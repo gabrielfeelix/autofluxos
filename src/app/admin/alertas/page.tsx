@@ -2,6 +2,7 @@ import { BarraDeLista } from '@/components/design/barra-de-lista'
 import { lerParametros, SemResultado, TelaDaAdministracao } from '@/components/admin/partes'
 import { TabelaDeAlertas } from '@/components/admin/tabela-de-alertas'
 import { listarAlertas } from '@/server/repos/alertas'
+import { IlustracaoTudoCerto } from '@/components/design/ilustracoes'
 
 export const dynamic = 'force-dynamic'
 
@@ -47,7 +48,8 @@ export default async function Alertas({ searchParams }: { searchParams: Promise<
           <SemResultado titulo="Nenhum alerta com estes filtros" limpar={BASE} />
         ) : (
           <section className="app-card px-8 py-12 text-center">
-            <p className="text-[14px] font-semibold text-soft">Nada quebrou</p>
+            <IlustracaoTudoCerto />
+            <p className="mt-6 text-[14px] font-semibold text-soft">Nada quebrou</p>
             <p className="mx-auto mt-1.5 max-w-md text-[12.5px] leading-6 text-dim">
               Esta tela vazia é a notícia boa. Ela enche sozinha quando o webhook do WhatsApp falhar, a Cloud API recusar uma entrega ou o cofre não devolver uma credencial.
             </p>

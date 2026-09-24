@@ -20,6 +20,7 @@ import {
   PREFIXO_DA_CHAVE,
 } from '@/core/agenda'
 import { testeDaChave } from '@/core/conexoes'
+import { IlustracaoChaves } from '@/components/design/ilustracoes'
 
 export const dynamic = 'force-dynamic'
 
@@ -202,8 +203,9 @@ export default async function Pagina({ params }: { params: Promise<{ clienteId: 
         )}
 
         {conexoes.length === 0 ? (
-          <div className="app-card px-6 py-10 text-center">
-            <p className="text-[13.5px] text-soft">Nenhuma chave ainda.</p>
+          <div className="app-card px-6 py-12 text-center">
+            <IlustracaoChaves />
+            <p className="mt-6 text-[13.5px] font-semibold text-soft">Nenhuma chave ainda</p>
             <p className="mx-auto mt-2 max-w-[440px] text-[12.5px] leading-6 text-dim">
               Enquanto não houver, os blocos de API só alcançam endereços que não pedem chave, como
               webhook, ou uma planilha publicada pelo Apps Script.

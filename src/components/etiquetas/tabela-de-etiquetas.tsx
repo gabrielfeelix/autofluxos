@@ -11,6 +11,7 @@ import { FichaDeEtiqueta } from '@/components/etiquetas/ficha'
 import { PopoverDoQuadro } from '@/components/quadros/popover-do-quadro'
 import { CLASSE_DA_COR, CORES_DE_ETIQUETA, LIMITE_DO_NOME, ROTULO_DA_COR, type CorDeEtiqueta } from '@/core/etiquetas'
 import { acaoJuntarEtiquetas, acaoNovaEtiqueta, acaoSalvarEtiqueta, acaoTirarEtiqueta } from '@/server/acoes-etiquetas'
+import { IlustracaoEtiquetas } from '@/components/design/ilustracoes'
 
 export type LinhaDeEtiqueta = {
   id: string
@@ -127,7 +128,8 @@ export function TabelaDeEtiquetas({ clienteId, inicial }: { clienteId: string; i
 
       {lista.length === 0 ? (
         <div className="px-5 py-14 text-center">
-          <p className="text-[13.5px] font-semibold text-soft">Nenhuma etiqueta ainda</p>
+          <IlustracaoEtiquetas />
+          <p className="mt-6 text-[13.5px] font-semibold text-soft">Nenhuma etiqueta ainda</p>
           <p className="mx-auto mt-1.5 max-w-[420px] text-[12.5px] leading-5 text-dim">
             Etiqueta é a sua lista: quem já recebeu proposta, quem é aluno antigo, quem não quer mais mensagem. Ela vira
             filtro em Contatos e público de transmissão.

@@ -10,6 +10,7 @@ import { explicarSegmento, type Segmento } from '@/core/segmentos'
 import { acaoApagarSegmento, acaoContarSegmento, acaoCriarSegmento } from '@/server/acoes-segmentos'
 import type { SegmentoSalvo } from '@/server/repos/segmentos'
 import { EditorDeSegmento } from './editor-de-segmento'
+import { IlustracaoSegmentos } from '@/components/design/ilustracoes'
 
 export type LinhaDeSegmento = {
   id: string
@@ -102,7 +103,8 @@ export function TabelaDeSegmentos({ clienteId, inicial }: { clienteId: string; i
 
       {lista.length === 0 ? (
         <div className="px-5 py-14 text-center">
-          <p className="text-[13.5px] font-semibold text-soft">Nenhum segmento ainda</p>
+          <IlustracaoSegmentos />
+          <p className="mt-6 text-[13.5px] font-semibold text-soft">Nenhum segmento ainda</p>
           <p className="mx-auto mt-1.5 max-w-[440px] text-[12.5px] leading-5 text-dim">
             Segmento é uma regra que escolhe contatos sozinha, como “quem não compra há 90 dias” ou “quem veio de
             anúncio este mês”. A lista se atualiza todo dia, sem ninguém mexer.

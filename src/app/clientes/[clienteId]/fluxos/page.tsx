@@ -19,7 +19,7 @@ import { ClienteShell } from '@/components/design/cliente-shell'
 import {
   EsqueletoDeLista,
 } from '@/components/design/esqueleto'
-import { IlustracaoAutomacoes } from '@/components/design/ilustracoes'
+import { IlustracaoAnuncios, IlustracaoAutomacoes, IlustracaoEventos, IlustracaoPalavrasChave, IlustracaoSequencias } from '@/components/design/ilustracoes'
 import { BotaoPerigo } from '@/components/design/botao-perigo'
 import {
   ModalFormulario,
@@ -800,8 +800,9 @@ async function ConteudoDaAba({
           )}
 
           {gatilhos.length === 0 ? (
-            <div className="border-b border-line px-5 py-10 text-center">
-              <p className="text-[13px] font-semibold text-soft">
+            <div className="border-b border-line px-5 py-12 text-center">
+              <IlustracaoPalavrasChave />
+              <p className="mt-6 text-[13px] font-semibold text-soft">
                 Nenhuma palavra-chave ainda
               </p>
               <p className="mt-1 text-xs leading-5 text-dim">
@@ -912,8 +913,9 @@ async function ConteudoDaAba({
           )}
 
           {gatilhosDeEvento.length === 0 ? (
-            <div className="border-b border-line px-5 py-10 text-center">
-              <p className="text-[13px] font-semibold text-soft">Nenhum evento ainda</p>
+            <div className="border-b border-line px-5 py-12 text-center">
+              <IlustracaoEventos />
+              <p className="mt-6 text-[13px] font-semibold text-soft">Nenhum evento ainda</p>
               <p className="mx-auto mt-1 max-w-[460px] text-xs leading-5 text-dim">
                 Crie um para a agenda ou o financeiro avisarem esta conta.
               </p>
@@ -1059,8 +1061,9 @@ async function ConteudoDaAba({
           )}
 
           {campanhas.length === 0 ? (
-            <div className="border-b border-line px-5 py-10 text-center">
-              <p className="text-[13px] font-semibold text-soft">Nenhuma campanha ainda</p>
+            <div className="border-b border-line px-5 py-12 text-center">
+              <IlustracaoAnuncios />
+              <p className="mt-6 text-[13px] font-semibold text-soft">Nenhuma campanha ainda</p>
               <p className="mt-1 text-xs leading-5 text-dim">
                 Sem elas, todo mundo que vem de anúncio entra pela mesma porta ,
                 e o relatório não separa quem veio de onde.
@@ -1153,8 +1156,9 @@ async function ConteudoDaAba({
           )}
 
           {sequencias.length === 0 ? (
-            <div className="border-b border-line px-5 py-10 text-center">
-              <p className="text-[13px] font-semibold text-soft">Nenhuma sequência ainda</p>
+            <div className="border-b border-line px-5 py-12 text-center">
+              <IlustracaoSequencias />
+              <p className="mt-6 text-[13px] font-semibold text-soft">Nenhuma sequência ainda</p>
               <p className="mt-1 text-xs leading-5 text-dim">
                 Sem elas, quem não respondeu depois do atendimento simplesmente some.
               </p>

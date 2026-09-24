@@ -11,6 +11,7 @@ import { NOME_DA_CONEXAO_DE_ADS } from '@/server/token-de-anuncios'
 import { ultimaChegadaDeAnuncio } from '@/server/repos/ultimos-eventos'
 import { CamadasDaConexao } from '@/components/conexoes/camadas'
 import { estadoDaConexao } from '@/core/conexoes'
+import { IlustracaoAnuncios } from '@/components/design/ilustracoes'
 
 export const dynamic = 'force-dynamic'
 
@@ -244,8 +245,9 @@ export default async function Pagina({
         </div>
 
         {paginas.length === 0 ? (
-          <div className="app-card px-5 py-8 text-center">
-            <p className="text-[13px] font-bold">Nenhuma página ligada ainda</p>
+          <div className="app-card px-5 py-12 text-center">
+            <IlustracaoAnuncios />
+            <p className="mt-6 text-[13px] font-bold">Nenhuma página ligada ainda</p>
             <p className="mx-auto mt-1.5 max-w-[420px] text-[11.5px] leading-5 text-dim">
               Enquanto não houver uma, os leads de formulário deste cliente não entram.
               Quem conversa pelo WhatsApp continua chegando normalmente.

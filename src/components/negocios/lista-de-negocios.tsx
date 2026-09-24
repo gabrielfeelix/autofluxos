@@ -7,6 +7,7 @@ import { CLASSE_DA_COR, estaParado, type Cartao, type Etapa } from '@/core/quadr
 import { comoDias, diasDesde, filtrarNegocios, tituloDoNegocio, type FiltroDaLista } from '@/core/negocios'
 import { telefoneLegivel } from '@/core/contatos/telefone'
 import { dataCurta } from '@/lib/quando'
+import { IlustracaoQuadros } from '@/components/design/ilustracoes'
 
 const CABECALHO = 'px-4 py-3 text-[10.5px] font-bold tracking-[0.06em] whitespace-nowrap text-dim uppercase'
 const FUNDO_DA_LINHA = 'hover:bg-[color-mix(in_oklab,var(--surface)_75%,var(--panel))]'
@@ -96,9 +97,16 @@ export function ListaDeNegocios({
 
       <div className="app-card min-h-0 flex-1 overflow-auto">
         {visiveis.length === 0 ? (
-          <p className="px-5 py-16 text-center text-[12.5px] text-dim">
-            {cartoes.length === 0 ? 'Nenhum negócio neste funil ainda.' : 'Nenhum negócio com esses filtros.'}
-          </p>
+          <div className="px-5 py-16 text-center">
+            {cartoes.length === 0 && (
+              <div className="mb-5">
+                <IlustracaoQuadros />
+              </div>
+            )}
+            <p className="text-[12.5px] text-dim">
+              {cartoes.length === 0 ? 'Nenhum negócio neste funil ainda.' : 'Nenhum negócio com esses filtros.'}
+            </p>
+          </div>
         ) : (
           <table className="w-full min-w-[980px] border-collapse text-left">
             <thead className="sticky top-0 z-[1] bg-panel">

@@ -19,6 +19,7 @@ import type { Template } from '@/server/repos/templates'
 import type { Progresso, Transmissao } from '@/server/repos/transmissoes'
 import { Numeros, ProximaAcao, ROTULO_DO_ESTADO } from '@/components/transmissoes/numeros'
 import { useConfirmar } from '@/components/design/confirmar'
+import { IlustracaoTransmissoes } from '@/components/design/ilustracoes'
 
 /**
  * A lista de transmissões, com o progresso real de cada uma.
@@ -108,7 +109,13 @@ export function ListaDeTransmissoes({
       )}
 
       {transmissoes.length === 0 ? (
-        <p className="px-5 py-8 text-center text-[13px] text-dim">Nenhuma transmissão ainda.</p>
+        <div className="px-5 py-14 text-center">
+          <IlustracaoTransmissoes />
+          <p className="mt-6 text-[13.5px] font-semibold text-soft">Nenhuma transmissão ainda</p>
+          <p className="mx-auto mt-1.5 max-w-[420px] text-xs leading-5 text-dim">
+            Uma mensagem só, para uma lista inteira de contatos de uma vez.
+          </p>
+        </div>
       ) : visiveis.length === 0 ? (
         <p className="px-5 py-8 text-center text-[13px] text-dim">Nenhuma transmissão com esse filtro.</p>
       ) : (

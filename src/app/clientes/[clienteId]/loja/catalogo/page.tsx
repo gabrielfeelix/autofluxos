@@ -13,6 +13,7 @@ import { acaoCriarProduto, acaoDefinirPreco, acaoRenomearProduto } from '@/serve
 import { acharCliente } from '@/server/repos/clientes'
 import { lojaDaConta } from '@/server/repos/lojas'
 import { listarProdutos } from '@/server/repos/produtos'
+import { IlustracaoProdutos } from '@/components/design/ilustracoes'
 
 export const dynamic = 'force-dynamic'
 
@@ -196,11 +197,14 @@ export default async function Pagina({ params }: { params: Promise<{ clienteId: 
           </header>
 
           {ativos.length === 0 ? (
-            <p className="px-5 py-10 text-center text-xs leading-5 text-dim">
-              Nenhum item ainda. Sem catálogo, a venda ainda pode ser registrada
-              com valor e nota: o item só é obrigatório para quem quiser
-              segmentar por produto depois.
-            </p>
+            <div className="px-5 py-14 text-center">
+              <IlustracaoProdutos />
+              <p className="mt-6 text-[13.5px] font-semibold text-soft">Nenhum item ainda</p>
+              <p className="mx-auto mt-1.5 max-w-[440px] text-xs leading-5 text-dim">
+                Sem catálogo, a venda ainda pode ser registrada com valor e nota: o item só é
+                obrigatório para quem quiser segmentar por produto depois.
+              </p>
+            </div>
           ) : (
             <ul>
               {ativos.map((produto) => (

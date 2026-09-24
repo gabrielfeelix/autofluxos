@@ -14,6 +14,7 @@ import { responsaveisDoEscopo } from '@/server/repos/relatorios'
 import { agendaDoIntervalo, paginaDaAgenda } from '@/server/repos/atividades'
 import { acharCliente } from '@/server/repos/clientes'
 import { membrosDaConta } from '@/server/repos/usuarios'
+import { IlustracaoAtividades } from '@/components/design/ilustracoes'
 
 export const dynamic = 'force-dynamic'
 
@@ -188,9 +189,13 @@ export default async function Pagina({
                 </Link>
               </>
             ) : (
-              <p className="mx-auto max-w-[440px] text-[13px] leading-6 text-muted">
-                Nenhuma atividade aberta. Crie uma pela ficha do contato, pelo Inbox ou pelo botão acima.
-              </p>
+              <>
+                <IlustracaoAtividades />
+                <p className="mt-6 text-[13.5px] font-semibold text-soft">Nenhuma atividade aberta</p>
+                <p className="mx-auto mt-1.5 max-w-[440px] text-xs leading-5 text-dim">
+                  Crie uma pela ficha do contato, pelo Inbox ou pelo botão acima.
+                </p>
+              </>
             )}
           </div>
         )}

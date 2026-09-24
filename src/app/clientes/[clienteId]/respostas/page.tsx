@@ -14,6 +14,7 @@ import {
   paginarRespostas,
   type DesfechoDaResposta,
 } from '@/server/repos/respostas'
+import { IlustracaoRespostas } from '@/components/design/ilustracoes'
 
 export const dynamic = 'force-dynamic'
 
@@ -346,6 +347,11 @@ async function Tabela({
 
       {respostas.length === 0 ? (
         <div className="app-card py-14 text-center">
+          {termo === '' && (
+            <div className="mb-6">
+              <IlustracaoRespostas />
+            </div>
+          )}
           <p className="text-[13px] font-bold">
             {termo !== ''
               ? `Ninguém com "${termo}" respondeu`

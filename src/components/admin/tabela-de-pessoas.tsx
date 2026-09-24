@@ -11,6 +11,7 @@ import { RolagemDaTabela } from '@/components/lead/rolagem-da-tabela'
 import { RemoverComDestino } from '@/components/conta/remover-com-destino'
 import { CLASSE_DO_CABECALHO, COLUNA_FIXA, FUNDO_DA_FIXA, FUNDO_DA_LINHA, Selo } from './partes'
 import { dataCurta, horaExata, quando } from '@/lib/quando'
+import { IlustracaoEquipe } from '@/components/design/ilustracoes'
 
 /** O seletor de função na linha, mais baixo que o do formulário. */
 const DROPDOWN_COMPACTO = '[&_.app-dropdown-trigger]:min-h-9! [&_.app-dropdown-trigger]:py-1.5! [&_.app-dropdown-trigger]:text-[12.5px]'
@@ -173,7 +174,8 @@ export function TabelaDePessoas({
       <>
         {cabecalho}
         <div className="app-card px-5 py-12 text-center">
-          <p className="text-[13px] font-bold">Ninguém com acesso ainda</p>
+          <IlustracaoEquipe />
+          <p className="mt-6 text-[13px] font-bold">Ninguém com acesso ainda</p>
           <p className="mx-auto mt-1 max-w-sm text-[12px] leading-5 text-dim">Enquanto isso, só o Suporte 4YU abre esta organização.</p>
         </div>
         {modal}

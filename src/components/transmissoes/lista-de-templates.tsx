@@ -6,6 +6,7 @@ import { acaoApagarTemplate } from '@/server/acoes-transmissoes'
 import type { Template } from '@/server/repos/templates'
 import { NovoModelo } from './novo-modelo'
 import { useConfirmar } from '@/components/design/confirmar'
+import { IlustracaoModelos } from '@/components/design/ilustracoes'
 
 /**
  * A lista de modelos aprovados, e o formulário de criar um.
@@ -63,9 +64,10 @@ export function ListaDeTemplates({
       </header>
 
       {templates.length === 0 ? (
-        <p className="px-5 py-8 text-center text-[13px] text-dim">
-          Nenhum modelo ainda.
-        </p>
+        <div className="px-5 py-14 text-center">
+          <IlustracaoModelos />
+          <p className="mt-6 text-[13.5px] font-semibold text-soft">Nenhum modelo ainda</p>
+        </div>
       ) : (
         <ul className="divide-y divide-line">
           {templates.map((template) => (

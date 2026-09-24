@@ -9,6 +9,7 @@ import { canalDoInstagram, diasAteVencer } from '@/server/repos/canais-instagram
 import { ultimaMensagemRecebida } from '@/server/repos/ultimos-eventos'
 import { CamadasDaConexao } from '@/components/conexoes/camadas'
 import { estadoDaConexao } from '@/core/conexoes'
+import { IlustracaoCanal } from '@/components/design/ilustracoes'
 
 export const dynamic = 'force-dynamic'
 
@@ -156,7 +157,8 @@ export default async function Pagina({
             )}
           </section>
         ) : (
-          <section className="app-card px-5 py-6">
+          <section className="app-card flex items-center gap-10 px-5 py-6">
+            <div className="min-w-0 flex-1">
             <p className="text-[14px] font-semibold text-soft">Nenhuma conta ligada</p>
             <p className="mt-1.5 max-w-lg text-[12.5px] leading-6 text-dim">
               Conectar abre a tela do Instagram, onde o dono do perfil autoriza. A conta precisa
@@ -192,6 +194,10 @@ export default async function Pagina({
                 <code className="font-mono">INSTAGRAM_APP_SECRET</code> no ambiente deste servidor.
               </p>
             )}
+            </div>
+            <div className="hidden shrink-0 pr-6 md:block">
+              <IlustracaoCanal />
+            </div>
           </section>
         )}
 

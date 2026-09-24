@@ -8,6 +8,7 @@ import { contasDoUsuario, ehAdminDaPlataforma, exigirUsuario } from '@/server/se
 import { ROTULO_DO_PAPEL } from '@/core/permissoes'
 import { quando } from '@/lib/quando'
 import { resumoDasContas, type ResumoDeAtendimento } from '@/server/repos/clientes'
+import { IlustracaoOrganizacoes } from '@/components/design/ilustracoes'
 
 export const dynamic = 'force-dynamic'
 
@@ -101,7 +102,8 @@ export default async function Contas() {
 
         {contas.length === 0 ? (
           <section className="app-card border-dashed px-8 py-12 text-center">
-            <p className="text-[14px] font-semibold text-soft">Nenhuma organização ainda</p>
+            <IlustracaoOrganizacoes />
+            <p className="mt-6 text-[14px] font-semibold text-soft">Nenhuma organização ainda</p>
             {/*
               O estado vazio conta **o que fazer**, e o que fazer mudou quando o
               cadastro abriu ao público: antes a conta nascia junto com a venda e

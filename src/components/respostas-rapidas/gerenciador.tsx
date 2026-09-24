@@ -8,6 +8,7 @@ import { RotuloCampo } from '@/components/design/modal-formulario'
 import { PopoverDoQuadro } from '@/components/quadros/popover-do-quadro'
 import { acaoEditarRespostaRapida, acaoNovaRespostaRapida, acaoTirarRespostaRapida } from '@/server/acoes-respostas-rapidas'
 import type { RespostaRapida } from '@/server/repos/respostas-rapidas'
+import { IlustracaoRespostasRapidas } from '@/components/design/ilustracoes'
 
 type Recado = { texto: string; erro?: boolean }
 
@@ -56,7 +57,8 @@ export function GerenciadorDeRespostasRapidas({ clienteId, inicial }: { clienteI
 
       {lista.length === 0 ? (
         <div className="px-5 py-14 text-center">
-          <p className="text-[13.5px] font-semibold text-soft">Nenhuma resposta ainda</p>
+          <IlustracaoRespostasRapidas />
+          <p className="mt-6 text-[13.5px] font-semibold text-soft">Nenhuma resposta ainda</p>
           <p className="mx-auto mt-1.5 max-w-[420px] text-[12.5px] leading-5 text-dim">
             Cadastre a frase que a equipe repete todo dia, como o endereço, o horário ou o primeiro passo do orçamento.
             Na conversa, ela entra com um clique.

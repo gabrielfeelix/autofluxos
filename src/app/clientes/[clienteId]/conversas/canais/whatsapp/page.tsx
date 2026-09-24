@@ -35,6 +35,7 @@ import { whatsappConfigurado } from '@/server/whatsapp/conexao'
 import { CamadasDaConexao } from '@/components/conexoes/camadas'
 import { estadoDaConexao, idadeDoEvento } from '@/core/conexoes'
 import { ultimaMensagemRecebida } from '@/server/repos/ultimos-eventos'
+import { IlustracaoCanal } from '@/components/design/ilustracoes'
 
 export const dynamic = 'force-dynamic'
 
@@ -395,10 +396,11 @@ export default async function Pagina({
           </header>
 
           {canais.length === 0 ? (
-            <p className="border-b border-line px-5 py-8 text-center text-xs leading-5 text-dim">
-              Nenhum número conectado ainda, sem isto o WhatsApp não chega até
-              aqui.
-            </p>
+            <div className="border-b border-line px-5 py-12 text-center">
+              <IlustracaoCanal />
+              <p className="mt-6 text-[13.5px] font-semibold text-soft">Nenhum número conectado ainda</p>
+              <p className="mt-1 text-xs leading-5 text-dim">Sem isto o WhatsApp não chega até aqui.</p>
+            </div>
           ) : (
             <ul>
               {canais.map((canal) => {

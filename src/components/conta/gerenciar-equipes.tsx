@@ -3,6 +3,7 @@
 import { useState, useTransition } from 'react'
 import { acaoArquivarEquipe, acaoCriarEquipe } from '@/server/acoes-acesso'
 import { useConfirmar } from '@/components/design/confirmar'
+import { IlustracaoEquipe } from '@/components/design/ilustracoes'
 
 /**
  * As equipes da conta (RB-40).
@@ -98,10 +99,14 @@ export function GerenciarEquipes({
       </div>
 
       {equipes.length === 0 ? (
-        <p className="px-5 py-8 text-center text-xs leading-5 text-dim">
-          Nenhuma equipe ainda. Sem equipe, o escopo &ldquo;da equipe dela&rdquo; não
-          alcança nada, crie uma antes de usá-lo no acesso.
-        </p>
+        <div className="px-5 py-12 text-center">
+          <IlustracaoEquipe />
+          <p className="mt-6 text-[13.5px] font-semibold text-soft">Nenhuma equipe ainda</p>
+          <p className="mx-auto mt-1.5 max-w-[440px] text-xs leading-5 text-dim">
+            Sem equipe, o escopo &ldquo;da equipe dela&rdquo; não alcança nada, crie uma antes
+            de usá-lo no acesso.
+          </p>
+        </div>
       ) : (
         <ul>
           {equipes.map((equipe) => (

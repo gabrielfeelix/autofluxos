@@ -12,6 +12,7 @@ import { pedidosDePlano } from '@/server/repos/pedidos-de-plano'
 import { listarAtos } from '@/server/repos/auditoria'
 import { planosVigentes } from '@/server/repos/planos'
 import { verboDoAto } from '@/core/atos-da-auditoria'
+import { IlustracaoOrganizacoes } from '@/components/design/ilustracoes'
 
 export const dynamic = 'force-dynamic'
 
@@ -80,7 +81,8 @@ export default async function VisaoGeral() {
 
       {organizacoes.length === 0 ? (
         <section className="app-card border-dashed px-10 py-14 text-center">
-          <p className="text-[14px] font-semibold text-soft">Nenhuma organização ainda</p>
+          <IlustracaoOrganizacoes />
+          <p className="mt-6 text-[14px] font-semibold text-soft">Nenhuma organização ainda</p>
           <p className="mx-auto mt-1.5 max-w-md text-[12.5px] leading-6 text-dim">
             Crie uma organização vazia ou comece com o exemplo pronto para conhecer o fluxo completo.
           </p>
