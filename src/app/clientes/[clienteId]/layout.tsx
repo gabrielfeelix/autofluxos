@@ -1,6 +1,7 @@
 import { notFound } from 'next/navigation'
 import { Suspense, type ReactNode } from 'react'
 import { BarraDoCliente } from '@/components/design/barra-do-cliente'
+import { CabecalhoDoCliente } from '@/components/design/cabecalho-do-cliente'
 import { MolduraDoCliente } from '@/components/design/moldura-do-cliente'
 import { FaixaDeImpersonacao } from '@/components/conta/faixa-impersonacao'
 import { FaixaDeSuporte } from '@/components/conta/faixa-de-suporte'
@@ -30,6 +31,7 @@ export default async function LayoutDoCliente({
     <MolduraDoCliente
       base={`/clientes/${cliente.id}`}
       barra={<BarraDoCliente cliente={cliente} />}
+      cabecalho={<CabecalhoDoCliente clienteId={cliente.id} />}
       faixas={
         <>
           <FaixaDeImpersonacao />

@@ -181,7 +181,7 @@ function Presenca({ atual }: { atual: string }) {
  * Cada número só é contado para quem abre a tela dele: contar conversas para
  * quem não atende seria mostrar, pelo menu, o que a tela recusa.
  */
-const contarDaBarra = cache(async (clienteId: string): Promise<Record<Contagem, number>> => {
+export const contarDaBarra = cache(async (clienteId: string): Promise<Record<Contagem, number>> => {
   const zeros = { minhas: 0, 'sem-dono': 0, atrasadas: 0 }
   try {
     const acesso = await acessoCompleto(clienteId)

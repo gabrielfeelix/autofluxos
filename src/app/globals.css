@@ -1853,3 +1853,90 @@ textarea::placeholder {
     animation: none !important;
   }
 }
+
+/*
+ * O cabeçalho da organização (`cabecalho.tsx`). Os botões são planos, sem
+ * borda, como os da Brevo: a borda de `.quadro-tool` (que o gatilho do popover
+ * herda) é de ferramenta de funil e pesava numa faixa de 56px com seis portas.
+ * Vêm depois de `.quadro-tool` no arquivo para ganhar dela no empate.
+ */
+.cabecalho-acao {
+  display: inline-flex;
+  height: 36px;
+  min-height: 36px;
+  align-items: center;
+  gap: 7px;
+  border: 0;
+  border-radius: 9px;
+  padding: 0;
+  background: transparent;
+  color: var(--soft);
+  font-size: 13px;
+  font-weight: 600;
+  transition:
+    background 150ms ease,
+    color 150ms ease;
+}
+.cabecalho-acao.px-2\.5 {
+  padding: 0 10px;
+}
+.cabecalho-acao:hover,
+.cabecalho-acao[aria-expanded='true'] {
+  background: var(--surface);
+  color: var(--ink);
+}
+.cabecalho-perfil {
+  height: 36px;
+  min-height: 36px;
+  gap: 8px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: 0 10px 0 4px;
+  background: var(--panel);
+}
+.cabecalho-perfil:hover,
+.cabecalho-perfil[aria-expanded='true'] {
+  background: var(--surface);
+  border-color: var(--line-strong);
+}
+
+/*
+ * A gaveta de ajuda: `<dialog>` modal encostado à direita, altura cheia. O
+ * navegador centraliza o dialog com `margin: auto`; aqui ele vai para a borda.
+ */
+.gaveta-de-ajuda {
+  position: fixed;
+  inset: 0 0 0 auto;
+  margin: 0;
+  width: min(400px, 100vw);
+  max-width: none;
+  height: 100dvh;
+  max-height: none;
+  padding: 0;
+  border: 0;
+  border-left: 1px solid var(--line);
+  background: var(--panel);
+  color: var(--ink);
+  box-shadow: -18px 0 48px rgb(19 25 34 / 12%);
+}
+.gaveta-de-ajuda[open] {
+  animation: gaveta-entra 220ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+.gaveta-de-ajuda::backdrop {
+  background: rgb(19 25 34 / 18%);
+}
+@keyframes gaveta-entra {
+  from {
+    transform: translateX(24px);
+    opacity: 0;
+  }
+  to {
+    transform: none;
+    opacity: 1;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .gaveta-de-ajuda[open] {
+    animation: none;
+  }
+}

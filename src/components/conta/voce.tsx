@@ -39,6 +39,11 @@ export function PerfilDaSessao({ inicial, children }: { inicial: Perfil; childre
   )
 }
 
+/** Quem muda o perfil na hora (foto e nome otimistas), fora do provedor nulo. */
+export function useMudarPerfil(): ((perfil: Perfil | null) => void) | null {
+  return useContext(ContextoDoPerfil)?.mudar ?? null
+}
+
 /** O perfil atual, ou nulo fora do provedor (a tela de carregamento). */
 export function usePerfil(): Perfil | null {
   return useContext(ContextoDoPerfil)?.perfil ?? null
@@ -174,7 +179,7 @@ async function recortarQuadrada(arquivo: File): Promise<File> {
   }
 }
 
-function EditarPerfil({
+export function EditarPerfil({
   perfil,
   mudar,
   aoFechar,
@@ -306,7 +311,7 @@ function EditarPerfil({
   )
 }
 
-function TrocarSenha({ aoFechar }: { aoFechar: () => void }) {
+export function TrocarSenha({ aoFechar }: { aoFechar: () => void }) {
   const [erro, setErro] = useState<string | null>(null)
   const [feito, setFeito] = useState(false)
   const [rodando, comecar] = useTransition()

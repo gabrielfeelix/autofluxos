@@ -15,11 +15,14 @@ import { ehEditorDeFluxo } from './aba-do-caminho'
 export function MolduraDoCliente({
   base,
   barra,
+  cabecalho,
   faixas,
   children,
 }: {
   base: string
   barra: ReactNode
+  /** O cabeçalho do computador. Fica fora da rolagem: a página rola por baixo dele. */
+  cabecalho: ReactNode
   faixas: ReactNode
   children: ReactNode
 }) {
@@ -33,9 +36,10 @@ export function MolduraDoCliente({
         No celular a barra de baixo é fixa e cobre o pé da tela: o miolo ganha
         a altura dela embaixo, para o último item não ficar escondido atrás.
       */}
-      <div className="app-miolo-com-barra relative min-w-0 flex-1 md:overflow-auto">
+      <div className="flex min-w-0 flex-1 flex-col md:min-h-0">
         {faixas}
-        {children}
+        {cabecalho}
+        <div className="app-miolo-com-barra relative min-h-0 min-w-0 flex-1 md:overflow-auto">{children}</div>
       </div>
     </div>
   )

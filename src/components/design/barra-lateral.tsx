@@ -149,12 +149,13 @@ export function BarraLateral({ base, area = 'cliente', itens: itensRecebidos = [
           </>
         )}
       </nav>
-      <div className="mt-3 border-t border-line pt-3">
+      {/* Na organização, perfil e tema moram no cabeçalho (`cabecalho.tsx`). */}
+      {area === 'administracao' && <div className="mt-3 border-t border-line pt-3">
         {contaButton()}
         <div className={recolhida ? 'flex flex-col items-center' : 'mt-2'}>
           <BotaoDeTema recolhida={recolhida} />
         </div>
-      </div>
+      </div>}
     </aside>
     {dica.elemento}
     <dialog ref={painel} aria-labelledby="titulo-conta" onClick={(event) => { if (event.target === event.currentTarget) painel.current?.close() }} className="fixed inset-0 m-auto w-[min(360px,calc(100%-32px))] rounded-2xl border border-line bg-panel p-5 text-ink shadow-xl backdrop:bg-black/30">

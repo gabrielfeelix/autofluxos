@@ -32,7 +32,11 @@ export function EsqueletoDoCliente({ ativa, recolhida = false, children }: { ati
       aceso={{ secao: ativa, item: ativa === 'inicio' ? 'inicio' : null }}
       secoes={SECOES.map((secao) => ({ ...secao, itens: secao.itens.map((item) => ({ ...item, href: '#' })) }))}
       rodape={<p className="text-sm text-dim">Carregando sua organização…</p>} />
-    <div className="relative min-w-0 flex-1 md:overflow-auto"><div className="flex min-h-full flex-col md:h-full">{children}</div></div>
+    <div className="flex min-w-0 flex-1 flex-col md:min-h-0">
+      {/* O cabeçalho reservado: sem ele, a tela desce 56px quando o de verdade chega. */}
+      <div aria-hidden className="hidden h-14 shrink-0 border-b border-line bg-panel md:block" />
+      <div className="relative min-h-0 min-w-0 flex-1 md:overflow-auto"><div className="flex min-h-full flex-col md:h-full">{children}</div></div>
+    </div>
   </div>
 }
 
