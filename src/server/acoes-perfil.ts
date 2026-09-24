@@ -25,6 +25,13 @@ type Resultado = { ok: true; nome: string; imagem: string | null } | { ok: false
 export async function acaoEditarPerfil(formData: FormData): Promise<Resultado> {
   const sessao = await sessaoAtual()
   if (!sessao) return { ok: false, erro: 'sua sessão expirou, entre de novo' }
+  /*
+   * Entrando como outra pessoa (suporte), o id da sessão é o dela: trocar o
+   * nome e a foto de alguém que não pediu, sem registro, não é suporte.
+   */
+  if (sessao.impersonadoPor) {
+    return { ok: false, erro: 'entrando como outra pessoa, o perfil dela não pode ser editado' }
+  }
   const usuarioId = sessao.usuario.id
 
   const nome = String(formData.get('nome') ?? '')

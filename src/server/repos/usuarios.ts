@@ -335,6 +335,20 @@ export async function removerComDestino(
         where client_id = $1 and responsavel = $2 and situacao = 'aberta'`,
       [contaId, usuarioId, destino],
     )
+    /*
+     * As exceções de acesso e as equipes saem junto. O cascade da 0073 só
+     * dispara quando o usuário é apagado, e sair da conta não apaga ninguém:
+     * sem isto, quem fosse cadastrado de novo meses depois voltaria com a
+     * exceção antiga (um `exportar` liberado, por exemplo) sem ninguém ver.
+     */
+    await cliente.query(
+      'delete from public.membro_capacidades where client_id = $1 and usuario_id = $2',
+      [contaId, usuarioId],
+    )
+    await cliente.query(
+      'delete from public.equipe_membros where client_id = $1 and usuario_id = $2',
+      [contaId, usuarioId],
+    )
     await cliente.query(
       'delete from public.af_membros where "organizationId" = $1 and "userId" = $2',
       [contaId, usuarioId],

@@ -59,6 +59,13 @@ beforeAll(async () => {
      values ($1, $2, 'aberta', $3, 'aberta', null), ($1, $2, 'feita', $3, 'concluida', now())`,
     [conta, contato, sai],
   )
+  // Exceção de acesso e equipe de quem sai: precisam sair junto com ela.
+  await q(
+    `insert into membro_capacidades (client_id, usuario_id, capacidade, escopo) values ($1, $2, 'exportar', 'nenhum')`,
+    [conta, sai],
+  )
+  const [{ id: equipe }] = await q(`insert into equipes (client_id, nome) values ($1, 'Recepção') returning id`, [conta])
+  await q(`insert into equipe_membros (equipe_id, client_id, usuario_id) values ($1, $2, $3)`, [equipe, conta, sai])
 })
 
 afterAll(async () => {
@@ -96,6 +103,10 @@ describe.skipIf(!temBanco)('remover com destino', () => {
     ])
     const membros = await q(`select 1 from af_membros where "organizationId" = $1 and "userId" = $2`, [conta, sai])
     expect(membros).toHaveLength(0)
+    const excecoes = await q(`select 1 from membro_capacidades where client_id = $1 and usuario_id = $2`, [conta, sai])
+    expect(excecoes).toHaveLength(0)
+    const equipes = await q(`select 1 from equipe_membros where client_id = $1 and usuario_id = $2`, [conta, sai])
+    expect(equipes).toHaveLength(0)
   })
 
   it('o último proprietário não sai', async () => {

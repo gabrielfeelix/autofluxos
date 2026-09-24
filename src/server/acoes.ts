@@ -380,15 +380,18 @@ export async function acaoVoltarParaVersao(fluxoId: string, clienteId: string, v
  * O desenho de uma versão publicada, para o Histórico mostrar e comparar (A12).
  *
  * Pedido ao clicar, e não junto da página: a lista de versões pode ser longa e
- * quase ninguém abre mais de uma. Só leitura, então basta poder ver a conta;
- * o fluxo precisa ser dela, e a versão, do fluxo.
+ * quase ninguém abre mais de uma. Só leitura, mas com a mesma porta do editor
+ * (`configurar_operacao`): o desenho traz mensagens, prompts e conexões, e
+ * quem não abre o editor não pode ler o fluxo chamando a ação direto. O fluxo
+ * precisa ser da conta, e a versão, do fluxo.
  */
 export async function acaoGrafoDaVersao(
   clienteId: string,
   fluxoId: string,
   versaoId: string,
 ): Promise<{ ok: true; grafo: Fluxo } | { ok: false; erro: string }> {
-  await exigirAcessoAoCliente(clienteId)
+  const acesso = await exigirCapacidade(clienteId, 'configurar_operacao', 'todos')
+  if (recusou(acesso)) return { ok: false, erro: acesso.erro }
   const fluxo = await acharFluxo(fluxoId)
   if (!fluxo || fluxo.clienteId !== clienteId) return { ok: false, erro: 'esta automação não é desta conta' }
   const versao = await acharVersaoDoFluxo(versaoId, fluxoId)
