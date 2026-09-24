@@ -1,9 +1,10 @@
 import { notFound } from 'next/navigation'
-import type { ReactNode } from 'react'
+import { Suspense, type ReactNode } from 'react'
 import { BarraDoCliente } from '@/components/design/barra-do-cliente'
 import { MolduraDoCliente } from '@/components/design/moldura-do-cliente'
 import { FaixaDeImpersonacao } from '@/components/conta/faixa-impersonacao'
 import { FaixaDeSuporte } from '@/components/conta/faixa-de-suporte'
+import { FaixaDoPlano } from '@/components/conta/faixa-do-plano'
 import { acharCliente } from '@/server/repos/clientes'
 
 /**
@@ -33,6 +34,10 @@ export default async function LayoutDoCliente({
         <>
           <FaixaDeImpersonacao />
           <FaixaDeSuporte clienteId={cliente.id} />
+          {/* Não segura a tela: o aviso chega quando chegar. */}
+          <Suspense fallback={null}>
+            <FaixaDoPlano clienteId={cliente.id} />
+          </Suspense>
         </>
       }
     >

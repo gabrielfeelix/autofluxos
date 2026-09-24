@@ -13,6 +13,7 @@ import { POST } from './route'
  * depois. O caminho do evento até a conversa é provado contra o Supabase de
  * verdade em `receber-evento.test.ts`.
  */
+import { recursoLiberado } from '@/server/recursos-do-plano'
 vi.mock('@/server/limite', () => ({ consumirLimite: vi.fn() }))
 vi.mock('@/server/receber-evento', () => ({ tratarEvento: vi.fn() }))
 vi.mock('@/server/repos/webhooks-de-entrada', () => ({
@@ -21,6 +22,7 @@ vi.mock('@/server/repos/webhooks-de-entrada', () => ({
   marcarRecusa: vi.fn(),
 }))
 vi.mock('@/server/alertar', () => ({ alertar: vi.fn() }))
+vi.mock('@/server/recursos-do-plano', () => ({ recursoLiberado: vi.fn() }))
 // `after()` roda depois da resposta; no teste ele executa na hora, que é o que
 // permite conferir o que a rota mandou processar.
 vi.mock('next/server', () => ({ after: (fn: () => unknown) => fn() }))
@@ -61,6 +63,16 @@ describe('POST /api/webhook/entrada/[clienteId]', () => {
     vi.mocked(tratarEvento).mockResolvedValue('aberto')
     vi.mocked(marcarChamada).mockResolvedValue(undefined)
     vi.mocked(marcarRecusa).mockResolvedValue(undefined)
+    vi.mocked(recursoLiberado).mockResolvedValue(true)
+  })
+
+  it('plano sem webhook devolve 403 depois da assinatura e não processa', async () => {
+    vi.mocked(recursoLiberado).mockResolvedValue(false)
+    const resposta = await pedir({ evento: 'vaga.aberta', telefone: '5511999998888' })
+
+    expect(resposta.status).toBe(403)
+    expect(recursoLiberado).toHaveBeenCalledWith(CLIENTE, 'webhook')
+    expect(tratarEvento).not.toHaveBeenCalled()
   })
 
   it('assinatura certa processa o evento', async () => {

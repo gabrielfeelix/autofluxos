@@ -21,6 +21,7 @@ import {
   perguntaDeConfirmacao,
 } from '@/core/confirmacao'
 import { lerPoliticas, politicaDe } from '../ia/politica'
+import { recursoLiberado } from '../recursos-do-plano'
 import { registrarChamada, type DecididoPor } from '../repos/ia-chamadas'
 import {
   assinatura,
@@ -291,6 +292,21 @@ async function rodar(
           sessao: seguinte.sessao,
         }
         continue
+      }
+
+      // Integração pausada pelo plano (seção 8 do plano da administração): a
+      // chamada não sai, e a conversa vai para uma pessoa, pelo mesmo caminho
+      // da credencial que sumiu. O fluxo fica como está e religa ao subir.
+      if (opcoes.clienteId && opcoes.origem !== 'simulador' && !(await recursoLiberado(opcoes.clienteId, 'integracoes'))) {
+        return {
+          acoes: [
+            ...semEfeito(resultado.acoes, 'chamar_http'),
+            { tipo: 'enviar_texto', texto: AVISO_DE_HANDOFF },
+            { tipo: 'transferir_humano', motivo: 'a integração está pausada: o plano da organização não inclui conexão com outros sistemas' },
+          ],
+          sessao: { ...resultado.sessao, status: 'humano' },
+          ...(destino ? { destino } : {}),
+        }
       }
 
       // A credencial é buscada aqui, fora do motor, e vive só o tempo desta

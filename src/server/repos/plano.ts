@@ -10,10 +10,9 @@ import { db, ehIdInvalido } from '../db'
  * que `repos/distribuicao.ts` existe: `Cliente` é a ficha que a tela de cadastro
  * edita, e plano não se edita ali. O precedente está aberto desde a 0064.
  *
- * **Nada aqui nega nada.** Medir vem antes de cobrar, e medir sem travar vem
- * antes de travar: estas funções respondem "quanto foi usado", e nenhuma delas
- * responde "pode continuar?". Quem for escrever a trava, um mês depois de haver
- * número real, escreve noutro lugar e com o dono junto.
+ * **Nada aqui nega nada.** Estas funções respondem "quanto foi usado" e "qual é
+ * o contrato"; a trava por recurso mora em `server/recursos-do-plano.ts`, e
+ * consumo nunca trava atendimento: acima da faixa vira excedente.
  */
 
 export type ConsumoDoMes = {
@@ -78,8 +77,100 @@ export async function planoDaConta(clienteId: string): Promise<IdDoPlano> {
   }
 
   const plano = (data as { plano?: string } | null)?.plano
-  if (plano === 'essencial' || plano === 'operacao' || plano === 'escala') return plano
-  return PLANO_DE_ENTRADA
+  return plano || PLANO_DE_ENTRADA
+}
+
+/**
+ * O contrato da organização: o plano que vale, a descida agendada e o preço
+ * (0102). Degrada como `planoDaConta`: sem leitura, plano de entrada sem nada
+ * agendado.
+ */
+export type ContratoDaConta = {
+  plano: IdDoPlano
+  planoAgendado: IdDoPlano | null
+  planoAgendadoPara: string | null
+  /** Nulo = o preço do plano. */
+  precoContratado: number | null
+  precoAgendado: number | null
+  precoAgendadoPara: string | null
+}
+
+type LinhaDoContrato = {
+  plano: string | null
+  plano_agendado: string | null
+  plano_agendado_para: string | null
+  preco_contratado: number | null
+  preco_agendado: number | null
+  preco_agendado_para: string | null
+}
+
+const COLUNAS_DO_CONTRATO = 'plano, plano_agendado, plano_agendado_para, preco_contratado, preco_agendado, preco_agendado_para'
+
+function paraContrato(linha: LinhaDoContrato | null): ContratoDaConta {
+  return {
+    plano: linha?.plano || PLANO_DE_ENTRADA,
+    planoAgendado: linha?.plano_agendado ?? null,
+    planoAgendadoPara: linha?.plano_agendado_para ?? null,
+    precoContratado: linha?.preco_contratado ?? null,
+    precoAgendado: linha?.preco_agendado ?? null,
+    precoAgendadoPara: linha?.preco_agendado_para ?? null,
+  }
+}
+
+export async function contratoDaConta(clienteId: string): Promise<ContratoDaConta> {
+  const { data, error } = await db().from('clients').select(COLUNAS_DO_CONTRATO).eq('id', clienteId).maybeSingle()
+  if (error && !ehIdInvalido(error)) console.error('[plano] não deu para ler o contrato da conta', error.message)
+  return paraContrato((error ? null : data) as LinhaDoContrato | null)
+}
+
+/** Os contratos de todas as organizações, para a passada diária. */
+export async function contratosDeTodas(): Promise<(ContratoDaConta & { clienteId: string; nome: string })[]> {
+  const { data, error } = await db().from('clients').select(`id, nome, ${COLUNAS_DO_CONTRATO}`)
+  if (error) throw new Error(`não deu para ler os contratos: ${error.message}`)
+  return ((data ?? []) as (LinhaDoContrato & { id: string; nome: string })[]).map((linha) => ({ clienteId: linha.id, nome: linha.nome, ...paraContrato(linha) }))
+}
+
+/** Agenda a descida para `para` (o dia da virada). Substitui a que houver. */
+export async function agendarDescida(clienteId: string, plano: IdDoPlano, para: string): Promise<{ ok: boolean; erro?: string }> {
+  const { error } = await db()
+    .from('clients')
+    .update({ plano_agendado: plano, plano_agendado_para: para, atualizado_em: new Date().toISOString() })
+    .eq('id', clienteId)
+  if (error) return { ok: false, erro: `não deu para agendar a descida: ${error.message}` }
+  return { ok: true }
+}
+
+export async function cancelarDescida(clienteId: string): Promise<{ ok: boolean; erro?: string }> {
+  const { error } = await db()
+    .from('clients')
+    .update({ plano_agendado: null, plano_agendado_para: null, atualizado_em: new Date().toISOString() })
+    .eq('id', clienteId)
+  if (error) return { ok: false, erro: `não deu para cancelar a descida: ${error.message}` }
+  return { ok: true }
+}
+
+/** Agenda um preço novo com aviso (ou tira o agendado, com `null`). */
+export async function agendarPreco(clienteIds: string[], preco: number | null, para: string | null): Promise<{ ok: boolean; erro?: string }> {
+  if (clienteIds.length === 0) return { ok: true }
+  const { error } = await db().from('clients').update({ preco_agendado: preco, preco_agendado_para: para }).in('id', clienteIds)
+  if (error) return { ok: false, erro: `não deu para agendar o preço: ${error.message}` }
+  return { ok: true }
+}
+
+/** Grava o preço contratado de quem ainda não tem (legado: o preço de antes). */
+export async function congelarPreco(planoId: string, preco: number): Promise<void> {
+  const { error } = await db().from('clients').update({ preco_contratado: preco }).eq('plano', planoId).is('preco_contratado', null)
+  if (error) console.error('[plano] não deu para congelar o preço', error.message)
+}
+
+/** Aplica o preço agendado que venceu. */
+export async function aplicarPreco(clienteId: string, preco: number): Promise<{ ok: boolean; erro?: string }> {
+  const { error } = await db()
+    .from('clients')
+    .update({ preco_contratado: preco, preco_agendado: null, preco_agendado_para: null, atualizado_em: new Date().toISOString() })
+    .eq('id', clienteId)
+  if (error) return { ok: false, erro: error.message }
+  return { ok: true }
 }
 
 /**
@@ -93,10 +184,24 @@ export async function planoDaConta(clienteId: string): Promise<IdDoPlano> {
 export async function definirPlano(
   clienteId: string,
   plano: IdDoPlano,
+  /** O preço do contrato novo: o do plano de destino, salvo acerto à parte. */
+  precoContratado: number,
 ): Promise<{ ok: boolean; erro?: string }> {
+  /*
+   * Trocar de plano é contrato novo: o preço passa a ser o do destino, e a
+   * descida ou o preço que estavam agendados deixam de fazer sentido.
+   */
   const { error } = await db()
     .from('clients')
-    .update({ plano, atualizado_em: new Date().toISOString() })
+    .update({
+      plano,
+      preco_contratado: precoContratado,
+      plano_agendado: null,
+      plano_agendado_para: null,
+      preco_agendado: null,
+      preco_agendado_para: null,
+      atualizado_em: new Date().toISOString(),
+    })
     .eq('id', clienteId)
 
   if (error) return { ok: false, erro: `não deu para trocar o plano: ${error.message}` }
@@ -213,10 +318,7 @@ export async function consumoDeTodasAsContas(
       return {
         clienteId: conta.id,
         nome: conta.nome,
-        plano:
-          plano === 'essencial' || plano === 'operacao' || plano === 'escala'
-            ? plano
-            : PLANO_DE_ENTRADA,
+        plano: plano || PLANO_DE_ENTRADA,
         mes,
         conversas: medido.conversas,
         arquivos: medido.arquivos,
@@ -273,4 +375,20 @@ export async function usoDaOrganizacao(
     webhooks,
     chavePropria: Boolean((cliente.data as { ia_chave_ref: string | null } | null)?.ia_chave_ref),
   }
+}
+
+/** As organizações num plano (ou com descida agendada para ele), para a tela Planos. */
+export async function organizacoesNoPlano(planoId: string): Promise<{ id: string; nome: string; precoContratado: number | null; agendada: boolean }[]> {
+  const { data, error } = await db()
+    .from('clients')
+    .select('id, nome, plano, plano_agendado, preco_contratado')
+    .or(`plano.eq.${planoId},plano_agendado.eq.${planoId}`)
+    .order('nome', { ascending: true })
+  if (error) throw new Error(`não deu para listar as organizações do plano: ${error.message}`)
+  return ((data ?? []) as { id: string; nome: string; plano: string; plano_agendado: string | null; preco_contratado: number | null }[]).map((linha) => ({
+    id: linha.id,
+    nome: linha.nome,
+    precoContratado: linha.preco_contratado,
+    agendada: linha.plano !== planoId,
+  }))
 }

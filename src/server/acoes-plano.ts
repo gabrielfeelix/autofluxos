@@ -1,8 +1,8 @@
 'use server'
 
 import { revalidatePath } from 'next/cache'
-import type { IdDoPlano } from '@/core/planos'
-import { planoVigente } from './repos/planos'
+import { ehIdDePlano, type IdDoPlano } from '@/core/planos'
+import { planosVigentes } from './repos/planos'
 import { registrar } from './repos/auditoria'
 import { planoDaConta } from './repos/plano'
 import { exigirAcessoAoCliente, podeAdministrarConta } from './sessao'
@@ -41,9 +41,8 @@ export async function acaoPedirTrocaDePlano(
     return { ok: false, erro: 'só quem administra a organização pode pedir mudança de plano' }
   }
 
-  if (desejado !== 'essencial' && desejado !== 'operacao' && desejado !== 'escala') {
-    return { ok: false, erro: 'esse plano não existe' }
-  }
+  const destino = ehIdDePlano(desejado) ? (await planosVigentes()).find((plano) => plano.id === desejado && plano.ativo) : undefined
+  if (!destino) return { ok: false, erro: 'esse plano não existe' }
 
   const atual = await planoDaConta(clienteId)
   if (atual === desejado) {
@@ -68,7 +67,7 @@ export async function acaoPedirTrocaDePlano(
     autorEmail: acesso.sessao.usuario.email,
     contaId: clienteId,
     alvoTipo: 'plano',
-    alvoNome: (await planoVigente(desejado)).nome,
+    alvoNome: destino.nome,
     detalhes: { de: atual, para: desejado, ...resumoDaTroca(previsao) },
   })
 

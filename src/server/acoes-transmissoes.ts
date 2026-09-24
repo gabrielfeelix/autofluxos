@@ -1,6 +1,7 @@
 'use server'
 
 import { revalidatePath } from 'next/cache'
+import { recusaDoPlano } from './recursos-do-plano'
 import {
   apagarTemplateNaMeta,
   criarDaBibliotecaNaMeta,
@@ -429,6 +430,9 @@ export async function acaoCriarTransmissao(
 ): Promise<ResultadoDaTransmissao> {
   const acesso = await exigirCapacidade(clienteId, 'exportar', 'todos')
   if (recusou(acesso)) return acesso
+
+  const foraDoPlano = await recusaDoPlano(clienteId, 'transmissoes')
+  if (foraDoPlano) return { ok: false, erro: foraDoPlano }
 
   const nome = dados.nome.trim()
   if (!nome) return { ok: false, erro: 'Dê um nome para esta transmissão.' }

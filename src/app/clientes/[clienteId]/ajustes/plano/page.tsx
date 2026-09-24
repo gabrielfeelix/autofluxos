@@ -4,7 +4,7 @@ import { AjustesShell } from '@/components/design/ajustes-shell'
 import { Trilha } from '@/components/design/trilha'
 import { acaoPedirTrocaDePlano } from '@/server/acoes-plano'
 import { acharCliente } from '@/server/repos/clientes'
-import { consumoDaConta, planoDaConta, usoDaOrganizacao } from '@/server/repos/plano'
+import { consumoDaConta, contratoDaConta, usoDaOrganizacao } from '@/server/repos/plano'
 import { pedidosDePlano } from '@/server/repos/pedidos-de-plano'
 import { planosVigentes } from '@/server/repos/planos'
 import type { IdDoPlano } from '@/core/planos'
@@ -37,14 +37,15 @@ export default async function Pagina({ params }: { params: Promise<{ clienteId: 
   const podeMexer = acesso !== null && podeAdministrarConta(acesso)
 
   const lendoConsumo = consumoDaConta(clienteId)
-  const [plano, consumo, pedidos, planos, uso] = await Promise.all([
-    planoDaConta(clienteId),
+  const [contrato, consumo, pedidos, planos, uso] = await Promise.all([
+    contratoDaConta(clienteId),
     lendoConsumo,
     pedidosDePlano({ organizacaoId: clienteId }).catch(() => []),
     planosVigentes(),
     // Medido junto da página para o modal de troca abrir na hora.
     usoDaOrganizacao(clienteId, undefined, lendoConsumo),
   ])
+  const plano = contrato.plano
   // Só o pedido que a administração ainda não respondeu (A5). Atendido ou
   // recusado, some da tela; pedido para o plano que já vale também.
   const aberto = pedidos.find((pedido) => pedido.situacao === 'aberto' && pedido.para !== plano)
@@ -72,6 +73,7 @@ export default async function Pagina({ params }: { params: Promise<{ clienteId: 
           pedidoAberto={pedidoAberto}
           pedirTroca={acaoPedirTrocaDePlano.bind(null, cliente.id)}
           uso={uso}
+          contrato={contrato}
           conexoesHref={`/clientes/${cliente.id}/ajustes/integracoes`}
           planos={planos.filter((p) => p.ativo || p.id === plano)}
         />

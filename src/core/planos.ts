@@ -29,9 +29,11 @@
  * O identificador do plano, e o que vai na coluna `clients.plano`.
  *
  * Texto e não número: `'essencial'` sobrevive a uma faixa nova no meio da
- * tabela, e `2` vira mentira no dia em que a ordem mudar.
+ * tabela, e `2` vira mentira no dia em que a ordem mudar. Desde a 0102 (A8) a
+ * administração cria plano, então o id é qualquer texto no formato de
+ * `ehIdDePlano`, amarrado a `planos.id` por chave estrangeira.
  */
-export type IdDoPlano = 'essencial' | 'operacao' | 'escala'
+export type IdDoPlano = string
 
 export type Plano = {
   id: IdDoPlano
@@ -65,6 +67,8 @@ export type Plano = {
   itens: string[]
   /** Quantos números de WhatsApp o plano comporta. */
   numeros: number
+  /** Reais por conversa acima de `conversas`, na fatura seguinte (0102). */
+  precoExcedente: number
   /** O que o plano libera, na lista fechada de `RECURSOS_DO_PLANO`. */
   recursos: RecursoDoPlano[]
 }
@@ -104,6 +108,7 @@ export const PLANOS: Plano[] = [
     preco: 297,
     conversas: 1000,
     numeros: 1,
+    precoExcedente: 0.4,
     recursos: ['crm'],
     resumo: 'Para quem atende sozinho e quer parar de repetir horário e preço.',
     itens: [
@@ -121,6 +126,7 @@ export const PLANOS: Plano[] = [
     preco: 597,
     conversas: 3000,
     numeros: 1,
+    precoExcedente: 0.3,
     recursos: ['crm', 'ia', 'transcricao', 'transmissoes', 'integracoes'],
     resumo: 'Para quem já tem gente atendendo junto e perde conversa no meio.',
     itens: [
@@ -139,6 +145,7 @@ export const PLANOS: Plano[] = [
     preco: 1197,
     conversas: 8000,
     numeros: 5,
+    precoExcedente: 0.2,
     recursos: ['crm', 'ia', 'transcricao', 'transmissoes', 'integracoes', 'varios_numeros', 'chave_propria', 'webhook'],
     resumo: 'Para operação com mais de um número, volume alto e dado sensível.',
     itens: [
@@ -244,4 +251,25 @@ export function comoTamanho(bytes: number): string {
   }
 
   return `${(emMega / 1024).toFixed(1).replace('.', ',')} GB`
+}
+
+/** O formato do id de plano, o mesmo do `check` `planos_id_formato` (0102). */
+export function ehIdDePlano(valor: string): boolean {
+  return /^[a-z0-9][a-z0-9_-]{0,39}$/.test(valor)
+}
+
+/**
+ * O id de um plano novo, a partir do nome: "Operação Plus" vira
+ * `operacao-plus`. Nasce do nome e não muda depois, porque `clients.plano`
+ * guarda o id.
+ */
+export function idDoNome(nome: string): string {
+  return nome
+    .normalize('NFD')
+    .replace(/[̀-ͯ]/g, '')
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+    .slice(0, 40)
+    .replace(/-+$/g, '')
 }

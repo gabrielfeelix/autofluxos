@@ -6,6 +6,7 @@ import { apagarContatosVencidos, MESES_DE_RETENCAO_PADRAO } from '@/server/repos
 import { marcarQuemSumiu } from '@/server/repos/crm'
 import { DIAS_PARA_INATIVAR } from '@/core/crm'
 import { reconciliarTemplates } from '@/server/reconciliar-templates'
+import { passadaDoPlano } from '@/server/passada-do-plano'
 
 export const dynamic = 'force-dynamic'
 
@@ -98,6 +99,16 @@ export async function GET(req: Request) {
      */
     const templates = await reconciliarTemplates()
 
+    /*
+     * E o plano, pela mesma carona: a descida agendada vale na virada do mês,
+     * o preço agendado no dia dele, e os avisos (7 e 1 dia antes da descida,
+     * 80% e 100% do consumo) saem uma vez cada. Nunca lança por organização.
+     */
+    const plano = await passadaDoPlano(agora).catch(async (erro) => {
+      await alertar('a passada do plano falhou', erro)
+      return null
+    })
+
     return Response.json({
       ...resultado,
       meses: MESES_DE_RETENCAO_PADRAO,
@@ -107,6 +118,7 @@ export async function GET(req: Request) {
       inativados,
       diasParaInativar: DIAS_PARA_INATIVAR,
       templates,
+      plano,
     })
   } catch (erro) {
     // Ninguém está olhando quando isto roda às quatro da manhã. Uma limpeza que

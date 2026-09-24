@@ -1,5 +1,6 @@
 'use server'
 
+import { recusaDoPlano } from './recursos-do-plano'
 import { podeLigar } from '@/core/entrada'
 import { destinoPodeReceber, recusaParaLigar } from './repos/entrada'
 import { podeResponderAgora } from './distribuir-atendimento'
@@ -633,6 +634,9 @@ export async function acaoCriarGatilhoDeEvento(
   if (evento === '') return { erro: 'escreva o nome do evento' }
   if (fluxoId === '') return { erro: 'escolha qual fluxo este evento abre' }
 
+  const foraDoPlano = await recusaDoPlano(clienteId, 'webhook')
+  if (foraDoPlano) return { erro: foraDoPlano }
+
   const r = await criarGatilhoDeEvento(clienteId, evento, fluxoId)
   if (!r.ok) return { erro: r.motivo }
 
@@ -683,6 +687,9 @@ export async function acaoCriarWebhookDeEntrada(
 ): Promise<{ ok: true; segredo: string } | { ok: false; erro: string }> {
   const acesso = await exigirCapacidade(clienteId, 'configurar_operacao', 'todos')
   if (recusou(acesso)) return acesso
+
+  const foraDoPlano = await recusaDoPlano(clienteId, 'webhook')
+  if (foraDoPlano) return { ok: false, erro: foraDoPlano }
 
   const r = await criarWebhook(clienteId, nome)
   if (!r.ok) return { ok: false, erro: r.motivo }
@@ -1938,6 +1945,9 @@ export async function acaoCriarConexao(
 ): Promise<{ ok: boolean; erro?: string }> {
   const acesso = await exigirCapacidade(clienteId, 'configurar_operacao', 'todos')
   if (recusou(acesso)) return acesso
+
+  const foraDoPlano = await recusaDoPlano(clienteId, 'integracoes')
+  if (foraDoPlano) return { ok: false, erro: foraDoPlano }
 
   const tipo = String(formData.get('tipo') ?? 'bearer')
   if (tipo !== 'bearer' && tipo !== 'cabecalho' && tipo !== 'query') {

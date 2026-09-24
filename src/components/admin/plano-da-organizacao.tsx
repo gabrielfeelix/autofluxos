@@ -2,14 +2,16 @@
 
 import { useState, useTransition } from 'react'
 import { AvisoFlutuante } from '@/components/design/aviso-flutuante'
-import { acaoAdminRecusarPedido, acaoAdminTrocarPlano } from '@/server/acoes-admin'
+import { acaoAdminCancelarDescida, acaoAdminRecusarPedido, acaoAdminTrocarPlano } from '@/server/acoes-admin'
+import { diaPorExtenso, excedente, fraseDoExcedente, proximaVirada, reais } from '@/core/contrato-do-plano'
 import { ModalDeTroca } from '@/components/plano/modal-de-troca'
 import type { RecursoDoPlano } from '@/core/planos'
 import { previsaoDaTroca, type UsoDaOrganizacao } from '@/core/troca-de-plano'
 import { horaExata, quando } from '@/lib/quando'
 import { Selo } from './partes'
 
-export type PlanoNaTela = { id: string; nome: string; preco: number; conversas: number; numeros: number; resumo: string; recursos: RecursoDoPlano[] }
+export type PlanoNaTela = { id: string; nome: string; preco: number; conversas: number; numeros: number; precoExcedente: number; resumo: string; recursos: RecursoDoPlano[] }
+export type DescidaNaTela = { plano: string; para: string }
 export type PedidoNaTela = { id: string; quando: string; quemPediu: string; de: string; para: string; situacao: 'aberto' | 'atendido' | 'recusado' }
 
 /**
@@ -23,9 +25,15 @@ export function PlanoDaOrganizacao({
   conversas,
   pedidos: pedidosIniciais,
   uso,
+  descida: descidaInicial,
+  precoContratado,
 }: {
   organizacaoId: string
   atual: string
+  /** A descida agendada para a virada do mês, se houver. */
+  descida: DescidaNaTela | null
+  /** O que a organização paga hoje; nulo = o preço do plano. */
+  precoContratado: number | null
   planos: PlanoNaTela[]
   conversas: number
   pedidos: PedidoNaTela[]
@@ -33,6 +41,8 @@ export function PlanoDaOrganizacao({
   uso: UsoDaOrganizacao
 }) {
   const [atual, setAtual] = useState(inicial)
+  const [descida, setDescida] = useState(descidaInicial)
+  const [preco, setPreco] = useState(precoContratado)
   const [pedidos, setPedidos] = useState(pedidosIniciais)
   const [aviso, setAviso] = useState<string | null>(null)
   const [, comecar] = useTransition()
@@ -42,26 +52,51 @@ export function PlanoDaOrganizacao({
   const fracao = plano.conversas > 0 ? conversas / plano.conversas : 0
   const nome = (id: string) => planos.find((item) => item.id === id)?.nome ?? id
 
+  const previsao = (para: string) => previsaoDaTroca(plano, planos.find((item) => item.id === para) ?? plano, uso, preco)
+
+  // Subida vale na hora; descida fica agendada para a virada do mês (seção 8).
   const trocar = (para: string, pedidoId: string | undefined, confirmacao: { ciente: boolean; motivo: string }) => {
     setEscolha(null)
-    const antes = { atual, pedidos }
-    setAtual(para)
+    const antes = { atual, pedidos, descida, preco }
+    const desce = previsao(para).impacto.sentido === 'desce'
+    if (para === atual) setDescida(null)
+    else if (desce) setDescida({ plano: para, para: proximaVirada(new Date()) })
+    else {
+      setAtual(para)
+      setDescida(null)
+      setPreco(planos.find((item) => item.id === para)?.preco ?? null)
+    }
     if (pedidoId) setPedidos((lista) => lista.map((pedido) => (pedido.id === pedidoId ? { ...pedido, situacao: 'atendido' } : pedido)))
+    const voltar = (texto: string) => {
+      setAtual(antes.atual)
+      setDescida(antes.descida)
+      setPreco(antes.preco)
+      setPedidos(antes.pedidos)
+      setAviso(texto)
+    }
     comecar(async () => {
       try {
         const r = await acaoAdminTrocarPlano(organizacaoId, para, pedidoId, confirmacao)
-        if (!r.ok) {
-          setAtual(antes.atual)
-          setPedidos(antes.pedidos)
-          setAviso(r.erro ?? 'não deu para trocar o plano')
-        }
+        if (!r.ok) voltar(r.erro ?? 'não deu para trocar o plano')
       } catch {
-        setAtual(antes.atual)
-        setPedidos(antes.pedidos)
-        setAviso('sem conexão com o servidor')
+        voltar('sem conexão com o servidor')
       }
     })
   }
+
+  const desfazerDescida = () => {
+    const antes = descida
+    setDescida(null)
+    comecar(async () => {
+      const r = await acaoAdminCancelarDescida(organizacaoId).catch(() => ({ ok: false, erro: 'sem conexão com o servidor' }))
+      if (!r.ok) {
+        setDescida(antes)
+        setAviso(r.erro ?? 'não deu para cancelar a descida')
+      }
+    })
+  }
+
+  const conta = fraseDoExcedente(excedente(conversas, plano))
 
   const recusar = (pedidoId: string) => {
     const antes = pedidos
@@ -89,7 +124,25 @@ export function PlanoDaOrganizacao({
         <span className="mt-2.5 block h-2 overflow-hidden rounded-full bg-surface">
           <span className={`block h-full rounded-full ${fracao > 1 ? 'bg-perigo' : fracao >= 0.8 ? 'bg-aviso' : 'bg-primary'}`} style={{ width: `${Math.min(100, Math.round(fracao * 100))}%` }} />
         </span>
+        <p className="mt-2 text-[12px] leading-5 text-dim">
+          {conta ? `${conta} Estimativa: a cobrança é manual enquanto não há gateway.` : `Acima da faixa, cada conversa custa ${reais(plano.precoExcedente)} na fatura seguinte.`}
+        </p>
+        <p className="mt-3 border-t border-line pt-3 text-[12.5px] text-muted">
+          Paga <strong className="font-semibold text-ink tabular-nums">{reais(preco ?? plano.preco)}</strong> por mês
+          {preco !== null && preco !== plano.preco && <span className="text-dim"> (contrato; o {plano.nome} custa {reais(plano.preco)} para organização nova)</span>}
+        </p>
       </section>
+
+      {descida && (
+        <section className="flex flex-wrap items-center gap-3 rounded-[14px] border border-amber-400/30 bg-amber-400/[0.07] px-5 py-3.5">
+          <p className="min-w-0 flex-1 text-[12.5px] leading-5 text-soft">
+            <strong className="font-semibold">Descida agendada para o {nome(descida.plano)}</strong> em {diaPorExtenso(descida.para)}. Até lá, tudo continua como está; a organização é avisada 7 dias e 1 dia antes.
+          </p>
+          <button type="button" onClick={desfazerDescida} className="app-secondary-button px-3.5 py-2 text-[12.5px]">
+            Cancelar descida
+          </button>
+        </section>
+      )}
 
       <section aria-labelledby="titulo-planos">
         <h2 id="titulo-planos" className="mb-3 text-[15px] font-bold">
@@ -103,7 +156,7 @@ export function PlanoDaOrganizacao({
                 <article className={`app-card flex h-full flex-col gap-2 p-4 ${eh ? 'ring-2 ring-primary/60' : ''}`}>
                   <div className="flex items-center justify-between gap-2">
                     <h3 className="text-[15px] font-bold">{item.nome}</h3>
-                    {eh && <Selo tom="destaque">Plano atual</Selo>}
+                    {eh ? <Selo tom="destaque">Plano atual</Selo> : descida?.plano === item.id ? <Selo tom="aviso">Agendado</Selo> : null}
                   </div>
                   <p className="text-[22px] font-bold tracking-[-0.02em] tabular-nums">
                     R$ {item.preco.toLocaleString('pt-BR')}
@@ -116,6 +169,8 @@ export function PlanoDaOrganizacao({
                   <div className="mt-auto pt-2">
                     {eh ? (
                       <p className="text-[12px] text-dim">É o plano desta organização</p>
+                    ) : descida?.plano === item.id ? (
+                      <p className="text-[12px] text-dim">Vale em {diaPorExtenso(descida.para)}</p>
                     ) : (
                       <button type="button" onClick={() => setEscolha({ para: item.id })} className="app-secondary-button w-full px-3 py-2 text-[12.5px]">
                         Mudar para {item.nome}
@@ -172,7 +227,7 @@ export function PlanoDaOrganizacao({
         <ModalDeTroca
           quem="administracao"
           paraNome={nome(escolha.para)}
-          previsao={previsaoDaTroca(plano, planos.find((item) => item.id === escolha.para) ?? plano, uso)}
+          previsao={previsao(escolha.para)}
           aoFechar={() => setEscolha(null)}
           aoConfirmar={(confirmacao) => trocar(escolha.para, escolha.pedidoId, confirmacao)}
         />

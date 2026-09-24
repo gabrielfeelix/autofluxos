@@ -14,11 +14,12 @@
  * - **perda**: recurso que sai do plano. Com uso medido, a tela diz o que está
  *   em uso ("3 fluxos respondem com IA") e pede ciência antes de confirmar.
  * - **aviso**: o mês já passou da faixa de conversas do plano de destino.
- *   Não bloqueia, pelo mesmo motivo de `repos/plano.ts`: medir vem antes de
- *   travar.
+ *   Não bloqueia: consumo nunca trava atendimento, e acima da faixa cada
+ *   conversa entra como excedente (seção 8), com a conta escrita no aviso.
  *
  * Puro, sem banco: o uso chega medido de `repos/plano.ts`.
  */
+import { excedente, fraseDoExcedente } from './contrato-do-plano'
 import { RECURSOS_DO_PLANO, type Plano, type RecursoDoPlano } from './planos'
 
 /** O que a organização usa hoje, medido no banco. */
@@ -62,7 +63,7 @@ export type ImpactoDaTroca = {
 
 const plural = (n: number, um: string, varios: string) => `${n.toLocaleString('pt-BR')} ${n === 1 ? um : varios}`
 
-function usoDoRecurso(recurso: RecursoDoPlano, uso: UsoDaOrganizacao): string | null {
+export function usoDoRecurso(recurso: RecursoDoPlano, uso: UsoDaOrganizacao): string | null {
   switch (recurso) {
     case 'ia':
       return uso.fluxosComIa > 0 ? `${plural(uso.fluxosComIa, 'fluxo responde', 'fluxos respondem')} com IA` : null
@@ -84,7 +85,7 @@ function usoDoRecurso(recurso: RecursoDoPlano, uso: UsoDaOrganizacao): string | 
 }
 
 /** O que um plano precisa ter para entrar na conta do impacto. */
-export type PlanoNaTroca = Pick<Plano, 'nome' | 'preco' | 'conversas' | 'numeros' | 'recursos'> & { id: string }
+export type PlanoNaTroca = Pick<Plano, 'nome' | 'preco' | 'conversas' | 'numeros' | 'recursos'> & { id: string; precoExcedente?: number }
 
 /** O que o modal de troca mostra: de onde, para onde, e o impacto. */
 export type PrevisaoDaTroca = {
@@ -98,11 +99,19 @@ export type PrevisaoDaTroca = {
  * medido junto da página (o modal abre na hora), e no servidor, de novo, ao
  * confirmar.
  */
-export function previsaoDaTroca(de: PlanoNaTroca, para: PlanoNaTroca, uso: UsoDaOrganizacao): PrevisaoDaTroca {
+export function previsaoDaTroca(
+  de: PlanoNaTroca,
+  para: PlanoNaTroca,
+  uso: UsoDaOrganizacao,
+  /** O preço contratado hoje, quando difere do preço do plano (legado, acerto). */
+  precoAtual?: number | null,
+): PrevisaoDaTroca {
+  const impacto = impactoDaTroca(de, para, uso)
+  const pagaHoje = precoAtual ?? de.preco
   return {
-    de: { id: de.id, nome: de.nome, preco: de.preco },
+    de: { id: de.id, nome: de.nome, preco: pagaHoje },
     para: { id: para.id, nome: para.nome, preco: para.preco },
-    impacto: impactoDaTroca(de, para, uso),
+    impacto: { ...impacto, diferenca: para.preco - pagaHoje },
   }
 }
 
@@ -126,8 +135,9 @@ export function impactoDaTroca(de: PlanoNaTroca, para: PlanoNaTroca, uso: UsoDaO
 
   const avisos: string[] = []
   if (uso.conversas > para.conversas) {
+    const conta = para.precoExcedente !== undefined ? fraseDoExcedente(excedente(uso.conversas, { conversas: para.conversas, precoExcedente: para.precoExcedente })) : null
     avisos.push(
-      `Este mês já teve ${plural(uso.conversas, 'conversa', 'conversas')} e o ${para.nome} comporta ${para.conversas.toLocaleString('pt-BR')} por mês. Nada é bloqueado, mas a organização fica acima do plano.`,
+      `Este mês já teve ${plural(uso.conversas, 'conversa', 'conversas')} e o ${para.nome} comporta ${para.conversas.toLocaleString('pt-BR')} por mês. Nada é bloqueado: acima da faixa, cada conversa entra como excedente na fatura seguinte.${conta ? ` ${conta.replace('neste mês', 'num mês como este')} (estimativa)` : ''}`,
     )
   }
 

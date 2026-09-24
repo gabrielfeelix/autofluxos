@@ -1,7 +1,7 @@
 import 'server-only'
 import { previsaoDaTroca, type PrevisaoDaTroca } from '@/core/troca-de-plano'
 import { planoVigente } from './repos/planos'
-import { planoDaConta, usoDaOrganizacao } from './repos/plano'
+import { contratoDaConta, usoDaOrganizacao } from './repos/plano'
 
 export type { PrevisaoDaTroca }
 
@@ -13,9 +13,9 @@ export type { PrevisaoDaTroca }
  * abrir e clicar, e o bloqueio vale pelo estado de agora.
  */
 export async function preverTroca(clienteId: string, para: string): Promise<PrevisaoDaTroca> {
-  const [atual, uso] = await Promise.all([planoDaConta(clienteId), usoDaOrganizacao(clienteId)])
-  const [de, destino] = await Promise.all([planoVigente(atual), planoVigente(para)])
-  return previsaoDaTroca(de, destino, uso)
+  const [contrato, uso] = await Promise.all([contratoDaConta(clienteId), usoDaOrganizacao(clienteId)])
+  const [de, destino] = await Promise.all([planoVigente(contrato.plano), planoVigente(para)])
+  return previsaoDaTroca(de, destino, uso, contrato.precoContratado)
 }
 
 /** O motivo de recusar a confirmação, ou nulo se ela pode seguir. */

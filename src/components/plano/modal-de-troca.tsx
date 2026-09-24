@@ -5,6 +5,7 @@ import { useEffect, useRef, useState } from 'react'
 import { Caixa } from '@/components/design/caixa'
 import { Modal } from '@/components/design/modal'
 import { RotuloCampo } from '@/components/design/modal-formulario'
+import { diaPorExtenso, proximaVirada } from '@/core/contrato-do-plano'
 import type { PrevisaoDaTroca } from '@/core/troca-de-plano'
 
 type Carregado = { ok: boolean; erro?: string; previsao?: PrevisaoDaTroca }
@@ -67,10 +68,13 @@ export function ModalDeTroca({
   const podeConfirmar = Boolean(impacto) && !bloqueado && (!impacto!.exigeCiencia || ciente)
 
   const titulo = !impacto ? `Mudar para ${paraNome}` : desce ? `Descer para ${paraNome}` : `Subir para ${paraNome}`
+  const virada = diaPorExtenso(proximaVirada(new Date()))
   const descricao =
     quem === 'organizacao'
       ? 'O pedido vai para a 4YU, que confirma com você antes de mudar a cobrança.'
-      : 'A troca vale na hora e fica na auditoria da organização.'
+      : desce
+        ? `A descida vale na virada do mês, em ${virada}, e fica na auditoria da organização.`
+        : 'A subida vale na hora e fica na auditoria da organização.'
 
   return (
     <Modal aberto aoFechar={aoFechar} titulo={titulo} descricao={descricao} largura={500}>
@@ -155,15 +159,11 @@ export function ModalDeTroca({
             </p>
           ))}
 
-          {quem === 'organizacao' && impacto.perde.some((perda) => perda.emUso) && (
-            <p className="text-[12px] leading-5 text-dim">
-              Nada é desligado agora. Antes de mudar a cobrança, a 4YU combina com você o que sai do ar.
-            </p>
-          )}
-
-          {quem === 'administracao' && desce && impacto.perde.some((perda) => perda.emUso) && (
-            <p className="text-[12px] leading-5 text-dim">
-              O produto ainda não desliga recurso pelo plano: o que está em uso continua funcionando depois da troca. Combine com a organização o que ela desliga.
+          {desce && (
+            <p className="rounded-[12px] border border-line bg-surface px-4 py-3 text-[12.5px] leading-5 text-muted">
+              <strong className="font-semibold text-soft">Vale em {virada}.</strong> Até lá, tudo continua funcionando: é o prazo para salvar e exportar.
+              {impacto.perde.length > 0 && ' Na virada, o que sai fica só leitura, com a configuração guardada, e religa se a organização subir de novo. Nada é apagado.'}
+              {quem === 'organizacao' && ' Avisamos 7 dias e 1 dia antes.'}
             </p>
           )}
 
@@ -207,7 +207,7 @@ export function ModalDeTroca({
             onClick={() => aoConfirmar({ ciente, motivo })}
             className="app-primary-button flex-[1.35] px-4 py-2.5 text-[13px] disabled:cursor-not-allowed disabled:opacity-50"
           >
-            {quem === 'organizacao' ? 'Enviar pedido' : `Mudar para ${paraNome}`}
+            {quem === 'organizacao' ? 'Enviar pedido' : desce ? `Agendar para ${virada}` : `Mudar para ${paraNome}`}
           </button>
         )}
       </div>

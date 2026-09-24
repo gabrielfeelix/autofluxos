@@ -1,6 +1,7 @@
 import 'server-only'
 import { gemini } from './gemini'
 import { lerChave } from '../repos/chave-de-ia'
+import { recusaDoPlano } from '../recursos-do-plano'
 import type { Modelo } from './types'
 
 /**
@@ -48,6 +49,15 @@ export async function escolherModelo({
 }): Promise<ModeloEscolhido> {
   if (!iaHabilitada) {
     return { modelo: null, dono: null, motivo: 'esta automação não tem IA contratada' }
+  }
+
+  /*
+   * O plano vigente precisa incluir IA (seção 8 do plano da administração). O
+   * fluxo guarda `ia_habilitada`: subir de plano religa sem ninguém mexer.
+   */
+  if (clienteId) {
+    const recusa = await recusaDoPlano(clienteId, 'ia')
+    if (recusa) return { modelo: null, dono: null, motivo: recusa }
   }
 
   if (clienteId) {

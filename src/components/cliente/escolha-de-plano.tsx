@@ -12,7 +12,9 @@ import {
   type IdDoPlano,
 } from '@/core/planos'
 import type { ConsumoDoMes } from '@/server/repos/plano'
-import { previsaoDaTroca, type UsoDaOrganizacao } from '@/core/troca-de-plano'
+import { previsaoDaTroca, usoDoRecurso, type UsoDaOrganizacao } from '@/core/troca-de-plano'
+import { diaPorExtenso, excedente, fraseDoExcedente, reais } from '@/core/contrato-do-plano'
+import { RECURSOS_DO_PLANO } from '@/core/planos'
 import { ModalDeTroca } from '@/components/plano/modal-de-troca'
 
 /**
@@ -34,8 +36,17 @@ export function EscolhaDePlano({
   pedirTroca,
   uso,
   conexoesHref,
+  contrato,
   planos = PLANOS,
 }: {
+  /** O contrato (0102): descida agendada e preço. */
+  contrato: {
+    planoAgendado: IdDoPlano | null
+    planoAgendadoPara: string | null
+    precoContratado: number | null
+    precoAgendado: number | null
+    precoAgendadoPara: string | null
+  }
   /** Os planos em vigor (tabela `planos`, A6). Sem eles, os do código. */
   planos?: readonly Plano[]
   atual: IdDoPlano
@@ -53,6 +64,11 @@ export function EscolhaDePlano({
   const fracao = fracaoUsada(consumo.conversas, plano)
   const estourou = fracao > 1
   const perto = !estourou && fracao >= 0.8
+  const conta = fraseDoExcedente(excedente(consumo.conversas, plano))
+  const pausados = RECURSOS_DO_PLANO.filter((recurso) => !plano.recursos.includes(recurso.chave))
+    .map((recurso) => ({ rotulo: recurso.rotulo, emUso: usoDoRecurso(recurso.chave, uso) }))
+    .filter((recurso) => recurso.emUso && recurso.rotulo)
+  const descida = contrato.planoAgendado && contrato.planoAgendadoPara ? { plano: acharPlano(contrato.planoAgendado), para: contrato.planoAgendadoPara } : null
 
   const [pedido, setPedido] = useState<IdDoPlano | null>(null)
   const [erro, setErro] = useState<string | null>(null)
@@ -93,10 +109,22 @@ export function EscolhaDePlano({
             <p className="text-[11.5px] text-dim">Plano desta organização</p>
             <p className="mt-0.5 text-[19px] font-bold tracking-[-0.02em]">{plano.nome}</p>
           </div>
-          <p className="text-[13px] text-muted">
-            R$ {plano.preco.toLocaleString('pt-BR')} por mês
+          <p className="text-right text-[13px] text-muted">
+            {reais(contrato.precoContratado ?? plano.preco)} por mês
+            {contrato.precoAgendado !== null && contrato.precoAgendadoPara && (
+              <span className="block text-[11.5px] text-aviso">
+                passa a {reais(contrato.precoAgendado)} em {diaPorExtenso(contrato.precoAgendadoPara)}
+              </span>
+            )}
           </p>
         </div>
+
+        {descida && (
+          <p role="status" className="mt-4 rounded-[11px] border border-amber-400/30 bg-amber-400/[0.07] px-4 py-3 text-[12.5px] leading-5 text-soft">
+            <strong className="font-semibold">Em {diaPorExtenso(descida.para)}, a organização passa para o plano {descida.plano.nome}.</strong>{' '}
+            Até lá, tudo continua funcionando: é o prazo para salvar e exportar. O que sai fica só leitura, com a configuração guardada, e nada é apagado.
+          </p>
+        )}
 
         <div className="mt-5">
           <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
@@ -125,12 +153,27 @@ export function EscolhaDePlano({
             letras. Enquanto a medição é nova, um número errado não pode virar
             conta sem atender.
           */}
-          <p className={`mt-2 text-[12px] leading-6 ${estourou ? 'text-perigo' : 'text-dim'}`}>
+          <p className={`mt-2 text-[12px] leading-6 ${estourou ? 'text-perigo' : perto ? 'text-aviso' : 'text-dim'}`}>
             {estourou
-              ? 'Este mês passou do que o plano comporta. Nada foi bloqueado: procure a gente para ajustar a faixa.'
-              : O_QUE_E_CONVERSA}
+              ? `${conta} Nada é bloqueado; a estimativa entra na fatura seguinte.`
+              : perto
+                ? `Você usou ${Math.round(fracao * 100)}% da faixa. Nada é bloqueado: acima dela, cada conversa custa ${reais(plano.precoExcedente)} na fatura seguinte.`
+                : O_QUE_E_CONVERSA}
           </p>
         </div>
+
+        {pausados.length > 0 && (
+          <div className="mt-3 border-t border-line pt-3">
+            <p className="text-[12px] font-semibold text-soft">Pausado porque o plano {plano.nome} não inclui</p>
+            <ul className="mt-1 flex flex-col gap-0.5">
+              {pausados.map((recurso) => (
+                <li key={recurso.rotulo} className="text-[12px] leading-5 text-dim">
+                  {recurso.rotulo}: {recurso.emUso}. A configuração está guardada e volta ao subir de plano.
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
 
         <p className="mt-3 border-t border-line pt-3 text-[12px] leading-6 text-dim">
           Também neste mês: {consumo.arquivos.toLocaleString('pt-BR')} arquivo
@@ -182,7 +225,7 @@ export function EscolhaDePlano({
           <ModalDeTroca
             quem="organizacao"
             paraNome={acharPlano(escolhido).nome}
-            previsao={previsaoDaTroca(plano, acharPlano(escolhido), uso)}
+            previsao={previsaoDaTroca(plano, acharPlano(escolhido), uso, contrato.precoContratado)}
             aoFechar={() => setEscolhido(null)}
             aoConfirmar={({ ciente }) => pedir(escolhido, ciente)}
             conexoesHref={conexoesHref}

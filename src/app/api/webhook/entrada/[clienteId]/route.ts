@@ -5,6 +5,7 @@ import { alertar } from '@/server/alertar'
 import { consumirLimite } from '@/server/limite'
 import { tratarEvento } from '@/server/receber-evento'
 import { segredosAtivos, marcarChamada, marcarRecusa } from '@/server/repos/webhooks-de-entrada'
+import { recursoLiberado } from '@/server/recursos-do-plano'
 
 /**
  * Onde um sistema de fora avisa que algo aconteceu (0044).
@@ -107,6 +108,12 @@ export async function POST(req: Request, { params }: { params: Promise<{ cliente
     // minuto: uma enxurrada de 401 não vira enxurrada de escrita (0095).
     after(() => marcarRecusa(clienteId))
     return Response.json({ erro: 'assinatura inválida' }, { status: 401 })
+  }
+
+  // 4. Webhook pausado pelo plano (seção 8 do plano da administração). Vem
+  //    depois da assinatura: quem não assina não descobre nada sobre a conta.
+  if (!(await recursoLiberado(clienteId, 'webhook'))) {
+    return Response.json({ erro: 'webhook pausado: o plano da organização não inclui webhook de entrada' }, { status: 403 })
   }
 
   let bruto: unknown

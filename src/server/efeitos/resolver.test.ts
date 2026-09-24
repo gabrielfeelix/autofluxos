@@ -8,6 +8,7 @@ vi.mock('./http', () => ({ chamarHttp }))
 
 const lerCredencial = vi.hoisted(() => vi.fn())
 vi.mock('../repos/conexoes', () => ({ lerCredencial }))
+vi.mock('../recursos-do-plano', () => ({ recursoLiberado: vi.fn(async () => true) }))
 
 const { executarComEfeitos, MAX_EFEITOS } = await import('./resolver')
 

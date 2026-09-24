@@ -12,13 +12,14 @@ import { acharUsuarioPorEmail, papelNaConta, removerComDestino } from './repos/u
 import { acharUsuario, exigirAdminDaPlataforma } from './sessao'
 import { autenticacao } from './auth'
 import { definirFuncaoDoMembro } from './pessoas'
-import { definirPlano, planoDaConta } from './repos/plano'
-import { planoVigente, salvarPlano } from './repos/planos'
+import { agendarDescida, agendarPreco, cancelarDescida, congelarPreco, contratoDaConta, definirPlano, organizacoesNoPlano } from './repos/plano'
+import { criarPlano, excluirPlano, planosVigentes, salvarPlano, type EdicaoDePlano } from './repos/planos'
+import { DIAS_DE_AVISO_DO_PRECO, diaDeHoje, proximaVirada, somarDias } from '@/core/contrato-do-plano'
 import { preverTroca, recusaDaTroca, resumoDaTroca, type PrevisaoDaTroca } from './troca-de-plano'
-import { ehRecursoDoPlano } from '@/core/planos'
+import { ehIdDePlano, ehRecursoDoPlano, idDoNome, PLANO_DE_ENTRADA } from '@/core/planos'
 import { CAPACIDADES, ehEscopo, type Politica } from '@/core/permissoes'
 import { funcoesVigentes, salvarFuncao } from './repos/funcoes'
-import { acharPedido } from './repos/pedidos-de-plano'
+import { acharPedido, pedidosDePlano } from './repos/pedidos-de-plano'
 import { ehFuncao, PAPEL_DA_FUNCAO, type IdDaFuncao } from '@/core/funcoes'
 
 /**
@@ -240,37 +241,54 @@ export async function acaoAdminPreverTroca(
   plano: string,
 ): Promise<{ ok: boolean; erro?: string; previsao?: PrevisaoDaTroca }> {
   await exigirAdminDaPlataforma()
-  if (plano !== 'essencial' && plano !== 'operacao' && plano !== 'escala') return { ok: false, erro: 'esse plano não existe' }
+  if (!(await planoExiste(plano))) return { ok: false, erro: 'esse plano não existe' }
   return { ok: true, previsao: await preverTroca(organizacaoId, plano) }
 }
 
+async function planoExiste(id: string): Promise<boolean> {
+  return ehIdDePlano(id) && (await planosVigentes()).some((plano) => plano.id === id)
+}
+
 /**
- * A troca pela administração. Vale na hora (não há cobrança ainda), mas passa
- * pela mesma regra do pedido: número a mais bloqueia, recurso em uso que sai
- * exige ciência, e o motivo vai para a auditoria.
+ * A troca pela administração, pela mesma regra do pedido: número a mais
+ * bloqueia, recurso em uso que sai exige ciência, e o motivo vai para a
+ * auditoria.
+ *
+ * **Subida vale na hora; descida, na virada do mês** (seção 8). A descida fica
+ * agendada em `clients.plano_agendado`, a passada diária aplica e avisa 7 e 1
+ * dia antes. Até lá tudo funciona: é o prazo para salvar e exportar.
  */
 export async function acaoAdminTrocarPlano(
   organizacaoId: string,
   plano: string,
   pedidoId?: string,
   confirmacao: { ciente?: boolean; motivo?: string } = {},
-): Promise<{ ok: boolean; erro?: string }> {
+): Promise<{ ok: boolean; erro?: string; agendadaPara?: string }> {
   const sessao = await exigirAdminDaPlataforma()
-  if (plano !== 'essencial' && plano !== 'operacao' && plano !== 'escala') return { ok: false, erro: 'esse plano não existe' }
+  if (!(await planoExiste(plano))) return { ok: false, erro: 'esse plano não existe' }
   const organizacao = await acharCliente(organizacaoId)
   if (!organizacao) return { ok: false, erro: 'esta organização não existe mais' }
 
-  const de = await planoDaConta(organizacaoId)
-  const destino = await planoVigente(plano)
+  const contrato = await contratoDaConta(organizacaoId)
+  const de = contrato.plano
+  const destino = (await planosVigentes()).find((item) => item.id === plano)!
   const previsao = de !== plano ? await preverTroca(organizacaoId, plano) : null
   const recusa = previsao ? recusaDaTroca(previsao, confirmacao.ciente === true) : null
   if (recusa) return { ok: false, erro: recusa }
   const motivo = String(confirmacao.motivo ?? '').trim().slice(0, 500)
+  let agendadaPara: string | undefined
   if (de !== plano) {
-    const r = await definirPlano(organizacaoId, plano)
-    if (!r.ok) return { ok: false, erro: r.erro }
+    const desce = previsao?.impacto.sentido === 'desce'
+    if (desce) {
+      agendadaPara = proximaVirada(new Date())
+      const r = await agendarDescida(organizacaoId, plano, agendadaPara)
+      if (!r.ok) return { ok: false, erro: r.erro }
+    } else {
+      const r = await definirPlano(organizacaoId, plano, destino.preco)
+      if (!r.ok) return { ok: false, erro: r.erro }
+    }
     await registrar({
-      acao: 'trocou_plano',
+      acao: desce ? 'agendou_descida_de_plano' : 'trocou_plano',
       autorId: sessao.usuario.id,
       autorEmail: sessao.usuario.email,
       contaId: organizacaoId,
@@ -278,9 +296,19 @@ export async function acaoAdminTrocarPlano(
       alvoTipo: 'plano',
       alvoId: plano,
       alvoNome: destino.nome,
-      detalhes: { de, para: plano, ...(pedidoId ? { pedido: pedidoId } : {}), ...(previsao ? resumoDaTroca(previsao) : {}), ...(motivo ? { motivo } : {}) },
+      detalhes: {
+        de,
+        para: plano,
+        ...(agendadaPara ? { valeEm: agendadaPara } : { precoContratado: destino.preco }),
+        ...(pedidoId ? { pedido: pedidoId } : {}),
+        ...(previsao ? resumoDaTroca(previsao) : {}),
+        ...(motivo ? { motivo } : {}),
+      },
       impersonadoPor: sessao.impersonadoPor,
     })
+  } else if (contrato.planoAgendado) {
+    // Escolher o plano que já vale desfaz a descida agendada.
+    await cancelarDescida(organizacaoId)
   }
   if (pedidoId) {
     await registrar({
@@ -292,11 +320,34 @@ export async function acaoAdminTrocarPlano(
       alvoTipo: 'pedido',
       alvoId: pedidoId,
       alvoNome: destino.nome,
-      detalhes: { pedido: pedidoId, de, para: plano },
+      detalhes: { pedido: pedidoId, de, para: plano, ...(agendadaPara ? { valeEm: agendadaPara } : {}) },
       impersonadoPor: sessao.impersonadoPor,
     })
   }
-  revalidatePath('/admin/organizacoes')
+  return { ok: true, ...(agendadaPara ? { agendadaPara } : {}) }
+}
+
+/** Desfaz a descida agendada: a organização fica no plano de hoje. */
+export async function acaoAdminCancelarDescida(organizacaoId: string): Promise<{ ok: boolean; erro?: string }> {
+  const sessao = await exigirAdminDaPlataforma()
+  const organizacao = await acharCliente(organizacaoId)
+  if (!organizacao) return { ok: false, erro: 'esta organização não existe mais' }
+  const contrato = await contratoDaConta(organizacaoId)
+  if (!contrato.planoAgendado) return { ok: true }
+  const r = await cancelarDescida(organizacaoId)
+  if (!r.ok) return r
+  await registrar({
+    acao: 'cancelou_descida_de_plano',
+    autorId: sessao.usuario.id,
+    autorEmail: sessao.usuario.email,
+    contaId: organizacaoId,
+    contaNome: organizacao.nome,
+    alvoTipo: 'plano',
+    alvoId: contrato.planoAgendado,
+    alvoNome: contrato.planoAgendado,
+    detalhes: { plano: contrato.plano, desceriaPara: contrato.planoAgendado, valeria: contrato.planoAgendadoPara },
+    impersonadoPor: sessao.impersonadoPor,
+  })
   return { ok: true }
 }
 
@@ -329,6 +380,8 @@ export type DadosDoPlano = {
   preco: number
   conversas: number
   numeros: number
+  /** Reais por conversa acima da faixa. */
+  precoExcedente: number
   resumo: string
   itens: string[]
   recursos: string[]
@@ -336,9 +389,8 @@ export type DadosDoPlano = {
 }
 
 /** Edita um plano. Valida tudo antes do banco: a recusa do `check` viria em linguagem de Postgres. */
-export async function acaoAdminSalvarPlano(id: string, dados: DadosDoPlano): Promise<{ ok: boolean; erro?: string }> {
-  const sessao = await exigirAdminDaPlataforma()
-  if (id !== 'essencial' && id !== 'operacao' && id !== 'escala') return { ok: false, erro: 'esse plano não existe' }
+/** Valida tudo antes do banco: a recusa do `check` viria em linguagem de Postgres. */
+function validarPlano(dados: DadosDoPlano): { ok: true; edicao: EdicaoDePlano } | { ok: false; erro: string } {
   const nome = String(dados.nome ?? '').trim()
   if (nome.length < 1 || nome.length > 60) return { ok: false, erro: 'o nome precisa ter de 1 a 60 caracteres' }
   const inteiro = (valor: unknown, minimo: number) => (Number.isInteger(Number(valor)) && Number(valor) >= minimo ? Number(valor) : null)
@@ -348,11 +400,51 @@ export async function acaoAdminSalvarPlano(id: string, dados: DadosDoPlano): Pro
   if (preco === null) return { ok: false, erro: 'o preço é um número inteiro de reais, zero ou mais' }
   if (conversas === null) return { ok: false, erro: 'o limite de conversas é um número inteiro, zero ou mais' }
   if (numeros === null) return { ok: false, erro: 'o plano comporta pelo menos 1 número' }
+  const precoExcedente = Math.round(Number(dados.precoExcedente) * 100) / 100
+  if (!Number.isFinite(precoExcedente) || precoExcedente < 0) return { ok: false, erro: 'o preço do excedente é em reais, zero ou mais' }
   const recursos = (dados.recursos ?? []).filter(ehRecursoDoPlano)
   const itens = (dados.itens ?? []).map((item) => String(item).trim()).filter(Boolean).slice(0, 20)
+  return {
+    ok: true,
+    edicao: { nome, preco, conversas, numeros, precoExcedente, resumo: String(dados.resumo ?? '').trim(), itens, recursos, ativo: dados.ativo !== false },
+  }
+}
 
-  const r = await salvarPlano(id, { nome, preco, conversas, numeros, resumo: String(dados.resumo ?? '').trim(), itens, recursos, ativo: dados.ativo !== false })
+/**
+ * O que fazer com quem já está no plano quando o preço muda (seção 8.1): o
+ * preço novo vale para organização nova; para as existentes, manter o antigo
+ * (legado) ou aplicar com aviso de 30 dias.
+ */
+export type PrecoParaQuemJaEsta = 'manter' | 'avisar'
+
+export async function acaoAdminSalvarPlano(
+  id: string,
+  dados: DadosDoPlano,
+  quemJaEsta: PrecoParaQuemJaEsta = 'manter',
+): Promise<{ ok: boolean; erro?: string; avisadas?: number }> {
+  const sessao = await exigirAdminDaPlataforma()
+  const anterior = ehIdDePlano(id) ? (await planosVigentes()).find((plano) => plano.id === id) : undefined
+  if (!anterior) return { ok: false, erro: 'esse plano não existe' }
+  const validado = validarPlano(dados)
+  if (!validado.ok) return validado
+  const { nome, preco, conversas, numeros, precoExcedente } = validado.edicao
+
+  /*
+   * Antes de mudar o preço, quem está no plano sem preço gravado ganha o de
+   * antes: sem isso, o preço novo valeria para eles na hora, que é o que a
+   * seção 8.1 proíbe.
+   */
+  const mudouPreco = preco !== anterior.preco
+  if (mudouPreco) await congelarPreco(id, anterior.preco)
+  const r = await salvarPlano(id, validado.edicao)
   if (!r.ok) return { ok: false, erro: r.motivo }
+  let avisadas = 0
+  if (mudouPreco && quemJaEsta === 'avisar') {
+    const alvo = (await organizacoesNoPlano(id)).filter((organizacao) => !organizacao.agendada && organizacao.precoContratado !== preco).map((organizacao) => organizacao.id)
+    const r2 = await agendarPreco(alvo, preco, somarDias(diaDeHoje(new Date()), DIAS_DE_AVISO_DO_PRECO))
+    if (!r2.ok) return { ok: false, erro: r2.erro }
+    avisadas = alvo.length
+  }
   await registrar({
     acao: 'editou_plano',
     autorId: sessao.usuario.id,
@@ -360,7 +452,122 @@ export async function acaoAdminSalvarPlano(id: string, dados: DadosDoPlano): Pro
     alvoTipo: 'plano',
     alvoId: id,
     alvoNome: nome,
-    detalhes: { preco, conversas, numeros, ativo: dados.ativo !== false },
+    detalhes: { preco, conversas, numeros, precoExcedente, ativo: dados.ativo !== false, ...(mudouPreco ? { precoAntes: anterior.preco, quemJaEsta, avisadas } : {}) },
+    impersonadoPor: sessao.impersonadoPor,
+  })
+  return { ok: true, avisadas }
+}
+
+/**
+ * Cria um plano (A8), e "Duplicar" é o mesmo com os dados de outro. O id nasce
+ * do nome e não muda depois; nome repetido ganha número no fim do id.
+ */
+export async function acaoAdminCriarPlano(dados: DadosDoPlano): Promise<{ ok: boolean; erro?: string; id?: string }> {
+  const sessao = await exigirAdminDaPlataforma()
+  const validado = validarPlano(dados)
+  if (!validado.ok) return validado
+  const base = idDoNome(validado.edicao.nome) || 'plano'
+  const existentes = new Set((await planosVigentes()).map((plano) => plano.id))
+  let id = base
+  for (let n = 2; existentes.has(id); n++) id = `${base.slice(0, 36)}-${n}`
+  const r = await criarPlano(id, validado.edicao)
+  if (!r.ok) return { ok: false, erro: r.motivo }
+  await registrar({
+    acao: 'criou_plano',
+    autorId: sessao.usuario.id,
+    autorEmail: sessao.usuario.email,
+    alvoTipo: 'plano',
+    alvoId: id,
+    alvoNome: validado.edicao.nome,
+    detalhes: { preco: validado.edicao.preco, conversas: validado.edicao.conversas, numeros: validado.edicao.numeros, ativo: validado.edicao.ativo },
+    impersonadoPor: sessao.impersonadoPor,
+  })
+  return { ok: true, id }
+}
+
+/** O que impede excluir o plano: as organizações nele e os pedidos abertos para ele. */
+export async function acaoAdminImpedimentosDoPlano(id: string): Promise<{
+  ok: boolean
+  erro?: string
+  organizacoes?: { id: string; nome: string; agendada: boolean }[]
+  pedidos?: number
+  motivo?: string | null
+}> {
+  await exigirAdminDaPlataforma()
+  if (!ehIdDePlano(id)) return { ok: false, erro: 'esse plano não existe' }
+  const [organizacoes, pedidos, planos] = await Promise.all([organizacoesNoPlano(id), pedidosDePlano({}).catch(() => []), planosVigentes()])
+  return {
+    ok: true,
+    organizacoes: organizacoes.map(({ id: organizacaoId, nome, agendada }) => ({ id: organizacaoId, nome, agendada })),
+    pedidos: pedidos.filter((pedido) => pedido.situacao === 'aberto' && pedido.para === id).length,
+    motivo: motivoParaNaoExcluir(id, planos),
+  }
+}
+
+function motivoParaNaoExcluir(id: string, planos: { id: string; ativo: boolean }[]): string | null {
+  if (id === PLANO_DE_ENTRADA) return 'É o plano em que organização nova nasce; ele não se exclui. Tire de venda se não quiser vender.'
+  if (!planos.some((plano) => plano.id !== id && plano.ativo)) return 'Precisa sobrar pelo menos um plano à venda.'
+  return null
+}
+
+/**
+ * Move todas as organizações de um plano para outro, na hora, para o plano
+ * poder ser excluído. **O preço contratado de cada uma não muda**: é o plano
+ * que está saindo, não o contrato. Descida agendada para o plano que sai
+ * passa a apontar para o destino.
+ */
+export async function acaoAdminMoverOrganizacoes(de: string, para: string): Promise<{ ok: boolean; erro?: string; movidas?: number }> {
+  const sessao = await exigirAdminDaPlataforma()
+  if (de === para || !ehIdDePlano(de) || !(await planoExiste(para))) return { ok: false, erro: 'escolha outro plano de destino' }
+  const planos = await planosVigentes()
+  const origem = planos.find((plano) => plano.id === de)
+  const destino = planos.find((plano) => plano.id === para)!
+  const organizacoes = await organizacoesNoPlano(de)
+  for (const organizacao of organizacoes) {
+    if (organizacao.agendada) {
+      const contrato = await contratoDaConta(organizacao.id)
+      const r = await agendarDescida(organizacao.id, para, contrato.planoAgendadoPara ?? proximaVirada(new Date()))
+      if (!r.ok) return { ok: false, erro: r.erro }
+    } else {
+      const r = await definirPlano(organizacao.id, para, organizacao.precoContratado ?? origem?.preco ?? destino.preco)
+      if (!r.ok) return { ok: false, erro: r.erro }
+    }
+    await registrar({
+      acao: 'trocou_plano',
+      autorId: sessao.usuario.id,
+      autorEmail: sessao.usuario.email,
+      contaId: organizacao.id,
+      contaNome: organizacao.nome,
+      alvoTipo: 'plano',
+      alvoId: para,
+      alvoNome: destino.nome,
+      detalhes: { de, para, motivo: `o plano ${origem?.nome ?? de} vai ser excluído`, precoMantido: true },
+      impersonadoPor: sessao.impersonadoPor,
+    })
+  }
+  return { ok: true, movidas: organizacoes.length }
+}
+
+/** Exclui o plano, se nada o prende (A8). */
+export async function acaoAdminExcluirPlano(id: string): Promise<{ ok: boolean; erro?: string }> {
+  const sessao = await exigirAdminDaPlataforma()
+  const impedimentos = await acaoAdminImpedimentosDoPlano(id)
+  if (!impedimentos.ok) return { ok: false, erro: impedimentos.erro }
+  if (impedimentos.motivo) return { ok: false, erro: impedimentos.motivo }
+  const quantas = impedimentos.organizacoes?.length ?? 0
+  if (quantas > 0) return { ok: false, erro: `${quantas} ${quantas === 1 ? 'organização está' : 'organizações estão'} neste plano. Mova antes de excluir.` }
+  if ((impedimentos.pedidos ?? 0) > 0) return { ok: false, erro: 'há pedido de troca aberto para este plano. Atenda ou recuse antes.' }
+  const plano = (await planosVigentes()).find((item) => item.id === id)
+  const r = await excluirPlano(id)
+  if (!r.ok) return { ok: false, erro: r.motivo }
+  await registrar({
+    acao: 'excluiu_plano',
+    autorId: sessao.usuario.id,
+    autorEmail: sessao.usuario.email,
+    alvoTipo: 'plano',
+    alvoId: id,
+    alvoNome: plano?.nome ?? id,
+    detalhes: plano ? { preco: plano.preco, conversas: plano.conversas } : {},
     impersonadoPor: sessao.impersonadoPor,
   })
   return { ok: true }

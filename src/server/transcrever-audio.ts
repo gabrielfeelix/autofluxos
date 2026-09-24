@@ -1,4 +1,5 @@
 import 'server-only'
+import { recusaDoPlano } from './recursos-do-plano'
 import { ehArquivoGuardado } from '@/core/midia-recebida'
 import { db } from './db'
 import { lerChave } from './repos/chave-de-ia'
@@ -137,6 +138,10 @@ export async function transcreverAudio(
   // Já transcrita: devolve o que está guardado. Transcrever de novo custaria
   // uma chamada para produzir o mesmo texto.
   if (linha.transcricao) return { ok: true, texto: linha.transcricao }
+
+  // Transcrição antiga continua legível (acima); nova só no plano que inclui.
+  const recusa = await recusaDoPlano(clienteId, 'transcricao')
+  if (recusa) return { ok: false, erro: recusa }
 
   if (!ehArquivoGuardado(linha.arquivo) || linha.arquivo.midia !== 'audio') {
     return { ok: false, erro: 'não há áudio guardado nesta mensagem' }
