@@ -14,6 +14,7 @@ import { autenticacao } from './auth'
 import { definirFuncaoDoMembro } from './pessoas'
 import { definirPlano, planoDaConta } from './repos/plano'
 import { planoVigente, salvarPlano } from './repos/planos'
+import { preverTroca, recusaDaTroca, resumoDaTroca, type PrevisaoDaTroca } from './troca-de-plano'
 import { ehRecursoDoPlano } from '@/core/planos'
 import { CAPACIDADES, ehEscopo, type Politica } from '@/core/permissoes'
 import { funcoesVigentes, salvarFuncao } from './repos/funcoes'
@@ -233,10 +234,26 @@ export async function acaoAdminDarAcesso(
  * Troca o plano da organização (grava `clients.plano`) e, quando vem de um
  * pedido, fecha o pedido como atendido. As duas coisas vão para a auditoria.
  */
+/** O que muda se a organização for para `plano`, para o modal da administração. */
+export async function acaoAdminPreverTroca(
+  organizacaoId: string,
+  plano: string,
+): Promise<{ ok: boolean; erro?: string; previsao?: PrevisaoDaTroca }> {
+  await exigirAdminDaPlataforma()
+  if (plano !== 'essencial' && plano !== 'operacao' && plano !== 'escala') return { ok: false, erro: 'esse plano não existe' }
+  return { ok: true, previsao: await preverTroca(organizacaoId, plano) }
+}
+
+/**
+ * A troca pela administração. Vale na hora (não há cobrança ainda), mas passa
+ * pela mesma regra do pedido: número a mais bloqueia, recurso em uso que sai
+ * exige ciência, e o motivo vai para a auditoria.
+ */
 export async function acaoAdminTrocarPlano(
   organizacaoId: string,
   plano: string,
   pedidoId?: string,
+  confirmacao: { ciente?: boolean; motivo?: string } = {},
 ): Promise<{ ok: boolean; erro?: string }> {
   const sessao = await exigirAdminDaPlataforma()
   if (plano !== 'essencial' && plano !== 'operacao' && plano !== 'escala') return { ok: false, erro: 'esse plano não existe' }
@@ -245,6 +262,10 @@ export async function acaoAdminTrocarPlano(
 
   const de = await planoDaConta(organizacaoId)
   const destino = await planoVigente(plano)
+  const previsao = de !== plano ? await preverTroca(organizacaoId, plano) : null
+  const recusa = previsao ? recusaDaTroca(previsao, confirmacao.ciente === true) : null
+  if (recusa) return { ok: false, erro: recusa }
+  const motivo = String(confirmacao.motivo ?? '').trim().slice(0, 500)
   if (de !== plano) {
     const r = await definirPlano(organizacaoId, plano)
     if (!r.ok) return { ok: false, erro: r.erro }
@@ -257,7 +278,7 @@ export async function acaoAdminTrocarPlano(
       alvoTipo: 'plano',
       alvoId: plano,
       alvoNome: destino.nome,
-      detalhes: { de, para: plano, ...(pedidoId ? { pedido: pedidoId } : {}) },
+      detalhes: { de, para: plano, ...(pedidoId ? { pedido: pedidoId } : {}), ...(previsao ? resumoDaTroca(previsao) : {}), ...(motivo ? { motivo } : {}) },
       impersonadoPor: sessao.impersonadoPor,
     })
   }

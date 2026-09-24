@@ -2,7 +2,7 @@ import { notFound } from 'next/navigation'
 import { EscolhaDePlano } from '@/components/cliente/escolha-de-plano'
 import { AjustesShell } from '@/components/design/ajustes-shell'
 import { Trilha } from '@/components/design/trilha'
-import { acaoPedirTrocaDePlano } from '@/server/acoes-plano'
+import { acaoPedirTrocaDePlano, acaoPreverTrocaDePlano } from '@/server/acoes-plano'
 import { acharCliente } from '@/server/repos/clientes'
 import { consumoDaConta, planoDaConta } from '@/server/repos/plano'
 import { pedidosDePlano } from '@/server/repos/pedidos-de-plano'
@@ -68,6 +68,8 @@ export default async function Pagina({ params }: { params: Promise<{ clienteId: 
           podeMexer={podeMexer}
           pedidoAberto={pedidoAberto}
           pedirTroca={acaoPedirTrocaDePlano.bind(null, cliente.id)}
+          preverTroca={acaoPreverTrocaDePlano.bind(null, cliente.id)}
+          conexoesHref={`/clientes/${cliente.id}/ajustes/integracoes`}
           planos={planos.filter((p) => p.ativo || p.id === plano)}
         />
       </main>

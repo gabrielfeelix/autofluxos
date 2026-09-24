@@ -6,6 +6,7 @@ import { planoVigente } from './repos/planos'
 import { registrar } from './repos/auditoria'
 import { planoDaConta } from './repos/plano'
 import { exigirAcessoAoCliente, podeAdministrarConta } from './sessao'
+import { preverTroca, recusaDaTroca, resumoDaTroca, type PrevisaoDaTroca } from './troca-de-plano'
 
 /**
  * O pedido de mudança de plano.
@@ -33,10 +34,11 @@ import { exigirAcessoAoCliente, podeAdministrarConta } from './sessao'
 export async function acaoPedirTrocaDePlano(
   clienteId: string,
   desejado: IdDoPlano,
+  ciente = false,
 ): Promise<{ ok: boolean; erro?: string }> {
   const acesso = await exigirAcessoAoCliente(clienteId)
   if (!podeAdministrarConta(acesso)) {
-    return { ok: false, erro: 'só quem administra a conta pode pedir mudança de plano' }
+    return { ok: false, erro: 'só quem administra a organização pode pedir mudança de plano' }
   }
 
   if (desejado !== 'essencial' && desejado !== 'operacao' && desejado !== 'escala') {
@@ -45,8 +47,14 @@ export async function acaoPedirTrocaDePlano(
 
   const atual = await planoDaConta(clienteId)
   if (atual === desejado) {
-    return { ok: false, erro: 'a conta já está neste plano' }
+    return { ok: false, erro: 'a organização já está neste plano' }
   }
+
+  // O bloqueio e a ciência valem pelo estado de agora, e não pelo que o modal
+  // mostrou quando abriu.
+  const previsao = await preverTroca(clienteId, desejado)
+  const recusa = recusaDaTroca(previsao, ciente)
+  if (recusa) return { ok: false, erro: recusa }
 
   /*
    * A auditoria nunca estoura, de propósito (ver `repos/auditoria.ts`). Aqui
@@ -61,9 +69,20 @@ export async function acaoPedirTrocaDePlano(
     contaId: clienteId,
     alvoTipo: 'plano',
     alvoNome: (await planoVigente(desejado)).nome,
-    detalhes: { de: atual, para: desejado },
+    detalhes: { de: atual, para: desejado, ...resumoDaTroca(previsao) },
   })
 
   revalidatePath(`/clientes/${clienteId}/ajustes/plano`)
   return { ok: true }
+}
+
+/** O que muda se a organização for para `desejado`, para o modal mostrar antes do pedido. */
+export async function acaoPreverTrocaDePlano(
+  clienteId: string,
+  desejado: IdDoPlano,
+): Promise<{ ok: boolean; erro?: string; previsao?: PrevisaoDaTroca }> {
+  const acesso = await exigirAcessoAoCliente(clienteId)
+  if (!podeAdministrarConta(acesso)) return { ok: false, erro: 'só quem administra a organização pode pedir mudança de plano' }
+  if (desejado !== 'essencial' && desejado !== 'operacao' && desejado !== 'escala') return { ok: false, erro: 'esse plano não existe' }
+  return { ok: true, previsao: await preverTroca(clienteId, desejado) }
 }

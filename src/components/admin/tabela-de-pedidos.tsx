@@ -4,7 +4,8 @@ import Link from 'next/link'
 import { useState, useTransition } from 'react'
 import { AvisoFlutuante } from '@/components/design/aviso-flutuante'
 import { RolagemDaTabela } from '@/components/lead/rolagem-da-tabela'
-import { acaoAdminRecusarPedido, acaoAdminTrocarPlano } from '@/server/acoes-admin'
+import { acaoAdminPreverTroca, acaoAdminRecusarPedido, acaoAdminTrocarPlano } from '@/server/acoes-admin'
+import { ModalDeTroca } from '@/components/plano/modal-de-troca'
 import { horaExata, quando } from '@/lib/quando'
 import { CLASSE_DO_CABECALHO, COLUNA_FIXA, FUNDO_DA_FIXA, FUNDO_DA_LINHA, Selo } from './partes'
 
@@ -25,14 +26,17 @@ export function TabelaDePedidos({ pedidos: iniciais, nomes }: { pedidos: PedidoN
   const [pedidos, setPedidos] = useState(iniciais)
   const [aviso, setAviso] = useState<string | null>(null)
   const [, comecar] = useTransition()
+  // Atender passa pelo modal de impacto; recusar não muda nada e segue direto.
+  const [atendendo, setAtendendo] = useState<PedidoNaTabela | null>(null)
   const nome = (id: string) => nomes[id] ?? id
 
-  const responder = (pedido: PedidoNaTabela, atender: boolean) => {
+  const responder = (pedido: PedidoNaTabela, atender: boolean, confirmacao?: { ciente: boolean; motivo: string }) => {
+    setAtendendo(null)
     const antes = pedidos
     setPedidos((lista) => lista.map((item) => (item.id === pedido.id ? { ...item, situacao: atender ? 'atendido' : 'recusado', respondidoPor: 'você' } : item)))
     comecar(async () => {
       try {
-        const r = atender ? await acaoAdminTrocarPlano(pedido.organizacaoId, pedido.para, pedido.id) : await acaoAdminRecusarPedido(pedido.id)
+        const r = atender ? await acaoAdminTrocarPlano(pedido.organizacaoId, pedido.para, pedido.id, confirmacao) : await acaoAdminRecusarPedido(pedido.id)
         if (!r.ok) {
           setPedidos(antes)
           setAviso(r.erro ?? 'não deu para responder o pedido')
@@ -85,7 +89,7 @@ export function TabelaDePedidos({ pedidos: iniciais, nomes }: { pedidos: PedidoN
                       <button type="button" onClick={() => responder(pedido, false)} className="rounded-[8px] px-2.5 py-1.5 text-[12px] font-semibold text-muted transition hover:bg-surface hover:text-perigo">
                         Recusar
                       </button>
-                      <button type="button" onClick={() => responder(pedido, true)} className="app-primary-button px-3 py-1.5 text-[12px] whitespace-nowrap">
+                      <button type="button" onClick={() => setAtendendo(pedido)} className="app-primary-button px-3 py-1.5 text-[12px] whitespace-nowrap">
                         Atender
                       </button>
                     </span>
@@ -96,6 +100,15 @@ export function TabelaDePedidos({ pedidos: iniciais, nomes }: { pedidos: PedidoN
           </tbody>
         </table>
       </RolagemDaTabela>
+      {atendendo && (
+        <ModalDeTroca
+          quem="administracao"
+          paraNome={nome(atendendo.para)}
+          carregar={() => acaoAdminPreverTroca(atendendo.organizacaoId, atendendo.para)}
+          aoFechar={() => setAtendendo(null)}
+          aoConfirmar={(confirmacao) => responder(atendendo, true, confirmacao)}
+        />
+      )}
       {aviso && (
         <AvisoFlutuante tom="erro" aoSumir={() => setAviso(null)}>
           {aviso}

@@ -2,7 +2,8 @@
 
 import { useState, useTransition } from 'react'
 import { AvisoFlutuante } from '@/components/design/aviso-flutuante'
-import { acaoAdminRecusarPedido, acaoAdminTrocarPlano } from '@/server/acoes-admin'
+import { acaoAdminPreverTroca, acaoAdminRecusarPedido, acaoAdminTrocarPlano } from '@/server/acoes-admin'
+import { ModalDeTroca } from '@/components/plano/modal-de-troca'
 import { horaExata, quando } from '@/lib/quando'
 import { Selo } from './partes'
 
@@ -30,17 +31,20 @@ export function PlanoDaOrganizacao({
   const [pedidos, setPedidos] = useState(pedidosIniciais)
   const [aviso, setAviso] = useState<string | null>(null)
   const [, comecar] = useTransition()
+  // A troca passa pelo modal de impacto antes (bloqueio, o que sai, motivo).
+  const [escolha, setEscolha] = useState<{ para: string; pedidoId?: string } | null>(null)
   const plano = planos.find((item) => item.id === atual) ?? planos[0]!
   const fracao = plano.conversas > 0 ? conversas / plano.conversas : 0
   const nome = (id: string) => planos.find((item) => item.id === id)?.nome ?? id
 
-  const trocar = (para: string, pedidoId?: string) => {
+  const trocar = (para: string, pedidoId: string | undefined, confirmacao: { ciente: boolean; motivo: string }) => {
+    setEscolha(null)
     const antes = { atual, pedidos }
     setAtual(para)
     if (pedidoId) setPedidos((lista) => lista.map((pedido) => (pedido.id === pedidoId ? { ...pedido, situacao: 'atendido' } : pedido)))
     comecar(async () => {
       try {
-        const r = await acaoAdminTrocarPlano(organizacaoId, para, pedidoId)
+        const r = await acaoAdminTrocarPlano(organizacaoId, para, pedidoId, confirmacao)
         if (!r.ok) {
           setAtual(antes.atual)
           setPedidos(antes.pedidos)
@@ -108,7 +112,7 @@ export function PlanoDaOrganizacao({
                     {eh ? (
                       <p className="text-[12px] text-dim">É o plano desta organização</p>
                     ) : (
-                      <button type="button" onClick={() => trocar(item.id)} className="app-secondary-button w-full px-3 py-2 text-[12.5px]">
+                      <button type="button" onClick={() => setEscolha({ para: item.id })} className="app-secondary-button w-full px-3 py-2 text-[12.5px]">
                         Mudar para {item.nome}
                       </button>
                     )}
@@ -146,7 +150,7 @@ export function PlanoDaOrganizacao({
                     <button type="button" onClick={() => recusar(pedido.id)} className="rounded-[8px] px-2.5 py-1.5 text-[12px] font-semibold text-muted transition hover:bg-surface hover:text-perigo">
                       Recusar
                     </button>
-                    <button type="button" onClick={() => trocar(pedido.para, pedido.id)} className="app-primary-button px-3 py-1.5 text-[12px]">
+                    <button type="button" onClick={() => setEscolha({ para: pedido.para, pedidoId: pedido.id })} className="app-primary-button px-3 py-1.5 text-[12px]">
                       Atender
                     </button>
                   </span>
@@ -159,6 +163,15 @@ export function PlanoDaOrganizacao({
         )}
       </section>
 
+      {escolha && (
+        <ModalDeTroca
+          quem="administracao"
+          paraNome={nome(escolha.para)}
+          carregar={() => acaoAdminPreverTroca(organizacaoId, escolha.para)}
+          aoFechar={() => setEscolha(null)}
+          aoConfirmar={(confirmacao) => trocar(escolha.para, escolha.pedidoId, confirmacao)}
+        />
+      )}
       {aviso && (
         <AvisoFlutuante tom="erro" aoSumir={() => setAviso(null)}>
           {aviso}

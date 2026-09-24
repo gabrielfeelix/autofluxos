@@ -1,5 +1,6 @@
 import 'server-only'
 import { PLANO_DE_ENTRADA, type IdDoPlano } from '@/core/planos'
+import type { UsoDaOrganizacao } from '@/core/troca-de-plano'
 import { db, ehIdInvalido } from '../db'
 
 /**
@@ -223,4 +224,48 @@ export async function consumoDeTodasAsContas(
       }
     },
   )
+}
+
+/**
+ * O que a organização usa hoje de cada coisa que o plano limita, para o modal
+ * de troca dizer o que sai antes de sair (`core/troca-de-plano.ts`).
+ *
+ * Contagem sem linha (`head`), uma consulta por sinal e todas juntas. Leitura
+ * que falha vira zero: o modal perde um detalhe, e a troca continua passando
+ * pela confirmação de quem pediu.
+ */
+export async function usoDaOrganizacao(clienteId: string, agora = new Date()): Promise<UsoDaOrganizacao> {
+  const inicioDoMes = new Date(Date.UTC(agora.getUTCFullYear(), agora.getUTCMonth(), 1)).toISOString()
+  const contar = async (consulta: PromiseLike<{ count: number | null; error: unknown }>) => {
+    const { count, error } = await consulta
+    if (error) console.error('[plano] não deu para medir o uso:', error)
+    return count ?? 0
+  }
+  const [consumo, numeros, fluxosComIa, transcricoes, transmissoes, conexoes, webhooks, cliente] = await Promise.all([
+    consumoDaConta(clienteId, agora),
+    contar(db().from('channels').select('id', { count: 'exact', head: true }).eq('client_id', clienteId).eq('status', 'ativo').neq('provider', 'instagram')),
+    contar(db().from('flows').select('id', { count: 'exact', head: true }).eq('client_id', clienteId).eq('ativo', true).eq('ia_habilitada', true)),
+    contar(
+      db()
+        .from('messages')
+        .select('id, contacts!inner(client_id)', { count: 'exact', head: true })
+        .eq('contacts.client_id', clienteId)
+        .not('transcricao', 'is', null)
+        .gte('ts', inicioDoMes),
+    ),
+    contar(db().from('transmissoes').select('id', { count: 'exact', head: true }).eq('cliente_id', clienteId).in('estado', ['agendada', 'enviando'])),
+    contar(db().from('connections').select('id', { count: 'exact', head: true }).eq('client_id', clienteId)),
+    contar(db().from('webhooks_de_entrada').select('id', { count: 'exact', head: true }).eq('client_id', clienteId).eq('ativo', true)),
+    db().from('clients').select('ia_chave_ref').eq('id', clienteId).maybeSingle(),
+  ])
+  return {
+    conversas: consumo.conversas,
+    numeros,
+    fluxosComIa,
+    transcricoes,
+    transmissoes,
+    conexoes,
+    webhooks,
+    chavePropria: Boolean((cliente.data as { ia_chave_ref: string | null } | null)?.ia_chave_ref),
+  }
 }

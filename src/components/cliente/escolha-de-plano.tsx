@@ -12,6 +12,8 @@ import {
   type IdDoPlano,
 } from '@/core/planos'
 import type { ConsumoDoMes } from '@/server/repos/plano'
+import type { PrevisaoDaTroca } from '@/server/troca-de-plano'
+import { ModalDeTroca } from '@/components/plano/modal-de-troca'
 
 /**
  * O plano da conta, o consumo do mês, e o pedido de troca.
@@ -30,6 +32,8 @@ export function EscolhaDePlano({
   podeMexer,
   pedidoAberto,
   pedirTroca,
+  preverTroca,
+  conexoesHref,
   planos = PLANOS,
 }: {
   /** Os planos em vigor (tabela `planos`, A6). Sem eles, os do código. */
@@ -39,7 +43,10 @@ export function EscolhaDePlano({
   podeMexer: boolean
   /** O último pedido de troca ainda não atendido, lido da auditoria. */
   pedidoAberto: { para: IdDoPlano; quando: string; por: string } | null
-  pedirTroca: (desejado: IdDoPlano) => Promise<{ ok: boolean; erro?: string }>
+  pedirTroca: (desejado: IdDoPlano, ciente: boolean) => Promise<{ ok: boolean; erro?: string }>
+  /** O que muda com a troca, medido no servidor, para o modal mostrar antes do pedido. */
+  preverTroca: (desejado: IdDoPlano) => Promise<{ ok: boolean; erro?: string; previsao?: PrevisaoDaTroca }>
+  conexoesHref: string
 }) {
   const acharPlano = (id: IdDoPlano) => planos.find((p) => p.id === id) ?? acharPlanoDoCodigo(id)
   const plano = acharPlano(atual)
@@ -50,15 +57,24 @@ export function EscolhaDePlano({
   const [pedido, setPedido] = useState<IdDoPlano | null>(null)
   const [erro, setErro] = useState<string | null>(null)
   const [rodando, comecar] = useTransition()
+  const [escolhido, setEscolhido] = useState<IdDoPlano | null>(null)
 
-  function pedir(desejado: IdDoPlano) {
+  // Otimista: o cartão já diz "pedido enviado" e volta atrás, com o motivo, se
+  // o servidor recusar (bloqueio que apareceu depois de o modal abrir).
+  function pedir(desejado: IdDoPlano, ciente: boolean) {
     setErro(null)
+    setEscolhido(null)
+    const anterior = pedido
+    setPedido(desejado)
     comecar(async () => {
       try {
-        const r = await pedirTroca(desejado)
-        if (r.ok) setPedido(desejado)
-        else setErro(r.erro ?? 'não deu para enviar o pedido')
+        const r = await pedirTroca(desejado, ciente)
+        if (!r.ok) {
+          setPedido(anterior)
+          setErro(r.erro ?? 'não deu para enviar o pedido')
+        }
       } catch {
+        setPedido(anterior)
         setErro('não deu para enviar o pedido agora')
       }
     })
@@ -157,10 +173,21 @@ export function EscolhaDePlano({
               pedido={(pedido ?? pedidoAberto?.para) === p.id}
               podeMexer={podeMexer}
               rodando={rodando}
-              aoPedir={() => pedir(p.id)}
+              aoPedir={() => setEscolhido(p.id)}
             />
           ))}
         </div>
+
+        {escolhido && (
+          <ModalDeTroca
+            quem="organizacao"
+            paraNome={acharPlano(escolhido).nome}
+            carregar={() => preverTroca(escolhido)}
+            aoFechar={() => setEscolhido(null)}
+            aoConfirmar={({ ciente }) => pedir(escolhido, ciente)}
+            conexoesHref={conexoesHref}
+          />
+        )}
 
         {erro && (
           <p role="alert" className="mt-3 text-[12.5px] text-perigo">
@@ -253,9 +280,9 @@ function Cartao({
               ? `Pedir mudança para o plano ${plano.nome}`
               : 'Só o proprietário ou um administrador da organização pede mudança de plano'
           }
-          className="app-primary-button w-full disabled:cursor-not-allowed disabled:opacity-50"
+          className="app-secondary-button w-full px-4 py-2.5 text-[13px] disabled:cursor-not-allowed disabled:opacity-50"
         >
-          {rodando ? 'Enviando...' : 'Quero este plano'}
+          {rodando ? 'Enviando...' : `Mudar para ${plano.nome}`}
         </button>
       )}
     </article>
