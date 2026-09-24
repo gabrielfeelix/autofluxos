@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from 'react'
 import { AvisoFlutuante } from '@/components/design/aviso-flutuante'
+import { Dropdown } from '@/components/design/dropdown'
 import { RolagemDaTabela } from '@/components/lead/rolagem-da-tabela'
 import { ROTULO_DA_CAPACIDADE, ROTULO_DO_ESCOPO } from '@/components/conta/editor-de-acesso'
 import { CAPACIDADES, ESCOPOS, type Capacidade, type Escopo, type Politica } from '@/core/permissoes'
@@ -15,6 +16,15 @@ const TOM: Record<Escopo, string> = {
   equipe: 'bg-emerald-400/[0.1] text-ok border-emerald-400/30',
   proprios: 'bg-amber-400/[0.1] text-aviso border-amber-400/30',
   nenhum: 'bg-surface text-dim border-line',
+}
+
+/** A mesma pílula, aplicada ao gatilho do nosso Dropdown (o CSS dele vence sem o `!`). */
+const PILULA = '[&_.app-dropdown-trigger]:min-h-0! [&_.app-dropdown-trigger]:gap-1.5! [&_.app-dropdown-trigger]:rounded-full! [&_.app-dropdown-trigger]:px-2.5! [&_.app-dropdown-trigger]:py-1! [&_.app-dropdown-trigger]:text-[11.5px]! [&_.app-dropdown-trigger]:font-semibold!'
+const TOM_DO_GATILHO: Record<Escopo, string> = {
+  todos: '[&_.app-dropdown-trigger]:bg-primary-weak! [&_.app-dropdown-trigger]:text-primary! [&_.app-dropdown-trigger]:border-primary/25!',
+  equipe: '[&_.app-dropdown-trigger]:bg-emerald-400/[0.1]! [&_.app-dropdown-trigger]:text-ok! [&_.app-dropdown-trigger]:border-emerald-400/30!',
+  proprios: '[&_.app-dropdown-trigger]:bg-amber-400/[0.1]! [&_.app-dropdown-trigger]:text-aviso! [&_.app-dropdown-trigger]:border-amber-400/30!',
+  nenhum: '[&_.app-dropdown-trigger]:bg-surface! [&_.app-dropdown-trigger]:text-dim! [&_.app-dropdown-trigger]:border-line!',
 }
 
 /**
@@ -76,20 +86,15 @@ export function MatrizDeFuncoes({ funcoes: iniciais, editavel = false }: { funco
                   return (
                     <td key={funcao.id} className="px-4 py-3">
                       {trava ? (
-                        <span className={`inline-flex rounded-full border px-2.5 py-1 text-[11.5px] font-semibold ${TOM[escopo]}`}>{ROTULO_DO_ESCOPO[escopo]}</span>
+                        <span className={`inline-flex rounded-full border px-2.5 py-1 text-[11.5px] font-semibold whitespace-nowrap ${TOM[escopo]}`}>{ROTULO_DO_ESCOPO[escopo]}</span>
                       ) : (
-                        <select
-                          aria-label={`${ROTULO_DA_CAPACIDADE[capacidade].titulo}, ${funcao.nome}`}
-                          value={escopo}
-                          onChange={(evento) => trocar(funcao, capacidade, evento.target.value as Escopo)}
-                          className={`cursor-pointer rounded-full border px-2.5 py-1 text-[11.5px] font-semibold outline-none focus-visible:ring-2 focus-visible:ring-primary/40 ${TOM[escopo]}`}
-                        >
-                          {ESCOPOS.map((opcao) => (
-                            <option key={opcao} value={opcao}>
-                              {ROTULO_DO_ESCOPO[opcao]}
-                            </option>
-                          ))}
-                        </select>
+                        <Dropdown
+                          rotuloAcessivel={`${ROTULO_DA_CAPACIDADE[capacidade].titulo}, ${funcao.nome}`}
+                          valor={escopo}
+                          aoMudar={(valor) => valor !== escopo && trocar(funcao, capacidade, valor as Escopo)}
+                          opcoes={ESCOPOS.map((opcao) => ({ valor: opcao, rotulo: ROTULO_DO_ESCOPO[opcao] }))}
+                          className={`w-[208px] ${PILULA} ${TOM_DO_GATILHO[escopo]}`}
+                        />
                       )}
                     </td>
                   )
