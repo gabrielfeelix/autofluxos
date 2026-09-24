@@ -234,6 +234,11 @@ async function ConteudoDaAba({
   const precisa = (...abas: Aba[]) => abas.includes(aba)
   // O editor aberto pelo destino volta para esta mesma aba, com a busca.
   const voltaDaAba = `/clientes/${cliente.id}/fluxos?${new URLSearchParams(parametros).toString()}`
+  // Aberto pela lista com busca ou filtro, o ‹ do editor volta para eles (12.2).
+  const hrefDoFluxo = (fluxoId: string) =>
+    Object.keys(parametros).length > 0
+      ? `/clientes/${cliente.id}/fluxos/${fluxoId}?volta=${encodeURIComponent(voltaDaAba)}`
+      : `/clientes/${cliente.id}/fluxos/${fluxoId}`
   const vazio = <T,>(valor: T) => Promise.resolve(valor)
 
   const [
@@ -685,7 +690,7 @@ async function ConteudoDaAba({
                       `pointer-events-auto` para si.
                     */}
                     <Link
-                      href={`/clientes/${cliente.id}/fluxos/${fluxo.id}`}
+                      href={hrefDoFluxo(fluxo.id)}
                       aria-label={`Abrir a automação ${fluxo.nome}`}
                       className="absolute inset-0"
                     />
@@ -744,7 +749,7 @@ async function ConteudoDaAba({
                         emAndamento={emAndamento.get(fluxo.id) ?? 0}
                       />
                       <Link
-                        href={`/clientes/${cliente.id}/fluxos/${fluxo.id}`}
+                        href={hrefDoFluxo(fluxo.id)}
                         className="hidden rounded-lg border border-line px-2.5 py-1 text-[11px] font-semibold text-muted transition hover:border-strong hover:text-ink md:inline-block"
                       >
                         Editar

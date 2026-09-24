@@ -56,3 +56,17 @@ Funil.
 | Testar | OK no desktop e no celular (`.ux-local/testar.mjs`): abre o simulador, responde "Desculpa, não entendi" e repete as opções, sem erro de JS. **Defeito, corrigido:** no celular o editor inteiro rolava de lado (piso de 1024px no CSS, achado da 3.5 que a 5.8 não pegou). Abaixo de 768px o piso sai, a barra de blocos vira gaveta ("+ Bloco"), o painel cobre o desenho e começa fechado, e o topo rola dentro dele. Também: "Testar" no topo com o painel recolhido não mostrava nada; agora abre o painel. |
 | Pessoa/equipe → fila e atividades | Atividades: OK, gestão e atendimento veem 0 (a equipe não tem atividade), e `?responsavel=<outro>` não vaza. **Lacuna de regra:** Inbox e Contatos mostram as 60 conversas para quem tem atendimento só nos próprios. Já documentado no código (o Início conta igual ao Inbox); vira tarefa com decisão. |
 | Integração com erro → reparo → origem | Parcial: "Reconectar o número ›" existe; não há volta para o fluxo ou campanha que dependia da conexão. |
+
+## Consertos da 12.2 (23/09, depois da validação)
+
+- Editor: a lista de Automações com busca ou filtro abre o editor com
+  `?volta=`, e o ‹ volta para `?q=agendar` (conferido em desktop e celular,
+  `.ux-local/reparo.mjs`).
+- WhatsApp: "Conectar o WhatsApp" de uma transmissão parada leva `?volta=` da
+  transmissão; a página mostra "‹ Voltar para a transmissão" e guarda o
+  endereço em `sessionStorage` da aba, porque a conexão passa pela Meta e volta
+  sem ele. Endereço de fora da conta é descartado (servidor e cliente usam
+  `voltaInterna`). O link some depois de usado.
+- Cartão do número: "sem fluxo" diz onde escolher ("Escolher os fluxos", logo
+  abaixo). A conta de revisão não tem número, então esta linha foi conferida só
+  no código e no typecheck.

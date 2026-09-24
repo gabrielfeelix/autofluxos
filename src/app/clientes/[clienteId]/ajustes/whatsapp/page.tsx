@@ -1,3 +1,5 @@
+import { VoltaDoReparo } from '@/components/conexoes/volta-do-reparo'
+import { voltaInterna } from '@/core/volta-da-ficha'
 import Link from 'next/link'
 import { headers } from 'next/headers'
 import { notFound } from 'next/navigation'
@@ -97,10 +99,10 @@ export default async function Pagina({
   searchParams,
 }: {
   params: Promise<{ clienteId: string }>
-  searchParams: Promise<{ resultado?: string; erro?: string }>
+  searchParams: Promise<{ resultado?: string; erro?: string; volta?: string }>
 }) {
   const { clienteId } = await params
-  const { resultado, erro } = await searchParams
+  const { resultado, erro, volta } = await searchParams
   const cliente = await acharCliente(clienteId)
   if (!cliente) notFound()
 
@@ -169,6 +171,7 @@ export default async function Pagina({
             { rotulo: 'WhatsApp' },
           ]}
         />
+        <VoltaDoReparo clienteId={cliente.id} volta={voltaInterna(volta, cliente.id)} />
         <h1 className="mb-5 text-[20px] font-bold tracking-[-0.02em] md:text-[25px]">
           WhatsApp
         </h1>
@@ -619,7 +622,7 @@ export default async function Pagina({
                                     </Link>
                                   </>
                                 ) : (
-                                  ': sem fluxo.'
+                                  ': sem fluxo. Escolha em “Escolher os fluxos”, logo abaixo.'
                                 )}
                               </li>
                             ))}

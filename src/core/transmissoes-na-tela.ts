@@ -7,6 +7,8 @@
  */
 
 type TransmissaoNaTela = {
+  /** Com ele, o reparo do número sabe voltar para esta transmissão (Fase 12). */
+  id?: string
   nome: string
   estado: string
   criadaEm: string
@@ -122,7 +124,12 @@ export function proximaAcaoDaTransmissao(
     if (erro.includes('número de whatsapp') || erro.includes('canal conectado')) {
       return {
         texto: 'Sem um número de WhatsApp que mande modelo, nada sai. Conecte o número e crie a transmissão de novo.',
-        link: { rotulo: 'Conectar o WhatsApp', href: `/clientes/${clienteId}/ajustes/whatsapp` },
+        link: {
+          rotulo: 'Conectar o WhatsApp',
+          href: `/clientes/${clienteId}/ajustes/whatsapp${
+            t.id ? `?volta=${encodeURIComponent(`/clientes/${clienteId}/transmissoes/${t.id}`)}` : ''
+          }`,
+        },
       }
     }
     return {

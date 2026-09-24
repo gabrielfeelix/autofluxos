@@ -58,12 +58,25 @@ describe('a próxima ação de cada transmissão', () => {
     expect(r?.texto).toMatch(/12 retidas não foram entregues/)
   })
 
-  it('número desconectado leva à conexão do WhatsApp', () => {
+  it('número desconectado leva à conexão do WhatsApp, com volta para a transmissão', () => {
     const r = proximaAcaoDaTransmissao(
       t('x', 'falhou', AGORA.toISOString(), 'este cliente não tem um número de WhatsApp conectado'),
       undefined,
       'c1',
     )
+    expect(r?.link?.href).toBe(
+      `/clientes/c1/ajustes/whatsapp?volta=${encodeURIComponent('/clientes/c1/transmissoes/x')}`,
+    )
+  })
+
+  it('sem o id da transmissão, a conexão do WhatsApp abre sem volta', () => {
+    const { nome, estado, criadaEm, quando, erro } = t(
+      'x',
+      'falhou',
+      AGORA.toISOString(),
+      'este cliente não tem um número de WhatsApp conectado',
+    )
+    const r = proximaAcaoDaTransmissao({ nome, estado, criadaEm, quando, erro }, undefined, 'c1')
     expect(r?.link?.href).toBe('/clientes/c1/ajustes/whatsapp')
   })
 
