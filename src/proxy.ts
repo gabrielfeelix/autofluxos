@@ -132,6 +132,8 @@ const PREFIXOS_ABERTOS = [
   '/api/whatsapp/retorno',
   '/api/instagram/retorno',
   '/api/anuncios/retorno',
+  // O mesmo caso, voltando da Nuvemshop (F4): `state` assinado mais sessão.
+  '/api/loja/nuvemshop/retorno',
   /**
    * **Os webhooks da Meta. Mesmo bug das rotas de retorno, e custou o Inbox.**
    *

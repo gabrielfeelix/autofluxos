@@ -10,6 +10,12 @@
 --    e recria, como na 0034 e na 0070. Toda linha existente é `magento`, que
 --    continua aceita, então a recriação não recusa nada.
 --
+--    E ganha `id_na_plataforma`: o número da loja na Nuvemshop (o `user_id`
+--    do OAuth). É por ele que o webhook da Nuvemshop, que só traz esse
+--    número, acha a conta. Anulável: a Magento não tem. Único por plataforma
+--    entre os preenchidos, porque a mesma loja ligada a duas contas faria o
+--    aviso de desinstalação desligar a conta errada.
+--
 -- 2. `public.pedidos_de_loja`: o "Quero esta" dos cartões "Em breve". Uma
 --    linha por conta e plataforma (o `unique` é o "grava uma vez por conta"; o
 --    segundo clique não vira segundo voto). É a medida de demanda para decidir
@@ -29,6 +35,14 @@ alter table public.lojas_integradas drop constraint if exists lojas_integradas_p
 alter table public.lojas_integradas
   add constraint lojas_integradas_plataforma_check
   check (plataforma in ('magento', 'nuvemshop', 'woocommerce'));
+
+alter table public.lojas_integradas
+  add column if not exists id_na_plataforma text
+  check (id_na_plataforma is null or id_na_plataforma ~ '^[0-9]{1,20}$');
+
+create unique index if not exists lojas_integradas_id_na_plataforma_idx
+  on public.lojas_integradas (plataforma, id_na_plataforma)
+  where id_na_plataforma is not null;
 
 create table if not exists public.pedidos_de_loja (
   client_id uuid not null references public.clients (id) on delete cascade,

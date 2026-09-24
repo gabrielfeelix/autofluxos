@@ -36,6 +36,11 @@ describe('estadoDaPlataforma', () => {
     expect(estadoDaPlataforma(FICHAS.vtex, { ativa: true })).toBe('em_breve')
   })
 
+  it('tela pronta sem o app liberado continua "Em breve"; liberada, disponível', () => {
+    expect(estadoDaPlataforma(FICHAS.nuvemshop, null, false)).toBe('em_breve')
+    expect(estadoDaPlataforma(FICHAS.nuvemshop, null, true)).toBe('disponivel')
+  })
+
   it('Magento: disponível, configurada (desligada) ou conectada', () => {
     expect(estadoDaPlataforma(FICHAS.magento, null)).toBe('disponivel')
     expect(estadoDaPlataforma(FICHAS.magento, { ativa: false })).toBe('configurada')
@@ -47,7 +52,7 @@ describe('ordenarPlataformas', () => {
   it('conectada primeiro, depois o que conecta hoje, e no "Em breve" o Brasil antes', () => {
     const cartoes = PLATAFORMAS_DE_LOJA.map((id) => ({
       ficha: FICHAS[id],
-      estado: estadoDaPlataforma(FICHAS[id], id === 'magento' ? { ativa: true } : null),
+      estado: estadoDaPlataforma(FICHAS[id], id === 'magento' ? { ativa: true } : null, id !== 'nuvemshop'),
     }))
     const ordem = ordenarPlataformas(cartoes).map((c) => c.ficha.id)
     expect(ordem[0]).toBe('magento')

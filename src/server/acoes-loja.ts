@@ -1,19 +1,25 @@
 'use server'
 
 import { revalidatePath } from 'next/cache'
+import { redirect } from 'next/navigation'
 import { normalizarEndereco, type ProdutoDaLoja } from '@/core/loja'
 import { lojaMagento } from '@/loja/magento'
 import { lojaAdmin } from '@/loja/magento-admin'
+import { lojaNuvemshop } from '@/loja/nuvemshop'
+import { criarEstado } from './instagram/estado'
+import { nuvemshopConfigurado, urlDeAutorizacao } from './nuvemshop/conexao'
 import { exigirCapacidade, recusou } from './permissoes'
-import { apagarConexao, criarConexao } from './repos/conexoes'
+import { apagarConexao, criarConexao, lerCredencial } from './repos/conexoes'
 import { ehPlataformaDeLoja } from '@/core/plataformas-de-loja'
 import {
   desligarEstoqueExato,
   ligarEstoqueExato,
   ligarLoja,
   lojaDaConta,
+  lojaNuvemshopDaConta,
   registrarPedidoDeLoja,
   salvarLoja,
+  soltarLojaNuvemshop,
 } from './repos/lojas'
 
 /**
@@ -208,4 +214,72 @@ export async function acaoQueroEstaPlataforma(
   // recusaria com 23514 e a tela mostraria um erro de Postgres.
   if (!ehPlataformaDeLoja(plataforma)) return { ok: false, motivo: 'essa plataforma não está na lista' }
   return registrarPedidoDeLoja(clienteId, plataforma)
+}
+
+/*
+ * ---------------------------------------------------------------------------
+ * Nuvemshop (F4 do plano de navegação). Fontes em
+ * docs/INTEGRACAO-MAGENTO-23-SET.md, seção Nuvemshop.
+ * ---------------------------------------------------------------------------
+ */
+
+/**
+ * Manda o lojista autorizar na Nuvemshop. O `state` é o bilhete assinado do
+ * Instagram: diz qual conta começou, e o retorno só grava com ele válido.
+ */
+export async function acaoConectarNuvemshop(clienteId: string): Promise<{ ok: false; motivo: string }> {
+  const acesso = await exigirCapacidade(clienteId, 'configurar_operacao', 'todos')
+  if (recusou(acesso)) return { ok: false, motivo: acesso.erro ?? 'sem permissão' }
+  if (!nuvemshopConfigurado()) return { ok: false, motivo: 'a conexão com a Nuvemshop ainda não foi liberada' }
+  redirect(urlDeAutorizacao(criarEstado(clienteId)))
+}
+
+/** Busca de verdade na loja conectada, ligada ou não, para o dono ver antes de ligar. */
+export async function acaoTestarNuvemshop(
+  clienteId: string,
+  termo: string,
+): Promise<{ ok: true; amostra: ProdutoDaLoja[] } | { ok: false; motivo: string }> {
+  const acesso = await exigirCapacidade(clienteId, 'configurar_operacao', 'todos')
+  if (recusou(acesso)) return { ok: false, motivo: acesso.erro ?? 'sem permissão' }
+
+  const loja = await lojaNuvemshopDaConta(clienteId)
+  if (!loja?.storeId || !loja.conexaoId) return { ok: false, motivo: 'conecte a loja antes de testar' }
+  const credencial = await lerCredencial(loja.conexaoId, clienteId).catch(() => null)
+  if (!credencial) return { ok: false, motivo: 'o acesso à loja sumiu; conecte de novo' }
+
+  const limpo = termo.trim()
+  if (limpo.length < 2) return { ok: false, motivo: 'escreva o nome de um produto da loja' }
+  const r = await lojaNuvemshop({ endereco: loja.endereco, storeId: loja.storeId, token: credencial.valor }).buscar(limpo)
+  return r.ok ? { ok: true, amostra: r.valor } : r
+}
+
+/** Liga ou desliga o bot na Nuvemshop. Sem revalidar: a tela é otimista. */
+export async function acaoLigarNuvemshop(
+  clienteId: string,
+  ativa: boolean,
+): Promise<{ ok: true } | { ok: false; motivo: string }> {
+  const acesso = await exigirCapacidade(clienteId, 'configurar_operacao', 'todos')
+  if (recusou(acesso)) return { ok: false, motivo: acesso.erro ?? 'sem permissão' }
+  if (ativa) {
+    const loja = await lojaNuvemshopDaConta(clienteId)
+    if (!loja?.storeId || !loja.conexaoId) return { ok: false, motivo: 'conecte a loja antes de ligar' }
+  }
+  return ligarLoja(clienteId, ativa, 'nuvemshop')
+}
+
+/**
+ * Desconecta: desliga, solta o número da loja e apaga o token do cofre. O
+ * app continua instalado na Nuvemshop até o lojista remover lá; sem o token,
+ * nada daqui fala com ela.
+ */
+export async function acaoDesconectarNuvemshop(clienteId: string): Promise<{ ok: true } | { ok: false; motivo: string }> {
+  const acesso = await exigirCapacidade(clienteId, 'configurar_operacao', 'todos')
+  if (recusou(acesso)) return { ok: false, motivo: acesso.erro ?? 'sem permissão' }
+  try {
+    const solta = await soltarLojaNuvemshop({ clienteId })
+    if (solta?.conexaoId) await apagarConexao(solta.conexaoId, clienteId)
+    return { ok: true }
+  } catch (erro) {
+    return { ok: false, motivo: erro instanceof Error ? erro.message : 'não deu para desconectar' }
+  }
 }

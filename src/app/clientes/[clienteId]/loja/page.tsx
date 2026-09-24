@@ -9,7 +9,8 @@ import {
 } from '@/core/plataformas-de-loja'
 import { acaoQueroEstaPlataforma } from '@/server/acoes-loja'
 import { acharCliente } from '@/server/repos/clientes'
-import { lojaDaConta, pedidosDeLoja } from '@/server/repos/lojas'
+import { nuvemshopConfigurado } from '@/server/nuvemshop/conexao'
+import { lojaDaConta, lojaNuvemshopDaConta, pedidosDeLoja } from '@/server/repos/lojas'
 
 export const dynamic = 'force-dynamic'
 
@@ -19,20 +20,31 @@ export const dynamic = 'force-dynamic'
  *
  * Substitui o 307 de `/loja` para `/loja/magento` que a F1 deixou até esta
  * tela existir. A ordem e o estado de cada cartão são regra pura
- * (`core/plataformas-de-loja.ts`); aqui só se lê o que a conta tem: a loja
- * Magento (a única que conecta hoje) e os "Quero esta" já dados.
+ * (`core/plataformas-de-loja.ts`); aqui só se lê o que a conta tem: as lojas
+ * Magento e Nuvemshop (as que conectam hoje) e os "Quero esta" já dados.
  */
 export default async function Pagina({ params }: { params: Promise<{ clienteId: string }> }) {
   const { clienteId } = await params
   const cliente = await acharCliente(clienteId)
   if (!cliente) notFound()
 
-  const [magento, pedidos] = await Promise.all([lojaDaConta(cliente.id), pedidosDeLoja(cliente.id)])
+  const [magento, nuvemshop, pedidos] = await Promise.all([
+    lojaDaConta(cliente.id),
+    lojaNuvemshopDaConta(cliente.id),
+    pedidosDeLoja(cliente.id),
+  ])
+  // A Nuvemshop sem `storeId` foi desconectada: a linha fica, a conexão não.
+  const lojas = { magento, nuvemshop: nuvemshop?.storeId ? nuvemshop : null }
+  const liberada = { nuvemshop: nuvemshopConfigurado() }
 
   const cartoes = ordenarPlataformas(
     PLATAFORMAS_DE_LOJA.map((id) => ({
       ficha: FICHAS[id],
-      estado: estadoDaPlataforma(FICHAS[id], id === 'magento' ? magento : null),
+      estado: estadoDaPlataforma(
+        FICHAS[id],
+        id === 'magento' || id === 'nuvemshop' ? lojas[id] : null,
+        id === 'nuvemshop' ? liberada.nuvemshop : true,
+      ),
       pedida: pedidos.includes(id),
     })),
   )

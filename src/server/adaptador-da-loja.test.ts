@@ -2,13 +2,18 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { lojaFalsa } from '@/loja/falsa'
 
 const lojaDaConta = vi.hoisted(() => vi.fn())
-vi.mock('./repos/lojas', () => ({ lojaDaConta }))
+const lojaNuvemshopDaConta = vi.hoisted(() => vi.fn())
+vi.mock('./repos/lojas', () => ({ lojaDaConta, lojaNuvemshopDaConta }))
+const lojaNuvemshop = vi.hoisted(() => vi.fn())
+vi.mock('@/loja/nuvemshop', () => ({ lojaNuvemshop }))
 const lerCredencial = vi.hoisted(() => vi.fn())
 vi.mock('./repos/conexoes', () => ({ lerCredencial }))
 const lojaMagento = vi.hoisted(() => vi.fn())
 vi.mock('@/loja/magento', () => ({ lojaMagento }))
 const lojaAdmin = vi.hoisted(() => vi.fn())
 vi.mock('@/loja/magento-admin', () => ({ lojaAdmin }))
+// O catálogo próprio é o último recurso; aqui, vazio, para "nenhuma loja" dar null.
+vi.mock('./repos/produtos', () => ({ listarProdutos: async () => [] }))
 const alertar = vi.hoisted(() => vi.fn())
 vi.mock('./alertar', () => ({ alertar }))
 
@@ -40,6 +45,24 @@ describe('lojaAtivaDaConta', () => {
     expect(await lojaAtivaDaConta('c1')).toBeNull()
     lojaDaConta.mockResolvedValue({ ...base, ativa: false })
     expect(await lojaAtivaDaConta('c1')).toBeNull()
+  })
+
+  it('Magento desligada e Nuvemshop ligada: a Nuvemshop, com o token do cofre', async () => {
+    lojaDaConta.mockResolvedValue({ ...base, ativa: false })
+    lojaNuvemshopDaConta.mockResolvedValue({ ...base, plataforma: 'nuvemshop', endereco: 'https://x.nuvemshop.com.br', storeId: '789', conexaoId: 'ns1' })
+    lerCredencial.mockResolvedValue({ tipo: 'bearer', campo: null, valor: 'tok' })
+    const falsa = lojaFalsa({ produtos: [headset] })
+    lojaNuvemshop.mockReturnValue(falsa)
+    expect(await lojaAtivaDaConta('c1')).toBe(falsa)
+    expect(lojaNuvemshop).toHaveBeenCalledWith({ endereco: 'https://x.nuvemshop.com.br', storeId: '789', token: 'tok' })
+  })
+
+  it('Nuvemshop ligada sem token no cofre vale como desligada', async () => {
+    lojaDaConta.mockResolvedValue(null)
+    lojaNuvemshopDaConta.mockResolvedValue({ ...base, plataforma: 'nuvemshop', storeId: '789', conexaoId: 'ns1' })
+    lerCredencial.mockResolvedValue(null)
+    expect(await lojaAtivaDaConta('c1')).toBeNull()
+    expect(lojaNuvemshop).not.toHaveBeenCalled()
   })
 
   it('sem token: a busca pública, sem ler o cofre', async () => {

@@ -21,7 +21,7 @@ export type { ViaDeEstoque } from '@/loja/types'
 export type LojaIntegrada = {
   id: string
   clienteId: string
-  plataforma: 'magento'
+  plataforma: 'magento' | 'nuvemshop'
   endereco: string
   codigoDaLoja: string | null
   sufixo: string
@@ -35,7 +35,7 @@ export type LojaIntegrada = {
 type Linha = {
   id: string
   client_id: string
-  plataforma: 'magento'
+  plataforma: 'magento' | 'nuvemshop'
   endereco: string
   codigo_da_loja: string | null
   sufixo_da_url: string
@@ -65,13 +65,19 @@ function paraLoja(l: Linha): LojaIntegrada {
   }
 }
 
-/** A loja Magento da conta, ligada ou não. `null` = nunca configurada. */
-export async function lojaDaConta(clienteId: string): Promise<LojaIntegrada | null> {
+/**
+ * A loja da conta nesta plataforma (Magento por padrão), ligada ou não.
+ * `null` = nunca configurada.
+ */
+export async function lojaDaConta(
+  clienteId: string,
+  plataforma: LojaIntegrada['plataforma'] = 'magento',
+): Promise<LojaIntegrada | null> {
   const { data, error } = await db()
     .from('lojas_integradas')
     .select(COLUNAS)
     .eq('client_id', clienteId)
-    .eq('plataforma', 'magento')
+    .eq('plataforma', plataforma)
     .maybeSingle()
 
   if (ehIdInvalido(error)) return null
@@ -116,8 +122,9 @@ export async function salvarLoja(
 export async function ligarLoja(
   clienteId: string,
   ativa: boolean,
+  plataforma: LojaIntegrada['plataforma'] = 'magento',
 ): Promise<{ ok: true } | { ok: false; motivo: string }> {
-  const loja = await lojaDaConta(clienteId)
+  const loja = await lojaDaConta(clienteId, plataforma)
   if (!loja) return { ok: false, motivo: 'configure e teste a loja antes de ligar' }
   if (ativa && !loja.verificadaEm) return { ok: false, motivo: 'teste a loja antes de ligar' }
 
@@ -125,7 +132,7 @@ export async function ligarLoja(
     .from('lojas_integradas')
     .update({ ativa, atualizado_em: new Date().toISOString() })
     .eq('client_id', clienteId)
-    .eq('plataforma', 'magento')
+    .eq('plataforma', plataforma)
 
   if (error) throw new Error(`não deu para ${ativa ? 'ligar' : 'desligar'} a loja: ${error.message}`)
   return { ok: true }
@@ -194,4 +201,93 @@ export async function registrarPedidoDeLoja(
 
   if (error) return { ok: false, motivo: `não deu para gravar o pedido: ${error.message}` }
   return { ok: true }
+}
+
+/**
+ * A loja Nuvemshop da conta, com o número dela na plataforma (0103).
+ *
+ * Lida à parte, e não pelo `COLUNAS`: `id_na_plataforma` só existe depois da
+ * 0103, e a leitura da Magento (que o bot faz a cada pergunta) não pode cair
+ * por uma coluna que ela não usa. Erro aqui vira `null`: o bot segue para o
+ * catálogo em vez de parar.
+ */
+export async function lojaNuvemshopDaConta(
+  clienteId: string,
+): Promise<(LojaIntegrada & { storeId: string | null }) | null> {
+  const { data, error } = await db()
+    .from('lojas_integradas')
+    .select(`${COLUNAS}, id_na_plataforma`)
+    .eq('client_id', clienteId)
+    .eq('plataforma', 'nuvemshop')
+    .maybeSingle()
+
+  if (error || !data) return null
+  const linha = data as Linha & { id_na_plataforma: string | null }
+  return { ...paraLoja(linha), storeId: linha.id_na_plataforma }
+}
+
+/**
+ * Grava a Nuvemshop que acabou de autorizar. **Nasce desligada**, como a
+ * Magento: quem liga é o dono, na tela, depois de ver a busca funcionar.
+ *
+ * A Conexão (token no Vault) é criada antes, por quem chama; aqui só se
+ * aponta para ela. Religar a mesma conta sobrescreve a linha.
+ */
+export async function salvarLojaNuvemshop(
+  clienteId: string,
+  dados: { endereco: string; storeId: string; conexaoId: string },
+): Promise<void> {
+  const agora = new Date().toISOString()
+  const { error } = await db()
+    .from('lojas_integradas')
+    .upsert(
+      {
+        client_id: clienteId,
+        plataforma: 'nuvemshop',
+        endereco: dados.endereco,
+        codigo_da_loja: null,
+        sufixo_da_url: '',
+        id_na_plataforma: dados.storeId,
+        conexao_id: dados.conexaoId,
+        ativa: false,
+        verificada_em: agora,
+        atualizado_em: agora,
+      },
+      { onConflict: 'client_id,plataforma' },
+    )
+
+  if (error?.code === '23505') {
+    throw new Error('esta loja Nuvemshop já está conectada a outra conta do AutoFluxos')
+  }
+  if (error) throw new Error(`não deu para salvar a loja: ${error.message}`)
+}
+
+/**
+ * Tira a conexão da Nuvemshop: desliga, solta o token e o número da loja. A
+ * linha fica (o endereço serve para reconectar), e quem apaga a Conexão do
+ * token é quem chama, depois disto.
+ *
+ * Com `storeId` e sem conta: é o aviso de desinstalação da própria
+ * Nuvemshop, que só sabe o número da loja.
+ */
+export async function soltarLojaNuvemshop(
+  alvo: { clienteId: string } | { storeId: string },
+): Promise<{ clienteId: string; conexaoId: string | null } | null> {
+  let consulta = db()
+    .from('lojas_integradas')
+    .select('client_id, conexao_id')
+    .eq('plataforma', 'nuvemshop')
+  consulta = 'clienteId' in alvo ? consulta.eq('client_id', alvo.clienteId) : consulta.eq('id_na_plataforma', alvo.storeId)
+  const { data, error } = await consulta.maybeSingle()
+  if (error) throw new Error(`não deu para achar a loja: ${error.message}`)
+  if (!data) return null
+  const linha = data as { client_id: string; conexao_id: string | null }
+
+  const { error: erro } = await db()
+    .from('lojas_integradas')
+    .update({ ativa: false, conexao_id: null, id_na_plataforma: null, atualizado_em: new Date().toISOString() })
+    .eq('client_id', linha.client_id)
+    .eq('plataforma', 'nuvemshop')
+  if (erro) throw new Error(`não deu para desconectar a loja: ${erro.message}`)
+  return { clienteId: linha.client_id, conexaoId: linha.conexao_id }
 }

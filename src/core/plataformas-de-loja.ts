@@ -41,7 +41,7 @@ export const FICHAS: Record<PlataformaDeLoja, FichaDaPlataforma> = {
     nome: 'Nuvemshop',
     resumo: 'A mais usada por loja pequena e média no Brasil.',
     brasileira: true,
-    href: null,
+    href: '/loja/nuvemshop',
   },
   tray: {
     id: 'tray',
@@ -98,12 +98,17 @@ export type EstadoDaPlataforma = 'conectada' | 'configurada' | 'disponivel' | 'e
  *
  * `configurada` é a loja cadastrada e desligada: o endereço está lá, o bot não
  * consulta. Mostrar como "conectada" mentiria sobre o que o bot faz.
+ *
+ * `liberada: false` é a plataforma com tela pronta e credencial do app ainda
+ * não posta (a Nuvemshop sem `NUVEMSHOP_APP_ID`): continua "Em breve", com o
+ * "Quero esta", em vez de um botão que leva a uma tela que não conecta.
  */
 export function estadoDaPlataforma(
   ficha: FichaDaPlataforma,
   loja: { ativa: boolean } | null,
+  liberada = true,
 ): EstadoDaPlataforma {
-  if (!ficha.href) return 'em_breve'
+  if (!ficha.href || (!liberada && !loja)) return 'em_breve'
   if (!loja) return 'disponivel'
   return loja.ativa ? 'conectada' : 'configurada'
 }

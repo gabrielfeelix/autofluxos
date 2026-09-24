@@ -3,10 +3,11 @@ import { enriquecer, type Complemento } from '@/loja/enriquecer'
 import { lojaCatalogo } from '@/loja/catalogo'
 import { lojaMagento } from '@/loja/magento'
 import { lojaAdmin } from '@/loja/magento-admin'
+import { lojaNuvemshop } from '@/loja/nuvemshop'
 import type { Loja } from '@/loja/types'
 import { alertar } from './alertar'
 import { lerCredencial } from './repos/conexoes'
-import { lojaDaConta } from './repos/lojas'
+import { lojaDaConta, lojaNuvemshopDaConta } from './repos/lojas'
 import { listarProdutos } from './repos/produtos'
 import { estaAtivo } from '@/core/produtos'
 
@@ -17,7 +18,7 @@ export const PRAZO_DO_TOKEN_MS = 3_000
  * Qual adaptador fala com a loja desta conta, no desenho de
  * `adaptador-do-canal.ts`: um lugar só escolhe, e quem usa recebe `Loja`.
  *
- * **Magento ligada ganha.** Sem ela, a conta com catálogo próprio ativo
+ * **Magento ligada ganha**, depois a Nuvemshop ligada. Sem nenhuma, a conta com catálogo próprio ativo
  * (`public.produtos`, cadastrado ou importado) usa o catálogo, pelo mesmo
  * caminho: o bot busca e manda o card igual. O catálogo nunca é cópia da
  * Magento, e com as duas a busca é a da loja, ao vivo.
@@ -37,7 +38,7 @@ export const PRAZO_DO_TOKEN_MS = 3_000
  */
 export async function lojaAtivaDaConta(clienteId: string): Promise<Loja | null> {
   const loja = await lojaDaConta(clienteId)
-  if (!loja || !loja.ativa) return catalogoDaConta(clienteId)
+  if (!loja || !loja.ativa) return (await nuvemshopDaConta(clienteId)) ?? catalogoDaConta(clienteId)
 
   const publica = lojaMagento({ endereco: loja.endereco, codigoDaLoja: loja.codigoDaLoja, sufixo: loja.sufixo })
 
@@ -70,6 +71,26 @@ export async function lojaAtivaDaConta(clienteId: string): Promise<Loja | null> 
       return r.ok ? { ok: true, valor: await enriquecer(r.valor, admin, noCard) } : r
     },
   }
+}
+
+/**
+ * A Nuvemshop ligada da conta, ou `null` (F4 do plano de navegação).
+ *
+ * Vem depois da Magento e antes do catálogo, pela mesma regra: loja ao vivo
+ * ganha de cópia. Sem token no cofre (a Conexão foi apagada em Chaves de API)
+ * a loja não responde nada, então vale como desligada.
+ */
+async function nuvemshopDaConta(clienteId: string): Promise<Loja | null> {
+  const loja = await lojaNuvemshopDaConta(clienteId)
+  if (!loja?.ativa || !loja.storeId || !loja.conexaoId) return null
+  let credencial = null
+  try {
+    credencial = await lerCredencial(loja.conexaoId, clienteId)
+  } catch {
+    return null
+  }
+  if (!credencial) return null
+  return lojaNuvemshop({ endereco: loja.endereco, storeId: loja.storeId, token: credencial.valor })
 }
 
 /**
