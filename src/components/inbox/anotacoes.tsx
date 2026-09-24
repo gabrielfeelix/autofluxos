@@ -1,6 +1,6 @@
 'use client'
 
-import { createContext, useContext, useState, type ReactNode } from 'react'
+import { createContext, useContext, useEffect, useState, type ReactNode } from 'react'
 import type { Anotacao } from '@/core/anotacoes'
 import { diaEHora } from '@/core/datas'
 
@@ -24,7 +24,10 @@ type Anotar = (texto: string) => Promise<{ ok: true; anotacao: Anotacao } | { ok
 
 const Contexto = createContext<{
   entradas: Entrada[]
-  anotar: (texto: string) => void
+  /** Devolve o id local, para quem anotou acompanhar se ela gravou. */
+  anotar: (texto: string) => string
+  /** Quantas anotações foram feitas nesta tela. A aba de anotações segue esse número. */
+  anotadas: number
   tentarDeNovo: (id: string) => void
   antiga: string
 } | null>(null)
@@ -70,13 +73,17 @@ export function ProvedorDeAnotacoes({
     )
   }
 
+  const [anotadas, setAnotadas] = useState(0)
+
   const anotar = (texto: string) => {
     const id = `local-${crypto.randomUUID()}`
+    setAnotadas((n) => n + 1)
     setEntradas((atuais) => [
       { id, texto, autor, criadoEm: new Date().toISOString(), estado: 'guardando' },
       ...atuais,
     ])
     void mandar(id, texto)
+    return id
   }
 
   const tentarDeNovo = (id: string) => {
@@ -89,7 +96,7 @@ export function ProvedorDeAnotacoes({
   }
 
   return (
-    <Contexto.Provider value={{ entradas, anotar, tentarDeNovo, antiga: antiga.trim() }}>
+    <Contexto.Provider value={{ entradas, anotar, anotadas, tentarDeNovo, antiga: antiga.trim() }}>
       {children}
     </Contexto.Provider>
   )
@@ -102,6 +109,14 @@ function useAnotacoes() {
 }
 
 /** Quantas anotações o contato tem, para o ícone da barra acender. */
+/**
+ * Quantas anotações foram feitas nesta tela, ou 0 fora de um provedor. Quem
+ * precisa reagir a uma anotação nova (a aba do Inbox) observa este número.
+ */
+export function useAnotadas(): number {
+  return useContext(Contexto)?.anotadas ?? 0
+}
+
 export function useTemAnotacao(): boolean {
   const contexto = useContext(Contexto)
   return Boolean(contexto && (contexto.entradas.length > 0 || contexto.antiga !== ''))
@@ -113,12 +128,53 @@ export function useTemAnotacao(): boolean {
  * Depois de anotar ela limpa e fecha; a nota já está na lista ao lado.
  */
 export function EntradaDeAnotacao({ limite, aoAnotar }: { limite: number; aoAnotar?: () => void }) {
-  const { anotar } = useAnotacoes()
+  const { anotar, entradas } = useAnotacoes()
   const [aberta, setAberta] = useState(false)
   const [texto, setTexto] = useState('')
+  const [ultima, setUltima] = useState<string | null>(null)
+
+  /*
+   * O retorno de quem anotou, no mesmo lugar em que anotou: "Salvando…" e
+   * depois "Anotação salva". A anotação também aparece na lista, mas a lista
+   * pode estar em outra aba ou fora da tela, e sem sinal aqui a pessoa não
+   * sabe se o clique pegou.
+   *
+   * A local troca de id quando grava (`local-…` vira o id do banco), então
+   * sumir da lista com o id local e sem erro é o sinal de que gravou.
+   */
+  const acompanhada = ultima ? entradas.find((entrada) => entrada.id === ultima) : undefined
+  const situacao: 'salvando' | 'salva' | 'erro' | null = !ultima
+    ? null
+    : !acompanhada
+      ? 'salva'
+      : acompanhada.estado === 'erro'
+        ? 'erro'
+        : 'salvando'
+
+  useEffect(() => {
+    if (situacao !== 'salva') return
+    const tempo = setTimeout(() => setUltima(null), 2500)
+    return () => clearTimeout(tempo)
+  }, [situacao])
+
+  const aviso = situacao && (
+    <p
+      role="status"
+      className={`mt-1.5 text-[12px] font-semibold ${
+        situacao === 'erro' ? 'text-perigo' : situacao === 'salva' ? 'text-ok' : 'text-dim'
+      }`}
+    >
+      {situacao === 'salvando'
+        ? 'Salvando…'
+        : situacao === 'salva'
+          ? '✓ Anotação salva'
+          : 'Não salvou. Tente de novo em Anotações.'}
+    </p>
+  )
 
   if (!aberta) {
     return (
+      <>
       <button
         type="button"
         onClick={() => setAberta(true)}
@@ -126,13 +182,15 @@ export function EntradaDeAnotacao({ limite, aoAnotar }: { limite: number; aoAnot
       >
         + Anotar
       </button>
+      {aviso}
+      </>
     )
   }
 
   const enviar = () => {
     const limpo = texto.trim()
     if (limpo === '') return
-    anotar(limpo)
+    setUltima(anotar(limpo))
     setTexto('')
     setAberta(false)
     aoAnotar?.()

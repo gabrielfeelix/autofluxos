@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, type ReactNode } from 'react'
+import { useAnotadas } from './anotacoes'
 
 /**
  * As duas abas da coluna do contato no Inbox: "Contato" e "Anotações".
@@ -18,6 +19,18 @@ import { useState, type ReactNode } from 'react'
  */
 export function AbasDaFicha({ contato, anotacoes }: { contato: ReactNode; anotacoes: ReactNode }) {
   const [aba, setAba] = useState<'contato' | 'anotacoes'>('contato')
+
+  /*
+   * Anotou pela barra da conversa, a coluna abre em Anotações: a nota nova
+   * aparece onde a pessoa vai procurar por ela. Comparado no render, e não num
+   * efeito, para a troca sair no mesmo quadro da anotação.
+   */
+  const anotadas = useAnotadas()
+  const [vistas, setVistas] = useState(anotadas)
+  if (anotadas !== vistas) {
+    setVistas(anotadas)
+    if (anotadas > vistas) setAba('anotacoes')
+  }
 
   return (
     <>

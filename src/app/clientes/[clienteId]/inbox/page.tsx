@@ -1,5 +1,6 @@
 import { Fragment, Suspense, type ReactNode } from 'react'
-import { ListaDeAnotacoes, ProvedorDeAnotacoes } from '@/components/inbox/anotacoes'
+import { EntradaDeAnotacao, ListaDeAnotacoes, ProvedorDeAnotacoes } from '@/components/inbox/anotacoes'
+import { LIMITE_DA_NOTA } from '@/core/flow/limites'
 import { anotacoesDoContato } from '@/server/repos/eventos'
 import { acaoAnotar } from '@/server/acoes-crm'
 import { after } from 'next/server'
@@ -1362,7 +1363,14 @@ function DadosDoLead({
       </div>
 
       <AbasDaFicha
-        anotacoes={<ListaDeAnotacoes />}
+        anotacoes={
+          <>
+            <div className="mb-3">
+              <EntradaDeAnotacao limite={LIMITE_DA_NOTA} />
+            </div>
+            <ListaDeAnotacoes vazio="Ninguém anotou nada sobre esta pessoa ainda." />
+          </>
+        }
         contato={
       <>
         {/*

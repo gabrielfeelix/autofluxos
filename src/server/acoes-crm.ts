@@ -580,7 +580,13 @@ export async function acaoAnotar(
   const quemFez = await sessaoAtual()
   try {
     const anotacao = await registrarAnotacao(clienteId, contatoId, limpo, quemFez?.usuario.nome ?? null)
-    revalidatePath(`/clientes/${clienteId}/leads/${contatoId}`)
+    /*
+     * Sem `revalidatePath` aqui, de propósito. Numa ação do servidor ele faz o
+     * Next redesenhar a rota **aberta** na volta, e o dono via o Inbox inteiro
+     * recarregar a cada anotação. A tela já mostra a anotação antes da
+     * resposta (`ProvedorDeAnotacoes`) e troca pela gravada quando ela chega;
+     * quem abrir a página depois lê do banco, onde ela já está.
+     */
     return { ok: true, anotacao }
   } catch (erro) {
     console.error('[anotar]', erro instanceof Error ? erro.message : erro)
