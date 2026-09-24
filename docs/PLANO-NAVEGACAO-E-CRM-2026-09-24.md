@@ -298,6 +298,38 @@ só no fim da frente.
   dá 404; esqueleto sem piscar; papel de atendimento não vê Automações nem
   Configurações.
 
+**Estado da F1 (feita em 24/set, commit `1a954c9`, só local, sem deploy):**
+
+- Esqueleto em `src/components/design/secoes-do-cliente.tsx`: `SECOES` (seções
+  com `itens`), `ITENS` (achatado), `AbaDoCliente` = a "porta" de cada tela
+  (permissão e nome na tela de sem acesso). Para uma tela nova: subitem em
+  `SECOES`, porta em `EXIGENCIA_DA_SECAO` e `ENDERECO_DA_ABA`, prefixo em
+  `aba-do-caminho.ts` (`PREFIXOS` e `DO_CAMINHO`), e teste nos dois `.test.ts`.
+- Subitem aceso sai de caminho + busca (`acesoDoCaminho`): `?de=` nas
+  Conversas, `?aba=` em Automações. `?de=minhas` vira o id de quem olha na
+  página do Inbox.
+- Contagens em `barra-do-cliente.tsx` (`contarDaBarra`, com `cache`), repo
+  `contarConversasDaBarra` em `repos/leads.ts`. Atrasadas = `vencidas` da agenda.
+- Barra recolhida: cookie `autofluxos-barra` (`cookie-da-barra.ts`), lido por
+  `server/preferencias.ts`. O script do `<head>` copia o valor antigo do
+  `localStorage` para o cookie uma vez.
+- Rotas movidas (308 em `next.config.ts`, `SAIRAM_DE_CONFIGURACOES`):
+  `ajustes/whatsapp` e `instagram` para `conversas/canais/...`,
+  `ajustes/respostas-rapidas` para `conversas/respostas-rapidas`,
+  `ajustes/etiquetas` para `leads/etiquetas`, `ajustes/produtos` para
+  `loja/catalogo`, `ajustes/integracoes/magento` para `loja/magento`.
+  `/loja` vai para `/loja/magento` com 307 até a F4 existir.
+- Tela nova `conversas/canais/page.tsx` (cartões por canal, estado de
+  `catalogoDeIntegracoes`).
+- Loja visível (`lojaVisivel` em `repos/recursos.ts`): objetivo `vender`, ou
+  loja conectada, ou catálogo com item. Não há interruptor de Loja ainda (pediria
+  migration); entra na F4.
+- Análise tem só Atendimento; **Vendas entra na F3** como subitem novo em
+  `SECOES` (porta `relatorios` ou uma nova).
+- Celular: `BaixoPorSecoes` e `GavetaPorSecoes` em `barra-do-celular.tsx`.
+- A administração (`/admin`) usa a mesma `BarraLateral` com `itens` planos;
+  não quebrar esse caminho.
+
 **F2. Cartão com cara de negócio, página do negócio e lista** (5.1, 5.2 e 5.2b)
 - Aceite: do quadro, "Abrir negócio" leva à página; mudar etapa pelos degraus
   grava sem recarregar e aparece no histórico; aba Histórico filtra por tipo.
