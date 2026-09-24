@@ -177,7 +177,7 @@ export default async function Pagina({
       conteudo: (
         <CaixaDoBloco titulo="Como as conversas terminaram" subtitulo="As quatro partes somam todas as conversas do período.">
           {atual.conversas === 0 ? (
-            <Vazio>Nenhuma conversa começou neste período.</Vazio>
+            <Vazio desenho="rosca">Nenhuma conversa começou neste período.</Vazio>
           ) : (
             <Rosca
               totalRotulo="conversas"
@@ -237,7 +237,7 @@ export default async function Pagina({
       conteudo: (
         <CaixaDoBloco titulo="Por onde chegam" subtitulo="Conversas do período, pelo canal da automação que atendeu.">
           {canais.length === 0 ? (
-            <Vazio>Nenhuma conversa começou neste período.</Vazio>
+            <Vazio desenho="rosca">Nenhuma conversa começou neste período.</Vazio>
           ) : canais.length === 1 ? (
             // Uma fatia só é um anel inteiro que não compara nada: o número diz mais.
             <div className="flex flex-1 flex-col justify-center">
@@ -371,7 +371,7 @@ export default async function Pagina({
           subtitulo={<Mudanca atual={atual.fechamentos.ganhos} antes={antes.fechamentos.ganhos} />}
         >
           {atual.fechamentos.ganhos + atual.fechamentos.perdidos === 0 ? (
-            <Vazio>Nenhum negócio fechado no período.</Vazio>
+            <Vazio desenho="fechamentos">Nenhum negócio fechado no período.</Vazio>
           ) : (
             <div className="flex flex-1 flex-col">
               <p className="text-[34px] leading-none font-bold tracking-[-0.03em] tabular-nums text-ink">

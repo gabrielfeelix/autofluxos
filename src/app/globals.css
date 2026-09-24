@@ -1717,6 +1717,22 @@ textarea::placeholder {
   animation: ilu-percorre 5s ease-in-out infinite;
 }
 
+.ilu-cresce {
+  transform-box: fill-box;
+  transform-origin: left center;
+  animation: ilu-cresce 3.2s ease-in-out infinite;
+}
+
+@keyframes ilu-cresce {
+  0%,
+  100% {
+    transform: scaleX(1);
+  }
+  50% {
+    transform: scaleX(0.82);
+  }
+}
+
 @keyframes ilu-flutua {
   0%,
   100% {

@@ -3,6 +3,7 @@
 import { useId, useState, type ReactNode } from 'react'
 import { comoDinheiro } from '@/core/crm'
 import { azul, dinheiroCurto, type Fatia } from './formatos'
+import { IlustracaoDeRelatorio, type DesenhoDeRelatorio } from '@/components/design/ilustracoes'
 
 /**
  * Os gráficos dos blocos de Análise. SVG à mão, sem biblioteca: são poucas
@@ -56,10 +57,15 @@ export function CaixaDoBloco({
   )
 }
 
-export function Vazio({ children }: { children: ReactNode }) {
+/**
+ * O cartão sem dado. O desenho é a forma do gráfico que vai aparecer ali
+ * (`barras` quando não se diz nada, que é o ranking, o caso mais comum).
+ */
+export function Vazio({ children, desenho = 'barras' }: { children: ReactNode; desenho?: DesenhoDeRelatorio }) {
   return (
-    <div className="flex flex-1 items-center justify-center rounded-lg border border-dashed border-line px-4 py-8 text-center text-[12.5px] leading-5 text-dim">
-      {children}
+    <div className="flex flex-1 flex-col items-center justify-center gap-4 rounded-lg border border-dashed border-line px-4 py-8 text-center text-[12.5px] leading-5 text-dim">
+      <IlustracaoDeRelatorio desenho={desenho} />
+      <p className="max-w-[320px]">{children}</p>
     </div>
   )
 }
@@ -582,7 +588,7 @@ export function MapaDeHorarios({ celulas, unidade }: { celulas: number[][]; unid
   const [fd, fh] = foco ?? pico
   const nFoco = celulas[fd]?.[fh] ?? 0
 
-  if (total === 0) return <Vazio>Nenhuma conversa começou neste período.</Vazio>
+  if (total === 0) return <Vazio desenho="horarios">Nenhuma conversa começou neste período.</Vazio>
 
   return (
     <div className="flex flex-1 flex-col">
@@ -660,7 +666,7 @@ export function MapaDeHorarios({ celulas, unidade }: { celulas: number[][]; unid
 export function Satisfacao({ nps, media, porNota }: { nps: number | null; media: number | null; porNota: number[] }) {
   const [foco, setFoco] = useState<number | null>(null)
   const respostas = porNota.reduce((s, n) => s + n, 0)
-  if (nps === null || respostas === 0) return <Vazio>Ninguém respondeu a pesquisa de satisfação neste período.</Vazio>
+  if (nps === null || respostas === 0) return <Vazio desenho="nps">Ninguém respondeu a pesquisa de satisfação neste período.</Vazio>
 
   const detratores = porNota.slice(0, 7).reduce((s, n) => s + n, 0)
   const neutros = (porNota[7] ?? 0) + (porNota[8] ?? 0)

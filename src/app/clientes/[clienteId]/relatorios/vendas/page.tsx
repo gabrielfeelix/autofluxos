@@ -407,7 +407,7 @@ async function blocosDeVendas({
           }
         >
           {!funil || (passagens[0]?.chegaram ?? 0) === 0 ? (
-            <Vazio>Nenhum negócio foi criado neste funil no período.</Vazio>
+            <Vazio desenho="funil">Nenhum negócio foi criado neste funil no período.</Vazio>
           ) : (
             <FunilInvertido
               degraus={passagens.map((p, i) => ({

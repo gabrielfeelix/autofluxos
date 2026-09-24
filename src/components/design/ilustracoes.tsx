@@ -39,13 +39,21 @@ const TRACO = {
  * conteúdo: ela ocupa o vazio sem competir com o texto que explica o que fazer,
  * nem com o botão que é a ação da tela.
  */
-function Tela({ children, titulo }: { children: React.ReactNode; titulo: string }) {
+function Tela({
+  children,
+  titulo,
+  altura = 'h-[116px]',
+}: {
+  children: React.ReactNode
+  titulo: string
+  altura?: string
+}) {
   return (
     <svg
       viewBox="0 0 200 120"
       role="img"
       aria-label={titulo}
-      className="ilu mx-auto h-[116px] w-auto text-primary/75"
+      className={`ilu mx-auto w-auto text-primary/75 ${altura}`}
     >
       {children}
     </svg>
@@ -772,6 +780,221 @@ export function IlustracaoTudoCerto() {
       <Brilho x={158} y={40} atraso={500} />
       <Brilho x={152} y={94} r={3} atraso={1000} />
       <Brilho x={50} y={88} r={3} atraso={1500} />
+    </Tela>
+  )
+}
+
+/*
+ * ---------------------------------------------------------------------------
+ * Os cartões de relatório sem dado.
+ *
+ * Menores que as de tela (o cartão divide a linha com outro) e uma por forma de
+ * gráfico, não por assunto: quem vê a rosca vazia entende que ali vai aparecer
+ * uma rosca, e isso diz mais sobre o cartão do que um desenho de "conversa".
+ * ---------------------------------------------------------------------------
+ */
+
+export type DesenhoDeRelatorio = 'barras' | 'rosca' | 'funil' | 'nps' | 'horarios' | 'fechamentos'
+
+const ALTURA_DO_CARTAO = 'h-[84px]'
+
+export function IlustracaoDeRelatorio({ desenho }: { desenho: DesenhoDeRelatorio }) {
+  switch (desenho) {
+    case 'rosca':
+      return <RelatorioRosca />
+    case 'funil':
+      return <RelatorioFunil />
+    case 'nps':
+      return <RelatorioNps />
+    case 'horarios':
+      return <RelatorioHorarios />
+    case 'fechamentos':
+      return <RelatorioFechamentos />
+    default:
+      return <RelatorioBarras />
+  }
+}
+
+/** Um ranking: quem está na frente, com a barra maior. */
+function RelatorioBarras() {
+  const larguras = [104, 78, 56, 34]
+  return (
+    <Tela titulo="Um ranking em barras, ainda sem dados" altura={ALTURA_DO_CARTAO}>
+      {larguras.map((w, i) => {
+        const y = 18 + i * 23
+        return (
+          <g key={w} opacity={1 - i * 0.2}>
+            <circle cx={36} cy={y + 7} r={7} {...TRACO} />
+            <rect x={52} y={y} width={w + 30} height={14} rx={4} fill="currentColor" opacity={0.08} />
+            <rect
+              x={52}
+              y={y}
+              width={w}
+              height={14}
+              rx={4}
+              fill="currentColor"
+              opacity={i === 0 ? 0.45 : 0.25}
+              className="ilu-cresce"
+              style={{ animationDelay: `${i * 220}ms` }}
+            />
+          </g>
+        )
+      })}
+    </Tela>
+  )
+}
+
+/** A rosca, com as fatias em tons, e a legenda ao lado. */
+function RelatorioRosca() {
+  const r = 30
+  const volta = 2 * Math.PI * r
+  const fatias = [0.45, 0.3, 0.25]
+  let inicio = 0
+  return (
+    <Tela titulo="Um gráfico de rosca, ainda sem dados" altura={ALTURA_DO_CARTAO}>
+      <g className="ilu-gira-devagar" style={{ transformOrigin: '72px 60px' }}>
+        {fatias.map((f, i) => {
+          const arco = f * volta - 3
+          const el = (
+            <circle
+              key={i}
+              cx={72}
+              cy={60}
+              r={r}
+              fill="none"
+              stroke="currentColor"
+              strokeWidth={14}
+              strokeDasharray={`${arco} ${volta - arco}`}
+              strokeDashoffset={-inicio * volta}
+              opacity={0.55 - i * 0.15}
+            />
+          )
+          inicio += f
+          return el
+        })}
+      </g>
+      {fatias.map((_, i) => (
+        <g key={i} opacity={0.9 - i * 0.2}>
+          <circle cx={128} cy={40 + i * 20} r={4} fill="currentColor" opacity={0.55 - i * 0.15} />
+          <rect x={138} y={37.5 + i * 20} width={36 - i * 8} height={5} rx={2.5} fill="currentColor" opacity={0.35} />
+        </g>
+      ))}
+    </Tela>
+  )
+}
+
+/** O funil de etapas, cada uma mais estreita que a de cima. */
+function RelatorioFunil() {
+  const degraus = [128, 96, 64, 36]
+  return (
+    <Tela titulo="Um funil de etapas, ainda sem dados" altura={ALTURA_DO_CARTAO}>
+      {degraus.map((w, i) => (
+        <rect
+          key={w}
+          x={100 - w / 2}
+          y={14 + i * 24}
+          width={w}
+          height={18}
+          rx={5}
+          fill="currentColor"
+          opacity={0.4 - i * 0.08}
+        />
+      ))}
+      {[70, 100, 130].map((x, i) => (
+        <circle
+          key={x}
+          cx={x}
+          cy={6}
+          r={3}
+          fill="currentColor"
+          opacity={0.5}
+          className="ilu-flutua"
+          style={{ animationDelay: `${i * 400}ms` }}
+        />
+      ))}
+    </Tela>
+  )
+}
+
+/** O NPS: o velocímetro de detratores a promotores, com o ponteiro indeciso. */
+function RelatorioNps() {
+  // Três arcos de 60 graus cada, centro em (100, 96), raio 60.
+  const ponto = (graus: number) => {
+    const rad = (graus * Math.PI) / 180
+    return `${(100 + 60 * Math.cos(rad)).toFixed(2)} ${(96 - 60 * Math.sin(rad)).toFixed(2)}`
+  }
+  const arcos: [number, number, number][] = [
+    [178, 122, 0.2],
+    [118, 62, 0.4],
+    [58, 2, 0.75],
+  ]
+  return (
+    <Tela titulo="Um medidor de satisfação, ainda sem respostas" altura={ALTURA_DO_CARTAO}>
+      {arcos.map(([de, ate, o]) => (
+        <path
+          key={de}
+          d={`M${ponto(de)}A60 60 0 0 1 ${ponto(ate)}`}
+          fill="none"
+          stroke="currentColor"
+          strokeWidth={12}
+          strokeLinecap="round"
+          opacity={o}
+        />
+      ))}
+      <g className="ilu-balanca" style={{ transformOrigin: '100px 96px' }}>
+        <path d="M100 96V52" {...TRACO} strokeWidth={3} />
+      </g>
+      <circle cx={100} cy={96} r={6} fill="currentColor" />
+    </Tela>
+  )
+}
+
+/** O mapa de horários: a grade de dias e horas, com um pico aceso. */
+function RelatorioHorarios() {
+  const colunas = 12
+  const linhas = 5
+  // Tons fixos, e não aleatórios, para o servidor e o navegador desenharem igual.
+  const tom = (l: number, c: number) => ((l * 7 + c * 5 + l * c) % 5) / 5
+  return (
+    <Tela titulo="Uma grade de dias e horários, ainda sem dados" altura={ALTURA_DO_CARTAO}>
+      {Array.from({ length: linhas }).flatMap((_, l) =>
+        Array.from({ length: colunas }).map((_, c) => {
+          const pico = l === 2 && c === 7
+          return (
+            <rect
+              key={`${l}-${c}`}
+              x={22 + c * 13.5}
+              y={20 + l * 17}
+              width={10.5}
+              height={13}
+              rx={2.5}
+              fill="currentColor"
+              opacity={pico ? 0.85 : 0.08 + tom(l, c) * 0.25}
+              className={pico ? 'ilu-pulsa' : undefined}
+            />
+          )
+        }),
+      )}
+    </Tela>
+  )
+}
+
+/** Fechamentos: o troféu do negócio ganho. */
+function RelatorioFechamentos() {
+  return (
+    <Tela titulo="Um troféu, ainda sem negócios fechados" altura={ALTURA_DO_CARTAO}>
+      <g className="ilu-flutua">
+        <path d="M80 22h40v22a20 20 0 0 1-40 0Z" fill="currentColor" opacity={0.2} />
+        <path d="M80 22h40v22a20 20 0 0 1-40 0Z" {...TRACO} />
+        <path d="M80 30h-9a10 10 0 0 0 11 16M120 30h9a10 10 0 0 1-11 16" {...TRACO} />
+        <path d="M100 64v12" {...TRACO} />
+        <rect x={84} y={76} width={32} height={10} rx={3} fill="currentColor" opacity={0.3} />
+        <rect x={84} y={76} width={32} height={10} rx={3} {...TRACO} />
+      </g>
+      <path d="M60 100h80" {...TRACO} opacity={0.3} />
+      <Brilho x={56} y={30} />
+      <Brilho x={146} y={40} atraso={700} />
+      <Brilho x={142} y={80} r={3} atraso={1300} />
     </Tela>
   )
 }
