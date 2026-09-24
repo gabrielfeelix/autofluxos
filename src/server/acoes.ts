@@ -16,9 +16,7 @@ import { autorDaPessoa } from '@/core/autor-da-mensagem'
 import { assinar, avisoDeEntrada } from '@/core/atendente'
 import {
   ehAdminDaPlataforma,
-  exigirAcessoAoCliente,
   exigirOperadorDa4YU,
-  podeAdministrarConta,
 } from './sessao'
 import { exigirCapacidade, recusou } from './permissoes'
 import { fluxoNovo } from '@/core/flow/novo'
@@ -69,13 +67,7 @@ import {
   registrarSaida,
 } from './repos/conversas'
 import { travarContato } from './repos/travas'
-import {
-  acharUsuarioPorEmail,
-  definirPapelNaConta,
-  membrosDaConta,
-  removerComDestino,
-} from './repos/usuarios'
-import { autenticacao } from './auth'
+import { membrosDaConta, removerComDestino } from './repos/usuarios'
 import { exigirHierarquia } from './pessoas'
 import { registrar } from './repos/auditoria'
 import { conferirChaveDaAgenda } from './agenda'
@@ -1812,23 +1804,6 @@ export async function acaoTirarDoQuadro(
 // ---------------------------------------------------------------------------
 // Equipe da conta (A7)
 // ---------------------------------------------------------------------------
-
-/**
- * Os três papéis do plugin de organização, e o que cada um significa aqui.
- *
- * `owner` manda na conta; `admin` mexe na equipe; `member` atende. A lista é
- * fechada porque o valor é escrito em `af_membros."role"` e vira decisão de
- * permissão depois, aceitar o que vier do formulário seria deixar o navegador
- * inventar um papel que o código não conhece.
- */
-const PAPEIS_DA_CONTA = ['owner', 'admin', 'member'] as const
-type PapelDaConta = (typeof PAPEIS_DA_CONTA)[number]
-
-const ehPapelDaConta = (valor: string): valor is PapelDaConta =>
-  (PAPEIS_DA_CONTA as readonly string[]).includes(valor)
-
-/** A recusa que todas as ações de equipe dão para quem só atende. */
-const SO_QUEM_ADMINISTRA = 'só quem administra a conta mexe na equipe'
 
 /** Tira alguém da conta. Não apaga a pessoa, ela pode ser dona de outra. */
 export async function acaoRemoverDaConta(
