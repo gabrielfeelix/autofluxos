@@ -265,71 +265,88 @@ export type DegrauDoFunil = {
 }
 
 /**
- * O funil de verdade, largo em cima e estreito embaixo: cada faixa tem a
- * largura de quantos chegaram àquela etapa, e o lado dela vai até a largura
- * da seguinte, então a forma já mostra onde afunila. Tom único do escuro ao
- * claro, porque as etapas têm ordem. A passagem que mais perde ganha um
- * rótulo, e não só cor.
+ * O funil, largo em cima e estreito embaixo, com os números ao lado.
+ *
+ * **A largura tem piso.** Proporcional pura, uma etapa com 1 de 30 vira um
+ * fio, e um funil com etapas zeradas vira um coador de café: a forma some e
+ * sobra agulha. Aqui a largura vai de 38% (ninguém) a 100% (todo mundo que
+ * entrou): a ordem entre as etapas continua certa, e o número exato está
+ * escrito ao lado, que é onde se lê. Etapa zerada fica cinza, no piso, como
+ * lugar vazio, e não some.
+ *
+ * Cada fatia desce até a largura da seguinte, então a forma já mostra onde
+ * afunila. Tom único do escuro ao claro, porque as etapas têm ordem. A
+ * passagem que mais perde ganha um selo, e não só cor.
  */
 export function FunilInvertido({ degraus }: { degraus: DegrauDoFunil[] }) {
   const [foco, setFoco] = useState<number | null>(null)
   const topo = Math.max(degraus[0]?.n ?? 0, 1)
-  const largura = (n: number) => Math.max((n / topo) * 100, 7)
+  const PISO = 38
+  // Cada etapa desce um pouco mesmo sem perda: quatro etapas com 1 negócio
+  // cada ainda parecem funil, e não uma pilha de tijolos.
+  const largura = (n: number, i: number) => (PISO + (100 - PISO) * Math.min(n / topo, 1)) * (1 - 0.07 * i)
+  const passo = degraus.length > 1 ? 48 / (degraus.length - 1) : 0
   const topoReal = degraus[0]?.n ?? 0
   const ultimo = degraus[degraus.length - 1]?.n ?? 0
-  const passo = degraus.length > 1 ? 60 / (degraus.length - 1) : 0
 
   return (
     <div className="flex flex-1 flex-col">
-      <ol className="flex flex-col gap-[3px]" onMouseLeave={() => setFoco(null)}>
+      <ol className="flex flex-col gap-1" onMouseLeave={() => setFoco(null)}>
         {degraus.map((d, i) => {
-          const cima = largura(d.n)
-          const baixo = i < degraus.length - 1 ? largura(degraus[i + 1]!.n) : Math.max(cima * 0.72, 5)
-          const cor = azul(100 - passo * i)
-          const escuro = i < degraus.length / 2
+          const cima = largura(d.n, i)
+          const baixo = i < degraus.length - 1 ? largura(degraus[i + 1]!.n, i + 1) : cima * 0.84
+          const vazio = d.n === 0
+          const cor = vazio ? 'var(--surface-strong)' : azul(100 - passo * i)
+          const textoClaro = !vazio && 100 - passo * i > 70
+          const apagada = foco !== null && foco !== i
           return (
             <li
               key={d.chave}
               onMouseEnter={() => setFoco(i)}
-              className="grid grid-cols-[minmax(0,108px)_minmax(0,1fr)_auto] items-center gap-3 sm:grid-cols-[minmax(0,150px)_minmax(0,1fr)_110px]"
+              className="grid grid-cols-[minmax(0,1fr)_minmax(0,1.15fr)] items-center gap-4"
             >
-              <span className="truncate text-right text-[12.5px] font-semibold text-soft" title={d.rotulo}>
-                {d.rotulo}
-              </span>
-              <div className="relative h-11">
-                <svg viewBox="0 0 100 44" preserveAspectRatio="none" className="absolute inset-0 size-full" aria-hidden>
+              <div className={`relative h-12 transition-opacity duration-150 ${apagada ? 'opacity-45' : ''}`}>
+                <svg viewBox="0 0 100 48" preserveAspectRatio="none" className="absolute inset-0 size-full overflow-visible" aria-hidden>
+                  {/* O traço da mesma cor, com junta redonda, arredonda os cantos da fatia. */}
                   <path
-                    d={`M${50 - cima / 2},0 L${50 + cima / 2},0 L${50 + baixo / 2},44 L${50 - baixo / 2},44 Z`}
+                    d={`M${50 - cima / 2 + 2},3 L${50 + cima / 2 - 2},3 L${50 + baixo / 2 - 2},45 L${50 - baixo / 2 + 2},45 Z`}
                     fill={cor}
-                    opacity={foco === null || foco === i ? 1 : 0.45}
-                    className="transition-opacity duration-150"
+                    stroke={cor}
+                    strokeWidth="7"
+                    strokeLinejoin="round"
+                    vectorEffect="non-scaling-stroke"
                   />
                 </svg>
                 <span
-                  className={`absolute inset-0 flex items-center justify-center text-[13px] font-bold tabular-nums ${
-                    escuro && cima > 22 ? 'text-white' : 'text-ink'
+                  className={`absolute inset-0 flex items-center justify-center text-[14px] font-bold tabular-nums ${
+                    vazio ? 'text-dim' : textoClaro ? 'text-white' : 'text-ink'
                   }`}
                 >
                   {d.n.toLocaleString('pt-BR')}
                 </span>
               </div>
-              <div className="text-[11.5px] leading-4 tabular-nums">
-                {i === 0 ? (
-                  <span className="text-dim">entraram</span>
-                ) : d.taxa === null ? (
-                  <span className="text-dim">ninguém chegou</span>
-                ) : (
-                  <>
-                    <span className={d.perdeuMais ? 'font-semibold text-aviso' : 'text-soft'}>
-                      <span aria-hidden>↓</span> {d.taxa}% seguiram
-                    </span>
-                    {d.perdeuMais && (
-                      <span className="mt-0.5 block text-[10px] font-bold tracking-[0.04em] text-aviso uppercase">
-                        maior perda
+              <div className="min-w-0">
+                <p className="truncate text-[13px] font-semibold text-ink" title={d.rotulo}>
+                  {d.rotulo}
+                </p>
+                <p className="mt-0.5 flex flex-wrap items-center gap-x-1.5 gap-y-1 text-[11.5px] leading-4 tabular-nums">
+                  {i === 0 ? (
+                    <span className="text-dim">entraram no funil</span>
+                  ) : d.taxa === null ? (
+                    <span className="text-dim">ninguém chegou até aqui</span>
+                  ) : (
+                    <>
+                      <span className={d.perdeuMais ? 'font-semibold text-aviso' : 'text-soft'}>
+                        {d.taxa}% da etapa anterior
                       </span>
-                    )}
-                  </>
-                )}
+                      {d.perdeuMais && (
+                        <span className="rounded-full bg-aviso/12 px-1.5 py-px text-[9.5px] font-bold tracking-[0.05em] text-aviso uppercase">
+                          maior perda
+                        </span>
+                      )}
+                    </>
+                  )}
+                </p>
               </div>
             </li>
           )
