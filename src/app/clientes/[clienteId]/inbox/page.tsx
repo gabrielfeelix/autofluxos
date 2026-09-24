@@ -10,6 +10,8 @@ import { comoFalta, restaDaJanela } from '@/channels/janela'
 import { Assumir, PassarPara } from '@/components/inbox/assumir'
 import { membrosDaConta, type MembroDaConta } from '@/server/repos/usuarios'
 import { sessaoAtual } from '@/server/sessao'
+import { meuAlcance } from '@/server/permissoes'
+import { alcancaDono } from '@/core/permissoes'
 import { ClienteShell } from '@/components/design/cliente-shell'
 import { Dica } from '@/components/design/dica'
 import { IlustracaoInbox } from '@/components/design/ilustracoes'
@@ -194,6 +196,11 @@ async function Tela({ cliente, busca }: { cliente: Cliente; busca: Busca }) {
   const pagina = Math.max(1, Number(primeiro(busca.pagina)) || 1)
   const termo = limparBusca(primeiro(busca.busca))
 
+  // Quem a pessoa pode ver. Entra em **todas** as consultas da fila: lista,
+  // busca local, contadores e a conversa aberta pelo endereço. Um contador sem
+  // alcance contaria para o atendente as conversas dos colegas.
+  const alcance = await meuAlcance(clienteId)
+
   const [
     fila,
     local,
@@ -212,6 +219,7 @@ async function Tela({ cliente, busca }: { cliente: Cliente; busca: Busca }) {
       busca: termo,
       pagina,
       porPagina: CONVERSAS_POR_PAGINA,
+      alcance,
     }),
     /*
      * A fila inteira, para os rails filtrarem no navegador, ou `null` quando a
@@ -222,10 +230,10 @@ async function Tela({ cliente, busca }: { cliente: Cliente; busca: Busca }) {
      * Vai junto das outras no mesmo `Promise.all`, em série somaria uma ida de
      * rede à tela mais aberta do produto.
      */
-    filaInteira(clienteId, { busca: termo }),
+    filaInteira(clienteId, { busca: termo, alcance }),
     listarRespostasRapidas(clienteId),
-    contarPorAtribuicao(clienteId),
-    contarPorEstado(clienteId),
+    contarPorAtribuicao(clienteId, alcance),
+    contarPorEstado(clienteId, alcance),
     listarEtiquetas(clienteId),
     /*
      * Só custa quando o Inbox está vazio, que é quando a resposta importa,
@@ -264,7 +272,7 @@ async function Tela({ cliente, busca }: { cliente: Cliente; busca: Busca }) {
    */
   const naLista = escolherLead(leads, pedido)
   const selecionado =
-    naLista?.contatoId === pedido || !pedido ? naLista : ((await acharLead(clienteId, pedido)) ?? naLista)
+    naLista?.contatoId === pedido || !pedido ? naLista : ((await acharLead(clienteId, pedido, alcance)) ?? naLista)
 
   /*
    * **`sessaoAtual` e `pulsoDaConta` vão juntas.** Eram duas idas de rede em
@@ -389,7 +397,12 @@ async function Tela({ cliente, busca }: { cliente: Cliente; busca: Busca }) {
   const fixadosDeFora =
     local === null && fixadasDaPessoa.size > 0 && termo === ''
       ? (await leadsPorContatos(clienteId, [...fixadasDaPessoa.keys()])).filter(
-          (lead) => !naPagina.has(lead.contatoId) && cabeNoRecorte(lead, estado, atribuicao),
+          (lead) =>
+            !naPagina.has(lead.contatoId) &&
+            cabeNoRecorte(lead, estado, atribuicao) &&
+            // Fixou quando a conversa era dele e ela passou para outra pessoa:
+            // some da fila junto com o resto.
+            alcancaDono(alcance, lead.atribuidoA),
         )
       : []
 
@@ -627,6 +640,8 @@ async function Conteudo({
   /** Ver `DadosDoLead`: sem automação o card não fala de bot. */
   temAutomacao: boolean
 }) {
+  // Mesmo alcance da `Tela`: `meuAlcance` é `cache`, então não relê nada.
+  const alcance = await meuAlcance(clienteId)
   /*
    * Tudo o que ainda vai sair nesta conta.
    *
@@ -668,7 +683,22 @@ async function Conteudo({
           local={local}
           selecionado={selecionado}
           esperando={esperando}
-          equipe={equipe}
+          equipe={
+            // O filtro "de quem é" só oferece quem a pessoa alcança. A equipe
+            // inteira continua indo para "Passar para", que é outra pergunta.
+            alcance.tipo === 'tudo'
+              ? equipe
+              : alcance.tipo === 'nada'
+                ? []
+                : equipe.filter((membro) => alcance.donos.includes(membro.id))
+          }
+          rotuloDeTodos={
+            alcance.tipo === 'tudo'
+              ? 'Todos os atendentes'
+              : alcance.tipo === 'donos' && alcance.donos.length > 1
+                ? 'Minha equipe e sem dono'
+                : 'Minhas e sem dono'
+          }
           contagem={contagem}
           porEstado={porEstado}
           atribuicao={atribuicao}

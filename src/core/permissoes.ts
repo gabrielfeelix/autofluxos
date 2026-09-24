@@ -368,6 +368,28 @@ export function filtroDe(acesso: Acesso, capacidade: Capacidade): FiltroDeEscopo
   }
 }
 
+/**
+ * Quais conversas e contatos esta pessoa alcança, já com os donos resolvidos.
+ *
+ * O `FiltroDeEscopo` fala em equipes; a fila e a lista de contatos falam em
+ * **dono** (`atribuido_a`). Esta é a tradução, feita uma vez por página.
+ *
+ * `semDono` é sempre verdadeiro em `donos`: atendente e gestor enxergam a fila
+ * sem responsável, porque é de lá que eles pegam conversa. O que eles não
+ * enxergam é a conversa **de outra pessoa** fora do alcance deles.
+ */
+export type AlcanceDeConversas =
+  | { tipo: 'tudo' }
+  | { tipo: 'nada' }
+  | { tipo: 'donos'; donos: readonly string[] }
+
+/** Esta conversa (ou contato), com este dono, está no alcance? */
+export function alcancaDono(alcance: AlcanceDeConversas, dono: string | null | undefined): boolean {
+  if (alcance.tipo === 'tudo') return true
+  if (alcance.tipo === 'nada') return false
+  return !dono || alcance.donos.includes(dono)
+}
+
 // ---------------------------------------------------------------------------
 // Os nomes que a tela usa
 // ---------------------------------------------------------------------------

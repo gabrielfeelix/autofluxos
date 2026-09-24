@@ -1,3 +1,4 @@
+import { meuAlcance } from '@/server/permissoes'
 import { Fragment } from 'react'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
@@ -132,7 +133,8 @@ export default async function Pagina({
     comPessoa,
   ] = await Promise.all([
     acharCliente(clienteId),
-    acharLead(clienteId, contatoId),
+    // Contato de outra pessoa, fora do alcance, cai no `notFound` abaixo.
+    meuAlcance(clienteId).then((alcance) => acharLead(clienteId, contatoId, alcance)),
     listarRespostasRapidas(clienteId),
     listarEtiquetas(clienteId),
     quadrosDoContato(clienteId, contatoId),

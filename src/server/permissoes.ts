@@ -1,4 +1,5 @@
 import 'server-only'
+import { cache } from 'react'
 import {
   ehCapacidade,
   ehEscopo,
@@ -6,6 +7,7 @@ import {
   filtroDe,
   pode,
   type Acesso,
+  type AlcanceDeConversas,
   type Capacidade,
   type Escopo,
   type FiltroDeEscopo,
@@ -21,6 +23,7 @@ import {
   type SessaoAtual,
 } from './sessao'
 import { destinoNaConta } from '@/components/design/secoes-do-cliente'
+import { responsaveisDoEscopo } from './repos/relatorios'
 
 /**
  * A autorização de negócio (RB-40 a RB-42).
@@ -258,3 +261,31 @@ export function filtroDoAcesso(
 ): FiltroDeEscopo {
   return filtroDe(acesso.regras, capacidade)
 }
+
+/**
+ * O alcance de conversas e contatos desta pessoa, pronto para a consulta.
+ *
+ * Mesma capacidade do menu (`atender`): quem atende só os próprios vê os dele,
+ * o gestor vê os da equipe, e quem tem `todos` vê a conta inteira. Em todos os
+ * casos restritos, a fila sem dono continua visível (ver `AlcanceDeConversas`).
+ */
+export async function alcanceDeConversas(
+  clienteId: string,
+  acesso: AcessoCompleto,
+): Promise<AlcanceDeConversas> {
+  const escopo = filtroDoAcesso(acesso, 'atender')
+  if (escopo.tipo === 'tudo') return { tipo: 'tudo' }
+  if (escopo.tipo === 'impossivel') return { tipo: 'nada' }
+  const donos = await responsaveisDoEscopo(clienteId, escopo)
+  return donos === null ? { tipo: 'tudo' } : { tipo: 'donos', donos }
+}
+
+/**
+ * O alcance de quem está logado nesta conta, uma vez por requisição.
+ *
+ * A página, a rota da conversa e as ações perguntam a mesma coisa; `cache`
+ * faz as três lerem papel, equipe e sobrescrita uma vez só.
+ */
+export const meuAlcance = cache(async (clienteId: string): Promise<AlcanceDeConversas> => {
+  return alcanceDeConversas(clienteId, await acessoCompleto(clienteId))
+})

@@ -1,3 +1,4 @@
+import { meuAlcance } from '@/server/permissoes'
 import Link from 'next/link'
 import { hrefDaFicha } from '@/core/volta-da-ficha'
 import { LinhaClicavel } from '@/components/lead/linha-clicavel'
@@ -147,6 +148,8 @@ const lerPagina = cache(
       busca: termo,
       pagina,
       contatos: daFaixa,
+      // Atendente vê os contatos dele e os sem responsável; gestor, os da equipe.
+      alcance: await meuAlcance(clienteId),
     })
     return { ...resultado, faixas }
   },

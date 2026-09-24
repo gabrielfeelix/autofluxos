@@ -10,6 +10,7 @@ import { SemAcesso } from '@/components/design/sem-acesso'
 import { ClienteShell } from '@/components/design/cliente-shell'
 import { intervaloDaVista, lerFiltroDaAgenda, paraParametros, POR_PAGINA_DA_AGENDA } from '@/core/atividades'
 import { capacidadeNaPagina, filtroDoAcesso } from '@/server/permissoes'
+import { responsaveisDoEscopo } from '@/server/repos/relatorios'
 import { agendaDoIntervalo, paginaDaAgenda } from '@/server/repos/atividades'
 import { acharCliente } from '@/server/repos/clientes'
 import { membrosDaConta } from '@/server/repos/usuarios'
@@ -90,7 +91,14 @@ export default async function Pagina({
     noCalendario
       ? agendaDoIntervalo(clienteId, escopo, acesso.sessao.usuario.id, filtro, agora, intervalo)
       : null,
-    podeVerEquipe || podeCriarParaOutros ? membrosDaConta(clienteId) : Promise.resolve([]),
+    podeVerEquipe || podeCriarParaOutros
+      ? // O gestor escolhe responsável entre a equipe dele, não entre a conta
+        // inteira: a consulta já não mostraria as atividades dos outros.
+        Promise.all([membrosDaConta(clienteId), responsaveisDoEscopo(clienteId, escopo)]).then(
+          ([membros, alcancados]) =>
+            alcancados === null ? membros : membros.filter((membro) => alcancados.includes(membro.id)),
+        )
+      : Promise.resolve([]),
   ])
 
   const base = `/clientes/${cliente.id}/atividades`

@@ -202,6 +202,7 @@ export function RailsLocais<T extends LeadDoRail>({
   conversaAberta,
   equipe,
   usuarioId,
+  rotuloDeTodos = 'Todos os atendentes',
   aoRecortar,
 }: {
   clienteId: string
@@ -212,6 +213,7 @@ export function RailsLocais<T extends LeadDoRail>({
   conversaAberta: string | null
   equipe: { id: string; nome: string; presenca?: string }[]
   usuarioId: string | null
+  rotuloDeTodos?: string
   /**
    * Recebe o recorte a cada mudança de rail.
    *
@@ -267,7 +269,7 @@ export function RailsLocais<T extends LeadDoRail>({
    * que ninguém avisou que algo mudou.
    */
   const opcoesDeDono: OpcaoDaPilula[] = [
-    { chave: 'todos', rotulo: 'Todos os atendentes', contagem: donos.total },
+    { chave: 'todos', rotulo: rotuloDeTodos, contagem: donos.total },
     {
       chave: 'sem-dono',
       rotulo: 'Sem dono',
@@ -322,7 +324,7 @@ export function RailsLocais<T extends LeadDoRail>({
         <PilulaMenu
           aria="Filtrar por quem atende"
           escolhida={atribuicao}
-          rotulo={opcoesDeDono.find((o) => o.chave === atribuicao)?.rotulo ?? 'Todos os atendentes'}
+          rotulo={opcoesDeDono.find((o) => o.chave === atribuicao)?.rotulo ?? rotuloDeTodos}
           opcoes={opcoesDeDono}
           aoEscolher={setAtribuicao}
         />

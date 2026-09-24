@@ -3,7 +3,7 @@ import { z } from 'zod'
 import { acharLead, lerConversa } from '@/server/repos/leads'
 import { marcarComoLida, quandoLeu } from '@/server/repos/leituras'
 import { avisarQueLeu } from '@/server/recibo-de-leitura'
-import { exigirCapacidade, recusou } from '@/server/permissoes'
+import { alcanceDeConversas, exigirCapacidade, recusou } from '@/server/permissoes'
 import { sessaoAtual } from '@/server/sessao'
 
 export const dynamic = 'force-dynamic'
@@ -73,7 +73,9 @@ export async function GET(
   // O contato precisa ser **desta** conta. A URL é adivinhável, e sem esta
   // conferência o uuid de um contato de outro cliente devolveria a conversa
   // dele para quem só tem acesso a esta.
-  const lead = await acharLead(clienteId, contatoId)
+  // E precisa estar no alcance de quem pede: atendente não lê a conversa de
+  // outro atendente pelo endereço, mesmo sabendo o uuid.
+  const lead = await acharLead(clienteId, contatoId, await alcanceDeConversas(clienteId, acesso))
   if (!lead) return Response.json({ erro: 'não encontrado' }, { status: 404 })
 
   const desde = new URL(req.url).searchParams.get('desde')

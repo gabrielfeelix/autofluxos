@@ -85,6 +85,7 @@ export function Fila({
   paginas,
   agendadas,
   doInstagram,
+  rotuloDeTodos = "Todos os atendentes",
 }: {
   clienteId: string;
   /** A página que o servidor filtrou. É o que a lista mostra no modo paginado. */
@@ -96,6 +97,12 @@ export function Fila({
   local: Lead[] | null;
   selecionado: Lead | null;
   esperando: number;
+  /**
+   * O nome do "todos" do filtro de dono. Para quem vê a conta inteira são
+   * todos os atendentes; para o atendente restrito, "todos" é o que ele
+   * alcança, e chamar isso de "Todos os atendentes" prometeria o que não há.
+   */
+  rotuloDeTodos?: string;
   equipe: MembroDaConta[];
   contagem: Contagem;
   porEstado: { aberta: number; adiada: number; resolvida: number };
@@ -315,7 +322,7 @@ export function Fila({
   const opcoesDeDono: OpcaoDaPilula[] = [
     {
       chave: "todos",
-      rotulo: "Todos os atendentes",
+      rotulo: rotuloDeTodos,
       contagem: contagem.total,
       href: linkDe("todos"),
     },
@@ -422,6 +429,7 @@ export function Fila({
               conversaAberta={selecionado?.contatoId ?? null}
               equipe={equipe}
               usuarioId={usuarioId}
+              rotuloDeTodos={rotuloDeTodos}
               aoRecortar={aoRecortar}
             />
           ) : (
@@ -445,7 +453,7 @@ export function Fila({
                   escolhida={atribuicao}
                   rotulo={
                     opcoesDeDono.find((o) => o.chave === atribuicao)?.rotulo ??
-                    "Todos os atendentes"
+                    rotuloDeTodos
                   }
                   opcoes={opcoesDeDono}
                 />

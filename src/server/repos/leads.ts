@@ -21,6 +21,21 @@ import { urlsAssinadas } from './midia-recebida'
 import { TIPOS_DE_MIDIA, type TipoDeMidia } from '@/core/flow/schema'
 import { casarReacoes } from '@/core/reacoes'
 import { db, ehIdInvalido } from '../db'
+import type { AlcanceDeConversas } from '@/core/permissoes'
+
+/**
+ * Restringe uma consulta da view `leads` ao alcance de quem pergunta.
+ *
+ * Entra **na consulta**, nunca depois: filtrar a página já montada deixaria o
+ * total e a paginação contando conversa de outra pessoa. Os donos são uuids
+ * lidos do banco (`responsaveisDoEscopo`), nunca texto vindo da tela, e é isso
+ * que permite montá-los dentro do `or`.
+ */
+function noAlcance<Q extends { or: (f: string) => Q; is: (c: string, v: null) => Q }>(q: Q, alcance: AlcanceDeConversas | undefined): Q {
+  if (!alcance || alcance.tipo === 'tudo') return q
+  if (alcance.tipo === 'nada' || alcance.donos.length === 0) return q.is('atribuido_a', null)
+  return q.or(`atribuido_a.is.null,atribuido_a.in.(${alcance.donos.join(',')})`)
+}
 import { contatosComEtiqueta as contatosComEtiquetaManual, etiquetasDeContatos, type Etiqueta } from './etiquetas'
 
 /**
@@ -640,6 +655,8 @@ export type FiltroDeLeads = {
    * mostraria a base inteira justo quando o filtro não achou ninguém.
    */
   contatos?: string[] | null
+  /** Quem a pessoa pode ver. Ausente = a conta inteira (rotinas do sistema). */
+  alcance?: AlcanceDeConversas
 }
 
 export type PaginaDeLeads = {
@@ -749,6 +766,7 @@ export async function paginarLeads(
       q = q.or(partes.join(','))
     }
     if (permitidos) q = q.in('contact_id', permitidos)
+    q = noAlcance(q, filtro.alcance)
 
     // `sem-dono` é a fila que precisa de gente; um id vira "os chats dele".
     if (filtro.atribuicao === 'sem-dono') q = q.is('atribuido_a', null)
@@ -889,13 +907,17 @@ async function contatosComEtiqueta(
  * Filtra por cliente **também**, e não só pelo id do contato: a URL é adivinhável
  * e um id de outro cliente não pode abrir só porque alguém o digitou.
  */
-export async function acharLead(clienteId: string, contatoId: string): Promise<Lead | null> {
-  const { data, error } = await db()
-    .from('leads')
-    .select(COLUNAS)
-    .eq('client_id', clienteId)
-    .eq('contact_id', contatoId)
-    .maybeSingle()
+export async function acharLead(
+  clienteId: string,
+  contatoId: string,
+  alcance?: AlcanceDeConversas,
+): Promise<Lead | null> {
+  // Fora do alcance é "não existe", e não "sem permissão": dizer que existe
+  // já conta a quem pergunta que aquele contato é de outra pessoa.
+  const { data, error } = await noAlcance(
+    db().from('leads').select(COLUNAS).eq('client_id', clienteId).eq('contact_id', contatoId),
+    alcance,
+  ).maybeSingle()
 
   if (ehIdInvalido(error)) return null
   if (error) throw new Error(`não deu para buscar o lead: ${error.message}`)
@@ -1358,11 +1380,12 @@ export async function aplicarImportacao(
  */
 export async function contarPorAtribuicao(
   clienteId: string,
+  alcance?: AlcanceDeConversas,
 ): Promise<{ total: number; semDono: number; porUsuario: Map<string, number> }> {
-  const { data, error } = await db()
-    .from('leads')
-    .select('atribuido_a')
-    .eq('client_id', clienteId)
+  const { data, error } = await noAlcance(
+    db().from('leads').select('atribuido_a').eq('client_id', clienteId),
+    alcance,
+  )
 
   if (ehIdInvalido(error)) return { total: 0, semDono: 0, porUsuario: new Map() }
   if (error) throw new Error(`não deu para contar as atribuições: ${error.message}`)
@@ -1508,11 +1531,12 @@ export async function definirEstadoDaConversa(
  */
 export async function contarPorEstado(
   clienteId: string,
+  alcance?: AlcanceDeConversas,
 ): Promise<{ aberta: number; adiada: number; resolvida: number }> {
-  const { data, error } = await db()
-    .from('leads')
-    .select('estado_efetivo')
-    .eq('client_id', clienteId)
+  const { data, error } = await noAlcance(
+    db().from('leads').select('estado_efetivo').eq('client_id', clienteId),
+    alcance,
+  )
 
   const vazio = { aberta: 0, adiada: 0, resolvida: 0 }
   if (ehIdInvalido(error)) return vazio
@@ -1552,7 +1576,7 @@ export async function contarPorEstado(
  */
 export async function filaInteira(
   clienteId: string,
-  opcoes: { busca?: string } = {},
+  opcoes: { busca?: string; alcance?: AlcanceDeConversas } = {},
 ): Promise<Lead[] | null> {
   const termo = (opcoes.busca ?? '').trim()
 
@@ -1578,6 +1602,7 @@ export async function filaInteira(
     busca: termo,
     pagina: 1,
     porPagina: TETO_DA_FILA_LOCAL,
+    alcance: opcoes.alcance,
   })
 
   return pagina.leads

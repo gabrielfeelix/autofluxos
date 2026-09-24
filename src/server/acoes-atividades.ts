@@ -24,7 +24,7 @@ import { paginarLeads } from './repos/leads'
 import { oportunidadesAbertasDoContato } from './repos/quadros'
 import { telefoneLegivel } from '@/core/contatos/telefone'
 import type { FiltroDeEscopo } from '@/core/permissoes'
-import { exigirCapacidade, filtroDoAcesso, recusou } from './permissoes'
+import { alcanceDeConversas, exigirCapacidade, filtroDoAcesso, recusou } from './permissoes'
 import { sessaoAtual } from './sessao'
 
 /**
@@ -132,7 +132,12 @@ export async function acaoBuscarContatosParaAtividade(
   const limpo = String(termo ?? '').trim()
   if (limpo.length < 2) return { ok: true, contatos: [] }
 
-  const { leads } = await paginarLeads(clienteId, { estado: 'todas', busca: limpo, porPagina: 8 })
+  const { leads } = await paginarLeads(clienteId, {
+    estado: 'todas',
+    busca: limpo,
+    porPagina: 8,
+    alcance: await alcanceDeConversas(clienteId, acesso),
+  })
   return {
     ok: true,
     contatos: leads.map((l) => ({

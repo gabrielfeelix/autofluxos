@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import {
+  alcancaDono,
   alcanca,
   alcancaPeloMenos,
   CAPACIDADES,
@@ -337,5 +338,20 @@ describe('o resumo do acesso em frases', () => {
     expect(resumoDoAcesso({ papel: null, ehAdminDaPlataforma: true }).perfil).toBe('Suporte 4YU')
     expect(rotuloDoPapel(null)).toBe('Suporte 4YU')
     expect(rotuloDoPapel('admin')).toBe('Administrador da conta')
+  })
+})
+
+describe('alcancaDono', () => {
+  it('quem vê tudo alcança qualquer dono', () => {
+    expect(alcancaDono({ tipo: 'tudo' }, 'outro')).toBe(true)
+  })
+  it('atendente alcança o que é dele e o que não tem dono, nunca o do colega', () => {
+    const meu = { tipo: 'donos' as const, donos: ['eu'] }
+    expect(alcancaDono(meu, 'eu')).toBe(true)
+    expect(alcancaDono(meu, null)).toBe(true)
+    expect(alcancaDono(meu, 'colega')).toBe(false)
+  })
+  it('sem capacidade de atender, nada', () => {
+    expect(alcancaDono({ tipo: 'nada' }, null)).toBe(false)
   })
 })
