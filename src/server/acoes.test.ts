@@ -84,6 +84,22 @@ function lerAcoes(codigo: string): Acao[] {
 
 const ACOES = lerAcoes(CODIGO)
 
+/**
+ * **A porta da tela Pessoas** (A7, f190147). As ações dela não perguntam uma
+ * capacidade, perguntam a hierarquia: `exigirHierarquia` exige gerenciar
+ * pessoas (gestor para cima) e estar acima de quem é mexido, e
+ * `acaoDarAcessoNaOrganizacao`, que ainda não tem alvo, faz a primeira metade
+ * à mão com `atorNaOrganizacao` e `podeGerenciarPessoas`. As duas passam por
+ * `acessoCompleto`, que chama `exigirAcessoAoCliente`: a empresa é conferida
+ * e o que se exige está dito, que é o que as travas abaixo cobram.
+ */
+function declaraHierarquia(acao: Acao): boolean {
+  return (
+    acao.corpo.includes('await exigirHierarquia(clienteId') ||
+    (acao.corpo.includes('await atorNaOrganizacao(clienteId)') && acao.corpo.includes('podeGerenciarPessoas('))
+  )
+}
+
 describe('toda ação pergunta quem é antes de agir', () => {
   it('encontra as ações dos arquivos, se isto zerar, o resto não prova nada', () => {
     // Uma mudança de formatação que quebrasse o recorte faria todos os testes
@@ -115,7 +131,8 @@ describe('toda ação pergunta quem é antes de agir', () => {
         acao.corpo.includes('await exigirAcessoAoCliente(clienteId)') ||
         acao.corpo.includes('await exigirCapacidade(clienteId') ||
         acao.corpo.includes('await exigirAdministracao(clienteId)') ||
-        acao.corpo.includes('await papelNaConta(clienteId')
+        acao.corpo.includes('await papelNaConta(clienteId') ||
+        declaraHierarquia(acao)
       expect(confere, `${nome}: não pergunta quem é`).toBe(true)
     },
   )
@@ -136,7 +153,8 @@ describe('toda ação pergunta quem é antes de agir', () => {
     const semCapacidade = ACOES.filter(
       (acao) =>
         acao.parametros.includes('clienteId') &&
-        !acao.corpo.includes('await exigirCapacidade(clienteId'),
+        !acao.corpo.includes('await exigirCapacidade(clienteId') &&
+        !declaraHierarquia(acao),
     ).map((a) => a.nome)
 
     /*
@@ -151,9 +169,12 @@ describe('toda ação pergunta quem é antes de agir', () => {
      *
      * Continua sendo um teto que só desce. Uma ação nova escrita com a
      * fronteira antiga aparece aqui, em vez de entrar quieta na conta.
+     *
+     * Desceu para 26 quando a trava passou a ler a porta da hierarquia
+     * (`declaraHierarquia`): as cinco ações da tela Pessoas dizem o que exigem.
      */
     expect(semCapacidade.length, `ainda sem capacidade: ${semCapacidade.join(', ')}`)
-      .toBeLessThanOrEqual(27)
+      .toBeLessThanOrEqual(26)
   })
 
   /**
@@ -180,7 +201,7 @@ describe('toda ação pergunta quem é antes de agir', () => {
     // Conferir depois de gravar é não conferir: o dado já mudou quando o
     // `redirect` acontece.
     for (const acao of ACOES) {
-      const guarda = acao.corpo.search(/await exigir(AcessoAoCliente|OperadorDa4YU|Capacidade)\(/)
+      const guarda = acao.corpo.search(/await (exigir(AcessoAoCliente|OperadorDa4YU|Capacidade|Hierarquia)|atorNaOrganizacao)\(/)
       const escrita = acao.corpo.search(/\bawait (criar|salvar|publicar|apagar|atualizar|guardar|trocar|definir|encerrar|alterar|desconectar|aplicar|corrigir)/)
       if (escrita === -1) continue
       expect(guarda, `${acao.nome}: confere depois de escrever`).toBeLessThan(escrita)
