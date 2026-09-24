@@ -11,54 +11,54 @@ a4 = 11 e 12).
 
 ## Onde parei
 
-Feito, tudo na `main` (deploys READY até a 8.2; da 8.3 em diante ver
-"Deploy parado" abaixo):
+Feito, tudo na `main`:
 
 | Tarefa | Commit |
 |---|---|
 | 10.1, 10.4 passo 3, achado do A2, 5.7, 5.8, 5.9 | `cc883ed` a `1073709` |
-| 6.1 prévia com o consumo real do dia | `b9e911d` |
-| 6.2 progresso numa consulta (migration **0096**) | `458f6ba` |
-| 6.3 filtros, detalhe por destinatário, próxima ação | `9d1b881` |
-| 6.4 estado da conexão em camadas (inclui a troca de `falhaDoCanal`) | `924d406` |
-| 6.5 cartões de integração com ação escrita | `5674660` |
-| 6.6 cartão do número: saúde, respostas, webhook | `01d3617` |
-| 6.7 chaves: testar, trocar, excluir (migration **0097**) | `3d51465` |
-| 8.1 estado do atendimento igual no Inbox e na ficha | `589bf38` |
-| 8.2 compositor com três modos e respostas rápidas por teclado | `ae32e1a` |
-| 8.3 próximos passos por destino, três tipos na aba, resumo no topo | `737e144` |
-| 8.4 ganhar/perder, segmento e funil dizem o efeito | `b2bde21` |
-| 8.5 `?aba=`/`?volta=`, aviso de fora do filtro, `recarregarContato`, e2e | `1f8dd4d` |
+| 6.1 a 6.7 | `b9e911d` a `3d51465` (migrations **0096**, **0097**) |
+| 8.1 a 8.5 | `589bf38` a `1f8dd4d` |
 | 8.6 foco, toque, envios parciais, importação só das recusadas | `f8ad517` |
 | 7.5 passo 6: e2e do atendimento pelo rodapé | `737b5d1` |
 | Revisão A1 `ba6eff4` e Fase 7: três achados corrigidos | `2378342` |
-| Fase 12 (parcial): varredura, jornadas, quatro correções de volta | `b568586` |
+| Fase 12: jornadas e quatro correções de volta | `b568586` |
+| Fase 12: editor no celular (gaveta de blocos, sem rolar de lado), Testar abre o painel | `5357659` |
+| Fase 12: 80 prints finais, 33 rotas "Validada em navegador" | `fd02f42` |
+| 12.2: editor volta com a busca, reparo do WhatsApp volta para a transmissão, "sem fluxo" diz onde escolher | `a75e027` |
 
-Detalhes e desvios: 6.x em `a1.md`, 8.x em `a2.md`.
+Detalhes: 6.x em `a1.md`, 8.x em `a2.md`, Fase 12 em `fase-12.md`.
 
-**Próximo, na ordem:**
+**O plano de UX acabou, menos:**
 
-1. **Docker voltar** (caiu às 21:59 de 23/09; é o Docker Desktop do Windows,
-   não sobe pelo WSL). Depois: `npx supabase status`, dev na 3101.
-2. Fase 12, o que falta: conferir no navegador a ida e volta do gatilho
-   (`.ux-local/j11.mjs`), "Segmento → transmissão" e "Testar"; prints finais
-   em `docs/revisao-ux-ui-2026-09-23/prints-depois/` com
-   `PRINTS=docs/revisao-ux-ui-2026-09-23/prints-depois node .ux-local/varredura.mjs`
-   (jpg, dono, desktop e celular); atualizar `00-cobertura.md` para
-   "Validada em navegador" (as 45 rotas da varredura) e fazer o passo 4.
-   Registro em `docs/ux-paralelo/fase-12.md`.
-3. Tarefa 12.2 no plano: itens abertos (um pede decisão do Gabriel: Inbox e
-   Contatos recortam por "só os próprios"?).
-4. 10.6 continua **bloqueada**: Brevo sem `autofluxos.mail.4yu.com.br`.
+1. **Decisão do Gabriel:** Inbox e Contatos recortam por escopo "só os
+   próprios"? Hoje mostram tudo, e o Início conta igual ao Inbox.
+2. **Transmissão por segmento** (achado da Fase 12): o público da transmissão
+   só pode ser etiqueta; segmento salvo não leva a lugar nenhum. É
+   funcionalidade nova (congelar a lista do segmento na confirmação, RB-38), não
+   conserto de tela. Precisa de plano próprio.
+3. **10.6 bloqueada:** `autofluxos.mail.4yu.com.br` não existe no DNS; falta o
+   domínio na Brevo com DKIM.
 
-**Deploy:** a cota da Vercel voltou em 23/09 à noite; `f8ad517` e
-`2378342` READY (levaram 8.3 a 8.6 juntas). Commit pulado pela Vercel por
-outro mais novo aparece `AUSENTE` no `deploy.sh`: conferir o seguinte.
+**Deploy:** a Vercel bateu a cota diária de novo em 23/09 à noite (o Gabriel
+confirmou). `5357659`, `fd02f42`, `a75e027` e este commit estão parados; o
+primeiro deploy depois que a cota voltar publica todos: conferir que deu
+READY com `.ux-local/deploy.sh <sha do último>`.
 
-Scripts de print novos: `.ux-local/ficha.mjs` (8.3, cria agendada "zz
-print"), `efeitos.mjs` (8.4, desfaz os cartões que criar), `texto-aba.mjs`.
-O e2e (`npx playwright test`) sobe o próprio `next dev` na `PORTA`: pare o
-seu antes, e depois desfaça o `tsconfig.json` que ele reescreve.
+**Ambiente local nesta máquina (23/09 à noite):** o Docker Desktop voltou,
+mas sem `/var/run/docker.sock` no WSL, e a porta 56431 do Kong está presa por
+uma conexão do Antigravity no Windows. Contorno usado, fora do repositório:
+`docker` apontando para `/mnt/c/Program Files/Docker/Docker/resources/bin/docker.exe`,
+o container `fwd-kong-ux` (socat, `--restart unless-stopped`) na **56441** até
+o Kong, e o dev com `SUPABASE_URL=http://127.0.0.1:56441` e a chave
+publicável local fixa. Com a 56431 presa, o e2e (que lê o `.env.teste-local`)
+não sobe; fechar o Antigravity ou reiniciar o Kong depois resolve. Quando a
+56431 voltar, `docker.exe rm -f fwd-kong-ux`.
+
+Scripts de print novos: `.ux-local/testar.mjs`, `reparo.mjs`,
+`atalho-atende.mjs`, `largo.mjs` (acha o elemento que alarga a página no
+celular), além dos anteriores. O e2e (`npx playwright test`) sobe o próprio
+`next dev` na `PORTA`: pare o seu antes, e depois desfaça o `tsconfig.json`
+que ele reescreve.
 
 ## Produção
 

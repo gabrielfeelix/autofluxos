@@ -1544,3 +1544,10 @@ Uma linha por tarefa concluída ou desvio: data, tarefa, commit, observação.
 - 23/09: o plano passa a rodar com **4 agentes em paralelo** (regras em
   `docs/PARALELO-UX.md`). A partir daqui o registro de cada um fica em
   `docs/ux-paralelo/aN.md`, não aqui. A 5.9 foi para o agente da Fase 8.
+- 23/09 (noite), tarefa 10.6: **continua bloqueada no passo 0.**
+  `autofluxos.mail.4yu.com.br` não existe no DNS (NXDOMAIN no dns.google para
+  TXT e CNAME, inclusive `brevo1._domainkey` e `brevo2._domainkey`). Falta
+  cadastrar o domínio na Brevo e publicar os registros de DKIM que ela der.
+  Nada de código foi feito.
+- 23/09 (noite), Fase 12: `5357659` (editor no celular, Testar abre o
+  painel), `fd02f42` (prints finais e cobertura), `a75e027` (voltas da 12.2).
