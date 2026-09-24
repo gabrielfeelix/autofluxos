@@ -197,6 +197,15 @@ extração explícito para os objetos de `public`.
   **Aqui o código foi publicado antes da migration, e de propósito:** ele lê
   as colunas novas por `to_jsonb` e cai em `core/planos.ts` e nos papéis
   quando as tabelas não existem, então não havia intervalo em que a tela cai.
+- **a `0101` foi aplicada em 24/set/2026** (F2 do plano de navegação e CRM),
+  com autorização explícita do dono, pela Management API. Aditiva: uma coluna
+  anulável, `quadro_cartoes.previsao_de_fechamento date`, sem default. Ensaio
+  em transação antes (coluna 1 dentro, 0 depois do `rollback`). Depois de
+  aplicar: tipo `date`, anulável, sem default; **33** cartões intactos, **0**
+  com previsão; `public` com **82** tabelas e
+  `app_verandi.migrations_aplicadas` com **35**, iguais a antes. Data API:
+  `quadro_cartoes?select=previsao_de_fechamento` **200** com a chave secreta e
+  `app_verandi.conta` **200**.
 - **a `0084` e a `0085` foram aplicadas em 20/set/2026**, na execução da F7, com
   autorização explícita do dono (pedida para a `0084` e estendida por ele às
   seguintes da F7/F8). As duas conferidas pelos **dois** testes: replay do zero em
