@@ -362,19 +362,20 @@ function useConversasEsperando(base: string | undefined): number {
 }
 
 /**
- * A barra de baixo da organização: Conversas, Contatos, Negócios, Atividades e
- * "Mais" (plano de navegação, seção 3, item 7).
+ * A barra de baixo da organização: Atividades, Contatos, **Conversas no
+ * centro**, Negócios e "Mais".
  *
- * São as quatro telas de quem trabalha o dia inteiro no celular; o resto é
- * montar e ajustar, e fica na gaveta, que "Mais" abre com a barra inteira.
- * Quem não vê uma das quatro (CRM desligado, acesso de atendimento) ganha o
- * próximo da reserva no lugar: barra com buraco parece quebrada.
+ * Conversas é o que se abre o dia inteiro, então ganha o círculo azul no meio,
+ * saltado da barra, com o número de quem espera. As outras três são as telas
+ * de quem trabalha no celular; o resto é montar e ajustar, e fica na gaveta,
+ * que "Mais" abre. Quem não vê uma das três (CRM desligado, acesso de
+ * atendimento) ganha o próximo da reserva no lugar: barra com buraco parece
+ * quebrada.
  */
 const DE_BAIXO: { id: string; rotulo: string; icone: ReactNode }[] = [
-  { id: 'conversas', rotulo: 'Conversas', icone: <IconeDeMensagem /> },
+  { id: 'atividades', rotulo: 'Atividades', icone: <IconeDeAgenda /> },
   { id: 'contatos', rotulo: 'Contatos', icone: <IconeDePessoas /> },
   { id: 'negocios', rotulo: 'Negócios', icone: <IconeDeNegocios /> },
-  { id: 'atividades', rotulo: 'Atividades', icone: <IconeDeAgenda /> },
   { id: 'fluxos', rotulo: 'Automações', icone: <IconeDeFluxo /> },
   { id: 'atendimento', rotulo: 'Análise', icone: <IconeDeGrafico /> },
 ]
@@ -393,44 +394,60 @@ function BaixoPorSecoes({
   aoAbrirMais: () => void
 }) {
   const subitens = secoes.flatMap((secao) => secao.itens)
+  const conversas = secoes.find((candidata) => candidata.chave === 'conversas')
   const atalhos = DE_BAIXO.flatMap((atalho) => {
-    if (atalho.id === 'conversas') {
-      const secao = secoes.find((candidata) => candidata.chave === 'conversas')
-      return secao ? [{ ...atalho, href: secao.itens[0]!.href, acesa: aceso?.secao === 'conversas', contador: undefined as ReactNode }] : []
-    }
     const item = subitens.find((candidato) => candidato.id === atalho.id)
     return item ? [{ ...atalho, href: item.href, acesa: aceso?.item === atalho.id, contador: item.contador }] : []
-  }).slice(0, 4)
+  }).slice(0, conversas ? 3 : 4)
+  const bloquear = {
+    'aria-disabled': carregando || undefined,
+    tabIndex: carregando ? -1 : undefined,
+    onClick: (evento: { preventDefault(): void }) => {
+      if (carregando) evento.preventDefault()
+    },
+  }
   const classe = (acesa: boolean) =>
     `relative flex h-full flex-col items-center justify-end gap-1 pb-2 [&_svg]:size-[22px] ${acesa ? 'text-primary' : 'text-muted'}`
+  const atalho = (item: (typeof atalhos)[number]) => (
+    <Link key={item.id} href={item.href} aria-current={item.acesa ? 'page' : undefined} {...bloquear} className={classe(item.acesa)}>
+      {item.acesa && <span aria-hidden className="absolute top-0 h-[3px] w-8 rounded-b-full bg-primary" />}
+      <span aria-hidden className="relative">
+        {item.icone}
+        {item.contador && <span className="absolute -top-2 left-3 [&>*]:scale-90">{item.contador}</span>}
+      </span>
+      <span className="text-[10.5px] font-semibold">{item.rotulo}</span>
+    </Link>
+  )
+  const conversasAcesa = aceso?.secao === 'conversas'
 
   return (
     <div className="mx-auto grid h-16 max-w-[520px] grid-cols-5 grid-rows-[4rem]">
-      {atalhos.map((atalho) => (
+      {atalhos.slice(0, 2).map(atalho)}
+      {conversas && (
         <Link
-          key={atalho.id}
-          href={atalho.href}
-          aria-current={atalho.acesa ? 'page' : undefined}
-          aria-disabled={carregando || undefined}
-          tabIndex={carregando ? -1 : undefined}
-          onClick={(evento) => {
-            if (carregando) evento.preventDefault()
-          }}
-          className={classe(atalho.acesa)}
+          href={conversas.itens[0]!.href}
+          aria-current={conversasAcesa ? 'page' : undefined}
+          aria-label={esperando > 0 ? `Conversas, ${esperando} esperando` : 'Conversas'}
+          {...bloquear}
+          className="group relative flex h-full flex-col items-center justify-end gap-1 pb-2"
         >
-          {atalho.acesa && <span aria-hidden className="absolute top-0 h-[3px] w-8 rounded-b-full bg-primary" />}
-          <span aria-hidden className="relative">
-            {atalho.icone}
-            {atalho.id === 'conversas' && esperando > 0 && (
-              <span className="absolute -top-1.5 left-3.5 flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-perigo px-1 text-[10.5px] font-bold text-white ring-2 ring-panel">
+          <span
+            aria-hidden
+            className={`relative flex size-[56px] shrink-0 items-center justify-center rounded-full bg-primary text-white shadow-[0_10px_24px_-6px_var(--primary)] ring-[5px] ring-canvas transition group-active:scale-95 [&_svg]:size-[26px] ${conversasAcesa ? '' : 'opacity-95'}`}
+          >
+            <IconeDeMensagem />
+            {esperando > 0 && (
+              <span className="absolute -top-0.5 -right-0.5 flex h-[20px] min-w-[20px] items-center justify-center rounded-full bg-perigo px-1 text-[11px] font-bold text-white ring-2 ring-panel">
                 {esperando > 99 ? '99+' : esperando}
               </span>
             )}
-            {atalho.contador && <span className="absolute -top-2 left-3 [&>*]:scale-90">{atalho.contador}</span>}
           </span>
-          <span className="text-[10.5px] font-semibold">{atalho.rotulo}</span>
+          <span aria-hidden className={`text-[10.5px] font-semibold ${conversasAcesa ? 'text-primary' : 'text-muted'}`}>
+            Conversas
+          </span>
         </Link>
-      ))}
+      )}
+      {atalhos.slice(2).map(atalho)}
       <button type="button" onClick={aoAbrirMais} aria-haspopup="dialog" className={classe(false)}>
         <span aria-hidden>
           <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor">
