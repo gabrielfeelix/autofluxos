@@ -142,6 +142,9 @@ diretório, aplicada só com autorização explícita do Gabriel.
 | A6 | `712e0fc` | planos editáveis (`0099`) |
 | A7 | `f190147` | funções e Pessoas com hierarquia (`0100`) |
 | fechamento | `d3da637`, `ad07b08`, `3405afc` | registro da produção, lint, Pessoas no celular |
+| 8, 8.1 | `c9c2b69`, `f7c30a5` | `0102`, descida na virada, trava por recurso, excedente, preço legado ou com aviso |
+| A8 | `f7c30a5` | criar, duplicar, excluir plano |
+| A9, A10 | `e960ca4` | ações de usuário e de organização; deploy READY |
 
 **`0099` e `0100` em produção desde 24/set/2026** (ensaio com 56 capacidades
 iguais antes e depois; registro em `docs/BANCO-COMPARTILHADO.md`). Deploy

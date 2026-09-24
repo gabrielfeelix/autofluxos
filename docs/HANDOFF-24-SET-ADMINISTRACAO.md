@@ -28,35 +28,31 @@ Auth, Storage ou extensão. Nunca `supabase db push` nem `db reset`.
   vem de `usoDaOrganizacao` em `server/repos/plano.ts`, medido junto da página.
 - Hoje **nada no produto trava recurso pelo plano**: `recursos` só descreve.
 
-## O que falta, na ordem
+## Feito em 24/set (segunda sessão)
 
-1. **Seção 8 e 8.1 (plano de verdade)**, uma migration:
-   `clients.plano_agendado`, `clients.plano_agendado_para`,
-   `clients.preco_contratado` (preenchido com o preço de hoje),
-   `planos.preco_excedente` (0,40 / 0,30 / 0,20).
-   - descida agendada para a virada do mês; subida na hora. A passada diária
-     que aplica a descida entra na manutenção que já existe (procure o cron
-     em `vercel.json` / `src/app/api`); aviso no app e por e-mail 7 dias e 1
-     dia antes;
-   - trava por recurso, só leitura, religando ao subir (tabela na seção 8):
-     IA, transcrição, transmissões, integrações e webhook. Cada trava lê o
-     plano **vigente**, nunca o agendado;
-   - excedente: conta no modal e na tela Plano e consumo ("estimativa"
-     enquanto não há gateway); aviso em 80% e 100% da faixa;
-   - preço editado na tela Planos vale para organização nova; para as
-     existentes, a administração escolhe entre manter (legado) e aplicar com
-     aviso de 30 dias.
-2. **A8 planos**: criar, duplicar, excluir (bloqueado com organização no
-   plano: modal lista quais e oferece "Mover todas para…"). Migration tira o
-   `check` de ids fixos de `planos.id` e `clients.plano`.
-3. **A9 usuários**: editar nome/e-mail, redefinir senha, organizações do
-   usuário (pôr, trocar função, tirar), excluir (bloqueado se único
-   Proprietário de alguma organização).
-4. **A10 organizações**: criar pela administração; excluir com nome digitado,
-   bloqueado com canal conectado.
+- `0102` em produção (registro no runbook): `c9c2b69`.
+- Seções 8, 8.1 e A8: `f7c30a5`. A9 e A10: `e960ca4`. Deploy `e960ca4` READY.
+- MGM Pilates movida para **Escala a R$ 800** (`preco_contratado`), a pedido
+  do Gabriel, antes de ligar a trava: o bot dela usa uma conexão (Verandi),
+  e no Essencial a integração pausaria. Registro na auditoria.
+- Travas: `server/recursos-do-plano.ts` (IA em `ia/modelo.ts`, transcrição
+  nova, criar transmissão, integração no `efeitos/resolver.ts` vira handoff,
+  webhook de entrada 403 depois da assinatura, criar conexão/webhook).
+- Passada diária: `server/passada-do-plano.ts`, na carona de
+  `api/manutencao/retencao`.
 
-A tabela de pedidos (`tabela-de-pedidos.tsx`) ainda mede o uso sob demanda
-(lento); vale acelerar a consulta de transcrições em `usoDaOrganizacao`.
+## O que falta
+
+- **E-mail dos avisos não sai ainda**: `server/email.ts` só envia com
+  `BREVO_API_KEY` e `EMAIL_REMETENTE` na Vercel, e `autofluxos.mail.4yu.com.br`
+  não tem DKIM da Brevo (NXDOMAIN em 24/set). Hoje o aviso vale no app (faixa
+  em `components/conta/faixa-do-plano.tsx`). Cadastrar o domínio na Brevo,
+  publicar o DNS e pôr as duas variáveis.
+- As outras 5 organizações seguem no Essencial (só CRM): "Cliente 00" perdeu IA
+  e conexão pela trava. Conferir se alguma precisa de outro plano.
+- `acoes.test.ts` tem 5 falhas em ações de pessoas (`acaoSalvarAcesso`,
+  `acaoTrocarFuncao`...), fora desta frente; não investigado.
+- A tabela de pedidos ainda mede o uso sob demanda (lento).
 
 ## Como trabalhar (regras do Gabriel)
 
