@@ -1,0 +1,46 @@
+/*
+ * Cores dos gráficos de Análise.
+ *
+ * Categórica (identidade: canal, motivo, produto) em ordem fixa, nunca
+ * ciclada: a sétima categoria vira "Outros". A ordem foi conferida no
+ * validador de paleta (daltonismo e visão normal), no claro e no escuro. Três
+ * cores do claro ficam abaixo de 3:1 contra o fundo, então todo gráfico daqui
+ * escreve o número ao lado da cor, e nunca depende só dela.
+ *
+ * Sequencial (quantidade: mapa de horários, funil) é um tom só, o azul da
+ * marca misturado com o fundo, e por isso segue o tema sem valor próprio.
+ */
+:root {
+  --serie-1: #2563eb;
+  --serie-2: #eb6834;
+  --serie-3: #1baf7a;
+  --serie-4: #eda100;
+  --serie-5: #e87ba4;
+  --serie-6: #4a3aa7;
+  --serie-outros: #a3acb9;
+
+  /* Polaridade do NPS: detrator e promotor são opostos, neutro é cinza. */
+  --polo-ruim: #e0612f;
+  --polo-neutro: #c3cad4;
+  --polo-bom: #2563eb;
+}
+
+:root[data-tema='escuro'] {
+  --serie-1: #3b82f6;
+  --serie-2: #d95926;
+  --serie-3: #199e70;
+  --serie-4: #c98500;
+  --serie-5: #d55181;
+  --serie-6: #9085e9;
+  --serie-outros: #5b6679;
+
+  --polo-ruim: #e2703f;
+  --polo-neutro: #4a5568;
+  --polo-bom: #3b82f6;
+}
+
+/* Bloco em modo de personalizar: contorno tracejado, e o bloco oculto esmaecido. */
+.bloco-editando {
+  outline: 1.5px dashed color-mix(in oklab, var(--primary) 45%, transparent);
+  outline-offset: 3px;
+}

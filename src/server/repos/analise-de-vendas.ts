@@ -46,7 +46,8 @@ with ${LIMITES}
 select count(*) filter (where q.situacao = 'ganha')::int as ganhos,
        count(*) filter (where q.situacao = 'perdida')::int as perdidos,
        sum(q.valor) filter (where q.situacao = 'ganha') as valor,
-       count(q.valor) filter (where q.situacao = 'ganha')::int as ganhos_com_valor
+       count(q.valor) filter (where q.situacao = 'ganha')::int as ganhos_com_valor,
+       avg(extract(epoch from (q.fechado_em - q.criado_em))) filter (where q.situacao = 'ganha')::bigint as segundos_ate_ganhar
   from public.quadro_cartoes q, lim
  where ${DO_RECORTE}
    and ${FECHADO_NO_PERIODO}`
@@ -148,6 +149,8 @@ export type TotaisDeVendas = {
   /** `numeric` chega como texto; `null` quando nenhum ganho tinha valor. */
   valor: number | null
   ganhosComValor: number
+  /** Média da criação ao ganho, entre os ganhos do período. */
+  segundosAteGanhar: number | null
 }
 
 export async function totaisDeVendas(
@@ -163,6 +166,7 @@ export async function totaisDeVendas(
     perdidos: Number(r.perdidos),
     valor: numeroOuNulo(r.valor),
     ganhosComValor: Number(r.ganhos_com_valor),
+    segundosAteGanhar: numeroOuNulo(r.segundos_ate_ganhar),
   }
 }
 
@@ -241,5 +245,104 @@ export async function alcanceDosNegocios(
     maiorOrdem: numeroOuNulo(r.maior_ordem),
     ganho: Boolean(r.ganho),
     n: Number(r.n),
+  }))
+}
+
+// ---------------------------------------------------------------------------
+// Os blocos a mais: o que está aberto agora, o que vende e de onde vem.
+// ---------------------------------------------------------------------------
+
+/*
+ * Foto de agora, sem período: negócio aberto não tem data de fechamento, e
+ * "quanto tenho na mesa" é a pergunta de hoje. Etapa é de um funil só.
+ */
+const SQL_DO_ABERTO = `
+select col.id, col.nome, col.ordem,
+       count(q.id)::int as n,
+       sum(q.valor) as valor
+  from public.quadro_colunas col
+  left join public.quadro_cartoes q
+    on q.coluna_id = col.id
+   and q.situacao = 'aberta'
+   and q.client_id = $1
+   and ($2::uuid[] is null or q.responsavel = any($2::uuid[]))
+ where col.quadro_id = $3::uuid
+   and col.tipo = 'normal'
+ group by col.id, col.nome, col.ordem
+ order by col.ordem`
+
+const SQL_DOS_PRODUTOS = `
+with ${LIMITES}
+select p.nome as produto, count(*)::int as n, sum(q.valor) as valor
+  from public.quadro_cartoes q
+  left join public.produtos p on p.id = q.produto_id,
+       lim
+ where ${DO_RECORTE}
+   and q.situacao = 'ganha'
+   and q.fechado_em >= lim.ini and q.fechado_em < lim.fim
+ group by 1`
+
+const SQL_DA_ORIGEM = `
+with ${LIMITES}
+select a.campanha, (p.ad_id is not null) as anuncio, count(*)::int as n, sum(q.valor) as valor
+  from public.quadro_cartoes q
+  left join lateral (
+    select pp.ad_id from public.passagens pp
+     where pp.contact_id = q.contact_id and pp.client_id = $1
+     order by pp.criado_em asc limit 1
+  ) p on true
+  left join public.anuncios a on a.client_id = $1 and a.ad_id = p.ad_id,
+       lim
+ where ${DO_RECORTE}
+   and q.situacao = 'ganha'
+   and q.fechado_em >= lim.ini and q.fechado_em < lim.fim
+ group by 1, 2`
+
+export type EtapaEmAberto = { id: string; nome: string; ordem: number; n: number; valor: number | null }
+
+export async function negociosEmAberto(clienteId: string, responsaveis: Responsaveis, quadroId: string): Promise<EtapaEmAberto[]> {
+  const { rows } = await bancoDoLogin().query(SQL_DO_ABERTO, [
+    clienteId,
+    responsaveis === null ? null : [...responsaveis],
+    quadroId,
+  ])
+  return (rows as Record<string, unknown>[]).map((r) => ({
+    id: String(r.id),
+    nome: String(r.nome),
+    ordem: Number(r.ordem),
+    n: Number(r.n),
+    valor: numeroOuNulo(r.valor),
+  }))
+}
+
+export type GanhosAgrupados = { rotulo: string | null; anuncio?: boolean; n: number; valor: number | null }
+
+export async function ganhosPorProduto(
+  clienteId: string,
+  periodo: Periodo,
+  responsaveis: Responsaveis,
+  quadroId: string | null,
+): Promise<GanhosAgrupados[]> {
+  const { rows } = await bancoDoLogin().query(SQL_DOS_PRODUTOS, parametros(clienteId, periodo, responsaveis, quadroId))
+  return (rows as Record<string, unknown>[]).map((r) => ({
+    rotulo: r.produto ? String(r.produto) : null,
+    n: Number(r.n),
+    valor: numeroOuNulo(r.valor),
+  }))
+}
+
+/** Pela primeira passagem de anúncio do contato do negócio. */
+export async function ganhosPorOrigem(
+  clienteId: string,
+  periodo: Periodo,
+  responsaveis: Responsaveis,
+  quadroId: string | null,
+): Promise<GanhosAgrupados[]> {
+  const { rows } = await bancoDoLogin().query(SQL_DA_ORIGEM, parametros(clienteId, periodo, responsaveis, quadroId))
+  return (rows as Record<string, unknown>[]).map((r) => ({
+    rotulo: r.campanha ? String(r.campanha) : null,
+    anuncio: Boolean(r.anuncio),
+    n: Number(r.n),
+    valor: numeroOuNulo(r.valor),
   }))
 }

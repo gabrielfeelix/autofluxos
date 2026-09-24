@@ -1,5 +1,6 @@
 import Link from 'next/link'
 import type { ReactNode } from 'react'
+import { Sparkline } from '@/components/relatorios/graficos'
 import { ATALHOS_DE_PERIODO, comoDuracao, diaCurto, variacao, type Periodo } from '@/core/relatorios'
 
 /**
@@ -98,12 +99,18 @@ export function Cartao({
   detalhe,
   comparacao,
   definicao,
+  tendencia,
+  medidor,
 }: {
   titulo: string
   valor: string
   detalhe?: string
   comparacao?: ReactNode
   definicao: string
+  /** A série do período, dia a dia ou mês a mês, desenhada miúda embaixo do número. */
+  tendencia?: number[]
+  /** Percentual de 0 a 100, desenhado como barra: para taxas, onde a tendência não cabe. */
+  medidor?: number | null
 }) {
   return (
     <section className="app-card relative flex min-w-0 flex-col px-4 py-3.5">
@@ -127,8 +134,20 @@ export function Cartao({
           </div>
         </details>
       </div>
-      <p className="mt-1.5 text-[24px] font-bold tracking-[-0.02em] tabular-nums text-ink">{valor}</p>
+      <p className="mt-1.5 truncate text-[24px] font-bold tracking-[-0.02em] tabular-nums text-ink" title={valor}>
+        {valor}
+      </p>
       {detalhe && <p className="mt-0.5 text-[11.5px] leading-5 text-dim">{detalhe}</p>}
+      {medidor !== undefined && medidor !== null && (
+        <div className="mt-3 h-2 overflow-hidden rounded-full bg-surface-strong" aria-hidden>
+          <div className="h-full rounded-full bg-primary" style={{ width: `${Math.min(Math.max(medidor, 0), 100)}%` }} />
+        </div>
+      )}
+      {tendencia && tendencia.some((v) => v > 0) && (
+        <div className="mt-2.5">
+          <Sparkline valores={tendencia} rotulo={`Tendência de ${titulo} no período`} />
+        </div>
+      )}
       {comparacao && <div className="mt-auto pt-2 text-[11.5px]">{comparacao}</div>}
     </section>
   )

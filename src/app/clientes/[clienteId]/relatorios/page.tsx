@@ -1,7 +1,10 @@
+import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { AjudaDaTela, type PassoDaAjuda } from '@/components/design/ajuda-da-tela'
 import { ClienteShell } from '@/components/design/cliente-shell'
 import { GraficoDiario } from '@/components/relatorios/grafico-diario'
+import { CaixaDoBloco, ListaEmBarras, MapaDeHorarios, Rosca, Satisfacao, Vazio } from '@/components/relatorios/graficos'
+import { PainelDeBlocos, type Bloco } from '@/components/relatorios/painel-de-blocos'
 import { BarraDoPeriodo, Cartao, Mudanca, MudancaDeTempo, MudancaEmPontos } from '@/components/relatorios/pecas'
 import { comoDinheiro } from '@/core/crm'
 import { taxaDeAutomacao, terminadas } from '@/core/desfecho-da-conversa'
@@ -10,8 +13,13 @@ import { comoDuracao, completarDias, hojeEmSaoPaulo, lerPeriodo, periodoAnterior
 import { capacidadeNaPagina, filtroDoAcesso } from '@/server/permissoes'
 import { SemAcesso } from '@/components/design/sem-acesso'
 import { acharCliente } from '@/server/repos/clientes'
+import { arranjoDaAnalise } from '@/server/preferencias'
 import {
   atendimentosPorPessoa,
+  conversasPorCanal,
+  faixasDeEspera,
+  horariosDoPeriodo,
+  origemDosContatos,
   responsaveisDoEscopo,
   serieDoPeriodo,
   totaisDoPeriodo,
@@ -44,8 +52,12 @@ const PASSOS_DA_AJUDA: PassoDaAjuda[] = [
     texto: 'Cada número mostra quanto mudou em relação ao período anterior, do mesmo tamanho e logo antes.',
   },
   {
-    titulo: 'Veja dia a dia',
-    texto: 'O gráfico mostra todos os dias do período, inclusive os que não tiveram nada.',
+    titulo: 'Passe o mouse',
+    texto: 'Cada gráfico mostra o número exato de um dia, de um horário ou de uma fatia.',
+  },
+  {
+    titulo: 'Personalize',
+    texto: 'Em Personalizar, esconda o que não usa e mude a ordem dos blocos. Fica guardado neste aparelho.',
   },
 ]
 
@@ -94,6 +106,262 @@ export default async function Pagina({
   const automacao = taxaDeAutomacao(atual.desfechos)
   const automacaoAntes = taxaDeAutomacao(antes.desfechos)
 
+  const horarios = await horariosDoPeriodo(clienteId, periodo, responsaveis)
+  const canais = await conversasPorCanal(clienteId, periodo, responsaveis)
+  const espera = await faixasDeEspera(clienteId, periodo, responsaveis)
+  const origens = await origemDosContatos(clienteId, periodo, responsaveis)
+  const arranjo = await arranjoDaAnalise('atendimento')
+
+  const blocos: Bloco[] = [
+    {
+      id: 'numeros',
+      titulo: 'Números do período',
+      largura: 'inteira',
+      conteudo: (
+        <div className="grid grid-cols-2 gap-3 lg:grid-cols-4 lg:gap-4">
+          <Cartao
+            titulo="Conversas"
+            valor={String(atual.conversas)}
+            tendencia={serie.map((d) => d.conversas)}
+            comparacao={<Mudanca atual={atual.conversas} antes={antes.conversas} />}
+            definicao="Conversas que começaram no período, em qualquer canal ligado a uma automação da conta."
+          />
+          <Cartao
+            titulo="Contatos novos"
+            valor={String(atual.contatosNovos)}
+            tendencia={serie.map((d) => d.contatosNovos)}
+            comparacao={<Mudanca atual={atual.contatosNovos} antes={antes.contatosNovos} />}
+            definicao="Pessoas que falaram com a organização pela primeira vez no período (o dia em que o contato foi criado)."
+          />
+          <Cartao
+            titulo="Resolvidas pela automação"
+            valor={automacao === null ? 'sem dado' : `${automacao}%`}
+            medidor={automacao}
+            detalhe={
+              automacao === null
+                ? 'nenhuma conversa terminou ainda'
+                : `${atual.desfechos.bot} de ${terminadas(atual.desfechos)} que terminaram`
+            }
+            comparacao={<MudancaEmPontos atual={automacao} antes={automacaoAntes} melhorQuando="sobe" />}
+            definicao="Das conversas do período que já terminaram, quantas a automação resolveu sozinha, sem passar por ninguém da equipe. As que ainda estão acontecendo ficam fora da conta."
+          />
+          <Cartao
+            titulo="Espera pela equipe"
+            valor={atual.tempos.medianaAteResponder === null ? 'sem dado' : comoDuracao(atual.tempos.medianaAteResponder)}
+            detalhe={
+              atual.tempos.entraramNaFila === 0
+                ? 'ninguém pediu uma pessoa'
+                : `mediana · média ${comoDuracao(atual.tempos.mediaAteResponder)} · ${atual.tempos.responderam} de ${atual.tempos.entraramNaFila} respondidas`
+            }
+            tendencia={serie.map((d) => d.foramParaPessoa)}
+            comparacao={
+              <MudancaDeTempo atual={atual.tempos.medianaAteResponder} antes={antes.tempos.medianaAteResponder} />
+            }
+            definicao="Do momento em que a conversa foi para a equipe até a primeira resposta enviada. A mediana é o atendimento típico; a média mostra se alguém esperou muito mais. Conversa sem resposta ainda não entra na conta. A linha miúda é quantas foram para a equipe a cada dia."
+          />
+        </div>
+      ),
+    },
+    { id: 'por-dia', titulo: 'Por dia', largura: 'dois-tercos', conteudo: <GraficoDiario serie={serie} cruzaAno={cruzaAno} /> },
+    {
+      id: 'desfechos',
+      titulo: 'Como terminaram',
+      largura: 'terco',
+      conteudo: (
+        <CaixaDoBloco titulo="Como as conversas terminaram" subtitulo="As quatro partes somam todas as conversas do período.">
+          {atual.conversas === 0 ? (
+            <Vazio>Nenhuma conversa começou neste período.</Vazio>
+          ) : (
+            <Rosca
+              totalRotulo="conversas"
+              fatias={[
+                { chave: 'bot', rotulo: 'Resolvidas pela automação', n: atual.desfechos.bot, cor: 'var(--serie-1)', dica: 'Terminaram sem passar por ninguém da equipe.' },
+                { chave: 'prevista', rotulo: 'Atendidas pela equipe', n: atual.desfechos.prevista, cor: 'var(--serie-3)', dica: 'O fluxo previa passar para uma pessoa, ou alguém assumiu pelo Inbox.' },
+                { chave: 'falha', rotulo: 'Interrompidas por erro', n: atual.desfechos.falha, cor: 'var(--serie-2)', alerta: true, dica: 'Pararam por um problema técnico e foram para a equipe. O motivo está na conversa, no Inbox.' },
+                { chave: 'aberta', rotulo: 'Ainda acontecendo', n: atual.desfechos.aberta, cor: 'var(--serie-outros)', dica: 'Não terminaram, então ficam fora da taxa da automação.' },
+              ]}
+            />
+          )}
+        </CaixaDoBloco>
+      ),
+    },
+    {
+      id: 'horarios',
+      titulo: 'Quando chegam',
+      largura: 'dois-tercos',
+      conteudo: (
+        <CaixaDoBloco titulo="Quando as conversas chegam" subtitulo="Dia da semana e hora em que cada conversa começou, no horário de Brasília. Mostra quando vale ter alguém olhando o Inbox.">
+          <MapaDeHorarios celulas={horarios} unidade={['conversa', 'conversas']} />
+        </CaixaDoBloco>
+      ),
+    },
+    {
+      id: 'canais',
+      titulo: 'Por onde chegam',
+      largura: 'terco',
+      conteudo: (
+        <CaixaDoBloco titulo="Por onde chegam" subtitulo="Conversas do período, pelo canal da automação que atendeu.">
+          {canais.length === 0 ? (
+            <Vazio>Nenhuma conversa começou neste período.</Vazio>
+          ) : canais.length === 1 ? (
+            // Uma fatia só é um anel inteiro que não compara nada: o número diz mais.
+            <div className="flex flex-1 flex-col justify-center">
+              <p className="text-[34px] leading-none font-bold tracking-[-0.03em] tabular-nums text-ink">100%</p>
+              <p className="mt-2 text-[13px] text-soft">
+                das {canais[0]!.n.toLocaleString('pt-BR')} conversas vieram pelo{' '}
+                <strong className="font-semibold text-ink">{NOME_DO_CANAL[canais[0]!.canal] ?? canais[0]!.canal}</strong>
+              </p>
+              <div className="mt-4 h-2.5 rounded-full" style={{ background: COR_DO_CANAL[canais[0]!.canal] ?? 'var(--primary)' }} aria-hidden />
+              <p className="mt-auto pt-5 text-[12px] leading-5 text-dim">
+                Com outro canal ligado, este bloco mostra a divisão entre eles.{' '}
+                <Link href={`/clientes/${cliente.id}/ajustes/integracoes`} className="font-semibold text-primary hover:underline">
+                  Ver canais
+                </Link>
+              </p>
+            </div>
+          ) : (
+            <Rosca
+              totalRotulo="conversas"
+              fatias={canais
+                .sort((a, b) => b.n - a.n)
+                .map((c) => ({ chave: c.canal, rotulo: NOME_DO_CANAL[c.canal] ?? c.canal, n: c.n, cor: COR_DO_CANAL[c.canal] ?? 'var(--serie-outros)' }))}
+            />
+          )}
+        </CaixaDoBloco>
+      ),
+    },
+    ...(pessoas.length >= 2
+      ? [
+          {
+            id: 'equipe',
+            titulo: 'Quem atendeu',
+            largura: 'metade' as const,
+            conteudo: (
+              <ListaEmBarras
+                titulo="Quem atendeu"
+                subtitulo="Conversas que foram para a equipe, pelo responsável do contato."
+                ranking
+                valorPermitido
+                valorEmDinheiro={false}
+                rotuloQuantidade="Atendimentos"
+                rotuloValor="Resolvidos"
+                unidade={['atendimento', 'atendimentos']}
+                vazio="Ninguém da equipe atendeu no período."
+                linhas={pessoas.map((p) => ({
+                  chave: p.usuarioId,
+                  rotulo: equipe.find((m) => m.id === p.usuarioId)?.nome || 'alguém que saiu da organização',
+                  n: p.atendimentos,
+                  valor: p.fechados,
+                  detalhe: `${p.fechados} de ${p.atendimentos} resolvidos`,
+                }))}
+              />
+            ),
+          },
+        ]
+      : []),
+    {
+      id: 'origem',
+      titulo: 'De onde vêm os contatos',
+      largura: 'metade',
+      conteudo: (
+        <ListaEmBarras
+          titulo="De onde vêm os contatos"
+          subtitulo="Contatos novos do período, pela campanha do primeiro anúncio em que clicaram."
+          unidade={['contato novo', 'contatos novos']}
+          vazio="Nenhum contato novo no período."
+          linhas={origens.map((o) => ({
+            chave: o.anuncio ? `a:${o.campanha ?? ''}` : 'direto',
+            rotulo: o.anuncio ? o.campanha || 'Anúncio sem campanha' : 'Chegou sem anúncio',
+            n: o.n,
+            apagada: !o.anuncio,
+          }))}
+        />
+      ),
+    },
+    {
+      id: 'satisfacao',
+      titulo: 'Satisfação (NPS)',
+      largura: 'terco',
+      conteudo: (
+        <CaixaDoBloco
+          titulo="Satisfação (NPS)"
+          subtitulo={<MudancaEmPontos atual={atual.satisfacao.nps} antes={antes.satisfacao.nps} melhorQuando="sobe" />}
+        >
+          <Satisfacao nps={atual.satisfacao.nps} media={atual.satisfacao.media} porNota={atual.satisfacao.porNota} />
+        </CaixaDoBloco>
+      ),
+    },
+    {
+      id: 'espera',
+      titulo: 'Quanto esperaram',
+      largura: 'terco',
+      conteudo: (
+        <ListaEmBarras
+          titulo="Quanto esperaram"
+          subtitulo="Da ida para a equipe até a primeira resposta, conversa por conversa."
+          manterOrdem
+          unidade={['conversa', 'conversas']}
+          vazio="Ninguém pediu uma pessoa no período."
+          linhas={
+            atual.tempos.entraramNaFila === 0
+              ? []
+              : [
+                  { chave: '5', rotulo: 'Até 5 minutos', n: espera.ate5 },
+                  { chave: '15', rotulo: '5 a 15 minutos', n: espera.ate15 },
+                  { chave: '60', rotulo: '15 minutos a 1 hora', n: espera.ate60 },
+                  { chave: '4h', rotulo: '1 a 4 horas', n: espera.ate4h },
+                  { chave: 'mais', rotulo: 'Mais de 4 horas', n: espera.mais },
+                  { chave: 'sem', rotulo: 'Sem resposta ainda', n: espera.semResposta, apagada: true },
+                ]
+          }
+        />
+      ),
+    },
+    {
+      id: 'fechamentos',
+      titulo: 'Fechamentos',
+      largura: 'terco',
+      conteudo: (
+        <CaixaDoBloco
+          titulo="Fechamentos"
+          subtitulo={<Mudanca atual={atual.fechamentos.ganhos} antes={antes.fechamentos.ganhos} />}
+        >
+          {atual.fechamentos.ganhos + atual.fechamentos.perdidos === 0 ? (
+            <Vazio>Nenhum negócio fechado no período.</Vazio>
+          ) : (
+            <div className="flex flex-1 flex-col">
+              <p className="text-[34px] leading-none font-bold tracking-[-0.03em] tabular-nums text-ink">
+                {atual.fechamentos.ganhos}{' '}
+                <span className="text-[15px] font-semibold tracking-normal text-dim">
+                  {atual.fechamentos.ganhos === 1 ? 'ganho' : 'ganhos'}
+                </span>
+              </p>
+              {podeVerValor && atual.fechamentos.valor !== null && (
+                <p className="mt-1.5 text-[14px] font-semibold tabular-nums text-soft">{comoDinheiro(atual.fechamentos.valor)}</p>
+              )}
+              <div className="mt-5 flex h-2.5 gap-[2px] overflow-hidden rounded-full" aria-hidden>
+                <div className="bg-primary" style={{ flex: atual.fechamentos.ganhos }} />
+                <div className="bg-strong" style={{ flex: atual.fechamentos.perdidos }} />
+              </div>
+              <div className="mt-2 flex justify-between text-[11.5px] tabular-nums">
+                <span className="text-soft">
+                  <strong className="text-ink">{atual.fechamentos.ganhos}</strong> ganhos
+                </span>
+                <span className="text-dim">
+                  <strong className="text-soft">{atual.fechamentos.perdidos}</strong>{' '}
+                  {atual.fechamentos.perdidos === 1 ? 'perdido' : 'perdidos'}
+                </span>
+              </div>
+              <Link href={`/clientes/${cliente.id}/relatorios/vendas`} className="mt-auto pt-5 text-[12.5px] font-semibold text-primary hover:underline">
+                Ver funil, ranking e receita em Vendas →
+              </Link>
+            </div>
+          )}
+        </CaixaDoBloco>
+      ),
+    },
+  ]
+
   return (
     <ClienteShell cliente={cliente} ativa="relatorios">
       <main className="mx-auto w-full max-w-[1280px] px-4 pt-[26px] pb-[42px] md:px-[42px]">
@@ -122,168 +390,21 @@ export default async function Pagina({
         </p>
 
         <div className="mt-4">
-          <BarraDoPeriodo base={base} periodo={periodo} anterior={anterior} hoje={hoje} />
-        </div>
-
-        <div className="mt-5 grid grid-cols-2 gap-3 lg:grid-cols-4">
-          <Cartao
-            titulo="Conversas"
-            valor={String(atual.conversas)}
-            comparacao={<Mudanca atual={atual.conversas} antes={antes.conversas} />}
-            definicao="Conversas que começaram no período, em qualquer canal ligado a uma automação da conta."
+          <PainelDeBlocos
+            pagina="atendimento"
+            arranjoInicial={arranjo}
+            barra={<BarraDoPeriodo base={base} periodo={periodo} anterior={anterior} hoje={hoje} />}
+            blocos={blocos}
           />
-          <Cartao
-            titulo="Contatos novos"
-            valor={String(atual.contatosNovos)}
-            comparacao={<Mudanca atual={atual.contatosNovos} antes={antes.contatosNovos} />}
-            definicao="Pessoas que falaram com a organização pela primeira vez no período (o dia em que o contato foi criado)."
-          />
-          <Cartao
-            titulo="Resolvidas pela automação"
-            valor={automacao === null ? 'sem dado' : `${automacao}%`}
-            detalhe={
-              automacao === null
-                ? 'nenhuma conversa terminou ainda'
-                : `${atual.desfechos.bot} de ${terminadas(atual.desfechos)} que terminaram`
-            }
-            comparacao={<MudancaEmPontos atual={automacao} antes={automacaoAntes} melhorQuando="sobe" />}
-            definicao="Das conversas do período que já terminaram, quantas a automação resolveu sozinha, sem passar por ninguém da equipe. As que ainda estão acontecendo ficam fora da conta."
-          />
-          <Cartao
-            titulo="Espera pela equipe"
-            valor={atual.tempos.medianaAteResponder === null ? 'sem dado' : comoDuracao(atual.tempos.medianaAteResponder)}
-            detalhe={
-              atual.tempos.entraramNaFila === 0
-                ? 'ninguém pediu uma pessoa'
-                : `mediana · média ${comoDuracao(atual.tempos.mediaAteResponder)} · ${atual.tempos.responderam} de ${atual.tempos.entraramNaFila} respondidas`
-            }
-            comparacao={
-              <MudancaDeTempo atual={atual.tempos.medianaAteResponder} antes={antes.tempos.medianaAteResponder} />
-            }
-            definicao="Do momento em que a conversa foi para a equipe até a primeira resposta enviada. A mediana é o atendimento típico; a média mostra se alguém esperou muito mais. Conversa sem resposta ainda não entra na conta."
-          />
-        </div>
-
-        <div className="mt-5 grid items-start gap-5 lg:grid-cols-[minmax(0,1fr)_336px]">
-          <div className="flex min-w-0 flex-col gap-5">
-            <GraficoDiario serie={serie} cruzaAno={cruzaAno} />
-            <ComoTerminaram totais={atual} />
-          </div>
-
-          <aside className="flex min-w-0 flex-col gap-3">
-            <Cartao
-              titulo="Satisfação (NPS)"
-              valor={atual.satisfacao.nps === null ? 'sem dado' : String(atual.satisfacao.nps)}
-              detalhe={
-                atual.satisfacao.respostas === 0
-                  ? 'ninguém respondeu a pesquisa no período'
-                  : `média ${atual.satisfacao.media?.toLocaleString('pt-BR')} · ${atual.satisfacao.respostas} ${atual.satisfacao.respostas === 1 ? 'resposta' : 'respostas'} · ${atual.satisfacao.promotores} promotores, ${atual.satisfacao.detratores} detratores`
-              }
-              comparacao={
-                <MudancaEmPontos atual={atual.satisfacao.nps} antes={antes.satisfacao.nps} melhorQuando="sobe" />
-              }
-              definicao="Notas de 0 a 10 da pesquisa de satisfação, dadas no período. NPS é o percentual de notas 9 e 10 menos o de notas até 6; vai de -100 a 100."
-            />
-            <Cartao
-              titulo="Fechamentos"
-              valor={`${atual.fechamentos.ganhos} ${atual.fechamentos.ganhos === 1 ? 'ganho' : 'ganhos'}`}
-              detalhe={[
-                podeVerValor && atual.fechamentos.valor !== null ? comoDinheiro(atual.fechamentos.valor) : null,
-                podeVerValor && atual.fechamentos.valor === null && atual.fechamentos.ganhos > 0
-                  ? 'nenhum ganho com valor anotado'
-                  : null,
-                `${atual.fechamentos.perdidos} ${atual.fechamentos.perdidos === 1 ? 'perdido' : 'perdidos'}`,
-              ]
-                .filter(Boolean)
-                .join(' · ')}
-              comparacao={<Mudanca atual={atual.fechamentos.ganhos} antes={antes.fechamentos.ganhos} />}
-              definicao="Negócios do funil de vendas marcados como ganhos ou perdidos no período, pelo dia em que foram fechados."
-            />
-            {pessoas.length >= 2 && (
-              <QuemAtendeu
-                pessoas={pessoas.map((p) => ({
-                  ...p,
-                  nome: equipe.find((m) => m.id === p.usuarioId)?.nome || 'alguém que saiu da organização',
-                }))}
-              />
-            )}
-          </aside>
         </div>
       </main>
     </ClienteShell>
   )
 }
 
-// ---------------------------------------------------------------------------
-// Desfechos e pessoas
-// ---------------------------------------------------------------------------
-
-/**
- * As quatro fatias, e elas somam o total de conversas de propósito: painel
- * cujas partes não fecham com o todo é painel que ninguém consegue conferir.
- */
-function ComoTerminaram({ totais }: { totais: { conversas: number; desfechos: Record<'bot' | 'prevista' | 'falha' | 'aberta', number> } }) {
-  const { conversas, desfechos } = totais
-  const fatias = [
-    { rotulo: 'Resolvidas pela automação', n: desfechos.bot, dica: 'Terminaram sem passar por ninguém da equipe.' },
-    { rotulo: 'Atendidas pela equipe', n: desfechos.prevista, dica: 'O fluxo previa passar para uma pessoa, ou alguém assumiu pelo Inbox.' },
-    { rotulo: 'Interrompidas por um erro', n: desfechos.falha, dica: 'Pararam por um problema técnico e foram para a equipe. O motivo está escrito na conversa, no Inbox.', atencao: true },
-    { rotulo: 'Ainda acontecendo', n: desfechos.aberta, dica: 'Não terminaram, então ficam fora da taxa da automação.' },
-  ]
-  return (
-    <section className="app-card px-5 py-4" aria-labelledby="titulo-desfechos">
-      <h2 id="titulo-desfechos" className="text-[14px] font-bold">
-        Como as conversas terminaram
-      </h2>
-      {conversas === 0 ? (
-        <p className="mt-2 text-[13px] text-dim">Nenhuma conversa começou neste período.</p>
-      ) : (
-        <ul className="mt-3 flex flex-col gap-2.5">
-          {fatias.map((f) => {
-            const pct = Math.round((f.n / conversas) * 100)
-            const alerta = f.atencao && f.n > 0
-            return (
-              <li key={f.rotulo}>
-                <div className="flex items-baseline gap-2 text-[12.5px]">
-                  <strong className={`tabular-nums ${alerta ? 'text-aviso' : 'text-ink'}`}>{f.n}</strong>
-                  <span className={alerta ? 'text-aviso' : 'text-soft'}>{f.rotulo}</span>
-                  <span className="ml-auto text-[11.5px] tabular-nums text-dim">{pct}%</span>
-                </div>
-                <div className="mt-1 h-1.5 overflow-hidden rounded-full bg-surface-strong" aria-hidden>
-                  <div className={`h-full rounded-full ${alerta ? 'bg-aviso' : 'bg-primary'}`} style={{ width: `${pct}%` }} />
-                </div>
-                <p className="mt-0.5 text-[11px] text-dim">{f.dica}</p>
-              </li>
-            )
-          })}
-        </ul>
-      )}
-    </section>
-  )
-}
-
-/**
- * Volume por pessoa, e não tempo: a responsabilidade pode trocar de mãos no
- * meio, e dividir a espera cobraria de alguém o atraso de outro. Só aparece
- * para quem vê a conta inteira e com duas pessoas ou mais.
- */
-function QuemAtendeu({ pessoas }: { pessoas: { usuarioId: string; nome: string; atendimentos: number; fechados: number }[] }) {
-  return (
-    <section className="app-card overflow-hidden" aria-labelledby="titulo-pessoas">
-      <h2 id="titulo-pessoas" className="px-4 pt-3.5 pb-2 text-[12.5px] font-bold text-muted">
-        Quem atendeu
-      </h2>
-      <ul>
-        {pessoas.map((p) => (
-          <li key={p.usuarioId} className="flex items-center gap-3 border-t border-line-soft px-4 py-2.5">
-            <span className="min-w-0 flex-1 truncate text-[13px] font-semibold">{p.nome}</span>
-            <span className="whitespace-nowrap text-[11.5px] text-dim">
-              <strong className="font-semibold text-soft">{p.atendimentos}</strong> atend. ·{' '}
-              <strong className="font-semibold text-soft">{p.fechados}</strong> fechados
-            </span>
-          </li>
-        ))}
-      </ul>
-    </section>
-  )
+const NOME_DO_CANAL: Record<string, string> = { whatsapp: 'WhatsApp', instagram: 'Instagram', telegram: 'Telegram' }
+const COR_DO_CANAL: Record<string, string> = {
+  whatsapp: 'var(--marca-whatsapp)',
+  instagram: 'var(--marca-instagram)',
+  telegram: 'var(--marca-telegram)',
 }

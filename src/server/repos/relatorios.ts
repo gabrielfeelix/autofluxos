@@ -66,6 +66,8 @@ export type SatisfacaoDoPeriodo = {
   /** `null` quando ninguém respondeu, que é diferente de NPS zero. */
   nps: number | null
   media: number | null
+  /** Quantas respostas cada nota teve, de 0 a 10 (índice = nota). */
+  porNota: number[]
 }
 
 export type FechamentosDoPeriodo = {
@@ -321,7 +323,9 @@ function resumirNotas(notas: { nota: number; n: number }[]): SatisfacaoDoPeriodo
   let neutros = 0
   let detratores = 0
   let soma = 0
+  const porNota = Array.from({ length: 11 }, () => 0)
   for (const { nota, n } of notas) {
+    if (nota >= 0 && nota <= 10) porNota[nota] = (porNota[nota] ?? 0) + n
     respostas += n
     soma += nota * n
     const faixa = faixaDaNota(nota)
@@ -329,7 +333,7 @@ function resumirNotas(notas: { nota: number; n: number }[]): SatisfacaoDoPeriodo
     else if (faixa === 'neutro') neutros += n
     else detratores += n
   }
-  if (respostas === 0) return { respostas, promotores, neutros, detratores, nps: null, media: null }
+  if (respostas === 0) return { respostas, promotores, neutros, detratores, nps: null, media: null, porNota }
   return {
     respostas,
     promotores,
@@ -337,6 +341,7 @@ function resumirNotas(notas: { nota: number; n: number }[]): SatisfacaoDoPeriodo
     detratores,
     nps: Math.round(((promotores - detratores) / respostas) * 100),
     media: Math.round((soma / respostas) * 10) / 10,
+    porNota,
   }
 }
 
@@ -369,5 +374,129 @@ export async function atendimentosPorPessoa(
     usuarioId: String(r.usuario_id),
     atendimentos: Number(r.atendimentos),
     fechados: Number(r.fechados),
+  }))
+}
+
+// ---------------------------------------------------------------------------
+// Os blocos a mais de Análise > Atendimento: quando, por onde, de onde e
+// quanto esperaram. Mesmas definições de conversa, contato e fila de cima.
+// ---------------------------------------------------------------------------
+
+const SESSOES_DO_PERIODO = `
+    from public.sessions s
+    join public.flow_versions fv on fv.id = s.flow_version_id
+    join public.flows f on f.id = fv.flow_id
+    join public.contacts c on c.id = s.contact_id,
+         lim
+   where f.client_id = $1
+     and s.criado_em >= lim.ini and s.criado_em < lim.fim
+     and ${NO_ESCOPO('c.atribuido_a')}`
+
+const SQL_DOS_HORARIOS = `
+with ${LIMITES}
+select extract(isodow from s.criado_em at time zone '${FUSO_DOS_RELATORIOS}')::int as dia,
+       extract(hour from s.criado_em at time zone '${FUSO_DOS_RELATORIOS}')::int as hora,
+       count(*)::int as n
+  ${SESSOES_DO_PERIODO}
+ group by 1, 2`
+
+const SQL_DOS_CANAIS = `
+with ${LIMITES}
+select f.canal, count(*)::int as n
+  ${SESSOES_DO_PERIODO}
+ group by 1`
+
+const SQL_DA_ESPERA = `
+with ${LIMITES},
+fila as (
+  select extract(epoch from (
+           (select min(m.ts) from public.messages m
+             where m.contact_id = c.id and m.direcao = 'saida' and m.ts > h.criado_em) - h.criado_em
+         )) as segundos
+    from public.handoffs h
+    join public.sessions s on s.id = h.session_id
+    join public.contacts c on c.id = s.contact_id,
+         lim
+   where c.client_id = $1
+     and h.criado_em >= lim.ini and h.criado_em < lim.fim
+     and ${NO_ESCOPO('c.atribuido_a')}
+)
+select count(*) filter (where segundos < 300)::int as ate5,
+       count(*) filter (where segundos >= 300 and segundos < 900)::int as ate15,
+       count(*) filter (where segundos >= 900 and segundos < 3600)::int as ate60,
+       count(*) filter (where segundos >= 3600 and segundos < 14400)::int as ate4h,
+       count(*) filter (where segundos >= 14400)::int as mais,
+       count(*) filter (where segundos is null)::int as sem_resposta
+  from fila`
+
+/*
+ * A primeira passagem de anúncio de cada contato novo decide a origem dele:
+ * quem chegou por anúncio e depois voltou direto continua sendo "do anúncio".
+ */
+const SQL_DA_ORIGEM = `
+with ${LIMITES},
+novos as (
+  select c.id
+    from public.contacts c, lim
+   where c.client_id = $1
+     and c.criado_em >= lim.ini and c.criado_em < lim.fim
+     and ${NO_ESCOPO('c.atribuido_a')}
+)
+select a.campanha, (p.ad_id is not null) as anuncio, count(*)::int as n
+  from novos
+  left join lateral (
+    select pp.ad_id from public.passagens pp
+     where pp.contact_id = novos.id and pp.client_id = $1
+     order by pp.criado_em asc limit 1
+  ) p on true
+  left join public.anuncios a on a.client_id = $1 and a.ad_id = p.ad_id
+ group by 1, 2`
+
+/** `[dia][hora]`, segunda na linha 0, com zero onde não houve conversa. */
+export async function horariosDoPeriodo(clienteId: string, periodo: Periodo, responsaveis: Responsaveis): Promise<number[][]> {
+  const { rows } = await bancoDoLogin().query(SQL_DOS_HORARIOS, parametros(clienteId, periodo, responsaveis))
+  const celulas = Array.from({ length: 7 }, () => Array.from({ length: 24 }, () => 0))
+  for (const r of rows as { dia: number; hora: number; n: number }[]) {
+    const linha = celulas[Number(r.dia) - 1]
+    if (linha) linha[Number(r.hora)] = Number(r.n)
+  }
+  return celulas
+}
+
+export async function conversasPorCanal(
+  clienteId: string,
+  periodo: Periodo,
+  responsaveis: Responsaveis,
+): Promise<{ canal: string; n: number }[]> {
+  const { rows } = await bancoDoLogin().query(SQL_DOS_CANAIS, parametros(clienteId, periodo, responsaveis))
+  return (rows as Record<string, unknown>[]).map((r) => ({ canal: String(r.canal), n: Number(r.n) }))
+}
+
+export type FaixasDeEspera = { ate5: number; ate15: number; ate60: number; ate4h: number; mais: number; semResposta: number }
+
+export async function faixasDeEspera(clienteId: string, periodo: Periodo, responsaveis: Responsaveis): Promise<FaixasDeEspera> {
+  const { rows } = await bancoDoLogin().query(SQL_DA_ESPERA, parametros(clienteId, periodo, responsaveis))
+  const r = rows[0] as Record<string, unknown>
+  return {
+    ate5: Number(r.ate5),
+    ate15: Number(r.ate15),
+    ate60: Number(r.ate60),
+    ate4h: Number(r.ate4h),
+    mais: Number(r.mais),
+    semResposta: Number(r.sem_resposta),
+  }
+}
+
+/** `campanha` nula com `anuncio` falso = chegou sem anúncio. */
+export async function origemDosContatos(
+  clienteId: string,
+  periodo: Periodo,
+  responsaveis: Responsaveis,
+): Promise<{ campanha: string | null; anuncio: boolean; n: number }[]> {
+  const { rows } = await bancoDoLogin().query(SQL_DA_ORIGEM, parametros(clienteId, periodo, responsaveis))
+  return (rows as Record<string, unknown>[]).map((r) => ({
+    campanha: r.campanha ? String(r.campanha) : null,
+    anuncio: Boolean(r.anuncio),
+    n: Number(r.n),
   }))
 }
