@@ -15,6 +15,8 @@ import { definirFuncaoDoMembro } from './pessoas'
 import { definirPlano, planoDaConta } from './repos/plano'
 import { planoVigente, salvarPlano } from './repos/planos'
 import { ehRecursoDoPlano } from '@/core/planos'
+import { CAPACIDADES, ehEscopo, type Politica } from '@/core/permissoes'
+import { funcoesVigentes, salvarFuncao } from './repos/funcoes'
 import { acharPedido } from './repos/pedidos-de-plano'
 import { ehFuncao, PAPEL_DA_FUNCAO, type IdDaFuncao } from '@/core/funcoes'
 
@@ -338,6 +340,41 @@ export async function acaoAdminSalvarPlano(id: string, dados: DadosDoPlano): Pro
     alvoId: id,
     alvoNome: nome,
     detalhes: { preco, conversas, numeros, ativo: dados.ativo !== false },
+    impersonadoPor: sessao.impersonadoPor,
+  })
+  return { ok: true }
+}
+
+// ---------------------------------------------------------------------------
+// Funções (A7)
+// ---------------------------------------------------------------------------
+
+/**
+ * Edita o que uma função pode. O Proprietário não se edita, e o nível de
+ * nenhuma muda: ele é a hierarquia. Vale na hora para todo mundo com a função
+ * gravada, em todas as organizações.
+ */
+export async function acaoAdminSalvarFuncao(id: string, capacidades: Record<string, string>): Promise<{ ok: boolean; erro?: string }> {
+  const sessao = await exigirAdminDaPlataforma()
+  if (!ehFuncao(id)) return { ok: false, erro: 'essa função não existe' }
+  if (id === 'proprietario') return { ok: false, erro: 'o Proprietário pode tudo e não se edita' }
+  const politica = {} as Politica
+  for (const capacidade of CAPACIDADES) {
+    const escopo = capacidades[capacidade]
+    if (!escopo || !ehEscopo(escopo)) return { ok: false, erro: 'escopo inválido' }
+    politica[capacidade] = escopo
+  }
+  const atual = (await funcoesVigentes()).porId[id]
+  const r = await salvarFuncao(id, { descricao: atual.descricao, capacidades: politica })
+  if (!r.ok) return { ok: false, erro: r.motivo }
+  await registrar({
+    acao: 'editou_funcao',
+    autorId: sessao.usuario.id,
+    autorEmail: sessao.usuario.email,
+    alvoTipo: 'funcao',
+    alvoId: id,
+    alvoNome: atual.nome,
+    detalhes: politica,
     impersonadoPor: sessao.impersonadoPor,
   })
   return { ok: true }

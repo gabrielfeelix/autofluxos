@@ -1,11 +1,15 @@
 import { notFound } from 'next/navigation'
 import { AjustesShell } from '@/components/design/ajustes-shell'
 import { Trilha } from '@/components/design/trilha'
-import { Dropdown } from '@/components/design/dropdown'
-import { ModalFormulario, RotuloCampo } from '@/components/design/modal-formulario'
-import { LinhaDaEquipe } from '@/components/conta/linha-da-equipe'
+import Link from 'next/link'
+import { TabelaDePessoas } from '@/components/admin/tabela-de-pessoas'
 import { Distribuicao, type PessoaNaDistribuicao } from '@/components/conta/distribuicao'
-import { acaoCadastrarPessoaNaConta } from '@/server/acoes'
+import { acaoDarAcessoNaOrganizacao, acaoTrocarFuncao } from '@/server/acoes-pessoas'
+import { acaoPendenciasDoMembro } from '@/server/acoes-acesso'
+import { atorNaOrganizacao, pessoasNaHierarquia } from '@/server/pessoas'
+import { funcoesVigentes } from '@/server/repos/funcoes'
+import { pessoasDaOrganizacao } from '@/server/repos/organizacoes'
+import { funcoesAtribuiveis, podeEditarPessoa, podeGerenciarPessoas, podeVerPessoa } from '@/core/funcoes'
 import { acharCliente } from '@/server/repos/clientes'
 import { membrosDaConta, type MembroDaConta } from '@/server/repos/usuarios'
 import { ajustesDaConta, atendentesDaConta } from '@/server/repos/distribuicao'
@@ -13,15 +17,9 @@ import { contarAbertasPorAtendente } from '@/server/repos/leads'
 import { conferirAcessoAoCliente, podeAdministrarConta } from '@/server/sessao'
 import { capacidadesPorMembro, equipesPorMembro, listarEquipes } from '@/server/repos/equipes'
 import { GerenciarEquipes } from '@/components/conta/gerenciar-equipes'
-import { DETALHE_DO_PAPEL, ROTULO_DO_PAPEL, ehPapelDaConta, resumoDoAcesso } from '@/core/permissoes'
+import { ehPapelDaConta, resumoDoAcesso } from '@/core/permissoes'
 
 export const dynamic = 'force-dynamic'
-
-const PAPEIS = (['member', 'admin', 'owner'] as const).map((valor) => ({
-  valor,
-  rotulo: ROTULO_DO_PAPEL[valor],
-  detalhe: DETALHE_DO_PAPEL[valor],
-}))
 
 export default async function Pagina({ params }: { params: Promise<{ clienteId: string }> }) {
   const { clienteId } = await params
@@ -105,103 +103,82 @@ export default async function Pagina({ params }: { params: Promise<{ clienteId: 
     }),
   )
 
+  // A regra de hierarquia (plano da administração, §2): cada um vê a si e
+  // quem está abaixo; o gestor, só os atendentes da equipe dele. O servidor
+  // confere de novo em cada ação.
+  const [ator, hierarquia, funcoes, datas] = await Promise.all([
+    atorNaOrganizacao(clienteId),
+    pessoasNaHierarquia(clienteId),
+    funcoesVigentes(),
+    pessoasDaOrganizacao(clienteId).catch(() => []),
+  ])
+  const visiveis = equipe.filter((membro) => {
+    const alvo = hierarquia.get(membro.id)
+    return alvo !== undefined && podeVerPessoa(ator, alvo)
+  })
+  const nomeDaEquipe = new Map(equipesDaConta.map((time) => [time.id, time.nome]))
+  const desdeDe = new Map(datas.map((pessoa) => [pessoa.id, pessoa.desde]))
+  const ultimoDe = new Map(datas.map((pessoa) => [pessoa.id, pessoa.ultimoAcesso]))
+
   return (
     <AjustesShell cliente={cliente} ativa="equipe">
-      <main className="w-full max-w-[1100px] px-4 md:px-[42px] pt-[26px] pb-[42px]">
+      <main className="w-full px-4 md:px-[42px] pt-[26px] pb-[42px]">
         <Trilha
           caminho={[
             { rotulo: 'Configurações', href: `/clientes/${cliente.id}/ajustes` },
-            { rotulo: 'Pessoas e acesso' },
+            { rotulo: 'Pessoas' },
           ]}
         />
-        <h1 className="text-[25px] font-bold tracking-[-0.02em]">Pessoas e acesso</h1>
+        <div className="flex flex-wrap items-end justify-between gap-3">
+          <h1 className="text-[25px] font-bold tracking-[-0.02em]">Pessoas</h1>
+          <Link href={`/clientes/${cliente.id}/ajustes/equipe/funcoes`} className="text-[12.5px] font-semibold text-primary hover:underline">
+            O que cada função pode fazer →
+          </Link>
+        </div>
         <p className="mt-1.5 mb-6 max-w-[650px] text-[13px] leading-6 text-dim">
-          Quem entra nesta conta e o que cada pessoa pode fazer. Só quem está aqui
-          aparece para assumir conversa no Inbox.
+          Quem trabalha nesta organização e com qual função. Você vê e muda só quem
+          está abaixo de você. Só quem está aqui aparece para assumir conversa no Inbox.
         </p>
 
-        <section className="app-card overflow-hidden">
-          <header className="flex items-center justify-between gap-4 border-b border-line px-5 py-4">
-            <h2 className="text-[14.5px] font-bold">
-              Pessoas{' '}
-              <span className="font-semibold text-dim">{equipe.length}</span>
-            </h2>
-            {podeMexer && (
-              <ModalFormulario
-                botao="+ Cadastrar pessoa"
-                titulo="Adicionar alguém"
-                descricao="Acesso provisório: peça para a pessoa trocar a senha no primeiro acesso (em Você, no rodapé da barra). E-mail que já existe só liga a pessoa a esta conta."
-                rotuloEnviar="Adicionar"
-                variante={equipe.length === 0 ? 'primario' : 'secundario'}
-                action={acaoCadastrarPessoaNaConta.bind(null, clienteId, {})}
-              >
-                <label>
-                  <RotuloCampo>Nome</RotuloCampo>
-                  <input
-                    name="nome"
-                    autoFocus
-                    placeholder="Nome de quem entra"
-                    className="app-field px-[13px] py-[11px] text-[13.5px]"
-                  />
-                </label>
-                <label>
-                  <RotuloCampo>E-mail</RotuloCampo>
-                  <input
-                    name="email"
-                    type="email"
-                    required
-                    placeholder="pessoa@exemplo.com.br"
-                    className="app-field px-[13px] py-[11px] text-[13.5px]"
-                  />
-                </label>
-                <label>
-                  <RotuloCampo>Senha (mín. 10 caracteres)</RotuloCampo>
-                  <input
-                    name="senha"
-                    type="password"
-                    minLength={10}
-                    autoComplete="new-password"
-                    className="app-field px-[13px] py-[11px] text-[13.5px]"
-                  />
-                </label>
-                <label>
-                  <RotuloCampo>Função</RotuloCampo>
-                  <Dropdown
-                    nome="papel"
-                    rotuloAcessivel="Função"
-                    valorInicial="member"
-                    opcoes={PAPEIS}
-                  />
-                </label>
-              </ModalFormulario>
-            )}
-          </header>
-
-          {equipe.length === 0 ? (
-            <p className="px-5 py-10 text-center text-xs leading-5 text-dim">
-              Ninguém ligado a esta conta ainda. Enquanto isso, só quem administra a
-              plataforma consegue abrir o painel dela.
-            </p>
-          ) : (
-            <ul>
-              {equipe.map((membro) => (
-                <LinhaDaEquipe
-                  key={membro.id}
-                  clienteId={clienteId}
-                  membro={{
-                    ...membro,
-                    equipes: porMembro.get(membro.id) ?? [],
-                    sobrescritas: capacidades.get(membro.id) ?? {},
-                  }}
-                  papeis={PAPEIS}
-                  podeMexer={podeMexer}
-                  equipesDaConta={equipesDaConta}
-                  pessoas={equipe.map((pessoa) => ({ id: pessoa.id, nome: pessoa.nome }))}
-                />
-              ))}
-            </ul>
-          )}
-        </section>
+        <div className="mb-8 flex min-h-[320px] flex-col">
+          <TabelaDePessoas
+            clienteId={clienteId}
+            pessoas={visiveis.map((membro) => ({
+              id: membro.id,
+              nome: membro.nome,
+              email: membro.email,
+              funcao: hierarquia.get(membro.id)?.funcao ?? 'atendente',
+              equipes: (porMembro.get(membro.id) ?? []).map((id) => nomeDaEquipe.get(id) ?? 'equipe'),
+              suspensa: false,
+              voce: membro.id === ator.usuarioId,
+              desde: desdeDe.get(membro.id) ?? new Date(0).toISOString(),
+              ultimoAcesso: ultimoDe.get(membro.id) ?? null,
+              podeEditar: podeEditarPessoa(ator, hierarquia.get(membro.id)!),
+            }))}
+            funcoes={funcoesAtribuiveis(ator).map((funcao) => ({ valor: funcao, rotulo: funcoes.porId[funcao].nome, detalhe: funcoes.porId[funcao].descricao }))}
+            trocarFuncao={acaoTrocarFuncao.bind(null, clienteId)}
+            pendencias={acaoPendenciasDoMembro.bind(null, clienteId)}
+            darAcesso={podeGerenciarPessoas(ator) ? acaoDarAcessoNaOrganizacao.bind(null, clienteId) : undefined}
+            acesso={{
+              equipesDaConta,
+              porPessoa: Object.fromEntries(
+                visiveis
+                  .filter((membro) => podeEditarPessoa(ator, hierarquia.get(membro.id)!))
+                  .map((membro) => [
+                    membro.id,
+                    {
+                      id: membro.id,
+                      nome: membro.nome,
+                      papel: membro.papel,
+                      equipes: porMembro.get(membro.id) ?? [],
+                      sobrescritas: capacidades.get(membro.id) ?? {},
+                      base: funcoes.daTabela && hierarquia.get(membro.id) ? funcoes.porId[hierarquia.get(membro.id)!.funcao].capacidades : undefined,
+                    },
+                  ]),
+              ),
+            }}
+          />
+        </div>
 
         {podeMexer && (
           <GerenciarEquipes clienteId={clienteId} equipes={equipesDaConta} perda={perdaPorEquipe} />

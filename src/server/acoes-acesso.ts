@@ -1,14 +1,9 @@
 'use server'
 
 import { revalidatePath } from 'next/cache'
-import {
-  ehCapacidade,
-  ehEscopo,
-  ehPapelDaConta,
-  MODELOS_EXTRA,
-  POLITICAS,
-  type Politica,
-} from '@/core/permissoes'
+import { CAPACIDADES, ehCapacidade, ehEscopo, ehPapelDaConta, type Politica } from '@/core/permissoes'
+import { conferirExcecoes } from '@/core/funcoes'
+import { baseDaPessoa, exigirHierarquia } from './pessoas'
 import {
   arquivarEquipe,
   criarEquipe,
@@ -81,8 +76,11 @@ export async function acaoSalvarAcesso(
     capacidades: Record<string, string>
   },
 ): Promise<{ ok: boolean; erro?: string }> {
-  const acesso = await exigirCapacidade(clienteId, 'configurar_empresa', 'todos')
-  if (recusou(acesso)) return acesso
+  // Regra de hierarquia: só quem está acima mexe no acesso desta pessoa.
+  const permitido = await exigirHierarquia(clienteId, usuarioId)
+  if ('ok' in permitido) return permitido
+  // O papel vem do banco, e não da tela: quem muda papel é a troca de função.
+  dados = { ...dados, papel: permitido.alvo.papel }
 
   if (!ehPapelDaConta(dados.papel)) return { ok: false, erro: 'esse papel não existe' }
 
@@ -98,6 +96,13 @@ export async function acaoSalvarAcesso(
     desejado[chave] = escopo
   }
 
+  // A base é a função da pessoa (A7) quando ela está gravada; sem a tabela, o papel.
+  const base = await baseDaPessoa(clienteId, usuarioId, dados.papel)
+  // Ninguém concede o que não tem: a política resultante cabe na de quem pede.
+  const resultado = Object.fromEntries(CAPACIDADES.map((c) => [c, desejado[c] ?? base[c]])) as Politica
+  const cabe = conferirExcecoes(permitido.ator, resultado)
+  if (!cabe.ok) return { ok: false, erro: cabe.motivo }
+
   const quem = await sessaoAtual()
 
   const daEquipe = await definirEquipesDoMembro(clienteId, usuarioId, dados.equipes)
@@ -107,44 +112,10 @@ export async function acaoSalvarAcesso(
     clienteId,
     usuarioId,
     desejado,
-    POLITICAS[dados.papel],
+    base,
     quem?.usuario.id ?? null,
   )
   if (!dasCapacidades.ok) return { ok: false, erro: dasCapacidades.motivo }
-
-  ajustes(clienteId)
-  return { ok: true }
-}
-
-/**
- * Aplica um modelo (gestor, operador) por cima do papel.
- *
- * É a prévia da UI-18 virando ação: a tela mostra o que muda, e isto grava. O
- * modelo não vira papel no banco, ele é copiado como sobrescrita, porque é
- * ponto de partida editável e não profissão (§11 da proposta).
- */
-export async function acaoAplicarModelo(
-  clienteId: string,
-  usuarioId: string,
-  papel: string,
-  modelo: keyof typeof MODELOS_EXTRA,
-): Promise<{ ok: boolean; erro?: string }> {
-  const acesso = await exigirCapacidade(clienteId, 'configurar_empresa', 'todos')
-  if (recusou(acesso)) return acesso
-
-  if (!ehPapelDaConta(papel)) return { ok: false, erro: 'esse papel não existe' }
-  const escolhido = MODELOS_EXTRA[modelo]
-  if (!escolhido) return { ok: false, erro: 'esse modelo não existe' }
-
-  const quem = await sessaoAtual()
-  const r = await definirCapacidades(
-    clienteId,
-    usuarioId,
-    escolhido,
-    POLITICAS[papel],
-    quem?.usuario.id ?? null,
-  )
-  if (!r.ok) return { ok: false, erro: r.motivo }
 
   ajustes(clienteId)
   return { ok: true }
@@ -167,8 +138,8 @@ export async function acaoPendenciasDoMembro(
   atividades?: number
   erro?: string
 }> {
-  const acesso = await exigirCapacidade(clienteId, 'configurar_empresa', 'todos')
-  if (recusou(acesso)) return acesso
+  const permitido = await exigirHierarquia(clienteId, usuarioId)
+  if ('ok' in permitido) return permitido
 
   const r = await pendenciasDoMembro(clienteId, usuarioId)
   return { ok: true, ...r }

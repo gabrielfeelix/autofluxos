@@ -5,6 +5,8 @@ import {
   NIVEL_DO_SUPORTE,
   PAPEL_DA_FUNCAO,
   funcaoDerivada,
+  podeEditarPessoa,
+  podeGerenciarPessoas,
   type IdDaFuncao,
   type NaHierarquia,
 } from '@/core/funcoes'
@@ -88,6 +90,24 @@ export async function atorNaOrganizacao(clienteId: string): Promise<Ator> {
 }
 
 /**
+ * A porta de toda ação da tela Pessoas: quem pede gerencia pessoas e está
+ * acima de quem é mexido (`podeEditarPessoa`). Devolve os dois já lidos.
+ */
+export async function exigirHierarquia(
+  clienteId: string,
+  usuarioId: string,
+): Promise<{ ator: Ator; alvo: PessoaNaHierarquia } | { ok: false; erro: string }> {
+  const ator = await atorNaOrganizacao(clienteId)
+  if (!podeGerenciarPessoas(ator)) return { ok: false, erro: 'só gestor, administrador ou proprietário mexe em pessoas' }
+  const alvo = (await pessoasNaHierarquia(clienteId)).get(usuarioId)
+  if (!alvo) return { ok: false, erro: 'esta pessoa não está nesta organização' }
+  if (!podeEditarPessoa(ator, alvo)) {
+    return { ok: false, erro: ator.usuarioId === usuarioId ? 'a sua própria função muda pelas mãos de quem está acima de você' : 'você só mexe em quem está abaixo de você' }
+  }
+  return { ator, alvo }
+}
+
+/**
  * Troca a função de alguém, gravando nos dois lugares que a leem.
  *
  * - `af_membros.role`: o papel do Better Auth que acompanha a função;
@@ -132,4 +152,12 @@ export async function definirFuncaoDoMembro(
     }
   }
   return { ok: true, donosAnteriores }
+}
+
+/** A política de base desta pessoa: a da função gravada (com a tabela) ou a do papel. */
+export async function baseDaPessoa(clienteId: string, usuarioId: string, papel: string): Promise<Politica> {
+  const [funcoes, gravadas] = await Promise.all([funcoesVigentes(), funcoesGravadas(clienteId).catch(() => new Map<string, IdDaFuncao>())])
+  const gravada = funcoes.daTabela ? gravadas.get(usuarioId) : undefined
+  if (gravada) return funcoes.porId[gravada].capacidades
+  return POLITICAS[ehPapelDaConta(papel) ? papel : 'member']
 }

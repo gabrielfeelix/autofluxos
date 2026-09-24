@@ -1,6 +1,7 @@
 'use client'
 
-import { useState, useTransition, type ReactNode } from 'react'
+import { useState, useTransition } from 'react'
+import { EditorDeAcesso, type MembroParaAcesso } from '@/components/conta/editor-de-acesso'
 import { Avatar } from '@/components/design/avatar'
 import { AvisoFlutuante } from '@/components/design/aviso-flutuante'
 import { Dropdown } from '@/components/design/dropdown'
@@ -43,7 +44,7 @@ export function TabelaDePessoas({
   pendencias,
   remover,
   darAcesso,
-  extra,
+  acesso,
 }: {
   remover?: (clienteId: string, usuarioId: string, destino: string | null) => Promise<{ ok: boolean; erro?: string }>
   /** Sem ela, a tabela não mostra o botão (quem pede não dá acesso). */
@@ -54,13 +55,17 @@ export function TabelaDePessoas({
   funcoes: { valor: string; rotulo: string; detalhe?: string }[]
   trocarFuncao: (usuarioId: string, funcao: string) => Promise<Resultado>
   pendencias: (usuarioId: string) => Promise<{ ok: boolean; conversas?: number; cartoes?: number; atividades?: number; erro?: string }>
-  /** Uma ação a mais por linha (o ajuste de acesso, na organização). */
-  extra?: (pessoa: PessoaNaTabela) => ReactNode
+  /**
+   * O ajuste fino de acesso (as exceções por pessoa), só na organização. Cada
+   * pessoa editável traz o que o editor precisa para abrir já preenchido.
+   */
+  acesso?: { equipesDaConta: { id: string; nome: string }[]; porPessoa: Record<string, MembroParaAcesso> }
 }) {
   const [pessoas, setPessoas] = useState(iniciais)
   const [aviso, setAviso] = useState<string | null>(null)
   const [, comecar] = useTransition()
   const [dando, setDando] = useState(false)
+  const [ajustando, setAjustando] = useState<MembroParaAcesso | null>(null)
   const [removendo, setRemovendo] = useState<{ pessoa: PessoaNaTabela; pendencias: { conversas: number; cartoes: number; atividades: number } } | null>(null)
   const rotulo = new Map(funcoes.map((funcao) => [funcao.valor, funcao.rotulo]))
 
@@ -200,7 +205,15 @@ export function TabelaDePessoas({
                 </td>
                 <td className="px-2 py-2.5">
                   <div className="flex items-center justify-end gap-1">
-                    {extra?.(pessoa)}
+                    {pessoa.podeEditar && acesso?.porPessoa[pessoa.id] && (
+                      <button
+                        type="button"
+                        onClick={() => setAjustando(acesso.porPessoa[pessoa.id] ?? null)}
+                        className="rounded-[8px] px-2.5 py-1.5 text-[12px] font-semibold whitespace-nowrap text-muted transition hover:bg-surface hover:text-ink"
+                      >
+                        Ajustar acesso
+                      </button>
+                    )}
                     {pessoa.podeEditar && (
                       <button
                         type="button"
@@ -233,6 +246,9 @@ export function TabelaDePessoas({
             setRemovendo(null)
           }}
         />
+      )}
+      {ajustando && acesso && (
+        <EditorDeAcesso clienteId={clienteId} membro={ajustando} equipesDaConta={acesso.equipesDaConta} aoFechar={() => setAjustando(null)} />
       )}
       {aviso && (
         <AvisoFlutuante tom="erro" aoSumir={() => setAviso(null)}>

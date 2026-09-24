@@ -76,6 +76,7 @@ import {
   removerComDestino,
 } from './repos/usuarios'
 import { autenticacao } from './auth'
+import { exigirHierarquia } from './pessoas'
 import { registrar } from './repos/auditoria'
 import { conferirChaveDaAgenda } from './agenda'
 import { NOME_DA_CREDENCIAL_DA_AGENDA } from '@/core/agenda'
@@ -1829,120 +1830,17 @@ const ehPapelDaConta = (valor: string): valor is PapelDaConta =>
 /** A recusa que todas as ações de equipe dão para quem só atende. */
 const SO_QUEM_ADMINISTRA = 'só quem administra a conta mexe na equipe'
 
-/**
- * Põe uma pessoa na conta, cadastrando ou vinculando quem já existe.
- *
- * **É a tela de Equipe funcionando sem SMTP.** O convite por e-mail depende de
- * um servidor de e-mail que é global ao projeto compartilhado com a Verandi
- * (ver BANCO-COMPARTILHADO.md), e enquanto ele não existir uma tela de equipe
- * seria uma lista vazia com um botão que não faz nada. Aqui a senha é definida
- * por quem cadastra e combinada por fora, é o mesmo caminho de
- * `/criar-conta`, que é como todo usuário do sistema nasce hoje.
- *
- * E-mail que já existe **vincula em vez de recusar**: quem administra duas
- * companhias é o caso que a A1 modelou de propósito, e "esse e-mail já está em
- * uso" seria um beco para exatamente ele.
- */
-export async function acaoCadastrarPessoaNaConta(
-  clienteId: string,
-  _estado: EstadoSalvar,
-  formData: FormData,
-): Promise<EstadoSalvar> {
-  const acesso = await exigirAcessoAoCliente(clienteId)
-  if (!podeAdministrarConta(acesso)) return { erro: SO_QUEM_ADMINISTRA }
-
-  const nome = String(formData.get('nome') ?? '').trim()
-  const email = String(formData.get('email') ?? '').trim()
-  const senha = String(formData.get('senha') ?? '')
-  const papel = String(formData.get('papel') ?? 'member')
-
-  if (email === '') return { erro: 'escreva o e-mail' }
-  if (!ehPapelDaConta(papel)) return { erro: 'papel inválido' }
-
-  const jaExiste = await acharUsuarioPorEmail(email)
-  let usuarioId = jaExiste?.id ?? null
-
-  if (!usuarioId) {
-    if (nome === '') return { erro: 'escreva o nome de quem vai entrar' }
-    if (senha.length < 10) return { erro: 'a senha precisa de pelo menos 10 caracteres' }
-
-    try {
-      const criado = await autenticacao().api.signUpEmail({
-        body: { name: nome, email, password: senha },
-      })
-      usuarioId = criado.user.id
-    } catch (erro) {
-      return { erro: erro instanceof Error ? erro.message : 'não deu para cadastrar' }
-    }
-  }
-
-  try {
-    await autenticacao().api.addMember({
-      body: { userId: usuarioId, role: papel, organizationId: clienteId },
-    })
-  } catch (erro) {
-    // Já ser membro não é falha: é a resposta a "põe essa pessoa aqui".
-    const mensagem = erro instanceof Error ? erro.message : ''
-    if (!/already|duplicate|23505/i.test(mensagem)) {
-      return { erro: mensagem || 'não deu para ligar a pessoa à conta' }
-    }
-  }
-
-  await registrar({
-    acao: 'vinculou_membro',
-    autorId: acesso.sessao?.usuario.id ?? null,
-    autorEmail: acesso.sessao?.usuario.email ?? 'painel',
-    contaId: clienteId,
-    alvoTipo: 'usuario',
-    alvoId: usuarioId,
-    alvoNome: jaExiste?.nome ?? nome,
-    detalhes: { papel, cadastrou: jaExiste ? 'nao' : 'sim' },
-    impersonadoPor: acesso.sessao?.impersonadoPor ?? null,
-  })
-
-  revalidatePath(`/clientes/${clienteId}/ajustes/equipe`)
-  return { ok: true }
-}
-
-/** Troca o papel de alguém dentro desta conta. */
-export async function acaoDefinirPapelNaConta(
-  clienteId: string,
-  usuarioId: string,
-  papel: string,
-): Promise<{ ok: boolean; erro?: string }> {
-  const acesso = await exigirAcessoAoCliente(clienteId)
-  if (!podeAdministrarConta(acesso)) return { ok: false, erro: SO_QUEM_ADMINISTRA }
-  if (!ehPapelDaConta(papel)) return { ok: false, erro: 'papel inválido' }
-
-  // O objeto de recusa é `{ ok: false, motivo }`. Testar `if (!r)` aqui seria
-  // sempre falso, objeto é verdadeiro , e a recusa passaria batida com a
-  // auditoria registrando uma troca que não aconteceu.
-  const r = await definirPapelNaConta(clienteId, usuarioId, papel)
-  if (!r.ok) return { ok: false, erro: r.motivo }
-
-  await registrar({
-    acao: 'trocou_papel',
-    autorId: acesso.sessao?.usuario.id ?? null,
-    autorEmail: acesso.sessao?.usuario.email ?? 'painel',
-    contaId: clienteId,
-    alvoTipo: 'usuario',
-    alvoId: usuarioId,
-    detalhes: { papel },
-    impersonadoPor: acesso.sessao?.impersonadoPor ?? null,
-  })
-
-  revalidatePath(`/clientes/${clienteId}/ajustes/equipe`)
-  return { ok: true }
-}
-
 /** Tira alguém da conta. Não apaga a pessoa, ela pode ser dona de outra. */
 export async function acaoRemoverDaConta(
   clienteId: string,
   usuarioId: string,
   destino: string | null,
 ): Promise<{ ok: boolean; erro?: string }> {
-  const acesso = await exigirAcessoAoCliente(clienteId)
-  if (!podeAdministrarConta(acesso)) return { ok: false, erro: SO_QUEM_ADMINISTRA }
+  // A regra de hierarquia (plano da administração, §2): só quem está acima
+  // tira alguém, e ninguém tira a si mesmo por aqui.
+  const permitido = await exigirHierarquia(clienteId, usuarioId)
+  if ('ok' in permitido) return permitido
+  const acesso = permitido.ator.acesso
 
   // Reatribuir e remover juntos, numa transação (E15): ver `removerComDestino`.
   const r = await removerComDestino(clienteId, usuarioId, destino)

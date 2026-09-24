@@ -51,7 +51,7 @@ import { acaoSalvarAcesso } from '@/server/acoes-acesso'
  * é personalizado (senão a pessoa não veria o que está diferente).
  */
 
-const ROTULO_DA_CAPACIDADE: Record<Capacidade, { titulo: string; detalhe: string }> = {
+export const ROTULO_DA_CAPACIDADE: Record<Capacidade, { titulo: string; detalhe: string }> = {
   configurar_empresa: {
     titulo: 'Configurar a organização',
     detalhe: 'equipe, acesso, canais e cadastro. É o poder de dar poder.',
@@ -86,7 +86,7 @@ const ROTULO_DA_CAPACIDADE: Record<Capacidade, { titulo: string; detalhe: string
   },
 }
 
-const ROTULO_DO_ESCOPO: Record<Escopo, string> = {
+export const ROTULO_DO_ESCOPO: Record<Escopo, string> = {
   nenhum: 'Não pode',
   proprios: 'Só o que é dela',
   equipe: 'Da equipe dela',
@@ -99,6 +99,8 @@ export type MembroParaAcesso = {
   papel: string
   equipes: string[]
   sobrescritas: Partial<Politica>
+  /** A política da função da pessoa (A7). Ausente = a do papel. */
+  base?: Politica
 }
 
 export function EditorDeAcesso({
@@ -132,9 +134,9 @@ export function EditorDeAcesso({
     () =>
       CAPACIDADES.map((capacidade) => ({
         capacidade,
-        escopo: escopoDe({ papel, sobrescritas, equipes, usuarioId: membro?.id }, capacidade),
+        escopo: escopoDe({ papel, sobrescritas, equipes, usuarioId: membro?.id, politicaBase: membro?.base }, capacidade),
       })),
-    [papel, sobrescritas, equipes, membro?.id],
+    [papel, sobrescritas, equipes, membro?.id, membro?.base],
   )
 
   const podeDeVerdade = efetivo.filter((linha) => linha.escopo !== 'nenhum')
@@ -143,7 +145,7 @@ export function EditorDeAcesso({
     () => Object.fromEntries(equipesDaConta.map((equipe) => [equipe.id, equipe.nome])),
     [equipesDaConta],
   )
-  const resumo = resumoDoAcesso({ papel, sobrescritas, equipes, usuarioId: membro?.id }, nomesDasEquipes)
+  const resumo = resumoDoAcesso({ papel, sobrescritas, equipes, usuarioId: membro?.id, politicaBase: membro?.base }, nomesDasEquipes)
 
   /** Escopo de equipe sem equipe nenhuma alcança zero registros (E14). */
   const escopoDeEquipeSemEquipe = resumo.semAlcance
@@ -274,7 +276,7 @@ export function EditorDeAcesso({
           <section className="flex flex-col gap-2.5 border-t border-line px-3.5 py-3">
             {CAPACIDADES.map((capacidade) => {
               const daSobrescrita = sobrescritas[capacidade]
-              const doPapel = POLITICAS[papel][capacidade]
+              const doPapel = (membro?.base ?? POLITICAS[papel])[capacidade]
               return (
                 <label key={capacidade} className="flex items-start gap-3">
                   <span className="min-w-0 flex-1">
@@ -291,7 +293,7 @@ export function EditorDeAcesso({
                     className="app-field shrink-0 px-2 py-1.5 text-[12px]"
                   >
                     <option value="papel">
-                      Igual ao papel ({ROTULO_DO_ESCOPO[doPapel].toLowerCase()})
+                      Igual à função ({ROTULO_DO_ESCOPO[doPapel].toLowerCase()})
                     </option>
                     {ESCOPOS.map((escopo) => (
                       <option key={escopo} value={escopo}>
