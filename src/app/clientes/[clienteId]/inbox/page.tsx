@@ -1037,6 +1037,7 @@ async function ColunaDaConversa({
                 sumido com o campo vazio, e o botão de enviar no lugar dele.
               */
               key={selecionado.contatoId}
+              canal={canal}
               acao={acaoResponderLead.bind(null, clienteId, selecionado.contatoId)}
               restaDaJanela={janela}
               nome={primeiroNome}

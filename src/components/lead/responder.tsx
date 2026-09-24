@@ -9,6 +9,8 @@ import { pedirNovas } from '@/components/inbox/sinal-de-conversa'
 import { SeletorDeEmoji } from '@/components/lead/seletor-de-emoji'
 import { SeletorDeProduto } from '@/components/lead/seletor-de-produto'
 import { SeletorDeRespostaRapida } from '@/components/lead/seletor-de-resposta-rapida'
+import { alternarMarca, type Marca } from '@/components/editor/formatar'
+import { DEFINICAO_DO_CANAL, type CanalId } from '@/core/canais'
 
 /**
  * Até onde o campo cresce sozinho antes de virar rolagem.
@@ -59,6 +61,7 @@ export function CaixaDeResposta({
   temAutomacao = true,
   anexo,
   conversa,
+  canal = 'whatsapp',
 }: {
   acao: (formData: FormData) => Promise<{ ok: boolean; erro?: string }>
   /** `null` = fora da janela, ou a pessoa nunca escreveu. */
@@ -83,6 +86,12 @@ export function CaixaDeResposta({
    * rascunho guardado também valem lá (tarefa 8.2).
    */
   conversa?: { clienteId: string; contatoId: string }
+  /**
+   * Por onde a resposta sai. O WhatsApp entende `*negrito*`, `_itálico_` e
+   * `~riscado~`; o Instagram mostra os asteriscos como asteriscos. Por isso os
+   * botões de formato só existem na conversa de WhatsApp.
+   */
+  canal?: CanalId
 }) {
   const ids = anexo ?? conversa ?? null
   /*
@@ -182,6 +191,32 @@ export function CaixaDeResposta({
     textarea.style.height = `${Math.min(desejada, TETO_DA_ALTURA)}px`
     textarea.style.overflowY = desejada > TETO_DA_ALTURA ? 'auto' : 'hidden'
   }
+
+  /**
+   * Negrito, itálico e riscado na seleção, pelos botões ou por Ctrl+B / Ctrl+I.
+   *
+   * A regra de envolver, desfazer e manter a seleção é a mesma do editor de
+   * fluxos (`alternarMarca`, com teste próprio). Duas implementações do mesmo
+   * gesto acabariam discordando sobre o que fazer com o espaço no fim da
+   * seleção, e a pessoa aprenderia o botão duas vezes.
+   */
+  function aplicarMarca(marca: Marca) {
+    const textarea = campo.current
+    if (!textarea) return
+    const { proximo, selecaoInicio, selecaoFim } = alternarMarca(
+      textarea.value,
+      textarea.selectionStart,
+      textarea.selectionEnd,
+      marca,
+    )
+    if (proximo.length > 4096) return
+    textarea.value = proximo
+    textarea.focus()
+    textarea.setSelectionRange(selecaoInicio, selecaoFim)
+    conferirTexto()
+  }
+
+  const formata = canal === 'whatsapp'
 
   /** Depois de qualquer escrita que não veio da digitação. */
   function conferirTexto() {
@@ -319,36 +354,22 @@ export function CaixaDeResposta({
         ícones fiquem alinhados com a última linha do texto, e não flutuando no
         meio de um retângulo alto.
       */}
-      <div className="flex items-end gap-1">
-        {livre && anexo && !gravando && <BotaoDeAnexo desabilitado={enviando} />}
+      <div
+        className={`rounded-[16px] border bg-panel transition ${
+          livre ? 'border-strong focus-within:border-primary/50 focus-within:shadow-[0_0_0_3px_color-mix(in_oklab,var(--primary)_12%,transparent)]' : 'border-line opacity-80'
+        }`}
+      >
+      {/*
+        O campo em cima, a barra embaixo: o arranjo da referência escolhida pelo
+        dono (24/set). Com os ícones ao lado, a linha de escrever perdia um
+        terço da largura para botões que se usa uma vez por conversa, e não
+        havia onde pôr o negrito e o itálico sem espremer ainda mais o texto.
+      */}
         {/*
           O emoji entra pelo mesmo caminho da resposta rápida: `inserirResposta`
           escreve no cursor e confere o teto de 4.096 caracteres. Um caminho só
           é o que evita a tela aceitar por aqui o que recusa por ali.
         */}
-        {livre && !gravando && <SeletorDeEmoji aoEscolher={inserirResposta} desabilitado={enviando} />}
-        {/*
-          Resposta rápida e produto são duas entradas da mesma barra, com o
-          mesmo padrão: abre para cima, busca por teclado, Esc fecha (8.2).
-        */}
-        {livre && !gravando && respostasRapidas.length > 0 && (
-          <SeletorDeRespostaRapida
-            respostas={respostasRapidas}
-            aberto={rapidasAbertas}
-            aoAbrir={() => setRapidasAbertas(true)}
-            aoFechar={fecharRapidas}
-            aoEscolher={(resposta) => {
-              setRapidasAbertas(false)
-              inserirResposta(resposta.texto)
-              setAnuncio(`Resposta /${resposta.atalho} inserida.`)
-            }}
-            desabilitado={enviando}
-          />
-        )}
-        {livre && anexo && !gravando && (
-          <SeletorDeProduto clienteId={anexo.clienteId} contatoId={anexo.contatoId} desabilitado={enviando} />
-        )}
-
         {/*
           O campo some enquanto grava, e `hidden` em vez de desmontar: desmontar
           levaria junto o texto já digitado, e quem grava um áudio no meio de
@@ -372,7 +393,7 @@ export function CaixaDeResposta({
           aria-describedby={livre ? undefined : 'motivo-do-compositor'}
           placeholder={
             livre
-              ? `Responder ${nome} pelo WhatsApp…`
+              ? `Responder ${nome} pelo ${DEFINICAO_DO_CANAL[canal].nome}…`
               : `Texto livre fechado até ${nome} responder`
           }
           /*
@@ -381,7 +402,7 @@ export function CaixaDeResposta({
             outra faz a mensagem "mudar" ao ser enviada, e quem escreve passa a
             revisar duas vezes o mesmo parágrafo.
           */
-          className="min-h-9 flex-1 resize-none rounded-[19px] border border-line bg-surface px-3.5 py-2 font-texto text-[14px] leading-[1.45] outline-none transition placeholder:text-dim focus:border-primary/40 disabled:opacity-50"
+          className="block min-h-11 w-full resize-none rounded-t-[16px] bg-transparent px-3.5 pt-3 pb-1 font-texto text-[14.5px] leading-[1.45] outline-none placeholder:text-dim disabled:opacity-50"
           onChange={(evento) => {
             setTemTexto(evento.currentTarget.value.trim() !== '')
             ajustarAltura(evento.currentTarget)
@@ -411,12 +432,66 @@ export function CaixaDeResposta({
             }
             // Enter manda, Shift+Enter quebra linha, o hábito de todo mundo que
             // usa WhatsApp. `requestSubmit` para o `action` do form valer.
+            if (formata && (evento.ctrlKey || evento.metaKey) && !evento.altKey) {
+              const marca: Marca | null =
+                evento.key === 'b' || evento.key === 'B'
+                  ? 'negrito'
+                  : evento.key === 'i' || evento.key === 'I'
+                    ? 'italico'
+                    : null
+              if (marca) {
+                evento.preventDefault()
+                aplicarMarca(marca)
+                return
+              }
+            }
             if (evento.key === 'Enter' && !evento.shiftKey) {
               evento.preventDefault()
               evento.currentTarget.form?.requestSubmit()
             }
           }}
         />
+
+        <div className="flex items-center gap-0.5 px-1.5 pb-1.5">
+        {livre && anexo && !gravando && <BotaoDeAnexo desabilitado={enviando} />}
+        {livre && !gravando && <SeletorDeEmoji aoEscolher={inserirResposta} desabilitado={enviando} />}
+        {/*
+          Resposta rápida e produto são duas entradas da mesma barra, com o
+          mesmo padrão: abre para cima, busca por teclado, Esc fecha (8.2).
+        */}
+        {livre && !gravando && respostasRapidas.length > 0 && (
+          <SeletorDeRespostaRapida
+            respostas={respostasRapidas}
+            aberto={rapidasAbertas}
+            aoAbrir={() => setRapidasAbertas(true)}
+            aoFechar={fecharRapidas}
+            aoEscolher={(resposta) => {
+              setRapidasAbertas(false)
+              inserirResposta(resposta.texto)
+              setAnuncio(`Resposta /${resposta.atalho} inserida.`)
+            }}
+            desabilitado={enviando}
+          />
+        )}
+        {livre && anexo && !gravando && (
+          <SeletorDeProduto clienteId={anexo.clienteId} contatoId={anexo.contatoId} desabilitado={enviando} />
+        )}
+
+        {livre && !gravando && formata && (
+          <>
+            <span aria-hidden className="mx-1 h-4 w-px bg-line" />
+            <BotaoDeFormato rotulo="Negrito (Ctrl+B)" aoClicar={() => aplicarMarca('negrito')} desabilitado={enviando}>
+              <strong>B</strong>
+            </BotaoDeFormato>
+            <BotaoDeFormato rotulo="Itálico (Ctrl+I)" aoClicar={() => aplicarMarca('italico')} desabilitado={enviando}>
+              <em className="font-serif">I</em>
+            </BotaoDeFormato>
+            <BotaoDeFormato rotulo="Riscado" aoClicar={() => aplicarMarca('riscado')} desabilitado={enviando}>
+              <s>S</s>
+            </BotaoDeFormato>
+          </>
+        )}
+        {!gravando && <span className="flex-1" />}
 
         {/*
           Gravando, a linha é só da gravação, e o microfone se encarrega disso
@@ -446,6 +521,7 @@ export function CaixaDeResposta({
             {enviando ? '…' : '➤'}
           </button>
         )}
+        </div>
       </div>
 
       {/*
@@ -468,5 +544,38 @@ export function CaixaDeResposta({
         </p>
       )}
     </form>
+  )
+}
+
+/**
+ * Um botão de formato da barra do campo.
+ *
+ * `onMouseDown` com `preventDefault` segura o foco no campo: sem isso o clique
+ * tira o foco do `<textarea>`, a seleção se perde, e o negrito cai no lugar
+ * errado, ou em lugar nenhum.
+ */
+function BotaoDeFormato({
+  rotulo,
+  aoClicar,
+  desabilitado,
+  children,
+}: {
+  rotulo: string
+  aoClicar: () => void
+  desabilitado?: boolean
+  children: React.ReactNode
+}) {
+  return (
+    <button
+      type="button"
+      title={rotulo}
+      aria-label={rotulo}
+      disabled={desabilitado}
+      onMouseDown={(evento) => evento.preventDefault()}
+      onClick={aoClicar}
+      className="flex size-8 items-center justify-center rounded-lg text-[14px] text-soft transition hover:bg-surface hover:text-ink disabled:opacity-50"
+    >
+      {children}
+    </button>
   )
 }
