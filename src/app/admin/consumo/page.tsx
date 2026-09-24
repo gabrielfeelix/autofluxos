@@ -1,131 +1,147 @@
-import { acharPlano, comoTamanho, fracaoUsada, O_QUE_E_CONVERSA } from '@/core/planos'
-import { consumoDeTodasAsContas, type ConsumoDeUmaConta } from '@/server/repos/plano'
-import { EscopoDoAdmin } from '@/components/conta/escopo-do-admin'
+import Link from 'next/link'
+import { BarraDeLista } from '@/components/design/barra-de-lista'
+import { LinhaClicavel } from '@/components/lead/linha-clicavel'
+import {
+  COLUNA_FIXA,
+  FUNDO_DA_FIXA,
+  FUNDO_DA_LINHA,
+  lerParametros,
+  Numero,
+  ordenar,
+  SemResultado,
+  Selo,
+  Tabela,
+  TelaDaAdministracao,
+  ThOrdenavel,
+} from '@/components/admin/partes'
+import { comoTamanho, fracaoUsada, O_QUE_E_CONVERSA } from '@/core/planos'
+import { consumoDeTodasAsContas } from '@/server/repos/plano'
+import { planosVigentes } from '@/server/repos/planos'
 
 export const dynamic = 'force-dynamic'
 
+const BASE = '/admin/consumo'
+
+const FAIXAS = [
+  { valor: 'acima', rotulo: 'Acima do limite' },
+  { valor: 'perto', rotulo: 'Perto do limite (80% ou mais)' },
+  { valor: 'folga', rotulo: 'Com folga' },
+  { valor: 'parada', rotulo: 'Sem conversa no mês' },
+]
+
 /**
- * Quanto cada conta consumiu no mês.
- *
- * **Esta tela mede e não cobra, e a distinção é o desenho inteiro.** Medir vem
- * antes de cobrar, e medir sem travar vem antes de travar: um mês de número real
- * dirá se as faixas de `core/planos.ts` fazem sentido, e ninguém descobre isso
- * por dedução. Se a trava nascesse junto da primeira medição, o primeiro erro de
- * contagem viraria cliente sem atender.
- *
- * Por isso nada aqui bloqueia coisa nenhuma, e o passar da faixa aparece como
- * aviso para quem opera a 4YU, não como porta fechada para o cliente.
- *
- * Nasce protegida sem fazer nada: `admin/layout.tsx` chama
- * `exigirAdminDaPlataforma()` uma vez e toda rota abaixo herda.
+ * O que cada organização usou neste mês, contra o que o plano comporta.
+ * Nada aqui bloqueia nada: a medição existe para as faixas serem conferidas
+ * antes de virarem cobrança.
  */
-export default async function Consumo() {
-  const contas = await consumoDeTodasAsContas()
+export default async function Consumo({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {
+  const parametros = lerParametros(await searchParams)
+  const [contas, planos] = await Promise.all([consumoDeTodasAsContas(), planosVigentes()])
+  const planoDe = (id: string) => planos.find((plano) => plano.id === id) ?? planos[0]!
+  const linhas = contas.map((conta) => {
+    const plano = planoDe(conta.plano)
+    return { ...conta, planoNome: plano.nome, limite: plano.conversas, fracao: fracaoUsada(conta.conversas, plano) }
+  })
 
-  const totalDeConversas = contas.reduce((soma, c) => soma + c.conversas, 0)
-  const totalDeBytes = contas.reduce((soma, c) => soma + c.bytes, 0)
-  const ativas = contas.filter((c) => c.conversas > 0).length
+  const busca = (parametros.busca ?? '').trim().toLocaleLowerCase('pt-BR')
+  const filtradas = linhas.filter((linha) => {
+    if (busca && !linha.nome.toLocaleLowerCase('pt-BR').includes(busca)) return false
+    if (parametros.plano && linha.plano !== parametros.plano) return false
+    if (parametros.faixa === 'acima' && linha.fracao <= 1) return false
+    if (parametros.faixa === 'perto' && linha.fracao < 0.8) return false
+    if (parametros.faixa === 'folga' && (linha.fracao >= 0.8 || linha.conversas === 0)) return false
+    if (parametros.faixa === 'parada' && linha.conversas > 0) return false
+    return true
+  })
+  const lista = ordenar(
+    filtradas,
+    parametros,
+    { nome: (l) => l.nome, plano: (l) => l.planoNome, conversas: (l) => l.conversas, uso: (l) => l.fracao, arquivos: (l) => l.arquivos, bytes: (l) => l.bytes },
+    { ordem: 'uso', direcao: 'desc' },
+  )
+  const temFiltro = !!(parametros.busca || parametros.plano || parametros.faixa)
+  const total = linhas.reduce((soma, linha) => soma + linha.conversas, 0)
+  const bytes = linhas.reduce((soma, linha) => soma + linha.bytes, 0)
+  const ativas = linhas.filter((linha) => linha.conversas > 0).length
+  const acima = linhas.filter((linha) => linha.fracao > 1).length
 
   return (
-    <main className="w-full px-4 pt-[38px] pb-[46px] md:px-[46px]">
-      <header className="mb-7">
-        <EscopoDoAdmin>Consumo por conta · plataforma inteira</EscopoDoAdmin>
-        <h1 className="text-[25px] font-bold tracking-[-0.02em]">Consumo</h1>
-        <p className="mt-1 max-w-[680px] text-[13px] leading-6 text-muted">
-          O que cada conta usou neste mês, contra o que o plano dela comporta.{' '}
-          {O_QUE_E_CONVERSA} Nada aqui bloqueia nada: a medição existe para as faixas
-          serem conferidas antes de virarem cobrança.
-        </p>
-      </header>
-
-      <section className="mb-6 grid gap-3 sm:grid-cols-3">
-        <Numero rotulo="Conversas no mês" valor={totalDeConversas.toLocaleString('pt-BR')} />
-        <Numero rotulo="Contas com conversa" valor={`${ativas} de ${contas.length}`} />
-        <Numero rotulo="Arquivos recebidos" valor={comoTamanho(totalDeBytes)} />
+    <TelaDaAdministracao titulo="Consumo" descricao={`O que cada organização usou neste mês, contra o que o plano comporta. ${O_QUE_E_CONVERSA}`}>
+      <section className="mb-5 grid grid-cols-2 gap-3 lg:grid-cols-4">
+        <Numero rotulo="Conversas no mês" valor={total.toLocaleString('pt-BR')} />
+        <Numero rotulo="Organizações com conversa" valor={`${ativas} de ${linhas.length}`} />
+        <Numero rotulo="Acima do limite" valor={acima} tom={acima > 0 ? 'perigo' : 'normal'} detalhe={acima > 0 ? 'hora de conversar sobre plano' : 'ninguém estourou'} />
+        <Numero rotulo="Arquivos recebidos" valor={comoTamanho(bytes)} detalhe="só o que chegou pelas conversas" />
       </section>
-
-      {contas.length === 0 ? (
-        <section className="app-card border-dashed px-8 py-12 text-center">
-          <p className="text-[14px] font-semibold text-soft">Nenhuma conta ainda</p>
-        </section>
+      <div className="mb-3">
+        <BarraDeLista
+          base={BASE}
+          parametros={parametros}
+          busca={{ chave: 'busca', placeholder: 'Exemplo: Studio Vega', rotulo: 'Buscar organização' }}
+          grupos={[
+            { chave: 'faixa', titulo: 'Uso do plano', opcoes: FAIXAS },
+            { chave: 'plano', titulo: 'Plano', opcoes: planos.map((plano) => ({ valor: plano.id, rotulo: plano.nome })) },
+          ]}
+          resumo={temFiltro ? `${lista.length} de ${linhas.length}` : `${linhas.length} ${linhas.length === 1 ? 'organização' : 'organizações'}`}
+        />
+      </div>
+      {lista.length === 0 ? (
+        <SemResultado titulo={temFiltro ? 'Nenhuma organização com estes filtros' : 'Nenhuma organização ainda'} limpar={temFiltro ? BASE : undefined} />
       ) : (
-        <ul className="app-card divide-y divide-line overflow-hidden">
-          {contas.map((conta) => (
-            <li key={conta.clienteId}>
-              <LinhaDaConta conta={conta} />
-            </li>
-          ))}
-        </ul>
+        <Tabela largura={860}>
+          <thead>
+            <tr className="border-b border-line">
+              <ThOrdenavel base={BASE} parametros={parametros} chave="nome" fixa>
+                Organização
+              </ThOrdenavel>
+              <ThOrdenavel base={BASE} parametros={parametros} chave="plano">
+                Plano
+              </ThOrdenavel>
+              <ThOrdenavel base={BASE} parametros={parametros} chave="uso" className="w-[260px]">
+                Conversas do plano
+              </ThOrdenavel>
+              <ThOrdenavel base={BASE} parametros={parametros} chave="arquivos" className="text-right">
+                Arquivos
+              </ThOrdenavel>
+              <ThOrdenavel base={BASE} parametros={parametros} chave="bytes" className="text-right">
+                Tamanho
+              </ThOrdenavel>
+            </tr>
+          </thead>
+          <tbody>
+            {lista.map((linha) => {
+              const estourou = linha.fracao > 1
+              const perto = !estourou && linha.fracao >= 0.8
+              return (
+                <LinhaClicavel key={linha.clienteId} href={`/admin/organizacoes/${linha.clienteId}/plano`} className={`group cursor-pointer border-b border-line last:border-0 ${FUNDO_DA_LINHA}`}>
+                  <td className={`${COLUNA_FIXA} ${FUNDO_DA_FIXA} px-4 py-3`}>
+                    <Link href={`/admin/organizacoes/${linha.clienteId}/plano`} className="block truncate text-[13px] font-bold hover:text-primary">
+                      {linha.nome}
+                    </Link>
+                  </td>
+                  <td className="px-4 py-3">
+                    <Selo tom="destaque">{linha.planoNome}</Selo>
+                  </td>
+                  <td className="px-4 py-3">
+                    <span className="flex items-baseline justify-between gap-2 text-[12px]">
+                      <span className={`font-semibold tabular-nums ${estourou ? 'text-perigo' : perto ? 'text-aviso' : 'text-soft'}`}>
+                        {linha.conversas.toLocaleString('pt-BR')} de {linha.limite.toLocaleString('pt-BR')}
+                      </span>
+                      <span className="text-[11px] text-dim tabular-nums">{Math.round(linha.fracao * 100)}%</span>
+                    </span>
+                    <span className="mt-1.5 block h-1.5 overflow-hidden rounded-full bg-surface">
+                      <span className={`block h-full rounded-full ${estourou ? 'bg-perigo' : perto ? 'bg-aviso' : 'bg-primary'}`} style={{ width: `${Math.min(100, Math.round(linha.fracao * 100))}%` }} />
+                    </span>
+                  </td>
+                  <td className="px-4 py-3 text-right text-[12.5px] tabular-nums">{linha.arquivos.toLocaleString('pt-BR')}</td>
+                  <td className="px-4 py-3 text-right text-[12.5px] tabular-nums text-muted">{comoTamanho(linha.bytes)}</td>
+                </LinhaClicavel>
+              )
+            })}
+          </tbody>
+        </Tabela>
       )}
-
-      {/*
-        Escrito na tela, e não só no código, porque quem abrir isto daqui a três
-        meses vai somar este número com o do acervo e achar que o disco encolheu.
-      */}
-      <p className="mt-4 max-w-[680px] text-[12px] leading-6 text-dim">
-        O tamanho conta só os arquivos que chegaram pelas conversas. O acervo de mídia mora
-        no Storage e não tem tabela espelho, então ele não entra nesta soma.
-      </p>
-    </main>
-  )
-}
-
-function Numero({ rotulo, valor }: { rotulo: string; valor: string }) {
-  return (
-    <div className="app-card px-4 py-3.5">
-      <p className="text-[11.5px] text-dim">{rotulo}</p>
-      <p className="mt-1 text-[21px] font-bold tracking-[-0.02em]">{valor}</p>
-    </div>
-  )
-}
-
-function LinhaDaConta({ conta }: { conta: ConsumoDeUmaConta }) {
-  const plano = acharPlano(conta.plano)
-  const fracao = fracaoUsada(conta.conversas, plano)
-  const estourou = fracao > 1
-  const perto = !estourou && fracao >= 0.8
-
-  const tom = estourou ? 'text-perigo' : perto ? 'text-aviso' : 'text-muted'
-
-  return (
-    <article className="flex flex-wrap items-center gap-x-4 gap-y-2 px-4 py-3.5">
-      <div className="min-w-0 flex-1">
-        <p className="truncate text-[13.5px] font-semibold text-soft">{conta.nome}</p>
-        <p className="mt-0.5 text-[11.5px] text-dim">
-          {plano.nome} · R$ {plano.preco} por mês
-        </p>
-      </div>
-
-      <div className="w-full sm:w-[220px]">
-        <div className="flex items-baseline justify-between gap-2">
-          <span className={`text-[12.5px] font-semibold ${tom}`}>
-            {conta.conversas.toLocaleString('pt-BR')} de{' '}
-            {plano.conversas.toLocaleString('pt-BR')}
-          </span>
-          <span className="text-[11px] text-dim">conversas</span>
-        </div>
-
-        {/*
-          A barra para de crescer em 100% e a cor é que denuncia o estouro, senão
-          uma conta com o dobro da faixa empurraria a linha inteira para fora.
-        */}
-        <div className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-surface">
-          <div
-            className={`h-full rounded-full ${
-              estourou ? 'bg-perigo' : perto ? 'bg-aviso' : 'bg-primary'
-            }`}
-            style={{ width: `${Math.min(100, Math.round(fracao * 100))}%` }}
-          />
-        </div>
-      </div>
-
-      <div className="w-[96px] shrink-0 text-right">
-        <p className="text-[12.5px] text-muted">{comoTamanho(conta.bytes)}</p>
-        <p className="text-[11px] text-dim">
-          {conta.arquivos.toLocaleString('pt-BR')} arquivo
-          {conta.arquivos === 1 ? '' : 's'}
-        </p>
-      </div>
-    </article>
+      <p className="mt-3 text-[11.5px] text-dim">O tamanho conta só os arquivos que chegaram pelas conversas. O acervo de mídia mora no Storage e não entra nesta soma.</p>
+    </TelaDaAdministracao>
   )
 }

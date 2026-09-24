@@ -1,6 +1,5 @@
 'use server'
 
-import { revalidatePath } from 'next/cache'
 import { marcarAlertaVisto } from './repos/alertas'
 import { exigirAdminDaPlataforma } from './sessao'
 
@@ -17,19 +16,18 @@ import { exigirAdminDaPlataforma } from './sessao'
  * é contar de cliente para quem talvez não seja dele.
  */
 
-export async function acaoMarcarAlertaVisto(dados: FormData): Promise<void> {
+/**
+ * Marca um alerta (ou todos, sem id) como visto, para a tabela de Alertas.
+ *
+ * Devolve o resultado e não revalida a tela aberta: a linha já esmaeceu na
+ * hora (ação otimista) e só volta se isto falhar.
+ */
+export async function acaoVerAlerta(id?: string): Promise<{ ok: boolean; erro?: string }> {
   await exigirAdminDaPlataforma()
-
-  const id = String(dados.get('id') ?? '')
-  if (!id) return
-
-  await marcarAlertaVisto(id)
-  revalidatePath('/admin/alertas')
-}
-
-export async function acaoMarcarTodosOsAlertasVistos(): Promise<void> {
-  await exigirAdminDaPlataforma()
-
-  await marcarAlertaVisto()
-  revalidatePath('/admin/alertas')
+  try {
+    await marcarAlertaVisto(id)
+    return { ok: true }
+  } catch (erro) {
+    return { ok: false, erro: erro instanceof Error ? erro.message : 'não deu para marcar' }
+  }
 }

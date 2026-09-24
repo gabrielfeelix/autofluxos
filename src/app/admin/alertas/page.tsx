@@ -1,148 +1,72 @@
-import { horaExata, quando } from '@/lib/quando'
-import { acaoMarcarAlertaVisto, acaoMarcarTodosOsAlertasVistos } from '@/server/acoes-alertas'
-import { type Alerta, listarAlertas } from '@/server/repos/alertas'
-import { EscopoDoAdmin } from '@/components/conta/escopo-do-admin'
+import { BarraDeLista } from '@/components/design/barra-de-lista'
+import { lerParametros, SemResultado, TelaDaAdministracao } from '@/components/admin/partes'
+import { TabelaDeAlertas } from '@/components/admin/tabela-de-alertas'
+import { listarAlertas } from '@/server/repos/alertas'
 
 export const dynamic = 'force-dynamic'
 
+const BASE = '/admin/alertas'
+
 /**
- * O que quebrou.
- *
- * **Por que esta tela existe.** `alertar()` era um POST num webhook de Discord
- * e a variável desse webhook nunca foi preenchida, então durante meses o
- * produto teve um mecanismo de aviso completo que não avisava ninguém. Falha no
- * processamento do webhook do WhatsApp, recusa da Cloud API e cofre que não
- * devolve credencial caíam num `console.error` que some do log da Vercel em
- * algumas horas.
- *
- * Agora o alerta vira linha em `public.alertas` (0039) e esta é a tela dela. O
- * webhook continua existindo e toca por cima quando a variável existir.
- *
- * **"Visto" e não "resolvido".** A tela não sabe se o problema acabou, sabe se
- * alguém leu. Prometer "resolvido" num botão que só muda uma data seria a
- * interface afirmando uma coisa que ela não tem como verificar.
+ * Falhas que o produto registrou sozinho: webhook que não processou, entrega
+ * recusada pela Meta, credencial que o cofre não devolveu. Somem depois de
+ * 90 dias. Mesma tabela e barra de filtros das outras listas.
  */
-export default async function Alertas() {
-  const alertas = await listarAlertas({ limite: 200 })
-  const abertos = alertas.filter((a) => a.vistoEm === null).length
+export default async function Alertas({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {
+  const parametros = lerParametros(await searchParams)
+  const todos = await listarAlertas({ limite: 300 })
+  const ambientes = [...new Set(todos.map((alerta) => alerta.ambiente))]
+
+  const busca = (parametros.busca ?? '').trim().toLocaleLowerCase('pt-BR')
+  const lista = todos.filter((alerta) => {
+    if (parametros.situacao === 'abertos' && alerta.vistoEm !== null) return false
+    if (parametros.situacao === 'vistos' && alerta.vistoEm === null) return false
+    if (parametros.ambiente && alerta.ambiente !== parametros.ambiente) return false
+    if (busca && ![alerta.titulo, alerta.detalhe, JSON.stringify(alerta.contexto)].some((texto) => texto.toLocaleLowerCase('pt-BR').includes(busca))) return false
+    return true
+  })
+  const temFiltro = !!(parametros.busca || parametros.situacao || parametros.ambiente)
+  const abertos = todos.filter((alerta) => alerta.vistoEm === null).length
 
   return (
-    <main className="w-full px-4 pt-[38px] pb-[46px] md:px-[46px]">
-      <header className="mb-7 flex flex-wrap items-start justify-between gap-4">
-        <div>
-          <EscopoDoAdmin>Alertas da plataforma · todas as contas</EscopoDoAdmin>
-          <h1 className="text-[25px] font-bold tracking-[-0.02em]">Alertas</h1>
-          <p className="mt-1 max-w-2xl text-[13px] text-muted">
-            Falhas que o produto registrou sozinho: webhook que não processou, entrega recusada
-            pela Meta, credencial que o cofre não devolveu. Some depois de 90 dias.
-          </p>
-        </div>
-
-        {abertos > 0 && (
-          <form action={acaoMarcarTodosOsAlertasVistos}>
-            <button
-              type="submit"
-              className="rounded-[9px] border border-line px-3 py-2 text-[12.5px] font-semibold text-muted transition hover:bg-surface hover:text-ink"
-            >
-              Marcar {abertos} como {abertos === 1 ? 'visto' : 'vistos'}
-            </button>
-          </form>
-        )}
-      </header>
-
-      {alertas.length === 0 ? (
-        <section className="app-card border-dashed px-8 py-12 text-center">
-          <p className="text-[14px] font-semibold text-soft">Nada quebrou</p>
-          <p className="mx-auto mt-1.5 max-w-md text-[12.5px] leading-6 text-dim">
-            Esta tela vazia é a notícia boa. Ela enche sozinha quando o webhook do WhatsApp falhar,
-            a Cloud API recusar uma entrega ou o cofre não devolver uma credencial.
-          </p>
-        </section>
-      ) : (
-        <ul className="app-card divide-y divide-line overflow-hidden">
-          {alertas.map((alerta) => (
-            <li key={alerta.id}>
-              <Linha alerta={alerta} />
-            </li>
-          ))}
-        </ul>
-      )}
-    </main>
-  )
-}
-
-function Linha({ alerta }: { alerta: Alerta }) {
-  const aberto = alerta.vistoEm === null
-  const contexto = Object.entries(alerta.contexto)
-
-  return (
-    <article className={`px-4 py-3.5 md:px-5 ${aberto ? '' : 'opacity-55'}`}>
-      <div className="flex flex-wrap items-center gap-2">
-        {aberto && (
-          <span
-            aria-label="não visto"
-            className="size-[7px] shrink-0 rounded-full bg-amber-400"
-          />
-        )}
-        <h2 className="text-[13.5px] font-semibold text-soft">{alerta.titulo}</h2>
-
-        {/*
-         * O ambiente só aparece quando NÃO é produção. Um selo em toda linha
-         * vira ruído; a informação que muda a decisão é "isto aqui é de uma
-         * branch de teste, pode respirar".
-         */}
-        {alerta.ambiente !== 'production' && (
-          <span className="rounded-md border border-line px-1.5 py-0.5 font-mono text-[9.5px] text-dim">
-            {alerta.ambiente}
-          </span>
-        )}
-
-        <time
-          dateTime={alerta.criadoEm}
-          title={horaExata(alerta.criadoEm)}
-          className="ml-auto shrink-0 text-[11.5px] text-dim"
-        >
-          {quando(alerta.criadoEm)}
-        </time>
+    <TelaDaAdministracao titulo="Alertas" descricao="Falhas que o produto registrou sozinho: webhook que não processou, entrega recusada pela Meta, credencial que o cofre não devolveu. Somem depois de 90 dias.">
+      <div className="mb-3">
+        <BarraDeLista
+          base={BASE}
+          parametros={parametros}
+          busca={{ chave: 'busca', placeholder: 'Exemplo: webhook, número ou mensagem de erro', rotulo: 'Buscar alerta' }}
+          grupos={[
+            { chave: 'situacao', titulo: 'Situação', opcoes: [{ valor: 'abertos', rotulo: 'Não vistos' }, { valor: 'vistos', rotulo: 'Vistos' }] },
+            ...(ambientes.length > 1 ? [{ chave: 'ambiente', titulo: 'Ambiente', opcoes: ambientes.map((valor) => ({ valor, rotulo: valor })) }] : []),
+          ]}
+          resumo={temFiltro ? `${lista.length} de ${todos.length}` : `${todos.length} ${todos.length === 1 ? 'alerta' : 'alertas'} · ${abertos} não ${abertos === 1 ? 'visto' : 'vistos'}`}
+        />
       </div>
-
-      {contexto.length > 0 && (
-        <dl className="mt-1.5 flex flex-wrap gap-x-3.5 gap-y-1">
-          {contexto.map(([chave, valor]) => (
-            <div key={chave} className="flex gap-1.5 text-[11.5px]">
-              <dt className="text-dim">{chave}:</dt>
-              <dd className="font-mono text-muted">{String(valor)}</dd>
-            </div>
-          ))}
-        </dl>
+      {lista.length === 0 ? (
+        temFiltro ? (
+          <SemResultado titulo="Nenhum alerta com estes filtros" limpar={BASE} />
+        ) : (
+          <section className="app-card px-8 py-12 text-center">
+            <p className="text-[14px] font-semibold text-soft">Nada quebrou</p>
+            <p className="mx-auto mt-1.5 max-w-md text-[12.5px] leading-6 text-dim">
+              Esta tela vazia é a notícia boa. Ela enche sozinha quando o webhook do WhatsApp falhar, a Cloud API recusar uma entrega ou o cofre não devolver uma credencial.
+            </p>
+          </section>
+        )
+      ) : (
+        <TabelaDeAlertas
+          key={JSON.stringify(parametros)}
+          alertas={lista.map((alerta) => ({
+            id: alerta.id,
+            titulo: alerta.titulo,
+            detalhe: alerta.detalhe,
+            contexto: Object.entries(alerta.contexto).map(([chave, valor]) => [chave, String(valor)] as [string, string]),
+            ambiente: alerta.ambiente,
+            criadoEm: alerta.criadoEm,
+            visto: alerta.vistoEm !== null,
+          }))}
+        />
       )}
-
-      {/*
-       * `<details>` e não um acordeão de React: o detalhe é um stack de erro
-       * que quase ninguém abre, e quem abre quer poder selecionar e copiar. O
-       * elemento nativo faz as duas coisas sem estado nenhum.
-       */}
-      <details className="group mt-2">
-        <summary className="cursor-pointer list-none text-[11.5px] font-semibold text-dim transition hover:text-primary">
-          <span className="group-open:hidden">Ver o detalhe</span>
-          <span className="hidden group-open:inline">Esconder</span>
-        </summary>
-        <pre className="mt-2 max-h-[280px] overflow-auto rounded-[9px] border border-line bg-black/25 p-3 font-mono text-[11px] leading-5 whitespace-pre-wrap text-muted">
-          {alerta.detalhe}
-        </pre>
-      </details>
-
-      {aberto && (
-        <form action={acaoMarcarAlertaVisto} className="mt-2.5">
-          <input type="hidden" name="id" value={alerta.id} />
-          <button
-            type="submit"
-            className="text-[11.5px] font-semibold text-dim transition hover:text-primary"
-          >
-            Marcar como visto
-          </button>
-        </form>
-      )}
-    </article>
+    </TelaDaAdministracao>
   )
 }
