@@ -206,25 +206,6 @@ export async function acharUsuario(id: string): Promise<UsuarioDaSessao | null> 
   }
 }
 
-/**
- * Para onde a pessoa vai quando entra, e para onde a tela de entrar a manda se
- * ela já estava logada.
- *
- * Mora aqui, e não junto das ações, porque **duas** telas precisam da mesma
- * resposta: a que acabou de autenticar e a que descobre uma sessão já aberta.
- * Duas cópias divergem no dia em que o administrador ganhar uma tela inicial
- * própria.
- */
-export async function destinoAposEntrar(sessao: SessaoAtual): Promise<string> {
-  if (ehAdminDaPlataforma(sessao)) return '/admin/contas'
-
-  const [primeira, ...resto] = await contasDoUsuario(sessao.usuario.id)
-  // Uma conta só é o caso comum, e mandar essa pessoa para um seletor de um
-  // item é fazê-la clicar para confirmar o óbvio.
-  if (primeira && resto.length === 0) return `/clientes/${primeira.id}`
-  return '/contas'
-}
-
 export type AcessoAoCliente = {
   sessao: SessaoAtual
   /** `owner`, `admin`, `member`, ou nulo para o administrador da plataforma. */

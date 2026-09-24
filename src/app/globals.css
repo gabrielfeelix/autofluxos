@@ -578,6 +578,26 @@ textarea::placeholder {
   animation: dropdown-in 130ms ease both;
 }
 
+/*
+ * O menu de troca de conta (`seletor-de-conta.tsx`). Mesma superfície do
+ * dropdown, mas é `popover="auto"`: o navegador põe `inset: 0` e `margin:
+ * auto`, e sem zerar os dois a caixa ignora o `top`/`left` medidos do botão.
+ */
+.app-seletor-de-conta {
+  position: fixed;
+  inset: auto;
+  margin: 0;
+  padding: 6px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: var(--panel);
+  color: var(--ink);
+  box-shadow: var(--shadow-menu);
+}
+.app-seletor-de-conta:popover-open {
+  animation: dropdown-in 140ms ease both;
+}
+
 .app-dropdown-option {
   display: flex;
   width: 100%;

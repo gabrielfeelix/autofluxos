@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { MODELOS_EXTRA, type Acesso } from '@/core/permissoes'
-import { ITENS, liberaSecao, secoesVisiveis } from './secoes-do-cliente'
+import { ITENS, destinoNaConta, liberaSecao, secoesVisiveis, telaInicial } from './secoes-do-cliente'
 
 /**
  * A barra lateral com o CRM opcional (T7.1, §4.2).
@@ -76,5 +76,33 @@ describe('as seções que esta pessoa pode usar (E7)', () => {
 
   it('sem regras é o esqueleto, e mostra tudo', () => {
     expect(liberaSecao(undefined, 'fluxos')).toBe(true)
+  })
+})
+
+describe('telaInicial e destinoNaConta', () => {
+  const operador = {
+    papel: 'member' as const,
+    sobrescritas: { atender: 'proprios' as const, configurar_operacao: 'nenhum' as const, exportar: 'nenhum' as const },
+  }
+
+  it('quem atende só as próprias conversas entra pelo Inbox', () => {
+    expect(telaInicial(operador)).toBe('/inbox')
+  })
+
+  it('dono, membro sem restrição e administrador da 4YU entram pelo Painel', () => {
+    expect(telaInicial({ papel: 'owner' })).toBe('')
+    expect(telaInicial({ papel: 'member' })).toBe('')
+    expect(telaInicial({ papel: null, ehAdminDaPlataforma: true })).toBe('')
+  })
+
+  it('a troca de conta mantém a seção quando a outra conta libera', () => {
+    expect(destinoNaConta({ papel: 'owner' }, 'inbox')).toBe('/inbox')
+    expect(destinoNaConta({ papel: 'owner' }, 'fluxos')).toBe('/fluxos')
+  })
+
+  it('seção fechada ou inventada cai na tela inicial, nunca na de sem acesso', () => {
+    expect(destinoNaConta(operador, 'fluxos')).toBe('/inbox')
+    expect(destinoNaConta({ papel: 'owner' }, 'nao-existe')).toBe('')
+    expect(destinoNaConta({ papel: 'owner' }, null)).toBe('')
   })
 })

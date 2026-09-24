@@ -1,20 +1,20 @@
 import Link from 'next/link'
 import { Suspense, cache } from 'react'
 import { acessoCompleto, filtroDoAcesso } from '@/server/permissoes'
-import { resumoDoAcesso } from '@/core/permissoes'
+import { ROTULO_DO_PAPEL, ROTULO_DO_SUPORTE, resumoDoAcesso, type PapelDaConta } from '@/core/permissoes'
+import { SeletorDeConta } from '@/components/conta/seletor-de-conta'
 import { PainelVoce, PerfilDaSessao } from '@/components/conta/voce'
 import { contagensDaAgenda } from '@/server/repos/atividades'
 import { lerFiltroDaAgenda } from '@/core/atividades'
 import { ContadorDaAgenda } from '@/components/atividades/contador-da-agenda'
 import { NotificacoesDaFila } from '@/components/inbox/notificacoes-da-fila'
 import { acaoDefinirPresenca } from '@/server/acoes-conta'
-import type { Cliente } from '@/server/repos/clientes'
+import { resumoDasContas, type Cliente, type ResumoDeAtendimento } from '@/server/repos/clientes'
 import { crmVisivel } from '@/server/repos/recursos'
 import { presencaDoUsuario } from '@/server/repos/usuarios'
 import { contasDoUsuario, ehAdminDaPlataforma } from '@/server/sessao'
 import { BarraLateral } from './barra-lateral'
 import { liberaSecao, secoesVisiveis } from './secoes-do-cliente'
-import { LogoDoCliente } from './logo-cliente'
 import { MarcaDeAdmin } from './marca-de-admin'
 import { Marca } from './marca'
 
@@ -37,6 +37,26 @@ export async function BarraDoCliente({ cliente }: { cliente: Cliente }) {
     presencaDoUsuario(acesso.sessao.usuario.id),
     crmVisivel(cliente.id),
   ])
+  // Só vale a consulta quando existe outra conta para onde ir.
+  const esperando = contas.length > 1 ? await resumoDasContas(contas.map((conta) => conta.id)) : new Map<string, ResumoDeAtendimento>()
+  const perfil = resumoDoAcesso(acesso.regras).perfil
+  const doSeletor = contas.map((conta) => ({
+    id: conta.id,
+    nome: conta.nome,
+    logoUrl: conta.logoUrl,
+    // Na conta aberta, o perfil de verdade (com as exceções da pessoa); nas
+    // outras, o nome do papel, que sai sem consulta.
+    papel: conta.id === cliente.id ? perfil : (ROTULO_DO_PAPEL[conta.papel as PapelDaConta] ?? conta.papel),
+    esperando: esperando.get(conta.id)?.esperandoPessoa ?? 0,
+  }))
+  const atual = doSeletor.find((conta) => conta.id === cliente.id) ?? {
+    // O administrador da 4YU entra sem ser membro: a conta não está na lista dele.
+    id: cliente.id,
+    nome: cliente.nome,
+    logoUrl: cliente.logoUrl,
+    papel: acesso.papel === null ? ROTULO_DO_SUPORTE : perfil,
+    esperando: 0,
+  }
   // O administrador da plataforma veio da lista de clientes e precisa do
   // caminho de volta. O dono do negócio, não: para ele não existe "todos os
   // clientes", existe a conta dele.
@@ -59,7 +79,7 @@ export async function BarraDoCliente({ cliente }: { cliente: Cliente }) {
           voltarHref={podeVerTodosOsClientes ? '/painel' : undefined}
           presenca={presenca ?? undefined}
           conta={cliente.nome}
-          contaNoTopo={<SeletorDeConta cliente={cliente} outrasContas={contas.length} />}
+          contaNoTopo={<SeletorDeConta atual={atual} contas={doSeletor} />}
           voltar={
             podeVerTodosOsClientes ? (
               <Link
@@ -80,7 +100,7 @@ export async function BarraDoCliente({ cliente }: { cliente: Cliente }) {
           rodape={
             <PainelVoce
               email={acesso.sessao.usuario.email}
-              papel={`${resumoDoAcesso(acesso.regras).perfil} · ${cliente.nome}`}
+              papel={`${perfil} · ${cliente.nome}`}
               suporte={acesso.papel === null}
               configuracoesHref={liberaSecao(acesso.regras, 'ajustes') ? `${base}/ajustes` : null}
               outrasContas={contas.length}
@@ -102,41 +122,6 @@ export async function BarraDoCliente({ cliente }: { cliente: Cliente }) {
       </PerfilDaSessao>
     </>
   )
-}
-
-/**
- * A conta atual no topo da barra, e o caminho para as outras.
- *
- * Morava no rodapé; subiu quando o rodapé passou a ser da pessoa (7.5). Vira
- * link para o seletor só quando a pessoa tem mais de uma companhia. Um botão
- * que abre uma lista de um item é atrito puro, e conta única é o caso comum.
- */
-function SeletorDeConta({ cliente, outrasContas }: { cliente: Cliente; outrasContas: number }) {
-  const miolo = (
-    <>
-      <LogoDoCliente cliente={cliente} tamanho={24} />
-      <span className="min-w-0 flex-1 truncate text-[12.5px] font-semibold text-muted">{cliente.nome}</span>
-      {outrasContas > 1 && (
-        <span aria-hidden className="text-[11px] text-dim">
-          trocar
-        </span>
-      )}
-    </>
-  )
-
-  if (outrasContas > 1) {
-    return (
-      <Link
-        href="/contas"
-        title="Trocar de conta"
-        className="flex items-center gap-2 rounded-[10px] px-2 py-1.5 transition hover:bg-surface"
-      >
-        {miolo}
-      </Link>
-    )
-  }
-
-  return <div className="flex items-center gap-2 px-2 py-1.5">{miolo}</div>
 }
 
 /**

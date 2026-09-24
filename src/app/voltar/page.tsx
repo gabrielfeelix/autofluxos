@@ -1,5 +1,6 @@
 import { redirect } from 'next/navigation'
-import { destinoAposEntrar, sessaoAtual } from '@/server/sessao'
+import { destinoAposEntrar } from '@/server/permissoes'
+import { sessaoAtual } from '@/server/sessao'
 
 export const dynamic = 'force-dynamic'
 

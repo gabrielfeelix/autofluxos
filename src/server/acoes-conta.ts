@@ -16,10 +16,10 @@ import {
 } from './repos/clientes'
 import { definirPapelNaConta, definirPresenca, papelNaConta } from './repos/usuarios'
 import type { UsuarioDaSessao } from './sessao'
+import { caminhoNaConta, destinoAposEntrar } from './permissoes'
 import {
   acharUsuario,
   contasDoUsuario,
-  destinoAposEntrar,
   ehAdminDaPlataforma,
   existeAlgumUsuario,
   exigirAdminDaPlataforma,
@@ -251,22 +251,27 @@ export async function acaoCriarPrimeiroAdministrador(
  * 0020) e não num cookie próprio é o que faz o servidor nunca precisar
  * acreditar no navegador sobre em qual conta a pessoa está.
  */
-export async function acaoTrocarDeCompanhia(contaId: string) {
+export async function acaoTrocarDeCompanhia(contaId: string, secao?: string | null) {
   const sessao = await sessaoAtual()
   if (!sessao) redirect('/entrar')
 
   const contas = await contasDoUsuario(sessao.usuario.id)
   // A lista vem do banco, não do formulário: um `contaId` postado à mão não
   // pode virar acesso a uma conta de que a pessoa não é membro.
-  if (!contas.some((conta) => conta.id === contaId)) redirect('/contas')
+  const conta = contas.find((candidata) => candidata.id === contaId)
+  if (!conta) redirect('/contas')
 
   await autenticacao().api.setActiveOrganization({
     headers: await headers(),
     body: { organizationId: contaId },
   })
 
+  // A seção vem do seletor da barra: quem estava no Inbox da outra conta cai no
+  // Inbox desta, se ela liberar. `caminhoNaConta` confere, e o pior caso de um
+  // valor inventado é a tela inicial.
+  const destino = await caminhoNaConta(sessao.usuario.id, conta, secao)
   revalidatePath('/', 'layout')
-  redirect(`/clientes/${contaId}`)
+  redirect(destino)
 }
 
 /**

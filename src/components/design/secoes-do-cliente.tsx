@@ -140,6 +140,36 @@ export function liberaSecao(regras: Acesso | undefined, chave: AbaDoCliente): bo
   return exigencia.capacidades.some((capacidade) => pode(regras, capacidade, exigencia.minimo))
 }
 
+/**
+ * A primeira tela de quem entra na conta, relativa a `/clientes/<id>`.
+ *
+ * Quem atende só as próprias conversas não tem o que fazer no Painel: o
+ * trabalho dele é a fila, e abrir no resumo da operação é um clique a mais toda
+ * manhã. Dono, gestor e membro sem restrição continuam no Painel.
+ *
+ * Sai do **escopo**, e não do nome do papel: a sobrescrita que transforma um
+ * membro em operador muda a tela inicial junto, sem ninguém lembrar de mexer
+ * aqui.
+ */
+export function telaInicial(regras: Acesso): string {
+  if (regras.ehAdminDaPlataforma) return ''
+  const soOsProprios = pode(regras, 'atender', 'proprios') && !pode(regras, 'atender', 'equipe')
+  return soOsProprios && liberaSecao(regras, 'inbox') ? '/inbox' : ''
+}
+
+/**
+ * Para onde vai quem troca de conta estando em `secao`.
+ *
+ * Quem estava no Inbox da Empresa 1 quer o Inbox da Empresa 2, e não o Painel.
+ * Se a outra conta não libera aquela seção para esta pessoa, cai na tela
+ * inicial dela: mandar para a tela de "sem acesso" seria punir a troca.
+ */
+export function destinoNaConta(regras: Acesso, secao?: string | null): string {
+  const item = ITENS.find((candidato) => candidato.chave === secao)
+  if (item && item.chave !== 'inicio' && liberaSecao(regras, item.chave)) return item.href
+  return telaInicial(regras)
+}
+
 /** O nome da seção como o menu mostra, para a tela de sem acesso dizer o mesmo. */
 export function rotuloDaSecao(chave: AbaDoCliente): string {
   return ITENS.find((item) => item.chave === chave)?.rotulo ?? 'esta tela'

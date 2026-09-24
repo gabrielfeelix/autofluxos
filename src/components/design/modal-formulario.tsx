@@ -64,7 +64,7 @@ export function ModalFormulario({
    * `secundario` para quando o modal não é a ação principal da tela; `linha`
    * para a ação de uma linha de lista, no tamanho do `BotaoPerigo` ao lado.
    */
-  variante?: 'primario' | 'secundario' | 'linha'
+  variante?: 'primario' | 'secundario' | 'linha' | 'cartao'
 }) {
   const dialogo = useRef<HTMLDialogElement>(null)
   const formulario = useRef<HTMLFormElement>(null)
@@ -154,7 +154,10 @@ export function ModalFormulario({
             ? 'app-primary-button px-[18px] py-2.5 text-[13px]'
             : variante === 'linha'
               ? 'rounded-lg border border-line px-2.5 py-1 text-[11px] font-semibold text-muted transition hover:bg-surface-strong hover:text-ink'
-              : 'app-secondary-button px-3 py-1.5 text-[11.5px]'
+              : variante === 'cartao'
+                ? // Ocupa a célula inteira de uma grade de cartões: é o "adicionar" no fim dela.
+                  'group flex h-full min-h-[184px] w-full flex-col items-center justify-center gap-2.5 rounded-[16px] border border-dashed border-strong text-[13px] font-semibold text-muted transition hover:border-primary hover:bg-primary-weak hover:text-primary'
+                : 'app-secondary-button px-3 py-1.5 text-[11.5px]'
         }
       >
         {botao}

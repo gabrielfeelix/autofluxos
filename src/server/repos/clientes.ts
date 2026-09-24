@@ -167,6 +167,43 @@ export async function resumirAtendimento(): Promise<Map<string, ResumoDeAtendime
   return mapa
 }
 
+/**
+ * O resumo de atendimento só destas contas: quem espera, quantos contatos e o
+ * último movimento.
+ *
+ * É o que o seletor de conta e a tela `/contas` mostram: quem atende três
+ * empresas precisa saber em qual tem gente esperando sem entrar em cada uma.
+ * Mesma view do painel da 4YU, **sempre** filtrada, porque a view é de todos os
+ * clientes.
+ *
+ * Falha vira mapa vazio. É informação de apoio, e derrubar a barra lateral por
+ * causa dela seria trocar um número por uma tela quebrada.
+ */
+export async function resumoDasContas(
+  ids: readonly string[],
+): Promise<Map<string, ResumoDeAtendimento>> {
+  const mapa = new Map<string, ResumoDeAtendimento>()
+  if (ids.length === 0) return mapa
+
+  const { data, error } = await db()
+    .from('resumo_clientes')
+    .select('client_id, contatos, esperando_pessoa, ultima_atividade')
+    .in('client_id', ids)
+
+  if (error) {
+    console.error('[clientes] não deu para resumir as contas:', error.message)
+    return mapa
+  }
+  for (const linha of data as LinhaDeResumo[]) {
+    mapa.set(linha.client_id, {
+      contatos: Number(linha.contatos),
+      esperandoPessoa: Number(linha.esperando_pessoa),
+      ultimaAtividade: linha.ultima_atividade ? new Date(linha.ultima_atividade) : null,
+    })
+  }
+  return mapa
+}
+
 export async function acharCliente(id: string): Promise<Cliente | null> {
   const { data, error } = await db().from('clients').select(COLUNAS).eq('id', id).maybeSingle()
 

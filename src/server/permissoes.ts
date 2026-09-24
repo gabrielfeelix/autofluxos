@@ -12,7 +12,15 @@ import {
   type Politica,
 } from '@/core/permissoes'
 import { db } from './db'
-import { exigirAcessoAoCliente, ehAdminDaPlataforma, type AcessoAoCliente } from './sessao'
+import {
+  contasDoUsuario,
+  exigirAcessoAoCliente,
+  ehAdminDaPlataforma,
+  type AcessoAoCliente,
+  type ContaDoUsuario,
+  type SessaoAtual,
+} from './sessao'
+import { destinoNaConta } from '@/components/design/secoes-do-cliente'
 
 /**
  * A autorização de negócio (RB-40 a RB-42).
@@ -138,6 +146,43 @@ export async function sobrescritasDoUsuario(
     }
   }
   return saida
+}
+
+/**
+ * Onde esta pessoa cai ao entrar nesta conta, já com o caminho inteiro.
+ *
+ * Recebe o usuário e o papel explícitos, e não lê a sessão do cookie: o login
+ * chama isto **na mesma requisição** que acabou de autenticar, quando o cookie
+ * novo ainda não voltou do navegador. Equipe não entra porque a tela inicial
+ * só depende do escopo, e escopo sai de papel e sobrescrita.
+ */
+export async function caminhoNaConta(
+  usuarioId: string,
+  conta: Pick<ContaDoUsuario, 'id' | 'papel'>,
+  secao?: string | null,
+): Promise<string> {
+  const papel = ehPapelDaConta(conta.papel) ? conta.papel : null
+  const sobrescritas = papel ? await sobrescritasDoUsuario(conta.id, usuarioId) : {}
+  return `/clientes/${conta.id}${destinoNaConta({ papel, usuarioId, sobrescritas }, secao)}`
+}
+
+/**
+ * Para onde a pessoa vai quando entra, e para onde a tela de entrar a manda se
+ * ela já estava logada.
+ *
+ * Mora aqui, e não junto das ações, porque **várias** telas precisam da mesma
+ * resposta: a que acabou de autenticar, a que descobre uma sessão já aberta, o
+ * cadastro e o `/voltar`. Saiu de `sessao.ts` quando passou a depender do
+ * acesso da pessoa: quem só atende as próprias conversas entra pelo Inbox.
+ */
+export async function destinoAposEntrar(sessao: SessaoAtual): Promise<string> {
+  if (ehAdminDaPlataforma(sessao)) return '/admin/contas'
+
+  const [primeira, ...resto] = await contasDoUsuario(sessao.usuario.id)
+  // Uma conta só é o caso comum, e mandar essa pessoa para um seletor de um
+  // item é fazê-la clicar para confirmar o óbvio.
+  if (primeira && resto.length === 0) return caminhoNaConta(sessao.usuario.id, primeira)
+  return '/contas'
 }
 
 // ---------------------------------------------------------------------------

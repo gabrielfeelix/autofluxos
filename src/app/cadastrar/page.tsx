@@ -3,7 +3,8 @@ import { redirect } from 'next/navigation'
 import { FormularioDeConta } from '@/components/conta/formulario'
 import { Portico } from '@/components/design/portico'
 import { acaoCadastrarSe } from '@/server/acoes-conta'
-import { destinoAposEntrar, sessaoAtual } from '@/server/sessao'
+import { destinoAposEntrar } from '@/server/permissoes'
+import { sessaoAtual } from '@/server/sessao'
 
 export const dynamic = 'force-dynamic'
 
