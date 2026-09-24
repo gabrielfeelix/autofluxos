@@ -121,6 +121,7 @@ export default async function Pagina({
         <div className="grid grid-cols-2 gap-3 lg:grid-cols-4 lg:gap-4">
           <Cartao
             titulo="Conversas"
+            vazio={atual.conversas === 0 && 'Sem conversas no período'}
             valor={String(atual.conversas)}
             tendencia={serie.map((d) => d.conversas)}
             comparacao={<Mudanca atual={atual.conversas} antes={antes.conversas} />}
@@ -128,6 +129,7 @@ export default async function Pagina({
           />
           <Cartao
             titulo="Contatos novos"
+            vazio={atual.contatosNovos === 0 && 'Sem contatos novos'}
             valor={String(atual.contatosNovos)}
             tendencia={serie.map((d) => d.contatosNovos)}
             comparacao={<Mudanca atual={atual.contatosNovos} antes={antes.contatosNovos} />}
@@ -135,6 +137,7 @@ export default async function Pagina({
           />
           <Cartao
             titulo="Resolvidas pela automação"
+            vazio={automacao === null && 'Nenhuma conversa terminou'}
             valor={automacao === null ? 'sem dado' : `${automacao}%`}
             medidor={automacao}
             detalhe={
@@ -147,6 +150,12 @@ export default async function Pagina({
           />
           <Cartao
             titulo="Espera pela equipe"
+            vazio={
+              atual.tempos.medianaAteResponder === null &&
+              (atual.tempos.entraramNaFila === 0
+                ? 'Ninguém pediu atendimento'
+                : 'Ainda sem resposta da equipe')
+            }
             valor={atual.tempos.medianaAteResponder === null ? 'sem dado' : comoDuracao(atual.tempos.medianaAteResponder)}
             detalhe={
               atual.tempos.entraramNaFila === 0
@@ -154,9 +163,7 @@ export default async function Pagina({
                 : `mediana · média ${comoDuracao(atual.tempos.mediaAteResponder)} · ${atual.tempos.responderam} de ${atual.tempos.entraramNaFila} respondidas`
             }
             tendencia={serie.map((d) => d.foramParaPessoa)}
-            comparacao={
-              <MudancaDeTempo atual={atual.tempos.medianaAteResponder} antes={antes.tempos.medianaAteResponder} />
-            }
+            comparacao={<MudancaDeTempo atual={atual.tempos.medianaAteResponder} antes={antes.tempos.medianaAteResponder} />}
             definicao="Do momento em que a conversa foi para a equipe até a primeira resposta enviada. A mediana é o atendimento típico; a média mostra se alguém esperou muito mais. Conversa sem resposta ainda não entra na conta. A linha miúda é quantas foram para a equipe a cada dia."
           />
         </div>
@@ -175,10 +182,35 @@ export default async function Pagina({
             <Rosca
               totalRotulo="conversas"
               fatias={[
-                { chave: 'bot', rotulo: 'Resolvidas pela automação', n: atual.desfechos.bot, cor: 'var(--serie-1)', dica: 'Terminaram sem passar por ninguém da equipe.' },
-                { chave: 'prevista', rotulo: 'Atendidas pela equipe', n: atual.desfechos.prevista, cor: 'var(--serie-3)', dica: 'O fluxo previa passar para uma pessoa, ou alguém assumiu pelo Inbox.' },
-                { chave: 'falha', rotulo: 'Interrompidas por erro', n: atual.desfechos.falha, cor: 'var(--serie-2)', alerta: true, dica: 'Pararam por um problema técnico e foram para a equipe. O motivo está na conversa, no Inbox.' },
-                { chave: 'aberta', rotulo: 'Ainda acontecendo', n: atual.desfechos.aberta, cor: 'var(--serie-outros)', dica: 'Não terminaram, então ficam fora da taxa da automação.' },
+                {
+                  chave: 'bot',
+                  rotulo: 'Resolvidas pela automação',
+                  n: atual.desfechos.bot,
+                  cor: 'var(--serie-1)',
+                  dica: 'Terminaram sem passar por ninguém da equipe.',
+                },
+                {
+                  chave: 'prevista',
+                  rotulo: 'Atendidas pela equipe',
+                  n: atual.desfechos.prevista,
+                  cor: 'var(--serie-3)',
+                  dica: 'O fluxo previa passar para uma pessoa, ou alguém assumiu pelo Inbox.',
+                },
+                {
+                  chave: 'falha',
+                  rotulo: 'Interrompidas por erro',
+                  n: atual.desfechos.falha,
+                  cor: 'var(--serie-2)',
+                  alerta: true,
+                  dica: 'Pararam por um problema técnico e foram para a equipe. O motivo está na conversa, no Inbox.',
+                },
+                {
+                  chave: 'aberta',
+                  rotulo: 'Ainda acontecendo',
+                  n: atual.desfechos.aberta,
+                  cor: 'var(--serie-outros)',
+                  dica: 'Não terminaram, então ficam fora da taxa da automação.',
+                },
               ]}
             />
           )}
@@ -190,7 +222,10 @@ export default async function Pagina({
       titulo: 'Quando chegam',
       largura: 'dois-tercos',
       conteudo: (
-        <CaixaDoBloco titulo="Quando as conversas chegam" subtitulo="Dia da semana e hora em que cada conversa começou, no horário de Brasília. Mostra quando vale ter alguém olhando o Inbox.">
+        <CaixaDoBloco
+          titulo="Quando as conversas chegam"
+          subtitulo="Dia da semana e hora em que cada conversa começou, no horário de Brasília. Mostra quando vale ter alguém olhando o Inbox."
+        >
           <MapaDeHorarios celulas={horarios} unidade={['conversa', 'conversas']} />
         </CaixaDoBloco>
       ),
@@ -211,7 +246,11 @@ export default async function Pagina({
                 das {canais[0]!.n.toLocaleString('pt-BR')} conversas vieram pelo{' '}
                 <strong className="font-semibold text-ink">{NOME_DO_CANAL[canais[0]!.canal] ?? canais[0]!.canal}</strong>
               </p>
-              <div className="mt-4 h-2.5 rounded-full" style={{ background: COR_DO_CANAL[canais[0]!.canal] ?? 'var(--primary)' }} aria-hidden />
+              <div
+                className="mt-4 h-2.5 rounded-full"
+                style={{ background: COR_DO_CANAL[canais[0]!.canal] ?? 'var(--primary)' }}
+                aria-hidden
+              />
               <p className="mt-auto pt-5 text-[12px] leading-5 text-dim">
                 Com outro canal ligado, este bloco mostra a divisão entre eles.{' '}
                 <Link href={`/clientes/${cliente.id}/ajustes/integracoes`} className="font-semibold text-primary hover:underline">
@@ -224,7 +263,12 @@ export default async function Pagina({
               totalRotulo="conversas"
               fatias={canais
                 .sort((a, b) => b.n - a.n)
-                .map((c) => ({ chave: c.canal, rotulo: NOME_DO_CANAL[c.canal] ?? c.canal, n: c.n, cor: COR_DO_CANAL[c.canal] ?? 'var(--serie-outros)' }))}
+                .map((c) => ({
+                  chave: c.canal,
+                  rotulo: NOME_DO_CANAL[c.canal] ?? c.canal,
+                  n: c.n,
+                  cor: COR_DO_CANAL[c.canal] ?? 'var(--serie-outros)',
+                }))}
             />
           )}
         </CaixaDoBloco>
@@ -352,7 +396,10 @@ export default async function Pagina({
                   {atual.fechamentos.perdidos === 1 ? 'perdido' : 'perdidos'}
                 </span>
               </div>
-              <Link href={`/clientes/${cliente.id}/relatorios/vendas`} className="mt-auto pt-5 text-[12.5px] font-semibold text-primary hover:underline">
+              <Link
+                href={`/clientes/${cliente.id}/relatorios/vendas`}
+                className="mt-auto pt-5 text-[12.5px] font-semibold text-primary hover:underline"
+              >
                 Ver funil, ranking e receita em Vendas →
               </Link>
             </div>

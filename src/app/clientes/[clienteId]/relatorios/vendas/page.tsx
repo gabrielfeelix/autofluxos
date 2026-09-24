@@ -59,7 +59,10 @@ const PADRAO = 90
 
 const PASSOS_DA_AJUDA: PassoDaAjuda[] = [
   { titulo: 'Escolha o período', texto: 'Um mês, um trimestre, um ano, ou um intervalo seu. Cada dia é o dia de Brasília.' },
-  { titulo: 'Leia os blocos', texto: 'Funil, ranking de quem vende, receita por mês, motivos de perda, o que está aberto e o que mais vende.' },
+  {
+    titulo: 'Leia os blocos',
+    texto: 'Funil, ranking de quem vende, receita por mês, motivos de perda, o que está aberto e o que mais vende.',
+  },
   { titulo: 'Troque a medida', texto: 'Nos blocos com Quantidade e Valor, um toque reordena pelo que importa agora.' },
   { titulo: 'Personalize', texto: 'Em Personalizar, esconda o que não usa e mude a ordem. Fica guardado neste aparelho.' },
 ]
@@ -124,7 +127,16 @@ export default async function Pagina({
   const doFunil: Record<string, string> = quadroId ? { funil: quadroId } : {}
 
   const blocos = temNegocio
-    ? await blocosDeVendas({ clienteId: cliente.id, periodo, anterior, responsaveis, quadroId, quadros, podeVerValor, contaInteira })
+    ? await blocosDeVendas({
+        clienteId: cliente.id,
+        periodo,
+        anterior,
+        responsaveis,
+        quadroId,
+        quadros,
+        podeVerValor,
+        contaInteira,
+      })
     : []
   const arranjo = await arranjoDaAnalise('vendas')
 
@@ -139,8 +151,8 @@ export default async function Pagina({
             passos={PASSOS_DA_AJUDA}
           >
             <p>
-              <strong className="text-ink">Ganho e perdido contam no dia em que o negócio foi fechado.</strong> Um
-              negócio criado em março e ganho em maio conta em maio.
+              <strong className="text-ink">Ganho e perdido contam no dia em que o negócio foi fechado.</strong> Um negócio criado
+              em março e ganho em maio conta em maio.
             </p>
             <p>
               <strong className="text-ink">Cada número tem um ?</strong> com a definição exata do que ele conta.
@@ -285,14 +297,19 @@ async function blocosDeVendas({
     podeVerValor && (
       <Cartao
         key="valor"
+        vazio={atual.ganhos === 0 && 'Sem vendas no período'}
         titulo="Ganho no período"
         valor={atual.valor === null ? 'R$ 0,00' : dinheiroCurto(atual.valor)}
-        detalhe={[
-          atual.valor !== null && atual.valor >= 10_000 ? comoDinheiro(atual.valor) : null,
-          semValor > 0 ? `${semValor} ${semValor === 1 ? 'ganho sem valor fica' : 'ganhos sem valor ficam'} fora da soma` : null,
-        ]
-          .filter(Boolean)
-          .join(' · ') || undefined}
+        detalhe={
+          [
+            atual.valor !== null && atual.valor >= 10_000 ? comoDinheiro(atual.valor) : null,
+            semValor > 0
+              ? `${semValor} ${semValor === 1 ? 'ganho sem valor fica' : 'ganhos sem valor ficam'} fora da soma`
+              : null,
+          ]
+            .filter(Boolean)
+            .join(' · ') || undefined
+        }
         tendencia={porMes.map((m) => m.valor ?? 0)}
         comparacao={<Mudanca atual={atual.valor ?? 0} antes={antes.valor ?? 0} formatar={comoDinheiro} />}
         definicao="Soma do valor dos negócios marcados como ganhos no período, pelo dia em que foram fechados. A linha miúda é a receita mês a mês."
@@ -300,6 +317,7 @@ async function blocosDeVendas({
     ),
     <Cartao
       key="ganhos"
+      vazio={fechados === 0 && 'Sem negócios fechados'}
       titulo="Negócios ganhos"
       valor={String(atual.ganhos)}
       detalhe={`${atual.perdidos} ${atual.perdidos === 1 ? 'perdido' : 'perdidos'} no mesmo período`}
@@ -309,6 +327,7 @@ async function blocosDeVendas({
     />,
     <Cartao
       key="taxa"
+      vazio={taxa === null && 'Sem negócios fechados'}
       titulo="Taxa de vitória"
       valor={taxa === null ? 'sem dado' : `${taxa}%`}
       medidor={taxa}
@@ -319,15 +338,21 @@ async function blocosDeVendas({
     podeVerValor && (
       <Cartao
         key="ticket"
+        vazio={ticket === null && 'Sem vendas com valor'}
         titulo="Ticket médio"
         valor={ticket === null ? 'sem dado' : dinheiroCurto(ticket)}
-        detalhe={ticket === null ? 'nenhum ganho com valor no período' : `média de ${atual.ganhosComValor} ${atual.ganhosComValor === 1 ? 'ganho' : 'ganhos'} com valor`}
+        detalhe={
+          ticket === null
+            ? 'nenhum ganho com valor no período'
+            : `média de ${atual.ganhosComValor} ${atual.ganhosComValor === 1 ? 'ganho' : 'ganhos'} com valor`
+        }
         comparacao={<Mudanca atual={ticket} antes={ticketAntes} formatar={comoDinheiro} />}
         definicao="Valor ganho dividido pelos negócios ganhos que têm valor anotado. Ganho sem valor fica fora da média, para não puxá-la para baixo."
       />
     ),
     <Cartao
       key="ciclo"
+      vazio={atual.segundosAteGanhar === null && 'Sem vendas no período'}
       titulo="Ciclo de venda"
       valor={comoDiasAteGanhar(atual.segundosAteGanhar)}
       detalhe="média, da criação do negócio ao ganho"
@@ -340,8 +365,11 @@ async function blocosDeVendas({
     />,
     <Cartao
       key="aberto"
+      vazio={abertoN === 0 && 'Nada em aberto agora'}
       titulo="Em aberto agora"
-      valor={podeVerValor && abertoValor > 0 ? dinheiroCurto(abertoValor) : `${abertoN} ${abertoN === 1 ? 'negócio' : 'negócios'}`}
+      valor={
+        podeVerValor && abertoValor > 0 ? dinheiroCurto(abertoValor) : `${abertoN} ${abertoN === 1 ? 'negócio' : 'negócios'}`
+      }
       detalhe={
         podeVerValor && abertoValor > 0
           ? `${abertoN} ${abertoN === 1 ? 'negócio' : 'negócios'} no funil ${funil?.nome ?? ''}`
@@ -357,7 +385,9 @@ async function blocosDeVendas({
       titulo: 'Números do período',
       largura: 'inteira',
       conteudo: (
-        <div className={`grid grid-cols-2 gap-3 md:grid-cols-3 lg:gap-4 ${cartoes.length === 6 ? 'xl:grid-cols-6' : 'xl:grid-cols-4'}`}>
+        <div
+          className={`grid grid-cols-2 gap-3 md:grid-cols-3 lg:gap-4 ${cartoes.length === 6 ? 'xl:grid-cols-6' : 'xl:grid-cols-4'}`}
+        >
           {cartoes}
         </div>
       ),
@@ -371,8 +401,8 @@ async function blocosDeVendas({
           titulo="Funil de vendas"
           subtitulo={
             <>
-              Negócios criados no período no funil <strong className="font-semibold text-soft">{funil?.nome}</strong>, e
-              até onde cada um chegou.
+              Negócios criados no período no funil <strong className="font-semibold text-soft">{funil?.nome}</strong>, e até onde
+              cada um chegou.
             </>
           }
         >
@@ -440,7 +470,9 @@ async function blocosDeVendas({
           ) : (
             <Rosca
               totalRotulo={motivos.reduce((s, m) => s + m.n, 0) === 1 ? 'perdido' : 'perdidos'}
-              fatias={emFatias(motivos.filter((m) => !m.semMotivo).map((m) => ({ chave: m.rotulo, rotulo: m.rotulo, n: m.n }))).concat(
+              fatias={emFatias(
+                motivos.filter((m) => !m.semMotivo).map((m) => ({ chave: m.rotulo, rotulo: m.rotulo, n: m.n })),
+              ).concat(
                 motivos
                   .filter((m) => m.semMotivo)
                   .map((m) => ({ chave: '__sem', rotulo: m.rotulo, n: m.n, cor: 'var(--line-strong)' })),

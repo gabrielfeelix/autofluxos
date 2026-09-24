@@ -69,9 +69,8 @@ export function BarraDoPeriodo({
       </div>
 
       <p className="text-[12px] text-dim">
-        {diaCurto(periodo.de, cruza)} a {diaCurto(periodo.ate, cruza)} ({periodo.dias}{' '}
-        {periodo.dias === 1 ? 'dia' : 'dias'}), comparado com {diaCurto(anterior.de, cruza)} a{' '}
-        {diaCurto(anterior.ate, cruza)} · horário de Brasília
+        {diaCurto(periodo.de, cruza)} a {diaCurto(periodo.ate, cruza)} ({periodo.dias} {periodo.dias === 1 ? 'dia' : 'dias'}),
+        comparado com {diaCurto(anterior.de, cruza)} a {diaCurto(anterior.ate, cruza)} · horário de Brasília
       </p>
     </div>
   )
@@ -85,6 +84,7 @@ export function Cartao({
   definicao,
   tendencia,
   medidor,
+  vazio,
 }: {
   titulo: string
   valor: string
@@ -95,6 +95,11 @@ export function Cartao({
   tendencia?: number[]
   /** Percentual de 0 a 100, desenhado como barra: para taxas, onde a tendência não cabe. */
   medidor?: number | null
+  /**
+   * Quando o período não tem nada para este número: uma frase curta no lugar
+   * de "sem dado", "0 de 0" e "sem base". Um cartão vazio diz uma coisa só.
+   */
+  vazio?: string | false
 }) {
   return (
     <section className="app-card relative flex min-w-0 flex-col px-4 py-3.5">
@@ -118,26 +123,45 @@ export function Cartao({
           </div>
         </details>
       </div>
-      <p className="mt-1.5 truncate text-[24px] font-bold tracking-[-0.02em] tabular-nums text-ink" title={valor}>
-        {valor}
-      </p>
-      {detalhe && <p className="mt-0.5 text-[11.5px] leading-5 text-dim">{detalhe}</p>}
-      {medidor !== undefined && medidor !== null && (
-        <div className="mt-3 h-2 overflow-hidden rounded-full bg-surface-strong" aria-hidden>
-          <div className="h-full rounded-full bg-primary" style={{ width: `${Math.min(Math.max(medidor, 0), 100)}%` }} />
+      {vazio ? (
+        <div className="flex flex-1 flex-col items-center justify-center gap-2 pt-3 pb-1 text-center">
+          <span
+            className="flex size-9 items-center justify-center rounded-full border border-dashed border-strong bg-surface text-dim"
+            aria-hidden
+          >
+            <svg viewBox="0 0 20 20" className="size-4" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round">
+              <path d="M4 15.5h12" />
+              <path d="M6.5 12.5v-2M10 12.5V7.5M13.5 12.5v-4" />
+            </svg>
+          </span>
+          <p className="text-[12px] leading-[1.35] text-dim">{vazio}</p>
         </div>
+      ) : (
+        <>
+          <p className="mt-1.5 truncate text-[24px] font-bold tracking-[-0.02em] tabular-nums text-ink" title={valor}>
+            {valor}
+          </p>
+          {detalhe && <p className="mt-0.5 text-[11.5px] leading-5 text-dim">{detalhe}</p>}
+          {medidor !== undefined && medidor !== null && (
+            <div className="mt-3 h-2 overflow-hidden rounded-full bg-surface-strong" aria-hidden>
+              <div className="h-full rounded-full bg-primary" style={{ width: `${Math.min(Math.max(medidor, 0), 100)}%` }} />
+            </div>
+          )}
+          {tendencia && tendencia.filter((v) => v > 0).length >= 2 && (
+            <div className="mt-2.5">
+              <Sparkline valores={tendencia} rotulo={`Tendência de ${titulo} no período`} />
+            </div>
+          )}
+          {comparacao && <div className="mt-auto pt-2 text-[11.5px]">{comparacao}</div>}
+        </>
       )}
-      {tendencia && tendencia.some((v) => v > 0) && (
-        <div className="mt-2.5">
-          <Sparkline valores={tendencia} rotulo={`Tendência de ${titulo} no período`} />
-        </div>
-      )}
-      {comparacao && <div className="mt-auto pt-2 text-[11.5px]">{comparacao}</div>}
     </section>
   )
 }
 
-const SEM_BASE = <span className="text-dim">sem base para comparar</span>
+// Sem período anterior para comparar, a linha some: "sem base" em todo
+// cartão de conta nova só enchia a tela de tristeza.
+const SEM_BASE = null
 
 /**
  * Volume: subir não é bom nem ruim por si, então a cor é neutra.
@@ -183,9 +207,8 @@ export function MudancaEmPontos({
   const melhorou = melhorQuando === 'sobe' ? diferenca > 0 : diferenca < 0
   return (
     <span className={melhorou ? 'text-ok' : 'text-aviso'}>
-      <span aria-hidden>{diferenca > 0 ? '▲' : '▼'}</span> {Math.abs(diferenca)}{' '}
-      {Math.abs(diferenca) === 1 ? 'ponto' : 'pontos'} {melhorou ? '(melhor)' : '(pior)'}{' '}
-      <span className="text-dim">que o anterior</span>
+      <span aria-hidden>{diferenca > 0 ? '▲' : '▼'}</span> {Math.abs(diferenca)} {Math.abs(diferenca) === 1 ? 'ponto' : 'pontos'}{' '}
+      {melhorou ? '(melhor)' : '(pior)'} <span className="text-dim">que o anterior</span>
     </span>
   )
 }

@@ -303,10 +303,19 @@ export function FunilInvertido({ degraus }: { degraus: DegrauDoFunil[] }) {
             <li
               key={d.chave}
               onMouseEnter={() => setFoco(i)}
-              className="grid grid-cols-[minmax(0,1fr)_minmax(0,1.15fr)] items-center gap-4"
+              className="grid cursor-default grid-cols-[minmax(0,1fr)_minmax(0,1.15fr)] items-center gap-3"
             >
-              <div className={`relative h-12 transition-opacity duration-150 ${apagada ? 'opacity-45' : ''}`}>
-                <svg viewBox="0 0 100 48" preserveAspectRatio="none" className="absolute inset-0 size-full overflow-visible" aria-hidden>
+              <div
+                className={`relative h-12 transition-[opacity,transform] duration-150 ${apagada ? 'opacity-40' : ''} ${
+                  foco === i ? 'scale-[1.025]' : ''
+                }`}
+              >
+                <svg
+                  viewBox="0 0 100 48"
+                  preserveAspectRatio="none"
+                  className="absolute inset-0 size-full overflow-visible"
+                  aria-hidden
+                >
                   {/* O traço da mesma cor, com junta redonda, arredonda os cantos da fatia. */}
                   <path
                     d={`M${50 - cima / 2 + 2},3 L${50 + cima / 2 - 2},3 L${50 + baixo / 2 - 2},45 L${50 - baixo / 2 + 2},45 Z`}
@@ -325,28 +334,52 @@ export function FunilInvertido({ degraus }: { degraus: DegrauDoFunil[] }) {
                   {d.n.toLocaleString('pt-BR')}
                 </span>
               </div>
-              <div className="min-w-0">
-                <p className="truncate text-[13px] font-semibold text-ink" title={d.rotulo}>
-                  {d.rotulo}
-                </p>
-                <p className="mt-0.5 flex flex-wrap items-center gap-x-1.5 gap-y-1 text-[11.5px] leading-4 tabular-nums">
+              <div
+                className={`flex min-w-0 items-center gap-2.5 rounded-xl border px-2.5 py-1.5 transition-colors duration-150 ${
+                  foco === i ? 'border-primary/25 bg-primary-weak' : 'border-transparent'
+                }`}
+              >
+                <span
+                  className="h-8 w-1 shrink-0 rounded-full"
+                  style={{ background: vazio ? 'var(--line-strong)' : cor }}
+                  aria-hidden
+                />
+                <div className="min-w-0 flex-1">
+                  <p
+                    className={`truncate text-[13px] font-semibold transition-colors ${foco === i ? 'text-primary' : 'text-ink'}`}
+                    title={d.rotulo}
+                  >
+                    {d.rotulo}
+                  </p>
+                  <p
+                    className={`mt-px truncate text-[11.5px] tabular-nums ${d.perdeuMais ? 'font-semibold text-aviso' : 'text-dim'}`}
+                  >
+                    {d.n.toLocaleString('pt-BR')} {d.n === 1 ? 'negócio' : 'negócios'}
+                    {d.perdeuMais && ' · maior perda'}
+                  </p>
+                </div>
+                <span
+                  title={i === 0 ? 'Todos os negócios criados no período' : 'Quantos da etapa anterior chegaram aqui'}
+                  className={`shrink-0 rounded-md px-1.5 py-0.5 text-[11.5px] font-bold tabular-nums ${
+                    i === 0
+                      ? 'bg-surface-strong text-soft'
+                      : d.taxa === null
+                        ? 'bg-surface text-dim'
+                        : d.perdeuMais
+                          ? 'bg-aviso/12 text-aviso'
+                          : 'bg-surface-strong text-soft'
+                  }`}
+                >
                   {i === 0 ? (
-                    <span className="text-dim">entraram no funil</span>
+                    '100%'
                   ) : d.taxa === null ? (
-                    <span className="text-dim">ninguém chegou até aqui</span>
+                    '-'
                   ) : (
                     <>
-                      <span className={d.perdeuMais ? 'font-semibold text-aviso' : 'text-soft'}>
-                        {d.taxa}% da etapa anterior
-                      </span>
-                      {d.perdeuMais && (
-                        <span className="rounded-full bg-aviso/12 px-1.5 py-px text-[9.5px] font-bold tracking-[0.05em] text-aviso uppercase">
-                          maior perda
-                        </span>
-                      )}
+                      <span aria-hidden>↓</span> {d.taxa}%
                     </>
                   )}
-                </p>
+                </span>
               </div>
             </li>
           )
