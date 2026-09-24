@@ -1335,12 +1335,14 @@ Registro completo em `docs/ux-paralelo/fase-12.md`.
 - [x] Contatos → ficha → voltar mantém busca, filtro e página.
 - [x] Funil: `key` duplicada entre o fechamento e o painel do contato.
 - [x] Transmissão: a volta do destinatário mantém o filtro de estado.
-- [x] Gatilho: nome do destino leva ao editor, que volta à aba de origem (conferir no navegador).
+- [x] Gatilho: nome do destino leva ao editor, que volta à aba de origem, com a busca (conferido no navegador).
 - [ ] **Decisão do Gabriel:** Inbox e Contatos recortam por escopo "só os próprios"? Hoje mostram tudo, e o Início conta igual ao Inbox.
 - [ ] Cartão do número do WhatsApp: cada situação "sem fluxo" com link para escolher a automação.
 - [ ] Reparo de integração com volta para o fluxo ou campanha que dependia dela.
 - [ ] O ‹ do editor volta para a lista com a busca que estava aberta.
-- [ ] Conferir no navegador "Segmento → transmissão" e "Testar" (scripts de 12.1 não chegaram lá).
+- [x] Conferir no navegador "Segmento → transmissão" e "Testar". Testar OK.
+- [x] Editor no celular: sem rolar de lado; barra de blocos em gaveta, painel por cima do desenho.
+- [ ] Transmissão por segmento: hoje o público da transmissão só pode ser uma etiqueta, e o segmento salvo não leva a lugar nenhum. É funcionalidade nova (congelar a lista do segmento na confirmação, RB-38), não conserto de tela.
 
 ---
 

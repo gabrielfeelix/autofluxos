@@ -345,13 +345,16 @@ body {
  * 1024px de largura mínima num aparelho de 390px, e o resultado era a página
  * inteira rolando de lado: cabeçalho, abas e conteúdo saindo pela direita.
  *
- * O editor continua desktop de propósito: barra de blocos, desenho e painel de
- * propriedades lado a lado não cabem num celular, e espremer os três seria
- * pior do que assumir o mínimo. A diferença é que agora quem exige a largura é
- * ele, e não o produto inteiro.
+ * Do tablet para cima o editor continua com o piso: barra de blocos, desenho e
+ * painel de propriedades lado a lado, e espremer os três seria pior do que
+ * assumir o mínimo. No celular (Fase 12) ele não fica lado a lado: a barra de
+ * blocos vira gaveta e o painel cobre o desenho, então o piso sai, e com ele a
+ * página rolando de lado.
  */
-.app-editor {
-  min-width: 1024px;
+@media (min-width: 768px) {
+  .app-editor {
+    min-width: 1024px;
+  }
 }
 
 body {

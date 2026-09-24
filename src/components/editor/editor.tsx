@@ -443,6 +443,17 @@ export function Editor({
   const ultimoSelecionado = useRef<string | null>(null)
   const [aba, setAba] = useState<AbaDoPainel>(origem ? 'antes' : 'bloco')
   const [painelAberto, setPainelAberto] = useState(true)
+  /**
+   * No celular a barra de blocos é uma gaveta, aberta pelo "+ Bloco" do
+   * desenho. Fixa ao lado, ela e o painel somavam mais que a tela e o editor
+   * inteiro rolava de lado (Fase 12). No computador este estado não aparece.
+   */
+  const [blocosNoCelular, setBlocosNoCelular] = useState(false)
+  // No celular o painel aberto cobre o desenho: começa fechado lá.
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- a largura da tela só existe depois de montar
+    if (window.matchMedia('(max-width: 767px)').matches) setPainelAberto(false)
+  }, [])
   const [buscaDeBloco, setBuscaDeBloco] = useState('')
   const catalogo = useMemo(() => filtrarCatalogo(buscaDeBloco), [buscaDeBloco])
 
@@ -882,6 +893,7 @@ export function Editor({
         : { x: 80 + nodes.length * 24, y: 80 + nodes.length * 40 }
 
     criarNo(tipo, livre(centralizar(centro), nodes))
+    setBlocosNoCelular(false)
   }
 
   /**
@@ -1401,8 +1413,9 @@ export function Editor({
   ].sort()
 
   return (
-    <div className="app-editor flex h-screen flex-col bg-canvas">
-      <header className="flex h-[54px] shrink-0 items-center gap-3 border-b border-line bg-panel px-4">
+    <div className="app-editor flex h-dvh w-full flex-col overflow-hidden bg-canvas">
+      {/* No celular o topo rola dentro dele, e não a página inteira. */}
+      <header className="relative flex h-[54px] shrink-0 items-center gap-3 border-b border-line bg-panel px-4 max-md:overflow-x-auto max-md:[scrollbar-width:none] max-md:[&_button]:whitespace-nowrap">
         <Link
           href={voltarHref}
           title={`Voltar para ${clienteNome}`}
@@ -1636,7 +1649,11 @@ export function Editor({
 
         <button
           type="button"
-          onClick={() => setAba('testar')}
+          onClick={() => {
+            setAba('testar')
+            // Com o painel recolhido, trocar só a aba não mostrava nada.
+            setPainelAberto(true)
+          }}
           title="Conversar com este desenho sem sair do editor"
           className={`rounded-lg border px-3.5 py-2 text-[12.5px] font-semibold transition ${
             aba === 'testar'
@@ -1722,7 +1739,7 @@ export function Editor({
         </div>
       )}
 
-      <div className="flex min-h-0 flex-1">
+      <div className="relative flex min-h-0 flex-1">
         {/*
           A barra de blocos tem largura fixa desde sempre, e ela é grande demais
           para quem já decorou os dez blocos e pequena demais para quem está
@@ -1733,7 +1750,9 @@ export function Editor({
         */}
         <nav
           style={{ width: larguraDosBlocos }}
-          className="relative shrink-0 overflow-y-auto border-r border-line bg-panel px-3 py-3.5"
+          className={`relative shrink-0 overflow-y-auto border-r border-line bg-panel px-3 py-3.5 max-md:absolute max-md:inset-y-0 max-md:left-0 max-md:z-30 max-md:!w-[min(300px,85vw)] max-md:shadow-[0_24px_60px_rgba(19,25,34,0.2)] ${
+            blocosNoCelular ? '' : 'max-md:hidden'
+          }`}
         >
           <PuxadorDeLargura
             largura={larguraDosBlocos}
@@ -1833,6 +1852,7 @@ export function Editor({
         <div
           ref={areaRef}
           className="relative min-w-0 flex-1"
+          onPointerDown={() => setBlocosNoCelular(false)}
           onDrop={soltar}
           // Sem cancelar o `dragover`, o navegador recusa o soltar e o gesto
           // termina com a animação de "voltou para o lugar".
@@ -1841,6 +1861,13 @@ export function Editor({
             evento.dataTransfer.dropEffect = 'copy'
           }}
         >
+          <button
+            type="button"
+            onClick={() => setBlocosNoCelular(true)}
+            className="absolute top-3 left-3 z-20 rounded-lg border border-line bg-panel px-3 py-2 text-[12.5px] font-semibold text-muted shadow-[0_8px_20px_rgba(19,25,34,0.1)] md:hidden"
+          >
+            + Bloco
+          </button>
           <AcaoDaArestaProvider value={acoesDaAresta}>
           <RealceDeArestasProvider>
           <RespostasPorVariavelProvider value={respostasPorVariavel}>
@@ -2022,7 +2049,7 @@ export function Editor({
             ))}
           </aside>
         ) : (
-        <aside className="flex w-[420px] shrink-0 flex-col border-l border-line bg-panel">
+        <aside className="flex w-[420px] shrink-0 flex-col border-l border-line bg-panel max-md:absolute max-md:inset-0 max-md:z-30 max-md:w-full">
           <div className="flex shrink-0 items-center gap-1 border-b border-line px-3 pt-2.5 text-xs">
             {abas.map((chave) => (
               <button
