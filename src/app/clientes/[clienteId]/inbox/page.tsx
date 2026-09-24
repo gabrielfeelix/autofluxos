@@ -12,7 +12,6 @@ import { membrosDaConta, type MembroDaConta } from '@/server/repos/usuarios'
 import { sessaoAtual } from '@/server/sessao'
 import { ClienteShell } from '@/components/design/cliente-shell'
 import { Dica } from '@/components/design/dica'
-import { LogoDoCanal } from '@/components/design/selo-do-canal'
 import { IlustracaoInbox } from '@/components/design/ilustracoes'
 import { recemConectado } from '@/core/coexistencia-na-tela'
 import { coexistenciaDoCliente } from '@/server/repos/coexistencia'
@@ -61,7 +60,7 @@ import type { EtiquetaEscolhivel } from '@/components/etiquetas/seletor'
 import { AcoesRapidas } from '@/components/inbox/acoes-rapidas'
 import { hrefDaFicha } from '@/core/volta-da-ficha'
 import { Avatar } from '@/components/inbox/avatar'
-import { ColunaDaFicha, MolduraDoInbox } from '@/components/inbox/moldura'
+import { ColunaDaFicha, MolduraDoInbox, SoSemFicha } from '@/components/inbox/moldura'
 import { telefoneLegivel } from '@/core/contatos/telefone'
 import { AbasDaFicha } from '@/components/inbox/abas-da-ficha'
 import { Fila, type Contagem } from '@/components/inbox/fila'
@@ -1181,7 +1180,22 @@ function CabecalhoDaConversa({
       <header className="flex min-h-[62px] flex-wrap items-center gap-x-3 gap-y-2 border-b border-line px-4 py-2">
         <Avatar nome={lead.nome} alerta={Boolean(lead.aguardando)} tamanho={40} canal={canal} />
         <div className="min-w-[140px] flex-1">
-          <h2 className="truncate text-[13.5px] font-bold">{nome}</h2>
+          <h2 className="truncate text-[13.5px] font-bold">
+            {nome}
+            {/*
+              O telefone morava numa faixa própria embaixo do cabeçalho, junto
+              de uma aba "WhatsApp" fixa (errada em conversa do Instagram). O
+              canal virou selo no avatar e o número foi para o topo da coluna
+              do contato; aqui ele só aparece quando essa coluna está fechada.
+            */}
+            {canal === 'whatsapp' && (
+              <SoSemFicha>
+                <span className="ml-2 font-mono text-[11.5px] font-normal text-dim">
+                  {telefoneLegivel(lead.waId)}
+                </span>
+              </SoSemFicha>
+            )}
+          </h2>
           {/*
             De quem é a conversa fica **embaixo do nome**, e não num botão à
             direita. É estado, não ação: quem lê o cabeçalho precisa saber se
@@ -1250,22 +1264,6 @@ function CabecalhoDaConversa({
         />
       </header>
 
-      {/*
-        A aba do canal.
-
-        É **uma** hoje, e mesmo assim desenhada como aba: o Inbox recebe só de
-        WhatsApp (ver `core/canais.ts`), e o dia em que o segundo canal entregar
-        é o dia em que esta linha ganha a segunda aba, sem mudar de forma.
-      */}
-      <div className="flex items-end gap-4 border-b border-line px-4">
-        <span className="flex items-center gap-1.5 border-b-2 border-[#25d366] py-2 text-[12.5px] font-semibold text-ink">
-          <span className="text-[#25d366]">
-            <LogoDoCanal canal="whatsapp" tamanho={14} />
-          </span>
-          WhatsApp
-        </span>
-        <span className="ml-auto py-2 font-mono text-[11.5px] text-dim">{lead.waId}</span>
-      </div>
     </>
   )
 }

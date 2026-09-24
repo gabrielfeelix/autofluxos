@@ -90,6 +90,16 @@ export function ColunaDaFicha({ children }: { children: ReactNode }) {
  * O endereço não serve para decidir: a fila grava a conversa escolhida nele
  * mesmo quando foi escolhida sozinha (`useFilaLocal`).
  */
+/**
+ * O que só aparece quando a coluna do contato não está à vista: fechada pelo
+ * botão, ou no celular, onde ela não existe. Hoje é o telefone no cabeçalho da
+ * conversa, que mora no topo da coluna do contato e não pode sumir junto dela.
+ */
+export function SoSemFicha({ children }: { children: ReactNode }) {
+  const { aberta } = useFicha()
+  return <span className={aberta ? 'md:hidden' : undefined}>{children}</span>
+}
+
 const ATRIBUTO_DO_CELULAR = 'data-inbox-celular'
 type ColunaDoCelular = 'lista' | 'conversa'
 
