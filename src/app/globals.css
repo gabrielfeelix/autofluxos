@@ -228,7 +228,7 @@
   --marca-meta: #0866ff;
   --marca-telegram: #229ed9;
   /*
-   * As plataformas de loja (Loja > Conectar loja) não viram classe do Tailwind:
+   * As plataformas de loja (Comércio > Integrações) não viram classe do Tailwind:
    * o cartão desenha a inicial com `var(--marca-<id>)`, e a cor mora aqui, uma
    * linha por marca, no mesmo lugar das outras.
    */

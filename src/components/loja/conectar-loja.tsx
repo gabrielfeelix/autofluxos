@@ -14,7 +14,7 @@ export type CartaoDePlataforma = {
 type Resposta = { ok: true } | { ok: false; motivo: string }
 
 /**
- * A tela Loja > Conectar loja (plano de navegação e CRM, 5.6).
+ * A tela Comércio > Integrações (plano de navegação e CRM, 5.6).
  *
  * Grade de cartões à esquerda, o que a conexão rende à direita. **Todo cartão
  * leva a um próximo passo**: conectar, abrir a conexão, religar, ou o "Quero
@@ -38,7 +38,7 @@ export function ConectarLoja({
 
   return (
     <main className="w-full max-w-[1440px] px-4 pt-[26px] pb-[42px] md:px-[42px]">
-      <h1 className="text-[20px] font-bold tracking-[-0.02em] md:text-[25px]">Conectar loja</h1>
+      <h1 className="text-[20px] font-bold tracking-[-0.02em] md:text-[25px]">Integrações</h1>
       <p className="mt-1.5 mb-6 max-w-[680px] text-[13px] leading-6 text-dim">
         Ligue a sua loja on-line e o bot passa a responder com o que está nela: o produto certo, o preço, o estoque e o
         link para comprar. Ele só lê a loja; quem fecha a compra é o site.
@@ -85,22 +85,22 @@ export function ConectarLoja({
   )
 }
 
-/** Estado vazio que ensina e tem botão: sem loja conectada, o catálogo já serve. */
+/** Estado vazio que ensina e tem botão: sem loja conectada, os produtos cadastrados já servem. */
 function SemLojaAinda({ clienteId }: { clienteId: string }) {
   return (
     <section className="flex flex-col gap-4 rounded-[14px] border border-primary/20 bg-primary-weak p-5 sm:flex-row sm:items-center">
       <div className="min-w-0 flex-1">
         <h2 className="text-[14.5px] font-bold">Nenhuma loja conectada ainda</h2>
         <p className="mt-1 max-w-[560px] text-[12.5px] leading-5 text-muted">
-          Escolha a sua plataforma abaixo. Se ela ainda não chegou, monte o catálogo à mão enquanto isso: o bot já
-          responde com os produtos que estiverem lá.
+          Escolha a sua plataforma abaixo. Se ela ainda não chegou, cadastre os produtos à mão enquanto isso: o bot
+          já responde com eles.
         </p>
       </div>
       <Link
         href={`/clientes/${clienteId}/loja/catalogo`}
         className="app-primary-button inline-flex shrink-0 items-center justify-center gap-1.5 px-4 py-2.5 text-[12.5px]"
       >
-        Montar o catálogo
+        Cadastrar produtos
         <span aria-hidden>›</span>
       </Link>
     </section>

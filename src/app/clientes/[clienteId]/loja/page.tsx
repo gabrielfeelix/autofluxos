@@ -15,7 +15,7 @@ import { lojaDaConta, lojaNuvemshopDaConta, pedidosDeLoja } from '@/server/repos
 export const dynamic = 'force-dynamic'
 
 /**
- * Loja > Conectar loja: um cartão por plataforma (plano de navegação e CRM,
+ * Comércio > Integrações: um cartão por plataforma (plano de navegação e CRM,
  * 5.6, F4).
  *
  * Substitui o 307 de `/loja` para `/loja/magento` que a F1 deixou até esta

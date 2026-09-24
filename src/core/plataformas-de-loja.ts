@@ -1,5 +1,5 @@
 /**
- * As plataformas de loja on-line da tela Loja > Conectar loja (plano de
+ * As plataformas de loja on-line da tela Comércio > Integrações (plano de
  * navegação e CRM, 5.6).
  *
  * Sem I/O: a lista, a ordem dos cartões e a regra de quando a Loja aparece no
@@ -138,30 +138,16 @@ export function ordenarPlataformas<T extends { ficha: FichaDaPlataforma; estado:
 }
 
 /**
- * A Loja aparece no menu desta conta?
+ * O Comércio aparece no menu desta conta?
  *
- * - quem ligou em Objetivo e recursos vê;
  * - **loja conectada aparece sempre**: o bot está consultando aquela loja, e
  *   esconder o único lugar de desligá-la seria deixar a conta sem controle;
- * - quem desligou não vê;
- * - quem nunca escolheu (`null`) segue a regra de antes do interruptor:
- *   objetivo de vender, loja cadastrada (mesmo desligada) ou catálogo com
- *   item. Estúdio de pilates não vê.
+ * - quem desligou em Objetivo e recursos não vê;
+ * - o resto vê, **inclusive quem nunca escolheu** (`null`). Até 24/set a
+ *   regra escondia de quem não vendia, e isso escondia a seção das seis
+ *   contas de produção; o Gabriel pediu a seção à vista. Quem não vende
+ *   desliga no interruptor.
  */
-export function mostraLoja({
-  escolha,
-  vende,
-  lojaConectada,
-  lojaCadastrada,
-  temCatalogo,
-}: {
-  escolha: boolean | null
-  vende: boolean
-  lojaConectada: boolean
-  lojaCadastrada: boolean
-  temCatalogo: boolean
-}): boolean {
-  if (escolha === true || lojaConectada) return true
-  if (escolha === false) return false
-  return vende || lojaCadastrada || temCatalogo
+export function mostraLoja({ escolha, lojaConectada }: { escolha: boolean | null; lojaConectada: boolean }): boolean {
+  return lojaConectada || escolha !== false
 }

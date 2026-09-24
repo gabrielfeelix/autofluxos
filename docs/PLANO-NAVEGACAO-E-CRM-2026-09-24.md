@@ -412,6 +412,12 @@ depois da pesquisa de cada uma.
   `id_na_plataforma` (anulável, único por plataforma), tabela
   `pedidos_de_loja` (RLS ligada, zero políticas, revoke com `public`) e
   `clients.loja_ativa` (anulável, sem default: `null` = regra de antes).
+- **Mudança pedida pelo Gabriel depois da F4 (24/set):** a seção se chama
+  **Comércio** (não "Loja"), com **Produtos** (`/loja/catalogo`, primeiro
+  subitem) e **Integrações** (`/loja`). E aparece **por padrão**: a regra
+  antiga escondia das seis contas de produção (todas com objetivo `atender`
+  e sem produto). Some só com o interruptor desligado em Objetivo e recursos
+  (`mostraLoja`); loja conectada aparece sempre. Chave `loja` e rotas iguais.
 - Tela `loja/page.tsx` + `components/loja/conectar-loja.tsx`: "Disponível
   agora" (cartão largo) e "Em breve" (grade, Brasil primeiro), "O que a
   conexão rende" à direita, estado vazio com "Montar o catálogo". Regras puras

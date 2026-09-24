@@ -4,7 +4,7 @@ import { useState, useTransition } from 'react'
 import { acaoDefinirLoja } from '@/server/acoes-recursos'
 
 /**
- * Ligar e desligar a Loja no menu (0103, plano de navegação 5.6).
+ * Ligar e desligar o Comércio no menu (0103, plano de navegação 5.6).
  *
  * Mesmo desenho do `InterruptorDoCrm`: otimista, e a frase de que desligar
  * não apaga nada fica escrita junto do botão. `ativo` é o que a barra mostra
@@ -52,23 +52,23 @@ export function InterruptorDaLoja({
               : 'bg-accent text-[var(--accent-ink)] hover:opacity-90'
           }`}
         >
-          {ligado ? 'Desativar Loja' : 'Ativar Loja'}
+          {ligado ? 'Desativar Comércio' : 'Ativar Comércio'}
         </button>
         <span className="text-[12px] text-muted">
-          {ligado ? 'Ligada: a Loja aparece no menu.' : 'Desligada: a Loja não aparece no menu.'}
+          {ligado ? 'Ligado: o Comércio aparece no menu.' : 'Desligado: o Comércio não aparece no menu.'}
         </span>
       </div>
 
       <p className="max-w-[620px] text-[12px] leading-5 text-dim">
         {ligado
-          ? 'Desativar só esconde o item do menu. Nada é apagado: o catálogo e a loja cadastrada continuam onde estão, e voltam a aparecer quando você ativar de novo.'
-          : 'Ativar mostra a Loja no menu: conectar a sua loja on-line e montar o catálogo que o bot usa para responder sobre produto, preço e estoque.'}
+          ? 'Desativar só esconde o item do menu. Nada é apagado: os produtos e a loja cadastrada continuam onde estão, e voltam a aparecer quando você ativar de novo.'
+          : 'Ativar mostra o Comércio no menu: os produtos que o bot usa para responder sobre preço e estoque, e a integração com a sua loja on-line.'}
       </p>
 
       {!ligado && lojaConectada && (
         <p className="max-w-[620px] text-[12px] leading-5 text-muted">
-          Esta conta tem uma loja conectada e o bot está consultando ela, então a
-          Loja continua no menu mesmo desligada aqui: é lá que se desliga a
+          Esta conta tem uma loja conectada e o bot está consultando ela, então o
+          Comércio continua no menu mesmo desligado aqui: é lá que se desliga a
           conexão.
         </p>
       )}

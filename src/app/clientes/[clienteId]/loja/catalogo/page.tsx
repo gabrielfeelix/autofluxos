@@ -88,14 +88,14 @@ export default async function Pagina({ params }: { params: Promise<{ clienteId: 
       <main className="w-full max-w-[1440px] px-4 md:px-[42px] pt-[26px] pb-[42px]">
         <Trilha
           caminho={[
-            { rotulo: 'Loja' },
-            { rotulo: 'Catálogo' },
+            { rotulo: 'Comércio' },
+            { rotulo: 'Produtos' },
           ]}
         />
         <div className="flex items-center gap-2.5">
-          <h1 className="text-[25px] font-bold tracking-[-0.02em]">Catálogo</h1>
+          <h1 className="text-[25px] font-bold tracking-[-0.02em]">Produtos</h1>
           <AjudaDaTela
-            titulo="Como funciona o Catálogo"
+            titulo="Como funciona Produtos"
             resumo="O catálogo é a lista do que a organização vende. Ele serve a três leitores: o bot, a equipe no Inbox e o funil de vendas."
             passos={PASSOS_DA_AJUDA}
           >

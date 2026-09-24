@@ -148,13 +148,15 @@ export const SECOES: Secao[] = [
     ],
   },
   {
-    // Só com o recurso ligado (`lojaVisivel`): estúdio de pilates não vê Loja.
+    // Comércio (pedido do Gabriel, 24/set; o plano dizia "Loja"). Aparece por
+    // padrão e some quando a conta desliga em Objetivo e recursos
+    // (`lojaVisivel`). A chave e as rotas seguem `loja`: nenhum link quebra.
     chave: 'loja',
-    rotulo: 'Loja',
+    rotulo: 'Comércio',
     icone: <IconeLoja />,
     itens: [
-      { id: 'conectar-loja', rotulo: 'Conectar loja', href: '/loja', aba: 'loja' },
-      { id: 'catalogo', rotulo: 'Catálogo', href: '/loja/catalogo', aba: 'loja' },
+      { id: 'catalogo', rotulo: 'Produtos', href: '/loja/catalogo', aba: 'loja' },
+      { id: 'conectar-loja', rotulo: 'Integrações', href: '/loja', aba: 'loja' },
     ],
   },
   {
@@ -289,6 +291,7 @@ export function destinoNaConta(regras: Acesso, secao?: string | null): string {
 /** O nome da tela como o menu mostra, para a tela de sem acesso dizer o mesmo. */
 export function rotuloDaSecao(chave: AbaDoCliente): string {
   if (chave === 'inbox') return 'Conversas'
+  if (chave === 'loja') return 'Comércio'
   return ITENS.find((item) => item.aba === chave)?.rotulo ?? 'esta tela'
 }
 

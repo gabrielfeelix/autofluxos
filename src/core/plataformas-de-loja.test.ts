@@ -8,26 +8,18 @@ import {
   ordenarPlataformas,
 } from './plataformas-de-loja'
 
-const nada = { escolha: null, vende: false, lojaConectada: false, lojaCadastrada: false, temCatalogo: false }
-
 describe('mostraLoja', () => {
-  it('estúdio de pilates (atende, sem loja, sem catálogo, nunca escolheu) não vê', () => {
-    expect(mostraLoja(nada)).toBe(false)
+  it('aparece por padrão, inclusive para quem nunca escolheu', () => {
+    expect(mostraLoja({ escolha: null, lojaConectada: false })).toBe(true)
+    expect(mostraLoja({ escolha: true, lojaConectada: false })).toBe(true)
   })
 
-  it('sem escolha, vale a regra de antes: vender, loja cadastrada ou catálogo', () => {
-    expect(mostraLoja({ ...nada, vende: true })).toBe(true)
-    expect(mostraLoja({ ...nada, lojaCadastrada: true })).toBe(true)
-    expect(mostraLoja({ ...nada, temCatalogo: true })).toBe(true)
-  })
-
-  it('ligar mostra mesmo sem nada; desligar esconde mesmo vendendo', () => {
-    expect(mostraLoja({ ...nada, escolha: true })).toBe(true)
-    expect(mostraLoja({ ...nada, escolha: false, vende: true, temCatalogo: true, lojaCadastrada: true })).toBe(false)
+  it('desligada no interruptor some', () => {
+    expect(mostraLoja({ escolha: false, lojaConectada: false })).toBe(false)
   })
 
   it('loja conectada aparece mesmo desligada: é o único lugar de desligá-la', () => {
-    expect(mostraLoja({ ...nada, escolha: false, lojaConectada: true })).toBe(true)
+    expect(mostraLoja({ escolha: false, lojaConectada: true })).toBe(true)
   })
 })
 

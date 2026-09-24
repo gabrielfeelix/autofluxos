@@ -197,7 +197,7 @@ export async function acaoDesconectarToken(clienteId: string): Promise<{ ok: tru
 }
 
 /**
- * "Quero esta" num cartão "Em breve" de Loja > Conectar loja.
+ * "Quero esta" num cartão "Em breve" de Comércio > Integrações.
  *
  * Mesma porta das outras ações da loja: quem pede integração para a conta é
  * quem configura a operação. **Não revalida nada**: a tela marca o cartão na

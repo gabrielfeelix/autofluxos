@@ -111,11 +111,11 @@ export default async function Pagina({ params }: { params: Promise<{ clienteId: 
 
         <section className="app-card mt-5 overflow-hidden">
           <header className="border-b border-line px-5 py-4">
-            <h2 className="text-[14.5px] font-bold">Loja</h2>
+            <h2 className="text-[14.5px] font-bold">Comércio</h2>
             <p className="mt-1 text-[12.5px] leading-5 text-dim">
-              Loja on-line conectada e catálogo de produtos, para o bot responder
-              com o produto certo, o preço e o link. É opcional: quem atende sem
-              vender produto não precisa dela.
+              Produtos e integração com a loja on-line, para o bot responder com
+              o produto certo, o preço e o link. É opcional: quem atende sem
+              vender produto pode esconder.
             </p>
           </header>
           <div className="px-5 py-4">

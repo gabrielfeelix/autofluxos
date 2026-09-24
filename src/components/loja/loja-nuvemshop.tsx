@@ -92,11 +92,11 @@ export function LojaNuvemshop({
             ) : (
               <>
                 <p className="text-[12.5px] leading-5 text-muted">
-                  A conexão com a Nuvemshop está sendo liberada. Enquanto isso, o catálogo manual já deixa o bot
-                  responder sobre os seus produtos.
+                  A conexão com a Nuvemshop está sendo liberada. Enquanto isso, os produtos cadastrados à mão já
+                  deixam o bot responder sobre eles.
                 </p>
                 <Link href={catalogoHref} className="app-primary-button inline-flex items-center gap-1.5 px-4 py-2.5 text-[12.5px]">
-                  Montar o catálogo <span aria-hidden>›</span>
+                  Cadastrar produtos <span aria-hidden>›</span>
                 </Link>
               </>
             )}

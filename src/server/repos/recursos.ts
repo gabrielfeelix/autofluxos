@@ -145,30 +145,17 @@ export async function definirLojaAtiva(
 }
 
 /**
- * A Loja aparece no menu desta conta? (plano de navegação, 5.6)
+ * O Comércio aparece no menu desta conta? (plano de navegação, 5.6)
  *
- * A regra mora em `mostraLoja` (`core/plataformas-de-loja.ts`): a escolha em
- * Objetivo e recursos manda, loja conectada aparece sempre, e quem nunca
- * escolheu segue a regra de antes (vender, loja cadastrada ou catálogo).
- * Estúdio de pilates, que atende e não tem catálogo, não vê.
- *
- * Erro de leitura responde `true`: esconder Catálogo de quem usa, por uma
- * consulta que falhou, seria apagar uma tela por acidente.
+ * A regra mora em `mostraLoja` (`core/plataformas-de-loja.ts`): aparece por
+ * padrão, some só com o interruptor desligado, e loja conectada aparece
+ * sempre. Erro de leitura responde `true`: esconder Produtos de quem usa, por
+ * uma consulta que falhou, seria apagar uma tela por acidente.
  */
 export async function lojaVisivel(clienteId: string): Promise<boolean> {
-  const [{ objetivo }, escolha, lojas, produtos] = await Promise.all([
-    recursosDaConta(clienteId),
-    escolhaDeLoja(clienteId),
-    db().from('lojas_integradas').select('ativa').eq('client_id', clienteId),
-    db().from('produtos').select('id', { count: 'exact', head: true }).eq('client_id', clienteId),
-  ])
-  if (lojas.error || produtos.error) return true
-  const linhas = (lojas.data ?? []) as { ativa: boolean }[]
-  return mostraLoja({
-    escolha,
-    vende: objetivo === 'vender',
-    lojaConectada: linhas.some((l) => l.ativa),
-    lojaCadastrada: linhas.length > 0,
-    temCatalogo: (produtos.count ?? 0) > 0,
-  })
+  const escolha = await escolhaDeLoja(clienteId)
+  if (escolha !== false) return true
+  const lojas = await db().from('lojas_integradas').select('ativa').eq('client_id', clienteId).eq('ativa', true)
+  if (lojas.error) return true
+  return mostraLoja({ escolha, lojaConectada: (lojas.data ?? []).length > 0 })
 }
