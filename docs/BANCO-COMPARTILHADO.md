@@ -206,6 +206,32 @@ extração explícito para os objetos de `public`.
   `app_verandi.migrations_aplicadas` com **35**, iguais a antes. Data API:
   `quadro_cartoes?select=previsao_de_fechamento` **200** com a chave secreta e
   `app_verandi.conta` **200**.
+- **a `0102` foi aplicada em 24/set/2026** (seções 8, 8.1 e A8 do plano da
+  administração), com a autorização escrita do dono em
+  `docs/HANDOFF-24-SET-ADMINISTRACAO.md`, pela Management API. Cria
+  `planos.preco_excedente` (0,40 / 0,30 / 0,20), cinco colunas anuláveis em
+  `clients` (`plano_agendado`, `plano_agendado_para`, `preco_contratado`,
+  `preco_agendado`, `preco_agendado_para`) e `public.avisos_de_plano`; troca os
+  `check` de ids fixos (`planos_id_check`, `clients_plano_check`) por formato
+  (`planos_id_formato`) e chave estrangeira (`clients_plano_fkey` `on delete
+  restrict`, `clients_plano_agendado_fkey` `on delete set null`). Único dado
+  reescrito: `preco_contratado` preenchido com o preço do plano (6 de 6 contas,
+  todas no Essencial, R$ 297).
+
+  Ensaio em transação antes, com o `notify` fora: dentro, os três excedentes,
+  6 contas com preço, `clients` com 38 colunas e as duas FKs; depois do
+  `rollback`, `clients` de volta a 33 colunas e `avisos_de_plano` ausente.
+  Releitura depois de aplicar: `avisos_de_plano` com RLS ligada e 0 políticas,
+  `has_table_privilege` falso para `anon`/`authenticated` e verdadeiro para
+  `service_role`; `pg_tables` de `public` de 71 para 72; **6** contas e **45**
+  contatos intactos; `app_verandi.migrations_aplicadas` **35**, 40 tabelas em
+  `app_verandi` e **16** policies de `storage.objects`, iguais a antes. Data
+  API: `avisos_de_plano`, `clients?select=plano_agendado,preco_contratado` e
+  `planos?select=preco_excedente` **200** com a chave secreta e **401** com a
+  publicável; `app_verandi.conta` **200**.
+
+  A migration entrou **antes** do código que lê as colunas novas (regra da
+  `0071`); o código publicado até aqui não lê nenhuma delas.
 - **a `0084` e a `0085` foram aplicadas em 20/set/2026**, na execução da F7, com
   autorização explícita do dono (pedida para a `0084` e estendida por ele às
   seguintes da F7/F8). As duas conferidas pelos **dois** testes: replay do zero em
