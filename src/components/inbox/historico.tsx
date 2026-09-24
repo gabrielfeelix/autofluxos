@@ -340,7 +340,7 @@ function ListaDeMensagens({
               nossa
                 ? 'bolha-nossa rounded-[15px_15px_4px_15px]'
                 : mensagem.toque
-                  ? 'bolha-deles rounded-[15px_15px_15px_4px] border border-ok/45'
+                  ? 'bolha-toque rounded-[15px_15px_15px_4px]'
                   : 'bolha-deles rounded-[15px_15px_15px_4px]'
             }`}>
               {mensagem.cita && <CitacaoNaBolha cita={mensagem.cita} nome={nome} />}
@@ -413,7 +413,7 @@ function ListaDeMensagens({
                 atende ler "resposta pronta" sem comparar com o menu acima.
               */}
               <span className="ml-2 text-[11px] text-muted" title={horaExata(mensagem.ts)}>
-                {mensagem.toque && <span className="font-semibold text-ok">tocou na opção · </span>}
+                {mensagem.toque && <span className="selo-toque mr-1.5">tocou na opção</span>}
                 {nossa && mensagem.autor ? `${mensagem.autor} · ` : ''}
                 {horaDoRelogio(mensagem.ts)}
               </span>
