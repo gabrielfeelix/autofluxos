@@ -2,7 +2,7 @@
 
 import { revalidatePath } from 'next/cache'
 import { ehObjetivo } from '@/core/objetivo-da-conta'
-import { definirCrmAtivo, definirObjetivo } from './repos/recursos'
+import { definirCrmAtivo, definirLojaAtiva, definirObjetivo } from './repos/recursos'
 import { exigirCapacidade, recusou } from './permissoes'
 
 /**
@@ -68,6 +68,28 @@ export async function acaoDefinirCrm(
    * popula retroativamente, e desligar não remove. Quem quiser trazer o
    * histórico usa a importação, que é outra ação e tem prévia de quantidade.
    */
+  revalidatePath(`/clientes/${clienteId}`, 'layout')
+  return { ok: true }
+}
+
+/**
+ * Liga ou desliga a Loja no menu (0103, plano de navegação 5.6).
+ *
+ * Mesmo desenho de `acaoDefinirCrm`: a barra inteira muda, então a
+ * revalidação é do layout. **Desligar não apaga nada**: nem o catálogo, nem a
+ * loja cadastrada. Loja conectada continua no menu mesmo desligada aqui
+ * (`mostraLoja`), porque é o único lugar de desligá-la.
+ */
+export async function acaoDefinirLoja(
+  clienteId: string,
+  ativa: boolean,
+): Promise<RespostaDeRecursos> {
+  const acesso = await exigirCapacidade(clienteId, 'configurar_operacao', 'todos')
+  if (recusou(acesso)) return acesso
+
+  const r = await definirLojaAtiva(clienteId, ativa)
+  if (!r.ok) return { ok: false, erro: r.motivo }
+
   revalidatePath(`/clientes/${clienteId}`, 'layout')
   return { ok: true }
 }

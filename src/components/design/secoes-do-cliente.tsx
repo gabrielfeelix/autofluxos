@@ -153,7 +153,7 @@ export const SECOES: Secao[] = [
     rotulo: 'Loja',
     icone: <IconeLoja />,
     itens: [
-      { id: 'conectar-loja', rotulo: 'Conectar loja', href: '/loja/magento', aba: 'loja' },
+      { id: 'conectar-loja', rotulo: 'Conectar loja', href: '/loja', aba: 'loja' },
       { id: 'catalogo', rotulo: 'Catálogo', href: '/loja/catalogo', aba: 'loja' },
     ],
   },
@@ -264,7 +264,7 @@ const ENDERECO_DA_ABA: Record<AbaDoCliente, string> = {
   atividades: '/atividades',
   fluxos: '/fluxos',
   transmissoes: '/transmissoes',
-  loja: '/loja/magento',
+  loja: '/loja',
   relatorios: '/relatorios',
   vendas: '/relatorios/vendas',
   ajustes: '/ajustes',

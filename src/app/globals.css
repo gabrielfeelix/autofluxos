@@ -227,6 +227,18 @@
   --marca-instagram: #e1306c;
   --marca-meta: #0866ff;
   --marca-telegram: #229ed9;
+  /*
+   * As plataformas de loja (Loja > Conectar loja) não viram classe do Tailwind:
+   * o cartão desenha a inicial com `var(--marca-<id>)`, e a cor mora aqui, uma
+   * linha por marca, no mesmo lugar das outras.
+   */
+  --marca-nuvemshop: #2c3357;
+  --marca-tray: #0a4ee4;
+  --marca-loja_integrada: #00a0a0;
+  --marca-vtex: #f71963;
+  --marca-woocommerce: #7f54b3;
+  --marca-shopify: #5e8e3e;
+  --marca-magento: #ee672f;
 
   /* O polegar da barra de rolagem: a borda dele é sempre a cor do fundo. */
   --barra: #c8cfd8;

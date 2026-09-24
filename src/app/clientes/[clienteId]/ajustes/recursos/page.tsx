@@ -6,10 +6,12 @@ import { notFound } from 'next/navigation'
 import { AjustesShell } from '@/components/design/ajustes-shell'
 import { Trilha } from '@/components/design/trilha'
 import { EscolherObjetivo } from '@/components/recursos/escolher-objetivo'
+import { InterruptorDaLoja } from '@/components/recursos/interruptor-da-loja'
 import { InterruptorDoCrm } from '@/components/recursos/interruptor-do-crm'
 import { acharCliente } from '@/server/repos/clientes'
 import { listarQuadros } from '@/server/repos/quadros'
-import { recursosDaConta } from '@/server/repos/recursos'
+import { lojaDaConta } from '@/server/repos/lojas'
+import { lojaVisivel, recursosDaConta } from '@/server/repos/recursos'
 
 export const dynamic = 'force-dynamic'
 
@@ -46,10 +48,12 @@ export default async function Pagina({ params }: { params: Promise<{ clienteId: 
     )
   }
   const onboarding = await onboardingDaConta(clienteId)
-  const [cliente, recursos, quadros] = await Promise.all([
+  const [cliente, recursos, quadros, lojaNoMenu, loja] = await Promise.all([
     acharCliente(clienteId),
     recursosDaConta(clienteId),
     listarQuadros(clienteId),
+    lojaVisivel(clienteId),
+    lojaDaConta(clienteId),
   ])
   if (!cliente) notFound()
 
@@ -102,6 +106,20 @@ export default async function Pagina({ params }: { params: Promise<{ clienteId: 
               ativo={recursos.crmAtivo}
               temQuadro={quadros.length > 0}
             />
+          </div>
+        </section>
+
+        <section className="app-card mt-5 overflow-hidden">
+          <header className="border-b border-line px-5 py-4">
+            <h2 className="text-[14.5px] font-bold">Loja</h2>
+            <p className="mt-1 text-[12.5px] leading-5 text-dim">
+              Loja on-line conectada e catálogo de produtos, para o bot responder
+              com o produto certo, o preço e o link. É opcional: quem atende sem
+              vender produto não precisa dela.
+            </p>
+          </header>
+          <div className="px-5 py-4">
+            <InterruptorDaLoja clienteId={cliente.id} ativo={lojaNoMenu} lojaConectada={Boolean(loja?.ativa)} />
           </div>
         </section>
       </main>

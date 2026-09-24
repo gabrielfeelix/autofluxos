@@ -105,16 +105,6 @@ const config: NextConfig = {
         destination: `/clientes/:clienteId/${para}/:resto*`,
         permanent: true,
       })),
-      /*
-       * `/loja` sozinha ainda não é tela: a grade de plataformas é a F4 do
-       * plano. Até lá leva à única loja que existe, e **não** é permanente,
-       * porque o navegador guardaria o 308 e a grade nunca apareceria.
-       */
-      {
-        source: '/clientes/:clienteId/loja',
-        destination: '/clientes/:clienteId/loja/magento',
-        permanent: false,
-      },
     ]
   },
 

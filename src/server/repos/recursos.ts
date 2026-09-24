@@ -6,6 +6,7 @@ import {
   OBJETIVO_PADRAO,
   type Objetivo,
 } from '@/core/objetivo-da-conta'
+import { mostraLoja } from '@/core/plataformas-de-loja'
 import { db, ehIdInvalido } from '../db'
 
 /**
@@ -119,24 +120,55 @@ export function crmAoCriar(objetivo: Objetivo): boolean {
 }
 
 /**
+ * A escolha de Loja em Objetivo e recursos (0103). `null` = nunca escolheu.
+ *
+ * Lida à parte de `recursosDaConta`, e de propósito: se a coluna faltar (código
+ * publicado antes da migration), só esta leitura cai para `null`, que é a regra
+ * de antes do interruptor, e o objetivo e o CRM continuam lidos certo.
+ */
+export async function escolhaDeLoja(clienteId: string): Promise<boolean | null> {
+  const { data, error } = await db().from('clients').select('loja_ativa').eq('id', clienteId).maybeSingle()
+  if (error || !data) return null
+  const valor = (data as { loja_ativa: boolean | null }).loja_ativa
+  return typeof valor === 'boolean' ? valor : null
+}
+
+/** Liga ou desliga a Loja no menu. Mesmo formato de `definirCrmAtivo`. */
+export async function definirLojaAtiva(
+  clienteId: string,
+  ativa: boolean,
+): Promise<{ ok: true } | { ok: false; motivo: string }> {
+  const { error } = await db().from('clients').update({ loja_ativa: ativa }).eq('id', clienteId)
+
+  if (error) return { ok: false, motivo: `não deu para gravar: ${error.message}` }
+  return { ok: true }
+}
+
+/**
  * A Loja aparece no menu desta conta? (plano de navegação, 5.6)
  *
- * Ainda não existe interruptor de Loja em Objetivo e recursos; enquanto não
- * existe, vale o mesmo raciocínio do `crmVisivel`: a conta que escolheu vender
- * vê, e **quem já usa não perde a tela** (loja conectada ou catálogo com item).
+ * A regra mora em `mostraLoja` (`core/plataformas-de-loja.ts`): a escolha em
+ * Objetivo e recursos manda, loja conectada aparece sempre, e quem nunca
+ * escolheu segue a regra de antes (vender, loja cadastrada ou catálogo).
  * Estúdio de pilates, que atende e não tem catálogo, não vê.
  *
  * Erro de leitura responde `true`: esconder Catálogo de quem usa, por uma
  * consulta que falhou, seria apagar uma tela por acidente.
  */
 export async function lojaVisivel(clienteId: string): Promise<boolean> {
-  const { objetivo } = await recursosDaConta(clienteId)
-  if (objetivo === 'vender') return true
-
-  const [lojas, produtos] = await Promise.all([
-    db().from('lojas_integradas').select('client_id', { count: 'exact', head: true }).eq('client_id', clienteId),
+  const [{ objetivo }, escolha, lojas, produtos] = await Promise.all([
+    recursosDaConta(clienteId),
+    escolhaDeLoja(clienteId),
+    db().from('lojas_integradas').select('ativa').eq('client_id', clienteId),
     db().from('produtos').select('id', { count: 'exact', head: true }).eq('client_id', clienteId),
   ])
   if (lojas.error || produtos.error) return true
-  return (lojas.count ?? 0) > 0 || (produtos.count ?? 0) > 0
+  const linhas = (lojas.data ?? []) as { ativa: boolean }[]
+  return mostraLoja({
+    escolha,
+    vende: objetivo === 'vender',
+    lojaConectada: linhas.some((l) => l.ativa),
+    lojaCadastrada: linhas.length > 0,
+    temCatalogo: (produtos.count ?? 0) > 0,
+  })
 }
