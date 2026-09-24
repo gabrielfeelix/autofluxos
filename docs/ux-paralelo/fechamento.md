@@ -1,7 +1,9 @@
 # Fechamento do plano de UX: um agente só (desde 23/09 à noite)
 
 Os quatro worktrees (`../autofluxos-a1` a `a4`) foram apagados e nenhum outro
-agente está rodando. O que falta do plano é feito por **um agente só**, na
+agente deste plano está rodando (mas **outra sessão** trabalha no plano da
+casca e do celular, `docs/PLANO-CASCA-ESQUELETOS-CELULAR.md`, mexendo em
+moldura, barras e Inbox no celular: `git fetch` antes de cada tarefa). O que falta do plano é feito por **um agente só**, na
 pasta `../autofluxos-ux`, branch `ux/restante`, `PORTA=3101`, com push na
 `main` a cada tarefa (rebase `--autostash` antes). Os registros por tarefa
 continuam no `aN.md` da fase (a1 = 5 e 6, a2 = 5.9, 7 e 8, a3 = 9 e 10,
@@ -9,7 +11,8 @@ a4 = 11 e 12).
 
 ## Onde parei
 
-Feito, tudo na `main`, deploys READY:
+Feito, tudo na `main` (deploys READY até a 8.2; da 8.3 em diante ver
+"Deploy parado" abaixo):
 
 | Tarefa | Commit |
 |---|---|
@@ -23,15 +26,19 @@ Feito, tudo na `main`, deploys READY:
 | 6.7 chaves: testar, trocar, excluir (migration **0097**) | `3d51465` |
 | 8.1 estado do atendimento igual no Inbox e na ficha | `589bf38` |
 | 8.2 compositor com três modos e respostas rápidas por teclado | `ae32e1a` |
+| 8.3 próximos passos por destino, três tipos na aba, resumo no topo | `737e144` |
+| 8.4 ganhar/perder, segmento e funil dizem o efeito | `b2bde21` |
+| 8.5 `?aba=`/`?volta=`, aviso de fora do filtro, `recarregarContato`, e2e | `1f8dd4d` |
 
 Detalhes e desvios: 6.x em `a1.md`, 8.x em `a2.md`.
 
 **Próximo, na ordem:**
 
-1. 8.3 a 8.6. Somar o achado da 5.9: **Inbox no celular (390 px) mostra
-   lista e conversa lado a lado**, a conversa sai cortada (continua assim).
-   Na 8.5 passo 2, o print da 8.1 mostrou o caso: conversa aberta por link
-   (`?conversa=`) que não está na página da fila abre sem aviso nenhum.
+1. 8.6 (acessibilidade e envios parciais). Já feito de brinde na 8.3:
+   `horaComFuso` ("(Brasília)") nas agendadas da ficha e `prazoEmPalavras`
+   por dia quando não há hora. Falta no passo 4 o painel `agendar.tsx`
+   (`quandoLegivel`). O Inbox no celular **já foi resolvido** pela outra
+   sessão (`0deeb1c`, uma coluna por vez): não mexer em `inbox/moldura.tsx`.
 2. 7.5 Passo 6: e2e do membro de atendimento (trocar nome e foto pelo rodapé,
    menu sem Configurações) e os testes "editar perfil só altera o próprio" e
    "nome vazio é recusado", se ainda não existirem.
@@ -40,11 +47,18 @@ Detalhes e desvios: 6.x em `a1.md`, 8.x em `a2.md`.
    que atendimento não vê o atalho "Automações ›" no Início.
 5. 10.6 continua **bloqueada**: Brevo sem `autofluxos.mail.4yu.com.br`.
 
-Scripts de print desta sessão em `.ux-local/`: `whatsapp.mjs` (6.6),
-`chaves.mjs` (6.7), `atendimento.mjs [aguardando|humano]` (8.1, cria sessão
-`humano` e pedido de pessoa no primeiro contato), `compositor.mjs` (8.2,
-mensagem de entrada + respostas rápidas `zz*`). `prints.mjs` ganhou a tela
-`chaves` e `INBOX_CONTATO=<id>` abre o Inbox numa conversa.
+**Deploy parado (23/09, 20:37):** a Vercel recusa com "Deployment rate
+limited, retry in 24 hours" (cota diária do Hobby; prévia de branch também
+conta). `737e144`, `b2bde21` e `1f8dd4d` estão na `main` sem deploy. O
+`deploy.sh` só diz `AUSENTE`; o motivo aparece no status do commit:
+`GH_TOKEN=$GITHUB_TOKEN gh api repos/gabrielfeelix/autofluxos/commits/<sha>/status`.
+Quando a cota voltar, o próximo push publica tudo junto: conferir READY.
+Para gastar menos, esta sessão parou de empurrar a branch `ux/restante`.
+
+Scripts de print novos: `.ux-local/ficha.mjs` (8.3, cria agendada "zz
+print"), `efeitos.mjs` (8.4, desfaz os cartões que criar), `texto-aba.mjs`.
+O e2e (`npx playwright test`) sobe o próprio `next dev` na `PORTA`: pare o
+seu antes, e depois desfaça o `tsconfig.json` que ele reescreve.
 
 ## Produção
 
