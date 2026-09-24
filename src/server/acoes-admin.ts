@@ -13,7 +13,8 @@ import { acharUsuario, exigirAdminDaPlataforma } from './sessao'
 import { autenticacao } from './auth'
 import { definirFuncaoDoMembro } from './pessoas'
 import { definirPlano, planoDaConta } from './repos/plano'
-import { planoVigente } from './repos/planos'
+import { planoVigente, salvarPlano } from './repos/planos'
+import { ehRecursoDoPlano } from '@/core/planos'
 import { acharPedido } from './repos/pedidos-de-plano'
 import { ehFuncao, PAPEL_DA_FUNCAO, type IdDaFuncao } from '@/core/funcoes'
 
@@ -291,6 +292,52 @@ export async function acaoAdminRecusarPedido(pedidoId: string): Promise<{ ok: bo
     alvoId: pedidoId,
     alvoNome: pedido.para,
     detalhes: { pedido: pedidoId, de: pedido.de, para: pedido.para },
+    impersonadoPor: sessao.impersonadoPor,
+  })
+  return { ok: true }
+}
+
+// ---------------------------------------------------------------------------
+// Planos editáveis (A6)
+// ---------------------------------------------------------------------------
+
+export type DadosDoPlano = {
+  nome: string
+  preco: number
+  conversas: number
+  numeros: number
+  resumo: string
+  itens: string[]
+  recursos: string[]
+  ativo: boolean
+}
+
+/** Edita um plano. Valida tudo antes do banco: a recusa do `check` viria em linguagem de Postgres. */
+export async function acaoAdminSalvarPlano(id: string, dados: DadosDoPlano): Promise<{ ok: boolean; erro?: string }> {
+  const sessao = await exigirAdminDaPlataforma()
+  if (id !== 'essencial' && id !== 'operacao' && id !== 'escala') return { ok: false, erro: 'esse plano não existe' }
+  const nome = String(dados.nome ?? '').trim()
+  if (nome.length < 1 || nome.length > 60) return { ok: false, erro: 'o nome precisa ter de 1 a 60 caracteres' }
+  const inteiro = (valor: unknown, minimo: number) => (Number.isInteger(Number(valor)) && Number(valor) >= minimo ? Number(valor) : null)
+  const preco = inteiro(dados.preco, 0)
+  const conversas = inteiro(dados.conversas, 0)
+  const numeros = inteiro(dados.numeros, 1)
+  if (preco === null) return { ok: false, erro: 'o preço é um número inteiro de reais, zero ou mais' }
+  if (conversas === null) return { ok: false, erro: 'o limite de conversas é um número inteiro, zero ou mais' }
+  if (numeros === null) return { ok: false, erro: 'o plano comporta pelo menos 1 número' }
+  const recursos = (dados.recursos ?? []).filter(ehRecursoDoPlano)
+  const itens = (dados.itens ?? []).map((item) => String(item).trim()).filter(Boolean).slice(0, 20)
+
+  const r = await salvarPlano(id, { nome, preco, conversas, numeros, resumo: String(dados.resumo ?? '').trim(), itens, recursos, ativo: dados.ativo !== false })
+  if (!r.ok) return { ok: false, erro: r.motivo }
+  await registrar({
+    acao: 'editou_plano',
+    autorId: sessao.usuario.id,
+    autorEmail: sessao.usuario.email,
+    alvoTipo: 'plano',
+    alvoId: id,
+    alvoNome: nome,
+    detalhes: { preco, conversas, numeros, ativo: dados.ativo !== false },
     impersonadoPor: sessao.impersonadoPor,
   })
   return { ok: true }

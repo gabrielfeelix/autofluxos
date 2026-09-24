@@ -5,7 +5,8 @@ import { Trilha } from '@/components/design/trilha'
 import { acaoPedirTrocaDePlano } from '@/server/acoes-plano'
 import { acharCliente } from '@/server/repos/clientes'
 import { consumoDaConta, planoDaConta } from '@/server/repos/plano'
-import { ultimoAto } from '@/server/repos/auditoria'
+import { pedidosDePlano } from '@/server/repos/pedidos-de-plano'
+import { planosVigentes } from '@/server/repos/planos'
 import type { IdDoPlano } from '@/core/planos'
 import { conferirAcessoAoCliente, podeAdministrarConta } from '@/server/sessao'
 
@@ -35,17 +36,16 @@ export default async function Pagina({ params }: { params: Promise<{ clienteId: 
   const acesso = await conferirAcessoAoCliente(clienteId)
   const podeMexer = acesso !== null && podeAdministrarConta(acesso)
 
-  const [plano, consumo, ultimoPedido] = await Promise.all([
+  const [plano, consumo, pedidos, planos] = await Promise.all([
     planoDaConta(clienteId),
     consumoDaConta(clienteId),
-    ultimoAto(clienteId, 'pediu_troca_de_plano'),
+    pedidosDePlano({ organizacaoId: clienteId }).catch(() => []),
+    planosVigentes(),
   ])
-  // Pedido para o plano que a conta já tem foi atendido: some da tela.
-  const para = ultimoPedido?.detalhes?.para
-  const pedidoAberto =
-    ultimoPedido && typeof para === 'string' && para !== plano
-      ? { para: para as IdDoPlano, quando: ultimoPedido.quando, por: ultimoPedido.autorEmail ?? '' }
-      : null
+  // Só o pedido que a administração ainda não respondeu (A5). Atendido ou
+  // recusado, some da tela; pedido para o plano que já vale também.
+  const aberto = pedidos.find((pedido) => pedido.situacao === 'aberto' && pedido.para !== plano)
+  const pedidoAberto = aberto ? { para: aberto.para as IdDoPlano, quando: aberto.quando, por: aberto.quemPediu } : null
 
   return (
     <AjustesShell cliente={cliente} ativa="plano">
@@ -58,7 +58,7 @@ export default async function Pagina({ params }: { params: Promise<{ clienteId: 
         />
         <h1 className="text-[25px] font-bold tracking-[-0.02em]">Plano e consumo</h1>
         <p className="mt-1.5 mb-6 max-w-[650px] text-[13px] leading-6 text-dim">
-          Em que plano esta conta está, quanto já foi usado neste mês, e o que muda se
+          Em que plano esta organização está, quanto já foi usado neste mês, e o que muda se
           você trocar.
         </p>
 
@@ -68,6 +68,7 @@ export default async function Pagina({ params }: { params: Promise<{ clienteId: 
           podeMexer={podeMexer}
           pedidoAberto={pedidoAberto}
           pedirTroca={acaoPedirTrocaDePlano.bind(null, cliente.id)}
+          planos={planos.filter((p) => p.ativo || p.id === plano)}
         />
       </main>
     </AjustesShell>

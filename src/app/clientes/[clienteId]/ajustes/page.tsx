@@ -2,7 +2,7 @@ import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { AjustesShell } from '@/components/design/ajustes-shell'
 import { ICONE_DA_TELA } from '@/components/design/icones-de-ajustes'
-import { acharPlano } from '@/core/planos'
+import { planoVigente } from '@/server/repos/planos'
 import { estaAtivo } from '@/core/produtos'
 import { resumoDoCatalogo } from '@/core/conexoes'
 import { catalogoDeIntegracoes } from '@/server/catalogo-de-integracoes'
@@ -170,7 +170,7 @@ export default async function Pagina({
             icone={ICONE_DA_TELA['plano']}
             titulo="Plano e consumo"
             descricao="Em que plano esta organização está, quanto já foi usado neste mês, e como pedir para mudar de faixa."
-            estado={<Selo tom="neutro">{acharPlano(plano).nome}</Selo>}
+            estado={<Selo tom="neutro">{(await planoVigente(plano)).nome}</Selo>}
           />
         </Grupo>
 

@@ -2,7 +2,8 @@
 
 import { useState, useTransition } from 'react'
 import {
-  acharPlano,
+  acharPlano as acharPlanoDoCodigo,
+  type Plano,
   comoTamanho,
   fracaoUsada,
   O_QUE_E_CONVERSA,
@@ -29,7 +30,10 @@ export function EscolhaDePlano({
   podeMexer,
   pedidoAberto,
   pedirTroca,
+  planos = PLANOS,
 }: {
+  /** Os planos em vigor (tabela `planos`, A6). Sem eles, os do código. */
+  planos?: readonly Plano[]
   atual: IdDoPlano
   consumo: ConsumoDoMes
   podeMexer: boolean
@@ -37,6 +41,7 @@ export function EscolhaDePlano({
   pedidoAberto: { para: IdDoPlano; quando: string; por: string } | null
   pedirTroca: (desejado: IdDoPlano) => Promise<{ ok: boolean; erro?: string }>
 }) {
+  const acharPlano = (id: IdDoPlano) => planos.find((p) => p.id === id) ?? acharPlanoDoCodigo(id)
   const plano = acharPlano(atual)
   const fracao = fracaoUsada(consumo.conversas, plano)
   const estourou = fracao > 1
@@ -144,7 +149,7 @@ export function EscolhaDePlano({
           </p>
         )}
         <div className="grid gap-3 lg:grid-cols-3">
-          {PLANOS.map((p) => (
+          {planos.map((p) => (
             <Cartao
               key={p.id}
               plano={p}
@@ -177,7 +182,7 @@ function Cartao({
   rodando,
   aoPedir,
 }: {
-  plano: (typeof PLANOS)[number]
+  plano: Plano
   ehOAtual: boolean
   pedido: boolean
   podeMexer: boolean

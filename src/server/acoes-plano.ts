@@ -1,7 +1,8 @@
 'use server'
 
 import { revalidatePath } from 'next/cache'
-import { acharPlano, type IdDoPlano } from '@/core/planos'
+import type { IdDoPlano } from '@/core/planos'
+import { planoVigente } from './repos/planos'
 import { registrar } from './repos/auditoria'
 import { planoDaConta } from './repos/plano'
 import { exigirAcessoAoCliente, podeAdministrarConta } from './sessao'
@@ -59,7 +60,7 @@ export async function acaoPedirTrocaDePlano(
     autorEmail: acesso.sessao.usuario.email,
     contaId: clienteId,
     alvoTipo: 'plano',
-    alvoNome: acharPlano(desejado).nome,
+    alvoNome: (await planoVigente(desejado)).nome,
     detalhes: { de: atual, para: desejado },
   })
 

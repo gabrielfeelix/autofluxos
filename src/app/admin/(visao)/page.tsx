@@ -10,6 +10,7 @@ import { listarClientes, resumirAtendimento } from '@/server/repos/clientes'
 import { consumoDeTodasAsContas } from '@/server/repos/plano'
 import { pedidosDePlano } from '@/server/repos/pedidos-de-plano'
 import { listarAtos } from '@/server/repos/auditoria'
+import { planosVigentes } from '@/server/repos/planos'
 import { verboDoAto } from '@/core/atos-da-auditoria'
 
 export const dynamic = 'force-dynamic'
@@ -31,6 +32,7 @@ export default async function VisaoGeral() {
     pedidosDePlano().catch(() => []),
     listarAtos({ limite: 6 }).catch(() => []),
   ])
+  const planos = await planosVigentes()
 
   const esperando = organizacoes
     .map((organizacao) => ({ organizacao, resumo: atendimento.get(organizacao.id) }))
@@ -41,7 +43,7 @@ export default async function VisaoGeral() {
   const conversas = consumo.reduce((soma, conta) => soma + conta.conversas, 0)
   const pedidosAbertos = pedidos.filter((pedido) => pedido.situacao === 'aberto').length
   const pertoDoLimite = consumo
-    .map((conta) => ({ conta, fracao: fracaoUsada(conta.conversas, acharPlano(conta.plano)) }))
+    .map((conta) => ({ conta, fracao: fracaoUsada(conta.conversas, planos.find((plano) => plano.id === conta.plano) ?? acharPlano(conta.plano)) }))
     .filter(({ fracao }) => fracao >= 0.8)
     .sort((a, b) => b.fracao - a.fracao)
 
