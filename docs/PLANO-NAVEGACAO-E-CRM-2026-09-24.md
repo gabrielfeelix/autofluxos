@@ -334,6 +334,37 @@ só no fim da frente.
 - Aceite: do quadro, "Abrir negócio" leva à página; mudar etapa pelos degraus
   grava sem recarregar e aparece no histórico; aba Histórico filtra por tipo.
 
+**Estado da F2 (feita em 24/set, commit `c3ed2ea`, só local, sem deploy):**
+
+- Aceite conferido com Playwright no local (`.ux-local/f2.mjs`, fora do git):
+  quadro, diálogo, "Abrir negócio", clique num degrau, recarregar, aba
+  Histórico > Etapas mostra "Saiu de Novo contato para Aula experimental".
+  Build de produção sem erro de hidratação.
+- Página: rota `src/app/clientes/[clienteId]/negocios/[cartaoId]/page.tsx`
+  (lê tudo) e `components/negocios/pagina-do-negocio.tsx` (tela, otimista).
+  Ações novas em `server/acoes-negocio.ts` (previsão, trocar de funil, anotar
+  no negócio); o resto reusa `acoes-crm.ts`, `acoes.ts` e
+  `acoes-atividades.ts`. Nenhuma revalida a página aberta.
+- Regras puras em `core/negocios.ts` (título provisório, degrau, dias,
+  categoria do evento, filtro da lista), com teste.
+- **Histórico sem migration:** o evento do negócio é o do contato com
+  `dados.cartaoId` (convenção da 0072). `moverCartao`, `atribuirCartao` e a
+  anotação da página passaram a gravar o id; `repos/negocios.ts` lê os do
+  cartão mais os sem id (conversa, fluxo) desde a criação dele. Atividades
+  entram no histórico vindas de `atividades.cartao_id`. Eventos antigos de
+  mover e assumir não têm o id e aparecem só pela data.
+- **Migration `0101_previsao_do_negocio.sql`**: `quadro_cartoes.previsao_de_fechamento`
+  (date, anulável). **Aplicada só no local.** O cartão é lido com `*`, então
+  o funil não cai em produção sem ela; só gravar a previsão falha. Aplicar em
+  produção antes do deploy, com autorização.
+- Cartão: `components/quadros/quadro.tsx`. A soma em R$ por coluna já existia.
+- Lista: `?ver=lista` na mesma rota de `/quadros`, `components/negocios/lista-de-negocios.tsx`,
+  filtros `busca`, `etapa`, `situacao`, `responsavel`, `temperatura` na URL.
+  Alternância no `cabecalho-do-quadro.tsx`; o seletor de funil mantém a vista.
+- Barra: `/negocios` acende CRM > Negócios (`aba-do-caminho.ts`, com teste).
+- O servidor de dev da 3100 (do outro agente) serviu SSR velho de componente
+  cliente; prints finais saíram de `next build` + `next start` na 3107.
+
 **F3. Análise > Vendas e Etiquetas como lista** (5.3 e 5.4)
 - Aceite: números batem com uma consulta à mão no banco local para um período.
 
