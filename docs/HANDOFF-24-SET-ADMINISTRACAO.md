@@ -66,7 +66,7 @@ A tabela de pedidos (`tabela-de-pedidos.tsx`) ainda mede o uso sob demanda
   migration pelo diretório **na hora** (`ls supabase/migrations | tail -1`).
 - Migration **antes** do push quando o código lê objeto novo (regra da
   `0071` no runbook).
-- Ações otimistas, sem `revalidatePath` da rota aberta; nenhum travessão (—)
+- Ações otimistas, sem `revalidatePath` da rota aberta; nenhum travessão (U+2014)
   em arquivo aberto; placeholder começa com "Exemplo:"; interface diz
   "Organização" e "Função"; usar os componentes nossos (`Dropdown`, `Modal`,
   `Caixa`, botões `app-primary-button`/`app-secondary-button` com padding).
