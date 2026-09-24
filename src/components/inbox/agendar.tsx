@@ -13,6 +13,7 @@ import {
 import { acaoAgendarMensagem, acaoCancelarAgendada } from '@/server/acoes-agendamento'
 import { acaoListarTemplates } from '@/server/acoes-transmissoes'
 import type { MensagemAgendada } from '@/server/repos/mensagens-agendadas'
+import { diaEHoraComFuso } from '@/lib/quando'
 import type { Template } from '@/server/repos/templates'
 
 /**
@@ -157,8 +158,17 @@ export function AgendarMensagem({
           setQuandoBruto(e.target.value)
           setErro(null)
         }}
-        className="app-field mb-2 px-2.5 py-1.5 text-[12.5px]"
+        className="app-field mb-1 px-2.5 py-1.5 text-[12.5px]"
       />
+      {/*
+        O campo usa o relógio do computador de quem agenda; a confirmação diz a
+        hora de Brasília, a mesma que a lista e a ficha mostram. Para quem está
+        em Brasília as duas batem; para quem atende de Manaus, é aqui que a
+        diferença aparece antes de virar compromisso com o cliente.
+      */}
+      <p className="mb-2 min-h-4 text-[11.5px] text-dim" aria-live="polite">
+        {quando && !Number.isNaN(quando.getTime()) ? `Sai em ${diaEHoraComFuso(quando)}` : ''}
+      </p>
 
       {/*
         Fora da janela, a caixa passa a **oferecer a saída** em vez de só avisar
@@ -280,7 +290,7 @@ function LinhaAgendada({
       <div className="flex items-start gap-2">
         <div className="min-w-0 flex-1">
           <p className="text-[11px] font-bold text-soft tabular-nums">
-            {quandoLegivel(agendada.quando)}
+            {diaEHoraComFuso(agendada.quando)}
             {agendada.criadaPorNome && (
               <span className="font-normal text-dim"> · {agendada.criadaPorNome}</span>
             )}
@@ -323,13 +333,6 @@ function LinhaAgendada({
   )
 }
 
-/** "16/set às 09:00", dia e hora, sem ano, que é o que cabe e o que se pergunta. */
-function quandoLegivel(iso: string): string {
-  const data = new Date(iso)
-  const dia = data.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' })
-  const hora = data.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
-  return `${dia.replace('.', '')} às ${hora}`
-}
 
 /** Relógio com um `+`: marcar algo para uma hora que ainda não chegou. */
 export function IconeAgendar() {

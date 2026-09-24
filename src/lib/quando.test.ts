@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { diaDaMensagem, etiquetasDeDia, horaDoRelogio, rotuloDoDia } from './quando'
+import { diaDaMensagem, diaEHoraComFuso, etiquetasDeDia, horaDoRelogio, rotuloDoDia } from './quando'
 
 /**
  * O fuso é o miolo destes testes, não um detalhe.
@@ -97,5 +97,15 @@ describe('etiquetasDeDia', () => {
     const etiquetas = etiquetasDeDia(itens, (i) => i.ts, agora)
     expect(etiquetas[0]).not.toBeNull()
     expect(etiquetas[1]).not.toBeNull()
+  })
+})
+
+describe('diaEHoraComFuso', () => {
+  it('escreve dia, hora de Brasília e o fuso', () => {
+    expect(diaEHoraComFuso('2026-09-16T12:00:00Z')).toBe('16 set às 09:00 (Brasília)')
+  })
+
+  it('22h de Brasília continua no mesmo dia, mesmo já sendo o dia seguinte em UTC', () => {
+    expect(diaEHoraComFuso('2026-09-17T01:00:00Z')).toBe('16 set às 22:00 (Brasília)')
   })
 })

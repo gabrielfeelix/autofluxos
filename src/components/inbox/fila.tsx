@@ -657,7 +657,7 @@ export function Fila({
               */
               <div
                 key={lead.contatoId}
-                className={`group relative mx-1.5 mb-0.5 rounded-[10px] transition ${
+                className={`group relative mx-1.5 mb-0.5 rounded-[10px] transition pointer-coarse:flex pointer-coarse:items-start ${
                   ativa ? "bg-primary/[0.12]" : "hover:bg-surface"
                 }`}
               >
@@ -675,7 +675,7 @@ export function Fila({
                 aria-current={ativa ? "page" : undefined}
                 scroll={false}
                 prefetch
-                className="flex gap-2.5 rounded-[10px] px-2.5 py-3"
+                className="flex min-w-0 flex-1 gap-2.5 rounded-[10px] px-2.5 py-3"
               >
                 <Avatar nome={lead.nome} alerta={Boolean(lead.aguardando)} />
                 <span className="min-w-0 flex-1">
@@ -807,8 +807,13 @@ export function Fila({
                 `opacity-0` com `group-hover` e `focus-within`, e não
                 `hidden`: quem chega por teclado precisa achar o botão no Tab, e
                 um elemento que não existe no DOM não recebe foco.
+
+                No toque não existe hover (o `group-hover` do Tailwind só vale
+                com `hover: hover`), então com ponteiro grosso os botões saem
+                do canto sobreposto e viram uma coluna fixa à direita da linha,
+                sempre visível e com alvo de 32 px. O horário continua no lugar.
               */}
-              <span className="pointer-events-none absolute top-2.5 right-2.5 flex items-center gap-0.5 opacity-0 transition group-focus-within:pointer-events-auto group-focus-within:opacity-100 group-hover:pointer-events-auto group-hover:opacity-100">
+              <span className="pointer-events-none absolute top-2.5 right-2.5 flex items-center gap-0.5 opacity-0 transition group-focus-within:pointer-events-auto group-focus-within:opacity-100 group-hover:pointer-events-auto group-hover:opacity-100 pointer-coarse:pointer-events-auto pointer-coarse:static pointer-coarse:flex-col pointer-coarse:gap-1 pointer-coarse:py-2 pointer-coarse:pr-1 pointer-coarse:opacity-100">
                 <BotaoDaLinha
                   rotulo={presa ? `Soltar ${nome} do topo` : `Fixar ${nome} no topo`}
                   dica={
@@ -1316,7 +1321,7 @@ function BotaoDaLinha({
         evento.stopPropagation();
         aoClicar();
       }}
-      className={`flex size-6 items-center justify-center rounded-md transition disabled:opacity-30 ${
+      className={`flex size-6 items-center justify-center rounded-md transition disabled:opacity-30 pointer-coarse:size-8 ${
         aceso
           ? "text-primary hover:bg-primary/15"
           : "text-dim hover:bg-surface-strong hover:text-soft"

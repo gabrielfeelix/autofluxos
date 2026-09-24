@@ -1177,12 +1177,12 @@ Ler `05-atendimento-crm.md` inteiro antes. Preservar os invariantes da seção
 
 ### Tarefa 8.6: acessibilidade e lote de arquivos [X18, X19, X06, X15, X17]
 
-- [ ] **Passo 1:** ações de fixar/não lida visíveis no foco e no toque, alvo mínimo 24 px.
-- [ ] **Passo 2:** revisão de anexos: foco inicial, Esc fecha, foco volta ao botão.
-- [ ] **Passo 3:** envio de vários arquivos lista enviados / pendentes / falhos por nome; tentar de novo só os pendentes.
-- [ ] **Passo 4:** conferir rótulos de data e hora (dia sem hora nunca mostra hora; mensagem agendada mostra fuso).
-- [ ] **Passo 5:** importação com pendências: tentar de novo só as linhas recusadas.
-- [ ] **Passo 6:** commit `fix(atendimento): foco, toque e envios parciais`.
+- [x] **Passo 1:** ações de fixar/não lida visíveis no foco e no toque, alvo mínimo 24 px.
+- [x] **Passo 2:** revisão de anexos: foco inicial, Esc fecha, foco volta ao botão.
+- [x] **Passo 3:** envio de vários arquivos lista enviados / pendentes / falhos por nome; tentar de novo só os pendentes.
+- [x] **Passo 4:** conferir rótulos de data e hora (dia sem hora nunca mostra hora; mensagem agendada mostra fuso).
+- [x] **Passo 5:** importação com pendências: tentar de novo só as linhas recusadas.
+- [x] **Passo 6:** commit `fix(atendimento): foco, toque e envios parciais`.
 
 ---
 

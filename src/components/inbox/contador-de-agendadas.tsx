@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState, useTransition } from 'react'
 import { acaoCancelarAgendada } from '@/server/acoes-agendamento'
 import type { MensagemAgendada } from '@/server/repos/mensagens-agendadas'
+import { diaEHoraComFuso } from '@/lib/quando'
 
 /**
  * "N agendadas" na barra de filtros, e a lista inteira da conta ao clicar.
@@ -106,7 +107,7 @@ function Linha({
           <p className="truncate text-[12.5px] font-bold text-ink">
             {agendada.nomeDoContato ?? 'sem nome'}
             <span className="ml-1.5 font-normal text-dim tabular-nums">
-              {quandoLegivel(agendada.quando)}
+              {diaEHoraComFuso(agendada.quando)}
             </span>
           </p>
           <p className="line-clamp-2 text-[12px] leading-4 text-muted">{agendada.texto}</p>
@@ -141,10 +142,3 @@ function Linha({
   )
 }
 
-/** "16/set às 09:00", dia e hora, sem ano, que é o que cabe e o que se pergunta. */
-function quandoLegivel(iso: string): string {
-  const data = new Date(iso)
-  const dia = data.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' })
-  const hora = data.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
-  return `${dia.replace('.', '')} às ${hora}`
-}

@@ -56,6 +56,19 @@ export function horaComFuso(iso: string): string {
   return `${horaCompleta.format(new Date(iso))} (Brasília)`
 }
 
+const diaCurto = new Intl.DateTimeFormat('pt-BR', { day: '2-digit', month: 'short', timeZone: FUSO })
+const soHora = new Intl.DateTimeFormat('pt-BR', { hour: '2-digit', minute: '2-digit', timeZone: FUSO })
+
+/**
+ * "16 set às 09:00 (Brasília)": dia e hora sem ano, para listas curtas de
+ * mensagens agendadas. Mesmo motivo do `horaComFuso`, e no fuso fixo: o
+ * relógio do navegador de quem atende de outro estado diria outra hora.
+ */
+export function diaEHoraComFuso(iso: string | Date): string {
+  const data = new Date(iso)
+  return `${diaCurto.format(data).replace('.', '').replace(' de ', ' ')} às ${soHora.format(data)} (Brasília)`
+}
+
 /*
  * -----------------------------------------------------------------------------
  * Hora de relógio e agrupamento por dia

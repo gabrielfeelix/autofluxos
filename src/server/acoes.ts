@@ -2739,34 +2739,77 @@ export async function acaoSalvarNotas(
  * **nada aqui é destrutivo**: renomear é reversível apagando o campo, criar
  * contato é reversível apagando o contato, e pendência não escreve nada.
  */
+export type LinhaRecusada = { numero: number; nome: string; telefone: string; motivo: string }
+
+/** Teto das linhas corrigidas que voltam sem arquivo: o mesmo corpo de uma planilha grande. */
+const TETO_DE_LINHAS_CORRIGIDAS = 5000
+
+/**
+ * As linhas que voltam corrigidas na tela, sem a planilha. Vêm do navegador,
+ * então passam pelo mesmo crivo de um CSV: só texto, tamanho limitado, e a
+ * conciliação decide tudo de novo (nada do que a tela diz é aceito como já
+ * conferido).
+ */
+function linhasCorrigidas(bruto: string): { numero: number; nome: string; telefone: string }[] | null {
+  let lido: unknown
+  try {
+    lido = JSON.parse(bruto)
+  } catch {
+    return null
+  }
+  if (!Array.isArray(lido) || lido.length === 0 || lido.length > TETO_DE_LINHAS_CORRIGIDAS) return null
+  const linhas = []
+  for (const item of lido) {
+    if (typeof item !== 'object' || item === null) return null
+    const { numero, nome, telefone } = item as Record<string, unknown>
+    if (!Number.isInteger(numero) || typeof nome !== 'string' || typeof telefone !== 'string') return null
+    linhas.push({ numero: numero as number, nome: nome.trim().slice(0, 200), telefone: telefone.trim().slice(0, 60) })
+  }
+  return linhas
+}
+
 export async function acaoImportarContatos(
   clienteId: string,
   _estado: EstadoSalvar,
   formData: FormData,
-): Promise<EstadoSalvar & { resumo?: string; pendentes?: string[] }> {
+): Promise<EstadoSalvar & { resumo?: string; recusadas?: LinhaRecusada[] }> {
   const acesso = await exigirCapacidade(clienteId, 'exportar', 'todos')
   if (recusou(acesso)) return acesso
 
-  const arquivo = formData.get('planilha')
-  if (!(arquivo instanceof File) || arquivo.size === 0) return { erro: 'Escolha um arquivo CSV.' }
-  if (arquivo.size > 4 * 1024 * 1024) return { erro: 'O arquivo passa de 4 MB.' }
+  /*
+   * Segunda volta: só as linhas recusadas, já corrigidas na própria tela.
+   * Mandar a planilha inteira de novo funcionaria (quem já entrou casa e não
+   * duplica), mas obrigava a pessoa a consertar o arquivo dela para três
+   * linhas e a reler o resumo de trezentas.
+   */
+  const corrigidas = formData.get('linhas')
+  let daPlanilha: { numero: number; nome: string; telefone: string }[]
+  if (typeof corrigidas === 'string') {
+    const linhas = linhasCorrigidas(corrigidas)
+    if (!linhas) return { erro: 'As linhas corrigidas vieram num formato que não reconheço. Importe a planilha de novo.' }
+    daPlanilha = linhas
+  } else {
+    const arquivo = formData.get('planilha')
+    if (!(arquivo instanceof File) || arquivo.size === 0) return { erro: 'Escolha um arquivo CSV.' }
+    if (arquivo.size > 4 * 1024 * 1024) return { erro: 'O arquivo passa de 4 MB.' }
 
-  const { cabecalho, linhas } = lerCsv(await arquivo.text())
-  const colunas = acharColunas(cabecalho)
+    const { cabecalho, linhas } = lerCsv(await arquivo.text())
+    const colunas = acharColunas(cabecalho)
 
-  if (colunas.telefone === -1) {
-    return {
-      erro: `Não achei a coluna do telefone. O cabeçalho tem: ${cabecalho.join(', ') || '(vazio)'}. Renomeie uma coluna para "Telefone".`,
+    if (colunas.telefone === -1) {
+      return {
+        erro: `Não achei a coluna do telefone. O cabeçalho tem: ${cabecalho.join(', ') || '(vazio)'}. Renomeie uma coluna para "Telefone".`,
+      }
     }
-  }
-  if (linhas.length === 0) return { erro: 'A planilha não tem nenhuma linha além do cabeçalho.' }
+    if (linhas.length === 0) return { erro: 'A planilha não tem nenhuma linha além do cabeçalho.' }
 
-  const daPlanilha = linhas.map((celulas, i) => ({
-    // +2: a primeira linha do arquivo é o cabeçalho e o editor conta de 1.
-    numero: i + 2,
-    nome: colunas.nome === -1 ? '' : (celulas[colunas.nome] ?? '').trim(),
-    telefone: (celulas[colunas.telefone] ?? '').trim(),
-  }))
+    daPlanilha = linhas.map((celulas, i) => ({
+      // +2: a primeira linha do arquivo é o cabeçalho e o editor conta de 1.
+      numero: i + 2,
+      nome: colunas.nome === -1 ? '' : (celulas[colunas.nome] ?? '').trim(),
+      telefone: (celulas[colunas.telefone] ?? '').trim(),
+    }))
+  }
 
   const conciliacoes = conciliar(daPlanilha, await contatosConhecidos(clienteId))
   const resultado = await aplicarImportacao(clienteId, conciliacoes)
@@ -2774,8 +2817,13 @@ export async function acaoImportarContatos(
   revalidatePath(`/clientes/${clienteId}/leads`)
   revalidatePath(`/clientes/${clienteId}/inbox`)
 
+  const uma = daPlanilha.length === 1
+  const lidas =
+    typeof corrigidas === 'string'
+      ? uma ? 'linha corrigida' : 'linhas corrigidas'
+      : uma ? 'linha lida' : 'linhas lidas'
   const partes = [
-    `${daPlanilha.length} ${daPlanilha.length === 1 ? 'linha lida' : 'linhas lidas'}`,
+    `${daPlanilha.length} ${lidas}`,
     `${resultado.renomeados} ${resultado.renomeados === 1 ? 'nome corrigido' : 'nomes corrigidos'}`,
     `${resultado.criados} ${resultado.criados === 1 ? 'contato novo' : 'contatos novos'}`,
   ]
@@ -2786,11 +2834,9 @@ export async function acaoImportarContatos(
   return {
     ok: true,
     resumo: partes.join(' · '),
-    // As pendências voltam com o número da linha para a pessoa consertar na
-    // planilha dela. Sem isso, "40 sem importar" não diz quais.
-    pendentes: resultado.pendentes.map(
-      (p) => `linha ${p.numero}${p.nome ? ` (${p.nome})` : ''}, ${p.motivo}`,
-    ),
+    // As recusadas voltam inteiras, com o número da linha: a tela mostra cada
+    // uma para corrigir ali mesmo e mandar de novo só elas.
+    recusadas: resultado.pendentes,
   }
 }
 

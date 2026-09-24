@@ -51,6 +51,11 @@ import { pedirNovas } from '@/components/inbox/sinal-de-conversa'
  * os cinco em paralelo entregaria fora de ordem no celular do cliente, e um
  * erro no meio deixaria ninguém sabendo o que foi e o que não foi.
  *
+ * Depois de um erro, a leva **não perde** os que já saíram: cada anexo guarda o
+ * próprio estado (enviado, falhou ou pendente) e a revisão lista os três por
+ * nome. "Tentar de novo" manda só o que ainda não saiu, na mesma ordem; mandar
+ * a leva inteira de novo repetiria a foto no celular do cliente.
+ *
  * ---------------------------------------------------------------------------
  * A revisão é a única defesa que existe
  * ---------------------------------------------------------------------------
@@ -79,6 +84,10 @@ type Anexo = {
   /** `blob:` local, **nada sobe para ver**. Só o que for confirmado vai ao Storage. */
   previa: string | null
   legenda: string
+  /** Sem estado = pendente. `enviado` nunca volta para a fila. */
+  estado?: 'enviado' | 'falhou'
+  /** Por que falhou, na língua de quem lê. */
+  motivo?: string
 }
 
 type Valor = {
@@ -89,6 +98,11 @@ type Valor = {
 }
 
 const Contexto = createContext<Valor | null>(null)
+
+/** O que ainda precisa sair: pendentes e o que falhou. */
+function faltaEnviar(anexos: Anexo[]) {
+  return anexos.filter((a) => a.estado !== 'enviado')
+}
 
 /**
  * `null` fora do provedor, como na citação: a caixa de resposta também serve a
@@ -119,6 +133,8 @@ export function ProvedorDeEntrega({
   const [atual, setAtual] = useState(0)
   const [erro, setErro] = useState<string | null>(null)
   const [enviado, setEnviado] = useState(0)
+  /** Tamanho da fila **desta** tentativa, para o "Enviando 2 de 3" não mudar no meio. */
+  const [total, setTotal] = useState(0)
   const [fase, setFase] = useState<'parado' | 'subindo' | 'enviando'>('parado')
   const [arrastando, setArrastando] = useState(false)
   const [, comecar] = useTransition()
@@ -130,6 +146,14 @@ export function ProvedorDeEntrega({
    * mensagem por que o arrasto passa.
    */
   const profundidade = useRef(0)
+
+  /*
+   * Quem abriu a revisão (o clipe, o `+` da barra). Ao fechar, o foco volta
+   * para ele: sem isto o foco caía no `body` e quem usa teclado recomeçava a
+   * tabulação do topo da página. No arrasto não há botão, e o foco fica onde
+   * estava.
+   */
+  const quemAbriu = useRef<HTMLElement | null>(null)
 
   /*
    * Espelho para soltar os `blob:` no desmonte. Cada `createObjectURL` prende o
@@ -180,6 +204,10 @@ export function ProvedorDeEntrega({
         legenda: '',
       }))
 
+      if (anexos.length === 0 && document.activeElement instanceof HTMLElement) {
+        quemAbriu.current = document.activeElement
+      }
+
       // Abre já no primeiro dos que acabaram de entrar: é o que a pessoa quer
       // ver, e não a foto que ela já revisou há dois cliques.
       setAtual(anexos.length)
@@ -194,6 +222,9 @@ export function ProvedorDeEntrega({
     setAtual(0)
     setErro(null)
     setEnviado(0)
+    const volta = quemAbriu.current
+    quemAbriu.current = null
+    if (volta?.isConnected) requestAnimationFrame(() => volta.focus())
   }
 
   function remover(id: string) {
@@ -225,18 +256,39 @@ export function ProvedorDeEntrega({
     [adicionar, anexos.length],
   )
 
-  const legendaGrande = anexos.some((a) => a.legenda.trim().length > LIMITE_LEGENDA)
+  const legendaGrande = faltaEnviar(anexos).some((a) => a.legenda.trim().length > LIMITE_LEGENDA)
+
+  function marcar(id: string, estado: Anexo['estado'], motivo?: string) {
+    setAnexos((atuais) => atuais.map((a) => (a.id === id ? { ...a, estado, motivo } : a)))
+  }
 
   function enviarTudo() {
-    if (anexos.length === 0 || legendaGrande) return
+    const fila = faltaEnviar(anexos)
+    if (fila.length === 0 || legendaGrande) return
     setErro(null)
+    setTotal(fila.length)
+    // A falha anterior volta a ser pendente: vai tentar de novo agora.
+    setAnexos((atuais) =>
+      atuais.map((a) => (a.estado === 'falhou' ? { ...a, estado: undefined, motivo: undefined } : a)),
+    )
 
     comecar(async () => {
+      let saiuAlgum = false
+      let emCurso: Anexo | undefined
+      const falhou = (anexo: Anexo, motivo: string) => {
+        marcar(anexo.id, 'falhou', motivo)
+        setAtual(anexos.findIndex((a) => a.id === anexo.id))
+        setErro(`${anexo.arquivo.name}: ${motivo}`)
+        // O que já saiu antes do erro também é conversa: a transcrição busca o
+        // que houver, e o que falhou simplesmente não está lá.
+        if (saiuAlgum) pedirNovas()
+      }
       try {
-        for (let i = 0; i < anexos.length; i++) {
-          const anexo = anexos[i]
+        for (let i = 0; i < fila.length; i++) {
+          const anexo = fila[i]
           if (!anexo) continue
           const { arquivo, legenda } = anexo
+          emCurso = anexo
           setEnviado(i)
           setFase('subindo')
 
@@ -251,7 +303,7 @@ export function ProvedorDeEntrega({
             bytes: arquivo.size,
           })
           if (!preparo.ok || !preparo.envio) {
-            setErro(`${arquivo.name}: ${preparo.erro ?? 'não deu para preparar o envio'}`)
+            falhou(anexo, preparo.erro ?? 'não deu para preparar o envio')
             return
           }
 
@@ -266,7 +318,7 @@ export function ProvedorDeEntrega({
             headers: { 'content-type': arquivo.type },
           })
           if (!subida.ok) {
-            setErro(`${arquivo.name}: o arquivo não subiu; tente de novo`)
+            falhou(anexo, 'o arquivo não subiu')
             return
           }
 
@@ -280,24 +332,19 @@ export function ProvedorDeEntrega({
             ...(texto !== '' && preparo.envio.midia !== 'audio' ? { legenda: texto } : {}),
           })
           if (!r.ok) {
-            setErro(`${arquivo.name}: ${r.erro ?? 'não deu para enviar'}`)
-            /*
-             * O que já saiu não volta. Tirar da lista os que foram deixa a
-             * segunda tentativa mandar só o que falta, repetir a leva inteira
-             * mandaria a mesma foto duas vezes.
-             */
-            setAnexos((atuais) => atuais.slice(i))
-            setAtual(0)
-            // O que já saiu antes do erro também é conversa: a transcrição
-            // busca o que houver, e o que falhou simplesmente não está lá.
-            pedirNovas()
+            falhou(anexo, r.erro ?? 'não deu para enviar')
             return
           }
+          marcar(anexo.id, 'enviado')
+          saiuAlgum = true
         }
         // A leva inteira saiu: as bolhas entram na conversa agora, sem esperar
         // o pulso do servidor e sem redesenhar a página.
         pedirNovas()
         fechar()
+      } catch {
+        // `fetch` que cai (rede, aba dormindo) rejeita em vez de responder.
+        if (emCurso) falhou(emCurso, 'a conexão caiu no meio do envio')
       } finally {
         setFase('parado')
         setEnviado(0)
@@ -367,6 +414,7 @@ export function ProvedorDeEntrega({
             erro={erro}
             fase={fase}
             enviado={enviado}
+            total={total}
             legendaGrande={legendaGrande}
             aoEscolher={setAtual}
             aoRemover={remover}
@@ -395,6 +443,7 @@ function PainelDeRevisao({
   erro,
   fase,
   enviado,
+  total,
   legendaGrande,
   aoEscolher,
   aoRemover,
@@ -409,6 +458,7 @@ function PainelDeRevisao({
   erro: string | null
   fase: 'parado' | 'subindo' | 'enviando'
   enviado: number
+  total: number
   legendaGrande: boolean
   aoEscolher: (i: number) => void
   aoRemover: (id: string) => void
@@ -424,6 +474,12 @@ function PainelDeRevisao({
   const ehAudio = emFoco.arquivo.type.startsWith('audio/')
   const legendaAtual = emFoco.legenda
   const excede = legendaAtual.trim().length > LIMITE_LEGENDA
+  const faltam = faltaEnviar(anexos)
+  const enviados = anexos.filter((a) => a.estado === 'enviado')
+  const falhos = anexos.filter((a) => a.estado === 'falhou')
+  const pendentes = anexos.filter((a) => a.estado === undefined)
+  const houveTentativa = enviados.length > 0 || falhos.length > 0
+  const jaSaiu = emFoco.estado === 'enviado'
 
   return (
     /*
@@ -448,7 +504,11 @@ function PainelDeRevisao({
           ✕
         </button>
         <p className="text-[13px] font-semibold">
-          {anexos.length === 1 ? 'Enviar este arquivo' : `Enviar ${anexos.length} arquivos`}
+          {houveTentativa
+            ? `Faltam ${faltam.length} de ${anexos.length}`
+            : anexos.length === 1
+              ? 'Enviar este arquivo'
+              : `Enviar ${anexos.length} arquivos`}
         </p>
         <p className="ml-auto min-w-0 truncate text-[11.5px] text-dim" title={emFoco.arquivo.name}>
           {emFoco.arquivo.name} · {(emFoco.arquivo.size / 1024 / 1024).toFixed(1)} MB
@@ -486,10 +546,41 @@ function PainelDeRevisao({
       </div>
 
       <div className="shrink-0 border-t border-line px-3 py-3">
-        {erro && (
-          <p className="mb-2 rounded-[10px] border border-rose-400/25 bg-rose-400/[0.08] px-3 py-2 text-[12.5px] leading-5 text-perigo">
+        {/* Depois de uma tentativa, a lista abaixo já diz o erro, por nome. */}
+        {erro && !houveTentativa && (
+          <p
+            role="alert"
+            className="mb-2 rounded-[10px] border border-rose-400/25 bg-rose-400/[0.08] px-3 py-2 text-[12.5px] leading-5 text-perigo"
+          >
             {erro}
           </p>
+        )}
+
+        {/*
+          Depois de um envio parcial, o que foi e o que não foi, por nome. As
+          miniaturas marcam o mesmo, mas miniatura não diz o nome, e é o nome
+          que a pessoa confere com o que o cliente disse ter recebido.
+        */}
+        {houveTentativa && !ocupado && (
+          <ul role="alert" className="mb-2 max-h-32 space-y-0.5 overflow-y-auto text-[12px] leading-5">
+            {enviados.length > 0 && (
+              <li className="text-soft">
+                <strong className="text-ink">Enviados:</strong>{' '}
+                {enviados.map((a) => a.arquivo.name).join(', ')}
+              </li>
+            )}
+            {falhos.map((a) => (
+              <li key={a.id} className="text-perigo">
+                <strong>Falhou:</strong> {a.arquivo.name} ({a.motivo})
+              </li>
+            ))}
+            {pendentes.length > 0 && (
+              <li className="text-dim">
+                <strong className="text-soft">Não tentados:</strong>{' '}
+                {pendentes.map((a) => a.arquivo.name).join(', ')}
+              </li>
+            )}
+          </ul>
         )}
 
         <div className="flex items-end gap-2">
@@ -497,7 +588,9 @@ function PainelDeRevisao({
             Áudio não leva legenda na Cloud API. Esconder o campo é melhor do que
             deixá-lo aceitar texto e o envio recusar depois.
           */}
-          {ehAudio ? (
+          {jaSaiu ? (
+            <p className="flex-1 px-1 text-[12px] text-dim">Este já foi enviado.</p>
+          ) : ehAudio ? (
             <p className="flex-1 px-1 text-[12px] text-dim">Áudio não leva legenda no WhatsApp.</p>
           ) : (
             <div className="min-w-0 flex-1">
@@ -525,19 +618,32 @@ function PainelDeRevisao({
             </div>
           )}
 
+          {/*
+            Foco inicial: a legenda (o `autoFocus` do campo). Sem campo, que é o
+            caso do áudio e do que já saiu, o foco vai para o enviar, e nunca
+            fica no `body` atrás do painel.
+          */}
           <button
             type="button"
+            autoFocus={ehAudio || jaSaiu}
             onClick={aoEnviar}
             disabled={ocupado || legendaGrande}
             aria-label={
-              anexos.length === 1 ? 'Enviar o arquivo' : `Enviar ${anexos.length} arquivos`
+              houveTentativa
+                ? `Tentar de novo os ${faltam.length} que faltam`
+                : anexos.length === 1
+                  ? 'Enviar o arquivo'
+                  : `Enviar ${anexos.length} arquivos`
             }
-            className="app-primary-button relative flex size-9 shrink-0 items-center justify-center rounded-full text-[13.5px] leading-none disabled:opacity-50"
+            title={houveTentativa ? 'Tentar de novo só os que faltam' : undefined}
+            className={`app-primary-button relative flex h-9 shrink-0 items-center justify-center rounded-full text-[13.5px] leading-none disabled:opacity-50 ${
+              houveTentativa && !ocupado ? 'px-3.5 text-[12.5px] font-semibold' : 'w-9'
+            }`}
           >
-            {ocupado ? '…' : '➤'}
-            {anexos.length > 1 && !ocupado && (
+            {ocupado ? '…' : houveTentativa ? 'Tentar de novo' : '➤'}
+            {faltam.length > 1 && !ocupado && (
               <span className="absolute -top-1 -right-1 flex size-[17px] items-center justify-center rounded-full bg-panel text-[11px] font-bold text-primary ring-1 ring-primary/40">
-                {anexos.length}
+                {faltam.length}
               </span>
             )}
           </button>
@@ -554,7 +660,9 @@ function PainelDeRevisao({
                 type="button"
                 onClick={() => aoEscolher(i)}
                 disabled={ocupado}
-                aria-label={`Revisar ${anexo.arquivo.name}`}
+                aria-label={`Revisar ${anexo.arquivo.name}${
+                  anexo.estado === 'enviado' ? ' (enviado)' : anexo.estado === 'falhou' ? ' (falhou)' : ''
+                }`}
                 aria-current={i === atual}
                 className={`flex size-11 items-center justify-center overflow-hidden rounded-lg border bg-surface text-[15px] transition disabled:opacity-60 ${
                   i === atual
@@ -569,12 +677,26 @@ function PainelDeRevisao({
                   <Simbolo arquivo={anexo.arquivo} />
                 )}
               </button>
-              {!ocupado && (
+              {anexo.estado && (
+                <span
+                  aria-hidden
+                  className={`absolute -bottom-1 -left-1 flex size-[18px] items-center justify-center rounded-full text-[11px] leading-none font-bold text-white ring-2 ring-panel ${
+                    anexo.estado === 'enviado' ? 'bg-emerald-600' : 'bg-rose-600'
+                  }`}
+                >
+                  {anexo.estado === 'enviado' ? '✓' : '!'}
+                </span>
+              )}
+              {/*
+                Visível no hover, no foco do teclado e sempre no toque: com
+                `hidden` o botão não existia para quem não tem mouse.
+              */}
+              {!ocupado && anexo.estado !== 'enviado' && (
                 <button
                   type="button"
                   onClick={() => aoRemover(anexo.id)}
                   aria-label={`Tirar ${anexo.arquivo.name} da leva`}
-                  className="absolute -top-1.5 -right-1.5 hidden size-[18px] items-center justify-center rounded-full border border-line bg-panel text-[11px] leading-none text-dim shadow-sm transition group-hover:flex hover:text-perigo"
+                  className="absolute -top-1.5 -right-1.5 flex size-[22px] items-center justify-center rounded-full border border-line bg-panel text-[11px] leading-none text-dim opacity-0 shadow-sm transition group-focus-within:opacity-100 group-hover:opacity-100 hover:text-perigo focus-visible:opacity-100 pointer-coarse:size-6 pointer-coarse:opacity-100"
                 >
                   ✕
                 </button>
@@ -607,7 +729,7 @@ function PainelDeRevisao({
 
           {ocupado && (
             <p className="ml-auto shrink-0 pl-2 text-[11.5px] text-dim">
-              {fase === 'subindo' ? 'Subindo' : 'Enviando'} {enviado + 1} de {anexos.length}…
+              {fase === 'subindo' ? 'Subindo' : 'Enviando'} {enviado + 1} de {total}…
             </p>
           )}
         </div>
