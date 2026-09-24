@@ -434,6 +434,7 @@ async function blocosDeVendas({
       conteudo: (
         <ListaEmBarras
           titulo="Ranking de vendas"
+          desenho="podio"
           subtitulo="Quem mais ganhou negócios no período. Troque a medida para ver quem trouxe mais dinheiro."
           ranking
           valorPermitido={podeVerValor}
@@ -466,7 +467,7 @@ async function blocosDeVendas({
       conteudo: (
         <CaixaDoBloco titulo="Por que perdemos" subtitulo="Motivo anotado em cada negócio perdido no período.">
           {motivos.length === 0 ? (
-            <Vazio>Nenhum negócio perdido no período.</Vazio>
+            <Vazio desenho="motivos">Nenhum negócio perdido no período.</Vazio>
           ) : (
             <Rosca
               totalRotulo={motivos.reduce((s, m) => s + m.n, 0) === 1 ? 'perdido' : 'perdidos'}
@@ -489,6 +490,7 @@ async function blocosDeVendas({
       conteudo: (
         <ListaEmBarras
           titulo="Em aberto por etapa"
+          desenho="etapas"
           subtitulo={`Onde estão hoje os negócios abertos do funil ${funil?.nome ?? ''}.`}
           manterOrdem
           valorPermitido={podeVerValor}
@@ -505,6 +507,7 @@ async function blocosDeVendas({
       conteudo: (
         <ListaEmBarras
           titulo="O que mais vende"
+          desenho="maisVendidos"
           subtitulo="Negócios ganhos no período, pelo produto ou serviço do negócio."
           valorPermitido={podeVerValor}
           maximo={6}
@@ -527,6 +530,7 @@ async function blocosDeVendas({
       conteudo: (
         <ListaEmBarras
           titulo="De onde vêm as vendas"
+          desenho="origemDasVendas"
           subtitulo="Negócios ganhos, pela campanha do primeiro anúncio em que o cliente clicou."
           valorPermitido={podeVerValor}
           maximo={6}

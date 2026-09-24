@@ -794,91 +794,337 @@ export function IlustracaoTudoCerto() {
  * ---------------------------------------------------------------------------
  */
 
-export type DesenhoDeRelatorio = 'barras' | 'rosca' | 'funil' | 'nps' | 'horarios' | 'fechamentos'
+export type DesenhoDeRelatorio =
+  | 'desfecho'
+  | 'horarios'
+  | 'canais'
+  | 'atendentes'
+  | 'origens'
+  | 'nps'
+  | 'espera'
+  | 'fechamentos'
+  | 'funil'
+  | 'podio'
+  | 'motivos'
+  | 'etapas'
+  | 'maisVendidos'
+  | 'origemDasVendas'
 
 const ALTURA_DO_CARTAO = 'h-[84px]'
 
 export function IlustracaoDeRelatorio({ desenho }: { desenho: DesenhoDeRelatorio }) {
-  switch (desenho) {
-    case 'rosca':
-      return <RelatorioRosca />
-    case 'funil':
-      return <RelatorioFunil />
-    case 'nps':
-      return <RelatorioNps />
-    case 'horarios':
-      return <RelatorioHorarios />
-    case 'fechamentos':
-      return <RelatorioFechamentos />
-    default:
-      return <RelatorioBarras />
-  }
+  const Desenho = {
+    desfecho: RelatorioDesfecho,
+    horarios: RelatorioHorarios,
+    canais: RelatorioCanais,
+    atendentes: RelatorioAtendentes,
+    origens: RelatorioOrigens,
+    nps: RelatorioNps,
+    espera: RelatorioEspera,
+    fechamentos: RelatorioFechamentos,
+    funil: RelatorioFunil,
+    podio: RelatorioPodio,
+    motivos: RelatorioMotivos,
+    etapas: RelatorioEtapas,
+    maisVendidos: RelatorioMaisVendidos,
+    origemDasVendas: RelatorioOrigemDasVendas,
+  }[desenho]
+  return <Desenho />
 }
 
-/** Um ranking: quem está na frente, com a barra maior. */
-function RelatorioBarras() {
-  const larguras = [104, 78, 56, 34]
+/** Como terminaram: a conversa que se divide em automação, equipe e sem resposta. */
+function RelatorioDesfecho() {
+  const destinos = [22, 60, 98]
   return (
-    <Tela titulo="Um ranking em barras, ainda sem dados" altura={ALTURA_DO_CARTAO}>
-      {larguras.map((w, i) => {
-        const y = 18 + i * 23
-        return (
-          <g key={w} opacity={1 - i * 0.2}>
-            <circle cx={36} cy={y + 7} r={7} {...TRACO} />
-            <rect x={52} y={y} width={w + 30} height={14} rx={4} fill="currentColor" opacity={0.08} />
-            <rect
-              x={52}
-              y={y}
-              width={w}
-              height={14}
-              rx={4}
-              fill="currentColor"
-              opacity={i === 0 ? 0.45 : 0.25}
-              className="ilu-cresce"
-              style={{ animationDelay: `${i * 220}ms` }}
-            />
-          </g>
-        )
-      })}
+    <Tela titulo="Uma conversa que termina de três jeitos" altura={ALTURA_DO_CARTAO}>
+      <path d="M14 42h56a6 6 0 0 1 6 6v18a6 6 0 0 1-6 6H30l-10 8V48a6 6 0 0 1 6-6Z" {...TRACO} />
+      <rect x={26} y={51} width={36} height={4.5} rx={2.2} fill="currentColor" opacity={0.5} />
+      <rect x={26} y={60} width={22} height={4} rx={2} fill="currentColor" opacity={0.28} />
+      {destinos.map((y, i) => (
+        <path
+          key={y}
+          d={`M82 57C112 57 110 ${y} 136 ${y}`}
+          {...TRACO}
+          opacity={0.5}
+          className="ilu-corre"
+          style={{ animationDelay: `${i * 200}ms` }}
+        />
+      ))}
+      {destinos.map((y, i) => (
+        <circle key={y} cx={152} cy={y} r={14} fill="currentColor" opacity={0.12 + (2 - i) * 0.06} />
+      ))}
+      {destinos.map((y) => (
+        <circle key={y} cx={152} cy={y} r={14} {...TRACO} />
+      ))}
+      {/* O robô: resolvida pela automação */}
+      <rect x={145} y={17} width={14} height={11} rx={3} {...TRACO} />
+      <path d="M152 17v-3" {...TRACO} />
+      <circle cx={149.5} cy={22.5} r={1.2} fill="currentColor" />
+      <circle cx={154.5} cy={22.5} r={1.2} fill="currentColor" />
+      {/* A pessoa: foi para a equipe */}
+      <circle cx={152} cy={56} r={3.5} {...TRACO} />
+      <path d="M145 67a7 7 0 0 1 14 0" {...TRACO} />
+      {/* O relógio: ficou sem resposta */}
+      <circle cx={152} cy={98} r={6.5} {...TRACO} />
+      <path d="M152 94.5V98h3" {...TRACO} />
     </Tela>
   )
 }
 
-/** A rosca, com as fatias em tons, e a legenda ao lado. */
-function RelatorioRosca() {
-  const r = 30
-  const volta = 2 * Math.PI * r
-  const fatias = [0.45, 0.3, 0.25]
-  let inicio = 0
+/** Por onde chegam: WhatsApp e Instagram caindo na mesma caixa de entrada. */
+function RelatorioCanais() {
   return (
-    <Tela titulo="Um gráfico de rosca, ainda sem dados" altura={ALTURA_DO_CARTAO}>
-      <g className="ilu-gira-devagar" style={{ transformOrigin: '72px 60px' }}>
-        {fatias.map((f, i) => {
-          const arco = f * volta - 3
-          const el = (
-            <circle
-              key={i}
-              cx={72}
-              cy={60}
-              r={r}
-              fill="none"
-              stroke="currentColor"
-              strokeWidth={14}
-              strokeDasharray={`${arco} ${volta - arco}`}
-              strokeDashoffset={-inicio * volta}
-              opacity={0.55 - i * 0.15}
-            />
-          )
-          inicio += f
-          return el
-        })}
+    <Tela titulo="Dois canais chegando numa caixa de entrada" altura={ALTURA_DO_CARTAO}>
+      {/* O balão redondo, do WhatsApp */}
+      <path d="M40 18a16 16 0 1 1-8.5 29.6L22 50l2.6-8.8A16 16 0 0 1 40 18Z" {...TRACO} />
+      <rect x={32} y={32} width={16} height={4} rx={2} fill="currentColor" opacity={0.5} />
+      {/* A câmera quadrada, do Instagram */}
+      <rect x={24} y={68} width={32} height={32} rx={10} {...TRACO} />
+      <circle cx={40} cy={84} r={7.5} {...TRACO} />
+      <circle cx={49} cy={75} r={1.6} fill="currentColor" />
+
+      <path d="M62 34C92 34 96 58 118 64" {...TRACO} opacity={0.5} className="ilu-corre" />
+      <path d="M62 84C92 84 96 72 118 70" {...TRACO} opacity={0.5} className="ilu-corre" style={{ animationDelay: '300ms' }} />
+
+      {/* A mensagem entrando */}
+      <g className="ilu-flutua">
+        <rect x={138} y={26} width={30} height={20} rx={4} fill="currentColor" opacity={0.2} />
+        <rect x={138} y={26} width={30} height={20} rx={4} {...TRACO} />
+        <path d="M138 30l15 9 15-9" {...TRACO} opacity={0.7} />
       </g>
-      {fatias.map((_, i) => (
-        <g key={i} opacity={0.9 - i * 0.2}>
-          <circle cx={128} cy={40 + i * 20} r={4} fill="currentColor" opacity={0.55 - i * 0.15} />
-          <rect x={138} y={37.5 + i * 20} width={36 - i * 8} height={5} rx={2.5} fill="currentColor" opacity={0.35} />
+      {/* A caixa de entrada */}
+      <path d="M126 58h52l10 22v20a6 6 0 0 1-6 6h-60a6 6 0 0 1-6-6V80Z" fill="currentColor" opacity={0.1} />
+      <path d="M126 58h52l10 22v20a6 6 0 0 1-6 6h-60a6 6 0 0 1-6-6V80Z" {...TRACO} />
+      <path d="M116 80h20l5 8h22l5-8h20" {...TRACO} opacity={0.7} />
+    </Tela>
+  )
+}
+
+/** Quem atendeu: a pessoa de fone, respondendo. */
+function RelatorioAtendentes() {
+  return (
+    <Tela titulo="Uma pessoa de fone atendendo uma conversa" altura={ALTURA_DO_CARTAO}>
+      <circle cx={84} cy={48} r={16} fill="currentColor" opacity={0.15} />
+      <circle cx={84} cy={48} r={16} {...TRACO} />
+      <path d="M62 50a22 22 0 0 1 44 0" {...TRACO} />
+      <rect x={58} y={45} width={7} height={14} rx={3.5} fill="currentColor" opacity={0.5} />
+      <rect x={103} y={45} width={7} height={14} rx={3.5} fill="currentColor" opacity={0.5} />
+      <path d="M62 58c1 10 8 14 16 14" {...TRACO} />
+      <circle cx={80} cy={72} r={2.2} fill="currentColor" />
+      <path d="M50 110a34 34 0 0 1 68 0" {...TRACO} />
+
+      {/* A resposta sendo digitada */}
+      <g className="ilu-flutua">
+        <path d="M130 22h46a6 6 0 0 1 6 6v16a6 6 0 0 1-6 6h-32l-10 8V28a6 6 0 0 1 6-6Z" fill="currentColor" opacity={0.15} />
+        <path d="M130 22h46a6 6 0 0 1 6 6v16a6 6 0 0 1-6 6h-32l-10 8V28a6 6 0 0 1 6-6Z" {...TRACO} />
+        {[144, 154, 164].map((x, i) => (
+          <circle
+            key={x}
+            cx={x}
+            cy={36}
+            r={2.6}
+            fill="currentColor"
+            opacity={0.7}
+            className="ilu-pulsa"
+            style={{ animationDelay: `${i * 250}ms` }}
+          />
+        ))}
+      </g>
+    </Tela>
+  )
+}
+
+/** De onde vêm os contatos: anúncio, mapa e busca chegando numa ficha. */
+function RelatorioOrigens() {
+  return (
+    <Tela titulo="Anúncio, mapa e busca trazendo um contato novo" altura={ALTURA_DO_CARTAO}>
+      {/* O anúncio */}
+      <rect x={18} y={12} width={32} height={24} rx={5} {...TRACO} />
+      <path d="M30 19v10l8-5Z" fill="currentColor" opacity={0.6} />
+      {/* O mapa */}
+      <path d="M24 54a10 10 0 0 1 20 0c0 8-10 17-10 17s-10-9-10-17Z" {...TRACO} />
+      <circle cx={34} cy={54} r={3} fill="currentColor" opacity={0.6} />
+      {/* A busca */}
+      <circle cx={32} cy={96} r={8} {...TRACO} />
+      <path d="M38 102l7 7" {...TRACO} strokeWidth={2} />
+
+      {[
+        'M54 24C90 24 96 60 124 60',
+        'M50 58C80 58 96 60 124 60',
+        'M48 96C90 96 96 60 124 60',
+      ].map((d, i) => (
+        <path key={d} d={d} {...TRACO} opacity={0.45} className="ilu-corre" style={{ animationDelay: `${i * 220}ms` }} />
+      ))}
+
+      {/* A ficha do contato novo */}
+      <g className="ilu-pulsa">
+        <rect x={126} y={36} width={60} height={48} rx={8} fill="currentColor" opacity={0.14} />
+        <rect x={126} y={36} width={60} height={48} rx={8} {...TRACO} />
+        <circle cx={144} cy={54} r={6.5} {...TRACO} />
+        <path d="M133 74a11 11 0 0 1 22 0" {...TRACO} />
+        <rect x={160} y={50} width={18} height={4} rx={2} fill="currentColor" opacity={0.5} />
+        <rect x={160} y={59} width={12} height={3.5} rx={1.75} fill="currentColor" opacity={0.3} />
+      </g>
+    </Tela>
+  )
+}
+
+/** Quanto esperaram: a ampulheta, e a conversa parada do lado. */
+function RelatorioEspera() {
+  return (
+    <Tela titulo="Uma ampulheta ao lado de uma conversa esperando" altura={ALTURA_DO_CARTAO}>
+      <path d="M62 14h44M62 106h44" {...TRACO} strokeWidth={2.5} />
+      <path d="M68 14c0 26 32 28 32 46s-32 20-32 46M100 14c0 26-32 28-32 46s32 20 32 46" {...TRACO} />
+      <path d="M74 26h20l-10 16Z" fill="currentColor" opacity={0.35} />
+      <path d="M84 62v34" {...TRACO} opacity={0.6} className="ilu-corre" />
+      <path d="M72 102q12-16 24 0Z" fill="currentColor" opacity={0.45} />
+
+      <g className="ilu-flutua">
+        <path d="M126 36h50a6 6 0 0 1 6 6v18a6 6 0 0 1-6 6h-36l-10 8V42a6 6 0 0 1 6-6Z" {...TRACO} opacity={0.8} />
+        {[142, 152, 162].map((x, i) => (
+          <circle key={x} cx={x} cy={51} r={2.6} fill="currentColor" opacity={0.3 + i * 0.2} />
+        ))}
+      </g>
+    </Tela>
+  )
+}
+
+/** Ranking de vendas: o pódio, com a estrela em cima do primeiro. */
+function RelatorioPodio() {
+  return (
+    <Tela titulo="Um pódio com três lugares" altura={ALTURA_DO_CARTAO}>
+      <rect x={46} y={64} width={36} height={40} rx={4} {...TRACO} opacity={0.7} />
+      <rect x={82} y={46} width={36} height={58} rx={4} fill="currentColor" opacity={0.18} />
+      <rect x={82} y={46} width={36} height={58} rx={4} {...TRACO} />
+      <rect x={118} y={76} width={36} height={28} rx={4} {...TRACO} opacity={0.55} />
+      <path d="M36 104h128" {...TRACO} opacity={0.35} />
+
+      <circle cx={64} cy={54} r={6} {...TRACO} opacity={0.7} />
+      <circle cx={136} cy={66} r={6} {...TRACO} opacity={0.55} />
+      <path
+        d="M100 14l4.4 8.9 9.8 1.4-7.1 6.9 1.7 9.8-8.8-4.6-8.8 4.6 1.7-9.8-7.1-6.9 9.8-1.4Z"
+        fill="currentColor"
+        opacity={0.6}
+        className="ilu-flutua"
+      />
+      <path d="M97 62l4-3v18" {...TRACO} strokeWidth={2} />
+      <Brilho x={72} y={24} r={3} />
+      <Brilho x={130} y={30} r={3} atraso={700} />
+    </Tela>
+  )
+}
+
+/** Por que perdemos: o negócio riscado, e a pergunta que ficou. */
+function RelatorioMotivos() {
+  return (
+    <Tela titulo="Um negócio marcado como perdido e um ponto de interrogação" altura={ALTURA_DO_CARTAO}>
+      <rect x={34} y={22} width={78} height={80} rx={8} {...TRACO} />
+      <rect x={46} y={36} width={40} height={5} rx={2.5} fill="currentColor" opacity={0.55} />
+      <rect x={46} y={50} width={52} height={4} rx={2} fill="currentColor" opacity={0.25} />
+      <rect x={46} y={60} width={34} height={4} rx={2} fill="currentColor" opacity={0.25} />
+      <rect x={46} y={78} width={30} height={12} rx={4} fill="currentColor" opacity={0.2} />
+
+      <circle cx={110} cy={26} r={12} fill="currentColor" opacity={0.3} />
+      <circle cx={110} cy={26} r={12} {...TRACO} />
+      <path d="M105 21l10 10M115 21l-10 10" {...TRACO} strokeWidth={2} />
+
+      <g className="ilu-flutua">
+        <path d="M134 50h44a6 6 0 0 1 6 6v22a6 6 0 0 1-6 6h-30l-10 8V56a6 6 0 0 1 6-6Z" fill="currentColor" opacity={0.12} />
+        <path d="M134 50h44a6 6 0 0 1 6 6v22a6 6 0 0 1-6 6h-30l-10 8V56a6 6 0 0 1 6-6Z" {...TRACO} />
+        <path d="M151 61a5.5 5.5 0 1 1 7 5.3c-1.2.4-2 1.3-2 2.6V71" {...TRACO} strokeWidth={2} />
+        <circle cx={156} cy={76} r={1.5} fill="currentColor" />
+      </g>
+    </Tela>
+  )
+}
+
+/** Em aberto por etapa: as colunas do funil, com negócios parados em cada uma. */
+function RelatorioEtapas() {
+  const colunas = [
+    [22, 3],
+    [78, 2],
+    [134, 1],
+  ] as const
+  return (
+    <Tela titulo="Colunas de etapas com negócios em aberto" altura={ALTURA_DO_CARTAO}>
+      {colunas.map(([x, n], c) => (
+        <g key={x}>
+          <rect x={x} y={14} width={48} height={92} rx={7} {...TRACO} opacity={0.4} />
+          <rect x={x + 8} y={23} width={20} height={4.5} rx={2.2} fill="currentColor" opacity={0.7} />
+          {Array.from({ length: n }).map((_, i) => (
+            <rect
+              key={i}
+              x={x + 7}
+              y={36 + i * 20}
+              width={34}
+              height={15}
+              rx={3.5}
+              fill="currentColor"
+              opacity={0.22}
+              className={c === 1 && i === 0 ? 'ilu-encaixa' : undefined}
+            />
+          ))}
         </g>
       ))}
+    </Tela>
+  )
+}
+
+/** O que mais vende: o produto, e as vendas dele subindo. */
+function RelatorioMaisVendidos() {
+  return (
+    <Tela titulo="Um produto com um gráfico de vendas subindo" altura={ALTURA_DO_CARTAO}>
+      <rect x={22} y={56} width={52} height={46} rx={4} fill="currentColor" opacity={0.12} />
+      <rect x={22} y={56} width={52} height={46} rx={4} {...TRACO} />
+      <path d="M22 56l-6-10h26l6 10M74 56l6-10H54l-6 10" {...TRACO} opacity={0.75} />
+      <path d="M58 30l8-8h18a3 3 0 0 1 3 3v10a3 3 0 0 1-3 3H66Z" {...TRACO} />
+      <circle cx={65} cy={30} r={1.8} {...TRACO} />
+      <path d="M58 30c-6 2-10 12-12 26" {...TRACO} opacity={0.5} />
+
+      {[
+        [112, 30],
+        [136, 48],
+        [160, 68],
+      ].map(([x = 0, h = 0], i) => (
+        <rect
+          key={x}
+          x={x}
+          y={102 - h}
+          width={16}
+          height={h}
+          rx={3}
+          fill="currentColor"
+          opacity={0.2 + i * 0.15}
+          className="ilu-sobe"
+          style={{ animationDelay: `${i * 200}ms` }}
+        />
+      ))}
+      <path d="M106 64l24-18 22 8 26-26" {...TRACO} />
+      <path d="M168 28h10v10" {...TRACO} />
+      <path d="M100 102h86" {...TRACO} opacity={0.35} />
+    </Tela>
+  )
+}
+
+/** De onde vêm as vendas: o anúncio virando dinheiro. */
+function RelatorioOrigemDasVendas() {
+  return (
+    <Tela titulo="Um anúncio levando a um saco de dinheiro" altura={ALTURA_DO_CARTAO}>
+      <rect x={16} y={34} width={58} height={46} rx={7} {...TRACO} />
+      <path d="M36 46v14l12-7Z" fill="currentColor" opacity={0.6} />
+      <rect x={26} y={68} width={38} height={4.5} rx={2.2} fill="currentColor" opacity={0.35} />
+
+      <path d="M80 57C100 57 108 70 124 70" {...TRACO} opacity={0.5} className="ilu-corre" />
+
+      <g className="ilu-flutua">
+        <path d="M144 46c-18 10-22 52 8 52h4c30 0 26-42 8-52Z" fill="currentColor" opacity={0.2} />
+        <path d="M144 46c-18 10-22 52 8 52h4c30 0 26-42 8-52Z" {...TRACO} />
+        <path d="M144 46h20M146 36l8 8 8-8" {...TRACO} />
+        <path d="M160 66c-2-3-12-3-12 2s12 3 12 8-10 5-12 2M154 60v26" {...TRACO} />
+      </g>
+      <ellipse cx={186} cy={98} rx={8} ry={3.5} {...TRACO} opacity={0.6} />
+      <ellipse cx={186} cy={92} rx={8} ry={3.5} {...TRACO} opacity={0.6} />
+      <Brilho x={128} y={28} r={3} />
     </Tela>
   )
 }
@@ -951,7 +1197,7 @@ function RelatorioNps() {
 
 /** O mapa de horários: a grade de dias e horas, com um pico aceso. */
 function RelatorioHorarios() {
-  const colunas = 12
+  const colunas = 8
   const linhas = 5
   // Tons fixos, e não aleatórios, para o servidor e o navegador desenharem igual.
   const tom = (l: number, c: number) => ((l * 7 + c * 5 + l * c) % 5) / 5
@@ -963,7 +1209,7 @@ function RelatorioHorarios() {
           return (
             <rect
               key={`${l}-${c}`}
-              x={22 + c * 13.5}
+              x={18 + c * 13.5}
               y={20 + l * 17}
               width={10.5}
               height={13}
@@ -975,6 +1221,12 @@ function RelatorioHorarios() {
           )
         }),
       )}
+      {/* O relógio: é a hora que a grade mede */}
+      <circle cx={162} cy={60} r={22} fill="currentColor" opacity={0.12} />
+      <circle cx={162} cy={60} r={22} {...TRACO} />
+      <path d="M162 60V46" {...TRACO} strokeWidth={2} />
+      <path d="M162 60h11" {...TRACO} strokeWidth={2} className="ilu-gira" style={{ transformOrigin: '162px 60px' }} />
+      <circle cx={162} cy={60} r={2} fill="currentColor" />
     </Tela>
   )
 }

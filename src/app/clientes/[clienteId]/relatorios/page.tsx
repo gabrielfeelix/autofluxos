@@ -177,7 +177,7 @@ export default async function Pagina({
       conteudo: (
         <CaixaDoBloco titulo="Como as conversas terminaram" subtitulo="As quatro partes somam todas as conversas do período.">
           {atual.conversas === 0 ? (
-            <Vazio desenho="rosca">Nenhuma conversa começou neste período.</Vazio>
+            <Vazio desenho="desfecho">Nenhuma conversa começou neste período.</Vazio>
           ) : (
             <Rosca
               totalRotulo="conversas"
@@ -237,7 +237,7 @@ export default async function Pagina({
       conteudo: (
         <CaixaDoBloco titulo="Por onde chegam" subtitulo="Conversas do período, pelo canal da automação que atendeu.">
           {canais.length === 0 ? (
-            <Vazio desenho="rosca">Nenhuma conversa começou neste período.</Vazio>
+            <Vazio desenho="canais">Nenhuma conversa começou neste período.</Vazio>
           ) : canais.length === 1 ? (
             // Uma fatia só é um anel inteiro que não compara nada: o número diz mais.
             <div className="flex flex-1 flex-col justify-center">
@@ -283,6 +283,7 @@ export default async function Pagina({
             conteudo: (
               <ListaEmBarras
                 titulo="Quem atendeu"
+          desenho="atendentes"
                 subtitulo="Conversas que foram para a equipe, pelo responsável do contato."
                 ranking
                 valorPermitido
@@ -310,6 +311,7 @@ export default async function Pagina({
       conteudo: (
         <ListaEmBarras
           titulo="De onde vêm os contatos"
+          desenho="origens"
           subtitulo="Contatos novos do período, pela campanha do primeiro anúncio em que clicaram."
           unidade={['contato novo', 'contatos novos']}
           vazio="Nenhum contato novo no período."
@@ -342,6 +344,7 @@ export default async function Pagina({
       conteudo: (
         <ListaEmBarras
           titulo="Quanto esperaram"
+          desenho="espera"
           subtitulo="Da ida para a equipe até a primeira resposta, conversa por conversa."
           manterOrdem
           unidade={['conversa', 'conversas']}

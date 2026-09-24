@@ -59,9 +59,10 @@ export function CaixaDoBloco({
 
 /**
  * O cartão sem dado. O desenho é a forma do gráfico que vai aparecer ali
- * (`barras` quando não se diz nada, que é o ranking, o caso mais comum).
+ * e não do gráfico em geral: dois cartões de assunto diferente nunca
+ * repetem desenho, por isso `desenho` é obrigatório.
  */
-export function Vazio({ children, desenho = 'barras' }: { children: ReactNode; desenho?: DesenhoDeRelatorio }) {
+export function Vazio({ children, desenho }: { children: ReactNode; desenho: DesenhoDeRelatorio }) {
   return (
     <div className="flex flex-1 flex-col items-center justify-center gap-4 rounded-lg border border-dashed border-line px-4 py-8 text-center text-[12.5px] leading-5 text-dim">
       <IlustracaoDeRelatorio desenho={desenho} />
@@ -447,6 +448,7 @@ export function ListaEmBarras({
   titulo,
   subtitulo,
   vazio,
+  desenho,
 }: {
   linhas: LinhaDeBarra[]
   unidade: [singular: string, plural: string]
@@ -462,6 +464,8 @@ export function ListaEmBarras({
   titulo: string
   subtitulo?: ReactNode
   vazio: ReactNode
+  /** O desenho do cartão vazio, pelo assunto do ranking. */
+  desenho: DesenhoDeRelatorio
 }) {
   const temValor = valorPermitido && linhas.some((l) => (l.valor ?? 0) > 0)
   const [medida, setMedida] = useState<'n' | 'valor'>('n')
@@ -494,7 +498,7 @@ export function ListaEmBarras({
       }
     >
       {linhas.length === 0 ? (
-        <Vazio>{vazio}</Vazio>
+        <Vazio desenho={desenho}>{vazio}</Vazio>
       ) : (
         <>
           <ol className="flex flex-col gap-3">
