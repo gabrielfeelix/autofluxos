@@ -57,7 +57,7 @@ export default async function Contas() {
           <div className="flex items-center gap-1">
             {ehAdminDaPlataforma(sessao) && (
               <Link
-                href="/admin/contas"
+                href="/admin"
                 className="rounded-[8px] px-2.5 py-1.5 text-[12px] font-semibold text-muted transition hover:bg-surface hover:text-ink"
               >
                 Área de administração
@@ -80,7 +80,7 @@ export default async function Contas() {
           </h1>
           <p className="mt-1.5 text-[14px] text-muted">
             {contas.length === 0 ? (
-              'Você ainda não está em nenhuma companhia.'
+              'Você ainda não está em nenhuma organização.'
             ) : totalEsperando > 0 ? (
               <>
                 <span className="font-semibold text-perigo">
@@ -92,7 +92,7 @@ export default async function Contas() {
                 Escolha por onde começar.
               </>
             ) : contas.length === 1 ? (
-              'Tudo respondido. Escolha a companhia para entrar.'
+              'Tudo respondido. Escolha a organização para entrar.'
             ) : (
               `Tudo respondido nas suas ${contas.length} companhias. Escolha em qual trabalhar agora.`
             )}
@@ -101,7 +101,7 @@ export default async function Contas() {
 
         {contas.length === 0 ? (
           <section className="app-card border-dashed px-8 py-12 text-center">
-            <p className="text-[14px] font-semibold text-soft">Nenhuma companhia ainda</p>
+            <p className="text-[14px] font-semibold text-soft">Nenhuma organização ainda</p>
             {/*
               O estado vazio conta **o que fazer**, e o que fazer mudou quando o
               cadastro abriu ao público: antes a conta nascia junto com a venda e
@@ -151,16 +151,16 @@ export default async function Contas() {
                     >
                       +
                     </span>
-                    <span>Nova companhia</span>
+                    <span>Nova organização</span>
                     <span className="-mt-1.5 text-[11.5px] font-normal text-dim">Outro negócio ou unidade</span>
                   </>
                 }
-                titulo="Nova companhia"
+                titulo="Nova organização"
                 descricao="Ela nasce vazia, o primeiro fluxo e o número de WhatsApp vêm depois, na tela dela."
                 action={acaoCriarCompanhia}
               >
                 <label>
-                  <RotuloCampo>Nome da companhia</RotuloCampo>
+                  <RotuloCampo>Nome da organização</RotuloCampo>
                   <input
                     name="nome"
                     required

@@ -8,7 +8,7 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 
 <!-- END:nextjs-agent-rules -->
 
-## Banco de produção compartilhado — obrigatório
+## Banco de produção compartilhado: obrigatório
 
 AutoFluxos e Verandi são produtos diferentes no **mesmo projeto Supabase de
 produção**. Antes de qualquer trabalho que toque banco, migration, Auth, RLS,

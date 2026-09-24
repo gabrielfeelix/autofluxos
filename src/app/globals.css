@@ -1637,7 +1637,7 @@ textarea::placeholder {
 }
 
 /*
- * O lugar do "‹ Todos os clientes" na tela de carregamento.
+ * O lugar do "‹ Administração" na tela de carregamento.
  *
  * Só o administrador da plataforma tem esse link, e o esqueleto não tem sessão
  * para saber quem está olhando: ele desenhava a barra sem a linha, a barra

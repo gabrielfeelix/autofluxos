@@ -40,7 +40,7 @@ export function FormularioDeEmpresa({
   return (
     <form action={enviar} className="flex flex-col gap-3.5">
       <label>
-        <Rotulo>Nome da empresa</Rotulo>
+        <Rotulo>Nome da organização</Rotulo>
         <input
           type="text"
           name="empresa"
@@ -90,7 +90,7 @@ export function FormularioDeEmpresa({
         disabled={pendente}
         className="app-primary-button mt-1 px-4 py-3 text-[13.5px]"
       >
-        {pendente ? 'Criando…' : 'Criar empresa e continuar'}
+        {pendente ? 'Criando…' : 'Criar organização e continuar'}
       </button>
     </form>
   )

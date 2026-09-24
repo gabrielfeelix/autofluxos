@@ -96,7 +96,7 @@ export default async function Pagina({ params }: { params: Promise<{ clienteId: 
           <h1 className="text-[25px] font-bold tracking-[-0.02em]">Catálogo</h1>
           <AjudaDaTela
             titulo="Como funciona o Catálogo"
-            resumo="O catálogo é a lista do que a empresa vende. Ele serve a três leitores: o bot, a equipe no Inbox e o funil de vendas."
+            resumo="O catálogo é a lista do que a organização vende. Ele serve a três leitores: o bot, a equipe no Inbox e o funil de vendas."
             passos={PASSOS_DA_AJUDA}
           >
             <p>
@@ -129,7 +129,7 @@ export default async function Pagina({ params }: { params: Promise<{ clienteId: 
            */
           <div className="mb-5 flex flex-wrap items-center gap-x-3 gap-y-1 rounded-[14px] border border-primary/25 bg-primary/[0.06] px-4 py-3 text-[12.5px] leading-6">
             <span className="flex-1">
-              <strong>O catálogo desta conta vem da loja Magento.</strong>{' '}
+              <strong>O catálogo desta organização vem da loja Magento.</strong>{' '}
               <span className="text-muted">
                 O bot e o Inbox buscam os produtos lá, ao vivo. Esta lista serve ao funil de vendas.
               </span>

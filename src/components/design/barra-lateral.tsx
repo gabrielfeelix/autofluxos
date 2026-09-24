@@ -8,10 +8,29 @@ import { Avatar } from '@/components/design/avatar'
 import { usePerfil } from '@/components/conta/voce'
 import { abaDoCaminho } from './aba-do-caminho'
 import { BarraDoCelular } from './barra-do-celular'
+import { abaDaAdministracao, GRUPOS_DA_ADMINISTRACAO, EMBAIXO_DA_ADMINISTRACAO } from './secoes-da-administracao'
 
 type Item = { chave: string; rotulo: string; href: string; icone: ReactNode; acesa?: boolean; contador?: ReactNode }
 
-export function BarraLateral({ base, itens: itensRecebidos, marca, voltar, voltarHref, rodape, presenca, conta, contaNoTopo, carregando = false }: {
+/**
+ * Os grupos do meio da barra, e o mapa de endereço para item aceso.
+ *
+ * A barra é **uma só** para as duas áreas: o app da organização e a
+ * administração da plataforma. O que muda é a lista de itens, os grupos e como
+ * o endereço acende um item, e isso vem por uma chave (`area`), e não por
+ * função: a barra é componente de cliente e a moldura que a desenha é de
+ * servidor, e função não atravessa essa fronteira.
+ */
+const GRUPOS_DO_CLIENTE = [
+  { nome: 'Dia a dia', chaves: ['inbox', 'atividades', 'leads', 'quadros', 'relatorios'] },
+  { nome: 'Automação', chaves: ['fluxos', 'transmissoes'] },
+]
+
+export function BarraLateral({ base, area = 'cliente', itens: itensRecebidos, marca, voltar, voltarHref, voltarRotulo, rodape, presenca, conta, contaNoTopo, carregando = false }: {
+  /** Qual das duas barras: a da organização ou a da administração. */
+  area?: 'cliente' | 'administracao'
+  /** O texto do link de volta na gaveta do celular. */
+  voltarRotulo?: string
   /**
    * O começo do endereço da conta (`/clientes/<id>`). Com ele, o item aceso sai
    * do caminho, e a barra, que mora no layout, acompanha a navegação sem ser
@@ -20,7 +39,7 @@ export function BarraLateral({ base, itens: itensRecebidos, marca, voltar, volta
   base?: string
   marca: ReactNode
   voltar: ReactNode | null
-  /** O mesmo "Todos os clientes" de `voltar`, para a gaveta do celular. */
+  /** O mesmo "‹ Administração" de `voltar`, para a gaveta do celular. */
   voltarHref?: string
   itens: Item[]
   rodape: ReactNode
@@ -39,14 +58,15 @@ export function BarraLateral({ base, itens: itensRecebidos, marca, voltar, volta
   carregando?: boolean
 }) {
   const caminho = usePathname()
-  const abaAcesa = base ? abaDoCaminho(caminho, base) : null
+  const abaAcesa = !base ? null : area === 'administracao' ? abaDaAdministracao(caminho) : abaDoCaminho(caminho, base)
+  const grupos = area === 'administracao' ? GRUPOS_DA_ADMINISTRACAO : GRUPOS_DO_CLIENTE
   const itens = base ? itensRecebidos.map((item) => ({ ...item, acesa: item.chave === abaAcesa })) : itensRecebidos
   const recolhida = usePreferencia('barra')
   const painel = useRef<HTMLDialogElement>(null)
   const disponivel = presenca === 'disponivel'
   const perfil = usePerfil()
   const nomeNoBotao = perfil?.nome ?? 'Você'
-  const rotuloConta = `Você: ${nomeNoBotao}${conta ? `, na conta ${conta}` : ''}${presenca ? ` · ${disponivel ? 'Disponível' : 'Ausente'}` : ''}`
+  const rotuloConta = `Você: ${nomeNoBotao}${conta ? `, na organização ${conta}` : ''}${presenca ? ` · ${disponivel ? 'Disponível' : 'Ausente'}` : ''}`
   const link = (item: Item) => (
     <Link key={item.chave} href={item.href} aria-disabled={carregando || undefined} tabIndex={carregando ? -1 : undefined} onClick={(event) => { if (carregando) event.preventDefault() }} aria-current={item.acesa ? 'page' : undefined} aria-label={item.rotulo} title={item.rotulo}
       className={`relative flex shrink-0 items-center gap-2.5 rounded-[10px] px-2.5 py-2.5 text-[13px] font-semibold transition ${recolhida ? 'size-10 justify-center px-0' : ''} ${item.acesa ? 'bg-primary-weak text-primary' : 'text-muted hover:bg-surface hover:text-ink'}`}>
@@ -72,16 +92,16 @@ export function BarraLateral({ base, itens: itensRecebidos, marca, voltar, volta
       baixo moram em `BarraDoCelular`. A faixa de abas que rolava de lado (5.8)
       saiu junto: cinco atalhos fixos e uma gaveta cabem em qualquer largura.
     */}
-    <BarraDoCelular base={base} itens={itens} contaNoTopo={contaNoTopo} voltarHref={voltarHref} presenca={presenca} carregando={carregando} aoAbrirVoce={() => painel.current?.showModal()} />
+    <BarraDoCelular base={area === 'cliente' ? base : undefined} embaixo={area === 'administracao' ? EMBAIXO_DA_ADMINISTRACAO : undefined} voltarRotulo={voltarRotulo} rotuloDaNavegacao={area === 'administracao' ? 'Administração' : undefined} itens={itens} contaNoTopo={contaNoTopo} voltarHref={voltarHref} presenca={presenca} carregando={carregando} aoAbrirVoce={() => painel.current?.showModal()} />
     <aside className={`hidden shrink-0 flex-col border-r border-line bg-panel py-4 md:flex ${recolhida ? 'w-[68px] px-2.5' : 'w-[226px] px-3.5'}`}>
       <div className={`mb-5 flex items-center gap-2 ${recolhida ? 'justify-center' : 'px-2'}`}>
         <span className={recolhida ? '[&_span:last-child]:hidden' : ''}>{marca}</span>
       </div>
       {!recolhida && voltar}
       {!recolhida && contaNoTopo && <div className="mb-3">{contaNoTopo}</div>}
-      <nav aria-label="Seções do cliente" className="flex min-h-0 flex-1 flex-col gap-1 overflow-y-auto">
+      <nav aria-label={area === 'administracao' ? 'Administração' : 'Seções do cliente'} className="flex min-h-0 flex-1 flex-col gap-1 overflow-y-auto">
         {itens.filter((item) => item.chave === 'inicio').map(link)}
-        {[{ nome: 'Dia a dia', chaves: ['inbox', 'atividades', 'leads', 'quadros', 'relatorios'] }, { nome: 'Automação', chaves: ['fluxos', 'transmissoes'] }].filter((grupo) => itens.some((item) => grupo.chaves.includes(item.chave))).map((grupo) => (
+        {grupos.filter((grupo) => itens.some((item) => grupo.chaves.includes(item.chave))).map((grupo) => (
           <div key={grupo.nome}>
             <p className={`mt-5 mb-1.5 px-2.5 text-[10px] font-semibold uppercase tracking-[0.08em] text-dim ${recolhida ? 'hidden' : ''}`}>{grupo.nome}</p>
             {itens.filter((item) => grupo.chaves.includes(item.chave)).map(link)}

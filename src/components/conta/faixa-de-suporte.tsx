@@ -22,14 +22,14 @@ export async function FaixaDeSuporte({ clienteId }: { clienteId: string }) {
       className="sticky top-0 z-50 flex flex-wrap items-center justify-between gap-x-4 gap-y-1.5 border-b border-info/30 bg-info/10 px-4 py-2 backdrop-blur md:px-6"
     >
       <p className="text-[12.5px] leading-5 text-info">
-        Você está nesta conta como <strong className="font-semibold">Suporte 4YU</strong>. Suas
+        Você está nesta organização como <strong className="font-semibold">Suporte 4YU</strong>. Suas
         ações ficam registradas com o seu nome.
       </p>
       <Link
-        href="/painel"
+        href={`/admin/organizacoes/${clienteId}`}
         className="rounded-lg border border-info/40 px-2.5 py-1 text-[11.5px] font-bold text-info transition hover:bg-info/10"
       >
-        Sair da conta
+        Sair da organização
       </Link>
     </div>
   )

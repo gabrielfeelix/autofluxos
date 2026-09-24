@@ -8,7 +8,7 @@ import { MARCA_DE_ADMIN } from './tema'
  *
  * Roda na moldura do cliente, que é por onde toda tela da conta passa, e existe
  * por causa da tela de carregamento: ela desenha a barra lateral inteira sem
- * ter sessão para consultar. Sem esta marca, o "‹ Todos os clientes" sumia
+ * ter sessão para consultar. Sem esta marca, o "‹ Administração" sumia
  * enquanto a próxima aba vinha e voltava quando ela chegava, e a barra subia e
  * descia junto a cada troca.
  *

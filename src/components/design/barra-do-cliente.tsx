@@ -57,9 +57,9 @@ export async function BarraDoCliente({ cliente }: { cliente: Cliente }) {
     papel: acesso.papel === null ? ROTULO_DO_SUPORTE : perfil,
     esperando: 0,
   }
-  // O administrador da plataforma veio da lista de clientes e precisa do
-  // caminho de volta. O dono do negócio, não: para ele não existe "todos os
-  // clientes", existe a conta dele.
+  // O administrador da plataforma veio da administração e precisa do caminho
+  // de volta. O dono do negócio, não: para ele não existe administração,
+  // existe a organização dele.
   const podeVerTodosOsClientes = ehAdminDaPlataforma(acesso.sessao)
   const base = `/clientes/${cliente.id}`
 
@@ -67,7 +67,7 @@ export async function BarraDoCliente({ cliente }: { cliente: Cliente }) {
     <>
       {/*
         Grava no navegador quem é administrador, para o esqueleto de quem chega
-        de fora reservar o espaço do "‹ Todos os clientes". Ver `MarcaDeAdmin`.
+        de fora reservar o espaço do "‹ Administração". Ver `MarcaDeAdmin`.
       */}
       <MarcaDeAdmin admin={podeVerTodosOsClientes} />
       <PerfilDaSessao
@@ -76,17 +76,17 @@ export async function BarraDoCliente({ cliente }: { cliente: Cliente }) {
         <BarraLateral
           base={base}
           marca={<Marca />}
-          voltarHref={podeVerTodosOsClientes ? '/painel' : undefined}
+          voltarHref={podeVerTodosOsClientes ? '/admin' : undefined}
           presenca={presenca ?? undefined}
           conta={cliente.nome}
           contaNoTopo={<SeletorDeConta atual={atual} contas={doSeletor} />}
           voltar={
             podeVerTodosOsClientes ? (
               <Link
-                href="/painel"
+                href="/admin"
                 className="hidden items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-[11.5px] text-dim transition hover:text-primary md:mb-1.5 md:flex"
               >
-                <span aria-hidden>‹</span> Todos os clientes
+                <span aria-hidden>‹</span> Administração
               </Link>
             ) : null
           }

@@ -55,7 +55,7 @@ export function RemoverComDestino({
         destino === null || destino === SEM_RESPONSAVEL ? null : destino,
       )
       if (!r.ok) {
-        setErro(r.erro ?? 'não deu para tirar da conta')
+        setErro(r.erro ?? 'não deu para tirar da organização')
         return
       }
       aoFechar()
@@ -116,7 +116,7 @@ export function RemoverComDestino({
           disabled={rodando || (temPendencia && destino === null)}
           className="rounded-lg bg-perigo px-3.5 py-2 text-[12.5px] font-bold text-white transition hover:opacity-90 disabled:opacity-40"
         >
-          {rodando ? 'Tirando…' : 'Tirar da conta'}
+          {rodando ? 'Tirando…' : 'Tirar da organização'}
         </button>
       </div>
     </Modal>

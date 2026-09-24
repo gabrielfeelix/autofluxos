@@ -1,67 +1,56 @@
-import Link from 'next/link'
 import type { ReactNode } from 'react'
 import { FaixaDeImpersonacao } from '@/components/conta/faixa-impersonacao'
-import { NavegacaoDoAdmin } from '@/components/conta/navegacao-admin'
-import { Marca } from '@/components/design/marca'
-import { acaoSair } from '@/server/acoes-conta'
+import { PainelVoce, PerfilDaSessao } from '@/components/conta/voce'
+import { BarraLateral } from '@/components/design/barra-lateral'
+import { ContextoDaAdministracao, MarcaDaAdministracao } from '@/components/admin/marca-da-administracao'
+import { ITENS_DA_ADMINISTRACAO } from '@/components/design/secoes-da-administracao'
+import { contarAlertasAbertos } from '@/server/repos/alertas'
 import { exigirAdminDaPlataforma } from '@/server/sessao'
 
 /**
- * A área de quem administra a plataforma, as contas, as pessoas e o registro.
+ * A administração da plataforma: uma casca só, a mesma `BarraLateral` do app
+ * da organização (ícones, grupos, recolher, tema, celular), com os itens da
+ * plataforma no lugar das seções da organização.
  *
  * **Aqui `layout.tsx` é a escolha certa**, ao contrário do que acontece nas
- * telas do cliente. Toda tela desta área usa a mesma moldura e nenhuma delas é
- * tela cheia, então não existe o filho que precisaria se desligar da moldura ,
- * que foi o motivo de a moldura do cliente ser componente.
- *
- * O ganho é o que importa: `exigirAdminDaPlataforma()` roda uma vez, aqui, e
- * **toda** rota abaixo herda a conferência. Uma tela nova nasce protegida sem
- * ninguém lembrar de protegê-la.
+ * telas da organização. `exigirAdminDaPlataforma()` roda uma vez, aqui, e
+ * **toda** rota abaixo herda a conferência: uma tela nova nasce protegida sem
+ * ninguém lembrar de protegê-la. As ações continuam conferindo por conta
+ * própria, porque layout não roda de novo na navegação.
  */
 export default async function LayoutDoAdmin({ children }: { children: ReactNode }) {
   const sessao = await exigirAdminDaPlataforma()
+  const alertas = await contarAlertasAbertos().catch(() => 0)
 
   return (
-    <div className="flex min-h-screen flex-col md:h-screen md:min-h-[700px] md:flex-row md:overflow-hidden">
-      <aside className="flex shrink-0 flex-col border-line bg-panel md:w-[226px] md:border-r md:px-3.5 md:pt-5 md:pb-4">
-        <div className="flex items-center gap-2.5 border-b border-line px-4 py-3 md:mb-5 md:border-0 md:px-2 md:py-0">
-          <Marca />
-          <span className="rounded-md border border-line px-1.5 py-0.5 font-mono text-[9.5px] text-dim">
-            admin
-          </span>
+    <PerfilDaSessao inicial={{ nome: sessao.usuario.nome, imagem: sessao.usuario.imagem ?? null }}>
+      <div className="flex min-h-screen flex-col md:h-screen md:min-h-[700px] md:flex-row md:overflow-hidden">
+        <BarraLateral
+          base="/admin"
+          area="administracao"
+          marca={<MarcaDaAdministracao />}
+          voltar={null}
+          contaNoTopo={<ContextoDaAdministracao />}
+          itens={ITENS_DA_ADMINISTRACAO.map((item) => ({
+            ...item,
+            contador:
+              item.chave === 'alertas' && alertas > 0 ? (
+                <span className="grid h-[18px] min-w-[18px] place-items-center rounded-full bg-aviso/15 px-1 text-[10.5px] font-bold text-aviso tabular-nums">
+                  {alertas > 99 ? '99+' : alertas}
+                </span>
+              ) : undefined,
+          }))}
+          rodape={
+            <PainelVoce email={sessao.usuario.email} papel="Administrador da plataforma" suporte={false} configuracoesHref={null} outrasContas={0}>
+              {null}
+            </PainelVoce>
+          }
+        />
+        <div className="app-miolo-com-barra relative min-w-0 flex-1 md:overflow-auto">
+          <FaixaDeImpersonacao />
+          <div className="app-page-enter flex min-h-full flex-col md:h-full">{children}</div>
         </div>
-
-        <Link
-          href="/painel"
-          className="hidden items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-[11.5px] text-dim transition hover:text-primary md:mb-1.5 md:flex"
-        >
-          <span aria-hidden>‹</span> Todos os clientes
-        </Link>
-
-        <NavegacaoDoAdmin />
-
-        <div className="hidden flex-1 md:block" />
-
-        <div className="hidden items-center gap-2.5 border-t border-line px-1.5 pt-3.5 md:flex">
-          <span className="min-w-0 flex-1">
-            <span className="block truncate text-[12.5px] font-semibold">{sessao.usuario.nome}</span>
-            <span className="block truncate text-[11px] text-dim">{sessao.usuario.email}</span>
-          </span>
-          <form action={acaoSair}>
-            <button
-              type="submit"
-              className="rounded-[7px] px-1.5 py-1 text-[11.5px] font-semibold text-dim transition hover:bg-rose-400/[0.08] hover:text-perigo"
-            >
-              Sair
-            </button>
-          </form>
-        </div>
-      </aside>
-
-      <div className="relative min-w-0 flex-1 md:overflow-auto">
-        <FaixaDeImpersonacao />
-        <div className="app-page-enter">{children}</div>
       </div>
-    </div>
+    </PerfilDaSessao>
   )
 }

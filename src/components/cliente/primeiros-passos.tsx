@@ -44,7 +44,7 @@ export function PrimeirosPassos({ passos }: { passos: PassoDaConta[] }) {
         <p className="mt-1 text-[12.5px] text-white/85">
           {proximo
             ? `Falta${passos.length - prontos === 1 ? '' : 'm'} ${passos.length - prontos} ${passos.length - prontos === 1 ? 'passo' : 'passos'} para preparar seu atendimento.`
-            : 'Tudo pronto, a conta está completa.'}
+            : 'Tudo pronto, a organização está completa.'}
         </p>
 
         <div className="mt-3.5 flex items-center gap-3">

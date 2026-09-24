@@ -27,7 +27,7 @@ export function SemAcesso({ clienteId, oQue }: { clienteId: string; oQue: string
 export function FunilDesligado({ clienteId, podeLigar }: { clienteId: string; podeLigar: boolean }) {
   return (
     <Aviso
-      titulo="O funil está desligado nesta conta"
+      titulo="O funil está desligado nesta organização"
       texto={
         podeLigar
           ? 'Os funis e as negociações continuam guardados. Para voltar a usar, ligue o funil em Objetivo e recursos.'

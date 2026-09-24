@@ -94,8 +94,8 @@ export function PainelVoce({
       </div>
 
       <div className="mt-2 flex flex-col gap-0.5 border-t border-line pt-2">
-        {configuracoesHref && <Linha href={configuracoesHref}>Configurações da conta</Linha>}
-        {outrasContas > 1 && <Linha href="/contas">Trocar de conta</Linha>}
+        {configuracoesHref && <Linha href={configuracoesHref}>Configurações da organização</Linha>}
+        {outrasContas > 1 && <Linha href="/contas">Trocar de organização</Linha>}
         {/* Ajuda aqui e não só no "?" de cada tela: é o lugar em que se procura
             "onde eu aprendo isso" sem estar numa tela específica (10.4). */}
         <Linha href="/ajuda">Ajuda</Linha>
@@ -237,7 +237,7 @@ function EditarPerfil({
   }
 
   return (
-    <Modal aberto aoFechar={aoFechar} titulo="Editar perfil" descricao="Seu nome e sua foto, em todas as contas em que você entra.">
+    <Modal aberto aoFechar={aoFechar} titulo="Editar perfil" descricao="Seu nome e sua foto, em todas as organizações em que você entra.">
       <div className="flex flex-col gap-4">
         <div className="flex items-center gap-3">
           <Avatar nome={nome || perfil.nome} imagem={imagemNaTela} tamanho={64} />
@@ -324,7 +324,7 @@ function TrocarSenha({ aoFechar }: { aoFechar: () => void }) {
   }
 
   return (
-    <Modal aberto aoFechar={aoFechar} titulo="Trocar senha" descricao="Vale para todas as contas em que você entra com este e-mail.">
+    <Modal aberto aoFechar={aoFechar} titulo="Trocar senha" descricao="Vale para todas as organizações em que você entra com este e-mail.">
       {feito ? (
         <div className="flex flex-col gap-4">
           <p className="text-[13px] leading-5 text-muted">Senha trocada. Use a nova no próximo acesso.</p>

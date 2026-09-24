@@ -52,7 +52,7 @@ export function FichaDoCliente({
             {editando ? 'Fechar' : 'Editar'}
           </button>
         ) : (
-          <p className="text-[12px] text-dim">Só o proprietário ou um administrador da conta edita.</p>
+          <p className="text-[12px] text-dim">Só o proprietário ou um administrador da organização edita.</p>
         )}
       </header>
 

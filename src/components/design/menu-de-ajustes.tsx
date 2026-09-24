@@ -11,7 +11,7 @@ const sinonimos: Partial<Record<TelaDeAjustes, string>> = {
   contexto: 'contexto negocio inteligencia artificial bot',
   acervo: 'acervo fotos videos pdf documentos',
   recursos: 'recursos onboarding crm objetivo assistente personalizar sistema',
-  negocio: 'cadastro cnpj empresa',
+  negocio: 'cadastro cnpj empresa organização',
   anuncios: 'leads meta facebook anuncios captacao formulario',
   horario: 'retomada inatividade expediente',
   equipe: 'equipe usuarios membros papeis permissoes',

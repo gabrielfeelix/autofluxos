@@ -56,7 +56,7 @@ export function EscolherObjetivo({
   return (
     <div className="flex flex-col gap-2.5">
       <fieldset className="flex flex-col gap-2.5" disabled={rodando}>
-        <legend className="sr-only">Objetivo da conta</legend>
+        <legend className="sr-only">Objetivo da organização</legend>
         {OBJETIVOS.map((objetivo) => {
           const marcado = objetivo === escolhido
           const pede = (['automacao', 'funil'] as const).filter((passo) => cobra(objetivo, passo))

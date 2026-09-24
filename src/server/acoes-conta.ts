@@ -233,7 +233,7 @@ export async function acaoCriarPrimeiroAdministrador(
   // um administrador não rouba a sessão de quem o cadastrou.
   if (!jaTemGente) {
     await autenticacao().api.signInEmail({ body: { email, password: senha }, headers: cabecalhos })
-    redirect('/admin/contas')
+    redirect('/admin')
   }
 
   revalidatePath('/admin/usuarios')
@@ -386,7 +386,7 @@ export async function acaoEntrarComo(usuarioId: string) {
 /** Volta a ser você. */
 export async function acaoPararDeEntrarComo() {
   const sessao = await sessaoAtual()
-  if (!sessao?.impersonadoPor) redirect('/painel')
+  if (!sessao?.impersonadoPor) redirect('/admin')
 
   const administrador = await acharUsuario(sessao.impersonadoPor)
   await autenticacao().api.stopImpersonating({ headers: await headers() })
@@ -444,7 +444,7 @@ export async function acaoVincularMembro(formData: FormData) {
   const papelAtual = await papelNaConta(contaId, usuarioId)
 
   if (papelAtual === papel) {
-    revalidatePath('/admin/contas')
+    revalidatePath('/admin/organizacoes')
     revalidatePath('/admin/usuarios')
     return
   }
@@ -486,7 +486,7 @@ export async function acaoVincularMembro(formData: FormData) {
     impersonadoPor: sessao.impersonadoPor,
   })
 
-  revalidatePath('/admin/contas')
+  revalidatePath('/admin/organizacoes')
   revalidatePath('/admin/usuarios')
 }
 
@@ -666,7 +666,7 @@ export async function acaoApagarConta(contaId: string): Promise<{ ok: boolean; e
   const apagou = await apagarCliente(contaId)
   if (!apagou) return { ok: false, erro: 'esta conta não existe mais' }
 
-  revalidatePath('/admin/contas')
+  revalidatePath('/admin/organizacoes')
   revalidatePath('/admin/usuarios')
   revalidatePath('/', 'layout')
   return { ok: true }

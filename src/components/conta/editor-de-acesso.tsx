@@ -53,7 +53,7 @@ import { acaoSalvarAcesso } from '@/server/acoes-acesso'
 
 const ROTULO_DA_CAPACIDADE: Record<Capacidade, { titulo: string; detalhe: string }> = {
   configurar_empresa: {
-    titulo: 'Configurar a empresa',
+    titulo: 'Configurar a organização',
     detalhe: 'equipe, acesso, canais e cadastro. É o poder de dar poder.',
   },
   configurar_operacao: {
@@ -90,7 +90,7 @@ const ROTULO_DO_ESCOPO: Record<Escopo, string> = {
   nenhum: 'Não pode',
   proprios: 'Só o que é dela',
   equipe: 'Da equipe dela',
-  todos: 'De toda a conta',
+  todos: 'De toda a organização',
 }
 
 export type MembroParaAcesso = {

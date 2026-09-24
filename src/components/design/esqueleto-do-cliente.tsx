@@ -4,7 +4,7 @@ import { BarraLateral } from './barra-lateral'
 import { type AbaDoCliente, ITENS } from './secoes-do-cliente'
 
 /**
- * O "‹ Todos os clientes" fica **escrito** aqui, e não em branco.
+ * O "‹ Administração" fica **escrito** aqui, e não em branco.
  *
  * Ele é só do administrador, e o esqueleto não tem sessão para perguntar: quem
  * responde é a marca `data-admin` no `<html>`, posta antes da primeira pintura
@@ -14,7 +14,7 @@ import { type AbaDoCliente, ITENS } from './secoes-do-cliente'
  */
 const VOLTAR_RESERVADO = (
   <span className="voltar-reservado items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-[11.5px] text-dim md:mb-1.5">
-    <span aria-hidden>‹</span> Todos os clientes
+    <span aria-hidden>‹</span> Administração
   </span>
 )
 
@@ -24,7 +24,7 @@ export function EsqueletoDoCliente({ ativa, children }: { ativa: AbaDoCliente; c
     <BarraLateral carregando marca={<Marca />} voltar={VOLTAR_RESERVADO}
       contaNoTopo={<span className="block h-[36px]" />}
       itens={ITENS.map((item) => ({ ...item, href: '#', acesa: item.chave === ativa }))}
-      rodape={<p className="text-sm text-dim">Carregando sua conta…</p>} />
+      rodape={<p className="text-sm text-dim">Carregando sua organização…</p>} />
     <div className="relative min-w-0 flex-1 md:overflow-auto"><div className="flex min-h-full flex-col md:h-full">{children}</div></div>
   </div>
 }

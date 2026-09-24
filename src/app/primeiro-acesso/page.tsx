@@ -35,14 +35,14 @@ export default async function PrimeiroAcesso({
    * `/admin/contas`. Sem esta linha, um administrador que caísse nesta URL
    * criaria uma empresa em nome próprio e viraria cliente de si mesmo.
    */
-  if (ehAdminDaPlataforma(sessao)) redirect('/admin/contas')
+  if (ehAdminDaPlataforma(sessao)) redirect('/admin')
 
   const [primeira] = await contasDoUsuario(sessao.usuario.id)
   if (primeira) redirect(`/clientes/${primeira.id}`)
 
   return (
     <Portico
-      titulo="Criar sua empresa"
+      titulo="Criar sua organização"
       descricao={`Olá, ${sessao.usuario.nome.split(' ')[0]}. Esta será a primeira conta da sua empresa no AutoFluxos.`}
       rodape={
         <p>

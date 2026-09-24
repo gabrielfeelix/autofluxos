@@ -35,9 +35,14 @@ const ROTULO_CURTO: Record<string, string> = {
   quadros: 'Funil',
 }
 
-export function itensDeBaixo<T extends { chave: string }>(itens: T[]): T[] {
+const ROTULO_CURTO_DA_ADMINISTRACAO: Record<string, string> = {
+  inicio: 'Início',
+  pedidos: 'Pedidos',
+}
+
+export function itensDeBaixo<T extends { chave: string }>(itens: T[], ordem: readonly string[] = ORDEM_DE_BAIXO): T[] {
   const visiveis = new Map(itens.map((item) => [item.chave, item]))
-  const escolhidas = ORDEM_DE_BAIXO.filter((chave) => visiveis.has(chave))
+  const escolhidas = ordem.filter((chave) => visiveis.has(chave))
   for (const chave of RESERVAS) {
     if (escolhidas.length >= 5) break
     if (visiveis.has(chave)) escolhidas.push(chave)
@@ -50,6 +55,9 @@ export function BarraDoCelular({
   itens,
   contaNoTopo,
   voltarHref,
+  voltarRotulo = 'Administração',
+  embaixo: ordemDeBaixo,
+  rotuloDaNavegacao = 'Seções do cliente',
   presenca,
   carregando,
   aoAbrirVoce,
@@ -58,6 +66,10 @@ export function BarraDoCelular({
   itens: Item[]
   contaNoTopo?: ReactNode
   voltarHref?: string
+  voltarRotulo?: string
+  /** A ordem dos cinco atalhos de baixo, quando não é a do app da organização. */
+  embaixo?: readonly string[]
+  rotuloDaNavegacao?: string
   presenca?: string
   carregando: boolean
   aoAbrirVoce: () => void
@@ -65,7 +77,8 @@ export function BarraDoCelular({
   const gaveta = useRef<HTMLDialogElement>(null)
   const caminho = usePathname()
   const perfil = usePerfil()
-  const embaixo = itensDeBaixo(itens)
+  const embaixo = itensDeBaixo(itens, ordemDeBaixo)
+  const curtos = ordemDeBaixo ? ROTULO_CURTO_DA_ADMINISTRACAO : ROTULO_CURTO
   const naGaveta = itens.filter((item) => !embaixo.includes(item))
   const esperando = useConversasEsperando(carregando ? undefined : base)
   const primeiroNome = perfil?.nome.trim().split(/\s+/)[0]
@@ -186,7 +199,7 @@ export function BarraDoCelular({
                 href={voltarHref}
                 className="mb-2 flex items-center gap-2 rounded-xl px-3 py-2.5 text-[13px] text-dim hover:bg-surface"
               >
-                <span aria-hidden>‹</span> Todos os clientes
+                <span aria-hidden>‹</span> {voltarRotulo}
               </Link>
             )}
             {naGaveta.map((item) =>
@@ -239,7 +252,7 @@ export function BarraDoCelular({
         do Inbox põe no `<html>`.
       */}
       <nav
-        aria-label="Seções do cliente"
+        aria-label={rotuloDaNavegacao}
         className="app-barra-de-baixo fixed inset-x-0 bottom-0 z-30 border-t border-line bg-panel/95 pb-[env(safe-area-inset-bottom)] backdrop-blur md:hidden"
       >
         <div className="mx-auto grid h-16 max-w-[520px] grid-cols-5 grid-rows-[4rem]">
@@ -272,7 +285,7 @@ export function BarraDoCelular({
                       {item.icone}
                       {item.contador && <span className="absolute -top-2 left-3 [&>*]:scale-90">{item.contador}</span>}
                     </span>
-                    <span className="text-[10.5px] font-semibold">{ROTULO_CURTO[item.chave] ?? item.rotulo}</span>
+                    <span className="text-[10.5px] font-semibold">{curtos[item.chave] ?? item.rotulo}</span>
                   </>,
                 ),
           )}

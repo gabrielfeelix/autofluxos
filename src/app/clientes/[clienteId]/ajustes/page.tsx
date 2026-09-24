@@ -137,8 +137,8 @@ export default async function Pagina({
           <Cartao
             href={`/clientes/${cliente.id}/ajustes/negocio`}
             icone={ICONE_DA_TELA['negocio']}
-            titulo="Dados da empresa"
-            descricao="Edite nome, logo, dados de contato e informações administrativas da empresa."
+            titulo="Dados da organização"
+            descricao="Edite nome, logo, dados de contato e informações administrativas da organização."
             estado={
               <Selo tom={cliente.logoUrl ? 'ok' : 'neutro'}>
                 {cliente.logoUrl ? 'com logo' : 'sem logo'}
@@ -148,7 +148,7 @@ export default async function Pagina({
           <Cartao
             href={`/clientes/${cliente.id}/ajustes/equipe`}
             icone={ICONE_DA_TELA['equipe']}
-            titulo="Pessoas e acesso"
+            titulo="Pessoas"
             descricao="Quem entra nesta conta, o que cada pessoa pode fazer, equipes e distribuição do atendimento."
             estado={
               <Selo tom={equipe.length === 0 ? 'alerta' : 'ok'}>
@@ -162,14 +162,14 @@ export default async function Pagina({
             href={`/clientes/${cliente.id}/ajustes/recursos`}
             icone={ICONE_DA_TELA['recursos']}
             titulo="Objetivo e recursos"
-            descricao="Para que esta conta usa o AutoFluxos, e se o CRM aparece no menu. Ninguém precisa de tudo."
+            descricao="Para que esta organização usa o AutoFluxos, e se o CRM aparece no menu. Ninguém precisa de tudo."
             estado={<Selo tom={recursos.crmAtivo ? 'ok' : 'neutro'}>{recursos.crmAtivo ? 'com CRM' : 'sem CRM'}</Selo>}
           />
           <Cartao
             href={`/clientes/${cliente.id}/ajustes/plano`}
             icone={ICONE_DA_TELA['plano']}
             titulo="Plano e consumo"
-            descricao="Em que plano esta conta está, quanto já foi usado neste mês, e como pedir para mudar de faixa."
+            descricao="Em que plano esta organização está, quanto já foi usado neste mês, e como pedir para mudar de faixa."
             estado={<Selo tom="neutro">{acharPlano(plano).nome}</Selo>}
           />
         </Grupo>
@@ -224,7 +224,7 @@ export default async function Pagina({
             href={`/clientes/${cliente.id}/ajustes/contexto`}
             icone={ICONE_DA_TELA['contexto']}
             titulo="Conhecimento da IA"
-            descricao="Informações da empresa que a IA usa para responder com precisão."
+            descricao="Informações da organização que a IA usa para responder com precisão."
             estado={
               semContexto ? (
                 <Selo tom="alerta">vazio</Selo>

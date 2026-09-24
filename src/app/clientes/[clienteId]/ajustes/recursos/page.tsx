@@ -70,7 +70,7 @@ export default async function Pagina({ params }: { params: Promise<{ clienteId: 
         </p>
 
         <section className="mb-6 rounded-xl border border-primary/20 bg-primary-weak p-5">
-          <h2 className="text-base font-bold">Um começo pensado para sua empresa</h2>
+          <h2 className="text-base font-bold">Um começo pensado para sua organização</h2>
           <p className="mt-2 text-sm leading-6 text-muted">Escolha sua forma de atender e confira os modelos recomendados. Seus funis e automações existentes são preservados.</p>
           <Link href={`/clientes/${cliente.id}/configurar`} className="app-primary-button mt-4 inline-flex px-4 py-2.5 text-sm">{onboarding?.status === 'concluido' ? 'Ver preparação e próximos passos' : onboarding ? 'Continuar preparação' : 'Abrir assistente de configuração'} →</Link>
         </section>

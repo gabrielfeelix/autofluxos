@@ -175,7 +175,7 @@ export function HorarioDeAtendimentoForm({
       <div className="mb-4">
         <LinhaLigaDesliga
           titulo="Definir horário de atendimento"
-          descricao="Sem isto, a conta é sempre aberta e o bot promete atendente a qualquer hora."
+          descricao="Sem isto, a organização fica sempre aberta e o bot promete atendente a qualquer hora."
           marcada={ligado}
           aoMudar={setLigado}
           ajuda={

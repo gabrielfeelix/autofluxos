@@ -404,7 +404,7 @@ export function alcancaDono(alcance: AlcanceDeConversas, dono: string | null | u
  */
 export const ROTULO_DO_PAPEL: Record<PapelDaConta, string> = {
   owner: 'Proprietário',
-  admin: 'Administrador da conta',
+  admin: 'Administrador',
   member: 'Membro',
 }
 
@@ -413,7 +413,7 @@ export const ROTULO_DO_SUPORTE = 'Suporte 4YU'
 
 export const DETALHE_DO_PAPEL: Record<PapelDaConta, string> = {
   owner: 'faz tudo, inclusive mexer em quem manda',
-  admin: 'faz tudo na conta, menos virar proprietário',
+  admin: 'faz tudo na organização, menos virar proprietário',
   member: 'o acesso vem do perfil escolhido em Acesso',
 }
 

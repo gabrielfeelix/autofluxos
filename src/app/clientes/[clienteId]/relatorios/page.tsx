@@ -128,7 +128,7 @@ export default async function Pagina({
           {contaInteira
             ? 'Como o atendimento andou no período.'
             : escopo.tipo === 'proprios'
-              ? 'Só os contatos que estão com você. Os números da conta inteira ficam com quem gerencia.'
+              ? 'Só os contatos que estão com você. Os números da organização inteira ficam com quem gerencia.'
               : 'Só os contatos das suas equipes.'}
         </p>
 
@@ -145,7 +145,7 @@ export default async function Pagina({
             titulo="Contatos novos"
             valor={String(atual.contatosNovos)}
             comparacao={<Mudanca atual={atual.contatosNovos} antes={antes.contatosNovos} />}
-            definicao="Pessoas que falaram com a conta pela primeira vez no período (o dia em que o contato foi criado)."
+            definicao="Pessoas que falaram com a organização pela primeira vez no período (o dia em que o contato foi criado)."
           />
           <Cartao
             titulo="Resolvidas pela automação"
@@ -212,7 +212,7 @@ export default async function Pagina({
               <QuemAtendeu
                 pessoas={pessoas.map((p) => ({
                   ...p,
-                  nome: equipe.find((m) => m.id === p.usuarioId)?.nome || 'alguém que saiu da conta',
+                  nome: equipe.find((m) => m.id === p.usuarioId)?.nome || 'alguém que saiu da organização',
                 }))}
               />
             )}

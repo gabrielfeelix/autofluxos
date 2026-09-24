@@ -69,7 +69,7 @@ export function EscolhaDePlano({
         </h2>
         <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
           <div>
-            <p className="text-[11.5px] text-dim">Plano desta conta</p>
+            <p className="text-[11.5px] text-dim">Plano desta organização</p>
             <p className="mt-0.5 text-[19px] font-bold tracking-[-0.02em]">{plano.nome}</p>
           </div>
           <p className="text-[13px] text-muted">
@@ -125,7 +125,7 @@ export function EscolhaDePlano({
         <p className="mt-1 mb-3 max-w-[650px] text-[12.5px] leading-6 text-dim">
           {podeMexer
             ? 'O pedido vai para a 4YU, que confirma com você antes de mudar a cobrança.'
-            : 'Só o proprietário ou um administrador da conta pede mudança de plano. Os planos ficam aqui para consulta.'}
+            : 'Só o proprietário ou um administrador da organização pede mudança de plano. Os planos ficam aqui para consulta.'}
         </p>
 
         {(pedido ?? pedidoAberto) && (
@@ -229,7 +229,7 @@ function Cartao({
       </ul>
 
       {ehOAtual ? (
-        <p className="text-center text-[12px] text-dim">É o plano desta conta</p>
+        <p className="text-center text-[12px] text-dim">É o plano desta organização</p>
       ) : pedido ? (
         /*
           "Pedido enviado" e não "plano alterado": nada mudou no banco, e dizer o
@@ -246,7 +246,7 @@ function Cartao({
           title={
             podeMexer
               ? `Pedir mudança para o plano ${plano.nome}`
-              : 'Só o proprietário ou um administrador da conta pede mudança de plano'
+              : 'Só o proprietário ou um administrador da organização pede mudança de plano'
           }
           className="app-primary-button w-full disabled:cursor-not-allowed disabled:opacity-50"
         >

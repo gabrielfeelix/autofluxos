@@ -179,7 +179,7 @@ export async function caminhoNaConta(
  * acesso da pessoa: quem só atende as próprias conversas entra pelo Inbox.
  */
 export async function destinoAposEntrar(sessao: SessaoAtual): Promise<string> {
-  if (ehAdminDaPlataforma(sessao)) return '/admin/contas'
+  if (ehAdminDaPlataforma(sessao)) return '/admin'
 
   const [primeira, ...resto] = await contasDoUsuario(sessao.usuario.id)
   // Uma conta só é o caso comum, e mandar essa pessoa para um seletor de um

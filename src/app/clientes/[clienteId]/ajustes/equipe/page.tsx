@@ -165,10 +165,10 @@ export default async function Pagina({ params }: { params: Promise<{ clienteId: 
                   />
                 </label>
                 <label>
-                  <RotuloCampo>Papel na conta</RotuloCampo>
+                  <RotuloCampo>Função</RotuloCampo>
                   <Dropdown
                     nome="papel"
-                    rotuloAcessivel="Papel na conta"
+                    rotuloAcessivel="Função"
                     valorInicial="member"
                     opcoes={PAPEIS}
                   />

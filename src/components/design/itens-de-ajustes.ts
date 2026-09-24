@@ -30,8 +30,8 @@ export const GRUPOS: { titulo: string | null; itens: { chave: TelaDeAjustes; rot
   {
     titulo: 'Organização',
     itens: [
-      { chave: 'negocio', rotulo: 'Dados da empresa' },
-      { chave: 'equipe', rotulo: 'Pessoas e acesso' },
+      { chave: 'negocio', rotulo: 'Dados da organização' },
+      { chave: 'equipe', rotulo: 'Pessoas' },
       { chave: 'recursos', rotulo: 'Objetivo e recursos' },
       { chave: 'plano', rotulo: 'Plano e consumo' },
     ],

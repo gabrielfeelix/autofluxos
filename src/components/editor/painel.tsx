@@ -1733,7 +1733,7 @@ export function Painel({
                     </p>
                     <p>
                       <strong>Nunca voltar</strong> é para o caminho que não pode ser
-                      interrompido. O padrão vem das Configurações da conta e vale para todos os
+                      interrompido. O padrão vem das Configurações da organização e vale para todos os
                       outros caminhos, inclusive os que chegam a atendimento humano sem passar
                       por bloco nenhum.
                     </p>
@@ -1802,7 +1802,7 @@ export function Painel({
               rotulo="O que o bot diz ao voltar"
               valor={no.data.mensagemDeRetomada ?? ''}
               secao="blocos"
-              dica="Vazio usa o texto das Configurações da conta."
+              dica="Vazio usa o texto das Configurações da organização."
               detalhes={
                 <p>
                   Precisa dizer duas coisas: que o bot voltou, e que a pessoa{' '}

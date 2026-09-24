@@ -90,7 +90,7 @@ export function Assistente({ clienteId, nome, inicial, temQuadro, temFluxo }: {
               { valor: 'depois', titulo: 'Decidir depois', descricao: 'Comece pelo Inbox e conheça as possibilidades com calma.' },
             ]} />
             <Escolhas titulo="Por qual canal vamos começar?" ajuda="Você pode conectar outros depois. Esta escolha não muda conexões existentes." nome="canal" valor={respostas.canal} mudar={(valor) => mudar('canal', valor as RespostasOnboarding['canal'])} opcoes={[
-              { valor: 'whatsapp', titulo: 'WhatsApp', descricao: 'Conversas pelo número da empresa.' },
+              { valor: 'whatsapp', titulo: 'WhatsApp', descricao: 'Conversas pelo número da organização.' },
               { valor: 'instagram', titulo: 'Instagram', descricao: 'Direct da sua conta profissional.' },
             ]} />
           </div>}
@@ -119,7 +119,7 @@ export function Assistente({ clienteId, nome, inicial, temQuadro, temFluxo }: {
           <div className="flex gap-2">{etapa > 0 && <button type="button" disabled={salvando} onClick={() => void salvar('salvar', etapa - 1)} className="app-secondary-button px-4 py-2.5 text-sm">Voltar</button>}<button type="submit" disabled={salvando} className="app-primary-button px-4 py-2.5 text-sm disabled:opacity-50">{salvando ? 'Salvando…' : etapa === 3 ? 'Preparar meu sistema' : 'Continuar →'}</button></div>
         </footer>
       </form>
-      <p className="mt-4 text-center text-[11px] leading-5 text-dim">O progresso é salvo por empresa ao avançar ou continuar depois.</p>
+      <p className="mt-4 text-center text-[11px] leading-5 text-dim">O progresso é salvo por organização ao avançar ou continuar depois.</p>
     </>}
   </main>
 }

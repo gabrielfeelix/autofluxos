@@ -21,7 +21,7 @@ export type Preferencia = keyof typeof PREFERENCIAS
  * para o esqueleto saber disso antes de qualquer consulta terminar.
  *
  * Não é preferência e ninguém escolhe: é uma marca que a moldura do cliente
- * escreve ao montar. Existe porque o "‹ Todos os clientes" só aparece para o
+ * escreve ao montar. Existe porque o "‹ Administração" só aparece para o
  * administrador, e o esqueleto de carregamento não tem sessão para consultar.
  * Sem a marca ele desenhava a barra sem aquela linha, a barra inteira subia e
  * descia a cada troca de aba, e voltava ao lugar quando a tela chegava.
