@@ -354,10 +354,15 @@ export function CaixaDeResposta({
         ícones fiquem alinhados com a última linha do texto, e não flutuando no
         meio de um retângulo alto.
       */}
+      {/*
+        Fora da janela o campo inteiro sai de vista: um retângulo em que não se
+        escreve, com o enviar apagado, é só ruído embaixo do aviso que já diz o
+        que fazer. `hidden` e não desmontar, pelo mesmo motivo da gravação: o
+        rascunho guardado continua no campo e reaparece quando a janela abrir.
+      */}
       <div
-        className={`rounded-[16px] border bg-panel transition ${
-          livre ? 'border-strong focus-within:border-primary/50 focus-within:shadow-[0_0_0_3px_color-mix(in_oklab,var(--primary)_12%,transparent)]' : 'border-line opacity-80'
-        }`}
+        hidden={!livre}
+        className="rounded-[16px] border border-strong bg-panel transition focus-within:border-primary/50 focus-within:shadow-[0_0_0_3px_color-mix(in_oklab,var(--primary)_12%,transparent)]"
       >
       {/*
         O campo em cima, a barra embaixo: o arranjo da referência escolhida pelo
@@ -390,7 +395,6 @@ export function CaixaDeResposta({
           */
           style={{ overflowY: 'hidden' }}
           disabled={enviando || !livre}
-          aria-describedby={livre ? undefined : 'motivo-do-compositor'}
           placeholder={
             livre
               ? `Responder ${nome} pelo ${DEFINICAO_DO_CANAL[canal].nome}…`
@@ -532,11 +536,6 @@ export function CaixaDeResposta({
         rodapé só era lida por quem já estava prestes a escrever. O que fica é o
         que só importa a quem vai responder agora.
       */}
-      {!livre && (
-        <p id="motivo-do-compositor" className="mt-1.5 px-1 text-[11.5px] leading-4 text-dim">
-          O que você escreveu fica guardado aqui e volta a poder ser enviado quando {nome} responder.
-        </p>
-      )}
       {livre && !gravando && temAutomacao && (
         <p className="mt-1.5 px-1 text-[11.5px] leading-4 text-dim">
           Responder daqui assume a conversa: o bot para de falar com {nome} até você clicar em
