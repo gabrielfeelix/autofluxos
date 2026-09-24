@@ -238,7 +238,10 @@ export async function criarCliente(nome: string): Promise<Cliente> {
  * O nome é o único obrigatório, cliente cadastrado no meio de uma reunião tem
  * só isso, e exigir telefone para salvar o nome faria a pessoa inventar um.
  */
-export async function atualizarCadastro(id: string, cadastro: Cadastro): Promise<void> {
+export async function atualizarCadastro(
+  id: string,
+  cadastro: Omit<Cadastro, 'observacoes'> & { observacoes?: string },
+): Promise<void> {
   const { error } = await db()
     .from('clients')
     .update({
@@ -247,11 +250,19 @@ export async function atualizarCadastro(id: string, cadastro: Cadastro): Promise
       telefone: cadastro.telefone.trim(),
       email: cadastro.email.trim(),
       cnpj: cadastro.cnpj.trim(),
-      observacoes: cadastro.observacoes.trim(),
+      // Observações são nota interna da 4YU. Só a administração manda o campo;
+      // quando ele não vem, a nota fica como está.
+      ...(cadastro.observacoes === undefined ? {} : { observacoes: cadastro.observacoes.trim() }),
     })
     .eq('id', id)
 
   if (error) throw new Error(`não deu para salvar o cadastro: ${error.message}`)
+}
+
+/** A nota interna da 4YU sobre o cliente. Só a administração chama. */
+export async function atualizarObservacoes(id: string, observacoes: string): Promise<void> {
+  const { error } = await db().from('clients').update({ observacoes: observacoes.trim() }).eq('id', id)
+  if (error) throw new Error(`não deu para salvar as observações: ${error.message}`)
 }
 
 export async function atualizarContexto(id: string, contexto: string): Promise<void> {

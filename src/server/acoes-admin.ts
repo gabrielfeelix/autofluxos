@@ -6,7 +6,7 @@ import { redirect } from 'next/navigation'
 import type { EstadoSalvar } from '@/components/design/formulario-salvar'
 import { acaoRemoverLogo, acaoSalvarCadastro, acaoSalvarLogo } from './acoes'
 import { registrar } from './repos/auditoria'
-import { acharCliente, criarCliente } from './repos/clientes'
+import { acharCliente, atualizarObservacoes, criarCliente } from './repos/clientes'
 import { definirSuspensao } from './repos/organizacoes'
 import { pendenciasDoMembro } from './repos/equipes'
 import { acharUsuarioPorEmail, organizacoesSoDele, papelNaConta, removerComDestino } from './repos/usuarios'
@@ -44,6 +44,12 @@ export async function acaoAdminSalvarCadastro(
   const sessao = await exigirAdminDaPlataforma()
   const r = await acaoSalvarCadastro(organizacaoId, estado, formData)
   if (r.ok) {
+    // A ação da organização não grava observações: a nota é nossa.
+    try {
+      await atualizarObservacoes(organizacaoId, String(formData.get('observacoes') ?? ''))
+    } catch (erro) {
+      return { erro: erro instanceof Error ? erro.message : 'não deu para salvar' }
+    }
     await registrar({
       acao: 'editou_organizacao',
       autorId: sessao.usuario.id,

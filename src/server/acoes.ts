@@ -2374,6 +2374,8 @@ export async function acaoSalvarCadastro(
   const acesso = await exigirCapacidade(clienteId, 'configurar_empresa', 'todos')
   if (recusou(acesso)) return acesso
 
+  // Observações ficam de fora: são a nota interna da 4YU sobre o cliente, e
+  // só a administração grava (`acaoAdminSalvarCadastro`).
   const nome = String(formData.get('nome') ?? '').trim()
   if (nome === '') return { erro: 'A organização precisa de um nome.' }
 
@@ -2384,7 +2386,6 @@ export async function acaoSalvarCadastro(
       telefone: String(formData.get('telefone') ?? ''),
       email: String(formData.get('email') ?? ''),
       cnpj: String(formData.get('cnpj') ?? ''),
-      observacoes: String(formData.get('observacoes') ?? ''),
     })
   } catch (erro) {
     return { erro: erro instanceof Error ? erro.message : 'não deu para salvar' }

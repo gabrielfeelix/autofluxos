@@ -19,6 +19,7 @@ export default async function Dados({ params }: { params: Promise<{ id: string }
       <FichaDoCliente
         cliente={organizacao}
         podeEditar
+        daPlataforma
         salvarCadastro={acaoAdminSalvarCadastro.bind(null, organizacao.id)}
         salvarLogo={acaoAdminSalvarLogo.bind(null, organizacao.id)}
         removerLogo={acaoAdminRemoverLogo.bind(null, organizacao.id)}

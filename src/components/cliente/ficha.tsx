@@ -24,8 +24,16 @@ export function FichaDoCliente({
   salvarLogo,
   removerLogo,
   podeEditar,
+  daPlataforma = false,
 }: {
   cliente: Cliente
+  /**
+   * Ligado só na administração. Observações são a nota interna da 4YU sobre o
+   * cliente ("Cliente do Eduardo", escopo, cobrança) e nunca aparecem para a
+   * própria organização; o texto também muda de voz, de "nossa ficha" para
+   * "seus dados".
+   */
+  daPlataforma?: boolean
   /** Sem `configurar_empresa`, a ficha é só leitura. A ação recusa do mesmo jeito. */
   podeEditar: boolean
   salvarCadastro: (estado: EstadoSalvar, formData: FormData) => Promise<EstadoSalvar>
@@ -40,8 +48,9 @@ export function FichaDoCliente({
         <div>
           <h2 className="text-[14.5px] font-bold">Cadastro</h2>
           <p className="mt-0.5 text-[12px] text-dim">
-            Quem é este cliente e como falar com ele. É a nossa ficha, nada daqui vai para o
-            WhatsApp.
+            {daPlataforma
+              ? 'Quem é este cliente e como falar com ele. É a nossa ficha, nada daqui vai para o WhatsApp.'
+              : 'Quem responde pela organização e como a 4YU fala com vocês. Nada daqui vai para o WhatsApp.'}
           </p>
         </div>
         {podeEditar ? (
@@ -62,13 +71,13 @@ export function FichaDoCliente({
 
           <FormularioSalvar action={salvarCadastro} rotulo="Salvar cadastro">
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-              <Campo rotulo="Nome do cliente" nome="nome" valor={cliente.nome} obrigatorio />
+              <Campo rotulo={daPlataforma ? 'Nome do cliente' : 'Nome da organização'} nome="nome" valor={cliente.nome} obrigatorio />
               <Campo
                 rotulo="Quem responde"
                 nome="responsavel"
                 valor={cliente.responsavel}
-                dica="a pessoa com quem a gente fala"
-                exemplo="ex.: Daniel, dono do estúdio"
+                dica={daPlataforma ? 'a pessoa com quem a gente fala' : 'a pessoa com quem a 4YU fala'}
+                exemplo="Exemplo: Daniel, dono do estúdio"
               />
               <Campo
                 rotulo="Telefone"
@@ -94,16 +103,18 @@ export function FichaDoCliente({
               />
             </div>
 
-            <label className="mt-5 block">
-              <Rotulo>Observações</Rotulo>
-              <textarea
-                name="observacoes"
-                rows={4}
-                defaultValue={cliente.observacoes}
-                placeholder="Escopo combinado, prazo, o que já foi cobrado."
-                className="app-field resize-y px-3.5 py-3 text-[13px] leading-6"
-              />
-            </label>
+            {daPlataforma && (
+              <label className="mt-5 block">
+                <Rotulo>Observações</Rotulo>
+                <textarea
+                  name="observacoes"
+                  rows={4}
+                  defaultValue={cliente.observacoes}
+                  placeholder="Exemplo: escopo combinado, prazo, o que já foi cobrado."
+                  className="app-field resize-y px-3.5 py-3 text-[13px] leading-6"
+                />
+              </label>
+            )}
           </FormularioSalvar>
         </div>
       ) : (
@@ -114,7 +125,7 @@ export function FichaDoCliente({
             <Leitura rotulo="Telefone" valor={cliente.telefone ? telefoneLegivel(cliente.telefone) : cliente.telefone} />
             <Leitura rotulo="E-mail" valor={cliente.email} />
             <Leitura rotulo="CNPJ" valor={cliente.cnpj} />
-            <Leitura rotulo="Observações" valor={cliente.observacoes} largo />
+            {daPlataforma && <Leitura rotulo="Observações" valor={cliente.observacoes} largo />}
           </dl>
         </div>
       )}
