@@ -29,31 +29,31 @@ Feito, tudo na `main` (deploys READY até a 8.2; da 8.3 em diante ver
 | 8.3 próximos passos por destino, três tipos na aba, resumo no topo | `737e144` |
 | 8.4 ganhar/perder, segmento e funil dizem o efeito | `b2bde21` |
 | 8.5 `?aba=`/`?volta=`, aviso de fora do filtro, `recarregarContato`, e2e | `1f8dd4d` |
+| 8.6 foco, toque, envios parciais, importação só das recusadas | `f8ad517` |
+| 7.5 passo 6: e2e do atendimento pelo rodapé | `737b5d1` |
+| Revisão A1 `ba6eff4` e Fase 7: três achados corrigidos | `2378342` |
+| Fase 12 (parcial): varredura, jornadas, quatro correções de volta | `b568586` |
 
 Detalhes e desvios: 6.x em `a1.md`, 8.x em `a2.md`.
 
 **Próximo, na ordem:**
 
-1. 8.6 (acessibilidade e envios parciais). Já feito de brinde na 8.3:
-   `horaComFuso` ("(Brasília)") nas agendadas da ficha e `prazoEmPalavras`
-   por dia quando não há hora. Falta no passo 4 o painel `agendar.tsx`
-   (`quandoLegivel`). O Inbox no celular **já foi resolvido** pela outra
-   sessão (`0deeb1c`, uma coluna por vez): não mexer em `inbox/moldura.tsx`.
-2. 7.5 Passo 6: e2e do membro de atendimento (trocar nome e foto pelo rodapé,
-   menu sem Configurações) e os testes "editar perfil só altera o próprio" e
-   "nome vazio é recusado", se ainda não existirem.
-3. Revisar os merges que o A4 não revisou (A1 `ba6eff4`, A2 Fase 7).
-4. Fase 12 (validação integrada), com as personas criadas no local. Provar ali
-   que atendimento não vê o atalho "Automações ›" no Início.
-5. 10.6 continua **bloqueada**: Brevo sem `autofluxos.mail.4yu.com.br`.
+1. **Docker voltar** (caiu às 21:59 de 23/09; é o Docker Desktop do Windows,
+   não sobe pelo WSL). Depois: `npx supabase status`, dev na 3101.
+2. Fase 12, o que falta: conferir no navegador a ida e volta do gatilho
+   (`.ux-local/j11.mjs`), "Segmento → transmissão" e "Testar"; prints finais
+   em `docs/revisao-ux-ui-2026-09-23/prints-depois/` com
+   `PRINTS=docs/revisao-ux-ui-2026-09-23/prints-depois node .ux-local/varredura.mjs`
+   (jpg, dono, desktop e celular); atualizar `00-cobertura.md` para
+   "Validada em navegador" (as 45 rotas da varredura) e fazer o passo 4.
+   Registro em `docs/ux-paralelo/fase-12.md`.
+3. Tarefa 12.2 no plano: itens abertos (um pede decisão do Gabriel: Inbox e
+   Contatos recortam por "só os próprios"?).
+4. 10.6 continua **bloqueada**: Brevo sem `autofluxos.mail.4yu.com.br`.
 
-**Deploy parado (23/09, 20:37):** a Vercel recusa com "Deployment rate
-limited, retry in 24 hours" (cota diária do Hobby; prévia de branch também
-conta). `737e144`, `b2bde21` e `1f8dd4d` estão na `main` sem deploy. O
-`deploy.sh` só diz `AUSENTE`; o motivo aparece no status do commit:
-`GH_TOKEN=$GITHUB_TOKEN gh api repos/gabrielfeelix/autofluxos/commits/<sha>/status`.
-Quando a cota voltar, o próximo push publica tudo junto: conferir READY.
-Para gastar menos, esta sessão parou de empurrar a branch `ux/restante`.
+**Deploy:** a cota da Vercel voltou em 23/09 à noite; `f8ad517` e
+`2378342` READY (levaram 8.3 a 8.6 juntas). Commit pulado pela Vercel por
+outro mais novo aparece `AUSENTE` no `deploy.sh`: conferir o seguinte.
 
 Scripts de print novos: `.ux-local/ficha.mjs` (8.3, cria agendada "zz
 print"), `efeitos.mjs` (8.4, desfaz os cartões que criar), `texto-aba.mjs`.
