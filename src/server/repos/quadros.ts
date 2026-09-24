@@ -568,6 +568,9 @@ type LinhaDoCartao = {
   responsavel: string | null
   temperatura: string | null
   produto_id: string | null
+  criado_em: string
+  /** Só existe depois da 0101. Lido por `*`, então a falta dela não derruba a tela. */
+  previsao_de_fechamento?: string | null
   produtos: { nome: string | null } | null
   contacts: {
     nome_real: string | null
@@ -577,6 +580,9 @@ type LinhaDoCartao = {
   } | null
   af_usuarios: { nome: string | null } | null
 }
+
+const COLUNAS_DO_CARTAO_SEM_JUNCAO = '*, produtos (nome), '
+const JUNCOES_DO_CARTAO = 'contacts (nome_real, nome, wa_id, ultima_mensagem_em), af_usuarios (nome:name)'
 
 /**
  * Os cartões de um quadro, com o nome de quem está neles.
@@ -589,8 +595,12 @@ export async function listarCartoes(clienteId: string, quadroId: string): Promis
   const { data, error } = await db()
     .from('quadro_cartoes')
     .select(
-      'id, contact_id, coluna_id, entrou_na_coluna_em, titulo, valor, situacao, responsavel, ' +
-        'temperatura, produto_id, produtos (nome), ' +
+      /*
+       * `*` e não a lista de colunas, por causa da 0101: com a lista, pedir
+       * `previsao_de_fechamento` num banco sem ela derruba o funil inteiro com
+       * `column does not exist`; com `*`, a coluna vem quando existe.
+       */
+      COLUNAS_DO_CARTAO_SEM_JUNCAO +
         /*
          * `nome:name` é apelido, e não capricho: a coluna de `af_usuarios`
          * chama `name`, em inglês, porque a tabela nasceu do Better Auth e não
@@ -602,7 +612,7 @@ export async function listarCartoes(clienteId: string, quadroId: string): Promis
          * estar. Traduzir a coluna no banco seria mexer numa tabela que o Auth
          * gerencia.
          */
-        'contacts (nome_real, nome, wa_id, ultima_mensagem_em), af_usuarios (nome:name)',
+        JUNCOES_DO_CARTAO,
     )
     .eq('client_id', clienteId)
     .eq('quadro_id', quadroId)
@@ -610,7 +620,11 @@ export async function listarCartoes(clienteId: string, quadroId: string): Promis
   if (ehIdInvalido(error)) return []
   if (error) throw new Error(`não deu para listar os cartões: ${error.message}`)
 
-  return (data as unknown as LinhaDoCartao[]).map((linha) => ({
+  return (data as unknown as LinhaDoCartao[]).map(paraCartao)
+}
+
+function paraCartao(linha: LinhaDoCartao): Cartao {
+  return {
     id: linha.id,
     contatoId: linha.contact_id,
     colunaId: linha.coluna_id,
@@ -633,7 +647,111 @@ export async function listarCartoes(clienteId: string, quadroId: string): Promis
     temperatura: ehTemperaturaDoCartao(linha.temperatura) ? linha.temperatura : null,
     produtoId: linha.produto_id,
     produtoNome: linha.produtos?.nome ?? null,
-  }))
+    criadoEm: linha.criado_em,
+    previsao: linha.previsao_de_fechamento ?? null,
+  }
+}
+
+/**
+ * Um cartão só, com o funil em que está: é o que a página do negócio abre (F2).
+ * `null` para id de outra conta, apagado ou malformado, e a página vira 404.
+ */
+export async function acharCartao(
+  clienteId: string,
+  cartaoId: string,
+): Promise<(Cartao & { quadroId: string; motivo: string | null; fechadoEm: string | null }) | null> {
+  const { data, error } = await db()
+    .from('quadro_cartoes')
+    .select(COLUNAS_DO_CARTAO_SEM_JUNCAO + JUNCOES_DO_CARTAO)
+    .eq('client_id', clienteId)
+    .eq('id', cartaoId)
+    .maybeSingle()
+
+  if (ehIdInvalido(error)) return null
+  if (error) throw new Error(`não deu para ler o negócio: ${error.message}`)
+  if (!data) return null
+
+  const linha = data as unknown as LinhaDoCartao & {
+    quadro_id: string
+    motivo: string | null
+    fechado_em: string | null
+  }
+  return {
+    ...paraCartao(linha),
+    quadroId: linha.quadro_id,
+    motivo: linha.motivo ?? null,
+    fechadoEm: linha.fechado_em ?? null,
+  }
+}
+
+/**
+ * Quando se espera fechar (0101). `null` apaga a previsão.
+ *
+ * Aceita só `YYYY-MM-DD`: a data chega do `<input type="date">`, e qualquer
+ * outra coisa é engano que o Postgres devolveria como erro em inglês.
+ */
+export async function preverFechamento(
+  clienteId: string,
+  cartaoId: string,
+  data: string | null,
+): Promise<{ ok: true } | { ok: false; motivo: string }> {
+  if (data !== null && !/^\d{4}-\d{2}-\d{2}$/.test(data)) {
+    return { ok: false, motivo: 'essa data não é válida' }
+  }
+
+  const { data: linha, error } = await db()
+    .from('quadro_cartoes')
+    .update({ previsao_de_fechamento: data })
+    .eq('client_id', clienteId)
+    .eq('id', cartaoId)
+    .select('id')
+    .maybeSingle()
+
+  if (ehIdInvalido(error)) return { ok: false, motivo: 'este negócio não existe mais' }
+  if (error) throw new Error(`não deu para gravar a previsão: ${error.message}`)
+  return linha ? { ok: true } : { ok: false, motivo: 'este negócio não existe mais' }
+}
+
+/**
+ * Leva o negócio para outro funil, na primeira etapa dele.
+ *
+ * O relógio da etapa recomeça, porque a etapa é outra. Se a pessoa já tem
+ * negócio aberto no funil de destino, o índice único da 0071 recusa, e a
+ * recusa vira frase em vez de erro de Postgres.
+ */
+export async function trocarDeFunil(
+  clienteId: string,
+  cartaoId: string,
+  quadroId: string,
+  autor: string | null = null,
+): Promise<{ ok: true; colunaId: string } | { ok: false; motivo: string }> {
+  const destino = await acharQuadro(clienteId, quadroId)
+  const primeira = destino?.etapas[0]
+  if (!destino || !primeira) return { ok: false, motivo: 'esse funil não existe ou não tem etapas' }
+
+  const { data, error } = await db()
+    .from('quadro_cartoes')
+    .update({ quadro_id: destino.id, coluna_id: primeira.id, entrou_na_coluna_em: new Date().toISOString() })
+    .eq('client_id', clienteId)
+    .eq('id', cartaoId)
+    .select('id, contact_id')
+    .maybeSingle()
+
+  if (error?.code === '23505') {
+    return { ok: false, motivo: 'esta pessoa já tem um negócio aberto nesse funil' }
+  }
+  if (ehIdInvalido(error)) return { ok: false, motivo: 'este negócio não existe mais' }
+  if (error) throw new Error(`não deu para trocar de funil: ${error.message}`)
+  if (!data) return { ok: false, motivo: 'este negócio não existe mais' }
+
+  await anotar(
+    clienteId,
+    (data as { contact_id: string }).contact_id,
+    'entrou-no-quadro',
+    { cartaoId, quadro: destino.nome },
+    autor,
+  )
+  return { ok: true, colunaId: primeira.id }
 }
 
 /**
@@ -957,7 +1075,9 @@ export async function moverCartao(
       clienteId,
       movido.contact_id,
       'mudou-de-etapa',
-      { de: origem?.quadro_colunas?.nome ?? '', para: destino ?? '' },
+      // `cartaoId` é o que põe o evento no histórico **deste negócio** (F2),
+      // a mesma convenção que a 0072 usa para ganhar e perder.
+      { cartaoId, de: origem?.quadro_colunas?.nome ?? '', para: destino ?? '' },
       autor,
     )
   }
@@ -1298,7 +1418,7 @@ export async function atribuirCartao(
   }
   const quem = linha.af_usuarios?.nome ?? null
 
-  await anotar(clienteId, linha.contact_id, 'assumiu', { quem: quem ?? '' }, autor)
+  await anotar(clienteId, linha.contact_id, 'assumiu', { cartaoId, quem: quem ?? '' }, autor)
   return { ok: true, quem }
 }
 

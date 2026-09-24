@@ -1,5 +1,6 @@
 'use client'
 
+import Link from 'next/link'
 import { useEffect, useRef, useState, useTransition } from 'react'
 import {
   CLASSE_DA_COR,
@@ -21,6 +22,7 @@ import {
   type TipoDeEtapa,
 } from '@/core/quadros'
 import { comoDinheiro } from '@/core/crm'
+import { comoDias, diasDesde, tituloDoNegocio } from '@/core/negocios'
 import {
   acaoAtribuirCartao,
   acaoDefinirCorDaEtapa,
@@ -406,7 +408,7 @@ export function Quadro({
                   <li className="shrink-0 rounded-lg border border-dashed border-line px-2 py-4 text-center text-[11px] leading-4 text-dim">
                     {/* Estado vazio que responde a pergunta certa: não é "não há
                         ninguém", é "o que eu faço aqui". */}
-                    Arraste um contato para cá
+                    Arraste um negócio para cá
                   </li>
                 ) : (
                   daEtapa.map((cartao) => (
@@ -456,39 +458,72 @@ export function Quadro({
                           className="flex min-h-12 min-w-0 flex-1 items-start gap-2 rounded text-left focus-visible:outline-2 focus-visible:outline-primary"
                         >
                           {/*
-                            O mesmo avatar da fila do Inbox, e não um parecido:
-                            a cor derivada do nome só vira identificação se for a
-                            mesma cor nas duas telas. Dois geradores de cor
-                            fariam a mesma pessoa mudar de cor ao trocar de aba.
-                          */}
-                          <Avatar nome={cartao.nome} tamanho={26} />
+                            **O negócio na frente, a pessoa embaixo** (F2, 5.2).
 
+                            O cartão sempre foi a negociação, e abria com o
+                            avatar e o nome do contato: o funil parecia uma
+                            lista de pessoas. Agora o título e o valor vêm
+                            primeiro; sem título, "Negócio de <nome>" em cinza,
+                            para ninguém confundir com o nome da pessoa.
+                          */}
                           <span className="min-w-0 flex-1">
-                            <span className="flex items-baseline gap-2">
-                              <strong className="min-w-0 flex-1 truncate text-[12.5px] leading-[1.3] font-semibold">
+                            <strong
+                              className={`line-clamp-2 text-[13px] leading-[1.3] font-semibold ${
+                                tituloDoNegocio(cartao).provisorio ? 'text-dim' : 'text-ink'
+                              }`}
+                            >
+                              {tituloDoNegocio(cartao).texto}
+                            </strong>
+                            {cartao.valor != null && (
+                              <span className="mt-0.5 block text-[12.5px] font-bold tabular-nums text-soft">
+                                {comoDinheiro(cartao.valor)}
+                              </span>
+                            )}
+
+                            {/*
+                              O mesmo avatar da fila do Inbox, e não um parecido:
+                              a cor derivada do nome só vira identificação se for
+                              a mesma cor nas duas telas.
+                            */}
+                            <span className="mt-2 flex items-center gap-1.5 border-t border-line/70 pt-2">
+                              <Avatar nome={cartao.nome} tamanho={18} />
+                              <span className="min-w-0 flex-1 truncate text-[11px] text-muted">
                                 {cartao.nome}
-                              </strong>
-                              {cartao.valor != null && (
-                                <span className="shrink-0 text-[11.5px] font-semibold tabular-nums text-soft">
-                                  {comoDinheiro(cartao.valor)}
+                                {cartao.telefone && cartao.telefone !== cartao.nome && (
+                                  <span className="text-dim"> · {telefoneLegivel(cartao.telefone)}</span>
+                                )}
+                              </span>
+                              {cartao.temperatura && (
+                                <span
+                                  title={`Temperatura: ${cartao.temperatura}`}
+                                  className={`shrink-0 rounded-full px-1.5 text-[9.5px] font-bold capitalize ${
+                                    cartao.temperatura === 'quente'
+                                      ? 'bg-rose-400/15 text-rose-600'
+                                      : cartao.temperatura === 'morno'
+                                        ? 'bg-amber-400/15 text-amber-700'
+                                        : 'bg-sky-400/15 text-sky-700'
+                                  }`}
+                                >
+                                  {cartao.temperatura}
                                 </span>
                               )}
                             </span>
 
-                            {cartao.titulo && (
-                              <span className="mt-[3px] block truncate text-[11px] leading-4 text-muted">
-                                {cartao.titulo}
-                              </span>
-                            )}
-
                             <span className="mt-[5px] flex items-center gap-1.5">
                               <span
-                                className={`truncate text-[10.5px] ${
-                                  parado(cartao, etapa, agora) ? 'text-aviso' : 'text-dim'
+                                className={`shrink-0 text-[10.5px] font-semibold ${
+                                  parado(cartao, etapa, agora) ? 'text-aviso' : 'text-muted'
                                 }`}
                               >
-                                {espera(cartao, agora)}
+                                {comoDias(diasDesde(cartao.entrouNaColunaEm, agora))} na etapa
                               </span>
+                              {/* Quando a pessoa falou continua no cartão, mais
+                                  discreto: é o que diz de quem se deve resposta. */}
+                              {cartao.ultimaMensagemEm && (
+                                <span className="min-w-0 truncate text-[10.5px] text-dim">
+                                  · {espera(cartao, agora)}
+                                </span>
+                              )}
 
                               {cartao.situacao === 'ganha' && (
                                 <span className="shrink-0 text-[10.5px] font-semibold text-ok">
@@ -1385,6 +1420,12 @@ function MenuDoCartao({
                 >
                   Ver resumo
                 </Item>
+                <Link
+                  href={`/clientes/${clienteId}/negocios/${cartao.id}`}
+                  className="truncate rounded px-2 py-1.5 text-left text-[12px] transition hover:bg-surface-strong"
+                >
+                  Abrir negócio
+                </Link>
 
                 <span className="my-1 border-t border-line" />
                 <Item

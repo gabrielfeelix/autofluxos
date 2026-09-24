@@ -153,6 +153,25 @@ export async function abertasDoCartao(clienteId: string, cartaoId: string): Prom
   return (data as unknown as LinhaDaAtividade[]).map(paraAtividade)
 }
 
+/**
+ * Todas as atividades de um negócio, abertas primeiro. É o que a página do
+ * negócio mostra à direita (as abertas) e no histórico (as feitas).
+ */
+export async function atividadesDoCartao(clienteId: string, cartaoId: string): Promise<Atividade[]> {
+  const { data, error } = await db()
+    .from('atividades')
+    .select(COLUNAS)
+    .eq('client_id', clienteId)
+    .eq('cartao_id', cartaoId)
+    .order('situacao', { ascending: true })
+    .order('prazo', { ascending: true, nullsFirst: false })
+    .limit(100)
+
+  if (ehIdInvalido(error)) return []
+  if (error) throw new Error(`não deu para ler as atividades: ${error.message}`)
+  return (data as unknown as LinhaDaAtividade[]).map(paraAtividade)
+}
+
 // ---------------------------------------------------------------------------
 // A agenda paginada: a tela de Atividades
 // ---------------------------------------------------------------------------

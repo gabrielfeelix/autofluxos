@@ -29,7 +29,7 @@ export function FecharCartao({
   situacao: 'ganha' | 'perdida'
   motivos: { id: string; nome: string }[]
   aoFechar: () => void
-  aoConcluir: (resultado: { abriuEm?: string }) => void
+  aoConcluir: (resultado: { abriuEm?: string; motivo?: string; titulo?: string }) => void
   /**
    * O nome do funil que este entrega ao ganhar. `undefined` = quem abre não
    * sabe (a ficha), e o modal fala da regra em vez de afirmar um destino.
@@ -160,7 +160,7 @@ export function FecharCartao({
           setErro(r.erro ?? 'não deu para fechar')
           return
         }
-        aoConcluir({ abriuEm: r.abriuEm })
+        aoConcluir({ abriuEm: r.abriuEm, motivo: ganhou ? undefined : motivo, titulo })
       } catch {
         setErro('não deu para fechar agora, tente de novo')
       }

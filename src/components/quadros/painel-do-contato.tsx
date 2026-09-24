@@ -396,12 +396,19 @@ export function PainelDoContato({
           </Secao>
         )}
       </div>
-      <footer className="shrink-0 border-t border-line bg-panel px-5 py-4 sm:px-6">
+      {/* O diálogo é o gesto rápido; a página é onde se trabalha o negócio (F2). */}
+      <footer className="flex shrink-0 gap-2 border-t border-line bg-panel px-5 py-4 sm:px-6">
+        <Link
+          href={`/clientes/${clienteId}/negocios/${cartao.id}`}
+          className="app-primary-button flex flex-1 items-center justify-center px-3 py-2 text-[12.5px]"
+        >
+          Abrir negócio
+        </Link>
         <Link
           href={hrefDaFicha(clienteId, contatoId, { volta })}
-          className="crm-button w-full justify-between"
+          className="crm-button flex-1 justify-between"
         >
-          Ver ficha completa <span aria-hidden>↗</span>
+          Ficha do contato <span aria-hidden>↗</span>
         </Link>
       </footer>
     </dialog>

@@ -174,6 +174,11 @@ export type Cartao = {
   produtoId?: string | null
   /** O nome do produto **hoje**. A venda guarda o nome da época em `venda_itens`. */
   produtoNome?: string | null
+
+  /** Quando o negócio nasceu. É o "aberto há 12 dias" da página do negócio. */
+  criadoEm?: string
+  /** `YYYY-MM-DD` de quando se espera fechar (0101). `null` = ninguém previu. */
+  previsao?: string | null
 }
 
 /** Ver `core/crm.ts`. Repetido aqui como tipo para o cartão não importar o CRM. */

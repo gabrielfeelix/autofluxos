@@ -51,7 +51,7 @@ export function BarraDoQuadro({
           <input
             value={filtro.busca}
             onChange={(evento) => aoFiltrar({ ...filtro, busca: evento.currentTarget.value })}
-            placeholder="Buscar contato…"
+            placeholder="Buscar negócio ou contato…"
             aria-label="Buscar cartão por nome, telefone ou negociação"
             className="app-field h-9 py-2 pr-8 pl-9 text-xs"
           />
@@ -135,7 +135,7 @@ export function BarraDoQuadro({
         </PopoverDoQuadro>
         <span aria-live="polite" className="ml-auto flex items-center gap-2 text-[11px] text-dim">
           <span className="font-medium tabular-nums">
-            {visiveis === 1 ? '1 contato' : `${visiveis} contatos`}
+            {visiveis === 1 ? '1 negócio' : `${visiveis} negócios`}
             {escondidos > 0 && ` de ${visiveis + escondidos}`}
           </span>
           {somaAberta > 0 && (

@@ -145,10 +145,13 @@ export async function registrarAnotacao(
   contatoId: string,
   texto: string,
   autor: string | null,
+  /** A anotação feita na página do negócio vai para o histórico dele (F2). */
+  cartaoId: string | null = null,
 ): Promise<Anotacao> {
+  const dados = cartaoId ? { texto, cartaoId } : { texto }
   const { data, error } = await db()
     .from('eventos_do_contato')
-    .insert({ client_id: clienteId, contato_id: contatoId, tipo: 'nota', dados: { texto }, autor })
+    .insert({ client_id: clienteId, contato_id: contatoId, tipo: 'nota', dados, autor })
     .select('id, criado_em')
     .single()
 

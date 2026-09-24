@@ -15,10 +15,13 @@ export function CabecalhoDoQuadro({
   importar,
   apagar,
   fora,
+  visao = 'quadro',
 }: {
   clienteId: string
   quadros: { id: string; nome: string }[]
   abertoId?: string
+  /** Quadro | Lista (5.2b): o mesmo funil, desenhado de dois jeitos. */
+  visao?: 'quadro' | 'lista'
   adicionar?: ReactNode
   configuracoes?: ReactNode
   importar?: ReactNode
@@ -36,7 +39,7 @@ export function CabecalhoDoQuadro({
         </span>
         <div className="min-w-0">
           <h1 className="mb-1 text-[11px] font-semibold tracking-[0.06em] text-dim uppercase">
-            Funil de vendas
+            Negócios
           </h1>
           {atual ? (
             <NovoQuadro
@@ -61,7 +64,7 @@ export function CabecalhoDoQuadro({
                     {quadros.map((quadro) => (
                       <Link
                         key={quadro.id}
-                        href={`/clientes/${clienteId}/quadros?q=${quadro.id}`}
+                        href={`/clientes/${clienteId}/quadros?q=${quadro.id}${visao === 'lista' ? '&ver=lista' : ''}`}
                         aria-current={quadro.id === abertoId ? 'page' : undefined}
                         data-fechar-popover
                         className={`quadro-menu-item ${quadro.id === abertoId ? 'bg-primary/[0.08] text-primary' : ''}`}
@@ -91,9 +94,38 @@ export function CabecalhoDoQuadro({
         </div>
       </div>
       <div className="flex items-center gap-2">
-        <Link href={`/clientes/${clienteId}/atividades`} className="quadro-tool">
-          Atividades
-        </Link>
+        {atual && (
+          <nav
+            aria-label="Ver negócios como"
+            className="flex rounded-lg border border-line bg-surface p-0.5 text-[12.5px] font-semibold"
+          >
+            {(
+              [
+                ['quadro', 'Quadro'],
+                ['lista', 'Lista'],
+              ] as const
+            ).map(([chave, rotulo]) => (
+              <Link
+                key={chave}
+                href={`/clientes/${clienteId}/quadros?q=${atual.id}${chave === 'lista' ? '&ver=lista' : ''}`}
+                aria-current={visao === chave ? 'page' : undefined}
+                className={`rounded-md px-3 py-1.5 transition ${
+                  visao === chave ? 'bg-panel text-ink shadow-[0_1px_2px_rgba(19,25,34,0.08)]' : 'text-muted hover:text-soft'
+                }`}
+              >
+                {rotulo}
+              </Link>
+            ))}
+          </nav>
+        )}
+        {/* `.quadro-tool` define o próprio display e venceria um `hidden` na
+            mesma tag; quem esconde no celular é o invólucro. Lá a barra de
+            baixo já tem Atividades. */}
+        <span className="hidden sm:contents">
+          <Link href={`/clientes/${clienteId}/atividades`} className="quadro-tool">
+            Atividades
+          </Link>
+        </span>
         {adicionar}
         {atual && (
           <PopoverDoQuadro

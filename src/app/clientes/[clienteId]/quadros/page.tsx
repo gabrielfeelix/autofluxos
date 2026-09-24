@@ -10,6 +10,7 @@ import { QuadroPadrao } from '@/components/quadros/quadro-padrao'
 import { NovoQuadro } from '@/components/quadros/novo-quadro'
 import { EntregaDoQuadro } from '@/components/quadros/entrega-do-quadro'
 import { TrazerTodos } from '@/components/quadros/trazer-todos'
+import { ListaDeNegocios } from '@/components/negocios/lista-de-negocios'
 import { acaoApagarQuadro } from '@/server/acoes'
 import { acharCliente, type Cliente } from '@/server/repos/clientes'
 import { contarForaDoQuadro, listarCartoes, listarQuadros } from '@/server/repos/quadros'
@@ -52,10 +53,11 @@ export default async function Pagina({
   searchParams,
 }: {
   params: Promise<{ clienteId: string }>
-  searchParams: Promise<{ q?: string }>
+  searchParams: Promise<Record<string, string | undefined>>
 }) {
   const { clienteId } = await params
-  const { q } = await searchParams
+  const busca = await searchParams
+  const q = busca.q
 
   const cliente = await acharCliente(clienteId)
   if (!cliente) notFound()
@@ -76,8 +78,8 @@ export default async function Pagina({
 
           A `key` é o funil pedido porque é ele que muda sem trocar de rota.
         */}
-        <Suspense key={q ?? 'padrao'} fallback={<Espera />}>
-          <Conteudo cliente={cliente} q={q} />
+        <Suspense key={`${q ?? 'padrao'}:${busca.ver ?? 'quadro'}`} fallback={<Espera />}>
+          <Conteudo cliente={cliente} q={q} busca={busca} />
         </Suspense>
       </main>
     </ClienteShell>
@@ -91,7 +93,7 @@ function Espera() {
       <header className="mb-5 flex shrink-0 items-center justify-between gap-4">
         <div>
           <h1 className="mb-1 text-[11px] font-semibold tracking-[0.06em] text-dim uppercase">
-            Funil de vendas
+            Negócios
           </h1>
           <Esqueleto className="h-7 w-36 rounded-lg" />
         </div>
@@ -105,8 +107,18 @@ function Espera() {
   )
 }
 
-async function Conteudo({ cliente, q }: { cliente: Cliente; q?: string }) {
+async function Conteudo({
+  cliente,
+  q,
+  busca,
+}: {
+  cliente: Cliente
+  q?: string
+  busca: Record<string, string | undefined>
+}) {
   const agora = agoraDoServidor()
+  /** Quadro | Lista (5.2b). O mesmo funil, pela URL, para o link lembrar a escolha. */
+  const visao = busca.ver === 'lista' ? 'lista' : 'quadro'
   const quadros = await listarQuadros(cliente.id)
   // Id que não é deste cliente cai no primeiro em vez de dar erro: o valor vem
   // da URL, e link velho não pode virar tela quebrada.
@@ -137,6 +149,7 @@ async function Conteudo({ cliente, q }: { cliente: Cliente; q?: string }) {
         clienteId={cliente.id}
         quadros={quadros.map(({ id, nome }) => ({ id, nome }))}
         abertoId={aberto?.id}
+        visao={visao}
         fora={fora}
         adicionar={
           aberto?.etapas[0] && (
@@ -201,6 +214,26 @@ async function Conteudo({ cliente, q }: { cliente: Cliente; q?: string }) {
           </p>
           <span className="mt-6 inline-block">{novoQuadro}</span>
         </section>
+      ) : visao === 'lista' ? (
+        <ListaDeNegocios
+          clienteId={cliente.id}
+          etapas={aberto.etapas}
+          cartoes={cartoes}
+          equipe={equipe.map(({ id, nome }) => ({ id, nome }))}
+          filtro={{
+            busca: busca.busca,
+            etapa: busca.etapa,
+            responsavel: busca.responsavel,
+            situacao: busca.situacao,
+            temperatura: busca.temperatura,
+          }}
+          parametros={Object.fromEntries(
+            Object.entries({ q: aberto.id, ver: 'lista', ...busca }).filter(
+              (par): par is [string, string] => typeof par[1] === 'string' && par[1] !== '',
+            ),
+          )}
+          agora={agora}
+        />
       ) : (
         <>
           <Quadro

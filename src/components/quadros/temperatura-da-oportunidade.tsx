@@ -44,11 +44,14 @@ export function TemperaturaDaOportunidade({
   clienteId,
   cartaoId,
   temperatura,
+  aoMudar,
 }: {
   clienteId: string
   cartaoId: string
   /** `null` é "não avaliada", e é diferente de morno. */
   temperatura: Temperatura | null
+  /** Para quem mostra a temperatura em outro lugar da tela (a página do negócio). */
+  aoMudar?: (temperatura: Temperatura | null) => void
 }) {
   const otimista = useAcaoOtimista<Temperatura | null>(temperatura)
 
@@ -72,6 +75,7 @@ export function TemperaturaDaOportunidade({
                 // Clicar no aceso desmarca: é o caminho de volta para "ainda
                 // não sei", que sem isto não existiria.
                 const proximo = aceso ? null : valor
+                aoMudar?.(proximo)
                 otimista.agir(proximo, () =>
                   acaoAvaliarOportunidade(clienteId, cartaoId, proximo ?? ''),
                 )
