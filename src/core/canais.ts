@@ -93,7 +93,7 @@ export const DEFINICAO_DO_CANAL: Record<CanalId, DefinicaoDeCanal> = {
      * Manter `false` é a regra deste arquivo sendo cumprida, não contornada:
      * oferecer o canal na criação de automação faria alguém desenhar um fluxo
      * inteiro para descobrir na hora de publicar que não há conta de cliente
-     * para ligar. A tela `/clientes/<id>/ajustes/instagram` já conecta e já recebe ,
+     * para ligar. A tela `/clientes/<id>/conversas/canais/instagram` já conecta e já recebe ,
      * com o nosso perfil, que é exatamente o que o Standard permite.
      */
     disponivel: false,

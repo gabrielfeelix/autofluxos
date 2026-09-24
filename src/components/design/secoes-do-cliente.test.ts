@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { MODELOS_EXTRA, type Acesso } from '@/core/permissoes'
-import { ITENS, destinoNaConta, liberaSecao, secoesVisiveis, telaInicial } from './secoes-do-cliente'
+import { ITENS, SECOES, destinoNaConta, liberaSecao, secoesVisiveis, telaInicial } from './secoes-do-cliente'
 
 /**
  * A barra lateral com o CRM opcional (T7.1, §4.2).
@@ -9,32 +9,34 @@ import { ITENS, destinoNaConta, liberaSecao, secoesVisiveis, telaInicial } from 
  * e se "não perguntei" escondesse o item, a barra piscaria um item a menos em
  * todo carregamento. É exatamente o defeito que este arquivo existe para evitar.
  */
+const ids = (secoes: ReturnType<typeof secoesVisiveis>) => secoes.flatMap((secao) => secao.itens.map((item) => item.id))
+const chaves = (secoes: ReturnType<typeof secoesVisiveis>) => secoes.map((secao) => secao.chave)
+
 describe('as seções visíveis', () => {
   it('sem resposta mostra tudo: é o esqueleto, e esconder faria a barra piscar', () => {
-    expect(secoesVisiveis()).toHaveLength(ITENS.length)
-    expect(secoesVisiveis({})).toHaveLength(ITENS.length)
-    expect(secoesVisiveis({ crmVisivel: undefined })).toHaveLength(ITENS.length)
+    expect(ids(secoesVisiveis())).toEqual(ITENS.map((item) => item.id))
+    expect(ids(secoesVisiveis({}))).toEqual(ITENS.map((item) => item.id))
+    expect(chaves(secoesVisiveis({ crmVisivel: undefined, lojaVisivel: undefined }))).toEqual(SECOES.map((secao) => secao.chave))
   })
 
-  it('com o CRM visível mostra tudo', () => {
-    expect(secoesVisiveis({ crmVisivel: true }).map((i) => i.chave)).toEqual(
-      ITENS.map((i) => i.chave),
-    )
+  it('sem o CRM esconde Negócios, e só ele', () => {
+    expect(ids(secoesVisiveis({ crmVisivel: false }))).toEqual(ITENS.map((item) => item.id).filter((id) => id !== 'negocios'))
   })
 
-  it('sem o CRM esconde o funil, e só ele', () => {
-    const chaves = secoesVisiveis({ crmVisivel: false }).map((i) => i.chave)
-    expect(chaves).not.toContain('quadros')
-    expect(chaves).toEqual(ITENS.filter((i) => i.chave !== 'quadros').map((i) => i.chave))
+  it('sem Loja a seção some inteira, e só ela', () => {
+    expect(chaves(secoesVisiveis({ lojaVisivel: false }))).toEqual(SECOES.map((secao) => secao.chave).filter((chave) => chave !== 'loja'))
   })
 
-  it('Inbox, Contatos e Configurações nunca somem', () => {
-    // O atendimento tem que funcionar sem CRM: é o ponto da tarefa. Se algum dia
-    // esconder o CRM levar o Inbox junto, este teste cai.
-    const chaves = secoesVisiveis({ crmVisivel: false }).map((i) => i.chave)
-    for (const essencial of ['inicio', 'inbox', 'leads', 'ajustes'] as const) {
-      expect(chaves).toContain(essencial)
+  it('Conversas, Contatos e Configurações nunca somem por recurso', () => {
+    // O atendimento tem que funcionar sem CRM e sem Loja.
+    const visiveis = ids(secoesVisiveis({ crmVisivel: false, lojaVisivel: false }))
+    for (const essencial of ['inicio', 'minhas', 'todas', 'contatos', 'ajustes']) {
+      expect(visiveis).toContain(essencial)
     }
+  })
+
+  it('todo subitem tem id único: é ele que acende', () => {
+    expect(new Set(ITENS.map((item) => item.id)).size).toBe(ITENS.length)
   })
 })
 
@@ -45,23 +47,22 @@ describe('as seções que esta pessoa pode usar (E7)', () => {
     sobrescritas: { ...MODELOS_EXTRA.operador },
   }
 
-  it('acesso de atendimento não vê Automações, Transmissões nem Configurações', () => {
-    const chaves = secoesVisiveis({ crmVisivel: true, regras: atendimento }).map((i) => i.chave)
-    expect(chaves).not.toContain('fluxos')
-    expect(chaves).not.toContain('transmissoes')
-    expect(chaves).not.toContain('ajustes')
-    expect(chaves).toEqual(ITENS.map((i) => i.chave).filter((c) => !['fluxos', 'transmissoes', 'ajustes'].includes(c)))
+  it('acesso de atendimento não vê Automações nem Configurações', () => {
+    const secoes = secoesVisiveis({ crmVisivel: true, regras: atendimento })
+    expect(chaves(secoes)).not.toContain('automacoes')
+    expect(chaves(secoes)).not.toContain('ajustes')
+    // As telas que saíram de Configurações levaram a exigência junto.
+    expect(ids(secoes)).not.toContain('respostas-rapidas')
+    expect(ids(secoes)).not.toContain('etiquetas')
+    expect(ids(secoes)).toEqual(expect.arrayContaining(['minhas', 'sem-dono', 'todas', 'salvas', 'contatos', 'atividades']))
   })
 
   it('membro sem exceção continua vendo tudo: o menu não tira acesso de quem já tinha', () => {
-    const chaves = secoesVisiveis({ crmVisivel: true, regras: { papel: 'member', usuarioId: 'u1' } })
-    expect(chaves).toHaveLength(ITENS.length)
+    expect(ids(secoesVisiveis({ crmVisivel: true, regras: { papel: 'member', usuarioId: 'u1' } }))).toEqual(ITENS.map((item) => item.id))
   })
 
   it('suporte 4YU vê tudo', () => {
-    expect(
-      secoesVisiveis({ crmVisivel: true, regras: { papel: null, ehAdminDaPlataforma: true } }),
-    ).toHaveLength(ITENS.length)
+    expect(ids(secoesVisiveis({ crmVisivel: true, regras: { papel: null, ehAdminDaPlataforma: true } }))).toEqual(ITENS.map((item) => item.id))
   })
 
   it('Configurações abre para quem mexe só na operação', () => {
@@ -98,6 +99,7 @@ describe('telaInicial e destinoNaConta', () => {
   it('a troca de conta mantém a seção quando a outra conta libera', () => {
     expect(destinoNaConta({ papel: 'owner' }, 'inbox')).toBe('/inbox')
     expect(destinoNaConta({ papel: 'owner' }, 'fluxos')).toBe('/fluxos')
+    expect(destinoNaConta({ papel: 'owner' }, 'etiquetas')).toBe('/leads/etiquetas')
   })
 
   it('seção fechada ou inventada cai na tela inicial, nunca na de sem acesso', () => {

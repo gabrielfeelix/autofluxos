@@ -3,7 +3,6 @@ import { notFound } from 'next/navigation'
 import { AjustesShell } from '@/components/design/ajustes-shell'
 import { ICONE_DA_TELA } from '@/components/design/icones-de-ajustes'
 import { planoVigente } from '@/server/repos/planos'
-import { estaAtivo } from '@/core/produtos'
 import { resumoDoCatalogo } from '@/core/conexoes'
 import { catalogoDeIntegracoes } from '@/server/catalogo-de-integracoes'
 import type { ReactNode } from 'react'
@@ -12,7 +11,6 @@ import { acaoApagarCliente } from '@/server/acoes'
 import { listarAcervo } from '@/server/repos/acervo'
 import { acharCliente, contarOQueSomeCom } from '@/server/repos/clientes'
 import { recursosDaConta } from '@/server/repos/recursos'
-import { canalDoInstagram } from '@/server/repos/canais-instagram'
 import { listarConexoes } from '@/server/repos/conexoes'
 import { paginasDaConta } from '@/server/repos/paginas-de-lead'
 import { listarCanais } from '@/server/repos/conversas'
@@ -20,10 +18,7 @@ import { listarFluxos } from '@/server/repos/fluxos'
 import { contarLeads } from '@/server/repos/leads'
 import { automacaoNoAr, trilhaDeConfiguracao } from '@/core/trilha-de-configuracao'
 import { TrilhaDeConfiguracao } from '@/components/cliente/trilha-de-configuracao'
-import { listarRespostasRapidas } from '@/server/repos/respostas-rapidas'
-import { listarEtiquetas } from '@/server/repos/etiquetas'
 import { planoDaConta } from '@/server/repos/plano'
-import { listarProdutos } from '@/server/repos/produtos'
 import { membrosDaConta, type MembroDaConta } from '@/server/repos/usuarios'
 
 export const dynamic = 'force-dynamic'
@@ -35,11 +30,10 @@ export const dynamic = 'force-dynamic'
  * que separa um índice de um menu: conferir se o contexto está preenchido ou
  * quantas chaves existem deixa de exigir abrir as três telas e voltar.
  *
- * As linhas moram em **cinco grupos por intenção** (Organização, Canais,
- * Automação de resposta, Ferramentas do atendimento, Conexões e APIs), e todas as telas de configuração moram sob `/ajustes/`. As duas
- * coisas são da mesma decisão, e o porquê de cada uma está em
- * `docs/PLANO-CONFIGURACOES.md`. Rota que mudou de endereço continua
- * respondendo pelo redirecionamento escrito em `next.config.ts`.
+ * As linhas moram em **três grupos** (Organização, Atendimento e IA,
+ * Conexões e APIs). O que é uso diário saiu para a barra lateral (plano de
+ * navegação de 24/set); rota que mudou de endereço continua respondendo pelo
+ * redirecionamento escrito em `next.config.ts`.
  */
 export default async function Pagina({
   params,
@@ -50,36 +44,20 @@ export default async function Pagina({
   const cliente = await acharCliente(clienteId)
   if (!cliente) notFound()
 
-  const [conexoes, canais, respostasRapidas, acervo, estrago, etiquetas, contaDoInstagram, paginasDeLead, plano, recursos, fluxos, contatos, catalogo, listaDeProdutos] =
+  const [conexoes, canais, acervo, estrago, paginasDeLead, plano, recursos, fluxos, contatos, catalogo] =
     await Promise.all([
       listarConexoes(cliente.id),
       listarCanais(cliente.id),
-      listarRespostasRapidas(cliente.id),
       listarAcervo(cliente.id),
       contarOQueSomeCom(cliente.id),
-      listarEtiquetas(cliente.id),
-      canalDoInstagram(cliente.id),
       paginasDaConta(cliente.id),
       planoDaConta(cliente.id),
       recursosDaConta(cliente.id),
       listarFluxos(cliente.id),
       contarLeads(cliente.id),
       catalogoDeIntegracoes(cliente.id),
-      listarProdutos(cliente.id),
     ])
-  const produtos = listaDeProdutos.filter(estaAtivo).length
   const semContexto = cliente.contextoNegocio.trim() === ''
-
-  /*
-   * A saúde dos canais é calculada aqui e desenhada nos selos abaixo.
-   *
-   * O índice é a tela em que alguém pergunta "está tudo ligado?", e até agora
-   * ele respondia só "quantos", um número derrubado pela Meta aparecia como
-   * "1 número", em verde, exatamente igual a um número funcionando. Quem contava
-   * a verdade era a tela de dentro, que ninguém abre sem motivo.
-   */
-  const estadoDe = (chave: string) => catalogo.find((i) => i.chave === chave)?.estado
-  const whatsappComFalha = Boolean(estadoDe('whatsapp')?.falha)
 
   const trilha = trilhaDeConfiguracao({
     empresa: cliente,
@@ -90,7 +68,6 @@ export default async function Pagina({
     temContato: contatos > 0,
   })
   const faltaNaTrilha = trilha.some((passo) => passo.estado !== 'feito')
-  const autorizacaoDoIg = estadoDe('instagram')?.autorizacao
 
   /*
    * Quantas do catálogo estão configuradas, contadas da mesma lista que a
@@ -115,20 +92,18 @@ export default async function Pagina({
           Configurações
         </h1>
         <p className="mt-1.5 mb-7 max-w-[640px] text-[13px] leading-6 text-dim">
-          Tudo que muda como esta conta atende: por onde as conversas entram, o que o bot sabe
-          responder, com quem o sistema fala e quem tem acesso.
+          O que se ajusta uma vez: quem é a organização e quem tem acesso, o que o bot sabe
+          responder e com quem o sistema fala.
         </p>
 
         {faltaNaTrilha && <TrilhaDeConfiguracao clienteId={cliente.id} passos={trilha} />}
 
         {/*
-          Cinco grupos por intenção (tarefa 10.1 do plano de UX de 23/09): o
-          nome do grupo diz para que a pessoa entrou, e não de que tipo é a
-          tela. Organização vem primeiro porque é o que uma conta nova preenche
-          antes de tudo; Conexões e APIs por último porque é episódico.
-
-          Continua sendo uma página só, e as rotas não mudaram. O raciocínio
-          antigo, com a pesquisa de mercado, está em `docs/PLANO-CONFIGURACOES.md`.
+          Três grupos, só com o que se ajusta uma vez (plano de navegação de
+          24/set). Canais, Respostas rápidas, Etiquetas e Catálogo saíram: são
+          trabalho do dia e moram agora em Conversas, CRM e Loja, na barra.
+          Organização vem primeiro porque é o que uma conta nova preenche antes
+          de tudo; Conexões e APIs por último porque é episódico.
         */}
         <Grupo
           titulo="Organização"
@@ -175,50 +150,8 @@ export default async function Pagina({
         </Grupo>
 
         <Grupo
-          titulo="Canais"
-          descricao="Por onde a conversa entra e sai. Canal caído é cliente sem atendimento."
-        >
-          <Cartao
-            href={`/clientes/${cliente.id}/ajustes/whatsapp`}
-            icone={ICONE_DA_TELA['whatsapp']}
-            titulo="WhatsApp"
-            descricao="Conecte seu número e escolha como receber e responder às mensagens."
-            estado={
-              whatsappComFalha ? (
-                <Selo tom="perigo">reconectar</Selo>
-              ) : (
-                <Selo tom={canais.length === 0 ? 'alerta' : 'ok'}>
-                  {canais.length === 0
-                    ? 'nenhum'
-                    : `${canais.length} ${canais.length === 1 ? 'número' : 'números'}`}
-                </Selo>
-              )
-            }
-          />
-          <Cartao
-            href={`/clientes/${cliente.id}/ajustes/instagram`}
-            icone={ICONE_DA_TELA['instagram']}
-            titulo="Instagram"
-            descricao="Ligar o direct de uma conta profissional para as mensagens chegarem no mesmo Inbox."
-            estado={
-              autorizacaoDoIg === 'vencida' ? (
-                <Selo tom="perigo">reconectar</Selo>
-              ) : autorizacaoDoIg === 'vence_em_breve' ? (
-                <Selo tom="alerta">vence em breve</Selo>
-              ) : (
-                <Selo tom={contaDoInstagram ? 'ok' : 'neutro'}>
-                  {contaDoInstagram
-                    ? (contaDoInstagram.igUsername ?? 'ligada')
-                    : 'nenhuma'}
-                </Selo>
-              )
-            }
-          />
-        </Grupo>
-
-        <Grupo
-          titulo="Automação de resposta"
-          descricao="O que o bot sabe e quando ele devolve a conversa para a equipe ou volta a responder."
+          titulo="Atendimento e IA"
+          descricao="O que o bot sabe, quando ele devolve a conversa para a equipe, e os arquivos que conversas e automações usam."
         >
           <Cartao
             href={`/clientes/${cliente.id}/ajustes/contexto`}
@@ -251,53 +184,6 @@ export default async function Pagina({
                   <Selo tom="alerta">não volta sozinho</Selo>
                 )}
               </span>
-            }
-          />
-        </Grupo>
-
-        <Grupo
-          titulo="Ferramentas do atendimento"
-          descricao="O que a equipe usa na conversa: frases prontas, etiquetas, catálogo e arquivos."
-        >
-          <Cartao
-            href={`/clientes/${cliente.id}/ajustes/respostas-rapidas`}
-            icone={ICONE_DA_TELA['respostas-rapidas']}
-            titulo="Respostas rápidas"
-            descricao="Frases prontas para inserir na conversa sem reescrever todo dia."
-            estado={
-              <Selo tom={respostasRapidas.length === 0 ? 'neutro' : 'ok'}>
-                {respostasRapidas.length === 0
-                  ? 'nenhuma'
-                  : `${respostasRapidas.length} ${respostasRapidas.length === 1 ? 'resposta' : 'respostas'}`}
-              </Selo>
-            }
-          />
-          <Cartao
-            href={`/clientes/${cliente.id}/ajustes/etiquetas`}
-            icone={ICONE_DA_TELA['etiquetas']}
-            titulo="Etiquetas"
-            descricao="As que uma pessoa cria e aplica. Viram filtro na lista de contatos."
-            estado={
-              <Selo tom={etiquetas.length === 0 ? 'neutro' : 'ok'}>
-                {etiquetas.length === 0
-                  ? 'nenhuma'
-                  : `${etiquetas.length} ${etiquetas.length === 1 ? 'etiqueta' : 'etiquetas'}`}
-              </Selo>
-            }
-          />
-          <Cartao
-            href={`/clientes/${cliente.id}/ajustes/produtos`}
-            icone={ICONE_DA_TELA['produtos']}
-            titulo="Catálogo"
-            descricao="Produtos que a equipe manda no Inbox e o bot consulta."
-            estado={
-              estadoDe('magento')?.configurado ? (
-                <Selo tom="ok">vem da Magento</Selo>
-              ) : (
-                <Selo tom={produtos === 0 ? 'neutro' : 'ok'}>
-                  {produtos === 0 ? 'vazio' : `${produtos} ${produtos === 1 ? 'item' : 'itens'}`}
-                </Selo>
-              )
             }
           />
           <Cartao

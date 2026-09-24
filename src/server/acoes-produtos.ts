@@ -31,7 +31,7 @@ import { sessaoAtual } from './sessao'
 export type RespostaDoCatalogo = { ok: true; produtos: Produto[] } | { ok: false; erro: string }
 
 function recarregar(clienteId: string): void {
-  revalidatePath(`/clientes/${clienteId}/ajustes/produtos`)
+  revalidatePath(`/clientes/${clienteId}/loja/catalogo`)
   revalidatePath(`/clientes/${clienteId}/quadros`)
 }
 

@@ -31,7 +31,7 @@ export async function GET(req: Request) {
     redirect('/painel?erro=instagram_estado')
   }
 
-  const destino = `/clientes/${clienteId}/ajustes/instagram`
+  const destino = `/clientes/${clienteId}/conversas/canais/instagram`
 
   /*
    * **A sessão pode não vir aqui, e isso é normal.** Mesmo motivo da rota do

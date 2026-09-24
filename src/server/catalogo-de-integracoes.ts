@@ -55,7 +55,7 @@ export async function catalogoDeIntegracoes(clienteId: string): Promise<ItemDoCa
       nome: 'WhatsApp',
       categoria: 'Canal',
       descricao: 'O número da empresa atendendo pela Cloud API da Meta. É por onde a conversa entra e sai.',
-      href: '/ajustes/whatsapp',
+      href: '/conversas/canais/whatsapp',
       disponivel: true,
       estado: estadoDaConexao({
         tipo: 'whatsapp',
@@ -72,7 +72,7 @@ export async function catalogoDeIntegracoes(clienteId: string): Promise<ItemDoCa
       nome: 'Instagram',
       categoria: 'Canal',
       descricao: 'O direct de uma conta profissional chegando no mesmo Inbox do WhatsApp.',
-      href: '/ajustes/instagram',
+      href: '/conversas/canais/instagram',
       disponivel: true,
       estado: estadoDaConexao({
         tipo: 'instagram',
@@ -115,12 +115,12 @@ export async function catalogoDeIntegracoes(clienteId: string): Promise<ItemDoCa
       nome: 'Loja Magento',
       categoria: 'Loja',
       descricao: 'O bot consulta o catálogo da loja na hora: diz se tem, quanto custa e manda o link do produto.',
-      href: '/ajustes/integracoes/magento',
+      href: '/loja/magento',
       disponivel: true,
       estado: estadoDaConexao({
         tipo: 'cadastro',
         configurado: Boolean(loja?.ativa),
-        href: '/ajustes/integracoes/magento',
+        href: '/loja/magento',
       }),
     },
     {

@@ -613,7 +613,7 @@ function PrimeiraVez({ clienteId, temCanal }: { clienteId: string; temCanal: boo
               vazio que leva ao lugar errado é pior que estado vazio sem botão:
               ele ensina que o produto não sabe para onde mandar a pessoa. */}
           <Link
-            href={`/clientes/${clienteId}/ajustes/whatsapp`}
+            href={`/clientes/${clienteId}/conversas/canais/whatsapp`}
             className="app-secondary-button mt-5 inline-block px-5 py-2.5 text-[13px]"
           >
             Conectar um número

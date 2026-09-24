@@ -117,3 +117,26 @@ export async function crmVisivel(clienteId: string): Promise<boolean> {
 export function crmAoCriar(objetivo: Objetivo): boolean {
   return nasceComCrm(objetivo)
 }
+
+/**
+ * A Loja aparece no menu desta conta? (plano de navegação, 5.6)
+ *
+ * Ainda não existe interruptor de Loja em Objetivo e recursos; enquanto não
+ * existe, vale o mesmo raciocínio do `crmVisivel`: a conta que escolheu vender
+ * vê, e **quem já usa não perde a tela** (loja conectada ou catálogo com item).
+ * Estúdio de pilates, que atende e não tem catálogo, não vê.
+ *
+ * Erro de leitura responde `true`: esconder Catálogo de quem usa, por uma
+ * consulta que falhou, seria apagar uma tela por acidente.
+ */
+export async function lojaVisivel(clienteId: string): Promise<boolean> {
+  const { objetivo } = await recursosDaConta(clienteId)
+  if (objetivo === 'vender') return true
+
+  const [lojas, produtos] = await Promise.all([
+    db().from('lojas_integradas').select('client_id', { count: 'exact', head: true }).eq('client_id', clienteId),
+    db().from('produtos').select('id', { count: 'exact', head: true }).eq('client_id', clienteId),
+  ])
+  if (lojas.error || produtos.error) return true
+  return (lojas.count ?? 0) > 0 || (produtos.count ?? 0) > 0
+}

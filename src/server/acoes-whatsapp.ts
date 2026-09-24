@@ -18,7 +18,7 @@ export async function acaoConectarWhatsapp(dados: FormData): Promise<void> {
   await exigirAcessoAoCliente(clienteId)
 
   if (!whatsappConfigurado()) {
-    redirect(`/clientes/${clienteId}/ajustes/whatsapp?resultado=sem_app`)
+    redirect(`/clientes/${clienteId}/conversas/canais/whatsapp?resultado=sem_app`)
   }
 
   /*

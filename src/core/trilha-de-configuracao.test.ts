@@ -51,7 +51,7 @@ describe('trilhaDeConfiguracao', () => {
 
   it('publicada mas o canal aponta para outra: leva ao canal', () => {
     const [, , , automacao] = trilhaDeConfiguracao({ ...nova, canais: 1, publicados: 1 })
-    expect(automacao).toMatchObject({ href: '/ajustes/whatsapp' })
+    expect(automacao).toMatchObject({ href: '/conversas/canais/whatsapp' })
   })
 
   it('horário e conhecimento dizem o que falta', () => {

@@ -78,7 +78,7 @@ export function trilhaDeConfiguracao(f: FatosDaTrilha): PassoDaTrilha[] {
       titulo: 'Canal',
       estado: canalFeito ? 'feito' : 'pendente',
       motivo: canalFeito ? null : 'Ligue o WhatsApp ou o Instagram',
-      href: '/ajustes/whatsapp',
+      href: '/conversas/canais/whatsapp',
     },
     {
       chave: 'horario',
@@ -98,7 +98,7 @@ export function trilhaDeConfiguracao(f: FatosDaTrilha): PassoDaTrilha[] {
           : f.publicados === 0
             ? 'Publique uma automação'
             : 'O canal não aponta para a automação publicada',
-      href: canalFeito && f.publicados > 0 ? '/ajustes/whatsapp' : '/fluxos',
+      href: canalFeito && f.publicados > 0 ? '/conversas/canais/whatsapp' : '/fluxos',
     },
     {
       chave: 'teste',

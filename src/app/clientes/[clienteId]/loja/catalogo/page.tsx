@@ -1,7 +1,7 @@
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { AjudaDaTela, type PassoDaAjuda } from '@/components/design/ajuda-da-tela'
-import { AjustesShell } from '@/components/design/ajustes-shell'
+import { ClienteShell } from '@/components/design/cliente-shell'
 import { Trilha } from '@/components/design/trilha'
 import { Dropdown } from '@/components/design/dropdown'
 import { ModalFormulario, RotuloCampo } from '@/components/design/modal-formulario'
@@ -84,11 +84,11 @@ export default async function Pagina({ params }: { params: Promise<{ clienteId: 
   const arquivados = produtos.filter((p) => !estaAtivo(p))
 
   return (
-    <AjustesShell cliente={cliente} ativa="produtos">
-      <main className="w-full max-w-[1100px] px-4 md:px-[42px] pt-[26px] pb-[42px]">
+    <ClienteShell cliente={cliente} ativa="loja">
+      <main className="w-full max-w-[1440px] px-4 md:px-[42px] pt-[26px] pb-[42px]">
         <Trilha
           caminho={[
-            { rotulo: 'Configurações', href: `/clientes/${cliente.id}/ajustes` },
+            { rotulo: 'Loja' },
             { rotulo: 'Catálogo' },
           ]}
         />
@@ -135,7 +135,7 @@ export default async function Pagina({ params }: { params: Promise<{ clienteId: 
               </span>
             </span>
             <Link
-              href={`/clientes/${cliente.id}/ajustes/integracoes/magento`}
+              href={`/clientes/${cliente.id}/loja/magento`}
               className="app-secondary-button px-3 py-1.5 text-[11.5px]"
             >
               Ver a loja
@@ -307,6 +307,6 @@ export default async function Pagina({ params }: { params: Promise<{ clienteId: 
           </section>
         )}
       </main>
-    </AjustesShell>
+    </ClienteShell>
   )
 }

@@ -160,7 +160,7 @@ export async function acaoConectarToken(
     estoqueId: descoberta.valor.estoqueId,
   })
 
-  revalidatePath(`/clientes/${clienteId}/ajustes/integracoes/magento`)
+  revalidatePath(`/clientes/${clienteId}/loja/magento`)
   return { ok: true, via: descoberta.valor.via }
 }
 
@@ -178,6 +178,6 @@ export async function acaoDesconectarToken(clienteId: string): Promise<{ ok: tru
   const { conexaoId } = await desligarEstoqueExato(clienteId)
   if (conexaoId) await apagarConexao(conexaoId, clienteId)
 
-  revalidatePath(`/clientes/${clienteId}/ajustes/integracoes/magento`)
+  revalidatePath(`/clientes/${clienteId}/loja/magento`)
   return { ok: true }
 }

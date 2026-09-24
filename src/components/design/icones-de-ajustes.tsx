@@ -34,7 +34,9 @@ function Svg({ children }: { children: React.ReactNode }) {
   )
 }
 
-export const ICONE_DA_TELA: Record<TelaDeAjustes, React.ReactNode> = {
+// Os ícones das telas que saíram de Configurações (plano de navegação de
+// 24/set) ficam: continuam sendo o desenho dessas telas onde elas aparecerem.
+export const ICONE_DA_TELA: Record<TelaDeAjustes | 'whatsapp' | 'instagram' | 'respostas-rapidas' | 'etiquetas' | 'produtos', React.ReactNode> = {
   inicio: (
     <Svg>
       <rect x="3" y="3" width="7" height="7" rx="1.5" />

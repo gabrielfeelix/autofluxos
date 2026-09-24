@@ -64,12 +64,28 @@ export const cabecalhos = [
  * O motivo de cada nome novo está em `docs/PLANO-CONFIGURACOES.md` §2.
  */
 const TELAS_QUE_MUDARAM: { de: string; para: string }[] = [
-  { de: 'numero', para: 'ajustes/whatsapp' },
-  { de: 'instagram', para: 'ajustes/instagram' },
+  { de: 'numero', para: 'conversas/canais/whatsapp' },
+  { de: 'instagram', para: 'conversas/canais/instagram' },
   { de: 'conexoes', para: 'ajustes/chaves' },
   { de: 'anuncios', para: 'ajustes/anuncios' },
   { de: 'acervo', para: 'ajustes/acervo' },
   { de: 'contexto', para: 'ajustes/contexto' },
+]
+
+/**
+ * As telas que saíram de Configurações no plano de navegação de 24/set
+ * (`docs/PLANO-NAVEGACAO-E-CRM-2026-09-24.md`, seção 4): eram trabalho do dia
+ * escondido debaixo de ajuste. Mesmo motivo do 308 acima: link salvo e print
+ * com URL continuam chegando no lugar certo, e o `:resto*` leva junto o que vem
+ * depois do nome (a busca, `?resultado=`, passa sozinha).
+ */
+const SAIRAM_DE_CONFIGURACOES: { de: string; para: string }[] = [
+  { de: 'ajustes/whatsapp', para: 'conversas/canais/whatsapp' },
+  { de: 'ajustes/instagram', para: 'conversas/canais/instagram' },
+  { de: 'ajustes/respostas-rapidas', para: 'conversas/respostas-rapidas' },
+  { de: 'ajustes/etiquetas', para: 'leads/etiquetas' },
+  { de: 'ajustes/produtos', para: 'loja/catalogo' },
+  { de: 'ajustes/integracoes/magento', para: 'loja/magento' },
 ]
 
 const config: NextConfig = {
@@ -78,11 +94,28 @@ const config: NextConfig = {
   },
 
   async redirects() {
-    return TELAS_QUE_MUDARAM.map(({ de, para }) => ({
-      source: `/clientes/:clienteId/${de}`,
-      destination: `/clientes/:clienteId/${para}`,
-      permanent: true,
-    }))
+    return [
+      ...TELAS_QUE_MUDARAM.map(({ de, para }) => ({
+        source: `/clientes/:clienteId/${de}`,
+        destination: `/clientes/:clienteId/${para}`,
+        permanent: true,
+      })),
+      ...SAIRAM_DE_CONFIGURACOES.map(({ de, para }) => ({
+        source: `/clientes/:clienteId/${de}/:resto*`,
+        destination: `/clientes/:clienteId/${para}/:resto*`,
+        permanent: true,
+      })),
+      /*
+       * `/loja` sozinha ainda não é tela: a grade de plataformas é a F4 do
+       * plano. Até lá leva à única loja que existe, e **não** é permanente,
+       * porque o navegador guardaria o 308 e a grade nunca apareceria.
+       */
+      {
+        source: '/clientes/:clienteId/loja',
+        destination: '/clientes/:clienteId/loja/magento',
+        permanent: false,
+      },
+    ]
   },
 
   /**

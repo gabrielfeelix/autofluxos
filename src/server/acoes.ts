@@ -614,7 +614,7 @@ export async function acaoDefinirFluxosDoNumero(
   const r = await definirFluxosDoNumero(clienteId, canalId, fluxos)
   if (!r.ok) return { erro: r.motivo }
 
-  revalidatePath(`/clientes/${clienteId}/ajustes/whatsapp`)
+  revalidatePath(`/clientes/${clienteId}/conversas/canais/whatsapp`)
   revalidatePath(`/clientes/${clienteId}`)
   return { ok: true }
 }
@@ -831,7 +831,7 @@ export async function acaoCriarEtiqueta(
    * porque o seletor a acrescenta à lista sem esperar resposta. E quem cria em
    * Configurações está *nesta* página, que é a única que precisa ser refeita.
    */
-  revalidatePath(`/clientes/${clienteId}/ajustes/etiquetas`)
+  revalidatePath(`/clientes/${clienteId}/leads/etiquetas`)
   return { ok: true, etiqueta: r.etiqueta }
 }
 
@@ -852,7 +852,7 @@ export async function acaoEditarEtiqueta(
   const r = await editarEtiqueta(clienteId, etiquetaId, { nome, cor })
   if (!r.ok) return { erro: r.motivo }
 
-  revalidatePath(`/clientes/${clienteId}/ajustes/etiquetas`)
+  revalidatePath(`/clientes/${clienteId}/leads/etiquetas`)
   revalidatePath(`/clientes/${clienteId}/leads`)
   return { ok: true }
 }
@@ -865,7 +865,7 @@ export async function acaoApagarEtiqueta(
   if (recusou(acesso)) return acesso
 
   const apagou = await apagarEtiqueta(clienteId, etiquetaId)
-  revalidatePath(`/clientes/${clienteId}/ajustes/etiquetas`)
+  revalidatePath(`/clientes/${clienteId}/leads/etiquetas`)
   revalidatePath(`/clientes/${clienteId}/leads`)
   revalidatePath(`/clientes/${clienteId}/inbox`)
   return apagou.ok ? { ok: true } : { ok: false, erro: apagou.motivo }
@@ -1856,7 +1856,6 @@ export async function acaoRemoverDaConta(
     impersonadoPor: acesso.sessao?.impersonadoPor ?? null,
   })
 
-  revalidatePath(`/clientes/${clienteId}/ajustes/equipe`)
   return { ok: true }
 }
 
@@ -2057,7 +2056,7 @@ export async function acaoCriarRespostaRapida(
 
   revalidatePath(`/clientes/${clienteId}/inbox`)
   revalidatePath(`/clientes/${clienteId}/ajustes`)
-  revalidatePath(`/clientes/${clienteId}/ajustes/respostas-rapidas`)
+  revalidatePath(`/clientes/${clienteId}/conversas/respostas-rapidas`)
   return { ok: true }
 }
 
@@ -2077,7 +2076,7 @@ export async function acaoApagarRespostaRapida(
 
   revalidatePath(`/clientes/${clienteId}/inbox`)
   revalidatePath(`/clientes/${clienteId}/ajustes`)
-  revalidatePath(`/clientes/${clienteId}/ajustes/respostas-rapidas`)
+  revalidatePath(`/clientes/${clienteId}/conversas/respostas-rapidas`)
   return { ok: true }
 }
 

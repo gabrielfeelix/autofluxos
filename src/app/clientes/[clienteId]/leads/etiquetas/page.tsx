@@ -1,6 +1,6 @@
 import { notFound } from 'next/navigation'
 import { BotaoPerigo } from '@/components/design/botao-perigo'
-import { AjustesShell } from '@/components/design/ajustes-shell'
+import { ClienteShell } from '@/components/design/cliente-shell'
 import { Trilha } from '@/components/design/trilha'
 import { Dropdown } from '@/components/design/dropdown'
 import { ModalFormulario, RotuloCampo } from '@/components/design/modal-formulario'
@@ -28,11 +28,11 @@ export default async function Pagina({ params }: { params: Promise<{ clienteId: 
   const criarComCliente = acaoCriarEtiqueta.bind(null, cliente.id, {})
 
   return (
-    <AjustesShell cliente={cliente} ativa="etiquetas">
-      <main className="w-full max-w-[1100px] px-4 md:px-[42px] pt-[26px] pb-[42px]">
+    <ClienteShell cliente={cliente} ativa="etiquetas">
+      <main className="w-full max-w-[1440px] px-4 md:px-[42px] pt-[26px] pb-[42px]">
         <Trilha
           caminho={[
-            { rotulo: 'Configurações', href: `/clientes/${cliente.id}/ajustes` },
+            { rotulo: 'CRM' },
             { rotulo: 'Etiquetas' },
           ]}
         />
@@ -147,6 +147,6 @@ export default async function Pagina({ params }: { params: Promise<{ clienteId: 
           )}
         </section>
       </main>
-    </AjustesShell>
+    </ClienteShell>
   )
 }

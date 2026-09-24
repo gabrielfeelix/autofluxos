@@ -6,6 +6,8 @@ import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { Avatar } from '@/components/design/avatar'
 import { BotaoDeTema } from '@/components/design/tema'
 import { usePerfil } from '@/components/conta/voce'
+import type { Aceso } from './aba-do-caminho'
+import type { SecaoDaBarra } from './barra-lateral'
 
 type Item = {
   chave: string
@@ -18,15 +20,11 @@ type Item = {
 
 /**
  * O celular com cara de aplicativo: saudação e menu no topo, cinco atalhos
- * embaixo, o Inbox no meio.
+ * embaixo.
  *
- * A ordem foi pedida pelo dono: Painel, Contatos, **Inbox** (o botão de
- * destaque, no centro, onde o polegar alcança sem esticar), Atividades e Funil.
- * O resto (Automações, Transmissões, Relatórios, Configurações) mora na gaveta
- * do menu, porque é trabalho de montar, e não de atender o dia inteiro.
- *
- * Quando a pessoa não pode ver um dos cinco, ou o funil está desligado, o lugar
- * vai para o próximo da gaveta. Barra com buraco parece quebrada.
+ * A organização passa `secoes` e usa `BaixoPorSecoes` e `GavetaPorSecoes`, no
+ * fim deste arquivo (plano de navegação de 24/set). A ordem e as reservas
+ * abaixo ficaram para quem passa `itens` planos: a administração.
  */
 const ORDEM_DE_BAIXO = ['inicio', 'leads', 'inbox', 'atividades', 'quadros']
 const RESERVAS = ['fluxos', 'relatorios', 'transmissoes', 'ajustes']
@@ -61,9 +59,14 @@ export function BarraDoCelular({
   presenca,
   carregando,
   aoAbrirVoce,
+  secoes,
+  aceso,
 }: {
   base?: string
   itens: Item[]
+  /** As seções da organização: com elas, a barra de baixo é a do plano de navegação. */
+  secoes?: SecaoDaBarra[]
+  aceso?: Aceso | null
   contaNoTopo?: ReactNode
   voltarHref?: string
   voltarRotulo?: string
@@ -77,7 +80,7 @@ export function BarraDoCelular({
   const gaveta = useRef<HTMLDialogElement>(null)
   const caminho = usePathname()
   const perfil = usePerfil()
-  const embaixo = itensDeBaixo(itens, ordemDeBaixo)
+  const embaixo = secoes ? [] : itensDeBaixo(itens, ordemDeBaixo)
   const curtos = ordemDeBaixo ? ROTULO_CURTO_DA_ADMINISTRACAO : ROTULO_CURTO
   const naGaveta = itens.filter((item) => !embaixo.includes(item))
   const esperando = useConversasEsperando(carregando ? undefined : base)
@@ -202,7 +205,8 @@ export function BarraDoCelular({
                 <span aria-hidden>‹</span> {voltarRotulo}
               </Link>
             )}
-            {naGaveta.map((item) =>
+            {secoes && <GavetaPorSecoes secoes={secoes} aceso={aceso ?? null} carregando={carregando} />}
+            {!secoes && naGaveta.map((item) =>
               link(
                 item,
                 `flex items-center gap-3 rounded-xl px-3 py-3 text-[15px] font-semibold [&_svg]:size-[19px] ${item.acesa ? 'bg-primary-weak text-primary' : 'text-ink hover:bg-surface'}`,
@@ -255,7 +259,16 @@ export function BarraDoCelular({
         aria-label={rotuloDaNavegacao}
         className="app-barra-de-baixo fixed inset-x-0 bottom-0 z-30 border-t border-line bg-panel/95 pb-[env(safe-area-inset-bottom)] backdrop-blur md:hidden"
       >
-        <div className="mx-auto grid h-16 max-w-[520px] grid-cols-5 grid-rows-[4rem]">
+        {secoes && (
+          <BaixoPorSecoes
+            secoes={secoes}
+            aceso={aceso ?? null}
+            esperando={esperando}
+            carregando={carregando}
+            aoAbrirMais={() => gaveta.current?.showModal()}
+          />
+        )}
+        <div className={`mx-auto h-16 max-w-[520px] grid-cols-5 grid-rows-[4rem] ${secoes ? 'hidden' : 'grid'}`}>
           {embaixo.map((item, posicao) =>
             posicao === 2 && item.chave === 'inbox'
               ? link(
@@ -346,4 +359,196 @@ function useConversasEsperando(base: string | undefined): number {
     }
   }, [base])
   return quantas
+}
+
+/**
+ * A barra de baixo da organização: Conversas, Contatos, Negócios, Atividades e
+ * "Mais" (plano de navegação, seção 3, item 7).
+ *
+ * São as quatro telas de quem trabalha o dia inteiro no celular; o resto é
+ * montar e ajustar, e fica na gaveta, que "Mais" abre com a barra inteira.
+ * Quem não vê uma das quatro (CRM desligado, acesso de atendimento) ganha o
+ * próximo da reserva no lugar: barra com buraco parece quebrada.
+ */
+const DE_BAIXO: { id: string; rotulo: string; icone: ReactNode }[] = [
+  { id: 'conversas', rotulo: 'Conversas', icone: <IconeDeMensagem /> },
+  { id: 'contatos', rotulo: 'Contatos', icone: <IconeDePessoas /> },
+  { id: 'negocios', rotulo: 'Negócios', icone: <IconeDeNegocios /> },
+  { id: 'atividades', rotulo: 'Atividades', icone: <IconeDeAgenda /> },
+  { id: 'fluxos', rotulo: 'Automações', icone: <IconeDeFluxo /> },
+  { id: 'atendimento', rotulo: 'Análise', icone: <IconeDeGrafico /> },
+]
+
+function BaixoPorSecoes({
+  secoes,
+  aceso,
+  esperando,
+  carregando,
+  aoAbrirMais,
+}: {
+  secoes: SecaoDaBarra[]
+  aceso: Aceso | null
+  esperando: number
+  carregando: boolean
+  aoAbrirMais: () => void
+}) {
+  const subitens = secoes.flatMap((secao) => secao.itens)
+  const atalhos = DE_BAIXO.flatMap((atalho) => {
+    if (atalho.id === 'conversas') {
+      const secao = secoes.find((candidata) => candidata.chave === 'conversas')
+      return secao ? [{ ...atalho, href: secao.itens[0]!.href, acesa: aceso?.secao === 'conversas', contador: undefined as ReactNode }] : []
+    }
+    const item = subitens.find((candidato) => candidato.id === atalho.id)
+    return item ? [{ ...atalho, href: item.href, acesa: aceso?.item === atalho.id, contador: item.contador }] : []
+  }).slice(0, 4)
+  const classe = (acesa: boolean) =>
+    `relative flex h-full flex-col items-center justify-end gap-1 pb-2 [&_svg]:size-[22px] ${acesa ? 'text-primary' : 'text-muted'}`
+
+  return (
+    <div className="mx-auto grid h-16 max-w-[520px] grid-cols-5 grid-rows-[4rem]">
+      {atalhos.map((atalho) => (
+        <Link
+          key={atalho.id}
+          href={atalho.href}
+          aria-current={atalho.acesa ? 'page' : undefined}
+          aria-disabled={carregando || undefined}
+          tabIndex={carregando ? -1 : undefined}
+          onClick={(evento) => {
+            if (carregando) evento.preventDefault()
+          }}
+          className={classe(atalho.acesa)}
+        >
+          {atalho.acesa && <span aria-hidden className="absolute top-0 h-[3px] w-8 rounded-b-full bg-primary" />}
+          <span aria-hidden className="relative">
+            {atalho.icone}
+            {atalho.id === 'conversas' && esperando > 0 && (
+              <span className="absolute -top-1.5 left-3.5 flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-perigo px-1 text-[10.5px] font-bold text-white ring-2 ring-panel">
+                {esperando > 99 ? '99+' : esperando}
+              </span>
+            )}
+            {atalho.contador && <span className="absolute -top-2 left-3 [&>*]:scale-90">{atalho.contador}</span>}
+          </span>
+          <span className="text-[10.5px] font-semibold">{atalho.rotulo}</span>
+        </Link>
+      ))}
+      <button type="button" onClick={aoAbrirMais} aria-haspopup="dialog" className={classe(false)}>
+        <span aria-hidden>
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor">
+            <circle cx="5" cy="12" r="1.9" />
+            <circle cx="12" cy="12" r="1.9" />
+            <circle cx="19" cy="12" r="1.9" />
+          </svg>
+        </span>
+        <span className="text-[10.5px] font-semibold">Mais</span>
+      </button>
+    </div>
+  )
+}
+
+/**
+ * A gaveta da organização: o mapa inteiro, todas as seções abertas.
+ *
+ * No computador a barra é sanfona para não virar uma lista de 25; aqui a
+ * gaveta só abre quando alguém procura alguma coisa, e procurar é mais rápido
+ * com tudo à vista. Qualquer tela fica a dois toques: "Mais" e o item.
+ */
+function GavetaPorSecoes({ secoes, aceso, carregando }: { secoes: SecaoDaBarra[]; aceso: Aceso | null; carregando: boolean }) {
+  const bloquear = carregando
+    ? { 'aria-disabled': true, tabIndex: -1, onClick: (evento: { preventDefault(): void }) => evento.preventDefault() }
+    : {}
+  return (
+    <div className="flex flex-col gap-4">
+      {secoes.map((secao) =>
+        secao.solta ? (
+          <Link
+            key={secao.chave}
+            href={secao.itens[0]!.href}
+            {...bloquear}
+            aria-current={aceso?.secao === secao.chave ? 'page' : undefined}
+            className={`flex items-center gap-3 rounded-xl px-3 py-2.5 text-[15px] font-semibold [&_svg]:size-[19px] ${
+              aceso?.secao === secao.chave ? 'bg-primary-weak text-primary' : 'text-ink hover:bg-surface'
+            }`}
+          >
+            <span aria-hidden className={aceso?.secao === secao.chave ? 'text-primary' : 'text-dim'}>{secao.icone}</span>
+            {secao.rotulo}
+          </Link>
+        ) : (
+          <section key={secao.chave} aria-label={secao.rotulo}>
+            <p className="flex items-center gap-2 px-3 pb-1 text-[11px] font-semibold tracking-[0.08em] text-dim uppercase [&_svg]:size-[14px]">
+              <span aria-hidden>{secao.icone}</span>
+              {secao.rotulo}
+            </p>
+            <ul>
+              {secao.itens.map((item) => {
+                const acesa = aceso?.secao === secao.chave && aceso.item === item.id
+                return (
+                  <li key={item.id}>
+                    <Link
+                      href={item.href}
+                      {...bloquear}
+                      aria-current={acesa ? 'page' : undefined}
+                      className={`flex items-center gap-3 rounded-xl px-3 py-2.5 text-[15px] ${
+                        acesa ? 'bg-primary-weak font-semibold text-primary' : 'font-medium text-ink hover:bg-surface'
+                      }`}
+                    >
+                      <span className="flex-1">{item.rotulo}</span>
+                      {item.contador}
+                    </Link>
+                  </li>
+                )
+              })}
+            </ul>
+          </section>
+        ),
+      )}
+    </div>
+  )
+}
+
+function IconeDePessoas() {
+  return (
+    <svg aria-hidden width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round">
+      <circle cx="9.5" cy="8" r="3.6" />
+      <path d="M3 19.5c0-3.3 2.9-5.5 6.5-5.5s6.5 2.2 6.5 5.5" />
+      <path d="M16.5 4.6a3.4 3.4 0 0 1 0 6.6M18.6 14.4c1.5.8 2.4 2.4 2.4 4.4" opacity=".55" />
+    </svg>
+  )
+}
+
+function IconeDeNegocios() {
+  return (
+    <svg aria-hidden width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round">
+      <rect x="3" y="4" width="5" height="16" rx="1.5" />
+      <rect x="9.5" y="4" width="5" height="11" rx="1.5" />
+      <rect x="16" y="4" width="5" height="13.5" rx="1.5" opacity=".6" />
+    </svg>
+  )
+}
+
+function IconeDeAgenda() {
+  return (
+    <svg aria-hidden width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round">
+      <rect x="4" y="5" width="16" height="16" rx="3" />
+      <path d="M8 3v4m8-4v4M4 11h16m-12 5 2 2 5-4" />
+    </svg>
+  )
+}
+
+function IconeDeFluxo() {
+  return (
+    <svg aria-hidden width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
+      <circle cx="6" cy="6" r="2.8" />
+      <circle cx="18" cy="6" r="2.8" />
+      <circle cx="12" cy="18.5" r="2.8" />
+      <path d="M6 8.8v1.6a2.4 2.4 0 0 0 2.4 2.4h7.2a2.4 2.4 0 0 0 2.4-2.4V8.8M12 12.8v2.9" />
+    </svg>
+  )
+}
+
+function IconeDeGrafico() {
+  return (
+    <svg aria-hidden width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round">
+      <path d="M3.5 20.5h17M7 17v-4M12 17V7M17 17v-6.5" />
+    </svg>
+  )
 }

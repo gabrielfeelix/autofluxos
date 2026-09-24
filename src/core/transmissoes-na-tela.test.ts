@@ -65,7 +65,7 @@ describe('a próxima ação de cada transmissão', () => {
       'c1',
     )
     expect(r?.link?.href).toBe(
-      `/clientes/c1/ajustes/whatsapp?volta=${encodeURIComponent('/clientes/c1/transmissoes/x')}`,
+      `/clientes/c1/conversas/canais/whatsapp?volta=${encodeURIComponent('/clientes/c1/transmissoes/x')}`,
     )
   })
 
@@ -77,7 +77,7 @@ describe('a próxima ação de cada transmissão', () => {
       'este cliente não tem um número de WhatsApp conectado',
     )
     const r = proximaAcaoDaTransmissao({ nome, estado, criadaEm, quando, erro }, undefined, 'c1')
-    expect(r?.link?.href).toBe('/clientes/c1/ajustes/whatsapp')
+    expect(r?.link?.href).toBe('/clientes/c1/conversas/canais/whatsapp')
   })
 
   it('falha sem ação possível diz que não há nova tentativa automática', () => {

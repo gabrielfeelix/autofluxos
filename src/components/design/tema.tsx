@@ -1,6 +1,7 @@
 'use client'
 
 import { useSyncExternalStore } from 'react'
+import { BARRA_RECOLHIDA, COOKIE_DA_BARRA } from './cookie-da-barra'
 
 /**
  * As preferências que o navegador guarda e o `<html>` carrega como atributo.
@@ -8,10 +9,16 @@ import { useSyncExternalStore } from 'react'
  * As duas seguem o mesmo desenho, e por um motivo só: as duas precisam estar
  * aplicadas **antes da primeira pintura**. Tema lido tarde pisca a tela
  * inteira; barra lida tarde pisca a largura da barra e empurra o conteúdo.
+ *
+ * **A barra mora em cookie, o tema em `localStorage`.** A barra recolhida
+ * muda o que o servidor desenha (os rótulos, a largura, o que aparece no
+ * topo), e o servidor só lê cookie: com ela no `localStorage`, a página vinha
+ * larga do servidor e encolhia na hidratação, na frente da pessoa. O tema não
+ * precisa: ele é só CSS, e o script do `<head>` resolve antes de pintar.
  */
 export const PREFERENCIAS = {
   tema: { chave: 'autofluxos:tema', atributo: 'data-tema', quandoVale: 'escuro' },
-  barra: { chave: 'autofluxos:barra', atributo: 'data-barra', quandoVale: 'recolhida' },
+  barra: { chave: 'autofluxos:barra', atributo: 'data-barra', quandoVale: BARRA_RECOLHIDA },
 } as const
 
 export type Preferencia = keyof typeof PREFERENCIAS
@@ -71,12 +78,13 @@ export const LARGURA_DA_FILA = {
  */
 export const SCRIPT_DAS_PREFERENCIAS =
   'var d=document.documentElement;' +
-  Object.values(PREFERENCIAS)
-    .map(
-      (p) =>
-        `try{if(localStorage.getItem('${p.chave}')==='${p.quandoVale}')d.setAttribute('${p.atributo}','${p.quandoVale}')}catch(e){}`,
-    )
-    .join('') +
+  `try{if(localStorage.getItem('${PREFERENCIAS.tema.chave}')==='${PREFERENCIAS.tema.quandoVale}')d.setAttribute('${PREFERENCIAS.tema.atributo}','${PREFERENCIAS.tema.quandoVale}')}catch(e){}` +
+  // A barra vem do cookie. Quem recolheu antes do cookie existir tem a escolha
+  // no `localStorage`: ela é copiada para o cookie uma vez, para ninguém ver a
+  // barra abrir sozinha depois da troca.
+  `try{var c=document.cookie.match(/(?:^|; )${COOKIE_DA_BARRA}=([^;]*)/),b=c?c[1]:localStorage.getItem('${PREFERENCIAS.barra.chave}');` +
+  `if(!c&&b)document.cookie='${COOKIE_DA_BARRA}='+b+';path=/;max-age=31536000;samesite=lax';` +
+  `if(b==='${PREFERENCIAS.barra.quandoVale}')d.setAttribute('${PREFERENCIAS.barra.atributo}','${PREFERENCIAS.barra.quandoVale}')}catch(e){}` +
   `try{var w=parseInt(localStorage.getItem('${LARGURA_DA_FILA.chave}'),10);` +
   `if(w>=${LARGURA_DA_FILA.minimo}&&w<=${LARGURA_DA_FILA.maximo})` +
   `d.style.setProperty('${LARGURA_DA_FILA.variavel}',w+'px')}catch(e){}` +
@@ -90,7 +98,11 @@ export function definirPreferencia(qual: Preferencia, ligada: boolean) {
   if (ligada) raiz.setAttribute(atributo, quandoVale)
   else raiz.removeAttribute(atributo)
   try {
-    localStorage.setItem(chave, ligada ? quandoVale : 'nao')
+    if (qual === 'barra') {
+      document.cookie = `${COOKIE_DA_BARRA}=${ligada ? quandoVale : 'nao'};path=/;max-age=31536000;samesite=lax`
+    } else {
+      localStorage.setItem(chave, ligada ? quandoVale : 'nao')
+    }
   } catch {
     // Sem onde gravar, a escolha vale só para esta aba. Pior que gravar, e
     // melhor que não deixar escolher.
@@ -106,23 +118,22 @@ export function definirPreferencia(qual: Preferencia, ligada: boolean) {
  * precise ser sincronizado com ela, e o `MutationObserver` faz dois botões da
  * mesma preferência concordarem sem se conhecerem.
  *
- * O servidor sempre responde `false`, e é a resposta certa: ele não tem como
- * saber o que está gravado neste navegador. Não há cookie, e criar um só para
- * isto tornaria dinâmica toda página que hoje é estática. O que ele erra é o
- * ícone do botão, corrigido no mesmo quadro em que o React assume: a tela em
- * si já foi pintada certa pelo script.
+ * O servidor responde `doServidor`. Para o tema é sempre `false`: ele não tem
+ * como saber o que está no `localStorage`, e o que erra é só o ícone do botão.
+ * Para a barra, quem desenha no servidor lê o cookie (`barraRecolhida`) e
+ * passa a resposta, e a hidratação concorda com o que o script já aplicou.
  */
 /*
  * O nome começa em inglês contra a convenção do resto do repositório porque a
  * regra `react-hooks/rules-of-hooks` reconhece hook pelo prefixo `use`, e com
  * `usarPreferencia` o ESLint recusa o arquivo inteiro.
  */
-export function usePreferencia(qual: Preferencia): boolean {
+export function usePreferencia(qual: Preferencia, doServidor = false): boolean {
   const { atributo, quandoVale } = PREFERENCIAS[qual]
   return useSyncExternalStore(
     inscrever(atributo),
     () => document.documentElement.getAttribute(atributo) === quandoVale,
-    () => false,
+    () => doServidor,
   )
 }
 

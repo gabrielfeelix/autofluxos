@@ -146,7 +146,7 @@ export async function acaoImportarProdutos(
   if (!r.ok) return r
 
   const gravado = await gravarImportacao(clienteId, r.plano)
-  revalidatePath(`/clientes/${clienteId}/ajustes/produtos`)
+  revalidatePath(`/clientes/${clienteId}/loja/catalogo`)
   revalidatePath(`/clientes/${clienteId}/quadros`)
   return { ok: true, ...gravado }
 }

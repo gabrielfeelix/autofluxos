@@ -15,7 +15,7 @@ import { AVISO_DE_VENCIMENTO_DIAS } from './saude-da-conexao'
  * H05). O último evento aparece com a data, e quem lê decide. Falha é só o que
  * se sabe que quebra: número desembarcado, token vencido, inscrição perdida.
  *
- * Os `href` são relativos à conta (`/ajustes/whatsapp`), como os do Início.
+ * Os `href` são relativos à conta (`/conversas/canais/whatsapp`), como os do Início.
  */
 
 export type Autorizacao = 'valida' | 'vence_em_breve' | 'vencida' | 'nao_se_aplica'
@@ -76,9 +76,9 @@ export function estadoDaConexao(dados: DadosDaConexao, agora: Date = new Date())
             )
           : null,
         proximaAcao: !configurado
-          ? { texto: 'Conectar o WhatsApp', href: '/ajustes/whatsapp' }
+          ? { texto: 'Conectar o WhatsApp', href: '/conversas/canais/whatsapp' }
           : caido
-            ? { texto: 'Reconectar o número', href: '/ajustes/whatsapp' }
+            ? { texto: 'Reconectar o número', href: '/conversas/canais/whatsapp' }
             : null,
       }
     }
@@ -90,7 +90,7 @@ export function estadoDaConexao(dados: DadosDaConexao, agora: Date = new Date())
           autorizacao: 'nao_se_aplica',
           ultimoEvento: null,
           falha: null,
-          proximaAcao: { texto: 'Conectar o Instagram', href: '/ajustes/instagram' },
+          proximaAcao: { texto: 'Conectar o Instagram', href: '/conversas/canais/instagram' },
         }
       }
       const autorizacao = porValidade(dados.conta.tokenExpiraEm, agora)
@@ -105,7 +105,7 @@ export function estadoDaConexao(dados: DadosDaConexao, agora: Date = new Date())
             : null,
         proximaAcao:
           autorizacao === 'vencida' || autorizacao === 'vence_em_breve'
-            ? { texto: 'Reconectar o Instagram', href: '/ajustes/instagram' }
+            ? { texto: 'Reconectar o Instagram', href: '/conversas/canais/instagram' }
             : null,
       }
     }

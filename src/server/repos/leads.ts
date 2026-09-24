@@ -1705,3 +1705,32 @@ export async function donoDoContato(
   if (!data) return undefined
   return (data as { atribuido_a: string | null }).atribuido_a
 }
+
+/**
+ * Os dois números de Conversas na barra lateral: abertas comigo e abertas sem
+ * ninguém (plano de navegação, seção 3).
+ *
+ * Contam o mesmo que a fila mostra ao abrir `?de=minhas` e `?de=sem-dono`: o
+ * estado padrão da fila é `aberta`, e número de menu que não bate com a tela
+ * que ele abre ensina a pessoa a não confiar no número. Duas contagens `head`,
+ * sem trazer linha nenhuma.
+ */
+export async function contarConversasDaBarra(
+  clienteId: string,
+  usuarioId: string,
+): Promise<{ minhas: number; semDono: number }> {
+  const abertas = () =>
+    db()
+      .from('leads')
+      .select('contact_id', { count: 'exact', head: true })
+      .eq('client_id', clienteId)
+      .or('estado_efetivo.is.null,estado_efetivo.eq.aberta')
+  const [minhas, semDono] = await Promise.all([
+    abertas().eq('atribuido_a', usuarioId),
+    abertas().is('atribuido_a', null),
+  ])
+  if (ehIdInvalido(minhas.error) || ehIdInvalido(semDono.error)) return { minhas: 0, semDono: 0 }
+  if (minhas.error) throw new Error(`não deu para contar as conversas: ${minhas.error.message}`)
+  if (semDono.error) throw new Error(`não deu para contar as conversas: ${semDono.error.message}`)
+  return { minhas: minhas.count ?? 0, semDono: semDono.count ?? 0 }
+}

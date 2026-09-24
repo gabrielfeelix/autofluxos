@@ -127,7 +127,7 @@ function falhaDoCanal(canal: CanalParaPendencia, agora: number): Pendencia | nul
   return {
     chave: instagram ? `instagram-${canal.igUsername ?? ''}` : `whatsapp-${canal.displayPhoneNumber ?? ''}`,
     texto: estado.falha.replace(/\.$/, ''),
-    href: estado.proximaAcao?.href ?? (instagram ? '/ajustes/instagram' : '/ajustes/whatsapp'),
+    href: estado.proximaAcao?.href ?? (instagram ? '/conversas/canais/instagram' : '/conversas/canais/whatsapp'),
     tom: 'falha',
   }
 }

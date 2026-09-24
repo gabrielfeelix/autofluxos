@@ -1,32 +1,43 @@
 'use client'
 
 import Link from 'next/link'
-import { usePathname } from 'next/navigation'
-import { useRef, type ReactNode } from 'react'
+import { usePathname, useSearchParams } from 'next/navigation'
+import { useRef, type MouseEvent, type ReactNode } from 'react'
 import { BotaoDeTema, definirPreferencia, usePreferencia } from '@/components/design/tema'
 import { Avatar } from '@/components/design/avatar'
 import { usePerfil } from '@/components/conta/voce'
-import { abaDoCaminho } from './aba-do-caminho'
+import { acesoDoCaminho, type Aceso } from './aba-do-caminho'
 import { BarraDoCelular } from './barra-do-celular'
 import { abaDaAdministracao, GRUPOS_DA_ADMINISTRACAO, EMBAIXO_DA_ADMINISTRACAO } from './secoes-da-administracao'
 
 type Item = { chave: string; rotulo: string; href: string; icone: ReactNode; acesa?: boolean; contador?: ReactNode }
 
-/**
- * Os grupos do meio da barra, e o mapa de endereço para item aceso.
- *
- * A barra é **uma só** para as duas áreas: o app da organização e a
- * administração da plataforma. O que muda é a lista de itens, os grupos e como
- * o endereço acende um item, e isso vem por uma chave (`area`), e não por
- * função: a barra é componente de cliente e a moldura que a desenha é de
- * servidor, e função não atravessa essa fronteira.
- */
-const GRUPOS_DO_CLIENTE = [
-  { nome: 'Dia a dia', chaves: ['inbox', 'atividades', 'leads', 'quadros', 'relatorios'] },
-  { nome: 'Automação', chaves: ['fluxos', 'transmissoes'] },
-]
+/** Um subitem pronto para desenhar: `href` já absoluto, contagem já resolvida (ou em `Suspense`). */
+export type SubitemDaBarra = { id: string; rotulo: string; href: string; contador?: ReactNode }
 
-export function BarraLateral({ base, area = 'cliente', itens: itensRecebidos, marca, voltar, voltarHref, voltarRotulo, rodape, presenca, conta, contaNoTopo, carregando = false }: {
+/**
+ * Uma seção da barra do cliente (plano de navegação de 24/set). `ponto` é o
+ * aviso de que há número lá dentro, para quando a seção está fechada ou a barra
+ * está recolhida e os números não aparecem.
+ */
+export type SecaoDaBarra = {
+  chave: string
+  rotulo: string
+  icone: ReactNode
+  solta?: boolean
+  itens: SubitemDaBarra[]
+  ponto?: ReactNode
+}
+
+/**
+ * A barra é **uma só** para as duas áreas: o app da organização e a
+ * administração da plataforma. A administração passa `itens` e se agrupa por
+ * `GRUPOS_DA_ADMINISTRACAO`; a organização passa `secoes`, com subitens em
+ * sanfona. A diferença vem por dado (`area`, `secoes`), e não por função: a
+ * barra é componente de cliente e a moldura que a desenha é de servidor, e
+ * função não atravessa essa fronteira.
+ */
+export function BarraLateral({ base, area = 'cliente', itens: itensRecebidos = [], secoes, aceso: acesoRecebido, recolhidaInicial = false, eu, marca, voltar, voltarHref, voltarRotulo, rodape, presenca, conta, contaNoTopo, carregando = false }: {
   /** Qual das duas barras: a da organização ou a da administração. */
   area?: 'cliente' | 'administracao'
   /** O texto do link de volta na gaveta do celular. */
@@ -41,7 +52,16 @@ export function BarraLateral({ base, area = 'cliente', itens: itensRecebidos, ma
   voltar: ReactNode | null
   /** O mesmo "‹ Administração" de `voltar`, para a gaveta do celular. */
   voltarHref?: string
-  itens: Item[]
+  /** Os itens planos da administração. */
+  itens?: Item[]
+  /** As seções da organização, com subitens. */
+  secoes?: SecaoDaBarra[]
+  /** O item aceso quando não há `base` para descobrir pelo caminho (o esqueleto). */
+  aceso?: Aceso
+  /** O id de quem olha, para "Minhas conversas" acender também com `?de=<id>`. */
+  eu?: string
+  /** O que o cookie diz, lido no servidor, para a hidratação não piscar. */
+  recolhidaInicial?: boolean
   rodape: ReactNode
   presenca?: string
   /**
@@ -58,10 +78,11 @@ export function BarraLateral({ base, area = 'cliente', itens: itensRecebidos, ma
   carregando?: boolean
 }) {
   const caminho = usePathname()
-  const abaAcesa = !base ? null : area === 'administracao' ? abaDaAdministracao(caminho) : abaDoCaminho(caminho, base)
-  const grupos = area === 'administracao' ? GRUPOS_DA_ADMINISTRACAO : GRUPOS_DO_CLIENTE
+  const busca = useSearchParams()
+  const abaAcesa = base && area === 'administracao' ? abaDaAdministracao(caminho) : null
+  const aceso = base && area === 'cliente' ? acesoDoCaminho(caminho, base, busca, eu) : (acesoRecebido ?? null)
   const itens = base ? itensRecebidos.map((item) => ({ ...item, acesa: item.chave === abaAcesa })) : itensRecebidos
-  const recolhida = usePreferencia('barra')
+  const recolhida = usePreferencia('barra', recolhidaInicial)
   const painel = useRef<HTMLDialogElement>(null)
   const disponivel = presenca === 'disponivel'
   const perfil = usePerfil()
@@ -92,22 +113,27 @@ export function BarraLateral({ base, area = 'cliente', itens: itensRecebidos, ma
       baixo moram em `BarraDoCelular`. A faixa de abas que rolava de lado (5.8)
       saiu junto: cinco atalhos fixos e uma gaveta cabem em qualquer largura.
     */}
-    <BarraDoCelular base={area === 'cliente' ? base : undefined} embaixo={area === 'administracao' ? EMBAIXO_DA_ADMINISTRACAO : undefined} voltarRotulo={voltarRotulo} rotuloDaNavegacao={area === 'administracao' ? 'Administração' : undefined} itens={itens} contaNoTopo={contaNoTopo} voltarHref={voltarHref} presenca={presenca} carregando={carregando} aoAbrirVoce={() => painel.current?.showModal()} />
+    <BarraDoCelular base={area === 'cliente' ? base : undefined} secoes={secoes} aceso={aceso} embaixo={area === 'administracao' ? EMBAIXO_DA_ADMINISTRACAO : undefined} voltarRotulo={voltarRotulo} rotuloDaNavegacao={area === 'administracao' ? 'Administração' : undefined} itens={itens} contaNoTopo={contaNoTopo} voltarHref={voltarHref} presenca={presenca} carregando={carregando} aoAbrirVoce={() => painel.current?.showModal()} />
     <aside className={`hidden shrink-0 flex-col border-r border-line bg-panel py-4 md:flex ${recolhida ? 'w-[68px] px-2.5' : 'w-[226px] px-3.5'}`}>
       <div className={`mb-5 flex items-center gap-2 ${recolhida ? 'justify-center' : 'px-2'}`}>
         <span className={recolhida ? '[&_span:last-child]:hidden' : ''}>{marca}</span>
       </div>
       {!recolhida && voltar}
       {!recolhida && contaNoTopo && <div className="mb-3">{contaNoTopo}</div>}
-      <nav aria-label={area === 'administracao' ? 'Administração' : 'Seções do cliente'} className="flex min-h-0 flex-1 flex-col gap-1 overflow-y-auto">
-        {itens.filter((item) => item.chave === 'inicio').map(link)}
-        {grupos.filter((grupo) => itens.some((item) => grupo.chaves.includes(item.chave))).map((grupo) => (
-          <div key={grupo.nome}>
-            <p className={`mt-5 mb-1.5 px-2.5 text-[10px] font-semibold uppercase tracking-[0.08em] text-dim ${recolhida ? 'hidden' : ''}`}>{grupo.nome}</p>
-            {itens.filter((item) => grupo.chaves.includes(item.chave)).map(link)}
-          </div>
-        ))}
-        <div className="mt-auto pt-5">{itens.filter((item) => item.chave === 'ajustes').map(link)}</div>
+      <nav aria-label={area === 'administracao' ? 'Administração' : 'Seções do cliente'} className="sem-barra flex min-h-0 flex-1 flex-col gap-0.5 overflow-y-auto">
+        {secoes ? (
+          <NavegacaoPorSecoes secoes={secoes} aceso={aceso} recolhida={recolhida} carregando={carregando} />
+        ) : (
+          <>
+            {itens.filter((item) => item.chave === 'inicio').map(link)}
+            {GRUPOS_DA_ADMINISTRACAO.filter((grupo) => itens.some((item) => grupo.chaves.includes(item.chave))).map((grupo) => (
+              <div key={grupo.nome}>
+                <p className={`mt-5 mb-1.5 px-2.5 text-[10px] font-semibold uppercase tracking-[0.08em] text-dim ${recolhida ? 'hidden' : ''}`}>{grupo.nome}</p>
+                {itens.filter((item) => grupo.chaves.includes(item.chave)).map(link)}
+              </div>
+            ))}
+          </>
+        )}
       </nav>
       <div className="mt-3 border-t border-line pt-3">
         {contaButton()}
@@ -123,4 +149,77 @@ export function BarraLateral({ base, area = 'cliente', itens: itensRecebidos, ma
     </dialog>
     </>
   )
+}
+
+/**
+ * As seções da organização, em sanfona (plano de navegação, seção 3).
+ *
+ * **Só a seção atual fica aberta**, e quem decide qual é o endereço: clicar no
+ * nome de outra seção leva ao primeiro subitem dela, e a navegação abre a
+ * seção. Não há estado de "aberta" guardado em lugar nenhum, então a barra do
+ * esqueleto e a de verdade não têm como discordar.
+ *
+ * Os números ficam nos subitens da seção aberta. Fechada, ou com a barra
+ * recolhida, a seção mostra só um ponto: o suficiente para alguém abrir.
+ *
+ * Configurações vai para o pé da barra, separada do trabalho do dia.
+ */
+function NavegacaoPorSecoes({ secoes, aceso, recolhida, carregando }: { secoes: SecaoDaBarra[]; aceso: Aceso | null; recolhida: boolean; carregando: boolean }) {
+  const bloquear = carregando
+    ? { 'aria-disabled': true, tabIndex: -1, onClick: (evento: MouseEvent) => evento.preventDefault() }
+    : {}
+  const desenhar = (secao: SecaoDaBarra) => {
+    const aberta = aceso?.secao === secao.chave
+    const primeiro = secao.itens[0]
+    const comSubitens = !secao.solta && !recolhida
+    return (
+      <div key={secao.chave} className={secao.chave === 'ajustes' ? 'mt-auto pt-4' : ''}>
+        <Link
+          href={primeiro?.href ?? '#'}
+          {...bloquear}
+          aria-current={secao.solta && aberta ? 'page' : undefined}
+          aria-expanded={comSubitens ? aberta : undefined}
+          aria-label={secao.rotulo}
+          title={secao.rotulo}
+          className={`relative flex shrink-0 items-center gap-2.5 rounded-[10px] text-[13px] font-semibold transition ${recolhida ? 'mx-auto size-10 justify-center' : 'px-2.5 py-2'} ${
+            aberta && (secao.solta || recolhida) ? 'bg-primary-weak text-primary' : aberta ? 'text-ink' : 'text-muted hover:bg-surface hover:text-ink'
+          }`}
+        >
+          <span aria-hidden className={aberta ? 'text-primary' : 'text-dim'}>{secao.icone}</span>
+          {!recolhida && <span className="flex-1">{secao.rotulo}</span>}
+          {secao.ponto && (recolhida || !aberta) && (
+            <span className={recolhida ? 'absolute top-1.5 right-1.5' : 'flex'}>{secao.ponto}</span>
+          )}
+        </Link>
+        {comSubitens && (
+          // A sanfona anima pela linha da grade (0fr para 1fr): altura
+          // automática não se anima, e medir em JavaScript faria a barra
+          // esperar o React para abrir.
+          <div className={`grid transition-[grid-template-rows] duration-200 ease-out motion-reduce:transition-none ${aberta ? 'grid-rows-[1fr]' : 'grid-rows-[0fr]'}`}>
+            <ul className="ml-[18px] min-h-0 overflow-hidden border-l border-line pl-2" inert={!aberta}>
+              {secao.itens.map((item, posicao) => {
+                const itemAceso = aberta && aceso?.item === item.id
+                return (
+                  <li key={item.id} className={posicao === 0 ? 'pt-0.5' : posicao === secao.itens.length - 1 ? 'pb-1.5' : ''}>
+                    <Link
+                      href={item.href}
+                      {...bloquear}
+                      aria-current={itemAceso ? 'page' : undefined}
+                      className={`flex items-center gap-2 rounded-lg px-2.5 py-[7px] text-[12.5px] transition ${
+                        itemAceso ? 'bg-primary-weak font-semibold text-primary' : 'font-medium text-muted hover:bg-surface hover:text-ink'
+                      }`}
+                    >
+                      <span className="min-w-0 flex-1 truncate">{item.rotulo}</span>
+                      {item.contador}
+                    </Link>
+                  </li>
+                )
+              })}
+            </ul>
+          </div>
+        )}
+      </div>
+    )
+  }
+  return <>{secoes.map(desenhar)}</>
 }

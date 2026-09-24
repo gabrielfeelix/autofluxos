@@ -1,5 +1,5 @@
 import { notFound } from 'next/navigation'
-import { AjustesShell } from '@/components/design/ajustes-shell'
+import { ClienteShell } from '@/components/design/cliente-shell'
 import { Trilha } from '@/components/design/trilha'
 import { LojaMagento } from '@/components/cliente/loja-magento'
 import {
@@ -34,11 +34,11 @@ export default async function Pagina({
   const [loja, token] = await Promise.all([lojaDaConta(cliente.id), estadoDoToken(cliente.id)])
 
   return (
-    <AjustesShell cliente={cliente} ativa="integracoes">
+    <ClienteShell cliente={cliente} ativa="loja">
       <main className="w-full max-w-[1100px] px-4 pt-[26px] pb-[42px] md:px-[42px]">
         <Trilha
           caminho={[
-            { rotulo: 'Todas as conexões', href: `/clientes/${cliente.id}/ajustes/integracoes` },
+            { rotulo: 'Loja' },
             { rotulo: 'Magento' },
           ]}
         />
@@ -72,6 +72,6 @@ export default async function Pagina({
           guiaHref="https://github.com/gabrielfeelix/autofluxos/blob/main/docs/GUIA-MAGENTO-LOJISTA.md"
         />
       </main>
-    </AjustesShell>
+    </ClienteShell>
   )
 }

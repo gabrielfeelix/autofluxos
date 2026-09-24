@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react'
 import { Marca } from './marca'
 import { BarraLateral } from './barra-lateral'
-import { type AbaDoCliente, ITENS } from './secoes-do-cliente'
+import { type ChaveDaSecao, SECOES } from './secoes-do-cliente'
 
 /**
  * O "‹ Administração" fica **escrito** aqui, e não em branco.
@@ -18,12 +18,19 @@ const VOLTAR_RESERVADO = (
   </span>
 )
 
-/** Usa a mesma estrutura da navegação pronta, incluindo grupos e recolhimento. */
-export function EsqueletoDoCliente({ ativa, children }: { ativa: AbaDoCliente; children: ReactNode }) {
+/**
+ * A barra de verdade, com os nomes escritos e o Início aceso, antes de qualquer
+ * consulta. Usa `SECOES` inteira (sem permissão nem recurso, que o esqueleto
+ * não tem como perguntar) e o cookie da barra recolhida, para a largura já
+ * nascer certa.
+ */
+export function EsqueletoDoCliente({ ativa, recolhida = false, children }: { ativa: ChaveDaSecao; recolhida?: boolean; children: ReactNode }) {
   return <div className="flex min-h-screen flex-col md:h-screen md:min-h-[700px] md:flex-row md:overflow-hidden">
     <BarraLateral carregando marca={<Marca />} voltar={VOLTAR_RESERVADO}
       contaNoTopo={<span className="block h-[36px]" />}
-      itens={ITENS.map((item) => ({ ...item, href: '#', acesa: item.chave === ativa }))}
+      recolhidaInicial={recolhida}
+      aceso={{ secao: ativa, item: ativa === 'inicio' ? 'inicio' : null }}
+      secoes={SECOES.map((secao) => ({ ...secao, itens: secao.itens.map((item) => ({ ...item, href: '#' })) }))}
       rodape={<p className="text-sm text-dim">Carregando sua organização…</p>} />
     <div className="relative min-w-0 flex-1 md:overflow-auto"><div className="flex min-h-full flex-col md:h-full">{children}</div></div>
   </div>

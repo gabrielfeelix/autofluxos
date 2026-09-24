@@ -38,7 +38,7 @@ import {
 } from '@/core/relacionamento'
 import { listarQuadros } from '@/server/repos/quadros'
 import { crmVisivel, recursosDaConta } from '@/server/repos/recursos'
-import { type AbaDoCliente, secoesVisiveis } from '@/components/design/secoes-do-cliente'
+import { type AbaDoCliente, abasVisiveis } from '@/components/design/secoes-do-cliente'
 import { sessaoAtual } from '@/server/sessao'
 
 export const dynamic = 'force-dynamic'
@@ -136,7 +136,7 @@ export default async function Pagina({ params }: { params: Promise<{ clienteId: 
 
         <div className="mt-5 grid items-start gap-5 lg:grid-cols-[minmax(0,1fr)_336px]">
           <div className="flex min-w-0 flex-col gap-5">
-            <Atalhos clienteId={cliente.id} visiveis={secoesVisiveis({ crmVisivel: crm, regras: acesso.regras }).map((secao) => secao.chave)} />
+            <Atalhos clienteId={cliente.id} visiveis={abasVisiveis({ crmVisivel: crm, regras: acesso.regras })} />
 
             <Suspense fallback={<EsqueletoDeLista linhas={3} comRosto rotulo="Carregando a fila…" />}>
               <Fila clienteId={cliente.id} contatos={contatos} acesso={acesso} canais={canais} configura={configura} />
@@ -248,8 +248,8 @@ function passosDaConta({
         'Por onde as pessoas falam com o negócio: o WhatsApp da organização, o direct do Instagram ou os anúncios que geram contato. Dá para ligar mais de um depois.',
       feito: temCanal,
       acoes: [
-        { rotulo: 'WhatsApp', href: em('/ajustes/whatsapp') },
-        { rotulo: 'Instagram', href: em('/ajustes/instagram') },
+        { rotulo: 'WhatsApp', href: em('/conversas/canais/whatsapp') },
+        { rotulo: 'Instagram', href: em('/conversas/canais/instagram') },
         { rotulo: 'Anúncios', href: em('/ajustes/anuncios') },
       ],
     },
@@ -268,7 +268,7 @@ function passosDaConta({
       explica:
         'Mande uma mensagem para o canal que você ligou, do seu próprio celular. Ela aparece no Inbox em segundos, é o teste que mostra tudo funcionando de ponta a ponta.',
       feito: temContato,
-      acoes: [{ rotulo: 'Abrir o Inbox', href: em('/inbox') }],
+      acoes: [{ rotulo: 'Abrir as conversas', href: em('/inbox') }],
     },
     {
       chave: 'funil',
@@ -401,14 +401,14 @@ function Atalhos({ clienteId, visiveis }: { clienteId: string; visiveis: AbaDoCl
   const atalhos = [
     {
       href: `/clientes/${clienteId}/inbox`,
-      titulo: 'Inbox',
+      titulo: 'Conversas',
       texto: 'Responder quem está falando com o negócio agora.',
       icone: <IconeConversa className="size-[18px]" />,
       secao: 'inbox' as const,
     },
     {
       href: `/clientes/${clienteId}/quadros`,
-      titulo: 'Funil',
+      titulo: 'Negócios',
       texto: 'Ver em que ponto cada negociação está.',
       icone: <IconeFunil className="size-[18px]" />,
       secao: 'quadros' as const,
@@ -521,7 +521,7 @@ async function Fila({
             href={`/clientes/${clienteId}/inbox`}
             className="text-[12px] font-semibold text-primary transition hover:opacity-80 active:opacity-60"
           >
-            Abrir o Inbox
+            Abrir as conversas
           </Link>
         )}
       </header>

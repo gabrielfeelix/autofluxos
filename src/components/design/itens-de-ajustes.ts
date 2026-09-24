@@ -1,12 +1,7 @@
 export type TelaDeAjustes =
   | 'inicio'
-  | 'whatsapp'
-  | 'instagram'
   | 'contexto'
   | 'horario'
-  | 'respostas-rapidas'
-  | 'etiquetas'
-  | 'produtos'
   | 'acervo'
   | 'integracoes'
   | 'anuncios'
@@ -37,25 +32,12 @@ export const GRUPOS: { titulo: string | null; itens: { chave: TelaDeAjustes; rot
     ],
   },
   {
-    titulo: 'Canais',
-    itens: [
-      { chave: 'whatsapp', rotulo: 'WhatsApp' },
-      { chave: 'instagram', rotulo: 'Instagram' },
-    ],
-  },
-  {
-    titulo: 'Automação de resposta',
+    // Canais, Respostas rápidas, Etiquetas e Catálogo saíram para a barra
+    // lateral (plano de navegação de 24/set): são trabalho do dia, não ajuste.
+    titulo: 'Atendimento e IA',
     itens: [
       { chave: 'contexto', rotulo: 'Conhecimento da IA' },
       { chave: 'horario', rotulo: 'Horário e retomada' },
-    ],
-  },
-  {
-    titulo: 'Ferramentas do atendimento',
-    itens: [
-      { chave: 'respostas-rapidas', rotulo: 'Respostas rápidas' },
-      { chave: 'etiquetas', rotulo: 'Etiquetas' },
-      { chave: 'produtos', rotulo: 'Catálogo' },
       { chave: 'acervo', rotulo: 'Arquivos e mídias' },
     ],
   },

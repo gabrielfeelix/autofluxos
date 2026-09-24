@@ -1,5 +1,5 @@
 import { notFound } from 'next/navigation'
-import { AjustesShell } from '@/components/design/ajustes-shell'
+import { ClienteShell } from '@/components/design/cliente-shell'
 import { Trilha } from '@/components/design/trilha'
 import { GerenciadorDeRespostasRapidas } from '@/components/respostas-rapidas/gerenciador'
 import { acaoApagarRespostaRapida, acaoCriarRespostaRapida } from '@/server/acoes'
@@ -17,11 +17,11 @@ export default async function Pagina({ params }: { params: Promise<{ clienteId: 
   if (!cliente) notFound()
 
   return (
-    <AjustesShell cliente={cliente} ativa="respostas-rapidas">
-      <main className="w-full max-w-[1100px] px-4 md:px-[42px] pt-[26px] pb-[42px]">
+    <ClienteShell cliente={cliente} ativa="respostas-rapidas">
+      <main className="w-full max-w-[1440px] px-4 md:px-[42px] pt-[26px] pb-[42px]">
         <Trilha
           caminho={[
-            { rotulo: 'Configurações', href: `/clientes/${cliente.id}/ajustes` },
+            { rotulo: 'Conversas' },
             { rotulo: 'Respostas rápidas' },
           ]}
         />
@@ -37,6 +37,6 @@ export default async function Pagina({ params }: { params: Promise<{ clienteId: 
           apagar={acaoApagarRespostaRapida.bind(null, cliente.id)}
         />
       </main>
-    </AjustesShell>
+    </ClienteShell>
   )
 }

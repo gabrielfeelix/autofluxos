@@ -2,10 +2,10 @@ import type { ReactNode } from 'react'
 import { pode, type Acesso, type Capacidade, type Escopo } from '@/core/permissoes'
 
 /**
- * As seções do cliente, a lista, os ícones, e mais nada.
+ * As seções do cliente, os subitens, os ícones, e mais nada.
  *
  * ---------------------------------------------------------------------------
- * Por que isto saiu de `cliente-shell.tsx`
+ * Por que isto não mora em `cliente-shell.tsx`
  * ---------------------------------------------------------------------------
  *
  * A moldura faz três consultas ao banco antes de desenhar qualquer coisa
@@ -16,103 +16,184 @@ import { pode, type Acesso, type Capacidade, type Escopo } from '@/core/permisso
  *
  * Aqui não há `await`, não há banco, não há sessão. É o que permite o esqueleto
  * mostrar a barra lateral **de verdade**, com os nomes escritos e o item aceso,
- * em vez de sete blocos cinzas.
+ * em vez de blocos cinzas. As contagens chegam depois, cada uma no seu
+ * `Suspense`, pela `BarraDoCliente`.
  *
  * ---------------------------------------------------------------------------
- * A regra que isso preserva
+ * Seções com subitens (plano de navegação de 24/set, seção 3)
  * ---------------------------------------------------------------------------
  *
- * O `EsqueletoDeAbas` já dizia, sobre a barra de abas: *os rótulos são os de
- * verdade, não blocos cinzas, trocá-los por cinza faria a barra piscar a cada
- * clique, apagando justamente a única parte da tela que a pessoa acabou de
- * usar*. O raciocínio vale igual para a barra lateral, e só vale porque esta
- * lista não depende de I/O nenhum.
+ * A barra era plana, nove itens, e metade do trabalho diário morava escondida
+ * em Configurações ou em tela sem menu nenhum. Agora são seções com subitens,
+ * em sanfona: só a seção atual fica aberta, e clicar no nome de outra vai para
+ * o primeiro subitem dela. Início e Configurações ficam soltas, sem subitem.
  */
 
+/**
+ * A porta de cada tela: o que ela exige de quem a abre (`EXIGENCIA_DA_SECAO`)
+ * e o nome que a tela de sem acesso usa.
+ *
+ * As chaves antigas continuam de propósito. `fluxos` é Automações e `leads` é
+ * Contatos: o rótulo mudou, a chave não, e as rotas também não (`/leads`,
+ * `/quadros`, `/inbox`). Renomear obrigaria a tocar todas as telas que passam
+ * `ativa`, para arrumar uma palavra que só aparece aqui.
+ */
 export type AbaDoCliente =
   | 'inicio'
+  | 'inbox'
+  | 'respostas-rapidas'
+  | 'canais'
+  | 'leads'
+  | 'etiquetas'
+  | 'quadros'
   | 'atividades'
   | 'fluxos'
   | 'transmissoes'
-  | 'leads'
-  | 'quadros'
+  | 'loja'
   | 'relatorios'
-  | 'inbox'
   | 'ajustes'
 
-/**
- * As chaves são as antigas de propósito.
- *
- * `fluxos` acende "Automações" e `leads` acende "Contatos", o rótulo mudou, a
- * chave não. Renomear as duas obrigaria a tocar as doze telas que passam
- * `ativa`, para arrumar uma palavra que só aparece aqui. É a mesma decisão que
- * manteve a rota `/leads` quando a aba virou "Contatos".
- */
-export const ITENS: {
-  chave: AbaDoCliente
+export type ChaveDaSecao = 'inicio' | 'conversas' | 'crm' | 'automacoes' | 'loja' | 'analise' | 'ajustes'
+
+/** Os três números que pedem ação, e só eles (plano, seção 3, item 2). */
+export type Contagem = 'minhas' | 'sem-dono' | 'atrasadas'
+
+export type Subitem = {
+  /** Único na barra inteira: é o que acende. */
+  id: string
   rotulo: string
+  /** Relativo a `/clientes/<id>`. */
   href: string
+  /** A porta da tela, para a permissão e para o nome na tela de sem acesso. */
+  aba: AbaDoCliente
+  contagem?: Contagem
+}
+
+export type Secao = {
+  chave: ChaveDaSecao
+  rotulo: string
   icone: ReactNode
-}[] = [
-  { chave: 'inicio', rotulo: 'Painel', href: '', icone: <IconePainel /> },
-  { chave: 'inbox', rotulo: 'Inbox', href: '/inbox', icone: <IconeInbox /> },
-  { chave: 'atividades', rotulo: 'Atividades', href: '/atividades', icone: <svg aria-hidden width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><rect x="4" y="5" width="16" height="16" rx="3"/><path d="M8 3v4m8-4v4M4 11h16m-12 5 2 2 5-4"/></svg> },
-  { chave: 'leads', rotulo: 'Contatos', href: '/leads', icone: <IconeContatos /> },
-  // Quadros entra ao lado de Contatos, e não no fim, porque é a mesma gente
-  // olhada de outro jeito: a lista responde "quem existe", o quadro responde
-  // "em que ponto cada um está".
-  /*
-   * **"Funil de vendas", a rota continua `/quadros`.**
-   *
-   * O nome foi "Quadros" enquanto a tela era só a posição da pessoa no funil, e
-   * "Quadros" descreve o desenho (colunas), não o trabalho. Virou "Funis" quando
-   * ela ganhou negociação, valor, ganho e perda, e agora "Funil de vendas"
-   * porque sozinha a palavra é ambígua: este produto também tem funil de
-   * automação, e quem chega não sabe qual dos dois o menu está oferecendo.
-   *
-   * O singular não esconde que são vários, captação, comercial, pós-venda: o
-   * seletor dentro da tela continua mostrando todos. É o nome da seção, e é
-   * assim que o mercado a chama. A URL não muda: link salvo quebrado em troca
-   * de um rótulo não se paga.
-   */
-  { chave: 'quadros', rotulo: 'Funil de vendas', href: '/quadros', icone: <IconeQuadros /> },
-  // Relatórios fica no dia a dia, logo abaixo do funil: é onde se olha como a
-  // semana andou. Todo mundo que atende vê, cada um no próprio escopo; o corte
-  // é feito na consulta, não no menu (plano de UX, 11.1).
-  { chave: 'relatorios', rotulo: 'Relatórios', href: '/relatorios', icone: <IconeRelatorios /> },
-  { chave: 'fluxos', rotulo: 'Automações', href: '/fluxos', icone: <IconeAutomacoes /> },
-  /*
-   * Transmissões entra ao lado de Automações, e não dentro delas.
-   *
-   * Ela nasceu como um link dentro do texto da aba Campanhas, e isso foi um
-   * erro que custou o tempo de alguém procurando: tela que existe e não se
-   * acha é tela que não existe. O trabalho aqui também é de outra natureza ,
-   * automação responde a um gatilho, transmissão é alguém decidindo falar com
-   * uma lista hoje.
-   */
+  /** Sem subitens à vista: a seção é o próprio link (Início, Configurações). */
+  solta?: true
+  itens: Subitem[]
+}
+
+export const SECOES: Secao[] = [
   {
-    chave: 'transmissoes',
-    rotulo: 'Transmissões',
-    href: '/transmissoes',
-    icone: <IconeTransmissoes />,
+    chave: 'inicio',
+    rotulo: 'Início',
+    icone: <IconePainel />,
+    solta: true,
+    itens: [{ id: 'inicio', rotulo: 'Início', href: '', aba: 'inicio' }],
   },
-  { chave: 'ajustes', rotulo: 'Configurações', href: '/ajustes', icone: <IconeConfiguracoes /> },
+  {
+    /*
+     * "Conversas", e não "Inbox": é a palavra de quem atende, e a da Brevo, RD
+     * e Kommo em português. As três visões são a mesma tela, filtrada pela URL
+     * (`?de=`), para o número ficar na barra, onde ele faz alguém agir.
+     */
+    chave: 'conversas',
+    rotulo: 'Conversas',
+    icone: <IconeInbox />,
+    itens: [
+      { id: 'minhas', rotulo: 'Minhas conversas', href: '/inbox?de=minhas', aba: 'inbox', contagem: 'minhas' },
+      { id: 'sem-dono', rotulo: 'Sem responsável', href: '/inbox?de=sem-dono', aba: 'inbox', contagem: 'sem-dono' },
+      { id: 'todas', rotulo: 'Todas as conversas', href: '/inbox', aba: 'inbox' },
+      { id: 'salvas', rotulo: 'Mensagens salvas', href: '/favoritas', aba: 'inbox' },
+      { id: 'respostas-rapidas', rotulo: 'Respostas rápidas', href: '/conversas/respostas-rapidas', aba: 'respostas-rapidas' },
+      { id: 'canais', rotulo: 'Canais', href: '/conversas/canais', aba: 'canais' },
+    ],
+  },
+  {
+    /*
+     * "Negócios", e não "Funil de vendas": o cartão é a negociação
+     * (`docs/MODELO-CRM.md`), e é o nome do Pipedrive e do Agendor no Brasil.
+     * O seletor dentro da tela continua mostrando os funis. A rota continua
+     * `/quadros`: link salvo quebrado em troca de um rótulo não se paga.
+     *
+     * Etiqueta é a nossa "lista" e segmento é a regra: não existe um terceiro
+     * conceito (plano, seção 2).
+     */
+    chave: 'crm',
+    rotulo: 'CRM',
+    icone: <IconeContatos />,
+    itens: [
+      { id: 'contatos', rotulo: 'Contatos', href: '/leads', aba: 'leads' },
+      { id: 'segmentos', rotulo: 'Segmentos', href: '/leads/segmentos', aba: 'leads' },
+      { id: 'etiquetas', rotulo: 'Etiquetas', href: '/leads/etiquetas', aba: 'etiquetas' },
+      { id: 'negocios', rotulo: 'Negócios', href: '/quadros', aba: 'quadros' },
+      { id: 'atividades', rotulo: 'Atividades', href: '/atividades', aba: 'atividades', contagem: 'atrasadas' },
+    ],
+  },
+  {
+    /*
+     * As abas de Automações viraram subitens: invisíveis até entrar era o
+     * defeito. Os endereços são os mesmos de antes (`?aba=`), então link
+     * salvo abre o mesmo lugar.
+     *
+     * Transmissões continua aqui dentro, e não solta: automação responde a um
+     * gatilho, transmissão é alguém decidindo falar com uma lista hoje, mas as
+     * duas são o produto falando sozinho com muita gente.
+     */
+    chave: 'automacoes',
+    rotulo: 'Automações',
+    icone: <IconeAutomacoes />,
+    itens: [
+      { id: 'fluxos', rotulo: 'Fluxos', href: '/fluxos', aba: 'fluxos' },
+      { id: 'gatilhos', rotulo: 'Gatilhos', href: '/fluxos?aba=gatilhos', aba: 'fluxos' },
+      { id: 'sequencias', rotulo: 'Sequências', href: '/fluxos?aba=sequencias', aba: 'fluxos' },
+      { id: 'transmissoes', rotulo: 'Transmissões', href: '/transmissoes', aba: 'transmissoes' },
+      { id: 'respostas-coletadas', rotulo: 'Respostas coletadas', href: '/respostas', aba: 'fluxos' },
+    ],
+  },
+  {
+    // Só com o recurso ligado (`lojaVisivel`): estúdio de pilates não vê Loja.
+    chave: 'loja',
+    rotulo: 'Loja',
+    icone: <IconeLoja />,
+    itens: [
+      { id: 'conectar-loja', rotulo: 'Conectar loja', href: '/loja/magento', aba: 'loja' },
+      { id: 'catalogo', rotulo: 'Catálogo', href: '/loja/catalogo', aba: 'loja' },
+    ],
+  },
+  {
+    // Vendas entra aqui na F3 do plano, ao lado de Atendimento.
+    chave: 'analise',
+    rotulo: 'Análise',
+    icone: <IconeRelatorios />,
+    itens: [{ id: 'atendimento', rotulo: 'Atendimento', href: '/relatorios', aba: 'relatorios' }],
+  },
+  {
+    chave: 'ajustes',
+    rotulo: 'Configurações',
+    icone: <IconeConfiguracoes />,
+    solta: true,
+    itens: [{ id: 'ajustes', rotulo: 'Configurações', href: '/ajustes', aba: 'ajustes' }],
+  },
 ]
 
+/** Todos os subitens, na ordem da barra. */
+export const ITENS: (Subitem & { secao: ChaveDaSecao })[] = SECOES.flatMap((secao) =>
+  secao.itens.map((item) => ({ ...item, secao: secao.chave })),
+)
+
 /**
- * O que cada seção exige de quem a abre (E7).
+ * O que cada porta exige de quem a abre (E7).
  *
- * A mesma exigência vale para o menu (o item some) e para a moldura (a rota
+ * A mesma exigência vale para o menu (o subitem some) e para a moldura (a rota
  * direta mostra `SemAcesso`); as ações continuam conferindo no servidor, cada
- * uma com a sua capacidade. Duas capacidades numa seção querem dizer
- * "qualquer uma das duas": Configurações serve a quem mexe na empresa **ou** na
- * operação.
+ * uma com a sua capacidade. Duas capacidades querem dizer "qualquer uma das
+ * duas": Configurações serve a quem mexe na empresa **ou** na operação.
  *
- * Não muda acesso de ninguém que já existe: `member` sem exceção tem todas as
- * capacidades abaixo em `todos`. Quem perde itens do menu é quem já não
- * conseguia usar a tela (o acesso de atendimento, por exemplo), e que até
- * aqui abria a tela para ser recusado no primeiro clique.
+ * As telas que saíram de Configurações (Respostas rápidas, Canais, Etiquetas,
+ * Loja) levaram a exigência que tinham lá. Mudar de lugar não é mudar quem
+ * pode: isso seria decisão de acesso escondida numa mudança de menu.
  */
+const DE_CONFIGURACAO = {
+  capacidades: ['configurar_empresa', 'configurar_operacao'] as const,
+  minimo: 'todos' as const,
+}
+
 export const EXIGENCIA_DA_SECAO: Partial<
   Record<AbaDoCliente, { capacidades: readonly Capacidade[]; minimo: Escopo }>
 > = {
@@ -124,11 +205,15 @@ export const EXIGENCIA_DA_SECAO: Partial<
   relatorios: { capacidades: ['atender'], minimo: 'proprios' },
   fluxos: { capacidades: ['configurar_operacao'], minimo: 'todos' },
   transmissoes: { capacidades: ['exportar'], minimo: 'todos' },
-  ajustes: { capacidades: ['configurar_empresa', 'configurar_operacao'], minimo: 'todos' },
+  'respostas-rapidas': DE_CONFIGURACAO,
+  canais: DE_CONFIGURACAO,
+  etiquetas: DE_CONFIGURACAO,
+  loja: DE_CONFIGURACAO,
+  ajustes: DE_CONFIGURACAO,
 }
 
 /**
- * Esta pessoa abre esta seção?
+ * Esta pessoa abre esta tela?
  *
  * `regras` ausente é "não perguntei" (o esqueleto), e responde sim pelo mesmo
  * motivo do `crmVisivel`: esconder por falta de resposta faria a barra piscar.
@@ -143,9 +228,9 @@ export function liberaSecao(regras: Acesso | undefined, chave: AbaDoCliente): bo
 /**
  * A primeira tela de quem entra na conta, relativa a `/clientes/<id>`.
  *
- * Quem atende só as próprias conversas não tem o que fazer no Painel: o
+ * Quem atende só as próprias conversas não tem o que fazer no Início: o
  * trabalho dele é a fila, e abrir no resumo da operação é um clique a mais toda
- * manhã. Dono, gestor e membro sem restrição continuam no Painel.
+ * manhã. Dono, gestor e membro sem restrição continuam no Início.
  *
  * Sai do **escopo**, e não do nome do papel: a sobrescrita que transforma um
  * membro em operador muda a tela inicial junto, sem ninguém lembrar de mexer
@@ -157,52 +242,82 @@ export function telaInicial(regras: Acesso): string {
   return soOsProprios && liberaSecao(regras, 'inbox') ? '/inbox' : ''
 }
 
+/** O endereço de cada porta, para quem troca de conta cair no mesmo lugar. */
+const ENDERECO_DA_ABA: Record<AbaDoCliente, string> = {
+  inicio: '',
+  inbox: '/inbox',
+  'respostas-rapidas': '/conversas/respostas-rapidas',
+  canais: '/conversas/canais',
+  leads: '/leads',
+  etiquetas: '/leads/etiquetas',
+  quadros: '/quadros',
+  atividades: '/atividades',
+  fluxos: '/fluxos',
+  transmissoes: '/transmissoes',
+  loja: '/loja/magento',
+  relatorios: '/relatorios',
+  ajustes: '/ajustes',
+}
+
+function ehAba(valor: unknown): valor is AbaDoCliente {
+  return typeof valor === 'string' && Object.hasOwn(ENDERECO_DA_ABA, valor)
+}
+
 /**
  * Para onde vai quem troca de conta estando em `secao`.
  *
- * Quem estava no Inbox da Empresa 1 quer o Inbox da Empresa 2, e não o Painel.
- * Se a outra conta não libera aquela seção para esta pessoa, cai na tela
- * inicial dela: mandar para a tela de "sem acesso" seria punir a troca.
+ * Quem estava nas Conversas da Empresa 1 quer as Conversas da Empresa 2, e não
+ * o Início. Se a outra conta não libera aquela tela para esta pessoa, cai na
+ * tela inicial dela: mandar para a tela de "sem acesso" seria punir a troca.
  */
 export function destinoNaConta(regras: Acesso, secao?: string | null): string {
-  const item = ITENS.find((candidato) => candidato.chave === secao)
-  if (item && item.chave !== 'inicio' && liberaSecao(regras, item.chave)) return item.href
+  if (ehAba(secao) && secao !== 'inicio' && liberaSecao(regras, secao)) return ENDERECO_DA_ABA[secao]
   return telaInicial(regras)
 }
 
-/** O nome da seção como o menu mostra, para a tela de sem acesso dizer o mesmo. */
+/** O nome da tela como o menu mostra, para a tela de sem acesso dizer o mesmo. */
 export function rotuloDaSecao(chave: AbaDoCliente): string {
-  return ITENS.find((item) => item.chave === chave)?.rotulo ?? 'esta tela'
+  if (chave === 'inbox') return 'Conversas'
+  return ITENS.find((item) => item.aba === chave)?.rotulo ?? 'esta tela'
 }
 
 /**
- * As seções que **esta** conta vê (T7.1), e que **esta pessoa** pode usar (E7).
+ * As seções que **esta** conta vê (T7.1), com os subitens que **esta pessoa**
+ * pode usar (E7).
  *
  * ---------------------------------------------------------------------------
- * Por que a filtragem mora aqui, e não em `cliente-shell.tsx`
+ * Por que a filtragem mora aqui, e não em `barra-do-cliente.tsx`
  * ---------------------------------------------------------------------------
  *
- * Pelo mesmo motivo de `ITENS` morar neste arquivo: aqui não há `await`, não há
- * banco e não há sessão, e é isso que permite o `loading.tsx` desenhar a barra
- * de verdade. Quem vai ao banco é a moldura; ela pergunta lá e passa a resposta
- * para cá.
+ * Pelo mesmo motivo de `SECOES` morar neste arquivo: aqui não há `await`, e é
+ * isso que permite o `loading.tsx` desenhar a barra de verdade. Quem vai ao
+ * banco é a moldura; ela pergunta lá e passa a resposta para cá.
  *
- * **O padrão é mostrar.** `crmVisivel` e `regras` ausentes querem dizer "não
- * perguntei" (é o esqueleto, que não pergunta nada), e esconder por falta de
- * resposta faria a barra piscar um item a menos em todo carregamento:
- * exatamente o defeito que este arquivo existe para não ter.
+ * **O padrão é mostrar.** `crmVisivel`, `lojaVisivel` e `regras` ausentes
+ * querem dizer "não perguntei" (é o esqueleto), e esconder por falta de
+ * resposta faria a barra piscar um item a menos em todo carregamento.
  *
- * O funil escondido por preferência (CRM desligado) e a seção escondida por
- * acesso são coisas diferentes, e a rota direta diz qual das duas é (E8): a
- * moldura mostra "o funil está desligado" num caso e `SemAcesso` no outro.
+ * Seção sem nenhum subitem liberado some inteira: um título que abre para o
+ * nada é pior que título nenhum.
  */
 export function secoesVisiveis({
   crmVisivel,
+  lojaVisivel,
   regras,
-}: { crmVisivel?: boolean; regras?: Acesso } = {}): typeof ITENS {
-  return ITENS.filter(
-    (item) => !(crmVisivel === false && item.chave === 'quadros') && liberaSecao(regras, item.chave),
-  )
+}: { crmVisivel?: boolean; lojaVisivel?: boolean; regras?: Acesso } = {}): Secao[] {
+  return SECOES.filter((secao) => !(lojaVisivel === false && secao.chave === 'loja'))
+    .map((secao) => ({
+      ...secao,
+      itens: secao.itens.filter(
+        (item) => !(crmVisivel === false && item.aba === 'quadros') && liberaSecao(regras, item.aba),
+      ),
+    }))
+    .filter((secao) => secao.itens.length > 0)
+}
+
+/** As portas que esta pessoa alcança pelo menu, para os atalhos do Início. */
+export function abasVisiveis(filtro: Parameters<typeof secoesVisiveis>[0] = {}): AbaDoCliente[] {
+  return [...new Set(secoesVisiveis(filtro).flatMap((secao) => secao.itens.map((item) => item.aba)))]
 }
 
 function IconePainel() {
@@ -235,16 +350,6 @@ function IconeContatos() {
   )
 }
 
-function IconeQuadros() {
-  return (
-    <svg aria-hidden width="15" height="15" viewBox="0 0 15 15" fill="none" stroke="currentColor" strokeWidth="1.4">
-      <rect x="1.4" y="2" width="3.4" height="11" rx="1" />
-      <rect x="5.8" y="2" width="3.4" height="7.4" rx="1" />
-      <rect x="10.2" y="2" width="3.4" height="9.2" rx="1" opacity=".6" />
-    </svg>
-  )
-}
-
 function IconeAutomacoes() {
   return (
     <svg aria-hidden width="15" height="15" viewBox="0 0 15 15" fill="none" stroke="currentColor" strokeWidth="1.4">
@@ -264,21 +369,21 @@ function IconeRelatorios() {
   )
 }
 
-function IconeTransmissoes() {
-  return (
-    <svg aria-hidden width="15" height="15" viewBox="0 0 15 15" fill="none" stroke="currentColor" strokeWidth="1.4">
-      {/* Um megafone: falar com muita gente de uma vez. */}
-      <path d="M2.2 6v3a1 1 0 0 0 1 1h1.4l4.6 2.6V3.4L5.6 6H3.2a1 1 0 0 0-1 1Z" strokeLinejoin="round" />
-      <path d="M11.2 5.6a2.8 2.8 0 0 1 0 4.4" strokeLinecap="round" />
-    </svg>
-  )
-}
-
 function IconeConfiguracoes() {
   return (
     <svg aria-hidden width="15" height="15" viewBox="0 0 15 15" fill="none" stroke="currentColor" strokeWidth="1.4">
       <circle cx="7.5" cy="7.5" r="2.3" />
       <path d="M7.5 1.2v1.6M7.5 12.2v1.6M1.2 7.5h1.6M12.2 7.5h1.6M3 3l1.2 1.2M10.8 10.8 12 12M12 3l-1.2 1.2M4.2 10.8 3 12" />
+    </svg>
+  )
+}
+
+function IconeLoja() {
+  return (
+    <svg aria-hidden width="15" height="15" viewBox="0 0 15 15" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinejoin="round">
+      {/* Uma sacola: a loja do cliente, e não o nosso plano. */}
+      <path d="M2.6 4.6h9.8l-.7 8.2a1 1 0 0 1-1 .9H4.3a1 1 0 0 1-1-.9Z" />
+      <path d="M5.2 6.4V3.9a2.3 2.3 0 0 1 4.6 0v2.5" strokeLinecap="round" />
     </svg>
   )
 }

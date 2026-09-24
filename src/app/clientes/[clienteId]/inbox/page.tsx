@@ -10,7 +10,7 @@ import { comoFalta, restaDaJanela } from '@/channels/janela'
 import { Assumir, PassarPara } from '@/components/inbox/assumir'
 import { membrosDaConta, type MembroDaConta } from '@/server/repos/usuarios'
 import { sessaoAtual } from '@/server/sessao'
-import { meuAlcance } from '@/server/permissoes'
+import { acessoCompleto, meuAlcance } from '@/server/permissoes'
 import { alcancaDono } from '@/core/permissoes'
 import { ClienteShell } from '@/components/design/cliente-shell'
 import { Dica } from '@/components/design/dica'
@@ -182,7 +182,14 @@ export default async function Pagina({
 
 async function Tela({ cliente, busca }: { cliente: Cliente; busca: Busca }) {
   const clienteId = cliente.id
-  const atribuicao = primeiro(busca.de) || 'todos'
+  /*
+   * `?de=minhas` é o "Minhas conversas" da barra lateral: o menu não conhece o
+   * id de quem está olhando (ele é desenhado sem I/O), então pede pela
+   * palavra, e aqui ela vira o id. O resto da tela continua vendo um id, como
+   * se a pessoa tivesse escolhido o próprio nome no filtro.
+   */
+  const deQuem = primeiro(busca.de) || 'todos'
+  const atribuicao = deQuem === 'minhas' ? (await acessoCompleto(clienteId)).sessao.usuario.id : deQuem
   /*
    * O eixo "em que pé está", separado do "de quem é" (0049).
    *

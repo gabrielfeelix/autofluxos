@@ -65,7 +65,7 @@ export async function GET(req: Request) {
     redirect('/painel?erro=whatsapp_estado')
   }
 
-  const destino = `/clientes/${clienteId}/ajustes/whatsapp`
+  const destino = `/clientes/${clienteId}/conversas/canais/whatsapp`
 
   /*
    * **A sessão pode não vir aqui, e isso é normal, não é invasão.**

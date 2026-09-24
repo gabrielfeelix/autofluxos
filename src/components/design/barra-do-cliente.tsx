@@ -6,15 +6,16 @@ import { SeletorDeConta } from '@/components/conta/seletor-de-conta'
 import { PainelVoce, PerfilDaSessao } from '@/components/conta/voce'
 import { contagensDaAgenda } from '@/server/repos/atividades'
 import { lerFiltroDaAgenda } from '@/core/atividades'
-import { ContadorDaAgenda } from '@/components/atividades/contador-da-agenda'
 import { NotificacoesDaFila } from '@/components/inbox/notificacoes-da-fila'
 import { acaoDefinirPresenca } from '@/server/acoes-conta'
 import { resumoDasContas, type Cliente, type ResumoDeAtendimento } from '@/server/repos/clientes'
-import { crmVisivel } from '@/server/repos/recursos'
+import { crmVisivel, lojaVisivel } from '@/server/repos/recursos'
+import { contarConversasDaBarra } from '@/server/repos/leads'
+import { barraRecolhida } from '@/server/preferencias'
 import { presencaDoUsuario } from '@/server/repos/usuarios'
 import { contasDoUsuario, ehAdminDaPlataforma } from '@/server/sessao'
 import { BarraLateral } from './barra-lateral'
-import { liberaSecao, secoesVisiveis } from './secoes-do-cliente'
+import { liberaSecao, secoesVisiveis, type Contagem } from './secoes-do-cliente'
 import { MarcaDeAdmin } from './marca-de-admin'
 import { Marca } from './marca'
 
@@ -32,10 +33,12 @@ import { Marca } from './marca'
  */
 export async function BarraDoCliente({ cliente }: { cliente: Cliente }) {
   const acesso = await acessoCompleto(cliente.id)
-  const [contas, presenca, mostraCrm] = await Promise.all([
+  const [contas, presenca, mostraCrm, mostraLoja, recolhida] = await Promise.all([
     contasDoUsuario(acesso.sessao.usuario.id),
     presencaDoUsuario(acesso.sessao.usuario.id),
     crmVisivel(cliente.id),
+    lojaVisivel(cliente.id),
+    barraRecolhida(),
   ])
   // Só vale a consulta quando existe outra conta para onde ir.
   const esperando = contas.length > 1 ? await resumoDasContas(contas.map((conta) => conta.id)) : new Map<string, ResumoDeAtendimento>()
@@ -90,13 +93,26 @@ export async function BarraDoCliente({ cliente }: { cliente: Cliente }) {
               </Link>
             ) : null
           }
-          itens={secoesVisiveis({ crmVisivel: mostraCrm, regras: acesso.regras }).map((item) => ({
-            chave: item.chave,
-            rotulo: item.rotulo,
-            href: `${base}${item.href}`,
-            icone: item.icone,
-            contador: item.chave === 'atividades' ? <Suspense fallback={null}><Pendencias clienteId={cliente.id} /></Suspense> : undefined,
-          }))}
+          recolhidaInicial={recolhida}
+          eu={acesso.sessao.usuario.id}
+          secoes={secoesVisiveis({ crmVisivel: mostraCrm, lojaVisivel: mostraLoja, regras: acesso.regras }).map((secao) => {
+            // O ponto da seção junta os números dela: fechada, ela avisa que
+            // há o que fazer lá dentro sem ocupar a barra com os números.
+            const contagens = secao.itens.flatMap((item) => (item.contagem ? [item.contagem] : []))
+            return {
+              chave: secao.chave,
+              rotulo: secao.rotulo,
+              icone: secao.icone,
+              solta: secao.solta,
+              ponto: contagens.length ? <Suspense fallback={null}><Ponto clienteId={cliente.id} quais={contagens} /></Suspense> : undefined,
+              itens: secao.itens.map((item) => ({
+                id: item.id,
+                rotulo: item.rotulo,
+                href: `${base}${item.href}`,
+                contador: item.contagem ? <Suspense fallback={null}><Numero clienteId={cliente.id} qual={item.contagem} /></Suspense> : undefined,
+              })),
+            }
+          })}
           rodape={
             <PainelVoce
               email={acesso.sessao.usuario.email}
@@ -159,34 +175,54 @@ function Presenca({ atual }: { atual: string }) {
 
 
 /*
- * O contador aparece duas vezes na mesma resposta (barra do computador e barra
- * de baixo do celular): `cache` faz as duas lerem uma consulta só.
+ * Os números aparecem mais de uma vez na mesma resposta (subitem, ponto da
+ * seção, barra de baixo do celular): `cache` faz todos lerem uma consulta só.
+ *
+ * Cada número só é contado para quem abre a tela dele: contar conversas para
+ * quem não atende seria mostrar, pelo menu, o que a tela recusa.
  */
-const contarPendencias = cache(async (clienteId: string) => {
+const contarDaBarra = cache(async (clienteId: string): Promise<Record<Contagem, number>> => {
+  const zeros = { minhas: 0, 'sem-dono': 0, atrasadas: 0 }
   try {
     const acesso = await acessoCompleto(clienteId)
-    // Mesma regra dos atalhos da agenda: o número do menu e os da tela batem.
-    return await contagensDaAgenda(
-      clienteId,
-      filtroDoAcesso(acesso, 'atender'),
-      acesso.sessao.usuario.id,
-      { ...lerFiltroDaAgenda({}), alcance: 'equipe' },
-      Date.now(),
-    )
+    const usuarioId = acesso.sessao.usuario.id
+    const [conversas, agenda] = await Promise.all([
+      liberaSecao(acesso.regras, 'inbox') ? contarConversasDaBarra(clienteId, usuarioId) : null,
+      // Mesma regra dos atalhos da agenda: o número do menu e os da tela batem.
+      liberaSecao(acesso.regras, 'atividades')
+        ? contagensDaAgenda(clienteId, filtroDoAcesso(acesso, 'atender'), usuarioId, { ...lerFiltroDaAgenda({}), alcance: 'equipe' }, Date.now())
+        : null,
+    ])
+    return { minhas: conversas?.minhas ?? 0, 'sem-dono': conversas?.semDono ?? 0, atrasadas: agenda?.vencidas ?? 0 }
   } catch {
-    return null
+    // A barra não é lugar de erro: sem número, a tela continua abrindo.
+    return zeros
   }
 })
 
-async function Pendencias({ clienteId }: { clienteId: string }) {
-  const contagens = await contarPendencias(clienteId)
-  const quantidade = contagens ? contagens.vencidas + contagens.hoje : 0
+const DIZ: Record<Contagem, [string, string]> = {
+  minhas: ['conversa aberta com você', 'conversas abertas com você'],
+  'sem-dono': ['conversa sem responsável', 'conversas sem responsável'],
+  atrasadas: ['atividade atrasada', 'atividades atrasadas'],
+}
+
+async function Numero({ clienteId, qual }: { clienteId: string; qual: Contagem }) {
+  const quantidade = (await contarDaBarra(clienteId))[qual]
   if (!quantidade) return null
-  const recorte = contagens!.vencidas > 0 ? 'vencidas' : 'hoje'
+  const rotulo = `${quantidade} ${DIZ[qual][quantidade === 1 ? 0 : 1]}`
+  // Atrasada é a única que já passou da hora: a cor diz isso antes do número.
+  const tom = qual === 'atrasadas' ? 'bg-perigo/12 text-perigo' : 'bg-primary-weak text-primary'
   return (
-    <ContadorDaAgenda
-      quantidade={quantidade}
-      destino={`/clientes/${clienteId}/atividades?recorte=${recorte}&alcance=equipe`}
-    />
+    <span title={rotulo} aria-label={rotulo} className={`min-w-[20px] rounded-full px-1.5 py-px text-center text-[10.5px] font-bold tabular-nums ${tom}`}>
+      {quantidade > 99 ? '99+' : quantidade}
+    </span>
   )
+}
+
+async function Ponto({ clienteId, quais }: { clienteId: string; quais: Contagem[] }) {
+  const contagens = await contarDaBarra(clienteId)
+  const total = quais.reduce((soma, qual) => soma + contagens[qual], 0)
+  if (!total) return null
+  const urgente = contagens.atrasadas > 0 && quais.includes('atrasadas')
+  return <span role="img" aria-label="Há o que fazer aqui" className={`block size-2 rounded-full ring-2 ring-panel ${urgente ? 'bg-perigo' : 'bg-primary'}`} />
 }

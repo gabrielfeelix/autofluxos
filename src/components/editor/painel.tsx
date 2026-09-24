@@ -3293,14 +3293,14 @@ function ConsultasDaIa({
             Cadastre produtos no{' '}
             <a
               className="underline underline-offset-2 hover:text-primary"
-              href={`/clientes/${clienteId}/ajustes/produtos`}
+              href={`/clientes/${clienteId}/loja/catalogo`}
             >
               Catálogo
             </a>{' '}
             ou ligue a loja em{' '}
             <a
               className="underline underline-offset-2 hover:text-primary"
-              href={`/clientes/${clienteId}/ajustes/integracoes/magento`}
+              href={`/clientes/${clienteId}/loja/magento`}
             >
               Integrações
             </a>{' '}

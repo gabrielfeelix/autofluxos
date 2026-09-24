@@ -37,7 +37,7 @@ describe('o estado da conexão em camadas', () => {
     )
     expect(e.autorizacao).toBe('vencida')
     expect(e.falha).toMatch(/@studio venceu/)
-    expect(e.proximaAcao).toEqual({ texto: 'Reconectar o Instagram', href: '/ajustes/instagram' })
+    expect(e.proximaAcao).toEqual({ texto: 'Reconectar o Instagram', href: '/conversas/canais/instagram' })
     expect(seloDaConexao(e).tom).toBe('perigo')
   })
 

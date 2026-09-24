@@ -17,7 +17,6 @@ import { ListaOrdenavel } from '@/components/fluxos/lista-ordenavel'
 import { RenomearPasta } from '@/components/fluxos/renomear-pasta'
 import { ClienteShell } from '@/components/design/cliente-shell'
 import {
-  EsqueletoDeAbas,
   EsqueletoDeLista,
 } from '@/components/design/esqueleto'
 import { IlustracaoAutomacoes } from '@/components/design/ilustracoes'
@@ -161,7 +160,16 @@ export default async function Pagina({
   return (
     <ClienteShell cliente={cliente} ativa="fluxos">
       <main className="w-full max-w-[1440px] px-4 md:px-[42px] pt-[26px] pb-[42px]">
-        <h1 className="mb-5 text-[20px] font-bold tracking-[-0.02em] md:text-[25px]">Automações</h1>
+        {/*
+          Fluxos, Gatilhos e Sequências são subitens da barra lateral (plano de
+          navegação de 24/set), e a barra de abas que havia aqui saiu: eram duas
+          navegações dizendo a mesma coisa. O título é o do subitem, com a seção
+          em cima, como em Negócios.
+        */}
+        <p className="mb-1 text-[11px] font-semibold tracking-[0.06em] text-dim uppercase">Automações</p>
+        <h1 className="mb-5 text-[20px] font-bold tracking-[-0.02em] md:text-[25px]">
+          {ABAS_ROTULOS.find((item) => item.chave === principal)?.rotulo}
+        </h1>
 
         {/*
           O conteúdo desce depois do título, e não junto com ele.
@@ -177,7 +185,7 @@ export default async function Pagina({
           velho na tela até o novo ficar pronto, que é o congelamento de novo,
           agora por dentro.
         */}
-        <Suspense key={aba} fallback={<Espera principal={principal} />}>
+        <Suspense key={aba} fallback={<Espera />}>
           <ConteudoDaAba
             cliente={cliente}
             aba={aba}
@@ -191,14 +199,9 @@ export default async function Pagina({
   )
 }
 
-/** O que ocupa a tela entre o clique na aba e a resposta do banco. */
-function Espera({ principal }: { principal: AbaPrincipal }) {
-  return (
-    <>
-      <EsqueletoDeAbas abas={ABAS_ROTULOS} ativa={principal} />
-      <EsqueletoDeLista linhas={4} rotulo="Carregando as automações…" />
-    </>
-  )
+/** O que ocupa a tela entre o clique no subitem e a resposta do banco. */
+function Espera() {
+  return <EsqueletoDeLista linhas={4} rotulo="Carregando as automações…" />
 }
 
 async function ConteudoDaAba({
@@ -417,16 +420,6 @@ async function ConteudoDaAba({
     campanhas: contagens.campanhas,
     sequencias: contagens.sequencias,
   }
-  // Derivado dos rótulos, e não reescrito: a barra do esqueleto e a barra de
-  // verdade precisam ter os mesmos itens na mesma ordem, senão a tela pula
-  // quando o conteúdo chega.
-  // Gatilhos soma os três tipos; cada sub-aba mostra o seu.
-  const CONTAGEM_PRINCIPAL: Record<AbaPrincipal, number> = {
-    fluxos: CONTAGEM.fluxos,
-    gatilhos: CONTAGEM.palavras + CONTAGEM.eventos + CONTAGEM.campanhas,
-    sequencias: CONTAGEM.sequencias,
-  }
-  const ABAS = ABAS_ROTULOS.map((item) => ({ ...item, contagem: CONTAGEM_PRINCIPAL[item.chave] }))
   const TIPOS = TIPOS_ROTULOS.map((item) => ({ ...item, contagem: CONTAGEM[item.chave] }))
   const nomeDaEtiqueta = (id: string | null) =>
     etiquetas.find((etiqueta) => etiqueta.id === id)?.nome ?? 'uma etiqueta apagada'
@@ -458,40 +451,6 @@ async function ConteudoDaAba({
 
   return (
     <>
-        {/*
-          Abas, e não quatro seções empilhadas.
-          A tela tinha fluxos, palavras-chave, campanhas e sequências uma embaixo
-          da outra, cada uma com o próprio texto de apoio: quem abria via um
-          paredão de explicação e precisava rolar para descobrir que havia mais
-          coisa. São quatro assuntos que se usam **um de cada vez**, ninguém
-          cadastra campanha e sequência no mesmo minuto.
-
-          A aba vem por `?aba=`, e não por estado de cliente: assim o endereço
-          leva de volta ao mesmo lugar, o botão "voltar" do navegador funciona, e
-          a página continua sendo renderizada no servidor.
-        */}
-        <nav aria-label="Automações" className="mb-5 flex gap-1 overflow-x-auto border-b border-line whitespace-nowrap">
-          {ABAS.map((item) => (
-            <Link
-              key={item.chave}
-              href={`/clientes/${cliente.id}/fluxos?aba=${item.chave}`}
-              aria-current={item.chave === principal ? 'page' : undefined}
-              className={`-mb-px shrink-0 border-b-2 px-3 py-2.5 text-[13px] font-semibold transition sm:px-3.5 ${
-                item.chave === principal
-                  ? 'border-primary text-primary'
-                  : 'border-transparent text-dim hover:text-soft'
-              }`}
-            >
-              {item.rotulo}
-              {item.contagem > 0 && (
-                <span className="ml-1.5 rounded-full bg-surface-strong px-1.5 py-0.5 text-[10.5px] font-normal text-dim">
-                  {item.contagem}
-                </span>
-              )}
-            </Link>
-          ))}
-        </nav>
-
         {principal === 'gatilhos' && (
           <div className="mb-5 flex flex-col gap-2.5 md:flex-row md:items-center md:justify-between">
             <p className="text-[12.5px] text-muted">O que faz uma automação começar.</p>

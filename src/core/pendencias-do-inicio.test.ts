@@ -61,7 +61,7 @@ describe('pendenciasDoInicio', () => {
     expect(pendenciasDoInicio({ ...base, canais: [{ ...instagram, tokenExpiraEm: null }] })).toEqual([])
 
     const [vencido] = pendenciasDoInicio({ ...base, canais: [{ ...instagram, tokenExpiraEm: '2026-09-20T00:00:00Z' }] })
-    expect(vencido).toMatchObject({ tom: 'falha', href: '/ajustes/instagram' })
+    expect(vencido).toMatchObject({ tom: 'falha', href: '/conversas/canais/instagram' })
     expect(vencido?.texto).toContain('@studio')
   })
 
