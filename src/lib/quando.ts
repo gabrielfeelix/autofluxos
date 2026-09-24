@@ -173,3 +173,10 @@ export function etiquetasDeDia<T>(
     return rotuloDoDia(quandoFoi(item), agora)
   })
 }
+
+const dataComAno = new Intl.DateTimeFormat('pt-BR', { day: '2-digit', month: 'short', year: 'numeric', timeZone: FUSO })
+
+/** "23 de set. de 2026", no fuso do produto: igual no servidor e no navegador. */
+export function dataCurta(iso: string | Date): string {
+  return dataComAno.format(typeof iso === 'string' ? new Date(iso) : iso)
+}

@@ -16,7 +16,7 @@ import {
   Th,
   ThOrdenavel,
 } from '@/components/admin/partes'
-import { horaExata, quando } from '@/lib/quando'
+import { dataCurta, horaExata, quando } from '@/lib/quando'
 import { acaoCriarCliente } from '@/server/acoes'
 import { listarOrganizacoes, type OrganizacaoListada } from '@/server/repos/organizacoes'
 import { planosVigentes } from '@/server/repos/planos'
@@ -187,7 +187,7 @@ export default async function Organizacoes({
                   {organizacao.ultimaAtividade ? <span title={horaExata(organizacao.ultimaAtividade)}>{quando(organizacao.ultimaAtividade)}</span> : <span className="text-dim">sem conversa</span>}
                 </td>
                 <td className="px-4 py-3 text-[12px] whitespace-nowrap text-muted">
-                  <span title={horaExata(organizacao.criadaEm)}>{new Date(organizacao.criadaEm).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', year: 'numeric' })}</span>
+                  <span title={horaExata(organizacao.criadaEm)}>{dataCurta(organizacao.criadaEm)}</span>
                 </td>
                 <td className="px-3 py-3 text-right">
                   <Link href={`/clientes/${organizacao.id}`} className="app-secondary-button px-2.5 py-1 text-[11.5px] whitespace-nowrap" title="Abrir como Suporte 4YU">

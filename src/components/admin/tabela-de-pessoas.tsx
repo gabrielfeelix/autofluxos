@@ -9,7 +9,7 @@ import { RotuloCampo } from '@/components/design/modal-formulario'
 import { RolagemDaTabela } from '@/components/lead/rolagem-da-tabela'
 import { RemoverComDestino } from '@/components/conta/remover-com-destino'
 import { CLASSE_DO_CABECALHO, COLUNA_FIXA, FUNDO_DA_FIXA, FUNDO_DA_LINHA, Selo } from './partes'
-import { horaExata, quando } from '@/lib/quando'
+import { dataCurta, horaExata, quando } from '@/lib/quando'
 
 export type PessoaNaTabela = {
   id: string
@@ -196,7 +196,7 @@ export function TabelaDePessoas({
                   {pessoa.ultimoAcesso ? <span title={horaExata(pessoa.ultimoAcesso)}>{quando(pessoa.ultimoAcesso)}</span> : <span className="text-dim">nunca entrou</span>}
                 </td>
                 <td className="px-4 py-3 text-[12px] whitespace-nowrap text-muted">
-                  {new Date(pessoa.desde).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', year: 'numeric' })}
+                  {dataCurta(pessoa.desde)}
                 </td>
                 <td className="px-2 py-2.5">
                   <div className="flex items-center justify-end gap-1">

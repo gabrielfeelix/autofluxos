@@ -1,163 +1,116 @@
 import Link from 'next/link'
-import {
-  acaoDefinirPapelDePlataforma,
-  acaoEntrarComo,
-  acaoRevogarSessoes,
-  acaoSuspenderAcesso,
-} from '@/server/acoes-conta'
-import { listarUsuarios } from '@/server/repos/usuarios'
+import { BarraDeLista } from '@/components/design/barra-de-lista'
+import { lerParametros, ordenar, SemResultado, TelaDaAdministracao, Th, ThOrdenavel } from '@/components/admin/partes'
+import { TabelaDeUsuarios } from '@/components/admin/tabela-de-usuarios'
+import { usuariosDaPlataforma, type UsuarioDaPlataforma } from '@/server/repos/usuarios-da-plataforma'
 import { exigirAdminDaPlataforma } from '@/server/sessao'
-import { EscopoDoAdmin } from '@/components/conta/escopo-do-admin'
 
 export const dynamic = 'force-dynamic'
 
-/**
- * Quem existe, o que pode, e o "entrar como".
- *
- * **O "entrar como" é o recurso mais perigoso deste painel**, e o desenho da
- * tela reflete isso: ele não é o botão primário, ele diz na frente que fica
- * registrado, e a sessão que ele abre dura uma hora e carrega uma faixa âmbar
- * em toda tela. Nada disso pede a senha de ninguém, é sessão marcada, com
- * prazo e rastro, que é a boa prática do recurso.
- */
-export default async function Usuarios() {
-  const [sessao, usuarios] = await Promise.all([exigirAdminDaPlataforma(), listarUsuarios()])
+const BASE = '/admin/usuarios'
 
-  return (
-    <main className="w-full px-4 pt-[38px] pb-[46px] md:px-[46px]">
-      <header className="mb-7 flex flex-wrap items-end justify-between gap-4">
-        <div>
-          <EscopoDoAdmin>Usuários da plataforma · papel global</EscopoDoAdmin>
-          <h1 className="text-[25px] font-bold tracking-[-0.02em]">Usuários</h1>
-          <p className="mt-1 text-[13px] text-muted">
-            {usuarios.length} {usuarios.length === 1 ? 'pessoa cadastrada' : 'pessoas cadastradas'}.
-            O papel daqui é o da plataforma (suporte 4YU ou usuário comum); o papel dentro de
-            cada conta se muda na própria conta, em Equipe. Convite por e-mail ainda não existe:
-            a senha é combinada fora daqui.
-          </p>
-        </div>
+const SITUACOES = [
+  { valor: 'ativo', rotulo: 'Ativos' },
+  { valor: 'suspenso', rotulo: 'Suspensos' },
+  { valor: 'sem-organizacao', rotulo: 'Sem organização' },
+  { valor: 'nunca-entrou', rotulo: 'Nunca entraram' },
+]
 
-        <Link href="/criar-conta" className="app-primary-button px-[18px] py-2.5 text-[13px]">
-          + Cadastrar pessoa
-        </Link>
-      </header>
-
-      <ul className="flex flex-col gap-2">
-        {usuarios.map((usuario) => {
-          const souEu = usuario.id === sessao.usuario.id
-          const ehAdmin = usuario.papelDePlataforma.split(',').includes('admin')
-
-          return (
-            <li key={usuario.id} className="app-card p-4">
-              <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
-                <div className="min-w-0 flex-1">
-                  <h2 className="flex flex-wrap items-center gap-2 text-[15px] font-bold tracking-[-0.01em]">
-                    {usuario.nome}
-                    {souEu && <Selo tom="neutro">você</Selo>}
-                    {ehAdmin && <Selo tom="destaque">administrador da 4YU</Selo>}
-                    {usuario.banido && <Selo tom="alerta">suspenso</Selo>}
-                  </h2>
-                  <p className="mt-0.5 truncate text-[11.5px] text-dim">{usuario.email}</p>
-                </div>
-
-                <p className="text-[11.5px] text-dim">
-                  {usuario.sessoesAtivas === 0
-                    ? 'nenhuma sessão aberta'
-                    : `${usuario.sessoesAtivas} ${usuario.sessoesAtivas === 1 ? 'sessão aberta' : 'sessões abertas'}`}
-                </p>
-              </div>
-
-              <div className="mt-2 flex flex-wrap items-center gap-2">
-                {usuario.contas.length === 0 ? (
-                  <span className="text-[12px] text-aviso">
-                    sem conta nenhuma, entra e não vê nada
-                  </span>
-                ) : (
-                  usuario.contas.map((conta) => (
-                    <span
-                      key={conta.id}
-                      className="rounded-full border border-line bg-surface px-2.5 py-1 text-[11.5px] text-soft"
-                    >
-                      {conta.nome} <span className="text-dim">· {conta.papel}</span>
-                    </span>
-                  ))
-                )}
-              </div>
-
-              <div className="mt-3 flex flex-wrap items-center gap-2 border-t border-line pt-3">
-                {/*
-                  Fora quando não faz sentido, e não desabilitado: entrar como
-                  si mesmo não é nada, e entrar como quem não tem conta nenhuma
-                  leva a uma tela vazia. Botão que existe e não funciona ensina
-                  a desconfiar dos que funcionam.
-                */}
-                {!souEu && !usuario.banido && usuario.contas.length > 0 && (
-                  <form action={acaoEntrarComo.bind(null, usuario.id)}>
-                    <button type="submit" className="app-secondary-button px-3 py-1.5 text-[11.5px]">
-                      Entrar como
-                    </button>
-                  </form>
-                )}
-
-                {!souEu && (
-                  <form action={acaoDefinirPapelDePlataforma}>
-                    <input type="hidden" name="usuarioId" value={usuario.id} />
-                    <input type="hidden" name="papel" value={ehAdmin ? 'user' : 'admin'} />
-                    <button type="submit" className="app-secondary-button px-3 py-1.5 text-[11.5px]">
-                      {ehAdmin ? 'Tirar administração' : 'Tornar administrador'}
-                    </button>
-                  </form>
-                )}
-
-                {usuario.sessoesAtivas > 0 && (
-                  <form action={acaoRevogarSessoes}>
-                    <input type="hidden" name="usuarioId" value={usuario.id} />
-                    <button type="submit" className="app-secondary-button px-3 py-1.5 text-[11.5px]">
-                      Derrubar sessões
-                    </button>
-                  </form>
-                )}
-
-                {!souEu && (
-                  <form action={acaoSuspenderAcesso} className="ml-auto flex items-center gap-2">
-                    <input type="hidden" name="usuarioId" value={usuario.id} />
-                    <input type="hidden" name="suspender" value={usuario.banido ? '0' : '1'} />
-                    <button
-                      type="submit"
-                      className={`rounded-[10px] border px-3 py-1.5 text-[11.5px] font-semibold transition ${
-                        usuario.banido
-                          ? 'border-strong bg-surface text-soft hover:text-primary'
-                          : 'border-rose-400/25 bg-rose-400/[0.07] text-perigo hover:bg-rose-400/[0.13]'
-                      }`}
-                    >
-                      {usuario.banido ? 'Devolver acesso' : 'Suspender acesso'}
-                    </button>
-                  </form>
-                )}
-              </div>
-
-              <p className="mt-2.5 text-[11px] leading-5 text-dim">
-                Entrar como {usuario.nome.split(' ')[0]} abre uma sessão de <strong>1 hora</strong>{' '}
-                marcada no banco e registrada na auditoria. Não usa nem revela a senha dele.
-              </p>
-            </li>
-          )
-        })}
-      </ul>
-    </main>
-  )
+function passa(usuario: UsuarioDaPlataforma, situacao: string): boolean {
+  if (situacao === 'ativo') return !usuario.suspenso
+  if (situacao === 'suspenso') return usuario.suspenso
+  if (situacao === 'sem-organizacao') return usuario.organizacoes.length === 0
+  if (situacao === 'nunca-entrou') return usuario.ultimoAcesso === null
+  return true
 }
 
-function Selo({ children, tom }: { children: string; tom: 'neutro' | 'destaque' | 'alerta' }) {
-  const cores = {
-    neutro: 'border-strong bg-surface text-dim',
-    destaque: 'border-primary/30 bg-primary/[0.12] text-primary',
-    alerta: 'border-rose-400/30 bg-rose-400/[0.1] text-perigo',
-  }[tom]
+/**
+ * Usuários: os logins da plataforma, e não as pessoas de uma organização.
+ *
+ * Um login pode estar em várias organizações com função diferente em cada; a
+ * coluna Organizações mostra as duas primeiras com a função, e o resto no
+ * "+N". Mudar a função é na aba Pessoas da organização, onde o clique leva.
+ */
+export default async function Usuarios({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {
+  const parametros = lerParametros(await searchParams)
+  const [sessao, todos] = await Promise.all([exigirAdminDaPlataforma(), usuariosDaPlataforma()])
+
+  const busca = (parametros.busca ?? '').trim().toLocaleLowerCase('pt-BR')
+  const filtrados = todos.filter((usuario) => {
+    if (busca && ![usuario.nome, usuario.email, ...usuario.organizacoes.map((o) => o.nome)].some((texto) => texto.toLocaleLowerCase('pt-BR').includes(busca))) return false
+    if (parametros.tipo === 'admin' && !usuario.adminDaPlataforma) return false
+    if (parametros.tipo === 'usuario' && usuario.adminDaPlataforma) return false
+    if (parametros.situacao && !passa(usuario, parametros.situacao)) return false
+    return true
+  })
+  const lista = ordenar(
+    filtrados,
+    parametros,
+    {
+      nome: (u) => u.nome,
+      organizacoes: (u) => u.organizacoes.length,
+      sessoes: (u) => u.sessoesAtivas,
+      ultimo: (u) => (u.ultimoAcesso ? Date.parse(u.ultimoAcesso) : null),
+      criado: (u) => Date.parse(u.criadoEm),
+    },
+    { ordem: 'ultimo', direcao: 'desc' },
+  )
+  const temFiltro = !!(parametros.busca || parametros.tipo || parametros.situacao)
 
   return (
-    <span className={`rounded-full border px-2 py-0.5 text-[10.5px] font-semibold ${cores}`}>
-      {children}
-    </span>
+    <TelaDaAdministracao
+      titulo="Usuários"
+      descricao="Os logins da plataforma, as organizações de cada um e a função em cada uma. Convite por e-mail ainda não existe: a senha provisória é combinada fora daqui."
+      acoes={
+        <Link href="/criar-conta" className="app-primary-button px-[18px] py-2.5 text-[13px]">
+          + Cadastrar usuário
+        </Link>
+      }
+    >
+      <div className="mb-3">
+        <BarraDeLista
+          base={BASE}
+          parametros={parametros}
+          busca={{ chave: 'busca', placeholder: 'Exemplo: nome, e-mail ou organização', rotulo: 'Buscar usuário' }}
+          grupos={[
+            { chave: 'situacao', titulo: 'Situação', opcoes: SITUACOES },
+            { chave: 'tipo', titulo: 'Tipo', opcoes: [{ valor: 'admin', rotulo: 'Administradores da plataforma' }, { valor: 'usuario', rotulo: 'Usuários' }] },
+          ]}
+          resumo={temFiltro ? `${lista.length} de ${todos.length}` : `${todos.length} ${todos.length === 1 ? 'login' : 'logins'}`}
+        />
+      </div>
+      {lista.length === 0 ? (
+        <SemResultado titulo={temFiltro ? 'Nenhum usuário com estes filtros' : 'Nenhum usuário ainda'} limpar={temFiltro ? BASE : undefined} />
+      ) : (
+        <TabelaDeUsuarios
+          key={JSON.stringify(parametros)}
+          usuarios={lista.map((usuario) => ({ ...usuario, voce: usuario.id === sessao.usuario.id }))}
+          cabecalhos={
+            <>
+              <ThOrdenavel base={BASE} parametros={parametros} chave="nome" fixa>
+                Usuário
+              </ThOrdenavel>
+              <ThOrdenavel base={BASE} parametros={parametros} chave="organizacoes">
+                Organizações e função
+              </ThOrdenavel>
+              <Th>Tipo</Th>
+              <Th>Status</Th>
+              <ThOrdenavel base={BASE} parametros={parametros} chave="sessoes" className="text-right">
+                Sessões
+              </ThOrdenavel>
+              <ThOrdenavel base={BASE} parametros={parametros} chave="ultimo">
+                Último acesso
+              </ThOrdenavel>
+              <ThOrdenavel base={BASE} parametros={parametros} chave="criado">
+                Criado
+              </ThOrdenavel>
+              <Th>
+                <span className="sr-only">Ações</span>
+              </Th>
+            </>
+          }
+        />
+      )}
+    </TelaDaAdministracao>
   )
 }

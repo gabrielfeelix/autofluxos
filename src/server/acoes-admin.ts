@@ -1,6 +1,7 @@
 'use server'
 
 import { revalidatePath } from 'next/cache'
+import { headers } from 'next/headers'
 import type { EstadoSalvar } from '@/components/design/formulario-salvar'
 import { acaoRemoverLogo, acaoSalvarCadastro, acaoSalvarLogo } from './acoes'
 import { registrar } from './repos/auditoria'
@@ -216,6 +217,62 @@ export async function acaoAdminDarAcesso(
   })
   revalidatePath('/admin/usuarios')
   return { ok: true, pessoa: { id: usuarioId, nome: existente?.nome ?? nome, email, funcao } }
+}
+
+// ---------------------------------------------------------------------------
+// Usuários (logins) da plataforma
+// ---------------------------------------------------------------------------
+
+export type OperacaoDeUsuario = 'tornar_admin' | 'tirar_admin' | 'suspender' | 'devolver' | 'derrubar_sessoes'
+
+/**
+ * Uma operação sobre um login, para a tabela de Usuários.
+ *
+ * Devolve o resultado em vez de revalidar a tela: a linha já mudou na hora
+ * (ação otimista) e só volta se isto recusar.
+ */
+export async function acaoAdminUsuario(usuarioId: string, operacao: OperacaoDeUsuario): Promise<{ ok: boolean; erro?: string }> {
+  const sessao = await exigirAdminDaPlataforma()
+  if (usuarioId === sessao.usuario.id && operacao !== 'derrubar_sessoes') {
+    return { ok: false, erro: 'isso não se faz com o próprio login' }
+  }
+  const alvo = await acharUsuario(usuarioId)
+  if (!alvo) return { ok: false, erro: 'este login não existe mais' }
+
+  const api = autenticacao().api
+  const comHeaders = { headers: await headers() }
+  try {
+    if (operacao === 'tornar_admin' || operacao === 'tirar_admin') {
+      await api.setRole({ ...comHeaders, body: { userId: usuarioId, role: operacao === 'tornar_admin' ? 'admin' : 'user' } })
+    } else if (operacao === 'suspender') {
+      await api.banUser({ ...comHeaders, body: { userId: usuarioId } })
+    } else if (operacao === 'devolver') {
+      await api.unbanUser({ ...comHeaders, body: { userId: usuarioId } })
+    } else {
+      await api.revokeUserSessions({ ...comHeaders, body: { userId: usuarioId } })
+    }
+  } catch (erro) {
+    return { ok: false, erro: erro instanceof Error ? erro.message : 'não deu para fazer isso' }
+  }
+
+  const acao = {
+    tornar_admin: 'trocou_papel',
+    tirar_admin: 'trocou_papel',
+    suspender: 'suspendeu_acesso',
+    devolver: 'devolveu_acesso',
+    derrubar_sessoes: 'revogou_sessoes',
+  }[operacao]
+  await registrar({
+    acao,
+    autorId: sessao.usuario.id,
+    autorEmail: sessao.usuario.email,
+    alvoTipo: 'usuario',
+    alvoId: usuarioId,
+    alvoNome: alvo.nome,
+    detalhes: operacao.endsWith('_admin') ? { papelDePlataforma: operacao === 'tornar_admin' ? 'admin' : 'user' } : {},
+    impersonadoPor: sessao.impersonadoPor,
+  })
+  return { ok: true }
 }
 
 /** O que "dar acesso" devolve: a pessoa, para a tabela pôr a linha sem recarregar. */
