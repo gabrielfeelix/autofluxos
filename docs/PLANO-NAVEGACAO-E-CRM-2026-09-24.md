@@ -196,7 +196,26 @@ fica para o gesto rápido, a página para trabalhar o negócio.
   evento não guarda o id do cartão, a migration adiciona `cartao_id` anulável
   (próximo número **pelo diretório**, aplicar só no local, anotar no fim).
 
-### 5.2 Negócios em lista
+### 5.2 O cartão mostra o negócio, não a pessoa (decidido com o Gabriel, 24/set)
+
+**Um funil só, e ele é de negócios.** No banco já é assim: `quadro_cartoes` é a
+negociação (título, valor, situação, motivo) e aponta para o contato
+(`contato_id`). O que engana é a cara do cartão: hoje abre com avatar e nome da
+pessoa (`src/components/quadros/quadro.tsx`, perto da linha 464) e o título vem
+embaixo, pequeno. Parece um funil de contatos.
+
+Vira, nesta ordem: **título do negócio** (grande), **valor**, e embaixo, menor,
+**o lead** (avatar, nome, telefone), temperatura e dias na etapa. Cartão sem
+título mostra "Negócio de <nome>" em cinza, para ninguém achar que é a pessoa.
+Quando o bot cria o cartão sozinho (política de entrada, migration `0075`), o
+título nasce do produto de interesse se houver.
+
+Não existe funil de contatos. O ciclo de vida da pessoa (`contacts.estagio`:
+novo, qualificado, negociando, cliente, perdido, inativo) continua sendo um
+campo que muda sozinho, visto em Contatos como coluna e filtro, nunca em
+colunas de arrastar.
+
+### 5.2b Negócios em lista
 
 Alternância **Quadro | Lista** no topo de CRM > Negócios, como a Brevo.
 Colunas: negócio, contato, etapa, valor, responsável, temperatura, dias na
@@ -279,7 +298,7 @@ só no fim da frente.
   dá 404; esqueleto sem piscar; papel de atendimento não vê Automações nem
   Configurações.
 
-**F2. Página do negócio + lista de negócios** (5.1 e 5.2)
+**F2. Cartão com cara de negócio, página do negócio e lista** (5.1, 5.2 e 5.2b)
 - Aceite: do quadro, "Abrir negócio" leva à página; mudar etapa pelos degraus
   grava sem recarregar e aparece no histórico; aba Histórico filtra por tipo.
 
@@ -303,6 +322,7 @@ daquele plano segue depois de F1.
 - Nomes: Conversas, CRM, Negócios, Loja, Análise.
 - Etiqueta é a lista; não existe "Listas" separado.
 - Página do negócio além do diálogo do quadro (revê `MODELO-CRM.md`).
+- Um funil só, de negócios: o cartão mostra o negócio na frente e o lead embaixo. Não existe funil de contatos.
 - Rotas antigas redirecionam; nenhuma quebra.
 - Plataformas de loja brasileiras primeiro; "Quero esta" mede a ordem.
 - Empresas, Agenda com Google e Telefone ficam fora até os gatilhos da seção 6.
