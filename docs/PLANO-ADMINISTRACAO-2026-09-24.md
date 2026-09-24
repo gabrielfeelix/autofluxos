@@ -132,9 +132,58 @@ diretório, aplicada só com autorização explícita do Gabriel.
 
 ## 6. Execução (24/set/2026)
 
-A1 `518bc66` · A2 `afcae57` · A3 `cf8b496` · A4 `36c8aa5` · A5 `af34014` ·
-A6 `712e0fc` · A7 `f190147` (publicado). Migrations `0099` e `0100` só no
-local. Pendências e comando de produção: `docs/HANDOFF-24-SET-ADMINISTRACAO.md`.
+| Fase | Commit | O quê |
+|---|---|---|
+| A1 | `518bc66` | casca única, `/admin` como Visão geral |
+| A2 | `afcae57` | organizações em tabela e detalhe com abas |
+| A3 | `cf8b496` | usuários em tabela |
+| A4 | `36c8aa5` | consumo, alertas e auditoria |
+| A5 | `af34014` | trocar plano e atender pedidos |
+| A6 | `712e0fc` | planos editáveis (`0099`) |
+| A7 | `f190147` | funções e Pessoas com hierarquia (`0100`) |
+| fechamento | `d3da637`, `ad07b08`, `3405afc` | registro da produção, lint, Pessoas no celular |
+
+**`0099` e `0100` em produção desde 24/set/2026** (ensaio com 56 capacidades
+iguais antes e depois; registro em `docs/BANCO-COMPARTILHADO.md`). Deploy
+`3405afc` READY. Hierarquia testada no navegador local: gestor só vê a si e a
+atendente da equipe dele; gestor promoveu atendente a gestor; administradora
+não vê o proprietário nem tem "Proprietário" nas opções; proprietário passou a
+posse e virou Administrador (`af_membros`: `owner`/`proprietario` e
+`admin`/`administrador`). Prints em `.ux-local/a7/`.
+
+## 7. Próxima frente: ações por tela (pedido do Gabriel, 24/set)
+
+Hoje a administração **edita** plano e função, troca plano, suspende
+organização, mexe em pessoas e em usuários (admin da plataforma, suspender,
+derrubar sessões). Falta o resto das ações. Decisões, já tomadas:
+
+**Planos (A8, precisa de migration nova, numerada pelo diretório)**
+- Criar plano, e "Duplicar" como atalho. Sai o `check` de ids fixos de
+  `planos.id` e de `clients.plano`; o id nasce do nome e não muda depois.
+- Excluir: **bloqueado enquanto houver organização no plano**. O modal diz
+  "N organizações estão neste plano", lista as organizações e oferece "Mover
+  todas para [plano]" antes de deixar excluir. Pedido de troca pendente para
+  o plano também bloqueia. Sempre sobra pelo menos um plano à venda.
+- "Tirar de venda" (`ativo = false`) continua sendo o caminho sem perda: quem
+  já está no plano fica, ninguém novo entra.
+- A landing segue em `core/planos.ts` (decisão da A6); plano novo não aparece
+  nela sozinho.
+
+**Usuários (A9, sem banco)**
+- Editar nome e e-mail; redefinir senha (senha provisória, como no Dar acesso).
+- Organizações do usuário: pôr numa organização com função, trocar a função,
+  tirar dela (mesma regra de hierarquia, com o Suporte no nível 5).
+- Excluir usuário: bloqueado se ele for o único Proprietário de alguma
+  organização; o modal lista quais e manda passar a posse antes.
+
+**Organizações (A10, sem banco)**
+- Criar organização pela administração (nome, plano, proprietário por e-mail).
+- Excluir organização: modal que mostra o que se perde (contatos, conversas,
+  canais) e pede o nome digitado; bloqueado com canal conectado, que precisa
+  ser desconectado antes. Suspender continua sendo o caminho reversível.
+
+**Funções**: continuam as quatro, sem criar nem excluir. O nível é a
+hierarquia, e função nova no meio quebraria "quem mexe em quem".
 
 ## Decisões da execução
 
