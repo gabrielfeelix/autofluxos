@@ -8,7 +8,7 @@ import {
   type Lead,
 } from '@/server/repos/leads'
 import { exigirCapacidade, recusou } from '@/server/permissoes'
-import { contatosDoNivel } from '@/server/consultas/nivel'
+import { contatosDoNivel, contatosDoSegmento, emAmbos } from '@/server/consultas/nivel'
 import { faixasDaConta } from '@/server/repos/relacionamento'
 import { FAIXAS_PADRAO, NIVEIS, type Nivel } from '@/core/relacionamento'
 
@@ -92,8 +92,11 @@ export async function GET(
 
   const faixas = (await faixasDaConta(cliente.id)) ?? FAIXAS_PADRAO
   const daFaixa = nivel ? await contatosDoNivel(cliente.id, nivel, faixas) : null
+  // O segmento pelo mesmo motivo e pela mesma função da tela.
+  const segmento = parametros.get('segmento') || null
+  const doSegmento = segmento ? await contatosDoSegmento(cliente.id, segmento) : null
 
-  const leads = await lerTudo(cliente.id, busca, etiqueta, marca, daFaixa)
+  const leads = await lerTudo(cliente.id, busca, etiqueta, marca, emAmbos(daFaixa, doSegmento))
   const colunas = colunasDosCampos(leads)
 
   const arquivo = montarCsv(

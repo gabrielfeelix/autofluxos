@@ -7,6 +7,8 @@ export type FiltroDeContatos = {
   marca: string | null
   busca: string
   nivel: Nivel | null
+  /** Um segmento salvo (a regra). Soma com os outros, como a etiqueta. */
+  segmento?: string | null
 }
 
 /**
@@ -21,6 +23,7 @@ export function enderecoDosContatos(base: string, filtro: Partial<FiltroDeContat
   if (filtro.marca) parametros.set('marca', filtro.marca)
   if (filtro.busca) parametros.set('busca', filtro.busca)
   if (filtro.nivel) parametros.set('nivel', filtro.nivel)
+  if (filtro.segmento) parametros.set('segmento', filtro.segmento)
   const consulta = parametros.toString()
   return consulta ? `${base}?${consulta}` : base
 }

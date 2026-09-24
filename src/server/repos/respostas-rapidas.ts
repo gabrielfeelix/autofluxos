@@ -31,17 +31,45 @@ export async function listarRespostasRapidas(clienteId: string): Promise<Respost
 export async function criarRespostaRapida(
   clienteId: string,
   resposta: Omit<RespostaRapida, 'id'>,
-): Promise<void> {
-  const { error } = await db().from('quick_replies').insert({
-    client_id: clienteId,
-    atalho: resposta.atalho,
-    texto: resposta.texto,
-  })
+): Promise<RespostaRapida> {
+  const { data, error } = await db()
+    .from('quick_replies')
+    .insert({
+      client_id: clienteId,
+      atalho: resposta.atalho,
+      texto: resposta.texto,
+    })
+    .select(COLUNAS)
+    .single()
 
   if (error?.code === '23505') {
     throw new Error(`já existe uma resposta rápida /${resposta.atalho} para este cliente`)
   }
   if (error) throw new Error(`não deu para criar a resposta rápida: ${error.message}`)
+  // Devolvida para a tela acrescentar a linha sem refazer a página.
+  return data as Linha
+}
+
+/** Troca atalho e texto. O par resposta–cliente, como em apagar. */
+export async function editarRespostaRapida(
+  respostaId: string,
+  clienteId: string,
+  resposta: Omit<RespostaRapida, 'id'>,
+): Promise<RespostaRapida | null> {
+  const { data, error } = await db()
+    .from('quick_replies')
+    .update({ atalho: resposta.atalho, texto: resposta.texto })
+    .eq('id', respostaId)
+    .eq('client_id', clienteId)
+    .select(COLUNAS)
+    .maybeSingle()
+
+  if (error?.code === '23505') {
+    throw new Error(`já existe uma resposta rápida /${resposta.atalho} para este cliente`)
+  }
+  if (ehIdInvalido(error)) return null
+  if (error) throw new Error(`não deu para editar a resposta rápida: ${error.message}`)
+  return (data as Linha | null) ?? null
 }
 
 /** O par resposta–cliente evita apagar um atalho pelo id de outro cliente. */

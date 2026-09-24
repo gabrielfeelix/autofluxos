@@ -1,6 +1,7 @@
 import 'server-only'
 import { condicoesDoNivel } from '@/core/segmentos'
 import type { Nivel } from '@/core/relacionamento'
+import { acharSegmento } from '../repos/segmentos'
 import { consultarContatos } from './contatos'
 
 /**
@@ -51,4 +52,29 @@ export async function contatosDoNivel(
   })
 
   return r.contatos.map((contato) => contato.contatoId)
+}
+
+/**
+ * Quem casa com um segmento salvo, pelo mesmo caminho e com o mesmo teto do
+ * nível: a tela de Contatos e o CSV filtram por `?segmento=` com isto.
+ * Segmento apagado depois de o link ser salvo não é "sem filtro": é ninguém.
+ */
+export async function contatosDoSegmento(clienteId: string, segmentoId: string): Promise<string[]> {
+  const segmento = await acharSegmento(clienteId, segmentoId)
+  if (!segmento) return []
+  const r = await consultarContatos({
+    clienteId,
+    segmento: segmento.regra,
+    escopo: { tipo: 'tudo' },
+    porPagina: TETO,
+  })
+  return r.contatos.map((contato) => contato.contatoId)
+}
+
+/** Dois filtros por lista de ids somam: passa quem está nos dois. `null` é "sem filtro". */
+export function emAmbos(a: string[] | null, b: string[] | null): string[] | null {
+  if (a === null) return b
+  if (b === null) return a
+  const emB = new Set(b)
+  return a.filter((id) => emB.has(id))
 }

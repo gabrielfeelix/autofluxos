@@ -1,5 +1,6 @@
 'use client'
 
+import Link from 'next/link'
 import { useCallback, useState, useTransition } from 'react'
 import { AvisoFlutuante } from '@/components/design/aviso-flutuante'
 import { useConfirmar } from '@/components/design/confirmar'
@@ -143,8 +144,20 @@ export function TabelaDeSegmentos({ clienteId, inicial }: { clienteId: string; i
                     <p className="mt-0.5 line-clamp-2 text-[12px] leading-5 text-dim">{explicarSegmento(s.regra)}</p>
                   )}
                 </td>
-                <td className="px-4 py-3.5 text-right text-[13.5px] font-semibold tabular-nums text-ink">
-                  {s.contatos === null ? <span className="text-dim">…</span> : s.contatos}
+                <td className="px-4 py-3.5 text-right text-[13.5px] font-semibold tabular-nums">
+                  {s.contatos === null ? (
+                    <span className="text-dim">…</span>
+                  ) : s.contatos === 0 ? (
+                    <span className="text-dim">0</span>
+                  ) : (
+                    <Link
+                      href={`/clientes/${clienteId}/leads?segmento=${s.id}`}
+                      title={`Ver os ${s.contatos} contatos de “${s.nome}”`}
+                      className="text-primary hover:underline"
+                    >
+                      {s.contatos}
+                    </Link>
+                  )}
                 </td>
                 <td className="hidden truncate px-4 py-3.5 text-soft lg:table-cell">{s.criadoPor ?? <span className="text-dim">-</span>}</td>
                 <td className="hidden px-4 py-3.5 tabular-nums text-dim md:table-cell">{DATA.format(new Date(s.criadoEm))}</td>

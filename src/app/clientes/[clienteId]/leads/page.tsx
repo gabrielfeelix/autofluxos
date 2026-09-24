@@ -33,7 +33,8 @@ import { acaoCriarContato } from '@/server/acoes'
 import { listarEtiquetasComContagem, type Etiqueta } from '@/server/repos/etiquetas'
 import { listarQuadros } from '@/server/repos/quadros'
 import { faixasDaConta, relacionamentoDeMuitos } from '@/server/repos/relacionamento'
-import { contatosDoNivel } from '@/server/consultas/nivel'
+import { contatosDoNivel, contatosDoSegmento, emAmbos } from '@/server/consultas/nivel'
+import { listarSegmentos } from '@/server/repos/segmentos'
 import { FAIXAS_PADRAO, NIVEIS, type Nivel } from '@/core/relacionamento'
 import { SeloDoCliente } from '@/components/lead-crm/selo-do-cliente'
 import { Responsavel } from '@/components/atividades/linha-da-agenda'
@@ -49,6 +50,8 @@ type Busca = {
   pagina?: string | string[]
   /** O nível do cliente (0070): ouro, prata, bronze, sem_compra. */
   nivel?: string | string[]
+  /** Um segmento salvo (CRM > Segmentos). */
+  segmento?: string | string[]
 }
 
 function primeiro(valor: string | string[] | undefined): string {
@@ -73,14 +76,16 @@ function enderecoDoCsv(
   marca: string | null,
   busca: string,
   nivel: Nivel | null,
+  segmento: string | null,
 ): string {
   const parametros = new URLSearchParams()
   if (etiqueta) parametros.set('etiqueta', etiqueta)
   if (marca) parametros.set('marca', marca)
   if (busca) parametros.set('busca', busca)
   // Sem isto, o CSV não vê a faixa e exporta a base inteira: é metade do
-  // defeito da RB-37, e é a metade que sai por e-mail.
+  // defeito da RB-37, e é a metade que sai por e-mail. Vale igual para o segmento.
   if (nivel) parametros.set('nivel', nivel)
+  if (segmento) parametros.set('segmento', segmento)
 
   const consulta = parametros.toString()
   return `/api/clientes/${clienteId}/leads/csv${consulta ? `?${consulta}` : ''}`
@@ -97,6 +102,7 @@ function fichaComVolta(filtro: Filtro, contatoId: string): string {
   if (filtro.marca) parametros.set('marca', filtro.marca)
   if (filtro.termo) parametros.set('busca', filtro.termo)
   if (filtro.nivel) parametros.set('nivel', filtro.nivel)
+  if (filtro.segmento) parametros.set('segmento', filtro.segmento)
   if (filtro.pagina > 1) parametros.set('pagina', String(filtro.pagina))
   const consulta = parametros.toString()
   return hrefDaFicha(filtro.clienteId, contatoId, {
@@ -112,6 +118,7 @@ type Filtro = {
   termo: string
   pagina: number
   nivel: Nivel | null
+  segmento: string | null
 }
 
 /**
@@ -122,7 +129,15 @@ type Filtro = {
  * faz os três receberem a mesma leitura em vez de três idas ao banco.
  */
 const lerPagina = cache(
-  async (clienteId: string, etiqueta: EtiquetaDeLead | null, marca: string | null, termo: string, pagina: number, nivel: Nivel | null) => {
+  async (
+    clienteId: string,
+    etiqueta: EtiquetaDeLead | null,
+    marca: string | null,
+    termo: string,
+    pagina: number,
+    nivel: Nivel | null,
+    segmento: string | null,
+  ) => {
     const faixas = (await faixasDaConta(clienteId)) ?? FAIXAS_PADRAO
 
     /*
@@ -139,6 +154,8 @@ const lerPagina = cache(
       caminho que a exportação usa.
     */
     const daFaixa = nivel ? await contatosDoNivel(clienteId, nivel, faixas) : null
+    // O segmento entra pelo mesmo caminho, antes de paginar, e soma com a faixa.
+    const doSegmento = segmento ? await contatosDoSegmento(clienteId, segmento) : null
     const resultado = await paginarLeads(clienteId, {
       // Contatos é a base inteira. Sem isto valia o padrão do Inbox
       // (`aberta`) e quem teve a conversa resolvida sumia da lista e do total.
@@ -147,7 +164,7 @@ const lerPagina = cache(
       etiquetaId: marca,
       busca: termo,
       pagina,
-      contatos: daFaixa,
+      contatos: emAmbos(daFaixa, doSegmento),
       // Atendente vê os contatos dele e os sem responsável; gestor, os da equipe.
       alcance: await meuAlcance(clienteId),
     })
@@ -155,8 +172,9 @@ const lerPagina = cache(
   },
 )
 
-const ler = (f: Filtro) => lerPagina(f.clienteId, f.etiqueta, f.marca, f.termo, f.pagina, f.nivel)
-const filtrando = (f: Filtro) => f.etiqueta !== null || f.marca !== null || f.termo !== '' || f.nivel !== null
+const ler = (f: Filtro) => lerPagina(f.clienteId, f.etiqueta, f.marca, f.termo, f.pagina, f.nivel, f.segmento)
+const filtrando = (f: Filtro) =>
+  f.etiqueta !== null || f.marca !== null || f.termo !== '' || f.nivel !== null || f.segmento !== null
 
 export default async function Pagina({
   params,
@@ -176,14 +194,16 @@ export default async function Pagina({
     termo: limparBusca(primeiro(busca.busca)),
     pagina: Math.max(1, Number(primeiro(busca.pagina)) || 1),
     nivel: nivelValido(busca.nivel),
+    segmento: primeiro(busca.segmento) || null,
   }
-  const chave = `${filtro.etiqueta}-${filtro.marca}-${filtro.termo}-${filtro.pagina}-${filtro.nivel}`
+  const chave = `${filtro.etiqueta}-${filtro.marca}-${filtro.termo}-${filtro.pagina}-${filtro.nivel}-${filtro.segmento}`
 
-  // O total da conta decide entre a tela de primeira vez e a tabela; as
-  // etiquetas alimentam o popover de filtros. As duas leituras são baratas.
-  const [totalDaConta, etiquetasDaConta] = await Promise.all([
+  // O total da conta decide entre a tela de primeira vez e a tabela; etiquetas
+  // e segmentos alimentam o popover de filtros. As leituras são baratas.
+  const [totalDaConta, etiquetasDaConta, segmentosDaConta] = await Promise.all([
     contarLeads(cliente.id),
     listarEtiquetasComContagem(cliente.id),
+    listarSegmentos(cliente.id),
   ])
 
   return (
@@ -197,8 +217,15 @@ export default async function Pagina({
           <>
             <BarraDeContatos
               base={`/clientes/${cliente.id}/leads`}
-              filtro={{ etiqueta: filtro.etiqueta, marca: filtro.marca, busca: filtro.termo, nivel: filtro.nivel }}
+              filtro={{
+                etiqueta: filtro.etiqueta,
+                marca: filtro.marca,
+                busca: filtro.termo,
+                nivel: filtro.nivel,
+                segmento: filtro.segmento,
+              }}
               manuais={etiquetasDaConta.map(({ id, nome, contatos }) => ({ id, nome, contatos: contatos ?? null }))}
+              segmentos={segmentosDaConta.map(({ id, nome }) => ({ id, nome }))}
               colunas={
                 <Suspense key={chave} fallback={<ColunasEsperando />}>
                   <ColunasDoFiltro filtro={filtro} />
@@ -259,7 +286,7 @@ function CabecalhoDaTela({ filtro, chave, totalDaConta }: { filtro: Filtro; chav
           </Link>
           {totalDaConta > 0 && (
             <a
-              href={enderecoDoCsv(clienteId, filtro.etiqueta, filtro.marca, filtro.termo, filtro.nivel)}
+              href={enderecoDoCsv(clienteId, filtro.etiqueta, filtro.marca, filtro.termo, filtro.nivel, filtro.segmento)}
               data-fechar-popover
               className="quadro-menu-item"
             >

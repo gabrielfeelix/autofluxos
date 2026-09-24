@@ -32,12 +32,15 @@ export function BarraDeContatos({
   base,
   filtro,
   manuais,
+  segmentos = [],
   colunas,
 }: {
   /** `/clientes/<id>/leads`. */
   base: string
   filtro: FiltroDeContatos
   manuais: { id: string; nome: string; contatos: number | null }[]
+  /** Os segmentos salvos, para filtrar por um deles (CRM > Segmentos). */
+  segmentos?: { id: string; nome: string }[]
   /** O botão Colunas, que depende das colunas da página e por isso vem pronto. */
   colunas: ReactNode
 }) {
@@ -72,7 +75,10 @@ export function BarraDeContatos({
   const automatica = AUTOMATICAS.find((a) => a.etiqueta === filtro.etiqueta)
   // Etiqueta apagada enquanto o link ficou salvo: o filtro vale, só não tem nome.
   const manual = filtro.marca ? (manuais.find((m) => m.id === filtro.marca)?.nome ?? 'etiqueta apagada') : null
-  const noPopover = (filtro.nivel ? 1 : 0) + (filtro.etiqueta ? 1 : 0) + (filtro.marca ? 1 : 0)
+  const doSegmento = filtro.segmento
+    ? (segmentos.find((s) => s.id === filtro.segmento)?.nome ?? 'segmento apagado')
+    : null
+  const noPopover = (filtro.nivel ? 1 : 0) + (filtro.etiqueta ? 1 : 0) + (filtro.marca ? 1 : 0) + (filtro.segmento ? 1 : 0)
   const temFiltro = noPopover > 0 || filtro.busca !== ''
 
   return (
@@ -159,6 +165,21 @@ export function BarraDeContatos({
               ))}
             </>
           )}
+
+          {segmentos.length > 0 && (
+            <>
+              <p className="quadro-menu-label mt-1 border-t border-line pt-2">Segmentos</p>
+              {segmentos.map((opcao) => (
+                <Opcao
+                  key={opcao.id}
+                  ativa={filtro.segmento === opcao.id}
+                  aoEscolher={() => ir({ segmento: filtro.segmento === opcao.id ? null : opcao.id })}
+                >
+                  {opcao.nome}
+                </Opcao>
+              ))}
+            </>
+          )}
         </PopoverDoQuadro>
         {colunas}
         {carregando && <span className="text-[11.5px] text-dim">carregando…</span>}
@@ -173,9 +194,10 @@ export function BarraDeContatos({
           )}
           {automatica && <Chip rotulo={`Etiqueta: ${automatica.rotulo}`} aoTirar={() => ir({ etiqueta: null })} />}
           {manual && <Chip rotulo={`Etiqueta: ${manual}`} aoTirar={() => ir({ marca: null })} />}
+          {doSegmento && <Chip rotulo={`Segmento: ${doSegmento}`} aoTirar={() => ir({ segmento: null })} />}
           <button
             type="button"
-            onClick={() => ir({ busca: '', nivel: null, etiqueta: null, marca: null })}
+            onClick={() => ir({ busca: '', nivel: null, etiqueta: null, marca: null, segmento: null })}
             className="font-semibold text-muted underline-offset-2 hover:text-primary hover:underline"
           >
             Limpar tudo

@@ -187,7 +187,7 @@ export function TabelaDeEtiquetas({ clienteId, inicial }: { clienteId: string; i
                         gatilho={<span aria-hidden className="px-0.5 text-[14px] leading-none">⋯</span>}
                       >
                         <button type="button" data-fechar-popover className="quadro-menu-item" onClick={() => setEdicao({ tipo: 'renomear', etiqueta: e })}>
-                          Renomear
+                          Editar
                         </button>
                         <button
                           type="button"
@@ -227,8 +227,8 @@ export function TabelaDeEtiquetas({ clienteId, inicial }: { clienteId: string; i
       {edicao?.tipo === 'nova' && <FormularioDaEtiqueta titulo="Nova etiqueta" rotulo="Criar etiqueta" aoFechar={() => setEdicao(null)} aoSalvar={criar} />}
       {edicao?.tipo === 'renomear' && (
         <FormularioDaEtiqueta
-          titulo={`Renomear “${edicao.etiqueta.nome}”`}
-          descricao="Quem já tem a etiqueta continua com ela: renomear não é recriar."
+          titulo={`Editar “${edicao.etiqueta.nome}”`}
+          descricao="Nome e cor. Quem já tem a etiqueta continua com ela: editar não é recriar."
           rotulo="Salvar"
           inicial={edicao.etiqueta}
           aoFechar={() => setEdicao(null)}
