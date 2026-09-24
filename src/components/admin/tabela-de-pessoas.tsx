@@ -12,6 +12,9 @@ import { RemoverComDestino } from '@/components/conta/remover-com-destino'
 import { CLASSE_DO_CABECALHO, COLUNA_FIXA, FUNDO_DA_FIXA, FUNDO_DA_LINHA, Selo } from './partes'
 import { dataCurta, horaExata, quando } from '@/lib/quando'
 
+/** O seletor de função na linha, mais baixo que o do formulário. */
+const DROPDOWN_COMPACTO = '[&_.app-dropdown-trigger]:min-h-9! [&_.app-dropdown-trigger]:py-1.5! [&_.app-dropdown-trigger]:text-[12.5px]'
+
 export type PessoaNaTabela = {
   id: string
   nome: string
@@ -79,9 +82,16 @@ export function TabelaDePessoas({
           setPessoas((lista) => lista.map((item) => (item.id === pessoa.id ? { ...item, funcao: anterior } : item)))
           setAviso(r.erro ?? 'não deu para trocar a função')
         } else if (funcao === 'proprietario') {
-          // A posse passou: quem era dono vira Administrador. A lista local
-          // acompanha, sem recarregar a tela.
-          setPessoas((lista) => lista.map((item) => (item.id !== pessoa.id && item.funcao === 'proprietario' ? { ...item, funcao: 'administrador', podeEditar: item.podeEditar } : item)))
+          // A posse passou: quem era dono vira Administrador, e quem pediu
+          // desce junto. A lista acompanha sem recarregar: a nova dona e os
+          // administradores deixam de ser editáveis por quem pediu.
+          setPessoas((lista) =>
+            lista.map((item) => {
+              if (item.id === pessoa.id) return { ...item, podeEditar: false }
+              const funcaoNova = item.funcao === 'proprietario' ? 'administrador' : item.funcao
+              return { ...item, funcao: funcaoNova, podeEditar: item.podeEditar && funcaoNova !== 'administrador' }
+            }),
+          )
         }
       } catch {
         setPessoas((lista) => lista.map((item) => (item.id === pessoa.id ? { ...item, funcao: anterior } : item)))
@@ -100,6 +110,32 @@ export function TabelaDePessoas({
       setRemovendo({ pessoa, pendencias: { conversas: r.conversas ?? 0, cartoes: r.cartoes ?? 0, atividades: r.atividades ?? 0 } })
     })
   }
+
+  const ajustarDa = (pessoa: PessoaNaTabela) =>
+    pessoa.podeEditar && acesso?.porPessoa[pessoa.id] ? (
+      <button
+        type="button"
+        onClick={() => setAjustando(acesso.porPessoa[pessoa.id] ?? null)}
+        className="shrink-0 rounded-[8px] px-2.5 py-1.5 text-[12px] font-semibold whitespace-nowrap text-muted transition hover:bg-surface hover:text-ink"
+      >
+        Ajustar acesso
+      </button>
+    ) : null
+
+  const removerDa = (pessoa: PessoaNaTabela) =>
+    pessoa.podeEditar ? (
+      <button
+        type="button"
+        onClick={() => pedirRemocao(pessoa)}
+        title={`Tirar ${pessoa.nome} da organização`}
+        aria-label={`Tirar ${pessoa.nome} da organização`}
+        className="flex size-8 shrink-0 items-center justify-center rounded-lg text-dim transition hover:bg-rose-400/[0.08] hover:text-perigo"
+      >
+        <svg aria-hidden width="15" height="15" viewBox="0 0 15 15" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
+          <path d="M2.5 4h10M6 4V2.6h3V4M3.8 4l.6 8.6h6.2l.6-8.6" />
+        </svg>
+      </button>
+    ) : null
 
   const cabecalho = (
     <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
@@ -149,9 +185,47 @@ export function TabelaDePessoas({
     <>
     {cabecalho}
     {modal}
-    <div className="app-card flex min-h-0 flex-1 flex-col overflow-hidden">
+    <ul className="app-card divide-y divide-line overflow-hidden md:hidden">
+      {pessoas.map((pessoa) => (
+        <li key={pessoa.id} className="px-4 py-3.5">
+          <div className="flex items-center gap-3">
+            <Avatar nome={pessoa.nome} imagem={null} tamanho={36} />
+            <div className="min-w-0 flex-1">
+              <p className="flex items-center gap-1.5 text-[13.5px] font-bold">
+                <span className="truncate">{pessoa.nome}</span>
+                {pessoa.voce && <Selo>você</Selo>}
+              </p>
+              <p className="truncate text-[11.5px] text-dim">{pessoa.email}</p>
+            </div>
+            {pessoa.suspensa && <Selo tom="alerta">Suspensa</Selo>}
+            {removerDa(pessoa)}
+          </div>
+          <div className="mt-3 flex items-center gap-2 pl-12">
+            {pessoa.podeEditar && funcoes.some((funcao) => funcao.valor === pessoa.funcao) ? (
+              <Dropdown
+                rotuloAcessivel={`Função de ${pessoa.nome}`}
+                valor={pessoa.funcao}
+                aoMudar={(valor) => valor !== pessoa.funcao && trocar(pessoa, valor)}
+                opcoes={funcoes}
+                className={`min-w-0 flex-1 ${DROPDOWN_COMPACTO}`}
+              />
+            ) : (
+              <span className="flex-1">
+                <Selo tom={pessoa.funcao === 'proprietario' ? 'destaque' : 'neutro'}>{rotulo.get(pessoa.funcao) ?? rotuloPadrao(pessoa.funcao)}</Selo>
+              </span>
+            )}
+            {ajustarDa(pessoa)}
+          </div>
+          <p className="mt-2 pl-12 text-[11.5px] text-dim">
+            {pessoa.equipes.length === 0 ? 'sem equipe' : pessoa.equipes.join(', ')} ·{' '}
+            {pessoa.ultimoAcesso ? `entrou ${quando(pessoa.ultimoAcesso)}` : 'nunca entrou'}
+          </p>
+        </li>
+      ))}
+    </ul>
+    <div className="app-card hidden min-h-0 flex-1 flex-col overflow-hidden md:flex">
       <RolagemDaTabela>
-        <table className="w-full min-w-[860px] border-collapse text-left">
+        <table className="w-full min-w-[780px] border-collapse text-left">
           <thead>
             <tr className="border-b border-line">
               <th scope="col" className={`${CLASSE_DO_CABECALHO} ${COLUNA_FIXA} z-[3] bg-panel`}>Pessoa</th>
@@ -159,7 +233,7 @@ export function TabelaDePessoas({
               <th scope="col" className={CLASSE_DO_CABECALHO}>Equipe</th>
               <th scope="col" className={CLASSE_DO_CABECALHO}>Status</th>
               <th scope="col" className={CLASSE_DO_CABECALHO}>Último acesso</th>
-              <th scope="col" className={CLASSE_DO_CABECALHO}>Desde</th>
+              <th scope="col" className={`${CLASSE_DO_CABECALHO} hidden 2xl:table-cell`}>Desde</th>
               <th scope="col" className="w-12 px-2 py-3">
                 <span className="sr-only">Ações</span>
               </th>
@@ -187,7 +261,7 @@ export function TabelaDePessoas({
                       valor={pessoa.funcao}
                       aoMudar={(valor) => valor !== pessoa.funcao && trocar(pessoa, valor)}
                       opcoes={funcoes}
-                      className="w-[172px]"
+                      className={`w-[152px] ${DROPDOWN_COMPACTO}`}
                     />
                   ) : (
                     <Selo tom={pessoa.funcao === 'proprietario' ? 'destaque' : 'neutro'}>{rotulo.get(pessoa.funcao) ?? rotuloPadrao(pessoa.funcao)}</Selo>
@@ -198,35 +272,17 @@ export function TabelaDePessoas({
                 </td>
                 <td className="px-4 py-3">{pessoa.suspensa ? <Selo tom="alerta">Suspensa</Selo> : <Selo tom="ok">Ativa</Selo>}</td>
                 <td className="px-4 py-3 text-[12px] whitespace-nowrap text-muted">
-                  {pessoa.ultimoAcesso ? <span title={horaExata(pessoa.ultimoAcesso)}>{quando(pessoa.ultimoAcesso)}</span> : <span className="text-dim">nunca entrou</span>}
+                  <span title={`Na organização desde ${dataCurta(pessoa.desde)}`}>
+                    {pessoa.ultimoAcesso ? <span title={horaExata(pessoa.ultimoAcesso)}>{quando(pessoa.ultimoAcesso)}</span> : <span className="text-dim">nunca entrou</span>}
+                  </span>
                 </td>
-                <td className="px-4 py-3 text-[12px] whitespace-nowrap text-muted">
+                <td className="hidden px-4 py-3 text-[12px] whitespace-nowrap text-muted 2xl:table-cell">
                   {dataCurta(pessoa.desde)}
                 </td>
                 <td className="px-2 py-2.5">
                   <div className="flex items-center justify-end gap-1">
-                    {pessoa.podeEditar && acesso?.porPessoa[pessoa.id] && (
-                      <button
-                        type="button"
-                        onClick={() => setAjustando(acesso.porPessoa[pessoa.id] ?? null)}
-                        className="rounded-[8px] px-2.5 py-1.5 text-[12px] font-semibold whitespace-nowrap text-muted transition hover:bg-surface hover:text-ink"
-                      >
-                        Ajustar acesso
-                      </button>
-                    )}
-                    {pessoa.podeEditar && (
-                      <button
-                        type="button"
-                        onClick={() => pedirRemocao(pessoa)}
-                        title={`Tirar ${pessoa.nome} da organização`}
-                        aria-label={`Tirar ${pessoa.nome} da organização`}
-                        className="flex size-8 items-center justify-center rounded-lg text-dim transition hover:bg-rose-400/[0.08] hover:text-perigo"
-                      >
-                        <svg aria-hidden width="15" height="15" viewBox="0 0 15 15" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
-                          <path d="M2.5 4h10M6 4V2.6h3V4M3.8 4l.6 8.6h6.2l.6-8.6" />
-                        </svg>
-                      </button>
-                    )}
+                    {ajustarDa(pessoa)}
+                    {removerDa(pessoa)}
                   </div>
                 </td>
               </tr>
@@ -234,6 +290,7 @@ export function TabelaDePessoas({
           </tbody>
         </table>
       </RolagemDaTabela>
+    </div>
       {removendo && (
         <RemoverComDestino
           clienteId={clienteId}
@@ -255,7 +312,6 @@ export function TabelaDePessoas({
           {aviso}
         </AvisoFlutuante>
       )}
-    </div>
     </>
   )
 }

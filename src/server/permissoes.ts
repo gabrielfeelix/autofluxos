@@ -102,9 +102,9 @@ async function regrasDe(acesso: AcessoAoCliente, clienteId: string): Promise<Ace
   // política da função (editável na administração). Sem uma das duas, vale o
   // papel, exatamente como antes da A7.
   const gravada = gravadas.get(usuarioId)
-  const politicaBase = funcoes.daTabela && gravada ? funcoes.porId[gravada].capacidades : undefined
+  const daTabela = funcoes.daTabela && gravada ? funcoes.porId[gravada] : undefined
 
-  return { papel, usuarioId, equipes, sobrescritas, politicaBase }
+  return { papel, usuarioId, equipes, sobrescritas, politicaBase: daTabela?.capacidades, nomeDaFuncao: daTabela?.nome }
 }
 
 /** As equipes desta pessoa nesta conta. Arquivada não conta. */

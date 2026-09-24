@@ -12,7 +12,7 @@ export function SemAcesso({ clienteId, oQue }: { clienteId: string; oQue: string
   return (
     <Aviso
       titulo={`Sem acesso a ${oQue}`}
-      texto={`Seu acesso não inclui ${oQue}. Fale com o proprietário da conta.`}
+      texto={`Seu acesso não inclui ${oQue}. Fale com o proprietário da organização.`}
       acao={{ rotulo: 'Voltar ao Painel', href: `/clientes/${clienteId}` }}
     />
   )

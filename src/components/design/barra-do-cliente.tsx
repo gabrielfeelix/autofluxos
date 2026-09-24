@@ -42,7 +42,7 @@ export async function BarraDoCliente({ cliente }: { cliente: Cliente }) {
   ])
   // Só vale a consulta quando existe outra conta para onde ir.
   const esperando = contas.length > 1 ? await resumoDasContas(contas.map((conta) => conta.id)) : new Map<string, ResumoDeAtendimento>()
-  const perfil = resumoDoAcesso(acesso.regras).perfil
+  const perfil = acesso.regras.nomeDaFuncao ?? resumoDoAcesso(acesso.regras).perfil
   const doSeletor = contas.map((conta) => ({
     id: conta.id,
     nome: conta.nome,

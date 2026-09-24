@@ -83,7 +83,8 @@ export function GerenciarEquipes({
           onKeyDown={(e) => {
             if (e.key === 'Enter') criar()
           }}
-          placeholder="Nome da equipe (Norte, Vendas, Suporte…)"
+          aria-label="Nome da equipe nova"
+          placeholder="Exemplo: Vendas"
           className="app-field min-w-0 flex-1 px-3 py-2 text-[13px]"
         />
         <button

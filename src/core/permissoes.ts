@@ -267,6 +267,8 @@ export type Acesso = {
    * existe. As exceções continuam valendo por cima das duas.
    */
   politicaBase?: Politica
+  /** O nome da função gravada, para a tela dizer "Atendente" e não o perfil derivado. */
+  nomeDaFuncao?: string
   /** As equipes de que esta pessoa faz parte. Vazio = nenhuma. */
   equipes?: readonly string[]
   usuarioId?: string
