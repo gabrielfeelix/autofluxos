@@ -228,3 +228,41 @@ export function diasAteVencer(expiraEm: string | null, agora: Date = new Date())
   const restante = new Date(expiraEm).getTime() - agora.getTime()
   return Math.floor(restante / (24 * 60 * 60 * 1_000))
 }
+
+/**
+ * Os contatos deste cliente que falam pelo Instagram.
+ *
+ * O contato não guarda o próprio canal: `contacts.wa_id` recebe o telefone no
+ * WhatsApp e o IGSID no Instagram, e os dois são só dígitos. Quem sabe o canal é
+ * a sessão (`sessions.channel_id`), então a resposta sai dela.
+ *
+ * Volta um conjunto em vez de um canal por contato porque o caso comum é a conta
+ * só ter WhatsApp: aí não há conta do Instagram, a consulta nem acontece, e todo
+ * contato fora do conjunto é WhatsApp. Uma coluna nova na view `leads` daria o
+ * mesmo resultado ao custo de uma migration num banco que é dividido com a
+ * Verandi, e a fila só precisa disto para desenhar o selo.
+ *
+ * Pagina de mil em mil porque é o teto que o PostgREST devolve por chamada, e
+ * cortar em silêncio pintaria de WhatsApp quem veio pelo Instagram.
+ */
+export async function contatosDoInstagram(clienteId: string): Promise<Set<string>> {
+  const canal = await canalDoInstagram(clienteId)
+  const contatos = new Set<string>()
+  if (!canal) return contatos
+
+  const PAGINA = 1000
+  for (let inicio = 0; ; inicio += PAGINA) {
+    const { data, error } = await db()
+      .from('sessions')
+      .select('contact_id')
+      .eq('channel_id', canal.id)
+      .order('id')
+      .range(inicio, inicio + PAGINA - 1)
+
+    if (error) throw new Error(`não deu para achar os contatos do Instagram: ${error.message}`)
+    for (const linha of data ?? []) contatos.add(linha.contact_id as string)
+    if (!data || data.length < PAGINA) break
+  }
+
+  return contatos
+}

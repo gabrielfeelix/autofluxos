@@ -173,10 +173,10 @@ export function EsqueletoDeInbox({ rotulo = 'Carregando as conversas…' }: { ro
         </div>
         {Array.from({ length: 6 }, (_, i) => (
           <div key={i} className="flex items-center gap-3 border-b border-line px-3.5 py-3">
-            <Esqueleto className="size-9 shrink-0 rounded-full" />
-            <span className="flex min-w-0 flex-1 flex-col gap-2">
-              <Esqueleto className="h-3 w-28" />
-              <Esqueleto className="h-2.5 w-full" />
+            <Esqueleto className="size-11 shrink-0 rounded-full" />
+            <span className="flex min-w-0 flex-1 flex-col gap-2.5">
+              <Esqueleto className="h-3.5 w-32" />
+              <Esqueleto className="h-3 w-full" />
             </span>
           </div>
         ))}

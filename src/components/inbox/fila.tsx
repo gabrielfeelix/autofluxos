@@ -84,6 +84,7 @@ export function Fila({
   pagina,
   paginas,
   agendadas,
+  doInstagram,
 }: {
   clienteId: string;
   /** A página que o servidor filtrou. É o que a lista mostra no modo paginado. */
@@ -123,6 +124,8 @@ export function Fila({
    * para carregar o que já cabia na mesma consulta.
    */
   agendadas: (MensagemAgendada & { nomeDoContato: string | null })[];
+  /** Quem fala pelo Instagram. Todo o resto é WhatsApp. Ver `contatosDoInstagram`. */
+  doInstagram: Set<string>;
 }) {
   /*
    * O recorte que os rails locais publicam. Começa na página do servidor para
@@ -658,7 +661,7 @@ export function Fila({
               <div
                 key={lead.contatoId}
                 className={`group relative mx-1.5 mb-0.5 rounded-[10px] transition pointer-coarse:flex pointer-coarse:items-start ${
-                  ativa ? "bg-primary/[0.12]" : "hover:bg-surface"
+                  ativa ? "bg-primary/[0.16]" : "hover:bg-surface"
                 }`}
               >
               {/*
@@ -675,13 +678,18 @@ export function Fila({
                 aria-current={ativa ? "page" : undefined}
                 scroll={false}
                 prefetch
-                className="flex min-w-0 flex-1 gap-2.5 rounded-[10px] px-2.5 py-3"
+                className="flex min-w-0 flex-1 items-start gap-3 rounded-[10px] px-3 py-2.5"
               >
-                <Avatar nome={lead.nome} alerta={Boolean(lead.aguardando)} />
+                <Avatar
+                  nome={lead.nome}
+                  alerta={Boolean(lead.aguardando)}
+                  tamanho={44}
+                  canal={doInstagram.has(lead.contatoId) ? "instagram" : "whatsapp"}
+                />
                 <span className="min-w-0 flex-1">
                   <span className="flex items-baseline gap-2">
                     <strong
-                      className={`min-w-0 flex-1 truncate text-[13px] ${ativa ? "text-ink" : semLer > 0 ? "font-bold text-ink" : "text-soft"}`}
+                      className={`min-w-0 flex-1 truncate text-[15px] leading-5 tracking-[-0.01em] text-ink ${semLer > 0 ? "font-bold" : "font-semibold"}`}
                     >
                       {nome}
                     </strong>
@@ -701,7 +709,9 @@ export function Fila({
                         <Alfinete preso />
                       </span>
                     )}
-                    <small className="shrink-0 text-[11px] text-muted group-hover:opacity-0">
+                    <small
+                      className={`shrink-0 text-[12px] group-hover:opacity-0 ${semLer > 0 ? "font-semibold text-primary" : "text-muted"}`}
+                    >
                       {lead.ultimaEm ? quando(lead.ultimaEm) : ""}
                     </small>
                   </span>
@@ -720,7 +730,7 @@ export function Fila({
                           ? `Aguardando pessoa: ${lead.aguardando.motivo}`
                           : undefined
                       }
-                      className={`min-w-0 flex-1 truncate text-[11.5px] ${lead.aguardando ? "text-perigo" : semLer > 0 ? "text-soft" : "text-muted"}`}
+                      className={`min-w-0 flex-1 truncate text-[13.5px] leading-5 ${lead.aguardando ? "text-perigo" : semLer > 0 ? "font-medium text-ink" : "text-soft"}`}
                     >
                       {lead.aguardando
                         ? `Pessoa: ${lead.aguardando.motivo}`
@@ -736,7 +746,7 @@ export function Fila({
                       <span
                         title={`${semLer} ${semLer === 1 ? "mensagem nova" : "mensagens novas"} desde a última vez que você abriu`}
                         aria-label={`${semLer} não ${semLer === 1 ? "lida" : "lidas"} para você`}
-                        className="shrink-0 rounded-full bg-primary px-1.5 py-px text-[11px] font-bold text-white"
+                        className="flex h-5 min-w-5 shrink-0 items-center justify-center rounded-full bg-primary px-1.5 text-[11.5px] font-bold text-white"
                       >
                         {semLer > TETO_DA_INSIGNIA
                           ? `${TETO_DA_INSIGNIA}+`
@@ -761,7 +771,7 @@ export function Fila({
                     linha: ler nunca atribui.
                   */}
                   {nomeDe(lead.atribuidoA) && (
-                    <span className="mt-0.5 block truncate text-[11px] text-dim">
+                    <span className="mt-0.5 block truncate text-[12px] text-dim">
                       {lead.atribuidoA === usuarioId
                         ? "responsável: você"
                         : `responsável: ${nomeDe(lead.atribuidoA)}`}
@@ -786,7 +796,7 @@ export function Fila({
                   {!lead.automacaoAtiva && !lead.aguardando && (
                     <span
                       title="O bot está pausado neste contato. Ele só volta quando alguém religar o bot."
-                      className="mt-0.5 flex items-center gap-1 text-[11px] text-amber-700"
+                      className="mt-0.5 flex items-center gap-1 text-[12px] text-amber-700"
                     >
                       <BotMudo />
                       bot pausado
@@ -813,7 +823,7 @@ export function Fila({
                 do canto sobreposto e viram uma coluna fixa à direita da linha,
                 sempre visível e com alvo de 32 px. O horário continua no lugar.
               */}
-              <span className="pointer-events-none absolute top-2.5 right-2.5 flex items-center gap-0.5 opacity-0 transition group-focus-within:pointer-events-auto group-focus-within:opacity-100 group-hover:pointer-events-auto group-hover:opacity-100 pointer-coarse:pointer-events-auto pointer-coarse:static pointer-coarse:flex-col pointer-coarse:gap-1 pointer-coarse:py-2 pointer-coarse:pr-1 pointer-coarse:opacity-100">
+              <span className="pointer-events-none absolute top-3 right-3 flex items-center gap-0.5 opacity-0 transition group-focus-within:pointer-events-auto group-focus-within:opacity-100 group-hover:pointer-events-auto group-hover:opacity-100 pointer-coarse:pointer-events-auto pointer-coarse:static pointer-coarse:flex-col pointer-coarse:gap-1 pointer-coarse:py-2 pointer-coarse:pr-1 pointer-coarse:opacity-100">
                 <BotaoDaLinha
                   rotulo={presa ? `Soltar ${nome} do topo` : `Fixar ${nome} no topo`}
                   dica={
@@ -1051,7 +1061,7 @@ function RelogioDaJanela({
    */
   if (restante === null) {
     return dentroDaPortaDeEntrada(janela) ? (
-      <span className="mt-0.5 block text-[11px] text-dim">
+      <span className="mt-0.5 block text-[12px] text-dim">
         só modelo aprovado<span className="text-dim"> · grátis, veio de anúncio</span>
       </span>
     ) : null;
@@ -1066,7 +1076,7 @@ function RelogioDaJanela({
 
   if (restante === 0) {
     return (
-      <span className="mt-0.5 block text-[11px] font-semibold text-perigo">
+      <span className="mt-0.5 block text-[12px] font-semibold text-perigo">
         janela fechada, só modelo aprovado
       </span>
     );
@@ -1078,7 +1088,7 @@ function RelogioDaJanela({
 
   return (
     <span
-      className={`mt-0.5 block text-[11px] ${apertado ? "font-semibold text-aviso" : "text-dim"}`}
+      className={`mt-0.5 block text-[12px] ${apertado ? "font-semibold text-aviso" : "text-dim"}`}
     >
       responder em {comoFalta(restante)}
       {gratis && <span className="text-dim"> · grátis, veio de anúncio</span>}

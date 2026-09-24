@@ -21,6 +21,8 @@
  * conversas cinza-iguais precisa para virar uma lista em que se acha alguém de
  * relance. É o mesmo truque de Slack e Google, e é só tela.
  */
+import { DEFINICAO_DO_CANAL, type CanalId } from '@/core/canais'
+import { LogoDoCanal } from '@/components/design/selo-do-canal'
 
 /**
  * As cores possíveis, escritas por extenso.
@@ -62,15 +64,31 @@ function corDoNome(nome: string): string {
   return CORES[soma % CORES.length] ?? SEM_NOME
 }
 
+/**
+ * O fundo do selo de cada canal. O Instagram é o gradiente da marca porque é
+ * assim que ele é reconhecido de relance; em cor chapada, o rosa passaria por
+ * um alerta.
+ */
+const FUNDO_DO_SELO: Partial<Record<CanalId, string>> = {
+  instagram: 'linear-gradient(45deg, #F58529 0%, #DD2A7B 55%, #8134AF 100%)',
+}
+
 export function Avatar({
   nome,
   alerta = false,
   tamanho = 36,
+  canal,
 }: {
   nome: string | null
   alerta?: boolean
-  /** Em pixels. 36 na fila e no cabeçalho; 56 no topo da ficha. */
+  /** Em pixels. 44 na fila; 40 no cabeçalho e no topo da ficha. */
   tamanho?: number
+  /**
+   * Por onde a pessoa fala. Desenha o selo da marca no canto de baixo, e é a
+   * única pista do canal na linha da fila: o João do WhatsApp e o do Instagram
+   * são duas conversas, e o nome sozinho não separa um do outro.
+   */
+  canal?: CanalId
 }) {
   const limpo = nome?.trim() ?? ''
   const iniciais = (limpo || '?')
@@ -90,7 +108,20 @@ export function Avatar({
       {/* A borda do ponto é da cor do painel: é ela que separa o vermelho do
           avatar sem desenhar um anel. */}
       {alerta && (
-        <span className="absolute -right-0.5 -bottom-0.5 size-2.5 rounded-full border-2 border-panel bg-rose-500" />
+        <span
+          className={`absolute -right-0.5 size-2.5 rounded-full border-2 border-panel bg-rose-500 ${canal ? '-top-0.5' : '-bottom-0.5'}`}
+        />
+      )}
+      {/* Com o selo no canto de baixo, o ponto de alerta sobe: os dois são
+          informação, e um não pode tampar o outro. */}
+      {canal && (
+        <span
+          title={DEFINICAO_DO_CANAL[canal].nome}
+          style={{ background: FUNDO_DO_SELO[canal] ?? DEFINICAO_DO_CANAL[canal].cor }}
+          className="absolute -right-1 -bottom-1 flex size-[18px] items-center justify-center rounded-full border-2 border-panel text-white"
+        >
+          <LogoDoCanal canal={canal} tamanho={10} />
+        </span>
       )}
     </span>
   )

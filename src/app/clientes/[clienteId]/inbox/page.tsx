@@ -68,6 +68,7 @@ import { listarQuadros, quadrosDoContato } from '@/server/repos/quadros'
 import { FunilDaConversa, type FunilDoContato } from '@/components/inbox/funil-da-conversa'
 import { marcarComoLida, naoLidasPorContato, quandoLeu } from '@/server/repos/leituras'
 import { favoritasEntre, fixadasDoUsuario } from '@/server/repos/marcadores'
+import { contatosDoInstagram } from '@/server/repos/canais-instagram'
 import { ajustesDaConta } from '@/server/repos/distribuicao'
 import { avisarQueLeu } from '@/server/recibo-de-leitura'
 import { FaixaDeCanalCaido } from '@/components/inbox/faixa-canal-caido'
@@ -199,6 +200,7 @@ async function Tela({ cliente, busca }: { cliente: Cliente; busca: Busca }) {
     etiquetas,
     coexistencia,
     temAutomacao,
+    doInstagram,
   ] =
     await Promise.all([
     paginarLeads(clienteId, {
@@ -234,6 +236,11 @@ async function Tela({ cliente, busca }: { cliente: Cliente; busca: Busca }) {
      * série numa tela que já espera várias consultas.
      */
     clienteTemAutomacao(clienteId),
+    /*
+     * O selo de canal de cada linha. Em conta só de WhatsApp não consulta nada,
+     * ver `contatosDoInstagram`.
+     */
+    contatosDoInstagram(clienteId),
   ])
 
   /*
@@ -476,6 +483,7 @@ async function Tela({ cliente, busca }: { cliente: Cliente; busca: Busca }) {
             paginas={fila.paginas}
             temAutomacao={temAutomacao}
             conversaPedida={Boolean(pedido)}
+            doInstagram={doInstagram}
           />
         )}
       </main>
@@ -579,8 +587,11 @@ async function Conteudo({
   paginas,
   temAutomacao,
   conversaPedida,
+  doInstagram,
 }: {
   clienteId: string
+  /** Quem fala pelo Instagram, para o selo de canal. Ver `contatosDoInstagram`. */
+  doInstagram: Set<string>
   /** O endereço já chegou com `?conversa=`: no celular, abre nela. */
   conversaPedida: boolean
   leads: Lead[]
@@ -666,6 +677,7 @@ async function Conteudo({
           pagina={pagina}
           paginas={paginas}
           agendadas={agendadasDaConta}
+          doInstagram={doInstagram}
         />
       }
       conversa={
