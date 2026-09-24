@@ -1104,7 +1104,7 @@ da sessão), `af_usuarios.image` (coluna já existe, `0019_login_por_usuario.sql
 - [x] **Passo 5: Trocar senha** (modal): senha atual + nova (mínimo do cadastro),
   pela troca de senha do Better Auth. Resolve o "acesso provisório" da 7.4
   ("peça para a pessoa trocar a senha no primeiro acesso").
-- [ ] **Passo 6:** testes: integração "editar perfil só altera o próprio usuário"
+- [x] **Passo 6:** testes: integração "editar perfil só altera o próprio usuário"
   e "nome vazio é recusado"; e2e com um membro de acesso de atendimento: troca o
   próprio nome e a foto pelo rodapé, e o menu não mostra Configurações. Prints
   do rodapé e do diálogo para proprietário e atendimento, desktop e celular.
