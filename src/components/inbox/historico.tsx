@@ -336,7 +336,7 @@ function ListaDeMensagens({
               peso**, 500 numa bolha azul com texto branco vira borrão em tela
               comum.
             */}
-            <p className={`max-w-[78%] px-3.5 py-2 font-texto text-[14.5px] leading-[1.45] whitespace-pre-wrap [overflow-wrap:anywhere] ${
+            <p title={mensagem.toque ? 'Tocou numa opção do menu' : undefined} className={`max-w-[78%] px-3.5 py-2 font-texto text-[14.5px] leading-[1.45] whitespace-pre-wrap [overflow-wrap:anywhere] ${
               nossa
                 ? 'bolha-nossa rounded-[15px_15px_4px_15px]'
                 : mensagem.toque
@@ -413,7 +413,6 @@ function ListaDeMensagens({
                 atende ler "resposta pronta" sem comparar com o menu acima.
               */}
               <span className="ml-2 text-[11px] text-muted" title={horaExata(mensagem.ts)}>
-                {mensagem.toque && <span className="selo-toque mr-1.5">tocou na opção</span>}
                 {nossa && mensagem.autor ? `${mensagem.autor} · ` : ''}
                 {horaDoRelogio(mensagem.ts)}
               </span>

@@ -831,9 +831,10 @@ textarea::placeholder {
   /*
    * 24/set, segunda volta: o dono achou o cinza liso escuro e sem graça, e
    * pediu "mais claro, talvez com degradê". A base sobe para `--canvas` e
-   * ganha duas luzes largas e fracas: azul da marca no alto à direita, verde
-   * do WhatsApp embaixo à esquerda. É o degradê que se percebe como
-   * "ambiente", não como desenho: nenhuma das duas passa de 9%, e o branco da
+   * ganha uma luz larga e fraca do azul da marca no alto à direita, que se
+   * dissolve no cinza claro. Houve uma segunda luz verde embaixo, e o dono
+   * pediu para tirar: "azul pro cinza" é o que ele gostou. É o degradê que se
+   * percebe como "ambiente", não como desenho: não passa de 9%, e o branco da
    * bolha continua o ponto mais claro da tela, que é o que importa.
    *
    * O fundo fica parado enquanto a conversa rola: `background-attachment`
@@ -841,14 +842,12 @@ textarea::placeholder {
    */
   background:
     radial-gradient(1100px 520px at 100% 0%, color-mix(in oklab, var(--primary) 9%, transparent), transparent 62%),
-    radial-gradient(900px 480px at 0% 100%, color-mix(in oklab, #25d366 7%, transparent), transparent 60%),
     var(--canvas);
 }
 
 :root[data-tema='escuro'] .app-conversa {
   background:
     radial-gradient(1100px 520px at 100% 0%, color-mix(in oklab, var(--primary) 14%, transparent), transparent 62%),
-    radial-gradient(900px 480px at 0% 100%, color-mix(in oklab, #25d366 8%, transparent), transparent 60%),
     color-mix(in oklab, var(--primary) 4%, var(--panel));
 }
 
@@ -1010,31 +1009,21 @@ textarea::placeholder {
  *
  * Era a bolha branca com borda verde a 45% e "tocou na opção" em texto verde
  * pequeno. O dono pediu "verde mesmo, verde WhatsApp": a bolha ganha o verde
- * claro da conversa do WhatsApp, e o rótulo vira uma pílula no verde da marca.
- * O texto da pílula é verde-escuro e não branco: branco sobre `#25D366` fica em
- * 2:1, ilegível num rótulo de 11px.
+ * claro da conversa do WhatsApp com contorno no verde da marca, e o rótulo
+ * escrito saiu, porque a cor já diz tudo (o `title` continua dizendo, para
+ * quem passa o mouse e para leitor de tela).
  */
 .bolha-toque {
   background: #dcf8c6;
   color: var(--ink);
-  box-shadow: 0 1px 2px rgba(16, 24, 40, 0.06);
+  box-shadow:
+    0 0 0 1.5px #25d366,
+    0 1px 2px rgba(16, 24, 40, 0.06);
 }
 
 :root[data-tema='escuro'] .bolha-toque {
   background: color-mix(in oklab, #25d366 22%, var(--surface-strong));
-  box-shadow: none;
-}
-
-.selo-toque {
-  display: inline-flex;
-  align-items: center;
-  border-radius: 999px;
-  background: #25d366;
-  color: #053d1c;
-  padding: 1px 7px;
-  font-size: 10.5px;
-  font-weight: 700;
-  line-height: 15px;
+  box-shadow: 0 0 0 1.5px #25d366;
 }
 
 /*

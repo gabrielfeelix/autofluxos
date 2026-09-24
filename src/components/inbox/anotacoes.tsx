@@ -216,7 +216,7 @@ export function EntradaDeAnotacao({ limite, aoAnotar }: { limite: number; aoAnot
           }
         }}
         rows={3}
-        placeholder="Já ligou duas vezes. Prefere de manhã."
+        placeholder="Exemplo: já ligou duas vezes, prefere de manhã."
         aria-label="Nova anotação"
         className="app-field resize-y px-2.5 py-2 text-[12.5px] leading-5"
       />

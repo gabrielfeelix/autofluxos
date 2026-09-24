@@ -784,7 +784,6 @@ async function Historico({
                 que quem respondeu foi gente, ver `core/autor-da-mensagem.ts`.
               */}
               <span className="ml-2 text-[9.5px] text-muted" title={horaExata(mensagem.ts)}>
-                {mensagem.toque && <span className="selo-toque mr-1.5">tocou na opção</span>}
                 {nossa && mensagem.autor ? `${mensagem.autor} · ` : ''}
                 {horaDoRelogio(mensagem.ts)}
               </span>
