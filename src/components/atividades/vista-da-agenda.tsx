@@ -75,6 +75,7 @@ export function VistaDaAgenda({
     equipe,
     podeAtribuir,
     aoSair: (id) => setAbertoId((atual) => (atual === id ? null : atual)),
+    volta,
   })
 
   const visiveis = itens.filter((i) => !saindo.has(i.id))

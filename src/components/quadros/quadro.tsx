@@ -629,6 +629,7 @@ export function Quadro({
       <PainelDoContato
         key={noPainel?.id ?? 'vazio'}
         clienteId={clienteId}
+        volta={`/clientes/${clienteId}/quadros?q=${quadroId}`}
         contatoId={noPainel?.contatoId ?? null}
         cartao={noPainel}
         etapas={etapas}

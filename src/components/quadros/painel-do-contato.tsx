@@ -1,6 +1,7 @@
 'use client'
 
 import Link from 'next/link'
+import { hrefDaFicha } from '@/core/volta-da-ficha'
 import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { Dropdown } from '@/components/design/dropdown'
 import { Avatar } from '@/components/inbox/avatar'
@@ -46,6 +47,7 @@ export function PainelDoContato({
   aoFechar,
   aoGanharOuPerder,
   aoAtualizarCartao,
+  volta,
 }: {
   clienteId: string
   contatoId: string | null
@@ -58,6 +60,8 @@ export function PainelDoContato({
   aoFechar: () => void
   aoGanharOuPerder: (situacao: 'ganha' | 'perdida') => void
   aoAtualizarCartao?: (dados: Partial<Pick<CartaoDoPainel, 'nome' | 'titulo' | 'valor'>>) => void
+  /** O funil aberto, para a ficha voltar para ele. */
+  volta?: string
 }) {
   const dialogo = useRef<HTMLDialogElement>(null)
   const [dados, setDados] = useState<Awaited<ReturnType<typeof acaoAbrirPainelDoContato>> | null>(
@@ -394,7 +398,7 @@ export function PainelDoContato({
       </div>
       <footer className="shrink-0 border-t border-line bg-panel px-5 py-4 sm:px-6">
         <Link
-          href={`/clientes/${clienteId}/leads/${contatoId}`}
+          href={hrefDaFicha(clienteId, contatoId, { volta })}
           className="crm-button w-full justify-between"
         >
           Ver ficha completa <span aria-hidden>↗</span>

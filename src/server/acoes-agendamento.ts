@@ -1,6 +1,7 @@
 'use server'
 
 import { revalidatePath } from 'next/cache'
+import { recarregarContato } from './recarregar-contato'
 import { conferirAgendamento, MOTIVO_DA_RECUSA } from '@/core/agendamento'
 import { agendar, cancelarAgendada } from './repos/mensagens-agendadas'
 import { contextoDeResposta } from './repos/conversas'
@@ -76,8 +77,7 @@ export async function acaoAgendarMensagem(
     criadaPorNome: quem?.usuario.nome ?? null,
   })
 
-  revalidatePath(`/clientes/${clienteId}/inbox`)
-  revalidatePath(`/clientes/${clienteId}/leads/${contatoId}`)
+  recarregarContato(clienteId, contatoId)
   return { ok: true }
 }
 
@@ -97,6 +97,10 @@ export async function acaoCancelarAgendada(
   const deu = await cancelarAgendada(clienteId, id)
   if (!deu) return { ok: false, erro: 'esta mensagem já saiu ou já tinha sido cancelada' }
 
+  // Só o id da mensagem chega aqui, então a ficha vai pelo molde da rota: a
+  // de qualquer contato desta tela recarrega, e o resumo do topo não fica
+  // dizendo "sai em..." para uma mensagem cancelada.
   revalidatePath(`/clientes/${clienteId}/inbox`)
+  revalidatePath('/clientes/[clienteId]/leads/[contatoId]', 'page')
   return { ok: true }
 }

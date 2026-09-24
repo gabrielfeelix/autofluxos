@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import { hrefDaFicha } from '@/core/volta-da-ficha'
 import { acessoCompleto, filtroDoAcesso, type AcessoCompleto } from '@/server/permissoes'
 import { pode, type FiltroDeEscopo } from '@/core/permissoes'
 import { onboardingDaConta } from '@/server/repos/onboarding'
@@ -680,7 +681,7 @@ async function ClientesSumindo({ clienteId }: { clienteId: string }) {
           return (
             <li key={sumido.contatoId}>
               <Link
-                href={`/clientes/${clienteId}/leads/${sumido.contatoId}`}
+                href={hrefDaFicha(clienteId, sumido.contatoId, { volta: `/clientes/${clienteId}` })}
                 className="flex items-center gap-2 text-[12px] text-soft transition hover:text-primary"
               >
                 <span aria-hidden className={`size-2 shrink-0 rounded-full ${CLASSE_DO_NIVEL[nivel]}`} />

@@ -613,6 +613,28 @@ export function Fila({
           )}
         </div>
 
+        {/*
+          A conversa aberta que a lista não mostra (8.5, X01): veio de um link,
+          de um aviso ou da ficha, e não cabe no filtro escolhido. A conversa
+          abre do mesmo jeito; o aviso diz por que ela não está marcada na
+          lista, e some quando o filtro passa a incluí-la. No modo paginado a
+          lista é uma página só, e aí a frase não pode afirmar "filtro".
+        */}
+        {selecionado &&
+          !naTela.some((lead) => lead.contatoId === selecionado.contatoId) && (
+            <p
+              role="status"
+              className="mx-3 mt-2 shrink-0 rounded-lg border border-amber-400/40 bg-amber-400/[0.08] px-3 py-2 text-[11.5px] leading-4 text-soft"
+            >
+              <strong className="font-semibold">
+                {selecionado.nome ?? "Esta conversa"}
+              </strong>{" "}
+              {local
+                ? "está fora do filtro atual. Ela continua aberta ao lado."
+                : "não está nesta página da lista. Ela continua aberta ao lado."}
+            </p>
+          )}
+
         <nav
           aria-label="Conversas"
           className="min-h-0 flex-1 overflow-y-auto py-1.5"

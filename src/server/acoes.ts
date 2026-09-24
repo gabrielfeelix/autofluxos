@@ -119,6 +119,7 @@ import {
 import { ehCorDeEtiqueta, type CorDeEtiqueta } from '@/core/etiquetas'
 import { OPERADORES_DE_GATILHO, type OperadorDeGatilho } from '@/core/gatilhos'
 import { rodarPosAtendimento } from './receber-mensagem'
+import { recarregarContato } from './recarregar-contato'
 import { inscreverNoEvento, sairPelaEtiqueta, sairPorEvento } from './sequencias'
 import {
   acharSequencia,
@@ -2348,9 +2349,7 @@ export async function acaoEncerrarAtendimento(clienteId: string, contatoId: stri
   // sequência falar primeiro se algum passo for de um minuto.
   await inscreverNoEvento(clienteId, [contatoId], 'atendimento_encerrado')
 
-  revalidatePath(`/clientes/${clienteId}/leads`)
-  revalidatePath(`/clientes/${clienteId}/leads/${contatoId}`)
-  revalidatePath(`/clientes/${clienteId}/inbox`)
+  recarregarContato(clienteId, contatoId)
 }
 
 /** Pausa ou religa o motor sem transformar a pausa em um handoff fictício. */
@@ -2390,9 +2389,7 @@ export async function acaoAlternarAutomacaoDoLead(
   // decide inscrever é o evento, não o interruptor.
   if (!ativa) await sairPorEvento(contatoId, 'automacao_pausada')
 
-  revalidatePath(`/clientes/${clienteId}/leads`)
-  revalidatePath(`/clientes/${clienteId}/leads/${contatoId}`)
-  revalidatePath(`/clientes/${clienteId}/inbox`)
+  recarregarContato(clienteId, contatoId)
   return { ok: true }
 }
 
@@ -2712,9 +2709,7 @@ export async function acaoCorrigirNome(
   const ok = await corrigirNome(clienteId, contatoId, nome)
   if (!ok) return { erro: 'este contato não é deste cliente' }
 
-  revalidatePath(`/clientes/${clienteId}/leads/${contatoId}`)
-  revalidatePath(`/clientes/${clienteId}/leads`)
-  revalidatePath(`/clientes/${clienteId}/inbox`)
+  recarregarContato(clienteId, contatoId)
   return { ok: true }
 }
 
@@ -2984,7 +2979,7 @@ export async function acaoAdiarConversa(
     return { ok: false, erro: erro instanceof Error ? erro.message : 'não deu para adiar' }
   }
 
-  revalidatePath(`/clientes/${clienteId}/inbox`)
+  recarregarContato(clienteId, contatoId)
   return { ok: true }
 }
 
@@ -3013,7 +3008,7 @@ export async function acaoDefinirEstadoDaConversa(
     return { ok: false, erro: erro instanceof Error ? erro.message : 'não deu para mudar' }
   }
 
-  revalidatePath(`/clientes/${clienteId}/inbox`)
+  recarregarContato(clienteId, contatoId)
   return { ok: true }
 }
 
@@ -3084,8 +3079,7 @@ export async function acaoAssumirAtendimento(
 
   await avisarQueEntrou(clienteId, contatoId, sessao.usuario.nome)
 
-  revalidatePath(`/clientes/${clienteId}/inbox`)
-  revalidatePath(`/clientes/${clienteId}/leads/${contatoId}`)
+  recarregarContato(clienteId, contatoId)
   return { ok: true }
 }
 
@@ -3149,8 +3143,7 @@ export async function acaoLiberarAtendimento(
   const revisao = await trocarControle(clienteId, contatoId, null)
   if (revisao === null) return { ok: false, erro: 'este contato não é deste cliente' }
 
-  revalidatePath(`/clientes/${clienteId}/inbox`)
-  revalidatePath(`/clientes/${clienteId}/leads/${contatoId}`)
+  recarregarContato(clienteId, contatoId)
   return { ok: true }
 }
 
@@ -3189,6 +3182,6 @@ export async function acaoAtribuirPara(
   const revisao = await trocarControle(clienteId, contatoId, usuarioId)
   if (revisao === null) return { ok: false, erro: 'este contato não é deste cliente' }
 
-  revalidatePath(`/clientes/${clienteId}/inbox`)
+  recarregarContato(clienteId, contatoId)
   return { ok: true }
 }

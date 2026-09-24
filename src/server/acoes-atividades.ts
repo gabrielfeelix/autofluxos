@@ -1,6 +1,7 @@
 'use server'
 
 import { revalidatePath } from 'next/cache'
+import { recarregarContato } from './recarregar-contato'
 import {
   ehDestinoAoFechar,
   ehTipoDeAtividade,
@@ -318,5 +319,5 @@ function recarregar(clienteId: string, contatoId: string | null): void {
   revalidatePath(`/clientes/${clienteId}/quadros`)
   revalidatePath(`/clientes/${clienteId}/atividades`)
   revalidatePath(`/clientes/${clienteId}`, 'layout')
-  if (contatoId) revalidatePath(`/clientes/${clienteId}/leads/${contatoId}`)
+  if (contatoId) recarregarContato(clienteId, contatoId)
 }

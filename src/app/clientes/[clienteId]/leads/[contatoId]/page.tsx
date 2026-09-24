@@ -46,6 +46,7 @@ import type { AnuncioEmCache, Passagem } from '@/core/anuncios'
 import { origemDoContato } from '@/core/contatos/origem'
 import { Avatar } from '@/components/inbox/avatar'
 import { Abas, IrParaAba } from '@/components/lead-crm/abas'
+import { abaDaFicha, voltaDaFicha } from '@/core/volta-da-ficha'
 import { CabecalhoDoTipo } from '@/components/lead-crm/tipo-do-passo'
 import { prazoEmPalavras, proximaAcao } from '@/core/atividades'
 import { EstagioDoContato } from '@/components/lead-crm/estagio-do-contato'
@@ -91,10 +92,17 @@ export const dynamic = 'force-dynamic'
 
 export default async function Pagina({
   params,
+  searchParams,
 }: {
   params: Promise<{ clienteId: string; contatoId: string }>
+  searchParams: Promise<{ aba?: string | string[]; volta?: string | string[] }>
 }) {
   const { clienteId, contatoId } = await params
+  // De onde a pessoa veio e em que aba ela quer cair (8.5). `volta` é conferido
+  // em `voltaDaFicha`: só endereço desta conta vira link.
+  const pedido = await searchParams
+  const abaInicial = abaDaFicha(pedido.aba)
+  const volta = voltaDaFicha(pedido.volta, clienteId)
   const [
     cliente,
     lead,
@@ -214,10 +222,10 @@ export default async function Pagina({
     <ClienteShell cliente={cliente} ativa="leads">
       <main className="w-full max-w-[1440px] px-4 md:px-[42px] pt-[26px] pb-[42px]">
         <Link
-        href={`/clientes/${cliente.id}/leads`}
-        className="mb-3.5 inline-block text-[12.5px] text-muted transition hover:text-primary"
+          href={volta.href}
+          className="mb-3.5 inline-block text-[12.5px] text-muted transition hover:text-primary"
         >
-        ← Leads
+          ← {volta.rotulo}
         </Link>
 
         <header className="mb-[18px] flex flex-wrap items-center gap-3.5">
@@ -382,7 +390,7 @@ export default async function Pagina({
           ser imposta.
         */}
         <Abas
-          inicial="visao"
+          inicial={abaInicial}
           extra={
             /*
               A contagem da janela de 24h fica aqui, e não no rodapé da caixa

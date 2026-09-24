@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import { hrefDaFicha } from '@/core/volta-da-ficha'
 import { notFound } from 'next/navigation'
 import { ClienteShell } from '@/components/design/cliente-shell'
 import { Paginacao } from '@/components/atividades/paginacao'
@@ -177,7 +178,10 @@ async function Detalhe({
                 <li key={d.id} className="flex flex-wrap items-start justify-between gap-x-4 gap-y-1 px-5 py-3">
                   <div className="min-w-0">
                     <Link
-                      href={`/clientes/${clienteId}/leads/${d.contatoId}`}
+                      href={hrefDaFicha(clienteId, d.contatoId, {
+                        aba: 'conversa',
+                        volta: `/clientes/${clienteId}/transmissoes/${transmissaoId}`,
+                      })}
                       className="text-[13px] font-semibold hover:text-primary hover:underline"
                     >
                       {d.nome || (d.waId ? telefoneLegivel(d.waId) : 'Contato sem nome')}

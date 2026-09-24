@@ -48,10 +48,13 @@ export function useAcoesDaAgenda({
   equipe,
   podeAtribuir,
   aoSair,
+  volta,
 }: {
   clienteId: string
   equipe: { id: string; nome: string }[]
   podeAtribuir: boolean
+  /** O endereço da agenda, para o "Abrir contato" do menu voltar para cá. */
+  volta?: string
   /** Avisado quando uma atividade sai da tela (concluída, cancelada, reaberta). */
   aoSair?: (atividadeId: string) => void
 }) {
@@ -146,6 +149,7 @@ export function useAcoesDaAgenda({
       podeAtribuir={podeAtribuir}
       pendente={pendentes[item.id] ?? null}
       aoPedir={(pedido) => pedir(item, pedido)}
+      volta={volta}
     />
   )
 
@@ -202,7 +206,7 @@ export function ListaDaAgenda({
   equipe: { id: string; nome: string }[]
   podeAtribuir: boolean
 }) {
-  const { acoes, erros, saindo, extras } = useAcoesDaAgenda({ clienteId, equipe, podeAtribuir })
+  const { acoes, erros, saindo, extras } = useAcoesDaAgenda({ clienteId, equipe, podeAtribuir, volta })
   const visiveis = itens.filter((item) => !saindo.has(item.id))
 
   return (

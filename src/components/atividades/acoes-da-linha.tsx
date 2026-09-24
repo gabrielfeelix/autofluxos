@@ -1,5 +1,6 @@
 'use client'
 
+import { hrefDaFicha } from '@/core/volta-da-ficha'
 import Link from 'next/link'
 import { useState } from 'react'
 import { SeletorDePessoa } from './seletor-de-pessoa'
@@ -47,6 +48,7 @@ export function AcoesDaLinha({
   podeAtribuir,
   pendente,
   aoPedir,
+  volta,
 }: {
   item: ItemDaAgenda
   clienteId: string
@@ -55,6 +57,7 @@ export function AcoesDaLinha({
   /** O texto do botão enquanto a ação roda ("Concluindo…"), ou `null`. */
   pendente: string | null
   aoPedir: (pedido: PedidoDaLinha) => void
+  volta?: string
 }) {
   const aberta = item.situacao === 'aberta'
   const [dia, setDia] = useState(item.prazo ? item.prazo.slice(0, 10) : '')
@@ -138,7 +141,7 @@ export function AcoesDaLinha({
       )}
 
       <PopoverDoQuadro rotulo={`Mais ações para ${item.titulo}`} largura={240} gatilho={<span aria-hidden className="px-0.5 text-[14px] leading-none">⋯</span>}>
-        <Link href={`/clientes/${clienteId}/leads/${item.contatoId}`} className="quadro-menu-item">
+        <Link href={hrefDaFicha(clienteId, item.contatoId, { aba: 'atividades', volta })} className="quadro-menu-item">
           Abrir contato
         </Link>
         <Link href={`/clientes/${clienteId}/inbox?conversa=${item.contatoId}`} className="quadro-menu-item">

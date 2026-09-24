@@ -49,6 +49,17 @@ export function Abas({
   const tablist = useRef<HTMLDivElement>(null)
 
   /*
+   * Chegou por link numa aba que não é a primeira (`?aba=historico`, 8.5): o
+   * foco vai para ela, e quem usa teclado ou leitor de tela sabe onde caiu.
+   * Só na montagem: depois disso quem manda no foco é a pessoa.
+   */
+  useEffect(() => {
+    if (!inicial || inicial === abas[0]?.chave) return
+    tablist.current?.querySelector<HTMLButtonElement>(`[data-aba="${inicial}"]`)?.focus()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  /*
    * Atalhos de outros lugares da ficha ("Anotar" e "Etiquetar", no alto) pedem
    * uma aba, e às vezes um bloco dentro dela.
    *

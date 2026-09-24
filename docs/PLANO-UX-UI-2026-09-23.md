@@ -1165,15 +1165,15 @@ Ler `05-atendimento-crm.md` inteiro antes. Preservar os invariantes da seção
 
 ### Tarefa 8.5: contexto preservado entre telas [X07, X01, X16, H10]
 
-- [ ] **Passo 1:** ficha aceita `?aba=` (visao, atividades, historico, dados,
+- [x] **Passo 1:** ficha aceita `?aba=` (visao, atividades, historico, dados,
   conversa) e `?volta=` (URL interna validada: precisa começar com
   `/clientes/<id>/`); o botão voltar usa `volta` quando existir.
-- [ ] **Passo 2:** Inbox aberto por link de conversa fora do filtro mostra "Esta
+- [x] **Passo 2:** Inbox aberto por link de conversa fora do filtro mostra "Esta
   conversa está fora do filtro atual".
-- [ ] **Passo 3:** mutações na ficha e no Inbox chamam o mesmo `recarregar` de
+- [x] **Passo 3:** mutações na ficha e no Inbox chamam o mesmo `recarregar` de
   contato; conferir com Playwright: concluir atividade na ficha e voltar ao
   Inbox mostra o estado novo sem recarregar.
-- [ ] **Passo 4:** commit `feat(navegacao): ficha e Inbox preservam o contexto de onde a pessoa veio`.
+- [x] **Passo 4:** commit `feat(navegacao): ficha e Inbox preservam o contexto de onde a pessoa veio`.
 
 ### Tarefa 8.6: acessibilidade e lote de arquivos [X18, X19, X06, X15, X17]
 

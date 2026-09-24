@@ -1,3 +1,4 @@
+import { hrefDaFicha } from '@/core/volta-da-ficha'
 import Link from 'next/link'
 import type { ReactNode } from 'react'
 import { iniciaisDe } from '@/components/design/logo-cliente'
@@ -167,7 +168,7 @@ function partes({ item, agora, clienteId, volta }: Props) {
   const urgencia = urgenciaDe(item, agora)
   const palavra = PALAVRA[urgencia]
   const resolvida = item.situacao !== 'aberta'
-  const hrefDoContato = `/clientes/${clienteId}/leads/${item.contatoId}?volta=${encodeURIComponent(volta)}`
+  const hrefDoContato = hrefDaFicha(clienteId, item.contatoId, { aba: 'atividades', volta })
 
   const prazo = (
     <span className="flex items-start gap-2">

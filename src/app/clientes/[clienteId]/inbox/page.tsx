@@ -58,6 +58,7 @@ import { CartaoDoAtendimento, SeloDoAtendimento } from '@/components/atendimento
 import { estadoDoAtendimento, type Atendimento } from '@/core/estado-do-atendimento'
 import type { EtiquetaEscolhivel } from '@/components/etiquetas/seletor'
 import { AcoesRapidas } from '@/components/inbox/acoes-rapidas'
+import { hrefDaFicha } from '@/core/volta-da-ficha'
 import { Avatar } from '@/components/inbox/avatar'
 import { ColunaDaFicha, MolduraDoInbox } from '@/components/inbox/moldura'
 import { Fila, type Contagem } from '@/components/inbox/fila'
@@ -1311,7 +1312,9 @@ function DadosDoLead({
         <p className="mt-0.5 font-mono text-[11.5px] text-dim">{lead.waId}</p>
 
         <Link
-          href={`/clientes/${clienteId}/leads/${lead.contatoId}`}
+          href={hrefDaFicha(clienteId, lead.contatoId, {
+            volta: `/clientes/${clienteId}/inbox?conversa=${lead.contatoId}`,
+          })}
           className="app-secondary-button mt-3 w-full px-3 py-1.5 text-center text-[12.5px]"
         >
           Ver ficha completa
