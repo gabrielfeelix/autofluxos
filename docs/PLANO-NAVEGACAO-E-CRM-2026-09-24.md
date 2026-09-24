@@ -404,6 +404,53 @@ só no fim da frente.
 **F4. Loja** (5.6): tela de plataformas, "Quero esta", Nuvemshop e WooCommerce
 depois da pesquisa de cada uma.
 
+**Estado da F4 (24/set, commits `5c94c9e` e `12ab219`, só local, sem deploy;
+WooCommerce fica para depois):**
+
+- **Migration `0103_loja_conectar.sql`, aplicada só no local. Falta
+  autorização para produção**, e ela entra **antes** do deploy (o código lê
+  `pedidos_de_loja`, `clients.loja_ativa` e `lojas_integradas.id_na_plataforma`).
+  Aditiva: check de `plataforma` com `nuvemshop` e `woocommerce`,
+  `id_na_plataforma` (anulável, único por plataforma), tabela
+  `pedidos_de_loja` (RLS ligada, zero políticas, revoke com `public`) e
+  `clients.loja_ativa` (anulável, sem default: `null` = regra de antes). Ao
+  aplicar, registrar em `docs/BANCO-COMPARTILHADO.md` como a `0101`.
+- Tela `loja/page.tsx` + `components/loja/conectar-loja.tsx`: "Disponível
+  agora" (cartão largo) e "Em breve" (grade, Brasil primeiro), "O que a
+  conexão rende" à direita, estado vazio com "Montar o catálogo". Regras puras
+  em `core/plataformas-de-loja.ts` (lista, estado, ordem, `mostraLoja`), com
+  teste. Sai o 307 de `/loja` do `next.config.ts`; "Conectar loja" em `SECOES`
+  e `ENDERECO_DA_ABA` apontam para `/loja`. Cores das marcas em `globals.css`
+  (`--marca-<id>`).
+- "Quero esta": `acaoQueroEstaPlataforma` (`configurar_operacao`), otimista,
+  uma vez por conta (chave conta + plataforma). Contar demanda:
+  `select plataforma, count(*) from pedidos_de_loja group by 1`.
+- Interruptor de Loja em Objetivo e recursos (`interruptor-da-loja.tsx`,
+  `acaoDefinirLoja`). Loja conectada aparece mesmo desligada.
+- **Nuvemshop**: pesquisa em `docs/INTEGRACAO-MAGENTO-23-SET.md`. OAuth de app
+  de parceiro, `state` = bilhete do Instagram; retorno
+  `api/loja/nuvemshop/retorno` (público no `proxy.ts`), webhook
+  `api/webhook/nuvemshop` (HMAC; `app/uninstalled` e LGPD). Adaptador
+  `loja/nuvemshop.ts`, tradução pura `core/nuvemshop.ts` com teste; o bot usa
+  Magento ligada, senão Nuvemshop ligada, senão catálogo. Tela
+  `loja/nuvemshop`.
+- **Depende do Gabriel** para a Nuvemshop sair do "Em breve": conta de parceiro
+  e app em <https://partners.nuvemshop.com.br> (escopos `read_products` e
+  `read_orders`, retorno `https://autofluxos.4yu.com.br/api/loja/nuvemshop/retorno`,
+  webhooks de LGPD para `https://autofluxos.4yu.com.br/api/webhook/nuvemshop`),
+  e `NUVEMSHOP_APP_ID`/`NUVEMSHOP_CLIENT_SECRET` na Vercel. Primeira conexão
+  real: conferir o link do produto (`canonical_url` ou `/produtos/<handle>/`,
+  não confirmado na doc) numa loja demo.
+- Aceite conferido no local (`.ux-local/f4.mjs` e `f4-nuvemshop.mjs`, fora do
+  git): pilates sem Loja no menu; ligar no interruptor mostra sem recarregar;
+  "Quero esta" marca na hora e some depois de recarregar; `/loja`,
+  `/loja/magento`, `/ajustes/integracoes/magento` e `/loja/catalogo` abrem;
+  Conectar leva a `nuvemshop.com.br/apps/<id>/authorize?state=`; retorno com
+  estado ruim, sem código e com código falso redireciona certo; webhook 401
+  sem assinatura, 200 com ela, e desinstalar solta a loja e apaga o token. A
+  API real da Nuvemshop respondeu 401 ao token falso (URL e User-Agent
+  chegam). Prints em 1440 e 390 em `.ux-local/f4/`.
+
 **F5. Pedidos e carrinho abandonado** como gatilho de automação.
 
 **F6. Agenda com Google**, começando pelo pedido de verificação.
