@@ -799,7 +799,20 @@ textarea::placeholder {
  * continua cumprindo o papel de mostrar o formato do que vem.
  */
 /*
- * O fundo do histórico da conversa, um azul quase invisível.
+ * O fundo do histórico da conversa: cinza, para a bolha de quem escreveu ser
+ * branca e sólida em cima dele.
+ *
+ * Até 24/set era um véu azul a 3% sobre o branco do painel, e a bolha
+ * recebida era cinza-claro (`--surface-strong`) em cima dele: dois tons
+ * pastéis empilhados, e a mensagem do cliente, que é o que mais se lê na
+ * tela, parecia desbotada. O dono escolheu o arranjo da referência que
+ * mandou: fundo cinza, bolha deles branca, bolha nossa azul cheia. É também o
+ * arranjo do WhatsApp.
+ *
+ * O cinza é `--canvas-deep` com um fio do `--primary`, para o cinza não ficar
+ * frio demais ao lado da bolha azul.
+ *
+ * O texto antigo, que ainda explica por que a conversa tem fundo próprio:
  *
  * Pedido do dono, e ele resolve um problema real: a coluna do meio e a coluna
  * da fila eram os dois o mesmo branco de painel, e a fronteira entre "a lista"
@@ -815,7 +828,7 @@ textarea::placeholder {
  * nenhuma.
  */
 .app-conversa {
-  background: color-mix(in oklab, var(--primary) 3%, var(--panel));
+  background: color-mix(in oklab, var(--primary) 3%, var(--canvas-deep));
 }
 
 :root[data-tema='escuro'] .app-conversa {
@@ -951,6 +964,31 @@ textarea::placeholder {
 }
 
 /*
+ * A bolha do que **eles** mandam: branca e sólida sobre o cinza da conversa.
+ *
+ * Era `bg-surface-strong`, um cinza-claro sobre fundo quase branco, e o dono
+ * descreveu exatamente o problema: "muito pastel". Branco puro com uma sombra
+ * de 1px é o que separa a bolha do fundo sem precisar de borda, e o texto
+ * `--ink` sobre branco é o contraste máximo do painel.
+ *
+ * No escuro, "branco" é `--surface-strong`: o degrau mais claro acima do fundo
+ * da conversa. A sombra some lá porque sombra escura sobre fundo escuro não se
+ * vê; quem separa é a diferença de tom.
+ */
+.bolha-deles {
+  background: var(--panel);
+  color: var(--ink);
+  box-shadow:
+    0 1px 2px rgba(16, 24, 40, 0.06),
+    0 0 0 1px rgba(16, 24, 40, 0.04);
+}
+
+:root[data-tema='escuro'] .bolha-deles {
+  background: var(--surface-strong);
+  box-shadow: none;
+}
+
+/*
  * A bolha do que **nós** mandamos: azul sólido, texto branco.
  *
  * ---------------------------------------------------------------------------
@@ -1051,7 +1089,8 @@ textarea::placeholder {
  * mais escuro que qualquer outra tela do painel, e o preto não é um degrau
  * abaixo do painel, é a ausência dele.
  *
- * Pedido do dono, e é a mesma fórmula de `.app-conversa`, de propósito: as duas
+ * Pedido do dono, e era a mesma fórmula de `.app-conversa` até o Inbox ganhar o
+ * fundo cinza em 24/set (ver lá). A ideia continua valendo para as duas
  * são a área de trabalho no meio da tela, com a lista de um lado. Usar o mesmo
  * véu faz o editor e o Inbox parecerem o mesmo produto em vez de duas telas que
  * herdaram fundos diferentes.

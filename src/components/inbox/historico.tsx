@@ -340,8 +340,8 @@ function ListaDeMensagens({
               nossa
                 ? 'bolha-nossa rounded-[15px_15px_4px_15px]'
                 : mensagem.toque
-                  ? 'rounded-[15px_15px_15px_4px] border border-ok/35 bg-ok/10 text-ink'
-                  : 'rounded-[15px_15px_15px_4px] bg-surface-strong text-ink'
+                  ? 'bolha-deles rounded-[15px_15px_15px_4px] border border-ok/45'
+                  : 'bolha-deles rounded-[15px_15px_15px_4px]'
             }`}>
               {mensagem.cita && <CitacaoNaBolha cita={mensagem.cita} nome={nome} />}
               {mensagem.anexo && <AnexoNaConversa anexo={mensagem.anexo} />}

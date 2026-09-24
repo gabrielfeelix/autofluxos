@@ -69,6 +69,7 @@ import { FunilDaConversa, type FunilDoContato } from '@/components/inbox/funil-d
 import { marcarComoLida, naoLidasPorContato, quandoLeu } from '@/server/repos/leituras'
 import { favoritasEntre, fixadasDoUsuario } from '@/server/repos/marcadores'
 import { contatosDoInstagram } from '@/server/repos/canais-instagram'
+import type { CanalId } from '@/core/canais'
 import { ajustesDaConta } from '@/server/repos/distribuicao'
 import { avisarQueLeu } from '@/server/recibo-de-leitura'
 import { FaixaDeCanalCaido } from '@/components/inbox/faixa-canal-caido'
@@ -710,6 +711,7 @@ async function Conteudo({
             <ColunaDaConversa
               clienteId={clienteId}
               lead={selecionado}
+              canal={doInstagram.has(selecionado.contatoId) ? 'instagram' : 'whatsapp'}
               equipe={equipe}
               usuarioId={usuarioId}
               etiquetas={etiquetas}
@@ -779,6 +781,7 @@ async function Conteudo({
 async function ColunaDaConversa({
   clienteId,
   lead,
+  canal,
   equipe,
   usuarioId,
   etiquetas,
@@ -788,6 +791,8 @@ async function ColunaDaConversa({
   clienteId: string
   /** A conversa aberta. Nunca `null` aqui: quem decide isso é quem renderiza. */
   lead: Lead
+  /** Por onde a pessoa fala. Muda o selo e o que o campo de resposta oferece. */
+  canal: CanalId
   equipe: MembroDaConta[]
   usuarioId: string | null
   etiquetas: EtiquetaEscolhivel[]
@@ -932,6 +937,7 @@ async function ColunaDaConversa({
         <CabecalhoDaConversa
           clienteId={clienteId}
           lead={selecionado}
+          canal={canal}
           equipe={equipe}
           usuarioId={usuarioId}
           etiquetas={etiquetas}
@@ -1114,6 +1120,7 @@ function EsperaDaFicha() {
 function CabecalhoDaConversa({
   clienteId,
   lead,
+  canal,
   equipe,
   usuarioId,
   etiquetas,
@@ -1126,6 +1133,7 @@ function CabecalhoDaConversa({
 }: {
   clienteId: string
   lead: Lead
+  canal: CanalId
   equipe: MembroDaConta[]
   usuarioId: string | null
   etiquetas: EtiquetaEscolhivel[]
@@ -1160,7 +1168,7 @@ function CabecalhoDaConversa({
         por baixo da coluna do contato, sem dar para clicar (visto na 5.9).
       */}
       <header className="flex min-h-[62px] flex-wrap items-center gap-x-3 gap-y-2 border-b border-line px-4 py-2">
-        <Avatar nome={lead.nome} alerta={Boolean(lead.aguardando)} />
+        <Avatar nome={lead.nome} alerta={Boolean(lead.aguardando)} tamanho={40} canal={canal} />
         <div className="min-w-[140px] flex-1">
           <h2 className="truncate text-[13.5px] font-bold">{nome}</h2>
           {/*
