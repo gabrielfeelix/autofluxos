@@ -584,6 +584,7 @@ export const FERRAMENTAS: Ferramenta[] = [
       'Não use para só responder quanto custa ou se tem: para isso basta o texto. ' +
       'O produtoId precisa ter vindo de `loja_buscar` ou `loja_combina_com` nesta mesma resposta; ' +
       'se a pessoa falar de um produto de uma mensagem anterior, busque de novo antes. ' +
+      'Pedido de quantidade ("me envia 100 desse", "quero 3") não é motivo para mandar o card de novo nem repetido. ' +
       'Depois de usar, responda com uma frase curta apresentando os produtos, sem repetir preço nem link: o card já leva os dois.',
     argumentos: [
       {
