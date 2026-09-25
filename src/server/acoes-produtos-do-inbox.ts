@@ -34,7 +34,15 @@ export async function acaoBuscarProdutosDoInbox(clienteId: string, termo: string
     return { ok: false, semCatalogo: true, erro: 'esta conta ainda não tem catálogo nem loja ligada' }
   }
   const r = await loja.buscar(termo.slice(0, 80))
-  return r.ok ? { ok: true, produtos: r.valor } : { ok: false, erro: r.motivo }
+  if (!r.ok) return { ok: false, erro: r.motivo }
+
+  // A busca do bot pula a foto para responder rápido; aqui quem escolhe é uma
+  // pessoa olhando a lista, e a foto é o que diz se o card sai com imagem.
+  // Se a releitura falhar, a lista vai sem foto, nunca sem produto.
+  const comFoto = await loja.lerPorSku(r.valor.map((p) => p.produtoId))
+  if (!comFoto.ok) return { ok: true, produtos: r.valor }
+  const fotos = new Map(comFoto.valor.map((p) => [p.produtoId, p.foto]))
+  return { ok: true, produtos: r.valor.map((p) => ({ ...p, foto: fotos.get(p.produtoId) ?? p.foto })) }
 }
 
 export async function acaoEnviarProdutoDoInbox(
