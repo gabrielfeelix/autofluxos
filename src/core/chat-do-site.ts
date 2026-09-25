@@ -20,7 +20,15 @@ export type ConfigDoSite = {
   saudacao: string
   /** Pedir nome e WhatsApp ou e-mail depois da primeira resposta. */
   pedirContato: boolean
+  /**
+   * A animação do botão, quando a loja mandou a dela (o personagem da marca).
+   * `null` = o robô padrão. A URL é sempre do nosso Storage: a tela sobe o
+   * arquivo, e o balão nunca carrega mídia de endereço que alguém digitou.
+   */
+  mascote: Mascote | null
 }
+
+export type Mascote = { url: string; tipo: 'imagem' | 'video' }
 
 export const CONFIG_PADRAO: ConfigDoSite = {
   dominios: [],
@@ -28,6 +36,7 @@ export const CONFIG_PADRAO: ConfigDoSite = {
   titulo: 'Atendimento',
   saudacao: 'Olá! Como podemos ajudar?',
   pedirContato: true,
+  mascote: null,
 }
 
 /** Tetos dos campos de texto, para o balão não virar outdoor. */
@@ -60,7 +69,14 @@ export function lerConfigDoSite(bruto: unknown): ConfigDoSite {
     titulo: texto(o.titulo, CONFIG_PADRAO.titulo, TETO_DO_TITULO),
     saudacao: texto(o.saudacao, CONFIG_PADRAO.saudacao, TETO_DA_SAUDACAO),
     pedirContato: typeof o.pedirContato === 'boolean' ? o.pedirContato : CONFIG_PADRAO.pedirContato,
+    mascote: lerMascote(o.mascote),
   }
+}
+
+function lerMascote(bruto: unknown): Mascote | null {
+  const m = bruto && typeof bruto === 'object' ? (bruto as Record<string, unknown>) : null
+  if (!m || typeof m.url !== 'string' || !/^https?:\/\//.test(m.url)) return null
+  return { url: m.url, tipo: m.tipo === 'video' ? 'video' : 'imagem' }
 }
 
 /**

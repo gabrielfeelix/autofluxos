@@ -90,6 +90,7 @@
     '.raiz{position:fixed;right:20px;bottom:20px;z-index:2147483000;display:flex;flex-direction:column;align-items:flex-end;gap:12px;color:var(--tinta);font-size:15px;line-height:1.45;-webkit-font-smoothing:antialiased}' +
     '.botao{width:58px;height:58px;border-radius:50%;border:0;background:var(--c);color:#fff;cursor:pointer;display:grid;place-items:center;box-shadow:0 10px 28px -8px color-mix(in srgb,var(--c) 70%,#000),0 2px 6px rgba(22,24,29,.18);transition:transform .18s ease;position:relative}' +
     '.botao:hover{transform:scale(1.05)}' +
+    '.botao .mascote{width:100%;height:100%;object-fit:cover;border-radius:50%;pointer-events:none}' +
     '.botao{width:64px;height:64px}.botao svg.robo{width:54px;height:54px;overflow:visible}' +
     '.robo .braco{transform-origin:47px 41px;animation:acena 3.6s ease-in-out infinite}' +
     '.robo .olhos{transform-origin:32px 31px;animation:pisca 4.2s infinite}' +
@@ -222,15 +223,45 @@
     }
   }
 
+  /* O ícone do botão fechado: o personagem da loja, quando ela mandou um, e o
+   * robô quando não. Vídeo vai mudo, em loop e sem controles: é enfeite, e
+   * navegador de celular só toca sozinho o que está mudo. */
+  function pintarIcone() {
+    var m = config.mascote
+    botao.textContent = ''
+    if (m && m.tipo === 'video') {
+      var v = document.createElement('video')
+      v.className = 'mascote'
+      v.src = m.url
+      v.muted = true
+      v.autoplay = true
+      v.loop = true
+      v.playsInline = true
+      v.setAttribute('aria-hidden', 'true')
+      botao.appendChild(v)
+    } else if (m) {
+      var img = el('img', 'mascote')
+      img.src = m.url
+      img.alt = ''
+      botao.appendChild(img)
+    } else {
+      botao.innerHTML = ICONE_ROBO
+    }
+  }
+
   function montarBotao() {
     botao = el('button', 'botao')
     botao.type = 'button'
     botao.setAttribute('aria-label', 'Abrir conversa')
-    botao.innerHTML = ICONE_ROBO
+    pintarIcone()
     naolidas = el('span', 'naolidas')
     naolidas.hidden = true
     botao.appendChild(naolidas)
-    botao.addEventListener('click', abrir)
+    // O mesmo botão abre e fecha: aberto, ele vira o X, e o X tem que fechar.
+    botao.addEventListener('click', function () {
+      if (aberto) fecharPainel()
+      else abrir()
+    })
     raiz.appendChild(botao)
   }
 
@@ -343,7 +374,7 @@
     painel.remove()
     raiz.classList.remove('aberto')
     botao.setAttribute('aria-label', 'Abrir conversa')
-    botao.innerHTML = ICONE_ROBO
+    pintarIcone()
     botao.appendChild(naolidas)
     botao.focus()
     agendar()

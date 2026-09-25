@@ -1,9 +1,15 @@
 'use client'
 
-import { useState, useTransition } from 'react'
-import type { ConfigDoSite } from '@/core/chat-do-site'
+import { useRef, useState, useTransition } from 'react'
+import type { ConfigDoSite, Mascote } from '@/core/chat-do-site'
 import { TETO_DA_SAUDACAO, TETO_DE_DOMINIOS, TETO_DO_TITULO } from '@/core/chat-do-site'
-import { acaoLigarChatDoSite, acaoPausarChatDoSite, acaoSalvarChatDoSite } from '@/server/acoes-site'
+import {
+  acaoLigarChatDoSite,
+  acaoPausarChatDoSite,
+  acaoSalvarChatDoSite,
+  acaoSubirMascote,
+  acaoTirarMascote,
+} from '@/server/acoes-site'
 
 type Inicial = {
   ligado: boolean
@@ -43,6 +49,10 @@ export function ConfigurarChatDoSite({
   const [salvo, setSalvo] = useState(inicial.config)
   const [aviso, setAviso] = useState<{ tom: 'ok' | 'erro'; texto: string } | null>(null)
   const [copiado, setCopiado] = useState(false)
+  const [mascote, setMascote] = useState<Mascote | null>(inicial.config.mascote)
+  const [avisoDoMascote, setAvisoDoMascote] = useState<string | null>(null)
+  const [enviando, iniciarEnvio] = useTransition()
+  const seletor = useRef<HTMLInputElement>(null)
   const [salvando, iniciar] = useTransition()
 
   const mudou =
@@ -97,6 +107,41 @@ export function ConfigurarChatDoSite({
           ? { tom: 'erro', texto: `Salvo, mas estes endereços não foram aceitos: ${r.recusados.join(', ')}.` }
           : { tom: 'ok', texto: 'Salvo. O balão já usa a versão nova.' },
       )
+    })
+  }
+
+  function enviarMascote(arquivo: File) {
+    setAvisoDoMascote(null)
+    // A prévia troca na hora pelo arquivo local; o endereço definitivo chega
+    // quando o servidor terminar, e volta ao anterior se ele recusar.
+    const antes = mascote
+    const local = URL.createObjectURL(arquivo)
+    setMascote({ url: local, tipo: arquivo.type.startsWith('video/') ? 'video' : 'imagem' })
+    const dados = new FormData()
+    dados.set('clienteId', clienteId)
+    dados.set('arquivo', arquivo)
+    iniciarEnvio(async () => {
+      const r = await acaoSubirMascote(dados)
+      if (!r.ok) {
+        setMascote(antes)
+        setAvisoDoMascote(r.erro)
+      } else {
+        setMascote(r.mascote)
+      }
+      URL.revokeObjectURL(local)
+    })
+  }
+
+  function tirarMascote() {
+    const antes = mascote
+    setMascote(null)
+    setAvisoDoMascote(null)
+    iniciarEnvio(async () => {
+      const r = await acaoTirarMascote(clienteId)
+      if (!r.ok) {
+        setMascote(antes)
+        setAvisoDoMascote(r.erro)
+      }
     })
   }
 
@@ -256,6 +301,56 @@ export function ConfigurarChatDoSite({
           </div>
         </section>
 
+        <section className="app-card flex flex-wrap items-center gap-5 px-5 py-5">
+          <span
+            style={{ background: cor }}
+            className="flex size-[72px] shrink-0 items-center justify-center overflow-hidden rounded-full shadow-[0_10px_24px_-10px_rgba(22,24,29,.55)]"
+          >
+            <IconeDoBotao mascote={mascote} />
+          </span>
+          <div className="min-w-0 flex-1">
+            <h2 className="text-[15px] font-bold">Personagem do botão</h2>
+            <p className="mt-1 max-w-[520px] text-[12.5px] leading-5 text-dim">
+              {mascote
+                ? 'O botão do balão usa a animação da loja.'
+                : 'Hoje é o robô que acena. Mande a animação do personagem da marca para ele aparecer no lugar.'}{' '}
+              GIF, WebP, PNG ou MP4 em loop, até 3,5 MB. Quadrada fica melhor: o botão é redondo.
+            </p>
+            {avisoDoMascote && <p className="mt-2 text-[12.5px] font-semibold text-perigo">{avisoDoMascote}</p>}
+            <div className="mt-3 flex flex-wrap items-center gap-2">
+              <input
+                ref={seletor}
+                type="file"
+                accept="image/gif,image/webp,image/png,video/mp4"
+                className="hidden"
+                onChange={(e) => {
+                  const arquivo = e.target.files?.[0]
+                  if (arquivo) enviarMascote(arquivo)
+                  e.target.value = ''
+                }}
+              />
+              <button
+                type="button"
+                disabled={enviando}
+                onClick={() => seletor.current?.click()}
+                className="rounded-[10px] border border-line px-3.5 py-2 text-[13px] font-bold transition hover:bg-surface disabled:opacity-60"
+              >
+                {enviando ? 'Enviando' : mascote ? 'Trocar animação' : 'Enviar animação'}
+              </button>
+              {mascote && (
+                <button
+                  type="button"
+                  disabled={enviando}
+                  onClick={tirarMascote}
+                  className="rounded-[10px] px-3 py-2 text-[13px] font-semibold text-dim transition hover:bg-surface hover:text-ink disabled:opacity-60"
+                >
+                  Voltar ao robô
+                </button>
+              )}
+            </div>
+          </div>
+        </section>
+
         <section className="app-card flex items-start gap-4 px-5 py-5">
           <div className="min-w-0 flex-1">
             <h2 className="text-[15px] font-bold">Pedir nome e contato</h2>
@@ -296,7 +391,7 @@ export function ConfigurarChatDoSite({
       </div>
 
       <aside className="flex min-w-0 flex-col gap-5 lg:sticky lg:top-6">
-        <Previa titulo={titulo} saudacao={saudacao} cor={cor} />
+        <Previa titulo={titulo} saudacao={saudacao} cor={cor} mascote={mascote} />
 
         <section className="app-card px-5 py-5">
           <h2 className="text-[15px] font-bold">Instalar no site</h2>
@@ -371,7 +466,17 @@ function Passo({ n }: { n: number }) {
  * antes de as duas coisas existirem. As medidas e as cores são as do
  * `public/chat/v1.js`.
  */
-function Previa({ titulo, saudacao, cor }: { titulo: string; saudacao: string; cor: string }) {
+function Previa({
+  titulo,
+  saudacao,
+  cor,
+  mascote,
+}: {
+  titulo: string
+  saudacao: string
+  cor: string
+  mascote: Mascote | null
+}) {
   return (
     <section
       aria-label="Prévia do balão"
@@ -424,10 +529,10 @@ function Previa({ titulo, saudacao, cor }: { titulo: string; saudacao: string; c
       <div className="mt-4 flex justify-end">
         <span
           style={{ background: cor }}
-          className="flex size-14 items-center justify-center rounded-full shadow-[0_10px_24px_-8px_rgba(22,24,29,.5)]"
+          className="flex size-14 items-center justify-center overflow-hidden rounded-full shadow-[0_10px_24px_-8px_rgba(22,24,29,.5)]"
           aria-hidden
         >
-          <Robo />
+          <IconeDoBotao mascote={mascote} />
         </span>
       </div>
     </section>
@@ -468,4 +573,14 @@ function Robo() {
       <rect x="25" y="47" width="14" height="5" rx="2.5" fill="#fff" opacity=".85" />
     </svg>
   )
+}
+
+/** O que vai dentro do botão: a animação da loja, ou o robô padrão. */
+function IconeDoBotao({ mascote }: { mascote: Mascote | null }) {
+  if (!mascote) return <Robo />
+  if (mascote.tipo === 'video') {
+    return <video src={mascote.url} muted autoPlay loop playsInline className="size-full object-cover" aria-hidden />
+  }
+  // eslint-disable-next-line @next/next/no-img-element
+  return <img src={mascote.url} alt="" className="size-full object-cover" />
 }
