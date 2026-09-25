@@ -911,81 +911,110 @@ async function avancarConversa(
 
   await vincularSessaoNaMensagem(mensagem.id, salva.id)
 
-  /**
-   * O expediente vai junto, e as duas buscas correm ao mesmo tempo.
-   *
-   * O motor precisa saber se tem gente para atender **antes** de rodar, porque
-   * é ele que decide o que dizer no handoff. Buscar em série custaria uma
-   * viagem a mais no relógio de toda mensagem; em paralelo com o preparo da IA,
-   * não custa nada.
-   */
-  const [opcoesDeIa, horarioGuardado] = await Promise.all([
-    prepararIa(canalSalvo, contato.id, versao, texto),
-    horarioDoCliente(canalSalvo.clienteId),
-  ])
+  // "Digitando" desde já, e não só quando a resposta estiver pronta: com IA a
+  // rodada leva de 5 a 40 s, e silêncio nesse tempo parece robô quebrado.
+  const digitando = manterDigitando(fabricaDeCanal(canalSalvo), mensagem.id, contato.waId)
+  try {
 
-  /*
-   * Conta que puxa o expediente do CRM refaz a cópia quando ela envelhece.
-   *
-   * Quase toda mensagem passa reto por aqui: só a primeira depois de seis
-   * horas paga a busca, e mesmo ela desiste em 2,5s e segue com a cópia
-   * anterior. Ver `horario-do-crm.ts`.
-   */
-  const horario = await manterCopiaDoCrm(canalSalvo.clienteId, horarioGuardado)
+    /**
+     * O expediente vai junto, e as duas buscas correm ao mesmo tempo.
+     *
+     * O motor precisa saber se tem gente para atender **antes** de rodar, porque
+     * é ele que decide o que dizer no handoff. Buscar em série custaria uma
+     * viagem a mais no relógio de toda mensagem; em paralelo com o preparo da IA,
+     * não custa nada.
+     */
+    const [opcoesDeIa, horarioGuardado] = await Promise.all([
+      prepararIa(canalSalvo, contato.id, versao, texto),
+      horarioDoCliente(canalSalvo.clienteId),
+    ])
 
-  /*
-   * A revisão do controle **antes** de o motor rodar (RB-15).
-   *
-   * Tem que ser lida aqui, e não depois: ela é a prova de que esta rodada foi
-   * autorizada pelo estado que existia quando ela começou. Lida depois, já teria
-   * a troca de controle embutida, e a conferência sempre passaria.
-   */
-  const revisaoAutorizada = await revisaoDoControle(canalSalvo.clienteId, contato.id)
+    /*
+     * Conta que puxa o expediente do CRM refaz a cópia quando ela envelhece.
+     *
+     * Quase toda mensagem passa reto por aqui: só a primeira depois de seis
+     * horas paga a busca, e mesmo ela desiste em 2,5s e segue com a cópia
+     * anterior. Ver `horario-do-crm.ts`.
+     */
+    const horario = await manterCopiaDoCrm(canalSalvo.clienteId, horarioGuardado)
 
-  // Conversa nova começa pelo início do fluxo. A primeira mensagem da pessoa
-  // é o gatilho, não uma resposta, ela ainda não foi perguntada nada. Vale
-  // também para gatilho e para mídia: a frase que abriu o fluxo não é para ser
-  // consumida como resposta do primeiro bloco dele.
-  const resultado = await executarComEfeitos(
-    versao.grafo,
-    salva.sessao,
-    conversaNova ? { tipo: 'inicio' } : entrada,
-    {
-      ...opcoesDeIa,
-      atendimento: contextoDeAtendimento(horario),
-      // A data vem do fuso da conta, e não do servidor. Em UTC, a partir das
-      // 21h em São Paulo, "hoje" já é amanhã, que é exatamente o horário em
-      // que gente manda mensagem para marcar aula.
-      hoje: hojeNaConta(horario?.fuso ?? SEMPRE_ABERTO.fuso),
-      // As mesmas datas que a IA recebe, agora também como `{{variavel}}` para
-      // o fluxo desenhado à mão, é o que faz "semana que vem" funcionar sem
-      // IA contratada, com um botão em vez de um modelo.
-      datas: varsDeData(horario?.fuso ?? SEMPRE_ABERTO.fuso),
-      carregarFluxo: carregadorDeFluxo(canalSalvo.clienteId),
-    },
-  )
+    /*
+     * A revisão do controle **antes** de o motor rodar (RB-15).
+     *
+     * Tem que ser lida aqui, e não depois: ela é a prova de que esta rodada foi
+     * autorizada pelo estado que existia quando ela começou. Lida depois, já teria
+     * a troca de controle embutida, e a conferência sempre passaria.
+     */
+    const revisaoAutorizada = await revisaoDoControle(canalSalvo.clienteId, contato.id)
 
-  await guardarSessao(salva.id, resultado.sessao)
-  // Saltou de automação: a sessão passa a executar a versão do destino, senão a
-  // próxima mensagem voltaria para o fluxo de origem com um nó que não existe
-  // lá, e o motor recomeçaria a saudação no meio da conversa.
-  if (resultado.destino) await trocarVersaoDaSessao(salva.id, resultado.destino.versaoId)
-  await sincronizarTimeout(
-    canalSalvo.clienteId,
-    contato.id,
-    salva.id,
-    // O prazo é lido do grafo onde a conversa **parou**, não de onde ela começou.
-    resultado.destino?.grafo ?? versao.grafo,
-    resultado.sessao,
-  )
-  await aplicar(
-    fabricaDeCanal(canalSalvo),
-    contato,
-    salva.id,
-    mensagem.id,
-    resultado.acoes,
-    revisaoAutorizada,
-  )
+    // Conversa nova começa pelo início do fluxo. A primeira mensagem da pessoa
+    // é o gatilho, não uma resposta, ela ainda não foi perguntada nada. Vale
+    // também para gatilho e para mídia: a frase que abriu o fluxo não é para ser
+    // consumida como resposta do primeiro bloco dele.
+    const resultado = await executarComEfeitos(
+      versao.grafo,
+      salva.sessao,
+      conversaNova ? { tipo: 'inicio' } : entrada,
+      {
+        ...opcoesDeIa,
+        atendimento: contextoDeAtendimento(horario),
+        // A data vem do fuso da conta, e não do servidor. Em UTC, a partir das
+        // 21h em São Paulo, "hoje" já é amanhã, que é exatamente o horário em
+        // que gente manda mensagem para marcar aula.
+        hoje: hojeNaConta(horario?.fuso ?? SEMPRE_ABERTO.fuso),
+        // As mesmas datas que a IA recebe, agora também como `{{variavel}}` para
+        // o fluxo desenhado à mão, é o que faz "semana que vem" funcionar sem
+        // IA contratada, com um botão em vez de um modelo.
+        datas: varsDeData(horario?.fuso ?? SEMPRE_ABERTO.fuso),
+        carregarFluxo: carregadorDeFluxo(canalSalvo.clienteId),
+      },
+    )
+
+    await guardarSessao(salva.id, resultado.sessao)
+    // Saltou de automação: a sessão passa a executar a versão do destino, senão a
+    // próxima mensagem voltaria para o fluxo de origem com um nó que não existe
+    // lá, e o motor recomeçaria a saudação no meio da conversa.
+    if (resultado.destino) await trocarVersaoDaSessao(salva.id, resultado.destino.versaoId)
+    await sincronizarTimeout(
+      canalSalvo.clienteId,
+      contato.id,
+      salva.id,
+      // O prazo é lido do grafo onde a conversa **parou**, não de onde ela começou.
+      resultado.destino?.grafo ?? versao.grafo,
+      resultado.sessao,
+    )
+    await aplicar(
+      fabricaDeCanal(canalSalvo),
+      contato,
+      salva.id,
+      mensagem.id,
+      resultado.acoes,
+      revisaoAutorizada,
+    )
+  } finally {
+    digitando.parar()
+  }
+}
+
+/**
+ * Liga o "digitando" e o renova até `parar()`.
+ *
+ * A Meta apaga o indicador sozinha em 25 s ou quando a resposta sai. Uma
+ * rodada com IA pode passar disso (modelo lento, nova tentativa depois de
+ * 503), então ele é renovado a cada 20 s. Melhor-esforço: `aguardarResposta`
+ * já engole a falha, e um indicador que não aparece não pode travar a resposta.
+ */
+function manterDigitando(canal: Canal, mensagemId: string, contato: string): { parar: () => void } {
+  const ligar = () => {
+    try {
+      void Promise.resolve(canal.aguardarResposta({ mensagemId, contato }, 0)).catch(() => {})
+    } catch {
+      // Canal sem indicador: segue sem ele.
+    }
+  }
+  ligar()
+  const renovar = setInterval(ligar, 20_000)
+  return { parar: () => clearInterval(renovar) }
 }
 
 /**

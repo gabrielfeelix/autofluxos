@@ -36,10 +36,13 @@ import { rodarTarefas } from '@/server/tarefas'
  * é gravado, e a sessão fica presa em `aguardando_http`. Como a mensagem já foi
  * deduplicada, a Meta não reenvia e a pessoa fica sem resposta nenhuma.
  *
- * 60s cobre o pior caso realista: três saltos de redirecionamento no timeout
- * cheio, mais o banco.
+ * 60s cobria o pior caso de um nó de API. Não cobre uma rodada de IA vendedora
+ * em dia de Gemini instável: até três chamadas ao modelo, cada uma com até
+ * três tentativas depois de 503, mais busca e card na loja. Em 25/set/2026 uma
+ * rodada foi cortada calada nos 60s, sem resposta, sem alerta e sem handoff.
+ * A conta roda em Fluid compute, que permite 300s.
  */
-export const maxDuration = 60
+export const maxDuration = 300
 
 export async function GET(req: Request) {
   const parametros = new URL(req.url).searchParams
