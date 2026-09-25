@@ -280,7 +280,7 @@ export function gemini({ chave, modelo }: { chave: string; modelo?: string }): M
     pausar: boolean,
   ): Promise<Resposta> {
     if (estaSemCota(MODELO_ULTIMO_RECURSO)) {
-      return desistencia ?? { tipo: 'nao_sei', motivo: 'os três modelos estão sem cota hoje' }
+      return desistencia ?? { tipo: 'nao_sei', motivo: 'os três modelos estão sem cota hoje', falhou: true }
     }
     if (pausar) await new Promise((pronto) => setTimeout(pronto, 1_000))
     const terceira = await tentar(MODELO_ULTIMO_RECURSO, chave, corpo, TIMEOUT_RESERVA_MS)
@@ -345,6 +345,7 @@ async function tentar(
       const desistencia: Resposta = {
         tipo: 'nao_sei',
         motivo: `o modelo respondeu ${resposta.status}`,
+        falhou: true,
       }
 
       return VALE_RETENTAR.has(resposta.status)
@@ -398,6 +399,7 @@ async function tentar(
     const desistencia: Resposta = {
       tipo: 'nao_sei',
       motivo: porTempo ? 'o modelo demorou demais' : 'não deu para falar com o modelo',
+      falhou: true,
     }
 
     /*

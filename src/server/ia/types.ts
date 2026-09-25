@@ -64,7 +64,16 @@ export type Turno =
  */
 export type Resposta =
   | { tipo: 'texto'; texto: string }
-  | { tipo: 'nao_sei'; motivo: string }
+  | {
+      tipo: 'nao_sei'
+      motivo: string
+      /**
+       * Falha de transporte (cota, fora do ar, demora), e não decisão do
+       * modelo. É o que faz a cadeia de provedores tentar o próximo: `nao_sei`
+       * de escopo é resposta, este é "não deu para perguntar".
+       */
+      falhou?: true
+    }
   /**
    * "Antes de responder, preciso consultar isto."
    *

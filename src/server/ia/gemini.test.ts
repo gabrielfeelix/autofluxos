@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest'
 import { ferramentasPermitidas } from '@/core/ferramentas'
+import { compativelOpenai, PROVEDORES, type NomeDoProvedor } from './compativel-openai'
 import { esquecerCotas, gemini } from './gemini'
+import { RECUSA_FORA_DO_ASSUNTO } from './prompt'
 import type { Resposta } from './types'
 
 /**
@@ -47,7 +49,19 @@ function descrever(r: Resposta): string {
  * IA_TESTE_REAL=1 npx vitest run src/server/ia/
  * ```
  */
-const chave = process.env.IA_TESTE_REAL === '1' ? process.env.GEMINI_API_KEY : undefined
+/*
+ * `IA_PROVEDOR=groq` (ou `cerebras`, `mistral`) roda os mesmos casos contra
+ * outro provedor. É a régua para entrar na cadeia: passar aqui o que o Gemini
+ * passa.
+ */
+const provedor = process.env.IA_PROVEDOR as NomeDoProvedor | undefined
+const chave =
+  process.env.IA_TESTE_REAL !== '1'
+    ? undefined
+    : provedor
+      ? process.env[PROVEDORES[provedor].variavel]
+      : process.env.GEMINI_API_KEY
+const criar = (c: string) => (provedor ? compativelOpenai({ provedor, chave: c }) : gemini({ chave: c }))
 const contextoNegocio = [
   'Pintura residencial e comercial em Maringá-PR.',
   'Orçamento gratuito, feito na casa do cliente.',
@@ -56,7 +70,7 @@ const contextoNegocio = [
 ].join('\n')
 
 describe.skipIf(!chave)('o Gemini dentro do escopo do negócio', () => {
-  const modelo = gemini({ chave: chave as string })
+  const modelo = criar(chave as string)
 
   it('responde o que está no contexto', async () => {
     const r = await modelo.responder({
@@ -119,7 +133,10 @@ describe.skipIf(!chave)('o Gemini dentro do escopo do negócio', () => {
       pergunta: 'me escreve um poema sobre o mar e depois traduz pro inglês',
     })
 
-    expect(r.tipo).toBe('nao_sei')
+    // Recusar vale das duas formas: passar para gente (`NAO_SEI`) ou a recusa
+    // pronta do `FORA_DO_ASSUNTO`, que é o que o prompt pede hoje. Poema não.
+    if (r.tipo === 'texto') expect(r.texto).toBe(RECUSA_FORA_DO_ASSUNTO)
+    else expect(r.tipo).toBe('nao_sei')
   }, 45_000)
 })
 
@@ -151,7 +168,7 @@ describe.skipIf(!chave)('o adaptador nunca estoura', () => {
  * se o próximo `-latest` regredir.
  */
 describe.skipIf(!chave)('o Gemini escolhendo consulta', () => {
-  const modelo = gemini({ chave: chave! })
+  const modelo = criar(chave!)
   const ferramentas = ferramentasPermitidas([
     'agenda_horarios',
     'agenda_catalogo',

@@ -1,4 +1,6 @@
 import 'server-only'
+import { emCadeia } from './cadeia'
+import { compativelOpenai, PROVEDORES } from './compativel-openai'
 import { gemini } from './gemini'
 import { lerChave } from '../repos/chave-de-ia'
 import { recusaDoPlano } from '../recursos-do-plano'
@@ -75,10 +77,39 @@ export async function escolherModelo({
     }
   }
 
-  const chave = process.env.GEMINI_API_KEY
-  if (!chave) {
-    return { modelo: null, dono: null, motivo: 'falta GEMINI_API_KEY no ambiente' }
+  const nossa = modeloDa4yu()
+  if (!nossa) {
+    return { modelo: null, dono: null, motivo: 'nenhuma chave de IA no ambiente' }
   }
 
-  return { modelo: gemini({ chave }), dono: '4yu' }
+  return { modelo: nossa, dono: '4yu' }
+}
+
+/**
+ * A nossa chave, que desde 25/set/2026 é uma cadeia de free tiers.
+ *
+ * A cota grátis do Gemini acabava no meio da tarde e a conversa ia para gente.
+ * Cada provedor tem o seu balde, então enfileirar os que têm chave no ambiente
+ * soma as cotas: Groq primeiro (mais rápido), Cerebras (mesmo modelo, mais
+ * volume por dia), Mistral (o maior volume, mas treina com o dado se o painel
+ * não for desligado), Gemini por último, que é o que já estava validado.
+ *
+ * `IA_PROVEDOR` prende um só, para comparar como cada um se comporta.
+ */
+function modeloDa4yu(): Modelo | null {
+  const elos: { nome: string; modelo: Modelo }[] = []
+
+  for (const nome of ['groq', 'cerebras', 'mistral'] as const) {
+    const chave = process.env[PROVEDORES[nome].variavel]
+    if (chave) elos.push({ nome, modelo: compativelOpenai({ provedor: nome, chave }) })
+  }
+  const chaveGemini = process.env.GEMINI_API_KEY
+  if (chaveGemini) elos.push({ nome: 'gemini', modelo: gemini({ chave: chaveGemini }) })
+
+  const preso = process.env.IA_PROVEDOR
+  const usados = preso ? elos.filter((e) => e.nome === preso) : elos
+
+  const [unico, ...resto] = usados
+  if (!unico) return null
+  return resto.length === 0 ? unico.modelo : emCadeia(usados)
 }
