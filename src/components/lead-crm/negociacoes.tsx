@@ -1,7 +1,8 @@
 'use client'
 
 import { useRouter } from 'next/navigation'
-import { useState, useTransition } from 'react'
+import { useState } from 'react'
+import { depoisDaTela } from '@/components/inbox/conversa-local'
 import { comoDinheiro, type Situacao } from '@/core/crm'
 import { comoParado, estaParado } from '@/core/quadros'
 import { FecharCartao } from '@/components/quadros/fechar-cartao'
@@ -32,9 +33,13 @@ export type NegociacaoDoContato = {
  * lista fechada de motivos. Duas telas com dois modais de fechar venda viram,
  * em um mês, duas regras de fechar venda.
  *
- * Depois de fechar, `router.refresh()`: `acaoFecharCartao` revalida `/quadros`,
- * não esta rota, e o que muda aqui é mais do que o cartão (o estágio anda, a
- * linha do tempo ganha uma linha, o "já rendeu" muda).
+ * Depois de fechar, `router.refresh()`: o que muda aqui é mais do que o
+ * cartão (o estágio anda, a linha do tempo ganha uma linha, o "já rendeu"
+ * muda). Fechar não é otimista (dispara o cliente e o funil seguinte), mas a
+ * linha vira GANHA ou PERDIDA no "ok", sem esperar o redesenho.
+ *
+ * Reabrir é otimista desde 25/set: a linha volta a ter Ganhar e Perder no
+ * clique, e volta ao que era se o servidor recusar. Não recarrega a ficha.
  */
 export function Negociacoes({
   clienteId,
@@ -54,7 +59,16 @@ export function Negociacoes({
     situacao: Exclude<Situacao, 'aberta'>
   } | null>(null)
   const [aviso, setAviso] = useState<string | null>(null)
-  const [rodando, comecar] = useTransition()
+  /** A situação que esta aba acabou de dar a cada cartão, por cima da do servidor. */
+  const [situacoes, setSituacoes] = useState<ReadonlyMap<string, Situacao>>(new Map())
+  const situacaoDe = (n: NegociacaoDoContato) => situacoes.get(n.cartaoId) ?? n.situacao
+  const marcar = (cartaoId: string, situacao: Situacao | undefined) =>
+    setSituacoes((antes) => {
+      const novo = new Map(antes)
+      if (situacao) novo.set(cartaoId, situacao)
+      else novo.delete(cartaoId)
+      return novo
+    })
 
   if (negociacoes.length === 0) {
     return (
@@ -82,7 +96,8 @@ export function Negociacoes({
 
       <ul>
         {negociacoes.map((negociacao) => {
-          const aberta = negociacao.situacao === 'aberta'
+          const situacao = situacaoDe(negociacao)
+          const aberta = situacao === 'aberta'
           const parada = aberta && estaParado(negociacao.entrouEm)
           return (
             <li key={negociacao.cartaoId} className="border-b border-line px-[18px] py-3.5 last:border-0">
@@ -126,18 +141,17 @@ export function Negociacoes({
                 <span className="mt-2.5 flex items-center gap-2.5">
                   <span
                     className={`rounded-full border px-2.5 py-0.5 text-[10.5px] font-bold ${
-                      negociacao.situacao === 'ganha'
+                      situacao === 'ganha'
                         ? 'border-emerald-400/25 bg-emerald-400/[0.09] text-ok'
                         : 'border-line bg-surface text-muted'
                     }`}
                   >
-                    {negociacao.situacao === 'ganha' ? 'GANHA' : 'PERDIDA'}
+                    {situacao === 'ganha' ? 'GANHA' : 'PERDIDA'}
                   </span>
                   {/* Fechar é um clique, e errar o clique é rotina, mesma
                       frase e mesma ação do menu do cartão. */}
                   <button
                     type="button"
-                    disabled={rodando}
                     onClick={() => reabrir(negociacao.cartaoId)}
                     className="text-[11.5px] text-muted underline decoration-dotted underline-offset-2 transition hover:text-primary disabled:opacity-50"
                   >
@@ -172,6 +186,7 @@ export function Negociacoes({
           motivos={motivos}
           aoFechar={() => setFechando(null)}
           aoConcluir={(resultado) => {
+            marcar(fechando.cartao.cartaoId, fechando.situacao)
             setFechando(null)
             setAviso(
               resultado.abriuEm
@@ -187,13 +202,19 @@ export function Negociacoes({
 
   function reabrir(cartaoId: string) {
     setAviso(null)
-    comecar(async () => {
-      const r = await acaoReabrirCartao(clienteId, cartaoId)
-      if (!r.ok) {
-        setAviso(r.erro ?? 'não deu para reabrir')
-        return
-      }
-      router.refresh()
-    })
+    const antes = situacoes.get(cartaoId)
+    marcar(cartaoId, 'aberta')
+    depoisDaTela(() => acaoReabrirCartao(clienteId, cartaoId)).then(
+      (r) => {
+        if (!r.ok) {
+          marcar(cartaoId, antes)
+          setAviso(r.erro ?? 'não deu para reabrir')
+        }
+      },
+      () => {
+        marcar(cartaoId, antes)
+        setAviso('sem conexão com o servidor: a venda continua fechada')
+      },
+    )
   }
 }

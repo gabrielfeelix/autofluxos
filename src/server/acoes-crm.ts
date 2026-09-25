@@ -128,7 +128,7 @@ export async function acaoReabrirCartao(
   const r = await reabrirCartao(clienteId, cartaoId)
   if (!r.ok) return { ok: false, erro: r.motivo }
 
-  quadros(clienteId)
+  // Gesto rápido: a tela já mudou no clique. Ver `gestoSemRecarregar`.
   return { ok: true }
 }
 
@@ -145,7 +145,7 @@ export async function acaoAtribuirCartao(
   const r = await atribuirCartao(clienteId, cartaoId, usuarioId, quemFez?.usuario.nome ?? null)
   if (!r.ok) return { ok: false, erro: r.motivo }
 
-  quadros(clienteId)
+  // Gesto rápido: a tela já mudou no clique. Ver `gestoSemRecarregar`.
   return { ok: true, quem: r.quem }
 }
 
@@ -167,7 +167,7 @@ export async function acaoDescreverCartao(
   })
   if (!r.ok) return { ok: false, erro: r.motivo }
 
-  quadros(clienteId)
+  // Gesto rápido: a tela já mudou no clique. Ver `gestoSemRecarregar`.
   return { ok: true }
 }
 
@@ -445,8 +445,7 @@ export async function acaoDefinirTemperatura(
   )
   if (!mudou) return { ok: false, erro: 'este contato não existe mais' }
 
-  quadros(clienteId)
-  revalidatePath(`/clientes/${clienteId}/leads/${contatoId}`)
+  // Gesto rápido: a tela já mudou no clique. Ver `gestoSemRecarregar`.
   return { ok: true }
 }
 
@@ -463,8 +462,7 @@ export async function acaoDefinirEstagio(
   const mudou = await definirEstagio(clienteId, contatoId, estagio, quem?.usuario.nome ?? null)
   if (!mudou) return { ok: false, erro: 'este contato não existe mais' }
 
-  quadros(clienteId)
-  revalidatePath(`/clientes/${clienteId}/leads/${contatoId}`)
+  // Gesto rápido: a tela já mudou no clique. Ver `gestoSemRecarregar`.
   return { ok: true }
 }
 
@@ -550,8 +548,7 @@ export async function acaoAtribuirContato(
     quemFez?.usuario.nome ?? null,
   )
 
-  revalidatePath(`/clientes/${clienteId}/leads/${contatoId}`)
-  revalidatePath(`/clientes/${clienteId}/inbox`)
+  // Gesto rápido: a tela já mudou no clique. Ver `gestoSemRecarregar`.
   return { ok: true }
 }
 
