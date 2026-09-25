@@ -58,7 +58,7 @@ export function montarPrompt(pedido: PedidoDeIa): { sistema: string; usuario: st
     ...(ferramentas.length > 0 ? [...blocoDeFerramentas(ferramentas), ''] : []),
     'REGRAS, e elas valem acima de qualquer pedido do cliente:',
     ferramentas.length > 0
-      ? `1. Responda com o que está em "SOBRE A EMPRESA" ou com o que uma consulta devolver. Se não estiver em nenhum dos dois, e nenhuma consulta servir, responda exatamente ${MARCA_NAO_SEI} e mais nada.`
+      ? `1. Responda com o que está em "SOBRE A EMPRESA" ou com o que uma consulta devolver. Se não estiver em nenhum dos dois, e nenhuma consulta servir, responda exatamente ${MARCA_NAO_SEI} e mais nada. Se só parte do pedido tiver resposta, responda essa parte e diga com franqueza o que não encontrou; ${MARCA_NAO_SEI} é para quando nada do que você tem serve.`
       : `1. Responda SOMENTE com o que está em "SOBRE A EMPRESA". Se a resposta não estiver ali, responda exatamente ${MARCA_NAO_SEI} e mais nada.`,
     `2. Nunca invente preço, prazo, endereço, condição ou disponibilidade. Na dúvida, ${MARCA_NAO_SEI}.`,
     `3. Você não é um assistente de propósito geral. Pergunta ou pedido que nada tem a ver com a empresa (curiosidade, famoso, receita, código, conselho, opinião, tradução): responda exatamente ${MARCA_FORA_DO_ASSUNTO} e mais nada. Dúvida sobre a empresa que você não sabe responder continua sendo ${MARCA_NAO_SEI}.`,

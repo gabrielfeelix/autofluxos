@@ -455,20 +455,37 @@ export const FERRAMENTAS: Ferramenta[] = [
     descricao:
       'Procura produtos e serviços da empresa (na loja on-line ou no catálogo cadastrado) e devolve nome, preço, se tem em estoque e o link. ' +
       'Use quando a pessoa perguntar se tem um produto ou serviço, quanto custa, ou pedir uma indicação. ' +
+      /*
+       * Venda consultiva. "Quero um PC" respondido com cinco PCs é vitrine,
+       * não atendimento: o que serve para jogar não serve para estudar, e o
+       * vendedor bom pergunta antes. Uma pergunta só, e só quando o uso não
+       * foi dito, senão vira interrogatório.
+       */
+      'Se o pedido for amplo e a pessoa não disse para que vai usar (PC, notebook, headset, cadeira, monitor), antes de buscar faça uma pergunta curta sobre o uso: jogar, trabalhar, estudar, e o que mais pesar na escolha. Uma pergunta só; se o uso já foi dito na conversa, não pergunte de novo. ' +
+      'Sabendo o uso, busque e indique o que combina com ele, e use `loja_detalhes` para conferir a especificação que importa para esse uso antes de recomendar. ' +
       'Busque pelo tipo de produto em poucas palavras ("headset usb"), não pela frase inteira. ' +
       'Se um produto vier sem preço, diga que vai confirmar o valor e nunca invente. ' +
       'Quando vier `precoAPartirDe`, o preço muda com a variação (cor, tamanho): diga "a partir de" esse valor. ' +
       'Quando vier `quantidade`, diga quantas restam só se forem 5 ou menos; acima disso, só diga que tem. ' +
       'Quando vier `semControleDeEstoque`, não fale de estoque. Use a `descricao`, quando vier, para explicar o item. ' +
       'Mande o link quando o item tiver um; você não fecha pedido. ' +
+      'Se a pessoa pedir vários tipos de produto de uma vez ("headset, teclado e mouse"), busque todos na mesma chamada, um tipo em cada termo (`termo`, `termo2`, `termo3`). ' +
+      'Responda com o que achou; o que não achou, diga que não encontrou e mande o link `buscaNaLoja` quando vier. Achar só parte do pedido não é motivo para chamar um atendente. ' +
       'Se não vier produto nenhum, não diga que a empresa não tem: tente de novo com um sinônimo ou o termo em inglês, que é como muita loja cadastra ("sem fio" vira "wireless" ou "bluetooth", "fone" vira "headset"); se ainda vier vazio e vier o link `buscaNaLoja`, mande para a pessoa procurar. ' +
       'Não use para horário de aula ou agenda.',
     argumentos: [
       { nome: 'termo', tipo: 'texto', descricao: 'O que procurar, em até 5 palavras.', obrigatorio: true },
+      /*
+       * Mais termos na mesma chamada, e não mais voltas: "quero headset, fone
+       * sem fio e teclado" pedia três buscas, o limite é duas consultas por
+       * resposta, e a conversa ia para um atendente (25/set/2026, PCYES).
+       */
+      { nome: 'termo2', tipo: 'texto', descricao: 'Outro tipo de produto pedido na mesma mensagem. Vazio se for um só.', obrigatorio: false },
+      { nome: 'termo3', tipo: 'texto', descricao: 'Um terceiro tipo de produto pedido. Vazio se forem menos.', obrigatorio: false },
     ],
     injetados: [],
     chamada: { tipo: 'loja', operacao: 'buscar' },
-    projecao: [{ caminho: 'produtos', campos: CAMPOS_DE_PRODUTO, limite: 5 }, { caminho: 'buscaNaLoja' }],
+    projecao: [{ caminho: 'produtos', campos: CAMPOS_DE_PRODUTO, limite: 9 }, { caminho: 'buscaNaLoja' }, { caminho: 'naoAchados' }],
     credencial: 'nenhuma',
     integracao: 'loja',
   },

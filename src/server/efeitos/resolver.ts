@@ -1141,14 +1141,48 @@ async function executarNaLoja(
   }
 
   if (operacao === 'buscar') {
-    const termo = valores.termo ?? ''
-    const r = await loja.buscar(termo)
-    if (!r.ok) return r
-    // Vazio vem com a página de busca da loja: ver `linkDaBusca`. O catálogo
-    // próprio não tem página de busca, e aí vai só a lista vazia.
-    if (r.valor.length > 0) return { ok: true, json: { produtos: r.valor } }
-    const buscaNaLoja = loja.linkDaBusca(termo)
-    return { ok: true, json: buscaNaLoja ? { produtos: [], buscaNaLoja } : { produtos: [] } }
+    const termos = [valores.termo, valores.termo2, valores.termo3]
+      .map((t) => (t ?? '').trim())
+      .filter((t, i, todos) => t !== '' && todos.indexOf(t) === i)
+    if (termos.length <= 1) {
+      const termo = termos[0] ?? ''
+      const r = await loja.buscar(termo)
+      if (!r.ok) return r
+      // Vazio vem com a página de busca da loja: ver `linkDaBusca`. O catálogo
+      // próprio não tem página de busca, e aí vai só a lista vazia.
+      if (r.valor.length > 0) return { ok: true, json: { produtos: r.valor } }
+      const buscaNaLoja = loja.linkDaBusca(termo)
+      return { ok: true, json: buscaNaLoja ? { produtos: [], buscaNaLoja } : { produtos: [] } }
+    }
+
+    /*
+     * Vários tipos de produto numa mensagem: uma busca por termo, em paralelo,
+     * três de cada. Uma loja recusando um termo não derruba os outros; só
+     * falha se todos falharem, porque aí o problema é a loja e não o termo.
+     */
+    const resultados = await Promise.all(termos.map((t) => loja.buscar(t)))
+    if (resultados.every((r) => !r.ok)) return resultados[0] as { ok: false; motivo: string }
+    const vistos = new Set<string>()
+    const produtos: ProdutoDaLoja[] = []
+    const naoAchados: string[] = []
+    resultados.forEach((r, i) => {
+      const achados = r.ok ? r.valor.filter((p) => !vistos.has(p.produtoId)).slice(0, 3) : []
+      if (achados.length === 0) naoAchados.push(termos[i]!)
+      for (const p of achados) {
+        vistos.add(p.produtoId)
+        produtos.push(p)
+      }
+    })
+    const primeiroSemNada = naoAchados[0]
+    const buscaNaLoja = primeiroSemNada ? loja.linkDaBusca(primeiroSemNada) : ''
+    return {
+      ok: true,
+      json: {
+        produtos,
+        ...(naoAchados.length > 0 ? { naoAchados } : {}),
+        ...(buscaNaLoja ? { buscaNaLoja } : {}),
+      },
+    }
   }
 
   const r = await loja.combinaCom(valores.produtoId ?? '')
