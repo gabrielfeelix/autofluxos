@@ -1,5 +1,6 @@
 import { after } from 'next/server'
 import { z } from 'zod'
+import { espiando } from '@/server/espiar'
 import { acharLead, lerConversa } from '@/server/repos/leads'
 import { marcarComoLida, quandoLeu } from '@/server/repos/leituras'
 import { avisarQueLeu } from '@/server/recibo-de-leitura'
@@ -94,7 +95,8 @@ export async function GET(
     ? conversa.mensagens
     : conversa.mensagens.filter((mensagem) => Date.parse(mensagem.ts) > corte)
 
-  if (novas.some((mensagem) => mensagem.direcao === 'entrada')) {
+  // Espiando, nada vira lido e o cliente não recebe o visto (`server/espiar.ts`).
+  if (novas.some((mensagem) => mensagem.direcao === 'entrada') && !(await espiando(clienteId))) {
     const sessao = await sessaoAtual()
     const usuarioId = sessao?.usuario.id ?? null
 

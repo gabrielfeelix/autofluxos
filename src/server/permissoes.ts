@@ -283,7 +283,15 @@ export async function alcanceDeConversas(
   clienteId: string,
   acesso: AcessoCompleto,
 ): Promise<AlcanceDeConversas> {
-  const escopo = filtroDoAcesso(acesso, 'atender')
+  return alcanceDasRegras(clienteId, acesso.regras)
+}
+
+/**
+ * O mesmo alcance, a partir das regras de qualquer pessoa da conta. É o que o
+ * modo espiar usa para ver a fila como o atendente vê (`server/espiar.ts`).
+ */
+export async function alcanceDasRegras(clienteId: string, regras: Acesso): Promise<AlcanceDeConversas> {
+  const escopo = filtroDe(regras, 'atender')
   if (escopo.tipo === 'tudo') return { tipo: 'tudo' }
   if (escopo.tipo === 'impossivel') return { tipo: 'nada' }
   const donos = await responsaveisDoEscopo(clienteId, escopo)

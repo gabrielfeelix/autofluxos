@@ -1,4 +1,5 @@
 import { z } from 'zod'
+import { espiando } from '@/server/espiar'
 import { contarPorAtribuicao, contarPorEstado, leadsMudadosDesde, pulsoDaConta } from '@/server/repos/leads'
 import { naoLidasPorContato } from '@/server/repos/leituras'
 import { alcanceDeConversas, exigirCapacidade, recusou } from '@/server/permissoes'
@@ -26,7 +27,9 @@ export async function GET(req: Request, contexto: { params: Promise<{ clienteId:
   if (recusou(acesso)) return Response.json({ erro: 'não encontrado' }, { status: 404 })
 
   const clienteId = params.data.clienteId
-  const alcance = await alcanceDeConversas(clienteId, acesso)
+  // Espiando, a fila viva é a do espiado, como a página (`server/espiar.ts`).
+  const espiao = await espiando(clienteId)
+  const alcance = espiao?.alcance ?? (await alcanceDeConversas(clienteId, acesso))
   const [{ leads, completo }, pulso, contagem, porEstado] = await Promise.all([
     leadsMudadosDesde(clienteId, new Date(desde).toISOString(), alcance),
     pulsoDaConta(clienteId),
@@ -34,7 +37,7 @@ export async function GET(req: Request, contexto: { params: Promise<{ clienteId:
     contarPorEstado(clienteId, alcance),
   ])
   const naoLidas = await naoLidasPorContato(
-    acesso.sessao.usuario.id ?? null,
+    espiao?.alvo.id ?? acesso.sessao.usuario.id ?? null,
     leads.map((lead) => lead.contatoId),
   )
 

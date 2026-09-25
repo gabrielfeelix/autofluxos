@@ -89,8 +89,11 @@ export function Fila({
   paginas,
   agendadas,
   canalDoContato,
+  menuDeEspiar,
   rotuloDeTodos = "Todos os atendentes",
 }: {
+  /** O olho do modo espiar, montado no servidor (`components/inbox/espiar.tsx`). */
+  menuDeEspiar?: React.ReactNode;
   clienteId: string;
   /** A página que o servidor filtrou. É o que a lista mostra no modo paginado. */
   leads: Lead[];
@@ -454,6 +457,7 @@ export function Fila({
             separada de configuração.
           */}
           <span className="ml-auto flex shrink-0 items-center gap-0.5">
+            {menuDeEspiar}
             {/*
               A porta das guardadas fica aqui, e não na barra lateral.
 

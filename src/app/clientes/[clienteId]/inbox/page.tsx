@@ -12,7 +12,9 @@ import { ProvedorDaConversa } from '@/components/inbox/conversa-local'
 import { EtiquetasAplicadas } from '@/components/etiquetas/seletor'
 import { membrosDaConta, type MembroDaConta } from '@/server/repos/usuarios'
 import { sessaoAtual } from '@/server/sessao'
-import { acessoCompleto, meuAlcance } from '@/server/permissoes'
+import { acessoCompleto } from '@/server/permissoes'
+import { alcanceDaTela, espiando, quemPossoEspiar } from '@/server/espiar'
+import { FaixaDeEspiar, MenuDeEspiar, RodapeDeEspiar } from '@/components/inbox/espiar'
 import { alcancaDono } from '@/core/permissoes'
 import { ClienteShell } from '@/components/design/cliente-shell'
 import { Dica } from '@/components/design/dica'
@@ -192,7 +194,10 @@ async function Tela({ cliente, busca }: { cliente: Cliente; busca: Busca }) {
    * se a pessoa tivesse escolhido o próprio nome no filtro.
    */
   const deQuem = primeiro(busca.de) || 'todos'
-  const atribuicao = deQuem === 'minhas' ? (await acessoCompleto(clienteId)).sessao.usuario.id : deQuem
+  // Espiando, "minhas" são as do espiado: a tela é a dele.
+  const espiao = await espiando(clienteId)
+  const atribuicao =
+    deQuem === 'minhas' ? (espiao?.alvo.id ?? (await acessoCompleto(clienteId)).sessao.usuario.id) : deQuem
   /*
    * O eixo "em que pé está", separado do "de quem é" (0049).
    *
@@ -209,7 +214,7 @@ async function Tela({ cliente, busca }: { cliente: Cliente; busca: Busca }) {
   // Quem a pessoa pode ver. Entra em **todas** as consultas da fila: lista,
   // busca local, contadores e a conversa aberta pelo endereço. Um contador sem
   // alcance contaria para o atendente as conversas dos colegas.
-  const alcance = await meuAlcance(clienteId)
+  const alcance = await alcanceDaTela(clienteId)
 
   const [
     fila,
@@ -221,6 +226,7 @@ async function Tela({ cliente, busca }: { cliente: Cliente; busca: Busca }) {
     coexistencia,
     temAutomacao,
     canalDoContato,
+    espiaveis,
   ] =
     await Promise.all([
     paginarLeads(clienteId, {
@@ -262,6 +268,8 @@ async function Tela({ cliente, busca }: { cliente: Cliente; busca: Busca }) {
      * ver `canaisDosContatos`.
      */
     canaisDosContatos(clienteId),
+    // A porta do modo espiar só aparece para quem tem de quem espiar.
+    espiao ? Promise.resolve([] as string[]) : quemPossoEspiar(clienteId),
   ])
 
   /*
@@ -336,8 +344,10 @@ async function Tela({ cliente, busca }: { cliente: Cliente; busca: Busca }) {
    * vezes na mesma navegação escreve o mesmo relógio duas vezes. Sem usuário,
    * quem ainda não tem usuário na conta, as duas funções não fazem nada.
    */
-  const usuarioId = sessao?.usuario.id ?? null
-  if (selecionado) {
+  // Espiando, a tela é a do espiado: as não lidas e as fixadas são as dele.
+  // Quem escreve "li" é o bloco abaixo, e ele não roda espiando.
+  const usuarioId = espiao ? espiao.alvo.id : (sessao?.usuario.id ?? null)
+  if (selecionado && !espiao) {
     /*
      * A ordem importa: **ler o relógio antes de empurrá-lo.**
      *
@@ -458,6 +468,7 @@ async function Tela({ cliente, busca }: { cliente: Cliente; busca: Busca }) {
       */}
       <PulsoDoInbox clienteId={cliente.id} pulsoNaTela={pulso} />
       <FaixaDeCanalCaido clienteId={cliente.id} />
+      {espiao && <FaixaDeEspiar clienteId={cliente.id} nome={espiao.alvo.nome} />}
       {/*
         **Sem respiro em volta, e essa é a diferença mais visível desta tela.**
 
@@ -510,6 +521,17 @@ async function Tela({ cliente, busca }: { cliente: Cliente; busca: Busca }) {
             temAutomacao={temAutomacao}
             conversaPedida={Boolean(pedido)}
             canalDoContato={canalDoContato}
+            espiado={espiao?.alvo.nome ?? null}
+            menuDeEspiar={
+              espiao ? null : (
+                <MenuDeEspiar
+                  clienteId={cliente.id}
+                  pessoas={equipe
+                    .filter((membro) => espiaveis.includes(membro.id))
+                    .map((membro) => ({ id: membro.id, nome: membro.nome }))}
+                />
+              )
+            }
           />
         )}
       </main>
@@ -608,8 +630,13 @@ async function Conteudo({
   temAutomacao,
   conversaPedida,
   canalDoContato,
+  espiado,
+  menuDeEspiar,
 }: {
   clienteId: string
+  /** O nome de quem está sendo espiado, ou `null` fora do modo espiar. */
+  espiado: string | null
+  menuDeEspiar: React.ReactNode
   /** Quem fala por outro canal que não o WhatsApp, para o selo. Ver `canaisDosContatos`. */
   canalDoContato: Map<string, CanalId>
   /** O endereço já chegou com `?conversa=`: no celular, abre nela. */
@@ -644,8 +671,8 @@ async function Conteudo({
   /** Ver `DadosDoLead`: sem automação o card não fala de bot. */
   temAutomacao: boolean
 }) {
-  // Mesmo alcance da `Tela`: `meuAlcance` é `cache`, então não relê nada.
-  const alcance = await meuAlcance(clienteId)
+  // Mesmo alcance da `Tela`: `alcanceDaTela` é `cache`, então não relê nada.
+  const alcance = await alcanceDaTela(clienteId)
   /*
    * Tudo o que ainda vai sair nesta conta.
    *
@@ -715,6 +742,7 @@ async function Conteudo({
           paginas={paginas}
           agendadas={agendadasDaConta}
           canalDoContato={canalDoContato}
+          menuDeEspiar={menuDeEspiar}
         />
       }
       conversa={
@@ -753,6 +781,7 @@ async function Conteudo({
               etiquetas={etiquetas}
               temAutomacao={temAutomacao}
               respostasRapidas={respostasRapidas}
+              espiado={espiado}
             />
           </Suspense>
         ) : (
@@ -823,8 +852,11 @@ async function ColunaDaConversa({
   etiquetas,
   temAutomacao,
   respostasRapidas,
+  espiado,
 }: {
   clienteId: string
+  /** Espiando: no lugar da caixa de resposta, o aviso de só leitura. */
+  espiado: string | null
   /** A conversa aberta. Nunca `null` aqui: quem decide isso é quem renderiza. */
   lead: Lead
   /** Por onde a pessoa fala. Muda o selo e o que o campo de resposta oferece. */
@@ -997,6 +1029,7 @@ async function ColunaDaConversa({
           janelaApertada={apertado}
           fimDaJanela={fimDaJanela}
           agendadas={agendadasDaConversa}
+          espiando={espiado !== null}
         />
         {/*
           `flex-col-reverse` é o que faz a conversa abrir na mensagem mais
@@ -1058,6 +1091,9 @@ async function ColunaDaConversa({
                 favoritas={favoritas}
               />
             </div>
+            {espiado !== null ? (
+              <RodapeDeEspiar nome={espiado} />
+            ) : (
             <TravaDaResposta exigeAssumir={ajustesDeAtendimento.exigeAssumir}>
             <CaixaDeResposta
               /*
@@ -1077,6 +1113,7 @@ async function ColunaDaConversa({
               anexo={{ clienteId, contatoId: selecionado.contatoId }}
             />
             </TravaDaResposta>
+            )}
           </ProvedorDeEntrega>
         </ProvedorDeCitacao>
       </section>
@@ -1171,8 +1208,11 @@ function CabecalhoDaConversa({
   janelaApertada,
   fimDaJanela,
   agendadas,
+  espiando,
 }: {
   clienteId: string
+  /** No modo espiar o cabeçalho só informa: assumir, passar e as ações somem. */
+  espiando: boolean
   lead: Lead
   canal: CanalId
   equipe: MembroDaConta[]
@@ -1265,14 +1305,14 @@ function CabecalhoDaConversa({
           outra pessoa, e a que mais precisa dizer em palavras o que vai fazer.
           Só aparecem quando há para quem passar.
         */}
-        {equipe.length > 1 && (
+        {!espiando && equipe.length > 1 && (
           <PassarPara
             atribuir={acaoAtribuirPara.bind(null, clienteId, lead.contatoId)}
             equipe={equipe}
           />
         )}
 
-        {(usuarioId || responsavel) && (
+        {!espiando && (usuarioId || responsavel) && (
           <Assumir
             assumir={acaoAssumirAtendimento.bind(null, clienteId, lead.contatoId)}
             liberar={acaoLiberarAtendimento.bind(null, clienteId, lead.contatoId)}
@@ -1281,15 +1321,17 @@ function CabecalhoDaConversa({
           />
         )}
 
-        <AcoesRapidas
-          clienteId={clienteId}
-          contatoId={lead.contatoId}
-          etiquetas={etiquetas}
-          temAutomacao={temAutomacao}
-          fimDaJanela={fimDaJanela}
-          agendadas={agendadas}
-          nomeDoContato={lead.nome?.split(' ')[0] ?? 'esta pessoa'}
-        />
+        {!espiando && (
+          <AcoesRapidas
+            clienteId={clienteId}
+            contatoId={lead.contatoId}
+            etiquetas={etiquetas}
+            temAutomacao={temAutomacao}
+            fimDaJanela={fimDaJanela}
+            agendadas={agendadas}
+            nomeDoContato={lead.nome?.split(' ')[0] ?? 'esta pessoa'}
+          />
+        )}
       </header>
 
     </>
