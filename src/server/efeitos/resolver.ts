@@ -1099,7 +1099,7 @@ async function dispararFerramenta({
  * venda perdida. Falhando, a conversa vai para uma pessoa.
  */
 async function executarNaLoja(
-  operacao: 'buscar' | 'combina_com' | 'mostrar' | 'pedido',
+  operacao: 'buscar' | 'combina_com' | 'mostrar' | 'pedido' | 'ficha',
   valores: Record<string, string>,
   opcoes: OpcoesDeEfeitos,
 ): Promise<{ ok: true; json: unknown } | { ok: false; motivo: string }> {
@@ -1122,6 +1122,22 @@ async function executarNaLoja(
     const skus = [valores.produtoId, valores.produtoId2, valores.produtoId3].filter((s): s is string => Boolean(s))
     const r = await loja.lerPorSku(skus)
     return r.ok ? { ok: true, json: { mostrados: r.valor } } : r
+  }
+
+  if (operacao === 'ficha') {
+    const sku = valores.produtoId ?? ''
+    if (loja.ficha) {
+      const r = await loja.ficha(sku)
+      if (!r.ok) return r
+      return r.valor ? { ok: true, json: { produto: r.valor } } : { ok: false, motivo: 'o produto não está mais na loja' }
+    }
+    // Loja sem página de produto (catálogo próprio, Nuvemshop): a descrição
+    // que existe é a do item, e é ela que vai.
+    const r = await loja.lerPorSku([sku])
+    if (!r.ok) return r
+    const p = r.valor[0]
+    if (!p) return { ok: false, motivo: 'o produto não está mais na loja' }
+    return { ok: true, json: { produto: { produtoId: p.produtoId, nome: p.nome, descricao: p.descricao ?? '' } } }
   }
 
   if (operacao === 'buscar') {

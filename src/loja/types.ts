@@ -5,7 +5,7 @@
  * plataforma, e quem escolhe é `server/adaptador-da-loja.ts`. Nuvemshop ou
  * Tray entram implementando `Loja`, sem mexer em quem a usa.
  */
-import type { ProdutoDaLoja } from '@/core/loja'
+import type { FichaDoProduto, ProdutoDaLoja } from '@/core/loja'
 export type ResultadoDaLoja<T> = { ok: true; valor: T } | { ok: false; motivo: string }
 export type ConfigDaLoja = { codigoDaLoja: string | null; moeda: string; sufixo: string }
 /**
@@ -19,6 +19,12 @@ export type Loja = {
   combinaCom(sku: string): Promise<ResultadoDaLoja<ProdutoDaLoja[]>>
   /** Relê pelo SKU, na ordem pedida, para o card sair com o preço de agora. */
   lerPorSku(skus: string[]): Promise<ResultadoDaLoja<ProdutoDaLoja[]>>
+  /**
+   * Descrição e especificações de um produto. Opcional: só a Magento tem
+   * página de produto com ficha; no catálogo próprio a descrição já vem na
+   * busca. `null` = o SKU não existe mais.
+   */
+  ficha?(sku: string): Promise<ResultadoDaLoja<FichaDoProduto | null>>
   /** A página de busca da loja para este termo. Sem rede. */
   linkDaBusca(termo: string): string
   lerConfig(): Promise<ResultadoDaLoja<ConfigDaLoja>>

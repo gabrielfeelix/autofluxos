@@ -297,3 +297,120 @@ export function textoDoCard(produto: ProdutoDaLoja): string {
   // WhatsApp é espaço sobrando no meio da mensagem.
   return [titulo, detalhe, produto.link].filter(Boolean).join('\n')
 }
+
+/*
+ * ---------------------------------------------------------------------------
+ * A ficha do produto: descrição e especificações, para a IA tirar dúvida
+ * ---------------------------------------------------------------------------
+ *
+ * A busca traz nome, preço e estoque, e isso não responde "funciona no PS5?"
+ * nem "o microfone é removível?". A resposta mora na página do produto, e a
+ * IA só a lê quando a pergunta pede (`loja_detalhes`), porque a ficha é o
+ * pedaço mais caro em token de toda a conversa.
+ */
+
+/** Quanto da ficha chega ao modelo. Folga para a pergunta comum, e só. */
+export const LIMITE_DA_FICHA = 1500
+
+export type FichaDoProduto = {
+  produtoId: string
+  nome: string
+  descricao: string
+  /** Atributos de escolha da loja ("headsetcommicrofone: Retrátil"). */
+  especificacoes: string[]
+}
+
+export const QUERY_FICHA = `query Ficha($sku: String) {
+  products(filter: { sku: { eq: $sku } }, pageSize: 1) {
+    items { sku name short_description { html } description { html } }
+  }
+}`
+
+/**
+ * Os atributos, numa consulta à parte porque `custom_attributesV2` só existe
+ * do Magento 2.4.7 em diante: na mesma consulta, loja mais velha recusaria a
+ * ficha inteira por causa de um campo que é só complemento.
+ */
+export const QUERY_ATRIBUTOS = `query Atributos($sku: String) {
+  products(filter: { sku: { eq: $sku } }, pageSize: 1) {
+    items { custom_attributesV2 { items { code ... on AttributeSelectedOptions { selected_options { label } } } } }
+  }
+}`
+
+/**
+ * Atributo de escolha que é configuração da loja, e não do produto.
+ * Medido na PCYES (25/set/2026): status, layout de página, frete, Facebook.
+ */
+const ATRIBUTO_INTERNO =
+  /^(status|visibility|page_layout|options_container|msrp_|gift_|tax_class|am_|send_to_|freterapido_|custom_design|custom_layout|mais_vendido|quantity_and_stock)/
+
+const ENTIDADES: Record<string, string> = {
+  '&lt;': '<',
+  '&gt;': '>',
+  '&quot;': '"',
+  '&#39;': "'",
+  '&apos;': "'",
+  '&nbsp;': ' ',
+  '&amp;': '&',
+}
+
+/**
+ * HTML de descrição virando texto que se lê.
+ *
+ * **Duas passadas, e é medido.** A descrição da PCYES é HTML do Page Builder
+ * com outro HTML dentro, escapado (`&lt;style&gt;` com centenas de linhas de
+ * CSS). Uma passada tira as tags de fora e revela as de dentro como texto; a
+ * segunda tira essas. Sem ela, o modelo recebia 11 mil caracteres de CSS.
+ */
+export function limparHtml(html: string): string {
+  let texto = html
+  for (let passada = 0; passada < 2; passada++) {
+    texto = texto
+      .replace(/<(style|script)[^>]*>[\s\S]*?<\/\1>/gi, ' ')
+      .replace(/<br\s*\/?>/gi, '\n')
+      .replace(/<\/(p|div|li|tr|h[1-6]|table|ul|ol)>/gi, '\n')
+      .replace(/<\/td>/gi, ' ')
+      .replace(/<[^>]+>/g, ' ')
+      .replace(/&(lt|gt|quot|#39|apos|nbsp|amp);/g, (e) => ENTIDADES[e] ?? e)
+  }
+  return texto
+    .split('\n')
+    .map((linha) => linha.replace(/\s+/g, ' ').trim())
+    .filter(Boolean)
+    .join('\n')
+}
+
+/** Corta no fim de uma linha ou palavra, para não partir número no meio. */
+function cortarFicha(texto: string, limite: number): string {
+  if (texto.length <= limite) return texto
+  const pedaco = texto.slice(0, limite)
+  const quebra = Math.max(pedaco.lastIndexOf('\n'), pedaco.lastIndexOf(' '))
+  return `${(quebra > limite * 0.8 ? pedaco.slice(0, quebra) : pedaco).trimEnd()}…`
+}
+
+export function traduzirFicha(json: unknown, atributos: unknown): FichaDoProduto | null {
+  const item = itensDe(json)[0] as
+    | { sku?: unknown; name?: unknown; short_description?: { html?: unknown }; description?: { html?: unknown } }
+    | undefined
+  if (!item || typeof item.sku !== 'string' || typeof item.name !== 'string') return null
+
+  const html = (campo: { html?: unknown } | undefined) => (typeof campo?.html === 'string' ? limparHtml(campo.html) : '')
+  const curta = html(item.short_description)
+  const longa = html(item.description)
+  // A curta primeiro: na PCYES é ela que traz os números (frequência,
+  // sensibilidade, compatibilidade). A longa entra com o que sobrar.
+  const descricao = cortarFicha([curta, longa].filter(Boolean).join('\n'), LIMITE_DA_FICHA)
+
+  const brutos = (itensDe(atributos)[0] as { custom_attributesV2?: { items?: unknown } } | undefined)
+    ?.custom_attributesV2?.items
+  const especificacoes = (Array.isArray(brutos) ? brutos : []).flatMap((a) => {
+    const { code, selected_options } = a as { code?: unknown; selected_options?: unknown }
+    if (typeof code !== 'string' || ATRIBUTO_INTERNO.test(code) || !Array.isArray(selected_options)) return []
+    const rotulos = selected_options
+      .map((o) => (o as { label?: unknown }).label)
+      .filter((l): l is string => typeof l === 'string' && l !== '')
+    return rotulos.length > 0 ? [`${code}: ${rotulos.join(', ')}`] : []
+  })
+
+  return { produtoId: item.sku, nome: item.name, descricao, especificacoes: especificacoes.slice(0, 15) }
+}

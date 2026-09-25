@@ -7,7 +7,10 @@ import {
   paginaDaBusca,
   totalDe,
   QUERY_POR_SKU,
+  QUERY_ATRIBUTOS,
+  QUERY_FICHA,
   QUERY_RECOMENDACOES,
+  traduzirFicha,
   traduzirPorSku,
   traduzirProdutos,
   traduzirRecomendacoes,
@@ -71,6 +74,16 @@ export function lojaMagento(dados: DadosDaLoja, chamar: Chamar = chamarHttp): Lo
       if (pedidos.length === 0) return { ok: true, valor: [] }
       const r = await graphql(QUERY_POR_SKU, { skus: pedidos })
       return r.ok ? { ok: true, valor: traduzirPorSku(r.valor, pedidos, dados.endereco, dados.sufixo) } : r
+    },
+    async ficha(sku) {
+      const limpo = sku.trim()
+      if (!limpo) return { ok: true, valor: null }
+      const [r, atributos] = await Promise.all([
+        graphql(QUERY_FICHA, { sku: limpo }),
+        graphql(QUERY_ATRIBUTOS, { sku: limpo }),
+      ])
+      // Atributo recusado (Magento antes do 2.4.7) não derruba a ficha.
+      return r.ok ? { ok: true, valor: traduzirFicha(r.valor, atributos.ok ? atributos.valor : null) } : r
     },
     linkDaBusca(termo) {
       return linkDaBusca(dados.endereco, termo)

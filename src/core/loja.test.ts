@@ -1,5 +1,8 @@
 import { describe, expect, it } from 'vitest'
 import {
+  LIMITE_DA_FICHA,
+  limparHtml,
+  traduzirFicha,
   QUERY_BUSCA,
   linhasDoCard,
   linkDaBusca,
@@ -173,5 +176,63 @@ describe('linkDaBusca', () => {
     expect(linkDaBusca('https://loja.com.br', ' mouse & teclado ')).toBe(
       'https://loja.com.br/catalogsearch/result/?q=mouse%20%26%20teclado',
     )
+  })
+})
+
+describe('a ficha do produto', () => {
+  it('tira o CSS escapado de dentro do Page Builder, em duas passadas', () => {
+    const html =
+      '<style>#html-body{display:flex}</style><div data-content-type="html">' +
+      '&lt;style&gt;.pcyes-desc{color:red}&lt;/style&gt;' +
+      '&lt;p class="x"&gt;Drivers de 40mm, 20Hz a 20kHz.&lt;/p&gt;' +
+      '&lt;td&gt;&lt;span&gt;Cabo&lt;/span&gt;&lt;span&gt;1,8m&lt;/span&gt;&lt;/td&gt;</div>'
+    const texto = limparHtml(html)
+    expect(texto).not.toMatch(/display|color|pcyes|<|&lt;/)
+    expect(texto).toContain('Drivers de 40mm, 20Hz a 20kHz.')
+    expect(texto).toContain('Cabo 1,8m')
+  })
+
+  it('curta primeiro, corte no limite e atributo interno fora', () => {
+    const json = {
+      data: {
+        products: {
+          items: [
+            {
+              sku: '330107',
+              name: 'Headset CM500',
+              short_description: { html: 'Compatível com Windows e Linux.' },
+              description: { html: `<p>${'longo '.repeat(600)}</p>` },
+            },
+          ],
+        },
+      },
+    }
+    const atributos = {
+      data: {
+        products: {
+          items: [
+            {
+              custom_attributesV2: {
+                items: [
+                  { code: 'headsetcommicrofone', selected_options: [{ label: 'Retrátil' }] },
+                  { code: 'status', selected_options: [{ label: 'Habilitado' }] },
+                  { code: 'price', value: '108.9' },
+                ],
+              },
+            },
+          ],
+        },
+      },
+    }
+    const ficha = traduzirFicha(json, atributos)!
+    expect(ficha.descricao.startsWith('Compatível com Windows e Linux.')).toBe(true)
+    expect(ficha.descricao.length).toBeLessThanOrEqual(LIMITE_DA_FICHA + 1)
+    expect(ficha.especificacoes).toEqual(['headsetcommicrofone: Retrátil'])
+  })
+
+  it('SKU que não veio é null, e atributo recusado não derruba a ficha', () => {
+    expect(traduzirFicha({ data: { products: { items: [] } } }, null)).toBeNull()
+    const so = traduzirFicha({ data: { products: { items: [{ sku: 'a', name: 'b' }] } } }, null)
+    expect(so).toEqual({ produtoId: 'a', nome: 'b', descricao: '', especificacoes: [] })
   })
 })

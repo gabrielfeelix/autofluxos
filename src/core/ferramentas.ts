@@ -186,7 +186,7 @@ export type ChamadaDeFerramenta =
     }
   | {
       tipo: 'loja'
-      operacao: 'buscar' | 'combina_com' | 'mostrar' | 'pedido'
+      operacao: 'buscar' | 'combina_com' | 'mostrar' | 'pedido' | 'ficha'
     }
 
 /** Os campos que as ferramentas de loja devolvem ao modelo. Allow-list. */
@@ -498,6 +498,36 @@ export const FERRAMENTAS: Ferramenta[] = [
   },
   {
     /*
+     * Separada de `loja_buscar` porque a ficha é cara em token (até
+     * `LIMITE_DA_FICHA` caracteres por produto) e a maior parte das perguntas
+     * ("tem headset?", "quanto custa?") não precisa dela. O modelo só abre a
+     * página quando a pergunta é de detalhe.
+     */
+    nome: 'loja_detalhes',
+    rotulo: 'Ler a ficha do produto',
+    escreve: false,
+    descricao:
+      'Lê a descrição e as especificações técnicas de um produto da loja: compatibilidade, conexão, medidas, material, o que vem na caixa. ' +
+      'Use quando a pessoa perguntar um detalhe que o nome e o preço do produto não respondem ("funciona no PS5?", "o microfone sai?"). ' +
+      'Responda só com o que a ficha disser; se não estiver lá, diga que vai confirmar e nunca complete com o que parecer provável. ' +
+      'O produtoId precisa ter vindo de `loja_buscar` ou `loja_combina_com` nesta mesma resposta; se o produto é de uma mensagem anterior, busque de novo antes.',
+    argumentos: [
+      {
+        nome: 'produtoId',
+        tipo: 'id',
+        descricao: 'O produtoId do produto, vindo de `loja_buscar` ou `loja_combina_com`.',
+        obrigatorio: true,
+        soDeResultadoAnterior: true,
+      },
+    ],
+    injetados: [],
+    chamada: { tipo: 'loja', operacao: 'ficha' },
+    projecao: [{ caminho: 'produto', campos: ['produtoId', 'nome', 'descricao', 'especificacoes'], limite: 1 }],
+    credencial: 'nenhuma',
+    integracao: 'loja',
+  },
+  {
+    /*
      * Separada de `loja_buscar` porque buscar é pensar e mostrar é falar com o
      * cliente. O card sai pelo servidor, com o preço relido na hora; o modelo
      * só escolhe quais, e só entre os que a conversa já viu.
@@ -597,6 +627,12 @@ export function acharFerramenta(nome: string): Ferramenta | undefined {
  */
 export function ferramentasPermitidas(nomes: readonly string[]): Ferramenta[] {
   const pedidas = new Set(nomes)
+  /*
+   * Quem pode buscar pode ler a ficha do que achou. É leitura da mesma loja,
+   * com a mesma trava de id, e sem isto cada fluxo de venda já publicado
+   * precisaria ser reeditado para a IA responder "funciona no PS5?".
+   */
+  if (pedidas.has('loja_buscar')) pedidas.add('loja_detalhes')
   return FERRAMENTAS.filter((f) => pedidas.has(f.nome))
 }
 
