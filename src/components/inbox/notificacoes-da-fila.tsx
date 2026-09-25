@@ -4,8 +4,9 @@ import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from '
 import { useRouter } from 'next/navigation'
 import { z } from 'zod'
 import { idsDosAlertas, novosAlertas, type AlertaDaFila } from './alertas'
-import { assinarPush, pushDisponivel } from './assinar-push'
-import { acaoAssinarAvisos } from '@/server/acoes-push'
+import { assinarPush, cancelarPush, pushDisponivel } from './assinar-push'
+import { acaoAssinarAvisos, acaoCancelarAvisos } from '@/server/acoes-push'
+import { Interruptor } from '@/components/design/interruptor'
 
 const respostaSchema = z.object({
   alertas: z.array(
@@ -26,6 +27,37 @@ const INTERVALO_DE_CONSULTA = 30_000
 
 /** A permissão não avisa quando muda; quem muda é o clique, que guarda o novo valor. */
 const semAssinatura = () => () => {}
+
+/*
+ * "Desligado" pelo painel. A permissão do navegador, uma vez dada, a página
+ * não consegue tirar; então desligar é o painel parar de avisar neste
+ * navegador (e cancelar o push dele). Fica no `localStorage` porque é escolha
+ * deste aparelho, não da pessoa em todos.
+ */
+const CHAVE_DO_DESLIGADO = 'autofluxos:avisos-desligados'
+const assinantesDoDesligado = new Set<() => void>()
+function lerDesligado(): boolean {
+  try {
+    return localStorage.getItem(CHAVE_DO_DESLIGADO) === '1'
+  } catch {
+    return false
+  }
+}
+function gravarDesligado(desligado: boolean) {
+  try {
+    if (desligado) localStorage.setItem(CHAVE_DO_DESLIGADO, '1')
+    else localStorage.removeItem(CHAVE_DO_DESLIGADO)
+  } catch {
+    // Sem armazenamento, vale só até recarregar.
+  }
+  assinantesDoDesligado.forEach((avisar) => avisar())
+}
+function assinarDesligado(avisar: () => void) {
+  assinantesDoDesligado.add(avisar)
+  return () => {
+    assinantesDoDesligado.delete(avisar)
+  }
+}
 
 function permissaoAtual(): Permissao {
   if (typeof window === 'undefined' || !('Notification' in window)) return 'indisponivel'
@@ -52,6 +84,7 @@ export function NotificacoesDaFila({
   clienteId,
   alertasIniciais,
   compacto = false,
+  interruptor = false,
 }: {
   clienteId: string
   /**
@@ -66,6 +99,8 @@ export function NotificacoesDaFila({
   alertasIniciais?: AlertaDaFila[]
   /** Na barra lateral o espaço é de 226px: só o ponto e uma palavra. */
   compacto?: boolean
+  /** Linha com interruptor, para o menu do perfil no cabeçalho. */
+  interruptor?: boolean
 }) {
   const router = useRouter()
   const vistos = useRef<Set<string> | null>(
@@ -81,6 +116,7 @@ export function NotificacoesDaFila({
   const lida = useSyncExternalStore(semAssinatura, permissaoAtual, () => 'desconhecida' as const)
   const [escolhida, setPermissao] = useState<Permissao | null>(null)
   const permissao = escolhida ?? lida
+  const desligado = useSyncExternalStore(assinarDesligado, lerDesligado, () => false)
 
   useEffect(() => {
     let ativa = true
@@ -101,7 +137,7 @@ export function NotificacoesDaFila({
         const novos = primeiraLeitura ? [] : novosAlertas(dados.data.alertas, vistos.current!)
         vistos.current = idsDosAlertas(dados.data.alertas)
 
-        if (permissaoAtual() !== 'granted') return
+        if (permissaoAtual() !== 'granted' || lerDesligado()) return
         for (const alerta of novos) {
           avisar(clienteId, alerta, (destino) => router.push(destino))
         }
@@ -157,9 +193,9 @@ export function NotificacoesDaFila({
    * `assinarPush` reaproveita a assinatura que já existe.
    */
   useEffect(() => {
-    if (permissao !== 'granted') return
+    if (permissao !== 'granted' || desligado) return
     void registrarPush()
-  }, [permissao, registrarPush])
+  }, [permissao, desligado, registrarPush])
 
   async function pedirPermissao() {
     if (permissaoAtual() !== 'default') return setPermissao(permissaoAtual())
@@ -172,6 +208,35 @@ export function NotificacoesDaFila({
 
   const ativo = permissao === 'granted'
   const bloqueado = permissao === 'denied'
+
+  if (interruptor) {
+    const ligado = ativo && !desligado
+    return (
+      <label className={`flex items-center gap-2.5 rounded-lg px-2.5 py-2 transition ${bloqueado ? 'opacity-70' : 'cursor-pointer hover:bg-surface'}`}>
+        <span aria-hidden className={`size-2 shrink-0 rounded-full transition-colors ${ligado ? 'bg-emerald-500' : bloqueado ? 'bg-rose-400' : 'bg-dim'}`} />
+        <span className="min-w-0 flex-1">
+          <span className="block text-[12.5px] font-semibold text-soft">Avisos de atendimento</span>
+          <span className="block text-[11px] text-dim">
+            {bloqueado ? 'Bloqueados no navegador' : ligado ? 'Avisa quando alguém entra na fila' : 'Desligados neste navegador'}
+          </span>
+        </span>
+        <Interruptor
+          marcada={ligado}
+          desabilitada={bloqueado}
+          rotuloAcessivel="Avisos de novo atendimento"
+          aoMudar={(ligar) => {
+            // A tela muda no clique; permissão e push vêm por trás.
+            gravarDesligado(!ligar)
+            if (ligar) {
+              if (!ativo) void pedirPermissao()
+              return
+            }
+            void cancelarPush().then((endpoint) => (endpoint ? acaoCancelarAvisos(endpoint) : null)).catch(() => null)
+          }}
+        />
+      </label>
+    )
+  }
 
   if (compacto) {
     return (

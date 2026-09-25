@@ -3,7 +3,9 @@
 import Link from 'next/link'
 import { usePathname, useSearchParams } from 'next/navigation'
 import { useEffect, useMemo, useRef, useState, useSyncExternalStore, type ReactNode } from 'react'
-import { acaoSair, acaoDefinirPresenca } from '@/server/acoes-conta'
+import { acaoSair } from '@/server/acoes-conta'
+import { LinhaDePresenca } from '@/components/conta/linha-de-presenca'
+import { usePresenca } from '@/components/conta/presenca'
 import { EditarPerfil, TrocarSenha, useMudarPerfil, usePerfil } from '@/components/conta/voce'
 import { PopoverDoQuadro } from '@/components/quadros/popover-do-quadro'
 import { INDICE } from '@/components/ajuda/indice'
@@ -137,7 +139,7 @@ function MenuDoPerfil({
   email,
   papel,
   suporte,
-  presenca,
+  presenca: presencaDoServidor,
   planoHref,
   ajustesHref,
   outrasContas,
@@ -158,6 +160,7 @@ function MenuDoPerfil({
   const [aberto, setAberto] = useState<'perfil' | 'senha' | null>(null)
   const nome = perfil?.nome ?? 'Você'
   const primeiroNome = nome.split(' ')[0] || nome
+  const presenca = usePresenca(presencaDoServidor)
   const disponivel = presenca === 'disponivel'
 
   return (
@@ -192,15 +195,12 @@ function MenuDoPerfil({
           </span>
         </div>
 
-        {presenca && (
-          <form action={acaoDefinirPresenca.bind(null, disponivel ? 'ausente' : 'disponivel')} className="px-1 pb-1">
-            <button type="submit" className="flex w-full items-center gap-2.5 rounded-lg border border-line px-2.5 py-2 text-left transition hover:bg-surface">
-              <span aria-hidden className={`size-2 shrink-0 rounded-full ${disponivel ? 'bg-emerald-500' : 'bg-dim'}`} />
-              <span className="flex-1 text-[12.5px] font-semibold text-soft">{disponivel ? 'Disponível' : 'Ausente'}</span>
-              <span className="text-[11px] text-dim">{disponivel ? 'ficar ausente' : 'ficar disponível'}</span>
-            </button>
-          </form>
-        )}
+        {/* O que se liga e desliga no dia a dia fica junto e em cima: a pessoa
+            abre o menu para isso muito mais do que para trocar senha. */}
+        <div className="mx-1 mb-1 rounded-xl border border-line bg-surface/40 p-0.5">
+          <LinhaDePresenca doServidor={presencaDoServidor} />
+          {avisosDoNavegador}
+        </div>
 
         <Grupo>
           <ItemDoMenu icone={<IconePessoa />} aoClicar={() => setAberto('perfil')}>Meu perfil</ItemDoMenu>
@@ -232,10 +232,6 @@ function MenuDoPerfil({
             {outrasContas > 1 && <ItemDoMenu icone={<IconeTrocar />} href="/contas">Trocar de organização</ItemDoMenu>}
           </Grupo>
         )}
-
-        <Grupo>
-          <div className="px-1">{avisosDoNavegador}</div>
-        </Grupo>
 
         <Grupo>
           <form action={acaoSair}>

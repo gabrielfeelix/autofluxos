@@ -7,7 +7,7 @@ import { PainelVoce, PerfilDaSessao } from '@/components/conta/voce'
 import { contagensDaAgenda } from '@/server/repos/atividades'
 import { lerFiltroDaAgenda } from '@/core/atividades'
 import { NotificacoesDaFila } from '@/components/inbox/notificacoes-da-fila'
-import { acaoDefinirPresenca } from '@/server/acoes-conta'
+import { LinhaDePresenca } from '@/components/conta/linha-de-presenca'
 import { resumoDasContas, type Cliente, type ResumoDeAtendimento } from '@/server/repos/clientes'
 import { crmVisivel, lojaVisivel } from '@/server/repos/recursos'
 import { contarConversasDaBarra } from '@/server/repos/leads'
@@ -121,7 +121,7 @@ export async function BarraDoCliente({ cliente }: { cliente: Cliente }) {
               configuracoesHref={liberaSecao(acesso.regras, 'ajustes') ? `${base}/ajustes` : null}
               outrasContas={contas.length}
             >
-              {presenca && <Presenca atual={presenca} />}
+              <LinhaDePresenca doServidor={presenca} />
 
               {/*
                 O aviso de fila vive **aqui**, e não só no Inbox.
@@ -139,40 +139,6 @@ export async function BarraDoCliente({ cliente }: { cliente: Cliente }) {
     </>
   )
 }
-
-/**
- * Disponível ou ausente.
- *
- * Fica ao lado da conta, no rodapé, e não escondido num menu de perfil: é um
- * estado que a pessoa precisa **ver sem procurar**. Quem esquece de voltar de
- * "ausente" some da lista de quem pode receber conversa, e some sem erro nenhum
- * aparecer em lugar nenhum.
- */
-function Presenca({ atual }: { atual: string }) {
-  const disponivel = atual === 'disponivel'
-
-  return (
-    <form action={acaoDefinirPresenca.bind(null, disponivel ? 'ausente' : 'disponivel')}>
-      <button
-        type="submit"
-        className="flex w-full items-center gap-2 rounded-[10px] px-2 py-2 text-left transition hover:bg-surface"
-      >
-        {/* Ponto **e** palavra: quem não distingue as duas cores lê o estado
-            do mesmo jeito (WCAG 1.4.1). */}
-        <span
-          aria-hidden
-          className={`size-2 shrink-0 rounded-full ${disponivel ? 'bg-emerald-400' : 'bg-dim'}`}
-        />
-        <span className="flex-1 text-[13px] font-semibold text-muted">
-          {disponivel ? 'Disponível' : 'Ausente'}
-        </span>
-        <span className="text-[11px] text-dim">trocar</span>
-      </button>
-    </form>
-  )
-}
-
-
 
 /*
  * Os números aparecem mais de uma vez na mesma resposta (subitem, ponto da

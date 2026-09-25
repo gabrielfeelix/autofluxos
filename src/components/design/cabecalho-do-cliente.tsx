@@ -53,7 +53,7 @@ export async function CabecalhoDoCliente({ clienteId }: { clienteId: string }) {
             <SinoDaConta clienteId={clienteId} administra={administra} />
           </Suspense>
         }
-        avisosDoNavegador={<NotificacoesDaFila clienteId={clienteId} compacto />}
+        avisosDoNavegador={<NotificacoesDaFila clienteId={clienteId} interruptor />}
       />
     </PerfilDaSessao>
   )

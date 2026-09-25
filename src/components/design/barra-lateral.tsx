@@ -1,5 +1,6 @@
 'use client'
 
+import { usePresenca } from '@/components/conta/presenca'
 import Link from 'next/link'
 import { usePathname, useSearchParams } from 'next/navigation'
 import { createPortal } from 'react-dom'
@@ -38,7 +39,7 @@ export type SecaoDaBarra = {
  * barra é componente de cliente e a moldura que a desenha é de servidor, e
  * função não atravessa essa fronteira.
  */
-export function BarraLateral({ base, area = 'cliente', itens: itensRecebidos = [], secoes, aceso: acesoRecebido, recolhidaInicial = false, eu, marca, voltar, voltarHref, voltarRotulo, rodape, presenca, conta, contaNoTopo, carregando = false }: {
+export function BarraLateral({ base, area = 'cliente', itens: itensRecebidos = [], secoes, aceso: acesoRecebido, recolhidaInicial = false, eu, marca, voltar, voltarHref, voltarRotulo, rodape, presenca: presencaDoServidor, conta, contaNoTopo, carregando = false }: {
   /** Qual das duas barras: a da organização ou a da administração. */
   area?: 'cliente' | 'administracao'
   /** O texto do link de volta na gaveta do celular. */
@@ -85,6 +86,8 @@ export function BarraLateral({ base, area = 'cliente', itens: itensRecebidos = [
   const itens = base ? itensRecebidos.map((item) => ({ ...item, acesa: item.chave === abaAcesa })) : itensRecebidos
   const recolhida = usePreferencia('barra', recolhidaInicial)
   const painel = useRef<HTMLDialogElement>(null)
+  // A escolhida agora vale na hora; a do servidor, no próximo carregamento.
+  const presenca = usePresenca(presencaDoServidor) ?? undefined
   const disponivel = presenca === 'disponivel'
   const perfil = usePerfil()
   const dica = useDica()

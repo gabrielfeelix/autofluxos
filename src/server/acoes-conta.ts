@@ -601,7 +601,9 @@ export async function acaoDefinirPresenca(presenca: 'disponivel' | 'ausente') {
   if (!sessao) redirect('/entrar')
 
   await definirPresenca(sessao.usuario.id, presenca)
-  revalidatePath('/', 'layout')
+  // Sem `revalidatePath`: recarregar o layout inteiro atrasava o interruptor em
+  // segundos. A tela já mudou sozinha (`conta/presenca.ts`); o resto do painel
+  // lê o valor novo do banco no próximo carregamento.
 }
 
 // ---------------------------------------------------------------------------
