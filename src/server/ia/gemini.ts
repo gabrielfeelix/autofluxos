@@ -230,7 +230,23 @@ export function gemini({ chave, modelo }: { chave: string; modelo?: string }): M
       if (segunda.tipo !== 'retentar') return segunda.resposta
 
       if (segunda.status === '429') marcarSemCota(reserva)
-      return segunda.desistencia
+
+      /*
+       * **Pico nos dois modelos ao mesmo tempo, e uma última volta.**
+       *
+       * Em 25/set/2026 os dois devolveram 503 na mesma rodada e o primeiro
+       * cliente testando a IA vendedora caiu em "vou te passar para um
+       * atendente" sem a IA ter falado nada. Medido na hora: cerca de 1 em 3
+       * chamadas voltava 503, em cada modelo, e a seguinte passava. Esperar um
+       * segundo e voltar ao principal resolve o caso comum por uns segundos a
+       * mais. Cota (429) não volta: ali esperar um segundo não muda nada.
+       */
+      if (primeira.status === '429' || segunda.status === '429' || estaSemCota(nome)) {
+        return segunda.desistencia
+      }
+      await new Promise((pronto) => setTimeout(pronto, 1_000))
+      const terceira = await tentar(nome, chave, corpo, TIMEOUT_RESERVA_MS)
+      return terceira.tipo === 'retentar' ? terceira.desistencia : terceira.resposta
     },
   }
 }
