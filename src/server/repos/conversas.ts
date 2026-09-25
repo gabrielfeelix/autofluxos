@@ -901,6 +901,41 @@ export async function registrarHandoff(
 }
 
 /**
+ * Desde quando esta sessão espera gente sem ter ouvido nada, ou `null`.
+ *
+ * "Nada" é nenhuma mensagem de saída para o contato depois do handoff aberto
+ * mais recente, de quem quer que seja: o bot avisando, alguém respondendo
+ * pelo painel, ou do celular. É isso que faz o aviso de espera sair uma vez
+ * só por handoff: depois dele, já existe uma saída, e a conta volta a zero.
+ */
+export async function handoffSemResposta(
+  sessaoId: string,
+  contatoId: string,
+): Promise<string | null> {
+  const { data: handoff, error } = await db()
+    .from('handoffs')
+    .select('criado_em')
+    .eq('session_id', sessaoId)
+    .is('resolvido_em', null)
+    .order('criado_em', { ascending: false })
+    .limit(1)
+    .maybeSingle()
+  if (error) throw new Error(`não deu para ler o handoff: ${error.message}`)
+  if (!handoff) return null
+
+  const desde = handoff.criado_em as string
+  const { count, error: erroDaContagem } = await db()
+    .from('messages')
+    .select('id', { count: 'exact', head: true })
+    .eq('contact_id', contatoId)
+    .eq('direcao', 'saida')
+    .gt('ts', desde)
+  if (erroDaContagem) throw new Error(`não deu para contar as respostas: ${erroDaContagem.message}`)
+
+  return (count ?? 0) === 0 ? desde : null
+}
+
+/**
  * Tudo que responder um lead pelo painel exige, numa consulta só.
  *
  * Existe como função única porque as três coisas têm que vir do **mesmo**

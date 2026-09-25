@@ -18,6 +18,7 @@ import { acharFluxo, acharVersao, type VersaoPublicada } from './repos/fluxos'
 import { acrescentarNota, lerConversa } from './repos/leads'
 import {
   ATENDIMENTO_SEMPRE_ABERTO,
+  avisoDeForaDoHorario,
   pediuAtendente,
   type ContextoDoAtendimento,
 } from '@/core/engine/executar'
@@ -56,6 +57,7 @@ import {
   definirStatusDaSessao,
   guardarCampo,
   guardarSessao,
+  handoffSemResposta,
   confirmarEntrega,
   registrarEntrada,
   registrarHandoff,
@@ -851,6 +853,7 @@ async function avancarConversa(
   // está conversando com a pessoa.
   if (anterior && anterior.sessao.status === 'humano') {
     await vincularSessaoNaMensagem(mensagem.id, anterior.id)
+    await avisarQueAEquipeVem(canalSalvo, contato, anterior.id, mensagem.id, fabricaDeCanal)
     return
   }
 
@@ -1003,6 +1006,48 @@ async function avancarConversa(
     )
   } finally {
     digitando.parar()
+  }
+}
+
+/**
+ * Quanto a pessoa espera, depois do handoff, antes de ouvir que alguém vem.
+ *
+ * Menos que isso e o aviso repete a frase do handoff que ela acabou de ler.
+ */
+const ESPERA_ANTES_DO_AVISO_MS = 2 * 60_000
+
+/** O que a pessoa lê quando escreve de novo e ninguém do time respondeu. */
+export const AVISO_DE_ESPERA = 'Nosso time já foi avisado e te responde por aqui em instantes 🙂'
+
+/**
+ * Um aviso, uma vez por handoff, para quem escreve e ninguém responde.
+ *
+ * Na PCYES, o "oi" que chegou três minutos depois do handoff ficou sem nada: a
+ * sessão estava com gente, o bot calado, e ninguém tinha pegado a conversa. Do
+ * outro lado, isso é número morto. Fora do expediente o aviso é o de fechado,
+ * que diz quando volta, porque "em instantes" às 22h é promessa quebrada.
+ *
+ * Melhor-esforço: falhar aqui não pode impedir a mensagem de ficar registrada.
+ */
+async function avisarQueAEquipeVem(
+  canalSalvo: CanalSalvo,
+  contato: Contato,
+  sessaoId: string,
+  mensagemId: string,
+  fabricaDeCanal: FabricaDeCanal,
+): Promise<void> {
+  try {
+    const desde = await handoffSemResposta(sessaoId, contato.id)
+    if (!desde || Date.now() - new Date(desde).getTime() < ESPERA_ANTES_DO_AVISO_MS) return
+
+    const horario = await horarioDoCliente(canalSalvo.clienteId)
+    const texto = avisoDeForaDoHorario(contextoDeAtendimento(horario)) ?? AVISO_DE_ESPERA
+    await aplicar(fabricaDeCanal(canalSalvo), contato, sessaoId, mensagemId, [{ tipo: 'enviar_texto', texto }], null)
+  } catch (erro) {
+    await alertar('não deu para avisar a pessoa que a equipe já vem', erro, {
+      contato: contato.id,
+      sessao: sessaoId,
+    })
   }
 }
 
