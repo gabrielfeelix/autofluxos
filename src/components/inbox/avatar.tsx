@@ -47,7 +47,7 @@ const CORES = [
   'border-orange-200 bg-orange-50 text-orange-700',
 ] as const
 
-/** Cinza para quem não tem nome: inventar cor para "?" seria dar identidade ao vazio. */
+/** Cinza para quem não tem nome: inventar cor para a silhueta seria dar identidade ao vazio. */
 const SEM_NOME = 'border-strong bg-surface text-soft'
 
 /**
@@ -91,7 +91,7 @@ export function Avatar({
   canal?: CanalId
 }) {
   const limpo = nome?.trim() ?? ''
-  const iniciais = (limpo || '?')
+  const iniciais = limpo
     .split(' ')
     .filter(Boolean)
     .slice(0, 2)
@@ -104,7 +104,17 @@ export function Avatar({
       style={{ width: tamanho, height: tamanho, fontSize: Math.round(tamanho * 0.3) }}
       className={`relative flex shrink-0 items-center justify-center rounded-full border font-bold ${limpo ? corDoNome(limpo) : SEM_NOME}`}
     >
-      {iniciais}
+      {limpo ? (
+        iniciais
+      ) : (
+        /* Sem nome (visitante do site, quase sempre): uma silhueta, e não
+           "?". O ponto de interrogação lia como erro, como se faltasse dado
+           que devia estar ali; a silhueta diz só "alguém", que é o que é. */
+        <svg aria-hidden viewBox="0 0 24 24" width={Math.round(tamanho * 0.55)} height={Math.round(tamanho * 0.55)} className="fill-current opacity-70">
+          <circle cx="12" cy="8.2" r="4.2" />
+          <path d="M3.8 21c.6-4.4 4-7.3 8.2-7.3s7.6 2.9 8.2 7.3c.1.6-.4 1-1 1H4.8c-.6 0-1.1-.4-1-1Z" />
+        </svg>
+      )}
       {/* A borda do ponto é da cor do painel: é ela que separa o vermelho do
           avatar sem desenhar um anel. */}
       {alerta && (

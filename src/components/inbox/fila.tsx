@@ -5,7 +5,7 @@ import { useCallback, useDeferredValue, useEffect, useMemo, useRef, useState, us
 import { comoFalta, dentroDaPortaDeEntrada, restaDaJanela } from "@/channels/janela";
 import { Dica } from "@/components/design/dica";
 import { LARGURA_DA_FILA } from "@/components/design/tema";
-import type { CanalId } from "@/core/canais";
+import { canalPeloContato, type CanalId } from "@/core/canais";
 import { chavesDoTelefone } from "@/core/contatos/telefone";
 import { Avatar } from "@/components/inbox/avatar";
 import { RailsLocais } from "@/components/inbox/fila-local";
@@ -786,7 +786,7 @@ export function Fila({
                   nome={lead.nome}
                   alerta={Boolean(lead.aguardando)}
                   tamanho={44}
-                  canal={canalDoContato.get(lead.contatoId) ?? "whatsapp"}
+                  canal={canalPeloContato(lead.waId, canalDoContato.get(lead.contatoId))}
                 />
                 <span className="min-w-0 flex-1">
                   <span className="flex items-baseline gap-2">

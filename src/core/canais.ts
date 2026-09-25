@@ -159,6 +159,19 @@ export const CANAIS_DE_FLUXO = CANAIS.filter((id) => DEFINICAO_DO_CANAL[id].flux
 export const CANAL_PADRAO: CanalId = 'whatsapp'
 
 /**
+ * Por onde um contato fala, para o selo da tela.
+ *
+ * O mapa (`canaisDosContatos`) vem do servidor quando a página carrega, e a
+ * conversa que chega ao vivo depois não está nele: sem a segunda pista, o
+ * visitante do site aparecia com o selo do WhatsApp até alguém recarregar.
+ * O `wa_id` do visitante começa com `site:` (`receber-do-site.ts`), e isso
+ * vale na hora, sem ida ao banco.
+ */
+export function canalPeloContato(waId: string, doMapa?: CanalId): CanalId {
+  return doMapa ?? (waId.startsWith('site:') ? 'site' : CANAL_PADRAO)
+}
+
+/**
  * O que chegou do formulário é um canal válido **e ligado**?
  *
  * Devolve o padrão em vez de estourar: o valor vem de `<form>`, e uma aba velha

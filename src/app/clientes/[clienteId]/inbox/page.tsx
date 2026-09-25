@@ -78,7 +78,7 @@ import { FunilDaConversa, type FunilDoContato } from '@/components/inbox/funil-d
 import { marcarComoLida, naoLidasPorContato, quandoLeu } from '@/server/repos/leituras'
 import { favoritasEntre, fixadasDoUsuario } from '@/server/repos/marcadores'
 import { canaisDosContatos } from '@/server/repos/canais-site'
-import type { CanalId } from '@/core/canais'
+import { canalPeloContato, type CanalId } from '@/core/canais'
 import { ajustesDaConta } from '@/server/repos/distribuicao'
 import { avisarQueLeu } from '@/server/recibo-de-leitura'
 import { FaixaDeCanalCaido } from '@/components/inbox/faixa-canal-caido'
@@ -775,7 +775,7 @@ async function Conteudo({
             <ColunaDaConversa
               clienteId={clienteId}
               lead={selecionado}
-              canal={canalDoContato.get(selecionado.contatoId) ?? 'whatsapp'}
+              canal={canalPeloContato(selecionado.waId, canalDoContato.get(selecionado.contatoId))}
               equipe={equipe}
               usuarioId={usuarioId}
               etiquetas={etiquetas}

@@ -63,9 +63,12 @@ export function LogoDoCanal({ canal, tamanho = 12 }: { canal: CanalId; tamanho?:
   }
 
   if (canal === 'site') {
+    // Globo, e não balão de conversa: balão é o que todo canal é, e na fila
+    // ao lado do WhatsApp ele não dizia "veio do site".
     return (
-      <svg {...comum} className="fill-current">
-        <path d="M5 3h14a3 3 0 0 1 3 3v9a3 3 0 0 1-3 3h-6.2l-4.3 3.4c-.7.5-1.5 0-1.5-.8V18H5a3 3 0 0 1-3-3V6a3 3 0 0 1 3-3Zm2.5 6.2a1.3 1.3 0 1 0 0 2.6 1.3 1.3 0 0 0 0-2.6Zm4.5 0a1.3 1.3 0 1 0 0 2.6 1.3 1.3 0 0 0 0-2.6Zm4.5 0a1.3 1.3 0 1 0 0 2.6 1.3 1.3 0 0 0 0-2.6Z" />
+      <svg {...comum} fill="none" stroke="currentColor" strokeWidth={2.2} strokeLinecap="round">
+        <circle cx="12" cy="12" r="9" />
+        <path d="M3 12h18M12 3c2.5 2.6 3.8 5.6 3.8 9s-1.3 6.4-3.8 9M12 3C9.5 5.6 8.2 8.6 8.2 12s1.3 6.4 3.8 9" />
       </svg>
     )
   }
