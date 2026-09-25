@@ -20,6 +20,7 @@ import { ehArquivoGuardado, midiaDoTipo } from '@/core/midia-recebida'
 import { urlsAssinadas } from './midia-recebida'
 import { TIPOS_DE_MIDIA, type TipoDeMidia } from '@/core/flow/schema'
 import { casarReacoes } from '@/core/reacoes'
+import { linhasDoCard, type ProdutoDaLoja } from '@/core/loja'
 import { db, ehIdInvalido } from '../db'
 import type { AlcanceDeConversas } from '@/core/permissoes'
 
@@ -132,7 +133,12 @@ export const ETIQUETAS_DE_LEAD = [
 export type EtiquetaDeLead = (typeof ETIQUETAS_DE_LEAD)[number]
 
 /** Um produto do card que saiu, só o que a bolha desenha. */
-export type ProdutoNaMensagem = { nome: string; foto: string }
+/**
+ * Um card de produto como a pessoa viu no WhatsApp: foto, nome, a linha de
+ * preço e o botão da loja. `titulo` e `detalhe` saem de `linhasDoCard`, a mesma
+ * função que monta o corpo do `cta_url`, para a Inbox dizer o que o cliente leu.
+ */
+export type ProdutoNaMensagem = { nome: string; foto: string; titulo: string; detalhe: string; link: string | null }
 
 /** O arquivo de uma mensagem, quando ela tem um. `texto` é a legenda. */
 export type AnexoDaMensagem = {
@@ -1197,9 +1203,12 @@ function produtosDoPayload(payload: unknown): ProdutoNaMensagem[] {
   const lista = (payload as { produtos?: unknown } | null)?.produtos
   if (!Array.isArray(lista)) return []
   return lista.flatMap((item) => {
-    const p = item as { nome?: unknown; foto?: unknown } | null
+    const p = item as { nome?: unknown; foto?: unknown; link?: unknown } | null
     if (typeof p?.foto !== 'string' || !p.foto.startsWith('https://')) return []
-    return [{ nome: typeof p.nome === 'string' ? p.nome : 'produto', foto: p.foto }]
+    const nome = typeof p.nome === 'string' ? p.nome : 'produto'
+    const { titulo, detalhe } = linhasDoCard({ ...(item as ProdutoDaLoja), nome })
+    const link = typeof p.link === 'string' && p.link.startsWith('https://') ? p.link : null
+    return [{ nome, foto: p.foto, titulo, detalhe, link }]
   })
 }
 

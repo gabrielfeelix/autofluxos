@@ -5,7 +5,6 @@ import { podeReagir } from '@/channels/janela'
 import { assinaturaDasReacoes } from '@/core/reacoes'
 import {
   AnexoNaConversa,
-  FotosDoCard,
   ArquivoSemCopia,
   MensagemNaoSuportada,
   CartoesNaBolha,
@@ -15,6 +14,7 @@ import {
 } from '@/components/lead/anexo'
 import { RodapeDaMensagem } from '@/components/lead/rodape-da-mensagem'
 import { Transcricao } from '@/components/lead/transcricao'
+import { CardsDeProduto } from '@/components/lead/cards-de-produto'
 import { TextoDoWhatsApp } from '@/components/texto-do-whatsapp'
 import { etiquetasDeDia, horaDoRelogio, horaExata } from '@/lib/quando'
 import type { MensagemDoLead } from '@/server/repos/leads'
@@ -337,6 +337,16 @@ function ListaDeMensagens({
               peso**, 500 numa bolha azul com texto branco vira borrão em tela
               comum.
             */}
+            {mensagem.produtos?.length ? (
+              <CardsDeProduto
+                produtos={mensagem.produtos}
+                nossa={nossa}
+                hora={horaDoRelogio(mensagem.ts)}
+                horaCompleta={horaExata(mensagem.ts)}
+                autor={nossa ? mensagem.autor : null}
+                naoConfirmado={nossa && !mensagem.entregue}
+              />
+            ) : (
             <p title={mensagem.toque ? 'Tocou numa opção do menu' : undefined} className={`max-w-[78%] px-3.5 py-2 font-texto text-[14.5px] leading-[1.45] whitespace-pre-wrap [overflow-wrap:anywhere] ${
               nossa
                 ? 'bolha-nossa rounded-[15px_15px_4px_15px]'
@@ -346,7 +356,6 @@ function ListaDeMensagens({
             }`}>
               {mensagem.cita && <CitacaoNaBolha cita={mensagem.cita} nome={nome} />}
               {mensagem.anexo && <AnexoNaConversa anexo={mensagem.anexo} />}
-              {mensagem.produtos && <FotosDoCard produtos={mensagem.produtos} />}
               {/*
                 O arquivo que a pessoa mandou. Mesma bolha do que sai, e a
                 diferença está em quem produziu a URL: aqui ela é assinada e
@@ -422,6 +431,7 @@ function ListaDeMensagens({
                 <span className="ml-2 text-[11px] font-semibold text-soft">envio não confirmado</span>
               )}
             </p>
+            )}
             {mensagem.menu && (
               <MenuNaConversa menu={mensagem.menu} respondido={indice < mensagens.length - 1} />
             )}
