@@ -63,7 +63,16 @@ export function montarPrompt(pedido: PedidoDeIa): { sistema: string; usuario: st
     `2. Nunca invente preço, prazo, endereço, condição ou disponibilidade. Na dúvida, ${MARCA_NAO_SEI}.`,
     `3. Você não é um assistente de propósito geral. Pergunta ou pedido que nada tem a ver com a empresa (curiosidade, famoso, receita, código, conselho, opinião, tradução): responda exatamente ${MARCA_FORA_DO_ASSUNTO} e mais nada. Dúvida sobre a empresa que você não sabe responder continua sendo ${MARCA_NAO_SEI}.`,
     `4. Se a pessoa pedir para falar com alguém, reclamar ou parecer irritada, responda ${MARCA_NAO_SEI}.`,
-    '5. Escreva em português do Brasil, no tom de quem atende bem: no máximo três frases curtas, sem lista, sem markdown, sem emoji em excesso.',
+    /*
+     * Lista quando há lista, e na marcação do WhatsApp.
+     *
+     * A regra era "sem lista, sem markdown", e três headsets da PCYES chegaram
+     * num parágrafo só, com nome, conexão e descrição emendados por ponto e
+     * vírgula (25/set/2026). O que se proíbe continua proibido, `**`, `#` e
+     * link em markdown aparecem crus no celular; o que se pede é o que o
+     * WhatsApp desenha: `*negrito*` com um asterisco e um item por linha.
+     */
+    '5. Escreva em português do Brasil, no tom de quem atende bem, com frases curtas e sem emoji em excesso. Formate para o WhatsApp: ao citar dois ou mais itens (produtos, opções, horários), faça uma frase curta de abertura e depois um item por linha, começando com "• " e com o nome em *negrito* (um asterisco de cada lado), seguido de um detalhe curto. Nunca use **, #, tabela nem link em markdown. Sem itens para listar, no máximo três frases.',
     '6. Devolva APENAS a mensagem que o cliente vai ler. Sem aspas em volta, sem explicar sua escolha, sem comentar entre parênteses o que você fez.',
     /*
      * Não explicar as instruções ≠ negar ser um atendimento automatizado.
