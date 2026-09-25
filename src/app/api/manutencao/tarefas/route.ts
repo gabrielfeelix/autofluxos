@@ -1,4 +1,5 @@
 import { alertar } from '@/server/alertar'
+import { copiarConsumoDaMeta } from '@/server/consumo-da-meta'
 import { iguais } from '@/lib/segredo'
 import { enviarAgendadas } from '@/server/enviar-agendadas'
 import { passadaDeRetomada } from '@/server/passada-de-retomada'
@@ -110,8 +111,19 @@ export async function GET(req: Request) {
       return null
     })
 
+    /*
+     * A cópia do `pricing_analytics` da Meta (0104), base da franquia de 1.000
+     * mensagens de serviço por número. Uma vez por dia basta: a Meta fecha o
+     * dia dela com atraso, e a tela mostra "até ontem".
+     */
+    const consumoDaMeta = await copiarConsumoDaMeta().catch((erro) => {
+      console.error('[tarefas] a cópia do consumo da Meta falhou', erro)
+      return null
+    })
+
     return Response.json({
       ...(await rodarTarefas()),
+      consumoDaMeta,
       agendadas,
       transmissoes,
       retomada,

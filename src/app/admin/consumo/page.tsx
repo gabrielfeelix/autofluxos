@@ -15,7 +15,9 @@ import {
   ThOrdenavel,
 } from '@/components/admin/partes'
 import { comoTamanho, fracaoUsada, O_QUE_E_CONVERSA } from '@/core/planos'
-import { consumoDeTodasAsContas } from '@/server/repos/plano'
+import { FRANQUIA_DE_SERVICO, franquiaDoMes } from '@/core/franquia-da-meta'
+import { consumoDaMetaDeTodas } from '@/server/consumo-da-meta'
+import { chaveDoMes, consumoDeTodasAsContas } from '@/server/repos/plano'
 import { planosVigentes } from '@/server/repos/planos'
 
 export const dynamic = 'force-dynamic'
@@ -36,11 +38,14 @@ const FAIXAS = [
  */
 export default async function Consumo({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {
   const parametros = lerParametros(await searchParams)
-  const [contas, planos] = await Promise.all([consumoDeTodasAsContas(), planosVigentes()])
+  const [contas, planos, daMeta] = await Promise.all([consumoDeTodasAsContas(), planosVigentes(), consumoDaMetaDeTodas()])
+  const mes = chaveDoMes(new Date())
   const planoDe = (id: string) => planos.find((plano) => plano.id === id) ?? planos[0]!
   const linhas = contas.map((conta) => {
     const plano = planoDe(conta.plano)
-    return { ...conta, planoNome: plano.nome, limite: plano.conversas, fracao: fracaoUsada(conta.conversas, plano) }
+    // O número mais cheio da conta: a franquia da Meta é por número, e é ele que estoura primeiro.
+    const meta = franquiaDoMes(daMeta.get(conta.clienteId) ?? [], mes)[0] ?? null
+    return { ...conta, planoNome: plano.nome, limite: plano.conversas, fracao: fracaoUsada(conta.conversas, plano), meta }
   })
 
   const busca = (parametros.busca ?? '').trim().toLocaleLowerCase('pt-BR')
@@ -56,7 +61,7 @@ export default async function Consumo({ searchParams }: { searchParams: Promise<
   const lista = ordenar(
     filtradas,
     parametros,
-    { nome: (l) => l.nome, plano: (l) => l.planoNome, conversas: (l) => l.conversas, uso: (l) => l.fracao, arquivos: (l) => l.arquivos, bytes: (l) => l.bytes },
+    { nome: (l) => l.nome, plano: (l) => l.planoNome, conversas: (l) => l.conversas, uso: (l) => l.fracao, arquivos: (l) => l.arquivos, bytes: (l) => l.bytes, meta: (l) => l.meta?.usadas ?? -1 },
     { ordem: 'uso', direcao: 'desc' },
   )
   const temFiltro = !!(parametros.busca || parametros.plano || parametros.faixa)
@@ -64,14 +69,16 @@ export default async function Consumo({ searchParams }: { searchParams: Promise<
   const bytes = linhas.reduce((soma, linha) => soma + linha.bytes, 0)
   const ativas = linhas.filter((linha) => linha.conversas > 0).length
   const acima = linhas.filter((linha) => linha.fracao > 1).length
+  const metaPerto = linhas.filter((linha) => linha.meta && linha.meta.nivel !== 'folga').length
 
   return (
     <TelaDaAdministracao titulo="Consumo" descricao={`O que cada organização usou neste mês, contra o que o plano comporta. ${O_QUE_E_CONVERSA}`}>
-      <section className="mb-5 grid grid-cols-2 gap-3 lg:grid-cols-4">
+      <section className="mb-5 grid grid-cols-2 gap-3 lg:grid-cols-5">
         <Numero rotulo="Conversas no mês" valor={total.toLocaleString('pt-BR')} />
         <Numero rotulo="Organizações com conversa" valor={`${ativas} de ${linhas.length}`} />
         <Numero rotulo="Acima do limite" valor={acima} tom={acima > 0 ? 'perigo' : 'normal'} detalhe={acima > 0 ? 'hora de conversar sobre plano' : 'ninguém estourou'} />
         <Numero rotulo="Arquivos recebidos" valor={comoTamanho(bytes)} detalhe="só o que chegou pelas conversas" />
+        <Numero rotulo="Grátis da Meta" valor={metaPerto} tom={metaPerto > 0 ? 'perigo' : 'normal'} detalhe={metaPerto > 0 ? `perto ou acima de ${FRANQUIA_DE_SERVICO.toLocaleString('pt-BR')} respostas` : 'todos com folga'} />
       </section>
       <div className="mb-3">
         <BarraDeLista
@@ -88,7 +95,7 @@ export default async function Consumo({ searchParams }: { searchParams: Promise<
       {lista.length === 0 ? (
         <SemResultado titulo={temFiltro ? 'Nenhuma organização com estes filtros' : 'Nenhuma organização ainda'} limpar={temFiltro ? BASE : undefined} />
       ) : (
-        <Tabela largura={860}>
+        <Tabela largura={1040}>
           <thead>
             <tr className="border-b border-line">
               <ThOrdenavel base={BASE} parametros={parametros} chave="nome" fixa>
@@ -99,6 +106,9 @@ export default async function Consumo({ searchParams }: { searchParams: Promise<
               </ThOrdenavel>
               <ThOrdenavel base={BASE} parametros={parametros} chave="uso" className="w-[260px]">
                 Conversas do plano
+              </ThOrdenavel>
+              <ThOrdenavel base={BASE} parametros={parametros} chave="meta" className="w-[180px]">
+                Grátis da Meta
               </ThOrdenavel>
               <ThOrdenavel base={BASE} parametros={parametros} chave="arquivos" className="text-right">
                 Arquivos
@@ -132,6 +142,15 @@ export default async function Consumo({ searchParams }: { searchParams: Promise<
                     <span className="mt-1.5 block h-1.5 overflow-hidden rounded-full bg-surface">
                       <span className={`block h-full rounded-full ${estourou ? 'bg-perigo' : perto ? 'bg-aviso' : 'bg-primary'}`} style={{ width: `${Math.min(100, Math.round(linha.fracao * 100))}%` }} />
                     </span>
+                  </td>
+                  <td className="px-4 py-3">
+                    {linha.meta ? (
+                      <span className={`text-[12px] font-semibold tabular-nums ${linha.meta.nivel === 'estourou' ? 'text-perigo' : linha.meta.nivel === 'perto' ? 'text-aviso' : 'text-soft'}`}>
+                        {linha.meta.usadas.toLocaleString('pt-BR')} de {FRANQUIA_DE_SERVICO.toLocaleString('pt-BR')}
+                      </span>
+                    ) : (
+                      <span className="text-[12px] text-dim">sem dado</span>
+                    )}
                   </td>
                   <td className="px-4 py-3 text-right text-[12.5px] tabular-nums">{linha.arquivos.toLocaleString('pt-BR')}</td>
                   <td className="px-4 py-3 text-right text-[12.5px] tabular-nums text-muted">{comoTamanho(linha.bytes)}</td>

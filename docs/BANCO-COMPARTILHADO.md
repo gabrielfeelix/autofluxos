@@ -261,6 +261,13 @@ extração explícito para os objetos de `public`.
   antiga, a lista de pedidos vira vazia, a Nuvemshop vira `null`), então no
   intervalo só o "Quero esta" e o interruptor de Loja recusavam, com mensagem,
   e nenhuma tela caiu.
+- **a `0104` foi aplicada em 25/set/2026** (franquia de mensagens de serviço da
+  Meta, que passa a ser cobrada em 1/out/2026), com autorização explícita do
+  dono, pela Management API. Aditiva: só a tabela `public.consumo_da_meta`
+  (cópia diária do `pricing_analytics` de cada WABA), RLS ligada, sem grant
+  para `anon`/`authenticated`. Ensaio em transação antes (tabela criada e
+  ausente depois do `rollback`); primeira cópia rodada logo depois: 3 WABAs,
+  7 pontos, nenhuma falha.
 - **a `0084` e a `0085` foram aplicadas em 20/set/2026**, na execução da F7, com
   autorização explícita do dono (pedida para a `0084` e estendida por ele às
   seguintes da F7/F8). As duas conferidas pelos **dois** testes: replay do zero em

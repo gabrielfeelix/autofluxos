@@ -4,7 +4,10 @@ import { AjustesShell } from '@/components/design/ajustes-shell'
 import { Trilha } from '@/components/design/trilha'
 import { acaoPedirTrocaDePlano } from '@/server/acoes-plano'
 import { acharCliente } from '@/server/repos/clientes'
-import { consumoDaConta, contratoDaConta, usoDaOrganizacao } from '@/server/repos/plano'
+import { consumoDaMetaDoMes } from '@/server/consumo-da-meta'
+import { franquiaDoMes } from '@/core/franquia-da-meta'
+import { listarCanais } from '@/server/repos/conversas'
+import { chaveDoMes, consumoDaConta, contratoDaConta, usoDaOrganizacao } from '@/server/repos/plano'
 import { pedidosDePlano } from '@/server/repos/pedidos-de-plano'
 import { planosVigentes } from '@/server/repos/planos'
 import type { IdDoPlano } from '@/core/planos'
@@ -37,14 +40,19 @@ export default async function Pagina({ params }: { params: Promise<{ clienteId: 
   const podeMexer = acesso !== null && podeAdministrarConta(acesso)
 
   const lendoConsumo = consumoDaConta(clienteId)
-  const [contrato, consumo, pedidos, planos, uso] = await Promise.all([
+  const [contrato, consumo, pedidos, planos, uso, canais, pontosDaMeta] = await Promise.all([
     contratoDaConta(clienteId),
     lendoConsumo,
     pedidosDePlano({ organizacaoId: clienteId }).catch(() => []),
     planosVigentes(),
     // Medido junto da página para o modal de troca abrir na hora.
     usoDaOrganizacao(clienteId, undefined, lendoConsumo),
+    listarCanais(clienteId).catch(() => []),
+    consumoDaMetaDoMes(clienteId),
   ])
+  // Só aparece para quem tem número na API oficial: é a conta que a Meta cobra.
+  const temWhatsAppOficial = canais.some((canal) => canal.provider === 'cloud-api')
+  const franquiaDaMeta = temWhatsAppOficial ? franquiaDoMes(pontosDaMeta, chaveDoMes(new Date())) : null
   const plano = contrato.plano
   // Só o pedido que a administração ainda não respondeu (A5). Atendido ou
   // recusado, some da tela; pedido para o plano que já vale também.
@@ -74,6 +82,7 @@ export default async function Pagina({ params }: { params: Promise<{ clienteId: 
           pedirTroca={acaoPedirTrocaDePlano.bind(null, cliente.id)}
           uso={uso}
           contrato={contrato}
+          franquiaDaMeta={franquiaDaMeta}
           conexoesHref={`/clientes/${cliente.id}/ajustes/integracoes`}
           planos={planos.filter((p) => p.ativo || p.id === plano)}
         />
