@@ -31,7 +31,7 @@ o nome de perfil inteiro do WhatsApp.
 | 1. 429 | 429 agora cai no `MODELO_ULTIMO_RECURSO` (`14dacba`). Faturamento da chave segue decisão do Gabriel. |
 | 2. aviso junto da resposta | gancho `antesDaIa` no resolvedor manda os envios antes do modelo (`c5b23dd`) |
 | 3. fora do assunto | marca `FORA_DO_ASSUNTO` vira recusa fixa, sem handoff (`ba0a27c`) |
-| 4 e 5. instrução do `vendedor-ia` | texto novo abaixo, validado com `validar()` contra a versão 2. **Falta publicar** (versão 3): colar no editor, ou autorizar a escrita |
+| 4 e 5. instrução do `vendedor-ia` | texto novo abaixo, publicado como versão 3 (`ac1a3cc3`) em 25/set, conta PCYES |
 | 6. silêncio no modo humano | aviso único após 2 min sem nenhuma saída desde o handoff (`3bba783`) |
 | 7. nome no menu | `primeiroNome()` em `vars-iniciais.ts` (`f77267c`) |
 | 8. lentidão | não mexido |
