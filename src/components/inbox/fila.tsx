@@ -27,6 +27,7 @@ import type { FiltroDeEstado, Lead } from "@/server/repos/leads";
 import type { MembroDaConta } from "@/server/repos/usuarios";
 import { ContadorDeAgendadas } from "@/components/inbox/contador-de-agendadas";
 import { linhaViva, useRemendos } from "@/components/inbox/conversa-local";
+import { juntarComVivas, naoLidasVivas, useFilaViva } from "@/components/inbox/fila-viva";
 import type { MensagemAgendada } from "@/server/repos/mensagens-agendadas";
 
 export type Contagem = {
@@ -81,7 +82,7 @@ export function Fila({
   estado,
   termo,
   usuarioId,
-  naoLidas,
+  naoLidas: naoLidasDoServidor,
   fixadas,
   pagina,
   paginas,
@@ -151,14 +152,33 @@ export function Fila({
   // clique atrasava o botão (medido: 10 ms virou 100 a 340 ms em dev). O botão,
   // o selo e a ficha mudam primeiro; a fila vem no quadro seguinte.
   const remendos = useDeferredValue(useRemendos());
+  /*
+   * As linhas que mudaram depois do desenho do servidor (`fila-viva.ts`). É o
+   * que troca a última frase, a hora e a ordem de uma conversa quando chega
+   * mensagem nela, sem redesenhar a página.
+   */
+  const viva = useFilaViva();
   const leads = useMemo(
-    () => leadsDoServidor.map((lead) => linhaViva(lead, remendos)),
-    [leadsDoServidor, remendos],
+    () => juntarComVivas(leadsDoServidor, viva.linhas, false).map((lead) => linhaViva(lead, remendos)),
+    [leadsDoServidor, viva.linhas, remendos],
   );
   const local = useMemo(
-    () => localDoServidor?.map((lead) => linhaViva(lead, remendos)) ?? null,
-    [localDoServidor, remendos],
+    () =>
+      localDoServidor
+        ? juntarComVivas(localDoServidor, viva.linhas, true).map((lead) => linhaViva(lead, remendos))
+        : null,
+    [localDoServidor, viva.linhas, remendos],
   );
+  // A conversa aberta nunca aparece como não lida, como no desenho do servidor.
+  const naoLidas = useMemo(() => {
+    const juntas = naoLidasVivas(naoLidasDoServidor, viva.naoLidas);
+    if (selecionado && juntas.has(selecionado.contatoId)) {
+      const semAberta = new Map(juntas);
+      semAberta.delete(selecionado.contatoId);
+      return semAberta;
+    }
+    return juntas;
+  }, [naoLidasDoServidor, viva.naoLidas, selecionado]);
 
   const [recorte, setRecorte] = useState<Lead[]>(leads);
 
@@ -229,9 +249,11 @@ export function Fila({
 
   // Props novas do servidor jogam fora o remendo de não lidas, durante a
   // renderização e não num efeito (evita a segunda pintura com o valor velho).
-  const [naoLidasVistas, setNaoLidasVistas] = useState(naoLidas);
-  if (naoLidasVistas !== naoLidas) {
-    setNaoLidasVistas(naoLidas);
+  // Só as props do servidor zeram o remendo; o que chega ao vivo não, senão
+  // uma mensagem em outra conversa desfaria o "marcar como lida" desta.
+  const [naoLidasVistas, setNaoLidasVistas] = useState(naoLidasDoServidor);
+  if (naoLidasVistas !== naoLidasDoServidor) {
+    setNaoLidasVistas(naoLidasDoServidor);
     setRemendoDeNaoLidas(new Map());
   }
 

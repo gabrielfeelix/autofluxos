@@ -1691,6 +1691,45 @@ export async function leadsPorContatos(clienteId: string, ids: string[]): Promis
 }
 
 /**
+ * As linhas da fila que mudaram desde um instante: quem recebeu ou mandou
+ * mensagem depois dele.
+ *
+ * É o que deixa o Inbox se atualizar como o WhatsApp, linha por linha, em vez
+ * de redesenhar a página inteira a cada mensagem de outra conversa. O teto de
+ * 100 contatos cobre qualquer intervalo entre dois pulsos; passar disso é sinal
+ * de que a tela ficou muito tempo parada, e aí quem chama redesenha tudo.
+ */
+export async function leadsMudadosDesde(
+  clienteId: string,
+  desde: string,
+  alcance?: AlcanceDeConversas,
+): Promise<{ leads: Lead[]; completo: boolean }> {
+  const TETO = 100
+  const { data, error } = await db()
+    .from('messages')
+    .select('contact_id, contacts!inner(client_id)')
+    .eq('contacts.client_id', clienteId)
+    .gt('ts', desde)
+    .order('ts', { ascending: false })
+    .limit(TETO * 4)
+
+  if (ehIdInvalido(error)) return { leads: [], completo: true }
+  if (error) throw new Error(`não deu para ler o que mudou na fila: ${error.message}`)
+
+  const ids = [...new Set((data ?? []).map((linha) => linha.contact_id as string))]
+  const completo = ids.length <= TETO && (data?.length ?? 0) < TETO * 4
+  if (ids.length === 0) return { leads: [], completo }
+
+  let q = db().from('leads').select(COLUNAS).eq('client_id', clienteId).in('contact_id', ids.slice(0, TETO))
+  q = noAlcance(q, alcance)
+  const { data: linhas, error: erro } = await q
+
+  if (ehIdInvalido(erro)) return { leads: [], completo }
+  if (erro) throw new Error(`não deu para ler as linhas da fila: ${erro.message}`)
+  return { leads: await classificar((linhas as Linha[]).map(paraLead)), completo }
+}
+
+/**
  * Quantas conversas **abertas** cada pessoa tem nesta conta.
  *
  * Existe separada de `contarPorAtribuicao`, que conta tudo o que já foi

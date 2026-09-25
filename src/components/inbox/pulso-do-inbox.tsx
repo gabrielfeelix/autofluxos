@@ -3,8 +3,9 @@
 import { useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { z } from 'zod'
+import { buscarMudancas, pulsoDaTela } from './fila-viva'
 import { precisaAtualizar } from './pulso'
-import { DEU_CONTA, ESPERA_PELA_CONVERSA_MS, pedirNovas } from './sinal-de-conversa'
+import { DEU_CONTA, pedirNovas } from './sinal-de-conversa'
 
 const respostaSchema = z.object({ pulso: z.string().nullable() })
 
@@ -36,7 +37,7 @@ const SILENCIO_ATE_DESISTIR = 40_000
  * inteiras ao servidor para desenhar praticamente a mesma fila. Uma a cada
  * quatro segundos mantém a lista viva sem transformar movimento em pisca-pisca.
  */
-const ESPERA_ENTRE_REDESENHOS_MS = 4_000
+const ESPERA_ENTRE_REDESENHOS_MS = 1_500
 
 /**
  * De quanto em quanto tempo a fila da esquerda se acerta quando a conversa
@@ -169,7 +170,15 @@ export function PulsoDoInbox({
       }
       ultimoRedesenho.current = Date.now()
       redesenhoMarcado = null
-      router.refresh()
+      /*
+       * Primeiro só as linhas que mudaram (`fila-viva.ts`): a fila troca a
+       * frase, a hora e a ordem sem a página inteira voltar do servidor. A
+       * página inteira fica para quando isso não dá (rede, ou mudança demais
+       * para caber na resposta), que era o único caminho antes.
+       */
+      void buscarMudancas(clienteId, pulsoDaTela(pulsoNaTela)).then((deu) => {
+        if (!deu && ativo) router.refresh()
+      })
     }
 
     /**
@@ -190,14 +199,18 @@ export function PulsoDoInbox({
      */
     function reagir(pulso: string | null) {
       if (!ativo) return
-      if (!precisaAtualizar({ doBanco: pulso, naTela: pulsoNaTela })) return
+      if (!precisaAtualizar({ doBanco: pulso, naTela: pulsoDaTela(pulsoNaTela) })) return
 
       pedirNovas(pulso)
 
-      // Um só por vez: duas mensagens seguidas marcariam dois redesenhos, e o
-      // "deu conta" da conversa só cancelaria um deles.
+      /*
+       * A fila atualiza na hora, e não depois de esperar a conversa aberta: o
+       * que ela busca agora são só as linhas que mudaram, barato o bastante
+       * para não precisar do "deu conta" que evitava a página inteira. É o que
+       * faz a linha subir para o topo junto com a bolha aparecendo.
+       */
       if (redesenhoMarcado !== null) return
-      redesenhoMarcado = window.setTimeout(redesenhar, ESPERA_PELA_CONVERSA_MS)
+      redesenhar()
     }
 
     // ---------------------------------------------------------------- stream
