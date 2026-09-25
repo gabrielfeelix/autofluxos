@@ -88,14 +88,21 @@ export async function acaoEnviarProdutoDoInbox(
 
   // UTM de atendimento, e não de chatbot: é uma pessoa mandando, e a análise
   // da loja precisa separar a venda do robô da venda de quem atende.
-  const produto = comLinkRastreado(lidoDaLoja, { id: contatoId, clienteId }, canal.origem, 'atendimento')
+  const quemResponde = await sessaoAtual()
+  const usuario = quemResponde?.usuario
+  const produto = comLinkRastreado(
+    lidoDaLoja,
+    { id: contatoId, clienteId },
+    canal.origem,
+    'atendimento',
+    usuario?.id ? { id: usuario.id, nome: usuario.nome ?? '' } : undefined,
+  )
 
   // Card só com foto, link e canal que saiba mostrar; o resto vai como texto
   // com o link, igual ao bot (`receber-mensagem.ts`, `enviar_produtos`).
   const enviarCard = produto.foto && produto.link ? canal.enviarProdutos?.bind(canal) : undefined
   const texto = textoDoCard(produto)
 
-  const quemResponde = await sessaoAtual()
   const registro = await registrarSaida({
     contatoId,
     sessaoId: contexto.sessaoId,

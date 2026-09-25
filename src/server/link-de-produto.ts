@@ -43,7 +43,28 @@ export type MeioDoLink = 'chatbot' | 'atendimento'
  * UTM que a loja ou a campanha já tiver no link fica como está; sobrescrever
  * apagaria a atribuição de quem escreveu primeiro.
  */
-export function comUtm(link: string, origem: CanalId, meio: MeioDoLink = 'chatbot'): string {
+/**
+ * Quem mandou, legível no relatório e único no banco: `ana-souza-3f9a1c2e`.
+ * Só o nome trocaria de dono quando duas Anas atendem; só o id seria um
+ * código que ninguém lê na tela do GA4.
+ */
+export function quemNaUtm(usuario: { id: string; nome: string }): string {
+  const nome = usuario.nome
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-|-$/g, '')
+    .slice(0, 30)
+  return `${nome || 'atendente'}-${usuario.id.replace(/-/g, '').slice(0, 8)}`
+}
+
+export function comUtm(
+  link: string,
+  origem: CanalId,
+  meio: MeioDoLink = 'chatbot',
+  quem?: { id: string; nome: string },
+): string {
   let url: URL
   try {
     url = new URL(link)
@@ -54,6 +75,9 @@ export function comUtm(link: string, origem: CanalId, meio: MeioDoLink = 'chatbo
     ['utm_source', origem],
     ['utm_medium', meio],
     ['utm_campaign', 'autofluxos'],
+    // Quem mandou: o robô, ou a pessoa que atendeu. É o que responde "quanto
+    // vendeu cada atendente" na análise da loja.
+    ['utm_content', quem ? quemNaUtm(quem) : 'robo'],
   ]
   for (const [nome, valor] of utms) if (!url.searchParams.has(nome)) url.searchParams.set(nome, valor)
   return url.toString()
@@ -65,9 +89,10 @@ export function comLinkRastreado(
   contato: { id: string; clienteId: string },
   origem: CanalId = 'whatsapp',
   meio: MeioDoLink = 'chatbot',
+  quem?: { id: string; nome: string },
 ): ProdutoDaLoja {
   if (!/^https?:\/\//.test(produto.link)) return produto
-  const destino = comUtm(produto.link, origem, meio)
+  const destino = comUtm(produto.link, origem, meio, quem)
   const chave = segredo()
   if (!chave) return { ...produto, link: destino }
   const conteudo: Conteudo = { k: contato.clienteId, c: contato.id, u: destino, n: produto.nome.slice(0, 120) }
