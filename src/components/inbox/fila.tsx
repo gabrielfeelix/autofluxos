@@ -27,7 +27,8 @@ import type { FiltroDeEstado, Lead } from "@/server/repos/leads";
 import type { MembroDaConta } from "@/server/repos/usuarios";
 import { ContadorDeAgendadas } from "@/components/inbox/contador-de-agendadas";
 import { linhaViva, useRemendos } from "@/components/inbox/conversa-local";
-import { esquecerContadoresVivos, juntarComVivas, naoLidasVivas, useFilaViva } from "@/components/inbox/fila-viva";
+import { esquecerContadoresVivos, juntarComVivas, juntarNaPagina, naoLidasVivas, useFilaViva } from "@/components/inbox/fila-viva";
+import { cabeNoRecorte } from "@/components/inbox/recorte";
 import type { MensagemAgendada } from "@/server/repos/mensagens-agendadas";
 
 export type Contagem = {
@@ -167,10 +168,18 @@ export function Fila({
   }, [contagemDoServidor, porEstadoDoServidor]);
   const contagem = viva.contagem ?? contagemDoServidor;
   const porEstado = viva.porEstado ?? porEstadoDoServidor;
-  const leads = useMemo(
-    () => juntarComVivas(leadsDoServidor, viva.linhas, false).map((lead) => linhaViva(lead, remendos)),
-    [leadsDoServidor, viva.linhas, remendos],
-  );
+  const { leads, novasForaDaPagina } = useMemo(() => {
+    const naPagina = juntarNaPagina(
+      leadsDoServidor,
+      viva.linhas,
+      (lead) => cabeNoRecorte(lead, estado, atribuicao),
+      pagina === 1 && termo === "",
+    );
+    return {
+      leads: naPagina.leads.map((lead) => linhaViva(lead, remendos)),
+      novasForaDaPagina: naPagina.novas,
+    };
+  }, [leadsDoServidor, viva.linhas, remendos, estado, atribuicao, pagina, termo]);
   const local = useMemo(
     () =>
       localDoServidor
@@ -708,6 +717,24 @@ export function Fila({
                 : "não está nesta página da lista. Ela continua aberta ao lado."}
             </p>
           )}
+
+        {/*
+          Modo paginado, longe do topo: conversa nova não tem lugar conhecido
+          nesta página. Em vez de sumir com ela, a fila diz que chegou.
+        */}
+        {!local && novasForaDaPagina > 0 && (
+          <Link
+            href={`/clientes/${clienteId}/inbox?de=${encodeURIComponent(atribuicao)}&estado=${estado}`}
+            className="mx-3 mt-2 flex shrink-0 items-center justify-between gap-2 rounded-lg border border-primary/30 bg-primary/[0.06] px-3 py-2 text-[11.5px] font-semibold text-primary hover:bg-primary/[0.1]"
+          >
+            <span>
+              {novasForaDaPagina === 1
+                ? "1 conversa nova"
+                : `${novasForaDaPagina} conversas novas`}
+            </span>
+            <span aria-hidden>Ver no topo ↑</span>
+          </Link>
+        )}
 
         <nav
           aria-label="Conversas"

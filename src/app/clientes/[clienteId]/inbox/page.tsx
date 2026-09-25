@@ -65,6 +65,7 @@ import { AcoesRapidas } from '@/components/inbox/acoes-rapidas'
 import { hrefDaFicha } from '@/core/volta-da-ficha'
 import { Avatar } from '@/components/inbox/avatar'
 import { ColunaDaFicha, MolduraDoInbox, SoSemFicha } from '@/components/inbox/moldura'
+import { cabeNoRecorte } from '@/components/inbox/recorte'
 import { telefoneLegivel } from '@/core/contatos/telefone'
 import { AbasDaFicha } from '@/components/inbox/abas-da-ficha'
 import { Fila, type Contagem } from '@/components/inbox/fila'
@@ -585,12 +586,6 @@ function EstadoVazio({
  * fila local usa para filtrar no navegador (ver `RailsLocais`), e é de propósito,
  * duas definições do mesmo recorte divergiriam no primeiro estado novo.
  */
-function cabeNoRecorte(lead: Lead, estado: FiltroDeEstado, atribuicao: string): boolean {
-  if (estado !== 'todas' && lead.estadoEfetivo !== estado) return false
-  if (atribuicao === 'todos') return true
-  if (atribuicao === 'sem-dono') return lead.atribuidoA === null
-  return lead.atribuidoA === atribuicao
-}
 
 async function Conteudo({
   clienteId,

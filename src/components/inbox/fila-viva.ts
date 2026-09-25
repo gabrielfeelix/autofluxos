@@ -151,6 +151,30 @@ export function juntarComVivas(base: Lead[], vivas: ReadonlyMap<string, Lead>, a
 }
 
 /**
+ * O modo paginado: a página que o servidor desenhou, com o que chegou ao vivo.
+ *
+ * Na primeira página, sem busca, ela se comporta como a fila do WhatsApp:
+ * conversa nova que cabe no filtro entra, e a página volta à ordem do
+ * servidor, a mensagem mais recente em cima. Em qualquer outra página a linha
+ * nova não tem lugar conhecido: só as que já estão à vista são trocadas, e
+ * `novas` diz quantas esperam no topo, para a tela oferecer o caminho.
+ */
+export function juntarNaPagina(
+  base: Lead[],
+  vivas: ReadonlyMap<string, Lead>,
+  cabe: (lead: Lead) => boolean,
+  primeiraPagina: boolean,
+): { leads: Lead[]; novas: number } {
+  if (vivas.size === 0) return { leads: base, novas: 0 }
+  const vistos = new Set(base.map((lead) => lead.contatoId))
+  const juntas = base.map((lead) => maisNova(lead, vivas.get(lead.contatoId)))
+  const novas = [...vivas.values()].filter((lead) => !vistos.has(lead.contatoId) && cabe(lead))
+  if (!primeiraPagina) return { leads: juntas, novas: novas.length }
+  const data = (lead: Lead) => (lead.ultimaEm ? Date.parse(lead.ultimaEm) : 0)
+  return { leads: [...novas, ...juntas].sort((a, b) => data(b) - data(a)), novas: 0 }
+}
+
+/**
  * As não lidas, com as que chegaram ao vivo por cima das do servidor.
  *
  * Zero vivo tira a conversa do mapa: quem conta é o `size` ("Não lidas 3"), e
