@@ -186,7 +186,7 @@ export type ChamadaDeFerramenta =
     }
   | {
       tipo: 'loja'
-      operacao: 'buscar' | 'combina_com' | 'mostrar'
+      operacao: 'buscar' | 'combina_com' | 'mostrar' | 'pedido'
     }
 
 /** Os campos que as ferramentas de loja devolvem ao modelo. Allow-list. */
@@ -542,6 +542,39 @@ export const FERRAMENTAS: Ferramenta[] = [
     injetados: [],
     chamada: { tipo: 'loja', operacao: 'mostrar' },
     projecao: [{ caminho: 'mostrados', campos: ['produtoId', 'nome'], limite: 3 }],
+    credencial: 'nenhuma',
+    integracao: 'loja',
+  },
+  {
+    /*
+     * O telefone é injetado, não argumento: é ele que prova que quem pergunta
+     * é quem comprou. Se fosse argumento, bastaria o modelo ser convencido a
+     * digitar o telefone de outra pessoa. Ver `loja/magento-pedido.ts`.
+     */
+    nome: 'loja_pedido',
+    rotulo: 'Consultar pedido na loja',
+    escreve: false,
+    descricao:
+      'Consulta um pedido da loja on-line pelo número e devolve a situação, a data, o total, os itens e o código de rastreio quando houver. ' +
+      'Use quando a pessoa perguntar do pedido dela, da entrega ou do rastreio, e já tiver dito o número do pedido. ' +
+      'O pedido só aparece se o telefone desta conversa for o da compra; se vier `encontrado: false`, peça o CPF usado na compra e consulte de novo com ele. ' +
+      'Se ainda assim não achar, diga que não conseguiu localizar e ofereça chamar alguém do time. Nunca invente situação nem prazo. ' +
+      'Não use para buscar produto.',
+    argumentos: [
+      { nome: 'numero', tipo: 'texto', descricao: 'O número do pedido, como a pessoa escreveu.', obrigatorio: true },
+      {
+        nome: 'documento',
+        tipo: 'texto',
+        descricao: 'O CPF ou CNPJ da compra, só se a pessoa informou. Deixe vazio se não.',
+        obrigatorio: false,
+      },
+    ],
+    injetados: ['telefone'],
+    chamada: { tipo: 'loja', operacao: 'pedido' },
+    projecao: [
+      { caminho: 'encontrado' },
+      { caminho: 'pedido', campos: ['numero', 'situacao', 'feitoEm', 'total', 'itens', 'rastreios'], limite: 1 },
+    ],
     credencial: 'nenhuma',
     integracao: 'loja',
   },

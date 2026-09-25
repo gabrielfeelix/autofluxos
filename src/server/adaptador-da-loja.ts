@@ -3,9 +3,11 @@ import { enriquecer, type Complemento } from '@/loja/enriquecer'
 import { lojaCatalogo } from '@/loja/catalogo'
 import { lojaMagento } from '@/loja/magento'
 import { lojaAdmin } from '@/loja/magento-admin'
+import { consultarPedido, type ConsultaDePedido } from '@/loja/magento-pedido'
 import { lojaNuvemshop } from '@/loja/nuvemshop'
 import type { Loja } from '@/loja/types'
 import { alertar } from './alertar'
+import { chamarHttp } from './efeitos/http'
 import { lerCredencial } from './repos/conexoes'
 import { lojaDaConta, lojaNuvemshopDaConta } from './repos/lojas'
 import { listarProdutos } from './repos/produtos'
@@ -13,6 +15,30 @@ import { estaAtivo } from '@/core/produtos'
 
 /** Quanto a foto e o estoque exato podem atrasar uma resposta, somados. */
 export const PRAZO_DO_TOKEN_MS = 3_000
+
+/**
+ * O pedido da loja Magento desta conta, conferido contra quem pergunta.
+ *
+ * Usa o mesmo token do estoque exato, mesmo com o estoque exato desligado: o
+ * token é da conta, e ler pedido é outra permissão dele, não outro token. Quem
+ * confere se a pessoa pode ver o pedido é `consultarPedido`.
+ */
+export async function consultarPedidoDaConta(
+  clienteId: string,
+  entrada: { numero: string; telefone: string; documento?: string },
+): Promise<{ ok: true; valor: ConsultaDePedido } | { ok: false; motivo: string }> {
+  const loja = await lojaDaConta(clienteId)
+  if (!loja || !loja.ativa) return { ok: false, motivo: 'a loja desta conta não está ligada' }
+  if (!loja.conexaoId) return { ok: false, motivo: 'a loja desta conta não tem token conectado' }
+
+  let credencial = null
+  try {
+    credencial = await lerCredencial(loja.conexaoId, clienteId)
+  } catch {
+    return { ok: false, motivo: 'não deu para ler o token da loja' }
+  }
+  return consultarPedido({ endereco: loja.endereco, credencial }, entrada, chamarHttp)
+}
 
 /**
  * Qual adaptador fala com a loja desta conta, no desenho de

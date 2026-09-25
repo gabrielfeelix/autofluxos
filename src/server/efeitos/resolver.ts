@@ -33,7 +33,7 @@ import type { Modelo, Resposta, Turno } from '../ia/types'
 import { alertar } from '../alertar'
 import { chamarHttp } from './http'
 import { lerCredencial } from '../repos/conexoes'
-import { lojaAtivaDaConta } from '../adaptador-da-loja'
+import { consultarPedidoDaConta, lojaAtivaDaConta } from '../adaptador-da-loja'
 
 /**
  * O motor, com os efeitos externos resolvidos.
@@ -1080,11 +1080,20 @@ async function dispararFerramenta({
  * venda perdida. Falhando, a conversa vai para uma pessoa.
  */
 async function executarNaLoja(
-  operacao: 'buscar' | 'combina_com' | 'mostrar',
+  operacao: 'buscar' | 'combina_com' | 'mostrar' | 'pedido',
   valores: Record<string, string>,
   opcoes: OpcoesDeEfeitos,
 ): Promise<{ ok: true; json: unknown } | { ok: false; motivo: string }> {
   if (!opcoes.clienteId) return { ok: false, motivo: 'a consulta à loja só funciona numa conta' }
+
+  if (operacao === 'pedido') {
+    const r = await consultarPedidoDaConta(opcoes.clienteId, {
+      numero: valores.numero ?? '',
+      telefone: valores.telefone ?? '',
+      ...(valores.documento ? { documento: valores.documento } : {}),
+    })
+    return r.ok ? { ok: true, json: r.valor } : r
+  }
   const loja = await lojaAtivaDaConta(opcoes.clienteId)
   if (!loja) return { ok: false, motivo: 'a loja desta conta não está ligada' }
 
