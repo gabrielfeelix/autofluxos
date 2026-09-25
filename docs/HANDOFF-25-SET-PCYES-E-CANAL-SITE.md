@@ -114,3 +114,18 @@ quem navega no site.
 - Proibido travessão (o traço longo) em qualquer arquivo tocado.
 - Placeholder de campo começa com "Exemplo:".
 - Implementar no fio principal, sem subagente para implementar.
+
+## 3. Aberto: lentidão da IA vendedora (medido 25/set, 13:22)
+
+Pedido "headset com fio" levou 75 s até o card: 3 chamadas ao Gemini em
+série (decidir busca, decidir card, escrever), de 20 a 28 s cada; Magento
+abaixo de 1 s. Benchmark do mesmo dia, 8 chamadas com ferramenta por modelo:
+`3.1-flash-lite` (padrão) 8,2 s médio e 2 com 503; `3.5-flash-lite` 6,5 s e 0
+com 503 (virou a última tentativa em `2dcd90d`); `gemini-flash-lite-latest`
+1,6 s e 0 com 503, mas é apelido (ver o cabeçalho de `src/server/ia/gemini.ts`).
+Trocar o padrão exige a suíte real de `gemini.test.ts`, que hoje não roda:
+`vitest.unit.config.ts` bloqueia rede e o `vitest.integration.config.ts` não
+inclui o arquivo. Consertar isso primeiro, depois medir os candidatos.
+O "digitando" da Meta dura ~25 s e a renovação não pareceu funcionar; o fluxo
+de vendas da PCYES ganhou a mensagem "Deixa eu procurar aqui no estoque 🔎"
+(versão 2) para cobrir a espera.
