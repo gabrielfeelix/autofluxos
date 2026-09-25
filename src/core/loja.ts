@@ -414,3 +414,41 @@ export function traduzirFicha(json: unknown, atributos: unknown): FichaDoProduto
 
   return { produtoId: item.sku, nome: item.name, descricao, especificacoes: especificacoes.slice(0, 15) }
 }
+
+/*
+ * ---------------------------------------------------------------------------
+ * Frete por CEP
+ * ---------------------------------------------------------------------------
+ */
+
+export type OpcaoDeFrete = { transportadora: string; servico: string; preco: number }
+
+/** Só os 8 dígitos. Qualquer outra coisa não é CEP, e a loja nem é chamada. */
+export function cepLimpo(cep: string): string | null {
+  const digitos = cep.replace(/\D/g, '')
+  return digitos.length === 8 ? digitos : null
+}
+
+/**
+ * O que `estimate-shipping-methods` devolve, virando o que a IA lê.
+ *
+ * O prazo vem dentro do nome do serviço ("PAC (7 dias úteis)"), e é assim
+ * que ele vai: separar seria adivinhar o formato de cada transportadora.
+ * Indisponível sai; mais barato primeiro.
+ */
+export function traduzirFrete(json: unknown): OpcaoDeFrete[] {
+  if (!Array.isArray(json)) return []
+  return json
+    .flatMap((m) => {
+      const o = m as { available?: unknown; carrier_title?: unknown; method_title?: unknown; amount?: unknown }
+      if (o.available === false || typeof o.amount !== 'number') return []
+      return [
+        {
+          transportadora: typeof o.carrier_title === 'string' ? o.carrier_title : '',
+          servico: typeof o.method_title === 'string' ? o.method_title : '',
+          preco: o.amount,
+        },
+      ]
+    })
+    .sort((a, b) => a.preco - b.preco)
+}

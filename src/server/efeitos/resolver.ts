@@ -3,7 +3,7 @@ import { ATENDIMENTO_SEMPRE_ABERTO, avisoDeForaDoHorario, executar } from '@/cor
 import type { ContextoDoAtendimento } from '@/core/engine/executar'
 import type { Acao, Entrada, Resultado, Sessao } from '@/core/engine/types'
 import type { Fluxo } from '@/core/flow/schema'
-import type { ProdutoDaLoja } from '@/core/loja'
+import { cepLimpo, type ProdutoDaLoja } from '@/core/loja'
 import { VARIAVEIS_DE_DATA } from '@/core/datas'
 import { VARIAVEIS_DO_ATENDIMENTO, varsDoAtendimento } from '@/core/vars-do-atendimento'
 import {
@@ -1113,7 +1113,7 @@ async function dispararFerramenta({
  * venda perdida. Falhando, a conversa vai para uma pessoa.
  */
 async function executarNaLoja(
-  operacao: 'buscar' | 'combina_com' | 'mostrar' | 'pedido' | 'ficha',
+  operacao: 'buscar' | 'combina_com' | 'mostrar' | 'pedido' | 'ficha' | 'frete',
   valores: Record<string, string>,
   opcoes: OpcoesDeEfeitos,
 ): Promise<{ ok: true; json: unknown } | { ok: false; motivo: string }> {
@@ -1136,6 +1136,14 @@ async function executarNaLoja(
     const skus = [valores.produtoId, valores.produtoId2, valores.produtoId3].filter((s): s is string => Boolean(s))
     const r = await loja.lerPorSku(skus)
     return r.ok ? { ok: true, json: { mostrados: r.valor } } : r
+  }
+
+  if (operacao === 'frete') {
+    const cep = cepLimpo(valores.cep ?? '')
+    if (!cep) return { ok: true, json: { opcoes: [], aviso: 'CEP inválido: peça o CEP com 8 dígitos' } }
+    if (!loja.frete) return { ok: false, motivo: 'esta loja não calcula frete por aqui' }
+    const r = await loja.frete(valores.produtoId ?? '', cep)
+    return r.ok ? { ok: true, json: { opcoes: r.valor } } : r
   }
 
   if (operacao === 'ficha') {

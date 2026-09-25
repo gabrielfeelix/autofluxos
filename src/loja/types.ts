@@ -5,7 +5,7 @@
  * plataforma, e quem escolhe é `server/adaptador-da-loja.ts`. Nuvemshop ou
  * Tray entram implementando `Loja`, sem mexer em quem a usa.
  */
-import type { FichaDoProduto, ProdutoDaLoja } from '@/core/loja'
+import type { FichaDoProduto, OpcaoDeFrete, ProdutoDaLoja } from '@/core/loja'
 export type ResultadoDaLoja<T> = { ok: true; valor: T } | { ok: false; motivo: string }
 export type ConfigDaLoja = { codigoDaLoja: string | null; moeda: string; sufixo: string }
 /**
@@ -25,6 +25,8 @@ export type Loja = {
    * busca. `null` = o SKU não existe mais.
    */
   ficha?(sku: string): Promise<ResultadoDaLoja<FichaDoProduto | null>>
+  /** Opções de frete de um produto para um CEP, como o checkout calcularia. */
+  frete?(sku: string, cep: string): Promise<ResultadoDaLoja<OpcaoDeFrete[]>>
   /** A página de busca da loja para este termo. Sem rede. */
   linkDaBusca(termo: string): string
   lerConfig(): Promise<ResultadoDaLoja<ConfigDaLoja>>

@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import {
+  cepLimpo,
+  traduzirFrete,
   LIMITE_DA_FICHA,
   limparHtml,
   traduzirFicha,
@@ -234,5 +236,26 @@ describe('a ficha do produto', () => {
     expect(traduzirFicha({ data: { products: { items: [] } } }, null)).toBeNull()
     const so = traduzirFicha({ data: { products: { items: [{ sku: 'a', name: 'b' }] } } }, null)
     expect(so).toEqual({ produtoId: 'a', nome: 'b', descricao: '', especificacoes: [] })
+  })
+})
+
+describe('o frete por CEP', () => {
+  it('CEP só com 8 dígitos, com ou sem traço', () => {
+    expect(cepLimpo('87013-000')).toBe('87013000')
+    expect(cepLimpo('Maringá')).toBeNull()
+    expect(cepLimpo('8701300')).toBeNull()
+  })
+
+  it('mais barato primeiro, indisponível fora, prazo no nome do serviço', () => {
+    const json = [
+      { carrier_title: 'CORREIOS', method_title: 'SEDEX (3 dias úteis)', amount: 32.68, available: true },
+      { carrier_title: 'BIAGI', method_title: 'Normal (1 dia útil)', amount: 28.66, available: true },
+      { carrier_title: 'X', method_title: 'Y', amount: 10, available: false },
+    ]
+    expect(traduzirFrete(json)).toEqual([
+      { transportadora: 'BIAGI', servico: 'Normal (1 dia útil)', preco: 28.66 },
+      { transportadora: 'CORREIOS', servico: 'SEDEX (3 dias úteis)', preco: 32.68 },
+    ])
+    expect(traduzirFrete({ message: 'erro' })).toEqual([])
   })
 })

@@ -11,6 +11,7 @@ import {
   QUERY_FICHA,
   QUERY_RECOMENDACOES,
   traduzirFicha,
+  traduzirFrete,
   traduzirPorSku,
   traduzirProdutos,
   traduzirRecomendacoes,
@@ -54,7 +55,46 @@ export function lojaMagento(dados: DadosDaLoja, chamar: Chamar = chamarHttp): Lo
     return { ok: true, valor: resposta.json }
   }
 
+  /**
+   * A REST de visitante, a mesma que o checkout usa sem login.
+   *
+   * O frete não tem consulta pública direta: a loja só calcula para um
+   * carrinho. Então se cria um carrinho de visitante, põe o item e pergunta.
+   * Não vira pedido, e o Magento limpa carrinho de visitante abandonado.
+   */
+  async function rest(caminho: string, corpo: unknown): Promise<ResultadoDaLoja<unknown>> {
+    const base = dados.codigoDaLoja ? `/rest/${encodeURIComponent(dados.codigoDaLoja)}/V1` : '/rest/V1'
+    const resposta = await chamar(
+      {
+        tipo: 'chamar_http',
+        metodo: 'POST',
+        url: `${dados.endereco}${base}${caminho}`,
+        cabecalhos: [{ chave: 'Content-Type', valor: 'application/json' }],
+        corpo: JSON.stringify(corpo),
+        mapear: [],
+        aoFalhar: 'humano',
+      },
+      { deTeste: false, comJson: true },
+    )
+    if (!resposta.ok) return { ok: false, motivo: `a loja não respondeu: ${resposta.motivo}` }
+    return { ok: true, valor: resposta.json }
+  }
+
   return {
+    async frete(sku, cep) {
+      const carrinho = await rest('/guest-carts', {})
+      if (!carrinho.ok) return carrinho
+      const id = carrinho.valor
+      if (typeof id !== 'string' || !/^[A-Za-z0-9]+$/.test(id)) {
+        return { ok: false, motivo: 'a loja não abriu o carrinho para calcular o frete' }
+      }
+      const item = await rest(`/guest-carts/${id}/items`, { cartItem: { sku, qty: 1, quote_id: id } })
+      if (!item.ok) return item
+      const r = await rest(`/guest-carts/${id}/estimate-shipping-methods`, {
+        address: { postcode: cep, country_id: 'BR' },
+      })
+      return r.ok ? { ok: true, valor: traduzirFrete(r.valor) } : r
+    },
     async buscar(termo, opcoes) {
       const limpo = termo.trim().slice(0, 80)
       if (!limpo) return { ok: true, valor: [] }

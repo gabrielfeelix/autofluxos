@@ -186,7 +186,7 @@ export type ChamadaDeFerramenta =
     }
   | {
       tipo: 'loja'
-      operacao: 'buscar' | 'combina_com' | 'mostrar' | 'pedido' | 'ficha'
+      operacao: 'buscar' | 'combina_com' | 'mostrar' | 'pedido' | 'ficha' | 'frete'
     }
 
 /** Os campos que as ferramentas de loja devolvem ao modelo. Allow-list. */
@@ -507,6 +507,36 @@ export const FERRAMENTAS: Ferramenta[] = [
   },
   {
     /*
+     * O CEP é argumento, e não injetado: é a pessoa que diz para onde vai.
+     * Não é identidade de ninguém, e errar só custa um frete para outro lugar.
+     */
+    nome: 'loja_frete',
+    rotulo: 'Calcular o frete',
+    escreve: false,
+    descricao:
+      'Calcula o frete de um produto da loja para um CEP e devolve as opções: transportadora, serviço com o prazo e o preço. ' +
+      'Use quando a pessoa perguntar quanto fica o frete, quanto tempo demora para chegar ou se entrega na cidade dela. ' +
+      'Precisa do CEP: se ela não disse, peça o CEP; não use com só o nome da cidade, e nunca invente um CEP. ' +
+      'Mostre as 2 ou 3 opções mais em conta ou mais rápidas, com preço e prazo, e avise que o valor final aparece na finalização da compra. ' +
+      'O produtoId precisa ter vindo de `loja_buscar` ou `loja_combina_com` nesta mesma resposta; se o produto é de uma mensagem anterior, busque de novo antes.',
+    argumentos: [
+      {
+        nome: 'produtoId',
+        tipo: 'id',
+        descricao: 'O produtoId do produto, vindo de `loja_buscar` ou `loja_combina_com`.',
+        obrigatorio: true,
+        soDeResultadoAnterior: true,
+      },
+      { nome: 'cep', tipo: 'texto', descricao: 'O CEP de entrega, com 8 dígitos.', obrigatorio: true },
+    ],
+    injetados: [],
+    chamada: { tipo: 'loja', operacao: 'frete' },
+    projecao: [{ caminho: 'opcoes', campos: ['transportadora', 'servico', 'preco'], limite: 5 }, { caminho: 'aviso' }],
+    credencial: 'nenhuma',
+    integracao: 'loja',
+  },
+  {
+    /*
      * Separada de `loja_buscar` porque a ficha é cara em token (até
      * `LIMITE_DA_FICHA` caracteres por produto) e a maior parte das perguntas
      * ("tem headset?", "quanto custa?") não precisa dela. O modelo só abre a
@@ -641,7 +671,10 @@ export function ferramentasPermitidas(nomes: readonly string[]): Ferramenta[] {
    * com a mesma trava de id, e sem isto cada fluxo de venda já publicado
    * precisaria ser reeditado para a IA responder "funciona no PS5?".
    */
-  if (pedidas.has('loja_buscar')) pedidas.add('loja_detalhes')
+  if (pedidas.has('loja_buscar')) {
+    pedidas.add('loja_detalhes')
+    pedidas.add('loja_frete')
+  }
   return FERRAMENTAS.filter((f) => pedidas.has(f.nome))
 }
 
