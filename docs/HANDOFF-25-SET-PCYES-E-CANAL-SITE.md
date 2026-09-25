@@ -46,6 +46,11 @@ antes de entregar tela (`scripts/ux-local/`).
   `src/loja/magento-pedido.test.ts`.
 - `aa34b21` IA com terceira tentativa quando principal e reserva dão 503
   (medido: ~1 em 3 chamadas ao Gemini com 503 nesse dia).
+- `96cbd8c` "digitando" liga assim que a mensagem chega e é renovado a cada
+  20 s; webhook do WhatsApp passa de 60 s para 300 s (uma rodada de IA foi
+  cortada calada nos 60 s).
+- Presença: o rodízio só entrega para quem está "disponível". O Gabriel estava
+  "ausente" e o lead caiu em "Sem responsável"; foi corrigido no banco.
 
 ### Pendências da PCYES (não bloqueiam o canal Site)
 - **Não verificado:** se o token do Magento de dev tem permissão de ler pedidos
