@@ -16,12 +16,21 @@ import type { Lead } from '@/server/repos/leads'
  * guardar num `useRef` perderia tudo no primeiro redesenho.
  */
 
+export type ContagemViva = { total: number; semDono: number; porUsuario: Map<string, number> }
+export type PorEstadoVivo = { aberta: number; adiada: number; resolvida: number }
+
 type Estado = {
   linhas: ReadonlyMap<string, Lead>
   naoLidas: ReadonlyMap<string, number>
+  /**
+   * Os contadores do topo, do último pulso. `null` enquanto nada chegou ou
+   * depois que o servidor redesenhou a tela, que traz os dele, mais novos.
+   */
+  contagem: ContagemViva | null
+  porEstado: PorEstadoVivo | null
 }
 
-let estado: Estado = { linhas: new Map(), naoLidas: new Map() }
+let estado: Estado = { linhas: new Map(), naoLidas: new Map(), contagem: null, porEstado: null }
 /** O último pulso que a tela já mostra, venha do servidor ou daqui. */
 let pulsoVisto: string | null = null
 const assinantes = new Set<() => void>()
@@ -77,6 +86,8 @@ export async function buscarMudancas(clienteId: string, desdePulso: string | nul
       naoLidas: Record<string, number>
       pulso: string | null
       completo: boolean
+      contagem?: { total: number; semDono: number; porUsuario: Record<string, number> }
+      porEstado?: PorEstadoVivo
     }
 
     const linhas = new Map(estado.linhas)
@@ -85,13 +96,30 @@ export async function buscarMudancas(clienteId: string, desdePulso: string | nul
       linhas.set(lead.contatoId, lead)
       naoLidas.set(lead.contatoId, dados.naoLidas[lead.contatoId] ?? 0)
     }
-    estado = { linhas, naoLidas }
+    estado = {
+      linhas,
+      naoLidas,
+      contagem: dados.contagem
+        ? { ...dados.contagem, porUsuario: new Map(Object.entries(dados.contagem.porUsuario)) }
+        : estado.contagem,
+      porEstado: dados.porEstado ?? estado.porEstado,
+    }
     if (instante(dados.pulso) > instante(pulsoVisto)) pulsoVisto = dados.pulso
     assinantes.forEach((assinante) => assinante())
     return dados.completo
   } catch {
     return false
   }
+}
+
+/**
+ * O servidor redesenhou a tela e trouxe contadores tão novos quanto os daqui,
+ * ou mais: os vivos saem de cena até o próximo pulso.
+ */
+export function esquecerContadoresVivos() {
+  if (!estado.contagem && !estado.porEstado) return
+  estado = { ...estado, contagem: null, porEstado: null }
+  assinantes.forEach((assinante) => assinante())
 }
 
 /** A linha mais nova entre a do servidor e a que chegou ao vivo. */
@@ -122,13 +150,21 @@ export function juntarComVivas(base: Lead[], vivas: ReadonlyMap<string, Lead>, a
   return novas.length ? [...novas, ...juntas] : juntas
 }
 
-/** As não lidas, com as que chegaram ao vivo por cima das do servidor. */
+/**
+ * As não lidas, com as que chegaram ao vivo por cima das do servidor.
+ *
+ * Zero vivo tira a conversa do mapa: quem conta é o `size` ("Não lidas 3"), e
+ * uma conversa que outra aba já leu não pode continuar somando.
+ */
 export function naoLidasVivas(
   doServidor: ReadonlyMap<string, number>,
   vivas: ReadonlyMap<string, number>,
 ): Map<string, number> {
   if (vivas.size === 0) return doServidor as Map<string, number>
   const juntas = new Map(doServidor)
-  for (const [id, n] of vivas) juntas.set(id, n)
+  for (const [id, n] of vivas) {
+    if (n > 0) juntas.set(id, n)
+    else juntas.delete(id)
+  }
   return juntas
 }

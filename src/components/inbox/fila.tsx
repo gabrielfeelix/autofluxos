@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useCallback, useDeferredValue, useMemo, useRef, useState, useTransition } from "react";
+import { useCallback, useDeferredValue, useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { comoFalta, dentroDaPortaDeEntrada, restaDaJanela } from "@/channels/janela";
 import { Dica } from "@/components/design/dica";
 import { LARGURA_DA_FILA } from "@/components/design/tema";
@@ -27,7 +27,7 @@ import type { FiltroDeEstado, Lead } from "@/server/repos/leads";
 import type { MembroDaConta } from "@/server/repos/usuarios";
 import { ContadorDeAgendadas } from "@/components/inbox/contador-de-agendadas";
 import { linhaViva, useRemendos } from "@/components/inbox/conversa-local";
-import { juntarComVivas, naoLidasVivas, useFilaViva } from "@/components/inbox/fila-viva";
+import { esquecerContadoresVivos, juntarComVivas, naoLidasVivas, useFilaViva } from "@/components/inbox/fila-viva";
 import type { MensagemAgendada } from "@/server/repos/mensagens-agendadas";
 
 export type Contagem = {
@@ -76,8 +76,8 @@ export function Fila({
   selecionado,
   esperando,
   equipe,
-  contagem,
-  porEstado,
+  contagem: contagemDoServidor,
+  porEstado: porEstadoDoServidor,
   atribuicao,
   estado,
   termo,
@@ -158,6 +158,15 @@ export function Fila({
    * mensagem nela, sem redesenhar a página.
    */
   const viva = useFilaViva();
+  /*
+   * Os contadores do topo seguem o último pulso. Quando o servidor redesenha,
+   * os dele são os mais novos, e os vivos saem até o próximo pulso.
+   */
+  useEffect(() => {
+    esquecerContadoresVivos();
+  }, [contagemDoServidor, porEstadoDoServidor]);
+  const contagem = viva.contagem ?? contagemDoServidor;
+  const porEstado = viva.porEstado ?? porEstadoDoServidor;
   const leads = useMemo(
     () => juntarComVivas(leadsDoServidor, viva.linhas, false).map((lead) => linhaViva(lead, remendos)),
     [leadsDoServidor, viva.linhas, remendos],
