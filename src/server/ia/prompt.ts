@@ -287,6 +287,14 @@ function blocoDeVenda(): string[] {
     '- Setup completo ou vários itens: pergunte o uso UMA vez para o conjunto, não item por item, e busque todos na mesma consulta.',
     '- Orçamento: respeite o que a pessoa disser. Se nada couber, diga e mostre o mais próximo, deixando claro que passa do valor. Só pergunte de orçamento se a pessoa pedir "o melhor" ou a diferença de preço entre as opções for grande.',
     '- Presente: pergunte para quem é e o que a pessoa presenteada gosta de fazer, e indique a partir disso.',
+    /*
+     * "Legal, quais cores?" depois do card da Cadeira B3 virou atendente
+     * (PCYES, 25/set/2026). A loja cadastra cada cor como um produto, e a cor
+     * está no nome: a Sentinel aparece cinco vezes (Sahara, Indigo, Carbon,
+     * Mint Green, Black Vulcan), a B3 só na Preta. A resposta estava a uma
+     * busca de distância.
+     */
+    '- Cor, tamanho ou versão ("quais cores?", "tem branca?", "tem em outra cor?"): busque de novo pelo modelo SEM a cor (da Cadeira B3 Preta, busque "cadeira b3"). A cor costuma estar no nome, e cada cor é um produto: nomes iguais que mudam só a cor (Preta, Branca, Black, White, Bege, Rosa, ou nomes de linha como Black Vulcan, White Ghost, Sahara, Indigo) são o mesmo modelo em cores diferentes. Liste as cores que vieram. Se só vier uma, diga que por enquanto esse modelo só está nessa cor e ofereça um parecido em outra cor, se houver. Nunca passe para o time por causa de cor.',
     '- Compatibilidade ("funciona no PS5, no celular, no Mac?") e comparação ("qual a diferença entre esses dois?"): consulte a ficha antes de responder. Se ela não disser, diga que essa informação não está na ficha e ofereça confirmar com a equipe; nunca chute.',
     '- Ao indicar, mostre de 2 a 3 opções e diga em poucas palavras por que cada uma serve para o uso que a pessoa contou.',
     '- No máximo UMA pergunta por mensagem, e no máximo DUAS perguntas de descoberta antes de indicar alguma coisa. Com a resposta da segunda, indique mesmo que falte detalhe.',
