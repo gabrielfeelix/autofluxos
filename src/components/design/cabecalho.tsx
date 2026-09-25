@@ -347,7 +347,16 @@ export function Sino({ avisos }: { avisos: AvisoDoCabecalho[] | null }) {
                 <span className="min-w-0 flex-1">
                   <span className="flex items-baseline gap-2">
                     <strong className="flex-1 text-[12.5px] font-semibold text-ink">{aviso.titulo}</strong>
-                    {aviso.quando && <span className="shrink-0 text-[10.5px] text-dim">{haQuanto(aviso.quando)}</span>}
+                    {/*
+                      O popover é nativo e já vem no HTML do servidor. Na virada do
+                      minuto o servidor escreve "há 11 min" e o navegador calcula
+                      "há 12 min": o aviso é esperado, não erro.
+                    */}
+                    {aviso.quando && (
+                      <time dateTime={aviso.quando} suppressHydrationWarning className="shrink-0 text-[10.5px] text-dim">
+                        {haQuanto(aviso.quando)}
+                      </time>
+                    )}
                   </span>
                   <span className="mt-0.5 block text-[11.5px] leading-5 text-dim">{aviso.texto}</span>
                 </span>
