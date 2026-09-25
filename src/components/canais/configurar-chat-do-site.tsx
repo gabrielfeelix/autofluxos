@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from 'react'
 import type { ConfigDoSite } from '@/core/chat-do-site'
-import { TETO_DA_SAUDACAO, TETO_DO_TITULO } from '@/core/chat-do-site'
+import { TETO_DA_SAUDACAO, TETO_DE_DOMINIOS, TETO_DO_TITULO } from '@/core/chat-do-site'
 import { acaoLigarChatDoSite, acaoPausarChatDoSite, acaoSalvarChatDoSite } from '@/server/acoes-site'
 
 type Inicial = {
@@ -34,7 +34,8 @@ export function ConfigurarChatDoSite({
 }) {
   const [ligado, setLigado] = useState(inicial.ligado)
   const [chave, setChave] = useState(inicial.chave)
-  const [dominios, setDominios] = useState(inicial.config.dominios.join('\n'))
+  const [links, setLinks] = useState<string[]>(inicial.config.dominios.length ? inicial.config.dominios : [''])
+  const dominios = links.map((l) => l.trim()).filter(Boolean).join('\n')
   const [titulo, setTitulo] = useState(inicial.config.titulo)
   const [saudacao, setSaudacao] = useState(inicial.config.saudacao)
   const [cor, setCor] = useState(inicial.config.cor)
@@ -45,7 +46,7 @@ export function ConfigurarChatDoSite({
   const [salvando, iniciar] = useTransition()
 
   const mudou =
-    dominios.trim() !== salvo.dominios.join('\n') ||
+    dominios !== salvo.dominios.join('\n') ||
     titulo !== salvo.titulo ||
     saudacao !== salvo.saudacao ||
     cor.toUpperCase() !== salvo.cor ||
@@ -87,7 +88,7 @@ export function ConfigurarChatDoSite({
       }
       setSalvo(r.config)
       setChave(r.chave)
-      setDominios(r.config.dominios.join('\n'))
+      setLinks(r.config.dominios.length ? r.config.dominios : [''])
       setTitulo(r.config.titulo)
       setSaudacao(r.config.saudacao)
       setCor(r.config.cor)
@@ -144,17 +145,55 @@ export function ConfigurarChatDoSite({
         <section className="app-card px-5 py-5">
           <h2 className="text-[15px] font-bold">Onde o balão aparece</h2>
           <p className="mt-1 max-w-[560px] text-[12.5px] leading-5 text-dim">
-            Os endereços do site, um por linha. O balão só responde nestes: se alguém copiar o trecho para outro site,
-            ele não abre lá. Com e sem www contam como o mesmo.
+            O balão só responde nestes endereços: se alguém copiar o trecho para outro site, ele não abre lá. Com e sem
+            www contam como o mesmo.
           </p>
-          <textarea
-            value={dominios}
-            onChange={(e) => setDominios(e.target.value)}
-            rows={3}
-            spellCheck={false}
-            placeholder={'Exemplo: pcyes.com.br'}
-            className="app-field mt-3 w-full resize-y px-[13px] py-[11px] font-mono text-[13px]"
-          />
+          <div className="mt-4 flex flex-col gap-3">
+            {links.map((link, i) => (
+              <div key={i}>
+                <label htmlFor={`link-${i}`} className="text-[12.5px] font-semibold text-muted">
+                  Link {i + 1}
+                </label>
+                <div className="mt-1.5 flex items-center gap-2">
+                  <input
+                    id={`link-${i}`}
+                    value={link}
+                    onChange={(e) => setLinks(links.map((l, j) => (j === i ? e.target.value : l)))}
+                    spellCheck={false}
+                    autoComplete="off"
+                    inputMode="url"
+                    placeholder="Exemplo: pcyes.com.br"
+                    className="app-field min-w-0 flex-1 px-[13px] py-[10px] text-[13.5px]"
+                  />
+                  {links.length > 1 && (
+                    <button
+                      type="button"
+                      onClick={() => setLinks(links.filter((_, j) => j !== i))}
+                      aria-label={`Remover o link ${i + 1}`}
+                      className="flex size-9 shrink-0 items-center justify-center rounded-[9px] text-dim transition hover:bg-rose-400/[0.08] hover:text-perigo"
+                    >
+                      <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden>
+                        <path d="M6 6l12 12M18 6 6 18" />
+                      </svg>
+                    </button>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+          {links.length < TETO_DE_DOMINIOS && (
+            <button
+              type="button"
+              onClick={() => {
+                setLinks([...links, ''])
+                // O campo novo ganha o foco: quem clicou em adicionar vai digitar.
+                setTimeout(() => document.getElementById(`link-${links.length}`)?.focus(), 0)
+              }}
+              className="mt-3 inline-flex items-center gap-1.5 rounded-[9px] px-2 py-1.5 -ml-2 text-[13px] font-semibold text-primary transition hover:bg-primary-weak"
+            >
+              <span aria-hidden className="text-[16px] leading-none">+</span> Adicionar outro link
+            </button>
+          )}
         </section>
 
         <section className="app-card px-5 py-5">
