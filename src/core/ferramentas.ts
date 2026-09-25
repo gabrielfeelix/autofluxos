@@ -461,7 +461,7 @@ export const FERRAMENTAS: Ferramenta[] = [
       'Quando vier `quantidade`, diga quantas restam só se forem 5 ou menos; acima disso, só diga que tem. ' +
       'Quando vier `semControleDeEstoque`, não fale de estoque. Use a `descricao`, quando vier, para explicar o item. ' +
       'Mande o link quando o item tiver um; você não fecha pedido. ' +
-      'Se não vier produto nenhum, não diga que a empresa não tem: tente outro termo; se vier o link `buscaNaLoja`, mande para a pessoa procurar. ' +
+      'Se não vier produto nenhum, não diga que a empresa não tem: tente de novo com um sinônimo ou o termo em inglês, que é como muita loja cadastra ("sem fio" vira "wireless" ou "bluetooth", "fone" vira "headset"); se ainda vier vazio e vier o link `buscaNaLoja`, mande para a pessoa procurar. ' +
       'Não use para horário de aula ou agenda.',
     argumentos: [
       { nome: 'termo', tipo: 'texto', descricao: 'O que procurar, em até 5 palavras.', obrigatorio: true },
