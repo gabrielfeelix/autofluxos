@@ -33,14 +33,16 @@ export function CardsDeProduto({
         const ultimo = i === produtos.length - 1
         return (
           <div
-            key={`${produto.foto}-${i}`}
+            key={`${produto.foto ?? produto.nome}-${i}`}
             className={`w-[272px] max-w-[78%] overflow-hidden font-texto ${
               nossa ? 'bolha-nossa rounded-[15px_15px_4px_15px]' : 'bolha-deles rounded-[15px_15px_15px_4px]'
             }`}
           >
-            <div className="p-1.5 pb-0 [&_button]:mb-0">
-              <ImagemDaConversa url={produto.foto} nome={produto.nome} produto />
-            </div>
+            {produto.foto && (
+              <div className="p-1.5 pb-0 [&_button]:mb-0">
+                <ImagemDaConversa url={produto.foto} nome={produto.nome} produto />
+              </div>
+            )}
             <div className="px-3 pt-2 pb-1.5 [overflow-wrap:anywhere]">
               <p className="text-[14px] leading-[1.35] font-semibold">{produto.titulo}</p>
               {produto.detalhe && <p className="text-[13.5px] leading-[1.4]">{produto.detalhe}</p>}

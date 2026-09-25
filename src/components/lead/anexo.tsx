@@ -19,10 +19,12 @@ import { telefoneLegivel } from '@/core/contatos/telefone'
  * o carrossel do bot (até três) vira uma fileira, na ordem em que chegou.
  */
 export function FotosDoCard({ produtos }: { produtos: ProdutoNaMensagem[] }) {
-  if (produtos.length === 1) return <ImagemDaConversa url={produtos[0]!.foto} nome={produtos[0]!.nome} produto />
+  const comFoto = produtos.flatMap((p) => (p.foto ? [{ ...p, foto: p.foto }] : []))
+  if (comFoto.length === 0) return null
+  if (comFoto.length === 1) return <ImagemDaConversa url={comFoto[0]!.foto} nome={comFoto[0]!.nome} produto />
   return (
     <div className="mb-1.5 grid grid-cols-3 gap-1.5 [&>button]:mb-0">
-      {produtos.map((p) => (
+      {comFoto.map((p) => (
         <ImagemDaConversa key={p.foto} url={p.foto} nome={p.nome} produto />
       ))}
     </div>

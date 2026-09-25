@@ -581,6 +581,8 @@ export function canalCloudApi(config: ConfigCloudApi): Canal {
       }
     },
 
+    cardSemFoto: true,
+
     async enviarProdutos(para, produtos) {
       /*
        * Um card por produto, e não o carrossel de mídia: o carrossel exige de
@@ -594,15 +596,16 @@ export function canalCloudApi(config: ConfigCloudApi): Canal {
        */
       let primeiro: string | null = null
       for (const produto of produtos) {
-        // Sem link não há botão, e o cta_url sem url a Meta recusa.
-        if (!produto.foto || !produto.link) continue
+        // Sem link não há botão, e o cta_url sem url a Meta recusa. Sem foto
+        // o card sai igual, só sem o cabeçalho de imagem, que é opcional.
+        if (!produto.link) continue
         const { titulo, detalhe } = linhasDoCard(produto)
         const resposta = await mandar({
           to: para,
           type: 'interactive',
           interactive: {
             type: 'cta_url',
-            header: { type: 'image', image: { link: produto.foto } },
+            ...(produto.foto ? { header: { type: 'image', image: { link: produto.foto } } } : {}),
             body: { text: cortarCaracteres(`*${titulo}*\n${detalhe}`, LIMITE_CORPO_CTA) },
             action: {
               name: 'cta_url',

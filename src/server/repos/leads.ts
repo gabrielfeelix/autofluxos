@@ -138,7 +138,7 @@ export type EtiquetaDeLead = (typeof ETIQUETAS_DE_LEAD)[number]
  * preço e o botão da loja. `titulo` e `detalhe` saem de `linhasDoCard`, a mesma
  * função que monta o corpo do `cta_url`, para a Inbox dizer o que o cliente leu.
  */
-export type ProdutoNaMensagem = { nome: string; foto: string; titulo: string; detalhe: string; link: string | null }
+export type ProdutoNaMensagem = { nome: string; foto: string | null; titulo: string; detalhe: string; link: string | null }
 
 /** O arquivo de uma mensagem, quando ela tem um. `texto` é a legenda. */
 export type AnexoDaMensagem = {
@@ -1198,17 +1198,19 @@ function anexoDoPayload(payload: unknown): AnexoDaMensagem | null {
   }
 }
 
-/** As fotos do card de produto em `payload.produtos`; só `https`, só com foto. */
+/** Os cards de produto em `payload.produtos`; foto e link só `https`, e sem os dois não é card. */
 function produtosDoPayload(payload: unknown): ProdutoNaMensagem[] {
   const lista = (payload as { produtos?: unknown } | null)?.produtos
   if (!Array.isArray(lista)) return []
   return lista.flatMap((item) => {
     const p = item as { nome?: unknown; foto?: unknown; link?: unknown } | null
-    if (typeof p?.foto !== 'string' || !p.foto.startsWith('https://')) return []
-    const nome = typeof p.nome === 'string' ? p.nome : 'produto'
+    const foto = typeof p?.foto === 'string' && p.foto.startsWith('https://') ? p.foto : null
+    const link = typeof p?.link === 'string' && p.link.startsWith('https://') ? p.link : null
+    // Sem foto e sem link o que saiu foi texto, e o texto já está na mensagem.
+    if (!foto && !link) return []
+    const nome = typeof p?.nome === 'string' ? p.nome : 'produto'
     const { titulo, detalhe } = linhasDoCard({ ...(item as ProdutoDaLoja), nome })
-    const link = typeof p.link === 'string' && p.link.startsWith('https://') ? p.link : null
-    return [{ nome, foto: p.foto, titulo, detalhe, link }]
+    return [{ nome, foto, titulo, detalhe, link }]
   })
 }
 

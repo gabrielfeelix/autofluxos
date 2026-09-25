@@ -134,10 +134,16 @@ export type Canal = {
    *
    * Opcional, como `reagir`: o Telegram não tem o formato, e quem chama manda
    * texto com o link quando o método não existe. Só recebe produto **com
-   * foto real**; sem foto, quem chama também manda texto, e o adaptador nunca
-   * precisa inventar imagem.
+   * foto real**, a não ser que o canal diga `cardSemFoto`; sem foto, quem
+   * chama manda texto, e o adaptador nunca precisa inventar imagem.
    */
   enviarProdutos?(para: string, produtos: ProdutoDaLoja[]): Promise<string | null>
+  /**
+   * O card deste canal existe sem imagem. No WhatsApp o `cta_url` tem o
+   * cabeçalho opcional, e o card sem foto ainda esconde o link de rastreio
+   * atrás do botão; em texto, o link aparece inteiro, e ele é longo.
+   */
+  cardSemFoto?: boolean
   /**
    * Manda um modelo aprovado, a única coisa que atravessa a janela fechada.
    *

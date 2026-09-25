@@ -484,7 +484,7 @@ describe('card do produto na Cloud API', () => {
       { ...produto, produtoId: 'sem-link', link: '' },
     ])
 
-    expect(fetchMock).toHaveBeenCalledTimes(1)
+    expect(fetchMock).toHaveBeenCalledTimes(2)
     expect(JSON.parse(fetchMock.mock.calls[0]![1].body)).toEqual({
       messaging_product: 'whatsapp',
       to: '5544999',
@@ -496,6 +496,11 @@ describe('card do produto na Cloud API', () => {
         action: { name: 'cta_url', parameters: { display_text: 'Ver na loja', url: produto.link } },
       },
     })
+    // Sem foto o card sai igual, só sem cabeçalho: em texto, o link de
+    // rastreio aparece inteiro na conversa (PCYES, 25/set/2026).
+    const semFoto = JSON.parse(fetchMock.mock.calls[1]![1].body)
+    expect(semFoto.interactive.header).toBeUndefined()
+    expect(semFoto.interactive.action.parameters.url).toBe(produto.link)
   })
 })
 

@@ -1701,7 +1701,7 @@ async function aplicar(
         // `link-de-produto.ts`. Fica gravado assim também, porque o chat do
         // site desenha o card a partir do histórico.
         const produtos = acao.produtos.map((p) => comLinkRastreado(p, contato, canal.origem))
-        const comFoto = enviarCards ? produtos.filter((p) => p.foto && p.link) : []
+        const comFoto = enviarCards ? produtos.filter((p) => p.link && (p.foto || canal.cardSemFoto)) : []
         const semFoto = produtos.filter((p) => !comFoto.includes(p))
 
         if (enviarCards && comFoto.length > 0) {

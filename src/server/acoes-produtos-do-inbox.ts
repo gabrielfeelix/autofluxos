@@ -100,7 +100,7 @@ export async function acaoEnviarProdutoDoInbox(
 
   // Card só com foto, link e canal que saiba mostrar; o resto vai como texto
   // com o link, igual ao bot (`receber-mensagem.ts`, `enviar_produtos`).
-  const enviarCard = produto.foto && produto.link ? canal.enviarProdutos?.bind(canal) : undefined
+  const enviarCard = produto.link && (produto.foto || canal.cardSemFoto) ? canal.enviarProdutos?.bind(canal) : undefined
   const texto = textoDoCard(produto)
 
   const registro = await registrarSaida({
