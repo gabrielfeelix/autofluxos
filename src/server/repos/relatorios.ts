@@ -400,9 +400,14 @@ select extract(isodow from s.criado_em at time zone '${FUSO_DOS_RELATORIOS}')::i
   ${SESSOES_DO_PERIODO}
  group by 1, 2`
 
+/*
+ * O site roda os fluxos do WhatsApp, então `flows.canal` diz "whatsapp" para
+ * as duas coisas. Quem separa é o contato: o visitante do site tem `wa_id`
+ * começando por "site:".
+ */
 const SQL_DOS_CANAIS = `
 with ${LIMITES}
-select f.canal, count(*)::int as n
+select case when c.wa_id like 'site:%' then 'site' else f.canal end as canal, count(*)::int as n
   ${SESSOES_DO_PERIODO}
  group by 1`
 

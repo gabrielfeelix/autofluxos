@@ -2,7 +2,7 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import type { Periodo } from '@/core/relatorios'
 import { db } from '../db'
 import { criarCliente } from './clientes'
-import { serieDoPeriodo, totaisDoPeriodo } from './relatorios'
+import { conversasPorCanal, serieDoPeriodo, totaisDoPeriodo } from './relatorios'
 
 /**
  * Os números dos Relatórios (plano de UX, 11.1).
@@ -28,13 +28,13 @@ let indice = 0
 const NOITE_DO_DIA_22 = '2026-09-23T01:30:00Z'
 const PERIODO: Periodo = { de: '2026-09-20', ate: '2026-09-22', dias: 3, atalho: null }
 
-async function conversa(dono: string | null, quando: string, comFila: boolean) {
+async function conversa(dono: string | null, quando: string, comFila: boolean, doSite = false) {
   indice += 1
   const { data: contato } = await db()
     .from('contacts')
     .insert({
       client_id: clienteId,
-      wa_id: `5511${seed}${String(indice).padStart(2, '0')}`,
+      wa_id: doSite ? `site:${seed}${indice}` : `5511${seed}${String(indice).padStart(2, '0')}`,
       atribuido_a: dono,
       criado_em: quando,
     })
@@ -124,5 +124,13 @@ describe.skipIf(!temCredencial)('relatórios por período', () => {
     const serie = await serieDoPeriodo(clienteId, PERIODO, [ana])
     expect(serie.find((d) => d.dia === '2026-09-22')?.conversas).toBe(1)
     expect(serie.find((d) => d.dia === '2026-09-23')).toBeUndefined()
+  })
+
+  // Por último: acrescenta uma conversa e mudaria as contas dos testes acima.
+  it('conversa do site conta como Site, mesmo rodando fluxo do WhatsApp', async () => {
+    await conversa(null, '2026-09-21T12:00:00Z', false, true)
+    const canais = await conversasPorCanal(clienteId, PERIODO, null)
+    expect(canais.find((c) => c.canal === 'site')?.n).toBe(1)
+    expect(canais.find((c) => c.canal === 'whatsapp')?.n).toBe(6)
   })
 })

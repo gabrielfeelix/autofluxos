@@ -6,6 +6,7 @@ import { GraficoDiario } from '@/components/relatorios/grafico-diario'
 import { CaixaDoBloco, ListaEmBarras, MapaDeHorarios, Rosca, Satisfacao, Vazio } from '@/components/relatorios/graficos'
 import { PainelDeBlocos, type Bloco } from '@/components/relatorios/painel-de-blocos'
 import { BarraDoPeriodo, Cartao, Mudanca, MudancaDeTempo, MudancaEmPontos } from '@/components/relatorios/pecas'
+import { DEFINICAO_DO_CANAL } from '@/core/canais'
 import { comoDinheiro } from '@/core/crm'
 import { taxaDeAutomacao, terminadas } from '@/core/desfecho-da-conversa'
 import { pode } from '@/core/permissoes'
@@ -235,7 +236,7 @@ export default async function Pagina({
       titulo: 'Por onde chegam',
       largura: 'terco',
       conteudo: (
-        <CaixaDoBloco titulo="Por onde chegam" subtitulo="Conversas do período, pelo canal da automação que atendeu.">
+        <CaixaDoBloco titulo="Por onde chegam" subtitulo="Conversas do período, pelo canal onde aconteceram.">
           {canais.length === 0 ? (
             <Vazio desenho="canais">Nenhuma conversa começou neste período.</Vazio>
           ) : canais.length === 1 ? (
@@ -452,9 +453,10 @@ export default async function Pagina({
   )
 }
 
-const NOME_DO_CANAL: Record<string, string> = { whatsapp: 'WhatsApp', instagram: 'Instagram', telegram: 'Telegram' }
+const NOME_DO_CANAL: Record<string, string> = { whatsapp: 'WhatsApp', instagram: 'Instagram', telegram: 'Telegram', site: 'Site' }
 const COR_DO_CANAL: Record<string, string> = {
   whatsapp: 'var(--marca-whatsapp)',
   instagram: 'var(--marca-instagram)',
   telegram: 'var(--marca-telegram)',
+  site: DEFINICAO_DO_CANAL.site.cor,
 }
