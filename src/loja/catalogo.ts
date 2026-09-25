@@ -1,4 +1,4 @@
-import { LIMITE_DE_PRODUTOS, type ProdutoDaLoja } from '@/core/loja'
+import { paginaDaBusca, type ProdutoDaLoja } from '@/core/loja'
 import { normalizar } from '@/core/engine/interpolar'
 import { estaAtivo, type Produto } from '@/core/produtos'
 import type { Loja } from './types'
@@ -32,7 +32,7 @@ export function lojaCatalogo(listar: () => Promise<Produto[]>): Loja {
   }
 
   return {
-    async buscar(termo) {
+    async buscar(termo, opcoes) {
       const lidos = await ativos()
       if (!lidos.ok) return lidos
       const palavras = normalizar(termo).split(/\s+/).filter(Boolean)
@@ -50,7 +50,9 @@ export function lojaCatalogo(listar: () => Promise<Produto[]>): Loja {
       // sem cadeira azul ainda mostra as cadeiras.
       const todas = pontuados.filter((x) => x.acertos === palavras.length)
       const escolhidos = todas.length > 0 ? todas : pontuados.sort((a, b) => b.acertos - a.acertos)
-      return { ok: true, valor: escolhidos.slice(0, LIMITE_DE_PRODUTOS).map((x) => paraProdutoDaLoja(x.p)) }
+      const { pagina, porPagina } = paginaDaBusca(opcoes)
+      const inicio = (pagina - 1) * porPagina
+      return { ok: true, valor: escolhidos.slice(inicio, inicio + porPagina).map((x) => paraProdutoDaLoja(x.p)) }
     },
 
     async combinaCom() {

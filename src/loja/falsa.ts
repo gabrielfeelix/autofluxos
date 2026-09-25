@@ -1,4 +1,4 @@
-import { LIMITE_DE_PRODUTOS, type ProdutoDaLoja } from '@/core/loja'
+import { LIMITE_DE_PRODUTOS, paginaDaBusca, type ProdutoDaLoja } from '@/core/loja'
 import type { Loja } from './types'
 
 /**
@@ -21,14 +21,18 @@ export function lojaFalsa({
 
   return {
     buscas,
-    async buscar(termo) {
+    async buscar(termo, opcoes) {
       buscas.push(termo)
       if (falhar) return fora
       const t = termo.trim().toLowerCase()
       if (!t) return { ok: true, valor: [] }
       return {
         ok: true,
-        valor: produtos.filter((p) => p.nome.toLowerCase().includes(t)).slice(0, LIMITE_DE_PRODUTOS),
+        valor: (() => {
+          const { pagina, porPagina } = paginaDaBusca(opcoes)
+          const inicio = (pagina - 1) * porPagina
+          return produtos.filter((p) => p.nome.toLowerCase().includes(t)).slice(inicio, inicio + porPagina)
+        })(),
       }
     },
     async combinaCom(sku) {

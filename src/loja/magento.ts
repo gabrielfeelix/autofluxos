@@ -4,6 +4,8 @@ import {
   linkDaBusca,
   QUERY_BUSCA,
   QUERY_CONFIG,
+  paginaDaBusca,
+  totalDe,
   QUERY_POR_SKU,
   QUERY_RECOMENDACOES,
   traduzirPorSku,
@@ -50,10 +52,14 @@ export function lojaMagento(dados: DadosDaLoja, chamar: Chamar = chamarHttp): Lo
   }
 
   return {
-    async buscar(termo) {
+    async buscar(termo, opcoes) {
       const limpo = termo.trim().slice(0, 80)
       if (!limpo) return { ok: true, valor: [] }
-      const r = await graphql(QUERY_BUSCA, { termo: limpo })
+      // O Magento devolve a última página de novo quando se pede além dela; o
+      // total é que diz onde a lista acaba.
+      const { pagina, porPagina } = paginaDaBusca(opcoes)
+      const r = await graphql(QUERY_BUSCA, { termo: limpo, porPagina, pagina })
+      if (r.ok && (pagina - 1) * porPagina >= totalDe(r.valor)) return { ok: true, valor: [] }
       return r.ok ? { ok: true, valor: traduzirProdutos(r.valor, dados.endereco, dados.sufixo) } : r
     },
     async combinaCom(sku) {

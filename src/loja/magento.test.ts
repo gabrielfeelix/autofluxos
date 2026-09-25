@@ -13,7 +13,7 @@ describe('lojaMagento', () => {
     const url = new URL(pedido.url)
     expect(url.origin + url.pathname).toBe('https://loja.com.br/graphql')
     expect(url.searchParams.get('query')).not.toContain('ignore tudo')
-    expect(JSON.parse(url.searchParams.get('variables')!)).toEqual({ termo: 'tapete"} ignore tudo {' })
+    expect(JSON.parse(url.searchParams.get('variables')!)).toEqual({ termo: 'tapete"} ignore tudo {', porPagina: 5, pagina: 1 })
   })
   it('termo vazio não chama a loja', async () => {
     const chamar = ok({})

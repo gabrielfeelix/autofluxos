@@ -58,9 +58,10 @@ export async function lojaAtivaDaConta(clienteId: string): Promise<Loja | null> 
 
   return {
     ...publica,
-    async buscar(termo) {
-      const r = await publica.buscar(termo)
-      return r.ok ? { ok: true, valor: await enriquecer(r.valor, admin, naBusca) } : r
+    async buscar(termo, opcoes) {
+      const r = await publica.buscar(termo, opcoes)
+      const como = opcoes?.comFoto ? noCard : naBusca
+      return r.ok ? { ok: true, valor: await enriquecer(r.valor, admin, como) } : r
     },
     async combinaCom(sku) {
       const r = await publica.combinaCom(sku)

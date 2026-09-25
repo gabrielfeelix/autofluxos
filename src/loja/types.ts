@@ -8,8 +8,14 @@
 import type { ProdutoDaLoja } from '@/core/loja'
 export type ResultadoDaLoja<T> = { ok: true; valor: T } | { ok: false; motivo: string }
 export type ConfigDaLoja = { codigoDaLoja: string | null; moeda: string; sufixo: string }
+/**
+ * Página da busca. Sem opções vale o que o bot usa: a primeira página com
+ * `LIMITE_DE_PRODUTOS`. O seletor da conversa pede páginas maiores, porque
+ * ali quem escolhe é uma pessoa rolando a lista, não a IA.
+ */
+export type OpcoesDaBusca = { pagina?: number; porPagina?: number; comFoto?: boolean }
 export type Loja = {
-  buscar(termo: string): Promise<ResultadoDaLoja<ProdutoDaLoja[]>>
+  buscar(termo: string, opcoes?: OpcoesDaBusca): Promise<ResultadoDaLoja<ProdutoDaLoja[]>>
   combinaCom(sku: string): Promise<ResultadoDaLoja<ProdutoDaLoja[]>>
   /** Relê pelo SKU, na ordem pedida, para o card sair com o preço de agora. */
   lerPorSku(skus: string[]): Promise<ResultadoDaLoja<ProdutoDaLoja[]>>

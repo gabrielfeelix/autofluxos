@@ -30,6 +30,10 @@ export function SeletorDeProduto({
   const [termo, setTermo] = useState('')
   const [produtos, setProdutos] = useState<ProdutoDaLoja[]>([])
   const [buscando, setBuscando] = useState(false)
+  const [pagina, setPagina] = useState(1)
+  const [temMais, setTemMais] = useState(false)
+  const [maisVindo, setMaisVindo] = useState(false)
+  const fimDaLista = useRef<HTMLLIElement>(null)
   const [enviando, setEnviando] = useState<string | null>(null)
   const [erro, setErro] = useState<string | null>(null)
   const caixa = useRef<HTMLDivElement>(null)
@@ -53,6 +57,8 @@ export function SeletorDeProduto({
 
   async function buscar(texto: string) {
     const numero = ++ultimaBusca.current
+    setPagina(1)
+    setTemMais(false)
     if (texto.trim() === '') {
       setProdutos([])
       setErro(null)
@@ -65,6 +71,7 @@ export function SeletorDeProduto({
       if (numero !== ultimaBusca.current) return
       if (r.ok) {
         setProdutos(r.produtos)
+        setTemMais(r.temMais)
         setErro(null)
       } else {
         setProdutos([])
@@ -76,6 +83,46 @@ export function SeletorDeProduto({
       if (numero === ultimaBusca.current) setBuscando(false)
     }
   }
+
+  /*
+   * A próxima página chega sozinha quando o fim da lista aparece. A busca que
+   * a pessoa está digitando ganha: resposta de página velha é descartada pelo
+   * mesmo contador da busca.
+   */
+  async function carregarMais() {
+    if (maisVindo || !temMais) return
+    const numero = ultimaBusca.current
+    const proxima = pagina + 1
+    setMaisVindo(true)
+    try {
+      const r = await acaoBuscarProdutosDoInbox(clienteId, termo, proxima)
+      if (numero !== ultimaBusca.current) return
+      if (r.ok) {
+        setProdutos((atuais) => {
+          const vistos = new Set(atuais.map((p) => p.produtoId))
+          return [...atuais, ...r.produtos.filter((p) => !vistos.has(p.produtoId))]
+        })
+        setPagina(proxima)
+        setTemMais(r.temMais)
+      } else {
+        setTemMais(false)
+      }
+    } catch {
+      if (numero === ultimaBusca.current) setTemMais(false)
+    } finally {
+      setMaisVindo(false)
+    }
+  }
+
+  useEffect(() => {
+    const alvo = fimDaLista.current
+    if (!alvo || !temMais) return
+    const olho = new IntersectionObserver((entradas) => {
+      if (entradas.some((e) => e.isIntersecting)) void carregarMais()
+    })
+    olho.observe(alvo)
+    return () => olho.disconnect()
+  })
 
   // Espera a pessoa parar de digitar: a Magento é consulta de rede.
   useEffect(() => {
@@ -151,7 +198,7 @@ export function SeletorDeProduto({
           )}
 
           {produtos.length > 0 && (
-            <ul className="max-h-[300px] overflow-y-auto">
+            <ul className="max-h-[min(380px,55vh)] overflow-y-auto">
               {produtos.map((p) => {
                 const { detalhe } = linhasDoCard(p)
                 return (
@@ -164,7 +211,7 @@ export function SeletorDeProduto({
                     >
                       {p.foto ? (
                         // eslint-disable-next-line @next/next/no-img-element
-                        <img src={p.foto} alt="" className="size-10 shrink-0 rounded-[8px] border border-line object-cover" />
+                        <img src={p.foto} alt="" className="size-10 shrink-0 rounded-[8px] border border-line bg-white object-contain p-0.5" />
                       ) : (
                         <span className="flex size-10 shrink-0 items-center justify-center rounded-[8px] border border-line text-dim">
                           <IconeSacola />
@@ -180,6 +227,15 @@ export function SeletorDeProduto({
                   </li>
                 )
               })}
+              {temMais && (
+                <li ref={fimDaLista} className="px-1.5 py-2 text-center text-[11.5px] text-dim">
+                  {maisVindo ? 'Carregando mais…' : (
+                    <button type="button" onClick={() => void carregarMais()} className="font-semibold text-primary hover:underline">
+                      Mostrar mais
+                    </button>
+                  )}
+                </li>
+              )}
             </ul>
           )}
         </div>

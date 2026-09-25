@@ -39,9 +39,22 @@ const CAMPOS_DO_PRODUTO = `
   }
 `
 
-export const QUERY_BUSCA = `query Buscar($termo: String!) {
-  products(search: $termo, pageSize: ${LIMITE_DE_PRODUTOS}) { items { ${CAMPOS_DO_PRODUTO} } }
+export const QUERY_BUSCA = `query Buscar($termo: String!, $porPagina: Int!, $pagina: Int!) {
+  products(search: $termo, pageSize: $porPagina, currentPage: $pagina) { total_count items { ${CAMPOS_DO_PRODUTO} } }
 }`
+
+/** Quantos produtos a busca achou no total; sem o campo, conta como infinito. */
+export function totalDe(json: unknown): number {
+  const t = (json as { data?: { products?: { total_count?: unknown } } } | null)?.data?.products?.total_count
+  return typeof t === 'number' && Number.isFinite(t) ? t : Number.POSITIVE_INFINITY
+}
+
+/** Página e tamanho saneados: página a partir de 1, no máximo 50 por vez. */
+export function paginaDaBusca(opcoes?: { pagina?: number; porPagina?: number }): { pagina: number; porPagina: number } {
+  const pagina = Math.max(1, Math.floor(opcoes?.pagina ?? 1))
+  const porPagina = Math.min(50, Math.max(1, Math.floor(opcoes?.porPagina ?? LIMITE_DE_PRODUTOS)))
+  return { pagina, porPagina }
+}
 
 export const QUERY_RECOMENDACOES = `query Recomendar($sku: String!) {
   products(filter: { sku: { eq: $sku } }, pageSize: 1) {

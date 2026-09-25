@@ -1,5 +1,5 @@
 import 'server-only'
-import { LIMITE_DE_CARDS, type ProdutoDaLoja } from '@/core/loja'
+import { LIMITE_DE_CARDS, paginaDaBusca, type ProdutoDaLoja } from '@/core/loja'
 import {
   PREFIXO_SEM_SKU,
   enderecoDaLojaNuvemshop,
@@ -97,12 +97,13 @@ export function lojaNuvemshop(dados: DadosDaNuvemshop, buscar: Buscar = fetch): 
   }
 
   return {
-    async buscar(termo) {
+    async buscar(termo, opcoes) {
       const limpo = termo.trim().slice(0, 80)
       if (!limpo) return { ok: true, valor: [] }
+      const { pagina, porPagina } = paginaDaBusca(opcoes ?? { porPagina: 10 })
       const r = await chamarNuvemshop(
         dados,
-        `/products?q=${encodeURIComponent(limpo)}&published=true&per_page=10`,
+        `/products?q=${encodeURIComponent(limpo)}&published=true&per_page=${porPagina}&page=${pagina}`,
         buscar,
       )
       return r.ok ? { ok: true, valor: traduzirListaNuvemshop(r.valor, dados.endereco) } : r

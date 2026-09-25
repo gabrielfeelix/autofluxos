@@ -82,7 +82,7 @@ async function testar(enderecoDigitado: string, termoDigitado: string): Promise<
       via: null,
       estoqueId: null,
       prazoMs: 4_000,
-    }),
+    }).catch(() => busca.valor.slice(0, 3)),
   ])
 
   return {

@@ -23,26 +23,27 @@ import { exigirAcessoAoCliente, sessaoAtual } from './sessao'
  */
 
 export type RespostaDaBusca =
-  | { ok: true; produtos: ProdutoDaLoja[] }
+  | { ok: true; produtos: ProdutoDaLoja[]; temMais: boolean }
   | { ok: false; erro: string; semCatalogo?: true }
 
-export async function acaoBuscarProdutosDoInbox(clienteId: string, termo: string): Promise<RespostaDaBusca> {
+const POR_PAGINA_NO_SELETOR = 20
+
+export async function acaoBuscarProdutosDoInbox(
+  clienteId: string,
+  termo: string,
+  pagina = 1,
+): Promise<RespostaDaBusca> {
   await exigirAcessoAoCliente(clienteId)
 
   const loja = await lojaAtivaDaConta(clienteId)
   if (!loja) {
     return { ok: false, semCatalogo: true, erro: 'esta conta ainda não tem catálogo nem loja ligada' }
   }
-  const r = await loja.buscar(termo.slice(0, 80))
+  // Páginas de 20, com foto: aqui quem escolhe é uma pessoa rolando a lista, e
+  // a foto é o que diz se o card sai com imagem. O bot fica nos 5 de sempre.
+  const r = await loja.buscar(termo.slice(0, 80), { pagina, porPagina: POR_PAGINA_NO_SELETOR, comFoto: true })
   if (!r.ok) return { ok: false, erro: r.motivo }
-
-  // A busca do bot pula a foto para responder rápido; aqui quem escolhe é uma
-  // pessoa olhando a lista, e a foto é o que diz se o card sai com imagem.
-  // Se a releitura falhar, a lista vai sem foto, nunca sem produto.
-  const comFoto = await loja.lerPorSku(r.valor.map((p) => p.produtoId))
-  if (!comFoto.ok) return { ok: true, produtos: r.valor }
-  const fotos = new Map(comFoto.valor.map((p) => [p.produtoId, p.foto]))
-  return { ok: true, produtos: r.valor.map((p) => ({ ...p, foto: fotos.get(p.produtoId) ?? p.foto })) }
+  return { ok: true, produtos: r.valor, temMais: r.valor.length === POR_PAGINA_NO_SELETOR }
 }
 
 export async function acaoEnviarProdutoDoInbox(
