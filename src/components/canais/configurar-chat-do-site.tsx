@@ -385,14 +385,48 @@ function Previa({ titulo, saudacao, cor }: { titulo: string; saudacao: string; c
       <div className="mt-4 flex justify-end">
         <span
           style={{ background: cor }}
-          className="flex size-12 items-center justify-center rounded-full text-white shadow-[0_10px_24px_-8px_rgba(22,24,29,.5)]"
+          className="flex size-14 items-center justify-center rounded-full shadow-[0_10px_24px_-8px_rgba(22,24,29,.5)]"
           aria-hidden
         >
-          <svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor">
-            <path d="M12 3C6.9 3 3 6.5 3 10.9c0 2.4 1.2 4.6 3.1 6.1-.1 1.3-.6 2.6-1.5 3.6-.2.3 0 .7.4.7 1.9-.1 3.6-.8 4.9-1.9.7.2 1.4.2 2.1.2 5.1 0 9-3.5 9-7.9S17.1 3 12 3Z" />
-          </svg>
+          <Robo />
         </span>
       </div>
     </section>
+  )
+}
+
+/**
+ * O robô do botão, igual ao de `public/chat/v1.js`, acenando em loop. Mantido
+ * em espelho à mão: são duas cópias pequenas, e o script do balão não pode
+ * importar nada daqui.
+ */
+function Robo() {
+  return (
+    <svg viewBox="7 3 52 52" width="44" height="44" className="robo-previa overflow-visible">
+      <style>{`
+        .robo-previa .braco{transform-origin:47px 41px;animation:robo-acena 3.6s ease-in-out infinite}
+        .robo-previa .olhos{transform-origin:32px 31px;animation:robo-pisca 4.2s infinite}
+        .robo-previa .antena{animation:robo-respira 1.8s ease-in-out infinite}
+        @keyframes robo-acena{0%,52%,100%{transform:rotate(0)}8%{transform:rotate(-24deg)}16%{transform:rotate(10deg)}24%{transform:rotate(-24deg)}32%{transform:rotate(10deg)}42%{transform:rotate(0)}}
+        @keyframes robo-pisca{0%,92%,100%{transform:scaleY(1)}95%{transform:scaleY(.1)}}
+        @keyframes robo-respira{0%,100%{opacity:1}50%{opacity:.35}}
+        @media (prefers-reduced-motion:reduce){.robo-previa *{animation:none!important}}
+      `}</style>
+      <g className="braco">
+        <path d="M47 41 Q54 39 56 30" stroke="#fff" strokeWidth="4" strokeLinecap="round" fill="none" />
+        <circle cx="56.5" cy="27" r="4.6" fill="#fff" />
+      </g>
+      <line x1="32" y1="19" x2="32" y2="12" stroke="#fff" strokeWidth="3" strokeLinecap="round" />
+      <circle className="antena" cx="32" cy="10" r="3.4" fill="#FFD43B" />
+      <rect x="11.5" y="28" width="5" height="10" rx="2.5" fill="#fff" opacity=".85" />
+      <rect x="15" y="19" width="34" height="28" rx="10" fill="#fff" />
+      <rect x="19.5" y="24.5" width="25" height="15" rx="7.5" fill="#16181D" />
+      <g className="olhos">
+        <rect x="24.5" y="28.5" width="4.6" height="5.6" rx="2.3" fill="#6EE7F9" />
+        <rect x="34.9" y="28.5" width="4.6" height="5.6" rx="2.3" fill="#6EE7F9" />
+      </g>
+      <path d="M28.5 36.2 Q32 38.4 35.5 36.2" stroke="#6EE7F9" strokeWidth="1.6" strokeLinecap="round" fill="none" />
+      <rect x="25" y="47" width="14" height="5" rx="2.5" fill="#fff" opacity=".85" />
+    </svg>
   )
 }

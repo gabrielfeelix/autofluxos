@@ -90,6 +90,14 @@
     '.raiz{position:fixed;right:20px;bottom:20px;z-index:2147483000;display:flex;flex-direction:column;align-items:flex-end;gap:12px;color:var(--tinta);font-size:15px;line-height:1.45;-webkit-font-smoothing:antialiased}' +
     '.botao{width:58px;height:58px;border-radius:50%;border:0;background:var(--c);color:#fff;cursor:pointer;display:grid;place-items:center;box-shadow:0 10px 28px -8px color-mix(in srgb,var(--c) 70%,#000),0 2px 6px rgba(22,24,29,.18);transition:transform .18s ease;position:relative}' +
     '.botao:hover{transform:scale(1.05)}' +
+    '.botao{width:64px;height:64px}.botao svg.robo{width:54px;height:54px;overflow:visible}' +
+    '.robo .braco{transform-origin:47px 41px;animation:acena 3.6s ease-in-out infinite}' +
+    '.robo .olhos{transform-origin:32px 31px;animation:pisca 4.2s infinite}' +
+    '.robo .antena{animation:respira 1.8s ease-in-out infinite}' +
+    '@keyframes acena{0%,52%,100%{transform:rotate(0)}8%{transform:rotate(-24deg)}16%{transform:rotate(10deg)}24%{transform:rotate(-24deg)}32%{transform:rotate(10deg)}42%{transform:rotate(0)}}' +
+    '@keyframes pisca{0%,92%,100%{transform:scaleY(1)}95%{transform:scaleY(.1)}}' +
+    '@keyframes respira{0%,100%{opacity:1}50%{opacity:.35}}' +
+
     '.botao:focus-visible,button:focus-visible,a:focus-visible,textarea:focus-visible,input:focus-visible{outline:3px solid color-mix(in srgb,var(--c) 45%,#fff);outline-offset:2px}' +
     '.botao svg{width:27px;height:27px}' +
     '.naolidas{position:absolute;top:-3px;right:-3px;min-width:20px;height:20px;padding:0 5px;border-radius:10px;background:#E11D48;color:#fff;font-size:11.5px;font-weight:700;display:grid;place-items:center;border:2px solid #fff}' +
@@ -146,8 +154,23 @@
     '@media (max-width:480px){.raiz{right:14px;bottom:14px}.raiz.aberto{inset:0}.raiz.aberto .botao{display:none}.painel{position:fixed;inset:0;width:auto;height:100%;border-radius:0}.convite{max-width:230px}}' +
     '@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}'
 
-  var ICONE_CHAT =
-    '<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 3C6.9 3 3 6.5 3 10.9c0 2.4 1.2 4.6 3.1 6.1-.1 1.3-.6 2.6-1.5 3.6-.2.3 0 .7.4.7 1.9-.1 3.6-.8 4.9-1.9.7.2 1.4.2 2.1.2 5.1 0 9-3.5 9-7.9S17.1 3 12 3Z"/></svg>'
+  /* O robô do botão: acena em loop, pisca e a antena respira. É a única
+   * coisa que se mexe sozinha no balão, e para quando o visitante pede menos
+   * movimento. Cores fixas de propósito: branco e visor escuro leem em cima de
+   * qualquer cor de marca. */
+  var ICONE_ROBO =
+    '<svg class="robo" viewBox="7 3 52 52" aria-hidden="true">' +
+    '<g class="braco"><path d="M47 41 Q54 39 56 30" stroke="#fff" stroke-width="4" stroke-linecap="round" fill="none"/><circle cx="56.5" cy="27" r="4.6" fill="#fff"/></g>' +
+    '<line x1="32" y1="19" x2="32" y2="12" stroke="#fff" stroke-width="3" stroke-linecap="round"/>' +
+    '<circle class="antena" cx="32" cy="10" r="3.4" fill="#FFD43B"/>' +
+    '<rect x="11.5" y="28" width="5" height="10" rx="2.5" fill="#fff" opacity=".85"/>' +
+    '' +
+    '<rect x="15" y="19" width="34" height="28" rx="10" fill="#fff"/>' +
+    '<rect x="19.5" y="24.5" width="25" height="15" rx="7.5" fill="#16181D"/>' +
+    '<g class="olhos"><rect x="24.5" y="28.5" width="4.6" height="5.6" rx="2.3" fill="#6EE7F9"/><rect x="34.9" y="28.5" width="4.6" height="5.6" rx="2.3" fill="#6EE7F9"/></g>' +
+    '<path d="M28.5 36.2 Q32 38.4 35.5 36.2" stroke="#6EE7F9" stroke-width="1.6" stroke-linecap="round" fill="none"/>' +
+    '<rect x="25" y="47" width="14" height="5" rx="2.5" fill="#fff" opacity=".85"/>' +
+    '</svg>'
   var ICONE_FECHAR =
     '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg>'
   var ICONE_ENVIAR =
@@ -203,7 +226,7 @@
     botao = el('button', 'botao')
     botao.type = 'button'
     botao.setAttribute('aria-label', 'Abrir conversa')
-    botao.innerHTML = ICONE_CHAT
+    botao.innerHTML = ICONE_ROBO
     naolidas = el('span', 'naolidas')
     naolidas.hidden = true
     botao.appendChild(naolidas)
@@ -320,7 +343,7 @@
     painel.remove()
     raiz.classList.remove('aberto')
     botao.setAttribute('aria-label', 'Abrir conversa')
-    botao.innerHTML = ICONE_CHAT
+    botao.innerHTML = ICONE_ROBO
     botao.appendChild(naolidas)
     botao.focus()
     agendar()
