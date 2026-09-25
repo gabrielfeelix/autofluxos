@@ -26,6 +26,15 @@ type Inicial = {
 const real = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' })
 
 function Preco({ produto }: { produto: ProdutoDaLoja }) {
+  // Variações com preços diferentes chegam como "a partir de", sem `preco`.
+  if (produto.precoAPartirDe !== undefined) {
+    return (
+      <span>
+        <span className="mr-1 text-dim">a partir de</span>
+        <strong className="text-soft">{real.format(produto.precoAPartirDe)}</strong>
+      </span>
+    )
+  }
   if (produto.preco === undefined) return <span className="text-aviso">sem preço na loja</span>
   return (
     <span>
