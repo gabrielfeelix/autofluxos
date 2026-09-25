@@ -20,3 +20,23 @@ export function recarregarContato(clienteId: string, contatoId: string): void {
   revalidatePath(`/clientes/${clienteId}/atividades`)
   revalidatePath(`/clientes/${clienteId}/quadros`)
 }
+
+/**
+ * `gestoSemRecarregar`: por que as ações de gesto rápido não chamam a função
+ * acima (25/set).
+ *
+ * No Next 16.3, **qualquer** `revalidatePath` dentro de Server Action faz a
+ * resposta trazer a página aberta redesenhada inteira, seja qual for o caminho
+ * passado (`next/dist/server/web/spec-extension/revalidate.js`: "TODO: only
+ * revalidate if the path matches"). No Inbox isso é a fila, as contagens, o
+ * histórico e a ficha refeitos no servidor antes de o `await` da ação voltar:
+ * o botão ficava desabilitado por segundos, e quando a resposta chegava a tela
+ * pulava.
+ *
+ * Resolver, adiar, pausar o bot, assumir, devolver, passar, finalizar, marcar
+ * etiqueta, reagir, favoritar, agendar e mover no funil agora só gravam. Quem
+ * põe a mudança na tela é o cliente, na hora do clique
+ * (`components/inbox/conversa-local.ts`). As outras telas leem o banco no
+ * próximo carregamento; uma já visitada pode mostrar o valor antigo até o fim
+ * do `staleTimes.dynamic` (60 s, `next.config.ts`) ou um F5.
+ */

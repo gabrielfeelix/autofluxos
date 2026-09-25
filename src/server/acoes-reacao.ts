@@ -1,6 +1,5 @@
 'use server'
 
-import { revalidatePath } from 'next/cache'
 import { podeReagir } from '@/channels/janela'
 import { adaptadorDoCanal } from './adaptador-do-canal'
 import { confirmarEntrega, contextoDeResposta, registrarSaida } from './repos/conversas'
@@ -126,7 +125,7 @@ export async function acaoReagir(
    * automação por causa dele seria a pior surpresa possível: o fluxo para de
    * falar e ninguém sabe por quê.
    */
-  revalidatePath(`/clientes/${clienteId}/inbox`)
-  revalidatePath(`/clientes/${clienteId}/leads/${contatoId}`)
+  // Sem `revalidatePath`: a reação já está na bolha desde o clique
+  // (`lead/rodape-da-mensagem.tsx`). Ver `gestoSemRecarregar`.
   return { ok: true }
 }

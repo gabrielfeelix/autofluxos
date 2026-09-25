@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useCallback, useEffect, useMemo, useRef, useState, useTransition } from "react";
+import { useCallback, useDeferredValue, useMemo, useRef, useState, useTransition } from "react";
 import { comoFalta, dentroDaPortaDeEntrada, restaDaJanela } from "@/channels/janela";
 import { Dica } from "@/components/design/dica";
 import { LARGURA_DA_FILA } from "@/components/design/tema";
@@ -25,6 +25,7 @@ import { quando } from "@/lib/quando";
 import type { FiltroDeEstado, Lead } from "@/server/repos/leads";
 import type { MembroDaConta } from "@/server/repos/usuarios";
 import { ContadorDeAgendadas } from "@/components/inbox/contador-de-agendadas";
+import { linhaViva, useRemendos } from "@/components/inbox/conversa-local";
 import type { MensagemAgendada } from "@/server/repos/mensagens-agendadas";
 
 export type Contagem = {
@@ -68,8 +69,8 @@ export type Contagem = {
  */
 export function Fila({
   clienteId,
-  leads,
-  local,
+  leads: leadsDoServidor,
+  local: localDoServidor,
   selecionado,
   esperando,
   equipe,
@@ -140,6 +141,24 @@ export function Fila({
    * da pintura, e nascer vazio piscaria "nenhuma conversa" antes do efeito
    * rodar.
    */
+  /*
+   * O que esta aba resolveu, adiou, assumiu ou pausou, por cima do que o
+   * servidor desenhou (`conversa-local.ts`). Os gestos não redesenham mais a
+   * página, então é aqui que a linha muda de lugar, de selo ou de filtro.
+   */
+  // Adiado: a fila tem dezenas de linhas, e redesenhá-la no mesmo quadro do
+  // clique atrasava o botão (medido: 10 ms virou 100 a 340 ms em dev). O botão,
+  // o selo e a ficha mudam primeiro; a fila vem no quadro seguinte.
+  const remendos = useDeferredValue(useRemendos());
+  const leads = useMemo(
+    () => leadsDoServidor.map((lead) => linhaViva(lead, remendos)),
+    [leadsDoServidor, remendos],
+  );
+  const local = useMemo(
+    () => localDoServidor?.map((lead) => linhaViva(lead, remendos)) ?? null,
+    [localDoServidor, remendos],
+  );
+
   const [recorte, setRecorte] = useState<Lead[]>(leads);
 
   /*
@@ -193,16 +212,27 @@ export function Fila({
    * servidor ainda não confirmou. Quando props novas chegam, e elas chegam a
    * cada revalidação, o remendo é jogado fora, porque a partir dali quem sabe
    * a verdade é o servidor, inclusive quando a verdade é que a escrita falhou.
+   *
+   * **Fixar é a exceção, desde 25/set.** Fixar não recarrega mais a página
+   * (`gestoSemRecarregar`), e a página que chega depois pode ser a do cache do
+   * roteador, de antes do clique: jogar o remendo fora ali despregava o
+   * alfinete sozinho. O remendo de fixar guarda o que o servidor dizia no
+   * clique (`base`) e vale enquanto o servidor disser o mesmo.
    */
   const [remendoDeNaoLidas, setRemendoDeNaoLidas] = useState<Map<string, number>>(new Map());
-  const [remendoDeFixadas, setRemendoDeFixadas] = useState<Map<string, string | null>>(new Map());
+  const [remendoDeFixadas, setRemendoDeFixadas] = useState<
+    Map<string, { valor: string | null; base: string | null }>
+  >(new Map());
   const [erroDaMarcacao, setErroDaMarcacao] = useState<string | null>(null);
   const [marcando, marcar] = useTransition();
 
-  useEffect(() => {
+  // Props novas do servidor jogam fora o remendo de não lidas, durante a
+  // renderização e não num efeito (evita a segunda pintura com o valor velho).
+  const [naoLidasVistas, setNaoLidasVistas] = useState(naoLidas);
+  if (naoLidasVistas !== naoLidas) {
+    setNaoLidasVistas(naoLidas);
     setRemendoDeNaoLidas(new Map());
-    setRemendoDeFixadas(new Map());
-  }, [naoLidas, fixadas]);
+  }
 
   const semLerDe = useCallback(
     (contatoId: string) =>
@@ -213,9 +243,10 @@ export function Fila({
   /** Quando esta pessoa fixou a conversa, ou `null` se ela não está fixada. */
   const fixadaEm = useCallback(
     (contatoId: string) => {
+      const doServidor = fixadas.get(contatoId) ?? null;
       const remendada = remendoDeFixadas.get(contatoId);
-      if (remendada !== undefined) return remendada;
-      return fixadas.get(contatoId) ?? null;
+      if (remendada && remendada.base === doServidor) return remendada.valor;
+      return doServidor;
     },
     [remendoDeFixadas, fixadas],
   );
@@ -223,12 +254,12 @@ export function Fila({
   /** Quantas estão fixadas agora, contando o que esta aba acabou de mexer. */
   const quantasFixadas = useMemo(() => {
     const ids = new Set(fixadas.keys());
-    for (const [id, quando] of remendoDeFixadas) {
-      if (quando === null) ids.delete(id);
+    for (const id of remendoDeFixadas.keys()) {
+      if (fixadaEm(id) === null) ids.delete(id);
       else ids.add(id);
     }
     return ids.size;
-  }, [fixadas, remendoDeFixadas]);
+  }, [fixadas, remendoDeFixadas, fixadaEm]);
 
   /** Aplica o remendo, chama o servidor, e desfaz o remendo se ele recusar. */
   const comRemendo = useCallback(
@@ -255,16 +286,17 @@ export function Fila({
     (contatoId: string) => {
       const estava = fixadaEm(contatoId);
       const grudar = estava === null;
+      const base = fixadas.get(contatoId) ?? null;
       comRemendo(
         () =>
           setRemendoDeFixadas((antes) =>
-            new Map(antes).set(contatoId, grudar ? new Date().toISOString() : null),
+            new Map(antes).set(contatoId, { valor: grudar ? new Date().toISOString() : null, base }),
           ),
-        () => setRemendoDeFixadas((antes) => new Map(antes).set(contatoId, estava)),
+        () => setRemendoDeFixadas((antes) => new Map(antes).set(contatoId, { valor: estava, base })),
         () => acaoFixarConversa(clienteId, contatoId, grudar),
       );
     },
-    [clienteId, comRemendo, fixadaEm],
+    [clienteId, comRemendo, fixadaEm, fixadas],
   );
 
   const marcarNaoLida = useCallback(
@@ -501,7 +533,6 @@ export function Fila({
             */}
             <ContadorDeAgendadas
               clienteId={clienteId}
-              quantas={agendadas.length}
               lista={agendadas}
             />
           </div>

@@ -7,7 +7,9 @@ import { after } from 'next/server'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { comoFalta, restaDaJanela } from '@/channels/janela'
-import { Assumir, PassarPara } from '@/components/inbox/assumir'
+import { Assumir, PassarPara, TravaDaResposta } from '@/components/inbox/assumir'
+import { ProvedorDaConversa } from '@/components/inbox/conversa-local'
+import { EtiquetasAplicadas } from '@/components/etiquetas/seletor'
 import { membrosDaConta, type MembroDaConta } from '@/server/repos/usuarios'
 import { sessaoAtual } from '@/server/sessao'
 import { acessoCompleto, meuAlcance } from '@/server/permissoes'
@@ -891,14 +893,8 @@ async function ColunaDaConversa({
    * no fim é a pior forma de dizer não.
    */
   const ajustesDeAtendimento = await ajustesDaConta(clienteId)
-  const donoDaConversa = lead.atribuidoA
-  const travada =
-    ajustesDeAtendimento.exigeAssumir &&
-    usuarioId !== null &&
-    donoDaConversa !== null &&
-    donoDaConversa !== usuarioId
-  const nomeDoDono =
-    equipe.find((membro) => membro.id === donoDaConversa)?.nome.split(' ')[0] ?? null
+  // Quem decide se trava é `TravaDaResposta`, no cliente: assumir destrava no
+  // clique, sem esperar a página voltar do servidor.
 
   /*
    * O nome da campanha, só do contato aberto.
@@ -972,6 +968,20 @@ async function ColunaDaConversa({
       autor={equipe.find((membro) => membro.id === usuarioId)?.nome ?? null}
       anotar={acaoAnotar.bind(null, clienteId, lead.contatoId)}
     >
+      <ProvedorDaConversa
+        contatoId={lead.contatoId}
+        doServidor={{
+          estado: lead.estadoEfetivo,
+          automacaoAtiva: lead.automacaoAtiva,
+          atribuidoA: lead.atribuidoA,
+          sessaoComPessoa: comPessoa,
+          aguardando: lead.aguardando,
+          etiquetas: lead.etiquetasManuais.map((etiqueta) => etiqueta.id),
+        }}
+        usuarioId={usuarioId}
+        temAutomacao={temAutomacao}
+        equipe={equipe.map((membro) => ({ id: membro.id, nome: membro.nome }))}
+      >
       <section className="flex min-h-0 min-w-0 flex-col border-r border-line">
         <CabecalhoDaConversa
           clienteId={clienteId}
@@ -1047,26 +1057,7 @@ async function ColunaDaConversa({
                 favoritas={favoritas}
               />
             </div>
-            {travada ? (
-              /*
-                O lugar da caixa de resposta, e não um aviso acima dela.
-
-                A caixa desabilitada com um recado em cima seria um campo cinza
-                que a pessoa tenta clicar assim mesmo. Aqui o espaço diz o que é
-                preciso fazer, e o botão que faz isso está no cabeçalho desta
-                mesma coluna, a poucos centímetros de onde o olho já está.
-              */
-              <div className="shrink-0 border-t border-line bg-panel px-4 py-5 text-center">
-                <p className="text-[13px] font-semibold text-soft">
-                  {nomeDoDono ? `${nomeDoDono} está atendendo` : 'esta conversa já tem dono'}
-                </p>
-                <p className="mx-auto mt-1 max-w-[420px] text-[12.5px] leading-5 text-dim">
-                  Esta conta pediu que só quem assumiu responda, para duas pessoas não
-                  escreverem ao mesmo tempo. Use o botão de assumir, no topo da conversa,
-                  se precisar entrar nela.
-                </p>
-              </div>
-            ) : (
+            <TravaDaResposta exigeAssumir={ajustesDeAtendimento.exigeAssumir}>
             <CaixaDeResposta
               /*
                 A `key` é a conversa, e sem ela o rascunho de uma vazava para a
@@ -1084,7 +1075,7 @@ async function ColunaDaConversa({
               temAutomacao={temAutomacao}
               anexo={{ clienteId, contatoId: selecionado.contatoId }}
             />
-            )}
+            </TravaDaResposta>
           </ProvedorDeEntrega>
         </ProvedorDeCitacao>
       </section>
@@ -1098,8 +1089,10 @@ async function ColunaDaConversa({
           donoNome={equipe.find((membro) => membro.id === lead.atribuidoA)?.nome ?? null}
           passagens={passagens}
           nomesDosAnuncios={nomesDosAnuncios}
+          etiquetas={etiquetas}
         />
       </ColunaDaFicha>
+      </ProvedorDaConversa>
     </ProvedorDeAnotacoes>
   )
 }
@@ -1290,10 +1283,7 @@ function CabecalhoDaConversa({
         <AcoesRapidas
           clienteId={clienteId}
           contatoId={lead.contatoId}
-          estado={lead.estadoEfetivo}
           etiquetas={etiquetas}
-          etiquetasAplicadas={lead.etiquetasManuais.map((etiqueta) => etiqueta.id)}
-          automacaoAtiva={lead.automacaoAtiva}
           temAutomacao={temAutomacao}
           fimDaJanela={fimDaJanela}
           agendadas={agendadas}
@@ -1339,10 +1329,13 @@ function DadosDoLead({
   donoNome,
   passagens,
   nomesDosAnuncios,
+  etiquetas,
 }: {
   clienteId: string
   lead: Lead
   canal: CanalId
+  /** As da conta, para dar nome às aplicadas (inclusive as que se marcam agora). */
+  etiquetas: EtiquetaEscolhivel[]
   /** Por onde o contato já chegou, da mais recente para a mais antiga. */
   passagens: Passagem[]
   /** Nomes da Marketing API por `ad_id`. Vazio quando a conta não conectou o Ads. */
@@ -1439,18 +1432,12 @@ function DadosDoLead({
         />
 
         <Secao titulo="Etiquetas do contato" vazio="Nenhuma etiqueta aplicada.">
-          {lead.etiquetasManuais.length > 0 && (
-            <span className="flex flex-wrap gap-1">
-              {lead.etiquetasManuais.map((etiqueta) => (
-                <span
-                  key={etiqueta.id}
-                  className="rounded-full border border-line bg-surface px-2 py-0.5 text-[11.5px] font-semibold text-soft"
-                >
-                  {etiqueta.nome}
-                </span>
-              ))}
-            </span>
-          )}
+          <EtiquetasAplicadas
+            contatoId={lead.contatoId}
+            aplicadas={lead.etiquetasManuais.map((etiqueta) => etiqueta.id)}
+            disponiveis={etiquetas}
+            vazio="Nenhuma etiqueta aplicada."
+          />
         </Secao>
 
         <FunilDaConversa clienteId={clienteId} funis={funis} />

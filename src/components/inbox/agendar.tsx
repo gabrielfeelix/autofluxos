@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState, useTransition } from 'react'
+import { criarAgendada, ehProvisoria, marcarCancelada, useAgendadas } from './agendadas-local'
 import {
   conferirAgendamento,
   foraDaJanela,
@@ -40,8 +41,9 @@ export function AgendarMensagem({
   contatoId,
   nome,
   fimDaJanela,
-  agendadas,
+  agendadas: doServidor,
   aoFechar,
+  aoFalhar,
 }: {
   clienteId: string
   contatoId: string
@@ -50,13 +52,15 @@ export function AgendarMensagem({
   fimDaJanela: string | null
   agendadas: MensagemAgendada[]
   aoFechar: () => void
+  /** O painel já fechou quando o servidor recusa: o erro sobe para quem o abriu. */
+  aoFalhar: (erro: string) => void
 }) {
+  const agendadas = useAgendadas(doServidor, contatoId)
   const [texto, setTexto] = useState('')
   const [quandoBruto, setQuandoBruto] = useState('')
   const [modelo, setModelo] = useState('')
   const [aprovados, setAprovados] = useState<Template[] | null>(null)
   const [erro, setErro] = useState<string | null>(null)
-  const [enviando, comecar] = useTransition()
 
   const quando = quandoBruto === '' ? null : new Date(quandoBruto)
   const recusa = conferirAgendamento({ texto, quando })
@@ -106,17 +110,43 @@ export function AgendarMensagem({
     */
     dados.set('templateId', avisar ? modelo : '')
 
-    comecar(async () => {
-      const r = await acaoAgendarMensagem(clienteId, contatoId, dados)
-      if (!r.ok) {
-        setErro(r.erro ?? 'não deu para agendar')
-        return
-      }
-      setTexto('')
-      setQuandoBruto('')
-      setModelo('')
-      aoFechar()
+    /*
+     * Otimista (25/set): o painel fecha e a linha aparece no clique; o banco
+     * grava por trás. Agendar é interno até a hora marcada, e cancelar continua
+     * possível, então a aposta não mente sobre nada que já saiu. Recusou, a
+     * linha some e o erro aparece no cabeçalho.
+     */
+    const provisoria = criarAgendada({
+      clienteId,
+      contatoId,
+      texto: texto.trim(),
+      quando: (quando as Date).toISOString(),
+      criadaPorNome: null,
+      estado: 'agendada',
+      enviadaEm: null,
+      erro: null,
+      templateId: avisar && modelo ? modelo : null,
+      templateValores: null,
+      nomeDoContato: nome,
     })
+    setTexto('')
+    setQuandoBruto('')
+    setModelo('')
+    aoFechar()
+
+    acaoAgendarMensagem(clienteId, contatoId, dados).then(
+      (r) => {
+        if (r.ok && r.agendada) provisoria.confirmar(r.agendada)
+        else {
+          provisoria.desfazer()
+          aoFalhar(r.erro ?? 'não deu para agendar')
+        }
+      },
+      () => {
+        provisoria.desfazer()
+        aoFalhar('sem conexão com o servidor: a mensagem não foi agendada')
+      },
+    )
   }
 
   return (
@@ -229,11 +259,11 @@ export function AgendarMensagem({
 
       <button
         type="button"
-        disabled={Boolean(recusa) || enviando}
+        disabled={Boolean(recusa)}
         onClick={marcar}
         className="app-primary-button w-full py-2 text-[12.5px]"
       >
-        {enviando ? 'Agendando…' : 'Agendar mensagem'}
+        Agendar mensagem
       </button>
 
       {/*
@@ -306,17 +336,19 @@ function LinhaAgendada({
         {!falhou && (
           <button
             type="button"
-            disabled={indo}
+            disabled={indo || ehProvisoria(agendada.id)}
             onClick={() =>
               comecar(async () => {
+                setErro(null)
                 const r = await acaoCancelarAgendada(clienteId, agendada.id)
                 if (!r.ok) setErro(r.erro ?? 'não deu para cancelar')
+                else marcarCancelada(agendada.id)
               })
             }
             aria-label="Cancelar esta mensagem agendada"
             className="shrink-0 rounded-full px-1.5 py-0.5 text-[12px] leading-none text-dim transition hover:bg-surface-strong hover:text-perigo disabled:opacity-40"
           >
-            ×
+            {indo ? 'Cancelando…' : '×'}
           </button>
         )}
       </div>

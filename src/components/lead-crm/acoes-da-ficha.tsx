@@ -6,6 +6,7 @@ import { MarcarAtividade } from '@/components/inbox/marcar-atividade'
 import { Modal } from '@/components/design/modal'
 import { AvisoFlutuante } from '@/components/design/aviso-flutuante'
 import type { MensagemAgendada } from '@/server/repos/mensagens-agendadas'
+import { useAgendadas } from '@/components/inbox/agendadas-local'
 
 /**
  * As ações sobre o contato, no alto e à direita.
@@ -43,7 +44,8 @@ export function AcoesDaFicha({
   const [agendando, setAgendando] = useState(false)
   const [marcando, setMarcando] = useState(false)
   const [erroDaAtividade, setErroDaAtividade] = useState<string | null>(null)
-  const temAgendada = agendadas.some((a) => a.estado === 'agendada' || a.estado === 'enviando')
+  const pendentes = useAgendadas(agendadas, contatoId)
+  const temAgendada = pendentes.some((a) => a.estado === 'agendada' || a.estado === 'enviando')
 
   return (
     <>
@@ -123,6 +125,7 @@ export function AcoesDaFicha({
           fimDaJanela={fimDaJanela}
           agendadas={agendadas}
           aoFechar={() => setAgendando(false)}
+          aoFalhar={setErroDaAtividade}
         />
       </Modal>
 

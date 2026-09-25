@@ -53,7 +53,7 @@ export async function acaoFixarConversa(
 
   if (!grudar) {
     const r = await soltar(usuarioId, permitido)
-    if (r.ok) revalidarInbox(clienteId)
+    // Sem recarregar: o alfinete já mudou na fila (`inbox/fila.tsx`).
     return r
   }
 
@@ -66,7 +66,7 @@ export async function acaoFixarConversa(
   }
 
   const r = await fixar(usuarioId, permitido)
-  if (r.ok) revalidarInbox(clienteId)
+  // Sem recarregar: ver `gestoSemRecarregar`.
   return r
 }
 
@@ -89,7 +89,7 @@ export async function acaoMarcarNaoLida(
   if (!permitido) return { ok: false, erro: 'esta conversa não é desta conta' }
 
   const r = await marcarComoNaoLida(sessao.usuario.id, permitido)
-  if (r.ok) revalidarInbox(clienteId)
+  // Sem recarregar: a insígnia já acendeu na fila. Ver `gestoSemRecarregar`.
   return r
 }
 
@@ -112,7 +112,8 @@ export async function acaoMarcarTodasComoLidas(
   if (permitidos.length === 0) return { ok: true }
 
   const r = await marcarTodasComoLidas(sessao.usuario.id, permitidos)
-  if (r.ok) revalidarInbox(clienteId)
+  // Lote (ainda sem tela): recarrega, que é o que uma ação em lote pede.
+  if (r.ok) revalidatePath(`/clientes/${clienteId}/inbox`)
   return r
 }
 
@@ -138,18 +139,11 @@ export async function acaoFavoritarMensagem(
     ? await favoritar(usuarioId, clienteId, id)
     : await desfavoritar(usuarioId, id)
 
-  if (r.ok) revalidarInbox(clienteId)
+  /*
+   * Sem `revalidatePath`: a estrela já mudou no clique
+   * (`lead/rodape-da-mensagem.tsx`), e recarregar redesenhava a conversa
+   * inteira por uma estrela (ver `gestoSemRecarregar`). A lista de favoritas
+   * lê o banco no próximo carregamento.
+   */
   return r
-}
-
-/**
- * As duas telas que mostram marcação.
- *
- * O Inbox porque é onde se marca, e a lista de favoritas porque ela é o acervo,
- * tirar a estrela de dentro da conversa e a lista continuar mostrando aquela
- * mensagem é o tipo de divergência que faz a pessoa clicar duas vezes.
- */
-function revalidarInbox(clienteId: string) {
-  revalidatePath(`/clientes/${clienteId}/inbox`)
-  revalidatePath(`/clientes/${clienteId}/favoritas`)
 }

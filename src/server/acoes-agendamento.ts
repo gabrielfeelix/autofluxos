@@ -1,9 +1,7 @@
 'use server'
 
-import { revalidatePath } from 'next/cache'
-import { recarregarContato } from './recarregar-contato'
 import { conferirAgendamento, MOTIVO_DA_RECUSA } from '@/core/agendamento'
-import { agendar, cancelarAgendada } from './repos/mensagens-agendadas'
+import { agendar, cancelarAgendada, type MensagemAgendada } from './repos/mensagens-agendadas'
 import { contextoDeResposta } from './repos/conversas'
 import { exigirAcessoAoCliente, sessaoAtual } from './sessao'
 
@@ -27,7 +25,7 @@ export async function acaoAgendarMensagem(
   clienteId: string,
   contatoId: string,
   formData: FormData,
-): Promise<{ ok: boolean; erro?: string }> {
+): Promise<{ ok: boolean; erro?: string; agendada?: MensagemAgendada }> {
   await exigirAcessoAoCliente(clienteId)
 
   const texto = String(formData.get('texto') ?? '')
@@ -65,7 +63,7 @@ export async function acaoAgendarMensagem(
    */
   const templateId = String(formData.get('templateId') ?? '').trim() || null
 
-  await agendar({
+  const agendada = await agendar({
     clienteId,
     contatoId,
     texto: texto.trim(),
@@ -77,8 +75,9 @@ export async function acaoAgendarMensagem(
     criadaPorNome: quem?.usuario.nome ?? null,
   })
 
-  recarregarContato(clienteId, contatoId)
-  return { ok: true }
+  // Sem recarregar: a linha já apareceu no clique (`inbox/agendadas-local.ts`)
+  // e troca o id provisório por este. Ver `gestoSemRecarregar`.
+  return { ok: true, agendada }
 }
 
 /**
@@ -97,10 +96,7 @@ export async function acaoCancelarAgendada(
   const deu = await cancelarAgendada(clienteId, id)
   if (!deu) return { ok: false, erro: 'esta mensagem já saiu ou já tinha sido cancelada' }
 
-  // Só o id da mensagem chega aqui, então a ficha vai pelo molde da rota: a
-  // de qualquer contato desta tela recarrega, e o resumo do topo não fica
-  // dizendo "sai em..." para uma mensagem cancelada.
-  revalidatePath(`/clientes/${clienteId}/inbox`)
-  revalidatePath('/clientes/[clienteId]/leads/[contatoId]', 'page')
+  // Sem recarregar: a tela tira a linha quando este "ok" chega
+  // (`inbox/agendadas-local.ts`). Ver `gestoSemRecarregar`.
   return { ok: true }
 }

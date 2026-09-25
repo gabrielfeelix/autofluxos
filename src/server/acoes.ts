@@ -828,9 +828,12 @@ export async function acaoCriarEtiqueta(
    *
    * Quem cria a etiqueta de dentro de uma conversa já a vê aparecer na hora,
    * porque o seletor a acrescenta à lista sem esperar resposta. E quem cria em
-   * Configurações está *nesta* página, que é a única que precisa ser refeita.
+   * Configurações vê a tabela mudar pelo estado dela.
+   *
+   * Sobrou um `revalidatePath` só da tela de etiquetas, e ele ainda custava o
+   * mesmo: no Next 16.3 qualquer caminho redesenha a página aberta, ver
+   * `gestoSemRecarregar`. Saiu em 25/set.
    */
-  revalidatePath(`/clientes/${clienteId}/leads/etiquetas`)
   return { ok: true, etiqueta: r.etiqueta }
 }
 
@@ -882,6 +885,12 @@ export async function acaoMarcarEtiqueta(
   etiquetaId: string,
   contatos: string[],
   aplicar: boolean,
+  /**
+   * `false` no seletor de um contato só: a tela já mudou no clique, e
+   * recarregar redesenharia a página aberta (ver `gestoSemRecarregar`). A
+   * seleção em lote da lista de leads continua recarregando.
+   */
+  recarregar = true,
 ): Promise<{ ok: boolean; erro?: string; mudaram?: number; validos?: number }> {
   const acesso = await exigirCapacidade(clienteId, 'atender', 'proprios')
   if (recusou(acesso)) return acesso
@@ -914,10 +923,12 @@ export async function acaoMarcarEtiqueta(
     await inscreverNoEvento(clienteId, r.validos, 'etiqueta_aplicada', etiquetaId)
   }
 
-  revalidatePath(`/clientes/${clienteId}/leads`)
-  revalidatePath(`/clientes/${clienteId}/inbox`)
-  for (const contatoId of contatos) {
-    revalidatePath(`/clientes/${clienteId}/leads/${contatoId}`)
+  if (recarregar !== false) {
+    revalidatePath(`/clientes/${clienteId}/leads`)
+    revalidatePath(`/clientes/${clienteId}/inbox`)
+    for (const contatoId of contatos) {
+      revalidatePath(`/clientes/${clienteId}/leads/${contatoId}`)
+    }
   }
   // O que mudou de fato e quantos eram desta conta: a tela separa "aplicada",
   // "já tinham" e "fora desta conta" com estes dois números.
@@ -1791,7 +1802,9 @@ export async function acaoMoverCartao(
   const r = await moverCartao(clienteId, cartaoId, colunaId, quemFez?.usuario.nome ?? null)
   if (!r.ok) return { ok: false, erro: r.motivo }
 
-  revalidatePath(`/clientes/${clienteId}/quadros`)
+  // Sem recarregar: o quadro (`mudarCartao`) e o funil do Inbox já moveram o
+  // cartão no clique. O `revalidatePath` de `/quadros` redesenhava também o
+  // Inbox aberto, ver `gestoSemRecarregar`.
   return { ok: true }
 }
 
@@ -2212,12 +2225,14 @@ export async function acaoResponderLead(
  * mensagem. É o botão que faltava: sem ele, todo lead que passou por handoff
  * ficava vermelho para sempre e a tela perdia o sentido no segundo dia.
  */
-export async function acaoEncerrarAtendimento(clienteId: string, contatoId: string) {
+export async function acaoEncerrarAtendimento(
+  clienteId: string,
+  contatoId: string,
+): Promise<{ ok: boolean; erro?: string }> {
   const acesso = await exigirCapacidade(clienteId, 'atender', 'proprios')
-  // Ligada direto a `<form action>`, que exige retorno vazio: a recusa para a
-  // ação e não vira valor. A tela não mostra a permissão que falta, e não
-  // deve: quem não pode não precisa saber que a capacidade existe (RB-42).
-  if (recusou(acesso)) return
+  // Devolve a recusa desde 25/set: a tela só muda o cartão depois do "ok", e
+  // sem valor de volta ela tomaria a recusa por sucesso.
+  if (recusou(acesso)) return acesso
 
   await encerrarAtendimento(clienteId, contatoId)
 
@@ -2234,7 +2249,8 @@ export async function acaoEncerrarAtendimento(clienteId: string, contatoId: stri
   // sequência falar primeiro se algum passo for de um minuto.
   await inscreverNoEvento(clienteId, [contatoId], 'atendimento_encerrado')
 
-  recarregarContato(clienteId, contatoId)
+  // Gesto rápido: sem recarregar a página, ver `gestoSemRecarregar`.
+  return { ok: true }
 }
 
 /** Pausa ou religa o motor sem transformar a pausa em um handoff fictício. */
@@ -2274,7 +2290,7 @@ export async function acaoAlternarAutomacaoDoLead(
   // decide inscrever é o evento, não o interruptor.
   if (!ativa) await sairPorEvento(contatoId, 'automacao_pausada')
 
-  recarregarContato(clienteId, contatoId)
+  // Gesto rápido: sem recarregar a página, ver `gestoSemRecarregar`.
   return { ok: true }
 }
 
@@ -2911,7 +2927,7 @@ export async function acaoAdiarConversa(
     return { ok: false, erro: erro instanceof Error ? erro.message : 'não deu para adiar' }
   }
 
-  recarregarContato(clienteId, contatoId)
+  // Gesto rápido: sem recarregar a página, ver `gestoSemRecarregar`.
   return { ok: true }
 }
 
@@ -2940,7 +2956,7 @@ export async function acaoDefinirEstadoDaConversa(
     return { ok: false, erro: erro instanceof Error ? erro.message : 'não deu para mudar' }
   }
 
-  recarregarContato(clienteId, contatoId)
+  // Gesto rápido: sem recarregar a página, ver `gestoSemRecarregar`.
   return { ok: true }
 }
 
@@ -3011,7 +3027,7 @@ export async function acaoAssumirAtendimento(
 
   await avisarQueEntrou(clienteId, contatoId, sessao.usuario.nome)
 
-  recarregarContato(clienteId, contatoId)
+  // Gesto rápido: sem recarregar a página, ver `gestoSemRecarregar`.
   return { ok: true }
 }
 
@@ -3075,7 +3091,7 @@ export async function acaoLiberarAtendimento(
   const revisao = await trocarControle(clienteId, contatoId, null)
   if (revisao === null) return { ok: false, erro: 'este contato não é deste cliente' }
 
-  recarregarContato(clienteId, contatoId)
+  // Gesto rápido: sem recarregar a página, ver `gestoSemRecarregar`.
   return { ok: true }
 }
 
@@ -3114,6 +3130,6 @@ export async function acaoAtribuirPara(
   const revisao = await trocarControle(clienteId, contatoId, usuarioId)
   if (revisao === null) return { ok: false, erro: 'este contato não é deste cliente' }
 
-  recarregarContato(clienteId, contatoId)
+  // Gesto rápido: sem recarregar a página, ver `gestoSemRecarregar`.
   return { ok: true }
 }

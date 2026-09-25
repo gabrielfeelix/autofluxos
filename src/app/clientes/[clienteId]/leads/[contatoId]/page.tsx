@@ -557,7 +557,7 @@ export default async function Pagina({
                       />
                     </div>
                   </section>
-                  <Agendadas agendadas={agendadas} />
+                  <Agendadas agendadas={agendadas} contatoId={contatoId} />
                   <Acompanhamentos acompanhamentos={acompanhamentos} />
                 </div>
               ),

@@ -1,10 +1,43 @@
 'use client'
 
-import { useState, useTransition } from 'react'
+import { useState, useSyncExternalStore } from 'react'
 import { CLASSE_DA_COR, type CorDeEtiqueta } from '@/core/etiquetas'
 import { acaoCriarEtiqueta, acaoMarcarEtiqueta } from '@/server/acoes'
+import { agirNaConversa, mudarConversa, useConversa } from '@/components/inbox/conversa-local'
 
 export type EtiquetaEscolhivel = { id: string; nome: string; cor: CorDeEtiqueta }
+
+/*
+ * As etiquetas criadas por esta aba, de dentro de um seletor.
+ *
+ * O seletor mora num painel que desmonta ao fechar, e a lista vinha só das
+ * props do servidor: sem o `revalidatePath` (ver `gestoSemRecarregar`), a
+ * etiqueta recém-criada sumia ao reabrir. Aqui ela fica até o próximo
+ * carregamento trazer a lista do banco.
+ */
+let criadas: EtiquetaEscolhivel[] = []
+const assinantes = new Set<() => void>()
+const assinar = (assinante: () => void) => {
+  assinantes.add(assinante)
+  return () => {
+    assinantes.delete(assinante)
+  }
+}
+function trocarCriadas(novas: EtiquetaEscolhivel[]) {
+  criadas = novas
+  assinantes.forEach((assinante) => assinante())
+}
+
+/** As do servidor mais as criadas aqui, sem repetir. */
+export function useEtiquetasDisponiveis(doServidor: EtiquetaEscolhivel[]): EtiquetaEscolhivel[] {
+  const aqui = useSyncExternalStore(
+    assinar,
+    () => criadas,
+    () => criadas,
+  )
+  const ids = new Set(doServidor.map((e) => e.id))
+  return [...doServidor, ...aqui.filter((e) => !ids.has(e.id))]
+}
 
 /**
  * Aplicar e tirar etiquetas de um contato, clicando.
@@ -28,100 +61,62 @@ export function SeletorDeEtiquetas({
   disponiveis: EtiquetaEscolhivel[]
   aplicadas: string[]
 }) {
-  const [marcadas, setMarcadas] = useState<string[]>(aplicadas)
+  /*
+   * A marcação mora em `inbox/conversa-local.ts`, por contato: o ícone do
+   * cabeçalho e a seção "Etiquetas do contato" leem de lá, e reabrir o painel
+   * mostra o que se acabou de marcar, e não o que o servidor desenhou antes.
+   */
+  const { etiquetas: marcadas } = useConversa(contatoId, { etiquetas: aplicadas })
+  const lista = useEtiquetasDisponiveis(disponiveis)
   const [erro, setErro] = useState<string | null>(null)
-  const [, comecar] = useTransition()
   const [criando, setCriando] = useState(false)
   const [nova, setNova] = useState('')
-  /*
-   * A lista é estado local porque a etiqueta criada aqui precisa aparecer
-   * **antes** de o servidor responder. Vinda de fora por prop, ela só
-   * chegaria depois de a página ser refeita, que é a espera que este arquivo
-   * inteiro existe para evitar.
-   */
-  const [lista, setLista] = useState(disponiveis)
 
   const alternar = (etiquetaId: string) => {
     const aplicar = !marcadas.includes(etiquetaId)
     setErro(null)
-    setMarcadas((atuais) =>
-      aplicar ? [...atuais, etiquetaId] : atuais.filter((id) => id !== etiquetaId),
-    )
-
-    comecar(async () => {
-      const r = await acaoMarcarEtiqueta(clienteId, etiquetaId, [contatoId], aplicar)
-      if (!r.ok) {
-        // Desfaz o otimismo: uma ficha acesa que o servidor recusou é pior do
-        // que a recusa aparecer, porque ela mente até alguém recarregar.
-        setMarcadas((atuais) =>
-          aplicar ? atuais.filter((id) => id !== etiquetaId) : [...atuais, etiquetaId],
-        )
-        setErro(r.erro ?? 'não deu para mudar a etiqueta')
-      }
-    })
+    void agirNaConversa(
+      contatoId,
+      { etiquetas: aplicadas },
+      { etiquetas: aplicar ? [...marcadas, etiquetaId] : marcadas.filter((id) => id !== etiquetaId) },
+      () => acaoMarcarEtiqueta(clienteId, etiquetaId, [contatoId], aplicar, false),
+    ).then((falhou) => falhou && setErro(falhou))
   }
 
-  /*
-   * Criar aqui, e não em Configurações.
-   *
-   * A etiqueta nasce **no momento em que alguém precisa dela**, olhando uma
-   * conversa e pensando "isso é um orçamento". Mandar essa pessoa para outra
-   * tela para criar e voltar é a mesma volta que fazia ninguém anotar nada
-   * antes da anotação rápida existir: quem tem que ir e voltar, não vai.
-   *
-   * A cor não é perguntada. Seis cores e nenhuma delas muda o que a etiqueta
-   * faz, decidir entre elas no meio de um atendimento é escolha que só
-   * atrasa. Nasce `cinza` e quem quiser pintar tem a tela de Configurações,
-   * que continua existindo para gerenciar.
-   */
-  const criar = () => {
+  const criar = async () => {
     const nome = nova.trim()
     if (nome === '') return
 
-    /*
-     * **A etiqueta entra na lista já acesa, e o servidor confirma atrás.**
-     *
-     * O id provisório existe porque o de verdade só volta do banco. Ele vive
-     * poucos milissegundos e é trocado pelo real na resposta, nunca chega a
-     * ser enviado em nada, porque a única coisa que se faz com ele antes disso
-     * é desenhar.
-     */
     const provisorio = `novo-${Date.now()}`
     const otimista = { id: provisorio, nome, cor: 'cinza' as CorDeEtiqueta }
 
     setErro(null)
-    setLista((atuais) => [...atuais, otimista])
-    setMarcadas((atuais) => [...atuais, provisorio])
+    trocarCriadas([...criadas, otimista])
+    const desmarcar = mudarConversa(contatoId, { etiquetas: aplicadas }, { etiquetas: [...marcadas, provisorio] })
     setNova('')
     setCriando(false)
 
-    comecar(async () => {
-      const dados = new FormData()
-      dados.set('nome', nome)
-      dados.set('cor', 'cinza')
+    const dados = new FormData()
+    dados.set('nome', nome)
+    dados.set('cor', 'cinza')
 
-      const r = await acaoCriarEtiqueta(clienteId, {}, dados)
+    const r = await acaoCriarEtiqueta(clienteId, {}, dados).catch(() => ({ erro: 'sem conexão com o servidor', etiqueta: undefined }))
 
-      if (r.erro || !r.etiqueta) {
-        // Tira a aposta: uma etiqueta que o servidor recusou não pode ficar na
-        // tela, senão ela some sozinha no próximo carregamento sem explicação.
-        setLista((atuais) => atuais.filter((e) => e.id !== provisorio))
-        setMarcadas((atuais) => atuais.filter((id) => id !== provisorio))
-        setErro(r.erro ?? 'não deu para criar a etiqueta')
-        return
-      }
+    if (r.erro || !r.etiqueta) {
+      trocarCriadas(criadas.filter((e) => e.id !== provisorio))
+      desmarcar()
+      setErro(r.erro ?? 'não deu para criar a etiqueta')
+      return
+    }
 
-      const criada = r.etiqueta
-      setLista((atuais) => atuais.map((e) => (e.id === provisorio ? criada : e)))
-      setMarcadas((atuais) => atuais.map((id) => (id === provisorio ? criada.id : id)))
-
-      // Já nasce aplicada a este contato: quem cria uma etiqueta olhando uma
-      // conversa quer justamente marcá-la nela.
-      const marcou = await acaoMarcarEtiqueta(clienteId, criada.id, [contatoId], true)
-      if (!marcou.ok) {
-        setMarcadas((atuais) => atuais.filter((id) => id !== criada.id))
-      }
-    })
+    const criada = r.etiqueta
+    trocarCriadas(criadas.map((e) => (e.id === provisorio ? criada : e)))
+    desmarcar()
+    const comReal = [...marcadas.filter((id) => id !== provisorio), criada.id]
+    const falhou = await agirNaConversa(contatoId, { etiquetas: aplicadas }, { etiquetas: comReal }, () =>
+      acaoMarcarEtiqueta(clienteId, criada.id, [contatoId], true, false),
+    )
+    if (falhou) setErro(falhou)
   }
 
   return (
@@ -154,7 +149,7 @@ export function SeletorDeEtiquetas({
             value={nova}
             onChange={(e) => setNova(e.target.value)}
             onKeyDown={(e) => {
-              if (e.key === 'Enter') criar()
+              if (e.key === 'Enter') void criar()
               if (e.key === 'Escape') {
                 e.preventDefault()
                 e.stopPropagation()
@@ -168,7 +163,7 @@ export function SeletorDeEtiquetas({
           />
           <button
             type="button"
-            onClick={criar}
+            onClick={() => void criar()}
             className="app-secondary-button shrink-0 px-2.5 py-1.5 text-[11px]"
           >
             Criar
@@ -191,5 +186,43 @@ export function SeletorDeEtiquetas({
         </p>
       )}
     </div>
+  )
+}
+
+/**
+ * As etiquetas aplicadas, só leitura, como a coluna do contato mostra.
+ *
+ * Lê o mesmo store do seletor: marcar no cabeçalho aparece aqui no clique,
+ * sem esperar o servidor redesenhar a coluna.
+ */
+export function EtiquetasAplicadas({
+  contatoId,
+  aplicadas,
+  disponiveis,
+  vazio,
+}: {
+  contatoId: string
+  aplicadas: string[]
+  disponiveis: EtiquetaEscolhivel[]
+  vazio: string
+}) {
+  const { etiquetas } = useConversa(contatoId, { etiquetas: aplicadas })
+  const lista = useEtiquetasDisponiveis(disponiveis)
+  const nomes = etiquetas
+    .map((id) => lista.find((etiqueta) => etiqueta.id === id))
+    .filter((etiqueta): etiqueta is EtiquetaEscolhivel => Boolean(etiqueta))
+
+  if (nomes.length === 0) return <p className="text-[12px] text-dim">{vazio}</p>
+  return (
+    <span className="flex flex-wrap gap-1">
+      {nomes.map((etiqueta) => (
+        <span
+          key={etiqueta.id}
+          className="rounded-full border border-line bg-surface px-2 py-0.5 text-[11.5px] font-semibold text-soft"
+        >
+          {etiqueta.nome}
+        </span>
+      ))}
+    </span>
   )
 }

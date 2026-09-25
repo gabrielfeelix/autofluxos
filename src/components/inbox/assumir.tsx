@@ -1,7 +1,7 @@
 'use client'
 
-import { useActionState } from 'react'
-import { useAcaoOtimista } from '@/components/design/acao-otimista'
+import { useState, type ReactNode } from 'react'
+import { useConversaAberta } from '@/components/inbox/conversa-local'
 import { Dropdown } from '@/components/design/dropdown'
 
 /**
@@ -23,8 +23,6 @@ import { Dropdown } from '@/components/design/dropdown'
  * **E o silêncio dele aparece na tela**, no selo do atendimento, não só na dica
  * do botão.
  */
-type Estado = { erro?: string }
-
 export function Assumir({
   assumir,
   liberar,
@@ -47,9 +45,30 @@ export function Assumir({
    * A aposta é o próprio `souEu`: clicar em "Assumir" já mostra "você está
    * atendendo", e o servidor só é notado quando discorda.
    */
-  const { valor: meu, erro, pendente, agir } = useAcaoOtimista(souEu)
+  /*
+   * No store da conversa (25/set): assumir muda o botão, o selo embaixo do
+   * nome, o cartão do atendimento e a trava da caixa de resposta no mesmo
+   * clique. `souEu` e `responsavel` são o que o servidor desenhou; o que vale
+   * na tela é o que o store diz agora.
+   */
+  const conversa = useConversaAberta()
+  const [erro, setErro] = useState<string | null>(null)
+  const dono = conversa.valor.atribuidoA
+  const meu = conversa.usuarioId !== null ? dono === conversa.usuarioId : souEu
+  const temOutroDono = dono !== null ? !meu : Boolean(responsavel) && !souEu
 
-  const alternar = () => agir(!meu, () => (meu ? liberar() : assumir()))
+  const alternar = () => {
+    setErro(null)
+    void conversa
+      .agir(
+        meu
+          ? { atribuidoA: null }
+          : // Assumir cala o bot na conversa (`calarBotNaConversa`).
+            { atribuidoA: conversa.usuarioId, sessaoComPessoa: true },
+        () => (meu ? liberar() : assumir()),
+      )
+      .then(setErro)
+  }
 
   return (
     <div className="flex shrink-0 items-center gap-2">
@@ -73,7 +92,6 @@ export function Assumir({
       <button
         type="button"
         onClick={alternar}
-        disabled={pendente}
         title={
           meu
             ? 'Devolve a conversa para a fila. O bot continua calado até alguém finalizar o atendimento.'
@@ -81,7 +99,7 @@ export function Assumir({
         }
         className="rounded-[8px] border border-line px-2.5 py-1.5 text-[11.5px] font-semibold text-muted transition hover:border-primary/40 hover:text-primary disabled:opacity-50"
       >
-        {meu ? 'Devolver à fila' : responsavel ? 'Assumir mesmo assim' : 'Assumir'}
+        {meu ? 'Devolver à fila' : temOutroDono ? 'Assumir mesmo assim' : 'Assumir'}
       </button>
 
       {erro && (
@@ -111,13 +129,26 @@ export function PassarPara({
   atribuir: (formData: FormData) => Promise<{ ok: boolean; erro?: string }>
   equipe: { id: string; nome: string; presenca: string }[]
 }) {
-  const [estado, agir, pendente] = useActionState<Estado, FormData>(async (_anterior, formData) => {
-    const r = await atribuir(formData)
-    return { erro: r.ok ? undefined : r.erro }
-  }, {})
+  /*
+   * Passar era um `<form action>` com "…" no botão até o servidor redesenhar a
+   * página. Agora o responsável muda no clique, no selo e no cartão, e volta
+   * se o servidor recusar.
+   */
+  const conversa = useConversaAberta()
+  const [erro, setErro] = useState<string | null>(null)
+
+  const passar = (formData: FormData) => {
+    const para = String(formData.get('usuarioId') ?? '')
+    setErro(null)
+    if (para === '') {
+      setErro('escolha para quem passar')
+      return
+    }
+    void conversa.agir({ atribuidoA: para }, () => atribuir(formData)).then(setErro)
+  }
 
   return (
-    <form action={agir} className="flex shrink-0 items-center gap-1.5">
+    <form action={passar} className="flex shrink-0 items-center gap-1.5">
       <Dropdown
         nome="usuarioId"
         rotuloAcessivel="Passar a conversa para"
@@ -130,16 +161,58 @@ export function PassarPara({
       />
       <button
         type="submit"
-        disabled={pendente}
         className="rounded-[8px] border border-line px-2.5 py-1.5 text-[11.5px] font-semibold text-muted transition hover:border-primary/40 hover:text-primary disabled:opacity-50"
       >
-        {pendente ? '…' : 'Passar'}
+        Passar
       </button>
-      {estado.erro && (
+      {erro && (
         <span role="alert" className="max-w-[160px] text-[11.5px] leading-4 text-perigo">
-          {estado.erro}
+          {erro}
         </span>
       )}
     </form>
+  )
+}
+
+/**
+ * A trava de "só quem assumiu responde", do lado do cliente.
+ *
+ * Era decidida no servidor, e por isso só abria depois do `revalidatePath` de
+ * assumir. Agora lê o dono do store da conversa: assumir destrava a caixa no
+ * mesmo clique. A recusa de verdade continua no servidor (`podeResponderAgora`).
+ */
+export function TravaDaResposta({
+  exigeAssumir,
+  children,
+}: {
+  exigeAssumir: boolean
+  children: ReactNode
+}) {
+  const conversa = useConversaAberta()
+  const dono = conversa.valor.atribuidoA
+  const travada =
+    exigeAssumir && conversa.usuarioId !== null && dono !== null && dono !== conversa.usuarioId
+  if (!travada) return children
+
+  const nomeDoDono =
+    conversa.equipe.find((membro) => membro.id === dono)?.nome.split(' ')[0] ?? null
+
+  /*
+    O lugar da caixa de resposta, e não um aviso acima dela.
+
+    A caixa desabilitada com um recado em cima seria um campo cinza que a
+    pessoa tenta clicar assim mesmo. Aqui o espaço diz o que é preciso fazer,
+    e o botão que faz isso está no cabeçalho desta mesma coluna.
+  */
+  return (
+    <div className="shrink-0 border-t border-line bg-panel px-4 py-5 text-center">
+      <p className="text-[13px] font-semibold text-soft">
+        {nomeDoDono ? `${nomeDoDono} está atendendo` : 'esta conversa já tem dono'}
+      </p>
+      <p className="mx-auto mt-1 max-w-[420px] text-[12.5px] leading-5 text-dim">
+        Esta conta pediu que só quem assumiu responda, para duas pessoas não escreverem ao
+        mesmo tempo. Use o botão de assumir, no topo da conversa, se precisar entrar nela.
+      </p>
+    </div>
   )
 }

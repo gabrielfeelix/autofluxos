@@ -1,6 +1,9 @@
+'use client'
+
 import type { MensagemAgendada } from '@/server/repos/mensagens-agendadas'
 import { horaComFuso } from '@/lib/quando'
 import { CabecalhoDoTipo } from './tipo-do-passo'
+import { useAgendadas } from '@/components/inbox/agendadas-local'
 
 /**
  * O que já está marcado para sair.
@@ -14,7 +17,16 @@ import { CabecalhoDoTipo } from './tipo-do-passo'
  * que a que vai sair, e esconder a falha aqui faria alguém descobrir dias depois
  * que o cliente nunca recebeu o lembrete.
  */
-export function Agendadas({ agendadas }: { agendadas: MensagemAgendada[] }) {
+export function Agendadas({
+  agendadas: doServidor,
+  contatoId,
+}: {
+  agendadas: MensagemAgendada[]
+  contatoId: string
+}) {
+  // Com o que esta aba agendou ou cancelou por cima: agendar não recarrega a
+  // ficha (`inbox/agendadas-local.ts`).
+  const agendadas = useAgendadas(doServidor, contatoId)
   const pendentes = agendadas.filter((a) => a.estado !== 'falhou').length
 
   return (

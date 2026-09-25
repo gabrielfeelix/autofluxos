@@ -1,7 +1,8 @@
 'use client'
 
 import { useEffect, useRef, useState, type ReactNode } from 'react'
-import { useAcaoOtimista } from '@/components/design/acao-otimista'
+import { useConversaAberta } from '@/components/inbox/conversa-local'
+import { useAgendadas } from '@/components/inbox/agendadas-local'
 import { Dica } from '@/components/design/dica'
 import { SeletorDeEtiquetas, type EtiquetaEscolhivel } from '@/components/etiquetas/seletor'
 import { EntradaDeAnotacao, useTemAnotacao } from '@/components/inbox/anotacoes'
@@ -53,10 +54,7 @@ import {
 export function AcoesRapidas({
   clienteId,
   contatoId,
-  estado,
   etiquetas,
-  etiquetasAplicadas,
-  automacaoAtiva,
   temAutomacao,
   fimDaJanela,
   agendadas,
@@ -64,10 +62,7 @@ export function AcoesRapidas({
 }: {
   clienteId: string
   contatoId: string
-  estado: 'aberta' | 'adiada' | 'resolvida'
   etiquetas: EtiquetaEscolhivel[]
-  etiquetasAplicadas: string[]
-  automacaoAtiva: boolean
   /** Sem fluxo ligado não há bot: o botão de pausar não aparece. */
   temAutomacao: boolean
   /** Quando a janela de 24h fecha, em ISO, o agendamento avisa a partir dela. */
@@ -85,18 +80,30 @@ export function AcoesRapidas({
    * que se fazem **antes** de continuar trabalhando, esperar o servidor para
    * saber se pegou é esperar para começar a escrever a resposta.
    */
-  const conversa = useAcaoOtimista(estado)
-  const bot = useAcaoOtimista(automacaoAtiva)
+  /*
+   * O estado mora em `conversa-local.ts` desde 25/set, e não mais em dois
+   * `useAcaoOtimista` daqui: o selo embaixo do nome, o cartão da coluna do
+   * contato e a linha da fila mostram o mesmo resolvido e o mesmo bot, e os
+   * quatro mudam juntos no clique. O servidor não redesenha a página depois.
+   */
+  const conversa = useConversaAberta()
+  const [erro, setErro] = useState<string | null>(null)
   const [erroDaAtividade, setErroDaAtividade] = useState<string | null>(null)
+  const pendentes = useAgendadas(agendadas, contatoId)
 
-  const resolvida = conversa.valor !== 'aberta'
-  const botLigado = bot.valor
+  const resolvida = conversa.valor.estado !== 'aberta'
+  const botLigado = conversa.valor.automacaoAtiva
+
+  const agir = (mudanca: Parameters<typeof conversa.agir>[0], acao: Parameters<typeof conversa.agir>[1]) => {
+    setErro(null)
+    void conversa.agir(mudanca, acao).then(setErro)
+  }
 
   return (
     <div className="flex shrink-0 items-center gap-0.5">
-      {(conversa.erro || bot.erro) && (
+      {erro && (
         <span role="alert" className="mr-1 max-w-[160px] truncate text-[11.5px] text-rose-500">
-          {conversa.erro ?? bot.erro}
+          {erro}
         </span>
       )}
       {erroDaAtividade && (
@@ -108,7 +115,7 @@ export function AcoesRapidas({
       <AcaoComPainel
         rotulo="Etiquetas do contato"
         icone={<IconeEtiqueta />}
-        marcada={etiquetasAplicadas.length > 0}
+        marcada={conversa.valor.etiquetas.length > 0}
         largura={272}
       >
         <p className="mb-2 text-[12px] font-bold text-soft">Etiquetas do contato</p>
@@ -116,7 +123,7 @@ export function AcoesRapidas({
           clienteId={clienteId}
           contatoId={contatoId}
           disponiveis={etiquetas}
-          aplicadas={etiquetasAplicadas}
+          aplicadas={conversa.doServidor.etiquetas}
         />
       </AcaoComPainel>
 
@@ -147,10 +154,9 @@ export function AcoesRapidas({
                   <button
                     key={prazo}
                     type="button"
-                    disabled={conversa.pendente}
                     onClick={() => {
                       fechar()
-                      conversa.agir('adiada', () => acaoAdiarConversa(clienteId, contatoId, prazo))
+                      agir({ estado: 'adiada' }, () => acaoAdiarConversa(clienteId, contatoId, prazo))
                     }}
                     className="block w-full px-3 py-2 text-left text-[12.5px] font-semibold text-ink transition hover:bg-surface disabled:opacity-50"
                   >
@@ -200,7 +206,7 @@ export function AcoesRapidas({
         <AcaoComPainel
           rotulo="Para o contato: agendar mensagem"
           icone={<IconeAgendar />}
-          marcada={agendadas.some((a) => a.estado === 'agendada' || a.estado === 'enviando')}
+          marcada={pendentes.some((a) => a.estado === 'agendada' || a.estado === 'enviando')}
           largura={320}
         >
           {(fechar) => (
@@ -213,6 +219,7 @@ export function AcoesRapidas({
                 fimDaJanela={fimDaJanela}
                 agendadas={agendadas}
                 aoFechar={fechar}
+                aoFalhar={setErroDaAtividade}
               />
             </>
           )}
@@ -227,9 +234,8 @@ export function AcoesRapidas({
       <BotaoDeIcone
         rotulo={resolvida ? 'Reabrir conversa' : 'Marcar como resolvida'}
         marcada={resolvida}
-        desabilitado={conversa.pendente}
         aoClicar={() =>
-          conversa.agir(resolvida ? 'aberta' : 'resolvida', () =>
+          agir({ estado: resolvida ? 'aberta' : 'resolvida' }, () =>
             acaoDefinirEstadoDaConversa(clienteId, contatoId, resolvida ? 'aberta' : 'resolvida'),
           )
         }
@@ -241,9 +247,8 @@ export function AcoesRapidas({
         <BotaoDeIcone
           rotulo={botLigado ? 'Pausar o bot nesta conversa' : 'Religar o bot nesta conversa'}
           marcada={!botLigado}
-          desabilitado={bot.pendente}
           aoClicar={() =>
-            bot.agir(!botLigado, () =>
+            agir({ automacaoAtiva: !botLigado }, () =>
               acaoAlternarAutomacaoDoLead(clienteId, contatoId, !botLigado),
             )
           }

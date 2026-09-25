@@ -1,8 +1,10 @@
 'use client'
 
 import { useEffect, useRef, useState, useTransition } from 'react'
+import { ehProvisoria, marcarCancelada, useAgendadas } from './agendadas-local'
 import { acaoCancelarAgendada } from '@/server/acoes-agendamento'
 import type { MensagemAgendada } from '@/server/repos/mensagens-agendadas'
+import type { Agendada } from './agendadas-local'
 import { diaEHoraComFuso } from '@/lib/quando'
 
 /**
@@ -27,13 +29,14 @@ import { diaEHoraComFuso } from '@/lib/quando'
  */
 export function ContadorDeAgendadas({
   clienteId,
-  quantas,
-  lista,
+  lista: doServidor,
 }: {
   clienteId: string
-  quantas: number
   lista: (MensagemAgendada & { nomeDoContato: string | null })[]
 }) {
+  // A conta inteira, com o que esta aba agendou ou cancelou por cima.
+  const lista = useAgendadas(doServidor)
+  const quantas = lista.length
   const [aberto, setAberto] = useState(false)
   const caixa = useRef<HTMLDivElement>(null)
 
@@ -94,7 +97,7 @@ function Linha({
   agendada,
 }: {
   clienteId: string
-  agendada: MensagemAgendada & { nomeDoContato: string | null }
+  agendada: Agendada
 }) {
   const [erro, setErro] = useState<string | null>(null)
   const [indo, comecar] = useTransition()
@@ -124,17 +127,19 @@ function Linha({
         {!falhou && (
           <button
             type="button"
-            disabled={indo}
+            disabled={indo || ehProvisoria(agendada.id)}
             onClick={() =>
               comecar(async () => {
+                setErro(null)
                 const r = await acaoCancelarAgendada(clienteId, agendada.id)
                 if (!r.ok) setErro(r.erro ?? 'não deu para cancelar')
+                else marcarCancelada(agendada.id)
               })
             }
             aria-label={`Cancelar a mensagem de ${agendada.nomeDoContato ?? 'sem nome'}`}
             className="shrink-0 rounded-full px-1.5 py-0.5 text-[12.5px] leading-none text-dim transition hover:bg-surface hover:text-perigo disabled:opacity-40"
           >
-            ×
+            {indo ? 'Cancelando…' : '×'}
           </button>
         )}
       </div>

@@ -1,8 +1,10 @@
 'use client'
 
+import { useState } from 'react'
 import { useConfirmar } from '@/components/design/confirmar'
 import { useAcaoOtimista } from '@/components/design/acao-otimista'
-import type { Atendimento } from '@/core/estado-do-atendimento'
+import { estadoDoAtendimento, type Atendimento } from '@/core/estado-do-atendimento'
+import { useConversaAbertaOuNada } from '@/components/inbox/conversa-local'
 import { horaExata } from '@/lib/quando'
 
 type Resultado = { ok: boolean; erro?: string }
@@ -14,14 +16,42 @@ const TOM = {
   encerrado: 'border-line bg-surface text-muted',
 } as const
 
+/**
+ * O atendimento como a tela deve mostrar agora.
+ *
+ * Dentro do Inbox (`ProvedorDaConversa`), recalcula com o que esta aba acabou
+ * de mudar: pausar o bot no cabeçalho, assumir, finalizar. É a mesma função
+ * pura que o servidor usa, então o selo e o cartão dizem no clique o que o
+ * servidor diria no próximo carregamento. Fora do provedor, vale o do servidor.
+ */
+function useAtendimentoVivo(atendimento: Atendimento, donoNome: string | null) {
+  const aberta = useConversaAbertaOuNada()
+  if (!aberta) return { atendimento, donoNome, aberta: null }
+  const v = aberta.valor
+  const vivo = estadoDoAtendimento({
+    automacaoAtiva: v.automacaoAtiva,
+    aguardando: v.aguardando,
+    atribuidoA: v.atribuidoA,
+    sessaoComPessoa: v.sessaoComPessoa,
+    estado: v.estado,
+    temAutomacao: aberta.temAutomacao,
+    usuarioId: aberta.usuarioId,
+  })
+  const nome = v.atribuidoA
+    ? (aberta.equipe.find((membro) => membro.id === v.atribuidoA)?.nome ?? 'alguém fora da equipe')
+    : null
+  return { atendimento: vivo, donoNome: nome, aberta }
+}
+
 /** O selo do estado com o dono: "Em atendimento · com Ana" (tarefa 8.1). */
 export function SeloDoAtendimento({
-  atendimento,
-  donoNome,
+  atendimento: doServidor,
+  donoNome: donoDoServidor,
 }: {
   atendimento: Atendimento
   donoNome: string | null
 }) {
+  const { atendimento, donoNome } = useAtendimentoVivo(doServidor, donoDoServidor)
   const tom = atendimento.rotulo === 'Atendimento manual' ? TOM.encerrado : TOM[atendimento.estado]
   return (
     <span className={`inline-flex max-w-full items-center gap-1 truncate rounded-full border px-2 py-0.5 text-[11px] font-bold ${tom}`}>
@@ -38,8 +68,8 @@ export function SeloDoAtendimento({
  * na ficha (tarefa 8.1). Finalizar confirma antes, dizendo que o bot volta.
  */
 export function CartaoDoAtendimento({
-  atendimento,
-  donoNome,
+  atendimento: doServidor,
+  donoNome: donoDoServidor,
   aguardando,
   automacaoAtiva,
   finalizar,
@@ -58,7 +88,36 @@ export function CartaoDoAtendimento({
   largo?: boolean
 }) {
   const { confirmar, dialogo, rodando } = useConfirmar()
-  const bot = useAcaoOtimista(automacaoAtiva)
+  const { atendimento, donoNome, aberta } = useAtendimentoVivo(doServidor, donoDoServidor)
+  const semProvedor = useAcaoOtimista(automacaoAtiva)
+  const [erroDoBot, setErroDoBot] = useState<string | null>(null)
+  /*
+   * No Inbox o bot mora no store da conversa, o mesmo do botão do cabeçalho:
+   * pausar num lugar muda os dois. Fora dele (a Ficha) continua o hook local.
+   */
+  const bot = aberta
+    ? {
+        valor: aberta.valor.automacaoAtiva,
+        pendente: false,
+        erro: erroDoBot,
+        agir: (nova: boolean, acao: () => Promise<Resultado>) => {
+          setErroDoBot(null)
+          const desfazer = aberta.mudar({ automacaoAtiva: nova })
+          acao().then(
+            (r) => {
+              if (r.ok === false || r.erro) {
+                desfazer()
+                setErroDoBot(r.erro ?? 'não deu para salvar')
+              }
+            },
+            () => {
+              desfazer()
+              setErroDoBot('sem conexão com o servidor')
+            },
+          )
+        },
+      }
+    : semProvedor
   const manual = atendimento.rotulo === 'Atendimento manual'
   const tom = manual ? TOM.encerrado : TOM[atendimento.estado]
   const podeFinalizar =
@@ -97,7 +156,18 @@ export function CartaoDoAtendimento({
                 : 'Na próxima mensagem o bot volta a responder. O histórico continua como está.',
               rotulo: 'Finalizar atendimento',
               tom: 'normal',
-              aoConfirmar: finalizar,
+              /*
+                Finalizar não é otimista: dispara o pós-atendimento, que pode
+                mandar mensagem ao cliente. O modal mostra "Aguarde…" até o
+                "ok", e só então o cartão muda, sem recarregar a página.
+              */
+              aoConfirmar: async () => {
+                const r = await finalizar()
+                if (!(r && (r.ok === false || r.erro))) {
+                  aberta?.mudar({ aguardando: null, sessaoComPessoa: false })
+                }
+                return r
+              },
             })
           }
           className="mt-2.5 w-full rounded-[8px] border border-current/30 bg-white/60 px-2.5 py-2 text-[12px] font-bold transition hover:bg-white disabled:opacity-50 dark:bg-transparent"

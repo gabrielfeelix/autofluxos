@@ -41,12 +41,10 @@ export type FunilDoContato = {
  * Mover cartão cabe no que o `useAcaoOtimista` documenta: é interno (não sai
  * para o WhatsApp), reversível (mover de volta é um clique) e não é lote.
  *
- * **`acaoMoverCartao` revalida `/quadros` e não o Inbox**, e isso é de
- * propósito aqui: a tela onde o cartão mudou de lugar é o quadro, e ele estará
- * certo na próxima visita. O Inbox não se refaz, então a aposta otimista fica
- * de pé sem uma ida ao servidor que só existiria para repintar o que a tela já
- * mostra. Revalidar esta página devolveria os dois segundos que este arquivo
- * existe para evitar.
+ * **`acaoMoverCartao` não revalida nada** (25/set). Ela revalidava só
+ * `/quadros`, na crença de que o Inbox não se refazia; no Next 16.3 qualquer
+ * `revalidatePath` em Server Action redesenha a página aberta, então o Inbox
+ * se refazia sim. Ver `gestoSemRecarregar` em `server/recarregar-contato.ts`.
  */
 export function FunilDaConversa({
   clienteId,
