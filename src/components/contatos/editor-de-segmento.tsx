@@ -52,6 +52,8 @@ export function EditorDeSegmento({
   nomeInicial = '',
   regraInicial,
   aoSalvar,
+  aoEnviar,
+  erroInicial,
   aoCancelar,
 }: {
   clienteId: string
@@ -61,6 +63,14 @@ export function EditorDeSegmento({
   regraInicial?: Segmento
   /** Recebe o segmento como ficou gravado, para a tabela mudar sem recarregar. */
   aoSalvar?: (segmento: SegmentoSalvo) => void
+  /**
+   * Quem abriu o editor grava por conta própria, sem esperar aqui: a tabela de
+   * segmentos fecha o editor e mostra a linha no clique (25/set). Sem isto, o
+   * editor espera o servidor como antes.
+   */
+  aoEnviar?: (pedido: { nome: string; regra: Segmento }) => void
+  /** O motivo de uma recusa anterior, quando o editor reabre por causa dela. */
+  erroInicial?: string | null
   aoCancelar?: () => void
 }) {
   const [nome, setNome] = useState(nomeInicial)
@@ -70,7 +80,7 @@ export function EditorDeSegmento({
   const [previa, setPrevia] = useState<RespostaDaPrevia | null>(null)
   /** A regra que produziu a prévia na tela. Mudou depois? A prévia é velha. */
   const [regraDaPrevia, setRegraDaPrevia] = useState<string | null>(null)
-  const [erro, setErro] = useState<string | null>(null)
+  const [erro, setErro] = useState<string | null>(erroInicial ?? null)
   const [rodando, comecar] = useTransition()
 
   const regra: Segmento = { juncao, condicoes }
@@ -243,6 +253,7 @@ export function EditorDeSegmento({
 
   function salvar() {
     setErro(null)
+    if (aoEnviar) return aoEnviar({ nome, regra })
     comecar(async () => {
       const r = segmentoId
         ? await acaoSalvarSegmento(clienteId, segmentoId, nome, regra)

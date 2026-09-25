@@ -113,7 +113,6 @@ import {
 import { ehCorDeEtiqueta, type CorDeEtiqueta } from '@/core/etiquetas'
 import { OPERADORES_DE_GATILHO, type OperadorDeGatilho } from '@/core/gatilhos'
 import { rodarPosAtendimento } from './receber-mensagem'
-import { recarregarContato } from './recarregar-contato'
 import { inscreverNoEvento, sairPelaEtiqueta, sairPorEvento } from './sequencias'
 import {
   acharSequencia,
@@ -2611,7 +2610,7 @@ export async function acaoCorrigirNome(
   const ok = await corrigirNome(clienteId, contatoId, nome)
   if (!ok) return { erro: 'este contato não é deste cliente' }
 
-  recarregarContato(clienteId, contatoId)
+  // Gesto rápido: o nome já mudou na ficha no clique. Ver `gestoSemRecarregar`.
   return { ok: true }
 }
 
@@ -2628,7 +2627,7 @@ export async function acaoSalvarNotas(
   const ok = await salvarNotas(clienteId, contatoId, notas)
   if (!ok) return { erro: 'este contato não é deste cliente' }
 
-  revalidatePath(`/clientes/${clienteId}/leads/${contatoId}`)
+  // Gesto rápido: a nota já aparece na ficha no clique. Ver `gestoSemRecarregar`.
   return { ok: true }
 }
 

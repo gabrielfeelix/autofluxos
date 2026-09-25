@@ -1,6 +1,7 @@
 'use client'
 
-import { useState, useTransition } from 'react'
+import { useState } from 'react'
+import { depoisDaTela } from '@/components/inbox/conversa-local'
 import { Modal } from '@/components/design/modal'
 import { acaoCorrigirNome, acaoSalvarNotas } from '@/server/acoes'
 import { acaoDescreverCartao } from '@/server/acoes-crm'
@@ -23,7 +24,6 @@ export function EditarTextoDoContato({
   const [aberto, setAberto] = useState(false)
   const [rascunho, setRascunho] = useState(valor)
   const [erro, setErro] = useState<string | null>(null)
-  const [pendente, iniciar] = useTransition()
   const titulo = tipo === 'nome' ? 'Editar nome' : 'Editar anotação'
   return (
     <>
@@ -42,7 +42,7 @@ export function EditarTextoDoContato({
       <Modal
         aberto={aberto}
         aoFechar={() => {
-          if (!pendente) setAberto(false)
+          setAberto(false)
         }}
         titulo={titulo}
         descricao={
@@ -55,31 +55,36 @@ export function EditarTextoDoContato({
           onSubmit={(evento) => {
             evento.preventDefault()
             setErro(null)
-            iniciar(async () => {
-              try {
-                const texto = rascunho.trim()
-                if (tipo === 'nome' && !texto) {
-                  setErro('Informe um nome para o contato.')
-                  return
-                }
-                const form = new FormData()
-                form.set(tipo, texto)
-                const resposta = await (tipo === 'nome' ? acaoCorrigirNome : acaoSalvarNotas)(
-                  clienteId,
-                  contatoId,
-                  {},
-                  form,
-                )
-                if (resposta.erro || !resposta.ok) {
-                  setErro(resposta.erro ?? 'Não foi possível salvar.')
-                  return
-                }
-                aoSalvar(texto)
-                setAberto(false)
-              } catch {
-                setErro('Não foi possível salvar. Seu texto foi mantido; tente novamente.')
-              }
-            })
+            const texto = rascunho.trim()
+            if (tipo === 'nome' && !texto) {
+              setErro('Informe um nome para o contato.')
+              return
+            }
+            /*
+             * Era "Salvando…" até o servidor responder, e o servidor ainda
+             * redesenhava a ficha. Agora o texto aparece e o modal fecha no
+             * clique; se o servidor recusar, o valor antigo volta e o modal
+             * reabre com o texto digitado e o motivo.
+             */
+            const antes = valor
+            aoSalvar(texto)
+            setAberto(false)
+            const form = new FormData()
+            form.set(tipo, texto)
+            const desfazer = (motivo: string) => {
+              aoSalvar(antes)
+              setRascunho(texto)
+              setErro(motivo)
+              setAberto(true)
+            }
+            depoisDaTela(() =>
+              (tipo === 'nome' ? acaoCorrigirNome : acaoSalvarNotas)(clienteId, contatoId, {}, form),
+            ).then(
+              (resposta) => {
+                if (resposta.erro || !resposta.ok) desfazer(resposta.erro ?? 'Não foi possível salvar.')
+              },
+              () => desfazer('Não foi possível salvar. Seu texto foi mantido; tente novamente.'),
+            )
           }}
         >
           <label className="crm-field">
@@ -92,7 +97,6 @@ export function EditarTextoDoContato({
                 className="app-field px-3 py-2.5 text-sm"
                 value={rascunho}
                 onChange={(e) => setRascunho(e.target.value)}
-                disabled={pendente}
               />
             ) : (
               <textarea
@@ -102,7 +106,6 @@ export function EditarTextoDoContato({
                 className="app-field resize-y px-3 py-2.5 text-sm"
                 value={rascunho}
                 onChange={(e) => setRascunho(e.target.value)}
-                disabled={pendente}
               />
             )}
           </label>
@@ -115,7 +118,6 @@ export function EditarTextoDoContato({
             <button
               type="button"
               className="crm-button"
-              disabled={pendente}
               onClick={() => setAberto(false)}
             >
               Cancelar
@@ -123,9 +125,8 @@ export function EditarTextoDoContato({
             <button
               type="submit"
               className="app-primary-button px-4 py-2 text-xs"
-              disabled={pendente}
             >
-              {pendente ? 'Salvando…' : 'Salvar alterações'}
+              Salvar alterações
             </button>
           </div>
         </form>
@@ -152,7 +153,6 @@ export function DetalhesDaOportunidade({
   const [nome, setNome] = useState(titulo ?? '')
   const [preco, setPreco] = useState(valor === null ? '' : String(valor).replace('.', ','))
   const [erro, setErro] = useState<string | null>(null)
-  const [pendente, iniciar] = useTransition()
   return (
     <>
       <div className="flex items-start justify-between gap-3">
@@ -183,7 +183,7 @@ export function DetalhesDaOportunidade({
       <Modal
         aberto={editando}
         aoFechar={() => {
-          if (!pendente) setEditando(false)
+          setEditando(false)
         }}
         titulo="Editar negociação"
         descricao="Descreva a oportunidade e o valor estimado. Isso não registra uma venda."
@@ -197,24 +197,26 @@ export function DetalhesDaOportunidade({
               setErro(lido.motivo)
               return
             }
-            iniciar(async () => {
-              try {
-                const r = await acaoDescreverCartao(clienteId, cartaoId, {
-                  titulo: nome.trim(),
-                  valor: preco,
-                })
-                if (!r.ok) {
-                  setErro(r.erro ?? 'Não foi possível salvar.')
-                  return
-                }
-                const proximo = { titulo: nome.trim() || null, valor: lido.valor }
-                setConfirmado(proximo)
-                setEditando(false)
-                aoSalvar?.(proximo)
-              } catch {
-                setErro('Não foi possível salvar. Tente novamente.')
-              }
-            })
+            const proximo = { titulo: nome.trim() || null, valor: lido.valor }
+            const antes = confirmado
+            const digitado = { nome, preco }
+            setConfirmado(proximo)
+            setEditando(false)
+            aoSalvar?.(proximo)
+            const desfazer = (motivo: string) => {
+              setConfirmado(antes)
+              aoSalvar?.(antes)
+              setNome(digitado.nome)
+              setPreco(digitado.preco)
+              setErro(motivo)
+              setEditando(true)
+            }
+            depoisDaTela(() => acaoDescreverCartao(clienteId, cartaoId, { titulo: nome.trim(), valor: preco })).then(
+              (r) => {
+                if (!r.ok) desfazer(r.erro ?? 'Não foi possível salvar.')
+              },
+              () => desfazer('Não foi possível salvar. Tente novamente.'),
+            )
           }}
           className="space-y-4"
         >
@@ -226,7 +228,6 @@ export function DetalhesDaOportunidade({
               className="app-field px-3 py-2.5 text-sm"
               value={nome}
               onChange={(e) => setNome(e.target.value)}
-              disabled={pendente}
               placeholder="Ex.: Plano anual"
             />
           </label>
@@ -237,7 +238,6 @@ export function DetalhesDaOportunidade({
               className="app-field px-3 py-2.5 text-sm"
               value={preco}
               onChange={(e) => setPreco(e.target.value)}
-              disabled={pendente}
               placeholder="Não informado"
             />
           </label>
@@ -250,7 +250,6 @@ export function DetalhesDaOportunidade({
             <button
               type="button"
               className="crm-button"
-              disabled={pendente}
               onClick={() => setEditando(false)}
             >
               Cancelar
@@ -258,9 +257,8 @@ export function DetalhesDaOportunidade({
             <button
               type="submit"
               className="app-primary-button px-4 py-2 text-xs"
-              disabled={pendente}
             >
-              {pendente ? 'Salvando…' : 'Salvar alterações'}
+              Salvar alterações
             </button>
           </div>
         </form>

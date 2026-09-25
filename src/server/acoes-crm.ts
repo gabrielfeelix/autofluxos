@@ -640,7 +640,7 @@ export async function acaoAnotarNoDiario(
   const quemFez = await sessaoAtual()
   await anotar(clienteId, contatoId, 'nota', { texto }, quemFez?.usuario.nome ?? null)
 
-  revalidatePath(`/clientes/${clienteId}/leads/${contatoId}`)
-  revalidatePath(`/clientes/${clienteId}/quadros`)
+  // Gesto rápido: a nota já entrou na lista no clique (`lead-crm/diario.tsx`).
+  // Ver `gestoSemRecarregar`.
   return { ok: true }
 }

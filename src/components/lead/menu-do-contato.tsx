@@ -1,7 +1,8 @@
 'use client'
 
 import Link from 'next/link'
-import { useCallback, useEffect, useLayoutEffect, useRef, useState, useTransition } from 'react'
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react'
+import { agirNaConversa, useConversa } from '@/components/inbox/conversa-local'
 import { createPortal } from 'react-dom'
 import { acaoAlternarAutomacaoDoLead, acaoApagarContatos } from '@/server/acoes'
 import { useConfirmar } from '@/components/design/confirmar'
@@ -33,7 +34,7 @@ export function MenuDoContato({
   clienteId,
   contatoId,
   nome,
-  automacaoAtiva,
+  automacaoAtiva: doServidor,
   aguardandoPessoa,
 }: {
   clienteId: string
@@ -45,7 +46,9 @@ export function MenuDoContato({
   const [aberto, setAberto] = useState(false)
   const [erro, setErro] = useState<string | null>(null)
   const { confirmar, dialogo } = useConfirmar()
-  const [rodando, comecar] = useTransition()
+  // O bot mora no store por contato (`inbox/conversa-local.ts`): pausar aqui
+  // muda o rótulo no clique, e o Inbox, se aberto nesta aba, diz o mesmo.
+  const { automacaoAtiva } = useConversa(contatoId, { automacaoAtiva: doServidor })
   const raiz = useRef<HTMLDivElement>(null)
   const menu = useRef<HTMLDivElement>(null)
   const [caixa, setCaixa] = useState<{ top: number; left: number } | null>(null)
@@ -101,12 +104,20 @@ export function MenuDoContato({
     }
   }, [aberto])
 
+  /*
+   * Otimista desde 25/set. Era: o menu esperava o servidor aberto, com o botão
+   * desabilitado, e o rótulo só mudava quando a lista voltava redesenhada.
+   * Agora o menu fecha no clique; se o servidor recusar, reabre com o motivo.
+   */
   const alternarBot = () => {
     setErro(null)
-    comecar(async () => {
-      const r = await acaoAlternarAutomacaoDoLead(clienteId, contatoId, !automacaoAtiva)
-      if (!r.ok) setErro(r.erro ?? 'não deu para mudar a automação')
-      else setAberto(false)
+    setAberto(false)
+    void agirNaConversa(contatoId, { automacaoAtiva: doServidor }, { automacaoAtiva: !automacaoAtiva }, () =>
+      acaoAlternarAutomacaoDoLead(clienteId, contatoId, !automacaoAtiva),
+    ).then((falhou) => {
+      if (!falhou) return
+      setErro(falhou)
+      setAberto(true)
     })
   }
 
@@ -167,7 +178,7 @@ export function MenuDoContato({
           <button
             role="menuitem"
             type="button"
-            disabled={rodando || (aguardandoPessoa && !automacaoAtiva)}
+            disabled={aguardandoPessoa && !automacaoAtiva}
             title={
               aguardandoPessoa && !automacaoAtiva
                 ? 'Conclua o atendimento antes de religar o bot'
@@ -182,7 +193,6 @@ export function MenuDoContato({
           <button
             role="menuitem"
             type="button"
-            disabled={rodando}
             onClick={apagar}
             className="block w-full border-t border-line px-3 py-2 text-left text-[12.5px] text-perigo transition hover:bg-rose-400/[0.09] disabled:opacity-40"
           >

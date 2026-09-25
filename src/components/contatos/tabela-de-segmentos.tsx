@@ -2,13 +2,13 @@
 
 import Link from 'next/link'
 import { useCallback, useState, useTransition } from 'react'
+import { depoisDaTela, idProvisorio } from '@/components/inbox/conversa-local'
 import { AvisoFlutuante } from '@/components/design/aviso-flutuante'
 import { useConfirmar } from '@/components/design/confirmar'
 import { Modal } from '@/components/design/modal'
 import { PopoverDoQuadro } from '@/components/quadros/popover-do-quadro'
 import { explicarSegmento, type Segmento } from '@/core/segmentos'
-import { acaoApagarSegmento, acaoContarSegmento, acaoCriarSegmento } from '@/server/acoes-segmentos'
-import type { SegmentoSalvo } from '@/server/repos/segmentos'
+import { acaoApagarSegmento, acaoContarSegmento, acaoCriarSegmento, acaoSalvarSegmento } from '@/server/acoes-segmentos'
 import { EditorDeSegmento } from './editor-de-segmento'
 import { IlustracaoSegmentos } from '@/components/design/ilustracoes'
 
@@ -42,7 +42,9 @@ export function TabelaDeSegmentos({ clienteId, inicial }: { clienteId: string; i
   const [lista, setLista] = useState(inicial)
   const [editando, setEditando] = useState<LinhaDeSegmento | 'novo' | null>(null)
   const [recado, setRecado] = useState<Recado | null>(null)
-  const [duplicando, comecar] = useTransition()
+  /** O que o servidor recusou, para o editor reabrir com isso. */
+  const [recusado, setRecusado] = useState<{ nome: string; regra: Segmento; erro: string } | null>(null)
+  const [, comecar] = useTransition()
   const { confirmar, dialogo } = useConfirmar()
   const sumir = useCallback(() => setRecado(null), [])
 
@@ -53,27 +55,67 @@ export function TabelaDeSegmentos({ clienteId, inicial }: { clienteId: string; i
     })
   }
 
-  const gravado = (segmento: SegmentoSalvo, novo: boolean) => {
-    const linha: LinhaDeSegmento = {
-      id: segmento.id,
-      nome: segmento.nome,
-      regra: segmento.regra,
+  /**
+   * Criar, salvar e duplicar são otimistas desde 25/set. Era: o editor e o
+   * "Duplicar" esperavam o servidor. Agora a linha aparece (ou muda) e o editor
+   * fecha no clique; a contagem chega depois, como já chegava. Se o servidor
+   * recusar, a lista volta e o editor reabre com a regra e o motivo.
+   */
+  const enviar = (
+    alvo: LinhaDeSegmento | 'novo',
+    pedido: { nome: string; regra: Segmento },
+    /** Duplicar não abriu editor: a recusa vira aviso, e não um editor que ninguém pediu. */
+    reabrir = true,
+  ) => {
+    const antes = lista
+    const provisoria: LinhaDeSegmento = {
+      id: alvo === 'novo' ? idProvisorio('segmento') : alvo.id,
+      nome: pedido.nome.trim(),
+      regra: pedido.regra,
       contatos: null,
-      criadoPor: segmento.criadoPor,
-      criadoEm: segmento.criadoEm,
+      criadoPor: alvo === 'novo' ? null : alvo.criadoPor,
+      criadoEm: alvo === 'novo' ? new Date().toISOString() : alvo.criadoEm,
     }
-    setLista((atual) => (novo ? [...atual, linha] : atual.map((s) => (s.id === linha.id ? linha : s))).sort(porNome))
+    setLista((atual) =>
+      (alvo === 'novo' ? [...atual, provisoria] : atual.map((s) => (s.id === provisoria.id ? provisoria : s))).sort(porNome),
+    )
     setEditando(null)
-    setRecado({ texto: novo ? `Segmento “${linha.nome}” criado.` : 'Segmento salvo.' })
-    contar(linha.id, linha.regra)
+    setRecusado(null)
+    setRecado({ texto: alvo === 'novo' ? `Segmento “${provisoria.nome}” criado.` : 'Segmento salvo.' })
+
+    const desfazer = (erro: string) => {
+      setLista(antes)
+      setRecado(null)
+      if (!reabrir) {
+        setRecado({ texto: erro, erro: true })
+        return
+      }
+      setRecusado({ ...pedido, erro })
+      setEditando(alvo)
+    }
+    depoisDaTela(() =>
+      alvo === 'novo'
+        ? acaoCriarSegmento(clienteId, pedido.nome, pedido.regra)
+        : acaoSalvarSegmento(clienteId, alvo.id, pedido.nome, pedido.regra),
+    ).then(
+      (r) => {
+        if (!r.ok || !r.segmento) return desfazer(r.erro ?? 'não deu para salvar')
+        const salvo = r.segmento
+        setLista((atual) =>
+          atual.map((s) =>
+            s.id === provisoria.id
+              ? { ...s, id: salvo.id, nome: salvo.nome, regra: salvo.regra, criadoPor: salvo.criadoPor, criadoEm: salvo.criadoEm }
+              : s,
+          ),
+        )
+        contar(salvo.id, salvo.regra)
+      },
+      () => desfazer('sem conexão com o servidor'),
+    )
   }
 
   const duplicar = (s: LinhaDeSegmento) => {
-    comecar(async () => {
-      const r = await acaoCriarSegmento(clienteId, `${s.nome} (cópia)`, s.regra).catch(() => null)
-      if (r?.ok && r.segmento) gravado(r.segmento, true)
-      else setRecado({ texto: r?.erro ?? 'não deu para duplicar', erro: true })
-    })
+    enviar('novo', { nome: `${s.nome} (cópia)`, regra: s.regra }, false)
   }
 
   const apagar = (s: LinhaDeSegmento) =>
@@ -172,7 +214,7 @@ export function TabelaDeSegmentos({ clienteId, inicial }: { clienteId: string; i
                     <button type="button" data-fechar-popover className="quadro-menu-item" onClick={() => setEditando(s)}>
                       Editar
                     </button>
-                    <button type="button" data-fechar-popover disabled={duplicando} className="quadro-menu-item" onClick={() => duplicar(s)}>
+                    <button type="button" data-fechar-popover className="quadro-menu-item" onClick={() => duplicar(s)}>
                       Duplicar
                     </button>
                     <button
@@ -203,10 +245,14 @@ export function TabelaDeSegmentos({ clienteId, inicial }: { clienteId: string; i
             key={editando === 'novo' ? 'novo' : editando.id}
             clienteId={clienteId}
             segmentoId={editando === 'novo' ? undefined : editando.id}
-            nomeInicial={editando === 'novo' ? '' : editando.nome}
-            regraInicial={editando === 'novo' ? undefined : editando.regra}
-            aoCancelar={() => setEditando(null)}
-            aoSalvar={(segmento) => gravado(segmento, editando === 'novo')}
+            nomeInicial={recusado?.nome ?? (editando === 'novo' ? '' : editando.nome)}
+            regraInicial={recusado?.regra ?? (editando === 'novo' ? undefined : editando.regra)}
+            erroInicial={recusado?.erro}
+            aoCancelar={() => {
+              setEditando(null)
+              setRecusado(null)
+            }}
+            aoEnviar={(pedido) => enviar(editando, pedido)}
           />
         </Modal>
       )}

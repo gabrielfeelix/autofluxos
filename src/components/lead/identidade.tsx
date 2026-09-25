@@ -4,6 +4,7 @@ import { useRef, useState } from 'react'
 import type { EstadoSalvar } from '@/components/design/formulario-salvar'
 import { Avatar } from '@/components/inbox/avatar'
 import { telefoneLegivel } from '@/core/contatos/telefone'
+import { depoisDaTela } from '@/components/inbox/conversa-local'
 
 type Acao = (estado: EstadoSalvar, formData: FormData) => Promise<EstadoSalvar>
 
@@ -17,9 +18,9 @@ type Acao = (estado: EstadoSalvar, formData: FormData) => Promise<EstadoSalvar>
  * que quem atende reconhece na notificação do celular.
  */
 export function NomeDoContato({
-  nome,
+  nome: nomeDoServidor,
   nomeDoPerfil,
-  nomeReal,
+  nomeReal: nomeRealDoServidor,
   waId,
   salvar,
 }: {
@@ -31,15 +32,33 @@ export function NomeDoContato({
 }) {
   const dialogo = useRef<HTMLDialogElement>(null)
   const [erro, setErro] = useState<string | null>(null)
+  /** O nome que esta aba acabou de salvar, por cima do que o servidor desenhou. */
+  const [salvo, setSalvo] = useState<string | null>(null)
+  const nomeReal = salvo ?? nomeRealDoServidor
+  const nome = salvo === null ? nomeDoServidor : salvo || nomeDoPerfil
 
-  async function enviar(dados: FormData) {
+  /*
+   * Otimista desde 25/set. Era: o modal esperava o servidor, e o nome no
+   * título só mudava quando a ficha voltava redesenhada. Agora o título muda e
+   * o modal fecha no clique; se o servidor recusar, o nome antigo volta e o
+   * modal reabre com o motivo.
+   */
+  function enviar(dados: FormData) {
     setErro(null)
-    const r = await salvar({}, dados)
-    if (r && r.erro) {
-      setErro(r.erro)
-      return
-    }
+    const antes = salvo
+    setSalvo(String(dados.get('nome') ?? '').trim())
     dialogo.current?.close()
+    const desfazer = (motivo: string) => {
+      setSalvo(antes)
+      setErro(motivo)
+      dialogo.current?.showModal()
+    }
+    depoisDaTela(() => salvar({}, dados)).then(
+      (r) => {
+        if (r && r.erro) desfazer(r.erro)
+      },
+      () => desfazer('sem conexão com o servidor'),
+    )
   }
 
   return (

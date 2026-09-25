@@ -145,6 +145,13 @@ export function mudarConversa(
   }
 }
 
+let provisorios = 0
+/** Id de linha que ainda não chegou ao banco. Único nesta aba. */
+export function idProvisorio(prefixo: string): string {
+  provisorios += 1
+  return `${prefixo}-${Date.now()}-${provisorios}`
+}
+
 export type Resposta = { ok?: boolean; erro?: string } | void | undefined
 
 /**

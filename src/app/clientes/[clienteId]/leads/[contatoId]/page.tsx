@@ -3,6 +3,7 @@ import { Fragment } from 'react'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { ClienteShell } from '@/components/design/cliente-shell'
+import { ProvedorDaConversa } from '@/components/inbox/conversa-local'
 import { Suspense } from 'react'
 import { comoFalta, podeReagir, restaDaJanela } from '@/channels/janela'
 import { Dica } from '@/components/design/dica'
@@ -222,6 +223,25 @@ export default async function Pagina({
 
   return (
     <ClienteShell cliente={cliente} ativa="leads">
+      {/*
+        O mesmo store do Inbox (`inbox/conversa-local.ts`): finalizar, pausar o
+        bot ou marcar etiqueta aqui muda o cartão, o selo e as etiquetas no
+        clique, sem a ficha voltar do servidor.
+      */}
+      <ProvedorDaConversa
+        contatoId={contatoId}
+        doServidor={{
+          estado: lead.estadoEfetivo,
+          automacaoAtiva: lead.automacaoAtiva,
+          atribuidoA: lead.atribuidoA,
+          sessaoComPessoa: comPessoa,
+          aguardando: lead.aguardando,
+          etiquetas: lead.etiquetasManuais.map((etiqueta) => etiqueta.id),
+        }}
+        usuarioId={sessaoDaFicha?.usuario.id ?? null}
+        temAutomacao={temAutomacao}
+        equipe={equipe.map((membro) => ({ id: membro.id, nome: membro.nome }))}
+      >
       <main className="w-full max-w-[1440px] px-4 md:px-[42px] pt-[26px] pb-[42px]">
         <Link
           href={volta.href}
@@ -679,6 +699,7 @@ export default async function Pagina({
           ]}
         />
       </main>
+      </ProvedorDaConversa>
     </ClienteShell>
   )
 }

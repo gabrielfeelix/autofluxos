@@ -1,6 +1,7 @@
 'use client'
 
-import { useCallback, useState, useTransition } from 'react'
+import { useCallback, useState } from 'react'
+import { depoisDaTela, idProvisorio } from '@/components/inbox/conversa-local'
 import { AvisoFlutuante } from '@/components/design/aviso-flutuante'
 import { useConfirmar } from '@/components/design/confirmar'
 import { Modal } from '@/components/design/modal'
@@ -23,6 +24,44 @@ type Recado = { texto: string; erro?: boolean }
 export function GerenciadorDeRespostasRapidas({ clienteId, inicial }: { clienteId: string; inicial: RespostaRapida[] }) {
   const [lista, setLista] = useState(inicial)
   const [editando, setEditando] = useState<RespostaRapida | 'nova' | null>(null)
+  /** O que foi digitado e recusado pelo servidor, para o formulário reabrir com isso. */
+  const [recusada, setRecusada] = useState<{ atalho: string; texto: string; erro: string } | null>(null)
+
+  /*
+   * Otimista desde 25/set. Era: o modal esperava o servidor com "Salvando…".
+   * Agora a lista muda e o modal fecha no clique; se o servidor recusar (atalho
+   * repetido, por exemplo), a lista volta e o modal reabre com o que foi
+   * digitado e o motivo.
+   */
+  function enviar(resposta: RespostaRapida | null, dados: { atalho: string; texto: string }) {
+    const provisoria: RespostaRapida = {
+      id: resposta?.id ?? idProvisorio('nova'),
+      atalho: dados.atalho.trim(),
+      texto: dados.texto,
+    }
+    const antes = lista
+    setLista((atual) => (resposta ? atual.map((x) => (x.id === resposta.id ? provisoria : x)) : [...atual, provisoria]))
+    setEditando(null)
+    setRecusada(null)
+    setRecado({ texto: resposta ? `Resposta /${provisoria.atalho} salva.` : `Resposta /${provisoria.atalho} criada.` })
+
+    const desfazer = (erro: string) => {
+      setLista(antes)
+      setRecado(null)
+      setRecusada({ ...dados, erro })
+      setEditando(resposta ?? 'nova')
+    }
+    depoisDaTela(() =>
+      resposta ? acaoEditarRespostaRapida(clienteId, resposta.id, dados) : acaoNovaRespostaRapida(clienteId, dados),
+    ).then(
+      (r) => {
+        if (!r.ok || !r.resposta) return desfazer(r.erro ?? 'não deu para salvar')
+        const salva = r.resposta
+        setLista((atual) => atual.map((x) => (x.id === provisoria.id ? salva : x)))
+      },
+      () => desfazer('sem conexão com o servidor'),
+    )
+  }
   const [recado, setRecado] = useState<Recado | null>(null)
   const { confirmar, dialogo } = useConfirmar()
   const sumir = useCallback(() => setRecado(null), [])
@@ -105,15 +144,13 @@ export function GerenciadorDeRespostasRapidas({ clienteId, inicial }: { clienteI
       {editando && (
         <FormularioDaResposta
           key={editando === 'nova' ? 'nova' : editando.id}
-          clienteId={clienteId}
           resposta={editando === 'nova' ? null : editando}
-          aoFechar={() => setEditando(null)}
-          aoSalvar={(salva) => {
-            const nova = editando === 'nova'
-            setLista((atual) => (nova ? [...atual, salva] : atual.map((x) => (x.id === salva.id ? salva : x))))
+          recusada={recusada}
+          aoFechar={() => {
             setEditando(null)
-            setRecado({ texto: nova ? `Resposta /${salva.atalho} criada.` : `Resposta /${salva.atalho} salva.` })
+            setRecusada(null)
           }}
+          aoEnviar={(dados) => enviar(editando === 'nova' ? null : editando, dados)}
         />
       )}
 
@@ -133,27 +170,26 @@ export function GerenciadorDeRespostasRapidas({ clienteId, inicial }: { clienteI
 }
 
 function FormularioDaResposta({
-  clienteId,
   resposta,
+  recusada,
   aoFechar,
-  aoSalvar,
+  aoEnviar,
 }: {
-  clienteId: string
   resposta: RespostaRapida | null
+  recusada: { atalho: string; texto: string; erro: string } | null
   aoFechar: () => void
-  aoSalvar: (salva: RespostaRapida) => void
+  aoEnviar: (dados: { atalho: string; texto: string }) => void
 }) {
-  const [atalho, setAtalho] = useState(resposta?.atalho ?? '')
-  const [texto, setTexto] = useState(resposta?.texto ?? '')
-  const [erro, setErro] = useState<string | null>(null)
-  const [rodando, comecar] = useTransition()
+  const [atalho, setAtalho] = useState(recusada?.atalho ?? resposta?.atalho ?? '')
+  const [texto, setTexto] = useState(recusada?.texto ?? resposta?.texto ?? '')
+  const [erro, setErro] = useState<string | null>(recusada?.erro ?? null)
   const vazio = atalho.trim() === '' || texto.trim() === ''
 
   return (
     <Modal
       aberto
       largura={520}
-      aoFechar={() => !rodando && aoFechar()}
+      aoFechar={aoFechar}
       titulo={resposta ? `Editar /${resposta.atalho}` : 'Nova resposta rápida'}
       descricao="Na conversa, clique no atalho para inserir o texto onde está o cursor, sem apagar o que já foi escrito."
     >
@@ -162,15 +198,7 @@ function FormularioDaResposta({
         onSubmit={(evento) => {
           evento.preventDefault()
           setErro(null)
-          comecar(async () => {
-            const dados = { atalho, texto }
-            const r = await (resposta
-              ? acaoEditarRespostaRapida(clienteId, resposta.id, dados)
-              : acaoNovaRespostaRapida(clienteId, dados)
-            ).catch(() => ({ ok: false, erro: 'sem conexão com o servidor', resposta: undefined }))
-            if (r.ok && r.resposta) aoSalvar(r.resposta)
-            else setErro(r.erro ?? 'não deu para salvar')
-          })
+          aoEnviar({ atalho, texto })
         }}
       >
         <label className="block">
@@ -212,11 +240,11 @@ function FormularioDaResposta({
         )}
 
         <div className="flex justify-end gap-2 pt-1">
-          <button type="button" onClick={aoFechar} disabled={rodando} className="app-secondary-button h-9 px-4 text-[13px]">
+          <button type="button" onClick={aoFechar} className="app-secondary-button h-9 px-4 text-[13px]">
             Cancelar
           </button>
-          <button type="submit" disabled={rodando || vazio} className="app-primary-button h-9 px-4 text-[13px]">
-            {rodando ? 'Salvando…' : resposta ? 'Salvar' : 'Criar resposta'}
+          <button type="submit" disabled={vazio} className="app-primary-button h-9 px-4 text-[13px]">
+            {resposta ? 'Salvar' : 'Criar resposta'}
           </button>
         </div>
       </form>

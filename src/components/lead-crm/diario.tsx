@@ -1,7 +1,8 @@
 'use client'
 
 import { useState } from 'react'
-import { FormularioSalvar, type EstadoSalvar } from '@/components/design/formulario-salvar'
+import type { EstadoSalvar } from '@/components/design/formulario-salvar'
+import { depoisDaTela } from '@/components/inbox/conversa-local'
 import { AjudaDoCampo } from '@/components/design/ajuda-do-campo'
 import type { Evento } from '@/core/crm'
 
@@ -39,7 +40,54 @@ export function Diario({
   anotar: Acao
 }) {
   const [aberta, setAberta] = useState(false)
-  const notas = eventos.filter((evento) => evento.tipo === 'nota')
+  const [texto, setTexto] = useState('')
+  const [erro, setErro] = useState<string | null>(null)
+  /** As anotadas agora, antes de a ficha voltar do servidor. */
+  const [novas, setNovas] = useState<Evento[]>([])
+  const ids = new Set(eventos.map((evento) => evento.id))
+  const notas = [
+    ...novas.filter((nova) => !ids.has(nova.id)),
+    ...eventos.filter((evento) => evento.tipo === 'nota'),
+  ]
+
+  /*
+   * Otimista desde 25/set. Era um `FormularioSalvar` com "Salvando…" até o
+   * servidor responder, e o servidor ainda redesenhava a ficha para a nota
+   * aparecer. Agora a nota entra na lista e o campo fecha no clique; se o
+   * servidor recusar, ela sai, e o campo reabre com o texto e o motivo.
+   */
+  function salvar() {
+    const limpo = texto.trim()
+    if (limpo === '') {
+      setErro('escreva alguma coisa antes de salvar')
+      return
+    }
+    const provisoria: Evento = {
+      id: `nova-${Date.now()}`,
+      tipo: 'nota',
+      dados: { texto: limpo },
+      autor: null,
+      criadoEm: new Date().toISOString(),
+    }
+    setErro(null)
+    setNovas((atuais) => [provisoria, ...atuais])
+    setTexto('')
+    setAberta(false)
+    const dados = new FormData()
+    dados.set('texto', limpo)
+    const desfazer = (motivo: string) => {
+      setNovas((atuais) => atuais.filter((nota) => nota.id !== provisoria.id))
+      setTexto(limpo)
+      setErro(motivo)
+      setAberta(true)
+    }
+    depoisDaTela(() => anotar({}, dados)).then(
+      (r) => {
+        if (r.erro || r.ok === false) desfazer(r.erro ?? 'não deu para salvar')
+      },
+      () => desfazer('sem conexão com o servidor'),
+    )
+  }
 
   return (
     <section className="app-card overflow-hidden">
@@ -89,38 +137,48 @@ export function Diario({
       <div className="px-[18px] py-4">
         {aberta && (
           <div className="mb-4">
-            <FormularioSalvar
-              action={async (estado, formData) => {
-                const r = await anotar(estado, formData)
-                if (r.ok) setAberta(false)
-                return r
+            <form
+              onSubmit={(evento) => {
+                evento.preventDefault()
+                salvar()
               }}
-              rotulo="Salvar anotação"
-              /*
-                O "Cancelar" entra como `dica` para ficar na **mesma linha** do
-                Salvar. Ele era um botão solto embaixo do formulário, e a frase
-                que ocupava este lugar empurrava os dois para linhas diferentes:
-                sobrava um "Cancelar" sozinho, cortado na linha de baixo.
-              */
-              dica={
-                <button
-                  type="button"
-                  onClick={() => setAberta(false)}
-                  className="text-[11.5px] text-muted transition hover:text-primary"
-                >
-                  Cancelar
-                </button>
-              }
             >
               <textarea
                 name="texto"
                 autoFocus
                 rows={3}
                 maxLength={limite}
-                placeholder="Ligou, pediu para retornar terça de manhã."
+                value={texto}
+                onChange={(e) => setTexto(e.target.value)}
+                placeholder="Exemplo: ligou, pediu para retornar terça de manhã."
                 className="app-field resize-y px-3 py-2.5 text-[12.5px] leading-5"
               />
-            </FormularioSalvar>
+              {/*
+                O "Cancelar" fica na **mesma linha** do Salvar. Ele era um botão
+                solto embaixo do formulário, e sobrava sozinho, cortado na linha
+                de baixo.
+              */}
+              <div className="mt-3.5 flex items-center gap-3">
+                <button type="submit" className="app-primary-button px-[18px] py-2.5 text-[13px]">
+                  Salvar anotação
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setErro(null)
+                    setAberta(false)
+                  }}
+                  className="text-[11.5px] text-muted transition hover:text-primary"
+                >
+                  Cancelar
+                </button>
+                {erro && (
+                  <span role="alert" className="text-[12px] font-semibold text-perigo">
+                    {erro}
+                  </span>
+                )}
+              </div>
+            </form>
           </div>
         )}
 
