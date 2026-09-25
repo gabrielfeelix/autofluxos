@@ -286,9 +286,24 @@ export default async function Pagina({
            * celular. Ele também não redireciona de volta, o que fez duas
            * conexões reais terminarem sem o nosso banco saber.
            */}
-          <div className="mt-4">
+          <div className="mt-4 flex flex-wrap items-center gap-3">
             <ConectarWhatsapp clienteId={cliente.id} appId={appId} configId={configId} />
+            {/*
+             * Número sem celular: já na Cloud API noutro portfólio, ou chip
+             * que nunca teve WhatsApp. A coexistência não lista esse número.
+             */}
+            <ConectarWhatsapp
+              clienteId={cliente.id}
+              appId={appId}
+              configId={configId}
+              modo="api"
+              rotulo="Número só na API, sem celular"
+            />
           </div>
+          <p className="mt-2 text-[11.5px] leading-5 text-dim">
+            Sem celular: para número que já está na API da Meta ou chip que nunca teve
+            WhatsApp. Esse número deixa de funcionar no aplicativo.
+          </p>
 
           {!podeConectar && (
             <>

@@ -12,6 +12,7 @@ import {
   ehCoexistente,
   inscreverNaWaba,
   lerNumero,
+  registrarNumero,
   wabaQueContemONumero,
 } from './conexao'
 
@@ -62,9 +63,11 @@ export async function terminarOnboarding(entrada: {
   const contexto = { cliente: entrada.clienteId, numero: entrada.phoneNumberId }
 
   let coexistente = false
+  let naCloudApi = false
   try {
     const numero = await lerNumero(entrada.phoneNumberId, entrada.token)
     coexistente = ehCoexistente(numero)
+    naCloudApi = numero.platform_type === 'CLOUD_API'
 
     /*
      * **O telefone de verdade, para a tela ter o que mostrar.**
@@ -95,7 +98,9 @@ export async function terminarOnboarding(entrada: {
 
   if (!coexistente) {
     // Cloud API pura. Não é erro, é o outro caminho do produto, e ele não tem
-    // agenda nem histórico para sincronizar.
+    // agenda nem histórico para sincronizar. Mas precisa de inscrição e, se o
+    // número é novo, de registro, sem os dois nenhuma mensagem chega.
+    await terminarCloudApiPura(entrada, naCloudApi)
     return
   }
 
@@ -250,5 +255,54 @@ async function dispararUmaVez(
      * há 24h), o primeiro não é recuperável de jeito nenhum.
      */
     await alertar('o disparo do sync falhou', erro, contexto)
+  }
+}
+
+/**
+ * O fim do fluxo "só na API", sem celular.
+ *
+ * Nasceu em 25/set/2026 para ligar um número de teste que já estava na Cloud
+ * API noutro portfólio: o fluxo de coexistência não lista número sem o app, e
+ * digitar ele como novo dá "já registrado".
+ *
+ * Mesma regra da WABA do caminho coexistente: a que a Meta diz que contém o
+ * número vence a do retorno. Depois, inscrever o app e, só se o número ainda
+ * não estiver na Cloud API, registrar. Falha vira alerta e não desfaz o canal,
+ * que já foi gravado.
+ */
+async function terminarCloudApiPura(
+  entrada: { canalId: string; clienteId: string; phoneNumberId: string; wabaId: string | null; token: string },
+  naCloudApi: boolean,
+): Promise<void> {
+  const contexto = { cliente: entrada.clienteId, numero: entrada.phoneNumberId }
+
+  const wabaId =
+    (await wabaQueContemONumero(entrada.phoneNumberId, entrada.token)) ?? entrada.wabaId
+  if (!wabaId) {
+    await alertar(
+      'número só na API sem WABA conhecida; o app não foi inscrito',
+      new Error('nenhuma WABA do token contém o número e o retorno não trouxe waba_id'),
+      contexto,
+    )
+    return
+  }
+
+  try {
+    await inscreverNaWaba(wabaId, entrada.token)
+  } catch (erro) {
+    await alertar('o app não se inscreveu na WABA do número só na API', erro, { ...contexto, waba: wabaId })
+    return
+  }
+
+  if (wabaId !== entrada.wabaId) {
+    await anotarWaba(entrada.canalId, wabaId).catch(async (erro) => {
+      await alertar('não deu para corrigir a WABA do canal', erro, { ...contexto, waba: wabaId })
+    })
+  }
+
+  if (!naCloudApi) {
+    await registrarNumero(entrada.phoneNumberId, entrada.token).catch(async (erro) => {
+      await alertar('não deu para registrar o número na Cloud API', erro, contexto)
+    })
   }
 }

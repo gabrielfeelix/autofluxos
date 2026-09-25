@@ -46,6 +46,7 @@ declare global {
       init: (opcoes: Record<string, unknown>) => void
       login: (cb: (r: RespostaDoLogin) => void, opcoes: Record<string, unknown>) => void
     }
+    fbIniciado?: boolean
   }
 }
 
@@ -56,12 +57,19 @@ export function ConectarWhatsapp({
   appId,
   configId,
   rotulo = 'Conectar meu WhatsApp',
+  modo = 'coexistencia',
 }: {
   clienteId: string
   appId: string
   configId: string
   /** "Reconectar" no cartão de um número que caiu (tarefa 6.6). */
   rotulo?: string
+  /**
+   * `api` abre o fluxo comum, sem coexistência: escolhe portfólio e aceita
+   * número que já está na Cloud API ou que nunca teve WhatsApp. O número deixa
+   * de funcionar num celular, por isso é o caminho secundário da tela.
+   */
+  modo?: 'coexistencia' | 'api'
 }) {
   const router = useRouter()
   const [estado, setEstado] = useState<'parado' | 'abrindo' | 'concluindo' | 'erro'>('parado')
@@ -164,6 +172,20 @@ export function ConectarWhatsapp({
     return () => window.removeEventListener('message', aoReceber)
   }, [tentarConcluir])
 
+  // O Next carrega o SDK uma vez só: com dois botões na tela, o segundo não
+  // recebe callback nenhum do `<Script>` e ficaria em "Carregando…" para sempre.
+  // Ele descobre pelo sinal que o primeiro deixa na janela.
+  useEffect(() => {
+    if (pronto) return
+    const espera = setInterval(() => {
+      if (window.fbIniciado) {
+        setPronto(true)
+        clearInterval(espera)
+      }
+    }, 300)
+    return () => clearInterval(espera)
+  }, [pronto])
+
   function abrir() {
     if (!window.FB) {
       setErro('o SDK do Facebook não carregou; recarregue a página')
@@ -234,11 +256,14 @@ export function ConectarWhatsapp({
          * Foi exatamente o sintoma de 13/set: cliente terminando o fluxo e o
          * número nunca aparecendo no navegador.
          */
-        extras: {
-          setup: {},
-          featureType: 'whatsapp_business_app_onboarding',
-          sessionInfoVersion: '3',
-        },
+        extras:
+          modo === 'api'
+            ? { setup: {}, sessionInfoVersion: '3' }
+            : {
+                setup: {},
+                featureType: 'whatsapp_business_app_onboarding',
+                sessionInfoVersion: '3',
+              },
       },
     )
   }
@@ -248,14 +273,17 @@ export function ConectarWhatsapp({
       <Script
         src="https://connect.facebook.net/pt_BR/sdk.js"
         strategy="afterInteractive"
-        onLoad={() => {
-          window.FB?.init({
-            appId,
-            autoLogAppEvents: true,
-            xfbml: true,
-            version: 'v25.0',
-          })
-          setPronto(true)
+        onReady={() => {
+          if (!window.fbIniciado) {
+            window.FB?.init({
+              appId,
+              autoLogAppEvents: true,
+              xfbml: true,
+              version: 'v25.0',
+            })
+            window.fbIniciado = true
+          }
+          setPronto(Boolean(window.FB))
         }}
       />
 
@@ -263,10 +291,14 @@ export function ConectarWhatsapp({
         type="button"
         onClick={abrir}
         disabled={!pronto || estado === 'abrindo' || estado === 'concluindo'}
-        style={{ backgroundColor: '#25D366' }}
-        className="inline-flex items-center gap-2 rounded-[9px] px-[18px] py-3 text-[13.5px] font-semibold text-ink transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-50"
+        style={modo === 'api' ? undefined : { backgroundColor: '#25D366' }}
+        className={
+          modo === 'api'
+            ? 'inline-flex items-center gap-2 rounded-[9px] border border-line px-[18px] py-3 text-[13.5px] font-semibold text-muted transition hover:text-ink disabled:cursor-not-allowed disabled:opacity-50'
+            : 'inline-flex items-center gap-2 rounded-[9px] px-[18px] py-3 text-[13.5px] font-semibold text-ink transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-50'
+        }
       >
-        <LogoDoCanal canal="whatsapp" tamanho={17} />
+        {modo !== 'api' && <LogoDoCanal canal="whatsapp" tamanho={17} />}
         {estado === 'concluindo'
           ? 'Conectando…'
           : estado === 'abrindo'

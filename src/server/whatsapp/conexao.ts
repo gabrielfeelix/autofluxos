@@ -1,5 +1,6 @@
 import 'server-only'
 import { z } from 'zod'
+import { randomInt } from 'node:crypto'
 
 /**
  * A ponta servidor-a-servidor do Embedded Signup **hospedado pela Meta**.
@@ -169,6 +170,25 @@ export async function inscreverNaWaba(wabaId: string, token: string): Promise<vo
   await pedir(`https://graph.facebook.com/${versaoGraph()}/${wabaId}/subscribed_apps`, {
     method: 'POST',
     headers: { authorization: `Bearer ${token}` },
+  })
+}
+
+/**
+ * Registra na Cloud API um número que chegou pelo fluxo "só na API".
+ *
+ * **Só para número que ainda não está na Cloud API.** Quem já está
+ * (`platform_type: CLOUD_API`) não passa por aqui: registrar de novo exige o PIN
+ * de duas etapas que outro app pode ter definido, e errar o PIN trava o número.
+ *
+ * O PIN que vai aqui vira o PIN de duas etapas do número. Ninguém precisa dele
+ * no dia a dia; se um dia for preciso, ele se redefine no WhatsApp Manager.
+ */
+export async function registrarNumero(phoneNumberId: string, token: string): Promise<void> {
+  const pin = String(randomInt(0, 1_000_000)).padStart(6, '0')
+  await pedir(`https://graph.facebook.com/${versaoGraph()}/${phoneNumberId}/register`, {
+    method: 'POST',
+    headers: { authorization: `Bearer ${token}`, 'content-type': 'application/json' },
+    body: JSON.stringify({ messaging_product: 'whatsapp', pin }),
   })
 }
 
