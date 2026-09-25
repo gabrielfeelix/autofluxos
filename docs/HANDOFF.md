@@ -1,5 +1,8 @@
 # Handoff: 19/ago/2026, atualizado em 04/set
 
+> **Automação da PCYES, o que a IA erra (25/set/2026):** análise e correções em
+> [HANDOFF-25-SET-PCYES-AUTOMACAO.md](HANDOFF-25-SET-PCYES-AUTOMACAO.md).
+
 > **Conta PCYES e canal Site (25/set/2026):** estado da PCYES e o plano do
 > chat no site em [HANDOFF-25-SET-PCYES-E-CANAL-SITE.md](HANDOFF-25-SET-PCYES-E-CANAL-SITE.md).
 
