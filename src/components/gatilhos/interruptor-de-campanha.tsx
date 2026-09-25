@@ -1,6 +1,7 @@
 'use client'
 
-import { useState, useTransition } from 'react'
+import { useState } from 'react'
+import { depoisDaTela } from '@/components/inbox/conversa-local'
 import { acaoAlternarCampanha } from '@/server/acoes'
 
 /**
@@ -14,7 +15,7 @@ import { acaoAlternarCampanha } from '@/server/acoes'
 export function InterruptorDeCampanha({
   clienteId,
   campanhaId,
-  ativa,
+  ativa: doServidor,
   bloqueio = null,
 }: {
   clienteId: string
@@ -29,7 +30,11 @@ export function InterruptorDeCampanha({
   bloqueio?: string | null
 }) {
   const [erro, setErro] = useState<string | null>(null)
-  const [rodando, comecar] = useTransition()
+  /*
+   * Otimista desde 25/set: o interruptor vira no clique e volta, com o motivo,
+   * se o servidor recusar. Antes ele esperava a página voltar do servidor.
+   */
+  const [ativa, setAtual] = useState(doServidor)
 
   const explicacao = ativa
     ? 'Desligar: a frase para de abrir este fluxo. A contagem fica.'
@@ -42,14 +47,24 @@ export function InterruptorDeCampanha({
         role="switch"
         aria-checked={ativa}
         aria-label={ativa ? 'Desligar campanha' : 'Ligar campanha'}
-        disabled={rodando || (!ativa && bloqueio !== null)}
+        disabled={(!ativa && bloqueio !== null)}
         title={bloqueio ?? explicacao}
         onClick={() => {
           setErro(null)
-          comecar(async () => {
-            const r = await acaoAlternarCampanha(clienteId, campanhaId, !ativa)
-            if (!r.ok) setErro(r.erro ?? 'não deu para mudar a campanha')
-          })
+          const antes = ativa
+          setAtual(!antes)
+          depoisDaTela(() => acaoAlternarCampanha(clienteId, campanhaId, !antes)).then(
+            (r) => {
+              if (!r.ok) {
+                setAtual(antes)
+                setErro(r.erro ?? 'não deu para mudar a campanha')
+              }
+            },
+            () => {
+              setAtual(antes)
+              setErro('não deu para mudar agora')
+            },
+          )
         }}
         className={`relative h-[18px] w-8 shrink-0 rounded-full border transition disabled:cursor-not-allowed disabled:opacity-50 ${
           ativa && bloqueio !== null

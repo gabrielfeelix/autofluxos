@@ -1,6 +1,7 @@
 'use client'
 
-import { useState, useTransition } from 'react'
+import { useState } from 'react'
+import { depoisDaTela } from '@/components/inbox/conversa-local'
 import { acaoAlternarGatilho } from '@/server/acoes'
 
 /**
@@ -17,7 +18,7 @@ import { acaoAlternarGatilho } from '@/server/acoes'
 export function InterruptorDeGatilho({
   clienteId,
   gatilhoId,
-  ativo,
+  ativo: doServidor,
   bloqueio = null,
 }: {
   clienteId: string
@@ -32,7 +33,11 @@ export function InterruptorDeGatilho({
   bloqueio?: string | null
 }) {
   const [erro, setErro] = useState<string | null>(null)
-  const [rodando, comecar] = useTransition()
+  /*
+   * Otimista desde 25/set: o interruptor vira no clique e volta, com o motivo,
+   * se o servidor recusar. Antes ele esperava a página voltar do servidor.
+   */
+  const [ativo, setAtual] = useState(doServidor)
 
   const explicacao = ativo
     ? 'Desligar: a frase para de abrir este fluxo, e a contagem fica.'
@@ -45,14 +50,24 @@ export function InterruptorDeGatilho({
         role="switch"
         aria-checked={ativo}
         aria-label={ativo ? 'Desligar gatilho' : 'Ligar gatilho'}
-        disabled={rodando || (!ativo && bloqueio !== null)}
+        disabled={(!ativo && bloqueio !== null)}
         title={bloqueio ?? explicacao}
         onClick={() => {
           setErro(null)
-          comecar(async () => {
-            const r = await acaoAlternarGatilho(clienteId, gatilhoId, !ativo)
-            if (!r.ok) setErro(r.erro ?? 'não deu para mudar o gatilho')
-          })
+          const antes = ativo
+          setAtual(!antes)
+          depoisDaTela(() => acaoAlternarGatilho(clienteId, gatilhoId, !antes)).then(
+            (r) => {
+              if (!r.ok) {
+                setAtual(antes)
+                setErro(r.erro ?? 'não deu para mudar o gatilho')
+              }
+            },
+            () => {
+              setAtual(antes)
+              setErro('não deu para mudar agora')
+            },
+          )
         }}
         className={`relative h-[18px] w-8 shrink-0 rounded-full border transition disabled:cursor-not-allowed disabled:opacity-50 ${
           ativo && bloqueio !== null

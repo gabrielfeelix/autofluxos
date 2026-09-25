@@ -505,7 +505,7 @@ export async function acaoReordenarFluxos(
   if (recusou(acesso)) return acesso
 
   await reordenarFluxos(clienteId, idsNaOrdem)
-  revalidatePath(`/clientes/${clienteId}/fluxos`)
+  // A lista já reordenou no clique (`fluxos/lista-ordenavel.tsx`). Ver `gestoSemRecarregar`.
   return { ok: true }
 }
 
@@ -576,8 +576,7 @@ export async function acaoAlternarFluxoAtivo(
   }
 
   const mudou = await definirAtivo(clienteId, fluxoId, ativo)
-  revalidatePath(`/clientes/${clienteId}/fluxos`)
-  revalidatePath(`/clientes/${clienteId}`)
+  // Interruptor otimista na tela: sem recarregar. Ver `gestoSemRecarregar`.
   return mudou ? { ok: true } : { ok: false, erro: 'esta automação não existe mais' }
 }
 
@@ -657,7 +656,7 @@ export async function acaoAlternarGatilhoDeEvento(
   }
 
   const mudou = await alternarGatilhoDeEvento(clienteId, gatilhoId, ativo)
-  revalidatePath(`/clientes/${clienteId}/fluxos`)
+  // Interruptor otimista na tela: sem recarregar. Ver `gestoSemRecarregar`.
   return mudou ? { ok: true } : { ok: false, erro: 'este gatilho não existe mais' }
 }
 
@@ -706,7 +705,7 @@ export async function acaoAlternarWebhookDeEntrada(
   if (recusou(acesso)) return acesso
 
   const mudou = await alternarWebhook(clienteId, webhookId, ativo)
-  revalidatePath(`/clientes/${clienteId}/fluxos`)
+  // Interruptor otimista na tela: sem recarregar. Ver `gestoSemRecarregar`.
   return mudou ? { ok: true } : { ok: false, erro: 'este webhook não existe mais' }
 }
 
@@ -771,7 +770,7 @@ export async function acaoAlternarGatilho(
   }
 
   const mudou = await alternarGatilho(clienteId, gatilhoId, ativo)
-  revalidatePath(`/clientes/${clienteId}/fluxos`)
+  // Interruptor otimista na tela: sem recarregar. Ver `gestoSemRecarregar`.
   return mudou ? { ok: true } : { ok: false, erro: 'este gatilho não existe mais' }
 }
 
@@ -1032,7 +1031,7 @@ export async function acaoAlternarCampanha(
   }
 
   const mudou = await alternarCampanha(clienteId, campanhaId, ativa)
-  revalidatePath(`/clientes/${clienteId}/fluxos`)
+  // Interruptor otimista na tela: sem recarregar. Ver `gestoSemRecarregar`.
   return mudou ? { ok: true } : { ok: false, erro: 'esta campanha não existe mais' }
 }
 
@@ -1422,7 +1421,7 @@ export async function acaoAlternarSequencia(
   if (recusou(acesso)) return acesso
 
   const mudou = await alternarSequencia(clienteId, sequenciaId, ativa)
-  revalidatePath(`/clientes/${clienteId}/fluxos`)
+  // Interruptor otimista na tela: sem recarregar. Ver `gestoSemRecarregar`.
   return mudou ? { ok: true } : { ok: false, erro: 'esta sequência não existe mais' }
 }
 
@@ -1604,7 +1603,7 @@ export async function acaoDefinirQuadroPadrao(
   if (recusou(acesso)) return acesso
 
   const r = await definirQuadroPadrao(clienteId, padrao ? quadroId : null)
-  revalidatePath(`/clientes/${clienteId}/quadros`)
+  // O interruptor já mudou no clique (`quadros/quadro-padrao.tsx`). Ver `gestoSemRecarregar`.
   return r.ok ? { ok: true } : { ok: false, erro: r.motivo }
 }
 

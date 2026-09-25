@@ -1,6 +1,7 @@
 'use client'
 
-import { useState, useTransition } from 'react'
+import { useState } from 'react'
+import { depoisDaTela } from '@/components/inbox/conversa-local'
 import { acaoAlternarSequencia } from '@/server/acoes'
 
 /**
@@ -19,14 +20,18 @@ import { acaoAlternarSequencia } from '@/server/acoes'
 export function InterruptorDeSequencia({
   clienteId,
   sequenciaId,
-  ativa,
+  ativa: doServidor,
 }: {
   clienteId: string
   sequenciaId: string
   ativa: boolean
 }) {
   const [erro, setErro] = useState<string | null>(null)
-  const [rodando, comecar] = useTransition()
+  /*
+   * Otimista desde 25/set: o interruptor vira no clique e volta, com o motivo,
+   * se o servidor recusar. Antes ele esperava a página voltar do servidor.
+   */
+  const [ativa, setAtual] = useState(doServidor)
 
   return (
     <span className="inline-flex flex-col items-end gap-1">
@@ -35,7 +40,6 @@ export function InterruptorDeSequencia({
         role="switch"
         aria-checked={ativa}
         aria-label={ativa ? 'Desligar sequência' : 'Ligar sequência'}
-        disabled={rodando}
         title={
           ativa
             ? 'Desligar: para de inscrever gente nova, e quem está dentro encerra no próximo passo.'
@@ -43,14 +47,20 @@ export function InterruptorDeSequencia({
         }
         onClick={() => {
           setErro(null)
-          comecar(async () => {
-            try {
-              const r = await acaoAlternarSequencia(clienteId, sequenciaId, !ativa)
-              if (!r.ok) setErro(r.erro ?? 'não deu para mudar a sequência')
-            } catch {
+          const antes = ativa
+          setAtual(!antes)
+          depoisDaTela(() => acaoAlternarSequencia(clienteId, sequenciaId, !antes)).then(
+            (r) => {
+              if (!r.ok) {
+                setAtual(antes)
+                setErro(r.erro ?? 'não deu para mudar a sequência')
+              }
+            },
+            () => {
+              setAtual(antes)
               setErro('não deu para mudar agora')
-            }
-          })
+            },
+          )
         }}
         className={`relative h-[18px] w-8 shrink-0 rounded-full border transition disabled:opacity-50 ${
           ativa ? 'border-emerald-400/40 bg-emerald-400/25' : 'border-line bg-surface-strong'

@@ -73,7 +73,9 @@ export function Distribuicao({
   const [modo, setModo] = useState(distribuicao)
   const [trava, setTrava] = useState(exigeAssumir)
   const [erro, setErro] = useState<string | null>(null)
-  const [salvando, salvar] = useTransition()
+  // Sem travar os controles enquanto grava (25/set): a tela já mudou, e o
+  // servidor não redesenha mais a página (`gestoSemRecarregar`).
+  const [, salvar] = useTransition()
 
   const mudarConta = (ajustes: { distribuicao?: string; exigeAssumir?: boolean }) => {
     setErro(null)
@@ -110,7 +112,7 @@ export function Distribuicao({
               setModo(valor)
               mudarConta({ distribuicao: valor })
             }}
-            desabilitado={!podeMexer || salvando}
+            desabilitado={!podeMexer}
             rotuloAcessivel="Como o lead novo é distribuído"
             className="max-w-[420px]"
           />
@@ -130,7 +132,7 @@ export function Distribuicao({
           <input
             type="checkbox"
             checked={trava}
-            disabled={!podeMexer || salvando}
+            disabled={!podeMexer}
             onChange={(evento) => {
               setTrava(evento.target.checked)
               mudarConta({ exigeAssumir: evento.target.checked })
@@ -198,7 +200,9 @@ function LinhaDoAtendente({
   const [entra, setEntra] = useState(pessoa.entraNoRodizio ?? padrao)
   const [teto, setTeto] = useState(String(pessoa.tetoSimultaneo ?? 0))
   const [erro, setErro] = useState<string | null>(null)
-  const [salvando, salvar] = useTransition()
+  // Sem travar os controles enquanto grava (25/set): a tela já mudou, e o
+  // servidor não redesenha mais a página (`gestoSemRecarregar`).
+  const [, salvar] = useTransition()
 
   const gravar = (proximo: { entra: boolean; teto: string }) => {
     setErro(null)
@@ -219,7 +223,7 @@ function LinhaDoAtendente({
         <input
           type="checkbox"
           checked={entra}
-          disabled={!podeMexer || salvando}
+          disabled={!podeMexer}
           onChange={(evento) => {
             setEntra(evento.target.checked)
             gravar({ entra: evento.target.checked, teto })
@@ -249,7 +253,7 @@ function LinhaDoAtendente({
           min={0}
           max={200}
           value={teto}
-          disabled={!podeMexer || salvando || !entra}
+          disabled={!podeMexer || !entra}
           onChange={(evento) => setTeto(evento.target.value)}
           onBlur={() => gravar({ entra, teto })}
           title="Máximo de conversas abertas ao mesmo tempo. Zero é sem teto."

@@ -8,6 +8,7 @@ import {
 } from '@/server/acoes'
 import type { WebhookDeEntrada } from '@/server/repos/webhooks-de-entrada'
 import { dataDaChamada, estadoDoWebhook } from '@/core/webhook-de-entrada'
+import { depoisDaTela } from '@/components/inbox/conversa-local'
 
 /**
  * Quem pode avisar este cliente de fora (0044).
@@ -112,25 +113,7 @@ export function WebhooksDeEntrada({
       ) : (
         <ul className="mb-4">
           {webhooks.map((webhook) => (
-            <li
-              key={webhook.id}
-              className="flex items-center gap-3 border-b border-line py-3 last:border-0"
-            >
-              <InterruptorDoWebhook
-                clienteId={clienteId}
-                webhookId={webhook.id}
-                ativo={webhook.ativo}
-              />
-              <span className="min-w-0 flex-1">
-                <strong
-                  className={`block truncate text-[13px] font-semibold ${webhook.ativo ? '' : 'text-dim line-through'}`}
-                >
-                  {webhook.nome}
-                </strong>
-                <UltimaChamada webhook={webhook} />
-              </span>
-              <BotaoApagar clienteId={clienteId} webhookId={webhook.id} nome={webhook.nome} />
-            </li>
+            <LinhaDoWebhook key={webhook.id} clienteId={clienteId} webhook={webhook} />
           ))}
         </ul>
       )}
@@ -165,30 +148,63 @@ curl -X POST ${endereco} \\
   )
 }
 
-function InterruptorDoWebhook({
-  clienteId,
-  webhookId,
-  ativo,
-}: {
-  clienteId: string
-  webhookId: string
-  ativo: boolean
-}) {
-  const [rodando, comecar] = useTransition()
+/**
+ * Uma linha da lista. Guarda o "ligado" dela porque o interruptor e o nome
+ * riscado mostram o mesmo estado, e desde 25/set os dois mudam no clique: o
+ * servidor grava por trás e, se recusar, a linha volta com o motivo.
+ */
+function LinhaDoWebhook({ clienteId, webhook }: { clienteId: string; webhook: WebhookDeEntrada }) {
+  const [ativo, setAtivo] = useState(webhook.ativo)
+  const [erro, setErro] = useState<string | null>(null)
 
+  const alternar = () => {
+    const antes = ativo
+    setAtivo(!antes)
+    setErro(null)
+    const desfazer = (motivo: string) => {
+      setAtivo(antes)
+      setErro(motivo)
+    }
+    depoisDaTela(() => acaoAlternarWebhookDeEntrada(clienteId, webhook.id, !antes)).then(
+      (r) => {
+        if (!r.ok) desfazer(r.erro ?? 'não deu para mudar o webhook')
+      },
+      () => desfazer('não deu para mudar agora'),
+    )
+  }
+
+  return (
+    <li className="flex items-center gap-3 border-b border-line py-3 last:border-0">
+      <InterruptorDoWebhook ativo={ativo} aoAlternar={alternar} />
+      <span className="min-w-0 flex-1">
+        <strong className={`block truncate text-[13px] font-semibold ${ativo ? '' : 'text-dim line-through'}`}>
+          {webhook.nome}
+        </strong>
+        <UltimaChamada webhook={webhook} />
+        {erro && (
+          <span role="alert" className="block text-[11px] leading-4 text-perigo">
+            {erro}
+          </span>
+        )}
+      </span>
+      <BotaoApagar clienteId={clienteId} webhookId={webhook.id} nome={webhook.nome} />
+    </li>
+  )
+}
+
+function InterruptorDoWebhook({ ativo, aoAlternar }: { ativo: boolean; aoAlternar: () => void }) {
   return (
     <button
       type="button"
       role="switch"
       aria-checked={ativo}
       aria-label={ativo ? 'Desligar webhook' : 'Ligar webhook'}
-      disabled={rodando}
       title={
         ativo
           ? 'Desligar: as chamadas passam a levar 401, e o segredo continua guardado.'
           : 'Ligar: as chamadas com este segredo voltam a valer.'
       }
-      onClick={() => comecar(async () => void (await acaoAlternarWebhookDeEntrada(clienteId, webhookId, !ativo)))}
+      onClick={aoAlternar}
       className={`relative h-[18px] w-8 shrink-0 rounded-full border transition disabled:opacity-50 ${
         ativo ? 'border-emerald-400/40 bg-emerald-400/25' : 'border-line bg-surface-strong'
       }`}

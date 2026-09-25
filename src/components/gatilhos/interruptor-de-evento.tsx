@@ -1,6 +1,7 @@
 'use client'
 
-import { useState, useTransition } from 'react'
+import { useState } from 'react'
+import { depoisDaTela } from '@/components/inbox/conversa-local'
 import { acaoAlternarGatilhoDeEvento } from '@/server/acoes'
 
 /**
@@ -14,7 +15,7 @@ import { acaoAlternarGatilhoDeEvento } from '@/server/acoes'
 export function InterruptorDeEvento({
   clienteId,
   gatilhoId,
-  ativo,
+  ativo: doServidor,
   bloqueio = null,
 }: {
   clienteId: string
@@ -29,7 +30,11 @@ export function InterruptorDeEvento({
   bloqueio?: string | null
 }) {
   const [erro, setErro] = useState<string | null>(null)
-  const [rodando, comecar] = useTransition()
+  /*
+   * Otimista desde 25/set: o interruptor vira no clique e volta, com o motivo,
+   * se o servidor recusar. Antes ele esperava a página voltar do servidor.
+   */
+  const [ativo, setAtual] = useState(doServidor)
 
   const explicacao = ativo
     ? 'Desligar: o evento continua chegando, mas para de abrir este fluxo.'
@@ -42,14 +47,24 @@ export function InterruptorDeEvento({
         role="switch"
         aria-checked={ativo}
         aria-label={ativo ? 'Desligar gatilho de evento' : 'Ligar gatilho de evento'}
-        disabled={rodando || (!ativo && bloqueio !== null)}
+        disabled={(!ativo && bloqueio !== null)}
         title={bloqueio ?? explicacao}
         onClick={() => {
           setErro(null)
-          comecar(async () => {
-            const r = await acaoAlternarGatilhoDeEvento(clienteId, gatilhoId, !ativo)
-            if (!r.ok) setErro(r.erro ?? 'não deu para mudar o gatilho')
-          })
+          const antes = ativo
+          setAtual(!antes)
+          depoisDaTela(() => acaoAlternarGatilhoDeEvento(clienteId, gatilhoId, !antes)).then(
+            (r) => {
+              if (!r.ok) {
+                setAtual(antes)
+                setErro(r.erro ?? 'não deu para mudar o gatilho')
+              }
+            },
+            () => {
+              setAtual(antes)
+              setErro('não deu para mudar agora')
+            },
+          )
         }}
         className={`relative h-[18px] w-8 shrink-0 rounded-full border transition disabled:cursor-not-allowed disabled:opacity-50 ${
           ativo && bloqueio !== null

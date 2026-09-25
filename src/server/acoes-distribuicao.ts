@@ -1,6 +1,5 @@
 'use server'
 
-import { revalidatePath } from 'next/cache'
 import {
   definirAjustesDaConta,
   definirAtendente,
@@ -35,7 +34,6 @@ export async function acaoDefinirDistribuicao(
   }
 
   const r = await definirAjustesDaConta(clienteId, ajustes)
-  if (r.ok) revalidar(clienteId)
   return r
 }
 
@@ -63,18 +61,13 @@ export async function acaoDefinirAtendente(
     entraNoRodizio: ajuste.entraNoRodizio === true,
     tetoSimultaneo: teto,
   })
-  if (r.ok) revalidar(clienteId)
   return r
 }
 
-/**
- * A tela da equipe e o Inbox.
- *
- * O Inbox entra porque o rail de atribuição e a caixa de resposta mudam de
- * comportamento com a trava ligada, e uma aba aberta noutro monitor não pode
- * continuar oferecendo o que acabou de ser proibido.
+/*
+ * Sem `revalidatePath` desde 25/set. Ele redesenhava a tela da equipe, que já
+ * mudou no clique (`conta/distribuicao.tsx`), e o Inbox, com a intenção de
+ * avisar "uma aba aberta noutro monitor": isso ele nunca fez, porque só age na
+ * aba que chamou a ação. O Inbox lê a trava do banco ao carregar, e o servidor
+ * recusa a resposta de quem não assumiu (`podeResponderAgora`) de todo jeito.
  */
-function revalidar(clienteId: string) {
-  revalidatePath(`/clientes/${clienteId}/ajustes/equipe`)
-  revalidatePath(`/clientes/${clienteId}/inbox`)
-}

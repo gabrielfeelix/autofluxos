@@ -1,6 +1,7 @@
 'use client'
 
-import { useCallback, useState, useTransition } from 'react'
+import { useCallback, useState } from 'react'
+import { depoisDaTela } from '@/components/inbox/conversa-local'
 import { AvisoFlutuante } from '@/components/design/aviso-flutuante'
 import { AVISO_AO_DESLIGAR } from '@/core/entrada'
 import { acaoAlternarFluxoAtivo } from '@/server/acoes'
@@ -28,11 +29,15 @@ export function InterruptorDoFluxo({
   /** Conversas rodando esta automação agora (RB-44), para o aviso de desligar. */
   emAndamento?: number
 }) {
-  const [rodando, comecar] = useTransition()
+  /*
+   * Otimista desde 25/set: vira no clique, e volta com o motivo se o servidor
+   * recusar. Antes esperava a lista de automações voltar do servidor.
+   */
+  const [ligado, setLigado] = useState(fluxo.ativo)
   const [recado, setRecado] = useState<Recado | null>(null)
   const sumir = useCallback(() => setRecado(null), [])
 
-  const bloqueado = !fluxo.ativo && !fluxo.publicada
+  const bloqueado = !ligado && !fluxo.publicada
   const conversas =
     emAndamento === 1 ? '1 conversa em andamento termina' : `${emAndamento} conversas em andamento terminam`
 
@@ -41,36 +46,43 @@ export function InterruptorDoFluxo({
       <button
         type="button"
         role="switch"
-        aria-checked={fluxo.ativo}
-        aria-label={`${fluxo.ativo ? 'Desligar' : 'Ligar'} ${fluxo.nome}`}
-        disabled={rodando || bloqueado}
+        aria-checked={ligado}
+        aria-label={`${ligado ? 'Desligar' : 'Ligar'} ${fluxo.nome}`}
+        disabled={bloqueado}
         title={
           bloqueado
             ? 'Publique antes de ligar, senão ninguém recebe resposta.'
-            : fluxo.ativo
+            : ligado
               ? `Desligar: para de abrir conversa nova. ${emAndamento > 0 ? conversas : 'Quem já está conversando termina'} na versão em que começou.`
               : 'Ligar: volta a abrir conversa na próxima mensagem. Não precisa publicar de novo.'
         }
         onClick={() => {
           setRecado(null)
-          comecar(async () => {
-            const r = await acaoAlternarFluxoAtivo(clienteId, fluxo.id, !fluxo.ativo)
-            if (!r.ok) setRecado({ texto: r.erro ?? 'não deu para ligar ou desligar', erro: true })
-            else
-              setRecado(
-                fluxo.ativo
-                  ? { texto: `“${fluxo.nome}” desligada. ${AVISO_AO_DESLIGAR}` }
-                  : { texto: `“${fluxo.nome}” ligada: abre conversa nova a partir da próxima mensagem.` },
-              )
-          })
+          const antes = ligado
+          setLigado(!antes)
+          setRecado(
+            antes
+              ? { texto: `“${fluxo.nome}” desligada. ${AVISO_AO_DESLIGAR}` }
+              : { texto: `“${fluxo.nome}” ligada: abre conversa nova a partir da próxima mensagem.` },
+          )
+          const desfazer = (texto: string) => {
+            setLigado(antes)
+            setRecado({ texto, erro: true })
+          }
+          depoisDaTela(() => acaoAlternarFluxoAtivo(clienteId, fluxo.id, !antes)).then(
+            (r) => {
+              if (!r.ok) desfazer(r.erro ?? 'não deu para ligar ou desligar')
+            },
+            () => desfazer('não deu para ligar ou desligar agora'),
+          )
         }}
         className={`relative h-[18px] w-8 shrink-0 rounded-full border transition disabled:cursor-not-allowed disabled:opacity-50 ${
-          fluxo.ativo ? 'border-emerald-400/40 bg-emerald-400/25' : 'border-line bg-surface-strong'
+          ligado ? 'border-emerald-400/40 bg-emerald-400/25' : 'border-line bg-surface-strong'
         }`}
       >
         <span
           className={`absolute top-[2px] size-3 rounded-full transition-all ${
-            fluxo.ativo ? 'left-[15px] bg-emerald-400' : 'left-[2px] bg-dim'
+            ligado ? 'left-[15px] bg-emerald-400' : 'left-[2px] bg-dim'
           }`}
         />
       </button>
