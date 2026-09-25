@@ -74,6 +74,38 @@ describe('quando existe IA', () => {
     expect(r.sessao.status).toBe('humano')
   })
 
+  // "Deixa eu procurar" chegava junto da resposta, 23 s depois, na PCYES.
+  it('o que vem antes da IA sai antes de o modelo ser chamado, e só uma vez', async () => {
+    const ordem: string[] = []
+    const modelo = modeloQue(() => {
+      ordem.push('modelo')
+      return { tipo: 'texto', texto: 'Achei este!' }
+    })
+    const fluxo: Fluxo = {
+      ...fluxoComIa,
+      inicio: 'aviso',
+      nodes: [
+        { id: 'aviso', type: 'mensagem', position: { x: 0, y: 0 }, data: { texto: 'Deixa eu procurar' } },
+        ...fluxoComIa.nodes,
+      ],
+      edges: [{ id: 'a0', source: 'aviso', target: 'duvida' }, ...fluxoComIa.edges],
+    }
+
+    const r = await executarComEfeitos(fluxo, sessaoNova(), { tipo: 'inicio' }, {
+      modelo,
+      contextoNegocio,
+      historico: [{ de: 'pessoa', texto: 'tem headset?' }],
+      antesDaIa: async (envios) => {
+        for (const a of envios) if (a.tipo === 'enviar_texto') ordem.push(a.texto)
+      },
+    })
+
+    expect(ordem).toEqual(['Deixa eu procurar', 'modelo'])
+    const textos = r.acoes.flatMap((a) => (a.tipo === 'enviar_texto' ? [a.texto] : []))
+    expect(textos).not.toContain('Deixa eu procurar')
+    expect(textos).toContain('Achei este!')
+  })
+
   it('leva o contexto do negócio e a pergunta da pessoa até o modelo', async () => {
     const modelo = modeloQue(() => ({ tipo: 'texto', texto: 'ok' }))
 

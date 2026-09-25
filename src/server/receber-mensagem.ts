@@ -967,6 +967,16 @@ async function avancarConversa(
         // IA contratada, com um botão em vez de um modelo.
         datas: varsDeData(horario?.fuso ?? SEMPRE_ABERTO.fuso),
         carregarFluxo: carregadorDeFluxo(canalSalvo.clienteId),
+        // "Deixa eu procurar" sai antes do modelo, e não junto da resposta.
+        antesDaIa: (envios) =>
+          aplicar(
+            fabricaDeCanal(canalSalvo),
+            contato,
+            salva.id,
+            mensagem.id,
+            envios,
+            revisaoAutorizada,
+          ),
       },
     )
 

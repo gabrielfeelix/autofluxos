@@ -157,6 +157,17 @@ export type OpcoesDeEfeitos = {
    * errado, porque o erro mora no desenho, não no valor que volta.
    */
   semRede?: boolean
+  /**
+   * Entrega agora o que o fluxo mandou dizer antes de um nó de IA.
+   *
+   * Sem isto, "Deixa eu procurar 🔎" chegava no mesmo segundo que a resposta,
+   * 23 s depois, porque a rodada inteira só é enviada no fim. O aviso existe
+   * justamente para cobrir a espera do modelo, e só cobre se sair antes dela.
+   *
+   * Recebe só envios; o que sai por aqui não volta na lista final. Opcional:
+   * o simulador e a vitrine mostram tudo junto e não precisam disso.
+   */
+  antesDaIa?: (envios: Acao[]) => Promise<void>
 }
 
 /** O que uma chamada de API devolve quando a rede está fechada (`semRede`). */
@@ -445,6 +456,14 @@ async function rodar(
     // Sem modelo, `chamar_ia` continua na lista e quem chamou decide o que
     // fazer, hoje, mandar para uma pessoa. Nunca fingir que respondeu.
     if (!modelo) return { ...resultado, ...(destino ? { destino } : {}) }
+
+    if (opcoes.antesDaIa) {
+      const envios = resultado.acoes.filter(ehEnvio)
+      if (envios.length > 0) {
+        await opcoes.antesDaIa(envios)
+        resultado = { ...resultado, acoes: resultado.acoes.filter((a) => !ehEnvio(a)) }
+      }
+    }
 
     const resposta = await responderComFerramentas({
       modelo,
@@ -1133,6 +1152,16 @@ function produtosDe(json: unknown): ProdutoDaLoja[] {
  * já fala ("posso ajudar em mais alguma coisa?"), e o card chegando depois
  * dessa pergunta leria fora de ordem.
  */
+/** O que a pessoa vê. É só isto que pode sair antes da IA responder. */
+function ehEnvio(acao: Acao): boolean {
+  return (
+    acao.tipo === 'enviar_texto' ||
+    acao.tipo === 'enviar_midia' ||
+    acao.tipo === 'enviar_opcoes' ||
+    acao.tipo === 'enviar_produtos'
+  )
+}
+
 function comCards(acoes: Acao[], texto: string, produtos: ProdutoDaLoja[]): Acao[] {
   if (produtos.length === 0) return acoes
   const card: Acao = { tipo: 'enviar_produtos', produtos }
