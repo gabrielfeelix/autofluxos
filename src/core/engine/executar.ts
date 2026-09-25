@@ -76,6 +76,28 @@ export const PALAVRAS_DE_REINICIO = [
   'menu principal',
   'comecar de novo',
   'recomecar',
+  'menu inicial',
+  'voltar ao comeco',
+  'voltar pro comeco',
+  'voltar para o comeco',
+]
+
+/**
+ * As que só valem como **mensagem inteira**.
+ *
+ * Pedido do Gabriel, testando o chat do site: "voltar", "retornar" e "início"
+ * sozinhos também têm que voltar ao menu. Como trecho elas seriam perigosas:
+ * "quero retornar o produto" é devolução, e "voltar a comprar" não é pedido de
+ * menu nenhum. Sozinhas, não têm outra leitura.
+ */
+export const PALAVRAS_DE_REINICIO_SOZINHAS = [
+  'voltar',
+  'volta',
+  'retornar',
+  'retorna',
+  'inicio',
+  'reiniciar',
+  'recomeca',
 ]
 
 const MENSAGEM_TRANSFERENCIA = 'Vou te passar para um atendente. Só um instante!'
@@ -187,7 +209,7 @@ export function executar(
    * dizer de novo, e um reinício que esquece tudo é indistinguível de desligar
    * e ligar a conversa.
    */
-  if (entrada.tipo === 'texto' && pediuReinicio(entrada.texto)) {
+  if (entrada.tipo === 'texto' && pediuReinicio(entrada.texto) && !ehOpcaoDaParada(porId, s, entrada.texto)) {
     s.tentativas = 0
     return avancar(contexto, fluxo, porId, s, acoes, fluxo.inicio)
   }
@@ -1316,7 +1338,25 @@ export function pediuAtendente(texto: string): boolean {
 /** A pessoa pediu para recomeçar. Ver `PALAVRAS_DE_REINICIO`. */
 export function pediuReinicio(texto: string): boolean {
   const t = normalizar(texto)
-  return PALAVRAS_DE_REINICIO.some((palavra) => t.includes(palavra))
+  const sozinha = t.replace(/[^\p{L}\s]/gu, '').trim()
+  return (
+    PALAVRAS_DE_REINICIO.some((palavra) => t.includes(palavra)) ||
+    PALAVRAS_DE_REINICIO_SOZINHAS.includes(sozinha)
+  )
+}
+
+/**
+ * O texto é, ao pé da letra, uma opção da pergunta em que a conversa parou.
+ *
+ * Um menu com a opção "Voltar" quer dizer o "Voltar" **dele**, que quem
+ * desenhou ligou a algum lugar. O reinício é para quando nada na tela
+ * entende o pedido, não para passar por cima do que entende.
+ */
+function ehOpcaoDaParada(porId: Map<string, No>, s: Sessao, texto: string): boolean {
+  const parada = s.noAtual === null ? undefined : porId.get(s.noAtual)
+  if (parada?.type !== 'pergunta') return false
+  const t = normalizar(texto)
+  return resolverOpcoes(parada, s.vars).some((o) => normalizar(o.rotulo) === t)
 }
 
 function indexar(fluxo: Fluxo): Map<string, No> {

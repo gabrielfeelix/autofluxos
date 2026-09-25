@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { fluxoSchema, type Fluxo } from '../flow/schema'
-import { executar, MAX_TENTATIVAS } from './executar'
+import { executar, MAX_TENTATIVAS, pediuReinicio } from './executar'
 import { sessaoNova, type Acao, type Entrada, type Sessao } from './types'
 
 const p = { x: 0, y: 0 }
@@ -232,6 +232,35 @@ describe('as três garantias que impedem a pessoa de ficar presa', () => {
     expect(acoes.at(-1)?.tipo).toBe('enviar_opcoes')
     const primeira = executar(triagem, sessaoNova(), { tipo: 'inicio' })
     expect(sessao.noAtual).toBe(primeira.sessao.noAtual)
+  })
+
+  // Chat do site, 25/set: "voltar", "retornar" ou "início" sozinhos também.
+  it('"voltar", "retornar" e "início" sozinhos recomeçam; dentro de frase, não', () => {
+    for (const texto of ['Voltar', 'retornar', 'Início!', 'menu inicial']) {
+      expect(pediuReinicio(texto)).toBe(true)
+    }
+    for (const texto of ['quero retornar o produto', 'vou voltar a comprar']) {
+      expect(pediuReinicio(texto)).toBe(false)
+    }
+  })
+
+  it('um menu com a opção "Voltar" fica com o "Voltar" dele', () => {
+    const fluxo = fluxoSchema.parse({
+      inicio: 'menu',
+      nodes: [
+        {
+          id: 'menu',
+          type: 'pergunta',
+          position: { x: 0, y: 0 },
+          data: { texto: 'E agora?', opcoes: [{ id: 'v', rotulo: 'Voltar' }] },
+        },
+        { id: 'antes', type: 'handoff', position: { x: 0, y: 0 }, data: {} },
+      ],
+      edges: [{ id: 'e', source: 'menu', sourceHandle: 'v', target: 'antes' }],
+    })
+    const r = executar(fluxo, sessaoNova(), { tipo: 'inicio' })
+    const escolha = executar(fluxo, r.sessao, { tipo: 'texto', texto: 'voltar' })
+    expect(escolha.sessao.status).toBe('humano')
   })
 
   it('recomeçar não gasta tentativa nem esquece o que a pessoa já disse', () => {
