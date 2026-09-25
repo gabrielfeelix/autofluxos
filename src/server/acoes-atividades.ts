@@ -109,7 +109,7 @@ export async function acaoCriarAtividade(
 
   if (!r.ok) return { ok: false, erro: r.motivo }
 
-  recarregar(clienteId, dados.contatoId)
+  // Gesto rápido: a lista já mudou no clique. Ver `gestoSemRecarregar`.
   return { ok: true, criada: { id: r.atividade.id, prazo: r.atividade.prazo } }
 }
 
@@ -186,7 +186,7 @@ export async function acaoResolverAtividade(
   const r = await resolverAtividade(clienteId, atividadeId, situacao, motivo)
   if (!r.ok) return { ok: false, erro: r.motivo }
 
-  recarregar(clienteId, null)
+  // Gesto rápido: a lista já mudou no clique. Ver `gestoSemRecarregar`.
   return { ok: true }
 }
 
@@ -220,7 +220,7 @@ export async function acaoReagendarAtividade(
   })
   if (!r.ok) return { ok: false, erro: r.motivo }
 
-  recarregar(clienteId, dono.contatoId)
+  // Gesto rápido: a lista já mudou no clique. Ver `gestoSemRecarregar`.
   return { ok: true }
 }
 
@@ -247,7 +247,7 @@ export async function acaoAtribuirAtividade(
   const r = await atribuirAtividade(clienteId, atividadeId, para)
   if (!r.ok) return { ok: false, erro: r.motivo }
 
-  recarregar(clienteId, dono.contatoId)
+  // Gesto rápido: a lista já mudou no clique. Ver `gestoSemRecarregar`.
   return { ok: true }
 }
 
@@ -281,7 +281,7 @@ export async function acaoReabrirAtividade(
   const r = await reabrirAtividade(clienteId, atividadeId)
   if (!r.ok) return { ok: false, erro: r.motivo }
 
-  recarregar(clienteId, null)
+  // Gesto rápido: a lista já mudou no clique. Ver `gestoSemRecarregar`.
   return { ok: true }
 }
 

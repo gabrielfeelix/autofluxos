@@ -38,8 +38,9 @@ function atalhosDeDia(): { rotulo: string; dia: string }[] {
 /**
  * Concluir, reagendar e o menu `⋯` de uma linha da agenda.
  *
- * Quem executa é a lista (`ListaDaAgenda`), que guarda o estado de pendente,
- * de erro e o "Desfazer". Aqui só se pede.
+ * Quem executa é a lista (`useAcoesDaAgenda`), que muda a linha no clique e
+ * guarda o erro e o "Desfazer". Aqui só se pede. `pendente` chega sempre
+ * `null` desde 25/set: os gestos são otimistas e não há rótulo de espera.
  */
 export function AcoesDaLinha({
   item,

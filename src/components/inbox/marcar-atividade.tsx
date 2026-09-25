@@ -1,7 +1,8 @@
 'use client'
 
 import { useState } from 'react'
-import { useRouter } from 'next/navigation'
+import type { Atividade } from '@/core/atividades'
+import { depoisDaTela } from '@/components/inbox/conversa-local'
 import {
   CamposDaAtividade,
   pedidoDosCampos,
@@ -39,6 +40,10 @@ import { acaoCriarAtividade } from '@/server/acoes-atividades'
  * quando nenhum é passado. Numa equipe, tarefa sem dono é tarefa que ninguém
  * faz, e quem marca durante a conversa quase sempre é quem vai fazer.
  */
+/** Evento de janela: uma atividade acabou de ser criada no banco. */
+export const ATIVIDADE_CRIADA = 'atividade:criada'
+export type AtividadeCriada = { atividade: Atividade }
+
 export function MarcarAtividade({
   clienteId,
   contatoId,
@@ -54,7 +59,6 @@ export function MarcarAtividade({
    */
   aoFalhar: (erro: string) => void
 }) {
-  const router = useRouter()
   const [valores, setValores] = useState<ValoresDaAtividade>(VALORES_VAZIOS)
 
   function criar() {
@@ -62,11 +66,37 @@ export function MarcarAtividade({
     const pedido = { contatoId, ...pedidoDosCampos(valores) }
     // Esperar o servidor aqui era esperar para voltar a responder o cliente.
     aoFechar()
-    void acaoCriarAtividade(clienteId, pedido)
+    void depoisDaTela(() => acaoCriarAtividade(clienteId, pedido))
       .then((r) => {
-        if (!r.ok) return aoFalhar(`Atividade não marcada: ${r.erro ?? 'tente de novo'}`)
-        // Por trás, sem segurar nada: só traz a atividade nova para as listas.
-        router.refresh()
+        if (!r.ok || !r.criada) return aoFalhar(`Atividade não marcada: ${r.erro ?? 'tente de novo'}`)
+        /*
+         * Era `router.refresh()`: a página inteira de novo só para a aba
+         * Atividades da ficha saber da nova, e no Inbox, que não lista
+         * atividade, era redesenho puro. Agora a lista que existir escuta.
+         */
+        window.dispatchEvent(
+          new CustomEvent<AtividadeCriada>(ATIVIDADE_CRIADA, {
+            detail: {
+              atividade: {
+                id: r.criada.id,
+                contatoId,
+                cartaoId: null,
+                tipo: pedido.tipo,
+                titulo: pedido.titulo,
+                nota: null,
+                onde: pedido.onde ?? null,
+                horaMarcada: Boolean(pedido.hora),
+                prazo: r.criada.prazo,
+                responsavelId: null,
+                responsavelNome: null,
+                situacao: 'aberta',
+                concluidaEm: null,
+                motivoDoCancelamento: null,
+                criadoEm: new Date().toISOString(),
+              },
+            },
+          }),
+        )
       })
       .catch(() => aoFalhar('Atividade não marcada: sem conexão. Tente de novo.'))
   }

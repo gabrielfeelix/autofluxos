@@ -1,6 +1,9 @@
 'use client'
 
-import { useEffect, useRef, useState, useTransition } from 'react'
+import { useEffect, useRef, useState } from 'react'
+import { prazoDoDia } from '@/core/atividades'
+import { depoisDaTela } from '@/components/inbox/conversa-local'
+import { ajustarContagem, atrasada } from '@/components/design/contagens-local'
 import type { ItemDaAgenda } from '@/server/repos/atividades'
 import {
   acaoAtribuirAtividade,
@@ -16,15 +19,14 @@ import { CartaoDaAgenda, LinhaDaAgenda } from './linha-da-agenda'
 /** Quanto tempo o "Desfazer" fica na tela depois de concluir ou cancelar. */
 const TEMPO_DO_DESFAZER = 6000
 
-const PENDENTE: Record<PedidoDaLinha['tipo'], string> = {
-  concluir: 'Concluindo…',
-  reabrir: 'Reabrindo…',
-  cancelar: 'Cancelando…',
-  reagendar: 'Salvando…',
-  atribuir: 'Salvando…',
-}
 
 type Anuncio = { texto: string; atividadeId: string | null }
+
+function semItem(conjunto: Set<string>, chave: string): Set<string> {
+  const copia = new Set(conjunto)
+  copia.delete(chave)
+  return copia
+}
 
 function semChave(registro: Record<string, string>, chave: string): Record<string, string> {
   const copia = { ...registro }
@@ -58,8 +60,8 @@ export function useAcoesDaAgenda({
   /** Avisado quando uma atividade sai da tela (concluída, cancelada, reaberta). */
   aoSair?: (atividadeId: string) => void
 }) {
-  const [, comecar] = useTransition()
-  const [pendentes, setPendentes] = useState<Record<string, string>>({})
+  /** O que esta aba mudou em cada linha (prazo, responsável), por cima do servidor. */
+  const [remendos, setRemendos] = useState<Record<string, Partial<ItemDaAgenda>>>({})
   const [erros, setErros] = useState<Record<string, string>>({})
   const [saindo, setSaindo] = useState<Set<string>>(new Set())
   const [cancelando, setCancelando] = useState<ItemDaAgenda | null>(null)
@@ -76,68 +78,97 @@ export function useAcoesDaAgenda({
     relogio.current = window.setTimeout(() => setAnuncio(null), TEMPO_DO_DESFAZER)
   }
 
+  /**
+   * Otimista desde 25/set. Era: "Concluindo…" no botão até o servidor
+   * responder, e só então a linha saía; e o servidor ainda redesenhava o
+   * layout inteiro. Agora a linha sai (ou muda) no clique, o anúncio com
+   * "Desfazer" aparece junto, e se o servidor recusar a linha volta com o erro.
+   */
   function rodar(
-    item: Pick<ItemDaAgenda, 'id'>,
-    tipo: PedidoDaLinha['tipo'],
+    item: Pick<ItemDaAgenda, 'id'> & Partial<ItemDaAgenda>,
     acao: () => Promise<RespostaDaAtividade>,
-    depois: { sai?: boolean; anuncio?: Anuncio } = {},
+    depois: { sai?: boolean; volta?: boolean; anuncio?: Anuncio; remendo?: Partial<ItemDaAgenda> } = {},
   ) {
     setErros((atual) => semChave(atual, item.id))
-    setPendentes((atual) => ({ ...atual, [item.id]: PENDENTE[tipo] }))
-    comecar(async () => {
-      let r: RespostaDaAtividade
-      try {
-        r = await acao()
-      } catch {
-        r = { ok: false, erro: 'não deu para falar com o servidor, tente de novo' }
+    const remendoAntes = remendos[item.id]
+    if (depois.sai) {
+      setSaindo((atual) => new Set(atual).add(item.id))
+      aoSair?.(item.id)
+    }
+    if (depois.volta) setSaindo((atual) => semItem(atual, item.id))
+    if (depois.remendo) setRemendos((atual) => ({ ...atual, [item.id]: { ...atual[item.id], ...depois.remendo } }))
+    if (depois.anuncio) anunciar(depois.anuncio)
+
+    // O número de atrasadas do menu lateral muda junto.
+    const vivo = { situacao: 'aberta', prazo: null, ...item, ...remendoAntes }
+    const eraAtrasada = item.situacao !== undefined && atrasada(vivo)
+    const ficaAtrasada =
+      item.situacao !== undefined && !depois.sai && atrasada({ ...vivo, ...depois.remendo })
+    const delta = (ficaAtrasada ? 1 : 0) - (eraAtrasada ? 1 : 0)
+    ajustarContagem('atrasadas', delta)
+
+    const desfazer = (erro: string) => {
+      ajustarContagem('atrasadas', -delta)
+      if (depois.sai) setSaindo((atual) => semItem(atual, item.id))
+      if (depois.volta) setSaindo((atual) => new Set(atual).add(item.id))
+      if (depois.remendo) {
+        setRemendos((atual) => {
+          const novo = { ...atual }
+          if (remendoAntes) novo[item.id] = remendoAntes
+          else delete novo[item.id]
+          return novo
+        })
       }
-      setPendentes((atual) => semChave(atual, item.id))
-      if (!r.ok) {
-        setErros((atual) => ({ ...atual, [item.id]: r.erro ?? 'não deu certo' }))
-        return
-      }
-      if (depois.sai) {
-        setSaindo((atual) => new Set(atual).add(item.id))
-        aoSair?.(item.id)
-      }
-      if (depois.anuncio) anunciar(depois.anuncio)
-    })
+      if (depois.anuncio) setAnuncio(null)
+      setErros((atual) => ({ ...atual, [item.id]: erro }))
+    }
+
+    depoisDaTela(acao).then(
+      (r) => {
+        if (!r.ok) desfazer(r.erro ?? 'não deu certo')
+      },
+      () => desfazer('não deu para falar com o servidor, tente de novo'),
+    )
   }
 
   function pedir(item: ItemDaAgenda, pedido: PedidoDaLinha) {
     switch (pedido.tipo) {
       case 'concluir':
-        return rodar(item, 'concluir', () => acaoResolverAtividade(clienteId, item.id, 'concluida'), {
+        return rodar(item, () => acaoResolverAtividade(clienteId, item.id, 'concluida'), {
           sai: true,
           anuncio: { texto: 'Atividade concluída.', atividadeId: item.id },
         })
       case 'reabrir':
-        return rodar(item, 'reabrir', () => acaoReabrirAtividade(clienteId, item.id), {
+        return rodar(item, () => acaoReabrirAtividade(clienteId, item.id), {
           sai: true,
           anuncio: { texto: 'Atividade reaberta.', atividadeId: null },
         })
       case 'cancelar':
         return setCancelando(item)
       case 'reagendar':
-        return rodar(item, 'reagendar', () => acaoReagendarAtividade(clienteId, item.id, pedido.dia, pedido.hora), {
+        return rodar(item, () => acaoReagendarAtividade(clienteId, item.id, pedido.dia, pedido.hora), {
           anuncio: { texto: 'Prazo atualizado.', atividadeId: null },
+          remendo: {
+            prazo: prazoDoDia(pedido.dia, pedido.hora),
+            horaMarcada: pedido.dia.trim() !== '' && pedido.hora.trim() !== '',
+          },
         })
       case 'atribuir':
-        return rodar(item, 'atribuir', () => acaoAtribuirAtividade(clienteId, item.id, pedido.responsavelId), {
+        return rodar(item, () => acaoAtribuirAtividade(clienteId, item.id, pedido.responsavelId), {
           anuncio: { texto: 'Responsável atualizado.', atividadeId: null },
+          remendo: {
+            responsavelId: pedido.responsavelId || null,
+            responsavelNome: equipe.find((pessoa) => pessoa.id === pedido.responsavelId)?.nome ?? null,
+          },
         })
     }
   }
 
   function desfazer(atividadeId: string) {
     setAnuncio(null)
-    rodar({ id: atividadeId }, 'reabrir', () => acaoReabrirAtividade(clienteId, atividadeId), {
+    rodar({ id: atividadeId }, () => acaoReabrirAtividade(clienteId, atividadeId), {
+      volta: true,
       anuncio: { texto: 'Atividade reaberta.', atividadeId: null },
-    })
-    setSaindo((atual) => {
-      const novo = new Set(atual)
-      novo.delete(atividadeId)
-      return novo
     })
   }
 
@@ -147,7 +178,7 @@ export function useAcoesDaAgenda({
       clienteId={clienteId}
       equipe={equipe}
       podeAtribuir={podeAtribuir}
-      pendente={pendentes[item.id] ?? null}
+      pendente={null}
       aoPedir={(pedido) => pedir(item, pedido)}
       volta={volta}
     />
@@ -177,7 +208,7 @@ export function useAcoesDaAgenda({
           titulo={cancelando.titulo}
           aoFechar={() => setCancelando(null)}
           aoConfirmar={(motivo) =>
-            rodar(cancelando, 'cancelar', () => acaoResolverAtividade(clienteId, cancelando.id, 'cancelada', motivo), {
+            rodar(cancelando, () => acaoResolverAtividade(clienteId, cancelando.id, 'cancelada', motivo), {
               sai: true,
               anuncio: { texto: 'Atividade cancelada.', atividadeId: cancelando.id },
             })
@@ -187,7 +218,11 @@ export function useAcoesDaAgenda({
     </>
   )
 
-  return { acoes, erros, saindo, extras }
+  /** As linhas como a tela deve mostrar: sem as que saíram, com o que mudou. */
+  const vivos = <T extends ItemDaAgenda>(itens: T[]): T[] =>
+    itens.filter((item) => !saindo.has(item.id)).map((item) => (remendos[item.id] ? { ...item, ...remendos[item.id] } : item))
+
+  return { acoes, erros, saindo, extras, vivos }
 }
 
 /** A lista da agenda com as ações de cada linha. */
@@ -206,8 +241,8 @@ export function ListaDaAgenda({
   equipe: { id: string; nome: string }[]
   podeAtribuir: boolean
 }) {
-  const { acoes, erros, saindo, extras } = useAcoesDaAgenda({ clienteId, equipe, podeAtribuir, volta })
-  const visiveis = itens.filter((item) => !saindo.has(item.id))
+  const { acoes, erros, extras, vivos } = useAcoesDaAgenda({ clienteId, equipe, podeAtribuir, volta })
+  const visiveis = vivos(itens)
 
   return (
     <>

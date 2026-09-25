@@ -70,7 +70,7 @@ export function VistaDaAgenda({
   podeAtribuir: boolean
 }) {
   const [abertoId, setAbertoId] = useState<string | null>(null)
-  const { acoes, erros, saindo, extras } = useAcoesDaAgenda({
+  const { acoes, erros, extras, vivos } = useAcoesDaAgenda({
     clienteId,
     equipe,
     podeAtribuir,
@@ -78,8 +78,11 @@ export function VistaDaAgenda({
     volta,
   })
 
-  const visiveis = itens.filter((i) => !saindo.has(i.id))
-  const semPrazoVisiveis = semPrazo.filter((i) => !saindo.has(i.id))
+  // Juntas e separadas de novo: reagendar para "sem prazo" (ou tirar dele)
+  // muda a atividade de lista no clique.
+  const todas = vivos([...itens, ...semPrazo])
+  const visiveis = todas.filter((i) => i.prazo)
+  const semPrazoVisiveis = todas.filter((i) => !i.prazo)
   const porDia = new Map<string, ItemDaAgenda[]>()
   for (const item of visiveis) {
     const dia = diaDoPrazo(item.prazo!)

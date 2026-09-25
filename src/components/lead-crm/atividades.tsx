@@ -2,7 +2,9 @@
 
 import { Dropdown } from '@/components/design/dropdown'
 
-import { useState, useTransition } from 'react'
+import { useEffect, useState } from 'react'
+import { depoisDaTela } from '@/components/inbox/conversa-local'
+import { ATIVIDADE_CRIADA, type AtividadeCriada } from '@/components/inbox/marcar-atividade'
 import { horaDoRelogio } from '@/lib/quando'
 import {
   NOME_DO_TIPO,
@@ -67,7 +69,18 @@ export function Atividades({
   const [tipo, setTipo] = useState<TipoDeAtividade>('tarefa')
   const [prazo, setPrazo] = useState('')
   const [erro, setErro] = useState<string | null>(null)
-  const [rodando, comecar] = useTransition()
+
+  // "Marcar atividade" (cabeçalho da ficha, Inbox) avisa por evento quando o
+  // banco confirma, em vez de recarregar a página para esta lista saber.
+  useEffect(() => {
+    const aoCriar = (evento: Event) => {
+      const { atividade } = (evento as CustomEvent<AtividadeCriada>).detail
+      if (atividade.contatoId !== contatoId) return
+      setAtividades((atuais) => (atuais.some((a) => a.id === atividade.id) ? atuais : [...atuais, atividade]))
+    }
+    window.addEventListener(ATIVIDADE_CRIADA, aoCriar)
+    return () => window.removeEventListener(ATIVIDADE_CRIADA, aoCriar)
+  }, [contatoId])
 
   const abertas = atividades.filter((a) => a.situacao === 'aberta')
   const resolvidas = atividades.filter((a) => a.situacao !== 'aberta')
@@ -118,10 +131,10 @@ export function Atividades({
           />
           <button
             type="submit"
-            disabled={rodando || titulo.trim() === ''}
+            disabled={titulo.trim() === ''}
             className="app-secondary-button px-3 py-2 text-[12px] disabled:opacity-50"
           >
-            {rodando ? '…' : 'Criar'}
+            Criar
           </button>
         </div>
         <span className="text-[10.5px] leading-4 text-dim">
@@ -184,7 +197,6 @@ export function Atividades({
                 </span>
                 <button
                   type="button"
-                  disabled={rodando}
                   onClick={() => resolver(atividade.id, 'concluida')}
                   className="rounded-lg border border-line px-2.5 py-1 text-[11px] font-semibold text-muted transition hover:bg-white/[0.04] disabled:opacity-50"
                 >
@@ -209,7 +221,6 @@ export function Atividades({
                 </span>
                 <button
                   type="button"
-                  disabled={rodando}
                   onClick={() => reabrir(atividade.id)}
                   className="text-[10.5px] text-dim underline disabled:opacity-50"
                 >
@@ -232,43 +243,53 @@ export function Atividades({
     </div>
   )
 
+  /**
+   * Otimista desde 25/set: a linha aparece no clique com id provisório, que
+   * troca pelo do banco quando ele responde. Antes esperava o servidor com
+   * "…" no botão, e a linha criada ficava com um id que não dava para
+   * concluir até recarregar a ficha.
+   */
   function criar() {
+    if (titulo.trim() === '') return
     setErro(null)
-    comecar(async () => {
-      const r = await acaoCriarAtividade(clienteId, {
-        contatoId,
-        cartaoId: cartaoId ?? null,
-        tipo,
-        titulo,
-        prazo,
-      })
-      if (!r.ok) {
-        setErro(r.erro ?? 'não deu para criar')
-        return
-      }
-      // A lista vem do servidor no próximo render; aqui basta limpar o
-      // formulário para o gesto não parecer ignorado.
-      setTitulo('')
-      setPrazo('')
-      const criada: Atividade = {
-        id: `nova:${crypto.randomUUID()}`,
-        contatoId,
-        cartaoId: cartaoId ?? null,
-        tipo,
-        titulo: titulo.trim(),
-        nota: null,
-        onde: null,
-        horaMarcada: false,
-        prazo: prazo ? `${prazo}T12:00:00.000Z` : null,
-        responsavelId: null,
-        responsavelNome: null,
-        situacao: 'aberta',
-        concluidaEm: null,
-        motivoDoCancelamento: null,
-        criadoEm: new Date(agora).toISOString(),
-      }
-      setAtividades((atuais) => [...atuais, criada])
-    })
+    const provisoria: Atividade = {
+      id: `nova:${Date.now()}`,
+      contatoId,
+      cartaoId: cartaoId ?? null,
+      tipo,
+      titulo: titulo.trim(),
+      nota: null,
+      onde: null,
+      horaMarcada: false,
+      prazo: prazo ? `${prazo}T12:00:00.000Z` : null,
+      responsavelId: null,
+      responsavelNome: null,
+      situacao: 'aberta',
+      concluidaEm: null,
+      motivoDoCancelamento: null,
+      criadoEm: new Date().toISOString(),
+    }
+    const pedido = { contatoId, cartaoId: cartaoId ?? null, tipo, titulo, prazo }
+    setAtividades((atuais) => [...atuais, provisoria])
+    setTitulo('')
+    setPrazo('')
+
+    const desfazer = (motivo: string) => {
+      setAtividades((atuais) => atuais.filter((a) => a.id !== provisoria.id))
+      setTitulo(pedido.titulo)
+      setPrazo(pedido.prazo)
+      setErro(motivo)
+    }
+    depoisDaTela(() => acaoCriarAtividade(clienteId, pedido)).then(
+      (r) => {
+        if (!r.ok || !r.criada) return desfazer(r.erro ?? 'não deu para criar')
+        const criada = r.criada
+        setAtividades((atuais) =>
+          atuais.map((a) => (a.id === provisoria.id ? { ...a, id: criada.id, prazo: criada.prazo } : a)),
+        )
+      },
+      () => desfazer('sem conexão com o servidor'),
+    )
   }
 
   function resolver(atividadeId: string, situacao: 'concluida' | 'cancelada') {
@@ -278,13 +299,18 @@ export function Atividades({
       atuais.map((a) => (a.id === atividadeId ? { ...a, situacao } : a)),
     )
 
-    comecar(async () => {
-      const r = await acaoResolverAtividade(clienteId, atividadeId, situacao)
-      if (!r.ok) {
+    depoisDaTela(() => acaoResolverAtividade(clienteId, atividadeId, situacao)).then(
+      (r) => {
+        if (!r.ok) {
+          setAtividades(antes)
+          setErro(r.erro ?? 'não deu')
+        }
+      },
+      () => {
         setAtividades(antes)
-        setErro(r.erro ?? 'não deu')
-      }
-    })
+        setErro('sem conexão com o servidor')
+      },
+    )
   }
 
   function reabrir(atividadeId: string) {
@@ -294,12 +320,17 @@ export function Atividades({
       atuais.map((a) => (a.id === atividadeId ? { ...a, situacao: 'aberta' } : a)),
     )
 
-    comecar(async () => {
-      const r = await acaoReabrirAtividade(clienteId, atividadeId)
-      if (!r.ok) {
+    depoisDaTela(() => acaoReabrirAtividade(clienteId, atividadeId)).then(
+      (r) => {
+        if (!r.ok) {
+          setAtividades(antes)
+          setErro(r.erro ?? 'não deu')
+        }
+      },
+      () => {
         setAtividades(antes)
-        setErro(r.erro ?? 'não deu')
-      }
-    })
+        setErro('sem conexão com o servidor')
+      },
+    )
   }
 }

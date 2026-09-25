@@ -7,6 +7,7 @@ import { PainelVoce, PerfilDaSessao } from '@/components/conta/voce'
 import { contagensDaAgenda } from '@/server/repos/atividades'
 import { lerFiltroDaAgenda } from '@/core/atividades'
 import { NotificacoesDaFila } from '@/components/inbox/notificacoes-da-fila'
+import { NumeroDaBarra } from '@/components/design/numero-da-barra'
 import { LinhaDePresenca } from '@/components/conta/linha-de-presenca'
 import { resumoDasContas, type Cliente, type ResumoDeAtendimento } from '@/server/repos/clientes'
 import { crmVisivel, lojaVisivel } from '@/server/repos/recursos'
@@ -166,23 +167,10 @@ export const contarDaBarra = cache(async (clienteId: string): Promise<Record<Con
   }
 })
 
-const DIZ: Record<Contagem, [string, string]> = {
-  minhas: ['conversa aberta com você', 'conversas abertas com você'],
-  'sem-dono': ['conversa sem responsável', 'conversas sem responsável'],
-  atrasadas: ['atividade atrasada', 'atividades atrasadas'],
-}
-
 async function Numero({ clienteId, qual }: { clienteId: string; qual: Contagem }) {
-  const quantidade = (await contarDaBarra(clienteId))[qual]
-  if (!quantidade) return null
-  const rotulo = `${quantidade} ${DIZ[qual][quantidade === 1 ? 0 : 1]}`
-  // Atrasada é a única que já passou da hora: a cor diz isso antes do número.
-  const tom = qual === 'atrasadas' ? 'bg-perigo/12 text-perigo' : 'bg-primary-weak text-primary'
-  return (
-    <span title={rotulo} aria-label={rotulo} className={`min-w-[20px] rounded-full px-1.5 py-px text-center text-[10.5px] font-bold tabular-nums ${tom}`}>
-      {quantidade > 99 ? '99+' : quantidade}
-    </span>
-  )
+  // O desenho mora em `NumeroDaBarra`, no cliente, para os gestos mexerem no
+  // número sem esperar o layout voltar do servidor.
+  return <NumeroDaBarra qual={qual} doServidor={(await contarDaBarra(clienteId))[qual]} />
 }
 
 async function Ponto({ clienteId, quais }: { clienteId: string; quais: Contagem[] }) {
