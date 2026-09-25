@@ -213,8 +213,11 @@ export function gemini({ chave, modelo }: { chave: string; modelo?: string }): M
        * o Google ter liberado, e a resposta certa continua sendo tentar.
        */
       if (reserva !== null && estaSemCota(nome)) {
+        if (estaSemCota(reserva)) return ultimaVolta(corpo, null, false)
         const direto = await tentar(reserva, chave, corpo, TIMEOUT_RESERVA_MS)
-        return direto.tipo === 'retentar' ? direto.desistencia : direto.resposta
+        if (direto.tipo !== 'retentar') return direto.resposta
+        if (direto.status === '429') marcarSemCota(reserva)
+        return ultimaVolta(corpo, direto.desistencia, direto.status !== '429')
       }
 
       // Sem reserva não há para onde correr, então não se corta cedo: cortar
@@ -252,15 +255,38 @@ export function gemini({ chave, modelo }: { chave: string; modelo?: string }): M
        * atendente" sem a IA ter falado nada. Medido na hora: cerca de 1 em 3
        * chamadas voltava 503 no principal e metade na reserva. A última volta
        * vai para `MODELO_ULTIMO_RECURSO`, que no mesmo teste não deu 503
-       * nenhum. Cota (429) não volta: ali esperar um segundo não muda nada.
+       * nenhum.
+       *
+       * **Cota (429) também vai**, sem a pausa. A cota é por modelo, então o
+       * último recurso é outro balde, e na mesma tarde de 25/set o 429 nos
+       * dois primeiros mandou a conversa da PCYES para gente com um terceiro
+       * modelo cheio de cota esperando.
        */
-      if (primeira.status === '429' || segunda.status === '429' || estaSemCota(nome)) {
-        return segunda.desistencia
-      }
-      await new Promise((pronto) => setTimeout(pronto, 1_000))
-      const terceira = await tentar(MODELO_ULTIMO_RECURSO, chave, corpo, TIMEOUT_RESERVA_MS)
-      return terceira.tipo === 'retentar' ? terceira.desistencia : terceira.resposta
+      const houveCota = primeira.status === '429' || segunda.status === '429'
+      return ultimaVolta(corpo, segunda.desistencia, !houveCota)
     },
+  }
+
+  /**
+   * A terceira e última tentativa, em outro balde de cota.
+   *
+   * `pausar` é para o pico (503): um segundo de folga ajuda. Para cota, não
+   * muda nada e só atrasa. `desistencia` nula quer dizer que nenhuma
+   * tentativa anterior rodou nesta conversa, e aí a desistência é a desta.
+   */
+  async function ultimaVolta(
+    corpo: string,
+    desistencia: Resposta | null,
+    pausar: boolean,
+  ): Promise<Resposta> {
+    if (estaSemCota(MODELO_ULTIMO_RECURSO)) {
+      return desistencia ?? { tipo: 'nao_sei', motivo: 'os três modelos estão sem cota hoje' }
+    }
+    if (pausar) await new Promise((pronto) => setTimeout(pronto, 1_000))
+    const terceira = await tentar(MODELO_ULTIMO_RECURSO, chave, corpo, TIMEOUT_RESERVA_MS)
+    if (terceira.tipo !== 'retentar') return terceira.resposta
+    if (terceira.status === '429') marcarSemCota(MODELO_ULTIMO_RECURSO)
+    return terceira.desistencia
   }
 }
 

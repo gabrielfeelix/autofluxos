@@ -317,6 +317,29 @@ describe('o disjuntor de cota', () => {
     }
   })
 
+  // 25/set, PCYES: 429 nos dois primeiros e a conversa foi para gente com um
+  // terceiro modelo, de outro balde de cota, sem ser tentado.
+  it('429 no padrão e na reserva ainda tenta o último recurso', async () => {
+    const { chamadas, restaurar } = fingirFetch([
+      quotaExcedida, // padrão
+      quotaExcedida, // reserva
+      () => respondeu('salvou'), // último recurso
+      () => respondeu('direto'), // segunda conversa: só o último recurso
+    ])
+
+    try {
+      const modelo = gemini({ chave: 'k' })
+      expect(await modelo.responder(pedido)).toEqual({ tipo: 'texto', texto: 'salvou' })
+      expect(await modelo.responder(pedido)).toEqual({ tipo: 'texto', texto: 'direto' })
+
+      expect(chamadas).toHaveLength(4)
+      expect(chamadas[2]).toContain('gemini-3.5-flash-lite')
+      expect(chamadas[3]).toContain('gemini-3.5-flash-lite')
+    } finally {
+      restaurar()
+    }
+  })
+
   it('503 NÃO desliga o padrão, pico passa em segundos', async () => {
     // Marcar o modelo bom como fora por causa de um soluço seria desligar o
     // caminho normal do produto por um minuto ruim do Google.
