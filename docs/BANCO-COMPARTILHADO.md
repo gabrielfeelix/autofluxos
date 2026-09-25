@@ -261,6 +261,15 @@ extração explícito para os objetos de `public`.
   antiga, a lista de pedidos vira vazia, a Nuvemshop vira `null`), então no
   intervalo só o "Quero esta" e o interruptor de Loja recusavam, com mensagem,
   e nenhuma tela caiu.
+- **a `0105` foi aplicada em 25/set/2026** (canal Site, chat no site da loja),
+  com autorização explícita do dono, pela Management API, numa transação.
+  Aditiva: `channels.site_chave` (text, unique) e `channels.site_config`
+  (jsonb, default `{}`), e os checks `channels_provider_check` e
+  `channels_id_do_canal_check` trocados por versões que aceitam tudo o que as
+  antigas aceitavam mais `provider = 'site'`. As 4 linhas existentes passaram
+  no check novo. Verandi conferida antes e depois: **35** migrations (última
+  em 23/set), **40** tabelas em `app_verandi`. `notify pgrst, 'reload schema'`
+  depois, e a Data API leu `site_chave` na sequência.
 - **a `0104` foi aplicada em 25/set/2026** (franquia de mensagens de serviço da
   Meta, que passa a ser cobrada em 1/out/2026), com autorização explícita do
   dono, pela Management API. Aditiva: só a tabela `public.consumo_da_meta`
