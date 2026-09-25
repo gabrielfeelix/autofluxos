@@ -5,6 +5,7 @@ import { redirect } from 'next/navigation'
 import { normalizarEndereco, type ProdutoDaLoja } from '@/core/loja'
 import { lojaMagento } from '@/loja/magento'
 import { lojaAdmin } from '@/loja/magento-admin'
+import { enriquecer } from '@/loja/enriquecer'
 import { lojaNuvemshop } from '@/loja/nuvemshop'
 import { criarEstado } from './instagram/estado'
 import { nuvemshopConfigurado, urlDeAutorizacao } from './nuvemshop/conexao'
@@ -73,7 +74,16 @@ async function testar(enderecoDigitado: string, termoDigitado: string): Promise<
     return { ok: false, motivo: `a loja respondeu, mas não achou nada para "${termo}". Tente o nome de um produto que aparece no site.` }
   }
 
-  const complementos = await loja.combinaCom(busca.valor[0]!.produtoId)
+  // A foto vem pelo mesmo caminho do card, sem token: o teste prova que o card
+  // do WhatsApp vai sair com imagem, e não só que a busca responde.
+  const [complementos, amostra] = await Promise.all([
+    loja.combinaCom(busca.valor[0]!.produtoId),
+    enriquecer(busca.valor.slice(0, 3), lojaAdmin({ endereco: endereco.endereco, credencial: null }), {
+      via: null,
+      estoqueId: null,
+      prazoMs: 4_000,
+    }),
+  ])
 
   return {
     ok: true,
@@ -81,7 +91,7 @@ async function testar(enderecoDigitado: string, termoDigitado: string): Promise<
     codigoDaLoja: config.valor.codigoDaLoja,
     sufixo: config.valor.sufixo,
     moeda: config.valor.moeda,
-    amostra: busca.valor.slice(0, 3),
+    amostra,
     semComplementos: !complementos.ok || complementos.valor.length === 0,
   }
 }

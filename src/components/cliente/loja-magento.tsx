@@ -50,10 +50,20 @@ function Amostra({ produtos }: { produtos: ProdutoDaLoja[] }) {
   return (
     <ul className="mt-3 divide-y divide-line">
       {produtos.map((p) => (
-        <li key={p.produtoId} className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1 py-2.5 text-[13px]">
-          <a href={p.link} target="_blank" rel="noreferrer" className="min-w-0 flex-1 truncate underline-offset-2 hover:underline">
-            {p.nome}
-          </a>
+        <li key={p.produtoId} className="flex flex-wrap items-center justify-between gap-x-4 gap-y-1 py-2.5 text-[13px]">
+          <span className="flex min-w-0 flex-1 items-center gap-3">
+            {p.foto ? (
+              // eslint-disable-next-line @next/next/no-img-element -- foto do CDN da loja, domínio de cada cliente
+              <img src={p.foto} alt="" className="size-11 shrink-0 rounded-[8px] border border-line bg-white object-contain" />
+            ) : (
+              <span className="flex size-11 shrink-0 items-center justify-center rounded-[8px] border border-dashed border-line text-center text-[9.5px] leading-tight text-aviso">
+                sem foto
+              </span>
+            )}
+            <a href={p.link} target="_blank" rel="noreferrer" className="min-w-0 truncate underline-offset-2 hover:underline">
+              {p.nome}
+            </a>
+          </span>
           <span className="flex items-baseline gap-3 text-[12.5px]">
             <Preco produto={p} />
             <span className={p.emEstoque ? 'text-ok' : 'text-dim'}>{p.emEstoque ? 'em estoque' : 'esgotado'}</span>
