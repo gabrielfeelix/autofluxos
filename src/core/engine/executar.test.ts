@@ -1880,3 +1880,38 @@ describe('os blocos de etiqueta e anotação (0044)', () => {
     expect(nota).toMatchObject({ tipo: 'escrever_nota' })
   })
 })
+
+describe('pergunta sem texto no laço da IA', () => {
+  const p = { x: 0, y: 0 }
+  const laco = fluxoSchema.parse({
+    inicio: 'vendedor',
+    nodes: [
+      { id: 'vendedor', type: 'ia', position: p, data: { instrucao: 'Venda.', salvarEm: 'r' } },
+      { id: 'segue', type: 'pergunta', position: p, data: { texto: '', opcoes: [], salvarEm: 'pergunta' } },
+    ],
+    edges: [
+      { id: 'a', source: 'vendedor', target: 'segue' },
+      { id: 'b', source: 'segue', target: 'vendedor' },
+    ],
+  })
+
+  it('manda só a resposta da IA e espera a próxima mensagem', () => {
+    const { sessao, acoes } = conversar(laco, [
+      { tipo: 'inicio' },
+      { tipo: 'ia_respondeu', texto: 'Vai usar pra jogar ou estudar?' },
+    ])
+    expect(textos(acoes)).toEqual(['Vai usar pra jogar ou estudar?'])
+    expect(sessao.status).toBe('ativa')
+    expect(sessao.noAtual).toBe('segue')
+  })
+
+  it('a próxima mensagem volta para a IA', () => {
+    const { sessao } = conversar(laco, [
+      { tipo: 'inicio' },
+      { tipo: 'ia_respondeu', texto: 'Vai usar pra jogar ou estudar?' },
+      { tipo: 'texto', texto: 'jogar' },
+    ])
+    expect(sessao.status).toBe('aguardando_ia')
+    expect(sessao.noAtual).toBe('vendedor')
+  })
+})

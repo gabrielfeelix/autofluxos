@@ -235,9 +235,10 @@ export function validar(fluxo: Fluxo, capacidades: Capacidades = {}): ResultadoV
   }
   for (const nome of deConversa) deSistema.delete(nome)
 
+  const esperaDaIa = perguntasQueEsperamIa(fluxo)
   for (const no of fluxo.nodes) {
     const minhasSaidas = saidas(no.id)
-    conferirConteudo(no, erros, avisos, deSistema, { nome: nomeDoCanal, limites })
+    conferirConteudo(no, erros, avisos, deSistema, { nome: nomeDoCanal, limites }, esperaDaIa.has(no.id))
 
     if (no.type === 'pergunta' && perguntaEhDinamica(no)) {
       if (no.data.opcoes.length > 0) {
@@ -736,12 +737,44 @@ const MEDIDAS_PADRAO: MedidasDoCanal = {
   limites: DEFINICAO_DO_CANAL[CANAL_PADRAO].limites,
 }
 
+/**
+ * As perguntas que vêm logo depois de um bloco de IA, pulando só blocos que
+ * não falam nada (etapa, etiqueta, salvar campo, atraso).
+ *
+ * É onde pergunta sem texto faz sentido: a resposta da IA já é a pergunta, e a
+ * pergunta do fluxo só segura a conversa esperando a próxima mensagem.
+ * Em qualquer outro lugar, pergunta vazia é esquecimento, e a pessoa ficaria
+ * esperando sem saber que é a vez dela.
+ */
+const SEM_FALA = new Set(['etapa', 'etiqueta', 'salvar-campo', 'atraso'])
+
+function perguntasQueEsperamIa(fluxo: Fluxo): Set<string> {
+  const porId = new Map(fluxo.nodes.map((n) => [n.id, n]))
+  const achadas = new Set<string>()
+  for (const ia of fluxo.nodes.filter((n) => n.type === 'ia')) {
+    const fila = [ia.id]
+    const vistos = new Set(fila)
+    while (fila.length > 0) {
+      const atual = fila.shift()!
+      for (const aresta of fluxo.edges.filter((a) => a.source === atual)) {
+        const destino = porId.get(aresta.target)
+        if (!destino || vistos.has(destino.id)) continue
+        vistos.add(destino.id)
+        if (destino.type === 'pergunta') achadas.add(destino.id)
+        else if (SEM_FALA.has(destino.type)) fila.push(destino.id)
+      }
+    }
+  }
+  return achadas
+}
+
 function conferirConteudo(
   no: No,
   erros: Problema[],
   avisos: Problema[],
   deSistema: Set<string> = new Set(),
   medidas: MedidasDoCanal = MEDIDAS_PADRAO,
+  esperaDaIa = false,
 ): void {
   const { nome: nomeDoCanal, limites } = medidas
   const vazio = (texto: string) => texto.trim() === ''
@@ -851,7 +884,7 @@ function conferirConteudo(
       break
 
     case 'pergunta': {
-      if (vazio(no.data.texto)) {
+      if (vazio(no.data.texto) && !(esperaDaIa && no.data.opcoes.length === 0 && !perguntaEhDinamica(no))) {
         erros.push({ codigo: 'TEXTO_VAZIO', mensagem: 'Esta pergunta está sem texto.', noId: no.id })
       }
       // Pergunta dinâmica também vira interativa: as opções chegam na hora, mas

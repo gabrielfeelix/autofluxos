@@ -284,7 +284,7 @@ export function executar(
       }
 
       acoes.push({ tipo: 'enviar_texto', texto: MENSAGEM_SO_TEXTO })
-      acoes.push(perguntar(parada, s))
+      acoes.push(...perguntar(parada, s))
       return { acoes, sessao: s }
     }
 
@@ -491,7 +491,7 @@ function responderPergunta(
       )
     }
     acoes.push({ tipo: 'enviar_texto', texto: MENSAGEM_NAO_ENTENDI })
-    acoes.push(perguntar(no, s))
+    acoes.push(...perguntar(no, s))
     return { acoes, sessao: s }
   }
 
@@ -929,7 +929,7 @@ function avancar(
           break
         }
 
-        acoes.push(perguntar(no, s, esperaMs))
+        acoes.push(...perguntar(no, s, esperaMs))
         esperaMs = 0
         s.noAtual = no.id
         s.status = 'ativa'
@@ -1181,14 +1181,21 @@ export function mensagemDeRecusa(no: NoPergunta, motivo: MotivoDaRecusa = 'forma
   return no.data.formato ? PEDIDO_PADRAO[no.data.formato] : MENSAGEM_NAO_ENTENDI
 }
 
-function perguntar(no: NoPergunta, s: Sessao, esperaMs = 0): Acao {
+function perguntar(no: NoPergunta, s: Sessao, esperaMs = 0): Acao[] {
   const texto = interpolar(no.data.texto, s.vars)
   const opcoes = resolverOpcoes(no, s.vars)
+  /*
+   * Pergunta sem texto só espera. Existe para o laço de conversa com IA: a
+   * resposta da IA já termina perguntando, e um "quer ver outra opção?" fixo
+   * depois dela saía até atrás de uma recusa (25/set/2026, PCYES). O
+   * validador só deixa publicar assim logo depois de um bloco de IA.
+   */
+  if (opcoes.length === 0 && texto.trim() === '') return []
   if (opcoes.length === 0) {
-    return { tipo: 'enviar_texto', texto, ...(esperaMs > 0 ? { atrasoMs: esperaMs } : {}) }
+    return [{ tipo: 'enviar_texto', texto, ...(esperaMs > 0 ? { atrasoMs: esperaMs } : {}) }]
   }
 
-  return {
+  return [{
     tipo: 'enviar_opcoes',
     texto,
     opcoes,
@@ -1196,7 +1203,7 @@ function perguntar(no: NoPergunta, s: Sessao, esperaMs = 0): Acao {
     // Acima disso vira lista suspensa.
     formato: opcoes.length <= LIMITE_BOTOES ? 'botoes' : 'lista',
     ...(esperaMs > 0 ? { atrasoMs: esperaMs } : {}),
-  }
+  }]
 }
 
 /** Casa o que chegou com uma das opções. Aceita clique, texto ou número. */

@@ -1327,3 +1327,28 @@ describe('credencial das consultas da IA', () => {
     expect(codigos(fluxoComIa(['loja_buscar', 'agenda_horarios']))).toContain('FERRAMENTA_SEM_CREDENCIAL')
   })
 })
+
+describe('pergunta sem texto depois da IA', () => {
+  const laco = (antes: 'ia' | 'mensagem') =>
+    fluxoSchema.parse({
+      inicio: 'antes',
+      nodes: [
+        antes === 'ia'
+          ? { id: 'antes', type: 'ia', position: p, data: { instrucao: 'Ajude a escolher.', salvarEm: 'r' } }
+          : { id: 'antes', type: 'mensagem', position: p, data: { texto: 'Oi!' } },
+        { id: 'segue', type: 'pergunta', position: p, data: { texto: '', opcoes: [], salvarEm: 'pergunta' } },
+      ],
+      edges: [
+        { id: 'a', source: 'antes', target: 'segue' },
+        { id: 'b', source: 'segue', target: 'antes' },
+      ],
+    })
+
+  it('só espera, e publica: a resposta da IA é a pergunta', () => {
+    expect(codigos(validar(laco('ia')).erros)).not.toContain('TEXTO_VAZIO')
+  })
+
+  it('depois de qualquer outro bloco continua sendo esquecimento', () => {
+    expect(codigos(validar(laco('mensagem')).erros)).toContain('TEXTO_VAZIO')
+  })
+})
