@@ -18,7 +18,7 @@ export type ConfigDoSite = {
   titulo: string
   /** A primeira frase, antes de a pessoa escrever. Só enfeite: não é o fluxo. */
   saudacao: string
-  /** Pedir nome e WhatsApp ou e-mail depois da primeira mensagem. */
+  /** Pedir nome e WhatsApp ou e-mail depois da primeira resposta. */
   pedirContato: boolean
 }
 

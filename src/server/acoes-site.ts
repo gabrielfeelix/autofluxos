@@ -2,7 +2,7 @@
 
 import { type ConfigDoSite, lerConfigDoSite, lerListaDeDominios } from '@/core/chat-do-site'
 import { exigirCapacidade, recusou } from './permissoes'
-import { ligarChatDoSite, pausarChatDoSite, salvarConfigDoSite } from './repos/canais-site'
+import { garantirChatDoSite, ligarChatDoSite, pausarChatDoSite, salvarConfigDoSite } from './repos/canais-site'
 
 /**
  * As ações da tela do chat do site. Todas devolvem o resultado em vez de
@@ -29,7 +29,7 @@ export async function acaoPausarChatDoSite(clienteId: string): Promise<Resultado
 export async function acaoSalvarChatDoSite(
   clienteId: string,
   dados: { dominios: string; cor: string; titulo: string; saudacao: string; pedirContato: boolean },
-): Promise<Resultado<{ config: ConfigDoSite; recusados: string[] }>> {
+): Promise<Resultado<{ config: ConfigDoSite; recusados: string[]; chave: string }>> {
   const acesso = await exigirCapacidade(clienteId, 'configurar_empresa', 'todos')
   if (recusou(acesso)) return acesso
 
@@ -37,6 +37,7 @@ export async function acaoSalvarChatDoSite(
   // Passa pelo mesmo leitor do banco: cor inválida, título vazio e texto longo
   // caem no padrão ou no teto aqui, e não num segundo conjunto de regras.
   const config = lerConfigDoSite({ ...dados, dominios: validos })
+  const canal = await garantirChatDoSite(clienteId, 'pausado')
   await salvarConfigDoSite(clienteId, config)
-  return { ok: true, config, recusados }
+  return { ok: true, config, recusados, chave: canal.chave }
 }

@@ -86,6 +86,7 @@ export function ConfigurarChatDoSite({
         return
       }
       setSalvo(r.config)
+      setChave(r.chave)
       setDominios(r.config.dominios.join('\n'))
       setTitulo(r.config.titulo)
       setSaudacao(r.config.saudacao)
@@ -220,7 +221,7 @@ export function ConfigurarChatDoSite({
           <div className="min-w-0 flex-1">
             <h2 className="text-[15px] font-bold">Pedir nome e contato</h2>
             <p className="mt-1 max-w-[560px] text-[12.5px] leading-5 text-dim">
-              Depois da primeira mensagem, o balão pergunta o nome e um WhatsApp ou e-mail. Sem isso, a conversa fica no
+              Depois da primeira resposta, o balão pergunta o nome e um WhatsApp ou e-mail. Sem isso, a conversa fica no
               Inbox como visitante anônimo, e some se a pessoa trocar de navegador.
             </p>
           </div>

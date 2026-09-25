@@ -86,7 +86,7 @@
   /* ------------------------------------------------------------------ */
   var CSS =
     ':host{all:initial;font-family:inherit;--c:#6366F1;--tinta:#16181D;--apagado:#6B7280;--linha:#E7E8EC;--fundo:#FFFFFF;--bolha:#F2F3F5}' +
-    '*{box-sizing:border-box;font-family:inherit;margin:0}' +
+    '*{box-sizing:border-box;font-family:inherit;margin:0}[hidden]{display:none!important}' +
     '.raiz{position:fixed;right:20px;bottom:20px;z-index:2147483000;display:flex;flex-direction:column;align-items:flex-end;gap:12px;color:var(--tinta);font-size:15px;line-height:1.45;-webkit-font-smoothing:antialiased}' +
     '.botao{width:58px;height:58px;border-radius:50%;border:0;background:var(--c);color:#fff;cursor:pointer;display:grid;place-items:center;box-shadow:0 10px 28px -8px color-mix(in srgb,var(--c) 70%,#000),0 2px 6px rgba(22,24,29,.18);transition:transform .18s ease;position:relative}' +
     '.botao:hover{transform:scale(1.05)}' +
@@ -374,7 +374,7 @@
         lista.appendChild(opcoesDe(m, i !== ultimaEmpresa || respondeuDepois(i)))
       }
 
-      if (m.de === 'visitante' && precisaFicha(i)) lista.appendChild(ficha())
+      if (precisaFicha(i)) lista.appendChild(ficha())
     }
 
     for (var k = 0; k < pendentes.length; k++) {
@@ -398,12 +398,21 @@
     return pendentes.length > 0
   }
 
-  /* A ficha aparece logo depois da primeira mensagem do visitante. */
+  /* A ficha aparece depois da primeira resposta da empresa: pedir contato
+   * antes de responder seria cobrar para atender. Vai no fim do primeiro bloco
+   * de respostas, depois das opções dele. */
   function precisaFicha(i) {
     if (identificado || fichaDispensada || !config.pedirContato) return false
-    for (var j = 0; j < i; j++) if (mensagens[j].de === 'visitante') return false
-    return true
+    var fim = -1
+    for (var j = 0; j < mensagens.length; j++) {
+      if (mensagens[j].de === 'visitante') {
+        for (var k = j + 1; k < mensagens.length && mensagens[k].de === 'empresa'; k++) fim = k
+        break
+      }
+    }
+    return i === fim
   }
+
 
   function opcoesDe(m, respondida) {
     var caixa = el('div', 'opcoes')

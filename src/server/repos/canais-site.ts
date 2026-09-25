@@ -73,14 +73,28 @@ export async function acharChatPorChave(chave: string): Promise<CanalDoSite | nu
  * tela troca aqui sem mexer no WhatsApp.
  */
 export async function ligarChatDoSite(clienteId: string): Promise<CanalDoSite> {
-  const existente = await chatDoSite(clienteId)
-  if (existente) {
-    if (existente.status !== 'ativo') {
-      const { error } = await db().from('channels').update({ status: 'ativo' }).eq('id', existente.id)
-      if (error) throw new Error(`não deu para religar o chat do site: ${error.message}`)
-    }
-    return { ...existente, status: 'ativo' }
+  const canal = await garantirChatDoSite(clienteId, 'ativo')
+  if (canal.status !== 'ativo') {
+    const { error } = await db().from('channels').update({ status: 'ativo' }).eq('id', canal.id)
+    if (error) throw new Error(`não deu para religar o chat do site: ${error.message}`)
   }
+  return { ...canal, status: 'ativo' }
+}
+
+/**
+ * O canal da conta, criando se ainda não existe.
+ *
+ * Salvar a aparência antes de ligar é caminho normal (a pessoa arruma tudo e
+ * só então liga), e sem a linha o `update` não achava nada e a tela dizia
+ * "salvo" com nada gravado. Quem salva sem ligar ganha o canal **pausado**:
+ * configurar não é publicar.
+ */
+export async function garantirChatDoSite(
+  clienteId: string,
+  status: 'ativo' | 'pausado',
+): Promise<CanalDoSite> {
+  const existente = await chatDoSite(clienteId)
+  if (existente) return existente
 
   const { data: numero } = await db()
     .from('channels')
@@ -102,6 +116,7 @@ export async function ligarChatDoSite(clienteId: string): Promise<CanalDoSite> {
       // ser uma lista que alguém percorre.
       site_chave: randomBytes(18).toString('base64url'),
       site_config: {},
+      status,
       flow_id: numero?.flow_id ?? null,
       flow_boas_vindas_id: numero?.flow_boas_vindas_id ?? null,
       flow_midia_id: numero?.flow_midia_id ?? null,
