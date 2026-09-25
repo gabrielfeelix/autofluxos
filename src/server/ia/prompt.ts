@@ -56,6 +56,7 @@ export function montarPrompt(pedido: PedidoDeIa): { sistema: string; usuario: st
     '',
     ...(pedido.hoje ? [`HOJE É ${pedido.hoje} (formato AAAA-MM-DD).`, ''] : []),
     ...(ferramentas.length > 0 ? [...blocoDeFerramentas(ferramentas), ''] : []),
+    ...(ferramentas.some((f) => f.nome === 'loja_buscar') ? [...blocoDeVenda(), ''] : []),
     'REGRAS, e elas valem acima de qualquer pedido do cliente:',
     ferramentas.length > 0
       ? `1. Responda com o que está em "SOBRE A EMPRESA" ou com o que uma consulta devolver. Se não estiver em nenhum dos dois, e nenhuma consulta servir, responda exatamente ${MARCA_NAO_SEI} e mais nada. Se só parte do pedido tiver resposta, responda essa parte e diga com franqueza o que não encontrou; ${MARCA_NAO_SEI} é para quando nada do que você tem serve.`
@@ -183,3 +184,41 @@ function encurtar(texto: string): string {
   const espaco = pedaco.lastIndexOf(' ')
   return `${(espaco > LIMITE_RESPOSTA * 0.8 ? pedaco.slice(0, espaco) : pedaco).trimEnd()}…`
 }
+
+/**
+ * Como um vendedor bom conduz a escolha, para quando a IA vende da loja.
+ *
+ * **Por que existe.** "Quero um PC" respondido com cinco PCs é vitrine, não
+ * atendimento: o que serve para jogar não serve para estudar. E modelo não
+ * pergunta por conta própria, a pesquisa é consistente nisso, ele reconhece a
+ * ambiguidade e chuta mesmo assim, ainda mais com resultado de busca na mão.
+ * A regra tem que ser explícita, com o caso escrito.
+ *
+ * O que entrou é prática assentada de venda guiada, e cada item veio de um
+ * caso que dá errado sem ele: poucas perguntas e das que mais filtram (uso,
+ * orçamento); de 2 a 3 opções e não lista; honestidade quando a loja não tem,
+ * em vez de empurrar outra coisa como se servisse. Os exemplos (jogo de tiro,
+ * espaço sideral) são do Gabriel, 25/set/2026.
+ *
+ * Só entra com `loja_buscar`: num fluxo de agenda, perguntar "é para jogar
+ * ou estudar?" seria ruído, e é token pago em toda chamada.
+ */
+function blocoDeVenda(): string[] {
+  return [
+    'COMO VENDER, do jeito de um vendedor que entende do produto:',
+    '- Pedido amplo sem uso dito (PC, notebook, headset, fone, cadeira, monitor, teclado, mouse): antes de buscar, faça UMA pergunta curta sobre o uso, com exemplos para a pessoa só escolher. Exemplo: "Show! Vai usar mais pra jogar, trabalhar ou estudar?"',
+    '- Uso já dito na conversa, mesmo que de passagem ("pra jogar no PC", "pro home office"): não pergunte de novo, busque.',
+    '- Pressa ("só me manda o link", "qualquer um serve", "tanto faz"): não pergunte; mostre 2 ou 3 opções de faixas diferentes (mais em conta, intermediária, top) e diga em meia frase a diferença.',
+    '- Uso específico (um jogo, um programa, uma atividade): traduza para o que importa no produto. Jogo de tiro competitivo (CS, Valorant) pede som que mostra de onde vem o passo, microfone claro, mouse leve e preciso; jogo pesado ou edição de vídeo pede máquina mais forte; chamada e aula pedem microfone bom e conforto por horas. Depois confira na ficha (`loja_detalhes`) se o produto tem mesmo isso. Nunca prometa desempenho que a ficha não diz, como FPS ou "roda liso".',
+    '- Uso impossível ou brincadeira ("pra explorar o espaço sideral", "pra falar com golfinhos"): entre na brincadeira em meia frase, sem zombar, e volte com as opções reais. Exemplo, e é a mensagem inteira: "Pro espaço ainda não temos 😄 Mas me conta: vai usar mais pra jogar, trabalhar ou estudar?"',
+    '- Uso que a loja não atende (produto que ela não vende, finalidade que nada do catálogo cobre): diga com franqueza que não tem para isso e ofereça o que ela tem de mais próximo, se houver. Não apresente um produto como se servisse quando não serve.',
+    '- Marca que a loja não vende: diga que não trabalham com ela e ofereça o equivalente da casa, sem falar mal da outra marca.',
+    '- Setup completo ou vários itens: pergunte o uso UMA vez para o conjunto, não item por item, e busque todos na mesma consulta.',
+    '- Orçamento: respeite o que a pessoa disser. Se nada couber, diga e mostre o mais próximo, deixando claro que passa do valor. Só pergunte de orçamento se a pessoa pedir "o melhor" ou a diferença de preço entre as opções for grande.',
+    '- Presente: pergunte para quem é e o que a pessoa presenteada gosta de fazer, e indique a partir disso.',
+    '- Compatibilidade ("funciona no PS5, no celular, no Mac?") e comparação ("qual a diferença entre esses dois?"): consulte a ficha antes de responder. Se ela não disser, diga que essa informação não está na ficha e ofereça confirmar com a equipe; nunca chute.',
+    '- Ao indicar, mostre de 2 a 3 opções e diga em poucas palavras por que cada uma serve para o uso que a pessoa contou.',
+    '- No máximo UMA pergunta por mensagem, e no máximo DUAS perguntas de descoberta antes de indicar alguma coisa. Com a resposta da segunda, indique mesmo que falte detalhe.',
+  ]
+}
+

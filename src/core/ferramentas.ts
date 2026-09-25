@@ -455,14 +455,6 @@ export const FERRAMENTAS: Ferramenta[] = [
     descricao:
       'Procura produtos e serviços da empresa (na loja on-line ou no catálogo cadastrado) e devolve nome, preço, se tem em estoque e o link. ' +
       'Use quando a pessoa perguntar se tem um produto ou serviço, quanto custa, ou pedir uma indicação. ' +
-      /*
-       * Venda consultiva. "Quero um PC" respondido com cinco PCs é vitrine,
-       * não atendimento: o que serve para jogar não serve para estudar, e o
-       * vendedor bom pergunta antes. Uma pergunta só, e só quando o uso não
-       * foi dito, senão vira interrogatório.
-       */
-      'Se o pedido for amplo e a pessoa não disse para que vai usar (PC, notebook, headset, cadeira, monitor), antes de buscar faça uma pergunta curta sobre o uso: jogar, trabalhar, estudar, e o que mais pesar na escolha. Uma pergunta só; se o uso já foi dito na conversa, não pergunte de novo. ' +
-      'Sabendo o uso, busque e indique o que combina com ele, e use `loja_detalhes` para conferir a especificação que importa para esse uso antes de recomendar. ' +
       'Busque pelo tipo de produto em poucas palavras ("headset usb"), não pela frase inteira. ' +
       'Se um produto vier sem preço, diga que vai confirmar o valor e nunca invente. ' +
       'Quando vier `precoAPartirDe`, o preço muda com a variação (cor, tamanho): diga "a partir de" esse valor. ' +
