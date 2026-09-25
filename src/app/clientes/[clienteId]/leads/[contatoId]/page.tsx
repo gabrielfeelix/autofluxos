@@ -273,9 +273,9 @@ export default async function Pagina({
               {origem &&
                 (origem.deAnuncio && origem.titulo
                   ? ` · veio do anúncio “${origem.titulo}”`
-                  : origem.rotulo.toLowerCase() === 'direto'
-                    ? ' · veio direto'
-                    : ` · veio de ${origem.rotulo.toLowerCase()}`)}
+                  : origem.deAnuncio
+                    ? ` · veio de ${origem.rotulo.toLowerCase()}`
+                    : ` · chamou ${origem.nome.toLowerCase()}`)}
             </p>
           </div>
           <span className="flex-1" />

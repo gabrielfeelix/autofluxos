@@ -162,7 +162,7 @@ function LinhaDeOrigem({
   passagens,
   nomes,
 }: {
-  origem: { rotulo: string; titulo: string; anuncio: string }
+  origem: { nome: string; titulo: string; anuncio: string }
   passagens: Passagem[]
   nomes?: Map<string, AnuncioEmCache>
 }) {
@@ -175,7 +175,7 @@ function LinhaDeOrigem({
           title={origem.anuncio === '' ? undefined : `Anúncio ${origem.anuncio}`}
           className="text-[12px] text-soft"
         >
-          {origem.titulo !== '' ? origem.titulo : origem.rotulo}
+          {origem.titulo !== '' ? origem.titulo : origem.nome}
         </span>
       </Linha>
     )

@@ -45,6 +45,9 @@ export const CHAVES_DE_ORIGEM = [
 
 const CHAVES = new Set<string>(CHAVES_DE_ORIGEM)
 
+/** O que a tela diz de quem chamou sem vir de anúncio. */
+export const NOME_SEM_ANUNCIO = 'Por conta própria'
+
 /**
  * A origem como a tela precisa dela.
  *
@@ -54,8 +57,14 @@ const CHAVES = new Set<string>(CHAVES_DE_ORIGEM)
  * cru na tela é exatamente a queixa que `rotuloDoCampo` existe para resolver.
  */
 export type OrigemDoContato = {
-  /** `Anúncio` ou `Direto`, como foi gravado. */
+  /** `Anúncio` ou `Direto`, como foi gravado. Para comparar, não para mostrar. */
   rotulo: string
+  /**
+   * Como a tela escreve. "Direto" gravado vira "Por conta própria": o time
+   * leu "Direto" como Direct do Instagram (PCYES, 25/set/2026), e o que o
+   * dado quer dizer é que a pessoa chamou sem ter vindo de anúncio.
+   */
+  nome: string
   /** Veio de anúncio? Decide o destaque na tela. */
   deAnuncio: boolean
   /** O `headline` do anúncio. Vazio quando não veio ou não foi guardado. */
@@ -84,6 +93,7 @@ export function origemDoContato(campos: Record<string, string>): OrigemDoContato
 
   return {
     rotulo,
+    nome: rotulo.toLowerCase() === 'direto' ? NOME_SEM_ANUNCIO : rotulo,
     /*
      * O teste é o rótulo gravado, e não a presença de `origem_anuncio`.
      *

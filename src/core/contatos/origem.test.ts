@@ -17,6 +17,7 @@ describe('origemDoContato', () => {
 
     expect(origem).toEqual({
       rotulo: 'Anúncio',
+      nome: 'Anúncio',
       deAnuncio: true,
       titulo: 'Filme institucional para sua empresa',
       anuncio: '120210000000001',
@@ -27,6 +28,8 @@ describe('origemDoContato', () => {
   it('quem chegou direto não é anúncio', () => {
     const origem = origemDoContato({ origem: 'Direto' })
     expect(origem?.deAnuncio).toBe(false)
+    // "Direto" o time lia como Direct do Instagram.
+    expect(origem?.nome).toBe('Por conta própria')
     expect(origem?.titulo).toBe('')
   })
 

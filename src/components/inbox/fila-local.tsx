@@ -6,7 +6,7 @@ import {
   PilulaMenu,
   type OpcaoDaPilula,
 } from '@/components/inbox/pilulas'
-import { origemDoContato } from '@/core/contatos/origem'
+import { NOME_SEM_ANUNCIO, origemDoContato } from '@/core/contatos/origem'
 import type { FiltroDeEstado } from '@/server/repos/leads'
 
 /**
@@ -307,7 +307,7 @@ export function RailsLocais<T extends LeadDoRail>({
       descricao: 'Clicou num anúncio que abre conversa',
       contagem: origens.anuncio,
     },
-    { chave: 'direto', rotulo: 'Chegou direto', contagem: origens.direto },
+    { chave: 'direto', rotulo: NOME_SEM_ANUNCIO, contagem: origens.direto },
   ]
 
   return (

@@ -110,7 +110,7 @@ export default async function Pagina({
           nome: ficha?.nome || cartao.nome,
           telefone: ficha?.waId ?? cartao.telefone,
           ultimaEntradaEm: ficha?.ultimaEntradaEm ?? null,
-          origem: origem ? (origem.deAnuncio && origem.titulo ? `Anúncio: ${origem.titulo}` : origem.rotulo) : null,
+          origem: origem ? (origem.deAnuncio && origem.titulo ? `Anúncio: ${origem.titulo}` : origem.nome) : null,
           etiquetas: (porContato.get(cartao.contatoId) ?? []).map(({ id, nome, cor }) => ({ id, nome, cor })),
         }}
         historico={historico}

@@ -298,7 +298,7 @@ export function PainelDoContato({
                 <Linha rotulo="Última interação">
                   {ficha.ultimaEntradaEm ? quando(ficha.ultimaEntradaEm) : 'Ainda não escreveu'}
                 </Linha>
-                {origem && <Linha rotulo="Origem">{origem.titulo || origem.rotulo}</Linha>}
+                {origem && <Linha rotulo="Origem">{origem.titulo || origem.nome}</Linha>}
               </dl>
             </Secao>
             {dados && dados.agendadas.length > 0 && (

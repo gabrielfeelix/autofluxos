@@ -73,7 +73,7 @@ export function Informacoes({
 
         {origem && (
           <Linha rotulo="Origem">
-            <span className="font-semibold">{origem.rotulo}</span>
+            <span className="font-semibold">{origem.nome}</span>
             {origem.titulo && (
               <span className="mt-0.5 block text-[11.5px] font-normal text-dim">
                 {origem.titulo}
