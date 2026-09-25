@@ -74,7 +74,7 @@ import { listarQuadros, quadrosDoContato } from '@/server/repos/quadros'
 import { FunilDaConversa, type FunilDoContato } from '@/components/inbox/funil-da-conversa'
 import { marcarComoLida, naoLidasPorContato, quandoLeu } from '@/server/repos/leituras'
 import { favoritasEntre, fixadasDoUsuario } from '@/server/repos/marcadores'
-import { contatosDoInstagram } from '@/server/repos/canais-instagram'
+import { canaisDosContatos } from '@/server/repos/canais-site'
 import type { CanalId } from '@/core/canais'
 import { ajustesDaConta } from '@/server/repos/distribuicao'
 import { avisarQueLeu } from '@/server/recibo-de-leitura'
@@ -219,7 +219,7 @@ async function Tela({ cliente, busca }: { cliente: Cliente; busca: Busca }) {
     etiquetas,
     coexistencia,
     temAutomacao,
-    doInstagram,
+    canalDoContato,
   ] =
     await Promise.all([
     paginarLeads(clienteId, {
@@ -258,9 +258,9 @@ async function Tela({ cliente, busca }: { cliente: Cliente; busca: Busca }) {
     clienteTemAutomacao(clienteId),
     /*
      * O selo de canal de cada linha. Em conta só de WhatsApp não consulta nada,
-     * ver `contatosDoInstagram`.
+     * ver `canaisDosContatos`.
      */
-    contatosDoInstagram(clienteId),
+    canaisDosContatos(clienteId),
   ])
 
   /*
@@ -508,7 +508,7 @@ async function Tela({ cliente, busca }: { cliente: Cliente; busca: Busca }) {
             paginas={fila.paginas}
             temAutomacao={temAutomacao}
             conversaPedida={Boolean(pedido)}
-            doInstagram={doInstagram}
+            canalDoContato={canalDoContato}
           />
         )}
       </main>
@@ -612,11 +612,11 @@ async function Conteudo({
   paginas,
   temAutomacao,
   conversaPedida,
-  doInstagram,
+  canalDoContato,
 }: {
   clienteId: string
-  /** Quem fala pelo Instagram, para o selo de canal. Ver `contatosDoInstagram`. */
-  doInstagram: Set<string>
+  /** Quem fala por outro canal que não o WhatsApp, para o selo. Ver `canaisDosContatos`. */
+  canalDoContato: Map<string, CanalId>
   /** O endereço já chegou com `?conversa=`: no celular, abre nela. */
   conversaPedida: boolean
   leads: Lead[]
@@ -719,7 +719,7 @@ async function Conteudo({
           pagina={pagina}
           paginas={paginas}
           agendadas={agendadasDaConta}
-          doInstagram={doInstagram}
+          canalDoContato={canalDoContato}
         />
       }
       conversa={
@@ -752,7 +752,7 @@ async function Conteudo({
             <ColunaDaConversa
               clienteId={clienteId}
               lead={selecionado}
-              canal={doInstagram.has(selecionado.contatoId) ? 'instagram' : 'whatsapp'}
+              canal={canalDoContato.get(selecionado.contatoId) ?? 'whatsapp'}
               equipe={equipe}
               usuarioId={usuarioId}
               etiquetas={etiquetas}
@@ -923,7 +923,10 @@ async function ColunaDaConversa({
    */
   const agora = Date.now()
   const restante = restaDaJanela(contexto ?? { ultimaEntradaEm: null }, agora)
-  const janela = restante && restante > 0 ? comoFalta(restante) : null
+  // Chat do site: sem janela. O texto não aparece em pílula nenhuma (o
+  // cabeçalho a esconde para o site); ele só diz ao compositor que está livre.
+  const semJanela = contexto?.semJanela ?? false
+  const janela = semJanela ? 'sem prazo' : restante && restante > 0 ? comoFalta(restante) : null
   /*
    * Abaixo de duas horas a contagem muda de cor.
    *
@@ -946,8 +949,11 @@ async function ColunaDaConversa({
    * gratuidade, não autorização de texto livre, e foi somá-las que abria o
    * compositor para quem nunca escreveu. Ver o cabeçalho de `channels/janela`.
    */
-  const fimDaJanela =
-    restante !== null && restante > 0 ? new Date(agora + restante).toISOString() : null
+  const fimDaJanela = semJanela
+    ? new Date(agora + 365 * 24 * 60 * 60 * 1000).toISOString()
+    : restante !== null && restante > 0
+      ? new Date(agora + restante).toISOString()
+      : null
 
   if (!conversa) {
     return (
@@ -1243,7 +1249,7 @@ function CabecalhoDaConversa({
                 responsavel?.nome ?? (lead.atribuidoA ? 'alguém fora da equipe' : null)
               }
             />
-            {janela && (
+            {janela && canal !== 'site' && (
               <Dica texto="Depois disso o WhatsApp só aceita modelo aprovado pela Meta">
                 <span
                   className={`flex shrink-0 items-center gap-1 rounded-full px-1.5 py-0.5 text-[11px] font-semibold tabular-nums ${
@@ -1376,7 +1382,7 @@ function DadosDoLead({
         <div className="min-w-0 flex-1">
           <h2 className="truncate text-[14.5px] leading-5 font-semibold">{lead.nome ?? 'sem nome'}</h2>
           <p className="truncate font-mono text-[12px] text-dim">
-            {canal === 'whatsapp' ? telefoneLegivel(lead.waId) : 'Instagram'}
+            {canal === 'whatsapp' ? telefoneLegivel(lead.waId) : canal === 'site' ? 'Chat do site' : 'Instagram'}
           </p>
         </div>
         <Link

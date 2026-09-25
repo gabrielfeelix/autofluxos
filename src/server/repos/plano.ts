@@ -350,7 +350,7 @@ export async function usoDaOrganizacao(
   }
   const [consumo, numeros, fluxosComIa, transcricoes, transmissoes, conexoes, webhooks, cliente] = await Promise.all([
     consumoJaLido ?? consumoDaConta(clienteId, agora),
-    contar(db().from('channels').select('id', { count: 'exact', head: true }).eq('client_id', clienteId).eq('status', 'ativo').neq('provider', 'instagram')),
+    contar(db().from('channels').select('id', { count: 'exact', head: true }).eq('client_id', clienteId).eq('status', 'ativo').eq('provider', 'cloud-api')),
     contar(db().from('flows').select('id', { count: 'exact', head: true }).eq('client_id', clienteId).eq('ativo', true).eq('ia_habilitada', true)),
     contar(
       db()

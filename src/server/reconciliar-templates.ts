@@ -124,7 +124,7 @@ async function reconciliarUmCliente(
  */
 async function tokenDoCliente(clienteId: string): Promise<string | null> {
   const canais = await listarCanais(clienteId)
-  const doWhats = canais.find((c) => c.provider !== 'instagram' && c.status === 'ativo')
+  const doWhats = canais.find((c) => c.provider === 'cloud-api' && c.status === 'ativo')
   if (!doWhats) return null
   return lerTokenDoCanal(doWhats)
 }

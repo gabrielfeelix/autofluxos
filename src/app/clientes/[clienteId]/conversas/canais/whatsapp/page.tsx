@@ -115,7 +115,7 @@ export default async function Pagina({
     ultimaMensagemRecebida(cliente.id),
   ])
   // A conta do Instagram mora na mesma tabela; aqui aparecia como "sem número".
-  const canais = todosOsCanais.filter((c) => c.provider !== 'instagram')
+  const canais = todosOsCanais.filter((c) => c.provider === 'cloud-api')
   // As quatro camadas (6.4): cadastro, último evento e falha conhecida.
   const estado = estadoDaConexao({
     tipo: 'whatsapp',

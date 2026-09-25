@@ -108,6 +108,8 @@ export function pendenciasDoInicio(entrada: EntradaDasPendencias): Pendencia[] {
 }
 
 function falhaDoCanal(canal: CanalParaPendencia, agora: number): Pendencia | null {
+  // O chat do site não tem conexão que caia: não há token nem número.
+  if (canal.provider === 'site') return null
   const instagram = canal.provider === 'instagram'
   const estado = estadoDaConexao(
     instagram

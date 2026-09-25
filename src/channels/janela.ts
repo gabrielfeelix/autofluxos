@@ -87,6 +87,11 @@ export type Janela = {
    * por lá, ou chegou tanto tempo atrás que não importa mais.
    */
   portaDeEntradaEm?: string | null
+  /**
+   * O canal não tem janela nenhuma: o chat do site. Lá não existe Meta para
+   * recusar, e responder um dia depois é só uma resposta que chega tarde.
+   */
+  semJanela?: boolean
 }
 
 /** Quanto falta de um prazo, ou `null` se ele nunca começou. */
@@ -185,6 +190,7 @@ export function permissaoDeEnvio(janela: Janela, agora: number = Date.now()): Pe
  * que** não dá, ou dizer se sai de graça, usa `permissaoDeEnvio`.
  */
 export function dentroDaJanela(janela: Janela, agora: number = Date.now()): boolean {
+  if (janela.semJanela) return true
   const resta = restaDaJanela(janela, agora)
   return resta !== null && resta > 0
 }

@@ -1,4 +1,5 @@
 import 'server-only'
+import { ehVisitanteDoSite } from '@/core/contatos/visitante-do-site'
 import type { Canal, ValoresDoTemplate } from '@/channels/types'
 import {
   decidir,
@@ -251,9 +252,13 @@ async function tentarUm(
    * nas últimas 24h ser recusada, que é o oposto da razão de existir do
    * modelo.
    */
-  const recusa = await revalidarNoEnvio(transmissao.clienteId, destinatario.contatoId, {
-    comModelo: true,
-  })
+  // Visitante do site não tem WhatsApp: o endereço dele é um hash, e a Meta
+  // recusaria com um erro que não diz o motivo verdadeiro.
+  const recusa = ehVisitanteDoSite(destinatario.waId)
+    ? 'visitante do chat do site, sem WhatsApp'
+    : await revalidarNoEnvio(transmissao.clienteId, destinatario.contatoId, {
+        comModelo: true,
+      })
   if (recusa) {
     await marcarDestinatario(destinatario.id, { estado: 'falhou', erro: recusa })
     // O motivo fica escrito: sem ele, a transmissão termina com 40 enviados e
@@ -339,7 +344,7 @@ function codigoDoErro(erro: unknown): number | null {
 
 async function canalDoCliente(clienteId: string): Promise<Canal | null> {
   const canais = await listarCanais(clienteId)
-  const doWhats = canais.find((c) => c.provider !== 'instagram' && c.status === 'ativo')
+  const doWhats = canais.find((c) => c.provider === 'cloud-api' && c.status === 'ativo')
   if (!doWhats) return null
   return adaptadorDoCanal(doWhats)
 }

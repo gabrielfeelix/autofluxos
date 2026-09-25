@@ -42,7 +42,7 @@
  * mensagem. Preencher a tabela abaixo é o que basta, não há segunda cópia
  * destes números dentro do validador.
  */
-export const CANAIS = ['whatsapp', 'instagram', 'telegram'] as const
+export const CANAIS = ['whatsapp', 'instagram', 'telegram', 'site'] as const
 
 export type CanalId = (typeof CANAIS)[number]
 
@@ -57,6 +57,17 @@ export type DefinicaoDeCanal = {
   disponivel: boolean
   /** O que falta, escrito para quem for ligar o canal. */
   falta?: string
+  /**
+   * `false` = o canal não tem automação própria: executa as do WhatsApp.
+   *
+   * É o caso do chat do site. Os limites dele são mais folgados que os do
+   * WhatsApp em tudo (o balão é nosso, desenha quantos botões quiser), então
+   * um fluxo que passa no validador do WhatsApp sempre cabe no site. Pedir ao
+   * lojista para desenhar tudo duas vezes seria a duplicação que este arquivo
+   * evita, sem nenhum ganho: não existe limite do WhatsApp que o site precise
+   * afrouxar para a conversa funcionar.
+   */
+  fluxoProprio?: boolean
   limites: {
     /** Acima disso, a lista de opções deixa de ser botão. */
     botoes: number
@@ -127,7 +138,22 @@ export const DEFINICAO_DO_CANAL: Record<CanalId, DefinicaoDeCanal> = {
     // limite de 10 é nosso, para a lista continuar legível.
     limites: { botoes: 4, opcoes: 10, rotulo: 32, janelaHoras: null },
   },
+  site: {
+    id: 'site',
+    nome: 'Site',
+    resumo: 'Um balão de conversa no site da empresa, no mesmo Inbox, sem custo por mensagem.',
+    cor: '#6366F1',
+    disponivel: true,
+    fluxoProprio: false,
+    // Os mesmos números do WhatsApp de propósito: o site roda os fluxos de lá,
+    // e o validador que aprovou o desenho foi o do WhatsApp. Sem janela: o
+    // visitante está com a página aberta, e a resposta chega quando chegar.
+    limites: { botoes: 3, opcoes: 10, rotulo: 20, janelaHoras: null },
+  },
 }
+
+/** Os canais que se escolhem ao criar uma automação. O site usa as do WhatsApp. */
+export const CANAIS_DE_FLUXO = CANAIS.filter((id) => DEFINICAO_DO_CANAL[id].fluxoProprio !== false)
 
 /** O canal de tudo que já existe. Automação antiga é de WhatsApp. */
 export const CANAL_PADRAO: CanalId = 'whatsapp'
@@ -142,5 +168,5 @@ export const CANAL_PADRAO: CanalId = 'whatsapp'
  */
 export function canalValido(valor: unknown): CanalId {
   const id = String(valor ?? '') as CanalId
-  return CANAIS.includes(id) && DEFINICAO_DO_CANAL[id].disponivel ? id : CANAL_PADRAO
+  return CANAIS_DE_FLUXO.includes(id) && DEFINICAO_DO_CANAL[id].disponivel ? id : CANAL_PADRAO
 }

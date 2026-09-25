@@ -62,6 +62,14 @@ export function LogoDoCanal({ canal, tamanho = 12 }: { canal: CanalId; tamanho?:
     )
   }
 
+  if (canal === 'site') {
+    return (
+      <svg {...comum} className="fill-current">
+        <path d="M5 3h14a3 3 0 0 1 3 3v9a3 3 0 0 1-3 3h-6.2l-4.3 3.4c-.7.5-1.5 0-1.5-.8V18H5a3 3 0 0 1-3-3V6a3 3 0 0 1 3-3Zm2.5 6.2a1.3 1.3 0 1 0 0 2.6 1.3 1.3 0 0 0 0-2.6Zm4.5 0a1.3 1.3 0 1 0 0 2.6 1.3 1.3 0 0 0 0-2.6Zm4.5 0a1.3 1.3 0 1 0 0 2.6 1.3 1.3 0 0 0 0-2.6Z" />
+      </svg>
+    )
+  }
+
   if (canal === 'instagram') {
     return (
       <svg {...comum} className="fill-current">

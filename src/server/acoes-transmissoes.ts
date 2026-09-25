@@ -79,7 +79,7 @@ async function contaNaMeta(
   clienteId: string,
 ): Promise<{ wabaId: string; token: string } | { erro: string }> {
   const canais = await listarCanais(clienteId)
-  const doWhats = canais.find((c) => c.provider !== 'instagram' && c.status === 'ativo')
+  const doWhats = canais.find((c) => c.provider === 'cloud-api' && c.status === 'ativo')
   if (!doWhats) return { erro: 'Este cliente não tem um número de WhatsApp conectado.' }
 
   const coexistencia = await coexistenciaDoCliente(clienteId)

@@ -1,6 +1,7 @@
 import 'server-only'
 import { canalCloudApi } from '@/channels/cloud-api'
 import { canalInstagram } from '@/channels/instagram'
+import { canalDoSite } from '@/channels/site'
 import type { Canal } from '@/channels/types'
 import { type CanalSalvo, lerTokenDoCanal } from './repos/conversas'
 
@@ -26,6 +27,10 @@ import { type CanalSalvo, lerTokenDoCanal } from './repos/conversas'
  * migration 0040 e a 0047.
  */
 export async function adaptadorDoCanal(canal: CanalSalvo): Promise<Canal> {
+  // O site não fala com ninguém de fora: a linha gravada é a entrega. Ver
+  // `channels/site.ts`.
+  if (canal.provider === 'site') return canalDoSite()
+
   if (canal.provider === 'instagram') {
     if (!canal.igUserId) {
       throw new Error('este canal é de Instagram mas não tem conta ligada; reconecte pelo painel')

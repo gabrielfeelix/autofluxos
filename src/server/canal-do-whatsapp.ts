@@ -1,5 +1,6 @@
 import 'server-only'
 import { canalCloudApi } from '@/channels/cloud-api'
+import { canalDoSite } from '@/channels/site'
 import type { Canal } from '@/channels/types'
 import type { CanalSalvo } from './repos/conversas'
 
@@ -18,6 +19,11 @@ import type { CanalSalvo } from './repos/conversas'
  * da causa.
  */
 export function canalDoWhatsApp(canal: CanalSalvo): Canal {
+  // Esta é a fábrica padrão de quem roda fora de um webhook (prazo de pergunta,
+  // pós-atendimento, fluxo aberto pela equipe). Conversa do site passa por
+  // aqui também, e para ela não há token nem número: a linha gravada é a
+  // entrega. Ver `channels/site.ts`.
+  if (canal.provider === 'site') return canalDoSite()
   const token = process.env.WHATSAPP_TOKEN
   if (!token) throw new Error('falta WHATSAPP_TOKEN no ambiente')
   if (!canal.phoneNumberId) throw new Error('este canal não tem número do WhatsApp')

@@ -217,6 +217,8 @@ export default async function Pagina({
 
   const contexto = await contextoDeResposta(clienteId, contatoId)
   const restante = restaDaJanela(contexto ?? { ultimaEntradaEm: null })
+  // Chat do site: sem janela, a caixa de resposta fica livre e a pílula some.
+  const semJanela = contexto?.semJanela ?? false
   const janela = restante && restante > 0 ? comoFalta(restante) : null
   /** Menos de duas horas, a contagem muda de cor. Mesma régua do Inbox. */
   const apertado = restante !== null && restante > 0 && restante < 2 * 60 * 60 * 1000
@@ -421,7 +423,7 @@ export default async function Pagina({
               telas precisam dizer a mesma coisa no mesmo lugar, senão quem
               usa as duas aprende dois produtos.
             */
-            janela ? (
+            janela && !semJanela ? (
               <Dica alinhar="direita" texto="Depois disso o WhatsApp só aceita modelo aprovado pela Meta">
                 <span
                   className={`mb-1.5 flex shrink-0 items-center gap-1 rounded-full px-1.5 py-0.5 text-[10px] font-semibold tabular-nums ${
@@ -687,7 +689,7 @@ export default async function Pagina({
                   </div>
                   <CaixaDeResposta
                     acao={acaoResponderLead.bind(null, clienteId, contatoId)}
-                    restaDaJanela={janela}
+                    restaDaJanela={semJanela ? 'sem prazo' : janela}
                     nome={primeiroNome}
                     respostasRapidas={respostasRapidas}
                     temAutomacao={temAutomacao}

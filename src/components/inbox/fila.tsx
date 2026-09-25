@@ -5,6 +5,7 @@ import { useCallback, useDeferredValue, useMemo, useRef, useState, useTransition
 import { comoFalta, dentroDaPortaDeEntrada, restaDaJanela } from "@/channels/janela";
 import { Dica } from "@/components/design/dica";
 import { LARGURA_DA_FILA } from "@/components/design/tema";
+import type { CanalId } from "@/core/canais";
 import { chavesDoTelefone } from "@/core/contatos/telefone";
 import { Avatar } from "@/components/inbox/avatar";
 import { RailsLocais } from "@/components/inbox/fila-local";
@@ -85,7 +86,7 @@ export function Fila({
   pagina,
   paginas,
   agendadas,
-  doInstagram,
+  canalDoContato,
   rotuloDeTodos = "Todos os atendentes",
 }: {
   clienteId: string;
@@ -132,8 +133,8 @@ export function Fila({
    * para carregar o que já cabia na mesma consulta.
    */
   agendadas: (MensagemAgendada & { nomeDoContato: string | null })[];
-  /** Quem fala pelo Instagram. Todo o resto é WhatsApp. Ver `contatosDoInstagram`. */
-  doInstagram: Set<string>;
+  /** Quem fala por Instagram ou pelo site. Quem não está no mapa é WhatsApp. Ver `canaisDosContatos`. */
+  canalDoContato: Map<string, CanalId>;
 }) {
   /*
    * O recorte que os rails locais publicam. Começa na página do servidor para
@@ -723,7 +724,7 @@ export function Fila({
                   nome={lead.nome}
                   alerta={Boolean(lead.aguardando)}
                   tamanho={44}
-                  canal={doInstagram.has(lead.contatoId) ? "instagram" : "whatsapp"}
+                  canal={canalDoContato.get(lead.contatoId) ?? "whatsapp"}
                 />
                 <span className="min-w-0 flex-1">
                   <span className="flex items-baseline gap-2">

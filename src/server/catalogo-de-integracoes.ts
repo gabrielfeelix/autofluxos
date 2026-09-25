@@ -1,6 +1,7 @@
 import 'server-only'
 import { estadoDaConexao, type EstadoDaConexao } from '@/core/conexoes'
 import { canalDoInstagram } from './repos/canais-instagram'
+import { chatDoSite } from './repos/canais-site'
 import { listarConexoes } from './repos/conexoes'
 import { listarCanais } from './repos/conversas'
 import { lojaDaConta } from './repos/lojas'
@@ -8,7 +9,7 @@ import { paginasDaConta } from './repos/paginas-de-lead'
 import { ultimaChegadaDeAnuncio, ultimaMensagemRecebida } from './repos/ultimos-eventos'
 import { NOME_DA_CONEXAO_DE_ADS } from './token-de-anuncios'
 
-export type ChaveDaIntegracao = 'whatsapp' | 'instagram' | 'anuncios' | 'chaves' | 'magento' | 'telegram'
+export type ChaveDaIntegracao = 'whatsapp' | 'instagram' | 'anuncios' | 'chaves' | 'magento' | 'telegram' | 'site'
 
 export type ItemDoCatalogo = {
   chave: ChaveDaIntegracao
@@ -33,7 +34,7 @@ export type ItemDoCatalogo = {
  * total fixo de cinco, e a tela desenhava seis cartões.
  */
 export async function catalogoDeIntegracoes(clienteId: string): Promise<ItemDoCatalogo[]> {
-  const [canais, contaDoInstagram, paginas, conexoes, loja, ultimaMensagem, ultimoAnuncio] =
+  const [canais, contaDoInstagram, paginas, conexoes, loja, ultimaMensagem, ultimoAnuncio, site] =
     await Promise.all([
       listarCanais(clienteId),
       canalDoInstagram(clienteId),
@@ -42,9 +43,10 @@ export async function catalogoDeIntegracoes(clienteId: string): Promise<ItemDoCa
       lojaDaConta(clienteId),
       ultimaMensagemRecebida(clienteId),
       ultimaChegadaDeAnuncio(clienteId),
+      chatDoSite(clienteId),
     ])
 
-  const numeros = canais.filter((c) => c.provider !== 'instagram')
+  const numeros = canais.filter((c) => c.provider === 'cloud-api')
   const temTokenDeAnuncios = conexoes.some(
     (c) => c.nome.trim().toLowerCase() === NOME_DA_CONEXAO_DE_ADS && c.tipo === 'bearer',
   )
@@ -82,6 +84,21 @@ export async function catalogoDeIntegracoes(clienteId: string): Promise<ItemDoCa
         ultimoEvento: ultimaMensagem,
       }),
       rotuloDoEvento: 'Última mensagem recebida na conta',
+    },
+    {
+      chave: 'site',
+      nome: 'Chat no site',
+      categoria: 'Canal',
+      descricao: 'Um balão de conversa no site da loja, com os mesmos fluxos e a mesma IA, sem custo por mensagem.',
+      href: '/conversas/canais/site',
+      disponivel: true,
+      // Ligado e com endereço cadastrado é o que faz o balão abrir. Um sem o
+      // outro é cadastro pela metade, e a tela do canal diz o que falta.
+      estado: estadoDaConexao({
+        tipo: 'cadastro',
+        configurado: site?.status === 'ativo' && site.config.dominios.length > 0,
+        href: '/conversas/canais/site',
+      }),
     },
     {
       chave: 'anuncios',

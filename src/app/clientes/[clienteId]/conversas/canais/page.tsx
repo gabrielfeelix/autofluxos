@@ -2,7 +2,7 @@ import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import type { ReactNode } from 'react'
 import { ClienteShell } from '@/components/design/cliente-shell'
-import { LogoInstagram, LogoTelegram, LogoWhatsApp } from '@/components/design/logos-de-marca'
+import { LogoInstagram, LogoSite, LogoTelegram, LogoWhatsApp } from '@/components/design/logos-de-marca'
 import { idadeDoEvento, seloDaConexao } from '@/core/conexoes'
 import { catalogoDeIntegracoes, type ItemDoCatalogo } from '@/server/catalogo-de-integracoes'
 import { acharCliente } from '@/server/repos/clientes'
@@ -13,6 +13,7 @@ const LOGO: Record<string, ReactNode> = {
   whatsapp: <LogoWhatsApp />,
   instagram: <LogoInstagram />,
   telegram: <LogoTelegram />,
+  site: <LogoSite />,
 }
 
 /**

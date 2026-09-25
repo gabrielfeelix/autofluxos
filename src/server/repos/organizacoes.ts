@@ -154,11 +154,12 @@ export async function canaisDaOrganizacao(id: string): Promise<CanalDaOrganizaca
   )
   return rows.map((linha) => {
     const instagram = String(linha.instagram)
-    const tipo = instagram || String(linha.provider).includes('instagram') ? 'Instagram' : 'WhatsApp'
+    const site = String(linha.provider) === 'site'
+    const tipo = site ? 'Site' : instagram || String(linha.provider).includes('instagram') ? 'Instagram' : 'WhatsApp'
     return {
       id: String(linha.id),
       tipo,
-      nome: instagram ? `@${instagram}` : [String(linha.verificado), String(linha.numero)].filter(Boolean).join(' · ') || 'número sem nome',
+      nome: site ? 'chat do site' : instagram ? `@${instagram}` : [String(linha.verificado), String(linha.numero)].filter(Boolean).join(' · ') || 'número sem nome',
       status: String(linha.status ?? ''),
       desde: new Date(linha.criado_em).toISOString(),
     }

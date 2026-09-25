@@ -198,6 +198,17 @@ const PREFIXOS_ABERTOS = [
    * fechada, que é a rota que aceita fluxo do corpo.
    */
   '/api/simular/compartilhado',
+  /**
+   * O chat do site: o script do balão e a API que ele chama, do navegador de
+   * um visitante da loja, que nunca terá sessão aqui.
+   *
+   * Não afrouxa nada: as rotas conferem sozinhas o `Origin` contra os domínios
+   * do canal, o segredo do visitante e o limite por IP. Ver
+   * `app/api/site/[chave]/`.
+   */
+  '/api/site/',
+  // O script do balão, em `public/chat/`: a loja o carrega sem sessão nenhuma.
+  '/chat/',
   '/logos/',
   /**
    * O ícone da aba do navegador.

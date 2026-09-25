@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { LogoDoCanal } from '@/components/design/selo-do-canal'
-import { CANAIS, CANAL_PADRAO, DEFINICAO_DO_CANAL, type CanalId } from '@/core/canais'
+import { CANAIS_DE_FLUXO, CANAL_PADRAO, DEFINICAO_DO_CANAL, type CanalId } from '@/core/canais'
 
 /**
  * Onde esta automação vai atender, a primeira escolha do fluxo.
@@ -28,7 +28,7 @@ export function EscolherCanal({ nome = 'canal' }: { nome?: string }) {
       <input type="hidden" name={nome} value={escolhido} />
 
       <div className="grid grid-cols-3 gap-2">
-        {CANAIS.map((id) => {
+        {CANAIS_DE_FLUXO.map((id) => {
           const canal = DEFINICAO_DO_CANAL[id]
           const ativo = escolhido === id
 

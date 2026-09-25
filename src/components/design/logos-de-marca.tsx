@@ -102,6 +102,25 @@ export function LogoTelegram() {
   )
 }
 
+/**
+ * O chat do site. Não é marca de ninguém: uma janela de navegador com o balão
+ * de conversa, que é exatamente o que o visitante vê. A cor é a do canal em
+ * `core/canais.ts`, escrita aqui porque não há `--marca-site` (o site é do
+ * lojista, não de uma rede).
+ */
+export function LogoSite() {
+  return (
+    <Moldura classe="text-[#6366F1]">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+        <rect x="2.5" y="3.5" width="19" height="14" rx="2.5" />
+        <path d="M2.5 7.5h19" />
+        <path d="M9 11.2h6.5a1.3 1.3 0 0 1 1.3 1.3v1.9a1.3 1.3 0 0 1-1.3 1.3H12l-2.3 1.8v-1.8H9a1.3 1.3 0 0 1-1.3-1.3v-1.9A1.3 1.3 0 0 1 9 11.2Z" fill="currentColor" stroke="none" />
+        <path d="M8 21h8" />
+      </svg>
+    </Moldura>
+  )
+}
+
 /** A chave, não é marca de ninguém: é o que o cliente traz do sistema dele. */
 export function LogoChave() {
   return (

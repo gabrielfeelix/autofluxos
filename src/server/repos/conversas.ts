@@ -2,6 +2,7 @@ import 'server-only'
 import type { OrigemDoHandoff } from '@/core/desfecho-da-conversa'
 import type { AutorDaSaida } from '@/core/autor-da-mensagem'
 import { ehBsuid } from '@/core/contatos/bsuid'
+import { ehVisitanteDoSite } from '@/core/contatos/visitante-do-site'
 import { sessaoSchema, type Sessao } from '@/core/engine/types'
 import type { PapelDoNumero } from '@/core/papeis-do-numero'
 import { db, ehIdInvalido } from '../db'
@@ -70,10 +71,10 @@ export const COLUNA_DO_PAPEL: Record<PapelDoNumero, string> = {
   posAtendimento: 'flow_pos_atendimento_id',
 }
 
-const COLUNAS_DO_CANAL =
+export const COLUNAS_DO_CANAL =
   'id, client_id, provider, phone_number_id, display_phone_number, ig_user_id, ig_username, token_ref, token_expira_em, flow_id, flow_boas_vindas_id, flow_midia_id, flow_pos_atendimento_id, status, desembarcado_em'
 
-function paraCanal(linha: Record<string, unknown>): CanalSalvo {
+export function paraCanal(linha: Record<string, unknown>): CanalSalvo {
   return {
     id: linha.id as string,
     clienteId: linha.client_id as string,
@@ -941,6 +942,8 @@ export type ContextoDeResposta = {
    * `null` na maioria das conversas, e `null` quer dizer 24h e pago.
    */
   portaDeEntradaEm: string | null
+  /** Chat do site: não há janela de 24h para respeitar. Ver `channels/janela.ts`. */
+  semJanela: boolean
 }
 
 export async function contextoDeResposta(
@@ -1028,7 +1031,11 @@ export async function contextoDeResposta(
   if (erroDaEntrada) throw new Error(`não deu para achar a última mensagem: ${erroDaEntrada.message}`)
   if (erroDaPorta) throw new Error(`não deu para achar a passagem: ${erroDaPorta.message}`)
 
-  const canal = await canalDaResposta(clienteId, (sessao as { channel_id: string } | null)?.channel_id)
+  const canal = await canalDaResposta(
+    clienteId,
+    (sessao as { channel_id: string } | null)?.channel_id,
+    contato.wa_id as string,
+  )
   if (!canal) return null
 
   return {
@@ -1038,6 +1045,7 @@ export async function contextoDeResposta(
     ultimaEntradaEm: (entrada as { ts: string } | null)?.ts ?? null,
     ultimaEntradaWaId: (entrada as { wa_message_id: string | null } | null)?.wa_message_id ?? null,
     portaDeEntradaEm: (porta as { criado_em: string } | null)?.criado_em ?? null,
+    semJanela: canal.provider === 'site',
   }
 }
 
@@ -1051,14 +1059,22 @@ export async function contextoDeResposta(
 async function canalDaResposta(
   clienteId: string,
   canalDaSessao: string | undefined,
+  waId: string,
 ): Promise<CanalSalvo | null> {
   const consulta = db().from('channels').select(COLUNAS_DO_CANAL)
 
+  /*
+   * Sem sessão, o endereço decide entre o site e o resto. Visitante do site
+   * sem sessão existe (conta sem fluxo publicado, bot pausado para ele), e cair
+   * no "primeiro canal ativo" mandaria a resposta da equipe para a Meta, com um
+   * endereço que não é telefone de ninguém.
+   */
   const { data, error } = canalDaSessao
     ? await consulta.eq('id', canalDaSessao).maybeSingle()
     : await consulta
         .eq('client_id', clienteId)
         .eq('status', 'ativo')
+        .eq('provider', ehVisitanteDoSite(waId) ? 'site' : 'cloud-api')
         .order('criado_em', { ascending: true })
         .limit(1)
         .maybeSingle()
