@@ -111,6 +111,7 @@ export function categoriaDoEvento(tipo: string): Exclude<FiltroDoHistorico, 'tud
     case 'mensagem-recebida':
     case 'mensagem-enviada':
     case 'agendou':
+    case 'abriu-produto':
       return 'conversa'
     default:
       return 'automacao'

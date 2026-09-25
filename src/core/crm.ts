@@ -383,6 +383,8 @@ export const TIPOS_DE_EVENTO = [
    */
   'entrou-no-fluxo',
   'escolheu-no-fluxo',
+  /** Clicou em "Ver produto" num card. Ver `server/link-de-produto.ts`. */
+  'abriu-produto',
 ] as const
 
 export type TipoDeEvento = (typeof TIPOS_DE_EVENTO)[number]
@@ -442,6 +444,8 @@ export function comoFrase(evento: Evento): string {
      * a3f2-…` é log. Quem abre a ficha quer ler "entrou em Agendamento" e
      * "escolheu Quero remarcar", que é a conversa contada de fora.
      */
+    case 'abriu-produto':
+      return d.produto ? `abriu o produto ${d.produto}` : 'abriu um produto'
     case 'entrou-no-fluxo':
       return d.fluxo ? `entrou no fluxo ${d.fluxo}` : 'entrou num fluxo'
     case 'escolheu-no-fluxo':

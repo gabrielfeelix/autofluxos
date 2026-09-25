@@ -12,6 +12,7 @@ import { avisarHandoff } from './avisar-handoff'
 import { executarComEfeitos, type OpcoesDeEfeitos } from './efeitos/resolver'
 import { guardarMidiaRecebida } from './guardar-midia-recebida'
 import { escolherModelo } from './ia/modelo'
+import { comLinkRastreado } from './link-de-produto'
 import { guardarComentario, guardarNota } from './repos/avaliacoes'
 import { acharCliente, horarioDoCliente } from './repos/clientes'
 import { acharFluxo, acharVersao, type VersaoPublicada } from './repos/fluxos'
@@ -1696,8 +1697,12 @@ async function aplicar(
         const enviarCards = canal.enviarProdutos?.bind(canal)
         // Foto sem link também vira texto: o card sem link não tem botão, o
         // canal pula, e o item sumiria calado.
-        const comFoto = enviarCards ? acao.produtos.filter((p) => p.foto && p.link) : []
-        const semFoto = acao.produtos.filter((p) => !comFoto.includes(p))
+        // O link passa por nós para o clique virar evento do contato; ver
+        // `link-de-produto.ts`. Fica gravado assim também, porque o chat do
+        // site desenha o card a partir do histórico.
+        const produtos = acao.produtos.map((p) => comLinkRastreado(p, contato))
+        const comFoto = enviarCards ? produtos.filter((p) => p.foto && p.link) : []
+        const semFoto = produtos.filter((p) => !comFoto.includes(p))
 
         if (enviarCards && comFoto.length > 0) {
           const registro = await registrarSaida({

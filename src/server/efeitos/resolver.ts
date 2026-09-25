@@ -767,6 +767,20 @@ async function responderComFerramentas({
     })
 
     if (resposta.tipo === 'texto' && cards.length > 0) return { ...resposta, produtos: cards }
+    /*
+     * Os cards já escolhidos não se perdem por causa da frase.
+     *
+     * 25/set/2026, PCYES: a IA buscou três categorias, escolheu três cards, e
+     * a última chamada, a que só escreve a frase em volta, caiu por cota (o
+     * Groq grátis dá 8 mil tokens por minuto e a rodada gastou três chamadas).
+     * A conversa foi para um atendente com a vitrine pronta. Falha de
+     * transporte com card na mão vira a vitrine com uma frase curta; recusa de
+     * escopo (`nao_sei` sem `falhou`) continua sendo recusa.
+     */
+    if (resposta.tipo === 'nao_sei' && resposta.falhou && cards.length > 0) {
+      console.warn(`[ia] a frase final falhou (${resposta.motivo}); os cards saem mesmo assim`)
+      return { tipo: 'texto', texto: 'Separei essas opções pra você 👇', produtos: cards }
+    }
     if (resposta.tipo !== 'usar_ferramenta') return resposta
 
     const conferida = conferirPedido({
