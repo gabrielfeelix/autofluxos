@@ -1,6 +1,7 @@
 'use client'
 
 import type { ProdutoNaMensagem } from '@/server/repos/leads'
+import { TextoDoWhatsApp } from '@/components/texto-do-whatsapp'
 import { ImagemDaConversa } from './visor-de-imagem'
 
 /**
@@ -45,7 +46,13 @@ export function CardsDeProduto({
             )}
             <div className="px-3 pt-2 pb-1.5 [overflow-wrap:anywhere]">
               <p className="text-[14px] leading-[1.35] font-semibold">{produto.titulo}</p>
-              {produto.detalhe && <p className="text-[13.5px] leading-[1.4]">{produto.detalhe}</p>}
+              {produto.detalhe && (
+                // O preço antigo vem ~riscado~, como no WhatsApp; aqui ele
+                // ainda ganha o cinza que o WhatsApp não tem.
+                <p className="text-[13.5px] leading-[1.4] [&_s]:text-muted">
+                  <TextoDoWhatsApp texto={produto.detalhe} />
+                </p>
+              )}
               <p className="mt-0.5 text-right text-[11px] text-muted" title={horaCompleta}>
                 {ultimo && autor ? `${autor} · ` : ''}
                 {hora}

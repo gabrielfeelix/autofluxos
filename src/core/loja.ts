@@ -268,14 +268,24 @@ export function traduzirPorSku(json: unknown, skus: readonly string[], endereco:
  *
  * Sem preço não escreve preço nenhum, nem "R$ 0,00" nem "consulte": o bot já
  * disse na conversa que vai confirmar o valor, e o card repetir isso é ruído.
+ *
+ * `whatsapp` marca a promoção como o WhatsApp desenha: o preço antigo
+ * ~riscado~ e o novo em *negrito*. Cor não existe lá; o riscado é o que
+ * separa um do outro. Só para quem desenha a marcação (o card da Cloud API e
+ * a Inbox); o Instagram e o texto puro mostrariam os símbolos crus.
  */
-export function linhasDoCard(produto: ProdutoDaLoja): { titulo: string; detalhe: string } {
+export function linhasDoCard(
+  produto: ProdutoDaLoja,
+  opcoes: { whatsapp?: boolean } = {},
+): { titulo: string; detalhe: string } {
   const partes: string[] = []
   if (produto.precoAPartirDe !== undefined) partes.push(`a partir de ${comoDinheiro(produto.precoAPartirDe)}`)
   else if (produto.preco !== undefined) {
     partes.push(
       produto.precoDe !== undefined
-        ? `de ${comoDinheiro(produto.precoDe)} por ${comoDinheiro(produto.preco)}`
+        ? opcoes.whatsapp
+          ? `de ~${comoDinheiro(produto.precoDe)}~ por *${comoDinheiro(produto.preco)}*`
+          : `de ${comoDinheiro(produto.precoDe)} por ${comoDinheiro(produto.preco)}`
         : comoDinheiro(produto.preco),
     )
   }

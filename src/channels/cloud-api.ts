@@ -599,7 +599,7 @@ export function canalCloudApi(config: ConfigCloudApi): Canal {
         // Sem link não há botão, e o cta_url sem url a Meta recusa. Sem foto
         // o card sai igual, só sem o cabeçalho de imagem, que é opcional.
         if (!produto.link) continue
-        const { titulo, detalhe } = linhasDoCard(produto)
+        const { titulo, detalhe } = linhasDoCard(produto, { whatsapp: true })
         const resposta = await mandar({
           to: para,
           type: 'interactive',

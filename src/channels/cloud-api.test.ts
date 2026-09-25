@@ -492,7 +492,7 @@ describe('card do produto na Cloud API', () => {
       interactive: {
         type: 'cta_url',
         header: { type: 'image', image: { link: produto.foto } },
-        body: { text: '*Headset PCYES Comfort CM500*\nde R$ 119,90 por R$ 95,92, em estoque' },
+        body: { text: '*Headset PCYES Comfort CM500*\nde ~R$ 119,90~ por *R$ 95,92*, em estoque' },
         action: { name: 'cta_url', parameters: { display_text: 'Ver na loja', url: produto.link } },
       },
     })

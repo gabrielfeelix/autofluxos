@@ -1209,7 +1209,7 @@ function produtosDoPayload(payload: unknown): ProdutoNaMensagem[] {
     // Sem foto e sem link o que saiu foi texto, e o texto já está na mensagem.
     if (!foto && !link) return []
     const nome = typeof p?.nome === 'string' ? p.nome : 'produto'
-    const { titulo, detalhe } = linhasDoCard({ ...(item as ProdutoDaLoja), nome })
+    const { titulo, detalhe } = linhasDoCard({ ...(item as ProdutoDaLoja), nome }, { whatsapp: true })
     return [{ nome, foto, titulo, detalhe, link }]
   })
 }
