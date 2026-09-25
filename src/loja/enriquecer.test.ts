@@ -24,6 +24,14 @@ describe('enriquecer', () => {
     expect(r).toEqual([{ ...p('abc'), quantidade: 3, foto: 'https://loja.com.br/media/abc.jpg' }])
   })
 
+  // Estoque não é para o cliente: acima das últimas unidades o número nem
+  // chega ao modelo, e o bot não tem o que contar a quem pergunta.
+  it('estoque acima das últimas unidades não segue adiante', async () => {
+    const [r] = await enriquecer([p('abcdefgh')], admin(), { via: 'msi', estoqueId: 1, prazoMs: 1000 })
+    expect(r!.quantidade).toBeUndefined()
+    expect(r!.foto).toBe('https://loja.com.br/media/abcdefgh.jpg')
+  })
+
   it('esgotado não gasta chamada de quantidade, mas ganha foto', async () => {
     const a = admin()
     const [r] = await enriquecer([p('x', false)], a, { via: 'msi', estoqueId: 1, prazoMs: 1000 })

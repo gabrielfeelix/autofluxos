@@ -1,4 +1,4 @@
-import { LIMITE_DE_PRODUTOS, type ProdutoDaLoja } from './loja'
+import { LIMITE_DE_PRODUTOS, ULTIMAS_UNIDADES, type ProdutoDaLoja } from './loja'
 
 /**
  * A Nuvemshop vista pelo bot: só tradução, sem rede.
@@ -130,8 +130,14 @@ export function traduzirProdutoNuvemshop(bruto: unknown, endereco: string): Prod
 
   // Quantidade só quando toda variação é contada: somar com uma infinita
   // daria um número que parece exato e não é.
+  //
+  // E só quando são as últimas: estoque não é informação para o cliente, e o
+  // que o modelo não recebe ele não tem como contar a quem pergunta "quantas
+  // vocês têm aí?" de dez jeitos diferentes. Acima de 5 o card diz "em
+  // estoque" e o bot diz que tem; o número real nunca sai daqui.
   if (variacoes.length > 0 && variacoes.every((v) => !infinito(v))) {
-    produto.quantidade = variacoes.reduce((soma, v) => soma + quantidadeDe(v), 0)
+    const total = variacoes.reduce((soma, v) => soma + quantidadeDe(v), 0)
+    if (total <= ULTIMAS_UNIDADES) produto.quantidade = total
   }
 
   const imagens = Array.isArray(p.images) ? p.images : []

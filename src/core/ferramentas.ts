@@ -458,7 +458,7 @@ export const FERRAMENTAS: Ferramenta[] = [
       'Busque pelo tipo de produto em poucas palavras ("headset usb"), não pela frase inteira. ' +
       'Se um produto vier sem preço, diga que vai confirmar o valor e nunca invente. ' +
       'Quando vier `precoAPartirDe`, o preço muda com a variação (cor, tamanho): diga "a partir de" esse valor. ' +
-      'Quando vier `quantidade`, diga quantas restam só se forem 5 ou menos; acima disso, só diga que tem. ' +
+      'Quando vier `quantidade`, são as últimas unidades: diga quantas restam. Sem `quantidade`, diga só se tem ou se está esgotado; nunca estime nem informe número de estoque. ' +
       'Quando vier `semControleDeEstoque`, não fale de estoque. Use a `descricao`, quando vier, para explicar o item. ' +
       'Mande o link quando o item tiver um; você não fecha pedido. ' +
       'Se a pessoa pedir vários tipos de produto de uma vez ("headset, teclado e mouse"), busque todos na mesma chamada, um tipo em cada termo (`termo`, `termo2`, `termo3`). ' +
@@ -628,6 +628,7 @@ export const FERRAMENTAS: Ferramenta[] = [
       'Use quando a pessoa perguntar do pedido dela, da entrega ou do rastreio, e já tiver dito o número do pedido. ' +
       'O pedido só aparece se o telefone desta conversa for o da compra; se vier `encontrado: false`, peça o CPF usado na compra e consulte de novo com ele. ' +
       'Se ainda assim não achar, diga que não conseguiu localizar e ofereça chamar alguém do time. Nunca invente situação nem prazo. ' +
+      'Só fale do pedido que esta consulta devolveu; nunca de pedido, nome ou dado de outra pessoa. Você não cancela, troca nem muda endereço: ofereça o time. ' +
       'Não use para buscar produto.',
     argumentos: [
       { nome: 'numero', tipo: 'texto', descricao: 'O número do pedido, como a pessoa escreveu.', obrigatorio: true },

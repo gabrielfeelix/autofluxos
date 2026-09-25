@@ -27,6 +27,9 @@ export const LIMITE_DE_PRODUTOS = 5
  */
 export const LIMITE_DE_CARDS = 3
 
+/** Até quantas unidades o estoque vira "últimas N". Acima disso, nenhum número sai. */
+export const ULTIMAS_UNIDADES = 5
+
 const CAMPOS_DO_PRODUTO = `
   sku
   name
@@ -279,7 +282,7 @@ export function linhasDoCard(produto: ProdutoDaLoja): { titulo: string; detalhe:
   // Catálogo próprio: ninguém conta estoque, então o card não afirma nada.
   if (!produto.semControleDeEstoque) {
     if (!produto.emEstoque) partes.push('esgotado')
-    else if (produto.quantidade !== undefined && produto.quantidade <= 5) {
+    else if (produto.quantidade !== undefined && produto.quantidade <= ULTIMAS_UNIDADES) {
       partes.push(produto.quantidade === 1 ? 'última unidade' : `últimas ${produto.quantidade} unidades`)
     } else partes.push('em estoque')
   }
@@ -340,9 +343,11 @@ export const QUERY_ATRIBUTOS = `query Atributos($sku: String) {
 /**
  * Atributo de escolha que é configuração da loja, e não do produto.
  * Medido na PCYES (25/set/2026): status, layout de página, frete, Facebook.
+ * Custo, fornecedor e estoque entram por precaução: se a loja um dia criar
+ * esse atributo, ele não vai parar na boca do bot.
  */
 const ATRIBUTO_INTERNO =
-  /^(status|visibility|page_layout|options_container|msrp_|gift_|tax_class|am_|send_to_|freterapido_|custom_design|custom_layout|mais_vendido|quantity_and_stock)/
+  /^(status|visibility|page_layout|options_container|msrp_|gift_|tax_class|am_|send_to_|freterapido_|custom_design|custom_layout|mais_vendido|quantity_and_stock|cost|custo|fornecedor|supplier|margem|estoque|stock|qty)/
 
 const ENTIDADES: Record<string, string> = {
   '&lt;': '<',

@@ -1,4 +1,4 @@
-import type { ProdutoDaLoja } from '@/core/loja'
+import { ULTIMAS_UNIDADES, type ProdutoDaLoja } from '@/core/loja'
 import type { ResultadoDaLoja, ViaDeEstoque } from './types'
 
 /**
@@ -55,7 +55,9 @@ export async function enriquecer(
       ])
       return {
         ...produto,
-        ...(quantidade?.ok ? { quantidade: quantidade.valor } : {}),
+        // Só as últimas unidades seguem adiante. O número exato acima disso
+        // não é para o cliente, e o que não chega ao modelo não vaza por ele.
+        ...(quantidade?.ok && quantidade.valor <= ULTIMAS_UNIDADES ? { quantidade: quantidade.valor } : {}),
         ...(foto?.ok && foto.valor ? { foto: foto.valor } : {}),
       }
     }),
