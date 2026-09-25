@@ -2,8 +2,10 @@ import { describe, expect, it } from 'vitest'
 import {
   interpretarResposta,
   LIMITE_RESPOSTA,
+  MARCA_FORA_DO_ASSUNTO,
   MARCA_NAO_SEI,
   montarPrompt,
+  RECUSA_FORA_DO_ASSUNTO,
   TURNOS_DE_HISTORICO,
 } from './prompt'
 
@@ -78,6 +80,16 @@ describe('a resposta vira decisão', () => {
     for (const bruto of [MARCA_NAO_SEI, `"${MARCA_NAO_SEI}"`, `Acho que ${MARCA_NAO_SEI}.`, 'nao_sei']) {
       expect(interpretarResposta(bruto).tipo).toBe('nao_sei')
     }
+  })
+
+  // "Quem é pablo vittar?" na PCYES virou handoff. Fora do assunto recusa
+  // sozinho; gente é para quem pediu gente.
+  it('fora do assunto vira a recusa fixa, sem chamar ninguém', () => {
+    expect(interpretarResposta(MARCA_FORA_DO_ASSUNTO)).toEqual({
+      tipo: 'texto',
+      texto: RECUSA_FORA_DO_ASSUNTO,
+    })
+    expect(interpretarResposta(`${MARCA_FORA_DO_ASSUNTO} ${MARCA_NAO_SEI}`).tipo).toBe('nao_sei')
   })
 
   /** Entre calar e inventar, uma pessoa assume. Vazio nunca vira mensagem. */

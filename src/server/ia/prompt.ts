@@ -19,6 +19,25 @@ import type { PedidoDeIa, Resposta, Turno } from './types'
  */
 export const MARCA_NAO_SEI = 'NAO_SEI'
 
+/**
+ * A palavra para "isso não é assunto da empresa", separada de `NAO_SEI`.
+ *
+ * As duas eram uma só, e todo `NAO_SEI` vira handoff: "Quem é pablo vittar?"
+ * na PCYES ocupou uma pessoa do time para recusar uma pergunta que qualquer
+ * robô recusa sozinho. Gente é para quem pediu gente, reclamou ou tem uma
+ * dúvida de verdade que o contexto não cobre.
+ *
+ * A recusa continua obrigatória (assistente de propósito geral é proibido na
+ * Business API desde jan/2026), só que a frase é nossa e fixa, e não do
+ * modelo: um modelo autorizado a "recusar com as próprias palavras" acaba
+ * respondendo a pergunta antes de recusar.
+ */
+export const MARCA_FORA_DO_ASSUNTO = 'FORA_DO_ASSUNTO'
+
+/** O que a pessoa lê quando pergunta o que a empresa não trata. */
+export const RECUSA_FORA_DO_ASSUNTO =
+  'Isso foge do que eu consigo te ajudar por aqui 🙂 Me conta o que você procura com a gente que eu te ajudo!'
+
 /** O WhatsApp corta texto acima disso. Melhor cortar aqui e saber onde. */
 export const LIMITE_RESPOSTA = 1000
 
@@ -42,7 +61,7 @@ export function montarPrompt(pedido: PedidoDeIa): { sistema: string; usuario: st
       ? `1. Responda com o que está em "SOBRE A EMPRESA" ou com o que uma consulta devolver. Se não estiver em nenhum dos dois, e nenhuma consulta servir, responda exatamente ${MARCA_NAO_SEI} e mais nada.`
       : `1. Responda SOMENTE com o que está em "SOBRE A EMPRESA". Se a resposta não estiver ali, responda exatamente ${MARCA_NAO_SEI} e mais nada.`,
     `2. Nunca invente preço, prazo, endereço, condição ou disponibilidade. Na dúvida, ${MARCA_NAO_SEI}.`,
-    `3. Você não é um assistente de propósito geral. Pedido fora do assunto da empresa, receita, código, conselho, opinião, tradução, responde ${MARCA_NAO_SEI}.`,
+    `3. Você não é um assistente de propósito geral. Pergunta ou pedido que nada tem a ver com a empresa (curiosidade, famoso, receita, código, conselho, opinião, tradução): responda exatamente ${MARCA_FORA_DO_ASSUNTO} e mais nada. Dúvida sobre a empresa que você não sabe responder continua sendo ${MARCA_NAO_SEI}.`,
     `4. Se a pessoa pedir para falar com alguém, reclamar ou parecer irritada, responda ${MARCA_NAO_SEI}.`,
     '5. Escreva em português do Brasil, no tom de quem atende bem: no máximo três frases curtas, sem lista, sem markdown, sem emoji em excesso.',
     '6. Devolva APENAS a mensagem que o cliente vai ler. Sem aspas em volta, sem explicar sua escolha, sem comentar entre parênteses o que você fez.',
@@ -137,6 +156,12 @@ export function interpretarResposta(bruto: string | null | undefined): Resposta 
   // não serve para mandar a alguém, não tem meia recusa.
   if (texto.toUpperCase().includes(MARCA_NAO_SEI)) {
     return { tipo: 'nao_sei', motivo: 'a pergunta saiu do que a empresa informou' }
+  }
+
+  // Depois do `NAO_SEI` de propósito: se vierem as duas, quem ganha é a
+  // saída que chama gente, que é o lado seguro.
+  if (texto.toUpperCase().includes(MARCA_FORA_DO_ASSUNTO)) {
+    return { tipo: 'texto', texto: RECUSA_FORA_DO_ASSUNTO }
   }
 
   return { tipo: 'texto', texto: encurtar(texto) }
