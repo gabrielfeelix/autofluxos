@@ -82,6 +82,19 @@ const MODELO_PADRAO = 'gemini-3.1-flash-lite'
 const MODELO_RESERVA = 'gemini-3.6-flash'
 
 /**
+ * A última volta, quando principal e reserva deram pico na mesma rodada.
+ *
+ * `3.5-flash-lite` reprovou como padrão (diz `NAO_SEI` para pergunta que o
+ * contexto responde, ver acima), mas como último recurso o defeito dele não
+ * piora nada: `NAO_SEI` vira handoff, que é exatamente o que aconteceria se a
+ * rodada desistisse. Em 25/set/2026, 8 chamadas com ferramenta de loja: 8
+ * respostas, 0 com 503, 8 chamando a ferramenta, enquanto `3.1-flash-lite`
+ * deu 2 com 503, `3.6-flash` 4, e os mais novos (`3.7-flash`, `3.8-flash`)
+ * 4 e 6, mais 429. Modelo recém-lançado é o mais disputado.
+ */
+const MODELO_ULTIMO_RECURSO = 'gemini-3.5-flash-lite'
+
+/**
  * O que merece uma segunda tentativa.
  *
  * 503 e 429 são o Google dizendo "agora não, tente de novo", a mensagem
@@ -237,15 +250,15 @@ export function gemini({ chave, modelo }: { chave: string; modelo?: string }): M
        * Em 25/set/2026 os dois devolveram 503 na mesma rodada e o primeiro
        * cliente testando a IA vendedora caiu em "vou te passar para um
        * atendente" sem a IA ter falado nada. Medido na hora: cerca de 1 em 3
-       * chamadas voltava 503, em cada modelo, e a seguinte passava. Esperar um
-       * segundo e voltar ao principal resolve o caso comum por uns segundos a
-       * mais. Cota (429) não volta: ali esperar um segundo não muda nada.
+       * chamadas voltava 503 no principal e metade na reserva. A última volta
+       * vai para `MODELO_ULTIMO_RECURSO`, que no mesmo teste não deu 503
+       * nenhum. Cota (429) não volta: ali esperar um segundo não muda nada.
        */
       if (primeira.status === '429' || segunda.status === '429' || estaSemCota(nome)) {
         return segunda.desistencia
       }
       await new Promise((pronto) => setTimeout(pronto, 1_000))
-      const terceira = await tentar(nome, chave, corpo, TIMEOUT_RESERVA_MS)
+      const terceira = await tentar(MODELO_ULTIMO_RECURSO, chave, corpo, TIMEOUT_RESERVA_MS)
       return terceira.tipo === 'retentar' ? terceira.desistencia : terceira.resposta
     },
   }
