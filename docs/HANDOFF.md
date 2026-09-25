@@ -1,5 +1,8 @@
 # Handoff: 19/ago/2026, atualizado em 04/set
 
+> **Conta PCYES e canal Site (25/set/2026):** estado da PCYES e o plano do
+> chat no site em [HANDOFF-25-SET-PCYES-E-CANAL-SITE.md](HANDOFF-25-SET-PCYES-E-CANAL-SITE.md).
+
 > **Plano de UX de 23/set/2026 (em execução):** onde parou e o próximo passo
 > em [HANDOFF-23-SET-UX-FASE-1.md](HANDOFF-23-SET-UX-FASE-1.md).
 
