@@ -1,9 +1,10 @@
 /**
  * Troca `{{variavel}}` pelo valor coletado na conversa.
  *
- * Variável que não existe vira string vazia, de propósito: é melhor mandar
- * "Obrigado, !" do que "Obrigado, {{nome}}!". O primeiro é esquisito, o segundo
- * denuncia que tem um robô mal configurado do outro lado.
+ * Variável que não existe vira string vazia, de propósito: "Obrigado,
+ * {{nome}}!" escrito literal denuncia robô mal configurado. E numa mensagem, a
+ * vírgula e o espaço que a seguravam somem junto: o chat do site da PCYES
+ * mandava "Olá, !" para quem ainda não tinha dito o nome. Vira "Olá!".
  *
  * O validador avisa sobre variável desconhecida na hora de publicar, o lugar
  * certo de pegar isso é no editor, não na frente do cliente.
@@ -14,11 +15,29 @@ export function interpolar(
   escapar: Escape = comoTexto,
 ): string {
   const mensagem = escapar === comoTexto
-  const base = mensagem ? semDestaqueNoNome(texto) : texto
+  const base = mensagem ? semVazioPendurado(semDestaqueNoNome(texto), vars) : texto
   return base.replace(/\{\{\s*([a-zA-Z][a-zA-Z0-9_]*)\s*\}\}/g, (_, chave: string) => {
     const valor = vars[chave] ?? ''
     return escapar(mensagem && ehVariavelDeNome(chave) ? nomeComoSeEscreve(valor) : valor)
   })
+}
+
+/**
+ * Tira da frase a variável vazia com a vírgula e o espaço que vinham antes.
+ *
+ * "Olá, {{nome}}!" → "Olá!"; "Oi {{nome}}, tudo bem?" → "Oi, tudo bem?". No
+ * começo da linha leva a vírgula de depois: "{{nome}}, seu pedido" → "Seu
+ * pedido" ficaria melhor, mas "seu pedido" já é mais honesto que ", seu pedido".
+ */
+function semVazioPendurado(texto: string, vars: Record<string, string>): string {
+  const vazia = (chave: string) => (vars[chave] ?? '').trim() === ''
+  return texto
+    .replace(/(^|\n)[ \t]*\{\{\s*([a-zA-Z][a-zA-Z0-9_]*)\s*\}\},?[ \t]*/g, (achado, quebra: string, chave: string) =>
+      vazia(chave) ? quebra : achado,
+    )
+    .replace(/,?[ \t]*\{\{\s*([a-zA-Z][a-zA-Z0-9_]*)\s*\}\}/g, (achado, chave: string) =>
+      vazia(chave) ? '' : achado,
+    )
 }
 
 /**

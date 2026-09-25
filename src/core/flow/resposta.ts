@@ -130,7 +130,10 @@ export function conferirResposta(
   hoje?: string,
 ): Conferida {
   const valor = texto.trim()
-  if (formato === undefined) return { ok: true, valor, padrao: valor }
+  if (formato === undefined) {
+    const limpo = semMuleta(valor)
+    return { ok: true, valor: limpo, padrao: limpo }
+  }
   if (valor === '') return { ok: false, motivo: 'formato' }
 
   const padrao = padronizar(formato, valor)
@@ -293,3 +296,30 @@ function comoCpf(valor: string): string | null {
 }
 
 const dois = (n: number) => String(n).padStart(2, '0')
+
+/**
+ * Tira o "é um", o "meu nome é" e afins da frente de uma resposta curta.
+ *
+ * No chat do site da PCYES, "Qual é o produto?" recebeu "É um MOUSE", e a
+ * mensagem seguinte saiu *"Me conta o que está acontecendo com o É um MOUSE"*.
+ * Gente responde pergunta com frase, não com valor de formulário, e o que
+ * se guarda é o valor.
+ *
+ * Só em resposta curta (até seis palavras): numa descrição longa, "é um
+ * barulho que começa quando..." é conteúdo, e cortar a frente mudaria o que a
+ * pessoa disse. E só quando sobra alguma coisa: "É o João" vira "João", mas
+ * "Uma" sozinha continua "Uma".
+ */
+export function semMuleta(valor: string): string {
+  if (valor.split(/\s+/).length > 6) return valor
+  const limpo = valor
+    .replace(MULETA_NA_FRENTE, '')
+    .replace(ARTIGO_NA_FRENTE, '')
+    .trim()
+  return limpo === '' ? valor : limpo
+}
+
+const MULETA_NA_FRENTE =
+  /^(?:(?:o\s+)?meu\s+nome\s+(?:é|e)|me\s+chamo|eu\s+sou|sou|(?:é|e|eh)(?=\s))\s+/iu
+
+const ARTIGO_NA_FRENTE = /^(?:um|uma|o|a|os|as|meu|minha|meus|minhas)\s+(?=\S)/iu

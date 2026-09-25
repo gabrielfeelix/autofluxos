@@ -485,7 +485,7 @@ describe('nó de API', () => {
     const parado = executar(comApi, sessaoCom({ codigo: 'AB12' }), { tipo: 'inicio' })
     const r = executar(comApi, parado.sessao, { tipo: 'http_respondeu', valores: {} })
 
-    expect(textos(r.acoes)).toContain('Seu pedido está .')
+    expect(textos(r.acoes)).toContain('Seu pedido está.')
   })
 })
 

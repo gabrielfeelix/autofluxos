@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { chavesSimplesCitadas, comoUrl, fatiarVariaveis, interpolar, variaveisCitadas } from './interpolar'
+import { chavesSimplesCitadas, comoJson, comoUrl, fatiarVariaveis, interpolar, variaveisCitadas } from './interpolar'
 
 describe('fatiarVariaveis, o realce do editor', () => {
   it('separa literal de citação', () => {
@@ -129,5 +129,20 @@ describe('nome de gente na mensagem', () => {
 
   it('em URL e JSON o valor vai cru', () => {
     expect(interpolar('/p?n={{nome}}', { nome: 'DANIEL' }, comoUrl)).toBe('/p?n=DANIEL')
+  })
+})
+
+// Chat do site da PCYES: "Olá, !" para quem ainda não disse o nome.
+describe('variável vazia no meio da frase', () => {
+  it('leva junto a vírgula e o espaço que a seguravam', () => {
+    expect(interpolar('Olá, {{nome}}!', {})).toBe('Olá!')
+    expect(interpolar('Oi {{nome}}, tudo bem?', {})).toBe('Oi, tudo bem?')
+    expect(interpolar('Olá, {{nome}}, tudo bem?', {})).toBe('Olá, tudo bem?')
+    expect(interpolar('{{nome}}, seu pedido saiu.', {})).toBe('seu pedido saiu.')
+    expect(interpolar('Olá, {{nome}}!', { nome: 'Ana' })).toBe('Olá, Ana!')
+  })
+
+  it('fora de mensagem não mexe: numa URL ou num JSON a vírgula é sintaxe', () => {
+    expect(interpolar('{"a": 1, "b": "{{x}}"}', {}, comoJson)).toBe('{"a": 1, "b": ""}')
   })
 })

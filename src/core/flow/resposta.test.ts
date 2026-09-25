@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { conferirResposta } from './resposta'
+import { conferirResposta, semMuleta } from './resposta'
 
 const padrao = (formato: Parameters<typeof conferirResposta>[0], texto: string) => {
   const r = conferirResposta(formato, texto)
@@ -171,5 +171,26 @@ describe('data_futura, a data que já passou não serve para marcar aula', () =>
 
     const ilegivel = conferirResposta('data_futura', 'semana que vem', HOJE)
     expect(ilegivel).toEqual({ ok: false, motivo: 'formato' })
+  })
+})
+
+// "Qual é o produto?" → "É um MOUSE" → "...acontecendo com o É um MOUSE".
+describe('semMuleta', () => {
+  it('guarda o valor, e não a frase em volta dele', () => {
+    expect(semMuleta('É um MOUSE')).toBe('MOUSE')
+    expect(semMuleta('Meu nome é Ana')).toBe('Ana')
+    expect(semMuleta('eu sou a Carla')).toBe('Carla')
+    expect(conferirResposta(undefined, ' é uma cadeira gamer ')).toEqual({
+      ok: true,
+      valor: 'cadeira gamer',
+      padrao: 'cadeira gamer',
+    })
+  })
+
+  it('não mexe em resposta longa nem apaga a resposta inteira', () => {
+    const longa = 'é um barulho que começa quando eu ligo o pc de manhã'
+    expect(semMuleta(longa)).toBe(longa)
+    expect(semMuleta('Uma')).toBe('Uma')
+    expect(semMuleta('Eduardo')).toBe('Eduardo')
   })
 })
