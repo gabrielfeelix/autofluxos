@@ -46,6 +46,7 @@ export function ConfigurarChatDoSite({
   const [saudacao, setSaudacao] = useState(inicial.config.saudacao)
   const [cor, setCor] = useState(inicial.config.cor)
   const [pedirContato, setPedirContato] = useState(inicial.config.pedirContato)
+  const [tema, setTema] = useState(inicial.config.tema)
   const [salvo, setSalvo] = useState(inicial.config)
   const [aviso, setAviso] = useState<{ tom: 'ok' | 'erro'; texto: string } | null>(null)
   const [copiado, setCopiado] = useState(false)
@@ -60,7 +61,8 @@ export function ConfigurarChatDoSite({
     titulo !== salvo.titulo ||
     saudacao !== salvo.saudacao ||
     cor.toUpperCase() !== salvo.cor ||
-    pedirContato !== salvo.pedirContato
+    pedirContato !== salvo.pedirContato ||
+    tema !== salvo.tema
 
   const trecho = chave ? `<script src="${urlDoScript}" data-chave="${chave}" async></script>` : ''
   const semDominio = salvo.dominios.length === 0
@@ -91,7 +93,7 @@ export function ConfigurarChatDoSite({
   function salvar() {
     setAviso(null)
     iniciar(async () => {
-      const r = await acaoSalvarChatDoSite(clienteId, { dominios, cor, titulo, saudacao, pedirContato })
+      const r = await acaoSalvarChatDoSite(clienteId, { dominios, cor, titulo, saudacao, pedirContato, tema })
       if (!r.ok) {
         setAviso({ tom: 'erro', texto: r.erro })
         return
@@ -102,6 +104,7 @@ export function ConfigurarChatDoSite({
       setTitulo(r.config.titulo)
       setSaudacao(r.config.saudacao)
       setCor(r.config.cor)
+      setTema(r.config.tema)
       setAviso(
         r.recusados.length
           ? { tom: 'erro', texto: `Salvo, mas estes endereços não foram aceitos: ${r.recusados.join(', ')}.` }
@@ -283,6 +286,38 @@ export function ConfigurarChatDoSite({
                 <code className="ml-1 font-mono text-[12px] text-dim">{cor.toUpperCase()}</code>
               </div>
             </div>
+            <div className="md:col-span-2">
+              <span className="text-[12.5px] font-semibold text-muted">Fundo do balão</span>
+              <div role="radiogroup" aria-label="Fundo do balão" className="mt-1.5 grid max-w-[360px] grid-cols-2 gap-2">
+                {(
+                  [
+                    ['claro', 'Claro', '#FFFFFF', '#F2F3F5'],
+                    ['escuro', 'Escuro', '#15161A', '#24262D'],
+                  ] as const
+                ).map(([valor, rotulo, fundo, bolha]) => (
+                  <button
+                    key={valor}
+                    type="button"
+                    role="radio"
+                    aria-checked={tema === valor}
+                    onClick={() => setTema(valor)}
+                    className={`flex items-center gap-2.5 rounded-[11px] border px-3 py-2.5 text-left text-[13px] font-semibold transition ${
+                      tema === valor ? 'border-primary bg-primary-weak text-ink' : 'border-line hover:bg-surface'
+                    }`}
+                  >
+                    <span
+                      aria-hidden
+                      style={{ background: fundo }}
+                      className="flex h-7 w-10 shrink-0 flex-col justify-center gap-[3px] rounded-[6px] border border-line px-1.5"
+                    >
+                      <span style={{ background: bolha }} className="h-1.5 w-5 rounded-full" />
+                      <span style={{ background: cor }} className="h-1.5 w-4 self-end rounded-full" />
+                    </span>
+                    {rotulo}
+                  </button>
+                ))}
+              </div>
+            </div>
             <label className="block md:col-span-2">
               <span className="text-[12.5px] font-semibold text-muted">Primeira frase do balão</span>
               <textarea
@@ -391,7 +426,7 @@ export function ConfigurarChatDoSite({
       </div>
 
       <aside className="flex min-w-0 flex-col gap-5 lg:sticky lg:top-6">
-        <Previa titulo={titulo} saudacao={saudacao} cor={cor} mascote={mascote} />
+        <Previa titulo={titulo} saudacao={saudacao} cor={cor} mascote={mascote} tema={tema} />
 
         <section className="app-card px-5 py-5">
           <h2 className="text-[15px] font-bold">Instalar no site</h2>
@@ -471,12 +506,18 @@ function Previa({
   saudacao,
   cor,
   mascote,
+  tema,
 }: {
   titulo: string
   saudacao: string
   cor: string
   mascote: Mascote | null
+  tema: 'claro' | 'escuro'
 }) {
+  const escuro = tema === 'escuro'
+  const t = escuro
+    ? { fundo: '#15161A', tinta: '#F3F4F6', bolha: '#24262D', linha: '#2B2E36', dica: '#6B7080', opcao: `color-mix(in srgb, ${cor} 55%, #fff)` }
+    : { fundo: '#FFFFFF', tinta: '#16181D', bolha: '#F2F3F5', linha: '#E7E8EC', dica: '#9CA0A8', opcao: `color-mix(in srgb, ${cor} 85%, #000)` }
   return (
     <section
       aria-label="Prévia do balão"
@@ -487,7 +528,7 @@ function Previa({
         <span className="h-2 w-10 rounded-full bg-surface-strong" />
         <span className="h-2 w-12 rounded-full bg-surface-strong" />
       </div>
-      <div className="mx-auto flex w-full max-w-[330px] flex-col overflow-hidden rounded-[18px] bg-white text-[#16181D] shadow-[0_24px_60px_-18px_rgba(22,24,29,.45),0_0_0_1px_rgba(22,24,29,.06)]">
+      <div style={{ background: t.fundo, color: t.tinta }} className="mx-auto flex w-full max-w-[330px] flex-col overflow-hidden rounded-[18px] shadow-[0_24px_60px_-18px_rgba(22,24,29,.45),0_0_0_1px_rgba(22,24,29,.06)]">
         <div style={{ background: cor }} className="flex items-center gap-3 px-4 py-3.5 text-white">
           <div className="min-w-0 flex-1">
             <p className="truncate text-[14.5px] font-bold">{titulo || 'Atendimento'}</p>
@@ -496,20 +537,20 @@ function Previa({
           <span className="flex size-7 items-center justify-center rounded-[8px] bg-white/15 text-[15px]">×</span>
         </div>
         <div className="flex flex-col gap-1.5 px-3.5 pt-4 pb-3 text-[13.5px] leading-[1.45]">
-          <p className="max-w-[85%] self-start rounded-[16px] rounded-bl-[5px] bg-[#F2F3F5] px-3 py-2 whitespace-pre-wrap">
+          <p style={{ background: t.bolha }} className="max-w-[85%] self-start rounded-[16px] rounded-bl-[5px] px-3 py-2 whitespace-pre-wrap">
             {saudacao || 'Olá! Como podemos ajudar?'}
           </p>
           <p style={{ background: cor }} className="max-w-[85%] self-end rounded-[16px] rounded-br-[5px] px-3 py-2 text-white">
             Vocês têm teclado mecânico?
           </p>
-          <p className="max-w-[85%] self-start rounded-[16px] rounded-bl-[5px] bg-[#F2F3F5] px-3 py-2">
+          <p style={{ background: t.bolha }} className="max-w-[85%] self-start rounded-[16px] rounded-bl-[5px] px-3 py-2">
             Temos! Você prefere com fio ou sem fio?
           </p>
           <div className="mt-1 flex flex-col gap-1.5">
             {['Com fio', 'Sem fio'].map((o) => (
               <span
                 key={o}
-                style={{ borderColor: `color-mix(in srgb, ${cor} 40%, #E7E8EC)`, color: `color-mix(in srgb, ${cor} 85%, #000)` }}
+                style={{ borderColor: `color-mix(in srgb, ${cor} 40%, ${t.linha})`, color: t.opcao }}
                 className="rounded-[11px] border-[1.5px] px-3 py-2 text-[13px] font-semibold"
               >
                 {o}
@@ -517,8 +558,8 @@ function Previa({
             ))}
           </div>
         </div>
-        <div className="flex items-center gap-2 border-t border-[#E7E8EC] px-3.5 py-2.5">
-          <span className="flex-1 text-[13px] text-[#9CA0A8]">Escreva sua mensagem</span>
+        <div style={{ borderColor: t.linha }} className="flex items-center gap-2 border-t px-3.5 py-2.5">
+          <span style={{ color: t.dica }} className="flex-1 text-[13px]">Escreva sua mensagem</span>
           <span style={{ background: cor }} className="flex size-8 items-center justify-center rounded-[10px] text-white">
             <svg viewBox="0 0 24 24" width="15" height="15" fill="currentColor" aria-hidden>
               <path d="M3.4 20.4 21 12 3.4 3.6l-.01 6.53L15 12 3.39 13.87z" />

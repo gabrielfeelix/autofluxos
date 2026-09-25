@@ -26,6 +26,8 @@ export type ConfigDoSite = {
    * arquivo, e o balão nunca carrega mídia de endereço que alguém digitou.
    */
   mascote: Mascote | null
+  /** O fundo do balão. A cor da marca vale nos dois. */
+  tema: 'claro' | 'escuro'
 }
 
 export type Mascote = { url: string; tipo: 'imagem' | 'video' }
@@ -37,6 +39,7 @@ export const CONFIG_PADRAO: ConfigDoSite = {
   saudacao: 'Olá! Como podemos ajudar?',
   pedirContato: true,
   mascote: null,
+  tema: 'claro',
 }
 
 /** Tetos dos campos de texto, para o balão não virar outdoor. */
@@ -70,6 +73,7 @@ export function lerConfigDoSite(bruto: unknown): ConfigDoSite {
     saudacao: texto(o.saudacao, CONFIG_PADRAO.saudacao, TETO_DA_SAUDACAO),
     pedirContato: typeof o.pedirContato === 'boolean' ? o.pedirContato : CONFIG_PADRAO.pedirContato,
     mascote: lerMascote(o.mascote),
+    tema: o.tema === 'escuro' ? 'escuro' : 'claro',
   }
 }
 

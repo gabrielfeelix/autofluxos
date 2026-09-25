@@ -86,6 +86,11 @@
   /* ------------------------------------------------------------------ */
   var CSS =
     ':host{all:initial;font-family:inherit;--c:#6366F1;--tinta:#16181D;--apagado:#6B7280;--linha:#E7E8EC;--fundo:#FFFFFF;--bolha:#F2F3F5}' +
+    '.raiz{--ficha:#FAFAFB;--campo:#fff;--c-texto:color-mix(in srgb,var(--c) 85%,#000)}' +
+    /* Fundo escuro: a loja de tema escuro não quer um retângulo branco aceso no
+     * canto. A cor da marca continua a mesma; o texto dela clareia para ler. */
+    '.raiz.escuro{--tinta:#F3F4F6;--apagado:#9CA0A8;--linha:#2B2E36;--fundo:#15161A;--bolha:#24262D;--ficha:#1B1D22;--campo:#101114;--c-texto:color-mix(in srgb,var(--c) 55%,#fff)}' +
+    '.raiz.escuro .painel,.raiz.escuro .convite{box-shadow:0 24px 60px -18px rgba(0,0,0,.8),0 0 0 1px rgba(255,255,255,.08)}' +
     '*{box-sizing:border-box;font-family:inherit;margin:0}[hidden]{display:none!important}' +
     '.raiz{position:fixed;right:20px;bottom:20px;z-index:2147483000;display:flex;flex-direction:column;align-items:flex-end;gap:12px;color:var(--tinta);font-size:15px;line-height:1.45;-webkit-font-smoothing:antialiased}' +
     '.botao{width:58px;height:58px;border-radius:50%;border:0;background:var(--c);color:#fff;cursor:pointer;display:grid;place-items:center;box-shadow:0 10px 28px -8px color-mix(in srgb,var(--c) 70%,#000),0 2px 6px rgba(22,24,29,.18);transition:transform .18s ease;position:relative}' +
@@ -121,10 +126,10 @@
     '.visitante.pendente{opacity:.6}' +
     '.autor{align-self:flex-start;font-size:11.5px;color:var(--apagado);margin:8px 0 0 6px}' +
     '.opcoes{align-self:stretch;display:flex;flex-direction:column;gap:6px;margin:4px 0 6px;padding-left:2px}' +
-    '.opcoes button{text-align:left;font-size:14.5px;padding:10px 14px;border-radius:12px;border:1.5px solid color-mix(in srgb,var(--c) 40%,var(--linha));background:var(--fundo);color:color-mix(in srgb,var(--c) 85%,#000);font-weight:600;cursor:pointer;transition:background .15s}' +
-    '.opcoes button:hover:not(:disabled){background:color-mix(in srgb,var(--c) 8%,#fff)}' +
+    '.opcoes button{text-align:left;font-size:14.5px;padding:10px 14px;border-radius:12px;border:1.5px solid color-mix(in srgb,var(--c) 40%,var(--linha));background:var(--fundo);color:var(--c-texto);font-weight:600;cursor:pointer;transition:background .15s}' +
+    '.opcoes button:hover:not(:disabled){background:color-mix(in srgb,var(--c) 10%,var(--fundo))}' +
     '.opcoes button:disabled{cursor:default;opacity:.45}' +
-    '.opcoes button.escolhida{opacity:1;background:color-mix(in srgb,var(--c) 12%,#fff)}' +
+    '.opcoes button.escolhida{opacity:1;background:color-mix(in srgb,var(--c) 16%,var(--fundo))}' +
     '.card{align-self:flex-start;width:84%;border:1px solid var(--linha);border-radius:16px;overflow:hidden;background:var(--fundo)}' +
     '.card img{display:block;width:100%;aspect-ratio:4/3;object-fit:contain;background:#fff;border-bottom:1px solid var(--linha)}' +
     '.card .c{padding:10px 13px 12px}' +
@@ -137,9 +142,9 @@
     '.digitando i{width:7px;height:7px;border-radius:50%;background:#A3A7B0;animation:pula 1.2s infinite}' +
     '.digitando i:nth-child(2){animation-delay:.15s}.digitando i:nth-child(3){animation-delay:.3s}' +
     '@keyframes pula{0%,60%,100%{transform:none;opacity:.5}30%{transform:translateY(-4px);opacity:1}}' +
-    '.ficha{align-self:stretch;margin:10px 0 6px;border:1px solid var(--linha);border-radius:16px;padding:14px;background:#FAFAFB}' +
+    '.ficha{align-self:stretch;margin:10px 0 6px;border:1px solid var(--linha);border-radius:16px;padding:14px;background:var(--ficha)}' +
     '.ficha p{font-size:13.5px;margin-bottom:10px}' +
-    '.ficha input{display:block;width:100%;font-size:15px;padding:10px 12px;border:1px solid var(--linha);border-radius:10px;background:#fff;color:var(--tinta);margin-bottom:8px}' +
+    '.ficha input{display:block;width:100%;font-size:15px;padding:10px 12px;border:1px solid var(--linha);border-radius:10px;background:var(--campo);color:var(--tinta);margin-bottom:8px}' +
     '.ficha .acoes{display:flex;align-items:center;gap:12px;margin-top:2px}' +
     '.ficha .salvar{border:0;border-radius:10px;background:var(--c);color:#fff;font-weight:650;font-size:14px;padding:9px 16px;cursor:pointer}' +
     '.ficha .depois{border:0;background:none;color:var(--apagado);font-size:13px;cursor:pointer;text-decoration:underline;text-underline-offset:2px}' +
@@ -711,6 +716,7 @@
         if (!c) return
         config = c
         host.style.setProperty('--c', c.cor)
+        if (c.tema === 'escuro') raiz.classList.add('escuro')
         estilo.textContent = CSS.replace('--c:#6366F1', '--c:' + c.cor)
         document.body.appendChild(host)
         montarBotao()

@@ -30,7 +30,14 @@ export async function acaoPausarChatDoSite(clienteId: string): Promise<Resultado
 
 export async function acaoSalvarChatDoSite(
   clienteId: string,
-  dados: { dominios: string; cor: string; titulo: string; saudacao: string; pedirContato: boolean },
+  dados: {
+    dominios: string
+    cor: string
+    titulo: string
+    saudacao: string
+    pedirContato: boolean
+    tema: 'claro' | 'escuro'
+  },
 ): Promise<Resultado<{ config: ConfigDoSite; recusados: string[]; chave: string }>> {
   const acesso = await exigirCapacidade(clienteId, 'configurar_empresa', 'todos')
   if (recusou(acesso)) return acesso

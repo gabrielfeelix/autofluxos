@@ -16,8 +16,8 @@ export async function GET(req: Request, { params }: Contexto) {
   const porta = await abrirPorta(req, chave, 'leitura')
   if (!porta.ok) return porta.resposta
 
-  const { titulo, cor, saudacao, pedirContato, mascote } = porta.canal.config
-  return responder(porta.origem, { titulo, cor, saudacao, pedirContato, mascote })
+  const { titulo, cor, saudacao, pedirContato, mascote, tema } = porta.canal.config
+  return responder(porta.origem, { titulo, cor, saudacao, pedirContato, mascote, tema })
 }
 
 export async function OPTIONS(req: Request, { params }: Contexto) {
