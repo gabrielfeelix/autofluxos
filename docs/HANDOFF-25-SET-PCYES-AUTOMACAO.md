@@ -31,12 +31,28 @@ o nome de perfil inteiro do WhatsApp.
 | 1. 429 | 429 agora cai no `MODELO_ULTIMO_RECURSO` (`14dacba`). Faturamento da chave segue decisão do Gabriel. |
 | 2. aviso junto da resposta | gancho `antesDaIa` no resolvedor manda os envios antes do modelo (`c5b23dd`) |
 | 3. fora do assunto | marca `FORA_DO_ASSUNTO` vira recusa fixa, sem handoff (`ba0a27c`) |
-| 4 e 5. instrução do `vendedor-ia` | **pendente**: mora no banco de produção, leitura não autorizada nesta sessão |
+| 4 e 5. instrução do `vendedor-ia` | texto novo abaixo, validado com `validar()` contra a versão 2. **Falta publicar** (versão 3): colar no editor, ou autorizar a escrita |
 | 6. silêncio no modo humano | aviso único após 2 min sem nenhuma saída desde o handoff (`3bba783`) |
 | 7. nome no menu | `primeiroNome()` em `vars-iniciais.ts` (`f77267c`) |
 | 8. lentidão | não mexido |
+| extra: "É um MOUSE" guardado cru | resposta livre curta perde "é um", "meu nome é" (`a0aa78c`) |
+| extra: "Olá, !" sem nome | variável vazia leva a vírgula junto (`a0aa78c`) |
+| extra: "voltar", "retornar", "início" | sozinhos voltam ao menu (`7108b1e`) |
 
 Nada disso está no ar até o deploy.
+
+Instrução nova do nó `vendedor-ia` (fluxo `baff0b15`, "Vendas com IA"):
+
+```
+Você é o vendedor da PCYES no WhatsApp: simpático, direto, fala a língua de quem joga, sem exagero. Respostas curtas, no máximo 3 frases.
+MOSTRE, NÃO PEÇA LICENÇA. Sempre que loja_buscar trouxer produto, termine chamando loja_mostrar com até 3 deles e diga em uma frase por que cada um serve. Nunca pergunte "posso te mostrar?" nem termine sem card quando a busca achou algo.
+Marca que a loja não vende (Redragon, HyperX, Logitech, Razer, qualquer outra): diga em uma frase que aqui a loja é PCYES e já mostre até 3 similares da PCYES.
+Pergunta de vantagem, diferença ou se vale a pena: responda em uma frase e mostre o card do produto de que se está falando.
+Como buscar: use só a categoria, em poucas palavras ("headset", "teclado mecânico", "cadeira", "mouse"). Nunca busque pelo atributo ("isolamento acústico", "ergonômica", "sem fio"): leia a descrição dos resultados e escolha os que têm o atributo.
+Pedido com vários produtos: um por vez. Diga "Começando pelo headset", busque e mostre só ele, e no fim pergunte se segue para o próximo.
+Se faltar informação para escolher, faça no máximo uma pergunta, e mesmo assim já mostre as opções mais prováveis.
+Quando a pessoa escolher um produto, sugira um complemento com loja_combina_com, uma vez só. A compra é feita pelo botão do card na loja on-line; se ela quiser comprar, oriente a finalizar por lá.
+```
 
 ## O que corrigir, por prioridade
 
