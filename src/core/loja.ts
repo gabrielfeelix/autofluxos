@@ -31,6 +31,7 @@ const CAMPOS_DO_PRODUTO = `
   sku
   name
   url_key
+  canonical_url
   stock_status
   price_range {
     minimum_price { regular_price { value } final_price { value } }
@@ -111,6 +112,25 @@ export function linkDoProduto(endereco: string, urlKey: string, sufixo: string):
 }
 
 /**
+ * O `canonical_url` da loja como link absoluto, ou `null` para cair no
+ * `url_key`. Vem relativo (`caminho-do-produto.html`) ou absoluto, conforme a
+ * configuração; absoluto só vale se for da própria loja, para um catálogo
+ * adulterado não mandar o cliente para outro site.
+ */
+export function linkCanonico(endereco: string, canonico: unknown): string | null {
+  if (typeof canonico !== 'string' || canonico.trim() === '') return null
+  const valor = canonico.trim()
+  if (/^https?:\/\//i.test(valor)) {
+    try {
+      return new URL(valor).host === new URL(endereco).host ? valor : null
+    } catch {
+      return null
+    }
+  }
+  return `${endereco}/${valor.replace(/^\/+/, '')}`
+}
+
+/**
  * A página de busca da própria loja, para quando a busca do bot volta vazia.
  *
  * Vazio não quer dizer "não vende": a busca é por relevância, e o termo que o
@@ -136,6 +156,11 @@ function traduzirItem(bruto: unknown, endereco: string, sufixo: string): Produto
   const urlKey = typeof it.url_key === 'string' ? it.url_key.trim() : ''
   if (!sku || !nome || !urlKey) return null
 
+  // O endereço de verdade é o `canonical_url` (reescrita de URL da loja); o
+  // `url_key` só coincide com ele quando ninguém mexeu. Na DEV da PCYES o
+  // `url_key` dá 404 e a loja joga para a home (25/set/2026).
+  const link = linkCanonico(endereco, it.canonical_url) ?? linkDoProduto(endereco, urlKey, sufixo)
+
   const faixa = it.price_range as
     | { minimum_price?: Record<string, unknown>; maximum_price?: Record<string, unknown> }
     | null
@@ -152,7 +177,7 @@ function traduzirItem(bruto: unknown, endereco: string, sufixo: string): Produto
       nome,
       precoAPartirDe: final,
       emEstoque: it.stock_status === 'IN_STOCK',
-      link: linkDoProduto(endereco, urlKey, sufixo),
+      link,
     }
   }
 
@@ -162,7 +187,7 @@ function traduzirItem(bruto: unknown, endereco: string, sufixo: string): Produto
     ...(final !== undefined ? { preco: final } : {}),
     ...(final !== undefined && cheio !== undefined && cheio > final ? { precoDe: cheio } : {}),
     emEstoque: it.stock_status === 'IN_STOCK',
-    link: linkDoProduto(endereco, urlKey, sufixo),
+    link,
   }
 }
 

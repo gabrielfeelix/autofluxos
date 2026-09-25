@@ -131,6 +131,9 @@ export const ETIQUETAS_DE_LEAD = [
 
 export type EtiquetaDeLead = (typeof ETIQUETAS_DE_LEAD)[number]
 
+/** Um produto do card que saiu, só o que a bolha desenha. */
+export type ProdutoNaMensagem = { nome: string; foto: string }
+
 /** O arquivo de uma mensagem, quando ela tem um. `texto` é a legenda. */
 export type AnexoDaMensagem = {
   midia: TipoDeMidia
@@ -174,6 +177,13 @@ export type MensagemDoLead = {
    * atende não descobre que a foto do plano já foi.
    */
   anexo?: AnexoDaMensagem
+  /**
+   * As fotos do card de produto que saiu (bot ou pessoa). O card grava o
+   * produto inteiro em `payload.produtos`, e não `{ midia, url }`: sem isto a
+   * conversa mostrava só o texto do card, e quem atende não via o que o
+   * cliente recebeu no WhatsApp.
+   */
+  produtos?: ProdutoNaMensagem[]
   /**
    * O lugar que ela mandou. Ausente em quase toda linha.
    *
@@ -1070,6 +1080,7 @@ export async function lerConversa(
       .filter((m) => m.reagiu_a === null)
       .map((m) => {
         const anexo = anexoDoPayload(m.payload)
+        const produtos = produtosDoPayload(m.payload)
         const local = localDoPayload(m.payload)
         const cartoes = cartoesDoPayload(m.payload)
 
@@ -1122,6 +1133,7 @@ export async function lerConversa(
           ts: m.ts,
           entregue: m.entregue,
           ...(anexo ? { anexo } : {}),
+          ...(produtos.length ? { produtos } : {}),
           ...(recebido ? { recebido } : {}),
           ...(semCopia ? { semCopia: true as const } : {}),
           ...(naoSuportada ? { naoSuportada: true as const } : {}),
@@ -1178,6 +1190,17 @@ function anexoDoPayload(payload: unknown): AnexoDaMensagem | null {
     url: bruto.url,
     ...(typeof bruto.nomeArquivo === 'string' ? { nomeArquivo: bruto.nomeArquivo } : {}),
   }
+}
+
+/** As fotos do card de produto em `payload.produtos`; só `https`, só com foto. */
+function produtosDoPayload(payload: unknown): ProdutoNaMensagem[] {
+  const lista = (payload as { produtos?: unknown } | null)?.produtos
+  if (!Array.isArray(lista)) return []
+  return lista.flatMap((item) => {
+    const p = item as { nome?: unknown; foto?: unknown } | null
+    if (typeof p?.foto !== 'string' || !p.foto.startsWith('https://')) return []
+    return [{ nome: typeof p.nome === 'string' ? p.nome : 'produto', foto: p.foto }]
+  })
 }
 
 /**

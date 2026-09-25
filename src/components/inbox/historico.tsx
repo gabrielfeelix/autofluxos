@@ -5,6 +5,7 @@ import { podeReagir } from '@/channels/janela'
 import { assinaturaDasReacoes } from '@/core/reacoes'
 import {
   AnexoNaConversa,
+  FotosDoCard,
   ArquivoSemCopia,
   MensagemNaoSuportada,
   CartoesNaBolha,
@@ -345,6 +346,7 @@ function ListaDeMensagens({
             }`}>
               {mensagem.cita && <CitacaoNaBolha cita={mensagem.cita} nome={nome} />}
               {mensagem.anexo && <AnexoNaConversa anexo={mensagem.anexo} />}
+              {mensagem.produtos && <FotosDoCard produtos={mensagem.produtos} />}
               {/*
                 O arquivo que a pessoa mandou. Mesma bolha do que sai, e a
                 diferença está em quem produziu a URL: aqui ela é assinada e

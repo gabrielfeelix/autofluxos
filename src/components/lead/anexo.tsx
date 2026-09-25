@@ -1,5 +1,5 @@
 import { ImagemDaConversa } from '@/components/lead/visor-de-imagem'
-import type { AnexoDaMensagem, CartaoDeContato, Citada, LocalDaMensagem } from '@/server/repos/leads'
+import type { AnexoDaMensagem, CartaoDeContato, ProdutoNaMensagem, Citada, LocalDaMensagem } from '@/server/repos/leads'
 import { telefoneLegivel } from '@/core/contatos/telefone'
 
 /**
@@ -14,6 +14,21 @@ import { telefoneLegivel } from '@/core/contatos/telefone'
  * fluxo e aponta para qualquer host, então não dá para listar domínios no
  * `next.config` sem quebrar o caso normal.
  */
+/**
+ * As fotos do card de produto, em cima do texto dele. Uma foto ocupa a bolha;
+ * o carrossel do bot (até três) vira uma fileira, na ordem em que chegou.
+ */
+export function FotosDoCard({ produtos }: { produtos: ProdutoNaMensagem[] }) {
+  if (produtos.length === 1) return <ImagemDaConversa url={produtos[0]!.foto} nome={produtos[0]!.nome} produto />
+  return (
+    <div className="mb-1.5 grid grid-cols-3 gap-1.5 [&>button]:mb-0">
+      {produtos.map((p) => (
+        <ImagemDaConversa key={p.foto} url={p.foto} nome={p.nome} produto />
+      ))}
+    </div>
+  )
+}
+
 export function AnexoNaConversa({ anexo }: { anexo: AnexoDaMensagem }) {
   const nome = anexo.nomeArquivo?.trim() || 'arquivo'
 

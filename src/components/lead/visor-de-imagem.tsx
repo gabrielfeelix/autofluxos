@@ -30,7 +30,16 @@ import { useEffect, useState } from 'react'
  * pessoa procura o X; sem o clique fora ela clica e nada acontece; e sem travar
  * a rolagem o dedo no trackpad rola a conversa atrás da foto.
  */
-export function ImagemDaConversa({ url, nome }: { url: string; nome: string }) {
+export function ImagemDaConversa({
+  url,
+  nome,
+  produto = false,
+}: {
+  url: string
+  nome: string
+  /** Foto de catálogo: fundo branco e inteira, sem cortar o produto. */
+  produto?: boolean
+}) {
   const [aberto, setAberto] = useState(false)
 
   useEffect(() => {
@@ -67,7 +76,7 @@ export function ImagemDaConversa({ url, nome }: { url: string; nome: string }) {
         <img
           src={url}
           alt={nome}
-          className="max-h-56 w-full rounded-lg border border-line object-cover"
+          className={`max-h-56 w-full rounded-lg border border-line ${produto ? 'aspect-square bg-white object-contain p-2' : 'object-cover'}`}
         />
       </button>
 
