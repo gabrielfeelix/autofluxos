@@ -1700,7 +1700,7 @@ async function aplicar(
         // O link passa por nós para o clique virar evento do contato; ver
         // `link-de-produto.ts`. Fica gravado assim também, porque o chat do
         // site desenha o card a partir do histórico.
-        const produtos = acao.produtos.map((p) => comLinkRastreado(p, contato))
+        const produtos = acao.produtos.map((p) => comLinkRastreado(p, contato, canal.origem))
         const comFoto = enviarCards ? produtos.filter((p) => p.foto && p.link) : []
         const semFoto = produtos.filter((p) => !comFoto.includes(p))
 

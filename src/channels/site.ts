@@ -37,6 +37,7 @@ import type { Canal } from './types'
  */
 export function canalDoSite(): Canal {
   return {
+    origem: 'site',
     async aguardarResposta(_alvo, atrasoMs) {
       const tetoMs = LIMITE_ATRASO_SEGUNDOS * 1_000
       const esperaMs = Math.min(Math.max(atrasoMs, 0), tetoMs)

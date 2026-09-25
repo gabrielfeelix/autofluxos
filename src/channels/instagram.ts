@@ -131,6 +131,7 @@ export function canalInstagram(config: ConfigInstagram): Canal {
   }
 
   return {
+    origem: 'instagram',
     async aguardarResposta({ contato }, atrasoMs) {
       try {
         // Duas ações separadas porque a API as trata como coisas diferentes, e

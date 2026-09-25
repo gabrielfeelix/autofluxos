@@ -1,4 +1,5 @@
 import type { Opcao, TipoDeMidia } from '@/core/flow/schema'
+import type { CanalId } from '@/core/canais'
 import type { ProdutoDaLoja } from '@/core/loja'
 
 /** O que o canal precisa para entregar um arquivo. Espelha `enviar_midia`. */
@@ -107,6 +108,11 @@ export type EnvioDeTemplate = {
  * nada em `core/` muda.
  */
 export type Canal = {
+  /**
+   * Por onde este canal fala, para o `utm_source` dos links de produto.
+   * Ausente vale WhatsApp, que é o canal de sempre e o dos testes.
+   */
+  origem?: CanalId
   /** Mostra "digitando" quando houver suporte e segura a resposta pelo prazo. */
   aguardarResposta(alvo: AlvoDoIndicador, atrasoMs: number): Promise<void>
   /**

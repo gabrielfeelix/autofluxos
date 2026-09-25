@@ -1,6 +1,7 @@
 'use server'
 
 import { revalidatePath } from 'next/cache'
+import { comLinkRastreado } from './link-de-produto'
 import { dentroDaJanela } from '@/channels/janela'
 import { autorDaPessoa } from '@/core/autor-da-mensagem'
 import { textoDoCard, type ProdutoDaLoja } from '@/core/loja'
@@ -75,8 +76,8 @@ export async function acaoEnviarProdutoDoInbox(
   // da Magento não traz).
   const lido = await loja.lerPorSku([produtoId])
   if (!lido.ok) return { ok: false, erro: lido.motivo }
-  const produto = lido.valor[0]
-  if (!produto) return { ok: false, erro: 'esse produto não está mais no catálogo' }
+  const lidoDaLoja = lido.valor[0]
+  if (!lidoDaLoja) return { ok: false, erro: 'esse produto não está mais no catálogo' }
 
   let canal
   try {
@@ -84,6 +85,10 @@ export async function acaoEnviarProdutoDoInbox(
   } catch (erro) {
     return { ok: false, erro: erro instanceof Error ? erro.message : String(erro) }
   }
+
+  // UTM de atendimento, e não de chatbot: é uma pessoa mandando, e a análise
+  // da loja precisa separar a venda do robô da venda de quem atende.
+  const produto = comLinkRastreado(lidoDaLoja, { id: contatoId, clienteId }, canal.origem, 'atendimento')
 
   // Card só com foto, link e canal que saiba mostrar; o resto vai como texto
   // com o link, igual ao bot (`receber-mensagem.ts`, `enviar_produtos`).
