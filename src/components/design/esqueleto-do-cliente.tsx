@@ -25,7 +25,7 @@ const VOLTAR_RESERVADO = (
  * nascer certa.
  */
 export function EsqueletoDoCliente({ ativa, recolhida = false, children }: { ativa: ChaveDaSecao; recolhida?: boolean; children: ReactNode }) {
-  return <div className="flex min-h-screen flex-col md:h-screen md:min-h-[700px] md:flex-row md:overflow-hidden">
+  return <div className="flex min-h-screen flex-col md:h-dvh md:flex-row md:overflow-hidden">
     <BarraLateral carregando marca={<Marca />} voltar={VOLTAR_RESERVADO}
       contaNoTopo={<span className="block h-[36px]" />}
       recolhidaInicial={recolhida}

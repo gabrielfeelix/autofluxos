@@ -24,7 +24,7 @@ export default async function LayoutDoAdmin({ children }: { children: ReactNode 
 
   return (
     <PerfilDaSessao inicial={{ nome: sessao.usuario.nome, imagem: sessao.usuario.imagem ?? null }}>
-      <div className="flex min-h-screen flex-col md:h-screen md:min-h-[700px] md:flex-row md:overflow-hidden">
+      <div className="flex min-h-screen flex-col md:h-dvh md:flex-row md:overflow-hidden">
         <BarraLateral
           base="/admin"
           area="administracao"

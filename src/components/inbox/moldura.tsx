@@ -174,7 +174,7 @@ export function MolduraDoInbox({
         sem voltar ao topo. As colunas já tinham `overflow` próprio, o que
         faltava era um teto para elas medirem.
 
-        No computador o teto é `h-full`: a casca do cliente é `h-screen`, então
+        No computador o teto é `h-full`: a casca do cliente é `h-dvh`, então
         "cheio" já é a janela menos nada, a tela encosta no topo. No celular a
         casca cresce com o conteúdo e não há altura de que herdar, então ali a
         conta é em `dvh`, descontando a faixa de navegação que a barra lateral

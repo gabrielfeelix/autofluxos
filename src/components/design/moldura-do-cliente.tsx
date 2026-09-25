@@ -30,7 +30,7 @@ export function MolduraDoCliente({
   if (ehEditorDeFluxo(caminho, base)) return children
 
   return (
-    <div className="flex min-h-screen flex-col md:h-screen md:min-h-[700px] md:flex-row md:overflow-hidden">
+    <div className="flex min-h-screen flex-col md:h-dvh md:flex-row md:overflow-hidden">
       {barra}
       {/*
         No celular a barra de baixo é fixa e cobre o pé da tela: o miolo ganha
