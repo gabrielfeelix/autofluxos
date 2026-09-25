@@ -63,14 +63,14 @@ O handoff anterior, que pediu esta frente, é
    É escolha dele; só lembrar.
 2. **Domínios reais**: só o protótipo está cadastrado. Faltam `pcyes.com.br` e
    `dev.pcyes.com.br` quando for para o Magento (passos na própria tela).
-3. **Inbox ao vivo, o que ainda não é vivo**: contadores do topo ("Não lidas",
-   total) e, no modo paginado (conta acima de `TETO_DA_FILA_LOCAL`), conversa
-   nova fora da página visível. Ver `components/inbox/fila-viva.ts`.
-4. **Relatórios** contam conversa do site como WhatsApp (usam o `flows.canal`).
+3. **Inbox ao vivo, o que ainda não é vivo**: no modo paginado (conta acima
+   de `TETO_DA_FILA_LOCAL`), conversa nova fora da página visível. Os
+   contadores do topo já seguem o pulso (`27566ac`).
+4. ~~Relatórios contam site como WhatsApp~~: resolvido em `d236a1d`.
 5. **Visitante anônimo** perde a conversa ao trocar de navegador. Futuro:
    cliente logado no Magento.
-6. Erro de hidratação antigo no Inbox ("há 11 min" x "há 12 min" na virada do
-   minuto). Não é desta frente.
+6. ~~Hidratação "há 11 min" x "há 12 min"~~: era o sino de avisos,
+   resolvido em `a7172c2`.
 7. Mensagens de teste no Inbox da PCYES (um "oi" anônimo do site) podem ser
    apagadas.
 
