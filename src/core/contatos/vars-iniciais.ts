@@ -57,7 +57,7 @@ export const VARIAVEIS_NATIVAS = [
 export function varsIniciais(contato: RetratoDoContato): Record<string, string> {
   const vars: Record<string, string> = {}
 
-  const doPerfil = (contato.nome ?? '').trim()
+  const doPerfil = primeiroNome(contato.nome ?? '')
   if (doPerfil !== '') vars.nome = doPerfil
 
   // Sem telefone quando o endereço é BSUID (usernames do WhatsApp): o id da
@@ -114,4 +114,22 @@ export function varsIniciais(contato: RetratoDoContato): Record<string, string> 
   if (paraLer !== '') vars.telefone_br = telefoneLegivel(paraLer)
 
   return vars
+}
+
+/**
+ * O nome de perfil do WhatsApp, reduzido ao que se usa numa saudação.
+ *
+ * O perfil é escrito para a vitrine, não para a conversa: "Eduardo Yamamoto |
+ * Gestor de Growth" apareceu inteiro no menu da PCYES, com cargo e tudo, e
+ * soa exatamente como robô lendo campo. Corta no primeiro `|`, travessão,
+ * hífen solto ou emoji, e fica com a primeira palavra.
+ *
+ * Só o do perfil passa por aqui. O que alguém do time corrigiu (`nome_real`) e
+ * o que a conversa coletou já são o nome que se quer usar, e reduzir esses
+ * seria desfazer uma decisão de gente.
+ */
+export function primeiroNome(perfil: string): string {
+  const antesDoCorte = perfil.split(/\s[-\u2013\u2014|•·]\s|[|\u2013\u2014]|\p{Extended_Pictographic}/u)[0] ?? ''
+  const palavra = antesDoCorte.trim().split(/\s+/)[0] ?? ''
+  return palavra.replace(/^[^\p{L}]+|[^\p{L}]+$/gu, '')
 }

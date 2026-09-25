@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { varsIniciais } from './vars-iniciais'
+import { primeiroNome, varsIniciais } from './vars-iniciais'
 
 describe('varsIniciais', () => {
   it('o telefone é o do WhatsApp, sem ele, integração nenhuma reconhece ninguém', () => {
@@ -28,6 +28,17 @@ describe('varsIniciais', () => {
 
   it('o nome do perfil entra quando existe', () => {
     expect(varsIniciais({ waId: '55449', nome: 'Marina' })).toMatchObject({ nome: 'Marina' })
+  })
+
+  // O menu da PCYES chamou alguém de "Eduardo Yamamoto | Gestor de Growth".
+  it('do perfil fica só o primeiro nome, sem cargo nem emoji', () => {
+    expect(primeiroNome('Eduardo Yamamoto | Gestor de Growth')).toBe('Eduardo')
+    expect(primeiroNome('Marina Souza - Nutricionista')).toBe('Marina')
+    expect(primeiroNome('Ju 🌸 Doces')).toBe('Ju')
+    expect(primeiroNome('🌸Ana🌸')).toBe('')
+    expect(primeiroNome('~Carla~')).toBe('Carla')
+    expect(primeiroNome('Ana-Clara Reis')).toBe('Ana-Clara')
+    expect(varsIniciais({ waId: '55449', nome: 'Eduardo Yamamoto | Growth' }).nome).toBe('Eduardo')
   })
 
   it('perfil em branco não vira variável vazia', () => {
