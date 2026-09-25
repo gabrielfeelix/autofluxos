@@ -1,4 +1,5 @@
 import 'server-only'
+import { legendaDoManual, manualEmPdf, nomeDoArquivoDoManual } from '@/core/manuais'
 import { ATENDIMENTO_SEMPRE_ABERTO, avisoDeForaDoHorario, executar } from '@/core/engine/executar'
 import type { ContextoDoAtendimento } from '@/core/engine/executar'
 import type { Acao, Entrada, Resultado, Sessao } from '@/core/engine/types'
@@ -526,7 +527,7 @@ async function rodar(
     resultado = {
       acoes: [
         ...semEfeito(resultado.acoes, 'chamar_ia'),
-        ...comCards(seguinte.acoes, resposta.texto, resposta.produtos ?? []),
+        ...comCards(seguinte.acoes, resposta.texto, resposta.produtos ?? [], resposta.anexos ?? []),
       ],
       sessao: seguinte.sessao,
     }
@@ -639,7 +640,7 @@ type RespostaFinal =
    * com o texto, e não como ação à parte, porque só saem se a resposta sair:
    * uma rodada que termina em `nao_sei` não manda card nenhum.
    */
-  | (Extract<Resposta, { tipo: 'texto' }> & { produtos?: ProdutoDaLoja[] })
+  | (Extract<Resposta, { tipo: 'texto' }> & { produtos?: ProdutoDaLoja[]; anexos?: AnexoDaIa[] })
   /**
    * A IA quer gravar e a política deste cliente manda perguntar antes.
    *
@@ -755,6 +756,8 @@ async function responderComFerramentas({
 
   /** O que `loja_mostrar` separou para sair como card junto da resposta. */
   const cards: ProdutoDaLoja[] = []
+  /** O manual em PDF que `loja_enviar_manual` separou, pelo mesmo caminho dos cards. */
+  const anexos: AnexoDaIa[] = []
 
   for (let volta = 0; volta <= MAX_VOLTAS_DE_FERRAMENTA; volta++) {
     const resposta = await modelo.responder({
@@ -766,7 +769,9 @@ async function responderComFerramentas({
       ferramentas: volta === MAX_VOLTAS_DE_FERRAMENTA ? [] : permitidas,
     })
 
-    if (resposta.tipo === 'texto' && cards.length > 0) return { ...resposta, produtos: cards }
+    if (resposta.tipo === 'texto' && (cards.length > 0 || anexos.length > 0)) {
+      return { ...resposta, produtos: cards, anexos }
+    }
     /*
      * Os cards já escolhidos não se perdem por causa da frase.
      *
@@ -779,7 +784,10 @@ async function responderComFerramentas({
      */
     if (resposta.tipo === 'nao_sei' && resposta.falhou && cards.length > 0) {
       console.warn(`[ia] a frase final falhou (${resposta.motivo}); os cards saem mesmo assim`)
-      return { tipo: 'texto', texto: 'Separei essas opções pra você 👇', produtos: cards }
+      return { tipo: 'texto', texto: 'Separei essas opções pra você 👇', produtos: cards, anexos }
+    }
+    if (resposta.tipo === 'nao_sei' && resposta.falhou && anexos.length > 0) {
+      return { tipo: 'texto', texto: 'Aqui está 👇', anexos }
     }
     if (resposta.tipo !== 'usar_ferramenta') return resposta
 
@@ -876,6 +884,11 @@ async function responderComFerramentas({
 
     if (ferramenta.chamada.tipo === 'loja' && ferramenta.chamada.operacao === 'mostrar') {
       cards.push(...produtosDe(disparo.json))
+    }
+    if (ferramenta.chamada.tipo === 'loja' && ferramenta.chamada.operacao === 'manual') {
+      const anexo = anexoDe(disparo.json)
+      // Um manual por rodada: pedir o mesmo duas vezes não manda dois PDFs.
+      if (anexo && !anexos.some((a) => a.url === anexo.url)) anexos.push(anexo)
     }
 
     const recorte = projetar(disparo.json, ferramenta.projecao)
@@ -1113,7 +1126,7 @@ async function dispararFerramenta({
  * venda perdida. Falhando, a conversa vai para uma pessoa.
  */
 async function executarNaLoja(
-  operacao: 'buscar' | 'combina_com' | 'mostrar' | 'pedido' | 'ficha' | 'frete',
+  operacao: 'buscar' | 'combina_com' | 'mostrar' | 'pedido' | 'ficha' | 'frete' | 'manuais' | 'manual',
   valores: Record<string, string>,
   opcoes: OpcoesDeEfeitos,
 ): Promise<{ ok: true; json: unknown } | { ok: false; motivo: string }> {
@@ -1136,6 +1149,46 @@ async function executarNaLoja(
     const skus = [valores.produtoId, valores.produtoId2, valores.produtoId3].filter((s): s is string => Boolean(s))
     const r = await loja.lerPorSku(skus)
     return r.ok ? { ok: true, json: { mostrados: r.valor } } : r
+  }
+
+  if (operacao === 'manuais') {
+    if (!loja.manuais) return { ok: false, motivo: 'esta loja não tem página de drivers e manuais' }
+    const r = await loja.manuais(valores.termo ?? '')
+    if (!r.ok) return r
+    const { itens, busca } = r.valor
+    // Vazio leva a página da busca, como `buscaNaLoja`: o nome que a pessoa
+    // escreveu pode não bater com o cadastro, e ela procura por lá.
+    return { ok: true, json: { itens, ...(itens.length === 0 ? { buscaDeDownloads: busca } : {}) } }
+  }
+
+  if (operacao === 'manual') {
+    if (!loja.downloads) return { ok: false, motivo: 'esta loja não tem página de drivers e manuais' }
+    const r = await loja.downloads(valores.manualId ?? '')
+    if (!r.ok) return r
+    if (!r.valor) return { ok: true, json: { enviado: false, motivo: 'produto não encontrado na página de downloads' } }
+    const { nome, pagina, arquivos } = r.valor
+    const pdf = manualEmPdf(arquivos)
+    const temDriver = arquivos.some((a) => a.secao === 'driver')
+    return {
+      ok: true,
+      json: {
+        enviado: pdf !== null,
+        produto: nome,
+        temDriver,
+        paginaDeDownloads: pagina,
+        ...(pdf
+          ? {
+              anexo: {
+                tipo: 'enviar_midia',
+                midia: 'documento',
+                url: pdf.url,
+                nomeArquivo: nomeDoArquivoDoManual(nome),
+                legenda: legendaDoManual(nome, pagina, temDriver),
+              } satisfies AnexoDaIa,
+            }
+          : {}),
+      },
+    }
   }
 
   if (operacao === 'frete') {
@@ -1211,6 +1264,12 @@ async function executarNaLoja(
   return r.ok ? { ok: true, json: { produtos: r.valor } } : r
 }
 
+/** O PDF que `executarNaLoja('manual')` separou. Nunca vai ao modelo: a projeção não inclui `anexo`. */
+function anexoDe(json: unknown): AnexoDaIa | null {
+  const anexo = (json as { anexo?: AnexoDaIa } | null)?.anexo
+  return anexo && anexo.tipo === 'enviar_midia' && anexo.url.startsWith('https://') ? anexo : null
+}
+
 /** Os produtos que `executarNaLoja('mostrar')` devolveu, inteiros, com foto. */
 function produtosDe(json: unknown): ProdutoDaLoja[] {
   const lista = (json as { mostrados?: unknown } | null)?.mostrados
@@ -1234,13 +1293,16 @@ function ehEnvio(acao: Acao): boolean {
   )
 }
 
-function comCards(acoes: Acao[], texto: string, produtos: ProdutoDaLoja[]): Acao[] {
-  if (produtos.length === 0) return acoes
-  const card: Acao = { tipo: 'enviar_produtos', produtos }
+function comCards(acoes: Acao[], texto: string, produtos: ProdutoDaLoja[], anexos: AnexoDaIa[] = []): Acao[] {
+  const extras: Acao[] = [...(produtos.length > 0 ? [{ tipo: 'enviar_produtos', produtos } as Acao] : []), ...anexos]
+  if (extras.length === 0) return acoes
   const posicao = acoes.findIndex((a) => a.tipo === 'enviar_texto' && a.texto === texto)
-  if (posicao === -1) return [...acoes, card]
-  return [...acoes.slice(0, posicao + 1), card, ...acoes.slice(posicao + 1)]
+  if (posicao === -1) return [...acoes, ...extras]
+  return [...acoes.slice(0, posicao + 1), ...extras, ...acoes.slice(posicao + 1)]
 }
+
+/** O manual em PDF, como ação de mídia que o canal já sabe mandar. */
+type AnexoDaIa = Extract<Acao, { tipo: 'enviar_midia' }>
 
 async function logar({
   opcoes,

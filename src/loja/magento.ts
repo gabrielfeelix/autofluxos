@@ -16,6 +16,12 @@ import {
   traduzirProdutos,
   traduzirRecomendacoes,
 } from '@/core/loja'
+import {
+  lerBuscaDeDownloads,
+  lerPaginaDeDownloads,
+  linkDaBuscaDeDownloads,
+  linkDaPaginaDeDownloads,
+} from '@/core/manuais'
 import { chamarHttp } from '@/server/efeitos/http'
 import type { DadosDaLoja, Loja, ResultadoDaLoja } from './types'
 
@@ -33,6 +39,16 @@ type Chamar = typeof chamarHttp
  * hora de salvar, deixaria a porta aberta para quem trocar o DNS depois.
  */
 export function lojaMagento(dados: DadosDaLoja, chamar: Chamar = chamarHttp): Loja {
+  /** Página HTML da loja, pela mesma chamada que confere rede interna. */
+  async function pagina(url: string): Promise<ResultadoDaLoja<string>> {
+    const resposta = await chamar(
+      { tipo: 'chamar_http', metodo: 'GET', url, cabecalhos: [], corpo: '', mapear: [], aoFalhar: 'humano' },
+      { deTeste: false, comTexto: true },
+    )
+    if (!resposta.ok) return { ok: false, motivo: `a página de downloads não respondeu: ${resposta.motivo}` }
+    return { ok: true, valor: resposta.texto ?? '' }
+  }
+
   async function graphql(query: string, variaveis: Record<string, unknown>): Promise<ResultadoDaLoja<unknown>> {
     const url = new URL(`${dados.endereco}/graphql`)
     url.searchParams.set('query', query)
@@ -124,6 +140,20 @@ export function lojaMagento(dados: DadosDaLoja, chamar: Chamar = chamarHttp): Lo
       ])
       // Atributo recusado (Magento antes do 2.4.7) não derruba a ficha.
       return r.ok ? { ok: true, valor: traduzirFicha(r.valor, atributos.ok ? atributos.valor : null) } : r
+    },
+    async manuais(termo) {
+      const busca = linkDaBuscaDeDownloads(dados.endereco, termo)
+      if (!termo.trim()) return { ok: true, valor: { itens: [], busca } }
+      const r = await pagina(busca)
+      return r.ok ? { ok: true, valor: { itens: lerBuscaDeDownloads(r.valor), busca } } : r
+    },
+    async downloads(manualId) {
+      const endereco = linkDaPaginaDeDownloads(dados.endereco, manualId.trim())
+      if (!endereco) return { ok: true, valor: null }
+      const r = await pagina(endereco)
+      if (!r.ok) return r
+      const lida = lerPaginaDeDownloads(r.valor)
+      return { ok: true, valor: lida.nome === '' && lida.arquivos.length === 0 ? null : { ...lida, pagina: endereco } }
     },
     linkDaBusca(termo) {
       return linkDaBusca(dados.endereco, termo)

@@ -186,7 +186,7 @@ export type ChamadaDeFerramenta =
     }
   | {
       tipo: 'loja'
-      operacao: 'buscar' | 'combina_com' | 'mostrar' | 'pedido' | 'ficha' | 'frete'
+      operacao: 'buscar' | 'combina_com' | 'mostrar' | 'pedido' | 'ficha' | 'frete' | 'manuais' | 'manual'
     }
 
 /** Os campos que as ferramentas de loja devolvem ao modelo. Allow-list. */
@@ -646,6 +646,55 @@ export const FERRAMENTAS: Ferramenta[] = [
       { caminho: 'encontrado' },
       { caminho: 'pedido', campos: ['numero', 'situacao', 'feitoEm', 'total', 'itens', 'rastreios'], limite: 1 },
     ],
+    credencial: 'nenhuma',
+    integracao: 'loja',
+  },
+  {
+    /*
+     * Drivers e manuais pela página pública de downloads da loja
+     * (`core/manuais.ts`). Duas consultas, como buscar e mostrar: achar o
+     * produto certo é uma decisão, mandar o arquivo é outra, e mandar o manual
+     * do mouse errado é pior que perguntar qual é o mouse.
+     */
+    nome: 'loja_manuais',
+    rotulo: 'Procurar driver ou manual',
+    escreve: false,
+    descricao:
+      'Procura na página de downloads da loja os produtos que têm driver, software ou manual. ' +
+      'Use quando a pessoa pedir driver, manual, software, programa do mouse ou teclado, ou ajuda para instalar um produto. ' +
+      'Busque pelo nome ou modelo do produto em poucas palavras ("basaran", "cm500"), não pela frase inteira. ' +
+      'Se vier mais de um produto e não der para saber qual é o da pessoa, pergunte qual, mostrando os nomes. ' +
+      'Se não vier nenhum, tente outra palavra do nome uma vez; se ainda vier vazio, mande o link `buscaDeDownloads`. ' +
+      'Não use para procurar produto para comprar: para isso é `loja_buscar`.',
+    argumentos: [{ nome: 'termo', tipo: 'texto', descricao: 'Nome ou modelo do produto, em até 4 palavras.', obrigatorio: true }],
+    injetados: [],
+    chamada: { tipo: 'loja', operacao: 'manuais' },
+    projecao: [{ caminho: 'itens', campos: ['manualId', 'nome', 'categoria'], limite: 5 }, { caminho: 'buscaDeDownloads' }],
+    credencial: 'nenhuma',
+    integracao: 'loja',
+  },
+  {
+    nome: 'loja_enviar_manual',
+    rotulo: 'Mandar o manual em PDF',
+    escreve: false,
+    descricao:
+      'Manda na conversa o manual em PDF do produto, com o link da página onde ficam o driver e os outros arquivos. ' +
+      'Use depois de `loja_manuais`, quando já souber qual é o produto da pessoa. ' +
+      'Se vier `enviado: true`, responda só uma frase curta, sem link nem nome de arquivo: o PDF e a legenda já levam tudo. ' +
+      'Se vier `enviado: false` e vier `paginaDeDownloads`, diga que esse produto não tem manual em PDF e mande o link da página, onde está o driver. ' +
+      'Não use duas vezes para o mesmo produto: o arquivo já foi.',
+    argumentos: [
+      {
+        nome: 'manualId',
+        tipo: 'id',
+        descricao: 'O manualId de um item que veio de `loja_manuais`.',
+        obrigatorio: true,
+        soDeResultadoAnterior: true,
+      },
+    ],
+    injetados: [],
+    chamada: { tipo: 'loja', operacao: 'manual' },
+    projecao: [{ caminho: 'enviado' }, { caminho: 'produto' }, { caminho: 'temDriver' }, { caminho: 'paginaDeDownloads' }],
     credencial: 'nenhuma',
     integracao: 'loja',
   },

@@ -6,6 +6,7 @@
  * Tray entram implementando `Loja`, sem mexer em quem a usa.
  */
 import type { FichaDoProduto, OpcaoDeFrete, ProdutoDaLoja } from '@/core/loja'
+import type { ArquivoDeDownload, ItemDeDownload } from '@/core/manuais'
 export type ResultadoDaLoja<T> = { ok: true; valor: T } | { ok: false; motivo: string }
 export type ConfigDaLoja = { codigoDaLoja: string | null; moeda: string; sufixo: string }
 /**
@@ -27,6 +28,15 @@ export type Loja = {
   ficha?(sku: string): Promise<ResultadoDaLoja<FichaDoProduto | null>>
   /** Opções de frete de um produto para um CEP, como o checkout calcularia. */
   frete?(sku: string, cep: string): Promise<ResultadoDaLoja<OpcaoDeFrete[]>>
+  /**
+   * Drivers e manuais pela página pública de downloads (`/drivers`, ver
+   * `core/manuais.ts`). Opcional: só a Magento com esse módulo tem.
+   */
+  manuais?(termo: string): Promise<ResultadoDaLoja<{ itens: ItemDeDownload[]; busca: string }>>
+  /** Os arquivos de um produto da página de downloads. `null` = id que não existe. */
+  downloads?(manualId: string): Promise<
+    ResultadoDaLoja<{ nome: string; pagina: string; arquivos: ArquivoDeDownload[] } | null>
+  >
   /** A página de busca da loja para este termo. Sem rede. */
   linkDaBusca(termo: string): string
   lerConfig(): Promise<ResultadoDaLoja<ConfigDaLoja>>

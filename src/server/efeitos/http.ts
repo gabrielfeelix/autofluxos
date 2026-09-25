@@ -49,6 +49,12 @@ export type RespostaHttp =
        * ferramenta, e não este campo.
        */
       json?: unknown
+      /**
+       * O corpo cru, em texto. Só vem com `comTexto`: página HTML que não tem
+       * API, como a de drivers da loja, lida por aqui para passar pela mesma
+       * conferência de rede interna que toda chamada passa.
+       */
+      texto?: string
     }
   | { ok: false; motivo: string }
 
@@ -70,7 +76,8 @@ export async function chamarHttp(
     deTeste,
     credencial,
     comJson = false,
-  }: { deTeste: boolean; credencial?: CredencialDaChamada | null; comJson?: boolean },
+    comTexto = false,
+  }: { deTeste: boolean; credencial?: CredencialDaChamada | null; comJson?: boolean; comTexto?: boolean },
 ): Promise<RespostaHttp> {
   // Um prazo para a chamada inteira, saltos incluídos. Os tempos do undici são
   // de **inatividade**: um servidor pingando um byte por segundo nunca os
@@ -236,6 +243,16 @@ export async function chamarHttp(
   // consumido, deixar pendurado segura a conexão até o timeout.
   // Com `comJson` o corpo interessa mesmo sem mapeamento: é o caminho da IA,
   // que não mapeia nada, quem recorta é a projeção da ferramenta.
+  if (comTexto) {
+    try {
+      return { ok: true, valores: {}, texto: await resposta.body.text() }
+    } catch {
+      return { ok: false, motivo: 'a resposta não chegou inteira' }
+    } finally {
+      await fechar()
+    }
+  }
+
   if (pedido.mapear.length === 0 && !comJson) {
     await descartar(resposta)
     await fechar()
