@@ -4,6 +4,7 @@ import { useState, type ReactNode } from 'react'
 import { AgendarMensagem } from '@/components/inbox/agendar'
 import { MarcarAtividade } from '@/components/inbox/marcar-atividade'
 import { Modal } from '@/components/design/modal'
+import { AvisoFlutuante } from '@/components/design/aviso-flutuante'
 import type { MensagemAgendada } from '@/server/repos/mensagens-agendadas'
 
 /**
@@ -41,6 +42,7 @@ export function AcoesDaFicha({
 }) {
   const [agendando, setAgendando] = useState(false)
   const [marcando, setMarcando] = useState(false)
+  const [erroDaAtividade, setErroDaAtividade] = useState<string | null>(null)
   const temAgendada = agendadas.some((a) => a.estado === 'agendada' || a.estado === 'enviando')
 
   return (
@@ -129,6 +131,11 @@ export function AcoesDaFicha({
         já vem com a nova na próxima pintura: não existe uma segunda lista aqui
         para manter em dia.
       */}
+      {erroDaAtividade && (
+        <AvisoFlutuante tom="erro" aoSumir={() => setErroDaAtividade(null)}>
+          {erroDaAtividade}
+        </AvisoFlutuante>
+      )}
       <Modal
         aberto={marcando}
         aoFechar={() => setMarcando(false)}
@@ -139,6 +146,7 @@ export function AcoesDaFicha({
           clienteId={clienteId}
           contatoId={contatoId}
           aoFechar={() => setMarcando(false)}
+          aoFalhar={setErroDaAtividade}
         />
       </Modal>
     </>

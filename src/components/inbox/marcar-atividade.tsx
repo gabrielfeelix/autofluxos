@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useTransition } from 'react'
+import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import {
   CamposDaAtividade,
@@ -43,28 +43,32 @@ export function MarcarAtividade({
   clienteId,
   contatoId,
   aoFechar,
+  aoFalhar,
 }: {
   clienteId: string
   contatoId: string
   aoFechar: () => void
+  /**
+   * O painel fecha no clique e a atividade grava por trás. Se o servidor
+   * recusar, o painel já não existe: quem mostra o erro é quem o abriu.
+   */
+  aoFalhar: (erro: string) => void
 }) {
   const router = useRouter()
   const [valores, setValores] = useState<ValoresDaAtividade>(VALORES_VAZIOS)
-  const [erro, setErro] = useState<string | null>(null)
-  const [rodando, comecar] = useTransition()
 
   function criar() {
     if (valores.titulo.trim() === '') return
-    setErro(null)
-    comecar(async () => {
-      const r = await acaoCriarAtividade(clienteId, { contatoId, ...pedidoDosCampos(valores) })
-      if (!r.ok) {
-        setErro(r.erro ?? 'não deu para marcar')
-        return
-      }
-      router.refresh()
-      aoFechar()
-    })
+    const pedido = { contatoId, ...pedidoDosCampos(valores) }
+    // Esperar o servidor aqui era esperar para voltar a responder o cliente.
+    aoFechar()
+    void acaoCriarAtividade(clienteId, pedido)
+      .then((r) => {
+        if (!r.ok) return aoFalhar(`Atividade não marcada: ${r.erro ?? 'tente de novo'}`)
+        // Por trás, sem segurar nada: só traz a atividade nova para as listas.
+        router.refresh()
+      })
+      .catch(() => aoFalhar('Atividade não marcada: sem conexão. Tente de novo.'))
   }
 
   return (
@@ -79,18 +83,12 @@ export function MarcarAtividade({
 
       <CamposDaAtividade valores={valores} aoMudar={setValores} />
 
-      {erro && (
-        <span role="alert" className="text-[12px] font-semibold text-perigo">
-          {erro}
-        </span>
-      )}
-
       <button
         type="submit"
-        disabled={rodando || valores.titulo.trim() === ''}
+        disabled={valores.titulo.trim() === ''}
         className="app-primary-button w-full px-3 py-2 text-[12.5px] disabled:opacity-50"
       >
-        {rodando ? 'Marcando…' : 'Marcar'}
+        Marcar
       </button>
 
       {/*

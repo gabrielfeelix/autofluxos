@@ -238,6 +238,19 @@ export function Quadro({
     mover(cancelado.cartao.id, cancelado.voltarPara)
   }
 
+  /*
+   * Atribuir e reabrir pelo menu mudam o cartão na hora; a resposta devolve o
+   * de antes quando o servidor recusa. Esperar a volta do cache do funil era o
+   * cartão ficar parado um segundo depois do clique.
+   */
+  function mudarCartao(cartaoId: string, mudanca: Partial<Cartao>): () => void {
+    const antes = cartoes.find((c) => c.id === cartaoId)
+    setCartoes((atuais) => atuais.map((c) => (c.id === cartaoId ? { ...c, ...mudanca } : c)))
+    return () => {
+      if (antes) setCartoes((atuais) => atuais.map((c) => (c.id === cartaoId ? antes : c)))
+    }
+  }
+
   function tirar(cartaoId: string) {
     const antes = cartoes
     setErro(null)
@@ -559,6 +572,7 @@ export function Quadro({
                           aoFechar={(situacao) => setFechando({ cartao, situacao })}
                           aoAbrirPainel={() => setNoPainel(cartao)}
                           aoAvisar={setAviso}
+                          aoMudar={(mudanca) => mudarCartao(cartao.id, mudanca)}
                         />
                       </div>
                     </li>
@@ -1279,6 +1293,7 @@ function MenuDoCartao({
   aoFechar,
   aoAbrirPainel,
   aoAvisar,
+  aoMudar,
 }: {
   etapas: Etapa[]
   etapaAtual: string
@@ -1290,6 +1305,8 @@ function MenuDoCartao({
   aoFechar: (situacao: 'ganha' | 'perdida') => void
   aoAbrirPainel: () => void
   aoAvisar: (texto: string | null) => void
+  /** Aplica a mudança no cartão já; devolve quem desfaz. */
+  aoMudar: (mudanca: Partial<Cartao>) => () => void
 }) {
   const [aberto, setAberto] = useState(false)
   const [vendo, setVendo] = useState<'acoes' | 'mover' | 'assumir'>('acoes')
@@ -1337,14 +1354,18 @@ function MenuDoCartao({
 
   const fechado = Boolean(cartao.situacao && cartao.situacao !== 'aberta')
 
-  function agir(acao: () => Promise<{ ok: boolean; erro?: string }>, feito?: string) {
+  function agir(acao: () => Promise<{ ok: boolean; erro?: string }>, feito?: string, mudanca?: Partial<Cartao>) {
     setAberto(false)
     setVendo('acoes')
+    const desfazer = mudanca ? aoMudar(mudanca) : null
+    if (mudanca && feito) aoAvisar(feito)
     comecar(async () => {
       try {
         const r = await acao()
+        if (!r.ok) desfazer?.()
         aoAvisar(r.ok ? (feito ?? null) : (r.erro ?? 'não deu certo'))
       } catch {
+        desfazer?.()
         aoAvisar('não deu certo agora, tente de novo')
       }
     })
@@ -1380,7 +1401,7 @@ function MenuDoCartao({
                 {fechado ? (
                   <Item
                     onClick={() =>
-                      agir(() => acaoReabrirCartao(clienteId, cartao.id), 'Cartão reaberto.')
+                      agir(() => acaoReabrirCartao(clienteId, cartao.id), 'Cartão reaberto.', { situacao: 'aberta' })
                     }
                   >
                     Reabrir negociação
@@ -1476,6 +1497,7 @@ function MenuDoCartao({
                       agir(
                         () => acaoAtribuirCartao(clienteId, cartao.id, pessoa.id),
                         `${pessoa.nome} assumiu ${cartao.nome}.`,
+                        { responsavelId: pessoa.id, responsavelNome: pessoa.nome },
                       )
                     }
                   >
@@ -1492,6 +1514,7 @@ function MenuDoCartao({
                         agir(
                           () => acaoAtribuirCartao(clienteId, cartao.id, null),
                           'Cartão devolvido para a fila.',
+                          { responsavelId: null, responsavelNome: null },
                         )
                       }
                     >

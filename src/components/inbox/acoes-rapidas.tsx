@@ -10,6 +10,7 @@ import { useFicha } from '@/components/inbox/moldura'
 import { PRAZOS_DE_ADIAMENTO, type PrazoDeAdiamento } from '@/core/adiamento'
 import { AgendarMensagem, IconeAgendar } from '@/components/inbox/agendar'
 import { MarcarAtividade, IconeAtividade } from '@/components/inbox/marcar-atividade'
+import { AvisoFlutuante } from '@/components/design/aviso-flutuante'
 import type { MensagemAgendada } from '@/server/repos/mensagens-agendadas'
 import {
   acaoAdiarConversa,
@@ -86,6 +87,7 @@ export function AcoesRapidas({
    */
   const conversa = useAcaoOtimista(estado)
   const bot = useAcaoOtimista(automacaoAtiva)
+  const [erroDaAtividade, setErroDaAtividade] = useState<string | null>(null)
 
   const resolvida = conversa.valor !== 'aberta'
   const botLigado = bot.valor
@@ -96,6 +98,11 @@ export function AcoesRapidas({
         <span role="alert" className="mr-1 max-w-[160px] truncate text-[11.5px] text-rose-500">
           {conversa.erro ?? bot.erro}
         </span>
+      )}
+      {erroDaAtividade && (
+        <AvisoFlutuante tom="erro" aoSumir={() => setErroDaAtividade(null)}>
+          {erroDaAtividade}
+        </AvisoFlutuante>
       )}
 
       <AcaoComPainel
@@ -164,7 +171,7 @@ export function AcoesRapidas({
           {(fechar) => (
             <>
               <DestinoDoPainel>Para a equipe</DestinoDoPainel>
-              <MarcarAtividade clienteId={clienteId} contatoId={contatoId} aoFechar={fechar} />
+              <MarcarAtividade clienteId={clienteId} contatoId={contatoId} aoFechar={fechar} aoFalhar={setErroDaAtividade} />
             </>
           )}
         </AcaoComPainel>
