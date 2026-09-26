@@ -50,7 +50,7 @@ describe('os modelos por ramo', () => {
   })
 
   it.each(Object.entries(MODELOS_DO_RAMO))('%s não usa travessão', (_, fluxo) => {
-    expect(JSON.stringify(fluxo)).not.toContain('—')
+    expect(JSON.stringify(fluxo)).not.toContain('\u2014')
   })
 })
 
