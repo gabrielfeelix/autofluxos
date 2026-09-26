@@ -40,10 +40,11 @@ export type ModeloDeQuadro = {
    * Comercial ou operacional (0071).
    *
    * É o que decide se concluir a etapa final **pede uma venda** ou só conclui
-   * o trabalho. Dos cinco modelos, só o Comercial vende: Atendimento,
-   * Captação, Agenda e Pós-venda terminam em sucesso operacional, e é por isso
-   * que "Resolvido", "Qualificado" e "Compareceu" nunca deveriam ter contado
-   * como compra (RB-03, A11).
+   * o trabalho. Dos seis modelos, vendem o Comercial e o de Pedidos (pedido
+   * entregue é venda feita): Atendimento, Captação, Agenda e Pós-venda
+   * terminam em sucesso operacional, e é por isso que "Resolvido",
+   * "Qualificado" e "Compareceu" nunca deveriam ter contado como compra
+   * (RB-03, A11).
    */
   finalidade: Finalidade
   etapas: readonly EtapaDoModelo[]
@@ -121,6 +122,29 @@ export const MODELOS_DE_QUADRO: readonly ModeloDeQuadro[] = [
       { nome: 'Oferta enviada', dias: 15 },
       { nome: 'Recomprou', tipo: 'ganho' },
       { nome: 'Sem retorno', tipo: 'perdido' },
+    ],
+  },
+  {
+    /*
+     * O funil do restaurante (PLANO-NICHOS 4.5). O pedido anda em horas, e não
+     * em dias, mas o prazo aqui é em dias inteiros (`limite_de_dias`): um dia
+     * é o menor aviso que existe, e pedido parado de um dia para o outro em
+     * qualquer etapa é pedido esquecido. "Cancelado" é a etapa de perda, como
+     * nos outros funis que vendem: sem ela o pedido desistido fica parado em
+     * "Novo pedido" e acende o aviso para sempre.
+     */
+    id: 'pedidos',
+    nome: 'Pedidos',
+    resumo:
+      'Para quem vende comida e entrega: do pedido que chegou até a porta do cliente, com o cancelado separado.',
+    etiquetas: ['delivery', 'comida'],
+    finalidade: 'comercial',
+    etapas: [
+      { nome: 'Novo pedido', dias: 1 },
+      { nome: 'Em preparo', dias: 1 },
+      { nome: 'Saiu para entrega', dias: 1 },
+      { nome: 'Entregue', tipo: 'ganho' },
+      { nome: 'Cancelado', tipo: 'perdido' },
     ],
   },
 ] as const
