@@ -434,6 +434,8 @@ export type DadosDoPlano = {
   numeros: number
   /** Reais por conversa acima da faixa. */
   precoExcedente: number
+  /** Reais por ano no anual; `null` = sem opção anual. */
+  precoAnual: number | null
   resumo: string
   itens: string[]
   recursos: string[]
@@ -454,11 +456,15 @@ function validarPlano(dados: DadosDoPlano): { ok: true; edicao: EdicaoDePlano } 
   if (numeros === null) return { ok: false, erro: 'o plano comporta pelo menos 1 número' }
   const precoExcedente = Math.round(Number(dados.precoExcedente) * 100) / 100
   if (!Number.isFinite(precoExcedente) || precoExcedente < 0) return { ok: false, erro: 'o preço do excedente é em reais, zero ou mais' }
+  const precoAnual = dados.precoAnual === null || dados.precoAnual === undefined ? null : inteiro(dados.precoAnual, 0)
+  if (dados.precoAnual !== null && dados.precoAnual !== undefined && precoAnual === null) {
+    return { ok: false, erro: 'o preço anual é um número inteiro de reais, ou vazio para não ter anual' }
+  }
   const recursos = (dados.recursos ?? []).filter(ehRecursoDoPlano)
   const itens = (dados.itens ?? []).map((item) => String(item).trim()).filter(Boolean).slice(0, 20)
   return {
     ok: true,
-    edicao: { nome, preco, conversas, numeros, precoExcedente, resumo: String(dados.resumo ?? '').trim(), itens, recursos, ativo: dados.ativo !== false },
+    edicao: { nome, preco, conversas, numeros, precoExcedente, precoAnual, resumo: String(dados.resumo ?? '').trim(), itens, recursos, ativo: dados.ativo !== false },
   }
 }
 

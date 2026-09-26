@@ -25,6 +25,7 @@ type Linha = {
   conversas: number | string
   numeros: number | string
   preco_excedente?: number | string | null
+  preco_anual?: number | string | null
   resumo: string | null
   itens: unknown
   recursos: unknown
@@ -47,6 +48,7 @@ function paraPlano(linha: Linha): PlanoVigente {
     conversas: Number(linha.conversas),
     numeros: Number(linha.numeros),
     precoExcedente: Number(linha.preco_excedente ?? base?.precoExcedente ?? 0),
+    precoAnual: linha.preco_anual === null || linha.preco_anual === undefined ? null : Number(linha.preco_anual),
     resumo: linha.resumo ?? base?.resumo ?? '',
     itens: lista(linha.itens),
     recursos: lista(linha.recursos).filter(ehRecursoDoPlano),
@@ -61,7 +63,7 @@ export const planosVigentes = cache(async (): Promise<PlanoVigente[]> => {
   try {
     const { data, error } = await db()
       .from('planos')
-      .select('id, nome, preco, conversas, numeros, preco_excedente, resumo, itens, recursos, ativo, ordem, atualizado_em')
+      .select('id, nome, preco, conversas, numeros, preco_excedente, preco_anual, resumo, itens, recursos, ativo, ordem, atualizado_em')
       .order('ordem', { ascending: true })
     if (error || !data || data.length === 0) return doCodigo()
     return (data as Linha[]).map(paraPlano)
@@ -80,7 +82,7 @@ export async function planoVigente(id: string): Promise<PlanoVigente> {
   return todos.find((plano) => plano.id === id) ?? todos.find((plano) => plano.id === 'essencial') ?? todos[0]!
 }
 
-export type EdicaoDePlano = Pick<Plano, 'nome' | 'preco' | 'conversas' | 'numeros' | 'precoExcedente' | 'resumo' | 'itens' | 'recursos'> & { ativo: boolean }
+export type EdicaoDePlano = Pick<Plano, 'nome' | 'preco' | 'conversas' | 'numeros' | 'precoExcedente' | 'precoAnual' | 'resumo' | 'itens' | 'recursos'> & { ativo: boolean }
 
 export async function salvarPlano(id: IdDoPlano, edicao: EdicaoDePlano): Promise<{ ok: boolean; motivo?: string }> {
   const { error, count } = await db()
@@ -92,6 +94,7 @@ export async function salvarPlano(id: IdDoPlano, edicao: EdicaoDePlano): Promise
         conversas: edicao.conversas,
         numeros: edicao.numeros,
         preco_excedente: edicao.precoExcedente,
+        preco_anual: edicao.precoAnual,
         resumo: edicao.resumo,
         itens: edicao.itens,
         recursos: edicao.recursos,
@@ -123,6 +126,7 @@ export async function criarPlano(id: string, edicao: EdicaoDePlano): Promise<{ o
       conversas: edicao.conversas,
       numeros: edicao.numeros,
       preco_excedente: edicao.precoExcedente,
+      preco_anual: edicao.precoAnual,
       resumo: edicao.resumo,
       itens: edicao.itens,
       recursos: edicao.recursos,

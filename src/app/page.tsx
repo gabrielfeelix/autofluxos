@@ -2,6 +2,7 @@ import type { Metadata } from 'next'
 import Link from 'next/link'
 import type { ReactNode } from 'react'
 import {
+  anualDoPlano,
   O_QUE_E_CONVERSA,
   PLANOS,
   PLANO_EM_DESTAQUE,
@@ -416,6 +417,7 @@ Um preço que cabe antes de dar resultado
                   key={plano.id}
                   nome={plano.nome}
                   preco={String(plano.preco)}
+                  anual={anualDoPlano(plano)}
                   resumo={plano.resumo}
                   itens={plano.itens}
                   destaque={plano.id === PLANO_EM_DESTAQUE}
@@ -425,8 +427,8 @@ Um preço que cabe antes de dar resultado
             </div>
 
             <p className={s.notaPreco}>
-              {O_QUE_E_CONVERSA} Os valores são mensais, sem fidelidade e sem taxa de
-              instalação. Fazemos a conta da tarifa da Meta com o seu volume antes de você
+              {O_QUE_E_CONVERSA} No mensal não há fidelidade; no anual você paga
+              o ano de uma vez, com desconto. Sem taxa de instalação. Fazemos a conta da tarifa da Meta com o seu volume antes de você
               assinar.
             </p>
           </div>
@@ -899,6 +901,7 @@ function Setor({
 function Plano({
   nome,
   preco,
+  anual,
   resumo,
   itens,
   destaque,
@@ -906,6 +909,8 @@ function Plano({
 }: {
   nome: string
   preco: string | null
+  /** O anual, quando o plano tem: a linha embaixo do preço mensal. */
+  anual: { porMes: number; porAno: number; desconto: number } | null
   resumo: string
   itens: string[]
   destaque?: boolean
@@ -935,6 +940,11 @@ function Plano({
           <span className={s.planoPrecoTexto}>Combinado</span>
         )}
       </p>
+      {preco && anual && (
+        <p className={s.planoAnual}>
+          ou <strong>R$ {anual.porMes.toLocaleString('pt-BR')}/mês</strong> no anual ({anual.desconto}% a menos)
+        </p>
+      )}
 
       <p className={s.planoResumo}>{resumo}</p>
 

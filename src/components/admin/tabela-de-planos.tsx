@@ -31,6 +31,7 @@ const VAZIO: PlanoNaTabela = {
   conversas: 1000,
   numeros: 1,
   precoExcedente: 0.4,
+  precoAnual: null,
   resumo: '',
   itens: [],
   recursos: ['crm'],
@@ -284,6 +285,7 @@ function EditarPlano({
               conversas: Number(dados.get('conversas')),
               numeros: Number(dados.get('numeros')),
               precoExcedente: Number(String(dados.get('precoExcedente') ?? '0').replace(',', '.')),
+              precoAnual: String(dados.get('precoAnual') ?? '').trim() === '' ? null : Number(dados.get('precoAnual')),
               resumo: String(dados.get('resumo') ?? ''),
               itens: String(dados.get('itens') ?? '').split('\n'),
               recursos,
@@ -301,6 +303,10 @@ function EditarPlano({
           <label>
             <RotuloCampo>Preço por mês (R$)</RotuloCampo>
             <input name="preco" type="number" min={0} step={1} required value={preco} onChange={(evento) => setPreco(evento.target.value)} placeholder="Exemplo: 597" className={campo} />
+          </label>
+          <label>
+            <RotuloCampo>Preço por ano (R$), vazio = sem anual</RotuloCampo>
+            <input name="precoAnual" type="number" min={0} step={1} defaultValue={plano.precoAnual ?? ''} placeholder={preco ? `Exemplo: ${Number(preco) * 10} (10 meses)` : 'Exemplo: 5970'} className={campo} />
           </label>
           <label>
             <RotuloCampo>Conversas por mês</RotuloCampo>

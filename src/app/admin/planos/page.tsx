@@ -33,6 +33,7 @@ export default async function Planos() {
         conversas: plano.conversas,
         numeros: plano.numeros,
         precoExcedente: plano.precoExcedente,
+        precoAnual: plano.precoAnual,
         resumo: plano.resumo,
         itens: plano.itens,
         recursos: plano.recursos,

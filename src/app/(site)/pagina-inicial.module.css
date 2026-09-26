@@ -941,6 +941,17 @@
   letter-spacing: 0;
 }
 
+.planoAnual {
+  margin: 6px 0 0;
+  font-size: 13px;
+  color: var(--dim);
+}
+
+.planoAnual strong {
+  color: var(--muted);
+  font-weight: 600;
+}
+
 .planoResumo {
   margin: 12px 0 0;
   font-size: 14px;

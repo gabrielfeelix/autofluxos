@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 
 import {
+  anualDoPlano,
   PLANOS,
   comoTamanho,
   PLANO_DE_ENTRADA,
@@ -126,5 +127,20 @@ describe('comoTamanho', () => {
     expect(comoTamanho(0)).toBe('0 MB')
     expect(comoTamanho(-5)).toBe('0 MB')
     expect(comoTamanho(Number.NaN)).toBe('0 MB')
+  })
+})
+
+describe('o anual do plano', () => {
+  it('pague 10, leve 12: 17% a menos, arredondado ao real por mês', () => {
+    expect(anualDoPlano({ preco: 597, precoAnual: 5970 })).toEqual({ porMes: 498, porAno: 5970, desconto: 17 })
+  })
+
+  it('sem anual, ou anual que não sai mais barato, não anuncia desconto', () => {
+    expect(anualDoPlano({ preco: 597, precoAnual: null })).toBeNull()
+    expect(anualDoPlano({ preco: 597, precoAnual: 597 * 12 })).toBeNull()
+  })
+
+  it('todo plano do código tem anual mais barato que doze mensalidades', () => {
+    for (const plano of PLANOS) expect(anualDoPlano(plano)).not.toBeNull()
   })
 })

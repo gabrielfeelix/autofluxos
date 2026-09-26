@@ -14,7 +14,7 @@ import {
 import type { ConsumoDoMes } from '@/server/repos/plano'
 import { previsaoDaTroca, usoDoRecurso, type UsoDaOrganizacao } from '@/core/troca-de-plano'
 import { diaPorExtenso, excedente, fraseDoExcedente, reais } from '@/core/contrato-do-plano'
-import { RECURSOS_DO_PLANO } from '@/core/planos'
+import { anualDoPlano, RECURSOS_DO_PLANO } from '@/core/planos'
 import { ModalDeTroca } from '@/components/plano/modal-de-troca'
 import { FranquiaDaMeta } from '@/components/plano/franquia-da-meta'
 import type { FranquiaDoNumero } from '@/core/franquia-da-meta'
@@ -283,6 +283,16 @@ function Cartao({
         R$ {plano.preco.toLocaleString('pt-BR')}
         <span className="text-[12px] font-normal text-dim"> por mês</span>
       </p>
+      {(() => {
+        const anual = anualDoPlano(plano)
+        return (
+          anual && (
+            <p className="mt-0.5 text-[11.5px] text-dim">
+              ou R$ {anual.porMes.toLocaleString('pt-BR')} por mês no anual ({anual.desconto}% a menos)
+            </p>
+          )
+        )
+      })()}
 
       <ul className="mt-3 mb-4 flex flex-1 flex-col gap-1.5">
         {plano.itens.map((item) => {

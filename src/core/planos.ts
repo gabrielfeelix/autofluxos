@@ -69,6 +69,15 @@ export type Plano = {
   numeros: number
   /** Reais por conversa acima de `conversas`, na fatura seguinte (0102). */
   precoExcedente: number
+  /**
+   * Reais **por ano** no pagamento anual (0110). `null` = sem opção anual.
+   *
+   * O valor de partida é 10 vezes o mensal, "pague 10 meses, leve 12": é o
+   * desconto mais comum no mercado (cerca de 17%), fácil de dizer numa frase, e
+   * foi a escolha de 26/set (`docs/IDEIAS-26-SET-DA-CONVERSA.md`, item 4). A
+   * administração muda na tela Planos.
+   */
+  precoAnual: number | null
   /** O que o plano libera, na lista fechada de `RECURSOS_DO_PLANO`. */
   recursos: RecursoDoPlano[]
 }
@@ -109,6 +118,7 @@ export const PLANOS: Plano[] = [
     conversas: 1000,
     numeros: 1,
     precoExcedente: 0.4,
+    precoAnual: 2970,
     recursos: ['crm'],
     resumo: 'Para quem atende sozinho e quer parar de repetir horário e preço.',
     itens: [
@@ -127,6 +137,7 @@ export const PLANOS: Plano[] = [
     conversas: 3000,
     numeros: 1,
     precoExcedente: 0.3,
+    precoAnual: 5970,
     recursos: ['crm', 'ia', 'transcricao', 'transmissoes', 'integracoes'],
     resumo: 'Para quem já tem gente atendendo junto e perde conversa no meio.',
     itens: [
@@ -146,6 +157,7 @@ export const PLANOS: Plano[] = [
     conversas: 8000,
     numeros: 5,
     precoExcedente: 0.2,
+    precoAnual: 11970,
     recursos: ['crm', 'ia', 'transcricao', 'transmissoes', 'integracoes', 'varios_numeros', 'chave_propria', 'webhook'],
     resumo: 'Para operação com mais de um número, volume alto e dado sensível.',
     itens: [
@@ -272,4 +284,16 @@ export function idDoNome(nome: string): string {
     .replace(/^-+|-+$/g, '')
     .slice(0, 40)
     .replace(/-+$/g, '')
+}
+
+/**
+ * Quanto sai por mês no anual, arredondado ao real, e quantos por cento de
+ * desconto isso é sobre doze mensalidades. `null` quando o plano não tem anual,
+ * ou quando o anual não sai mais barato (aí anunciar "desconto" seria mentira).
+ */
+export function anualDoPlano(plano: Pick<Plano, 'preco' | 'precoAnual'>): { porMes: number; porAno: number; desconto: number } | null {
+  if (plano.precoAnual === null || plano.preco <= 0) return null
+  const desconto = Math.round((1 - plano.precoAnual / (plano.preco * 12)) * 100)
+  if (desconto <= 0) return null
+  return { porMes: Math.round(plano.precoAnual / 12), porAno: plano.precoAnual, desconto }
 }
