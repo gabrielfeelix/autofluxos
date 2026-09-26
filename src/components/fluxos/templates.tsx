@@ -496,7 +496,7 @@ export function NovaAutomacao({
 
             <EscolhaDeComeco
               titulo="Usar modelo"
-              rodape={`${modelos.length} prontos, todos conferidos`}
+              rodape={`${destaque ? (() => { const g = separarPeloRamo(modelos, destaque); return g.doRamo.length + g.outros.length })() : modelos.length} prontos, todos conferidos`}
               aoClicar={() => setPasso('templates')}
               miniatura={<MiniaturaDeTemplate />}
             >

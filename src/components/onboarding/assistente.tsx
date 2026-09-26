@@ -16,11 +16,17 @@ const CHATBOTS = [
   { valor: 'nenhum', titulo: 'Escolher depois', descricao: 'Continue com sua equipe e crie uma automação quando precisar.' },
 ]
 
-export function Assistente({ clienteId, nome, inicial, temQuadro, temFluxo }: {
-  clienteId: string; nome: string; inicial: EstadoOnboarding | null; temQuadro: boolean; temFluxo: boolean
+export function Assistente({ clienteId, nome, inicial, nichoAtual = null, temQuadro, temFluxo }: {
+  clienteId: string; nome: string; inicial: EstadoOnboarding | null
+  /** A frente que a conta já tem: vem marcada na primeira pergunta. */
+  nichoAtual?: Nicho | null
+  temQuadro: boolean; temFluxo: boolean
 }) {
   const router = useRouter()
-  const [respostas, setRespostas] = useState<RespostasOnboarding>(inicial?.respostas ?? RESPOSTAS_INICIAIS)
+  const [respostas, setRespostas] = useState<RespostasOnboarding>(() => {
+    const respostas = inicial?.respostas ?? RESPOSTAS_INICIAIS
+    return respostas.nicho || !nichoAtual ? respostas : { ...respostas, nicho: nichoAtual }
+  })
   const [concluido, setConcluido] = useState(inicial?.status === 'concluido' ? inicial : null)
   const [salvando, setSalvando] = useState(false)
   const [erro, setErro] = useState('')

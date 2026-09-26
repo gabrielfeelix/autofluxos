@@ -7,6 +7,7 @@ import { acharCliente } from '@/server/repos/clientes'
 import { listarQuadros } from '@/server/repos/quadros'
 import { listarFluxos } from '@/server/repos/fluxos'
 import { onboardingDaConta } from '@/server/repos/onboarding'
+import { nichoDaConta } from '@/server/repos/recursos'
 
 export const dynamic = 'force-dynamic'
 
@@ -17,9 +18,9 @@ export default async function Pagina({ params }: { params: Promise<{ clienteId: 
     if (!cliente) notFound()
     return <ClienteShell cliente={cliente} ativa="ajustes"><SemAcesso clienteId={clienteId} oQue="a configuração guiada" /></ClienteShell>
   }
-  const [cliente, estado, quadros, fluxos] = await Promise.all([
-    acharCliente(clienteId), onboardingDaConta(clienteId), listarQuadros(clienteId), listarFluxos(clienteId),
+  const [cliente, estado, quadros, fluxos, nicho] = await Promise.all([
+    acharCliente(clienteId), onboardingDaConta(clienteId), listarQuadros(clienteId), listarFluxos(clienteId), nichoDaConta(clienteId),
   ])
   if (!cliente) notFound()
-  return <ClienteShell cliente={cliente} ativa="ajustes"><Assistente clienteId={clienteId} nome={cliente.nome} inicial={estado} temQuadro={quadros.length > 0} temFluxo={fluxos.length > 0} /></ClienteShell>
+  return <ClienteShell cliente={cliente} ativa="ajustes"><Assistente clienteId={clienteId} nome={cliente.nome} inicial={estado} nichoAtual={nicho} temQuadro={quadros.length > 0} temFluxo={fluxos.length > 0} /></ClienteShell>
 }
