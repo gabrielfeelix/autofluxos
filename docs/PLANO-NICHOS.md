@@ -315,8 +315,8 @@ param antes do push para pedir autorização (o push é o deploy).
 
 | # | Etapa | Toca produção? |
 |---|---|---|
-| 1 | `core/nichos.ts` + testes; barra lateral e Início lendo o pacote | não (sem nicho, nada muda) |
-| 2 | Migrations: `clients.nicho`, `produtos.categoria/ordem`, `materiais`, `ia_limite_contato_dia` | **sim, pedir autorização** |
+| 1 | `core/nichos.ts` + testes; barra lateral lendo o pacote (**feito 26/set**; primeiros passos do Início ficam para a 7) | não (sem nicho, nada muda) |
+| 2 | Migration `0106`: `clients.nicho`, `produtos.categoria/ordem`, `materiais`, `ia_limite_contato_dia` (**aplicada 26/set**) | sim, autorizada |
 | 3 | Motor: IA contínua e limite por contato | não |
 | 4 | Cardápio: categoria, grade com foto, envio de PDF, `enviar_cardapio` | não |
 | 5 | Modelos do restaurante e funil de pedidos | não |

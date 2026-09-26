@@ -270,6 +270,23 @@ extração explícito para os objetos de `public`.
   no check novo. Verandi conferida antes e depois: **35** migrations (última
   em 23/set), **40** tabelas em `app_verandi`. `notify pgrst, 'reload schema'`
   depois, e a Data API leu `site_chave` na sequência.
+- **a `0106` foi aplicada em 26/set/2026** (etapa 2 de `docs/PLANO-NICHOS.md`),
+  com autorização explícita do dono, pela Management API, numa transação.
+  Aditiva: `clients.nicho` (texto anulável, check nos três ramos),
+  `clients.ia_limite_contato_dia` (inteiro anulável, maior que zero),
+  `produtos.categoria` e `produtos.ordem` (anuláveis) e a tabela
+  `public.materiais` (cardápio em PDF e em imagem, um de cada por conta).
+  Ensaio em transação antes, pela conexão direta: colunas e tabela criadas,
+  RLS ligada, `anon`/`authenticated` sem acesso, `nicho = 'saude'` recusado
+  pelo check, e depois do `rollback` a tabela ausente. Releitura depois de
+  aplicar: **7** contas, **0** com ramo; **48** contatos; `pg_tables` de
+  `public` de 74 para 75; `materiais` com RLS e **0** políticas;
+  `app_verandi.migrations_aplicadas` **35**, **40** tabelas em `app_verandi` e
+  **16** policies de `storage.objects`, iguais a antes. Data API depois do
+  `notify`: `clients?select=nicho,ia_limite_contato_dia`, `materiais` e
+  `produtos?select=categoria,ordem` **200** com a chave secreta e **401** com a
+  publicável; `app_verandi.conta` **200**. O código publicado antes (etapa 1)
+  já lia `clients.nicho` com recuo para `null`.
 - **a `0104` foi aplicada em 25/set/2026** (franquia de mensagens de serviço da
   Meta, que passa a ser cobrada em 1/out/2026), com autorização explícita do
   dono, pela Management API. Aditiva: só a tabela `public.consumo_da_meta`
