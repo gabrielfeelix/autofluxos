@@ -131,10 +131,10 @@ o sistema muda de verdade por nicho.
 
 1. **Demo da pizzaria**: número e conta demo, fluxo de cardápio, QR. É o que
    destrava a venda na rua, e obriga a construir o pacote do restaurante.
-3. **Nicho na conta**: pergunta no onboarding, vocabulário e barra lateral por
+2. **Nicho na conta**: pergunta no onboarding, vocabulário e barra lateral por
    nicho, modelos entregues prontos.
-4. **Páginas por nicho no site** da 4yu, apontando para a demo.
-5. **Funções que só um nicho usa** (pedido de restaurante, tabela de atacado,
+3. **Páginas por nicho no site** da 4yu, apontando para a demo.
+4. **Funções que só um nicho usa** (pedido de restaurante, tabela de atacado,
    entrega de exame), uma por vez, conforme cliente real aparecer.
 
 ## Decisões (26/set)
