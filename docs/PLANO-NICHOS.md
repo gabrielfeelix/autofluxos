@@ -86,6 +86,49 @@ Em `Configurações > Recursos`, um campo "Tipo de negócio". Trocar muda nomes
 e primeiros passos. **Não apaga nada** e não instala nada sozinho: oferece o
 pacote novo com a mesma tela do 1.1.
 
+### 1.7 A ficha do assistente de IA (pedido do Gabriel, 26/set)
+
+**O problema.** Hoje o que a IA sabe do negócio é uma caixa de texto livre
+("Conhecimento da IA", `clients.contexto_negocio`). Na PCYES funciona porque o
+Gabriel escreveu o texto em blocos (ONDE FICA, PAGAMENTO, GARANTIA, ENTREGA...)
+e foi ajustando o que o bot pode e não pode fazer. Um dono de pizzaria não
+sabe fazer isso, e o bot dele fica respondendo "não sei" ou inventando.
+
+**A saída: perguntar certo, pelo ramo.** Em Configurações, a tela vira a
+**Ficha do assistente**: um formulário com as perguntas que o cliente final
+sempre faz naquele ramo. O dono responde; o sistema monta o texto para a IA no
+mesmo formato em blocos da PCYES.
+
+| Ramo | Perguntas que a ficha sempre faz |
+|---|---|
+| Loja virtual | prazo de envio, como calcular frete, formas de pagamento e parcelamento, trocas e devolução, garantia, rastreio, nota fiscal, retirada |
+| Restaurante | horário, área e taxa de entrega, tempo médio, pagamento, pedido mínimo, meia a meia, opções sem lactose/vegetarianas, retirada no balcão |
+| Comércio | horário, endereço e como chegar, faz entrega?, pagamento, encomenda, estacionamento |
+
+Além das perguntas do ramo, três blocos iguais para todos:
+
+- **O que o assistente pode fazer** (caixas marcadas por padrão): tirar
+  dúvida, mostrar produto, montar pedido...
+- **O que ele nunca faz** (marcadas por padrão, o dono não desmarca as de
+  segurança): prometer desconto, pedir dado de cartão, confirmar estoque sem
+  consultar, falar de concorrente.
+- **Quando passar para uma pessoa**: reclamação, pedido de reembolso, o que
+  não estiver na ficha.
+
+**A garantia de profissionalismo.** Pergunta que o cliente final faz e não
+está na ficha: o bot não inventa, diz que vai chamar alguém e passa para o
+atendente. A tela mostra o placar ("o assistente responde 8 de 10 perguntas
+comuns") com as que faltam, e um botão **Testar** que faz as perguntas comuns
+ao bot e mostra as respostas.
+
+**Onde mora.** Perguntas por ramo no pacote (`core/nichos.ts`), respostas em
+coluna nova da conta (jsonb, migration com autorização). O texto livre de hoje
+continua existindo, como "Mais alguma coisa que o assistente precisa saber".
+A PCYES vira a primeira ficha, convertida do texto atual.
+
+**Interface.** Os três ramos usam a mesma interface: mesma tela, mesmos
+componentes, mesma ordem. Muda a palavra, as perguntas e os exemplos.
+
 ### 1.6 O sistema inteiro muda pelo ramo (pedido do Gabriel, 26/set)
 
 Não é só a seção Comércio. Quem escolheu "restaurante" tem que sentir que o
@@ -348,6 +391,7 @@ param antes do push para pedir autorização (o push é o deploy).
 | 4 | Cardápio: categoria, grade com foto, envio de PDF, `enviar_cardapio` (**feito 26/set**; o arquivo sobe para o bucket que já existia, `autofluxos-acervo`, na pasta da conta, sem bucket nem política nova; ordenar é por botões de subir e descer, arrastar ficou de fora; a prévia da primeira página do PDF ficou de fora, a tela mostra o nome e um link para abrir; o aviso do editor sobre loja desligada ainda cita `enviar_cardapio` junto das consultas de loja) | não |
 | 5 | Modelos do restaurante e funil de pedidos (**feito 26/set**; `cardapio-botoes`, `atendente-ia-restaurante`, `voces-tem`, `horario-e-local` e o funil `pedidos`, com "Cancelado" como etapa de perda; o pacote ganhou `modelosDeFluxo`, `modeloDeFunil` e `tituloDosModelos`, e as galerias de fluxo e de funil mostram o ramo primeiro e o resto recolhido. Ficou de fora: o cardápio com botões manda o arquivo e os pratos por blocos de IA restritos, então **três dos quatro modelos pedem a IA ligada** (etiqueta "Precisa de IA"); o bloco de etapa e a etiqueta "Novo pedido" não vêm no modelo, porque apontam para ids da conta: o pedido chega com motivo "Novo pedido" e nota no contato, e ligar ao funil é da instalação do pacote (7); o atendente com IA fecha o pedido pedindo "menu" e "Enviar pedido", sem palavra de saída nova no motor; as partes do cardápio nos botões são fixas de pizzaria e o dono edita; sem desenho próprio na galeria, os quatro usam o genérico) | não |
 | 6 | Conta demo, mover o número, cardápio da Pizzaria Exemplo, QR | **sim, pedir autorização** |
+| 6.5 | Ficha do assistente de IA por ramo (1.7), com placar e Testar; PCYES convertida | sim (coluna jsonb): pedir autorização |
 | 7 | Onboarding por ramo, perguntas extras do ramo e instalação do pacote | não (a resposta das perguntas extras pode pedir coluna: se pedir, autorização) |
 | 7.1 | O sistema inteiro pelo ramo (1.6): inventário de telas, barra inteira, galeria, Configurações, Início, relatórios | não |
 | 8 | Pacotes de loja virtual e comércio, e seus ramos na demo | não |
