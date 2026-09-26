@@ -23,7 +23,12 @@ import {
 } from '@/core/confirmacao'
 import { lerPoliticas, politicaDe } from '../ia/politica'
 import { recursoLiberado } from '../recursos-do-plano'
-import { registrarChamada, type DecididoPor } from '../repos/ia-chamadas'
+import {
+  cotaDeIaDoContato,
+  registrarChamada,
+  registrarRespostaDaIa,
+  type DecididoPor,
+} from '../repos/ia-chamadas'
 import {
   assinatura,
   camposInjetadosTentados,
@@ -51,6 +56,17 @@ import { consultarPedidoDaConta, lojaAtivaDaConta } from '../adaptador-da-loja'
 
 /** Mensagem padrão antes de passar para uma pessoa. */
 const AVISO_DE_HANDOFF = 'Vou te passar para um atendente. Só um instante!'
+
+/**
+ * O que a pessoa lê quando o contato gastou as respostas de IA do dia
+ * (`clients.ia_limite_contato_dia`, 0106).
+ *
+ * Não fala em limite nem em cota: quem está do outro lado não contratou nada,
+ * e "limite atingido" soa como defeito. Diz o que acontece agora, que é uma
+ * pessoa assumir.
+ */
+export const AVISO_DE_LIMITE_DE_IA =
+  'Por hoje eu já respondi bastante por aqui. Vou te passar para uma pessoa do time. 🙌'
 
 /**
  * Trava contra fluxo que encadeia efeitos externos sem fim.
@@ -265,6 +281,9 @@ async function rodar(
    */
   let modelo = opcoes.modelo
   let saltos = 0
+  /** A cota de IA do contato, lida uma vez por rodada e só se a IA for chamada. */
+  let cota: { limite: number | null; usadas: number } | undefined
+  const quemConta = contaNoLimite(opcoes)
 
   const pergunta =
     opcoes.perguntaDaPessoa ??
@@ -458,12 +477,52 @@ async function rodar(
     // fazer, hoje, mandar para uma pessoa. Nunca fingir que respondeu.
     if (!modelo) return { ...resultado, ...(destino ? { destino } : {}) }
 
+    /*
+     * O limite de IA por contato (0106), antes de o modelo ser chamado.
+     *
+     * Existe para a conta de demonstração, aberta a quem ler o QR de um flyer:
+     * sem ele, uma pessoa só conversando a noite inteira é custo sem teto. No
+     * limite o modelo não é chamado, a pessoa lê que alguém do time assume, e
+     * a conversa vai para o mesmo caminho de quando a IA não sabe responder.
+     *
+     * Vem antes de `antesDaIa` para o "deixa eu procurar" não sair sozinho,
+     * prometendo uma busca que não vai acontecer: ele vai junto do aviso.
+     */
+    if (quemConta) {
+      cota ??= await cotaDeIaDoContato(quemConta.clienteId, quemConta.contatoId)
+      if (cota.limite !== null && cota.usadas >= cota.limite) {
+        const foraDoHorario = avisoDeForaDoHorario(atendimento)
+        return {
+          acoes: [
+            ...semEfeito(resultado.acoes, 'chamar_ia'),
+            { tipo: 'enviar_texto', texto: AVISO_DE_LIMITE_DE_IA },
+            ...(foraDoHorario ? [{ tipo: 'enviar_texto' as const, texto: foraDoHorario }] : []),
+            {
+              tipo: 'transferir_humano',
+              motivo: `o contato chegou ao limite de ${cota.limite} respostas de IA em 24 h`,
+            },
+          ],
+          sessao: { ...resultado.sessao, status: 'humano' },
+          ...(destino ? { destino } : {}),
+        }
+      }
+    }
+
     if (opcoes.antesDaIa) {
       const envios = resultado.acoes.filter(ehEnvio)
       if (envios.length > 0) {
         await opcoes.antesDaIa(envios)
         resultado = { ...resultado, acoes: resultado.acoes.filter((a) => !ehEnvio(a)) }
       }
+    }
+
+    // Só conta quem tem limite: conta sem limite não ganha uma linha a mais
+    // por resposta num log que existe para outra coisa. Grava junto com a
+    // chamada ao modelo, e não antes, para não somar a espera de um insert.
+    let registro: Promise<void> | null = null
+    if (quemConta && cota && cota.limite !== null) {
+      cota.usadas += 1
+      registro = registrarRespostaDaIa(quemConta.clienteId, quemConta.contatoId)
     }
 
     const resposta = await responderComFerramentas({
@@ -473,6 +532,7 @@ async function rodar(
       opcoes,
       vars: resultado.sessao.vars,
     })
+    if (registro) await registro
 
     if (resposta.tipo === 'confirmar') {
       /*
@@ -605,6 +665,20 @@ async function carregar(opcoes: OpcoesDeEfeitos, fluxoId: string) {
  */
 function semEfeito(acoes: Acao[], tipo: 'chamar_ia' | 'chamar_http' | 'ir_para_fluxo'): Acao[] {
   return acoes.filter((a) => a.tipo !== tipo || (a.tipo === 'chamar_http' && a.simulada))
+}
+
+/**
+ * De quem é a conversa que gasta o limite de IA, ou `null` quando ela não gasta.
+ *
+ * O simulador e a vitrine não contam nem são limitados: são o dono testando o
+ * próprio desenho, ou alguém vendo um link, e nenhum dos dois é um contato. Na
+ * prática o simulador já não manda `contatoId`; a origem conferida aqui é o
+ * cinto de segurança para o dia em que mandar.
+ */
+function contaNoLimite(opcoes: OpcoesDeEfeitos): { clienteId: string; contatoId: string } | null {
+  if (opcoes.origem === 'simulador' || opcoes.semRede) return null
+  if (!opcoes.clienteId || !opcoes.contatoId) return null
+  return { clienteId: opcoes.clienteId, contatoId: opcoes.contatoId }
 }
 
 function ultimaDaPessoa(historico: Turno[] | undefined): string | undefined {
