@@ -147,4 +147,4 @@ o sistema muda de verdade por nicho.
 
 ## Número da demo
 
-- Número da demo: +55 44 7400-7438 (hoje na conta PCYES, é número de teste do Gabriel). Plano em `docs/PLANO-NICHOS.md`.
+- Número da demo: +55 44 7400-7438 (número de teste do Gabriel). Desde 26/set está na conta própria "4YU Tech Demonstração", não mais na PCYES. Como funciona, ids e como voltar: `docs/DEMO.md`.

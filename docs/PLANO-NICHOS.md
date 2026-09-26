@@ -359,24 +359,25 @@ para entrega, Entregue.
 
 ### 4.9 Conta de demonstração e o número
 
-Decidido em 26/set: **o número fica na conta PCYES** (é conta de teste do
-Gabriel, não a da PCYES de verdade). Não há conta nova nem canal movido.
+**Feito em 26/set, e a decisão mudou.** O número não ficou na PCYES: a
+demonstração ganhou conta própria, "4YU Tech Demonstração"
+(`3a1d5ac8-369c-4373-856a-495468e7bad4`, sem frente), e o canal
+`fa673a09-e90d-4a86-ac21-d75ee5fdca26` foi movido para ela por
+`scripts/mover-canal.mts` (HANDOFF-26-SET-NICHOS 4.5).
 
-1. A demo roda na conta PCYES, no canal `fa673a09-e90d-4a86-ac21-d75ee5fdca26`.
-2. **Conflito a resolver na etapa 6:** essa conta tem Magento ligado, e
-   `lojaAtivaDaConta` escolhe Magento antes do catálogo próprio. Do jeito que
-   está, a IA da pizzaria buscaria na loja Magento. Saída prevista: o nó de IA
-   ganha a escolha da fonte (`loja` ou `catalogo`), sem mudar o padrão de
-   quem não escolhe.
-3. Montar o cardápio da Pizzaria Exemplo: umas 15 pizzas, bebidas e
-   sobremesas, com foto e preço; imagem e PDF do cardápio.
-4. Fluxo de entrada: lê o texto do QR ("Quero testar: pizzaria") por
-   gatilho de palavra-chave e pula para o ramo; sem texto, pergunta o ramo.
-5. Publicar, ligar a IA (ação de admin da plataforma), testar do celular.
-6. QR: `https://wa.me/554474007438?text=Quero%20testar%3A%20pizzaria`.
+1. Ramos: pizzaria, hamburgueria, restaurante, loja de roupas, salão, aulas e
+   loja online. A loja online é a PCYES de verdade, pela Magento dela ligada na
+   conta demo, com os fluxos da PCYES copiados.
+2. O conflito da Magento com o catálogo próprio foi resolvido como previsto:
+   todo bloco de IA dos ramos de exemplo usa `fonteDoCatalogo: 'catalogo'`, e
+   a loja online usa `'loja'`.
+3. Catálogo de 58 itens com foto, separados por categoria de cada ramo;
+   cardápio em imagem e PDF de cada ramo.
+4. O QR (`Quero testar: pizzaria`) abre a pizzaria por gatilho; sem ele, o
+   bot pergunta o ramo. Depois: botões ou IA.
+5. Tudo publicado; falta o teste do celular.
 
-Um ramo por vez no catálogo da demo: quando loja e comércio entrarem, cada
-ramo usa sua categoria e a IA recebe `categoria` fixa no nó (4.7).
+Ids, como voltar e o que foi testado: `docs/DEMO.md`.
 
 ## 5. Ordem de execução
 
