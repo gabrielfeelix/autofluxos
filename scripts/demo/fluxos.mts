@@ -38,6 +38,7 @@ const { validarPublicacao } = await import('@/core/validar-publicacao')
 const { criarFluxo, publicar, definirIa, listarFluxos, acharVersao, acharFluxo } = await import('@/server/repos/fluxos')
 const { acharCliente } = await import('@/server/repos/clientes')
 const { gatilhosAtivos, listarGatilhos, criarGatilho } = await import('@/server/repos/gatilhos')
+const { lojaAtivaDaConta } = await import('@/server/adaptador-da-loja')
 
 const GRAVAR = process.argv.includes('--gravar')
 const DEMO = '3a1d5ac8-369c-4373-856a-495468e7bad4'
@@ -73,9 +74,17 @@ class Grafo {
     this.edges.push({ id: `e${this.edges.length + 1}`, source, target, ...(sourceHandle ? { sourceHandle } : {}) })
   }
   json() {
+    // Não entendeu duas vezes: a frase repete as opções e ensina a recomeçar,
+    // antes de a terceira passar para uma pessoa.
+    for (const n of this.nodes) {
+      if (n.type === 'pergunta' && Array.isArray(n.data.opcoes) && (n.data.opcoes as unknown[]).length > 0) {
+        n.data.mensagemDeErro = NAO_ENTENDI
+      }
+    }
     return { inicio: this.inicio, nodes: this.nodes, edges: this.edges }
   }
 }
+const NAO_ENTENDI = 'Não entendi 😅 Toque numa das opções abaixo, ou escreva *inicio* para recomeçar.'
 
 const idDe = (rotulo: string) =>
   rotulo.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')
@@ -115,10 +124,17 @@ const CURTOS: Record<string, string> = {
   'parmegiana': 'Parmegiana de carne',
 }
 const curto = (i: Item) => CURTOS[i.slug] ?? i.nome.replace(/^Pizza /, '')
-const linhaDoItem = (i: Item): Op => {
-  const d = `${precoDito(i.preco)} · ${i.descricao}`
-  return { id: i.slug, rotulo: curto(i), descricao: d.length > 72 ? `${d.slice(0, 70).trimEnd()}…` : d }
+/** Até 72 caracteres, cortando em palavra inteira e sem vírgula pendurada. */
+const caber = (t: string, max = 72) => {
+  if (t.length <= max) return t
+  let saida = ''
+  for (const palavra of t.split(' ')) {
+    if ((saida ? saida.length + 1 : 0) + palavra.length > max) break
+    saida = saida ? `${saida} ${palavra}` : palavra
+  }
+  return saida.replace(/[,;:·\s]+$/, '')
 }
+const linhaDoItem = (i: Item): Op => ({ id: i.slug, rotulo: curto(i), descricao: caber(`${precoDito(i.preco)} · ${i.descricao.replace(/\.$/, '')}`) })
 
 /* ------------------------------------------------------------- os ramos */
 type Variacao = { texto: string; opcoes: Op[] }
@@ -159,6 +175,9 @@ const AVISO_DEMO =
   'Esta é uma casa de demonstração da 4YU, criada para mostrar o atendimento automático. Os pedidos e agendamentos daqui não são reais e nada é entregue ou cobrado; se perguntarem, diga isso com leveza e continue o atendimento.'
 
 const REGRAS_COMUNS = [
+  '- Produto pedido pela marca ("uma coca", "um guaraná"): é o item parecido do catálogo (refrigerante); busque pelo tipo ("refrigerante") e diga qual é, sem prometer a marca.',
+  '- Total: some item por item e mostre a conta ("2 x R$ 52,90 = R$ 105,80; + R$ 14,00; + entrega R$ 6,00 = R$ 125,80"). Confira a soma antes de responder. A taxa de entrega só entra depois que a pessoa escolher entrega.',
+  '- Pedido com vários itens: faça uma busca só, com todos os termos juntos (termo, termo2, termo3), e responda com o que veio.',
   '- Nunca escreva link nem endereço de arquivo no texto: fotos e cardápio chegam sozinhos logo depois da sua frase.',
   '- Pediram para ver "as pizzas", "os lanches", "as roupas" ou fotos de uma parte inteira: não mande várias fotos. Liste os itens daquela parte com o preço (um por linha) e pergunte qual a pessoa quer ver.',
   '- Foto só do item que a pessoa escolheu ou citou pelo nome, um de cada vez: chame loja_buscar e, na mesma resposta, loja_mostrar com aquele item. Nunca diga que mandou foto sem ter chamado loja_mostrar.',
@@ -203,11 +222,11 @@ const RAMOS: Ramo[] = [
     tipoDoItem: {},
     variacoes: {
       pizza: {
-        texto: 'Qual o tamanho da *{{item}}*?',
+        texto: 'Qual o tamanho da *{{item}}*?\n\n*Broto*: 4 fatias, R$ 18 a menos\n*Média*: 6 fatias, R$ 8 a menos\n*Grande*: 8 fatias, preço do cardápio',
         opcoes: [
-          { rotulo: 'Broto (4 fatias)', valor: '-18', descricao: 'R$ 18,00 a menos que a grande' },
-          { rotulo: 'Média (6 fatias)', valor: '-8', descricao: 'R$ 8,00 a menos que a grande' },
-          { rotulo: 'Grande (8 fatias)', valor: '0', descricao: 'O preço do cardápio' },
+          { rotulo: 'Broto', valor: '-18' },
+          { rotulo: 'Média', valor: '-8' },
+          { rotulo: 'Grande', valor: '0' },
         ],
       },
     },
@@ -472,6 +491,7 @@ const NOMES = {
   qr: 'Demo · QR pizzaria',
   lead: 'Demo · Quero no meu negócio',
   loja: 'Demo · Loja online (PCYES)',
+  pcyesProdutos: 'Demo · PCYES produtos',
   ...Object.fromEntries(RAMOS.map((r) => [r.chave, `Demo · ${r.rotulo}`])),
 } as Record<string, string>
 
@@ -760,22 +780,37 @@ function fluxoRamo(r: Ramo) {
     g.no('p-pagamento', 'pergunta', { texto: 'Como prefere pagar, lá na hora?', salvarEm: 'pagamento', opcoes: opcoes(['Pix', 'Cartão', 'Dinheiro']) })
     // Só aula experimental, que é grátis: não há o que pagar, e perguntar a forma seria estranho.
     g.no('p-gratis', 'condicao', { variavel: 'total_final', operador: 'igual', valor: '0,00' })
-    g.no('p-nada', 'salvar-campo', { campo: 'pagamento', valor: 'nada a pagar' })
+    g.no('p-nada', 'mensagem', {
+      partes: [
+        { tipo: 'salvar', campo: 'linha_total', valor: '*Grátis!* Nada a pagar, é só vir. 🎉' },
+        { tipo: 'salvar', campo: 'linha_pagamento', valor: '' },
+      ],
+    })
+    g.no('p-linhas', 'mensagem', {
+      partes: [
+        { tipo: 'salvar', campo: 'linha_total', valor: '*Total: R$ {{total_final}}*, pago no local' },
+        { tipo: 'salvar', campo: 'linha_pagamento', valor: '\n*Pagamento:* {{pagamento}}' },
+      ],
+    })
     g.liga('p-final', 'p-gratis')
     g.liga('p-gratis', 'p-nada', 'verdadeiro')
     g.liga('p-gratis', 'p-pagamento', 'falso')
-    resumo = `*Resumo do agendamento*{{carrinho}}\n\n*Total: R$ {{total_final}}*, pago no local\n*Quando:* {{dia}}, {{periodo}}\n*Pagamento:* {{pagamento}}`
+    resumo = `*Resumo do agendamento*{{carrinho}}\n\n{{linha_total}}\n*Quando:* {{dia}}, {{periodo}}{{linha_pagamento}}`
   } else {
-    let antesDaEntrega = 'p-entrega'
     if (r.observacao) {
-      g.no('p-obs', 'pergunta', { texto: 'Alguma observação? (tirar cebola, sem gelo...)\nSe não tiver, escreva *não*.', salvarEm: 'observacao' })
+      g.no('p-obs', 'pergunta', { texto: 'Alguma observação? (tirar cebola, sem gelo...)', salvarEm: 'tem_observacao', opcoes: opcoes(['Sem observação', 'Escrever observação']) })
       g.liga('b-carrinho', 'p-obs', idDe(fechar))
-      g.liga('p-obs', 'p-entrega')
-      antesDaEntrega = 'p-obs'
+      g.no('p-sem-obs', 'mensagem', { partes: [{ tipo: 'salvar', campo: 'linha_obs', valor: '' }] })
+      g.no('p-obs-texto', 'pergunta', { texto: 'Pode escrever a observação:', salvarEm: 'observacao' })
+      g.no('p-com-obs', 'mensagem', { partes: [{ tipo: 'salvar', campo: 'linha_obs', valor: '\n*Observação:* {{observacao}}' }] })
+      g.liga('p-obs', 'p-sem-obs', 'sem-observacao')
+      g.liga('p-obs', 'p-obs-texto', 'escrever-observacao')
+      g.liga('p-obs-texto', 'p-com-obs')
+      g.liga('p-sem-obs', 'p-entrega')
+      g.liga('p-com-obs', 'p-entrega')
     } else {
       g.liga('b-carrinho', 'p-entrega', idDe(fechar))
     }
-    void antesDaEntrega
     g.no('p-entrega', 'pergunta', {
       texto: `Entrega ou retirada?`,
       salvarEm: 'forma_entrega',
@@ -803,11 +838,16 @@ function fluxoRamo(r: Ramo) {
     g.liga('p-retirada', 'p-final')
     g.no('p-pagamento', 'pergunta', { texto: 'Como você vai pagar?', salvarEm: 'pagamento', opcoes: opcoes(['Pix', 'Cartão na entrega', 'Dinheiro']) })
     g.liga('p-final', 'p-pagamento')
-    resumo = `*Resumo do pedido*{{carrinho}}\n\nSubtotal: R$ {{total}}\n{{linha_taxa}}\n*Total: R$ {{total_final}}*\n\n*Entrega:* {{endereco}}\n*Pagamento:* {{pagamento}}${r.observacao ? '\n*Observação:* {{observacao}}' : ''}`
+    resumo = `*Resumo do pedido*{{carrinho}}\n\nSubtotal: R$ {{total}}\n{{linha_taxa}}\n*Total: R$ {{total_final}}*\n\n*Entrega:* {{endereco}}\n*Pagamento:* {{pagamento}}${r.observacao ? '{{linha_obs}}' : ''}`
   }
   g.no('p-resumo', 'mensagem', { partes: [{ tipo: 'texto', texto: resumo }] })
-  for (const o of r.agenda ? ['pix', 'cartao', 'dinheiro'] : ['pix', 'cartao-na-entrega', 'dinheiro']) g.liga('p-pagamento', 'p-resumo', o)
-  if (r.agenda) g.liga('p-nada', 'p-resumo')
+  if (r.agenda) {
+    for (const o of ['pix', 'cartao', 'dinheiro']) g.liga('p-pagamento', 'p-linhas', o)
+    g.liga('p-linhas', 'p-resumo')
+    g.liga('p-nada', 'p-resumo')
+  } else {
+    for (const o of ['pix', 'cartao-na-entrega', 'dinheiro']) g.liga('p-pagamento', 'p-resumo', o)
+  }
   g.no('p-confere', 'pergunta', { texto: 'Está tudo certo?', salvarEm: 'confere', opcoes: opcoes(['Confirmar', mais, 'Cancelar']) })
   g.liga('p-resumo', 'p-confere')
   g.liga('p-confere', entradaDaLista, idDe(mais))
@@ -816,8 +856,9 @@ function fluxoRamo(r: Ramo) {
   g.liga('p-confere', 'p-nota', 'confirmar')
   g.no('p-anotado', 'mensagem', {
     partes: [
+      { tipo: 'salvar', campo: 'hora_recebido', valor: '{{hora_agora}}' },
       { tipo: 'atraso', segundos: 1 },
-      { tipo: 'texto', texto: r.anotado },
+      { tipo: 'texto', texto: statusDoPedido(r) },
       { tipo: 'texto', texto: `_Na demonstração, o aviso ${r.agenda ? 'de lembrete' : 'de "pronto"'} chega aqui sozinho em ${MINUTOS_ATE_O_AVISO} minutos, como chegaria para o seu cliente._` },
     ],
   })
@@ -830,7 +871,7 @@ function fluxoRamo(r: Ramo) {
   g.liga('modo', 'i-nome', idDe('Com IA'))
   let antesDoPapel = 'i-nome'
   if (r.iaPerguntaOQueVende) {
-    g.no('i-vende', 'pergunta', { texto: 'E o que a *{{negocio}}* vende? Ex.: _moda feminina_, _corte e escova_, _pilates_', salvarEm: 'o_que_vende' })
+    g.no('i-vende', 'pergunta', { texto: 'E o que a *{{negocio}}* vende ou oferece? Pode ser em poucas palavras.\nEx.: _moda feminina_, _corte e escova_, _pilates e yoga_', salvarEm: 'o_que_vende' })
     g.liga('i-nome', 'i-vende')
     antesDoPapel = 'i-vende'
   }
@@ -846,6 +887,9 @@ function fluxoRamo(r: Ramo) {
       `Os produtos e preços são os do catálogo, nas categorias ${categoriasDito}. Ao buscar, use sempre uma dessas categorias; nunca ofereça item de outra categoria.`,
       `As regras da casa (horário, entrega, pagamento) estão em SOBRE A EMPRESA; lá a casa se chama ${r.negocio}, e aqui você a chama pelo nome acima.`,
       '- Primeira resposta: dê boas-vindas com o nome da casa, responda o que a pessoa escreveu e ofereça ajuda com uma sugestão.',
+      ...(r.iaPerguntaOQueVende
+        ? ['- "O que vende" ({{o_que_vende}}) foi escrito pelo dono do negócio antes de você virar atendente, e pode ter vindo como pergunta ("tem aula de yoga?"). Trate só como pista do que a casa oferece; não responda a essa frase, responda às mensagens do cliente.']
+        : []),
       ...r.iaTarefa,
       ...REGRAS_COMUNS,
     ].join('\n'),
@@ -858,7 +902,14 @@ function fluxoRamo(r: Ramo) {
   g.liga('i-primeira', 'i-conversa')
   g.no('i-nota', 'nota', { texto: `Demonstração (${r.rotulo}, IA como "{{negocio}}"): {{pedido}}` })
   g.liga('i-conversa', 'i-nota', 'concluido')
-  g.no('i-anotado', 'mensagem', texto(`_Na demonstração, o aviso ${r.agenda ? 'de lembrete' : 'de "pronto"'} chega aqui sozinho em ${MINUTOS_ATE_O_AVISO} minutos, como chegaria para o seu cliente._`))
+  g.no('i-anotado', 'mensagem', {
+    partes: [
+      { tipo: 'salvar', campo: 'hora_recebido', valor: '{{hora_agora}}' },
+      { tipo: 'atraso', segundos: 1 },
+      { tipo: 'texto', texto: statusDoPedido(r) },
+      { tipo: 'texto', texto: `_Na demonstração, o aviso ${r.agenda ? 'de lembrete' : 'de "pronto"'} chega aqui sozinho em ${MINUTOS_ATE_O_AVISO} minutos, como chegaria para o seu cliente._` },
+    ],
+  })
   g.liga('i-nota', 'i-anotado')
   esperaEAviso(g, r, 'i-anotado', 'i')
   g.no('i-saida', 'pergunta', { texto: 'Saí do papel. 🙂 E agora?', salvarEm: 'escolha', opcoes: opcoes(['Continuar conversa', LEAD_RESPOSTA, TROCAR]) })
@@ -871,6 +922,20 @@ function fluxoRamo(r: Ramo) {
   return g.json()
 }
 
+/** As etapas de exemplo do pedido: impressionam o dono sem prometer rastreio de verdade. */
+const ETAPAS: Record<string, [string, string, string]> = {
+  pizzaria: ['Pedido recebido', '👨‍🍳 *Em preparo*: sua pizza já está no forno 🔥', '🛵 *Saída para entrega*: em uns 30 minutos'],
+  hamburgueria: ['Pedido recebido', '👨‍🍳 *Em preparo*: seu lanche está na chapa 🔥', '🛵 *Saída para entrega*: em uns 25 minutos'],
+  restaurante: ['Pedido recebido', '👩‍🍳 *Em preparo*: estamos montando seu prato', '🛵 *Saída para entrega*: em uns 25 minutos'],
+  comercio: ['Pedido recebido', '📦 *Separando*: suas peças estão sendo embaladas', '🚚 *Pronto para entrega ou retirada*: te aviso aqui'],
+  servicos: ['Agendamento recebido', '📅 *Horário reservado* na agenda do salão', '⏰ *Lembrete*: você recebe aqui antes do horário'],
+  aulas: ['Agendamento recebido', '📅 *Vaga reservada* na turma', '⏰ *Lembrete*: você recebe aqui antes da aula'],
+}
+function statusDoPedido(r: Ramo): string {
+  const [recebido, agora, depois] = ETAPAS[r.chave]
+  return `✅ *${recebido}* às {{hora_recebido}}\n${agora}\n${depois}`
+}
+
 /** "Pedido pronto" alguns minutos depois: a pergunta espera, e o prazo dela é o aviso. */
 function esperaEAviso(g: Grafo, r: Ramo, depoisDe: string, p: 'b' | 'i'): void {
   g.no(`${p}-espera`, 'pergunta', {
@@ -880,7 +945,7 @@ function esperaEAviso(g: Grafo, r: Ramo, depoisDe: string, p: 'b' | 'i'): void {
     timeoutMinutos: MINUTOS_ATE_O_AVISO,
   })
   g.liga(depoisDe, `${p}-espera`)
-  g.no(`${p}-acompanha`, 'mensagem', texto(p === 'i' && r.agenda ? 'Está reservado. 😉 Te mando o lembrete aqui.' : r.acompanharResposta))
+  g.no(`${p}-acompanha`, 'mensagem', texto(statusDoPedido(r)))
   g.liga(`${p}-espera`, `${p}-acompanha`, idDe(r.acompanhar))
   g.liga(`${p}-acompanha`, `${p}-espera`)
   g.liga(`${p}-espera`, 'lead', idDe(LEAD_RESPOSTA))
@@ -919,6 +984,96 @@ function fluxoLoja() {
   return g.json()
 }
 
+/**
+ * A vitrine com botões da PCYES: produtos de verdade, lidos da loja na hora
+ * de publicar (preço e foto daquele dia), por categoria. Foto, preço, link da
+ * loja e "Quero comprar", que manda para o site ou para um vendedor.
+ */
+async function fluxoProdutosPcyes() {
+  const loja = await lojaAtivaDaConta(DEMO, 'loja')
+  if (!loja) throw new Error('a conta demo está sem a loja Magento ligada')
+  // Muitos mouses da loja vêm sem foto nem preço (o produto "pai" das cores):
+  // dois termos juntam os que têm.
+  const CATEGORIAS: [string, string[]][] = [['Headsets', ['headset']], ['Teclados', ['teclado']], ['Mouses', ['mouse gamer', 'mouse sem fio']], ['Cadeiras', ['cadeira']]]
+  const g = new Grafo('l-partes')
+  g.no('l-partes', 'pergunta', {
+    texto: '🎮 *PCYES*: o que você procura? 👇',
+    salvarEm: 'categoria',
+    opcoes: opcoes([...CATEGORIAS.map(([c]) => c), VOLTAR]),
+  })
+  g.no('l-menu', 'ir-fluxo', { fluxoId: ids['pcyes:abd4df71-cfa0-4e5c-a39d-af2aa57866cb'], rotulo: PCYES_FLUXOS['abd4df71-cfa0-4e5c-a39d-af2aa57866cb'] })
+  g.liga('l-partes', 'l-menu', idDe(VOLTAR))
+  const usados = new Set<string>()
+  for (const [k, [categoria, termos]] of CATEGORIAS.entries()) {
+    const achados = []
+    for (const termo of termos) {
+      const r = await loja.buscar(termo, { porPagina: 20, comFoto: true })
+      if (!r.ok) throw new Error(`a busca "${termo}" falhou: ${r.motivo}`)
+      achados.push(...r.valor)
+    }
+    const termo = termos.join(', ')
+    const produtos = achados
+      .filter((x, i) => achados.findIndex((y) => y.produtoId === x.produtoId) === i)
+      .filter((x) => x.emEstoque && x.foto && x.link && typeof x.preco === 'number' && !usados.has(x.produtoId))
+      .slice(0, 6)
+    if (produtos.length === 0) throw new Error(`nenhum produto com foto em "${termo}"`)
+    const rotulos = new Set<string>()
+    const linhas = produtos.map((x) => {
+      usados.add(x.produtoId)
+      // O nome da loja é longo ("Headset PCYES Gamer Nowy Black Vulcan USB..."):
+      // o rótulo fica com o que distingue, e o nome inteiro vai na descrição.
+      const comuns = new Set(['mouse', 'headset', 'teclado', 'cadeira', 'pcyes', 'gamer', 'sem', 'fio', 'de', 'para', 'com', 'e'])
+      const palavras = x.nome.split(/\s+/).filter((pl) => !comuns.has(pl.toLowerCase()))
+      let rotulo = ''
+      for (const pl of palavras) {
+        if ((rotulo ? rotulo.length + 1 : 0) + pl.length > 20) break
+        rotulo = rotulo ? `${rotulo} ${pl}` : pl
+      }
+      while (rotulos.has(rotulo)) rotulo = `${rotulo.slice(0, 18)} ${rotulos.size}`
+      rotulos.add(rotulo)
+      return { id: `p${x.produtoId}`, rotulo, descricao: caber(`R$ ${reais(x.preco!)} · ${x.nome}`), x }
+    })
+    g.no(`l-lista-${k}`, 'pergunta', {
+      texto: `*${categoria}* da PCYES\nToque para ver foto e preço 👇`,
+      salvarEm: 'escolhido',
+      opcoes: opcoes([...linhas.map(({ id, rotulo, descricao }) => ({ id, rotulo, descricao })), { rotulo: 'Outra categoria', id: 'outra' }, { rotulo: VOLTAR }]),
+    })
+    g.liga('l-partes', `l-lista-${k}`, idDe(categoria))
+    g.liga(`l-lista-${k}`, 'l-partes', 'outra')
+    g.liga(`l-lista-${k}`, 'l-menu', idDe(VOLTAR))
+    for (const { id, x } of linhas) {
+      g.no(`l-${id}`, 'mensagem', {
+        partes: [
+          { tipo: 'salvar', campo: 'produto', valor: x.nome },
+          { tipo: 'salvar', campo: 'preco', valor: reais(x.preco!) },
+          { tipo: 'salvar', campo: 'link_produto', valor: x.link },
+          { tipo: 'midia', midia: 'imagem', url: x.foto!, legenda: `*${x.nome}*\n*R$ ${reais(x.preco!)}*` },
+          { tipo: 'texto', texto: `🛒 Ver na loja: ${x.link}` },
+        ],
+      })
+      g.liga(`l-lista-${k}`, `l-${id}`, id)
+      g.liga(`l-${id}`, 'l-escolha')
+    }
+  }
+  g.no('l-escolha', 'pergunta', { texto: 'Gostou?', salvarEm: 'depois_do_produto', opcoes: opcoes(['Quero comprar', 'Ver outro', VOLTAR]) })
+  g.liga('l-escolha', 'l-partes', 'ver-outro')
+  g.liga('l-escolha', 'l-menu', idDe(VOLTAR))
+  g.no('l-comprar', 'pergunta', {
+    texto: 'Ótima escolha! 🎮 A compra é finalizada no site da PCYES, com frete e parcelamento na hora:\n{{link_produto}}\n\nSe preferir, um vendedor fecha com você por aqui.',
+    salvarEm: 'como_comprar',
+    opcoes: opcoes(['Falar com vendedor', 'Ver outro', VOLTAR]),
+  })
+  g.liga('l-escolha', 'l-comprar', 'quero-comprar')
+  g.liga('l-comprar', 'l-partes', 'ver-outro')
+  g.liga('l-comprar', 'l-menu', idDe(VOLTAR))
+  g.no('l-vendedor', 'handoff', {
+    motivo: 'Loja online (demo): quer comprar {{produto}} (R$ {{preco}})',
+    mensagens: ['Perfeito! Já chamei um vendedor para fechar o *{{produto}}* com você. Só um instante! 🙌'],
+  })
+  g.liga('l-comprar', 'l-vendedor', 'falar-com-vendedor')
+  return g.json()
+}
+
 /** Um fluxo da PCYES, sem funil e etiqueta, com os saltos e o "Sobre a empresa" da demo. */
 async function copiaDaPcyes(origem: string) {
   const f = await acharFluxo(origem)
@@ -946,6 +1101,12 @@ async function copiaDaPcyes(origem: string) {
     }
     if (n.type === 'ia') n.data = { ...n.data, fonteDoCatalogo: 'loja', sobreAEmpresa: contextoPcyes }
   }
+  // No menu, "Quero comprar" abre a vitrine com botões; a IA fica no modo "Com IA".
+  if (origem === 'abd4df71-cfa0-4e5c-a39d-af2aa57866cb') {
+    const vendas = grafo.nodes.find((n) => n.id === 'ir-vendas')
+    if (!vendas) throw new Error('o menu da PCYES mudou: não achei o bloco ir-vendas')
+    vendas.data = { fluxoId: ids.pcyesProdutos, rotulo: NOMES.pcyesProdutos }
+  }
   // O menu ganha as duas saídas da demo, ligadas antes da cadeia de condições
   // (sem isto, elas cairiam na última condição, que termina em Parcerias).
   if (origem === 'abd4df71-cfa0-4e5c-a39d-af2aa57866cb') {
@@ -965,6 +1126,7 @@ const grafos: Record<string, unknown> = {
   qr: fluxoQr(),
   lead: fluxoLead(),
   loja: fluxoLoja(),
+  pcyesProdutos: await fluxoProdutosPcyes(),
   ...Object.fromEntries(RAMOS.map((r) => [r.chave, fluxoRamo(r)])),
 }
 for (const origem of Object.keys(PCYES_FLUXOS)) grafos[`pcyes:${origem}`] = await copiaDaPcyes(origem)

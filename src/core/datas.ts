@@ -45,6 +45,8 @@ export const VARIAVEIS_DE_DATA = [
   'prox_semana_de',
   'prox_semana_ate',
   'daqui_30_dias',
+  // A hora de agora na conta, "19:42": "pedido recebido às {{hora_agora}}".
+  'hora_agora',
 ] as const
 
 export type VariavelDeData = (typeof VARIAVEIS_DE_DATA)[number]
@@ -105,6 +107,7 @@ export function varsDeData(fuso: string, agora: Date = new Date()): Record<strin
     prox_semana_de: proxDe,
     prox_semana_ate: proxAte,
     daqui_30_dias: daqui30,
+    hora_agora: new Intl.DateTimeFormat('pt-BR', { timeZone: fuso, hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }).format(agora),
   }
 }
 

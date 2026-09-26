@@ -109,3 +109,10 @@ describe('formato', () => {
     expect(Object.keys(varsDeData(SP, TERCA)).sort()).toEqual([...VARIAVEIS_DE_DATA].sort())
   })
 })
+
+describe('hora_agora', () => {
+  it('é a hora na conta, com dois dígitos', () => {
+    // 12:05 em UTC é 09:05 em São Paulo.
+    expect(varsDeData('America/Sao_Paulo', new Date('2026-09-26T12:05:00Z')).hora_agora).toBe('09:05')
+  })
+})

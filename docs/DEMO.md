@@ -53,9 +53,20 @@ horário é marcado.
    pergunta de qual quer ver; foto só do item escolhido ou citado.
 
 A **Loja online** é a PCYES de verdade: os botões são a cópia do menu da PCYES
-(comprar, meu pedido, suporte, garantia, empresa, parcerias) e a IA é a cópia
-do "Vendas com IA" dela, lendo a loja Magento (`fonteDoCatalogo: 'loja'`). É o
-que o Gabriel mostra ao chefe.
+(comprar, meu pedido, suporte, garantia, empresa, parcerias), e "Quero
+comprar" abre uma vitrine só de botões com produtos reais (headsets, teclados,
+mouses e cadeiras, lidos da loja na hora de publicar): foto, preço, "Ver na
+loja" com o link real, e "Quero comprar", que manda para o site ou chama um
+vendedor com o produto escrito. A IA é a cópia do "Vendas com IA" dela, lendo
+a loja Magento (`fonteDoCatalogo: 'loja'`). É o que o Gabriel mostra ao chefe.
+
+Depois de confirmar, o pedido mostra o acompanhamento de exemplo: "✅ Pedido
+recebido às 19:50", "👨‍🍳 Em preparo", "🛵 Saída para entrega", e o aviso de
+pronto chega sozinho. Observação é um botão ("Sem observação" ou "Escrever
+observação"). Aula experimental grátis mostra "*Grátis!* Nada a pagar, é só
+vir". Texto digitado no lugar do botão é entendido sem maiúscula nem acento e
+por parte do nome ("PIZZA CALABRESA", "água"); depois de não entender, o bot
+repete as opções e ensina a escrever *inicio*.
 
 ## Conta e ids
 
@@ -73,6 +84,7 @@ que o Gabriel mostra ao chefe.
 | Demo · Salão e serviços | `49f0a40c-4eaa-4161-a3b2-e25b8467a928` |
 | Demo · Aulas e estúdio | `6679e515-d89e-46b5-825b-d2f907467c7c` |
 | Demo · Loja online (PCYES) | `8d4ba017-0a61-4672-b6ce-b1b347966e2d` |
+| Demo · PCYES produtos (vitrine com botões) | `dabe5456-691a-4f6b-bc88-25cce1d2924a` |
 | Demo · PCYES menu | `9f17964c-2d7c-4541-8a50-7068b3edab4d` |
 | Demo · PCYES vendas com IA | `2b70afd3-57cf-49a0-8f9c-63f31c9a3607` |
 | Demo · PCYES meu pedido | `11cb83f3-9a83-439e-addf-1d80acace38a` |
@@ -215,6 +227,17 @@ duas vezes, e o pedido confirmado ia para um atendente como "a IA não soube"
 - Na loja online, "Meu pedido" consulta pedidos reais da PCYES (com a
   confirmação por CPF que o fluxo original já tem).
 - Ofensa leva à pessoa em vez de uma segunda chance.
+- Na loja online com IA, "mouse gamer preto" pode responder que só há
+  mousepads: na Magento da PCYES muitos mouses vêm sem preço nem foto (o
+  produto "pai" das cores), e a busca devolve o que tem. É dado da loja; a
+  PCYES real tem a mesma limitação. A vitrine com botões contorna buscando por
+  "mouse gamer" e "mouse sem fio".
+- A soma que a IA faz é conta de modelo: a instrução manda mostrar a conta
+  item a item, e o modo com botões soma de forma exata.
+- Se a IA cair (cota, tempo), na conversa com a IA o cliente recebe "Tive um
+  probleminha agora, pode me mandar de novo em instantes?" e segue com a IA.
+  Localmente só há a chave do Gemini; na Vercel a cadeia de provedores grátis
+  (Groq, Cerebras, Cloudflare, Mistral, Gemini) vale para os que tiverem chave.
 
 ## Peças do motor usadas (26/set, com teste)
 
