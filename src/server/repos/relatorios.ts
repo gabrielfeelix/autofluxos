@@ -2,6 +2,7 @@ import 'server-only'
 import { SEM_CONVERSAS, type ContagemPorDesfecho } from '@/core/desfecho-da-conversa'
 import { faixaDaNota } from '@/core/flow/schema'
 import type { FiltroDeEscopo } from '@/core/permissoes'
+import { resumirProdutosNoAtendimento, type ProdutosNoAtendimento } from '@/core/produtos-no-atendimento'
 import { FUSO_DOS_RELATORIOS, type DiaDoRelatorio, type Periodo } from '@/core/relatorios'
 import { bancoDoLogin } from '../auth'
 import { db } from '../db'
@@ -504,4 +505,75 @@ export async function origemDosContatos(
     anuncio: Boolean(r.anuncio),
     n: Number(r.n),
   }))
+}
+
+// ---------------------------------------------------------------------------
+// Produtos no atendimento: cards de produto enviados e cliques em "Ver
+// produto". A soma e a separação robô/pessoa ficam em
+// `core/produtos-no-atendimento.ts`; aqui o banco só agrupa.
+// ---------------------------------------------------------------------------
+
+/*
+ * Um item de `payload.produtos` é um card. Só conta o que saiu de fato
+ * (`entregue`): a linha é gravada antes do envio, e envio que falhou não
+ * ofereceu nada a ninguém.
+ */
+const SQL_DOS_CARDS = `
+with ${LIMITES}
+select m.payload->'autor'->>'tipo' as tipo,
+       m.payload->'autor'->>'id' as usuario_id,
+       m.payload->'autor'->>'nome' as nome,
+       sum(jsonb_array_length(m.payload->'produtos'))::int as cards
+  from public.messages m
+  join public.contacts c on c.id = m.contact_id,
+       lim
+ where c.client_id = $1
+   and m.direcao = 'saida'
+   and m.entregue
+   and m.ts >= lim.ini and m.ts < lim.fim
+   and jsonb_typeof(m.payload->'produtos') = 'array'
+   and ${NO_ESCOPO('c.atribuido_a')}
+ group by 1, 2, 3`
+
+/*
+ * Agrupado por produto e link: o link traz as UTMs de quem mandou o card.
+ * Com teto, que só pesa numa conta com milhares de produtos distintos no
+ * período, e aí os de baixo são os de um clique.
+ */
+const SQL_DOS_CLIQUES = `
+with ${LIMITES}
+select e.dados->>'produto' as produto,
+       e.dados->>'link' as link,
+       count(*)::int as n
+  from public.eventos_do_contato e
+  join public.contacts c on c.id = e.contato_id,
+       lim
+ where e.client_id = $1
+   and e.tipo = 'abriu-produto'
+   and e.criado_em >= lim.ini and e.criado_em < lim.fim
+   and ${NO_ESCOPO('c.atribuido_a')}
+ group by 1, 2
+ order by n desc
+ limit 2000`
+
+export async function produtosNoAtendimento(
+  clienteId: string,
+  periodo: Periodo,
+  responsaveis: Responsaveis,
+): Promise<ProdutosNoAtendimento> {
+  const cards = await bancoDoLogin().query(SQL_DOS_CARDS, parametros(clienteId, periodo, responsaveis))
+  const cliques = await bancoDoLogin().query(SQL_DOS_CLIQUES, parametros(clienteId, periodo, responsaveis))
+  return resumirProdutosNoAtendimento(
+    (cliques.rows as Record<string, unknown>[]).map((r) => ({
+      produto: r.produto ? String(r.produto) : null,
+      link: r.link ? String(r.link) : null,
+      n: Number(r.n),
+    })),
+    (cards.rows as Record<string, unknown>[]).map((r) => ({
+      tipo: r.tipo ? String(r.tipo) : null,
+      usuarioId: r.usuario_id ? String(r.usuario_id) : null,
+      nome: r.nome ? String(r.nome) : null,
+      cards: Number(r.cards),
+    })),
+  )
 }

@@ -15,12 +15,14 @@ import { capacidadeNaPagina, filtroDoAcesso } from '@/server/permissoes'
 import { SemAcesso } from '@/components/design/sem-acesso'
 import { acharCliente } from '@/server/repos/clientes'
 import { arranjoDaAnalise } from '@/server/preferencias'
+import { lojaVisivel } from '@/server/repos/recursos'
 import {
   atendimentosPorPessoa,
   conversasPorCanal,
   faixasDeEspera,
   horariosDoPeriodo,
   origemDosContatos,
+  produtosNoAtendimento,
   responsaveisDoEscopo,
   serieDoPeriodo,
   totaisDoPeriodo,
@@ -111,6 +113,9 @@ export default async function Pagina({
   const canais = await conversasPorCanal(clienteId, periodo, responsaveis)
   const espera = await faixasDeEspera(clienteId, periodo, responsaveis)
   const origens = await origemDosContatos(clienteId, periodo, responsaveis)
+  // Só onde o Comércio aparece no menu, a mesma regra da barra lateral: conta
+  // que desligou a Loja não tem card de produto para contar.
+  const produtos = (await lojaVisivel(clienteId)) ? await produtosNoAtendimento(clienteId, periodo, responsaveis) : null
   const arranjo = await arranjoDaAnalise('atendimento')
 
   const blocos: Bloco[] = [
@@ -325,6 +330,67 @@ export default async function Pagina({
         />
       ),
     },
+    ...(produtos
+      ? [
+          {
+            id: 'produtos-clicados',
+            titulo: 'Produtos mais clicados',
+            largura: 'metade' as const,
+            conteudo: (
+              <ListaEmBarras
+                titulo="Produtos mais clicados"
+                desenho="maisVendidos"
+                subtitulo="Toques em Ver produto, nos cards enviados pelo robô e pela equipe."
+                unidade={['clique', 'cliques']}
+                vazio="Ninguém abriu um produto no período."
+                linhas={produtos.produtos.map((p) => ({
+                  chave: p.nome,
+                  rotulo: p.nome,
+                  n: p.cliques,
+                  detalhe:
+                    [
+                      p.doRobo > 0 ? `${p.doRobo} do robô` : null,
+                      p.dePessoas > 0 ? `${p.dePessoas} da equipe` : null,
+                      p.semOrigem > 0 ? `${p.semOrigem} sem origem` : null,
+                    ]
+                      .filter(Boolean)
+                      .join(' · ') || undefined,
+                }))}
+              />
+            ),
+          },
+          {
+            id: 'produtos-oferecidos',
+            titulo: 'Quem ofereceu produtos',
+            largura: 'metade' as const,
+            conteudo: (
+              <ListaEmBarras
+                titulo="Quem ofereceu produtos"
+                desenho="atendentes"
+                subtitulo={
+                  produtos.cardsDoRobo + produtos.cardsDePessoas === 0
+                    ? 'Cards de produto enviados no período, pelo robô ou pelo Inbox.'
+                    : `Cards de produto enviados no período: ${produtos.cardsDoRobo.toLocaleString('pt-BR')} pelo robô, ${produtos.cardsDePessoas.toLocaleString('pt-BR')} pela equipe.`
+                }
+                ranking
+                valorPermitido
+                valorEmDinheiro={false}
+                rotuloQuantidade="Cards"
+                rotuloValor="Cliques"
+                unidade={['card', 'cards']}
+                vazio="Nenhum card de produto enviado no período."
+                linhas={produtos.quem.map((q) => ({
+                  chave: q.chave,
+                  rotulo: q.nome,
+                  n: q.cards,
+                  valor: q.cliques,
+                  detalhe: `${q.cliques} ${q.cliques === 1 ? 'clique' : 'cliques'} em Ver produto`,
+                }))}
+              />
+            ),
+          },
+        ]
+      : []),
     {
       id: 'satisfacao',
       titulo: 'Satisfação (NPS)',
