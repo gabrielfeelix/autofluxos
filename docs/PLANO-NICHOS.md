@@ -63,8 +63,9 @@ Mesmas seções e mesma ordem; muda o nome e o que aparece dentro de
 | item 2 | Integrações | Cardápio em PDF | Integrações | (some) |
 | item 3 | | Integrações (iFood, depois) | | |
 
-Regra de UX: **não mudar a posição das seções entre ramos.** O vendedor e o
-suporte explicam o sistema do mesmo jeito para todo mundo; só a palavra muda.
+Regra de UX: **a ordem das seções não muda entre ramos**, para o vendedor e o
+suporte explicarem o sistema do mesmo jeito. Mas o nome muda, e **o que não
+faz sentido para o ramo some** (ver 1.6).
 
 ### 1.3 Início por ramo
 
@@ -84,6 +85,33 @@ a foto e o preço quando o cliente pedir o cardápio."
 Em `Configurações > Recursos`, um campo "Tipo de negócio". Trocar muda nomes
 e primeiros passos. **Não apaga nada** e não instala nada sozinho: oferece o
 pacote novo com a mesma tela do 1.1.
+
+### 1.6 O sistema inteiro muda pelo ramo (pedido do Gabriel, 26/set)
+
+Não é só a seção Comércio. Quem escolheu "restaurante" tem que sentir que o
+sistema foi feito para restaurante em **todas** as telas; quem troca para
+"loja virtual" vê outra linguagem e outro menu. O pacote do ramo passa a
+cobrir:
+
+| Onde | O que muda | Exemplo restaurante |
+|---|---|---|
+| Barra lateral inteira | nome e presença de **qualquer** subitem, não só Comércio | Vendas vira Pedidos; sem aba de e-commerce |
+| Galeria de modelos (fluxos e funis) | mostra primeiro, ou só, os do ramo | cardápio, pedido, horário; não carrinho abandonado |
+| Configurações | os campos do negócio são os do ramo | horário, taxa e área de entrega, formas de pagamento |
+| Contexto do negócio (o que a IA sabe) | vem com um roteiro do ramo para preencher | "tem opção vegetariana? faz meia a meia?" |
+| Início e estados vazios | primeiros passos e textos do ramo | "Cadastre 5 pratos com foto" |
+| Relatórios e funil | nomes das etapas e dos números | Novo pedido, Em preparo, Saiu para entrega |
+
+**Perguntas extras no onboarding**, por ramo, cada uma liga ou não um pedaço
+do pacote. Restaurante: faz entrega? aceita reserva? está no iFood? tem
+cardápio em PDF? Quem responde "faz entrega" ganha o fluxo de pedido com
+endereço e taxa; quem responde "aceita reserva" ganha o fluxo de reserva. As
+respostas ficam guardadas na conta e podem ser mudadas em Configurações, o
+que oferece de novo os fluxos correspondentes.
+
+Regras que continuam valendo: o ramo **não** muda permissão nem cobrança; o
+que some do menu continua existindo (link direto funciona e o dado não se
+perde); e todo "some ou aparece" sai do pacote em `core/nichos.ts`.
 
 ### 1.5 A demo, pelo lado do dono da pizzaria
 
@@ -320,7 +348,8 @@ param antes do push para pedir autorização (o push é o deploy).
 | 4 | Cardápio: categoria, grade com foto, envio de PDF, `enviar_cardapio` (**feito 26/set**; o arquivo sobe para o bucket que já existia, `autofluxos-acervo`, na pasta da conta, sem bucket nem política nova; ordenar é por botões de subir e descer, arrastar ficou de fora; a prévia da primeira página do PDF ficou de fora, a tela mostra o nome e um link para abrir; o aviso do editor sobre loja desligada ainda cita `enviar_cardapio` junto das consultas de loja) | não |
 | 5 | Modelos do restaurante e funil de pedidos | não |
 | 6 | Conta demo, mover o número, cardápio da Pizzaria Exemplo, QR | **sim, pedir autorização** |
-| 7 | Onboarding por ramo e instalação do pacote | não |
+| 7 | Onboarding por ramo, perguntas extras do ramo e instalação do pacote | não (a resposta das perguntas extras pode pedir coluna: se pedir, autorização) |
+| 7.1 | O sistema inteiro pelo ramo (1.6): inventário de telas, barra inteira, galeria, Configurações, Início, relatórios | não |
 | 8 | Pacotes de loja virtual e comércio, e seus ramos na demo | não |
 | 9 | Painel admin: ver e trocar ramo, auditoria | não |
 
