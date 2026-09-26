@@ -288,16 +288,15 @@ para entrega, Entregue.
 
 ### 4.9 Conta de demonstração e o número
 
-1. Criar a conta "4YU Demonstração" pelo painel admin, ramo restaurante.
-2. **Mover o canal** `fa673a09-e90d-4a86-ac21-d75ee5fdca26` da PCYES para a
-   conta nova. Não existe rotina para isso hoje. Script
-   `scripts/mover-canal.ts` com dry-run por padrão:
-   - fecha sessões abertas do canal;
-   - troca `channels.client_id`;
-   - zera `flow_id` e `flow_*_id` (apontam para fluxos da PCYES);
-   - **não** move contatos nem conversas: o histórico de teste fica na PCYES.
-   - Efeito colateral: a conta PCYES fica **sem número de WhatsApp**, só com o
-     canal Site. Conferir antes se alguém da PCYES testa por esse número.
+Decidido em 26/set: **o número fica na conta PCYES** (é conta de teste do
+Gabriel, não a da PCYES de verdade). Não há conta nova nem canal movido.
+
+1. A demo roda na conta PCYES, no canal `fa673a09-e90d-4a86-ac21-d75ee5fdca26`.
+2. **Conflito a resolver na etapa 6:** essa conta tem Magento ligado, e
+   `lojaAtivaDaConta` escolhe Magento antes do catálogo próprio. Do jeito que
+   está, a IA da pizzaria buscaria na loja Magento. Saída prevista: o nó de IA
+   ganha a escolha da fonte (`loja` ou `catalogo`), sem mudar o padrão de
+   quem não escolhe.
 3. Montar o cardápio da Pizzaria Exemplo: umas 15 pizzas, bebidas e
    sobremesas, com foto e preço; imagem e PDF do cardápio.
 4. Fluxo de entrada: lê o texto do QR ("Quero testar: pizzaria") por
