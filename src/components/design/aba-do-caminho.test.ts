@@ -11,6 +11,7 @@ describe('o item aceso pelo caminho', () => {
     expect(abaDoCaminho(`${base}/leads/123`, base)).toBe('leads')
     expect(abaDoCaminho(`${base}/conversas/canais/whatsapp`, base)).toBe('canais')
     expect(abaDoCaminho(`${base}/leads/etiquetas`, base)).toBe('etiquetas')
+    expect(abaDoCaminho(`${base}/ajustes/etiquetas`, base)).toBe('etiquetas')
     expect(abaDoCaminho(`${base}/loja/catalogo`, base)).toBe('loja')
     expect(abaDoCaminho(`${base}/negocios/abc`, base)).toBe('quadros')
     expect(abaDoCaminho(`${base}/ajustes/horario`, base)).toBe('ajustes')

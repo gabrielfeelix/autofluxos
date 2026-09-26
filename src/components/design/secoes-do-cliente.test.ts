@@ -102,7 +102,7 @@ describe('telaInicial e destinoNaConta', () => {
   it('a troca de conta mantém a seção quando a outra conta libera', () => {
     expect(destinoNaConta({ papel: 'owner' }, 'inbox')).toBe('/inbox')
     expect(destinoNaConta({ papel: 'owner' }, 'fluxos')).toBe('/fluxos')
-    expect(destinoNaConta({ papel: 'owner' }, 'etiquetas')).toBe('/leads/etiquetas')
+    expect(destinoNaConta({ papel: 'owner' }, 'etiquetas')).toBe('/ajustes/etiquetas')
     expect(destinoNaConta({ papel: 'owner' }, 'vendas')).toBe('/relatorios/vendas')
   })
 

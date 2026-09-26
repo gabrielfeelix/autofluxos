@@ -54,7 +54,6 @@ export const LUGARES_DA_BARRA = [
   'crm',
   'contatos',
   'segmentos',
-  'etiquetas',
   'negocios',
   'atividades',
   'loja',

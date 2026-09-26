@@ -53,7 +53,7 @@ describe('o ramo da conta', () => {
   it('rotuloNaBarra usa o nome do ramo, e o de sempre sem ramo', () => {
     expect(rotuloNaBarra(null, 'contatos', 'Contatos')).toBe('Contatos')
     expect(rotuloNaBarra(PACOTES.aulas, 'contatos', 'Contatos')).toBe('Alunos')
-    expect(rotuloNaBarra(PACOTES.aulas, 'etiquetas', 'Etiquetas')).toBe('Etiquetas')
+    expect(rotuloNaBarra(PACOTES.aulas, 'segmentos', 'Segmentos')).toBe('Segmentos')
   })
 
   it('todo ramo abre o catálogo numa visão que existe', () => {

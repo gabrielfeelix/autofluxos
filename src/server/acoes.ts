@@ -852,7 +852,7 @@ export async function acaoEditarEtiqueta(
   const r = await editarEtiqueta(clienteId, etiquetaId, { nome, cor })
   if (!r.ok) return { erro: r.motivo }
 
-  revalidatePath(`/clientes/${clienteId}/leads/etiquetas`)
+  revalidatePath(`/clientes/${clienteId}/ajustes/etiquetas`)
   revalidatePath(`/clientes/${clienteId}/leads`)
   return { ok: true }
 }
@@ -865,7 +865,7 @@ export async function acaoApagarEtiqueta(
   if (recusou(acesso)) return acesso
 
   const apagou = await apagarEtiqueta(clienteId, etiquetaId)
-  revalidatePath(`/clientes/${clienteId}/leads/etiquetas`)
+  revalidatePath(`/clientes/${clienteId}/ajustes/etiquetas`)
   revalidatePath(`/clientes/${clienteId}/leads`)
   revalidatePath(`/clientes/${clienteId}/inbox`)
   return apagou.ok ? { ok: true } : { ok: false, erro: apagou.motivo }

@@ -9,6 +9,7 @@ import type { ReactNode } from 'react'
 import { ApagarCliente } from '@/components/cliente/apagar'
 import { acaoApagarCliente } from '@/server/acoes'
 import { listarAcervo } from '@/server/repos/acervo'
+import { listarEtiquetas } from '@/server/repos/etiquetas'
 import { acharCliente, contarOQueSomeCom } from '@/server/repos/clientes'
 import { recursosDaConta } from '@/server/repos/recursos'
 import { listarConexoes } from '@/server/repos/conexoes'
@@ -44,11 +45,12 @@ export default async function Pagina({
   const cliente = await acharCliente(clienteId)
   if (!cliente) notFound()
 
-  const [conexoes, canais, acervo, estrago, paginasDeLead, plano, recursos, fluxos, contatos, catalogo] =
+  const [conexoes, canais, acervo, etiquetas, estrago, paginasDeLead, plano, recursos, fluxos, contatos, catalogo] =
     await Promise.all([
       listarConexoes(cliente.id),
       listarCanais(cliente.id),
       listarAcervo(cliente.id),
+      listarEtiquetas(cliente.id),
       contarOQueSomeCom(cliente.id),
       paginasDaConta(cliente.id),
       planoDaConta(cliente.id),
@@ -100,8 +102,11 @@ export default async function Pagina({
 
         {/*
           Três grupos, só com o que se ajusta uma vez (plano de navegação de
-          24/set). Canais, Respostas rápidas, Etiquetas e Catálogo saíram: são
-          trabalho do dia e moram agora em Conversas, CRM e Loja, na barra.
+          24/set). Canais, Respostas rápidas e Catálogo saíram: são trabalho do
+          dia e moram agora em Conversas e Loja, na barra. Etiquetas voltou em
+          26/set, a pedido do Gabriel: criar e apagar etiqueta é configuração,
+          como nos outros sistemas; no dia a dia a equipe só coloca e tira
+          etiqueta do contato, na ficha dele.
           Organização vem primeiro porque é o que uma conta nova preenche antes
           de tudo; Conexões e APIs por último porque é episódico.
         */}
@@ -196,6 +201,19 @@ export default async function Pagina({
                 {acervo.length === 0
                   ? 'vazio'
                   : `${acervo.length} ${acervo.length === 1 ? 'arquivo' : 'arquivos'}`}
+              </Selo>
+            }
+          />
+          <Cartao
+            href={`/clientes/${cliente.id}/ajustes/etiquetas`}
+            icone={ICONE_DA_TELA['etiquetas']}
+            titulo="Etiquetas"
+            descricao="Crie, renomeie, junte e apague as etiquetas que a equipe coloca nos contatos."
+            estado={
+              <Selo tom={etiquetas.length === 0 ? 'neutro' : 'ok'}>
+                {etiquetas.length === 0
+                  ? 'nenhuma'
+                  : `${etiquetas.length} ${etiquetas.length === 1 ? 'etiqueta' : 'etiquetas'}`}
               </Selo>
             }
           />

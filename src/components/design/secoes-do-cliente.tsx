@@ -114,7 +114,8 @@ export const SECOES: Secao[] = [
      * `/quadros`: link salvo quebrado em troca de um rótulo não se paga.
      *
      * Etiqueta é a nossa "lista" e segmento é a regra: não existe um terceiro
-     * conceito (plano, seção 2).
+     * conceito (plano, seção 2). Gerenciar etiqueta mora em Configurações desde
+     * 26/set; aqui ela aparece como filtro de Contatos.
      */
     chave: 'crm',
     rotulo: 'CRM',
@@ -122,7 +123,6 @@ export const SECOES: Secao[] = [
     itens: [
       { id: 'contatos', rotulo: 'Contatos', href: '/leads', aba: 'leads' },
       { id: 'segmentos', rotulo: 'Segmentos', href: '/leads/segmentos', aba: 'leads' },
-      { id: 'etiquetas', rotulo: 'Etiquetas', href: '/leads/etiquetas', aba: 'etiquetas' },
       { id: 'negocios', rotulo: 'Negócios', href: '/quadros', aba: 'quadros' },
       { id: 'atividades', rotulo: 'Atividades', href: '/atividades', aba: 'atividades', contagem: 'atrasadas' },
     ],
@@ -262,7 +262,7 @@ const ENDERECO_DA_ABA: Record<AbaDoCliente, string> = {
   'respostas-rapidas': '/conversas/respostas-rapidas',
   canais: '/conversas/canais',
   leads: '/leads',
-  etiquetas: '/leads/etiquetas',
+  etiquetas: '/ajustes/etiquetas',
   quadros: '/quadros',
   atividades: '/atividades',
   fluxos: '/fluxos',
