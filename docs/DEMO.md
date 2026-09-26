@@ -15,11 +15,22 @@ horário é marcado.
    Salão e serviços, Aulas e estúdio, Loja online (PCYES) ou "Quero no meu
    negócio".
 3. **Com botões ou com IA?**
-   - **Com botões**: menu do negócio; cardápio em imagem e PDF; fotos por parte
-     do cardápio (cards com foto, preço e botão); "foto de um sabor/prato";
-     pedido com várias perguntas (tamanho, sabor, borda, bebida, observação,
-     entrega ou retirada, endereço, pagamento), resumo, confirmar, corrigir ou
-     cancelar. Nos serviços e aulas o "pedido" é o agendamento.
+   - **Com botões**: uma compra de verdade. "Ver cardápio" (ou "Fazer
+     pedido") abre a **lista** do WhatsApp: nos ramos de comida, primeiro as
+     partes do cardápio e depois os itens daquela parte (a lista do WhatsApp
+     aceita 10 linhas no total); na loja, no salão e nas aulas, todos os
+     itens de uma vez. Cada linha tem o nome e, embaixo, o preço e o que vem
+     nele. Tocou num item: chega a **foto daquele item** com descrição e
+     preço, e os botões "Fazer pedido" (ou "Agendar"), "Ver outro" e "Voltar
+     ao menu". "Fazer pedido" pergunta a variação **daquele** item (pizza:
+     broto, média ou grande; hambúrguer de carne: ponto; prato executivo:
+     acompanhamento; roupa: tamanho; jeans e calçado: numeração) e a
+     quantidade, e o item entra no carrinho. "Adicionar mais" volta à lista;
+     "Fechar pedido" pede observação, entrega ou retirada, endereço e
+     pagamento, e mostra o resumo com cada item, subtotal, taxa e total. No
+     salão e nas aulas, "Escolher horário" pede dia e período (aula
+     experimental grátis não pergunta pagamento). O cardápio inteiro em
+     imagem e PDF é uma linha da lista.
    - **Com IA**: a IA pede o nome do negócio (nos ramos de loja, salão e aulas,
      também o que ele vende), diz "a partir de agora eu sou a atendente da
      *Pizzaria Margherita*" e vira a atendente: dá boas-vindas com o nome,
@@ -32,10 +43,14 @@ horário é marcado.
    estiver sem movimento nenhum.
 5. **"Quero no meu negócio"**, em qualquer menu ou escrito em qualquer ponto
    ("para o meu negócio", "pro meu negócio", "no meu negócio"), passa para uma
-   pessoa com o motivo **"Lead da demo · <ramo>"**. Esse bloco nunca devolve a
-   conversa ao bot sozinho: é conversa do Gabriel.
-6. **Escrever *demo*** volta ao começo a qualquer hora (menos quando a conversa
-   está com uma pessoa; ver abaixo).
+   pessoa com o motivo **"Lead da demo · <ramo>"**. Se ninguém responder em
+   5 minutos, o bot volta sozinho ("Voltei! Para recomeçar, escreva inicio").
+6. **Escrever *inicio*** (com ou sem acento, maiúscula ou não) ou ***demo***
+   recomeça do zero a qualquer hora: oi com o nome, aviso e a pergunta do
+   ramo. Vale no meio de uma lista, de um pedido e da conversa com a IA.
+   Não vale com a conversa já com uma pessoa (ver Limitações).
+7. **Na IA**, "fotos das pizzas" recebe a lista de sabores com preço e a
+   pergunta de qual quer ver; foto só do item escolhido ou citado.
 
 A **Loja online** é a PCYES de verdade: os botões são a cópia do menu da PCYES
 (comprar, meu pedido, suporte, garantia, empresa, parcerias) e a IA é a cópia
@@ -147,6 +162,18 @@ projeto está no nível gratuito, com cota zero para modelos de imagem.
 
 ## O que foi testado (simulador, conta real, 26/set)
 
+Segunda rodada (26/set à noite, compra com carrinho): pizzaria (2 médias de
+calabresa e um refrigerante, entrega, total R$ 109,80), hamburgueria (2
+Cheddar Bacon ao ponto e batata, retirada), restaurante (ver outro, salmão
+com purê, entrega), loja de roupas (vestido M, tênis 38, 2 bonés, entrega,
+R$ 499,60), salão (corte e barba, amanhã à tarde, lembrete) e aulas (aula
+experimental grátis, lembrete). *inicio* recomeçou do meio da lista, do meio
+do pedido e de dentro da IA; depois de "Quero no meu negócio" o bot fica
+calado, como previsto. Na IA, "fotos das pizzas" trouxe a lista de sabores
+e a foto só da pepperoni, quando pedida.
+
+Primeira rodada:
+
 - QR da pizzaria, com botões, de ponta a ponta: aviso, cardápio (imagem e
   PDF), cards de uma parte do cardápio, foto de um sabor, pedido completo com
   meio a meio, resumo, confirmar, "acompanhar pedido", aviso de pronto pelo
@@ -172,21 +199,65 @@ duas vezes, e o pedido confirmado ia para um atendente como "a IA não soube"
 
 ## Limitações conhecidas
 
-- **Passou para uma pessoa, a conversa fica muda** (nem *demo* funciona) até
-  alguém atender na caixa de entrada da conta demo ou a retomada do bot
-  devolver em 15 minutos com "Voltei! Se quiser continuar testando, escreva
-  *demo*". Lead não volta sozinho, de propósito.
+- **Passou para uma pessoa, a conversa fica muda** (nem *inicio* funciona)
+  até alguém atender na caixa de entrada da conta demo ou a retomada do bot
+  devolver em 5 minutos. Fazer o *inicio* passar por cima do atendimento
+  humano só nesta conta exige uma coluna nova (por exemplo
+  `gatilhos.vence_atendimento`), ou seja, migration: não foi feita, fica
+  para o Gabriel autorizar.
 - `enviar_cardapio` manda o material da conta, que é um só: o da Pizzaria
   Exemplo. Por isso só a IA da pizzaria tem essa ferramenta; nos outros ramos
   a IA mostra as partes do cardápio em cards, e os botões mandam o cardápio
   do próprio ramo pelo bloco de mídia.
-- O card do WhatsApp só sai com link; o botão "Ver na loja" dos itens de
-  exemplo abre a imagem do cardápio do ramo.
+- Os itens de exemplo não têm link, então a IA manda a foto com legenda
+  (nome, preço, descrição), sem o botão "Ver na loja". Só a loja online
+  (PCYES) tem esse botão.
 - Na loja online, "Meu pedido" consulta pedidos reais da PCYES (com a
   confirmação por CPF que o fluxo original já tem).
-- Nomes no resumo vêm dos botões ("Amanhã, de Tarde"), com a maiúscula do
-  rótulo.
 - Ofensa leva à pessoa em vez de uma segunda chance.
+
+## Peças do motor usadas (26/set, com teste)
+
+- Opção de pergunta com `descricao`: a segunda linha da lista (preço).
+- Guardar com `conta: true`: soma o carrinho ("{{total}} + {{preco}} * 2").
+- Produto com foto e sem link sai como foto com legenda.
+- O pedaço "Guardar" dentro de uma mensagem conta como origem de variável no
+  validador.
+
+## Como rodar o simulador
+
+```bash
+cd /home/gabfelix/dev/4yu-apps/autofluxos
+npx tsx --conditions=react-server scripts/demo/simular.mts <roteiro.json>
+```
+
+O roteiro é um JSON com o fluxo de entrada, o nome do perfil e os passos, em
+ordem:
+
+```json
+{ "fluxo": "3d7d5119-0136-4a98-8e62-ea6255473245", "nome": "Gabriel",
+  "passos": [ { "opcao": "Pizzaria" }, { "opcao": "Com botões" },
+              { "opcao": "Ver cardápio" }, { "texto": "inicio" }, { "timeout": true } ] }
+```
+
+- `fluxo`: Início (`3d7d5119...`, o que o número abre) ou o QR da pizzaria
+  (`c14310a4...`). Para ir direto a um ramo, use o id do fluxo do ramo (tabela
+  acima); ele começa em "botões ou IA".
+- `opcao`: o rótulo exato de um botão ou linha da **última** pergunta. Se não
+  existir, o simulador para com `!!!`.
+- `texto`: o que a pessoa escreve. Passa pelos gatilhos como no servidor
+  (*inicio*, *demo*, "no meu negócio"), e fica calado se a conversa estiver
+  com uma pessoa.
+- `timeout`: vence o prazo da pergunta em que a conversa está (é o aviso de
+  "pronto" e o lembrete).
+
+A saída vai para o terminal: `BOT:` é texto; botões aparecem em
+`[A] [B] [C]`; listas aparecem como `LISTA [nome / descrição]`, uma linha
+por item; foto e documento como `<imagem> arquivo "legenda"`; card de
+produto da IA como `<cards>`; passagem para pessoa como `>> PASSOU PARA
+PESSOA: motivo`; e `[status=... no=...]` mostra onde a conversa parou. A IA
+roda de verdade (Gemini), com o catálogo e a loja da conta; nada é enviado
+pelo WhatsApp.
 
 ## O que o Gabriel testa do celular
 

@@ -507,7 +507,7 @@ const MENSAGENS_DO_LEAD = [
   'Enquanto isso, me conta: qual o nome da sua empresa e o que ela vende?',
 ]
 
-function lead(g: Grafo, id = 'lead', ramo = 'demo'): string {
+function lead(g: Grafo, id = 'lead', ramo = 'início, sem ramo'): string {
   return g.no(id, 'handoff', { motivo: `Lead da demo · ${ramo}`, mensagens: MENSAGENS_DO_LEAD })
 }
 const trocar = (g: Grafo, id = 'trocar') => g.no(id, 'ir-fluxo', { fluxoId: ids.inicio, rotulo: NOMES.inicio })
@@ -740,15 +740,31 @@ function fluxoRamo(r: Ramo) {
   /* ---- fechar: entrega ou agenda, pagamento, resumo */
   let resumo: string
   if (r.agenda) {
-    g.no('p-dia', 'pergunta', { texto: 'Para quando?', salvarEm: 'dia', opcoes: opcoes(['Hoje', 'Amanhã', 'Sábado']) })
+    // O rótulo tem maiúscula de botão; o valor é o que entra na frase ("amanhã, à tarde").
+    g.no('p-dia', 'pergunta', {
+      texto: 'Para quando?',
+      salvarEm: 'dia_escolhido',
+      salvarValorEm: 'dia',
+      opcoes: opcoes([{ rotulo: 'Hoje', valor: 'hoje' }, { rotulo: 'Amanhã', valor: 'amanhã' }, { rotulo: 'Sábado', valor: 'sábado' }]),
+    })
     g.liga('b-carrinho', 'p-dia', idDe(fechar))
-    g.no('p-periodo', 'pergunta', { texto: 'Qual período?', salvarEm: 'periodo', opcoes: opcoes(['De manhã', 'À tarde', 'À noite']) })
+    g.no('p-periodo', 'pergunta', {
+      texto: 'Qual período?',
+      salvarEm: 'periodo_escolhido',
+      salvarValorEm: 'periodo',
+      opcoes: opcoes([{ rotulo: 'De manhã', valor: 'de manhã' }, { rotulo: 'À tarde', valor: 'à tarde' }, { rotulo: 'À noite', valor: 'à noite' }]),
+    })
     for (const d of ['hoje', 'amanha', 'sabado']) g.liga('p-dia', 'p-periodo', d)
     g.no('p-final', 'salvar-campo', { campo: 'total_final', valor: '{{total}}', conta: true })
     for (const p of ['de-manha', 'a-tarde', 'a-noite']) g.liga('p-periodo', 'p-final', p)
     g.no('p-pagamento', 'pergunta', { texto: 'Como prefere pagar, lá na hora?', salvarEm: 'pagamento', opcoes: opcoes(['Pix', 'Cartão', 'Dinheiro']) })
-    g.liga('p-final', 'p-pagamento')
-    resumo = `*Resumo do agendamento*{{carrinho}}\n\n*Total: R$ {{total_final}}* (pago no local)\n*Quando:* {{dia}}, {{periodo}}\n*Pagamento:* {{pagamento}}`
+    // Só aula experimental, que é grátis: não há o que pagar, e perguntar a forma seria estranho.
+    g.no('p-gratis', 'condicao', { variavel: 'total_final', operador: 'igual', valor: '0,00' })
+    g.no('p-nada', 'salvar-campo', { campo: 'pagamento', valor: 'nada a pagar' })
+    g.liga('p-final', 'p-gratis')
+    g.liga('p-gratis', 'p-nada', 'verdadeiro')
+    g.liga('p-gratis', 'p-pagamento', 'falso')
+    resumo = `*Resumo do agendamento*{{carrinho}}\n\n*Total: R$ {{total_final}}*, pago no local\n*Quando:* {{dia}}, {{periodo}}\n*Pagamento:* {{pagamento}}`
   } else {
     let antesDaEntrega = 'p-entrega'
     if (r.observacao) {
@@ -766,11 +782,17 @@ function fluxoRamo(r: Ramo) {
       opcoes: opcoes([{ rotulo: 'Entrega', descricao: `Taxa de R$ ${reais(r.taxa)}` }, 'Vou retirar']),
     })
     g.no('p-endereco', 'pergunta', { texto: 'Qual o endereço? Rua, número, bairro e um ponto de referência.', salvarEm: 'endereco' })
-    g.no('p-com-taxa', 'salvar-campo', { campo: 'taxa', valor: reais(r.taxa) })
+    g.no('p-com-taxa', 'mensagem', {
+      partes: [
+        { tipo: 'salvar', campo: 'taxa', valor: reais(r.taxa) },
+        { tipo: 'salvar', campo: 'linha_taxa', valor: `Entrega: R$ ${reais(r.taxa)}` },
+      ],
+    })
     g.no('p-retirada', 'mensagem', {
       partes: [
         { tipo: 'salvar', campo: 'endereco', valor: 'retirada no local' },
         { tipo: 'salvar', campo: 'taxa', valor: '0,00' },
+        { tipo: 'salvar', campo: 'linha_taxa', valor: 'Retirada: sem taxa' },
       ],
     })
     g.liga('p-entrega', 'p-endereco', 'entrega')
@@ -781,10 +803,11 @@ function fluxoRamo(r: Ramo) {
     g.liga('p-retirada', 'p-final')
     g.no('p-pagamento', 'pergunta', { texto: 'Como você vai pagar?', salvarEm: 'pagamento', opcoes: opcoes(['Pix', 'Cartão na entrega', 'Dinheiro']) })
     g.liga('p-final', 'p-pagamento')
-    resumo = `*Resumo do pedido*{{carrinho}}\n\nSubtotal: R$ {{total}}\nEntrega: R$ {{taxa}}\n*Total: R$ {{total_final}}*\n\n*Entrega:* {{endereco}}\n*Pagamento:* {{pagamento}}${r.observacao ? '\n*Observação:* {{observacao}}' : ''}`
+    resumo = `*Resumo do pedido*{{carrinho}}\n\nSubtotal: R$ {{total}}\n{{linha_taxa}}\n*Total: R$ {{total_final}}*\n\n*Entrega:* {{endereco}}\n*Pagamento:* {{pagamento}}${r.observacao ? '\n*Observação:* {{observacao}}' : ''}`
   }
   g.no('p-resumo', 'mensagem', { partes: [{ tipo: 'texto', texto: resumo }] })
   for (const o of r.agenda ? ['pix', 'cartao', 'dinheiro'] : ['pix', 'cartao-na-entrega', 'dinheiro']) g.liga('p-pagamento', 'p-resumo', o)
+  if (r.agenda) g.liga('p-nada', 'p-resumo')
   g.no('p-confere', 'pergunta', { texto: 'Está tudo certo?', salvarEm: 'confere', opcoes: opcoes(['Confirmar', mais, 'Cancelar']) })
   g.liga('p-resumo', 'p-confere')
   g.liga('p-confere', entradaDaLista, idDe(mais))

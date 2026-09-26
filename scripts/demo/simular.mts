@@ -26,6 +26,8 @@ const { acharCliente } = await import('@/server/repos/clientes')
 const { sessaoNova } = await import('@/core/engine/types')
 const { varsDeData } = await import('@/core/datas')
 const { SEMPRE_ABERTO, hojeNaConta } = await import('@/core/horario')
+const { casarGatilho } = await import('@/core/gatilhos')
+const { gatilhosAtivos } = await import('@/server/repos/gatilhos')
 
 type Passo = { opcao?: string; texto?: string; timeout?: boolean }
 const roteiro: { fluxo: string; nome?: string; passos: Passo[] } = JSON.parse(fs.readFileSync(process.argv[2], 'utf8'))
@@ -73,7 +75,9 @@ async function rodada(entrada: Record<string, unknown>) {
         historico.push({ de: 'bot', texto: a.texto })
         break
       case 'enviar_opcoes':
-        console.log(`BOT: ${a.texto.replace(/\n/g, '\n     ')}\n     [${a.opcoes.map((o: any) => o.rotulo).join('] [')}]`)
+        console.log(
+          `BOT: ${a.texto.replace(/\n/g, '\n     ')}\n     ${a.formato === 'lista' ? 'LISTA ' : ''}[${a.opcoes.map((o: any) => o.rotulo + (o.descricao ? ` / ${o.descricao}` : '')).join(a.formato === 'lista' ? ']\n           [' : '] [')}]`,
+        )
         historico.push({ de: 'bot', texto: a.texto })
         ultimasOpcoes = a.opcoes
         break
@@ -113,8 +117,26 @@ for (const p of roteiro.passos) {
     await rodada({ tipo: 'opcao', opcaoId: o.id })
   } else if (p.texto !== undefined) {
     console.log(`\nPESSOA: ${p.texto}`)
+    // Como o servidor: com a conversa numa pessoa, nem gatilho fala.
+    if (sessao.status === 'humano') {
+      console.log('     (conversa com uma pessoa: o bot fica calado)')
+      continue
+    }
+    // Como o servidor: o gatilho escolhe o fluxo antes do motor, e a conversa recomeça.
+    const casado = casarGatilho(await gatilhosAtivos(clienteId), p.texto)
+    if (casado) {
+      const destino = await carregarFluxo(casado.fluxoId)
+      if (destino) {
+        console.log(`   ↪ gatilho "${casado.frase}": conversa nova`)
+        grafo = destino.grafo
+        sessao = { ...sessaoNova(), vars: roteiro.nome ? { nome: roteiro.nome } : {} }
+        historico.push({ de: 'pessoa', texto: p.texto })
+        await rodada({ tipo: 'inicio' })
+        continue
+      }
+    }
     historico.push({ de: 'pessoa', texto: p.texto })
     await rodada({ tipo: 'texto', texto: p.texto })
   }
-  if (sessao.status === 'humano' || sessao.status === 'encerrada') break
+  if (sessao.status === 'encerrada') break
 }
