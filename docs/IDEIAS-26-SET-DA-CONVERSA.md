@@ -15,9 +15,9 @@ não se toca daqui; o caso já está registrado na memória do projeto.
 | # | Ideia | Quem | Validada? | Situação |
 |---|---|---|---|---|
 | 1 | Logo some na barra recolhida da administração | Eduardo (print) | sim, é falha | **feito** |
-| 2 | No contato, tirar a etiqueta é desanexar, não apagar | Eduardo perguntou, Gabriel decidiu | sim, os dois | **feito** |
+| 2 | No contato, tirar a etiqueta é desanexar; apagar só em Configurações | Eduardo perguntou, Gabriel decidiu | sim, os dois | **feito** |
 | 3 | Mais uma IA grátis: Cloudflare | Eduardo | Eduardo pediu o teste | **pronto no código**, falta a chave |
-| 4 | Plano mensal **e anual**, com valores | Eduardo | sim, Gabriel concordou | falta decidir o desconto |
+| 4 | Plano mensal **e anual**, com valores | Eduardo | sim, Gabriel concordou | **feito** (0110 em produção) |
 | 5 | Marcar ganho e perda na negociação | Eduardo (print do RD) | já existe | nada a fazer |
 | 6 | Barra de etapas na negociação, nomes por funil | Eduardo (print do RD) | Gabriel: só na negociação | já existe |
 | 7 | Condições que avançam a etapa sozinhas | Eduardo | Gabriel: faz sentido na negociação | parte existe; resto é médio |
@@ -25,7 +25,7 @@ não se toca daqui; o caso já está registrado na memória do projeto.
 | 9 | Reunião com link do Meet criado sozinho | Eduardo perguntou | não | grande, depois |
 | 10 | Cobrar por usuário | Eduardo (pesquisa) | não, Gabriel em dúvida | recomendação: não |
 | 11 | Trocar de "produto" dentro do AutoFluxos | Gabriel (áudio) | não | **para o agente das frentes** |
-| 12 | Texto da tela Etiquetas "não é padrão de sistema" | Gabriel | ambíguo | pergunta aberta |
+| 12 | Tela Etiquetas "não é padrão de sistema" | Gabriel | sim, Gabriel | **feito**: foi para Configurações |
 | 13 | Tema claro e escuro para o cliente | Eduardo | resolvido na conversa | já existe |
 | 14 | Recolher a barra pela logo | Eduardo | resolvido na conversa | já existe |
 
@@ -84,12 +84,14 @@ não se toca daqui; o caso já está registrado na memória do projeto.
 - **O que já existe:** só preço mensal. Desde a migration 0102 o plano mora no
   banco (a administração cria plano), e `src/core/planos.ts` segue sendo a
   única fonte que o site e o sistema leem.
-- **Por que não foi feito hoje:** precisa de duas coisas que não são minhas:
-  (a) o desconto do anual, que é decisão de preço (o comum é "pague 10, leve
-  12", cerca de 17%); (b) uma migration com a coluna do preço anual, que só
-  entra com autorização do Gabriel.
-- **Tamanho:** médio (migration, `planos.ts`, card do site, tela de plano, tela
-  de planos da administração).
+- **Feito:** o Gabriel autorizou a migration e deixou o desconto comigo. A
+  `0110` criou `planos.preco_anual`, preenchida com "pague 10 meses, leve 12"
+  (17% a menos), aplicada em produção em 26/set e conferida (Verandi intacta).
+  O site e a tela de plano mostram "ou R$ X/mês no anual"; a administração
+  edita o valor em Planos (vazio = sem anual). Commit `4355783`.
+- **Falta, se quiserem:** registrar por organização se ela paga no mensal ou no
+  anual. Hoje o anual é preço anunciado; quem contrata anual tem o valor
+  ajustado à mão em "preço contratado".
 
 ### 5. Marcar ganho e perda na negociação
 
@@ -174,8 +176,10 @@ não se toca daqui; o caso já está registrado na memória do projeto.
 - **O que é:** o Eduardo mandou o print da tela Etiquetas e o Gabriel respondeu
   "esse aí eu não queria botar, não é padrão de sistema". Não ficou claro se é
   o parágrafo longo de explicação no topo ou outra coisa da tela.
-- **Pergunta para o Gabriel:** é o parágrafo? Se for, a troca é por uma linha
-  curta, como nas outras telas do CRM.
+- **Decidido pelo Gabriel depois:** na ficha do contato só se desanexa;
+  apagar etiqueta de verdade é nas configurações. A tela saiu de CRM >
+  Etiquetas e virou Configurações > Etiquetas (o endereço antigo redireciona).
+  Commit `410f2bd`.
 
 ### 13 e 14. Tema e barra (resolvidos na conversa)
 
@@ -207,13 +211,48 @@ Ideia que cai nas frentes e não foi implementada aqui:
 
 ## Plano de execução, por valor
 
-1. **Feito hoje:** logo da administração (1), etiqueta que desanexa (2), fila
-   de IA com Cloudflare (3).
-2. **Próximo, depende do Gabriel:**
-   - pôr a chave do Cloudflare e rodar a suíte de escopo (3). É o que evita o
-     bot da PCYES parar por cota;
-   - decidir o desconto do anual e autorizar a migration (4). É renda direta.
+1. **Feito hoje:** logo da administração (1), etiqueta que desanexa e
+   Etiquetas em Configurações (2, 12), fila de IA com Cloudflare (3), plano
+   anual (4), e da conversa de 25/set o aviso do chatbot antigo e o relatório
+   de produtos (seção abaixo).
+2. **Próximo, depende do Gabriel:** pôr a chave do Cloudflare e rodar a suíte
+   de escopo (3). É o que evita o bot da PCYES parar por cota.
 3. **Depois, quando o funil tiver uso real:** condições de etapa (7).
 4. **Mais para frente:** Meet pela agenda do Google (9).
 5. **Só decisão, sem código:** nome da atividade (8), cobrança por usuário
    (10), texto da tela Etiquetas (12).
+
+## Da conversa de 25/set
+
+Lida do mesmo jeito (cerca de 590 mensagens, 17 imagens, 18 áudios). Boa parte
+foi suporte do MGM, fora daqui. Muita coisa do dia já tinha sido feita em 25 e
+26/set: a IA não empurra para atendente o que não tem a ver com a loja, a
+frase fixa depois da IA, pedido com vários itens, frete por CEP, parcelamento,
+manuais e rastreio por CPF.
+
+Feito agora:
+
+- **Relatório "Produtos no atendimento"** (Gabriel, para a PCYES): produtos
+  mais clicados em "Ver produto" e quantos cards o robô e cada atendente
+  enviaram, no período e no escopo de quem vê. Na tela Relatórios, porque a de
+  Vendas só aparece com negócio no funil. Usa o que já era gravado. Commit
+  `2ab821d`.
+- **Aviso do chatbot antigo** na tela de conectar o WhatsApp (Gabriel): quem
+  vem de outra plataforma desconecta antes, ou a Meta recusa. Commit `80628d3`.
+
+Não feito, com o porquê:
+
+- **Pedido de suporte no meio da venda com IA** (Gabriel): o gatilho de
+  palavra-chave já troca de fluxo; falta a IA reconhecer "quebrou" e sair por
+  uma saída "suporte". É médio (saída nova no bloco de IA, motor, prompt e
+  editor), e antes vale conferir se o gatilho da PCYES já resolve.
+- **Carrinho pronto com link de pagar** (Gabriel): o carrinho de visitante do
+  Magento não abre por link sem módulo na loja. Grande e depende da PCYES.
+- **Arquivos da empresa como conhecimento da IA** (Eduardo, "cérebro"): médio
+  a grande; hoje o conhecimento é texto, e só o cardápio vira arquivo.
+- **Prospectar pelo número de teste** e **preço de 800**: decisão de negócio.
+  Mensagem fria exige modelo de marketing aprovado e mexe na nota do número.
+
+Para o agente das frentes: segmentar o sistema por ramo (farmácia, ensino,
+serviços, distribuição, e-commerce; o Eduardo gostou da farmácia), prompt e
+regras próprios por frente, e a PCYES como demonstração.
