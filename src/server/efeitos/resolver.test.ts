@@ -10,7 +10,7 @@ const lerCredencial = vi.hoisted(() => vi.fn())
 vi.mock('../repos/conexoes', () => ({ lerCredencial }))
 vi.mock('../recursos-do-plano', () => ({ recursoLiberado: vi.fn(async () => true) }))
 
-const { executarComEfeitos, MAX_EFEITOS } = await import('./resolver')
+const { executarComEfeitos, MAX_EFEITOS, AVISO_DE_FALHA_DA_IA } = await import('./resolver')
 
 /**
  * Sem rede e sem chave: o modelo é de mentira de propósito.
@@ -1051,6 +1051,47 @@ describe('IA contínua que conclui', () => {
     expect(r.sessao.vars.pedido).toBe('1 pepperoni grande, Rua das Flores 50, Pix')
     const saida = r.acoes.find((a) => a.tipo === 'transferir_humano')
     expect(saida?.tipo === 'transferir_humano' && saida.motivo).toBe('Novo pedido: 1 pepperoni grande, Rua das Flores 50, Pix')
+  })
+})
+
+describe('a IA caiu (cota, tempo): falha de transporte', () => {
+  const conversa = (conversar: boolean): Fluxo => ({
+    inicio: 'ia',
+    nodes: [
+      {
+        id: 'ia',
+        type: 'ia',
+        position: { x: 0, y: 0 },
+        data: { instrucao: 'Atenda.', ferramentas: [], ...(conversar ? { conversar: { maxTurnos: 5 } } : {}) },
+      },
+      { id: 'fim', type: 'handoff', position: { x: 0, y: 120 }, data: { motivo: 'fim', mensagem: 'Tchau.' } },
+    ],
+    edges: [{ id: 'a', source: 'ia', target: 'fim' }],
+  })
+  const caiu = () => modeloQue(() => ({ tipo: 'nao_sei', motivo: 'gemini devolveu 429', falhou: true }))
+
+  it('na conversa com a IA: pede para repetir e segue no mesmo bloco, sem chamar pessoa', async () => {
+    const r = await executarComEfeitos(conversa(true), sessaoNova(), { tipo: 'inicio' }, { modelo: caiu(), contextoNegocio })
+    expect(r.acoes.some((a) => a.tipo === 'transferir_humano')).toBe(false)
+    expect(r.acoes.some((a) => a.tipo === 'enviar_texto' && a.texto === AVISO_DE_FALHA_DA_IA)).toBe(true)
+    expect(r.sessao.status).toBe('ativa')
+    expect(r.sessao.noAtual).toBe('ia')
+  })
+
+  it('a mensagem seguinte volta para a IA, e ela responde', async () => {
+    let n = 0
+    const modelo = modeloQue(() =>
+      n++ === 0 ? { tipo: 'nao_sei', motivo: 'timeout', falhou: true } : { tipo: 'texto', texto: 'Oi! Voltei.' },
+    )
+    const r1 = await executarComEfeitos(conversa(true), sessaoNova(), { tipo: 'inicio' }, { modelo, contextoNegocio })
+    const r2 = await executarComEfeitos(conversa(true), r1.sessao, { tipo: 'texto', texto: 'tem pizza?' }, { modelo, contextoNegocio })
+    expect(r2.acoes.some((a) => a.tipo === 'enviar_texto' && a.texto === 'Oi! Voltei.')).toBe(true)
+    expect(r2.sessao.noAtual).toBe('ia')
+  })
+
+  it('no bloco de IA que responde uma vez: continua indo para uma pessoa, como sempre', async () => {
+    const r = await executarComEfeitos(conversa(false), sessaoNova(), { tipo: 'inicio' }, { modelo: caiu(), contextoNegocio })
+    expect(r.sessao.status).toBe('humano')
   })
 })
 

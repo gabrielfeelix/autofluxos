@@ -2168,3 +2168,59 @@ describe('Guardar com conta: o total do carrinho', () => {
     expect(executar(fluxo, sessaoNova(), { tipo: 'inicio' }).sessao.vars.x).toBe('1 + 1')
   })
 })
+
+describe('texto digitado no lugar do botão', () => {
+  const menu = (rotulos: string[]) =>
+    fluxoSchema.parse({
+      inicio: 'q',
+      nodes: [
+        { id: 'q', type: 'pergunta', position: p, data: { texto: 'Qual?', salvarEm: 'x', opcoes: rotulos.map((r, i) => ({ id: `o${i}`, rotulo: r })) } },
+        ...rotulos.map((_, i) => ({ id: `d${i}`, type: 'mensagem', position: p, data: { partes: [{ tipo: 'texto', texto: `foi ${i}` }] } })),
+      ],
+      edges: rotulos.map((_, i) => ({ id: `e${i}`, source: 'q', sourceHandle: `o${i}`, target: `d${i}` })),
+    })
+  const responder = (rotulos: string[], texto: string) => {
+    const f = menu(rotulos)
+    const r0 = executar(f, sessaoNova(), { tipo: 'inicio' })
+    return executar(f, r0.sessao, { tipo: 'texto', texto }).sessao.vars.x
+  }
+
+  it('ignora maiúscula e acento, e aceita o rótulo dentro do que foi escrito', () => {
+    expect(responder(['Calabresa', 'Margherita'], 'PIZZA CALABRESA')).toBe('Calabresa')
+  })
+  it('aceita um pedaço do rótulo quando só uma opção tem aquele pedaço', () => {
+    expect(responder(['Refrigerante 2 L', 'Água mineral', 'Suco natural'], 'agua')).toBe('Água mineral')
+  })
+  it('pedaço que serve para duas opções não escolhe nenhuma', () => {
+    expect(responder(['Pizza Calabresa', 'Pizza Mussarela'], 'pizza')).toBeUndefined()
+  })
+  it('"não" na frase nunca escolhe pela parte', () => {
+    expect(responder(['Agendar', 'Falar com alguém'], 'não quero agendar')).toBeUndefined()
+  })
+  it('rótulo curto demais não casa dentro de uma frase', () => {
+    expect(responder(['P', 'M', 'G'], 'quero uma camiseta grande')).toBeUndefined()
+  })
+})
+
+describe('menu que não entendeu a resposta', () => {
+  const menu = (mensagemDeErro?: string) =>
+    fluxoSchema.parse({
+      inicio: 'q',
+      nodes: [
+        { id: 'q', type: 'pergunta', position: p, data: { texto: 'Qual?', salvarEm: 'x', opcoes: [{ id: 'a', rotulo: 'Sim' }, { id: 'b', rotulo: 'Talvez' }], ...(mensagemDeErro ? { mensagemDeErro } : {}) } },
+        { id: 'f', type: 'mensagem', position: p, data: { partes: [{ tipo: 'texto', texto: 'ok' }] } },
+      ],
+      edges: [{ id: 'e1', source: 'q', sourceHandle: 'a', target: 'f' }, { id: 'e2', source: 'q', sourceHandle: 'b', target: 'f' }],
+    })
+  const textoDaRecusa = (f: ReturnType<typeof menu>) => {
+    const r0 = executar(f, sessaoNova(), { tipo: 'inicio' })
+    const r = executar(f, r0.sessao, { tipo: 'texto', texto: 'banana' })
+    return r.acoes.flatMap((a) => (a.tipo === 'enviar_texto' ? [a.texto] : []))[0]
+  }
+  it('usa a frase do bloco e repete as opções', () => {
+    expect(textoDaRecusa(menu('Toque numa opção ou escreva inicio.'))).toBe('Toque numa opção ou escreva inicio.')
+  })
+  it('sem frase no bloco, a padrão de sempre', () => {
+    expect(textoDaRecusa(menu())).toBe('Desculpa, não entendi. Pode escolher uma das opções abaixo?')
+  })
+})

@@ -372,3 +372,28 @@ describe('categoria nas ferramentas de loja', () => {
     expect(buscar).toHaveBeenCalledWith('headset', undefined)
   })
 })
+
+/*
+ * 26/set/2026, demo: "duas grandes de calabresa e uma coca" e "mouse gamer
+ * preto". O modelo pediu a mesma busca duas vezes; a trava recusava a segunda
+ * e a conversa ia para uma pessoa com o resultado já na mão.
+ */
+describe('a mesma consulta pedida de novo', () => {
+  it('não vira pessoa: o modelo é lembrado do resultado e responde com ele', async () => {
+    const loja = lojaFalsa({ produtos: [headset] })
+    lojaAtivaDaConta.mockResolvedValue(loja)
+    const modelo = modeloComRoteiro([
+      { tipo: 'usar_ferramenta', nome: 'loja_buscar', argumentos: { termo: 'headset' } },
+      { tipo: 'usar_ferramenta', nome: 'loja_buscar', argumentos: { termo: 'headset' } },
+      { tipo: 'texto', texto: 'Temos o CM500 por R$ 108,90.' },
+    ])
+
+    const r = await rodar(fluxo(['loja_buscar']), modelo)
+
+    // A loja foi consultada uma vez só; a repetição não saiu para a rede.
+    expect(loja.buscas).toEqual(['headset'])
+    expect(JSON.stringify(modelo.pedidos[2]?.historico)).toContain('repetida')
+    expect(textos(r)).toContain('Temos o CM500 por R$ 108,90.')
+    expect(r.sessao.status).not.toBe('humano')
+  })
+})

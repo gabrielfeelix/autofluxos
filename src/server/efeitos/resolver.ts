@@ -62,6 +62,12 @@ import { listarMateriais } from '../repos/materiais'
 const AVISO_DE_HANDOFF = 'Vou te passar para um atendente. Só um instante!'
 
 /**
+ * A IA não respondeu por falha de transporte (cota, tempo, provedor fora).
+ * Não é a pergunta que saiu do escopo, e a frase diz isso.
+ */
+export const AVISO_DE_FALHA_DA_IA = 'Tive um probleminha agora 😅 Pode me mandar de novo em instantes?'
+
+/**
  * O que a pessoa lê quando o contato gastou as respostas de IA do dia
  * (`clients.ia_limite_contato_dia`, 0106).
  *
@@ -561,6 +567,26 @@ async function rodar(
       }
     }
 
+    /*
+     * Falha de transporte na conversa livre com a IA (`conversar`): a
+     * pergunta não saiu do escopo, o provedor é que caiu. A conversa fica
+     * parada no mesmo bloco, esperando a próxima mensagem, e a frase pede para
+     * repetir. Bloco de IA que responde uma vez só continua indo para uma
+     * pessoa abaixo, como sempre foi: nele não há "próxima mensagem" que volte
+     * à IA.
+     */
+    if (resposta.tipo === 'nao_sei' && resposta.falhou) {
+      const parado = fluxoAtual.nodes.find((n) => n.id === resultado.sessao.noAtual)
+      if (parado?.type === 'ia' && parado.data.conversar) {
+        console.warn(`[ia] falha de transporte na conversa livre: ${resposta.motivo}`)
+        return {
+          acoes: [...semEfeito(resultado.acoes, 'chamar_ia'), { tipo: 'enviar_texto', texto: AVISO_DE_FALHA_DA_IA }],
+          sessao: { ...resultado.sessao, status: 'ativa' },
+          ...(destino ? { destino } : {}),
+        }
+      }
+    }
+
     if (resposta.tipo === 'nao_sei') {
       // A saída de emergência do §6. Entre calar e inventar, uma pessoa assume.
       //
@@ -912,6 +938,28 @@ async function responderComFerramentas({
       return { tipo: 'texto', texto: 'Perfeito, anotei tudo! 🙌', concluido }
     }
     if (resposta.tipo !== 'usar_ferramenta') return resposta
+
+    /*
+     * A mesma consulta de novo, nesta mesma resposta: o resultado já está na
+     * conversa. Antes isto era recusa, e a conversa ia para uma pessoa com o
+     * dado na mão (26/set, "duas grandes de calabresa e uma coca"). Agora o
+     * modelo é lembrado de que já tem o resultado e segue; nada sai para a
+     * rede, e o teto de voltas continua valendo, então não vira laço. Só vale
+     * para consulta autorizada: pedido de ferramenta fora do bloco continua
+     * recusado abaixo.
+     */
+    if (
+      permitidas.some((f) => f.nome === resposta.nome) &&
+      memoria.jaPedidos.has(assinatura(resposta.nome, resposta.argumentos))
+    ) {
+      conversa.push({
+        de: 'ferramenta',
+        nome: resposta.nome,
+        texto:
+          '{"repetida":true,"aviso":"Esta consulta já foi feita e o resultado está acima. Não consulte de novo: responda à pessoa com o que já tem, e diga com clareza o que não foi encontrado."}',
+      })
+      continue
+    }
 
     const conferida = conferirPedido({
       nome: resposta.nome,

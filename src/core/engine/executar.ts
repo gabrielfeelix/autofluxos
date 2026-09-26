@@ -599,7 +599,11 @@ function responderPergunta(
         contexto,
       )
     }
-    acoes.push({ tipo: 'enviar_texto', texto: MENSAGEM_NAO_ENTENDI })
+    // A frase de "não entendi" do bloco, quando quem desenhou escreveu uma;
+    // senão a padrão. Antes a do bloco só valia para resposta com formato, e o
+    // menu ignorava o que estava escrito nele.
+    const recusa = (no.data.mensagemDeErro ?? '').trim()
+    acoes.push({ tipo: 'enviar_texto', texto: recusa === '' ? MENSAGEM_NAO_ENTENDI : interpolar(recusa, s.vars) })
     acoes.push(...perguntar(no, s))
     return { acoes, sessao: s }
   }
@@ -1328,7 +1332,33 @@ function escolher(opcoes: Opcao[], entrada: Entrada): Opcao | undefined {
     return opcoes[Number(digitado) - 1]
   }
 
-  return undefined
+  return porParte(opcoes, digitado)
+}
+
+/**
+ * O texto que não bateu inteiro com nenhum rótulo, casado por parte.
+ *
+ * "PIZZA CALABRESA" para o botão "Calabresa", "água" para "Água mineral": a
+ * pessoa escreveu o que via, e antes disto recebia "não entendi". Só casa se
+ * **uma** opção servir, e por palavras inteiras. Frase com "não" nunca casa por
+ * parte ("não quero agendar" não é o botão "Agendar"), e rótulo com menos de
+ * três letras também não ("G" dentro de uma frase qualquer).
+ *
+ * Só alcança texto que antes era recusado: quem batia com o rótulo inteiro, ou
+ * com o número, continua saindo pelo mesmo caminho de sempre.
+ */
+function porParte(opcoes: Opcao[], digitado: string): Opcao | undefined {
+  const palavras = (t: string) => normalizar(t).replace(/[^\p{L}\p{N}]+/gu, ' ').trim()
+  const dito = palavras(digitado)
+  if (dito.length < 3 || /(^| )(nao|nem|nunca)( |$)/.test(dito)) return undefined
+  const dentro = (maior: string, menor: string) => ` ${maior} `.includes(` ${menor} `)
+
+  const servem = opcoes.filter((o) => {
+    const rotulo = palavras(o.rotulo)
+    if (rotulo.length < 3) return false
+    return dentro(rotulo, dito) || dentro(dito, rotulo)
+  })
+  return servem.length === 1 ? servem[0] : undefined
 }
 
 function avaliar(
