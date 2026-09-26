@@ -4,6 +4,11 @@ import { acessoCompleto, filtroDoAcesso, type AcessoCompleto } from '@/server/pe
 import { pode, type FiltroDeEscopo } from '@/core/permissoes'
 import { onboardingDaConta } from '@/server/repos/onboarding'
 import { passosDoOnboarding } from '@/core/onboarding'
+import { fichaPreenchida, pacoteDo, rotuloNaBarra, type PacoteDoNicho } from '@/core/nichos'
+import { lerFicha, placarDaFicha } from '@/core/ficha-do-assistente'
+import { nichoDaConta } from '@/server/repos/recursos'
+import { listarProdutos } from '@/server/repos/produtos'
+import { listarMateriais } from '@/server/repos/materiais'
 import { notFound } from 'next/navigation'
 import { Suspense } from 'react'
 import { ComoFunciona } from '@/components/cliente/como-funciona'
@@ -75,7 +80,7 @@ export default async function Pagina({ params }: { params: Promise<{ clienteId: 
   const acesso = await acessoCompleto(clienteId)
   const configura = pode(acesso.regras, 'configurar_operacao', 'todos')
   const onboarding = configura ? await onboardingDaConta(clienteId) : null
-  const [sessao, fluxos, canais, contatos, quadros, recursos, crm, ultimaMensagem] = await Promise.all([
+  const [sessao, fluxos, canais, contatos, quadros, recursos, crm, ultimaMensagem, nicho] = await Promise.all([
     sessaoAtual(),
     listarFluxos(cliente.id),
     listarCanais(cliente.id),
@@ -84,6 +89,14 @@ export default async function Pagina({ params }: { params: Promise<{ clienteId: 
     recursosDaConta(cliente.id),
     crmVisivel(cliente.id),
     ultimaMensagemRecebida(cliente.id),
+    nichoDaConta(cliente.id),
+  ])
+  const pacote = pacoteDo(nicho)
+  // Os números dos passos da frente, só quando ela pede e só para quem configura.
+  const pede = (passo: string) => configura && (pacote?.passosDoInicio as readonly string[] | undefined)?.includes(passo)
+  const [produtos, materiais] = await Promise.all([
+    pede('pratos') ? listarProdutos(cliente.id) : Promise.resolve([]),
+    pede('cardapio') ? listarMateriais(cliente.id) : Promise.resolve([]),
   ])
 
   // A mesma regra da trilha de Configurações: canal apontando para publicada.
@@ -99,6 +112,14 @@ export default async function Pagina({ params }: { params: Promise<{ clienteId: 
     temCanal: canais.length > 0,
     temContato: contatos > 0,
     temQuadro: quadros.length > 0,
+    frente: pacote
+      ? {
+          pacote,
+          comFoto: produtos.filter((produto) => produto.foto).length,
+          temCardapio: materiais.length > 0,
+          ficha: placarDaFicha(lerFicha(cliente.contextoNegocio, pacote.ficha.perguntas), pacote.ficha.perguntas),
+        }
+      : null,
   })
   const faltaPasso = passos.some((passo) => !passo.feito)
 
@@ -221,8 +242,15 @@ function passosDaConta({
   temCanal,
   temContato,
   temQuadro,
+  frente,
 }: {
   clienteId: string
+  frente?: {
+    pacote: PacoteDoNicho
+    comFoto: number
+    temCardapio: boolean
+    ficha: { respondidas: number; total: number }
+  } | null
   objetivo: Objetivo
   opcionais?: { automacao: boolean; funil: boolean }
   temFluxo: boolean
@@ -279,6 +307,38 @@ function passosDaConta({
       acoes: [{ rotulo: 'Criar um funil', href: em('/quadros') }],
     },
   ]
+
+  /*
+   * Os passos da frente (PLANO-NICHOS 1.3) entram antes da primeira conversa:
+   * são o que deixa o bot pronto para responder, e a conversa é o teste.
+   */
+  if (frente) {
+    const daFrente: Record<(typeof frente.pacote.passosDoInicio)[number], PassoDaConta> = {
+      pratos: {
+        chave: 'pratos',
+        titulo: `Cadastrar 5 ${rotuloNaBarra(frente.pacote, 'catalogo', 'Produtos').toLowerCase()} com foto`,
+        explica: `O bot mostra a foto e o preço quando o cliente pedir. ${Math.min(frente.comFoto, 5)} de 5 com foto até agora.`,
+        feito: frente.comFoto >= 5,
+        acoes: [{ rotulo: 'Abrir o catálogo', href: em('/loja/catalogo') }],
+      },
+      cardapio: {
+        chave: 'cardapio',
+        titulo: 'Subir o cardápio em PDF ou imagem',
+        explica: 'O bot manda este arquivo quando pedirem o cardápio.',
+        feito: frente.temCardapio,
+        acoes: [{ rotulo: 'Subir o cardápio', href: em('/loja/catalogo') }],
+      },
+      ficha: {
+        chave: 'ficha',
+        titulo: 'Preencher a ficha do assistente',
+        explica: `O que o seu cliente sempre pergunta, respondido uma vez. O assistente responde ${frente.ficha.respondidas} de ${frente.ficha.total} perguntas comuns.`,
+        feito: fichaPreenchida(frente.ficha.respondidas, frente.ficha.total),
+        acoes: [{ rotulo: 'Abrir a ficha', href: em('/ajustes/contexto') }],
+      },
+    }
+    const antesDaConversa = passos.findIndex((passo) => passo.chave === 'conversa')
+    passos.splice(antesDaConversa, 0, ...frente.pacote.passosDoInicio.map((passo) => daFrente[passo]))
+  }
 
   /*
    * O filtro, e por que ele é por passo e não por índice.

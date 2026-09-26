@@ -306,6 +306,20 @@ extração explícito para os objetos de `public`.
   `sessions?select=nps_pendente` **200** com a chave secreta e **401** com a
   publicável; `app_verandi.conta` **200**. A migration entrou antes do push do
   código que lê a coluna.
+- **a `0108` e a `0109` foram aplicadas em 26/set/2026** (frentes), com
+  autorização explícita do dono, pela Management API, numa transação só, e
+  **não** por `supabase db push`. A `0108` troca o check de `clients.nicho`
+  para aceitar `aulas`; a `0109` recria `preparar_onboarding` com a mesma
+  assinatura, lock e permissões, só ampliando a lista de funis e chatbots
+  aceitos com os modelos das frentes e aceitando a resposta `nicho`. Ensaio
+  antes: replay local em Docker de `0098` a `0110`, e ensaio em transação
+  contra a produção (check novo, `nicho = 'saude'` recusado, função
+  `security invoker`, grants só `postgres` e `service_role`, tudo desfeito no
+  `rollback`). Verandi conferida antes e depois: **35** migrations, **40**
+  tabelas em `app_verandi`, **16** policies de `storage.objects`, iguais;
+  `public` com **75** tabelas; **8** contas, **0** com frente. Data API depois
+  do `notify`: `clients?select=nicho` **200** com a chave secreta;
+  `app_verandi.conta` **200**.
 - **a `0104` foi aplicada em 25/set/2026** (franquia de mensagens de serviço da
   Meta, que passa a ser cobrada em 1/out/2026), com autorização explícita do
   dono, pela Management API. Aditiva: só a tabela `public.consumo_da_meta`

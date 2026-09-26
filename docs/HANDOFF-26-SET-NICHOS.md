@@ -52,10 +52,10 @@ sistema de gestão de alunos.
 | 1.4 e 9 | "Tipo de negócio" em Objetivo e recursos, com auditoria; admin mostra a frente | `a1f6dbf` |
 | 7 | Onboarding pergunta a frente e grava na conta; modelos das frentes esperam a `0109` | `b5282dc` |
 
-**Pendentes de autorização (versionadas, não aplicadas):** `0108` (check de
-`clients.nicho` aceita `aulas`: sem ela, escolher Aulas dá erro) e `0109`
-(`preparar_onboarding` aceita os modelos das frentes; depois dela, incluir
-`CHATBOTS_DAS_FRENTES` e `FUNIS_DAS_FRENTES` nas listas de `core/onboarding.ts`).
+**Aplicadas em 26/set, com autorização do Gabriel:** `0108` (check de
+`clients.nicho` aceita `aulas`) e `0109` (`preparar_onboarding` aceita os
+modelos das frentes, que já entraram nas listas de `core/onboarding.ts`).
+Registro em `docs/BANCO-COMPARTILHADO.md`.
 
 Nenhuma tela nova foi aberta no navegador ainda. Conferido só por `tsc` e
 vitest.

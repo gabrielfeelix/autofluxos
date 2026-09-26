@@ -52,14 +52,14 @@ describe('preparação da empresa', () => {
       const marcado = marcadoPelaFrente(RESPOSTAS_INICIAIS, nicho)
       const conferido = respostasOnboardingSchema.parse(marcado)
       expect(conferido.nicho).toBe(nicho)
-      expect(CHATBOTS_DO_ONBOARDING).toContain(conferido.chatbot)
+      expect(conferido.chatbot, nicho).toBe(PACOTES[nicho].modelosDeFluxo[0])
+      if (conferido.funil !== 'nenhum') expect(conferido.funil).toBe(PACOTES[nicho].modeloDeFunil)
       expect(nichoDoOnboarding(conferido)).toBe(nicho)
     }
   })
   it('todo chatbot e funil oferecido existe, com grafo válido', () => {
     for (const id of [...CHATBOTS_DO_ONBOARDING, ...CHATBOTS_DAS_FRENTES]) expect(fluxoSchema.safeParse(acharModelo(id)?.grafo).success, id).toBe(true)
     for (const id of FUNIS_DAS_FRENTES) expect(MODELOS_DE_QUADRO.map((m) => m.id)).toContain(id)
-    void PACOTES
   })
   it('recusa frente que não existe', () => {
     expect(respostasOnboardingSchema.safeParse({ ...RESPOSTAS_INICIAIS, nicho: 'saude' }).success).toBe(false)

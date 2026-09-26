@@ -117,6 +117,30 @@ export type PacoteDoNicho = {
    * assistente pode fazer, marcado por padrão.
    */
   ficha: { perguntas: PerguntaDaFicha[]; pode: string[] }
+  /**
+   * Os passos que a frente acrescenta aos primeiros passos do Início
+   * (PLANO-NICHOS 1.3), na ordem. Quem diz se o passo está feito é a tela do
+   * Início, que tem os números; aqui mora só qual passo a frente pede.
+   */
+  passosDoInicio: PassoDaFrente[]
+}
+
+/**
+ * Os passos que uma frente pode pedir no Início. `ficha`: a ficha do
+ * assistente com quase todas as perguntas respondidas; `pratos`: cinco itens
+ * do catálogo com foto; `cardapio`: o cardápio em arquivo.
+ */
+export const PASSOS_DA_FRENTE = ['ficha', 'pratos', 'cardapio'] as const
+
+export type PassoDaFrente = (typeof PASSOS_DA_FRENTE)[number]
+
+/**
+ * A ficha conta como preenchida com 80% das perguntas respondidas: exigir
+ * todas faria um passo nunca fechar por causa de uma pergunta que não se
+ * aplica ao negócio (a MGM não escreve reposição e responde 8 de 9).
+ */
+export function fichaPreenchida(respondidas: number, total: number): boolean {
+  return total > 0 && respondidas / total >= 0.8
 }
 
 /** Monta uma pergunta da ficha sem repetir o nome dos campos em toda linha. */
@@ -184,6 +208,7 @@ export const PACOTES: Record<Nicho, PacoteDoNicho> = {
     tituloDosModelos: 'Para aulas e horários',
     modelosDeFluxo: ['agendamento', 'reagendamento', 'nao-comparecimento', 'lembrete', 'aluno-inativo'],
     modeloDeFunil: 'agendamento',
+    passosDoInicio: ['ficha'],
     ficha: {
       pode: ['Tirar dúvidas com o que está nesta ficha', 'Explicar modalidades, planos e aula experimental', 'Informar horário e endereço'],
       perguntas: [
@@ -211,6 +236,7 @@ export const PACOTES: Record<Nicho, PacoteDoNicho> = {
     tituloDosModelos: 'Para lojas virtuais',
     modelosDeFluxo: ['carrinho-abandonado', 'status-do-pedido', 'cobranca-amigavel'],
     modeloDeFunil: 'comercial',
+    passosDoInicio: ['ficha'],
     ficha: {
       pode: ['Tirar dúvidas com o que está nesta ficha', 'Mostrar produtos, fotos e preços do catálogo', 'Consultar o status de um pedido', 'Informar prazo de envio e frete'],
       perguntas: [
@@ -239,6 +265,7 @@ export const PACOTES: Record<Nicho, PacoteDoNicho> = {
     tituloDosModelos: 'Para restaurantes',
     modelosDeFluxo: ['cardapio-botoes', 'atendente-ia-restaurante', 'horario-e-local'],
     modeloDeFunil: 'pedidos',
+    passosDoInicio: ['pratos', 'cardapio', 'ficha'],
     ficha: {
       pode: ['Tirar dúvidas com o que está nesta ficha', 'Mandar o cardápio e fotos dos pratos', 'Ajudar a montar um pedido', 'Informar horário, entrega e endereço'],
       perguntas: [
@@ -269,6 +296,7 @@ export const PACOTES: Record<Nicho, PacoteDoNicho> = {
     // Quem vende no balcão atende mais do que negocia: a venda acontece na
     // loja, e o que o WhatsApp organiza é a pergunta de quem vai passar lá.
     modeloDeFunil: 'atendimento',
+    passosDoInicio: ['ficha'],
     ficha: {
       pode: ['Tirar dúvidas com o que está nesta ficha', 'Dizer se tem o produto e quanto custa', 'Informar horário e endereço'],
       perguntas: [

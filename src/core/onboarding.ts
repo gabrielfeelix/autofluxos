@@ -2,22 +2,19 @@ import { z } from 'zod'
 import { cobra, type Objetivo } from './objetivo-da-conta'
 import { NICHOS, PACOTES, pacoteDo, type Nicho } from './nichos'
 
-/**
- * Os chatbots e funis que o assistente pode criar. Lista fechada: o navegador
- * escolhe um id, e o servidor nunca aceita modelo ou grafo que não esteja aqui.
- *
- * **Hoje são só os que a função `preparar_onboarding` da 0089 aceita**: ela
- * confere a lista no banco e recusaria o modelo de uma frente. A migration
- * 0109 abre a conferência para os modelos das frentes; depois dela aplicada,
- * estas listas passam a incluir `PACOTES[*].modelosDeFluxo` e o funil de cada
- * frente, e `CHATBOTS_DAS_FRENTES` e `FUNIS_DAS_FRENTES` entram aqui.
- */
-export const CHATBOTS_DO_ONBOARDING: readonly string[] = ['recado', 'menu-atendimento']
-export const FUNIS_DO_ONBOARDING = ['comercial', 'agendamento', 'pos-venda'] as const
-
-/** Os modelos das frentes, que entram no assistente quando a 0109 estiver aplicada. */
+/** Os modelos das frentes (`core/nichos.ts`). */
 export const CHATBOTS_DAS_FRENTES: readonly string[] = [...new Set(NICHOS.flatMap((nicho) => PACOTES[nicho].modelosDeFluxo))]
 export const FUNIS_DAS_FRENTES: readonly string[] = [...new Set(NICHOS.map((nicho) => PACOTES[nicho].modeloDeFunil))]
+
+/**
+ * Os chatbots e funis que o assistente pode criar: os de sempre e os das
+ * frentes. Lista fechada: o navegador escolhe um id, e o servidor nunca aceita
+ * modelo ou grafo que não esteja aqui. A função `preparar_onboarding` confere
+ * a mesma lista no banco (0109, aplicada em 26/set); um teste garante que a
+ * migration cobre todo modelo de frente.
+ */
+export const CHATBOTS_DO_ONBOARDING: readonly string[] = [...new Set(['recado', 'menu-atendimento', ...CHATBOTS_DAS_FRENTES])]
+export const FUNIS_DO_ONBOARDING = ['comercial', 'agendamento', 'pos-venda', 'pedidos', 'atendimento'] as const
 
 export const respostasOnboardingSchema = z.object({
   /**
