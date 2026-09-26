@@ -32,6 +32,11 @@ import { fluxoSchema, type Fluxo } from '@/core/flow/schema'
  * quando o plano não a contratou (`IA_NAO_CONTRATADA`), um modelo com IA na
  * galeria mostraria erro na cara de quem só escolheu da lista. Este grafo é
  * ponto de partida para quem tem IA no plano e contexto do negócio escrito.
+ *
+ * Os modelos de ramo com IA (restaurante, comércio) entraram na galeria depois,
+ * com a etiqueta "Precisa de IA" avisando antes da escolha (ver `modelos.ts`).
+ * Este continua fora: é o laço antigo, de uma resposta por volta, e quem quer
+ * conversa livre hoje tem o bloco de IA com `conversar`.
  */
 export const atendenteIa: Fluxo = fluxoSchema.parse({
   inicio: 'abertura',

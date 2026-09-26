@@ -2,8 +2,11 @@ import { fluxoSchema, type Fluxo } from '@/core/flow/schema'
 import { fluxoNovo } from '@/core/flow/novo'
 import { agendamento } from './agendamento'
 import { alunoInativo } from './aluno-inativo'
+import { atendenteIaRestaurante } from './atendente-ia-restaurante'
+import { cardapioBotoes } from './cardapio-botoes'
 import { carrinhoAbandonado } from './carrinho-abandonado'
 import { cobrancaAmigavel } from './cobranca-amigavel'
+import { horarioELocal } from './horario-e-local'
 import { lembrete } from './lembrete'
 import { menuAtendimento } from './menu-atendimento'
 import { naoComparecimento } from './nao-comparecimento'
@@ -12,6 +15,7 @@ import { qualificarSdr } from './qualificar-sdr'
 import { reagendamento } from './reagendamento'
 import { statusDoPedido } from './status-do-pedido'
 import { triagem } from './triagem'
+import { vocesTem } from './voces-tem'
 
 /**
  * Os modelos que a tela oferece ao criar um fluxo (B5).
@@ -28,6 +32,15 @@ import { triagem } from './triagem'
  * Todos nascem **válidos**: se um modelo produzisse um fluxo que o `publicar()`
  * recusa, a primeira coisa que a pessoa veria ao clicar em Publicar seria uma
  * lista de erros sobre um desenho que ela não fez.
+ *
+ * **A exceção avisada é a IA.** IA é plano à parte, ligada pela 4YU fluxo a
+ * fluxo, e o `validar()` recusa o bloco de IA enquanto ela não estiver ligada
+ * (`IA_NAO_CONTRATADA`). Até os modelos por ramo (PLANO-NICHOS 4.5), nenhum
+ * modelo tinha IA por esse motivo. Os de restaurante e de comércio precisam
+ * dela para buscar no cardápio e conversar, e por isso levam a etiqueta
+ * "Precisa de IA", do mesmo jeito que os da agenda levam "Precisa de
+ * integração": quem escolhe sabe antes que falta um passo. `modelos.test.ts`
+ * cobra as duas direções, IA sem etiqueta e etiqueta sem IA.
  */
 
 /**
@@ -48,7 +61,10 @@ export const ETIQUETAS = [
   'Pós-venda',
   'Financeiro',
   'E-commerce',
+  'Restaurante',
+  'Comércio',
   'Precisa de integração',
+  'Precisa de IA',
 ] as const
 
 export type Etiqueta = (typeof ETIQUETAS)[number]
@@ -303,6 +319,54 @@ export const MODELOS: Modelo[] = [
     etiquetas: ['WhatsApp', 'Atendimento', 'E-commerce'],
     sinonimos: ['pedido', 'rastreio', 'entrega', 'delivery', 'cadê', 'encomenda', 'nota'],
     grafo: statusDoPedido,
+  },
+  {
+    id: 'cardapio-botoes',
+    nome: 'Cardápio e pedido com botões',
+    resumo:
+      'Menu com cardápio, pedido, horário e atendente. O pedido pergunta itens, endereço e pagamento, mostra o resumo e passa para a cozinha. Precisa da IA ligada para mandar o cardápio e as fotos.',
+    etiquetas: ['WhatsApp', 'Restaurante', 'Vendas', 'Precisa de IA'],
+    sinonimos: [
+      'cardápio', 'cardapio', 'menu', 'pedido', 'delivery', 'pizzaria', 'lanchonete',
+      'hamburgueria', 'marmita', 'entrega', 'comida',
+    ],
+    grafo: cardapioBotoes,
+  },
+  {
+    id: 'atendente-ia-restaurante',
+    nome: 'Atendente de restaurante com IA',
+    resumo:
+      'A pessoa pede do jeito dela: a IA mostra o cardápio, manda foto dos pratos, entende meia a meia e monta o pedido com endereço. No fim, o pedido vai para a equipe.',
+    etiquetas: ['WhatsApp', 'Restaurante', 'Vendas', 'Precisa de IA'],
+    sinonimos: [
+      'inteligência artificial', 'cardápio', 'cardapio', 'pedido', 'delivery',
+      'pizzaria', 'meia a meia', 'foto', 'comida',
+    ],
+    grafo: atendenteIaRestaurante,
+  },
+  {
+    id: 'voces-tem',
+    nome: 'Vocês têm?',
+    resumo:
+      'A IA responde se tem o produto, quanto custa, o horário e onde fica, buscando no seu catálogo. Separar e fechar compra fica com a loja.',
+    etiquetas: ['WhatsApp', 'Comércio', 'Atendimento', 'Precisa de IA'],
+    sinonimos: [
+      'inteligência artificial', 'tem', 'estoque', 'produto', 'preço', 'loja', 'balcão', 'bairro',
+      'loja física', 'comércio',
+    ],
+    grafo: vocesTem,
+  },
+  {
+    id: 'horario-e-local',
+    nome: 'Horário e como chegar',
+    resumo:
+      'Botões com horário, endereço com mapa e entrega, sempre com a saída para alguém da loja. Serve de primeiro bot, sem IA.',
+    etiquetas: ['WhatsApp', 'Instagram', 'Comércio', 'Atendimento'],
+    sinonimos: [
+      'horário', 'endereço', 'localização', 'mapa', 'como chegar', 'entrega',
+      'loja física', 'comércio', 'bairro',
+    ],
+    grafo: horarioELocal,
   },
   {
     id: 'pesquisa-nps',

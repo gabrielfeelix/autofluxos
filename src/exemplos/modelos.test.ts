@@ -13,16 +13,28 @@ import { reagendamento } from './reagendamento'
  * uma lista de erros sobre um desenho que ela não fez.
  */
 describe('os modelos de fluxo', () => {
+  const usaIa = (id: string) => MODELOS.find((m) => m.id === id)!.grafo.nodes.some((no) => no.type === 'ia')
+
+  /*
+   * Válido **com a capacidade que a etiqueta anuncia**: o de IA com a IA
+   * ligada, o resto sem. Validar tudo com a IA ligada esconderia um bloco de IA
+   * entrando num modelo que promete funcionar sem ela.
+   */
   it.each(MODELOS.map((modelo) => modelo.id))('%s nasce válido', (id) => {
     const modelo = MODELOS.find((m) => m.id === id)!
-    const conferido = validar(modelo.grafo, { iaHabilitada: false, conexoes: [] })
+    const conferido = validar(modelo.grafo, { iaHabilitada: usaIa(id), conexoes: [] })
 
     expect(conferido.ok, JSON.stringify(conferido.ok ? [] : conferido.erros)).toBe(true)
   })
 
-  it('nenhum usa IA, ela é plano à parte e o validador recusaria', () => {
+  /*
+   * IA é plano à parte e o validador recusa o bloco enquanto ela não estiver
+   * ligada. Modelo com IA sem a etiqueta seria escolhido por quem não tem IA e
+   * mostraria erro ao publicar; etiqueta sem IA afastaria quem não precisa.
+   */
+  it('usa IA só quem avisa na etiqueta, e toda etiqueta de IA tem IA', () => {
     for (const modelo of MODELOS) {
-      expect(modelo.grafo.nodes.some((no) => no.type === 'ia')).toBe(false)
+      expect(modelo.etiquetas.includes('Precisa de IA'), modelo.id).toBe(usaIa(modelo.id))
     }
   })
 
