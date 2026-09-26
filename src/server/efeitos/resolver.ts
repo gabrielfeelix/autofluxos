@@ -1538,6 +1538,27 @@ function comCards(acoes: Acao[], texto: string, produtos: ProdutoDaLoja[], anexo
   if (extras.length === 0) return acoes
   const posicao = acoes.findIndex((a) => a.tipo === 'enviar_texto' && a.texto === texto)
   if (posicao === -1) return [...acoes, ...extras]
+
+  /*
+   * Catálogo sem loja on-line (todo produto sem link): as fotos saem uma a
+   * uma, com o botão de pedir, e a pergunta com que a IA fecha ("Também temos
+   * porções. Quer ver alguma?") só faz sentido **depois** delas. O último
+   * parágrafo, quando é pergunta, vai para depois das fotos. Produto com link
+   * (a loja on-line) continua como sempre: frase inteira, depois os cards.
+   */
+  const semLink = produtos.length > 0 && produtos.every((p) => !p.link)
+  const paragrafos = texto.split(/\n\s*\n/)
+  const ultimo = paragrafos.at(-1)?.trim() ?? ''
+  if (semLink && paragrafos.length > 1 && ultimo.endsWith('?')) {
+    const antes = acoes[posicao] as Extract<Acao, { tipo: 'enviar_texto' }>
+    return [
+      ...acoes.slice(0, posicao),
+      { ...antes, texto: paragrafos.slice(0, -1).join('\n\n').trim() },
+      ...extras,
+      { tipo: 'enviar_texto', texto: ultimo },
+      ...acoes.slice(posicao + 1),
+    ]
+  }
   return [...acoes.slice(0, posicao + 1), ...extras, ...acoes.slice(posicao + 1)]
 }
 

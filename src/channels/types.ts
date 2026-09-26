@@ -139,6 +139,14 @@ export type Canal = {
    */
   enviarProdutos?(para: string, produtos: ProdutoDaLoja[]): Promise<string | null>
   /**
+   * Um produto **sem link** com a foto no cabeçalho e um botão de resposta
+   * embaixo ("Pedir", "Agendar", ver `core/loja.botaoDePedido`). É o catálogo
+   * de quem não tem loja on-line: o toque volta como resposta, e a conversa
+   * segue o pedido daquele item. Opcional: canal sem ele manda a foto com
+   * legenda, como antes.
+   */
+  enviarProdutoComBotao?(para: string, produto: ProdutoDaLoja): Promise<string | null>
+  /**
    * O card deste canal existe sem imagem. No WhatsApp o `cta_url` tem o
    * cabeçalho opcional, e o card sem foto ainda esconde o link de rastreio
    * atrás do botão; em texto, o link aparece inteiro, e ele é longo.

@@ -111,6 +111,7 @@ function paraProdutoDaLoja(p: Produto): ProdutoDaLoja {
     ...(p.preco !== null ? { preco: p.preco } : {}),
     ...(p.descricao ? { descricao: p.descricao } : {}),
     ...(p.categoria ? { categoria: p.categoria } : {}),
+    especie: p.especie,
     emEstoque: true,
     semControleDeEstoque: true,
     ...(p.foto ? { foto: p.foto } : {}),

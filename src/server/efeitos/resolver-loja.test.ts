@@ -397,3 +397,28 @@ describe('a mesma consulta pedida de novo', () => {
     expect(r.sessao.status).not.toBe('humano')
   })
 })
+
+describe('a ordem: frase, fotos, e a pergunta depois', () => {
+  const burger = (id: string, nome: string, link = ''): ProdutoDaLoja => ({ produtoId: id, nome, preco: 30, emEstoque: true, foto: `https://x/${id}.jpg`, link })
+  const roteiro = (): Resposta[] => [
+    { tipo: 'usar_ferramenta', nome: 'loja_buscar', argumentos: { termo: 'hamburguer' } },
+    { tipo: 'usar_ferramenta', nome: 'loja_mostrar', argumentos: { produtoId: 'b1', produtoId2: 'b2' } },
+    { tipo: 'texto', texto: 'Aqui estão nossos hambúrgueres 👇\n\nTambém temos porções e bebidas. Quer ver alguma?' },
+  ]
+  const ordem = (r: Awaited<ReturnType<typeof rodar>>) =>
+    r.acoes.flatMap((a) => (a.tipo === 'enviar_texto' ? [`T:${a.texto}`] : a.tipo === 'enviar_produtos' ? ['FOTOS'] : []))
+
+  it('sem link: a pergunta final vai depois das fotos', async () => {
+    lojaAtivaDaConta.mockResolvedValue(lojaFalsa({ produtos: [burger('b1', 'Hamburguer Clássico'), burger('b2', 'Hamburguer Duplo')] }))
+    const r = await rodar(fluxo(['loja_buscar', 'loja_mostrar']), modeloComRoteiro(roteiro()))
+    expect(ordem(r)).toEqual(['T:Aqui estão nossos hambúrgueres 👇', 'FOTOS', 'T:Também temos porções e bebidas. Quer ver alguma?'])
+  })
+
+  it('com link (loja on-line): como sempre, a frase inteira e depois os cards', async () => {
+    lojaAtivaDaConta.mockResolvedValue(
+      lojaFalsa({ produtos: [burger('b1', 'Hamburguer Clássico', 'https://loja/1'), burger('b2', 'Hamburguer Duplo', 'https://loja/2')] }),
+    )
+    const r = await rodar(fluxo(['loja_buscar', 'loja_mostrar']), modeloComRoteiro(roteiro()))
+    expect(ordem(r)).toEqual(['T:Aqui estão nossos hambúrgueres 👇\n\nTambém temos porções e bebidas. Quer ver alguma?', 'FOTOS'])
+  })
+})

@@ -85,7 +85,12 @@ async function rodada(entrada: Record<string, unknown>) {
         console.log(`BOT: <${a.midia}> ${path.basename(a.url)}${a.legenda ? ` "${a.legenda}"` : ''}${a.nomeArquivo ? ` (${a.nomeArquivo})` : ''}`)
         break
       case 'enviar_produtos':
-        console.log(`BOT: <cards> ${a.produtos.map((p: any) => `${p.nome} R$ ${p.preco ?? '?'}${p.foto ? ' [foto]' : ''}${p.link ? ' [link]' : ''}`).join(' | ')}`)
+        // Como o WhatsApp mostra: com link, card com "Ver na loja"; sem link e
+        // com foto, uma mensagem por produto com o botão de pedir.
+        for (const p of a.produtos as any[]) {
+          const botao = p.link ? 'Ver na loja' : p.especie === 'servico' ? 'Agendar' : 'Pedir'
+          console.log(`BOT: <foto ${p.foto ? 'sim' : 'não'}> *${p.nome}* R$ ${p.preco ?? '?'} [${botao}]`)
+        }
         break
       case 'transferir_humano':
         console.log(`BOT: >> PASSOU PARA PESSOA: ${a.motivo}`)

@@ -541,3 +541,30 @@ describe('envio para contato sem telefone (BSUID)', () => {
     expect(enderecar(corpo)).toBe(corpo)
   })
 })
+
+describe('produto com botão de pedir', () => {
+  it('manda foto no cabeçalho, nome e preço no corpo, e o botão de resposta', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(new Response('{"messages":[{"id":"w1"}]}', { status: 200 }))
+    vi.stubGlobal('fetch', fetchMock)
+    const canal = canalCloudApi({ phoneNumberId: 'n1', token: 't', versaoGraph: 'v25.0' })
+
+    await canal.enviarProdutoComBotao!('5544999999999', {
+      produtoId: 'demo-burger',
+      nome: 'Cheddar Bacon',
+      preco: 34.9,
+      descricao: 'Blend 160 g e cheddar.',
+      emEstoque: true,
+      semControleDeEstoque: true,
+      especie: 'produto',
+      foto: 'https://x/burger.jpg',
+      link: '',
+    })
+
+    const corpo = JSON.parse(fetchMock.mock.calls.at(-1)?.[1].body as string)
+    expect(corpo.interactive.type).toBe('button')
+    expect(corpo.interactive.header).toEqual({ type: 'image', image: { link: 'https://x/burger.jpg' } })
+    expect(corpo.interactive.body.text).toContain('*Cheddar Bacon*')
+    expect(corpo.interactive.body.text).toContain('34,90')
+    expect(corpo.interactive.action.buttons).toEqual([{ type: 'reply', reply: { id: 'af-pedir:Cheddar Bacon', title: 'Pedir' } }])
+  })
+})

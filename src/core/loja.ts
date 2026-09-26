@@ -103,6 +103,8 @@ export type ProdutoDaLoja = {
   descricao?: string
   /** Só no catálogo próprio: o grupo do item (0106), "Pizzas", "Bebidas". */
   categoria?: string
+  /** Só no catálogo próprio: serviço agenda, produto pede (o botão da foto). */
+  especie?: 'produto' | 'servico'
   quantidade?: number
   /** Só com token (fase 2). Ausente = sem foto real; nunca o placeholder da loja. */
   foto?: string
@@ -319,12 +321,38 @@ export function linhasDoCard(
  */
 export function comoMandarProduto(
   produto: Pick<ProdutoDaLoja, 'link' | 'foto'>,
-  canal: { temCard: boolean; cardSemFoto?: boolean },
-): 'card' | 'imagem' | 'texto' {
+  canal: { temCard: boolean; cardSemFoto?: boolean; temPedir?: boolean },
+): 'card' | 'pedir' | 'imagem' | 'texto' {
   const foto = (produto.foto ?? '').startsWith('https://')
   if (canal.temCard && produto.link && (foto || canal.cardSemFoto)) return 'card'
+  // Foto sem link, num canal que desenha botão de resposta: a foto com o botão
+  // de pedir embaixo. O produto com link (a loja on-line) nunca chega aqui.
+  if (foto && !produto.link && canal.temPedir) return 'pedir'
   if (foto && !produto.link) return 'imagem'
   return 'texto'
+}
+
+/**
+ * O botão embaixo da foto do produto sem link: pedir, ou agendar o serviço.
+ *
+ * O id carrega o nome, e é assim que o toque volta: `pedidoDoBotao` o lê e a
+ * conversa recebe "Quero pedir: <nome>" como se a pessoa tivesse escrito. O
+ * prefixo separa este botão de qualquer opção desenhada num fluxo.
+ */
+export const PREFIXO_DO_BOTAO_DE_PEDIDO = 'af-pedir:'
+
+export function botaoDePedido(produto: Pick<ProdutoDaLoja, 'nome' | 'especie'>): { id: string; rotulo: string } {
+  return {
+    id: `${PREFIXO_DO_BOTAO_DE_PEDIDO}${[...produto.nome].slice(0, 200).join('')}`,
+    rotulo: produto.especie === 'servico' ? 'Agendar' : 'Pedir',
+  }
+}
+
+/** O texto que o toque no botão de pedir vira. `null` = não é esse botão. */
+export function pedidoDoBotao(id: string): string | null {
+  if (!id.startsWith(PREFIXO_DO_BOTAO_DE_PEDIDO)) return null
+  const nome = id.slice(PREFIXO_DO_BOTAO_DE_PEDIDO.length).trim()
+  return nome === '' ? null : `Quero pedir: ${nome}`
 }
 
 export function textoDoCard(produto: ProdutoDaLoja): string {

@@ -6,7 +6,7 @@ import { canalDoWhatsApp } from './canal-do-whatsapp'
 import { AUTOR_AUTOMACAO } from '@/core/autor-da-mensagem'
 import { sessaoNova, type Acao, type Entrada } from '@/core/engine/types'
 import { varsIniciais } from '@/core/contatos/vars-iniciais'
-import { comoMandarProduto, textoDoCard } from '@/core/loja'
+import { comoMandarProduto, pedidoDoBotao, textoDoCard } from '@/core/loja'
 import { alertar, type ContextoDoAlerta } from './alertar'
 import { avisarHandoff } from './avisar-handoff'
 import { executarComEfeitos, type OpcoesDeEfeitos } from './efeitos/resolver'
@@ -1701,9 +1701,11 @@ async function aplicar(
         // `link-de-produto.ts`. Fica gravado assim também, porque o chat do
         // site desenha o card a partir do histórico.
         const produtos = acao.produtos.map((p) => comLinkRastreado(p, contato, canal.origem))
+        const enviarComBotao = canal.enviarProdutoComBotao?.bind(canal)
         const jeito = (p: (typeof produtos)[number]) =>
-          comoMandarProduto(p, { temCard: Boolean(enviarCards), cardSemFoto: canal.cardSemFoto })
+          comoMandarProduto(p, { temCard: Boolean(enviarCards), cardSemFoto: canal.cardSemFoto, temPedir: Boolean(enviarComBotao) })
         const comFoto = produtos.filter((p) => jeito(p) === 'card')
+        const comBotao = produtos.filter((p) => jeito(p) === 'pedir')
         const soFoto = produtos.filter((p) => jeito(p) === 'imagem')
         const semFoto = produtos.filter((p) => jeito(p) === 'texto')
 
@@ -1716,6 +1718,22 @@ async function aplicar(
             payload: { produtos: comFoto },
           })
           const entrega = await entregar(() => enviarCards(contato.waId, comFoto), alvo)
+          if (!entrega.ok) return pararNoHumano(entrega.motivo)
+          await confirmarEntrega(registro, entrega.waMessageId)
+        }
+
+        // Foto sem link, com botão de pedir: um por mensagem, em ordem, cada um
+        // esperando o anterior sair, para as fotos chegarem na ordem da lista.
+        for (const produto of comBotao) {
+          const legenda = textoDoCard(produto)
+          const registro = await registrarSaida({
+            contatoId: contato.id,
+            sessaoId,
+            autor: AUTOR_AUTOMACAO,
+            texto: legenda,
+            payload: { midia: 'imagem', url: produto.foto },
+          })
+          const entrega = await entregar(() => enviarComBotao!(contato.waId, produto), alvo)
           if (!entrega.ok) return pararNoHumano(entrega.motivo)
           await confirmarEntrega(registro, entrega.waMessageId)
         }
@@ -1948,6 +1966,9 @@ function paraEntrada(mensagem: Mensagem): { entrada: Entrada; texto: string | nu
   }
 
   const resposta = mensagem.interactive?.button_reply ?? mensagem.interactive?.list_reply
+  // O botão "Pedir" embaixo da foto de um produto: vira o que a pessoa diria.
+  const pedido = resposta ? pedidoDoBotao(resposta.id) : null
+  if (pedido) return { entrada: { tipo: 'texto', texto: pedido }, texto: pedido }
   if (resposta) {
     return {
       entrada: { tipo: 'opcao', opcaoId: resposta.id },

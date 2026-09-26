@@ -72,6 +72,7 @@ describe('lojaCatalogo.buscar', () => {
       produtoId: 'u3',
       nome: 'Cadeira de escritório',
       descricao: 'Cor branca',
+      especie: 'produto',
       emEstoque: true,
       semControleDeEstoque: true,
       link: '',

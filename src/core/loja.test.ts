@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import {
+  botaoDePedido,
+  pedidoDoBotao,
   comoMandarProduto,
   cepLimpo,
   traduzirFrete,
@@ -276,5 +278,24 @@ describe('como o produto sai no canal', () => {
   })
   it('com link e foto, mas canal sem card: texto com o link, como antes', () => {
     expect(comoMandarProduto({ link: 'https://loja/p', foto: f }, { temCard: false })).toBe('texto')
+  })
+})
+
+describe('o botão de pedir embaixo da foto', () => {
+  const f = 'https://x/foto.jpg'
+  it('produto sem link, em canal com botão: pedir; com link continua card', () => {
+    expect(comoMandarProduto({ link: '', foto: f }, { temCard: true, temPedir: true })).toBe('pedir')
+    expect(comoMandarProduto({ link: 'https://loja/p', foto: f }, { temCard: true, temPedir: true })).toBe('card')
+    expect(comoMandarProduto({ link: '', foto: f }, { temCard: true })).toBe('imagem')
+  })
+  it('produto pede, serviço agenda, e o toque volta como "Quero pedir: nome"', () => {
+    const b = botaoDePedido({ nome: 'Cheddar Bacon', especie: 'produto' })
+    expect(b.rotulo).toBe('Pedir')
+    expect(botaoDePedido({ nome: 'Corte masculino', especie: 'servico' }).rotulo).toBe('Agendar')
+    expect(pedidoDoBotao(b.id)).toBe('Quero pedir: Cheddar Bacon')
+  })
+  it('opção de fluxo comum não é botão de pedir', () => {
+    expect(pedidoDoBotao('confirmar')).toBeNull()
+    expect(pedidoDoBotao('af-pedir:')).toBeNull()
   })
 })

@@ -49,8 +49,13 @@ horário é marcado.
    recomeça do zero a qualquer hora: oi com o nome, aviso e a pergunta do
    ramo. Vale no meio de uma lista, de um pedido e da conversa com a IA.
    Não vale com a conversa já com uma pessoa (ver Limitações).
-7. **Na IA**, "fotos das pizzas" recebe a lista de sabores com preço e a
-   pergunta de qual quer ver; foto só do item escolhido ou citado.
+7. **Na IA**, catálogo de verdade: "quero ver os hambúrgueres" ou "quais
+   serviços de cabelo?" recebe uma frase curta, depois uma mensagem por
+   produto (foto, nome, descrição, preço e o botão "Pedir", ou "Agendar" no
+   salão e nas aulas), e só então a pergunta final ("Também temos porções...
+   Quer ver alguma?"). Até 3 fotos por vez; havendo mais, a IA oferece os
+   outros. Tocar em "Pedir" volta para a IA como "Quero pedir: <nome>", e ela
+   segue o pedido daquele item.
 
 A **Loja online** é a PCYES de verdade: os botões são a cópia do menu da PCYES
 (comprar, meu pedido, suporte, garantia, empresa, parcerias), e "Quero
@@ -227,6 +232,8 @@ duas vezes, e o pedido confirmado ia para um atendente como "a IA não soube"
 - Na loja online, "Meu pedido" consulta pedidos reais da PCYES (com a
   confirmação por CPF que o fluxo original já tem).
 - Ofensa leva à pessoa em vez de uma segunda chance.
+- A IA às vezes repete uma listinha dos itens na frase de abertura, antes das
+  fotos. A instrução pede só a frase; é ajuste de texto, não de motor.
 - Na loja online com IA, "mouse gamer preto" pode responder que só há
   mousepads: na Magento da PCYES muitos mouses vêm sem preço nem foto (o
   produto "pai" das cores), e a busca devolve o que tem. É dado da loja; a

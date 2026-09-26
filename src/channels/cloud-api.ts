@@ -1,7 +1,7 @@
 import { ehBsuid } from '@/core/contatos/bsuid'
 import { LIMITE_ATRASO_SEGUNDOS, LIMITE_DESCRICAO_DA_OPCAO, LIMITE_ROTULO, type Opcao } from '@/core/flow/schema'
 import { cortarCaracteres } from '@/core/flow/texto'
-import { linhasDoCard } from '@/core/loja'
+import { botaoDePedido, linhasDoCard } from '@/core/loja'
 import { lerStatusDeEnvio } from '@/core/templates'
 import type { Canal, EnvioDeTemplate, Template } from './types'
 
@@ -616,6 +616,25 @@ export function canalCloudApi(config: ConfigCloudApi): Canal {
         primeiro ??= idDoEnvio(resposta)
       }
       return primeiro
+    },
+
+    async enviarProdutoComBotao(para, produto) {
+      // A foto no cabeçalho, nome, detalhe e descrição no corpo, e um botão de
+      // resposta: o toque volta como `button_reply` com o id do pedido.
+      const { titulo, detalhe } = linhasDoCard(produto, { whatsapp: true })
+      const botao = botaoDePedido(produto)
+      const corpo = [`*${titulo}*`, produto.descricao ?? '', detalhe].filter(Boolean).join('\n')
+      const resposta = await mandar({
+        to: para,
+        type: 'interactive',
+        interactive: {
+          type: 'button',
+          ...(produto.foto ? { header: { type: 'image', image: { link: produto.foto } } } : {}),
+          body: { text: cortarCaracteres(corpo, LIMITE_CORPO_CTA) },
+          action: { buttons: [{ type: 'reply', reply: { id: botao.id, title: cortarCaracteres(botao.rotulo, LIMITE_ROTULO) } }] },
+        },
+      })
+      return idDoEnvio(resposta)
     },
 
     async enviarOpcoes(para, texto, opcoes, formato) {
