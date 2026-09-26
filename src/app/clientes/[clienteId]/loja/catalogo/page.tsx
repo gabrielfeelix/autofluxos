@@ -8,14 +8,29 @@ import { ModalFormulario, RotuloCampo } from '@/components/design/modal-formular
 import { BotaoArquivar } from '@/components/produtos/botao-arquivar'
 import { ImportarPlanilha } from '@/components/produtos/importar-planilha'
 import { comoDinheiro } from '@/core/crm'
-import { ESPECIES, NOME_DA_ESPECIE, estaAtivo } from '@/core/produtos'
-import { acaoCriarProduto, acaoDefinirPreco, acaoRenomearProduto } from '@/server/acoes-produtos'
+import {
+  ESPECIES,
+  NOME_DA_ESPECIE,
+  agruparPorCategoria,
+  categoriasUsadas,
+  estaAtivo,
+  type Produto,
+} from '@/core/produtos'
+import {
+  acaoCriarProduto,
+  acaoDefinirCategoria,
+  acaoDefinirPreco,
+  acaoRenomearProduto,
+} from '@/server/acoes-produtos'
 import { acharCliente } from '@/server/repos/clientes'
 import { nichoDaConta } from '@/server/repos/recursos'
-import { pacoteDo } from '@/core/nichos'
+import { pacoteDo, visaoDoCatalogo } from '@/core/nichos'
 import { lojaDaConta } from '@/server/repos/lojas'
+import { listarMateriais } from '@/server/repos/materiais'
 import { listarProdutos } from '@/server/repos/produtos'
 import { IlustracaoProdutos } from '@/components/design/ilustracoes'
+import { BotoesDeOrdem } from '@/components/produtos/botoes-de-ordem'
+import { CardapioEmArquivo } from '@/components/produtos/cardapio-em-arquivo'
 
 export const dynamic = 'force-dynamic'
 
@@ -33,7 +48,7 @@ const PASSOS_DA_AJUDA: PassoDaAjuda[] = [
   {
     titulo: 'Importar: baixe o modelo e preencha',
     texto:
-      'Em “Importar”, baixe o modelo em Excel ou CSV. Uma linha por item. Só a coluna nome é obrigatória; tipo, sku, preço, descrição, link e foto são opcionais. Preço aceita 1.299,90 ou 1299.90.',
+      'Em “Importar”, baixe o modelo em Excel ou CSV. Uma linha por item. Só a coluna nome é obrigatória; tipo, categoria, sku, preço, descrição, link e foto são opcionais. Preço aceita 1.299,90 ou 1299.90.',
   },
   {
     titulo: 'Arraste o arquivo e confira a prévia',
@@ -74,8 +89,14 @@ const PASSOS_DA_AJUDA: PassoDaAjuda[] = [
  * Por isso a tela mostra o preço como **oferta**, e não como o que foi
  * cobrado, e por isso item sem preço aparece como "sem preço" em vez de R$ 0.
  */
-export default async function Pagina({ params }: { params: Promise<{ clienteId: string }> }) {
-  const { clienteId } = await params
+export default async function Pagina({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ clienteId: string }>
+  searchParams: Promise<{ visao?: string }>
+}) {
+  const [{ clienteId }, busca] = await Promise.all([params, searchParams])
   const [cliente, produtos, loja, nicho] = await Promise.all([
     acharCliente(clienteId),
     listarProdutos(clienteId),
@@ -90,6 +111,11 @@ export default async function Pagina({ params }: { params: Promise<{ clienteId: 
 
   const ativos = produtos.filter(estaAtivo)
   const arquivados = produtos.filter((p) => !estaAtivo(p))
+  // A visão que o ramo pede (restaurante abre em grade), trocável pelo endereço.
+  const visao = visaoDoCatalogo(pacote, busca.visao)
+  const categorias = categoriasUsadas(ativos)
+  // O cardápio em arquivo só aparece para o ramo que pede (`materiais`).
+  const materiais = pacote?.materiais ? await listarMateriais(clienteId) : null
 
   return (
     <ClienteShell cliente={cliente} ativa="loja">
@@ -151,11 +177,34 @@ export default async function Pagina({ params }: { params: Promise<{ clienteId: 
           </div>
         )}
 
+        {materiais && <CardapioEmArquivo clienteId={cliente.id} materiais={materiais} />}
+
         <section className="app-card overflow-hidden">
-          <header className="flex items-center justify-between gap-4 border-b border-line px-5 py-4">
-            <h2 className="text-[14.5px] font-bold">
-              {ativos.length} {ativos.length === 1 ? 'item ativo' : 'itens ativos'}
-            </h2>
+          <header className="flex flex-wrap items-center justify-between gap-4 border-b border-line px-5 py-4">
+            <div className="flex flex-wrap items-center gap-3">
+              <h2 className="text-[14.5px] font-bold">
+                {ativos.length} {ativos.length === 1 ? 'item ativo' : 'itens ativos'}
+              </h2>
+              <div role="group" aria-label="Como ver o catálogo" className="flex rounded-lg border border-line bg-panel p-0.5">
+                {(
+                  [
+                    { valor: 'grade', rotulo: 'Grade' },
+                    { valor: 'lista', rotulo: 'Lista' },
+                  ] as const
+                ).map((opcao) => (
+                  <Link
+                    key={opcao.valor}
+                    href={`/clientes/${cliente.id}/loja/catalogo?visao=${opcao.valor}`}
+                    aria-current={visao === opcao.valor ? 'page' : undefined}
+                    className={`rounded-md px-3 py-1 text-[12px] font-semibold transition ${
+                      visao === opcao.valor ? 'bg-primary-weak text-primary' : 'text-muted hover:text-ink'
+                    }`}
+                  >
+                    {opcao.rotulo}
+                  </Link>
+                ))}
+              </div>
+            </div>
             <div className="flex items-center gap-2">
               <ImportarPlanilha clienteId={cliente.id} />
               <ModalFormulario
@@ -187,6 +236,16 @@ export default async function Pagina({ params }: { params: Promise<{ clienteId: 
                 />
               </label>
               <label>
+                <RotuloCampo>Categoria (opcional)</RotuloCampo>
+                <input
+                  name="categoria"
+                  list={ID_DAS_CATEGORIAS}
+                  maxLength={60}
+                  placeholder="ex.: Pizzas, Bebidas"
+                  className="app-field px-[13px] py-[11px] text-[13.5px]"
+                />
+              </label>
+              <label>
                 <RotuloCampo>Preço (opcional)</RotuloCampo>
                 <input
                   name="preco"
@@ -212,12 +271,63 @@ export default async function Pagina({ params }: { params: Promise<{ clienteId: 
                 obrigatório para quem quiser segmentar por produto depois.
               </p>
             </div>
+          ) : visao === 'grade' ? (
+            /*
+             * A grade: foto grande, agrupada por categoria, como se lê um
+             * cardápio. A ordem dentro do grupo é a do dono, pelos botões de
+             * subir e descer; entre grupos, a ordem alfabética da categoria.
+             */
+            <div className="space-y-7 p-5">
+              {agruparPorCategoria(ativos).map((grupo) => (
+                <section key={grupo.categoria ?? ''} aria-label={grupo.categoria ?? 'Sem categoria'}>
+                  <h3 className="mb-3 flex items-baseline gap-2 text-[13px] font-bold">
+                    {grupo.categoria ?? 'Sem categoria'}
+                    <span className="text-[11px] font-normal text-dim tabular-nums">{grupo.itens.length}</span>
+                  </h3>
+                  <ul className="grid grid-cols-[repeat(auto-fill,minmax(min(220px,100%),1fr))] gap-3.5">
+                    {grupo.itens.map((produto, i) => (
+                      <li
+                        key={produto.id}
+                        className="flex flex-col overflow-hidden rounded-[12px] border border-line bg-panel"
+                      >
+                        <div className="flex aspect-[4/3] items-center justify-center bg-black/25">
+                          {produto.foto ? (
+                            // eslint-disable-next-line @next/next/no-img-element
+                            <img src={produto.foto} alt={produto.nome} className="size-full object-cover" />
+                          ) : (
+                            <span className="px-4 text-center text-[11px] leading-4 text-dim">
+                              Sem foto: vai como texto
+                            </span>
+                          )}
+                        </div>
+                        <div className="flex flex-1 flex-col gap-2.5 p-3">
+                          <div className="flex items-start justify-between gap-2">
+                            <p className="min-w-0 text-[13px] leading-5 font-semibold">{produto.nome}</p>
+                            <BotoesDeOrdem
+                              clienteId={cliente.id}
+                              produtoId={produto.id}
+                              nome={produto.nome}
+                              primeiro={i === 0}
+                              ultimo={i === grupo.itens.length - 1}
+                            />
+                          </div>
+                          <Preco produto={produto} />
+                          <div className="mt-auto flex flex-wrap items-center gap-1.5">
+                            <AcoesDoItem clienteId={cliente.id} produto={produto} />
+                          </div>
+                        </div>
+                      </li>
+                    ))}
+                  </ul>
+                </section>
+              ))}
+            </div>
           ) : (
             <ul>
               {ativos.map((produto) => (
                 <li
                   key={produto.id}
-                  className="flex items-center gap-3 border-b border-line px-5 py-4 last:border-0"
+                  className="flex flex-wrap items-center gap-3 border-b border-line px-5 py-4 last:border-0"
                 >
                   <span className="flex-1 text-[13.5px] font-medium">
                     {produto.nome}
@@ -225,69 +335,20 @@ export default async function Pagina({ params }: { params: Promise<{ clienteId: 
                       <span className="ml-2 text-[11px] font-normal text-dim tabular-nums">{produto.sku}</span>
                     )}
                   </span>
+                  {produto.categoria && <span className="text-[11px] text-dim">{produto.categoria}</span>}
                   <span className="text-[11px] text-dim">{NOME_DA_ESPECIE[produto.especie]}</span>
-                  {/*
-                    "sem preço" em vez de R$ 0,00: são estados diferentes, e o
-                    segundo é uma oferta que ninguém fez.
-                  */}
-                  <span
-                    className={
-                      produto.preco === null
-                        ? 'text-[11px] text-dim italic'
-                        : 'text-[12.5px] font-medium tabular-nums'
-                    }
-                  >
-                    {produto.preco === null ? 'sem preço' : comoDinheiro(produto.preco)}
-                  </span>
-                  <ModalFormulario
-                    botao="Preço"
-                    titulo={`Preço de “${produto.nome}”`}
-                    descricao="É a oferta de hoje. As vendas já registradas guardam o valor da época e não mudam."
-                    rotuloEnviar="Salvar"
-                    variante="secundario"
-                    action={acaoDefinirPreco.bind(null, cliente.id, produto.id, {})}
-                  >
-                    <label>
-                      <RotuloCampo>Preço</RotuloCampo>
-                      <input
-                        name="preco"
-                        autoFocus
-                        inputMode="decimal"
-                        defaultValue={produto.preco === null ? '' : produto.preco.toFixed(2).replace('.', ',')}
-                        placeholder="ex.: 150,00"
-                        className="app-field px-[13px] py-[11px] text-[13.5px]"
-                      />
-                      <span className="mt-1.5 block text-[11px] leading-5 text-dim">
-                        Apagar o campo volta para “não informado”, e aí o bot
-                        deixa de anunciar preço em vez de anunciar um antigo.
-                      </span>
-                    </label>
-                  </ModalFormulario>
-                  <ModalFormulario
-                    botao="Renomear"
-                    titulo={`Renomear “${produto.nome}”`}
-                    descricao="As vendas já registradas guardam o nome da época, e não mudam: renomear vale daqui para a frente."
-                    rotuloEnviar="Salvar"
-                    variante="secundario"
-                    action={acaoRenomearProduto.bind(null, cliente.id, produto.id, {})}
-                  >
-                    <label>
-                      <RotuloCampo>Nome</RotuloCampo>
-                      <input
-                        name="nome"
-                        required
-                        autoFocus
-                        maxLength={120}
-                        defaultValue={produto.nome}
-                        className="app-field px-[13px] py-[11px] text-[13.5px]"
-                      />
-                    </label>
-                  </ModalFormulario>
-                  <BotaoArquivar clienteId={cliente.id} produto={produto} arquivar />
+                  <Preco produto={produto} />
+                  <AcoesDoItem clienteId={cliente.id} produto={produto} />
                 </li>
               ))}
             </ul>
           )}
+          {/* As sugestões do campo categoria, nos formulários de criar e de trocar. */}
+          <datalist id={ID_DAS_CATEGORIAS}>
+            {categorias.map((c) => (
+              <option key={c} value={c} />
+            ))}
+          </datalist>
         </section>
 
         {arquivados.length > 0 && (
@@ -319,5 +380,101 @@ export default async function Pagina({ params }: { params: Promise<{ clienteId: 
         )}
       </main>
     </ClienteShell>
+  )
+}
+
+/** O `id` da lista de sugestões de categoria. Um só por página. */
+const ID_DAS_CATEGORIAS = 'categorias-do-catalogo'
+
+/**
+ * "sem preço" em vez de R$ 0,00: são estados diferentes, e o segundo é uma
+ * oferta que ninguém fez.
+ */
+function Preco({ produto }: { produto: Produto }) {
+  return (
+    <span
+      className={
+        produto.preco === null ? 'text-[11px] text-dim italic' : 'text-[12.5px] font-medium tabular-nums'
+      }
+    >
+      {produto.preco === null ? 'sem preço' : comoDinheiro(produto.preco)}
+    </span>
+  )
+}
+
+/** Preço, categoria, nome e arquivar: os mesmos na grade e na lista. */
+function AcoesDoItem({ clienteId, produto }: { clienteId: string; produto: Produto }) {
+  return (
+    <>
+      <ModalFormulario
+        botao="Preço"
+        titulo={`Preço de “${produto.nome}”`}
+        descricao="É a oferta de hoje. As vendas já registradas guardam o valor da época e não mudam."
+        rotuloEnviar="Salvar"
+        variante="secundario"
+        action={acaoDefinirPreco.bind(null, clienteId, produto.id, {})}
+      >
+        <label>
+          <RotuloCampo>Preço</RotuloCampo>
+          <input
+            name="preco"
+            autoFocus
+            inputMode="decimal"
+            defaultValue={produto.preco === null ? '' : produto.preco.toFixed(2).replace('.', ',')}
+            placeholder="ex.: 150,00"
+            className="app-field px-[13px] py-[11px] text-[13.5px]"
+          />
+          <span className="mt-1.5 block text-[11px] leading-5 text-dim">
+            Apagar o campo volta para “não informado”, e aí o bot
+            deixa de anunciar preço em vez de anunciar um antigo.
+          </span>
+        </label>
+      </ModalFormulario>
+      <ModalFormulario
+        botao="Categoria"
+        titulo={`Categoria de “${produto.nome}”`}
+        descricao="Agrupa o item na grade e deixa o bot procurar só dentro dela. Trocar de categoria leva o item para o fim do grupo novo."
+        rotuloEnviar="Salvar"
+        variante="secundario"
+        action={acaoDefinirCategoria.bind(null, clienteId, produto.id, {})}
+      >
+        <label>
+          <RotuloCampo>Categoria</RotuloCampo>
+          <input
+            name="categoria"
+            autoFocus
+            list={ID_DAS_CATEGORIAS}
+            maxLength={60}
+            defaultValue={produto.categoria ?? ''}
+            placeholder="ex.: Pizzas, Bebidas"
+            className="app-field px-[13px] py-[11px] text-[13.5px]"
+          />
+          <span className="mt-1.5 block text-[11px] leading-5 text-dim">
+            Em branco tira a categoria, e o item vai para “Sem categoria”.
+          </span>
+        </label>
+      </ModalFormulario>
+      <ModalFormulario
+        botao="Renomear"
+        titulo={`Renomear “${produto.nome}”`}
+        descricao="As vendas já registradas guardam o nome da época, e não mudam: renomear vale daqui para a frente."
+        rotuloEnviar="Salvar"
+        variante="secundario"
+        action={acaoRenomearProduto.bind(null, clienteId, produto.id, {})}
+      >
+        <label>
+          <RotuloCampo>Nome</RotuloCampo>
+          <input
+            name="nome"
+            required
+            autoFocus
+            maxLength={120}
+            defaultValue={produto.nome}
+            className="app-field px-[13px] py-[11px] text-[13.5px]"
+          />
+        </label>
+      </ModalFormulario>
+      <BotaoArquivar clienteId={clienteId} produto={produto} arquivar />
+    </>
   )
 }

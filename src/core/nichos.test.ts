@@ -2,7 +2,7 @@ import { readdirSync, readFileSync, statSync } from 'node:fs'
 import { join, relative } from 'node:path'
 import { describe, expect, it } from 'vitest'
 import { OBJETIVOS } from './objetivo-da-conta'
-import { NICHOS, PACOTES, ehNicho, pacoteDo } from './nichos'
+import { NICHOS, PACOTES, VISOES_DO_CATALOGO, ehNicho, pacoteDo, visaoDoCatalogo } from './nichos'
 
 describe('o ramo da conta', () => {
   it('sem ramo não há pacote: é o sistema de hoje', () => {
@@ -26,6 +26,27 @@ describe('o ramo da conta', () => {
 
   it('nenhum ramo esconde a lista de produtos: é o que o bot consulta', () => {
     for (const nicho of NICHOS) expect(PACOTES[nicho].itensOcultos).not.toContain('catalogo')
+  })
+
+  it('todo ramo abre o catálogo numa visão que existe', () => {
+    for (const nicho of NICHOS) expect(VISOES_DO_CATALOGO).toContain(PACOTES[nicho].visaoDoCatalogo)
+  })
+})
+
+describe('a visão do catálogo', () => {
+  it('sem ramo abre na lista, como sempre abriu', () => {
+    expect(visaoDoCatalogo(null)).toBe('lista')
+  })
+
+  it('o ramo escolhe a primeira visão, e o endereço troca', () => {
+    const grade = PACOTES[NICHOS.find((n) => PACOTES[n].visaoDoCatalogo === 'grade')!]
+    expect(visaoDoCatalogo(grade)).toBe('grade')
+    expect(visaoDoCatalogo(grade, 'lista')).toBe('lista')
+    expect(visaoDoCatalogo(null, 'grade')).toBe('grade')
+  })
+
+  it('visão desconhecida no endereço cai na do ramo', () => {
+    expect(visaoDoCatalogo(null, 'mosaico')).toBe('lista')
   })
 })
 

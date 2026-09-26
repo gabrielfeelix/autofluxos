@@ -53,7 +53,22 @@ export type PacoteDoNicho = {
   itensComercio: Partial<Record<'catalogo' | 'conectar-loja', string>>
   /** Subitens que não fazem sentido no ramo. Só da seção Comércio. */
   itensOcultos: ('catalogo' | 'conectar-loja')[]
+  /**
+   * Como a tela do catálogo abre. `grade` é foto grande, agrupada por
+   * categoria, que é como se lê um cardápio; `lista` é a tabela de sempre.
+   * As duas continuam a um clique: isto só escolhe a primeira.
+   */
+  visaoDoCatalogo: VisaoDoCatalogo
+  /**
+   * A tela do catálogo mostra o bloco do cardápio em arquivo (PDF e imagem,
+   * tabela `materiais`), que o bot manda quando pedem "o cardápio".
+   */
+  materiais: boolean
 }
+
+export const VISOES_DO_CATALOGO = ['grade', 'lista'] as const
+
+export type VisaoDoCatalogo = (typeof VISOES_DO_CATALOGO)[number]
 
 export const PACOTES: Record<Nicho, PacoteDoNicho> = {
   restaurante: {
@@ -64,6 +79,8 @@ export const PACOTES: Record<Nicho, PacoteDoNicho> = {
     iconeComercio: 'talheres',
     itensComercio: { catalogo: 'Pratos' },
     itensOcultos: [],
+    visaoDoCatalogo: 'grade',
+    materiais: true,
   },
   ecommerce: {
     nome: 'Loja virtual',
@@ -73,6 +90,8 @@ export const PACOTES: Record<Nicho, PacoteDoNicho> = {
     iconeComercio: 'sacola',
     itensComercio: {},
     itensOcultos: [],
+    visaoDoCatalogo: 'lista',
+    materiais: false,
   },
   comercio: {
     nome: 'Loja física, comércio',
@@ -83,10 +102,22 @@ export const PACOTES: Record<Nicho, PacoteDoNicho> = {
     itensComercio: { catalogo: 'Produtos e serviços' },
     // Integração é com loja on-line; quem vende no balcão não tem o que ligar.
     itensOcultos: ['conectar-loja'],
+    visaoDoCatalogo: 'lista',
+    materiais: false,
   },
 }
 
 /** O pacote do ramo, ou `null` para a conta sem ramo (o sistema de hoje). */
 export function pacoteDo(nicho: Nicho | null | undefined): PacoteDoNicho | null {
   return nicho ? PACOTES[nicho] : null
+}
+
+/**
+ * A visão do catálogo que vale para a tela: a pedida no endereço, se for uma
+ * que existe, senão a do ramo, senão a lista (a conta sem ramo abre como
+ * sempre abriu).
+ */
+export function visaoDoCatalogo(pacote: PacoteDoNicho | null, pedida?: string | null): VisaoDoCatalogo {
+  if (pedida && (VISOES_DO_CATALOGO as readonly string[]).includes(pedida)) return pedida as VisaoDoCatalogo
+  return pacote?.visaoDoCatalogo ?? 'lista'
 }
