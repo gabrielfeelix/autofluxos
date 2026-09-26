@@ -42,6 +42,11 @@ export function useEtiquetasDisponiveis(doServidor: EtiquetaEscolhivel[]): Etiqu
 /**
  * Aplicar e tirar etiquetas de um contato, clicando.
  *
+ * **Tirar daqui é desanexar, nunca apagar.** O `×` da ficha acesa tira a
+ * etiqueta desta pessoa e só; apagar a etiqueta da conta mora na tela
+ * Etiquetas. Acertado com o Eduardo em 26/set: sem os sinais, a ficha acesa não
+ * dizia o que o clique fazia, e parecia que dava para apagar em dois lugares.
+ *
  * **Todas as etiquetas da conta aparecem, as aplicadas acesas.** A alternativa, um botão "adicionar" que abre uma lista, esconde justamente a informação
  * que a tela existe para dar: quais **não** estão aplicadas. Com poucas
  * etiquetas, que é o caso real, mostrar tudo custa menos que um clique a mais.
@@ -129,14 +134,19 @@ export function SeletorDeEtiquetas({
               key={etiqueta.id}
               type="button"
               aria-pressed={acesa}
+              aria-label={acesa ? `Tirar "${etiqueta.nome}" deste contato` : `Colocar "${etiqueta.nome}" neste contato`}
+              title={acesa ? 'Tirar deste contato (a etiqueta continua existindo)' : 'Colocar neste contato'}
               onClick={() => alternar(etiqueta.id)}
-              className={`rounded-full border px-2 py-0.5 text-[10.5px] font-semibold transition ${
+              className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10.5px] font-semibold transition ${
                 acesa
                   ? CLASSE_DA_COR[etiqueta.cor]
-                  : 'border-line bg-transparent text-dim hover:border-strong hover:text-muted'
+                  : 'border-dashed border-line bg-transparent text-dim hover:border-strong hover:text-muted'
               }`}
             >
               {etiqueta.nome}
+              <span aria-hidden className="text-[11px] leading-none opacity-70">
+                {acesa ? '×' : '+'}
+              </span>
             </button>
           )
         })}
