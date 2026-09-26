@@ -1029,6 +1029,29 @@ describe('IA contínua que conclui', () => {
     const saida = r.acoes.find((a) => a.tipo === 'transferir_humano')
     expect(saida?.tipo === 'transferir_humano' && saida.motivo).toBe('Novo pedido: 2 mussarelas')
   })
+
+  /*
+   * 26/set/2026, demo da pizzaria: o Gemini chamou `concluir_conversa` duas
+   * vezes seguidas, a trava de consulta repetida recusou a segunda, e o pedido
+   * que a pessoa tinha acabado de confirmar foi para um atendente com o motivo
+   * "a IA não soube responder".
+   */
+  it('depois de concluir, a consulta sai da lista; e se vier de novo, a conversa conclui mesmo assim', async () => {
+    const modelo = modeloQue(() => ({
+      tipo: 'usar_ferramenta',
+      nome: 'concluir_conversa',
+      argumentos: { resumo: '1 pepperoni grande, Rua das Flores 50, Pix' },
+    }))
+    const r = await executarComEfeitos(comConcluir(true), sessaoNova(), { tipo: 'inicio' }, {
+      modelo,
+      contextoNegocio,
+    })
+
+    expect(modelo.pedidos[1]?.ferramentas?.map((f) => f.nome) ?? []).not.toContain('concluir_conversa')
+    expect(r.sessao.vars.pedido).toBe('1 pepperoni grande, Rua das Flores 50, Pix')
+    const saida = r.acoes.find((a) => a.tipo === 'transferir_humano')
+    expect(saida?.tipo === 'transferir_humano' && saida.motivo).toBe('Novo pedido: 1 pepperoni grande, Rua das Flores 50, Pix')
+  })
 })
 
 describe('"Sobre a empresa" do bloco', () => {

@@ -864,8 +864,23 @@ async function responderComFerramentas({
       // Na última volta o catálogo sai: o modelo tem que responder com o que
       // já tem. Deixá-lo pedir de novo produziria um pedido que ninguém vai
       // executar, e a conversa terminaria em silêncio.
-      ferramentas: volta === MAX_VOLTAS_DE_FERRAMENTA ? [] : permitidas,
+      // Concluída a conversa, a consulta de concluir sai: o que falta é a frase.
+      ferramentas:
+        volta === MAX_VOLTAS_DE_FERRAMENTA
+          ? []
+          : concluido === null
+            ? permitidas
+            : permitidas.filter((f) => f !== CONCLUIR_CONVERSA),
     })
+
+    /*
+     * E se o modelo pedir de novo mesmo assim, a conversa já está concluída:
+     * recusar como consulta repetida mandaria para um atendente, com o motivo
+     * "a IA não soube", um pedido que a pessoa acabou de confirmar.
+     */
+    if (concluido !== null && resposta.tipo === 'usar_ferramenta' && resposta.nome === CONCLUIR_CONVERSA.nome) {
+      return { tipo: 'texto', texto: 'Perfeito, anotei tudo! 🙌', produtos: cards, anexos, concluido }
+    }
 
     if (resposta.tipo === 'texto' && (cards.length > 0 || anexos.length > 0)) {
       return { ...resposta, produtos: cards, anexos, ...conclusao() }
