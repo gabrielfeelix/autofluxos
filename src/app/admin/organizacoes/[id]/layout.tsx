@@ -6,6 +6,8 @@ import { Selo } from '@/components/admin/partes'
 import { LogoDoCliente } from '@/components/design/logo-cliente'
 import { acharOrganizacao } from '@/server/repos/organizacoes'
 import { planoVigente } from '@/server/repos/planos'
+import { nichoDaConta } from '@/server/repos/recursos'
+import { pacoteDo } from '@/core/nichos'
 
 /**
  * O detalhe de uma organização: cabeçalho fixo e abas.
@@ -18,7 +20,7 @@ export default async function LayoutDaOrganizacao({ children, params }: { childr
   const { id } = await params
   const organizacao = await acharOrganizacao(id)
   if (!organizacao) notFound()
-  const plano = await planoVigente(organizacao.plano || 'essencial')
+  const [plano, nicho] = await Promise.all([planoVigente(organizacao.plano || 'essencial'), nichoDaConta(organizacao.id)])
   const base = `/admin/organizacoes/${organizacao.id}`
 
   return (
@@ -36,6 +38,11 @@ export default async function LayoutDaOrganizacao({ children, params }: { childr
           <h1 className="truncate text-[20px] font-bold tracking-[-0.02em] md:text-[25px]">{organizacao.nome}</h1>
           <p className="mt-1 flex flex-wrap items-center gap-1.5 text-[12px] text-muted">
             <Selo tom="destaque">{plano.nome}</Selo>
+            {/* O tipo de negócio, e a troca a um clique: a tela da conta, que o
+                suporte abre e que grava a auditoria (PLANO-NICHOS 3.3). */}
+            <Link href={`/clientes/${organizacao.id}/ajustes/recursos`} title="Trocar o tipo de negócio">
+              <Selo tom="neutro">{pacoteDo(nicho)?.nome ?? 'Sem tipo de negócio'}</Selo>
+            </Link>
             {organizacao.suspensaEm ? <Selo tom="alerta">Suspensa</Selo> : organizacao.esperando > 0 ? <Selo tom="aviso">{organizacao.esperando} esperando</Selo> : <Selo tom="ok">Ativa</Selo>}
             <span className="ml-1 truncate">{organizacao.responsavel || organizacao.email || 'sem responsável no cadastro'}</span>
           </p>

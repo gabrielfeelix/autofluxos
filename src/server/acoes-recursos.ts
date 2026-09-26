@@ -2,7 +2,9 @@
 
 import { revalidatePath } from 'next/cache'
 import { ehObjetivo } from '@/core/objetivo-da-conta'
-import { definirCrmAtivo, definirLojaAtiva, definirObjetivo } from './repos/recursos'
+import { ehNicho, pacoteDo } from '@/core/nichos'
+import { registrar } from './repos/auditoria'
+import { definirCrmAtivo, definirLojaAtiva, definirNicho, definirObjetivo, nichoDaConta } from './repos/recursos'
 import { exigirCapacidade, recusou } from './permissoes'
 
 /**
@@ -90,6 +92,43 @@ export async function acaoDefinirLoja(
   const r = await definirLojaAtiva(clienteId, ativa)
   if (!r.ok) return { ok: false, erro: r.motivo }
 
+  revalidatePath(`/clientes/${clienteId}`, 'layout')
+  return { ok: true }
+}
+
+/**
+ * Troca o tipo de negócio da conta (PLANO-NICHOS 1.4 e 3.3). Vazio volta para
+ * "sem tipo", o sistema de antes.
+ *
+ * Muda palavras, menu e sugestões: **não apaga nada e não instala nada**. A
+ * porta é `configurar_empresa` (dono e administrador), e não a da operação:
+ * trocar o tipo muda a tela de todo mundo na conta. Toda troca vai para a
+ * auditoria, com de onde e para onde.
+ */
+export async function acaoDefinirNicho(clienteId: string, nicho: string): Promise<RespostaDeRecursos> {
+  const acesso = await exigirCapacidade(clienteId, 'configurar_empresa', 'todos')
+  if (recusou(acesso)) return acesso
+
+  const novo = nicho === '' ? null : nicho
+  if (novo !== null && !ehNicho(novo)) return { ok: false, erro: 'esse tipo de negócio não existe' }
+
+  const anterior = await nichoDaConta(clienteId)
+  if (anterior === novo) return { ok: true }
+  const r = await definirNicho(clienteId, novo)
+  if (!r.ok) return { ok: false, erro: r.motivo }
+
+  await registrar({
+    acao: 'trocou_tipo_de_negocio',
+    autorId: acesso.sessao.usuario.id,
+    autorEmail: acesso.sessao.usuario.email,
+    contaId: clienteId,
+    alvoTipo: 'client',
+    alvoId: clienteId,
+    detalhes: { de: anterior ?? '', para: novo ?? '', nome: pacoteDo(novo)?.nome ?? 'Sem tipo' },
+    impersonadoPor: acesso.sessao.impersonadoPor,
+  })
+
+  // O menu, os títulos e as galerias de toda a conta mudam.
   revalidatePath(`/clientes/${clienteId}`, 'layout')
   return { ok: true }
 }
