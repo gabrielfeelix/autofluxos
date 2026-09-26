@@ -1,0 +1,97 @@
+{
+ "pizzaria": {
+  "negocio": "Pizzaria Exemplo",
+  "itens": [
+   {"slug":"mussarela","nome":"Pizza Mussarela","categoria":"Pizzas salgadas","preco":49.90,"descricao":"Molho de tomate, mussarela, tomate em rodelas, orégano e azeitona.","busca":"cheese pizza"},
+   {"slug":"calabresa","nome":"Pizza Calabresa","categoria":"Pizzas salgadas","preco":52.90,"descricao":"Calabresa fatiada, cebola, mussarela e orégano.","busca":"sausage onion pizza"},
+   {"slug":"margherita","nome":"Pizza Margherita","categoria":"Pizzas salgadas","preco":54.90,"descricao":"Mussarela, tomate, manjericão fresco e azeite.","busca":"margherita pizza"},
+   {"slug":"portuguesa","nome":"Pizza Portuguesa","categoria":"Pizzas salgadas","preco":58.90,"descricao":"Presunto, ovo, cebola, ervilha, azeitona e mussarela.","busca":"ham egg pizza"},
+   {"slug":"frango-catupiry","nome":"Pizza Frango com Catupiry","categoria":"Pizzas salgadas","preco":58.90,"descricao":"Frango desfiado temperado, requeijão cremoso e milho.","busca":"chicken pizza"},
+   {"slug":"quatro-queijos","nome":"Pizza Quatro Queijos","categoria":"Pizzas salgadas","preco":61.90,"descricao":"Mussarela, provolone, parmesão e gorgonzola.","busca":"four cheese pizza"},
+   {"slug":"pepperoni","nome":"Pizza Pepperoni","categoria":"Pizzas salgadas","preco":62.90,"descricao":"Pepperoni fatiado e muita mussarela.","busca":"pepperoni pizza"},
+   {"slug":"napolitana","nome":"Pizza Napolitana","categoria":"Pizzas salgadas","preco":54.90,"descricao":"Mussarela, tomate, parmesão ralado e manjericão.","busca":"neapolitan pizza"},
+   {"slug":"bacon-milho","nome":"Pizza Bacon com Milho","categoria":"Pizzas salgadas","preco":57.90,"descricao":"Bacon crocante, milho verde e mussarela.","busca":"bacon pizza"},
+   {"slug":"palmito","nome":"Pizza Palmito","categoria":"Pizzas salgadas","preco":59.90,"descricao":"Palmito, mussarela, azeitona e orégano.","busca":"olive pizza"},
+   {"slug":"lombo","nome":"Pizza Lombo Canadense","categoria":"Pizzas salgadas","preco":61.90,"descricao":"Lombo canadense, requeijão cremoso e mussarela.","busca":"ham pizza"},
+   {"slug":"vegetariana","nome":"Pizza Vegetariana","categoria":"Pizzas salgadas","preco":56.90,"descricao":"Brócolis, champignon, pimentão, cebola, tomate e mussarela.","busca":"vegetable pizza"},
+   {"slug":"chocolate-morango","nome":"Pizza Chocolate com Morango","categoria":"Pizzas doces","preco":54.90,"descricao":"Chocolate ao leite derretido com morangos frescos.","busca":"chocolate strawberry dessert pizza"},
+   {"slug":"romeu-julieta","nome":"Pizza Romeu e Julieta","categoria":"Pizzas doces","preco":52.90,"descricao":"Goiabada cremosa com mussarela.","busca":"sweet pizza"},
+   {"slug":"banana-canela","nome":"Pizza Banana com Canela","categoria":"Pizzas doces","preco":49.90,"descricao":"Banana, açúcar, canela e leite condensado.","busca":"banana dessert pizza"},
+   {"slug":"prestigio","nome":"Pizza Prestígio","categoria":"Pizzas doces","preco":54.90,"descricao":"Chocolate ao leite com coco ralado.","busca":"chocolate pizza"}
+  ]
+ },
+ "comum-comida": {
+  "negocio": "",
+  "itens": [
+   {"slug":"refri-2l","nome":"Refrigerante 2 L","categoria":"Bebidas","preco":14.00,"descricao":"Cola, guaraná ou laranja. Pergunte os sabores do dia.","busca":"soda bottle"},
+   {"slug":"refri-lata","nome":"Refrigerante lata 350 ml","categoria":"Bebidas","preco":6.50,"descricao":"Cola, guaraná ou laranja, bem gelado.","busca":"soda can"},
+   {"slug":"suco","nome":"Suco natural 500 ml","categoria":"Bebidas","preco":9.90,"descricao":"Laranja, limão ou maracujá, feito na hora.","busca":"orange juice glass"},
+   {"slug":"agua","nome":"Água mineral 500 ml","categoria":"Bebidas","preco":4.00,"descricao":"Com ou sem gás.","busca":"water bottle"},
+   {"slug":"petit-gateau","nome":"Petit gâteau","categoria":"Sobremesas","preco":18.90,"descricao":"Bolinho de chocolate com recheio cremoso e sorvete de creme.","busca":"chocolate lava cake"},
+   {"slug":"pudim","nome":"Pudim de leite","categoria":"Sobremesas","preco":12.90,"descricao":"Pudim de leite condensado com calda de caramelo.","busca":"flan caramel"},
+   {"slug":"brownie","nome":"Brownie com sorvete","categoria":"Sobremesas","preco":16.90,"descricao":"Brownie de chocolate quentinho com sorvete e calda.","busca":"brownie ice cream"}
+  ]
+ },
+ "hamburgueria": {
+  "negocio": "Hamburgueria Exemplo",
+  "itens": [
+   {"slug":"burger-classico","nome":"Hambúrguer Clássico","categoria":"Hambúrgueres","preco":29.90,"descricao":"Pão brioche, blend 160 g, queijo, alface, tomate e molho da casa.","busca":"cheeseburger"},
+   {"slug":"burger-cheddar-bacon","nome":"Cheddar Bacon","categoria":"Hambúrgueres","preco":34.90,"descricao":"Blend 160 g, cheddar cremoso, bacon crocante e cebola caramelizada.","busca":"bacon cheeseburger"},
+   {"slug":"burger-duplo","nome":"Duplo Smash","categoria":"Hambúrgueres","preco":36.90,"descricao":"Dois smash de 90 g, queijo prato em dobro e picles.","busca":"double burger"},
+   {"slug":"burger-frango","nome":"Frango Crocante","categoria":"Hambúrgueres","preco":31.90,"descricao":"Filé de frango empanado, alface, tomate e maionese de ervas.","busca":"chicken sandwich"},
+   {"slug":"burger-veggie","nome":"Veggie de Grão-de-bico","categoria":"Hambúrgueres","preco":30.90,"descricao":"Hambúrguer de grão-de-bico, queijo, rúcula e tomate seco.","busca":"veggie burger"},
+   {"slug":"batata","nome":"Batata frita","categoria":"Porções","preco":18.90,"descricao":"Porção de 300 g, crocante, com maionese da casa.","busca":"french fries"},
+   {"slug":"onion-rings","nome":"Onion rings","categoria":"Porções","preco":21.90,"descricao":"Anéis de cebola empanados, porção de 250 g.","busca":"onion rings"},
+   {"slug":"nuggets","nome":"Nuggets de frango","categoria":"Porções","preco":22.90,"descricao":"10 unidades com molho barbecue.","busca":"chicken nuggets"},
+   {"slug":"shake-chocolate","nome":"Milk-shake de chocolate","categoria":"Milk-shakes","preco":19.90,"descricao":"500 ml, feito com sorvete de verdade.","busca":"chocolate milkshake"},
+   {"slug":"shake-morango","nome":"Milk-shake de morango","categoria":"Milk-shakes","preco":19.90,"descricao":"500 ml, com calda de morango.","busca":"strawberry milkshake"}
+  ]
+ },
+ "restaurante": {
+  "negocio": "Restaurante Exemplo",
+  "itens": [
+   {"slug":"frango-grelhado","nome":"Filé de frango grelhado","categoria":"Pratos executivos","preco":32.90,"descricao":"Com arroz, feijão, salada e batata frita.","busca":"grilled chicken rice"},
+   {"slug":"bife-acebolado","nome":"Bife acebolado","categoria":"Pratos executivos","preco":36.90,"descricao":"Contrafilé acebolado com arroz, feijão, farofa e salada.","busca":"steak onions plate"},
+   {"slug":"parmegiana","nome":"Parmegiana de carne","categoria":"Pratos executivos","preco":39.90,"descricao":"Com arroz e batata frita.","busca":"parmigiana"},
+   {"slug":"feijoada","nome":"Feijoada completa","categoria":"Pratos executivos","preco":42.90,"descricao":"Só aos sábados. Com arroz, couve, farofa, torresmo e laranja.","busca":"feijoada"},
+   {"slug":"peixe","nome":"Salmão grelhado","categoria":"Pratos executivos","preco":46.90,"descricao":"Salmão grelhado com legumes e purê de batata.","busca":"grilled fish plate"},
+   {"slug":"salada-caesar","nome":"Salada Caesar com frango","categoria":"Saladas","preco":29.90,"descricao":"Alface americana, frango grelhado, croutons, parmesão e molho caesar.","busca":"caesar salad"},
+   {"slug":"salada-casa","nome":"Salada da casa","categoria":"Saladas","preco":24.90,"descricao":"Folhas, tomate, pepino, cenoura, grão-de-bico e ovo.","busca":"green salad bowl"}
+  ]
+ },
+ "comercio": {
+  "negocio": "Moda Exemplo",
+  "itens": [
+   {"slug":"camiseta","nome":"Camiseta básica algodão","categoria":"Roupas","preco":49.90,"descricao":"100% algodão, cores preto, branco e cinza. Tamanhos P ao GG.","busca":"t-shirt"},
+   {"slug":"calca-jeans","nome":"Calça jeans reta","categoria":"Roupas","preco":149.90,"descricao":"Jeans com elastano, lavagem média. Tamanhos 36 ao 48.","busca":"blue jeans"},
+   {"slug":"vestido","nome":"Vestido floral midi","categoria":"Roupas","preco":169.90,"descricao":"Viscose leve, estampa floral. Tamanhos P ao G.","busca":"floral dress"},
+   {"slug":"moletom","nome":"Moletom com capuz","categoria":"Roupas","preco":129.90,"descricao":"Flanelado por dentro, cores preto e mescla. Tamanhos P ao GG.","busca":"hoodie"},
+   {"slug":"tenis","nome":"Tênis branco casual","categoria":"Calçados","preco":199.90,"descricao":"Couro sintético, solado de borracha. Numeração 34 ao 44.","busca":"white sneakers"},
+   {"slug":"sandalia","nome":"Sandália rasteira","categoria":"Calçados","preco":79.90,"descricao":"Tiras finas, cores caramelo e preto. Numeração 33 ao 40.","busca":"sandals"},
+   {"slug":"bone","nome":"Boné aba curva","categoria":"Acessórios","preco":59.90,"descricao":"Ajustável, cores preto e bege.","busca":"baseball cap"},
+   {"slug":"bolsa","nome":"Bolsa transversal","categoria":"Acessórios","preco":119.90,"descricao":"Couro sintético, alça regulável.","busca":"leather handbag"}
+  ]
+ },
+ "servicos": {
+  "negocio": "Salão Exemplo",
+  "especie": "servico",
+  "itens": [
+   {"slug":"corte-feminino","nome":"Corte feminino","categoria":"Cabelo","preco":80.00,"descricao":"Lavagem, corte e finalização. Cerca de 1 hora.","busca":"hair salon haircut"},
+   {"slug":"corte-masculino","nome":"Corte masculino","categoria":"Cabelo","preco":45.00,"descricao":"Corte na máquina e tesoura. Cerca de 40 minutos.","busca":"barber haircut"},
+   {"slug":"escova","nome":"Escova","categoria":"Cabelo","preco":60.00,"descricao":"Lavagem e escova modelada. Cerca de 50 minutos.","busca":"hair dryer salon"},
+   {"slug":"barba","nome":"Barba completa","categoria":"Barba","preco":35.00,"descricao":"Toalha quente, navalha e hidratação. Cerca de 30 minutos.","busca":"beard shave barber"},
+   {"slug":"manicure","nome":"Manicure","categoria":"Unhas","preco":35.00,"descricao":"Cutilagem e esmaltação. Cerca de 40 minutos.","busca":"manicure nails"},
+   {"slug":"pedicure","nome":"Pedicure","categoria":"Unhas","preco":40.00,"descricao":"Cutilagem, lixamento e esmaltação. Cerca de 50 minutos.","busca":"pedicure"}
+  ]
+ },
+ "aulas": {
+  "negocio": "Estúdio Exemplo",
+  "especie": "servico",
+  "itens": [
+   {"slug":"pilates-2x","nome":"Pilates 2x por semana","categoria":"Planos","preco":280.00,"descricao":"Plano mensal, 8 aulas no mês, turmas de até 4 alunos.","busca":"pilates reformer"},
+   {"slug":"pilates-3x","nome":"Pilates 3x por semana","categoria":"Planos","preco":360.00,"descricao":"Plano mensal, 12 aulas no mês, turmas de até 4 alunos.","busca":"pilates class"},
+   {"slug":"aula-avulsa","nome":"Aula avulsa","categoria":"Planos","preco":70.00,"descricao":"Uma aula de 50 minutos, sem compromisso.","busca":"pilates studio"},
+   {"slug":"experimental","nome":"Aula experimental","categoria":"Aula experimental","preco":0,"descricao":"Gratuita, uma por pessoa, com avaliação postural.","busca":"yoga mat exercise"}
+  ]
+ }
+}
