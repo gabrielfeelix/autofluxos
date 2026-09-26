@@ -3,6 +3,7 @@
 import Link from 'next/link'
 import { useState, type ReactNode } from 'react'
 import { Modal } from '@/components/design/modal'
+import type { DestaqueDoRamo } from '@/core/nichos'
 import { NovoQuadro } from './novo-quadro'
 import { IconeDoQuadro, PopoverDoQuadro } from './popover-do-quadro'
 
@@ -16,6 +17,7 @@ export function CabecalhoDoQuadro({
   apagar,
   fora,
   visao = 'quadro',
+  destaqueDeFunis = null,
 }: {
   clienteId: string
   quadros: { id: string; nome: string }[]
@@ -27,6 +29,8 @@ export function CabecalhoDoQuadro({
   importar?: ReactNode
   apagar?: ReactNode
   fora: number
+  /** O funil do ramo da conta, para o "Novo funil" do seletor. */
+  destaqueDeFunis?: DestaqueDoRamo | null
 }) {
   const [painel, setPainel] = useState<'configuracoes' | 'importar' | null>(null)
   const atual = quadros.find((quadro) => quadro.id === abertoId)
@@ -45,6 +49,7 @@ export function CabecalhoDoQuadro({
             <NovoQuadro
               clienteId={clienteId}
               primeiro={false}
+              destaque={destaqueDeFunis}
               acionador={(abrir) => (
                 <PopoverDoQuadro
                   rotulo="Trocar funil"

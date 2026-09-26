@@ -75,6 +75,8 @@ import { listarQuadros } from '@/server/repos/quadros'
 import { SeloDoCanal } from '@/components/design/selo-do-canal'
 import { NomeDoFluxo } from '@/components/editor/nome-do-fluxo'
 import { ETIQUETAS, MODELOS } from '@/exemplos/modelos'
+import { destaqueDeFluxos, pacoteDo } from '@/core/nichos'
+import { nichoDaConta } from '@/server/repos/recursos'
 import { NovaAutomacao } from '@/components/fluxos/templates'
 import { contatosPorCampanha, listarCampanhas } from '@/server/repos/campanhas'
 import {
@@ -261,6 +263,7 @@ async function ConteudoDaAba({
     templatesAprovados,
     pastas,
     esperando,
+    nicho,
   ] = await Promise.all([
     contagensDeAutomacao(cliente.id),
     precisa('fluxos', 'palavras', 'eventos', 'campanhas', 'sequencias')
@@ -297,6 +300,8 @@ async function ConteudoDaAba({
       : vazio([] as Awaited<ReturnType<typeof listarTemplatesAprovados>>),
     precisa('fluxos') ? listarPastas(cliente.id) : vazio([] as Awaited<ReturnType<typeof listarPastas>>),
     precisa('sequencias') ? esperandoPorPasso(cliente.id) : vazio(new Map<string, number>()),
+    // O ramo só serve à galeria de modelos, que mora na aba de fluxos.
+    precisa('fluxos') ? nichoDaConta(cliente.id) : vazio(null),
   ])
   const criarPastaComCliente = acaoCriarPasta.bind(null, cliente.id, {})
   // Os campos de passo (criar e editar) usam as mesmas listas.
@@ -514,6 +519,7 @@ async function ConteudoDaAba({
               acao={criarComCliente}
               modelos={TEMPLATES}
               etiquetas={ETIQUETAS}
+              destaque={destaqueDeFluxos(pacoteDo(nicho))}
               clienteId={cliente.id}
               existentes={fluxos.map(({ id, nome }) => ({ id, nome }))}
               abrirEmModelos={abrirModelos}

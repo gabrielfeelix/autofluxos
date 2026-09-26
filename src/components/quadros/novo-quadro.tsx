@@ -3,6 +3,7 @@
 import { useRouter } from 'next/navigation'
 import { useState, useTransition, type ReactNode } from 'react'
 import { LIMITE_DO_NOME } from '@/core/quadros'
+import { separarPeloRamo, type DestaqueDoRamo } from '@/core/nichos'
 import { MODELOS_DE_QUADRO, type ModeloDeQuadro } from '@/core/quadros-modelos'
 import { Modal } from '@/components/design/modal'
 import { acaoCriarQuadroComModelo } from '@/server/acoes-crm'
@@ -22,23 +23,42 @@ import { acaoCriarQuadroComModelo } from '@/server/acoes-crm'
  * A miniatura mostra **as etapas de verdade**, com a de ganho em verde e a de
  * perda em rosa. É o que responde "esse funil é o meu?" antes de qualquer
  * palavra, e o que impede o template de ser um nome bonito que ninguém entende.
+ *
+ * Com ramo, o funil do ramo vem primeiro, sob o título do pacote ("Para
+ * restaurantes"), e os outros ficam em "Outros modelos", recolhido, como na
+ * galeria de fluxos (PLANO-NICHOS 1.6). Quem escolhe o funil do ramo é
+ * `core/nichos.ts`; aqui só se desenha.
  */
 export function NovoQuadro({
   clienteId,
   primeiro,
   acionador,
+  destaque = null,
 }: {
   clienteId: string
   primeiro: boolean
   acionador?: (abrir: () => void) => ReactNode
+  /** O funil do ramo da conta. `null` = a lista de sempre. */
+  destaque?: DestaqueDoRamo | null
 }) {
   const [aberto, setAberto] = useState(false)
   const [passo, setPasso] = useState<'como' | 'modelos' | 'nome'>('como')
   const [modelo, setModelo] = useState<ModeloDeQuadro | null>(null)
   const [nome, setNome] = useState('')
   const [erro, setErro] = useState<string | null>(null)
+  const [verOutros, setVerOutros] = useState(false)
   const [rodando, comecar] = useTransition()
   const router = useRouter()
+  const { doRamo, outros } = separarPeloRamo(MODELOS_DE_QUADRO, destaque)
+  // A miniatura do "Usar um modelo" mostra o funil que a conta mais provavelmente
+  // vai escolher: o do ramo, ou o Comercial para quem não tem ramo.
+  const sugerido = doRamo[0] ?? MODELOS_DE_QUADRO[1]!
+
+  function escolher(m: ModeloDeQuadro) {
+    setModelo(m)
+    setNome((atual) => atual || m.nome)
+    setPasso('nome')
+  }
 
   function fechar() {
     setAberto(false)
@@ -46,6 +66,7 @@ export function NovoQuadro({
     setModelo(null)
     setNome('')
     setErro(null)
+    setVerOutros(false)
   }
 
   /**
@@ -117,9 +138,13 @@ export function NovoQuadro({
           <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2">
             <Caminho
               titulo="Usar um modelo"
-              detalhe="Comercial, captação, agenda, pós-venda. Começa pronto."
+              detalhe={
+                doRamo.length > 0
+                  ? `${doRamo.map((m) => m.nome).join(', ')} e outros. Começa pronto.`
+                  : 'Comercial, captação, agenda, pós-venda. Começa pronto.'
+              }
               aoClicar={() => setPasso('modelos')}
-              miniatura={<MiniaturaDasEtapas etapas={MODELOS_DE_QUADRO[1]!.etapas} />}
+              miniatura={<MiniaturaDasEtapas etapas={sugerido.etapas} />}
             />
             <Caminho
               titulo="Começar do zero"
@@ -135,27 +160,33 @@ export function NovoQuadro({
 
         {passo === 'modelos' && (
           <div className="flex max-h-[420px] flex-col gap-2.5 overflow-y-auto pr-0.5">
-            {MODELOS_DE_QUADRO.map((m) => (
-              <button
-                key={m.id}
-                type="button"
-                onClick={() => {
-                  setModelo(m)
-                  setNome((atual) => atual || m.nome)
-                  setPasso('nome')
-                }}
-                className="group rounded-xl border border-line bg-panel p-3 text-left transition hover:border-primary/45 hover:bg-primary/[0.04]"
-              >
-                <span className="flex items-baseline gap-2">
-                  <strong className="text-[13px] font-bold text-soft">{m.nome}</strong>
-                  <span className="text-[10.5px] text-dim">{m.etapas.length} etapas</span>
-                </span>
-                <span className="mt-1 block text-[11.5px] leading-[1.5] text-dim">{m.resumo}</span>
-                <span className="mt-2.5 block">
-                  <MiniaturaDasEtapas etapas={m.etapas} comNome />
-                </span>
-              </button>
-            ))}
+            {doRamo.length > 0 && destaque ? (
+              <>
+                <p className="text-[11px] font-bold tracking-[0.05em] text-primary uppercase">{destaque.titulo}</p>
+                {doRamo.map((m) => (
+                  <CartaoDoFunil key={m.id} modelo={m} aoEscolher={escolher} />
+                ))}
+                {outros.length > 0 && (
+                  <div className="mt-1.5 flex flex-col gap-2.5 border-t border-line pt-3">
+                    <button
+                      type="button"
+                      onClick={() => setVerOutros((aberto) => !aberto)}
+                      aria-expanded={verOutros}
+                      className="flex w-full items-center justify-between text-[11.5px] font-semibold text-muted transition hover:text-soft"
+                    >
+                      <span>
+                        Outros modelos
+                        <span className="ml-1 text-[10.5px] font-normal opacity-70">{outros.length}</span>
+                      </span>
+                      <span aria-hidden>{verOutros ? '▴' : '▾'}</span>
+                    </button>
+                    {verOutros && outros.map((m) => <CartaoDoFunil key={m.id} modelo={m} aoEscolher={escolher} />)}
+                  </div>
+                )}
+              </>
+            ) : (
+              MODELOS_DE_QUADRO.map((m) => <CartaoDoFunil key={m.id} modelo={m} aoEscolher={escolher} />)
+            )}
           </div>
         )}
 
@@ -227,6 +258,32 @@ export function NovoQuadro({
         )}
       </Modal>
     </>
+  )
+}
+
+/** Um modelo de funil na lista: nome, resumo e as etapas em miniatura. */
+function CartaoDoFunil({
+  modelo,
+  aoEscolher,
+}: {
+  modelo: ModeloDeQuadro
+  aoEscolher: (modelo: ModeloDeQuadro) => void
+}) {
+  return (
+    <button
+      type="button"
+      onClick={() => aoEscolher(modelo)}
+      className="group rounded-xl border border-line bg-panel p-3 text-left transition hover:border-primary/45 hover:bg-primary/[0.04]"
+    >
+      <span className="flex items-baseline gap-2">
+        <strong className="text-[13px] font-bold text-soft">{modelo.nome}</strong>
+        <span className="text-[10.5px] text-dim">{modelo.etapas.length} etapas</span>
+      </span>
+      <span className="mt-1 block text-[11.5px] leading-[1.5] text-dim">{modelo.resumo}</span>
+      <span className="mt-2.5 block">
+        <MiniaturaDasEtapas etapas={modelo.etapas} comNome />
+      </span>
+    </button>
   )
 }
 

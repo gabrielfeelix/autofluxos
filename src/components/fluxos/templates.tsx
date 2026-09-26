@@ -7,6 +7,7 @@ import { acaoDuplicarFluxo } from '@/server/acoes'
 import { Modal } from '@/components/design/modal'
 import { EscolherCanal } from '@/components/fluxos/escolher-canal'
 import { contarEtiquetas, filtrarModelos } from '@/core/flow/filtrar-modelos'
+import { separarPeloRamo, type DestaqueDoRamo } from '@/core/nichos'
 import {
   DesenhoDoTemplate,
   MiniaturaDeArquivo,
@@ -43,6 +44,17 @@ import {
  * O modelo escolhido vai no mesmo campo `modelo` que o `acaoCriarFluxo` já
  * lia. Nada mudou no servidor, a decisão continua sendo dado de formulário, e
  * modelo desconhecido continua caindo no esqueleto em branco.
+ *
+ * ---------------------------------------------------------------------------
+ * A galeria pelo ramo da conta
+ * ---------------------------------------------------------------------------
+ *
+ * Com ramo, os modelos dele vêm primeiro, sob o título do pacote ("Para
+ * restaurantes"), e o resto fica em "Outros modelos", recolhido. Nada some: a
+ * pizzaria que quiser a pesquisa de satisfação abre o grupo, e a busca continua
+ * procurando em todos. Quem decide o que é do ramo é o pacote
+ * (`core/nichos.ts`); esta tela recebe o destaque pronto e só desenha. Sem
+ * ramo, a galeria é a de sempre.
  */
 
 export type ModeloDeGaleria = {
@@ -162,12 +174,15 @@ export function GaleriaDeTemplates({
   aoEscolher,
   altura,
   colunas = 2,
+  destaque = null,
 }: {
   modelos: readonly ModeloDeGaleria[]
   etiquetas: readonly string[]
   aoEscolher: (modelo: ModeloDeGaleria) => void
   /** Altura da lista rolável, em pixels. Sem valor, cresce com o conteúdo. */
   altura?: number
+  /** Os modelos do ramo da conta, em destaque. `null` = a galeria de sempre. */
+  destaque?: DestaqueDoRamo | null
   /**
    * Quantas colunas na largura grande. Duas dentro do modal, três na aba ,
    * ponto de quebra do Tailwind é da janela, não do contentor, e três colunas
@@ -177,11 +192,23 @@ export function GaleriaDeTemplates({
 }) {
   const [termo, setTermo] = useState('')
   const [marcadas, setMarcadas] = useState<string[]>([])
+  const [verOutros, setVerOutros] = useState(false)
 
   const achados = useMemo(
     () => filtrarModelos(modelos, termo, marcadas),
     [modelos, termo, marcadas],
   )
+  /*
+   * Os grupos só valem com a galeria parada. Quem busca ou marca etiqueta está
+   * procurando uma coisa, e o que achou aparece junto, do ramo ou não: um
+   * resultado escondido num grupo recolhido é um resultado que não foi achado.
+   */
+  const buscando = termo.trim() !== '' || marcadas.length > 0
+  const grupos = useMemo(() => separarPeloRamo(modelos, destaque), [modelos, destaque])
+  const agrupar = !buscando && grupos.doRamo.length > 0
+  const grade = `grid grid-cols-1 gap-2.5 sm:grid-cols-2 ${colunas === 3 ? 'xl:grid-cols-3' : ''}`
+  const cartoes = (lista: readonly ModeloDeGaleria[]) =>
+    lista.map((modelo) => <CartaoDoTemplate key={modelo.id} modelo={modelo} aoEscolher={aoEscolher} />)
 
   function alternar(etiqueta: string) {
     setMarcadas((atuais) =>
@@ -215,16 +242,35 @@ export function GaleriaDeTemplates({
           </button>
           .
         </p>
+      ) : agrupar && destaque ? (
+        <div className="mt-3 overflow-y-auto pr-0.5" style={altura ? { maxHeight: altura } : undefined}>
+          <p className="mb-2 text-[11px] font-bold tracking-[0.05em] text-primary uppercase">{destaque.titulo}</p>
+          <div className={grade}>{cartoes(grupos.doRamo)}</div>
+
+          {grupos.outros.length > 0 && (
+            <div className="mt-4 border-t border-line pt-3">
+              <button
+                type="button"
+                onClick={() => setVerOutros((aberto) => !aberto)}
+                aria-expanded={verOutros}
+                className="flex w-full items-center justify-between text-[11.5px] font-semibold text-muted transition hover:text-soft"
+              >
+                <span>
+                  Outros modelos
+                  <span className="ml-1 text-[10.5px] font-normal opacity-70">{grupos.outros.length}</span>
+                </span>
+                <span aria-hidden>{verOutros ? '▴' : '▾'}</span>
+              </button>
+              {verOutros && <div className={`mt-2.5 ${grade}`}>{cartoes(grupos.outros)}</div>}
+            </div>
+          )}
+        </div>
       ) : (
         <div
-          className={`mt-3 grid grid-cols-1 gap-2.5 overflow-y-auto pr-0.5 sm:grid-cols-2 ${
-            colunas === 3 ? 'xl:grid-cols-3' : ''
-          }`}
+          className={`mt-3 overflow-y-auto pr-0.5 ${grade}`}
           style={altura ? { maxHeight: altura } : undefined}
         >
-          {achados.map((modelo) => (
-            <CartaoDoTemplate key={modelo.id} modelo={modelo} aoEscolher={aoEscolher} />
-          ))}
+          {cartoes(achados)}
         </div>
       )}
     </div>
@@ -387,10 +433,13 @@ export function NovaAutomacao({
   clienteId,
   existentes,
   abrirEmModelos = false,
+  destaque = null,
 }: {
   acao: Acao
   modelos: readonly ModeloDeGaleria[]
   etiquetas: readonly string[]
+  /** Os modelos do ramo da conta. Ver `GaleriaDeTemplates`. */
+  destaque?: DestaqueDoRamo | null
   clienteId: string
   /** As automações da conta, para "Duplicar existente". */
   existentes: readonly { id: string; nome: string }[]
@@ -500,6 +549,7 @@ export function NovaAutomacao({
             <GaleriaDeTemplates
               modelos={modelos}
               etiquetas={etiquetas}
+              destaque={destaque}
               altura={420}
               aoEscolher={(modelo) => {
                 setEscolhido(modelo)
