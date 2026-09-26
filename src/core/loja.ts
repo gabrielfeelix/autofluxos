@@ -306,6 +306,27 @@ export function linhasDoCard(
  * recurso. Texto com o link no fim, e a prévia do link mostra o que a loja
  * tiver. Nunca a foto placeholder da loja.
  */
+/**
+ * Como um produto sai no canal.
+ *
+ * - **card**: tem link (o botão do card precisa dele) e foto, ou o canal
+ *   desenha card sem foto;
+ * - **imagem**: tem foto e não tem link. Antes ia como texto, e a foto
+ *   sumia: o item do cardápio de um restaurante, que não tem página para
+ *   linkar, chegava sem a foto que a pessoa pediu. Agora vai a foto com o
+ *   texto do card na legenda, sem botão;
+ * - **texto**: o resto.
+ */
+export function comoMandarProduto(
+  produto: Pick<ProdutoDaLoja, 'link' | 'foto'>,
+  canal: { temCard: boolean; cardSemFoto?: boolean },
+): 'card' | 'imagem' | 'texto' {
+  const foto = (produto.foto ?? '').startsWith('https://')
+  if (canal.temCard && produto.link && (foto || canal.cardSemFoto)) return 'card'
+  if (foto && !produto.link) return 'imagem'
+  return 'texto'
+}
+
 export function textoDoCard(produto: ProdutoDaLoja): string {
   const { titulo, detalhe } = linhasDoCard(produto)
   // Item do catálogo próprio pode não ter preço nem link: linha vazia no

@@ -2,6 +2,7 @@ import { descrever } from './descrever'
 import { mensagensDoHandoff, partesDaMensagem } from './mensagem'
 import {
   FORMATO_VARIAVEL,
+  LIMITE_DESCRICAO_DA_OPCAO,
   LIMITE_LEGENDA,
   LIMITE_MENSAGENS_HANDOFF,
   LIMITE_TEXTO,
@@ -283,6 +284,14 @@ export function validar(fluxo: Fluxo, capacidades: Capacidades = {}): ResultadoV
           })
         }
         vistas.add(opcao.id)
+
+        if ((opcao.descricao ?? '').length > LIMITE_DESCRICAO_DA_OPCAO) {
+          erros.push({
+            codigo: 'DESCRICAO_LONGA',
+            mensagem: `A descrição de "${opcao.rotulo}" tem ${(opcao.descricao ?? '').length} caracteres. A lista do WhatsApp corta em ${LIMITE_DESCRICAO_DA_OPCAO}.`,
+            noId: no.id,
+          })
+        }
 
         if (!minhasSaidas.some((a) => a.sourceHandle === opcao.id)) {
           erros.push({

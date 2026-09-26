@@ -123,6 +123,30 @@ describe('o corte do rótulo conta caracteres, e não unidades UTF-16', () => {
   })
 })
 
+describe('a descrição da linha da lista', () => {
+  it('vai como `description` na lista, e só em quem tem', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(new Response('{}', { status: 200 }))
+    vi.stubGlobal('fetch', fetchMock)
+    const canal = canalCloudApi({ phoneNumberId: 'n1', token: 't', versaoGraph: 'v25.0' })
+
+    await canal.enviarOpcoes(
+      '5544999999999',
+      'Qual pizza?',
+      [
+        { id: 'calabresa', rotulo: 'Calabresa', descricao: 'R$ 52,90 · calabresa, cebola e mussarela' },
+        { id: 'voltar', rotulo: 'Voltar ao menu' },
+      ],
+      'lista',
+    )
+
+    const corpo = JSON.parse(fetchMock.mock.calls.at(-1)?.[1].body as string)
+    expect(corpo.interactive.action.sections[0].rows).toEqual([
+      { id: 'calabresa', title: 'Calabresa', description: 'R$ 52,90 · calabresa, cebola e mussarela' },
+      { id: 'voltar', title: 'Voltar ao menu' },
+    ])
+  })
+})
+
 describe('reagir e citar', () => {
   function canal() {
     return canalCloudApi({

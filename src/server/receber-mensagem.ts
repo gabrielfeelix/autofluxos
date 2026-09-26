@@ -6,7 +6,7 @@ import { canalDoWhatsApp } from './canal-do-whatsapp'
 import { AUTOR_AUTOMACAO } from '@/core/autor-da-mensagem'
 import { sessaoNova, type Acao, type Entrada } from '@/core/engine/types'
 import { varsIniciais } from '@/core/contatos/vars-iniciais'
-import { textoDoCard } from '@/core/loja'
+import { comoMandarProduto, textoDoCard } from '@/core/loja'
 import { alertar, type ContextoDoAlerta } from './alertar'
 import { avisarHandoff } from './avisar-handoff'
 import { executarComEfeitos, type OpcoesDeEfeitos } from './efeitos/resolver'
@@ -1701,8 +1701,11 @@ async function aplicar(
         // `link-de-produto.ts`. Fica gravado assim também, porque o chat do
         // site desenha o card a partir do histórico.
         const produtos = acao.produtos.map((p) => comLinkRastreado(p, contato, canal.origem))
-        const comFoto = enviarCards ? produtos.filter((p) => p.link && (p.foto || canal.cardSemFoto)) : []
-        const semFoto = produtos.filter((p) => !comFoto.includes(p))
+        const jeito = (p: (typeof produtos)[number]) =>
+          comoMandarProduto(p, { temCard: Boolean(enviarCards), cardSemFoto: canal.cardSemFoto })
+        const comFoto = produtos.filter((p) => jeito(p) === 'card')
+        const soFoto = produtos.filter((p) => jeito(p) === 'imagem')
+        const semFoto = produtos.filter((p) => jeito(p) === 'texto')
 
         if (enviarCards && comFoto.length > 0) {
           const registro = await registrarSaida({
@@ -1713,6 +1716,24 @@ async function aplicar(
             payload: { produtos: comFoto },
           })
           const entrega = await entregar(() => enviarCards(contato.waId, comFoto), alvo)
+          if (!entrega.ok) return pararNoHumano(entrega.motivo)
+          await confirmarEntrega(registro, entrega.waMessageId)
+        }
+
+        // Foto sem link: a foto com o texto do card na legenda, sem botão.
+        for (const produto of soFoto) {
+          const legenda = textoDoCard(produto)
+          const registro = await registrarSaida({
+            contatoId: contato.id,
+            sessaoId,
+            autor: AUTOR_AUTOMACAO,
+            texto: legenda,
+            payload: { midia: 'imagem', url: produto.foto },
+          })
+          const entrega = await entregar(
+            () => canal.enviarMidia(contato.waId, { midia: 'imagem', url: produto.foto!, legenda }),
+            alvo,
+          )
           if (!entrega.ok) return pararNoHumano(entrega.motivo)
           await confirmarEntrega(registro, entrega.waMessageId)
         }

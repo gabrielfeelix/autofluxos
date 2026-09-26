@@ -55,7 +55,18 @@ export const opcaoSchema = z.object({
    * imutável.
    */
   valor: z.string().optional(),
+  /**
+   * A segunda linha do item, quando a pergunta sai como **lista** do WhatsApp
+   * (a `description` da linha, até 72 caracteres). É onde cabe o preço e o
+   * que vem no prato: o rótulo tem 20 e não cabe "Frango com Catupiry" e
+   * "R$ 58,90" juntos. Botão não tem descrição, e canal que não desenha
+   * lista ignora. Opcional para sempre, como o `valor`.
+   */
+  descricao: z.string().optional(),
 })
+
+/** Teto da descrição de uma linha de lista na Cloud API. */
+export const LIMITE_DESCRICAO_DA_OPCAO = 72
 
 const posicaoSchema = z.object({ x: z.number(), y: z.number() })
 
@@ -411,6 +422,13 @@ export const noSalvarCampoSchema = z.object({
     campo: nomeVariavel,
     /** Aceita interpolação: "{{nome}} - {{assunto}}" */
     valor: z.string(),
+    /**
+     * Guarda a **conta** do texto, e não o texto: "{{total}} + {{preco}} * 2"
+     * vira "105,80" (`core/engine/conta.ts`). É o total do carrinho. Só
+     * números e `+ - * /`; o que não for conta guarda vazio. Opcional para
+     * sempre: ausente é o Guardar de sempre.
+     */
+    conta: z.boolean().optional(),
   }),
 })
 

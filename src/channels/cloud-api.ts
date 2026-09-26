@@ -1,5 +1,5 @@
 import { ehBsuid } from '@/core/contatos/bsuid'
-import { LIMITE_ATRASO_SEGUNDOS, LIMITE_ROTULO, type Opcao } from '@/core/flow/schema'
+import { LIMITE_ATRASO_SEGUNDOS, LIMITE_DESCRICAO_DA_OPCAO, LIMITE_ROTULO, type Opcao } from '@/core/flow/schema'
 import { cortarCaracteres } from '@/core/flow/texto'
 import { linhasDoCard } from '@/core/loja'
 import { lerStatusDeEnvio } from '@/core/templates'
@@ -651,7 +651,17 @@ export function canalCloudApi(config: ConfigCloudApi): Canal {
           body: { text: texto },
           action: {
             button: 'Ver opções',
-            sections: [{ title: 'Opções', rows: opcoes.map((o) => ({ id: o.id, title: curto(o) })) }],
+            sections: [
+              {
+                title: 'Opções',
+                rows: opcoes.map((o) => ({
+                  id: o.id,
+                  title: curto(o),
+                  // A segunda linha do item (preço, o que vem nele). Só a lista tem.
+                  ...(o.descricao ? { description: cortarCaracteres(o.descricao, LIMITE_DESCRICAO_DA_OPCAO) } : {}),
+                })),
+              },
+            ],
           },
         },
       })

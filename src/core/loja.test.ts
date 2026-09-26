@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import {
+  comoMandarProduto,
   cepLimpo,
   traduzirFrete,
   LIMITE_DA_FICHA,
@@ -257,5 +258,23 @@ describe('o frete por CEP', () => {
       { transportadora: 'CORREIOS', servico: 'SEDEX (3 dias úteis)', preco: 32.68 },
     ])
     expect(traduzirFrete({ message: 'erro' })).toEqual([])
+  })
+})
+
+describe('como o produto sai no canal', () => {
+  const f = 'https://x/foto.jpg'
+  it('com link e foto, e canal de card: card', () => {
+    expect(comoMandarProduto({ link: 'https://loja/p', foto: f }, { temCard: true })).toBe('card')
+  })
+  it('foto sem link: a foto com legenda, e não mais texto sem foto', () => {
+    expect(comoMandarProduto({ link: '', foto: f }, { temCard: true })).toBe('imagem')
+    expect(comoMandarProduto({ link: '', foto: f }, { temCard: false })).toBe('imagem')
+  })
+  it('sem foto: texto, a não ser que o canal desenhe card sem foto', () => {
+    expect(comoMandarProduto({ link: 'https://loja/p' }, { temCard: true })).toBe('texto')
+    expect(comoMandarProduto({ link: 'https://loja/p' }, { temCard: true, cardSemFoto: true })).toBe('card')
+  })
+  it('com link e foto, mas canal sem card: texto com o link, como antes', () => {
+    expect(comoMandarProduto({ link: 'https://loja/p', foto: f }, { temCard: false })).toBe('texto')
   })
 })

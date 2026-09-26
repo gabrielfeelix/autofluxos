@@ -33,6 +33,7 @@ import {
 } from '../flow/schema'
 import { cortarCaracteres } from '../flow/texto'
 import { comoCabecalho, comoJson, comoUrl, interpolar, normalizar } from './interpolar'
+import { resultadoDaConta } from './conta'
 import type { Acao, Entrada, Resultado, Sessao } from './types'
 
 /** Na terceira vez que o motor não entende, a conversa vai para uma pessoa. */
@@ -916,7 +917,8 @@ function avancar(
       }
 
       case 'salvar-campo': {
-        const valor = interpolar(no.data.valor, s.vars)
+        const texto = interpolar(no.data.valor, s.vars)
+        const valor = no.data.conta ? resultadoDaConta(texto) : texto
         s.vars[no.data.campo] = valor
         acoes.push({ tipo: 'salvar_campo', campo: no.data.campo, valor })
         atual = seguir(no)

@@ -2133,3 +2133,38 @@ describe('IA contínua que conclui', () => {
     expect(sessao.vars.pedido).toBeUndefined()
   })
 })
+
+describe('Guardar com conta: o total do carrinho', () => {
+  it('soma item a item com preço, ajuste e quantidade, e o total fecha certo', () => {
+    const fluxo = fluxoSchema.parse({
+      inicio: 'zera',
+      nodes: [
+        { id: 'zera', type: 'salvar-campo', position: p, data: { campo: 'total', valor: '0' } },
+        { id: 'item1', type: 'mensagem', position: p, data: { partes: [{ tipo: 'salvar', campo: 'preco', valor: '52,90' }, { tipo: 'salvar', campo: 'qtd', valor: '2' }] } },
+        { id: 'soma1', type: 'salvar-campo', position: p, data: { campo: 'total', valor: '{{total}} + {{preco}} * {{qtd}}', conta: true } },
+        { id: 'item2', type: 'mensagem', position: p, data: { partes: [{ tipo: 'salvar', campo: 'preco', valor: '14,00' }, { tipo: 'salvar', campo: 'qtd', valor: '1' }] } },
+        { id: 'soma2', type: 'salvar-campo', position: p, data: { campo: 'total', valor: '{{total}} + {{preco}} * {{qtd}} + 6', conta: true } },
+        { id: 'fim', type: 'mensagem', position: p, data: { partes: [{ tipo: 'texto', texto: 'Total: R$ {{total}}' }] } },
+      ],
+      edges: [
+        { id: 'a', source: 'zera', target: 'item1' },
+        { id: 'b', source: 'item1', target: 'soma1' },
+        { id: 'c', source: 'soma1', target: 'item2' },
+        { id: 'd', source: 'item2', target: 'soma2' },
+        { id: 'e', source: 'soma2', target: 'fim' },
+      ],
+    })
+    const r = executar(fluxo, sessaoNova(), { tipo: 'inicio' })
+    expect(r.sessao.vars.total).toBe('125,80')
+    expect(r.acoes.some((a) => a.tipo === 'enviar_texto' && a.texto === 'Total: R$ 125,80')).toBe(true)
+  })
+
+  it('sem `conta`, o Guardar guarda o texto como sempre', () => {
+    const fluxo = fluxoSchema.parse({
+      inicio: 'g',
+      nodes: [{ id: 'g', type: 'salvar-campo', position: p, data: { campo: 'x', valor: '1 + 1' } }],
+      edges: [],
+    })
+    expect(executar(fluxo, sessaoNova(), { tipo: 'inicio' }).sessao.vars.x).toBe('1 + 1')
+  })
+})
