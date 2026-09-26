@@ -14,7 +14,7 @@ import { ListaDeNegocios } from '@/components/negocios/lista-de-negocios'
 import { acaoApagarQuadro } from '@/server/acoes'
 import { acharCliente, type Cliente } from '@/server/repos/clientes'
 import { nichoDaConta } from '@/server/repos/recursos'
-import { destaqueDeFunis, pacoteDo } from '@/core/nichos'
+import { destaqueDeFunis, pacoteDo, rotuloNaBarra } from '@/core/nichos'
 import { contarForaDoQuadro, listarCartoes, listarQuadros } from '@/server/repos/quadros'
 import { listarMotivos } from '@/server/repos/motivos-de-perda'
 import { membrosDaConta } from '@/server/repos/usuarios'
@@ -123,6 +123,7 @@ async function Conteudo({
   const visao = busca.ver === 'lista' ? 'lista' : 'quadro'
   const [quadros, nicho] = await Promise.all([listarQuadros(cliente.id), nichoDaConta(cliente.id)])
   const destaque = destaqueDeFunis(pacoteDo(nicho))
+  const titulo = rotuloNaBarra(pacoteDo(nicho), 'negocios', 'Negócios')
   // Id que não é deste cliente cai no primeiro em vez de dar erro: o valor vem
   // da URL, e link velho não pode virar tela quebrada.
   const aberto = quadros.find((quadro) => quadro.id === q) ?? quadros[0] ?? null
@@ -155,6 +156,7 @@ async function Conteudo({
         visao={visao}
         fora={fora}
         destaqueDeFunis={destaque}
+        titulo={titulo}
         adicionar={
           aberto?.etapas[0] && (
             <AdicionarContato

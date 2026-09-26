@@ -49,12 +49,12 @@ import {
  * A galeria pelo ramo da conta
  * ---------------------------------------------------------------------------
  *
- * Com ramo, os modelos dele vêm primeiro, sob o título do pacote ("Para
- * restaurantes"), e o resto fica em "Outros modelos", recolhido. Nada some: a
- * pizzaria que quiser a pesquisa de satisfação abre o grupo, e a busca continua
- * procurando em todos. Quem decide o que é do ramo é o pacote
- * (`core/nichos.ts`); esta tela recebe o destaque pronto e só desenha. Sem
- * ramo, a galeria é a de sempre.
+ * Com ramo, a galeria mostra só os modelos dele, sob o título do pacote ("Para
+ * restaurantes"), e os que servem a qualquer negócio, sob "Para qualquer
+ * negócio". O resto não aparece, nem na busca: carrinho abandonado não faz
+ * sentido para o estúdio de pilates (decisão do Gabriel, 26/set). Quem decide
+ * o que é do ramo é o pacote (`core/nichos.ts`); esta tela recebe o destaque
+ * pronto e só desenha. Sem ramo, a galeria é a de sempre, inteira.
  */
 
 export type ModeloDeGaleria = {
@@ -192,19 +192,19 @@ export function GaleriaDeTemplates({
 }) {
   const [termo, setTermo] = useState('')
   const [marcadas, setMarcadas] = useState<string[]>([])
-  const [verOutros, setVerOutros] = useState(false)
 
+  const grupos = useMemo(() => separarPeloRamo(modelos, destaque), [modelos, destaque])
+  // A conta com ramo procura só no que ela vê; sem ramo, em tudo.
+  const daConta = useMemo(() => (destaque ? [...grupos.doRamo, ...grupos.outros] : modelos), [destaque, grupos, modelos])
   const achados = useMemo(
-    () => filtrarModelos(modelos, termo, marcadas),
-    [modelos, termo, marcadas],
+    () => filtrarModelos(daConta, termo, marcadas),
+    [daConta, termo, marcadas],
   )
   /*
    * Os grupos só valem com a galeria parada. Quem busca ou marca etiqueta está
-   * procurando uma coisa, e o que achou aparece junto, do ramo ou não: um
-   * resultado escondido num grupo recolhido é um resultado que não foi achado.
+   * procurando uma coisa, e o que achou aparece junto, numa grade só.
    */
   const buscando = termo.trim() !== '' || marcadas.length > 0
-  const grupos = useMemo(() => separarPeloRamo(modelos, destaque), [modelos, destaque])
   const agrupar = !buscando && grupos.doRamo.length > 0
   const grade = `grid grid-cols-1 gap-2.5 sm:grid-cols-2 ${colunas === 3 ? 'xl:grid-cols-3' : ''}`
   const cartoes = (lista: readonly ModeloDeGaleria[]) =>
@@ -223,8 +223,8 @@ export function GaleriaDeTemplates({
         aoDigitar={setTermo}
         marcadas={marcadas}
         aoMarcar={alternar}
-        etiquetas={etiquetas}
-        modelos={modelos}
+        etiquetas={etiquetas.filter((etiqueta) => daConta.some((modelo) => modelo.etiquetas.includes(etiqueta)))}
+        modelos={daConta}
       />
 
       {achados.length === 0 ? (
@@ -249,19 +249,8 @@ export function GaleriaDeTemplates({
 
           {grupos.outros.length > 0 && (
             <div className="mt-4 border-t border-line pt-3">
-              <button
-                type="button"
-                onClick={() => setVerOutros((aberto) => !aberto)}
-                aria-expanded={verOutros}
-                className="flex w-full items-center justify-between text-[11.5px] font-semibold text-muted transition hover:text-soft"
-              >
-                <span>
-                  Outros modelos
-                  <span className="ml-1 text-[10.5px] font-normal opacity-70">{grupos.outros.length}</span>
-                </span>
-                <span aria-hidden>{verOutros ? '▴' : '▾'}</span>
-              </button>
-              {verOutros && <div className={`mt-2.5 ${grade}`}>{cartoes(grupos.outros)}</div>}
+              <p className="mb-2 text-[11px] font-bold tracking-[0.05em] text-muted uppercase">Para qualquer negócio</p>
+              <div className={grade}>{cartoes(grupos.outros)}</div>
             </div>
           )}
         </div>

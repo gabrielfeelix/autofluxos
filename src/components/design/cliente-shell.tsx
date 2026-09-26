@@ -53,8 +53,8 @@ export async function ClienteShell({
    * falta de acesso, é escolha da conta.
    */
   const liberada = liberaSecao(acesso.regras, ativa)
-  // O nome da seção Comércio depende do ramo; as outras não pagam a consulta.
-  const nicho = !liberada && ativa === 'loja' ? await nichoDaConta(cliente.id) : null
+  // O nome da tela depende do ramo; só a tela de sem acesso paga a consulta.
+  const nicho = !liberada ? await nichoDaConta(cliente.id) : null
   const conteudo = !liberada ? (
     <SemAcesso clienteId={cliente.id} oQue={rotuloDaSecao(ativa, nicho)} />
   ) : dependeDoCrm && !mostraCrm ? (

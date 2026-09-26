@@ -24,7 +24,7 @@ import {
 } from '@/server/acoes-produtos'
 import { acharCliente } from '@/server/repos/clientes'
 import { nichoDaConta } from '@/server/repos/recursos'
-import { pacoteDo, visaoDoCatalogo } from '@/core/nichos'
+import { pacoteDo, rotuloNaBarra, visaoDoCatalogo } from '@/core/nichos'
 import { lojaDaConta } from '@/server/repos/lojas'
 import { listarMateriais } from '@/server/repos/materiais'
 import { listarProdutos } from '@/server/repos/produtos'
@@ -106,8 +106,8 @@ export default async function Pagina({
   if (!cliente) notFound()
   // As palavras do ramo, as mesmas da barra lateral (`core/nichos.ts`).
   const pacote = pacoteDo(nicho)
-  const secao = pacote?.secaoComercio ?? 'Comércio'
-  const titulo = pacote?.itensComercio.catalogo ?? 'Produtos'
+  const secao = rotuloNaBarra(pacote, 'loja', 'Comércio')
+  const titulo = rotuloNaBarra(pacote, 'catalogo', 'Produtos')
 
   const ativos = produtos.filter(estaAtivo)
   const arquivados = produtos.filter((p) => !estaAtivo(p))

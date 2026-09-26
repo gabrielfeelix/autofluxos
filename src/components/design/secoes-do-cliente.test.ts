@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { MODELOS_EXTRA, type Acesso } from '@/core/permissoes'
+import { LUGARES_DA_BARRA, NICHOS, PACOTES } from '@/core/nichos'
 import { ITENS, SECOES, destinoNaConta, liberaSecao, rotuloDaSecao, secoesVisiveis, telaInicial } from './secoes-do-cliente'
 
 /**
@@ -132,12 +133,35 @@ describe('as palavras do ramo (core/nichos.ts)', () => {
     expect(secaoLoja({ nicho: 'comercio' })?.itens.map((item) => item.id)).toEqual(['catalogo'])
   })
 
-  it('o ramo não muda a ordem nem as outras seções', () => {
-    for (const nicho of ['restaurante', 'ecommerce', 'comercio'] as const) {
-      expect(chaves(secoesVisiveis({ nicho }))).toEqual(SECOES.map((secao) => secao.chave))
-      const foraDaLoja = (lista: ReturnType<typeof secoesVisiveis>) => ids(lista.filter((secao) => secao.chave !== 'loja'))
-      expect(foraDaLoja(secoesVisiveis({ nicho }))).toEqual(foraDaLoja(secoesVisiveis()))
+  it('o ramo não muda a ordem: só esconde, e só o que o pacote diz', () => {
+    for (const nicho of NICHOS) {
+      const ordem = SECOES.map((secao) => secao.chave)
+      const vistas = chaves(secoesVisiveis({ nicho }))
+      expect(vistas, nicho).toEqual(ordem.filter((chave) => vistas.includes(chave)))
+      const semOcultos = ids(secoesVisiveis()).filter((id) => !(PACOTES[nicho].ocultos as string[]).includes(id))
+      expect(ids(secoesVisiveis({ nicho })), nicho).toEqual(semOcultos)
     }
+  })
+
+  it('todo lugar que um ramo renomeia ou esconde existe na barra', () => {
+    const existentes = [...SECOES.map((secao) => secao.chave as string), ...ITENS.map((item) => item.id)]
+    for (const lugar of LUGARES_DA_BARRA) expect(existentes, lugar).toContain(lugar)
+  })
+
+  it('Início, Conversas, Automações e Configurações são iguais em todo ramo', () => {
+    const fixas = (lista: ReturnType<typeof secoesVisiveis>) =>
+      lista.filter((secao) => ['inicio', 'conversas', 'automacoes', 'ajustes'].includes(secao.chave)).map((secao) => [secao.rotulo, ...secao.itens.map((item) => item.rotulo)])
+    for (const nicho of NICHOS) expect(fixas(secoesVisiveis({ nicho })), nicho).toEqual(fixas(secoesVisiveis()))
+  })
+
+  it('aulas fala como a MGM: Alunos e Matrículas, e não tem Comércio', () => {
+    const barra = secoesVisiveis({ nicho: 'aulas' })
+    const crm = barra.find((secao) => secao.chave === 'crm')
+    expect(crm?.itens.find((item) => item.id === 'contatos')?.rotulo).toBe('Alunos')
+    expect(crm?.itens.find((item) => item.id === 'negocios')?.rotulo).toBe('Matrículas')
+    expect(barra.find((secao) => secao.chave === 'loja')).toBeUndefined()
+    expect(rotuloDaSecao('leads', 'aulas')).toBe('Alunos')
+    expect(rotuloDaSecao('quadros', 'aulas')).toBe('Matrículas')
   })
 
   it('o ramo não passa por cima do interruptor nem da permissão', () => {

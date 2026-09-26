@@ -24,9 +24,9 @@ import { acaoCriarQuadroComModelo } from '@/server/acoes-crm'
  * perda em rosa. É o que responde "esse funil é o meu?" antes de qualquer
  * palavra, e o que impede o template de ser um nome bonito que ninguém entende.
  *
- * Com ramo, o funil do ramo vem primeiro, sob o título do pacote ("Para
- * restaurantes"), e os outros ficam em "Outros modelos", recolhido, como na
- * galeria de fluxos (PLANO-NICHOS 1.6). Quem escolhe o funil do ramo é
+ * Com ramo, aparecem só o funil do ramo, sob o título do pacote ("Para
+ * restaurantes"), e o que serve a qualquer negócio, como na galeria de fluxos
+ * (PLANO-NICHOS 1.6). Quem escolhe o funil do ramo é
  * `core/nichos.ts`; aqui só se desenha.
  */
 export function NovoQuadro({
@@ -46,7 +46,6 @@ export function NovoQuadro({
   const [modelo, setModelo] = useState<ModeloDeQuadro | null>(null)
   const [nome, setNome] = useState('')
   const [erro, setErro] = useState<string | null>(null)
-  const [verOutros, setVerOutros] = useState(false)
   const [rodando, comecar] = useTransition()
   const router = useRouter()
   const { doRamo, outros } = separarPeloRamo(MODELOS_DE_QUADRO, destaque)
@@ -66,7 +65,6 @@ export function NovoQuadro({
     setModelo(null)
     setNome('')
     setErro(null)
-    setVerOutros(false)
   }
 
   /**
@@ -168,19 +166,8 @@ export function NovoQuadro({
                 ))}
                 {outros.length > 0 && (
                   <div className="mt-1.5 flex flex-col gap-2.5 border-t border-line pt-3">
-                    <button
-                      type="button"
-                      onClick={() => setVerOutros((aberto) => !aberto)}
-                      aria-expanded={verOutros}
-                      className="flex w-full items-center justify-between text-[11.5px] font-semibold text-muted transition hover:text-soft"
-                    >
-                      <span>
-                        Outros modelos
-                        <span className="ml-1 text-[10.5px] font-normal opacity-70">{outros.length}</span>
-                      </span>
-                      <span aria-hidden>{verOutros ? '▴' : '▾'}</span>
-                    </button>
-                    {verOutros && outros.map((m) => <CartaoDoFunil key={m.id} modelo={m} aoEscolher={escolher} />)}
+                    <p className="text-[11px] font-bold tracking-[0.05em] text-muted uppercase">Para qualquer negócio</p>
+                    {outros.map((m) => <CartaoDoFunil key={m.id} modelo={m} aoEscolher={escolher} />)}
                   </div>
                 )}
               </>

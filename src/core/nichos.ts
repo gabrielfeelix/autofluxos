@@ -28,7 +28,7 @@ import type { Objetivo } from './objetivo-da-conta'
  * Puro, sem banco e sem React, como `core/planos.ts` e `core/objetivo-da-conta.ts`.
  */
 
-export const NICHOS = ['restaurante', 'ecommerce', 'comercio'] as const
+export const NICHOS = ['aulas', 'ecommerce', 'restaurante', 'comercio'] as const
 
 export type Nicho = (typeof NICHOS)[number]
 
@@ -39,6 +39,32 @@ export function ehNicho(valor: unknown): valor is Nicho {
 /** O desenho da seção Comércio. Nome e não SVG: o desenho mora na barra. */
 export type IconeDoComercio = 'sacola' | 'talheres' | 'vitrine'
 
+/**
+ * Os lugares da barra lateral que um ramo pode renomear ou esconder: a chave
+ * de uma seção ou o `id` de um subitem (`components/design/secoes-do-cliente.tsx`).
+ * A lista mora aqui, e não lá, para o núcleo não depender de componente;
+ * `secoes-do-cliente.test.ts` confere que cada um existe de verdade na barra.
+ *
+ * Início, Conversas, Automações e Configurações ficam de fora de propósito:
+ * são o mesmo trabalho em todo ramo, e é por eles que o suporte explica o
+ * sistema.
+ */
+export const LUGARES_DA_BARRA = [
+  'crm',
+  'contatos',
+  'segmentos',
+  'etiquetas',
+  'negocios',
+  'atividades',
+  'loja',
+  'catalogo',
+  'conectar-loja',
+  'analise',
+  'vendas',
+] as const
+
+export type LugarDaBarra = (typeof LUGARES_DA_BARRA)[number]
+
 export type PacoteDoNicho = {
   /** Como o cartão do onboarding e a tela de recursos chamam o ramo. */
   nome: string
@@ -46,13 +72,19 @@ export type PacoteDoNicho = {
   exemplos: string
   /** O objetivo que já vem marcado. O dono pode trocar. */
   objetivoSugerido: Objetivo
-  /** O nome da seção Comércio (chave `loja`). */
-  secaoComercio: string
+  /**
+   * Os nomes que o ramo dá a seções e subitens da barra. O que não está aqui
+   * fica com o nome de sempre. A mesma palavra vale no título da tela e na
+   * tela de sem acesso (`rotuloNaBarra`).
+   */
+  rotulos: Partial<Record<LugarDaBarra, string>>
+  /**
+   * Subitens que não fazem sentido no ramo. Somem do menu, mas a rota direta
+   * continua abrindo e o dado continua lá (PLANO-NICHOS 1.6). Seção que fica
+   * sem subitem some inteira, como já acontecia com a permissão.
+   */
+  ocultos: LugarDaBarra[]
   iconeComercio: IconeDoComercio
-  /** O nome de cada subitem da seção, pelo `id` do subitem. */
-  itensComercio: Partial<Record<'catalogo' | 'conectar-loja', string>>
-  /** Subitens que não fazem sentido no ramo. Só da seção Comércio. */
-  itensOcultos: ('catalogo' | 'conectar-loja')[]
   /**
    * Como a tela do catálogo abre. `grade` é foto grande, agrupada por
    * categoria, que é como se lê um cardápio; `lista` é a tabela de sempre.
@@ -71,57 +103,86 @@ export type PacoteDoNicho = {
   tituloDosModelos: string
   /**
    * Os modelos de fluxo do ramo, pelo id de `src/exemplos/modelos.ts`, na
-   * ordem em que aparecem. São os que a galeria mostra primeiro e os que o
-   * preparo da conta vai instalar (PLANO-NICHOS 4.4). Os outros continuam a
-   * um clique, em "Outros modelos": nada some da galeria.
+   * ordem em que aparecem. A conta com ramo vê só estes e os de qualquer
+   * negócio (`MODELOS_DE_QUALQUER_RAMO`): decisão do Gabriel em 26/set, "não
+   * faz sentido uma automação de e-commerce para um lugar que não vende isso".
+   * São também os que o preparo da conta vai instalar (PLANO-NICHOS 4.4).
    */
   modelosDeFluxo: string[]
   /** O modelo de funil do ramo, pelo id de `core/quadros-modelos.ts`. */
   modeloDeFunil: string
 }
 
+/**
+ * Os modelos que servem a qualquer negócio, e por isso aparecem em toda
+ * galeria com ramo, sob "Para qualquer negócio". Recado, menu de dúvidas e
+ * pesquisa de satisfação são o mesmo trabalho na pizzaria e no estúdio.
+ */
+export const MODELOS_DE_QUALQUER_RAMO = ['recado', 'recado-curto', 'menu-atendimento', 'pesquisa-nps'] as const
+
+/** O funil que serve a qualquer negócio: organizar quem chega pelo WhatsApp. */
+export const FUNIS_DE_QUALQUER_RAMO = ['atendimento'] as const
+
 export const VISOES_DO_CATALOGO = ['grade', 'lista'] as const
 
 export type VisaoDoCatalogo = (typeof VISOES_DO_CATALOGO)[number]
 
 export const PACOTES: Record<Nicho, PacoteDoNicho> = {
-  restaurante: {
-    nome: 'Restaurante, lanchonete, delivery',
-    exemplos: 'pizzaria, hamburgueria, marmitaria',
-    objetivoSugerido: 'vender',
-    secaoComercio: 'Cardápio',
-    iconeComercio: 'talheres',
-    itensComercio: { catalogo: 'Pratos' },
-    itensOcultos: [],
-    visaoDoCatalogo: 'grade',
-    materiais: true,
-    tituloDosModelos: 'Para restaurantes',
-    modelosDeFluxo: ['cardapio-botoes', 'atendente-ia-restaurante'],
-    modeloDeFunil: 'pedidos',
+  /*
+   * Aulas e serviços com horário: a frente da MGM Pilates. As palavras são as
+   * que os fluxos publicados da MGM já usam (medido em 26/set: "aula" 128
+   * vezes, "aluno" 99, "matrícula" 10, "cliente" nenhuma). A agenda continua
+   * no sistema do cliente, por integração: o AutoFluxos não vira gestão de
+   * alunos, então não há catálogo nem loja para mostrar, e a seção Comércio
+   * some inteira. O link direto continua abrindo.
+   */
+  aulas: {
+    nome: 'Aulas e serviços com horário',
+    exemplos: 'pilates, academia, estúdio, escola, clínica',
+    objetivoSugerido: 'atender',
+    rotulos: { contatos: 'Alunos', negocios: 'Matrículas' },
+    ocultos: ['catalogo', 'conectar-loja'],
+    iconeComercio: 'vitrine',
+    visaoDoCatalogo: 'lista',
+    materiais: false,
+    tituloDosModelos: 'Para aulas e horários',
+    modelosDeFluxo: ['agendamento', 'reagendamento', 'nao-comparecimento', 'lembrete', 'aluno-inativo'],
+    modeloDeFunil: 'agendamento',
   },
   ecommerce: {
     nome: 'Loja virtual',
     exemplos: 'loja no site, Magento, Nuvemshop',
     objetivoSugerido: 'vender',
-    secaoComercio: 'Loja',
+    rotulos: { contatos: 'Clientes', loja: 'Loja' },
+    ocultos: [],
     iconeComercio: 'sacola',
-    itensComercio: {},
-    itensOcultos: [],
     visaoDoCatalogo: 'lista',
     materiais: false,
     tituloDosModelos: 'Para lojas virtuais',
-    modelosDeFluxo: ['carrinho-abandonado', 'status-do-pedido'],
+    modelosDeFluxo: ['carrinho-abandonado', 'status-do-pedido', 'cobranca-amigavel'],
     modeloDeFunil: 'comercial',
+  },
+  restaurante: {
+    nome: 'Restaurante, lanchonete, delivery',
+    exemplos: 'pizzaria, hamburgueria, marmitaria',
+    objetivoSugerido: 'vender',
+    rotulos: { contatos: 'Clientes', negocios: 'Pedidos', loja: 'Cardápio', catalogo: 'Pratos' },
+    ocultos: [],
+    iconeComercio: 'talheres',
+    visaoDoCatalogo: 'grade',
+    materiais: true,
+    tituloDosModelos: 'Para restaurantes',
+    modelosDeFluxo: ['cardapio-botoes', 'atendente-ia-restaurante', 'horario-e-local'],
+    modeloDeFunil: 'pedidos',
   },
   comercio: {
     nome: 'Loja física, comércio',
     exemplos: 'loja de bairro, papelaria, pet shop',
     objetivoSugerido: 'atender',
-    secaoComercio: 'Produtos',
-    iconeComercio: 'vitrine',
-    itensComercio: { catalogo: 'Produtos e serviços' },
+    rotulos: { contatos: 'Clientes', loja: 'Produtos', catalogo: 'Produtos e serviços' },
     // Integração é com loja on-line; quem vende no balcão não tem o que ligar.
-    itensOcultos: ['conectar-loja'],
+    ocultos: ['conectar-loja'],
+    iconeComercio: 'vitrine',
     visaoDoCatalogo: 'lista',
     materiais: false,
     tituloDosModelos: 'Para o seu comércio',
@@ -148,30 +209,50 @@ export function visaoDoCatalogo(pacote: PacoteDoNicho | null, pedida?: string | 
 }
 
 /**
- * O destaque do ramo numa galeria de modelos: o título do bloco e os ids, na
- * ordem do pacote. `null` para a conta sem ramo, que vê a galeria de sempre.
+ * O nome de um lugar da barra no ramo: o do pacote, se ele renomeia, senão o
+ * de sempre. É a mesma palavra na barra, no título da tela e na tela de sem
+ * acesso, para a pessoa não ler "Pratos" no menu e "Produtos" na página.
+ */
+export function rotuloNaBarra(pacote: PacoteDoNicho | null, lugar: LugarDaBarra, padrao: string): string {
+  return pacote?.rotulos[lugar] ?? padrao
+}
+
+/** Este lugar da barra some no ramo? Sem ramo, nada some. */
+export function ocultoNaBarra(pacote: PacoteDoNicho | null, lugar: string): boolean {
+  return !!pacote && (pacote.ocultos as readonly string[]).includes(lugar)
+}
+
+/**
+ * A galeria de uma conta com ramo: o título do bloco do ramo, os ids dele na
+ * ordem do pacote, e os de qualquer negócio. `null` para a conta sem ramo, que
+ * vê a galeria de sempre, inteira.
  *
  * Duas galerias usam isto, a de fluxos e a de funis, e a tela não decide nada:
  * ela recebe o destaque pronto e só desenha (PLANO-NICHOS 1.6).
  */
-export type DestaqueDoRamo = { titulo: string; ids: readonly string[] }
+export type DestaqueDoRamo = { titulo: string; ids: readonly string[]; tambem: readonly string[] }
 
 export function destaqueDeFluxos(pacote: PacoteDoNicho | null): DestaqueDoRamo | null {
-  return pacote ? { titulo: pacote.tituloDosModelos, ids: pacote.modelosDeFluxo } : null
+  return pacote
+    ? { titulo: pacote.tituloDosModelos, ids: pacote.modelosDeFluxo, tambem: MODELOS_DE_QUALQUER_RAMO }
+    : null
 }
 
 export function destaqueDeFunis(pacote: PacoteDoNicho | null): DestaqueDoRamo | null {
-  return pacote ? { titulo: pacote.tituloDosModelos, ids: [pacote.modeloDeFunil] } : null
+  return pacote
+    ? { titulo: pacote.tituloDosModelos, ids: [pacote.modeloDeFunil], tambem: FUNIS_DE_QUALQUER_RAMO }
+    : null
 }
 
 /**
- * Separa uma lista de modelos em "do ramo" e "outros".
+ * Separa uma lista de modelos em "do ramo" e "de qualquer negócio"; o resto
+ * não entra.
  *
  * Os do ramo saem na ordem do destaque, e não na da lista, porque a ordem do
- * pacote é a da recomendação; os outros mantêm a ordem de sempre. Id do
- * destaque que não existe na lista é ignorado: um modelo que saiu do código
- * não pode virar cartão vazio. Sem destaque, tudo é "outros", que é a galeria
- * de hoje.
+ * pacote é a da recomendação; os de qualquer negócio mantêm a ordem de
+ * sempre. Um id que está nos dois grupos fica só no do ramo. Id que não existe
+ * na lista é ignorado: um modelo que saiu do código não pode virar cartão
+ * vazio. Sem destaque, tudo é "outros", que é a galeria de hoje, inteira.
  */
 export function separarPeloRamo<T extends { id: string }>(
   modelos: readonly T[],
@@ -179,5 +260,6 @@ export function separarPeloRamo<T extends { id: string }>(
 ): { doRamo: T[]; outros: T[] } {
   if (!destaque) return { doRamo: [], outros: [...modelos] }
   const doRamo = destaque.ids.flatMap((id) => modelos.filter((modelo) => modelo.id === id))
-  return { doRamo, outros: modelos.filter((modelo) => !destaque.ids.includes(modelo.id)) }
+  const outros = modelos.filter((modelo) => destaque.tambem.includes(modelo.id) && !destaque.ids.includes(modelo.id))
+  return { doRamo, outros }
 }

@@ -39,6 +39,8 @@ import { FAIXAS_PADRAO, NIVEIS, type Nivel } from '@/core/relacionamento'
 import { SeloDoCliente } from '@/components/lead-crm/selo-do-cliente'
 import { Responsavel } from '@/components/atividades/linha-da-agenda'
 import { membrosDaConta } from '@/server/repos/usuarios'
+import { nichoDaConta } from '@/server/repos/recursos'
+import { pacoteDo, rotuloNaBarra } from '@/core/nichos'
 
 export const dynamic = 'force-dynamic'
 
@@ -200,16 +202,19 @@ export default async function Pagina({
 
   // O total da conta decide entre a tela de primeira vez e a tabela; etiquetas
   // e segmentos alimentam o popover de filtros. As leituras são baratas.
-  const [totalDaConta, etiquetasDaConta, segmentosDaConta] = await Promise.all([
+  const [totalDaConta, etiquetasDaConta, segmentosDaConta, nicho] = await Promise.all([
     contarLeads(cliente.id),
     listarEtiquetasComContagem(cliente.id),
     listarSegmentos(cliente.id),
+    nichoDaConta(cliente.id),
   ])
+  // A palavra do ramo, a mesma da barra ("Alunos" no estúdio, `core/nichos.ts`).
+  const titulo = rotuloNaBarra(pacoteDo(nicho), 'contatos', 'Contatos')
 
   return (
     <ClienteShell cliente={cliente} ativa="leads">
       <main className="flex min-h-full flex-col px-4 md:px-[42px] pt-[26px] pb-[42px]">
-        <CabecalhoDaTela filtro={filtro} chave={chave} totalDaConta={totalDaConta} />
+        <CabecalhoDaTela titulo={titulo} filtro={filtro} chave={chave} totalDaConta={totalDaConta} />
 
         {totalDaConta === 0 ? (
           <PrimeiraVezDaConta clienteId={cliente.id} />
@@ -254,11 +259,11 @@ export default async function Pagina({
  * que ainda não tem ninguém: antes ele só existia com a tabela montada, e conta
  * nova sem número conectado não tinha como cadastrar o primeiro contato.
  */
-function CabecalhoDaTela({ filtro, chave, totalDaConta }: { filtro: Filtro; chave: string; totalDaConta: number }) {
+function CabecalhoDaTela({ titulo, filtro, chave, totalDaConta }: { titulo: string; filtro: Filtro; chave: string; totalDaConta: number }) {
   const { clienteId } = filtro
   return (
     <div className="mb-4 flex flex-wrap items-center gap-x-3 gap-y-3">
-      <h1 className="text-[20px] font-bold tracking-[-0.02em] md:text-[25px]">Contatos</h1>
+      <h1 className="text-[20px] font-bold tracking-[-0.02em] md:text-[25px]">{titulo}</h1>
       {totalDaConta > 0 && (
         <Suspense key={chave} fallback={null}>
           <Contagem filtro={filtro} totalDaConta={totalDaConta} />

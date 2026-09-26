@@ -11,6 +11,9 @@ import {
   destaqueDeFunis,
   ehNicho,
   pacoteDo,
+  rotuloNaBarra,
+  MODELOS_DE_QUALQUER_RAMO,
+  FUNIS_DE_QUALQUER_RAMO,
   separarPeloRamo,
   visaoDoCatalogo,
 } from './nichos'
@@ -32,12 +35,25 @@ describe('o ramo da conta', () => {
       const pacote = PACOTES[nicho]
       expect(OBJETIVOS).toContain(pacote.objetivoSugerido)
       expect(pacote.nome.trim()).not.toBe('')
-      expect(pacote.secaoComercio.trim()).not.toBe('')
+      for (const rotulo of Object.values(pacote.rotulos)) expect(rotulo.trim(), nicho).not.toBe('')
     }
   })
 
-  it('nenhum ramo esconde a lista de produtos: é o que o bot consulta', () => {
-    for (const nicho of NICHOS) expect(PACOTES[nicho].itensOcultos).not.toContain('catalogo')
+  it('ramo que mostra cardápio em arquivo ou grade não esconde a lista de produtos', () => {
+    for (const nicho of NICHOS) {
+      const pacote = PACOTES[nicho]
+      if (pacote.materiais || pacote.visaoDoCatalogo === 'grade') expect(pacote.ocultos, nicho).not.toContain('catalogo')
+    }
+  })
+
+  it('só a lista de produtos e as integrações da loja podem sumir: o resto é trabalho de todo ramo', () => {
+    for (const nicho of NICHOS) for (const lugar of PACOTES[nicho].ocultos) expect(['catalogo', 'conectar-loja']).toContain(lugar)
+  })
+
+  it('rotuloNaBarra usa o nome do ramo, e o de sempre sem ramo', () => {
+    expect(rotuloNaBarra(null, 'contatos', 'Contatos')).toBe('Contatos')
+    expect(rotuloNaBarra(PACOTES.aulas, 'contatos', 'Contatos')).toBe('Alunos')
+    expect(rotuloNaBarra(PACOTES.aulas, 'etiquetas', 'Etiquetas')).toBe('Etiquetas')
   })
 
   it('todo ramo abre o catálogo numa visão que existe', () => {
@@ -72,16 +88,22 @@ describe('os modelos do ramo', () => {
 
   it('o destaque vem na ordem do pacote, e os outros na de sempre', () => {
     const lista = [{ id: 'a' }, { id: 'b' }, { id: 'c' }, { id: 'd' }]
-    const { doRamo, outros } = separarPeloRamo(lista, { titulo: 'Para teste', ids: ['c', 'a', 'sumiu'] })
+    const { doRamo, outros } = separarPeloRamo(lista, { titulo: 'Para teste', ids: ['c', 'a', 'sumiu'], tambem: ['d', 'a', 'b'] })
     expect(doRamo.map((m) => m.id)).toEqual(['c', 'a'])
+    // "a" já é do ramo e não repete; o que não está em nenhum grupo não entra.
     expect(outros.map((m) => m.id)).toEqual(['b', 'd'])
   })
 
-  it('o destaque de cada ramo separa modelos de verdade, sem perder nenhum', () => {
+  it('os modelos de qualquer negócio existem', () => {
+    for (const id of MODELOS_DE_QUALQUER_RAMO) expect(MODELOS.map((m) => m.id)).toContain(id)
+    for (const id of FUNIS_DE_QUALQUER_RAMO) expect(MODELOS_DE_QUADRO.map((m) => m.id)).toContain(id)
+  })
+
+  it('a conta com ramo vê só os modelos dele e os de qualquer negócio', () => {
     for (const nicho of NICHOS) {
       const { doRamo, outros } = separarPeloRamo(MODELOS, destaqueDeFluxos(PACOTES[nicho]))
       expect(doRamo.map((m) => m.id)).toEqual(PACOTES[nicho].modelosDeFluxo)
-      expect(doRamo.length + outros.length).toBe(MODELOS.length)
+      for (const modelo of outros) expect(MODELOS_DE_QUALQUER_RAMO as readonly string[]).toContain(modelo.id)
       const funis = separarPeloRamo(MODELOS_DE_QUADRO, destaqueDeFunis(PACOTES[nicho]))
       expect(funis.doRamo.map((m) => m.id)).toEqual([PACOTES[nicho].modeloDeFunil])
     }

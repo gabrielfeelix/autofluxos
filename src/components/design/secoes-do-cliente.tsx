@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react'
 import { pode, type Acesso, type Capacidade, type Escopo } from '@/core/permissoes'
-import { pacoteDo, type IconeDoComercio, type Nicho } from '@/core/nichos'
+import { ocultoNaBarra, pacoteDo, type IconeDoComercio, type LugarDaBarra, type Nicho, type PacoteDoNicho } from '@/core/nichos'
 
 /**
  * As seções do cliente, os subitens, os ícones, e mais nada.
@@ -292,8 +292,10 @@ export function destinoNaConta(regras: Acesso, secao?: string | null): string {
 /** O nome da tela como o menu mostra, para a tela de sem acesso dizer o mesmo. */
 export function rotuloDaSecao(chave: AbaDoCliente, nicho?: Nicho | null): string {
   if (chave === 'inbox') return 'Conversas'
-  if (chave === 'loja') return pacoteDo(nicho)?.secaoComercio ?? 'Comércio'
-  return ITENS.find((item) => item.aba === chave)?.rotulo ?? 'esta tela'
+  const pacote = pacoteDo(nicho)
+  if (chave === 'loja') return comPalavrasDoRamo(SECOES.find((secao) => secao.chave === 'loja')!, pacote).rotulo
+  const item = ITENS.find((item) => item.aba === chave)
+  return item ? (pacote?.rotulos[item.id as LugarDaBarra] ?? item.rotulo) : 'esta tela'
 }
 
 const ICONE_DO_COMERCIO: Record<IconeDoComercio, ReactNode> = {
@@ -303,25 +305,24 @@ const ICONE_DO_COMERCIO: Record<IconeDoComercio, ReactNode> = {
 }
 
 /**
- * A seção Comércio com as palavras do ramo (`core/nichos.ts`).
+ * A seção com as palavras do ramo (`core/nichos.ts`): o nome da seção e dos
+ * subitens que o pacote renomeia, sem os subitens que ele esconde, e o ícone
+ * da seção Comércio.
  *
- * Só a seção Comércio muda, e só no nome, no ícone e nos subitens que o ramo
- * não usa. **A posição não muda**: quem vende e quem dá suporte explica o
- * sistema do mesmo jeito para todo ramo. Sem ramo, a seção sai intocada.
+ * **A posição não muda**: quem vende e quem dá suporte explica o sistema do
+ * mesmo jeito para todo ramo. O que some, some do menu; a rota continua
+ * abrindo. Sem ramo, a seção sai intocada.
  */
-function comPalavrasDoRamo(secao: Secao, nicho: Nicho | null | undefined): Secao {
-  const pacote = pacoteDo(nicho)
-  if (!pacote || secao.chave !== 'loja') return secao
+function comPalavrasDoRamo(secao: Secao, pacote: PacoteDoNicho | null): Secao {
+  if (!pacote) return secao
+  const rotulo = (lugar: string, padrao: string) => pacote.rotulos[lugar as LugarDaBarra] ?? padrao
   return {
     ...secao,
-    rotulo: pacote.secaoComercio,
-    icone: ICONE_DO_COMERCIO[pacote.iconeComercio],
+    rotulo: rotulo(secao.chave, secao.rotulo),
+    icone: secao.chave === 'loja' ? ICONE_DO_COMERCIO[pacote.iconeComercio] : secao.icone,
     itens: secao.itens
-      .filter((item) => !(pacote.itensOcultos as string[]).includes(item.id))
-      .map((item) => {
-        const rotulo = pacote.itensComercio[item.id as keyof typeof pacote.itensComercio]
-        return rotulo ? { ...item, rotulo } : item
-      }),
+      .filter((item) => !ocultoNaBarra(pacote, item.id))
+      .map((item) => ({ ...item, rotulo: rotulo(item.id, item.rotulo) })),
   }
 }
 
@@ -345,7 +346,7 @@ function comPalavrasDoRamo(secao: Secao, nicho: Nicho | null | undefined): Secao
  * nada é pior que título nenhum.
  *
  * `nicho` ausente é a conta sem ramo, e o esqueleto também não pergunta: ele
- * mostra "Comércio" até a barra de verdade chegar com o nome do ramo.
+ * mostra os nomes de sempre até a barra de verdade chegar com os do ramo.
  */
 export function secoesVisiveis({
   crmVisivel,
@@ -354,7 +355,7 @@ export function secoesVisiveis({
   nicho,
 }: { crmVisivel?: boolean; lojaVisivel?: boolean; regras?: Acesso; nicho?: Nicho | null } = {}): Secao[] {
   return SECOES.filter((secao) => !(lojaVisivel === false && secao.chave === 'loja'))
-    .map((secao) => comPalavrasDoRamo(secao, nicho))
+    .map((secao) => comPalavrasDoRamo(secao, pacoteDo(nicho)))
     .map((secao) => ({
       ...secao,
       itens: secao.itens.filter(

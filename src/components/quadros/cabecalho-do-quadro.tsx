@@ -18,6 +18,7 @@ export function CabecalhoDoQuadro({
   fora,
   visao = 'quadro',
   destaqueDeFunis = null,
+  titulo = 'Negócios',
 }: {
   clienteId: string
   quadros: { id: string; nome: string }[]
@@ -31,6 +32,8 @@ export function CabecalhoDoQuadro({
   fora: number
   /** O funil do ramo da conta, para o "Novo funil" do seletor. */
   destaqueDeFunis?: DestaqueDoRamo | null
+  /** O nome da tela no ramo, o mesmo da barra ("Pedidos" no restaurante). */
+  titulo?: string
 }) {
   const [painel, setPainel] = useState<'configuracoes' | 'importar' | null>(null)
   const atual = quadros.find((quadro) => quadro.id === abertoId)
@@ -43,7 +46,7 @@ export function CabecalhoDoQuadro({
         </span>
         <div className="min-w-0">
           <h1 className="mb-1 text-[11px] font-semibold tracking-[0.06em] text-dim uppercase">
-            Negócios
+            {titulo}
           </h1>
           {atual ? (
             <NovoQuadro
