@@ -3,11 +3,13 @@
 import Link from 'next/link'
 import { useEffect, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { RESPOSTAS_INICIAIS, respostasOnboardingSchema, type EstadoOnboarding, type RespostasOnboarding } from '@/core/onboarding'
+import { CHATBOTS_DO_ONBOARDING, FUNIS_DO_ONBOARDING, RESPOSTAS_INICIAIS, funilDaFrente, marcadoPelaFrente, nichoDoOnboarding, respostasOnboardingSchema, type EstadoOnboarding, type RespostasOnboarding } from '@/core/onboarding'
+import { NICHOS, PACOTES, pacoteDo, type Nicho } from '@/core/nichos'
+import { acharModelo } from '@/exemplos/modelos'
 import { MODELOS_DE_QUADRO } from '@/core/quadros-modelos'
 import { acaoPrepararConta } from '@/server/acoes-onboarding'
 
-const PASSOS = ['Objetivo', 'Atendimento', 'Preparação', 'Revisão']
+const PASSOS = ['Seu negócio', 'Atendimento', 'Preparação', 'Revisão']
 const CHATBOTS = [
   { valor: 'recado', titulo: 'Receber e encaminhar', descricao: 'Pergunta o assunto e o nome antes de passar a conversa para sua equipe.' },
   { valor: 'menu-atendimento', titulo: 'Dúvidas frequentes', descricao: 'Um menu com horário, endereço e preços, com opção de falar com uma pessoa.' },
@@ -29,7 +31,7 @@ export function Assistente({ clienteId, nome, inicial, temQuadro, temFluxo }: {
   function mudar<K extends keyof RespostasOnboarding>(campo: K, valor: RespostasOnboarding[K]) {
     setRespostas((antes) => {
       const novo = { ...antes, [campo]: valor }
-      if (campo === 'objetivo') novo.funil = valor === 'atendimento' ? 'nenhum' : antes.funil === 'nenhum' ? 'comercial' : antes.funil
+      if (campo === 'objetivo') novo.funil = valor === 'atendimento' ? 'nenhum' : antes.funil === 'nenhum' ? funilDaFrente(antes.nicho) : antes.funil
       if (campo === 'atendimento') novo.chatbot = valor === 'hibrido' ? (antes.chatbot === 'nenhum' ? 'recado' : antes.chatbot) : 'nenhum'
       return novo
     })
@@ -49,8 +51,18 @@ export function Assistente({ clienteId, nome, inicial, temQuadro, temFluxo }: {
       setErro('Não foi possível salvar agora. Suas escolhas continuam aqui; tente novamente.')
     } finally { setSalvando(false) }
   }
+  const pacote = pacoteDo(nichoDoOnboarding(respostas))
+  // Com frente, os chatbots dela vêm primeiro; os dois de sempre continuam.
+  const chatbots = [
+    ...(pacote?.modelosDeFluxo ?? []).filter((id) => CHATBOTS_DO_ONBOARDING.includes(id) && !CHATBOTS.some((c) => c.valor === id)).flatMap((id) => {
+      const modelo = acharModelo(id)
+      return modelo ? [{ valor: modelo.id, titulo: modelo.nome, descricao: modelo.resumo }] : []
+    }),
+    ...CHATBOTS,
+  ]
+  const funis = [...new Set([...(pacote ? [pacote.modeloDeFunil] : []), ...FUNIS_DO_ONBOARDING])].filter((id) => (FUNIS_DO_ONBOARDING as readonly string[]).includes(id))
   const quadro = MODELOS_DE_QUADRO.find((modelo) => modelo.id === respostas.funil)
-  const bot = CHATBOTS.find((modelo) => modelo.valor === respostas.chatbot)
+  const bot = chatbots.find((modelo) => modelo.valor === respostas.chatbot)
   const vaiCriarQuadro = !!quadro && !temQuadro && respostas.objetivo !== 'atendimento'
   const vaiCriarFluxo = respostas.atendimento === 'hibrido' && respostas.chatbot !== 'nenhum' && !temFluxo
   const headingClass = 'text-2xl font-bold tracking-tight outline-none md:text-[30px]'
@@ -78,6 +90,11 @@ export function Assistente({ clienteId, nome, inicial, temQuadro, temFluxo }: {
       </ol>
       <form onSubmit={(event) => { event.preventDefault(); void salvar(etapa === 3 ? 'concluir' : 'salvar', Math.min(3, etapa + 1)) }} className="overflow-hidden rounded-2xl border border-line bg-panel shadow-sm" aria-busy={salvando}>
         <fieldset disabled={salvando} className="min-w-0 p-5 md:p-8">
+          {etapa === 0 && <Escolhas titulo="Qual é o seu negócio?" ajuda="O sistema se adapta ao seu ramo: nomes do menu, modelos prontos e as perguntas do assistente. Dá para trocar depois." nome="nicho" valor={respostas.nicho ?? ''} mudar={(valor) => setRespostas((antes) => marcadoPelaFrente(antes, valor as Nicho | 'outro'))} opcoes={[
+            ...NICHOS.map((nicho) => ({ valor: nicho, titulo: PACOTES[nicho].nome, descricao: PACOTES[nicho].exemplos })),
+            { valor: 'outro', titulo: 'Outro', descricao: 'O sistema completo, sem adaptar ao ramo.' },
+          ]} />}
+          {etapa === 0 && <div className="mt-7" />}
           {etapa === 0 && <Escolhas titulo="O que você quer organizar primeiro?" ajuda="O atendimento fica disponível em qualquer escolha. Vendas também prepara o acompanhamento por etapas." nome="objetivo" valor={respostas.objetivo} mudar={(valor) => mudar('objetivo', valor as RespostasOnboarding['objetivo'])} opcoes={[
             { valor: 'atendimento', titulo: 'Atendimento', descricao: 'Reunir conversas, responder com agilidade e acompanhar os contatos.' },
             { valor: 'vendas', titulo: 'Vendas', descricao: 'Acompanhar oportunidades desde o primeiro contato até o fechamento.' },
@@ -97,14 +114,15 @@ export function Assistente({ clienteId, nome, inicial, temQuadro, temFluxo }: {
           {etapa === 2 && <div className="space-y-7">
             <div><h2 className="text-lg font-bold">Um ponto de partida para sua rotina</h2><p className="mt-2 text-sm leading-6 text-muted">Escolha os modelos que quer preparar. Você poderá editar os detalhes depois.</p></div>
             {respostas.objetivo !== 'atendimento' && (temQuadro ? <Aviso>Você já tem funil. Vamos preservar suas etapas e seus contatos, sem criar outro automaticamente.</Aviso> : <Escolhas titulo="Como suas oportunidades avançam?" nome="funil" valor={respostas.funil} mudar={(valor) => mudar('funil', valor as RespostasOnboarding['funil'])} opcoes={[
-              ...MODELOS_DE_QUADRO.filter((modelo) => ['comercial', 'agendamento', 'pos-venda'].includes(modelo.id)).map((modelo) => ({ valor: modelo.id, titulo: modelo.nome, descricao: modelo.resumo })),
+              ...funis.flatMap((id) => MODELOS_DE_QUADRO.filter((modelo) => modelo.id === id)).map((modelo) => ({ valor: modelo.id, titulo: modelo.nome, descricao: modelo.resumo })),
               { valor: 'nenhum', titulo: 'Montar depois', descricao: 'Não criar um funil agora.' },
             ]} />)}
-            {respostas.atendimento === 'hibrido' && (temFluxo ? <Aviso>Você já tem automações. Seus fluxos e publicações serão preservados.</Aviso> : <Escolhas titulo="O que vale automatizar primeiro?" nome="chatbot" valor={respostas.chatbot} mudar={(valor) => mudar('chatbot', valor as RespostasOnboarding['chatbot'])} opcoes={CHATBOTS} />)}
+            {respostas.atendimento === 'hibrido' && (temFluxo ? <Aviso>Você já tem automações. Seus fluxos e publicações serão preservados.</Aviso> : <Escolhas titulo="O que vale automatizar primeiro?" nome="chatbot" valor={respostas.chatbot} mudar={(valor) => mudar('chatbot', valor as RespostasOnboarding['chatbot'])} opcoes={chatbots} />)}
             {respostas.objetivo === 'atendimento' && respostas.atendimento !== 'hibrido' && <Aviso>Seu começo será pelo Inbox, Contatos e Atividades. Depois de conectar o canal, confira o horário de atendimento e prepare suas respostas rápidas.</Aviso>}
           </div>}
           {etapa === 3 && <div className="space-y-5">
             <div><h2 className="text-xl font-bold">Veja o que vamos preparar</h2><p className="mt-2 text-sm text-muted">Confira suas escolhas. Volte a qualquer etapa para ajustar.</p></div>
+            {pacote && <div className="rounded-xl border border-line p-4"><p className="text-sm font-semibold">Tipo de negócio: {pacote.nome}</p><p className="mt-1 text-xs text-muted">O menu, os modelos e a ficha do assistente passam a falar do seu ramo. Nada é apagado.</p></div>}
             <div className="rounded-xl border border-line p-4"><p className="text-sm font-semibold">{respostas.objetivo === 'atendimento' ? 'Atendimento' : respostas.objetivo === 'vendas' ? 'Vendas' : 'Atendimento e vendas'}</p><p className="mt-1 text-xs text-muted">{respostas.atendimento === 'hibrido' ? 'Automação com equipe' : respostas.atendimento === 'equipe' ? 'Atendimento pela equipe' : 'Automação a decidir depois'} · {respostas.canal === 'whatsapp' ? 'WhatsApp' : 'Instagram'}</p></div>
             {vaiCriarQuadro && quadro && <div className="rounded-xl border border-line p-4"><p className="text-sm font-semibold">Funil: {quadro.nome}</p><div className="mt-3 flex flex-wrap gap-2">{quadro.etapas.map((item) => <span key={item.nome} className="rounded-md bg-surface px-2.5 py-1.5 text-xs text-muted">{item.nome}</span>)}</div><p className="mt-3 text-xs text-dim">Sem importar contatos nem alterar a entrada automática.</p></div>}
             {vaiCriarFluxo && <div className="rounded-xl border border-line p-4"><p className="text-sm font-semibold">Rascunho: {bot?.titulo}</p><p className="mt-2 text-xs leading-5 text-muted">{bot?.descricao} Ajuste os textos de exemplo no editor antes de publicar.</p><span className="mt-3 inline-block rounded-md bg-primary-weak px-2 py-1 text-[11px] font-semibold text-primary">Rascunho · pausado</span></div>}

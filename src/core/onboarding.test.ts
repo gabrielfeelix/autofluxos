@@ -1,5 +1,9 @@
+import { readFileSync } from 'node:fs'
+import { join } from 'node:path'
 import { describe, it, expect } from 'vitest'
-import { respostasOnboardingSchema, RESPOSTAS_INICIAIS, objetivoDoOnboarding, lerOnboarding, passosDoOnboarding } from './onboarding'
+import { respostasOnboardingSchema, RESPOSTAS_INICIAIS, objetivoDoOnboarding, lerOnboarding, passosDoOnboarding, marcadoPelaFrente, nichoDoOnboarding, CHATBOTS_DO_ONBOARDING, CHATBOTS_DAS_FRENTES, FUNIS_DAS_FRENTES } from './onboarding'
+import { NICHOS, PACOTES } from './nichos'
+import { MODELOS_DE_QUADRO } from './quadros-modelos'
 import { acharModelo } from '@/exemplos/modelos'
 import { fluxoSchema } from './flow/schema'
 
@@ -36,5 +40,32 @@ describe('preparação da empresa', () => {
   })
   it('usa modelos reais com grafos válidos', () => {
     for (const id of ['recado', 'menu-atendimento']) expect(fluxoSchema.safeParse(acharModelo(id)?.grafo).success).toBe(true)
+  })
+  it('preparação salva antes da pergunta da frente continua valendo, sem frente', () => {
+    const antiga = lerOnboarding({ status: 'concluido', respostas: RESPOSTAS_INICIAIS })
+    expect(antiga).not.toBeNull()
+    expect(nichoDoOnboarding(antiga!.respostas)).toBeNull()
+    expect(nichoDoOnboarding({ ...RESPOSTAS_INICIAIS, nicho: 'outro' })).toBeNull()
+  })
+  it('escolher a frente marca o objetivo, o funil e o chatbot dela, e tudo passa no schema', () => {
+    for (const nicho of NICHOS) {
+      const marcado = marcadoPelaFrente(RESPOSTAS_INICIAIS, nicho)
+      const conferido = respostasOnboardingSchema.parse(marcado)
+      expect(conferido.nicho).toBe(nicho)
+      expect(CHATBOTS_DO_ONBOARDING).toContain(conferido.chatbot)
+      expect(nichoDoOnboarding(conferido)).toBe(nicho)
+    }
+  })
+  it('todo chatbot e funil oferecido existe, com grafo válido', () => {
+    for (const id of [...CHATBOTS_DO_ONBOARDING, ...CHATBOTS_DAS_FRENTES]) expect(fluxoSchema.safeParse(acharModelo(id)?.grafo).success, id).toBe(true)
+    for (const id of FUNIS_DAS_FRENTES) expect(MODELOS_DE_QUADRO.map((m) => m.id)).toContain(id)
+    void PACOTES
+  })
+  it('recusa frente que não existe', () => {
+    expect(respostasOnboardingSchema.safeParse({ ...RESPOSTAS_INICIAIS, nicho: 'saude' }).success).toBe(false)
+  })
+  it('a 0109 aceita todo modelo e funil das frentes, e toda frente', () => {
+    const sql = readFileSync(join(__dirname, '../../supabase/migrations/0109_onboarding_frentes.sql'), 'utf8')
+    for (const id of [...CHATBOTS_DAS_FRENTES, ...FUNIS_DAS_FRENTES, ...NICHOS]) expect(sql, id).toContain(`'${id}'`)
   })
 })
