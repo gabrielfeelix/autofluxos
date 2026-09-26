@@ -145,6 +145,6 @@ o sistema muda de verdade por nicho.
 - Demo: WhatsApp primeiro, página depois.
 - Restaurante: cardápio próprio primeiro; iFood como opção do dono.
 
-## Em aberto
+## Número da demo
 
-- Qual número de WhatsApp vira o número de demonstração.
+- Número da demo: +55 44 7400-7438 (hoje na conta PCYES, é número de teste do Gabriel). Plano em `docs/PLANO-NICHOS.md`.
