@@ -6,8 +6,8 @@ import type { Modelo, PedidoDeIa, Resposta } from './types'
 /**
  * O adaptador dos provedores que falam o dialeto da OpenAI.
  *
- * Groq, Cerebras e Mistral aceitam o mesmo `chat/completions`, com `tools` no
- * mesmo formato, então um arquivo atende os três. O que muda entre eles é
+ * Groq, Cerebras, Mistral e Cloudflare aceitam o mesmo `chat/completions`, com `tools` no
+ * mesmo formato, então um arquivo atende os quatro. O que muda entre eles é
  * endereço, nome do modelo e um ou outro parâmetro, e isso mora em
  * `PROVEDORES`, não em código espalhado.
  *
@@ -20,10 +20,13 @@ import type { Modelo, PedidoDeIa, Resposta } from './types'
  * fluxos o dia inteiro sem pagar.
  */
 
-export type NomeDoProvedor = 'groq' | 'cerebras' | 'mistral'
+export type NomeDoProvedor = 'groq' | 'cerebras' | 'mistral' | 'cloudflare'
 
 type Provedor = {
+  /** Com `{conta}` quando o endereço leva o id da conta (`variavelDaConta`). */
   endereco: string
+  /** A variável de ambiente com o id da conta, para quem precisa dele na URL. */
+  variavelDaConta?: string
   modelo: string
   /** A variável de ambiente que guarda a chave. */
   variavel: string
@@ -68,6 +71,36 @@ export const PROVEDORES: Record<NomeDoProvedor, Provedor> = {
     variavel: 'MISTRAL_API_KEY',
     extras: { max_tokens: 1200 },
   },
+  /*
+   * Workers AI, pela porta compatível com a OpenAI. Entrou em 26/set/2026
+   * porque Mistral e Cerebras recusaram cartão brasileiro no cadastro e o
+   * Cloudflare dá cota diária grátis sem cartão. O mesmo `gpt-oss-120b` do
+   * Groq, pelo motivo de cima. **Ainda não passou pela suíte de escopo**: sem
+   * as duas variáveis no ambiente ele nem entra na cadeia, e antes de pôr as
+   * duas em produção roda `IA_PROVEDOR=cloudflare` no `gemini.test.ts`. Só
+   * `max_tokens` nos extras até a suíte provar que ele aceita os parâmetros de
+   * raciocínio dos outros dois.
+   */
+  cloudflare: {
+    endereco: 'https://api.cloudflare.com/client/v4/accounts/{conta}/ai/v1/chat/completions',
+    variavelDaConta: 'CLOUDFLARE_ACCOUNT_ID',
+    modelo: '@cf/openai/gpt-oss-120b',
+    variavel: 'CLOUDFLARE_API_TOKEN',
+    extras: { max_tokens: 1200 },
+  },
+}
+
+/**
+ * O endereço pronto, ou `null` quando falta o id da conta que ele exige.
+ *
+ * Quem monta a cadeia usa isto para não pôr na fila um provedor que só ia
+ * falhar: chave sem conta é configuração pela metade.
+ */
+export function enderecoDo(provedor: NomeDoProvedor): string | null {
+  const config = PROVEDORES[provedor]
+  if (!config.variavelDaConta) return config.endereco
+  const conta = process.env[config.variavelDaConta]
+  return conta ? config.endereco.replace('{conta}', encodeURIComponent(conta)) : null
 }
 
 /**
@@ -104,6 +137,7 @@ export function compativelOpenai({
 }): Modelo {
   const config = PROVEDORES[provedor]
   const nome = modelo ?? config.modelo
+  const endereco = enderecoDo(provedor)
 
   return {
     async responder(pedido: PedidoDeIa): Promise<Resposta> {
@@ -112,8 +146,12 @@ export function compativelOpenai({
         return { tipo: 'nao_sei', motivo: `${provedor} está sem cota agora`, falhou: true }
       }
 
+      if (!endereco) {
+        return { tipo: 'nao_sei', motivo: `${provedor} sem o id da conta no ambiente`, falhou: true }
+      }
+
       try {
-        const resposta = await fetch(config.endereco, {
+        const resposta = await fetch(endereco, {
           method: 'POST',
           headers: { 'content-type': 'application/json', authorization: `Bearer ${chave}` },
           body: montarCorpo(pedido, nome, config.extras),

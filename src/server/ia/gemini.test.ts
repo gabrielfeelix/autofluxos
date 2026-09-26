@@ -50,7 +50,7 @@ function descrever(r: Resposta): string {
  * ```
  */
 /*
- * `IA_PROVEDOR=groq` (ou `cerebras`, `mistral`) roda os mesmos casos contra
+ * `IA_PROVEDOR=groq` (ou `cerebras`, `mistral`, `cloudflare`) roda os mesmos casos contra
  * outro provedor. É a régua para entrar na cadeia: passar aqui o que o Gemini
  * passa.
  */

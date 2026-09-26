@@ -1,6 +1,6 @@
 import 'server-only'
 import { emCadeia } from './cadeia'
-import { compativelOpenai, PROVEDORES } from './compativel-openai'
+import { compativelOpenai, enderecoDo, PROVEDORES } from './compativel-openai'
 import { gemini } from './gemini'
 import { lerChave } from '../repos/chave-de-ia'
 import { recusaDoPlano } from '../recursos-do-plano'
@@ -91,7 +91,8 @@ export async function escolherModelo({
  * A cota grátis do Gemini acabava no meio da tarde e a conversa ia para gente.
  * Cada provedor tem o seu balde, então enfileirar os que têm chave no ambiente
  * soma as cotas: Groq primeiro (mais rápido), Cerebras (mesmo modelo, mais
- * volume por dia), Mistral (o maior volume, mas treina com o dado se o painel
+ * volume por dia), Cloudflare (o mesmo modelo, cota diária sem cartão, desde
+ * 26/set), Mistral (o maior volume, mas treina com o dado se o painel
  * não for desligado), Gemini por último, que é o que já estava validado.
  *
  * `IA_PROVEDOR` prende um só, para comparar como cada um se comporta.
@@ -99,9 +100,9 @@ export async function escolherModelo({
 function modeloDa4yu(): Modelo | null {
   const elos: { nome: string; modelo: Modelo }[] = []
 
-  for (const nome of ['groq', 'cerebras', 'mistral'] as const) {
+  for (const nome of ['groq', 'cerebras', 'cloudflare', 'mistral'] as const) {
     const chave = process.env[PROVEDORES[nome].variavel]
-    if (chave) elos.push({ nome, modelo: compativelOpenai({ provedor: nome, chave }) })
+    if (chave && enderecoDo(nome)) elos.push({ nome, modelo: compativelOpenai({ provedor: nome, chave }) })
   }
   const chaveGemini = process.env.GEMINI_API_KEY
   if (chaveGemini) elos.push({ nome: 'gemini', modelo: gemini({ chave: chaveGemini }) })
