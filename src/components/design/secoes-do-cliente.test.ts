@@ -154,12 +154,14 @@ describe('as palavras do ramo (core/nichos.ts)', () => {
     for (const nicho of NICHOS) expect(fixas(secoesVisiveis({ nicho })), nicho).toEqual(fixas(secoesVisiveis()))
   })
 
-  it('aulas fala como a MGM: Alunos e Matrículas, e não tem Comércio', () => {
+  it('aulas fala como a MGM: Alunos, Matrículas e Planos, sem integração de loja', () => {
     const barra = secoesVisiveis({ nicho: 'aulas' })
     const crm = barra.find((secao) => secao.chave === 'crm')
     expect(crm?.itens.find((item) => item.id === 'contatos')?.rotulo).toBe('Alunos')
     expect(crm?.itens.find((item) => item.id === 'negocios')?.rotulo).toBe('Matrículas')
-    expect(barra.find((secao) => secao.chave === 'loja')).toBeUndefined()
+    const planos = barra.find((secao) => secao.chave === 'loja')
+    expect(planos?.rotulo).toBe('Planos')
+    expect(planos?.itens.map((item) => item.rotulo)).toEqual(['Planos e modalidades'])
     expect(rotuloDaSecao('leads', 'aulas')).toBe('Alunos')
     expect(rotuloDaSecao('quadros', 'aulas')).toBe('Matrículas')
   })

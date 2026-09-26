@@ -302,6 +302,7 @@ const ICONE_DO_COMERCIO: Record<IconeDoComercio, ReactNode> = {
   sacola: <IconeLoja />,
   talheres: <IconeTalheres />,
   vitrine: <IconeVitrine />,
+  planos: <IconePlanos />,
 }
 
 /**
@@ -455,6 +456,16 @@ function IconeLoja() {
       {/* Uma sacola: a loja do cliente, e não o nosso plano. */}
       <path d="M2.6 4.6h9.8l-.7 8.2a1 1 0 0 1-1 .9H4.3a1 1 0 0 1-1-.9Z" />
       <path d="M5.2 6.4V3.9a2.3 2.3 0 0 1 4.6 0v2.5" strokeLinecap="round" />
+    </svg>
+  )
+}
+
+function IconePlanos() {
+  return (
+    <svg aria-hidden width="15" height="15" viewBox="0 0 15 15" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinejoin="round">
+      {/* Um cartão de plano com as linhas do que ele inclui. */}
+      <rect x="2" y="1.8" width="11" height="11.4" rx="2" />
+      <path d="M4.6 5h5.8M4.6 7.5h5.8M4.6 10h3.4" strokeLinecap="round" />
     </svg>
   )
 }

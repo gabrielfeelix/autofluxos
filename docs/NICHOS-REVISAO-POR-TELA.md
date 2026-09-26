@@ -27,10 +27,15 @@ sistema.
 | CRM › Contatos | Contatos | **Alunos** | **Clientes** | **Clientes** | **Clientes** | ✅ |
 | CRM › Negócios | Negócios | **Matrículas** | | **Pedidos** | | ✅ |
 | Segmentos, Etiquetas, Atividades | | | | | | |
-| Comércio (seção) | Comércio | **some** | **Loja** | **Cardápio** | **Produtos** | ✅ |
-| Comércio › Produtos | Produtos | some | | **Pratos** | **Produtos e serviços** | ✅ |
+| Comércio (seção) | Comércio | **Planos** | **Loja** | **Cardápio** | **Produtos** | ✅ |
+| Comércio › Produtos | Produtos | **Planos e modalidades** | | **Pratos** | **Produtos e serviços** | ✅ |
 | Comércio › Integrações | Integrações | some | | | some | ✅ |
 | Análise › Vendas | Vendas | | | | | ❔ |
+
+Aulas ganhou a seção **Planos** (Gabriel, 26/set): estúdio vende planos,
+pacotes e modalidades, e cadastrados no catálogo a IA responde com o dado
+certo. Na MGM serve menos, porque a Verandi já tem isso; nas próximas contas
+de aula, serve.
 
 Por que "Alunos" e "Matrículas": são as palavras que os fluxos publicados da
 MGM já usam (contado em 26/set: "aula" 128 vezes, "aluno" 99, "matrícula" 10,
@@ -58,7 +63,7 @@ Pedidos. Ficou "Vendas" em todas até o Gabriel decidir.
 | `/fluxos/[fluxoId]` | Editor | | | | | igual |
 | `/transmissoes`, `/respostas` | | | | | | igual |
 | `/loja`, `/loja/magento`, `/loja/nuvemshop` | Integrações da loja | some do menu | | | some do menu | ✅ |
-| `/loja/catalogo` | Produtos | some do menu | lista | **Pratos**, grade com foto, cardápio em arquivo | **Produtos e serviços** | ✅ |
+| `/loja/catalogo` | Produtos | **Planos e modalidades**: planos, pacotes e modalidades que a IA consulta | lista | **Pratos**, grade com foto, cardápio em arquivo | **Produtos e serviços** | ✅ |
 | `/relatorios` | Atendimento | | | | | igual |
 | `/relatorios/vendas` | Vendas | | | | | ❔ ver acima |
 | `/ajustes` | Configurações | | | | | igual |

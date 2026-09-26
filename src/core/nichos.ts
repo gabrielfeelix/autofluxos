@@ -38,7 +38,7 @@ export function ehNicho(valor: unknown): valor is Nicho {
 }
 
 /** O desenho da seção Comércio. Nome e não SVG: o desenho mora na barra. */
-export type IconeDoComercio = 'sacola' | 'talheres' | 'vitrine'
+export type IconeDoComercio = 'sacola' | 'talheres' | 'vitrine' | 'planos'
 
 /**
  * Os lugares da barra lateral que um ramo pode renomear ou esconder: a chave
@@ -191,18 +191,21 @@ export const PACOTES: Record<Nicho, PacoteDoNicho> = {
   /*
    * Aulas e serviços com horário: a frente da MGM Pilates. As palavras são as
    * que os fluxos publicados da MGM já usam (medido em 26/set: "aula" 128
-   * vezes, "aluno" 99, "matrícula" 10, "cliente" nenhuma). A agenda continua
-   * no sistema do cliente, por integração: o AutoFluxos não vira gestão de
-   * alunos, então não há catálogo nem loja para mostrar, e a seção Comércio
-   * some inteira. O link direto continua abrindo.
+   * vezes, "aluno" 99, "matrícula" 10, "cliente" nenhuma).
+   *
+   * A seção Comércio vira **Planos** (pedido do Gabriel, 26/set): o que um
+   * estúdio vende são planos, pacotes e modalidades, e cadastrados no
+   * catálogo a IA responde preço e modalidade com o dado certo. A agenda
+   * continua no sistema do cliente, por integração: o AutoFluxos não vira
+   * gestão de alunos. Integração de loja on-line não se aplica e some.
    */
   aulas: {
     nome: 'Aulas e serviços com horário',
     exemplos: 'pilates, academia, estúdio, escola, clínica',
     objetivoSugerido: 'atender',
-    rotulos: { contatos: 'Alunos', negocios: 'Matrículas' },
-    ocultos: ['catalogo', 'conectar-loja'],
-    iconeComercio: 'vitrine',
+    rotulos: { contatos: 'Alunos', negocios: 'Matrículas', loja: 'Planos', catalogo: 'Planos e modalidades' },
+    ocultos: ['conectar-loja'],
+    iconeComercio: 'planos',
     visaoDoCatalogo: 'lista',
     materiais: false,
     tituloDosModelos: 'Para aulas e horários',
@@ -210,7 +213,7 @@ export const PACOTES: Record<Nicho, PacoteDoNicho> = {
     modeloDeFunil: 'agendamento',
     passosDoInicio: ['ficha'],
     ficha: {
-      pode: ['Tirar dúvidas com o que está nesta ficha', 'Explicar modalidades, planos e aula experimental', 'Informar horário e endereço'],
+      pode: ['Tirar dúvidas com o que está nesta ficha', 'Explicar modalidades, planos e aula experimental', 'Mostrar planos e valores do catálogo', 'Informar horário e endereço'],
       perguntas: [
         p('oferta', 'O QUE OFERECEMOS', ['o que oferecemos', 'modalidades', 'servicos', 'aulas'], 'Que aulas e serviços vocês oferecem?', 'Pilates em aparelho em turma de até 5 pessoas, pilates individual e fisioterapia.', 'Quais aulas vocês têm?'),
         p('horarios', 'HORÁRIOS', ['horario', 'a grade', 'grade'], 'Qual o horário de funcionamento e a grade de aulas?', 'Segunda a sexta, das 7h às 21h. Sábado, das 8h às 12h.', 'Qual o horário de vocês?'),
