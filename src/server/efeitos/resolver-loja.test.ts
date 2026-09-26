@@ -31,6 +31,9 @@ vi.mock('../ia/politica', () => ({
   politicaDe: () => 'automatico',
 }))
 vi.mock('../repos/ia-chamadas', () => ({ registrarChamada: async () => {} }))
+
+const listarMateriais = vi.hoisted(() => vi.fn())
+vi.mock('../repos/materiais', () => ({ listarMateriais }))
 vi.mock('../alertar', () => ({ alertar: async () => {} }))
 
 const { executarComEfeitos } = await import('./resolver')
@@ -95,6 +98,7 @@ beforeEach(() => {
   chamarHttp.mockReset()
   lerCredencial.mockReset()
   lojaAtivaDaConta.mockReset()
+  listarMateriais.mockReset()
 })
 
 describe('ferramentas de loja no laço da IA', () => {
@@ -265,5 +269,106 @@ describe('ferramentas de loja no laço da IA', () => {
     } as Parameters<typeof executarComEfeitos>[3])
     expect(lojaAtivaDaConta).not.toHaveBeenCalled()
     expect(r.acoes.some((a) => a.tipo === 'transferir_humano')).toBe(true)
+  })
+})
+
+/** O que a ferramenta devolveu ao modelo, lido do histórico da segunda volta. */
+function resultadoDaFerramenta(modelo: { pedidos: PedidoDeIa[] }): unknown {
+  const turno = modelo.pedidos[1]?.historico?.find((t) => t.de === 'ferramenta')
+  return turno ? JSON.parse(turno.texto) : null
+}
+
+describe('enviar_cardapio', () => {
+  const pdf = {
+    tipo: 'cardapio-pdf',
+    url: 'https://arquivos.exemplo/cardapio.pdf',
+    nomeArquivo: 'Cardápio Pizzaria.pdf',
+    atualizadoEm: '2026-09-26T12:00:00Z',
+  }
+  const imagem = {
+    tipo: 'cardapio-imagem',
+    url: 'https://arquivos.exemplo/cardapio.jpg',
+    nomeArquivo: null,
+    atualizadoEm: '2026-09-26T12:00:00Z',
+  }
+
+  it('manda a imagem e o PDF logo depois da frase, sem o endereço passar pelo modelo', async () => {
+    listarMateriais.mockResolvedValue([pdf, imagem])
+    const modelo = modeloComRoteiro([
+      { tipo: 'usar_ferramenta', nome: 'enviar_cardapio', argumentos: {} },
+      { tipo: 'texto', texto: 'Aqui está o nosso cardápio!' },
+    ])
+
+    const r = await rodar(fluxo(['enviar_cardapio']), modelo)
+
+    // Não depende de loja ligada: o cardápio é da conta.
+    expect(lojaAtivaDaConta).not.toHaveBeenCalled()
+    expect(resultadoDaFerramenta(modelo)).toEqual({ enviado: true })
+    expect(JSON.stringify(modelo.pedidos[1])).not.toContain('arquivos.exemplo')
+
+    const frase = r.acoes.findIndex((a) => a.tipo === 'enviar_texto' && a.texto === 'Aqui está o nosso cardápio!')
+    expect(frase).toBeGreaterThanOrEqual(0)
+    expect(r.acoes.slice(frase + 1, frase + 3)).toEqual([
+      { tipo: 'enviar_midia', midia: 'imagem', url: imagem.url },
+      { tipo: 'enviar_midia', midia: 'documento', url: pdf.url, nomeArquivo: 'Cardápio Pizzaria.pdf' },
+    ])
+  })
+
+  it('sem cardápio cadastrado, responde ao modelo que não há arquivo e não manda mídia', async () => {
+    listarMateriais.mockResolvedValue([])
+    const modelo = modeloComRoteiro([
+      { tipo: 'usar_ferramenta', nome: 'enviar_cardapio', argumentos: {} },
+      { tipo: 'texto', texto: 'Ainda não temos o cardápio em arquivo, mas posso te dizer os sabores.' },
+    ])
+
+    const r = await rodar(fluxo(['enviar_cardapio']), modelo)
+
+    expect(resultadoDaFerramenta(modelo)).toMatchObject({ enviado: false })
+    expect(r.acoes.some((a) => a.tipo === 'enviar_midia')).toBe(false)
+    expect(textos(r)).toContain('Ainda não temos o cardápio em arquivo, mas posso te dizer os sabores.')
+  })
+})
+
+describe('categoria nas ferramentas de loja', () => {
+  it('loja_buscar e loja_mostrar passam a categoria para a loja', async () => {
+    const pedidos: { termo?: string; skus?: string[]; categoria?: string }[] = []
+    const loja = {
+      ...lojaFalsa({ produtos: [headset] }),
+      async buscar(termo: string, opcoes?: { categoria?: string }) {
+        pedidos.push({ termo, ...(opcoes?.categoria ? { categoria: opcoes.categoria } : {}) })
+        return { ok: true as const, valor: [headset] }
+      },
+      async lerPorSku(skus: string[], filtro?: { categoria?: string }) {
+        pedidos.push({ skus, ...(filtro?.categoria ? { categoria: filtro.categoria } : {}) })
+        return { ok: true as const, valor: [headset] }
+      },
+    }
+    lojaAtivaDaConta.mockResolvedValue(loja)
+    const modelo = modeloComRoteiro([
+      { tipo: 'usar_ferramenta', nome: 'loja_buscar', argumentos: { termo: 'headset', categoria: 'Áudio' } },
+      { tipo: 'usar_ferramenta', nome: 'loja_mostrar', argumentos: { produtoId: '330107', categoria: 'Áudio' } },
+      { tipo: 'texto', texto: 'Olha esse.' },
+    ])
+
+    await rodar(fluxo(['loja_buscar', 'loja_mostrar']), modelo)
+
+    expect(pedidos).toEqual([
+      { termo: 'headset', categoria: 'Áudio' },
+      { skus: ['330107'], categoria: 'Áudio' },
+    ])
+  })
+
+  it('sem categoria, a busca sai como sempre', async () => {
+    const loja = lojaFalsa({ produtos: [headset] })
+    const buscar = vi.spyOn(loja, 'buscar')
+    lojaAtivaDaConta.mockResolvedValue(loja)
+    const modelo = modeloComRoteiro([
+      { tipo: 'usar_ferramenta', nome: 'loja_buscar', argumentos: { termo: 'headset' } },
+      { tipo: 'texto', texto: 'Temos.' },
+    ])
+
+    await rodar(fluxo(['loja_buscar']), modelo)
+
+    expect(buscar).toHaveBeenCalledWith('headset', undefined)
   })
 })

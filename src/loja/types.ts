@@ -14,12 +14,17 @@ export type ConfigDaLoja = { codigoDaLoja: string | null; moeda: string; sufixo:
  * `LIMITE_DE_PRODUTOS`. O seletor da conversa pede páginas maiores, porque
  * ali quem escolhe é uma pessoa rolando a lista, não a IA.
  */
-export type OpcoesDaBusca = { pagina?: number; porPagina?: number; comFoto?: boolean }
+export type OpcoesDaBusca = { pagina?: number; porPagina?: number; comFoto?: boolean; categoria?: string }
+/**
+ * O filtro por categoria (0106). Só o catálogo próprio tem categoria; as lojas
+ * on-line ignoram o campo e respondem como sempre.
+ */
+export type FiltroDaLoja = { categoria?: string }
 export type Loja = {
   buscar(termo: string, opcoes?: OpcoesDaBusca): Promise<ResultadoDaLoja<ProdutoDaLoja[]>>
   combinaCom(sku: string): Promise<ResultadoDaLoja<ProdutoDaLoja[]>>
   /** Relê pelo SKU, na ordem pedida, para o card sair com o preço de agora. */
-  lerPorSku(skus: string[]): Promise<ResultadoDaLoja<ProdutoDaLoja[]>>
+  lerPorSku(skus: string[], filtro?: FiltroDaLoja): Promise<ResultadoDaLoja<ProdutoDaLoja[]>>
   /**
    * Descrição e especificações de um produto. Opcional: só a Magento tem
    * página de produto com ficha; no catálogo próprio a descrição já vem na

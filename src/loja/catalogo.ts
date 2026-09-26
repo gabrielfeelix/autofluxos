@@ -1,6 +1,6 @@
 import { paginaDaBusca, type ProdutoDaLoja } from '@/core/loja'
 import { normalizar } from '@/core/engine/interpolar'
-import { estaAtivo, type Produto } from '@/core/produtos'
+import { estaAtivo, mesmaCategoria, type Produto } from '@/core/produtos'
 import type { Loja } from './types'
 
 /**
@@ -21,11 +21,24 @@ import type { Loja } from './types'
  *    card para não escrever "em estoque";
  *  - "combina com": vazio;
  *  - página de busca: vazio, e o resolvedor não oferece link nenhum.
+ *
+ * O que só ele tem: `categoria` (0106). A busca e a releitura do card aceitam
+ * o filtro, sem distinguir caixa nem acento, e a categoria também conta como
+ * texto da busca: "pizza" acha todos os itens do grupo "Pizzas", mesmo os que
+ * não têm a palavra no nome.
  */
 export function lojaCatalogo(listar: () => Promise<Produto[]>): Loja {
-  async function ativos(): Promise<{ ok: true; valor: Produto[] } | { ok: false; motivo: string }> {
+  async function ativos(
+    categoria?: string,
+  ): Promise<{ ok: true; valor: Produto[] } | { ok: false; motivo: string }> {
+    const filtro = categoria?.trim() || null
     try {
-      return { ok: true, valor: (await listar()).filter(estaAtivo) }
+      return {
+        ok: true,
+        valor: (await listar()).filter(
+          (p) => estaAtivo(p) && (filtro === null || (p.categoria !== null && mesmaCategoria(p.categoria, filtro))),
+        ),
+      }
     } catch (e) {
       return { ok: false, motivo: `não deu para ler o catálogo: ${e instanceof Error ? e.message : String(e)}` }
     }
@@ -33,14 +46,14 @@ export function lojaCatalogo(listar: () => Promise<Produto[]>): Loja {
 
   return {
     async buscar(termo, opcoes) {
-      const lidos = await ativos()
+      const lidos = await ativos(opcoes?.categoria)
       if (!lidos.ok) return lidos
       const palavras = normalizar(termo).split(/\s+/).filter(Boolean)
       if (palavras.length === 0) return { ok: true, valor: [] }
 
       const pontuados = lidos.valor
         .map((p) => {
-          const texto = normalizar([p.nome, p.sku ?? '', p.descricao ?? ''].join(' '))
+          const texto = normalizar([p.nome, p.sku ?? '', p.descricao ?? '', p.categoria ?? ''].join(' '))
           return { p, acertos: palavras.filter((w) => texto.includes(w)).length }
         })
         .filter((x) => x.acertos > 0)
@@ -59,8 +72,8 @@ export function lojaCatalogo(listar: () => Promise<Produto[]>): Loja {
       return { ok: true, valor: [] }
     },
 
-    async lerPorSku(skus) {
-      const lidos = await ativos()
+    async lerPorSku(skus, filtro) {
+      const lidos = await ativos(filtro?.categoria)
       if (!lidos.ok) return lidos
       return {
         ok: true,
@@ -97,6 +110,7 @@ function paraProdutoDaLoja(p: Produto): ProdutoDaLoja {
     nome: p.nome,
     ...(p.preco !== null ? { preco: p.preco } : {}),
     ...(p.descricao ? { descricao: p.descricao } : {}),
+    ...(p.categoria ? { categoria: p.categoria } : {}),
     emEstoque: true,
     semControleDeEstoque: true,
     ...(p.foto ? { foto: p.foto } : {}),

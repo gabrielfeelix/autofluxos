@@ -109,3 +109,38 @@ describe('lojaCatalogo, o resto da interface', () => {
     expect(await quebrada.buscar('cadeira')).toEqual({ ok: false, motivo: 'não deu para ler o catálogo: timeout' })
   })
 })
+
+describe('lojaCatalogo por categoria (0106)', () => {
+  const cardapio = lojaCatalogo(async () => [
+    produto({ id: 'p1', nome: 'Calabresa', categoria: 'Pizzas', preco: 45 }),
+    produto({ id: 'p2', nome: 'Mussarela', categoria: 'Pizzas', preco: 40 }),
+    produto({ id: 'b1', nome: 'Coca lata', categoria: 'Bebidas', preco: 6 }),
+    produto({ id: 'b2', nome: 'Suco de calabresa', categoria: 'Bebidas', preco: 1 }),
+    produto({ id: 's1', nome: 'Brinde calabresa' }),
+  ])
+
+  it('o nome do grupo acha os itens dele, mesmo sem a palavra no nome', async () => {
+    const r = await cardapio.buscar('pizza')
+    expect(r.ok && r.valor.map((p) => p.nome)).toEqual(['Calabresa', 'Mussarela'])
+  })
+
+  it('o filtro deixa só a categoria, sem distinguir caixa', async () => {
+    const r = await cardapio.buscar('calabresa', { categoria: ' pizzas ' })
+    expect(r.ok && r.valor.map((p) => p.produtoId)).toEqual(['p1'])
+  })
+
+  it('sem filtro, a busca vê todas as categorias e os itens sem categoria', async () => {
+    const r = await cardapio.buscar('calabresa')
+    expect(r.ok && r.valor.map((p) => p.produtoId)).toEqual(['p1', 'b2', 's1'])
+  })
+
+  it('categoria vazia é o mesmo que sem filtro', async () => {
+    const r = await cardapio.buscar('calabresa', { categoria: '' })
+    expect(r.ok && r.valor).toHaveLength(3)
+  })
+
+  it('o card leva a categoria, e lerPorSku respeita o filtro', async () => {
+    const r = await cardapio.lerPorSku(['p1', 'b1'], { categoria: 'Bebidas' })
+    expect(r.ok && r.valor).toEqual([expect.objectContaining({ produtoId: 'b1', categoria: 'Bebidas' })])
+  })
+})

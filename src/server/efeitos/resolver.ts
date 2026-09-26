@@ -1,5 +1,6 @@
 import 'server-only'
 import { legendaDoManual, manualEmPdf, nomeDoArquivoDoManual } from '@/core/manuais'
+import { envioDoCardapio } from '@/core/materiais'
 import { ATENDIMENTO_SEMPRE_ABERTO, avisoDeForaDoHorario, executar } from '@/core/engine/executar'
 import type { ContextoDoAtendimento } from '@/core/engine/executar'
 import type { Acao, Entrada, Resultado, Sessao } from '@/core/engine/types'
@@ -14,6 +15,7 @@ import {
   projetar,
   rotulosDeId,
   type Ferramenta,
+  type OperacaoDeLoja,
 } from '@/core/ferramentas'
 import {
   AVISO_DE_DUVIDA,
@@ -40,6 +42,7 @@ import { alertar } from '../alertar'
 import { chamarHttp } from './http'
 import { lerCredencial } from '../repos/conexoes'
 import { consultarPedidoDaConta, lojaAtivaDaConta } from '../adaptador-da-loja'
+import { listarMateriais } from '../repos/materiais'
 
 /**
  * O motor, com os efeitos externos resolvidos.
@@ -830,7 +833,10 @@ async function responderComFerramentas({
 
   /** O que `loja_mostrar` separou para sair como card junto da resposta. */
   const cards: ProdutoDaLoja[] = []
-  /** O manual em PDF que `loja_enviar_manual` separou, pelo mesmo caminho dos cards. */
+  /**
+   * Os arquivos que `loja_enviar_manual` e `enviar_cardapio` separaram, pelo
+   * mesmo caminho dos cards.
+   */
   const anexos: AnexoDaIa[] = []
 
   for (let volta = 0; volta <= MAX_VOLTAS_DE_FERRAMENTA; volta++) {
@@ -959,10 +965,14 @@ async function responderComFerramentas({
     if (ferramenta.chamada.tipo === 'loja' && ferramenta.chamada.operacao === 'mostrar') {
       cards.push(...produtosDe(disparo.json))
     }
-    if (ferramenta.chamada.tipo === 'loja' && ferramenta.chamada.operacao === 'manual') {
-      const anexo = anexoDe(disparo.json)
-      // Um manual por rodada: pedir o mesmo duas vezes não manda dois PDFs.
-      if (anexo && !anexos.some((a) => a.url === anexo.url)) anexos.push(anexo)
+    if (
+      ferramenta.chamada.tipo === 'loja' &&
+      (ferramenta.chamada.operacao === 'manual' || ferramenta.chamada.operacao === 'cardapio')
+    ) {
+      // Um arquivo por rodada: pedir o mesmo duas vezes não manda dois PDFs.
+      for (const anexo of anexosDe(disparo.json)) {
+        if (!anexos.some((a) => a.url === anexo.url)) anexos.push(anexo)
+      }
     }
 
     const recorte = projetar(disparo.json, ferramenta.projecao)
@@ -1200,11 +1210,31 @@ async function dispararFerramenta({
  * venda perdida. Falhando, a conversa vai para uma pessoa.
  */
 async function executarNaLoja(
-  operacao: 'buscar' | 'combina_com' | 'mostrar' | 'pedido' | 'ficha' | 'frete' | 'manuais' | 'manual',
+  operacao: OperacaoDeLoja,
   valores: Record<string, string>,
   opcoes: OpcoesDeEfeitos,
 ): Promise<{ ok: true; json: unknown } | { ok: false; motivo: string }> {
   if (!opcoes.clienteId) return { ok: false, motivo: 'a consulta à loja só funciona numa conta' }
+
+  if (operacao === 'cardapio') {
+    /*
+     * O cardápio é da conta, não da loja: vem antes de escolher o adaptador,
+     * e uma conta com Magento ligada também manda o PDF que subiu. Sem
+     * material é resposta, e não falha: "não temos cardápio em arquivo" é
+     * verdade, e a conversa não precisa ir para uma pessoa por isso.
+     */
+    const envio = envioDoCardapio(await listarMateriais(opcoes.clienteId))
+    return {
+      ok: true,
+      json:
+        envio.length > 0
+          ? { enviado: true, anexos: envio }
+          : { enviado: false, aviso: 'esta empresa não cadastrou cardápio em arquivo' },
+    }
+  }
+
+  // Só o catálogo próprio filtra por categoria; as lojas on-line ignoram.
+  const filtro = valores.categoria ? { categoria: valores.categoria } : undefined
 
   if (operacao === 'pedido') {
     const r = await consultarPedidoDaConta(opcoes.clienteId, {
@@ -1221,7 +1251,7 @@ async function executarNaLoja(
     // Relê na loja em vez de reusar o que a busca trouxe: o card é a última
     // palavra sobre preço antes do clique, e ela tem que ser a de agora.
     const skus = [valores.produtoId, valores.produtoId2, valores.produtoId3].filter((s): s is string => Boolean(s))
-    const r = await loja.lerPorSku(skus)
+    const r = await loja.lerPorSku(skus, filtro)
     return r.ok ? { ok: true, json: { mostrados: r.valor } } : r
   }
 
@@ -1295,7 +1325,7 @@ async function executarNaLoja(
       .filter((t, i, todos) => t !== '' && todos.indexOf(t) === i)
     if (termos.length <= 1) {
       const termo = termos[0] ?? ''
-      const r = await loja.buscar(termo)
+      const r = await loja.buscar(termo, filtro)
       if (!r.ok) return r
       // Vazio vem com a página de busca da loja: ver `linkDaBusca`. O catálogo
       // próprio não tem página de busca, e aí vai só a lista vazia.
@@ -1309,7 +1339,7 @@ async function executarNaLoja(
      * três de cada. Uma loja recusando um termo não derruba os outros; só
      * falha se todos falharem, porque aí o problema é a loja e não o termo.
      */
-    const resultados = await Promise.all(termos.map((t) => loja.buscar(t)))
+    const resultados = await Promise.all(termos.map((t) => loja.buscar(t, filtro)))
     if (resultados.every((r) => !r.ok)) return resultados[0] as { ok: false; motivo: string }
     const vistos = new Set<string>()
     const produtos: ProdutoDaLoja[] = []
@@ -1338,10 +1368,18 @@ async function executarNaLoja(
   return r.ok ? { ok: true, json: { produtos: r.valor } } : r
 }
 
-/** O PDF que `executarNaLoja('manual')` separou. Nunca vai ao modelo: a projeção não inclui `anexo`. */
-function anexoDe(json: unknown): AnexoDaIa | null {
-  const anexo = (json as { anexo?: AnexoDaIa } | null)?.anexo
-  return anexo && anexo.tipo === 'enviar_midia' && anexo.url.startsWith('https://') ? anexo : null
+/**
+ * Os arquivos que `executarNaLoja('manual')` (um, em `anexo`) e
+ * `executarNaLoja('cardapio')` (até dois, em `anexos`) separaram. Nunca vão ao
+ * modelo: a projeção das duas ferramentas não inclui esses campos.
+ */
+function anexosDe(json: unknown): AnexoDaIa[] {
+  const bruto = json as { anexo?: AnexoDaIa; anexos?: unknown } | null
+  const lista = [...(bruto?.anexo ? [bruto.anexo] : []), ...(Array.isArray(bruto?.anexos) ? bruto.anexos : [])]
+  return lista.filter(
+    (a): a is AnexoDaIa =>
+      typeof a === 'object' && a !== null && a.tipo === 'enviar_midia' && typeof a.url === 'string' && a.url.startsWith('https://'),
+  )
 }
 
 /** Os produtos que `executarNaLoja('mostrar')` devolveu, inteiros, com foto. */

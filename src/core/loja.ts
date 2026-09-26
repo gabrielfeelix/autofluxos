@@ -101,6 +101,8 @@ export type ProdutoDaLoja = {
   semControleDeEstoque?: true
   /** Só no catálogo próprio: o que o dono escreveu sobre o item. */
   descricao?: string
+  /** Só no catálogo próprio: o grupo do item (0106), "Pizzas", "Bebidas". */
+  categoria?: string
   quantidade?: number
   /** Só com token (fase 2). Ausente = sem foto real; nunca o placeholder da loja. */
   foto?: string

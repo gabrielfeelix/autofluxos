@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest'
+import { ferramentasPermitidas } from '@/core/ferramentas'
 import {
   doCliente,
   interpretarResposta,
@@ -150,5 +151,28 @@ describe('o texto do cliente não se disfarça de sistema', () => {
     const { usuario } = montarPrompt({ ...pedido, pergunta: 'a'.repeat(LIMITE_MENSAGEM_DO_CLIENTE * 3) })
     expect(usuario.length).toBeLessThan(LIMITE_MENSAGEM_DO_CLIENTE + 200)
     expect(usuario).toContain('[mensagem cortada]')
+  })
+})
+
+describe('o cardápio em arquivo no prompt', () => {
+  it('entra no bloco de consultas e abre a exceção do "catálogo inteiro"', () => {
+    const { sistema } = montarPrompt({
+      ...pedido,
+      ferramentas: ferramentasPermitidas(['loja_buscar', 'enviar_cardapio']),
+    })
+    expect(sistema).toContain('- enviar_cardapio: ')
+    expect(sistema).toContain('use `enviar_cardapio`, que manda o arquivo inteiro')
+  })
+
+  it('sem a ferramenta, a regra de venda fica como era', () => {
+    const { sistema } = montarPrompt({ ...pedido, ferramentas: ferramentasPermitidas(['loja_buscar']) })
+    expect(sistema).not.toContain('enviar_cardapio')
+  })
+
+  it('o nome da ferramenta na resposta conta como vazamento', () => {
+    expect(interpretarResposta('Vou usar enviar_cardapio agora')).toEqual({
+      tipo: 'texto',
+      texto: RECUSA_FORA_DO_ASSUNTO,
+    })
   })
 })

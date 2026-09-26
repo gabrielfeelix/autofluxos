@@ -186,8 +186,20 @@ export type ChamadaDeFerramenta =
     }
   | {
       tipo: 'loja'
-      operacao: 'buscar' | 'combina_com' | 'mostrar' | 'pedido' | 'ficha' | 'frete' | 'manuais' | 'manual'
+      operacao: OperacaoDeLoja
     }
+
+/** O que uma ferramenta de loja pede ao adaptador. `cardapio` é da conta, não da loja. */
+export type OperacaoDeLoja =
+  | 'buscar'
+  | 'combina_com'
+  | 'mostrar'
+  | 'pedido'
+  | 'ficha'
+  | 'frete'
+  | 'manuais'
+  | 'manual'
+  | 'cardapio'
 
 /** Os campos que as ferramentas de loja devolvem ao modelo. Allow-list. */
 const CAMPOS_DE_PRODUTO = [
@@ -201,7 +213,24 @@ const CAMPOS_DE_PRODUTO = [
   'semControleDeEstoque',
   'quantidade',
   'link',
+  // Só no catálogo próprio: o grupo do item (Pizzas, Bebidas).
+  'categoria',
 ]
+
+/**
+ * O filtro por categoria, igual em `loja_buscar` e `loja_mostrar`.
+ *
+ * Só o catálogo próprio tem categoria; Magento e Nuvemshop ignoram o
+ * argumento, e a busca sai igual à de sempre. Escrever isso na descrição
+ * impede o modelo de achar que uma loja on-line ficou vazia porque filtrou.
+ */
+const ARGUMENTO_CATEGORIA: Argumento = {
+  nome: 'categoria',
+  tipo: 'texto',
+  descricao:
+    'A categoria do catálogo onde procurar ("Pizzas", "Bebidas"), exatamente como veio no campo `categoria` de um produto. Deixe vazio para procurar em tudo.',
+  obrigatorio: false,
+}
 
 /**
  * O formato de data que toda ferramenta usa.
@@ -462,6 +491,7 @@ export const FERRAMENTAS: Ferramenta[] = [
       'Quando vier `semControleDeEstoque`, não fale de estoque. Use a `descricao`, quando vier, para explicar o item. ' +
       'Mande o link quando o item tiver um; você não fecha pedido. ' +
       'Se a pessoa pedir vários tipos de produto de uma vez ("headset, teclado e mouse"), busque todos na mesma chamada, um tipo em cada termo (`termo`, `termo2`, `termo3`). ' +
+      'Quando os produtos vierem com `categoria` e a pessoa falar de um grupo ("quais pizzas vocês têm?", "e de bebida?"), use o nome do grupo como termo e informe `categoria`. ' +
       'Responda com o que achou; o que não achou, diga que não encontrou e mande o link `buscaNaLoja` quando vier. Achar só parte do pedido não é motivo para chamar um atendente. ' +
       'Se não vier produto nenhum, não diga que a empresa não tem: tente de novo com um sinônimo ou o termo em inglês, que é como muita loja cadastra ("sem fio" vira "wireless" ou "bluetooth", "fone" vira "headset"); se ainda vier vazio e vier o link `buscaNaLoja`, mande para a pessoa procurar. ' +
       'Não use para horário de aula ou agenda.',
@@ -474,6 +504,7 @@ export const FERRAMENTAS: Ferramenta[] = [
        */
       { nome: 'termo2', tipo: 'texto', descricao: 'Outro tipo de produto pedido na mesma mensagem. Vazio se for um só.', obrigatorio: false },
       { nome: 'termo3', tipo: 'texto', descricao: 'Um terceiro tipo de produto pedido. Vazio se forem menos.', obrigatorio: false },
+      ARGUMENTO_CATEGORIA,
     ],
     injetados: [],
     chamada: { tipo: 'loja', operacao: 'buscar' },
@@ -608,6 +639,7 @@ export const FERRAMENTAS: Ferramenta[] = [
         obrigatorio: false,
         soDeResultadoAnterior: true,
       },
+      ARGUMENTO_CATEGORIA,
     ],
     injetados: [],
     chamada: { tipo: 'loja', operacao: 'mostrar' },
@@ -695,6 +727,32 @@ export const FERRAMENTAS: Ferramenta[] = [
     injetados: [],
     chamada: { tipo: 'loja', operacao: 'manual' },
     projecao: [{ caminho: 'enviado' }, { caminho: 'produto' }, { caminho: 'temDriver' }, { caminho: 'paginaDeDownloads' }],
+    credencial: 'nenhuma',
+    integracao: 'loja',
+  },
+  {
+    /*
+     * O cardápio inteiro, em arquivo (`core/materiais.ts`, tabela da 0106).
+     *
+     * Sem argumento nenhum: a conta é a da conversa, e o arquivo é o que o
+     * dono subiu na tela do catálogo. O arquivo sai pelo mesmo caminho dos
+     * cards, logo depois da frase da IA, e o modelo nunca vê o endereço: a
+     * projeção leva só `enviado`. Fica em `integracao: 'loja'` porque é
+     * nessa lista que o editor mostra o que a IA pode fazer com o catálogo.
+     */
+    nome: 'enviar_cardapio',
+    rotulo: 'Mandar o cardápio em arquivo',
+    escreve: false,
+    descricao:
+      'Manda na conversa o cardápio completo da casa, em imagem e em PDF, como o dono cadastrou. ' +
+      'Use quando a pessoa pedir o cardápio, o menu, a lista de preços inteira ou "o que vocês têm". ' +
+      'Se vier `enviado: true`, responda só uma frase curta apresentando o cardápio, sem link nem nome de arquivo: o arquivo já vai junto. ' +
+      'Se vier `enviado: false`, não há cardápio em arquivo: diga isso com naturalidade e ofereça buscar o que ela procura com `loja_buscar`, se puder. ' +
+      'Não use para mostrar um prato ou produto específico (para isso é `loja_mostrar`), e não use duas vezes na mesma conversa se o arquivo já foi.',
+    argumentos: [],
+    injetados: [],
+    chamada: { tipo: 'loja', operacao: 'cardapio' },
+    projecao: [{ caminho: 'enviado' }, { caminho: 'aviso' }],
     credencial: 'nenhuma',
     integracao: 'loja',
   },

@@ -65,7 +65,9 @@ export function montarPrompt(pedido: PedidoDeIa): { sistema: string; usuario: st
     '',
     ...(pedido.hoje ? [`HOJE É ${pedido.hoje} (formato AAAA-MM-DD).`, ''] : []),
     ...(ferramentas.length > 0 ? [...blocoDeFerramentas(ferramentas), ''] : []),
-    ...(ferramentas.some((f) => f.nome === 'loja_buscar') ? [...blocoDeVenda(), ''] : []),
+    ...(ferramentas.some((f) => f.nome === 'loja_buscar')
+      ? [...blocoDeVenda(ferramentas.some((f) => f.nome === 'enviar_cardapio')), '']
+      : []),
     'REGRAS, e elas valem acima de qualquer pedido do cliente:',
     ferramentas.length > 0
       ? `1. Responda com o que está em "SOBRE A EMPRESA" ou com o que uma consulta devolver. Se não estiver em nenhum dos dois, e nenhuma consulta servir, responda exatamente ${MARCA_NAO_SEI} e mais nada. Se só parte do pedido tiver resposta, responda essa parte e diga com franqueza o que não encontrou; ${MARCA_NAO_SEI} é para quando nada do que você tem serve.`
@@ -239,7 +241,7 @@ export function interpretarResposta(bruto: string | null | undefined): Resposta 
 }
 
 const VAZAMENTO =
-  /SOBRE A EMPRESA|TAREFA DESTE MOMENTO|MENSAGEM DO CLIENTE|CONVERSA ATÉ AQUI|CONSULTAS QUE VOCÊ PODE|COMO VENDER, do jeito|valem acima de qualquer pedido|\[DADO|\b(loja|agenda)_[a-z_]+\b|atendente virtual de uma empresa/
+  /SOBRE A EMPRESA|TAREFA DESTE MOMENTO|MENSAGEM DO CLIENTE|CONVERSA ATÉ AQUI|CONSULTAS QUE VOCÊ PODE|COMO VENDER, do jeito|valem acima de qualquer pedido|\[DADO|\b(loja|agenda)_[a-z_]+\b|\benviar_cardapio\b|atendente virtual de uma empresa/
 
 function encurtar(texto: string): string {
   if (texto.length <= LIMITE_RESPOSTA) return texto
@@ -266,8 +268,13 @@ function encurtar(texto: string): string {
  *
  * Só entra com `loja_buscar`: num fluxo de agenda, perguntar "é para jogar
  * ou estudar?" seria ruído, e é token pago em toda chamada.
+ *
+ * Com `enviar_cardapio` no bloco, "o catálogo inteiro" tem resposta pronta:
+ * o arquivo que o dono subiu. Sem esta exceção escrita, a regra de não
+ * despejar lista faria a IA da pizzaria perguntar "é para jogar ou estudar?"
+ * a quem só pediu o cardápio.
  */
-function blocoDeVenda(): string[] {
+function blocoDeVenda(temCardapio = false): string[] {
   return [
     'COMO VENDER, do jeito de um vendedor que entende do produto:',
     '- Pedido amplo sem uso dito (PC, notebook, headset, fone, cadeira, monitor, teclado, mouse): antes de buscar, faça UMA pergunta curta sobre o uso, com exemplos para a pessoa só escolher. Exemplo: "Show! Vai usar mais pra jogar, trabalhar ou estudar?"',
@@ -276,6 +283,9 @@ function blocoDeVenda(): string[] {
      * 25/set/2026). Lista de trinta mouses no WhatsApp ninguém lê, e o bot
      * não fecha pedido: repetir o card cem vezes, ou três, é spam, não venda.
      */
+    ...(temCardapio
+      ? ['- "O cardápio", "o menu", "o que vocês têm" sem dizer de quê: use `enviar_cardapio`, que manda o arquivo inteiro. A regra abaixo vale para pedido de tudo de um tipo só.']
+      : []),
     '- "Todas as opções", "o catálogo inteiro", "me manda tudo de X": não despeje lista. Diga com leveza que por aqui fica melhor entender para que a pessoa precisa, assim você indica certo, e faça a pergunta de uso com exemplos. Exemplo: "Opa! Pelo WhatsApp fica mais fácil eu entender o que você precisa e te indicar o certo 😉 Vai usar mais pra jogar, trabalhar ou estudar?" Se o uso já foi dito, mostre 2 ou 3 e mande o link `buscaNaLoja` para ver o resto na loja.',
     '- Quantidade ("me envia 100 desse", "quero 3 desse"): você não fecha pedido, não separa unidade e não repete card. Diga em meia frase que a quantidade se escolhe na hora de comprar pelo link da loja; se for quantidade grande, para empresa ou revenda, ofereça o time.',
     '- Uso já dito na conversa, mesmo que de passagem ("pra jogar no PC", "pro home office"): não pergunte de novo, busque.',

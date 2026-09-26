@@ -342,3 +342,33 @@ describe('ferramentas de loja', () => {
     expect(JSON.stringify(projetado)).not.toContain('segredo')
   })
 })
+
+describe('enviar_cardapio e o filtro por categoria', () => {
+  it('enviar_cardapio não tem argumento e o endereço do arquivo não chega ao modelo', () => {
+    const f = acharFerramenta('enviar_cardapio')!
+    expect(f.argumentos).toEqual([])
+    expect(f.escreve).toBe(false)
+    expect(f.chamada).toEqual({ tipo: 'loja', operacao: 'cardapio' })
+    const projetado = projetar(
+      { enviado: true, anexos: [{ tipo: 'enviar_midia', midia: 'documento', url: 'https://x/c.pdf' }] },
+      f.projecao,
+    )
+    expect(projetado).toEqual({ enviado: true })
+  })
+
+  it('não entra sozinha: quem só marcou a busca não manda arquivo', () => {
+    expect(ferramentasPermitidas(['loja_buscar']).map((f) => f.nome)).not.toContain('enviar_cardapio')
+  })
+
+  it('loja_buscar e loja_mostrar aceitam categoria opcional, e a busca devolve a categoria', () => {
+    for (const nome of ['loja_buscar', 'loja_mostrar']) {
+      const arg = acharFerramenta(nome)!.argumentos.find((a) => a.nome === 'categoria')
+      expect(arg).toMatchObject({ tipo: 'texto', obrigatorio: false })
+    }
+    const projetado = projetar(
+      { produtos: [{ produtoId: 'p1', nome: 'Calabresa', categoria: 'Pizzas' }] },
+      acharFerramenta('loja_buscar')!.projecao,
+    )
+    expect(projetado).toEqual({ produtos: [{ produtoId: 'p1', nome: 'Calabresa', categoria: 'Pizzas' }] })
+  })
+})
