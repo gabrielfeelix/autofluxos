@@ -787,7 +787,8 @@ async function responderComFerramentas({
   ]
 
   const base = {
-    contextoNegocio: opcoes.contextoNegocio,
+    // O do bloco substitui o da conta, e não soma: ver `sobreAEmpresa` no schema.
+    contextoNegocio: chamada.sobreAEmpresa ?? opcoes.contextoNegocio,
     instrucao: chamada.instrucao,
     pergunta,
     hoje: opcoes.hoje,

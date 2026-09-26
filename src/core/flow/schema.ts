@@ -414,6 +414,9 @@ export const noSalvarCampoSchema = z.object({
   }),
 })
 
+/** Até quanto o "Sobre a empresa" de um bloco de IA pode ter. */
+export const LIMITE_SOBRE_A_EMPRESA_DO_BLOCO = 6_000
+
 export const noIaSchema = z.object({
   ...base,
   type: z.literal('ia'),
@@ -495,6 +498,18 @@ export const noIaSchema = z.object({
      * isto: sai igual das duas fontes.
      */
     fonteDoCatalogo: z.enum(['loja', 'catalogo']).optional(),
+    /**
+     * O "Sobre a empresa" deste bloco, no lugar do da conta.
+     *
+     * Ausente é o de sempre: a IA sabe o que a conta escreveu em Conhecimento
+     * da IA (`clients.contexto_negocio`). Preenchido, este texto **substitui**
+     * o da conta só aqui, e não soma a ele. Existe para a conta que atende duas
+     * marcas no mesmo número, como a demonstração da pizzaria dentro da conta
+     * de uma loja de informática (PLANO-NICHOS 4.9): somar os dois poria a IA
+     * da pizzaria dizendo que vende headset, e a regra 1 do prompt proíbe
+     * responder o que não está em "Sobre a empresa".
+     */
+    sobreAEmpresa: z.string().max(LIMITE_SOBRE_A_EMPRESA_DO_BLOCO).optional(),
   }),
 })
 

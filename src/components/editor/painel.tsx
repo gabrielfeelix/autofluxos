@@ -1747,6 +1747,43 @@ export function Painel({
             />
           )}
 
+          {/*
+            O "Sobre a empresa" só deste bloco. Desligado é o de sempre, o
+            Conhecimento da IA da conta; ligar começa vazio, e o texto
+            substitui o da conta aqui, sem somar.
+          */}
+          <LinhaLigaDesliga
+            titulo="Outra empresa neste bloco"
+            descricao="A IA usa o texto abaixo no lugar do Conhecimento da IA da conta."
+            marcada={no.data.sobreAEmpresa !== undefined}
+            aoMudar={(marcada) => aoMudarDados({ sobreAEmpresa: marcada ? '' : undefined })}
+            ajuda={
+              <AjudaDoCampo
+                titulo="Outra empresa neste bloco"
+                secao="blocos"
+                alinhar="direita"
+                texto="Para quando o mesmo número atende duas marcas."
+                detalhes={
+                  <p>
+                    O normal é a IA saber o que a conta escreveu em Conhecimento da IA. Ligado, este
+                    bloco usa só o texto daqui, sem misturar: é o caso de uma demonstração, ou de
+                    uma segunda marca atendida pelo mesmo WhatsApp.
+                  </p>
+                }
+              />
+            }
+          />
+          {no.data.sobreAEmpresa !== undefined && (
+            <Area
+              conhecidas={variaveis}
+              rotulo="Sobre a empresa, neste bloco"
+              valor={no.data.sobreAEmpresa}
+              aoMudar={(sobreAEmpresa) => aoMudarDados({ sobreAEmpresa })}
+              secao="blocos"
+              dica="O que a IA precisa saber: o que vende, horário, entrega, pagamento."
+            />
+          )}
+
           <CampoDeVariavel
             rotulo="Guardar resposta em"
             secao="variaveis"

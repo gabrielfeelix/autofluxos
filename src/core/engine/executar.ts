@@ -1485,6 +1485,7 @@ function chamarIa(no: NoIa, s: Sessao): Acao {
     ...(no.data.conexaoId ? { conexaoId: no.data.conexaoId } : {}),
     ...(no.data.fonteDoCatalogo ? { fonteDoCatalogo: no.data.fonteDoCatalogo } : {}),
     ...(no.data.conversar?.concluir ? { concluir: true as const } : {}),
+    ...((no.data.sobreAEmpresa ?? '').trim() !== '' ? { sobreAEmpresa: no.data.sobreAEmpresa!.trim() } : {}),
   }
 }
 

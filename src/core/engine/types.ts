@@ -234,6 +234,8 @@ export type Acao =
        * bloco com `conversar.concluir`.
        */
       concluir?: true
+      /** O "Sobre a empresa" do bloco, no lugar do da conta. Ausente = o da conta. */
+      sobreAEmpresa?: string
     }
   /**
    * Chamar uma API e reentrar no motor com `{ tipo: 'http_respondeu' }`.

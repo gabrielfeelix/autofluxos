@@ -366,7 +366,8 @@ export function validar(fluxo: Fluxo, capacidades: Capacidades = {}): ResultadoV
       })
     }
 
-    if (no.type === 'ia' && temContextoDeNegocio === false) {
+    // O bloco com o próprio "Sobre a empresa" não depende do da conta.
+    if (no.type === 'ia' && temContextoDeNegocio === false && (no.data.sobreAEmpresa ?? '').trim() === '') {
       erros.push({
         codigo: 'SEM_CONTEXTO_DE_NEGOCIO',
         mensagem:
@@ -1043,6 +1044,14 @@ function conferirConteudo(
       }
       conferirVariavel(no.data.salvarEm, 'variável')
       if (no.data.conversar?.concluir) conferirVariavel(no.data.conversar.concluir.salvarEm, 'variável do resumo')
+      if (no.data.sobreAEmpresa !== undefined && vazio(no.data.sobreAEmpresa)) {
+        avisos.push({
+          codigo: 'IA_SOBRE_A_EMPRESA_VAZIO',
+          mensagem:
+            '"Outra empresa neste bloco" está ligado e sem texto. Do jeito que está, a IA usa o Conhecimento da IA da conta.',
+          noId: no.id,
+        })
+      }
       break
 
     case 'handoff': {

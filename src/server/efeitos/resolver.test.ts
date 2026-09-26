@@ -1030,3 +1030,44 @@ describe('IA contínua que conclui', () => {
     expect(saida?.tipo === 'transferir_humano' && saida.motivo).toBe('Novo pedido: 2 mussarelas')
   })
 })
+
+describe('"Sobre a empresa" do bloco', () => {
+  const comSobre = (sobreAEmpresa?: string): Fluxo => ({
+    inicio: 'ia',
+    nodes: [
+      {
+        id: 'ia',
+        type: 'ia',
+        position: { x: 0, y: 0 },
+        data: { instrucao: 'Atenda.', ferramentas: [], ...(sobreAEmpresa !== undefined ? { sobreAEmpresa } : {}) },
+      },
+      {
+        id: 'fim',
+        type: 'handoff',
+        position: { x: 0, y: 120 },
+        data: { motivo: 'fim', mensagem: 'Já te passo.' },
+      },
+    ],
+    edges: [{ id: 'a1', source: 'ia', target: 'fim' }],
+  })
+
+  it('substitui o da conta, sem somar', async () => {
+    const modelo = modeloQue(() => ({ tipo: 'texto', texto: 'Oi!' }))
+    await executarComEfeitos(comSobre('Pizzaria Exemplo, abre às 18h.'), sessaoNova(), { tipo: 'inicio' }, {
+      modelo,
+      contextoNegocio: 'Loja de informática.',
+    })
+    expect(modelo.pedidos[0]?.contextoNegocio).toBe('Pizzaria Exemplo, abre às 18h.')
+  })
+
+  it('ausente ou vazio, vale o da conta', async () => {
+    for (const sobre of [undefined, '   ']) {
+      const modelo = modeloQue(() => ({ tipo: 'texto', texto: 'Oi!' }))
+      await executarComEfeitos(comSobre(sobre), sessaoNova(), { tipo: 'inicio' }, {
+        modelo,
+        contextoNegocio: 'Loja de informática.',
+      })
+      expect(modelo.pedidos[0]?.contextoNegocio).toBe('Loja de informática.')
+    }
+  })
+})
