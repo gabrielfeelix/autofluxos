@@ -46,6 +46,16 @@ sistema de gestão de alunos.
 | 6 (código) | `fonteDoCatalogo` no nó de IA; IA contínua que conclui o pedido; "Sobre a empresa" próprio no bloco de IA (agente da etapa 6 desta sessão; a parte de produção não foi feita) | `9915f76`, `19037f0` |
 | extra | NPS: nota pendente gravada na sessão (migration `0107` na produção) | `d7f88ea` |
 | extra | 3 testes do resolver com espaço antigo | `5f7da17` |
+| 4.1 | Frente `aulas` (Alunos, Matrículas, sem Comércio); pacote renomeia e esconde qualquer item de CRM, Comércio e Análise; galeria da conta com frente mostra só os modelos dela e os de qualquer negócio | `4d47914` |
+| 4.2 e 4.4 | `docs/NICHOS-REVISAO-POR-TELA.md` e `docs/NICHOS-TROCA-DE-FRENTE.md` (pesquisa RD e 3 opções) | `b92fd7f` |
+| 4.6 | Ficha do assistente por frente, com placar e Testar. **Sem coluna nova**: grava o mesmo `contexto_negocio` em blocos, e MGM e PCYES abrem preenchidas | `95e7e3c` |
+| 1.4 e 9 | "Tipo de negócio" em Objetivo e recursos, com auditoria; admin mostra a frente | `a1f6dbf` |
+| 7 | Onboarding pergunta a frente e grava na conta; modelos das frentes esperam a `0109` | `b5282dc` |
+
+**Pendentes de autorização (versionadas, não aplicadas):** `0108` (check de
+`clients.nicho` aceita `aulas`: sem ela, escolher Aulas dá erro) e `0109`
+(`preparar_onboarding` aceita os modelos das frentes; depois dela, incluir
+`CHATBOTS_DAS_FRENTES` e `FUNIS_DAS_FRENTES` nas listas de `core/onboarding.ts`).
 
 Nenhuma tela nova foi aberta no navegador ainda. Conferido só por `tsc` e
 vitest.
