@@ -7,6 +7,11 @@ import { acharCliente } from '@/server/repos/clientes'
 import { comoEsta } from '@/server/repos/chave-de-ia'
 import { acaoApagarChaveDeIa, acaoGuardarChaveDeIa } from '@/server/acoes-chave-de-ia'
 import { ChaveDeIa } from '@/components/conta/chave-de-ia'
+import { FichaDoAssistente } from '@/components/conta/ficha-do-assistente'
+import { acaoSalvarFicha, acaoTestarFicha } from '@/server/acoes-ficha'
+import { nichoDaConta } from '@/server/repos/recursos'
+import { pacoteDo } from '@/core/nichos'
+import { lerFicha, listasDoRamo, marcadasDaLista, placarDaFicha } from '@/core/ficha-do-assistente'
 
 export const dynamic = 'force-dynamic'
 
@@ -22,6 +27,10 @@ export const dynamic = 'force-dynamic'
  * É também o que mantém o número do cliente vivo: a política da Meta proíbe
  * assistente de propósito geral na Business API desde 15/jan/2026, e é o escopo
  * escrito aqui que faz o nosso bot ser task-oriented (ARQUITETURA §6).
+ *
+ * Conta com tipo de negócio vê a **ficha do assistente** no lugar da caixa
+ * livre (PLANO-NICHOS 1.7): as perguntas do ramo, que gravam o mesmo texto em
+ * blocos. Conta sem tipo de negócio continua com a caixa, sem mudança.
  */
 
 const EXEMPLO = `Somos a Prelúdio, produtora de vídeo em São Paulo (Barra Funda).
@@ -42,8 +51,9 @@ export default async function Pagina({ params }: { params: Promise<{ clienteId: 
   const cliente = await acharCliente(clienteId)
   if (!cliente) notFound()
 
-  const chave = await comoEsta(clienteId)
+  const [chave, nicho] = await Promise.all([comoEsta(clienteId), nichoDaConta(clienteId)])
   const vazio = cliente.contextoNegocio.trim() === ''
+  const pacote = pacoteDo(nicho)
 
   return (
     <AjustesShell cliente={cliente} ativa="contexto">
@@ -56,13 +66,24 @@ export default async function Pagina({ params }: { params: Promise<{ clienteId: 
           ]}
         />
         <h1 className="text-[25px] font-bold tracking-[-0.02em]">Conhecimento da IA</h1>
+        {pacote ? (
+          <p className="mt-1.5 mb-6 max-w-[620px] text-[13px] leading-6 text-dim">
+            Responda o que o seu cliente sempre pergunta. O assistente usa só o que estiver aqui; para
+            qualquer outra coisa, passa a conversa para uma pessoa.
+          </p>
+        ) : (
         <p className="mt-1.5 mb-6 max-w-[620px] text-[13px] leading-6 text-dim">
           É a <strong className="text-soft">única fonte de verdade</strong> do bloco de IA. Ela
           responde só com o que estiver escrito aqui; para qualquer outra coisa, passa a conversa
           para uma pessoa. Escreva como você explicaria o negócio para alguém no primeiro dia de
           trabalho, incluindo o que ela <em>não</em> deve responder.
         </p>
+        )}
 
+        {pacote ? (
+          <FichaNaTela clienteId={clienteId} texto={cliente.contextoNegocio} pacote={pacote} />
+        ) : (
+          <>
         {/* Dois cartões, e não uma página corrida (S03): o texto que a IA usa e
             a credencial com que ela fala têm risco e finalidade diferentes, e
             cada um mostra o próprio resultado ao salvar. */}
@@ -99,6 +120,9 @@ export default async function Pagina({ params }: { params: Promise<{ clienteId: 
           </div>
         </section>
 
+          </>
+        )}
+
         {/* Depois do contexto, e não antes: o que a IA **pode dizer** é a
             pergunta que traz a pessoa aqui; com a chave de quem ela fala é a
             segunda. Em cima, a chave viraria um campo técnico barrando a tela
@@ -112,5 +136,36 @@ export default async function Pagina({ params }: { params: Promise<{ clienteId: 
         </div>
       </main>
     </AjustesShell>
+  )
+}
+
+/** A ficha do ramo, lida do texto salvo. */
+function FichaNaTela({
+  clienteId,
+  texto,
+  pacote,
+}: {
+  clienteId: string
+  texto: string
+  pacote: NonNullable<ReturnType<typeof pacoteDo>>
+}) {
+  const { perguntas, pode } = pacote.ficha
+  const ficha = lerFicha(texto, perguntas)
+  const listas = listasDoRamo(pode)
+  const placar = placarDaFicha(ficha, perguntas)
+  return (
+    <FichaDoAssistente
+      perguntas={perguntas}
+      listas={listas}
+      ficha={ficha}
+      marcadas={{
+        pode: marcadasDaLista(listas[0]!, ficha.listas.pode),
+        nunca: marcadasDaLista(listas[1]!, ficha.listas.nunca),
+        passar: marcadasDaLista(listas[2]!, ficha.listas.passar),
+      }}
+      placar={{ ...placar, faltam: placar.faltam.map((p) => p.titulo.toLowerCase()) }}
+      salvar={acaoSalvarFicha.bind(null, clienteId)}
+      testar={acaoTestarFicha.bind(null, clienteId)}
+    />
   )
 }

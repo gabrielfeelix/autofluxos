@@ -1,3 +1,4 @@
+import type { PerguntaDaFicha } from './ficha-do-assistente'
 import type { Objetivo } from './objetivo-da-conta'
 
 /**
@@ -111,7 +112,43 @@ export type PacoteDoNicho = {
   modelosDeFluxo: string[]
   /** O modelo de funil do ramo, pelo id de `core/quadros-modelos.ts`. */
   modeloDeFunil: string
+  /**
+   * A ficha do assistente de IA (PLANO-NICHOS 1.7, `core/ficha-do-assistente.ts`):
+   * as perguntas que o cliente final sempre faz neste ramo, e o que o
+   * assistente pode fazer, marcado por padrão.
+   */
+  ficha: { perguntas: PerguntaDaFicha[]; pode: string[] }
 }
+
+/** Monta uma pergunta da ficha sem repetir o nome dos campos em toda linha. */
+function p(
+  id: string,
+  titulo: string,
+  comeca: string[],
+  pergunta: string,
+  exemplo: string,
+  doCliente: string,
+): PerguntaDaFicha {
+  return { id, titulo, comeca, pergunta, exemplo, doCliente }
+}
+
+const ONDE_FICA = p(
+  'onde',
+  'ONDE FICA',
+  ['onde fica', 'endereco', 'como chegar', 'localizacao'],
+  'Onde fica? Tem estacionamento ou ponto de referência?',
+  'Rua das Flores, 120, Centro. Em frente à praça. Estacionamento na rua.',
+  'Onde vocês ficam?',
+)
+
+const PAGAMENTO = p(
+  'pagamento',
+  'PAGAMENTO',
+  ['pagamento', 'formas de pagamento', 'parcelamento'],
+  'Quais formas de pagamento vocês aceitam?',
+  'Pix, cartão de crédito e débito. Parcelamos em até 3 vezes sem juros.',
+  'Aceitam cartão?',
+)
 
 /**
  * Os modelos que servem a qualquer negócio, e por isso aparecem em toda
@@ -148,6 +185,20 @@ export const PACOTES: Record<Nicho, PacoteDoNicho> = {
     tituloDosModelos: 'Para aulas e horários',
     modelosDeFluxo: ['agendamento', 'reagendamento', 'nao-comparecimento', 'lembrete', 'aluno-inativo'],
     modeloDeFunil: 'agendamento',
+    ficha: {
+      pode: ['Tirar dúvidas com o que está nesta ficha', 'Explicar modalidades, planos e aula experimental', 'Informar horário e endereço'],
+      perguntas: [
+        p('oferta', 'O QUE OFERECEMOS', ['o que oferecemos', 'modalidades', 'servicos', 'aulas'], 'Que aulas e serviços vocês oferecem?', 'Pilates em aparelho em turma de até 5 pessoas, pilates individual e fisioterapia.', 'Quais aulas vocês têm?'),
+        p('horarios', 'HORÁRIOS', ['horario', 'a grade', 'grade'], 'Qual o horário de funcionamento e a grade de aulas?', 'Segunda a sexta, das 7h às 21h. Sábado, das 8h às 12h.', 'Qual o horário de vocês?'),
+        p('valores', 'VALORES', ['valores', 'planos', 'precos', 'preco'], 'Quais são os planos e valores? O que pode ser dito sobre preço?', 'Planos de 1, 2 ou 3 vezes por semana. Valor exato só na avaliação.', 'Quanto custa?'),
+        p('experimental', 'AULA EXPERIMENTAL', ['aula experimental', 'experimental'], 'Tem aula experimental? Como funciona?', 'Sim, gratuita, só para pilates em aparelho. Agendada pelo WhatsApp.', 'Tem aula experimental?'),
+        p('matricula', 'COMO FUNCIONA A MATRÍCULA', ['como funciona a matricula', 'matricula'], 'Como a pessoa se matricula?', 'Depois da aula experimental, a recepção envia o contrato e o link de pagamento.', 'Como faço para me matricular?'),
+        p('cancelamento', 'CANCELAMENTO DE AULA', ['cancelamento', 'desmarcar'], 'Qual a regra para desmarcar uma aula?', 'Avisando com 2 horas de antecedência, a aula pode ser reposta.', 'Preciso desmarcar minha aula, como faço?'),
+        p('reposicao', 'REPOSIÇÃO', ['reposicao'], 'Como funciona a reposição de aula perdida?', 'Cada aula desmarcada no prazo vira uma reposição, válida por 30 dias.', 'Posso repor a aula que perdi?'),
+        ONDE_FICA,
+        p('levar', 'O QUE LEVAR', ['o que levar'], 'O que a pessoa precisa levar no dia da aula?', 'Roupa confortável e meia antiderrapante.', 'O que eu levo na primeira aula?'),
+      ],
+    },
   },
   ecommerce: {
     nome: 'Loja virtual',
@@ -161,6 +212,21 @@ export const PACOTES: Record<Nicho, PacoteDoNicho> = {
     tituloDosModelos: 'Para lojas virtuais',
     modelosDeFluxo: ['carrinho-abandonado', 'status-do-pedido', 'cobranca-amigavel'],
     modeloDeFunil: 'comercial',
+    ficha: {
+      pode: ['Tirar dúvidas com o que está nesta ficha', 'Mostrar produtos, fotos e preços do catálogo', 'Consultar o status de um pedido', 'Informar prazo de envio e frete'],
+      perguntas: [
+        p('oferta', 'O QUE VENDEMOS', ['o que vendemos', 'produtos'], 'O que a loja vende?', 'Eletrônicos e acessórios para casa e escritório.', 'O que vocês vendem?'),
+        p('site', 'SITE', ['site', 'loja virtual'], 'Qual o endereço da loja virtual?', 'www.minhaloja.com.br', 'Qual o site de vocês?'),
+        p('entrega', 'ENTREGA', ['entrega', 'envio', 'frete', 'prazo de envio'], 'Qual o prazo de envio e como se calcula o frete?', 'Postamos em até 2 dias úteis. O frete é calculado no carrinho pelo CEP.', 'Quanto tempo demora para chegar?'),
+        PAGAMENTO,
+        p('trocas', 'TROCAS E DEVOLUÇÃO', ['troca', 'devolucao'], 'Como funciona troca e devolução?', 'Até 7 dias depois de receber, pelo site, com frete por nossa conta.', 'Como faço para trocar?'),
+        p('garantia', 'GARANTIA', ['garantia'], 'Qual a garantia dos produtos?', '12 meses de garantia do fabricante.', 'Tem garantia?'),
+        p('rastreio', 'RASTREIO', ['rastreio', 'rastreamento', 'status do pedido'], 'Como a pessoa acompanha o pedido?', 'O código de rastreio chega por e-mail quando o pedido é postado.', 'Cadê meu pedido?'),
+        p('nota', 'NOTA FISCAL', ['nota fiscal', 'nf'], 'Como a pessoa recebe a nota fiscal?', 'A nota vai junto com o produto e por e-mail.', 'Vocês emitem nota fiscal?'),
+        p('retirada', 'RETIRADA', ['retirada', 'retirar'], 'Dá para retirar pessoalmente?', 'Sim, na loja física, de segunda a sexta, das 9h às 18h.', 'Posso retirar aí?'),
+        p('horario', 'HORÁRIO DO TIME', ['horario do time', 'horario'], 'Qual o horário do atendimento humano?', 'Segunda a sexta, das 9h às 18h.', 'Até que horas vocês atendem?'),
+      ],
+    },
   },
   restaurante: {
     nome: 'Restaurante, lanchonete, delivery',
@@ -174,6 +240,20 @@ export const PACOTES: Record<Nicho, PacoteDoNicho> = {
     tituloDosModelos: 'Para restaurantes',
     modelosDeFluxo: ['cardapio-botoes', 'atendente-ia-restaurante', 'horario-e-local'],
     modeloDeFunil: 'pedidos',
+    ficha: {
+      pode: ['Tirar dúvidas com o que está nesta ficha', 'Mandar o cardápio e fotos dos pratos', 'Ajudar a montar um pedido', 'Informar horário, entrega e endereço'],
+      perguntas: [
+        p('horario', 'HORÁRIO', ['horario', 'funcionamento'], 'Qual o horário de funcionamento?', 'Terça a domingo, das 18h às 23h30.', 'Vocês estão abertos?'),
+        p('entrega', 'ENTREGA', ['entrega', 'area de entrega', 'taxa de entrega', 'delivery'], 'Até onde vocês entregam e qual a taxa?', 'Entregamos até 5 km. Taxa de R$ 5 no centro e R$ 8 nos bairros.', 'Entregam no meu bairro? Qual a taxa?'),
+        p('tempo', 'TEMPO DE ENTREGA', ['tempo', 'prazo'], 'Quanto tempo leva, em média, para o pedido chegar?', 'De 40 a 60 minutos. Sexta e sábado pode passar de 1 hora.', 'Quanto tempo demora?'),
+        PAGAMENTO,
+        p('minimo', 'PEDIDO MÍNIMO', ['pedido minimo', 'minimo'], 'Tem pedido mínimo para entrega?', 'R$ 30 para entrega. Retirada sem mínimo.', 'Tem pedido mínimo?'),
+        p('meia', 'MEIA A MEIA', ['meia a meia', 'meio a meio', 'sabores'], 'Dá para pedir meia a meia? Como se cobra?', 'Sim, até 2 sabores. Cobramos o valor do sabor mais caro.', 'Pode ser meia calabresa meia mussarela?'),
+        p('restricoes', 'OPÇÕES SEM LACTOSE, VEGETARIANAS E OUTRAS', ['opcoes', 'sem lactose', 'vegetarian', 'vegan', 'sem gluten', 'restricoes'], 'Tem opção sem lactose, vegetariana ou sem glúten?', 'Temos 3 pizzas vegetarianas. Sem lactose e sem glúten não fazemos.', 'Tem pizza sem lactose?'),
+        p('retirada', 'RETIRADA NO BALCÃO', ['retirada', 'balcao', 'retirar'], 'Dá para retirar no balcão?', 'Sim, com 10% de desconto.', 'Posso buscar aí?'),
+        ONDE_FICA,
+      ],
+    },
   },
   comercio: {
     nome: 'Loja física, comércio',
@@ -190,6 +270,18 @@ export const PACOTES: Record<Nicho, PacoteDoNicho> = {
     // Quem vende no balcão atende mais do que negocia: a venda acontece na
     // loja, e o que o WhatsApp organiza é a pergunta de quem vai passar lá.
     modeloDeFunil: 'atendimento',
+    ficha: {
+      pode: ['Tirar dúvidas com o que está nesta ficha', 'Dizer se tem o produto e quanto custa', 'Informar horário e endereço'],
+      perguntas: [
+        p('oferta', 'O QUE VENDEMOS', ['o que vendemos', 'o que oferecemos', 'produtos'], 'O que a loja vende?', 'Material escolar, papelaria e presentes.', 'O que vocês vendem?'),
+        p('horario', 'HORÁRIO', ['horario', 'funcionamento'], 'Qual o horário de funcionamento?', 'Segunda a sexta, das 8h às 18h. Sábado, das 8h às 12h.', 'Que horas vocês abrem?'),
+        ONDE_FICA,
+        p('entrega', 'ENTREGA', ['entrega', 'delivery'], 'Vocês entregam? Onde e por quanto?', 'Entregamos no bairro por R$ 5, pedidos até as 16h.', 'Vocês entregam?'),
+        PAGAMENTO,
+        p('encomenda', 'ENCOMENDA', ['encomenda', 'reserva', 'separar'], 'Dá para encomendar ou pedir para separar?', 'Separamos por até 2 dias. Encomenda com 50% de sinal.', 'Consegue separar para mim?'),
+        p('estacionamento', 'ESTACIONAMENTO', ['estacionamento'], 'Tem estacionamento?', 'Não, mas tem vaga na rua e um estacionamento pago ao lado.', 'Tem onde estacionar?'),
+      ],
+    },
   },
 }
 
