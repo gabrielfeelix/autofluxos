@@ -1,8 +1,8 @@
 # Nichos
 
 > Visão do Gabriel, registrada em 25/set/2026 e ampliada em 26/set/2026.
-> **A direção está decidida; a lista de nichos e a ordem, não.** Nada disso
-> está construído ainda. Substitui o antigo `FRENTES-POR-SEGMENTO.md`.
+> **Direção e primeira leva decididas em 26/set** (ver "Decisões"). Nada
+> disso está construído ainda. Substitui o antigo `FRENTES-POR-SEGMENTO.md`.
 
 ## A ideia em uma frase
 
@@ -23,9 +23,9 @@ só preenche os dados dela.
 
 ## Como construir sem virar cinco sistemas
 
-A regra que a Verandi já usa e que funciona: **o código é um só e neutro; o
-nicho é um pacote de configuração.** Lá, o banco diz "pessoa" e a tela diz
-Aluno, Cliente ou Paciente conforme a conta (`verandi/src/core/vocabulario/`).
+**O código é um só e neutro; o nicho é um pacote de configuração.** O banco
+continua dizendo "produto", e a tela diz Cardápio, Produtos ou Catálogo
+conforme o nicho da conta.
 
 Aqui o pacote do nicho define:
 
@@ -53,7 +53,14 @@ mistura dois: `src/server/ia/prompt.ts` liga o bloco de venda quando há
 | Comércio de rua | nenhum | respostas rápidas, IA com base de conhecimento | "vocês têm X?", horário, localização, preço rápido |
 | Distribuidor / atacado | nenhum | nada específico | tabela de preço por cliente, pedido mínimo, recompra |
 | Saúde (clínica, farmácia, exames) | nenhum | envio de PDF | entrega de exame, CPF por formulário, LGPD dura |
-| Aulas / estética | MGM Pilates | agenda via Verandi | é território da Verandi: decidir a fronteira |
+| Serviço com agenda (aulas, estética, clínica) | MGM Pilates | agenda por integração | ver "Nicho com agenda" abaixo |
+
+### Nicho com agenda
+
+O AutoFluxos não vira sistema de gestão. Se o negócio já tem sistema próprio,
+o bot usa o dele por integração. Se não tem, o bot funciona com as
+informações básicas que o dono cadastrar (horário, serviços, preços), sem
+banco de dados de clientes nem agenda.
 
 ### Saúde: o que já se sabe
 
@@ -84,24 +91,45 @@ Duas peças prontas servem de base:
 - **Canal Site** (`public/chat/v1.js`): conversa sem WhatsApp, com conta real,
   então catálogo, IA e mídia funcionam. Só aceita os domínios cadastrados.
 
-Proposta:
+Decidido: **WhatsApp primeiro, página depois.**
 
-1. Uma **conta de demonstração por nicho** (começando pela pizzaria), com
-   cardápio, fotos, PDF e os dois fluxos (botões e IA). É o mesmo pacote que o
-   cliente real vai receber, então a demo testa o produto.
-2. Uma página pública `4yu.com.br/demo`, onde a pessoa escolhe o ramo e
-   conversa pelo widget do canal Site. O QR do flyer pode já cair no ramo
-   (`/demo/pizzaria`).
-3. **Recomendado junto:** um botão "testar no meu WhatsApp" (link `wa.me`
-   para um número de demonstração). Ver o bot no próprio WhatsApp convence
-   mais que numa página. Conversa iniciada pelo cliente não é cobrada pela
-   Meta, então o custo é baixo; o que custa é a IA, e ela já tem limite.
+1. Um **número de demonstração** no WhatsApp. O QR do flyer abre a conversa
+   (link `wa.me` com texto pronto). O bot pergunta o ramo (pizzaria, loja,
+   comércio) e, dentro dele, se a pessoa quer ver com botões ou com IA.
+2. Por trás, uma **conta de demonstração** com cardápio, fotos, PDF e os
+   fluxos do nicho. É o mesmo pacote que o cliente real vai receber, então a
+   demo também testa o produto.
+3. **Depois**, a página `4yu.com.br/demo` com o widget do canal Site, para
+   anúncio e site, onde abrir o WhatsApp é um passo a mais.
 
-## Ordem sugerida
+Por que WhatsApp primeiro: é onde os clientes da pizzaria já estão, então o
+dono vê exatamente o que o cliente dele vai ver; não precisa construir página;
+e o menu de escolha do ramo já é um fluxo nosso. Conversa iniciada pelo
+cliente não é cobrada pela Meta; o que custa é a IA, e ela já tem limite.
 
-1. **Fechar a lista** de nichos da primeira leva (sugestão: restaurante,
-   e-commerce, comércio de rua).
-2. **Demo da pizzaria**: conta demo, fluxo de cardápio, página e QR. É o que
+## Restaurante: cardápio próprio ou iFood
+
+O dono escolhe. Nem todo restaurante está no iFood, então o **cardápio
+próprio** no AutoFluxos vem primeiro; o iFood entra como opção.
+
+O iFood tem API pública para parceiros (Merchant API), e o módulo de
+catálogo organiza cardápio em categoria, item e complemento, que é o que o bot
+precisa ler. Custo de entrada: o integrador desenvolve, marca uma validação
+com o iFood em loja de teste, é homologado, e cada restaurante aceita a
+permissão no portal do parceiro. Referência:
+https://developer.ifood.com.br/pt-BR/docs/guides/modules/catalog/workflow
+
+## Concorrente: Agendor
+
+O Agendor (CRM B2B) tem páginas por segmento (indústria, distribuidora,
+transportadora, máquinas), mas **o produto é o mesmo** para todos: muda só o
+argumento de venda. Não há tela, funil pronto nem demo por segmento
+(https://www.agendor.com.br/solucoes, lido em 26/set). A nossa ideia vai além:
+o sistema muda de verdade por nicho.
+
+## Ordem
+
+1. **Demo da pizzaria**: número e conta demo, fluxo de cardápio, QR. É o que
    destrava a venda na rua, e obriga a construir o pacote do restaurante.
 3. **Nicho na conta**: pergunta no onboarding, vocabulário e barra lateral por
    nicho, modelos entregues prontos.
@@ -109,11 +137,14 @@ Proposta:
 5. **Funções que só um nicho usa** (pedido de restaurante, tabela de atacado,
    entrega de exame), uma por vez, conforme cliente real aparecer.
 
-## Em aberto (decisão do Gabriel)
+## Decisões (26/set)
 
-- Quais nichos entram primeiro.
-- Aulas, estética e clínicas com agenda: ficam na Verandi, no AutoFluxos, ou
-  nos dois (a Verandi agenda, o AutoFluxos conversa)?
-- A demo é só página, só WhatsApp, ou os dois?
-- Restaurante vai integrar com iFood/cardápio digital existente ou ter
-  cardápio próprio no AutoFluxos?
+- Primeira leva: **restaurante, e-commerce, comércio de rua**.
+- Nicho com agenda: usa o sistema do cliente por integração; sem sistema,
+  bot com informações básicas.
+- Demo: WhatsApp primeiro, página depois.
+- Restaurante: cardápio próprio primeiro; iFood como opção do dono.
+
+## Em aberto
+
+- Qual número de WhatsApp vira o número de demonstração.
