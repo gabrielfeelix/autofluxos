@@ -43,7 +43,7 @@ sistema de gestão de alunos.
 | 3 | IA contínua (`conversar: { maxTurnos }` no nó `ia`), limite de IA por contato | `4c0c4d9`, `f09f032`, `a45a7eb` |
 | 4 | Catálogo com categoria e ordem, grade com foto no restaurante, cardápio em PDF/imagem (bucket `autofluxos-acervo`), ferramenta `enviar_cardapio`, busca por categoria | `8ea0f7b`, `bbdac87`, `eb6106f`, `1bbf6c3` |
 | 5 | Modelos `cardapio-botoes`, `atendente-ia-restaurante`, `voces-tem`, `horario-e-local`; funil `pedidos`; galeria mostra primeiro os modelos do ramo | `198dfa8` a `a46bcea` |
-| 6 (código) | `fonteDoCatalogo` no nó de IA; IA contínua que conclui o pedido; "Sobre a empresa" próprio no bloco de IA (feito por outra sessão) | `9915f76`, `19037f0` |
+| 6 (código) | `fonteDoCatalogo` no nó de IA; IA contínua que conclui o pedido; "Sobre a empresa" próprio no bloco de IA (agente da etapa 6 desta sessão; a parte de produção não foi feita) | `9915f76`, `19037f0` |
 | extra | NPS: nota pendente gravada na sessão (migration `0107` na produção) | `d7f88ea` |
 | extra | 3 testes do resolver com espaço antigo | `5f7da17` |
 
