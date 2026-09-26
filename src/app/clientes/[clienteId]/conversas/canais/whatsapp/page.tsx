@@ -231,6 +231,22 @@ export default async function Pagina({
           </p>
 
           {/*
+           * **O chatbot antigo vem antes de tudo, e fora do `details`.** Quem
+           * chega aqui quase sempre vem de outra plataforma (BotConversa e
+           * parecidas), e o número ainda preso a ela faz a Meta recusar com
+           * "a empresa já está compartilhando essa conta com um parceiro". Foi o
+           * que travou o MGM um dia inteiro em 25/set. Escondido no passo a
+           * passo, ninguém leria antes de bater no erro.
+           */}
+          <div className="mt-3 max-w-[62ch] rounded-[10px] border border-aviso/30 bg-aviso/[0.06] px-3.5 py-2.5 text-[12px] leading-5 text-dim">
+            <strong className="text-muted">Usava outro chatbot neste número?</strong> Desconecte
+            ele antes: no WhatsApp Business, em Configurações, Conta, Business Platform; e no
+            Meta Business Suite, tire o parceiro antigo da conta do WhatsApp. A Meta pode levar
+            até 24 horas para soltar o número. Se ainda assim aparecer que o número já está com
+            um parceiro, fale com a gente antes de tentar de novo.
+          </div>
+
+          {/*
            * **O passo a passo desceu para um `details`, e o motivo é o clique.**
            *
            * A versão anterior abria com quatro passos numerados, o aviso de QR
