@@ -1,12 +1,19 @@
 import { Marca } from '@/components/design/marca'
 
-/** A marca com o selo "admin": quem está aqui sabe que não está numa organização. */
+/**
+ * A marca com o selo "admin": quem está aqui sabe que não está numa organização.
+ *
+ * **O invólucro é `div`, não `span`.** Com a barra recolhida, `BarraLateral`
+ * esconde todo `span` que é último filho, para sobrar só o símbolo. Um `span`
+ * aqui era o último filho de lá e sumia inteiro, com a logo junto: a barra
+ * recolhida da administração ficava sem marca nenhuma, nos dois temas.
+ */
 export function MarcaDaAdministracao() {
   return (
-    <span className="flex items-center gap-2">
+    <div className="flex items-center gap-2">
       <Marca />
       <span className="rounded-md border border-line px-1.5 py-0.5 font-mono text-[9.5px] text-dim">admin</span>
-    </span>
+    </div>
   )
 }
 
