@@ -1,6 +1,15 @@
 import 'server-only'
 import type { ErroDaLinha, ItemDaPlanilha, PlanoDeImportacao } from '@/core/importar-produtos'
-import { conferirNome, conferirPreco, type Especie, type Produto } from '@/core/produtos'
+import {
+  compararNoCatalogo,
+  conferirCategoria,
+  conferirNome,
+  conferirPreco,
+  mesmaCategoria,
+  mover,
+  type Especie,
+  type Produto,
+} from '@/core/produtos'
 import { db, ehIdInvalido } from '../db'
 
 /**
@@ -27,10 +36,12 @@ type LinhaDoProduto = {
   descricao: string | null
   link: string | null
   foto: string | null
+  categoria: string | null
+  ordem: number | null
   arquivado_em: string | null
 }
 
-const COLUNAS = 'id, nome, especie, preco, sku, descricao, link, foto, arquivado_em'
+const COLUNAS = 'id, nome, especie, preco, sku, descricao, link, foto, categoria, ordem, arquivado_em'
 
 /**
  * `numeric` do Postgres chega como **string** no supabase-js, não número.
@@ -57,6 +68,8 @@ function paraProduto(linha: LinhaDoProduto): Produto {
     descricao: linha.descricao,
     link: linha.link,
     foto: linha.foto,
+    categoria: linha.categoria,
+    ordem: linha.ordem,
     arquivadoEm: linha.arquivado_em,
   }
 }
@@ -70,6 +83,12 @@ export type ResultadoDoProduto = { ok: true; produto: Produto } | { ok: false; m
  * arquivado aqui obrigaria uma segunda consulta para a tela que precisa
  * mostrar o histórico, e `core/produtos.selecionaveis` já separa os dois usos
  * sem ir ao banco de novo.
+ *
+ * Dentro de cada lado, a ordem do catálogo (categoria, ordem do dono, nome),
+ * decidida em `core/produtos.compararNoCatalogo` e não no `order` da consulta:
+ * o Postgres ordena texto pela collation do banco, que não é a da tela, e
+ * "Água" cairia depois de "Suco". Em memória custa nada perto das 2000 linhas
+ * que a importação deixa entrar.
  */
 export async function listarProdutos(clienteId: string): Promise<Produto[]> {
   /*
@@ -95,7 +114,10 @@ export async function listarProdutos(clienteId: string): Promise<Produto[]> {
     todos.push(...(data as LinhaDoProduto[]))
     if (data.length < PAGINA) break
   }
-  return todos.map(paraProduto)
+  return todos.map(paraProduto).sort((a, b) => {
+    if ((a.arquivadoEm === null) !== (b.arquivadoEm === null)) return a.arquivadoEm === null ? -1 : 1
+    return compararNoCatalogo(a, b)
+  })
 }
 
 /**
@@ -133,6 +155,7 @@ export async function criarProduto(
   nomeBruto: string,
   especie: Especie,
   precoBruto = '',
+  categoriaBruta = '',
 ): Promise<ResultadoDoProduto> {
   const conferido = conferirNome(nomeBruto)
   if (!conferido.ok) return { ok: false, motivo: conferido.motivo }
@@ -142,9 +165,13 @@ export async function criarProduto(
   const preco = conferirPreco(precoBruto)
   if (!preco.ok) return { ok: false, motivo: preco.motivo }
 
+  // Categoria também: o item nasce sem `ordem` e vai para o fim do grupo.
+  const categoria = conferirCategoria(categoriaBruta)
+  if (!categoria.ok) return { ok: false, motivo: categoria.motivo }
+
   const { data, error } = await db()
     .from('produtos')
-    .insert({ client_id: clienteId, nome: conferido.nome, especie, preco: preco.preco })
+    .insert({ client_id: clienteId, nome: conferido.nome, especie, preco: preco.preco, categoria: categoria.categoria })
     .select(COLUNAS)
     .single()
 
@@ -222,6 +249,72 @@ export async function definirPreco(
   if (!data) return { ok: false, motivo: 'esse item do catálogo não existe' }
 
   return { ok: true, produto: paraProduto(data as LinhaDoProduto) }
+}
+
+/**
+ * A categoria do item (0106). `''` tira a categoria.
+ *
+ * Função própria pela mesma razão de `definirPreco`: vazio aqui quer dizer
+ * sempre "sem categoria". Trocar de categoria zera a `ordem`, porque a posição
+ * que o item tinha entre as pizzas não diz nada sobre onde ele fica entre as
+ * bebidas: ele entra no fim do grupo novo, e o dono sobe se quiser.
+ */
+export async function definirCategoria(
+  clienteId: string,
+  produtoId: string,
+  categoriaBruta: string,
+): Promise<ResultadoDoProduto> {
+  const categoria = conferirCategoria(categoriaBruta)
+  if (!categoria.ok) return { ok: false, motivo: categoria.motivo }
+
+  const { data, error } = await db()
+    .from('produtos')
+    .update({ categoria: categoria.categoria, ordem: null, atualizado_em: new Date().toISOString() })
+    .eq('client_id', clienteId)
+    .eq('id', produtoId)
+    .select(COLUNAS)
+    .maybeSingle()
+
+  if (ehIdInvalido(error)) return { ok: false, motivo: 'esse item do catálogo não existe' }
+  if (error) return { ok: false, motivo: `não deu para salvar a categoria: ${error.message}` }
+  if (!data) return { ok: false, motivo: 'esse item do catálogo não existe' }
+
+  return { ok: true, produto: paraProduto(data as LinhaDoProduto) }
+}
+
+/**
+ * Sobe ou desce um item dentro da categoria (`core/produtos.mover`).
+ *
+ * Lê o catálogo inteiro e compara a categoria em memória, pelo mesmo critério
+ * do agrupamento da grade: "pizzas" e "Pizzas" são o mesmo grupo na tela, e
+ * um `eq('categoria', ...)` no banco trataria os dois como grupos diferentes.
+ * Só os ativos entram, porque são os únicos que a grade mostra.
+ *
+ * As linhas que mudam vão uma a uma. São duas na maioria dos cliques e a
+ * categoria inteira só na primeira vez; uma troca que falhe no meio deixa
+ * duas posições iguais, e o nome desempata até o próximo clique consertar.
+ */
+export async function moverProduto(
+  clienteId: string,
+  produtoId: string,
+  direcao: 'subir' | 'descer',
+): Promise<{ ok: true } | { ok: false; motivo: string }> {
+  const ativos = (await listarProdutos(clienteId)).filter((p) => p.arquivadoEm === null)
+  const alvo = ativos.find((p) => p.id === produtoId)
+  if (!alvo) return { ok: false, motivo: 'esse item do catálogo não existe' }
+
+  const doGrupo = ativos.filter((p) => mesmaCategoria(p.categoria, alvo.categoria))
+  const mudancas = mover(doGrupo, produtoId, direcao)
+  const agora = new Date().toISOString()
+  for (const { id, ordem } of mudancas) {
+    const { error } = await db()
+      .from('produtos')
+      .update({ ordem, atualizado_em: agora })
+      .eq('client_id', clienteId)
+      .eq('id', id)
+    if (error) return { ok: false, motivo: `não deu para mudar a ordem: ${error.message}` }
+  }
+  return { ok: true }
 }
 
 /**
@@ -303,6 +396,7 @@ export async function gravarImportacao(
     descricao: item.descricao,
     link: item.link,
     foto: item.foto,
+    categoria: item.categoria,
   })
 
   for (let i = 0; i < plano.criar.length; i += 500) {
@@ -329,6 +423,7 @@ export async function gravarImportacao(
         if (item.descricao !== null) campos.descricao = item.descricao
         if (item.link !== null) campos.link = item.link
         if (item.foto !== null) campos.foto = item.foto
+        if (item.categoria !== null) campos.categoria = item.categoria
 
         const { error } = await db()
           .from('produtos')

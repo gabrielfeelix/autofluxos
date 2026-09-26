@@ -88,6 +88,16 @@ export type Produto = {
   /** Só `https://`, o banco recusa o resto. */
   link: string | null
   foto: string | null
+  /**
+   * O grupo do item (0106): "Pizzas", "Bebidas". `null` = sem categoria, e o
+   * item vai para o fim da lista, num grupo sem nome.
+   */
+  categoria: string | null
+  /**
+   * A posição que o dono escolheu dentro da categoria. `null` = ninguém
+   * ordenou ainda: fica depois dos ordenados, pelo nome.
+   */
+  ordem: number | null
   /** `null` = ativo. Data = arquivado naquele instante, e ainda legível. */
   arquivadoEm: string | null
 }
@@ -98,6 +108,10 @@ export function estaAtivo(produto: Pick<Produto, 'arquivadoEm'>): boolean {
 }
 
 export type Conferencia = { ok: true; nome: string } | { ok: false; motivo: string }
+
+export type ConferenciaDeCategoria =
+  | { ok: true; categoria: string | null }
+  | { ok: false; motivo: string }
 
 export type ConferenciaDePreco =
   | { ok: true; preco: number | null }
@@ -115,6 +129,21 @@ export function conferirNome(bruto: string): Conferencia {
   if (nome === '') return { ok: false, motivo: 'dê um nome ao item do catálogo' }
   if (nome.length > 120) return { ok: false, motivo: 'o nome precisa ter até 120 caracteres' }
   return { ok: true, nome }
+}
+
+/**
+ * A categoria serve?
+ *
+ * Vazio é "sem categoria" e não erro: o catálogo que existia antes da 0106
+ * vive sem ela. O teto de 60 é o `check` do banco, repetido aqui para a
+ * recusa chegar em português. Espaço repetido vira um só: "Pizzas  doces" e
+ * "Pizzas doces" digitados em dias diferentes seriam dois grupos na grade.
+ */
+export function conferirCategoria(bruto: string): ConferenciaDeCategoria {
+  const categoria = bruto.trim().replace(/\s+/g, ' ')
+  if (categoria === '') return { ok: true, categoria: null }
+  if (categoria.length > 60) return { ok: false, motivo: 'a categoria precisa ter até 60 caracteres' }
+  return { ok: true, categoria }
 }
 
 /**
@@ -165,4 +194,97 @@ export function temPrecoInformado(produto: Pick<Produto, 'preco'>): boolean {
  */
 export function selecionaveis(produtos: readonly Produto[]): Produto[] {
   return produtos.filter(estaAtivo)
+}
+
+/** Compara texto como a tela lê: sem caixa e sem acento ("Água" antes de "Bebidas"). */
+const COMPARAR_TEXTO = new Intl.Collator('pt-BR', { sensitivity: 'base', numeric: true }).compare
+
+/**
+ * A ordem do catálogo: categoria, depois a ordem do dono, depois o nome.
+ *
+ * Nulo vai por último nos dois primeiros critérios, e não é detalhe: item sem
+ * categoria no topo empurraria o cardápio para baixo de uma pilha de itens que
+ * o dono ainda não organizou, e item sem ordem antes dos ordenados desfaria a
+ * ordem que ele escolheu. É a mesma regra para a tela, para a busca do bot e
+ * para a grade: uma função só, para as três não discordarem.
+ */
+export function compararNoCatalogo(
+  a: Pick<Produto, 'categoria' | 'ordem' | 'nome'>,
+  b: Pick<Produto, 'categoria' | 'ordem' | 'nome'>,
+): number {
+  if (a.categoria !== b.categoria) {
+    if (a.categoria === null) return 1
+    if (b.categoria === null) return -1
+    const porCategoria = COMPARAR_TEXTO(a.categoria, b.categoria)
+    if (porCategoria !== 0) return porCategoria
+  }
+  if (a.ordem !== b.ordem) {
+    if (a.ordem === null) return 1
+    if (b.ordem === null) return -1
+    return a.ordem - b.ordem
+  }
+  return COMPARAR_TEXTO(a.nome, b.nome)
+}
+
+/** Mesmo grupo na grade: sem distinguir caixa nem acento, e nulo só com nulo. */
+export function mesmaCategoria(a: string | null, b: string | null): boolean {
+  if (a === null || b === null) return a === b
+  return COMPARAR_TEXTO(a, b) === 0
+}
+
+export function ordenarCatalogo<T extends Pick<Produto, 'categoria' | 'ordem' | 'nome'>>(produtos: readonly T[]): T[] {
+  return [...produtos].sort(compararNoCatalogo)
+}
+
+/** Um grupo da grade. `categoria: null` é o grupo "sem categoria", sempre o último. */
+export type GrupoDoCatalogo<T> = { categoria: string | null; itens: T[] }
+
+/**
+ * Agrupa por categoria, na ordem do catálogo.
+ *
+ * "pizzas" e "Pizzas" caem no mesmo grupo, com o nome do primeiro item que
+ * aparecer: o dono que digitou com caixa diferente em dois dias quis dizer a
+ * mesma coisa, e dois grupos quase iguais na grade seriam ruído.
+ */
+export function agruparPorCategoria<T extends Pick<Produto, 'categoria' | 'ordem' | 'nome'>>(
+  produtos: readonly T[],
+): GrupoDoCatalogo<T>[] {
+  const grupos: GrupoDoCatalogo<T>[] = []
+  for (const p of ordenarCatalogo(produtos)) {
+    const ultimo = grupos[grupos.length - 1]
+    if (ultimo !== undefined && mesmaCategoria(ultimo.categoria, p.categoria)) ultimo.itens.push(p)
+    else grupos.push({ categoria: p.categoria, itens: [p] })
+  }
+  return grupos
+}
+
+/** As categorias já usadas, sem repetir, para a tela sugerir ao digitar. */
+export function categoriasUsadas(produtos: readonly Pick<Produto, 'categoria' | 'ordem' | 'nome'>[]): string[] {
+  return agruparPorCategoria(produtos).flatMap((g) => (g.categoria === null ? [] : [g.categoria]))
+}
+
+/**
+ * Subir ou descer um item dentro da categoria dele.
+ *
+ * Devolve só as linhas cuja `ordem` muda. A categoria inteira é renumerada de
+ * 1 em diante na ordem que a tela mostra, e não só os dois itens trocados:
+ * enquanto houver item com `ordem` nula, trocar dois números não mexe em quem
+ * não tem número, e o clique pareceria não funcionar. Renumerar na primeira
+ * vez resolve de uma vez, e daí em diante cada clique muda duas linhas.
+ *
+ * Primeiro item subindo ou último descendo devolve vazio: não há para onde ir.
+ */
+export function mover<T extends Pick<Produto, 'id' | 'categoria' | 'ordem' | 'nome'>>(
+  daCategoria: readonly T[],
+  produtoId: string,
+  direcao: 'subir' | 'descer',
+): { id: string; ordem: number }[] {
+  const lista = ordenarCatalogo(daCategoria)
+  const de = lista.findIndex((p) => p.id === produtoId)
+  const para = direcao === 'subir' ? de - 1 : de + 1
+  if (de === -1 || para < 0 || para >= lista.length) return []
+
+  const trocada = [...lista]
+  ;[trocada[de], trocada[para]] = [trocada[para]!, trocada[de]!]
+  return trocada.flatMap((p, i) => (p.ordem === i + 1 ? [] : [{ id: p.id, ordem: i + 1 }]))
 }

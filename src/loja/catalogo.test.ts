@@ -10,6 +10,8 @@ function produto(p: Partial<Produto> & { id: string; nome: string }): Produto {
     descricao: null,
     link: null,
     foto: null,
+    categoria: null,
+    ordem: null,
     arquivadoEm: null,
     ...p,
   }

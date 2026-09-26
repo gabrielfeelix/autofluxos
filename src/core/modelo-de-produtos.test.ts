@@ -7,10 +7,10 @@ describe('modelo de planilha de produtos', () => {
   it('o CSV do modelo volta pela importação com os 3 exemplos e nenhum erro', () => {
     const r = lerProdutosDaPlanilha(lerCsv(csvDoModelo()))
     expect(r.ok && r.erros).toEqual([])
-    expect(r.ok && r.itens.map((i) => [i.nome, i.especie, i.preco])).toEqual([
-      ['Cadeira Gamer Sentinel', 'produto', 1299.9],
-      ['Avaliação física', 'servico', 150],
-      ['Consultoria sob medida', 'servico', null],
+    expect(r.ok && r.itens.map((i) => [i.nome, i.especie, i.preco, i.categoria])).toEqual([
+      ['Cadeira Gamer Sentinel', 'produto', 1299.9, 'Cadeiras'],
+      ['Avaliação física', 'servico', 150, 'Serviços'],
+      ['Consultoria sob medida', 'servico', null, 'Serviços'],
     ])
   })
 

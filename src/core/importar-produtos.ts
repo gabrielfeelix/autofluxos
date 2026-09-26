@@ -18,7 +18,7 @@
 
 import { normalizar } from './engine/interpolar'
 import type { Linha } from './planilha'
-import { conferirNome, conferirPreco, type Especie } from './produtos'
+import { conferirCategoria, conferirNome, conferirPreco, type Especie } from './produtos'
 
 export type ItemDaPlanilha = {
   /** A linha na planilha, para o erro e a prévia apontarem para ela. */
@@ -31,6 +31,8 @@ export type ItemDaPlanilha = {
   descricao: string | null
   link: string | null
   foto: string | null
+  /** O grupo no cardápio ou catálogo (0106). `null` = coluna vazia ou ausente. */
+  categoria: string | null
 }
 
 export type ErroDaLinha = { linha: number; motivo: string }
@@ -39,7 +41,7 @@ export type Leitura =
   { ok: true; itens: ItemDaPlanilha[]; erros: ErroDaLinha[] } | { ok: false; motivo: string }
 
 /** As colunas do modelo, na ordem em que o modelo as escreve. */
-export const COLUNAS_DO_MODELO = ['nome', 'tipo', 'sku', 'preco', 'descricao', 'link', 'foto'] as const
+export const COLUNAS_DO_MODELO = ['nome', 'tipo', 'categoria', 'sku', 'preco', 'descricao', 'link', 'foto'] as const
 
 type Coluna = (typeof COLUNAS_DO_MODELO)[number]
 
@@ -59,6 +61,9 @@ const SINONIMOS: Record<string, Coluna> = {
   url: 'link',
   foto: 'foto',
   imagem: 'foto',
+  categoria: 'categoria',
+  grupo: 'categoria',
+  secao: 'categoria',
 }
 
 /** Teto de linhas por arquivo: acima disso a prévia vira página que ninguém lê. */
@@ -140,6 +145,9 @@ function lerLinha(
   const foto = endereco(celula('foto'), 'foto')
   if (!foto.ok) return foto
 
+  const categoria = conferirCategoria(celula('categoria'))
+  if (!categoria.ok) return categoria
+
   return {
     ok: true,
     item: {
@@ -151,6 +159,7 @@ function lerLinha(
       descricao: descricao === '' ? null : descricao,
       link: link.valor,
       foto: foto.valor,
+      categoria: categoria.categoria,
     },
   }
 }

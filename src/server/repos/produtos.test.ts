@@ -207,6 +207,7 @@ describe.skipIf(!temCredencial)('importar planilha (0093)', () => {
     descricao: null,
     link: null,
     foto: null,
+    categoria: null,
     ...p,
   })
 

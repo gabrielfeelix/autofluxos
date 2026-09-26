@@ -32,9 +32,33 @@ describe('lerProdutosDaPlanilha', () => {
           descricao: 'Ergonômica',
           link: null,
           foto: null,
+          categoria: null,
         },
       ],
     })
+  })
+
+  it('lê a coluna categoria, aparada; vazia é sem categoria; longa é erro', () => {
+    const r = lerProdutosDaPlanilha(
+      planilha(
+        ['nome', 'categoria'],
+        ['Calabresa', '  Pizzas '],
+        ['Coca', ''],
+        ['Longa', 'x'.repeat(61)],
+      ),
+    )
+    if (!r.ok) throw new Error(r.motivo)
+    expect(r.itens.map((i) => [i.nome, i.categoria])).toEqual([
+      ['Calabresa', 'Pizzas'],
+      ['Coca', null],
+    ])
+    expect(r.erros).toEqual([{ linha: 4, motivo: 'a categoria precisa ter até 60 caracteres' }])
+  })
+
+  it('aceita "grupo" como nome da coluna de categoria', () => {
+    const r = lerProdutosDaPlanilha(planilha(['Produto', 'Grupo'], ['Suco', 'Bebidas']))
+    if (!r.ok) throw new Error(r.motivo)
+    expect(r.itens[0]!.categoria).toBe('Bebidas')
   })
 
   it('aceita preço brasileiro e com ponto decimal', () => {
@@ -98,7 +122,7 @@ describe('lerProdutosDaPlanilha', () => {
 })
 
 function item(parcial: Partial<ItemDaPlanilha> & { nome: string; linha: number }): ItemDaPlanilha {
-  return { especie: null, sku: null, preco: null, descricao: null, link: null, foto: null, ...parcial }
+  return { especie: null, sku: null, preco: null, descricao: null, link: null, foto: null, categoria: null, ...parcial }
 }
 
 describe('planejarImportacao', () => {

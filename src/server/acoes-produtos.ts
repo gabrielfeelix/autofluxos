@@ -6,8 +6,10 @@ import { ehEspecie, type Produto } from '@/core/produtos'
 import {
   arquivarProduto,
   criarProduto,
+  definirCategoria,
   definirPreco,
   listarProdutos,
+  moverProduto,
   renomearProduto,
 } from './repos/produtos'
 import { avaliarCartao, definirInteresse } from './repos/quadros'
@@ -62,6 +64,7 @@ export async function acaoCriarProduto(
     String(formData.get('nome') ?? ''),
     especie,
     String(formData.get('preco') ?? ''),
+    String(formData.get('categoria') ?? ''),
   )
   if (!r.ok) return { erro: r.motivo }
 
@@ -107,6 +110,48 @@ export async function acaoDefinirPreco(
 
   const r = await definirPreco(clienteId, produtoId, String(formData.get('preco') ?? ''))
   if (!r.ok) return { erro: r.motivo }
+
+  recarregar(clienteId)
+  return { ok: true }
+}
+
+/**
+ * A categoria do item (0106). Campo vazio tira a categoria.
+ *
+ * `configurar_operacao`, como nome e preço: a categoria decide como o
+ * cardápio aparece para o cliente e o que o bot acha ao filtrar por ela.
+ */
+export async function acaoDefinirCategoria(
+  clienteId: string,
+  produtoId: string,
+  _estado: EstadoSalvar,
+  formData: FormData,
+): Promise<EstadoSalvar> {
+  const acesso = await exigirCapacidade(clienteId, 'configurar_operacao', 'todos')
+  if (recusou(acesso)) return acesso
+
+  const r = await definirCategoria(clienteId, produtoId, String(formData.get('categoria') ?? ''))
+  if (!r.ok) return { erro: r.motivo }
+
+  recarregar(clienteId)
+  return { ok: true }
+}
+
+/** Sobe ou desce o item dentro da categoria, na grade do cardápio. */
+export async function acaoMoverProduto(
+  clienteId: string,
+  produtoId: string,
+  direcao: string,
+): Promise<{ ok: boolean; erro?: string }> {
+  const acesso = await exigirCapacidade(clienteId, 'configurar_operacao', 'todos')
+  if (recusou(acesso)) return acesso
+
+  // A direção chega da tela: recusar aqui é o que impede um valor qualquer de
+  // virar "descer" por omissão.
+  if (direcao !== 'subir' && direcao !== 'descer') return { ok: false, erro: 'direção inválida' }
+
+  const r = await moverProduto(clienteId, produtoId, direcao)
+  if (!r.ok) return { ok: false, erro: r.motivo }
 
   recarregar(clienteId)
   return { ok: true }

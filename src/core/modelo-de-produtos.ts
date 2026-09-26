@@ -18,6 +18,7 @@ const EXEMPLOS: Exemplo[] = [
   {
     nome: 'Cadeira Gamer Sentinel',
     tipo: 'produto',
+    categoria: 'Cadeiras',
     sku: 'CAD-001',
     preco: 1299.9,
     descricao: 'Cadeira ergonômica, apoio de braço 4D, até 150 kg',
@@ -27,6 +28,7 @@ const EXEMPLOS: Exemplo[] = [
   {
     nome: 'Avaliação física',
     tipo: 'serviço',
+    categoria: 'Serviços',
     sku: 'SRV-01',
     preco: 150,
     descricao: 'Avaliação de 40 minutos com profissional',
@@ -36,6 +38,7 @@ const EXEMPLOS: Exemplo[] = [
   {
     nome: 'Consultoria sob medida',
     tipo: 'serviço',
+    categoria: 'Serviços',
     sku: '',
     preco: '',
     descricao: 'Preço combinado na conversa',
@@ -97,7 +100,7 @@ export function xlsxDoModelo(): Record<string, string> {
   const corpo = EXEMPLOS.map(
     (e, n) => `<row r="${n + 2}">${COLUNAS_DO_MODELO.map((c, i) => celula(e[c], i, n + 2)).join('')}</row>`,
   ).join('')
-  const larguras = [28, 10, 12, 12, 44, 44, 52]
+  const larguras = [28, 10, 16, 12, 12, 44, 44, 52]
   const cols = larguras
     .map((w, i) => `<col min="${i + 1}" max="${i + 1}" width="${w}" customWidth="1"/>`)
     .join('')
