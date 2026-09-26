@@ -97,17 +97,75 @@ exigir outra conta e talvez **outro plano** ("acho que na RD é por plano").
 planos separados?) e trazer 2 ou 3 opções com prós e contras. Não mexer em
 plano nem preço sem decisão: preço mora só em `src/core/planos.ts`.
 
-### 4.5 Demo da pizzaria (etapa 6, parte de produção)
+### 4.5 A demonstração de todas as frentes (decisão nova do Gabriel, 26/set à tarde)
 
-Falta montar na conta PCYES, com autorização já dada pelo Gabriel: cardápio da
-"Pizzaria Exemplo" com fotos de licença livre no `autofluxos-acervo`, cardápio
-em PDF e PNG em `materiais`, fluxo de entrada (aviso de demonstração, texto do
-QR vai direto, senão pergunta Pizzaria ou Loja virtual; Loja virtual vai ao
-fluxo atual `abd4df71-cfa0-4e5c-a39d-af2aa57866cb`), `ia_limite_contato_dia = 40`,
-canal `fa673a09-e90d-4a86-ac21-d75ee5fdca26` apontado para a entrada (guardar
-ids antigos), teste ponta a ponta pelo simulador, QR em `docs/demo/`,
-`docs/DEMO-PIZZARIA.md`. Não mudar `clients.nicho` da PCYES por causa da demo.
-Número: +55 44 7400-7438.
+**Isto substitui a "demo da pizzaria dentro da PCYES".** O número
++55 44 7400-7438 é de teste do Gabriel. Estava na PCYES porque ele mostra ao
+chefe dele (ele trabalha na PCYES e quer vender o AutoFluxos para ela). Só
+que, com o número preso na PCYES, ele não consegue mostrar pizzaria nem outra
+frente. Decisão:
+
+- **Conta nova "4YU Tech Demonstração"** (nome da organização), e o canal
+  `fa673a09-e90d-4a86-ac21-d75ee5fdca26` **sai da PCYES e vai para ela**. Não
+  existe rotina de mover canal: escrever `scripts/mover-canal` com dry-run por
+  padrão (fechar sessões abertas, trocar `channels.client_id`, zerar
+  `flow_id`/`flow_*_id`, **não** mover contatos nem conversas; o histórico de
+  teste fica na PCYES). Produção: pedir o OK do Gabriel antes de rodar, com o
+  dry-run na mão.
+- O Gabriel vai trocar sozinho, no Business Manager, a foto e o nome do número
+  para "4YU Tech" com o logo da 4YU. Não é tarefa do agente.
+- A conta de demonstração **não tem frente** (`nicho` nulo): ela mostra todas.
+  O que importa nela é o WhatsApp, não a barra lateral. (O Gabriel levantou a
+  ideia de dar a um usuário acesso a várias frentes, e a dúvida de "qual nome
+  de aba vale então". Para a demo não precisa: sem frente, nomes gerais. Se
+  virar produto, é assunto da 4.4.)
+- **Pendência para perguntar:** mostrar a PCYES de verdade ao chefe continua
+  sendo útil? Se sim, a opção "Loja virtual" da demo pode usar a loja Magento
+  da PCYES (a conexão existe na conta PCYES e teria de ser ligada também na
+  demo); se não, usa uma loja de exemplo no catálogo próprio. Não decidir
+  sozinho.
+
+**O roteiro que o Gabriel descreveu:**
+
+1. Oi com o nome da pessoa (o nome do perfil do WhatsApp; sem nome, só "oi").
+   Aviso curto de que é uma demonstração.
+2. "Qual é o seu ramo?" (restaurante, loja virtual, comércio, aulas e
+   serviços...). Depois: **"Quer testar com botões ou com IA?"**
+3. **Com botões:** um atendimento completo de perguntas e opções. No
+   restaurante: escolher pizza ou hambúrguer, ver o cardápio em imagem e PDF,
+   ver foto do prato, montar pedido com várias perguntas, e **receber o aviso
+   de que o pedido ficou pronto** (mensagem que chega sozinha minutos depois:
+   ver se Sequências ou um atraso no fluxo resolvem).
+4. **Com IA:** a IA pergunta o ramo, o que a pessoa vende e o nome do negócio
+   ("Pizzaria Margherita"), diz "a partir de agora eu sou a atendente da
+   Pizzaria Margherita, me mande uma mensagem como se fosse um cliente" e
+   então **vira a atendente daquele negócio**: dá boas-vindas com o nome,
+   oferece produto, manda catálogo e foto, monta pedido, avisa quando fica
+   pronto. Tem que parecer uma funcionária esperta, não um robô.
+   Peças que já existem: IA contínua (`conversar`), IA que conclui, "Sobre a
+   empresa" próprio no bloco de IA (use variável com o nome do negócio),
+   `fonteDoCatalogo`, `enviar_cardapio`, busca por categoria.
+5. Em qualquer ponto, "quero isso para o meu negócio" vai para uma pessoa com
+   motivo "Lead da demo".
+
+**Catálogos de exemplo:** um por ramo preparado (pizzaria, hamburgueria, loja
+virtual, comércio, estúdio de aulas), com fotos de licença livre no
+`autofluxos-acervo`, separados por categoria para a IA de cada ramo buscar só
+o dela. Se a pessoa disser um negócio que não tem catálogo preparado, a IA
+atende pelo ramo mais próximo sem inventar foto. Cardápio em PDF e PNG
+gerados por você, com "Demonstração 4YU". `ia_limite_contato_dia` da conta
+demo: 40.
+
+**Qualidade:** o Gabriel quer que isso "mude o jogo" na hora de mostrar.
+Pesquise na web bons roteiros de bot de restaurante, loja e agendamento,
+use todos os fluxos que já temos em `src/exemplos/`, e teste cada caminho pelo
+simulador com a conta real antes de apontar o canal (mensagens de verdade não).
+Entregar QR em `docs/demo/` e `docs/DEMO.md` (como funciona, ids, como voltar,
+fontes das fotos, o que o Gabriel testa do celular). Atualizar `docs/NICHOS.md`
+e a seção 4.9 do `docs/PLANO-NICHOS.md`, que ainda dizem "o número fica na
+PCYES".
+
+Ao terminar cada parte: commit, push (é o deploy) e conferir o deploy.
 
 ### 4.6 Ficha do assistente de IA (plano 1.7)
 
