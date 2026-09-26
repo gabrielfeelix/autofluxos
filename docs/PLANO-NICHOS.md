@@ -316,7 +316,7 @@ param antes do push para pedir autorização (o push é o deploy).
 |---|---|---|
 | 1 | `core/nichos.ts` + testes; barra lateral lendo o pacote (**feito 26/set**; primeiros passos do Início ficam para a 7) | não (sem nicho, nada muda) |
 | 2 | Migration `0106`: `clients.nicho`, `produtos.categoria/ordem`, `materiais`, `ia_limite_contato_dia` (**aplicada 26/set**) | sim, autorizada |
-| 3 | Motor: IA contínua e limite por contato | não |
+| 3 | Motor: IA contínua e limite por contato (**feito 26/set**; `sairCom` ficou de fora, as palavras de saída são lista fixa no motor; o limite conta respostas gravadas em `ia_chamadas` com `ferramenta = 'resposta'`, só em conta com limite, e não tem tela) | não |
 | 4 | Cardápio: categoria, grade com foto, envio de PDF, `enviar_cardapio` | não |
 | 5 | Modelos do restaurante e funil de pedidos | não |
 | 6 | Conta demo, mover o número, cardápio da Pizzaria Exemplo, QR | **sim, pedir autorização** |

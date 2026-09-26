@@ -15,6 +15,7 @@ import {
   LIMITE_TEXTO,
   LIMITE_TEXTO_INTERATIVO,
   MARCA_DE_LISTA,
+  MAX_TURNOS_DA_IA,
   METODOS,
   OPERADORES,
   type Operador,
@@ -295,6 +296,29 @@ const NOME_DO_FORMATO_DE_SAIDA: Record<FormatoDeSaida, string> = {
 const METODO_EM_PORTUGUES: Record<string, string> = {
   GET: 'consultar, trazer informação de lá para a conversa',
   POST: 'mandar, entregar ao sistema o que a conversa coletou',
+}
+
+/**
+ * Quantas respostas a IA dá antes de a conversa seguir, quando ela continua
+ * conversando. Lista fechada pelo mesmo motivo de `PRAZOS`, e o teto é o do
+ * schema (`MAX_TURNOS_DA_IA`).
+ */
+const TURNOS_DA_IA = [3, 5, 10, 15, 20, MAX_TURNOS_DA_IA].map((n) => ({
+  valor: String(n),
+  rotulo: `${n} respostas`,
+}))
+
+/** O padrão ao ligar "Continuar conversando": dá para tirar dúvida e fazer pedido. */
+const TURNOS_DA_IA_PADRAO = 10
+
+/**
+ * A lista de tetos, com o gravado incluído quando ele não está nela: um teto
+ * que veio de outro lugar continua aparecendo, em vez de o campo ficar vazio.
+ */
+function opcoesDeTurnos(atual: number) {
+  return TURNOS_DA_IA.some((t) => t.valor === String(atual))
+    ? TURNOS_DA_IA
+    : [...TURNOS_DA_IA, { valor: String(atual), rotulo: `${atual} respostas` }]
 }
 
 const PRAZOS = [
@@ -1563,6 +1587,59 @@ export function Painel({
             clienteId={clienteId}
             aoMudar={aoMudarDados}
           />
+
+          {/*
+            A IA contínua (PLANO-NICHOS 4.6). Desligado é o bloco de sempre, que
+            responde uma vez e segue; por isso ligar não mexe em mais nada do
+            desenho, e desligar apaga o campo em vez de guardar um teto que
+            ninguém vê.
+          */}
+          <LinhaLigaDesliga
+            titulo="Continuar conversando"
+            descricao="A IA responde cada mensagem até o cliente escrever “menu” ou “sair”."
+            marcada={!!no.data.conversar}
+            aoMudar={(marcada) =>
+              aoMudarDados({
+                conversar: marcada ? { maxTurnos: TURNOS_DA_IA_PADRAO } : undefined,
+              })
+            }
+            ajuda={
+              <AjudaDoCampo
+                titulo="Continuar conversando"
+                secao="blocos"
+                alinhar="direita"
+                texto="A conversa fica com a IA em vez de seguir depois da primeira resposta."
+                detalhes={
+                  <>
+                    <p>
+                      Cada mensagem do cliente volta para a IA. A conversa segue para o próximo
+                      bloco quando o cliente escreve só <strong>“menu”</strong>,{' '}
+                      <strong>“sair”</strong> ou <strong>“voltar”</strong>, ou quando a IA chega ao
+                      número de respostas escolhido.
+                    </p>
+                    <p>
+                      Se a IA não souber responder, ou o cliente pedir um atendente, a conversa vai
+                      para uma pessoa, como sempre.
+                    </p>
+                  </>
+                }
+              />
+            }
+          />
+
+          {no.data.conversar && (
+            <label className="block">
+              <span className="mb-1.5 block text-[11px] font-bold tracking-[0.05em] text-muted uppercase">
+                Até quantas respostas
+              </span>
+              <Dropdown
+                valor={String(no.data.conversar.maxTurnos)}
+                aoMudar={(v) => aoMudarDados({ conversar: { maxTurnos: Number(v) } })}
+                rotuloAcessivel="Até quantas respostas"
+                opcoes={opcoesDeTurnos(no.data.conversar.maxTurnos)}
+              />
+            </label>
+          )}
 
           <CampoDeVariavel
             rotulo="Guardar resposta em"
