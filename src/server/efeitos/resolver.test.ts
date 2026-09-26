@@ -245,8 +245,9 @@ describe('resolvendo o nó de API', () => {
 
     const r = await executarComEfeitos(tolerante, sessaoNova(), { tipo: 'inicio' }, semIa)
 
-    // A conversa seguiu com a variável vazia, em vez de morrer na falha.
-    expect(textosDe(r)).toContain('está ')
+    // A conversa seguiu com a variável vazia, em vez de morrer na falha. Sem
+    // o espaço que sobrava: variável vazia leva o espaço junto (e63c9e2).
+    expect(textosDe(r)).toContain('está')
 
     // Ela termina em `humano` porque o FLUXO acaba num handoff, não porque a
     // integração caiu. É a diferença que este teste existe para provar.
@@ -442,7 +443,7 @@ describe('falha com seguir não deixa dado velho passando por fresco', () => {
     })
 
     const textos = r.acoes.flatMap((a) => (a.tipo === 'enviar_texto' ? [a.texto] : []))
-    expect(textos).toContain('está ')
+    expect(textos).toContain('está')
     expect(textos).not.toContain('está a caminho')
   })
 })
@@ -763,14 +764,15 @@ describe('as datas prontas do fluxo', () => {
 
   it('sem datas informadas, o fluxo continua rodando', async () => {
     // Fluxo antigo, chamador antigo: variável desconhecida vira vazio, como
-    // sempre foi. Nada pode estourar por causa de um parâmetro novo.
+    // sempre foi, e sem deixar espaço dobrado (e63c9e2). Nada pode estourar
+    // por causa de um parâmetro novo.
     const r = await executarComEfeitos(fluxoQueUsaData, sessaoNova(), { tipo: 'inicio' }, {
       modelo: null,
       contextoNegocio: '',
     })
 
     const texto = r.acoes.find((a) => a.tipo === 'enviar_texto')
-    expect(texto?.tipo === 'enviar_texto' && texto.texto).toBe('Tenho horário de  até .')
+    expect(texto?.tipo === 'enviar_texto' && texto.texto).toBe('Tenho horário de até.')
   })
 })
 
