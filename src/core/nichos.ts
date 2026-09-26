@@ -64,6 +64,20 @@ export type PacoteDoNicho = {
    * tabela `materiais`), que o bot manda quando pedem "o cardápio".
    */
   materiais: boolean
+  /**
+   * Como a galeria chama o grupo de modelos do ramo: "Para restaurantes". É
+   * o título do bloco em destaque, na galeria de fluxos e na de funis.
+   */
+  tituloDosModelos: string
+  /**
+   * Os modelos de fluxo do ramo, pelo id de `src/exemplos/modelos.ts`, na
+   * ordem em que aparecem. São os que a galeria mostra primeiro e os que o
+   * preparo da conta vai instalar (PLANO-NICHOS 4.4). Os outros continuam a
+   * um clique, em "Outros modelos": nada some da galeria.
+   */
+  modelosDeFluxo: string[]
+  /** O modelo de funil do ramo, pelo id de `core/quadros-modelos.ts`. */
+  modeloDeFunil: string
 }
 
 export const VISOES_DO_CATALOGO = ['grade', 'lista'] as const
@@ -81,6 +95,9 @@ export const PACOTES: Record<Nicho, PacoteDoNicho> = {
     itensOcultos: [],
     visaoDoCatalogo: 'grade',
     materiais: true,
+    tituloDosModelos: 'Para restaurantes',
+    modelosDeFluxo: ['cardapio-botoes', 'atendente-ia-restaurante'],
+    modeloDeFunil: 'pedidos',
   },
   ecommerce: {
     nome: 'Loja virtual',
@@ -92,6 +109,9 @@ export const PACOTES: Record<Nicho, PacoteDoNicho> = {
     itensOcultos: [],
     visaoDoCatalogo: 'lista',
     materiais: false,
+    tituloDosModelos: 'Para lojas virtuais',
+    modelosDeFluxo: ['carrinho-abandonado', 'status-do-pedido'],
+    modeloDeFunil: 'comercial',
   },
   comercio: {
     nome: 'Loja física, comércio',
@@ -104,6 +124,11 @@ export const PACOTES: Record<Nicho, PacoteDoNicho> = {
     itensOcultos: ['conectar-loja'],
     visaoDoCatalogo: 'lista',
     materiais: false,
+    tituloDosModelos: 'Para o seu comércio',
+    modelosDeFluxo: ['voces-tem', 'horario-e-local'],
+    // Quem vende no balcão atende mais do que negocia: a venda acontece na
+    // loja, e o que o WhatsApp organiza é a pergunta de quem vai passar lá.
+    modeloDeFunil: 'atendimento',
   },
 }
 
@@ -120,4 +145,39 @@ export function pacoteDo(nicho: Nicho | null | undefined): PacoteDoNicho | null 
 export function visaoDoCatalogo(pacote: PacoteDoNicho | null, pedida?: string | null): VisaoDoCatalogo {
   if (pedida && (VISOES_DO_CATALOGO as readonly string[]).includes(pedida)) return pedida as VisaoDoCatalogo
   return pacote?.visaoDoCatalogo ?? 'lista'
+}
+
+/**
+ * O destaque do ramo numa galeria de modelos: o título do bloco e os ids, na
+ * ordem do pacote. `null` para a conta sem ramo, que vê a galeria de sempre.
+ *
+ * Duas galerias usam isto, a de fluxos e a de funis, e a tela não decide nada:
+ * ela recebe o destaque pronto e só desenha (PLANO-NICHOS 1.6).
+ */
+export type DestaqueDoRamo = { titulo: string; ids: readonly string[] }
+
+export function destaqueDeFluxos(pacote: PacoteDoNicho | null): DestaqueDoRamo | null {
+  return pacote ? { titulo: pacote.tituloDosModelos, ids: pacote.modelosDeFluxo } : null
+}
+
+export function destaqueDeFunis(pacote: PacoteDoNicho | null): DestaqueDoRamo | null {
+  return pacote ? { titulo: pacote.tituloDosModelos, ids: [pacote.modeloDeFunil] } : null
+}
+
+/**
+ * Separa uma lista de modelos em "do ramo" e "outros".
+ *
+ * Os do ramo saem na ordem do destaque, e não na da lista, porque a ordem do
+ * pacote é a da recomendação; os outros mantêm a ordem de sempre. Id do
+ * destaque que não existe na lista é ignorado: um modelo que saiu do código
+ * não pode virar cartão vazio. Sem destaque, tudo é "outros", que é a galeria
+ * de hoje.
+ */
+export function separarPeloRamo<T extends { id: string }>(
+  modelos: readonly T[],
+  destaque: DestaqueDoRamo | null,
+): { doRamo: T[]; outros: T[] } {
+  if (!destaque) return { doRamo: [], outros: [...modelos] }
+  const doRamo = destaque.ids.flatMap((id) => modelos.filter((modelo) => modelo.id === id))
+  return { doRamo, outros: modelos.filter((modelo) => !destaque.ids.includes(modelo.id)) }
 }
