@@ -11,6 +11,8 @@ import { comoDinheiro } from '@/core/crm'
 import { ESPECIES, NOME_DA_ESPECIE, estaAtivo } from '@/core/produtos'
 import { acaoCriarProduto, acaoDefinirPreco, acaoRenomearProduto } from '@/server/acoes-produtos'
 import { acharCliente } from '@/server/repos/clientes'
+import { nichoDaConta } from '@/server/repos/recursos'
+import { pacoteDo } from '@/core/nichos'
 import { lojaDaConta } from '@/server/repos/lojas'
 import { listarProdutos } from '@/server/repos/produtos'
 import { IlustracaoProdutos } from '@/components/design/ilustracoes'
@@ -74,12 +76,17 @@ const PASSOS_DA_AJUDA: PassoDaAjuda[] = [
  */
 export default async function Pagina({ params }: { params: Promise<{ clienteId: string }> }) {
   const { clienteId } = await params
-  const [cliente, produtos, loja] = await Promise.all([
+  const [cliente, produtos, loja, nicho] = await Promise.all([
     acharCliente(clienteId),
     listarProdutos(clienteId),
     lojaDaConta(clienteId),
+    nichoDaConta(clienteId),
   ])
   if (!cliente) notFound()
+  // As palavras do ramo, as mesmas da barra lateral (`core/nichos.ts`).
+  const pacote = pacoteDo(nicho)
+  const secao = pacote?.secaoComercio ?? 'Comércio'
+  const titulo = pacote?.itensComercio.catalogo ?? 'Produtos'
 
   const ativos = produtos.filter(estaAtivo)
   const arquivados = produtos.filter((p) => !estaAtivo(p))
@@ -89,12 +96,12 @@ export default async function Pagina({ params }: { params: Promise<{ clienteId: 
       <main className="w-full max-w-[1440px] px-4 md:px-[42px] pt-[26px] pb-[42px]">
         <Trilha
           caminho={[
-            { rotulo: 'Comércio' },
-            { rotulo: 'Produtos' },
+            { rotulo: secao },
+            { rotulo: titulo },
           ]}
         />
         <div className="flex items-center gap-2.5">
-          <h1 className="text-[25px] font-bold tracking-[-0.02em]">Produtos</h1>
+          <h1 className="text-[25px] font-bold tracking-[-0.02em]">{titulo}</h1>
           <AjudaDaTela
             titulo="Como funciona Produtos"
             resumo="O catálogo é a lista do que a organização vende. Ele serve a três leitores: o bot, a equipe no Inbox e o funil de vendas."

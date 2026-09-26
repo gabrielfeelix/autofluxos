@@ -2,7 +2,7 @@ import type { ReactNode } from 'react'
 import { acessoCompleto } from '@/server/permissoes'
 import { pode } from '@/core/permissoes'
 import type { Cliente } from '@/server/repos/clientes'
-import { crmVisivel } from '@/server/repos/recursos'
+import { crmVisivel, nichoDaConta } from '@/server/repos/recursos'
 import { atrasoDeRevisao } from '@/server/atraso-de-revisao'
 import { type AbaDoCliente, liberaSecao, rotuloDaSecao } from './secoes-do-cliente'
 import { FunilDesligado, SemAcesso } from './sem-acesso'
@@ -52,8 +52,11 @@ export async function ClienteShell({
    * não a tela (E7). Funil com o CRM desligado é outra resposta (E8): não é
    * falta de acesso, é escolha da conta.
    */
-  const conteudo = !liberaSecao(acesso.regras, ativa) ? (
-    <SemAcesso clienteId={cliente.id} oQue={rotuloDaSecao(ativa)} />
+  const liberada = liberaSecao(acesso.regras, ativa)
+  // O nome da seção Comércio depende do ramo; as outras não pagam a consulta.
+  const nicho = !liberada && ativa === 'loja' ? await nichoDaConta(cliente.id) : null
+  const conteudo = !liberada ? (
+    <SemAcesso clienteId={cliente.id} oQue={rotuloDaSecao(ativa, nicho)} />
   ) : dependeDoCrm && !mostraCrm ? (
     <FunilDesligado
       clienteId={cliente.id}

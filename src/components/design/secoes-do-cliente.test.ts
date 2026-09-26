@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { MODELOS_EXTRA, type Acesso } from '@/core/permissoes'
-import { ITENS, SECOES, destinoNaConta, liberaSecao, secoesVisiveis, telaInicial } from './secoes-do-cliente'
+import { ITENS, SECOES, destinoNaConta, liberaSecao, rotuloDaSecao, secoesVisiveis, telaInicial } from './secoes-do-cliente'
 
 /**
  * A barra lateral com o CRM opcional (T7.1, §4.2).
@@ -109,5 +109,40 @@ describe('telaInicial e destinoNaConta', () => {
     expect(destinoNaConta(operador, 'fluxos')).toBe('/inbox')
     expect(destinoNaConta({ papel: 'owner' }, 'nao-existe')).toBe('')
     expect(destinoNaConta({ papel: 'owner' }, null)).toBe('')
+  })
+})
+
+describe('as palavras do ramo (core/nichos.ts)', () => {
+  const secaoLoja = (nicho: Parameters<typeof secoesVisiveis>[0]) => secoesVisiveis(nicho).find((secao) => secao.chave === 'loja')
+
+  it('sem ramo, nada muda: mesma barra, mesmas palavras', () => {
+    expect(secoesVisiveis({ nicho: null })).toEqual(secoesVisiveis())
+    expect(secaoLoja({ nicho: null })?.rotulo).toBe('Comércio')
+    expect(rotuloDaSecao('loja')).toBe('Comércio')
+  })
+
+  it('restaurante chama de Cardápio e Pratos', () => {
+    const loja = secaoLoja({ nicho: 'restaurante' })
+    expect(loja?.rotulo).toBe('Cardápio')
+    expect(loja?.itens.map((item) => item.rotulo)).toEqual(['Pratos', 'Integrações'])
+    expect(rotuloDaSecao('loja', 'restaurante')).toBe('Cardápio')
+  })
+
+  it('comércio de rua não vê Integrações, que é de loja on-line', () => {
+    expect(secaoLoja({ nicho: 'comercio' })?.itens.map((item) => item.id)).toEqual(['catalogo'])
+  })
+
+  it('o ramo não muda a ordem nem as outras seções', () => {
+    for (const nicho of ['restaurante', 'ecommerce', 'comercio'] as const) {
+      expect(chaves(secoesVisiveis({ nicho }))).toEqual(SECOES.map((secao) => secao.chave))
+      const foraDaLoja = (lista: ReturnType<typeof secoesVisiveis>) => ids(lista.filter((secao) => secao.chave !== 'loja'))
+      expect(foraDaLoja(secoesVisiveis({ nicho }))).toEqual(foraDaLoja(secoesVisiveis()))
+    }
+  })
+
+  it('o ramo não passa por cima do interruptor nem da permissão', () => {
+    expect(secaoLoja({ nicho: 'restaurante', lojaVisivel: false })).toBeUndefined()
+    const atendimento: Acesso = { papel: 'member', usuarioId: 'u1', sobrescritas: { ...MODELOS_EXTRA.operador } }
+    expect(secaoLoja({ nicho: 'restaurante', regras: atendimento })).toBeUndefined()
   })
 })

@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react'
 import { pode, type Acesso, type Capacidade, type Escopo } from '@/core/permissoes'
+import { pacoteDo, type IconeDoComercio, type Nicho } from '@/core/nichos'
 
 /**
  * As seções do cliente, os subitens, os ícones, e mais nada.
@@ -289,10 +290,39 @@ export function destinoNaConta(regras: Acesso, secao?: string | null): string {
 }
 
 /** O nome da tela como o menu mostra, para a tela de sem acesso dizer o mesmo. */
-export function rotuloDaSecao(chave: AbaDoCliente): string {
+export function rotuloDaSecao(chave: AbaDoCliente, nicho?: Nicho | null): string {
   if (chave === 'inbox') return 'Conversas'
-  if (chave === 'loja') return 'Comércio'
+  if (chave === 'loja') return pacoteDo(nicho)?.secaoComercio ?? 'Comércio'
   return ITENS.find((item) => item.aba === chave)?.rotulo ?? 'esta tela'
+}
+
+const ICONE_DO_COMERCIO: Record<IconeDoComercio, ReactNode> = {
+  sacola: <IconeLoja />,
+  talheres: <IconeTalheres />,
+  vitrine: <IconeVitrine />,
+}
+
+/**
+ * A seção Comércio com as palavras do ramo (`core/nichos.ts`).
+ *
+ * Só a seção Comércio muda, e só no nome, no ícone e nos subitens que o ramo
+ * não usa. **A posição não muda**: quem vende e quem dá suporte explica o
+ * sistema do mesmo jeito para todo ramo. Sem ramo, a seção sai intocada.
+ */
+function comPalavrasDoRamo(secao: Secao, nicho: Nicho | null | undefined): Secao {
+  const pacote = pacoteDo(nicho)
+  if (!pacote || secao.chave !== 'loja') return secao
+  return {
+    ...secao,
+    rotulo: pacote.secaoComercio,
+    icone: ICONE_DO_COMERCIO[pacote.iconeComercio],
+    itens: secao.itens
+      .filter((item) => !(pacote.itensOcultos as string[]).includes(item.id))
+      .map((item) => {
+        const rotulo = pacote.itensComercio[item.id as keyof typeof pacote.itensComercio]
+        return rotulo ? { ...item, rotulo } : item
+      }),
+  }
 }
 
 /**
@@ -313,13 +343,18 @@ export function rotuloDaSecao(chave: AbaDoCliente): string {
  *
  * Seção sem nenhum subitem liberado some inteira: um título que abre para o
  * nada é pior que título nenhum.
+ *
+ * `nicho` ausente é a conta sem ramo, e o esqueleto também não pergunta: ele
+ * mostra "Comércio" até a barra de verdade chegar com o nome do ramo.
  */
 export function secoesVisiveis({
   crmVisivel,
   lojaVisivel,
   regras,
-}: { crmVisivel?: boolean; lojaVisivel?: boolean; regras?: Acesso } = {}): Secao[] {
+  nicho,
+}: { crmVisivel?: boolean; lojaVisivel?: boolean; regras?: Acesso; nicho?: Nicho | null } = {}): Secao[] {
   return SECOES.filter((secao) => !(lojaVisivel === false && secao.chave === 'loja'))
+    .map((secao) => comPalavrasDoRamo(secao, nicho))
     .map((secao) => ({
       ...secao,
       itens: secao.itens.filter(
@@ -389,6 +424,26 @@ function IconeConfiguracoes() {
     <svg aria-hidden width="15" height="15" viewBox="0 0 15 15" fill="none" stroke="currentColor" strokeWidth="1.4">
       <circle cx="7.5" cy="7.5" r="2.3" />
       <path d="M7.5 1.2v1.6M7.5 12.2v1.6M1.2 7.5h1.6M12.2 7.5h1.6M3 3l1.2 1.2M10.8 10.8 12 12M12 3l-1.2 1.2M4.2 10.8 3 12" />
+    </svg>
+  )
+}
+
+function IconeTalheres() {
+  return (
+    <svg aria-hidden width="15" height="15" viewBox="0 0 15 15" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round">
+      {/* Garfo e faca: o cardápio do restaurante. */}
+      <path d="M4 1.6v4.2a1.6 1.6 0 0 0 3.2 0V1.6M5.6 1.6v12" />
+      <path d="M11.2 13.6V1.6c-1.4.6-2 2.4-2 4.4v2.4h2" />
+    </svg>
+  )
+}
+
+function IconeVitrine() {
+  return (
+    <svg aria-hidden width="15" height="15" viewBox="0 0 15 15" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinejoin="round">
+      {/* Um toldo sobre a porta: a loja de rua. */}
+      <path d="M1.6 5.4 2.6 1.8h9.8l1 3.6a1.9 1.9 0 0 1-3.8 0 1.9 1.9 0 0 1-3.8 0 1.9 1.9 0 0 1-3.8 0Z" />
+      <path d="M2.6 7.2v6h9.8v-6M6 13.2V9.6h3v3.6" />
     </svg>
   )
 }

@@ -10,7 +10,7 @@ import { NotificacoesDaFila } from '@/components/inbox/notificacoes-da-fila'
 import { NumeroDaBarra } from '@/components/design/numero-da-barra'
 import { LinhaDePresenca } from '@/components/conta/linha-de-presenca'
 import { resumoDasContas, type Cliente, type ResumoDeAtendimento } from '@/server/repos/clientes'
-import { crmVisivel, lojaVisivel } from '@/server/repos/recursos'
+import { crmVisivel, lojaVisivel, nichoDaConta } from '@/server/repos/recursos'
 import { contarConversasDaBarra } from '@/server/repos/leads'
 import { barraRecolhida } from '@/server/preferencias'
 import { presencaDoUsuario } from '@/server/repos/usuarios'
@@ -34,11 +34,12 @@ import { Marca } from './marca'
  */
 export async function BarraDoCliente({ cliente }: { cliente: Cliente }) {
   const acesso = await acessoCompleto(cliente.id)
-  const [contas, presenca, mostraCrm, mostraLoja, recolhida] = await Promise.all([
+  const [contas, presenca, mostraCrm, mostraLoja, nicho, recolhida] = await Promise.all([
     contasDoUsuario(acesso.sessao.usuario.id),
     presencaDoUsuario(acesso.sessao.usuario.id),
     crmVisivel(cliente.id),
     lojaVisivel(cliente.id),
+    nichoDaConta(cliente.id),
     barraRecolhida(),
   ])
   // Só vale a consulta quando existe outra conta para onde ir.
@@ -96,7 +97,7 @@ export async function BarraDoCliente({ cliente }: { cliente: Cliente }) {
           }
           recolhidaInicial={recolhida}
           eu={acesso.sessao.usuario.id}
-          secoes={secoesVisiveis({ crmVisivel: mostraCrm, lojaVisivel: mostraLoja, regras: acesso.regras }).map((secao) => {
+          secoes={secoesVisiveis({ crmVisivel: mostraCrm, lojaVisivel: mostraLoja, regras: acesso.regras, nicho }).map((secao) => {
             // O ponto da seção junta os números dela: fechada, ela avisa que
             // há o que fazer lá dentro sem ocupar a barra com os números.
             const contagens = secao.itens.flatMap((item) => (item.contagem ? [item.contagem] : []))

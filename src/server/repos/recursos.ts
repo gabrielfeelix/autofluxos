@@ -7,6 +7,7 @@ import {
   type Objetivo,
 } from '@/core/objetivo-da-conta'
 import { mostraLoja } from '@/core/plataformas-de-loja'
+import { ehNicho, type Nicho } from '@/core/nichos'
 import { db, ehIdInvalido } from '../db'
 
 /**
@@ -158,4 +159,36 @@ export async function lojaVisivel(clienteId: string): Promise<boolean> {
   const lojas = await db().from('lojas_integradas').select('ativa').eq('client_id', clienteId).eq('ativa', true)
   if (lojas.error) return true
   return mostraLoja({ escolha, lojaConectada: (lojas.data ?? []).length > 0 })
+}
+
+/**
+ * O ramo da conta (`clients.nicho`, `core/nichos.ts`). `null` = sem ramo.
+ *
+ * Lido à parte, como `escolhaDeLoja` e pelo mesmo motivo: se a coluna faltar
+ * (código publicado antes da migration), só esta leitura cai para `null`, que
+ * é a barra de antes do ramo, e nenhuma tela quebra.
+ */
+export async function nichoDaConta(clienteId: string): Promise<Nicho | null> {
+  const { data, error } = await db().from('clients').select('nicho').eq('id', clienteId).maybeSingle()
+  if (error || !data) return null
+  const valor = (data as { nicho: string | null }).nicho
+  return ehNicho(valor) ? valor : null
+}
+
+/**
+ * Troca o ramo da conta. `null` volta para "sem ramo".
+ *
+ * Muda só palavras e sugestões: não apaga nada e não instala nada
+ * (PLANO-NICHOS, 1.4). Quem chama grava a auditoria.
+ */
+export async function definirNicho(
+  clienteId: string,
+  nicho: Nicho | null,
+): Promise<{ ok: true } | { ok: false; motivo: string }> {
+  if (nicho !== null && !ehNicho(nicho)) return { ok: false, motivo: 'esse tipo de negócio não existe' }
+
+  const { error } = await db().from('clients').update({ nicho }).eq('id', clienteId)
+
+  if (error) return { ok: false, motivo: `não deu para gravar o tipo de negócio: ${error.message}` }
+  return { ok: true }
 }
