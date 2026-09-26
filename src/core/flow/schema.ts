@@ -122,6 +122,12 @@ export const LIMITE_PARTES = 10
 export const LIMITE_MENSAGENS_HANDOFF = 3
 
 /**
+ * O máximo de respostas seguidas de um bloco de IA que continua conversando.
+ * Ver `conversar` em `noIaSchema`.
+ */
+export const MAX_TURNOS_DA_IA = 30
+
+/**
  * Um pedaço de mensagem.
  *
  * **O bloco deixou de ser um texto e virou uma pilha**, e essa é a mudança mais
@@ -439,6 +445,25 @@ export const noIaSchema = z.object({
      * sentido.
      */
     conexaoId: z.string().optional(),
+    /**
+     * A IA segura a conversa em vez de responder uma vez só (PLANO-NICHOS 4.6).
+     *
+     * Ausente é o padrão e é o de sempre: responde e segue para a próxima
+     * ligação. Presente, cada mensagem nova do cliente volta a este mesmo bloco
+     * até a IA pedir uma pessoa, o cliente escrever uma palavra de saída
+     * ("menu", "sair", ver `PALAVRAS_DE_SAIDA_DA_IA`) ou as respostas chegarem
+     * a `maxTurnos`, e aí a conversa segue pela ligação normal.
+     *
+     * **Não é uma seta de volta.** O bloco fica parado como a pergunta fica,
+     * contando as respostas na sessão, e por isso a trava de laço do
+     * `validar()` e o `MAX_SALTOS` continuam valendo sem exceção nenhuma.
+     *
+     * O teto existe porque conversa sem fim com modelo é custo sem fim, e 30
+     * respostas seguidas já é uma conversa que devia ter virado atendimento.
+     */
+    conversar: z
+      .object({ maxTurnos: z.number().int().min(1).max(MAX_TURNOS_DA_IA) })
+      .optional(),
   }),
 })
 
@@ -957,6 +982,7 @@ export type Opcao = z.infer<typeof opcaoSchema>
 export type No = z.infer<typeof noSchema>
 export type NoPergunta = z.infer<typeof noPerguntaSchema>
 export type NoNps = z.infer<typeof noNpsSchema>
+export type NoIa = z.infer<typeof noIaSchema>
 export type NoMidia = z.infer<typeof noMidiaSchema>
 export type Cabecalho = z.infer<typeof cabecalhoSchema>
 export type Mapeamento = z.infer<typeof mapeamentoSchema>

@@ -25,6 +25,7 @@ import {
   timeoutDaPergunta,
   type Fluxo,
   type No,
+  type NoIa,
   type NoNps,
   type NoPergunta,
   type Opcao,
@@ -98,6 +99,35 @@ export const PALAVRAS_DE_REINICIO_SOZINHAS = [
   'inicio',
   'reiniciar',
   'recomeca',
+]
+
+/**
+ * As palavras que encerram a conversa livre com a IA (`conversar` no nó `ia`).
+ *
+ * **Só valem como mensagem inteira**, pela mesma razão de
+ * `PALAVRAS_DE_REINICIO_SOZINHAS`: "quero sair às 8" e "volta com troco?" são
+ * conversa com a IA, não pedido de sair dela. Sozinhas, não têm outra leitura.
+ *
+ * Aqui `menu` entra, ao contrário do reinício: parado na IA não há teclado com
+ * uma opção "Menu" para sequestrar, e "menu" sozinho é o jeito mais comum de
+ * dizer "chega de conversa, me mostra as opções".
+ *
+ * Elas levam para a **próxima ligação** do bloco, e não para o início: quem
+ * desenhou a IA contínua decidiu para onde a conversa vai depois dela, e
+ * "voltar" dito ali quer dizer voltar para o que veio antes da conversa livre.
+ */
+export const PALAVRAS_DE_SAIDA_DA_IA = [
+  'menu',
+  'sair',
+  'voltar',
+  'volta',
+  'retornar',
+  'parar',
+  'encerrar',
+  'voltar ao menu',
+  'voltar pro menu',
+  'voltar para o menu',
+  'menu principal',
 ]
 
 const MENSAGEM_TRANSFERENCIA = 'Vou te passar para um atendente. Só um instante!'
@@ -195,6 +225,21 @@ export function executar(
 
   if (entrada.tipo === 'texto' && pediuAtendente(entrada.texto)) {
     return transferir(s, acoes, 'a pessoa pediu para falar com um atendente', contexto)
+  }
+
+  /*
+   * "Menu" no meio da conversa com a IA encerra a conversa livre.
+   *
+   * Vem antes do reinício porque "voltar" e "menu principal" também são
+   * palavras de reinício, e aqui o desenho já disse o que vem depois: a
+   * próxima ligação do bloco, e não o começo do fluxo.
+   */
+  const paradaNaIa = conversandoComIa(porId, s)
+  if (paradaNaIa && entrada.tipo === 'texto' && pediuSaidaDaIa(entrada.texto)) {
+    s.tentativas = 0
+    return avancar(contexto, fluxo, porId, s, acoes, proximo(fluxo, paradaNaIa.id), {
+      no: paradaNaIa,
+    })
   }
 
   /*
@@ -366,13 +411,57 @@ export function executar(
   }
 
   if (atual.type === 'ia') {
-    // A pessoa escreveu enquanto o modelo pensava: ignora, a resposta vem.
-    if (entrada.tipo !== 'ia_respondeu') return { acoes, sessao: s }
+    if (entrada.tipo === 'ia_respondeu') {
+      acoes.push({ tipo: 'enviar_texto', texto: entrada.texto })
+      if (atual.data.salvarEm) s.vars[atual.data.salvarEm] = entrada.texto
 
-    acoes.push({ tipo: 'enviar_texto', texto: entrada.texto })
-    if (atual.data.salvarEm) s.vars[atual.data.salvarEm] = entrada.texto
-    s.tentativas = 0
-    return avancar(contexto, fluxo, porId, s, acoes, proximo(fluxo, atual.id), { no: atual })
+      /*
+       * IA contínua: respondeu e fica, até bater o teto de respostas.
+       *
+       * O contador é `tentativas`, e não um campo novo da sessão. Parado aqui o
+       * campo não tem outro uso (quem não entende é a pergunta, não a IA), ele
+       * já zera toda vez que a conversa anda, e é gravado em coluna própria.
+       * Campo novo precisaria de coluna nova: `sessions` é gravada campo a
+       * campo, e o que não tem coluna some entre uma mensagem e a outra.
+       *
+       * No teto, segue na hora, logo depois da última resposta: esperar a
+       * próxima mensagem para então seguir faria essa mensagem ser engolida
+       * pelo bloco seguinte, que não a pediu.
+       */
+      const { conversar } = atual.data
+      if (conversar && s.tentativas + 1 < conversar.maxTurnos) {
+        s.tentativas += 1
+        s.noAtual = atual.id
+        s.status = 'ativa'
+        return { acoes, sessao: s }
+      }
+
+      s.tentativas = 0
+      return avancar(contexto, fluxo, porId, s, acoes, proximo(fluxo, atual.id), { no: atual })
+    }
+
+    /*
+     * Parada na conversa livre, esperando o cliente (`ativa`, e não
+     * `aguardando_ia`): a mensagem nova volta para o modelo, no mesmo bloco.
+     *
+     * Botão clicado aqui é de um menu antigo, e a IA não tem opções para ele
+     * escolher. É a pessoa saindo da conversa livre, então segue como a
+     * palavra de saída.
+     */
+    if (conversandoComIa(porId, s)) {
+      if (entrada.tipo === 'texto') {
+        acoes.push(chamarIa(atual, s))
+        s.status = 'aguardando_ia'
+        return { acoes, sessao: s }
+      }
+      if (entrada.tipo === 'opcao') {
+        s.tentativas = 0
+        return avancar(contexto, fluxo, porId, s, acoes, proximo(fluxo, atual.id), { no: atual })
+      }
+    }
+
+    // A pessoa escreveu enquanto o modelo pensava: ignora, a resposta vem.
+    return { acoes, sessao: s }
   }
 
   if (atual.type === 'http') {
@@ -962,17 +1051,12 @@ function avancar(
       }
 
       case 'ia': {
-        acoes.push({
-          tipo: 'chamar_ia',
-          instrucao: interpolar(no.data.instrucao, s.vars),
-          // Nomes e id de credencial passam crus: nenhum dos dois é texto que
-          // a pessoa digitou, e interpolar aqui só criaria um lugar para um
-          // `{{...}}` vindo da conversa virar nome de ferramenta.
-          ferramentas: no.data.ferramentas,
-          ...(no.data.conexaoId ? { conexaoId: no.data.conexaoId } : {}),
-        })
+        acoes.push(chamarIa(no, s))
         s.noAtual = no.id
         s.status = 'aguardando_ia'
+        // Entrar na conversa livre começa a contagem de respostas do zero. Só
+        // com `conversar`: sem ele o contador fica como sempre ficou.
+        if (no.data.conversar) s.tentativas = 0
         return { acoes, sessao: s }
       }
 
@@ -1364,6 +1448,38 @@ function ehOpcaoDaParada(porId: Map<string, No>, s: Sessao, texto: string): bool
   if (parada?.type !== 'pergunta') return false
   const t = normalizar(texto)
   return resolverOpcoes(parada, s.vars).some((o) => normalizar(o.rotulo) === t)
+}
+
+/** O pedido ao modelo que o bloco de IA faz, na entrada e em cada volta da conversa livre. */
+function chamarIa(no: NoIa, s: Sessao): Acao {
+  return {
+    tipo: 'chamar_ia',
+    instrucao: interpolar(no.data.instrucao, s.vars),
+    // Nomes e id de credencial passam crus: nenhum dos dois é texto que
+    // a pessoa digitou, e interpolar aqui só criaria um lugar para um
+    // `{{...}}` vindo da conversa virar nome de ferramenta.
+    ferramentas: no.data.ferramentas,
+    ...(no.data.conexaoId ? { conexaoId: no.data.conexaoId } : {}),
+  }
+}
+
+/**
+ * O bloco de IA em que a conversa livre está parada, esperando o cliente.
+ *
+ * `ativa` é o que separa "esperando o cliente" de "esperando o modelo"
+ * (`aguardando_ia`): mensagem que chega enquanto o modelo pensa continua sendo
+ * ignorada, como sempre foi.
+ */
+function conversandoComIa(porId: Map<string, No>, s: Sessao): NoIa | null {
+  if (s.status !== 'ativa' || s.noAtual === null) return null
+  const no = porId.get(s.noAtual)
+  return no?.type === 'ia' && no.data.conversar ? no : null
+}
+
+/** A pessoa quer sair da conversa livre com a IA. Ver `PALAVRAS_DE_SAIDA_DA_IA`. */
+export function pediuSaidaDaIa(texto: string): boolean {
+  const sozinha = normalizar(texto).replace(/[^\p{L}\s]/gu, '').replace(/\s+/g, ' ').trim()
+  return PALAVRAS_DE_SAIDA_DA_IA.includes(sozinha)
 }
 
 function indexar(fluxo: Fluxo): Map<string, No> {

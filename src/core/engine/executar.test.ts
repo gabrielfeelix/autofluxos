@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { fluxoSchema, type Fluxo } from '../flow/schema'
-import { executar, MAX_TENTATIVAS, pediuReinicio } from './executar'
+import { executar, MAX_TENTATIVAS, pediuReinicio, pediuSaidaDaIa } from './executar'
 import { sessaoNova, type Acao, type Entrada, type Sessao } from './types'
 
 const p = { x: 0, y: 0 }
@@ -1913,5 +1913,174 @@ describe('pergunta sem texto no laço da IA', () => {
     ])
     expect(sessao.status).toBe('aguardando_ia')
     expect(sessao.noAtual).toBe('vendedor')
+  })
+})
+
+describe('IA contínua (conversar)', () => {
+  const p = { x: 0, y: 0 }
+  const montar = (conversar?: { maxTurnos: number }) =>
+    fluxoSchema.parse({
+      inicio: 'pizzaria',
+      nodes: [
+        {
+          id: 'pizzaria',
+          type: 'ia',
+          position: p,
+          data: { instrucao: 'Atenda a pizzaria.', salvarEm: 'r', ...(conversar ? { conversar } : {}) },
+        },
+        { id: 'menu', type: 'pergunta', position: p, data: { texto: 'O que deseja?', opcoes: [{ id: 'o1', rotulo: 'Cardápio' }] } },
+        { id: 'fim', type: 'handoff', position: p, data: {} },
+      ],
+      edges: [
+        { id: 'a', source: 'pizzaria', target: 'menu' },
+        { id: 'b', source: 'menu', sourceHandle: 'o1', target: 'fim' },
+      ],
+    })
+
+  const continua = montar({ maxTurnos: 3 })
+
+  it('sem conversar, responde uma vez e segue, como sempre', () => {
+    const { sessao, acoes } = conversar(montar(), [
+      { tipo: 'inicio' },
+      { tipo: 'ia_respondeu', texto: 'Oi! Temos calabresa.' },
+    ])
+    expect(textos(acoes)).toEqual(['Oi! Temos calabresa.'])
+    expect(tipos(acoes)).toContain('enviar_opcoes')
+    expect(sessao.noAtual).toBe('menu')
+    expect(sessao.tentativas).toBe(0)
+  })
+
+  it('sem conversar, mensagem parada no bloco de IA continua ignorada', () => {
+    const { sessao, acoes } = conversar(montar(), [
+      { tipo: 'inicio' },
+      { tipo: 'texto', texto: 'alô?' },
+    ])
+    expect(acoes).toEqual([])
+    expect(sessao.status).toBe('aguardando_ia')
+  })
+
+  it('sem conversar, "menu" parado no bloco de IA não vira saída', () => {
+    const { sessao, acoes } = conversar(montar(), [{ tipo: 'inicio' }, { tipo: 'texto', texto: 'menu' }])
+    expect(acoes).toEqual([])
+    expect(sessao.status).toBe('aguardando_ia')
+  })
+
+  it('responde e fica no mesmo bloco, esperando o cliente', () => {
+    const { sessao, acoes } = conversar(continua, [
+      { tipo: 'inicio' },
+      { tipo: 'ia_respondeu', texto: 'Oi! Temos calabresa.' },
+    ])
+    expect(textos(acoes)).toEqual(['Oi! Temos calabresa.'])
+    expect(sessao.noAtual).toBe('pizzaria')
+    expect(sessao.status).toBe('ativa')
+    expect(sessao.tentativas).toBe(1)
+    expect(sessao.vars['r']).toBe('Oi! Temos calabresa.')
+  })
+
+  it('a mensagem seguinte volta ao modelo, no mesmo bloco', () => {
+    const { sessao, acoes } = conversar(continua, [
+      { tipo: 'inicio' },
+      { tipo: 'ia_respondeu', texto: 'Oi!' },
+      { tipo: 'texto', texto: 'quanto é a calabresa?' },
+    ])
+    expect(acoes).toEqual([{ tipo: 'chamar_ia', instrucao: 'Atenda a pizzaria.', ferramentas: [] }])
+    expect(sessao.status).toBe('aguardando_ia')
+    expect(sessao.noAtual).toBe('pizzaria')
+  })
+
+  it('ignora o que chegar enquanto o modelo pensa, também na conversa livre', () => {
+    const { sessao, acoes } = conversar(continua, [
+      { tipo: 'inicio' },
+      { tipo: 'ia_respondeu', texto: 'Oi!' },
+      { tipo: 'texto', texto: 'quanto é?' },
+      { tipo: 'texto', texto: 'alô?' },
+    ])
+    expect(acoes).toEqual([])
+    expect(sessao.status).toBe('aguardando_ia')
+  })
+
+  it('no teto de respostas, segue para a próxima ligação logo depois da última', () => {
+    const { sessao, acoes } = conversar(continua, [
+      { tipo: 'inicio' },
+      { tipo: 'ia_respondeu', texto: 'um' },
+      { tipo: 'texto', texto: 'a' },
+      { tipo: 'ia_respondeu', texto: 'dois' },
+      { tipo: 'texto', texto: 'b' },
+      { tipo: 'ia_respondeu', texto: 'três' },
+    ])
+    expect(textos(acoes)).toEqual(['três'])
+    expect(tipos(acoes)).toContain('enviar_opcoes')
+    expect(sessao.noAtual).toBe('menu')
+    expect(sessao.tentativas).toBe(0)
+  })
+
+  it('maxTurnos 1 é o mesmo que não conversar', () => {
+    const { sessao } = conversar(montar({ maxTurnos: 1 }), [
+      { tipo: 'inicio' },
+      { tipo: 'ia_respondeu', texto: 'Oi!' },
+    ])
+    expect(sessao.noAtual).toBe('menu')
+  })
+
+  it.each(['menu', 'Sair', 'VOLTAR!', 'Menu principal', 'voltár'])('"%s" sai para a próxima ligação', (dito) => {
+    const { sessao, acoes } = conversar(continua, [
+      { tipo: 'inicio' },
+      { tipo: 'ia_respondeu', texto: 'Oi!' },
+      { tipo: 'texto', texto: dito },
+    ])
+    expect(tipos(acoes)).toEqual(['enviar_opcoes'])
+    expect(sessao.noAtual).toBe('menu')
+    expect(sessao.tentativas).toBe(0)
+  })
+
+  it('palavra de saída dentro de uma frase é conversa, e vai ao modelo', () => {
+    const { sessao } = conversar(continua, [
+      { tipo: 'inicio' },
+      { tipo: 'ia_respondeu', texto: 'Oi!' },
+      { tipo: 'texto', texto: 'quero ver o menu de bebidas' },
+    ])
+    expect(sessao.status).toBe('aguardando_ia')
+    expect(sessao.noAtual).toBe('pizzaria')
+  })
+
+  it('botão de um menu antigo também sai da conversa livre', () => {
+    const { sessao } = conversar(continua, [
+      { tipo: 'inicio' },
+      { tipo: 'ia_respondeu', texto: 'Oi!' },
+      { tipo: 'opcao', opcaoId: 'o1' },
+    ])
+    expect(sessao.noAtual).toBe('menu')
+  })
+
+  it('pedir atendente continua ganhando de tudo', () => {
+    const { sessao } = conversar(continua, [
+      { tipo: 'inicio' },
+      { tipo: 'ia_respondeu', texto: 'Oi!' },
+      { tipo: 'texto', texto: 'quero falar com um atendente' },
+    ])
+    expect(sessao.status).toBe('humano')
+  })
+
+  it('entrar de novo no bloco começa a contagem do zero', () => {
+    const { sessao } = conversar(continua, [
+      { tipo: 'inicio' },
+      { tipo: 'ia_respondeu', texto: 'um' },
+      { tipo: 'texto', texto: 'voltar ao início' },
+    ])
+    expect(sessao.noAtual).toBe('pizzaria')
+    expect(sessao.status).toBe('aguardando_ia')
+    expect(sessao.tentativas).toBe(0)
+  })
+
+  it('o schema recusa teto fora de 1 a 30', () => {
+    expect(() => montar({ maxTurnos: 0 })).toThrow()
+    expect(() => montar({ maxTurnos: 31 })).toThrow()
+    expect(() => montar({ maxTurnos: 30 })).not.toThrow()
+  })
+
+  it('pediuSaidaDaIa só aceita a mensagem inteira', () => {
+    expect(pediuSaidaDaIa(' Menu. ')).toBe(true)
+    expect(pediuSaidaDaIa('quero sair às 8')).toBe(false)
+    expect(pediuSaidaDaIa('volta com troco?')).toBe(false)
   })
 })

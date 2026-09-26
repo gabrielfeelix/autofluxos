@@ -864,3 +864,76 @@ describe('o fluxo desvia pelo horário de atendimento', () => {
     expect(texto(r)).toBe('Já te atendo!')
   })
 })
+
+describe('IA contínua no resolvedor', () => {
+  const continua: Fluxo = {
+    inicio: 'pizzaria',
+    nodes: [
+      {
+        id: 'pizzaria',
+        type: 'ia',
+        position: { x: 0, y: 0 },
+        data: { instrucao: 'Atenda a pizzaria.', ferramentas: [], conversar: { maxTurnos: 5 } },
+      },
+      {
+        id: 'fim',
+        type: 'handoff',
+        position: { x: 0, y: 120 },
+        data: { motivo: 'fim da conversa', mensagem: 'Já te passo para alguém.' },
+      },
+    ],
+    edges: [{ id: 'a1', source: 'pizzaria', target: 'fim' }],
+  }
+
+  it('cada mensagem volta ao modelo, com a pergunta nova e o histórico da conversa', async () => {
+    const modelo = modeloQue((p) => ({ tipo: 'texto', texto: `resposta para ${p.pergunta}` }))
+
+    const primeira = await executarComEfeitos(continua, sessaoNova(), { tipo: 'inicio' }, {
+      modelo,
+      contextoNegocio,
+      historico: [{ de: 'pessoa', texto: 'oi' }],
+    })
+    expect(primeira.sessao.status).toBe('ativa')
+    expect(primeira.sessao.noAtual).toBe('pizzaria')
+
+    const historico = [
+      { de: 'pessoa' as const, texto: 'oi' },
+      { de: 'bot' as const, texto: 'resposta para oi' },
+      { de: 'pessoa' as const, texto: 'tem calabresa?' },
+    ]
+    const segunda = await executarComEfeitos(
+      continua,
+      primeira.sessao,
+      { tipo: 'texto', texto: 'tem calabresa?' },
+      { modelo, contextoNegocio, historico },
+    )
+
+    const textos = segunda.acoes.flatMap((a) => (a.tipo === 'enviar_texto' ? [a.texto] : []))
+    expect(textos).toEqual(['resposta para tem calabresa?'])
+    expect(modelo.pedidos[1]?.pergunta).toBe('tem calabresa?')
+    expect(modelo.pedidos[1]?.historico).toEqual(historico)
+    expect(segunda.sessao.status).toBe('ativa')
+    expect(segunda.sessao.tentativas).toBe(2)
+  })
+
+  it('a IA pedir uma pessoa encerra a conversa livre pelo caminho de sempre', async () => {
+    let vez = 0
+    const modelo = modeloQue(() =>
+      vez++ === 0 ? { tipo: 'texto', texto: 'Oi!' } : { tipo: 'nao_sei', motivo: 'fora do contexto' },
+    )
+
+    const primeira = await executarComEfeitos(continua, sessaoNova(), { tipo: 'inicio' }, {
+      modelo,
+      contextoNegocio,
+    })
+    const segunda = await executarComEfeitos(
+      continua,
+      primeira.sessao,
+      { tipo: 'texto', texto: 'qual a cotação do dólar?' },
+      { modelo, contextoNegocio },
+    )
+
+    expect(segunda.sessao.status).toBe('humano')
+    expect(segunda.acoes.some((a) => a.tipo === 'transferir_humano')).toBe(true)
+  })
+})
