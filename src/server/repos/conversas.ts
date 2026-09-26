@@ -528,7 +528,7 @@ export async function ultimaFalaDaEquipe(contatoId: string): Promise<Date | null
 export async function acharSessao(sessaoId: string): Promise<SessaoComContexto | null> {
   const { data, error } = await db()
     .from('sessions')
-    .select('id, contact_id, channel_id, flow_version_id, no_atual, vars, tentativas, status, ia_pendente')
+    .select('id, contact_id, channel_id, flow_version_id, no_atual, vars, tentativas, status, ia_pendente, nps_pendente')
     .eq('id', sessaoId)
     .maybeSingle()
 
@@ -547,6 +547,7 @@ export async function acharSessao(sessaoId: string): Promise<SessaoComContexto |
       tentativas: data.tentativas,
       status: data.status,
       iaPendente: data.ia_pendente ?? null,
+      npsPendente: data.nps_pendente ?? null,
     }),
   }
 }
@@ -572,7 +573,7 @@ export async function ultimaSessao(
 ): Promise<SessaoSalva | null> {
   const { data, error } = await db()
     .from('sessions')
-    .select('id, flow_version_id, no_atual, vars, tentativas, status, ia_pendente')
+    .select('id, flow_version_id, no_atual, vars, tentativas, status, ia_pendente, nps_pendente')
     .eq('contact_id', contatoId)
     .eq('channel_id', canalId)
     .order('criado_em', { ascending: false })
@@ -591,6 +592,7 @@ export async function ultimaSessao(
       tentativas: data.tentativas,
       status: data.status,
       iaPendente: data.ia_pendente ?? null,
+      npsPendente: data.nps_pendente ?? null,
     }),
   }
 }
@@ -612,6 +614,9 @@ export async function criarSessao(
       // **apagar** a linha antiga. Omitir deixaria o pendente vivo e a próxima
       // mensagem cairia de novo na pergunta.
       ia_pendente: sessao.iaPendente ?? null,
+      // Mesmo motivo, para a nota que espera o "por quê?" (0107): sem apagar,
+      // a próxima pesquisa leria o comentário como resposta da anterior.
+      nps_pendente: sessao.npsPendente ?? null,
       vars: sessao.vars,
       tentativas: sessao.tentativas,
       status: sessao.status,
@@ -699,6 +704,9 @@ export async function guardarSessao(id: string, sessao: Sessao): Promise<void> {
       // **apagar** a linha antiga. Omitir deixaria o pendente vivo e a próxima
       // mensagem cairia de novo na pergunta.
       ia_pendente: sessao.iaPendente ?? null,
+      // Mesmo motivo, para a nota que espera o "por quê?" (0107): sem apagar,
+      // a próxima pesquisa leria o comentário como resposta da anterior.
+      nps_pendente: sessao.npsPendente ?? null,
       vars: sessao.vars,
       tentativas: sessao.tentativas,
       status: sessao.status,

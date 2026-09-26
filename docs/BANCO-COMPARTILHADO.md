@@ -287,6 +287,25 @@ extração explícito para os objetos de `public`.
   `produtos?select=categoria,ordem` **200** com a chave secreta e **401** com a
   publicável; `app_verandi.conta` **200**. O código publicado antes (etapa 1)
   já lia `clients.nicho` com recuo para `null`.
+- **a `0107` foi aplicada em 26/set/2026** (defeito do NPS), com autorização
+  explícita do dono, pela Management API, numa transação. Aditiva: uma coluna,
+  `sessions.nps_pendente` (`jsonb` anulável, sem default). É a nota da pesquisa
+  guardada enquanto o bloco `nps` espera o "por quê?": o motor já guardava
+  `npsPendente` na sessão, mas `sessions` não tinha coluna e o repositório não
+  lia nem gravava, então o comentário voltaria ao bloco como nota nova. O
+  mesmo buraco que a `0038` fechou para `ia_pendente`. Na produção o defeito
+  estava latente: **0** avaliações gravadas.
+
+  Verandi conferida antes e depois: **35** migrations (última `0064`), **40**
+  tabelas em `app_verandi`, **16** policies de `storage.objects`, iguais.
+  Ensaio em transação antes, pela conexão direta e sem o `notify`: coluna
+  `jsonb` anulável dentro, `anon` sem acesso, ausente depois do `rollback`.
+  Releitura depois de aplicar: tipo, nulidade e comentário certos; `sessions`
+  de 11 para 12 colunas, **20** sessões intactas, **0** preenchidas; `public`
+  com **75** tabelas, igual. Data API depois do `notify`:
+  `sessions?select=nps_pendente` **200** com a chave secreta e **401** com a
+  publicável; `app_verandi.conta` **200**. A migration entrou antes do push do
+  código que lê a coluna.
 - **a `0104` foi aplicada em 25/set/2026** (franquia de mensagens de serviço da
   Meta, que passa a ser cobrada em 1/out/2026), com autorização explícita do
   dono, pela Management API. Aditiva: só a tabela `public.consumo_da_meta`
