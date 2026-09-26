@@ -12,15 +12,26 @@
  * tela faz a próxima rodada criar outro: rode `--gravar` só depois de conferir
  * o dry-run.
  *
+ * O modo com botões é uma compra de verdade: a pessoa abre a lista do
+ * cardápio (por parte, porque a lista do WhatsApp tem 10 linhas no total),
+ * escolhe um item, recebe a foto dele com descrição e preço, escolhe a
+ * variação daquele item (tamanho, ponto, acompanhamento, numeração) e a
+ * quantidade, e o item entra no carrinho, com o total somado pelo Guardar com
+ * conta. Fechar o pedido pergunta entrega, endereço e pagamento, mostra o
+ * resumo com o total e, confirmado, o aviso de pronto chega sozinho.
+ *
+ * A lista de itens é escrita a partir de `catalogo.json`, o mesmo arquivo que
+ * montou o catálogo da conta: os produtos são conhecidos.
+ *
  * A loja online copia os fluxos da PCYES (lidos da versão publicada deles, sem
  * blocos de funil e etiqueta, que apontam para quadros da PCYES) e o "Sobre a
  * empresa" da PCYES, lido da conta dela na hora: o texto não entra no repo.
  */
+import fs from 'node:fs'
 import path from 'node:path'
 
 process.loadEnvFile(path.resolve(import.meta.dirname, '../../.env'))
 
-const { db } = await import('@/server/db')
 const { fluxoSchema } = await import('@/core/flow/schema')
 const { validar } = await import('@/core/flow/validar')
 const { validarPublicacao } = await import('@/core/validar-publicacao')
@@ -34,6 +45,17 @@ const PCYES = '64dbc3a9-1f77-4892-9770-e3e4be9e14cd'
 const ACERVO = `https://${new URL(process.env.SUPABASE_URL!).host}/storage/v1/object/public/autofluxos-acervo/${DEMO}`
 const MINUTOS_ATE_O_AVISO = 2
 
+type Item = { slug: string; nome: string; categoria: string; preco: number; descricao: string }
+const CATALOGO: Record<string, { itens: Item[] }> = JSON.parse(
+  fs.readFileSync(path.join(import.meta.dirname, 'catalogo.json'), 'utf8'),
+)
+const TODOS = new Map(Object.values(CATALOGO).flatMap((b) => b.itens).map((i) => [i.slug, i]))
+const item = (slug: string): Item => {
+  const i = TODOS.get(slug)
+  if (!i) throw new Error(`item ${slug} não está no catalogo.json`)
+  return i
+}
+
 type No = { id: string; type: string; position: { x: number; y: number }; data: Record<string, unknown> }
 type Aresta = { id: string; source: string; target: string; sourceHandle?: string }
 
@@ -44,7 +66,7 @@ class Grafo {
   constructor(public inicio: string) {}
   no(id: string, type: string, data: Record<string, unknown>): string {
     const i = this.nodes.length
-    this.nodes.push({ id, type, position: { x: (i % 6) * 340, y: Math.floor(i / 6) * 220 }, data })
+    this.nodes.push({ id, type, position: { x: (i % 8) * 340, y: Math.floor(i / 8) * 220 }, data })
     return id
   }
   liga(source: string, target: string, sourceHandle?: string): void {
@@ -57,11 +79,50 @@ class Grafo {
 
 const idDe = (rotulo: string) =>
   rotulo.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')
-const opcoes = (rotulos: string[]) => rotulos.map((r) => ({ id: idDe(r), rotulo: r }))
+type Op = { rotulo: string; valor?: string; descricao?: string; id?: string }
+const opcoes = (lista: (string | Op)[]) =>
+  lista.map((o) => {
+    const x = typeof o === 'string' ? { rotulo: o } : o
+    return { id: x.id ?? idDe(x.rotulo), rotulo: x.rotulo, ...(x.valor !== undefined ? { valor: x.valor } : {}), ...(x.descricao ? { descricao: x.descricao } : {}) }
+  })
 const texto = (t: string) => ({ partes: [{ tipo: 'atraso', segundos: 1 }, { tipo: 'texto', texto: t }] })
+const reais = (v: number) => v.toFixed(2).replace('.', ',')
+const precoDito = (v: number) => (v === 0 ? 'Grátis' : `R$ ${reais(v)}`)
+/** O nome curto da linha da lista: sem "Pizza ", e até 20 caracteres. */
+const CURTOS: Record<string, string> = {
+  'chocolate-morango': 'Chocolate e morango',
+  'veggie': 'Veggie grão-de-bico',
+  'refri-lata': 'Refrigerante lata',
+  'shake-chocolate': 'Shake de chocolate',
+  'shake-morango': 'Shake de morango',
+  'frango-grelhado': 'Frango grelhado',
+  'salada-caesar': 'Salada Caesar',
+  'burger-veggie': 'Veggie grão-de-bico',
+  'camiseta': 'Camiseta básica',
+  'calca-jeans': 'Calça jeans reta',
+  'vestido': 'Vestido floral midi',
+  'moletom': 'Moletom com capuz',
+  'tenis': 'Tênis branco',
+  'sandalia': 'Sandália rasteira',
+  'bone': 'Boné aba curva',
+  'bolsa': 'Bolsa transversal',
+  'pilates-2x': 'Pilates 2x/semana',
+  'pilates-3x': 'Pilates 3x/semana',
+  'lombo': 'Lombo canadense',
+  'frango-catupiry': 'Frango c/ catupiry',
+  'agua': 'Água mineral',
+  'suco': 'Suco natural',
+  'parmegiana': 'Parmegiana de carne',
+}
+const curto = (i: Item) => CURTOS[i.slug] ?? i.nome.replace(/^Pizza /, '')
+const linhaDoItem = (i: Item): Op => {
+  const d = `${precoDito(i.preco)} · ${i.descricao}`
+  return { id: i.slug, rotulo: curto(i), descricao: d.length > 72 ? `${d.slice(0, 70).trimEnd()}…` : d }
+}
 
 /* ------------------------------------------------------------- os ramos */
-type Pergunta = { id: string; texto: string; salvarEm: string; opcoes?: string[] }
+type Variacao = { texto: string; opcoes: Op[] }
+type Grupo = { rotulo: string; descricao: string; slugs: string[] }
 type Ramo = {
   chave: string
   rotulo: string
@@ -74,39 +135,40 @@ type Ramo = {
   infoRotulo: string
   info: string
   sobre: string
-  pedido: Pergunta[]
-  entrega: boolean
-  resumo: string
+  /** Uma lista só (até 9 itens) ou uma lista de partes, e dentro de cada parte os itens. */
+  grupos: Grupo[] | null
+  itens: string[]
+  /** A variação de cada item, pelo tipo; tipo ausente = sem variação. */
+  tipoDoItem: Record<string, string>
+  variacoes: Record<string, Variacao>
+  quantidade: boolean
+  /** Agendamento (salão, aulas): no fechamento pergunta dia e período, e não entrega. */
+  agenda: boolean
+  taxa: number
+  observacao: boolean
   anotado: string
   acompanhar: string
   acompanharResposta: string
   pronto: string
-  verFoto: string
-  perguntaFoto: string
   iaPerguntaOQueVende: boolean
   iaTarefa: string[]
   cardapioPelaIa: boolean
 }
 
-const PAGAMENTO: Pergunta = { id: 'p-pagamento', texto: 'Como você vai pagar?', salvarEm: 'pagamento', opcoes: ['Pix', 'Cartão na entrega', 'Dinheiro'] }
-const BEBIDA: Pergunta = {
-  id: 'p-bebida',
-  texto: 'Vai querer bebida?',
-  salvarEm: 'bebida',
-  opcoes: ['Refrigerante 2 L', 'Refrigerante lata', 'Suco natural', 'Água mineral', 'Sem bebida'],
-}
-const OBS: Pergunta = { id: 'p-obs', texto: 'Alguma observação? (tirar cebola, sem gelo...) Se não tiver, escreva *não*.', salvarEm: 'observacao' }
-
 const AVISO_DEMO =
   'Esta é uma casa de demonstração da 4YU, criada para mostrar o atendimento automático. Os pedidos e agendamentos daqui não são reais e nada é entregue ou cobrado; se perguntarem, diga isso com leveza e continue o atendimento.'
 
 const REGRAS_COMUNS = [
-  '- Nunca escreva link nem endereço de arquivo no texto: fotos, cards e cardápio chegam sozinhos logo depois da sua frase.',
-  '- Pediram foto ou perguntaram se tem um item: chame loja_buscar e, na mesma resposta, loja_mostrar com o item. Nunca diga que mandou foto sem ter chamado loja_mostrar.',
+  '- Nunca escreva link nem endereço de arquivo no texto: fotos e cardápio chegam sozinhos logo depois da sua frase.',
+  '- Pediram para ver "as pizzas", "os lanches", "as roupas" ou fotos de uma parte inteira: não mande várias fotos. Liste os itens daquela parte com o preço (um por linha) e pergunte qual a pessoa quer ver.',
+  '- Foto só do item que a pessoa escolheu ou citou pelo nome, um de cada vez: chame loja_buscar e, na mesma resposta, loja_mostrar com aquele item. Nunca diga que mandou foto sem ter chamado loja_mostrar.',
   '- Mudou de ideia no meio: ajuste sem reclamar e mande o resumo de novo.',
   '- Reclamação: peça desculpas em uma frase, diga que vai verificar e ofereça passar para uma pessoa.',
   '- Termine cada resposta com uma pergunta curta que leve o atendimento adiante, menos depois de concluir.',
 ]
+
+const BEBIDAS = ['refri-2l', 'refri-lata', 'suco', 'agua']
+const SOBREMESAS = ['petit-gateau', 'pudim', 'brownie']
 
 const RAMOS: Ramo[] = [
   {
@@ -124,36 +186,48 @@ const RAMOS: Ramo[] = [
       'Pizzaria Exemplo. ' + AVISO_DEMO,
       'Horário: terça a domingo, das 18h às 23h30.',
       'Entrega em até 45 minutos, taxa de R$ 6,00 para qualquer bairro. Retirada no balcão sem taxa, pronta em 25 minutos.',
-      'Os preços do cardápio são da pizza grande (8 fatias). A média (6 fatias) custa R$ 8,00 a menos. Meio a meio cobra o sabor mais caro.',
+      'Tamanhos: os preços do cardápio são da pizza grande (8 fatias). A média (6 fatias) custa R$ 8,00 a menos e a broto (4 fatias), R$ 18,00 a menos. Meio a meio cobra o sabor mais caro.',
       'Borda recheada de catupiry ou cheddar: R$ 8,00 a mais.',
       'Pagamento: Pix, cartão de crédito ou débito na entrega, ou dinheiro (levamos troco).',
       'Endereço: Avenida das Flores, 100, Centro (fictício).',
       'Não há cupom nem promoção ativa.',
     ].join('\n'),
-    pedido: [
-      { id: 'p-tamanho', texto: 'Vamos lá! 🍕 Qual o tamanho?', salvarEm: 'tamanho', opcoes: ['Média (6 fatias)', 'Grande (8 fatias)'] },
-      { id: 'p-sabor', texto: 'Qual sabor? Pode ser meio a meio, é só escrever.\nEx.: _meia calabresa, meia mussarela_', salvarEm: 'sabor' },
-      { id: 'p-borda', texto: 'Borda recheada?', salvarEm: 'borda', opcoes: ['Sem borda', 'Catupiry (+R$ 8)', 'Cheddar (+R$ 8)'] },
-      BEBIDA,
-      OBS,
+    grupos: [
+      { rotulo: 'Pizzas tradicionais', descricao: '6 sabores, a partir de R$ 49,90', slugs: ['mussarela', 'calabresa', 'margherita', 'napolitana', 'portuguesa', 'frango-catupiry'] },
+      { rotulo: 'Pizzas especiais', descricao: '6 sabores, a partir de R$ 56,90', slugs: ['quatro-queijos', 'pepperoni', 'bacon-milho', 'palmito', 'lombo', 'vegetariana'] },
+      { rotulo: 'Pizzas doces', descricao: '4 sabores, a partir de R$ 49,90', slugs: ['chocolate-morango', 'romeu-julieta', 'banana-canela', 'prestigio'] },
+      { rotulo: 'Bebidas', descricao: 'Refrigerante, suco e água', slugs: BEBIDAS },
+      { rotulo: 'Sobremesas', descricao: 'Petit gâteau, pudim e brownie', slugs: SOBREMESAS },
     ],
-    entrega: true,
-    resumo: '*Confere seu pedido:*\n\n🍕 Pizza {{tamanho}}: {{sabor}}\nBorda: {{borda}}\nBebida: {{bebida}}\nObservação: {{observacao}}\n\n*Entrega:* {{endereco}}\n*Pagamento:* {{pagamento}}',
+    itens: [],
+    tipoDoItem: {},
+    variacoes: {
+      pizza: {
+        texto: 'Qual o tamanho da *{{item}}*?',
+        opcoes: [
+          { rotulo: 'Broto (4 fatias)', valor: '-18', descricao: 'R$ 18,00 a menos que a grande' },
+          { rotulo: 'Média (6 fatias)', valor: '-8', descricao: 'R$ 8,00 a menos que a grande' },
+          { rotulo: 'Grande (8 fatias)', valor: '0', descricao: 'O preço do cardápio' },
+        ],
+      },
+    },
+    quantidade: true,
+    agenda: false,
+    taxa: 6,
+    observacao: true,
     anotado: '✅ Pedido confirmado! Já foi para o forno. 🔥\nTempo estimado: 40 minutos.',
     acompanhar: 'Acompanhar pedido',
     acompanharResposta: 'Seu pedido está no forno 🔥 Te aviso aqui assim que sair.',
-    pronto: '🛵 Oba, {{nome}}! Sua pizza saiu para entrega e chega em uns 15 minutos. Bom apetite!',
-    verFoto: 'Foto de um sabor',
-    perguntaFoto: 'Qual sabor você quer ver? É só escrever. Ex.: _calabresa_',
+    pronto: '🛵 Oba, {{nome}}! Seu pedido saiu para entrega e chega em uns 15 minutos. Bom apetite!',
     iaPerguntaOQueVende: false,
     iaTarefa: [
       '- Pediram o cardápio ou o menu: mande com enviar_cardapio (é o cardápio modelo da demonstração).',
-      '- Perguntaram de um sabor, de uma parte do cardápio ou pediram foto: busque com loja_buscar e mostre com loja_mostrar (até 3).',
       '- Na dúvida, sugira a mais pedida (Calabresa) e uma diferente (Frango com Catupiry).',
       '- "Meia calabresa meia mussarela" é uma pizza só, com dois sabores; cobra o sabor mais caro.',
+      '- Pergunte o tamanho (broto, média ou grande) e a quantidade de cada pizza.',
       '- Quando a pizza estiver escolhida, ofereça bebida ou sobremesa uma vez.',
-      '- Para fechar, confirme o que faltar: sabor e tamanho, entrega (com endereço) ou retirada, e a forma de pagamento (se dinheiro, troco para quanto).',
-      '- Com tudo certo, mande o resumo com o total (preços do cardápio, borda, bebida e taxa de entrega) e pergunte se pode mandar para a cozinha.',
+      '- Para fechar, confirme o que faltar: entrega (com endereço) ou retirada, e a forma de pagamento (se dinheiro, troco para quanto).',
+      '- Com tudo certo, mande o resumo com cada item, quantidade, preço e o total (preços do cardápio, tamanho, borda, bebida e taxa de entrega) e pergunte se pode mandar para a cozinha.',
       '- Quando a pessoa confirmar o resumo, chame concluir_conversa com o resumo completo e responda só uma frase curta dizendo que o pedido foi para o forno e o tempo estimado.',
     ],
     cardapioPelaIa: true,
@@ -178,28 +252,34 @@ const RAMOS: Ramo[] = [
       'Endereço: Rua dos Pinheiros, 45, Centro (fictício).',
       'Não há cupom nem promoção ativa.',
     ].join('\n'),
-    pedido: [
-      { id: 'p-lanche', texto: 'Bora! 🍔 Qual hambúrguer?', salvarEm: 'lanche', opcoes: ['Hambúrguer Clássico', 'Cheddar Bacon', 'Duplo Smash', 'Frango Crocante', 'Veggie grão-de-bico'] },
-      { id: 'p-ponto', texto: 'Ponto da carne?', salvarEm: 'ponto', opcoes: ['Ao ponto', 'Bem passado', 'Não se aplica'] },
-      { id: 'p-porcao', texto: 'Vai uma porção junto?', salvarEm: 'porcao', opcoes: ['Batata frita', 'Onion rings', 'Sem porção'] },
-      BEBIDA,
-      OBS,
+    grupos: [
+      { rotulo: 'Hambúrgueres', descricao: '5 lanches, a partir de R$ 29,90', slugs: ['burger-classico', 'burger-cheddar-bacon', 'burger-duplo', 'burger-frango', 'burger-veggie'] },
+      { rotulo: 'Porções', descricao: 'Batata, onion rings e nuggets', slugs: ['batata', 'onion-rings', 'nuggets'] },
+      { rotulo: 'Milk-shakes', descricao: 'Chocolate e morango, 500 ml', slugs: ['shake-chocolate', 'shake-morango'] },
+      { rotulo: 'Bebidas', descricao: 'Refrigerante, suco e água', slugs: BEBIDAS },
     ],
-    entrega: true,
-    resumo: '*Confere seu pedido:*\n\n🍔 {{lanche}} ({{ponto}})\nPorção: {{porcao}}\nBebida: {{bebida}}\nObservação: {{observacao}}\n\n*Entrega:* {{endereco}}\n*Pagamento:* {{pagamento}}',
+    itens: [],
+    tipoDoItem: { 'burger-classico': 'carne', 'burger-cheddar-bacon': 'carne', 'burger-duplo': 'carne' },
+    variacoes: {
+      carne: {
+        texto: 'Ponto da carne do *{{item}}*?',
+        opcoes: [{ rotulo: 'Ao ponto', valor: '0' }, { rotulo: 'Bem passado', valor: '0' }, { rotulo: 'Mal passado', valor: '0' }],
+      },
+    },
+    quantidade: true,
+    agenda: false,
+    taxa: 5,
+    observacao: true,
     anotado: '✅ Pedido confirmado! Já está na chapa. 🔥\nTempo estimado: 35 minutos.',
     acompanhar: 'Acompanhar pedido',
     acompanharResposta: 'Seu lanche está na chapa 🔥 Te aviso aqui assim que sair.',
     pronto: '🛵 {{nome}}, seu pedido saiu para entrega! Chega em uns 15 minutos.',
-    verFoto: 'Foto de um lanche',
-    perguntaFoto: 'Qual lanche você quer ver? É só escrever. Ex.: _cheddar bacon_',
     iaPerguntaOQueVende: false,
     iaTarefa: [
-      '- Pediram o cardápio: diga as partes (hambúrgueres, porções, milk-shakes e bebidas) e mostre os destaques com loja_mostrar.',
-      '- Perguntaram de um lanche ou pediram foto: busque com loja_buscar e mostre com loja_mostrar (até 3).',
-      '- Pergunte o ponto da carne quando o lanche tiver carne. Ofereça porção ou milk-shake uma vez.',
-      '- Para fechar, confirme o que faltar: lanches, entrega (com endereço) ou retirada, e a forma de pagamento.',
-      '- Com tudo certo, mande o resumo com o total (preços do cardápio, adicionais e taxa) e pergunte se pode mandar para a cozinha.',
+      '- Pediram o cardápio: diga as partes (hambúrgueres, porções, milk-shakes e bebidas) com os itens e preços de cada uma, e pergunte o que vai ser.',
+      '- Pergunte o ponto da carne quando o lanche tiver carne, e a quantidade. Ofereça porção ou milk-shake uma vez.',
+      '- Para fechar, confirme o que faltar: entrega (com endereço) ou retirada, e a forma de pagamento.',
+      '- Com tudo certo, mande o resumo com cada item, quantidade, preço e o total (com adicionais e taxa) e pergunte se pode mandar para a cozinha.',
       '- Quando a pessoa confirmar o resumo, chame concluir_conversa com o resumo completo e responda só uma frase curta com o tempo estimado.',
     ],
     cardapioPelaIa: false,
@@ -224,26 +304,34 @@ const RAMOS: Ramo[] = [
       'Endereço: Rua das Palmeiras, 300, Centro (fictício).',
       'Não há cupom nem promoção ativa.',
     ].join('\n'),
-    pedido: [
-      { id: 'p-prato', texto: 'Qual prato vai ser hoje? 🍽️', salvarEm: 'prato', opcoes: ['Frango grelhado', 'Bife acebolado', 'Parmegiana de carne', 'Feijoada (sábado)', 'Salmão grelhado', 'Salada Caesar'] },
-      { id: 'p-acomp', texto: 'Acompanhamento?', salvarEm: 'acompanhamento', opcoes: ['Arroz e feijão', 'Purê de batata', 'Só salada'] },
-      BEBIDA,
-      OBS,
+    grupos: [
+      { rotulo: 'Pratos executivos', descricao: '5 pratos, a partir de R$ 32,90', slugs: ['frango-grelhado', 'bife-acebolado', 'parmegiana', 'peixe', 'feijoada'] },
+      { rotulo: 'Saladas', descricao: 'Caesar e salada da casa', slugs: ['salada-caesar', 'salada-casa'] },
+      { rotulo: 'Bebidas', descricao: 'Refrigerante, suco e água', slugs: BEBIDAS },
+      { rotulo: 'Sobremesas', descricao: 'Petit gâteau, pudim e brownie', slugs: SOBREMESAS },
     ],
-    entrega: true,
-    resumo: '*Confere seu pedido:*\n\n🍽️ {{prato}} com {{acompanhamento}}\nBebida: {{bebida}}\nObservação: {{observacao}}\n\n*Entrega:* {{endereco}}\n*Pagamento:* {{pagamento}}',
+    itens: [],
+    tipoDoItem: { 'frango-grelhado': 'prato', 'bife-acebolado': 'prato', parmegiana: 'prato', peixe: 'prato' },
+    variacoes: {
+      prato: {
+        texto: 'Acompanhamento do *{{item}}*?',
+        opcoes: [{ rotulo: 'Arroz e feijão', valor: '0' }, { rotulo: 'Purê de batata', valor: '0' }, { rotulo: 'Só salada', valor: '0' }],
+      },
+    },
+    quantidade: true,
+    agenda: false,
+    taxa: 4,
+    observacao: true,
     anotado: '✅ Pedido confirmado! Já estamos montando seu prato.\nTempo estimado: 35 minutos.',
     acompanhar: 'Acompanhar pedido',
     acompanharResposta: 'Seu prato está sendo montado 👩‍🍳 Te aviso aqui assim que sair.',
     pronto: '🛵 {{nome}}, seu almoço saiu para entrega! Chega em uns 15 minutos.',
-    verFoto: 'Foto de um prato',
-    perguntaFoto: 'Qual prato você quer ver? É só escrever. Ex.: _parmegiana_',
     iaPerguntaOQueVende: false,
     iaTarefa: [
-      '- Pediram o cardápio: diga as partes (pratos executivos, saladas, bebidas e sobremesas) e mostre os destaques com loja_mostrar.',
-      '- Perguntaram de um prato ou pediram foto: busque com loja_buscar e mostre com loja_mostrar (até 3).',
-      '- Para fechar, confirme o que faltar: prato e acompanhamento, entrega (com endereço) ou retirada, e a forma de pagamento.',
-      '- Com tudo certo, mande o resumo com o total (preços do cardápio e taxa) e pergunte se pode mandar para a cozinha.',
+      '- Pediram o cardápio: diga as partes (pratos executivos, saladas, bebidas e sobremesas) com os itens e preços, e pergunte o que vai ser.',
+      '- Pergunte o acompanhamento dos pratos executivos e a quantidade.',
+      '- Para fechar, confirme o que faltar: entrega (com endereço) ou retirada, e a forma de pagamento.',
+      '- Com tudo certo, mande o resumo com cada item, quantidade, preço e o total (com taxa) e pergunte se pode mandar para a cozinha.',
       '- Quando a pessoa confirmar o resumo, chame concluir_conversa com o resumo completo e responda só uma frase curta com o tempo estimado.',
     ],
     cardapioPelaIa: false,
@@ -256,7 +344,7 @@ const RAMOS: Ramo[] = [
     categorias: ['Roupas', 'Calçados', 'Acessórios'],
     arquivo: 'Catálogo Moda Exemplo',
     verCatalogo: 'Ver catálogo',
-    fazerPedido: 'Comprar',
+    fazerPedido: 'Fazer pedido',
     infoRotulo: 'Horário e endereço',
     info: '*Horário*\nSegunda a sexta, das 9h às 19h. Sábado, das 9h às 14h.\n\n*Endereço*\nRua do Comércio, 250, Centro (fictício).\n\nEntregamos na cidade por R$ 10,00 ou você retira na loja.',
     sobre: [
@@ -268,27 +356,29 @@ const RAMOS: Ramo[] = [
       'Pagamento: Pix, cartão (até 3x sem juros acima de R$ 150) ou dinheiro.',
       'Não há cupom nem promoção ativa.',
     ].join('\n'),
-    pedido: [
-      { id: 'p-peca', texto: 'Qual peça você quer? Pode escrever o nome ou descrever. 🛍️', salvarEm: 'peca' },
-      { id: 'p-tamanho', texto: 'Qual tamanho?', salvarEm: 'tamanho', opcoes: ['P', 'M', 'G', 'GG', 'Numeração de calçado', 'Tamanho único'] },
-      { id: 'p-cor', texto: 'E a cor?', salvarEm: 'cor' },
-    ],
-    entrega: true,
-    resumo: '*Confere seu pedido:*\n\n🛍️ {{peca}}\nTamanho: {{tamanho}} · Cor: {{cor}}\n\n*Entrega:* {{endereco}}\n*Pagamento:* {{pagamento}}',
-    anotado: '✅ Pedido confirmado! Estamos separando sua peça.',
+    grupos: null,
+    itens: ['camiseta', 'calca-jeans', 'vestido', 'moletom', 'tenis', 'sandalia', 'bone', 'bolsa'],
+    tipoDoItem: { camiseta: 'roupa', vestido: 'roupa', moletom: 'roupa', 'calca-jeans': 'jeans', tenis: 'calcado', sandalia: 'calcado' },
+    variacoes: {
+      roupa: { texto: 'Qual tamanho da *{{item}}*?', opcoes: ['P', 'M', 'G', 'GG'].map((t) => ({ rotulo: t, valor: '0' })) },
+      jeans: { texto: 'Qual numeração da *{{item}}*?', opcoes: ['36', '38', '40', '42', '44', '46', '48'].map((t) => ({ rotulo: t, valor: '0' })) },
+      calcado: { texto: 'Qual numeração do *{{item}}*?', opcoes: ['34', '35', '36', '37', '38', '39', '40', '41', '42'].map((t) => ({ rotulo: t, valor: '0' })) },
+    },
+    quantidade: true,
+    agenda: false,
+    taxa: 10,
+    observacao: false,
+    anotado: '✅ Pedido confirmado! Estamos separando suas peças.',
     acompanhar: 'Acompanhar pedido',
     acompanharResposta: 'Estamos separando e embalando 📦 Te aviso aqui assim que ficar pronto.',
     pronto: '📦 {{nome}}, seu pedido está pronto! Se escolheu entrega, ele sai hoje; se vai retirar, já pode passar na loja.',
-    verFoto: 'Foto de uma peça',
-    perguntaFoto: 'Qual peça você quer ver? Ex.: _tênis branco_',
     iaPerguntaOQueVende: true,
     iaTarefa: [
       '- A loja vende o que a pessoa disse em "o que vende": {{o_que_vende}}. Para mostrar peças, use o catálogo de exemplo (roupas, calçados e acessórios) e escolha o que for mais parecido; se não houver nada parecido, diga que vai verificar com a equipe, sem inventar produto nem foto.',
-      '- Perguntaram se tem uma peça, pediram foto ou o catálogo: busque com loja_buscar e mostre com loja_mostrar (até 3).',
-      '- Pergunte tamanho e cor quando a pessoa escolher uma peça.',
-      '- Para fechar, confirme o que faltar: peça, tamanho, cor, entrega (com endereço) ou retirada, e a forma de pagamento.',
-      '- Com tudo certo, mande o resumo com o total (preço da peça e entrega) e pergunte se pode separar.',
-      '- Quando a pessoa confirmar o resumo, chame concluir_conversa com o resumo completo e responda só uma frase curta dizendo que a peça foi separada.',
+      '- Pergunte tamanho ou numeração e a quantidade quando a pessoa escolher uma peça.',
+      '- Para fechar, confirme o que faltar: entrega (com endereço) ou retirada, e a forma de pagamento.',
+      '- Com tudo certo, mande o resumo com cada peça, tamanho, quantidade, preço e o total (com entrega) e pergunte se pode separar.',
+      '- Quando a pessoa confirmar o resumo, chame concluir_conversa com o resumo completo e responda só uma frase curta dizendo que as peças foram separadas.',
     ],
     cardapioPelaIa: false,
   },
@@ -300,7 +390,7 @@ const RAMOS: Ramo[] = [
     categorias: ['Cabelo', 'Barba', 'Unhas'],
     arquivo: 'Serviços Salão Exemplo',
     verCatalogo: 'Ver serviços',
-    fazerPedido: 'Agendar horário',
+    fazerPedido: 'Agendar',
     infoRotulo: 'Horário e endereço',
     info: '*Horário*\nTerça a sábado, das 9h às 20h.\n\n*Endereço*\nRua das Acácias, 80, Centro (fictício).',
     sobre: [
@@ -311,25 +401,23 @@ const RAMOS: Ramo[] = [
       'Pagamento no salão: Pix, cartão ou dinheiro.',
       'Não há cupom nem promoção ativa.',
     ].join('\n'),
-    pedido: [
-      { id: 'p-servico', texto: 'Qual serviço? 💇', salvarEm: 'servico', opcoes: ['Corte feminino', 'Corte masculino', 'Escova', 'Barba completa', 'Manicure', 'Pedicure'] },
-      { id: 'p-dia', texto: 'Para quando?', salvarEm: 'dia', opcoes: ['Hoje', 'Amanhã', 'Outro dia'] },
-      { id: 'p-periodo', texto: 'Qual período?', salvarEm: 'periodo', opcoes: ['Manhã', 'Tarde', 'Noite'] },
-    ],
-    entrega: false,
-    resumo: '*Confere seu agendamento:*\n\n💇 {{servico}}\nQuando: {{dia}}, de {{periodo}}\n*Pagamento no salão:* {{pagamento}}',
+    grupos: null,
+    itens: ['corte-feminino', 'corte-masculino', 'escova', 'barba', 'manicure', 'pedicure'],
+    tipoDoItem: {},
+    variacoes: {},
+    quantidade: false,
+    agenda: true,
+    taxa: 0,
+    observacao: false,
     anotado: '✅ Horário reservado! Te esperamos.',
     acompanhar: 'Ver meu horário',
-    acompanharResposta: 'Seu horário: {{servico}}, {{dia}}, de {{periodo}}. 😉',
-    pronto: '⏰ Lembrete do Salão Exemplo: seu horário de {{servico}} é {{dia}}, de {{periodo}}. Se precisar trocar, é só responder aqui.',
-    verFoto: 'Foto de um serviço',
-    perguntaFoto: 'Qual serviço você quer ver? Ex.: _barba_',
+    acompanharResposta: 'Seu horário: {{dia}}, {{periodo}}. 😉',
+    pronto: '⏰ Lembrete do Salão Exemplo: seu horário é {{dia}}, {{periodo}}. Se precisar trocar, é só responder aqui.',
     iaPerguntaOQueVende: true,
     iaTarefa: [
       '- O negócio oferece o que a pessoa disse em "o que vende": {{o_que_vende}}. Para mostrar serviços e preços, use o catálogo de exemplo (cabelo, barba e unhas) e escolha o mais parecido; se não houver nada parecido, diga que vai verificar com a equipe, sem inventar serviço nem preço.',
-      '- Perguntaram preço, duração ou pediram foto: busque com loja_buscar e mostre com loja_mostrar (até 3).',
       '- Para agendar, confirme: serviço, dia e horário aproximado, e o nome de quem vai.',
-      '- Com tudo certo, mande o resumo do agendamento e pergunte se pode reservar.',
+      '- Com tudo certo, mande o resumo do agendamento com o preço e pergunte se pode reservar.',
       '- Quando a pessoa confirmar, chame concluir_conversa com o resumo completo e responda só uma frase curta dizendo que o horário foi reservado.',
     ],
     cardapioPelaIa: false,
@@ -342,7 +430,7 @@ const RAMOS: Ramo[] = [
     categorias: ['Planos', 'Aula experimental'],
     arquivo: 'Planos Estúdio Exemplo',
     verCatalogo: 'Ver planos',
-    fazerPedido: 'Agendar experimental',
+    fazerPedido: 'Agendar',
     infoRotulo: 'Horário e endereço',
     info: '*Horário das turmas*\nSegunda a sexta, das 6h às 21h. Sábado, das 8h às 12h.\n\n*Endereço*\nAvenida das Flores, 900, sala 2 (fictício).',
     sobre: [
@@ -354,25 +442,23 @@ const RAMOS: Ramo[] = [
       'Pagamento: Pix ou cartão, mensal.',
       'Não há cupom nem promoção ativa.',
     ].join('\n'),
-    pedido: [
-      { id: 'p-objetivo', texto: 'Legal! 🧘 Qual o seu objetivo principal?', salvarEm: 'objetivo', opcoes: ['Dor nas costas', 'Postura', 'Condicionamento', 'Outro'] },
-      { id: 'p-dia', texto: 'Para quando?', salvarEm: 'dia', opcoes: ['Esta semana', 'Semana que vem'] },
-      { id: 'p-periodo', texto: 'Qual período?', salvarEm: 'periodo', opcoes: ['Manhã', 'Tarde', 'Noite'] },
-    ],
-    entrega: false,
-    resumo: '*Confere sua aula experimental:*\n\n🧘 Objetivo: {{objetivo}}\nQuando: {{dia}}, de {{periodo}}\n*Gratuita*, com avaliação postural.',
-    anotado: '✅ Aula experimental reservada! Venha com roupa confortável.',
+    grupos: null,
+    itens: ['experimental', 'aula-avulsa', 'pilates-2x', 'pilates-3x'],
+    tipoDoItem: {},
+    variacoes: {},
+    quantidade: false,
+    agenda: true,
+    taxa: 0,
+    observacao: false,
+    anotado: '✅ Reservado! Venha com roupa confortável.',
     acompanhar: 'Ver minha aula',
-    acompanharResposta: 'Sua aula experimental: {{dia}}, de {{periodo}}. 😉',
-    pronto: '⏰ Lembrete do Estúdio Exemplo: sua aula experimental é {{dia}}, de {{periodo}}. Chegue 10 minutos antes para a avaliação.',
-    verFoto: 'Foto de um plano',
-    perguntaFoto: 'Qual plano você quer ver? Ex.: _3x por semana_',
+    acompanharResposta: 'Sua primeira aula: {{dia}}, {{periodo}}. 😉',
+    pronto: '⏰ Lembrete do Estúdio Exemplo: sua aula é {{dia}}, {{periodo}}. Chegue 10 minutos antes para a avaliação.',
     iaPerguntaOQueVende: true,
     iaTarefa: [
       '- O negócio oferece o que a pessoa disse em "o que vende": {{o_que_vende}}. Para mostrar planos e preços, use o catálogo de exemplo (planos de pilates e aula experimental) e escolha o mais parecido; se não houver nada parecido, diga que vai verificar com a equipe, sem inventar plano nem preço.',
-      '- Perguntaram de planos, preço ou pediram foto: busque com loja_buscar e mostre com loja_mostrar (até 3).',
       '- Ofereça a aula experimental gratuita para quem ainda não é aluno.',
-      '- Para agendar, confirme: objetivo, dia e horário aproximado, e o nome de quem vai.',
+      '- Para agendar, confirme: plano ou aula experimental, dia e horário aproximado, e o nome de quem vai.',
       '- Com tudo certo, mande o resumo e pergunte se pode reservar.',
       '- Quando a pessoa confirmar, chame concluir_conversa com o resumo completo e responda só uma frase curta dizendo que a aula foi reservada.',
     ],
@@ -415,17 +501,14 @@ for (const [chave, nome] of Object.entries(NOMES)) {
 /* -------------------------------------------------------- peças comuns */
 const LEAD_RESPOSTA = 'Quero no meu negócio'
 const TROCAR = 'Trocar de ramo'
+const VOLTAR = 'Voltar ao menu'
+const MENSAGENS_DO_LEAD = [
+  'Que ótimo! 🙌 Vou chamar alguém da 4YU para conversar com você.',
+  'Enquanto isso, me conta: qual o nome da sua empresa e o que ela vende?',
+]
 
 function lead(g: Grafo, id = 'lead', ramo = 'demo'): string {
-  return g.no(id, 'handoff', {
-    motivo: `Lead da demo · ${ramo}`,
-    // Quem pediu para falar com a 4YU espera o Gabriel; o bot não volta sozinho.
-    retomarEmMinutos: 'nunca',
-    mensagens: [
-      'Que ótimo! 🙌 Vou chamar alguém da 4YU para conversar com você.',
-      'Enquanto isso, me conta: qual o nome da sua empresa e o que ela vende?',
-    ],
-  })
+  return g.no(id, 'handoff', { motivo: `Lead da demo · ${ramo}`, mensagens: MENSAGENS_DO_LEAD })
 }
 const trocar = (g: Grafo, id = 'trocar') => g.no(id, 'ir-fluxo', { fluxoId: ids.inicio, rotulo: NOMES.inicio })
 
@@ -456,7 +539,7 @@ function fluxoInicio() {
   saudacao(g, 'ramo')
   const rotulos = [...RAMOS.map((r) => r.rotulo), 'Loja online (PCYES)', LEAD_RESPOSTA]
   g.no('ramo', 'pergunta', {
-    texto: 'Qual é o seu ramo? Escolha um para testar 👇\n_Para voltar aqui a qualquer momento, escreva *demo*._',
+    texto: 'Qual é o seu ramo? Escolha um para testar 👇\n_Para recomeçar a qualquer momento, escreva *inicio*._',
     salvarEm: 'ramo_demo',
     opcoes: opcoes(rotulos),
     mensagemDeErro: 'Toca numa das opções da lista 👇',
@@ -491,6 +574,7 @@ function fluxoRamo(r: Ramo) {
   const png = `${ACERVO}/demo-cardapio-${r.chave}.png`
   const pdf = `${ACERVO}/demo-cardapio-${r.chave}.pdf`
   const categoriasDito = r.categorias.join(', ')
+  const pedidoOuAgenda = r.agenda ? 'agendamento' : 'pedido'
 
   g.no('modo', 'pergunta', {
     texto: `${r.emoji} *${r.negocio}*\nQuer testar o atendimento com botões ou com IA?`,
@@ -501,8 +585,16 @@ function fluxoRamo(r: Ramo) {
   lead(g, 'lead', r.rotulo)
   g.liga('modo', 'trocar', idDe(TROCAR))
 
-  /* ---- botões */
-  g.no('b-abertura', 'mensagem', texto(`Bem-vindo à *${r.negocio}*! ${r.emoji}\nAqui você resolve tudo em poucos toques.`))
+  /* ---- botões: menu */
+  g.no('b-abertura', 'mensagem', {
+    partes: [
+      // Carrinho vazio a cada vez que a pessoa entra: "testar de novo" começa do zero.
+      { tipo: 'salvar', campo: 'carrinho', valor: '' },
+      { tipo: 'salvar', campo: 'total', valor: '0' },
+      { tipo: 'atraso', segundos: 1 },
+      { tipo: 'texto', texto: `Bem-vindo à *${r.negocio}*! ${r.emoji}\nAqui você escolhe e ${r.agenda ? 'agenda' : 'pede'} em poucos toques.` },
+    ],
+  })
   g.liga('modo', 'b-abertura', idDe('Com botões'))
   g.no('b-menu', 'pergunta', {
     texto: 'Como posso te ajudar?',
@@ -512,119 +604,206 @@ function fluxoRamo(r: Ramo) {
   g.liga('b-abertura', 'b-menu')
   g.liga('b-menu', 'lead', idDe(LEAD_RESPOSTA))
   g.liga('b-menu', 'trocar', idDe(TROCAR))
-
-  g.no('b-arquivo-img', 'midia', { midia: 'imagem', url: png, legenda: `${r.arquivo} ${r.emoji}` })
-  g.no('b-arquivo-pdf', 'midia', { midia: 'documento', url: pdf, nomeArquivo: `${r.arquivo}.pdf` })
-  g.liga('b-menu', 'b-arquivo-img', idDe(r.verCatalogo))
-  g.liga('b-arquivo-img', 'b-arquivo-pdf')
-  g.no('b-categorias', 'pergunta', {
-    texto: 'Quer ver com foto alguma parte?',
-    salvarEm: 'categoria',
-    opcoes: opcoes([...r.categorias, r.verFoto, r.fazerPedido, 'Voltar ao menu']),
-  })
-  g.liga('b-arquivo-pdf', 'b-categorias')
-  g.no('b-mostrar', 'ia', {
-    instrucao: `A pessoa quer ver "{{categoria}}". Busque com loja_buscar usando {{categoria}} como termo e como categoria, e mostre até 3 itens com loja_mostrar. Os itens chegam sozinhos como cards, com foto e preço: responda só com uma frase curta e simpática (ex.: "Olha só algumas das nossas!"), sem listar os itens, sem preço e sem link. Se houver mais itens nessa parte, diga que o ${r.verCatalogo.toLowerCase().replace('ver ', '')} tem todos.`,
-    ferramentas: ['loja_buscar', 'loja_mostrar'],
-    fonteDoCatalogo: 'catalogo',
-    sobreAEmpresa: r.sobre,
-  })
-  for (const c of r.categorias) g.liga('b-categorias', 'b-mostrar', idDe(c))
-  g.no('b-qual', 'pergunta', { texto: r.perguntaFoto, salvarEm: 'item_pedido' })
-  g.liga('b-categorias', 'b-qual', idDe(r.verFoto))
-  g.no('b-foto', 'ia', {
-    instrucao: `A pessoa quer ver a foto de "{{item_pedido}}". Busque com loja_buscar pelo que ela escreveu, só nas categorias ${categoriasDito}, e mostre o item mais parecido com loja_mostrar. O item chega sozinho como card, com foto e preço: responda só com uma frase curta, sem link nem endereço de arquivo. Se não houver nada parecido, diga que esse não tem aqui e sugira dois que tem.`,
-    ferramentas: ['loja_buscar', 'loja_mostrar'],
-    fonteDoCatalogo: 'catalogo',
-    sobreAEmpresa: r.sobre,
-  })
-  g.liga('b-qual', 'b-foto')
-  g.no('b-depois', 'pergunta', {
-    texto: 'E aí, o que vai ser?',
-    salvarEm: 'depois_do_catalogo',
-    opcoes: opcoes([r.fazerPedido, 'Ver mais', 'Voltar ao menu']),
-  })
-  g.liga('b-mostrar', 'b-depois')
-  g.liga('b-foto', 'b-depois')
-  g.liga('b-depois', 'b-categorias', idDe('Ver mais'))
   g.no('b-voltar', 'voltar', { destino: 'b-menu', rotulo: 'Como posso te ajudar?' })
-  g.liga('b-categorias', 'b-voltar', idDe('Voltar ao menu'))
-  g.liga('b-depois', 'b-voltar', idDe('Voltar ao menu'))
 
-  // informação
   g.no('b-info', 'mensagem', texto(r.info))
   g.liga('b-menu', 'b-info', idDe(r.infoRotulo))
-  g.no('b-mais', 'pergunta', {
-    texto: 'Posso ajudar em mais alguma coisa?',
-    salvarEm: 'quer_mais',
-    opcoes: opcoes([r.fazerPedido, r.verCatalogo, 'Voltar ao menu']),
-  })
+  g.no('b-mais', 'pergunta', { texto: 'Posso ajudar em mais alguma coisa?', salvarEm: 'quer_mais', opcoes: opcoes([r.verCatalogo, VOLTAR]) })
   g.liga('b-info', 'b-mais')
-  g.liga('b-mais', 'b-arquivo-img', idDe(r.verCatalogo))
-  g.liga('b-mais', 'b-voltar', idDe('Voltar ao menu'))
+  g.liga('b-mais', 'b-voltar', idDe(VOLTAR))
 
-  // pedido: as perguntas do ramo, em sequência
-  const perguntas = [...r.pedido]
-  const primeira = perguntas[0].id
-  for (const [origem, handle] of [
-    ['b-menu', idDe(r.fazerPedido)],
-    ['b-categorias', idDe(r.fazerPedido)],
-    ['b-depois', idDe(r.fazerPedido)],
-    ['b-mais', idDe(r.fazerPedido)],
-  ] as const) {
-    g.liga(origem, primeira, handle)
+  /* ---- a lista: por partes, ou uma só */
+  const ARQUIVO = r.chave === 'comercio' || r.agenda ? 'Receber em PDF' : 'Cardápio em PDF'
+  const itensDoRamo = r.grupos ? r.grupos.flatMap((gr) => gr.slugs) : r.itens
+  let entradaDaLista: string
+  const listaDeItens = (id: string, textoDaLista: string, slugs: string[], extras: Op[]) => {
+    g.no(id, 'pergunta', {
+      texto: textoDaLista,
+      salvarEm: 'escolhido',
+      opcoes: opcoes([...slugs.map((s) => linhaDoItem(item(s))), ...extras]),
+      mensagemDeErro: 'Toca num item da lista 👇',
+    })
+    for (const s of slugs) g.liga(id, `it-${s}`, s)
   }
-  let anterior: string | null = null
-  const ligarDoAnterior = (destino: string) => {
-    if (!anterior) return
-    const p = [...r.pedido, PAGAMENTO].find((x) => x.id === anterior)
-    if (p?.opcoes) for (const o of p.opcoes) g.liga(anterior, destino, idDe(o))
-    else g.liga(anterior, destino)
-  }
-  for (const p of perguntas) {
-    g.no(p.id, 'pergunta', { texto: p.texto, salvarEm: p.salvarEm, ...(p.opcoes ? { opcoes: opcoes(p.opcoes) } : { opcoes: [] }) })
-    ligarDoAnterior(p.id)
-    anterior = p.id
-  }
-  if (r.entrega) {
-    g.no('p-entrega', 'pergunta', { texto: 'Entrega ou retirada?', salvarEm: 'forma_entrega', opcoes: opcoes(['Entrega', 'Vou retirar']) })
-    ligarDoAnterior('p-entrega')
-    g.no('p-endereco', 'pergunta', { texto: 'Qual o endereço? Rua, número, bairro e um ponto de referência.', salvarEm: 'endereco' })
-    g.no('p-retirada', 'salvar-campo', { campo: 'endereco', valor: 'retirada no local' })
-    g.liga('p-entrega', 'p-endereco', idDe('Entrega'))
-    g.liga('p-entrega', 'p-retirada', idDe('Vou retirar'))
-    g.no(PAGAMENTO.id, 'pergunta', { texto: PAGAMENTO.texto, salvarEm: PAGAMENTO.salvarEm, opcoes: opcoes(PAGAMENTO.opcoes!) })
-    g.liga('p-endereco', PAGAMENTO.id)
-    g.liga('p-retirada', PAGAMENTO.id)
+  if (r.grupos) {
+    entradaDaLista = 'b-partes'
+    g.no('b-partes', 'pergunta', {
+      texto: r.chave === 'pizzaria' ? 'Escolha uma parte do cardápio 👇' : 'Escolha uma parte do cardápio 👇',
+      salvarEm: 'parte',
+      opcoes: opcoes([
+        ...r.grupos.map((gr) => ({ rotulo: gr.rotulo, descricao: gr.descricao })),
+        { rotulo: ARQUIVO, descricao: 'O cardápio inteiro em imagem e PDF' },
+        { rotulo: VOLTAR },
+      ]),
+      mensagemDeErro: 'Toca numa das opções da lista 👇',
+    })
+    r.grupos.forEach((gr, k) => {
+      listaDeItens(`b-lista-${k}`, `*${gr.rotulo}*\nToque para ver a foto e o preço 👇`, gr.slugs, [{ rotulo: 'Outra parte', id: 'outra-parte' }, { rotulo: VOLTAR }])
+      g.liga('b-partes', `b-lista-${k}`, idDe(gr.rotulo))
+      g.liga(`b-lista-${k}`, 'b-partes', 'outra-parte')
+      g.liga(`b-lista-${k}`, 'b-voltar', idDe(VOLTAR))
+    })
+    g.liga('b-partes', 'b-voltar', idDe(VOLTAR))
   } else {
-    g.no(PAGAMENTO.id, 'pergunta', { texto: 'Como prefere pagar, lá na hora?', salvarEm: PAGAMENTO.salvarEm, opcoes: opcoes(['Pix', 'Cartão', 'Dinheiro']) })
-    ligarDoAnterior(PAGAMENTO.id)
+    entradaDaLista = 'b-lista'
+    listaDeItens('b-lista', `*${r.negocio}*\nToque num item para ver a foto e o preço 👇`, r.itens, [
+      { rotulo: ARQUIVO, descricao: 'Tudo numa folha, em imagem e PDF' },
+      { rotulo: VOLTAR },
+    ])
+    g.liga('b-lista', 'b-voltar', idDe(VOLTAR))
   }
-  g.no('p-resumo', 'mensagem', { partes: [{ tipo: 'texto', texto: r.resumo }] })
-  for (const o of r.entrega ? PAGAMENTO.opcoes! : ['Pix', 'Cartão', 'Dinheiro']) g.liga(PAGAMENTO.id, 'p-resumo', idDe(o))
-  g.no('p-confere', 'pergunta', { texto: 'Está tudo certo?', salvarEm: 'confere', opcoes: opcoes(['Confirmar', 'Corrigir', 'Cancelar']) })
+  g.no('b-arquivo', 'mensagem', {
+    partes: [
+      { tipo: 'midia', midia: 'imagem', url: png, legenda: `${r.arquivo} ${r.emoji}` },
+      { tipo: 'midia', midia: 'documento', url: pdf, nomeArquivo: `${r.arquivo}.pdf` },
+    ],
+  })
+  g.liga(entradaDaLista, 'b-arquivo', idDe(ARQUIVO))
+  g.liga('b-arquivo', entradaDaLista)
+  for (const origem of ['b-menu', 'b-mais']) g.liga(origem, entradaDaLista, idDe(r.verCatalogo))
+  g.liga('b-menu', entradaDaLista, idDe(r.fazerPedido))
+
+  /* ---- o item escolhido: foto, descrição e preço */
+  for (const s of itensDoRamo) {
+    const i = item(s)
+    g.no(`it-${s}`, 'mensagem', {
+      partes: [
+        { tipo: 'salvar', campo: 'item', valor: i.nome },
+        { tipo: 'salvar', campo: 'preco', valor: reais(i.preco) },
+        { tipo: 'salvar', campo: 'tipo_item', valor: r.tipoDoItem[s] ?? (r.chave === 'pizzaria' && i.categoria.startsWith('Pizzas') ? 'pizza' : '') },
+        { tipo: 'salvar', campo: 'variacao', valor: '' },
+        { tipo: 'salvar', campo: 'ajuste', valor: '0' },
+        { tipo: 'salvar', campo: 'qtd', valor: '1' },
+        { tipo: 'midia', midia: 'imagem', url: `${ACERVO}/demo-${s}.jpg`, legenda: `*${i.nome}*\n${i.descricao}\n*${precoDito(i.preco)}*` },
+      ],
+    })
+    g.liga(`it-${s}`, 'b-escolha')
+  }
+  const botaoPedir = r.agenda ? 'Agendar' : 'Fazer pedido'
+  g.no('b-escolha', 'pergunta', {
+    texto: 'Gostou?',
+    salvarEm: 'depois_do_item',
+    opcoes: opcoes([botaoPedir, 'Ver outro', VOLTAR]),
+  })
+  g.liga('b-escolha', entradaDaLista, 'ver-outro')
+  g.liga('b-escolha', 'b-voltar', idDe(VOLTAR))
+
+  /* ---- variação daquele item, pelo tipo */
+  const tipos = Object.keys(r.variacoes)
+  let depoisDaEscolha = r.quantidade ? 'b-qtd' : 'b-soma'
+  if (tipos.length > 0) {
+    // Cadeia de condições: o tipo do item decide a pergunta; sem tipo, direto à quantidade.
+    tipos.forEach((t, k) => {
+      g.no(`b-tipo-${k}`, 'condicao', { variavel: 'tipo_item', operador: 'igual', valor: t })
+      g.no(`b-var-${t}`, 'pergunta', { texto: r.variacoes[t].texto, salvarEm: 'variacao', salvarValorEm: 'ajuste', opcoes: opcoes(r.variacoes[t].opcoes) })
+      g.liga(`b-tipo-${k}`, `b-var-${t}`, 'verdadeiro')
+      g.liga(`b-tipo-${k}`, k + 1 < tipos.length ? `b-tipo-${k + 1}` : depoisDaEscolha, 'falso')
+      for (const o of r.variacoes[t].opcoes) g.liga(`b-var-${t}`, depoisDaEscolha, o.id ?? idDe(o.rotulo))
+    })
+    g.liga('b-escolha', 'b-tipo-0', idDe(botaoPedir))
+  } else {
+    g.liga('b-escolha', depoisDaEscolha, idDe(botaoPedir))
+  }
+  if (r.quantidade) {
+    g.no('b-qtd', 'pergunta', { texto: 'Quantas?', salvarEm: 'qtd', opcoes: opcoes(['1', '2', '3']) })
+    for (const q of ['1', '2', '3']) g.liga('b-qtd', 'b-soma', q)
+  }
+
+  /* ---- entra no carrinho, com o total somado */
+  g.no('b-soma', 'salvar-campo', { campo: 'subtotal', valor: '({{preco}} + {{ajuste}}) * {{qtd}}', conta: true })
+  g.no('b-total', 'salvar-campo', { campo: 'total', valor: '{{total}} + {{subtotal}}', conta: true })
+  g.no('b-linha', 'salvar-campo', {
+    campo: 'carrinho',
+    valor: r.quantidade ? '{{carrinho}}\n• {{qtd}}x {{item}}, {{variacao}}: R$ {{subtotal}}' : '{{carrinho}}\n• {{item}}: R$ {{subtotal}}',
+  })
+  g.liga('b-soma', 'b-total')
+  g.liga('b-total', 'b-linha')
+  const fechar = r.agenda ? 'Escolher horário' : 'Fechar pedido'
+  const mais = r.agenda ? 'Adicionar outro' : 'Adicionar mais'
+  g.no('b-carrinho', 'pergunta', {
+    texto: `Anotado! ✅\n\n*Seu ${pedidoOuAgenda} até agora:*{{carrinho}}\n\n*Subtotal: R$ {{total}}*`,
+    salvarEm: 'no_carrinho',
+    opcoes: opcoes([mais, fechar, 'Esvaziar']),
+  })
+  g.liga('b-linha', 'b-carrinho')
+  g.liga('b-carrinho', entradaDaLista, idDe(mais))
+  g.no('b-esvaziar', 'mensagem', {
+    partes: [
+      { tipo: 'salvar', campo: 'carrinho', valor: '' },
+      { tipo: 'salvar', campo: 'total', valor: '0' },
+      { tipo: 'texto', texto: `Pronto, ${r.agenda ? 'agendamento' : 'pedido'} esvaziado. 🗑️` },
+    ],
+  })
+  g.liga('b-carrinho', 'b-esvaziar', 'esvaziar')
+  g.liga('b-esvaziar', 'b-voltar')
+
+  /* ---- fechar: entrega ou agenda, pagamento, resumo */
+  let resumo: string
+  if (r.agenda) {
+    g.no('p-dia', 'pergunta', { texto: 'Para quando?', salvarEm: 'dia', opcoes: opcoes(['Hoje', 'Amanhã', 'Sábado']) })
+    g.liga('b-carrinho', 'p-dia', idDe(fechar))
+    g.no('p-periodo', 'pergunta', { texto: 'Qual período?', salvarEm: 'periodo', opcoes: opcoes(['De manhã', 'À tarde', 'À noite']) })
+    for (const d of ['hoje', 'amanha', 'sabado']) g.liga('p-dia', 'p-periodo', d)
+    g.no('p-final', 'salvar-campo', { campo: 'total_final', valor: '{{total}}', conta: true })
+    for (const p of ['de-manha', 'a-tarde', 'a-noite']) g.liga('p-periodo', 'p-final', p)
+    g.no('p-pagamento', 'pergunta', { texto: 'Como prefere pagar, lá na hora?', salvarEm: 'pagamento', opcoes: opcoes(['Pix', 'Cartão', 'Dinheiro']) })
+    g.liga('p-final', 'p-pagamento')
+    resumo = `*Resumo do agendamento*{{carrinho}}\n\n*Total: R$ {{total_final}}* (pago no local)\n*Quando:* {{dia}}, {{periodo}}\n*Pagamento:* {{pagamento}}`
+  } else {
+    let antesDaEntrega = 'p-entrega'
+    if (r.observacao) {
+      g.no('p-obs', 'pergunta', { texto: 'Alguma observação? (tirar cebola, sem gelo...)\nSe não tiver, escreva *não*.', salvarEm: 'observacao' })
+      g.liga('b-carrinho', 'p-obs', idDe(fechar))
+      g.liga('p-obs', 'p-entrega')
+      antesDaEntrega = 'p-obs'
+    } else {
+      g.liga('b-carrinho', 'p-entrega', idDe(fechar))
+    }
+    void antesDaEntrega
+    g.no('p-entrega', 'pergunta', {
+      texto: `Entrega ou retirada?`,
+      salvarEm: 'forma_entrega',
+      opcoes: opcoes([{ rotulo: 'Entrega', descricao: `Taxa de R$ ${reais(r.taxa)}` }, 'Vou retirar']),
+    })
+    g.no('p-endereco', 'pergunta', { texto: 'Qual o endereço? Rua, número, bairro e um ponto de referência.', salvarEm: 'endereco' })
+    g.no('p-com-taxa', 'salvar-campo', { campo: 'taxa', valor: reais(r.taxa) })
+    g.no('p-retirada', 'mensagem', {
+      partes: [
+        { tipo: 'salvar', campo: 'endereco', valor: 'retirada no local' },
+        { tipo: 'salvar', campo: 'taxa', valor: '0,00' },
+      ],
+    })
+    g.liga('p-entrega', 'p-endereco', 'entrega')
+    g.liga('p-entrega', 'p-retirada', 'vou-retirar')
+    g.liga('p-endereco', 'p-com-taxa')
+    g.no('p-final', 'salvar-campo', { campo: 'total_final', valor: '{{total}} + {{taxa}}', conta: true })
+    g.liga('p-com-taxa', 'p-final')
+    g.liga('p-retirada', 'p-final')
+    g.no('p-pagamento', 'pergunta', { texto: 'Como você vai pagar?', salvarEm: 'pagamento', opcoes: opcoes(['Pix', 'Cartão na entrega', 'Dinheiro']) })
+    g.liga('p-final', 'p-pagamento')
+    resumo = `*Resumo do pedido*{{carrinho}}\n\nSubtotal: R$ {{total}}\nEntrega: R$ {{taxa}}\n*Total: R$ {{total_final}}*\n\n*Entrega:* {{endereco}}\n*Pagamento:* {{pagamento}}${r.observacao ? '\n*Observação:* {{observacao}}' : ''}`
+  }
+  g.no('p-resumo', 'mensagem', { partes: [{ tipo: 'texto', texto: resumo }] })
+  for (const o of r.agenda ? ['pix', 'cartao', 'dinheiro'] : ['pix', 'cartao-na-entrega', 'dinheiro']) g.liga('p-pagamento', 'p-resumo', o)
+  g.no('p-confere', 'pergunta', { texto: 'Está tudo certo?', salvarEm: 'confere', opcoes: opcoes(['Confirmar', mais, 'Cancelar']) })
   g.liga('p-resumo', 'p-confere')
-  g.liga('p-confere', primeira, 'corrigir')
-  g.no('p-cancelado', 'mensagem', texto('Tudo bem, cancelei. Se mudar de ideia, é só chamar. 😉'))
-  g.liga('p-confere', 'p-cancelado', 'cancelar')
-  g.liga('p-cancelado', 'b-voltar')
-  g.no('p-nota', 'nota', { texto: `Demonstração (${r.negocio}), pelos botões:\n${r.resumo}` })
+  g.liga('p-confere', entradaDaLista, idDe(mais))
+  g.liga('p-confere', 'b-esvaziar', 'cancelar')
+  g.no('p-nota', 'nota', { texto: `Demonstração (${r.negocio}), pelos botões:\n${resumo}` })
   g.liga('p-confere', 'p-nota', 'confirmar')
   g.no('p-anotado', 'mensagem', {
     partes: [
       { tipo: 'atraso', segundos: 1 },
       { tipo: 'texto', texto: r.anotado },
-      { tipo: 'texto', texto: `_Na demonstração, o aviso de "pronto" chega aqui sozinho em ${MINUTOS_ATE_O_AVISO} minutos, como chegaria para o seu cliente._` },
+      { tipo: 'texto', texto: `_Na demonstração, o aviso ${r.agenda ? 'de lembrete' : 'de "pronto"'} chega aqui sozinho em ${MINUTOS_ATE_O_AVISO} minutos, como chegaria para o seu cliente._` },
     ],
   })
   g.liga('p-nota', 'p-anotado')
   esperaEAviso(g, r, 'p-anotado', 'b')
 
   /* ---- IA */
-  g.no('i-nome', 'pergunta', {
-    texto: 'Agora eu viro a atendente do *seu* negócio. 🎭\nQual o nome dele? Ex.: _' + (r.chave === 'pizzaria' ? 'Pizzaria Margherita' : r.chave === 'hamburgueria' ? 'Burger do Zé' : r.chave === 'restaurante' ? 'Cantina da Vó' : r.chave === 'comercio' ? 'Loja da Ana' : r.chave === 'servicos' ? 'Studio Bella' : 'Studio Movimento') + '_',
-    salvarEm: 'negocio',
-  })
+  const exemplo = { pizzaria: 'Pizzaria Margherita', hamburgueria: 'Burger do Zé', restaurante: 'Cantina da Vó', comercio: 'Loja da Ana', servicos: 'Studio Bella' }[r.chave] ?? 'Studio Movimento'
+  g.no('i-nome', 'pergunta', { texto: `Agora eu viro a atendente do *seu* negócio. 🎭\nQual o nome dele? Ex.: _${exemplo}_`, salvarEm: 'negocio' })
   g.liga('modo', 'i-nome', idDe('Com IA'))
   let antesDoPapel = 'i-nome'
   if (r.iaPerguntaOQueVende) {
@@ -633,7 +812,7 @@ function fluxoRamo(r: Ramo) {
     antesDoPapel = 'i-vende'
   }
   g.no('i-primeira', 'pergunta', {
-    texto: 'Pronto! A partir de agora eu sou a atendente da *{{negocio}}*.\nMe mande uma mensagem como se você fosse um cliente. 😉\n_Para sair do papel, escreva *sair*._',
+    texto: 'Pronto! A partir de agora eu sou a atendente da *{{negocio}}*.\nMe mande uma mensagem como se você fosse um cliente. 😉\n_Para sair do papel, escreva *sair*. Para recomeçar, *inicio*._',
     salvarEm: 'primeira_mensagem',
   })
   g.liga(antesDoPapel, 'i-primeira')
@@ -656,14 +835,10 @@ function fluxoRamo(r: Ramo) {
   g.liga('i-primeira', 'i-conversa')
   g.no('i-nota', 'nota', { texto: `Demonstração (${r.rotulo}, IA como "{{negocio}}"): {{pedido}}` })
   g.liga('i-conversa', 'i-nota', 'concluido')
-  g.no('i-anotado', 'mensagem', texto(`_Na demonstração, o aviso de "pronto" chega aqui sozinho em ${MINUTOS_ATE_O_AVISO} minutos, como chegaria para o seu cliente._`))
+  g.no('i-anotado', 'mensagem', texto(`_Na demonstração, o aviso ${r.agenda ? 'de lembrete' : 'de "pronto"'} chega aqui sozinho em ${MINUTOS_ATE_O_AVISO} minutos, como chegaria para o seu cliente._`))
   g.liga('i-nota', 'i-anotado')
   esperaEAviso(g, r, 'i-anotado', 'i')
-  g.no('i-saida', 'pergunta', {
-    texto: 'Saí do papel. 🙂 E agora?',
-    salvarEm: 'escolha',
-    opcoes: opcoes(['Continuar conversa', LEAD_RESPOSTA, TROCAR]),
-  })
+  g.no('i-saida', 'pergunta', { texto: 'Saí do papel. 🙂 E agora?', salvarEm: 'escolha', opcoes: opcoes(['Continuar conversa', LEAD_RESPOSTA, TROCAR]) })
   g.liga('i-conversa', 'i-saida')
   g.no('i-pode', 'pergunta', { texto: 'Pode mandar, sou a atendente da *{{negocio}}* de novo. 😊', salvarEm: 'primeira_mensagem' })
   g.liga('i-saida', 'i-pode', idDe('Continuar conversa'))
@@ -682,12 +857,13 @@ function esperaEAviso(g: Grafo, r: Ramo, depoisDe: string, p: 'b' | 'i'): void {
     timeoutMinutos: MINUTOS_ATE_O_AVISO,
   })
   g.liga(depoisDe, `${p}-espera`)
-  g.no(`${p}-acompanha`, 'mensagem', texto(r.acompanharResposta))
+  g.no(`${p}-acompanha`, 'mensagem', texto(p === 'i' && r.agenda ? 'Está reservado. 😉 Te mando o lembrete aqui.' : r.acompanharResposta))
   g.liga(`${p}-espera`, `${p}-acompanha`, idDe(r.acompanhar))
   g.liga(`${p}-acompanha`, `${p}-espera`)
   g.liga(`${p}-espera`, 'lead', idDe(LEAD_RESPOSTA))
   g.liga(`${p}-espera`, 'trocar', idDe(TROCAR))
-  g.no(`${p}-pronto`, 'mensagem', texto(r.pronto))
+  // Na IA não há {{dia}}: o lembrete fala do que ficou combinado na conversa.
+  g.no(`${p}-pronto`, 'mensagem', texto(p === 'i' && r.agenda ? `⏰ Lembrete da *{{negocio}}*: seu horário está reservado. Te esperamos!` : r.pronto))
   g.liga(`${p}-espera`, `${p}-pronto`, 'timeout')
   g.no(`${p}-fim`, 'pergunta', {
     texto: 'Gostou? É assim que o *seu* cliente seria atendido, dia e noite. 😉',
@@ -737,9 +913,7 @@ async function copiaDaPcyes(origem: string) {
     return atual
   }
   grafo.inicio = seguinte(grafo.inicio)
-  grafo.edges = grafo.edges
-    .filter((e) => !tirar.has(e.source))
-    .map((e) => ({ ...e, target: seguinte(e.target) }))
+  grafo.edges = grafo.edges.filter((e) => !tirar.has(e.source)).map((e) => ({ ...e, target: seguinte(e.target) }))
   grafo.nodes = grafo.nodes.filter((n) => !tirar.has(n.id))
   for (const n of grafo.nodes) {
     if (n.type === 'ir-fluxo') {
@@ -749,19 +923,15 @@ async function copiaDaPcyes(origem: string) {
     }
     if (n.type === 'ia') n.data = { ...n.data, fonteDoCatalogo: 'loja', sobreAEmpresa: contextoPcyes }
   }
-  // O menu ganha as duas saídas da demo.
+  // O menu ganha as duas saídas da demo, ligadas antes da cadeia de condições
+  // (sem isto, elas cairiam na última condição, que termina em Parcerias).
   if (origem === 'abd4df71-cfa0-4e5c-a39d-af2aa57866cb') {
     const menu = grafo.nodes.find((n) => n.id === 'menu')!
-    ;(menu.data.opcoes as { id: string; rotulo: string }[]).push(
-      { id: 'demo-lead', rotulo: LEAD_RESPOSTA },
-      { id: 'demo-trocar', rotulo: TROCAR },
-    )
-    grafo.nodes.push({ id: 'demo-lead', type: 'handoff', position: { x: 0, y: 900 }, data: { motivo: 'Lead da demo · Loja online', retomarEmMinutos: 'nunca', mensagens: ['Que ótimo! 🙌 Vou chamar alguém da 4YU para conversar com você.', 'Enquanto isso, me conta: qual o nome da sua empresa e o que ela vende?'] } })
+    ;(menu.data.opcoes as { id: string; rotulo: string }[]).push({ id: 'demo-lead', rotulo: LEAD_RESPOSTA }, { id: 'demo-trocar', rotulo: TROCAR })
+    grafo.nodes.push({ id: 'demo-lead', type: 'handoff', position: { x: 0, y: 900 }, data: { motivo: 'Lead da demo · Loja online', mensagens: MENSAGENS_DO_LEAD } })
     grafo.nodes.push({ id: 'demo-trocar', type: 'ir-fluxo', position: { x: 340, y: 900 }, data: { fluxoId: ids.inicio, rotulo: NOMES.inicio } })
     grafo.edges.push({ id: 'demo-e1', source: 'menu', sourceHandle: 'demo-lead', target: 'demo-lead' })
     grafo.edges.push({ id: 'demo-e2', source: 'menu', sourceHandle: 'demo-trocar', target: 'demo-trocar' })
-    // Sem esta linha, "Quero no meu negócio" e "Trocar de ramo" cairiam na
-    // cadeia de condições do menu, que termina em Parcerias.
   }
   return grafo
 }
@@ -809,6 +979,8 @@ if (GRAVAR) {
   const GATILHOS: { frase: string; operador: 'igual' | 'contem'; fluxo: string }[] = [
     { frase: 'Quero testar: pizzaria', operador: 'igual', fluxo: 'qr' },
     { frase: 'demo', operador: 'igual', fluxo: 'inicio' },
+    // "início", "Inicio", "INÍCIO": o gatilho compara sem acento e sem maiúscula.
+    { frase: 'inicio', operador: 'igual', fluxo: 'inicio' },
     { frase: 'para o meu negócio', operador: 'contem', fluxo: 'lead' },
     { frase: 'pro meu negócio', operador: 'contem', fluxo: 'lead' },
     { frase: 'no meu negócio', operador: 'contem', fluxo: 'lead' },

@@ -115,15 +115,15 @@ if (contaId) {
   /*
    * Passada para uma pessoa (ofensa, dúvida que a IA não responde), a conversa
    * fica muda até alguém atender, inclusive para o gatilho "demo". Numa demo
-   * que ninguém vigia, o bot volta sozinho em 15 minutos. O lead ("Quero no
-   * meu negócio") tem "nunca" no próprio bloco, e fica com o Gabriel.
+   * que ninguém vigia, o bot volta sozinho em 5 minutos, o lead inclusive: o
+   * gatilho não passa por cima de atendimento humano.
    */
-  passo('retomada do bot: 15 minutos')
+  passo('retomada do bot: 5 minutos')
   if (GRAVAR) {
     await atualizarRetomada(contaId, {
       ativo: true,
-      minutos: 15,
-      mensagem: 'Voltei! 🙂 Se quiser continuar testando, escreva *demo*.',
+      minutos: 5,
+      mensagem: 'Voltei! 🙂 Para recomeçar a demonstração, escreva *inicio*.',
     })
   }
 }
@@ -173,8 +173,9 @@ if (contaId) {
         preco: it.preco,
         sku: `demo-${it.slug}`,
         descricao: it.descricao,
-        // O card do WhatsApp só sai com link; o botão abre o cardápio do ramo.
-        link: urls[`cardapio-${ramo === 'comum-comida' ? 'pizzaria' : ramo}.png`],
+        // Sem link: os negócios de exemplo não têm loja on-line, e produto com
+        // foto e sem link sai como foto com legenda, sem o botão "Ver na loja".
+        link: null,
         foto: urls[it.slug],
         categoria: it.categoria,
       })),
@@ -183,6 +184,15 @@ if (contaId) {
   if (GRAVAR && criar.length > 0) {
     const r = await gravarImportacao(contaId, { criar, atualizar: [], erros: [] } as never)
     console.log(`  criados ${r.criados}, erros ${JSON.stringify(r.erros)}`)
+  }
+
+  const { data: comLink } = await db().from('produtos').select('id').eq('client_id', contaId).like('sku', 'demo-%').not('link', 'is', null)
+  if ((comLink?.length ?? 0) > 0) {
+    passo(`tirar o link de ${comLink!.length} itens de exemplo`)
+    if (GRAVAR) {
+      const { error } = await db().from('produtos').update({ link: null }).eq('client_id', contaId).like('sku', 'demo-%')
+      if (error) throw new Error(error.message)
+    }
   }
 
   /* -------------------------------------------------------------- materiais */
