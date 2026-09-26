@@ -2084,3 +2084,52 @@ describe('IA contínua (conversar)', () => {
     expect(pediuSaidaDaIa('volta com troco?')).toBe(false)
   })
 })
+
+describe('IA contínua que conclui', () => {
+  const fluxo = (concluir: boolean, desenhada: boolean): Fluxo =>
+    fluxoSchema.parse({
+      inicio: 'ia',
+      nodes: [
+        {
+          id: 'ia',
+          type: 'ia',
+          position: p,
+          data: {
+            instrucao: 'Monte o pedido.',
+            conversar: { maxTurnos: 5, ...(concluir ? { concluir: { salvarEm: 'pedido' } } : {}) },
+          },
+        },
+        { id: 'feito', type: 'mensagem', position: p, data: { texto: 'Pedido: {{pedido}}' } },
+        { id: 'normal', type: 'mensagem', position: p, data: { texto: 'Saiu pelo normal.' } },
+      ],
+      edges: [
+        ...(desenhada ? [{ id: 'a1', source: 'ia', sourceHandle: 'concluido', target: 'feito' }] : []),
+        { id: 'a2', source: 'ia', target: 'normal' },
+      ],
+    })
+
+  const concluiu: Entrada = { tipo: 'ia_respondeu', texto: 'Enviado!', concluido: '1 calabresa' }
+
+  it('segue pela saída "concluiu" com o resumo na variável, depois da frase final', () => {
+    const { acoes, sessao } = conversar(fluxo(true, true), [{ tipo: 'inicio' }, concluiu])
+    expect(textos(acoes)).toEqual(['Enviado!', 'Pedido: 1 calabresa'])
+    expect(sessao.vars.pedido).toBe('1 calabresa')
+  })
+
+  it('sem a saída desenhada, segue pela ligação normal', () => {
+    const { acoes } = conversar(fluxo(true, false), [{ tipo: 'inicio' }, concluiu])
+    expect(textos(acoes)).toEqual(['Enviado!', 'Saiu pelo normal.'])
+  })
+
+  it('a ligação normal nunca é confundida com a de concluído: responder sem concluir fica na conversa', () => {
+    const { sessao } = conversar(fluxo(true, true), [{ tipo: 'inicio' }, { tipo: 'ia_respondeu', texto: 'Oi!' }])
+    expect(sessao.noAtual).toBe('ia')
+    expect(sessao.status).toBe('ativa')
+  })
+
+  it('bloco sem `concluir` ignora o sinal e continua conversando', () => {
+    const { sessao } = conversar(fluxo(false, false), [{ tipo: 'inicio' }, concluiu])
+    expect(sessao.noAtual).toBe('ia')
+    expect(sessao.vars.pedido).toBeUndefined()
+  })
+})

@@ -232,6 +232,7 @@ export function validar(fluxo: Fluxo, capacidades: Capacidades = {}): ResultadoV
     }
     if (no.type === 'salvar-campo') deConversa.add(no.data.campo)
     if (no.type === 'ia' && no.data.salvarEm) deConversa.add(no.data.salvarEm)
+    if (no.type === 'ia' && no.data.conversar?.concluir) deConversa.add(no.data.conversar.concluir.salvarEm)
   }
   for (const nome of deConversa) deSistema.delete(nome)
 
@@ -1041,6 +1042,7 @@ function conferirConteudo(
         erros.push({ codigo: 'IA_SEM_INSTRUCAO', mensagem: 'A IA está sem instrução.', noId: no.id })
       }
       conferirVariavel(no.data.salvarEm, 'variável')
+      if (no.data.conversar?.concluir) conferirVariavel(no.data.conversar.concluir.salvarEm, 'variável do resumo')
       break
 
     case 'handoff': {
@@ -1321,6 +1323,7 @@ function conferirVariaveis(fluxo: Fluxo, daConta: string[] = []): Problema[] {
     if (no.type === 'pergunta' && no.data.salvarMidiaEm) definidas.add(no.data.salvarMidiaEm)
     if (no.type === 'salvar-campo') definidas.add(no.data.campo)
     if (no.type === 'ia' && no.data.salvarEm) definidas.add(no.data.salvarEm)
+    if (no.type === 'ia' && no.data.conversar?.concluir) definidas.add(no.data.conversar.concluir.salvarEm)
     if (no.type === 'http') {
       for (const item of no.data.mapear) definidas.add(item.variavel)
     }

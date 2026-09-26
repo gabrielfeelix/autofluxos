@@ -164,7 +164,7 @@ export type Ferramenta = {
    *
    * Serve para a tela agrupar e para o validador saber qual Conexão cobrar.
    */
-  integracao: 'verandi' | 'loja'
+  integracao: 'verandi' | 'loja' | 'conversa'
 }
 
 /**
@@ -188,6 +188,12 @@ export type ChamadaDeFerramenta =
       tipo: 'loja'
       operacao: OperacaoDeLoja
     }
+  /**
+   * Não sai para lugar nenhum: é o sinal de que a conversa terminou bem. Quem
+   * trata é o resolvedor, que guarda o resumo e devolve a vez ao modelo para a
+   * frase final. Ver `CONCLUIR_CONVERSA`.
+   */
+  | { tipo: 'concluir' }
 
 /** O que uma ferramenta de loja pede ao adaptador. `cardapio` é da conta, não da loja. */
 export type OperacaoDeLoja =
@@ -757,6 +763,44 @@ export const FERRAMENTAS: Ferramenta[] = [
     integracao: 'loja',
   },
 ]
+
+/**
+ * O sinal de que a conversa livre chegou ao fim com sucesso (PLANO-NICHOS,
+ * etapa 6): o pedido fechado, o cadastro completo.
+ *
+ * **Fica fora de `FERRAMENTAS` de propósito.** Não é consulta que alguém marca
+ * numa caixinha: quem liga é o bloco, com `conversar.concluir`, e é o bloco que
+ * decide para onde a conversa vai depois. Estar no catálogo faria ela aparecer
+ * no editor como coisa que se consulta e passar no `validar()` num bloco que
+ * responde uma vez só, onde concluir não quer dizer nada.
+ *
+ * O resumo vai para a variável do bloco e dali para a nota e o motivo do
+ * atendimento: é o que a equipe lê, então a descrição pede o que a equipe
+ * precisa, e não o que a pessoa já leu.
+ */
+export const CONCLUIR_CONVERSA: Ferramenta = {
+  nome: 'concluir_conversa',
+  rotulo: 'Concluir a conversa',
+  escreve: false,
+  descricao:
+    'Encerra esta conversa com sucesso, quando a tarefa descrita em TAREFA DESTE MOMENTO estiver completa e a pessoa tiver confirmado (por exemplo, o pedido com itens, endereço e pagamento, e a pessoa disse que está certo). ' +
+    'Passe em `resumo` tudo o que a equipe precisa para atender, em texto corrido e sem inventar nada. ' +
+    'Depois responda só uma frase curta de fechamento para a pessoa, sem repetir o resumo inteiro. ' +
+    'Não use se faltar alguma informação, se a pessoa ainda estiver em dúvida, ou se ela pedir para falar com alguém.',
+  argumentos: [
+    {
+      nome: 'resumo',
+      tipo: 'texto',
+      descricao: 'O resumo do que foi combinado, para a equipe. Ex.: "1 pizza grande meia calabresa meia mussarela, 1 Coca 2 L. Entrega: Rua X, 100. Pagamento: Pix."',
+      obrigatorio: true,
+    },
+  ],
+  injetados: [],
+  chamada: { tipo: 'concluir' },
+  projecao: [{ caminho: 'concluido' }, { caminho: 'aviso' }],
+  credencial: 'nenhuma',
+  integracao: 'conversa',
+}
 
 /** Acha uma ferramenta pelo nome. `undefined` quando não existe. */
 export function acharFerramenta(nome: string): Ferramenta | undefined {

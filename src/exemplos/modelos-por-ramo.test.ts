@@ -133,32 +133,62 @@ describe('atendente de restaurante com IA', () => {
     expect(conversaLivre.data.instrucao).toContain('endereço')
   })
 
+  it('busca no catálogo próprio e pode concluir com o resumo em pedido', () => {
+    if (conversaLivre?.type !== 'ia') throw new Error('sumiu o bloco de IA')
+    expect(conversaLivre.data.fonteDoCatalogo).toBe('catalogo')
+    expect(conversaLivre.data.conversar?.concluir).toEqual({ salvarEm: 'pedido' })
+    const botoes = cardapioBotoes.nodes.find((n) => n.id === 'mostrar-categoria')
+    expect(botoes?.type === 'ia' && botoes.data.fonteDoCatalogo).toBe('catalogo')
+  })
+
   it('segura a conversa, e "menu" leva ao menu simples', () => {
     const c = conversa(atendenteIaRestaurante)
     c.passo({ tipo: 'inicio' })
     c.passo({ tipo: 'texto', texto: 'tem pizza sem lactose?' })
     c.passo({ tipo: 'ia_respondeu', texto: 'Tem sim, a de abobrinha.' })
 
-    // A segunda mensagem volta para a mesma IA.
-    expect(c.passo({ tipo: 'texto', texto: 'manda foto' }).map((a) => a.tipo)).toContain('chamar_ia')
-    c.passo({ tipo: 'ia_respondeu', texto: 'Resumo: 1 pizza de abobrinha, entrega na Rua A, Pix.' })
+    // A segunda mensagem volta para a mesma IA, que pode concluir.
+    const ia = c.passo({ tipo: 'texto', texto: 'manda foto' }).find((a) => a.tipo === 'chamar_ia')
+    expect(ia?.tipo === 'chamar_ia' && ia.concluir).toBe(true)
+    expect(ia?.tipo === 'chamar_ia' && ia.fonteDoCatalogo).toBe('catalogo')
+    c.passo({ tipo: 'ia_respondeu', texto: 'Olha ela aí!' })
 
     c.passo({ tipo: 'texto', texto: 'menu' })
     expect(c.sessao().noAtual).toBe('menu')
   })
 
-  it('"Enviar pedido" anota o último resumo da IA e chega à equipe como novo pedido', () => {
+  it('a IA fecha o pedido: a frase final sai, o resumo vai para a nota e a equipe recebe "Novo pedido"', () => {
     const c = conversa(atendenteIaRestaurante)
     c.passo({ tipo: 'inicio' })
-    c.passo({ tipo: 'texto', texto: 'quero uma calabresa grande' })
-    c.passo({ tipo: 'ia_respondeu', texto: 'Resumo: 1 calabresa grande, entrega na Rua B, cartão.' })
-    c.passo({ tipo: 'texto', texto: 'menu' })
-    const acoes = c.passo({ tipo: 'opcao', opcaoId: 'enviar' })
+    c.passo({ tipo: 'texto', texto: 'quero uma calabresa grande, Rua B, 10, cartão' })
+    const acoes = c.passo({
+      tipo: 'ia_respondeu',
+      texto: 'Pedido enviado para a cozinha! 🙌',
+      concluido: '1 calabresa grande. Entrega: Rua B, 10. Pagamento: cartão.',
+    })
 
+    const falas = textos(acoes)
+    expect(falas[0]).toBe('Pedido enviado para a cozinha! 🙌')
     const nota = acoes.find((a) => a.tipo === 'escrever_nota')
-    expect(nota?.tipo === 'escrever_nota' && nota.texto).toContain('1 calabresa grande')
+    expect(nota?.tipo === 'escrever_nota' && nota.texto).toContain('1 calabresa grande. Entrega: Rua B, 10')
     const saida = acoes.find((a) => a.tipo === 'transferir_humano')
     expect(saida?.tipo === 'transferir_humano' && saida.motivo).toBe('Novo pedido')
+    // Não é o "não sei": ninguém lê que a IA falhou num pedido que deu certo.
+    expect(JSON.stringify(acoes)).not.toMatch(/não soube/i)
+    expect(c.sessao().vars.pedido).toContain('1 calabresa grande')
+    expect(c.sessao().status).toBe('humano')
+  })
+
+  it('"Falar com atendente" leva a última resposta da IA na nota', () => {
+    const c = conversa(atendenteIaRestaurante)
+    c.passo({ tipo: 'inicio' })
+    c.passo({ tipo: 'texto', texto: 'quanto é a calabresa?' })
+    c.passo({ tipo: 'ia_respondeu', texto: 'A calabresa grande sai R$ 52.' })
+    c.passo({ tipo: 'texto', texto: 'menu' })
+    const acoes = c.passo({ tipo: 'opcao', opcaoId: 'pessoa' })
+    const nota = acoes.find((a) => a.tipo === 'escrever_nota')
+    expect(nota?.tipo === 'escrever_nota' && nota.texto).toContain('R$ 52')
+    expect(acoes.some((a) => a.tipo === 'transferir_humano')).toBe(true)
   })
 
   it('"Continuar conversa" volta para a IA', () => {

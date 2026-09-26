@@ -53,6 +53,7 @@ export function variaveisDoFluxo(fluxo: Fluxo): {
     if (no.type === 'pergunta' && no.data.salvarValorEm) anotar(no.data.salvarValorEm, no.id)
     if (no.type === 'salvar-campo' && no.data.campo) anotar(no.data.campo, no.id)
     if (no.type === 'ia' && no.data.salvarEm) anotar(no.data.salvarEm, no.id)
+    if (no.type === 'ia' && no.data.conversar?.concluir) anotar(no.data.conversar.concluir.salvarEm, no.id)
     // A nota e o comentário da pesquisa são variáveis como as outras: é o que
     // permite o "obrigado pela nota {{nota}}" do bloco seguinte.
     if (no.type === 'nps') {

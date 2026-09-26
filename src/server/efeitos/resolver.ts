@@ -4,11 +4,12 @@ import { envioDoCardapio } from '@/core/materiais'
 import { ATENDIMENTO_SEMPRE_ABERTO, avisoDeForaDoHorario, executar } from '@/core/engine/executar'
 import type { ContextoDoAtendimento } from '@/core/engine/executar'
 import type { Acao, Entrada, Resultado, Sessao } from '@/core/engine/types'
-import type { Fluxo } from '@/core/flow/schema'
+import type { FonteDoCatalogo, Fluxo } from '@/core/flow/schema'
 import { cepLimpo, type ProdutoDaLoja } from '@/core/loja'
 import { VARIAVEIS_DE_DATA } from '@/core/datas'
 import { VARIAVEIS_DO_ATENDIMENTO, varsDoAtendimento } from '@/core/vars-do-atendimento'
 import {
+  CONCLUIR_CONVERSA,
   acharFerramenta,
   ferramentasPermitidas,
   idsVistos,
@@ -583,7 +584,11 @@ async function rodar(
     const seguinte = executar(
       fluxoAtual,
       resultado.sessao,
-      { tipo: 'ia_respondeu', texto: resposta.texto },
+      {
+        tipo: 'ia_respondeu',
+        texto: resposta.texto,
+        ...(resposta.concluido !== undefined ? { concluido: resposta.concluido } : {}),
+      },
       atendimento,
     )
 
@@ -717,7 +722,12 @@ type RespostaFinal =
    * com o texto, e não como ação à parte, porque só saem se a resposta sair:
    * uma rodada que termina em `nao_sei` não manda card nenhum.
    */
-  | (Extract<Resposta, { tipo: 'texto' }> & { produtos?: ProdutoDaLoja[]; anexos?: AnexoDaIa[] })
+  | (Extract<Resposta, { tipo: 'texto' }> & {
+      produtos?: ProdutoDaLoja[]
+      anexos?: AnexoDaIa[]
+      /** O resumo de `concluir_conversa`, quando a IA deu a conversa por encerrada. */
+      concluido?: string
+    })
   /**
    * A IA quer gravar e a política deste cliente manda perguntar antes.
    *
@@ -770,7 +780,11 @@ async function responderComFerramentas({
   opcoes: OpcoesDeEfeitos
   vars: Record<string, string>
 }): Promise<RespostaFinal> {
-  const permitidas = ferramentasPermitidas(chamada.ferramentas)
+  // `concluir_conversa` não é do catálogo: vem do bloco, e só do que conversa.
+  const permitidas = [
+    ...ferramentasPermitidas(chamada.ferramentas),
+    ...(chamada.concluir ? [CONCLUIR_CONVERSA] : []),
+  ]
 
   const base = {
     contextoNegocio: opcoes.contextoNegocio,
@@ -838,6 +852,9 @@ async function responderComFerramentas({
    * mesmo caminho dos cards.
    */
   const anexos: AnexoDaIa[] = []
+  /** O resumo, se a IA chamou `concluir_conversa` nesta rodada. */
+  let concluido: string | null = null
+  const conclusao = () => (concluido === null ? {} : { concluido })
 
   for (let volta = 0; volta <= MAX_VOLTAS_DE_FERRAMENTA; volta++) {
     const resposta = await modelo.responder({
@@ -850,8 +867,9 @@ async function responderComFerramentas({
     })
 
     if (resposta.tipo === 'texto' && (cards.length > 0 || anexos.length > 0)) {
-      return { ...resposta, produtos: cards, anexos }
+      return { ...resposta, produtos: cards, anexos, ...conclusao() }
     }
+    if (resposta.tipo === 'texto') return { ...resposta, ...conclusao() }
     /*
      * Os cards já escolhidos não se perdem por causa da frase.
      *
@@ -864,10 +882,18 @@ async function responderComFerramentas({
      */
     if (resposta.tipo === 'nao_sei' && resposta.falhou && cards.length > 0) {
       console.warn(`[ia] a frase final falhou (${resposta.motivo}); os cards saem mesmo assim`)
-      return { tipo: 'texto', texto: 'Separei essas opções pra você 👇', produtos: cards, anexos }
+      return { tipo: 'texto', texto: 'Separei essas opções pra você 👇', produtos: cards, anexos, ...conclusao() }
     }
     if (resposta.tipo === 'nao_sei' && resposta.falhou && anexos.length > 0) {
-      return { tipo: 'texto', texto: 'Aqui está 👇', anexos }
+      return { tipo: 'texto', texto: 'Aqui está 👇', anexos, ...conclusao() }
+    }
+    /*
+     * A conversa já foi dada por concluída e só a frase final falhou: o que a
+     * pessoa combinou não pode ir para uma pessoa com o motivo "a IA não
+     * soube". Sai uma frase curta e fixa, e o resumo segue igual.
+     */
+    if (resposta.tipo === 'nao_sei' && resposta.falhou && concluido !== null) {
+      return { tipo: 'texto', texto: 'Perfeito, anotei tudo! 🙌', concluido }
     }
     if (resposta.tipo !== 'usar_ferramenta') return resposta
 
@@ -896,6 +922,22 @@ async function responderComFerramentas({
 
     const { ferramenta } = conferida.chamada
     memoria.jaPedidos.add(assinatura(resposta.nome, resposta.argumentos))
+
+    /*
+     * O sinal de conversa concluída não sai para a rede nem entra no log de
+     * consultas: guarda o resumo e devolve a vez ao modelo, que escreve a
+     * frase final. Quem muda o caminho da conversa é o motor, ao receber a
+     * resposta com `concluido`.
+     */
+    if (ferramenta.chamada.tipo === 'concluir') {
+      concluido = conferida.chamada.valores.resumo ?? ''
+      conversa.push({
+        de: 'ferramenta',
+        nome: ferramenta.nome,
+        texto: '{"concluido":true,"aviso":"Agora escreva só a frase curta de fechamento para a pessoa."}',
+      })
+      continue
+    }
 
     const tentouInjetado = camposInjetadosTentados(ferramenta, resposta.argumentos)
     if (tentouInjetado.length > 0) {
@@ -951,6 +993,7 @@ async function responderComFerramentas({
       argumentos: resposta.argumentos,
       vars,
       conexaoId: chamada.conexaoId,
+      fonteDoCatalogo: chamada.fonteDoCatalogo,
       opcoes,
       decididoPor: 'ia',
       idsConhecidos: memoria.ids,
@@ -1060,6 +1103,7 @@ async function resolverConfirmacao(
     argumentos: pendente.argumentos,
     vars: sessao.vars,
     conexaoId: conexaoDoNoDeIa(fluxo, sessao.noAtual),
+    fonteDoCatalogo: fonteDoNoDeIa(fluxo, sessao.noAtual),
     opcoes,
     decididoPor: 'pessoa_confirmou',
     resumo: pendente.resumo,
@@ -1113,6 +1157,7 @@ async function dispararFerramenta({
   argumentos,
   vars,
   conexaoId,
+  fonteDoCatalogo,
   opcoes,
   decididoPor,
   resumo,
@@ -1123,6 +1168,8 @@ async function dispararFerramenta({
   /** As variáveis da conversa, de onde saem os campos injetados. */
   vars: Record<string, string>
   conexaoId: string | undefined
+  /** De onde as consultas de loja leem, pelo bloco. Ausente = o padrão da conta. */
+  fonteDoCatalogo?: FonteDoCatalogo
   opcoes: OpcoesDeEfeitos
   decididoPor: DecididoPor
   resumo?: string
@@ -1143,7 +1190,7 @@ async function dispararFerramenta({
   }
 
   if (ferramenta.chamada.tipo === 'loja') {
-    const r = await executarNaLoja(ferramenta.chamada.operacao, conferida.chamada.valores, opcoes)
+    const r = await executarNaLoja(ferramenta.chamada.operacao, conferida.chamada.valores, opcoes, fonteDoCatalogo)
     await logar({
       opcoes,
       ferramenta,
@@ -1157,6 +1204,9 @@ async function dispararFerramenta({
   }
 
   const chamadaHttp = ferramenta.chamada
+  // O sinal de concluir é tratado no laço da IA e nunca chega aqui; se chegar,
+  // não há rede a chamar.
+  if (chamadaHttp.tipo !== 'http') return { ok: false, motivo: 'esta consulta não sai para a rede' }
 
   let credencial = null
   if (conexaoId && opcoes.clienteId) {
@@ -1213,6 +1263,7 @@ async function executarNaLoja(
   operacao: OperacaoDeLoja,
   valores: Record<string, string>,
   opcoes: OpcoesDeEfeitos,
+  fonteDoCatalogo?: FonteDoCatalogo,
 ): Promise<{ ok: true; json: unknown } | { ok: false; motivo: string }> {
   if (!opcoes.clienteId) return { ok: false, motivo: 'a consulta à loja só funciona numa conta' }
 
@@ -1237,6 +1288,11 @@ async function executarNaLoja(
   const filtro = valores.categoria ? { categoria: valores.categoria } : undefined
 
   if (operacao === 'pedido') {
+    // O catálogo próprio não tem pedido: consultar a loja on-line de um bloco
+    // que escolheu o catálogo misturaria as duas vendas.
+    if (fonteDoCatalogo === 'catalogo') {
+      return { ok: false, motivo: 'o catálogo próprio não consulta pedido de loja on-line' }
+    }
     const r = await consultarPedidoDaConta(opcoes.clienteId, {
       numero: valores.numero ?? '',
       telefone: valores.telefone ?? '',
@@ -1244,8 +1300,16 @@ async function executarNaLoja(
     })
     return r.ok ? { ok: true, json: r.valor } : r
   }
-  const loja = await lojaAtivaDaConta(opcoes.clienteId)
-  if (!loja) return { ok: false, motivo: 'a loja desta conta não está ligada' }
+  const loja = await lojaAtivaDaConta(opcoes.clienteId, fonteDoCatalogo)
+  if (!loja) {
+    return {
+      ok: false,
+      motivo:
+        fonteDoCatalogo === 'catalogo'
+          ? 'o catálogo desta conta não tem item ativo'
+          : 'a loja desta conta não está ligada',
+    }
+  }
 
   if (operacao === 'mostrar') {
     // Relê na loja em vez de reusar o que a busca trouxe: o card é a última
@@ -1458,6 +1522,12 @@ async function logar({
 function alvoDe(ferramenta: Ferramenta, valores: Record<string, string>): string {
   const argumento = ferramenta.argumentos.find((a) => a.tipo === 'id' && a.obrigatorio)
   return argumento ? (valores[argumento.nome] ?? '') : ''
+}
+
+/** De onde as consultas de loja do nó de IA onde a conversa parou leem. */
+function fonteDoNoDeIa(fluxo: Fluxo, noId: string | null): FonteDoCatalogo | undefined {
+  const no = fluxo.nodes.find((n) => n.id === noId)
+  return no?.type === 'ia' ? no.data.fonteDoCatalogo : undefined
 }
 
 /** A credencial que o nó de IA onde a conversa parou usa. */

@@ -12,6 +12,7 @@ import { lerCredencial } from './repos/conexoes'
 import { lojaDaConta, lojaNuvemshopDaConta } from './repos/lojas'
 import { listarProdutos } from './repos/produtos'
 import { estaAtivo } from '@/core/produtos'
+import type { FonteDoCatalogo } from '@/core/flow/schema'
 
 /** Quanto a foto e o estoque exato podem atrasar uma resposta, somados. */
 export const PRAZO_DO_TOKEN_MS = 3_000
@@ -61,10 +62,20 @@ export async function consultarPedidoDaConta(
  *
  * Token que não lê do cofre, que a loja recusa, ou loja lenta: o bot responde
  * com a fase 1 intacta.
+ *
+ * **A fonte pedida pelo bloco de IA** (`fonteDoCatalogo`) passa por cima da
+ * ordem: `catalogo` é só o catálogo próprio, mesmo com Magento ligada, que é a
+ * conta que vende no site e atende um cardápio no WhatsApp; `loja` é só a loja
+ * on-line, sem cair no catálogo. Ausente é a ordem acima, a de sempre.
  */
-export async function lojaAtivaDaConta(clienteId: string): Promise<Loja | null> {
+export async function lojaAtivaDaConta(clienteId: string, fonte?: FonteDoCatalogo): Promise<Loja | null> {
+  if (fonte === 'catalogo') return catalogoDaConta(clienteId)
   const loja = await lojaDaConta(clienteId)
-  if (!loja || !loja.ativa) return (await nuvemshopDaConta(clienteId)) ?? catalogoDaConta(clienteId)
+  if (!loja || !loja.ativa) {
+    const nuvemshop = await nuvemshopDaConta(clienteId)
+    if (nuvemshop || fonte === 'loja') return nuvemshop
+    return catalogoDaConta(clienteId)
+  }
 
   const publica = lojaMagento({ endereco: loja.endereco, codigoDaLoja: loja.codigoDaLoja, sufixo: loja.sufixo })
 

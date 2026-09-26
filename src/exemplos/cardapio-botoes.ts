@@ -111,6 +111,9 @@ export const cardapioBotoes: Fluxo = fluxoSchema.parse({
         instrucao:
           'A pessoa quer ver "{{categoria}}" do cardápio. Busque com loja_buscar usando {{categoria}} como termo e como categoria, e mostre até 3 itens com loja_mostrar, com foto e preço. Responda com uma frase curta e simpática. Se não achar nada, diga que essa parte do cardápio ainda não está cadastrada.',
         ferramentas: ['loja_buscar', 'loja_mostrar'],
+        // Os pratos são os do cardápio cadastrado em Comércio, mesmo numa conta
+        // que também tem loja on-line ligada.
+        fonteDoCatalogo: 'catalogo',
       },
     },
     {

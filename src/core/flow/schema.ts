@@ -462,10 +462,43 @@ export const noIaSchema = z.object({
      * respostas seguidas já é uma conversa que devia ter virado atendimento.
      */
     conversar: z
-      .object({ maxTurnos: z.number().int().min(1).max(MAX_TURNOS_DA_IA) })
+      .object({
+        maxTurnos: z.number().int().min(1).max(MAX_TURNOS_DA_IA),
+        /**
+         * A IA pode dizer que a conversa **deu certo** e seguir sozinha.
+         *
+         * Sem isto, a conversa livre só sai por palavra de saída, teto ou
+         * pedido de pessoa, e nenhuma das três é "o pedido está fechado": a
+         * pessoa tinha de escrever *menu* e tocar num botão para mandar o que
+         * já tinha combinado com a IA, e passar para gente pela marca de "não
+         * sei" faria a equipe ler "a IA não soube" num pedido que deu certo.
+         *
+         * Presente, a IA ganha a consulta `concluir_conversa`, com um resumo.
+         * Ela chama quando a tarefa da instrução terminou, escreve a frase
+         * final, e o bloco guarda o resumo em `salvarEm` e segue pela saída
+         * `concluido` (`SAIDA_CONCLUIDO`), ou pela ligação normal se essa saída
+         * não estiver desenhada. Ausente é o bloco de antes, sem mudança.
+         */
+        concluir: z.object({ salvarEm: nomeVariavel }).optional(),
+      })
       .optional(),
+    /**
+     * De onde saem os produtos das consultas de loja deste bloco.
+     *
+     * Ausente é o padrão de sempre (`lojaAtivaDaConta`): a loja on-line ligada
+     * ganha, e o catálogo próprio só responde sem loja. `catalogo` força o
+     * catálogo próprio mesmo com Magento ligada, que é o caso da conta que
+     * vende no site e mostra um cardápio no WhatsApp (PLANO-NICHOS 4.9);
+     * `loja` força a loja on-line, sem cair no catálogo quando ela falta.
+     *
+     * O cardápio em arquivo (`enviar_cardapio`) é da conta e não liga para
+     * isto: sai igual das duas fontes.
+     */
+    fonteDoCatalogo: z.enum(['loja', 'catalogo']).optional(),
   }),
 })
+
+export type FonteDoCatalogo = 'loja' | 'catalogo'
 
 /**
  * O bloco que passa a conversa para uma pessoa, e a despedida do bot.
@@ -1032,6 +1065,16 @@ export const SAIDA_TIMEOUT = 'timeout'
  * texto", e quem atendia nem sabia que aquilo era uma receita.
  */
 export const SAIDA_MIDIA = 'midia'
+
+/**
+ * A saída do bloco de IA quando a própria IA fecha a conversa com sucesso
+ * (`conversar.concluir`): o pedido montado, o cadastro completo.
+ *
+ * Separada da ligação normal porque as duas contam coisas opostas: a normal é
+ * a pessoa escrevendo *menu* ou a conversa batendo o teto, a desta é o
+ * objetivo cumprido. Sem ela desenhada, concluir segue pela ligação normal.
+ */
+export const SAIDA_CONCLUIDO = 'concluido'
 
 /**
  * As três saídas da pesquisa de satisfação (0060), na régua oficial do NPS:

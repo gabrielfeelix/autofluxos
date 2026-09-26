@@ -3,6 +3,7 @@ import {
   SAIDA_DETRATOR,
   SAIDA_ESCOLHEU,
   SAIDA_FALSO,
+  SAIDA_CONCLUIDO,
   SAIDA_MIDIA,
   SAIDA_NEUTRO,
   SAIDA_PROMOTOR,
@@ -89,6 +90,8 @@ export function nomeDaSaida(no: No, saida: string | undefined): string | null {
     const opcao = no.data.opcoes.find((o) => o.id === saida)
     if (opcao) return `a opção ${curto(opcao.rotulo) || '(sem rótulo)'}`
   }
+
+  if (no.type === 'ia' && saida === SAIDA_CONCLUIDO) return 'a saída de "a IA concluiu"'
 
   if (no.type === 'condicao') {
     if (saida === SAIDA_VERDADEIRO) return 'a saída de "sim"'

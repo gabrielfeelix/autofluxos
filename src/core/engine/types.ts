@@ -3,6 +3,7 @@ import type { ProdutoDaLoja } from '@/core/loja'
 import type {
   AoFalhar,
   Cabecalho,
+  FonteDoCatalogo,
   Mapeamento,
   Metodo,
   Opcao,
@@ -121,7 +122,16 @@ export const entradaSchema = z.discriminatedUnion('tipo', [
     legenda: z.string().optional(),
   }),
   /** o servidor chamou o modelo e trouxe a resposta de volta */
-  z.object({ tipo: z.literal('ia_respondeu'), texto: z.string() }),
+  z.object({
+    tipo: z.literal('ia_respondeu'),
+    texto: z.string(),
+    /**
+     * O resumo que a IA passou em `concluir_conversa`: ela deu a conversa por
+     * encerrada com sucesso. Só vem de bloco com `conversar.concluir`, e
+     * ausente é a resposta de sempre.
+     */
+    concluido: z.string().optional(),
+  }),
   /**
    * O servidor chamou a API e trouxe os valores **já extraídos**. Quem entende
    * de JSON é o resolvedor; o motor só sabe manipular pares de nome e texto.
@@ -217,6 +227,13 @@ export type Acao =
       ferramentas: string[]
       /** De qual credencial as ferramentas se servem. Só o id, nunca o valor. */
       conexaoId?: string
+      /** De onde as consultas de loja leem. Ausente = o padrão da conta. */
+      fonteDoCatalogo?: FonteDoCatalogo
+      /**
+       * A IA pode dar a conversa por concluída (`concluir_conversa`). Só no
+       * bloco com `conversar.concluir`.
+       */
+      concluir?: true
     }
   /**
    * Chamar uma API e reentrar no motor com `{ tipo: 'http_respondeu' }`.

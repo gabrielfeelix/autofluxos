@@ -10,6 +10,7 @@ import { NOME_DO_FORMATO, type FormatoDeResposta } from '@/core/flow/resposta'
 import {
   LIMITE_BOTOES,
   SAIDA_ESCOLHEU,
+  SAIDA_CONCLUIDO,
   SAIDA_MIDIA,
   SAIDA_DETRATOR,
   SAIDA_NEUTRO,
@@ -525,12 +526,29 @@ function NoNota({ data, selected }: NodeProps) {
 }
 
 function NoIa({ data, selected }: NodeProps) {
-  const d = data as { instrucao: string; salvarEm?: string }
+  const d = data as {
+    instrucao: string
+    salvarEm?: string
+    conversar?: { maxTurnos: number; concluir?: { salvarEm: string } }
+  }
+  // Com o concluir ligado o bloco tem duas saídas, e cada uma conta uma
+  // história oposta: "segue" é menu ou teto, "concluiu" é a tarefa feita.
+  const concluir = d.conversar?.concluir
   return (
-    <Caixa tipo="ia" selecionado={!!selected}>
+    <Caixa tipo="ia" selecionado={!!selected} saidaUnica={!concluir}>
       <p className="line-clamp-3 text-[12.5px] leading-5 text-soft">
         <RealceDeVariaveis texto={vazio(d.instrucao, '(sem instrução)')} />
       </p>
+      {concluir && (
+        <>
+          <Saida id={SAIDA_CONCLUIDO}>
+            <span className="text-[11px] text-ok">concluiu</span>
+          </Saida>
+          <Saida id="">
+            <span className="text-[11px] text-muted">menu ou teto</span>
+          </Saida>
+        </>
+      )}
     </Caixa>
   )
 }

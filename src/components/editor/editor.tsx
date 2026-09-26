@@ -323,6 +323,7 @@ export function Editor({
   clienteId,
   conexoes,
   lojaAtiva = false,
+  lojaOnline = false,
   politicasDaIa = {},
   etapas,
   etiquetas,
@@ -352,6 +353,8 @@ export function Editor({
   conexoes: ConexaoDoCliente[]
   /** A conta tem loja on-line ligada (0092). Libera as consultas de loja no bloco de IA. */
   lojaAtiva?: boolean
+  /** Magento ou Nuvemshop ligada: o bloco de IA pode escolher a fonte dos produtos. */
+  lojaOnline?: boolean
   /** A política desta conta para cada consulta que grava (A11). Sem linha, pede confirmação. */
   politicasDaIa?: Record<string, PoliticaDaIa>
   /** As etapas de quadro deste cliente, para o bloco de etapa (C1b). */
@@ -2107,6 +2110,7 @@ export function Editor({
                 valoresDeVariaveis={valoresDeVariaveis}
                 conexoes={conexoes}
                 lojaAtiva={lojaAtiva}
+                lojaOnline={lojaOnline}
                 politicasDaIa={politicasDaIa}
                 iaHabilitada={comIa}
                 etapas={etapas}

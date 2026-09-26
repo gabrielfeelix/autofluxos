@@ -15,7 +15,7 @@ import { listarGatilhosDeEvento } from '@/server/repos/webhooks-de-entrada'
 import { lerPoliticas } from '@/server/ia/politica'
 import { acharCliente } from '@/server/repos/clientes'
 import { listarConexoesParaFluxos } from '@/server/repos/conexoes'
-import { lojaDaConta } from '@/server/repos/lojas'
+import { lojaDaConta, lojaNuvemshopDaConta } from '@/server/repos/lojas'
 import { temProdutoAtivo } from '@/server/repos/produtos'
 import { listarEtiquetas } from '@/server/repos/etiquetas'
 import { membrosDaConta } from '@/server/repos/usuarios'
@@ -68,7 +68,7 @@ export default async function Pagina({
     )
   }
 
-  const [cliente, fluxo, conexoes, quadros, etiquetas, fluxosDaConta, loja, temCatalogo] = await Promise.all([
+  const [cliente, fluxo, conexoes, quadros, etiquetas, fluxosDaConta, loja, nuvemshop, temCatalogo] = await Promise.all([
     acharCliente(clienteId),
     acharFluxo(fluxoId),
     listarConexoesParaFluxos(clienteId),
@@ -76,6 +76,7 @@ export default async function Pagina({
     listarEtiquetas(clienteId),
     listarFluxos(clienteId),
     lojaDaConta(clienteId),
+    lojaNuvemshopDaConta(clienteId),
     temProdutoAtivo(clienteId),
   ])
   if (!cliente || !fluxo || fluxo.clienteId !== cliente.id) notFound()
@@ -174,7 +175,10 @@ export default async function Pagina({
         conexoes={conexoes}
         /* Magento ligada ou catálogo próprio com item ativo: os dois servem de
            loja para o bot (`adaptador-da-loja.ts`). */
-        lojaAtiva={(loja?.ativa ?? false) || temCatalogo}
+        lojaAtiva={(loja?.ativa ?? false) || nuvemshop?.ativa === true || temCatalogo}
+        /* Só com loja on-line ligada o bloco de IA oferece escolher entre ela
+           e o catálogo próprio: sem loja, o catálogo já é a única fonte. */
+        lojaOnline={(loja?.ativa ?? false) || nuvemshop?.ativa === true}
         /* O que a IA faz antes de gravar, por consulta, para o bloco de IA dizer
            a regra desta conta em vez de prometer sempre "pergunta antes". */
         politicasDaIa={Object.fromEntries(politicasDaIa)}

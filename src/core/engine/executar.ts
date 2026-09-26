@@ -13,6 +13,7 @@ import {
   SAIDA_DETRATOR,
   SAIDA_ESCOLHEU,
   SAIDA_FALSO,
+  SAIDA_CONCLUIDO,
   SAIDA_MIDIA,
   SAIDA_NEUTRO,
   SAIDA_PROMOTOR,
@@ -429,6 +430,24 @@ export function executar(
        * pelo bloco seguinte, que não a pediu.
        */
       const { conversar } = atual.data
+
+      /*
+       * A IA deu a conversa por concluída (`concluir_conversa`): a frase final
+       * já saiu acima, o resumo vai para a variável e a conversa segue na
+       * hora, pela saída de concluído, ou pela normal se ela não foi
+       * desenhada. Sem `conversar.concluir` o sinal é ignorado: a consulta nem
+       * é oferecida a esse bloco, e um sinal que chegasse assim não pode
+       * mudar o caminho de um desenho que não o previu.
+       */
+      if (conversar?.concluir && entrada.concluido !== undefined) {
+        s.vars[conversar.concluir.salvarEm] = entrada.concluido
+        s.tentativas = 0
+        const desenhada = proximo(fluxo, atual.id, SAIDA_CONCLUIDO)
+        return desenhada !== null
+          ? avancar(contexto, fluxo, porId, s, acoes, desenhada, { no: atual, saida: SAIDA_CONCLUIDO })
+          : avancar(contexto, fluxo, porId, s, acoes, proximo(fluxo, atual.id), { no: atual })
+      }
+
       if (conversar && s.tentativas + 1 < conversar.maxTurnos) {
         s.tentativas += 1
         s.noAtual = atual.id
@@ -1407,8 +1426,12 @@ function proximo(fluxo: Fluxo, noId: string, saida?: string): string | null {
     return saidas.find((a) => a.sourceHandle === saida)?.target ?? null
   }
   return (
-    saidas.find((a) => a.sourceHandle !== SAIDA_TIMEOUT && a.sourceHandle !== SAIDA_MIDIA)
-      ?.target ?? null
+    saidas.find(
+      (a) =>
+        a.sourceHandle !== SAIDA_TIMEOUT &&
+        a.sourceHandle !== SAIDA_MIDIA &&
+        a.sourceHandle !== SAIDA_CONCLUIDO,
+    )?.target ?? null
   )
 }
 
@@ -1460,6 +1483,8 @@ function chamarIa(no: NoIa, s: Sessao): Acao {
     // `{{...}}` vindo da conversa virar nome de ferramenta.
     ferramentas: no.data.ferramentas,
     ...(no.data.conexaoId ? { conexaoId: no.data.conexaoId } : {}),
+    ...(no.data.fonteDoCatalogo ? { fonteDoCatalogo: no.data.fonteDoCatalogo } : {}),
+    ...(no.data.conversar?.concluir ? { concluir: true as const } : {}),
   }
 }
 

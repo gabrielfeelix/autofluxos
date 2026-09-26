@@ -13,7 +13,8 @@ vi.mock('@/loja/magento', () => ({ lojaMagento }))
 const lojaAdmin = vi.hoisted(() => vi.fn())
 vi.mock('@/loja/magento-admin', () => ({ lojaAdmin }))
 // O catálogo próprio é o último recurso; aqui, vazio, para "nenhuma loja" dar null.
-vi.mock('./repos/produtos', () => ({ listarProdutos: async () => [] }))
+const listarProdutos = vi.hoisted(() => vi.fn())
+vi.mock('./repos/produtos', () => ({ listarProdutos }))
 const alertar = vi.hoisted(() => vi.fn())
 vi.mock('./alertar', () => ({ alertar }))
 
@@ -37,6 +38,54 @@ const base = {
 beforeEach(() => {
   vi.resetAllMocks()
   lojaMagento.mockReturnValue(lojaFalsa({ produtos: [headset] }))
+  listarProdutos.mockResolvedValue([])
+})
+
+const calabresa = {
+  id: 'p1',
+  nome: 'Pizza Calabresa',
+  especie: 'produto',
+  preco: 52,
+  sku: null,
+  descricao: 'Calabresa e cebola',
+  link: null,
+  foto: 'https://x/calabresa.jpg',
+  categoria: 'Pizzas',
+  ordem: 1,
+  arquivadoEm: null,
+}
+
+describe('lojaAtivaDaConta com a fonte escolhida no bloco', () => {
+  it('catalogo: o catálogo próprio mesmo com a Magento ligada', async () => {
+    lojaDaConta.mockResolvedValue(base)
+    listarProdutos.mockResolvedValue([calabresa])
+    const loja = await lojaAtivaDaConta('c1', 'catalogo')
+    expect(loja).not.toBeNull()
+    expect(lojaDaConta).not.toHaveBeenCalled()
+    expect(lojaMagento).not.toHaveBeenCalled()
+    const r = await loja!.buscar('calabresa')
+    expect(r.ok && r.valor.map((p) => p.nome)).toEqual(['Pizza Calabresa'])
+  })
+
+  it('catalogo sem item ativo: null, e não a Magento', async () => {
+    lojaDaConta.mockResolvedValue(base)
+    expect(await lojaAtivaDaConta('c1', 'catalogo')).toBeNull()
+  })
+
+  it('loja: sem loja on-line ligada não cai no catálogo', async () => {
+    lojaDaConta.mockResolvedValue(null)
+    lojaNuvemshopDaConta.mockResolvedValue(null)
+    listarProdutos.mockResolvedValue([calabresa])
+    expect(await lojaAtivaDaConta('c1', 'loja')).toBeNull()
+    expect(await lojaAtivaDaConta('c1')).not.toBeNull()
+  })
+
+  it('loja: a Magento ligada, como sem fonte', async () => {
+    lojaDaConta.mockResolvedValue(base)
+    listarProdutos.mockResolvedValue([calabresa])
+    const r = await (await lojaAtivaDaConta('c1', 'loja'))!.buscar('headset')
+    expect(r.ok && r.valor.map((p) => p.produtoId)).toEqual(['330107'])
+  })
 })
 
 describe('lojaAtivaDaConta', () => {

@@ -937,3 +937,96 @@ describe('IA contínua no resolvedor', () => {
     expect(segunda.acoes.some((a) => a.tipo === 'transferir_humano')).toBe(true)
   })
 })
+
+describe('IA contínua que conclui', () => {
+  const comConcluir = (concluir: boolean): Fluxo => ({
+    inicio: 'pizzaria',
+    nodes: [
+      {
+        id: 'pizzaria',
+        type: 'ia',
+        position: { x: 0, y: 0 },
+        data: {
+          instrucao: 'Monte o pedido.',
+          ferramentas: [],
+          conversar: { maxTurnos: 5, ...(concluir ? { concluir: { salvarEm: 'pedido' } } : {}) },
+        },
+      },
+      {
+        id: 'pedido-feito',
+        type: 'handoff',
+        position: { x: 0, y: 120 },
+        data: { motivo: 'Novo pedido: {{pedido}}', mensagem: 'A equipe já está com seu pedido.' },
+      },
+      {
+        id: 'menu',
+        type: 'handoff',
+        position: { x: 200, y: 120 },
+        data: { motivo: 'saiu da conversa', mensagem: 'Te passo para alguém.' },
+      },
+    ],
+    edges: [
+      { id: 'a1', source: 'pizzaria', sourceHandle: 'concluido', target: 'pedido-feito' },
+      { id: 'a2', source: 'pizzaria', target: 'menu' },
+    ],
+  })
+
+  /** Primeiro chama `concluir_conversa`; depois da volta, a frase final. */
+  const modeloQueConclui = () =>
+    modeloQue((p) =>
+      (p.historico ?? []).some((m) => m.de === 'ferramenta')
+        ? { tipo: 'texto', texto: 'Pedido enviado! 🙌' }
+        : { tipo: 'usar_ferramenta', nome: 'concluir_conversa', argumentos: { resumo: '1 calabresa grande, Rua B, Pix' } },
+    )
+
+  it('a IA conclui: a frase final sai, o resumo vai para a variável e segue pela saída "concluiu"', async () => {
+    const modelo = modeloQueConclui()
+    const r = await executarComEfeitos(comConcluir(true), sessaoNova(), { tipo: 'inicio' }, {
+      modelo,
+      contextoNegocio,
+    })
+
+    expect(modelo.pedidos[0]?.ferramentas?.map((f) => f.nome)).toEqual(['concluir_conversa'])
+    const textos = r.acoes.flatMap((a) => (a.tipo === 'enviar_texto' ? [a.texto] : []))
+    expect(textos[0]).toBe('Pedido enviado! 🙌')
+    expect(r.sessao.vars.pedido).toBe('1 calabresa grande, Rua B, Pix')
+    const saida = r.acoes.find((a) => a.tipo === 'transferir_humano')
+    expect(saida?.tipo === 'transferir_humano' && saida.motivo).toBe('Novo pedido: 1 calabresa grande, Rua B, Pix')
+  })
+
+  it('sem `concluir` no bloco, a consulta nem é oferecida, e a conversa fica como sempre', async () => {
+    const modelo = modeloQue(() => ({ tipo: 'texto', texto: 'Oi!' }))
+    const r = await executarComEfeitos(comConcluir(false), sessaoNova(), { tipo: 'inicio' }, {
+      modelo,
+      contextoNegocio,
+    })
+    expect(modelo.pedidos[0]?.ferramentas ?? []).toEqual([])
+    expect(r.sessao.status).toBe('ativa')
+    expect(r.sessao.noAtual).toBe('pizzaria')
+  })
+
+  it('pedida por um bloco que não conclui, `concluir_conversa` é recusada como qualquer consulta não autorizada', async () => {
+    const modelo = modeloQueConclui()
+    const r = await executarComEfeitos(comConcluir(false), sessaoNova(), { tipo: 'inicio' }, {
+      modelo,
+      contextoNegocio,
+    })
+    expect(r.sessao.vars.pedido).toBeUndefined()
+    expect(r.sessao.status).toBe('humano')
+  })
+
+  it('a frase final falhou depois de concluir: sai uma frase fixa, e não o "não soube"', async () => {
+    const modelo = modeloQue((p) =>
+      (p.historico ?? []).some((m) => m.de === 'ferramenta')
+        ? { tipo: 'nao_sei', motivo: 'cota', falhou: true }
+        : { tipo: 'usar_ferramenta', nome: 'concluir_conversa', argumentos: { resumo: '2 mussarelas' } },
+    )
+    const r = await executarComEfeitos(comConcluir(true), sessaoNova(), { tipo: 'inicio' }, {
+      modelo,
+      contextoNegocio,
+    })
+    expect(r.sessao.vars.pedido).toBe('2 mussarelas')
+    const saida = r.acoes.find((a) => a.tipo === 'transferir_humano')
+    expect(saida?.tipo === 'transferir_humano' && saida.motivo).toBe('Novo pedido: 2 mussarelas')
+  })
+})

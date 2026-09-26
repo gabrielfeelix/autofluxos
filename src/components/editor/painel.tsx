@@ -346,6 +346,7 @@ export function Painel({
   valoresDeVariaveis = {},
   conexoes = [],
   lojaAtiva = false,
+  lojaOnline = false,
   politicasDaIa = {},
   iaHabilitada = false,
   etapas = [],
@@ -384,6 +385,8 @@ export function Painel({
   valoresDeVariaveis?: Record<string, string[]>
   conexoes?: ConexaoDoCliente[]
   lojaAtiva?: boolean
+  /** Magento ou Nuvemshop ligada. Só aí existe escolha de fonte dos produtos. */
+  lojaOnline?: boolean
   /** A política desta conta para cada consulta que grava (A11). Sem linha, pede confirmação. */
   politicasDaIa?: Record<string, PoliticaDaIa>
   /** Este cliente tem o plano de IA. Muda o card inteiro do bloco de IA. */
@@ -1589,6 +1592,46 @@ export function Painel({
           />
 
           {/*
+            De onde saem os produtos (PLANO-NICHOS 4.9). Só existe escolha com
+            loja on-line ligada: sem ela, o catálogo próprio já é a única fonte.
+            Um bloco que já escolheu continua mostrando, para a escolha não
+            ficar valendo escondida se a loja for desligada depois.
+          */}
+          {(lojaOnline || no.data.fonteDoCatalogo !== undefined) && (
+            <label className="block">
+              <span className="mb-1.5 block text-[11px] font-bold tracking-[0.05em] text-muted uppercase">
+                Produtos de onde
+                <AjudaDoCampo
+                  titulo="Produtos de onde"
+                  secao="blocos"
+                  alinhar="direita"
+                  texto="De onde a IA busca e mostra produtos neste bloco."
+                  detalhes={
+                    <p>
+                      O padrão usa a loja on-line quando ela está ligada. Escolha{' '}
+                      <strong>catálogo próprio</strong> quando este bloco atende outra coisa, como
+                      um cardápio cadastrado em Comércio, e não pode misturar com os produtos do
+                      site.
+                    </p>
+                  }
+                />
+              </span>
+              <Dropdown
+                valor={no.data.fonteDoCatalogo ?? ''}
+                aoMudar={(v) =>
+                  aoMudarDados({ fonteDoCatalogo: v === 'loja' || v === 'catalogo' ? v : undefined })
+                }
+                rotuloAcessivel="De onde a IA busca os produtos"
+                opcoes={[
+                  { valor: '', rotulo: 'Padrão da conta', detalhe: 'a loja on-line, quando ligada' },
+                  { valor: 'loja', rotulo: 'Loja on-line', detalhe: 'só os produtos do site' },
+                  { valor: 'catalogo', rotulo: 'Catálogo próprio', detalhe: 'os itens cadastrados aqui' },
+                ]}
+              />
+            </label>
+          )}
+
+          {/*
             A IA contínua (PLANO-NICHOS 4.6). Desligado é o bloco de sempre, que
             responde uma vez e segue; por isso ligar não mexe em mais nada do
             desenho, e desligar apaga o campo em vez de guardar um teto que
@@ -1634,11 +1677,74 @@ export function Painel({
               </span>
               <Dropdown
                 valor={String(no.data.conversar.maxTurnos)}
-                aoMudar={(v) => aoMudarDados({ conversar: { maxTurnos: Number(v) } })}
+                aoMudar={(v) =>
+                  // Espalha o que já havia: trocar o teto não pode desligar o concluir.
+                  aoMudarDados({ conversar: { ...no.data.conversar!, maxTurnos: Number(v) } })
+                }
                 rotuloAcessivel="Até quantas respostas"
                 opcoes={opcoesDeTurnos(no.data.conversar.maxTurnos)}
               />
             </label>
+          )}
+
+          {/*
+            O sinal de sucesso da conversa livre (PLANO-NICHOS, etapa 6). Sem
+            ele, a conversa só termina por "menu", pelo teto ou indo para uma
+            pessoa, e nenhum dos três é "o pedido está fechado".
+          */}
+          {no.data.conversar && (
+            <LinhaLigaDesliga
+              titulo="A IA pode concluir"
+              descricao="Quando a tarefa termina, a IA fecha com um resumo e a conversa segue."
+              marcada={!!no.data.conversar.concluir}
+              aoMudar={(marcada) =>
+                aoMudarDados({
+                  conversar: {
+                    maxTurnos: no.data.conversar!.maxTurnos,
+                    ...(marcada ? { concluir: { salvarEm: 'resumo' } } : {}),
+                  },
+                })
+              }
+              ajuda={
+                <AjudaDoCampo
+                  titulo="A IA pode concluir"
+                  secao="blocos"
+                  alinhar="direita"
+                  texto="A IA decide que a tarefa da instrução terminou e segue sozinha."
+                  detalhes={
+                    <>
+                      <p>
+                        Quando o que a instrução pede estiver completo e o cliente confirmar (um
+                        pedido com itens e endereço, por exemplo), a IA manda a frase final, guarda
+                        um resumo na variável escolhida e a conversa segue pela saída{' '}
+                        <strong>“concluiu”</strong> do bloco, sem o cliente escrever “menu”.
+                      </p>
+                      <p>
+                        Use o resumo no bloco seguinte, como no motivo de um atendimento:{' '}
+                        <code>{'{{resumo}}'}</code>. Sem a saída “concluiu” ligada, segue pela
+                        ligação normal.
+                      </p>
+                    </>
+                  }
+                />
+              }
+            />
+          )}
+
+          {no.data.conversar?.concluir && (
+            <CampoDeVariavel
+              rotulo="Guardar o resumo em"
+              secao="variaveis"
+              valor={no.data.conversar.concluir.salvarEm}
+              variaveis={deOutrosBlocos}
+              modo="guarda"
+              dica="O que a IA combinou, para a equipe ler no atendimento."
+              aoMudar={(v) =>
+                aoMudarDados({
+                  conversar: { ...no.data.conversar!, concluir: { salvarEm: v.trim() } },
+                })
+              }
+            />
           )}
 
           <CampoDeVariavel
