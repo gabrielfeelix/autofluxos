@@ -1340,6 +1340,11 @@ function conferirVariaveis(fluxo: Fluxo, daConta: string[] = []): Problema[] {
     if (no.type === 'pergunta' && no.data.salvarPadraoEm) definidas.add(no.data.salvarPadraoEm)
     if (no.type === 'pergunta' && no.data.salvarMidiaEm) definidas.add(no.data.salvarMidiaEm)
     if (no.type === 'salvar-campo') definidas.add(no.data.campo)
+    // O pedaço "Guardar" dentro de uma mensagem também cria a variável, e o
+    // motor grava igual ao bloco Guardar.
+    if (no.type === 'mensagem') {
+      for (const parte of partesDaMensagem(no)) if (parte.tipo === 'salvar') definidas.add(parte.campo)
+    }
     if (no.type === 'ia' && no.data.salvarEm) definidas.add(no.data.salvarEm)
     if (no.type === 'ia' && no.data.conversar?.concluir) definidas.add(no.data.conversar.concluir.salvarEm)
     if (no.type === 'http') {

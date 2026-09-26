@@ -189,6 +189,18 @@ describe('validar', () => {
    * Avisar aqui acusaria justamente o caso legítimo, e aviso que grita no caso
    * certo é aviso que se aprende a ignorar, inclusive quando ele estiver certo.
    */
+  it('o pedaço "Guardar" dentro de uma mensagem conta como quem preenche', () => {
+    const fluxo = fluxoValido()
+    const oi = fluxo.nodes.find((n) => n.id === 'oi')
+    if (oi?.type === 'mensagem') {
+      oi.data.partes = [
+        { tipo: 'salvar', campo: 'preco', valor: '52,90' },
+        { tipo: 'texto', texto: 'Custa R$ {{preco}}' },
+      ]
+    }
+    expect(codigos(validar(fluxo).avisos)).not.toContain('VARIAVEL_DESCONHECIDA')
+  })
+
   it('não reclama de variável que outra automação da conta preenche', () => {
     const fluxo = fluxoValido()
     const oi = fluxo.nodes.find((n) => n.id === 'oi')
