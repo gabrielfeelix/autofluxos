@@ -1011,7 +1011,7 @@ function fluxoRamo(r: Ramo) {
     ],
   })
   if (r.agenda) g.liga('i-nota', 'i-anotado')
-  else pagamentoDaIa(g)
+  else pagamentoDaIa(g, r)
   esperaEAviso(g, r, 'i-anotado', 'i')
   g.no('i-saida', 'pergunta', { texto: 'Saí do papel. 🙂 E agora?', salvarEm: 'escolha', opcoes: opcoes(['Continuar conversa', LEAD_RESPOSTA, TROCAR]) })
   g.liga('i-conversa', 'i-saida')
@@ -1035,7 +1035,8 @@ const ETAPAS: Record<string, [string, string, string]> = {
 function statusDoPedido(r: Ramo, p: 'b' | 'i'): string {
   const [recebido, agora, depois] = ETAPAS[r.chave]
   // Com botões, a última etapa sabe se é entrega ou retirada.
-  return `✅ *${recebido}* às {{hora_recebido}}\n${agora}\n${p === 'b' && !r.agenda ? '{{etapa_final}}' : depois}`
+  void p
+  return `✅ *${recebido}* às {{hora_recebido}}\n${agora}\n${r.agenda ? depois : '{{etapa_final}}'}`
 }
 
 /**
@@ -1090,9 +1091,18 @@ function pagamentoDeMentira(g: Grafo, r: Ramo): void {
  * somou e a pessoa confirmou, nunca um número escrito pelo modelo. A rota da
  * demo devolve o copia e cola e os links já com o nome do negócio codificado.
  */
-function pagamentoDaIa(g: Grafo): void {
+function pagamentoDaIa(g: Grafo, r: Ramo): void {
+  // Entrega ou retirada, pelo que ficou na cobrança: a última etapa do
+  // acompanhamento e o aviso de pronto dependem disso.
+  g.no('i-etapa', 'condicao', { variavel: 'cobranca_entrega', operador: 'igual', valor: 'retirada' })
+  g.no('i-etapa-r', 'mensagem', { partes: [{ tipo: 'salvar', campo: 'etapa_final', valor: '🛍️ *Pronto para retirada*: te aviso aqui' }] })
+  g.no('i-etapa-e', 'mensagem', { partes: [{ tipo: 'salvar', campo: 'etapa_final', valor: ETAPAS[r.chave][2] }] })
+  g.liga('i-nota', 'i-etapa')
+  g.liga('i-etapa', 'i-etapa-r', 'verdadeiro')
+  g.liga('i-etapa', 'i-etapa-e', 'falso')
   g.no('i-tem-cobranca', 'condicao', { variavel: 'cobranca_total', operador: 'preenchido', valor: '' })
-  g.liga('i-nota', 'i-tem-cobranca')
+  g.liga('i-etapa-r', 'i-tem-cobranca')
+  g.liga('i-etapa-e', 'i-tem-cobranca')
   g.liga('i-tem-cobranca', 'i-anotado', 'falso')
   g.no('i-na-hora', 'condicao', { variavel: 'cobranca_pagamento', operador: 'igual', valor: 'na_hora' })
   g.liga('i-tem-cobranca', 'i-na-hora', 'verdadeiro')
@@ -1157,14 +1167,15 @@ function esperaEAviso(g: Grafo, r: Ramo, depoisDe: string, p: 'b' | 'i'): void {
   g.liga(`${p}-espera`, 'trocar', idDe(TROCAR))
   // Na IA não há {{dia}}: o lembrete fala do que ficou combinado na conversa.
   g.no(`${p}-pronto`, 'mensagem', texto(p === 'i' && r.agenda ? `⏰ Lembrete da *{{negocio}}*: seu horário está reservado. Te esperamos!` : r.pronto))
-  if (p === 'b' && !r.agenda) {
+  if (!r.agenda) {
     // Quem vai buscar não recebe "saiu para entrega".
-    g.no('b-retira', 'condicao', { variavel: 'forma_entrega', operador: 'igual', valor: 'Vou retirar' })
-    g.no('b-pronto-retirada', 'mensagem', texto(r.prontoRetirada))
-    g.liga(`${p}-espera`, 'b-retira', 'timeout')
-    g.liga('b-retira', 'b-pronto-retirada', 'verdadeiro')
-    g.liga('b-retira', `${p}-pronto`, 'falso')
-    g.liga('b-pronto-retirada', `${p}-fim`)
+    const retira = p === 'b' ? { variavel: 'forma_entrega', valor: 'Vou retirar' } : { variavel: 'cobranca_entrega', valor: 'retirada' }
+    g.no(`${p}-retira`, 'condicao', { variavel: retira.variavel, operador: 'igual', valor: retira.valor })
+    g.no(`${p}-pronto-retirada`, 'mensagem', texto(r.prontoRetirada))
+    g.liga(`${p}-espera`, `${p}-retira`, 'timeout')
+    g.liga(`${p}-retira`, `${p}-pronto-retirada`, 'verdadeiro')
+    g.liga(`${p}-retira`, `${p}-pronto`, 'falso')
+    g.liga(`${p}-pronto-retirada`, `${p}-fim`)
   } else {
     g.liga(`${p}-espera`, `${p}-pronto`, 'timeout')
   }
