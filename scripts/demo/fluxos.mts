@@ -3,6 +3,7 @@
  *
  *   npx tsx --conditions=react-server scripts/demo/fluxos.mts            (dry-run: monta e valida)
  *   npx tsx --conditions=react-server scripts/demo/fluxos.mts --gravar   (cria o que falta e publica)
+ *   ... --gravar --sem-loja   (não relê a loja da PCYES, se ela estiver fora do ar)
  *
  * Publica pelo mesmo `publicar()` da tela, que roda `validar()`, a conferência
  * de publicação e a RPC `publicar_fluxo`: cada rodada vira uma versão nova, e
@@ -41,6 +42,8 @@ const { gatilhosAtivos, listarGatilhos, criarGatilho } = await import('@/server/
 const { lojaAtivaDaConta } = await import('@/server/adaptador-da-loja')
 
 const GRAVAR = process.argv.includes('--gravar')
+/** Não relê a loja da PCYES: a vitrine com botões dela fica na versão publicada. Para quando a loja está fora do ar. */
+const SEM_LOJA = process.argv.includes('--sem-loja')
 const DEMO = '3a1d5ac8-369c-4373-856a-495468e7bad4'
 const PCYES = '64dbc3a9-1f77-4892-9770-e3e4be9e14cd'
 const ACERVO = `https://${new URL(process.env.SUPABASE_URL!).host}/storage/v1/object/public/autofluxos-acervo/${DEMO}`
@@ -1525,7 +1528,7 @@ const grafos: Record<string, unknown> = {
   qr: fluxoQr(),
   lead: fluxoLead(),
   loja: fluxoLoja(),
-  pcyesProdutos: await fluxoProdutosPcyes(),
+  ...(SEM_LOJA ? {} : { pcyesProdutos: await fluxoProdutosPcyes() }),
   ...Object.fromEntries(RAMOS.map((r) => [r.chave, fluxoRamo(r)])),
 }
 for (const origem of Object.keys(PCYES_FLUXOS)) grafos[`pcyes:${origem}`] = await copiaDaPcyes(origem)
