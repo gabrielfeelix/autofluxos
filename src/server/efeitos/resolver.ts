@@ -8,8 +8,12 @@ import type { FonteDoCatalogo, Fluxo } from '@/core/flow/schema'
 import { cepLimpo, type ProdutoDaLoja } from '@/core/loja'
 import { VARIAVEIS_DE_DATA } from '@/core/datas'
 import { VARIAVEIS_DO_ATENDIMENTO, varsDoAtendimento } from '@/core/vars-do-atendimento'
+import { VARIAVEIS_DA_COBRANCA, montarCobranca, type Cobranca } from '@/core/cobranca'
+import { estaAtivo } from '@/core/produtos'
+import { listarProdutos } from '../repos/produtos'
 import {
   CONCLUIR_CONVERSA,
+  ferramentaDeCobranca,
   acharFerramenta,
   ferramentasPermitidas,
   idsVistos,
@@ -614,6 +618,7 @@ async function rodar(
         tipo: 'ia_respondeu',
         texto: resposta.texto,
         ...(resposta.concluido !== undefined ? { concluido: resposta.concluido } : {}),
+        ...(resposta.cobranca ? { cobranca: resposta.cobranca } : {}),
       },
       atendimento,
     )
@@ -621,7 +626,7 @@ async function rodar(
     resultado = {
       acoes: [
         ...semEfeito(resultado.acoes, 'chamar_ia'),
-        ...comCards(seguinte.acoes, resposta.texto, resposta.produtos ?? [], resposta.anexos ?? []),
+        ...comCards(seguinte.acoes, resposta.texto, resposta.produtos ?? [], resposta.anexos ?? [], resposta.cobranca?.resumo),
       ],
       sessao: seguinte.sessao,
     }
@@ -753,6 +758,8 @@ type RespostaFinal =
       anexos?: AnexoDaIa[]
       /** O resumo de `concluir_conversa`, quando a IA deu a conversa por encerrada. */
       concluido?: string
+      /** A cobrança que o servidor montou nesta rodada: o resumo sai depois da frase. */
+      cobranca?: Cobranca
     })
   /**
    * A IA quer gravar e a política deste cliente manda perguntar antes.
@@ -809,6 +816,7 @@ async function responderComFerramentas({
   // `concluir_conversa` não é do catálogo: vem do bloco, e só do que conversa.
   const permitidas = [
     ...ferramentasPermitidas(chamada.ferramentas),
+    ...(chamada.cobranca ? [ferramentaDeCobranca(chamada.cobranca.ajustes)] : []),
     ...(chamada.concluir ? [CONCLUIR_CONVERSA] : []),
   ]
 
@@ -881,7 +889,9 @@ async function responderComFerramentas({
   const anexos: AnexoDaIa[] = []
   /** O resumo, se a IA chamou `concluir_conversa` nesta rodada. */
   let concluido: string | null = null
-  const conclusao = () => (concluido === null ? {} : { concluido })
+  /** A cobrança montada nesta rodada, se a IA chamou `montar_cobranca`. */
+  let cobranca: Cobranca | null = null
+  const conclusao = () => ({ ...(concluido === null ? {} : { concluido }), ...(cobranca === null ? {} : { cobranca }) })
 
   for (let volta = 0; volta <= MAX_VOLTAS_DE_FERRAMENTA; volta++) {
     const resposta = await modelo.responder({
@@ -925,6 +935,10 @@ async function responderComFerramentas({
     if (resposta.tipo === 'nao_sei' && resposta.falhou && cards.length > 0) {
       console.warn(`[ia] a frase final falhou (${resposta.motivo}); os cards saem mesmo assim`)
       return { tipo: 'texto', texto: 'Separei essas opções pra você 👇', produtos: cards, anexos, ...conclusao() }
+    }
+    // O resumo com o total é do servidor: a frase em volta faltar não o perde.
+    if (resposta.tipo === 'nao_sei' && resposta.falhou && cobranca !== null) {
+      return { tipo: 'texto', texto: 'Confere o resumo 👇', ...conclusao() }
     }
     if (resposta.tipo === 'nao_sei' && resposta.falhou && anexos.length > 0) {
       return { tipo: 'texto', texto: 'Aqui está 👇', anexos, ...conclusao() }
@@ -993,7 +1007,48 @@ async function responderComFerramentas({
      * frase final. Quem muda o caminho da conversa é o motor, ao receber a
      * resposta com `concluido`.
      */
+    if (ferramenta.chamada.tipo === 'cobranca') {
+      /*
+       * A conta é do servidor. Recusa aqui é dado, não ataque: item fora do
+       * catálogo ou ambíguo volta para a IA perguntar à pessoa, em vez de ir
+       * para um atendente.
+       */
+      const catalogo = opcoes.clienteId ? (await listarProdutos(opcoes.clienteId)).filter(estaAtivo) : []
+      const r = montarCobranca({
+        itens: conferida.chamada.valores.itens ?? '',
+        entrega: conferida.chamada.valores.entrega ?? '',
+        pagamento: conferida.chamada.valores.pagamento ?? '',
+        catalogo,
+        regras: chamada.cobranca!,
+      })
+      if (r.ok) cobranca = r.cobranca
+      conversa.push({
+        de: 'ferramenta',
+        nome: ferramenta.nome,
+        texto: JSON.stringify(
+          r.ok
+            ? { ok: true, aviso: 'O resumo com o total já vai para a pessoa logo depois da sua frase. Escreva só uma frase curta, sem itens nem valores.' }
+            : { ok: false, erro: r.erro },
+        ),
+      })
+      continue
+    }
+
     if (ferramenta.chamada.tipo === 'concluir') {
+      /*
+       * Com cobrança no bloco, concluir exige que a pessoa já tenha visto um
+       * resumo numa mensagem anterior e respondido. Resumo montado nesta mesma
+       * rodada ainda não foi lido por ninguém: confirmar agora seria pular a
+       * confirmação, que é exatamente o passo que modelos pulam.
+       */
+      if (chamada.cobranca && (cobranca !== null || !vars[VARIAVEIS_DA_COBRANCA.total])) {
+        conversa.push({
+          de: 'ferramenta',
+          nome: ferramenta.nome,
+          texto: '{"concluido":false,"aviso":"Ainda não dá para concluir: monte a cobrança com montar_cobranca e espere a pessoa confirmar o resumo."}',
+        })
+        continue
+      }
       concluido = conferida.chamada.valores.resumo ?? ''
       conversa.push({
         de: 'ferramenta',
@@ -1533,8 +1588,13 @@ function ehEnvio(acao: Acao): boolean {
   )
 }
 
-function comCards(acoes: Acao[], texto: string, produtos: ProdutoDaLoja[], anexos: AnexoDaIa[] = []): Acao[] {
-  const extras: Acao[] = [...(produtos.length > 0 ? [{ tipo: 'enviar_produtos', produtos } as Acao] : []), ...anexos]
+function comCards(acoes: Acao[], texto: string, produtos: ProdutoDaLoja[], anexos: AnexoDaIa[] = [], resumo?: string): Acao[] {
+  const extras: Acao[] = [
+    ...(produtos.length > 0 ? [{ tipo: 'enviar_produtos', produtos } as Acao] : []),
+    ...anexos,
+    // O resumo da cobrança, escrito pelo servidor, logo depois da frase da IA.
+    ...(resumo ? [{ tipo: 'enviar_texto', texto: resumo } as Acao] : []),
+  ]
   if (extras.length === 0) return acoes
   const posicao = acoes.findIndex((a) => a.tipo === 'enviar_texto' && a.texto === texto)
   if (posicao === -1) return [...acoes, ...extras]

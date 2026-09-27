@@ -1,3 +1,4 @@
+import { VARIAVEIS_DA_COBRANCA } from '../cobranca'
 import { descrever, nomeDaSaida } from '../flow/descrever'
 import { mensagensDoHandoff, partesDaMensagem } from '../flow/mensagem'
 import {
@@ -431,6 +432,15 @@ export function executar(
        * pelo bloco seguinte, que não a pediu.
        */
       const { conversar } = atual.data
+
+      // O total conferido pelo servidor fica na conversa: é dele que o
+      // pagamento sai, nunca de um número escrito pela IA.
+      if (conversar?.cobranca && entrada.cobranca) {
+        s.vars[VARIAVEIS_DA_COBRANCA.total] = entrada.cobranca.total
+        s.vars[VARIAVEIS_DA_COBRANCA.resumo] = entrada.cobranca.resumo
+        s.vars[VARIAVEIS_DA_COBRANCA.pagamento] = entrada.cobranca.pagamento
+        s.vars[VARIAVEIS_DA_COBRANCA.entrega] = entrada.cobranca.entrega
+      }
 
       /*
        * A IA deu a conversa por concluída (`concluir_conversa`): a frase final
@@ -1521,6 +1531,7 @@ function chamarIa(no: NoIa, s: Sessao): Acao {
     ...(no.data.conexaoId ? { conexaoId: no.data.conexaoId } : {}),
     ...(no.data.fonteDoCatalogo ? { fonteDoCatalogo: no.data.fonteDoCatalogo } : {}),
     ...(no.data.conversar?.concluir ? { concluir: true as const } : {}),
+    ...(no.data.conversar?.cobranca ? { cobranca: no.data.conversar.cobranca } : {}),
     ...((no.data.sobreAEmpresa ?? '').trim() !== '' ? { sobreAEmpresa: no.data.sobreAEmpresa!.trim() } : {}),
   }
 }

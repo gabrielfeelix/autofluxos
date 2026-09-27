@@ -131,6 +131,15 @@ export const entradaSchema = z.discriminatedUnion('tipo', [
      * ausente é a resposta de sempre.
      */
     concluido: z.string().optional(),
+    /** A cobrança que o servidor montou nesta rodada (`montar_cobranca`). */
+    cobranca: z
+      .object({
+        total: z.string(),
+        resumo: z.string(),
+        pagamento: z.string(),
+        entrega: z.string(),
+      })
+      .optional(),
   }),
   /**
    * O servidor chamou a API e trouxe os valores **já extraídos**. Quem entende
@@ -236,6 +245,8 @@ export type Acao =
        * bloco com `conversar.concluir`.
        */
       concluir?: true
+      /** As regras da cobrança conferida, do `conversar.cobranca` do bloco. */
+      cobranca?: { taxaEntrega: number; ajustes: { nome: string; valor: number }[] }
       /** O "Sobre a empresa" do bloco, no lugar do da conta. Ausente = o da conta. */
       sobreAEmpresa?: string
     }

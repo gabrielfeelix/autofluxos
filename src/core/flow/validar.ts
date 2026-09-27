@@ -1,3 +1,4 @@
+import { VARIAVEIS_DA_COBRANCA } from '../cobranca'
 import { descrever } from './descrever'
 import { mensagensDoHandoff, partesDaMensagem } from './mensagem'
 import {
@@ -234,6 +235,9 @@ export function validar(fluxo: Fluxo, capacidades: Capacidades = {}): ResultadoV
     if (no.type === 'salvar-campo') deConversa.add(no.data.campo)
     if (no.type === 'ia' && no.data.salvarEm) deConversa.add(no.data.salvarEm)
     if (no.type === 'ia' && no.data.conversar?.concluir) deConversa.add(no.data.conversar.concluir.salvarEm)
+    if (no.type === 'ia' && no.data.conversar?.cobranca) {
+      for (const v of Object.values(VARIAVEIS_DA_COBRANCA)) deConversa.add(v)
+    }
   }
   for (const nome of deConversa) deSistema.delete(nome)
 
@@ -1347,6 +1351,9 @@ function conferirVariaveis(fluxo: Fluxo, daConta: string[] = []): Problema[] {
     }
     if (no.type === 'ia' && no.data.salvarEm) definidas.add(no.data.salvarEm)
     if (no.type === 'ia' && no.data.conversar?.concluir) definidas.add(no.data.conversar.concluir.salvarEm)
+    if (no.type === 'ia' && no.data.conversar?.cobranca) {
+      for (const v of Object.values(VARIAVEIS_DA_COBRANCA)) definidas.add(v)
+    }
     if (no.type === 'http') {
       for (const item of no.data.mapear) definidas.add(item.variavel)
     }

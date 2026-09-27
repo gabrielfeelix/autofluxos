@@ -194,6 +194,11 @@ export type ChamadaDeFerramenta =
    * frase final. Ver `CONCLUIR_CONVERSA`.
    */
   | { tipo: 'concluir' }
+  /**
+   * Não sai para lugar nenhum: o resolvedor soma o pedido pelo catálogo e
+   * manda o resumo (`core/cobranca.ts`). Ver `ferramentaDeCobranca`.
+   */
+  | { tipo: 'cobranca' }
 
 /** O que uma ferramenta de loja pede ao adaptador. `cardapio` é da conta, não da loja. */
 export type OperacaoDeLoja =
@@ -800,6 +805,50 @@ export const CONCLUIR_CONVERSA: Ferramenta = {
   projecao: [{ caminho: 'concluido' }, { caminho: 'aviso' }],
   credencial: 'nenhuma',
   integracao: 'conversa',
+}
+
+/**
+ * A cobrança conferida (`core/cobranca.ts`): a IA diz o que a pessoa pediu, e
+ * o servidor acha os preços no catálogo, soma e manda o resumo com o total.
+ *
+ * Como `concluir_conversa`, fica fora de `FERRAMENTAS`: quem liga é o bloco,
+ * com `conversar.cobranca`. A descrição é montada com os ajustes daquele
+ * bloco, para o modelo escrever a variação com o nome que o servidor conhece.
+ */
+export function ferramentaDeCobranca(ajustes: { nome: string; valor: number }[]): Ferramenta {
+  const nomes = ajustes.map((a) => `"${a.nome}"`).join(', ')
+  return {
+    nome: 'montar_cobranca',
+    rotulo: 'Montar a cobrança do pedido',
+    escreve: false,
+    descricao:
+      'Calcula o total do pedido pelos preços do catálogo e manda para a pessoa o resumo com o total, pronto. ' +
+      'Use quando souber todos os itens com quantidade e variação, se é entrega (com endereço) ou retirada, e a forma de pagamento. ' +
+      'Nunca escreva preço, subtotal ou total você mesma: quem calcula é esta consulta. ' +
+      'Se vier `ok: true`, o resumo com o total já foi enviado logo depois da sua frase: escreva só uma frase curta, como "Confere o resumo 👇", sem repetir itens nem valores. ' +
+      'Se vier `ok: false`, leia `erro` e pergunte à pessoa o que falta ou qual item ela quer; não invente item. ' +
+      'Se a pessoa mudar qualquer coisa depois, use de novo antes de confirmar. ' +
+      'Só chame concluir_conversa depois que a pessoa disser que o resumo está certo.',
+    argumentos: [
+      {
+        nome: 'itens',
+        tipo: 'texto',
+        descricao:
+          'Um item por linha, separados por ";", no formato "2 x Nome do item (variação, variação)", com o nome como veio da busca. ' +
+          'Meio a meio: "1 x Calabresa / Mussarela (Grande)". ' +
+          (nomes ? `Variações que mudam o preço, escreva exatamente assim: ${nomes}. ` : '') +
+          'Ex.: "2 x Pizza Calabresa (Média); 1 x Refrigerante 2 L".',
+        obrigatorio: true,
+      },
+      { nome: 'entrega', tipo: 'texto', descricao: '"entrega" ou "retirada".', obrigatorio: true },
+      { nome: 'pagamento', tipo: 'texto', descricao: '"pix", "cartao" ou "na_hora" (maquininha ou dinheiro na entrega/retirada).', obrigatorio: true },
+    ],
+    injetados: [],
+    chamada: { tipo: 'cobranca' },
+    projecao: [{ caminho: 'ok' }, { caminho: 'erro' }, { caminho: 'aviso' }],
+    credencial: 'nenhuma',
+    integracao: 'conversa',
+  }
 }
 
 /** Acha uma ferramenta pelo nome. `undefined` quando não existe. */

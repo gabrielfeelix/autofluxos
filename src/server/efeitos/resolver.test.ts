@@ -10,6 +10,15 @@ const lerCredencial = vi.hoisted(() => vi.fn())
 vi.mock('../repos/conexoes', () => ({ lerCredencial }))
 vi.mock('../recursos-do-plano', () => ({ recursoLiberado: vi.fn(async () => true) }))
 
+const listarProdutos = vi.hoisted(() => vi.fn())
+vi.mock('../repos/produtos', () => ({ listarProdutos }))
+// Com `clienteId` (a cobrança lê o catálogo da conta), as políticas também são
+// lidas: sem banco no teste unitário, nenhuma.
+vi.mock('../ia/politica', async (original) => ({
+  ...(await original<typeof import('../ia/politica')>()),
+  lerPoliticas: vi.fn(async () => new Map()),
+}))
+
 const { executarComEfeitos, MAX_EFEITOS, AVISO_DE_FALHA_DA_IA } = await import('./resolver')
 
 /**
@@ -1133,5 +1142,81 @@ describe('"Sobre a empresa" do bloco', () => {
       })
       expect(modelo.pedidos[0]?.contextoNegocio).toBe('Loja de informática.')
     }
+  })
+})
+
+describe('cobrança conferida na IA', () => {
+  const produto = (nome: string, preco: number) => ({
+    id: nome, nome, especie: 'produto', preco, sku: null, descricao: null, foto: null, link: null, arquivadoEm: null, categoria: null, ordem: 0,
+  })
+  beforeEach(() => {
+    listarProdutos.mockResolvedValue([produto('Pizza Calabresa', 52.9), produto('Refrigerante 2 L', 14)])
+  })
+
+  const fluxo: Fluxo = fluxoSchema.parse({
+    inicio: 'pizzaria',
+    nodes: [
+      {
+        id: 'pizzaria',
+        type: 'ia',
+        position: { x: 0, y: 0 },
+        data: {
+          instrucao: 'Monte o pedido.',
+          ferramentas: [],
+          conversar: {
+            maxTurnos: 5,
+            concluir: { salvarEm: 'pedido' },
+            cobranca: { taxaEntrega: 6, ajustes: [{ nome: 'Média', valor: -8 }] },
+          },
+        },
+      },
+      { id: 'feito', type: 'mensagem', position: { x: 0, y: 120 }, data: { texto: 'Total {{cobranca_total}}' } },
+    ],
+    edges: [{ id: 'a1', source: 'pizzaria', sourceHandle: 'concluido', target: 'feito' }],
+  })
+
+  it('o total sai do catálogo, o resumo é do servidor e vem depois da frase', async () => {
+    const modelo = modeloQue((p) =>
+      (p.historico ?? []).some((m) => m.de === 'ferramenta')
+        ? { tipo: 'texto', texto: 'Confere o resumo 👇' }
+        : {
+            tipo: 'usar_ferramenta',
+            nome: 'montar_cobranca',
+            argumentos: { itens: '2 x Pizza Calabresa (Média); 1 x Refrigerante 2 L', entrega: 'entrega', pagamento: 'pix' },
+          },
+    )
+    const r = await executarComEfeitos(fluxo, sessaoNova(), { tipo: 'inicio' }, { modelo, contextoNegocio, clienteId: 'c1' })
+
+    expect(modelo.pedidos[0]?.ferramentas?.map((f) => f.nome)).toEqual(['montar_cobranca', 'concluir_conversa'])
+    const textos = r.acoes.flatMap((a) => (a.tipo === 'enviar_texto' ? [a.texto] : []))
+    expect(textos[0]).toBe('Confere o resumo 👇')
+    expect(textos[1]).toContain('*Total: R$ 109,80*')
+    expect(r.sessao.vars.cobranca_total).toBe('109,80')
+    expect(r.sessao.vars.cobranca_pagamento).toBe('pix')
+  })
+
+  it('item fora do catálogo volta para a IA perguntar, sem total nenhum', async () => {
+    const modelo = modeloQue((p) =>
+      (p.historico ?? []).some((m) => m.de === 'ferramenta')
+        ? { tipo: 'texto', texto: 'Esse sabor não temos. Quer outro?' }
+        : { tipo: 'usar_ferramenta', nome: 'montar_cobranca', argumentos: { itens: '1 x Pizza de Sushi', entrega: 'retirada', pagamento: 'pix' } },
+    )
+    const r = await executarComEfeitos(fluxo, sessaoNova(), { tipo: 'inicio' }, { modelo, contextoNegocio, clienteId: 'c1' })
+    const volta = modelo.pedidos[1]?.historico?.find((m) => m.de === 'ferramenta')
+    expect(volta?.texto).toContain('não está no catálogo')
+    expect(r.sessao.vars.cobranca_total).toBeUndefined()
+    expect(r.acoes.some((a) => a.tipo === 'transferir_humano')).toBe(false)
+  })
+
+  it('concluir sem a pessoa ter visto um resumo é recusado', async () => {
+    const modelo = modeloQue((p) =>
+      (p.historico ?? []).some((m) => m.de === 'ferramenta')
+        ? { tipo: 'texto', texto: 'Qual vai ser o pedido?' }
+        : { tipo: 'usar_ferramenta', nome: 'concluir_conversa', argumentos: { resumo: 'pedido' } },
+    )
+    const r = await executarComEfeitos(fluxo, sessaoNova(), { tipo: 'inicio' }, { modelo, contextoNegocio, clienteId: 'c1' })
+    expect(r.sessao.noAtual).toBe('pizzaria')
+    expect(r.sessao.vars.pedido).toBeUndefined()
+    expect(modelo.pedidos[1]?.historico?.find((m) => m.de === 'ferramenta')?.texto).toContain('"concluido":false')
   })
 })

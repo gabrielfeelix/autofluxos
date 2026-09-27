@@ -515,6 +515,19 @@ export const noIaSchema = z.object({
          * não estiver desenhada. Ausente é o bloco de antes, sem mudança.
          */
         concluir: z.object({ salvarEm: nomeVariavel }).optional(),
+        /**
+         * A cobrança conferida (`core/cobranca.ts`): a IA ganha a consulta
+         * `montar_cobranca`, o total sai do catálogo com estes ajustes e a
+         * taxa, e fica em `cobranca_total`, `cobranca_resumo`,
+         * `cobranca_pagamento` e `cobranca_entrega`. Com isto, concluir só
+         * vale depois de a pessoa ter visto um resumo.
+         */
+        cobranca: z
+          .object({
+            taxaEntrega: z.number().min(0).max(1_000),
+            ajustes: z.array(z.object({ nome: z.string().min(1).max(40), valor: z.number().min(-10_000).max(10_000) })).max(30).default([]),
+          })
+          .optional(),
       })
       .optional(),
     /**
