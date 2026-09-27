@@ -518,3 +518,47 @@ export function traduzirFrete(json: unknown): OpcaoDeFrete[] {
     })
     .sort((a, b) => a.preco - b.preco)
 }
+
+/**
+ * A lista de produtos que a IA escreveu em texto vira vitrine com foto.
+ *
+ * A instrução pede "mostre com loja_mostrar, nunca em lista", e o Gemini
+ * obedece; o Groq, primeiro da cadeia em produção, às vezes busca, não
+ * mostra e escreve "• Milk-shake de chocolate - 500 ml..." (27/set, demo).
+ * Pedir de novo no prompt é pedir. Aqui o servidor garante: linha de lista
+ * que cita um produto que a busca trouxe **com foto e sem link** (catálogo
+ * próprio) sai do texto, e o produto vai como foto com o botão de pedir.
+ *
+ * Produto com link (loja on-line) não entra: lá a lista em texto com o card
+ * depois é o comportamento de sempre. `null` = nada a fazer.
+ */
+export function vitrineDoTexto(
+  texto: string,
+  buscados: readonly ProdutoDaLoja[],
+  maximo = 3,
+): { texto: string; produtos: ProdutoDaLoja[] } | null {
+  const norm = (t: string) =>
+    t.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim()
+  // O nome sem a medida do fim ("Milk-shake de chocolate 500 ml" → "milk shake de chocolate").
+  const nucleo = (nome: string) => norm(nome).replace(/\s+\d+([.,]\d+)?\s*(ml|l|g|kg|cm)$/, '').trim()
+  const candidatos = buscados.filter(
+    (p, i) =>
+      !p.link && (p.foto ?? '').startsWith('https://') && buscados.findIndex((q) => q.produtoId === p.produtoId) === i,
+  )
+  if (candidatos.length === 0) return null
+
+  const BULLET = /^\s*([•·▪◦*-]|\d+[.)])\s+/
+  const escolhidos: ProdutoDaLoja[] = []
+  const linhas = texto.split('\n').filter((linha) => {
+    if (!BULLET.test(linha)) return true
+    const l = norm(linha)
+    const achado = candidatos.find((p) => nucleo(p.nome).length >= 3 && l.includes(nucleo(p.nome)))
+    if (!achado) return true
+    if (!escolhidos.includes(achado)) escolhidos.push(achado)
+    return false
+  })
+  if (escolhidos.length === 0) return null
+
+  const limpo = linhas.join('\n').replace(/\n{3,}/g, '\n\n').trim()
+  return { texto: limpo === '' ? 'Olha só 👇' : limpo, produtos: escolhidos.slice(0, maximo) }
+}

@@ -17,6 +17,8 @@ import {
   normalizarEndereco,
   traduzirProdutos,
   traduzirRecomendacoes,
+  vitrineDoTexto,
+  type ProdutoDaLoja,
 } from './loja'
 
 const item = (sobre: Record<string, unknown> = {}) => ({
@@ -297,5 +299,27 @@ describe('o botão de pedir embaixo da foto', () => {
   it('opção de fluxo comum não é botão de pedir', () => {
     expect(pedidoDoBotao('confirmar')).toBeNull()
     expect(pedidoDoBotao('af-pedir:')).toBeNull()
+  })
+})
+
+describe('vitrineDoTexto', () => {
+  const p = (nome: string, extra: Partial<ProdutoDaLoja> = {}): ProdutoDaLoja => ({
+    produtoId: nome, nome, emEstoque: true, link: '', foto: `https://x.test/${encodeURIComponent(nome)}.jpg`, ...extra,
+  })
+  const buscados = [p('Milk-shake de chocolate 500 ml'), p('Milk-shake de morango 500 ml'), p('Batata frita')]
+
+  it('tira as linhas de lista que citam produto buscado e devolve os produtos, na ordem', () => {
+    const r = vitrineDoTexto(
+      'Aqui estão os nossos milk-shakes 👇\n\n• **Milk-shake de morango** - 500 ml\n• Milk-shake de chocolate - 500 ml\n\nQuer ver as porções?',
+      buscados,
+    )
+    expect(r?.produtos.map((x) => x.nome)).toEqual(['Milk-shake de morango 500 ml', 'Milk-shake de chocolate 500 ml'])
+    expect(r?.texto).toBe('Aqui estão os nossos milk-shakes 👇\n\nQuer ver as porções?')
+  })
+
+  it('não mexe em produto com link, sem foto, nem em linha que não é lista', () => {
+    expect(vitrineDoTexto('• Headset X', [p('Headset X', { link: 'https://loja/x' })])).toBeNull()
+    expect(vitrineDoTexto('• Batata frita', [p('Batata frita', { foto: undefined })])).toBeNull()
+    expect(vitrineDoTexto('A Batata frita é ótima.', buscados)).toBeNull()
   })
 })

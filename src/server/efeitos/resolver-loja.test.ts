@@ -449,3 +449,40 @@ describe('a ordem: frase, fotos, e a pergunta depois', () => {
     expect(ordem(r)).toEqual(['T:Aqui estão nossos hambúrgueres 👇\n\nTambém temos porções e bebidas. Quer ver alguma?', 'FOTOS'])
   })
 })
+
+/*
+ * 27/set, demo em produção (Groq): a IA buscou os milk-shakes, não chamou
+ * loja_mostrar e escreveu a lista em texto. O servidor tira a lista e manda
+ * os produtos com foto.
+ */
+describe('lista em texto vira vitrine', () => {
+  const shake = (nome: string): ProdutoDaLoja => ({
+    produtoId: nome, nome, preco: 22.9, emEstoque: true, link: '', foto: `https://x.test/${nome.length}.jpg`,
+  })
+  const shakes = [shake('Milk-shake de chocolate 500 ml'), shake('Milk-shake de morango 500 ml')]
+
+  it('produto do catálogo próprio citado em lista sai com foto, e a lista some do texto', async () => {
+    lojaAtivaDaConta.mockResolvedValue({ ...lojaFalsa({ produtos: shakes }), async buscar() { return { ok: true as const, valor: shakes } } })
+    const modelo = modeloComRoteiro([
+      { tipo: 'usar_ferramenta', nome: 'loja_buscar', argumentos: { termo: 'milk-shake' } },
+      { tipo: 'texto', texto: 'Aqui estão os nossos milk-shakes 👇\n\n• **Milk-shake de chocolate** - 500 ml\n• **Milk-shake de morango** - 500 ml\n\nQuer ver as porções?' },
+    ])
+    const r = await rodar(fluxo(['loja_buscar', 'loja_mostrar']), modelo)
+    const tipos = r.acoes.map((a) => a.tipo)
+    expect(tipos).toContain('enviar_produtos')
+    const textos = r.acoes.flatMap((a) => (a.tipo === 'enviar_texto' ? [a.texto] : []))
+    expect(textos.join('\n')).not.toContain('•')
+    const vitrine = r.acoes.find((a) => a.tipo === 'enviar_produtos')
+    expect(vitrine?.tipo === 'enviar_produtos' && vitrine.produtos.map((p) => p.nome)).toEqual(shakes.map((p) => p.nome))
+  })
+
+  it('produto com link (loja on-line) continua como sempre', async () => {
+    lojaAtivaDaConta.mockResolvedValue(lojaFalsa({ produtos: [headset] }))
+    const modelo = modeloComRoteiro([
+      { tipo: 'usar_ferramenta', nome: 'loja_buscar', argumentos: { termo: 'headset' } },
+      { tipo: 'texto', texto: 'Temos:\n• Headset PCYES Comfort CM500' },
+    ])
+    const r = await rodar(fluxo(['loja_buscar', 'loja_mostrar']), modelo)
+    expect(r.acoes.some((a) => a.tipo === 'enviar_produtos')).toBe(false)
+  })
+})

@@ -5,7 +5,7 @@ import { ATENDIMENTO_SEMPRE_ABERTO, avisoDeForaDoHorario, executar } from '@/cor
 import type { ContextoDoAtendimento } from '@/core/engine/executar'
 import type { Acao, Entrada, Resultado, Sessao } from '@/core/engine/types'
 import type { FonteDoCatalogo, Fluxo } from '@/core/flow/schema'
-import { cepLimpo, type ProdutoDaLoja } from '@/core/loja'
+import { cepLimpo, vitrineDoTexto, type ProdutoDaLoja } from '@/core/loja'
 import { VARIAVEIS_DE_DATA } from '@/core/datas'
 import { VARIAVEIS_DO_ATENDIMENTO, varsDoAtendimento } from '@/core/vars-do-atendimento'
 import { VARIAVEIS_DA_COBRANCA, montarCobranca, type Cobranca } from '@/core/cobranca'
@@ -882,6 +882,9 @@ async function responderComFerramentas({
 
   /** O que `loja_mostrar` separou para sair como card junto da resposta. */
   const cards: ProdutoDaLoja[] = []
+  /** O que `loja_buscar` trouxe nesta rodada: a vitrine automática escolhe daqui. */
+  const buscados: ProdutoDaLoja[] = []
+  const podeMostrar = permitidas.some((f) => f.chamada.tipo === 'loja' && f.chamada.operacao === 'mostrar')
   /**
    * Os arquivos que `loja_enviar_manual` e `enviar_cardapio` separaram, pelo
    * mesmo caminho dos cards.
@@ -894,7 +897,7 @@ async function responderComFerramentas({
   const conclusao = () => ({ ...(concluido === null ? {} : { concluido }), ...(cobranca === null ? {} : { cobranca }) })
 
   for (let volta = 0; volta <= MAX_VOLTAS_DE_FERRAMENTA; volta++) {
-    const resposta = await modelo.responder({
+    let resposta = await modelo.responder({
       ...base,
       historico: conversa,
       // Na última volta o catálogo sai: o modelo tem que responder com o que
@@ -916,6 +919,20 @@ async function responderComFerramentas({
      */
     if (concluido !== null && resposta.tipo === 'usar_ferramenta' && resposta.nome === CONCLUIR_CONVERSA.nome) {
       return { tipo: 'texto', texto: 'Perfeito, anotei tudo! 🙌', produtos: cards, anexos, concluido }
+    }
+
+    /*
+     * A IA buscou, não mostrou e escreveu os produtos em lista de texto: o
+     * servidor tira a lista e manda os produtos com foto (`vitrineDoTexto`).
+     * Só catálogo próprio, e só se o bloco pode mostrar.
+     */
+    if (resposta.tipo === 'texto' && cards.length === 0 && podeMostrar) {
+      const vitrine = vitrineDoTexto(resposta.texto, buscados)
+      if (vitrine) {
+        console.warn(`[ia] lista em texto virou vitrine: ${vitrine.produtos.length} produto(s)`)
+        cards.push(...vitrine.produtos)
+        resposta = { ...resposta, texto: vitrine.texto }
+      }
     }
 
     if (resposta.tipo === 'texto' && (cards.length > 0 || anexos.length > 0)) {
@@ -1141,6 +1158,10 @@ async function responderComFerramentas({
 
     if (ferramenta.chamada.tipo === 'loja' && ferramenta.chamada.operacao === 'mostrar') {
       cards.push(...produtosDe(disparo.json))
+    }
+    if (ferramenta.chamada.tipo === 'loja' && ferramenta.chamada.operacao === 'buscar') {
+      const achados = (disparo.json as { produtos?: unknown } | null)?.produtos
+      if (Array.isArray(achados)) buscados.push(...(achados as ProdutoDaLoja[]))
     }
     if (
       ferramenta.chamada.tipo === 'loja' &&
