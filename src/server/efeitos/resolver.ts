@@ -1634,9 +1634,12 @@ function comCards(acoes: Acao[], texto: string, produtos: ProdutoDaLoja[], anexo
    * (a loja on-line) continua como sempre: frase inteira, depois os cards.
    */
   const semLink = produtos.length > 0 && produtos.every((p) => !p.link)
+  // O mesmo vale para o cardápio em arquivo: "Qual parte quer ver?" antes da
+  // imagem do cardápio lê fora de ordem (27/set, demo).
+  const soArquivo = produtos.length === 0 && anexos.length > 0
   const paragrafos = texto.split(/\n\s*\n/)
   const ultimo = paragrafos.at(-1)?.trim() ?? ''
-  if (semLink && paragrafos.length > 1 && ultimo.endsWith('?')) {
+  if ((semLink || soArquivo) && paragrafos.length > 1 && ultimo.endsWith('?')) {
     const antes = acoes[posicao] as Extract<Acao, { tipo: 'enviar_texto' }>
     return [
       ...acoes.slice(0, posicao),

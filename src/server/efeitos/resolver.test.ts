@@ -1242,12 +1242,15 @@ describe('cardápio próprio do bloco de IA', () => {
     })
     const modelo = modeloQue((p) =>
       (p.historico ?? []).some((m) => m.de === 'ferramenta')
-        ? { tipo: 'texto', texto: 'Olha o nosso cardápio 👇' }
+        ? { tipo: 'texto', texto: 'Olha o nosso cardápio 👇\n\nQual parte quer ver com foto?' }
         : { tipo: 'usar_ferramenta', nome: 'enviar_cardapio', argumentos: {} },
     )
     const r = await executarComEfeitos(fluxo, sessaoNova(), { tipo: 'inicio' }, { modelo, contextoNegocio })
     const tipos = r.acoes.map((a) => (a.tipo === 'enviar_midia' ? `${a.midia}:${a.url}` : a.tipo))
-    expect(tipos).toEqual(['enviar_texto', 'imagem:https://x.test/burger.png', 'documento:https://x.test/burger.pdf'])
+    // A pergunta vai depois dos arquivos.
+    expect(tipos).toEqual(['enviar_texto', 'imagem:https://x.test/burger.png', 'documento:https://x.test/burger.pdf', 'enviar_texto'])
+    const textos = r.acoes.flatMap((a) => (a.tipo === 'enviar_texto' ? [a.texto] : []))
+    expect(textos).toEqual(['Olha o nosso cardápio 👇', 'Qual parte quer ver com foto?'])
     const pdf = r.acoes.find((a) => a.tipo === 'enviar_midia' && a.midia === 'documento')
     expect(pdf?.tipo === 'enviar_midia' && pdf.nomeArquivo).toBe('Cardápio Burger.pdf')
   })
