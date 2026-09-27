@@ -45,6 +45,8 @@ const DEMO = '3a1d5ac8-369c-4373-856a-495468e7bad4'
 const PCYES = '64dbc3a9-1f77-4892-9770-e3e4be9e14cd'
 const ACERVO = `https://${new URL(process.env.SUPABASE_URL!).host}/storage/v1/object/public/autofluxos-acervo/${DEMO}`
 const MINUTOS_ATE_O_AVISO = 2
+/** Onde moram o Pix e a página de cartão de mentira (`core/pagamento-demo.ts`). */
+const SITE = 'https://autofluxos.4yu.com.br'
 
 type Item = { slug: string; nome: string; categoria: string; preco: number; descricao: string }
 const CATALOGO: Record<string, { itens: Item[] }> = JSON.parse(
@@ -166,6 +168,8 @@ type Ramo = {
   acompanhar: string
   acompanharResposta: string
   pronto: string
+  /** O aviso de pronto de quem vai buscar (sem agenda). */
+  prontoRetirada: string
   iaPerguntaOQueVende: boolean
   iaTarefa: string[]
   cardapioPelaIa: boolean
@@ -239,6 +243,7 @@ const RAMOS: Ramo[] = [
     acompanhar: 'Acompanhar pedido',
     acompanharResposta: 'Seu pedido está no forno 🔥 Te aviso aqui assim que sair.',
     pronto: '🛵 Oba, {{nome}}! Seu pedido saiu para entrega e chega em uns 15 minutos. Bom apetite!',
+    prontoRetirada: '🍕 {{nome}}, sua pizza está pronta! Pode vir buscar, ela está quentinha te esperando no balcão.',
     iaPerguntaOQueVende: false,
     iaTarefa: [
       '- Pediram o cardápio ou o menu: mande com enviar_cardapio (é o cardápio modelo da demonstração).',
@@ -294,6 +299,7 @@ const RAMOS: Ramo[] = [
     acompanhar: 'Acompanhar pedido',
     acompanharResposta: 'Seu lanche está na chapa 🔥 Te aviso aqui assim que sair.',
     pronto: '🛵 {{nome}}, seu pedido saiu para entrega! Chega em uns 15 minutos.',
+    prontoRetirada: '🍔 {{nome}}, seu lanche está pronto! Pode vir buscar no balcão.',
     iaPerguntaOQueVende: false,
     iaTarefa: [
       '- Pediram o cardápio: diga as partes (hambúrgueres, porções, milk-shakes e bebidas) com os itens e preços de cada uma, e pergunte o que vai ser.',
@@ -346,6 +352,7 @@ const RAMOS: Ramo[] = [
     acompanhar: 'Acompanhar pedido',
     acompanharResposta: 'Seu prato está sendo montado 👩‍🍳 Te aviso aqui assim que sair.',
     pronto: '🛵 {{nome}}, seu almoço saiu para entrega! Chega em uns 15 minutos.',
+    prontoRetirada: '🍽️ {{nome}}, seu almoço está pronto! Pode vir buscar no balcão.',
     iaPerguntaOQueVende: false,
     iaTarefa: [
       '- Pediram o cardápio: diga as partes (pratos executivos, saladas, bebidas e sobremesas) com os itens e preços, e pergunte o que vai ser.',
@@ -391,7 +398,8 @@ const RAMOS: Ramo[] = [
     anotado: '✅ Pedido confirmado! Estamos separando suas peças.',
     acompanhar: 'Acompanhar pedido',
     acompanharResposta: 'Estamos separando e embalando 📦 Te aviso aqui assim que ficar pronto.',
-    pronto: '📦 {{nome}}, seu pedido está pronto! Se escolheu entrega, ele sai hoje; se vai retirar, já pode passar na loja.',
+    pronto: '🚚 {{nome}}, seu pedido saiu para entrega e chega hoje!',
+    prontoRetirada: '🛍️ {{nome}}, suas peças estão separadas! Já pode passar na loja para retirar.',
     iaPerguntaOQueVende: true,
     iaTarefa: [
       '- A loja vende o que a pessoa disse em "o que vende": {{o_que_vende}}. Para mostrar peças, use o catálogo de exemplo (roupas, calçados e acessórios) e escolha o que for mais parecido; se não houver nada parecido, diga que vai verificar com a equipe, sem inventar produto nem foto.',
@@ -433,6 +441,7 @@ const RAMOS: Ramo[] = [
     acompanhar: 'Ver meu horário',
     acompanharResposta: 'Seu horário: {{dia}}, {{periodo}}. 😉',
     pronto: '⏰ Lembrete do Salão Exemplo: seu horário é {{dia}}, {{periodo}}. Se precisar trocar, é só responder aqui.',
+    prontoRetirada: '',
     iaPerguntaOQueVende: true,
     iaTarefa: [
       '- O negócio oferece o que a pessoa disse em "o que vende": {{o_que_vende}}. Para mostrar serviços e preços, use o catálogo de exemplo (cabelo, barba e unhas) e escolha o mais parecido; se não houver nada parecido, diga que vai verificar com a equipe, sem inventar serviço nem preço.',
@@ -474,6 +483,7 @@ const RAMOS: Ramo[] = [
     acompanhar: 'Ver minha aula',
     acompanharResposta: 'Sua primeira aula: {{dia}}, {{periodo}}. 😉',
     pronto: '⏰ Lembrete do Estúdio Exemplo: sua aula é {{dia}}, {{periodo}}. Chegue 10 minutos antes para a avaliação.',
+    prontoRetirada: '',
     iaPerguntaOQueVende: true,
     iaTarefa: [
       '- O negócio oferece o que a pessoa disse em "o que vende": {{o_que_vende}}. Para mostrar planos e preços, use o catálogo de exemplo (planos de pilates e aula experimental) e escolha o mais parecido; se não houver nada parecido, diga que vai verificar com a equipe, sem inventar plano nem preço.',
@@ -524,12 +534,42 @@ const LEAD_RESPOSTA = 'Quero no meu negócio'
 const TROCAR = 'Trocar de ramo'
 const VOLTAR = 'Voltar ao menu'
 const MENSAGENS_DO_LEAD = [
-  'Que ótimo! 🙌 Vou chamar alguém da 4YU para conversar com você.',
-  'Enquanto isso, me conta: qual o nome da sua empresa e o que ela vende?',
+  'Anotado! ✅ Já avisei a equipe da 4YU, e alguém te chama aqui mesmo, em horário comercial.',
 ]
 
+/**
+ * O lead: pergunta a empresa **antes** de passar para uma pessoa. Antes a
+ * pergunta ia junto da transferência, e quem respondia ficava falando sozinho
+ * (27/set: um visitante respondeu e esperou 11 minutos sem nada voltar).
+ */
+function nosDoLead(id: string, ramo: string): { pergunta: No; handoff: No } {
+  return {
+    pergunta: {
+      id,
+      type: 'pergunta',
+      position: { x: 0, y: 1100 },
+      data: {
+        texto: 'Que ótimo! 🙌 Para alguém da 4YU já te chamar sabendo do seu caso:\n*qual o nome da sua empresa e o que ela vende?*',
+        salvarEm: 'empresa_lead',
+      },
+    },
+    handoff: {
+      id: `${id}-pessoa`,
+      type: 'handoff',
+      position: { x: 340, y: 1100 },
+      data: {
+        motivo: `Lead da demo · ${ramo} · {{empresa_lead}}`,
+        mensagens: MENSAGENS_DO_LEAD,
+        mensagemDeRetomada: 'Oi de novo! 🙂 Se quiser continuar testando a demonstração, é só escrever *inicio*.',
+      },
+    },
+  }
+}
 function lead(g: Grafo, id = 'lead', ramo = 'início, sem ramo'): string {
-  return g.no(id, 'handoff', { motivo: `Lead da demo · ${ramo}`, mensagens: MENSAGENS_DO_LEAD })
+  const { pergunta, handoff } = nosDoLead(id, ramo)
+  g.nodes.push(pergunta, handoff)
+  g.liga(id, handoff.id)
+  return id
 }
 const trocar = (g: Grafo, id = 'trocar') => g.no(id, 'ir-fluxo', { fluxoId: ids.inicio, rotulo: NOMES.inicio })
 
@@ -612,6 +652,7 @@ function fluxoRamo(r: Ramo) {
       // Carrinho vazio a cada vez que a pessoa entra: "testar de novo" começa do zero.
       { tipo: 'salvar', campo: 'carrinho', valor: '' },
       { tipo: 'salvar', campo: 'total', valor: '0' },
+      { tipo: 'salvar', campo: 'linha_troco', valor: '' },
       { tipo: 'atraso', segundos: 1 },
       { tipo: 'texto', texto: `Bem-vindo à *${r.negocio}*! ${r.emoji}\nAqui você escolhe e ${r.agenda ? 'agenda' : 'pede'} em poucos toques.` },
     ],
@@ -695,14 +736,17 @@ function fluxoRamo(r: Ramo) {
         { tipo: 'salvar', campo: 'variacao', valor: '' },
         { tipo: 'salvar', campo: 'ajuste', valor: '0' },
         { tipo: 'salvar', campo: 'qtd', valor: '1' },
-        { tipo: 'midia', midia: 'imagem', url: `${ACERVO}/demo-${s}.jpg`, legenda: `*${i.nome}*\n${i.descricao}\n*${precoDito(i.preco)}*` },
+        // A foto vai em cima dos botões "Fazer pedido / Ver outro": uma bolha só.
+        { tipo: 'salvar', campo: 'foto_item', valor: `${ACERVO}/demo-${s}.jpg` },
+        { tipo: 'salvar', campo: 'legenda_item', valor: `*${i.nome}*\n${i.descricao}\n*${precoDito(i.preco)}*` },
       ],
     })
     g.liga(`it-${s}`, 'b-escolha')
   }
   const botaoPedir = r.agenda ? 'Agendar' : 'Fazer pedido'
   g.no('b-escolha', 'pergunta', {
-    texto: 'Gostou?',
+    texto: '{{legenda_item}}',
+    imagem: '{{foto_item}}',
     salvarEm: 'depois_do_item',
     opcoes: opcoes([botaoPedir, 'Ver outro', VOLTAR]),
   })
@@ -822,6 +866,7 @@ function fluxoRamo(r: Ramo) {
       partes: [
         { tipo: 'salvar', campo: 'taxa', valor: reais(r.taxa) },
         { tipo: 'salvar', campo: 'linha_taxa', valor: `Entrega: R$ ${reais(r.taxa)}` },
+        { tipo: 'salvar', campo: 'etapa_final', valor: ETAPAS[r.chave][2] },
       ],
     })
     g.no('p-retirada', 'mensagem', {
@@ -829,6 +874,7 @@ function fluxoRamo(r: Ramo) {
         { tipo: 'salvar', campo: 'endereco', valor: 'retirada no local' },
         { tipo: 'salvar', campo: 'taxa', valor: '0,00' },
         { tipo: 'salvar', campo: 'linha_taxa', valor: 'Retirada: sem taxa' },
+        { tipo: 'salvar', campo: 'etapa_final', valor: '🛍️ *Pronto para retirada*: te aviso aqui' },
       ],
     })
     g.liga('p-entrega', 'p-endereco', 'entrega')
@@ -837,9 +883,28 @@ function fluxoRamo(r: Ramo) {
     g.no('p-final', 'salvar-campo', { campo: 'total_final', valor: '{{total}} + {{taxa}}', conta: true })
     g.liga('p-com-taxa', 'p-final')
     g.liga('p-retirada', 'p-final')
-    g.no('p-pagamento', 'pergunta', { texto: 'Como você vai pagar?', salvarEm: 'pagamento', opcoes: opcoes(['Pix', 'Cartão na entrega', 'Dinheiro']) })
+    g.no('p-pagamento', 'pergunta', {
+      texto: 'Como você vai pagar?',
+      salvarEm: 'pagamento',
+      salvarValorEm: 'forma_pagamento',
+      opcoes: opcoes([{ rotulo: 'Pix', valor: 'pix' }, { rotulo: 'Cartão de crédito', valor: 'cartao' }, { rotulo: 'Pagar na hora', valor: 'na-hora' }]),
+    })
     g.liga('p-final', 'p-pagamento')
-    resumo = `*Resumo do pedido*{{carrinho}}\n\nSubtotal: R$ {{total}}\n{{linha_taxa}}\n*Total: R$ {{total_final}}*\n\n*Entrega:* {{endereco}}\n*Pagamento:* {{pagamento}}${r.observacao ? '{{linha_obs}}' : ''}`
+    // Na hora: maquininha, ou dinheiro com troco.
+    g.no('p-na-hora', 'pergunta', { texto: 'Na hora, como prefere pagar?', salvarEm: 'na_hora', opcoes: opcoes(['Maquininha', 'Dinheiro']) })
+    g.liga('p-pagamento', 'p-na-hora', 'pagar-na-hora')
+    g.no('p-maquininha', 'mensagem', { partes: [{ tipo: 'salvar', campo: 'pagamento', valor: 'Cartão na maquininha, na hora' }] })
+    g.liga('p-na-hora', 'p-maquininha', 'maquininha')
+    g.no('p-troco', 'pergunta', { texto: 'Precisa de troco? Escreva para quanto (ex.: *100*) ou *não*.', salvarEm: 'troco' })
+    g.liga('p-na-hora', 'p-troco', 'dinheiro')
+    g.no('p-sem-troco', 'condicao', { variavel: 'troco', operador: 'contem', valor: 'n' })
+    g.liga('p-troco', 'p-sem-troco')
+    g.no('p-dinheiro-sem', 'mensagem', { partes: [{ tipo: 'salvar', campo: 'pagamento', valor: 'Dinheiro, na hora' }, { tipo: 'salvar', campo: 'linha_troco', valor: '\n*Troco:* não precisa' }] })
+    g.no('p-dinheiro-com', 'mensagem', { partes: [{ tipo: 'salvar', campo: 'pagamento', valor: 'Dinheiro, na hora' }, { tipo: 'salvar', campo: 'linha_troco', valor: '\n*Troco para:* R$ {{troco}}' }] })
+    g.liga('p-sem-troco', 'p-dinheiro-sem', 'verdadeiro')
+    g.liga('p-sem-troco', 'p-dinheiro-com', 'falso')
+    for (const x of ['p-maquininha', 'p-dinheiro-sem', 'p-dinheiro-com']) g.liga(x, 'p-resumo')
+    resumo = `*Resumo do pedido*{{carrinho}}\n\nSubtotal: R$ {{total}}\n{{linha_taxa}}\n*Total: R$ {{total_final}}*\n\n*Entrega:* {{endereco}}\n*Pagamento:* {{pagamento}}{{linha_troco}}${r.observacao ? '{{linha_obs}}' : ''}`
   }
   g.no('p-resumo', 'mensagem', { partes: [{ tipo: 'texto', texto: resumo }] })
   if (r.agenda) {
@@ -847,7 +912,7 @@ function fluxoRamo(r: Ramo) {
     g.liga('p-linhas', 'p-resumo')
     g.liga('p-nada', 'p-resumo')
   } else {
-    for (const o of ['pix', 'cartao-na-entrega', 'dinheiro']) g.liga('p-pagamento', 'p-resumo', o)
+    for (const o of ['pix', 'cartao-de-credito']) g.liga('p-pagamento', 'p-resumo', o)
   }
   g.no('p-confere', 'pergunta', { texto: 'Está tudo certo?', salvarEm: 'confere', opcoes: opcoes(['Confirmar', mais, 'Cancelar']) })
   g.liga('p-resumo', 'p-confere')
@@ -855,15 +920,16 @@ function fluxoRamo(r: Ramo) {
   g.liga('p-confere', 'b-esvaziar', 'cancelar')
   g.no('p-nota', 'nota', { texto: `Demonstração (${r.negocio}), pelos botões:\n${resumo}` })
   g.liga('p-confere', 'p-nota', 'confirmar')
+  if (r.agenda) g.liga('p-nota', 'p-anotado')
+  else pagamentoDeMentira(g, r)
   g.no('p-anotado', 'mensagem', {
     partes: [
       { tipo: 'salvar', campo: 'hora_recebido', valor: '{{hora_agora}}' },
       { tipo: 'atraso', segundos: 1 },
-      { tipo: 'texto', texto: statusDoPedido(r) },
+      { tipo: 'texto', texto: statusDoPedido(r, 'b') },
       { tipo: 'texto', texto: `_Na demonstração, o aviso ${r.agenda ? 'de lembrete' : 'de "pronto"'} chega aqui sozinho em ${MINUTOS_ATE_O_AVISO} minutos, como chegaria para o seu cliente._` },
     ],
   })
-  g.liga('p-nota', 'p-anotado')
   esperaEAviso(g, r, 'p-anotado', 'b')
 
   /* ---- IA */
@@ -907,7 +973,7 @@ function fluxoRamo(r: Ramo) {
     partes: [
       { tipo: 'salvar', campo: 'hora_recebido', valor: '{{hora_agora}}' },
       { tipo: 'atraso', segundos: 1 },
-      { tipo: 'texto', texto: statusDoPedido(r) },
+      { tipo: 'texto', texto: statusDoPedido(r, 'i') },
       { tipo: 'texto', texto: `_Na demonstração, o aviso ${r.agenda ? 'de lembrete' : 'de "pronto"'} chega aqui sozinho em ${MINUTOS_ATE_O_AVISO} minutos, como chegaria para o seu cliente._` },
     ],
   })
@@ -932,9 +998,57 @@ const ETAPAS: Record<string, [string, string, string]> = {
   servicos: ['Agendamento recebido', '📅 *Horário reservado* na agenda do salão', '⏰ *Lembrete*: você recebe aqui antes do horário'],
   aulas: ['Agendamento recebido', '📅 *Vaga reservada* na turma', '⏰ *Lembrete*: você recebe aqui antes da aula'],
 }
-function statusDoPedido(r: Ramo): string {
+function statusDoPedido(r: Ramo, p: 'b' | 'i'): string {
   const [recebido, agora, depois] = ETAPAS[r.chave]
-  return `✅ *${recebido}* às {{hora_recebido}}\n${agora}\n${depois}`
+  // Com botões, a última etapa sabe se é entrega ou retirada.
+  return `✅ *${recebido}* às {{hora_recebido}}\n${agora}\n${p === 'b' && !r.agenda ? '{{etapa_final}}' : depois}`
+}
+
+/**
+ * O pagamento que parece de verdade (pedido do Gabriel, 27/set): Pix com QR
+ * Code, valor e "copia e cola"; cartão com link de pagamento; e o "Já paguei"
+ * que confirma. Tudo de mentira: a chave Pix é inventada e a página de cartão
+ * não recebe número nenhum (`core/pagamento-demo.ts`).
+ */
+function pagamentoDeMentira(g: Grafo, r: Ramo): void {
+  const nome = encodeURIComponent(r.negocio)
+  g.no('p-qual', 'condicao', { variavel: 'forma_pagamento', operador: 'igual', valor: 'pix' })
+  g.no('p-qual-cartao', 'condicao', { variavel: 'forma_pagamento', operador: 'igual', valor: 'cartao' })
+  g.liga('p-nota', 'p-qual')
+  g.liga('p-qual', 'p-pix-codigo', 'verdadeiro')
+  g.liga('p-qual', 'p-qual-cartao', 'falso')
+  g.liga('p-qual-cartao', 'p-cartao', 'verdadeiro')
+  g.liga('p-qual-cartao', 'p-anotado', 'falso')
+
+  g.no('p-pix-codigo', 'http', {
+    metodo: 'GET',
+    url: `${SITE}/api/demo/pix?v={{total_final}}&n=${nome}`,
+    mapear: [{ variavel: 'pix_codigo', caminho: 'codigo' }],
+    aoFalhar: 'seguir',
+  })
+  g.no('p-pix', 'mensagem', {
+    partes: [
+      { tipo: 'midia', midia: 'imagem', url: `${SITE}/api/demo/pix/qr?v={{total_final}}&n=${nome}`, legenda: `*Pix de R$ {{total_final}}* para *${r.negocio}*{{carrinho}}` },
+      { tipo: 'atraso', segundos: 1 },
+      { tipo: 'texto', texto: 'Escaneie o QR Code no app do banco, ou copie o código abaixo e cole em *Pix copia e cola* 👇' },
+      { tipo: 'texto', texto: '{{pix_codigo}}' },
+    ],
+  })
+  g.liga('p-pix-codigo', 'p-pix')
+  g.no('p-pix-espera', 'pergunta', { texto: 'Assim que pagar, toque em *Já paguei* 👇', salvarEm: 'pagou', opcoes: opcoes(['Já paguei', 'Pagar com cartão']) })
+  g.liga('p-pix', 'p-pix-espera')
+  g.no('p-pix-pago', 'mensagem', texto('✅ *Pagamento recebido!*\nR$ {{total_final}} via Pix. Obrigado!'))
+  g.liga('p-pix-espera', 'p-pix-pago', 'ja-paguei')
+  g.liga('p-pix-espera', 'p-cartao', 'pagar-com-cartao')
+  g.liga('p-pix-pago', 'p-anotado')
+
+  g.no('p-cartao', 'mensagem', texto(`💳 *Pagamento com cartão*\nTotal: *R$ {{total_final}}*, em até 3x sem juros.\n\nPague pelo link seguro 👇\n${SITE}/demo/pagar?v={{total_final}}&n=${nome}`))
+  g.no('p-cartao-espera', 'pergunta', { texto: 'Pagou? Toque em *Já paguei* 👇', salvarEm: 'pagou', opcoes: opcoes(['Já paguei', 'Pagar com Pix']) })
+  g.liga('p-cartao', 'p-cartao-espera')
+  g.no('p-cartao-pago', 'mensagem', texto('✅ *Pagamento aprovado!*\nR$ {{total_final}} no cartão. Obrigado!'))
+  g.liga('p-cartao-espera', 'p-cartao-pago', 'ja-paguei')
+  g.liga('p-cartao-espera', 'p-pix-codigo', 'pagar-com-pix')
+  g.liga('p-cartao-pago', 'p-anotado')
 }
 
 /** "Pedido pronto" alguns minutos depois: a pergunta espera, e o prazo dela é o aviso. */
@@ -946,14 +1060,24 @@ function esperaEAviso(g: Grafo, r: Ramo, depoisDe: string, p: 'b' | 'i'): void {
     timeoutMinutos: MINUTOS_ATE_O_AVISO,
   })
   g.liga(depoisDe, `${p}-espera`)
-  g.no(`${p}-acompanha`, 'mensagem', texto(statusDoPedido(r)))
+  g.no(`${p}-acompanha`, 'mensagem', texto(statusDoPedido(r, p)))
   g.liga(`${p}-espera`, `${p}-acompanha`, idDe(r.acompanhar))
   g.liga(`${p}-acompanha`, `${p}-espera`)
   g.liga(`${p}-espera`, 'lead', idDe(LEAD_RESPOSTA))
   g.liga(`${p}-espera`, 'trocar', idDe(TROCAR))
   // Na IA não há {{dia}}: o lembrete fala do que ficou combinado na conversa.
   g.no(`${p}-pronto`, 'mensagem', texto(p === 'i' && r.agenda ? `⏰ Lembrete da *{{negocio}}*: seu horário está reservado. Te esperamos!` : r.pronto))
-  g.liga(`${p}-espera`, `${p}-pronto`, 'timeout')
+  if (p === 'b' && !r.agenda) {
+    // Quem vai buscar não recebe "saiu para entrega".
+    g.no('b-retira', 'condicao', { variavel: 'forma_entrega', operador: 'igual', valor: 'Vou retirar' })
+    g.no('b-pronto-retirada', 'mensagem', texto(r.prontoRetirada))
+    g.liga(`${p}-espera`, 'b-retira', 'timeout')
+    g.liga('b-retira', 'b-pronto-retirada', 'verdadeiro')
+    g.liga('b-retira', `${p}-pronto`, 'falso')
+    g.liga('b-pronto-retirada', `${p}-fim`)
+  } else {
+    g.liga(`${p}-espera`, `${p}-pronto`, 'timeout')
+  }
   g.no(`${p}-fim`, 'pergunta', {
     texto: 'Gostou? É assim que o *seu* cliente seria atendido, dia e noite. 😉',
     salvarEm: 'fim_da_demo',
@@ -1095,6 +1219,12 @@ async function copiaDaPcyes(origem: string) {
   grafo.edges = grafo.edges.filter((e) => !tirar.has(e.source)).map((e) => ({ ...e, target: seguinte(e.target) }))
   grafo.nodes = grafo.nodes.filter((n) => !tirar.has(n.id))
   for (const n of grafo.nodes) {
+    // Na PCYES, pergunta sem resposta em 2 a 4 horas passa para uma pessoa. Na
+    // demo isso virou "Vou te passar para um atendente" às 5h da manhã para
+    // quem só parou de testar (27/set). Aqui a pergunta espera calada.
+    if (n.type === 'pergunta' && !grafo.edges.some((e) => e.source === n.id && e.sourceHandle === 'timeout')) {
+      delete n.data.timeoutMinutos
+    }
     if (n.type === 'ir-fluxo') {
       const alvo = ids[`pcyes:${n.data.fluxoId as string}`]
       if (!alvo) throw new Error(`salto de ${origem} para fora da lista: ${n.data.fluxoId}`)
@@ -1113,7 +1243,9 @@ async function copiaDaPcyes(origem: string) {
   if (origem === 'abd4df71-cfa0-4e5c-a39d-af2aa57866cb') {
     const menu = grafo.nodes.find((n) => n.id === 'menu')!
     ;(menu.data.opcoes as { id: string; rotulo: string }[]).push({ id: 'demo-lead', rotulo: LEAD_RESPOSTA }, { id: 'demo-trocar', rotulo: TROCAR })
-    grafo.nodes.push({ id: 'demo-lead', type: 'handoff', position: { x: 0, y: 900 }, data: { motivo: 'Lead da demo · Loja online', mensagens: MENSAGENS_DO_LEAD } })
+    const { pergunta, handoff } = nosDoLead('demo-lead', 'Loja online')
+    grafo.nodes.push(pergunta, handoff)
+    grafo.edges.push({ id: 'demo-e0', source: 'demo-lead', target: handoff.id })
     grafo.nodes.push({ id: 'demo-trocar', type: 'ir-fluxo', position: { x: 340, y: 900 }, data: { fluxoId: ids.inicio, rotulo: NOMES.inicio } })
     grafo.edges.push({ id: 'demo-e1', source: 'menu', sourceHandle: 'demo-lead', target: 'demo-lead' })
     grafo.edges.push({ id: 'demo-e2', source: 'menu', sourceHandle: 'demo-trocar', target: 'demo-trocar' })

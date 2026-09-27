@@ -155,6 +155,14 @@ const PREFIXOS_ABERTOS = [
    */
   '/api/webhook/',
   /**
+   * O pagamento de mentira da demonstração (`core/pagamento-demo.ts`): a
+   * imagem do Pix que o WhatsApp busca, o copia e cola que o fluxo da demo
+   * pede, e a página de pagamento com cartão que o visitante abre. Ninguém ali
+   * tem sessão. Nada lê banco nem conta de cliente.
+   */
+  '/api/demo/',
+  '/demo/',
+  /**
    * Os logos de cliente servidos para o `=IMAGE()` do Google Sheets (ver
    * `public/logos/README.md`).
    *
