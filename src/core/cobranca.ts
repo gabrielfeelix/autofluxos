@@ -47,7 +47,8 @@ export type Cobranca = {
   total: string
   resumo: string
   pagamento: FormaDePagamento
-  entrega: 'entrega' | 'retirada'
+  /** `local`: serviço feito no lugar (aula, corte), sem entrega nem retirada. */
+  entrega: 'entrega' | 'retirada' | 'local'
 }
 
 export type ResultadoDaCobranca = { ok: true; cobranca: Cobranca } | { ok: false; erro: string }
@@ -114,8 +115,8 @@ export function montarCobranca({
     return { ok: false, erro: `pagamento "${pagamento}" não existe: use pix, cartao ou na_hora` }
   }
   const modo = normalizar(entrega).trim()
-  if (modo !== 'entrega' && modo !== 'retirada') {
-    return { ok: false, erro: `entrega "${entrega}" não existe: use entrega ou retirada` }
+  if (modo !== 'entrega' && modo !== 'retirada' && modo !== 'local') {
+    return { ok: false, erro: `entrega "${entrega}" não existe: use entrega, retirada ou local` }
   }
 
   const linhasDoPedido = itens.split(/[;\n]/).map((l) => l.trim()).filter(Boolean)
@@ -159,11 +160,12 @@ export function montarCobranca({
   const taxa = modo === 'entrega' ? centavos(regras.taxaEntrega) : 0
   const total = subtotal + taxa
   const resumo = [
-    '*Resumo do pedido*',
+    modo === 'local' ? '*Resumo*' : '*Resumo do pedido*',
     ...linhas,
     '',
-    `Subtotal: ${reais(subtotal)}`,
-    modo === 'entrega' ? `Entrega: ${reais(taxa)}` : 'Retirada: sem taxa',
+    ...(modo === 'local'
+      ? []
+      : [`Subtotal: ${reais(subtotal)}`, modo === 'entrega' ? `Entrega: ${reais(taxa)}` : 'Retirada: sem taxa']),
     `*Total: ${reais(total)}*`,
     `*Pagamento:* ${NOME_DA_FORMA[forma]}`,
     '',

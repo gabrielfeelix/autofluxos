@@ -840,7 +840,7 @@ export function ferramentaDeCobranca(ajustes: { nome: string; valor: number }[])
           'Ex.: "2 x Pizza Calabresa (Média); 1 x Refrigerante 2 L".',
         obrigatorio: true,
       },
-      { nome: 'entrega', tipo: 'texto', descricao: '"entrega" ou "retirada".', obrigatorio: true },
+      { nome: 'entrega', tipo: 'texto', descricao: '"entrega", "retirada" ou "local" (serviço feito no lugar: aula, corte, consulta).', obrigatorio: true },
       { nome: 'pagamento', tipo: 'texto', descricao: '"pix", "cartao" ou "na_hora" (maquininha ou dinheiro na entrega/retirada).', obrigatorio: true },
     ],
     injetados: [],

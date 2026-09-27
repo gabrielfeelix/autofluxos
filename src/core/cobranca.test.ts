@@ -58,4 +58,11 @@ describe('cobrança conferida', () => {
     expect(r.ok && r.cobranca.pagamento).toBe('na_hora')
     expect(r.ok && r.cobranca.entrega).toBe('retirada')
   })
+  it('serviço no local: sem linha de entrega, título curto', () => {
+    const r = montar('1 x Pizza Mussarela', 'local', 'cartao')
+    expect(r.ok && r.cobranca.total).toBe('49,90')
+    expect(r.ok && r.cobranca.resumo.startsWith('*Resumo*\n')).toBe(true)
+    expect(r.ok && r.cobranca.resumo).not.toContain('Retirada')
+    expect(r.ok && r.cobranca.entrega).toBe('local')
+  })
 })
