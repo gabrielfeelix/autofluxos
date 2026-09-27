@@ -89,7 +89,21 @@ com o total e guarda `cobranca_total`. Item fora do catálogo ou ambíguo volta
 para a IA perguntar. `concluir_conversa` só vale depois de a pessoa ter visto
 o resumo e respondido. Depois do "confirmo", o Pix ou o link de cartão sai de
 `cobranca_total`, com o nome que o dono deu ao negócio. Código em
-`src/core/cobranca.ts`. Salão e aulas não cobram pela IA (pagam no local).
+`src/core/cobranca.ts`.
+
+**Salão:** depois de confirmar o horário (botões ou IA), pede um **sinal de
+R$ 20,00** por Pix ou cartão para garantir a vaga, descontado no dia, ou
+"Pagar tudo no dia". É o que salão e clínica fazem para cortar falta.
+
+**Aulas, "Já sou aluno"** (menu com botões): a matrícula de um aluno exemplo,
+achada "pelo número do WhatsApp": situação ativa, plano, turmas, reposição e
+mensalidade de R$ 280,00 em aberto. Dá para pagar a mensalidade (Pix ou
+cartão; a ficha passa a dizer "paga"), repor uma aula (dia e período; a
+reposição do mês acaba) e trocar de plano. Na IA, o mesmo aluno exemplo, e a
+mensalidade sai pela cobrança conferida (entrega "local"). Plano e aula
+avulsa pela IA também; aula experimental é grátis e não cobra. No cliente de
+verdade esses dados vêm do sistema dele por integração (a MGM usa a Verandi);
+sem API, "minha matrícula" passa para uma pessoa.
 
 Outras mudanças de 27/set: a foto do item vem **em cima dos botões**, numa
 bolha só (campo novo `imagem` na pergunta); quem escolhe retirada recebe

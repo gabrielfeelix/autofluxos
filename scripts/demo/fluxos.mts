@@ -188,13 +188,13 @@ const TAREFA_DA_COBRANCA = [
   '- Com tudo certo (itens com quantidade e variação, entrega com endereço ou retirada, e pagamento: pix, cartão ou na hora), chame montar_cobranca. O resumo com o total vai sozinho; escreva só uma frase curta como "Confere o resumo 👇". Nunca escreva preço total, subtotal nem soma você mesma.',
   '- Nunca calcule preço com tamanho, borda ou adicional ("a média sai por..."): diga o preço do cardápio e que o valor certinho vem no resumo.',
   '- Se a pessoa mudar algo depois do resumo, chame montar_cobranca de novo.',
-  '- Quando a pessoa confirmar o resumo, chame concluir_conversa com o resumo completo e responda só uma frase curta: se o pagamento for Pix ou cartão, diga que o pagamento chega em seguida; se for na hora, diga que o pedido está confirmado.',
+  '- Quando a pessoa confirmar o resumo, chame concluir_conversa com o resumo completo e responda só uma frase curta: se o pagamento for Pix ou cartão, diga que o Pix ou o link de pagamento chega na próxima mensagem; se for na hora, diga que o pedido está confirmado. Nunca diga que o pagamento foi feito, recebido ou confirmado: ele ainda vai acontecer.',
 ]
 /** Aulas: plano, aula avulsa ou mensalidade, feitos no estúdio (entrega "local"). */
 const TAREFA_DA_COBRANCA_NO_LOCAL = [
   '- Para fechar um plano, uma aula avulsa ou a aula experimental: com o que a pessoa escolheu, o dia e o horário, e a forma de pagamento (pix, cartão ou na hora), chame montar_cobranca com entrega "local". O resumo com o total vai sozinho; escreva só uma frase curta como "Confere o resumo 👇". Aula experimental é grátis: chame também, com pagamento "na_hora". Nunca escreva preço total nem soma você mesma.',
   '- Se a pessoa mudar algo depois do resumo, chame montar_cobranca de novo.',
-  '- Quando a pessoa confirmar o resumo, chame concluir_conversa com o resumo completo (com dia e horário) e responda só uma frase curta: se o pagamento for Pix ou cartão, diga que o pagamento chega em seguida; senão, que a vaga está reservada.',
+  '- Quando a pessoa confirmar o resumo, chame concluir_conversa com o resumo completo (com dia e horário; se for pagamento de mensalidade, comece o resumo com "Mensalidade") e responda só uma frase curta: se o pagamento for Pix ou cartão, diga que o Pix ou o link de pagamento chega na próxima mensagem; senão, que a vaga está reservada. Nunca diga que o pagamento foi feito, recebido ou confirmado: ele ainda vai acontecer.',
 ]
 const ehDaCobranca = (linha: string) => linha.startsWith('- Com tudo certo') || linha.startsWith('- Quando a pessoa confirmar')
 
@@ -692,10 +692,11 @@ _Achei pelo seu número de WhatsApp._
 🔁 Reposições: {{reposicoes}}
 {{linha_mensalidade}}`,
       },
-      { tipo: 'texto', texto: '_Na demonstração, este é um aluno exemplo. No seu estúdio, os dados vêm do seu sistema de alunos._' },
     ],
   })
+  g.no('a-aviso', 'mensagem', texto('_Na demonstração, este é um aluno exemplo. No seu estúdio, os dados vêm do seu sistema de alunos._'))
   g.liga('a-entra', 'a-ficha')
+  g.liga('a-ficha', 'a-escolhe')
   g.no('a-menu', 'pergunta', {
     texto: 'O que você quer fazer?',
     salvarEm: 'aluno_quer',
@@ -706,7 +707,13 @@ _Achei pelo seu número de WhatsApp._
       { rotulo: VOLTAR },
     ]),
   })
-  g.liga('a-ficha', 'a-menu')
+  // O aviso de "aluno exemplo" só na primeira vez que a ficha aparece.
+  g.no('a-escolhe', 'condicao', { variavel: 'viu_aviso_aluno', operador: 'preenchido', valor: '' })
+  g.no('a-marca', 'salvar-campo', { campo: 'viu_aviso_aluno', valor: 'sim' })
+  g.liga('a-escolhe', 'a-menu', 'verdadeiro')
+  g.liga('a-escolhe', 'a-marca', 'falso')
+  g.liga('a-marca', 'a-aviso')
+  g.liga('a-aviso', 'a-menu')
   g.liga('a-menu', 'b-voltar', idDe(VOLTAR))
   g.liga('a-menu', 'b-lista', 'trocar-de-plano')
 
@@ -763,7 +770,7 @@ Como quer pagar?`,
   g.no('a-repo-ok', 'mensagem', {
     partes: [
       { tipo: 'salvar', campo: 'reposicoes', valor: 'nenhuma este mês' },
-      { tipo: 'texto', texto: '✅ *Reposição marcada!*\n{{repo_dia}}, {{repo_periodo}}. Te esperamos! 🧘' },
+      { tipo: 'texto', texto: '✅ *Reposição marcada!*\n{{repo_dia_escolhido}}, {{repo_periodo}}. Te esperamos! 🧘' },
     ],
   })
   for (const h of ['de-manha', 'a-tarde', 'a-noite']) g.liga('a-repo-hora', 'a-repo-ok', h)
@@ -1178,7 +1185,7 @@ function statusDoPedido(r: Ramo, p: 'b' | 'i'): string {
  */
 function cobrar(
   g: Grafo,
-  c: { id: string; valor: string; nomeNaUrl: string; nomeDito: string; legendaExtra?: string; pagoPix: string; pagoCartao: string; depois: string },
+  c: { id: string; valor: string; nomeNaUrl: string; nomeDito: string; legendaExtra?: string; pagoPix: string; pagoCartao: string; depois: string; parcelado?: boolean },
 ): void {
   const { id } = c
   for (const forma of ['pix', 'cartao']) {
@@ -1212,7 +1219,7 @@ function cobrar(
   g.liga(`${id}-pix-espera`, `${id}-cartao-msg`, 'pagar-com-cartao')
   g.liga(`${id}-pix-pago`, c.depois)
 
-  g.no(`${id}-cartao-msg`, 'mensagem', texto(`💳 *Pagamento com cartão*\nTotal: *R$ ${c.valor}*, em até 3x sem juros.\n\nPague pelo link seguro 👇\n{{link_cartao}}`))
+  g.no(`${id}-cartao-msg`, 'mensagem', texto(`💳 *Pagamento com cartão*\n${c.parcelado ? `Total: *R$ ${c.valor}*, em até 3x sem juros.` : `Valor: *R$ ${c.valor}*`}\n\nPague pelo link seguro 👇\n{{link_cartao}}`))
   g.no(`${id}-cartao-espera`, 'pergunta', { texto: 'Pagou? Toque em *Já paguei* 👇', salvarEm: 'pagou', opcoes: opcoes(['Já paguei', 'Pagar com Pix']) })
   g.liga(`${id}-cartao-msg`, `${id}-cartao-espera`)
   g.no(`${id}-cartao-pago`, 'mensagem', texto(c.pagoCartao))
@@ -1239,6 +1246,7 @@ function pagamentoDeMentira(g: Grafo, r: Ramo): void {
     pagoPix: '✅ *Pagamento recebido!*\nR$ {{total_final}} via Pix. Obrigado!',
     pagoCartao: '✅ *Pagamento aprovado!*\nR$ {{total_final}} no cartão. Obrigado!',
     depois: 'p-anotado',
+    parcelado: true,
   })
 }
 
@@ -1300,8 +1308,17 @@ function pagamentoDaIa(g: Grafo, r: Ramo): void {
     nomeDito: '{{negocio}}',
     pagoPix: '✅ *Pagamento recebido!*\nR$ {{cobranca_total}} via Pix. Obrigado!',
     pagoCartao: '✅ *Pagamento aprovado!*\nR$ {{cobranca_total}} no cartão. Obrigado!',
-    depois: 'i-anotado',
+    depois: r.chave === 'aulas' ? 'i-foi-mensalidade' : 'i-anotado',
+    parcelado: true,
   })
+  if (r.chave === 'aulas') {
+    // Mensalidade paga não é aula marcada: nada de "vaga reservada".
+    g.no('i-foi-mensalidade', 'condicao', { variavel: 'pedido', operador: 'contem', valor: 'mensalidade' })
+    g.no('i-mensalidade-ok', 'mensagem', texto('🧘 Sua matrícula segue *ativa* até o dia 5 do mês que vem. Bons treinos!'))
+    g.liga('i-foi-mensalidade', 'i-mensalidade-ok', 'verdadeiro')
+    g.liga('i-foi-mensalidade', 'i-anotado', 'falso')
+    g.liga('i-mensalidade-ok', 'i-fim')
+  }
 }
 
 /** "Pedido pronto" alguns minutos depois: a pergunta espera, e o prazo dela é o aviso. */
