@@ -171,6 +171,8 @@ export type Acao =
       opcoes: Opcao[]
       /** decidido pela quantidade: até 3 vira botão, até 10 vira lista */
       formato: 'botoes' | 'lista'
+      /** A foto em cima dos botões (`https://`), ver `imagem` da pergunta. */
+      imagem?: string
       /** Esperar fora do motor antes do envio. Ausente = entregar na hora. */
       atrasoMs?: number
     }

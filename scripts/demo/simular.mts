@@ -76,7 +76,7 @@ async function rodada(entrada: Record<string, unknown>) {
         break
       case 'enviar_opcoes':
         console.log(
-          `BOT: ${a.texto.replace(/\n/g, '\n     ')}\n     ${a.formato === 'lista' ? 'LISTA ' : ''}[${a.opcoes.map((o: any) => o.rotulo + (o.descricao ? ` / ${o.descricao}` : '')).join(a.formato === 'lista' ? ']\n           [' : '] [')}]`,
+          `BOT: ${a.imagem ? `<foto em cima> ${path.basename(a.imagem)}\n     ` : ''}${a.texto.replace(/\n/g, '\n     ')}\n     ${a.formato === 'lista' ? 'LISTA ' : ''}[${a.opcoes.map((o: any) => o.rotulo + (o.descricao ? ` / ${o.descricao}` : '')).join(a.formato === 'lista' ? ']\n           [' : '] [')}]`,
         )
         historico.push({ de: 'bot', texto: a.texto })
         ultimasOpcoes = a.opcoes

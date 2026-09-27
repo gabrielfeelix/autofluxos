@@ -363,6 +363,8 @@ export function Conversa({
             hora: horaAtual(),
             opcoes: acao.opcoes,
             formato: acao.formato,
+            // A foto em cima dos botões, como o WhatsApp desenha.
+            ...(acao.imagem ? { anexo: { midia: 'imagem' as const, url: acao.imagem } } : {}),
           })
           ultimas = { chave, opcoes: acao.opcoes, formato: acao.formato }
           break

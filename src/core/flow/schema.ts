@@ -376,6 +376,20 @@ export const noPerguntaSchema = z.object({
      * falar é um timeout que só gera handoff.
      */
     timeoutMinutos: z.number().int().min(1).max(1_440).optional(),
+    /**
+     * A foto em cima dos botões: endereço `https://` da imagem, que aceita
+     * `{{variavel}}` (a foto do item que a pessoa escolheu).
+     *
+     * Sem isto, mostrar um produto e perguntar "Fazer pedido?" eram duas
+     * bolhas: a foto com legenda, e embaixo uma pergunta solta com os botões.
+     * No celular parece conversa quebrada. Com isto, a foto vai no cabeçalho
+     * da mensagem de botões do WhatsApp e a pergunta vira a legenda.
+     *
+     * Só botões (até 3 opções) têm cabeçalho de imagem. Com lista, ou num
+     * canal que não desenha isso, a foto sai antes, sozinha, e a pergunta
+     * depois, como era. **Opcional para sempre**, como os outros.
+     */
+    imagem: z.string().optional(),
   }),
 })
 

@@ -4,7 +4,7 @@ import { triagem } from '@/exemplos/triagem'
 import { db } from './db'
 import { abrirFluxoParaContato } from './receber-mensagem'
 import { criarCliente } from './repos/clientes'
-import { acharOuCriarContato, criarCanal, ultimaSessao } from './repos/conversas'
+import { acharOuCriarContato, criarCanal, tomarSessaoParada, ultimaSessao } from './repos/conversas'
 import { criarFluxo, publicar } from './repos/fluxos'
 
 /**
@@ -175,5 +175,17 @@ describe.skipIf(!temCredencial)('atendimento humano em curso', () => {
     await db().from('sessions').delete().eq('contact_id', contatoId)
     const r = await abrirFluxoParaContato(clienteId, contatoId, fluxoId, comMock)
     expect(r).toBe('aberto')
+  })
+})
+
+describe.skipIf(!temCredencial)('volta do bot com passadas simultâneas', () => {
+  it('só uma passada encerra a sessão parada, e só ela avisa', async () => {
+    // Em 27/set/2026 a demo mandou "Voltei!" duas e três vezes no mesmo
+    // segundo: um webhook por passada, todas lendo a mesma sessão em `humano`.
+    const sessaoId = await sessaoCom('humano')
+    const ganhou = await Promise.all([tomarSessaoParada(sessaoId), tomarSessaoParada(sessaoId), tomarSessaoParada(sessaoId)])
+    expect(ganhou.filter(Boolean)).toHaveLength(1)
+    const { data } = await db().from('sessions').select('status').eq('id', sessaoId).single()
+    expect((data as { status: string }).status).toBe('encerrada')
   })
 })

@@ -899,9 +899,26 @@ export function Painel({
             ninguém perde de vista o que configurou.
           */}
           <SecaoAvancada
-            resumo="arquivo como resposta, prazo"
-            temConteudo={!!no.data.aceitaMidia || !!no.data.timeoutMinutos}
+            resumo="foto em cima, arquivo como resposta, prazo"
+            temConteudo={!!no.data.aceitaMidia || !!no.data.timeoutMinutos || !!no.data.imagem}
           >
+            <Linha
+              rotulo="Foto em cima dos botões"
+              valor={no.data.imagem ?? ''}
+              secao="perguntas"
+              dica="Link https da imagem. A foto e os botões chegam numa mensagem só."
+              detalhes={
+                <p>
+                  Serve para mostrar um produto e perguntar na mesma bolha: a foto em cima, a
+                  pergunta como legenda e os botões embaixo. Aceita <code>{'{{variavel}}'}</code>,
+                  então pode ser a foto do item que a pessoa escolheu. Com mais de 3 opções o
+                  WhatsApp não desenha foto na lista: ela chega antes, sozinha.
+                </p>
+              }
+              aoMudar={(v) => aoMudarDados({ imagem: v.trim() === '' ? undefined : v.trim() })}
+              aceitaVariavel
+              conhecidas={variaveis}
+            />
             <LinhaLigaDesliga
               titulo="Aceitar foto, áudio ou documento"
               descricao="Cria a saída “mandou arquivo” no bloco."

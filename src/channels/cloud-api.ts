@@ -637,7 +637,9 @@ export function canalCloudApi(config: ConfigCloudApi): Canal {
       return idDoEnvio(resposta)
     },
 
-    async enviarOpcoes(para, texto, opcoes, formato) {
+    botoesComImagem: true,
+
+    async enviarOpcoes(para, texto, opcoes, formato, imagem) {
       // O validador já barra rótulo grande na publicação. Este corte é para a
       // versão que foi publicada antes daquela regra existir: melhor um rótulo
       // truncado do que a Meta recusar a mensagem inteira.
@@ -653,6 +655,7 @@ export function canalCloudApi(config: ConfigCloudApi): Canal {
           type: 'interactive',
           interactive: {
             type: 'button',
+            ...(imagem ? { header: { type: 'image', image: { link: imagem } } } : {}),
             body: { text: texto },
             action: {
               buttons: opcoes.map((o) => ({ type: 'reply', reply: { id: o.id, title: curto(o) } })),

@@ -9,9 +9,9 @@ import { acharVersao } from './repos/fluxos'
 import {
   confirmarEntrega,
   contextoDeResposta,
-  definirStatusDaSessao,
   registrarSaida,
   sessoesEmAtendimentoParado,
+  tomarSessaoParada,
   ultimaFalaDaEquipe,
   type SessaoParada,
 } from './repos/conversas'
@@ -161,6 +161,10 @@ export async function passadaDeRetomadaDoBot(): Promise<ResumoDaRetomadaDoBot> {
 
       const avisou = await devolverAoBot(parada, mensagemDaRetomada(conta, bloco?.mensagem))
       jaAvisados.add(parada.contatoId)
+      if (avisou === 'outra-passada') {
+        resumo.esperando += 1
+        continue
+      }
       resumo.devolvidas += 1
       if (!avisou) resumo.semAviso += 1
     } catch (erro) {
@@ -213,11 +217,15 @@ async function escolhaDoBloco(
  * a janela só reabre quando a pessoa escrever de novo, e é justamente essa
  * mensagem que precisa encontrar o bot ligado.
  *
- * A ordem é encerrar por último: se o envio morrer no meio, a conversa fica
- * como estava e a próxima passada tenta de novo. Encerrar primeiro deixaria
- * conversa devolvida sem ninguém ter sido avisado, sem segunda chance.
+ * **A ordem é encerrar primeiro**, numa troca condicional (`tomarSessaoParada`).
+ * Já foi encerrar por último, para o envio que morresse no meio ter segunda
+ * chance; só que passadas simultâneas (uma por webhook) liam a mesma sessão e
+ * cada uma avisava: a pessoa recebia a frase duas ou três vezes. Frase
+ * repetida é pior do que, raramente, nenhuma frase: a conversa volta ao bot
+ * de qualquer jeito, e a próxima mensagem dela já encontra o bot ligado.
  */
-async function devolverAoBot(parada: SessaoParada, texto: string): Promise<boolean> {
+async function devolverAoBot(parada: SessaoParada, texto: string): Promise<boolean | 'outra-passada'> {
+  if (!(await tomarSessaoParada(parada.id))) return 'outra-passada'
   const contexto = await contextoDeResposta(parada.clienteId, parada.contatoId)
 
   let avisou = false
@@ -239,8 +247,6 @@ async function devolverAoBot(parada: SessaoParada, texto: string): Promise<boole
     await confirmarEntrega(registro, await canal.enviarTexto(contexto.waId, texto))
     avisou = true
   }
-
-  await definirStatusDaSessao(parada.id, 'encerrada')
 
   await anotar(
     parada.clienteId,

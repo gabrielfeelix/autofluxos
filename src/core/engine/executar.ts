@@ -1304,6 +1304,9 @@ function perguntar(no: NoPergunta, s: Sessao, esperaMs = 0): Acao[] {
     return [{ tipo: 'enviar_texto', texto, ...(esperaMs > 0 ? { atrasoMs: esperaMs } : {}) }]
   }
 
+  // Foto sem endereço seguro (variável vazia, link `http`) some calada: melhor
+  // a pergunta sem foto do que a Meta recusar a mensagem inteira.
+  const imagem = interpolar(no.data.imagem ?? '', s.vars).trim()
   return [{
     tipo: 'enviar_opcoes',
     texto,
@@ -1311,6 +1314,7 @@ function perguntar(no: NoPergunta, s: Sessao, esperaMs = 0): Acao[] {
     // Até 3 opções o WhatsApp mostra como botão, que dá muito mais clique.
     // Acima disso vira lista suspensa.
     formato: opcoes.length <= LIMITE_BOTOES ? 'botoes' : 'lista',
+    ...(imagem.startsWith('https://') ? { imagem } : {}),
     ...(esperaMs > 0 ? { atrasoMs: esperaMs } : {}),
   }]
 }

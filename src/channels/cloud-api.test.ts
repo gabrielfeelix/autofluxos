@@ -73,6 +73,21 @@ describe('o corte do rótulo conta caracteres, e não unidades UTF-16', () => {
    * Não era hipótese: saiu assim três vezes numa conversa real da MGM, e o
    * histórico guarda o clique com 19 caracteres.
    */
+  it('põe a foto no cabeçalho dos botões, e só quando há foto', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(new Response('{}', { status: 200 }))
+    vi.stubGlobal('fetch', fetchMock)
+    const canal = canalCloudApi({ phoneNumberId: 'n1', token: 't', versaoGraph: 'v25.0' })
+    expect(canal.botoesComImagem).toBe(true)
+
+    await canal.enviarOpcoes('5544999999999', '*Pizza Calabresa*', [{ id: 'a', rotulo: 'Fazer pedido' }], 'botoes', 'https://x.test/c.jpg')
+    const comFoto = JSON.parse(fetchMock.mock.calls.at(-1)?.[1].body as string)
+    expect(comFoto.interactive.header).toEqual({ type: 'image', image: { link: 'https://x.test/c.jpg' } })
+
+    await canal.enviarOpcoes('5544999999999', 'E aí?', [{ id: 'a', rotulo: 'Sim' }], 'botoes')
+    const semFoto = JSON.parse(fetchMock.mock.calls.at(-1)?.[1].body as string)
+    expect(semFoto.interactive.header).toBeUndefined()
+  })
+
   it('não come a última letra de um rótulo que já cabia', async () => {
     const fetchMock = vi.fn().mockResolvedValue(new Response('{}', { status: 200 }))
     vi.stubGlobal('fetch', fetchMock)

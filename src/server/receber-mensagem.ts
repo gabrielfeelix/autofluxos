@@ -1663,16 +1663,37 @@ async function aplicar(
           await canal.aguardarResposta({ mensagemId, contato: contato.waId }, acao.atrasoMs)
         }
 
+        // Foto em cima dos botões numa mensagem só, quando o canal desenha isso.
+        // Senão (lista, Telegram, Instagram) a foto sai antes, sozinha.
+        const juntos = Boolean(acao.imagem && acao.formato === 'botoes' && canal.botoesComImagem)
+        if (acao.imagem && !juntos) {
+          const foto = await registrarSaida({
+            contatoId: contato.id,
+            sessaoId,
+            autor: AUTOR_AUTOMACAO,
+            texto: '',
+            payload: { midia: 'imagem', url: acao.imagem },
+          })
+          const envio = await entregar(() => canal.enviarMidia(contato.waId, { midia: 'imagem', url: acao.imagem! }), alvo)
+          if (!envio.ok) return pararNoHumano(envio.motivo)
+          await confirmarEntrega(foto, envio.waMessageId)
+        }
+
         const registro = await registrarSaida({
           contatoId: contato.id,
           sessaoId,
           // Saiu daqui: é o motor de fluxo falando, não gente.
           autor: AUTOR_AUTOMACAO,
           texto: acao.texto,
-          payload: { opcoes: acao.opcoes, formato: acao.formato },
+          payload: {
+            opcoes: acao.opcoes,
+            formato: acao.formato,
+            // O Inbox desenha a foto e os botões na mesma bolha, como o celular viu.
+            ...(juntos ? { midia: 'imagem', url: acao.imagem } : {}),
+          },
         })
         const entrega = await entregar(
-          () => canal.enviarOpcoes(contato.waId, acao.texto, acao.opcoes, acao.formato),
+          () => canal.enviarOpcoes(contato.waId, acao.texto, acao.opcoes, acao.formato, juntos ? acao.imagem : undefined),
           alvo,
         )
         if (!entrega.ok) return pararNoHumano(entrega.motivo)

@@ -1419,6 +1419,7 @@ function variaveisDoNo(no: No): string[] {
       // nenhum bloco preenche entrega uma pergunta que nasce sempre vazia.
       return [
         ...variaveisCitadas(no.data.texto),
+        ...variaveisCitadas(no.data.imagem ?? ''),
         ...(perguntaEhDinamica(no) ? [no.data.opcoesDe as string] : []),
       ]
     case 'salvar-campo':

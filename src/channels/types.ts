@@ -127,7 +127,14 @@ export type Canal = {
     texto: string,
     opcoes: Opcao[],
     formato: 'botoes' | 'lista',
+    /** A foto no cabeçalho dos botões. Só chega aqui se `botoesComImagem`. */
+    imagem?: string,
   ): Promise<string | null>
+  /**
+   * Este canal põe foto em cima dos botões, numa mensagem só (o `header`
+   * de imagem do WhatsApp). Ausente: quem chama manda a foto antes, sozinha.
+   */
+  botoesComImagem?: boolean
   enviarMidia(para: string, midia: Midia, citando?: Citacao): Promise<string | null>
   /**
    * O card do produto: foto, nome, preço, estoque e o botão para a loja.

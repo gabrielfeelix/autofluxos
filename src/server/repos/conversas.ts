@@ -687,6 +687,27 @@ export async function calarBotNaConversa(contatoId: string): Promise<boolean> {
  * `no_atual`, e o que a conversa já coletou sumiria por causa de uma mudança de
  * estado que não tinha nada a ver com isso.
  */
+/**
+ * Encerra a sessão só se ela ainda estiver em `humano`, e diz se foi esta
+ * chamada que encerrou.
+ *
+ * A volta do bot roda de carona em cada webhook da conta, e a Meta manda
+ * vários juntos (a mensagem, o "entregue", o "lido"). Cada passada lia a
+ * mesma sessão parada e cada uma mandava o "Voltei!": em 27/set/2026 a demo
+ * mandou a frase duas e três vezes no mesmo segundo. Com a troca condicional,
+ * uma passada só ganha, e só ela avisa.
+ */
+export async function tomarSessaoParada(id: string): Promise<boolean> {
+  const { data, error } = await db()
+    .from('sessions')
+    .update({ status: 'encerrada' })
+    .eq('id', id)
+    .eq('status', 'humano')
+    .select('id')
+  if (error) throw new Error(`não deu para encerrar a sessão parada: ${error.message}`)
+  return (data ?? []).length > 0
+}
+
 export async function definirStatusDaSessao(
   id: string,
   status: Sessao['status'],
