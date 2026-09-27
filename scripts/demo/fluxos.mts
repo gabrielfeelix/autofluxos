@@ -190,6 +190,12 @@ const TAREFA_DA_COBRANCA = [
   '- Se a pessoa mudar algo depois do resumo, chame montar_cobranca de novo.',
   '- Quando a pessoa confirmar o resumo, chame concluir_conversa com o resumo completo e responda só uma frase curta: se o pagamento for Pix ou cartão, diga que o pagamento chega em seguida; se for na hora, diga que o pedido está confirmado.',
 ]
+/** Aulas: plano, aula avulsa ou mensalidade, feitos no estúdio (entrega "local"). */
+const TAREFA_DA_COBRANCA_NO_LOCAL = [
+  '- Para fechar um plano, uma aula avulsa ou a aula experimental: com o que a pessoa escolheu, o dia e o horário, e a forma de pagamento (pix, cartão ou na hora), chame montar_cobranca com entrega "local". O resumo com o total vai sozinho; escreva só uma frase curta como "Confere o resumo 👇". Aula experimental é grátis: chame também, com pagamento "na_hora". Nunca escreva preço total nem soma você mesma.',
+  '- Se a pessoa mudar algo depois do resumo, chame montar_cobranca de novo.',
+  '- Quando a pessoa confirmar o resumo, chame concluir_conversa com o resumo completo (com dia e horário) e responda só uma frase curta: se o pagamento for Pix ou cartão, diga que o pagamento chega em seguida; senão, que a vaga está reservada.',
+]
 const ehDaCobranca = (linha: string) => linha.startsWith('- Com tudo certo') || linha.startsWith('- Quando a pessoa confirmar')
 
 const REGRAS_COMUNS = [
@@ -514,6 +520,7 @@ const RAMOS: Ramo[] = [
       '- Ofereça a aula experimental gratuita para quem ainda não é aluno.',
       '- Para agendar, confirme: plano ou aula experimental, dia e horário aproximado, e o nome de quem vai.',
       '- Com tudo certo, mande o resumo e pergunte se pode reservar.',
+      '- Se a pessoa disser que já é aluna ("minha matrícula", "minha mensalidade", "quero repor aula"): trate como o aluno exemplo da demonstração, achado pelo número do WhatsApp. Matrícula ativa, plano Pilates 2x por semana (R$ 280,00 por mês), turmas terça e quinta às 7h, 1 reposição disponível, mensalidade de R$ 280,00 em aberto com vencimento no dia 5. Mostre isso em linhas curtas, uma por informação. Para pagar a mensalidade, chame montar_cobranca com "1 x Pilates 2x por semana", entrega "local" e a forma que a pessoa escolher. Reposição: pergunte dia e período e confirme.',
       '- Quando a pessoa confirmar, chame concluir_conversa com o resumo completo e responda só uma frase curta dizendo que a aula foi reservada.',
     ],
     cardapioPelaIa: false,
@@ -653,6 +660,125 @@ function fluxoLead() {
   return g.json()
 }
 
+/* ------------------------------------------------------ área do aluno */
+const JA_SOU_ALUNO = 'Já sou aluno'
+const MENSALIDADE = '280,00'
+
+/**
+ * "Já sou aluno": a matrícula de um aluno exemplo, achada pelo número do
+ * WhatsApp, com mensalidade em aberto, reposição e troca de plano. É o que um
+ * estúdio de verdade quer ver; no cliente, os dados vêm do sistema dele por
+ * integração (a MGM usa a Verandi). Aqui são fixos e fictícios.
+ */
+function areaDoAluno(g: Grafo, r: Ramo): void {
+  g.no('a-entra', 'mensagem', {
+    partes: [
+      { tipo: 'salvar', campo: 'linha_mensalidade', valor: `💳 Mensalidade: *R$ ${MENSALIDADE} em aberto*, vence dia 5` },
+      { tipo: 'salvar', campo: 'reposicoes', valor: '1 disponível' },
+    ],
+  })
+  g.liga('b-menu', 'a-entra', idDe(JA_SOU_ALUNO))
+  g.no('a-ficha', 'mensagem', {
+    partes: [
+      { tipo: 'atraso', segundos: 1 },
+      {
+        tipo: 'texto',
+        texto: `🧘 *Sua matrícula no ${r.negocio}*
+_Achei pelo seu número de WhatsApp._
+
+✅ Situação: *ativa*
+📋 Plano: *Pilates 2x por semana*, R$ ${MENSALIDADE}/mês
+📅 Turmas: terça e quinta, às 7h
+🔁 Reposições: {{reposicoes}}
+{{linha_mensalidade}}`,
+      },
+      { tipo: 'texto', texto: '_Na demonstração, este é um aluno exemplo. No seu estúdio, os dados vêm do seu sistema de alunos._' },
+    ],
+  })
+  g.liga('a-entra', 'a-ficha')
+  g.no('a-menu', 'pergunta', {
+    texto: 'O que você quer fazer?',
+    salvarEm: 'aluno_quer',
+    opcoes: opcoes([
+      { rotulo: 'Pagar mensalidade', descricao: `R$ ${MENSALIDADE}, Pix ou cartão` },
+      { rotulo: 'Repor uma aula', descricao: 'Escolha o dia e o período' },
+      { rotulo: 'Trocar de plano', descricao: 'Ver os planos do estúdio' },
+      { rotulo: VOLTAR },
+    ]),
+  })
+  g.liga('a-ficha', 'a-menu')
+  g.liga('a-menu', 'b-voltar', idDe(VOLTAR))
+  g.liga('a-menu', 'b-lista', 'trocar-de-plano')
+
+  // Mensalidade: Pix ou cartão, e a ficha passa a dizer "paga".
+  g.no('a-paga-ja', 'condicao', { variavel: 'linha_mensalidade', operador: 'contem', valor: 'paga ✅' })
+  g.liga('a-menu', 'a-paga-ja', 'pagar-mensalidade')
+  g.no('a-ja-pagou', 'mensagem', texto('Sua mensalidade deste mês já está paga ✅ Nada em aberto!'))
+  g.liga('a-paga-ja', 'a-ja-pagou', 'verdadeiro')
+  g.liga('a-ja-pagou', 'a-mais')
+  g.no('a-forma', 'pergunta', {
+    texto: `Mensalidade de *R$ ${MENSALIDADE}*, vence dia 5.
+Como quer pagar?`,
+    salvarEm: 'forma_mensalidade',
+    opcoes: opcoes(['Pix', 'Cartão de crédito', VOLTAR]),
+  })
+  g.liga('a-paga-ja', 'a-forma', 'falso')
+  g.liga('a-forma', 'a-pag-pix', 'pix')
+  g.liga('a-forma', 'a-pag-cartao', 'cartao-de-credito')
+  g.liga('a-forma', 'a-menu-volta', idDe(VOLTAR))
+  g.no('a-menu-volta', 'voltar', { destino: 'a-menu', rotulo: 'O que você quer fazer?' })
+  cobrar(g, {
+    id: 'a-pag',
+    valor: MENSALIDADE,
+    nomeNaUrl: encodeURIComponent(r.negocio),
+    nomeDito: r.negocio,
+    legendaExtra: '\nMensalidade, Pilates 2x por semana',
+    pagoPix: `✅ *Mensalidade paga!*\nR$ ${MENSALIDADE} via Pix. Sua matrícula segue *ativa* até o dia 5 do mês que vem. 🙌`,
+    pagoCartao: `✅ *Mensalidade paga!*\nR$ ${MENSALIDADE} no cartão. Sua matrícula segue *ativa* até o dia 5 do mês que vem. 🙌`,
+    depois: 'a-pagou',
+  })
+  g.no('a-pagou', 'mensagem', { partes: [{ tipo: 'salvar', campo: 'linha_mensalidade', valor: '💳 Mensalidade: *paga ✅*' }] })
+  g.liga('a-pagou', 'a-mais')
+
+  // Reposição: dia e período; a de este mês acaba.
+  g.no('a-tem-repo', 'condicao', { variavel: 'reposicoes', operador: 'igual', valor: '1 disponível' })
+  g.liga('a-menu', 'a-tem-repo', 'repor-uma-aula')
+  g.no('a-sem-repo', 'mensagem', texto('Você já usou a reposição deste mês 😉 Na próxima falta avisada com 2 horas de antecedência, ganha outra.'))
+  g.liga('a-tem-repo', 'a-sem-repo', 'falso')
+  g.liga('a-sem-repo', 'a-mais')
+  g.no('a-repo-dia', 'pergunta', {
+    texto: 'Quando quer repor?',
+    salvarEm: 'repo_dia_escolhido',
+    salvarValorEm: 'repo_dia',
+    opcoes: opcoes([{ rotulo: 'Amanhã', valor: 'amanhã' }, { rotulo: 'Sexta', valor: 'sexta' }, { rotulo: 'Sábado', valor: 'sábado' }]),
+  })
+  g.liga('a-tem-repo', 'a-repo-dia', 'verdadeiro')
+  g.no('a-repo-hora', 'pergunta', {
+    texto: 'Qual período? As turmas têm até 4 alunos.',
+    salvarEm: 'repo_periodo_escolhido',
+    salvarValorEm: 'repo_periodo',
+    opcoes: opcoes([{ rotulo: 'De manhã', valor: 'de manhã' }, { rotulo: 'À tarde', valor: 'à tarde' }, { rotulo: 'À noite', valor: 'à noite' }]),
+  })
+  for (const d of ['amanha', 'sexta', 'sabado']) g.liga('a-repo-dia', 'a-repo-hora', d)
+  g.no('a-repo-ok', 'mensagem', {
+    partes: [
+      { tipo: 'salvar', campo: 'reposicoes', valor: 'nenhuma este mês' },
+      { tipo: 'texto', texto: '✅ *Reposição marcada!*\n{{repo_dia}}, {{repo_periodo}}. Te esperamos! 🧘' },
+    ],
+  })
+  for (const h of ['de-manha', 'a-tarde', 'a-noite']) g.liga('a-repo-hora', 'a-repo-ok', h)
+  g.liga('a-repo-ok', 'a-mais')
+
+  g.no('a-mais', 'pergunta', {
+    texto: 'Posso ajudar em mais alguma coisa?',
+    salvarEm: 'aluno_mais',
+    opcoes: opcoes(['Ver minha matrícula', LEAD_RESPOSTA, TROCAR]),
+  })
+  g.liga('a-mais', 'a-ficha', 'ver-minha-matricula')
+  g.liga('a-mais', 'lead', idDe(LEAD_RESPOSTA))
+  g.liga('a-mais', 'trocar', idDe(TROCAR))
+}
+
 /* ------------------------------------------------------------- um ramo */
 function fluxoRamo(r: Ramo) {
   const g = new Grafo('modo')
@@ -685,12 +811,13 @@ function fluxoRamo(r: Ramo) {
   g.no('b-menu', 'pergunta', {
     texto: 'Como posso te ajudar?',
     salvarEm: 'assunto',
-    opcoes: opcoes([r.verCatalogo, r.fazerPedido, r.infoRotulo, LEAD_RESPOSTA, TROCAR]),
+    opcoes: opcoes([r.verCatalogo, r.fazerPedido, ...(r.chave === 'aulas' ? [JA_SOU_ALUNO] : []), r.infoRotulo, LEAD_RESPOSTA, TROCAR]),
   })
   g.liga('b-abertura', 'b-menu')
   g.liga('b-menu', 'lead', idDe(LEAD_RESPOSTA))
   g.liga('b-menu', 'trocar', idDe(TROCAR))
   g.no('b-voltar', 'voltar', { destino: 'b-menu', rotulo: 'Como posso te ajudar?' })
+  if (r.chave === 'aulas') areaDoAluno(g, r)
 
   g.no('b-info', 'mensagem', texto(r.info))
   g.liga('b-menu', 'b-info', idDe(r.infoRotulo))
@@ -864,7 +991,7 @@ function fluxoRamo(r: Ramo) {
     g.liga('p-final', 'p-gratis')
     g.liga('p-gratis', 'p-nada', 'verdadeiro')
     g.liga('p-gratis', 'p-pagamento', 'falso')
-    resumo = `*Resumo do agendamento*{{carrinho}}\n\n{{linha_total}}\n*Quando:* {{dia}}, {{periodo}}{{linha_pagamento}}`
+    resumo = `*Resumo do agendamento*{{carrinho}}\n\n{{linha_total}}\n*Quando:* {{dia}}, {{periodo}}{{linha_pagamento}}${r.chave === 'servicos' ? `\n*Sinal:* R$ ${SINAL} para garantir o horário, descontado no dia` : ''}`
   } else {
     if (r.observacao) {
       g.no('p-obs', 'pergunta', { texto: 'Alguma observação? (tirar cebola, sem gelo...)', salvarEm: 'tem_observacao', opcoes: opcoes(['Sem observação', 'Escrever observação']) })
@@ -944,7 +1071,8 @@ function fluxoRamo(r: Ramo) {
   g.liga('p-confere', 'b-esvaziar', 'cancelar')
   g.no('p-nota', 'nota', { texto: `Demonstração (${r.negocio}), pelos botões:\n${resumo}` })
   g.liga('p-confere', 'p-nota', 'confirmar')
-  if (r.agenda) g.liga('p-nota', 'p-anotado')
+  if (r.chave === 'servicos') sinalDoSalao(g, 'p', 'p-nota', encodeURIComponent(r.negocio), r.negocio)
+  else if (r.agenda) g.liga('p-nota', 'p-anotado')
   else pagamentoDeMentira(g, r)
   g.no('p-anotado', 'mensagem', {
     partes: [
@@ -957,6 +1085,8 @@ function fluxoRamo(r: Ramo) {
   esperaEAviso(g, r, 'p-anotado', 'b')
 
   /* ---- IA */
+  // O salão cobra só o sinal, fixo, depois de agendar; os outros cobram pelo total conferido.
+  const cobraNaIa = r.chave !== 'servicos'
   const exemplo = { pizzaria: 'Pizzaria Margherita', hamburgueria: 'Burger do Zé', restaurante: 'Cantina da Vó', comercio: 'Loja da Ana', servicos: 'Studio Bella' }[r.chave] ?? 'Studio Movimento'
   // Cobrança de uma rodada anterior não pode virar o Pix desta.
   g.no('i-limpa', 'mensagem', {
@@ -986,8 +1116,8 @@ function fluxoRamo(r: Ramo) {
       ...(r.iaPerguntaOQueVende
         ? ['- "O que vende" ({{o_que_vende}}) foi escrito pelo dono do negócio antes de você virar atendente, e pode ter vindo como pergunta ("tem aula de yoga?"). Trate só como pista do que a casa oferece; não responda a essa frase, responda às mensagens do cliente.']
         : []),
-      ...(r.agenda ? r.iaTarefa : [...r.iaTarefa.filter((l) => !ehDaCobranca(l)), ...TAREFA_DA_COBRANCA]),
-      ...(r.agenda ? REGRAS_COMUNS : REGRAS_COMUNS.filter((l) => !l.startsWith('- Total:'))),
+      ...(!cobraNaIa ? r.iaTarefa : [...r.iaTarefa.filter((l) => !ehDaCobranca(l)), ...(r.agenda ? TAREFA_DA_COBRANCA_NO_LOCAL : TAREFA_DA_COBRANCA)]),
+      ...(!cobraNaIa ? REGRAS_COMUNS : REGRAS_COMUNS.filter((l) => !l.startsWith('- Total:'))),
     ].join('\n'),
     ferramentas: ['loja_buscar', 'loja_mostrar', ...(r.cardapioPelaIa ? ['enviar_cardapio'] : [])],
     fonteDoCatalogo: 'catalogo',
@@ -996,7 +1126,7 @@ function fluxoRamo(r: Ramo) {
     conversar: {
       maxTurnos: 20,
       concluir: { salvarEm: 'pedido' },
-      ...(r.agenda ? {} : { cobranca: { taxaEntrega: r.taxa, ajustes: r.ajustes ?? [] } }),
+      ...(cobraNaIa ? { cobranca: { taxaEntrega: r.taxa, ajustes: r.ajustes ?? [] } } : {}),
     },
   })
   g.liga('i-primeira', 'i-conversa')
@@ -1010,7 +1140,7 @@ function fluxoRamo(r: Ramo) {
       { tipo: 'texto', texto: `_Na demonstração, o aviso ${r.agenda ? 'de lembrete' : 'de "pronto"'} chega aqui sozinho em ${MINUTOS_ATE_O_AVISO} minutos, como chegaria para o seu cliente._` },
     ],
   })
-  if (r.agenda) g.liga('i-nota', 'i-anotado')
+  if (r.chave === 'servicos') sinalDoSalao(g, 'i', 'i-nota', '{{negocio}}', '{{negocio}}')
   else pagamentoDaIa(g, r)
   esperaEAviso(g, r, 'i-anotado', 'i')
   g.no('i-saida', 'pergunta', { texto: 'Saí do papel. 🙂 E agora?', salvarEm: 'escolha', opcoes: opcoes(['Continuar conversa', LEAD_RESPOSTA, TROCAR]) })
@@ -1040,56 +1170,104 @@ function statusDoPedido(r: Ramo, p: 'b' | 'i'): string {
 }
 
 /**
- * O pagamento que parece de verdade (pedido do Gabriel, 27/set): Pix com QR
- * Code, valor e "copia e cola"; cartão com link de pagamento; e o "Já paguei"
- * que confirma. Tudo de mentira: a chave Pix é inventada e a página de cartão
- * não recebe número nenhum (`core/pagamento-demo.ts`).
+ * Cobrar por Pix ou cartão, de mentira (`core/pagamento-demo.ts`): a rota da
+ * demo devolve o copia e cola e os links do QR e do cartão, já com o nome
+ * codificado. Serve ao pedido, ao sinal do salão e à mensalidade do aluno.
+ * Entradas: `${id}-pix` e `${id}-cartao`. Sem os links (a rota falhou), vai
+ * para `depois` sem cobrar: melhor que um Pix vazio.
  */
-function pagamentoDeMentira(g: Grafo, r: Ramo): void {
-  const nome = encodeURIComponent(r.negocio)
-  g.no('p-qual', 'condicao', { variavel: 'forma_pagamento', operador: 'igual', valor: 'pix' })
-  g.no('p-qual-cartao', 'condicao', { variavel: 'forma_pagamento', operador: 'igual', valor: 'cartao' })
-  g.liga('p-nota', 'p-qual')
-  g.liga('p-qual', 'p-pix-codigo', 'verdadeiro')
-  g.liga('p-qual', 'p-qual-cartao', 'falso')
-  g.liga('p-qual-cartao', 'p-cartao', 'verdadeiro')
-  g.liga('p-qual-cartao', 'p-anotado', 'falso')
-
-  g.no('p-pix-codigo', 'http', {
-    metodo: 'GET',
-    url: `${SITE}/api/demo/pix?v={{total_final}}&n=${nome}`,
-    mapear: [{ variavel: 'pix_codigo', caminho: 'codigo' }],
-    aoFalhar: 'seguir',
-  })
-  g.no('p-pix', 'mensagem', {
+function cobrar(
+  g: Grafo,
+  c: { id: string; valor: string; nomeNaUrl: string; nomeDito: string; legendaExtra?: string; pagoPix: string; pagoCartao: string; depois: string },
+): void {
+  const { id } = c
+  for (const forma of ['pix', 'cartao']) {
+    g.no(`${id}-${forma}`, 'http', {
+      metodo: 'GET',
+      url: `${SITE}/api/demo/pix?v=${c.valor}&n=${c.nomeNaUrl}`,
+      mapear: [
+        { variavel: 'pix_codigo', caminho: 'codigo' },
+        { variavel: 'pix_qr', caminho: 'qr' },
+        { variavel: 'link_cartao', caminho: 'link' },
+      ],
+      aoFalhar: 'seguir',
+    })
+    g.no(`${id}-${forma}-ok`, 'condicao', { variavel: 'pix_qr', operador: 'preenchido', valor: '' })
+    g.liga(`${id}-${forma}`, `${id}-${forma}-ok`)
+    g.liga(`${id}-${forma}-ok`, c.depois, 'falso')
+    g.liga(`${id}-${forma}-ok`, `${id}-${forma}-msg`, 'verdadeiro')
+  }
+  g.no(`${id}-pix-msg`, 'mensagem', {
     partes: [
-      { tipo: 'midia', midia: 'imagem', url: `${SITE}/api/demo/pix/qr?v={{total_final}}&n=${nome}`, legenda: `*Pix de R$ {{total_final}}* para *${r.negocio}*{{carrinho}}` },
+      { tipo: 'midia', midia: 'imagem', url: '{{pix_qr}}', legenda: `*Pix de R$ ${c.valor}* para *${c.nomeDito}*${c.legendaExtra ?? ''}` },
       { tipo: 'atraso', segundos: 1 },
       { tipo: 'texto', texto: 'Escaneie o QR Code no app do banco, ou copie o código abaixo e cole em *Pix copia e cola* 👇' },
       { tipo: 'texto', texto: '{{pix_codigo}}' },
     ],
   })
-  g.liga('p-pix-codigo', 'p-pix')
-  g.no('p-pix-espera', 'pergunta', { texto: 'Assim que pagar, toque em *Já paguei* 👇', salvarEm: 'pagou', opcoes: opcoes(['Já paguei', 'Pagar com cartão']) })
-  g.liga('p-pix', 'p-pix-espera')
-  g.no('p-pix-pago', 'mensagem', texto('✅ *Pagamento recebido!*\nR$ {{total_final}} via Pix. Obrigado!'))
-  g.liga('p-pix-espera', 'p-pix-pago', 'ja-paguei')
-  g.liga('p-pix-espera', 'p-cartao', 'pagar-com-cartao')
-  g.liga('p-pix-pago', 'p-anotado')
+  g.no(`${id}-pix-espera`, 'pergunta', { texto: 'Assim que pagar, toque em *Já paguei* 👇', salvarEm: 'pagou', opcoes: opcoes(['Já paguei', 'Pagar com cartão']) })
+  g.liga(`${id}-pix-msg`, `${id}-pix-espera`)
+  g.no(`${id}-pix-pago`, 'mensagem', texto(c.pagoPix))
+  g.liga(`${id}-pix-espera`, `${id}-pix-pago`, 'ja-paguei')
+  g.liga(`${id}-pix-espera`, `${id}-cartao-msg`, 'pagar-com-cartao')
+  g.liga(`${id}-pix-pago`, c.depois)
 
-  g.no('p-cartao', 'mensagem', texto(`💳 *Pagamento com cartão*\nTotal: *R$ {{total_final}}*, em até 3x sem juros.\n\nPague pelo link seguro 👇\n${SITE}/demo/pagar?v={{total_final}}&n=${nome}`))
-  g.no('p-cartao-espera', 'pergunta', { texto: 'Pagou? Toque em *Já paguei* 👇', salvarEm: 'pagou', opcoes: opcoes(['Já paguei', 'Pagar com Pix']) })
-  g.liga('p-cartao', 'p-cartao-espera')
-  g.no('p-cartao-pago', 'mensagem', texto('✅ *Pagamento aprovado!*\nR$ {{total_final}} no cartão. Obrigado!'))
-  g.liga('p-cartao-espera', 'p-cartao-pago', 'ja-paguei')
-  g.liga('p-cartao-espera', 'p-pix-codigo', 'pagar-com-pix')
-  g.liga('p-cartao-pago', 'p-anotado')
+  g.no(`${id}-cartao-msg`, 'mensagem', texto(`💳 *Pagamento com cartão*\nTotal: *R$ ${c.valor}*, em até 3x sem juros.\n\nPague pelo link seguro 👇\n{{link_cartao}}`))
+  g.no(`${id}-cartao-espera`, 'pergunta', { texto: 'Pagou? Toque em *Já paguei* 👇', salvarEm: 'pagou', opcoes: opcoes(['Já paguei', 'Pagar com Pix']) })
+  g.liga(`${id}-cartao-msg`, `${id}-cartao-espera`)
+  g.no(`${id}-cartao-pago`, 'mensagem', texto(c.pagoCartao))
+  g.liga(`${id}-cartao-espera`, `${id}-cartao-pago`, 'ja-paguei')
+  g.liga(`${id}-cartao-espera`, `${id}-pix-msg`, 'pagar-com-pix')
+  g.liga(`${id}-cartao-pago`, c.depois)
+}
+
+/** O pedido com botões: Pix, cartão ou na hora, pelo total do carrinho. */
+function pagamentoDeMentira(g: Grafo, r: Ramo): void {
+  g.no('p-qual', 'condicao', { variavel: 'forma_pagamento', operador: 'igual', valor: 'pix' })
+  g.no('p-qual-cartao', 'condicao', { variavel: 'forma_pagamento', operador: 'igual', valor: 'cartao' })
+  g.liga('p-nota', 'p-qual')
+  g.liga('p-qual', 'p-pag-pix', 'verdadeiro')
+  g.liga('p-qual', 'p-qual-cartao', 'falso')
+  g.liga('p-qual-cartao', 'p-pag-cartao', 'verdadeiro')
+  g.liga('p-qual-cartao', 'p-anotado', 'falso')
+  cobrar(g, {
+    id: 'p-pag',
+    valor: '{{total_final}}',
+    nomeNaUrl: encodeURIComponent(r.negocio),
+    nomeDito: r.negocio,
+    legendaExtra: '{{carrinho}}',
+    pagoPix: '✅ *Pagamento recebido!*\nR$ {{total_final}} via Pix. Obrigado!',
+    pagoCartao: '✅ *Pagamento aprovado!*\nR$ {{total_final}} no cartão. Obrigado!',
+    depois: 'p-anotado',
+  })
+}
+
+/** O sinal do salão: segura o horário e é descontado no dia. */
+const SINAL = '20,00'
+function sinalDoSalao(g: Grafo, p: 'p' | 'i', depoisDe: string, nomeNaUrl: string, nomeDito: string): void {
+  g.no(`${p}-sinal`, 'pergunta', {
+    texto: `Para garantir o seu horário, pedimos um *sinal de R$ ${SINAL}*, descontado no dia. 💚\nAssim a vaga fica segura só para você.`,
+    salvarEm: 'sinal',
+    opcoes: opcoes(['Pagar sinal no Pix', 'Sinal no cartão', 'Pagar tudo no dia']),
+  })
+  g.liga(depoisDe, `${p}-sinal`)
+  g.liga(`${p}-sinal`, `${p}-sin-pix`, 'pagar-sinal-no-pix')
+  g.liga(`${p}-sinal`, `${p}-sin-cartao`, 'sinal-no-cartao')
+  g.liga(`${p}-sinal`, `${p}-anotado`, 'pagar-tudo-no-dia')
+  cobrar(g, {
+    id: `${p}-sin`,
+    valor: SINAL,
+    nomeNaUrl,
+    nomeDito,
+    pagoPix: `✅ *Sinal recebido!*\nR$ ${SINAL} via Pix. Seu horário está garantido.`,
+    pagoCartao: `✅ *Sinal aprovado!*\nR$ ${SINAL} no cartão. Seu horário está garantido.`,
+    depois: `${p}-anotado`,
+  })
 }
 
 /**
  * O pagamento depois da IA: o total é o `cobranca_total` que o servidor
- * somou e a pessoa confirmou, nunca um número escrito pelo modelo. A rota da
- * demo devolve o copia e cola e os links já com o nome do negócio codificado.
+ * somou e a pessoa confirmou, nunca um número escrito pelo modelo.
  */
 function pagamentoDaIa(g: Grafo, r: Ramo): void {
   // Entrega ou retirada, pelo que ficou na cobrança: a última etapa do
@@ -1104,51 +1282,26 @@ function pagamentoDaIa(g: Grafo, r: Ramo): void {
   g.liga('i-etapa-r', 'i-tem-cobranca')
   g.liga('i-etapa-e', 'i-tem-cobranca')
   g.liga('i-tem-cobranca', 'i-anotado', 'falso')
+  // Aula experimental: total zero, nada a cobrar.
+  g.no('i-gratis', 'condicao', { variavel: 'cobranca_total', operador: 'igual', valor: '0,00' })
+  g.liga('i-tem-cobranca', 'i-gratis', 'verdadeiro')
+  g.liga('i-gratis', 'i-anotado', 'verdadeiro')
   g.no('i-na-hora', 'condicao', { variavel: 'cobranca_pagamento', operador: 'igual', valor: 'na_hora' })
-  g.liga('i-tem-cobranca', 'i-na-hora', 'verdadeiro')
+  g.liga('i-gratis', 'i-na-hora', 'falso')
   g.liga('i-na-hora', 'i-anotado', 'verdadeiro')
-  g.no('i-pag-dados', 'http', {
-    metodo: 'GET',
-    url: `${SITE}/api/demo/pix?v={{cobranca_total}}&n={{negocio}}`,
-    mapear: [
-      { variavel: 'pix_codigo', caminho: 'codigo' },
-      { variavel: 'pix_qr', caminho: 'qr' },
-      { variavel: 'link_cartao', caminho: 'link' },
-    ],
-    aoFalhar: 'seguir',
-  })
-  g.liga('i-na-hora', 'i-pag-dados', 'falso')
-  // Sem os links (a rota falhou), o pedido segue sem cobrança: melhor que Pix vazio.
-  g.no('i-pag-ok', 'condicao', { variavel: 'pix_qr', operador: 'preenchido', valor: '' })
-  g.liga('i-pag-dados', 'i-pag-ok')
-  g.liga('i-pag-ok', 'i-anotado', 'falso')
   g.no('i-qual', 'condicao', { variavel: 'cobranca_pagamento', operador: 'igual', valor: 'pix' })
-  g.liga('i-pag-ok', 'i-qual', 'verdadeiro')
-  g.liga('i-qual', 'i-pix', 'verdadeiro')
-  g.liga('i-qual', 'i-cartao', 'falso')
-
-  g.no('i-pix', 'mensagem', {
-    partes: [
-      { tipo: 'midia', midia: 'imagem', url: '{{pix_qr}}', legenda: '*Pix de R$ {{cobranca_total}}* para *{{negocio}}*' },
-      { tipo: 'atraso', segundos: 1 },
-      { tipo: 'texto', texto: 'Escaneie o QR Code no app do banco, ou copie o código abaixo e cole em *Pix copia e cola* 👇' },
-      { tipo: 'texto', texto: '{{pix_codigo}}' },
-    ],
+  g.liga('i-na-hora', 'i-qual', 'falso')
+  g.liga('i-qual', 'i-pag-pix', 'verdadeiro')
+  g.liga('i-qual', 'i-pag-cartao', 'falso')
+  cobrar(g, {
+    id: 'i-pag',
+    valor: '{{cobranca_total}}',
+    nomeNaUrl: '{{negocio}}',
+    nomeDito: '{{negocio}}',
+    pagoPix: '✅ *Pagamento recebido!*\nR$ {{cobranca_total}} via Pix. Obrigado!',
+    pagoCartao: '✅ *Pagamento aprovado!*\nR$ {{cobranca_total}} no cartão. Obrigado!',
+    depois: 'i-anotado',
   })
-  g.no('i-pix-espera', 'pergunta', { texto: 'Assim que pagar, toque em *Já paguei* 👇', salvarEm: 'pagou', opcoes: opcoes(['Já paguei', 'Pagar com cartão']) })
-  g.liga('i-pix', 'i-pix-espera')
-  g.no('i-pix-pago', 'mensagem', texto('✅ *Pagamento recebido!*\nR$ {{cobranca_total}} via Pix. Obrigado!'))
-  g.liga('i-pix-espera', 'i-pix-pago', 'ja-paguei')
-  g.liga('i-pix-espera', 'i-cartao', 'pagar-com-cartao')
-  g.liga('i-pix-pago', 'i-anotado')
-
-  g.no('i-cartao', 'mensagem', texto('💳 *Pagamento com cartão*\nTotal: *R$ {{cobranca_total}}*, em até 3x sem juros.\n\nPague pelo link seguro 👇\n{{link_cartao}}'))
-  g.no('i-cartao-espera', 'pergunta', { texto: 'Pagou? Toque em *Já paguei* 👇', salvarEm: 'pagou', opcoes: opcoes(['Já paguei', 'Pagar com Pix']) })
-  g.liga('i-cartao', 'i-cartao-espera')
-  g.no('i-cartao-pago', 'mensagem', texto('✅ *Pagamento aprovado!*\nR$ {{cobranca_total}} no cartão. Obrigado!'))
-  g.liga('i-cartao-espera', 'i-cartao-pago', 'ja-paguei')
-  g.liga('i-cartao-espera', 'i-pix', 'pagar-com-pix')
-  g.liga('i-cartao-pago', 'i-anotado')
 }
 
 /** "Pedido pronto" alguns minutos depois: a pergunta espera, e o prazo dela é o aviso. */
