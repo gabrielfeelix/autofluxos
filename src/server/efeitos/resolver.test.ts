@@ -1220,3 +1220,35 @@ describe('cobrança conferida na IA', () => {
     expect(modelo.pedidos[1]?.historico?.find((m) => m.de === 'ferramenta')?.texto).toContain('"concluido":false')
   })
 })
+
+describe('cardápio próprio do bloco de IA', () => {
+  it('enviar_cardapio manda a imagem e o PDF do bloco, depois da frase', async () => {
+    const fluxo: Fluxo = fluxoSchema.parse({
+      inicio: 'ia',
+      nodes: [
+        {
+          id: 'ia',
+          type: 'ia',
+          position: { x: 0, y: 0 },
+          data: {
+            instrucao: 'Atenda.',
+            ferramentas: ['enviar_cardapio'],
+            cardapio: { imagem: 'https://x.test/burger.png', pdf: 'https://x.test/burger.pdf', nomeArquivo: 'Cardápio Burger.pdf' },
+            conversar: { maxTurnos: 5 },
+          },
+        },
+      ],
+      edges: [],
+    })
+    const modelo = modeloQue((p) =>
+      (p.historico ?? []).some((m) => m.de === 'ferramenta')
+        ? { tipo: 'texto', texto: 'Olha o nosso cardápio 👇' }
+        : { tipo: 'usar_ferramenta', nome: 'enviar_cardapio', argumentos: {} },
+    )
+    const r = await executarComEfeitos(fluxo, sessaoNova(), { tipo: 'inicio' }, { modelo, contextoNegocio })
+    const tipos = r.acoes.map((a) => (a.tipo === 'enviar_midia' ? `${a.midia}:${a.url}` : a.tipo))
+    expect(tipos).toEqual(['enviar_texto', 'imagem:https://x.test/burger.png', 'documento:https://x.test/burger.pdf'])
+    const pdf = r.acoes.find((a) => a.tipo === 'enviar_midia' && a.midia === 'documento')
+    expect(pdf?.tipo === 'enviar_midia' && pdf.nomeArquivo).toBe('Cardápio Burger.pdf')
+  })
+})

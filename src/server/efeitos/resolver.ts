@@ -1107,6 +1107,21 @@ async function responderComFerramentas({
       }
     }
 
+    /*
+     * O cardápio do bloco vence o da conta: é arquivo que o desenho escolheu,
+     * sem ir ao banco. Sai pelo mesmo caminho dos anexos, depois da frase.
+     */
+    if (ferramenta.chamada.tipo === 'loja' && ferramenta.chamada.operacao === 'cardapio' && chamada.cardapio) {
+      const { imagem, pdf, nomeArquivo } = chamada.cardapio
+      const proprios = envioDoCardapio([
+        ...(imagem ? [{ tipo: 'cardapio-imagem' as const, url: imagem, nomeArquivo: null, atualizadoEm: '' }] : []),
+        ...(pdf ? [{ tipo: 'cardapio-pdf' as const, url: pdf, nomeArquivo: nomeArquivo ?? null, atualizadoEm: '' }] : []),
+      ])
+      for (const anexo of proprios) if (!anexos.some((a) => a.url === anexo.url)) anexos.push(anexo)
+      conversa.push({ de: 'ferramenta', nome: ferramenta.nome, texto: JSON.stringify({ enviado: proprios.length > 0 }) })
+      continue
+    }
+
     const disparo = await dispararFerramenta({
       ferramenta,
       argumentos: resposta.argumentos,

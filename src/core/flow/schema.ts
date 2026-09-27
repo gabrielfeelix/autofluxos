@@ -544,6 +544,24 @@ export const noIaSchema = z.object({
      */
     fonteDoCatalogo: z.enum(['loja', 'catalogo']).optional(),
     /**
+     * O cardápio em arquivo **deste bloco**, no lugar do da conta, para
+     * `enviar_cardapio`. Links `https://` de imagem e de PDF.
+     *
+     * Ausente é o de sempre: o material que a conta subiu. Existe pelo mesmo
+     * motivo do `sobreAEmpresa` abaixo: a conta que atende várias casas no
+     * mesmo número (a demonstração: pizzaria, hamburgueria, restaurante) tem
+     * um cardápio por casa, e o da conta é um só. Sem isto a IA da
+     * hamburgueria não tinha arquivo para mandar e listava o cardápio em
+     * texto corrido (27/set).
+     */
+    cardapio: z
+      .object({
+        imagem: z.string().startsWith('https://').optional(),
+        pdf: z.string().startsWith('https://').optional(),
+        nomeArquivo: z.string().max(80).optional(),
+      })
+      .optional(),
+    /**
      * O "Sobre a empresa" deste bloco, no lugar do da conta.
      *
      * Ausente é o de sempre: a IA sabe o que a conta escreveu em Conhecimento

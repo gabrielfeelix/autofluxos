@@ -1532,6 +1532,7 @@ function chamarIa(no: NoIa, s: Sessao): Acao {
     ...(no.data.fonteDoCatalogo ? { fonteDoCatalogo: no.data.fonteDoCatalogo } : {}),
     ...(no.data.conversar?.concluir ? { concluir: true as const } : {}),
     ...(no.data.conversar?.cobranca ? { cobranca: no.data.conversar.cobranca } : {}),
+    ...(no.data.cardapio ? { cardapio: no.data.cardapio } : {}),
     ...((no.data.sobreAEmpresa ?? '').trim() !== '' ? { sobreAEmpresa: no.data.sobreAEmpresa!.trim() } : {}),
   }
 }

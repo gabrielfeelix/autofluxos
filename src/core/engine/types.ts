@@ -245,6 +245,8 @@ export type Acao =
        * bloco com `conversar.concluir`.
        */
       concluir?: true
+      /** O cardápio em arquivo do bloco, no lugar do da conta. */
+      cardapio?: { imagem?: string; pdf?: string; nomeArquivo?: string }
       /** As regras da cobrança conferida, do `conversar.cobranca` do bloco. */
       cobranca?: { taxaEntrega: number; ajustes: { nome: string; valor: number }[] }
       /** O "Sobre a empresa" do bloco, no lugar do da conta. Ausente = o da conta. */
