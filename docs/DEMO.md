@@ -42,9 +42,12 @@ horário é marcado.
    roda de carona nos webhooks, então pode atrasar um pouco se o sistema
    estiver sem movimento nenhum.
 5. **"Quero no meu negócio"**, em qualquer menu ou escrito em qualquer ponto
-   ("para o meu negócio", "pro meu negócio", "no meu negócio"), passa para uma
-   pessoa com o motivo **"Lead da demo · <ramo>"**. Se ninguém responder em
-   5 minutos, o bot volta sozinho ("Voltei! Para recomeçar, escreva inicio").
+   ("para o meu negócio", "pro meu negócio", "no meu negócio"), pergunta o
+   nome da empresa e o que ela vende, e então passa para uma pessoa com o
+   motivo **"Lead da demo · <ramo> · <empresa>"**. Se ninguém responder, o bot
+   volta sozinho ("Oi de novo! Se quiser continuar testando, escreva inicio").
+   A volta só é conferida quando entra alguma mensagem na conta (ou no cron
+   diário), então pode chegar bem depois dos 15 minutos.
 6. **Escrever *inicio*** (com ou sem acento, maiúscula ou não) ou ***demo***
    recomeça do zero a qualquer hora: oi com o nome, aviso e a pergunta do
    ramo. Vale no meio de uma lista, de um pedido e da conversa com a IA.
@@ -56,6 +59,34 @@ horário é marcado.
    Quer ver alguma?"). Até 3 fotos por vez; havendo mais, a IA oferece os
    outros. Tocar em "Pedir" volta para a IA como "Quero pedir: <nome>", e ela
    segue o pedido daquele item.
+
+### Pagamento de mentira, que parece de verdade (27/set)
+
+No modo com botões, "Como você vai pagar?" oferece **Pix**, **Cartão de
+crédito** e **Pagar na hora** (maquininha, ou dinheiro com troco). Depois de
+confirmar o resumo:
+
+- **Pix**: chega a imagem com QR Code, nome da loja e valor (legenda com os
+  itens), depois o código copia e cola sozinho numa mensagem, fácil de copiar,
+  e os botões "Já paguei" e "Pagar com cartão".
+- **Cartão**: chega o link `autofluxos.4yu.com.br/demo/pagar?v=<total>&n=<loja>`,
+  um checkout de exemplo com o cartão de teste já preenchido e travado,
+  parcelas em até 3x e "Pagamento aprovado" com o botão "Voltar ao WhatsApp"
+  (que escreve "Já paguei").
+- "Já paguei" confirma o pagamento e segue para o acompanhamento.
+
+O código Pix tem o formato do Banco Central (o app do banco lê valor e nome),
+mas a chave é aleatória e inventada: o banco para em "chave não encontrada".
+Código em `src/core/pagamento-demo.ts`; rotas públicas `/api/demo/pix`,
+`/api/demo/pix/qr` e `/demo/pagar`, sem banco nem conta. O modo com IA ainda
+não manda Pix nem link: a IA só pergunta a forma de pagamento.
+
+Outras mudanças de 27/set: a foto do item vem **em cima dos botões**, numa
+bolha só (campo novo `imagem` na pergunta); quem escolhe retirada recebe
+"está pronto, pode vir buscar"; "Quero no meu negócio" pergunta a empresa
+**antes** de passar para a pessoa; e as cópias da PCYES não têm mais prazo nas
+perguntas (antes, parar de testar virava "Vou te passar para um atendente"
+horas depois).
 
 A **Loja online** é a PCYES de verdade: os botões são a cópia do menu da PCYES
 (comprar, meu pedido, suporte, garantia, empresa, parcerias), e "Quero
