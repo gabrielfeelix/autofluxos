@@ -1,3 +1,4 @@
+import { MARCA_DE_MOSTRAR } from '@/core/loja'
 import type { Ferramenta } from '@/core/ferramentas'
 import type { PedidoDeIa, Resposta, Turno } from './types'
 
@@ -235,10 +236,20 @@ export function interpretarResposta(bruto: string | null | undefined): Resposta 
   // disser. O cabeçalho das seções não aparece em atendimento de verdade, e o
   // nome de uma consulta interna também não: quem vê isso conseguiu o que a
   // regra 10 tenta impedir, e a recusa fixa é a saída que não depende dela.
-  if (VAZAMENTO.test(texto)) return { tipo: 'texto', texto: RECUSA_FORA_DO_ASSUNTO }
+  /*
+   * A linha que "chama" a vitrine por escrito ("(loja_mostrar com os produtos
+   * acima)") não é vazamento: é o modelo errando a chamada (27/set, demo). Ela
+   * vira a marca que o resolvedor troca pelas fotos do que foi buscado; o
+   * resto do texto ainda passa pela conferência abaixo.
+   */
+  const semChamadaEscrita = texto.replace(LINHA_DE_MOSTRAR_ESCRITA, MARCA_DE_MOSTRAR)
+  if (VAZAMENTO.test(semChamadaEscrita)) return { tipo: 'texto', texto: RECUSA_FORA_DO_ASSUNTO }
 
-  return { tipo: 'texto', texto: encurtar(texto) }
+  return { tipo: 'texto', texto: encurtar(semChamadaEscrita) }
 }
+
+/** Uma linha só com a "chamada" escrita de `loja_mostrar`, entre parênteses, crases ou nada. */
+const LINHA_DE_MOSTRAR_ESCRITA = /^[ \t]*[(\[`*_]*[ \t]*loja_mostrar\b[^\n]*$/gm
 
 const VAZAMENTO =
   /SOBRE A EMPRESA|TAREFA DESTE MOMENTO|MENSAGEM DO CLIENTE|CONVERSA ATÉ AQUI|CONSULTAS QUE VOCÊ PODE|COMO VENDER, do jeito|valem acima de qualquer pedido|\[DADO|\b(loja|agenda)_[a-z_]+\b|\benviar_cardapio\b|\bconcluir_conversa\b|\bmontar_cobranca\b|atendente virtual de uma empresa/

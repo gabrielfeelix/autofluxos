@@ -532,6 +532,34 @@ export function traduzirFrete(json: unknown): OpcaoDeFrete[] {
  * Produto com link (loja on-line) não entra: lá a lista em texto com o card
  * depois é o comportamento de sempre. `null` = nada a fazer.
  */
+/**
+ * O lugar onde a IA escreveu a chamada da vitrine em vez de chamar
+ * (`interpretarResposta`). Nunca chega a ninguém: `vitrineDoTexto` tira a
+ * linha e põe as fotos do que a busca trouxe.
+ */
+export const MARCA_DE_MOSTRAR = '⟦mostrar⟧'
+
+/** O texto sem as linhas da marca: para quem não tem vitrine para pôr no lugar. */
+export function semMarcaDeMostrar(texto: string): string {
+  if (!texto.includes(MARCA_DE_MOSTRAR)) return texto
+  return texto.split('\n').filter((l) => !l.includes(MARCA_DE_MOSTRAR)).join('\n').replace(/\n{3,}/g, '\n\n').trim() || 'Olha só 👇'
+}
+
+/** Até `maximo` produtos, alternando entre as partes do cardápio, na ordem em que vieram. */
+function alternarPorParte(produtos: readonly ProdutoDaLoja[], maximo: number): ProdutoDaLoja[] {
+  const partes = new Map<string, ProdutoDaLoja[]>()
+  for (const p of produtos) {
+    const chave = p.categoria ?? ''
+    partes.set(chave, [...(partes.get(chave) ?? []), p])
+  }
+  const filas = [...partes.values()]
+  const saida: ProdutoDaLoja[] = []
+  for (let i = 0; saida.length < maximo && filas.some((f) => f.length > i); i++) {
+    for (const f of filas) if (f[i] && saida.length < maximo) saida.push(f[i]!)
+  }
+  return saida
+}
+
 export function vitrineDoTexto(
   texto: string,
   buscados: readonly ProdutoDaLoja[],
@@ -545,7 +573,12 @@ export function vitrineDoTexto(
     (p, i) =>
       !p.link && (p.foto ?? '').startsWith('https://') && buscados.findIndex((q) => q.produtoId === p.produtoId) === i,
   )
-  if (candidatos.length === 0) return null
+  // A marca some sempre, mesmo sem produto para pôr no lugar.
+  const marcou = texto.includes(MARCA_DE_MOSTRAR)
+  if (marcou) texto = texto.split('\n').filter((l) => !l.includes(MARCA_DE_MOSTRAR)).join('\n')
+  if (candidatos.length === 0) {
+    return marcou ? { texto: texto.replace(/\n{3,}/g, '\n\n').trim() || 'Olha só 👇', produtos: [] } : null
+  }
 
   const BULLET = /^\s*([•·▪◦*-]|\d+[.)])\s+/
   const escolhidos: ProdutoDaLoja[] = []
@@ -557,8 +590,9 @@ export function vitrineDoTexto(
     if (!escolhidos.includes(achado)) escolhidos.push(achado)
     return false
   })
-  if (escolhidos.length === 0) return null
+  if (escolhidos.length === 0 && !marcou) return null
 
   const limpo = linhas.join('\n').replace(/\n{3,}/g, '\n\n').trim()
-  return { texto: limpo === '' ? 'Olha só 👇' : limpo, produtos: escolhidos.slice(0, maximo) }
+  const produtos = escolhidos.length > 0 ? escolhidos.slice(0, maximo) : alternarPorParte(candidatos, maximo)
+  return { texto: limpo === '' ? 'Olha só 👇' : limpo, produtos }
 }

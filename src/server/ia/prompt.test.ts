@@ -1,3 +1,4 @@
+import { MARCA_DE_MOSTRAR } from '@/core/loja'
 import { describe, expect, it } from 'vitest'
 import { ferramentasPermitidas } from '@/core/ferramentas'
 import {
@@ -174,5 +175,17 @@ describe('o cardápio em arquivo no prompt', () => {
       tipo: 'texto',
       texto: RECUSA_FORA_DO_ASSUNTO,
     })
+  })
+})
+
+describe('chamada de vitrine escrita no texto', () => {
+  it('a linha "(loja_mostrar ...)" vira a marca, e o resto passa', () => {
+    const r = interpretarResposta('Aqui estão 👇\n\n(loja_mostrar com os produtos acima)\n\nQuer algum?')
+    expect(r).toEqual({ tipo: 'texto', texto: `Aqui estão 👇\n\n${MARCA_DE_MOSTRAR}\n\nQuer algum?` })
+  })
+
+  it('nome de consulta no meio da frase continua sendo recusado', () => {
+    const r = interpretarResposta('Eu uso a loja_buscar para achar produtos.')
+    expect(r.tipo === 'texto' && r.texto).not.toContain('loja_buscar')
   })
 })

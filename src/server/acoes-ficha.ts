@@ -1,5 +1,6 @@
 'use server'
 
+import { semMarcaDeMostrar } from '@/core/loja'
 import { revalidatePath } from 'next/cache'
 import type { EstadoSalvar } from '@/components/design/formulario-salvar'
 import { escreverFicha, listasDoRamo, marcadasDaLista, type Ficha } from '@/core/ficha-do-assistente'
@@ -90,7 +91,7 @@ export async function acaoTestarFicha(clienteId: string, _estado: EstadoDoTeste)
           instrucao: 'Responda à pergunta do cliente com o que a empresa informou, em uma ou duas frases.',
           pergunta: p.doCliente,
         })
-        if (r.tipo === 'texto') return { pergunta: p.doCliente, resposta: r.texto, passou: false }
+        if (r.tipo === 'texto') return { pergunta: p.doCliente, resposta: semMarcaDeMostrar(r.texto), passou: false }
         if (r.tipo === 'nao_sei' && r.falhou) return { pergunta: p.doCliente, resposta: 'A IA não respondeu agora. Tente de novo.', passou: true }
         return { pergunta: p.doCliente, resposta: 'Não sabe: passaria para uma pessoa.', passou: true }
       } catch {

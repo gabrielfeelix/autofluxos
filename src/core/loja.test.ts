@@ -18,6 +18,7 @@ import {
   traduzirProdutos,
   traduzirRecomendacoes,
   vitrineDoTexto,
+  MARCA_DE_MOSTRAR,
   type ProdutoDaLoja,
 } from './loja'
 
@@ -321,5 +322,20 @@ describe('vitrineDoTexto', () => {
     expect(vitrineDoTexto('• Headset X', [p('Headset X', { link: 'https://loja/x' })])).toBeNull()
     expect(vitrineDoTexto('• Batata frita', [p('Batata frita', { foto: undefined })])).toBeNull()
     expect(vitrineDoTexto('A Batata frita é ótima.', buscados)).toBeNull()
+  })
+})
+
+describe('vitrine pela marca de chamada escrita', () => {
+  const p = (nome: string, categoria: string): ProdutoDaLoja => ({
+    produtoId: nome, nome, categoria, emEstoque: true, link: '', foto: `https://x.test/${nome.length}.jpg`,
+  })
+  it('troca a marca pelas fotos do que foi buscado, alternando entre as partes', () => {
+    const buscados = [p('Shake chocolate', 'Milk-shakes'), p('Shake morango', 'Milk-shakes'), p('Batata frita', 'Porções'), p('Nuggets', 'Porções')]
+    const r = vitrineDoTexto(`Aqui 👇\n\n${MARCA_DE_MOSTRAR}\n\nQuer algum?`, buscados)
+    expect(r?.texto).toBe('Aqui 👇\n\nQuer algum?')
+    expect(r?.produtos.map((x) => x.nome)).toEqual(['Shake chocolate', 'Batata frita', 'Shake morango'])
+  })
+  it('sem produto para mostrar, a marca só some', () => {
+    expect(vitrineDoTexto(`Oi\n${MARCA_DE_MOSTRAR}`, [])).toEqual({ texto: 'Oi', produtos: [] })
   })
 })

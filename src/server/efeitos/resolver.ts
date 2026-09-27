@@ -5,7 +5,7 @@ import { ATENDIMENTO_SEMPRE_ABERTO, avisoDeForaDoHorario, executar } from '@/cor
 import type { ContextoDoAtendimento } from '@/core/engine/executar'
 import type { Acao, Entrada, Resultado, Sessao } from '@/core/engine/types'
 import type { FonteDoCatalogo, Fluxo } from '@/core/flow/schema'
-import { cepLimpo, vitrineDoTexto, type ProdutoDaLoja } from '@/core/loja'
+import { MARCA_DE_MOSTRAR, cepLimpo, semMarcaDeMostrar, vitrineDoTexto, type ProdutoDaLoja } from '@/core/loja'
 import { VARIAVEIS_DE_DATA } from '@/core/datas'
 import { VARIAVEIS_DO_ATENDIMENTO, varsDoAtendimento } from '@/core/vars-do-atendimento'
 import { VARIAVEIS_DA_COBRANCA, montarCobranca, type Cobranca } from '@/core/cobranca'
@@ -786,6 +786,8 @@ function semPedido(resposta: Resposta): RespostaFinal {
   if (resposta.tipo === 'usar_ferramenta') {
     return { tipo: 'nao_sei', motivo: 'o modelo pediu uma consulta que este bloco não oferece' }
   }
+  // Sem ferramenta não há vitrine: a "chamada escrita" só some.
+  if (resposta.tipo === 'texto') return { ...resposta, texto: semMarcaDeMostrar(resposta.texto) }
   return resposta
 }
 
@@ -926,10 +928,11 @@ async function responderComFerramentas({
      * servidor tira a lista e manda os produtos com foto (`vitrineDoTexto`).
      * Só catálogo próprio, e só se o bloco pode mostrar.
      */
-    if (resposta.tipo === 'texto' && cards.length === 0 && podeMostrar) {
-      const vitrine = vitrineDoTexto(resposta.texto, buscados)
+    if (resposta.tipo === 'texto' && (cards.length === 0 || resposta.texto.includes(MARCA_DE_MOSTRAR))) {
+      // Com card já escolhido, só a marca sai; sem poder mostrar, também.
+      const vitrine = vitrineDoTexto(resposta.texto, cards.length === 0 && podeMostrar ? buscados : [])
       if (vitrine) {
-        console.warn(`[ia] lista em texto virou vitrine: ${vitrine.produtos.length} produto(s)`)
+        if (vitrine.produtos.length > 0) console.warn(`[ia] lista em texto virou vitrine: ${vitrine.produtos.length} produto(s)`)
         cards.push(...vitrine.produtos)
         resposta = { ...resposta, texto: vitrine.texto }
       }
