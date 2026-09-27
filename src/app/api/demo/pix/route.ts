@@ -11,5 +11,14 @@ export function GET(req: Request) {
   const valor = lerValor(url.searchParams.get('v'))
   if (valor === null) return Response.json({ erro: 'valor inválido' }, { status: 400 })
   const nome = limparNome(url.searchParams.get('n'))
-  return Response.json({ codigo: codigoPix(valor, nome), valor: reaisDito(valor), nome })
+  // Os links já codificados: o nome vem do que o dono digitou na demo ("Burger
+  // do Zé"), e espaço cru quebra o link no WhatsApp.
+  const q = `v=${encodeURIComponent(url.searchParams.get('v') ?? '')}&n=${encodeURIComponent(nome)}`
+  return Response.json({
+    codigo: codigoPix(valor, nome),
+    valor: reaisDito(valor),
+    nome,
+    qr: `${url.origin}/api/demo/pix/qr?${q}`,
+    link: `${url.origin}/demo/pagar?${q}`,
+  })
 }

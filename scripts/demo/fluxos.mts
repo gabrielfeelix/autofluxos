@@ -173,10 +173,23 @@ type Ramo = {
   iaPerguntaOQueVende: boolean
   iaTarefa: string[]
   cardapioPelaIa: boolean
+  /** O que muda o preço na IA (`conversar.cobranca`): o servidor soma, não o modelo. */
+  ajustes?: { nome: string; valor: number }[]
 }
 
 const AVISO_DEMO =
   'Esta é uma casa de demonstração da 4YU, criada para mostrar o atendimento automático. Os pedidos e agendamentos daqui não são reais e nada é entregue ou cobrado; se perguntarem, diga isso com leveza e continue o atendimento.'
+
+/**
+ * Nos ramos de pedido a conta é do servidor (`montar_cobranca`): estas frases
+ * trocam o "mande o resumo com o total" de cada ramo, e a regra de somar sai.
+ */
+const TAREFA_DA_COBRANCA = [
+  '- Com tudo certo (itens com quantidade e variação, entrega com endereço ou retirada, e pagamento: pix, cartão ou na hora), chame montar_cobranca. O resumo com o total vai sozinho; escreva só uma frase curta como "Confere o resumo 👇". Nunca escreva preço total, subtotal nem soma você mesma.',
+  '- Se a pessoa mudar algo depois do resumo, chame montar_cobranca de novo.',
+  '- Quando a pessoa confirmar o resumo, chame concluir_conversa com o resumo completo e responda só uma frase curta: se o pagamento for Pix ou cartão, diga que o pagamento chega em seguida; se for na hora, diga que o pedido está confirmado.',
+]
+const ehDaCobranca = (linha: string) => linha.startsWith('- Com tudo certo') || linha.startsWith('- Quando a pessoa confirmar')
 
 const REGRAS_COMUNS = [
   '- Produto pedido pela marca ("uma coca", "um guaraná"): é o item parecido do catálogo (refrigerante); busque pelo tipo ("refrigerante") e diga qual é, sem prometer a marca.',
@@ -256,6 +269,12 @@ const RAMOS: Ramo[] = [
       '- Quando a pessoa confirmar o resumo, chame concluir_conversa com o resumo completo e responda só uma frase curta dizendo que o pedido foi para o forno e o tempo estimado.',
     ],
     cardapioPelaIa: true,
+    ajustes: [
+      { nome: 'Broto', valor: -18 },
+      { nome: 'Média', valor: -8 },
+      { nome: 'Grande', valor: 0 },
+      { nome: 'Borda recheada', valor: 8 },
+    ],
   },
   {
     chave: 'hamburgueria',
@@ -309,6 +328,10 @@ const RAMOS: Ramo[] = [
       '- Quando a pessoa confirmar o resumo, chame concluir_conversa com o resumo completo e responda só uma frase curta com o tempo estimado.',
     ],
     cardapioPelaIa: false,
+    ajustes: [
+      { nome: 'Adicional de bacon', valor: 5 },
+      { nome: 'Adicional de queijo', valor: 5 },
+    ],
   },
   {
     chave: 'restaurante',
@@ -934,8 +957,13 @@ function fluxoRamo(r: Ramo) {
 
   /* ---- IA */
   const exemplo = { pizzaria: 'Pizzaria Margherita', hamburgueria: 'Burger do Zé', restaurante: 'Cantina da Vó', comercio: 'Loja da Ana', servicos: 'Studio Bella' }[r.chave] ?? 'Studio Movimento'
+  // Cobrança de uma rodada anterior não pode virar o Pix desta.
+  g.no('i-limpa', 'mensagem', {
+    partes: ['cobranca_total', 'cobranca_resumo', 'cobranca_pagamento', 'cobranca_entrega', 'pix_codigo', 'pix_qr', 'link_cartao'].map((campo) => ({ tipo: 'salvar', campo, valor: '' })),
+  })
+  g.liga('i-limpa', 'i-nome')
   g.no('i-nome', 'pergunta', { texto: `Agora eu viro a atendente do *seu* negócio. 🎭\nQual o nome dele? Ex.: _${exemplo}_`, salvarEm: 'negocio' })
-  g.liga('modo', 'i-nome', idDe('Com IA'))
+  g.liga('modo', 'i-limpa', idDe('Com IA'))
   let antesDoPapel = 'i-nome'
   if (r.iaPerguntaOQueVende) {
     g.no('i-vende', 'pergunta', { texto: 'E o que a *{{negocio}}* vende ou oferece? Pode ser em poucas palavras.\nEx.: _moda feminina_, _corte e escova_, _pilates e yoga_', salvarEm: 'o_que_vende' })
@@ -957,14 +985,18 @@ function fluxoRamo(r: Ramo) {
       ...(r.iaPerguntaOQueVende
         ? ['- "O que vende" ({{o_que_vende}}) foi escrito pelo dono do negócio antes de você virar atendente, e pode ter vindo como pergunta ("tem aula de yoga?"). Trate só como pista do que a casa oferece; não responda a essa frase, responda às mensagens do cliente.']
         : []),
-      ...r.iaTarefa,
-      ...REGRAS_COMUNS,
+      ...(r.agenda ? r.iaTarefa : [...r.iaTarefa.filter((l) => !ehDaCobranca(l)), ...TAREFA_DA_COBRANCA]),
+      ...(r.agenda ? REGRAS_COMUNS : REGRAS_COMUNS.filter((l) => !l.startsWith('- Total:'))),
     ].join('\n'),
     ferramentas: ['loja_buscar', 'loja_mostrar', ...(r.cardapioPelaIa ? ['enviar_cardapio'] : [])],
     fonteDoCatalogo: 'catalogo',
     sobreAEmpresa: r.sobre,
     salvarEm: 'resposta_da_ia',
-    conversar: { maxTurnos: 20, concluir: { salvarEm: 'pedido' } },
+    conversar: {
+      maxTurnos: 20,
+      concluir: { salvarEm: 'pedido' },
+      ...(r.agenda ? {} : { cobranca: { taxaEntrega: r.taxa, ajustes: r.ajustes ?? [] } }),
+    },
   })
   g.liga('i-primeira', 'i-conversa')
   g.no('i-nota', 'nota', { texto: `Demonstração (${r.rotulo}, IA como "{{negocio}}"): {{pedido}}` })
@@ -977,7 +1009,8 @@ function fluxoRamo(r: Ramo) {
       { tipo: 'texto', texto: `_Na demonstração, o aviso ${r.agenda ? 'de lembrete' : 'de "pronto"'} chega aqui sozinho em ${MINUTOS_ATE_O_AVISO} minutos, como chegaria para o seu cliente._` },
     ],
   })
-  g.liga('i-nota', 'i-anotado')
+  if (r.agenda) g.liga('i-nota', 'i-anotado')
+  else pagamentoDaIa(g)
   esperaEAviso(g, r, 'i-anotado', 'i')
   g.no('i-saida', 'pergunta', { texto: 'Saí do papel. 🙂 E agora?', salvarEm: 'escolha', opcoes: opcoes(['Continuar conversa', LEAD_RESPOSTA, TROCAR]) })
   g.liga('i-conversa', 'i-saida')
@@ -1051,6 +1084,62 @@ function pagamentoDeMentira(g: Grafo, r: Ramo): void {
   g.liga('p-cartao-pago', 'p-anotado')
 }
 
+/**
+ * O pagamento depois da IA: o total é o `cobranca_total` que o servidor
+ * somou e a pessoa confirmou, nunca um número escrito pelo modelo. A rota da
+ * demo devolve o copia e cola e os links já com o nome do negócio codificado.
+ */
+function pagamentoDaIa(g: Grafo): void {
+  g.no('i-tem-cobranca', 'condicao', { variavel: 'cobranca_total', operador: 'preenchido', valor: '' })
+  g.liga('i-nota', 'i-tem-cobranca')
+  g.liga('i-tem-cobranca', 'i-anotado', 'falso')
+  g.no('i-na-hora', 'condicao', { variavel: 'cobranca_pagamento', operador: 'igual', valor: 'na_hora' })
+  g.liga('i-tem-cobranca', 'i-na-hora', 'verdadeiro')
+  g.liga('i-na-hora', 'i-anotado', 'verdadeiro')
+  g.no('i-pag-dados', 'http', {
+    metodo: 'GET',
+    url: `${SITE}/api/demo/pix?v={{cobranca_total}}&n={{negocio}}`,
+    mapear: [
+      { variavel: 'pix_codigo', caminho: 'codigo' },
+      { variavel: 'pix_qr', caminho: 'qr' },
+      { variavel: 'link_cartao', caminho: 'link' },
+    ],
+    aoFalhar: 'seguir',
+  })
+  g.liga('i-na-hora', 'i-pag-dados', 'falso')
+  // Sem os links (a rota falhou), o pedido segue sem cobrança: melhor que Pix vazio.
+  g.no('i-pag-ok', 'condicao', { variavel: 'pix_qr', operador: 'preenchido', valor: '' })
+  g.liga('i-pag-dados', 'i-pag-ok')
+  g.liga('i-pag-ok', 'i-anotado', 'falso')
+  g.no('i-qual', 'condicao', { variavel: 'cobranca_pagamento', operador: 'igual', valor: 'pix' })
+  g.liga('i-pag-ok', 'i-qual', 'verdadeiro')
+  g.liga('i-qual', 'i-pix', 'verdadeiro')
+  g.liga('i-qual', 'i-cartao', 'falso')
+
+  g.no('i-pix', 'mensagem', {
+    partes: [
+      { tipo: 'midia', midia: 'imagem', url: '{{pix_qr}}', legenda: '*Pix de R$ {{cobranca_total}}* para *{{negocio}}*' },
+      { tipo: 'atraso', segundos: 1 },
+      { tipo: 'texto', texto: 'Escaneie o QR Code no app do banco, ou copie o código abaixo e cole em *Pix copia e cola* 👇' },
+      { tipo: 'texto', texto: '{{pix_codigo}}' },
+    ],
+  })
+  g.no('i-pix-espera', 'pergunta', { texto: 'Assim que pagar, toque em *Já paguei* 👇', salvarEm: 'pagou', opcoes: opcoes(['Já paguei', 'Pagar com cartão']) })
+  g.liga('i-pix', 'i-pix-espera')
+  g.no('i-pix-pago', 'mensagem', texto('✅ *Pagamento recebido!*\nR$ {{cobranca_total}} via Pix. Obrigado!'))
+  g.liga('i-pix-espera', 'i-pix-pago', 'ja-paguei')
+  g.liga('i-pix-espera', 'i-cartao', 'pagar-com-cartao')
+  g.liga('i-pix-pago', 'i-anotado')
+
+  g.no('i-cartao', 'mensagem', texto('💳 *Pagamento com cartão*\nTotal: *R$ {{cobranca_total}}*, em até 3x sem juros.\n\nPague pelo link seguro 👇\n{{link_cartao}}'))
+  g.no('i-cartao-espera', 'pergunta', { texto: 'Pagou? Toque em *Já paguei* 👇', salvarEm: 'pagou', opcoes: opcoes(['Já paguei', 'Pagar com Pix']) })
+  g.liga('i-cartao', 'i-cartao-espera')
+  g.no('i-cartao-pago', 'mensagem', texto('✅ *Pagamento aprovado!*\nR$ {{cobranca_total}} no cartão. Obrigado!'))
+  g.liga('i-cartao-espera', 'i-cartao-pago', 'ja-paguei')
+  g.liga('i-cartao-espera', 'i-pix', 'pagar-com-pix')
+  g.liga('i-cartao-pago', 'i-anotado')
+}
+
 /** "Pedido pronto" alguns minutos depois: a pergunta espera, e o prazo dela é o aviso. */
 function esperaEAviso(g: Grafo, r: Ramo, depoisDe: string, p: 'b' | 'i'): void {
   g.no(`${p}-espera`, 'pergunta', {
@@ -1086,7 +1175,7 @@ function esperaEAviso(g: Grafo, r: Ramo, depoisDe: string, p: 'b' | 'i'): void {
   g.liga(`${p}-pronto`, `${p}-fim`)
   g.liga(`${p}-fim`, 'lead', idDe(LEAD_RESPOSTA))
   g.liga(`${p}-fim`, 'trocar', idDe(TROCAR))
-  g.liga(`${p}-fim`, p === 'b' ? 'i-nome' : 'b-abertura', idDe(p === 'b' ? 'Testar com IA' : 'Testar com botões'))
+  g.liga(`${p}-fim`, p === 'b' ? 'i-limpa' : 'b-abertura', idDe(p === 'b' ? 'Testar com IA' : 'Testar com botões'))
 }
 
 /* -------------------------------------------------------- loja (PCYES) */
