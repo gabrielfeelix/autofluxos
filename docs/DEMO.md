@@ -277,10 +277,9 @@ duas vezes, e o pedido confirmado ia para um atendente como "a IA não soube"
   humano só nesta conta exige uma coluna nova (por exemplo
   `gatilhos.vence_atendimento`), ou seja, migration: não foi feita, fica
   para o Gabriel autorizar.
-- `enviar_cardapio` manda o material da conta, que é um só: o da Pizzaria
-  Exemplo. Por isso só a IA da pizzaria tem essa ferramenta; nos outros ramos
-  a IA mostra as partes do cardápio em cards, e os botões mandam o cardápio
-  do próprio ramo pelo bloco de mídia.
+- Cada bloco de IA tem o próprio cardápio (`cardapio` no bloco, 27/set):
+  "cardápio" na IA manda a imagem e o PDF do ramo, com uma frase curta, e
+  pergunta qual parte a pessoa quer ver com foto. Nunca lista em texto.
 - Os itens de exemplo não têm link, então a IA manda a foto com legenda
   (nome, preço, descrição), sem o botão "Ver na loja". Só a loja online
   (PCYES) tem esse botão.
