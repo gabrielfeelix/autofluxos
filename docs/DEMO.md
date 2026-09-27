@@ -78,8 +78,18 @@ confirmar o resumo:
 O código Pix tem o formato do Banco Central (o app do banco lê valor e nome),
 mas a chave é aleatória e inventada: o banco para em "chave não encontrada".
 Código em `src/core/pagamento-demo.ts`; rotas públicas `/api/demo/pix`,
-`/api/demo/pix/qr` e `/demo/pagar`, sem banco nem conta. O modo com IA ainda
-não manda Pix nem link: a IA só pergunta a forma de pagamento.
+`/api/demo/pix/qr` e `/demo/pagar`, sem banco nem conta.
+
+**No modo com IA** (pizzaria, hamburgueria, restaurante e loja de roupas) a
+IA **não faz conta**. Ela chama `montar_cobranca` com o que a pessoa pediu
+(itens, quantidade, variação, entrega, pagamento); o servidor acha cada item
+no catálogo, soma em centavos com a taxa e os ajustes do bloco
+(`conversar.cobranca`: tamanho, borda, adicional), manda ele mesmo o resumo
+com o total e guarda `cobranca_total`. Item fora do catálogo ou ambíguo volta
+para a IA perguntar. `concluir_conversa` só vale depois de a pessoa ter visto
+o resumo e respondido. Depois do "confirmo", o Pix ou o link de cartão sai de
+`cobranca_total`, com o nome que o dono deu ao negócio. Código em
+`src/core/cobranca.ts`. Salão e aulas não cobram pela IA (pagam no local).
 
 Outras mudanças de 27/set: a foto do item vem **em cima dos botões**, numa
 bolha só (campo novo `imagem` na pergunta); quem escolhe retirada recebe
@@ -270,8 +280,8 @@ duas vezes, e o pedido confirmado ia para um atendente como "a IA não soube"
   produto "pai" das cores), e a busca devolve o que tem. É dado da loja; a
   PCYES real tem a mesma limitação. A vitrine com botões contorna buscando por
   "mouse gamer" e "mouse sem fio".
-- A soma que a IA faz é conta de modelo: a instrução manda mostrar a conta
-  item a item, e o modo com botões soma de forma exata.
+- Nos ramos de pedido a IA não soma: o total é do servidor (`montar_cobranca`).
+  No salão e nas aulas o preço dito pela IA ainda é o do catálogo, sem soma.
 - Se a IA cair (cota, tempo), na conversa com a IA o cliente recebe "Tive um
   probleminha agora, pode me mandar de novo em instantes?" e segue com a IA.
   Localmente só há a chave do Gemini; na Vercel a cadeia de provedores grátis

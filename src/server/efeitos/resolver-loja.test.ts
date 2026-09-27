@@ -358,6 +358,33 @@ describe('categoria nas ferramentas de loja', () => {
     ])
   })
 
+  it('termo sem nada na categoria é buscado de novo sem ela', async () => {
+    // "calabresa" e "refrigerante" com categoria "Pizzas": o refrigerante não
+    // pode sumir por causa do filtro de outra parte do cardápio.
+    const pedidos: { termo: string; categoria?: string }[] = []
+    const loja = {
+      ...lojaFalsa({ produtos: [headset] }),
+      async buscar(termo: string, opcoes?: { categoria?: string }) {
+        pedidos.push({ termo, ...(opcoes?.categoria ? { categoria: opcoes.categoria } : {}) })
+        const achou = termo === 'calabresa' || !opcoes?.categoria
+        return { ok: true as const, valor: achou ? [headset] : [] }
+      },
+    }
+    lojaAtivaDaConta.mockResolvedValue(loja)
+    const modelo = modeloComRoteiro([
+      { tipo: 'usar_ferramenta', nome: 'loja_buscar', argumentos: { termo: 'calabresa', termo2: 'refrigerante', categoria: 'Pizzas' } },
+      { tipo: 'texto', texto: 'Temos.' },
+    ])
+
+    await rodar(fluxo(['loja_buscar']), modelo)
+
+    expect(pedidos).toEqual([
+      { termo: 'calabresa', categoria: 'Pizzas' },
+      { termo: 'refrigerante', categoria: 'Pizzas' },
+      { termo: 'refrigerante' },
+    ])
+  })
+
   it('sem categoria, a busca sai como sempre', async () => {
     const loja = lojaFalsa({ produtos: [headset] })
     const buscar = vi.spyOn(loja, 'buscar')

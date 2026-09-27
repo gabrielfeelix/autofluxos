@@ -1506,9 +1506,21 @@ async function executarNaLoja(
     const termos = [valores.termo, valores.termo2, valores.termo3]
       .map((t) => (t ?? '').trim())
       .filter((t, i, todos) => t !== '' && todos.indexOf(t) === i)
+    /*
+     * A categoria é uma só para todos os termos, e o pedido costuma misturar
+     * partes do cardápio: "calabresa" e "refrigerante" com categoria "Pizzas"
+     * deixava o refrigerante de fora, e a IA dizia que não tinha (27/set,
+     * demo). Termo sem nada na categoria é buscado de novo sem ela. Só o
+     * catálogo próprio filtra por categoria; nas lojas on-line nada muda.
+     */
+    const buscarNaLoja = async (termo: string) => {
+      const r = await loja.buscar(termo, filtro)
+      if (!filtro || !r.ok || r.valor.length > 0) return r
+      return loja.buscar(termo)
+    }
     if (termos.length <= 1) {
       const termo = termos[0] ?? ''
-      const r = await loja.buscar(termo, filtro)
+      const r = await buscarNaLoja(termo)
       if (!r.ok) return r
       // Vazio vem com a página de busca da loja: ver `linkDaBusca`. O catálogo
       // próprio não tem página de busca, e aí vai só a lista vazia.
@@ -1522,7 +1534,7 @@ async function executarNaLoja(
      * três de cada. Uma loja recusando um termo não derruba os outros; só
      * falha se todos falharem, porque aí o problema é a loja e não o termo.
      */
-    const resultados = await Promise.all(termos.map((t) => loja.buscar(t, filtro)))
+    const resultados = await Promise.all(termos.map((t) => buscarNaLoja(t)))
     if (resultados.every((r) => !r.ok)) return resultados[0] as { ok: false; motivo: string }
     const vistos = new Set<string>()
     const produtos: ProdutoDaLoja[] = []

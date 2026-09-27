@@ -186,6 +186,7 @@ const AVISO_DEMO =
  */
 const TAREFA_DA_COBRANCA = [
   '- Com tudo certo (itens com quantidade e variação, entrega com endereço ou retirada, e pagamento: pix, cartão ou na hora), chame montar_cobranca. O resumo com o total vai sozinho; escreva só uma frase curta como "Confere o resumo 👇". Nunca escreva preço total, subtotal nem soma você mesma.',
+  '- Nunca calcule preço com tamanho, borda ou adicional ("a média sai por..."): diga o preço do cardápio e que o valor certinho vem no resumo.',
   '- Se a pessoa mudar algo depois do resumo, chame montar_cobranca de novo.',
   '- Quando a pessoa confirmar o resumo, chame concluir_conversa com o resumo completo e responda só uma frase curta: se o pagamento for Pix ou cartão, diga que o pagamento chega em seguida; se for na hora, diga que o pedido está confirmado.',
 ]
