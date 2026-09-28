@@ -1,3 +1,5 @@
+import { iguais } from '@/lib/segredo'
+import { lerCorpoComTeto } from '@/server/corpo-com-teto'
 import { createHmac, timingSafeEqual } from 'node:crypto'
 import { after } from 'next/server'
 import { avisosDoWebhook } from '@/core/lead-ads'
@@ -61,7 +63,7 @@ export async function GET(req: Request) {
    */
   const esperado = process.env.WHATSAPP_VERIFY_TOKEN
 
-  if (modo === 'subscribe' && esperado && token === esperado && desafio) {
+  if (modo === 'subscribe' && esperado && token !== null && iguais(token, esperado) && desafio) {
     return new Response(desafio, { status: 200, headers: { 'content-type': 'text/plain' } })
   }
 
@@ -76,7 +78,9 @@ export async function POST(req: Request) {
 
   // Cru: a assinatura é sobre os bytes exatos, e `JSON.parse` + `stringify` já
   // não bate mais.
-  const corpo = await req.text()
+  const lido = await lerCorpoComTeto(req)
+  if (!lido.ok) return lido.resposta
+  const corpo = lido.corpo
 
   if (!assinaturaConfere(corpo, req.headers.get('x-hub-signature-256'))) {
     return new Response('assinatura inválida', { status: 401 })

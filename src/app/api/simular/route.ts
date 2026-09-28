@@ -101,7 +101,7 @@ export async function POST(req: Request) {
   const analise = corpoSchema.safeParse(bruto)
   if (!analise.success) {
     return Response.json(
-      { erro: 'requisição inválida', detalhes: analise.error.issues },
+      { erro: 'requisição inválida' },
       { status: 400 },
     )
   }

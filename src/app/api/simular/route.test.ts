@@ -14,6 +14,14 @@ vi.mock('@/server/limite', () => ({
   JANELA_DO_SIMULADOR_SEGUNDOS: 60,
 }))
 
+// A rota exige sessão de verdade desde c032476. Aqui ela existe, e o teste
+// próprio abaixo prova que sem ela a porta fecha.
+const sessaoAtual = vi.hoisted(() => vi.fn())
+vi.mock('@/server/sessao', () => ({
+  sessaoAtual,
+  conferirAcessoAoCliente: vi.fn(async () => null),
+}))
+
 function pedir(corpo: unknown) {
   return POST(
     new Request('http://localhost/api/simular', {
@@ -27,6 +35,17 @@ function pedir(corpo: unknown) {
 describe('POST /api/simular', () => {
   beforeEach(() => {
     vi.mocked(consumirLimite).mockResolvedValue(true)
+    sessaoAtual.mockResolvedValue({
+      usuario: { id: 'u1', nome: 'Teste', email: 't@exemplo.test', papelDePlataforma: null, banido: false },
+      contaAtivaId: null,
+      impersonadoPor: null,
+    })
+  })
+
+  it('sem sessão, recusa antes de qualquer coisa', async () => {
+    sessaoAtual.mockResolvedValue(null)
+    const r = await pedir({ fluxo: triagem, entrada: { tipo: 'inicio' } })
+    expect(r.status).toBe(401)
   })
 
   it('começa a conversa e devolve ações mais a sessão', async () => {
