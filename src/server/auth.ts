@@ -1,7 +1,7 @@
 import 'server-only'
 import { betterAuth } from 'better-auth'
 import { nextCookies } from 'better-auth/next-js'
-import { admin, organization } from 'better-auth/plugins'
+import { admin, haveIBeenPwned, organization } from 'better-auth/plugins'
 import { Pool } from 'pg'
 
 /**
@@ -47,6 +47,16 @@ let poolCache: Pool | null = null
  * Quem usa daqui escreve SQL, então vale a regra da casa: identificador nunca
  * vem de usuário, valor sempre vai como parâmetro (`$1`).
  */
+/** O que a pessoa lê quando a senha escolhida já vazou em algum lugar. */
+export const SENHA_VAZADA =
+  'Esta senha já apareceu em vazamentos de outros sites. Escolha outra, que você não use em nenhum outro lugar.'
+
+/** O erro da biblioteca é a recusa por senha vazada? */
+export function ehSenhaVazada(erro: unknown): boolean {
+  const corpo = (erro as { body?: { code?: unknown; message?: unknown } } | null)?.body
+  return corpo?.code === 'PASSWORD_COMPROMISED' || (erro instanceof Error && erro.message === SENHA_VAZADA)
+}
+
 export function bancoDoLogin(): Pool {
   if (poolCache) return poolCache
 
@@ -116,6 +126,18 @@ function montar() {
     verification: { modelName: 'af_verificacoes' },
 
     plugins: [
+      /**
+       * Senha que já apareceu em vazamento público é recusada, no cadastro, na
+       * troca e na redefinição pelo admin. É a regra que o NIST SP 800-63B
+       * põe no lugar das regras de "maiúscula, número e símbolo".
+       *
+       * Não manda a senha para lugar nenhum: sai só o começo (5 caracteres) do
+       * hash SHA-1, e a comparação é feita aqui (k-anonimato). Se o serviço
+       * estiver fora, a troca de senha falha e a pessoa tenta de novo: senha
+       * nova não é coisa que precise sair em segundos.
+       */
+      haveIBeenPwned({ customPasswordCompromisedMessage: SENHA_VAZADA }),
+
       /**
        * Impersonação, o "entrar como" do administrador.
        *

@@ -3,7 +3,7 @@
 import { revalidatePath } from 'next/cache'
 import { headers } from 'next/headers'
 import { redirect } from 'next/navigation'
-import { autenticacao, bancoDoLogin } from './auth'
+import { autenticacao, bancoDoLogin, ehSenhaVazada, SENHA_VAZADA } from './auth'
 import { chaveDeLimite, consumirLimite, JANELA_DE_LOGIN_POR_CONTA_SEGUNDOS, TETO_DE_LOGIN_POR_CONTA } from './limite'
 import { registrar } from './repos/auditoria'
 import {
@@ -240,6 +240,7 @@ export async function acaoCriarPrimeiroAdministrador(
       impersonadoPor: sessao?.impersonadoPor ?? null,
     })
   } catch (erro) {
+    if (ehSenhaVazada(erro)) return { erro: SENHA_VAZADA, email, nome }
     return { erro: motivo(erro), email, nome }
   }
 
@@ -773,6 +774,8 @@ export async function acaoCadastrarSe(
      * para descobrir quem tem conta aqui (e, com o banco compartilhado, na
      * Verandi também). O motivo real fica no log.
      */
+    // Senha vazada não revela se o e-mail existe: pode dizer o motivo.
+    if (ehSenhaVazada(erro)) return { erro: SENHA_VAZADA, email, nome, telefone }
     console.error('[cadastro] recusado:', motivo(erro))
     return {
       erro: 'Não deu para criar a conta com este e-mail. Se você já tem conta, entre por "Entrar".',

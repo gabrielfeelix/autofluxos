@@ -2,7 +2,7 @@
 
 import { headers } from 'next/headers'
 import { revalidatePath } from 'next/cache'
-import { autenticacao } from './auth'
+import { autenticacao, ehSenhaVazada, SENHA_VAZADA } from './auth'
 import { db } from './db'
 import { atualizarPerfil } from './repos/usuarios'
 import { sessaoAtual } from './sessao'
@@ -111,6 +111,7 @@ export async function acaoTrocarSenha(
     })
     return { ok: true }
   } catch (erro) {
+    if (ehSenhaVazada(erro)) return { ok: false, erro: SENHA_VAZADA }
     const mensagem = erro instanceof Error ? erro.message : String(erro)
     if (/invalid password|incorrect/i.test(mensagem)) {
       return { ok: false, erro: 'a senha atual não confere' }
