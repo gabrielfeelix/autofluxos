@@ -99,7 +99,7 @@ fórmula; todas as 276 Server Actions conferem acesso; IDOR varrido em todos os
 - Achado de agente só vira conserto depois de conferido no código. As duas
   rodadas tiveram falso positivo (ex.: `papelNaConta` existe duas vezes, com
   ordem de argumento oposta, e todas as chamadas estão certas).
-- Sem travessão (—) em arquivo nenhum. Gabriel é designer, não dev: plano com
+- Sem travessão (o traço longo) em arquivo nenhum. Gabriel é designer, não dev: plano com
   decisão tomada e explicação curta, não lista de opções.
 - Validar com `npx tsc --noEmit` e os testes dos arquivos tocados, não a suíte
   inteira. Commit por correção; um push ao fim da frente (push no `main` publica
