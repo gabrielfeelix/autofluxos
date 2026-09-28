@@ -228,6 +228,30 @@ Um push só, `6618b1d..138a020`. Build, tsc e os testes vizinhos (399) passam.
   para o admin da plataforma, opcional para todos pelo menu "Você". e2e do
   fluxo inteiro passa no banco local.
 
+### Rodada 3 do mesmo dia
+
+- **CI do `main` verde** pela primeira vez desde que as rotas usam
+  `RouteContext`: o `typecheck` chama `next typegen` antes do `tsc`, e 12
+  erros antigos de lint foram consertados (`b7f5371`).
+- **Dependabot:** entraram Vitest 4 (#4, fecha o alerta de path traversal do
+  `@vitest/mocker`), `actions/checkout` 7, `actions/setup-node` 7 e o grupo
+  "menores" (#1 a #3, inclui `better-auth` 1.7.5). Fechados com motivo:
+  TypeScript 7 (#6, typescript-eslint recusa), ESLint 10 e `@eslint/js` 10
+  (#5, #7, eslint-plugin-react quebra), Vitest 5 (#8). As três majors estão no
+  `ignore` do `dependabot.yml` (`3cabb32`). Zod 4 (#9): o único erro de tipo
+  foi consertado (`be445a2`), falta o CI dele depois do rebase.
+- **P11 feito no código** (`d0d8d8f`): "Esqueci a senha" e confirmação de
+  e-mail pelo Brevo, remetente `nao-responda@autofluxos.mail.4yu.com.br`.
+  Domínio e remetente criados no Brevo; `BREVO_API_KEY` (sensitive) e
+  `EMAIL_REMETENTE` na Vercel. Confirmação cobrada só de conta criada depois
+  de 28/set 21h UTC, com 3 dias de carência.
+- **P10 em parte** (`docs/PENTEST-2026-09-28.md`): SSRF por IPv6 achado e
+  consertado (`05af0ce`); troca de conta conferida no código. O ataque ao
+  vivo com sessão de outra conta ficou pendente.
+- **Miúdos:** helper do e2e com os rótulos novos (`c8c41f8`);
+  `VAPID_PRIVATE_KEY` dividida em "sensitive" (produção e preview) e
+  "encrypted" (desenvolvimento), mesmo valor.
+
 ### Pendências
 
 **Do Gabriel, em painel (cerca de 1 h):**
@@ -241,4 +265,6 @@ Um push só, `6618b1d..138a020`. Build, tsc e os testes vizinhos (399) passam.
 
 5. ~~0111~~ e ~~TOTP~~: feitos na rodada 2.
 
-**Próximos do plano, ainda não feitos:** P10 (teste de invasão dinâmico no local), P11 (esqueci a senha e confirmação de e-mail pelo Brevo), P12 (MFA para todo usuário, reusa o P3), P15 e P16.
+6. **DNS do e-mail** (sem ele o Brevo não autentica e a redefinição de senha cai no spam ou não sai): 4 registros na zona `4yu.com.br` da [Hostinger](https://hpanel.hostinger.com/domain/4yu.com.br/dns), TTL 300: TXT `autofluxos.mail` = `brevo-code:956bb6be0a30b14fe90af736230a867c`; CNAME `brevo1._domainkey.autofluxos.mail` = `b1.autofluxos-mail-4yu-com-br.dkim.brevo.com`; CNAME `brevo2._domainkey.autofluxos.mail` = `b2.autofluxos-mail-4yu-com-br.dkim.brevo.com`; TXT `_dmarc.autofluxos.mail` = `v=DMARC1; p=none; rua=mailto:rua@dmarc.brevo.com`. Depois, autenticar no [Brevo](https://app.brevo.com/senders/domain/list).
+
+**Próximos do plano, ainda não feitos:** resto do P10 (ataque ao vivo com sessão de outra conta, sessão, 2FA, limites, upload, webhooks, injeção de prompt; roteiro no handoff da rodada 3), P12 (MFA para todo usuário, reusa o P3), P15 e P16.
