@@ -164,6 +164,56 @@ export async function criarTransmissao(nova: NovaTransmissao): Promise<Transmiss
  * Em lotes porque o público é grande: 5.000 contatos num único insert estoura o
  * tamanho de requisição do PostgREST, e o erro que volta não diz isso.
  */
+/**
+ * Só os contatos que são desta conta, na ordem em que vieram.
+ *
+ * Os ids chegam da tela, e a fila aceita qualquer `contato_id` que exista no
+ * banco, de qualquer conta. Sem este filtro, quem tivesse o id de um contato
+ * de outra conta mandaria o modelo dele para o telefone desse contato
+ * (auditoria de 28/set/2026).
+ */
+export async function contatosDaConta(clienteId: string, contatoIds: string[], tamanhoDoLote = 500): Promise<string[]> {
+  const daConta = new Set<string>()
+  const unicos = [...new Set(contatoIds)]
+  for (let i = 0; i < unicos.length; i += tamanhoDoLote) {
+    const { data, error } = await db()
+      .from('contacts')
+      .select('id')
+      .eq('client_id', clienteId)
+      .in('id', unicos.slice(i, i + tamanhoDoLote))
+    if (error) {
+      if (ehIdInvalido(error)) continue
+      throw error
+    }
+    for (const linha of (data ?? []) as { id: string }[]) daConta.add(linha.id)
+  }
+  return unicos.filter((id) => daConta.has(id))
+}
+
+/**
+ * Uma transmissão igual (mesma conta, nome e modelo) criada nos últimos dois
+ * minutos e não cancelada. É o duplo clique, ou duas abas: sem esta pergunta,
+ * cada clique vira uma campanha inteira, e o mesmo público recebe duas vezes.
+ */
+export async function transmissaoRepetida(
+  clienteId: string,
+  nome: string,
+  templateId: string,
+  agora: Date = new Date(),
+): Promise<string | null> {
+  const { data, error } = await db()
+    .from('transmissoes')
+    .select('id')
+    .eq('cliente_id', clienteId)
+    .eq('nome', nome)
+    .eq('template_id', templateId)
+    .neq('estado', 'cancelada')
+    .gte('criada_em', new Date(agora.getTime() - 2 * 60 * 1_000).toISOString())
+    .limit(1)
+  if (error) throw error
+  return ((data ?? []) as { id: string }[])[0]?.id ?? null
+}
+
 export async function enfileirarDestinatarios(
   transmissaoId: string,
   contatoIds: string[],

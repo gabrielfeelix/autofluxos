@@ -38,7 +38,9 @@ import {
 } from './repos/templates'
 import {
   criarTransmissao,
+  contatosDaConta,
   enfileirarDestinatarios,
+  transmissaoRepetida,
   lerTransmissao,
   mudarEstadoDaTransmissao,
   enviadasHojePelaConta,
@@ -455,6 +457,13 @@ export async function acaoCriarTransmissao(
 
   if (!veredito.pode) return { ok: false, erro: veredito.recado ?? 'Não dá para transmitir agora.' }
 
+  if (await transmissaoRepetida(clienteId, nome, dados.templateId)) {
+    return { ok: false, erro: 'Esta transmissão acabou de ser criada. Confira a lista antes de criar de novo.' }
+  }
+
+  const contatoIds = await contatosDaConta(clienteId, dados.contatoIds)
+  if (contatoIds.length === 0) return { ok: false, erro: 'Nenhum destes contatos é desta conta.' }
+
   const quem = await sessaoAtual()
   const transmissao = await criarTransmissao({
     clienteId,
@@ -466,7 +475,7 @@ export async function acaoCriarTransmissao(
     criadaPorNome: quem?.usuario.nome ?? null,
   })
 
-  await enfileirarDestinatarios(transmissao.id, dados.contatoIds)
+  await enfileirarDestinatarios(transmissao.id, contatoIds)
   await mudarEstadoDaTransmissao(transmissao.id, 'agendada')
 
   telas(clienteId)
