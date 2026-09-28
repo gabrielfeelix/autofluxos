@@ -1,5 +1,6 @@
 'use server'
 
+import { dentroDoTetoDaConta, RECADO_DO_TETO_DA_CONTA } from '@/server/limite'
 import { headers } from 'next/headers'
 import { redirect } from 'next/navigation'
 import { revalidatePath } from 'next/cache'
@@ -160,6 +161,7 @@ export async function acaoImportarLeadsAntigos(
   pageId: string,
 ): Promise<{ ok: boolean; erro?: string; resumo?: string }> {
   await exigirAcessoAoCliente(clienteId)
+  if (!(await dentroDoTetoDaConta(clienteId, 'importar'))) return { ok: false, erro: RECADO_DO_TETO_DA_CONTA }
 
   const token = await tokenDeAnuncios(clienteId)
   if (!token) return { ok: false, erro: 'ligue a conta de anúncios antes de importar' }

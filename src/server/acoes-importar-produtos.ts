@@ -1,5 +1,6 @@
 'use server'
 
+import { dentroDoTetoDaConta, RECADO_DO_TETO_DA_CONTA } from '@/server/limite'
 import { revalidatePath } from 'next/cache'
 import { strFromU8, unzipSync } from 'fflate'
 import {
@@ -141,6 +142,7 @@ export async function acaoImportarProdutos(
 ): Promise<RespostaDaImportacao> {
   const acesso = await exigirCapacidade(clienteId, 'configurar_operacao', 'todos')
   if (recusou(acesso)) return { ok: false, erro: acesso.erro ?? 'sem acesso' }
+  if (!(await dentroDoTetoDaConta(clienteId, 'importar'))) return { ok: false, erro: RECADO_DO_TETO_DA_CONTA }
 
   const r = await planejar(clienteId, formData)
   if (!r.ok) return r

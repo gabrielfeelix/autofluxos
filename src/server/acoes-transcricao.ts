@@ -1,5 +1,6 @@
 'use server'
 
+import { dentroDoTetoDaConta, RECADO_DO_TETO_DA_CONTA } from '@/server/limite'
 import { revalidatePath } from 'next/cache'
 import { transcreverAudio } from './transcrever-audio'
 import { exigirAcessoAoCliente } from './sessao'
@@ -22,6 +23,7 @@ export async function acaoTranscreverAudio(
   mensagemId: string,
 ): Promise<{ ok: boolean; texto?: string; erro?: string }> {
   await exigirAcessoAoCliente(clienteId)
+  if (!(await dentroDoTetoDaConta(clienteId, 'transcrever'))) return { ok: false, erro: RECADO_DO_TETO_DA_CONTA }
 
   const r = await transcreverAudio(clienteId, contatoId, mensagemId)
   if (!r.ok) return { ok: false, erro: r.erro }

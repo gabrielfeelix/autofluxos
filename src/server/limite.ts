@@ -71,3 +71,23 @@ export async function consumirLimite(
     return false
   }
 }
+
+/**
+ * Teto por conta para ações de quem já entrou e que custam caro: importação
+ * (milhares de linhas de uma vez) e transcrição (IA paga por minuto de áudio).
+ *
+ * O login não segura quem já está dentro, e uma sessão roubada, ou um script
+ * na mão de alguém da equipe, repetiria a ação sem limite. O teto é largo
+ * para o uso real e existe para cortar o abuso (auditoria de 28/set/2026).
+ */
+export const TETOS_DA_CONTA = {
+  importar: { teto: 20, janelaSegundos: 60 * 60 },
+  transcrever: { teto: 120, janelaSegundos: 60 * 60 },
+} as const
+
+export const RECADO_DO_TETO_DA_CONTA = 'Muitas vezes seguidas nesta conta. Espere alguns minutos e tente de novo.'
+
+export async function dentroDoTetoDaConta(clienteId: string, finalidade: keyof typeof TETOS_DA_CONTA): Promise<boolean> {
+  const { teto, janelaSegundos } = TETOS_DA_CONTA[finalidade]
+  return consumirLimite(`conta:${finalidade}:${clienteId}`, teto, janelaSegundos)
+}

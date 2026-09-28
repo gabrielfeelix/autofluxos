@@ -1,5 +1,6 @@
 'use server'
 
+import { dentroDoTetoDaConta, RECADO_DO_TETO_DA_CONTA } from '@/server/limite'
 import { recusaDoPlano } from './recursos-do-plano'
 import { podeLigar } from '@/core/entrada'
 import { destinoPodeReceber, recusaParaLigar } from './repos/entrada'
@@ -2675,6 +2676,7 @@ export async function acaoImportarContatos(
 ): Promise<EstadoSalvar & { resumo?: string; recusadas?: LinhaRecusada[] }> {
   const acesso = await exigirCapacidade(clienteId, 'exportar', 'todos')
   if (recusou(acesso)) return acesso
+  if (!(await dentroDoTetoDaConta(clienteId, 'importar'))) return { ok: false, erro: RECADO_DO_TETO_DA_CONTA }
 
   /*
    * Segunda volta: só as linhas recusadas, já corrigidas na própria tela.
