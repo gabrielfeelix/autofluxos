@@ -60,8 +60,12 @@ export async function guardarAssinatura(
 }
 
 /** Quem desligou o aviso naquele navegador. */
-export async function apagarAssinatura(endpoint: string): Promise<void> {
-  const { error } = await db().from('assinaturas_de_push').delete().eq('endpoint', endpoint)
+export async function apagarAssinatura(endpoint: string, usuarioId?: string): Promise<void> {
+  // Com `usuarioId`, só apaga a assinatura desta pessoa: quem pede para
+  // desligar é o dono do navegador, e o endereço sozinho não prova isso.
+  let consulta = db().from('assinaturas_de_push').delete().eq('endpoint', endpoint)
+  if (usuarioId) consulta = consulta.eq('usuario_id', usuarioId)
+  const { error } = await consulta
   if (error) throw new Error(`não deu para apagar a assinatura de push: ${error.message}`)
 }
 

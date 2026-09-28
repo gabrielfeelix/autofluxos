@@ -11,7 +11,7 @@ import { tokenDeAnuncios } from './token-de-anuncios'
 import { lerNomesDoAnuncio } from '@/channels/marketing-api'
 import { exigirAcessoAoCliente } from './sessao'
 import { criarConexao, listarConexoes, trocarValor } from './repos/conexoes'
-import { desligarPagina, ligarPagina } from './repos/paginas-de-lead'
+import { clientePelaPagina, desligarPagina, ligarPagina } from './repos/paginas-de-lead'
 import { NOME_DA_CONEXAO_DE_ADS } from './token-de-anuncios'
 
 /**
@@ -162,6 +162,16 @@ export async function acaoImportarLeadsAntigos(
 ): Promise<{ ok: boolean; erro?: string; resumo?: string }> {
   await exigirAcessoAoCliente(clienteId)
   if (!(await dentroDoTetoDaConta(clienteId, 'importar'))) return { ok: false, erro: RECADO_DO_TETO_DA_CONTA }
+
+  /*
+   * A página tem que estar ligada a esta conta. O token de anúncios de uma
+   * agência costuma enxergar páginas de vários clientes, e sem esta conferência
+   * a conta A importava os leads da página que a conta B ligou (auditoria de
+   * 28/set/2026). É a mesma regra de `acaoLigarPagina`.
+   */
+  if ((await clientePelaPagina(pageId)) !== clienteId) {
+    return { ok: false, erro: 'esta página não está ligada a esta conta' }
+  }
 
   const token = await tokenDeAnuncios(clienteId)
   if (!token) return { ok: false, erro: 'ligue a conta de anúncios antes de importar' }

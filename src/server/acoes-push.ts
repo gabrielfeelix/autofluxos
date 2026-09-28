@@ -64,6 +64,6 @@ export async function acaoCancelarAvisos(endpoint: unknown): Promise<{ ok: boole
   const conferido = z.string().url().max(2000).safeParse(endpoint)
   if (!conferido.success) return { ok: false }
 
-  await apagarAssinatura(conferido.data)
+  await apagarAssinatura(conferido.data, sessao.usuario.id)
   return { ok: true }
 }
