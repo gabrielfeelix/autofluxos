@@ -66,3 +66,14 @@ describe('o resto do endurecimento continua de pé', () => {
     expect(valor('Referrer-Policy')).toBe('strict-origin-when-cross-origin')
   })
 })
+
+describe('Strict-Transport-Security', () => {
+  it('fica pelo menos um ano, e sem preload', () => {
+    const hsts = valor('Strict-Transport-Security')
+    const idade = Number(/max-age=(\d+)/.exec(hsts)?.[1] ?? 0)
+    expect(idade).toBeGreaterThanOrEqual(31_536_000)
+    // Preload é lista global dos navegadores e quase irreversível para o
+    // domínio inteiro da 4YU. Entrar nela é decisão própria, não efeito colateral.
+    expect(hsts).not.toContain('preload')
+  })
+})

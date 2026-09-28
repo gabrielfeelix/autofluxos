@@ -41,6 +41,13 @@ import type { NextConfig } from 'next'
  * nonce, quando alguém puder testá-la de verdade.
  */
 export const cabecalhos = [
+  /**
+   * HSTS: o navegador que já veio aqui uma vez nunca mais tenta `http://`,
+   * nem se alguém na rede (Wi-Fi de café) forçar o rebaixamento. É o que
+   * impede o cookie de sessão de viajar em claro. Dois anos, sem `preload`:
+   * a lista de preload é global e difícil de desfazer para o `4yu.com.br`.
+   */
+  { key: 'Strict-Transport-Security', value: 'max-age=63072000; includeSubDomains' },
   { key: 'Content-Security-Policy', value: "frame-ancestors 'none'" },
   { key: 'X-Frame-Options', value: 'DENY' },
   { key: 'X-Content-Type-Options', value: 'nosniff' },

@@ -114,6 +114,13 @@ const SECOES: readonly SecaoLegal[] = [
           responder aos pedidos delas e desenhar fluxos que não coletem mais do que você precisa.
           Se um fluxo seu coletar dado sensível, a decisão e a responsabilidade por ela são suas.
         </p>
+        <p>
+          <strong>Se acontecer um incidente de segurança</strong> que alcance dados da sua empresa,
+          a 4YU avisa você em até 24 horas depois de confirmá-lo, com o que se sabe até ali: o que
+          foi afetado, desde quando e o que já foi feito. É o que você precisa para cumprir o seu
+          próprio prazo de comunicação à ANPD e às pessoas afetadas, e nós seguimos ajudando até o
+          fim da apuração.
+        </p>
       </>
     ),
   },
