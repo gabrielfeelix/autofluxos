@@ -232,8 +232,8 @@ Um push só, `6618b1d..138a020`. Build, tsc e os testes vizinhos (399) passam.
 
 **Do Gabriel, em painel (cerca de 1 h):**
 
-1. **MFA** (app autenticador, não SMS) em: [GitHub](https://github.com/settings/security), [Vercel](https://vercel.com/account/settings/authentication), [Supabase](https://supabase.com/dashboard/account/security), [Meta Business](https://business.facebook.com/settings/security), [Google](https://myaccount.google.com/signinoptions/two-step-verification), Hostinger (painel > Segurança). Conferir também as sessões abertas e os apps autorizados em cada um.
-2. **Supabase Pro** (US$ 25/mês, backup diário de 7 dias): [billing da organização](https://supabase.com/dashboard/org/_/billing). Depois, ligar "Require MFA" na organização.
+1. ~~**MFA** nas contas humanas~~: **feito em 28/set** (GitHub, Hostinger, Meta, Vercel, Supabase e Google com app autenticador). Supabase não tem código de recuperação: manter o backup do Google Authenticator ligado.
+2. **Supabase Pro** (US$ 25/mês, backup diário de 7 dias; o Gabriel decidiu para **novembro/2026**): [billing da organização](https://supabase.com/dashboard/org/_/billing). Depois, ligar "Require MFA" na organização.
 3. **Vercel**: apagar `PAINEL_SEGREDO` e `PAINEL_SENHA`; recriar como **Sensitive**, **com o mesmo valor**, `BETTER_AUTH_SECRET`, `GEMINI_API_KEY` e `CRON_SECRET` (o `DATABASE_URL` já foi). **Não gerar `BETTER_AUTH_SECRET` novo**: ele cifra os segredos do 2FA, e trocar derruba todos os logins e desliga o 2FA de todo mundo. [Variáveis do projeto](https://vercel.com/4-yu/autofluxos/settings/environment-variables). Opcional: Vercel Pro (US$ 20/mês), termos do Hobby restringem uso comercial.
 4. **Contradição a resolver:** os Termos dizem "não treinamos modelos de IA com eles", e o nível gratuito da API do Gemini permite ao Google usar o conteúdo ([termos](https://ai.google.dev/gemini-api/terms)). Ou a chave ganha faturamento (o uso segue gratuito dentro da cota, o que muda é o termo), ou o texto dos Termos muda. As IAs gratuitas ficam ligadas até lá, por decisão do Gabriel.
 
