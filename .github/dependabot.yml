@@ -21,6 +21,18 @@ updates:
     groups:
       menores:
         update-types: [minor, patch]
+    # Majors que quebram o lint hoje. Cada linha diz o que precisa mudar para
+    # sair daqui; sem ela, o PR reabre toda semana e ninguém lembra por quê.
+    ignore:
+      # typescript-eslint ainda não suporta TS 7 ("does not support TS 7.0").
+      - dependency-name: typescript
+        update-types: [version-update:semver-major]
+      # eslint-plugin-react (via eslint-config-next) quebra no ESLint 10:
+      # "contextOrFilename.getFilename is not a function".
+      - dependency-name: eslint
+        update-types: [version-update:semver-major]
+      - dependency-name: '@eslint/js'
+        update-types: [version-update:semver-major]
 
   - package-ecosystem: github-actions
     directory: /
