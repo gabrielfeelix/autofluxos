@@ -2,6 +2,7 @@ import 'server-only'
 import { db, ehIdInvalido, pareceUuid } from '../db'
 import { VARIAVEIS_DE_DATA } from '@/core/datas'
 import { VARIAVEIS_DO_ATENDIMENTO } from '@/core/vars-do-atendimento'
+import { limparBusca } from './leads'
 
 /**
  * O histórico de respostas: uma linha por passagem pela automação.
@@ -184,7 +185,7 @@ export async function paginarRespostas(
   let contatosDaBusca: string[] | null = null
   const termo = (filtro.busca ?? '').trim()
   if (termo !== '') {
-    const alvo = `%${termo.replaceAll('%', '').replaceAll(',', '')}%`
+    const alvo = `%${limparBusca(termo)}%`
     const { data: achados, error } = await db()
       .from('contacts')
       .select('id')

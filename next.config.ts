@@ -89,6 +89,13 @@ const SAIRAM_DE_CONFIGURACOES: { de: string; para: string }[] = [
 ]
 
 const config: NextConfig = {
+  /**
+   * Sem `x-powered-by: Next.js`. Não protege nada sozinho, mas é de graça: quem
+   * varre a internet atrás de versão vulnerável do Next começa por esse
+   * cabeçalho, e não há motivo para respondermos a pergunta.
+   */
+  poweredByHeader: false,
+
   async headers() {
     return [{ source: '/:path*', headers: cabecalhos }]
   },
