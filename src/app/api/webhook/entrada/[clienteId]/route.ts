@@ -61,7 +61,7 @@ const corpoSchema = z.object({
    * O que mais o evento traz. Livre de propósito, quem define é o outro lado ,
    * e usado só para a anotação quando a janela de 24h está fechada.
    */
-  dados: z.record(z.unknown()).optional(),
+  dados: z.record(z.string(), z.unknown()).optional(),
 })
 
 export async function POST(req: Request, { params }: { params: Promise<{ clienteId: string }> }) {
