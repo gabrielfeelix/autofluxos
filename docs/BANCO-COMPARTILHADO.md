@@ -320,6 +320,16 @@ extração explícito para os objetos de `public`.
   `public` com **75** tabelas; **8** contas, **0** com frente. Data API depois
   do `notify`: `clients?select=nicho` **200** com a chave secreta;
   `app_verandi.conta` **200**.
+- **a `0112` foi aplicada em 28/set/2026** (TOTP, P3 do plano de segurança),
+  com autorização explícita do dono, pela Management API, **antes** do push do
+  código (o plugin `twoFactor` sem a tabela derrubaria o login). Aditiva:
+  `af_usuarios."twoFactorEnabled"` (default `false`) e a tabela
+  `public.af_dois_fatores` (segredo cifrado pelo Better Auth), RLS ligada,
+  política só para `autofluxos_login`. Ensaio em transação antes: coluna e
+  tabela criadas, `anon`/`authenticated` sem acesso, papel do login com
+  acesso, nada sobrou depois do `rollback`. Depois: `public` de **75** para
+  **76** tabelas; **6** usuários, **0** com 2FA; Verandi com **35**
+  migrations, **40** tabelas e **16** policies de `storage.objects`, iguais.
 - **a `0111` foi aplicada em 28/set/2026** (P5 do `PLANO-SEGURANCA-2026-09-28.md`),
   com autorização explícita do dono, pela Management API. Cria o papel
   `autofluxos_login` (sem `bypassrls`, sem superusuário), com grant e política

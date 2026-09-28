@@ -218,18 +218,27 @@ Um push só, `6618b1d..138a020`. Build, tsc e os testes vizinhos (399) passam.
 | P8 conferências | **em parte**: HSTS e cláusula de 24 h nos Termos feitos. Gemini não mexido, por decisão do Gabriel | `bb3589b` |
 | P14 miúdos | **feito**: teto de 1 MB nos webhooks da Meta, token de verificação em tempo constante, simulador sem `issues`, teto de 24 h da transmissão só nos degraus da Meta | `133dcc4`, `d02afc0` |
 
+### Rodada 2 do mesmo dia (autorizada pelo Gabriel)
+
+- **0111 aplicada** e o `DATABASE_URL` da Vercel trocado para o papel
+  `autofluxos_login`, agora como variável "sensitive". Conferido: login,
+  sessão e membros funcionam com o papel; `contacts`, auditoria, conexões,
+  Vault e Verandi recusados. O valor antigo ficou no cofre para desfazer.
+- **TOTP feito** (`f25d12c`) e **0112 aplicada** antes do push. Obrigatório
+  para o admin da plataforma, opcional para todos pelo menu "Você". e2e do
+  fluxo inteiro passa no banco local.
+
 ### Pendências
 
 **Do Gabriel, em painel (cerca de 1 h):**
 
 1. **MFA** (app autenticador, não SMS) em: [GitHub](https://github.com/settings/security), [Vercel](https://vercel.com/account/settings/authentication), [Supabase](https://supabase.com/dashboard/account/security), [Meta Business](https://business.facebook.com/settings/security), [Google](https://myaccount.google.com/signinoptions/two-step-verification), Hostinger (painel > Segurança). Conferir também as sessões abertas e os apps autorizados em cada um.
 2. **Supabase Pro** (US$ 25/mês, backup diário de 7 dias): [billing da organização](https://supabase.com/dashboard/org/_/billing). Depois, ligar "Require MFA" na organização.
-3. **Vercel**: apagar `PAINEL_SEGREDO` e `PAINEL_SENHA`; recriar como **Sensitive** `BETTER_AUTH_SECRET`, `DATABASE_URL`, `GEMINI_API_KEY` e `CRON_SECRET` (é rotação: trocar o `BETTER_AUTH_SECRET` derruba todos os logins, então fazer fora do horário da MGM). [Variáveis do projeto](https://vercel.com/4-yu/autofluxos/settings/environment-variables). Opcional: Vercel Pro (US$ 20/mês), termos do Hobby restringem uso comercial.
+3. **Vercel**: apagar `PAINEL_SEGREDO` e `PAINEL_SENHA`; recriar como **Sensitive**, **com o mesmo valor**, `BETTER_AUTH_SECRET`, `GEMINI_API_KEY` e `CRON_SECRET` (o `DATABASE_URL` já foi). **Não gerar `BETTER_AUTH_SECRET` novo**: ele cifra os segredos do 2FA, e trocar derruba todos os logins e desliga o 2FA de todo mundo. [Variáveis do projeto](https://vercel.com/4-yu/autofluxos/settings/environment-variables). Opcional: Vercel Pro (US$ 20/mês), termos do Hobby restringem uso comercial.
 4. **Contradição a resolver:** os Termos dizem "não treinamos modelos de IA com eles", e o nível gratuito da API do Gemini permite ao Google usar o conteúdo ([termos](https://ai.google.dev/gemini-api/terms)). Ou a chave ganha faturamento (o uso segue gratuito dentro da cota, o que muda é o termo), ou o texto dos Termos muda. As IAs gratuitas ficam ligadas até lá, por decisão do Gabriel.
 
 **Precisam de autorização explícita para produção:**
 
-5. **Aplicar a 0111** e trocar o `DATABASE_URL` para o papel `autofluxos_login`. Antes: testar login ponta a ponta no local com o papel; senha nova vai para `.secrets/4yu.env`.
-6. **TOTP para o admin da plataforma** (plugin `twoFactor`): pede migration (coluna `twoFactorEnabled` em `af_usuarios` e tabela de segredo), tela de ativação com QR, passo do código no login e obrigatoriedade para admin. Cerca de 1 dia. Fazer em sessão nova, com a migration autorizada antes do push, porque o plugin sem a tabela derruba o login.
+5. ~~0111~~ e ~~TOTP~~: feitos na rodada 2.
 
 **Próximos do plano, ainda não feitos:** P10 (teste de invasão dinâmico no local), P11 (esqueci a senha e confirmação de e-mail pelo Brevo), P12 (MFA para todo usuário, reusa o P3), P15 e P16.
