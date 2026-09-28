@@ -1,5 +1,6 @@
 import 'server-only'
 import { createHmac } from 'node:crypto'
+import { cookies } from 'next/headers'
 import { iguais } from '@/lib/segredo'
 
 /**
@@ -79,4 +80,51 @@ export function lerEstado(estado: string | null, agora: Date = new Date()): stri
   if (nascido > agora.getTime() + 60_000) return null
 
   return clienteId
+}
+
+/**
+ * O cookie que amarra o bilhete ao navegador que começou a conexão.
+ *
+ * **O bilhete sozinho era um bilhete ao portador** (auditoria de 28/set/2026).
+ * Ele prova qual cliente começou, mas não quem está voltando, e a rota de
+ * retorno, sem sessão garantida, confiava só nele. O ataque: alguém cria conta
+ * aqui, clica em "conectar Instagram" na conta dele, para na tela de
+ * autorização da Meta e manda esse link para a vítima ("conecta aqui para
+ * ganhar X"). A vítima autoriza, a Meta a devolve para cá com o bilhete do
+ * atacante, e o Instagram, o WhatsApp, os anúncios ou a loja **da vítima**
+ * caem na conta do atacante, que passa a ler e responder as conversas dela.
+ *
+ * A defesa é o padrão do OAuth: o mesmo bilhete fica guardado num cookie do
+ * navegador que começou, e a volta só vale se os dois baterem. O link
+ * repassado chega a outro navegador, que não tem o cookie.
+ *
+ * `SameSite=None` e não `Lax`, porque a volta é uma navegação que começa em
+ * facebook.com (ou na Nuvemshop), às vezes depois de um POST lá dentro, e é
+ * exatamente o caso em que `Lax` deixa o cookie para trás (ver o comentário
+ * de `PREFIXOS_ABERTOS` em `proxy.ts`). O cookie não autoriza nada sozinho: é
+ * só a metade de uma comparação cuja outra metade é assinada pelo servidor.
+ */
+const COOKIE_DA_CONEXAO = 'af_conexao'
+
+/** Cria o bilhete e o guarda no navegador. Só funciona dentro de Server Action. */
+export async function iniciarConexao(clienteId: string): Promise<string> {
+  const estado = criarEstado(clienteId)
+  ;(await cookies()).set(COOKIE_DA_CONEXAO, estado, {
+    httpOnly: true,
+    secure: true,
+    sameSite: 'none',
+    path: '/api/',
+    maxAge: VALIDADE_MS / 1_000,
+  })
+  return estado
+}
+
+/**
+ * O cliente do bilhete, se ele é válido **e** é o mesmo que este navegador
+ * guardou ao começar. `null` em qualquer outro caso.
+ */
+export async function concluirConexao(estado: string | null): Promise<string | null> {
+  const guardado = (await cookies()).get(COOKIE_DA_CONEXAO)?.value
+  if (!estado || !guardado || !iguais(guardado, estado)) return null
+  return lerEstado(estado)
 }

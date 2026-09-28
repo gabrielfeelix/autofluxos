@@ -4,7 +4,7 @@ import { headers } from 'next/headers'
 import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 import { instagramConfigurado, urlDeAutorizacao } from './instagram/conexao'
-import { criarEstado } from './instagram/estado'
+import { iniciarConexao } from './instagram/estado'
 import { desligarContaDoInstagram } from './repos/canais-instagram'
 import { exigirAcessoAoCliente } from './sessao'
 
@@ -38,7 +38,7 @@ export async function acaoConectarInstagram(dados: FormData): Promise<void> {
   const protocolo = cabecalhos.get('x-forwarded-proto') ?? 'https'
   const origem = `${protocolo}://${anfitriao}`
 
-  redirect(urlDeAutorizacao({ origem, state: criarEstado(clienteId) }))
+  redirect(urlDeAutorizacao({ origem, state: await iniciarConexao(clienteId) }))
 }
 
 export async function acaoDesligarInstagram(dados: FormData): Promise<void> {

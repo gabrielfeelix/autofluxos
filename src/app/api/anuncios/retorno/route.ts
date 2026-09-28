@@ -1,7 +1,7 @@
 import { redirect } from 'next/navigation'
 import { trocarCodigoPorToken } from '@/server/anuncios/conexao'
 import { alertar } from '@/server/alertar'
-import { lerEstado } from '@/server/instagram/estado'
+import { concluirConexao } from '@/server/instagram/estado'
 import { guardarTokenDeAnuncios } from '@/server/repos/conexoes-de-anuncios'
 import { conferirAcessoAoCliente, sessaoAtual } from '@/server/sessao'
 
@@ -24,7 +24,7 @@ export async function GET(req: Request) {
   const url = new URL(req.url)
   const parametros = url.searchParams
 
-  const clienteId = lerEstado(parametros.get('state'))
+  const clienteId = await concluirConexao(parametros.get('state'))
   if (!clienteId) redirect('/painel?erro=anuncios_estado')
 
   const destino = `/clientes/${clienteId}/ajustes/anuncios`

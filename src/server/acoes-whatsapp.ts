@@ -2,7 +2,7 @@
 
 import { headers } from 'next/headers'
 import { redirect } from 'next/navigation'
-import { criarEstado } from './instagram/estado'
+import { iniciarConexao } from './instagram/estado'
 import { exigirAcessoAoCliente } from './sessao'
 import { urlDoOnboarding, whatsappConfigurado } from './whatsapp/conexao'
 
@@ -31,5 +31,5 @@ export async function acaoConectarWhatsapp(dados: FormData): Promise<void> {
   const protocolo = cabecalhos.get('x-forwarded-proto') ?? 'https'
   const origem = `${protocolo}://${anfitriao}`
 
-  redirect(urlDoOnboarding({ origem, state: criarEstado(clienteId) }))
+  redirect(urlDoOnboarding({ origem, state: await iniciarConexao(clienteId) }))
 }

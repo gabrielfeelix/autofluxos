@@ -1,7 +1,7 @@
 import { redirect } from 'next/navigation'
 import { lerLojaNuvemshop } from '@/loja/nuvemshop'
 import { alertar } from '@/server/alertar'
-import { lerEstado } from '@/server/instagram/estado'
+import { concluirConexao } from '@/server/instagram/estado'
 import { assinarDesinstalacao, trocarCodigo } from '@/server/nuvemshop/conexao'
 import { apagarConexao, criarConexao } from '@/server/repos/conexoes'
 import { lojaNuvemshopDaConta, salvarLojaNuvemshop } from '@/server/repos/lojas'
@@ -25,7 +25,7 @@ export const dynamic = 'force-dynamic'
 export async function GET(req: Request) {
   const parametros = new URL(req.url).searchParams
 
-  const clienteId = lerEstado(parametros.get('state'))
+  const clienteId = await concluirConexao(parametros.get('state'))
   if (!clienteId) redirect('/painel?erro=nuvemshop_estado')
 
   const destino = `/clientes/${clienteId}/loja/nuvemshop`

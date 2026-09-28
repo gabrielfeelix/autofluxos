@@ -7,7 +7,7 @@ import { lojaMagento } from '@/loja/magento'
 import { lojaAdmin } from '@/loja/magento-admin'
 import { enriquecer } from '@/loja/enriquecer'
 import { lojaNuvemshop } from '@/loja/nuvemshop'
-import { criarEstado } from './instagram/estado'
+import { iniciarConexao } from './instagram/estado'
 import { nuvemshopConfigurado, urlDeAutorizacao } from './nuvemshop/conexao'
 import { exigirCapacidade, recusou } from './permissoes'
 import { apagarConexao, criarConexao, lerCredencial } from './repos/conexoes'
@@ -241,7 +241,7 @@ export async function acaoConectarNuvemshop(clienteId: string): Promise<{ ok: fa
   const acesso = await exigirCapacidade(clienteId, 'configurar_operacao', 'todos')
   if (recusou(acesso)) return { ok: false, motivo: acesso.erro ?? 'sem permissão' }
   if (!nuvemshopConfigurado()) return { ok: false, motivo: 'a conexão com a Nuvemshop ainda não foi liberada' }
-  redirect(urlDeAutorizacao(criarEstado(clienteId)))
+  redirect(urlDeAutorizacao(await iniciarConexao(clienteId)))
 }
 
 /** Busca de verdade na loja conectada, ligada ou não, para o dono ver antes de ligar. */

@@ -1,7 +1,7 @@
 import { redirect } from 'next/navigation'
 import { alertar } from '@/server/alertar'
 import { assinarMensagens, trocarCodigoPorConta } from '@/server/instagram/conexao'
-import { lerEstado } from '@/server/instagram/estado'
+import { concluirConexao } from '@/server/instagram/estado'
 import { salvarContaDoInstagram } from '@/server/repos/canais-instagram'
 import { conferirAcessoAoCliente, sessaoAtual } from '@/server/sessao'
 
@@ -24,7 +24,7 @@ export const dynamic = 'force-dynamic'
 export async function GET(req: Request) {
   const parametros = new URL(req.url).searchParams
 
-  const clienteId = lerEstado(parametros.get('state'))
+  const clienteId = await concluirConexao(parametros.get('state'))
   if (!clienteId) {
     // Sem bilhete válido não há para onde voltar com contexto: nem sabemos de
     // que cliente era. A lista é o único destino honesto.

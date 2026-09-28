@@ -4,7 +4,7 @@ import { headers } from 'next/headers'
 import { redirect } from 'next/navigation'
 import { revalidatePath } from 'next/cache'
 import { urlDeAutorizacao } from './anuncios/conexao'
-import { criarEstado } from './instagram/estado'
+import { iniciarConexao } from './instagram/estado'
 import { importarLeadsAntigos } from './importar-leads-antigos'
 import { tokenDeAnuncios } from './token-de-anuncios'
 import { lerNomesDoAnuncio } from '@/channels/marketing-api'
@@ -145,7 +145,7 @@ export async function acaoConectarComFacebook(clienteId: string): Promise<void> 
   const protocolo = cabecalhos.get('x-forwarded-proto') ?? 'https'
   const origem = `${protocolo}://${host}`
 
-  redirect(urlDeAutorizacao({ origem, state: criarEstado(clienteId) }))
+  redirect(urlDeAutorizacao({ origem, state: await iniciarConexao(clienteId) }))
 }
 
 /**
