@@ -21,9 +21,12 @@ import {
   acharUsuario,
   contasDoUsuario,
   ehAdminDaPlataforma,
+  encerrarSessao,
   existeAlgumUsuario,
   exigirAdminDaPlataforma,
+  FRESCOR_PARA_ENTRAR_COMO_MS,
   sessaoAtual,
+  sessaoFresca,
 } from './sessao'
 
 /**
@@ -365,6 +368,12 @@ function sugerirSlug(nome: string): string {
  */
 export async function acaoEntrarComo(usuarioId: string) {
   const sessao = await exigirAdminDaPlataforma()
+  // Entrar como é o gesto mais forte do sistema: pede login recente. Passou de
+  // 12 h, a sessão morre e a pessoa digita a senha de novo antes de seguir.
+  if (!sessaoFresca(sessao, FRESCOR_PARA_ENTRAR_COMO_MS)) {
+    await encerrarSessao(sessao.sessaoId)
+    redirect('/entrar')
+  }
   const alvo = await acharUsuario(usuarioId)
   if (!alvo) redirect('/admin/usuarios')
 

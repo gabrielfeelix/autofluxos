@@ -41,6 +41,45 @@ export type SessaoAtual = {
    * Nulo = é a própria pessoa. É o que a faixa no topo da tela lê.
    */
   impersonadoPor: string | null
+  /** Id da linha em `af_sessoes`. Opcional só para os testes montarem sessão à mão. */
+  sessaoId?: string
+  /** Quando a pessoa digitou a senha. A renovação diária não mexe nisto. */
+  iniciadaEm?: Date
+}
+
+/**
+ * Quanto uma sessão de **administrador da plataforma** vive, contado do login.
+ *
+ * O admin entra em qualquer conta de cliente. É a sessão que um ladrão de
+ * cookie (infostealer) mais quer, e o MFA não ajuda contra ela: o cookie já é
+ * de depois do MFA. O que ajuda é o cookie valer pouco tempo. Um dia é um
+ * login por dia de trabalho; os 7 dias de todo mundo continuam para quem não é
+ * admin.
+ */
+export const VIDA_DA_SESSAO_DE_ADMIN_MS = 24 * 60 * 60 * 1_000
+
+/**
+ * Quão recente o login precisa ser para o admin **entrar como** outra pessoa.
+ *
+ * É o gesto mais forte do sistema, e pedir senha de novo antes dele é a
+ * "sessão fresca" das referências (OWASP ASVS, Better Auth `freshAge`).
+ */
+export const FRESCOR_PARA_ENTRAR_COMO_MS = 12 * 60 * 60 * 1_000
+
+/** A sessão começou há menos de `janelaMs`? Sem data conhecida, não. */
+export function sessaoFresca(sessao: SessaoAtual, janelaMs: number, agora = Date.now()): boolean {
+  if (!sessao.iniciadaEm) return false
+  return agora - sessao.iniciadaEm.getTime() < janelaMs
+}
+
+/** Apaga a sessão no banco. Nunca estoura: quem chama já decidiu tratá-la como morta. */
+export async function encerrarSessao(sessaoId: string | undefined): Promise<void> {
+  if (!sessaoId) return
+  try {
+    await bancoDoLogin().query('delete from af_sessoes where id = $1', [sessaoId])
+  } catch (erro) {
+    console.error('[sessao] não deu para encerrar a sessão', erro instanceof Error ? erro.message : erro)
+  }
 }
 
 /**
@@ -62,7 +101,10 @@ export async function sessaoAtual(): Promise<SessaoAtual | null> {
     if (!resposta) return null
 
     const { user, session } = resposta
-    return {
+    const iniciadaEm = new Date(session.createdAt)
+    const sessao: SessaoAtual = {
+      sessaoId: session.id,
+      iniciadaEm,
       usuario: {
         id: user.id,
         nome: user.name,
@@ -74,6 +116,18 @@ export async function sessaoAtual(): Promise<SessaoAtual | null> {
       contaAtivaId: session.activeOrganizationId ?? null,
       impersonadoPor: session.impersonatedBy ?? null,
     }
+
+    // Sessão de admin passou de um dia: morre aqui, e a pessoa entra de novo.
+    // A impersonada tem prazo próprio (1 h, no plugin) e não passa por isto.
+    if (
+      !sessao.impersonadoPor &&
+      ehAdminDaPlataforma(sessao) &&
+      !sessaoFresca(sessao, VIDA_DA_SESSAO_DE_ADMIN_MS)
+    ) {
+      await encerrarSessao(session.id)
+      return null
+    }
+    return sessao
   } catch (erro) {
     console.error(
       '[sessao] não deu para ler a sessão, tratando como deslogado',
