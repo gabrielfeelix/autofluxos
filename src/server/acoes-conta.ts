@@ -126,8 +126,13 @@ export async function acaoEntrar(
     if (ehBanimento(erro)) {
       return { erro: 'Este acesso está suspenso. Fale com quem administra o painel.', email }
     }
+    // Falha de login vai para a auditoria: sem isso, força bruta contra uma
+    // conta não deixava rastro nenhum, só o limite que barra sem contar.
+    await registrar({ acao: 'falhou_login', autorEmail: email.slice(0, 200), alvoTipo: 'usuario' })
     return { erro: CREDENCIAL_NAO_CONFERE, email }
   }
+
+  await registrar({ acao: 'entrou', autorId: usuario.id, autorEmail: usuario.email, alvoTipo: 'usuario', alvoId: usuario.id })
 
   // `redirect` funciona lançando: precisa ficar fora do `try`, senão o próprio
   // catch o engoliria e a tela responderia "credenciais não conferem" depois de

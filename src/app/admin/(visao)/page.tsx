@@ -31,7 +31,7 @@ export default async function VisaoGeral() {
     consumoDeTodasAsContas(),
     contarAlertasAbertos().catch(() => 0),
     pedidosDePlano().catch(() => []),
-    listarAtos({ limite: 6 }).catch(() => []),
+    listarAtos({ limite: 6, semLogin: true }).catch(() => []),
   ])
   const planos = await planosVigentes()
 

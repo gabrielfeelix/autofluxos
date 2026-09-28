@@ -1,5 +1,25 @@
 import 'server-only'
+import { headers } from 'next/headers'
+import { ATOS_DE_LOGIN } from '@/core/atos-da-auditoria'
 import { db, ehIdInvalido } from '../db'
+
+/**
+ * De onde veio o ato: IP e navegador da requisição em curso.
+ *
+ * Até 28/set/2026 as colunas `ip` e `agente` existiam e toda chamada gravava
+ * vazio. Num incidente, "de onde entraram?" é a primeira pergunta, e a ANPD
+ * pede registro que responda. Fora de requisição (cron, fila) não há
+ * cabeçalho, e o ato sai sem origem, como antes.
+ */
+async function origemDaRequisicao(): Promise<{ ip: string; agente: string }> {
+  try {
+    const h = await headers()
+    const ip = h.get('x-forwarded-for')?.split(',')[0]?.trim() || h.get('x-real-ip') || ''
+    return { ip: ip.slice(0, 64), agente: (h.get('user-agent') ?? '').slice(0, 300) }
+  } catch {
+    return { ip: '', agente: '' }
+  }
+}
 
 /**
  * Quem fez o quê.
@@ -44,6 +64,7 @@ export type LinhaDeAuditoria = AtoAuditado & { id: string; quando: string }
  */
 export async function registrar(ato: AtoAuditado): Promise<void> {
   try {
+    const origem = ato.ip === undefined || ato.agente === undefined ? await origemDaRequisicao() : null
     const { error } = await db()
       .from('af_auditoria')
       .insert({
@@ -57,8 +78,8 @@ export async function registrar(ato: AtoAuditado): Promise<void> {
         alvo_nome: ato.alvoNome ?? '',
         detalhes: ato.detalhes ?? {},
         impersonado_por: ato.impersonadoPor ?? null,
-        ip: ato.ip ?? '',
-        agente: ato.agente ?? '',
+        ip: ato.ip ?? origem?.ip ?? '',
+        agente: ato.agente ?? origem?.agente ?? '',
       })
 
     if (error) throw new Error(error.message)
@@ -118,7 +139,7 @@ export const ATOS_POR_PAGINA = 100
  * `contaId` ausente traz a plataforma inteira, é a tela do administrador.
  */
 export async function listarAtos(
-  opcoes: { contaId?: string; limite?: number } = {},
+  opcoes: { contaId?: string; limite?: number; semLogin?: boolean } = {},
 ): Promise<LinhaDeAuditoria[]> {
   let consulta = db()
     .from('af_auditoria')
@@ -127,6 +148,7 @@ export async function listarAtos(
     .limit(opcoes.limite ?? ATOS_POR_PAGINA)
 
   if (opcoes.contaId) consulta = consulta.eq('conta_id', opcoes.contaId)
+  if (opcoes.semLogin) consulta = consulta.not('acao', 'in', `(${ATOS_DE_LOGIN.join(',')})`)
 
   const { data, error } = await consulta
   if (ehIdInvalido(error)) return []

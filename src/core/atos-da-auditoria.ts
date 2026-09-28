@@ -36,11 +36,20 @@ export const VERBOS_DA_AUDITORIA: Record<string, string> = {
   compartilhou_fluxo: 'compartilhou o fluxo',
   revogou_link_de_fluxo: 'revogou o link do fluxo',
   apagou_contato: 'apagou o contato',
+  entrou: 'entrou no painel',
+  falhou_login: 'errou a senha',
 }
 
 export function verboDoAto(acao: string): string {
   return VERBOS_DA_AUDITORIA[acao] ?? acao.replaceAll('_', ' ')
 }
+
+/**
+ * Login e senha errada: muitos, e sem conta. Ficam na Auditoria (é onde se
+ * procura força bruta), mas fora dos "últimos acontecimentos", que eles
+ * afogariam.
+ */
+export const ATOS_DE_LOGIN = ['entrou', 'falhou_login'] as const
 
 /** Os grupos do filtro da tela de Auditoria. */
 export const TIPOS_DE_ATO: { valor: string; rotulo: string; acoes: string[] }[] = [
@@ -49,4 +58,5 @@ export const TIPOS_DE_ATO: { valor: string; rotulo: string; acoes: string[] }[] 
   { valor: 'plano', rotulo: 'Planos', acoes: ['pediu_troca_de_plano', 'atendeu_pedido_de_plano', 'recusou_pedido_de_plano', 'trocou_plano', 'editou_plano'] },
   { valor: 'organizacao', rotulo: 'Organização', acoes: ['criou_conta', 'apagou_conta', 'apagou_cliente', 'editou_organizacao', 'suspendeu_organizacao', 'reativou_organizacao'] },
   { valor: 'fluxos', rotulo: 'Fluxos', acoes: ['publicou_fluxo', 'importou_fluxo', 'compartilhou_fluxo', 'revogou_link_de_fluxo'] },
+  { valor: 'login', rotulo: 'Login', acoes: [...ATOS_DE_LOGIN] },
 ]
