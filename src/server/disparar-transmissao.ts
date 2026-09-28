@@ -20,6 +20,7 @@ import {
   mudarEstadoDaTransmissao,
   progressoDa,
   proximosDaFila,
+  reservarDestinatario,
   type Destinatario,
   type Transmissao,
 } from './repos/transmissoes'
@@ -182,6 +183,8 @@ export async function dispararTransmissao(
   const intervalo = intervaloMs(RITMO_INICIAL)
 
   for (const destinatario of fila) {
+    // Outra passada pegou este destinatário entre a leitura e agora.
+    if (!(await reservarDestinatario(destinatario.id))) continue
     resumo.tentados += 1
 
     const decisao = await tentarUm(canal, transmissao, template, destinatario)

@@ -225,6 +225,42 @@ type LinhaDoDestinatario = {
  * para `undefined`, `on delete cascade` costuma limpar a linha, mas a leitura
  * não pode depender de uma corrida com o delete.
  */
+/**
+ * Quanto tempo a reserva de um destinatário segura. Folga larga para uma
+ * passada inteira; se a passada morrer no meio, a linha volta para a fila
+ * sozinha depois disto.
+ */
+const RESERVA_MS = 10 * 60 * 1_000
+
+/**
+ * Reserva um destinatário para esta passada, **antes** de enviar. `false` se
+ * outra passada chegou primeiro.
+ *
+ * Três gatilhos rodam a mesma fila (a carona do webhook, o pulso do Inbox e o
+ * cron, ver `passada-de-transmissoes.ts`), e `proximosDaFila` só lê. Sem
+ * reserva, dois deles liam os mesmos `na_fila` ao mesmo tempo e o contato
+ * recebia o modelo duas vezes: custo em dobro na Meta e risco de denúncia
+ * para o número do cliente (auditoria de 28/set/2026).
+ *
+ * A reserva usa `atualizada_em` e não um estado novo porque estado novo exige
+ * migration no banco compartilhado. A linha continua `na_fila` (a tela não
+ * muda), mas com `atualizada_em` empurrado para o futuro, e `proximosDaFila`
+ * ignora quem está no futuro. O update é condicional: só um dos concorrentes
+ * acha a linha ainda livre. `marcarDestinatario` grava `atualizada_em = agora`
+ * ao terminar, o que desfaz a reserva.
+ */
+export async function reservarDestinatario(destinatarioId: string, agora: Date = new Date()): Promise<boolean> {
+  const { data, error } = await db()
+    .from('transmissao_destinatarios')
+    .update({ atualizada_em: new Date(agora.getTime() + RESERVA_MS).toISOString() })
+    .eq('id', destinatarioId)
+    .eq('estado', 'na_fila')
+    .lte('atualizada_em', agora.toISOString())
+    .select('id')
+  if (error) throw error
+  return (data ?? []).length > 0
+}
+
 export async function proximosDaFila(
   transmissaoId: string,
   quantos: number,
@@ -234,6 +270,9 @@ export async function proximosDaFila(
     .select('id, transmissao_id, contato_id, estado, wamid, codigo_erro, erro, contacts (wa_id, nome)')
     .eq('transmissao_id', transmissaoId)
     .eq('estado', 'na_fila')
+    // Reservado por outra passada fica com `atualizada_em` no futuro: ver
+    // `reservarDestinatario`.
+    .lte('atualizada_em', new Date().toISOString())
     .limit(quantos)
 
   if (error) {

@@ -7,6 +7,7 @@ const proximosDaFila = vi.fn()
 const marcarDestinatario = vi.fn().mockResolvedValue(undefined)
 const mudarEstadoDaTransmissao = vi.fn().mockResolvedValue(undefined)
 const progressoDa = vi.fn()
+const reservarDestinatario = vi.fn()
 
 vi.mock('./repos/transmissoes', () => ({
   lerTransmissao: (...a: unknown[]) => lerTransmissao(...a),
@@ -14,6 +15,7 @@ vi.mock('./repos/transmissoes', () => ({
   marcarDestinatario: (...a: unknown[]) => marcarDestinatario(...a),
   mudarEstadoDaTransmissao: (...a: unknown[]) => mudarEstadoDaTransmissao(...a),
   progressoDa: (...a: unknown[]) => progressoDa(...a),
+  reservarDestinatario: (...a: unknown[]) => reservarDestinatario(...a),
 }))
 vi.mock('./repos/templates', () => ({ lerTemplate: (...a: unknown[]) => lerTemplate(...a) }))
 vi.mock('./repos/conversas', () => ({ listarCanais: vi.fn().mockResolvedValue([]) }))
@@ -106,6 +108,7 @@ beforeEach(() => {
   // `clearAllMocks` zera o retorno padrão; sem isto a revalidação devolveria
   // `undefined` e nada sairia.
   revalidarNoEnvio.mockResolvedValue(null)
+  reservarDestinatario.mockResolvedValue(true)
   lerTransmissao.mockResolvedValue(TRANSMISSAO)
   lerTemplate.mockResolvedValue(TEMPLATE)
   proximosDaFila.mockResolvedValue(destinatarios(2))
@@ -128,6 +131,19 @@ describe('o disparo', () => {
     expect(canal.enviarTemplate).toHaveBeenCalledTimes(2)
     expect(r.tentados).toBe(2)
     expect(r.aceitos).toBe(2)
+  })
+
+  /*
+   * Dois gatilhos (webhook e pulso do Inbox) lendo a mesma fila ao mesmo
+   * tempo: quem perde a reserva pula o contato em vez de mandar de novo.
+   */
+  it('não manda para quem outra passada já reservou', async () => {
+    reservarDestinatario.mockResolvedValueOnce(false).mockResolvedValueOnce(true)
+    const canal = aceita()
+    const r = await dispararTransmissao('t1', { canal, ...semEspera })
+
+    expect(canal.enviarTemplate).toHaveBeenCalledTimes(1)
+    expect(r.tentados).toBe(1)
   })
 
   /*
