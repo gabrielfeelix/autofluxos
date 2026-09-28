@@ -1,0 +1,30 @@
+# Dependabot, com espera antes de adotar versão nova.
+#
+# Os ataques ao npm de 2025 (chalk/debug e o Shai-Hulud) viveram poucas horas
+# ou dias no ar antes de serem retirados. Quem instalava a versão do dia levava
+# junto o script que rouba credencial da máquina de build. A espera (`cooldown`)
+# deixa a versão nova envelhecer antes de virar PR aqui.
+#
+# Correção de segurança não espera: o GitHub abre esses PRs na hora, com ou sem
+# cooldown. Para isso, "Dependabot security updates" precisa estar ligado em
+# Settings > Code security.
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+    cooldown:
+      default-days: 7
+      semver-major-days: 30
+    open-pull-requests-limit: 5
+    groups:
+      menores:
+        update-types: [minor, patch]
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: monthly
+    cooldown:
+      default-days: 7

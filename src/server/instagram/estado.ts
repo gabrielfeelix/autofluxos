@@ -1,5 +1,5 @@
 import 'server-only'
-import { createHmac } from 'node:crypto'
+import { createHmac, hkdfSync } from 'node:crypto'
 import { cookies } from 'next/headers'
 import { iguais } from '@/lib/segredo'
 
@@ -40,12 +40,20 @@ import { iguais } from '@/lib/segredo'
  */
 const VALIDADE_MS = 30 * 60 * 1_000
 
-function segredo(): string {
-  const valor = process.env.BETTER_AUTH_SECRET ?? process.env.PAINEL_SEGREDO
-  if (!valor) {
-    throw new Error('falta BETTER_AUTH_SECRET (ou PAINEL_SEGREDO) para assinar a conexão')
-  }
-  return valor
+/**
+ * A chave do bilhete é **derivada** do `BETTER_AUTH_SECRET`, e não ele cru.
+ *
+ * O mesmo segredo assina a sessão do login. Usá-lo direto aqui faria de
+ * qualquer defeito neste HMAC um defeito na sessão, e vice-versa. O HKDF com
+ * rótulo próprio dá uma chave que só serve para isto.
+ *
+ * O `PAINEL_SEGREDO`, que era o recuo, morreu: segredo aposentado que ainda é
+ * lido é segredo que alguém volta a confiar sem saber.
+ */
+function segredo(): Buffer {
+  const valor = process.env.BETTER_AUTH_SECRET
+  if (!valor) throw new Error('falta BETTER_AUTH_SECRET para assinar a conexão')
+  return Buffer.from(hkdfSync('sha256', valor, '', 'autofluxos:estado-oauth', 32))
 }
 
 function assinar(carga: string): string {

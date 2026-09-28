@@ -60,10 +60,8 @@ function ambienteDeTeste(): Record<string, string> {
 
   return {
     ...env,
-    // O painel falha fechado sem estes dois, e o valor aqui é descartável de
+    // O painel falha fechado sem o segredo, e o valor aqui é descartável de
     // propósito: nada neste arquivo pode servir para entrar em outro lugar.
-    PAINEL_SENHA: env.PAINEL_SENHA ?? 'senha-de-teste-local',
-    PAINEL_SEGREDO: env.PAINEL_SEGREDO ?? 'segredo-de-teste-local-sem-valor',
     BETTER_AUTH_SECRET: env.BETTER_AUTH_SECRET ?? 'better-auth-de-teste-local-sem-valor',
     BETTER_AUTH_URL: `http://localhost:${process.env.PORTA ?? '3100'}`,
     NODE_ENV: 'test',
