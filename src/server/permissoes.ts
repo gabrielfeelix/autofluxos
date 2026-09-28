@@ -18,6 +18,7 @@ import {
   contasDoUsuario,
   exigirAcessoAoCliente,
   ehAdminDaPlataforma,
+  temPapelDeAdmin,
   type AcessoAoCliente,
   type ContaDoUsuario,
   type SessaoAtual,
@@ -189,7 +190,9 @@ export async function caminhoNaConta(
  * acesso da pessoa: quem só atende as próprias conversas entra pelo Inbox.
  */
 export async function destinoAposEntrar(sessao: SessaoAtual): Promise<string> {
-  if (ehAdminDaPlataforma(sessao)) return '/admin'
+  // Admin sem 2FA vai direto ativar: sem isso cairia no seletor de contas
+  // vazio, porque o papel sozinho não abre mais a administração.
+  if (temPapelDeAdmin(sessao)) return sessao.usuario.duasEtapas ? '/admin' : '/ativar-duas-etapas'
 
   const [primeira, ...resto] = await contasDoUsuario(sessao.usuario.id)
   // Uma conta só é o caso comum, e mandar essa pessoa para um seletor de um

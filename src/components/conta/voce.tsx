@@ -1,6 +1,7 @@
 'use client'
 
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import { createContext, useContext, useState, useTransition, type ReactNode } from 'react'
 import { Avatar } from '@/components/design/avatar'
 import { CampoDeSenha } from '@/components/design/campo-de-senha'
@@ -9,6 +10,7 @@ import { RotuloCampo } from '@/components/design/modal-formulario'
 import { BotaoDeTema } from '@/components/design/tema'
 import { acaoSair } from '@/server/acoes-conta'
 import { acaoEditarPerfil, acaoTrocarSenha } from '@/server/acoes-perfil'
+import { ModalDeDuasEtapas } from './duas-etapas'
 
 /**
  * "Você": o perfil de quem está usando, no rodapé da barra (tarefa 7.5).
@@ -55,9 +57,12 @@ export function PainelVoce({
   suporte,
   configuracoesHref,
   outrasContas,
+  duasEtapas = false,
   children,
 }: {
   email: string
+  /** A verificação em duas etapas está ligada para esta pessoa. */
+  duasEtapas?: boolean
   /** "Proprietário · MGM Pilates". Ignorado quando `suporte`. */
   papel: string
   suporte: boolean
@@ -69,7 +74,8 @@ export function PainelVoce({
 }) {
   const contexto = useContext(ContextoDoPerfil)
   const perfil = contexto?.perfil ?? { nome: '', imagem: null }
-  const [aberto, setAberto] = useState<'perfil' | 'senha' | null>(null)
+  const [aberto, setAberto] = useState<'perfil' | 'senha' | 'duas-etapas' | null>(null)
+  const router = useRouter()
 
   return (
     <div className="flex flex-col">
@@ -91,6 +97,16 @@ export function PainelVoce({
       <div className="mt-4 flex flex-col gap-0.5 border-t border-line pt-3">
         <Linha aoClicar={() => setAberto('perfil')}>Editar perfil</Linha>
         <Linha aoClicar={() => setAberto('senha')}>Trocar senha</Linha>
+        {!suporte && (
+          <Linha aoClicar={() => setAberto('duas-etapas')}>
+            <span className="flex w-full items-center justify-between gap-2">
+              Verificação em duas etapas
+              <span className={`text-[11px] font-bold ${duasEtapas ? 'text-ok' : 'text-dim'}`}>
+                {duasEtapas ? 'ligada' : 'desligada'}
+              </span>
+            </span>
+          </Linha>
+        )}
       </div>
 
       <div className="mt-2 flex flex-col gap-0.5 border-t border-line pt-2">
@@ -118,6 +134,16 @@ export function PainelVoce({
         <EditarPerfil perfil={perfil} mudar={contexto.mudar} aoFechar={() => setAberto(null)} />
       )}
       {aberto === 'senha' && <TrocarSenha aoFechar={() => setAberto(null)} />}
+      {aberto === 'duas-etapas' && (
+        <ModalDeDuasEtapas
+          ligada={duasEtapas}
+          aoFechar={() => {
+            setAberto(null)
+            // O servidor mudou o estado; a tela aberta relê na próxima navegação.
+            router.refresh()
+          }}
+        />
+      )}
     </div>
   )
 }

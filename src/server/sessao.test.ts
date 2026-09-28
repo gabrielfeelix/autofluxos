@@ -17,6 +17,7 @@ function sessaoCom(papel: string | null, banido = false): SessaoAtual {
       email: 'fulano@exemplo.test',
       papelDePlataforma: papel,
       banido,
+      duasEtapas: true,
     },
     contaAtivaId: null,
     impersonadoPor: null,
@@ -69,5 +70,13 @@ describe('sessão fresca', () => {
 
   it('sem data conhecida, falha fechado', () => {
     expect(sessaoFresca(sessaoCom('admin'), 12 * HORA, agora)).toBe(false)
+  })
+})
+
+describe('admin sem verificação em duas etapas', () => {
+  it('não é admin enquanto não ligar o 2FA', () => {
+    const sessao = sessaoCom('admin')
+    sessao.usuario.duasEtapas = false
+    expect(ehAdminDaPlataforma(sessao)).toBe(false)
   })
 })

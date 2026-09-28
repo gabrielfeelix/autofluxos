@@ -1,7 +1,7 @@
 import 'server-only'
 import { betterAuth } from 'better-auth'
 import { nextCookies } from 'better-auth/next-js'
-import { admin, haveIBeenPwned, organization } from 'better-auth/plugins'
+import { admin, haveIBeenPwned, organization, twoFactor } from 'better-auth/plugins'
 import { Pool } from 'pg'
 
 /**
@@ -137,6 +137,21 @@ function montar() {
        * nova não é coisa que precise sair em segundos.
        */
       haveIBeenPwned({ customPasswordCompromisedMessage: SENHA_VAZADA }),
+
+      /**
+       * Verificação em duas etapas por aplicativo (TOTP: Google Authenticator,
+       * 1Password, Authy). Obrigatória para o administrador da plataforma,
+       * opcional para os outros (`sessao.ts`).
+       *
+       * O segredo fica cifrado com o `BETTER_AUTH_SECRET` em `af_dois_fatores`
+       * (0112): trocar aquele segredo desliga o 2FA de todo mundo. SMS não
+       * existe aqui de propósito: é o fator que se rouba por troca de chip.
+       * A própria biblioteca trava depois de erros seguidos no código.
+       */
+      twoFactor({
+        issuer: 'AutoFluxos',
+        schema: { twoFactor: { modelName: 'af_dois_fatores' } },
+      }),
 
       /**
        * Impersonação, o "entrar como" do administrador.

@@ -30,6 +30,8 @@ export type UsuarioDaSessao = {
   /** `admin` = administrador da 4YU. Nulo = usuário comum, dono ou membro de conta. */
   papelDePlataforma: string | null
   banido: boolean
+  /** Verificação em duas etapas ligada (0112). Opcional só para os testes. */
+  duasEtapas?: boolean
 }
 
 export type SessaoAtual = {
@@ -112,6 +114,7 @@ export async function sessaoAtual(): Promise<SessaoAtual | null> {
         imagem: user.image ?? null,
         papelDePlataforma: user.role ?? null,
         banido: Boolean(user.banned),
+        duasEtapas: Boolean((user as { twoFactorEnabled?: boolean | null }).twoFactorEnabled),
       },
       contaAtivaId: session.activeOrganizationId ?? null,
       impersonadoPor: session.impersonatedBy ?? null,
@@ -121,7 +124,7 @@ export async function sessaoAtual(): Promise<SessaoAtual | null> {
     // A impersonada tem prazo próprio (1 h, no plugin) e não passa por isto.
     if (
       !sessao.impersonadoPor &&
-      ehAdminDaPlataforma(sessao) &&
+      temPapelDeAdmin(sessao) &&
       !sessaoFresca(sessao, VIDA_DA_SESSAO_DE_ADMIN_MS)
     ) {
       await encerrarSessao(session.id)
@@ -151,12 +154,23 @@ export async function exigirUsuario(): Promise<SessaoAtual> {
  * inteira com `'admin'` daria falso justamente para quem tem mais de um papel ,
  * o erro apareceria no dia em que alguém ganhasse o segundo.
  */
-export function ehAdminDaPlataforma(sessao: SessaoAtual | null): boolean {
+export function temPapelDeAdmin(sessao: SessaoAtual | null): boolean {
   if (!sessao || sessao.usuario.banido) return false
   return (sessao.usuario.papelDePlataforma ?? '')
     .split(',')
     .map((papel) => papel.trim())
     .includes(PAPEL_ADMIN)
+}
+
+/**
+ * Administrador da plataforma **com** a verificação em duas etapas ligada.
+ *
+ * O papel sozinho não basta: o admin entra em qualquer conta de cliente, e
+ * senha vazada não pode ser suficiente para isso. Sem 2FA, a pessoa segue
+ * logada como usuária comum e é levada a ativar (`exigirAdminDaPlataforma`).
+ */
+export function ehAdminDaPlataforma(sessao: SessaoAtual | null): boolean {
+  return temPapelDeAdmin(sessao) && sessao?.usuario.duasEtapas === true
 }
 
 /**
@@ -168,6 +182,7 @@ export function ehAdminDaPlataforma(sessao: SessaoAtual | null): boolean {
  */
 export async function exigirAdminDaPlataforma(): Promise<SessaoAtual> {
   const sessao = await exigirUsuario()
+  if (temPapelDeAdmin(sessao) && !sessao.usuario.duasEtapas) redirect('/ativar-duas-etapas')
   if (!ehAdminDaPlataforma(sessao)) redirect('/painel')
   return sessao
 }

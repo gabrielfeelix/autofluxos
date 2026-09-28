@@ -122,6 +122,7 @@ export async function BarraDoCliente({ cliente }: { cliente: Cliente }) {
               suporte={acesso.papel === null}
               configuracoesHref={liberaSecao(acesso.regras, 'ajustes') ? `${base}/ajustes` : null}
               outrasContas={contas.length}
+              duasEtapas={acesso.sessao.usuario.duasEtapas === true}
             >
               <LinhaDePresenca doServidor={presenca} />
 

@@ -2,8 +2,10 @@
 
 import { headers } from 'next/headers'
 import { revalidatePath } from 'next/cache'
+import QRCode from 'qrcode'
 import { autenticacao, ehSenhaVazada, SENHA_VAZADA } from './auth'
 import { db } from './db'
+import { registrar } from './repos/auditoria'
 import { atualizarPerfil } from './repos/usuarios'
 import { sessaoAtual } from './sessao'
 
@@ -119,4 +121,66 @@ export async function acaoTrocarSenha(
     console.error('[perfil] troca de senha falhou:', mensagem)
     return { ok: false, erro: 'não deu para trocar a senha agora, tente de novo' }
   }
+}
+
+/**
+ * Verificação em duas etapas, passo 1: confere a senha e devolve o QR.
+ *
+ * A biblioteca grava o segredo já nesta hora, mas só liga o 2FA quando o
+ * primeiro código do aplicativo confere (`acaoConfirmarDuasEtapas`). Quem
+ * desiste no meio continua entrando só com a senha, como antes.
+ */
+export async function acaoComecarDuasEtapas(
+  senha: string,
+): Promise<{ ok: true; qr: string; chave: string; codigos: string[] } | { ok: false; erro: string }> {
+  const sessao = await sessaoAtual()
+  if (!sessao) return { ok: false, erro: 'sua sessão expirou, entre de novo' }
+  if (sessao.impersonadoPor) return { ok: false, erro: 'isto só a própria pessoa liga, não o suporte' }
+
+  try {
+    const r = await autenticacao().api.enableTwoFactor({ body: { password: senha }, headers: await headers() })
+    if (r.method !== 'totp') return { ok: false, erro: 'não deu para começar agora, tente de novo' }
+    const chave = new URL(r.totpURI).searchParams.get('secret') ?? ''
+    const qr = await QRCode.toDataURL(r.totpURI, { margin: 1, width: 220 })
+    return { ok: true, qr, chave, codigos: r.backupCodes }
+  } catch (erro) {
+    const mensagem = erro instanceof Error ? erro.message : String(erro)
+    if (/invalid password|incorrect/i.test(mensagem)) return { ok: false, erro: 'a senha não confere' }
+    console.error('[perfil] 2FA não começou:', mensagem)
+    return { ok: false, erro: 'não deu para começar agora, tente de novo' }
+  }
+}
+
+/** Passo 2: o primeiro código do aplicativo liga o 2FA de verdade. */
+export async function acaoConfirmarDuasEtapas(codigo: string): Promise<{ ok: true } | { ok: false; erro: string }> {
+  const sessao = await sessaoAtual()
+  if (!sessao) return { ok: false, erro: 'sua sessão expirou, entre de novo' }
+  if (sessao.impersonadoPor) return { ok: false, erro: 'isto só a própria pessoa liga, não o suporte' }
+
+  const limpo = codigo.replace(/\s/g, '')
+  if (!/^\d{6}$/.test(limpo)) return { ok: false, erro: 'são 6 números, do aplicativo' }
+  try {
+    await autenticacao().api.verifyTOTP({ body: { code: limpo }, headers: await headers() })
+  } catch {
+    return { ok: false, erro: 'código não confere; confira se o relógio do celular está certo' }
+  }
+  await registrar({ acao: 'ligou_duas_etapas', autorId: sessao.usuario.id, autorEmail: sessao.usuario.email, alvoTipo: 'usuario', alvoId: sessao.usuario.id })
+  return { ok: true }
+}
+
+/** Desliga, com a senha. O admin da plataforma perde a administração até ligar de novo. */
+export async function acaoDesligarDuasEtapas(senha: string): Promise<{ ok: true } | { ok: false; erro: string }> {
+  const sessao = await sessaoAtual()
+  if (!sessao) return { ok: false, erro: 'sua sessão expirou, entre de novo' }
+  if (sessao.impersonadoPor) return { ok: false, erro: 'isto só a própria pessoa desliga, não o suporte' }
+
+  try {
+    await autenticacao().api.disableTwoFactor({ body: { password: senha }, headers: await headers() })
+  } catch (erro) {
+    const mensagem = erro instanceof Error ? erro.message : String(erro)
+    if (/invalid password|incorrect/i.test(mensagem)) return { ok: false, erro: 'a senha não confere' }
+    return { ok: false, erro: 'não deu para desligar agora, tente de novo' }
+  }
+  await registrar({ acao: 'desligou_duas_etapas', autorId: sessao.usuario.id, autorEmail: sessao.usuario.email, alvoTipo: 'usuario', alvoId: sessao.usuario.id })
+  return { ok: true }
 }

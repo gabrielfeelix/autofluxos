@@ -47,6 +47,12 @@ const PORTAS_ABERTAS = [
   '/',
   '/entrar',
   /**
+   * O código de duas etapas vem **antes** de existir sessão: a senha certa só
+   * deixa o cookie de "falta o código". A tela não lê dado nenhum, e a ação
+   * que ela chama só vale com esse cookie.
+   */
+  '/entrar/codigo',
+  /**
    * O cadastro aberto ao público, a porta de quem chega pelo site.
    *
    * **`/primeiro-acesso` não entra nesta lista, e é de propósito.** Ele é o

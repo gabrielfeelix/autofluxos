@@ -38,6 +38,9 @@ export const VERBOS_DA_AUDITORIA: Record<string, string> = {
   apagou_contato: 'apagou o contato',
   entrou: 'entrou no painel',
   falhou_login: 'errou a senha',
+  falhou_codigo: 'errou o código de duas etapas',
+  ligou_duas_etapas: 'ligou a verificação em duas etapas',
+  desligou_duas_etapas: 'desligou a verificação em duas etapas',
 }
 
 export function verboDoAto(acao: string): string {
@@ -49,7 +52,7 @@ export function verboDoAto(acao: string): string {
  * procura força bruta), mas fora dos "últimos acontecimentos", que eles
  * afogariam.
  */
-export const ATOS_DE_LOGIN = ['entrou', 'falhou_login'] as const
+export const ATOS_DE_LOGIN = ['entrou', 'falhou_login', 'falhou_codigo'] as const
 
 /** Os grupos do filtro da tela de Auditoria. */
 export const TIPOS_DE_ATO: { valor: string; rotulo: string; acoes: string[] }[] = [

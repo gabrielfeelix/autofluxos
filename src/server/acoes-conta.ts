@@ -106,17 +106,30 @@ export async function acaoEntrar(
   }
 
   let usuario: UsuarioDaSessao
+  let pedeCodigo = false
   try {
     const entrada = await autenticacao().api.signInEmail({
       body: { email, password: senha },
       headers: cabecalhos,
     })
-    usuario = {
-      id: entrada.user.id,
-      nome: entrada.user.name,
-      email: entrada.user.email,
-      papelDePlataforma: entrada.user.role ?? null,
-      banido: Boolean(entrada.user.banned),
+    /*
+     * Senha certa, e a conta tem verificação em duas etapas: a biblioteca não
+     * abre sessão, grava um cookie de "falta o código" e devolve este sinal.
+     * A sessão só nasce em `acaoConferirCodigo`.
+     */
+    if ('twoFactorRedirect' in entrada && entrada.twoFactorRedirect) {
+      pedeCodigo = true
+      usuario = { id: '', nome: '', email, papelDePlataforma: null, banido: false }
+    } else {
+      const u = (entrada as { user: { id: string; name: string; email: string; role?: string | null; banned?: boolean | null; twoFactorEnabled?: boolean | null } }).user
+      usuario = {
+        id: u.id,
+        nome: u.name,
+        email: u.email,
+        papelDePlataforma: u.role ?? null,
+        banido: Boolean(u.banned),
+        duasEtapas: Boolean(u.twoFactorEnabled),
+      }
     }
   } catch (erro) {
     // Quem está banido nem chega a autenticar: o plugin `admin` recusa dentro
@@ -131,6 +144,8 @@ export async function acaoEntrar(
     await registrar({ acao: 'falhou_login', autorEmail: email.slice(0, 200), alvoTipo: 'usuario' })
     return { erro: CREDENCIAL_NAO_CONFERE, email }
   }
+
+  if (pedeCodigo) redirect('/entrar/codigo')
 
   await registrar({ acao: 'entrou', autorId: usuario.id, autorEmail: usuario.email, alvoTipo: 'usuario', alvoId: usuario.id })
 
@@ -149,6 +164,53 @@ export async function acaoEntrar(
 function ehBanimento(erro: unknown): boolean {
   const corpo = (erro as { body?: { code?: unknown } } | null)?.body
   return typeof corpo?.code === 'string' && corpo.code === 'BANNED_USER'
+}
+
+/**
+ * O segundo passo do login: o código de 6 dígitos do aplicativo, ou um código
+ * de recuperação.
+ *
+ * Só funciona com o cookie que `acaoEntrar` deixou depois da senha certa, e a
+ * biblioteca trava a conta depois de erros seguidos. O limite por IP aqui é
+ * por cima disso, para quem tenta muitas contas ao mesmo tempo.
+ */
+export async function acaoConferirCodigo(
+  _estado: { erro?: string },
+  formData: FormData,
+): Promise<{ erro?: string }> {
+  const bruto = String(formData.get('codigo') ?? '').trim()
+  const cabecalhos = await headers()
+  if (!(await consumirLimite(`codigo-2fa:${chaveDeLimite('login', cabecalhos)}`, 10, 5 * 60))) {
+    return { erro: 'Muitas tentativas, espere alguns minutos.' }
+  }
+
+  const soDigitos = bruto.replace(/\s/g, '')
+  let usuario: { id: string; email: string; name: string; role?: string | null; banned?: boolean | null }
+  try {
+    const r = /^\d{6}$/.test(soDigitos)
+      ? await autenticacao().api.verifyTOTP({ body: { code: soDigitos, trustDevice: false }, headers: cabecalhos })
+      : await autenticacao().api.verifyBackupCode({ body: { code: bruto, trustDevice: false }, headers: cabecalhos })
+    usuario = (r as { user: typeof usuario }).user
+  } catch {
+    await registrar({ acao: 'falhou_codigo', alvoTipo: 'usuario' })
+    return { erro: 'Código não confere. Confira o aplicativo e tente de novo; se o login expirou, volte e digite a senha.' }
+  }
+
+  await registrar({ acao: 'entrou', autorId: usuario.id, autorEmail: usuario.email, alvoTipo: 'usuario', alvoId: usuario.id, detalhes: { duasEtapas: true } })
+  redirect(
+    await destinoAposEntrar({
+      usuario: {
+        id: usuario.id,
+        nome: usuario.name,
+        email: usuario.email,
+        papelDePlataforma: usuario.role ?? null,
+        banido: Boolean(usuario.banned),
+        duasEtapas: true,
+      },
+      contaAtivaId: null,
+      impersonadoPor: null,
+    }),
+  )
 }
 
 export async function acaoSair() {

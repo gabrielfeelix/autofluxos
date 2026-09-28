@@ -41,7 +41,7 @@ export default async function LayoutDoAdmin({ children }: { children: ReactNode 
               ) : undefined,
           }))}
           rodape={
-            <PainelVoce email={sessao.usuario.email} papel="Administrador da plataforma" suporte={false} configuracoesHref={null} outrasContas={0}>
+            <PainelVoce email={sessao.usuario.email} papel="Administrador da plataforma" suporte={false} configuracoesHref={null} outrasContas={0} duasEtapas={sessao.usuario.duasEtapas === true}>
               {null}
             </PainelVoce>
           }
