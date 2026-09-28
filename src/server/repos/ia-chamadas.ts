@@ -1,5 +1,6 @@
 import 'server-only'
 import { db } from '../db'
+import { acharPlano, tetoDeIaDaConta } from '@/core/planos'
 
 /**
  * O registro do que a IA fez no sistema de um cliente.
@@ -94,10 +95,24 @@ export const FERRAMENTA_RESPOSTA = 'resposta'
 const JANELA_DO_LIMITE_MS = 24 * 60 * 60 * 1_000
 
 /**
+ * O limite por contato de quem não escolheu um, em respostas por 24 h.
+ *
+ * Até 28/set/2026 o padrão era "sem limite", e isso deixava uma pessoa só,
+ * conversando a noite inteira, gastar IA sem fim em qualquer conta. Quarenta é
+ * muito acima de uma conversa de atendimento real (que resolve em menos de
+ * vinte) e ainda corta o robô cedo. A coluna `ia_limite_contato_dia`, quando
+ * preenchida, continua mandando.
+ */
+export const LIMITE_PADRAO_POR_CONTATO = 40
+
+/** A janela do teto da conta: 30 dias corridos, sem depender de fuso. */
+const JANELA_DA_CONTA_MS = 30 * 24 * 60 * 60 * 1_000
+
+/**
  * Quanto a IA ainda pode responder para este contato, pela regra da conta.
  *
- * `limite` nulo é "sem limite", o de todas as contas antes da 0106, e aí nem a
- * contagem é feita: é uma leitura só, pela chave primária.
+ * Sem valor na coluna, vale `LIMITE_PADRAO_POR_CONTATO`. `limite` nulo no
+ * retorno só sai de erro de leitura.
  *
  * **Erro de leitura é "sem limite", nunca "esgotado".** O limite existe para
  * conter custo numa conta de demonstração; banco lento derrubando o
@@ -120,8 +135,8 @@ export async function cotaDeIaDoContato(
       return semLimite
     }
 
-    const limite = (conta as { ia_limite_contato_dia: number | null } | null)?.ia_limite_contato_dia ?? null
-    if (limite === null) return semLimite
+    const limite =
+      (conta as { ia_limite_contato_dia: number | null } | null)?.ia_limite_contato_dia ?? LIMITE_PADRAO_POR_CONTATO
 
     const desde = new Date(Date.now() - JANELA_DO_LIMITE_MS).toISOString()
     const { count, error } = await db()
@@ -153,4 +168,49 @@ export async function registrarRespostaDaIa(clienteId: string, contatoId: string
     decididoPor: 'ia',
     ok: true,
   })
+}
+
+/**
+ * Quanto a IA já respondeu na conta inteira, nos últimos 30 dias, e o teto.
+ *
+ * O limite por contato não segura quem troca de número; este segura. O teto
+ * vem do preço contratado (`clients.preco_contratado`), e sem ele do plano.
+ *
+ * Erro de leitura é "sem teto", pela mesma razão do limite por contato: banco
+ * lento não pode derrubar o atendimento de todas as contas.
+ */
+export async function cotaDeIaDaConta(clienteId: string): Promise<{ teto: number | null; usadas: number }> {
+  const semTeto = { teto: null, usadas: 0 }
+  try {
+    const { data: conta, error: erroConta } = await db()
+      .from('clients')
+      .select('plano, preco_contratado')
+      .eq('id', clienteId)
+      .maybeSingle()
+    if (erroConta || !conta) {
+      if (erroConta) console.error('[ia] não deu para ler o plano da conta', erroConta.message)
+      return semTeto
+    }
+
+    const { plano, preco_contratado } = conta as { plano: string | null; preco_contratado: number | null }
+    const preco = typeof preco_contratado === 'number' ? preco_contratado : acharPlano(plano ?? '').preco
+    const teto = tetoDeIaDaConta({ preco })
+
+    const desde = new Date(Date.now() - JANELA_DA_CONTA_MS).toISOString()
+    const { count, error } = await db()
+      .from('ia_chamadas')
+      .select('id', { count: 'exact', head: true })
+      .eq('client_id', clienteId)
+      .eq('ferramenta', FERRAMENTA_RESPOSTA)
+      .gte('criado_em', desde)
+    if (error) {
+      console.error('[ia] não deu para contar as respostas da conta', error.message)
+      return semTeto
+    }
+
+    return { teto, usadas: count ?? 0 }
+  } catch (erro) {
+    console.error('[ia] não deu para ler o teto de IA da conta', erro)
+    return semTeto
+  }
 }

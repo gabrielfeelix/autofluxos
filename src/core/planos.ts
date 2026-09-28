@@ -225,6 +225,26 @@ export function acharPlano(id: IdDoPlano | string): Plano {
 }
 
 /**
+ * Quantas respostas de IA a conta pode dar em 30 dias corridos.
+ *
+ * **Não é produto, é trava de custo.** Qualquer pessoa pode mandar mensagem
+ * para o WhatsApp de um cliente, e cada resposta de IA é paga pela 4YU. Sem
+ * teto por conta, um robô trocando de número a noite inteira é conta sem
+ * fundo (OWASP LLM10, "consumo sem limite"). O número é folgado de propósito:
+ * uso normal nunca encosta nele; encostar é sinal de abuso ou de fluxo errado,
+ * e nos dois casos uma pessoa precisa olhar.
+ *
+ * Cinco respostas por real de mensalidade, com piso no Essencial (1.500). Vale
+ * para plano criado no admin sem precisar de coluna nova.
+ */
+export const RESPOSTAS_DE_IA_POR_REAL = 5
+export const PISO_DE_RESPOSTAS_DE_IA = 1_500
+
+export function tetoDeIaDaConta(plano: Pick<Plano, 'preco'>): number {
+  return Math.max(PISO_DE_RESPOSTAS_DE_IA, Math.round(plano.preco * RESPOSTAS_DE_IA_POR_REAL))
+}
+
+/**
  * Quanto do plano já foi usado, de 0 a 1, para a barra da tela.
  *
  * Passa de 1 quando a conta estourou a faixa, e **isso é de propósito**: quem

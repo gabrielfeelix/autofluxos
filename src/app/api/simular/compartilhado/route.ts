@@ -4,7 +4,13 @@ import { varsDeData } from '@/core/datas'
 import { SEMPRE_ABERTO, hojeNaConta } from '@/core/horario'
 import { executarComEfeitos } from '@/server/efeitos/resolver'
 import { escolherModelo } from '@/server/ia/modelo'
-import { consumirLimite, JANELA_DA_VITRINE_SEGUNDOS, TETO_DA_VITRINE } from '@/server/limite'
+import {
+  consumirLimite,
+  JANELA_DA_VITRINE_NO_DIA_SEGUNDOS,
+  JANELA_DA_VITRINE_SEGUNDOS,
+  TETO_DA_VITRINE,
+  TETO_DA_VITRINE_NO_DIA,
+} from '@/server/limite'
 import { acharPorToken } from '@/server/repos/compartilhar'
 
 /**
@@ -83,7 +89,10 @@ export async function POST(req: Request) {
    * O teto é do link, não do endereço, e é consumido **depois** de o link ser
    * conferido: contar mensagem de link morto gastaria a cota de um link vivo.
    */
-  if (!(await consumirLimite(`vitrine:${link.id}`, TETO_DA_VITRINE, JANELA_DA_VITRINE_SEGUNDOS))) {
+  if (
+    !(await consumirLimite(`vitrine:${link.id}`, TETO_DA_VITRINE, JANELA_DA_VITRINE_SEGUNDOS)) ||
+    !(await consumirLimite(`vitrine-dia:${link.id}`, TETO_DA_VITRINE_NO_DIA, JANELA_DA_VITRINE_NO_DIA_SEGUNDOS))
+  ) {
     return Response.json(
       {
         erro: 'este link já rodou muitas mensagens de teste. Espere alguns minutos, ou peça um link novo a quem compartilhou.',

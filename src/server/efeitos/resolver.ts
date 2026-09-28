@@ -31,6 +31,7 @@ import {
 import { lerPoliticas, politicaDe } from '../ia/politica'
 import { recursoLiberado } from '../recursos-do-plano'
 import {
+  cotaDeIaDaConta,
   cotaDeIaDoContato,
   registrarChamada,
   registrarRespostaDaIa,
@@ -44,6 +45,7 @@ import {
 } from '../ia/ferramentas-do-pedido'
 import type { Modelo, Resposta, Turno } from '../ia/types'
 import { alertar } from '../alertar'
+import { consumirLimite } from '../limite'
 import { chamarHttp } from './http'
 import { lerCredencial } from '../repos/conexoes'
 import { consultarPedidoDaConta, lojaAtivaDaConta } from '../adaptador-da-loja'
@@ -297,6 +299,8 @@ async function rodar(
   let saltos = 0
   /** A cota de IA do contato, lida uma vez por rodada e só se a IA for chamada. */
   let cota: { limite: number | null; usadas: number } | undefined
+  /** O teto da conta inteira, lido junto e pela mesma regra. */
+  let cotaDaConta: { teto: number | null; usadas: number } | undefined
   const quemConta = contaNoLimite(opcoes)
 
   const pergunta =
@@ -503,8 +507,25 @@ async function rodar(
      * prometendo uma busca que não vai acontecer: ele vai junto do aviso.
      */
     if (quemConta) {
-      cota ??= await cotaDeIaDoContato(quemConta.clienteId, quemConta.contatoId)
-      if (cota.limite !== null && cota.usadas >= cota.limite) {
+      if (!cota || !cotaDaConta) {
+        ;[cota, cotaDaConta] = await Promise.all([
+          cotaDeIaDoContato(quemConta.clienteId, quemConta.contatoId),
+          cotaDeIaDaConta(quemConta.clienteId),
+        ])
+      }
+      const estourouContato = cota.limite !== null && cota.usadas >= cota.limite
+      const estourouConta = cotaDaConta.teto !== null && cotaDaConta.usadas >= cotaDaConta.teto
+      if (
+        estourouConta &&
+        (await consumirLimite(`alerta-teto-ia:${quemConta.clienteId}`, 1, 24 * 60 * 60))
+      ) {
+        // Um aviso por conta por dia: a contagem não sobe depois de barrar, e
+        // sem esta trava cada mensagem do abuso viraria um alerta.
+        await alertar('Conta atingiu o teto de respostas de IA', `${cotaDaConta.usadas} respostas em 30 dias`, {
+          clienteId: quemConta.clienteId,
+        })
+      }
+      if (estourouContato || estourouConta) {
         const foraDoHorario = avisoDeForaDoHorario(atendimento)
         return {
           acoes: [
@@ -513,7 +534,9 @@ async function rodar(
             ...(foraDoHorario ? [{ tipo: 'enviar_texto' as const, texto: foraDoHorario }] : []),
             {
               tipo: 'transferir_humano',
-              motivo: `o contato chegou ao limite de ${cota.limite} respostas de IA em 24 h`,
+              motivo: estourouConta
+                ? `a conta chegou ao teto de ${cotaDaConta.teto} respostas de IA em 30 dias`
+                : `o contato chegou ao limite de ${cota.limite} respostas de IA em 24 h`,
             },
           ],
           sessao: { ...resultado.sessao, status: 'humano' },
@@ -536,6 +559,7 @@ async function rodar(
     let registro: Promise<void> | null = null
     if (quemConta && cota && cota.limite !== null) {
       cota.usadas += 1
+      if (cotaDaConta) cotaDaConta.usadas += 1
       registro = registrarRespostaDaIa(quemConta.clienteId, quemConta.contatoId)
     }
 

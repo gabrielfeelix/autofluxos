@@ -41,6 +41,16 @@ export const TETO_DA_VITRINE = 40
 export const JANELA_DA_VITRINE_SEGUNDOS = 10 * 60
 
 /**
+ * O teto do dia, por link, por cima do de 10 minutos.
+ *
+ * Só o de 10 minutos deixava um script paciente, respeitando a janela, rodar
+ * 5.760 mensagens por dia num link só, todas com a IA da 4YU. Duzentas é uma
+ * tarde inteira de demonstração.
+ */
+export const TETO_DA_VITRINE_NO_DIA = 200
+export const JANELA_DA_VITRINE_NO_DIA_SEGUNDOS = 24 * 60 * 60
+
+/**
  * O primeiro proxy é quem viu a conexão de fora. Não confiamos no corpo da
  * requisição para formar a chave; sem cabeçalho, todas as chamadas desconhecidas
  * ficam juntas e o comportamento continua seguro.

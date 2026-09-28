@@ -12,15 +12,19 @@ import type { Modelo, PedidoDeIa, Resposta } from '../ia/types'
  */
 
 const cotaDeIaDoContato = vi.hoisted(() => vi.fn())
+const cotaDeIaDaConta = vi.hoisted(() => vi.fn())
 const registrarRespostaDaIa = vi.hoisted(() => vi.fn(async () => {}))
+const alertar = vi.hoisted(() => vi.fn(async () => {}))
 vi.mock('../repos/ia-chamadas', () => ({
   cotaDeIaDoContato,
+  cotaDeIaDaConta,
   registrarRespostaDaIa,
   registrarChamada: async () => {},
 }))
 vi.mock('./http', () => ({ chamarHttp: vi.fn() }))
 vi.mock('../repos/conexoes', () => ({ lerCredencial: vi.fn() }))
-vi.mock('../alertar', () => ({ alertar: async () => {} }))
+vi.mock('../alertar', () => ({ alertar }))
+vi.mock('../limite', () => ({ consumirLimite: async () => true }))
 
 const { executarComEfeitos, AVISO_DE_LIMITE_DE_IA } = await import('./resolver')
 
@@ -52,7 +56,36 @@ const daConta = { clienteId: 'c1', contatoId: 'p1', origem: 'whatsapp' as const,
 
 beforeEach(() => {
   cotaDeIaDoContato.mockReset()
+  cotaDeIaDaConta.mockReset()
+  cotaDeIaDaConta.mockResolvedValue({ teto: 1500, usadas: 0 })
   registrarRespostaDaIa.mockClear()
+  alertar.mockClear()
+})
+
+describe('teto de IA da conta', () => {
+  it('no teto, não chama o modelo, passa para uma pessoa e alerta o admin', async () => {
+    cotaDeIaDoContato.mockResolvedValue({ limite: 40, usadas: 0 })
+    cotaDeIaDaConta.mockResolvedValue({ teto: 1500, usadas: 1500 })
+    const modelo = modeloQue(() => ({ tipo: 'texto', texto: 'não devia sair' }))
+
+    const r = await executarComEfeitos(fluxo, sessaoNova(), { tipo: 'inicio' }, { ...daConta, modelo })
+
+    expect(modelo.pedidos).toHaveLength(0)
+    expect(r.acoes.at(-1)).toMatchObject({ tipo: 'transferir_humano' })
+    expect(r.sessao.status).toBe('humano')
+    expect(alertar).toHaveBeenCalledTimes(1)
+  })
+
+  it('abaixo do teto, responde normalmente', async () => {
+    cotaDeIaDoContato.mockResolvedValue({ limite: 40, usadas: 0 })
+    cotaDeIaDaConta.mockResolvedValue({ teto: 1500, usadas: 1499 })
+    const modelo = modeloQue(() => ({ tipo: 'texto', texto: 'oi' }))
+
+    await executarComEfeitos(fluxo, sessaoNova(), { tipo: 'inicio' }, { ...daConta, modelo })
+
+    expect(modelo.pedidos).toHaveLength(1)
+    expect(alertar).not.toHaveBeenCalled()
+  })
 })
 
 describe('limite de IA por contato', () => {
