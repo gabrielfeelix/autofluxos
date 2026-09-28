@@ -35,5 +35,14 @@ export default defineConfig([
     // Nosso: relatorio e trace do Playwright, que sao gerados e nao escritos.
     'test-results/**',
     'playwright-report/**',
+    // Nosso: rascunhos locais de UX, fora do git.
+    '.ux-local/**',
   ]),
+
+  // Scripts de demonstração e auditoria rodam na máquina, leem JSON solto dos
+  // fluxos e não vão para o bundle: tipar cada nó ali não paga.
+  {
+    files: ['scripts/**'],
+    rules: { '@typescript-eslint/no-explicit-any': 'off' },
+  },
 ])

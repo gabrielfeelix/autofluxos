@@ -907,7 +907,7 @@ function fluxoRamo(r: Ramo) {
 
   /* ---- variação daquele item, pelo tipo */
   const tipos = Object.keys(r.variacoes)
-  let depoisDaEscolha = r.quantidade ? 'b-qtd' : 'b-soma'
+  const depoisDaEscolha = r.quantidade ? 'b-qtd' : 'b-soma'
   if (tipos.length > 0) {
     // Cadeia de condições: o tipo do item decide a pergunta; sem tipo, direto à quantidade.
     tipos.forEach((t, k) => {

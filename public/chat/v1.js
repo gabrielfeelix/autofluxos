@@ -43,7 +43,9 @@
     memoria[k] = v
     try {
       window.localStorage.setItem(guardado + ':' + k, v)
-    } catch (e) {}
+    } catch (e) {
+      // Navegador sem armazenamento (aba anônima, cota cheia): segue sem guardar.
+    }
   }
 
   function aleatorio(bytes) {

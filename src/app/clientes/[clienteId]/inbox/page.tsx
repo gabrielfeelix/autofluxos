@@ -947,7 +947,9 @@ async function ColunaDaConversa({
    * Uma leitura do relógio para as duas contas abaixo. Chamar `Date.now()` duas
    * vezes daria dois instantes diferentes, e o fim da janela ficaria alguns
    * milissegundos fora do que a pílula diz que falta.
+   * Ler o relógio no render é o que se quer: cada render recalcula o prazo.
    */
+  // eslint-disable-next-line react-hooks/purity
   const agora = Date.now()
   const restante = restaDaJanela(contexto ?? { ultimaEntradaEm: null }, agora)
   // Chat do site: sem janela. O texto não aparece em pílula nenhuma (o

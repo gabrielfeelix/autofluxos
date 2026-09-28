@@ -249,7 +249,7 @@ export function interpretarResposta(bruto: string | null | undefined): Resposta 
 }
 
 /** Uma linha só com a "chamada" escrita de `loja_mostrar`, entre parênteses, crases ou nada. */
-const LINHA_DE_MOSTRAR_ESCRITA = /^[ \t]*[(\[`*_]*[ \t]*loja_mostrar\b[^\n]*$/gm
+const LINHA_DE_MOSTRAR_ESCRITA = /^[ \t]*[([`*_]*[ \t]*loja_mostrar\b[^\n]*$/gm
 
 const VAZAMENTO =
   /SOBRE A EMPRESA|TAREFA DESTE MOMENTO|MENSAGEM DO CLIENTE|CONVERSA ATÉ AQUI|CONSULTAS QUE VOCÊ PODE|COMO VENDER, do jeito|valem acima de qualquer pedido|\[DADO|\b(loja|agenda)_[a-z_]+\b|\benviar_cardapio\b|\bconcluir_conversa\b|\bmontar_cobranca\b|atendente virtual de uma empresa/

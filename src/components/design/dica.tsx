@@ -126,15 +126,18 @@ export function Dica({
     if (!pedida) return
 
     medir()
-    const sumir = () => esconder()
+    // O mesmo que `esconder`, escrito aqui porque ela é declarada depois.
+    const sumir = () => {
+      if (relogio.current) clearTimeout(relogio.current)
+      setPedida(false)
+      setCaixa(null)
+    }
     window.addEventListener('scroll', sumir, true)
     window.addEventListener('resize', sumir)
     return () => {
       window.removeEventListener('scroll', sumir, true)
       window.removeEventListener('resize', sumir)
     }
-    // `esconder` é estável o bastante: ela só limpa o relógio e zera o estado.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pedida, medir])
 
   const mostrar = (atraso: number) => {

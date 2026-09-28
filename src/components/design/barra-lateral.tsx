@@ -190,8 +190,15 @@ function NavegacaoPorSecoes({ secoes, aceso, recolhida, carregando, dica }: { se
   const [flutuante, setFlutuante] = useState<{ chave: string; topo: number; esquerda: number } | null>(null)
   const painel = useRef<HTMLDivElement>(null)
 
-  // Navegou, recolheu a barra ou expandiu: o painel flutuante sai.
-  useEffect(() => setFlutuante(null), [caminho, recolhida])
+  // Navegou, recolheu a barra ou expandiu: o painel flutuante sai. Ajustado
+  // durante o render, e não num efeito, para não pintar um quadro a mais com
+  // o painel ainda aberto.
+  const lugar = `${caminho}|${recolhida}`
+  const [lugarDoPainel, setLugarDoPainel] = useState(lugar)
+  if (lugarDoPainel !== lugar) {
+    setLugarDoPainel(lugar)
+    setFlutuante(null)
+  }
   useEffect(() => {
     if (!flutuante) return
     const fora = (evento: PointerEvent) => {

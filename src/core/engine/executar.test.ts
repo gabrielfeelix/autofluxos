@@ -264,7 +264,7 @@ describe('as três garantias que impedem a pessoa de ficar presa', () => {
   })
 
   it('recomeçar não gasta tentativa nem esquece o que a pessoa já disse', () => {
-    let sessao = { ...sessaoNova(), vars: { nome: 'Gabriel' }, tentativas: 2 }
+    const sessao = { ...sessaoNova(), vars: { nome: 'Gabriel' }, tentativas: 2 }
     const r = executar(triagem, sessao, { tipo: 'inicio' })
     const volta = executar(triagem, r.sessao, { tipo: 'texto', texto: 'menu principal' })
 
