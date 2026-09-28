@@ -758,7 +758,19 @@ export async function acaoCadastrarSe(
       body: { name: nome, email, password: senha },
     })
   } catch (erro) {
-    return { erro: motivo(erro), email, nome, telefone }
+    /*
+     * Frase única para qualquer recusa, como no login. O erro cru da biblioteca
+     * dizia "usuário já existe", e esta tela é pública: bastava tentar e-mails
+     * para descobrir quem tem conta aqui (e, com o banco compartilhado, na
+     * Verandi também). O motivo real fica no log.
+     */
+    console.error('[cadastro] recusado:', motivo(erro))
+    return {
+      erro: 'Não deu para criar a conta com este e-mail. Se você já tem conta, entre por "Entrar".',
+      email,
+      nome,
+      telefone,
+    }
   }
 
   /*

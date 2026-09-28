@@ -265,7 +265,7 @@ export async function receberDoInstagram(
     await alertar(
       'o Instagram mandou um corpo que não encaixa no formato de mensagem',
       new Error(analise.error.issues.map((i) => `${i.path.join('.')}: ${i.message}`).join('; ')),
-      { corpo: JSON.stringify(payload).slice(0, 800) },
+      { corpo: formaDoCorpo(payload).slice(0, 800) },
     )
     return
   }
@@ -327,6 +327,21 @@ export async function receberDoInstagram(
   }
 
   if (tratadas === 0) {
-    console.error('[webhook instagram] corpo sem mensagem tratada', JSON.stringify(payload))
+    console.error('[webhook instagram] corpo sem mensagem tratada', formaDoCorpo(payload))
   }
+}
+
+/**
+ * O formato do corpo, sem o conteúdo.
+ *
+ * Para diagnosticar "chegou algo que não soubemos ler" basta saber quais campos
+ * vieram. O valor não ajuda e é justamente o que não pode sair daqui: o texto
+ * da DM é conversa do cliente do nosso cliente, e este resumo vai para o log da
+ * Vercel, para `alertas` e para o webhook de alerta (Discord). Todo texto vira
+ * o tamanho dele; só `object` e `field`, que são o tipo do evento, ficam.
+ */
+function formaDoCorpo(payload: unknown): string {
+  return JSON.stringify(payload, (chave, valor) =>
+    typeof valor === 'string' && chave !== 'object' && chave !== 'field' ? `<texto ${valor.length}>` : valor,
+  )
 }
