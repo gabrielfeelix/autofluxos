@@ -418,6 +418,16 @@ export type ResultadoDaTransmissao = {
  * tier de 2.000 não é um erro a descobrir na mensagem 2.001: é uma campanha
  * que leva 3 dias, e a pessoa tem o direito de saber disso na hora de agendar.
  */
+/**
+ * O teto de 24 h vem da tela (a Meta não o expõe por API), então só vale se for
+ * um dos degraus que a Meta usa. Qualquer outro número, inclusive um forjado
+ * para passar do teto, cai no degrau de entrada.
+ */
+const DEGRAUS_DA_META = [250, 1_000, 10_000, 100_000]
+function degrauDaMeta(valor: number | undefined): number {
+  return typeof valor === 'number' && DEGRAUS_DA_META.includes(valor) ? valor : 250
+}
+
 export async function acaoCriarTransmissao(
   clienteId: string,
   dados: {
@@ -449,7 +459,7 @@ export async function acaoCriarTransmissao(
     publico: dados.contatoIds.length,
     // 250 é o degrau de quem está começando, e é onde a maioria fica: só sobe
     // quem usa 50% do limite em 7 dias.
-    limiteDiario: dados.limiteDiario ?? 250,
+    limiteDiario: degrauDaMeta(dados.limiteDiario),
     // Recontado aqui, e não aceito da tela: entre abrir a prévia e clicar,
     // outra pessoa da equipe pode ter mandado uma transmissão.
     jaEnviadasHoje: saiNoDiaDeHoje(dados.quando) ? await enviadasHojePelaConta(clienteId) : 0,
