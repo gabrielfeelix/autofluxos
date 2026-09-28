@@ -320,6 +320,20 @@ extração explícito para os objetos de `public`.
   `public` com **75** tabelas; **8** contas, **0** com frente. Data API depois
   do `notify`: `clients?select=nicho` **200** com a chave secreta;
   `app_verandi.conta` **200**.
+- **a `0111` foi aplicada em 28/set/2026** (P5 do `PLANO-SEGURANCA-2026-09-28.md`),
+  com autorização explícita do dono, pela Management API. Cria o papel
+  `autofluxos_login` (sem `bypassrls`, sem superusuário), com grant e política
+  de RLS própria só em `af_usuarios`, `af_sessoes`, `af_contas`,
+  `af_verificacoes`, `af_membros`, `af_convites`, `clients` (tudo) e
+  `funcoes`, `planos`, `membro_capacidades` (leitura). Senha fora do git, em
+  `.secrets/4yu.env` (`AUTOFLUXOS_LOGIN_DB_PASSWORD`); o `DATABASE_URL` da
+  Vercel passou a usar este papel, e o valor anterior ficou no cofre
+  (`AUTOFLUXOS_DATABASE_URL_ANTIGO`) para desfazer. Ensaio em transação contra
+  a produção antes: leu as 10 tabelas; recusado em `contacts`, `af_auditoria`,
+  `connections`, `messages`, `app_verandi` e `vault`. Conexão real pelo pooler
+  conferida depois. Verandi antes e depois: **35** migrations, **40** tabelas,
+  **16** policies de `storage.objects`; `public` com **75** tabelas; `anon` e
+  `authenticated` seguem sem acesso.
 - **a `0104` foi aplicada em 25/set/2026** (franquia de mensagens de serviço da
   Meta, que passa a ser cobrada em 1/out/2026), com autorização explícita do
   dono, pela Management API. Aditiva: só a tabela `public.consumo_da_meta`
