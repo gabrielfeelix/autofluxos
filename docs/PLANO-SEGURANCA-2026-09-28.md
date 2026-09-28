@@ -200,3 +200,36 @@ O que precisa de decisão sua, além de aprovar: **o número do teto de IA por
 plano** (P2). Proposta, se não quiser pensar nisso agora: Essencial 1.500
 respostas de IA por mês, os outros planos em proporção ao preço, e o
 excedente segue a regra de preço que já existe em `planos.preco_excedente`.
+
+---
+
+## 5. Execução de 28/set (aprovado pelo Gabriel no mesmo dia)
+
+Um push só, `6618b1d..138a020`. Build, tsc e os testes vizinhos (399) passam.
+
+| Item | Estado | Commit |
+|---|---|---|
+| P2 teto de IA | **feito**: 40 respostas por contato em 24 h por padrão; teto por conta em 30 dias (5 por real de mensalidade, piso 1.500), com alerta diário; vitrine com 200 por dia por link | `7c2324d` |
+| P3 admin | **em parte**: sessão de admin morre 24 h após o login; "entrar como" pede login das últimas 12 h. **TOTP não feito** (ver pendências) | `ec437cb` |
+| Senha vazada (NIST) | **feito**, fora do plano original: plugin `haveIBeenPwned` | `d225ce4` |
+| P5 papel do login | **migration escrita e ensaiada no local, não aplicada** | `138a020` |
+| P6 segredos e repositório | **feito no código e no GitHub**: estado OAuth com chave derivada (HKDF, também o P13), `PAINEL_SEGREDO` fora do código, Dependabot com cooldown, alertas e correções do Dependabot ligados, ruleset `main protegido` (sem force push, sem apagar). Painel da Vercel não mexido | `294e1fd` |
+| P7 incidente | **feito**: `docs/INCIDENTE.md`; login e senha errada na auditoria; IP e navegador em toda linha | `46bf1fc` |
+| P8 conferências | **em parte**: HSTS e cláusula de 24 h nos Termos feitos. Gemini não mexido, por decisão do Gabriel | `bb3589b` |
+| P14 miúdos | **feito**: teto de 1 MB nos webhooks da Meta, token de verificação em tempo constante, simulador sem `issues`, teto de 24 h da transmissão só nos degraus da Meta | `133dcc4`, `d02afc0` |
+
+### Pendências
+
+**Do Gabriel, em painel (cerca de 1 h):**
+
+1. **MFA** (app autenticador, não SMS) em: [GitHub](https://github.com/settings/security), [Vercel](https://vercel.com/account/settings/authentication), [Supabase](https://supabase.com/dashboard/account/security), [Meta Business](https://business.facebook.com/settings/security), [Google](https://myaccount.google.com/signinoptions/two-step-verification), Hostinger (painel > Segurança). Conferir também as sessões abertas e os apps autorizados em cada um.
+2. **Supabase Pro** (US$ 25/mês, backup diário de 7 dias): [billing da organização](https://supabase.com/dashboard/org/_/billing). Depois, ligar "Require MFA" na organização.
+3. **Vercel**: apagar `PAINEL_SEGREDO` e `PAINEL_SENHA`; recriar como **Sensitive** `BETTER_AUTH_SECRET`, `DATABASE_URL`, `GEMINI_API_KEY` e `CRON_SECRET` (é rotação: trocar o `BETTER_AUTH_SECRET` derruba todos os logins, então fazer fora do horário da MGM). [Variáveis do projeto](https://vercel.com/4-yu/autofluxos/settings/environment-variables). Opcional: Vercel Pro (US$ 20/mês), termos do Hobby restringem uso comercial.
+4. **Contradição a resolver:** os Termos dizem "não treinamos modelos de IA com eles", e o nível gratuito da API do Gemini permite ao Google usar o conteúdo ([termos](https://ai.google.dev/gemini-api/terms)). Ou a chave ganha faturamento (o uso segue gratuito dentro da cota, o que muda é o termo), ou o texto dos Termos muda. As IAs gratuitas ficam ligadas até lá, por decisão do Gabriel.
+
+**Precisam de autorização explícita para produção:**
+
+5. **Aplicar a 0111** e trocar o `DATABASE_URL` para o papel `autofluxos_login`. Antes: testar login ponta a ponta no local com o papel; senha nova vai para `.secrets/4yu.env`.
+6. **TOTP para o admin da plataforma** (plugin `twoFactor`): pede migration (coluna `twoFactorEnabled` em `af_usuarios` e tabela de segredo), tela de ativação com QR, passo do código no login e obrigatoriedade para admin. Cerca de 1 dia. Fazer em sessão nova, com a migration autorizada antes do push, porque o plugin sem a tabela derruba o login.
+
+**Próximos do plano, ainda não feitos:** P10 (teste de invasão dinâmico no local), P11 (esqueci a senha e confirmação de e-mail pelo Brevo), P12 (MFA para todo usuário, reusa o P3), P15 e P16.
