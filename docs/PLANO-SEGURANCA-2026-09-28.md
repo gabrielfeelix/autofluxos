@@ -238,8 +238,8 @@ Um push só, `6618b1d..138a020`. Build, tsc e os testes vizinhos (399) passam.
   "menores" (#1 a #3, inclui `better-auth` 1.7.5). Fechados com motivo:
   TypeScript 7 (#6, typescript-eslint recusa), ESLint 10 e `@eslint/js` 10
   (#5, #7, eslint-plugin-react quebra), Vitest 5 (#8). As três majors estão no
-  `ignore` do `dependabot.yml` (`3cabb32`). Zod 4 (#9): o único erro de tipo
-  foi consertado (`be445a2`), falta o CI dele depois do rebase.
+  `ignore` do `dependabot.yml` (`3cabb32`). Zod 4 (#9) entrou depois de dois
+  consertos compatíveis com as duas versões (`be445a2`, `84c87a1`).
 - **P11 feito no código** (`d0d8d8f`): "Esqueci a senha" e confirmação de
   e-mail pelo Brevo, remetente `nao-responda@autofluxos.mail.4yu.com.br`.
   Domínio e remetente criados no Brevo; `BREVO_API_KEY` (sensitive) e
