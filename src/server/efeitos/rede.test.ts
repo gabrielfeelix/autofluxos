@@ -115,6 +115,37 @@ describe('ehInterno', () => {
   it('aceita endereço público comum', () => {
     expect(ehInterno('8.8.8.8')).toBe(false)
     expect(ehInterno('93.184.216.34')).toBe(false)
+    expect(ehInterno('2606:4700::1111')).toBe(false)
+    expect(ehInterno('::ffff:8.8.8.8')).toBe(false)
+    expect(ehInterno('64:ff9b::808:808')).toBe(false)
+  })
+
+  // Achado do teste de invasão de 28/set/2026: todas estas passavam por
+  // externas. Cada uma é um IPv4 interno escrito em IPv6, ou uma faixa IPv6
+  // que não é da internet.
+  it.each([
+    '::1',
+    '0:0:0:0:0:0:0:1',
+    '::',
+    '::127.0.0.1',
+    '::7f00:1',
+    '::ffff:7f00:1',
+    '::ffff:a9fe:a9fe',
+    '::ffff:0:127.0.0.1',
+    '64:ff9b::7f00:1',
+    '64:ff9b::a9fe:a9fe',
+    '2002:7f00:1::1',
+    '2002:c0a8:101::1',
+    'fc00::1',
+    'fd12:3456::1',
+    'fe80::1%eth0',
+    'fec0::1',
+    'ff02::1',
+    ':::1',
+    '1::2::3',
+    'g::1',
+  ])('recusa %s', (ip) => {
+    expect(ehInterno(ip)).toBe(true)
   })
 })
 

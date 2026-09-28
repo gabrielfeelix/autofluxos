@@ -134,8 +134,50 @@ export function ehInterno(endereco: string): boolean {
 }
 
 function ehIpv6Interno(endereco: string): boolean {
-  const semZona = endereco.split('%')[0] ?? ''
-  if (semZona === '::' || semZona === '::1') return true
-  // fc00::/7 (único local) e fe80::/10 (link-local).
-  return /^f[cd]/.test(semZona) || /^fe[89ab]/.test(semZona)
+  const grupos = expandirIpv6(endereco.split('%')[0] ?? '')
+  // Forma que não se sabe ler: recusa, como no IPv4.
+  if (!grupos) return true
+
+  const [g0, g1, g2, g3, g4, g5, g6, g7] = grupos as [number, number, number, number, number, number, number, number]
+  const ipv4 = (alto: number, baixo: number) => `${alto >> 8}.${alto & 0xff}.${baixo >> 8}.${baixo & 0xff}`
+
+  // Um IPv4 escondido dentro do IPv6 vale o que o IPv4 vale. Sem isso,
+  // `::ffff:7f00:1`, `::7f00:1` (compatível, obsoleto), `64:ff9b::7f00:1`
+  // (NAT64) e `2002:7f00:1::` (6to4) passavam por externos.
+  if (g0 === 0 && g1 === 0 && g2 === 0 && g3 === 0 && g4 === 0) {
+    if (g5 === 0xffff || g5 === 0) {
+      if (g5 === 0 && g6 === 0 && (g7 === 0 || g7 === 1)) return true // :: e ::1
+      return ehInterno(ipv4(g6, g7))
+    }
+  }
+  if (g0 === 0 && g1 === 0 && g2 === 0 && g3 === 0 && g4 === 0xffff && g5 === 0) return ehInterno(ipv4(g6, g7))
+  if (g0 === 0x64 && g1 === 0xff9b) return ehInterno(ipv4(g6, g7))
+  if (g0 === 0x2002) return ehInterno(ipv4(g1, g2))
+
+  if ((g0 & 0xfe00) === 0xfc00) return true // fc00::/7, único local
+  if ((g0 & 0xffc0) === 0xfe80) return true // fe80::/10, link-local
+  if ((g0 & 0xffc0) === 0xfec0) return true // fec0::/10, site-local (obsoleto)
+  if ((g0 & 0xff00) === 0xff00) return true // ff00::/8, multicast
+  return false
+}
+
+/** Os 8 grupos de 16 bits de um IPv6, aceitando `::` e IPv4 no fim. `null` se não é IPv6. */
+function expandirIpv6(texto: string): number[] | null {
+  let s = texto.trim().toLowerCase()
+  const final = s.match(/^(.*:)(\d{1,3}(?:\.\d{1,3}){3})$/)
+  if (final?.[1] && final[2]) {
+    const n = final[2].split('.').map(Number)
+    if (n.some((x) => x > 255)) return null
+    s = `${final[1]}${((n[0]! << 8) | n[1]!).toString(16)}:${((n[2]! << 8) | n[3]!).toString(16)}`
+  }
+  const metades = s.split('::')
+  if (metades.length > 2) return null
+  const ler = (parte: string) => (parte === '' ? [] : parte.split(':'))
+  const esquerda = ler(metades[0] ?? '')
+  const direita = metades.length === 2 ? ler(metades[1] ?? '') : []
+  const faltam = 8 - esquerda.length - direita.length
+  if (metades.length === 2 ? faltam < 1 : faltam !== 0) return null
+  const todos = [...esquerda, ...Array(Math.max(faltam, 0)).fill('0'), ...direita]
+  if (todos.some((g) => !/^[0-9a-f]{1,4}$/.test(g))) return null
+  return todos.map((g) => parseInt(g, 16))
 }
