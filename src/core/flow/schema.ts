@@ -1189,16 +1189,7 @@ export function perguntaEhDinamica(no: NoPergunta): boolean {
   return (no.data.opcoesDe ?? '').trim() !== ''
 }
 
-/**
- * Os itens de uma variável que carrega lista.
- *
- * Separador `;` ou quebra de linha, que é o formato que sobrevive a `vars` ser
- * `Record<string, string>`. Guardar JSON numa string ali mentiria sobre o tipo;
- * separador não mente, só combina.
- */
-export function itensDaLista(valor: string): string[] {
-  return valor
-    .split(/[;\n]/)
-    .map((item) => item.trim())
-    .filter((item) => item !== '')
-}
+// Mora em `lista.ts`, sem dependência nenhuma: `formatos.ts` precisa dela, e
+// importar daqui fechava um ciclo com `FORMATOS_DE_SAIDA` que o zod 4 não
+// perdoa (o `z.enum` lê a lista na hora, e ela chegava `undefined`).
+export { itensDaLista } from './lista'

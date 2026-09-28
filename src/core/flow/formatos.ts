@@ -1,4 +1,4 @@
-import { itensDaLista } from './schema'
+import { itensDaLista } from './lista'
 
 /**
  * Como o valor que veio de um sistema aparece na conversa.
