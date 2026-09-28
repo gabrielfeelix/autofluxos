@@ -12,7 +12,7 @@ import {
   TETO_DO_SIMULADOR,
 } from '@/server/limite'
 import { acharFluxo, acharVersao } from '@/server/repos/fluxos'
-import { conferirAcessoAoCliente } from '@/server/sessao'
+import { conferirAcessoAoCliente, sessaoAtual } from '@/server/sessao'
 
 /**
  * Roda o motor sem WhatsApp nenhum.
@@ -64,6 +64,18 @@ const corpoSchema = z.object({
 })
 
 export async function POST(req: Request) {
+  /**
+   * **Sessão de verdade, e não só a presença do cookie.**
+   *
+   * O `proxy.ts` deixa passar qualquer requisição que traga um cookie com o
+   * nome certo, e o valor pode ser inventado: ele não vai ao banco. Até a
+   * auditoria de 28/set/2026 esta rota não conferia mais nada, e um POST sem
+   * `fluxoId` com `iaHabilitada: true` rodava a IA **com a chave da 4YU** para
+   * qualquer um na internet, 60 vezes por minuto por IP.
+   */
+  const quem = await sessaoAtual()
+  if (!quem) return Response.json({ erro: 'entre no painel para testar' }, { status: 401 })
+
   const tamanhoDeclarado = Number(req.headers.get('content-length') ?? '0')
   if (Number.isFinite(tamanhoDeclarado) && tamanhoDeclarado > LIMITE_DO_CORPO_EM_BYTES) {
     return Response.json({ erro: 'corpo excede 256 KB' }, { status: 413 })
@@ -137,7 +149,10 @@ export async function POST(req: Request) {
     return Response.json({ erro: 'não achei essa automação' }, { status: 404 })
   }
 
-  const { modelo } = await escolherModelo({ iaHabilitada, clienteId })
+  // IA só com dono: sem uma automação de uma conta a que a pessoa tem acesso,
+  // não há plano para conferir nem conta para atribuir o gasto, e o teste
+  // roda sem IA, como roda o fluxo de quem não a contratou.
+  const { modelo } = await escolherModelo({ iaHabilitada: iaHabilitada && Boolean(clienteId), clienteId })
 
   return Response.json(
     await executarComEfeitos(fluxo, sessao, entrada, {
