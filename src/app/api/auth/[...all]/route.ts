@@ -1,31 +1,38 @@
-import { autenticacao } from '@/server/auth'
-
 /**
- * A porta do Better Auth: `/api/auth/*`.
+ * A porta HTTP do Better Auth, `/api/auth/*`: **fechada de propósito.**
  *
- * Tudo que o login faz passa por aqui, entrar, sair, criar conta, trocar de
- * companhia, entrar como outra pessoa. A biblioteca resolve o caminho depois
- * do prefixo sozinha; o `[...all]` só entrega a requisição inteira para ela.
+ * Nenhuma tela deste painel fala com o Better Auth por HTTP. Entrar, sair,
+ * cadastrar, criar conta, adicionar membro e entrar como outra pessoa são
+ * Server Actions que chamam `autenticacao().api.*` no servidor
+ * (`acoes-conta.ts`, `acoes-pessoas.ts`, `acoes-admin.ts`), e a sessão é lida
+ * com `getSession` no servidor. O cookie continua sendo gravado pelo plugin
+ * `nextCookies`, que age dentro da Server Action e não precisa desta rota.
  *
- * **Por que não `toNextJsHandler(autenticacao())`**, que é o atalho da
- * biblioteca: ele quer a instância **agora**, no corpo do módulo, e construir a
- * instância abre o pool do Postgres. O `npm run build` do CI roda sem
- * `DATABASE_URL` (o repositório é público e não guarda segredo), e o import
- * deste arquivo derrubaria o build inteiro antes de qualquer requisição
- * existir. Chamar `autenticacao()` **dentro** de cada método adia isso para o
- * primeiro acesso de verdade, que é onde a falta da variável precisa aparecer.
+ * **Por que fechar em vez de deixar como estava** (auditoria de 28/set/2026):
+ * com o `handler` inteiro exposto, cada endpoint da biblioteca virava uma
+ * segunda porta ao lado da nossa, e a segunda porta não tem nenhuma das regras
+ * da primeira:
  *
- * O que `toNextJsHandler` faz de resto é exatamente isto: repassar `request`
- * para `auth.handler`. Os cinco verbos existem porque plugin pode registrar
- * endpoint em qualquer um deles, e um 405 aqui apareceria como "o login parou
- * de funcionar" sem dizer por quê.
+ * - `POST /api/auth/sign-in/email` fazia login **sem** o `consumirLimite` de
+ *   `acaoEntrar`. O limitador da biblioteca guarda contagem em memória, e na
+ *   Vercel cada instância nasce zerada: força bruta de senha sem teto real.
+ * - `POST /api/auth/sign-up/email` cadastrava sem o limite de `acaoCadastrarSe`.
+ * - `POST /api/auth/organization/create` inseria linha em `clients` sem passar
+ *   pelo plano, e `organization/delete`, `update-member-role` e
+ *   `remove-member` mexiam em conta e papel sem a conferência de suspensão e
+ *   de papel que `sessao.ts` faz.
+ *
+ * Se um dia uma tela precisar de um endpoint daqui (login social, por exemplo,
+ * que exige callback HTTP), ele entra numa lista explícita e com o mesmo
+ * limitador das Server Actions. Abrir o `handler` inteiro de novo é reabrir
+ * todas as portas acima de uma vez.
  */
-function responder(request: Request): Promise<Response> {
-  return autenticacao().handler(request)
+function fechada(): Response {
+  return new Response(null, { status: 404 })
 }
 
-export const GET = responder
-export const POST = responder
-export const PUT = responder
-export const PATCH = responder
-export const DELETE = responder
+export const GET = fechada
+export const POST = fechada
+export const PUT = fechada
+export const PATCH = fechada
+export const DELETE = fechada

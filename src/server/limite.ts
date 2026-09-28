@@ -19,6 +19,10 @@ export const JANELA_DE_TENTATIVAS_SEGUNDOS = 5 * 60
  * ininterruptas) e continua barrando script: a rota dispara IA e chamada de API
  * de verdade, então ela não pode ficar sem teto nenhum.
  */
+/** Tentativas de login numa mesma conta, somando todos os IPs. Ver `acaoEntrar`. */
+export const TETO_DE_LOGIN_POR_CONTA = 10
+export const JANELA_DE_LOGIN_POR_CONTA_SEGUNDOS = 15 * 60
+
 export const TETO_DO_SIMULADOR = 60
 export const JANELA_DO_SIMULADOR_SEGUNDOS = 60
 

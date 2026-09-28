@@ -4,7 +4,7 @@ import { revalidatePath } from 'next/cache'
 import { headers } from 'next/headers'
 import { redirect } from 'next/navigation'
 import { autenticacao, bancoDoLogin } from './auth'
-import { chaveDeLimite, consumirLimite } from './limite'
+import { chaveDeLimite, consumirLimite, JANELA_DE_LOGIN_POR_CONTA_SEGUNDOS, TETO_DE_LOGIN_POR_CONTA } from './limite'
 import { registrar } from './repos/auditoria'
 import {
   acharCliente,
@@ -88,6 +88,17 @@ export async function acaoEntrar(
 
   const cabecalhos = await headers()
   if (!(await consumirLimite(chaveDeLimite('login', cabecalhos)))) {
+    return { erro: 'Muitas tentativas, espere alguns minutos antes de tentar novamente.', email }
+  }
+  /*
+   * O teto por IP não segura quem ataca **uma** conta a partir de muitos
+   * endereços (rede de proxies, botnet): cada IP gasta 5 tentativas e passa a
+   * vez. Este é o teto da conta, qualquer que seja a origem. Ele é mais largo
+   * que o do IP para que a própria dona, errando a senha no celular e no
+   * computador, não se tranque, e curto o bastante para que adivinhar uma
+   * senha de 10 caracteres vire trabalho de séculos.
+   */
+  if (!(await consumirLimite(`login-conta:${email.toLowerCase()}`, TETO_DE_LOGIN_POR_CONTA, JANELA_DE_LOGIN_POR_CONTA_SEGUNDOS))) {
     return { erro: 'Muitas tentativas, espere alguns minutos antes de tentar novamente.', email }
   }
 
