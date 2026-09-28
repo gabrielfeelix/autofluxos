@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { ehAdminDaPlataforma, sessaoFresca, type SessaoAtual } from './sessao'
+import { CARENCIA_PARA_CONFIRMAR_MS, CONFIRMACAO_VALE_DESDE, ehAdminDaPlataforma, faltaConfirmarEmail, sessaoFresca, type SessaoAtual } from './sessao'
 
 /**
  * O papel de plataforma vem como **lista separada por vírgula**, é o formato
@@ -78,5 +78,32 @@ describe('admin sem verificação em duas etapas', () => {
     const sessao = sessaoCom('admin')
     sessao.usuario.duasEtapas = false
     expect(ehAdminDaPlataforma(sessao)).toBe(false)
+  })
+})
+
+describe('faltaConfirmarEmail', () => {
+  const corte = CONFIRMACAO_VALE_DESDE.getTime()
+  const dia = 24 * 60 * 60 * 1000
+
+  it('conta de antes do corte nunca é cobrada', () => {
+    expect(faltaConfirmarEmail({ emailVerified: false, createdAt: new Date(corte - dia) }, corte + 30 * dia)).toBe(false)
+  })
+
+  it('conta nova entra durante a carência', () => {
+    expect(faltaConfirmarEmail({ emailVerified: false, createdAt: new Date(corte + dia) }, corte + 2 * dia)).toBe(false)
+  })
+
+  it('conta nova sem confirmar é barrada depois da carência', () => {
+    const criada = corte + dia
+    expect(faltaConfirmarEmail({ emailVerified: false, createdAt: new Date(criada) }, criada + CARENCIA_PARA_CONFIRMAR_MS + 1)).toBe(true)
+  })
+
+  it('confirmado passa sempre', () => {
+    expect(faltaConfirmarEmail({ emailVerified: true, createdAt: new Date(corte + dia) }, corte + 30 * dia)).toBe(false)
+  })
+
+  it('aceita a data como texto, como vem do banco', () => {
+    const criada = new Date(corte + dia).toISOString()
+    expect(faltaConfirmarEmail({ emailVerified: null, createdAt: criada }, corte + 10 * dia)).toBe(true)
   })
 })

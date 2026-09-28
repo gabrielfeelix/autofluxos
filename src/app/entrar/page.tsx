@@ -19,14 +19,18 @@ export const dynamic = 'force-dynamic'
  * conferência é só de presença do cookie, e um cookie vencido viraria laço ,
  * a raiz confere de verdade, não encontra sessão e devolve para cá.
  */
-export default async function Entrar() {
+export default async function Entrar({ searchParams }: PageProps<'/entrar'>) {
   const sessao = await sessaoAtual()
   if (sessao) redirect(await destinoAposEntrar(sessao))
 
   return (
     <Portico
       titulo="Entrar"
-      descricao="Sua conta do AutoFluxos."
+      descricao={
+        (await searchParams).senha === 'nova'
+          ? 'Senha nova salva. Entre com ela.'
+          : 'Sua conta do AutoFluxos.'
+      }
       rodape={
         <>
           <p>
@@ -39,8 +43,12 @@ export default async function Entrar() {
             </Link>
           </p>
           <p className="mt-2">
-            Não existe recuperação por e-mail ainda, ela depende de SMTP, que é
-            compartilhado com outro produto. Peça uma senha nova a quem administra o painel.
+            <Link
+              href="/esqueci-senha"
+              className="text-muted underline underline-offset-2 transition hover:text-primary"
+            >
+              Esqueci a senha
+            </Link>
           </p>
         </>
       }

@@ -68,6 +68,28 @@ export const VIDA_DA_SESSAO_DE_ADMIN_MS = 24 * 60 * 60 * 1_000
  */
 export const FRESCOR_PARA_ENTRAR_COMO_MS = 12 * 60 * 60 * 1_000
 
+/**
+ * A confirmação de e-mail vale para conta criada a partir daqui.
+ *
+ * Os usuários de antes nunca confirmaram e-mail nenhum (não havia envio), e
+ * cobrar deles trancaria todo mundo de uma vez. Por isso a regra não é o
+ * `requireEmailVerification` da biblioteca, que não distingue.
+ */
+export const CONFIRMACAO_VALE_DESDE = new Date('2026-09-28T21:00:00Z')
+
+/** Três dias para confirmar: dá para usar o painel logo depois do cadastro. */
+export const CARENCIA_PARA_CONFIRMAR_MS = 3 * 24 * 60 * 60 * 1_000
+
+/** Conta nova, sem e-mail confirmado, e a carência acabou. */
+export function faltaConfirmarEmail(
+  usuario: { emailVerified?: boolean | null; createdAt?: Date | string | null },
+  agora = Date.now(),
+): boolean {
+  if (usuario.emailVerified || !usuario.createdAt) return false
+  const criadoEm = new Date(usuario.createdAt).getTime()
+  return criadoEm >= CONFIRMACAO_VALE_DESDE.getTime() && agora - criadoEm > CARENCIA_PARA_CONFIRMAR_MS
+}
+
 /** A sessão começou há menos de `janelaMs`? Sem data conhecida, não. */
 export function sessaoFresca(sessao: SessaoAtual, janelaMs: number, agora = Date.now()): boolean {
   if (!sessao.iniciadaEm) return false
@@ -118,6 +140,13 @@ export async function sessaoAtual(): Promise<SessaoAtual | null> {
       },
       contaAtivaId: session.activeOrganizationId ?? null,
       impersonadoPor: session.impersonatedBy ?? null,
+    }
+
+    // Conta nova que não confirmou o e-mail na carência: sai, e a tela de
+    // entrar manda o link de novo.
+    if (!sessao.impersonadoPor && faltaConfirmarEmail(user)) {
+      await encerrarSessao(session.id)
+      return null
     }
 
     // Sessão de admin passou de um dia: morre aqui, e a pessoa entra de novo.

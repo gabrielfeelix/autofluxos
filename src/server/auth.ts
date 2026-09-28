@@ -1,8 +1,11 @@
 import 'server-only'
 import { betterAuth } from 'better-auth'
+import { after } from 'next/server'
 import { nextCookies } from 'better-auth/next-js'
 import { admin, haveIBeenPwned, organization, twoFactor } from 'better-auth/plugins'
 import { Pool } from 'pg'
+import { enviarConfirmacaoDeEmail, enviarRedefinicaoDeSenha } from './email'
+import { registrar } from './repos/auditoria'
 
 /**
  * Login por usuário.
@@ -96,11 +99,51 @@ function montar() {
 
     emailAndPassword: {
       enabled: true,
-      // Ligar verificação por e-mail exige SMTP, que é **global ao projeto
-      // compartilhado**. Fica para quando o convite existir, e aí avaliado nos
-      // dois produtos (ver BANCO-COMPARTILHADO.md).
+      /*
+       * **Fica desligado, e a confirmação é cobrada por nós** (`sessaoAtual`).
+       *
+       * Ligado, a biblioteca recusaria o login de todo e-mail não confirmado, e
+       * os usuários de antes da confirmação existir nunca confirmaram nenhum:
+       * trancaria todo mundo de uma vez. A regra nossa vale só para conta
+       * criada depois de `CONFIRMACAO_VALE_DESDE`, com carência.
+       */
       requireEmailVerification: false,
       minPasswordLength: 10,
+
+      /*
+       * "Esqueci a senha".
+       *
+       * O `url` que a biblioteca monta aponta para `/api/auth/reset-password`,
+       * e essa rota está fechada (404, `99333a4`). O link do e-mail leva o
+       * token para uma página nossa, que chama `resetPassword` numa Server
+       * Action.
+       *
+       * O envio vai para `after()`: a resposta sai antes do e-mail. Esperar o
+       * Brevo aqui faria o pedido de um e-mail que existe demorar mais que o de
+       * um que não existe, e o tempo de resposta contaria quem tem conta.
+       */
+      sendResetPassword: async ({ user, token }) => {
+        after(() => enviarRedefinicaoDeSenha({ email: user.email, nome: user.name }, token))
+      },
+      // Uma hora, o padrão, dito em voz alta: o e-mail promete esse prazo.
+      resetPasswordTokenExpiresIn: 60 * 60,
+      // Trocou a senha porque desconfia de alguém: quem estava dentro sai.
+      revokeSessionsOnPasswordReset: true,
+      onPasswordReset: async ({ user }) => {
+        await registrar({ acao: 'redefiniu_senha', autorId: user.id, autorEmail: user.email, alvoTipo: 'usuario', alvoId: user.id })
+      },
+    },
+
+    emailVerification: {
+      // Só no cadastro. No login, quem precisa confirmar recebe o link pela
+      // ação de entrar, que decide com a regra da carência.
+      sendOnSignUp: true,
+      sendOnSignIn: false,
+      autoSignInAfterVerification: false,
+      expiresIn: 60 * 60 * 24,
+      sendVerificationEmail: async ({ user, token }) => {
+        after(() => enviarConfirmacaoDeEmail({ email: user.email, nome: user.name }, token))
+      },
     },
 
     /**

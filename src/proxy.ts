@@ -53,6 +53,14 @@ const PORTAS_ABERTAS = [
    */
   '/entrar/codigo',
   /**
+   * "Esqueci a senha" e confirmação de e-mail: por definição, quem chega aqui
+   * não tem sessão. Nenhuma das três lê dado sem o token do e-mail, e as ações
+   * têm limite por IP e por e-mail.
+   */
+  '/esqueci-senha',
+  '/redefinir-senha',
+  '/confirmar-email',
+  /**
    * O cadastro aberto ao público, a porta de quem chega pelo site.
    *
    * **`/primeiro-acesso` não entra nesta lista, e é de propósito.** Ele é o

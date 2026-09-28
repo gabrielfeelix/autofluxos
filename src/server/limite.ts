@@ -56,7 +56,7 @@ export const JANELA_DA_VITRINE_NO_DIA_SEGUNDOS = 24 * 60 * 60
  * ficam juntas e o comportamento continua seguro.
  */
 export function chaveDeLimite(
-  finalidade: 'login' | 'cadastro' | 'simular' | 'vitrine',
+  finalidade: 'login' | 'cadastro' | 'simular' | 'vitrine' | 'senha',
   cabecalhos: Headers,
 ): string {
   const encaminhado = cabecalhos.get('x-forwarded-for')?.split(',')[0]?.trim()

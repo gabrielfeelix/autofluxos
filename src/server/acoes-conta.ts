@@ -24,6 +24,7 @@ import {
   encerrarSessao,
   existeAlgumUsuario,
   exigirAdminDaPlataforma,
+  faltaConfirmarEmail,
   FRESCOR_PARA_ENTRAR_COMO_MS,
   sessaoAtual,
   sessaoFresca,
@@ -121,7 +122,21 @@ export async function acaoEntrar(
       pedeCodigo = true
       usuario = { id: '', nome: '', email, papelDePlataforma: null, banido: false }
     } else {
-      const u = (entrada as { user: { id: string; name: string; email: string; role?: string | null; banned?: boolean | null; twoFactorEnabled?: boolean | null } }).user
+      const { user: u, token } = entrada as {
+        token?: string
+        user: { id: string; name: string; email: string; role?: string | null; banned?: boolean | null; twoFactorEnabled?: boolean | null; emailVerified?: boolean | null; createdAt?: Date | string | null }
+      }
+      /*
+       * Conta nova que passou da carência sem confirmar o e-mail: a senha
+       * conferiu, mas a sessão que acabou de nascer morre aqui, e o link sai de
+       * novo. Só diz isso a quem acertou a senha, então não conta a ninguém
+       * de fora quem tem conta.
+       */
+      if (faltaConfirmarEmail(u)) {
+        if (token) await bancoDoLogin().query('delete from af_sessoes where token = $1', [token]).catch(() => {})
+        await autenticacao().api.sendVerificationEmail({ body: { email: u.email } }).catch(() => {})
+        return { erro: 'Falta confirmar o seu e-mail. Mandamos o link de novo, confira a caixa de entrada (e o spam).', email }
+      }
       usuario = {
         id: u.id,
         nome: u.name,
@@ -153,6 +168,75 @@ export async function acaoEntrar(
   // catch o engoliria e a tela responderia "credenciais não conferem" depois de
   // um login que deu certo.
   redirect(await destinoAposEntrar({ usuario, contaAtivaId: null, impersonadoPor: null }))
+}
+
+// ---------------------------------------------------------------------------
+// Esqueci a senha
+// ---------------------------------------------------------------------------
+
+export type EstadoDeRedefinicao = { erro?: string; enviado?: boolean; email?: string }
+
+/**
+ * Pede o link de redefinição.
+ *
+ * **A resposta é a mesma para e-mail que existe e que não existe** (OWASP
+ * Forgot Password), inclusive quando o limite estoura: dizer "muitas
+ * tentativas" só para quem tem conta seria contar quem tem conta. O e-mail sai
+ * em `after()` (ver `sendResetPassword` em `auth.ts`), então o tempo de
+ * resposta também não conta.
+ */
+export async function acaoPedirRedefinicao(
+  _estado: EstadoDeRedefinicao,
+  formData: FormData,
+): Promise<EstadoDeRedefinicao> {
+  const email = String(formData.get('email') ?? '').trim().toLowerCase().slice(0, 200)
+  if (!email.includes('@')) return { erro: 'Digite o e-mail da sua conta.', email }
+
+  const cabecalhos = await headers()
+  const porIp = await consumirLimite(chaveDeLimite('senha', cabecalhos), 5, 15 * 60)
+  const porEmail = porIp && (await consumirLimite(`senha-conta:${email}`, 3, 60 * 60))
+
+  if (porIp && porEmail) {
+    try {
+      await autenticacao().api.requestPasswordReset({ body: { email, redirectTo: '/redefinir-senha' }, headers: cabecalhos })
+    } catch (erro) {
+      console.error('[senha] pedido de redefinição falhou', motivo(erro))
+    }
+    await registrar({ acao: 'pediu_redefinicao', autorEmail: email, alvoTipo: 'usuario' })
+  }
+  return { enviado: true, email }
+}
+
+/**
+ * Troca a senha com o token do e-mail.
+ *
+ * O token é de uso único e vence em 1 hora (biblioteca). A senha nova passa
+ * pelo `haveIBeenPwned`, e as outras sessões caem
+ * (`revokeSessionsOnPasswordReset`). A auditoria sai do `onPasswordReset`.
+ */
+export async function acaoRedefinirSenha(
+  _estado: EstadoDeRedefinicao,
+  formData: FormData,
+): Promise<EstadoDeRedefinicao> {
+  const token = String(formData.get('token') ?? '')
+  const senha = String(formData.get('senha') ?? '')
+  const confirmacao = String(formData.get('confirmacao') ?? '')
+
+  const cabecalhos = await headers()
+  if (!(await consumirLimite(`redefinir:${chaveDeLimite('senha', cabecalhos)}`, 10, 15 * 60))) {
+    return { erro: 'Muitas tentativas, espere alguns minutos.' }
+  }
+  if (!token) return { erro: 'Este link está incompleto. Peça outro em "Esqueci a senha".' }
+  if (senha.length < 10) return { erro: 'A senha precisa de pelo menos 10 caracteres.' }
+  if (senha !== confirmacao) return { erro: 'As duas senhas não são iguais.' }
+
+  try {
+    await autenticacao().api.resetPassword({ body: { newPassword: senha, token }, headers: cabecalhos })
+  } catch (erro) {
+    if (ehSenhaVazada(erro)) return { erro: SENHA_VAZADA }
+    return { erro: 'Este link venceu ou já foi usado. Peça outro em "Esqueci a senha".' }
+  }
+  redirect('/entrar?senha=nova')
 }
 
 /**
