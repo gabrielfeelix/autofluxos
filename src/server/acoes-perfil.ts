@@ -99,8 +99,14 @@ export async function acaoTrocarSenha(
   if (nova === atual) return { ok: false, erro: 'a senha nova é igual à atual' }
 
   try {
+    /*
+     * `revokeOtherSessions: true`: quem troca a senha quase sempre desconfia
+     * de alguma coisa, e trocar a senha sem derrubar as outras sessões deixa
+     * um cookie roubado vivo por até 7 dias depois da troca. A sessão deste
+     * navegador continua; as dos outros aparelhos pedem login de novo.
+     */
     await autenticacao().api.changePassword({
-      body: { currentPassword: atual, newPassword: nova, revokeOtherSessions: false },
+      body: { currentPassword: atual, newPassword: nova, revokeOtherSessions: true },
       headers: await headers(),
     })
     return { ok: true }
