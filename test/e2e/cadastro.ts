@@ -33,11 +33,11 @@ export async function cadastrar(page: Page, quem: ReturnType<typeof identidade>)
   await page.getByRole('textbox', { name: 'Senha' }).fill(quem.senha)
   await page.getByRole('button', { name: /criar acesso|cadastrar/i }).click()
 
-  // Passo dois: a empresa. O cadastro tem dois passos de propósito, e a
-  // segunda tela só aparece para quem ainda não tem empresa nenhuma.
+  // Passo dois: a organização. O cadastro tem dois passos de propósito, e a
+  // segunda tela só aparece para quem ainda não tem organização nenhuma.
   await expect(page).toHaveURL(/\/primeiro-acesso/)
-  await page.getByRole('textbox', { name: 'Nome da empresa' }).fill(quem.empresa)
-  await page.getByRole('button', { name: /criar empresa/i }).click()
+  await page.getByRole('textbox', { name: 'Nome da organização' }).fill(quem.empresa)
+  await page.getByRole('button', { name: /criar organização/i }).click()
 
   await expect(page).toHaveURL(/\/clientes\/[0-9a-f-]{36}/, { timeout: 30_000 })
 
