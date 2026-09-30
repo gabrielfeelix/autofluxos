@@ -15,6 +15,11 @@
 //    handoff; na PCYES foram 7 desde 25/set, gente que só não tocou no menu.
 //    Sem prazo, quem voltar dias depois segue do ponto em que parou, e INICIO
 //    recomeça.
+// ATENÇÃO: `validar` abaixo recebe `iaHabilitada: true` para os quatro fluxos,
+// mas quem decide de verdade é `flows.ia_habilitada` no banco. Em 30/set o menu
+// foi publicado com a triagem e a coluna em false: "o fluxo pediu IA e não há
+// modelo disponível" e handoff no segundo texto do cliente. Ligar a coluna do
+// fluxo junto de publicar.
 import { readFileSync, writeFileSync } from 'node:fs'
 import { fluxoSchema } from '../../src/core/flow/schema'
 import { validar } from '../../src/core/flow/validar'

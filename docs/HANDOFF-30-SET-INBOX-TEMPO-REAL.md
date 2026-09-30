@@ -37,6 +37,17 @@ Aceite: abrir a Inbox em duas abas, mandar mensagem do celular para o número
 da PCYES e ver aparecer nas duas sem recarregar, com a aba mudando para "(1)"
 e voltando ao abrir. Testar e2e um spec por vez (memória: não derrubar a WSL).
 
+## Também urgente: várias mensagens seguidas
+
+A maioria dos clientes manda em rajada ("Olá boa tarde", "Tudo bem", "?").
+Hoje cada uma é uma rodada: a primeira abre o menu e as outras caem na triagem
+por cima do menu (Saraiva, 30/set 14:04). Proposta: juntar as mensagens que
+chegam em poucos segundos numa rodada só (esperar ~3 s de silêncio) e, com o
+menu recém-enviado, não responder cumprimento solto. Confirmar em conversa real.
+
+Em 30/set o menu foi publicado com a triagem e `flows.ia_habilitada` em false
+(corrigido às 14:1x); ver o aviso no topo de `scripts/fluxos/pcyes-triagem.mts`.
+
 ## Estado do bot da PCYES no fim do dia (tudo no ar, `bdffa46`)
 
 - Carrossel: frase da IA + cards numa mensagem (`src/core/juntar-cards.ts`).
