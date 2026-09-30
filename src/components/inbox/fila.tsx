@@ -201,6 +201,20 @@ export function Fila({
     return juntas;
   }, [naoLidasDoServidor, viva.naoLidas, selecionado]);
 
+  /*
+   * A linha clicada acende no clique, antes de a conversa chegar.
+   *
+   * Trocar de conversa segura a conversa anterior na tela até a nova vir (sem
+   * esqueleto, como o WhatsApp Web), e sem isto a linha só mudaria junto, o
+   * que parece "não clicou". Vale até o servidor confirmar a escolha.
+   */
+  const [abrindo, setAbrindo] = useState<string | null>(null);
+  const [abertaNoServidor, setAbertaNoServidor] = useState(selecionado?.contatoId ?? null);
+  if (abertaNoServidor !== (selecionado?.contatoId ?? null)) {
+    setAbertaNoServidor(selecionado?.contatoId ?? null);
+    setAbrindo(null);
+  }
+
   // Abriu, está lida; e continua lida ao sair (ver `zerarNaoLidaViva`).
   const abertaId = selecionado?.contatoId ?? null;
   useEffect(() => {
@@ -771,7 +785,7 @@ export function Fila({
           className="min-h-0 flex-1 overflow-y-auto py-1.5"
         >
           {naTela.map((lead) => {
-            const ativa = lead.contatoId === selecionado?.contatoId;
+            const ativa = lead.contatoId === (abrindo ?? selecionado?.contatoId);
             const nome = lead.nome ?? "sem nome";
             const semLer = semLerDe(lead.contatoId);
             const presa = fixadaEm(lead.contatoId) !== null;
@@ -806,6 +820,10 @@ export function Fila({
                 aria-current={ativa ? "page" : undefined}
                 scroll={false}
                 prefetch
+                onClick={(evento) => {
+                  if (evento.metaKey || evento.ctrlKey || evento.shiftKey || evento.button !== 0) return;
+                  setAbrindo(lead.contatoId);
+                }}
                 className="flex min-w-0 flex-1 items-start gap-3 rounded-[10px] px-3 py-2.5"
               >
                 <Avatar
@@ -832,13 +850,13 @@ export function Fila({
                       <span
                         aria-label="Conversa fixada"
                         title="Você fixou esta conversa"
-                        className="shrink-0 text-dim group-hover:opacity-0"
+                        className="shrink-0 text-dim group-hover:opacity-0 group-has-focus-visible:opacity-0"
                       >
                         <Alfinete preso />
                       </span>
                     )}
                     <small
-                      className={`shrink-0 text-[12px] group-hover:opacity-0 ${semLer > 0 ? "font-semibold text-primary" : "text-muted"}`}
+                      className={`shrink-0 text-[12px] group-hover:opacity-0 group-has-focus-visible:opacity-0 ${semLer > 0 ? "font-semibold text-primary" : "text-muted"}`}
                     >
                       {lead.ultimaEm ? quando(lead.ultimaEm) : ""}
                     </small>
@@ -946,16 +964,22 @@ export function Fila({
                 exato momento em que a pessoa está correndo o olho pela lista.
                 É o que o WhatsApp faz com o `v` que aparece ao passar o mouse.
 
-                `opacity-0` com `group-hover` e `focus-within`, e não
+                `opacity-0` com `group-hover` e foco de teclado, e não
                 `hidden`: quem chega por teclado precisa achar o botão no Tab, e
                 um elemento que não existe no DOM não recebe foco.
+
+                Foco de teclado (`has-focus-visible`), não `focus-within`: o
+                clique deixa o link da linha focado, e com `focus-within` os
+                botões ficavam acesos por cima do horário na conversa aberta
+                depois que o mouse saía (30/set/2026). O horário some pela
+                mesma regra, então os dois nunca aparecem juntos.
 
                 No toque não existe hover (o `group-hover` do Tailwind só vale
                 com `hover: hover`), então com ponteiro grosso os botões saem
                 do canto sobreposto e viram uma coluna fixa à direita da linha,
                 sempre visível e com alvo de 32 px. O horário continua no lugar.
               */}
-              <span className="pointer-events-none absolute top-3 right-3 flex items-center gap-0.5 opacity-0 transition group-focus-within:pointer-events-auto group-focus-within:opacity-100 group-hover:pointer-events-auto group-hover:opacity-100 pointer-coarse:pointer-events-auto pointer-coarse:static pointer-coarse:flex-col pointer-coarse:gap-1 pointer-coarse:py-2 pointer-coarse:pr-1 pointer-coarse:opacity-100">
+              <span className="pointer-events-none absolute top-3 right-3 flex items-center gap-0.5 opacity-0 transition group-has-focus-visible:pointer-events-auto group-has-focus-visible:opacity-100 group-hover:pointer-events-auto group-hover:opacity-100 pointer-coarse:pointer-events-auto pointer-coarse:static pointer-coarse:flex-col pointer-coarse:gap-1 pointer-coarse:py-2 pointer-coarse:pr-1 pointer-coarse:opacity-100">
                 <BotaoDaLinha
                   rotulo={presa ? `Soltar ${nome} do topo` : `Fixar ${nome} no topo`}
                   dica={

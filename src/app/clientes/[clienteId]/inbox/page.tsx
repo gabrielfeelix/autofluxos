@@ -85,7 +85,6 @@ import { avisarQueLeu } from '@/server/recibo-de-leitura'
 import { FaixaDeCanalCaido } from '@/components/inbox/faixa-canal-caido'
 import { Historico } from '@/components/inbox/historico'
 import { PulsoDoInbox } from '@/components/inbox/pulso-do-inbox'
-import { Esqueleto } from '@/components/design/esqueleto'
 
 export const dynamic = 'force-dynamic'
 
@@ -749,42 +748,32 @@ async function Conteudo({
       conversa={
         selecionado ? (
           /*
-            **A fronteira que faz trocar de conversa responder na hora.**
+            **Trocar de conversa não mostra esqueleto.**
 
-            Clicar noutra pessoa muda `?conversa=` e renavega, e a `key` do
-            `<Suspense>` lá de cima é só o filtro, de propósito, para a fila não
-            piscar. O efeito colateral é que a conversa não tinha fronteira
-            nenhuma: as consultas dela (histórico, contexto, funis, agendadas)
-            rodavam sem nada no lugar, e a tela ficava parada segurando a
-            conversa **anterior** até tudo voltar.
+            Até 30/set/2026 esta coluna tinha um `<Suspense key={contato}>` com
+            esqueleto próprio: todo clique em conversa cujo prefetch tinha
+            vencido apagava a coluna e desenhava cartões cinza, e o dono lia
+            isso como "a página recarregou". Sem a fronteira, a coluna suspende
+            na do filtro, que já está na tela, e a navegação do Next é uma
+            transição: o React segura a conversa anterior até a nova chegar,
+            como o WhatsApp Web. A linha clicada acende na hora (`Fila`).
 
-            Aqui a `key` é o contato. Ela isola só esta coluna: o esqueleto
-            aparece no clique, a fila do lado continua firme, e o `key` ainda
-            garante que nada da conversa antiga vaze para a nova.
+            A `key` continua, num `Fragment`: nada da conversa antiga (rascunho,
+            rolagem, remendos) vaza para a nova.
           */
-          <Suspense
-            key={selecionado.contatoId}
-            fallback={
-              <>
-                <EsperaDaConversa />
-                <ColunaDaFicha>
-                  <EsperaDaFicha />
-                </ColunaDaFicha>
-              </>
-            }
-          >
+          <Fragment key={selecionado.contatoId}>
             <ColunaDaConversa
-              clienteId={clienteId}
-              lead={selecionado}
-              canal={canalPeloContato(selecionado.waId, canalDoContato.get(selecionado.contatoId))}
-              equipe={equipe}
-              usuarioId={usuarioId}
-              etiquetas={etiquetas}
-              temAutomacao={temAutomacao}
-              respostasRapidas={respostasRapidas}
-              espiado={espiado}
-            />
-          </Suspense>
+            clienteId={clienteId}
+            lead={selecionado}
+            canal={canalPeloContato(selecionado.waId, canalDoContato.get(selecionado.contatoId))}
+            equipe={equipe}
+            usuarioId={usuarioId}
+            etiquetas={etiquetas}
+            temAutomacao={temAutomacao}
+            respostasRapidas={respostasRapidas}
+            espiado={espiado}
+          />
+          </Fragment>
         ) : (
           <section className="flex min-w-0 items-center justify-center p-10 text-center">
             <p className="max-w-[280px] text-[13px] leading-6 text-dim">
@@ -1139,66 +1128,6 @@ async function ColunaDaConversa({
       </ColunaDaFicha>
       </ProvedorDaConversa>
     </ProvedorDeAnotacoes>
-  )
-}
-
-/**
- * A conversa em cinza, enquanto as consultas dela voltam.
- *
- * Só a coluna do meio: a fila à esquerda não entra aqui, porque ela não mudou.
- * O desenho imita o que vem, cabeçalho, bolhas alternadas, caixa de resposta,
- * para o olho já saber onde olhar quando o conteúdo chega.
- */
-function EsperaDaConversa() {
-  return (
-    <section className="flex min-h-0 min-w-0 flex-col border-r border-line">
-      <div className="flex items-center gap-3 border-b border-line px-4 py-3">
-        <Esqueleto className="size-9 rounded-full" />
-        <span className="flex flex-col gap-2">
-          <Esqueleto className="h-3 w-40" />
-          <Esqueleto className="h-2.5 w-24" />
-        </span>
-      </div>
-      <div className="flex flex-1 flex-col gap-3 p-5">
-        {[0, 1, 2, 3, 4].map((i) => (
-          <Esqueleto
-            key={i}
-            className={`h-12 rounded-[14px] ${i % 2 === 0 ? 'w-[48%]' : 'w-[56%] self-end'}`}
-          />
-        ))}
-      </div>
-      <div className="border-t border-line p-3">
-        <Esqueleto className="h-10 w-full rounded-xl" />
-      </div>
-      <span role="status" className="sr-only">
-        Carregando a conversa…
-      </span>
-    </section>
-  )
-}
-
-/**
- * A ficha do contato em cinza.
- *
- * Existe para a grade não saltar: `temFicha` já reservou 296px, e uma coluna
- * reservada e vazia é uma faixa branca do lado da conversa. Ela vem junto do
- * esqueleto da conversa, como as duas verdadeiras vêm juntas.
- */
-function EsperaDaFicha() {
-  return (
-    <aside className="hidden min-h-0 flex-col gap-3 overflow-hidden p-4 xl:flex">
-      <span className="flex items-center gap-3">
-        <Esqueleto className="size-10 shrink-0 rounded-full" />
-        <span className="flex flex-1 flex-col gap-2">
-          <Esqueleto className="h-3 w-32" />
-          <Esqueleto className="h-2.5 w-24" />
-        </span>
-      </span>
-      <Esqueleto className="mt-1 h-8 w-full rounded-lg" />
-      <Esqueleto className="mt-3 h-2.5 w-full" />
-      <Esqueleto className="h-2.5 w-4/5" />
-      <Esqueleto className="mt-3 h-16 w-full rounded-xl" />
-    </aside>
   )
 }
 
