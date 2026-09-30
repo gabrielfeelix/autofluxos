@@ -320,6 +320,29 @@ extração explícito para os objetos de `public`.
   `public` com **75** tabelas; **8** contas, **0** com frente. Data API depois
   do `notify`: `clients?select=nicho` **200** com a chave secreta;
   `app_verandi.conta` **200**.
+- **a `0115` foi aplicada em 30/set/2026**, com autorização explícita do dono,
+  pela Management API. Conserta a P5: relatórios, análise de vendas, lista de
+  organizações, juntar etiquetas e remover membro faziam SQL de dados pelo
+  pool do login e quebravam com `permission denied` desde que o
+  `DATABASE_URL` passou a entrar como `autofluxos_login`. Cria o papel
+  `autofluxos_dados` (sem `bypassrls`, sem DDL, só `public`), usado por
+  `bancoDeDados()` (`src/server/banco-de-dados.ts`) via `DATABASE_URL_DADOS`.
+  Leitura nas 22 tabelas de relatório e nas views `resumo_clientes` e
+  `consumo_de_conversas`; escrita só `update` em `contacts`,
+  `quadro_cartoes`, `atividades`, `af_membros`, `etiquetas`, `delete` em
+  `membro_capacidades`, `equipe_membros`, `af_membros`, `etiquetas` e
+  `insert` em `contato_etiquetas`. Política de RLS própria
+  (`dados_do_autofluxos`) em cada tabela. Senha fora do git,
+  `AUTOFLUXOS_DADOS_DB_PASSWORD` no cofre. Conferido pelo pooler
+  `aws-0-sa-east-1:6543` antes de trocar a Vercel: os dois papéis conectam;
+  `autofluxos_dados` lê as 24 relações e é recusado em `af_sessoes`,
+  `af_contas`, `af_verificacoes`, `af_dois_fatores`, `af_convites` e
+  `app_verandi`; as escritas de `removerComDestino` e `juntarEtiquetas`
+  passaram num ensaio com `rollback`. Sem ensaio em transação da migration em
+  si (aditiva, `if not exists`). Verandi antes e depois com hash idêntico de
+  objetos, ACLs, policies e funções de `app_verandi`: **35** migrations,
+  **40** tabelas, **16** policies de `storage.objects`. `DATABASE_URL` da
+  Vercel voltou para `autofluxos_login` no mesmo dia.
 - **a `0114` foi aplicada em 30/set/2026**, com autorização explícita do dono,
   pela Management API: `af_contas.issuer` sem `not null`. O Better Auth 1.7.5
   (dependabot) recusava o schema e derrubava todo login desde 28/set com
