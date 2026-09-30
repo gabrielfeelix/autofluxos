@@ -28,7 +28,7 @@ export const PRAZO_DO_TOKEN_MS = 3_000
  */
 export async function consultarPedidoDaConta(
   clienteId: string,
-  entrada: { numero: string; telefone: string; documento?: string },
+  entrada: { numero: string; telefone: string; documento?: string; daEquipe?: boolean },
 ): Promise<{ ok: true; valor: ConsultaDePedido } | { ok: false; motivo: string }> {
   const loja = await lojaDaConta(clienteId)
   if (!loja || !loja.ativa) return { ok: false, motivo: 'a loja desta conta não está ligada' }

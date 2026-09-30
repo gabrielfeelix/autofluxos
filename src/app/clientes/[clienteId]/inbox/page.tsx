@@ -60,6 +60,7 @@ import {
   type Lead,
 } from '@/server/repos/leads'
 import { listarRespostasRapidas, type RespostaRapida } from '@/server/repos/respostas-rapidas'
+import { lojaDaConta } from '@/server/repos/lojas'
 import { CartaoDoAtendimento, SeloDoAtendimento } from '@/components/atendimento/estado'
 import { estadoDoAtendimento, type Atendimento } from '@/core/estado-do-atendimento'
 import type { EtiquetaEscolhivel } from '@/components/etiquetas/seletor'
@@ -920,6 +921,9 @@ async function ColunaDaConversa({
    * no fim é a pior forma de dizer não.
    */
   const ajustesDeAtendimento = await ajustesDaConta(clienteId)
+  // O botão de status do pedido só existe onde há loja on-line para consultar.
+  const lojaDosPedidos = await lojaDaConta(clienteId).catch(() => null)
+  const temPedidos = Boolean(lojaDosPedidos?.ativa && lojaDosPedidos.conexaoId)
   // Quem decide se trava é `TravaDaResposta`, no cliente: assumir destrava no
   // clique, sem esperar a página voltar do servidor.
 
@@ -1113,6 +1117,7 @@ async function ColunaDaConversa({
               respostasRapidas={respostasRapidas}
               temAutomacao={temAutomacao}
               anexo={{ clienteId, contatoId: selecionado.contatoId }}
+              temPedidos={temPedidos}
             />
             </TravaDaResposta>
             )}

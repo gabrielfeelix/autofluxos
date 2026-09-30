@@ -861,19 +861,15 @@ export function Fila({
                       className={`min-w-0 flex-1 truncate text-[13.5px] leading-5 ${semLer > 0 ? "font-medium text-ink" : "text-soft"}`}
                     >
                       {/*
-                        Só o rótulo em vermelho, o motivo em cinza: o rótulo
-                        diz "precisa de gente", e é o único ponto vermelho que
-                        a linha precisa. Motivo inteiro em vermelho competia com
-                        o nome pela atenção.
+                        A última mensagem, sempre, como no WhatsApp. Até
+                        30/set/2026 a conversa que esperava gente trocava a
+                        prévia pelo motivo do handoff ("Pessoa: o fluxo pediu
+                        IA..."), e ele ficava lá mesmo depois de a cliente
+                        responder e de quem atende assumir. Quem espera gente
+                        já tem o ponto vermelho no avatar; o motivo fica no
+                        `title` desta linha.
                       */}
-                      {lead.aguardando ? (
-                        <>
-                          <span className="font-semibold text-perigo">Pessoa: </span>
-                          {lead.aguardando.motivo}
-                        </>
-                      ) : (
-                        <ResumoDaConversa lead={lead} />
-                      )}
+                      <ResumoDaConversa lead={lead} />
                     </span>
                     {/*
                     A insígnia é **minha**, não da conversa: ela conta o que

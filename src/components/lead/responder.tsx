@@ -8,6 +8,7 @@ import { RetomarComModelo } from '@/components/lead/retomar-com-modelo'
 import { pedirNovas } from '@/components/inbox/sinal-de-conversa'
 import { SeletorDeEmoji } from '@/components/lead/seletor-de-emoji'
 import { SeletorDeProduto } from '@/components/lead/seletor-de-produto'
+import { SeletorDePedido } from '@/components/lead/seletor-de-pedido'
 import { SeletorDeRespostaRapida } from '@/components/lead/seletor-de-resposta-rapida'
 import { alternarMarca, type Marca } from '@/components/editor/formatar'
 import { DEFINICAO_DO_CANAL, type CanalId } from '@/core/canais'
@@ -60,6 +61,7 @@ export function CaixaDeResposta({
   respostasRapidas = [],
   temAutomacao = true,
   anexo,
+  temPedidos = false,
   conversa,
   canal = 'whatsapp',
 }: {
@@ -81,6 +83,8 @@ export function CaixaDeResposta({
    * inventar um botão que não teria para onde enviar.
    */
   anexo?: { clienteId: string; contatoId: string }
+  /** A conta tem loja on-line com pedidos: mostra o botão de status do pedido. */
+  temPedidos?: boolean
   /**
    * A conversa, para a Ficha, que não tem anexo: com ela o modo "modelo" e o
    * rascunho guardado também valem lá (tarefa 8.2).
@@ -479,6 +483,9 @@ export function CaixaDeResposta({
         )}
         {livre && anexo && !gravando && (
           <SeletorDeProduto clienteId={anexo.clienteId} contatoId={anexo.contatoId} desabilitado={enviando} />
+        )}
+        {livre && anexo && temPedidos && !gravando && (
+          <SeletorDePedido clienteId={anexo.clienteId} contatoId={anexo.contatoId} desabilitado={enviando} />
         )}
 
         {livre && !gravando && formata && (

@@ -38,10 +38,19 @@ export type PedidoDaLoja = {
   rastreios: { transportadora: string; codigo: string }[]
   /** Onde a entrega está, pela Frete Rápido. Ausente sem token ou sem frete. */
   entrega?: RastreioDaFreteRapido
+  /**
+   * O andamento que a loja anota no pedido ("Coletado / Postado - 28/09/2026
+   * às 20:40:12"), do mais novo para o mais antigo, até 3. Na PCYES é o
+   * rastreio que a integração de frete escreve no histórico do Magento.
+   */
+  andamento?: { texto: string; quando: string }[]
+  /** Nome de quem comprou. Só na busca da equipe, para conferir antes de mandar. */
+  comprador?: string
 }
 
 export type ConsultaDePedido =
-  | { encontrado: true; pedido: PedidoDaLoja }
+  /** `confere`: o telefone ou documento do pedido é o da conversa (busca da equipe). */
+  | { encontrado: true; pedido: PedidoDaLoja; confere?: boolean }
   | { encontrado: false; motivo: 'nao_achei_ou_nao_confere' }
 
 /** O que cada status padrão do Magento quer dizer para quem comprou. */
@@ -52,6 +61,8 @@ const SITUACOES: Record<string, string> = {
   processing: 'Pagamento aprovado, em separação',
   holded: 'Em análise pela loja',
   complete: 'Enviado',
+  // Status próprio da PCYES (30/set/2026): a Braspress já coletou.
+  delivered_carrier: 'Entregue à transportadora',
   closed: 'Devolvido ou reembolsado',
   canceled: 'Cancelado',
   fraud: 'Em análise pela loja',
@@ -91,7 +102,10 @@ type PedidoDoMagento = {
   grand_total?: unknown
   order_currency_code?: unknown
   customer_taxvat?: unknown
-  billing_address?: EnderecoDoMagento
+  billing_address?: EnderecoDoMagento & { firstname?: unknown; lastname?: unknown }
+  customer_firstname?: unknown
+  customer_lastname?: unknown
+  status_histories?: { comment?: unknown; created_at?: unknown }[]
   items?: { name?: unknown; qty_ordered?: unknown; parent_item_id?: unknown }[]
   extension_attributes?: {
     shipping_assignments?: { shipping?: { address?: EnderecoDoMagento } }[]
@@ -122,10 +136,38 @@ function dinheiro(valor: unknown, moeda: unknown): string {
 }
 
 /** O recorte que vai para a IA. Sem endereço, sem e-mail, sem documento. */
+/**
+ * "Em Transferência - 28/09/2026 às 21:32:52" vira texto e quando. Comentário
+ * que não tem esse formato (nota interna da loja, "Ordered amount of...") fica
+ * de fora: só o que é andamento de entrega pode chegar a quem comprou.
+ */
+export function andamentoDoPedido(historico: PedidoDoMagento['status_histories']): { texto: string; quando: string }[] {
+  const saida: { texto: string; quando: string }[] = []
+  for (const h of historico ?? []) {
+    const comentario = typeof h.comment === 'string' ? h.comment.trim() : ''
+    const m = /^(.{2,80}?)\s+-\s+(\d{2})\/(\d{2})\/(\d{4})\s+às\s+(\d{2}:\d{2})/.exec(comentario)
+    if (!m) continue
+    saida.push({ texto: m[1]!, quando: `${m[2]}/${m[3]} às ${m[5]}` })
+    if (saida.length === 3) break
+  }
+  return saida
+}
+
+function nomeDoComprador(pedido: PedidoDoMagento): string {
+  const partes = [
+    pedido.customer_firstname ?? pedido.billing_address?.firstname,
+    pedido.customer_lastname ?? pedido.billing_address?.lastname,
+  ]
+  return partes.filter((p): p is string => typeof p === 'string' && p.trim() !== '').join(' ').trim()
+}
+
 export function recortarPedido(
   pedido: PedidoDoMagento,
   rastreios: PedidoDaLoja['rastreios'],
+  opcoes: { comComprador?: boolean } = {},
 ): PedidoDaLoja {
+  const andamento = andamentoDoPedido(pedido.status_histories)
+  const comprador = opcoes.comComprador ? nomeDoComprador(pedido) : ''
   const codigo = typeof pedido.status === 'string' ? pedido.status : ''
   const rotulo = typeof pedido.status_label === 'string' ? pedido.status_label : undefined
   return {
@@ -140,6 +182,8 @@ export function recortarPedido(
       .map((i) => ({ nome: String(i.name ?? ''), quantidade: Number(i.qty_ordered ?? 0) }))
       .filter((i) => i.nome !== ''),
     rastreios,
+    ...(andamento.length > 0 ? { andamento } : {}),
+    ...(comprador ? { comprador } : {}),
   }
 }
 
@@ -173,7 +217,18 @@ function filtro(campo: string, valor: string): string {
 
 export async function consultarPedido(
   dados: { endereco: string; credencial: CredencialDaChamada | null },
-  entrada: { numero: string; telefone: string; documento?: string },
+  entrada: {
+    numero: string
+    telefone: string
+    documento?: string
+    /**
+     * Busca da equipe pela Inbox: acha pelo número sem exigir que o telefone
+     * confira (o cliente pode ter comprado com outro número) e devolve
+     * `confere` e o nome do comprador, para quem atende conferir antes de
+     * mandar. O bot nunca passa isto.
+     */
+    daEquipe?: boolean
+  },
   chamar: Chamar,
 ): Promise<ResultadoDaLoja<ConsultaDePedido>> {
   if (!dados.credencial) return { ok: false, motivo: 'a loja desta conta não tem token conectado' }
@@ -213,10 +268,11 @@ export async function consultarPedido(
   if (!achados.ok) return achados
 
   const lista = (achados.valor as { items?: PedidoDoMagento[] } | null)?.items ?? []
-  const pedido =
+  const conferido =
     numero !== ''
       ? lista.find((p) => conferePedido(p, entrada))
       : lista.find((p) => conferePedido(p, { telefone: entrada.telefone }))
+  const pedido = conferido ?? (entrada.daEquipe && numero !== '' ? lista[0] : undefined)
   if (!pedido) return { ok: true, valor: { encontrado: false, motivo: 'nao_achei_ou_nao_confere' } }
 
   // Rastreio é melhor-esforço: o status sozinho já responde a pergunta, e um
@@ -234,5 +290,12 @@ export async function consultarPedido(
     }
   }
 
-  return { ok: true, valor: { encontrado: true, pedido: recortarPedido(pedido, rastreios) } }
+  return {
+    ok: true,
+    valor: {
+      encontrado: true,
+      pedido: recortarPedido(pedido, rastreios, { comComprador: entrada.daEquipe }),
+      ...(entrada.daEquipe ? { confere: conferido !== undefined } : {}),
+    },
+  }
 }
