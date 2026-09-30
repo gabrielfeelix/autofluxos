@@ -85,6 +85,29 @@ card e explica o "Avise-me"): rode o script a partir do rascunho **atual**.
 
 ## Pendências, em ordem
 
+0. **A Inbox AINDA "dá F5": ao enviar mensagem e sozinha a cada tantos
+   segundos.** Prioridade máxima, o Gabriel está sem paciência com isso.
+   O que ele quer: a tela idêntica, parada, e só as informações mudando em
+   tempo real, igual ao WhatsApp Web. Nenhum esqueleto de carregamento, nenhuma
+   página inteira voltando do servidor no uso normal.
+   Já feito em 30/set e **não bastou**: tirar `revalidatePath` de
+   `acaoResponderLead` e `acaoEnviarProdutoDoInbox`, tirar o `router.refresh`
+   do `pulso-do-inbox.tsx` (`2c86b93`). Suspeitos que sobram, para provar com a
+   aba Network (requisição RSC `?_rsc=` depois do clique ou no intervalo):
+   - server action que renova o cookie de sessão (Better Auth em
+     `sessaoAtual`/`exigirCapacidade`): cookie gravado numa action faz o Next
+     redesenhar a rota aberta, igual ao `revalidatePath`;
+   - outras actions da Inbox com `revalidatePath` (`acaoMarcarEtiqueta`,
+     `acaoTranscreverAudio`, assumir/atribuir: `grep revalidatePath
+     src/server/acoes*.ts`);
+   - o `loading.tsx` de `clientes/[clienteId]` é o esqueleto que ele vê
+     (cartões cinza): qualquer refetch do segmento mostra ele;
+   - intervalos: `pulso-do-inbox.tsx` (5 s, deveria só buscar dados),
+     `notificacoes-da-fila.tsx`, `barra-do-celular.tsx` (30 s), e os
+     `router.refresh()` de `espiar.tsx` e `retomar-com-modelo.tsx`.
+   Aceite: Inbox aberta 10 minutos, mandando e recebendo mensagem, sem nenhuma
+   requisição de página (`_rsc`) e sem piscar.
+
 1. **MGM Pilates (cliente pagante): nenhuma mensagem enviada no histórico.**
    Visto pelo Gabriel na Inbox em 30/set à noite e conferido no banco: a MGM
    tem 1.636 mensagens de `entrada` com `historico=true`, **zero de `saida`**
