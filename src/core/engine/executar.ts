@@ -981,6 +981,7 @@ function avancar(
             link: linkDoEncaminhamento(telefone, interpolar(no.data.mensagemPronta, s.vars)),
             nome: no.data.nome.trim(),
             telefone,
+            cartao: no.data.cartao === true,
           })
         }
         atual = seguir(no)

@@ -217,6 +217,7 @@ export function dadosPadrao(tipo: TipoNo): Record<string, unknown> {
         telefone: '',
         mensagemPronta: 'Olá! Vim pelo WhatsApp da loja.\nProduto:\nO que está acontecendo:',
         rotulo: 'Abrir conversa',
+        cartao: false,
       }
     case 'nota':
       // Nasce vazia e o validador recusa publicar assim. Um texto de exemplo

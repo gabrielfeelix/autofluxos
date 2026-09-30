@@ -230,6 +230,8 @@ export type Acao =
       link: string
       nome: string
       telefone: string
+      /** Mandar também o cartão de contato (uma mensagem a mais). */
+      cartao: boolean
     }
   /** persistir no contato, é isso que alimenta a tela de leads */
   | { tipo: 'salvar_campo'; campo: string; valor: string }

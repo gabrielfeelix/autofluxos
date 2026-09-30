@@ -935,6 +935,12 @@ export const noEncaminharSchema = z.object({
     mensagemPronta: z.string().default(''),
     /** O texto do botão. Vazio = "Abrir conversa". */
     rotulo: z.string().optional(),
+    /**
+     * Mandar também o cartão de contato. Desligado por padrão: desde 1/out/2026
+     * a Meta cobra cada mensagem, o cartão é uma a mais, e o botão já abre a
+     * conversa com o time. O cartão só acrescenta o "Salvar contato".
+     */
+    cartao: z.boolean().optional(),
   }),
 })
 

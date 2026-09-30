@@ -80,6 +80,7 @@ describe('bloco encaminhar', () => {
       link: 'https://wa.me/554421011428?text=Sou%20Ana',
       nome: 'Suporte PCYES',
       telefone: '554421011428',
+      cartao: false,
     })
   })
 

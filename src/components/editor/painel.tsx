@@ -1343,13 +1343,34 @@ export function Painel({
                   ela preencher.
                 </p>
                 <p>
-                  Depois do botão chega o <strong>cartão de contato</strong>, para salvar o número.
-                  No chat do site, que não tem botão nem cartão, vai o texto com o link e o número
-                  escritos.
+                  No chat do site, que não tem botão, vai o texto com o link e o número escritos.
                 </p>
               </>
             }
           />
+          <div className="flex items-start gap-3">
+            <div className="min-w-0 flex-1">
+              <span className="block text-[11px] font-bold tracking-[0.05em] text-muted uppercase">
+                Mandar cartão de contato
+              </span>
+              <p className="mt-1 text-[12px] leading-5 text-dim">
+                Chega depois do botão, com &ldquo;Salvar contato&rdquo;. É uma mensagem a mais, e a Meta
+                cobra cada uma.
+              </p>
+            </div>
+            <button
+              type="button"
+              role="switch"
+              aria-checked={no.data.cartao === true}
+              aria-label="Mandar cartão de contato"
+              onClick={() => aoMudarDados({ cartao: no.data.cartao !== true })}
+              className={`relative mt-0.5 h-6 w-11 shrink-0 rounded-full transition ${no.data.cartao === true ? 'bg-primary' : 'bg-strong'}`}
+            >
+              <span
+                className={`absolute top-0.5 size-5 rounded-full bg-white shadow transition-all ${no.data.cartao === true ? 'left-[22px]' : 'left-0.5'}`}
+              />
+            </button>
+          </div>
         </>
       )}
 

@@ -1644,7 +1644,7 @@ async function aplicar(
         if (!entrega.ok) return pararNoHumano(entrega.motivo)
         await confirmarEntrega(registro, entrega.waMessageId)
 
-        if (enviarCartao) {
+        if (enviarCartao && acao.cartao) {
           const cartao = await registrarSaida({
             contatoId: contato.id,
             sessaoId,
