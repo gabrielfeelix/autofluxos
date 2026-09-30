@@ -390,7 +390,14 @@ async function tentar(
 
     return {
       tipo: 'pronta',
-      resposta: interpretarResposta(partes.find((p) => p.text !== undefined)?.text),
+      // Só o texto de resposta, juntado: parte de pensamento fica de fora, e a
+      // resposta pode vir partida em mais de uma parte.
+      resposta: interpretarResposta(
+        partes
+          .filter((p) => p.text !== undefined && !p.thought)
+          .map((p) => p.text)
+          .join(''),
+      ),
     }
   } catch (erro) {
     const porTempo = erro instanceof Error && erro.name === 'TimeoutError'
@@ -417,6 +424,8 @@ async function tentar(
 
 type ParteGemini = {
   text?: string
+  /** Parte de raciocínio ("pensamento") do modelo: nunca vai para o cliente. */
+  thought?: boolean
   functionCall?: { name?: string; args?: unknown }
 }
 

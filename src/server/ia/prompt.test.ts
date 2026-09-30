@@ -1,7 +1,7 @@
 import { MARCA_DE_MOSTRAR } from '@/core/loja'
 import { describe, expect, it } from 'vitest'
 import { ferramentasPermitidas } from '@/core/ferramentas'
-import {
+import { pareceRascunho,
   doCliente,
   interpretarResposta,
   LIMITE_MENSAGEM_DO_CLIENTE,
@@ -187,5 +187,18 @@ describe('chamada de vitrine escrita no texto', () => {
   it('nome de consulta no meio da frase continua sendo recusado', () => {
     const r = interpretarResposta('Eu uso a loja_buscar para achar produtos.')
     expect(r.tipo === 'texto' && r.texto).not.toContain('loja_buscar')
+  })
+})
+
+describe('rascunho do modelo nunca vai para o cliente', () => {
+  it('o vazamento real da PCYES vira falha, para a cadeia tentar outro provedor', () => {
+    const vazou = 'y One B300 Core i3 8GB RAM 256GB SSD"\n            *   Search results show:\n                *   294800: Mini Computador PCYES B'
+    expect(pareceRascunho(vazou)).toBe(true)
+    expect(interpretarResposta(vazou)).toMatchObject({ tipo: 'nao_sei', falhou: true })
+  })
+  it('resposta normal com lista do WhatsApp passa', () => {
+    const boa = 'Tenho duas opções para você:\n• *Mini PC PCYES One B300* - Core i3, 8GB, 256GB SSD\n• *Mini PC PCYES One B500* - mais potente'
+    expect(pareceRascunho(boa)).toBe(false)
+    expect(pareceRascunho('Ok! Seu pedido 000001955 está com a Braspress.')).toBe(false)
   })
 })

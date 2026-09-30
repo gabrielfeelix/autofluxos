@@ -74,7 +74,7 @@ export function montarPrompt(pedido: PedidoDeIa): { sistema: string; usuario: st
       ? `1. Responda com o que está em "SOBRE A EMPRESA" ou com o que uma consulta devolver. Se não estiver em nenhum dos dois, e nenhuma consulta servir, responda exatamente ${MARCA_NAO_SEI} e mais nada. Se só parte do pedido tiver resposta, responda essa parte e diga com franqueza o que não encontrou; ${MARCA_NAO_SEI} é para quando nada do que você tem serve.`
       : `1. Responda SOMENTE com o que está em "SOBRE A EMPRESA". Se a resposta não estiver ali, responda exatamente ${MARCA_NAO_SEI} e mais nada.`,
     `2. Nunca invente preço, prazo, endereço, condição, parcelamento, cupom ou disponibilidade. Na dúvida, ${MARCA_NAO_SEI}.`,
-    `3. Você não é um assistente de propósito geral. Pergunta ou pedido que nada tem a ver com a empresa (curiosidade, famoso, receita, código, conselho, opinião, tradução): responda exatamente ${MARCA_FORA_DO_ASSUNTO} e mais nada. Dúvida sobre a empresa que você não sabe responder continua sendo ${MARCA_NAO_SEI}.`,
+    `3. Mensagem curta de confirmação, agradecimento ou cumprimento ("ok", "certo", "blz", "valeu", "oi") nunca é fora do assunto: siga a conversa de onde ela estava. Você não é um assistente de propósito geral. Pergunta ou pedido que nada tem a ver com a empresa (curiosidade, famoso, receita, código, conselho, opinião, tradução): responda exatamente ${MARCA_FORA_DO_ASSUNTO} e mais nada. Dúvida sobre a empresa que você não sabe responder continua sendo ${MARCA_NAO_SEI}.`,
     `4. Se a pessoa pedir para falar com alguém, reclamar ou parecer irritada, responda ${MARCA_NAO_SEI}.`,
     /*
      * Lista quando há lista, e na marcação do WhatsApp.
@@ -219,6 +219,12 @@ export function interpretarResposta(bruto: string | null | undefined): Resposta 
 
   if (texto === '') return { tipo: 'nao_sei', motivo: 'o modelo respondeu vazio' }
 
+  // Rascunho do modelo no lugar da resposta: falha de transporte, para a
+  // cadeia tentar o próximo provedor em vez de mandar isso ao cliente.
+  if (pareceRascunho(texto)) {
+    return { tipo: 'nao_sei', motivo: 'o modelo devolveu rascunho em vez de resposta', falhou: true }
+  }
+
   // A marca pode vir sozinha, entre aspas, com ponto final, ou embrulhada numa
   // frase ("Sobre isso eu diria NAO_SEI"). Em qualquer um dos casos a resposta
   // não serve para mandar a alguém, não tem meia recusa.
@@ -327,3 +333,20 @@ function blocoDeVenda(temCardapio = false): string[] {
   ]
 }
 
+/**
+ * O texto é o raciocínio interno do modelo, e não a mensagem para o cliente?
+ *
+ * PCYES, 30/set/2026 15:23: foi para o WhatsApp de um cliente
+ * `y One B300 Core i3 8GB RAM 256GB SSD" / *   Search results show: /
+ * *   294800: Mini Computador PCYES B`, o rascunho do Gemini cortado no meio.
+ * Três sinais, qualquer um basta: lista com o recuo de rascunho (`*` com
+ * espaços dos dois lados, no começo da linha e já recuada), frase de
+ * raciocínio em inglês, ou id de produto seguido de dois-pontos, que só existe
+ * no resultado de consulta.
+ */
+export function pareceRascunho(texto: string): boolean {
+  if (/^\s{2,}\*\s{2,}\S/m.test(texto)) return true
+  if (/\b(search results|the user (is|wants|asked)|let me|i need to|i should|i will|we need to|thinking process|draft:)/i.test(texto)) return true
+  if (/^\s*[*•-]?\s*\d{5,7}:\s/m.test(texto)) return true
+  return false
+}
