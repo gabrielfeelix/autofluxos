@@ -12,6 +12,7 @@ import {
   SAIDA_ESCOLHEU,
   SAIDA_CONCLUIDO,
   SAIDA_MIDIA,
+  SAIDA_TEXTO_LIVRE,
   SAIDA_DETRATOR,
   SAIDA_NEUTRO,
   SAIDA_PROMOTOR,
@@ -297,6 +298,7 @@ function NoPergunta({ data, selected }: NodeProps) {
     formato?: FormatoDeResposta
     timeoutMinutos?: number
     aceitaMidia?: boolean
+    entendeTextoLivre?: boolean
   }
   const dinamica = (d.opcoesDe ?? '').trim() !== ''
   const prazo = d.timeoutMinutos ?? null
@@ -381,6 +383,11 @@ function NoPergunta({ data, selected }: NodeProps) {
 
       {/* Só aparece quando o desenho pediu: saída que ninguém usa é fio a mais
           para desviar com o mouse em todo bloco de pergunta do fluxo. */}
+      {d.entendeTextoLivre && d.opcoes.length > 0 && (
+        <Saida id={SAIDA_TEXTO_LIVRE}>
+          <span className="text-[11px] text-info">escreveu outra coisa</span>
+        </Saida>
+      )}
       {d.aceitaMidia && (
         <Saida id={SAIDA_MIDIA}>
           <span className="text-[11px] text-info">mandou arquivo</span>

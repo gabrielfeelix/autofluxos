@@ -5,6 +5,7 @@ import {
   SAIDA_FALSO,
   SAIDA_CONCLUIDO,
   SAIDA_MIDIA,
+  SAIDA_TEXTO_LIVRE,
   SAIDA_NEUTRO,
   SAIDA_PROMOTOR,
   SAIDA_TIMEOUT,
@@ -86,6 +87,7 @@ export function nomeDaSaida(no: No, saida: string | undefined): string | null {
   if (no.type === 'pergunta') {
     if (saida === SAIDA_TIMEOUT) return 'a saída de "ninguém respondeu no prazo"'
     if (saida === SAIDA_MIDIA) return 'a saída de "mandou arquivo"'
+    if (saida === SAIDA_TEXTO_LIVRE) return 'a saída de "escreveu outra coisa"'
     if (saida === SAIDA_ESCOLHEU) return 'a saída de "escolheu"'
     if (saida === SAIDA_VAZIO) return 'a saída de "a lista veio vazia"'
 

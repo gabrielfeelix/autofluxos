@@ -17,6 +17,7 @@ import {
   SAIDA_FALSO,
   SAIDA_CONCLUIDO,
   SAIDA_MIDIA,
+  SAIDA_TEXTO_LIVRE,
   SAIDA_NEUTRO,
   SAIDA_PROMOTOR,
   SAIDA_TIMEOUT,
@@ -623,6 +624,24 @@ function responderPergunta(
   }
 
   const escolhida = escolher(opcoes, entrada)
+
+  /*
+   * Escreveu em vez de tocar, e o desenho sabe o que fazer com isso
+   * (`entendeTextoLivre`): segue pela saída "escreveu outra coisa", com a frase
+   * guardada, em vez de repetir o menu. Só texto de verdade: vazio continua
+   * sendo "não entendi".
+   */
+  if (!escolhida && entrada.tipo === 'texto' && entrada.texto.trim() !== '' && no.data.entendeTextoLivre) {
+    const livre = proximo(fluxo, no.id, SAIDA_TEXTO_LIVRE)
+    if (livre) {
+      if (salvarEm) {
+        s.vars[salvarEm] = entrada.texto
+        acoes.push({ tipo: 'salvar_campo', campo: salvarEm, valor: entrada.texto })
+      }
+      s.tentativas = 0
+      return avancar(contexto, fluxo, porId, s, acoes, livre, { no, saida: SAIDA_TEXTO_LIVRE })
+    }
+  }
 
   if (!escolhida) {
     s.tentativas += 1
@@ -1521,6 +1540,7 @@ function proximo(fluxo: Fluxo, noId: string, saida?: string): string | null {
       (a) =>
         a.sourceHandle !== SAIDA_TIMEOUT &&
         a.sourceHandle !== SAIDA_MIDIA &&
+        a.sourceHandle !== SAIDA_TEXTO_LIVRE &&
         a.sourceHandle !== SAIDA_CONCLUIDO,
     )?.target ?? null
   )

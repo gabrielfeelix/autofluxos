@@ -19,6 +19,7 @@ import {
   SAIDA_ESCOLHEU,
   SAIDA_FALSO,
   SAIDA_MIDIA,
+  SAIDA_TEXTO_LIVRE,
   SAIDA_NEUTRO,
   SAIDA_PROMOTOR,
   SAIDA_TIMEOUT,
@@ -334,7 +335,8 @@ export function validar(fluxo: Fluxo, capacidades: Capacidades = {}): ResultadoV
       }
 
       const continuacoes = minhasSaidas.filter(
-        (a) => a.sourceHandle !== SAIDA_TIMEOUT && a.sourceHandle !== SAIDA_MIDIA,
+        (a) =>
+          a.sourceHandle !== SAIDA_TIMEOUT && a.sourceHandle !== SAIDA_MIDIA && a.sourceHandle !== SAIDA_TEXTO_LIVRE,
       )
       if (opcoes.length === 0 && continuacoes.length === 0) {
         erros.push({

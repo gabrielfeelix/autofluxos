@@ -353,6 +353,17 @@ export const noPerguntaSchema = z.object({
      */
     aceitaMidia: z.boolean().optional(),
     /**
+     * Texto que não é nenhuma das opções segue pela saída "escreveu outra
+     * coisa" em vez de ouvir "toca numa das opções".
+     *
+     * Existe por causa do menu da PCYES em 30/set/2026: a pessoa descreveu o
+     * defeito do mouse por extenso e recebeu "toca numa das opções" e o menu
+     * de novo. Ligada a uma IA de triagem, a frase é entendida e a conversa
+     * vai para o assunto certo. O texto fica guardado em `salvarEm`, como o
+     * rótulo de uma opção ficaria. Desligado é o padrão.
+     */
+    entendeTextoLivre: z.boolean().optional(),
+    /**
      * Onde guardar a **referência** do arquivo que a pessoa mandou.
      *
      * É o id do anexo no WhatsApp, não o arquivo: `core/` não faz rede e não
@@ -1178,6 +1189,13 @@ export const SAIDA_TIMEOUT = 'timeout'
  * texto", e quem atendia nem sabia que aquilo era uma receita.
  */
 export const SAIDA_MIDIA = 'midia'
+
+/**
+ * A saída de quando a pessoa **escreve** em vez de tocar numa opção
+ * (`entendeTextoLivre`). Sem aresta ligada nela, vale o de sempre: a frase
+ * de "não entendi" e as opções de novo.
+ */
+export const SAIDA_TEXTO_LIVRE = 'texto-livre'
 
 /**
  * A saída do bloco de IA quando a própria IA fecha a conversa com sucesso

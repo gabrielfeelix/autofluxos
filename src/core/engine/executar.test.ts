@@ -2202,6 +2202,39 @@ describe('texto digitado no lugar do botão', () => {
   })
 })
 
+describe('menu que entende texto livre', () => {
+  const menu = (entende: boolean, ligada = true) =>
+    fluxoSchema.parse({
+      inicio: 'q',
+      nodes: [
+        { id: 'q', type: 'pergunta', position: p, data: { texto: 'Qual?', salvarEm: 'assunto', opcoes: [{ id: 'a', rotulo: 'Comprar' }, { id: 'b', rotulo: 'Suporte' }], ...(entende ? { entendeTextoLivre: true } : {}) } },
+        { id: 'f', type: 'mensagem', position: p, data: { partes: [{ tipo: 'texto', texto: 'opção' }] } },
+        { id: 'livre', type: 'mensagem', position: p, data: { partes: [{ tipo: 'texto', texto: 'livre: {{assunto}}' }] } },
+      ],
+      edges: [
+        { id: 'e1', source: 'q', sourceHandle: 'a', target: 'f' },
+        { id: 'e2', source: 'q', sourceHandle: 'b', target: 'f' },
+        ...(ligada ? [{ id: 'e3', source: 'q', sourceHandle: 'texto-livre', target: 'livre' }] : []),
+      ],
+    })
+  const textos = (f: ReturnType<typeof menu>, texto: string) => {
+    const r0 = executar(f, sessaoNova(), { tipo: 'inicio' })
+    const r = executar(f, r0.sessao, { tipo: 'texto', texto })
+    return r.acoes.flatMap((a) => (a.tipo === 'enviar_texto' ? [a.texto] : []))
+  }
+
+  it('frase que não é opção segue pela saída "escreveu outra coisa", guardada', () => {
+    expect(textos(menu(true), 'meu mouse parou de funcionar')).toEqual(['livre: meu mouse parou de funcionar'])
+  })
+  it('a opção digitada continua saindo pela opção', () => {
+    expect(textos(menu(true), 'suporte')).toEqual(['opção'])
+  })
+  it('desligado, ou sem aresta, é o "não entendi" de sempre', () => {
+    expect(textos(menu(false), 'meu mouse parou')[0]).toBe('Desculpa, não entendi. Pode escolher uma das opções abaixo?')
+    expect(textos(menu(true, false), 'meu mouse parou')[0]).toBe('Desculpa, não entendi. Pode escolher uma das opções abaixo?')
+  })
+})
+
 describe('menu que não entendeu a resposta', () => {
   const menu = (mensagemDeErro?: string) =>
     fluxoSchema.parse({
