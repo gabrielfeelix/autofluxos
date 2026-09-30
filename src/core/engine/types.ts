@@ -104,7 +104,11 @@ export const sessaoSchema = z.object({
 /** O que chegou. O motor não sabe se veio do WhatsApp ou do simulador. */
 export const entradaSchema = z.discriminatedUnion('tipo', [
   /** primeira interação: começa o fluxo do zero */
-  z.object({ tipo: z.literal('inicio') }),
+  /**
+   * `opcaoId`: a conversa é nova, mas a pessoa tocou numa opção de um menu
+   * antigo (a conversa anterior tinha acabado). Ver o ramo `inicio` do motor.
+   */
+  z.object({ tipo: z.literal('inicio'), opcaoId: z.string().min(1).optional() }),
   z.object({ tipo: z.literal('texto'), texto: z.string() }),
   /** a pessoa clicou num botão ou item de lista */
   z.object({ tipo: z.literal('opcao'), opcaoId: z.string().min(1) }),

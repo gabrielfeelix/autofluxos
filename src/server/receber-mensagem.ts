@@ -959,7 +959,7 @@ async function avancarConversa(
     const resultado = await executarComEfeitos(
       versao.grafo,
       salva.sessao,
-      conversaNova ? { tipo: 'inicio' } : entrada,
+      conversaNova ? { tipo: 'inicio', ...(entrada.tipo === 'opcao' ? { opcaoId: entrada.opcaoId } : {}) } : entrada,
       {
         ...opcoesDeIa,
         atendimento: contextoDeAtendimento(horario),

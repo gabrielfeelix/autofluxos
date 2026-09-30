@@ -342,7 +342,31 @@ export function executar(
 
   if (entrada.tipo === 'inicio') {
     s.tentativas = 0
-    return avancar(contexto, fluxo, porId, s, acoes, fluxo.inicio)
+    const inicio = avancar(contexto, fluxo, porId, s, acoes, fluxo.inicio)
+
+    /*
+     * Conversa nova aberta pelo toque numa opção de um menu antigo.
+     *
+     * Acontece depois de um fluxo que termina (o Encaminhar da PCYES): a
+     * conversa acabou, o menu anterior continua na tela, e a pessoa toca em
+     * outra opção. Recomeçar com a saudação ignora o que ela escolheu e a faz
+     * tocar de novo. Então, se o início para numa pergunta que tem essa mesma
+     * opção, a pergunta não é repetida e a escolha vale como resposta. Opção
+     * que o menu de hoje não tem cai no recomeço de sempre.
+     */
+    const parada = inicio.sessao.noAtual === null ? undefined : porId.get(inicio.sessao.noAtual)
+    if (
+      entrada.opcaoId &&
+      inicio.sessao.status === 'ativa' &&
+      parada?.type === 'pergunta' &&
+      resolverOpcoes(parada, inicio.sessao.vars).some((o) => o.id === entrada.opcaoId)
+    ) {
+      const repetida = perguntar(parada, inicio.sessao).length
+      const antes = inicio.acoes.slice(0, inicio.acoes.length - repetida)
+      const escolha = executar(fluxo, inicio.sessao, { tipo: 'opcao', opcaoId: entrada.opcaoId }, contexto)
+      return { acoes: [...antes, ...escolha.acoes], sessao: escolha.sessao }
+    }
+    return inicio
   }
 
   const atual = s.noAtual === null ? undefined : porId.get(s.noAtual)
