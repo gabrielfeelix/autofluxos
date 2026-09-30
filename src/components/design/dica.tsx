@@ -63,6 +63,7 @@ export function Dica({
   lado = 'baixo',
   alinhar = 'centro',
   largo = false,
+  soSeCortado = false,
 }: {
   texto: string
   children: ReactNode
@@ -87,6 +88,12 @@ export function Dica({
    * ela sairia numa tira só, mais larga que a janela.
    */
   largo?: boolean
+  /**
+   * Para texto com `truncate`: o balão só aparece quando o texto está cortado,
+   * e mostra ele inteiro. O embrulho vira bloco que encolhe, em vez do
+   * `inline-flex shrink-0` dos botões, senão o texto nunca chega a ser cortado.
+   */
+  soSeCortado?: boolean
 }) {
   const alvo = useRef<HTMLSpanElement>(null)
   const balao = useRef<HTMLSpanElement>(null)
@@ -141,6 +148,12 @@ export function Dica({
   }, [pedida, medir])
 
   const mostrar = (atraso: number) => {
+    if (soSeCortado) {
+      // Cortado é quando algum filho com `truncate` tem conteúdo mais largo
+      // que a própria caixa; texto que cabe inteiro não precisa de balão.
+      const filhos = alvo.current?.querySelectorAll<HTMLElement>('*') ?? []
+      if (![...filhos].some((el) => el.scrollWidth > el.clientWidth + 1)) return
+    }
     if (relogio.current) clearTimeout(relogio.current)
     relogio.current = setTimeout(() => setPedida(true), atraso)
   }
@@ -159,7 +172,7 @@ export function Dica({
     */
     <span
       ref={alvo}
-      className="relative inline-flex shrink-0"
+      className={soSeCortado ? 'relative block min-w-0 flex-1' : 'relative inline-flex shrink-0'}
       onMouseEnter={() => mostrar(400)}
       onMouseLeave={esconder}
       onFocus={() => mostrar(0)}
@@ -175,7 +188,11 @@ export function Dica({
             aria-hidden
             style={caixa ? { top: caixa.top, left: caixa.left } : { top: 0, left: 0 }}
             className={`pointer-events-none fixed z-[70] rounded-[8px] bg-ink px-2 py-1 text-[11px] font-semibold text-panel shadow-menu transition-opacity duration-100 ${
-              largo ? 'w-[248px] leading-[1.45] whitespace-normal normal-case' : 'whitespace-nowrap'
+              soSeCortado
+                ? 'max-w-[min(360px,90vw)] leading-[1.45] whitespace-pre-line normal-case'
+                : largo
+                  ? 'w-[248px] leading-[1.45] whitespace-normal normal-case'
+                  : 'whitespace-nowrap'
             } ${caixa ? 'opacity-100' : 'opacity-0'}`}
           >
             {texto}

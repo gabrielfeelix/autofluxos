@@ -137,26 +137,27 @@ export function PassarPara({
   const conversa = useConversaAberta()
   const [erro, setErro] = useState<string | null>(null)
 
-  const passar = (formData: FormData) => {
-    const para = String(formData.get('usuarioId') ?? '')
+  // Escolher no seletor já transfere: o botão "Transferir" ao lado era um
+  // clique a mais para um gesto que a escolha já deixa claro (30/set/2026).
+  const transferir = (para: string) => {
+    if (para === '') return
     setErro(null)
-    if (para === '') {
-      setErro('escolha para quem transferir')
-      return
-    }
+    const formData = new FormData()
+    formData.set('usuarioId', para)
     void conversa.agir({ atribuidoA: para }, () => atribuir(formData)).then(setErro)
   }
 
   return (
-    <form action={passar} className="flex shrink-0 items-center gap-1.5">
+    <div className="flex shrink-0 items-center gap-1.5">
       <Dropdown
-        nome="usuarioId"
         rotuloAcessivel="Transferir a conversa para"
-        className="w-[150px]"
+        className="w-[170px]"
+        valor=""
+        aoMudar={transferir}
         /*
-         * Começa vazio. Sem isto aparecia o primeiro nome da equipe, e o seletor
-         * lia como "o responsável é fulano" numa conversa sem responsável
-         * nenhum (30/set/2026).
+         * Sempre mostra "Transferir para…": sem isto aparecia o primeiro nome
+         * da equipe, e o seletor lia como "o responsável é fulano" numa
+         * conversa sem responsável nenhum. Quem é o responsável diz o selo.
          */
         opcoes={[
           { valor: '', rotulo: 'Transferir para…' },
@@ -167,18 +168,12 @@ export function PassarPara({
           })),
         ]}
       />
-      <button
-        type="submit"
-        className="rounded-[8px] border border-line px-2.5 py-1.5 text-[11.5px] font-semibold text-muted transition hover:border-primary/40 hover:text-primary disabled:opacity-50"
-      >
-        Transferir
-      </button>
       {erro && (
         <span role="alert" className="max-w-[160px] text-[11.5px] leading-4 text-perigo">
           {erro}
         </span>
       )}
-    </form>
+    </div>
   )
 }
 

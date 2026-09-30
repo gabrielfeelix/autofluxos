@@ -852,13 +852,9 @@ export function Fila({
                     linha vermelha só dizia que havia algo errado e escondia o
                     quê: nem o mouse, nem outra tela contavam.
                   */}
+                    <Dica texto={textoDoBalao(lead)} lado="baixo" soSeCortado>
                     <span
-                      title={
-                        lead.aguardando
-                          ? `Aguardando pessoa: ${lead.aguardando.motivo}`
-                          : undefined
-                      }
-                      className={`min-w-0 flex-1 truncate text-[13.5px] leading-5 ${semLer > 0 ? "font-medium text-ink" : "text-soft"}`}
+                      className={`block min-w-0 truncate text-[13.5px] leading-5 ${semLer > 0 ? "font-medium text-ink" : "text-soft"}`}
                     >
                       {/*
                         A última mensagem, sempre, como no WhatsApp. Até
@@ -871,6 +867,7 @@ export function Fila({
                       */}
                       <ResumoDaConversa lead={lead} />
                     </span>
+                    </Dica>
                     {/*
                     A insígnia é **minha**, não da conversa: ela conta o que
                     entrou depois da última vez que *eu* abri. "Alguém leu" é
@@ -1277,6 +1274,16 @@ function ResumoDaConversa({ lead }: { lead: Lead }) {
       {textoDaConversa(lead)}
     </>
   );
+}
+
+/**
+ * O balão escuro da prévia cortada: a mensagem inteira, e o motivo de quem
+ * espera gente, que antes ficava num `title` nativo (lento e claro demais).
+ */
+function textoDoBalao(lead: Lead): string {
+  const quem = quemFalou(lead);
+  const texto = `${quem ? `${quem}: ` : ""}${textoDaConversa(lead)}`;
+  return lead.aguardando ? `${texto}\n\nAguardando pessoa: ${lead.aguardando.motivo}` : texto;
 }
 
 /** O texto da última mensagem, sem quem falou. */

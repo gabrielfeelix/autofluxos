@@ -218,7 +218,9 @@ export function SeletorDeProduto({
                         </span>
                       )}
                       <span className="min-w-0 flex-1">
-                        <span className="block truncate text-[12.5px] font-semibold">{p.nome}</span>
+                        <Dica texto={p.nome} lado="cima" soSeCortado>
+                          <span className="block truncate text-[12.5px] font-semibold">{p.nome}</span>
+                        </Dica>
                         <span className="block truncate text-[11.5px] text-dim">
                           {enviando === p.produtoId ? 'Enviando…' : detalhe || 'sem preço'}
                         </span>
