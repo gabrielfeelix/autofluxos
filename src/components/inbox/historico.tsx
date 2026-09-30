@@ -258,6 +258,19 @@ export function Historico({
     return () => window.removeEventListener(PEDIDO, aoPedido)
   }, [conferir])
 
+  /*
+   * Ao abrir a conversa, busca na hora o que veio depois do desenho.
+   *
+   * Voltar para uma conversa aberta há pouco reaproveita a cópia que o
+   * navegador guardou da página (prefetch ou visita anterior), e ela é de
+   * **antes** do que se enviou nela: as mensagens mandadas sumiam ao sair e
+   * voltar, até o próximo pulso (30/set/2026). Sem pulso de referência, a
+   * busca não toma o atalho e traz tudo depois da última bolha da cópia.
+   */
+  useEffect(() => {
+    void conferir(null)
+  }, [conferir])
+
   // Enquanto houver resposta nossa sem confirmação recente, relê de pouco em
   // pouco: a confirmação da Meta não mexe no pulso, e sem isto ninguém avisa.
   useEffect(() => {
