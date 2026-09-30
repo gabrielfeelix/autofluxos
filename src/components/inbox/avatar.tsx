@@ -8,7 +8,7 @@
  * componente de cliente.
  *
  * ---------------------------------------------------------------------------
- * Por que a cor vem do nome, e não uma foto
+ * Por que iniciais, e não foto
  * ---------------------------------------------------------------------------
  *
  * **A Cloud API não expõe foto de perfil de contato.** O webhook entrega
@@ -16,53 +16,19 @@
  * é o do próprio negócio, o nosso lado, não o dela. Quem mostra foto de
  * contato no mercado está rodando provedor não oficial por cima do WhatsApp
  * Web, que é o caminho que arrisca banir o número do cliente.
- *
- * Então a cor derivada do nome não é um consolo: é o que uma fila de trinta
- * conversas cinza-iguais precisa para virar uma lista em que se acha alguém de
- * relance. É o mesmo truque de Slack e Google, e é só tela.
  */
 import { DEFINICAO_DO_CANAL, type CanalId } from '@/core/canais'
 import { LogoDoCanal } from '@/components/design/selo-do-canal'
 
 /**
- * As cores possíveis, escritas por extenso.
+ * Uma cor só, chapada: roxo escuro com a inicial clara.
  *
- * Classe inteira, e não `bg-[hsl(${x})]`: o Tailwind lê o código fonte para
- * decidir o que gerar, e classe montada em tempo de execução simplesmente não
- * sai no CSS. O sintoma seria um avatar transparente, sem erro nenhum.
- *
- * **Os tons são de tema claro**, fundo `50`, texto `700`. Eles eram `400/[0.14]`
- * com texto `200`, medida de fundo preto: sobre branco o texto claro sobre o
- * fundo claro dava menos de 2:1, e as iniciais sumiam. No escuro o par continua
- * legível porque a superfície do card escuro é cinza-azulada, não preta.
+ * Era uma cor por nome, em tom claro com borda da mesma família. A borda tinha
+ * a espessura do traço das letras e as duas brigavam: as iniciais pareciam
+ * contornadas, e ficavam difíceis de ler. Fundo sólido e contraste alto leem
+ * de relance em qualquer tamanho, nos dois temas.
  */
-const CORES = [
-  'border-sky-200 bg-sky-50 text-sky-700',
-  'border-violet-200 bg-violet-50 text-violet-700',
-  'border-emerald-200 bg-emerald-50 text-emerald-700',
-  'border-amber-200 bg-amber-50 text-amber-700',
-  'border-rose-200 bg-rose-50 text-rose-700',
-  'border-teal-200 bg-teal-50 text-teal-700',
-  'border-indigo-200 bg-indigo-50 text-indigo-700',
-  'border-orange-200 bg-orange-50 text-orange-700',
-] as const
-
-/** Cinza para quem não tem nome: inventar cor para a silhueta seria dar identidade ao vazio. */
-const SEM_NOME = 'border-strong bg-surface text-soft'
-
-/**
- * A mesma pessoa cai sempre na mesma cor.
- *
- * Soma dos códigos das letras, e nada mais esperto: a exigência é ser estável
- * entre a fila e o cabeçalho, e entre hoje e amanhã, não ser bem distribuída.
- * Duas pessoas dividindo cor não atrapalha ninguém; a mesma pessoa trocando de
- * cor a cada tela, sim.
- */
-function corDoNome(nome: string): string {
-  let soma = 0
-  for (let i = 0; i < nome.length; i += 1) soma += nome.charCodeAt(i)
-  return CORES[soma % CORES.length] ?? SEM_NOME
-}
+const COR = 'bg-violet-800 text-violet-50'
 
 /**
  * O fundo do selo de cada canal. O Instagram é o gradiente da marca porque é
@@ -102,7 +68,7 @@ export function Avatar({
   return (
     <span
       style={{ width: tamanho, height: tamanho, fontSize: Math.round(tamanho * 0.3) }}
-      className={`relative flex shrink-0 items-center justify-center rounded-full border font-bold ${limpo ? corDoNome(limpo) : SEM_NOME}`}
+      className={`relative flex shrink-0 items-center justify-center rounded-full font-bold ${COR}`}
     >
       {limpo ? (
         iniciais
