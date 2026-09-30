@@ -141,7 +141,7 @@ export function PassarPara({
     const para = String(formData.get('usuarioId') ?? '')
     setErro(null)
     if (para === '') {
-      setErro('escolha para quem passar')
+      setErro('escolha para quem transferir')
       return
     }
     void conversa.agir({ atribuidoA: para }, () => atribuir(formData)).then(setErro)
@@ -151,19 +151,27 @@ export function PassarPara({
     <form action={passar} className="flex shrink-0 items-center gap-1.5">
       <Dropdown
         nome="usuarioId"
-        rotuloAcessivel="Passar a conversa para"
+        rotuloAcessivel="Transferir a conversa para"
         className="w-[150px]"
-        opcoes={equipe.map((membro) => ({
-          valor: membro.id,
-          rotulo: membro.nome,
-          detalhe: membro.presenca === 'disponivel' ? undefined : 'ausente',
-        }))}
+        /*
+         * Começa vazio. Sem isto aparecia o primeiro nome da equipe, e o seletor
+         * lia como "o responsável é fulano" numa conversa sem responsável
+         * nenhum (30/set/2026).
+         */
+        opcoes={[
+          { valor: '', rotulo: 'Transferir para…' },
+          ...equipe.map((membro) => ({
+            valor: membro.id,
+            rotulo: membro.nome,
+            detalhe: membro.presenca === 'disponivel' ? undefined : 'ausente',
+          })),
+        ]}
       />
       <button
         type="submit"
         className="rounded-[8px] border border-line px-2.5 py-1.5 text-[11.5px] font-semibold text-muted transition hover:border-primary/40 hover:text-primary disabled:opacity-50"
       >
-        Passar
+        Transferir
       </button>
       {erro && (
         <span role="alert" className="max-w-[160px] text-[11.5px] leading-4 text-perigo">

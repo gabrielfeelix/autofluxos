@@ -938,6 +938,15 @@ async function avancarConversa(
     await anotar(canalSalvo.clienteId, contato.id, 'entrou-no-fluxo', {
       fluxo: abertura.nomeDoFluxo,
     })
+    /*
+     * A conversa nova já nasce com responsável, pela distribuição da conta.
+     *
+     * Até 30/set/2026 só o handoff distribuía, e toda conversa que o bot
+     * atendia ficava "sem responsável" na Inbox, inclusive as que a equipe ia
+     * acompanhar. Conta sem distribuição (ou sem ninguém disponível) segue sem
+     * dono, como antes. Quem já tem dono não muda.
+     */
+    await distribuirSeSemDono(canalSalvo.clienteId, contato.id)
     // Depois de criar a sessão de propósito: o contador é da tela, e nunca pode
     // ficar entre a escolha do fluxo e a conversa existir.
     if (abertura.gatilhoId) await contarDisparo(abertura.gatilhoId)
