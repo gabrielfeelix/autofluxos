@@ -166,7 +166,7 @@ export async function passadaDeRetomadaDoBot(): Promise<ResumoDaRetomadaDoBot> {
         continue
       }
       resumo.devolvidas += 1
-      if (!avisou) resumo.semAviso += 1
+      if (!avisou && mensagemDaRetomada(conta, bloco?.mensagem)) resumo.semAviso += 1
     } catch (erro) {
       // Uma conversa não derruba a passada: é o mesmo `try` por linha de
       // `passada-de-retomada` e `disparar-transmissao`. Um número desconectado
@@ -224,12 +224,12 @@ async function escolhaDoBloco(
  * repetida é pior do que, raramente, nenhuma frase: a conversa volta ao bot
  * de qualquer jeito, e a próxima mensagem dela já encontra o bot ligado.
  */
-async function devolverAoBot(parada: SessaoParada, texto: string): Promise<boolean | 'outra-passada'> {
+async function devolverAoBot(parada: SessaoParada, texto: string | null): Promise<boolean | 'outra-passada'> {
   if (!(await tomarSessaoParada(parada.id))) return 'outra-passada'
   const contexto = await contextoDeResposta(parada.clienteId, parada.contatoId)
 
   let avisou = false
-  if (contexto && dentroDaJanela(contexto)) {
+  if (texto && contexto && dentroDaJanela(contexto)) {
     const canal = await adaptadorDoCanal(contexto.canal)
 
     // Grava antes de enviar, como toda saída nossa: mensagem que saiu e não
@@ -254,7 +254,7 @@ async function devolverAoBot(parada: SessaoParada, texto: string): Promise<boole
     'automacao',
     {
       o_que: 'a conversa voltou ao bot por inatividade do atendimento',
-      avisou: avisou ? 'sim' : 'não, a janela de 24h estava fechada',
+      avisou: avisou ? 'sim' : texto ? 'não, a janela de 24h estava fechada' : 'não, volta calado',
     },
     'automação',
   )

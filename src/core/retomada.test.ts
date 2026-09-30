@@ -66,9 +66,8 @@ describe('a mensagem', () => {
     expect(mensagemDaRetomada({ ...LIGADA, mensagem: 'da conta' }, undefined)).toBe('da conta')
   })
 
-  it('texto em branco nunca vira mensagem em branco no WhatsApp de alguém', () => {
-    expect(mensagemDaRetomada({ ...LIGADA, mensagem: '   ' }, '  ')).toBe(
-      MENSAGEM_DE_RETOMADA_PADRAO,
-    )
+  it('texto em branco, ou o sugerido antigo, volta calado', () => {
+    expect(mensagemDaRetomada({ ...LIGADA, mensagem: '   ' }, '  ')).toBeNull()
+    expect(mensagemDaRetomada({ ...LIGADA, mensagem: MENSAGEM_DE_RETOMADA_PADRAO }, undefined)).toBeNull()
   })
 })

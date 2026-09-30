@@ -21,7 +21,7 @@
  * é testável sem subir nada e é o único lugar em que a regra existe escrita.
  */
 
-/** O padrão que a tela sugere e que vale quando a conta não escreveu nada. */
+/** O texto que a tela sugeria até 30/set/2026. Gravado assim, vale como vazio. */
 export const MENSAGEM_DE_RETOMADA_PADRAO =
   'Por aqui o atendimento seguiu sozinho, e voltei a te atender. ' +
   'A equipe já foi avisada e pode entrar na conversa a qualquer momento.'
@@ -97,11 +97,20 @@ export function decidirRetomada(
   return faltamMs <= 0 ? { o: 'retomar' } : { o: 'esperar', faltamMs }
 }
 
-/** O texto que sai, na ordem bloco, conta, padrão. */
+/**
+ * O texto que sai, na ordem bloco, conta; `null` quando o bot volta calado.
+ *
+ * **Calado é o padrão desde 30/set/2026.** O aviso ("voltei a te atender, a
+ * equipe já foi avisada") chegava para quem não tinha perguntado nada, soava
+ * estranho (o chefe da PCYES recebeu no próprio número) e, desde 1/out, cada
+ * mensagem de serviço é cobrada. Voltar ao bot não precisa de anúncio: a
+ * próxima mensagem da pessoa já encontra o bot ligado. O texto sugerido antigo,
+ * gravado por quem só salvou a tela, conta como não escrito.
+ */
 export function mensagemDaRetomada(
   conta: ConfigDaConta,
   doBloco: string | undefined,
-): string {
+): string | null {
   const escolhido = (doBloco ?? conta.mensagem ?? '').trim()
-  return escolhido === '' ? MENSAGEM_DE_RETOMADA_PADRAO : escolhido
+  return escolhido === '' || escolhido === MENSAGEM_DE_RETOMADA_PADRAO ? null : escolhido
 }

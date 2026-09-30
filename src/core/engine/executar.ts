@@ -429,7 +429,16 @@ export function executar(
 
     const saida = proximo(fluxo, atual.id, SAIDA_TIMEOUT)
     if (saida === null) {
-      return transferir(s, acoes, 'ninguém respondeu dentro do prazo da pergunta', contexto)
+      /*
+       * Vai para a fila, **calado**. A pessoa saiu da conversa; "Vou te passar
+       * para um atendente" chegava horas depois para quem não estava mais ali
+       * (PCYES, 30/set: o dono recebeu no próprio número, sem ter pedido nada),
+       * e desde 1/out cada mensagem é cobrada. Quem precisa saber é a equipe,
+       * e ela sabe pela fila.
+       */
+      acoes.push({ tipo: 'transferir_humano', motivo: 'ninguém respondeu dentro do prazo da pergunta' })
+      s.status = 'humano'
+      return { acoes, sessao: s }
     }
 
     s.tentativas = 0

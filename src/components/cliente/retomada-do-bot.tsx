@@ -73,7 +73,9 @@ export function RetomadaDoBotForm({
   const [escolha, setEscolha] = useState(naLista ? String(guardado) : 'livre')
   const [quanto, setQuanto] = useState(String(partes.quanto))
   const [unidade, setUnidade] = useState<'minutos' | 'horas'>(partes.unidade)
-  const [mensagem, setMensagem] = useState(inicial.mensagem ?? MENSAGEM_DE_RETOMADA_PADRAO)
+  const [mensagem, setMensagem] = useState(
+    inicial.mensagem && inicial.mensagem.trim() !== MENSAGEM_DE_RETOMADA_PADRAO ? inicial.mensagem : '',
+  )
 
   const livre = escolha === 'livre'
   const minutos = livre ? Number(quanto || 0) * (unidade === 'horas' ? 60 : 1) : Number(escolha)
@@ -178,27 +180,20 @@ export function RetomadaDoBotForm({
 
           <label className="mt-5 block">
             <span className="mb-1.5 block text-[12.5px] font-bold text-soft">
-              O que o bot diz ao voltar
+              O que o bot diz ao voltar (opcional)
             </span>
             <span className="mb-2 block text-[11.5px] leading-4 text-dim">
-              Precisa dizer as duas coisas: que o bot voltou, e que a pessoa não foi esquecida.
+              Em branco, o bot volta calado e responde a próxima mensagem da pessoa. Cada aviso é uma
+              mensagem cobrada pela Meta.
             </span>
             <textarea
               name="mensagem"
               rows={3}
               value={mensagem}
               onChange={(e) => setMensagem(e.target.value)}
+              placeholder="Exemplo: Voltei por aqui! Se ainda precisar, é só me dizer."
               className="app-field resize-y px-3.5 py-3 text-[13px] leading-6"
             />
-            {mensagem.trim() !== MENSAGEM_DE_RETOMADA_PADRAO && (
-              <button
-                type="button"
-                onClick={() => setMensagem(MENSAGEM_DE_RETOMADA_PADRAO)}
-                className="mt-2 text-[11.5px] text-muted underline underline-offset-2 transition hover:text-primary"
-              >
-                voltar ao texto sugerido
-              </button>
-            )}
           </label>
 
           {/*

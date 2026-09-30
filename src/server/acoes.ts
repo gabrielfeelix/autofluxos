@@ -2854,15 +2854,7 @@ export async function acaoSalvarRetomada(
     return { erro: 'o prazo precisa estar entre 1 minuto e 24 horas' }
   }
 
-  /*
-   * Texto em branco com o recurso ligado é recusado, e não trocado pelo padrão
-   * em silêncio. Quem apagou o campo quis apagar alguma coisa, e descobrir pelo
-   * WhatsApp do cliente qual frase foi para o lugar é tarde demais. Desligado,
-   * o campo pode ficar vazio: não sai mensagem nenhuma.
-   */
-  if (ativo && mensagem.trim() === '') {
-    return { erro: 'escreva o que o bot diz ao voltar, ou desligue a retomada' }
-  }
+  // Texto em branco vale: o bot volta calado (ver `mensagemDaRetomada`).
 
   await atualizarRetomada(clienteId, { ativo, minutos, mensagem })
 
