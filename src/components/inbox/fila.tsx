@@ -201,6 +201,24 @@ export function Fila({
     return juntas;
   }, [naoLidasDoServidor, viva.naoLidas, selecionado]);
 
+  /*
+   * "(3) AutoFluxos" na aba, como o WhatsApp Web: quantas conversas têm
+   * mensagem nova para mim. A Inbox é a tela que fica aberta o dia inteiro
+   * atrás de outras abas, e sem isto quem atende só sabia que chegou coisa
+   * olhando para ela (pedido de 30/set/2026).
+   *
+   * Refeito quando a conversa aberta muda porque o Next reescreve o título a
+   * cada navegação, e o prefixo sumiria até a próxima mensagem.
+   */
+  const conversasSemLer = naoLidas.size;
+  useEffect(() => {
+    const semNumero = document.title.replace(/^\(\d+\+?\)\s*/, "");
+    document.title = conversasSemLer > 0 ? `(${conversasSemLer}) ${semNumero}` : semNumero;
+    return () => {
+      document.title = document.title.replace(/^\(\d+\+?\)\s*/, "");
+    };
+  }, [conversasSemLer, selecionado]);
+
   const [recorte, setRecorte] = useState<Lead[]>(leads);
 
   /*

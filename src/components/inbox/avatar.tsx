@@ -119,6 +119,9 @@ export function Avatar({
           avatar sem desenhar um anel. */}
       {alerta && (
         <span
+          role="img"
+          aria-label="Esperando alguém da equipe"
+          title="Esperando alguém da equipe: some quando alguém responde ou marca Já atendi"
           className={`absolute -right-0.5 size-2.5 rounded-full border-2 border-panel bg-rose-500 ${canal ? '-top-0.5' : '-bottom-0.5'}`}
         />
       )}
