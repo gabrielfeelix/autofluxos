@@ -1,15 +1,9 @@
+import { iniciais } from '@/core/iniciais'
 import type { Cliente } from '@/server/repos/clientes'
 
 /** As duas primeiras letras que sobram do nome, para quando não há logo. */
 export function iniciaisDe(nome: string): string {
-  const palavras = nome
-    .trim()
-    .split(/\s+/)
-    .filter((p) => p.length > 1)
-
-  if (palavras.length === 0) return nome.slice(0, 2).toUpperCase()
-  if (palavras.length === 1) return palavras[0]!.slice(0, 2).toUpperCase()
-  return (palavras[0]![0]! + palavras[palavras.length - 1]![0]!).toUpperCase()
+  return iniciais(nome, { palavraUnica: 2 })
 }
 
 /**

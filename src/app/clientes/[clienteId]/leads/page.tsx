@@ -1,4 +1,5 @@
 import { meuAlcance } from '@/server/permissoes'
+import { iniciais as iniciaisDoNome } from '@/core/iniciais'
 import Link from 'next/link'
 import { hrefDaFicha } from '@/core/volta-da-ficha'
 import { LinhaClicavel } from '@/components/lead/linha-clicavel'
@@ -738,7 +739,7 @@ function Cabecalho({
 }
 
 function Avatar({ nome }: { nome: string | null }) {
-  const iniciais = (nome ?? '?').split(' ').filter(Boolean).slice(0, 2).map((parte) => parte[0]).join('').toUpperCase()
+  const iniciais = iniciaisDoNome(nome)
   return (
     <span className="flex size-8 shrink-0 items-center justify-center rounded-full border border-strong bg-surface text-[10px] font-bold text-muted">
       {iniciais}

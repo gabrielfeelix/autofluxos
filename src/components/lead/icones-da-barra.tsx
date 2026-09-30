@@ -77,6 +77,16 @@ export function IconeLocalizacao() {
   )
 }
 
+/** Um tíquete com o picote no meio: cupom de desconto. */
+export function IconeCupom() {
+  return (
+    <svg {...traco} width={TAMANHO} height={TAMANHO}>
+      <path d="M3.5 8.5V6.5a1 1 0 0 1 1-1h15a1 1 0 0 1 1 1v2a2.5 2.5 0 0 0 0 5v2a1 1 0 0 1-1 1h-15a1 1 0 0 1-1-1v-2a2.5 2.5 0 0 0 0-5Z" />
+      <path d="M14.5 5.5v2M14.5 10.9v2.2M14.5 16.5v2" />
+    </svg>
+  )
+}
+
 export function IconeMicrofone() {
   return (
     <svg {...traco} width={TAMANHO} height={TAMANHO}>

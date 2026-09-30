@@ -19,6 +19,7 @@
  */
 import { DEFINICAO_DO_CANAL, type CanalId } from '@/core/canais'
 import { LogoDoCanal } from '@/components/design/selo-do-canal'
+import { iniciais } from '@/core/iniciais'
 
 /**
  * Uma cor só, chapada: roxo escuro com a inicial clara.
@@ -57,13 +58,7 @@ export function Avatar({
   canal?: CanalId
 }) {
   const limpo = nome?.trim() ?? ''
-  const iniciais = limpo
-    .split(' ')
-    .filter(Boolean)
-    .slice(0, 2)
-    .map((parte) => parte[0])
-    .join('')
-    .toUpperCase()
+  const letras = limpo ? iniciais(limpo) : ''
 
   return (
     <span
@@ -71,7 +66,7 @@ export function Avatar({
       className={`relative flex shrink-0 items-center justify-center rounded-full font-bold ${COR}`}
     >
       {limpo ? (
-        iniciais
+        letras
       ) : (
         /* Sem nome (visitante do site, quase sempre): uma silhueta, e não
            "?". O ponto de interrogação lia como erro, como se faltasse dado

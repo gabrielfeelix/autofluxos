@@ -9,6 +9,7 @@ import { pedirNovas } from '@/components/inbox/sinal-de-conversa'
 import { SeletorDeEmoji } from '@/components/lead/seletor-de-emoji'
 import { SeletorDeProduto } from '@/components/lead/seletor-de-produto'
 import { SeletorDePedido } from '@/components/lead/seletor-de-pedido'
+import { SeletorDeCupom } from '@/components/lead/seletor-de-cupom'
 import { SeletorDeRespostaRapida } from '@/components/lead/seletor-de-resposta-rapida'
 import { alternarMarca, type Marca } from '@/components/editor/formatar'
 import { DEFINICAO_DO_CANAL, type CanalId } from '@/core/canais'
@@ -486,6 +487,9 @@ export function CaixaDeResposta({
         )}
         {livre && anexo && temPedidos && !gravando && (
           <SeletorDePedido clienteId={anexo.clienteId} contatoId={anexo.contatoId} desabilitado={enviando} />
+        )}
+        {livre && anexo && temPedidos && !gravando && (
+          <SeletorDeCupom clienteId={anexo.clienteId} contatoId={anexo.contatoId} desabilitado={enviando} />
         )}
 
         {livre && !gravando && formata && (

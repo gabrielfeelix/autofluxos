@@ -1,5 +1,6 @@
 'use client'
 
+import { iniciais as iniciaisDoNome } from '@/core/iniciais'
 import { useId, useState, type ReactNode } from 'react'
 import { comoDinheiro } from '@/core/crm'
 import { azul, dinheiroCurto, type Fatia } from './formatos'
@@ -423,8 +424,7 @@ export type LinhaDeBarra = {
 }
 
 function iniciais(nome: string): string {
-  const partes = nome.trim().split(/\s+/)
-  return ((partes[0]?.[0] ?? '') + (partes.length > 1 ? (partes[partes.length - 1]?.[0] ?? '') : '')).toUpperCase()
+  return iniciaisDoNome(nome)
 }
 
 /**

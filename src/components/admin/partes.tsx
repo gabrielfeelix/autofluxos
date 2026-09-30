@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import { iniciais as iniciaisDoNome } from '@/core/iniciais'
 import type { ReactNode } from 'react'
 import { RolagemDaTabela } from '@/components/lead/rolagem-da-tabela'
 import { Esqueleto } from '@/components/design/esqueleto'
@@ -177,7 +178,7 @@ export function Selo({ children, tom = 'neutro', title }: { children: ReactNode;
 
 /** Iniciais num círculo, para quem não tem logo nem foto. */
 export function Iniciais({ nome, tamanho = 32 }: { nome: string; tamanho?: number }) {
-  const iniciais = nome.split(' ').filter(Boolean).slice(0, 2).map((parte) => parte[0]).join('').toUpperCase() || '?'
+  const iniciais = iniciaisDoNome(nome)
   return (
     <span
       style={{ width: tamanho, height: tamanho }}

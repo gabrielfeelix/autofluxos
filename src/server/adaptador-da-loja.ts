@@ -4,6 +4,7 @@ import { lojaCatalogo } from '@/loja/catalogo'
 import { lojaMagento } from '@/loja/magento'
 import { lojaAdmin } from '@/loja/magento-admin'
 import { consultarPedido, type ConsultaDePedido } from '@/loja/magento-pedido'
+import { listarCupons, type CupomDaLoja } from '@/loja/magento-cupons'
 import { lojaNuvemshop } from '@/loja/nuvemshop'
 import type { Loja } from '@/loja/types'
 import { alertar } from './alertar'
@@ -55,6 +56,26 @@ export async function consultarPedidoDaConta(
   const rastreio = linkDoRastreio(r.valor.pedido)
   const pedido = { ...r.valor.pedido, ...(entrega ? { entrega } : {}), ...(rastreio ? { linkDoRastreio: rastreio } : {}) }
   return { ok: true, valor: { ...r.valor, pedido } }
+}
+
+/**
+ * Os cupons ativos da loja da conta (só Magento), para o seletor da Inbox.
+ * `hoje` no fuso de Brasília: cupom que vence hoje ainda vale hoje.
+ */
+export async function cuponsDaConta(
+  clienteId: string,
+): Promise<{ ok: true; valor: CupomDaLoja[] } | { ok: false; motivo: string }> {
+  const loja = await lojaDaConta(clienteId)
+  if (!loja || !loja.ativa) return { ok: false, motivo: 'a loja desta conta não está ligada' }
+  if (!loja.conexaoId) return { ok: false, motivo: 'a loja desta conta não tem token conectado' }
+  let credencial = null
+  try {
+    credencial = await lerCredencial(loja.conexaoId, clienteId)
+  } catch {
+    return { ok: false, motivo: 'não deu para ler o token da loja' }
+  }
+  const hoje = new Date().toLocaleDateString('sv-SE', { timeZone: 'America/Sao_Paulo' })
+  return listarCupons({ endereco: loja.endereco, credencial }, hoje, chamarHttp)
 }
 
 async function entregaDaFreteRapido(clienteId: string, numero: string): Promise<RastreioDaFreteRapido | null> {

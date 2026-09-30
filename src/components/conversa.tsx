@@ -1,5 +1,6 @@
 'use client'
 
+import { iniciais as iniciaisDoNome } from '@/core/iniciais'
 import { encaminhamentoEmTexto } from '@/core/encaminhar'
 import { useEffect, useRef, useState } from 'react'
 import { sessaoNova, type Acao, type Entrada, type Resultado, type Sessao } from '@/core/engine/types'
@@ -520,13 +521,7 @@ export function Conversa({
         timeoutDaPergunta(no) !== null,
     )
   const eventos = contarEventos(itens)
-  const iniciais = nomeContato
-    .split(/\s+/)
-    .filter(Boolean)
-    .slice(0, 2)
-    .map((parte) => parte[0])
-    .join('')
-    .toUpperCase()
+  const iniciais = iniciaisDoNome(nomeContato)
 
   return (
     <div className="flex min-h-0 flex-1 flex-col">
