@@ -47,6 +47,12 @@ let poolCache: Pool | null = null
  * pooler que já é o gargalo, a `max: 1` acima existe justamente para isso não
  * acontecer.
  *
+ * **Só tabela do login.** Em produção este pool entra como `autofluxos_login`
+ * (0111), que enxerga `af_*`, `clients`, `funcoes`, `planos` e
+ * `membro_capacidades` e mais nada. Consulta que toca qualquer outra tabela
+ * vai por `bancoDeDados()` (`server/banco-de-dados.ts`), senão quebra com
+ * `permission denied` só em produção, como em 28/set.
+ *
  * Quem usa daqui escreve SQL, então vale a regra da casa: identificador nunca
  * vem de usuário, valor sempre vai como parâmetro (`$1`).
  */

@@ -1,6 +1,6 @@
 import 'server-only'
 import { ehCorDeEtiqueta, LIMITE_DO_NOME, type CorDeEtiqueta } from '@/core/etiquetas'
-import { bancoDoLogin } from '../auth'
+import { bancoDeDados } from '../banco-de-dados'
 import { db, ehIdInvalido } from '../db'
 import { sequenciasQueUsamAEtiqueta } from './sequencias'
 
@@ -102,7 +102,7 @@ export async function juntarEtiquetas(
     }
   }
 
-  const conexao = await bancoDoLogin().connect()
+  const conexao = await bancoDeDados().connect()
   try {
     await conexao.query('begin')
     const { rows: donas } = await conexao.query(

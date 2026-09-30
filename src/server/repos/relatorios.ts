@@ -4,7 +4,7 @@ import { faixaDaNota } from '@/core/flow/schema'
 import type { FiltroDeEscopo } from '@/core/permissoes'
 import { resumirProdutosNoAtendimento, type ProdutosNoAtendimento } from '@/core/produtos-no-atendimento'
 import { FUSO_DOS_RELATORIOS, type DiaDoRelatorio, type Periodo } from '@/core/relatorios'
-import { bancoDoLogin } from '../auth'
+import { bancoDeDados } from '../banco-de-dados'
 import { db } from '../db'
 
 /**
@@ -34,7 +34,7 @@ import { db } from '../db'
  *
  * Não é migration porque não precisa ser: consulta parametrizada não cria nada
  * no banco que a Verandi divide. Vai pelo mesmo pool do login, que já fala
- * Postgres direto (`bancoDoLogin`); valor sempre como parâmetro (`$1`),
+ * Postgres direto (`bancoDeDados`); valor sempre como parâmetro (`$1`),
  * identificador nunca vem de fora.
  *
  * ---------------------------------------------------------------------------
@@ -285,7 +285,7 @@ export async function totaisDoPeriodo(
   periodo: Periodo,
   responsaveis: Responsaveis,
 ): Promise<TotaisDoPeriodo> {
-  const { rows } = await bancoDoLogin().query(SQL_DOS_TOTAIS, parametros(clienteId, periodo, responsaveis))
+  const { rows } = await bancoDeDados().query(SQL_DOS_TOTAIS, parametros(clienteId, periodo, responsaveis))
   const r = rows[0] as Record<string, unknown>
 
   const desfechos: ContagemPorDesfecho = { ...SEM_CONVERSAS }
@@ -355,7 +355,7 @@ export async function serieDoPeriodo(
   periodo: Periodo,
   responsaveis: Responsaveis,
 ): Promise<DiaDoRelatorio[]> {
-  const { rows } = await bancoDoLogin().query(SQL_DA_SERIE, parametros(clienteId, periodo, responsaveis))
+  const { rows } = await bancoDeDados().query(SQL_DA_SERIE, parametros(clienteId, periodo, responsaveis))
   return (rows as Record<string, unknown>[]).map((r) => ({
     dia: String(r.dia),
     contatosNovos: Number(r.contatos_novos),
@@ -370,7 +370,7 @@ export async function atendimentosPorPessoa(
   periodo: Periodo,
   responsaveis: Responsaveis,
 ): Promise<AtendimentoDaPessoa[]> {
-  const { rows } = await bancoDoLogin().query(SQL_DAS_PESSOAS, parametros(clienteId, periodo, responsaveis))
+  const { rows } = await bancoDeDados().query(SQL_DAS_PESSOAS, parametros(clienteId, periodo, responsaveis))
   return (rows as Record<string, unknown>[]).map((r) => ({
     usuarioId: String(r.usuario_id),
     atendimentos: Number(r.atendimentos),
@@ -460,7 +460,7 @@ select a.campanha, (p.ad_id is not null) as anuncio, count(*)::int as n
 
 /** `[dia][hora]`, segunda na linha 0, com zero onde não houve conversa. */
 export async function horariosDoPeriodo(clienteId: string, periodo: Periodo, responsaveis: Responsaveis): Promise<number[][]> {
-  const { rows } = await bancoDoLogin().query(SQL_DOS_HORARIOS, parametros(clienteId, periodo, responsaveis))
+  const { rows } = await bancoDeDados().query(SQL_DOS_HORARIOS, parametros(clienteId, periodo, responsaveis))
   const celulas = Array.from({ length: 7 }, () => Array.from({ length: 24 }, () => 0))
   for (const r of rows as { dia: number; hora: number; n: number }[]) {
     const linha = celulas[Number(r.dia) - 1]
@@ -474,14 +474,14 @@ export async function conversasPorCanal(
   periodo: Periodo,
   responsaveis: Responsaveis,
 ): Promise<{ canal: string; n: number }[]> {
-  const { rows } = await bancoDoLogin().query(SQL_DOS_CANAIS, parametros(clienteId, periodo, responsaveis))
+  const { rows } = await bancoDeDados().query(SQL_DOS_CANAIS, parametros(clienteId, periodo, responsaveis))
   return (rows as Record<string, unknown>[]).map((r) => ({ canal: String(r.canal), n: Number(r.n) }))
 }
 
 export type FaixasDeEspera = { ate5: number; ate15: number; ate60: number; ate4h: number; mais: number; semResposta: number }
 
 export async function faixasDeEspera(clienteId: string, periodo: Periodo, responsaveis: Responsaveis): Promise<FaixasDeEspera> {
-  const { rows } = await bancoDoLogin().query(SQL_DA_ESPERA, parametros(clienteId, periodo, responsaveis))
+  const { rows } = await bancoDeDados().query(SQL_DA_ESPERA, parametros(clienteId, periodo, responsaveis))
   const r = rows[0] as Record<string, unknown>
   return {
     ate5: Number(r.ate5),
@@ -499,7 +499,7 @@ export async function origemDosContatos(
   periodo: Periodo,
   responsaveis: Responsaveis,
 ): Promise<{ campanha: string | null; anuncio: boolean; n: number }[]> {
-  const { rows } = await bancoDoLogin().query(SQL_DA_ORIGEM, parametros(clienteId, periodo, responsaveis))
+  const { rows } = await bancoDeDados().query(SQL_DA_ORIGEM, parametros(clienteId, periodo, responsaveis))
   return (rows as Record<string, unknown>[]).map((r) => ({
     campanha: r.campanha ? String(r.campanha) : null,
     anuncio: Boolean(r.anuncio),
@@ -561,8 +561,8 @@ export async function produtosNoAtendimento(
   periodo: Periodo,
   responsaveis: Responsaveis,
 ): Promise<ProdutosNoAtendimento> {
-  const cards = await bancoDoLogin().query(SQL_DOS_CARDS, parametros(clienteId, periodo, responsaveis))
-  const cliques = await bancoDoLogin().query(SQL_DOS_CLIQUES, parametros(clienteId, periodo, responsaveis))
+  const cards = await bancoDeDados().query(SQL_DOS_CARDS, parametros(clienteId, periodo, responsaveis))
+  const cliques = await bancoDeDados().query(SQL_DOS_CLIQUES, parametros(clienteId, periodo, responsaveis))
   return resumirProdutosNoAtendimento(
     (cliques.rows as Record<string, unknown>[]).map((r) => ({
       produto: r.produto ? String(r.produto) : null,

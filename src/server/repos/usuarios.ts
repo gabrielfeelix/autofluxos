@@ -1,5 +1,6 @@
 import 'server-only'
 import { bancoDoLogin } from '../auth'
+import { bancoDeDados } from '../banco-de-dados'
 
 /**
  * As pessoas e as contas, do ponto de vista de quem administra a plataforma.
@@ -100,7 +101,7 @@ export type ContaComMembros = {
  * lista que só mostra o que já está resolvido esconde o trabalho.
  */
 export async function listarContasComMembros(): Promise<ContaComMembros[]> {
-  const { rows } = await bancoDoLogin().query(
+  const { rows } = await bancoDeDados().query(
     `select c.id,
             c.nome,
             c.slug,
@@ -299,7 +300,7 @@ export async function removerComDestino(
 > {
   if (destino === usuarioId) return { ok: false, motivo: 'escolha outra pessoa para receber' }
 
-  const cliente = await bancoDoLogin().connect()
+  const cliente = await bancoDeDados().connect()
   try {
     await cliente.query('begin')
     const { rows } = await cliente.query(

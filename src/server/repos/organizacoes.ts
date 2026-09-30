@@ -1,6 +1,7 @@
 import 'server-only'
 import { cache } from 'react'
 import { bancoDoLogin } from '../auth'
+import { bancoDeDados } from '../banco-de-dados'
 import { chaveDoMes } from './plano'
 
 /**
@@ -37,7 +38,7 @@ export type OrganizacaoListada = {
 
 export async function listarOrganizacoes(opcoes: { id?: string } = {}): Promise<OrganizacaoListada[]> {
   const mes = chaveDoMes(new Date())
-  const { rows } = await bancoDoLogin().query(
+  const { rows } = await bancoDeDados().query(
     `select c.id,
             c.nome,
             coalesce(c.responsavel, '') as responsavel,
@@ -142,7 +143,7 @@ export type CanalDaOrganizacao = { id: string; tipo: string; nome: string; statu
 
 /** Os canais ligados (WhatsApp, Instagram), para o Resumo. */
 export async function canaisDaOrganizacao(id: string): Promise<CanalDaOrganizacao[]> {
-  const { rows } = await bancoDoLogin().query(
+  const { rows } = await bancoDeDados().query(
     `select ch.id, ch.provider, ch.status, ch.criado_em,
             coalesce(nullif(ch.verified_name, ''), '') as verificado,
             coalesce(nullif(ch.display_phone_number, ''), '') as numero,

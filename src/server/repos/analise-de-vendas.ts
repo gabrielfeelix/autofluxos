@@ -1,7 +1,7 @@
 import 'server-only'
 import type { AlcanceDosNegocios, MesDeVendas, MotivoDePerda } from '@/core/analise-de-vendas'
 import { FUSO_DOS_RELATORIOS, type Periodo } from '@/core/relatorios'
-import { bancoDoLogin } from '../auth'
+import { bancoDeDados } from '../banco-de-dados'
 import type { Responsaveis } from './relatorios'
 
 /**
@@ -159,7 +159,7 @@ export async function totaisDeVendas(
   responsaveis: Responsaveis,
   quadroId: string | null,
 ): Promise<TotaisDeVendas> {
-  const { rows } = await bancoDoLogin().query(SQL_DOS_TOTAIS, parametros(clienteId, periodo, responsaveis, quadroId))
+  const { rows } = await bancoDeDados().query(SQL_DOS_TOTAIS, parametros(clienteId, periodo, responsaveis, quadroId))
   const r = rows[0] as Record<string, unknown>
   return {
     ganhos: Number(r.ganhos),
@@ -172,7 +172,7 @@ export async function totaisDeVendas(
 
 /** Há algum negócio no alcance desta pessoa, em qualquer data? Decide a tela vazia. */
 export async function existeNegocio(clienteId: string, responsaveis: Responsaveis, quadroId: string | null): Promise<boolean> {
-  const { rows } = await bancoDoLogin().query(SQL_EXISTE, [
+  const { rows } = await bancoDeDados().query(SQL_EXISTE, [
     clienteId,
     responsaveis === null ? null : [...responsaveis],
     quadroId,
@@ -187,7 +187,7 @@ export async function ganhosPorMes(
   responsaveis: Responsaveis,
   quadroId: string | null,
 ): Promise<MesDeVendas[]> {
-  const { rows } = await bancoDoLogin().query(SQL_DOS_MESES, parametros(clienteId, periodo, responsaveis, quadroId))
+  const { rows } = await bancoDeDados().query(SQL_DOS_MESES, parametros(clienteId, periodo, responsaveis, quadroId))
   return (rows as Record<string, unknown>[]).map((r) => ({
     mes: String(r.mes),
     ganhos: Number(r.ganhos),
@@ -201,7 +201,7 @@ export async function motivosDePerda(
   responsaveis: Responsaveis,
   quadroId: string | null,
 ): Promise<MotivoDePerda[]> {
-  const { rows } = await bancoDoLogin().query(SQL_DOS_MOTIVOS, parametros(clienteId, periodo, responsaveis, quadroId))
+  const { rows } = await bancoDeDados().query(SQL_DOS_MOTIVOS, parametros(clienteId, periodo, responsaveis, quadroId))
   return (rows as Record<string, unknown>[]).map((r) => ({
     motivo: r.motivo === null ? null : String(r.motivo),
     n: Number(r.n),
@@ -223,7 +223,7 @@ export async function vendasPorPessoa(
   responsaveis: Responsaveis,
   quadroId: string | null,
 ): Promise<VendasDaPessoa[]> {
-  const { rows } = await bancoDoLogin().query(SQL_DA_EQUIPE, parametros(clienteId, periodo, responsaveis, quadroId))
+  const { rows } = await bancoDeDados().query(SQL_DA_EQUIPE, parametros(clienteId, periodo, responsaveis, quadroId))
   return (rows as Record<string, unknown>[]).map((r) => ({
     usuarioId: r.usuario_id === null ? null : String(r.usuario_id),
     ganhos: Number(r.ganhos),
@@ -240,7 +240,7 @@ export async function alcanceDosNegocios(
   responsaveis: Responsaveis,
   quadroId: string,
 ): Promise<AlcanceDosNegocios[]> {
-  const { rows } = await bancoDoLogin().query(SQL_DO_ALCANCE, parametros(clienteId, periodo, responsaveis, quadroId))
+  const { rows } = await bancoDeDados().query(SQL_DO_ALCANCE, parametros(clienteId, periodo, responsaveis, quadroId))
   return (rows as Record<string, unknown>[]).map((r) => ({
     maiorOrdem: numeroOuNulo(r.maior_ordem),
     ganho: Boolean(r.ganho),
@@ -301,7 +301,7 @@ select a.campanha, (p.ad_id is not null) as anuncio, count(*)::int as n, sum(q.v
 export type EtapaEmAberto = { id: string; nome: string; ordem: number; n: number; valor: number | null }
 
 export async function negociosEmAberto(clienteId: string, responsaveis: Responsaveis, quadroId: string): Promise<EtapaEmAberto[]> {
-  const { rows } = await bancoDoLogin().query(SQL_DO_ABERTO, [
+  const { rows } = await bancoDeDados().query(SQL_DO_ABERTO, [
     clienteId,
     responsaveis === null ? null : [...responsaveis],
     quadroId,
@@ -323,7 +323,7 @@ export async function ganhosPorProduto(
   responsaveis: Responsaveis,
   quadroId: string | null,
 ): Promise<GanhosAgrupados[]> {
-  const { rows } = await bancoDoLogin().query(SQL_DOS_PRODUTOS, parametros(clienteId, periodo, responsaveis, quadroId))
+  const { rows } = await bancoDeDados().query(SQL_DOS_PRODUTOS, parametros(clienteId, periodo, responsaveis, quadroId))
   return (rows as Record<string, unknown>[]).map((r) => ({
     rotulo: r.produto ? String(r.produto) : null,
     n: Number(r.n),
@@ -338,7 +338,7 @@ export async function ganhosPorOrigem(
   responsaveis: Responsaveis,
   quadroId: string | null,
 ): Promise<GanhosAgrupados[]> {
-  const { rows } = await bancoDoLogin().query(SQL_DA_ORIGEM, parametros(clienteId, periodo, responsaveis, quadroId))
+  const { rows } = await bancoDeDados().query(SQL_DA_ORIGEM, parametros(clienteId, periodo, responsaveis, quadroId))
   return (rows as Record<string, unknown>[]).map((r) => ({
     rotulo: r.campanha ? String(r.campanha) : null,
     anuncio: Boolean(r.anuncio),
