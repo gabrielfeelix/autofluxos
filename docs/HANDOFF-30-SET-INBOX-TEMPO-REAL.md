@@ -8,6 +8,12 @@ visual. Regras do repo valem (`AGENTS.md`); memórias relevantes: ações
 otimistas sem recarregar, print local em 1440 e 390 antes de entregar UI,
 commit por fase e deploy no fim.
 
+## Atualização 30/set, fim da tarde
+
+Itens 1 a 6 e o botão de status do pedido foram feitos no mesmo dia (`2c86b93`,
+`f3fea72`, `92846ce`). Falta confirmar em uso real com duas abas. Continua
+aberto: **mensagens em rajada** (seção abaixo).
+
 ## O que ele viu (30/set, conta PCYES `64dbc3a9-1f77-4892-9770-e3e4be9e14cd`)
 
 1. **Mensagem nova não aparece na conversa aberta.** A fila mostrou "Certo,
