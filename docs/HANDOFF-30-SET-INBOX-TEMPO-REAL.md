@@ -32,6 +32,18 @@ commit por fase e deploy no fim.
    aponta para `/inbox?de=minhas` (`secoes-do-cliente.tsx:101`); a leitura do
    `de` está em `inbox/page.tsx` (~linha 191). O destaque da barra também
    marcou "Todas".
+6. **"envio não confirmado" que já foi.** Saraiva, 14:07: duas respostas
+   ficaram marcadas na tela, mas no banco estão `entregue=true` com `wamid`. A
+   transcrição pegou a linha antes de `confirmarEntrega` e nunca a relê.
+   Corrigir junto com o item 1 (a linha já desenhada também precisa atualizar).
+
+## Pedido novo: status do pedido pela Inbox
+
+Nos botões de ação da resposta (ao lado do de produto, `acoes-produtos-do-inbox.ts`),
+um ícone de localização que consulta o pedido da pessoa (a mesma
+`loja_pedido` do bot: Magento + Frete Rápido, `src/loja/frete-rapido.ts`) e
+manda o status pronto, como o bot faria. Busca por nº do pedido ou CPF;
+sugerir pelo telefone do contato quando a loja deixar.
 
 Aceite: abrir a Inbox em duas abas, mandar mensagem do celular para o número
 da PCYES e ver aparecer nas duas sem recarregar, com a aba mudando para "(1)"
