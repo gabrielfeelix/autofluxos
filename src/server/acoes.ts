@@ -68,6 +68,7 @@ import {
   encerrarAtendimento,
   alterarAutomacaoDoContato,
   registrarSaida,
+  atribuirSeSemDono,
 } from './repos/conversas'
 import { travarContato } from './repos/travas'
 import { membrosDaConta, removerComDestino } from './repos/usuarios'
@@ -2194,6 +2195,13 @@ export async function acaoResponderLead(
   }
 
   await confirmarEntrega(registro, waMessageId)
+
+  // Quem respondeu passa a ser o responsável, se a conversa não tinha um.
+  if (quemResponde) {
+    await atribuirSeSemDono(clienteId, contatoId, quemResponde.usuario.id).catch((erro) =>
+      console.error('[inbox] não deu para atribuir a quem respondeu', erro),
+    )
+  }
 
   // Só o status: o que a conversa já coletou continua na sessão, e é ele que
   // volta a valer se o bot reassumir depois do "Já atendi".

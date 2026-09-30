@@ -1579,3 +1579,21 @@ export async function revisaoDoControle(
   const linha = data as { controle_revisao: number | null } | null
   return linha?.controle_revisao ?? null
 }
+
+/**
+ * Dá o contato a quem respondeu, **só se ainda não tem dono**.
+ *
+ * Responder é assumir: em 30/set o dono da PCYES respondeu três conversas pela
+ * Inbox e elas seguiram em "Sem responsável", porque só o botão "Assumir"
+ * atribuía. A condição fica no próprio `update`: se alguém assumiu no mesmo
+ * instante, ninguém toma a conversa de ninguém.
+ */
+export async function atribuirSeSemDono(clienteId: string, contatoId: string, usuarioId: string): Promise<void> {
+  const { error } = await db()
+    .from('contacts')
+    .update({ atribuido_a: usuarioId })
+    .eq('id', contatoId)
+    .eq('client_id', clienteId)
+    .is('atribuido_a', null)
+  if (error && !ehIdInvalido(error)) throw new Error(`não deu para atribuir o contato: ${error.message}`)
+}
