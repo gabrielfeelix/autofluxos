@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { canalCloudApi, enderecar } from './cloud-api'
+import { canalCloudApi, comRetentativaDeConexao, enderecar } from './cloud-api'
 
 afterEach(() => {
   vi.useRealTimers()
@@ -643,5 +643,30 @@ describe('produto com botão de pedir', () => {
     expect(corpo.interactive.body.text).toContain('*Cheddar Bacon*')
     expect(corpo.interactive.body.text).toContain('34,90')
     expect(corpo.interactive.action.buttons).toEqual([{ type: 'reply', reply: { id: 'af-pedir:Cheddar Bacon', title: 'Pedir' } }])
+  })
+})
+
+describe('retentativa quando a conexão cai', () => {
+  it('tenta de novo depois de "fetch failed" e entrega', async () => {
+    const chamar = vi
+      .fn()
+      .mockRejectedValueOnce(new TypeError('fetch failed'))
+      .mockResolvedValueOnce(new Response('{}', { status: 200 }))
+    const r = await comRetentativaDeConexao(chamar, [0])
+    expect(r.status).toBe(200)
+    expect(chamar).toHaveBeenCalledTimes(2)
+  })
+
+  it('prazo estourado não repete: a Meta pode ter recebido', async () => {
+    const prazo = Object.assign(new Error('timeout'), { name: 'TimeoutError' })
+    const chamar = vi.fn().mockRejectedValue(prazo)
+    await expect(comRetentativaDeConexao(chamar, [0, 0])).rejects.toBe(prazo)
+    expect(chamar).toHaveBeenCalledTimes(1)
+  })
+
+  it('desiste depois das tentativas combinadas', async () => {
+    const chamar = vi.fn().mockRejectedValue(new TypeError('fetch failed'))
+    await expect(comRetentativaDeConexao(chamar, [0, 0])).rejects.toThrow('fetch failed')
+    expect(chamar).toHaveBeenCalledTimes(3)
   })
 })

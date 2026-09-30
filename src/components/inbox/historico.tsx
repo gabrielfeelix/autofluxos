@@ -1,6 +1,7 @@
 'use client'
 
 import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { EnvioNaoConfirmado } from './reenviar'
 import { podeReagir } from '@/channels/janela'
 import { assinaturaDasReacoes } from '@/core/reacoes'
 import {
@@ -428,7 +429,7 @@ function ListaDeMensagens({
                 {horaDoRelogio(mensagem.ts)}
               </span>
               {nossa && !mensagem.entregue && (
-                <span className="ml-2 text-[11px] font-semibold text-soft">envio não confirmado</span>
+                <EnvioNaoConfirmado clienteId={clienteId} contatoId={contatoId} mensagemId={mensagem.id} />
               )}
             </p>
             )}

@@ -37,6 +37,34 @@ const TIMEOUT_MS = 15_000
 const LIMITE_CORPO_CTA = 1024
 const TEXTO_DO_BOTAO_DA_LOJA = 'Ver na loja'
 
+/**
+ * Tenta de novo quando a **conexão** caiu antes de haver resposta.
+ *
+ * `TypeError: fetch failed` é rede (DNS, TLS, conexão derrubada no meio do
+ * caminho): a Meta não chegou a responder, e na prática não recebeu. Em 30/set
+ * uma resposta do atendente da PCYES ao cliente que pedia cupom morreu assim,
+ * e a tentativa seguinte, um segundo depois, teria saído.
+ *
+ * Prazo estourado **não** repete: aí a Meta pode ter recebido e só demorado a
+ * responder, e repetir entregaria a mensagem duas vezes.
+ */
+export async function comRetentativaDeConexao(
+  chamar: () => Promise<Response>,
+  esperas: readonly number[] = [400, 1_200],
+): Promise<Response> {
+  for (let i = 0; ; i++) {
+    try {
+      return await chamar()
+    } catch (erro) {
+      const nome = erro instanceof Error ? erro.name : ''
+      const ehPrazo = nome === 'TimeoutError' || nome === 'AbortError'
+      const espera = esperas[i]
+      if (ehPrazo || espera === undefined) throw erro
+      await new Promise((r) => setTimeout(r, espera))
+    }
+  }
+}
+
 /** Limites do carrossel interativo da Meta: corpo, card e quantidade. */
 const LIMITE_CORPO_CARROSSEL = 1024
 const LIMITE_CORPO_DO_CARD = 160
@@ -194,18 +222,23 @@ export function canalCloudApi(config: ConfigCloudApi): Canal {
   async function mandar(
     corpo: Record<string, unknown>,
     timeoutMs: number = TIMEOUT_MS,
+    /** Esperas entre tentativas quando a conexão cai; `[]` não repete. */
+    esperas?: readonly number[],
   ): Promise<RespostaDeEnvio> {
     let resposta: Response
     try {
-      resposta = await fetch(url, {
-        method: 'POST',
-        headers: {
-          Authorization: `Bearer ${config.token}`,
-          'content-type': 'application/json',
-        },
-        body: JSON.stringify({ messaging_product: 'whatsapp', ...enderecar(corpo) }),
-        signal: AbortSignal.timeout(timeoutMs),
-      })
+      resposta = await comRetentativaDeConexao(() =>
+        fetch(url, {
+          method: 'POST',
+          headers: {
+            Authorization: `Bearer ${config.token}`,
+            'content-type': 'application/json',
+          },
+          body: JSON.stringify({ messaging_product: 'whatsapp', ...enderecar(corpo) }),
+          signal: AbortSignal.timeout(timeoutMs),
+        }),
+        esperas,
+      )
     } catch (erro) {
       // Rede caída ou prazo estourado. Vira erro nosso com nome, e não um
       // `TypeError: fetch failed` que não diz nada a quem for ler o handoff.
@@ -327,6 +360,8 @@ export function canalCloudApi(config: ConfigCloudApi): Canal {
             typing_indicator: { type: 'text' },
           },
           TIMEOUT_INDICADOR_MS,
+          // Conveniência: não vale segurar a resposta tentando de novo.
+          [],
         )
       } catch (erro) {
         // "Digitando" é conveniência. Token ou rede ruins ainda serão

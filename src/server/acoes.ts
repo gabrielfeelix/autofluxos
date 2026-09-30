@@ -2222,6 +2222,72 @@ export async function acaoResponderLead(
 }
 
 /**
+ * "Tentar de novo" na resposta que ficou com envio não confirmado.
+ *
+ * Manda outra vez **a mesma linha** do histórico, sem criar uma segunda: se a
+ * primeira tentativa caiu na rede (30/set, PCYES, "fetch failed" no meio de uma
+ * conversa sobre cupom), quem atende não precisa copiar e colar, e o histórico
+ * não fica com duas bolhas iguais. Só texto escrito por gente: bot, card e
+ * arquivo têm caminho próprio.
+ */
+export async function acaoReenviarMensagem(
+  clienteId: string,
+  contatoId: string,
+  mensagemId: string,
+): Promise<{ ok: boolean; erro?: string }> {
+  const acesso = await exigirCapacidade(clienteId, 'atender', 'proprios')
+  if (recusou(acesso)) return acesso
+
+  const quemResponde = await sessaoAtual()
+  const trava = await podeResponderAgora(clienteId, contatoId, quemResponde?.usuario.id ?? null)
+  if (!trava.ok) return trava
+
+  const { data: linha, error } = await db()
+    .from('messages')
+    .select('id, contact_id, direcao, texto, cita, entregue, arquivo, payload')
+    .eq('id', mensagemId)
+    .eq('contact_id', contatoId)
+    .maybeSingle()
+  if (error) return { ok: false, erro: 'não deu para ler a mensagem' }
+  if (!linha || linha.direcao !== 'saida') return { ok: false, erro: 'mensagem não encontrada' }
+  if (linha.entregue) return { ok: true }
+
+  const payload = (linha.payload ?? {}) as Record<string, unknown>
+  const soTexto = !linha.arquivo && !payload.produtos && !payload.midia && !payload.encaminhamento
+  const deGente = (payload.autor as { tipo?: string } | undefined)?.tipo !== 'automacao'
+  if (!soTexto || !deGente || typeof linha.texto !== 'string' || linha.texto.trim() === '') {
+    return { ok: false, erro: 'só dá para reenviar daqui uma resposta em texto' }
+  }
+
+  const contexto = await contextoDeResposta(clienteId, contatoId)
+  if (!contexto) return { ok: false, erro: 'este lead não tem um número conectado para responder' }
+  if (!dentroDaJanela(contexto)) {
+    return { ok: false, erro: 'passaram mais de 24h desde a última mensagem dela; agora só por modelo aprovado' }
+  }
+
+  let canal
+  try {
+    canal = await adaptadorDoCanal(contexto.canal)
+  } catch (erro) {
+    return { ok: false, erro: erro instanceof Error ? erro.message : String(erro) }
+  }
+
+  let waMessageId: string | null
+  try {
+    waMessageId = await canal.enviarTexto(
+      contexto.waId,
+      assinar(linha.texto, quemResponde?.usuario.nome),
+      (linha.cita as string | null) ?? undefined,
+    )
+  } catch (erro) {
+    return { ok: false, erro: erro instanceof Error ? erro.message : 'não deu para enviar' }
+  }
+
+  await confirmarEntrega(linha.id as string, waMessageId)
+  return { ok: true }
+}
+
+/**
  * "Já falei com essa pessoa."
  *
  * Tira o lead da fila de quem espera e devolve o contato ao bot na próxima
