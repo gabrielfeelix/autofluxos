@@ -79,6 +79,10 @@ describe('o catálogo de efeitos do motor', () => {
     // nenhum. No simulador vira bolha no navegador; a leitura da loja por trás
     // dele é `loja_mostrar`, que é GET e `escreve: false`.
     'enviar_produtos',
+    // Auditado em 30/set/2026: o bloco Encaminhar só entrega mensagem (texto
+    // com botão para o wa.me de outro time e, opcional, o cartão de contato).
+    // Não escreve em lugar nenhum nem chama rede fora do canal.
+    'encaminhar_contato',
     'salvar_campo',
     'pausar_automacao',
     'chamar_ia',
