@@ -21,42 +21,14 @@ import { DEFINICAO_DO_CANAL, type CanalId } from '@/core/canais'
 import { LogoDoCanal } from '@/components/design/selo-do-canal'
 
 /**
- * As cores possíveis, escritas por extenso: chapadas e escuras, com a inicial
- * clara.
+ * Uma cor só, chapada: roxo escuro com a inicial clara.
  *
- * Classe inteira, e não `bg-[hsl(${x})]`: o Tailwind lê o código fonte para
- * decidir o que gerar, e classe montada em tempo de execução simplesmente não
- * sai no CSS. O sintoma seria um avatar transparente, sem erro nenhum.
- *
- * Eram tons claros com borda da mesma família, e a borda tinha a espessura do
- * traço das letras: as iniciais pareciam contornadas e ficavam difíceis de ler.
- * Fundo sólido `700/800` com texto `50` passa de 4,5:1 em todas, nos dois temas.
+ * Era uma cor por nome, em tom claro com borda da mesma família. A borda tinha
+ * a espessura do traço das letras e as duas brigavam: as iniciais pareciam
+ * contornadas, e ficavam difíceis de ler. Fundo sólido e contraste alto leem
+ * de relance em qualquer tamanho, nos dois temas.
  */
-const CORES = [
-  'bg-violet-800 text-violet-50',
-  'bg-sky-800 text-sky-50',
-  'bg-emerald-800 text-emerald-50',
-  'bg-amber-800 text-amber-50',
-  'bg-rose-800 text-rose-50',
-  'bg-teal-800 text-teal-50',
-  'bg-indigo-800 text-indigo-50',
-  'bg-orange-800 text-orange-50',
-] as const
-
-/** Cinza para quem não tem nome: inventar cor para a silhueta seria dar identidade ao vazio. */
-const SEM_NOME = 'bg-slate-600 text-slate-50'
-
-/**
- * A mesma pessoa cai sempre na mesma cor.
- *
- * Soma dos códigos das letras, e nada mais esperto: a exigência é ser estável
- * entre a fila e o cabeçalho, e entre hoje e amanhã, não ser bem distribuída.
- */
-function corDoNome(nome: string): string {
-  let soma = 0
-  for (let i = 0; i < nome.length; i += 1) soma += nome.charCodeAt(i)
-  return CORES[soma % CORES.length] ?? SEM_NOME
-}
+const COR = 'bg-violet-800 text-violet-50'
 
 /**
  * O fundo do selo de cada canal. O Instagram é o gradiente da marca porque é
@@ -96,7 +68,7 @@ export function Avatar({
   return (
     <span
       style={{ width: tamanho, height: tamanho, fontSize: Math.round(tamanho * 0.3) }}
-      className={`relative flex shrink-0 items-center justify-center rounded-full font-bold ${limpo ? corDoNome(limpo) : SEM_NOME}`}
+      className={`relative flex shrink-0 items-center justify-center rounded-full font-bold ${COR}`}
     >
       {limpo ? (
         iniciais
