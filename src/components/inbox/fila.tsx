@@ -28,6 +28,7 @@ import type { MembroDaConta } from "@/server/repos/usuarios";
 import { ContadorDeAgendadas } from "@/components/inbox/contador-de-agendadas";
 import { linhaViva, useRemendos } from "@/components/inbox/conversa-local";
 import { esquecerContadoresVivos, juntarComVivas, juntarNaPagina, naoLidasVivas, useFilaViva, zerarNaoLidaViva } from "@/components/inbox/fila-viva";
+import { ajustarContagem } from "@/components/design/contagens-local";
 import { cabeNoRecorte } from "@/components/inbox/recorte";
 import type { MensagemAgendada } from "@/server/repos/mensagens-agendadas";
 
@@ -84,6 +85,7 @@ export function Fila({
   termo,
   usuarioId,
   naoLidas: naoLidasDoServidor,
+  abertaEstavaSemLer = false,
   fixadas,
   pagina,
   paginas,
@@ -118,6 +120,11 @@ export function Fila({
   termo: string;
   usuarioId: string | null;
   naoLidas: Map<string, number>;
+  /**
+   * A conversa aberta tinha mensagem por ler antes de abrir. O número da barra
+   * lateral foi contado antes de a leitura ser gravada, e a fila desconta.
+   */
+  abertaEstavaSemLer?: boolean;
   /**
    * As conversas que **esta pessoa** grudou no topo, e quando grudou.
    *
@@ -217,29 +224,20 @@ export function Fila({
 
   // Abriu, está lida; e continua lida ao sair (ver `zerarNaoLidaViva`).
   const abertaId = selecionado?.contatoId ?? null;
+  const atribuidaDaAberta = selecionado?.atribuidoA ?? null;
+  const abertaConta = selecionado?.estadoEfetivo === "aberta";
+  useEffect(() => {
+    if (!abertaId || !abertaEstavaSemLer || !abertaConta) return;
+    if (atribuidaDaAberta === null) ajustarContagem("sem-dono", -1);
+    else if (atribuidaDaAberta === usuarioId) ajustarContagem("minhas", -1);
+  }, [abertaId, abertaEstavaSemLer, abertaConta, atribuidaDaAberta, usuarioId]);
+
   useEffect(() => {
     if (!abertaId) return;
     zerarNaoLidaViva(abertaId);
     return () => zerarNaoLidaViva(abertaId);
   }, [abertaId]);
 
-  /*
-   * "(3) AutoFluxos" na aba, como o WhatsApp Web: quantas conversas têm
-   * mensagem nova para mim. A Inbox é a tela que fica aberta o dia inteiro
-   * atrás de outras abas, e sem isto quem atende só sabia que chegou coisa
-   * olhando para ela (pedido de 30/set/2026).
-   *
-   * Refeito quando a conversa aberta muda porque o Next reescreve o título a
-   * cada navegação, e o prefixo sumiria até a próxima mensagem.
-   */
-  const conversasSemLer = naoLidas.size;
-  useEffect(() => {
-    const semNumero = document.title.replace(/^\(\d+\+?\)\s*/, "");
-    document.title = conversasSemLer > 0 ? `(${conversasSemLer}) ${semNumero}` : semNumero;
-    return () => {
-      document.title = document.title.replace(/^\(\d+\+?\)\s*/, "");
-    };
-  }, [conversasSemLer, selecionado]);
 
   const [recorte, setRecorte] = useState<Lead[]>(leads);
 
@@ -394,6 +392,43 @@ export function Fila({
     },
     [clienteId, comRemendo, semLerDe],
   );
+
+  /*
+   * Os números de não lidas contam o que a pessoa **consegue achar**.
+   *
+   * Contavam toda conversa com mensagem sem ler, inclusive a resolvida pelo
+   * bot (encaminhada ao Suporte e encerrada): a aba dizia "(2)", a pílula
+   * "Não lidas 2", e a lista de abertas não tinha bolinha nenhuma (30/set/2026).
+   * A pílula conta o recorte que está na tela; a aba, as conversas abertas.
+   */
+  const naoLidasNoRecorte = useMemo(
+    () => (local ? recorte : leads).filter((lead) => semLerDe(lead.contatoId) > 0).length,
+    [local, recorte, leads, semLerDe],
+  );
+  const abertasSemLer = useMemo(
+    () =>
+      (local ?? leads).filter(
+        (lead) => lead.estadoEfetivo === "aberta" && semLerDe(lead.contatoId) > 0,
+      ).length,
+    [local, leads, semLerDe],
+  );
+
+  /*
+   * "(3) AutoFluxos" na aba, como o WhatsApp Web: quantas conversas têm
+   * mensagem nova para mim. A Inbox é a tela que fica aberta o dia inteiro
+   * atrás de outras abas, e sem isto quem atende só sabia que chegou coisa
+   * olhando para ela (pedido de 30/set/2026).
+   *
+   * Refeito quando a conversa aberta muda porque o Next reescreve o título a
+   * cada navegação, e o prefixo sumiria até a próxima mensagem.
+   */
+  useEffect(() => {
+    const semNumero = document.title.replace(/^\(\d+\+?\)\s*/, "");
+    document.title = abertasSemLer > 0 ? `(${abertasSemLer}) ${semNumero}` : semNumero;
+    return () => {
+      document.title = document.title.replace(/^\(\d+\+?\)\s*/, "");
+    };
+  }, [abertasSemLer, selecionado]);
 
   const naTela = useMemo(() => {
     const base = local ? recorte : leads;
@@ -584,7 +619,7 @@ export function Fila({
                 rotulo="Não lidas"
                 ligada={soNaoLidas}
                 aoAlternar={() => setSoNaoLidas((x) => !x)}
-                contagem={naoLidas.size}
+                contagem={naoLidasNoRecorte}
               />
               <PilulaMenu
                 aria="Ordem da lista"

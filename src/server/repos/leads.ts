@@ -18,6 +18,7 @@ import {
 import { autorDoPayload, comoChamarOAutor } from '@/core/autor-da-mensagem'
 import { ehArquivoGuardado, midiaDoTipo } from '@/core/midia-recebida'
 import { urlsAssinadas } from './midia-recebida'
+import { naoLidasPorContato } from './leituras'
 import { TIPOS_DE_MIDIA, type TipoDeMidia } from '@/core/flow/schema'
 import { casarReacoes } from '@/core/reacoes'
 import { linhasDoCard, type ProdutoDaLoja } from '@/core/loja'
@@ -1781,32 +1782,34 @@ export async function donoDoContato(
 
 /**
  * Os dois números de Conversas na barra lateral: comigo e sem ninguém, só as
- * que esperam resposta (plano de navegação, seção 3; pendentes desde
- * 30/set/2026). Duas contagens `head`, sem trazer linha nenhuma.
+ * abertas com mensagem que **quem olha** ainda não leu.
+ *
+ * É a mesma regra da bolinha azul da fila (`naoLidasPorContato`). Até
+ * 30/set/2026 contava "última mensagem é do cliente": a barra dizia "Minhas
+ * conversas 2" com as duas já lidas, e o dono abria a fila procurando bolinha
+ * que não existia. Número e bolinha agora dizem a mesma coisa, como no WhatsApp.
  */
 export async function contarConversasDaBarra(
   clienteId: string,
   usuarioId: string,
 ): Promise<{ minhas: number; semDono: number }> {
-  /*
-   * **Pendente, não aberta.** O número conta conversa em que a última palavra é
-   * do cliente, como o WhatsApp conta quem está esperando resposta. Contar toda
-   * conversa aberta dizia "Minhas conversas 4" com todas já respondidas, e o
-   * número deixava de ser o que falta fazer (30/set/2026).
-   */
-  const abertas = () =>
-    db()
-      .from('leads')
-      .select('contact_id', { count: 'exact', head: true })
-      .eq('client_id', clienteId)
-      .or('estado_efetivo.is.null,estado_efetivo.eq.aberta')
-      .eq('ultima_direcao', 'entrada')
-  const [minhas, semDono] = await Promise.all([
-    abertas().eq('atribuido_a', usuarioId),
-    abertas().is('atribuido_a', null),
-  ])
-  if (ehIdInvalido(minhas.error) || ehIdInvalido(semDono.error)) return { minhas: 0, semDono: 0 }
-  if (minhas.error) throw new Error(`não deu para contar as conversas: ${minhas.error.message}`)
-  if (semDono.error) throw new Error(`não deu para contar as conversas: ${semDono.error.message}`)
-  return { minhas: minhas.count ?? 0, semDono: semDono.count ?? 0 }
+  const { data, error } = await db()
+    .from('leads')
+    .select('contact_id, atribuido_a')
+    .eq('client_id', clienteId)
+    .or('estado_efetivo.is.null,estado_efetivo.eq.aberta')
+    .or(`atribuido_a.is.null,atribuido_a.eq.${usuarioId}`)
+  if (ehIdInvalido(error)) return { minhas: 0, semDono: 0 }
+  if (error) throw new Error(`não deu para contar as conversas: ${error.message}`)
+
+  const linhas = (data ?? []) as { contact_id: string; atribuido_a: string | null }[]
+  const naoLidas = await naoLidasPorContato(usuarioId, linhas.map((l) => l.contact_id))
+  let minhas = 0
+  let semDono = 0
+  for (const linha of linhas) {
+    if (!naoLidas.get(linha.contact_id)) continue
+    if (linha.atribuido_a === usuarioId) minhas++
+    else if (linha.atribuido_a === null) semDono++
+  }
+  return { minhas, semDono }
 }

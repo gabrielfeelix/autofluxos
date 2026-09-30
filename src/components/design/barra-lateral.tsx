@@ -10,6 +10,7 @@ import { Avatar } from '@/components/design/avatar'
 import { usePerfil } from '@/components/conta/voce'
 import { acesoDoCaminho, type Aceso } from './aba-do-caminho'
 import { BarraDoCelular } from './barra-do-celular'
+import { pedirFiltroDaInbox } from '@/components/inbox/fila-local'
 import { abaDaAdministracao, GRUPOS_DA_ADMINISTRACAO, EMBAIXO_DA_ADMINISTRACAO } from './secoes-da-administracao'
 
 type Item = { chave: string; rotulo: string; href: string; icone: ReactNode; acesa?: boolean; contador?: ReactNode }
@@ -182,6 +183,19 @@ export function BarraLateral({ base, area = 'cliente', itens: itensRecebidos = [
  *
  * Configurações vai para o pé da barra, separada do trabalho do dia.
  */
+/**
+ * Item de Conversas clicado com a Inbox aberta: a fila troca o filtro na hora
+ * (`pedirFiltroDaInbox`) e o link não navega. Com tecla de abrir em outra aba,
+ * o link segue normal.
+ */
+function filtraNaInbox(evento: MouseEvent, href: string, caminho: string | null): boolean {
+  if (evento.metaKey || evento.ctrlKey || evento.shiftKey || evento.button !== 0) return false
+  if (!caminho?.endsWith('/inbox')) return false
+  const [rota, consulta = ''] = href.split('?')
+  if (!rota?.endsWith('/inbox')) return false
+  return pedirFiltroDaInbox(new URLSearchParams(consulta).get('de') ?? 'todos')
+}
+
 function NavegacaoPorSecoes({ secoes, aceso, recolhida, carregando, dica }: { secoes: SecaoDaBarra[]; aceso: Aceso | null; recolhida: boolean; carregando: boolean; dica: Dica }) {
   const bloquear = carregando
     ? { 'aria-disabled': true, tabIndex: -1, onClick: (evento: MouseEvent) => evento.preventDefault() }
@@ -285,6 +299,10 @@ function NavegacaoPorSecoes({ secoes, aceso, recolhida, carregando, dica }: { se
                     <Link
                       href={item.href}
                       {...bloquear}
+                      onClick={(evento) => {
+                        if (carregando) return evento.preventDefault()
+                        if (filtraNaInbox(evento, item.href, caminho)) evento.preventDefault()
+                      }}
                       aria-current={itemAceso ? 'page' : undefined}
                       className={`flex items-center gap-2 rounded-lg px-2.5 py-[7px] text-[12.5px] transition ${
                         itemAceso ? 'bg-primary-weak font-semibold text-primary' : 'font-medium text-muted hover:bg-surface hover:text-ink'

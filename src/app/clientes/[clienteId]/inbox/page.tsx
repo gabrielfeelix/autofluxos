@@ -457,6 +457,8 @@ async function Tela({ cliente, busca }: { cliente: Cliente; busca: Busca }) {
    * sessão, caso em que não há o que marcar no banco mas a tela continua
    * mostrando a conversa aberta.
    */
+  // O número da barra lateral foi contado antes desta leitura; a fila desconta.
+  const abertaEstavaSemLer = selecionado ? (naoLidas.get(selecionado.contatoId) ?? 0) > 0 : false
   if (selecionado) naoLidas.delete(selecionado.contatoId)
 
   return (
@@ -509,6 +511,7 @@ async function Tela({ cliente, busca }: { cliente: Cliente; busca: Busca }) {
             equipe={equipe}
             usuarioId={usuarioId}
             naoLidas={naoLidas}
+            abertaEstavaSemLer={abertaEstavaSemLer}
             fixadas={fixadas}
             etiquetas={etiquetas}
             contagem={contagem}
@@ -618,6 +621,7 @@ async function Conteudo({
   equipe,
   usuarioId,
   naoLidas,
+  abertaEstavaSemLer,
   fixadas,
   etiquetas,
   contagem,
@@ -658,6 +662,7 @@ async function Conteudo({
   usuarioId: string | null
   /** Quantas entradas cada conversa tem depois da última vez que **eu** abri. */
   naoLidas: Map<string, number>
+  abertaEstavaSemLer: boolean
   /** As conversas que **eu** grudei no topo, e quando. Ver a 0063. */
   fixadas: Map<string, string>
   contagem: Contagem
@@ -737,6 +742,7 @@ async function Conteudo({
           termo={termo}
           usuarioId={usuarioId}
           naoLidas={naoLidas}
+          abertaEstavaSemLer={abertaEstavaSemLer}
           fixadas={fixadas}
           pagina={pagina}
           paginas={paginas}

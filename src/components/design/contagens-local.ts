@@ -87,31 +87,6 @@ export function useContagem(qual: Contagem, doServidor: number): number {
 // O que cada gesto conta
 // ---------------------------------------------------------------------------
 
-type ConversaContada = { estado: string; atribuidoA: string | null }
-
-/**
- * Quanto uma conversa pesa em "minhas" e "sem responsável": aberta e comigo,
- * ou aberta e sem dono. A mesma regra de `contarConversasDaBarra`.
- */
-export function contarConversa(
-  antes: ConversaContada,
-  depois: ConversaContada,
-  usuarioId: string | null,
-): () => void {
-  const peso = (c: ConversaContada) => ({
-    minhas: c.estado === 'aberta' && usuarioId !== null && c.atribuidoA === usuarioId ? 1 : 0,
-    semDono: c.estado === 'aberta' && c.atribuidoA === null ? 1 : 0,
-  })
-  const a = peso(antes)
-  const d = peso(depois)
-  ajustarContagem('minhas', d.minhas - a.minhas)
-  ajustarContagem('sem-dono', d.semDono - a.semDono)
-  return () => {
-    ajustarContagem('minhas', a.minhas - d.minhas)
-    ajustarContagem('sem-dono', a.semDono - d.semDono)
-  }
-}
-
 /**
  * Atrasada, para o menu: aberta e com prazo antes de hoje. A mesma regra de
  * `contagensDaAgenda` (`vencidas`).

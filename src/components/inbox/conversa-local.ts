@@ -8,7 +8,6 @@ import {
   useSyncExternalStore,
   type ReactNode,
 } from 'react'
-import { contarConversa } from '@/components/design/contagens-local'
 
 /**
  * O que esta aba acabou de mudar numa conversa, antes de o servidor confirmar.
@@ -237,14 +236,10 @@ export function useConversaAberta() {
   return {
     ...aberta,
     valor,
-    agir: (mudanca: Partial<Conversa>, acao: () => Promise<Resposta>) => {
-      // "Minhas" e "sem responsável" no menu lateral mudam junto.
-      const desfazerContagem = contarConversa(valor, { ...valor, ...mudanca }, aberta.usuarioId)
-      return agirNaConversa(aberta.contatoId, aberta.doServidor, mudanca, acao).then((erro) => {
-        if (erro) desfazerContagem()
-        return erro
-      })
-    },
+    // Sem mexer nos números do menu lateral: eles contam mensagem não lida, e
+    // a conversa aberta está lida por definição.
+    agir: (mudanca: Partial<Conversa>, acao: () => Promise<Resposta>) =>
+      agirNaConversa(aberta.contatoId, aberta.doServidor, mudanca, acao),
     mudar: (mudanca: Partial<Conversa>) =>
       mudarConversa(aberta.contatoId, aberta.doServidor, mudanca),
   }

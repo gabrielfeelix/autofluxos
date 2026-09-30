@@ -81,6 +81,21 @@ export function useFilaLocal(entrada: {
   return { estado, setEstado, atribuicao, setAtribuicao }
 }
 
+const EVENTO_DE_FILTRO = 'autofluxos:filtro-da-inbox'
+type PedidoDeFiltro = { de: string; atendido: boolean }
+
+/**
+ * Pede à fila aberta que troque o filtro de dono sem navegar.
+ *
+ * Devolve `false` quando não há fila local na tela (outra página, ou conta
+ * grande no modo paginado), e aí quem pediu segue o link normal.
+ */
+export function pedirFiltroDaInbox(de: string): boolean {
+  const pedido: PedidoDeFiltro = { de, atendido: false }
+  window.dispatchEvent(new CustomEvent(EVENTO_DE_FILTRO, { detail: pedido }))
+  return pedido.atendido
+}
+
 /**
  * O recorte da fila para os dois rails escolhidos.
  *
@@ -249,6 +264,23 @@ export function RailsLocais<T extends LeadDoRail>({
     conversaAberta,
     usuarioId,
   })
+
+  /*
+   * "Minhas conversas", "Sem responsável" e "Todas" na barra lateral com a
+   * Inbox já aberta: troca aqui, como as pílulas, em vez de o link refazer a
+   * página inteira no servidor (2,5 s na PCYES, 30/set/2026).
+   */
+  useEffect(() => {
+    const aoPedir = (evento: Event) => {
+      const pedido = (evento as CustomEvent<PedidoDeFiltro>).detail
+      const dono = pedido.de === 'minhas' ? usuarioId : pedido.de
+      if (!dono) return
+      setAtribuicao(dono)
+      pedido.atendido = true
+    }
+    window.addEventListener(EVENTO_DE_FILTRO, aoPedir)
+    return () => window.removeEventListener(EVENTO_DE_FILTRO, aoPedir)
+  }, [usuarioId, setAtribuicao])
 
   /*
    * A origem é estado local e **não vai para a URL**, diferente dos outros dois.
