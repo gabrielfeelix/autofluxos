@@ -1,7 +1,6 @@
 'use client'
 
 import { useEffect, useRef } from 'react'
-import { useRouter } from 'next/navigation'
 import { z } from 'zod'
 import { buscarMudancas, pulsoDaTela } from './fila-viva'
 import { precisaAtualizar } from './pulso'
@@ -17,6 +16,9 @@ const respostaSchema = z.object({ pulso: z.string().nullable() })
  * deixar ninguém perdido, e uma consulta de uma linha só.
  */
 const INTERVALO = 5_000
+
+/** Quando a busca das linhas que mudaram falha, a próxima tentativa. */
+const NOVA_TENTATIVA_MS = 5_000
 
 /**
  * Quanto tempo sem nenhum sinal do stream antes de considerar que ele morreu.
@@ -113,7 +115,6 @@ export function PulsoDoInbox({
    */
   pulsoNaTela: string | null
 }) {
-  const router = useRouter()
   /** Quando a página foi redesenhada pela última vez, para não repetir à toa. */
   const ultimoRedesenho = useRef(0)
 
@@ -176,8 +177,17 @@ export function PulsoDoInbox({
        * página inteira fica para quando isso não dá (rede, ou mudança demais
        * para caber na resposta), que era o único caminho antes.
        */
+      /*
+       * Sem `router.refresh()` aqui desde 30/set/2026: a página inteira voltando
+       * do servidor é o "F5 sozinho" que o dono da conta via ao mandar ou
+       * receber mensagem. O que chegou já foi aplicado linha a linha; se a busca
+       * falhou (rede) ou veio incompleta, tenta de novo daqui a pouco, só a
+       * parte que mudou.
+       */
       void buscarMudancas(clienteId, pulsoDaTela(pulsoNaTela)).then((deu) => {
-        if (!deu && ativo) router.refresh()
+        if (!deu && ativo && redesenhoMarcado === null) {
+          redesenhoMarcado = window.setTimeout(redesenhar, NOVA_TENTATIVA_MS)
+        }
       })
     }
 
@@ -320,7 +330,7 @@ export function PulsoDoInbox({
       window.removeEventListener(DEU_CONTA, aoDarConta)
       document.removeEventListener('visibilitychange', aoTrocarDeVisibilidade)
     }
-  }, [clienteId, router, pulsoNaTela])
+  }, [clienteId, pulsoNaTela])
 
   // Não desenha nada: o efeito é a tela inteira ficando em dia.
   return null

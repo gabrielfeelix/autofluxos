@@ -25,6 +25,11 @@ import {
   type PedidoDeNovas,
 } from '@/components/inbox/sinal-de-conversa'
 
+/** Até quanto tempo depois de enviada uma resposta ainda espera confirmação. */
+const JANELA_DE_CONFIRMACAO_MS = 2 * 60_000
+/** De quanto em quanto a conversa aberta relê a resposta ainda não confirmada. */
+const RELEITURA_DA_CONFIRMACAO_MS = 3_000
+
 /**
  * A conversa, e ela anda sozinha.
  *
@@ -120,12 +125,30 @@ export function Historico({
    * segunda mensagem seguida nunca chegaria.
    */
   const ultimoTs = useRef<string | null>(null)
+  /**
+   * A mais antiga das nossas mensagens recentes ainda sem confirmação da Meta.
+   *
+   * A busca pedia só o que era mais novo que a última bolha, e uma bolha já
+   * desenhada como "envio não confirmado" nunca era relida: a resposta tinha
+   * saído, o banco dizia entregue, e a tela seguia pedindo "Tentar de novo"
+   * (Saraiva, 30/set/2026). Com isto a busca começa antes dela.
+   */
+  const pendenteDesde = useRef<string | null>(null)
   useEffect(() => {
     ultimoTs.current = lista.at(-1)?.ts ?? null
+    const limite = Date.now() - JANELA_DE_CONFIRMACAO_MS
+    pendenteDesde.current =
+      lista.find((m) => m.direcao === 'saida' && !m.entregue && Date.parse(m.ts) >= limite)?.ts ?? null
   }, [lista])
 
   /** Uma busca por vez: o pulso pode avisar duas vezes antes da primeira voltar. */
   const buscando = useRef(false)
+  /**
+   * Pedido que chegou enquanto uma busca estava no ar. Antes era descartado, e
+   * a mensagem nova só aparecia com F5 (Leonardo, 30/set/2026); agora roda
+   * assim que a busca em andamento termina.
+   */
+  const deNovo = useRef<{ pulso: string | null } | null>(null)
 
   const conferir = useCallback(
     async (pulso: string | null) => {
@@ -142,12 +165,15 @@ export function Historico({
        * mensagem que está à vista.
        */
       const carimbo = pulso ? Date.parse(pulso.split('|')[0] ?? '') : Number.NaN
-      if (naTela && !Number.isNaN(carimbo) && carimbo <= Date.parse(naTela)) {
+      if (naTela && !pendenteDesde.current && !Number.isNaN(carimbo) && carimbo <= Date.parse(naTela)) {
         avisarQueDeuConta()
         return
       }
 
-      if (buscando.current) return
+      if (buscando.current) {
+        deNovo.current = { pulso }
+        return
+      }
       buscando.current = true
       try {
         /*
@@ -158,7 +184,12 @@ export function Historico({
          * deixaria a última mensagem congelada no estado em que ela nasceu.
          * Reler uma linha é barato; ficar com a errada na tela não é.
          */
-        const desde = naTela ? new Date(Date.parse(naTela) - 1).toISOString() : null
+        const aPartir = pendenteDesde.current && naTela
+          ? Math.min(Date.parse(pendenteDesde.current), Date.parse(naTela))
+          : naTela
+            ? Date.parse(naTela)
+            : null
+        const desde = aPartir !== null ? new Date(aPartir - 1).toISOString() : null
         const endereco =
           `/api/clientes/${clienteId}/inbox/conversa/${contatoId}` +
           (desde ? `?desde=${encodeURIComponent(desde)}` : '')
@@ -198,16 +229,34 @@ export function Historico({
          */
       } finally {
         buscando.current = false
+        const pendente = deNovo.current
+        deNovo.current = null
+        if (pendente) void conferirRef.current?.(pendente.pulso)
       }
     },
     [clienteId, contatoId],
   )
+
+  const conferirRef = useRef(conferir)
+  useEffect(() => {
+    conferirRef.current = conferir
+  }, [conferir])
 
   useEffect(() => {
     const aoPedido = (evento: Event) => void conferir((evento as PedidoDeNovas).detail ?? null)
     window.addEventListener(PEDIDO, aoPedido)
     return () => window.removeEventListener(PEDIDO, aoPedido)
   }, [conferir])
+
+  // Enquanto houver resposta nossa sem confirmação recente, relê de pouco em
+  // pouco: a confirmação da Meta não mexe no pulso, e sem isto ninguém avisa.
+  useEffect(() => {
+    const limite = Date.now() - JANELA_DE_CONFIRMACAO_MS
+    const pendente = lista.some((m) => m.direcao === 'saida' && !m.entregue && Date.parse(m.ts) >= limite)
+    if (!pendente) return
+    const espera = window.setTimeout(() => void conferir(null), RELEITURA_DA_CONFIRMACAO_MS)
+    return () => window.clearTimeout(espera)
+  }, [lista, conferir])
 
   return (
     <ListaDeMensagens

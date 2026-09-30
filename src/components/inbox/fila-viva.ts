@@ -175,6 +175,22 @@ export function juntarNaPagina(
 }
 
 /**
+ * A conversa foi aberta (ou acabou de ser deixada): nada nela está por ler.
+ *
+ * A contagem viva vence a do servidor em `naoLidasVivas`, e guardava o número
+ * de antes de abrir: ao sair da conversa, o "1" voltava na linha e no título da
+ * aba, mesmo com tudo lido (30/set/2026). O servidor já marca a leitura a cada
+ * busca da conversa aberta; aqui é o espelho disso na tela.
+ */
+export function zerarNaoLidaViva(contatoId: string) {
+  if (!estado.naoLidas.get(contatoId)) return
+  const naoLidas = new Map(estado.naoLidas)
+  naoLidas.set(contatoId, 0)
+  estado = { ...estado, naoLidas }
+  assinantes.forEach((assinante) => assinante())
+}
+
+/**
  * As não lidas, com as que chegaram ao vivo por cima das do servidor.
  *
  * Zero vivo tira a conversa do mapa: quem conta é o `size` ("Não lidas 3"), e

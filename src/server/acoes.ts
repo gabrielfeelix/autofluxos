@@ -2210,8 +2210,9 @@ export async function acaoResponderLead(
   // `subirRevisaoDoControle`.
   await subirRevisaoDoControle(contatoId)
 
-  revalidatePath(`/clientes/${clienteId}/leads/${contatoId}`)
-  revalidatePath(`/clientes/${clienteId}/leads`)
+  // Sem `revalidatePath` desde 30/set/2026: numa server action ele redesenha
+  // a tela aberta inteira, e cada resposta enviada virava um "F5" na Inbox.
+  // A bolha nova quem mostra é a transcrição ao vivo.
   /*
    * **O Inbox não é revalidado aqui de propósito.**
    *

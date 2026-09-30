@@ -1,6 +1,5 @@
 'use server'
 
-import { revalidatePath } from 'next/cache'
 import { comLinkRastreado } from './link-de-produto'
 import { dentroDaJanela } from '@/channels/janela'
 import { autorDaPessoa } from '@/core/autor-da-mensagem'
@@ -123,6 +122,7 @@ export async function acaoEnviarProdutoDoInbox(
   await confirmarEntrega(registro, waMessageId)
   if (contexto.sessaoId) await definirStatusDaSessao(contexto.sessaoId, 'humano')
 
-  revalidatePath(`/clientes/${clienteId}/leads/${contatoId}`)
+  // Sem `revalidatePath`: redesenharia a Inbox aberta inteira. O card novo
+  // aparece pela transcrição ao vivo.
   return { ok: true }
 }

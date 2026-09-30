@@ -27,7 +27,7 @@ import type { FiltroDeEstado, Lead } from "@/server/repos/leads";
 import type { MembroDaConta } from "@/server/repos/usuarios";
 import { ContadorDeAgendadas } from "@/components/inbox/contador-de-agendadas";
 import { linhaViva, useRemendos } from "@/components/inbox/conversa-local";
-import { esquecerContadoresVivos, juntarComVivas, juntarNaPagina, naoLidasVivas, useFilaViva } from "@/components/inbox/fila-viva";
+import { esquecerContadoresVivos, juntarComVivas, juntarNaPagina, naoLidasVivas, useFilaViva, zerarNaoLidaViva } from "@/components/inbox/fila-viva";
 import { cabeNoRecorte } from "@/components/inbox/recorte";
 import type { MensagemAgendada } from "@/server/repos/mensagens-agendadas";
 
@@ -200,6 +200,14 @@ export function Fila({
     }
     return juntas;
   }, [naoLidasDoServidor, viva.naoLidas, selecionado]);
+
+  // Abriu, está lida; e continua lida ao sair (ver `zerarNaoLidaViva`).
+  const abertaId = selecionado?.contatoId ?? null;
+  useEffect(() => {
+    if (!abertaId) return;
+    zerarNaoLidaViva(abertaId);
+    return () => zerarNaoLidaViva(abertaId);
+  }, [abertaId]);
 
   /*
    * "(3) AutoFluxos" na aba, como o WhatsApp Web: quantas conversas têm
