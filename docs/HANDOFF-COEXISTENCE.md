@@ -166,22 +166,12 @@ curl 'https://graph.facebook.com/v21.0/<PHONE_NUMBER_ID>?fields=is_on_biz_app,pl
 # coexistente = is_on_biz_app: true  E  platform_type: CLOUD_API
 ```
 
-### 2b. O fluxo do cliente mudou — **não é mais QR code**
+### 2b. O fluxo do cliente, tela por tela
 
-A doc foi atualizada em **21/mai/2026** e descreve outro fluxo. Qualquer tutorial
-(ou versão anterior deste documento) que fale em "escanear QR code" está velho.
-O que acontece hoje, na tela do cliente:
-
-1. ele escolhe conectar a conta existente e digita o número;
-2. a tela mostra um **código de verificação**;
-3. ele recebe uma mensagem da **Conta Oficial do Facebook Business** no
-   WhatsApp Business dele e toca em **Connect**;
-4. toca em **Connect to the Business Platform**, depois **Confirm** — é aqui que
-   ele decide compartilhar (ou não) o histórico;
-5. **cola o código** e termina o Embedded Signup.
-
-Importa para o suporte: quando um cliente travar, a pergunta certa é "chegou a
-mensagem do Facebook Business?" e não "conseguiu ler o QR?".
+Conferido em 30/set/2026 conectando a PCYES: **tem QR code sim** (esta seção
+dizia o contrário, e estava errada). O passo a passo completo, com o que
+escolher em cada tela e onde parar, está em
+[CONECTAR-NUMERO-WHATSAPP.md](CONECTAR-NUMERO-WHATSAPP.md).
 
 ### 2c. Teste sem cliente real: conta de sandbox
 
