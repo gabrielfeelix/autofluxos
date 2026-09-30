@@ -4,6 +4,32 @@ Para o próximo agente, que continua a otimização do bot e da Inbox da PCYES.
 Substitui `HANDOFF-30-SET-PCYES-BOT.md` e `HANDOFF-30-SET-INBOX-TEMPO-REAL.md`
 (no git em `e1aadac`). Leia inteiro antes de mexer.
 
+## PRIMEIRO: ajudar o Gabriel na conversa do Will (antes de tudo)
+
+O Gabriel está atendendo o **Will** agora pela Inbox da PCYES (contato
+`a88efd68-cbe2-448a-a52e-f73be4b93563`, telefone final 1624, bot pausado, com
+o Gabriel). Ele mandou o card do **Computador PCYES One B300 i3-3220 8GB SSD
+256GB NVMe Linux** (SKU 390199, R$ 1.219,90) e explicou Pix com 5% e cupom de
+primeira compra. O Will respondeu às 15:37: **"Tem uma versão com wifi? mas que
+não passe muito deste valor"**.
+
+O que já foi levantado no catálogo (GraphQL público da loja, 30/set):
+- A linha **One** (desktop, i3-3220 ou i5-3470, de R$ 1.029,90 a ~R$ 1.680)
+  não cita Wi-Fi no nome nem na descrição do 390199: tratar como **sem Wi-Fi**
+  e confirmar na ficha antes de afirmar.
+- Com Wi-Fi em estoque, o mais barato é o **Mini Computador B300 Hexa-core
+  i3-1215U 8GB SSD 512GB NVMe Wi-Fi Bluetooth Linux** (SKU 293960,
+  R$ 3.799,90; ficha diz "Wi-Fi AC · Bluetooth 5.0 · 2x RJ45 Gigabit"). Bem
+  acima do valor que ele quer.
+- A PCYES **não vende adaptador Wi-Fi USB** (busca por "adaptador wifi" e
+  "adaptador wireless usb" não traz nenhum).
+
+Ajude o Gabriel a responder: honesto sobre não haver versão com Wi-Fi perto de
+R$ 1.220, citar o Mini B300 com Wi-Fi como opção (com o preço), e sugerir a
+saída barata de um adaptador Wi-Fi USB comum de outra loja (a PCYES não tem),
+sem inventar modelo. Mande o texto pronto para ele colar, e o card do 293960
+pelo botão de produto da Inbox se ele quiser.
+
 ## Regras e jeito de trabalhar
 
 - Regras do repo valem (`AGENTS.md`, `docs/BANCO-COMPARTILHADO.md`). Em
