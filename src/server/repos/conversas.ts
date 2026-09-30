@@ -676,7 +676,33 @@ export async function calarBotNaConversa(contatoId: string): Promise<boolean> {
 
   if (ehIdInvalido(error)) return false
   if (error) throw new Error(`não deu para calar o bot: ${error.message}`)
+  // A execução do bot que estiver no meio (esperando o modelo) confere a
+  // revisão antes de gravar e de enviar; sem subir aqui, ela terminava depois e
+  // devolvia a conversa ao bot. Aconteceu na PCYES em 30/set/2026.
+  await subirRevisaoDoControle(contatoId)
   return (data?.length ?? 0) > 0
+}
+
+/**
+ * Invalida a execução do bot em andamento nesta conversa (ver `aplicar`).
+ *
+ * Leitura e escrita condicional, e não `+ 1` no banco: a Data API não soma. Se
+ * outra escrita subir no meio, o `eq` não casa e tentamos de novo uma vez; o
+ * que importa é a revisão **mudar**, não quanto.
+ */
+export async function subirRevisaoDoControle(contatoId: string): Promise<void> {
+  for (let tentativa = 0; tentativa < 2; tentativa++) {
+    const { data } = await db().from('contacts').select('controle_revisao').eq('id', contatoId).maybeSingle()
+    const atual = (data as { controle_revisao: number | null } | null)?.controle_revisao
+    if (atual == null) return
+    const { data: gravou } = await db()
+      .from('contacts')
+      .update({ controle_revisao: atual + 1 })
+      .eq('id', contatoId)
+      .eq('controle_revisao', atual)
+      .select('id')
+    if ((gravou?.length ?? 0) > 0) return
+  }
 }
 
 /**

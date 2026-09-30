@@ -1023,6 +1023,23 @@ async function avancarConversa(
       },
     )
 
+    /*
+     * Alguém assumiu enquanto o modelo pensava? Então nada desta execução vale:
+     * nem gravar a sessão, que devolveria ao bot uma conversa que a pessoa
+     * acabou de tomar (PCYES, 30/set/2026), nem enviar, que `aplicar` já recusa.
+     */
+    if (revisaoAutorizada !== null) {
+      const agora = await revisaoDoControle(canalSalvo.clienteId, contato.id)
+      if (!aindaAutorizada({ conducao: 'bot', responsavelId: null, revisao: agora ?? -1 }, revisaoAutorizada)) {
+        await alertar(
+          'a resposta do bot foi descartada: alguém assumiu a conversa no meio',
+          `revisão autorizada ${revisaoAutorizada}, atual ${agora ?? 'desconhecida'}`,
+          { contato: contato.id, sessao: salva.id },
+        )
+        return
+      }
+    }
+
     await guardarSessao(salva.id, resultado.sessao)
     // Saltou de automação: a sessão passa a executar a versão do destino, senão a
     // próxima mensagem voltaria para o fluxo de origem com um nó que não existe

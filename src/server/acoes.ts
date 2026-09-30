@@ -63,6 +63,7 @@ import {
   confirmarEntrega,
   definirFluxosDoNumero,
   definirStatusDaSessao,
+  subirRevisaoDoControle,
   desconectarNumero,
   encerrarAtendimento,
   alterarAutomacaoDoContato,
@@ -2197,6 +2198,9 @@ export async function acaoResponderLead(
   // Só o status: o que a conversa já coletou continua na sessão, e é ele que
   // volta a valer se o bot reassumir depois do "Já atendi".
   if (contexto.sessaoId) await definirStatusDaSessao(contexto.sessaoId, 'humano')
+  // Invalida a execução do bot que estiver esperando o modelo agora; ver
+  // `subirRevisaoDoControle`.
+  await subirRevisaoDoControle(contatoId)
 
   revalidatePath(`/clientes/${clienteId}/leads/${contatoId}`)
   revalidatePath(`/clientes/${clienteId}/leads`)
