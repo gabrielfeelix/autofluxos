@@ -40,3 +40,18 @@ describe('conversa nova aberta pelo toque num menu antigo', () => {
     expect(acoes.some((a) => a.tipo === 'enviar_opcoes')).toBe(true)
   })
 })
+
+describe('pediuInicioDoAtendimento', () => {
+  it('reconhece "início" sozinho, com acento, maiúscula ou pontuação', async () => {
+    const { pediuInicioDoAtendimento } = await import('./executar')
+    for (const t of ['INICIO', 'Início', 'início!', 'reiniciar', 'Recomeçar', 'menu inicial']) {
+      expect(pediuInicioDoAtendimento(t)).toBe(true)
+    }
+  })
+  it('não confunde com frase nem com "voltar"', async () => {
+    const { pediuInicioDoAtendimento } = await import('./executar')
+    for (const t of ['voltar', 'no início eu queria um mouse', 'inicio do pedido 123']) {
+      expect(pediuInicioDoAtendimento(t)).toBe(false)
+    }
+  })
+})

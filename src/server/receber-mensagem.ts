@@ -22,6 +22,7 @@ import {
   ATENDIMENTO_SEMPRE_ABERTO,
   avisoDeForaDoHorario,
   pediuAtendente,
+  pediuInicioDoAtendimento,
   type ContextoDoAtendimento,
 } from '@/core/engine/executar'
 import { tipoDoReferral } from '@/core/regras-de-entrada'
@@ -860,9 +861,14 @@ async function avancarConversa(
   }
 
   const viva = anterior && anterior.sessao.status !== 'encerrada' ? anterior : null
+  // "Início" recomeça pelo fluxo principal do número, e não pelo começo do
+  // fluxo em que a conversa está (ver `pediuInicioDoAtendimento`): tratar a
+  // conversa viva como se não existisse faz o principal abrir, e a viva morrer
+  // encerrada logo abaixo, como em qualquer abertura.
+  const recomecar = Boolean(viva) && entrada.tipo === 'texto' && pediuInicioDoAtendimento(entrada.texto)
   const abertura = await escolherAbertura(
     canalSalvo,
-    { temSessaoViva: Boolean(viva), primeiraVez: anterior === null },
+    { temSessaoViva: Boolean(viva) && !recomecar, primeiraVez: anterior === null },
     entrada,
   )
 

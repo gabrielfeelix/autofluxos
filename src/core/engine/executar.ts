@@ -1541,6 +1541,23 @@ export function pediuAtendente(texto: string): boolean {
 }
 
 /** A pessoa pediu para recomeçar. Ver `PALAVRAS_DE_REINICIO`. */
+/**
+ * "Início" sozinho: recomeçar **o atendimento**, e não o fluxo em que a pessoa
+ * está.
+ *
+ * Depois de um salto (menu → Vendas com IA), o reinício do motor volta ao
+ * começo do fluxo de destino, e quem escreveu "início" queria o menu com a
+ * saudação. Quem decide o fluxo principal é o servidor (`avancarConversa`),
+ * então aqui só se reconhece o pedido. "Voltar" fica de fora de propósito:
+ * costuma querer dizer o passo anterior, não o começo de tudo.
+ */
+export const PALAVRAS_DE_INICIO_DO_ATENDIMENTO = ['inicio', 'reiniciar', 'recomecar', 'comecar de novo', 'menu inicial']
+
+export function pediuInicioDoAtendimento(texto: string): boolean {
+  const sozinha = normalizar(texto).replace(/[^\p{L}\s]/gu, '').trim()
+  return PALAVRAS_DE_INICIO_DO_ATENDIMENTO.includes(sozinha)
+}
+
 export function pediuReinicio(texto: string): boolean {
   const t = normalizar(texto)
   const sozinha = t.replace(/[^\p{L}\s]/gu, '').trim()
