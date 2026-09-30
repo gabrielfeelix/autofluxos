@@ -85,15 +85,23 @@ card e explica o "Avise-me"): rode o script a partir do rascunho **atual**.
 
 ## Pendências, em ordem
 
-1. **Decisão aberta do Eduardo Yamamoto.** Às 13:40 de 30/set o login do
-   Gabriel, em Configurações › Pessoas da PCYES, deu acesso ao Eduardo (dono da
-   4YU, admin da MGM) como **Proprietário**, e o Gabriel caiu para admin. Foi
-   engano (queria a MGM). Esperando o Gabriel dizer **"pode desfazer"**: tirar o
-   Eduardo da PCYES e o Gabriel voltar a proprietário (mexe em `af_membros`,
-   que é do login; ver `acoes-pessoas.ts`, `definirFuncaoDoMembro`). Proposta
-   que ele ainda não respondeu: confirmação com o nome da conta ao dar acesso e
-   aviso de que "Proprietário" rebaixa quem já é.
-2. **Mensagens em rajada.** "Olá boa tarde", "Tudo bem", "?" viram três
+1. **MGM Pilates (cliente pagante): nenhuma mensagem enviada no histórico.**
+   Visto pelo Gabriel na Inbox em 30/set à noite e conferido no banco: a MGM
+   tem 1.636 mensagens de `entrada` com `historico=true`, **zero de `saida`**
+   e só 1 entrada ao vivo. Até a mensagem de hoje às 09:46 (Maria Augusta)
+   entrou como histórico, e a Inbox diz "Passaram 24h" numa conversa de
+   horas atrás. O canal (+55 11 93213-9312, `cloud-api`, coexistência) foi
+   conectado de novo em 30/set às 14:25 (`coexistencia_em`), com a importação
+   do histórico em 68%. Analisar:
+   - se a importação (`historico_sync`) descarta as mensagens que a empresa
+     mandou pelo app (devem entrar como `saida`, eco da coexistência);
+   - se o webhook ao vivo do número novo está assinado e chegando (só 1
+     entrada ao vivo);
+   - se a janela de 24h ignora mensagem com `historico=true` mesmo quando ela
+     é de hoje (`ultima_entrada_em`).
+   Ver também a memória `mgm-falta-ligar-fluxo-no-canal`: falta fixar
+   "Fluxo - Atendimento" no WhatsApp do Daniel quando o Gabriel avisar.
+2. **Mensagens em rajada (PCYES).** "Olá boa tarde", "Tudo bem", "?" viram três
    rodadas e respostas por cima do menu (Saraiva, 30/set 14:04). Proposta:
    juntar o que chega em ~3 s numa rodada e não responder cumprimento solto logo
    depois do menu.
@@ -123,3 +131,11 @@ card e explica o "Avise-me"): rode o script a partir do rascunho **atual**.
   categoria "placa de video" traz 635 itens e esconde o modelo pedido.
 - Coexistência: a saudação automática do app chega como eco com U+200E e não
   pode calar o bot (`ehMensagemAutomaticaDoApp`).
+
+## Resolvido na mesma noite
+
+- Eduardo Yamamoto tinha sido ligado à PCYES como proprietário por engano
+  (13:40, Configurações › Pessoas da conta errada). O Gabriel voltou a
+  proprietário e o Eduardo foi tirado da PCYES; continua admin da MGM e dono
+  da 4YU. A tela de dar acesso ainda não mostra o nome da conta nem avisa que
+  "Proprietário" rebaixa quem já é: vale propor ao Gabriel.
