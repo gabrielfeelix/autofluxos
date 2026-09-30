@@ -131,11 +131,3 @@ card e explica o "Avise-me"): rode o script a partir do rascunho **atual**.
   categoria "placa de video" traz 635 itens e esconde o modelo pedido.
 - Coexistência: a saudação automática do app chega como eco com U+200E e não
   pode calar o bot (`ehMensagemAutomaticaDoApp`).
-
-## Resolvido na mesma noite
-
-- Eduardo Yamamoto tinha sido ligado à PCYES como proprietário por engano
-  (13:40, Configurações › Pessoas da conta errada). O Gabriel voltou a
-  proprietário e o Eduardo foi tirado da PCYES; continua admin da MGM e dono
-  da 4YU. A tela de dar acesso ainda não mostra o nome da conta nem avisa que
-  "Proprietário" rebaixa quem já é: vale propor ao Gabriel.
