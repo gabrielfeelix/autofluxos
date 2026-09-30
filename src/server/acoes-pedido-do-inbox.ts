@@ -2,7 +2,7 @@
 
 import { dentroDaJanela } from '@/channels/janela'
 import { autorDaPessoa } from '@/core/autor-da-mensagem'
-import { mensagemDoPedido } from '@/core/pedido-na-conversa'
+import { linkDoRastreio, mensagemDoPedido } from '@/core/pedido-na-conversa'
 import type { PedidoDaLoja } from '@/loja/magento-pedido'
 import { consultarPedidoDaConta } from './adaptador-da-loja'
 import { adaptadorDoCanal } from './adaptador-do-canal'
@@ -30,7 +30,7 @@ import { exigirAcessoAoCliente, sessaoAtual } from './sessao'
  */
 
 export type RespostaDoPedido =
-  | { ok: true; pedido: PedidoDaLoja; confere: boolean; previa: string }
+  | { ok: true; pedido: PedidoDaLoja; confere: boolean; previa: string; rastreio: string | null }
   | { ok: false; erro: string }
 
 async function buscar(clienteId: string, contatoId: string, numero: string): Promise<RespostaDoPedido> {
@@ -51,6 +51,7 @@ async function buscar(clienteId: string, contatoId: string, numero: string): Pro
     pedido: r.valor.pedido,
     confere: r.valor.confere ?? false,
     previa: mensagemDoPedido(r.valor.pedido),
+    rastreio: linkDoRastreio(r.valor.pedido),
   }
 }
 
@@ -84,8 +85,13 @@ export async function acaoEnviarPedidoDoInbox(
   if (!achado.ok) return achado
   const texto = achado.previa
 
-  const loja = await lojaDaConta(clienteId)
-  const paginaDePedidos = loja?.endereco ? `${loja.endereco.replace(/\/+$/, '')}/sales/order/history/` : null
+  // O rastreio da Frete Rápido quando o envio traz o código; senão a página
+  // de pedidos da loja, que pede login.
+  const rastreio = linkDoRastreio(achado.pedido)
+  const loja = rastreio ? null : await lojaDaConta(clienteId)
+  const paginaDePedidos =
+    rastreio ?? (loja?.endereco ? `${loja.endereco.replace(/\/+$/, '')}/sales/order/history/` : null)
+  const rotulo = rastreio ? 'Rastrear entrega' : 'Ver meus pedidos'
 
   let canal
   try {
@@ -107,7 +113,7 @@ export async function acaoEnviarPedidoDoInbox(
   let waMessageId: string | null
   try {
     waMessageId = comBotao
-      ? await comBotao(contexto.waId, texto, 'Ver meus pedidos', paginaDePedidos!)
+      ? await comBotao(contexto.waId, texto, rotulo, paginaDePedidos!)
       : await canal.enviarTexto(
           contexto.waId,
           paginaDePedidos ? `${texto}\n\nAcompanhe em ${paginaDePedidos}` : texto,

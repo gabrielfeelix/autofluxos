@@ -673,6 +673,7 @@ export const FERRAMENTAS: Ferramenta[] = [
       'Com o número, o pedido aparece se o telefone desta conversa ou o CPF informado forem os da compra; se vier `encontrado: false`, peça o CPF e consulte de novo com os dois. ' +
       'Só com o CPF, o pedido aparece apenas se o telefone desta conversa também for o da compra; se não achar, peça o número do pedido. ' +
       'Se ainda assim não achar, diga que não conseguiu localizar e ofereça chamar alguém do time. Nunca invente situação nem prazo: a previsão é a que vier em `entrega.previsao`. ' +
+      'A última movimentação da entrega vem em `andamento` (a mais nova primeiro). Se vier `linkDoRastreio`, mande o link para a pessoa acompanhar. ' +
       'Só fale do pedido que esta consulta devolveu; nunca de pedido, nome ou dado de outra pessoa. Você não cancela, troca nem muda endereço: ofereça o time. ' +
       'Não use para buscar produto.',
     argumentos: [
@@ -693,7 +694,7 @@ export const FERRAMENTAS: Ferramenta[] = [
     chamada: { tipo: 'loja', operacao: 'pedido' },
     projecao: [
       { caminho: 'encontrado' },
-      { caminho: 'pedido', campos: ['numero', 'situacao', 'feitoEm', 'total', 'itens', 'rastreios', 'entrega'], limite: 1 },
+      { caminho: 'pedido', campos: ['numero', 'situacao', 'feitoEm', 'total', 'itens', 'rastreios', 'entrega', 'andamento', 'linkDoRastreio'], limite: 1 },
     ],
     credencial: 'nenhuma',
     integracao: 'loja',

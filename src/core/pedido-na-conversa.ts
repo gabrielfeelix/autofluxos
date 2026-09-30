@@ -32,6 +32,19 @@ export function mensagemDoPedido(pedido: PedidoDaLoja): string {
   return linhas.join('\n')
 }
 
+/**
+ * A página pública de rastreio da Frete Rápido, quando o pedido tem o código.
+ *
+ * O código é o `id_frete` deles (`FR260928DHHN5`: FR, a data e um sufixo) e
+ * o link é `ondeestameupedido.com.br/<código>`, confirmado em 30/set/2026 na
+ * própria API (`url_rastreio` do frete do pedido 000001955 da PCYES). Ele
+ * chega pelo rastreio do envio no Magento; sem esse código, `null`.
+ */
+export function linkDoRastreio(pedido: Pick<PedidoDaLoja, 'rastreios'>): string | null {
+  const codigo = pedido.rastreios.map((r) => r.codigo.trim()).find((c) => /^FR\d{6}[A-Z0-9]{3,}$/i.test(c))
+  return codigo ? `https://ondeestameupedido.com.br/${codigo.toUpperCase()}` : null
+}
+
 /** "BRASPRESS TRANSPORTES URGENTES LTDA" vira "Braspress". */
 export function nomeCurto(razaoSocial: string): string {
   const primeira = razaoSocial.trim().split(/\s+/)[0] ?? ''

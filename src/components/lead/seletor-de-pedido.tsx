@@ -168,7 +168,7 @@ export function SeletorDePedido({
               <div className="max-h-[min(300px,45vh)] overflow-y-auto rounded-[10px] border border-line bg-surface px-3 py-2.5">
                 <p className="whitespace-pre-wrap text-[12.5px] leading-5 text-ink">{semMarcacao(achado.previa)}</p>
                 <p className="mt-2 border-t border-line pt-1.5 text-center text-[12px] font-semibold text-primary">
-                  Ver meus pedidos
+                  {achado.rastreio ? 'Rastrear entrega' : 'Ver meus pedidos'}
                 </p>
               </div>
               <button

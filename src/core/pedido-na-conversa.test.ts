@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { andamentoDoPedido } from '@/loja/magento-pedido'
-import { dataCurta, mensagemDoPedido, nomeCurto } from './pedido-na-conversa'
+import { dataCurta, linkDoRastreio, mensagemDoPedido, nomeCurto } from './pedido-na-conversa'
 
 describe('status do pedido na conversa', () => {
   it('junta situação, entrega, andamento, itens e total numa mensagem', () => {
@@ -41,6 +41,13 @@ describe('status do pedido na conversa', () => {
       { texto: 'Em Transferência', quando: '28/09 às 21:32' },
       { texto: 'Coletado / Postado', quando: '28/09 às 20:40' },
     ])
+  })
+
+  it('código FR do envio vira o link público da Frete Rápido', () => {
+    expect(linkDoRastreio({ rastreios: [{ transportadora: 'Frete Rápido', codigo: 'FR260928DHHN5' }] })).toBe(
+      'https://ondeestameupedido.com.br/FR260928DHHN5',
+    )
+    expect(linkDoRastreio({ rastreios: [{ transportadora: 'Correios', codigo: 'AA123456789BR' }] })).toBeNull()
   })
 
   it('encurta transportadora e data', () => {

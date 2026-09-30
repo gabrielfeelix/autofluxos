@@ -15,6 +15,7 @@ import { rastrearNaFreteRapido, type RastreioDaFreteRapido } from '@/loja/frete-
 import { listarProdutos } from './repos/produtos'
 import { estaAtivo } from '@/core/produtos'
 import type { FonteDoCatalogo } from '@/core/flow/schema'
+import { linkDoRastreio } from '@/core/pedido-na-conversa'
 
 /** Quanto a foto e o estoque exato podem atrasar uma resposta, somados. */
 export const PRAZO_DO_TOKEN_MS = 3_000
@@ -50,7 +51,10 @@ export async function consultarPedidoDaConta(
    * API fora ou sem frete ainda, a resposta segue com o que o Magento sabe.
    */
   const entrega = await entregaDaFreteRapido(clienteId, r.valor.pedido.numero)
-  return entrega ? { ok: true, valor: { ...r.valor, pedido: { ...r.valor.pedido, entrega } } } : r
+  // O link público da Frete Rápido, para o bot mandar junto (ver `linkDoRastreio`).
+  const rastreio = linkDoRastreio(r.valor.pedido)
+  const pedido = { ...r.valor.pedido, ...(entrega ? { entrega } : {}), ...(rastreio ? { linkDoRastreio: rastreio } : {}) }
+  return { ok: true, valor: { ...r.valor, pedido } }
 }
 
 async function entregaDaFreteRapido(clienteId: string, numero: string): Promise<RastreioDaFreteRapido | null> {

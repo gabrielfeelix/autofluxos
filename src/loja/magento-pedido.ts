@@ -46,6 +46,8 @@ export type PedidoDaLoja = {
   andamento?: { texto: string; quando: string }[]
   /** Nome de quem comprou. Só na busca da equipe, para conferir antes de mandar. */
   comprador?: string
+  /** A página pública de rastreio da Frete Rápido, quando o envio tem o código. */
+  linkDoRastreio?: string
 }
 
 export type ConsultaDePedido =
