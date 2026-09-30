@@ -36,6 +36,22 @@ const TIMEOUT_MS = 15_000
  */
 const LIMITE_CORPO_CTA = 1024
 const TEXTO_DO_BOTAO_DA_LOJA = 'Ver na loja'
+
+/** Limites do carrossel interativo da Meta: corpo, card e quantidade. */
+const LIMITE_CORPO_CARROSSEL = 1024
+const LIMITE_CORPO_DO_CARD = 160
+const LIMITE_DO_CARROSSEL = 10
+
+/**
+ * O corpo do card do carrossel: até 160 caracteres e duas quebras de linha.
+ * O preço fica inteiro; quem encolhe é o nome, que o cabeçalho já mostra na
+ * foto e a loja mostra inteiro no clique.
+ */
+function corpoDoCardDoCarrossel(titulo: string, detalhe: string): string {
+  const resto = LIMITE_CORPO_DO_CARD - detalhe.length - 3
+  const nome = resto > 20 ? cortarCaracteres(titulo, resto) : ''
+  return cortarCaracteres(nome ? `*${nome}*\n${detalhe}` : detalhe, LIMITE_CORPO_DO_CARD)
+}
 /** Indicador é conveniência; ele não pode consumir o prazo de um envio real. */
 const TIMEOUT_INDICADOR_MS = 2_000
 /**
@@ -616,6 +632,57 @@ export function canalCloudApi(config: ConfigCloudApi): Canal {
         primeiro ??= idDoEnvio(resposta)
       }
       return primeiro
+    },
+
+    async enviarProdutosComTexto(para, texto, produtos) {
+      const comLink = produtos.filter((p) => p.link && p.foto).slice(0, LIMITE_DO_CARROSSEL)
+      const [unico] = comLink
+      if (!unico) return null
+
+      // Um produto só: o card de sempre, com a frase em cima do nome. O
+      // carrossel exige no mínimo dois.
+      if (comLink.length === 1) {
+        const { titulo, detalhe } = linhasDoCard(unico, { whatsapp: true })
+        const resposta = await mandar({
+          to: para,
+          type: 'interactive',
+          interactive: {
+            type: 'cta_url',
+            header: { type: 'image', image: { link: unico.foto } },
+            body: { text: cortarCaracteres(`${texto}\n\n*${titulo}*\n${detalhe}`, LIMITE_CORPO_CTA) },
+            action: { name: 'cta_url', parameters: { display_text: TEXTO_DO_BOTAO_DA_LOJA, url: unico.link } },
+          },
+        })
+        return idDoEnvio(resposta)
+      }
+
+      /*
+       * O carrossel: uma mensagem, a frase no corpo e um card por produto,
+       * cada um com a foto e o botão da loja. A Meta pede o mesmo tipo de
+       * botão em todos os cards e foto (ou vídeo) em todos, e é por isso que
+       * só entra produto com foto e link.
+       */
+      const resposta = await mandar({
+        to: para,
+        type: 'interactive',
+        interactive: {
+          type: 'carousel',
+          body: { text: cortarCaracteres(texto, LIMITE_CORPO_CARROSSEL) },
+          action: {
+            cards: comLink.map((produto, i) => {
+              const { titulo, detalhe } = linhasDoCard(produto, { whatsapp: true })
+              return {
+                card_index: i,
+                type: 'cta_url',
+                header: { type: 'image', image: { link: produto.foto } },
+                body: { text: corpoDoCardDoCarrossel(titulo, detalhe) },
+                action: { name: 'cta_url', parameters: { display_text: TEXTO_DO_BOTAO_DA_LOJA, url: produto.link } },
+              }
+            }),
+          },
+        },
+      })
+      return idDoEnvio(resposta)
     },
 
     async enviarBotaoDeLink(para, texto, rotulo, url) {

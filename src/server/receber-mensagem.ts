@@ -14,6 +14,7 @@ import { executarComEfeitos, type OpcoesDeEfeitos } from './efeitos/resolver'
 import { guardarMidiaRecebida } from './guardar-midia-recebida'
 import { escolherModelo } from './ia/modelo'
 import { comLinkRastreado } from './link-de-produto'
+import { juntarFraseAosCards } from '@/core/juntar-cards'
 import { guardarComentario, guardarNota } from './repos/avaliacoes'
 import { acharCliente, horarioDoCliente } from './repos/clientes'
 import { acharFluxo, acharVersao, type VersaoPublicada } from './repos/fluxos'
@@ -1647,7 +1648,16 @@ async function aplicar(
     }
   }
 
-  for (const acao of acoes) {
+  const jeitoDoCanal = {
+    temCard: Boolean(canal.enviarProdutos),
+    cardSemFoto: canal.cardSemFoto,
+    temPedir: Boolean(canal.enviarProdutoComBotao),
+  }
+  const aEnviar = canal.enviarProdutosComTexto
+    ? juntarFraseAosCards(acoes, (p) => comoMandarProduto(p, jeitoDoCanal) === 'card' && Boolean(p.foto))
+    : acoes
+
+  for (const acao of aEnviar) {
     switch (acao.tipo) {
       case 'enviar_texto': {
         if (acao.atrasoMs && mensagemId) {
@@ -1820,6 +1830,24 @@ async function aplicar(
         // `link-de-produto.ts`. Fica gravado assim também, porque o chat do
         // site desenha o card a partir do histórico.
         const produtos = acao.produtos.map((p) => comLinkRastreado(p, contato, canal.origem))
+
+        // A frase e os cards numa mensagem só: `juntarFraseAosCards` só junta
+        // quando todo produto sai como card com foto.
+        const juntos = canal.enviarProdutosComTexto?.bind(canal)
+        if (acao.texto && juntos) {
+          const texto = acao.texto
+          const registro = await registrarSaida({
+            contatoId: contato.id,
+            sessaoId,
+            autor: AUTOR_AUTOMACAO,
+            texto: [texto, ...produtos.map(textoDoCard)].join('\n\n'),
+            payload: { produtos },
+          })
+          const entrega = await entregar(() => juntos(contato.waId, texto, produtos), alvo)
+          if (!entrega.ok) return pararNoHumano(entrega.motivo)
+          await confirmarEntrega(registro, entrega.waMessageId)
+          break
+        }
         const enviarComBotao = canal.enviarProdutoComBotao?.bind(canal)
         const jeito = (p: (typeof produtos)[number]) =>
           comoMandarProduto(p, { temCard: Boolean(enviarCards), cardSemFoto: canal.cardSemFoto, temPedir: Boolean(enviarComBotao) })
@@ -2166,3 +2194,4 @@ function contextoDeAtendimento(horario: HorarioDeAtendimento | null): ContextoDo
     hoje,
   }
 }
+

@@ -146,6 +146,16 @@ export type Canal = {
    */
   enviarProdutos?(para: string, produtos: ProdutoDaLoja[]): Promise<string | null>
   /**
+   * A frase que apresenta os produtos e os cards **numa mensagem só**. Só
+   * recebe produto com foto real e link, de 1 a 10.
+   *
+   * Existe porque desde 1/out/2026 a Meta cobra cada mensagem de serviço:
+   * frase mais três cards eram quatro cobranças, e três mensagens seguidas
+   * também chegavam pela metade (30/set, três cards pedidos, um na tela).
+   * Opcional: sem ele, a frase sai como texto e os cards por `enviarProdutos`.
+   */
+  enviarProdutosComTexto?(para: string, texto: string, produtos: ProdutoDaLoja[]): Promise<string | null>
+  /**
    * Um produto **sem link** com a foto no cabeçalho e um botão de resposta
    * embaixo ("Pedir", "Agendar", ver `core/loja.botaoDePedido`). É o catálogo
    * de quem não tem loja on-line: o toque volta como resposta, e a conversa

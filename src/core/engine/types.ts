@@ -219,6 +219,11 @@ export type Acao =
       tipo: 'enviar_produtos'
       produtos: ProdutoDaLoja[]
       atrasoMs?: number
+      /**
+       * A frase que apresenta os cards, quando vai junto deles numa mensagem
+       * só (`juntarFraseAosCards` no envio). Ausente, a frase saiu antes.
+       */
+      texto?: string
     }
   /**
    * Mandar a pessoa para o WhatsApp de outro time (bloco `encaminhar`).

@@ -543,6 +543,68 @@ describe('card do produto na Cloud API', () => {
   })
 })
 
+describe('frase e cards numa mensagem só', () => {
+  const produto = {
+    produtoId: '330107',
+    nome: 'Headset PCYES Comfort CM500',
+    preco: 95.92,
+    emEstoque: true,
+    foto: 'https://cdn.exemplo/foto.jpg',
+    link: 'https://loja.exemplo/cm500',
+  }
+
+  it('dois ou mais produtos saem num carrossel, com a frase no corpo', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(new Response('{"messages":[{"id":"wamid-1"}]}', { status: 200 }))
+    vi.stubGlobal('fetch', fetchMock)
+    const canal = canalCloudApi({ phoneNumberId: 'numero-1', token: 'token-de-teste', versaoGraph: 'v25.0' })
+
+    const id = await canal.enviarProdutosComTexto!('5544999', 'Dois bons para jogar:', [
+      produto,
+      { ...produto, produtoId: '307806', nome: 'Headset Kamar', link: 'https://loja.exemplo/kamar' },
+    ])
+
+    expect(id).toBe('wamid-1')
+    expect(fetchMock).toHaveBeenCalledTimes(1)
+    const corpo = JSON.parse(fetchMock.mock.calls[0]![1].body)
+    expect(corpo.interactive.type).toBe('carousel')
+    expect(corpo.interactive.body.text).toBe('Dois bons para jogar:')
+    expect(corpo.interactive.action.cards).toHaveLength(2)
+    expect(corpo.interactive.action.cards[1]).toEqual({
+      card_index: 1,
+      type: 'cta_url',
+      header: { type: 'image', image: { link: produto.foto } },
+      body: { text: '*Headset Kamar*\nR$ 95,92, em estoque' },
+      action: { name: 'cta_url', parameters: { display_text: 'Ver na loja', url: 'https://loja.exemplo/kamar' } },
+    })
+    for (const card of corpo.interactive.action.cards) expect(card.body.text.length).toBeLessThanOrEqual(160)
+  })
+
+  it('um produto só vira o card de sempre, com a frase em cima', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(new Response('{}', { status: 200 }))
+    vi.stubGlobal('fetch', fetchMock)
+    const canal = canalCloudApi({ phoneNumberId: 'numero-1', token: 'token-de-teste', versaoGraph: 'v25.0' })
+
+    await canal.enviarProdutosComTexto!('5544999', 'Esse aqui serve:', [produto])
+
+    const corpo = JSON.parse(fetchMock.mock.calls[0]![1].body)
+    expect(corpo.interactive.type).toBe('cta_url')
+    expect(corpo.interactive.body.text).toBe('Esse aqui serve:\n\n*Headset PCYES Comfort CM500*\nR$ 95,92, em estoque')
+  })
+
+  it('nome comprido encolhe, o preço fica inteiro', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(new Response('{}', { status: 200 }))
+    vi.stubGlobal('fetch', fetchMock)
+    const canal = canalCloudApi({ phoneNumberId: 'numero-1', token: 'token-de-teste', versaoGraph: 'v25.0' })
+    const longo = { ...produto, nome: 'Cadeira Gamer PCYES Ergonômica Sentinel Sahara PCSTL-SH '.repeat(4), preco: 1049.9, precoDe: 1159.9 }
+
+    await canal.enviarProdutosComTexto!('5544999', 'Opções:', [longo, longo])
+
+    const card = JSON.parse(fetchMock.mock.calls[0]![1].body).interactive.action.cards[0]
+    expect(card.body.text.length).toBeLessThanOrEqual(160)
+    expect(card.body.text).toContain('R$ 1.049,90')
+  })
+})
+
 describe('envio para contato sem telefone (BSUID)', () => {
   it('troca `to` por `recipient` quando o destino é BSUID', () => {
     expect(enderecar({ to: 'BR.13491208655302741918', type: 'text' })).toEqual({
