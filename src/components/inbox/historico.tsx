@@ -1,6 +1,6 @@
 'use client'
 
-import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { Fragment, useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { EnvioNaoConfirmado } from './reenviar'
 import { podeReagir } from '@/channels/janela'
 import { assinaturaDasReacoes } from '@/core/reacoes'
@@ -407,7 +407,7 @@ function ListaDeMensagens({
                 naoConfirmado={nossa && !mensagem.entregue}
               />
             ) : (
-            <p title={mensagem.toque ? 'Tocou numa opção do menu' : undefined} className={`max-w-[78%] px-3.5 py-2 font-texto text-[14.5px] leading-[1.45] whitespace-pre-wrap [overflow-wrap:anywhere] ${
+            <p title={mensagem.toque ? 'Tocou numa opção do menu' : undefined} className={`relative max-w-[78%] px-3.5 py-2 font-texto text-[14.5px] leading-[1.45] whitespace-pre-wrap [overflow-wrap:anywhere] ${
               nossa
                 ? 'bolha-nossa rounded-[15px_15px_4px_15px]'
                 : mensagem.toque
@@ -483,13 +483,20 @@ function ListaDeMensagens({
                 Toque em botão: verde e com o nome dito no rodapé, para quem
                 atende ler "resposta pronta" sem comparar com o menu acima.
               */}
-              <span className="ml-2 text-[11px] text-muted" title={horaExata(mensagem.ts)}>
-                {nossa && mensagem.autor ? `${mensagem.autor} · ` : ''}
-                {horaDoRelogio(mensagem.ts)}
-              </span>
-              {nossa && mensagem.entregue && <Tiques situacao={mensagem.situacao} />}
-              {nossa && !mensagem.entregue && (
-                <EnvioNaoConfirmado clienteId={clienteId} contatoId={contatoId} mensagemId={mensagem.id} />
+              {nossa && !mensagem.entregue ? (
+                <>
+                  <span className="ml-2 text-[11px] text-muted" title={horaExata(mensagem.ts)}>
+                    {mensagem.autor ? `${mensagem.autor} · ` : ''}
+                    {horaDoRelogio(mensagem.ts)}
+                  </span>
+                  <EnvioNaoConfirmado clienteId={clienteId} contatoId={contatoId} mensagemId={mensagem.id} />
+                </>
+              ) : (
+                <RodapeDaBolha titulo={horaExata(mensagem.ts)}>
+                  {nossa && mensagem.autor ? `${mensagem.autor} · ` : ''}
+                  {horaDoRelogio(mensagem.ts)}
+                  {nossa && <Tiques situacao={mensagem.situacao} />}
+                </RodapeDaBolha>
               )}
             </p>
             )}
@@ -640,5 +647,29 @@ function Tiques({ situacao }: { situacao?: MensagemDoLead['situacao'] }) {
         {dois && <path d="M7.6 7.6 9 9l6-7" />}
       </svg>
     </span>
+  )
+}
+
+/**
+ * Hora, autor e tiques presos no canto de baixo da bolha, como no WhatsApp.
+ *
+ * Antes eles vinham colados no fim do texto e iam parar onde a última palavra
+ * terminasse: no meio da bolha numa mensagem, na linha de baixo na outra. O
+ * truque é o do próprio WhatsApp: uma cópia **invisível** no fim do texto
+ * reserva o lugar, e a visível fica no canto. Se a última linha tem espaço, a
+ * reserva cabe nela e o rodapé divide a linha com o texto; se não tem, a
+ * reserva desce e a bolha ganha uma linha, sempre alinhada à direita.
+ */
+function RodapeDaBolha({ titulo, children }: { titulo: string; children: ReactNode }) {
+  const rodape = 'inline-flex items-center whitespace-nowrap text-[11px] leading-none text-muted'
+  return (
+    <>
+      <span aria-hidden className={`invisible ml-2.5 ${rodape}`}>
+        {children}
+      </span>
+      <span className={`absolute right-3.5 bottom-[7px] ${rodape}`} title={titulo}>
+        {children}
+      </span>
+    </>
   )
 }
