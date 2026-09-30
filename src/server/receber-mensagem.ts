@@ -919,7 +919,10 @@ async function avancarConversa(
     // depende deles falha em silêncio. Ver `core/contatos/vars-iniciais.ts`.
     salva = await criarSessao(contato.id, canalSalvo.id, abertura.versaoId, {
       ...sessaoNova(),
-      vars: varsIniciais(contato),
+      vars: {
+        ...varsIniciais(contato),
+        ...(ehRetomada(anterior, entrada, abertura, Date.now()) ? { [VARIAVEL_DE_RETOMADA]: 'sim' } : {}),
+      },
     })
     /*
      * Por onde a conversa entrou, na linha do tempo do contato.
@@ -2195,3 +2198,36 @@ function contextoDeAtendimento(horario: HorarioDeAtendimento | null): ContextoDo
   }
 }
 
+/**
+ * A variável que diz "esta pessoa acabou de ser atendida e escreveu de novo".
+ *
+ * O fluxo principal decide o que fazer com ela; na PCYES, uma condição no
+ * começo do menu manda a mensagem direto para a triagem em vez de abrir com
+ * "Olá, fulano! Bem-vindo" de novo (30/set/2026: quem recebia o botão do
+ * Suporte e escrevia "obrigado" ganhava a saudação e o menu inteiros, e cada
+ * um é uma mensagem cobrada).
+ */
+export const VARIAVEL_DE_RETOMADA = 'retomada'
+
+/** Até quanto depois do fim da conversa anterior conta como retomada. */
+const JANELA_DE_RETOMADA_MS = 2 * 60 * 60 * 1000
+
+/**
+ * A conversa nova é continuação da que acabou de terminar?
+ *
+ * Só por texto e só no fluxo principal: toque num botão antigo tem caminho
+ * próprio, gatilho e campanha abrem o fluxo deles, e INICIO pede o menu com
+ * todas as letras.
+ */
+export function ehRetomada(
+  anterior: { sessao: { status: string }; atualizadoEm?: string } | null,
+  entrada: Entrada,
+  abertura: { gatilhoId?: string | null; campanhaId?: string | null },
+  agora: number,
+): boolean {
+  if (!anterior || anterior.sessao.status !== 'encerrada' || !anterior.atualizadoEm) return false
+  if (entrada.tipo !== 'texto' || pediuInicioDoAtendimento(entrada.texto)) return false
+  if (abertura.gatilhoId || abertura.campanhaId) return false
+  const passou = agora - Date.parse(anterior.atualizadoEm)
+  return passou >= 0 && passou <= JANELA_DE_RETOMADA_MS
+}

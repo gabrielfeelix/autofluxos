@@ -133,6 +133,8 @@ export type SessaoSalva = {
   id: string
   flowVersionId: string
   sessao: Sessao
+  /** Última vez que a conversa andou. Só `ultimaSessao` preenche. */
+  atualizadoEm?: string
 }
 
 /**
@@ -573,7 +575,7 @@ export async function ultimaSessao(
 ): Promise<SessaoSalva | null> {
   const { data, error } = await db()
     .from('sessions')
-    .select('id, flow_version_id, no_atual, vars, tentativas, status, ia_pendente, nps_pendente')
+    .select('id, flow_version_id, no_atual, vars, tentativas, status, ia_pendente, nps_pendente, atualizado_em')
     .eq('contact_id', contatoId)
     .eq('channel_id', canalId)
     .order('criado_em', { ascending: false })
@@ -586,6 +588,7 @@ export async function ultimaSessao(
   return {
     id: data.id as string,
     flowVersionId: data.flow_version_id as string,
+    atualizadoEm: (data.atualizado_em as string | null) ?? undefined,
     sessao: sessaoSchema.parse({
       noAtual: data.no_atual,
       vars: data.vars ?? {},

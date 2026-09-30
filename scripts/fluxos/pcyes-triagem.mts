@@ -51,7 +51,7 @@ function semPrazo(g: Grafo): Grafo {
 }
 
 // ---------------------------------------------------------------- menu
-const TRIAGEM = `A pessoa escreveu em vez de escolher uma opção do menu. O que ela escreveu: {{assunto}}
+const TRIAGEM = `A pessoa escreveu em vez de escolher uma opção do menu, ou voltou a escrever logo depois de um atendimento terminar. Leia a mensagem dela e a conversa até aqui.
 Seu único trabalho é entender o assunto e levar ao time certo. Não resolva o assunto aqui, não indique produto, não peça dado.
 Os assuntos:
 - compra: quer comprar, escolher, comparar, saber preço, estoque ou se um produto serve;
@@ -61,6 +61,8 @@ Os assuntos:
 - empresa: compra com CNPJ, cotação, revenda, licitação;
 - parceria: influenciador, patrocínio, parceria, marketing.
 Se der para saber o assunto, chame concluir_conversa com o resumo sendo só a palavra do assunto, e escreva como fechamento uma frase curta que mostre que entendeu (ex.: "Entendi, é sobre o defeito do mouse. Vou te passar para o Suporte."). Não pergunte nada nesse caso.
+Se for agradecimento, confirmação ou despedida ("obrigado", "ok", "valeu", "blz"), responda em uma frase cordial e curta, sem pergunta, e chame concluir_conversa com o resumo fim.
+Se continuar o assunto do atendimento que acabou (conversa até aqui), leve ao mesmo assunto.
 Se for só um cumprimento ou não der para saber, responda em uma frase perguntando como pode ajudar, com exemplos curtos (comprar um produto, acompanhar um pedido, baixar driver, suporte). Uma pergunta só.`
 
 const menu = semPrazo(ler(MENU))
@@ -78,6 +80,21 @@ const rotas = [
 
 menu.nodes = menu.nodes.filter((n) => !n.id.startsWith('triagem'))
 menu.edges = menu.edges.filter((e) => !String(e.id).startsWith('triagem') && e.sourceHandle !== 'texto-livre')
+// Retomada: quem acabou de ser atendido e escreve de novo não recebe a
+// saudação e o menu de novo; a frase vai direto para a triagem. A variável
+// vem do servidor (`VARIAVEL_DE_RETOMADA`, até 2 h depois do fim).
+menu.edges = menu.edges.filter((e) => !(e.source === 'funil' && e.target === 'menu'))
+menu.nodes.push({
+  id: 'triagem-retomada',
+  type: 'condicao',
+  position: p(0, 350),
+  data: { variavel: 'retomada', operador: 'preenchido', valor: '' },
+})
+menu.edges.push(
+  { id: 'triagem-retomada-e0', source: 'funil', target: 'triagem-retomada' },
+  { id: 'triagem-retomada-v', source: 'triagem-retomada', sourceHandle: 'verdadeiro', target: 'triagem' },
+  { id: 'triagem-retomada-f', source: 'triagem-retomada', sourceHandle: 'falso', target: 'menu' },
+)
 menu.nodes.push({
   id: 'triagem',
   type: 'ia',
