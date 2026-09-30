@@ -108,8 +108,18 @@ export async function GET(
     if (usuarioId) after(() => avisarQueLeu(clienteId, contatoId, leuAntesEm))
   }
 
+  /*
+   * Os tiques de toda mensagem que saiu, e não só das novas: "lida" chega
+   * para uma mensagem de minutos atrás, que o `desde` já deixou para trás.
+   */
+  const situacoes = Object.fromEntries(
+    conversa.mensagens
+      .filter((mensagem) => mensagem.direcao === 'saida' && mensagem.situacao)
+      .map((mensagem) => [mensagem.id, mensagem.situacao]),
+  )
+
   return Response.json(
-    { novas, cortada: conversa.cortada },
+    { novas, cortada: conversa.cortada, situacoes },
     {
       headers: {
         // Conversa em cache é conversa parada, o mesmo defeito que a rota do

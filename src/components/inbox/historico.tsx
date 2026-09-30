@@ -84,6 +84,8 @@ export function Historico({
    * volta a ter uma fonte só.
    */
   const [aoVivo, setAoVivo] = useState<MensagemDoLead[]>([])
+  /** Os tiques que chegaram depois do desenho: "lida" muda mensagem antiga. */
+  const [situacoes, setSituacoes] = useState<Record<string, MensagemDoLead['situacao']>>({})
 
   const idsDoServidor = useMemo(
     () => new Set(mensagens.map((mensagem) => mensagem.id)),
@@ -110,12 +112,16 @@ export function Historico({
    * Meta confirma, sem a página inteira ser redesenhada para isso.
    */
   const lista = useMemo(() => {
-    if (aoVivo.length === 0) return mensagens
+    const comTiques = (mensagem: MensagemDoLead) => {
+      const situacao = situacoes[mensagem.id]
+      return situacao && situacao !== mensagem.situacao ? { ...mensagem, situacao } : mensagem
+    }
+    if (aoVivo.length === 0) return mensagens.map(comTiques)
     const porId = new Map(aoVivo.map((mensagem) => [mensagem.id, mensagem]))
-    const atualizadas = mensagens.map((mensagem) => porId.get(mensagem.id) ?? mensagem)
-    const ineditas = aoVivo.filter((mensagem) => !idsDoServidor.has(mensagem.id))
+    const atualizadas = mensagens.map((mensagem) => comTiques(porId.get(mensagem.id) ?? mensagem))
+    const ineditas = aoVivo.filter((mensagem) => !idsDoServidor.has(mensagem.id)).map(comTiques)
     return ineditas.length === 0 ? atualizadas : [...atualizadas, ...ineditas]
-  }, [mensagens, aoVivo, idsDoServidor])
+  }, [mensagens, aoVivo, idsDoServidor, situacoes])
 
   /**
    * O carimbo da última mensagem à vista, que é o "de onde continuar".
@@ -197,7 +203,11 @@ export function Historico({
         const resposta = await fetch(endereco, { cache: 'no-store', credentials: 'same-origin' })
         if (!resposta.ok) return
 
-        const corpo = (await resposta.json()) as { novas?: MensagemDoLead[] }
+        const corpo = (await resposta.json()) as {
+          novas?: MensagemDoLead[]
+          situacoes?: Record<string, MensagemDoLead['situacao']>
+        }
+        if (corpo.situacoes) setSituacoes(corpo.situacoes)
         const novas = corpo.novas ?? []
         if (novas.length === 0) return
 
@@ -477,6 +487,7 @@ function ListaDeMensagens({
                 {nossa && mensagem.autor ? `${mensagem.autor} · ` : ''}
                 {horaDoRelogio(mensagem.ts)}
               </span>
+              {nossa && mensagem.entregue && <Tiques situacao={mensagem.situacao} />}
               {nossa && !mensagem.entregue && (
                 <EnvioNaoConfirmado clienteId={clienteId} contatoId={contatoId} mensagemId={mensagem.id} />
               )}
@@ -601,5 +612,33 @@ function EtiquetaDoDia({ rotulo }: { rotulo: string }) {
     <p className="my-1 self-center rounded-full border border-line bg-surface px-3 py-1 text-center text-[11px] font-medium text-dim">
       {rotulo}
     </p>
+  )
+}
+
+/**
+ * Os tiques do WhatsApp na saída: um cinza quando saiu, dois cinza quando
+ * chegou no aparelho, dois azuis quando a pessoa leu. Vêm do webhook
+ * `statuses` da Meta (migration 0116); mensagem antiga fica com um só.
+ *
+ * Falha não desenha tique: quem mostra a falha é o "envio não confirmado".
+ */
+function Tiques({ situacao }: { situacao?: MensagemDoLead['situacao'] }) {
+  if (situacao === 'falhou') return null
+  const dois = situacao === 'entregue' || situacao === 'lida'
+  const rotulo = situacao === 'lida' ? 'Lida' : situacao === 'entregue' ? 'Entregue' : 'Enviada'
+  return (
+    <span
+      role="img"
+      aria-label={rotulo}
+      title={rotulo}
+      /* Lida em ciano claro, e não no azul do WhatsApp: a bolha já é azul, e
+         azul sobre azul some. O cinza vira o branco translúcido da bolha. */
+      className={`ml-1 inline-flex align-[-2px] ${situacao === 'lida' ? 'text-[#7ee8fa]' : 'text-dim'}`}
+    >
+      <svg width={dois ? 16 : 11} height="11" viewBox={dois ? '0 0 16 11' : '0 0 11 11'} fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+        <path d="M1 6l3 3 6-7" />
+        {dois && <path d="M7.6 7.6 9 9l6-7" />}
+      </svg>
+    </span>
   )
 }

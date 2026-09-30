@@ -2,6 +2,7 @@ import 'server-only'
 import { z } from 'zod'
 import { condutaPara, statusDaMeta } from '@/core/templates'
 import { aplicarStatusPorWamid, type EstadoDoDestinatario } from './repos/transmissoes'
+import { avancarSituacaoDaMensagem, type SituacaoDaMensagem } from './repos/conversas'
 import { atualizarCategoriaPorWabaId, atualizarStatusPorWabaId } from './repos/templates'
 
 /**
@@ -197,6 +198,13 @@ function estadoDaEntrega(status: string | undefined): EstadoDoDestinatario | nul
   }
 }
 
+const SITUACAO_DO_ESTADO: Partial<Record<EstadoDoDestinatario, SituacaoDaMensagem>> = {
+  aceita: 'enviada',
+  entregue: 'entregue',
+  lida: 'lida',
+  falhou: 'falhou',
+}
+
 export type ResultadoDaEntrega = {
   /** Quantas linhas de transmissão foram atualizadas. */
   atualizados: number
@@ -243,6 +251,15 @@ export async function receberStatusDeEntrega(payload: unknown): Promise<Resultad
 
         if (codigo !== null && condutaPara(codigo) === 'template_pausado') {
           mortos.add(codigo)
+        }
+
+        // Os tiques da Inbox. Melhor-esforço: falhar aqui não pode derrubar o
+        // webhook e fazer a Meta reenviar o lote.
+        const situacao = SITUACAO_DO_ESTADO[estado]
+        if (situacao) {
+          await avancarSituacaoDaMensagem(wamid, situacao).catch((erro) =>
+            console.warn('[status] não deu para gravar a situação', erro instanceof Error ? erro.message : erro),
+          )
         }
 
         const achou = await aplicarStatusPorWamid(wamid, {

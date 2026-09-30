@@ -925,6 +925,44 @@ export async function confirmarEntrega(id: string, waMessageId?: string | null):
   if (error) throw new Error(`não deu para confirmar a entrega: ${error.message}`)
 }
 
+export type SituacaoDaMensagem = 'enviada' | 'entregue' | 'lida' | 'falhou'
+
+/**
+ * O que pode ser trocado por cada situação: ela **só avança**. A Meta manda
+ * `sent`, `delivered` e `read` sem garantia de ordem, e um `delivered` que
+ * chega atrasado não pode apagar os tiques azuis de uma mensagem já lida.
+ * Falha vale só sobre quem ainda não chegou.
+ */
+const ANTERIORES: Record<SituacaoDaMensagem, SituacaoDaMensagem[]> = {
+  enviada: [],
+  entregue: ['enviada'],
+  lida: ['enviada', 'entregue', 'falhou'],
+  falhou: ['enviada'],
+}
+
+/**
+ * Grava a situação que o webhook `statuses` trouxe para uma mensagem que
+ * saiu. Devolve `false` quando o wamid não é de mensagem de conversa
+ * (transmissão, por exemplo), que é caso comum e não erro.
+ */
+export async function avancarSituacaoDaMensagem(
+  waMessageId: string,
+  situacao: SituacaoDaMensagem,
+): Promise<boolean> {
+  const antes = ANTERIORES[situacao]
+  const filtro = antes.length > 0 ? `situacao.is.null,situacao.in.(${antes.join(',')})` : 'situacao.is.null'
+  const { data, error } = await db()
+    .from('messages')
+    .update({ situacao })
+    .eq('wa_message_id', waMessageId)
+    .eq('direcao', 'saida')
+    .or(filtro)
+    .select('id')
+  if (ehIdInvalido(error)) return false
+  if (error) throw new Error(`não deu para gravar a situação da mensagem: ${error.message}`)
+  return (data ?? []).length > 0
+}
+
 /** O que o fluxo coletou vira coluna na tela de leads. */
 export async function guardarCampo(
   contatoId: string,

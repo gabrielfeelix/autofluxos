@@ -64,7 +64,9 @@ function instante(pulso: string | null): number {
  * página, que não muda mais, e toda batida do stream buscaria de novo.
  */
 export function pulsoDaTela(doServidor: string | null): string | null {
-  return instante(pulsoVisto) > instante(doServidor) ? pulsoVisto : doServidor
+  // Empate de hora fica com o que chegou por aqui: o pulso também muda sem
+  // mensagem nova (arquivo baixado, tique de lida), e o visto é o mais recente.
+  return pulsoVisto !== null && instante(pulsoVisto) >= instante(doServidor) ? pulsoVisto : doServidor
 }
 
 /**
@@ -107,7 +109,7 @@ export async function buscarMudancas(clienteId: string, desdePulso: string | nul
         : estado.contagem,
       porEstado: dados.porEstado ?? estado.porEstado,
     }
-    if (instante(dados.pulso) > instante(pulsoVisto)) pulsoVisto = dados.pulso
+    if (instante(dados.pulso) >= instante(pulsoVisto)) pulsoVisto = dados.pulso
     assinantes.forEach((assinante) => assinante())
     return dados.completo
   } catch {

@@ -177,6 +177,12 @@ export type MensagemDoLead = {
   /** Saídas que ainda não tiveram confirmação do canal não são entrega certa. */
   entregue: boolean
   /**
+   * Os tiques do WhatsApp na saída, pelo webhook `statuses` (migration 0116).
+   * Ausente em mensagem antiga ou de entrada: a tela mostra só o tique de
+   * "saiu" quando `entregue` é verdadeiro.
+   */
+  situacao?: 'enviada' | 'entregue' | 'lida' | 'falhou'
+  /**
    * Ausente na esmagadora maioria das linhas.
    *
    * Sem isto, a conversa mostraria só a legenda, e um arquivo entregue viraria
@@ -881,7 +887,7 @@ const MENSAGENS_NO_PULSO = 5
 export async function pulsoDaConta(clienteId: string): Promise<string | null> {
   const { data, error } = await db()
     .from('messages')
-    .select('ts, arquivo, contacts!inner(client_id)')
+    .select('ts, arquivo, situacao, contacts!inner(client_id)')
     .eq('contacts.client_id', clienteId)
     .order('ts', { ascending: false })
     .limit(MENSAGENS_NO_PULSO)
@@ -889,12 +895,15 @@ export async function pulsoDaConta(clienteId: string): Promise<string | null> {
   if (ehIdInvalido(error)) return null
   if (error) throw new Error(`não deu para ler o pulso da conta: ${error.message}`)
 
-  const linhas = (data ?? []) as { ts: string; arquivo: unknown }[]
+  const linhas = (data ?? []) as { ts: string; arquivo: unknown; situacao: string | null }[]
   const ultima = linhas[0]
   if (!ultima) return null
 
   const arquivos = linhas.map((linha) => (ehArquivoGuardado(linha.arquivo) ? '1' : '0')).join('')
-  return `${ultima.ts}|${arquivos}`
+  // A situação entra no pulso para os tiques andarem sem recarregar: a
+  // mensagem virou "lida" e a conversa aberta pergunta de novo (0116).
+  const tiques = linhas.map((linha) => (linha.situacao ?? '-').charAt(0)).join('')
+  return `${ultima.ts}|${arquivos}|${tiques}`
 }
 
 /**
@@ -1002,7 +1011,7 @@ export async function lerConversa(
   const { data, error } = await db()
     .from('messages')
     .select(
-      'id, direcao, texto, ts, entregue, payload, wa_message_id, reagiu_a, reacao, cita, arquivo, transcricao',
+      'id, direcao, texto, ts, entregue, situacao, payload, wa_message_id, reagiu_a, reacao, cita, arquivo, transcricao',
     )
     .eq('contact_id', contatoId)
     .order('ts', { ascending: false })
@@ -1017,6 +1026,7 @@ export async function lerConversa(
     texto: string | null
     ts: string
     entregue: boolean
+    situacao: 'enviada' | 'entregue' | 'lida' | 'falhou' | null
     payload: unknown
     wa_message_id: string | null
     reagiu_a: string | null
@@ -1139,6 +1149,7 @@ export async function lerConversa(
           texto: m.texto,
           ts: m.ts,
           entregue: m.entregue,
+          ...(m.situacao ? { situacao: m.situacao } : {}),
           ...(anexo ? { anexo } : {}),
           ...(produtos.length ? { produtos } : {}),
           ...(recebido ? { recebido } : {}),
