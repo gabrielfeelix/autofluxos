@@ -9,7 +9,9 @@ import type { Loja } from '@/loja/types'
 import { alertar } from './alertar'
 import { chamarHttp } from './efeitos/http'
 import { lerCredencial } from './repos/conexoes'
-import { lojaDaConta, lojaNuvemshopDaConta } from './repos/lojas'
+import { freteRapidoDaConta, lojaDaConta, lojaNuvemshopDaConta } from './repos/lojas'
+import { lerDoCofre } from './cofre'
+import { rastrearNaFreteRapido, type RastreioDaFreteRapido } from '@/loja/frete-rapido'
 import { listarProdutos } from './repos/produtos'
 import { estaAtivo } from '@/core/produtos'
 import type { FonteDoCatalogo } from '@/core/flow/schema'
@@ -38,7 +40,28 @@ export async function consultarPedidoDaConta(
   } catch {
     return { ok: false, motivo: 'não deu para ler o token da loja' }
   }
-  return consultarPedido({ endereco: loja.endereco, credencial }, entrada, chamarHttp)
+  const r = await consultarPedido({ endereco: loja.endereco, credencial }, entrada, chamarHttp)
+  if (!r.ok || !r.valor.encontrado) return r
+
+  /*
+   * Só depois de o Magento confirmar que o pedido é de quem pergunta: a Frete
+   * Rápido responde para qualquer número, e perguntar a ela antes disso seria
+   * dar rastreio de terceiro a quem chuta. Melhor-esforço: sem token, com a
+   * API fora ou sem frete ainda, a resposta segue com o que o Magento sabe.
+   */
+  const entrega = await entregaDaFreteRapido(clienteId, r.valor.pedido.numero)
+  return entrega ? { ok: true, valor: { ...r.valor, pedido: { ...r.valor.pedido, entrega } } } : r
+}
+
+async function entregaDaFreteRapido(clienteId: string, numero: string): Promise<RastreioDaFreteRapido | null> {
+  const ref = await freteRapidoDaConta(clienteId)
+  if (!ref) return null
+  const token = await lerDoCofre(ref).catch(() => null)
+  if (!token) return null
+  const r = await rastrearNaFreteRapido(numero, token)
+  if (r.ok) return r.valor
+  void alertar('Frete Rápido', r.motivo, { clienteId })
+  return null
 }
 
 /**

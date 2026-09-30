@@ -1,5 +1,6 @@
 import type { CredencialDaChamada } from '@/server/efeitos/http'
 import type { chamarHttp } from '@/server/efeitos/http'
+import type { RastreioDaFreteRapido } from './frete-rapido'
 import type { ResultadoDaLoja } from './types'
 
 /**
@@ -35,6 +36,8 @@ export type PedidoDaLoja = {
   total: string
   itens: { nome: string; quantidade: number }[]
   rastreios: { transportadora: string; codigo: string }[]
+  /** Onde a entrega está, pela Frete Rápido. Ausente sem token ou sem frete. */
+  entrega?: RastreioDaFreteRapido
 }
 
 export type ConsultaDePedido =
@@ -140,6 +143,25 @@ export function recortarPedido(
   }
 }
 
+/**
+ * Os pedidos de um CPF ou CNPJ, o mais recente primeiro. O Magento guarda o
+ * documento como a pessoa digitou no checkout, então a busca vai com os dois
+ * jeitos (só dígitos e com máscara) no mesmo grupo, que o Magento lê como "ou".
+ */
+export function filtroPorDocumento(documento: string): string {
+  const mascara =
+    documento.length === 11
+      ? documento.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4')
+      : documento.replace(/(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})/, '$1.$2.$3/$4-$5')
+  const g = 'searchCriteria[filterGroups][0][filters]'
+  return (
+    [documento, mascara]
+      .map((v, i) => `${g}[${i}][field]=customer_taxvat&${g}[${i}][value]=${encodeURIComponent(v)}&${g}[${i}][conditionType]=eq`)
+      .join('&') +
+    '&searchCriteria[sortOrders][0][field]=created_at&searchCriteria[sortOrders][0][direction]=DESC&searchCriteria[pageSize]=5'
+  )
+}
+
 function filtro(campo: string, valor: string): string {
   const p = 'searchCriteria[filterGroups][0][filters][0]'
   return (
@@ -157,7 +179,9 @@ export async function consultarPedido(
   if (!dados.credencial) return { ok: false, motivo: 'a loja desta conta não tem token conectado' }
 
   const numero = entrada.numero.replace(/^#/, '').trim()
-  if (numero === '') return { ok: true, valor: { encontrado: false, motivo: 'nao_achei_ou_nao_confere' } }
+  const documento = soDigitos(entrada.documento ?? '')
+  const semNumeroNemDocumento = numero === '' && documento.length !== 11 && documento.length !== 14
+  if (semNumeroNemDocumento) return { ok: true, valor: { encontrado: false, motivo: 'nao_achei_ou_nao_confere' } }
 
   async function ler(caminho: string): Promise<ResultadoDaLoja<unknown>> {
     const r = await chamar(
@@ -179,11 +203,20 @@ export async function consultarPedido(
     return { ok: false, motivo: `a loja não respondeu: ${r.motivo}` }
   }
 
-  const achados = await ler(`/rest/V1/orders?${filtro('increment_id', numero)}`)
+  /*
+   * Com número: o pedido volta se o telefone **ou** o CPF conferem, a regra
+   * de sempre. Sem número, só com o CPF: a busca é pelo documento, e aí o
+   * documento sozinho não basta, porque CPF de outra pessoa se descobre fácil.
+   * O pedido só volta se **também** o telefone da conversa for o da compra.
+   */
+  const achados = await ler(numero !== '' ? `/rest/V1/orders?${filtro('increment_id', numero)}` : `/rest/V1/orders?${filtroPorDocumento(documento)}`)
   if (!achados.ok) return achados
 
   const lista = (achados.valor as { items?: PedidoDoMagento[] } | null)?.items ?? []
-  const pedido = lista.find((p) => conferePedido(p, entrada))
+  const pedido =
+    numero !== ''
+      ? lista.find((p) => conferePedido(p, entrada))
+      : lista.find((p) => conferePedido(p, { telefone: entrada.telefone }))
   if (!pedido) return { ok: true, valor: { encontrado: false, motivo: 'nao_achei_ou_nao_confere' } }
 
   // Rastreio é melhor-esforço: o status sozinho já responde a pergunta, e um

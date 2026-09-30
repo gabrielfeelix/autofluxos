@@ -668,14 +668,20 @@ export const FERRAMENTAS: Ferramenta[] = [
     rotulo: 'Consultar pedido na loja',
     escreve: false,
     descricao:
-      'Consulta um pedido da loja on-line pelo número e devolve a situação, a data, o total, os itens e o código de rastreio quando houver. ' +
-      'Use quando a pessoa perguntar do pedido dela, da entrega ou do rastreio, e já tiver dito o número do pedido. ' +
-      'O pedido só aparece se o telefone desta conversa for o da compra; se vier `encontrado: false`, peça o CPF usado na compra e consulte de novo com ele. ' +
-      'Se ainda assim não achar, diga que não conseguiu localizar e ofereça chamar alguém do time. Nunca invente situação nem prazo. ' +
+      'Consulta um pedido da loja on-line pelo número, ou pelo CPF da compra quando a pessoa não tem o número, e devolve a situação, a data, o total, os itens e, quando houver, a entrega: transportadora, código, previsão e a última movimentação. ' +
+      'Use quando a pessoa perguntar do pedido dela, da entrega ou do rastreio. Peça o número do pedido ou o CPF usado na compra, o que ela tiver. ' +
+      'Com o número, o pedido aparece se o telefone desta conversa ou o CPF informado forem os da compra; se vier `encontrado: false`, peça o CPF e consulte de novo com os dois. ' +
+      'Só com o CPF, o pedido aparece apenas se o telefone desta conversa também for o da compra; se não achar, peça o número do pedido. ' +
+      'Se ainda assim não achar, diga que não conseguiu localizar e ofereça chamar alguém do time. Nunca invente situação nem prazo: a previsão é a que vier em `entrega.previsao`. ' +
       'Só fale do pedido que esta consulta devolveu; nunca de pedido, nome ou dado de outra pessoa. Você não cancela, troca nem muda endereço: ofereça o time. ' +
       'Não use para buscar produto.',
     argumentos: [
-      { nome: 'numero', tipo: 'texto', descricao: 'O número do pedido, como a pessoa escreveu.', obrigatorio: true },
+      {
+        nome: 'numero',
+        tipo: 'texto',
+        descricao: 'O número do pedido, como a pessoa escreveu. Vazio se ela só informou o CPF.',
+        obrigatorio: false,
+      },
       {
         nome: 'documento',
         tipo: 'texto',
@@ -687,7 +693,7 @@ export const FERRAMENTAS: Ferramenta[] = [
     chamada: { tipo: 'loja', operacao: 'pedido' },
     projecao: [
       { caminho: 'encontrado' },
-      { caminho: 'pedido', campos: ['numero', 'situacao', 'feitoEm', 'total', 'itens', 'rastreios'], limite: 1 },
+      { caminho: 'pedido', campos: ['numero', 'situacao', 'feitoEm', 'total', 'itens', 'rastreios', 'entrega'], limite: 1 },
     ],
     credencial: 'nenhuma',
     integracao: 'loja',

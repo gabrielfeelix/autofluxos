@@ -291,3 +291,23 @@ export async function soltarLojaNuvemshop(
   if (erro) throw new Error(`não deu para desconectar a loja: ${erro.message}`)
   return { clienteId: linha.client_id, conexaoId: linha.conexao_id }
 }
+
+/**
+ * A referência do token da Frete Rápido da loja Magento desta conta, no cofre.
+ *
+ * Consulta à parte, e não mais uma coluna em `COLUNAS`: a coluna nasceu na
+ * 0113, e código que sobe antes da migration não pode derrubar a leitura da
+ * loja inteira. Qualquer erro aqui vale "sem Frete Rápido", e o pedido segue
+ * só com o Magento.
+ */
+export async function freteRapidoDaConta(clienteId: string): Promise<string | null> {
+  const { data, error } = await db()
+    .from('lojas_integradas')
+    .select('frete_rapido_ref')
+    .eq('client_id', clienteId)
+    .eq('plataforma', 'magento')
+    .maybeSingle()
+  if (error || !data) return null
+  const ref = (data as { frete_rapido_ref?: unknown }).frete_rapido_ref
+  return typeof ref === 'string' && ref !== '' ? ref : null
+}

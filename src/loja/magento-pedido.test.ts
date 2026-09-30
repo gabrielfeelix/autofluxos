@@ -92,3 +92,28 @@ describe('mesmoTelefone', () => {
     expect(mesmoTelefone('5978', '554498775978')).toBe(false)
   })
 })
+
+describe('consultarPedido só com o CPF', () => {
+  it('busca pelo documento, com e sem máscara, e mostra o pedido do mesmo telefone', async () => {
+    const chamar = lojaCom([pedido])
+    const r = await consultarPedido(dados, { numero: '', telefone: '554498775978', documento: '123.456.789-09' }, chamar as never)
+    expect(r.ok && r.valor.encontrado).toBe(true)
+    const url = decodeURIComponent((chamar.mock.calls[0] as unknown as [{ url: string }])[0].url)
+    expect(url).toContain('[field]=customer_taxvat')
+    expect(url).toContain('[value]=12345678909')
+    expect(url).toContain('[value]=123.456.789-09')
+  })
+
+  it('CPF certo com telefone de outra pessoa não mostra nada', async () => {
+    const chamar = lojaCom([pedido])
+    const r = await consultarPedido(dados, { numero: '', telefone: '5511911001414', documento: '12345678909' }, chamar as never)
+    expect(r).toEqual({ ok: true, valor: { encontrado: false, motivo: 'nao_achei_ou_nao_confere' } })
+  })
+
+  it('sem número e sem documento válido nem consulta a loja', async () => {
+    const chamar = lojaCom([pedido])
+    const r = await consultarPedido(dados, { numero: '', telefone: '554498775978', documento: '123' }, chamar as never)
+    expect(r.ok && r.valor.encontrado).toBe(false)
+    expect(chamar).not.toHaveBeenCalled()
+  })
+})
