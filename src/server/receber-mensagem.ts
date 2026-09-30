@@ -840,6 +840,35 @@ function carregadorDeFluxo(clienteId: string) {
   }
 }
 
+/**
+ * Tocou numa opção de um menu anterior, no meio de outro assunto?
+ *
+ * O menu continua na tela depois que a pessoa escolhe, e tocar em outra opção
+ * dele é o jeito natural de mudar de assunto. Só que o toque chegava como
+ * resposta da pergunta atual, e dentro da IA virava texto para ela: a PCYES viu
+ * a conversa presa em "drivers" com o cliente tocando "Quero comprar".
+ *
+ * Duas condições, as duas necessárias: a opção **não** é da parada atual (se
+ * for, é resposta normal) e **é** de uma pergunta do fluxo principal do número.
+ * A segunda protege os botões que pertencem à conversa corrente, como o
+ * "Pedir" dos cards de produto, que precisam continuar chegando à IA.
+ */
+async function trocouDeAssunto(canalSalvo: CanalSalvo, viva: SessaoSalva, opcaoId: string): Promise<boolean> {
+  if (!canalSalvo.flowId) return false
+  const temOpcao = (grafo: unknown, so?: string) =>
+    ((grafo as { nodes?: { id: string; type: string; data?: { opcoes?: { id: string }[] } }[] } | null)?.nodes ?? []).some(
+      (n) => n.type === 'pergunta' && (so === undefined || n.id === so) && (n.data?.opcoes ?? []).some((o) => o.id === opcaoId),
+    )
+
+  const atual = await acharVersao(viva.flowVersionId)
+  if (atual && viva.sessao.noAtual && temOpcao(atual.grafo, viva.sessao.noAtual)) return false
+
+  const principal = await acharFluxo(canalSalvo.flowId)
+  if (!principal?.versaoPublicadaId || !principal.ativo) return false
+  const versao = await acharVersao(principal.versaoPublicadaId)
+  return Boolean(versao && temOpcao(versao.grafo))
+}
+
 async function avancarConversa(
   canalSalvo: CanalSalvo,
   contato: Contato,
@@ -865,7 +894,10 @@ async function avancarConversa(
   // fluxo em que a conversa está (ver `pediuInicioDoAtendimento`): tratar a
   // conversa viva como se não existisse faz o principal abrir, e a viva morrer
   // encerrada logo abaixo, como em qualquer abertura.
-  const recomecar = Boolean(viva) && entrada.tipo === 'texto' && pediuInicioDoAtendimento(entrada.texto)
+  const recomecar =
+    Boolean(viva) &&
+    ((entrada.tipo === 'texto' && pediuInicioDoAtendimento(entrada.texto)) ||
+      (entrada.tipo === 'opcao' && viva !== null && (await trocouDeAssunto(canalSalvo, viva, entrada.opcaoId))))
   const abertura = await escolherAbertura(
     canalSalvo,
     { temSessaoViva: Boolean(viva) && !recomecar, primeiraVez: anterior === null },
