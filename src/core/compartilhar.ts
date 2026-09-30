@@ -328,6 +328,11 @@ function textoDoBloco(no: No): string {
        */
       return 'escreve na anotação do contato'
     }
+    case 'encaminhar':
+      // O texto é o que o cliente lê, então pode aparecer. O telefone não: é
+      // de um time da conta, às vezes o celular de uma pessoa, e o link é
+      // público.
+      return no.data.texto.trim() || 'encaminha para o WhatsApp de outro time'
     case 'ir-fluxo':
       // Pelo mesmo motivo da etapa: o nome da outra automação é informação da
       // conta de origem, e quem recebe o link não importa o destino junto, o

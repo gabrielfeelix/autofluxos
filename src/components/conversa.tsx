@@ -1,5 +1,6 @@
 'use client'
 
+import { encaminhamentoEmTexto } from '@/core/encaminhar'
 import { useEffect, useRef, useState } from 'react'
 import { sessaoNova, type Acao, type Entrada, type Resultado, type Sessao } from '@/core/engine/types'
 import {
@@ -354,6 +355,11 @@ export function Conversa({
               ...(produto.foto ? { anexo: { midia: 'imagem' as const, url: produto.foto } } : {}),
             })
           }
+          break
+        case 'encaminhar_contato':
+          // O simulador não tem botão de link nem cartão: mostra o que o
+          // canal sem esses recursos mandaria, o texto com o link e o número.
+          adicionar({ chave, de: 'bot', texto: encaminhamentoEmTexto(acao), hora: horaAtual() })
           break
         case 'enviar_opcoes':
           adicionar({

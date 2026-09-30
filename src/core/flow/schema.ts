@@ -912,6 +912,33 @@ export const noNotaSchema = z.object({
 })
 
 /**
+ * **Encaminhar contato**: mandar a pessoa para o WhatsApp de outro time.
+ *
+ * O caso que pediu isto é a PCYES: suporte, comercial para empresa e
+ * marketing atendem em números próprios, e o atendente copiava à mão o texto
+ * com o número de cada um. Aqui sai o texto, um botão que abre a conversa com
+ * o time já com a mensagem escrita (`mensagemPronta`), e o cartão de contato.
+ * Ver `core/encaminhar.ts`.
+ *
+ * `texto` e `mensagemPronta` interpolam variável: "Olá! Sou {{nome}}" chega ao
+ * suporte com o nome de quem escreveu. `telefone` fica como a pessoa digitou,
+ * e quem normaliza é `telefoneDoEncaminhamento`, na hora de mandar.
+ */
+export const noEncaminharSchema = z.object({
+  ...base,
+  type: z.literal('encaminhar'),
+  data: z.object({
+    texto: z.string().default(''),
+    /** O nome no cartão de contato: "Suporte PCYES". */
+    nome: z.string().default(''),
+    telefone: z.string().default(''),
+    mensagemPronta: z.string().default(''),
+    /** O texto do botão. Vazio = "Abrir conversa". */
+    rotulo: z.string().optional(),
+  }),
+})
+
+/**
  * **Ir para outro fluxo**: a interligação entre automações.
  *
  * O caso que pediu isto é literal: o estúdio tem um fluxo de pilates e um de
@@ -1052,6 +1079,7 @@ export const noSchema = z.discriminatedUnion('type', [
   noEtapaSchema,
   noEtiquetaSchema,
   noNotaSchema,
+  noEncaminharSchema,
   noIrFluxoSchema,
   noVoltarSchema,
   noNpsSchema,
@@ -1093,6 +1121,7 @@ export type Opcao = z.infer<typeof opcaoSchema>
 export type No = z.infer<typeof noSchema>
 export type NoPergunta = z.infer<typeof noPerguntaSchema>
 export type NoNps = z.infer<typeof noNpsSchema>
+export type NoEncaminhar = z.infer<typeof noEncaminharSchema>
 export type NoIa = z.infer<typeof noIaSchema>
 export type NoMidia = z.infer<typeof noMidiaSchema>
 export type Cabecalho = z.infer<typeof cabecalhoSchema>

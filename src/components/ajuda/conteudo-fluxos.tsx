@@ -48,6 +48,7 @@ const ORDEM_DOS_BLOCOS: TipoNo[] = [
   'ia',
   'handoff',
   'http',
+  'encaminhar',
   'nps',
 ]
 
@@ -71,6 +72,8 @@ const QUANDO_USAR: Record<TipoNo, string> = {
   voltar:
     'O "voltar ao menu" que todo bot tem. Manda a conversa para um passo anterior deste mesmo fluxo, sem uma seta cruzando o desenho inteiro.',
   http: 'Consultar ou gravar no sistema do cliente: a agenda, o CRM, a planilha.',
+  encaminhar:
+    'Quando o assunto é de outro time, com WhatsApp próprio: suporte, comercial, marketing. Manda o texto, um botão que abre a conversa com eles já com a mensagem escrita, e o cartão de contato.',
   nps: 'Perguntar de 0 a 10 no fim do atendimento. Ele já separa os três caminhos, quem gostou, quem tanto faz e quem não gostou, e guarda a nota com data, para o relatório poder comparar um mês com o outro.',
 }
 

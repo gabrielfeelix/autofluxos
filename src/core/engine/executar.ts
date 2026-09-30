@@ -1,3 +1,4 @@
+import { linkDoEncaminhamento, ROTULO_PADRAO_DO_ENCAMINHAMENTO, telefoneDoEncaminhamento } from '../encaminhar'
 import { VARIAVEIS_DA_COBRANCA } from '../cobranca'
 import { descrever, nomeDaSaida } from '../flow/descrever'
 import { mensagensDoHandoff, partesDaMensagem } from '../flow/mensagem'
@@ -962,6 +963,25 @@ function avancar(
         // para o grafo que já estava no ar quando a etiqueta foi apagada.
         if (no.data.etiquetaId) {
           acoes.push({ tipo: 'aplicar_etiqueta', etiquetaId: no.data.etiquetaId })
+        }
+        atual = seguir(no)
+        break
+      }
+
+      case 'encaminhar': {
+        // Telefone que não vira número não sai: o `validar` já recusa publicar
+        // assim, e isto protege o grafo que estava no ar antes da regra. O
+        // bloco some calado e a conversa segue, como a etiqueta sem etiqueta.
+        const telefone = telefoneDoEncaminhamento(no.data.telefone)
+        if (telefone) {
+          acoes.push({
+            tipo: 'encaminhar_contato',
+            texto: interpolar(no.data.texto, s.vars).trim(),
+            rotulo: no.data.rotulo?.trim() || ROTULO_PADRAO_DO_ENCAMINHAMENTO,
+            link: linkDoEncaminhamento(telefone, interpolar(no.data.mensagemPronta, s.vars)),
+            nome: no.data.nome.trim(),
+            telefone,
+          })
         }
         atual = seguir(no)
         break

@@ -1659,7 +1659,8 @@ function ehEnvio(acao: Acao): boolean {
     acao.tipo === 'enviar_texto' ||
     acao.tipo === 'enviar_midia' ||
     acao.tipo === 'enviar_opcoes' ||
-    acao.tipo === 'enviar_produtos'
+    acao.tipo === 'enviar_produtos' ||
+    acao.tipo === 'encaminhar_contato'
   )
 }
 

@@ -206,6 +206,18 @@ export function dadosPadrao(tipo: TipoNo): Record<string, unknown> {
       // Nasce sem etiqueta, pelo mesmo motivo da etapa: uma etiqueta chutada
       // classificaria contato de verdade com um rótulo que ninguém escolheu.
       return { etiquetaId: '' }
+    case 'encaminhar':
+      // Nasce com o texto e a mensagem pronta de exemplo, que é o que ensina o
+      // bloco. Nome e telefone vazios: o validador recusa publicar assim, e um
+      // número chutado mandaria cliente de verdade para o WhatsApp de ninguém.
+      return {
+        texto:
+          'Esse assunto é com o nosso time de Suporte 🔧\nToque em *Abrir conversa*: a mensagem já vai escrita, é só completar e enviar.',
+        nome: '',
+        telefone: '',
+        mensagemPronta: 'Olá! Vim pelo WhatsApp da loja.\nProduto:\nO que está acontecendo:',
+        rotulo: 'Abrir conversa',
+      }
     case 'nota':
       // Nasce vazia e o validador recusa publicar assim. Um texto de exemplo
       // que fosse publicado por engano escreveria a frase de exemplo na ficha

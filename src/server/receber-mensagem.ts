@@ -1,4 +1,5 @@
 import 'server-only'
+import { encaminhamentoEmTexto, telefoneLegivel } from '@/core/encaminhar'
 import { z } from 'zod'
 import { distribuirSeSemDono } from './distribuir-atendimento'
 import type { Canal } from '@/channels/types'
@@ -1614,6 +1615,48 @@ async function aplicar(
         if (!entrega.ok) return pararNoHumano(entrega.motivo)
 
         await confirmarEntrega(registro, entrega.waMessageId)
+        break
+      }
+
+      case 'encaminhar_contato': {
+        /*
+         * Duas mensagens onde o canal sabe (botão que abre a conversa com o
+         * time, depois o cartão para salvar) e uma só onde não sabe (texto
+         * com o link e o número escritos). O histórico guarda o texto que a
+         * pessoa leu e, no cartão, o nome e o número, para o Inbox mostrar
+         * para onde ela foi mandada.
+         */
+        const enviarBotao = canal.enviarBotaoDeLink?.bind(canal)
+        const enviarCartao = canal.enviarContato?.bind(canal)
+        const texto = enviarBotao ? acao.texto : encaminhamentoEmTexto(acao)
+
+        const registro = await registrarSaida({
+          contatoId: contato.id,
+          sessaoId,
+          autor: AUTOR_AUTOMACAO,
+          texto,
+          payload: { encaminhamento: { nome: acao.nome, telefone: acao.telefone, link: acao.link } },
+        })
+        const entrega = await entregar(
+          () => (enviarBotao ? enviarBotao(contato.waId, acao.texto, acao.rotulo, acao.link) : canal.enviarTexto(contato.waId, texto)),
+          alvo,
+        )
+        if (!entrega.ok) return pararNoHumano(entrega.motivo)
+        await confirmarEntrega(registro, entrega.waMessageId)
+
+        if (enviarCartao) {
+          const cartao = await registrarSaida({
+            contatoId: contato.id,
+            sessaoId,
+            autor: AUTOR_AUTOMACAO,
+            texto: `${acao.nome}: ${telefoneLegivel(acao.telefone)}`,
+          })
+          const envio = await entregar(() => enviarCartao(contato.waId, { nome: acao.nome, telefone: acao.telefone }), alvo)
+          // O botão já chegou com o link: o cartão é conveniência, e sem ele a
+          // pessoa ainda tem como falar com o time. Falha aqui não para a
+          // conversa na mão de alguém.
+          if (envio.ok) await confirmarEntrega(cartao, envio.waMessageId)
+        }
         break
       }
 

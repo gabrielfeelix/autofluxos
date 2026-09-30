@@ -1,5 +1,11 @@
 'use client'
 
+import {
+  LIMITE_MENSAGEM_PRONTA,
+  LIMITE_ROTULO_DO_ENCAMINHAMENTO,
+  LIMITE_TEXTO_DO_ENCAMINHAMENTO,
+  ROTULO_PADRAO_DO_ENCAMINHAMENTO,
+} from '@/core/encaminhar'
 import { problemaDoEndereco } from '@/core/flow/validar'
 import { efeitoDaPolitica, politicaDaFerramenta, type PoliticaDaIa } from '@/core/autonomia-da-ia'
 import { MINUTOS_DE_RETOMADA_PADRAO, type ConfigDaConta } from '@/core/retomada'
@@ -1279,6 +1285,67 @@ export function Painel({
                 <p>
                   Ninguém do outro lado da conversa lê isto. Por isso o campo não tem barra de
                   negrito: um <code>*isto*</code> apareceria com os asteriscos para quem lê a ficha.
+                </p>
+              </>
+            }
+          />
+        </>
+      )}
+
+      {no.type === 'encaminhar' && (
+        <>
+          <Linha
+            rotulo="Nome no cartão"
+            valor={no.data.nome}
+            aoMudar={(nome) => aoMudarDados({ nome })}
+            secao="blocos"
+            dica="Como o time aparece no cartão de contato. Exemplo: Suporte PCYES."
+          />
+          <Linha
+            rotulo="WhatsApp do time"
+            valor={no.data.telefone}
+            aoMudar={(telefone) => aoMudarDados({ telefone })}
+            secao="blocos"
+            dica="Com DDD, do jeito que você escreveria. Exemplo: (44) 2101-1428."
+          />
+          <Area
+            rotulo="Texto"
+            valor={no.data.texto}
+            limite={LIMITE_TEXTO_DO_ENCAMINHAMENTO}
+            aoMudar={(texto) => aoMudarDados({ texto })}
+            conhecidas={variaveis}
+            formatavel
+            secao="blocos"
+            exemplo="Esse assunto é com o nosso time de Suporte"
+            dica="O que a pessoa lê, com o botão embaixo. Diga com quem ela vai falar e o que mandar."
+          />
+          <Linha
+            rotulo="Texto do botão"
+            valor={no.data.rotulo ?? ''}
+            aoMudar={(rotulo) => aoMudarDados({ rotulo })}
+            secao="blocos"
+            dica={`Até ${LIMITE_ROTULO_DO_ENCAMINHAMENTO} caracteres. Vazio, fica "${ROTULO_PADRAO_DO_ENCAMINHAMENTO}".`}
+          />
+          <Area
+            rotulo="Mensagem pronta"
+            valor={no.data.mensagemPronta}
+            limite={LIMITE_MENSAGEM_PRONTA}
+            aoMudar={(mensagemPronta) => aoMudarDados({ mensagemPronta })}
+            conhecidas={variaveis}
+            secao="blocos"
+            exemplo="Olá! Produto: / O que está acontecendo:"
+            dica="Já vem escrita quando a pessoa toca no botão. Ela completa e envia para o time."
+            detalhes={
+              <>
+                <p>
+                  O toque no botão abre a conversa com o time com este texto na caixa de mensagem.
+                  A pessoa revisa, completa e envia. Deixe lacunas como <code>Produto:</code> para
+                  ela preencher.
+                </p>
+                <p>
+                  Depois do botão chega o <strong>cartão de contato</strong>, para salvar o número.
+                  No chat do site, que não tem botão nem cartão, vai o texto com o link e o número
+                  escritos.
                 </p>
               </>
             }
@@ -2968,6 +3035,8 @@ function resumoDoBloco(no: No): string {
       return 'Põe uma etiqueta'
     case 'nota':
       return curto(no.data.texto) || 'Escreve na anotação'
+    case 'encaminhar':
+      return curto(no.data.nome ? `Encaminha para ${no.data.nome}` : '') || 'Encaminhar contato'
     case 'ir-fluxo':
       return curto(no.data.rotulo) || 'Ir para outra automação'
     case 'voltar':

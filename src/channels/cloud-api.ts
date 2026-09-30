@@ -618,6 +618,36 @@ export function canalCloudApi(config: ConfigCloudApi): Canal {
       return primeiro
     },
 
+    async enviarBotaoDeLink(para, texto, rotulo, url) {
+      const resposta = await mandar({
+        to: para,
+        type: 'interactive',
+        interactive: {
+          type: 'cta_url',
+          body: { text: cortarCaracteres(texto, LIMITE_CORPO_CTA) },
+          action: { name: 'cta_url', parameters: { display_text: cortarCaracteres(rotulo, LIMITE_ROTULO), url } },
+        },
+      })
+      return idDoEnvio(resposta)
+    },
+
+    async enviarContato(para, contato) {
+      // `wa_id` é o que faz o cartão ganhar o botão "Conversar": sem ele o
+      // WhatsApp mostra só "Adicionar", e a pessoa teria de salvar o contato
+      // para depois procurar a conversa.
+      const resposta = await mandar({
+        to: para,
+        type: 'contacts',
+        contacts: [
+          {
+            name: { formatted_name: contato.nome, first_name: contato.nome },
+            phones: [{ phone: `+${contato.telefone}`, type: 'WORK', wa_id: contato.telefone }],
+          },
+        ],
+      })
+      return idDoEnvio(resposta)
+    },
+
     async enviarProdutoComBotao(para, produto) {
       // A foto no cabeçalho, nome, detalhe e descrição no corpo, e um botão de
       // resposta: o toque volta como `button_reply` com o id do pedido.

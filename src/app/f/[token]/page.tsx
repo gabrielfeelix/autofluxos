@@ -45,6 +45,7 @@ const ROTULO_DO_BLOCO: Record<LinhaDoRoteiro['tipo'], string> = {
   etapa: 'Etapa do funil',
   etiqueta: 'Etiqueta',
   nota: 'Anotação',
+  encaminhar: 'Encaminha contato',
   'ir-fluxo': 'Vai para outra automação',
   voltar: 'Volta ao menu',
   nps: 'Pesquisa de satisfação',

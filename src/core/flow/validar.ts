@@ -1,5 +1,11 @@
 import { VARIAVEIS_DA_COBRANCA } from '../cobranca'
 import { descrever } from './descrever'
+import {
+  LIMITE_MENSAGEM_PRONTA,
+  LIMITE_ROTULO_DO_ENCAMINHAMENTO,
+  LIMITE_TEXTO_DO_ENCAMINHAMENTO,
+  telefoneDoEncaminhamento,
+} from '../encaminhar'
 import { mensagensDoHandoff, partesDaMensagem } from './mensagem'
 import {
   FORMATO_VARIAVEL,
@@ -475,6 +481,50 @@ export function validar(fluxo: Fluxo, capacidades: Capacidades = {}): ResultadoV
         erros.push({
           codigo: 'ETIQUETA_INEXISTENTE',
           mensagem: `${descrever(no)} aponta para uma etiqueta que não existe mais neste cliente. Escolha outra, publicar assim entrega um fluxo que não marca ninguém.`,
+          noId: no.id,
+        })
+      }
+    }
+
+    if (no.type === 'encaminhar') {
+      if (!telefoneDoEncaminhamento(no.data.telefone)) {
+        erros.push({
+          codigo: 'ENCAMINHAR_SEM_TELEFONE',
+          mensagem: `${descrever(no)} precisa do WhatsApp do time, com DDD. Exemplo: (44) 2101-1428.`,
+          noId: no.id,
+        })
+      }
+      if (no.data.nome.trim() === '') {
+        erros.push({
+          codigo: 'ENCAMINHAR_SEM_NOME',
+          mensagem: `${descrever(no)} precisa de um nome para o cartão de contato, como "Suporte PCYES".`,
+          noId: no.id,
+        })
+      }
+      if (no.data.texto.trim() === '') {
+        erros.push({
+          codigo: 'ENCAMINHAR_SEM_TEXTO',
+          mensagem: `${descrever(no)} precisa de um texto dizendo para a pessoa por que e com quem ela vai falar.`,
+          noId: no.id,
+        })
+      } else if (contarCaracteres(no.data.texto) > LIMITE_TEXTO_DO_ENCAMINHAMENTO) {
+        erros.push({
+          codigo: 'ENCAMINHAR_TEXTO_LONGO',
+          mensagem: `${descrever(no)}: o texto passa de ${LIMITE_TEXTO_DO_ENCAMINHAMENTO} caracteres, o máximo que o WhatsApp aceita junto do botão.`,
+          noId: no.id,
+        })
+      }
+      if (contarCaracteres(no.data.rotulo ?? '') > LIMITE_ROTULO_DO_ENCAMINHAMENTO) {
+        erros.push({
+          codigo: 'ENCAMINHAR_ROTULO_LONGO',
+          mensagem: `${descrever(no)}: o texto do botão passa de ${LIMITE_ROTULO_DO_ENCAMINHAMENTO} caracteres, o máximo do WhatsApp.`,
+          noId: no.id,
+        })
+      }
+      if (contarCaracteres(no.data.mensagemPronta) > LIMITE_MENSAGEM_PRONTA) {
+        erros.push({
+          codigo: 'ENCAMINHAR_MENSAGEM_LONGA',
+          mensagem: `${descrever(no)}: a mensagem pronta passa de ${LIMITE_MENSAGEM_PRONTA} caracteres. Deixe só o começo, a pessoa completa.`,
           noId: no.id,
         })
       }
@@ -1464,6 +1514,8 @@ function variaveisDoNo(no: No): string[] {
       // conversa escolher qual marcar seria entregar a classificação dos
       // contatos a quem está do outro lado.
       return []
+    case 'encaminhar':
+      return [...variaveisCitadas(no.data.texto), ...variaveisCitadas(no.data.mensagemPronta)]
     case 'nota':
       // Esta **interpola**, é a diferença entre "pediu {{servico}}" e uma
       // frase fixa repetida em todo contato. Então a citação é conferida como
@@ -1520,6 +1572,8 @@ function textosDoNo(no: No): string[] {
       return [no.data.url, no.data.corpo, ...no.data.cabecalhos.map((c) => c.valor)]
     case 'nota':
       return [no.data.texto]
+    case 'encaminhar':
+      return [no.data.texto, no.data.mensagemPronta, no.data.nome, no.data.rotulo ?? '']
     case 'nps':
       return [no.data.texto, no.data.perguntaAberta]
     case 'condicao':

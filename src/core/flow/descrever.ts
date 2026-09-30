@@ -59,6 +59,8 @@ export function descrever(no: No): string {
       return 'O bloco de etiqueta'
     case 'nota':
       return rotular('Anotação', curto(no.data.texto))
+    case 'encaminhar':
+      return rotular('Encaminhar para', curto(no.data.nome || no.data.telefone))
     case 'ir-fluxo':
       // `rotulo` é o nome do fluxo de destino guardado na hora da escolha. É
       // exatamente o que identifica o bloco para quem lê a lista de problemas.

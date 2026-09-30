@@ -216,6 +216,21 @@ export type Acao =
       produtos: ProdutoDaLoja[]
       atrasoMs?: number
     }
+  /**
+   * Mandar a pessoa para o WhatsApp de outro time (bloco `encaminhar`).
+   *
+   * Já resolvido pelo motor: texto e link interpolados, telefone só em
+   * dígitos com o país. O canal decide a forma: botão que abre a conversa e
+   * cartão de contato onde existem, texto com o link nos outros.
+   */
+  | {
+      tipo: 'encaminhar_contato'
+      texto: string
+      rotulo: string
+      link: string
+      nome: string
+      telefone: string
+    }
   /** persistir no contato, é isso que alimenta a tela de leads */
   | { tipo: 'salvar_campo'; campo: string; valor: string }
   /**

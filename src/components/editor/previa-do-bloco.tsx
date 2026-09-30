@@ -228,6 +228,14 @@ export function detalhesDoBloco(no: No): Detalhe[] {
     case 'etiqueta':
       return [{ rotulo: 'Etiqueta', valor: texto(no.data.etiquetaId, '(não escolhida)') }]
 
+    case 'encaminhar':
+      return [
+        { rotulo: 'Para', valor: texto(no.data.nome, '(sem nome)') },
+        { rotulo: 'WhatsApp', valor: texto(no.data.telefone, '(sem telefone)') },
+        { rotulo: 'Texto', valor: texto(no.data.texto, '(sem texto)') },
+        { rotulo: 'Mensagem pronta', valor: texto(no.data.mensagemPronta, '(nenhuma)') },
+      ]
+
     case 'nota':
       return [{ rotulo: 'Escreve', valor: texto(no.data.texto, '(nada, o texto está vazio)') }]
 
