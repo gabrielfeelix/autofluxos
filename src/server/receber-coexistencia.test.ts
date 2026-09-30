@@ -103,6 +103,24 @@ describe('de quem é a ficha', () => {
   it('sem os dois lados, não há ficha para escolher', () => {
     expect(contatoDaMensagem({ from: NUMERO_DO_NEGOCIO }, NUMERO_DO_NEGOCIO)).toBeNull()
   })
+
+  /*
+   * O formato real do `history`: a Meta só põe `to` no echo. Na mensagem que o
+   * negócio mandou, quem recebeu é o `id` da thread. Sem isto toda mensagem
+   * enviada do histórico era descartada em silêncio (MGM, 30/set/2026:
+   * 1.635 recebidas importadas, zero enviadas).
+   */
+  it('no histórico, a mensagem do negócio sem `to` vai para a ficha da thread', () => {
+    expect(
+      contatoDaMensagem({ from: NUMERO_DO_NEGOCIO }, NUMERO_DO_NEGOCIO, '5511999998888'),
+    ).toBe('5511999998888')
+  })
+
+  it('a thread não muda a ficha de quem mandou', () => {
+    expect(
+      contatoDaMensagem({ from: '5511999998888' }, NUMERO_DO_NEGOCIO, '5511000000000'),
+    ).toBe('5511999998888')
+  })
 })
 
 describe('o carimbo da Meta', () => {

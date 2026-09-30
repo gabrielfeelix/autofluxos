@@ -107,8 +107,15 @@ export function RetomarComModelo({
   return (
     <div className={moldura}>
       <p className="text-[12.5px] leading-5 text-dim">
-        <strong className="text-muted">Passaram 24h desde a última mensagem de {nome}.</strong> O
-        WhatsApp só deixa retomar com um modelo aprovado pela Meta.
+        {/*
+          Não diz "passaram 24h": com coexistência, a mensagem que a pessoa
+          mandou antes de o número ser conectado vem do histórico e não abre
+          janela, e a frase mentia numa conversa de horas atrás (MGM,
+          30/set/2026). A janela só conta o que chegou por aqui.
+        */}
+        <strong className="text-muted">Janela de 24h fechada.</strong> Ela abre quando {nome} escreve
+        para este número por aqui, e vale 24h. Fora dela, o WhatsApp só deixa retomar com um modelo
+        aprovado pela Meta.
       </p>
 
       {aprovados === null ? (

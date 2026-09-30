@@ -292,9 +292,16 @@ export function direcaoDaMensagem(
 export function contatoDaMensagem(
   mensagem: { from?: string; to?: string },
   numeroDoNegocio: string | null,
+  /**
+   * O `id` da thread do `history`, que **é** o número do cliente. A Meta só
+   * manda `to` no echo: no histórico, a mensagem que o negócio mandou vem só
+   * com `from`, e sem este recurso ela era descartada em silêncio (MGM,
+   * 30/set/2026: 1.635 recebidas importadas e nenhuma enviada).
+   */
+  daThread?: string,
 ): string | null {
   const direcao = direcaoDaMensagem(mensagem, numeroDoNegocio)
-  const outro = direcao === 'saida' ? mensagem.to : mensagem.from
+  const outro = direcao === 'saida' ? (mensagem.to ?? daThread) : mensagem.from
   return outro ?? null
 }
 
@@ -506,7 +513,7 @@ async function tratarHistorico(
   for (const lote of lotes) {
     for (const thread of lote.threads) {
       for (const mensagem of thread.messages) {
-        await gravarMensagemImportada(canal, mensagem, true)
+        await gravarMensagemImportada(canal, mensagem, true, thread.id)
       }
     }
   }
@@ -531,8 +538,9 @@ async function gravarMensagemImportada(
   canal: CanalSalvo,
   mensagem: z.infer<typeof mensagemDoHistoricoSchema>,
   historico: boolean,
+  daThread?: string,
 ): Promise<void> {
-  const waId = contatoDaMensagem(mensagem, numeroDoNegocio(canal))
+  const waId = contatoDaMensagem(mensagem, numeroDoNegocio(canal), daThread)
   if (!waId) return
 
   const direcao = direcaoDaMensagem(mensagem, numeroDoNegocio(canal))
