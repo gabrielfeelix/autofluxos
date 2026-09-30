@@ -18,7 +18,7 @@ import { juntarFraseAosCards } from '@/core/juntar-cards'
 import { guardarComentario, guardarNota } from './repos/avaliacoes'
 import { acharCliente, horarioDoCliente } from './repos/clientes'
 import { acharFluxo, acharVersao, type VersaoPublicada } from './repos/fluxos'
-import { acrescentarNota, lerConversa } from './repos/leads'
+import { acrescentarNota, definirEstadoDaConversa, lerConversa } from './repos/leads'
 import {
   ATENDIMENTO_SEMPRE_ABERTO,
   avisoDeForaDoHorario,
@@ -1015,15 +1015,16 @@ async function avancarConversa(
         datas: varsDeData(horario?.fuso ?? SEMPRE_ABERTO.fuso),
         carregarFluxo: carregadorDeFluxo(canalSalvo.clienteId),
         // "Deixa eu procurar" sai antes do modelo, e não junto da resposta.
-        antesDaIa: (envios) =>
-          aplicar(
+        antesDaIa: async (envios) => {
+          await aplicar(
             fabricaDeCanal(canalSalvo),
             contato,
             salva.id,
             mensagem.id,
             envios,
             revisaoAutorizada,
-          ),
+          )
+        },
       },
     )
 
@@ -1057,7 +1058,7 @@ async function avancarConversa(
       resultado.destino?.grafo ?? versao.grafo,
       resultado.sessao,
     )
-    await aplicar(
+    const saiuTudo = await aplicar(
       fabricaDeCanal(canalSalvo),
       contato,
       salva.id,
@@ -1065,6 +1066,25 @@ async function avancarConversa(
       resultado.acoes,
       revisaoAutorizada,
     )
+
+    /*
+     * O bot encaminhou a pessoa para outro time e a automação terminou ali:
+     * daqui não há mais nada a fazer, e a conversa sai da fila de "Sem
+     * responsável". Na PCYES, em 30/set, três conversas levadas ao Suporte
+     * ficaram abertas sem dono como se alguém devesse responder. Se a pessoa
+     * escrever de novo, a própria mensagem reabre (0049).
+     */
+    if (
+      saiuTudo === true &&
+      resultado.sessao.status === 'encerrada' &&
+      resultado.acoes.some((a) => a.tipo === 'encaminhar_contato')
+    ) {
+      try {
+        await definirEstadoDaConversa(canalSalvo.clienteId, contato.id, 'resolvida')
+      } catch (erro) {
+        console.error('[encaminhar] não deu para resolver a conversa encaminhada', erro)
+      }
+    }
   } finally {
     digitando.parar()
   }
@@ -1565,7 +1585,7 @@ async function aplicar(
    * decisão ficar visível em vez de depender de um parâmetro esquecido.
    */
   revisaoAutorizada: number | null,
-): Promise<void> {
+): Promise<boolean | void> {
   /*
    * A execução que ficou para trás para aqui, antes de qualquer envio.
    *
@@ -2107,6 +2127,9 @@ async function aplicar(
   }
 
   await salvarCampos()
+  // Tudo saiu. Quem chama usa isto para saber que pode dar a conversa por
+  // resolvida; qualquer `return` antes daqui é falha ou descarte.
+  return true
 }
 
 /** Traduz o que o WhatsApp mandou para o que o motor entende. */
