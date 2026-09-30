@@ -44,6 +44,22 @@ export function ajustarContagem(qual: Contagem, delta: number) {
   assinantes.forEach((assinante) => assinante())
 }
 
+/**
+ * Os números que a fila viva trouxe (`fila-viva.ts`), mais novos que os do
+ * layout. Desde que a Inbox parou de recarregar a página inteira (30/set/2026),
+ * é por aqui que a barra lateral acompanha mensagem nova sem F5.
+ */
+let vivos: Readonly<Partial<Record<Contagem, number>>> = {}
+
+export function definirContagensVivas(numeros: Partial<Record<Contagem, number>>) {
+  vivos = { ...vivos, ...numeros }
+  // O número vivo já conta os gestos desta aba.
+  const limpos = { ...ajustes }
+  for (const qual of Object.keys(numeros) as Contagem[]) delete limpos[qual]
+  ajustes = limpos
+  assinantes.forEach((assinante) => assinante())
+}
+
 /** O número como a tela deve mostrar: o do servidor, mais o que esta aba mexeu. */
 export function useContagem(qual: Contagem, doServidor: number): number {
   const agora = useSyncExternalStore(
@@ -52,11 +68,19 @@ export function useContagem(qual: Contagem, doServidor: number): number {
     () => ajustes,
   )
   useEffect(() => {
+    // Número novo do layout é o mais recente: o vivo de antes deixa de valer.
+    if (vistos[qual] !== undefined && vistos[qual] !== doServidor && vivos[qual] !== undefined) {
+      const resto = { ...vivos }
+      delete resto[qual]
+      vivos = resto
+    }
     vistos[qual] = doServidor
   }, [qual, doServidor])
+  const vivo = vivos[qual]
+  const base = vivo ?? doServidor
   const ajuste = agora[qual]
-  if (!ajuste || ajuste.base !== doServidor) return doServidor
-  return Math.max(0, doServidor + ajuste.delta)
+  if (!ajuste || (vivo === undefined && ajuste.base !== doServidor)) return base
+  return Math.max(0, base + ajuste.delta)
 }
 
 // ---------------------------------------------------------------------------

@@ -3,8 +3,8 @@
 import { useContagem, type Contagem } from './contagens-local'
 
 const DIZ: Record<Contagem, [string, string]> = {
-  minhas: ['conversa aberta com você', 'conversas abertas com você'],
-  'sem-dono': ['conversa sem responsável', 'conversas sem responsável'],
+  minhas: ['conversa sua esperando resposta', 'conversas suas esperando resposta'],
+  'sem-dono': ['conversa sem responsável esperando resposta', 'conversas sem responsável esperando resposta'],
   atrasadas: ['atividade atrasada', 'atividades atrasadas'],
 }
 

@@ -1,6 +1,7 @@
 'use client'
 
 import { useSyncExternalStore } from 'react'
+import { definirContagensVivas } from '@/components/design/contagens-local'
 import type { Lead } from '@/server/repos/leads'
 
 /**
@@ -88,7 +89,9 @@ export async function buscarMudancas(clienteId: string, desdePulso: string | nul
       completo: boolean
       contagem?: { total: number; semDono: number; porUsuario: Record<string, number> }
       porEstado?: PorEstadoVivo
+      barra?: { minhas: number; 'sem-dono': number }
     }
+    if (dados.barra) definirContagensVivas(dados.barra)
 
     const linhas = new Map(estado.linhas)
     const naoLidas = new Map(estado.naoLidas)

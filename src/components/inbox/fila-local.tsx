@@ -42,9 +42,26 @@ export function useFilaLocal(entrada: {
   atribuicaoInicial: string
   busca: string
   conversaAberta: string | null
+  /** Quem está olhando: o filtro com o próprio id vai para a URL como `minhas`. */
+  usuarioId?: string | null
 }) {
   const [estado, setEstado] = useState<FiltroDeEstado>(entrada.estadoInicial)
   const [atribuicao, setAtribuicao] = useState(entrada.atribuicaoInicial)
+
+  /*
+   * O filtro que o servidor mandou mudou: vale o novo.
+   *
+   * Clicar em "Minhas conversas" na barra lateral com a Inbox já aberta é
+   * navegação para a mesma página, e o Next não remonta a fila: o estado
+   * guardado continuava "todos", e o efeito abaixo ainda reescrevia a URL para
+   * `de=todos`, e a barra acendia "Todas as conversas" (30/set/2026).
+   */
+  const [doServidor, setDoServidor] = useState({ e: entrada.estadoInicial, a: entrada.atribuicaoInicial })
+  if (doServidor.e !== entrada.estadoInicial || doServidor.a !== entrada.atribuicaoInicial) {
+    setDoServidor({ e: entrada.estadoInicial, a: entrada.atribuicaoInicial })
+    setEstado(entrada.estadoInicial)
+    setAtribuicao(entrada.atribuicaoInicial)
+  }
 
   /*
    * A URL segue a escolha, e o efeito roda **depois** da pintura: o filtro já
@@ -54,12 +71,12 @@ export function useFilaLocal(entrada: {
   useEffect(() => {
     const url = new URL(window.location.href)
     url.searchParams.set('estado', estado)
-    url.searchParams.set('de', atribuicao)
+    url.searchParams.set('de', entrada.usuarioId && atribuicao === entrada.usuarioId ? 'minhas' : atribuicao)
     if (entrada.busca) url.searchParams.set('busca', entrada.busca)
     else url.searchParams.delete('busca')
     if (entrada.conversaAberta) url.searchParams.set('conversa', entrada.conversaAberta)
     window.history.replaceState(null, '', url)
-  }, [estado, atribuicao, entrada.busca, entrada.conversaAberta])
+  }, [estado, atribuicao, entrada.busca, entrada.conversaAberta, entrada.usuarioId])
 
   return { estado, setEstado, atribuicao, setAtribuicao }
 }
@@ -230,6 +247,7 @@ export function RailsLocais<T extends LeadDoRail>({
     atribuicaoInicial,
     busca,
     conversaAberta,
+    usuarioId,
   })
 
   /*

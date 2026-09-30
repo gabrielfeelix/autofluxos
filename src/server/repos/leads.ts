@@ -1780,24 +1780,27 @@ export async function donoDoContato(
 }
 
 /**
- * Os dois números de Conversas na barra lateral: abertas comigo e abertas sem
- * ninguém (plano de navegação, seção 3).
- *
- * Contam o mesmo que a fila mostra ao abrir `?de=minhas` e `?de=sem-dono`: o
- * estado padrão da fila é `aberta`, e número de menu que não bate com a tela
- * que ele abre ensina a pessoa a não confiar no número. Duas contagens `head`,
- * sem trazer linha nenhuma.
+ * Os dois números de Conversas na barra lateral: comigo e sem ninguém, só as
+ * que esperam resposta (plano de navegação, seção 3; pendentes desde
+ * 30/set/2026). Duas contagens `head`, sem trazer linha nenhuma.
  */
 export async function contarConversasDaBarra(
   clienteId: string,
   usuarioId: string,
 ): Promise<{ minhas: number; semDono: number }> {
+  /*
+   * **Pendente, não aberta.** O número conta conversa em que a última palavra é
+   * do cliente, como o WhatsApp conta quem está esperando resposta. Contar toda
+   * conversa aberta dizia "Minhas conversas 4" com todas já respondidas, e o
+   * número deixava de ser o que falta fazer (30/set/2026).
+   */
   const abertas = () =>
     db()
       .from('leads')
       .select('contact_id', { count: 'exact', head: true })
       .eq('client_id', clienteId)
       .or('estado_efetivo.is.null,estado_efetivo.eq.aberta')
+      .eq('ultima_direcao', 'entrada')
   const [minhas, semDono] = await Promise.all([
     abertas().eq('atribuido_a', usuarioId),
     abertas().is('atribuido_a', null),

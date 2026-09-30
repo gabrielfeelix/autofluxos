@@ -1,6 +1,6 @@
 import { z } from 'zod'
 import { espiando } from '@/server/espiar'
-import { contarPorAtribuicao, contarPorEstado, leadsMudadosDesde, pulsoDaConta } from '@/server/repos/leads'
+import { contarConversasDaBarra, contarPorAtribuicao, contarPorEstado, leadsMudadosDesde, pulsoDaConta } from '@/server/repos/leads'
 import { naoLidasPorContato } from '@/server/repos/leituras'
 import { alcanceDeConversas, exigirCapacidade, recusou } from '@/server/permissoes'
 
@@ -30,11 +30,14 @@ export async function GET(req: Request, contexto: { params: Promise<{ clienteId:
   // Espiando, a fila viva é a do espiado, como a página (`server/espiar.ts`).
   const espiao = await espiando(clienteId)
   const alcance = espiao?.alcance ?? (await alcanceDeConversas(clienteId, acesso))
-  const [{ leads, completo }, pulso, contagem, porEstado] = await Promise.all([
+  const [{ leads, completo }, pulso, contagem, porEstado, barra] = await Promise.all([
     leadsMudadosDesde(clienteId, new Date(desde).toISOString(), alcance),
     pulsoDaConta(clienteId),
     contarPorAtribuicao(clienteId, alcance),
     contarPorEstado(clienteId, alcance),
+    // Os números da barra lateral vêm junto: sem o F5 automático, era a
+    // única coisa que os atualizava.
+    contarConversasDaBarra(clienteId, espiao?.alvo.id ?? acesso.sessao.usuario.id).catch(() => null),
   ])
   const naoLidas = await naoLidasPorContato(
     espiao?.alvo.id ?? acesso.sessao.usuario.id ?? null,
@@ -49,6 +52,7 @@ export async function GET(req: Request, contexto: { params: Promise<{ clienteId:
       completo,
       contagem: { ...contagem, porUsuario: Object.fromEntries(contagem.porUsuario) },
       porEstado,
+      ...(barra ? { barra: { minhas: barra.minhas, 'sem-dono': barra.semDono } } : {}),
     },
     { headers: { 'Cache-Control': 'private, no-store, max-age=0' } },
   )
