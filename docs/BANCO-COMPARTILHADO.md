@@ -320,6 +320,13 @@ extração explícito para os objetos de `public`.
   `public` com **75** tabelas; **8** contas, **0** com frente. Data API depois
   do `notify`: `clients?select=nicho` **200** com a chave secreta;
   `app_verandi.conta` **200**.
+- **a `0114` foi aplicada em 30/set/2026**, com autorização explícita do dono,
+  pela Management API: `af_contas.issuer` sem `not null`. O Better Auth 1.7.5
+  (dependabot) recusava o schema e derrubava todo login desde 28/set com
+  "Database schema mismatch", mostrado como "credenciais não conferem". Ensaio
+  em transação antes; login conferido depois contra a produção (senha errada
+  volta `INVALID_EMAIL_OR_PASSWORD`). Verandi com 35 migrations e 42 tabelas,
+  iguais.
 - **a `0113` foi aplicada em 30/set/2026** (Frete Rápido da PCYES), com
   autorização explícita do dono, pela Management API. Aditiva: coluna nula
   `lojas_integradas.frete_rapido_ref` (uuid, referência do segredo no Vault).

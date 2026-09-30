@@ -2,6 +2,7 @@
 
 import { revalidatePath } from 'next/cache'
 import { headers } from 'next/headers'
+import { alertar } from './alertar'
 import { redirect } from 'next/navigation'
 import { autenticacao, bancoDoLogin, ehSenhaVazada, SENHA_VAZADA } from './auth'
 import { chaveDeLimite, consumirLimite, JANELA_DE_LOGIN_POR_CONTA_SEGUNDOS, TETO_DE_LOGIN_POR_CONTA } from './limite'
@@ -157,6 +158,13 @@ export async function acaoEntrar(
     // Falha de login vai para a auditoria: sem isso, força bruta contra uma
     // conta não deixava rastro nenhum, só o limite que barra sem contar.
     await registrar({ acao: 'falhou_login', autorEmail: email.slice(0, 200), alvoTipo: 'usuario' })
+    // Para quem tenta, a resposta é sempre a mesma. Para nós, não: em 30/set o
+    // login inteiro ficou fora dias por um erro de schema do Better Auth, e a
+    // tela só dizia "credenciais não conferem". Erro que não é senha errada
+    // vira alerta.
+    if ((erro as { body?: { code?: unknown } } | null)?.body?.code !== 'INVALID_EMAIL_OR_PASSWORD') {
+      void alertar('Login falhou por erro interno', erro)
+    }
     return { erro: CREDENCIAL_NAO_CONFERE, email }
   }
 
