@@ -145,6 +145,13 @@ card e explica o "Avise-me"): rode o script a partir do rascunho **atual**.
 
 ## Pegadinhas que já custaram tempo
 
+- Com o Gemini primeiro na cadeia, ele mandou o próprio rascunho ao cliente
+  (30/set 15:23, "Search results show: 294800: ..."). Corrigido em `b33f5fd`:
+  parte `thought` ignorada e `pareceRascunho` (`src/server/ia/prompt.ts`) trata
+  rascunho como falha, e a cadeia tenta o próximo. Se voltar a vazar, olhar o
+  `thinkingConfig` do Gemini 3 flash-lite e o teto de 1.200 tokens de saída
+  (o pensamento come o teto e a resposta sai cortada).
+
 - O Magento numera pedido com 9 dígitos (`000001955`); gente digita `1955`.
 - Status `delivered_carrier` é da PCYES ("Entregue à transportadora").
 - O andamento da entrega está nos comentários do pedido
