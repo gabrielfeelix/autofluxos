@@ -48,6 +48,10 @@ describe('status do pedido na conversa', () => {
       'https://ondeestameupedido.com.br/FR260928DHHN5',
     )
     expect(linkDoRastreio({ rastreios: [{ transportadora: 'Correios', codigo: 'AA123456789BR' }] })).toBeNull()
+    // Como a PCYES grava: o link inteiro no número de rastreio.
+    expect(
+      linkDoRastreio({ rastreios: [{ transportadora: 'BRASPRESS', codigo: 'https://ondeestameupedido.com.br/FR260928DHHN5' }] }),
+    ).toBe('https://ondeestameupedido.com.br/FR260928DHHN5')
   })
 
   it('encurta transportadora e data', () => {

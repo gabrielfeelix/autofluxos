@@ -21,7 +21,9 @@ export function mensagemDoPedido(pedido: PedidoDaLoja): string {
     const { situacao, quando } = pedido.entrega.ultima
     linhas.push(`Última atualização: ${situacao}${quando ? `, ${dataCurta(quando)}` : ''}`)
   }
-  const codigo = pedido.rastreios[0]?.codigo || pedido.entrega?.codigo || ''
+  // Link no lugar do código não vai no texto: o botão já leva a ele.
+  const bruto = pedido.rastreios[0]?.codigo || pedido.entrega?.codigo || ''
+  const codigo = codigoDaFreteRapido(bruto) ?? (/^https?:\/\//i.test(bruto) ? '' : bruto)
   if (codigo) linhas.push(`Código de rastreio: ${codigo}`)
 
   if (pedido.itens.length > 0) {
@@ -41,8 +43,18 @@ export function mensagemDoPedido(pedido: PedidoDaLoja): string {
  * chega pelo rastreio do envio no Magento; sem esse código, `null`.
  */
 export function linkDoRastreio(pedido: Pick<PedidoDaLoja, 'rastreios'>): string | null {
-  const codigo = pedido.rastreios.map((r) => r.codigo.trim()).find((c) => /^FR\d{6}[A-Z0-9]{3,}$/i.test(c))
-  return codigo ? `https://ondeestameupedido.com.br/${codigo.toUpperCase()}` : null
+  const codigo = pedido.rastreios.map((r) => codigoDaFreteRapido(r.codigo)).find(Boolean)
+  return codigo ? `https://ondeestameupedido.com.br/${codigo}` : null
+}
+
+/**
+ * O código FR, venha ele puro ou dentro do link. A PCYES grava no rastreio do
+ * envio o link inteiro (`https://ondeestameupedido.com.br/FR260928DHHN5`),
+ * não o código (30/set/2026).
+ */
+export function codigoDaFreteRapido(rastreio: string): string | null {
+  const m = /(?:^|ondeestameupedido\.com\.br\/)(FR\d{6}[A-Z0-9]{3,})\/?$/i.exec(rastreio.trim())
+  return m ? m[1]!.toUpperCase() : null
 }
 
 /** "BRASPRESS TRANSPORTES URGENTES LTDA" vira "Braspress". */
