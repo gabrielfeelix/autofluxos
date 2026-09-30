@@ -29,6 +29,8 @@ export type CupomDaLoja = {
   descricao: string
   /** `AAAA-MM-DD`, ou `null` sem data de fim. */
   validoAte: string | null
+  /** Quantas vezes já foi usado: o mais usado vem primeiro na lista. */
+  usos: number
 }
 
 type RegraDoMagento = {
@@ -135,13 +137,24 @@ export function juntarCupons(regras: RegraDoMagento[], cupons: CupomDoMagento[],
     const fim = [dataDe(regra.to_date), expira].filter((d): d is string => d !== null).sort()[0] ?? null
     lista.push({
       codigo,
-      nome: String(regra.name ?? '').trim() || codigo,
+      nome: nomeLimpo(String(regra.name ?? '')) || codigo,
       desconto: textoDoDesconto(regra),
       descricao: String(regra.description ?? '').trim(),
       validoAte: fim,
+      usos: Number(cupom.times_used ?? 0) || 0,
     })
   }
-  return lista.sort((a, b) => a.codigo.localeCompare(b.codigo, 'pt-BR'))
+  // O mais usado primeiro: é o que a equipe manda todo dia (na PCYES, o de
+  // primeira compra), e não pode ficar perdido entre cinquenta de parceiros.
+  return lista.sort((a, b) => b.usos - a.usos || a.codigo.localeCompare(b.codigo, 'pt-BR'))
+}
+
+/** "[PCYES] CUPOM WERDUM" vira "WERDUM": o prefixo é arrumação interna da loja. */
+function nomeLimpo(nome: string): string {
+  return nome
+    .replace(/^\s*\[[^\]]*\]\s*/, '')
+    .replace(/^cupom\s+/i, '')
+    .trim()
 }
 
 export function textoDoDesconto(regra: RegraDoMagento): string {

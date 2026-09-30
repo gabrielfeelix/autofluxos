@@ -43,7 +43,24 @@ describe('os cupons da regra', () => {
       HOJE,
     )
     expect(lista).toEqual([
-      { codigo: 'BEMVINDO5', nome: 'Boas-vindas', desconto: '5% de desconto', descricao: '', validoAte: '2026-12-31' },
+      { codigo: 'BEMVINDO5', nome: 'Boas-vindas', desconto: '5% de desconto', descricao: '', validoAte: '2026-12-31', usos: 0 },
+    ])
+  })
+})
+
+describe('a ordem e o nome', () => {
+  it('o mais usado vem primeiro, sem o prefixo interno da loja', () => {
+    const lista = juntarCupons(
+      [{ ...regra, name: '[PCYES] CUPOM WERDUM' }, { ...regra, rule_id: 8, name: '[PCYES] PRIMEIRA COMPRA' }],
+      [
+        { rule_id: 7, code: 'WERDUM10', times_used: 0 },
+        { rule_id: 8, code: 'BEMVINDO10', times_used: 127 },
+      ],
+      HOJE,
+    )
+    expect(lista.map((c) => [c.codigo, c.nome])).toEqual([
+      ['BEMVINDO10', 'PRIMEIRA COMPRA'],
+      ['WERDUM10', 'WERDUM'],
     ])
   })
 })
@@ -65,6 +82,7 @@ describe('a mensagem que sai', () => {
         desconto: '10% de desconto',
         descricao: '',
         validoAte: '2026-12-31',
+        usos: 0,
       }),
     ).toBe('Cupom 10% off para o site:\n*BEMVINDO10*\nVálido até 31/12/2026.')
   })

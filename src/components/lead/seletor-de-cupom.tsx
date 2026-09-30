@@ -158,7 +158,10 @@ export function SeletorDeCupom({
                         {enviado === cupom.codigo ? 'Enviado ✓' : enviando === cupom.codigo ? 'Enviando…' : 'Enviar'}
                       </span>
                     </span>
-                    <span className="mt-0.5 block text-[12px] leading-5 text-soft">{cupom.desconto}</span>
+                    <span className="mt-0.5 block text-[12px] leading-5 text-soft">
+                      {cupom.desconto}
+                      {cupom.nome !== cupom.codigo && <span className="text-dim"> · {cupom.nome}</span>}
+                    </span>
                     {cupom.validoAte && (
                       <span className="block text-[11.5px] leading-4 text-dim">
                         até {cupom.validoAte.split('-').reverse().join('/')}
