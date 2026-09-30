@@ -7,6 +7,7 @@ import {
   direcaoDaMensagem,
   ehCampoDeCoexistencia,
   webhookDeCoexistenciaSchema,
+  ehMensagemAutomaticaDoApp,
 } from './receber-coexistencia'
 
 /**
@@ -481,5 +482,15 @@ describe('PARTNER_ADDED, o onboarding que a Meta avisa por webhook', () => {
       'wamid.HBgLMTY0NjcwNDM1OTUVAgARGBIyNDlBOEI5QUQ4NDc0N0FCNjMA',
     )
     expect(valor?.message_echoes?.[0]?.text?.body).toBe("Here's the info you requested!")
+  })
+})
+
+describe('ehMensagemAutomaticaDoApp', () => {
+  it('a saudação do app (começa com U+200E) não é gente', () => {
+    expect(ehMensagemAutomaticaDoApp({ text: { body: '‎Pcyes Ecommerce agradece seu contato.' } })).toBe(true)
+  })
+  it('texto digitado é gente', () => {
+    expect(ehMensagemAutomaticaDoApp({ text: { body: 'Oi, tudo bem?' } })).toBe(false)
+    expect(ehMensagemAutomaticaDoApp({ type: 'image' })).toBe(false)
   })
 })

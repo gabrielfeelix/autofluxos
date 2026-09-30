@@ -642,6 +642,12 @@ export function carimboDaMeta(timestamp: string | undefined): string | null {
  * promover sessão `encerrada` a `humano`, que reescreveria o histórico e faria a
  * taxa de "resolvidas pelo bot" cair por uma conversa que ele resolveu.
  */
+/** Saudação e ausência do app começam com U+200E; ver `tratarEcos`. */
+export function ehMensagemAutomaticaDoApp(mensagem: unknown): boolean {
+  const corpo = (mensagem as { text?: { body?: unknown } } | null)?.text?.body
+  return typeof corpo === 'string' && corpo.startsWith('\u200E')
+}
+
 async function tratarEcos(
   canal: CanalSalvo,
   valor: z.infer<typeof valorSchema>,
@@ -665,6 +671,18 @@ async function tratarEcos(
      * automação a cada mensagem recebida, que é o oposto do produto.
      */
     if (direcaoDaMensagem(mensagem, numeroDoNegocio(canal)) !== 'saida') continue
+
+    /*
+     * Mensagem automática do app (saudação, ausência) não é gente atendendo.
+     *
+     * O WhatsApp Business manda sozinho a "mensagem de saudação" configurada
+     * nele, e ela chega aqui como eco igual a qualquer outra. Em 30/set/2026 a
+     * saudação da PCYES calou o bot no primeiro contato de um cliente, com
+     * ninguém no celular. O app marca essas mensagens começando o texto com
+     * U+200E (marca de direção, invisível); quem digita não produz esse
+     * caractere. Grava no histórico, não cala.
+     */
+    if (ehMensagemAutomaticaDoApp(mensagem)) continue
 
     const contato = await acharOuCriarContato(canal.clienteId, waId, null)
     await calarBotNaConversa(contato.id)
