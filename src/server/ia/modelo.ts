@@ -90,22 +90,33 @@ export async function escolherModelo({
  *
  * A cota grátis do Gemini acabava no meio da tarde e a conversa ia para gente.
  * Cada provedor tem o seu balde, então enfileirar os que têm chave no ambiente
- * soma as cotas: Groq primeiro (mais rápido), Cerebras (mesmo modelo, mais
- * volume por dia), Cloudflare (o mesmo modelo, cota diária sem cartão, desde
- * 26/set), Mistral (o maior volume, mas treina com o dado se o painel
- * não for desligado), Gemini por último, que é o que já estava validado.
+ * soma as cotas.
+ *
+ * **A ordem é pelo tamanho do balde por minuto, não pela velocidade.** Até
+ * 30/set o Groq vinha primeiro por ser o mais rápido, mas o grátis dele dá
+ * 8.000 tokens por minuto (medido: duas chamadas de 3.678 deixaram 213), e um
+ * turno de venda faz três chamadas de 4 a 6 mil (lista de produtos, regras,
+ * histórico). Estourava na segunda, caía no Gemini já atrasado, e a soma dos
+ * prazos passava de 50 s; no fim a conversa ia para uma pessoa por um "Oi".
+ * O Cerebras roda o mesmo modelo do Groq com balde maior; o Gemini
+ * flash-lite aguentou 10 mil tokens em 4,4 s no mesmo teste. O Groq fica de
+ * reserva para quando os dois caírem.
  *
  * `IA_PROVEDOR` prende um só, para comparar como cada um se comporta.
  */
 function modeloDa4yu(): Modelo | null {
   const elos: { nome: string; modelo: Modelo }[] = []
-
-  for (const nome of ['groq', 'cerebras', 'cloudflare', 'mistral'] as const) {
+  const compativel = (nome: 'groq' | 'cerebras' | 'cloudflare' | 'mistral') => {
     const chave = process.env[PROVEDORES[nome].variavel]
     if (chave && enderecoDo(nome)) elos.push({ nome, modelo: compativelOpenai({ provedor: nome, chave }) })
   }
+
+  compativel('cerebras')
   const chaveGemini = process.env.GEMINI_API_KEY
   if (chaveGemini) elos.push({ nome: 'gemini', modelo: gemini({ chave: chaveGemini }) })
+  compativel('groq')
+  compativel('cloudflare')
+  compativel('mistral')
 
   const preso = process.env.IA_PROVEDOR
   const usados = preso ? elos.filter((e) => e.nome === preso) : elos
