@@ -1038,9 +1038,18 @@ export function Fila({
 
           {naTela.length === 0 && (
             <p className="px-4 py-8 text-center text-[12.5px] leading-5 text-dim">
-              {(local ? digitado : termo) === ""
-                ? "Nenhuma conversa neste filtro."
-                : `Ninguém com “${local ? digitado : termo}” aqui. Enter procura no servidor.`}
+              {(local ? digitado : termo) === "" ? (
+                "Nenhuma conversa neste filtro."
+              ) : (
+                <>
+                  Ninguém encontrado para “{local ? digitado : termo}”.
+                  {local && (
+                    <span className="mt-1 block text-[11.5px]">
+                      Aperte Enter para uma busca mais completa.
+                    </span>
+                  )}
+                </>
+              )}
             </p>
           )}
         </nav>
