@@ -12,6 +12,7 @@ import {
 } from '@/server/acoes'
 import { acharCliente } from '@/server/repos/clientes'
 import { listarConexoes, type Conexao } from '@/server/repos/conexoes'
+import { NOME_DA_CONEXAO_DE_ADS } from '@/server/token-de-anuncios'
 import { listarFluxos } from '@/server/repos/fluxos'
 import { CartaoDaAgenda } from '@/components/conexoes/agenda'
 import {
@@ -47,10 +48,13 @@ export default async function Pagina({ params }: { params: Promise<{ clienteId: 
   const cliente = await acharCliente(clienteId)
   if (!cliente) notFound()
 
-  const [conexoes, fluxos] = await Promise.all([
+  const [todas, fluxos] = await Promise.all([
     listarConexoes(clienteId),
     listarFluxos(clienteId),
   ])
+  // A chave de anúncios mora na tela de Anúncios, que a cria, troca e usa.
+  // Solta aqui ela parecia uma chave qualquer, "nenhum bloco usa".
+  const conexoes = todas.filter((c) => c.nome.trim().toLowerCase() !== NOME_DA_CONEXAO_DE_ADS)
 
   /**
    * Quantos blocos apontam para cada credencial.

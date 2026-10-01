@@ -8,7 +8,7 @@ import { urlDeAutorizacao } from './anuncios/conexao'
 import { iniciarConexao } from './instagram/estado'
 import { importarLeadsAntigos } from './importar-leads-antigos'
 import { tokenDeAnuncios } from './token-de-anuncios'
-import { lerNomesDoAnuncio } from '@/channels/marketing-api'
+import { assinarLeadsDaPagina, lerNomesDoAnuncio, listarPaginasDoToken } from '@/channels/marketing-api'
 import { exigirAcessoAoCliente } from './sessao'
 import { criarConexao, listarConexoes, trocarValor } from './repos/conexoes'
 import { clientePelaPagina, desligarPagina, ligarPagina } from './repos/paginas-de-lead'
@@ -97,10 +97,25 @@ export async function acaoLigarPagina(
   await exigirAcessoAoCliente(clienteId)
 
   const pageId = String(formData.get('pageId') ?? '').trim()
-  const nome = String(formData.get('nome') ?? '').trim()
+  let nome = String(formData.get('nome') ?? '').trim()
 
   if (!/^\d{5,}$/.test(pageId)) {
-    return { ok: false, erro: 'o id da página é só números, copie do Gerenciador de Anúncios' }
+    return { ok: false, erro: 'escolha uma página da lista' }
+  }
+
+  /*
+   * Ligar é também fazer a Página mandar os leads (`subscribed_apps`). Antes
+   * isso era um passo à parte, no explorador da Meta, e sem ele o lead nunca
+   * chegava, sem erro em lugar nenhum. Se a assinatura falhar, a Página não é
+   * ligada: ligada sem assinatura é o pior estado, o de parecer pronta.
+   */
+  const token = await tokenDeAnuncios(clienteId)
+  if (!token) return { ok: false, erro: 'ligue a conta de anúncios antes de ligar uma página' }
+  const assinou = await assinarLeadsDaPagina(pageId, token)
+  if (!assinou.ok) return { ok: false, erro: `a Meta não deixou ligar esta página: ${assinou.erro.mensagem}` }
+
+  if (!nome) {
+    nome = (await listarPaginasDoToken(token))?.find((p) => p.id === pageId)?.nome ?? ''
   }
 
   const r = await ligarPagina({ clienteId, pageId, nome })

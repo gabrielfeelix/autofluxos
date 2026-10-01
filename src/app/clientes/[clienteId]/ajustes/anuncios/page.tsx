@@ -7,7 +7,8 @@ import { acaoConectarComFacebook, acaoLigarAds, acaoLigarPagina } from '@/server
 import { acharCliente } from '@/server/repos/clientes'
 import { listarConexoes } from '@/server/repos/conexoes'
 import { paginasDaConta } from '@/server/repos/paginas-de-lead'
-import { NOME_DA_CONEXAO_DE_ADS } from '@/server/token-de-anuncios'
+import { NOME_DA_CONEXAO_DE_ADS, tokenDeAnuncios } from '@/server/token-de-anuncios'
+import { listarPaginasDoToken } from '@/channels/marketing-api'
 import { ultimaChegadaDeAnuncio } from '@/server/repos/ultimos-eventos'
 import { CamadasDaConexao } from '@/components/conexoes/camadas'
 import { estadoDaConexao } from '@/core/conexoes'
@@ -54,6 +55,11 @@ export default async function Pagina({
   const temToken = conexoes.some(
     (c) => c.nome.trim().toLowerCase() === NOME_DA_CONEXAO_DE_ADS && c.tipo === 'bearer',
   )
+  // As Páginas que o token enxerga, menos as já ligadas: a pessoa escolhe numa
+  // lista em vez de procurar o id. `null` quando a Meta não respondeu.
+  const token = temToken ? await tokenDeAnuncios(clienteId) : null
+  const doToken = token ? await listarPaginasDoToken(token) : null
+  const paraLigar = (doToken ?? []).filter((p) => !paginas.some((l) => l.pageId === p.id))
   const estado = estadoDaConexao({
     tipo: 'anuncios',
     paginas: paginas.length,
@@ -219,28 +225,29 @@ export default async function Pagina({
             rotuloEnviar="Ligar"
             action={acaoLigarPagina.bind(null, clienteId)}
           >
-            <label className="block">
-              <RotuloCampo>ID da página</RotuloCampo>
-              <input
-                name="pageId"
-                required
-                inputMode="numeric"
-                placeholder="102938475610293"
-                className="app-field px-3 py-2.5 font-mono text-[13px]"
-              />
-              <span className="mt-1 block text-[10.5px] text-dim">
-                Só números. Está em Configurações da Página → Informações.
-              </span>
-            </label>
-
-            <label className="block">
-              <RotuloCampo>Nome (para você reconhecer)</RotuloCampo>
-              <input
-                name="nome"
-                placeholder="Página da academia"
-                className="app-field px-3 py-2.5 text-[13px]"
-              />
-            </label>
+            {paraLigar.length > 0 ? (
+              <label className="block">
+                <RotuloCampo>Página</RotuloCampo>
+                <select name="pageId" required className="app-field px-3 py-2.5 text-[13px]">
+                  {paraLigar.map((p) => (
+                    <option key={p.id} value={p.id}>
+                      {p.nome || p.id}
+                    </option>
+                  ))}
+                </select>
+                <span className="mt-1 block text-[10.5px] text-dim">
+                  As Páginas que a conta de anúncios ligada acima enxerga.
+                </span>
+              </label>
+            ) : (
+              <p className="text-[12px] leading-5 text-soft">
+                {!temToken
+                  ? 'Ligue a conta de anúncios acima primeiro. As Páginas dela aparecem aqui.'
+                  : doToken === null
+                    ? 'A Meta não respondeu agora. Feche e tente de novo em instantes.'
+                    : 'Todas as Páginas que a conta de anúncios enxerga já estão ligadas. Para outra Página, dê acesso a ela no Business Manager.'}
+              </p>
+            )}
           </ModalFormulario>
         </div>
 

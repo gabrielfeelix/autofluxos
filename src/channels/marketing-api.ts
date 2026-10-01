@@ -266,3 +266,81 @@ export async function listarLeadsDoFormulario(entrada: {
     clearTimeout(prazo)
   }
 }
+
+/* -------------------------------------------------------------------------- */
+/* Páginas do token, e a assinatura de leads                                   */
+/* -------------------------------------------------------------------------- */
+
+export type PaginaDoToken = { id: string; nome: string }
+
+async function chamarGraph(
+  caminho: string,
+  token: string,
+  metodo: 'GET' | 'POST' = 'GET',
+): Promise<{ ok: true; corpo: Record<string, unknown> } | { ok: false; erro: ErroDaMarketingApi }> {
+  const versao = process.env.META_GRAPH_VERSAO ?? VERSAO_PADRAO
+  const controle = new AbortController()
+  const prazo = setTimeout(() => controle.abort(), TIMEOUT_MS)
+  try {
+    const resposta = await fetch(`https://graph.facebook.com/${versao}/${caminho}`, {
+      method: metodo,
+      headers: { Authorization: `Bearer ${token}` },
+      signal: controle.signal,
+    })
+    const corpo = (await resposta.json().catch(() => null)) as
+      | (Record<string, unknown> & { error?: { code?: unknown; message?: unknown } })
+      | null
+    if (!resposta.ok || corpo?.error) {
+      const codigo = corpo?.error?.code
+      return {
+        ok: false,
+        erro: {
+          codigo: typeof codigo === 'number' ? codigo : null,
+          mensagem: texto(corpo?.error?.message) || `a Meta respondeu ${resposta.status}`,
+        },
+      }
+    }
+    return { ok: true, corpo: corpo ?? {} }
+  } catch (erro) {
+    return { ok: false, erro: { codigo: null, mensagem: erro instanceof Error ? erro.message : String(erro) } }
+  } finally {
+    clearTimeout(prazo)
+  }
+}
+
+/**
+ * As Páginas que o token de anúncios enxerga, para a tela oferecer uma lista em
+ * vez de pedir o id (relato de 01/out/2026: "como vou ligar uma página se não
+ * sei o id?"). Só as que têm a tarefa de leads: as outras chegariam sem dado.
+ */
+export async function listarPaginasDoToken(token: string): Promise<PaginaDoToken[] | null> {
+  const r = await chamarGraph('me/accounts?fields=id,name,tasks&limit=100', token)
+  if (!r.ok) return null
+  const itens = (r.corpo.data ?? []) as { id?: unknown; name?: unknown; tasks?: unknown }[]
+  return itens
+    .filter((p) => !Array.isArray(p.tasks) || p.tasks.includes('MANAGE_LEADS') || p.tasks.includes('MANAGE'))
+    .map((p) => ({ id: texto(p.id), nome: texto(p.name) }))
+    .filter((p) => p.id !== '')
+}
+
+/**
+ * Faz a Página mandar os leads para o nosso app.
+ *
+ * **É o passo que todo mundo esquece, e ele falha em silêncio**: sem a Página
+ * instalar o app (`subscribed_apps` com `leadgen`), a Meta não manda nada e o
+ * painel do app continua dizendo que o webhook está certo. A chamada exige o
+ * token **da Página**, que sai do token de anúncios.
+ */
+export async function assinarLeadsDaPagina(
+  pageId: string,
+  token: string,
+): Promise<{ ok: true } | { ok: false; erro: ErroDaMarketingApi }> {
+  const daPagina = await chamarGraph(`${pageId}?fields=access_token`, token)
+  if (!daPagina.ok) return daPagina
+  const tokenDaPagina = texto(daPagina.corpo.access_token)
+  if (!tokenDaPagina) {
+    return { ok: false, erro: { codigo: null, mensagem: 'o token não tem acesso de gerenciar esta Página' } }
+  }
+  const assinou = await chamarGraph(`${pageId}/subscribed_apps?subscribed_fields=leadgen`, tokenDaPagina, 'POST')
+  return assinou.ok ? { ok: true } : assinou
+}
