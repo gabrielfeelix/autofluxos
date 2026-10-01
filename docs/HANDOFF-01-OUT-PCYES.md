@@ -109,6 +109,14 @@ Banco e loja (não passam pelo git):
    Ver também a memória de fixar "Fluxo - Atendimento" no canal do Daniel.
 6. Menor: o seletor de cupom não foi visto na tela da PCYES; a lista tem ~45
    cupons de parceiro.
+7. **Tom profissional no sistema inteiro** (pedido do Gabriel em 01/out,
+   "não está profissional"). Varrer rótulos, status, selos, botões, avisos e
+   estados vazios do `src/` e trocar linguagem informal pelo padrão de SaaS
+   B2B. Exemplos que ele citou: "Gente esperando" → "Cliente aguardando";
+   "Sem conversa no mês" → "Sem atividade no mês"; "repassar para humano" →
+   "transferir para atendente". Começa em `src/app/admin/organizacoes/(lista)/page.tsx:193`
+   e `src/app/admin/consumo/page.tsx:31`. Inclui textos que o bot manda
+   (`AVISO_DE_ESPERA`, `AVISO_DE_HANDOFF` em `receber-mensagem.ts`).
 
 ## Pegadinhas novas
 
