@@ -32,9 +32,10 @@ const SAIR_DO_ASSUNTO = (assuntos: string) =>
 
 const ASSUNTOS = {
   compra: 'compra (quer comprar, escolher, comparar, saber preço, estoque ou se um produto serve)',
-  pedido: 'pedido (pedido já feito, pagamento, entrega, rastreio, nota fiscal, cancelamento)',
+  pedido: 'pedido (pedido já feito, entrega, rastreio, nota fiscal, cancelamento)',
   garantia: 'garantia (defeito, produto que parou de funcionar, troca, devolução, garantia, peça de reposição)',
-  equipe: 'equipe (pediu para falar com uma pessoa, reclamação, compra para empresa, assunto que não é nenhum dos outros)',
+  equipe:
+    'equipe (pediu para falar com uma pessoa, reclamação, problema no site ou na hora de pagar, forma de pagamento que não aparece, cupom que não funciona, compra para empresa, assunto que não é nenhum dos outros)',
 }
 
 /** As saídas de uma IA para os outros ramos, na ordem em que são testadas. */

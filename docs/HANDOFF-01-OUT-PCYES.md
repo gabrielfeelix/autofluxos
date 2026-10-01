@@ -148,6 +148,12 @@ Banco e loja (não passam pelo git):
 12. ~~Anúncios~~: feito. "Ligar uma página" lista as Páginas do token e já
    assina `subscribed_apps`; `meta-ads` saiu de Chaves de API.
 
+13. **Site e pagamento vão para o especialista** (01/out, depois do Evandro):
+   assunto `site` nas IAs da PCYES (triagem v6, Vendas v11, Meu pedido v7,
+   Drivers v5) leva a um handoff "Vou passar para um especialista". A triagem
+   não promete mais "vou te passar para o time" nos outros assuntos. No modelo
+   de loja, site e pagamento caem em `equipe`.
+
 ## Pegadinhas novas
 
 - O pulso da conta muda sem mensagem nova (arquivo baixado, tique). Quem
