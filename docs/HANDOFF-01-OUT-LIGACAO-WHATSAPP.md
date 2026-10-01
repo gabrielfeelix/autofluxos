@@ -6,6 +6,68 @@ memórias: resposta curta, decisão tomada e implementada (o Gabriel não é dev
 publicar na hora, print em 1440 e 390 antes de entregar tela, sem travessão em
 arquivo nenhum, `tsconfig.json`/`next-env.d.ts` do `next dev` não se commitam.
 
+## Andamento da fase 0 (01/out/2026, fim do dia): leia isto primeiro
+
+**Pronto e publicado:**
+
+- `5a7ce51`: o webhook (`src/app/api/webhook/whatsapp/route.ts`) chama
+  `guardarEventoDeLigacao` (`src/server/sonda-ligacao.ts`) **antes** de tudo no
+  `after()`. Grava cada evento do campo `calls` em `alertas` com
+  `titulo = 'sonda: ligação do WhatsApp'` e `visto_em` preenchido (não polui
+  `/admin/alertas`). Sem migration. Sai quando a fase 1 estender `chamadas`.
+- `scripts/sonda-ligacao/`: página local de prova (`servidor.mjs` + `pagina.html`,
+  sem `next dev`). Uso no cabeçalho do `servidor.mjs`: `SONDA_TOKEN` e
+  `SONDA_PHONE_ID` no ambiente, abre `http://localhost:4747`, libera o microfone,
+  e atende sozinho: lê a oferta, gera a resposta SDP no navegador, chama
+  `pre_accept` e `accept`, e loga ICE, conexão e bytes de áudio recebidos.
+  Tem também "Ligar (empresa liga)". **Nunca rodou com ligação real.**
+- `f8db5f7`: achado dos 2.000 registrado em `docs/PESQUISA-LIGACAO-WHATSAPP.md` §1.1.
+
+**Já conferido na Meta (não refaça):**
+
+- O app `1063817842847269` já assina o campo `calls` (`GET /<app>/subscriptions`).
+- `WHATSAPP_TOKEN` (`.env`, system user) alcança a demo e o número de teste.
+- **Demo** `+55 44 7400-7438`, `1301107846409860`, WABA `2245936116250161`,
+  portfólio `1494483661926723` (verificado). Cloud API pura, sem coexistência.
+  Ligar o Calling volta **`138015`** (limite abaixo de 2.000): portfólio em
+  `TIER_250`.
+- Motivo, pelo `health_status` do número: *"Your display name has not been
+  approved yet. Your message limit will increase after the display name is
+  approved."* O Gabriel editou o nome para "4YU" no WhatsApp Manager; a Meta
+  devolveu `new_name_status: AVAILABLE_WITHOUT_REVIEW` de novo, **sem revisão**.
+  Editar o nome não destrava. Sobra: chamado no suporte da Meta (assunto
+  "WABiz: Account & WABA", tipo "Messaging Limits",
+  `business.facebook.com/direct-support/?business_id=1494483661926723`).
+  Ainda não aberto; ofereça escrever o texto.
+- Mesmo diagnóstico: WABA da demo com **erro de pagamento `141006`**, bloqueia
+  iniciativa da empresa (inclui ligação que a empresa faz).
+- **Número de teste** `+1 555-197-7747`, `1171822376025244`: isento dos 2.000.
+  Calling em `NOT_SET`. **É o caminho da fase 0.**
+
+**Próximo passo, nesta ordem:**
+
+1. O Gabriel autoriza ligar o Calling no número de teste. O modo automático
+   barrou o `POST /1171822376025244/settings` sem autorização explícita; peça
+   a frase "pode ligar no número de teste". Corpo:
+   `{"calling":{"status":"ENABLED","call_icon_visibility":"DEFAULT","callback_permission_status":"DISABLED"}}`.
+2. O Gabriel cadastra o WhatsApp dele como destinatário do número de teste em
+   `developers.facebook.com/apps/1063817842847269/whatsapp-business/wa-dev-console/`
+   (número de teste só fala com até 5 cadastrados; botões desse painel já
+   falharam calados antes, ver `docs/ESTADO.md` "O que custou caro descobrir").
+3. Rodar a sonda com `SONDA_TOKEN=$WHATSAPP_TOKEN SONDA_PHONE_ID=1171822376025244`
+   e pedir para ele ligar pelo WhatsApp para `+1 555-197-7747`. Sucesso =
+   `pre_accept`/`accept` com 200, `conexão connected` e bytes de áudio subindo.
+   Falhou: pare, reporte o log, não siga para a fase 1.
+
+**Furos achados para a fase 1:**
+
+- O webhook `account_alerts` é assinado e **descartado** pelo código. É por ali
+  que a Meta explica limite negado/adiado. Tratar.
+- Elegibilidade por cliente: `GET /<PHONE_NUMBER_ID>?fields=health_status,name_status,whatsapp_business_manager_messaging_limit,is_on_biz_app`
+  responde tudo de uma vez. Base para a tela "falta isto para ligar".
+- Leitura do banco de produção via Management API foi barrada pelo modo
+  automático nesta sessão; peça autorização antes de consultar.
+
 ## O pedido
 
 Ligação **real** pelo WhatsApp, dentro do Inbox. Não é o chat do site (esse já
