@@ -228,7 +228,7 @@ export function SecaoDuvidas() {
         </Duvida>
       </div>
 
-      <Sub>Atendimento humano</Sub>
+      <Sub>Atendimento pela equipe</Sub>
       <div className="space-y-2">
         <Duvida p="O bot continuou respondendo depois que assumi a conversa.">
           <p>
@@ -286,7 +286,7 @@ export function SecaoDepoisDoFluxo() {
       <Tabela cabecalho={['Onde', 'Para que serve', 'Como o fluxo alimenta']}>
         <Linha>
           <Cel forte>Inbox</Cel>
-          <Cel>A fila de quem precisa de gente. Assumir cala o bot naquele contato.</Cel>
+          <Cel>A fila de quem aguarda atendimento. Assumir cala o bot naquele contato.</Cel>
           <Cel>
             Todo bloco de {NOMES.handoff}, toda falha marcada como “passa para uma pessoa”, toda
             palavra de escape.

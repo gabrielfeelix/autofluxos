@@ -243,7 +243,7 @@ export default async function Pagina({
             ele antes: no WhatsApp Business, em Configurações, Conta, Business Platform; e no
             Meta Business Suite, tire o parceiro antigo da conta do WhatsApp. A Meta pode levar
             até 24 horas para soltar o número. Se ainda assim aparecer que o número já está com
-            um parceiro, fale com a gente antes de tentar de novo.
+            um parceiro, fale com o suporte antes de tentar de novo.
           </div>
 
           {/*

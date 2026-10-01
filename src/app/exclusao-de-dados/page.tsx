@@ -71,7 +71,7 @@ const SECOES: readonly SecaoLegal[] = [
           conversou: é ela quem decide sobre esses dados, e ela apaga pelo painel na hora. Basta
           pedir na mesma conversa do WhatsApp ou do Instagram.
         </p>
-        <p>Se preferir falar direto com a gente, ou se a empresa não responder:</p>
+        <p>Se preferir falar diretamente conosco, ou se a empresa não responder:</p>
         <Lista>
           <Item>
             Escreva para <a href="mailto:contato@4yu.com.br?subject=Exclus%C3%A3o%20de%20dados">contato@4yu.com.br</a>{' '}
@@ -162,7 +162,7 @@ const SECOES: readonly SecaoLegal[] = [
           <Item>o cadastro dele, número ou conta do Instagram, nome e os campos que o fluxo preencheu;</Item>
           <Item>todas as mensagens trocadas, nos dois sentidos, e os arquivos referenciados nelas;</Item>
           <Item>as sessões de fluxo, onde a conversa estava, e o que já tinha sido respondido;</Item>
-          <Item>os pedidos de atendimento humano e a trava que segurava o robô;</Item>
+          <Item>os pedidos de atendimento pela equipe e a trava que segurava o robô;</Item>
           <Item>as etiquetas, o que estava marcado como não lido, e os cartões dele nos quadros;</Item>
           <Item>as inscrições em sequências, com as mensagens futuras que estavam agendadas.</Item>
         </Lista>
@@ -251,7 +251,7 @@ export default function Pagina() {
     <PaginaLegal
       titulo="Exclusão de dados"
       rotuloDoIndice="Índice da exclusão de dados"
-      resumo="O resumo em uma frase: peça pelo painel ou escreva para a gente, respondemos em até 15 dias, e o que é apagado some de verdade, sem lixeira e sem cópia guardada em outro lugar."
+      resumo="O resumo em uma frase: peça pelo painel ou escreva para nós, respondemos em até 15 dias, e o que é apagado some de verdade, sem lixeira e sem cópia guardada em outro lugar."
       selos={[
         { icone: 'lixeira', texto: 'Apagado é apagado' },
         { icone: 'relogio', texto: 'Em até 15 dias' },

@@ -432,7 +432,7 @@ function GavetaDeAjuda({ aberta, aoFechar }: { aberta: boolean; aoFechar: () => 
           <div className="flex items-start justify-between gap-3">
             <div>
               <h2 id="titulo-da-ajuda" className="text-[21px] font-bold tracking-[-0.02em] text-ink">Precisa de ajuda?</h2>
-              <p className="mt-1 text-[13px] text-soft">Aqui você acha o caminho, ou fala direto com a gente.</p>
+              <p className="mt-1 text-[13px] text-soft">Encontre o caminho aqui, ou fale com o suporte.</p>
             </div>
             <button type="button" onClick={aoFechar} aria-label="Fechar a ajuda" className="flex size-8 shrink-0 items-center justify-center rounded-lg text-muted transition hover:bg-panel hover:text-ink">
               <svg aria-hidden width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"><path d="M6 6l12 12M18 6 6 18" /></svg>
@@ -454,7 +454,7 @@ function GavetaDeAjuda({ aberta, aoFechar }: { aberta: boolean; aoFechar: () => 
           {!busca && (
             <div className="flex flex-col">
               <PortaDeAjuda icone={<IconeLivro />} titulo="Central de ajuda" texto="Como montar automações, perguntas, datas e integrações, com exemplo." href="/ajuda" />
-              <PortaDeAjuda icone={<IconeWhatsapp />} titulo="Falar com o suporte" texto="Chama a 4YU no WhatsApp. Responde gente, em horário comercial." href={WHATSAPP_DA_4YU} externo />
+              <PortaDeAjuda icone={<IconeWhatsapp />} titulo="Falar com o suporte" texto="Atendimento da equipe 4YU no WhatsApp, em horário comercial." href={WHATSAPP_DA_4YU} externo />
               <PortaDeAjuda icone={<IconeEnvelope />} titulo="Escrever para a 4YU" texto={`Para pedido com calma, print ou planilha: ${EMAIL_DA_4YU}.`} href={`mailto:${EMAIL_DA_4YU}`} externo />
             </div>
           )}
@@ -462,7 +462,7 @@ function GavetaDeAjuda({ aberta, aoFechar }: { aberta: boolean; aoFechar: () => 
           <div className={busca ? '' : 'mt-3 border-t border-line pt-3'}>
             {grupos.length === 0 ? (
               <p className="px-3 py-6 text-center text-[12.5px] text-dim">
-                Nada com &ldquo;{busca}&rdquo;. Chama a gente no{' '}
+                Nada com &ldquo;{busca}&rdquo;. Fale com o suporte no{' '}
                 <a href={WHATSAPP_DA_4YU} target="_blank" rel="noreferrer" className="font-semibold text-primary hover:underline">WhatsApp</a>.
               </p>
             ) : (

@@ -116,7 +116,7 @@ export function RetomadaDoBotForm({
                   escolha explícita de alguém, e nenhum prazo desfaz escolha explícita.
                 </p>
                 <p>
-                  Um bloco de “falar com humano” pode ter prazo próprio, ou nunca voltar, e o que
+                  Um bloco “Transferir para atendente” pode ter prazo próprio, ou nunca voltar, e o que
                   ele escolher vence o daqui naquele caminho. Enquanto esta chave estiver
                   desligada, nenhuma conversa volta sozinha.
                 </p>

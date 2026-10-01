@@ -51,7 +51,7 @@ export default async function VisaoGeral() {
   return (
     <TelaDaAdministracao
       titulo="Visão geral"
-      descricao="A plataforma hoje: onde tem gente esperando, o uso do mês e o que precisa de atenção."
+      descricao="A plataforma hoje: contas com cliente aguardando, o uso do mês e o que precisa de atenção."
       acoes={
         <NovaOrganizacao planos={planos} />
       }
@@ -97,7 +97,7 @@ export default async function VisaoGeral() {
           <section aria-labelledby="titulo-esperando">
             <div className="mb-3 flex items-baseline justify-between gap-3">
               <h2 id="titulo-esperando" className="text-[15px] font-bold">
-                Onde tem gente esperando
+                Contas com cliente aguardando
               </h2>
               <Link href="/admin/organizacoes" className="text-[12px] font-semibold text-primary hover:underline">
                 Ver todas →

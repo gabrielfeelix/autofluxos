@@ -485,8 +485,8 @@ async function ConteudoDaAba({
             <div>
               <h2 className="text-[14.5px] font-bold">Fluxos</h2>
               <p className="mt-0.5 text-[12px] text-dim">
-                O desenho do atendimento. Só o que está publicado atende gente de
-                verdade.
+                O desenho do atendimento. Só o que está publicado atende clientes
+                reais.
               </p>
             </div>
             <span className="flex flex-wrap items-center gap-2">

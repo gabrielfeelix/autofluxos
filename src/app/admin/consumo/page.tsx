@@ -28,7 +28,7 @@ const FAIXAS = [
   { valor: 'acima', rotulo: 'Acima do limite' },
   { valor: 'perto', rotulo: 'Perto do limite (80% ou mais)' },
   { valor: 'folga', rotulo: 'Com folga' },
-  { valor: 'parada', rotulo: 'Sem conversa no mês' },
+  { valor: 'parada', rotulo: 'Sem atividade no mês' },
 ]
 
 /**

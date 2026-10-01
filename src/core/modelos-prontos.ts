@@ -122,7 +122,7 @@ export const MODELOS_PRONTOS: readonly ModeloPronto[] = [
     id: 'pos-atendimento',
     titulo: 'Depois do atendimento',
     resumo: 'Pergunta como foi, no dia seguinte.',
-    corpo: 'Oi {nome}! Como foi seu atendimento do dia {data}? Sua opinião ajuda muito a gente.',
+    corpo: 'Oi {nome}! Como foi seu atendimento do dia {data}? Sua opinião é muito importante para nós.',
     categoria: 'UTILITY',
     sinonimos: ['pesquisa', 'satisfação', 'feedback', 'avaliação', 'nps'],
   },

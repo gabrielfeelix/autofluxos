@@ -186,7 +186,7 @@ export function HorarioDeAtendimentoForm({
               detalhes={
                 <>
                   <p>
-                    Com um horário preenchido, o bloco de “falar com humano” avisa sozinho quem
+                    Com um horário preenchido, o bloco “Transferir para atendente” avisa sozinho quem
                     escrever fora do expediente, dizendo quando vocês voltam. Sem ele, a conta é
                     sempre aberta e esse aviso nunca acontece.
                   </p>

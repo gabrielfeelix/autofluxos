@@ -62,7 +62,7 @@ export function trilhaDeConfiguracao(f: FatosDaTrilha): PassoDaTrilha[] {
   const faltaNoHorario = !f.temHorario && !f.temConhecimento
     ? 'Falta o horário e o que a IA sabe do negócio'
     : !f.temHorario
-      ? 'Falta dizer quando há gente para atender'
+      ? 'Falta definir o horário de atendimento'
       : 'Falta contar à IA o que o negócio faz'
 
   return [

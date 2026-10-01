@@ -239,7 +239,7 @@ export function dadosPadrao(tipo: TipoNo): Record<string, unknown> {
       // Sem pergunta aberta: a pesquisa de uma pergunta só é a que as pessoas
       // terminam, e quem quiser o "por quê?" liga no painel.
       return {
-        texto: 'De 0 a 10, o quanto você recomendaria a gente para um amigo?',
+        texto: 'De 0 a 10, o quanto você nos recomendaria para um amigo?',
         perguntaAberta: '',
       }
     case 'ia':

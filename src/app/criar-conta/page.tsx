@@ -101,7 +101,7 @@ export default async function CriarConta() {
           <p>
             Esta é a primeira execução: ainda não há ninguém cadastrado, e quem sair daqui
             nasce administrador da plataforma. Depois deste cadastro a porta se fecha sozinha,
-            e daqui em diante só administrador cria gente.
+            e daqui em diante só administrador cria usuários.
           </p>
         )
       }

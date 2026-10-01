@@ -25,9 +25,9 @@ export const dynamic = 'force-dynamic'
 const BASE = '/admin/organizacoes'
 
 const SITUACOES = [
-  { valor: 'esperando', rotulo: 'Com gente esperando' },
+  { valor: 'esperando', rotulo: 'Com cliente aguardando' },
   { valor: 'ativa', rotulo: 'Com conversa no mês' },
-  { valor: 'parada', rotulo: 'Sem conversa no mês' },
+  { valor: 'parada', rotulo: 'Sem atividade no mês' },
   { valor: 'sem-pessoas', rotulo: 'Sem ninguém com acesso' },
   { valor: 'suspensa', rotulo: 'Suspensa' },
 ]
@@ -190,7 +190,7 @@ export default async function Organizacoes({
 function Situacao({ organizacao }: { organizacao: OrganizacaoListada }) {
   if (organizacao.suspensaEm) return <Selo tom="alerta">Suspensa</Selo>
   if (organizacao.pessoas === 0) return <Selo tom="aviso">Sem ninguém com acesso</Selo>
-  if (organizacao.esperando > 0) return <Selo tom="aviso">Gente esperando</Selo>
+  if (organizacao.esperando > 0) return <Selo tom="aviso">Cliente aguardando</Selo>
   if (organizacao.conversasNoMes > 0) return <Selo tom="ok">Ativa</Selo>
-  return <Selo>Sem conversa no mês</Selo>
+  return <Selo>Sem atividade no mês</Selo>
 }

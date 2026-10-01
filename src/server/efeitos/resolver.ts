@@ -978,7 +978,7 @@ async function responderComFerramentas({
      */
     if (resposta.tipo === 'nao_sei' && resposta.falhou && cards.length > 0) {
       console.warn(`[ia] a frase final falhou (${resposta.motivo}); os cards saem mesmo assim`)
-      return { tipo: 'texto', texto: 'Separei essas opções pra você 👇', produtos: cards, anexos, ...conclusao() }
+      return { tipo: 'texto', texto: 'Separei estas opções para você 👇', produtos: cards, anexos, ...conclusao() }
     }
     // O resumo com o total é do servidor: a frase em volta faltar não o perde.
     if (resposta.tipo === 'nao_sei' && resposta.falhou && cobranca !== null) {

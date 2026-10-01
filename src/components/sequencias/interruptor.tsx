@@ -42,7 +42,7 @@ export function InterruptorDeSequencia({
         aria-label={ativa ? 'Desligar sequência' : 'Ligar sequência'}
         title={
           ativa
-            ? 'Desligar: para de inscrever gente nova, e quem está dentro encerra no próximo passo.'
+            ? 'Desligar: para de inscrever novos contatos, e quem está dentro encerra no próximo passo.'
             : 'Ligar: volta a inscrever a partir do próximo evento.'
         }
         onClick={() => {

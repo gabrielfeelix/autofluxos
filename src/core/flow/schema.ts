@@ -1056,7 +1056,7 @@ export const noNpsSchema = z.object({
   ...base,
   type: z.literal('nps'),
   data: z.object({
-    texto: z.string().default('De 0 a 10, o quanto você recomendaria a gente para um amigo?'),
+    texto: z.string().default('De 0 a 10, o quanto você nos recomendaria para um amigo?'),
     /**
      * Onde a nota fica disponível para os blocos seguintes.
      *

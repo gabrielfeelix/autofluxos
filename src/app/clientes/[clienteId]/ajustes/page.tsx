@@ -175,7 +175,7 @@ export default async function Pagina({
             href={`/clientes/${cliente.id}/ajustes/horario`}
             icone={ICONE_DA_TELA['horario']}
             titulo="Horário e retomada"
-            descricao="Quando há gente para atender, e o que fazer com a conversa que ficou parada com uma pessoa."
+            descricao="Horário de atendimento da equipe, e o que fazer com a conversa parada com um atendente."
             estado={
               <span className="flex flex-wrap items-center justify-end gap-1.5">
                 {cliente.horarioAtendimento ? (

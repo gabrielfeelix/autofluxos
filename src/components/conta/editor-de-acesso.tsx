@@ -66,7 +66,7 @@ export const ROTULO_DA_CAPACIDADE: Record<Capacidade, { titulo: string; detalhe:
   },
   criar_oportunidade: {
     titulo: 'Criar oportunidade',
-    detalhe: 'pôr gente no funil e mover cartão.',
+    detalhe: 'incluir contatos no funil e mover cartões.',
   },
   registrar_venda: {
     titulo: 'Registrar venda ou perda',

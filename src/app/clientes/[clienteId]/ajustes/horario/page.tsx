@@ -47,7 +47,7 @@ export default async function Pagina({
         />
         <h1 className="text-[20px] font-bold tracking-[-0.02em] md:text-[25px]">Horário e retomada</h1>
         <p className="mt-1 mb-7 max-w-[620px] text-[13px] leading-6 text-muted">
-          Duas decisões sobre quando há gente do outro lado. Cada uma salva sozinha.
+          Quando a equipe atende e quando o bot retoma a conversa. Cada uma salva sozinha.
         </p>
 
         {/* Duas seções do mesmo peso, cada uma com o próprio salvar e o próprio

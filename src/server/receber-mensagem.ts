@@ -1124,7 +1124,7 @@ async function avancarConversa(
 const ESPERA_ANTES_DO_AVISO_MS = 2 * 60_000
 
 /** O que a pessoa lê quando escreve de novo e ninguém do time respondeu. */
-export const AVISO_DE_ESPERA = 'Nosso time já foi avisado e te responde por aqui em instantes 🙂'
+export const AVISO_DE_ESPERA = 'Nossa equipe já foi avisada e responde por aqui em instantes.'
 
 /**
  * Um aviso, uma vez por handoff, para quem escreve e ninguém responde.

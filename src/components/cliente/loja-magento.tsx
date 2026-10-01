@@ -199,7 +199,7 @@ export function LojaMagento({
         <label className="mt-4 block">
           <span className="mb-1.5 block text-[12.5px] font-bold text-soft">Um produto que a loja vende</span>
           <span className="mb-2 block text-[11.5px] leading-4 text-dim">
-            Só para o teste: a gente busca na loja e mostra o que ela respondeu.
+            Apenas para teste: buscamos na loja e mostramos a resposta.
           </span>
           <input
             value={termo}

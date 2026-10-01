@@ -347,7 +347,7 @@ function EditarPlano({
 
         <label>
           <RotuloCampo>Para quem é</RotuloCampo>
-          <input name="resumo" maxLength={160} defaultValue={plano.resumo} placeholder="Exemplo: Para quem já tem gente atendendo junto." className={campo} />
+          <input name="resumo" maxLength={160} defaultValue={plano.resumo} placeholder="Exemplo: Para quem já tem uma equipe de atendimento." className={campo} />
         </label>
         <fieldset>
           <legend className="mb-1.5 text-[12px] font-semibold text-muted">O que libera</legend>

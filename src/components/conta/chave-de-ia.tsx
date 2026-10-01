@@ -63,7 +63,7 @@ export function ChaveDeIa({
         ) : (
           <p className="text-[12.5px] leading-5 text-soft">
             Esta conta usa <strong>a chave da 4YU</strong>, que é de demonstração. O Google pode
-            usar essas conversas para treinar modelo. Para atender gente de verdade, cadastre a
+            usar essas conversas para treinar modelo. Para atender clientes reais, cadastre a
             chave paga do cliente.
           </p>
         )}

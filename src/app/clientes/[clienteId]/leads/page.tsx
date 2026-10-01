@@ -349,7 +349,7 @@ async function Contagem({ filtro, totalDaConta }: { filtro: Filtro; totalDaConta
       </span>
       {esperando > 0 && (
         <span className="rounded-full border border-rose-400/25 bg-rose-400/[0.09] px-3 py-1 text-[11px] font-bold text-perigo">
-          {esperando} esperando humano nesta página
+          {esperando} aguardando atendente nesta página
         </span>
       )}
     </>

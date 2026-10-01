@@ -76,7 +76,7 @@ export function FichaDoCliente({
                 rotulo="Quem responde"
                 nome="responsavel"
                 valor={cliente.responsavel}
-                dica={daPlataforma ? 'a pessoa com quem a gente fala' : 'a pessoa com quem a 4YU fala'}
+                dica="a pessoa com quem a 4YU fala"
                 exemplo="Exemplo: Daniel, dono do estúdio"
               />
               <Campo

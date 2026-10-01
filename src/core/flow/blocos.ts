@@ -33,7 +33,7 @@ export const NOMES: Record<TipoNo, string> = {
   condicao: 'Condição',
   'salvar-campo': 'Guardar',
   ia: 'IA',
-  handoff: 'Falar com humano',
+  handoff: 'Transferir para atendente',
   http: 'Serviços externos',
   midia: 'Mídia',
   /**

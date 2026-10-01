@@ -641,7 +641,7 @@ export default async function Pagina({
                       <AjudaDoCampo
                         titulo="Jornada"
                         secao="duvidas"
-                        texto="Por quais anúncios esta pessoa passou antes de falar com a gente."
+                        texto="Por quais anúncios esta pessoa passou antes de iniciar a conversa."
                         detalhes={
                           <p>
                             Vazio significa que ela chegou <strong>direto</strong>, sem anúncio,

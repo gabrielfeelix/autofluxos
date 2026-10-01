@@ -672,7 +672,7 @@ export function validar(fluxo: Fluxo, capacidades: Capacidades = {}): ResultadoV
     avisos.push({
       codigo: 'SEM_SAIDA_HUMANA',
       mensagem:
-        'Nenhum caminho do fluxo chega a um bloco "Falar com humano". Se a conversa puder precisar de uma pessoa, vale acrescentar um.',
+        'Nenhum caminho do fluxo chega a um bloco "Transferir para atendente". Se a conversa puder precisar da equipe, vale acrescentar um.',
     })
   }
 
@@ -1125,7 +1125,7 @@ function conferirConteudo(
       if (mensagens.every((mensagem) => vazio(mensagem))) {
         erros.push({
           codigo: 'TEXTO_VAZIO',
-          mensagem: 'Sem mensagem, a pessoa é passada para um humano sem aviso nenhum.',
+          mensagem: 'Sem mensagem, o contato é transferido para um atendente sem aviso.',
           noId: no.id,
         })
       } else if (mensagens.some((mensagem) => vazio(mensagem))) {

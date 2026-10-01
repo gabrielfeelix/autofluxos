@@ -336,7 +336,7 @@ function Corpo({
       return (
         <p className="text-[11.5px] leading-5 text-muted">
           O bot para de responder <strong className="text-soft">para este contato</strong> e a
-          conversa fica onde está. Não é o mesmo que “falar com humano”: ninguém entra na fila e
+          conversa fica onde está. Não é o mesmo que “Transferir para atendente”: ninguém entra na fila e
           ninguém é avisado. Para religar, use o botão na tela do contato.
         </p>
       )

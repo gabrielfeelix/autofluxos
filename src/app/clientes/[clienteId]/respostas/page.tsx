@@ -49,7 +49,7 @@ type Busca = {
 
 const DESFECHOS: { chave: DesfechoDaResposta | null; rotulo: string; dica: string }[] = [
   { chave: null, rotulo: 'Todas', dica: 'Todas as passagens pela automação' },
-  { chave: 'bot', rotulo: 'Terminou com o bot', dica: 'A conversa acabou sem precisar de gente' },
+  { chave: 'bot', rotulo: 'Terminou com o bot', dica: 'A conversa terminou sem precisar de atendente' },
   { chave: 'pessoa', rotulo: 'Foi para uma pessoa', dica: 'Alguém do time assumiu a conversa' },
   { chave: 'aberta', rotulo: 'Não terminou', dica: 'Parou no meio, sem desfecho' },
 ]

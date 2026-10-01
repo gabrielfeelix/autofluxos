@@ -71,7 +71,7 @@ export function GerenciarEquipes({
       <header className="border-b border-line px-5 py-4">
         <h2 className="text-[14.5px] font-bold">Equipes</h2>
         <p className="mt-1 max-w-[620px] text-[12px] leading-5 text-dim">
-          Agrupam gente para o escopo <strong className="text-muted">da equipe dela</strong>{' '}
+          Agrupam pessoas para o escopo <strong className="text-muted">da equipe dela</strong>{' '}
           no acesso. Uma pessoa pode estar em mais de uma, quem cobre duas praças
           não precisa de um papel novo.
         </p>

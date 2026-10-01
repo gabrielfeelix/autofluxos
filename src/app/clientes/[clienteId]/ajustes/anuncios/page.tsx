@@ -181,7 +181,7 @@ export default async function Pagina({
                 botao={temToken ? "Trocar o token" : "Colar um token"}
                 variante="secundario"
                 titulo="Ligar a conta de anúncios da Meta"
-                descricao="O token fica guardado num cofre e não volta para esta tela. Antes de guardar, a gente pergunta à Meta se ele vale, token recusado não vira nada."
+                descricao="O token fica guardado num cofre e não volta para esta tela. Antes de guardar, o token é validado com a Meta; token recusado não é salvo."
                 rotuloEnviar="Conferir e guardar"
                 action={acaoLigarAds.bind(null, clienteId)}
               >

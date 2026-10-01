@@ -1413,7 +1413,7 @@ const ORDENS = [
     chave: "espera",
     curto: "Esperando há mais tempo",
     rotulo: "Esperando há mais tempo",
-    descricao: "Quem pediu gente primeiro vem primeiro; o resto segue por data",
+    descricao: "Quem pediu atendimento primeiro vem primeiro; o resto segue por data",
   },
 ] as const;
 

@@ -819,7 +819,7 @@ export async function porNoQuadro(
   if (!quadro) return { ok: false, motivo: 'este quadro não existe mais' }
 
   const primeira = quadro.etapas[0]
-  if (!primeira) return { ok: false, motivo: 'crie uma etapa antes de pôr gente no quadro' }
+  if (!primeira) return { ok: false, motivo: 'crie uma etapa antes de incluir contatos no quadro' }
 
   // Os contatos são conferidos contra o **mesmo cliente**: os ids chegam de
   // formulário, e a chave estrangeira só sabe que eles existem.
@@ -1774,7 +1774,7 @@ export async function trazerTodosParaOQuadro(
   const quadro = await acharQuadro(clienteId, quadroId)
   if (!quadro) return { ok: false, motivo: 'este quadro não existe mais' }
   if (!quadro.etapas[0]) {
-    return { ok: false, motivo: 'crie uma etapa antes de trazer gente para o quadro' }
+    return { ok: false, motivo: 'crie uma etapa antes de trazer contatos para o quadro' }
   }
 
   const { data, error } = await db()

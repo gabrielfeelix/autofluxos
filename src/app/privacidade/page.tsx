@@ -260,7 +260,7 @@ export default function Pagina() {
       fecho={{
         texto:
           'Ficou alguma dúvida sobre o que fazemos com os dados? Escreva. Respondemos em português, sem letra miúda.',
-        rotulo: 'Falar com a gente',
+        rotulo: 'Fale conosco',
         href: 'mailto:contato@4yu.com.br?subject=AutoFluxos%3A%20d%C3%BAvida%20sobre%20privacidade',
       }}
     />

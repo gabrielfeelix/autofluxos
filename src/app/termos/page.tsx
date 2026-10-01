@@ -284,7 +284,7 @@ export default function Pagina() {
     <PaginaLegal
       titulo="Termos de Serviço"
       rotuloDoIndice="Índice dos termos"
-      resumo="O resumo em uma frase: você desenha o atendimento e é dono das conversas, nós rodamos a ferramenta com honestidade sobre o que ela garante, e quem usar isso para incomodar gente perde o acesso."
+      resumo="O resumo em uma frase: você desenha o atendimento e é dono das conversas, nós rodamos a ferramenta com honestidade sobre o que ela garante, e quem usar isso para incomodar pessoas perde o acesso."
       selos={[
         { icone: 'documento', texto: 'As conversas são suas' },
         { icone: 'proibido', texto: 'Nada de disparo em massa' },
@@ -296,7 +296,7 @@ export default function Pagina() {
       fecho={{
         texto:
           'Alguma dúvida sobre uma regra destas antes de assinar embaixo? Pergunte. Respondemos em português, sem letra miúda.',
-        rotulo: 'Falar com a gente',
+        rotulo: 'Fale conosco',
         href: 'mailto:contato@4yu.com.br?subject=AutoFluxos%3A%20d%C3%BAvida%20sobre%20os%20termos',
       }}
     />

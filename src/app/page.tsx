@@ -115,7 +115,7 @@ API oficial do WhatsApp Business
                 Ver planos
               </a>
               <a className={`${s.botao} ${s.botaoVazado} ${s.botaoGrande}`} href="#conversar">
-                Falar com a gente
+                Fale conosco
               </a>
             </div>
 
@@ -170,7 +170,7 @@ API oficial do WhatsApp Business
               <span className={`${s.risco} ${s.riscoCentro}`} data-revela data-atraso="90" aria-hidden />
               <p className={`${s.chamada} ${s.chamadaCentro}`} data-revela data-atraso="100">
                 “Que horas vocês abrem?” pela oitava vez antes do almoço. Você responde,
-                volta pro que estava fazendo, e às sete da noite descobre que alguém
+                volta para o que estava fazendo, e às sete da noite descobre que alguém
                 perguntando de orçamento ficou sem resposta desde as onze.
               </p>
             </div>
@@ -280,7 +280,7 @@ API oficial do WhatsApp Business
                   }}
                   rotulos={[
                     'Você conecta o seu número',
-                    'A gente monta o primeiro fluxo com você',
+                    'Montamos o primeiro fluxo com você',
                     'Sua equipe entra na caixa de entrada',
                     'Você ajusta olhando o que aconteceu',
                   ]}
@@ -293,14 +293,14 @@ API oficial do WhatsApp Business
                   arte={<JanelaConexao />}
                   titulo="Você conecta o seu número"
                   texto="A autorização acontece dentro do WhatsApp, com a sua conta. Nunca pedimos
-senha. Você corta o acesso quando quiser, no painel da Meta, sem falar com a
-gente."
+senha. Você corta o acesso quando quiser, no painel da Meta, sem precisar nos
+contatar."
                   atraso={0}
                 />
                 <Passo
                   rotulo="Desenhar"
                   arte={<JanelaDesenho />}
-                  titulo="A gente monta o primeiro fluxo com você"
+                  titulo="Montamos o primeiro fluxo com você"
                   texto="Você não abre o sistema numa tela vazia. Sentamos junto e montamos o
 atendimento com as perguntas que chegam no seu WhatsApp de verdade."
                   atraso={80}
@@ -465,7 +465,7 @@ O que perguntam antes de assinar
               />
               <Pergunta
                 pergunta="Quanto tempo até estar no ar?"
-                resposta="A autorização do número na Meta costuma levar alguns dias. O primeiro fluxo a gente desenha numa conversa de uma hora."
+                resposta="A autorização do número na Meta costuma levar alguns dias. O primeiro fluxo desenhamos juntos numa conversa de uma hora."
               />
               <Pergunta
                 pergunta="E os meus dados?"
@@ -495,7 +495,7 @@ O que perguntam antes de assinar
                 className={`${s.botao} ${s.botaoPrincipal} ${s.botaoGrande}`}
                 href="mailto:contato@4yu.com.br?subject=AutoFluxos%3A%20quero%20conhecer"
               >
-                Falar com a gente
+                Fale conosco
               </a>
               <Link className={`${s.botao} ${s.botaoVazado} ${s.botaoGrande}`} href={ENTRAR}>
                 Já sou cliente
@@ -553,7 +553,7 @@ O que perguntam antes de assinar
                 data-n="002"
                 href="mailto:contato@4yu.com.br?subject=AutoFluxos%3A%20quero%20conhecer"
               >
-                Falar com a gente
+                Fale conosco
               </a>
               <Link className={s.rodapeLink} data-n="003" href="/privacidade">
                 Privacidade
@@ -974,7 +974,7 @@ function Plano({
         className={`${s.botao} ${destaque ? s.botaoPrincipal : s.botaoVazado} ${s.planoBotao}`}
         href={`mailto:contato@4yu.com.br?subject=${encodeURIComponent(`AutoFluxos: plano ${nome}`)}`}
       >
-        {preco ? 'Começar' : 'Falar com a gente'}
+        {preco ? 'Começar' : 'Fale conosco'}
       </a>
     </article>
   )

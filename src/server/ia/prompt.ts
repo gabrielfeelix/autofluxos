@@ -37,7 +37,7 @@ export const MARCA_FORA_DO_ASSUNTO = 'FORA_DO_ASSUNTO'
 
 /** O que a pessoa lê quando pergunta o que a empresa não trata. */
 export const RECUSA_FORA_DO_ASSUNTO =
-  'Isso foge do que eu consigo te ajudar por aqui 🙂 Me conta o que você procura com a gente que eu te ajudo!'
+  'Esse assunto foge do que consigo ajudar por aqui. Me conte o que você procura e eu te ajudo.'
 
 /** O WhatsApp corta texto acima disso. Melhor cortar aqui e saber onde. */
 export const LIMITE_RESPOSTA = 1000

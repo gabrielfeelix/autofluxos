@@ -328,7 +328,7 @@ function Cartao({
           contrário faria a pessoa esperar uma fatura que não vem.
         */
         <p className="text-center text-[12px] text-ok">
-          Pedido enviado. A gente entra em contato.
+          Pedido enviado. Entraremos em contato.
         </p>
       ) : (
         <button

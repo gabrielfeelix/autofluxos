@@ -139,7 +139,7 @@ export const PLANOS: Plano[] = [
     precoExcedente: 0.3,
     precoAnual: 5970,
     recursos: ['crm', 'ia', 'transcricao', 'transmissoes', 'integracoes'],
-    resumo: 'Para quem já tem gente atendendo junto e perde conversa no meio.',
+    resumo: 'Para quem já tem uma equipe de atendimento e precisa de organização.',
     itens: [
       'Tudo do Essencial',
       'Até 3.000 conversas por mês',

@@ -45,7 +45,7 @@ export function descrever(no: No): string {
     case 'ia':
       return rotular('IA', curto(no.data.instrucao))
     case 'handoff':
-      return rotular('Falar com humano', curto(no.data.motivo))
+      return rotular('Transferir para atendente', curto(no.data.motivo))
     case 'http':
       return rotular('Serviços externos', curto(no.data.url))
     case 'midia':

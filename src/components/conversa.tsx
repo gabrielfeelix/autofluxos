@@ -428,7 +428,7 @@ export function Conversa({
           })
           break
         case 'transferir_humano':
-          adicionar({ chave, de: 'sistema', texto: `passou para um humano, ${acao.motivo}`, alerta: true })
+          adicionar({ chave, de: 'sistema', texto: `transferida para atendente: ${acao.motivo}`, alerta: true })
           break
         case 'encerrar':
           /*

@@ -74,7 +74,7 @@ export function ConectarLoja({
           )}
 
           <p className="text-[12px] leading-5 text-dim">
-            A sua não está na lista? Fale com a gente pelo suporte. Cada &quot;Quero esta&quot; conta um pedido da sua
+            A sua não está na lista? Fale com o suporte. Cada &quot;Quero esta&quot; conta um pedido da sua
             conta, e a plataforma mais pedida é a próxima a chegar.
           </p>
         </div>

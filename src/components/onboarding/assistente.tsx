@@ -108,7 +108,7 @@ export function Assistente({ clienteId, nome, inicial, nichoAtual = null, temQua
           ]} />}
           {etapa === 1 && <div className="space-y-7">
             <Escolhas titulo="Como você quer atender?" ajuda="Usar funil não exige chatbot. Sua equipe pode fazer todo o atendimento." nome="atendimento" valor={respostas.atendimento} mudar={(valor) => mudar('atendimento', valor as RespostasOnboarding['atendimento'])} opcoes={[
-              { valor: 'equipe', titulo: 'Minha equipe responde', descricao: 'As conversas chegam ao Inbox para atendimento humano.' },
+              { valor: 'equipe', titulo: 'Minha equipe responde', descricao: 'As conversas chegam ao Inbox para atendimento da equipe.' },
               { valor: 'hibrido', titulo: 'Automação com minha equipe', descricao: 'Prepare um rascunho para dúvidas ou triagem, com passagem para uma pessoa.' },
               { valor: 'depois', titulo: 'Decidir depois', descricao: 'Comece pelo Inbox e conheça as possibilidades com calma.' },
             ]} />

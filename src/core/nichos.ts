@@ -262,7 +262,7 @@ export const PACOTES: Record<Nicho, PacoteDoNicho> = {
         p('rastreio', 'RASTREIO', ['rastreio', 'rastreamento', 'status do pedido'], 'Como a pessoa acompanha o pedido?', 'O código de rastreio chega por e-mail quando o pedido é postado.', 'Cadê meu pedido?'),
         p('nota', 'NOTA FISCAL', ['nota fiscal', 'nf'], 'Como a pessoa recebe a nota fiscal?', 'A nota vai junto com o produto e por e-mail.', 'Vocês emitem nota fiscal?'),
         p('retirada', 'RETIRADA', ['retirada', 'retirar'], 'Dá para retirar pessoalmente?', 'Sim, na loja física, de segunda a sexta, das 9h às 18h.', 'Posso retirar aí?'),
-        p('horario', 'HORÁRIO DO TIME', ['horario do time', 'horario'], 'Qual o horário do atendimento humano?', 'Segunda a sexta, das 9h às 18h.', 'Até que horas vocês atendem?'),
+        p('horario', 'HORÁRIO DO TIME', ['horario do time', 'horario'], 'Qual o horário de atendimento da equipe?', 'Segunda a sexta, das 9h às 18h.', 'Até que horas vocês atendem?'),
       ],
     },
   },

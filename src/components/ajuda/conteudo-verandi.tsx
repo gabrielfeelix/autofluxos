@@ -139,7 +139,7 @@ export function SecaoVerandiDados() {
                 </span>
               )}
             </Cel>
-            <Cel>{preset.dados.aoFalhar === 'humano' ? 'passa para uma pessoa' : 'segue'}</Cel>
+            <Cel>{preset.dados.aoFalhar === 'humano' ? 'transfere para atendente' : 'segue'}</Cel>
           </Linha>
         ))}
       </Tabela>
@@ -581,7 +581,7 @@ export function SecaoOutrosSistemas() {
 
       <Nota tom="dica" titulo="Credencial, em uma frase">
         <p>
-          É a senha que o seu sistema exige para deixar a gente consultar, como a senha do
+          É a senha que o seu sistema exige para permitir a consulta, como a senha do
           seu e-mail, só que para programa falar com programa. Quem fez o sistema te dá. Ela fica
           guardada num cofre, fora do desenho: quem receber um link do seu fluxo vê os blocos e
           nunca a chave.

@@ -833,7 +833,7 @@ export function AdicionarContato({
         aberto={aberto}
         aoFechar={fechar}
         titulo={`Adicionar em “${etapaNome}”`}
-        descricao="Só aparece quem ainda não está no funil. Para pôr muita gente de uma vez, use a seleção em lote na tela de Contatos."
+        descricao="Só aparece quem ainda não está no funil. Para incluir vários contatos de uma vez, use a seleção em lote na tela de Contatos."
       >
         <input
           autoFocus

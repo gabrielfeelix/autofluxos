@@ -64,7 +64,7 @@ export const ESTADOS_DA_FILA = [
   {
     chave: 'resolvida',
     rotulo: 'Conversas encerradas',
-    descricao: 'Atendimento terminado por gente ou por automação',
+    descricao: 'Atendimento concluído pela equipe ou por automação',
   },
 ] as const
 

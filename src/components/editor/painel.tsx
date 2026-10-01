@@ -941,7 +941,7 @@ export function Painel({
                     detalhes={
                       <>
                         <p>
-                          Muita gente não toca no botão: escreve “meu mouse parou de funcionar”. Sem
+                          Muitos contatos não tocam no botão: escreve “meu mouse parou de funcionar”. Sem
                           isto, o bot responde “toca numa das opções” e manda o menu de novo.
                         </p>
                         <p>
@@ -1465,11 +1465,11 @@ export function Painel({
             formatavel
             exemplo="O que faltou para ser uma boa experiência?"
             secao="blocos"
-            dica="Vazio, a pesquisa acaba na nota, e é a que mais gente responde até o fim."
+            dica="Vazio, a pesquisa acaba na nota, e é o formato com mais respostas completas."
             detalhes={
               <>
                 <p>
-                  Vazio, a pesquisa acaba na nota, e é a que mais gente responde até o fim. Com
+                  Vazio, a pesquisa acaba na nota, e é o formato com mais respostas completas. Com
                   texto, o bloco faz esta segunda pergunta <strong>antes</strong> de seguir pela
                   faixa da nota.
                 </p>
@@ -2089,7 +2089,7 @@ export function Painel({
                     <p>
                       <strong>Nunca voltar</strong> é para o caminho que não pode ser
                       interrompido. O padrão vem das Configurações da organização e vale para todos os
-                      outros caminhos, inclusive os que chegam a atendimento humano sem passar
+                      outros caminhos, inclusive os que chegam ao atendimento da equipe sem passar
                       por bloco nenhum.
                     </p>
                   </>
@@ -2435,7 +2435,7 @@ export function Painel({
                 aoMudar={(aoFalhar) => aoMudarDados({ aoFalhar })}
                 rotuloAcessivel="Se falhar"
                 opcoes={[
-                  { valor: 'humano', rotulo: 'passa para uma pessoa' },
+                  { valor: 'humano', rotulo: 'transfere para atendente' },
                   {
                     valor: 'seguir',
                     rotulo: 'continua a conversa mesmo assim',
@@ -3077,7 +3077,7 @@ function resumoDoBloco(no: No): string {
     case 'ia':
       return curto(no.data.instrucao) || 'IA sem instrução'
     case 'handoff':
-      return curto(mensagensDoHandoff(no)[0] ?? '') || 'Falar com humano'
+      return curto(mensagensDoHandoff(no)[0] ?? '') || 'Transferir para atendente'
     case 'http':
       return curto(no.data.url) || 'Serviços externos'
     case 'etapa':

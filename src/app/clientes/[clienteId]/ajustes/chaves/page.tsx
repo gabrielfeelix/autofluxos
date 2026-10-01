@@ -183,7 +183,7 @@ export default async function Pagina({ params }: { params: Promise<{ clienteId: 
               botao={`Ligar a ${NOME_DA_AGENDA}`}
               variante="secundario"
               titulo={`Ligar a agenda ${NOME_DA_AGENDA}`}
-              descricao={`A chave fica num cofre e não volta para esta tela. Antes de guardar, a gente pergunta à agenda se ela vale, chave recusada não vira chave guardada.`}
+              descricao={`A chave fica num cofre e não volta para esta tela. Antes de guardar, a chave é validada com a agenda; chave recusada não é salva.`}
               rotuloEnviar="Conferir e ligar"
               action={acaoLigarAgenda.bind(null, clienteId)}
             >
