@@ -97,6 +97,8 @@ export function RodapeDaMensagem({
   const [menuAberto, setMenuAberto] = useState(false)
   const [emojisAbertos, setEmojisAbertos] = useState(false)
   const [copiado, setCopiado] = useState(false)
+  /** Perto do fim da área que rola, o menu abre para cima, como no WhatsApp. */
+  const [paraCima, setParaCima] = useState(false)
   const caixa = useRef<HTMLDivElement>(null)
   /** `null` fora do provedor, a tela que não monta citação ainda reage. */
   const citacao = useCitacao()
@@ -194,6 +196,7 @@ export function RodapeDaMensagem({
         onClick={() => {
           limparErro()
           setEmojisAbertos(false)
+          if (!menuAberto && caixa.current) setParaCima(espacoAbaixo(caixa.current) < 230)
           setMenuAberto((a) => !a)
         }}
         title="Mais opções"
@@ -208,7 +211,7 @@ export function RodapeDaMensagem({
       {menuAberto && (
         <div
           role="menu"
-          className={`absolute top-8 ${lado} z-30 min-w-[196px] overflow-hidden rounded-[12px] border border-line bg-panel py-1.5 shadow-[0_8px_28px_rgba(19,25,34,0.16)]`}
+          className={`absolute ${paraCima ? 'bottom-full mb-1' : 'top-8'} ${lado} z-30 min-w-[196px] overflow-hidden rounded-[12px] border border-line bg-panel py-1.5 shadow-[0_8px_28px_rgba(19,25,34,0.16)]`}
         >
           {citacao && waMessageId && (
             <button
@@ -311,6 +314,16 @@ export function RodapeDaMensagem({
       )}
     </div>
   )
+}
+
+/** Quanto cabe entre o topo da bolha e o fim do primeiro ancestral que rola. */
+function espacoAbaixo(el: HTMLElement): number {
+  const topo = el.getBoundingClientRect().top
+  for (let pai = el.parentElement; pai; pai = pai.parentElement) {
+    const { overflowY } = getComputedStyle(pai)
+    if (overflowY === 'auto' || overflowY === 'scroll') return pai.getBoundingClientRect().bottom - topo
+  }
+  return window.innerHeight - topo
 }
 
 function Svg({ children }: { children: ReactNode }) {
