@@ -288,7 +288,20 @@ export function RodapeDaMensagem({
         As reações ficam **fora** da bolha, encostadas na borda de baixo, como
         no WhatsApp: a reação comenta a mensagem, não faz parte dela.
       */}
-      {(chips.length > 0 || guardada || copiado || erro || erroDaEstrela) && (
+      {/*
+        "Copiado" flutua acima da bolha, escuro e legível, e some sozinho. Na
+        linha das reações ele saía cinza, minúsculo e colado no balão.
+      */}
+      {copiado && (
+        <span
+          role="status"
+          className={`pointer-events-none absolute bottom-full ${lado} z-30 mb-1.5 rounded-full bg-ink px-3 py-1.5 text-[12.5px] font-medium text-panel shadow-[0_6px_20px_rgba(19,25,34,0.2)]`}
+        >
+          Mensagem copiada
+        </span>
+      )}
+
+      {(chips.length > 0 || guardada || erro || erroDaEstrela) && (
         <span className={`-mt-1.5 flex flex-wrap items-center gap-1 px-2 ${nossa ? 'flex-row-reverse' : ''}`}>
           {chips.map((chip) => (
             <span
@@ -304,7 +317,6 @@ export function RodapeDaMensagem({
               ★
             </span>
           )}
-          {copiado && <span className="text-[11px] text-muted">Copiado</span>}
           {(erro || erroDaEstrela) && (
             <span className="max-w-[220px] text-[11px] leading-4 text-perigo" role="alert">
               {erro ?? erroDaEstrela}
