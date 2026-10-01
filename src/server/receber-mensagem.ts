@@ -70,6 +70,7 @@ import {
   ultimaSessao,
   vincularSessaoNaMensagem,
   trocarBsuid,
+  ultimaEntradaDeTexto,
   type CanalSalvo,
   type Contato,
   type IdentidadeDoWhatsApp,
@@ -77,6 +78,7 @@ import {
   revisaoDoControle,
 } from './repos/conversas'
 import { travarContato } from './repos/travas'
+import { JANELA_DA_RAJADA_MS, textoDaRajada } from '@/core/rajada'
 import { inscreverNoEvento, sairPelaEtiqueta, sairPorEvento } from './sequencias'
 import { marcarContatos } from './repos/etiquetas'
 import { porContatoNaEtapa } from './repos/quadros'
@@ -559,6 +561,21 @@ export async function tratarUma(
    * entrega da Meta decidir o acompanhamento do cliente.
    */
   await sairPorEvento(contato.id, 'respondeu')
+
+  /*
+   * A rajada, ver `core/rajada.ts`: texto espera um pouco antes de acordar o
+   * bot, e se outro texto da mesma pessoa chegou nesse meio tempo, quem
+   * responde é ele. A mensagem já está gravada acima, então desistir aqui não
+   * perde nada: a IA de quem responde lê a rajada inteira.
+   *
+   * Antes da trava de propósito: esperar segurando a vez faria a mensagem
+   * seguinte ficar na fila da trava em vez de gravar e esperar a sua janela.
+   */
+  if (entrada.tipo === 'texto' && !process.env.VITEST) {
+    await new Promise((resolver) => setTimeout(resolver, JANELA_DA_RAJADA_MS))
+    const ultima = await ultimaEntradaDeTexto(contato.id)
+    if (ultima !== null && ultima !== mensagemId) return
+  }
 
   // Daqui para baixo a conversa avança, e duas mensagens da mesma pessoa não
   // podem avançar juntas, ver `repos/travas.ts` e a migration 0007.
@@ -1525,7 +1542,11 @@ async function prepararIa(
     // o art. 20 cobra.
     contatoId,
     contextoNegocio: cliente?.contextoNegocio ?? '',
-    perguntaDaPessoa: perguntaDaPessoa ?? undefined,
+    // A rajada inteira, não só o último envio: quem mandou "Olá", "Tudo bem"
+    // e "?" fez uma pergunta só, e a IA responde uma vez.
+    perguntaDaPessoa: perguntaDaPessoa
+      ? (textoDaRajada(conversa.mensagens) ?? perguntaDaPessoa)
+      : undefined,
     historico: conversa.mensagens.map((m) => ({
       de: m.direcao === 'entrada' ? ('pessoa' as const) : ('bot' as const),
       texto: m.texto ?? '(áudio ou imagem)',

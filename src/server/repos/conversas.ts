@@ -838,6 +838,29 @@ export async function registrarEntrada(dados: {
 }
 
 /**
+ * A última mensagem de texto que a pessoa mandou, para a espera da rajada
+ * (`core/rajada.ts`). Reação não entra: ela não faz a conversa andar.
+ *
+ * Erro vira `null`, e quem chama segue respondendo: na dúvida, responder duas
+ * vezes é melhor que não responder.
+ */
+export async function ultimaEntradaDeTexto(contatoId: string): Promise<string | null> {
+  const { data, error } = await db()
+    .from('messages')
+    .select('id')
+    .eq('contact_id', contatoId)
+    .eq('direcao', 'entrada')
+    .eq('payload->>type', 'text')
+    .is('reagiu_a', null)
+    .order('ts', { ascending: false })
+    .limit(1)
+    .maybeSingle()
+
+  if (error || !data) return null
+  return (data as { id: string }).id
+}
+
+/**
  * Registra uma saída **antes** de ela sair, como não confirmada.
  *
  * A ordem é essa de propósito. Gravar depois do envio deixa uma janela, curta,
