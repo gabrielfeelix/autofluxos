@@ -107,8 +107,11 @@ export const entradaSchema = z.discriminatedUnion('tipo', [
   /**
    * `opcaoId`: a conversa é nova, mas a pessoa tocou numa opção de um menu
    * antigo (a conversa anterior tinha acabado). Ver o ramo `inicio` do motor.
+   *
+   * `texto`: a frase que abriu a conversa. O motor só a usa quando o primeiro
+   * menu entende texto livre e ela diz alguma coisa além de cumprimento.
    */
-  z.object({ tipo: z.literal('inicio'), opcaoId: z.string().min(1).optional() }),
+  z.object({ tipo: z.literal('inicio'), opcaoId: z.string().min(1).optional(), texto: z.string().optional() }),
   z.object({ tipo: z.literal('texto'), texto: z.string() }),
   /** a pessoa clicou num botão ou item de lista */
   z.object({ tipo: z.literal('opcao'), opcaoId: z.string().min(1) }),

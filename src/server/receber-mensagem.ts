@@ -599,7 +599,7 @@ export async function tratarUma(
     if (!contatoAtual.automacaoAtiva) return
 
     const contatoComOrigem = await atribuirOrigem(contatoAtual, mensagem.referral)
-    await avancarConversa(canalSalvo, contatoComOrigem, mensagem, entrada, texto, fabricaDeCanal)
+    await avancarConversa(canalSalvo, contatoComOrigem, mensagem, mensagemId, entrada, texto, fabricaDeCanal)
   } finally {
     await destravar()
   }
@@ -892,6 +892,8 @@ async function avancarConversa(
   canalSalvo: CanalSalvo,
   contato: Contato,
   mensagem: Mensagem,
+  /** A linha desta mensagem em `messages`; `mensagem.id` é o id do WhatsApp. */
+  mensagemId: string,
   entrada: Entrada,
   texto: string | null,
   fabricaDeCanal: FabricaDeCanal,
@@ -1022,13 +1024,19 @@ async function avancarConversa(
     const revisaoAutorizada = await revisaoDoControle(canalSalvo.clienteId, contato.id)
 
     // Conversa nova começa pelo início do fluxo. A primeira mensagem da pessoa
-    // é o gatilho, não uma resposta, ela ainda não foi perguntada nada. Vale
-    // também para gatilho e para mídia: a frase que abriu o fluxo não é para ser
-    // consumida como resposta do primeiro bloco dele.
+    // é o gatilho, não uma resposta: ela ainda não foi perguntada nada. A
+    // exceção é o menu que entende texto, que recebe a frase como assunto (ver
+    // o ramo `inicio` do motor); mídia nunca é consumida assim.
     const resultado = await executarComEfeitos(
       versao.grafo,
       salva.sessao,
-      conversaNova ? { tipo: 'inicio', ...(entrada.tipo === 'opcao' ? { opcaoId: entrada.opcaoId } : {}) } : entrada,
+      conversaNova
+        ? {
+            tipo: 'inicio',
+            ...(entrada.tipo === 'opcao' ? { opcaoId: entrada.opcaoId } : {}),
+            ...(entrada.tipo === 'texto' ? { texto: entrada.texto } : {}),
+          }
+        : entrada,
       {
         ...opcoesDeIa,
         atendimento: contextoDeAtendimento(horario),
@@ -1068,6 +1076,23 @@ async function avancarConversa(
           `revisão autorizada ${revisaoAutorizada}, atual ${agora ?? 'desconhecida'}`,
           { contato: contato.id, sessao: salva.id },
         )
+        return
+      }
+    }
+
+    /*
+     * A pessoa mandou outra coisa enquanto o bot pensava: esta resposta já
+     * nasceu velha. Evandro (PCYES, 01/out/2026) escreveu "ainda estou com o
+     * mesmo problema" e, nove segundos depois, tocou em "Quero comprar". A
+     * triagem levou dez segundos e respondeu sobre o pedido; o toque respondeu
+     * sobre a compra. Duas respostas que se contradizem, as duas cobradas.
+     * Sem gravar nem enviar, a mensagem nova, que espera a vez, responde a
+     * partir do mesmo ponto e com a rajada inteira na mão.
+     */
+    if (!process.env.VITEST) {
+      const maisNova = await ultimaEntradaDeTexto(contato.id)
+      if (maisNova !== null && maisNova !== mensagemId) {
+        console.warn('[rajada] resposta descartada: chegou mensagem nova enquanto o bot pensava', contato.id)
         return
       }
     }

@@ -372,6 +372,27 @@ export function executar(
       const escolha = executar(fluxo, inicio.sessao, { tipo: 'opcao', opcaoId: entrada.opcaoId }, contexto)
       return { acoes: [...antes, ...escolha.acoes], sessao: escolha.sessao }
     }
+    /*
+     * A frase que abriu a conversa é o assunto, quando o menu sabe ler.
+     *
+     * PCYES, 30/set/2026: "Suporte não responde." ganhou "Olá, Bruno! Bem-vindo
+     * à PCYES" e o menu; "O software do mouse Fenner está com defeito" ganhou o
+     * menu, depois "toca numa das opções" e o menu de novo. A pessoa já tinha
+     * dito o que queria. Com o menu que entende texto (ou com a frase igual a
+     * uma opção), ela vale como resposta, e o menu não sai: a triagem responde
+     * no lugar dele. Cumprimento sozinho continua abrindo o menu.
+     */
+    const frase = entrada.texto?.trim() ?? ''
+    if (frase !== '' && !soCumprimento(frase) && inicio.sessao.status === 'ativa' && parada?.type === 'pergunta') {
+      const opcoes = resolverOpcoes(parada, inicio.sessao.vars)
+      const leTexto = parada.data.entendeTextoLivre && proximo(fluxo, parada.id, SAIDA_TEXTO_LIVRE) !== null
+      if (leTexto || escolher(opcoes, { tipo: 'texto', texto: frase })) {
+        const repetida = perguntar(parada, inicio.sessao).length
+        const antes = inicio.acoes.slice(0, inicio.acoes.length - repetida)
+        const resposta = executar(fluxo, inicio.sessao, { tipo: 'texto', texto: frase }, contexto)
+        return { acoes: [...antes, ...resposta.acoes], sessao: resposta.sessao }
+      }
+    }
     return inicio
   }
 
@@ -1655,3 +1676,28 @@ export function pediuSaidaDaIa(texto: string): boolean {
 function indexar(fluxo: Fluxo): Map<string, No> {
   return new Map(fluxo.nodes.map((no) => [no.id, no]))
 }
+
+/**
+ * "Oi", "bom dia, tudo bem?", "opaaa": a frase só cumprimenta, não diz o assunto.
+ *
+ * Tira acento, pontuação e emoji, junta letra repetida ("oiii", "olaaa") e
+ * confere se sobrou alguma palavra fora do vocabulário de cumprimento.
+ */
+export function soCumprimento(texto: string): boolean {
+  const palavras = texto
+    .normalize('NFKD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .replace(/[^a-z\s]/g, ' ')
+    .split(/\s+/)
+    .filter(Boolean)
+    .map((p) => p.replace(/(.)\1+/g, '$1'))
+  return palavras.every((p) => CUMPRIMENTO.has(p))
+}
+
+const CUMPRIMENTO = new Set([
+  'oi', 'oie', 'ola', 'alo', 'alou', 'opa', 'eai', 'e', 'ai', 'salve', 'hey', 'hi', 'hello',
+  'bom', 'boa', 'dia', 'tarde', 'noite', 'tudo', 'td', 'bem', 'tranquilo', 'tranquila', 'blz', 'beleza',
+  'como', 'vai', 'esta', 'ta', 'voce', 'vc', 'vcs', 'voces', 'pessoal', 'gente', 'amigo', 'amiga',
+  'por', 'favor', 'pf', 'pfv', 'ok', 'obrigado', 'obrigada', 'certo', 'sim', 'com', 'o', 'a',
+])

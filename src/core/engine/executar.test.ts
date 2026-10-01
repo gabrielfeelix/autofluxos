@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { fluxoSchema, type Fluxo } from '../flow/schema'
-import { executar, MAX_TENTATIVAS, pediuReinicio, pediuSaidaDaIa } from './executar'
+import { executar, MAX_TENTATIVAS, pediuReinicio, pediuSaidaDaIa, soCumprimento } from './executar'
 import { sessaoNova, type Acao, type Entrada, type Sessao } from './types'
 
 const p = { x: 0, y: 0 }
@@ -2232,6 +2232,51 @@ describe('menu que entende texto livre', () => {
   it('desligado, ou sem aresta, é o "não entendi" de sempre', () => {
     expect(textos(menu(false), 'meu mouse parou')[0]).toBe('Desculpa, não entendi. Pode escolher uma das opções abaixo?')
     expect(textos(menu(true, false), 'meu mouse parou')[0]).toBe('Desculpa, não entendi. Pode escolher uma das opções abaixo?')
+  })
+})
+
+describe('conversa nova aberta com o assunto', () => {
+  const menu = (entende: boolean) =>
+    fluxoSchema.parse({
+      inicio: 'q',
+      nodes: [
+        { id: 'q', type: 'pergunta', position: p, data: { texto: 'Olá! Como posso ajudar?', salvarEm: 'assunto', opcoes: [{ id: 'a', rotulo: 'Comprar' }, { id: 'b', rotulo: 'Suporte' }], ...(entende ? { entendeTextoLivre: true } : {}) } },
+        { id: 'f', type: 'mensagem', position: p, data: { partes: [{ tipo: 'texto', texto: 'opção' }] } },
+        { id: 'livre', type: 'mensagem', position: p, data: { partes: [{ tipo: 'texto', texto: 'livre: {{assunto}}' }] } },
+      ],
+      edges: [
+        { id: 'e1', source: 'q', sourceHandle: 'a', target: 'f' },
+        { id: 'e2', source: 'q', sourceHandle: 'b', target: 'f' },
+        { id: 'e3', source: 'q', sourceHandle: 'texto-livre', target: 'livre' },
+      ],
+    })
+  const abrir = (f: ReturnType<typeof menu>, texto: string) =>
+    executar(f, sessaoNova(), { tipo: 'inicio', texto }).acoes.flatMap((a) =>
+      a.tipo === 'enviar_texto' ? [a.texto] : a.tipo === 'enviar_opcoes' ? ['(menu)'] : [],
+    )
+
+  it('a frase de reclamação vai para a triagem, sem o menu na frente (Bruno, PCYES)', () => {
+    expect(abrir(menu(true), 'Suporte não responde.')).toEqual(['livre: Suporte não responde.'])
+  })
+  it('a frase igual a uma opção escolhe a opção, mesmo sem texto livre', () => {
+    expect(abrir(menu(false), 'suporte')).toEqual(['opção'])
+  })
+  it('cumprimento sozinho abre o menu de sempre', () => {
+    for (const oi of ['Oi', 'Boa tarde...', 'Olá, bom dia! Tudo bem?', 'Opaaa', 'E aí 👋']) {
+      expect(abrir(menu(true), oi)).not.toContain('livre: ' + oi)
+    }
+  })
+  it('menu que não lê texto ignora a frase, como antes', () => {
+    expect(abrir(menu(false), 'meu mouse parou')).not.toContain('Desculpa, não entendi. Pode escolher uma das opções abaixo?')
+  })
+})
+
+describe('soCumprimento', () => {
+  it('separa cumprimento de assunto', () => {
+    expect(soCumprimento('Oii, boa noite!')).toBe(true)
+    expect(soCumprimento('Olaaa')).toBe(true)
+    expect(soCumprimento('ainda estou com o mesmo problema')).toBe(false)
+    expect(soCumprimento('Quero comprar')).toBe(false)
   })
 })
 
