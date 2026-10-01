@@ -18,6 +18,8 @@ export type EstadoNaTela = {
   historicoProgresso?: number | null
   contatosVistoEm?: string | null
   historicoVistoEm?: string | null
+  /** O histórico não foi compartilhado na conexão: não há o que esperar. */
+  historicoRecusadoEm?: string | null
   desembarcadoEm?: string | null
   /** O telefone como a Meta exibe. `null` em canal conectado antes de 0048. */
   displayPhoneNumber?: string | null
@@ -95,7 +97,10 @@ export function situacaoDoNumero(
 
   const syncs = [
     { comecou: estado.contatosSyncEm, progresso: estado.contatosProgresso, visto: estado.contatosVistoEm },
-    { comecou: estado.historicoSyncEm, progresso: estado.historicoProgresso, visto: estado.historicoVistoEm },
+    // Recusado: a Meta não vai mandar nada, e esperar viraria "travado".
+    ...(estado.historicoRecusadoEm
+      ? []
+      : [{ comecou: estado.historicoSyncEm, progresso: estado.historicoProgresso, visto: estado.historicoVistoEm }]),
   ]
 
   let algumCorrendo = false

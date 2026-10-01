@@ -33,6 +33,8 @@ export type EstadoDeCoexistencia = {
   contatosVistoEm?: string | null
   historicoProgresso?: number | null
   historicoVistoEm?: string | null
+  /** A Meta avisou que o histórico não foi compartilhado (0117). */
+  historicoRecusadoEm?: string | null
   /**
    * O número e o nome como a Meta os exibe, para a tela dizer qual telefone
    * está ali, em vez do `phone_number_id` que ninguém reconhece.
@@ -490,6 +492,16 @@ export async function anotarProgressoDoSync(
   if (error) throw new Error(`não deu para anotar o progresso: ${error.message}`)
 }
 
+/** Grava que o histórico não foi compartilhado, uma vez só. */
+export async function anotarHistoricoRecusado(canalId: string): Promise<void> {
+  const { error } = await db()
+    .from('channels')
+    .update({ historico_recusado_em: new Date().toISOString() })
+    .eq('id', canalId)
+    .is('historico_recusado_em', null)
+  if (error) throw new Error(`não deu para anotar a recusa do histórico: ${error.message}`)
+}
+
 /**
  * O estado de coexistência de todos os números de um cliente, de uma vez.
  *
@@ -504,7 +516,7 @@ export async function coexistenciaDoCliente(
   const { data, error } = await db()
     .from('channels')
     .select(
-      `id, ${COLUNAS}, contatos_sync_progresso, contatos_sync_visto_em, historico_sync_progresso, historico_sync_visto_em, display_phone_number, verified_name, waba_id`,
+      `id, ${COLUNAS}, contatos_sync_progresso, contatos_sync_visto_em, historico_sync_progresso, historico_sync_visto_em, historico_recusado_em, display_phone_number, verified_name, waba_id`,
     )
     .eq('client_id', clienteId)
 
@@ -519,6 +531,7 @@ export async function coexistenciaDoCliente(
       contatosVistoEm: (linha.contatos_sync_visto_em ?? null) as string | null,
       historicoProgresso: (linha.historico_sync_progresso ?? null) as number | null,
       historicoVistoEm: (linha.historico_sync_visto_em ?? null) as string | null,
+      historicoRecusadoEm: (linha.historico_recusado_em ?? null) as string | null,
       displayPhoneNumber: (linha.display_phone_number ?? null) as string | null,
       verifiedName: (linha.verified_name ?? null) as string | null,
       wabaId: (linha.waba_id ?? null) as string | null,

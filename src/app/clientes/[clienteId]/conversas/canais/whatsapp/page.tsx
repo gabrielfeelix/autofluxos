@@ -597,6 +597,13 @@ export default async function Pagina({
                              * passam a valer.
                              */}
                             <ul className="mt-1.5 space-y-1 text-[11px] leading-5 text-dim">
+                              {estado?.historicoRecusadoEm && (
+                                <li>
+                                  · O <strong className="text-muted">histórico de conversas não foi
+                                  compartilhado</strong> na conexão. Para importá-lo, reconecte o número
+                                  e autorize o compartilhamento no celular.
+                                </li>
+                              )}
                               <li>
                                 · Abra o WhatsApp Business no celular{' '}
                                 <strong className="text-muted">ao menos uma vez a cada 14

@@ -11,6 +11,7 @@ import {
   type CanalSalvo,
 } from './repos/conversas'
 import {
+  anotarHistoricoRecusado,
   anotarProgressoDoSync,
   apagarContatosDaAgenda,
   guardarContatosDaAgenda,
@@ -504,7 +505,16 @@ async function tratarHistorico(
 ): Promise<void> {
   // Armadilha 4: a recusa chega como erro e não é falha.
   const recusou = [...(valor.errors ?? []), ...(valor.history ?? []).flatMap((h) => h.errors ?? [])]
-  if (recusou.some((e) => e.code === HISTORICO_RECUSADO)) return
+  if (recusou.some((e) => e.code === HISTORICO_RECUSADO)) {
+    // Gravada para a tela dizer "não foi compartilhado" em vez de "parada em
+    // 0%". Falhar aqui não é motivo para a Meta reenviar.
+    try {
+      await anotarHistoricoRecusado(canal.id)
+    } catch (erro) {
+      await alertar('não deu para anotar a recusa do histórico', erro, { canal: canal.id })
+    }
+    return
+  }
 
   const lotes = [...(valor.history ?? [])].sort(
     (a, b) => (a.metadata?.chunk_order ?? 0) - (b.metadata?.chunk_order ?? 0),
