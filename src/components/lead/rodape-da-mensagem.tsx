@@ -67,6 +67,7 @@ export function RodapeDaMensagem({
   nossa,
   mensagemId,
   favorita,
+  bolhaClara = false,
   children,
 }: {
   clienteId: string
@@ -91,6 +92,8 @@ export function RodapeDaMensagem({
   mensagemId: string
   /** Se **eu** já guardei esta mensagem. */
   favorita: boolean
+  /** A nossa bolha é clara nesta tela (a do lead): a estrela sai azul, não branca. */
+  bolhaClara?: boolean
   /** A bolha. Ela vem com `max-w-full`: a largura máxima é deste invólucro. */
   children: ReactNode
 }) {
@@ -208,6 +211,22 @@ export function RodapeDaMensagem({
         <IconeSeta />
       </button>
 
+      {/*
+        A estrela de favorita mora no canto de cima da bolha, clarinha: branca
+        na nossa (azul), cinza na do cliente. No hover a seta entra no lugar;
+        no celular, onde a seta fica sempre, ela vai para o lado da seta.
+        Embaixo da bolha ela ficava solta e torta (pedido de 01/out/2026).
+      */}
+      {guardada && (
+        <span
+          title="Favoritada"
+          aria-label="Mensagem favoritada"
+          className={`pointer-events-none absolute top-2 right-2.5 text-[12px] leading-none transition [@media(hover:hover)]:group-hover:opacity-0 [@media(hover:none)]:right-9 ${menuAberto ? 'opacity-0' : ''} ${nossa && !bolhaClara ? 'text-white/80' : nossa ? 'text-primary/70' : 'text-muted'}`}
+        >
+          ★
+        </span>
+      )}
+
       {menuAberto && (
         <div
           role="menu"
@@ -301,7 +320,7 @@ export function RodapeDaMensagem({
         </span>
       )}
 
-      {(chips.length > 0 || guardada || erro || erroDaEstrela) && (
+      {(chips.length > 0 || erro || erroDaEstrela) && (
         <span className={`-mt-1.5 flex flex-wrap items-center gap-1 px-2 ${nossa ? 'flex-row-reverse' : ''}`}>
           {chips.map((chip) => (
             <span
@@ -312,11 +331,6 @@ export function RodapeDaMensagem({
               {chip.emoji}
             </span>
           ))}
-          {guardada && (
-            <span title="Favoritada" className="text-[13px] leading-none text-primary">
-              ★
-            </span>
-          )}
           {(erro || erroDaEstrela) && (
             <span className="max-w-[220px] text-[11px] leading-4 text-perigo" role="alert">
               {erro ?? erroDaEstrela}

@@ -789,6 +789,7 @@ async function Historico({
                 nossa={nossa}
                 mensagemId={mensagem.id}
                 favorita={favoritas.has(mensagem.id)}
+                bolhaClara
             >
             <p className={`relative max-w-full px-3 py-2 font-texto text-[14.5px] leading-[1.45] whitespace-pre-wrap ${nossa ? 'rounded-[13px_13px_4px_13px] border border-primary/[0.22] bg-primary/[0.13]' : mensagem.toque ? 'bolha-toque rounded-[13px_13px_13px_4px]' : 'rounded-[13px_13px_13px_4px] border border-line bg-surface'}`}>
               {mensagem.cita && <CitacaoNaBolha cita={mensagem.cita} nome={nomeDoLead} />}
