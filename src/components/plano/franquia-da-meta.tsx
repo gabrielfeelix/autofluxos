@@ -29,8 +29,10 @@ export function FranquiaDaMeta({ numeros, mes }: { numeros: FranquiaDoNumero[]; 
 
       {numeros.length === 0 ? (
         <p className="mt-1 text-[12px] leading-6 text-dim">
-          A Meta ainda não mediu nenhuma resposta deste mês. Cada número tem{' '}
-          {FRANQUIA_DE_SERVICO.toLocaleString('pt-BR')} respostas grátis por mês.
+          Nenhuma resposta deste mês na última leitura. A Meta fecha a contagem
+          com atraso e lemos de madrugada: o que foi enviado hoje aparece amanhã.
+          Cada número tem {FRANQUIA_DE_SERVICO.toLocaleString('pt-BR')} respostas
+          grátis por mês.
         </p>
       ) : (
         <ul className="mt-2 flex flex-col gap-3">
