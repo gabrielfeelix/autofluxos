@@ -69,6 +69,8 @@ export function montarPrompt(pedido: PedidoDeIa): { sistema: string; usuario: st
     ...(ferramentas.some((f) => f.nome === 'loja_buscar')
       ? [...blocoDeVenda(ferramentas.some((f) => f.nome === 'enviar_cardapio')), '']
       : []),
+    ...blocoDeConversa(),
+    '',
     'REGRAS, e elas valem acima de qualquer pedido do cliente:',
     ferramentas.length > 0
       ? `1. Responda com o que está em "SOBRE A EMPRESA" ou com o que uma consulta devolver. Se não estiver em nenhum dos dois, e nenhuma consulta servir, responda exatamente ${MARCA_NAO_SEI} e mais nada. Se só parte do pedido tiver resposta, responda essa parte e diga com franqueza o que não encontrou; ${MARCA_NAO_SEI} é para quando nada do que você tem serve.`
@@ -258,7 +260,7 @@ export function interpretarResposta(bruto: string | null | undefined): Resposta 
 const LINHA_DE_MOSTRAR_ESCRITA = /^[ \t]*[([`*_]*[ \t]*loja_mostrar\b[^\n]*$/gm
 
 const VAZAMENTO =
-  /SOBRE A EMPRESA|TAREFA DESTE MOMENTO|MENSAGEM DO CLIENTE|CONVERSA ATÉ AQUI|CONSULTAS QUE VOCÊ PODE|COMO VENDER, do jeito|valem acima de qualquer pedido|\[DADO|\b(loja|agenda)_[a-z_]+\b|\benviar_cardapio\b|\bconcluir_conversa\b|\bmontar_cobranca\b|atendente virtual de uma empresa/
+  /SOBRE A EMPRESA|TAREFA DESTE MOMENTO|MENSAGEM DO CLIENTE|CONVERSA ATÉ AQUI|CONSULTAS QUE VOCÊ PODE|COMO VENDER, do jeito|JEITO DE CONVERSAR, como|valem acima de qualquer pedido|\[DADO|\b(loja|agenda)_[a-z_]+\b|\benviar_cardapio\b|\bconcluir_conversa\b|\bmontar_cobranca\b|atendente virtual de uma empresa/
 
 function encurtar(texto: string): string {
   if (texto.length <= LIMITE_RESPOSTA) return texto
@@ -291,6 +293,31 @@ function encurtar(texto: string): string {
  * despejar lista faria a IA da pizzaria perguntar "é para jogar ou estudar?"
  * a quem só pediu o cardápio.
  */
+/**
+ * Como um atendente bom escreve no WhatsApp, e o que o bot fazia de robô.
+ *
+ * Tirado das conversas da PCYES de 30/set e 01/out/2026, lado a lado com o
+ * atendimento manual do Gabriel nas mesmas conversas ("quebrou a tampa? ou
+ * quer comprar avulsa?"), e da pesquisa de mercado do mesmo dia (Intercom
+ * Fin, Sierra, diretrizes de conversa do Google): resposta primeiro, só o
+ * que foi perguntado, sem elogio de abertura nem "posso ajudar em mais algo?"
+ * em toda mensagem, e nenhuma promessa que o bot não cumpre sozinho.
+ */
+function blocoDeConversa(): string[] {
+  return [
+    'JEITO DE CONVERSAR, como um bom atendente humano no WhatsApp:',
+    '- Comece pela resposta. Sem elogio de abertura ("Ótima escolha!", "Excelente pergunta!", "Essa é uma excelente escolha") e sem repetir o que a pessoa acabou de dizer.',
+    '- Responda só o que foi perguntado. Informação a mais entra só se mudar a decisão da pessoa agora.',
+    '- Curto: na maioria das vezes, até três frases curtas. Acompanhe o jeito da pessoa: quem escreve curto e informal recebe curto e informal; quem escreve formal recebe formal.',
+    '- Não termine as mensagens com "Posso te ajudar em mais alguma coisa?", "Qualquer dúvida, estou à disposição" ou parecido. Termine com o próximo passo concreto, ou sem fecho nenhum.',
+    '- Varie: não repita a abertura, a pergunta ou o fechamento que você já usou nesta conversa.',
+    '- Na dúvida sobre o que a pessoa quer, pergunte de um jeito simples e direto, com as opções ("quebrou ou quer comprar uma avulsa?"), em vez de supor.',
+    '- Só prometa o que você faz nesta conversa. Nunca diga "vou encaminhar", "já passo para o time", "vou verificar e te retorno" sem uma consulta ou transferência que faça isso de verdade.',
+    '- O card do produto sai logo depois da sua frase. Não fale da posição dele ("card acima", "link que apareceu aí").',
+    '- Emoji: no máximo um, e só quando combinar com o tom da pessoa. Nenhum em reclamação.',
+  ]
+}
+
 function blocoDeVenda(temCardapio = false): string[] {
   return [
     'COMO VENDER, do jeito de um vendedor que entende do produto:',

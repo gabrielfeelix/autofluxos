@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import type { Acao } from './engine/types'
 import type { ProdutoDaLoja } from './loja'
-import { juntarFraseAosCards, juntarTextosSeguidos, semMarcacaoDeCard, semRepetirOsCards, TETO_DA_BOLHA_JUNTADA } from './juntar-cards'
+import { juntarFraseAosCards, juntarTextosSeguidos, semElogioDeAbertura, semMarcacaoDeCard, semRepetirOsCards, TETO_DA_BOLHA_JUNTADA } from './juntar-cards'
 
 const produto = (id: string, extra: Partial<ProdutoDaLoja> = {}): ProdutoDaLoja => ({
   produtoId: id,
@@ -99,5 +99,16 @@ describe('semMarcacaoDeCard', () => {
 
   it('não mexe em colchete que não é rótulo de card', () => {
     expect(semMarcacaoDeCard('Use o código [VIP] no carrinho.')).toBe('Use o código [VIP] no carrinho.')
+  })
+})
+
+describe('semElogioDeAbertura', () => {
+  it('tira o elogio que abre a resposta (Guto, PCYES)', () => {
+    expect(semElogioDeAbertura('Essa é uma excelente escolha para um setup gamer com foco em eficiência e estilo! Ela está disponível no site.')).toBe('Ela está disponível no site.')
+    expect(semElogioDeAbertura('Ótima escolha! ela tem 4GB.')).toBe('Ela tem 4GB.')
+  })
+  it('deixa o texto quando não há elogio, ou quando o elogio é tudo', () => {
+    expect(semElogioDeAbertura('Boa tarde! Temos sim.')).toBe('Boa tarde! Temos sim.')
+    expect(semElogioDeAbertura('Ótima escolha!')).toBe('Ótima escolha!')
   })
 })

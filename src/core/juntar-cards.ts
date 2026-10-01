@@ -153,3 +153,20 @@ export function semMarcacaoDeCard(texto: string): string {
     .replace(/:\s*$/, '.')
     .trim()
 }
+
+/**
+ * Tira a frase de elogio que abre a resposta ("Ótima escolha!", "Essa é uma
+ * excelente escolha para um setup gamer!").
+ *
+ * A regra está no prompt; isto é a trava. Só a primeira frase, e só quando
+ * sobra texto depois dela: elogio sozinho continua sendo a resposta.
+ */
+export function semElogioDeAbertura(texto: string): string {
+  const elogio =
+    /^\s*(?:(?:essa|esta|essa aí|que)\s+(?:é\s+)?(?:uma\s+)?)?(?:ótima|excelente|boa|perfeita|bela|incrível)\s+(?:escolha|pergunta|opção|pedida)\b[^.!?\n]*[.!?]+\s*/i
+  const m = elogio.exec(texto)
+  if (!m) return texto
+  const resto = texto.slice(m[0].length)
+  if (resto.trim() === '') return texto
+  return resto.charAt(0).toUpperCase() + resto.slice(1)
+}
