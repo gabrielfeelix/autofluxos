@@ -59,9 +59,9 @@ export function estadoDoAtendimento(e: EntradaDoAtendimento): Atendimento {
   if (e.aguardando) {
     return {
       estado: 'aguardando_humano',
-      rotulo: 'Aguardando pessoa',
+      rotulo: 'Aguardando atendente',
       donoId,
-      efeito: `O bot está calado: pediram uma pessoa. ${VOLTA_NA_PROXIMA}`,
+      efeito: `O bot está pausado: o cliente pediu atendimento. ${VOLTA_NA_PROXIMA}`,
       botCalado: true,
       proximaAcao: souDono ? 'finalizar' : 'assumir',
     }

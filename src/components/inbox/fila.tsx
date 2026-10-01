@@ -1361,7 +1361,7 @@ function ResumoDaConversa({ lead }: { lead: Lead }) {
 function textoDoBalao(lead: Lead): string {
   const quem = quemFalou(lead);
   const texto = `${quem ? `${quem}: ` : ""}${textoDaConversa(lead)}`;
-  return lead.aguardando ? `${texto}\n\nAguardando pessoa: ${lead.aguardando.motivo}` : texto;
+  return lead.aguardando ? `${texto}\n\nAguardando atendente: ${lead.aguardando.motivo}` : texto;
 }
 
 /** O texto da última mensagem, sem quem falou. */

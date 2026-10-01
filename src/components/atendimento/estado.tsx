@@ -5,7 +5,7 @@ import { useConfirmar } from '@/components/design/confirmar'
 import { useAcaoOtimista } from '@/components/design/acao-otimista'
 import { estadoDoAtendimento, type Atendimento } from '@/core/estado-do-atendimento'
 import { useConversaAbertaOuNada } from '@/components/inbox/conversa-local'
-import { horaExata } from '@/lib/quando'
+import { horaExata, quando } from '@/lib/quando'
 
 type Resultado = { ok: boolean; erro?: string }
 
@@ -129,18 +129,27 @@ export function CartaoDoAtendimento({
       className={`rounded-[11px] border px-3 py-2.5 ${tom} ${largo ? 'flex flex-wrap items-center gap-x-4 gap-y-2 px-[17px] py-[13px]' : ''}`}
     >
       <div className="min-w-0 flex-1 basis-[260px]">
-      <p className="text-[11px] font-bold tracking-[0.04em] uppercase">{atendimento.rotulo}</p>
-      <p className="mt-0.5 text-[11.5px] text-soft">
-        {donoNome ? `Responsável: ${donoNome}` : 'Sem responsável'}
+      {/*
+        Enxuto (pedido de 01/out/2026): rótulo, quem e desde quando numa linha,
+        o motivo numa linha só (inteiro no `title`). O que acontece com o bot
+        mora na dica do botão, não em parágrafo fixo no cartão.
+      */}
+      <p className="text-[11px] font-bold tracking-[0.04em] uppercase" title={atendimento.efeito}>
+        {atendimento.rotulo}
+      </p>
+      <p className="mt-0.5 truncate text-[12px] text-soft">
+        {donoNome ?? 'Sem responsável'}
+        {aguardando && (
+          <span className="text-dim" title={horaExata(aguardando.desde)} suppressHydrationWarning>
+            {' '}· {quando(aguardando.desde)}
+          </span>
+        )}
       </p>
       {aguardando && (
-        <>
-          {/* O motivo inteiro, quebrando linha: é aqui que se entende o pedido. */}
-          <p className="mt-1 text-[12px] leading-4 break-words text-soft">{aguardando.motivo}</p>
-          <p className="mt-1 text-[11px] text-dim">esperando desde {horaExata(aguardando.desde)}</p>
-        </>
+        <p className="mt-0.5 truncate text-[11.5px] text-muted first-letter:uppercase" title={`${aguardando.motivo} (${horaExata(aguardando.desde)})`}>
+          {aguardando.motivo}
+        </p>
       )}
-      <p className="mt-1.5 text-[11.5px] leading-4 text-muted">{atendimento.efeito}</p>
       </div>
       <div className={largo ? 'flex shrink-0 flex-wrap gap-2 [&>button]:mt-0 [&>button]:w-auto [&>button]:px-3.5' : ''}>
 
@@ -148,6 +157,7 @@ export function CartaoDoAtendimento({
         <button
           type="button"
           disabled={rodando}
+          title={atendimento.efeito}
           onClick={() =>
             confirmar({
               titulo: 'Finalizar o atendimento?',
