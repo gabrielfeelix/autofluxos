@@ -2,6 +2,7 @@
 
 import { useRef, useState, useTransition } from 'react'
 import { Dropdown } from '@/components/design/dropdown'
+import { useCliqueNoFundo } from '@/components/design/clique-no-fundo'
 import {
   PRAZOS_DO_LINK,
   PRAZO_PADRAO,
@@ -56,6 +57,7 @@ export function Compartilhar({
   publicada: { versao: number; grafo: Fluxo } | null
 }) {
   const dialogo = useRef<HTMLDialogElement>(null)
+  const fundo = useCliqueNoFundo(dialogo, () => dialogo.current?.close())
   const [links, setLinks] = useState<LinkNaLista[] | null>(null)
   const [prazo, setPrazo] = useState<string>(PRAZO_PADRAO)
   const [erro, setErro] = useState<string | null>(null)
@@ -206,9 +208,7 @@ export function Compartilhar({
       <dialog
         ref={dialogo}
         aria-label="Compartilhar por link"
-        onClick={(evento) => {
-          if (evento.target === dialogo.current) dialogo.current?.close()
-        }}
+        {...fundo}
         onClose={() => {
           setCopiado(null)
           setQr(null)

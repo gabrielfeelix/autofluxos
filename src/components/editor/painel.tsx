@@ -725,7 +725,7 @@ export function Painel({
               */}
               {no.data.opcoes.length === 0 && (
                 <>
-                  <label className="block">
+                  <div className="block">
                     <span className="mb-1.5 block text-[11px] font-bold tracking-[0.05em] text-muted uppercase">
                       A resposta precisa ser
                       <AjudaDoCampo
@@ -775,7 +775,7 @@ export function Painel({
                         })),
                       ]}
                     />
-                  </label>
+                  </div>
 
                   {no.data.formato && (
                     <>
@@ -1011,7 +1011,7 @@ export function Painel({
               />
             )}
 
-            <label className="block">
+            <div className="block">
               <span className="mb-1.5 block text-[11px] font-bold tracking-[0.05em] text-muted uppercase">
                 Prazo para responder
                 <AjudaDoCampo
@@ -1071,7 +1071,7 @@ export function Painel({
                   vez de receber o texto.
                 </span>
               )}
-            </label>
+            </div>
           </SecaoAvancada>
         </>
       )}
@@ -1095,7 +1095,7 @@ export function Painel({
             }
             aoMudar={(variavel) => aoMudarDados({ variavel })}
           />
-          <label className="block">
+          <div className="block">
             <span className="mb-1.5 block text-[11px] font-bold tracking-[0.05em] text-muted uppercase">
               Operador
               <AjudaDoCampo
@@ -1128,7 +1128,7 @@ export function Painel({
                 rotulo: ROTULO_DO_OPERADOR[operador],
               }))}
             />
-          </label>
+          </div>
           {no.data.operador !== 'vazio' && no.data.operador !== 'preenchido' && (
             <div className="space-y-1.5">
               <Linha
@@ -1190,7 +1190,7 @@ export function Painel({
       )}
 
       {no.type === 'etapa' && (
-        <label className="block">
+        <div className="block">
           <span className="mb-1.5 block text-[11px] font-bold tracking-[0.05em] text-muted uppercase">
             Etapa do funil
             <AjudaDoCampo
@@ -1242,11 +1242,11 @@ export function Painel({
               />
             </>
           )}
-        </label>
+        </div>
       )}
 
       {no.type === 'etiqueta' && (
-        <label className="block">
+        <div className="block">
           <span className="mb-1.5 block text-[11px] font-bold tracking-[0.05em] text-muted uppercase">
             Etiqueta no contato
             <AjudaDoCampo
@@ -1286,7 +1286,7 @@ export function Painel({
               />
             </>
           )}
-        </label>
+        </div>
       )}
 
       {no.type === 'nota' && (
@@ -1497,7 +1497,7 @@ export function Painel({
             />
           )}
 
-          <label className="block">
+          <div className="block">
             <span className="mb-1.5 block text-[11px] font-bold tracking-[0.05em] text-muted uppercase">
               Prazo para responder
               <AjudaDoCampo
@@ -1536,12 +1536,12 @@ export function Painel({
                 ? 'Passado o prazo, a conversa sai pela saída “não respondeu”. Sem nada ligado nela, a conversa encerra, quem ignorou uma pesquisa não vira fila de atendimento.'
                 : 'Sem prazo, a conversa espera para sempre pela nota.'}
             </span>
-          </label>
+          </div>
         </>
       )}
 
       {no.type === 'ir-fluxo' && (
-        <label className="block">
+        <div className="block">
           <span className="mb-1.5 block text-[11px] font-bold tracking-[0.05em] text-muted uppercase">
             Continuar em qual automação
             <AjudaDoCampo
@@ -1599,7 +1599,7 @@ export function Painel({
               />
             </>
           )}
-        </label>
+        </div>
       )}
 
       {/*
@@ -1607,7 +1607,7 @@ export function Painel({
         Ver `noVoltarSchema` para por que ele existe ao lado da seta.
       */}
       {no.type === 'voltar' && (
-        <label className="block">
+        <div className="block">
           <span className="mb-1.5 block text-[11px] font-bold tracking-[0.05em] text-muted uppercase">
             Voltar para qual passo
             <AjudaDoCampo
@@ -1660,7 +1660,7 @@ export function Painel({
                 })),
             ]}
           />
-        </label>
+        </div>
       )}
 
       {no.type === 'ia' && (
@@ -1733,7 +1733,7 @@ export function Painel({
             ficar valendo escondida se a loja for desligada depois.
           */}
           {(lojaOnline || no.data.fonteDoCatalogo !== undefined) && (
-            <label className="block">
+            <div className="block">
               <span className="mb-1.5 block text-[11px] font-bold tracking-[0.05em] text-muted uppercase">
                 Produtos de onde
                 <AjudaDoCampo
@@ -1763,7 +1763,7 @@ export function Painel({
                   { valor: 'catalogo', rotulo: 'Catálogo próprio', detalhe: 'os itens cadastrados aqui' },
                 ]}
               />
-            </label>
+            </div>
           )}
 
           {/*
@@ -1806,7 +1806,7 @@ export function Painel({
           />
 
           {no.data.conversar && (
-            <label className="block">
+            <div className="block">
               <span className="mb-1.5 block text-[11px] font-bold tracking-[0.05em] text-muted uppercase">
                 Até quantas respostas
               </span>
@@ -1819,7 +1819,7 @@ export function Painel({
                 rotuloAcessivel="Até quantas respostas"
                 opcoes={opcoesDeTurnos(no.data.conversar.maxTurnos)}
               />
-            </label>
+            </div>
           )}
 
           {/*
@@ -2010,7 +2010,7 @@ export function Painel({
             ofereceria uma escolha que não existe.
           */}
           {equipe.length > 1 && (
-            <label className="block">
+            <div className="block">
               <span className="mb-1.5 block text-[11px] font-bold tracking-[0.05em] text-muted uppercase">
                 Avisar quem
                 <AjudaDoCampo
@@ -2049,7 +2049,7 @@ export function Painel({
                   ? 'Se essa pessoa sair da conta ou estiver ausente, o aviso volta a ser da equipe, aviso endereçado a quem não está é aviso que ninguém recebe.'
                   : 'Todo mundo que estiver disponível recebe, respeitando o horário de atendimento.'}
               </span>
-            </label>
+            </div>
           )}
 
           {/*
@@ -2066,7 +2066,7 @@ export function Painel({
             "nunca" porque interromper ali seria pior, uma negociação de
             cancelamento, uma reclamação.
           */}
-          <label className="block">
+          <div className="block">
             <span className="mb-1.5 block text-[11px] font-bold tracking-[0.05em] text-muted uppercase">
               Se ninguém responder
               <AjudaDoCampo
@@ -2145,7 +2145,7 @@ export function Painel({
                 )}
               </span>
             )}
-          </label>
+          </div>
 
           {/*
             O texto só aparece quando este bloco escolheu prazo próprio: quem
@@ -2204,7 +2204,7 @@ export function Painel({
             estou falando pelo número?"*, é respondida no “?” ao lado do nome
             do bloco. Ver `AJUDA_DO_BLOCO`.
           */}
-          <label className="block">
+          <div className="block">
             <span className="mb-1.5 block text-[11px] font-bold tracking-[0.05em] text-muted uppercase">
               Método
               <AjudaDoCampo
@@ -2241,7 +2241,7 @@ export function Painel({
                 ? 'Consultar: pergunta alguma coisa ao sistema e traz a resposta para a conversa.'
                 : 'Mandar: entrega ao sistema o que a conversa coletou, um pedido, um agendamento, um cadastro.'}
             </span>
-          </label>
+          </div>
 
           <Linha
             rotulo="Endereço"
@@ -2305,7 +2305,7 @@ export function Painel({
 
           <Mapeamentos mapear={no.data.mapear} aoMudar={(mapear) => aoMudarDados({ mapear })} />
 
-          <label className="block">
+          <div className="block">
             <span className="mb-1.5 block text-[11px] font-bold tracking-[0.05em] text-muted uppercase">
               Credencial
               <AjudaDoCampo
@@ -2382,7 +2382,7 @@ export function Painel({
                 />
               </>
             )}
-          </label>
+          </div>
 
           {/*
             Cabeçalhos e "se falhar", recolhidos.
@@ -2407,7 +2407,7 @@ export function Painel({
               aoMudar={(cabecalhos) => aoMudarDados({ cabecalhos })}
             />
 
-            <label className="block">
+            <div className="block">
               <span className="mb-1.5 block text-[11px] font-bold tracking-[0.05em] text-muted uppercase">
                 Se falhar
                 <AjudaDoCampo
@@ -2442,7 +2442,7 @@ export function Painel({
                   },
                 ]}
               />
-            </label>
+            </div>
           </SecaoAvancada>
         </>
       )}
@@ -3312,7 +3312,7 @@ function Mapeamentos({
                     a única saída era pedir para o cliente mudar a API dele.
                   */}
                   {!m.quantos && (
-                    <label className="mt-1 block pl-1">
+                    <div className="mt-1 block pl-1">
                       <span className="mb-1 block text-[10.5px] leading-4 text-dim">
                         mostrar como
                         <AjudaDoCampo
@@ -3345,7 +3345,7 @@ function Mapeamentos({
                           })),
                         ]}
                       />
-                    </label>
+                    </div>
                   )}
 
                   {/*
@@ -3535,7 +3535,7 @@ function ConsultasDaIa({
       ))}
 
       {precisaDeCredencial && (
-        <label className="mt-2.5 block">
+        <div className="mt-2.5 block">
           <span className="mb-1.5 block text-[11px] font-bold tracking-[0.05em] text-muted uppercase">
             Credencial das consultas
             <AjudaDoCampo
@@ -3597,7 +3597,7 @@ function ConsultasDaIa({
               </span>
             </>
           )}
-        </label>
+        </div>
       )}
 
       {/*

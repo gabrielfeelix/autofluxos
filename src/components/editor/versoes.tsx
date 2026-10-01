@@ -5,6 +5,7 @@ import { compararGrafos, resumoDaComparacao } from '@/core/flow/comparar'
 import type { Fluxo } from '@/core/flow/schema'
 import { acaoGrafoDaVersao } from '@/server/acoes'
 import { GrafoDeLeitura } from './grafo-de-leitura'
+import { useCliqueNoFundo } from '@/components/design/clique-no-fundo'
 
 export type VersaoNaLista = {
   id: string
@@ -48,6 +49,7 @@ export function Versoes({
   rascunho: Fluxo
 }) {
   const dialogo = useRef<HTMLDialogElement>(null)
+  const fundo = useCliqueNoFundo(dialogo, () => fechar())
   const [confirmando, setConfirmando] = useState<string | null>(null)
   const [vendo, setVendo] = useState<string | null>(null)
   const [grafos, setGrafos] = useState<Record<string, Fluxo>>({})
@@ -117,9 +119,7 @@ export function Versoes({
       <dialog
         ref={dialogo}
         aria-label="Histórico de publicações"
-        onClick={(evento) => {
-          if (evento.target === dialogo.current) fechar()
-        }}
+        {...fundo}
         onClose={() => {
           setConfirmando(null)
           setVendo(null)

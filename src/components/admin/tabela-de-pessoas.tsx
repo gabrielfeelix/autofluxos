@@ -367,10 +367,10 @@ function DarAcesso({
           <RotuloCampo>Senha provisória (só para login novo, mín. 10 caracteres)</RotuloCampo>
           <input name="senha" type="password" minLength={10} autoComplete="new-password" className="app-field px-[13px] py-[11px] text-[13.5px]" />
         </label>
-        <label>
+        <div>
           <RotuloCampo>Função</RotuloCampo>
           <Dropdown nome="funcao" rotuloAcessivel="Função" valorInicial={padrao} opcoes={funcoes} />
-        </label>
+        </div>
         {erro && (
           <p role="alert" className="rounded-[10px] border border-rose-400/25 bg-rose-400/[0.08] px-3 py-2.5 text-[12px] leading-5 text-perigo">
             {erro}

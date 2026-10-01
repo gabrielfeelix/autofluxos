@@ -15,6 +15,7 @@ import { horaDoRelogio } from '@/lib/quando'
 import type { ItemDaAgenda } from '@/server/repos/atividades'
 import { CartaoDaAgenda, IconeDoTipo } from './linha-da-agenda'
 import { useAcoesDaAgenda } from './lista-da-agenda'
+import { useCliqueNoFundo } from '@/components/design/clique-no-fundo'
 
 const DIAS_DA_SEMANA = ['seg', 'ter', 'qua', 'qui', 'sex', 'sáb', 'dom']
 
@@ -302,6 +303,7 @@ function Bloco({
 
 function DialogoDaAtividade({ aoFechar, children }: { aoFechar: () => void; children: ReactNode }) {
   const dialogo = useRef<HTMLDialogElement>(null)
+  const fundo = useCliqueNoFundo(dialogo, () => dialogo.current?.close())
   const abriu = useRef(false)
   return (
     <dialog
@@ -314,9 +316,7 @@ function DialogoDaAtividade({ aoFechar, children }: { aoFechar: () => void; chil
       }}
       aria-label="Atividade"
       onClose={aoFechar}
-      onClick={(evento) => {
-        if (evento.target === dialogo.current) dialogo.current?.close()
-      }}
+      {...fundo}
       className="app-dialog m-auto w-[520px] max-w-[calc(100vw-32px)] overflow-visible rounded-[18px] border border-line bg-panel p-2 text-ink shadow-[0_40px_100px_rgba(19,25,34,0.132)]"
     >
       {children}

@@ -1,6 +1,7 @@
 'use client'
 
 import { useRef, useState } from 'react'
+import { useCliqueNoFundo } from '@/components/design/clique-no-fundo'
 
 /**
  * O diálogo de cancelar, com motivo obrigatório (RB-28).
@@ -19,6 +20,7 @@ export function DialogoDeCancelar({
   aoConfirmar: (motivo: string) => void
 }) {
   const dialogo = useRef<HTMLDialogElement>(null)
+  const fundo = useCliqueNoFundo(dialogo, () => dialogo.current?.close())
   const abriu = useRef(false)
   const [motivo, setMotivo] = useState('')
 
@@ -36,9 +38,7 @@ export function DialogoDeCancelar({
       }}
       aria-labelledby="titulo-cancelar-atividade"
       onClose={aoFechar}
-      onClick={(evento) => {
-        if (evento.target === dialogo.current) dialogo.current?.close()
-      }}
+      {...fundo}
       className="app-dialog m-auto w-[420px] max-w-[calc(100vw-32px)] rounded-[18px] border border-line bg-panel p-6 text-ink shadow-[0_40px_100px_rgba(19,25,34,0.132)]"
     >
       <form

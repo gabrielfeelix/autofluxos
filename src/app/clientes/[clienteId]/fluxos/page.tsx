@@ -768,7 +768,7 @@ async function ConteudoDaAba({
                     className="app-field px-[13px] py-[11px] text-[13.5px]"
                   />
                 </label>
-                <label>
+                <div>
                   <RotuloCampo>Como comparar</RotuloCampo>
                   <Dropdown
                     nome="operador"
@@ -779,8 +779,8 @@ async function ConteudoDaAba({
                       rotulo: ROTULO_DO_OPERADOR[operador],
                     }))}
                   />
-                </label>
-                <label>
+                </div>
+                <div>
                   <RotuloCampo>Fluxo que ela abre</RotuloCampo>
                   <Dropdown
                     nome="fluxoId"
@@ -791,7 +791,7 @@ async function ConteudoDaAba({
                       ...(item.versaoPublicadaId ? {} : { detalhe: 'rascunho' }),
                     }))}
                   />
-                </label>
+                </div>
               </ModalFormulario>
             )}
           </header>
@@ -893,7 +893,7 @@ async function ConteudoDaAba({
                     className="app-field px-[13px] py-[11px] font-mono text-[13px]"
                   />
                 </label>
-                <label>
+                <div>
                   <RotuloCampo>Fluxo que ele abre</RotuloCampo>
                   <Dropdown
                     nome="fluxoId"
@@ -904,7 +904,7 @@ async function ConteudoDaAba({
                       ...(item.versaoPublicadaId ? {} : { detalhe: 'rascunho' }),
                     }))}
                   />
-                </label>
+                </div>
               </ModalFormulario>
             )}
           </header>
@@ -1041,7 +1041,7 @@ async function ConteudoDaAba({
                     className="app-field px-[13px] py-[11px] text-[13.5px]"
                   />
                 </label>
-                <label>
+                <div>
                   <RotuloCampo>Fluxo que ela abre</RotuloCampo>
                   <Dropdown
                     nome="fluxoId"
@@ -1052,7 +1052,7 @@ async function ConteudoDaAba({
                       ...(item.versaoPublicadaId ? {} : { detalhe: 'rascunho' }),
                     }))}
                   />
-                </label>
+                </div>
               </ModalFormulario>
             )}
           </header>

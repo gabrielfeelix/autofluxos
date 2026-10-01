@@ -412,7 +412,7 @@ export default async function Pagina({
                   className="app-field px-[13px] py-[11px] text-[13.5px]"
                 />
               </label>
-              <label>
+              <div>
                 <RotuloCampo>Fluxo principal</RotuloCampo>
                 <Dropdown
                   nome="flowId"
@@ -422,7 +422,7 @@ export default async function Pagina({
                     ...fluxos.map((fluxo) => ({ valor: fluxo.id, rotulo: fluxo.nome })),
                   ]}
                 />
-              </label>
+              </div>
             </ModalFormulario>
           </header>
 

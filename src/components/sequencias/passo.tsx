@@ -53,7 +53,7 @@ export function CamposDoPasso({
           />
         </label>
       </div>
-      <label>
+      <div>
         <RotuloCampo>Fluxo que este passo abre</RotuloCampo>
         <Dropdown
           nome="fluxoId"
@@ -61,7 +61,7 @@ export function CamposDoPasso({
           opcoes={fluxos}
           valorInicial={inicial?.fluxoId}
         />
-      </label>
+      </div>
       {/*
         O modelo aprovado, para o passo que passa de 24h.
 
@@ -74,7 +74,7 @@ export function CamposDoPasso({
         pessoa desenhar uma sequência que só entregaria se a Meta aprovasse a
         tempo.
       */}
-      <label>
+      <div>
         <RotuloCampo>Modelo aprovado (só para passos acima de 24h)</RotuloCampo>
         {modelos.length === 0 ? (
           <p className="text-[11.5px] leading-5 text-muted">
@@ -92,7 +92,7 @@ export function CamposDoPasso({
             ]}
           />
         )}
-      </label>
+      </div>
     </>
   )
 }

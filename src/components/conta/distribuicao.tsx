@@ -103,7 +103,7 @@ export function Distribuicao({
       </header>
 
       <div className="flex flex-col gap-4 px-5 py-4">
-        <label className="flex flex-col gap-1.5">
+        <div className="flex flex-col gap-1.5">
           <span className="text-[12.5px] font-semibold text-soft">Lead novo vai para</span>
           <Dropdown
             opcoes={MODOS}
@@ -126,7 +126,7 @@ export function Distribuicao({
             Quem já foi atendido por alguém volta sempre para essa pessoa, mesmo que a
             conversa anterior tenha sido resolvida meses atrás.
           </span>
-        </label>
+        </div>
 
         <label className="flex items-start gap-2.5">
           <input

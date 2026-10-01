@@ -115,7 +115,7 @@ export default async function Pagina({ params }: { params: Promise<{ clienteId: 
               <input name="nome" required placeholder="CRM" className="app-field px-3 py-2.5 text-[13px]" />
             </label>
 
-            <label className="block">
+            <div className="block">
               <RotuloCampo>Como ela entra na chamada</RotuloCampo>
               <Dropdown
                 nome="tipo"
@@ -127,7 +127,7 @@ export default async function Pagina({ params }: { params: Promise<{ clienteId: 
                   { valor: 'query', rotulo: 'Um parâmetro na URL', detalhe: 'Ex.: ?key=' },
                 ]}
               />
-            </label>
+            </div>
 
             <label className="block">
               <RotuloCampo>Nome do cabeçalho ou parâmetro</RotuloCampo>

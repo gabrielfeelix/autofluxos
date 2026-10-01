@@ -226,7 +226,7 @@ export default async function Pagina({
                   className="app-field px-[13px] py-[11px] text-[13.5px]"
                 />
               </label>
-              <label>
+              <div>
                 <RotuloCampo>Tipo</RotuloCampo>
                 <Dropdown
                   nome="especie"
@@ -234,7 +234,7 @@ export default async function Pagina({
                   valorInicial="produto"
                   opcoes={OPCOES_DE_ESPECIE}
                 />
-              </label>
+              </div>
               <label>
                 <RotuloCampo>Categoria (opcional)</RotuloCampo>
                 <input

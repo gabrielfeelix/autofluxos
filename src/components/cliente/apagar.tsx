@@ -1,6 +1,7 @@
 'use client'
 
 import { useRef, useState, useTransition } from 'react'
+import { useCliqueNoFundo } from '@/components/design/clique-no-fundo'
 
 export type EstragoDaExclusao = {
   leads: number
@@ -32,6 +33,7 @@ export function ApagarCliente({
   acao: () => Promise<{ ok: boolean; erro?: string }>
 }) {
   const dialogo = useRef<HTMLDialogElement>(null)
+  const fundo = useCliqueNoFundo(dialogo, () => fechar())
   const [digitado, setDigitado] = useState('')
   const [erro, setErro] = useState<string | null>(null)
   const [apagando, comecar] = useTransition()
@@ -57,9 +59,7 @@ export function ApagarCliente({
       <dialog
         ref={dialogo}
         aria-label={`Apagar o cliente ${nome}`}
-        onClick={(evento) => {
-          if (evento.target === dialogo.current) fechar()
-        }}
+        {...fundo}
         onClose={() => {
           setDigitado('')
           setErro(null)

@@ -1,6 +1,7 @@
 'use client'
 
 import type { ReactNode } from 'react'
+import { useCliqueNoFundo } from '@/components/design/clique-no-fundo'
 import { useRef, useState } from 'react'
 import {
   camposDoFormulario,
@@ -67,6 +68,7 @@ export function ModalFormulario({
   variante?: 'primario' | 'secundario' | 'linha' | 'cartao'
 }) {
   const dialogo = useRef<HTMLDialogElement>(null)
+  const fundo = useCliqueNoFundo(dialogo, () => tentarFechar())
   const formulario = useRef<HTMLFormElement>(null)
   /**
    * Como o formulário estava quando o modal abriu.
@@ -171,9 +173,7 @@ export function ModalFormulario({
           evento.preventDefault()
           tentarFechar()
         }}
-        onClick={(evento) => {
-          if (evento.target === dialogo.current) tentarFechar()
-        }}
+        {...fundo}
         className="app-dialog m-auto w-[min(420px,92vw)] rounded-[18px] border border-line bg-panel p-[26px] text-ink shadow-[0_40px_100px_rgba(19,25,34,0.132)]"
       >
         <h2 className="text-[17px] font-bold">{titulo}</h2>

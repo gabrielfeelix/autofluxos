@@ -128,7 +128,7 @@ export function RetomadaDoBotForm({
 
       {ligada && (
         <div className="app-card mt-4 px-5 py-4">
-          <label className="block">
+          <div className="block">
             <span className="mb-1.5 block text-[12.5px] font-bold text-soft">
               Devolver ao bot depois de
             </span>
@@ -141,7 +141,7 @@ export function RetomadaDoBotForm({
               valor={escolha}
               aoMudar={setEscolha}
             />
-          </label>
+          </div>
 
           {livre && (
             <div className="mt-2.5 flex items-center gap-2">

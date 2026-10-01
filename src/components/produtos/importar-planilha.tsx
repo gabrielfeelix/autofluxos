@@ -3,6 +3,7 @@
 import { useRef, useState } from 'react'
 import type { ErroDaLinha } from '@/core/importar-produtos'
 import { acaoImportarProdutos, acaoPreverImportacao, type Previa } from '@/server/acoes-importar-produtos'
+import { useCliqueNoFundo } from '@/components/design/clique-no-fundo'
 
 type Etapa =
   | { tipo: 'escolher' }
@@ -29,6 +30,7 @@ function plural(n: number, um: string, varios: string): string {
  */
 export function ImportarPlanilha({ clienteId }: { clienteId: string }) {
   const dialogo = useRef<HTMLDialogElement>(null)
+  const fundo = useCliqueNoFundo(dialogo, () => fechar())
   const [arquivo, setArquivo] = useState<File | null>(null)
   const [etapa, setEtapa] = useState<Etapa>({ tipo: 'escolher' })
   const [erro, setErro] = useState<string | null>(null)
@@ -113,9 +115,7 @@ export function ImportarPlanilha({ clienteId }: { clienteId: string }) {
           evento.preventDefault()
           fechar()
         }}
-        onClick={(evento) => {
-          if (evento.target === dialogo.current) fechar()
-        }}
+        {...fundo}
         onDragEnter={(e) => {
           if (!ehArrastoDeArquivo(e) || etapa.tipo !== 'escolher') return
           e.preventDefault()

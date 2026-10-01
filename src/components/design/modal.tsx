@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useRef, type ReactNode } from 'react'
+import { useCliqueNoFundo } from '@/components/design/clique-no-fundo'
 
 /**
  * O modal **controlado**, o irmão de `ModalFormulario`.
@@ -37,6 +38,7 @@ export function Modal({
   children: ReactNode
 }) {
   const dialogo = useRef<HTMLDialogElement>(null)
+  const fundo = useCliqueNoFundo(dialogo, () => aoFechar())
 
   useEffect(() => {
     const elemento = dialogo.current
@@ -55,9 +57,7 @@ export function Modal({
       // `Esc` dispara `close` sem passar por clique nenhum: sem isto o estado de
       // fora continuaria dizendo "aberto" e o modal não abriria de novo.
       onClose={aoFechar}
-      onClick={(evento) => {
-        if (evento.target === dialogo.current) aoFechar()
-      }}
+      {...fundo}
       style={{ width: `min(${largura}px, 92vw)` }}
       className="app-dialog relative m-auto rounded-[18px] border border-line bg-panel p-[26px] text-ink shadow-[0_40px_100px_rgba(19,25,34,0.132)]"
     >

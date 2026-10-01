@@ -1,6 +1,7 @@
 'use client'
 
 import { useRef, useState } from 'react'
+import { useCliqueNoFundo } from '@/components/design/clique-no-fundo'
 
 export type PessoaDoSeletor = { id: string; nome: string }
 
@@ -37,6 +38,7 @@ export function SeletorDePessoa({
   aoFechar: () => void
 }) {
   const dialogo = useRef<HTMLDialogElement>(null)
+  const fundo = useCliqueNoFundo(dialogo, () => dialogo.current?.close())
   const abriu = useRef(false)
   const [busca, setBusca] = useState('')
 
@@ -78,9 +80,7 @@ export function SeletorDePessoa({
       }}
       aria-labelledby="titulo-seletor-de-pessoa"
       onClose={aoFechar}
-      onClick={(evento) => {
-        if (evento.target === dialogo.current) dialogo.current?.close()
-      }}
+      {...fundo}
       className="app-dialog m-auto w-[400px] max-w-[calc(100vw-32px)] rounded-[18px] border border-line bg-panel p-5 text-ink shadow-[0_40px_100px_rgba(19,25,34,0.132)]"
     >
       <h2 id="titulo-seletor-de-pessoa" className="text-[16px] font-bold">

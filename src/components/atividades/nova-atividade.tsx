@@ -3,6 +3,7 @@
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useEffect, useRef, useState, useTransition } from 'react'
+import { useCliqueNoFundo } from '@/components/design/clique-no-fundo'
 import { Dropdown } from '@/components/design/dropdown'
 import { SeletorDePessoa } from './seletor-de-pessoa'
 import { paraParametros, type FiltroDaAgenda } from '@/core/atividades'
@@ -153,6 +154,7 @@ function DialogoDeNovaAtividade({
   aoCriar: (criada: Criada) => void
 }) {
   const dialogo = useRef<HTMLDialogElement>(null)
+  const fundo = useCliqueNoFundo(dialogo, () => dialogo.current?.close())
   const abriu = useRef(false)
   const espera = useRef<ReturnType<typeof setTimeout> | null>(null)
   const pedidoDaBusca = useRef(0)
@@ -244,9 +246,7 @@ function DialogoDeNovaAtividade({
       }}
       aria-labelledby="titulo-nova-atividade"
       onClose={aoFechar}
-      onClick={(evento) => {
-        if (evento.target === dialogo.current) dialogo.current?.close()
-      }}
+      {...fundo}
       className="app-dialog m-auto w-[480px] max-w-[calc(100vw-32px)] rounded-[18px] border border-line bg-panel p-6 text-ink shadow-[0_40px_100px_rgba(19,25,34,0.132)]"
     >
       <form
@@ -308,7 +308,7 @@ function DialogoDeNovaAtividade({
                   </div>
                 )}
                 {negocios.length > 0 && (
-                  <label className="flex flex-1 flex-col gap-1">
+                  <div className="flex flex-1 flex-col gap-1">
                     <span className="text-[11.5px] font-medium text-muted">Negócio (opcional)</span>
                     <Dropdown
                       rotuloAcessivel="Negócio"
@@ -319,7 +319,7 @@ function DialogoDeNovaAtividade({
                         ...negocios.map((n) => ({ valor: n.cartaoId, rotulo: n.rotulo, detalhe: n.detalhe })),
                       ]}
                     />
-                  </label>
+                  </div>
                 )}
               </div>
             )}

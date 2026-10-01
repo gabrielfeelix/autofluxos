@@ -61,7 +61,7 @@ export function CamposDaSequencia({
             que observar.
           </p>
         ) : (
-          <label className="md:col-span-2">
+          <div className="md:col-span-2">
             <span className="mb-1 block text-[11px] font-semibold text-muted">
               Etiqueta que dispara
             </span>
@@ -70,7 +70,7 @@ export function CamposDaSequencia({
               rotuloAcessivel="Etiqueta que dispara a sequência"
               opcoes={etiquetas.map((etiqueta) => ({ valor: etiqueta.id, rotulo: etiqueta.nome }))}
             />
-          </label>
+          </div>
         ))}
 
       {porEtapa &&
@@ -79,7 +79,7 @@ export function CamposDaSequencia({
             Crie um quadro primeiro, em Quadros. Sem etapa este gatilho não tem o que observar.
           </p>
         ) : (
-          <label className="md:col-span-2">
+          <div className="md:col-span-2">
             <span className="mb-1 block text-[11px] font-semibold text-muted">
               Etapa que dispara
             </span>
@@ -93,7 +93,7 @@ export function CamposDaSequencia({
               cartão à mão na tela de Funil de vendas não inscreve ninguém, inscrever alguém por um
               arrasto de arrumação seria mandar mensagem por engano.
             </span>
-          </label>
+          </div>
         ))}
 
       {porSumico && (
@@ -125,7 +125,7 @@ export function CamposDaSequencia({
         </label>
       )}
 
-      <label className="md:col-span-2">
+      <div className="md:col-span-2">
         <span className="mb-1 block text-[11px] font-semibold text-muted">
           Etiqueta que tira da sequência (opcional)
         </span>
@@ -138,7 +138,7 @@ export function CamposDaSequencia({
             ...etiquetas.map((etiqueta) => ({ valor: etiqueta.id, rotulo: etiqueta.nome })),
           ]}
         />
-      </label>
+      </div>
     </div>
   )
 }

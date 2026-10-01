@@ -5,6 +5,7 @@ import type { EstadoSalvar } from '@/components/design/formulario-salvar'
 import { Avatar } from '@/components/inbox/avatar'
 import { telefoneLegivel } from '@/core/contatos/telefone'
 import { depoisDaTela } from '@/components/inbox/conversa-local'
+import { useCliqueNoFundo } from '@/components/design/clique-no-fundo'
 
 type Acao = (estado: EstadoSalvar, formData: FormData) => Promise<EstadoSalvar>
 
@@ -32,6 +33,10 @@ export function NomeDoContato({
 }) {
   const dialogo = useRef<HTMLDialogElement>(null)
   const [erro, setErro] = useState<string | null>(null)
+  const fundo = useCliqueNoFundo(dialogo, () => {
+    setErro(null)
+    dialogo.current?.close()
+  })
   /** O nome que esta aba acabou de salvar, por cima do que o servidor desenhou. */
   const [salvo, setSalvo] = useState<string | null>(null)
   const nomeReal = salvo ?? nomeRealDoServidor
@@ -118,12 +123,7 @@ export function NomeDoContato({
       */}
       <dialog
         ref={dialogo}
-        onClick={(evento) => {
-          if (evento.target === dialogo.current) {
-            setErro(null)
-            dialogo.current.close()
-          }
-        }}
+        {...fundo}
         className="app-dialog m-auto w-[380px] rounded-[18px] border border-line bg-panel p-[26px] text-ink shadow-[0_40px_100px_rgba(19,25,34,0.132)]"
       >
         <div className="flex items-center gap-3">
