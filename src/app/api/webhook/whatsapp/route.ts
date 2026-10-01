@@ -13,6 +13,7 @@ import { enviarAgendadas } from '@/server/enviar-agendadas'
 import { passadaDeTransmissoes, POR_CARONA } from '@/server/passada-de-transmissoes'
 import { passadaDeRetomadaDoBot } from '@/server/passada-de-retomada-do-bot'
 import { rodarTarefas } from '@/server/tarefas'
+import { guardarEventoDeLigacao } from '@/server/sonda-ligacao'
 
 /**
  * Onde o WhatsApp bate.
@@ -106,6 +107,15 @@ export async function POST(req: Request) {
 
   after(async () => {
     try {
+      /*
+       * Ligação primeiro: a Meta dá de 30 a 60 segundos para atender, e cada
+       * segundo gasto antes daqui sai dessa janela. Hoje só a sonda da fase 0
+       * lê isto, ver `sonda-ligacao.ts`.
+       */
+      await guardarEventoDeLigacao(payload).catch((erro) =>
+        console.error('[webhook] a sonda de ligação falhou', erro),
+      )
+
       await receberMensagem(payload)
 
       /*

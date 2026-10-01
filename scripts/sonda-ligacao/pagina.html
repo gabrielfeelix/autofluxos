@@ -1,0 +1,199 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sonda de ligação</title>
+<style>
+  body { font: 15px/1.5 system-ui, sans-serif; margin: 0; padding: 24px; background: #f6f6f4; color: #1d1d1b; }
+  main { max-width: 760px; margin: 0 auto; }
+  h1 { font-size: 20px; margin: 0 0 4px; }
+  p { margin: 0 0 16px; color: #555; }
+  .linha { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 12px; }
+  button, input { font: inherit; padding: 8px 14px; border-radius: 8px; border: 1px solid #ccc; background: #fff; }
+  button.primario { background: #1d6b4f; color: #fff; border-color: #1d6b4f; }
+  button:disabled { opacity: .5; }
+  #estado { font-weight: 600; margin: 12px 0; }
+  #log { background: #fff; border: 1px solid #ddd; border-radius: 8px; padding: 12px; height: 420px; overflow: auto;
+         font: 12px/1.45 ui-monospace, monospace; white-space: pre-wrap; }
+</style>
+</head>
+<body>
+<main>
+  <h1>Sonda de ligação pelo WhatsApp</h1>
+  <p>Fase 0: o navegador responde direto à Meta, sem servidor de mídia.</p>
+
+  <div class="linha">
+    <button id="microfone" class="primario">1. Liberar microfone</button>
+    <label><input type="checkbox" id="automatico" checked> atender sozinho</label>
+  </div>
+  <div class="linha">
+    <button id="atender" disabled>Atender</button>
+    <button id="encerrar" disabled>Encerrar</button>
+  </div>
+  <div class="linha">
+    <input id="destino" placeholder="Exemplo: 5544999990000">
+    <button id="ligar" disabled>Ligar (empresa liga)</button>
+  </div>
+
+  <div id="estado">Parado.</div>
+  <audio id="audio" autoplay></audio>
+  <div id="log"></div>
+</main>
+
+<script>
+const $ = (id) => document.getElementById(id)
+const ICE = [{ urls: 'stun:stun.l.google.com:19302' }]
+let microfone = null
+let conexao = null
+let chamada = null
+let ofertaPendente = null
+let desde = new Date().toISOString()
+
+function log(...partes) {
+  const linha = `${new Date().toLocaleTimeString()}  ${partes.map((p) => typeof p === 'string' ? p : JSON.stringify(p)).join(' ')}`
+  $('log').textContent += linha + '\n'
+  $('log').scrollTop = $('log').scrollHeight
+  console.log(linha)
+}
+const estado = (texto) => { $('estado').textContent = texto; log('ESTADO', texto) }
+
+async function meta(corpo) {
+  const r = await fetch('/chamada', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(corpo) })
+  const resultado = await r.json()
+  log(`Meta ${corpo.action}`, resultado)
+  return resultado
+}
+
+function novaConexao() {
+  const pc = new RTCPeerConnection({ iceServers: ICE })
+  microfone.getTracks().forEach((t) => pc.addTrack(t, microfone))
+  pc.ontrack = (e) => { $('audio').srcObject = e.streams[0] ?? new MediaStream([e.track]); log('trilha remota chegou', e.track.kind) }
+  pc.oniceconnectionstatechange = () => log('ICE', pc.iceConnectionState)
+  pc.onconnectionstatechange = () => {
+    log('conexão', pc.connectionState)
+    if (pc.connectionState === 'connected') estado('ÁUDIO CONECTADO. Fale e escute.')
+  }
+  return pc
+}
+
+function esperarCandidatos(pc) {
+  if (pc.iceGatheringState === 'complete') return Promise.resolve()
+  return new Promise((ok) => {
+    const fim = () => { pc.removeEventListener('icegatheringstatechange', ver); ok() }
+    const ver = () => pc.iceGatheringState === 'complete' && fim()
+    pc.addEventListener('icegatheringstatechange', ver)
+    setTimeout(fim, 3000)
+  })
+}
+
+async function atender() {
+  if (!ofertaPendente) return
+  const { call_id, sdp } = ofertaPendente
+  ofertaPendente = null
+  $('atender').disabled = true
+  chamada = call_id
+  conexao = novaConexao()
+  log('oferta da Meta:\n' + sdp)
+  await conexao.setRemoteDescription({ type: 'offer', sdp })
+  await conexao.setLocalDescription(await conexao.createAnswer())
+  await esperarCandidatos(conexao)
+  const resposta = conexao.localDescription.sdp
+  log('resposta do navegador:\n' + resposta)
+  const sessao = { sdp_type: 'answer', sdp: resposta }
+  const pre = await meta({ call_id, action: 'pre_accept', session: sessao })
+  if (pre.status !== 200) return estado('pre_accept RECUSADO pela Meta. Ver log.')
+  const ok = await meta({ call_id, action: 'accept', session: sessao })
+  if (ok.status !== 200) return estado('accept RECUSADO pela Meta. Ver log.')
+  estado('Meta aceitou a resposta. Esperando o áudio conectar...')
+  $('encerrar').disabled = false
+  vigiarAudio()
+}
+
+async function ligar() {
+  const to = $('destino').value.replace(/\D/g, '')
+  if (!to) return
+  conexao = novaConexao()
+  await conexao.setLocalDescription(await conexao.createOffer())
+  await esperarCandidatos(conexao)
+  const oferta = conexao.localDescription.sdp
+  log('oferta do navegador:\n' + oferta)
+  const r = await meta({ to, action: 'connect', session: { sdp_type: 'offer', sdp: oferta } })
+  chamada = r.corpo?.calls?.[0]?.id ?? null
+  if (!chamada) return estado('connect RECUSADO pela Meta. Ver log.')
+  estado('Chamando. Esperando a resposta SDP no webhook...')
+  $('encerrar').disabled = false
+}
+
+async function encerrar() {
+  if (chamada) await meta({ call_id: chamada, action: 'terminate' })
+  conexao?.close()
+  conexao = null
+  chamada = null
+  $('encerrar').disabled = true
+  estado('Encerrada.')
+}
+
+function vigiarAudio() {
+  const pc = conexao
+  const timer = setInterval(async () => {
+    if (!pc || pc.connectionState === 'closed') return clearInterval(timer)
+    const stats = await pc.getStats()
+    stats.forEach((s) => {
+      if (s.type === 'inbound-rtp' && s.kind === 'audio') log('áudio recebido', { bytes: s.bytesReceived, pacotes: s.packetsReceived, perdidos: s.packetsLost })
+      if (s.type === 'candidate-pair' && s.nominated && s.state === 'succeeded') log('par ICE', s.localCandidateId, '->', s.remoteCandidateId)
+    })
+  }, 3000)
+}
+
+async function tratar(evento) {
+  const c = evento.contexto ?? {}
+  log('webhook', evento.detalhe, { call_id: c.call_id, direction: c.direction, status: c.status, sdp_type: c.sdp_type, duration: c.duration })
+  if (c.event === 'connect' && c.sdp_type === 'offer') {
+    ofertaPendente = { call_id: c.call_id, sdp: c.sdp }
+    estado(`TOCANDO: ${c.from ?? 'cliente'}`)
+    $('atender').disabled = false
+    if ($('automatico').checked) await atender()
+  } else if (c.event === 'connect' && c.sdp_type === 'answer' && conexao && c.call_id === chamada) {
+    log('resposta da Meta:\n' + c.sdp)
+    await conexao.setRemoteDescription({ type: 'answer', sdp: c.sdp })
+    estado('Resposta da Meta aplicada. Esperando o áudio conectar...')
+    vigiarAudio()
+  } else if (c.event === 'terminate') {
+    conexao?.close()
+    conexao = null
+    chamada = null
+    $('encerrar').disabled = true
+    estado(`Terminou: ${c.status ?? ''} ${c.duration ?? ''}s`)
+  }
+}
+
+async function buscar() {
+  try {
+    const r = await fetch('/eventos?desde=' + encodeURIComponent(desde))
+    const lista = await r.json()
+    if (!Array.isArray(lista)) return log('erro ao ler eventos', lista)
+    for (const evento of lista) {
+      desde = evento.criado_em
+      await tratar(evento)
+    }
+  } catch (erro) {
+    log('erro ao ler eventos', String(erro))
+  } finally {
+    setTimeout(buscar, 1000)
+  }
+}
+
+$('microfone').onclick = async () => {
+  microfone = await navigator.mediaDevices.getUserMedia({ audio: true })
+  $('microfone').disabled = true
+  $('ligar').disabled = false
+  estado('Pronto. Ligue pelo WhatsApp para o número de teste.')
+  buscar()
+}
+$('atender').onclick = atender
+$('encerrar').onclick = encerrar
+$('ligar').onclick = ligar
+</script>
+</body>
+</html>
