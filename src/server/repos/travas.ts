@@ -24,8 +24,20 @@ import { db } from '../db'
  */
 const VALIDADE_SEGUNDOS = 75
 
-/** Quanto tempo alguém espera pela vez antes de desistir. */
+/** Quanto tempo alguém espera pela vez antes de desistir, por padrão. */
 const ESPERA_MAXIMA_MS = 20_000
+
+/**
+ * A espera de uma **mensagem que chegou**, mais longa que a validade da trava.
+ *
+ * Com 20 s, uma trava legítima era lida como travada: em 01/out/2026 a Bụriti
+ * Prints (PCYES) escreveu no menu, a triagem com IA levou 28 s, e o toque em
+ * "Suporte técnico" que veio no meio desistiu aos 20 s e virou "conversa
+ * presa" para a equipe, sem nunca chegar ao fluxo de Suporte. Esperando mais
+ * que a validade, quem desiste é só quem encontrou uma trava que nem vencendo
+ * soltou, que é o caso de coisa realmente presa.
+ */
+export const ESPERA_DA_MENSAGEM_MS = (VALIDADE_SEGUNDOS + 5) * 1_000
 
 /** Entre uma tentativa e outra. Sobe até um teto, ver `esperar`. */
 const PAUSA_INICIAL_MS = 120
@@ -45,8 +57,11 @@ export type Destravar = () => Promise<void>
  * Quem chama **precisa** soltar num `finally`. Não soltar não é catastrófico
  * (a trava vence sozinha), mas deixa o contato mudo pelo resto da validade.
  */
-export async function travarContato(contatoId: string): Promise<Destravar | null> {
-  const limite = Date.now() + ESPERA_MAXIMA_MS
+export async function travarContato(
+  contatoId: string,
+  esperaMs: number = ESPERA_MAXIMA_MS,
+): Promise<Destravar | null> {
+  const limite = Date.now() + esperaMs
   let pausa = PAUSA_INICIAL_MS
 
   for (;;) {

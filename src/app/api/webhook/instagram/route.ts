@@ -35,7 +35,7 @@ import { receberDoInstagram } from '@/server/receber-do-instagram'
  */
 
 /** Mesmo orçamento do webhook do WhatsApp, e pelo mesmo motivo. */
-export const maxDuration = 60
+export const maxDuration = 300
 
 export async function GET(req: Request) {
   const parametros = new URL(req.url).searchParams

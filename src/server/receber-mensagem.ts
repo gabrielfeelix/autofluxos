@@ -79,7 +79,7 @@ import {
   type SessaoSalva,
   revisaoDoControle,
 } from './repos/conversas'
-import { travarContato } from './repos/travas'
+import { ESPERA_DA_MENSAGEM_MS, travarContato } from './repos/travas'
 import { JANELA_DA_RAJADA_MS, textoDaRajada } from '@/core/rajada'
 import { inscreverNoEvento, sairPelaEtiqueta, sairPorEvento } from './sequencias'
 import { marcarContatos } from './repos/etiquetas'
@@ -581,7 +581,7 @@ export async function tratarUma(
 
   // Daqui para baixo a conversa avança, e duas mensagens da mesma pessoa não
   // podem avançar juntas, ver `repos/travas.ts` e a migration 0007.
-  const destravar = await travarContato(contato.id)
+  const destravar = await travarContato(contato.id, ESPERA_DA_MENSAGEM_MS)
   if (!destravar) {
     await desistirDaVez(canalSalvo, contato)
     return
@@ -707,7 +707,7 @@ async function atribuirOrigem(contato: Contato, referral?: Referral): Promise<Co
 /**
  * Não conseguiu a vez dentro do prazo.
  *
- * Vinte segundos esperando significa que alguma coisa está presa, não que há
+ * Esperar mais que a validade da trava (`ESPERA_DA_MENSAGEM_MS`) significa que alguma coisa está presa, não que há
  * fila. A mensagem já foi deduplicada, então a pessoa não pode simplesmente
  * ficar sem resposta e sem aparecer em lugar nenhum: vira handoff, que é o que
  * a tela de leads mostra. Sem sessão para pendurar o handoff, resta o log.
