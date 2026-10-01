@@ -103,8 +103,7 @@ Banco e loja (não passam pelo git):
 5. **MGM**: o histórico importado antes de `ca6f064` não tem as mensagens que a
    MGM mandou, e não volta sem reconectar o número, o que o Gabriel recusou.
    Ver também a memória de fixar "Fluxo - Atendimento" no canal do Daniel.
-6. Chave grátis do **Cerebras** (`CEREBRAS_API_KEY`, o Gabriel cria).
-7. Menor: o seletor de cupom não foi visto na tela da PCYES; a lista tem ~45
+6. Menor: o seletor de cupom não foi visto na tela da PCYES; a lista tem ~45
    cupons de parceiro.
 
 ## Pegadinhas novas
