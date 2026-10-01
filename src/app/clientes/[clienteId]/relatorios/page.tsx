@@ -400,7 +400,7 @@ export default async function Pagina({
     {
       id: 'mensagens',
       titulo: 'Mensagens enviadas',
-      largura: 'terco',
+      largura: 'metade',
       conteudo: (
         <CaixaDoBloco
           titulo="Mensagens enviadas"
@@ -446,7 +446,7 @@ export default async function Pagina({
           {
             id: 'cupons',
             titulo: 'Cupons mandados',
-            largura: 'terco',
+            largura: 'metade',
             conteudo: (
               <ListaEmBarras
                 titulo="Cupons mandados"

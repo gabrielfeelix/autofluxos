@@ -96,10 +96,14 @@ Banco e loja (não passam pelo git):
    prova: `replaceState` da fila, prefetch, cookie de sessão, actions que
    revalidam. A recarga ao trocar de conversa vinha dos deploys. Se o Gabriel
    relatar de novo, pegar o horário e cruzar com os deploys.
-3. **Mensagens em rajada** ("Olá", "Tudo bem", "?" viram três respostas): juntar
-   o que chega em ~3 s numa rodada.
-4. **Métricas** (a Meta cobra cada mensagem de serviço desde 1/out): resolução
-   sem humano, mensagens por conversa, uso do CHAT10.
+3. ~~Mensagens em rajada~~: feito em `ef5fd80` (`core/rajada.ts`). Texto
+   espera 3 s; se outro texto da pessoa chega, só o último responde e a IA lê
+   a rajada inteira. Falta ver acontecer numa conversa real.
+4. ~~Métricas~~: feito em `8fe56f8`. Relatórios ganharam "Mensagens enviadas"
+   (só API: robô + equipe, sem o eco do celular nem o site) e "Cupons
+   mandados" (cupom ativo do Magento citado numa saída do período, com pedidos
+   e receita da loja, sem cancelado). "Resolvidas pela automação" já existia.
+   Não vi os dois blocos com dado: a conta revisora não tem loja nem envio.
 5. **MGM**: o histórico importado antes de `ca6f064` não tem as mensagens que a
    MGM mandou, e não volta sem reconectar o número, o que o Gabriel recusou.
    Ver também a memória de fixar "Fluxo - Atendimento" no canal do Daniel.
