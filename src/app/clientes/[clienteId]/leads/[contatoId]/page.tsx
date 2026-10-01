@@ -776,7 +776,21 @@ async function Historico({
             {/* A coluna é o que dá lugar à reação embaixo da bolha, ver o Inbox. */}
             <div className={`flex flex-col gap-0 ${nossa ? 'items-end' : 'items-start'}`}>
             {/* Mesma fonte e mesmo corpo do Inbox, ver o comentário de lá. */}
-            <p className={`max-w-[78%] px-3 py-2 font-texto text-[14.5px] leading-[1.45] whitespace-pre-wrap ${nossa ? 'rounded-[13px_13px_4px_13px] border border-primary/[0.22] bg-primary/[0.13]' : mensagem.toque ? 'bolha-toque rounded-[13px_13px_13px_4px]' : 'rounded-[13px_13px_13px_4px] border border-line bg-surface'}`}>
+            <RodapeDaMensagem
+                key={assinaturaDasReacoes(mensagem.reacoes)}
+                clienteId={clienteId}
+                contatoId={contatoId}
+                waMessageId={mensagem.waMessageId ?? null}
+                podeReagir={podeReagir(mensagem.ts)}
+                reacoes={mensagem.reacoes ?? []}
+                nome={nomeDoLead}
+                texto={mensagem.texto}
+                deQuem={nossa ? 'ao atendimento' : `a ${nomeDoLead ?? 'cliente'}`}
+                nossa={nossa}
+                mensagemId={mensagem.id}
+                favorita={favoritas.has(mensagem.id)}
+            >
+            <p className={`relative max-w-full px-3 py-2 font-texto text-[14.5px] leading-[1.45] whitespace-pre-wrap ${nossa ? 'rounded-[13px_13px_4px_13px] border border-primary/[0.22] bg-primary/[0.13]' : mensagem.toque ? 'bolha-toque rounded-[13px_13px_13px_4px]' : 'rounded-[13px_13px_13px_4px] border border-line bg-surface'}`}>
               {mensagem.cita && <CitacaoNaBolha cita={mensagem.cita} nome={nomeDoLead} />}
               {mensagem.anexo && <AnexoNaConversa anexo={mensagem.anexo} />}
               {/*
@@ -816,28 +830,10 @@ async function Historico({
                 <span className="ml-2 text-[9.5px] text-aviso">envio não confirmado</span>
               )}
             </p>
+            </RodapeDaMensagem>
             {/* Os botões que o bot mandou e o que a pessoa tocou, ver o Inbox. */}
             {mensagem.menu && (
               <MenuNaConversa menu={mensagem.menu} respondido={indice < conversa.mensagens.length - 1} />
-            )}
-            {/* Em toda bolha, e não só nas com id da Meta: a estrela guarda pelo
-                id interno, que a saída ainda não confirmada também tem. */}
-            {(
-              /* A `key` devolve a palavra final ao servidor, ver o Inbox. */
-              <RodapeDaMensagem
-                key={assinaturaDasReacoes(mensagem.reacoes)}
-                clienteId={clienteId}
-                contatoId={contatoId}
-                waMessageId={mensagem.waMessageId ?? null}
-                podeReagir={podeReagir(mensagem.ts)}
-                reacoes={mensagem.reacoes ?? []}
-                nome={nomeDoLead}
-                texto={mensagem.texto}
-                deQuem={nossa ? 'ao atendimento' : `a ${nomeDoLead ?? 'cliente'}`}
-                nossa={nossa}
-                mensagemId={mensagem.id}
-                favorita={favoritas.has(mensagem.id)}
-              />
             )}
             </div>
           </Fragment>

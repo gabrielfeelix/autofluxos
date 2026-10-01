@@ -1,13 +1,13 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { useAcaoOtimista } from '@/components/design/acao-otimista'
 import { useCitacao } from '@/components/lead/citacao'
 import { acaoReagir } from '@/server/acoes-reacao'
 import { acaoFavoritarMensagem } from '@/server/acoes-marcadores'
 
 /**
- * O que fica pendurado embaixo da bolha: as reações e os três botões.
+ * A bolha com o que mora nela: a seta do menu no canto e as reações embaixo.
  *
  * ---------------------------------------------------------------------------
  * Por que as duas coisas moram no mesmo componente
@@ -52,8 +52,8 @@ type ReacaoNaBolha = {
 /** Os seis do WhatsApp, na ordem dele. */
 const EMOJIS = ['👍', '❤️', '😂', '😮', '😢', '🙏'] as const
 
-const BOTAO =
-  'rounded-full border border-line bg-surface px-1.5 py-0.5 text-[11px] leading-none text-muted transition hover:border-primary/40 hover:text-primary'
+const ITEM =
+  'flex w-full items-center gap-3 px-3.5 py-2 text-left text-[13.5px] text-ink transition hover:bg-surface disabled:opacity-50'
 
 export function RodapeDaMensagem({
   clienteId,
@@ -67,6 +67,7 @@ export function RodapeDaMensagem({
   nossa,
   mensagemId,
   favorita,
+  children,
 }: {
   clienteId: string
   contatoId: string
@@ -90,8 +91,13 @@ export function RodapeDaMensagem({
   mensagemId: string
   /** Se **eu** já guardei esta mensagem. */
   favorita: boolean
+  /** A bolha. Ela vem com `max-w-full`: a largura máxima é deste invólucro. */
+  children: ReactNode
 }) {
-  const [aberto, setAberto] = useState(false)
+  const [menuAberto, setMenuAberto] = useState(false)
+  const [emojisAbertos, setEmojisAbertos] = useState(false)
+  const [copiado, setCopiado] = useState(false)
+  const caixa = useRef<HTMLDivElement>(null)
   /** `null` fora do provedor, a tela que não monta citação ainda reage. */
   const citacao = useCitacao()
 
@@ -105,15 +111,9 @@ export function RodapeDaMensagem({
   const { valor: minhaReacao, erro, agir, limparErro } = useAcaoOtimista<string | null>(nossaDoServidor)
 
   /*
-   * A estrela tem otimismo próprio, e não divide o de `agir`.
-   *
-   * Um estado só para as duas faria o erro de uma aparecer do lado da outra, e
-   * desfazer a reação ao falhar o favorito. São gestos independentes: dá para
-   * reagir e guardar a mesma mensagem, na ordem que for.
-   *
-   * Guardar é otimista pela razão oposta à de enviar mensagem: nada sai do
-   * sistema. Se o servidor recusar, a estrela volta e ninguém do outro lado
-   * chegou a ver nada.
+   * A estrela tem otimismo próprio, e não divide o de `agir`: são gestos
+   * independentes, e um estado só faria o erro de um aparecer no outro.
+   * Guardar é otimista porque nada sai do sistema.
    */
   const {
     valor: guardada,
@@ -121,14 +121,36 @@ export function RodapeDaMensagem({
     agir: agirNaEstrela,
   } = useAcaoOtimista<boolean>(favorita)
 
+  // Clique fora ou Esc fecha o que estiver aberto, como no WhatsApp.
+  useEffect(() => {
+    if (!menuAberto && !emojisAbertos) return
+    const fora = (evento: MouseEvent) => {
+      if (!caixa.current?.contains(evento.target as Node)) {
+        setMenuAberto(false)
+        setEmojisAbertos(false)
+      }
+    }
+    const esc = (evento: KeyboardEvent) => {
+      if (evento.key === 'Escape') {
+        setMenuAberto(false)
+        setEmojisAbertos(false)
+      }
+    }
+    document.addEventListener('mousedown', fora)
+    document.addEventListener('keydown', esc)
+    return () => {
+      document.removeEventListener('mousedown', fora)
+      document.removeEventListener('keydown', esc)
+    }
+  }, [menuAberto, emojisAbertos])
+
   function reagir(emoji: string) {
     if (!waMessageId) return
-    setAberto(false)
+    setEmojisAbertos(false)
 
     /*
      * Clicar no emoji que já está lá **remove**, string vazia é como a Meta
-     * desfaz uma reação. Sem isto, reagir de novo com o mesmo emoji seria uma
-     * ação sem efeito visível, e não haveria caminho nenhum para tirar.
+     * desfaz uma reação. Sem isto, não haveria caminho nenhum para tirar.
      */
     const escolhido = emoji === minhaReacao ? '' : emoji
 
@@ -137,117 +159,211 @@ export function RodapeDaMensagem({
     )
   }
 
+  function copiar() {
+    setMenuAberto(false)
+    if (!texto) return
+    navigator.clipboard
+      .writeText(texto)
+      .then(() => {
+        setCopiado(true)
+        setTimeout(() => setCopiado(false), 1500)
+      })
+      .catch(() => {})
+  }
+
   const chips = [
     ...daOutraPessoa.map((r) => ({ chave: r.id, emoji: r.emoji, dono: nome ?? 'cliente' })),
     ...(minhaReacao ? [{ chave: 'nossa', emoji: minhaReacao, dono: 'atendimento' }] : []),
   ]
+  const lado = nossa ? 'right-0' : 'left-0'
 
   return (
-    <span className={`-mt-1 flex flex-wrap items-center gap-1 ${nossa ? 'flex-row-reverse' : ''}`}>
+    <div
+      ref={caixa}
+      className={`group relative flex min-w-0 max-w-[78%] flex-col ${nossa ? 'items-end' : 'items-start'}`}
+    >
+      {children}
+
+      {/*
+        A seta no canto da bolha, como no WhatsApp: some até o mouse passar,
+        e no celular, que não tem hover, fica sempre. O menu abre embaixo dela.
+        Antes eram três botões pequenos embaixo de toda bolha, sempre à vista.
+      */}
+      <button
+        type="button"
+        onClick={() => {
+          limparErro()
+          setEmojisAbertos(false)
+          setMenuAberto((a) => !a)
+        }}
+        title="Mais opções"
+        aria-label="Mais opções desta mensagem"
+        aria-haspopup="menu"
+        aria-expanded={menuAberto}
+        className={`absolute top-1 right-1 grid h-7 w-7 place-items-center rounded-full bg-panel/85 text-muted shadow-[0_1px_4px_rgba(19,25,34,0.12)] backdrop-blur-sm transition hover:text-ink focus-visible:opacity-100 [@media(hover:hover)]:opacity-0 [@media(hover:hover)]:group-hover:opacity-100 ${menuAberto ? '!opacity-100' : ''}`}
+      >
+        <IconeSeta />
+      </button>
+
+      {menuAberto && (
+        <div
+          role="menu"
+          className={`absolute top-8 ${lado} z-30 min-w-[196px] overflow-hidden rounded-[12px] border border-line bg-panel py-1.5 shadow-[0_8px_28px_rgba(19,25,34,0.16)]`}
+        >
+          {citacao && waMessageId && (
+            <button
+              type="button"
+              role="menuitem"
+              className={ITEM}
+              onClick={() => {
+                setMenuAberto(false)
+                citacao.citar({ waMessageId, texto, deQuem })
+              }}
+            >
+              <IconeResponder /> Responder
+            </button>
+          )}
+          {texto && (
+            <button type="button" role="menuitem" className={ITEM} onClick={copiar}>
+              <IconeCopiar /> Copiar
+            </button>
+          )}
+          {podeReagir && waMessageId && (
+            <button
+              type="button"
+              role="menuitem"
+              className={ITEM}
+              onClick={() => {
+                setMenuAberto(false)
+                setEmojisAbertos(true)
+              }}
+            >
+              <IconeReagir /> Reagir
+            </button>
+          )}
+          {/*
+            A estrela não depende do `waMessageId`: guarda pelo id interno, que
+            existe até na saída que a Meta ainda não confirmou.
+          */}
+          <button
+            type="button"
+            role="menuitem"
+            aria-pressed={guardada}
+            className={ITEM}
+            onClick={() => {
+              setMenuAberto(false)
+              agirNaEstrela(!guardada, () => acaoFavoritarMensagem(clienteId, mensagemId, !guardada))
+            }}
+          >
+            <IconeEstrela cheia={guardada} /> {guardada ? 'Desfavoritar' : 'Favoritar'}
+          </button>
+        </div>
+      )}
+
+      {emojisAbertos && (
+        <div
+          role="menu"
+          aria-label="Reagir"
+          className={`absolute bottom-full ${lado} z-30 mb-1.5 flex gap-1 rounded-full border border-line bg-panel px-2 py-1.5 shadow-[0_8px_28px_rgba(19,25,34,0.16)]`}
+        >
+          {EMOJIS.map((emoji) => (
+            <button
+              key={emoji}
+              type="button"
+              role="menuitem"
+              onClick={() => reagir(emoji)}
+              title={emoji === minhaReacao ? 'Tirar a reação' : `Reagir com ${emoji}`}
+              className={`grid h-9 w-9 place-items-center rounded-full text-[22px] leading-none transition hover:scale-125 ${emoji === minhaReacao ? 'bg-primary/20' : ''}`}
+            >
+              {emoji}
+            </button>
+          ))}
+        </div>
+      )}
+
       {/*
         As reações ficam **fora** da bolha, encostadas na borda de baixo, como
-        no WhatsApp: a reação comenta a mensagem, não faz parte dela. Dentro,
-        viraria parte do texto, e a diferença importa quando a mensagem é
-        longa.
+        no WhatsApp: a reação comenta a mensagem, não faz parte dela.
       */}
-      {chips.map((chip) => (
-        <span
-          key={chip.chave}
-          title={`${chip.dono} reagiu`}
-          className="rounded-full border border-line bg-panel px-1.5 py-0.5 text-[12px] leading-none shadow-[0_1px_2px_rgba(19,25,34,0.055)]"
-        >
-          {chip.emoji}
-        </span>
-      ))}
-
-      {waMessageId && (
-        /*
-         * A barra fica **sempre visível**, e não no hover.
-         *
-         * Havia aqui um comentário descrevendo uma barra que aparecia ao
-         * passar o mouse, com `opacity` e `focus-within`, e esse CSS nunca
-         * existiu. Ficar visível é o certo de qualquer jeito: quem usa no
-         * celular não tem hover, e quem navega por teclado descobriria o botão
-         * só depois de chegar nele.
-         */
-        <span className={`relative flex items-center gap-1 ${nossa ? 'flex-row-reverse' : ''}`}>
-          {citacao && (
-            <button
-              type="button"
-              onClick={() => citacao.citar({ waMessageId, texto, deQuem })}
-              title="Responder citando"
-              aria-label="Responder citando esta mensagem"
-              className={BOTAO}
-            >
-              ↩
-            </button>
-          )}
-
-          {podeReagir && (
-            <button
-              type="button"
-              onClick={() => {
-                limparErro()
-                setAberto((a) => !a)
-              }}
-              title="Reagir"
-              aria-label="Reagir a esta mensagem"
-              aria-expanded={aberto}
-              className={BOTAO}
-            >
-              ☺
-            </button>
-          )}
-
-          {aberto && (
+      {(chips.length > 0 || guardada || copiado || erro || erroDaEstrela) && (
+        <span className={`-mt-1.5 flex flex-wrap items-center gap-1 px-2 ${nossa ? 'flex-row-reverse' : ''}`}>
+          {chips.map((chip) => (
             <span
-              role="menu"
-              className={`absolute bottom-full z-20 mb-1 flex gap-0.5 rounded-full border border-line bg-panel px-1.5 py-1 shadow-[0_4px_16px_rgba(19,25,34,0.099)] ${nossa ? 'right-0' : 'left-0'}`}
+              key={chip.chave}
+              title={`${chip.dono} reagiu`}
+              className="rounded-full border border-line bg-panel px-1.5 py-0.5 text-[15px] leading-none shadow-[0_1px_2px_rgba(19,25,34,0.055)]"
             >
-              {EMOJIS.map((emoji) => (
-                <button
-                  key={emoji}
-                  type="button"
-                  role="menuitem"
-                  onClick={() => reagir(emoji)}
-                  title={emoji === minhaReacao ? 'Tirar a reação' : `Reagir com ${emoji}`}
-                  className={`rounded-full px-1 py-0.5 text-[14px] leading-none transition hover:scale-125 ${emoji === minhaReacao ? 'bg-primary/25' : ''}`}
-                >
-                  {emoji}
-                </button>
-              ))}
+              {chip.emoji}
+            </span>
+          ))}
+          {guardada && (
+            <span title="Favoritada" className="text-[13px] leading-none text-primary">
+              ★
+            </span>
+          )}
+          {copiado && <span className="text-[11px] text-muted">Copiado</span>}
+          {(erro || erroDaEstrela) && (
+            <span className="max-w-[220px] text-[11px] leading-4 text-perigo" role="alert">
+              {erro ?? erroDaEstrela}
             </span>
           )}
         </span>
       )}
+    </div>
+  )
+}
 
-      {/*
-        A estrela mora **fora** do bloco guardado por `waMessageId`.
+function Svg({ children }: { children: ReactNode }) {
+  return (
+    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" className="shrink-0 text-muted">
+      {children}
+    </svg>
+  )
+}
 
-        Citar e reagir precisam do id da Meta; guardar não. Deixá-la lá dentro
-        esconderia o botão exatamente na saída recém-escrita, que é uma das
-        mensagens que mais se quer guardar.
-      */}
-      <button
-        type="button"
-        onClick={() =>
-          agirNaEstrela(!guardada, () =>
-            acaoFavoritarMensagem(clienteId, mensagemId, !guardada),
-          )
-        }
-        title={guardada ? 'Tirar das guardadas' : 'Guardar esta mensagem'}
-        aria-label={guardada ? 'Tirar esta mensagem das guardadas' : 'Guardar esta mensagem'}
-        aria-pressed={guardada}
-        className={`${BOTAO} ${guardada ? 'border-primary/40 text-primary' : ''}`}
-      >
-        {guardada ? '★' : '☆'}
-      </button>
+function IconeSeta() {
+  return (
+    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d="m6 9 6 6 6-6" />
+    </svg>
+  )
+}
 
-      {(erro || erroDaEstrela) && (
-        <span className="max-w-[220px] text-[11px] leading-4 text-perigo" role="alert">
-          {erro ?? erroDaEstrela}
-        </span>
-      )}
-    </span>
+function IconeResponder() {
+  return (
+    <Svg>
+      <path d="M9 14 4 9l5-5" />
+      <path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11" />
+    </Svg>
+  )
+}
+
+function IconeCopiar() {
+  return (
+    <Svg>
+      <rect x="8" y="8" width="13" height="13" rx="2" />
+      <path d="M16 8V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h3" />
+    </Svg>
+  )
+}
+
+function IconeReagir() {
+  return (
+    <Svg>
+      <circle cx="12" cy="12" r="9" />
+      <path d="M8.5 14.5a4.5 4.5 0 0 0 7 0" />
+      <path d="M9 9.5h.01M15 9.5h.01" />
+    </Svg>
+  )
+}
+
+function IconeEstrela({ cheia }: { cheia: boolean }) {
+  return (
+    <Svg>
+      <path
+        d="m12 3 2.8 5.7 6.2.9-4.5 4.4 1 6.2L12 17.3 6.5 20.2l1-6.2L3 9.6l6.2-.9L12 3Z"
+        fill={cheia ? 'currentColor' : 'none'}
+      />
+    </Svg>
   )
 }

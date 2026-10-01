@@ -410,6 +410,20 @@ function ListaDeMensagens({
               peso**, 500 numa bolha azul com texto branco vira borrão em tela
               comum.
             */}
+            <RodapeDaMensagem
+                key={assinaturaDasReacoes(mensagem.reacoes)}
+                clienteId={clienteId}
+                contatoId={contatoId}
+                waMessageId={mensagem.waMessageId ?? null}
+                podeReagir={podeReagir(mensagem.ts)}
+                reacoes={mensagem.reacoes ?? []}
+                nome={nome}
+                texto={mensagem.texto}
+                deQuem={nossa ? 'ao atendimento' : `a ${nome ?? 'cliente'}`}
+                nossa={nossa}
+                mensagemId={mensagem.id}
+                favorita={favoritas.has(mensagem.id)}
+            >
             {mensagem.produtos?.length ? (
               <CardsDeProduto
                 produtos={mensagem.produtos}
@@ -420,7 +434,7 @@ function ListaDeMensagens({
                 naoConfirmado={nossa && !mensagem.entregue}
               />
             ) : (
-            <p title={mensagem.toque ? 'Tocou numa opção do menu' : undefined} className={`relative max-w-[78%] px-3.5 py-2 font-texto text-[14.5px] leading-[1.45] whitespace-pre-wrap [overflow-wrap:anywhere] ${
+            <p title={mensagem.toque ? 'Tocou numa opção do menu' : undefined} className={`relative max-w-full px-3.5 py-2 font-texto text-[14.5px] leading-[1.45] whitespace-pre-wrap [overflow-wrap:anywhere] ${
               nossa
                 ? 'bolha-nossa rounded-[15px_15px_4px_15px]'
                 : mensagem.toque
@@ -513,49 +527,9 @@ function ListaDeMensagens({
               )}
             </p>
             )}
+            </RodapeDaMensagem>
             {mensagem.menu && (
               <MenuNaConversa menu={mensagem.menu} respondido={indice < mensagens.length - 1} />
-            )}
-            {/*
-              O rodapé passou a existir **em toda bolha**.
-
-              Antes ele só nascia com id da Meta ou reação, porque só citar e
-              reagir moravam ali, e os dois precisam do id. A estrela não
-              precisa: ela guarda pelo id interno (`messages.id`), que existe em
-              toda mensagem gravada, inclusive na saída que a Meta ainda não
-              confirmou. Guardar o que se acabou de escrever é justamente um dos
-              casos de uso, e escondê-lo até a confirmação chegar seria esconder
-              o botão no único momento em que a pessoa está olhando para a
-              mensagem.
-
-              Os outros dois continuam guardados por `waMessageId` dentro do
-              componente, então nada aparece que não funcione.
-            */}
-            {(
-              /*
-               * A `key` é o que devolve a palavra final ao servidor.
-               *
-               * O rodapé guarda a nossa reação em estado para poder mostrá-la
-               * antes da resposta. Quando a leitura seguinte trouxer outra
-               * coisa, alguém reagiu do celular, a Meta recusou, a outra
-               * pessoa reagiu também , a chave muda, o componente remonta, e
-               * o otimismo pendurado ali morre junto. Sem isso, a tela ficaria
-               * com a aposta para sempre.
-               */
-              <RodapeDaMensagem
-                key={assinaturaDasReacoes(mensagem.reacoes)}
-                clienteId={clienteId}
-                contatoId={contatoId}
-                waMessageId={mensagem.waMessageId ?? null}
-                podeReagir={podeReagir(mensagem.ts)}
-                reacoes={mensagem.reacoes ?? []}
-                nome={nome}
-                texto={mensagem.texto}
-                deQuem={nossa ? 'ao atendimento' : `a ${nome ?? 'cliente'}`}
-                nossa={nossa}
-                mensagemId={mensagem.id}
-                favorita={favoritas.has(mensagem.id)}
-              />
             )}
           </div>
           </Fragment>
