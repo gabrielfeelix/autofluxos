@@ -26,7 +26,7 @@ export function juntarFraseAosCards(acoes: Acao[], saiComoCard: (p: ProdutoDaLoj
       acao.texto.length <= LIMITE_DA_FRASE_JUNTO_DOS_CARDS &&
       seguinte.produtos.every(saiComoCard)
     ) {
-      saida.push({ ...seguinte, texto: acao.texto })
+      saida.push({ ...seguinte, texto: semRepetirOsCards(acao.texto, seguinte.produtos) })
       i++
       continue
     }
@@ -102,4 +102,31 @@ export function juntarTextosSeguidos(acoes: Acao[]): Acao[] {
     aberto = acao.tipo === 'enviar_texto' ? saida.length - 1 : -1
   }
   return saida
+}
+
+/**
+ * Tira da frase as linhas que repetem o card: nome do produto, preço, link.
+ *
+ * A regra está no prompt, e o modelo às vezes não segue: o mousepad do Evandro
+ * (PCYES, 01/out/2026) saiu com nome, preço e link no texto e de novo no card
+ * logo abaixo. Linha que só repete o card some; frase que cita o produto no
+ * meio de uma explicação fica.
+ */
+export function semRepetirOsCards(texto: string, produtos: readonly ProdutoDaLoja[]): string {
+  const nomes = new Set(produtos.map((p) => normalizar(p.nome)))
+  const links = produtos.map((p) => p.link).filter(Boolean)
+  const linhas = texto.split('\n').filter((linha) => {
+    const limpa = normalizar(linha.replace(/[*_•-]/g, ''))
+    if (limpa === '') return true
+    if (nomes.has(limpa)) return false
+    if (/https?:\/\//.test(linha) && (links.some((l) => linha.includes(l)) || /^\s*https?:\/\/\S+\s*$/.test(linha))) return false
+    if (/^r\$\s?[\d.,]+(,|\s|$)/i.test(limpa) && /estoque|à vista|no pix|parcel|de r\$/i.test(limpa + ' ')) return false
+    if (/^r\$\s?[\d.,]+$/i.test(limpa)) return false
+    return true
+  })
+  return linhas.join('\n').replace(/\n{3,}/g, '\n\n').trim()
+}
+
+function normalizar(texto: string): string {
+  return texto.trim().toLowerCase().replace(/\s+/g, ' ')
 }

@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import type { Acao } from './engine/types'
 import type { ProdutoDaLoja } from './loja'
-import { juntarFraseAosCards, juntarTextosSeguidos, TETO_DA_BOLHA_JUNTADA } from './juntar-cards'
+import { juntarFraseAosCards, juntarTextosSeguidos, semRepetirOsCards, TETO_DA_BOLHA_JUNTADA } from './juntar-cards'
 
 const produto = (id: string, extra: Partial<ProdutoDaLoja> = {}): ProdutoDaLoja => ({
   produtoId: id,
@@ -68,5 +68,20 @@ describe('juntarTextosSeguidos', () => {
     expect(juntarTextosSeguidos([texto('a'), texto('b', 2000)])).toHaveLength(2)
     const longo = 'x'.repeat(TETO_DA_BOLHA_JUNTADA)
     expect(juntarTextosSeguidos([texto(longo), texto('b')])).toHaveLength(2)
+  })
+})
+
+describe('semRepetirOsCards', () => {
+  it('tira nome, preço e link que o card já mostra, e deixa a explicação', () => {
+    const produto = {
+      produtoId: '1',
+      nome: 'Mouse Pad Desk PCYES Mat Exclusive Bordo 800x400mm 2mm PMPEXDR',
+      preco: 69.9,
+      emEstoque: true,
+      link: 'https://www.pcyes.com.br/mouse-pad-desk',
+    }
+    const texto =
+      'O Mouse Pad Desk PCYES é excelente para dar mais espaço.\n\nMouse Pad Desk PCYES Mat Exclusive Bordo 800x400mm 2mm PMPEXDR\nR$ 69,90, em estoque\nhttps://www.pcyes.com.br/mouse-pad-desk'
+    expect(semRepetirOsCards(texto, [produto])).toBe('O Mouse Pad Desk PCYES é excelente para dar mais espaço.')
   })
 })

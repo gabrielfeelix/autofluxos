@@ -838,8 +838,14 @@ export async function registrarEntrada(dados: {
 }
 
 /**
- * A última mensagem de texto que a pessoa mandou, para a espera da rajada
- * (`core/rajada.ts`). Reação não entra: ela não faz a conversa andar.
+ * A última mensagem que a pessoa mandou, de texto ou toque em botão, para a
+ * espera da rajada (`core/rajada.ts`). Reação e arquivo não entram: não fazem
+ * a conversa andar como resposta.
+ *
+ * O toque entra desde 01/out/2026: o Evandro (PCYES) escreveu "ainda estou com
+ * o mesmo problema" e tocou "Quero comprar" num menu antigo. O texto esperava
+ * a janela, o toque não esperava, e os dois responderam ao mesmo tempo, cada
+ * um num fluxo. Com o toque contando, o texto cede a vez a ele.
  *
  * Erro vira `null`, e quem chama segue respondendo: na dúvida, responder duas
  * vezes é melhor que não responder.
@@ -850,7 +856,7 @@ export async function ultimaEntradaDeTexto(contatoId: string): Promise<string | 
     .select('id')
     .eq('contact_id', contatoId)
     .eq('direcao', 'entrada')
-    .eq('payload->>type', 'text')
+    .in('payload->>type', ['text', 'interactive', 'button'])
     .is('reagiu_a', null)
     .order('ts', { ascending: false })
     .limit(1)
