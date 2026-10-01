@@ -237,7 +237,7 @@ export const PACOTES: Record<Nicho, PacoteDoNicho> = {
     visaoDoCatalogo: 'lista',
     materiais: false,
     tituloDosModelos: 'Para lojas virtuais',
-    modelosDeFluxo: ['carrinho-abandonado', 'status-do-pedido', 'cobranca-amigavel'],
+    modelosDeFluxo: ['atendimento-loja', 'carrinho-abandonado', 'status-do-pedido', 'cobranca-amigavel'],
     modeloDeFunil: 'comercial',
     passosDoInicio: ['ficha'],
     ficha: {

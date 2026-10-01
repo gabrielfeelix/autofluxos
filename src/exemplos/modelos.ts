@@ -14,6 +14,7 @@ import { pesquisaNps } from './pesquisa-nps'
 import { qualificarSdr } from './qualificar-sdr'
 import { reagendamento } from './reagendamento'
 import { statusDoPedido } from './status-do-pedido'
+import { atendimentoLoja } from './atendimento-loja'
 import { triagem } from './triagem'
 import { vocesTem } from './voces-tem'
 
@@ -310,6 +311,15 @@ export const MODELOS: Modelo[] = [
     etiquetas: ['WhatsApp', 'Vendas', 'E-commerce'],
     sinonimos: ['carrinho', 'checkout', 'cupom', 'desconto', 'loja', 'recuperação', 'venda perdida'],
     grafo: carrinhoAbandonado,
+  },
+  {
+    id: 'atendimento-loja',
+    nome: 'Atendimento de loja virtual',
+    resumo:
+      'Menu que entende texto, vendedor com IA que mostra os produtos da loja, consulta de pedido e triagem de troca e garantia. Preço, Pix, cupom e prazo vêm da ficha da loja.',
+    etiquetas: ['WhatsApp', 'Atendimento', 'Vendas', 'E-commerce', 'Precisa de integração', 'Precisa de IA'],
+    sinonimos: ['loja', 'e-commerce', 'vender', 'menu', 'pedido', 'garantia', 'troca'],
+    grafo: atendimentoLoja,
   },
   {
     id: 'status-do-pedido',
