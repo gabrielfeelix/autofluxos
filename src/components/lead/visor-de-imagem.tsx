@@ -34,11 +34,14 @@ export function ImagemDaConversa({
   url,
   nome,
   produto = false,
+  solta = false,
 }: {
   url: string
   nome: string
   /** Foto de catálogo: fundo branco e inteira, sem cortar o produto. */
   produto?: boolean
+  /** Sem balão em volta: a foto é a mensagem inteira, como no Instagram. */
+  solta?: boolean
 }) {
   const [aberto, setAberto] = useState(false)
 
@@ -70,13 +73,17 @@ export function ImagemDaConversa({
         type="button"
         onClick={() => setAberto(true)}
         title="Ver a imagem"
-        className="mb-1.5 block w-full cursor-zoom-in"
+        className={solta ? 'block cursor-zoom-in' : 'mb-1.5 block w-full cursor-zoom-in'}
       >
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
           src={url}
           alt={nome}
-          className={`max-h-56 w-full rounded-lg border border-line ${produto ? 'aspect-square bg-white object-contain p-2' : 'object-cover'}`}
+          className={
+            solta
+              ? 'block max-h-80 w-auto max-w-[min(300px,100%)] rounded-[16px] object-cover'
+              : `max-h-56 w-full rounded-lg border border-line ${produto ? 'aspect-square bg-white object-contain p-2' : 'object-cover'}`
+          }
         />
       </button>
 

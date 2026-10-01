@@ -31,7 +31,7 @@ export function FotosDoCard({ produtos }: { produtos: ProdutoNaMensagem[] }) {
   )
 }
 
-export function AnexoNaConversa({ anexo }: { anexo: AnexoDaMensagem }) {
+export function AnexoNaConversa({ anexo, solta = false }: { anexo: AnexoDaMensagem; solta?: boolean }) {
   const nome = anexo.nomeArquivo?.trim() || 'arquivo'
 
   /*
@@ -40,7 +40,7 @@ export function AnexoNaConversa({ anexo }: { anexo: AnexoDaMensagem }) {
    * URL assinada de cinco minutos, e uma aba com essa URL expira sozinha.
    */
   if (anexo.midia === 'imagem') {
-    return <ImagemDaConversa url={anexo.url} nome={nome} />
+    return <ImagemDaConversa url={anexo.url} nome={nome} solta={solta} />
   }
 
   if (anexo.midia === 'video') {
@@ -48,7 +48,11 @@ export function AnexoNaConversa({ anexo }: { anexo: AnexoDaMensagem }) {
       <video
         src={anexo.url}
         controls
-        className="mb-1.5 max-h-56 w-full rounded-lg border border-line bg-black"
+        className={
+          solta
+            ? 'block max-h-80 w-auto max-w-[min(300px,100%)] rounded-[16px] bg-black'
+            : 'mb-1.5 max-h-56 w-full rounded-lg border border-line bg-black'
+        }
       />
     )
   }
@@ -113,6 +117,29 @@ export function SemTexto() {
  */
 export function CitacaoNaBolha({ cita, nome }: { cita: Citada; nome: string | null }) {
   const deQuem = cita.direcao === 'saida' ? 'atendimento' : (nome ?? 'cliente')
+
+  /*
+   * Foto ou vídeo citado: a miniatura esmaecida e escurecida em cima, baixa,
+   * como o Instagram mostra a mensagem respondida. Não compete com a resposta,
+   * e diz de cara o que foi citado.
+   */
+  if (cita.midia) {
+    return (
+      <span className="mb-1.5 block">
+        {cita.direcao && <span className="mb-1 block text-[11px] font-bold opacity-75">{deQuem}</span>}
+        <span className="relative block h-24 w-36 overflow-hidden rounded-[12px] bg-black/30">
+          {cita.midia.tipo === 'imagem' ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={cita.midia.url} alt="" className="h-full w-full object-cover opacity-55" />
+          ) : (
+            <video src={cita.midia.url} muted preload="metadata" className="h-full w-full object-cover opacity-55" />
+          )}
+          <span aria-hidden className="absolute inset-0 bg-black/20" />
+        </span>
+        {cita.texto?.trim() && <span className="mt-1 block truncate text-[12px] opacity-75">{cita.texto}</span>}
+      </span>
+    )
+  }
 
   return (
     <span className="mb-1.5 flex gap-2 rounded-md border-l-2 border-primary/50 bg-surface px-2 py-1.5">

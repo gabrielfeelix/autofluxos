@@ -167,6 +167,8 @@ export type Citada = {
   id?: string
   texto: string | null
   direcao?: Direcao
+  /** Foto ou vídeo citado, com a URL da mensagem original. Ver `comMidiaNaCitacao`. */
+  midia?: { tipo: 'imagem' | 'video'; url: string }
 }
 
 export type MensagemDoLead = {
@@ -1113,9 +1115,7 @@ export async function lerConversa(
     .filter((caminho): caminho is string => caminho !== null)
   const assinadas = await urlsAssinadas(caminhos)
 
-  return {
-    cortada,
-    mensagens: visiveis
+  const montadas = visiveis
       /*
        * **A reação some da lista como linha própria.** Ela já foi grudada na
        * mensagem que comenta, e deixá-la também solta no fim da conversa é
@@ -1196,8 +1196,28 @@ export async function lerConversa(
           ...(reacoes?.length ? { reacoes } : {}),
           ...(cita ? { cita } : {}),
         }
-      }),
-  }
+      })
+
+  return { cortada, mensagens: comMidiaNaCitacao(montadas) }
+}
+
+/**
+ * A citada que é foto ou vídeo leva a mídia dela para a bolha que a cita.
+ *
+ * Sem isto a citação de uma foto dizia só "mensagem original"; com ela, a
+ * bolha mostra a foto pequena e esmaecida em cima, como o Instagram faz
+ * (pedido de 01/out/2026). A URL é a mesma já assinada da mensagem original.
+ */
+function comMidiaNaCitacao<M extends { id: string; anexo?: AnexoDaMensagem; recebido?: AnexoDaMensagem; cita?: Citada }>(
+  mensagens: M[],
+): M[] {
+  const porId = new Map(mensagens.map((m) => [m.id, m]))
+  return mensagens.map((m) => {
+    const alvo = m.cita?.id ? porId.get(m.cita.id) : undefined
+    const midia = alvo?.recebido ?? alvo?.anexo
+    if (!m.cita || !midia || (midia.midia !== 'imagem' && midia.midia !== 'video')) return m
+    return { ...m, cita: { ...m.cita, midia: { tipo: midia.midia, url: midia.url } } }
+  })
 }
 
 /**

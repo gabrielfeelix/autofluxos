@@ -360,6 +360,19 @@ function ListaDeMensagens({
       )}
       {mensagens.map((mensagem, indice) => {
         const nossa = mensagem.direcao === 'saida'
+        /*
+         * Foto ou vídeo sozinho sai **sem balão**, solto na conversa, como no
+         * Instagram e no WhatsApp: o fundo azul em volta de uma foto só
+         * emoldurava a foto (pedido de 01/out/2026). Com legenda ou citação,
+         * o balão volta, porque aí há texto para ler.
+         */
+        const midiaDaBolha = mensagem.recebido ?? mensagem.anexo
+        const midiaSolta =
+          !mensagem.texto &&
+          !mensagem.cita &&
+          !mensagem.local &&
+          !mensagem.cartoes &&
+          (midiaDaBolha?.midia === 'imagem' || midiaDaBolha?.midia === 'video')
         const etiqueta = diasDaConversa[indice]
         /*
          * A barra só aparece onde há id da Meta.
@@ -434,21 +447,23 @@ function ListaDeMensagens({
                 naoConfirmado={nossa && !mensagem.entregue}
               />
             ) : (
-            <p title={mensagem.toque ? 'Tocou numa opção do menu' : undefined} className={`relative max-w-full px-3.5 py-2 font-texto text-[14.5px] leading-[1.45] whitespace-pre-wrap [overflow-wrap:anywhere] ${
-              nossa
-                ? 'bolha-nossa rounded-[15px_15px_4px_15px]'
+            <p title={mensagem.toque ? 'Tocou numa opção do menu' : undefined} className={`relative max-w-full font-texto text-[14.5px] leading-[1.45] whitespace-pre-wrap [overflow-wrap:anywhere] ${
+              midiaSolta
+                ? ''
+                : nossa
+                ? 'bolha-nossa rounded-[15px_15px_4px_15px] px-3.5 py-2'
                 : mensagem.toque
-                  ? 'bolha-toque rounded-[15px_15px_15px_4px]'
-                  : 'bolha-deles rounded-[15px_15px_15px_4px]'
+                  ? 'bolha-toque rounded-[15px_15px_15px_4px] px-3.5 py-2'
+                  : 'bolha-deles rounded-[15px_15px_15px_4px] px-3.5 py-2'
             }`}>
               {mensagem.cita && <CitacaoNaBolha cita={mensagem.cita} nome={nome} />}
-              {mensagem.anexo && <AnexoNaConversa anexo={mensagem.anexo} />}
+              {mensagem.anexo && <AnexoNaConversa anexo={mensagem.anexo} solta={midiaSolta} />}
               {/*
                 O arquivo que a pessoa mandou. Mesma bolha do que sai, e a
                 diferença está em quem produziu a URL: aqui ela é assinada e
                 morre em cinco minutos.
               */}
-              {mensagem.recebido && <AnexoNaConversa anexo={mensagem.recebido} />}
+              {mensagem.recebido && <AnexoNaConversa anexo={mensagem.recebido} solta={midiaSolta} />}
               {/*
                 Transcrever só o áudio **recebido**.
 
@@ -519,7 +534,7 @@ function ListaDeMensagens({
                   <EnvioNaoConfirmado clienteId={clienteId} contatoId={contatoId} mensagemId={mensagem.id} />
                 </>
               ) : (
-                <RodapeDaBolha titulo={horaExata(mensagem.ts)}>
+                <RodapeDaBolha titulo={horaExata(mensagem.ts)} sobreMidia={midiaSolta}>
                   {nossa && mensagem.autor ? `${mensagem.autor} · ` : ''}
                   {horaDoRelogio(mensagem.ts)}
                   {nossa && <Tiques situacao={mensagem.situacao} />}
@@ -647,8 +662,27 @@ function Tiques({ situacao }: { situacao?: MensagemDoLead['situacao'] }) {
  * reserva cabe nela e o rodapé divide a linha com o texto; se não tem, a
  * reserva desce e a bolha ganha uma linha, sempre alinhada à direita.
  */
-function RodapeDaBolha({ titulo, children }: { titulo: string; children: ReactNode }) {
+function RodapeDaBolha({
+  titulo,
+  sobreMidia = false,
+  children,
+}: {
+  titulo: string
+  /** Mídia sem balão: a hora vai numa pílula escura sobre o canto da foto. */
+  sobreMidia?: boolean
+  children: ReactNode
+}) {
   const rodape = 'inline-flex items-center whitespace-nowrap text-[11px] leading-none text-muted'
+  if (sobreMidia) {
+    return (
+      <span
+        className="absolute right-2 bottom-2 inline-flex items-center whitespace-nowrap rounded-full bg-black/50 px-2 py-1 text-[11px] leading-none text-white backdrop-blur-sm"
+        title={titulo}
+      >
+        {children}
+      </span>
+    )
+  }
   return (
     <>
       <span aria-hidden className={`invisible ml-2.5 ${rodape}`}>
