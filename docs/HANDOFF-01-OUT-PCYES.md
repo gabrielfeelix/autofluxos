@@ -148,6 +148,11 @@ Banco e loja (não passam pelo git):
    Ads vão juntos para o App Review (Instagram foi reprovado por falta de
    screencast).
 
+12. **Anúncios** (`ajustes/anuncios`, existe desde 14/set): "Ligar uma
+   página" só grava `paginas_de_lead`; deveria também fazer o
+   `subscribed_apps?subscribed_fields=leadgen` da Página. E a chave `meta-ads`
+   não deve aparecer solta em Chaves de API: ela é da tela de Anúncios.
+
 ## Pegadinhas novas
 
 - O pulso da conta muda sem mensagem nova (arquivo baixado, tique). Quem
