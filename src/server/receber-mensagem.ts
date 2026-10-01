@@ -15,6 +15,7 @@ import { guardarMidiaRecebida } from './guardar-midia-recebida'
 import { escolherModelo } from './ia/modelo'
 import { comLinkRastreado } from './link-de-produto'
 import { juntarFraseAosCards, juntarTextosSeguidos } from '@/core/juntar-cards'
+import type { Turno } from '@/server/ia/types'
 import { guardarComentario, guardarNota } from './repos/avaliacoes'
 import { acharCliente, horarioDoCliente } from './repos/clientes'
 import { acharFluxo, acharVersao, type VersaoPublicada } from './repos/fluxos'
@@ -1547,10 +1548,24 @@ async function prepararIa(
     perguntaDaPessoa: perguntaDaPessoa
       ? (textoDaRajada(conversa.mensagens) ?? perguntaDaPessoa)
       : undefined,
-    historico: conversa.mensagens.map((m) => ({
-      de: m.direcao === 'entrada' ? ('pessoa' as const) : ('bot' as const),
-      texto: m.texto ?? '(áudio ou imagem)',
-    })),
+    historico: conversa.mensagens.flatMap((m): Turno[] => {
+      if (m.direcao === 'entrada') return [{ de: 'pessoa', texto: m.texto ?? '(áudio ou imagem)' }]
+      if (!m.produtos?.length) return [{ de: 'bot', texto: m.texto ?? '(áudio ou imagem)' }]
+      /*
+       * O card gravado como texto (nome, preço, link) ensinava o modelo a
+       * escrever o card na frase: em 01/out/2026 saiu "[Card: Placa de Vídeo
+       * ... - R$ 1.509,00]" para um cliente da PCYES. A frase fica como fala
+       * do bot; o card vira dado do que foi mostrado.
+       */
+      const doCard = new Set(m.produtos.flatMap((p) => [p.titulo, p.detalhe, p.link ?? ''].map((l) => l.trim())))
+      const frase = (m.texto ?? '').split('\n').filter((l) => !doCard.has(l.trim())).join('\n').replace(/\n{3,}/g, '\n\n').trim()
+      const mostrados = {
+        de: 'ferramenta' as const,
+        nome: 'loja_mostrar',
+        texto: JSON.stringify({ ja_mostrado_em_card: m.produtos.map((p) => ({ nome: p.titulo, detalhe: p.detalhe })) }),
+      }
+      return frase ? [{ de: 'bot', texto: frase }, mostrados] : [mostrados]
+    }),
   }
 }
 

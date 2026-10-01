@@ -130,3 +130,26 @@ export function semRepetirOsCards(texto: string, produtos: readonly ProdutoDaLoj
 function normalizar(texto: string): string {
   return texto.trim().toLowerCase().replace(/\s+/g, ' ')
 }
+
+/**
+ * Tira do texto da IA a marcação que ela inventa no lugar do card.
+ *
+ * PCYES, 01/out/2026: a placa de vídeo saiu com "[Card: Placa de Vídeo ... -
+ * R$ 1.509,00]" no meio da frase, e o card de verdade logo abaixo. Nenhum
+ * código nosso escreve isso: o modelo imitou o card que via no histórico.
+ * Colchete com cara de rótulo técnico nunca é conversa, então some sempre.
+ */
+export function semMarcacaoDeCard(texto: string): string {
+  const marca = String.raw`\[\s*(?:card|cards|produto|produtos|imagem|foto|vitrine|link)\b[^\]\n]*\]`
+  return texto
+    // "por aqui:" apontava para a marca; sem ela, a frase termina ali.
+    .replace(new RegExp(String.raw`:[ \t]*(?:\n[ \t]*)*` + marca, 'gi'), '.')
+    .replace(new RegExp(marca, 'gi'), '')
+    .split('\n')
+    .map((linha) => linha.replace(/[ \t]+$/, ''))
+    .join('\n')
+    .replace(/[ \t]{2,}/g, ' ')
+    .replace(/\n{3,}/g, '\n\n')
+    .replace(/:\s*$/, '.')
+    .trim()
+}

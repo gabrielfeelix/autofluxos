@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import type { Acao } from './engine/types'
 import type { ProdutoDaLoja } from './loja'
-import { juntarFraseAosCards, juntarTextosSeguidos, semRepetirOsCards, TETO_DA_BOLHA_JUNTADA } from './juntar-cards'
+import { juntarFraseAosCards, juntarTextosSeguidos, semMarcacaoDeCard, semRepetirOsCards, TETO_DA_BOLHA_JUNTADA } from './juntar-cards'
 
 const produto = (id: string, extra: Partial<ProdutoDaLoja> = {}): ProdutoDaLoja => ({
   produtoId: id,
@@ -83,5 +83,21 @@ describe('semRepetirOsCards', () => {
     const texto =
       'O Mouse Pad Desk PCYES é excelente para dar mais espaço.\n\nMouse Pad Desk PCYES Mat Exclusive Bordo 800x400mm 2mm PMPEXDR\nR$ 69,90, em estoque\nhttps://www.pcyes.com.br/mouse-pad-desk'
     expect(semRepetirOsCards(texto, [produto])).toBe('O Mouse Pad Desk PCYES é excelente para dar mais espaço.')
+  })
+})
+
+describe('semMarcacaoDeCard', () => {
+  it('tira o "[Card: ...]" que o modelo inventou e fecha a frase que apontava para ele', () => {
+    const texto =
+      'Ela está disponível em nosso site e você pode finalizar a compra por aqui:\n\n' +
+      '[Card: Placa de Vídeo PCYES RTX 3050 - R$ 1.509,00]\n\n' +
+      'Posso te ajudar com mais alguma dúvida?'
+    expect(semMarcacaoDeCard(texto)).toBe(
+      'Ela está disponível em nosso site e você pode finalizar a compra por aqui.\n\nPosso te ajudar com mais alguma dúvida?',
+    )
+  })
+
+  it('não mexe em colchete que não é rótulo de card', () => {
+    expect(semMarcacaoDeCard('Use o código [VIP] no carrinho.')).toBe('Use o código [VIP] no carrinho.')
   })
 })

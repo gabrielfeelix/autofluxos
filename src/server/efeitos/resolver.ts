@@ -6,6 +6,7 @@ import type { ContextoDoAtendimento } from '@/core/engine/executar'
 import type { Acao, Entrada, Resultado, Sessao } from '@/core/engine/types'
 import type { FonteDoCatalogo, Fluxo } from '@/core/flow/schema'
 import { MARCA_DE_MOSTRAR, cepLimpo, semMarcaDeMostrar, vitrineDoTexto, type ProdutoDaLoja } from '@/core/loja'
+import { semMarcacaoDeCard, semRepetirOsCards } from '@/core/juntar-cards'
 import { VARIAVEIS_DE_DATA } from '@/core/datas'
 import { VARIAVEIS_DO_ATENDIMENTO, varsDoAtendimento } from '@/core/vars-do-atendimento'
 import { VARIAVEIS_DA_COBRANCA, montarCobranca, type Cobranca } from '@/core/cobranca'
@@ -960,6 +961,11 @@ async function responderComFerramentas({
         cards.push(...vitrine.produtos)
         resposta = { ...resposta, texto: vitrine.texto }
       }
+    }
+
+    if (resposta.tipo === 'texto') {
+      const limpo = semMarcacaoDeCard(cards.length > 0 ? semRepetirOsCards(resposta.texto, cards) : resposta.texto)
+      resposta = { ...resposta, texto: limpo || (cards.length > 0 ? 'Separei estas opções para você 👇' : resposta.texto) }
     }
 
     if (resposta.tipo === 'texto' && (cards.length > 0 || anexos.length > 0)) {
