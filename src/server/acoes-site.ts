@@ -1,8 +1,16 @@
 'use server'
 
-import { type ConfigDoSite, type Mascote, lerConfigDoSite, lerListaDeDominios } from '@/core/chat-do-site'
+import {
+  type CampoDoFormulario,
+  chaveNoContato,
+  type ConfigDoSite,
+  type Mascote,
+  lerConfigDoSite,
+  lerListaDeDominios,
+} from '@/core/chat-do-site'
 import { db } from './db'
 import { BUCKET_DO_ACERVO } from './repos/acervo'
+import { definicoesDeCampo, definirCampo } from './repos/campos'
 import { exigirCapacidade, recusou } from './permissoes'
 import { chatDoSite, garantirChatDoSite, ligarChatDoSite, pausarChatDoSite, salvarConfigDoSite } from './repos/canais-site'
 
@@ -35,7 +43,8 @@ export async function acaoSalvarChatDoSite(
     cor: string
     titulo: string
     saudacao: string
-    pedirContato: boolean
+    prazo: string
+    formulario: CampoDoFormulario[]
     tema: 'claro' | 'escuro'
   },
 ): Promise<Resultado<{ config: ConfigDoSite; recusados: string[]; chave: string }>> {
@@ -50,6 +59,7 @@ export async function acaoSalvarChatDoSite(
   // aparência não pode apagar a animação que a loja subiu.
   const config = lerConfigDoSite({ ...dados, dominios: validos, mascote: canal.config.mascote })
   await salvarConfigDoSite(clienteId, config)
+  await definirCampoProprio(clienteId, config.formulario)
   return { ok: true, config, recusados, chave: canal.chave }
 }
 
@@ -62,6 +72,21 @@ export async function acaoSalvarChatDoSite(
  * com a Verandi. O GIF, que é o formato que todo mundo tem, vira WebP animado
  * aqui, com o mesmo movimento e um terço do peso.
  */
+/**
+ * A pergunta própria do formulário vira um campo da empresa, para aparecer com
+ * o nome certo na ficha do lead, nos filtros e no fluxo. Só cria: se a chave já
+ * existe (a empresa a definiu antes, talvez com outro tipo), ela é de quem a
+ * definiu, e o formulário só grava nela.
+ */
+async function definirCampoProprio(clienteId: string, formulario: CampoDoFormulario[]): Promise<void> {
+  const proprio = formulario.find((c) => c.tipo === 'proprio')
+  const chave = proprio && chaveNoContato(proprio)
+  if (!proprio?.rotulo || !chave) return
+  const existentes = await definicoesDeCampo(clienteId)
+  if (existentes.some((d) => d.chave === chave)) return
+  await definirCampo(clienteId, { chave, rotulo: proprio.rotulo, tipo: 'texto_curto' })
+}
+
 // Abaixo dos 4 MB que a Server Action aceita (next.config.ts), com folga para o formulário.
 const TETO_DO_MASCOTE = 3.5 * 1024 * 1024
 const ACEITOS: Record<string, { extensao: string; tipo: Mascote['tipo'] }> = {

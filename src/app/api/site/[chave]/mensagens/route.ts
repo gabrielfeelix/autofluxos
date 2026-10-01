@@ -1,6 +1,6 @@
 import { after } from 'next/server'
 import { z } from 'zod'
-import { TETO_DA_MENSAGEM } from '@/core/chat-do-site'
+import { lerFicha, TETO_DA_MENSAGEM } from '@/core/chat-do-site'
 import { alertar } from '@/server/alertar'
 import {
   abrirPorta,
@@ -41,6 +41,8 @@ const corpoSchema = z.object({
   texto: z.string().trim().min(1).max(TETO_DA_MENSAGEM).optional(),
   opcao: z.object({ id: z.string().min(1).max(200), rotulo: z.string().min(1).max(120) }).optional(),
   pagina: z.string().url().max(500).optional(),
+  /** O formulário de antes da conversa, quando esta é a primeira mensagem dela. */
+  ficha: z.record(z.string(), z.string().max(300)).optional(),
 })
 
 /**
@@ -72,6 +74,11 @@ export async function POST(req: Request, { params }: Contexto) {
   const { ref, texto, opcao, pagina } = analise.data
   const canal = porta.canal
 
+  // Conferido aqui, antes do 202: o balão volta ao formulário com o erro de
+  // cada campo em vez de mandar uma conversa com CPF errado gravado.
+  const ficha = analise.data.ficha ? lerFicha(canal.config.formulario, analise.data.ficha) : null
+  if (ficha && !ficha.ok) return responder(porta.origem, { erro: 'confira os dados', erros: ficha.erros }, 400)
+
   after(async () => {
     try {
       await receberDoSite(
@@ -79,6 +86,7 @@ export async function POST(req: Request, { params }: Contexto) {
         segredo,
         opcao ? { tipo: 'opcao', ref, opcaoId: opcao.id, rotulo: opcao.rotulo } : { tipo: 'texto', ref, texto: texto! },
         pagina ?? null,
+        ficha?.ok ? { nome: ficha.nome, campos: ficha.campos } : null,
       )
     } catch (erro) {
       console.error('[site] falhou ao processar a mensagem', erro)

@@ -71,6 +71,11 @@ const SECOES: readonly SecaoLegal[] = [
             permitir que uma pessoa da empresa assuma quando o fluxo pedir.
           </Item>
           <Item>
+            <strong>Formulário do chat do site:</strong> quando a empresa ativa, o nome, o e-mail, o
+            WhatsApp e, só se ela escolher pedir, CPF, CNPJ ou uma pergunta própria. Ficam na ficha
+            do contato junto da conversa e saem com ela num pedido de exclusão.
+          </Item>
+          <Item>
             <strong>Respostas guardadas pelo fluxo:</strong> o que a própria empresa decidiu
             perguntar e registrar (por exemplo: nome, assunto, prazo).
           </Item>

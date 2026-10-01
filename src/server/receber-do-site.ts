@@ -1,9 +1,17 @@
 import 'server-only'
 import { createHash } from 'node:crypto'
 import { canalDoSite } from '@/channels/site'
-import { type MensagemPublica, mensagemPublica, TETO_DA_MENSAGEM } from '@/core/chat-do-site'
+import type { ValorDeCampo } from '@/core/campos'
+import {
+  camposQueFaltam,
+  type MensagemPublica,
+  mensagemPublica,
+  TETO_DA_MENSAGEM,
+  type TipoDoFormulario,
+} from '@/core/chat-do-site'
 import { PREFIXO_DO_SITE } from '@/core/contatos/visitante-do-site'
 import { db } from './db'
+import { gravarCampos } from './repos/campos'
 import type { CanalDoSite } from './repos/canais-site'
 import { type Mensagem, tratarUma } from './receber-mensagem'
 
@@ -62,21 +70,50 @@ export function paraMensagemInterna(endereco: string, chegou: ChegadaDoSite): Me
   return { ...base, type: 'text', text: { body: chegou.texto.slice(0, TETO_DA_MENSAGEM) } }
 }
 
+/** O formulário do balão, já conferido por `lerFicha`. */
+export type FichaDoVisitante = { nome: string | null; campos: Record<string, string> }
+
 export async function receberDoSite(
   canal: CanalDoSite,
   segredo: string,
   chegou: ChegadaDoSite,
   pagina: string | null,
+  ficha: FichaDoVisitante | null = null,
 ): Promise<void> {
   const endereco = enderecoDoVisitante(canal.id, segredo)
   const mensagem = paraMensagemInterna(endereco, chegou)
 
-  // Nome nulo: o visitante ainda não disse quem é. `acharOuCriarContato` trata
-  // nulo como "não sei", não como "apague", então o nome que ele der depois
-  // (`identificarVisitante`) sobrevive às próximas mensagens.
-  await tratarUma(canal, mensagem, null, () => canalDoSite())
+  // O nome do formulário entra como "nome do perfil", o mesmo que o WhatsApp
+  // manda: é o que deixa a primeira resposta do fluxo já chamar pelo nome.
+  // Nulo é "não sei", não "apague": o nome dado antes sobrevive.
+  await tratarUma(canal, mensagem, ficha?.nome ?? null, () => canalDoSite())
 
+  if (ficha && Object.keys(ficha.campos).length) await guardarFicha(canal.clienteId, endereco, ficha.campos)
   if (pagina) await lembrarPagina(canal.clienteId, endereco, pagina)
+}
+
+/**
+ * Os campos do formulário vão para a ficha do lead com origem `contato`: a
+ * pessoa disse o próprio dado, o que vale mais que o bot deduzir e menos que a
+ * equipe corrigir (`core/campos.ts`). Depois do `tratarUma`, porque é ele que
+ * cria o contato, e contato sem mensagem é robô testando a rota.
+ *
+ * O WhatsApp informado vai para `campos.whatsapp` e **não junta** com o
+ * contato do WhatsApp de mesmo número: ver `docs/DECISIONS.md`.
+ */
+async function guardarFicha(clienteId: string, endereco: string, campos: Record<string, string>): Promise<void> {
+  const { data } = await db()
+    .from('contacts')
+    .select('id')
+    .eq('client_id', clienteId)
+    .eq('wa_id', endereco)
+    .maybeSingle()
+  if (!data) return
+
+  const em = new Date().toISOString()
+  const novos: Record<string, ValorDeCampo> = {}
+  for (const [chave, valor] of Object.entries(campos)) novos[chave] = { valor, origem: 'contato', autorId: null, em }
+  await gravarCampos(clienteId, data.id, novos)
 }
 
 /**
@@ -114,7 +151,7 @@ async function lembrarPagina(clienteId: string, endereco: string, pagina: string
 export async function conversaDoVisitante(
   canal: CanalDoSite,
   segredo: string,
-): Promise<{ mensagens: MensagemPublica[]; identificado: boolean }> {
+): Promise<{ mensagens: MensagemPublica[]; identificado: boolean; faltam: TipoDoFormulario[] }> {
   const endereco = enderecoDoVisitante(canal.id, segredo)
 
   const { data: contato, error } = await db()
@@ -125,7 +162,8 @@ export async function conversaDoVisitante(
     .maybeSingle()
 
   if (error) throw new Error(`não deu para achar o visitante: ${error.message}`)
-  if (!contato) return { mensagens: [], identificado: false }
+  const formulario = canal.config.formulario
+  if (!contato) return { mensagens: [], identificado: false, faltam: camposQueFaltam(formulario, null) }
 
   const { data, error: erro } = await db()
     .from('messages')
@@ -139,9 +177,12 @@ export async function conversaDoVisitante(
   if (erro) throw new Error(`não deu para ler a conversa: ${erro.message}`)
 
   const campos = (contato.campos ?? {}) as Record<string, string>
+  const faltam = camposQueFaltam(formulario, { nome: contato.nome_real || contato.nome || null, campos })
   return {
     mensagens: (data ?? []).reverse().map(mensagemPublica),
+    // Para o balão de antes, ainda em cache em algum navegador.
     identificado: Boolean(contato.nome_real || contato.nome) && Boolean(campos.whatsapp || campos.email),
+    faltam,
   }
 }
 

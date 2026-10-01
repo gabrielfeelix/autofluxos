@@ -1,3 +1,5 @@
+import { cpfValido } from '../documentos'
+
 /**
  * O que a resposta livre precisa ser, e o que dizer quando não é.
  *
@@ -276,23 +278,7 @@ function comoTelefone(valor: string): string | null {
 
 /** Onze dígitos, com o dígito verificador conferido de verdade. */
 function comoCpf(valor: string): string | null {
-  const digitos = valor.replace(/\D/g, '')
-  if (digitos.length !== 11) return null
-  // `111.111.111-11` passa em qualquer conta de verificador, e é o erro de
-  // digitação mais comum de todos.
-  if (/^(\d)\1{10}$/.test(digitos)) return null
-
-  for (const [ate, peso] of [
-    [9, 10],
-    [10, 11],
-  ] as const) {
-    let soma = 0
-    for (let i = 0; i < ate; i++) soma += Number(digitos[i]) * (peso - i)
-    const resto = (soma * 10) % 11
-    if ((resto === 10 ? 0 : resto) !== Number(digitos[ate])) return null
-  }
-
-  return digitos
+  return cpfValido(valor)
 }
 
 const dois = (n: number) => String(n).padStart(2, '0')

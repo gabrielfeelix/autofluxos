@@ -1,8 +1,15 @@
 'use client'
 
 import { useRef, useState, useTransition } from 'react'
-import type { ConfigDoSite, Mascote } from '@/core/chat-do-site'
-import { TETO_DA_SAUDACAO, TETO_DE_DOMINIOS, TETO_DO_TITULO } from '@/core/chat-do-site'
+import type { CampoDoFormulario, ConfigDoSite, Mascote, TipoDoFormulario } from '@/core/chat-do-site'
+import {
+  TETO_DA_SAUDACAO,
+  TETO_DE_DOMINIOS,
+  TETO_DO_PRAZO,
+  TETO_DO_ROTULO,
+  TETO_DO_TITULO,
+  TIPOS_DO_FORMULARIO,
+} from '@/core/chat-do-site'
 import {
   acaoLigarChatDoSite,
   acaoPausarChatDoSite,
@@ -45,7 +52,8 @@ export function ConfigurarChatDoSite({
   const [titulo, setTitulo] = useState(inicial.config.titulo)
   const [saudacao, setSaudacao] = useState(inicial.config.saudacao)
   const [cor, setCor] = useState(inicial.config.cor)
-  const [pedirContato, setPedirContato] = useState(inicial.config.pedirContato)
+  const [formulario, setFormulario] = useState<CampoDoFormulario[]>(inicial.config.formulario)
+  const [prazo, setPrazo] = useState(inicial.config.prazo)
   const [tema, setTema] = useState(inicial.config.tema)
   const [salvo, setSalvo] = useState(inicial.config)
   const [aviso, setAviso] = useState<{ tom: 'ok' | 'erro'; texto: string } | null>(null)
@@ -61,7 +69,8 @@ export function ConfigurarChatDoSite({
     titulo !== salvo.titulo ||
     saudacao !== salvo.saudacao ||
     cor.toUpperCase() !== salvo.cor ||
-    pedirContato !== salvo.pedirContato ||
+    JSON.stringify(formulario) !== JSON.stringify(salvo.formulario) ||
+    prazo !== salvo.prazo ||
     tema !== salvo.tema
 
   const trecho = chave ? `<script src="${urlDoScript}" data-chave="${chave}" async></script>` : ''
@@ -93,7 +102,7 @@ export function ConfigurarChatDoSite({
   function salvar() {
     setAviso(null)
     iniciar(async () => {
-      const r = await acaoSalvarChatDoSite(clienteId, { dominios, cor, titulo, saudacao, pedirContato, tema })
+      const r = await acaoSalvarChatDoSite(clienteId, { dominios, cor, titulo, saudacao, prazo, formulario, tema })
       if (!r.ok) {
         setAviso({ tom: 'erro', texto: r.erro })
         return
@@ -103,6 +112,8 @@ export function ConfigurarChatDoSite({
       setLinks(r.config.dominios.length ? r.config.dominios : [''])
       setTitulo(r.config.titulo)
       setSaudacao(r.config.saudacao)
+      setPrazo(r.config.prazo)
+      setFormulario(r.config.formulario)
       setCor(r.config.cor)
       setTema(r.config.tema)
       setAviso(
@@ -319,7 +330,7 @@ export function ConfigurarChatDoSite({
               </div>
             </div>
             <label className="block md:col-span-2">
-              <span className="text-[12.5px] font-semibold text-muted">Primeira frase do balão</span>
+              <span className="text-[12.5px] font-semibold text-muted">Saudação</span>
               <textarea
                 value={saudacao}
                 onChange={(e) => setSaudacao(e.target.value)}
@@ -329,9 +340,20 @@ export function ConfigurarChatDoSite({
                 className="app-field mt-1.5 w-full resize-y px-[13px] py-[10px] text-[13.5px]"
               />
               <span className="mt-1 block text-[11.5px] text-dim">
-                Aparece antes de a pessoa escrever. Depois disso, quem responde é o fluxo
-                {fluxoPrincipal ? ` "${fluxoPrincipal}"` : ''}, o mesmo do WhatsApp.
+                Em destaque na tela inicial e como primeira mensagem da conversa. Depois disso, quem responde é o
+                fluxo{fluxoPrincipal ? ` "${fluxoPrincipal}"` : ''}, o mesmo do WhatsApp.
               </span>
+            </label>
+            <label className="block md:col-span-2">
+              <span className="text-[12.5px] font-semibold text-muted">Tempo de resposta</span>
+              <input
+                value={prazo}
+                onChange={(e) => setPrazo(e.target.value)}
+                maxLength={TETO_DO_PRAZO}
+                placeholder="Exemplo: Costumamos responder em poucos minutos"
+                className="app-field mt-1.5 w-full px-[13px] py-[10px] text-[13.5px]"
+              />
+              <span className="mt-1 block text-[11.5px] text-dim">No cartão &quot;Nova conversa&quot; e no topo da conversa.</span>
             </label>
           </div>
         </section>
@@ -386,27 +408,7 @@ export function ConfigurarChatDoSite({
           </div>
         </section>
 
-        <section className="app-card flex items-start gap-4 px-5 py-5">
-          <div className="min-w-0 flex-1">
-            <h2 className="text-[15px] font-bold">Pedir nome e contato</h2>
-            <p className="mt-1 max-w-[560px] text-[12.5px] leading-5 text-dim">
-              Depois da primeira resposta, o balão pergunta o nome e um WhatsApp ou e-mail. Sem isso, a conversa fica no
-              Inbox como visitante anônimo, e some se a pessoa trocar de navegador.
-            </p>
-          </div>
-          <button
-            type="button"
-            role="switch"
-            aria-checked={pedirContato}
-            aria-label="Pedir nome e contato"
-            onClick={() => setPedirContato(!pedirContato)}
-            className={`relative mt-1 h-6 w-11 shrink-0 rounded-full transition ${pedirContato ? 'bg-primary' : 'bg-strong'}`}
-          >
-            <span
-              className={`absolute top-0.5 size-5 rounded-full bg-white shadow transition-all ${pedirContato ? 'left-[22px]' : 'left-0.5'}`}
-            />
-          </button>
-        </section>
+        <EditorDoFormulario formulario={formulario} onChange={setFormulario} />
 
         <div className="flex flex-wrap items-center gap-3">
           <button
@@ -426,7 +428,15 @@ export function ConfigurarChatDoSite({
       </div>
 
       <aside className="flex min-w-0 flex-col gap-5 lg:sticky lg:top-6">
-        <Previa titulo={titulo} saudacao={saudacao} cor={cor} mascote={mascote} tema={tema} />
+        <Previa
+          titulo={titulo}
+          saudacao={saudacao}
+          prazo={prazo}
+          formulario={formulario}
+          cor={cor}
+          mascote={mascote}
+          tema={tema}
+        />
 
         <section className="app-card px-5 py-5">
           <h2 className="text-[15px] font-bold">Instalar no site</h2>
@@ -493,79 +503,359 @@ function Passo({ n }: { n: number }) {
   )
 }
 
+const CAMPOS: Record<TipoDoFormulario, { nome: string; dica: string; exemplo: string }> = {
+  nome: { nome: 'Nome', dica: 'Vai para o nome do lead, e o fluxo já chama a pessoa por ele.', exemplo: 'Exemplo: Ana Souza' },
+  email: { nome: 'E-mail', dica: 'Fica na ficha do lead.', exemplo: 'Exemplo: ana@empresa.com.br' },
+  telefone: {
+    nome: 'WhatsApp',
+    dica: 'Com código do país. Fica na ficha do lead, sem juntar com a conversa do WhatsApp.',
+    exemplo: 'Exemplo: (11) 98765-4321',
+  },
+  cpf: { nome: 'CPF', dica: 'Dado pessoal protegido pela LGPD: peça só se precisar dele para atender.', exemplo: 'Exemplo: 123.456.789-09' },
+  cnpj: { nome: 'CNPJ', dica: 'Para venda a empresas. O dígito verificador é conferido.', exemplo: 'Exemplo: 12.345.678/0001-90' },
+  proprio: { nome: 'Pergunta própria', dica: 'Uma pergunta sua. A resposta vira um campo do lead.', exemplo: 'Escreva aqui' },
+}
+
+type Escolha = 'nao' | 'opcional' | 'obrigatorio'
+
+/**
+ * Os campos do formulário, um por linha, cada um com três estados: não pedir,
+ * opcional, obrigatório. Três botões e não dois interruptores porque
+ * "obrigatório sem pedir" não existe, e dois interruptores deixariam marcar.
+ */
+function EditorDoFormulario({
+  formulario,
+  onChange,
+}: {
+  formulario: CampoDoFormulario[]
+  onChange: (f: CampoDoFormulario[]) => void
+}) {
+  const [rotuloProprio, setRotuloProprio] = useState(formulario.find((c) => c.tipo === 'proprio')?.rotulo ?? '')
+
+  function escolher(tipo: TipoDoFormulario, escolha: Escolha) {
+    const sem = formulario.filter((c) => c.tipo !== tipo)
+    const novo: CampoDoFormulario[] =
+      escolha === 'nao'
+        ? sem
+        : [...sem, { tipo, obrigatorio: escolha === 'obrigatorio', ...(tipo === 'proprio' ? { rotulo: rotuloProprio } : {}) }]
+    onChange(TIPOS_DO_FORMULARIO.flatMap((t) => novo.filter((c) => c.tipo === t)))
+  }
+
+  function renomear(rotulo: string) {
+    setRotuloProprio(rotulo)
+    onChange(formulario.map((c) => (c.tipo === 'proprio' ? { ...c, rotulo } : c)))
+  }
+
+  return (
+    <section className="app-card px-5 py-5">
+      <h2 className="text-[15px] font-bold">Formulário antes da conversa</h2>
+      <p className="mt-1 max-w-[580px] text-[12.5px] leading-5 text-dim">
+        O visitante preenche ao abrir uma conversa nova, e os dados vão para a ficha do lead. Quem já respondeu não é
+        perguntado de novo.
+      </p>
+      <ul className="mt-4 divide-y divide-line overflow-hidden rounded-[12px] border border-line">
+        {TIPOS_DO_FORMULARIO.map((tipo) => {
+          const campo = formulario.find((c) => c.tipo === tipo)
+          const escolha: Escolha = !campo ? 'nao' : campo.obrigatorio ? 'obrigatorio' : 'opcional'
+          return (
+            <li key={tipo} className={`px-4 py-3.5 transition ${campo ? 'bg-panel' : 'bg-surface/50'}`}>
+              <div className="flex flex-wrap items-center gap-x-4 gap-y-2.5">
+                <div className="min-w-[180px] flex-1">
+                  <p className={`text-[13.5px] font-semibold ${campo ? 'text-ink' : 'text-muted'}`}>{CAMPOS[tipo].nome}</p>
+                  <p className="mt-0.5 text-[12px] leading-[18px] text-dim">{CAMPOS[tipo].dica}</p>
+                </div>
+                <div role="radiogroup" aria-label={CAMPOS[tipo].nome} className="flex shrink-0 rounded-[10px] bg-surface p-[3px]">
+                  {(
+                    [
+                      ['nao', 'Não pedir'],
+                      ['opcional', 'Opcional'],
+                      ['obrigatorio', 'Obrigatório'],
+                    ] as const
+                  ).map(([valor, rotulo]) => (
+                    <button
+                      key={valor}
+                      type="button"
+                      role="radio"
+                      aria-checked={escolha === valor}
+                      onClick={() => escolher(tipo, valor)}
+                      className={`rounded-[8px] px-2.5 py-1.5 text-[12px] font-semibold transition ${
+                        escolha === valor
+                          ? valor === 'nao'
+                            ? 'bg-panel text-ink shadow-[0_1px_2px_rgba(22,24,29,.12)]'
+                            : 'bg-primary text-white shadow-[0_1px_2px_rgba(22,24,29,.18)]'
+                          : 'text-dim hover:text-ink'
+                      }`}
+                    >
+                      {rotulo}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              {tipo === 'proprio' && campo && (
+                <label className="mt-3 block">
+                  <span className="text-[12px] font-semibold text-muted">Pergunta</span>
+                  <input
+                    value={rotuloProprio}
+                    onChange={(e) => renomear(e.target.value)}
+                    maxLength={TETO_DO_ROTULO}
+                    placeholder="Exemplo: Número do pedido"
+                    className="app-field mt-1 w-full px-[12px] py-[9px] text-[13.5px]"
+                  />
+                  {!/[a-zA-ZÀ-ÿ]/.test(rotuloProprio) && (
+                    <span className="mt-1 block text-[11.5px] font-semibold text-aviso">
+                      Escreva a pergunta, ou ela não aparece no formulário.
+                    </span>
+                  )}
+                </label>
+              )}
+            </li>
+          )
+        })}
+      </ul>
+      {formulario.length === 0 && (
+        <p className="mt-3 text-[12px] text-dim">Sem formulário: a pessoa já começa escrevendo, como visitante anônimo.</p>
+      )}
+    </section>
+  )
+}
+
+type Aba = 'inicio' | 'ficha' | 'conversa'
+
 /**
  * O balão como o visitante vai ver, desenhado com os valores da tela.
  *
  * É uma imitação, e não o script de verdade num iframe: o script precisa de
  * canal ligado e domínio cadastrado para abrir, e a prévia tem que funcionar
  * antes de as duas coisas existirem. As medidas e as cores são as do
- * `public/chat/v1.js`.
+ * `public/chat/v1.js`. As três telas que a configuração muda têm aba própria.
  */
 function Previa({
   titulo,
   saudacao,
+  prazo,
+  formulario,
   cor,
   mascote,
   tema,
 }: {
   titulo: string
   saudacao: string
+  prazo: string
+  formulario: CampoDoFormulario[]
   cor: string
   mascote: Mascote | null
   tema: 'claro' | 'escuro'
 }) {
+  const [aba, setAba] = useState<Aba>('inicio')
   const escuro = tema === 'escuro'
   const t = escuro
-    ? { fundo: '#15161A', tinta: '#F3F4F6', bolha: '#24262D', linha: '#2B2E36', dica: '#6B7080', opcao: `color-mix(in srgb, ${cor} 55%, #fff)` }
-    : { fundo: '#FFFFFF', tinta: '#16181D', bolha: '#F2F3F5', linha: '#E7E8EC', dica: '#9CA0A8', opcao: `color-mix(in srgb, ${cor} 85%, #000)` }
+    ? { fundo: '#15161A', tinta: '#F3F4F6', bolha: '#24262D', linha: '#2B2E36', dica: '#6B7080', apagado: '#9CA0A8', campo: '#101114', opcao: `color-mix(in srgb, ${cor} 55%, #fff)` }
+    : { fundo: '#FFFFFF', tinta: '#16181D', bolha: '#F2F3F5', linha: '#E7E8EC', dica: '#9CA0A8', apagado: '#6B7280', campo: '#FFFFFF', opcao: `color-mix(in srgb, ${cor} 85%, #000)` }
+  const escuroDaCor = `color-mix(in srgb, ${cor} 62%, #000)`
+  const nome = titulo || 'Atendimento'
+  const frase = saudacao || 'Olá! Como podemos ajudar?'
+  const tempo = prazo || 'Costumamos responder em poucos minutos'
+  const abaVisivel = aba === 'ficha' && formulario.length === 0 ? 'conversa' : aba
+
+  const avatar = (
+    <span
+      style={{ background: 'rgba(255,255,255,.18)', boxShadow: '0 0 0 2px rgba(255,255,255,.28)' }}
+      className="flex size-8 shrink-0 items-center justify-center overflow-hidden rounded-full"
+    >
+      <IconeDoBotao mascote={mascote} pequeno />
+    </span>
+  )
+  const topo = (
+    <div style={{ background: cor }} className="flex items-center gap-2.5 px-3 py-3 text-white">
+      <span className="text-[17px] leading-none opacity-90">‹</span>
+      {avatar}
+      <div className="min-w-0 flex-1">
+        <p className="truncate text-[13.5px] font-bold">{nome}</p>
+        <p className="truncate text-[11px] opacity-85">{tempo}</p>
+      </div>
+      <span className="flex size-6 items-center justify-center rounded-[7px] bg-white/15 text-[13px]">×</span>
+    </div>
+  )
+  const abas = (ativa: 'inicio' | 'mensagens') => (
+    <div style={{ borderColor: t.linha }} className="flex border-t">
+      {(
+        [
+          ['inicio', 'Início', 'M3 10.5 12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z'],
+          ['mensagens', 'Mensagens', 'M21 12a8 8 0 0 1-11.6 7.1L4 20.5l1.4-4.6A8 8 0 1 1 21 12z'],
+        ] as const
+      ).map(([id, rotulo, d]) => (
+        <span
+          key={id}
+          style={{ color: ativa === id ? t.opcao : t.apagado }}
+          className="flex flex-1 flex-col items-center gap-0.5 py-2 text-[10.5px] font-semibold"
+        >
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" strokeLinejoin="round" aria-hidden>
+            <path d={d} />
+          </svg>
+          {rotulo}
+        </span>
+      ))}
+    </div>
+  )
+
   return (
     <section
       aria-label="Prévia do balão"
       className="relative overflow-hidden rounded-[18px] border border-line bg-[linear-gradient(180deg,var(--surface)_0%,var(--canvas-deep)_100%)] p-5"
     >
-      <div aria-hidden className="mb-4 flex gap-2">
-        <span className="h-2 w-16 rounded-full bg-surface-strong" />
-        <span className="h-2 w-10 rounded-full bg-surface-strong" />
-        <span className="h-2 w-12 rounded-full bg-surface-strong" />
+      <div role="tablist" aria-label="Tela da prévia" className="mx-auto mb-4 flex w-fit rounded-[10px] bg-panel p-[3px] shadow-[0_0_0_1px_var(--line)]">
+        {(
+          [
+            ['inicio', 'Início'],
+            ['ficha', 'Formulário'],
+            ['conversa', 'Conversa'],
+          ] as const
+        ).map(([id, rotulo]) => (
+          <button
+            key={id}
+            type="button"
+            role="tab"
+            aria-selected={abaVisivel === id}
+            disabled={id === 'ficha' && formulario.length === 0}
+            onClick={() => setAba(id)}
+            className={`rounded-[8px] px-3 py-1.5 text-[12px] font-semibold transition disabled:opacity-40 ${
+              abaVisivel === id ? 'bg-primary text-white' : 'text-dim hover:text-ink'
+            }`}
+          >
+            {rotulo}
+          </button>
+        ))}
       </div>
-      <div style={{ background: t.fundo, color: t.tinta }} className="mx-auto flex w-full max-w-[330px] flex-col overflow-hidden rounded-[18px] shadow-[0_24px_60px_-18px_rgba(22,24,29,.45),0_0_0_1px_rgba(22,24,29,.06)]">
-        <div style={{ background: cor }} className="flex items-center gap-3 px-4 py-3.5 text-white">
-          <div className="min-w-0 flex-1">
-            <p className="truncate text-[14.5px] font-bold">{titulo || 'Atendimento'}</p>
-            <p className="text-[11.5px] opacity-85">Respondemos por aqui mesmo</p>
-          </div>
-          <span className="flex size-7 items-center justify-center rounded-[8px] bg-white/15 text-[15px]">×</span>
-        </div>
-        <div className="flex flex-col gap-1.5 px-3.5 pt-4 pb-3 text-[13.5px] leading-[1.45]">
-          <p style={{ background: t.bolha }} className="max-w-[85%] self-start rounded-[16px] rounded-bl-[5px] px-3 py-2 whitespace-pre-wrap">
-            {saudacao || 'Olá! Como podemos ajudar?'}
-          </p>
-          <p style={{ background: cor }} className="max-w-[85%] self-end rounded-[16px] rounded-br-[5px] px-3 py-2 text-white">
-            Vocês têm teclado mecânico?
-          </p>
-          <p style={{ background: t.bolha }} className="max-w-[85%] self-start rounded-[16px] rounded-bl-[5px] px-3 py-2">
-            Temos! Você prefere com fio ou sem fio?
-          </p>
-          <div className="mt-1 flex flex-col gap-1.5">
-            {['Com fio', 'Sem fio'].map((o) => (
-              <span
-                key={o}
-                style={{ borderColor: `color-mix(in srgb, ${cor} 40%, ${t.linha})`, color: t.opcao }}
-                className="rounded-[11px] border-[1.5px] px-3 py-2 text-[13px] font-semibold"
-              >
-                {o}
+
+      <div
+        style={{ background: t.fundo, color: t.tinta }}
+        className="mx-auto flex h-[470px] w-full max-w-[330px] flex-col overflow-hidden rounded-[18px] shadow-[0_24px_60px_-18px_rgba(22,24,29,.45),0_0_0_1px_rgba(22,24,29,.06)]"
+      >
+        {abaVisivel === 'inicio' && (
+          <>
+            <div className="min-h-0 flex-1">
+              <div style={{ background: `linear-gradient(155deg, ${cor} 0%, ${escuroDaCor} 100%)` }} className="px-4 pt-4 pb-14 text-white">
+                <div className="flex items-center gap-2.5">
+                  {avatar}
+                  <p className="min-w-0 flex-1 truncate text-[13px] font-bold">{nome}</p>
+                  <span className="flex size-6 items-center justify-center rounded-[7px] bg-white/15 text-[13px]">×</span>
+                </div>
+                <p className="mt-6 text-[21px] leading-[1.15] font-[750] tracking-[-0.02em] break-words">{frase}</p>
+                <p className="mt-1.5 text-[12.5px] opacity-85">Precisa de ajuda? Inicie uma conversa.</p>
+              </div>
+              <div className="relative -mt-10 px-3">
+                <div
+                  style={{ background: t.fundo, boxShadow: `0 8px 28px -12px rgba(22,24,29,.28), 0 0 0 1px ${t.linha}` }}
+                  className="flex items-center gap-3 rounded-[14px] p-3.5"
+                >
+                  <div className="min-w-0 flex-1">
+                    <p className="text-[13.5px] font-bold">Nova conversa</p>
+                    <p style={{ color: t.apagado }} className="mt-0.5 flex items-center gap-1.5 text-[11.5px]">
+                      <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden>
+                        <circle cx="12" cy="12" r="9" />
+                        <path d="M12 7v5l3 2" />
+                      </svg>
+                      <span className="truncate">{tempo}</span>
+                    </p>
+                  </div>
+                  <span style={{ background: cor }} className="flex size-8 shrink-0 items-center justify-center rounded-full text-white">
+                    <IconeEnviar />
+                  </span>
+                </div>
+                <div
+                  style={{ background: t.fundo, boxShadow: `0 8px 28px -12px rgba(22,24,29,.28), 0 0 0 1px ${t.linha}` }}
+                  className="mt-3 rounded-[14px] pb-1"
+                >
+                  <p style={{ color: t.apagado }} className="px-3.5 pt-3 pb-1 text-[10px] font-bold tracking-[.06em] uppercase">
+                    Continuar de onde parou
+                  </p>
+                  <div className="flex items-center gap-2.5 px-3.5 py-2">
+                    <span style={{ background: cor }} className="flex size-8 shrink-0 items-center justify-center overflow-hidden rounded-full">
+                      <IconeDoBotao mascote={mascote} pequeno />
+                    </span>
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate text-[12.5px] font-semibold">Temos! Você prefere com fio ou sem fio?</p>
+                      <p style={{ color: t.apagado }} className="truncate text-[11px]">
+                        {nome} · há 5 min
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            {abas('inicio')}
+          </>
+        )}
+
+        {abaVisivel === 'ficha' && (
+          <>
+            {topo}
+            <div className="min-h-0 flex-1 overflow-hidden px-4 pt-4">
+              <p className="text-[15.5px] font-[750] tracking-[-0.01em]">Antes de começar</p>
+              <p style={{ color: t.apagado }} className="mt-0.5 mb-3.5 text-[11.5px]">
+                Preencha para a equipe saber com quem está falando.
+              </p>
+              {formulario.map((c) => (
+                <div key={c.tipo} className="mb-2.5">
+                  <p className="mb-1 text-[11.5px] font-semibold">
+                    {c.tipo === 'proprio' ? c.rotulo || 'Pergunta própria' : CAMPOS[c.tipo].nome}
+                    {!c.obrigatorio && <span style={{ color: t.apagado }} className="font-normal"> (opcional)</span>}
+                  </p>
+                  <div className="flex gap-1.5">
+                    {c.tipo === 'telefone' && (
+                      <span style={{ borderColor: t.linha, background: t.campo }} className="shrink-0 rounded-[9px] border px-2 py-[7px] text-[12px]">
+                        BR +55
+                      </span>
+                    )}
+                    <span
+                      style={{ borderColor: t.linha, background: t.campo, color: t.dica }}
+                      className="min-w-0 flex-1 truncate rounded-[9px] border px-2.5 py-[7px] text-[12px]"
+                    >
+                      {CAMPOS[c.tipo].exemplo}
+                    </span>
+                  </div>
+                </div>
+              ))}
+              <span style={{ background: cor }} className="mt-1.5 block rounded-[10px] py-2.5 text-center text-[13px] font-bold text-white">
+                Iniciar conversa
               </span>
-            ))}
-          </div>
-        </div>
-        <div style={{ borderColor: t.linha }} className="flex items-center gap-2 border-t px-3.5 py-2.5">
-          <span style={{ color: t.dica }} className="flex-1 text-[13px]">Escreva sua mensagem</span>
-          <span style={{ background: cor }} className="flex size-8 items-center justify-center rounded-[10px] text-white">
-            <svg viewBox="0 0 24 24" width="15" height="15" fill="currentColor" aria-hidden>
-              <path d="M3.4 20.4 21 12 3.4 3.6l-.01 6.53L15 12 3.39 13.87z" />
-            </svg>
-          </span>
-        </div>
+            </div>
+          </>
+        )}
+
+        {abaVisivel === 'conversa' && (
+          <>
+            {topo}
+            <div className="flex min-h-0 flex-1 flex-col gap-1.5 overflow-hidden px-3.5 pt-4 pb-3 text-[13.5px] leading-[1.45]">
+              <p style={{ background: t.bolha }} className="max-w-[85%] self-start rounded-[16px] rounded-bl-[5px] px-3 py-2 whitespace-pre-wrap">
+                {frase}
+              </p>
+              <p style={{ background: cor }} className="max-w-[85%] self-end rounded-[16px] rounded-br-[5px] px-3 py-2 text-white">
+                Vocês têm teclado mecânico?
+              </p>
+              <p style={{ background: t.bolha }} className="max-w-[85%] self-start rounded-[16px] rounded-bl-[5px] px-3 py-2">
+                Temos! Você prefere com fio ou sem fio?
+              </p>
+              <div className="mt-1 flex flex-col gap-1.5">
+                {['Com fio', 'Sem fio'].map((o) => (
+                  <span
+                    key={o}
+                    style={{ borderColor: `color-mix(in srgb, ${cor} 40%, ${t.linha})`, color: t.opcao }}
+                    className="rounded-[11px] border-[1.5px] px-3 py-2 text-[13px] font-semibold"
+                  >
+                    {o}
+                  </span>
+                ))}
+              </div>
+            </div>
+            <div style={{ borderColor: t.linha }} className="flex items-center gap-2 border-t px-3.5 py-2.5">
+              <span style={{ color: t.dica }} className="flex-1 text-[13px]">Escreva sua mensagem</span>
+              <span style={{ background: cor }} className="flex size-8 items-center justify-center rounded-[10px] text-white">
+                <IconeEnviar />
+              </span>
+            </div>
+          </>
+        )}
       </div>
       <div className="mt-4 flex justify-end">
         <span
@@ -580,14 +870,22 @@ function Previa({
   )
 }
 
+function IconeEnviar() {
+  return (
+    <svg viewBox="0 0 24 24" width="15" height="15" fill="currentColor" aria-hidden>
+      <path d="M3.4 20.4 21 12 3.4 3.6l-.01 6.53L15 12 3.39 13.87z" />
+    </svg>
+  )
+}
+
 /**
  * O robô do botão, igual ao de `public/chat/v1.js`, acenando em loop. Mantido
  * em espelho à mão: são duas cópias pequenas, e o script do balão não pode
  * importar nada daqui.
  */
-function Robo() {
+function Robo({ tamanho = 44 }: { tamanho?: number }) {
   return (
-    <svg viewBox="7 3 52 52" width="44" height="44" className="robo-previa overflow-visible">
+    <svg viewBox="7 3 52 52" width={tamanho} height={tamanho} className="robo-previa overflow-visible">
       <style>{`
         .robo-previa .braco{transform-origin:47px 41px;animation:robo-acena 3.6s ease-in-out infinite}
         .robo-previa .olhos{transform-origin:32px 31px;animation:robo-pisca 4.2s infinite}
@@ -617,8 +915,8 @@ function Robo() {
 }
 
 /** O que vai dentro do botão: a animação da loja, ou o robô padrão. */
-function IconeDoBotao({ mascote }: { mascote: Mascote | null }) {
-  if (!mascote) return <Robo />
+function IconeDoBotao({ mascote, pequeno }: { mascote: Mascote | null; pequeno?: boolean }) {
+  if (!mascote) return <Robo tamanho={pequeno ? 26 : 44} />
   if (mascote.tipo === 'video') {
     return <video src={mascote.url} muted autoPlay loop playsInline className="size-full object-cover" aria-hidden />
   }

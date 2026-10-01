@@ -12,6 +12,17 @@
  * A conversa não mora aqui. O servidor grava tudo, e o balão só pergunta "o
  * que tem de novo?" em intervalos: curtos enquanto espera resposta, longos
  * quando está parado, e nenhum quando a aba está escondida.
+ *
+ * Quatro telas, no jeito dos widgets de atendimento que o visitante já
+ * conhece: Início (saudação e "Nova conversa"), Mensagens (as conversas
+ * anteriores), o formulário de antes da conversa, e a conversa. Início e
+ * Mensagens têm abas no rodapé; o formulário e a conversa têm voltar.
+ *
+ * As conversas anteriores ficam neste navegador, sem login: o servidor tem um
+ * fio só por visitante, e o balão guarda onde cada conversa começou (o `ref`
+ * da primeira mensagem). Fatiar o fio por essas marcas é o que mostra a lista
+ * de Recentes. Sem armazenamento, tudo vira uma conversa só, que é o que ela é
+ * no Inbox de qualquer jeito.
  */
 ;(function () {
   'use strict'
@@ -63,6 +74,21 @@
     gravar('visitante', segredo)
   }
 
+  /* Onde cada conversa começou: o `ref` da primeira mensagem dela. */
+  function marcas() {
+    try {
+      var lista = JSON.parse(ler('conversas') || '[]')
+      return Array.isArray(lista) ? lista.filter(function (r) { return typeof r === 'string' }) : []
+    } catch (e) {
+      return []
+    }
+  }
+  function marcar(ref) {
+    var lista = marcas()
+    lista.push(ref)
+    gravar('conversas', JSON.stringify(lista.slice(-50)))
+  }
+
   function pedir(caminho, opcoes) {
     opcoes = opcoes || {}
     return fetch(api + caminho, {
@@ -88,39 +114,90 @@
   /* ------------------------------------------------------------------ */
   var CSS =
     ':host{all:initial;font-family:inherit;--c:#6366F1;--tinta:#16181D;--apagado:#6B7280;--linha:#E7E8EC;--fundo:#FFFFFF;--bolha:#F2F3F5}' +
-    '.raiz{--ficha:#FAFAFB;--campo:#fff;--c-texto:color-mix(in srgb,var(--c) 85%,#000)}' +
+    '.raiz{--ficha:#F7F7F9;--campo:#fff;--c-texto:color-mix(in srgb,var(--c) 85%,#000);--c-escuro:color-mix(in srgb,var(--c) 62%,#000)}' +
     /* Fundo escuro: a loja de tema escuro não quer um retângulo branco aceso no
      * canto. A cor da marca continua a mesma; o texto dela clareia para ler. */
     '.raiz.escuro{--tinta:#F3F4F6;--apagado:#9CA0A8;--linha:#2B2E36;--fundo:#15161A;--bolha:#24262D;--ficha:#1B1D22;--campo:#101114;--c-texto:color-mix(in srgb,var(--c) 55%,#fff)}' +
     '.raiz.escuro .painel,.raiz.escuro .convite{box-shadow:0 24px 60px -18px rgba(0,0,0,.8),0 0 0 1px rgba(255,255,255,.08)}' +
     '*{box-sizing:border-box;font-family:inherit;margin:0}[hidden]{display:none!important}' +
+    'button{font:inherit;color:inherit}' +
     '.raiz{position:fixed;right:20px;bottom:20px;z-index:2147483000;display:flex;flex-direction:column;align-items:flex-end;gap:12px;color:var(--tinta);font-size:15px;line-height:1.45;-webkit-font-smoothing:antialiased}' +
-    '.botao{width:58px;height:58px;border-radius:50%;border:0;background:var(--c);color:#fff;cursor:pointer;display:grid;place-items:center;box-shadow:0 10px 28px -8px color-mix(in srgb,var(--c) 70%,#000),0 2px 6px rgba(22,24,29,.18);transition:transform .18s ease;position:relative}' +
+    '.botao{width:64px;height:64px;border-radius:50%;border:0;background:var(--c);color:#fff;cursor:pointer;display:grid;place-items:center;box-shadow:0 10px 28px -8px color-mix(in srgb,var(--c) 70%,#000),0 2px 6px rgba(22,24,29,.18);transition:transform .18s ease;position:relative}' +
     '.botao:hover{transform:scale(1.05)}' +
     '.botao .mascote{width:100%;height:100%;object-fit:cover;border-radius:50%;pointer-events:none}' +
-    '.botao{width:64px;height:64px}.botao svg.robo{width:54px;height:54px;overflow:visible}' +
-    '.robo .braco{transform-origin:47px 41px;animation:acena 3.6s ease-in-out infinite}' +
-    '.robo .olhos{transform-origin:32px 31px;animation:pisca 4.2s infinite}' +
-    '.robo .antena{animation:respira 1.8s ease-in-out infinite}' +
+    '.botao svg.robo{width:54px;height:54px;overflow:visible}' +
+    '.robo.vivo .braco{transform-origin:47px 41px;animation:acena 3.6s ease-in-out infinite}' +
+    '.robo.vivo .olhos{transform-origin:32px 31px;animation:pisca 4.2s infinite}' +
+    '.robo.vivo .antena{animation:respira 1.8s ease-in-out infinite}' +
     '@keyframes acena{0%,52%,100%{transform:rotate(0)}8%{transform:rotate(-24deg)}16%{transform:rotate(10deg)}24%{transform:rotate(-24deg)}32%{transform:rotate(10deg)}42%{transform:rotate(0)}}' +
     '@keyframes pisca{0%,92%,100%{transform:scaleY(1)}95%{transform:scaleY(.1)}}' +
     '@keyframes respira{0%,100%{opacity:1}50%{opacity:.35}}' +
-
-    '.botao:focus-visible,button:focus-visible,a:focus-visible,textarea:focus-visible,input:focus-visible{outline:3px solid color-mix(in srgb,var(--c) 45%,#fff);outline-offset:2px}' +
-    '.botao svg{width:27px;height:27px}' +
+    '.botao:focus-visible,button:focus-visible,a:focus-visible,textarea:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid color-mix(in srgb,var(--c) 45%,#fff);outline-offset:2px}' +
+    '.botao>svg:not(.robo){width:27px;height:27px}' +
     '.naolidas{position:absolute;top:-3px;right:-3px;min-width:20px;height:20px;padding:0 5px;border-radius:10px;background:#E11D48;color:#fff;font-size:11.5px;font-weight:700;display:grid;place-items:center;border:2px solid #fff}' +
     '.convite{max-width:260px;background:var(--fundo);border-radius:16px 16px 4px 16px;padding:12px 34px 12px 14px;box-shadow:0 12px 32px -10px rgba(22,24,29,.35),0 0 0 1px var(--linha);font-size:14px;position:relative;cursor:pointer;animation:entra .45s cubic-bezier(.2,.8,.2,1)}' +
     '.convite .fechar{position:absolute;top:6px;right:6px;width:22px;height:22px;border:0;background:transparent;color:var(--apagado);cursor:pointer;border-radius:6px;font-size:16px;line-height:1}' +
     '@keyframes entra{from{opacity:0;transform:translateY(8px) scale(.96)}to{opacity:1;transform:none}}' +
-    '.painel{width:380px;height:min(620px,calc(100vh - 110px));background:var(--fundo);border-radius:20px;box-shadow:0 24px 60px -18px rgba(22,24,29,.45),0 0 0 1px rgba(22,24,29,.06);display:flex;flex-direction:column;overflow:hidden;transform-origin:bottom right;animation:abre .22s cubic-bezier(.2,.8,.2,1)}' +
+    '.painel{width:380px;height:min(640px,calc(100vh - 110px));background:var(--fundo);border-radius:20px;box-shadow:0 24px 60px -18px rgba(22,24,29,.45),0 0 0 1px rgba(22,24,29,.06);display:flex;flex-direction:column;overflow:hidden;transform-origin:bottom right;animation:abre .22s cubic-bezier(.2,.8,.2,1)}' +
     '@keyframes abre{from{opacity:0;transform:translateY(10px) scale(.97)}to{opacity:1;transform:none}}' +
-    '.topo{background:var(--c);color:#fff;padding:16px 14px 16px 18px;display:flex;align-items:center;gap:12px}' +
+    '.tela{flex:1;min-height:0;display:flex;flex-direction:column}' +
+    '.rolar{flex:1;min-height:0;overflow-y:auto;overscroll-behavior:contain}' +
+
+    /* Avatar: o personagem da loja ou o robô, sempre sobre a cor da marca. */
+    '.avatar{width:38px;height:38px;flex:none;border-radius:50%;background:var(--c);display:grid;place-items:center;overflow:hidden}' +
+    '.avatar img,.avatar video{width:100%;height:100%;object-fit:cover}' +
+    '.avatar svg{width:32px;height:32px;overflow:visible}' +
+    '.sobre-cor .avatar{background:rgba(255,255,255,.18);box-shadow:0 0 0 2px rgba(255,255,255,.28)}' +
+
+    /* Início */
+    '.capa{background:linear-gradient(155deg,var(--c) 0%,var(--c-escuro) 100%);color:#fff;padding:18px 18px 74px;position:relative}' +
+    '.capa .linha{display:flex;align-items:center;gap:10px}' +
+    '.capa .nome{flex:1;min-width:0;font-weight:700;font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}' +
+    '.capa h1{font-size:27px;font-weight:750;line-height:1.15;letter-spacing:-.022em;margin-top:30px;overflow-wrap:anywhere}' +
+    '.capa .sub{font-size:15px;opacity:.86;margin-top:8px}' +
+    '.fechar-topo{width:34px;height:34px;flex:none;border:0;border-radius:10px;background:rgba(255,255,255,.14);color:#fff;cursor:pointer;display:grid;place-items:center}' +
+    '.fechar-topo:hover{background:rgba(255,255,255,.24)}' +
+    '.cartoes{padding:0 14px 16px;margin-top:-56px;position:relative;display:flex;flex-direction:column;gap:12px}' +
+    '.cartao{background:var(--fundo);border-radius:16px;box-shadow:0 8px 28px -12px rgba(22,24,29,.28),0 0 0 1px var(--linha);overflow:hidden}' +
+    '.acao{display:flex;align-items:center;gap:14px;width:100%;padding:16px;border:0;background:none;text-align:left;cursor:pointer;transition:background .15s}' +
+    '.acao:hover{background:color-mix(in srgb,var(--c) 5%,var(--fundo))}' +
+    '.acao .txt{flex:1;min-width:0}' +
+    '.acao b{display:block;font-size:15px;font-weight:700}' +
+    '.acao small{display:flex;align-items:center;gap:6px;font-size:13px;color:var(--apagado);margin-top:2px}' +
+    '.acao small svg{flex:none}' +
+    '.seta{width:36px;height:36px;flex:none;border-radius:50%;background:var(--c);color:#fff;display:grid;place-items:center}' +
+    '.cartao h4{font-size:12px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--apagado);padding:14px 16px 2px}' +
+
+    /* Listas de conversas */
+    '.item{display:flex;align-items:center;gap:12px;width:100%;padding:12px 16px;border:0;background:none;text-align:left;cursor:pointer;transition:background .15s}' +
+    '.item:hover{background:var(--bolha)}' +
+    '.item .txt{flex:1;min-width:0}' +
+    '.item b{display:block;font-size:14px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}' +
+    '.item small{display:block;font-size:12.5px;color:var(--apagado);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}' +
+    '.item.novo b{font-weight:750}' +
+    '.ponto{width:9px;height:9px;flex:none;border-radius:50%;background:#E11D48}' +
+    '.titulo-aba{background:var(--c);color:#fff;display:flex;align-items:center;gap:10px;padding:14px 14px 14px 18px}' +
+    '.titulo-aba h2{flex:1;font-size:16px;font-weight:700}' +
+    '.novo-chat{display:flex;width:calc(100% - 32px);align-items:center;justify-content:center;gap:8px;margin:16px;padding:12px;border:0;border-radius:12px;background:var(--c);color:#fff;font-weight:700;font-size:14.5px;cursor:pointer;box-shadow:0 6px 18px -8px var(--c)}' +
+    '.novo-chat:hover{background:var(--c-escuro)}' +
+    '.secao{font-size:12px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--apagado);padding:6px 16px 6px}' +
+    '.vazio{padding:36px 28px;text-align:center;color:var(--apagado);font-size:14px}' +
+    '.vazio svg{color:color-mix(in srgb,var(--c) 55%,var(--linha));margin-bottom:10px}' +
+
+    /* Abas */
+    '.abas{display:flex;border-top:1px solid var(--linha);background:var(--fundo)}' +
+    '.abas button{flex:1;padding:9px 0 7px;display:flex;flex-direction:column;align-items:center;gap:2px;font-size:12px;font-weight:650;color:var(--apagado);background:none;border:0;cursor:pointer;position:relative}' +
+    '.abas button.ativa{color:var(--c-texto)}' +
+    '.abas .ponto{position:absolute;top:7px;left:calc(50% + 8px)}' +
+
+    /* Conversa */
+    '.topo{background:var(--c);color:#fff;padding:12px 12px 12px 8px;display:flex;align-items:center;gap:10px}' +
     '.topo .t{flex:1;min-width:0}' +
-    '.topo h2{font-size:16px;font-weight:700;letter-spacing:-.01em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}' +
-    '.topo p{font-size:12.5px;opacity:.85;margin-top:1px}' +
-    '.topo button{width:34px;height:34px;border:0;border-radius:10px;background:rgba(255,255,255,.14);color:#fff;cursor:pointer;display:grid;place-items:center}' +
-    '.topo button:hover{background:rgba(255,255,255,.24)}' +
-    '.lista{flex:1;overflow-y:auto;padding:18px 14px 8px;display:flex;flex-direction:column;gap:6px;overscroll-behavior:contain}' +
+    '.topo h2{font-size:15.5px;font-weight:700;letter-spacing:-.01em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}' +
+    '.topo p{font-size:12px;opacity:.85;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}' +
+    '.voltar{width:34px;height:34px;flex:none;border:0;border-radius:10px;background:transparent;color:#fff;cursor:pointer;display:grid;place-items:center}' +
+    '.voltar:hover{background:rgba(255,255,255,.16)}' +
+    '.lista{padding:18px 14px 8px;display:flex;flex-direction:column;gap:6px}' +
     '.msg{max-width:84%;padding:9px 13px;border-radius:18px;white-space:pre-wrap;word-wrap:break-word;overflow-wrap:anywhere}' +
     '.msg a{color:inherit;text-decoration:underline;text-underline-offset:2px}' +
     '.empresa{align-self:flex-start;background:var(--bolha);border-bottom-left-radius:6px}' +
@@ -144,45 +221,68 @@
     '.digitando i{width:7px;height:7px;border-radius:50%;background:#A3A7B0;animation:pula 1.2s infinite}' +
     '.digitando i:nth-child(2){animation-delay:.15s}.digitando i:nth-child(3){animation-delay:.3s}' +
     '@keyframes pula{0%,60%,100%{transform:none;opacity:.5}30%{transform:translateY(-4px);opacity:1}}' +
-    '.ficha{align-self:stretch;margin:10px 0 6px;border:1px solid var(--linha);border-radius:16px;padding:14px;background:var(--ficha)}' +
-    '.ficha p{font-size:13.5px;margin-bottom:10px}' +
-    '.ficha input{display:block;width:100%;font-size:15px;padding:10px 12px;border:1px solid var(--linha);border-radius:10px;background:var(--campo);color:var(--tinta);margin-bottom:8px}' +
-    '.ficha .acoes{display:flex;align-items:center;gap:12px;margin-top:2px}' +
-    '.ficha .salvar{border:0;border-radius:10px;background:var(--c);color:#fff;font-weight:650;font-size:14px;padding:9px 16px;cursor:pointer}' +
-    '.ficha .depois{border:0;background:none;color:var(--apagado);font-size:13px;cursor:pointer;text-decoration:underline;text-underline-offset:2px}' +
-    '.ficha .erro{color:#BE123C;font-size:12.5px;margin:0 0 8px}' +
     '.aviso{align-self:center;font-size:12.5px;color:var(--apagado);text-align:center;margin:6px 0}' +
     '.escrever{border-top:1px solid var(--linha);padding:10px 10px 10px 14px;display:flex;align-items:flex-end;gap:8px}' +
     '.escrever textarea{flex:1;resize:none;border:0;outline:0;font-size:15px;line-height:1.4;max-height:120px;padding:8px 0;color:var(--tinta);background:transparent}' +
     '.escrever textarea::placeholder{color:#9CA0A8}' +
     '.escrever button{width:40px;height:40px;flex:none;border:0;border-radius:12px;background:var(--c);color:#fff;cursor:pointer;display:grid;place-items:center;transition:opacity .15s}' +
     '.escrever button:disabled{opacity:.35;cursor:default}' +
-    '.marca{text-align:center;font-size:11px;color:#A3A7B0;padding:0 0 8px}' +
+
+    /* Formulário */
+    '.form{padding:22px 20px 20px}' +
+    '.form h3{font-size:19px;font-weight:750;letter-spacing:-.015em}' +
+    '.form .sub{color:var(--apagado);font-size:13.5px;margin:4px 0 20px}' +
+    '.campo{margin-bottom:14px}' +
+    '.campo label{display:block;font-size:13px;font-weight:650;margin-bottom:6px}' +
+    '.campo label span{font-weight:400;color:var(--apagado)}' +
+    '.campo input,.campo select{display:block;width:100%;font-size:15px;padding:11px 12px;border:1px solid var(--linha);border-radius:11px;background:var(--campo);color:var(--tinta);outline:0;transition:border-color .15s,box-shadow .15s}' +
+    '.campo input::placeholder{color:#9CA0A8}' +
+    '.campo input:focus,.campo select:focus{border-color:var(--c);box-shadow:0 0 0 3px color-mix(in srgb,var(--c) 18%,transparent)}' +
+    '.campo .tel{display:flex;gap:8px}.campo .tel select{width:104px;flex:none;padding-right:6px}' +
+    '.campo .erro{color:#E11D48;font-size:12.5px;margin-top:5px}' +
+    '.campo.invalido input{border-color:#E11D48}' +
+    '.principal{width:100%;border:0;border-radius:12px;background:var(--c);color:#fff;font-weight:700;font-size:15px;padding:13px;cursor:pointer;margin-top:6px}' +
+    '.principal:hover{background:var(--c-escuro)}' +
+    '.principal:disabled{opacity:.6;cursor:default}' +
+    '.pular{display:block;margin:12px auto 0;border:0;background:none;color:var(--apagado);font-size:13px;cursor:pointer;text-decoration:underline;text-underline-offset:2px}' +
+
+    '.marca{text-align:center;font-size:11px;color:#A3A7B0;padding:6px 0 8px;background:var(--fundo)}' +
     '.marca a{color:inherit;text-decoration:none}' +
     '@media (max-width:480px){.raiz{right:14px;bottom:14px}.raiz.aberto{inset:0}.raiz.aberto .botao{display:none}.painel{position:fixed;inset:0;width:auto;height:100%;border-radius:0}.convite{max-width:230px}}' +
     '@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}'
 
-  /* O robô do botão: acena em loop, pisca e a antena respira. É a única
-   * coisa que se mexe sozinha no balão, e para quando o visitante pede menos
-   * movimento. Cores fixas de propósito: branco e visor escuro leem em cima de
-   * qualquer cor de marca. */
-  var ICONE_ROBO =
-    '<svg class="robo" viewBox="7 3 52 52" aria-hidden="true">' +
-    '<g class="braco"><path d="M47 41 Q54 39 56 30" stroke="#fff" stroke-width="4" stroke-linecap="round" fill="none"/><circle cx="56.5" cy="27" r="4.6" fill="#fff"/></g>' +
-    '<line x1="32" y1="19" x2="32" y2="12" stroke="#fff" stroke-width="3" stroke-linecap="round"/>' +
-    '<circle class="antena" cx="32" cy="10" r="3.4" fill="#FFD43B"/>' +
-    '<rect x="11.5" y="28" width="5" height="10" rx="2.5" fill="#fff" opacity=".85"/>' +
-    '' +
-    '<rect x="15" y="19" width="34" height="28" rx="10" fill="#fff"/>' +
-    '<rect x="19.5" y="24.5" width="25" height="15" rx="7.5" fill="#16181D"/>' +
-    '<g class="olhos"><rect x="24.5" y="28.5" width="4.6" height="5.6" rx="2.3" fill="#6EE7F9"/><rect x="34.9" y="28.5" width="4.6" height="5.6" rx="2.3" fill="#6EE7F9"/></g>' +
-    '<path d="M28.5 36.2 Q32 38.4 35.5 36.2" stroke="#6EE7F9" stroke-width="1.6" stroke-linecap="round" fill="none"/>' +
-    '<rect x="25" y="47" width="14" height="5" rx="2.5" fill="#fff" opacity=".85"/>' +
-    '</svg>'
-  var ICONE_FECHAR =
-    '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg>'
-  var ICONE_ENVIAR =
-    '<svg viewBox="0 0 24 24" width="19" height="19" fill="currentColor" aria-hidden="true"><path d="M3.4 20.4 21 12 3.4 3.6l-.01 6.53L15 12 3.39 13.87z"/></svg>'
+  /* O robô: no botão ele acena em loop, pisca e a antena respira; no avatar
+   * fica parado. Cores fixas de propósito: branco e visor escuro leem em cima
+   * de qualquer cor de marca. */
+  function robo(vivo) {
+    return (
+      '<svg class="robo' + (vivo ? ' vivo' : '') + '" viewBox="7 3 52 52" aria-hidden="true">' +
+      '<g class="braco"><path d="M47 41 Q54 39 56 30" stroke="#fff" stroke-width="4" stroke-linecap="round" fill="none"/><circle cx="56.5" cy="27" r="4.6" fill="#fff"/></g>' +
+      '<line x1="32" y1="19" x2="32" y2="12" stroke="#fff" stroke-width="3" stroke-linecap="round"/>' +
+      '<circle class="antena" cx="32" cy="10" r="3.4" fill="#FFD43B"/>' +
+      '<rect x="11.5" y="28" width="5" height="10" rx="2.5" fill="#fff" opacity=".85"/>' +
+      '<rect x="15" y="19" width="34" height="28" rx="10" fill="#fff"/>' +
+      '<rect x="19.5" y="24.5" width="25" height="15" rx="7.5" fill="#16181D"/>' +
+      '<g class="olhos"><rect x="24.5" y="28.5" width="4.6" height="5.6" rx="2.3" fill="#6EE7F9"/><rect x="34.9" y="28.5" width="4.6" height="5.6" rx="2.3" fill="#6EE7F9"/></g>' +
+      '<path d="M28.5 36.2 Q32 38.4 35.5 36.2" stroke="#6EE7F9" stroke-width="1.6" stroke-linecap="round" fill="none"/>' +
+      '<rect x="25" y="47" width="14" height="5" rx="2.5" fill="#fff" opacity=".85"/>' +
+      '</svg>'
+    )
+  }
+  function icone(d, tamanho, cheio) {
+    return (
+      '<svg viewBox="0 0 24 24" width="' + (tamanho || 20) + '" height="' + (tamanho || 20) + '" ' +
+      (cheio ? 'fill="currentColor"' : 'fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"') +
+      ' aria-hidden="true">' + d + '</svg>'
+    )
+  }
+  var FECHAR = '<path d="M6 6l12 12M18 6 6 18"/>'
+  var ENVIAR = '<path d="M3.4 20.4 21 12 3.4 3.6l-.01 6.53L15 12 3.39 13.87z"/>'
+  var VOLTAR = '<path d="M15 18l-6-6 6-6"/>'
+  var CASA = '<path d="M3 10.5 12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/>'
+  var BALAO = '<path d="M21 12a8 8 0 0 1-11.6 7.1L4 20.5l1.4-4.6A8 8 0 1 1 21 12z"/>'
+  var RELOGIO = '<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>'
+  var MAIS = '<path d="M12 5v14M5 12h14"/>'
 
   /* ------------------------------------------------------------------ */
   var host = document.createElement('div')
@@ -197,21 +297,33 @@
 
   var config = null
   var mensagens = []
-  var pendentes = [] // bolhas do visitante ainda não gravadas
-  var identificado = true
-  var fichaDispensada = ler('ficha') === 'depois'
+  var pendentes = [] // bolhas do visitante ainda não gravadas: { ref, texto, conversa }
+  var faltam = [] // campos do formulário que o servidor ainda não tem
   var aberto = false
+  var tela = 'inicio' // inicio | mensagens | ficha | conversa
+  var atual = null // a conversa aberta: o ref que a abriu, 'antiga', ou null para uma nova
+  var ficha = null // o que o formulário coletou, até ir junto da primeira mensagem
+  var errosDaFicha = {}
+  var rascunho = ''
   var esperandoDesde = 0
   var vistas = Number(ler('vistas') || 0)
   var relogio = null
   var ultimaAssinatura = ''
-  var painel, lista, campo, enviar, botao, naolidas
+  var painel, botao, naolidas, lista, campo, enviar
 
   function el(tag, classe, texto) {
     var e = document.createElement(tag)
     if (classe) e.className = classe
     if (texto !== undefined) e.textContent = texto
     return e
+  }
+  function botaoCom(classe, html, rotulo, acao) {
+    var b = el('button', classe)
+    b.type = 'button'
+    if (html) b.innerHTML = html
+    if (rotulo) b.setAttribute('aria-label', rotulo)
+    if (acao) b.addEventListener('click', acao)
+    return b
   }
 
   /* Links no texto viram clicáveis, sem innerHTML: o texto nunca é HTML. */
@@ -230,12 +342,11 @@
     }
   }
 
-  /* O ícone do botão fechado: o personagem da loja, quando ela mandou um, e o
-   * robô quando não. Vídeo vai mudo, em loop e sem controles: é enfeite, e
-   * navegador de celular só toca sozinho o que está mudo. */
-  function pintarIcone() {
+  /* O personagem da loja, quando ela mandou um, e o robô quando não. Vídeo vai
+   * mudo, em loop e sem controles: é enfeite, e navegador de celular só toca
+   * sozinho o que está mudo. */
+  function personagem(alvo, vivo) {
     var m = config.mascote
-    botao.textContent = ''
     if (m && m.tipo === 'video') {
       var v = document.createElement('video')
       v.className = 'mascote'
@@ -245,25 +356,36 @@
       v.loop = true
       v.playsInline = true
       v.setAttribute('aria-hidden', 'true')
-      botao.appendChild(v)
+      alvo.appendChild(v)
     } else if (m) {
       var img = el('img', 'mascote')
       img.src = m.url
       img.alt = ''
-      botao.appendChild(img)
+      alvo.appendChild(img)
     } else {
-      botao.innerHTML = ICONE_ROBO
+      alvo.insertAdjacentHTML('beforeend', robo(vivo))
     }
+  }
+  function avatar() {
+    var a = el('span', 'avatar')
+    personagem(a, false)
+    return a
+  }
+
+  function pintarBotao() {
+    botao.textContent = ''
+    if (aberto) botao.innerHTML = icone(FECHAR, 27)
+    else personagem(botao, true)
+    botao.appendChild(naolidas)
   }
 
   function montarBotao() {
     botao = el('button', 'botao')
     botao.type = 'button'
     botao.setAttribute('aria-label', 'Abrir conversa')
-    pintarIcone()
     naolidas = el('span', 'naolidas')
     naolidas.hidden = true
-    botao.appendChild(naolidas)
+    pintarBotao()
     // O mesmo botão abre e fecha: aberto, ele vira o X, e o X tem que fechar.
     botao.addEventListener('click', function () {
       if (aberto) fecharPainel()
@@ -292,54 +414,134 @@
     raiz.insertBefore(convite, botao)
   }
 
-  function montarPainel() {
+  function abrir() {
+    if (aberto) return
+    aberto = true
+    var convite = raiz.querySelector('.convite')
+    if (convite) convite.remove()
+    gravar('convite', '1')
     painel = el('div', 'painel')
     painel.setAttribute('role', 'dialog')
     painel.setAttribute('aria-label', config.titulo)
-
-    var topo = el('div', 'topo')
-    var t = el('div', 't')
-    t.appendChild(el('h2', null, config.titulo))
-    t.appendChild(el('p', null, 'Respondemos por aqui mesmo'))
-    var fechar = el('button')
-    fechar.type = 'button'
-    fechar.setAttribute('aria-label', 'Fechar conversa')
-    fechar.innerHTML = ICONE_FECHAR
-    fechar.addEventListener('click', fecharPainel)
-    topo.appendChild(t)
-    topo.appendChild(fechar)
-
-    lista = el('div', 'lista')
-    lista.setAttribute('aria-live', 'polite')
-
-    var escrever = el('form', 'escrever')
-    campo = el('textarea')
-    campo.rows = 1
-    campo.placeholder = 'Escreva sua mensagem'
-    campo.setAttribute('aria-label', 'Mensagem')
-    campo.maxLength = 2000
-    enviar = el('button')
-    enviar.type = 'submit'
-    enviar.disabled = true
-    enviar.setAttribute('aria-label', 'Enviar')
-    enviar.innerHTML = ICONE_ENVIAR
-    campo.addEventListener('input', function () {
-      enviar.disabled = campo.value.trim() === ''
-      campo.style.height = 'auto'
-      campo.style.height = Math.min(campo.scrollHeight, 120) + 'px'
+    painel.addEventListener('keydown', function (ev) {
+      if (ev.key === 'Escape') fecharPainel()
     })
-    campo.addEventListener('keydown', function (ev) {
-      if (ev.key === 'Enter' && !ev.shiftKey && !ev.isComposing) {
-        ev.preventDefault()
-        mandarTexto()
+    raiz.classList.add('aberto')
+    raiz.insertBefore(painel, botao)
+    botao.setAttribute('aria-label', 'Fechar conversa')
+    pintarBotao()
+    if (tela === 'conversa') marcarVistas()
+    desenhar()
+    buscar()
+  }
+
+  function fecharPainel() {
+    if (!aberto) return
+    aberto = false
+    if (campo) rascunho = campo.value
+    painel.remove()
+    painel = lista = campo = enviar = null
+    raiz.classList.remove('aberto')
+    botao.setAttribute('aria-label', 'Abrir conversa')
+    pintarBotao()
+    botao.focus()
+    agendar()
+  }
+
+  function marcarVistas() {
+    vistas = contarEmpresa()
+    gravar('vistas', String(vistas))
+    naolidas.hidden = true
+  }
+  function contarEmpresa() {
+    return mensagens.filter(function (m) {
+      return m.de === 'empresa'
+    }).length
+  }
+  function naoLidas() {
+    return Math.max(0, contarEmpresa() - vistas)
+  }
+
+  /* ------------------------------------------------------------------ */
+  /* As conversas: o fio do servidor, fatiado pelas marcas deste navegador. */
+  function conversas() {
+    var inicio = {}
+    marcas().forEach(function (r) {
+      inicio[r] = true
+    })
+    var todas = []
+    var corrente = null
+    for (var i = 0; i < mensagens.length; i++) {
+      var m = mensagens[i]
+      if (m.de === 'visitante' && m.ref && inicio[m.ref]) {
+        corrente = { id: m.ref, mensagens: [] }
+        todas.push(corrente)
+      } else if (!corrente) {
+        corrente = { id: 'antiga', mensagens: [] }
+        todas.push(corrente)
       }
+      corrente.mensagens.push(m)
+    }
+    return todas.reverse() // a mais recente primeiro
+  }
+  function conversaPorId(id) {
+    var todas = conversas()
+    for (var i = 0; i < todas.length; i++) if (todas[i].id === id) return todas[i]
+    return null
+  }
+  function resumo(c) {
+    var ultima = c.mensagens[c.mensagens.length - 1]
+    var texto = ultima.texto || (ultima.produtos ? 'Produto enviado' : ultima.midia ? 'Arquivo enviado' : '')
+    return { texto: (ultima.de === 'visitante' ? 'Você: ' : '') + texto, em: ultima.em }
+  }
+  function quando(iso) {
+    var min = Math.round((Date.now() - new Date(iso).getTime()) / 60000)
+    if (!(min >= 0)) return ''
+    if (min < 1) return 'agora'
+    if (min < 60) return 'há ' + min + ' min'
+    if (min < 1440) return 'há ' + Math.round(min / 60) + ' h'
+    var d = new Date(iso)
+    return ('0' + d.getDate()).slice(-2) + '/' + ('0' + (d.getMonth() + 1)).slice(-2)
+  }
+
+  /* O formulário aparece numa conversa nova quando falta algum obrigatório,
+   * ou quando o visitante nunca o viu. Quem já respondeu ou pulou não é
+   * perguntado de novo pelo que é opcional. */
+  function precisaFicha() {
+    if (!config.formulario || !config.formulario.length || ficha) return false
+    var obrigatorioFaltando = config.formulario.some(function (c) {
+      return c.obrigatorio && faltam.indexOf(c.tipo) >= 0
     })
-    escrever.addEventListener('submit', function (ev) {
-      ev.preventDefault()
-      mandarTexto()
-    })
-    escrever.appendChild(campo)
-    escrever.appendChild(enviar)
+    return obrigatorioFaltando || (faltam.length > 0 && !ler('ficha'))
+  }
+
+  function irPara(nova, conversa) {
+    if (campo) rascunho = campo.value
+    tela = nova
+    if (conversa !== undefined) atual = conversa
+    if (tela === 'conversa') marcarVistas()
+    desenhar()
+  }
+  function novaConversa() {
+    errosDaFicha = {}
+    if (precisaFicha()) irPara('ficha', null)
+    else irPara('conversa', null)
+  }
+
+  /* ------------------------------------------------------------------ */
+  function desenhar() {
+    if (!painel) return
+    var rolagem = lista ? lista.parentNode.scrollHeight - lista.parentNode.scrollTop - lista.parentNode.clientHeight : 0
+    var mesmaTela = painel.getAttribute('data-tela') === tela + ':' + atual
+    var foco = sombra.activeElement
+    painel.textContent = ''
+    lista = campo = enviar = null
+    painel.setAttribute('data-tela', tela + ':' + atual)
+
+    if (tela === 'inicio') telaInicio()
+    else if (tela === 'mensagens') telaMensagens()
+    else if (tela === 'ficha') telaFicha()
+    else telaConversa(mesmaTela ? rolagem : 0)
 
     var marca = el('div', 'marca')
     var link = el('a', null, 'Atendimento por AutoFluxos')
@@ -347,59 +549,340 @@
     link.target = '_blank'
     link.rel = 'noopener'
     marca.appendChild(link)
-
-    painel.appendChild(topo)
-    painel.appendChild(lista)
-    painel.appendChild(escrever)
     painel.appendChild(marca)
-    painel.addEventListener('keydown', function (ev) {
-      if (ev.key === 'Escape') fecharPainel()
+
+    if (tela === 'conversa' && campo && (!mesmaTela || (foco && foco.tagName === 'TEXTAREA'))) campo.focus()
+  }
+
+  function abas() {
+    var barra = el('nav', 'abas')
+    ;[
+      ['inicio', 'Início', CASA],
+      ['mensagens', 'Mensagens', BALAO],
+    ].forEach(function (a) {
+      var b = botaoCom(tela === a[0] ? 'ativa' : '', icone(a[2], 22), null, function () {
+        irPara(a[0])
+      })
+      b.appendChild(document.createTextNode(a[1]))
+      if (tela === a[0]) b.setAttribute('aria-current', 'page')
+      if (a[0] === 'mensagens' && naoLidas() > 0) b.appendChild(el('span', 'ponto'))
+      barra.appendChild(b)
     })
+    return barra
   }
 
-  function abrir() {
-    if (aberto) return
-    aberto = true
-    var convite = raiz.querySelector('.convite')
-    if (convite) convite.remove()
-    gravar('convite', '1')
-    if (!painel) montarPainel()
-    raiz.classList.add('aberto')
-    raiz.insertBefore(painel, botao)
-    botao.setAttribute('aria-label', 'Fechar conversa')
-    botao.innerHTML = ICONE_FECHAR
-    botao.appendChild(naolidas)
-    marcarVistas()
-    desenhar()
-    campo.focus()
-    buscar()
+  function itemDaConversa(c, destaque) {
+    var r = resumo(c)
+    var b = botaoCom('item' + (destaque ? ' novo' : ''), null, null, function () {
+      irPara('conversa', c.id)
+    })
+    b.appendChild(avatar())
+    var txt = el('span', 'txt')
+    txt.appendChild(el('b', null, r.texto || config.titulo))
+    txt.appendChild(el('small', null, config.titulo + ' · ' + quando(r.em)))
+    b.appendChild(txt)
+    if (destaque) b.appendChild(el('span', 'ponto'))
+    return b
   }
 
-  function fecharPainel() {
-    if (!aberto) return
-    aberto = false
-    painel.remove()
-    raiz.classList.remove('aberto')
-    botao.setAttribute('aria-label', 'Abrir conversa')
-    pintarIcone()
-    botao.appendChild(naolidas)
-    botao.focus()
-    agendar()
+  function telaInicio() {
+    var t = el('div', 'tela')
+    var rolar = el('div', 'rolar')
+    var capa = el('div', 'capa sobre-cor')
+    var linha = el('div', 'linha')
+    linha.appendChild(avatar())
+    linha.appendChild(el('span', 'nome', config.titulo))
+    linha.appendChild(botaoCom('fechar-topo', icone(FECHAR, 18), 'Fechar', fecharPainel))
+    capa.appendChild(linha)
+    capa.appendChild(el('h1', null, config.saudacao))
+    capa.appendChild(el('p', 'sub', 'Precisa de ajuda? Inicie uma conversa.'))
+    rolar.appendChild(capa)
+
+    var cartoes = el('div', 'cartoes')
+    var todas = conversas()
+    var principal = el('div', 'cartao')
+    var acao = botaoCom('acao', null, null, novaConversa)
+    var txt = el('span', 'txt')
+    txt.appendChild(el('b', null, 'Nova conversa'))
+    var prazo = el('small')
+    prazo.innerHTML = icone(RELOGIO, 14)
+    prazo.appendChild(document.createTextNode(config.prazo))
+    txt.appendChild(prazo)
+    acao.appendChild(txt)
+    var seta = el('span', 'seta')
+    seta.innerHTML = icone(ENVIAR, 17, true)
+    acao.appendChild(seta)
+    principal.appendChild(acao)
+    cartoes.appendChild(principal)
+
+    if (todas.length) {
+      var recentes = el('div', 'cartao')
+      recentes.appendChild(el('h4', null, 'Continuar de onde parou'))
+      recentes.appendChild(itemDaConversa(todas[0], naoLidas() > 0))
+      cartoes.appendChild(recentes)
+    }
+    rolar.appendChild(cartoes)
+    t.appendChild(rolar)
+    t.appendChild(abas())
+    painel.appendChild(t)
   }
 
-  function marcarVistas() {
-    vistas = mensagens.filter(function (m) {
-      return m.de === 'empresa'
-    }).length
-    gravar('vistas', String(vistas))
-    naolidas.hidden = true
+  function telaMensagens() {
+    var t = el('div', 'tela')
+    var topo = el('div', 'titulo-aba')
+    topo.appendChild(el('h2', null, 'Mensagens'))
+    topo.appendChild(botaoCom('fechar-topo', icone(FECHAR, 18), 'Fechar', fecharPainel))
+    t.appendChild(topo)
+
+    var rolar = el('div', 'rolar')
+    var novo = botaoCom('novo-chat', icone(MAIS, 18), null, novaConversa)
+    novo.appendChild(document.createTextNode('Iniciar um novo chat'))
+    rolar.appendChild(novo)
+
+    var todas = conversas()
+    if (todas.length) {
+      rolar.appendChild(el('div', 'secao', 'Recentes'))
+      todas.forEach(function (c, i) {
+        rolar.appendChild(itemDaConversa(c, i === 0 && naoLidas() > 0))
+      })
+    } else {
+      var vazio = el('div', 'vazio')
+      vazio.innerHTML = icone(BALAO, 40)
+      vazio.appendChild(el('p', null, 'Nenhuma conversa ainda. Quando você escrever, ela fica guardada aqui neste navegador.'))
+      rolar.appendChild(vazio)
+    }
+    t.appendChild(rolar)
+    t.appendChild(abas())
+    painel.appendChild(t)
+  }
+
+  function topoDaConversa(volta) {
+    var topo = el('div', 'topo sobre-cor')
+    topo.appendChild(botaoCom('voltar', icone(VOLTAR, 22), 'Voltar', volta))
+    topo.appendChild(avatar())
+    var t = el('div', 't')
+    t.appendChild(el('h2', null, config.titulo))
+    t.appendChild(el('p', null, config.prazo))
+    topo.appendChild(t)
+    topo.appendChild(botaoCom('fechar-topo', icone(FECHAR, 18), 'Fechar', fecharPainel))
+    return topo
   }
 
   /* ------------------------------------------------------------------ */
-  function desenhar() {
-    if (!lista) return
-    var perto = lista.scrollHeight - lista.scrollTop - lista.clientHeight < 80
-    lista.textContent = ''
+  /* O formulário de antes da conversa. */
+  var DDIS = [
+    ['55', 'BR'], ['351', 'PT'], ['1', 'US'], ['54', 'AR'], ['595', 'PY'], ['598', 'UY'], ['56', 'CL'],
+    ['57', 'CO'], ['52', 'MX'], ['51', 'PE'], ['34', 'ES'], ['39', 'IT'], ['49', 'DE'], ['33', 'FR'],
+    ['44', 'GB'], ['81', 'JP'],
+  ]
+  var ROTULOS = { nome: 'Nome', email: 'E-mail', telefone: 'WhatsApp', cpf: 'CPF', cnpj: 'CNPJ' }
+  var EXEMPLOS = {
+    nome: 'Exemplo: Ana Souza',
+    email: 'Exemplo: ana@empresa.com.br',
+    telefone: 'Exemplo: (11) 98765-4321',
+    cpf: 'Exemplo: 123.456.789-09',
+    cnpj: 'Exemplo: 12.345.678/0001-90',
+    proprio: 'Escreva aqui',
+  }
+
+  function so(v) {
+    return String(v).replace(/\D/g, '')
+  }
+  function mascara(tipo, v, ddi) {
+    var d = so(v)
+    if (tipo === 'cpf') {
+      d = d.slice(0, 11)
+      return d.replace(/^(\d{3})(\d)/, '$1.$2').replace(/^(\d{3})\.(\d{3})(\d)/, '$1.$2.$3').replace(/\.(\d{3})(\d{1,2})$/, '.$1-$2')
+    }
+    if (tipo === 'cnpj') {
+      d = d.slice(0, 14)
+      return d
+        .replace(/^(\d{2})(\d)/, '$1.$2')
+        .replace(/^(\d{2})\.(\d{3})(\d)/, '$1.$2.$3')
+        .replace(/\.(\d{3})(\d)/, '.$1/$2')
+        .replace(/(\d{4})(\d{1,2})$/, '$1-$2')
+    }
+    if (tipo === 'telefone' && ddi === '55') {
+      d = d.slice(0, 11)
+      if (d.length < 3) return d.length ? '(' + d : ''
+      var corte = d.length > 10 ? 7 : 6
+      return '(' + d.slice(0, 2) + ') ' + d.slice(2, corte) + (d.length > corte ? '-' + d.slice(corte) : '')
+    }
+    return v
+  }
+
+  /* As mesmas réguas de `src/core/chat-do-site.ts` e `src/core/documentos.ts`.
+   * O servidor confere de novo; aqui é só para o erro aparecer antes. */
+  function cpfOk(v) {
+    var d = so(v)
+    if (d.length !== 11 || /^(\d)\1{10}$/.test(d)) return false
+    for (var ate = 9; ate <= 10; ate++) {
+      var soma = 0
+      for (var i = 0; i < ate; i++) soma += Number(d[i]) * (ate + 1 - i)
+      var resto = (soma * 10) % 11
+      if ((resto === 10 ? 0 : resto) !== Number(d[ate])) return false
+    }
+    return true
+  }
+  function cnpjOk(v) {
+    var d = so(v)
+    if (d.length !== 14 || /^(\d)\1{13}$/.test(d)) return false
+    for (var ate = 12; ate <= 13; ate++) {
+      var soma = 0
+      for (var i = 0; i < ate; i++) soma += Number(d[i]) * (((ate - 1 - i) % 8) + 2)
+      var resto = soma % 11
+      if ((resto < 2 ? 0 : 11 - resto) !== Number(d[ate])) return false
+    }
+    return true
+  }
+  function conferir(tipo, valor, ddi) {
+    if (tipo === 'nome') return valor.replace(/\s+/g, ' ').length >= 2 ? '' : 'Escreva seu nome.'
+    if (tipo === 'email') return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(valor) ? '' : 'Confira o e-mail.'
+    if (tipo === 'telefone') {
+      var n = so(valor)
+      if (ddi === '55') return n.length === 10 || n.length === 11 ? '' : 'Confira o número, com DDD.'
+      return (ddi + n).length >= 8 && (ddi + n).length <= 15 ? '' : 'Confira o número.'
+    }
+    if (tipo === 'cpf') return cpfOk(valor) ? '' : 'CPF inválido. Confira os números.'
+    if (tipo === 'cnpj') return cnpjOk(valor) ? '' : 'CNPJ inválido. Confira os números.'
+    return valor.length <= 200 ? '' : 'Resposta longa demais.'
+  }
+
+  function telaFicha() {
+    var t = el('div', 'tela')
+    t.appendChild(topoDaConversa(function () {
+      irPara(conversas().length ? 'mensagens' : 'inicio')
+    }))
+    var rolar = el('div', 'rolar')
+    var f = el('form', 'form')
+    f.noValidate = true
+    f.appendChild(el('h3', null, 'Antes de começar'))
+    f.appendChild(el('p', 'sub', 'Preencha para a equipe saber com quem está falando.'))
+
+    var entradas = {}
+    var anterior = ficha || {}
+    var obrigatorios = 0
+    config.formulario.forEach(function (c) {
+      if (faltam.indexOf(c.tipo) < 0) return
+      if (c.obrigatorio) obrigatorios++
+      var caixa = el('div', 'campo' + (errosDaFicha[c.tipo] ? ' invalido' : ''))
+      var id = 'af-' + c.tipo
+      var rotulo = el('label', null, c.tipo === 'proprio' ? c.rotulo : ROTULOS[c.tipo])
+      rotulo.htmlFor = id
+      if (!c.obrigatorio) rotulo.appendChild(el('span', null, ' (opcional)'))
+      caixa.appendChild(rotulo)
+
+      var input = el('input')
+      input.id = id
+      input.placeholder = EXEMPLOS[c.tipo]
+      input.value = anterior[c.tipo] ? String(anterior[c.tipo]).replace(/^\+\d+\s/, '') : ''
+      if (c.tipo === 'nome') input.autocomplete = 'name'
+      if (c.tipo === 'email') {
+        input.type = 'email'
+        input.autocomplete = 'email'
+      }
+      if (c.tipo === 'cpf' || c.tipo === 'cnpj' || c.tipo === 'telefone') input.inputMode = 'numeric'
+      if (c.tipo === 'proprio') input.maxLength = 200
+
+      var ddi = null
+      if (c.tipo === 'telefone') {
+        input.type = 'tel'
+        input.autocomplete = 'tel-national'
+        ddi = el('select')
+        ddi.setAttribute('aria-label', 'Código do país')
+        DDIS.forEach(function (p) {
+          var o = el('option', null, p[1] + ' +' + p[0])
+          o.value = p[0]
+          ddi.appendChild(o)
+        })
+        var ddiAnterior = anterior.telefone && /^\+(\d+)\s/.exec(anterior.telefone)
+        if (ddiAnterior) ddi.value = ddiAnterior[1]
+        ddi.addEventListener('change', function () {
+          input.value = mascara('telefone', input.value, ddi.value)
+        })
+        var tel = el('div', 'tel')
+        tel.appendChild(ddi)
+        tel.appendChild(input)
+        caixa.appendChild(tel)
+      } else {
+        caixa.appendChild(input)
+      }
+      if (c.tipo === 'cpf' || c.tipo === 'cnpj' || c.tipo === 'telefone') {
+        input.addEventListener('input', function () {
+          input.value = mascara(c.tipo, input.value, ddi ? ddi.value : null)
+        })
+      }
+      if (errosDaFicha[c.tipo]) {
+        var erro = el('p', 'erro', errosDaFicha[c.tipo])
+        erro.id = id + '-erro'
+        input.setAttribute('aria-invalid', 'true')
+        input.setAttribute('aria-describedby', erro.id)
+        caixa.appendChild(erro)
+      }
+      entradas[c.tipo] = { campo: c, input: input, ddi: ddi }
+      f.appendChild(caixa)
+    })
+
+    var ir = el('button', 'principal', 'Iniciar conversa')
+    ir.type = 'submit'
+    f.appendChild(ir)
+    if (!obrigatorios) {
+      f.appendChild(botaoCom('pular', null, null, function () {
+        gravar('ficha', '1')
+        irPara('conversa', null)
+      }))
+      f.lastChild.textContent = 'Pular e ir para a conversa'
+    }
+
+    f.addEventListener('submit', function (ev) {
+      ev.preventDefault()
+      var valores = {}
+      var erros = {}
+      Object.keys(entradas).forEach(function (tipo) {
+        var e = entradas[tipo]
+        var v = e.input.value.trim()
+        if (!v) {
+          if (e.campo.obrigatorio) erros[tipo] = 'Preencha este campo.'
+          return
+        }
+        var problema = conferir(tipo, v, e.ddi && e.ddi.value)
+        if (problema) erros[tipo] = problema
+        else valores[tipo] = e.ddi ? '+' + e.ddi.value + ' ' + v : v
+      })
+      errosDaFicha = erros
+      if (Object.keys(erros).length) {
+        ficha = null
+        desenhar()
+        var primeiro = painel.querySelector('[aria-invalid]')
+        if (primeiro) primeiro.focus()
+        return
+      }
+      ficha = valores
+      gravar('ficha', '1')
+      irPara('conversa', null)
+    })
+
+    rolar.appendChild(f)
+    t.appendChild(rolar)
+    painel.appendChild(t)
+    var primeiro = f.querySelector('[aria-invalid]') || f.querySelector('input')
+    if (primeiro) setTimeout(function () { primeiro.focus() }, 0)
+  }
+
+  /* ------------------------------------------------------------------ */
+  function telaConversa(distanciaDoFim) {
+    var t = el('div', 'tela')
+    t.appendChild(topoDaConversa(function () {
+      irPara(conversas().length ? 'mensagens' : 'inicio')
+    }))
+    var rolar = el('div', 'rolar')
+    lista = el('div', 'lista')
+    lista.setAttribute('aria-live', 'polite')
+    rolar.appendChild(lista)
+    t.appendChild(rolar)
+
+    var conversa = atual ? conversaPorId(atual) : null
+    var msgs = conversa ? conversa.mensagens : []
 
     var saudacao = el('div', 'msg empresa')
     textoComLinks(saudacao, config.saudacao)
@@ -407,15 +890,18 @@
 
     var ultimoAutor = null
     var ultimaEmpresa = -1
-    for (var j = mensagens.length - 1; j >= 0; j--) {
-      if (mensagens[j].de === 'empresa') {
+    for (var j = msgs.length - 1; j >= 0; j--) {
+      if (msgs[j].de === 'empresa') {
         ultimaEmpresa = j
         break
       }
     }
+    var minhas = pendentes.filter(function (p) {
+      return p.conversa === atual
+    })
 
-    for (var i = 0; i < mensagens.length; i++) {
-      var m = mensagens[i]
+    for (var i = 0; i < msgs.length; i++) {
+      var m = msgs[i]
       if (m.de === 'empresa' && m.autor && m.autor !== ultimoAutor) {
         lista.appendChild(el('div', 'autor', m.autor))
       }
@@ -432,56 +918,70 @@
       }
 
       if (m.opcoes && m.opcoes.length) {
-        lista.appendChild(opcoesDe(m, i !== ultimaEmpresa || respondeuDepois(i)))
+        lista.appendChild(opcoesDe(msgs, i, i !== ultimaEmpresa || respondeuDepois(msgs, i, minhas)))
       }
-
-      if (precisaFicha(i)) lista.appendChild(ficha())
     }
 
-    for (var k = 0; k < pendentes.length; k++) {
-      var pend = el('div', 'msg visitante pendente')
-      pend.textContent = pendentes[k].texto
-      lista.appendChild(pend)
+    for (var k = 0; k < minhas.length; k++) {
+      lista.appendChild(el('div', 'msg visitante pendente', minhas[k].texto))
     }
 
-    if (esperandoResposta()) {
+    if (esperandoResposta() && (minhas.length || (msgs.length && msgs[msgs.length - 1].de === 'visitante'))) {
       var dig = el('div', 'digitando')
       dig.setAttribute('aria-label', 'Digitando')
       dig.innerHTML = '<i></i><i></i><i></i>'
       lista.appendChild(dig)
     }
 
-    if (perto || esperandoDesde) lista.scrollTop = lista.scrollHeight
-  }
-
-  function respondeuDepois(i) {
-    for (var j = i + 1; j < mensagens.length; j++) if (mensagens[j].de === 'visitante') return true
-    return pendentes.length > 0
-  }
-
-  /* A ficha aparece depois da primeira resposta da empresa: pedir contato
-   * antes de responder seria cobrar para atender. Vai no fim do primeiro bloco
-   * de respostas, depois das opções dele. */
-  function precisaFicha(i) {
-    if (identificado || fichaDispensada || !config.pedirContato) return false
-    var fim = -1
-    for (var j = 0; j < mensagens.length; j++) {
-      if (mensagens[j].de === 'visitante') {
-        for (var k = j + 1; k < mensagens.length && mensagens[k].de === 'empresa'; k++) fim = k
-        break
+    var escrever = el('form', 'escrever')
+    campo = el('textarea')
+    campo.rows = 1
+    campo.placeholder = 'Escreva sua mensagem'
+    campo.setAttribute('aria-label', 'Mensagem')
+    campo.maxLength = 2000
+    campo.value = rascunho
+    enviar = el('button')
+    enviar.type = 'submit'
+    enviar.disabled = campo.value.trim() === ''
+    enviar.setAttribute('aria-label', 'Enviar')
+    enviar.innerHTML = icone(ENVIAR, 19, true)
+    campo.addEventListener('input', function () {
+      rascunho = campo.value
+      enviar.disabled = campo.value.trim() === ''
+      campo.style.height = 'auto'
+      campo.style.height = Math.min(campo.scrollHeight, 120) + 'px'
+    })
+    campo.addEventListener('keydown', function (ev) {
+      if (ev.key === 'Enter' && !ev.shiftKey && !ev.isComposing) {
+        ev.preventDefault()
+        mandarTexto()
       }
-    }
-    return i === fim
+    })
+    escrever.addEventListener('submit', function (ev) {
+      ev.preventDefault()
+      mandarTexto()
+    })
+    escrever.appendChild(campo)
+    escrever.appendChild(enviar)
+    t.appendChild(escrever)
+    painel.appendChild(t)
+
+    rolar.scrollTop = distanciaDoFim < 80 || esperandoDesde ? rolar.scrollHeight : rolar.scrollHeight - rolar.clientHeight - distanciaDoFim
   }
 
+  function respondeuDepois(msgs, i, minhas) {
+    for (var j = i + 1; j < msgs.length; j++) if (msgs[j].de === 'visitante') return true
+    return minhas.length > 0
+  }
 
-  function opcoesDe(m, respondida) {
+  function opcoesDe(msgs, i, respondida) {
+    var m = msgs[i]
     var caixa = el('div', 'opcoes')
     var escolhida = null
     if (respondida) {
-      for (var j = mensagens.indexOf(m) + 1; j < mensagens.length; j++) {
-        if (mensagens[j].de === 'visitante') {
-          escolhida = mensagens[j].texto
+      for (var j = i + 1; j < msgs.length; j++) {
+        if (msgs[j].de === 'visitante') {
+          escolhida = msgs[j].texto
           break
         }
       }
@@ -547,59 +1047,6 @@
     return b
   }
 
-  function ficha() {
-    var f = el('form', 'ficha')
-    f.appendChild(el('p', null, 'Para não perder a conversa, como falamos com você?'))
-    var erro = el('p', 'erro')
-    erro.hidden = true
-    var nome = el('input')
-    nome.placeholder = 'Seu nome'
-    nome.autocomplete = 'name'
-    nome.setAttribute('aria-label', 'Seu nome')
-    var contato = el('input')
-    contato.placeholder = 'WhatsApp com DDD ou e-mail'
-    contato.autocomplete = 'tel'
-    contato.setAttribute('aria-label', 'WhatsApp com DDD ou e-mail')
-    var acoes = el('div', 'acoes')
-    var salvar = el('button', 'salvar', 'Salvar')
-    salvar.type = 'submit'
-    var depois = el('button', 'depois', 'Agora não')
-    depois.type = 'button'
-    depois.addEventListener('click', function () {
-      fichaDispensada = true
-      gravar('ficha', 'depois')
-      desenhar()
-    })
-    f.addEventListener('submit', function (ev) {
-      ev.preventDefault()
-      salvar.disabled = true
-      pedir('/contato', { metodo: 'POST', corpo: { nome: nome.value, contato: contato.value } }).then(
-        function (r) {
-          salvar.disabled = false
-          if (r.ok) {
-            identificado = true
-            desenhar()
-          } else {
-            erro.textContent = (r.dados && r.dados.erro) || 'Não deu para salvar. Confira os dados.'
-            erro.hidden = false
-          }
-        },
-        function () {
-          salvar.disabled = false
-          erro.textContent = 'Sem conexão. Tente de novo.'
-          erro.hidden = false
-        }
-      )
-    })
-    acoes.appendChild(salvar)
-    acoes.appendChild(depois)
-    f.appendChild(erro)
-    f.appendChild(nome)
-    f.appendChild(contato)
-    f.appendChild(acoes)
-    return f
-  }
-
   /* ------------------------------------------------------------------ */
   function esperandoResposta() {
     return esperandoDesde > 0 && Date.now() - esperandoDesde < 90000
@@ -609,22 +1056,47 @@
     var texto = campo.value.trim()
     if (!texto) return
     campo.value = ''
-    campo.style.height = 'auto'
-    enviar.disabled = true
+    rascunho = ''
     mandar({ texto: texto }, texto)
   }
 
   function mandar(corpo, textoDaBolha) {
     var ref = aleatorio(12)
-    pendentes.push({ ref: ref, texto: textoDaBolha })
+    // A primeira mensagem de uma conversa nova é a marca dela.
+    if (atual === null) {
+      marcar(ref)
+      atual = ref
+      if (ficha) corpo.ficha = ficha
+    }
+    var conversa = atual
+    var fichaMandada = corpo.ficha || null
+    pendentes.push({ ref: ref, texto: textoDaBolha, conversa: conversa })
     esperandoDesde = Date.now()
     desenhar()
     corpo.ref = ref
     corpo.pagina = location.href.slice(0, 500)
     pedir('/mensagens', { metodo: 'POST', corpo: corpo }).then(
       function (r) {
-        if (!r.ok) falhou(ref, (r.dados && r.dados.erro) || 'Não deu para enviar.')
-        else agendar(900)
+        if (r.ok) {
+          if (fichaMandada) {
+            ficha = null
+            faltam = []
+          }
+          agendar(900)
+          return
+        }
+        if (fichaMandada && r.dados && r.dados.erros) {
+          // O servidor recusou o formulário: volta para ele com o erro de cada
+          // campo, e a mensagem volta para a caixa de texto.
+          desmarcar(ref)
+          pendentes = pendentes.filter(function (p) { return p.ref !== ref })
+          esperandoDesde = 0
+          rascunho = textoDaBolha
+          errosDaFicha = r.dados.erros
+          irPara('ficha', null)
+          return
+        }
+        falhou(ref, (r.dados && r.dados.erro) || 'Não deu para enviar.')
       },
       function () {
         falhou(ref, 'Sem conexão. Tente de novo.')
@@ -632,22 +1104,30 @@
     )
   }
 
+  function desmarcar(ref) {
+    gravar('conversas', JSON.stringify(marcas().filter(function (r) { return r !== ref })))
+    if (atual === ref) atual = null
+  }
+
   function falhou(ref, motivo) {
+    var era = pendentes.filter(function (p) { return p.ref === ref })[0]
     pendentes = pendentes.filter(function (p) {
       return p.ref !== ref
     })
+    // A conversa nova que não chegou a existir no servidor não vira marca.
+    if (era && era.conversa === ref) desmarcar(ref)
     esperandoDesde = 0
     desenhar()
     if (lista) {
       lista.appendChild(el('div', 'aviso', motivo))
-      lista.scrollTop = lista.scrollHeight
+      lista.parentNode.scrollTop = lista.parentNode.scrollHeight
     }
   }
 
   function aplicar(dados) {
-    var ultimaEmpresaAntes = contarEmpresa()
+    var empresaAntes = contarEmpresa()
     mensagens = dados.mensagens || []
-    identificado = dados.identificado !== false
+    if (Array.isArray(dados.faltam) && !ficha) faltam = dados.faltam
     var gravadas = {}
     mensagens.forEach(function (m) {
       if (m.ref) gravadas[m.ref] = true
@@ -657,25 +1137,18 @@
     })
 
     /* Chegou resposta nova: para de mostrar "digitando". */
-    if (contarEmpresa() > ultimaEmpresaAntes && pendentes.length === 0) esperandoDesde = 0
+    if (contarEmpresa() > empresaAntes && pendentes.length === 0) esperandoDesde = 0
 
-    var novas = contarEmpresa() - vistas
-    if (aberto) marcarVistas()
-    else if (novas > 0) {
-      naolidas.textContent = String(novas)
-      naolidas.hidden = false
+    if (aberto && tela === 'conversa') marcarVistas()
+    else if (naoLidas() > 0) {
+      naolidas.textContent = String(naoLidas())
+      naolidas.hidden = aberto
     }
     /* Só redesenha quando algo mudou: redesenhar a cada consulta apagaria o
-     * que o visitante está digitando na ficha. */
-    var assinatura = JSON.stringify([mensagens, pendentes.length, esperandoDesde > 0, identificado])
-    if (aberto && assinatura !== ultimaAssinatura) desenhar()
+     * que o visitante está digitando no formulário. */
+    var assinatura = JSON.stringify([mensagens, pendentes.length, esperandoDesde > 0])
+    if (aberto && assinatura !== ultimaAssinatura && tela !== 'ficha') desenhar()
     ultimaAssinatura = assinatura
-  }
-
-  function contarEmpresa() {
-    return mensagens.filter(function (m) {
-      return m.de === 'empresa'
-    }).length
   }
 
   function buscar() {
@@ -717,7 +1190,8 @@
       .then(function (c) {
         if (!c) return
         config = c
-        host.style.setProperty('--c', c.cor)
+        if (!Array.isArray(config.formulario)) config.formulario = []
+        if (!config.prazo) config.prazo = 'Costumamos responder em poucos minutos'
         if (c.tema === 'escuro') raiz.classList.add('escuro')
         estilo.textContent = CSS.replace('--c:#6366F1', '--c:' + c.cor)
         document.body.appendChild(host)

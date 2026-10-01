@@ -1,6 +1,10 @@
 import { describe, expect, it } from 'vitest'
 import {
+  camposQueFaltam,
+  chaveDoCampoProprio,
   lerConfigDoSite,
+  lerFicha,
+  lerFormulario,
   lerListaDeDominios,
   mensagemPublica,
   normalizarDominio,
@@ -57,8 +61,81 @@ describe('a configuração guardada', () => {
     const config = lerConfigDoSite({ titulo: '  PCYES  ', cor: 'vermelho' })
     expect(config.titulo).toBe('PCYES')
     expect(config.cor).toBe('#6366F1')
-    expect(config.pedirContato).toBe(true)
+    expect(config.formulario).toEqual([
+      { tipo: 'nome', obrigatorio: true },
+      { tipo: 'telefone', obrigatorio: false },
+    ])
     expect(config.dominios).toEqual([])
+  })
+
+  it('o pedirContato desligado de antes vira formulário vazio', () => {
+    expect(lerConfigDoSite({ pedirContato: false }).formulario).toEqual([])
+  })
+})
+
+describe('o formulário antes da conversa', () => {
+  it('limpa a lista: um de cada, ordem fixa, próprio só com pergunta', () => {
+    expect(
+      lerFormulario([
+        { tipo: 'cpf', obrigatorio: true },
+        { tipo: 'nome' },
+        { tipo: 'cpf', obrigatorio: false },
+        { tipo: 'proprio', obrigatorio: true, rotulo: '   ' },
+        { tipo: 'senha' },
+      ]),
+    ).toEqual([
+      { tipo: 'nome', obrigatorio: false },
+      { tipo: 'cpf', obrigatorio: true },
+    ])
+  })
+
+  it('a pergunta própria vira chave sem acento, e não toma chave reservada', () => {
+    expect(chaveDoCampoProprio('Número do pedido')).toBe('numero_do_pedido')
+    expect(chaveDoCampoProprio('Telefone')).toBe('site_telefone')
+    expect(chaveDoCampoProprio('123')).toBeNull()
+  })
+
+  const formulario = lerFormulario([
+    { tipo: 'nome', obrigatorio: true },
+    { tipo: 'telefone', obrigatorio: true },
+    { tipo: 'cpf', obrigatorio: false },
+    { tipo: 'cnpj', obrigatorio: false },
+    { tipo: 'proprio', obrigatorio: false, rotulo: 'Número do pedido' },
+  ])
+
+  it('aceita e normaliza o que está certo', () => {
+    expect(
+      lerFicha(formulario, {
+        nome: '  Ana   Souza ',
+        telefone: '+55 (44) 99999-1234',
+        cpf: '529.982.247-25',
+        cnpj: '11.222.333/0001-81',
+        proprio: '1234',
+        email: 'ignorado@x.com',
+      }),
+    ).toEqual({
+      ok: true,
+      nome: 'Ana Souza',
+      campos: { whatsapp: '5544999991234', cpf: '52998224725', cnpj: '11222333000181', numero_do_pedido: '1234' },
+    })
+  })
+
+  it('recusa verificador errado e obrigatório vazio', () => {
+    const r = lerFicha(formulario, { nome: 'Ana', cpf: '529.982.247-26', cnpj: '11.222.333/0001-80' })
+    expect(r.ok).toBe(false)
+    if (!r.ok) expect(Object.keys(r.erros).sort()).toEqual(['cnpj', 'cpf', 'telefone'])
+  })
+
+  it('telefone de fora do Brasil passa só pelo tamanho', () => {
+    const r = lerFicha([{ tipo: 'telefone', obrigatorio: true }], { telefone: '+1 202 555 0123' })
+    expect(r).toEqual({ ok: true, nome: null, campos: { whatsapp: '12025550123' } })
+  })
+
+  it('o que falta sai do contato', () => {
+    expect(camposQueFaltam(formulario, null)).toEqual(['nome', 'telefone', 'cpf', 'cnpj', 'proprio'])
+    expect(
+      camposQueFaltam(formulario, { nome: 'Ana', campos: { whatsapp: '5544999991234', numero_do_pedido: '1' } }),
+    ).toEqual(['cpf', 'cnpj'])
   })
 })
 
