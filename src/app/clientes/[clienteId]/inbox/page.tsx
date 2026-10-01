@@ -85,6 +85,7 @@ import { avisarQueLeu } from '@/server/recibo-de-leitura'
 import { FaixaDeCanalCaido } from '@/components/inbox/faixa-canal-caido'
 import { Historico } from '@/components/inbox/historico'
 import { PulsoDoInbox } from '@/components/inbox/pulso-do-inbox'
+import { TelefoneDoInbox } from '@/components/inbox/telefone-do-inbox'
 
 export const dynamic = 'force-dynamic'
 
@@ -471,6 +472,7 @@ async function Tela({ cliente, busca }: { cliente: Cliente; busca: Busca }) {
         tela cujo conteúdo é a conversa acontecendo agora.
       */}
       <PulsoDoInbox clienteId={cliente.id} pulsoNaTela={pulso} />
+      <TelefoneDoInbox clienteId={cliente.id} />
       <FaixaDeCanalCaido clienteId={cliente.id} />
       {espiao && <FaixaDeEspiar clienteId={cliente.id} nome={espiao.alvo.nome} />}
       {/*

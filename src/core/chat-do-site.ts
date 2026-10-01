@@ -27,6 +27,8 @@ export type ConfigDoSite = {
   formulario: CampoDoFormulario[]
   /** A promessa de tempo no cartão "Nova conversa". */
   prazo: string
+  /** O botão de ligação de voz na conversa. Desligado até a conta escolher. */
+  ligacao: boolean
   /**
    * A animação do botão, quando a loja mandou a dela (o personagem da marca).
    * `null` = o robô padrão. A URL é sempre do nosso Storage: a tela sobe o
@@ -71,6 +73,7 @@ export const CONFIG_PADRAO: ConfigDoSite = {
   saudacao: 'Olá! Como podemos ajudar?',
   formulario: FORMULARIO_DE_ANTES,
   prazo: 'Costumamos responder em poucos minutos',
+  ligacao: false,
   mascote: null,
   tema: 'claro',
 }
@@ -109,6 +112,7 @@ export function lerConfigDoSite(bruto: unknown): ConfigDoSite {
     saudacao: texto(o.saudacao, CONFIG_PADRAO.saudacao, TETO_DA_SAUDACAO),
     formulario: lerFormulario(o.formulario, o.pedirContato),
     prazo: texto(o.prazo, CONFIG_PADRAO.prazo, TETO_DO_PRAZO),
+    ligacao: o.ligacao === true,
     mascote: lerMascote(o.mascote),
     tema: o.tema === 'escuro' ? 'escuro' : 'claro',
   }

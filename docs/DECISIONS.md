@@ -22,3 +22,18 @@ Append-only. Cada entrada: data, decisão, porquê, onde está no código.
   `localStorage`. `public/chat/v1.js` (`conversas`, `marcar`).
 - **Pergunta própria** grava em `campos.<chave da pergunta>` e cria a definição
   em `campos_definidos` (texto curto) só se a chave não existir.
+
+## 01/out/2026: ligação de voz no chat do site
+
+- **Áudio de navegador para navegador (WebRTC), sem servidor de mídia.** O
+  servidor só guarda a sinalização em `public.chamadas` (0118): a oferta do
+  visitante e a resposta do atendente, cada uma com todos os candidatos ICE
+  dentro, então são duas escritas e nenhuma conexão longa na Vercel.
+  `src/server/chamadas.ts`.
+- **O Inbox toca pelo stream que já existe** (`/inbox/stream`, evento
+  `chamadas`), só em conta com a opção ligada. Toca para quem está com o Inbox
+  aberto; o primeiro que atende leva (`update ... where status = 'chamando'`).
+- **Só STUN por padrão.** Rede com NAT simétrico (empresa, parte do 4G) precisa
+  de TURN, que entra pela variável `CHAMADA_ICE_SERVERS` sem mudar código.
+- **Só o visitante liga, e só depois da primeira mensagem**: contato sem
+  conversa é robô, e o Inbox não toca para ele.

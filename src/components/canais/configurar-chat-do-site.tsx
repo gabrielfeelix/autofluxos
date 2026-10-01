@@ -54,6 +54,7 @@ export function ConfigurarChatDoSite({
   const [cor, setCor] = useState(inicial.config.cor)
   const [formulario, setFormulario] = useState<CampoDoFormulario[]>(inicial.config.formulario)
   const [prazo, setPrazo] = useState(inicial.config.prazo)
+  const [ligacao, setLigacao] = useState(inicial.config.ligacao)
   const [tema, setTema] = useState(inicial.config.tema)
   const [salvo, setSalvo] = useState(inicial.config)
   const [aviso, setAviso] = useState<{ tom: 'ok' | 'erro'; texto: string } | null>(null)
@@ -71,6 +72,7 @@ export function ConfigurarChatDoSite({
     cor.toUpperCase() !== salvo.cor ||
     JSON.stringify(formulario) !== JSON.stringify(salvo.formulario) ||
     prazo !== salvo.prazo ||
+    ligacao !== salvo.ligacao ||
     tema !== salvo.tema
 
   const trecho = chave ? `<script src="${urlDoScript}" data-chave="${chave}" async></script>` : ''
@@ -102,7 +104,7 @@ export function ConfigurarChatDoSite({
   function salvar() {
     setAviso(null)
     iniciar(async () => {
-      const r = await acaoSalvarChatDoSite(clienteId, { dominios, cor, titulo, saudacao, prazo, formulario, tema })
+      const r = await acaoSalvarChatDoSite(clienteId, { dominios, cor, titulo, saudacao, prazo, formulario, ligacao, tema })
       if (!r.ok) {
         setAviso({ tom: 'erro', texto: r.erro })
         return
@@ -114,6 +116,7 @@ export function ConfigurarChatDoSite({
       setSaudacao(r.config.saudacao)
       setPrazo(r.config.prazo)
       setFormulario(r.config.formulario)
+      setLigacao(r.config.ligacao)
       setCor(r.config.cor)
       setTema(r.config.tema)
       setAviso(
@@ -409,6 +412,33 @@ export function ConfigurarChatDoSite({
         </section>
 
         <EditorDoFormulario formulario={formulario} onChange={setFormulario} />
+
+        <section className="app-card flex items-start gap-4 px-5 py-5">
+          <span className="flex size-10 shrink-0 items-center justify-center rounded-[11px] bg-emerald-500/10 text-emerald-600">
+            <svg viewBox="0 0 24 24" width="19" height="19" fill="currentColor" aria-hidden>
+              <path d="M6.6 10.8a15.1 15.1 0 0 0 6.6 6.6l2.2-2.2a1 1 0 0 1 1-.25 11.4 11.4 0 0 0 3.6.57 1 1 0 0 1 1 1V20a1 1 0 0 1-1 1A17 17 0 0 1 3 4a1 1 0 0 1 1-1h3.5a1 1 0 0 1 1 1c0 1.25.2 2.45.57 3.57a1 1 0 0 1-.25 1z" />
+            </svg>
+          </span>
+          <div className="min-w-0 flex-1">
+            <h2 className="text-[15px] font-bold">Ligação de voz</h2>
+            <p className="mt-1 max-w-[560px] text-[12.5px] leading-5 text-dim">
+              O visitante liga pelo balão, direto do navegador, e o Inbox toca para quem estiver com ele aberto. Sem número
+              de telefone e sem custo por minuto. Aparece depois da primeira mensagem da conversa.
+            </p>
+          </div>
+          <button
+            type="button"
+            role="switch"
+            aria-checked={ligacao}
+            aria-label="Ligação de voz"
+            onClick={() => setLigacao(!ligacao)}
+            className={`relative mt-1 h-6 w-11 shrink-0 rounded-full transition ${ligacao ? 'bg-primary' : 'bg-strong'}`}
+          >
+            <span
+              className={`absolute top-0.5 size-5 rounded-full bg-white shadow transition-all ${ligacao ? 'left-[22px]' : 'left-0.5'}`}
+            />
+          </button>
+        </section>
 
         <div className="flex flex-wrap items-center gap-3">
           <button

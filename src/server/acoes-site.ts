@@ -45,6 +45,7 @@ export async function acaoSalvarChatDoSite(
     saudacao: string
     prazo: string
     formulario: CampoDoFormulario[]
+    ligacao: boolean
     tema: 'claro' | 'escuro'
   },
 ): Promise<Resultado<{ config: ConfigDoSite; recusados: string[]; chave: string }>> {

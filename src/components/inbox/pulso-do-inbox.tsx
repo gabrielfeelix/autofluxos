@@ -250,6 +250,13 @@ export function PulsoDoInbox({
        */
       fonte.onerror = () => {}
 
+      // As ligações do site viajam no mesmo stream, com evento próprio. Quem
+      // toca é o `TelefoneDoInbox`; aqui só se repassa, sem acoplar os dois.
+      fonte.addEventListener('chamadas', (evento) => {
+        ultimoSinal = Date.now()
+        window.dispatchEvent(new CustomEvent('autofluxos:chamadas', { detail: (evento as MessageEvent).data }))
+      })
+
       // Uma conexão que abre já é sinal de vida: sem isto, uma reconexão logo
       // depois de uma aba voltar do congelamento contaria como silêncio antigo.
       fonte.onopen = () => {

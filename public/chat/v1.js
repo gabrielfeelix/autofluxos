@@ -246,6 +246,22 @@
     '.principal:disabled{opacity:.6;cursor:default}' +
     '.pular{display:block;margin:12px auto 0;border:0;background:none;color:var(--apagado);font-size:13px;cursor:pointer;text-decoration:underline;text-underline-offset:2px}' +
 
+    /* Ligação */
+    '.ligacao{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;background:linear-gradient(160deg,var(--c) 0%,var(--c-escuro) 100%);color:#fff;padding:24px;text-align:center;position:relative}' +
+    '.ligacao .cantos{position:absolute;top:12px;left:10px;right:12px;display:flex;justify-content:space-between}' +
+    '.ligacao .grande{width:104px;height:104px;border-radius:50%;background:rgba(255,255,255,.16);display:grid;place-items:center;position:relative}' +
+    '.ligacao .grande svg{width:80px;height:80px;overflow:visible}.ligacao .grande img,.ligacao .grande video{width:100%;height:100%;object-fit:cover;border-radius:50%}' +
+    '.ligacao .onda{position:absolute;inset:-8px;border-radius:50%;border:2px solid rgba(255,255,255,.4);animation:onda 1.8s ease-out infinite}' +
+    '.ligacao .onda+.onda{animation-delay:.9s}' +
+    '@keyframes onda{from{transform:scale(.92);opacity:1}to{transform:scale(1.4);opacity:0}}' +
+    '.ligacao h2{font-size:21px;font-weight:750;letter-spacing:-.015em;margin-top:22px}' +
+    '.ligacao .estado{font-size:15px;opacity:.88;margin-top:4px;font-variant-numeric:tabular-nums}' +
+    '.ligacao .botoes{display:flex;gap:28px;margin-top:44px}' +
+    '.ligacao .botoes span{display:flex;flex-direction:column;align-items:center;gap:8px;font-size:12.5px;font-weight:600;opacity:.95}' +
+    '.redondo{width:62px;height:62px;border-radius:50%;border:0;display:grid;place-items:center;cursor:pointer;background:rgba(255,255,255,.18);color:#fff;transition:transform .15s,background .15s}' +
+    '.redondo:hover{transform:scale(1.06)}' +
+    '.redondo.ativo{background:#fff;color:var(--c-texto)}' +
+    '.redondo.vermelho{background:#E11D48;box-shadow:0 0 0 2px rgba(255,255,255,.9),0 10px 24px -8px rgba(0,0,0,.45)}.redondo.vermelho svg{transform:rotate(135deg)}' +
     '.marca{text-align:center;font-size:11px;color:#A3A7B0;padding:6px 0 8px;background:var(--fundo)}' +
     '.marca a{color:inherit;text-decoration:none}' +
     '@media (max-width:480px){.raiz{right:14px;bottom:14px}.raiz.aberto{inset:0}.raiz.aberto .botao{display:none}.painel{position:fixed;inset:0;width:auto;height:100%;border-radius:0}.convite{max-width:230px}}' +
@@ -283,6 +299,10 @@
   var BALAO = '<path d="M21 12a8 8 0 0 1-11.6 7.1L4 20.5l1.4-4.6A8 8 0 1 1 21 12z"/>'
   var RELOGIO = '<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>'
   var MAIS = '<path d="M12 5v14M5 12h14"/>'
+  var TELEFONE =
+    '<path d="M6.6 10.8a15.1 15.1 0 0 0 6.6 6.6l2.2-2.2a1 1 0 0 1 1-.25 11.4 11.4 0 0 0 3.6.57 1 1 0 0 1 1 1V20a1 1 0 0 1-1 1A17 17 0 0 1 3 4a1 1 0 0 1 1-1h3.5a1 1 0 0 1 1 1c0 1.25.2 2.45.57 3.57a1 1 0 0 1-.25 1z"/>'
+  var MICROFONE = '<rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/>'
+  var MUDO = MICROFONE + '<path d="M4 4l16 16"/>'
 
   /* ------------------------------------------------------------------ */
   var host = document.createElement('div')
@@ -430,6 +450,7 @@
     raiz.insertBefore(painel, botao)
     botao.setAttribute('aria-label', 'Fechar conversa')
     pintarBotao()
+    if (ligacao) tela = 'ligacao'
     if (tela === 'conversa') marcarVistas()
     desenhar()
     buscar()
@@ -541,6 +562,7 @@
     if (tela === 'inicio') telaInicio()
     else if (tela === 'mensagens') telaMensagens()
     else if (tela === 'ficha') telaFicha()
+    else if (tela === 'ligacao') telaLigacao()
     else telaConversa(mesmaTela ? rolagem : 0)
 
     var marca = el('div', 'marca')
@@ -664,6 +686,11 @@
     t.appendChild(el('h2', null, config.titulo))
     t.appendChild(el('p', null, config.prazo))
     topo.appendChild(t)
+    // Ligar só numa conversa que já existe: o servidor recusa contato sem
+    // mensagem, e o botão não promete o que não vai cumprir.
+    if (config.ligacao && tela === 'conversa' && atual && conversaPorId(atual) && window.RTCPeerConnection) {
+      topo.appendChild(botaoCom('fechar-topo', icone(TELEFONE, 18, true), 'Ligar por voz', ligar))
+    }
     topo.appendChild(botaoCom('fechar-topo', icone(FECHAR, 18), 'Fechar', fecharPainel))
     return topo
   }
@@ -1048,6 +1075,240 @@
   }
 
   /* ------------------------------------------------------------------ */
+  /* Ligação de voz: navegador com navegador, por WebRTC. O servidor só
+   * guarda a oferta daqui e a resposta do atendente (`server/chamadas.ts`).
+   * Cada lado junta todos os candidatos antes de mandar, então são duas
+   * escritas, e daqui só se pergunta "atenderam?" uma vez por segundo. */
+  var ligacao = null // { id, pc, micro, estado, desde, mudo, texto }
+  var alto = null
+  var rotuloDaLigacao = null
+
+  function juntarCandidatos(pc) {
+    return new Promise(function (pronto) {
+      if (pc.iceGatheringState === 'complete') return pronto()
+      var fim = function () {
+        pc.removeEventListener('icegatheringstatechange', ver)
+        pronto()
+      }
+      var ver = function () {
+        if (pc.iceGatheringState === 'complete') fim()
+      }
+      pc.addEventListener('icegatheringstatechange', ver)
+      setTimeout(fim, 3000)
+    })
+  }
+
+  function textoDaLigacao() {
+    if (!ligacao) return ''
+    if (ligacao.estado === 'preparando') return 'Preparando o microfone'
+    if (ligacao.estado === 'chamando') return 'Chamando'
+    if (ligacao.estado === 'falando') {
+      var s = Math.floor((Date.now() - ligacao.desde) / 1000)
+      return ('0' + Math.floor(s / 60)).slice(-2) + ':' + ('0' + (s % 60)).slice(-2)
+    }
+    return ligacao.texto
+  }
+
+  function ligar() {
+    if (ligacao) return irPara('ligacao')
+    var voltaPara = atual
+    ligacao = { estado: 'preparando', mudo: false, volta: voltaPara }
+    irPara('ligacao')
+    var esta = ligacao
+    pedir('/chamada')
+      .then(function (r) {
+        if (!r.ok) throw new Error('indisponível')
+        return navigator.mediaDevices
+          .getUserMedia({ audio: { echoCancellation: true, noiseSuppression: true } })
+          .then(
+            function (micro) {
+              return { ice: r.dados.iceServers, micro: micro }
+            },
+            function () {
+              throw new Error('microfone')
+            }
+          )
+      })
+      .then(function (pronto) {
+        if (ligacao !== esta) return pronto.micro.getTracks().forEach(function (t) { t.stop() })
+        esta.micro = pronto.micro
+        var pc = new RTCPeerConnection({ iceServers: pronto.ice })
+        esta.pc = pc
+        pronto.micro.getTracks().forEach(function (t) {
+          pc.addTrack(t, pronto.micro)
+        })
+        pc.ontrack = function (e) {
+          if (!alto) {
+            alto = document.createElement('audio')
+            alto.autoplay = true
+            sombra.appendChild(alto)
+          }
+          alto.srcObject = e.streams[0] || new MediaStream([e.track])
+          alto.play().catch(function () {})
+        }
+        pc.onconnectionstatechange = function () {
+          if (pc.connectionState === 'failed' && ligacao === esta) desligar('A conexão caiu')
+        }
+        return pc
+          .createOffer()
+          .then(function (oferta) {
+            return pc.setLocalDescription(oferta)
+          })
+          .then(function () {
+            return juntarCandidatos(pc)
+          })
+          .then(function () {
+            return pedir('/chamada', { metodo: 'POST', corpo: { oferta: pc.localDescription.sdp } })
+          })
+          .then(function (r) {
+            if (ligacao !== esta) return
+            if (!r.ok) return fimDaLigacao((r.dados && r.dados.erro) || 'Não deu para ligar agora.')
+            esta.id = r.dados.id
+            esta.estado = 'chamando'
+            desenhar()
+            vigiar(esta)
+          })
+      })
+      .catch(function (e) {
+        if (ligacao === esta) {
+          fimDaLigacao(
+            e && e.message === 'microfone'
+              ? 'Libere o microfone do navegador para ligar.'
+              : 'Não deu para ligar agora.'
+          )
+        }
+      })
+  }
+
+  function vigiar(esta) {
+    if (ligacao !== esta || !esta.id) return
+    pedir('/chamada/' + esta.id).then(
+      function (r) {
+        if (ligacao !== esta) return
+        var d = r.dados || {}
+        if (r.ok && d.status === 'em_andamento' && d.resposta && esta.estado === 'chamando') {
+          esta.pc.setRemoteDescription({ type: 'answer', sdp: d.resposta }).then(function () {
+            esta.estado = 'falando'
+            esta.desde = Date.now()
+            desenhar()
+          })
+        } else if (r.ok && (d.status === 'perdida' || d.status === 'recusada')) {
+          return fimDaLigacao('Ninguém pôde atender agora. Deixe sua mensagem na conversa.')
+        } else if (r.ok && d.status === 'encerrada') {
+          return fimDaLigacao('Ligação encerrada')
+        }
+        setTimeout(function () {
+          vigiar(esta)
+        }, esta.estado === 'falando' ? 2000 : 1000)
+      },
+      function () {
+        setTimeout(function () {
+          vigiar(esta)
+        }, 2000)
+      }
+    )
+  }
+
+  function largarLigacao() {
+    if (!ligacao) return
+    if (ligacao.pc) ligacao.pc.close()
+    if (ligacao.micro) ligacao.micro.getTracks().forEach(function (t) { t.stop() })
+  }
+
+  function fimDaLigacao(texto) {
+    largarLigacao()
+    var esta = ligacao
+    esta.estado = 'fim'
+    esta.texto = texto
+    desenhar()
+    setTimeout(function () {
+      if (ligacao !== esta) return
+      ligacao = null
+      if (tela === 'ligacao') irPara('conversa', esta.volta)
+    }, 3500)
+  }
+
+  function desligar(texto) {
+    if (!ligacao) return
+    var id = ligacao.id
+    var duracao = ligacao.estado === 'falando' ? ' · ' + textoDaLigacao() : ''
+    fimDaLigacao((texto || 'Ligação encerrada') + duracao)
+    if (id) pedir('/chamada/' + id, { metodo: 'POST', corpo: { acao: 'encerrar' } }).catch(function () {})
+  }
+
+  function alternarMudo() {
+    if (!ligacao || !ligacao.micro) return
+    ligacao.mudo = !ligacao.mudo
+    ligacao.micro.getAudioTracks().forEach(function (t) {
+      t.enabled = !ligacao.mudo
+    })
+    desenhar()
+  }
+
+  /* Sair da página no meio da ligação desliga do lado do atendente também. */
+  window.addEventListener('pagehide', function () {
+    if (ligacao && ligacao.id && ligacao.estado !== 'fim') {
+      fetch(api + '/chamada/' + ligacao.id, {
+        method: 'POST',
+        keepalive: true,
+        headers: { 'x-visitante': segredo, 'content-type': 'application/json' },
+        body: '{"acao":"encerrar"}',
+        credentials: 'omit',
+      }).catch(function () {})
+    }
+  })
+
+  setInterval(function () {
+    if (rotuloDaLigacao && ligacao && ligacao.estado === 'falando') rotuloDaLigacao.textContent = textoDaLigacao()
+  }, 1000)
+
+  function telaLigacao() {
+    if (!ligacao) {
+      tela = 'conversa'
+      return telaConversa(0)
+    }
+    var t = el('div', 'ligacao')
+    var cantos = el('div', 'cantos')
+    cantos.appendChild(botaoCom('voltar', icone(VOLTAR, 22), 'Voltar para a conversa', function () {
+      irPara('conversa', ligacao.volta)
+    }))
+    cantos.appendChild(botaoCom('fechar-topo', icone(FECHAR, 18), 'Fechar', fecharPainel))
+    t.appendChild(cantos)
+
+    var grande = el('div', 'grande')
+    if (ligacao.estado === 'chamando' || ligacao.estado === 'preparando') {
+      grande.appendChild(el('span', 'onda'))
+      grande.appendChild(el('span', 'onda'))
+    }
+    personagem(grande, ligacao.estado === 'falando')
+    t.appendChild(grande)
+    t.appendChild(el('h2', null, config.titulo))
+    rotuloDaLigacao = el('p', 'estado', textoDaLigacao())
+    rotuloDaLigacao.setAttribute('aria-live', 'polite')
+    t.appendChild(rotuloDaLigacao)
+
+    if (ligacao.estado !== 'fim') {
+      var botoes = el('div', 'botoes')
+      if (ligacao.estado === 'falando') {
+        var mudo = el('span')
+        var bm = botaoCom('redondo' + (ligacao.mudo ? ' ativo' : ''), icone(ligacao.mudo ? MUDO : MICROFONE, 26), ligacao.mudo ? 'Ligar o microfone' : 'Desligar o microfone', alternarMudo)
+        bm.setAttribute('aria-pressed', ligacao.mudo ? 'true' : 'false')
+        mudo.appendChild(bm)
+        mudo.appendChild(document.createTextNode(ligacao.mudo ? 'No mudo' : 'Mudo'))
+        botoes.appendChild(mudo)
+      }
+      var fim = el('span')
+      fim.appendChild(botaoCom('redondo vermelho', icone(TELEFONE, 26, true), 'Desligar', function () {
+        desligar()
+      }))
+      fim.appendChild(document.createTextNode('Desligar'))
+      botoes.appendChild(fim)
+      t.appendChild(botoes)
+    }
+    painel.appendChild(t)
+  }
+
+  /* ------------------------------------------------------------------ */
   function esperandoResposta() {
     return esperandoDesde > 0 && Date.now() - esperandoDesde < 90000
   }
@@ -1147,7 +1408,7 @@
     /* Só redesenha quando algo mudou: redesenhar a cada consulta apagaria o
      * que o visitante está digitando no formulário. */
     var assinatura = JSON.stringify([mensagens, pendentes.length, esperandoDesde > 0])
-    if (aberto && assinatura !== ultimaAssinatura && tela !== 'ficha') desenhar()
+    if (aberto && assinatura !== ultimaAssinatura && tela !== 'ficha' && tela !== 'ligacao') desenhar()
     ultimaAssinatura = assinatura
   }
 

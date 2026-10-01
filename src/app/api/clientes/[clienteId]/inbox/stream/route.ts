@@ -1,6 +1,8 @@
 import { z } from 'zod'
+import { chamadasTocando } from '@/server/chamadas'
 import { enviarAgendadas } from '@/server/enviar-agendadas'
 import { passadaDeTransmissoes, POR_CARONA } from '@/server/passada-de-transmissoes'
+import { chatDoSite } from '@/server/repos/canais-site'
 import { pulsoDaConta } from '@/server/repos/leads'
 import { exigirCapacidade, recusou } from '@/server/permissoes'
 
@@ -110,11 +112,15 @@ export async function GET(
 
   const clienteId = params.data.clienteId
   const codificador = new TextEncoder()
+  // Só conta com ligação ligada pergunta pelas chamadas a cada segundo. Quem
+  // ligar a opção agora vê o Inbox tocar na próxima reconexão (até 50 s).
+  const comLigacao = (await chatDoSite(clienteId).catch(() => null))?.config.ligacao === true
 
   const fluxo = new ReadableStream<Uint8Array>({
     async start(controlador) {
       let vivo = true
       let ultimoEnviado: string | null | undefined
+      let ultimasChamadas = '[]'
 
       const encerrar = () => {
         if (!vivo) return
@@ -152,6 +158,15 @@ export async function GET(
       async function conferir() {
         if (!vivo) return
         try {
+          if (comLigacao) {
+            // Evento com nome próprio: o `onmessage` do pulso não o recebe, e
+            // quem escuta é o telefone do Inbox (`telefone-do-inbox.tsx`).
+            const chamadas = JSON.stringify(await chamadasTocando(clienteId))
+            if (chamadas !== ultimasChamadas) {
+              ultimasChamadas = chamadas
+              mandar(`event: chamadas\ndata: ${chamadas}\n\n`)
+            }
+          }
           const pulso = await pulsoDaConta(clienteId)
           if (pulso === ultimoEnviado) return
           ultimoEnviado = pulso
