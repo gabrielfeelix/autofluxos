@@ -2271,6 +2271,23 @@ describe('conversa nova aberta com o assunto', () => {
   })
 })
 
+describe('foto com legenda', () => {
+  it('a legenda vale como texto quando o bloco não pede foto (Rodrigo, PCYES)', () => {
+    const f = fluxoSchema.parse({
+      inicio: 'q',
+      nodes: [
+        { id: 'q', type: 'pergunta', position: p, data: { texto: 'O que procura?', salvarEm: 'produto' } },
+        { id: 'm', type: 'mensagem', position: p, data: { partes: [{ tipo: 'texto', texto: 'buscando {{produto}}' }] } },
+      ],
+      edges: [{ id: 'e1', source: 'q', target: 'm' }],
+    })
+    const r0 = executar(f, sessaoNova(), { tipo: 'inicio' })
+    const r = executar(f, r0.sessao, { tipo: 'midia', formato: 'image', legenda: 'GT 730 suporta 2560x1080?' })
+    expect(r.acoes.flatMap((a) => (a.tipo === 'enviar_texto' ? [a.texto] : []))).toEqual(['buscando GT 730 suporta 2560x1080?'])
+    expect(r.sessao.status).not.toBe('humano')
+  })
+})
+
 describe('soCumprimento', () => {
   it('separa cumprimento de assunto', () => {
     expect(soCumprimento('Oii, boa noite!')).toBe(true)

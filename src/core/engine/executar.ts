@@ -343,6 +343,17 @@ export function executar(
       return { acoes, sessao: s }
     }
 
+    /*
+     * Foto com legenda: a legenda é a pergunta. Rodrigo (PCYES, 01/out/2026)
+     * mandou a foto da placa com "suporta 2560 × 1080 pela HDMI?" escrito
+     * embaixo; o bot só lê texto, mas a pergunta estava escrita. Sem legenda,
+     * a Regra B de sempre.
+     */
+    const legenda = (entrada.legenda ?? '').trim()
+    if (legenda !== '' && entrada.formato !== 'sticker') {
+      return executar(fluxo, s, { tipo: 'texto', texto: legenda }, contexto)
+    }
+
     return transferir(s, acoes, `a pessoa mandou ${entrada.formato} e o bot só lê texto`, contexto)
   }
 

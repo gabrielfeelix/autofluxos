@@ -72,6 +72,7 @@ import {
   vincularSessaoNaMensagem,
   trocarBsuid,
   ultimaEntradaDeTexto,
+  chegouEntradaDepois,
   type CanalSalvo,
   type Contato,
   type IdentidadeDoWhatsApp,
@@ -1035,6 +1036,7 @@ async function avancarConversa(
             tipo: 'inicio',
             ...(entrada.tipo === 'opcao' ? { opcaoId: entrada.opcaoId } : {}),
             ...(entrada.tipo === 'texto' ? { texto: entrada.texto } : {}),
+            ...(entrada.tipo === 'midia' && entrada.legenda ? { texto: entrada.legenda } : {}),
           }
         : entrada,
       {
@@ -1090,8 +1092,7 @@ async function avancarConversa(
      * partir do mesmo ponto e com a rajada inteira na mão.
      */
     if (!process.env.VITEST) {
-      const maisNova = await ultimaEntradaDeTexto(contato.id)
-      if (maisNova !== null && maisNova !== mensagemId) {
+      if (await chegouEntradaDepois(contato.id, mensagemId)) {
         console.warn('[rajada] resposta descartada: chegou mensagem nova enquanto o bot pensava', contato.id)
         return
       }

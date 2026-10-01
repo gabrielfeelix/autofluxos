@@ -867,6 +867,29 @@ export async function ultimaEntradaDeTexto(contatoId: string): Promise<string | 
 }
 
 /**
+ * Chegou alguma mensagem da pessoa depois desta? Qualquer tipo, menos reação.
+ *
+ * `ultimaEntradaDeTexto` não serve para isso: ela ignora foto e áudio, e para
+ * uma foto a resposta sempre parecia velha. Em 01/out/2026 a pergunta do
+ * Rodrigo (PCYES), uma foto com legenda, ficou sem resposta por isso.
+ * Erro vira `false`: na dúvida, responder.
+ */
+export async function chegouEntradaDepois(contatoId: string, mensagemId: string): Promise<boolean> {
+  const { data: esta, error } = await db().from('messages').select('ts').eq('id', mensagemId).maybeSingle()
+  if (error || !esta) return false
+  const { data, error: erro } = await db()
+    .from('messages')
+    .select('id')
+    .eq('contact_id', contatoId)
+    .eq('direcao', 'entrada')
+    .is('reagiu_a', null)
+    .gt('ts', (esta as { ts: string }).ts)
+    .limit(1)
+  if (erro || !data) return false
+  return data.length > 0
+}
+
+/**
  * Registra uma saída **antes** de ela sair, como não confirmada.
  *
  * A ordem é essa de propósito. Gravar depois do envio deixa uma janela, curta,
