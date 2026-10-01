@@ -37,3 +37,17 @@ Append-only. Cada entrada: data, decisão, porquê, onde está no código.
   de TURN, que entra pela variável `CHAMADA_ICE_SERVERS` sem mudar código.
 - **Só o visitante liga, e só depois da primeira mensagem**: contato sem
   conversa é robô, e o Inbox não toca para ele.
+
+## 01/out/2026: ligação pelo WhatsApp pausada
+
+- **Pausada pelo dono na fase 0**, antes de qualquer tela. Retomar pelo
+  [handoff](HANDOFF-01-OUT-LIGACAO-WHATSAPP.md), seção "Andamento da fase 0".
+- **Por que travou:** Calling exige limite de 2.000 no portfólio. A demo
+  (`1301107846409860`) está em `TIER_250` com portfólio verificado; ligar o
+  Calling volta `138015`. O `health_status` culpa o nome de exibição sem
+  revisão, e editar o nome não abriu revisão (`AVAILABLE_WITHOUT_REVIEW`).
+  Saída: chamado no suporte da Meta. Mesmo bloqueio vale para cliente.
+- **O que ficou no ar:** o webhook grava eventos `calls` em `alertas`
+  (`src/server/sonda-ligacao.ts`, `5a7ce51`). Inofensivo enquanto nenhum
+  número tem Calling ligado; remover ou substituir na fase 1.
+

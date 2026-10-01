@@ -1,5 +1,9 @@
 # Handoff: 19/ago/2026, atualizado em 04/set
 
+> **Ligação pelo WhatsApp no Inbox (01/out/2026): PAUSADA pelo dono.** Fase 0
+> pela metade (sonda pronta, nunca testada com ligação real). Onde parou e como
+> retomar em [HANDOFF-01-OUT-LIGACAO-WHATSAPP.md](HANDOFF-01-OUT-LIGACAO-WHATSAPP.md).
+
 > **Automação da PCYES, o que a IA erra (25/set/2026):** análise e correções em
 > [HANDOFF-25-SET-PCYES-AUTOMACAO.md](HANDOFF-25-SET-PCYES-AUTOMACAO.md).
 

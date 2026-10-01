@@ -14,6 +14,21 @@ repositório e **ainda não aplicadas**: são o item 5 abaixo.
 
 ---
 
+## 01/out/2026: conta WhatsApp da demo (4YU Tech)
+
+Achado pelo `health_status` da Meta no número `+55 44 7400-7438`:
+
+- **Forma de pagamento com erro (`141006`)** na WABA `2245936116250161`.
+  Bloqueia toda mensagem iniciada pela empresa na demo (template, lembrete,
+  e ligação feita pela empresa). Corrigir em
+  https://business.facebook.com/billing_hub/accounts?business_id=1494483661926723
+- **Limite preso em 250** apesar do portfólio verificado. Só importa quando a
+  ligação pelo WhatsApp voltar (ela exige 2.000). Saída: chamado em
+  https://business.facebook.com/direct-support/?business_id=1494483661926723,
+  assunto "WABiz: Account & WABA", tipo "Messaging Limits".
+
+---
+
 ## 0. Abertas em 24/set/2026 (frente de plano e administração)
 
 A frente está no ar (deploy `e960ca4`). O que sobrou depende de você.
