@@ -343,6 +343,14 @@ extração explícito para os objetos de `public`.
   objetos, ACLs, policies e funções de `app_verandi`: **35** migrations,
   **40** tabelas, **16** policies de `storage.objects`. `DATABASE_URL` da
   Vercel voltou para `autofluxos_login` no mesmo dia.
+- **a `0118` foi aplicada em 01/out/2026**, com autorização explícita do dono,
+  pela Management API. Aditiva: cria `public.chamadas` (sinalização da ligação
+  de voz do chat do site), RLS ligada sem políticas, `grant` só para
+  `service_role`. Ensaio em transação contra a produção (sem o `notify`, com
+  `rollback`) limpo antes de aplicar. Conferido depois: grants só `postgres` e
+  `service_role`; Data API `GET chamadas` 200 com a chave secreta e 401 com a
+  pública; `channels` 200; Verandi `GET conta` com `Accept-Profile: app_verandi`
+  200.
 - **a `0114` foi aplicada em 30/set/2026**, com autorização explícita do dono,
   pela Management API: `af_contas.issuer` sem `not null`. O Better Auth 1.7.5
   (dependabot) recusava o schema e derrubava todo login desde 28/set com
