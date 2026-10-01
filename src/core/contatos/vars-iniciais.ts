@@ -129,7 +129,9 @@ export function varsIniciais(contato: RetratoDoContato): Record<string, string> 
  * seria desfazer uma decisão de gente.
  */
 export function primeiroNome(perfil: string): string {
-  const antesDoCorte = perfil.split(/\s[-\u2013\u2014|•·]\s|[|\u2013\u2014]|\p{Extended_Pictographic}/u)[0] ?? ''
+  // NFKC desfaz a letra estilizada do WhatsApp: "𝔇𝔬𝔲𝔤𝔩𝔞𝔰" vira "Douglas", e
+  // o bot não cumprimenta ninguém em fonte gótica (PCYES, 30/set/2026).
+  const antesDoCorte = perfil.normalize('NFKC').split(/\s[-\u2013\u2014|•·]\s|[|\u2013\u2014]|\p{Extended_Pictographic}/u)[0] ?? ''
   const palavra = antesDoCorte.trim().split(/\s+/)[0] ?? ''
   return palavra.replace(/^[^\p{L}]+|[^\p{L}]+$/gu, '')
 }

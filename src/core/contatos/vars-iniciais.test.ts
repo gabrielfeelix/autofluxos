@@ -70,3 +70,10 @@ describe('varsIniciais', () => {
     expect(vars.nome).toBe('Ana Paula')
   })
 })
+
+describe('primeiroNome com letra estilizada', () => {
+  it('desfaz a fonte do WhatsApp', () => {
+    expect(primeiroNome('𝔇𝔬𝔲𝔤𝔩𝔞𝔰 Silva')).toBe('Douglas')
+    expect(primeiroNome('𝓛𝓮𝓸𝓷𝓪𝓻𝓭𝓸')).toBe('Leonardo')
+  })
+})
