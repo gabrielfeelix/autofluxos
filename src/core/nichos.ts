@@ -246,7 +246,17 @@ export const PACOTES: Record<Nicho, PacoteDoNicho> = {
         p('oferta', 'O QUE VENDEMOS', ['o que vendemos', 'produtos'], 'O que a loja vende?', 'Eletrônicos e acessórios para casa e escritório.', 'O que vocês vendem?'),
         p('site', 'SITE', ['site', 'loja virtual'], 'Qual o endereço da loja virtual?', 'www.minhaloja.com.br', 'Qual o site de vocês?'),
         p('entrega', 'ENTREGA', ['entrega', 'envio', 'frete', 'prazo de envio'], 'Qual o prazo de envio e como se calcula o frete?', 'Postamos em até 2 dias úteis. O frete é calculado no carrinho pelo CEP.', 'Quanto tempo demora para chegar?'),
-        PAGAMENTO,
+        /*
+         * As quatro abaixo vieram da PCYES (30/set/2026), e cada uma foi uma
+         * resposta errada do bot antes de existir: "o preço é o mesmo no Pix"
+         * quando o Pix tinha 5%, "não temos cupom" com cupom ativo, o bot
+         * dizendo que resolvia tudo quando garantia era de outro número, e o
+         * cliente desconfiado do CNPJ na hora de pagar.
+         */
+        p('pagamento', 'PAGAMENTO', ['pagamento', 'formas de pagamento', 'parcelamento', 'pix'], 'Quais formas de pagamento vocês aceitam? Tem desconto no Pix? O preço do site é o do cartão?', 'Pix com 5% de desconto. O preço do site é o do cartão, em até 10x sem juros.', 'Tem desconto no Pix?'),
+        p('cupom', 'CUPOM', ['cupom', 'cupons', 'desconto'], 'Tem cupom para quem chega pelo WhatsApp? Qual o código, quanto dá, o que fica de fora e se soma com o Pix?', 'CHAT10: 10% em todo o site, menos placas de vídeo. Soma com o desconto do Pix.', 'Tem algum cupom?'),
+        p('outros-times', 'OUTROS TIMES', ['outros times', 'como atendemos', 'suporte', 'contatos'], 'Que assuntos não são atendidos aqui, e qual o contato de cada um?', 'Suporte técnico, garantia e peça de reposição: (11) 2101-1428, no WhatsApp. Compra para empresa: (11) 2101-1485.', 'Meu produto deu defeito, com quem falo?'),
+        p('nome-no-pix', 'NOME NO PAGAMENTO', ['nome no pix', 'cnpj', 'razao social'], 'Que nome ou CNPJ aparece na hora de pagar?', 'Aparece Minha Loja Comércio Ltda, CNPJ 00.000.000/0001-00.', 'O Pix saiu com outro nome, é de vocês mesmo?'),
         p('trocas', 'TROCAS E DEVOLUÇÃO', ['troca', 'devolucao'], 'Como funciona troca e devolução?', 'Até 7 dias depois de receber, pelo site, com frete por nossa conta.', 'Como faço para trocar?'),
         p('garantia', 'GARANTIA', ['garantia'], 'Qual a garantia dos produtos?', '12 meses de garantia do fabricante.', 'Tem garantia?'),
         p('rastreio', 'RASTREIO', ['rastreio', 'rastreamento', 'status do pedido'], 'Como a pessoa acompanha o pedido?', 'O código de rastreio chega por e-mail quando o pedido é postado.', 'Cadê meu pedido?'),
