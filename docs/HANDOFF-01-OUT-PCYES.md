@@ -125,6 +125,29 @@ Banco e loja (não passam pelo git):
    menu em vez de ir para a equipe. Lições viraram regra geral em `3cfdad9`
    (prompt e ficha de e-commerce) e `0162b37` (bolha única).
 
+9. **Modal "Nova chave" com clique ruim** (`ajustes/chaves`, relato de
+   01/out): clicar perto do seletor "Como ela entra na chamada" abre o
+   dropdown, e clicar no espaço entre campos dispara o aviso de sair com texto
+   preenchido. Só dentro do campo ou fora do modal se comporta. Suspeita: o
+   rótulo envolve o seletor, e o clique no fundo do modal conta como "fora".
+10. **Galeria de integrações com logo** (pedido de 01/out): um card por
+   integração conhecida (Meta, WhatsApp, Instagram, Magento, Nuvemshop,
+   Verandi, Google Agenda), cada um com seu jeito de ligar: login (OAuth) onde
+   o serviço tem, um campo "cole sua chave" onde não tem, e "Outra integração
+   → Nova chave" para o resto. O primeiro card é **Conectar com Meta**: login
+   do Facebook, escolhe as Páginas, e o sistema gera o token, assina
+   `subscribed_apps` e grava `paginas_de_lead` sozinho. Para Página de cliente
+   depende do App Review (`leads_retrieval`, `pages_manage_metadata`,
+   `pages_manage_ads`, `ads_read` em Advanced). O vídeo do review é esse botão.
+11. **Lead Ads, teste manual em andamento** (01/out): usuário do sistema
+   `autofluxos-ads` (Funcionário; o portfólio só aceita 1 admin) com a Página
+   4YU e o app; caso de uso "Capturar e gerenciar leads" adicionado ao app;
+   token com as 6 permissões guardado como `meta-ads` na conta 4YU
+   (`f175bf85-...`). Falta: `subscribed_apps` na Página, `paginas_de_lead`,
+   lead pela Lead Ads Testing Tool. Se der erro de permissão, Instagram e Lead
+   Ads vão juntos para o App Review (Instagram foi reprovado por falta de
+   screencast).
+
 ## Pegadinhas novas
 
 - O pulso da conta muda sem mensagem nova (arquivo baixado, tique). Quem
