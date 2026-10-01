@@ -173,7 +173,7 @@ export function SeletorDeConta({ atual, contas }: { atual: ContaDoSeletor; conta
                     <IconeAtual />
                   ) : conta.esperando > 0 ? (
                     <span
-                      title={conta.esperando === 1 ? '1 conversa esperando' : `${conta.esperando} conversas esperando`}
+                      title={conta.esperando === 1 ? '1 conversa não lida' : `${conta.esperando} conversas não lidas`}
                       className="shrink-0 rounded-full bg-perigo/12 px-2 py-0.5 text-[11px] font-bold tabular-nums text-perigo"
                     >
                       {conta.esperando > 99 ? '99+' : conta.esperando}

@@ -9,7 +9,7 @@ import { lerFiltroDaAgenda } from '@/core/atividades'
 import { NotificacoesDaFila } from '@/components/inbox/notificacoes-da-fila'
 import { NumeroDaBarra } from '@/components/design/numero-da-barra'
 import { LinhaDePresenca } from '@/components/conta/linha-de-presenca'
-import { resumoDasContas, type Cliente, type ResumoDeAtendimento } from '@/server/repos/clientes'
+import { type Cliente } from '@/server/repos/clientes'
 import { crmVisivel, lojaVisivel, nichoDaConta } from '@/server/repos/recursos'
 import { contarConversasDaBarra } from '@/server/repos/leads'
 import { barraRecolhida } from '@/server/preferencias'
@@ -43,7 +43,21 @@ export async function BarraDoCliente({ cliente }: { cliente: Cliente }) {
     barraRecolhida(),
   ])
   // Só vale a consulta quando existe outra conta para onde ir.
-  const esperando = contas.length > 1 ? await resumoDasContas(contas.map((conta) => conta.id)) : new Map<string, ResumoDeAtendimento>()
+  /*
+   * O número de cada conta é o da barra lateral dela: conversas abertas, minhas
+   * ou sem dono, com mensagem que **quem olha** não leu. Antes era "foi para a
+   * equipe e não resolveu", lida ou não: o seletor dizia 7 na PCYES e a barra
+   * dela, nada (01/out/2026). Dois números para a mesma pergunta não servem.
+   */
+  const esperando = new Map<string, number>()
+  if (contas.length > 1) {
+    const contagens = await Promise.all(
+      contas.map((conta) =>
+        contarConversasDaBarra(conta.id, acesso.sessao.usuario.id).catch(() => ({ minhas: 0, semDono: 0 })),
+      ),
+    )
+    contas.forEach((conta, i) => esperando.set(conta.id, contagens[i]!.minhas + contagens[i]!.semDono))
+  }
   const perfil = acesso.regras.nomeDaFuncao ?? resumoDoAcesso(acesso.regras).perfil
   const doSeletor = contas.map((conta) => ({
     id: conta.id,
@@ -52,7 +66,7 @@ export async function BarraDoCliente({ cliente }: { cliente: Cliente }) {
     // Na conta aberta, o perfil de verdade (com as exceções da pessoa); nas
     // outras, o nome do papel, que sai sem consulta.
     papel: conta.id === cliente.id ? perfil : (ROTULO_DO_PAPEL[conta.papel as PapelDaConta] ?? conta.papel),
-    esperando: esperando.get(conta.id)?.esperandoPessoa ?? 0,
+    esperando: esperando.get(conta.id) ?? 0,
   }))
   const atual = doSeletor.find((conta) => conta.id === cliente.id) ?? {
     // O administrador da 4YU entra sem ser membro: a conta não está na lista dele.
