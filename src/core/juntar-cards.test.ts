@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import type { Acao } from './engine/types'
 import type { ProdutoDaLoja } from './loja'
-import { juntarFraseAosCards } from './juntar-cards'
+import { juntarFraseAosCards, juntarTextosSeguidos, TETO_DA_BOLHA_JUNTADA } from './juntar-cards'
 
 const produto = (id: string, extra: Partial<ProdutoDaLoja> = {}): ProdutoDaLoja => ({
   produtoId: id,
@@ -40,5 +40,33 @@ describe('juntarFraseAosCards', () => {
     const espera: Acao[] = [{ tipo: 'enviar_texto', texto: 'Oi', atrasoMs: 1000 }, cards]
     expect(juntarFraseAosCards(longa, comFoto)).toEqual(longa)
     expect(juntarFraseAosCards(espera, comFoto)).toEqual(espera)
+  })
+})
+
+describe('juntarTextosSeguidos', () => {
+  const texto = (t: string, atrasoMs?: number): Acao => ({ tipo: 'enviar_texto', texto: t, ...(atrasoMs ? { atrasoMs } : {}) })
+  const pergunta = (t: string): Acao => ({
+    tipo: 'enviar_opcoes',
+    texto: t,
+    formato: 'botoes',
+    opcoes: [{ id: 'a', rotulo: 'Sim' }],
+  })
+
+  it('junta texto com texto e texto com a pergunta', () => {
+    expect(juntarTextosSeguidos([texto('Segue o manual.'), texto('Precisa de mais algo?')])).toEqual([
+      texto('Segue o manual.\n\nPrecisa de mais algo?'),
+    ])
+    expect(juntarTextosSeguidos([texto('Olá!'), pergunta('Como posso ajudar?')])).toEqual([
+      pergunta('Olá!\n\nComo posso ajudar?'),
+    ])
+  })
+
+  it('passa por cima de ação silenciosa, mas não de atraso nem do teto', () => {
+    expect(
+      juntarTextosSeguidos([texto('a'), { tipo: 'salvar_campo', campo: 'x', valor: 'y' }, texto('b')]),
+    ).toEqual([texto('a\n\nb'), { tipo: 'salvar_campo', campo: 'x', valor: 'y' }])
+    expect(juntarTextosSeguidos([texto('a'), texto('b', 2000)])).toHaveLength(2)
+    const longo = 'x'.repeat(TETO_DA_BOLHA_JUNTADA)
+    expect(juntarTextosSeguidos([texto(longo), texto('b')])).toHaveLength(2)
   })
 })

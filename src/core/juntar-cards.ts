@@ -37,3 +37,69 @@ export function juntarFraseAosCards(acoes: Acao[], saiComoCard: (p: ProdutoDaLoj
 
 /** O corpo do carrossel aceita 1024; o do card único, 1024 com o card dentro. */
 const LIMITE_DA_FRASE_JUNTO_DOS_CARDS = 800
+
+/**
+ * Textos seguidos do robô numa mensagem só (pedido de 01/out/2026: a Meta
+ * cobra cada mensagem desde esse dia, e a PCYES media ~6 por conversa).
+ *
+ * Junta, na ordem em que sairiam:
+ *
+ * - texto seguido de texto, num parágrafo cada;
+ * - texto seguido de botões ou lista, como começo do corpo da pergunta.
+ *
+ * O teto é de caractere e não de quantidade: o que passa dele sai separado,
+ * como antes. 1.000 cabe no corpo de botões do WhatsApp (1.024) e no texto do
+ * Instagram (1.000), e é o limite de uma bolha que ainda se lê no celular.
+ *
+ * Não junta quando a segunda tem atraso, que é o desenho pedindo pausa entre
+ * as duas, nem pergunta com foto em cima, que já sai em mensagem própria.
+ */
+export const TETO_DA_BOLHA_JUNTADA = 1_000
+
+/**
+ * Ações que não mandam nada nem mudam quem conduz: o texto pode passar por
+ * cima delas para encontrar o seguinte. Transferir, encerrar e ir para outro
+ * fluxo ficam de fora de propósito, porque mudam o que vem depois.
+ */
+const SILENCIOSAS = new Set<Acao['tipo']>([
+  'salvar_campo',
+  'mover_etapa',
+  'aplicar_etiqueta',
+  'escrever_nota',
+  'guardar_nota',
+  'guardar_comentario',
+])
+
+export function juntarTextosSeguidos(acoes: Acao[]): Acao[] {
+  const saida: Acao[] = []
+  // Onde está o último texto que ainda pode receber o seguinte.
+  let aberto = -1
+  for (const acao of acoes) {
+    if (SILENCIOSAS.has(acao.tipo)) {
+      saida.push(acao)
+      continue
+    }
+    const anterior = aberto >= 0 ? saida[aberto] : undefined
+    const semAtraso = !('atrasoMs' in acao && acao.atrasoMs)
+    if (anterior?.tipo === 'enviar_texto' && semAtraso && anterior.texto.trim()) {
+      if (acao.tipo === 'enviar_texto' && acao.texto.trim()) {
+        const texto = `${anterior.texto}\n\n${acao.texto}`
+        if (texto.length <= TETO_DA_BOLHA_JUNTADA) {
+          saida[aberto] = { ...anterior, texto }
+          continue
+        }
+      }
+      if (acao.tipo === 'enviar_opcoes' && !acao.imagem) {
+        const texto = acao.texto.trim() ? `${anterior.texto}\n\n${acao.texto}` : anterior.texto
+        if (texto.length <= TETO_DA_BOLHA_JUNTADA) {
+          saida[aberto] = { ...acao, texto, ...(anterior.atrasoMs ? { atrasoMs: anterior.atrasoMs } : {}) }
+          aberto = -1
+          continue
+        }
+      }
+    }
+    saida.push(acao)
+    aberto = acao.tipo === 'enviar_texto' ? saida.length - 1 : -1
+  }
+  return saida
+}

@@ -14,7 +14,7 @@ import { executarComEfeitos, type OpcoesDeEfeitos } from './efeitos/resolver'
 import { guardarMidiaRecebida } from './guardar-midia-recebida'
 import { escolherModelo } from './ia/modelo'
 import { comLinkRastreado } from './link-de-produto'
-import { juntarFraseAosCards } from '@/core/juntar-cards'
+import { juntarFraseAosCards, juntarTextosSeguidos } from '@/core/juntar-cards'
 import { guardarComentario, guardarNota } from './repos/avaliacoes'
 import { acharCliente, horarioDoCliente } from './repos/clientes'
 import { acharFluxo, acharVersao, type VersaoPublicada } from './repos/fluxos'
@@ -1706,9 +1706,12 @@ async function aplicar(
     cardSemFoto: canal.cardSemFoto,
     temPedir: Boolean(canal.enviarProdutoComBotao),
   }
+  // Uma bolha em vez de várias: cada mensagem é cobrada pela Meta desde
+  // 01/out/2026. Primeiro os textos entre si, depois a frase com os cards.
+  const juntados = juntarTextosSeguidos(acoes)
   const aEnviar = canal.enviarProdutosComTexto
-    ? juntarFraseAosCards(acoes, (p) => comoMandarProduto(p, jeitoDoCanal) === 'card' && Boolean(p.foto))
-    : acoes
+    ? juntarFraseAosCards(juntados, (p) => comoMandarProduto(p, jeitoDoCanal) === 'card' && Boolean(p.foto))
+    : juntados
 
   for (const acao of aEnviar) {
     switch (acao.tipo) {
