@@ -3,7 +3,9 @@ import { AjustesShell } from '@/components/design/ajustes-shell'
 import { Trilha } from '@/components/design/trilha'
 import { ModalFormulario, RotuloCampo } from '@/components/design/modal-formulario'
 import { CartaoDaPagina } from '@/components/anuncios/cartao-da-pagina'
-import { acaoConectarComFacebook, acaoLigarAds, acaoLigarPagina } from '@/server/acoes-lead-ads'
+import { PaginasParaLigar } from '@/components/anuncios/paginas-para-ligar'
+import { LogoMeta } from '@/components/design/logos-de-marca'
+import { acaoConectarComFacebook, acaoLigarAds } from '@/server/acoes-lead-ads'
 import { acharCliente } from '@/server/repos/clientes'
 import { listarConexoes } from '@/server/repos/conexoes'
 import { paginasDaConta } from '@/server/repos/paginas-de-lead'
@@ -115,22 +117,22 @@ export default async function Pagina({
         */}
         <div className="app-card mb-4 px-5 py-4">
           <div className="flex flex-wrap items-center gap-3">
-            <span
-              aria-hidden
-              className={`flex size-8 shrink-0 items-center justify-center rounded-lg text-[15px] ${
-                temToken ? 'bg-primary/[0.12]' : 'bg-surface'
-              }`}
-            >
-              🔑
-            </span>
+            <LogoMeta />
             <div className="min-w-0 flex-1">
-              <p className="text-[13.5px] font-bold">Acesso à conta de anúncios</p>
+              <p className="text-[13.5px] font-bold">Conta da Meta</p>
               <p className="mt-0.5 text-[11.5px] leading-4 text-dim">
                 {temToken ? (
-                  <>
-                    Ligado. É ele que lê o lead e descobre{' '}
-                    <strong className="text-soft">de qual campanha</strong> a pessoa veio.
-                  </>
+                  doToken === null ? (
+                    'Ligada, mas a Meta não respondeu agora. Se continuar, troque o token.'
+                  ) : (
+                    <>
+                      Ligada. Enxerga{' '}
+                      <strong className="text-soft">
+                        {doToken.length === 1 ? '1 Página' : `${doToken.length} Páginas`}
+                      </strong>
+                      {doToken.length > 0 && `: ${doToken.map((p) => p.nome).join(', ')}`}.
+                    </>
+                  )
                 ) : (
                   'Sem ele, nenhum lead de formulário entra, a Meta avisa, e não há com o que buscar.'
                 )}
@@ -208,56 +210,34 @@ export default async function Pagina({
           </div>
         </div>
 
-        <div className="mb-3 mt-7 flex flex-wrap items-end justify-between gap-3">
-          <div>
-            <h2 className="text-[15px] font-bold">Páginas ligadas</h2>
-            <p className="mt-1 max-w-[560px] text-[12px] leading-5 text-dim">
-              A Meta manda o lead dizendo de qual Página ele veio. Ligar aqui é o que diz que
-              aquela Página é deste cliente, sem isso o lead chega e é descartado.
-            </p>
-          </div>
-
-          <ModalFormulario
-            botao="+ Ligar uma página"
-            variante="secundario"
-            titulo="Ligar uma página do Facebook"
-            descricao="Os leads dos formulários dessa página passam a entrar nesta conta."
-            rotuloEnviar="Ligar"
-            action={acaoLigarPagina.bind(null, clienteId)}
-          >
-            {paraLigar.length > 0 ? (
-              <label className="block">
-                <RotuloCampo>Página</RotuloCampo>
-                <select name="pageId" required className="app-field px-3 py-2.5 text-[13px]">
-                  {paraLigar.map((p) => (
-                    <option key={p.id} value={p.id}>
-                      {p.nome || p.id}
-                    </option>
-                  ))}
-                </select>
-                <span className="mt-1 block text-[10.5px] text-dim">
-                  As Páginas que a conta de anúncios ligada acima enxerga.
-                </span>
-              </label>
-            ) : (
-              <p className="text-[12px] leading-5 text-soft">
-                {!temToken
-                  ? 'Ligue a conta de anúncios acima primeiro. As Páginas dela aparecem aqui.'
-                  : doToken === null
-                    ? 'A Meta não respondeu agora. Feche e tente de novo em instantes.'
-                    : 'Todas as Páginas que a conta de anúncios enxerga já estão ligadas. Para outra Página, dê acesso a ela no Business Manager.'}
+        {paraLigar.length > 0 && (
+          <>
+            <div className="mb-3 mt-7">
+              <h2 className="text-[15px] font-bold">Páginas para ligar</h2>
+              <p className="mt-1 max-w-[560px] text-[12px] leading-5 text-dim">
+                Os leads dos formulários da Página passam a entrar nesta conta.
               </p>
-            )}
-          </ModalFormulario>
+            </div>
+            <PaginasParaLigar clienteId={clienteId} paginas={paraLigar} />
+          </>
+        )}
+
+        <div className="mb-3 mt-7">
+          <h2 className="text-[15px] font-bold">Páginas ligadas</h2>
+          <p className="mt-1 max-w-[560px] text-[12px] leading-5 text-dim">
+            Os leads dos formulários destas Páginas entram aqui, com o telefone e a campanha de
+            onde vieram.
+          </p>
         </div>
 
         {paginas.length === 0 ? (
           <div className="app-card px-5 py-12 text-center">
             <IlustracaoAnuncios />
-            <p className="mt-6 text-[13px] font-bold">Nenhuma página ligada ainda</p>
+            <p className="mt-6 text-[13px] font-bold">Nenhuma Página ligada ainda</p>
             <p className="mx-auto mt-1.5 max-w-[420px] text-[11.5px] leading-5 text-dim">
-              Enquanto não houver uma, os leads de formulário deste cliente não entram.
-              Quem conversa pelo WhatsApp continua chegando normalmente.
+              {temToken
+                ? 'Ligue uma das Páginas acima. Enquanto isso, os leads de formulário não entram; o WhatsApp segue normal.'
+                : 'Ligue a conta da Meta acima e as Páginas dela aparecem aqui para escolher.'}
             </p>
           </div>
         ) : (
@@ -269,6 +249,7 @@ export default async function Pagina({
                 pageId={pagina.pageId}
                 nome={pagina.nome}
                 temToken={temToken}
+                foto={doToken?.find((p) => p.id === pagina.pageId)?.foto ?? null}
               />
             ))}
           </div>

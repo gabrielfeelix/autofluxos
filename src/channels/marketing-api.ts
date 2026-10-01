@@ -271,7 +271,7 @@ export async function listarLeadsDoFormulario(entrada: {
 /* Páginas do token, e a assinatura de leads                                   */
 /* -------------------------------------------------------------------------- */
 
-export type PaginaDoToken = { id: string; nome: string }
+export type PaginaDoToken = { id: string; nome: string; foto: string | null }
 
 async function chamarGraph(
   caminho: string,
@@ -314,12 +314,17 @@ async function chamarGraph(
  * sei o id?"). Só as que têm a tarefa de leads: as outras chegariam sem dado.
  */
 export async function listarPaginasDoToken(token: string): Promise<PaginaDoToken[] | null> {
-  const r = await chamarGraph('me/accounts?fields=id,name,tasks&limit=100', token)
+  const r = await chamarGraph('me/accounts?fields=id,name,tasks,picture{url}&limit=100', token)
   if (!r.ok) return null
-  const itens = (r.corpo.data ?? []) as { id?: unknown; name?: unknown; tasks?: unknown }[]
+  const itens = (r.corpo.data ?? []) as {
+    id?: unknown
+    name?: unknown
+    tasks?: unknown
+    picture?: { data?: { url?: unknown } }
+  }[]
   return itens
     .filter((p) => !Array.isArray(p.tasks) || p.tasks.includes('MANAGE_LEADS') || p.tasks.includes('MANAGE'))
-    .map((p) => ({ id: texto(p.id), nome: texto(p.name) }))
+    .map((p) => ({ id: texto(p.id), nome: texto(p.name), foto: texto(p.picture?.data?.url) || null }))
     .filter((p) => p.id !== '')
 }
 

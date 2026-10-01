@@ -1,5 +1,6 @@
 'use client'
 
+import { FotoDaPagina } from './foto-da-pagina'
 import { useState, useTransition } from 'react'
 import { acaoDesligarPagina, acaoImportarLeadsAntigos } from '@/server/acoes-lead-ads'
 
@@ -16,11 +17,13 @@ export function CartaoDaPagina({
   pageId,
   nome,
   temToken,
+  foto = null,
 }: {
   clienteId: string
   pageId: string
   nome: string
   temToken: boolean
+  foto?: string | null
 }) {
   const [saindo, comecar] = useTransition()
   const [importando, importar] = useTransition()
@@ -28,16 +31,11 @@ export function CartaoDaPagina({
 
   return (
     <div className="app-card flex flex-wrap items-center gap-3 px-5 py-3.5">
-      <span
-        aria-hidden
-        className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-surface text-[15px]"
-      >
-        📄
-      </span>
+      <FotoDaPagina foto={foto} nome={nome} />
 
       <div className="min-w-0 flex-1">
         <p className="truncate text-[13px] font-bold">{nome !== '' ? nome : 'Página sem nome'}</p>
-        <p className="mt-0.5 font-mono text-[10.5px] text-dim">{pageId}</p>
+        <p className="mt-0.5 text-[11px] text-dim">Página do Facebook</p>
       </div>
 
       {temToken ? (
