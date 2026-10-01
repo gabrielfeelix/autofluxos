@@ -112,7 +112,7 @@ export default async function Pagina({ params }: { params: Promise<{ clienteId: 
           >
             <label className="block">
               <RotuloCampo>Nome</RotuloCampo>
-              <input name="nome" required placeholder="CRM" className="app-field px-3 py-2.5 text-[13px]" />
+              <input name="nome" required placeholder="Exemplo: CRM" className="app-field px-3 py-2.5 text-[13px]" />
             </label>
 
             <div className="block">
@@ -131,7 +131,7 @@ export default async function Pagina({ params }: { params: Promise<{ clienteId: 
 
             <label className="block">
               <RotuloCampo>Nome do cabeçalho ou parâmetro</RotuloCampo>
-              <input name="campo" placeholder="x-api-key" className="app-field px-3 py-2.5 text-[13px]" />
+              <input name="campo" placeholder="Exemplo: x-api-key" className="app-field px-3 py-2.5 text-[13px]" />
               <span className="mt-1 block text-[10.5px] text-dim">
                 Deixe vazio quando for Bearer. Nos outros dois, é obrigatório.
               </span>
