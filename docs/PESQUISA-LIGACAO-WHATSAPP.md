@@ -71,6 +71,16 @@ estar verificado. Se o AutoFluxos usa um portfólio nosso para todos, um cliente
 não verificado herda a regra do nosso. Conferir como o onboarding atual cria o
 portfólio.
 
+**Medido em 1/out/2026 na demo (`1301107846409860`) [OFICIAL, Health Status API]:**
+portfólio 4YU `verified` e mesmo assim `whatsapp_business_manager_messaging_limit:
+TIER_250`; ligar o Calling volta `138015`. O `health_status` do número diz o
+motivo: "Your display name has not been approved yet. Your message limit will
+increase after the display name is approved." (`name_status:
+AVAILABLE_WITHOUT_REVIEW`). Ou seja: **verificação + nome de exibição aprovado**,
+os dois. Diagnóstico de qualquer cliente: `GET /<PHONE_NUMBER_ID>?fields=health_status,name_status,whatsapp_business_manager_messaging_limit`.
+O motivo também chega no webhook `account_alerts`, que assinamos mas o código
+não lê (descartado em silêncio).
+
 Outras fontes de terceiros ainda dizem "1.000" ou "2.000 conversas"; são
 textos antigos ou imprecisos. A Meta diz 2.000 destinatários únicos.
 
