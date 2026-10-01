@@ -8,6 +8,7 @@ import {
 } from '@/core/segmentos'
 import type { FiltroDeEscopo } from '@/core/permissoes'
 import { db, ehIdInvalido } from '../db'
+import { digitos, trechosDoTelefone } from '@/core/contatos/telefone'
 
 /**
  * A consulta de contatos que **todas** as superfícies usam (T6.1, RB-37).
@@ -169,7 +170,10 @@ export async function consultarContatos(
   if (termo !== '') {
     // O termo já vem limpo por `limparBusca`. Mesmo assim ele entra só em
     // `ilike` com curinga nas pontas, e nunca monta um `or()` com identificador.
-    consulta = consulta.or(`nome.ilike.*${termo}*,telefone.ilike.*${termo}*`)
+    // Telefone também pelos dígitos, com e sem o nono dígito: "98804 9974"
+    // acha `554488049974` (ver `trechosDoTelefone`).
+    const doTelefone = digitos(termo).length >= 4 ? trechosDoTelefone(termo).map((t) => `telefone.like.*${t}*`) : []
+    consulta = consulta.or([`nome.ilike.*${termo}*`, `telefone.ilike.*${termo}*`, ...doTelefone].join(','))
   }
 
   consulta = ordenar(consulta, pedido.ordem ?? 'recentes')

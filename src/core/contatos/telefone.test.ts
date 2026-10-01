@@ -5,8 +5,7 @@ import {
   mascaraDeTelefone,
   telefoneCanonico,
   telefoneCompleto,
-  telefoneLegivel,
-} from './telefone'
+  telefoneLegivel, trechosDoTelefone } from './telefone'
 
 describe('chaves do telefone', () => {
   const casa = (a: string, b: string) =>
@@ -176,5 +175,16 @@ describe('telefoneCompleto', () => {
   it('recusa meio telefone', () => {
     expect(telefoneCompleto('(44) 9000')).toBe(false)
     expect(telefoneCompleto('449')).toBe(false)
+  })
+})
+
+describe('trechosDoTelefone', () => {
+  it('com o nono dígito digitado, procura também sem ele', () => {
+    expect(trechosDoTelefone('98804-9974')).toEqual(['988049974', '88049974'])
+    expect(trechosDoTelefone('(44) 98804-9974')).toEqual(['44988049974', '4488049974'])
+  })
+  it('sem o nono dígito, ou curto, fica como foi digitado', () => {
+    expect(trechosDoTelefone('8804-9974')).toEqual(['88049974'])
+    expect(trechosDoTelefone('Ana')).toEqual([])
   })
 })

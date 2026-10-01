@@ -1,3 +1,5 @@
+import { trechosDoTelefone } from './contatos/telefone'
+
 /**
  * Os quadros: em que etapa cada contato está (0032).
  *
@@ -468,7 +470,7 @@ export function passaNoFiltro(cartao: Cartao, filtro: FiltroDoQuadro): boolean {
   return (
     comparavel(cartao.nome).includes(alvo) ||
     comparavel(cartao.titulo ?? '').includes(alvo) ||
-    (soDigitos.length >= 3 && cartao.telefone.replace(/\D/g, '').includes(soDigitos))
+    trechosDoTelefone(soDigitos).some((t) => cartao.telefone.replace(/\D/g, '').includes(t))
   )
 }
 

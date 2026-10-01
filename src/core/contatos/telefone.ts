@@ -75,6 +75,22 @@ export function chavesDoTelefone(bruto: string): string[] {
 }
 
 /**
+ * Os pedaços de dígitos que uma busca parcial procura dentro do telefone.
+ *
+ * Quem busca "98804-9974" digita o nono dígito, e a Meta grava muito número
+ * sem ele (`554488049974`): o `includes` cru não achava. Com nove dígitos ou
+ * mais e um 9 na casa do nono dígito, a forma sem ele também vale. Menos de
+ * três dígitos não busca nada.
+ */
+export function trechosDoTelefone(bruto: string): string[] {
+  const so = digitos(bruto)
+  if (so.length < 3) return []
+  const trechos = [so]
+  if (so.length >= 9 && so.at(-9) === '9') trechos.push(so.slice(0, -9) + so.slice(-8))
+  return trechos
+}
+
+/**
  * A forma preferida para mostrar e guardar: DDI + DDD + número, sem máscara.
  *
  * `null` quando não dá para normalizar, mesmo critério de `chavesDoTelefone`.

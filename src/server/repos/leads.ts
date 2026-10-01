@@ -1,7 +1,7 @@
 import 'server-only'
 import { z } from 'zod'
 import type { Conciliacao, ContatoConhecido } from '@/core/contatos/planilha'
-import { chavesDoTelefone, digitos } from '@/core/contatos/telefone'
+import { chavesDoTelefone, digitos, trechosDoTelefone } from '@/core/contatos/telefone'
 import { padraoSemAcento } from '@/core/atividades'
 import { LIMITE_DA_NOTA } from '@/core/flow/limites'
 import {
@@ -779,7 +779,7 @@ export async function paginarLeads(
       const numeros = digitos(termo)
       const partes = [`wa_id.ilike.*${termo}*`]
       if (padrao.trim() !== '') partes.push(`nome.imatch.${padrao}`, `nome_real.imatch.${padrao}`)
-      if (numeros.length >= 4) partes.push(`wa_id.like.*${numeros}*`)
+      if (numeros.length >= 4) for (const t of trechosDoTelefone(numeros)) partes.push(`wa_id.like.*${t}*`)
       // E buscar pelas formas do telefone, não só pelo que foi digitado: quem
       // procura "(11) 98765-4321" não acha `551187654321` com `ilike`, e o nono
       // dígito faz o mesmo aparelho ter duas grafias. `chavesDoTelefone`

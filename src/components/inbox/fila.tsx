@@ -6,7 +6,7 @@ import { comoFalta, dentroDaPortaDeEntrada, restaDaJanela } from "@/channels/jan
 import { Dica } from "@/components/design/dica";
 import { LARGURA_DA_FILA } from "@/components/design/tema";
 import { canalPeloContato, type CanalId } from "@/core/canais";
-import { chavesDoTelefone } from "@/core/contatos/telefone";
+import { chavesDoTelefone, trechosDoTelefone } from "@/core/contatos/telefone";
 import { Avatar } from "@/components/inbox/avatar";
 import { RailsLocais } from "@/components/inbox/fila-local";
 import {
@@ -726,7 +726,7 @@ export function Fila({
               name="busca"
               value={digitado}
               onChange={(e) => setDigitado(e.target.value)}
-              placeholder="Pesquisar em conversas"
+              placeholder="Buscar por nome ou número"
               aria-label="Pesquisar em conversas"
               className="app-field rounded-full py-2 pr-9 pl-9 text-[13px]"
             />
@@ -1377,7 +1377,7 @@ function procurar(leads: Lead[], termo: string): Lead[] {
     if (achatar(lead.ultimoTexto ?? "").includes(alvo)) return true;
     // `includes` e não igualdade: digitar só o DDD e o começo do número já
     // recorta, que é como se busca telefone de cabeça.
-    if (so !== "" && lead.waId.includes(so)) return true;
+    if (trechosDoTelefone(termo).some((t) => lead.waId.includes(t))) return true;
     return chaves.some((chave) => lead.waId === chave);
   });
 }
