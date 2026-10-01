@@ -21,6 +21,7 @@ import {
   conversasPorCanal,
   faixasDeEspera,
   horariosDoPeriodo,
+  mensagensEnviadas,
   origemDosContatos,
   produtosNoAtendimento,
   responsaveisDoEscopo,
@@ -28,6 +29,7 @@ import {
   totaisDoPeriodo,
 } from '@/server/repos/relatorios'
 import { membrosDaConta } from '@/server/repos/usuarios'
+import { cuponsDoChat } from '@/server/adaptador-da-loja'
 
 export const dynamic = 'force-dynamic'
 
@@ -116,6 +118,10 @@ export default async function Pagina({
   // Só onde o Comércio aparece no menu, a mesma regra da barra lateral: conta
   // que desligou a Loja não tem card de produto para contar.
   const produtos = (await lojaVisivel(clienteId)) ? await produtosNoAtendimento(clienteId, periodo, responsaveis) : null
+  const enviadas = await mensagensEnviadas(clienteId, periodo, responsaveis)
+  const enviadasAntes = await mensagensEnviadas(clienteId, anterior, responsaveis)
+  const porConversa = enviadas.conversas === 0 ? null : enviadas.total / enviadas.conversas
+  const cupons = await cuponsDoChat(clienteId, periodo, responsaveis)
   const arranjo = await arranjoDaAnalise('atendimento')
 
   const blocos: Bloco[] = [
@@ -389,6 +395,82 @@ export default async function Pagina({
               />
             ),
           },
+        ]
+      : []),
+    {
+      id: 'mensagens',
+      titulo: 'Mensagens enviadas',
+      largura: 'terco',
+      conteudo: (
+        <CaixaDoBloco
+          titulo="Mensagens enviadas"
+          subtitulo={<Mudanca atual={enviadas.total} antes={enviadasAntes.total} />}
+        >
+          {enviadas.total === 0 ? (
+            <Vazio desenho="canais">Nenhuma mensagem enviada pelo WhatsApp no período.</Vazio>
+          ) : (
+            <div className="flex flex-1 flex-col">
+              <p className="text-[34px] leading-none font-bold tracking-[-0.03em] tabular-nums text-ink">
+                {enviadas.total.toLocaleString('pt-BR')}{' '}
+                <span className="text-[15px] font-semibold tracking-normal text-dim">
+                  {enviadas.total === 1 ? 'mensagem' : 'mensagens'}
+                </span>
+              </p>
+              {porConversa !== null && (
+                <p className="mt-1.5 text-[14px] font-semibold tabular-nums text-soft">
+                  {porConversa.toLocaleString('pt-BR', { maximumFractionDigits: 1 })} por conversa
+                </p>
+              )}
+              <div className="mt-5 flex h-2.5 gap-[2px] overflow-hidden rounded-full" aria-hidden>
+                <div className="bg-primary" style={{ flex: enviadas.doRobo }} />
+                <div className="bg-strong" style={{ flex: enviadas.total - enviadas.doRobo }} />
+              </div>
+              <div className="mt-2 flex justify-between text-[11.5px] tabular-nums">
+                <span className="text-soft">
+                  <strong className="text-ink">{enviadas.doRobo.toLocaleString('pt-BR')}</strong> do robô
+                </span>
+                <span className="text-dim">
+                  <strong className="text-soft">{(enviadas.total - enviadas.doRobo).toLocaleString('pt-BR')}</strong> da equipe
+                </span>
+              </div>
+              <p className="mt-auto pt-5 text-[11.5px] leading-4 text-dim">
+                Desde 1/out/2026 a Meta cobra cada mensagem enviada pelo WhatsApp. O que sai pelo aplicativo do celular não entra aqui.
+              </p>
+            </div>
+          )}
+        </CaixaDoBloco>
+      ),
+    },
+    ...(cupons
+      ? [
+          {
+            id: 'cupons',
+            titulo: 'Cupons mandados',
+            largura: 'terco',
+            conteudo: (
+              <ListaEmBarras
+                titulo="Cupons mandados"
+                subtitulo="Pedidos na loja com cada cupom que o atendimento mandou no período, sem os cancelados."
+                linhas={
+                  cupons.ok
+                    ? cupons.valor.map((c) => ({
+                        chave: c.codigo,
+                        rotulo: c.codigo,
+                        n: c.pedidos,
+                        valor: c.receita,
+                        detalhe: `mandado para ${c.contatos} ${c.contatos === 1 ? 'pessoa' : 'pessoas'}`,
+                      }))
+                    : []
+                }
+                unidade={['pedido', 'pedidos']}
+                valorPermitido={podeVerValor}
+                rotuloQuantidade="Pedidos"
+                rotuloValor="Receita (R$)"
+                desenho="maisVendidos"
+                vazio={cupons.ok ? 'Nenhum cupom da loja foi mandado no período.' : `Não deu para ler a loja: ${cupons.motivo}.`}
+              />
+            ),
+          } satisfies Bloco,
         ]
       : []),
     {

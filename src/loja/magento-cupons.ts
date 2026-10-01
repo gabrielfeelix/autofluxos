@@ -229,3 +229,62 @@ function filtroEm(campo: string, valores: string[]): string {
   const p = 'searchCriteria[filterGroups][0][filters][0]'
   return `${p}[field]=${encodeURIComponent(campo)}&${p}[value]=${encodeURIComponent(valores.join(','))}&${p}[conditionType]=in`
 }
+
+/** Pedidos que usaram um cupom no período, sem os cancelados. */
+export type VendasDoCupom = { codigo: string; pedidos: number; receita: number }
+
+/**
+ * Status que não viraram venda: cancelado, e `closed`, que no Magento é o
+ * pedido reembolsado por inteiro.
+ */
+const NAO_E_VENDA = new Set(['canceled', 'closed'])
+
+/**
+ * Quantos pedidos usaram o cupom entre dois instantes, e quanto somaram.
+ *
+ * `de` e `ate` em UTC no formato do Magento (`AAAA-MM-DD HH:MM:SS`), que é como
+ * ele guarda `created_at`. A comparação do código é a do MySQL, que ignora
+ * maiúscula: "chat10" digitado no site conta como CHAT10.
+ */
+export async function vendasDoCupom(
+  dados: { endereco: string; credencial: CredencialDaChamada | null },
+  codigo: string,
+  periodo: { de: string; ate: string },
+  chamar: Chamar,
+): Promise<ResultadoDaLoja<VendasDoCupom>> {
+  if (!dados.credencial) return { ok: false, motivo: 'a loja desta conta não tem token conectado' }
+
+  const filtros = [
+    filtroNoGrupo(0, 'coupon_code', codigo, 'eq'),
+    filtroNoGrupo(1, 'created_at', periodo.de, 'gteq'),
+    filtroNoGrupo(2, 'created_at', periodo.ate, 'lt'),
+  ].join('&')
+  const r = await chamar(
+    {
+      tipo: 'chamar_http',
+      metodo: 'GET',
+      url: `${dados.endereco}/rest/V1/orders?${filtros}&searchCriteria[pageSize]=500&fields=items[grand_total,status]`,
+      cabecalhos: [],
+      corpo: '',
+      mapear: [],
+      aoFalhar: 'humano',
+    },
+    { deTeste: false, credencial: dados.credencial, comJson: true },
+  )
+  if (!r.ok) return { ok: false, motivo: `a loja não respondeu: ${r.motivo}` }
+
+  const itens = (r.json as { items?: { grand_total?: unknown; status?: unknown }[] } | null)?.items ?? []
+  let pedidos = 0
+  let receita = 0
+  for (const item of itens) {
+    if (typeof item.status === 'string' && NAO_E_VENDA.has(item.status)) continue
+    pedidos++
+    receita += Number(item.grand_total) || 0
+  }
+  return { ok: true, valor: { codigo, pedidos, receita: Math.round(receita * 100) / 100 } }
+}
+
+function filtroNoGrupo(grupo: number, campo: string, valor: string, condicao: string): string {
+  const p = `searchCriteria[filterGroups][${grupo}][filters][0]`
+  return `${p}[field]=${encodeURIComponent(campo)}&${p}[value]=${encodeURIComponent(valor)}&${p}[conditionType]=${condicao}`
+}

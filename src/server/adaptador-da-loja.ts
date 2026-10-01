@@ -4,7 +4,9 @@ import { lojaCatalogo } from '@/loja/catalogo'
 import { lojaMagento } from '@/loja/magento'
 import { lojaAdmin } from '@/loja/magento-admin'
 import { consultarPedido, type ConsultaDePedido } from '@/loja/magento-pedido'
-import { listarCupons, type CupomDaLoja } from '@/loja/magento-cupons'
+import { listarCupons, vendasDoCupom, type CupomDaLoja } from '@/loja/magento-cupons'
+import type { Periodo } from '@/core/relatorios'
+import { cuponsMandados, type Responsaveis } from './repos/relatorios'
 import { lojaNuvemshop } from '@/loja/nuvemshop'
 import type { Loja } from '@/loja/types'
 import { alertar } from './alertar'
@@ -76,6 +78,63 @@ export async function cuponsDaConta(
   }
   const hoje = new Date().toLocaleDateString('sv-SE', { timeZone: 'America/Sao_Paulo' })
   return listarCupons({ endereco: loja.endereco, credencial }, hoje, chamarHttp)
+}
+
+/** Um cupom que o atendimento mandou, e o que ele vendeu no mesmo período. */
+export type CupomDoChat = { codigo: string; contatos: number; pedidos: number; receita: number }
+
+/** Mais que isso vira lista de parceiro, e cada um é uma chamada à loja. */
+const CUPONS_NO_RELATORIO = 6
+
+/**
+ * Os cupons que o atendimento mandou no período e quantos pedidos cada um
+ * trouxe na loja, para o relatório (pedido de 30/set/2026: medir o CHAT10).
+ *
+ * `null` quando a conta não tem Magento ligado, e o bloco nem aparece. O pedido
+ * conta quem usou o cupom, tenha recebido pelo chat ou não: para um cupom só
+ * do chat, como o CHAT10, é a venda que o chat trouxe.
+ */
+export async function cuponsDoChat(
+  clienteId: string,
+  periodo: Periodo,
+  responsaveis: Responsaveis,
+): Promise<{ ok: true; valor: CupomDoChat[] } | { ok: false; motivo: string } | null> {
+  const loja = await lojaDaConta(clienteId)
+  if (!loja || !loja.ativa || !loja.conexaoId) return null
+  const ativos = await cuponsDaConta(clienteId)
+  if (!ativos.ok) return ativos
+
+  const mandados = (
+    await cuponsMandados(clienteId, periodo, responsaveis, ativos.valor.map((c) => c.codigo))
+  ).slice(0, CUPONS_NO_RELATORIO)
+  if (mandados.length === 0) return { ok: true, valor: [] }
+
+  let credencial = null
+  try {
+    credencial = await lerCredencial(loja.conexaoId, clienteId)
+  } catch {
+    return { ok: false, motivo: 'não deu para ler o token da loja' }
+  }
+  const noMagento = { de: `${periodo.de} 03:00:00`, ate: `${diaSeguinte(periodo.ate)} 03:00:00` }
+
+  const valor: CupomDoChat[] = []
+  for (const m of mandados) {
+    const r = await vendasDoCupom({ endereco: loja.endereco, credencial }, m.codigo, noMagento, chamarHttp)
+    if (!r.ok) return r
+    valor.push({ ...m, pedidos: r.valor.pedidos, receita: r.valor.receita })
+  }
+  return { ok: true, valor }
+}
+
+/**
+ * `AAAA-MM-DD` mais um dia. Meia-noite de Brasília é 03:00 UTC o ano inteiro
+ * desde que o horário de verão acabou (2019), e o Magento guarda `created_at`
+ * em UTC: é daí o `03:00:00` de quem chama.
+ */
+function diaSeguinte(dia: string): string {
+  const d = new Date(`${dia}T12:00:00Z`)
+  d.setUTCDate(d.getUTCDate() + 1)
+  return d.toISOString().slice(0, 10)
 }
 
 async function entregaDaFreteRapido(clienteId: string, numero: string): Promise<RastreioDaFreteRapido | null> {

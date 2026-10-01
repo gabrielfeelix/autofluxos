@@ -577,3 +577,84 @@ export async function produtosNoAtendimento(
     })),
   )
 }
+
+/**
+ * As mensagens que a conta mandou pelo WhatsApp no período, que é o que a Meta
+ * cobra desde 1/out/2026 (cada mensagem de serviço, não mais por conversa).
+ *
+ * Conta só o que saiu pela API: as mensagens com `autor`, robô ou pessoa da
+ * equipe pela Inbox, e que a Meta aceitou (`wa_message_id`). O eco da
+ * coexistência, o que o dono mandou pelo app do celular, tem `from` no lugar
+ * do autor e não passa pela cobrança da API. Visitante do site também fica de
+ * fora: lá não existe Meta.
+ */
+export type MensagensEnviadas = {
+  total: number
+  doRobo: number
+  /** Conversas que receberam pelo menos uma: o denominador do "por conversa". */
+  conversas: number
+}
+
+const SQL_DAS_ENVIADAS = `
+with ${LIMITES}
+select count(*)::int as total,
+       count(*) filter (where m.payload->'autor'->>'tipo' = 'automacao')::int as do_robo,
+       count(distinct m.contact_id::text || coalesce(m.session_id::text, ''))::int as conversas
+  from public.messages m
+  join public.contacts c on c.id = m.contact_id,
+       lim
+ where c.client_id = $1
+   and m.direcao = 'saida'
+   and m.ts >= lim.ini and m.ts < lim.fim
+   and m.payload ? 'autor'
+   and m.wa_message_id is not null
+   and c.wa_id not like 'site:%'
+   and ${NO_ESCOPO('c.atribuido_a')}`
+
+export async function mensagensEnviadas(
+  clienteId: string,
+  periodo: Periodo,
+  responsaveis: Responsaveis,
+): Promise<MensagensEnviadas> {
+  const { rows } = await bancoDeDados().query(SQL_DAS_ENVIADAS, parametros(clienteId, periodo, responsaveis))
+  const r = rows[0] as Record<string, unknown>
+  return { total: Number(r.total), doRobo: Number(r.do_robo), conversas: Number(r.conversas) }
+}
+
+/**
+ * Quais destes cupons o atendimento mandou no período, e para quantas pessoas.
+ *
+ * Casa o código como palavra inteira e sem diferença de maiúscula: o cupom
+ * "STI" não pode contar toda mensagem que fala de "estilo". Robô e equipe
+ * contam igual; o eco do celular do dono também, porque ali o cupom foi
+ * mandado do mesmo jeito.
+ */
+const SQL_DOS_CUPONS_MANDADOS = `
+with ${LIMITES},
+codigos as (select unnest($5::text[]) as codigo)
+select k.codigo, count(distinct m.contact_id)::int as contatos
+  from codigos k
+  join public.messages m
+    on m.texto ~* ('\\m' || regexp_replace(k.codigo, '([^[:alnum:]])', '\\\\\\1', 'g') || '\\M')
+  join public.contacts c on c.id = m.contact_id,
+       lim
+ where c.client_id = $1
+   and m.direcao = 'saida'
+   and m.ts >= lim.ini and m.ts < lim.fim
+   and ${NO_ESCOPO('c.atribuido_a')}
+ group by k.codigo
+ order by contatos desc`
+
+export async function cuponsMandados(
+  clienteId: string,
+  periodo: Periodo,
+  responsaveis: Responsaveis,
+  codigos: string[],
+): Promise<{ codigo: string; contatos: number }[]> {
+  if (codigos.length === 0) return []
+  const { rows } = await bancoDeDados().query(SQL_DOS_CUPONS_MANDADOS, [
+    ...parametros(clienteId, periodo, responsaveis),
+    codigos,
+  ])
+  return (rows as Record<string, unknown>[]).map((r) => ({ codigo: String(r.codigo), contatos: Number(r.contatos) }))
+}
