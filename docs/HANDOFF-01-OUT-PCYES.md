@@ -118,8 +118,8 @@ Banco e loja (não passam pelo git):
    e `src/app/admin/consumo/page.tsx:31`. Inclui textos que o bot manda
    (`AVISO_DE_ESPERA`, `AVISO_DE_HANDOFF` em `receber-mensagem.ts`).
 8. **Revisão das conversas de 30/set** (feita em 01/out): o que sobrou aberto.
-   Texto "9h às 17h" nos fluxos Suporte técnico, Compra para empresa,
-   Parcerias e Meu pedido (confirmar se é o horário desses times); saudação
+   ~~"9h às 17h" nos fluxos~~: 8h às 18h publicado em 01/out (Suporte v5,
+   Compra para empresa v5, Parcerias v5, Meu pedido v6). Saudação
    automática do app ("Pcyes Ecommerce agradece seu contato") ainda ligada no
    celular, duplica a do bot; reclamação ("Suporte não responde") volta ao
    menu em vez de ir para a equipe. Lições viraram regra geral em `3cfdad9`
