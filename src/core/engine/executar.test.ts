@@ -1219,7 +1219,7 @@ describe('o handoff sabe que horas são', () => {
       (a) => a.tipo === 'enviar_texto',
     )
     expect(textos).toHaveLength(1)
-    expect(textos[0]!.texto).toContain('fechado')
+    expect(textos[0]!.texto).toContain('fora do horário')
   })
 
   it('o aviso não engole a frase que o cliente escreveu no bloco de handoff', () => {
@@ -1249,7 +1249,7 @@ describe('o handoff sabe que horas são', () => {
     // A ordem é a ordem de entrega: o aviso precisa sair enquanto o bot ainda
     // fala. Depois do handoff, quem manda é a pessoa que assumir.
     const acoes = transferindo(FECHADO)
-    const aviso = acoes.findIndex((a) => a.tipo === 'enviar_texto' && a.texto.includes('fechado'))
+    const aviso = acoes.findIndex((a) => a.tipo === 'enviar_texto' && a.texto.includes('fora do horário'))
     const handoff = acoes.findIndex((a) => a.tipo === 'transferir_humano')
     expect(aviso).toBeLessThan(handoff)
   })

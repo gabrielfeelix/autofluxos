@@ -193,14 +193,19 @@ export const ATENDIMENTO_SEMPRE_ABERTO: ContextoDoAtendimento = {
 export function avisoDeForaDoHorario(contexto: ContextoDoAtendimento): string | null {
   if (contexto.atendimentoAberto) return null
 
+  /*
+   * Quem está fora do horário é a equipe, não o atendimento: o bot responde de
+   * madrugada. "Nosso atendimento está fechado", dito pelo próprio bot que
+   * acabou de responder, soava como defeito (PCYES, 30/set/2026).
+   */
   const motivo = (contexto.motivoDeFechado ?? '').trim()
-  const fechado = motivo
-    ? `Hoje é ${motivo} e o atendimento está fechado`
-    : 'Nosso atendimento está fechado agora'
+  const fora = motivo
+    ? `Hoje é ${motivo} e nossa equipe não está atendendo`
+    : 'Nossa equipe está fora do horário agora'
 
   return contexto.proximaAbertura
-    ? `${fechado}, voltamos ${contexto.proximaAbertura}. Deixe sua mensagem que a gente responde por aqui assim que abrir. 🙌`
-    : `${fechado}. Deixe sua mensagem que a gente responde por aqui assim que abrir. 🙌`
+    ? `${fora} e volta ${contexto.proximaAbertura}. Sua mensagem fica registrada e um especialista responde por aqui assim que retornar.`
+    : `${fora}. Sua mensagem fica registrada e um especialista responde por aqui assim que retornar.`
 }
 
 /**

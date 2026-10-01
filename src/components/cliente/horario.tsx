@@ -161,9 +161,9 @@ export function HorarioDeAtendimentoForm({
                 <em className="text-soft">
                   “
                   {feriadoDeHoje
-                    ? `hoje é ${feriadoDeHoje} e o atendimento está fechado`
-                    : 'nosso atendimento está fechado agora'}
-                  {volta ? `, voltamos ${volta}` : ''}”
+                    ? `hoje é ${feriadoDeHoje} e nossa equipe não está atendendo`
+                    : 'nossa equipe está fora do horário agora'}
+                  {volta ? ` e volta ${volta}` : ''}”
                 </em>
                 .
               </>
@@ -364,7 +364,7 @@ export function HorarioDeAtendimentoForm({
                   </p>
                   <p>
                     O motivo aparece na conversa:{' '}
-                    <em>“hoje é Natal e o atendimento está fechado”</em>. Sem esta lista, o bot
+                    <em>“hoje é Natal e nossa equipe não está atendendo”</em>. Sem esta lista, o bot
                     promete atendimento no Natal, ninguém responde, e a pessoa fica esperando.
                   </p>
                 </>
