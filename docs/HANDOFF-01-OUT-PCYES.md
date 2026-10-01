@@ -139,15 +139,12 @@ Banco e loja (não passam pelo git):
    `subscribed_apps` e grava `paginas_de_lead` sozinho. Para Página de cliente
    depende do App Review (`leads_retrieval`, `pages_manage_metadata`,
    `pages_manage_ads`, `ads_read` em Advanced). O vídeo do review é esse botão.
-11. **Lead Ads, teste manual em andamento** (01/out): usuário do sistema
-   `autofluxos-ads` (Funcionário; o portfólio só aceita 1 admin) com a Página
-   4YU e o app; caso de uso "Capturar e gerenciar leads" adicionado ao app;
-   token com as 6 permissões guardado como `meta-ads` na conta 4YU
-   (`f175bf85-...`). Falta: `subscribed_apps` na Página, `paginas_de_lead`,
-   lead pela Lead Ads Testing Tool. Se der erro de permissão, Instagram e Lead
-   Ads vão juntos para o App Review (Instagram foi reprovado por falta de
-   screencast).
-
+11. ~~Lead Ads~~: provado em 01/out com a Página 4YU, só com acesso padrão
+   (sem App Review): webhook chegou, `leads_retrieval` leu o lead, recusa só
+   pelo telefone falso da ferramenta de teste. Usuário do sistema
+   `autofluxos-ads` (Funcionário), token `meta-ads` na conta 4YU. Página de
+   cliente (sem função no app) ainda pode exigir App Review: descobrir no
+   primeiro cliente; se exigir, vai junto com o Instagram.
 12. ~~Anúncios~~: feito. "Ligar uma página" lista as Páginas do token e já
    assina `subscribed_apps`; `meta-ads` saiu de Chaves de API.
 
