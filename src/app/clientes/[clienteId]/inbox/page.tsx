@@ -231,7 +231,9 @@ async function Tela({ cliente, busca }: { cliente: Cliente; busca: Busca }) {
     await Promise.all([
     paginarLeads(clienteId, {
       atribuicao,
-      estado,
+      // Buscando, todas as conversas, como na fila local: a aba não esconde
+      // a conversa resolvida que a pessoa procura pelo número.
+      estado: termo === '' ? estado : 'todas',
       busca: termo,
       pagina,
       porPagina: CONVERSAS_POR_PAGINA,

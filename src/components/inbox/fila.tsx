@@ -7,6 +7,7 @@ import { Dica } from "@/components/design/dica";
 import { LARGURA_DA_FILA } from "@/components/design/tema";
 import { canalPeloContato, type CanalId } from "@/core/canais";
 import { chavesDoTelefone, trechosDoTelefone } from "@/core/contatos/telefone";
+import { acaoBuscarNasMensagens } from "@/server/acoes-busca";
 import { Avatar } from "@/components/inbox/avatar";
 import { RailsLocais } from "@/components/inbox/fila-local";
 import {
@@ -430,14 +431,45 @@ export function Fila({
     };
   }, [abertasSemLer, selecionado]);
 
+  /*
+   * As conversas em que o termo foi dito, perguntadas ao servidor. A fila
+   * local só tem a última mensagem de cada conversa; "suporte técnico" dito
+   * três mensagens atrás não aparecia (01/out/2026). Espera a pessoa parar de
+   * digitar, e a resposta velha não sobrescreve a nova.
+   */
+  const [porMensagem, setPorMensagem] = useState<{ termo: string; ids: Set<string> }>({ termo: "", ids: new Set() });
+  useEffect(() => {
+    const termo = digitado.trim();
+    if (!local || termo.length < 3) return;
+    let valeu = true;
+    const espera = setTimeout(() => {
+      acaoBuscarNasMensagens(clienteId, termo)
+        .then((ids) => {
+          if (valeu) setPorMensagem({ termo, ids: new Set(ids) });
+        })
+        .catch(() => {});
+    }, 300);
+    return () => {
+      valeu = false;
+      clearTimeout(espera);
+    };
+  }, [local, digitado, clienteId]);
+
   const naTela = useMemo(() => {
-    const base = local ? recorte : leads;
-    if (!local) return comFixadasNoTopo(base, fixadaEm);
+    if (!local) return comFixadasNoTopo(leads, fixadaEm);
+    /*
+     * Buscando, a lista é a fila inteira, não a aba aberta: quem procura
+     * "9974" olhando "Abertas" não achava a conversa já resolvida. É o que o
+     * WhatsApp faz.
+     */
+    const termo = digitado.trim();
+    const base = termo === "" ? recorte : local;
     const recortada = soNaoLidas
       ? base.filter((lead) => semLerDe(lead.contatoId) > 0)
       : base;
-    return comFixadasNoTopo(ordenar(procurar(recortada, digitado), ordem), fixadaEm);
-  }, [local, recorte, leads, soNaoLidas, semLerDe, ordem, digitado, fixadaEm]);
+    const ditas = porMensagem.termo === termo ? porMensagem.ids : undefined;
+    return comFixadasNoTopo(ordenar(procurar(recortada, digitado, ditas), ordem), fixadaEm);
+  }, [local, recorte, leads, soNaoLidas, semLerDe, ordem, digitado, fixadaEm, porMensagem]);
 
   const nomeDe = (id: string | null) =>
     id
@@ -1365,7 +1397,7 @@ const achatar = (texto: string) =>
  * O que sobra é comparação de nome e da última mensagem, que é o que se procura
  * quando não se está procurando um número.
  */
-function procurar(leads: Lead[], termo: string): Lead[] {
+function procurar(leads: Lead[], termo: string, ditas?: ReadonlySet<string>): Lead[] {
   const alvo = achatar(termo.trim());
   if (alvo === "") return leads;
 
@@ -1373,6 +1405,7 @@ function procurar(leads: Lead[], termo: string): Lead[] {
   const chaves = so === "" ? [] : chavesDoTelefone(termo);
 
   return leads.filter((lead) => {
+    if (ditas?.has(lead.contatoId)) return true;
     if (achatar(lead.nome ?? "").includes(alvo)) return true;
     if (achatar(lead.ultimoTexto ?? "").includes(alvo)) return true;
     // `includes` e não igualdade: digitar só o DDD e o começo do número já

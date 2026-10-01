@@ -713,6 +713,32 @@ export function limparBusca(bruto: string): string {
 }
 
 /**
+ * Os contatos da conta com alguma mensagem que contém o termo.
+ *
+ * A busca do Inbox lia nome, telefone e a última mensagem; quem procurava
+ * "suporte técnico" não achava a conversa em que isso foi dito três mensagens
+ * atrás (pedido de 01/out/2026). Devolve só ids: quem chama cruza com a fila
+ * que a pessoa já pode ver, e a permissão continua sendo a da fila.
+ *
+ * Acento e caixa não importam (`padraoSemAcento`). Menos de três letras não
+ * busca: "a" casaria com toda conversa da conta.
+ */
+export async function contatosPorMensagem(clienteId: string, bruto: string): Promise<string[]> {
+  const termo = limparBusca(bruto)
+  if (termo.length < 3) return []
+  const { data, error } = await db()
+    .from('messages')
+    .select('contact_id, contacts!inner(client_id)')
+    .eq('contacts.client_id', clienteId)
+    .filter('texto', 'imatch', padraoSemAcento(termo))
+    .order('ts', { ascending: false })
+    .limit(500)
+  if (ehIdInvalido(error)) return []
+  if (error) throw new Error(`não deu para buscar nas mensagens: ${error.message}`)
+  return [...new Set((data as { contact_id: string }[]).map((m) => m.contact_id))]
+}
+
+/**
  * Uma página de leads do cliente.
  *
  * **Por que a etiqueta é resolvida antes e não depois.** Ela não é coluna: sai
@@ -727,6 +753,8 @@ export async function paginarLeads(
 ): Promise<PaginaDeLeads> {
   const porPagina = filtro.porPagina ?? LEADS_POR_PAGINA
   const termo = limparBusca(filtro.busca ?? '')
+  // Fora do construtor da consulta, que é síncrono.
+  const porMensagem = termo === '' ? [] : await contatosPorMensagem(clienteId, termo)
 
   /**
    * Os dois filtros por etiqueta restringem, e por isso a interseção.
@@ -786,6 +814,8 @@ export async function paginarLeads(
       // devolve as duas; sem isto, a busca por telefone só funciona quando a
       // pessoa digita exatamente como a Meta gravou.
       for (const chave of chavesDoTelefone(termo)) partes.push(`wa_id.eq.${chave}`)
+      // E as conversas em que o termo foi dito, não só o nome e o número.
+      if (porMensagem.length > 0) partes.push(`contact_id.in.(${porMensagem.join(',')})`)
       q = q.or(partes.join(','))
     }
     if (permitidos) q = q.in('contact_id', permitidos)
