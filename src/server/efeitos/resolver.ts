@@ -1512,9 +1512,33 @@ async function executarNaLoja(
     const r = await loja.manuais(valores.termo ?? '')
     if (!r.ok) return r
     const { itens, busca } = r.valor
+    if (itens.length > 0) return { ok: true, json: { itens } }
+
+    /*
+     * Produto que a loja vende e que não tem nada para baixar. Sem isto, a IA
+     * só sabia "não achei" e pedia o modelo exato de novo a cada mensagem: em
+     * 01/out/2026 o volante W270 da PCYES, que não tem driver, ganhou a mesma
+     * resposta três vezes até um atendente explicar na manhã seguinte.
+     * Conferir no catálogo separa "nome errado" de "não existe download".
+     */
+    const naLoja = await loja.buscar(valores.termo ?? '')
+    if (naLoja.ok && naLoja.valor.length > 0) {
+      return {
+        ok: true,
+        json: {
+          itens,
+          semDownload: naLoja.valor.slice(0, 3).map((p) => p.nome),
+          orientacao:
+            'Estes produtos existem na loja, mas não têm driver nem manual na página de downloads. ' +
+            'Se um deles é o da pessoa, diga que ele não precisa de driver (costuma funcionar só conectando) ' +
+            'e não peça o modelo de novo.',
+        },
+      }
+    }
+
     // Vazio leva a página da busca, como `buscaNaLoja`: o nome que a pessoa
     // escreveu pode não bater com o cadastro, e ela procura por lá.
-    return { ok: true, json: { itens, ...(itens.length === 0 ? { buscaDeDownloads: busca } : {}) } }
+    return { ok: true, json: { itens, buscaDeDownloads: busca } }
   }
 
   if (operacao === 'manual') {

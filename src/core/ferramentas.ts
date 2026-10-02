@@ -715,11 +715,18 @@ export const FERRAMENTAS: Ferramenta[] = [
       'Busque pelo nome ou modelo do produto em poucas palavras ("basaran", "cm500"), não pela frase inteira. ' +
       'Se vier mais de um produto e não der para saber qual é o da pessoa, pergunte qual, mostrando os nomes. ' +
       'Se não vier nenhum, tente outra palavra do nome uma vez; se ainda vier vazio, mande o link `buscaDeDownloads`. ' +
+      'Se vier `semDownload`, o produto existe mas não tem arquivo para baixar: siga a `orientacao` e não peça o modelo de novo. ' +
+      'Nunca repita o mesmo pedido de modelo: se a pessoa já confirmou e não achou, diga que não encontrou e ofereça o suporte. ' +
       'Não use para procurar produto para comprar: para isso é `loja_buscar`.',
     argumentos: [{ nome: 'termo', tipo: 'texto', descricao: 'Nome ou modelo do produto, em até 4 palavras.', obrigatorio: true }],
     injetados: [],
     chamada: { tipo: 'loja', operacao: 'manuais' },
-    projecao: [{ caminho: 'itens', campos: ['manualId', 'nome', 'categoria'], limite: 5 }, { caminho: 'buscaDeDownloads' }],
+    projecao: [
+      { caminho: 'itens', campos: ['manualId', 'nome', 'categoria'], limite: 5 },
+      { caminho: 'buscaDeDownloads' },
+      { caminho: 'semDownload' },
+      { caminho: 'orientacao' },
+    ],
     credencial: 'nenhuma',
     integracao: 'loja',
   },
