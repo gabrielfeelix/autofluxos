@@ -30,7 +30,7 @@ export function MolduraDoCliente({
   if (ehEditorDeFluxo(caminho, base)) return children
 
   return (
-    <div className="flex min-h-screen flex-col md:h-dvh md:flex-row md:overflow-hidden">
+    <div className="app-casca flex min-h-screen flex-col md:h-dvh md:flex-row md:overflow-hidden">
       {barra}
       {/*
         No celular a barra de baixo é fixa e cobre o pé da tela: o miolo ganha
@@ -39,7 +39,10 @@ export function MolduraDoCliente({
       <div className="flex min-w-0 flex-1 flex-col md:min-h-0">
         {faixas}
         {cabecalho}
-        <div className="app-miolo-com-barra relative min-h-0 min-w-0 flex-1 md:overflow-auto">{children}</div>
+        {/* O quadro de vidro segura as telas; quem rola é o miolo dentro dele. */}
+        <div className="app-quadro flex min-h-0 min-w-0 flex-1 flex-col">
+          <div className="app-miolo-com-barra relative min-h-0 min-w-0 flex-1 md:overflow-auto">{children}</div>
+        </div>
       </div>
     </div>
   )

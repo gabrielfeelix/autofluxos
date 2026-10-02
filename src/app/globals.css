@@ -101,6 +101,13 @@
   --color-marca-instagram: var(--marca-instagram);
   --color-marca-meta: var(--marca-meta);
   --color-marca-telegram: var(--marca-telegram);
+
+  /* A casca azul (ver o bloco "A casca" mais abaixo). */
+  --color-sobre-casca: var(--sobre-casca);
+  --color-sobre-casca-suave: var(--sobre-casca-suave);
+  --color-casca-hover: var(--casca-hover);
+  --color-casca-linha: var(--casca-linha);
+  --color-contador: var(--contador);
 }
 
 :root {
@@ -231,6 +238,31 @@
   /* O polegar da barra de rolagem: a borda dele é sempre a cor do fundo. */
   --barra: #c8cfd8;
   --barra-forte: #aeb7c2;
+
+  /*
+   * A casca: o fundo azul atrás da barra, do cabeçalho e do quadro (decisão de
+   * 02/out/2026 em `docs/DECISIONS.md`, opção C). O degradê vai do azul um
+   * degrau mais escuro, atrás da barra, ao mais claro no canto oposto. Os fios
+   * são o desenho de um fluxo, bem apagados: a marca do produto, e não uma
+   * foto de galáxia.
+   */
+  --casca: linear-gradient(135deg, #1a3fb8 0%, #1d4ed8 45%, #3a6cf0 100%);
+  --casca-fios: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='240' height='150'%3E%3Cg fill='none' stroke='white' stroke-opacity='.1' stroke-width='1.4'%3E%3Crect x='20' y='18' width='52' height='24' rx='7'/%3E%3Crect x='140' y='80' width='52' height='24' rx='7'/%3E%3Ccircle cx='212' cy='30' r='6'/%3E%3Ccircle cx='46' cy='118' r='6'/%3E%3Cpath d='M72 30c40 0 30 62 68 62M192 92c26 0 20-46 20-56M46 42v70M52 118c40 0 60-14 88-14'/%3E%3C/g%3E%3Cg fill='white' fill-opacity='.1'%3E%3Ccircle cx='72' cy='30' r='2.5'/%3E%3Ccircle cx='140' cy='92' r='2.5'/%3E%3Ccircle cx='192' cy='92' r='2.5'/%3E%3C/g%3E%3C/svg%3E");
+  /* Texto e controle que moram direto no azul. */
+  --sobre-casca: #ffffff;
+  --sobre-casca-suave: rgb(255 255 255 / 0.78);
+  --casca-hover: rgb(255 255 255 / 0.14);
+  --casca-linha: rgb(255 255 255 / 0.25);
+  /*
+   * O vidro: branco translúcido com desfoque. O quadro deixa o azul passar um
+   * pouco; a barra, que é navegação e precisa de contraste, passa menos.
+   */
+  --vidro: rgb(255 255 255 / 0.78);
+  --vidro-forte: rgb(255 255 255 / 0.9);
+  --vidro-borda: rgb(255 255 255 / 0.6);
+  --sombra-ilha: 0 20px 44px -24px rgb(8 20 70 / 0.65);
+  /* O número que pede ação na barra: coral sólido, para ler de longe. */
+  --contador: #e5484d;
 }
 
 /*
@@ -298,6 +330,13 @@
   --shadow-pop: 0 8px 20px rgba(0, 0, 0, 0.45);
   --shadow-menu: 0 14px 34px rgba(0, 0, 0, 0.55), 0 2px 8px rgba(0, 0, 0, 0.4);
   --shadow-modal: 0 28px 70px rgba(0, 0, 0, 0.6), 0 4px 14px rgba(0, 0, 0, 0.45);
+
+  /* No escuro a casca vira marinho: o azul cheio cansaria a vista à noite. */
+  --casca: linear-gradient(135deg, #0a1433 0%, #0f1d47 50%, #172c6b 100%);
+  --vidro: rgb(14 20 31 / 0.82);
+  --vidro-forte: rgb(17 23 34 / 0.92);
+  --vidro-borda: rgb(255 255 255 / 0.06);
+  --sombra-ilha: 0 20px 44px -24px rgb(0 0 0 / 0.8);
 }
 
 * {
@@ -1877,8 +1916,9 @@ textarea::placeholder {
   border-radius: 9px;
   padding: 0;
   background: transparent;
-  color: var(--soft);
-  font-size: 13px;
+  /* O cabeçalho mora na casca: os botões são brancos sobre o azul. */
+  color: var(--sobre-casca-suave);
+  font-size: 13.5px;
   font-weight: 600;
   transition:
     background 150ms ease,
@@ -1889,22 +1929,84 @@ textarea::placeholder {
 }
 .cabecalho-acao:hover,
 .cabecalho-acao[aria-expanded='true'] {
-  background: var(--surface);
-  color: var(--ink);
+  background: var(--casca-hover);
+  color: var(--sobre-casca);
 }
 .cabecalho-perfil {
-  height: 36px;
-  min-height: 36px;
+  height: 38px;
+  min-height: 38px;
   gap: 8px;
-  border: 1px solid var(--line);
+  border: 0;
   border-radius: 999px;
-  padding: 0 10px 0 4px;
-  background: var(--panel);
+  padding: 0 10px 0 5px;
+  background: var(--casca-hover);
+  color: var(--sobre-casca);
 }
 .cabecalho-perfil:hover,
 .cabecalho-perfil[aria-expanded='true'] {
-  background: var(--surface);
-  border-color: var(--line-strong);
+  background: rgb(255 255 255 / 0.22);
+}
+
+/*
+ * ---------------------------------------------------------------------------
+ * A casca
+ * ---------------------------------------------------------------------------
+ *
+ * O fundo azul da conta (opção C de 02/out/2026, `docs/DECISIONS.md`): a barra
+ * é uma ilha de vidro, o cabeçalho mora direto no azul e as telas ficam num
+ * quadro de vidro único. Trocar para a opção A (barra no azul, folha clara)
+ * deve ser mudança deste bloco e da barra, não das telas.
+ */
+.app-casca {
+  background: var(--casca-fios), var(--casca);
+  background-color: #1d4ed8;
+}
+
+@media (min-width: 768px) {
+  .app-ilha {
+    margin: 12px;
+    border-radius: 22px;
+    background: var(--vidro-forte);
+    -webkit-backdrop-filter: blur(24px) saturate(1.3);
+    backdrop-filter: blur(24px) saturate(1.3);
+    box-shadow: var(--sombra-ilha);
+  }
+
+  /*
+   * O desfoque vai num pseudo-elemento, **nunca no quadro**: `backdrop-filter`
+   * transforma o elemento em referência de `position: fixed`, e todo aviso,
+   * menu ou gaveta fixa dentro das telas passaria a se posicionar pelo quadro
+   * e não pela janela.
+   */
+  .app-quadro {
+    position: relative;
+    isolation: isolate;
+    margin: 0 12px 12px 0;
+    border-radius: 22px;
+    box-shadow: var(--sombra-ilha);
+  }
+  .app-quadro::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    border-radius: inherit;
+    border: 1px solid var(--vidro-borda);
+    background: var(--vidro);
+    -webkit-backdrop-filter: blur(28px) saturate(1.3);
+    backdrop-filter: blur(28px) saturate(1.3);
+    pointer-events: none;
+  }
+  .app-quadro > .app-miolo-com-barra {
+    border-radius: inherit;
+  }
+}
+
+/* No celular a casca fica atrás do topo; o miolo segue no fundo de sempre. */
+@media (max-width: 767.98px) {
+  .app-quadro {
+    background: var(--canvas);
+  }
 }
 
 /*

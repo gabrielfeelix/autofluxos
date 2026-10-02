@@ -20,7 +20,7 @@ import Image from 'next/image'
  * sendo o último filho daqui.
  */
 export function Marca({ compacta = false }: { compacta?: boolean }) {
-  const lado = compacta ? 24 : 28
+  const lado = compacta ? 24 : 30
 
   return (
     <div className="flex items-center gap-2.5">
@@ -32,7 +32,7 @@ export function Marca({ compacta = false }: { compacta?: boolean }) {
         priority
         className="shrink-0"
       />
-      <span className={`${compacta ? 'text-sm' : 'text-[15.5px]'} font-bold tracking-[-0.01em]`}>
+      <span className={`${compacta ? 'text-sm' : 'text-[18px]'} font-bold tracking-[-0.01em]`}>
         AutoFluxos
       </span>
     </div>

@@ -194,5 +194,5 @@ async function Ponto({ clienteId, quais }: { clienteId: string; quais: Contagem[
   const total = quais.reduce((soma, qual) => soma + contagens[qual], 0)
   if (!total) return null
   const urgente = contagens.atrasadas > 0 && quais.includes('atrasadas')
-  return <span role="img" aria-label="Há o que fazer aqui" className={`block size-2 rounded-full ring-2 ring-panel ${urgente ? 'bg-perigo' : 'bg-primary'}`} />
+  return <span role="img" aria-label="Há o que fazer aqui" className={`block size-2 rounded-full ring-2 ring-panel ${urgente ? 'bg-contador' : 'bg-primary'}`} />
 }

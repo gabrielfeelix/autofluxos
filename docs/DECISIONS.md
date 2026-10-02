@@ -64,3 +64,23 @@ Append-only. Cada entrada: data, decisão, porquê, onde está no código.
 - **Revisto:** antes o aviso não levava conteúdo da conversa "porque atravessa
   o servidor de push". A carga do Web Push é cifrada de ponta a ponta
   (RFC 8291), o servidor não lê; é o que o WhatsApp já faz.
+
+## 02/out/2026: casca azul, opção C (painéis flutuantes)
+
+- **Por quê:** o painel era branco sobre cinza com um azul, o kit padrão de
+  SaaS. O dono quer personalidade (referência: Bitrix24), sem serifa, bege ou
+  itálico: cor em alguns lugares, respiro na lateral, fonte maior.
+- **Duas opções desenhadas**, protótipo navegável em
+  https://claude.ai/artifact/UBK2qodWLXc2nMqqpVxBsJ (botão A/C no canto):
+  - **A, casca:** lateral e cabeçalho direto no azul, texto branco; o trabalho
+    numa folha clara encaixada (canto superior esquerdo arredondado).
+  - **C, flutuante (escolhida):** fundo azul em degradê (`#1a3fb8` → `#1d4ed8`
+    → `#3a6cf0`, 135°) com fios e blocos de fluxo a 10%; lateral é ilha branca
+    com margem; cabeçalho e título no azul; conteúdo em painéis de vidro.
+  - Comparação das três primeiras ideias (A, B só lateral, C):
+    https://claude.ai/artifact/F2NHZe7abCP6q9kRMNcJQW
+- **Regras do dono para a C:** vidro (translúcido com desfoque) em vez de
+  branco chapado onde der; quando muitos cartões ficarem picotados, um quadro
+  único por trás; a tela de conversa é **um** quadro unindo lista, chat e
+  ficha, nunca três blocos soltos. Trocar para A deve continuar possível: tudo
+  passa por token.

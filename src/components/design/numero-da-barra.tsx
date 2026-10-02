@@ -17,10 +17,10 @@ export function NumeroDaBarra({ qual, doServidor }: { qual: Contagem; doServidor
   const quantidade = useContagem(qual, doServidor)
   if (!quantidade) return null
   const rotulo = `${quantidade} ${DIZ[qual][quantidade === 1 ? 0 : 1]}`
-  // Atrasada é a única que já passou da hora: a cor diz isso antes do número.
-  const tom = qual === 'atrasadas' ? 'bg-perigo/12 text-perigo' : 'bg-primary-weak text-primary'
+  // Coral sólido em todos: é o número que pede ação, e precisa ler de longe,
+  // inclusive sobre o item aceso, que é azul cheio.
   return (
-    <span title={rotulo} aria-label={rotulo} className={`min-w-[20px] rounded-full px-1.5 py-px text-center text-[10.5px] font-bold tabular-nums ${tom}`}>
+    <span title={rotulo} aria-label={rotulo} className="min-w-[22px] rounded-full bg-contador px-1.5 py-0.5 text-center text-[11.5px] font-bold text-white tabular-nums">
       {quantidade > 99 ? '99+' : quantidade}
     </span>
   )

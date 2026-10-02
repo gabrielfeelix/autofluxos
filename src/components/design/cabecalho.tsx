@@ -70,7 +70,7 @@ export function Cabecalho({
   const [ajudaAberta, setAjudaAberta] = useState(false)
 
   return (
-    <header className="cabecalho-do-cliente hidden h-14 shrink-0 items-center gap-3 border-b border-line bg-panel px-6 md:flex lg:px-[42px]">
+    <header className="cabecalho-do-cliente hidden h-16 shrink-0 items-center gap-3 pr-5 pl-3 text-sobre-casca md:flex">
       <OndeEstou base={base} />
 
       <div className="ml-auto flex items-center gap-1">
@@ -89,7 +89,7 @@ export function Cabecalho({
           </Link>
         )}
         {sino}
-        <span aria-hidden className="mx-1.5 h-5 w-px bg-line" />
+        <span aria-hidden className="mx-1.5 h-5 w-px bg-casca-linha" />
         <MenuDoPerfil
           email={email}
           papel={papel}
@@ -117,16 +117,16 @@ function OndeEstou({ base }: { base: string }) {
   const item = secao.itens.find((i) => i.id === aceso?.item)
 
   return (
-    <nav aria-label="Onde você está" className="flex min-w-0 flex-1 items-center gap-2 text-[13.5px]">
+    <nav aria-label="Onde você está" className="flex min-w-0 flex-1 items-center gap-2 text-[14.5px]">
       {secao.solta || !item ? (
-        <span className="truncate font-semibold text-ink">{item?.rotulo ?? secao.rotulo}</span>
+        <span className="truncate font-semibold text-sobre-casca">{item?.rotulo ?? secao.rotulo}</span>
       ) : (
         <>
-          <span className="truncate text-dim">{secao.rotulo}</span>
-          <span aria-hidden className="text-dim">
+          <span className="truncate text-sobre-casca-suave">{secao.rotulo}</span>
+          <span aria-hidden className="text-sobre-casca-suave">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"><path d="m9 6 6 6-6 6" /></svg>
           </span>
-          <span className="truncate font-semibold text-ink">{item.rotulo}</span>
+          <span className="truncate font-semibold text-sobre-casca">{item.rotulo}</span>
         </>
       )}
     </nav>
@@ -174,11 +174,11 @@ function MenuDoPerfil({
             <span className="relative flex shrink-0">
               <Avatar nome={nome} imagem={perfil?.imagem ?? null} tamanho={28} />
               {presenca && (
-                <span aria-hidden className={`absolute -right-0.5 -bottom-0.5 size-2.5 rounded-full border-2 border-panel ${disponivel ? 'bg-emerald-500' : 'bg-dim'}`} />
+                <span aria-hidden className={`absolute -right-0.5 -bottom-0.5 size-2.5 rounded-full border-2 border-[#2a55dc] ${disponivel ? 'bg-emerald-500' : 'bg-dim'}`} />
               )}
             </span>
-            <span className="max-w-[140px] truncate text-[13px] font-semibold text-ink">{primeiroNome}</span>
-            <svg aria-hidden width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" className="text-dim"><path d="m6 9 6 6 6-6" /></svg>
+            <span className="max-w-[140px] truncate text-[13.5px] font-semibold text-sobre-casca">{primeiroNome}</span>
+            <svg aria-hidden width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" className="text-sobre-casca-suave"><path d="m6 9 6 6 6-6" /></svg>
           </>
         }
       >
@@ -325,7 +325,7 @@ export function Sino({ avisos }: { avisos: AvisoDoCabecalho[] | null }) {
           }}
         >
           <IconeSino />
-          {temNovo && <span aria-hidden className="absolute -top-0.5 -right-0.5 size-2 rounded-full bg-perigo ring-2 ring-panel" />}
+          {temNovo && <span aria-hidden className="absolute -top-0.5 -right-0.5 size-2 rounded-full bg-contador ring-2 ring-[#2a55dc]" />}
         </span>
       }
     >

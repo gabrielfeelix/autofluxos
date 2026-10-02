@@ -24,7 +24,7 @@ export default async function LayoutDoAdmin({ children }: { children: ReactNode 
 
   return (
     <PerfilDaSessao inicial={{ nome: sessao.usuario.nome, imagem: sessao.usuario.imagem ?? null }}>
-      <div className="flex min-h-screen flex-col md:h-dvh md:flex-row md:overflow-hidden">
+      <div className="app-casca flex min-h-screen flex-col md:h-dvh md:flex-row md:overflow-hidden">
         <BarraLateral
           base="/admin"
           area="administracao"
@@ -46,9 +46,12 @@ export default async function LayoutDoAdmin({ children }: { children: ReactNode 
             </PainelVoce>
           }
         />
-        <div className="app-miolo-com-barra relative min-w-0 flex-1 md:overflow-auto">
-          <FaixaDeImpersonacao />
-          <div className="app-page-enter flex min-h-full flex-col md:h-full">{children}</div>
+        {/* Sem cabeçalho na administração: o quadro encosta no topo com a mesma folga da barra. */}
+        <div className="app-quadro flex min-h-0 min-w-0 flex-1 flex-col md:mt-3">
+          <div className="app-miolo-com-barra relative min-w-0 flex-1 md:overflow-auto">
+            <FaixaDeImpersonacao />
+            <div className="app-page-enter flex min-h-full flex-col md:h-full">{children}</div>
+          </div>
         </div>
       </div>
     </PerfilDaSessao>

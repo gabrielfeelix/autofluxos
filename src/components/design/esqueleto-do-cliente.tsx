@@ -25,7 +25,7 @@ const VOLTAR_RESERVADO = (
  * nascer certa.
  */
 export function EsqueletoDoCliente({ ativa, recolhida = false, children }: { ativa: ChaveDaSecao; recolhida?: boolean; children: ReactNode }) {
-  return <div className="flex min-h-screen flex-col md:h-dvh md:flex-row md:overflow-hidden">
+  return <div className="app-casca flex min-h-screen flex-col md:h-dvh md:flex-row md:overflow-hidden">
     <BarraLateral carregando marca={<Marca />} voltar={VOLTAR_RESERVADO}
       contaNoTopo={<span className="block h-[36px]" />}
       recolhidaInicial={recolhida}
@@ -33,9 +33,11 @@ export function EsqueletoDoCliente({ ativa, recolhida = false, children }: { ati
       secoes={SECOES.map((secao) => ({ ...secao, itens: secao.itens.map((item) => ({ ...item, href: '#' })) }))}
       rodape={<p className="text-sm text-dim">Carregando sua organização…</p>} />
     <div className="flex min-w-0 flex-1 flex-col md:min-h-0">
-      {/* O cabeçalho reservado: sem ele, a tela desce 56px quando o de verdade chega. */}
-      <div aria-hidden className="hidden h-14 shrink-0 border-b border-line bg-panel md:block" />
-      <div className="relative min-h-0 min-w-0 flex-1 md:overflow-auto"><div className="flex min-h-full flex-col md:h-full">{children}</div></div>
+      {/* O cabeçalho reservado: sem ele, a tela desce 64px quando o de verdade chega. */}
+      <div aria-hidden className="hidden h-16 shrink-0 md:block" />
+      <div className="app-quadro flex min-h-0 min-w-0 flex-1 flex-col">
+        <div className="relative min-h-0 min-w-0 flex-1 md:overflow-auto"><div className="flex min-h-full flex-col md:h-full">{children}</div></div>
+      </div>
     </div>
   </div>
 }
