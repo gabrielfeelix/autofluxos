@@ -379,19 +379,67 @@ export async function listarPedidosDaPessoa(
 
   porDocumento(quem.documento)
   porEmail(quem.email)
-  for (const cliente of await clientesPeloTelefone(dados, quem.telefone, chamar)) {
+
+  // Os três caminhos correm juntos: recentes pelo telefone do pedido, cadastro
+  // pelo telefone, e o CPF/e-mail da ficha.
+  const [recentes, clientes] = await Promise.all([
+    recentesComTelefone(dados, quem.telefone, chamar),
+    clientesPeloTelefone(dados, quem.telefone, chamar),
+  ])
+  for (const cliente of clientes) {
     porEmail(cliente.email)
     porDocumento(cliente.taxvat)
   }
-  if (valores.length === 0) return { ok: true, valor: [] }
 
-  const g = 'searchCriteria[filterGroups][0][filters]'
-  const consulta =
-    valores
-      .map(([campo, valor], i) => `${g}[${i}][field]=${campo}&${g}[${i}][value]=${encodeURIComponent(valor)}&${g}[${i}][conditionType]=eq`)
-      .join('&') +
-    '&searchCriteria[sortOrders][0][field]=created_at&searchCriteria[sortOrders][0][direction]=DESC&searchCriteria[pageSize]=5'
+  let pelaChave: PedidoDoMagento[] = []
+  if (valores.length > 0) {
+    const g = 'searchCriteria[filterGroups][0][filters]'
+    const consulta =
+      valores
+        .map(([campo, valor], i) => `${g}[${i}][field]=${campo}&${g}[${i}][value]=${encodeURIComponent(valor)}&${g}[${i}][conditionType]=eq`)
+        .join('&') +
+      '&searchCriteria[sortOrders][0][field]=created_at&searchCriteria[sortOrders][0][direction]=DESC&searchCriteria[pageSize]=5'
+    const r = await lerPedidos(dados, consulta, chamar)
+    if (!r.ok && recentes.length === 0) return r
+    if (r.ok) pelaChave = r.valor
+  }
 
+  // Um pedido só uma vez, do mais novo para o mais antigo, até 5.
+  const vistos = new Set<string>()
+  const juntos = [...recentes, ...pelaChave]
+    .filter((p) => {
+      const n = String(p.increment_id ?? '')
+      if (n === '' || vistos.has(n)) return false
+      vistos.add(n)
+      return true
+    })
+    .sort((x, y) => String(y.created_at ?? '').localeCompare(String(x.created_at ?? '')))
+    .slice(0, 5)
+
+  return {
+    ok: true,
+    valor: juntos.map((p) => {
+      const recorte = recortarPedido(p, [])
+      return {
+        numero: recorte.numero,
+        situacao: recorte.situacao,
+        feitoEm: recorte.feitoEm,
+        total: recorte.total,
+        confere: conferePedido(p, { telefone: quem.telefone }),
+        entregue: pedidoEntregue(p.status, p.status_label),
+      }
+    }),
+  }
+}
+
+/** Quantos pedidos recentes a busca por telefone varre. A PCYES inteira tem uns 2 mil. */
+export const PEDIDOS_VARRIDOS = 300
+
+async function lerPedidos(
+  dados: { endereco: string; credencial: CredencialDaChamada | null },
+  consulta: string,
+  chamar: Chamar,
+): Promise<ResultadoDaLoja<PedidoDoMagento[]>> {
   const r = await chamar(
     {
       tipo: 'chamar_http',
@@ -408,22 +456,32 @@ export async function listarPedidosDaPessoa(
     if (/respondeu (401|403)/.test(r.motivo)) return { ok: false, motivo: 'o token da loja não tem permissão para ler pedidos' }
     return { ok: false, motivo: `a loja não respondeu: ${r.motivo}` }
   }
+  return { ok: true, valor: (r.json as { items?: PedidoDoMagento[] } | null)?.items ?? [] }
+}
 
-  const lista = (r.json as { items?: PedidoDoMagento[] } | null)?.items ?? []
-  return {
-    ok: true,
-    valor: lista.map((p) => {
-      const recorte = recortarPedido(p, [])
-      return {
-        numero: recorte.numero,
-        situacao: recorte.situacao,
-        feitoEm: recorte.feitoEm,
-        total: recorte.total,
-        confere: conferePedido(p, { telefone: quem.telefone }),
-        entregue: pedidoEntregue(p.status, p.status_label),
-      }
-    }),
-  }
+/**
+ * Os pedidos recentes com o telefone desta conversa na cobrança ou na entrega.
+ *
+ * O `/V1/orders` não filtra por telefone, então lê os últimos
+ * `PEDIDOS_VARRIDOS` só com os campos da lista (`fields`) e confere aqui. Pega
+ * pedido de convidado, que não tem cadastro, e não depende de o token poder
+ * ler clientes (02/out/2026: o #1975 do Ale não aparecia pelo cadastro).
+ */
+async function recentesComTelefone(
+  dados: { endereco: string; credencial: CredencialDaChamada | null },
+  telefone: string,
+  chamar: Chamar,
+): Promise<PedidoDoMagento[]> {
+  if (soDigitos(telefone).length < 8) return []
+  const campos =
+    'items[increment_id,status,status_label,created_at,grand_total,order_currency_code,' +
+    'billing_address[telephone],extension_attributes[shipping_assignments[shipping[address[telephone]]]]]'
+  const consulta =
+    'searchCriteria[sortOrders][0][field]=created_at&searchCriteria[sortOrders][0][direction]=DESC' +
+    `&searchCriteria[pageSize]=${PEDIDOS_VARRIDOS}&fields=${encodeURIComponent(campos)}`
+  const r = await lerPedidos(dados, consulta, chamar)
+  if (!r.ok) return []
+  return r.valor.filter((p) => conferePedido(p, { telefone }))
 }
 
 /**

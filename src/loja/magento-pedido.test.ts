@@ -148,20 +148,32 @@ describe('listarPedidosDaPessoa', () => {
     )
     const r = await listarPedidosDaPessoa(dados, { telefone: '5544998775978' }, chamar as never)
 
-    const cliente = decodeURIComponent((chamar.mock.calls[0]![0] as { url: string }).url)
+    const urls = chamar.mock.calls.map(([a]) => decodeURIComponent(a.url))
+    const cliente = urls.find((u) => u.includes('/V1/customers/search'))!
     expect(cliente).toContain('[field]=billing_telephone')
     expect(cliente).toContain('[value]=%9877%5978&')
     expect(cliente).toContain('[conditionType]=like')
-    const pedidos = decodeURIComponent((chamar.mock.calls[1]![0] as { url: string }).url)
+    const pedidos = urls.at(-1)!
     expect(pedidos).toContain('=ana@loja.com')
     expect(pedidos).toContain('=12345678909')
     expect(r.ok && r.valor[0]?.entregue).toBe(true)
   })
 
-  it('telefone sem cadastro e ficha vazia não busca pedido', async () => {
-    const chamar = lojaCom([pedido])
-    expect(await listarPedidosDaPessoa(dados, { telefone: '554498775978' }, chamar as never)).toEqual({ ok: true, valor: [] })
-    expect(chamar.mock.calls.every(([a]) => !a.url.includes('/V1/orders'))).toBe(true)
+  // 02/out/2026: o #1975 do Ale não vinha pelo cadastro (convidado ou token
+  // sem clientes). Os pedidos recentes com o telefone dele vêm.
+  it('sem cadastro e sem ficha, acha nos pedidos recentes pelo telefone', async () => {
+    const outro = { ...pedido, increment_id: '000000999', billing_address: { telephone: '11 90000-0000' } }
+    const chamar = vi.fn(async (acao: { url: string }) =>
+      acao.url.includes('/V1/customers/search')
+        ? { ok: false as const, motivo: 'a loja respondeu 403' }
+        : { ok: true as const, json: { items: [outro, pedido] } },
+    )
+    const r = await listarPedidosDaPessoa(dados, { telefone: '554498775978' }, chamar as never)
+
+    expect(r.ok && r.valor.map((p) => p.numero)).toEqual(['000000123'])
+    const varredura = decodeURIComponent(chamar.mock.calls.find(([a]) => a.url.includes('/V1/orders'))![0].url)
+    expect(varredura).toContain('pageSize]=300')
+    expect(varredura).toContain('fields=items[')
   })
 
   it('entregue à transportadora não conta como entregue', () => {
