@@ -605,10 +605,10 @@ export function Quadro({
           dizem o que este quadro faz. O convite responde "e agora?", que é a
           pergunta seguinte, e pergunta seguinte fica no lugar seguinte.
         */
-        <div className="mt-3 shrink-0 rounded-xl border border-dashed border-line bg-panel px-5 py-7 text-center">
+        <div className="app-card mt-3 shrink-0 px-5 py-10 text-center">
           <IlustracaoQuadros />
-          <p className="mt-4 text-[13.5px] font-semibold text-soft">Nenhuma pessoa neste funil</p>
-          <p className="mx-auto mt-1.5 max-w-[460px] text-[12px] leading-5 text-dim">
+          <p className="mt-6 text-[13.5px] font-semibold text-soft">Nenhuma pessoa neste funil</p>
+          <p className="mx-auto mt-1.5 max-w-[460px] text-[12.5px] leading-5 text-dim">
             O funil só recebe sozinho quem chega depois que ele existe. Quem já estava na sua lista
             entra por aqui.
           </p>

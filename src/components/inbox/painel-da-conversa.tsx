@@ -16,6 +16,7 @@ import { encerrarAberta, semearAberta, useAberta, type Previa } from '@/componen
 import { EtiquetasAplicadas, type EtiquetaEscolhivel } from '@/components/etiquetas/seletor'
 import { CartaoDoAtendimento, SeloDoAtendimento } from '@/components/atendimento/estado'
 import { Dica } from '@/components/design/dica'
+import { Esqueleto } from '@/components/design/esqueleto'
 import { CamposColetados } from '@/components/lead/campos-coletados'
 import { QuemE } from '@/components/lead/quem-e'
 import { CaixaDeResposta } from '@/components/lead/responder'
@@ -117,34 +118,136 @@ function maisNova(a: ConversaAberta | null, b: ConversaAberta | null): ConversaA
 
 /**
  * O clique numa conversa que ainda não veio: o cabeçalho com o que a linha já
- * sabe, e o corpo esperando. Segurar a conversa anterior na tela, como antes,
- * deixava a caixa de resposta de outra pessoa aberta enquanto a nova chegava.
+ * sabe, e o resto com a forma do que vai chegar.
+ *
+ * **É uma conversa desenhada, e não três barras.** Balões alternando de lado,
+ * com linhas dentro e o horário no canto, a pílula do dia, a caixa de resposta
+ * no pé e a ficha ao lado: quando a conversa chega, cada coisa cai no lugar
+ * que já estava reservado, e o olho não precisa reler a tela. Sobre o mesmo
+ * fundo da conversa (`app-conversa`), senão a espera era um retângulo branco.
+ *
+ * Segurar a conversa anterior na tela, como antes, deixava a caixa de resposta
+ * de outra pessoa aberta enquanto a nova chegava.
  */
+const BALOES_DE_ESPERA: { nosso: boolean; linhas: string[] }[] = [
+  { nosso: false, linhas: ['w-[220px]'] },
+  { nosso: false, linhas: ['w-[300px]', 'w-[180px]'] },
+  { nosso: true, linhas: ['w-[260px]'] },
+  { nosso: true, linhas: ['w-[320px]', 'w-[240px]', 'w-[150px]'] },
+  { nosso: false, linhas: ['w-[160px]'] },
+  { nosso: true, linhas: ['w-[210px]'] },
+  { nosso: false, linhas: ['w-[280px]', 'w-[120px]'] },
+]
+
 function ConversaChegando({ previa, falhou }: { previa: Previa | null; falhou: boolean }) {
   return (
-    <section className="flex min-h-0 min-w-0 flex-col border-r border-line" aria-busy={!falhou}>
-      <header className="flex min-h-[62px] items-center gap-3 border-b border-line px-4 py-2">
-        {previa ? (
-          <>
+    <>
+      <section className="flex min-h-0 min-w-0 flex-col border-r border-line" aria-busy={!falhou}>
+        <span role="status" className="sr-only">
+          {falhou ? 'Não deu para abrir esta conversa.' : 'Abrindo a conversa…'}
+        </span>
+        <header className="flex min-h-[62px] items-center gap-3 border-b border-line px-4 py-2">
+          {previa ? (
             <Avatar nome={previa.lead.nome} alerta={Boolean(previa.lead.aguardando)} tamanho={40} canal={previa.canal} />
-            <h2 className="min-w-0 flex-1 truncate text-[13.5px] font-bold">{previa.lead.nome ?? 'sem nome'}</h2>
-          </>
-        ) : (
-          <span className="h-10 w-10 animate-pulse rounded-full bg-surface" />
-        )}
-      </header>
-      <div className="flex min-h-0 flex-1 flex-col justify-end gap-2.5 p-5">
-        {falhou ? (
-          <p className="m-auto text-[13px] text-dim">Não deu para abrir esta conversa. Tente de novo.</p>
-        ) : (
-          <>
-            <span className="h-9 w-[46%] animate-pulse rounded-2xl bg-surface" />
-            <span className="h-9 w-[38%] animate-pulse self-end rounded-2xl bg-primary/10" />
-            <span className="h-14 w-[52%] animate-pulse rounded-2xl bg-surface" />
-          </>
-        )}
-      </div>
-    </section>
+          ) : (
+            <Esqueleto className="size-10 rounded-full" />
+          )}
+          <div className="min-w-[140px] flex-1">
+            {previa ? (
+              <h2 className="truncate text-[13.5px] font-bold">{previa.lead.nome ?? 'sem nome'}</h2>
+            ) : (
+              <Esqueleto className="h-3.5 w-[150px]" />
+            )}
+            <Esqueleto className="mt-1.5 h-[18px] w-[190px] rounded-full" />
+          </div>
+          <Esqueleto className="hidden h-8 w-[72px] rounded-[10px] sm:block" />
+          <span className="hidden gap-1.5 sm:flex">
+            {[0, 1, 2, 3].map((i) => (
+              <Esqueleto key={i} className="size-8 rounded-lg" />
+            ))}
+          </span>
+        </header>
+
+        <div className="app-conversa flex min-h-0 flex-1 flex-col justify-end overflow-hidden p-5">
+          {falhou ? (
+            <p className="m-auto rounded-[12px] border border-line bg-panel px-4 py-3 text-[13px] text-dim">
+              Não deu para abrir esta conversa. Clique nela de novo.
+            </p>
+          ) : (
+            <div className="flex flex-col gap-2">
+              <Esqueleto className="mx-auto mb-2 h-[22px] w-[52px] rounded-full" />
+              {BALOES_DE_ESPERA.map((balao, i) => (
+                <div
+                  key={i}
+                  className={`flex max-w-[78%] flex-col gap-1.5 px-3.5 py-2.5 ${
+                    balao.nosso
+                      ? 'self-end rounded-[15px_15px_4px_15px] bg-primary/[0.12]'
+                      : 'bolha-deles self-start rounded-[15px_15px_15px_4px]'
+                  }`}
+                >
+                  {balao.linhas.map((largura, j) => (
+                    <Esqueleto key={j} className={`h-2.5 max-w-full ${largura}`} />
+                  ))}
+                  <Esqueleto className="h-2 w-7 self-end opacity-70" />
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* A caixa de resposta no pé, com o campo e os botões no lugar deles. */}
+        <div className="flex items-center gap-2 border-t border-line px-[18px] py-3">
+          <Esqueleto className="size-8 shrink-0 rounded-lg" />
+          <Esqueleto className="size-8 shrink-0 rounded-lg" />
+          <Esqueleto className="h-10 min-w-0 flex-1 rounded-[12px]" />
+          <Esqueleto className="size-10 shrink-0 rounded-full" />
+        </div>
+      </section>
+
+      <ColunaDaFicha>
+        <aside aria-hidden className="min-w-0 overflow-hidden border-l border-line bg-panel">
+          <div className="flex items-center gap-3 border-b border-line px-4 py-3.5">
+            {previa ? (
+              <Avatar nome={previa.lead.nome} tamanho={40} canal={previa.canal} />
+            ) : (
+              <Esqueleto className="size-10 rounded-full" />
+            )}
+            <div className="min-w-0 flex-1">
+              {previa ? (
+                <p className="truncate text-[14.5px] leading-5 font-semibold">{previa.lead.nome ?? 'sem nome'}</p>
+              ) : (
+                <Esqueleto className="h-3.5 w-[120px]" />
+              )}
+              <Esqueleto className="mt-1.5 h-2.5 w-[110px]" />
+            </div>
+            <Esqueleto className="h-7 w-[52px] rounded-[10px]" />
+          </div>
+          <div className="flex gap-6 border-b border-line px-4 py-3">
+            <Esqueleto className="h-3 w-[54px]" />
+            <Esqueleto className="h-3 w-[70px]" />
+          </div>
+          <div className="flex flex-col gap-5 p-4">
+            <Esqueleto className="h-[58px] w-full rounded-[12px]" />
+            <div className="flex flex-col gap-2.5 rounded-[12px] border border-line p-3">
+              {['w-[70%]', 'w-[55%]', 'w-[62%]'].map((largura, i) => (
+                <Esqueleto key={i} className={`h-2.5 ${largura}`} />
+              ))}
+            </div>
+            <div className="flex flex-col gap-2">
+              <Esqueleto className="h-3 w-[110px]" />
+              <span className="flex gap-1.5">
+                <Esqueleto className="h-6 w-[64px] rounded-full" />
+                <Esqueleto className="h-6 w-[82px] rounded-full" />
+              </span>
+            </div>
+            <div className="flex flex-col gap-2">
+              <Esqueleto className="h-3 w-[130px]" />
+              <Esqueleto className="h-2.5 w-[85%]" />
+            </div>
+          </div>
+        </aside>
+      </ColunaDaFicha>
+    </>
   )
 }
 

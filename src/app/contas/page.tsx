@@ -101,7 +101,7 @@ export default async function Contas() {
         </header>
 
         {contas.length === 0 ? (
-          <section className="app-card border-dashed px-8 py-12 text-center">
+          <section className="app-card px-5 py-14 text-center">
             <IlustracaoOrganizacoes />
             <p className="mt-6 text-[14px] font-semibold text-soft">Nenhuma organização ainda</p>
             {/*

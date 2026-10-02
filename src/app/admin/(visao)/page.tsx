@@ -80,7 +80,7 @@ export default async function VisaoGeral() {
       </section>
 
       {organizacoes.length === 0 ? (
-        <section className="app-card border-dashed px-10 py-14 text-center">
+        <section className="app-card px-5 py-14 text-center">
           <IlustracaoOrganizacoes />
           <p className="mt-6 text-[14px] font-semibold text-soft">Nenhuma organização ainda</p>
           <p className="mx-auto mt-1.5 max-w-md text-[12.5px] leading-6 text-dim">

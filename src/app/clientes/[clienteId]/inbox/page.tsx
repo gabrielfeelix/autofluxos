@@ -502,31 +502,44 @@ function EstadoVazio({
    * pior que não dizer nada.
    */
   return (
-    <section className="mx-auto mt-16 max-w-[440px] text-center">
-      <IlustracaoInbox />
-      <p className="mt-6 font-mono text-[11px] font-bold tracking-[0.16em] text-dim">INBOX VAZIO</p>
-      <h2 className="mt-2 text-[18px] font-bold tracking-[-0.02em]">Nenhuma conversa para atender</h2>
-      <p className="mt-2 text-[13.5px] leading-6 text-muted">
-        Quando alguém falar com o número ligado ao bot, a conversa aparece aqui. A tela de Leads
-        continua sendo o lugar para analisar todos os contatos.
-      </p>
-
-      {/*
-       * Número recém-conectado demora: enquanto a Meta não termina de
-       * sincronizar, mensagem nova não chega. Dizer isso evita a conclusão de
-       * que algo quebrou, que foi o que aconteceu com o primeiro cliente.
-       */}
-      {recem && (
-        <p className="mt-3 rounded-[10px] border border-line bg-surface px-3.5 py-2.5 text-left text-[12.5px] leading-5 text-dim">
-          Este número foi conectado há pouco. A Meta ainda está sincronizando, e
-          isso pode levar algumas horas, até terminar, é normal nenhuma
-          conversa nova aparecer aqui.
+    /*
+      Largura cheia e cartão com cabeçalho, como o vazio de Transmissões: era
+      uma coluna de 440px no meio da tela, e o Inbox vazio parecia outra
+      página (02/out/2026).
+    */
+    <section className="app-card overflow-hidden">
+      <header className="flex flex-wrap items-start justify-between gap-4 border-b border-line px-5 py-4">
+        <div className="min-w-0">
+          <h2 className="text-[14.5px] font-bold">Caixa de Entrada</h2>
+          <p className="mt-0.5 text-[12px] leading-5 text-dim">
+            As conversas do WhatsApp, do Instagram e do site chegam aqui.
+          </p>
+        </div>
+        <Link href={`/clientes/${clienteId}/leads`} className="app-secondary-button inline-flex h-9 shrink-0 items-center px-4 text-[13px]">
+          Ver Leads
+        </Link>
+      </header>
+      <div className="px-5 py-14 text-center">
+        <IlustracaoInbox />
+        <p className="mt-6 text-[13.5px] font-semibold text-soft">Nenhuma conversa para atender</p>
+        <p className="mx-auto mt-1.5 max-w-[460px] text-[12.5px] leading-5 text-dim">
+          Quando alguém falar com o número ligado ao bot, a conversa aparece aqui. A tela de Leads
+          continua sendo o lugar para analisar todos os contatos.
         </p>
-      )}
 
-      <Link href={`/clientes/${clienteId}/leads`} className="app-secondary-button mt-5 inline-block px-4 py-2.5 text-[13px]">
-        Ver Leads
-      </Link>
+        {/*
+         * Número recém-conectado demora: enquanto a Meta não termina de
+         * sincronizar, mensagem nova não chega. Dizer isso evita a conclusão de
+         * que algo quebrou, que foi o que aconteceu com o primeiro cliente.
+         */}
+        {recem && (
+          <p className="mx-auto mt-4 max-w-[460px] rounded-[10px] border border-line bg-surface px-3.5 py-2.5 text-left text-[12.5px] leading-5 text-dim">
+            Este número foi conectado há pouco. A Meta ainda está sincronizando, e
+            isso pode levar algumas horas, até terminar, é normal nenhuma
+            conversa nova aparecer aqui.
+          </p>
+        )}
+      </div>
     </section>
   )
 }

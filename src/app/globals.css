@@ -871,11 +871,18 @@ textarea::placeholder {
     color-mix(in oklab, var(--primary) 4%, var(--panel));
 }
 
-.app-esqueleto {
-  position: relative;
-  overflow: hidden;
-  border-radius: 6px;
-  background: var(--surface-strong);
+/*
+ * Em `@layer components` para o `rounded-*` de quem usa vencer o canto
+ * padrão. Solta, a regra ganhava de todo utilitário: círculo de avatar e
+ * pílula de selo saíam com canto de 6px em todos os esqueletos (02/out/2026).
+ */
+@layer components {
+  .app-esqueleto {
+    position: relative;
+    overflow: hidden;
+    border-radius: 6px;
+    background: var(--surface-strong);
+  }
 }
 
 .app-esqueleto::after {
