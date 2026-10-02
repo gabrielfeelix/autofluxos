@@ -1,5 +1,3 @@
-import Image from 'next/image'
-import Link from 'next/link'
 import type { ReactNode } from 'react'
 import type { Categoria } from './artigos'
 
@@ -14,29 +12,6 @@ import type { Categoria } from './artigos'
 
 export const WHATSAPP_DA_4YU = 'https://wa.me/5544998775978'
 export const EMAIL_DA_4YU = 'contato@4yu.com.br'
-
-export function CabecalhoDaAjuda() {
-  return (
-    <header className="mx-auto w-full max-w-[1200px] px-3 pt-3 md:px-6">
-      <div className="flex h-[60px] items-center gap-3 rounded-2xl border border-white/25 bg-white/[0.14] pr-2 pl-4 text-white backdrop-blur-md">
-        <Link href="/ajuda" className="flex items-center gap-2.5">
-          <span className="flex size-8 shrink-0 items-center justify-center rounded-[10px] bg-white">
-            <Image src="/logos/logo-autofluxos-marca.png" alt="" width={22} height={22} />
-          </span>
-          <span className="text-[15px] font-bold tracking-[-0.01em]">AutoFluxos</span>
-          <span aria-hidden className="hidden h-5 w-px bg-white/30 sm:block" />
-          <span className="hidden text-[14px] font-medium text-white/85 sm:inline">Central de ajuda</span>
-        </Link>
-        <Link
-          href="/painel"
-          className="ml-auto inline-flex h-10 items-center rounded-xl whitespace-nowrap bg-white px-4 text-[13px] font-semibold text-[#1d4ed8] transition hover:bg-white/90"
-        >
-          Voltar ao painel
-        </Link>
-      </div>
-    </header>
-  )
-}
 
 /** O fim de toda página: quem não achou fala com a equipe. */
 export function FaleComAGente() {

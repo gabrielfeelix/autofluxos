@@ -1,0 +1,92 @@
+/*
+ * O movimento e os detalhes da central de ajuda e da documentação.
+ *
+ * Só movimento que responde a um gesto: abrir sanfona, trocar de aba, copiar,
+ * recolher grupo da lateral. Nada entra sozinho na tela. Quem pede
+ * `prefers-reduced-motion` recebe tudo parado (fim do arquivo).
+ */
+
+/* Sanfona: o conteúdo do <details> cresce em vez de aparecer de estalo. */
+.sanfona-de-ajuda,
+.docs-resposta {
+  interpolate-size: allow-keywords;
+}
+
+.sanfona-de-ajuda::details-content,
+.docs-resposta::details-content {
+  block-size: 0;
+  overflow: clip;
+  transition:
+    block-size 0.24s cubic-bezier(0.2, 0, 0, 1),
+    content-visibility 0.24s allow-discrete;
+}
+
+.sanfona-de-ajuda[open]::details-content,
+.docs-resposta[open]::details-content {
+  block-size: auto;
+}
+
+/* Grupo da lateral: abre e fecha pela altura, com a seta girando junto. */
+.docs-grupo-corpo {
+  display: grid;
+  grid-template-rows: 0fr;
+  transition: grid-template-rows 0.22s cubic-bezier(0.2, 0, 0, 1);
+}
+
+.docs-grupo-corpo[data-aberto='true'] {
+  grid-template-rows: 1fr;
+}
+
+.docs-grupo-corpo > div {
+  overflow: hidden;
+}
+
+/* A barra embaixo da aba ativa desliza até a aba nova. */
+.docs-abas-marca {
+  transition:
+    left 0.22s cubic-bezier(0.2, 0, 0, 1),
+    width 0.22s cubic-bezier(0.2, 0, 0, 1);
+}
+
+/* O ícone de copiar vira tique. */
+.docs-copiado {
+  animation: docs-entra 0.18s cubic-bezier(0.2, 0, 0, 1);
+}
+
+@keyframes docs-entra {
+  from {
+    opacity: 0;
+    transform: scale(0.6);
+  }
+}
+
+/* A busca ⌘K abre crescendo um pouco a partir do centro. */
+.docs-busca[open] {
+  animation: docs-busca-abre 0.16s cubic-bezier(0.2, 0, 0, 1);
+}
+
+.docs-busca::backdrop {
+  background: rgb(8 20 70 / 0.45);
+  backdrop-filter: blur(3px);
+}
+
+@keyframes docs-busca-abre {
+  from {
+    opacity: 0;
+    transform: translateY(-6px) scale(0.98);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sanfona-de-ajuda::details-content,
+  .docs-resposta::details-content,
+  .docs-grupo-corpo,
+  .docs-abas-marca {
+    transition: none;
+  }
+
+  .docs-copiado,
+  .docs-busca[open] {
+    animation: none;
+  }
+}

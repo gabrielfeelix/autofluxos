@@ -24,7 +24,7 @@ export function SecaoDuvidas() {
       chamada="Agrupadas pelo momento em que aparecem. Abra a que combina com o seu sintoma."
     >
       <Sub>Desenhar e publicar</Sub>
-      <div className="space-y-2">
+      <div className="border-t border-line">
         <Duvida p="Desenhei tudo e o bot não responde. O que faltou?">
           <p>Confira nesta ordem, que é a ordem em que costuma faltar:</p>
           <ol className="ml-4 list-decimal space-y-1">
@@ -87,7 +87,7 @@ export function SecaoDuvidas() {
       </div>
 
       <Sub>Perguntas, datas e menus</Sub>
-      <div className="space-y-2">
+      <div className="border-t border-line">
         <Duvida p="O bot marcou no horário errado. Como isso acontece?">
           <p>
             Quase sempre é <strong className="text-soft">“sem repetir” numa lista pareada</strong>.
@@ -163,7 +163,7 @@ export function SecaoDuvidas() {
       </div>
 
       <Sub>Verandi e integrações</Sub>
-      <div className="space-y-2">
+      <div className="border-t border-line">
         <Duvida p="O bot está perguntando o nome de quem faz aula há dois anos.">
           <p>
             Falta o bloco de <strong className="text-soft">reconhecer quem está falando</strong> como
@@ -229,7 +229,7 @@ export function SecaoDuvidas() {
       </div>
 
       <Sub>Atendimento pela equipe</Sub>
-      <div className="space-y-2">
+      <div className="border-t border-line">
         <Duvida p="O bot continuou respondendo depois que assumi a conversa.">
           <p>
             Não deveria: assumir cala o bot naquele contato. Se ainda está falando, confira se o que

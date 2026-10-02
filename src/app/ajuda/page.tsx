@@ -10,6 +10,9 @@ import {
   WHATSAPP_DA_4YU,
 } from '@/components/ajuda/moldura'
 import { RedirecionarAncoraAntiga } from '@/components/ajuda/sumario'
+import { CabecalhoDeDocs } from '@/components/docs/casca'
+import { BlocoDeCodigo } from '@/components/docs/codigo'
+import { SeloDeMetodo } from '@/components/docs/referencia'
 
 /**
  * A home da central de ajuda, no desenho das centrais de SaaS (Intercom,
@@ -29,6 +32,7 @@ export default function Pagina() {
   return (
     <>
       <RedirecionarAncoraAntiga />
+      <CabecalhoDeDocs area="ajuda" />
 
       <section className="mx-auto w-full max-w-[760px] px-4 pt-14 pb-16 text-center md:pt-20 md:pb-20">
         <h1 className="text-[32px] leading-[1.1] font-bold tracking-[-0.03em] text-white md:text-[44px]">
@@ -115,6 +119,50 @@ export default function Pagina() {
               </li>
             ))}
           </ul>
+
+          <section className="mt-12 grid items-center gap-8 overflow-hidden rounded-[22px] border border-line p-6 md:p-8 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.1fr)]">
+            <div>
+              <h2 className="text-[20px] font-bold tracking-[-0.02em] text-ink">Para desenvolvedores</h2>
+              <p className="mt-2 max-w-[48ch] text-[14.5px] leading-[1.65] text-muted">
+                Integre o seu sistema: envie eventos que abrem conversas no WhatsApp, chame a sua API
+                no meio do atendimento e instale o chat no seu site.
+              </p>
+              <ul className="mt-5 space-y-1">
+                {[
+                  { href: '/ajuda/desenvolvedores/disparar-evento', rotulo: 'Disparar um evento', metodo: 'POST' as const },
+                  { href: '/ajuda/desenvolvedores/assinatura', rotulo: 'Assinar a requisição' },
+                  { href: '/ajuda/desenvolvedores/chamar-seu-sistema', rotulo: 'Chamar o seu sistema' },
+                  { href: '/ajuda/desenvolvedores/chat-do-site', rotulo: 'Instalar o chat do site' },
+                ].map((item) => (
+                  <li key={item.href}>
+                    <Link href={item.href} className="group flex items-center gap-3 rounded-lg py-1.5 text-[14px] font-medium text-soft transition hover:text-primary">
+                      <span className="w-12">{item.metodo ? <SeloDeMetodo metodo={item.metodo} pequeno /> : null}</span>
+                      {item.rotulo}
+                      <span aria-hidden className="text-dim transition group-hover:translate-x-0.5 group-hover:text-primary">
+                        <IconeSeta />
+                      </span>
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+              <Link
+                href="/ajuda/desenvolvedores/visao-geral"
+                className="mt-6 inline-flex h-10 items-center rounded-xl bg-primary px-4 text-[13.5px] font-semibold text-primary-ink transition hover:bg-primary-strong"
+              >
+                Abrir a documentação
+              </Link>
+            </div>
+            <BlocoDeCodigo
+              titulo="Disparar um evento"
+              trechos={[
+                {
+                  rotulo: 'cURL',
+                  linguagem: 'shell',
+                  codigo: 'curl --request POST \\\n  --url https://autofluxos.4yu.com.br/api/webhook/entrada/SEU_CLIENTE_ID \\\n  --header "x-autofluxos-assinatura: sha256=$assinatura" \\\n  --data \'{"evento":"vaga.aberta","telefone":"5511999998888"}\'',
+                },
+              ]}
+            />
+          </section>
 
           <FaleComAGente />
         </div>

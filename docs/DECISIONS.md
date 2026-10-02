@@ -185,3 +185,24 @@ Append-only. Cada entrada: data, decisão, porquê, onde está no código.
   telefone (fica no endereço). A lista de "Status do pedido" busca pelo CPF
   ou e-mail da ficha (`listarPedidosDaPessoa`) e marca os que têm o telefone
   da conversa; sem CPF nem e-mail, pede o número. Não testado contra a PCYES.
+
+## 02/out/2026: documentação no formato de docs, com área de desenvolvedores
+
+- Pedido do Gabriel: "ainda tem cara de IA, só card". A central virou casca de
+  documentação (régua: RD Station Developers e shadcn/ui): lateral com filtro
+  (atalho `/`) e grupos que recolhem, selo de método HTTP, título com
+  "Copiar página" e setas anterior/próximo, sumário à direita, busca ⌘K nas
+  duas áreas. `src/components/docs/casca.tsx`.
+- **Duas áreas, um desenho:** Central de ajuda (`/ajuda/<id>`) e
+  Desenvolvedores (`/ajuda/desenvolvedores/<pagina>`), trocadas pelo cabeçalho.
+- **A área de desenvolvedores documenta só o que existe:** o webhook de
+  entrada (`POST /api/webhook/entrada/{clienteId}`, HMAC no
+  `x-autofluxos-assinatura`, 120/min, 64 KB, sem retry), o bloco Chama um
+  sistema (GET/POST/DELETE, 10 s, https, credencial bearer/cabeçalho/query), as
+  chamadas da Verandi e o script do chat do site. Não há API REST pública, e a
+  página diz isso. Fonte: `src/components/docs/paginas-dev.tsx`.
+- **Componentes novos:** painel de código marinho com abas de linguagem, copiar
+  e realce próprio; lista de campos com tipo e obrigatório; respostas por
+  status em sanfona; passos com linha vertical; sanfona com altura animada.
+  Movimento só em resposta a gesto, parado com `prefers-reduced-motion`
+  (`docs.css`).

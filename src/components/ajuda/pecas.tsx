@@ -40,7 +40,7 @@ export function Secao({
 }) {
   return (
     <div className="artigo-de-ajuda">
-      {chamada && <p className="text-[17px] leading-[1.65] text-soft">{chamada}</p>}
+      {chamada && <p className="text-[16px] leading-[1.7] text-soft">{chamada}</p>}
       <div className="mt-7 space-y-5 text-[15px] leading-[1.75] text-muted">{children}</div>
     </div>
   )
@@ -340,23 +340,26 @@ export function Espelho({
  * chama nada. Já a lista de blocos não tem ordem nenhuma, e numerá-la seria
  * inventar uma sequência que o produto não tem.
  */
+/**
+ * Passo a passo com a linha vertical ligando os números, como nas docs de
+ * referência: a linha diz "isto é uma sequência" sem precisar de cartão.
+ */
 export function Passos({ children }: { children: ReactNode }) {
-  return <ol className="space-y-3.5">{children}</ol>
+  return <ol className="passos-de-ajuda">{children}</ol>
 }
 
 export function Passo({ n, titulo, children }: { n: number; titulo: string; children: ReactNode }) {
   return (
-    <li className="app-card flex gap-3.5 p-4">
+    <li className="relative pb-7 pl-11 last:pb-0">
+      <span aria-hidden className="absolute top-8 bottom-0 left-[13px] w-px bg-line [li:last-child>&]:hidden" />
       <span
         aria-hidden
-        className="flex size-7 shrink-0 items-center justify-center rounded-lg bg-primary/[0.12] font-mono text-[12px] font-bold text-primary"
+        className="absolute top-0 left-0 flex size-7 items-center justify-center rounded-full border border-line bg-panel text-[13px] font-semibold text-ink"
       >
         {n}
       </span>
-      <div className="min-w-0 space-y-2">
-        <strong className="block text-[14px] font-bold text-ink">{titulo}</strong>
-        <div className="space-y-2 text-[13px] leading-[1.65]">{children}</div>
-      </div>
+      <strong className="block pt-0.5 text-[15.5px] font-semibold text-ink">{titulo}</strong>
+      <div className="mt-2 space-y-2 text-[14.5px] leading-[1.7]">{children}</div>
     </li>
   )
 }
@@ -364,19 +367,14 @@ export function Passo({ n, titulo, children }: { n: number; titulo: string; chil
 /** Uma pergunta da sanfona. Fechada por padrão: a página é para varrer. */
 export function Duvida({ p, children }: { p: string; children: ReactNode }) {
   return (
-    <details className="group app-card app-card-interactive overflow-hidden">
-      <summary className="flex list-none items-start gap-3 px-4 py-3.5 text-[13.5px] font-semibold text-ink [&::-webkit-details-marker]:hidden">
-        <span
-          aria-hidden
-          className="mt-[3px] shrink-0 font-mono text-[11px] text-primary transition-transform group-open:rotate-90"
-        >
-          ▸
-        </span>
+    <details className="sanfona-de-ajuda group border-b border-line">
+      <summary className="flex cursor-pointer list-none items-center justify-between gap-4 py-4 text-[15px] font-semibold text-ink transition hover:text-primary [&::-webkit-details-marker]:hidden">
         {p}
+        <svg aria-hidden width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" className="shrink-0 text-dim transition-transform duration-200 group-open:rotate-180">
+          <path d="m6 9 6 6 6-6" />
+        </svg>
       </summary>
-      <div className="space-y-2.5 border-t border-line px-4 py-3.5 pl-[34px] text-[13px] leading-[1.7] text-muted">
-        {children}
-      </div>
+      <div className="space-y-2.5 pb-5 text-[14.5px] leading-[1.7] text-muted">{children}</div>
     </details>
   )
 }
