@@ -1735,6 +1735,7 @@ async function aplicar(
         contatoId: contato.id,
         nomeDoContato: contato.nomeReal ?? contato.nome,
         motivo,
+        canal: canal.origem,
         avisarUsuarioId,
       })
     } catch (erro) {

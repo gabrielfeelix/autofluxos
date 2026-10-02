@@ -850,6 +850,28 @@ export async function registrarEntrada(dados: {
  * Erro vira `null`, e quem chama segue respondendo: na dúvida, responder duas
  * vezes é melhor que não responder.
  */
+/**
+ * O texto da última mensagem que a pessoa mandou, para o aviso de handoff.
+ *
+ * Só o que tem texto (legenda de foto conta). Erro vira `null`: o aviso sai
+ * sem a citação, nunca deixa de sair por causa dela.
+ */
+export async function ultimoTextoRecebido(contatoId: string): Promise<string | null> {
+  const { data, error } = await db()
+    .from('messages')
+    .select('texto')
+    .eq('contact_id', contatoId)
+    .eq('direcao', 'entrada')
+    .not('texto', 'is', null)
+    .is('reagiu_a', null)
+    .order('ts', { ascending: false })
+    .limit(1)
+    .maybeSingle()
+
+  if (error || !data) return null
+  return (data as { texto: string | null }).texto
+}
+
 export async function ultimaEntradaDeTexto(contatoId: string): Promise<string | null> {
   const { data, error } = await db()
     .from('messages')

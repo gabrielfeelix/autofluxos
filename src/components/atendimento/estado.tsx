@@ -6,6 +6,7 @@ import { useAcaoOtimista } from '@/components/design/acao-otimista'
 import { estadoDoAtendimento, type Atendimento } from '@/core/estado-do-atendimento'
 import { useConversaAbertaOuNada } from '@/components/inbox/conversa-local'
 import { horaExata, quando } from '@/lib/quando'
+import { resumoDoMotivo } from '@/core/aviso-de-handoff'
 
 type Resultado = { ok: boolean; erro?: string }
 
@@ -147,7 +148,7 @@ export function CartaoDoAtendimento({
       </p>
       {aguardando && (
         <p className="mt-0.5 truncate text-[11.5px] text-muted first-letter:uppercase" title={`${aguardando.motivo} (${horaExata(aguardando.desde)})`}>
-          {aguardando.motivo}
+          {resumoDoMotivo(aguardando.motivo)}
         </p>
       )}
       </div>

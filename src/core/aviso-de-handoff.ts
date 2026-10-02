@@ -81,20 +81,83 @@ export function quemAvisar(
 }
 
 /**
+ * O porquê do handoff em linguagem de quem atende.
+ *
+ * O motivo gravado é para diagnóstico e pode trazer o erro cru de uma
+ * ferramenta ("em \"loja_detalhes\": \"produtoId\" não é um identificador...").
+ * Isso não serve a quem recebe o aviso: ele quer saber o que fazer, não qual
+ * parâmetro falhou. Os motivos que o sistema escreve viram uma frase curta; o
+ * que o cliente escreveu no bloco de handoff ("Lead qualificado - pilates")
+ * passa como está, porque é a palavra dele.
+ *
+ * O motivo completo continua no banco e na dica do Inbox, para quem investiga.
+ */
+export function resumoDoMotivo(motivo: string): string {
+  const m = motivo.trim()
+  if (!m) return 'O bot passou a conversa para a equipe'
+  if (/^a IA não soube responder/i.test(m)) return 'A IA não encontrou a resposta e passou para a equipe'
+  if (/respostas de IA/i.test(m)) return 'A IA chegou ao limite de respostas e passou para a equipe'
+  if (/não há modelo disponível/i.test(m)) return 'A IA está indisponível e passou para a equipe'
+  if (/^a (integração|consulta)\b|chamadas externas/i.test(m)) {
+    return 'Uma consulta automática falhou e o bot passou para a equipe'
+  }
+  if (/ciclo no desenho|automação de destino/i.test(m)) {
+    return 'A automação não conseguiu continuar e passou para a equipe'
+  }
+  if (/prazo da pergunta/i.test(m)) return 'O contato não respondeu a pergunta do bot a tempo'
+  return m.charAt(0).toUpperCase() + m.slice(1)
+}
+
+const NOME_DO_CANAL: Record<string, string> = {
+  whatsapp: 'WhatsApp',
+  instagram: 'Instagram',
+  telegram: 'Telegram',
+  site: 'Chat do site',
+}
+
+const LIMITE_DA_MENSAGEM = 90
+
+/**
  * O texto do aviso.
  *
- * Curto de propósito: ele é lido numa tira de notificação de celular, onde o
- * sistema corta o resto. O nome de quem está esperando vem primeiro porque é o
- * que decide se a pessoa larga o que está fazendo.
+ * Lido numa tira de notificação de celular, onde o sistema corta o resto, e
+ * por alguém que pode estar em mais de uma conta. Então, nesta ordem:
  *
- * **Não leva o conteúdo da conversa.** A notificação atravessa o servidor de
- * push do fabricante do navegador; o motivo do handoff é nosso, a mensagem do
- * lead é dele.
+ * - **Título:** quem espera. O nome, ou o telefone quando não há nome. É o que
+ *   decide se a pessoa larga o que está fazendo.
+ * - **Primeira linha:** em qual conta e por qual canal. Sem isso, quem atende
+ *   duas empresas não sabe de qual é o aviso.
+ * - **Segunda linha:** o porquê, em frase de gente (`resumoDoMotivo`).
+ * - **Terceira linha:** o que o contato escreveu por último, cortado.
+ *
+ * **A última mensagem pode ir no aviso.** A carga do Web Push é cifrada de
+ * ponta a ponta (RFC 8291): o servidor de push do fabricante entrega sem
+ * conseguir ler. É o mesmo que o WhatsApp mostra na notificação dele.
  */
-export function textoDoAviso(nome: string | null, motivo: string) {
-  const quem = (nome ?? '').trim() || 'Um contato'
+export function textoDoAviso(dados: {
+  nome: string | null
+  /** Telefone já legível, para quando não há nome. */
+  telefone?: string | null
+  conta?: string | null
+  canal?: string | null
+  motivo: string
+  ultimaMensagem?: string | null
+}) {
+  const nome = (dados.nome ?? '').trim()
+  const telefone = (dados.telefone ?? '').trim()
+  const quem = nome || (telefone ? telefone.charAt(0).toUpperCase() + telefone.slice(1) : '') || 'Um contato'
+
+  const onde = [dados.conta?.trim(), dados.canal ? (NOME_DO_CANAL[dados.canal] ?? dados.canal) : null]
+    .filter(Boolean)
+    .join(' · ')
+
+  const ultima = (dados.ultimaMensagem ?? '').replace(/\s+/g, ' ').trim()
+  const citacao = ultima
+    ? `“${ultima.length > LIMITE_DA_MENSAGEM ? `${ultima.slice(0, LIMITE_DA_MENSAGEM - 1).trimEnd()}…` : ultima}”`
+    : ''
+
   return {
     titulo: `${quem} está esperando atendimento`,
-    corpo: motivo.trim() || 'o bot passou a conversa para uma pessoa',
+    corpo: [onde, resumoDoMotivo(dados.motivo), citacao].filter(Boolean).join('\n'),
   }
 }

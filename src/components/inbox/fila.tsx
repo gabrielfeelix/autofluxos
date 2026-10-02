@@ -33,6 +33,7 @@ import { ajustarContagem } from "@/components/design/contagens-local";
 import { cabeNoRecorte } from "@/components/inbox/recorte";
 import { abrirConversa, preCarregarConversa, useAberta } from "@/components/inbox/aberta-local";
 import type { MensagemAgendada } from "@/server/repos/mensagens-agendadas";
+import { resumoDoMotivo } from "@/core/aviso-de-handoff";
 
 export type Contagem = {
   total: number;
@@ -1375,7 +1376,7 @@ function ResumoDaConversa({ lead }: { lead: Lead }) {
 function textoDoBalao(lead: Lead): string {
   const quem = quemFalou(lead);
   const texto = `${quem ? `${quem}: ` : ""}${textoDaConversa(lead)}`;
-  return lead.aguardando ? `${texto}\n\nAguardando atendente: ${lead.aguardando.motivo}` : texto;
+  return lead.aguardando ? `${texto}\n\nAguardando atendente: ${resumoDoMotivo(lead.aguardando.motivo)}` : texto;
 }
 
 /** O texto da última mensagem, sem quem falou. */

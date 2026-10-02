@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { quemAvisar, textoDoAviso, type CandidatoAoAviso } from './aviso-de-handoff'
+import { quemAvisar, resumoDoMotivo, textoDoAviso, type CandidatoAoAviso } from './aviso-de-handoff'
 import { SEMPRE_ABERTO, type HorarioDeAtendimento } from './horario'
 
 const membro = (over: Partial<CandidatoAoAviso> = {}): CandidatoAoAviso => ({
@@ -143,22 +143,57 @@ describe('quemAvisar, com o handoff endereçado a alguém', () => {
   })
 })
 
+describe('resumoDoMotivo', () => {
+  it('erro cru de ferramenta da IA vira frase de quem atende', () => {
+    const cru = 'a IA não soube responder, em "loja_detalhes": "produtoId" não é um identificador que apareceu nesta consulta'
+    expect(resumoDoMotivo(cru)).toBe('A IA não encontrou a resposta e passou para a equipe')
+  })
+
+  it('falha de integração ou consulta não mostra o detalhe técnico', () => {
+    expect(resumoDoMotivo('a consulta frete falhou, HTTP 500')).toBe(
+      'Uma consulta automática falhou e o bot passou para a equipe',
+    )
+    expect(resumoDoMotivo('a integração falhou, a credencial configurada não está mais disponível')).toBe(
+      'Uma consulta automática falhou e o bot passou para a equipe',
+    )
+  })
+
+  it('o texto do bloco de handoff, escrito pelo cliente, passa como está', () => {
+    expect(resumoDoMotivo('lead qualificado - pilates')).toBe('Lead qualificado - pilates')
+  })
+
+  it('motivo vazio ainda diz algo', () => {
+    expect(resumoDoMotivo('  ')).toBe('O bot passou a conversa para a equipe')
+  })
+})
+
 describe('textoDoAviso', () => {
-  it('o nome de quem espera vem primeiro, é o que faz largar o que se está fazendo', () => {
-    expect(textoDoAviso('Marina', 'o bot não entendeu 3 vezes')).toEqual({
+  it('título com quem espera; corpo com conta e canal, o porquê e a última fala', () => {
+    expect(
+      textoDoAviso({
+        nome: 'Marina',
+        conta: 'PCYES',
+        canal: 'whatsapp',
+        motivo: 'a IA não soube responder, em "loja_detalhes": erro',
+        ultimaMensagem: 'qual o preço   do\nmouse gamer?',
+      }),
+    ).toEqual({
       titulo: 'Marina está esperando atendimento',
-      corpo: 'o bot não entendeu 3 vezes',
+      corpo: 'PCYES · WhatsApp\nA IA não encontrou a resposta e passou para a equipe\n“qual o preço do mouse gamer?”',
     })
   })
 
-  it('contato sem nome não vira título quebrado', () => {
-    expect(textoDoAviso(null, 'pediu para falar com alguém').titulo).toBe(
-      'Um contato está esperando atendimento',
+  it('sem nome, o telefone identifica; sem nada, "Um contato"', () => {
+    expect(textoDoAviso({ nome: null, telefone: '(44) 99999-0000', motivo: 'x' }).titulo).toBe(
+      '(44) 99999-0000 está esperando atendimento',
     )
-    expect(textoDoAviso('   ', 'x').titulo).toBe('Um contato está esperando atendimento')
+    expect(textoDoAviso({ nome: '   ', motivo: 'x' }).titulo).toBe('Um contato está esperando atendimento')
   })
 
-  it('motivo vazio não deixa a notificação sem corpo', () => {
-    expect(textoDoAviso('Marina', '  ').corpo).toBe('o bot passou a conversa para uma pessoa')
+  it('mensagem longa é cortada para caber na tira', () => {
+    const corpo = textoDoAviso({ nome: 'Ana', motivo: 'x', ultimaMensagem: 'a'.repeat(200) }).corpo
+    const citacao = corpo.split('\n').at(-1) ?? ''
+    expect(citacao.length).toBeLessThanOrEqual(92)
+    expect(citacao.endsWith('…”')).toBe(true)
   })
 })

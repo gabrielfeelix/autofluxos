@@ -51,3 +51,16 @@ Append-only. Cada entrada: data, decisão, porquê, onde está no código.
   (`src/server/sonda-ligacao.ts`, `5a7ce51`). Inofensivo enquanto nenhum
   número tem Calling ligado; remover ou substituir na fase 1.
 
+
+## 02/out/2026: o aviso de handoff diz conta, canal, porquê e a última fala
+
+- **Por quê:** o dono recebeu "Um contato está esperando atendimento / a IA
+  não soube responder, em \"loja_detalhes\": \"produtoId\" não é um
+  identificador..." e não soube de qual conta era nem quem escreveu.
+- **O que mudou:** título com nome ou telefone; corpo com `Conta · Canal`, o
+  porquê em frase de gente (`resumoDoMotivo` em `src/core/aviso-de-handoff.ts`)
+  e a última mensagem do contato, cortada em 90 caracteres. O Inbox mostra a
+  mesma frase; o motivo cru fica no banco e na dica, para diagnóstico.
+- **Revisto:** antes o aviso não levava conteúdo da conversa "porque atravessa
+  o servidor de push". A carga do Web Push é cifrada de ponta a ponta
+  (RFC 8291), o servidor não lê; é o que o WhatsApp já faz.

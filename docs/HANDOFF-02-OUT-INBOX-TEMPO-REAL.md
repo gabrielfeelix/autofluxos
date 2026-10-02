@@ -108,7 +108,7 @@ Para o próximo agente. Tudo abaixo está commitado, publicado e em produção
    conversa. Foi entendido como "ponha na sua lista de tarefas". Se era para
    lançar algo na tela de Atividades do app, pergunte o quê.
 
-7. **Melhorar as notificações de "esperando atendimento"** (pedido do dono,
+7. **Feito em 02/out (ver `docs/DECISIONS.md`).** **Melhorar as notificações de "esperando atendimento"** (pedido do dono,
    02/out, com print): chegou "Um contato está esperando atendimento / a IA
    não soube responder, em \"loja_detalhes\": \"produtoId\" não é um
    identificador que apareceu nesta consulta". Falta dizer **de qual conta**

@@ -3,7 +3,10 @@ import webpush from 'web-push'
 import { quemAvisar, textoDoAviso } from '@/core/aviso-de-handoff'
 import { SEMPRE_ABERTO } from '@/core/horario'
 import { alertar } from './alertar'
-import { horarioDoCliente } from './repos/clientes'
+import { telefoneLegivel } from '@/core/contatos/telefone'
+import type { CanalId } from '@/core/canais'
+import { acharCliente, horarioDoCliente } from './repos/clientes'
+import { acharContato, ultimoTextoRecebido } from './repos/conversas'
 import { apagarAssinatura, assinaturasDe } from './repos/assinaturas-de-push'
 import { membrosDaConta } from './repos/usuarios'
 
@@ -63,12 +66,15 @@ export async function avisarHandoff({
   contatoId,
   nomeDoContato,
   motivo,
+  canal,
   avisarUsuarioId,
 }: {
   clienteId: string
   contatoId: string
   nomeDoContato: string | null
   motivo: string
+  /** Por onde a conversa chegou. Ausente vale WhatsApp. */
+  canal?: CanalId
   /**
    * Quando o bloco de handoff endereçou o aviso a alguém.
    *
@@ -124,7 +130,21 @@ export async function avisarHandoff({
     if (assinaturas.length === 0) return
 
     prepararWebPush()
-    const { titulo, corpo } = textoDoAviso(nomeDoContato, motivo)
+    // O que identifica o aviso: a conta, o telefone e a última fala. Cada
+    // leitura que falha só tira a sua linha do texto, o aviso sai igual.
+    const [cliente, contato, ultimaMensagem] = await Promise.all([
+      acharCliente(clienteId).catch(() => null),
+      acharContato(contatoId).catch(() => null),
+      ultimoTextoRecebido(contatoId),
+    ])
+    const { titulo, corpo } = textoDoAviso({
+      nome: nomeDoContato,
+      telefone: contato ? telefoneLegivel(contato.waId) : null,
+      conta: cliente?.nome ?? null,
+      canal: canal ?? 'whatsapp',
+      motivo,
+      ultimaMensagem,
+    })
     const carga = JSON.stringify({
       titulo,
       corpo,
