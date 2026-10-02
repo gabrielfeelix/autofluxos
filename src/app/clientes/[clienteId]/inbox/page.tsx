@@ -476,14 +476,15 @@ async function Tela({ cliente, busca }: { cliente: Cliente; busca: Busca }) {
   )
 }
 
+/**
+ * A conversa pedida no endereço; sem pedido, a do topo da lista.
+ *
+ * Abria a primeira que esperava atendente, e para quem olha isso é "abriu a
+ * segunda conversa": a lista já vem na ordem escolhida em Classificar, e a do
+ * topo é a que a pessoa espera ver aberta (02/out/2026).
+ */
 function escolherLead(leads: Lead[], contatoId: string | undefined): Lead | null {
-  if (leads.length === 0) return null
-  return (
-    leads.find((lead) => lead.contatoId === contatoId) ??
-    leads.find((lead) => lead.aguardando !== null) ??
-    leads[0] ??
-    null
-  )
+  return leads.find((lead) => lead.contatoId === contatoId) ?? leads[0] ?? null
 }
 
 function EstadoVazio({
