@@ -299,22 +299,22 @@ function LinhaDoAtendente({
 export function PassarConversas({
   clienteId,
   pessoas,
-  semDono,
-  todas,
+  contagem: inicial,
   podeMexer,
 }: {
   clienteId: string
   pessoas: { id: string; nome: string }[]
-  semDono: number
-  todas: number
+  contagem: { semDono: number; total: number; porDono: Record<string, number> }
   podeMexer: boolean
 }) {
   const [para, setPara] = useState(pessoas[0]?.id ?? '')
   const [escopo, setEscopo] = useState<'sem-dono' | 'todas'>('sem-dono')
   const [aviso, setAviso] = useState<{ tom: 'ok' | 'erro'; texto: string } | null>(null)
-  const [contagem, setContagem] = useState({ semDono, todas })
+  const [contagem, setContagem] = useState(inicial)
   const [passando, passar] = useTransition()
-  const n = escopo === 'sem-dono' ? contagem.semDono : contagem.todas
+  // "Todas" é o que ainda não é da pessoa escolhida, e muda com ela.
+  const naoSaoDela = contagem.total - (contagem.porDono[para] ?? 0)
+  const n = escopo === 'sem-dono' ? contagem.semDono : naoSaoDela
   const nome = pessoas.find((p) => p.id === para)?.nome.split(' ')[0] ?? ''
 
   return (
@@ -343,7 +343,7 @@ export function PassarConversas({
             <Dropdown
               opcoes={[
                 { valor: 'sem-dono', rotulo: `Só as sem dono (${contagem.semDono})` },
-                { valor: 'todas', rotulo: `Todas, inclusive de outras pessoas (${contagem.todas})` },
+                { valor: 'todas', rotulo: `Todas que ainda não são dela (${naoSaoDela})` },
               ]}
               valor={escopo}
               aoMudar={(valor) => setEscopo(valor as 'sem-dono' | 'todas')}
@@ -366,7 +366,13 @@ export function PassarConversas({
                 }))
                 if (!r.ok) return setAviso({ tom: 'erro', texto: r.erro ?? 'não deu para passar' })
                 setAviso({ tom: 'ok', texto: `${r.passaram ?? 0} ${r.passaram === 1 ? 'conversa passou' : 'conversas passaram'} para ${nome}.` })
-                setContagem((atual) => ({ semDono: 0, todas: atual.todas }))
+                // Tudo o que passou agora é da pessoa: o número dela sobe e o resto zera.
+                setContagem((atual) => {
+                  const porDono = escopo === 'todas'
+                    ? Object.fromEntries(Object.keys(atual.porDono).map((id) => [id, id === para ? atual.total : 0]))
+                    : { ...atual.porDono, [para]: (atual.porDono[para] ?? 0) + (r.passaram ?? 0) }
+                  return { ...atual, semDono: 0, porDono }
+                })
               })
             }}
           >

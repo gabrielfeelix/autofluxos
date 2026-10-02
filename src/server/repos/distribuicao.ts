@@ -193,11 +193,19 @@ export async function marcarUltimoLead(clienteId: string, usuarioId: string): Pr
 
 export type EscopoDaPassagem = 'sem-dono' | 'todas'
 
-/** Quantos contatos cada escopo alcança, para o botão dizer o número antes. */
-export async function contarParaPassar(clienteId: string): Promise<{ semDono: number; todas: number }> {
-  const contar = async (soSemDono: boolean) => {
+/**
+ * Quantos contatos cada escopo alcança, para o botão dizer o número antes.
+ * `porDono` deixa a tela tirar do "todas" o que já é da pessoa escolhida:
+ * passar para alguém o que já é dele não passa nada.
+ */
+export async function contarParaPassar(
+  clienteId: string,
+  donos: string[],
+): Promise<{ semDono: number; total: number; porDono: Record<string, number> }> {
+  const contar = async (filtro: { dono?: string | null }) => {
     let consulta = db().from('contacts').select('id', { count: 'exact', head: true }).eq('client_id', clienteId)
-    if (soSemDono) consulta = consulta.is('atribuido_a', null)
+    if (filtro.dono === null) consulta = consulta.is('atribuido_a', null)
+    else if (filtro.dono) consulta = consulta.eq('atribuido_a', filtro.dono)
     const { count, error } = await consulta
     if (error) {
       if (!ehIdInvalido(error)) console.error('[distribuicao] não deu para contar os contatos', error.message)
@@ -205,8 +213,12 @@ export async function contarParaPassar(clienteId: string): Promise<{ semDono: nu
     }
     return count ?? 0
   }
-  const [semDono, todas] = await Promise.all([contar(true), contar(false)])
-  return { semDono, todas }
+  const [semDono, total, ...deCada] = await Promise.all([
+    contar({ dono: null }),
+    contar({}),
+    ...donos.map((dono) => contar({ dono })),
+  ])
+  return { semDono, total, porDono: Object.fromEntries(donos.map((dono, i) => [dono, deCada[i] ?? 0])) }
 }
 
 /**

@@ -36,7 +36,7 @@ export default async function Pagina({ params }: { params: Promise<{ clienteId: 
     ajustesDaConta(clienteId),
     atendentesDaConta(clienteId),
     contarAbertasPorAtendente(clienteId).catch(() => new Map<string, number>()),
-    contarParaPassar(clienteId),
+    contarParaPassar(clienteId, equipe.map((membro) => membro.id)),
   ])
 
   const pessoas: PessoaNaDistribuicao[] = equipe.map((membro) => {
@@ -75,8 +75,7 @@ export default async function Pagina({ params }: { params: Promise<{ clienteId: 
             <PassarConversas
               clienteId={clienteId}
               pessoas={pessoas.map(({ id, nome }) => ({ id, nome }))}
-              semDono={contagem.semDono}
-              todas={contagem.todas}
+              contagem={contagem}
               podeMexer={podeMexer}
             />
           )}
