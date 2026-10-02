@@ -1,8 +1,12 @@
+import { Miolo } from '@/components/design/miolo'
 import { Suspense } from 'react'
 import { notFound } from 'next/navigation'
 import { ClienteShell } from '@/components/design/cliente-shell'
 import { EsqueletoDeAbas, EsqueletoDeLista } from '@/components/design/esqueleto'
 import { ListaDeTemplates } from '@/components/transmissoes/lista-de-templates'
+import { NovoModelo } from '@/components/transmissoes/novo-modelo'
+import { NovaTransmissao } from '@/components/transmissoes/nova-transmissao'
+import { CabecalhoDaTela } from '@/components/design/cabecalho-da-tela'
 import { ListaDeTransmissoes } from '@/components/transmissoes/lista-de-transmissoes'
 import { acharCliente, type Cliente } from '@/server/repos/clientes'
 import { listarTemplates } from '@/server/repos/templates'
@@ -57,13 +61,7 @@ export default async function Pagina({
 
   return (
     <ClienteShell cliente={cliente} ativa="transmissoes">
-      <main className="w-full max-w-[1440px] px-4 md:px-[42px] pt-[26px] pb-[42px]">
-        <h1 className="mb-1 text-[20px] font-bold tracking-[-0.02em] md:text-[25px]">
-          Transmissões
-        </h1>
-        <p className="mb-5 text-[12.5px] leading-5 text-dim">
-          Mandar mensagem para uma lista de contatos, com modelo aprovado pela Meta.
-        </p>
+      <Miolo largura="cheia">
 
         {/*
           Mesma fronteira da tela de Automações: título e abas aparecem no ato,
@@ -73,14 +71,18 @@ export default async function Pagina({
         <Suspense key={aba} fallback={<Espera aba={aba} />}>
           <Conteudo cliente={cliente} aba={aba} filtro={{ q, estado, periodo }} />
         </Suspense>
-      </main>
+      </Miolo>
     </ClienteShell>
   )
 }
 
+/** A frase do topo, a mesma na espera e na tela, para nada pular. */
+const DESCRICAO = 'Mandar mensagem para uma lista de contatos, com modelo aprovado pela Meta.'
+
 function Espera({ aba }: { aba: Aba }) {
   return (
     <>
+      <CabecalhoDaTela titulo="Transmissões" descricao={DESCRICAO} />
       <EsqueletoDeAbas abas={ABAS} ativa={aba} />
       <EsqueletoDeLista
         linhas={4}
@@ -113,6 +115,17 @@ async function Conteudo({
 
   return (
     <>
+      <CabecalhoDaTela
+        titulo="Transmissões"
+        descricao={DESCRICAO}
+        acoes={
+          aba === 'modelos' ? (
+            <NovoModelo clienteId={cliente.id} />
+          ) : (
+            <NovaTransmissao clienteId={cliente.id} templates={templates} enviadasHoje={enviadasHoje} />
+          )
+        }
+      />
       <nav className="mb-5 flex gap-1 border-b border-line" aria-label="Seções">
         {ABAS.map((item) => (
           <a
@@ -138,7 +151,6 @@ async function Conteudo({
           transmissoes={transmissoes}
           progressos={progressos}
           templates={templates}
-          enviadasHoje={enviadasHoje}
           filtro={filtro}
         />
       )}

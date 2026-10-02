@@ -1,5 +1,6 @@
 'use client'
 
+import { CabecalhoDaTela, Contagem, type TopoDaTela } from '@/components/design/cabecalho-da-tela'
 import Link from 'next/link'
 import { useCallback, useState, useTransition } from 'react'
 import { depoisDaTela, idProvisorio } from '@/components/inbox/conversa-local'
@@ -38,7 +39,7 @@ const porNome = (a: LinhaDeSegmento, b: LinhaDeSegmento) => a.nome.localeCompare
  * A contagem é "quantos casam agora", no escopo de quem olha. Quem pode
  * **receber** mensagem é outra pergunta, e quem responde é a prévia do editor.
  */
-export function TabelaDeSegmentos({ clienteId, inicial }: { clienteId: string; inicial: LinhaDeSegmento[] }) {
+export function TabelaDeSegmentos({ clienteId, inicial, topo }: { clienteId: string; inicial: LinhaDeSegmento[]; topo: TopoDaTela }) {
   const [lista, setLista] = useState(inicial)
   const [editando, setEditando] = useState<LinhaDeSegmento | 'novo' | null>(null)
   const [recado, setRecado] = useState<Recado | null>(null)
@@ -133,15 +134,20 @@ export function TabelaDeSegmentos({ clienteId, inicial }: { clienteId: string; i
     })
 
   return (
+    <>
+    <CabecalhoDaTela
+      {...topo}
+      contagem={<Contagem>{lista.length} {lista.length === 1 ? 'segmento' : 'segmentos'}</Contagem>}
+      acoes={
+        <>
+          {topo.acoes}
+          <button type="button" onClick={() => setEditando('novo')} className="app-primary-button h-9 px-4 text-[13px]">
+            + Novo segmento
+          </button>
+        </>
+      }
+    />
     <section className="app-card overflow-hidden">
-      <header className="flex flex-wrap items-center justify-between gap-3 border-b border-line px-5 py-4">
-        <h2 className="text-[14.5px] font-bold">
-          {lista.length} {lista.length === 1 ? 'segmento' : 'segmentos'}
-        </h2>
-        <button type="button" onClick={() => setEditando('novo')} className="app-primary-button h-9 px-4 text-[13px]">
-          + Novo segmento
-        </button>
-      </header>
 
       {lista.length === 0 ? (
         <div className="px-5 py-14 text-center">
@@ -269,5 +275,6 @@ export function TabelaDeSegmentos({ clienteId, inicial }: { clienteId: string; i
         </AvisoFlutuante>
       )}
     </section>
+    </>
   )
 }

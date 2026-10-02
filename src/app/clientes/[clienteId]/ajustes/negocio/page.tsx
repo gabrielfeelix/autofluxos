@@ -1,7 +1,8 @@
+import { CabecalhoDaTela } from '@/components/design/cabecalho-da-tela'
+import { Miolo } from '@/components/design/miolo'
 import { notFound } from 'next/navigation'
 import { FichaDoCliente } from '@/components/cliente/ficha'
 import { AjustesShell } from '@/components/design/ajustes-shell'
-import { Trilha } from '@/components/design/trilha'
 import { acaoRemoverLogo, acaoSalvarCadastro, acaoSalvarLogo } from '@/server/acoes'
 import { acharCliente } from '@/server/repos/clientes'
 import { acessoCompleto } from '@/server/permissoes'
@@ -36,18 +37,16 @@ export default async function Pagina({ params }: { params: Promise<{ clienteId: 
 
   return (
     <AjustesShell cliente={cliente} ativa="negocio">
-      <main className="w-full max-w-[1100px] px-4 pt-[26px] pb-[42px] md:px-[42px]">
-        <Trilha
-          caminho={[
+      <Miolo largura="leitura">
+        <CabecalhoDaTela
+          trilha={[
             { rotulo: 'Configurações', href: `/clientes/${cliente.id}/ajustes` },
             { rotulo: 'Dados da organização' },
           ]}
+          titulo={<>Dados da organização</>}
+          descricao={<>O cadastro e o logo desta organização, e a partir de quanto um cliente de vocês é
+          ouro ou prata.</>}
         />
-        <h1 className="text-[25px] font-bold tracking-[-0.02em]">Dados da organização</h1>
-        <p className="mt-1.5 mb-6 max-w-[650px] text-[13px] leading-6 text-dim">
-          O cadastro e o logo desta organização, e a partir de quanto um cliente de vocês é
-          ouro ou prata.
-        </p>
 
         {/* Observações saem antes de ir para o navegador: são nota interna da
             4YU, e esconder só na tela ainda mandaria o texto no payload. */}
@@ -65,7 +64,7 @@ export default async function Pagina({ params }: { params: Promise<{ clienteId: 
         <div className="mt-5">
           <FaixasDeNivelDaConta clienteId={cliente.id} faixas={faixas ?? FAIXAS_PADRAO} />
         </div>
-      </main>
+      </Miolo>
     </AjustesShell>
   )
 }

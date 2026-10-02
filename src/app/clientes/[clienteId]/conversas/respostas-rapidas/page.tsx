@@ -1,6 +1,6 @@
+import { Miolo } from '@/components/design/miolo'
 import { notFound } from 'next/navigation'
 import { ClienteShell } from '@/components/design/cliente-shell'
-import { Trilha } from '@/components/design/trilha'
 import { GerenciadorDeRespostasRapidas } from '@/components/respostas-rapidas/gerenciador'
 import { acharCliente } from '@/server/repos/clientes'
 import { listarRespostasRapidas } from '@/server/repos/respostas-rapidas'
@@ -17,21 +17,18 @@ export default async function Pagina({ params }: { params: Promise<{ clienteId: 
 
   return (
     <ClienteShell cliente={cliente} ativa="respostas-rapidas">
-      <main className="w-full max-w-[1440px] px-4 md:px-[42px] pt-[26px] pb-[42px]">
-        <Trilha
-          caminho={[
-            { rotulo: 'Conversas' },
-            { rotulo: 'Respostas rápidas' },
-          ]}
+      <Miolo largura="cheia">
+        <GerenciadorDeRespostasRapidas
+          topo={{
+            trilha: [{ rotulo: 'Conversas' }, { rotulo: 'Respostas rápidas' }],
+            titulo: 'Respostas rápidas',
+            descricao:
+              'Frases prontas para quem atende. Elas pertencem a este cliente e aparecem na caixa de resposta do Inbox, não vão para o fluxo nem alteram o que o bot diz sozinho.',
+          }}
+          clienteId={cliente.id}
+          inicial={respostas}
         />
-        <h1 className="text-[20px] font-bold tracking-[-0.02em] md:text-[25px]">Respostas rápidas</h1>
-        <p className="mt-1.5 mb-6 max-w-[650px] text-[13px] leading-6 text-dim">
-          Frases prontas para quem atende. Elas pertencem a este cliente e aparecem na caixa de
-          resposta do Inbox, não vão para o fluxo nem alteram o que o bot diz sozinho.
-        </p>
-
-        <GerenciadorDeRespostasRapidas clienteId={cliente.id} inicial={respostas} />
-      </main>
+      </Miolo>
     </ClienteShell>
   )
 }

@@ -1,6 +1,7 @@
 'use client'
 
 import { useCallback, useState } from 'react'
+import { CabecalhoDaTela, Contagem, type TopoDaTela } from '@/components/design/cabecalho-da-tela'
 import { depoisDaTela, idProvisorio } from '@/components/inbox/conversa-local'
 import { AvisoFlutuante } from '@/components/design/aviso-flutuante'
 import { useConfirmar } from '@/components/design/confirmar'
@@ -21,7 +22,7 @@ type Recado = { texto: string; erro?: boolean }
  * (ele é único na conta, e só o banco sabe) e aí mudam a lista sem refazer a
  * página. Apagar confirma antes.
  */
-export function GerenciadorDeRespostasRapidas({ clienteId, inicial }: { clienteId: string; inicial: RespostaRapida[] }) {
+export function GerenciadorDeRespostasRapidas({ clienteId, inicial, topo }: { clienteId: string; inicial: RespostaRapida[]; topo: TopoDaTela }) {
   const [lista, setLista] = useState(inicial)
   const [editando, setEditando] = useState<RespostaRapida | 'nova' | null>(null)
   /** O que foi digitado e recusado pelo servidor, para o formulário reabrir com isso. */
@@ -81,18 +82,17 @@ export function GerenciadorDeRespostasRapidas({ clienteId, inicial }: { clienteI
     })
 
   return (
-    <section className="app-card overflow-hidden">
-      <header className="flex flex-wrap items-center justify-between gap-3 border-b border-line px-5 py-4">
-        <div className="min-w-0">
-          <h2 className="text-[14.5px] font-bold">
-            {lista.length} {lista.length === 1 ? 'resposta' : 'respostas'}
-          </h2>
-          {lista.length > 0 && <p className="mt-0.5 text-[12px] text-dim">Aparecem na caixa de resposta das Conversas.</p>}
-        </div>
+    <>
+    <CabecalhoDaTela
+      {...topo}
+      contagem={<Contagem>{lista.length} {lista.length === 1 ? 'resposta' : 'respostas'}</Contagem>}
+      acoes={
         <button type="button" onClick={() => setEditando('nova')} className="app-primary-button h-9 px-4 text-[13px]">
           + Nova resposta
         </button>
-      </header>
+      }
+    />
+    <section className="app-card overflow-hidden">
 
       {lista.length === 0 ? (
         <div className="px-5 py-14 text-center">
@@ -166,6 +166,7 @@ export function GerenciadorDeRespostasRapidas({ clienteId, inicial }: { clienteI
         </AvisoFlutuante>
       )}
     </section>
+    </>
   )
 }
 

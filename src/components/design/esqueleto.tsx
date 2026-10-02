@@ -232,3 +232,37 @@ export function EsqueletoDeAbas({
     </div>
   )
 }
+
+/**
+ * Uma tela de Configurações enquanto ela vem: caminho, título, a frase do que
+ * a tela ajusta e dois cartões de formulário.
+ *
+ * Era um bloco de seis linhas de texto solto, que não parecia com nenhuma das
+ * telas daqui: todas têm o caminho "Configurações › …", título, descrição e o
+ * conteúdo em cartão (02/out/2026).
+ */
+export function EsqueletoDeAjuste({ rotulo = 'Carregando a configuração…' }: { rotulo?: string }) {
+  return (
+    <div className="w-full max-w-[1100px] px-4 pt-[26px] pb-[42px] md:px-[42px]">
+      <Aviso>{rotulo}</Aviso>
+      <Esqueleto className="mb-4 h-3 w-40 rounded" />
+      <Esqueleto className="h-[30px] w-64 rounded-lg" />
+      <Esqueleto className="mt-3 h-3.5 w-full max-w-[560px] rounded" />
+      <Esqueleto className="mt-2 mb-6 h-3.5 w-2/3 max-w-[420px] rounded" />
+      {[3, 2].map((campos, cartao) => (
+        <div key={cartao} className="app-card mb-5 p-5">
+          <Esqueleto className="h-4 w-44 rounded" />
+          <Esqueleto className="mt-2 mb-5 h-3 w-72 max-w-full rounded" />
+          <div className="grid gap-4 md:grid-cols-2">
+            {Array.from({ length: campos * 2 }, (_, i) => (
+              <div key={i}>
+                <Esqueleto className="mb-2 h-3 w-24 rounded" />
+                <Esqueleto className="h-10 w-full rounded-[10px]" />
+              </div>
+            ))}
+          </div>
+        </div>
+      ))}
+    </div>
+  )
+}

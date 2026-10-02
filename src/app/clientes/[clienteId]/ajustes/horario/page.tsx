@@ -1,6 +1,7 @@
+import { CabecalhoDaTela } from '@/components/design/cabecalho-da-tela'
+import { Miolo } from '@/components/design/miolo'
 import { notFound } from 'next/navigation'
 import { AjustesShell } from '@/components/design/ajustes-shell'
-import { Trilha } from '@/components/design/trilha'
 import { HorarioDeAtendimentoForm } from '@/components/cliente/horario'
 import { RetomadaDoBotForm } from '@/components/cliente/retomada-do-bot'
 import { acaoSalvarHorario, acaoSalvarRetomada } from '@/server/acoes'
@@ -38,17 +39,15 @@ export default async function Pagina({
 
   return (
     <AjustesShell cliente={cliente} ativa="horario">
-      <main className="w-full max-w-[1100px] px-4 pt-[26px] pb-[42px] md:px-[42px]">
-        <Trilha
-          caminho={[
+      <Miolo largura="leitura">
+        <CabecalhoDaTela
+          trilha={[
             { rotulo: 'Configurações', href: `/clientes/${cliente.id}/ajustes` },
             { rotulo: 'Horário e retomada' },
           ]}
+          titulo={<>Horário e retomada</>}
+          descricao={<>Quando a equipe atende e quando o bot retoma a conversa. Cada uma salva sozinha.</>}
         />
-        <h1 className="text-[20px] font-bold tracking-[-0.02em] md:text-[25px]">Horário e retomada</h1>
-        <p className="mt-1 mb-7 max-w-[620px] text-[13px] leading-6 text-muted">
-          Quando a equipe atende e quando o bot retoma a conversa. Cada uma salva sozinha.
-        </p>
 
         {/* Duas seções do mesmo peso, cada uma com o próprio salvar e o próprio
             "Salvo" (S04). Antes a retomada vinha como apêndice do horário, e
@@ -90,7 +89,7 @@ export default async function Pagina({
             salvar={acaoSalvarRetomada.bind(null, cliente.id)}
           />
         </section>
-      </main>
+      </Miolo>
     </AjustesShell>
   )
 }

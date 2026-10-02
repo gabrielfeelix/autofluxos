@@ -1,4 +1,6 @@
+import { Miolo } from '@/components/design/miolo'
 import Link from 'next/link'
+import { CabecalhoDaTela } from '@/components/design/cabecalho-da-tela'
 import { Suspense } from 'react'
 import { notFound } from 'next/navigation'
 import { rotulosDoEstado, TEXTO_DA_RECUSA } from '@/core/entrada'
@@ -161,17 +163,13 @@ export default async function Pagina({
 
   return (
     <ClienteShell cliente={cliente} ativa="fluxos">
-      <main className="w-full max-w-[1440px] px-4 md:px-[42px] pt-[26px] pb-[42px]">
+      <Miolo largura="cheia">
         {/*
           Fluxos, Gatilhos e Sequências são subitens da barra lateral (plano de
           navegação de 24/set), e a barra de abas que havia aqui saiu: eram duas
           navegações dizendo a mesma coisa. O título é o do subitem, com a seção
           em cima, como em Negócios.
         */}
-        <p className="mb-1 text-[11px] font-semibold tracking-[0.06em] text-dim uppercase">Automações</p>
-        <h1 className="mb-5 text-[20px] font-bold tracking-[-0.02em] md:text-[25px]">
-          {ABAS_ROTULOS.find((item) => item.chave === principal)?.rotulo}
-        </h1>
 
         {/*
           O conteúdo desce depois do título, e não junto com ele.
@@ -187,7 +185,7 @@ export default async function Pagina({
           velho na tela até o novo ficar pronto, que é o congelamento de novo,
           agora por dentro.
         */}
-        <Suspense key={aba} fallback={<Espera />}>
+        <Suspense key={aba} fallback={<Espera titulo={ABAS_ROTULOS.find((item) => item.chave === principal)?.rotulo} />}>
           <ConteudoDaAba
             cliente={cliente}
             aba={aba}
@@ -196,14 +194,19 @@ export default async function Pagina({
             parametros={parametros}
           />
         </Suspense>
-      </main>
+      </Miolo>
     </ClienteShell>
   )
 }
 
 /** O que ocupa a tela entre o clique no subitem e a resposta do banco. */
-function Espera() {
-  return <EsqueletoDeLista linhas={4} rotulo="Carregando as automações…" />
+function Espera({ titulo }: { titulo?: string }) {
+  return (
+    <>
+      <CabecalhoDaTela titulo={titulo} />
+      <EsqueletoDeLista linhas={4} rotulo="Carregando as automações…" />
+    </>
+  )
 }
 
 async function ConteudoDaAba({
@@ -454,42 +457,17 @@ async function ConteudoDaAba({
     ),
   ]
 
-  return (
-    <>
-        {principal === 'gatilhos' && (
-          <div className="mb-5 flex flex-col gap-2.5 md:flex-row md:items-center md:justify-between">
-            <p className="text-[12.5px] text-muted">O que faz uma automação começar.</p>
-            <nav aria-label="Tipos de gatilho" className="flex max-w-full gap-1 self-start overflow-x-auto rounded-[10px] border border-line bg-panel p-1 whitespace-nowrap md:self-auto">
-              {TIPOS.map((item) => (
-                <Link
-                  key={item.chave}
-                  href={`/clientes/${cliente.id}/fluxos?${consultaDaAba(item.chave)}`}
-                  aria-current={item.chave === aba ? 'page' : undefined}
-                  className={`shrink-0 rounded-[7px] px-2.5 py-1.5 text-[12.5px] font-semibold transition sm:px-3 ${
-                    item.chave === aba ? 'bg-primary-weak text-primary' : 'text-dim hover:text-soft'
-                  }`}
-                >
-                  {item.rotulo}
-                  {item.contagem > 0 && (
-                    <span className="ml-1.5 text-[11px] font-normal text-dim">{item.contagem}</span>
-                  )}
-                </Link>
-              ))}
-            </nav>
-          </div>
-        )}
-
-        {aba === 'fluxos' && (
-        <section className="app-card overflow-hidden">
-          <header className="flex flex-col gap-3 border-b border-line px-5 py-4 md:flex-row md:items-center md:justify-between">
-            <div>
-              <h2 className="text-[14.5px] font-bold">Fluxos</h2>
-              <p className="mt-0.5 text-[12px] text-dim">
-                O desenho do atendimento. Só o que está publicado atende clientes
-                reais.
-              </p>
-            </div>
-            <span className="flex flex-wrap items-center gap-2">
+  /*
+   * O topo da tela: título, frase e ações fora do cartão (`CabecalhoDaTela`,
+   * padrão de Contatos). As ações eram o cabeçalho de cada cartão, e o título
+   * do cartão repetia o da página. Função por aba porque cada uma só tem os
+   * dados que a dela pede.
+   */
+  const topo = {
+    fluxos: () => ({
+      descricao: <>O desenho do atendimento. Só o que está publicado atende clientes
+                reais.</>,
+      acoes: <><span className="flex flex-wrap items-center gap-2">
             <ModalFormulario
               botao="+ Nova pasta"
               titulo="Nova pasta"
@@ -524,8 +502,208 @@ async function ConteudoDaAba({
               existentes={fluxos.map(({ id, nome }) => ({ id, nome }))}
               abrirEmModelos={abrirModelos}
             />
-            </span>
-          </header>
+            </span></>,
+    }),
+    palavras: () => ({
+      descricao: <>Uma frase que o cliente escreve e leva direto a uma automação.</>,
+      acoes: <>{fluxos.length > 0 && (
+              <ModalFormulario
+                botao="+ Palavra-chave"
+                titulo="Nova palavra-chave"
+                descricao="Uma frase que leva direto a um fluxo, de qualquer ponto da conversa. “Contém” casa a palavra inteira, não pedaço de palavra."
+                rotuloEnviar="Adicionar"
+                                action={criarGatilhoComCliente}
+              >
+                <label>
+                  <RotuloCampo>Palavra ou frase</RotuloCampo>
+                  <input
+                    name="frase"
+                    required
+                    autoFocus
+                    placeholder="ex.: cancelar"
+                    className="app-field px-[13px] py-[11px] text-[13.5px]"
+                  />
+                </label>
+                <div>
+                  <RotuloCampo>Como comparar</RotuloCampo>
+                  <Dropdown
+                    nome="operador"
+                    rotuloAcessivel="Como comparar a frase"
+                    valorInicial="contem"
+                    opcoes={OPERADORES_DE_GATILHO.map((operador) => ({
+                      valor: operador,
+                      rotulo: ROTULO_DO_OPERADOR[operador],
+                    }))}
+                  />
+                </div>
+                <div>
+                  <RotuloCampo>Fluxo que ela abre</RotuloCampo>
+                  <Dropdown
+                    nome="fluxoId"
+                    rotuloAcessivel="Fluxo que esta palavra abre"
+                    opcoes={fluxos.map((item) => ({
+                      valor: item.id,
+                      rotulo: item.nome,
+                      ...(item.versaoPublicadaId ? {} : { detalhe: 'rascunho' }),
+                    }))}
+                  />
+                </div>
+              </ModalFormulario>
+            )}</>,
+    }),
+    eventos: () => ({
+      descricao: <>Outro sistema avisa que algo aconteceu, e uma automação começa.</>,
+      acoes: <>{fluxos.length > 0 && (
+              <ModalFormulario
+                botao="+ Evento"
+                titulo="Novo evento"
+                descricao="O nome vem do sistema que avisa (vaga.aberta, pedido.pago). Ele precisa ser exatamente igual ao que o outro lado manda, aqui não há “contém”."
+                rotuloEnviar="Criar evento"
+                                action={acaoCriarGatilhoDeEvento.bind(null, cliente.id, {})}
+              >
+                <label>
+                  <RotuloCampo>Nome do evento</RotuloCampo>
+                  <input
+                    name="evento"
+                    required
+                    autoFocus
+                    maxLength={120}
+                    placeholder="ex.: vaga.aberta"
+                    className="app-field px-[13px] py-[11px] font-mono text-[13px]"
+                  />
+                </label>
+                <div>
+                  <RotuloCampo>Fluxo que ele abre</RotuloCampo>
+                  <Dropdown
+                    nome="fluxoId"
+                    rotuloAcessivel="Fluxo que este evento abre"
+                    opcoes={fluxos.map((item) => ({
+                      valor: item.id,
+                      rotulo: item.nome,
+                      ...(item.versaoPublicadaId ? {} : { detalhe: 'rascunho' }),
+                    }))}
+                  />
+                </div>
+              </ModalFormulario>
+            )}</>,
+    }),
+    campanhas: () => ({
+      descricao: <>Por frase ou link de anúncio. Para mandar mensagem a uma lista, use{' '}
+              <Link href={`/clientes/${cliente.id}/transmissoes`} className="font-semibold text-primary hover:underline">
+                Transmissões
+              </Link>
+              .</>,
+      acoes: <>{/*
+              Sem fluxo, o botão dava lugar a NADA, e a tela ficava sem saída:
+              o cabeçalho explicando o que é campanha, a lista vazia dizendo que
+              não há nenhuma, e nenhum caminho para criar a primeira. Quem não
+              escreveu este código não tem como adivinhar que o que falta é um
+              fluxo, porque a palavra "fluxo" não aparece em lugar nenhum da
+              tela.
+
+              Campanha precisa de um fluxo porque ela É "quem chegar por esta
+              frase entra por aqui". Sem destino, não há o que gravar. Então em
+              vez de esconder, a tela diz o que falta e leva até lá.
+            */}
+            {fluxos.length === 0 ? (
+              <p className="max-w-[24ch] shrink-0 text-right text-[11.5px] leading-5 text-dim">
+                Crie um{' '}
+                <Link
+                  href={`/clientes/${cliente.id}/fluxos`}
+                  className="font-semibold text-ink underline underline-offset-2"
+                >
+                  fluxo
+                </Link>{' '}
+                primeiro, a campanha precisa de um lugar para levar quem chegar.
+              </p>
+            ) : (
+              <ModalFormulario
+                botao="+ Campanha"
+                titulo="Nova campanha"
+                descricao="Cole no anúncio exatamente a frase que você escrever aqui. Ela casa com a mensagem inteira."
+                rotuloEnviar="Criar campanha"
+                                action={criarCampanhaComCliente}
+              >
+                <label>
+                  <RotuloCampo>Nome da campanha</RotuloCampo>
+                  <input
+                    name="nome"
+                    required
+                    autoFocus
+                    placeholder="ex.: Anúncio pilates agosto"
+                    className="app-field px-[13px] py-[11px] text-[13.5px]"
+                  />
+                </label>
+                <label>
+                  <RotuloCampo>Frase do anúncio</RotuloCampo>
+                  <input
+                    name="frase"
+                    required
+                    placeholder="ex.: Quero saber mais sobre o plano trimestral"
+                    className="app-field px-[13px] py-[11px] text-[13.5px]"
+                  />
+                </label>
+                <div>
+                  <RotuloCampo>Fluxo que ela abre</RotuloCampo>
+                  <Dropdown
+                    nome="fluxoId"
+                    rotuloAcessivel="Fluxo que a campanha abre"
+                    opcoes={fluxos.map((item) => ({
+                      valor: item.id,
+                      rotulo: item.nome,
+                      ...(item.versaoPublicadaId ? {} : { detalhe: 'rascunho' }),
+                    }))}
+                  />
+                </div>
+              </ModalFormulario>
+            )}</>,
+    }),
+    sequencias: () => ({
+      descricao: <>Acompanhamento automático depois de um atendimento. Quem responde, sai. Acima de 24h, o passo precisa de um modelo aprovado.</>,
+      acoes: <><ModalFormulario
+              botao="+ Sequência"
+              titulo="Nova sequência"
+              descricao="Ela nasce sem passo, e sem passo não inscreve ninguém, o passo você acrescenta na linha dela, depois de criada."
+              rotuloEnviar="Criar sequência"
+                            action={criarSequenciaComCliente}
+            >
+              <CamposDaSequencia
+                etiquetas={etiquetas.map((e) => ({ id: e.id, nome: e.nome }))}
+                etapas={etapasDosQuadros}
+              />
+            </ModalFormulario></>,
+    }),
+  }[aba]()
+  const tituloDaTela = ABAS_ROTULOS.find((item) => item.chave === principal)?.rotulo
+
+  return (
+    <>
+        <CabecalhoDaTela titulo={tituloDaTela} descricao={topo.descricao} acoes={topo.acoes} />
+        {principal === 'gatilhos' && (
+          <div className="mb-5 flex flex-col gap-2.5 md:flex-row md:items-center md:justify-between">
+            <nav aria-label="Tipos de gatilho" className="flex max-w-full gap-1 self-start overflow-x-auto rounded-[10px] border border-line bg-panel p-1 whitespace-nowrap md:self-auto">
+              {TIPOS.map((item) => (
+                <Link
+                  key={item.chave}
+                  href={`/clientes/${cliente.id}/fluxos?${consultaDaAba(item.chave)}`}
+                  aria-current={item.chave === aba ? 'page' : undefined}
+                  className={`shrink-0 rounded-[7px] px-2.5 py-1.5 text-[12.5px] font-semibold transition sm:px-3 ${
+                    item.chave === aba ? 'bg-primary-weak text-primary' : 'text-dim hover:text-soft'
+                  }`}
+                >
+                  {item.rotulo}
+                  {item.contagem > 0 && (
+                    <span className="ml-1.5 text-[11px] font-normal text-dim">{item.contagem}</span>
+                  )}
+                </Link>
+              ))}
+            </nav>
+          </div>
+        )}
+
+        {aba === 'fluxos' && (
+        <section className="app-card overflow-hidden">
+          
 
           {fluxos.length > 0 && (
             <div className="border-b border-line px-5 py-3">
@@ -742,59 +920,7 @@ async function ConteudoDaAba({
 
         {aba === 'palavras' && (
         <section className="app-card overflow-hidden">
-          <header className="flex items-start justify-between gap-4 border-b border-line px-5 py-4">
-            <div className="min-w-0">
-            <h2 className="text-[14.5px] font-bold">Palavras-chave</h2>
-            <p className="mt-0.5 text-[12px] leading-5 text-dim">
-              Uma frase que o cliente escreve e leva direto a uma automação.
-            </p>
-            </div>
-            {fluxos.length > 0 && (
-              <ModalFormulario
-                botao="+ Palavra-chave"
-                titulo="Nova palavra-chave"
-                descricao="Uma frase que leva direto a um fluxo, de qualquer ponto da conversa. “Contém” casa a palavra inteira, não pedaço de palavra."
-                rotuloEnviar="Adicionar"
-                variante="secundario"
-                action={criarGatilhoComCliente}
-              >
-                <label>
-                  <RotuloCampo>Palavra ou frase</RotuloCampo>
-                  <input
-                    name="frase"
-                    required
-                    autoFocus
-                    placeholder="ex.: cancelar"
-                    className="app-field px-[13px] py-[11px] text-[13.5px]"
-                  />
-                </label>
-                <div>
-                  <RotuloCampo>Como comparar</RotuloCampo>
-                  <Dropdown
-                    nome="operador"
-                    rotuloAcessivel="Como comparar a frase"
-                    valorInicial="contem"
-                    opcoes={OPERADORES_DE_GATILHO.map((operador) => ({
-                      valor: operador,
-                      rotulo: ROTULO_DO_OPERADOR[operador],
-                    }))}
-                  />
-                </div>
-                <div>
-                  <RotuloCampo>Fluxo que ela abre</RotuloCampo>
-                  <Dropdown
-                    nome="fluxoId"
-                    rotuloAcessivel="Fluxo que esta palavra abre"
-                    opcoes={fluxos.map((item) => ({
-                      valor: item.id,
-                      rotulo: item.nome,
-                      ...(item.versaoPublicadaId ? {} : { detalhe: 'rascunho' }),
-                    }))}
-                  />
-                </div>
-              </ModalFormulario>
-            )}
-          </header>
+          
           {gatilhos.length > 0 && (
             <BuscaDaAba
               base={`/clientes/${cliente.id}/fluxos`}
@@ -865,49 +991,7 @@ async function ConteudoDaAba({
 
         {aba === 'eventos' && (
         <section className="app-card overflow-hidden">
-          <header className="flex flex-wrap items-start justify-between gap-4 border-b border-line px-5 py-4">
-            <span>
-              <h2 className="text-[14px] font-bold tracking-[-0.01em]">Eventos de outro sistema</h2>
-              <p className="mt-0.5 text-[11.5px] leading-5 text-dim">
-                Outro sistema avisa que algo aconteceu, e uma automação começa.
-              </p>
-            </span>
-
-            {fluxos.length > 0 && (
-              <ModalFormulario
-                botao="+ Evento"
-                titulo="Novo evento"
-                descricao="O nome vem do sistema que avisa (vaga.aberta, pedido.pago). Ele precisa ser exatamente igual ao que o outro lado manda, aqui não há “contém”."
-                rotuloEnviar="Criar evento"
-                variante="secundario"
-                action={acaoCriarGatilhoDeEvento.bind(null, cliente.id, {})}
-              >
-                <label>
-                  <RotuloCampo>Nome do evento</RotuloCampo>
-                  <input
-                    name="evento"
-                    required
-                    autoFocus
-                    maxLength={120}
-                    placeholder="ex.: vaga.aberta"
-                    className="app-field px-[13px] py-[11px] font-mono text-[13px]"
-                  />
-                </label>
-                <div>
-                  <RotuloCampo>Fluxo que ele abre</RotuloCampo>
-                  <Dropdown
-                    nome="fluxoId"
-                    rotuloAcessivel="Fluxo que este evento abre"
-                    opcoes={fluxos.map((item) => ({
-                      valor: item.id,
-                      rotulo: item.nome,
-                      ...(item.versaoPublicadaId ? {} : { detalhe: 'rascunho' }),
-                    }))}
-                  />
-                </div>
-              </ModalFormulario>
-            )}
-          </header>
+          
           {gatilhosDeEvento.length > 0 && (
             <BuscaDaAba
               base={`/clientes/${cliente.id}/fluxos`}
@@ -979,83 +1063,7 @@ async function ConteudoDaAba({
 
         {aba === 'campanhas' && (
         <section className="app-card overflow-hidden">
-          <header className="flex items-start justify-between gap-4 border-b border-line px-5 py-4">
-            <div className="min-w-0">
-            <h2 className="text-[14.5px] font-bold">Campanhas</h2>
-            <p className="mt-0.5 text-[12px] leading-5 text-dim">
-              Por frase ou link de anúncio. Para mandar mensagem a uma lista, use{' '}
-              <Link href={`/clientes/${cliente.id}/transmissoes`} className="font-semibold text-primary hover:underline">
-                Transmissões
-              </Link>
-              .
-            </p>
-            </div>
-            {/*
-              Sem fluxo, o botão dava lugar a NADA, e a tela ficava sem saída:
-              o cabeçalho explicando o que é campanha, a lista vazia dizendo que
-              não há nenhuma, e nenhum caminho para criar a primeira. Quem não
-              escreveu este código não tem como adivinhar que o que falta é um
-              fluxo, porque a palavra "fluxo" não aparece em lugar nenhum da
-              tela.
-
-              Campanha precisa de um fluxo porque ela É "quem chegar por esta
-              frase entra por aqui". Sem destino, não há o que gravar. Então em
-              vez de esconder, a tela diz o que falta e leva até lá.
-            */}
-            {fluxos.length === 0 ? (
-              <p className="max-w-[24ch] shrink-0 text-right text-[11.5px] leading-5 text-dim">
-                Crie um{' '}
-                <Link
-                  href={`/clientes/${cliente.id}/fluxos`}
-                  className="font-semibold text-ink underline underline-offset-2"
-                >
-                  fluxo
-                </Link>{' '}
-                primeiro, a campanha precisa de um lugar para levar quem chegar.
-              </p>
-            ) : (
-              <ModalFormulario
-                botao="+ Campanha"
-                titulo="Nova campanha"
-                descricao="Cole no anúncio exatamente a frase que você escrever aqui. Ela casa com a mensagem inteira."
-                rotuloEnviar="Criar campanha"
-                variante="secundario"
-                action={criarCampanhaComCliente}
-              >
-                <label>
-                  <RotuloCampo>Nome da campanha</RotuloCampo>
-                  <input
-                    name="nome"
-                    required
-                    autoFocus
-                    placeholder="ex.: Anúncio pilates agosto"
-                    className="app-field px-[13px] py-[11px] text-[13.5px]"
-                  />
-                </label>
-                <label>
-                  <RotuloCampo>Frase do anúncio</RotuloCampo>
-                  <input
-                    name="frase"
-                    required
-                    placeholder="ex.: Quero saber mais sobre o plano trimestral"
-                    className="app-field px-[13px] py-[11px] text-[13.5px]"
-                  />
-                </label>
-                <div>
-                  <RotuloCampo>Fluxo que ela abre</RotuloCampo>
-                  <Dropdown
-                    nome="fluxoId"
-                    rotuloAcessivel="Fluxo que a campanha abre"
-                    opcoes={fluxos.map((item) => ({
-                      valor: item.id,
-                      rotulo: item.nome,
-                      ...(item.versaoPublicadaId ? {} : { detalhe: 'rascunho' }),
-                    }))}
-                  />
-                </div>
-              </ModalFormulario>
-            )}
-          </header>
+          
           {campanhas.length > 0 && (
             <BuscaDaAba
               base={`/clientes/${cliente.id}/fluxos`}
@@ -1127,30 +1135,7 @@ async function ConteudoDaAba({
 
         {aba === 'sequencias' && (
         <section className="app-card overflow-hidden">
-          <header className="flex items-start justify-between gap-4 border-b border-line px-5 py-4">
-            <div className="min-w-0 max-w-[86ch]">
-            <h2 className="text-[14.5px] font-bold">Sequências</h2>
-            <p className="mt-0.5 text-[12px] leading-5 text-dim">
-              Acompanhamento automático depois de um atendimento. Quem responde, sai.
-            </p>
-            <p className="mt-2 text-[11.5px] leading-5 text-dim">
-              Acima de 24h, o passo precisa de um modelo aprovado.
-            </p>
-            </div>
-            <ModalFormulario
-              botao="+ Sequência"
-              titulo="Nova sequência"
-              descricao="Ela nasce sem passo, e sem passo não inscreve ninguém, o passo você acrescenta na linha dela, depois de criada."
-              rotuloEnviar="Criar sequência"
-              variante="secundario"
-              action={criarSequenciaComCliente}
-            >
-              <CamposDaSequencia
-                etiquetas={etiquetas.map((e) => ({ id: e.id, nome: e.nome }))}
-                etapas={etapasDosQuadros}
-              />
-            </ModalFormulario>
-          </header>
+          
           {sequencias.length > 0 && (
             <BuscaDaAba
               base={`/clientes/${cliente.id}/fluxos`}

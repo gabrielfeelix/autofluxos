@@ -1,3 +1,4 @@
+import { Miolo } from '@/components/design/miolo'
 import Link from 'next/link'
 import { hrefDaFicha } from '@/core/volta-da-ficha'
 import { notFound } from 'next/navigation'
@@ -111,7 +112,7 @@ async function Detalhe({
   ]
 
   return (
-    <main className="w-full max-w-[1100px] px-4 pt-[26px] pb-[42px] md:px-[42px]">
+    <Miolo largura="leitura">
       <Link
         href={`/clientes/${clienteId}/transmissoes?aba=transmissoes`}
         className="text-[12.5px] font-semibold text-dim hover:text-ink"
@@ -214,6 +215,6 @@ async function Detalhe({
           />
         </div>
       </section>
-    </main>
+    </Miolo>
   )
 }

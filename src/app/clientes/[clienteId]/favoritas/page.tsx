@@ -1,3 +1,5 @@
+import { CabecalhoDaTela, Contagem } from '@/components/design/cabecalho-da-tela'
+import { Miolo } from '@/components/design/miolo'
 import Link from 'next/link'
 import { IlustracaoGuardadas } from '@/components/design/ilustracoes'
 import { notFound } from 'next/navigation'
@@ -60,29 +62,26 @@ export default async function Pagina({
         rápidas: era uma coluna de 900px com uma caixa tracejada, e a tela
         parecia de outro produto ao lado das vizinhas (02/out/2026).
       */}
-      <main className="w-full max-w-[1440px] px-4 pt-[26px] pb-[42px] md:px-[42px]">
-        <h1 className="mb-1 text-[20px] font-bold tracking-[-0.02em] md:text-[25px]">
-          Mensagens guardadas
-        </h1>
+      <Miolo largura="cheia">
         {/* Uma linha, como o dono pediu para todo cabeçalho desta casa. */}
-        <p className="mb-6 text-[13px] leading-6 text-dim">
-          O que você marcou com a estrela. Só você vê esta lista.
-        </p>
-
-        <section className="app-card overflow-hidden">
-          <header className="flex items-start justify-between gap-4 border-b border-line px-5 py-4">
-            <div className="min-w-0">
-              <h2 className="text-[14.5px] font-bold">Guardadas por você</h2>
-              <p className="mt-0.5 text-[12px] leading-5 text-dim">
-                {favoritas.length === 0
-                  ? 'A estrela fica embaixo de cada mensagem, no Inbox.'
-                  : `${favoritas.length} ${favoritas.length === 1 ? 'mensagem' : 'mensagens'}. Clique para abrir a conversa.`}
-              </p>
-            </div>
-            <Link href={`/clientes/${clienteId}/inbox`} className="app-primary-button inline-flex h-9 shrink-0 items-center px-4 text-[13px]">
+        <CabecalhoDaTela
+          titulo="Mensagens guardadas"
+          contagem={
+            favoritas.length > 0 && (
+              <Contagem>
+                {favoritas.length} {favoritas.length === 1 ? 'mensagem' : 'mensagens'}
+              </Contagem>
+            )
+          }
+          descricao="O que você marcou com a estrela. Só você vê esta lista."
+          acoes={
+            <Link href={`/clientes/${clienteId}/inbox`} className="quadro-tool">
               Ir para o Inbox
             </Link>
-          </header>
+          }
+        />
+
+        <section className="app-card overflow-hidden">
 
           {favoritas.length === 0 ? (
             /*
@@ -133,7 +132,7 @@ export default async function Pagina({
             </ul>
           )}
         </section>
-      </main>
+      </Miolo>
     </ClienteShell>
   )
 }

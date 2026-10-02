@@ -1,5 +1,6 @@
 'use client'
 
+import { CabecalhoDaTela, Contagem, type TopoDaTela } from '@/components/design/cabecalho-da-tela'
 import { useState, useTransition } from 'react'
 import { EditorDeAcesso, type MembroParaAcesso } from '@/components/conta/editor-de-acesso'
 import { Avatar } from '@/components/design/avatar'
@@ -49,7 +50,14 @@ export function TabelaDePessoas({
   remover,
   darAcesso,
   acesso,
+  topo,
 }: {
+  /**
+   * O topo da tela, quando a tabela é a tela (Configurações › Pessoas). Com
+   * ele, "+ Dar acesso" sobe para a linha do título, como em toda tela da
+   * conta, e a contagem vira a pílula ao lado do título.
+   */
+  topo?: TopoDaTela
   remover?: (clienteId: string, usuarioId: string, destino: string | null) => Promise<{ ok: boolean; erro?: string }>
   /** Sem ela, a tabela não mostra o botão (quem pede não dá acesso). */
   darAcesso?: (formData: FormData) => Promise<{ ok?: boolean; erro?: string; pessoa?: { id: string; nome: string; email: string; funcao: string } }>
@@ -138,7 +146,25 @@ export function TabelaDePessoas({
       </button>
     ) : null
 
-  const cabecalho = (
+  const botaoDeDarAcesso = darAcesso && (
+    <button type="button" onClick={() => setDando(true)} className="app-primary-button px-4 py-2 text-[12.5px]">
+      + Dar acesso
+    </button>
+  )
+  const cabecalho = topo ? (
+    <CabecalhoDaTela
+      trilha={topo.trilha}
+      titulo={topo.titulo}
+      contagem={<Contagem>{pessoas.length} {pessoas.length === 1 ? 'pessoa' : 'pessoas'}</Contagem>}
+      descricao={topo.descricao}
+      acoes={
+        <>
+          {topo.acoes}
+          {botaoDeDarAcesso}
+        </>
+      }
+    />
+  ) : (
     <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
       <p className="text-[12px] text-dim tabular-nums">
         {pessoas.length} {pessoas.length === 1 ? 'pessoa' : 'pessoas'}

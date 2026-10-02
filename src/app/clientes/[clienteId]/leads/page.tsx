@@ -278,35 +278,6 @@ function CabecalhoDaTela({ titulo, filtro, chave, totalDaConta }: { titulo: stri
         >
           Importar
         </Link>
-        <PopoverDoQuadro
-          rotulo="Mais ações de contatos"
-          largura={260}
-          className="quadro-icon-button"
-          gatilho={<IconeDoQuadro tipo="menu" />}
-        >
-          <Link href={`/clientes/${clienteId}/leads/segmentos`} data-fechar-popover className="quadro-menu-item">
-            <span className="flex-1">
-              Segmentos
-              <span className="block text-[11px] font-normal text-dim">Grupos salvos por regra, com prévia de quem entra</span>
-            </span>
-          </Link>
-          {totalDaConta > 0 && (
-            <a
-              href={enderecoDoCsv(clienteId, filtro.etiqueta, filtro.marca, filtro.termo, filtro.nivel, filtro.segmento)}
-              data-fechar-popover
-              className="quadro-menu-item"
-            >
-              <span className="flex-1">
-                Baixar CSV
-                <span className="block text-[11px] font-normal text-dim">
-                  <Suspense fallback="Baixa os contatos do filtro atual">
-                    <AlcanceDoCsv filtro={filtro} />
-                  </Suspense>
-                </span>
-              </span>
-            </a>
-          )}
-        </PopoverDoQuadro>
         <ModalFormulario
           botao="+ Novo contato"
           titulo="Novo contato"
@@ -332,6 +303,45 @@ function CabecalhoDaTela({ titulo, filtro, chave, totalDaConta }: { titulo: stri
             />
           </label>
         </ModalFormulario>
+        {/*
+          O menu vai no fim, com nome: ícone solto entre "Importar" e "+ Novo
+          contato" espremia a ação principal entre duas secundárias e não dizia
+          o que guardava (02/out/2026).
+        */}
+        <PopoverDoQuadro
+          rotulo="Mais ações de contatos"
+          largura={260}
+          className="quadro-tool"
+          gatilho={
+            <>
+              <IconeDoQuadro tipo="menu" />
+              Ações
+            </>
+          }
+        >
+          <Link href={`/clientes/${clienteId}/leads/segmentos`} data-fechar-popover className="quadro-menu-item">
+            <span className="flex-1">
+              Segmentos
+              <span className="block text-[11px] font-normal text-dim">Grupos salvos por regra, com prévia de quem entra</span>
+            </span>
+          </Link>
+          {totalDaConta > 0 && (
+            <a
+              href={enderecoDoCsv(clienteId, filtro.etiqueta, filtro.marca, filtro.termo, filtro.nivel, filtro.segmento)}
+              data-fechar-popover
+              className="quadro-menu-item"
+            >
+              <span className="flex-1">
+                Baixar CSV
+                <span className="block text-[11px] font-normal text-dim">
+                  <Suspense fallback="Baixa os contatos do filtro atual">
+                    <AlcanceDoCsv filtro={filtro} />
+                  </Suspense>
+                </span>
+              </span>
+            </a>
+          )}
+        </PopoverDoQuadro>
       </div>
     </div>
   )

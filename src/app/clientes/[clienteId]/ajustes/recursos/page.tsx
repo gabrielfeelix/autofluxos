@@ -1,10 +1,11 @@
+import { CabecalhoDaTela } from '@/components/design/cabecalho-da-tela'
+import { Miolo } from '@/components/design/miolo'
 import Link from 'next/link'
 import { capacidadeNaPagina } from '@/server/permissoes'
 import { SemAcesso } from '@/components/design/sem-acesso'
 import { onboardingDaConta } from '@/server/repos/onboarding'
 import { notFound } from 'next/navigation'
 import { AjustesShell } from '@/components/design/ajustes-shell'
-import { Trilha } from '@/components/design/trilha'
 import { EscolherObjetivo } from '@/components/recursos/escolher-objetivo'
 import { EscolherTipoDeNegocio } from '@/components/recursos/escolher-tipo-de-negocio'
 import { InterruptorDaLoja } from '@/components/recursos/interruptor-da-loja'
@@ -62,19 +63,17 @@ export default async function Pagina({ params }: { params: Promise<{ clienteId: 
 
   return (
     <AjustesShell cliente={cliente} ativa="recursos">
-      <main className="w-full max-w-[1100px] px-4 pt-[26px] pb-[42px] md:px-[42px]">
-        <Trilha
-          caminho={[
+      <Miolo largura="leitura">
+        <CabecalhoDaTela
+          trilha={[
             { rotulo: 'Configurações', href: `/clientes/${cliente.id}/ajustes` },
             { rotulo: 'Objetivo e recursos' },
           ]}
-        />
-        <h1 className="text-[25px] font-bold tracking-[-0.02em]">Objetivo e recursos</h1>
-        <p className="mt-1.5 mb-6 max-w-[650px] text-[13px] leading-6 text-dim">
-          O que esta conta usa do produto. Ninguém precisa de tudo: quem só quer
+          titulo={<>Objetivo e recursos</>}
+          descricao={<>O que esta conta usa do produto. Ninguém precisa de tudo: quem só quer
           atender mais rápido não precisa montar funil nem desenhar chatbot, e o
-          produto não deveria ficar cobrando isso para sempre.
-        </p>
+          produto não deveria ficar cobrando isso para sempre.</>}
+        />
 
         <section className="mb-6 rounded-xl border border-primary/20 bg-primary-weak p-5">
           <h2 className="text-base font-bold">Um começo pensado para sua organização</h2>
@@ -138,7 +137,7 @@ export default async function Pagina({ params }: { params: Promise<{ clienteId: 
             <InterruptorDaLoja clienteId={cliente.id} ativo={lojaNoMenu} lojaConectada={Boolean(loja?.ativa)} />
           </div>
         </section>
-      </main>
+      </Miolo>
     </AjustesShell>
   )
 }

@@ -1,6 +1,7 @@
+import { CabecalhoDaTela } from '@/components/design/cabecalho-da-tela'
+import { Miolo } from '@/components/design/miolo'
 import { notFound } from "next/navigation";
 import { AjustesShell } from "@/components/design/ajustes-shell";
-import { Trilha } from "@/components/design/trilha";
 import {
   ModalFormulario,
   RotuloCampo,
@@ -83,7 +84,7 @@ export default async function Pagina({
 
   return (
     <AjustesShell cliente={cliente} ativa="anuncios">
-      <main className="w-full max-w-[1280px] px-4 md:px-[42px] pt-[26px] pb-[42px]">
+      <Miolo largura="larga">
         {busca.ok === "1" && (
           <p className="mb-4 rounded-[10px] border border-primary/30 bg-primary/[0.08] px-4 py-3 text-[12px] text-soft">
             Conta de anúncios ligada. Agora ligue a página de onde vêm os leads,
@@ -99,21 +100,19 @@ export default async function Pagina({
         )}
 
         <div className="mb-[30px]">
-          <Trilha
-            caminho={[
+          <CabecalhoDaTela
+          trilha={[
               {
                 rotulo: "Configurações",
                 href: `/clientes/${cliente.id}/ajustes`,
               },
               { rotulo: "Anúncios" },
             ]}
-          />
-          <h1 className="text-[25px] font-bold tracking-[-0.02em]">Anúncios</h1>
-          <p className="mt-1.5 max-w-[620px] text-[13px] leading-6 text-dim">
-            Quem preenche o formulário de um anúncio no Facebook ou no Instagram
+          titulo={<>Anúncios</>}
+          descricao={<>Quem preenche o formulário de um anúncio no Facebook ou no Instagram
             entra aqui como lead, com o telefone e a campanha de onde veio, sem
-            planilha e sem intermediário no meio.
-          </p>
+            planilha e sem intermediário no meio.</>}
+        />
         </div>
 
         <div className="mb-4">
@@ -286,7 +285,7 @@ export default async function Pagina({
             ))}
           </div>
         )}
-      </main>
+      </Miolo>
     </AjustesShell>
   );
 }

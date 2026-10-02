@@ -4,7 +4,6 @@ import { useRouter } from 'next/navigation'
 import type { StatusDoTemplate } from '@/core/templates'
 import { acaoApagarTemplate } from '@/server/acoes-transmissoes'
 import type { Template } from '@/server/repos/templates'
-import { NovoModelo } from './novo-modelo'
 import { useConfirmar } from '@/components/design/confirmar'
 import { IlustracaoModelos } from '@/components/design/ilustracoes'
 
@@ -53,15 +52,7 @@ export function ListaDeTemplates({
 }) {
   return (
     <section className="app-card overflow-hidden">
-      <header className="flex items-start justify-between gap-4 border-b border-line px-5 py-4">
-        <div>
-          <h2 className="text-[14.5px] font-bold">Modelos aprovados</h2>
-          <p className="mt-0.5 text-[12px] leading-5 text-dim">
-            A Meta revisa cada modelo antes de liberar o uso.
-          </p>
-        </div>
-        <NovoModelo clienteId={clienteId} />
-      </header>
+      {/* Título e "Novo modelo" moram no topo da tela (`CabecalhoDaTela`). */}
 
       {templates.length === 0 ? (
         <div className="px-5 py-14 text-center">

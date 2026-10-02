@@ -1,3 +1,4 @@
+import { Miolo } from '@/components/design/miolo'
 import { MioloCarregando } from '@/components/design/esqueleto-do-cliente'
 import { Esqueleto } from '@/components/design/esqueleto'
 
@@ -9,7 +10,7 @@ import { Esqueleto } from '@/components/design/esqueleto'
 export default function Carregando() {
   return (
     <MioloCarregando>
-      <main className="w-full max-w-[1440px] px-4 pt-[26px] pb-[42px] md:px-[42px]">
+      <Miolo largura="cheia">
         <span role="status" className="sr-only">
           Carregando as respostas rápidas…
         </span>
@@ -42,7 +43,7 @@ export default function Carregando() {
             </div>
           ))}
         </section>
-      </main>
+      </Miolo>
     </MioloCarregando>
   )
 }

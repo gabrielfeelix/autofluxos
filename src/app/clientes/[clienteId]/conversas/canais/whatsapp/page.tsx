@@ -1,3 +1,4 @@
+import { Miolo } from '@/components/design/miolo'
 import { VoltaDoReparo } from '@/components/conexoes/volta-do-reparo'
 import { voltaInterna } from '@/core/volta-da-ficha'
 import Link from 'next/link'
@@ -165,7 +166,7 @@ export default async function Pagina({
 
   return (
     <ClienteShell cliente={cliente} ativa="canais">
-      <main className="w-full max-w-[1440px] px-4 md:px-[42px] pt-[26px] pb-[42px]">
+      <Miolo largura="cheia">
         <Trilha
           caminho={[
             { rotulo: 'Canais', href: `/clientes/${cliente.id}/conversas/canais` },
@@ -753,7 +754,7 @@ export default async function Pagina({
         </section>
         )}
 
-      </main>
+      </Miolo>
     </ClienteShell>
   )
 }

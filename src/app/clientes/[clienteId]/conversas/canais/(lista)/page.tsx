@@ -1,3 +1,4 @@
+import { Miolo } from '@/components/design/miolo'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import type { ReactNode } from 'react'
@@ -35,7 +36,7 @@ export default async function Pagina({ params }: { params: Promise<{ clienteId: 
 
   return (
     <ClienteShell cliente={cliente} ativa="canais">
-      <main className="w-full max-w-[1440px] px-4 pt-[26px] pb-[42px] md:px-[42px]">
+      <Miolo largura="cheia">
         <h1 className="text-[20px] font-bold tracking-[-0.02em] md:text-[25px]">Canais</h1>
         <p className="mt-1.5 mb-6 max-w-[650px] text-[13px] leading-6 text-dim">
           Por onde as conversas chegam. Cada cartão diz se o canal está conectado, quando chegou a última mensagem e o
@@ -46,7 +47,7 @@ export default async function Pagina({ params }: { params: Promise<{ clienteId: 
             <CartaoDoCanal key={item.chave} clienteId={cliente.id} item={item} />
           ))}
         </div>
-      </main>
+      </Miolo>
     </ClienteShell>
   )
 }

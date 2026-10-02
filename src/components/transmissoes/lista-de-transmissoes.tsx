@@ -13,7 +13,6 @@ import {
   proximaAcaoDaTransmissao,
   type Periodo,
 } from '@/core/transmissoes-na-tela'
-import { NovaTransmissao } from '@/components/transmissoes/nova-transmissao'
 import { acaoCancelarTransmissao } from '@/server/acoes-transmissoes'
 import type { Template } from '@/server/repos/templates'
 import type { Progresso, Transmissao } from '@/server/repos/transmissoes'
@@ -44,14 +43,12 @@ export function ListaDeTransmissoes({
   transmissoes,
   progressos,
   templates,
-  enviadasHoje,
   filtro,
 }: {
   clienteId: string
   transmissoes: Transmissao[]
   progressos: Record<string, Progresso>
   templates: Template[]
-  enviadasHoje: number
   filtro: { q?: string; estado?: string; periodo?: string }
 }) {
   const aprovados = templates.filter((t) => t.status === 'aprovado')
@@ -62,15 +59,7 @@ export function ListaDeTransmissoes({
 
   return (
     <section className="app-card overflow-hidden">
-      <header className="flex flex-wrap items-center justify-between gap-3 border-b border-line px-5 py-4">
-        <div className="min-w-0">
-          <h2 className="text-[14.5px] font-bold">Transmissões</h2>
-          <p className="mt-0.5 text-[12px] leading-5 text-dim">
-            Um modelo aprovado, um público e um horário.
-          </p>
-        </div>
-        <NovaTransmissao clienteId={clienteId} templates={templates} enviadasHoje={enviadasHoje} />
-      </header>
+      {/* Título e "Nova transmissão" moram no topo da tela (`CabecalhoDaTela`). */}
 
       {aprovados.length === 0 && (
         /*

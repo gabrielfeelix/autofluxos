@@ -1,8 +1,8 @@
+import { Miolo } from '@/components/design/miolo'
 import { notFound } from 'next/navigation'
 import { TabelaDeSegmentos } from '@/components/contatos/tabela-de-segmentos'
 import { ClienteShell } from '@/components/design/cliente-shell'
 import { SemAcesso } from '@/components/design/sem-acesso'
-import { Trilha } from '@/components/design/trilha'
 import { consultarContatos } from '@/server/consultas/contatos'
 import { capacidadeNaPagina, filtroDoAcesso } from '@/server/permissoes'
 import { acharCliente } from '@/server/repos/clientes'
@@ -52,16 +52,19 @@ export default async function Pagina({ params }: { params: Promise<{ clienteId: 
 
   return (
     <ClienteShell cliente={cliente} ativa="leads">
-      <main className="w-full max-w-[1440px] px-4 pt-[26px] pb-[42px] md:px-[42px]">
-        <Trilha caminho={[{ rotulo: 'CRM' }, { rotulo: 'Segmentos' }]} />
-        <h1 className="text-[20px] font-bold tracking-[-0.02em] md:text-[25px]">Segmentos</h1>
-        <p className="mt-1.5 mb-6 max-w-[680px] text-[13px] leading-6 text-dim">
-          Um segmento é uma <strong className="text-soft">regra</strong>, não uma lista: “clientes sem comprar há 90
-          dias” responde uma coisa hoje e outra no mês que vem, porque a regra é a mesma e as pessoas mudaram. Estar no
-          segmento não autoriza mensagem: quem pode receber é conferido de novo no instante do envio.
-        </p>
-
+      <Miolo largura="cheia">
         <TabelaDeSegmentos
+          topo={{
+            trilha: [{ rotulo: 'CRM' }, { rotulo: 'Segmentos' }],
+            titulo: 'Segmentos',
+            descricao: (
+              <>
+                Um segmento é uma <strong className="text-soft">regra</strong>, não uma lista: “clientes sem comprar há
+                90 dias” responde uma coisa hoje e outra no mês que vem, porque a regra é a mesma e as pessoas mudaram.
+                Estar no segmento não autoriza mensagem: quem pode receber é conferido de novo no instante do envio.
+              </>
+            ),
+          }}
           clienteId={cliente.id}
           inicial={segmentos.map((s, i) => ({
             id: s.id,
@@ -72,7 +75,7 @@ export default async function Pagina({ params }: { params: Promise<{ clienteId: 
             criadoEm: s.criadoEm,
           }))}
         />
-      </main>
+      </Miolo>
     </ClienteShell>
   )
 }

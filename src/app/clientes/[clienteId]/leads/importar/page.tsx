@@ -1,3 +1,4 @@
+import { Miolo } from '@/components/design/miolo'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { ClienteShell } from '@/components/design/cliente-shell'
@@ -34,7 +35,7 @@ export default async function Pagina({ params }: { params: Promise<{ clienteId: 
 
   return (
     <ClienteShell cliente={cliente} ativa="leads">
-      <main className="w-full max-w-[1100px] px-4 md:px-[42px] pt-[26px] pb-[42px]">
+      <Miolo largura="leitura">
         <Link
           href={`/clientes/${clienteId}/leads`}
           className="mb-3.5 inline-block text-[12.5px] text-muted transition hover:text-primary"
@@ -48,7 +49,7 @@ export default async function Pagina({ params }: { params: Promise<{ clienteId: 
         </p>
 
         <ImportarContatos acao={acaoImportarContatos.bind(null, cliente.id)} />
-      </main>
+      </Miolo>
     </ClienteShell>
   )
 }

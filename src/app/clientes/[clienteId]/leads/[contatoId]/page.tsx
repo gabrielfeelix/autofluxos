@@ -1,3 +1,4 @@
+import { Miolo } from '@/components/design/miolo'
 import { meuAlcance } from '@/server/permissoes'
 import { Fragment } from 'react'
 import Link from 'next/link'
@@ -244,7 +245,7 @@ export default async function Pagina({
         temAutomacao={temAutomacao}
         equipe={equipe.map((membro) => ({ id: membro.id, nome: membro.nome }))}
       >
-      <main className="w-full max-w-[1440px] px-4 md:px-[42px] pt-[26px] pb-[42px]">
+      <Miolo largura="cheia">
         <Link
           href={volta.href}
           className="mb-3.5 inline-block text-[12.5px] text-muted transition hover:text-primary"
@@ -700,7 +701,7 @@ export default async function Pagina({
             },
           ]}
         />
-      </main>
+      </Miolo>
       </ProvedorDaConversa>
     </ClienteShell>
   )

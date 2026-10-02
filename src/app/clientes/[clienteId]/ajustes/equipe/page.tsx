@@ -1,6 +1,6 @@
+import { Miolo } from '@/components/design/miolo'
 import { notFound } from 'next/navigation'
 import { AjustesShell } from '@/components/design/ajustes-shell'
-import { Trilha } from '@/components/design/trilha'
 import Link from 'next/link'
 import { TabelaDePessoas } from '@/components/admin/tabela-de-pessoas'
 import { Distribuicao, type PessoaNaDistribuicao } from '@/components/conta/distribuicao'
@@ -122,26 +122,23 @@ export default async function Pagina({ params }: { params: Promise<{ clienteId: 
 
   return (
     <AjustesShell cliente={cliente} ativa="equipe">
-      <main className="w-full px-4 md:px-[42px] pt-[26px] pb-[42px]">
-        <Trilha
-          caminho={[
-            { rotulo: 'Configurações', href: `/clientes/${cliente.id}/ajustes` },
-            { rotulo: 'Pessoas' },
-          ]}
-        />
-        <div className="flex flex-wrap items-end justify-between gap-3">
-          <h1 className="text-[25px] font-bold tracking-[-0.02em]">Pessoas</h1>
-          <Link href={`/clientes/${cliente.id}/ajustes/equipe/funcoes`} className="text-[12.5px] font-semibold text-primary hover:underline">
-            O que cada função pode fazer →
-          </Link>
-        </div>
-        <p className="mt-1.5 mb-6 max-w-[650px] text-[13px] leading-6 text-dim">
-          Quem trabalha nesta organização e com qual função. Você vê e muda só quem
-          está abaixo de você. Só quem está aqui aparece para assumir conversa no Inbox.
-        </p>
-
+      <Miolo largura="toda">
         <div className="mb-8 flex min-h-[320px] flex-col">
           <TabelaDePessoas
+            topo={{
+              trilha: [
+                { rotulo: 'Configurações', href: `/clientes/${cliente.id}/ajustes` },
+                { rotulo: 'Pessoas' },
+              ],
+              titulo: 'Pessoas',
+              descricao:
+                'Quem trabalha nesta organização e com qual função. Você vê e muda só quem está abaixo de você. Só quem está aqui aparece para assumir conversa no Inbox.',
+              acoes: (
+                <Link href={`/clientes/${cliente.id}/ajustes/equipe/funcoes`} className="quadro-tool">
+                  Funções
+                </Link>
+              ),
+            }}
             clienteId={clienteId}
             pessoas={visiveis.map((membro) => ({
               id: membro.id,
@@ -192,7 +189,7 @@ export default async function Pagina({ params }: { params: Promise<{ clienteId: 
           podeMexer={podeMexer}
         />
 
-      </main>
+      </Miolo>
     </AjustesShell>
   )
 }

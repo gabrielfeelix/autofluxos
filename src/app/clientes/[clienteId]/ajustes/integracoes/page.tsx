@@ -1,3 +1,4 @@
+import { Miolo } from '@/components/design/miolo'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import type { ReactNode } from 'react'
@@ -96,7 +97,7 @@ export default async function Pagina({
 
   return (
     <AjustesShell cliente={cliente} ativa="integracoes">
-      <main className="w-full max-w-[1100px] px-4 md:px-[42px] pt-[26px] pb-[42px]">
+      <Miolo largura="leitura">
         <h1 className="text-[22px] font-bold tracking-[-0.02em] md:text-[28px]">Todas as conexões</h1>
         <p className="mt-1.5 max-w-[640px] text-[13px] leading-6 text-dim">
           Tudo com que esta conta fala, os canais por onde a conversa passa e os sistemas que
@@ -123,7 +124,7 @@ export default async function Pagina({
             ))}
           </div>
         )}
-      </main>
+      </Miolo>
     </AjustesShell>
   )
 }

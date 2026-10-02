@@ -92,3 +92,21 @@ Append-only. Cada entrada: data, decisão, porquê, onde está no código.
   para `--p-*`; `.app-quadro` os troca por brancos e todo painel dentro dele
   volta aos `--p-*` (`globals.css`, bloco "A casca"). Nenhuma tela foi editada.
   Celular segue no fundo antigo.
+
+## 02/out/2026: padrão de tela da conta (DS)
+
+- **Topo de tela:** `CabecalhoDaTela` (`src/components/design/cabecalho-da-tela.tsx`):
+  título, `Contagem` (pílula), descrição e ações **fora do cartão**, à direita.
+  Padrão de Contatos, escolhido pelo dono; o cartão começa direto no conteúdo,
+  sem repetir o título. Ação que mora em componente de cliente (modal com
+  estado) recebe `topo: TopoDaTela` e desenha o cabeçalho com o próprio botão.
+  Trilha só aparece com link de volta (senão repete o caminho do cabeçalho).
+  Sem rótulo de seção em cima do título.
+- **Menu de mais ações:** botão com texto ("Ações"), no fim da linha, nunca
+  ícone solto entre dois botões.
+- **Largura:** `Miolo largura="leitura|larga|cheia|toda"` (`miolo.tsx`) no lugar
+  de 31 `<main>` escritos à mão.
+- **Espera:** `EsqueletoDeAjuste` para as subtelas de Configurações.
+- **Casca:** selo e cartão de estado tingidos (rose/amber/emerald/perigo...)
+  soltos no azul viram pastilha clara com a cor do estado; `.quadro-seletor`
+  (seletor de funil) é título branco no azul.

@@ -1,7 +1,8 @@
+import { CabecalhoDaTela } from '@/components/design/cabecalho-da-tela'
+import { Miolo } from '@/components/design/miolo'
 import { notFound } from 'next/navigation'
 import { EscolhaDePlano } from '@/components/cliente/escolha-de-plano'
 import { AjustesShell } from '@/components/design/ajustes-shell'
-import { Trilha } from '@/components/design/trilha'
 import { acaoPedirTrocaDePlano } from '@/server/acoes-plano'
 import { acharCliente } from '@/server/repos/clientes'
 import { consumoDaMetaDoMes } from '@/server/consumo-da-meta'
@@ -61,18 +62,16 @@ export default async function Pagina({ params }: { params: Promise<{ clienteId: 
 
   return (
     <AjustesShell cliente={cliente} ativa="plano">
-      <main className="w-full max-w-[1100px] px-4 pt-[26px] pb-[42px] md:px-[42px]">
-        <Trilha
-          caminho={[
+      <Miolo largura="leitura">
+        <CabecalhoDaTela
+          trilha={[
             { rotulo: 'Configurações', href: `/clientes/${cliente.id}/ajustes` },
             { rotulo: 'Plano e consumo' },
           ]}
+          titulo={<>Plano e consumo</>}
+          descricao={<>Em que plano esta organização está, quanto já foi usado neste mês, e o que muda se
+          você trocar.</>}
         />
-        <h1 className="text-[25px] font-bold tracking-[-0.02em]">Plano e consumo</h1>
-        <p className="mt-1.5 mb-6 max-w-[650px] text-[13px] leading-6 text-dim">
-          Em que plano esta organização está, quanto já foi usado neste mês, e o que muda se
-          você trocar.
-        </p>
 
         <EscolhaDePlano
           atual={plano}
@@ -86,7 +85,7 @@ export default async function Pagina({ params }: { params: Promise<{ clienteId: 
           conexoesHref={`/clientes/${cliente.id}/ajustes/integracoes`}
           planos={planos.filter((p) => p.ativo || p.id === plano)}
         />
-      </main>
+      </Miolo>
     </AjustesShell>
   )
 }

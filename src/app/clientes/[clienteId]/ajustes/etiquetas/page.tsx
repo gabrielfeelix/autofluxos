@@ -1,6 +1,7 @@
+import { CabecalhoDaTela } from '@/components/design/cabecalho-da-tela'
+import { Miolo } from '@/components/design/miolo'
 import { notFound } from 'next/navigation'
 import { ClienteShell } from '@/components/design/cliente-shell'
-import { Trilha } from '@/components/design/trilha'
 import { TabelaDeEtiquetas } from '@/components/etiquetas/tabela-de-etiquetas'
 import { acharCliente } from '@/server/repos/clientes'
 import { listarEtiquetasComContagem } from '@/server/repos/etiquetas'
@@ -23,15 +24,15 @@ export default async function Pagina({ params }: { params: Promise<{ clienteId: 
 
   return (
     <ClienteShell cliente={cliente} ativa="etiquetas">
-      <main className="w-full max-w-[1440px] px-4 pt-[26px] pb-[42px] md:px-[42px]">
-        <Trilha caminho={[{ rotulo: 'Configurações', href: `/clientes/${cliente.id}/ajustes` }, { rotulo: 'Etiquetas' }]} />
-        <h1 className="text-[20px] font-bold tracking-[-0.02em] md:text-[25px]">Etiquetas</h1>
-        <p className="mt-1.5 mb-6 max-w-[680px] text-[13px] leading-6 text-dim">
-          As etiquetas que a equipe cria e aplica, como “cliente antigo”, “orçamento enviado” ou “não insistir”. Elas
+      <Miolo largura="cheia">
+        <CabecalhoDaTela
+          trilha={[{ rotulo: 'Configurações', href: `/clientes/${cliente.id}/ajustes` }, { rotulo: 'Etiquetas' }]}
+          titulo={<>Etiquetas</>}
+          descricao={<>As etiquetas que a equipe cria e aplica, como “cliente antigo”, “orçamento enviado” ou “não insistir”. Elas
           viram filtro em Contatos: clique no número para ver quem tem cada uma. As que o sistema deduz do histórico
           (<em>abriu com mídia</em>, <em>foi para pessoa</em>, <em>não respondeu</em>) não aparecem aqui, porque mudar
-          uma delas na mão faria a tela mentir na próxima mensagem.
-        </p>
+          uma delas na mão faria a tela mentir na próxima mensagem.</>}
+        />
 
         <TabelaDeEtiquetas
           clienteId={cliente.id}
@@ -43,7 +44,7 @@ export default async function Pagina({ params }: { params: Promise<{ clienteId: 
             criadoEm: e.criadoEm ?? '',
           }))}
         />
-      </main>
+      </Miolo>
     </ClienteShell>
   )
 }

@@ -1,6 +1,7 @@
+import { CabecalhoDaTela } from '@/components/design/cabecalho-da-tela'
+import { Miolo } from '@/components/design/miolo'
 import { notFound } from 'next/navigation'
 import { ClienteShell } from '@/components/design/cliente-shell'
-import { Trilha } from '@/components/design/trilha'
 import { LojaNuvemshop } from '@/components/loja/loja-nuvemshop'
 import {
   acaoConectarNuvemshop,
@@ -35,14 +36,14 @@ export default async function Pagina({
 
   return (
     <ClienteShell cliente={cliente} ativa="loja">
-      <main className="w-full max-w-[1100px] px-4 pt-[26px] pb-[42px] md:px-[42px]">
-        <Trilha caminho={[{ rotulo: 'Integrações', href: `/clientes/${cliente.id}/loja` }, { rotulo: 'Nuvemshop' }]} />
-        <h1 className="text-[20px] font-bold tracking-[-0.02em] md:text-[25px]">Loja Nuvemshop</h1>
-        <p className="mt-1 mb-6 max-w-[620px] text-[13px] leading-6 text-muted">
-          O bot consulta a loja <strong className="text-soft">na hora da conversa</strong>: diz se tem, quanto custa,
+      <Miolo largura="leitura">
+        <CabecalhoDaTela
+          trilha={[{ rotulo: 'Integrações', href: `/clientes/${cliente.id}/loja` }, { rotulo: 'Nuvemshop' }]}
+          titulo={<>Loja Nuvemshop</>}
+          descricao={<>O bot consulta a loja <strong className="text-soft">na hora da conversa</strong>: diz se tem, quanto custa,
           quanto há em estoque e manda o link do produto. Ele só lê. Nada é criado, alterado ou apagado na loja, e
-          quem fecha a compra é o site.
-        </p>
+          quem fecha a compra é o site.</>}
+        />
 
         <LojaNuvemshop
           liberada={nuvemshopConfigurado()}
@@ -54,7 +55,7 @@ export default async function Pagina({
           ligar={acaoLigarNuvemshop.bind(null, cliente.id)}
           desconectar={acaoDesconectarNuvemshop.bind(null, cliente.id)}
         />
-      </main>
+      </Miolo>
     </ClienteShell>
   )
 }

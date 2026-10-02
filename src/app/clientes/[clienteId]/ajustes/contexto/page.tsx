@@ -1,3 +1,4 @@
+import { Miolo } from '@/components/design/miolo'
 import { notFound } from 'next/navigation'
 import { AjustesShell } from '@/components/design/ajustes-shell'
 import { Trilha } from '@/components/design/trilha'
@@ -57,7 +58,7 @@ export default async function Pagina({ params }: { params: Promise<{ clienteId: 
 
   return (
     <AjustesShell cliente={cliente} ativa="contexto">
-      <main className="w-full max-w-[1100px] px-4 md:px-[42px] pt-[26px] pb-[42px]">
+      <Miolo largura="leitura">
 
         <Trilha
           caminho={[
@@ -134,7 +135,7 @@ export default async function Pagina({ params }: { params: Promise<{ clienteId: 
             apagar={acaoApagarChaveDeIa.bind(null, clienteId)}
           />
         </div>
-      </main>
+      </Miolo>
     </AjustesShell>
   )
 }

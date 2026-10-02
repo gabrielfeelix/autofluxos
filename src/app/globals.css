@@ -2082,6 +2082,67 @@ textarea::placeholder {
     box-shadow: var(--sombra-ilha);
   }
 
+  /*
+   * Selo e cartão **de estado** soltos no azul (aguardando, ganho, com a
+   * equipe, finalizar atendimento). Eles são tinta clara a 7-15% feita para o
+   * branco: sobre o azul o tom some e o texto, já clareado, não lê. Aqui
+   * viram pastilha clara, com a cor do estado forte por cima. Dentro de
+   * cartão nada muda.
+   */
+  .app-quadro
+    :is(
+      [class*='bg-rose-'][class*='/'],
+      [class*='bg-amber-'][class*='/'],
+      [class*='bg-emerald-'][class*='/'],
+      [class*='bg-red-'][class*='/'],
+      [class*='bg-sky-'][class*='/'],
+      [class*='bg-perigo/'],
+      [class*='bg-aviso/'],
+      [class*='bg-info/'],
+      [class*='bg-ok/']
+    ):not(:is(.bg-panel, .app-card, .crm-section, .app-inbox, dialog, [popover], .quadro-popover) *) {
+    --primary: var(--p-primary);
+    --primary-strong: var(--p-primary-strong);
+    --primary-weak: var(--p-primary-weak);
+    --primary-ink: var(--p-primary-ink);
+    --surface: var(--p-surface);
+    --surface-strong: var(--p-surface-strong);
+    --surface-hover: var(--p-surface-hover);
+    --line: var(--p-line);
+    --line-soft: var(--p-line-soft);
+    --line-strong: var(--p-line-strong);
+    --ink: var(--p-ink);
+    --soft: var(--p-soft);
+    --muted: var(--p-muted);
+    --dim: var(--p-dim);
+    --placeholder: var(--p-placeholder);
+    --perigo: var(--p-perigo);
+    --aviso: var(--p-aviso);
+    --ok: var(--p-ok);
+    --info: var(--p-info);
+    --barra: var(--p-barra);
+    --barra-forte: var(--p-barra-forte);
+    background-color: color-mix(in oklab, currentColor 7%, var(--panel));
+  }
+
+  /*
+   * O seletor de funil (e quem mais usar `.quadro-seletor`) é título: mora no
+   * azul com texto branco, e o hover é uma pastilha translúcida com respiro,
+   * não o branco chapado do botão de ferramenta.
+   */
+  .app-quadro .quadro-seletor {
+    --ink: #ffffff;
+    margin-left: -8px;
+    padding: 2px 8px;
+    border-radius: 10px;
+    color: #ffffff;
+  }
+  .app-quadro .quadro-seletor:hover,
+  .app-quadro .quadro-seletor[aria-expanded='true'] {
+    background: rgb(255 255 255 / 0.14);
+    border-color: transparent;
+  }
+
   /* Botão primário solto no azul: fundo branco, texto azul. Em cartão, volta. */
   .app-quadro .bg-primary.text-white {
     color: var(--primary-ink);

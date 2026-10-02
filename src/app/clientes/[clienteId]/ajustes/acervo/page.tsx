@@ -1,6 +1,7 @@
+import { CabecalhoDaTela } from '@/components/design/cabecalho-da-tela'
+import { Miolo } from '@/components/design/miolo'
 import { notFound } from 'next/navigation'
 import { AjustesShell } from '@/components/design/ajustes-shell'
-import { Trilha } from '@/components/design/trilha'
 import { GerenciadorDoAcervo } from '@/components/acervo/gerenciador'
 import { acaoApagarDoAcervo } from '@/server/acoes'
 import { listarAcervo } from '@/server/repos/acervo'
@@ -15,30 +16,28 @@ export default async function Pagina({ params }: { params: Promise<{ clienteId: 
 
   return (
     <AjustesShell cliente={cliente} ativa="acervo">
-      <main className="w-full max-w-[1280px] px-4 md:px-[42px] pt-[26px] pb-[42px]">
-        <Trilha
-          caminho={[
+      <Miolo largura="larga">
+        <CabecalhoDaTela
+          trilha={[
             { rotulo: 'Configurações', href: `/clientes/${cliente.id}/ajustes` },
             { rotulo: 'Arquivos e mídias' },
           ]}
-        />
-        <h1 className="text-[25px] font-bold tracking-[-0.02em]">Arquivos e mídias</h1>
-        <p className="mt-1.5 mb-6 max-w-[680px] text-[13px] leading-6 text-dim">
-          Os arquivos que o bloco de Mídia pode enviar: foto da sala, vídeo do trabalho, PDF do
+          titulo={<>Arquivos e mídias</>}
+          descricao={<>Os arquivos que o bloco de Mídia pode enviar: foto da sala, vídeo do trabalho, PDF do
           plano. Copie o endereço de um arquivo e cole no bloco.{' '}
           <strong className="font-semibold text-soft">
             Eles ficam num endereço público enquanto estiverem aqui
           </strong>{' '}
          , é o que permite o WhatsApp baixá-los para entregar. Não guarde documento pessoal de
-          ninguém.
-        </p>
+          ninguém.</>}
+        />
 
         <GerenciadorDoAcervo
           arquivos={arquivos}
           clienteId={cliente.id}
           apagar={acaoApagarDoAcervo.bind(null, cliente.id)}
         />
-      </main>
+      </Miolo>
     </AjustesShell>
   )
 }

@@ -1,6 +1,7 @@
+import { CabecalhoDaTela } from '@/components/design/cabecalho-da-tela'
+import { Miolo } from '@/components/design/miolo'
 import { notFound } from 'next/navigation'
 import { ClienteShell } from '@/components/design/cliente-shell'
-import { Trilha } from '@/components/design/trilha'
 import { LojaMagento } from '@/components/cliente/loja-magento'
 import {
   acaoConectarToken,
@@ -35,19 +36,17 @@ export default async function Pagina({
 
   return (
     <ClienteShell cliente={cliente} ativa="loja">
-      <main className="w-full max-w-[1100px] px-4 pt-[26px] pb-[42px] md:px-[42px]">
-        <Trilha
-          caminho={[
+      <Miolo largura="leitura">
+        <CabecalhoDaTela
+          trilha={[
             { rotulo: 'Integrações', href: `/clientes/${cliente.id}/loja` },
             { rotulo: 'Magento' },
           ]}
-        />
-        <h1 className="text-[20px] font-bold tracking-[-0.02em] md:text-[25px]">Loja Magento</h1>
-        <p className="mt-1 mb-6 max-w-[600px] text-[13px] leading-6 text-muted">
-          O bot consulta a loja <strong className="text-soft">na hora da conversa</strong>: diz se tem,
+          titulo={<>Loja Magento</>}
+          descricao={<>O bot consulta a loja <strong className="text-soft">na hora da conversa</strong>: diz se tem,
           quanto custa e manda o link do produto. Ele só lê. Nada é criado, alterado ou apagado na
-          loja, e quem fecha a compra é o site.
-        </p>
+          loja, e quem fecha a compra é o site.</>}
+        />
 
         <LojaMagento
           inicial={
@@ -71,7 +70,7 @@ export default async function Pagina({
           // da loja: ele não tem acesso ao painel.
           guiaHref="https://github.com/gabrielfeelix/autofluxos/blob/main/docs/GUIA-MAGENTO-LOJISTA.md"
         />
-      </main>
+      </Miolo>
     </ClienteShell>
   )
 }

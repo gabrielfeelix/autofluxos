@@ -1,8 +1,9 @@
+import { Miolo } from '@/components/design/miolo'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { AjudaDaTela, type PassoDaAjuda } from '@/components/design/ajuda-da-tela'
 import { ClienteShell } from '@/components/design/cliente-shell'
-import { Trilha } from '@/components/design/trilha'
+import { CabecalhoDaTela, Contagem } from '@/components/design/cabecalho-da-tela'
 import { Dropdown } from '@/components/design/dropdown'
 import { ModalFormulario, RotuloCampo } from '@/components/design/modal-formulario'
 import { BotaoArquivar } from '@/components/produtos/botao-arquivar'
@@ -106,7 +107,6 @@ export default async function Pagina({
   if (!cliente) notFound()
   // As palavras do ramo, as mesmas da barra lateral (`core/nichos.ts`).
   const pacote = pacoteDo(nicho)
-  const secao = rotuloNaBarra(pacote, 'loja', 'Comércio')
   const titulo = rotuloNaBarra(pacote, 'catalogo', 'Produtos')
 
   const ativos = produtos.filter(estaAtivo)
@@ -119,15 +119,11 @@ export default async function Pagina({
 
   return (
     <ClienteShell cliente={cliente} ativa="loja">
-      <main className="w-full max-w-[1440px] px-4 md:px-[42px] pt-[26px] pb-[42px]">
-        <Trilha
-          caminho={[
-            { rotulo: secao },
-            { rotulo: titulo },
-          ]}
-        />
-        <div className="flex items-center gap-2.5">
-          <h1 className="text-[25px] font-bold tracking-[-0.02em]">{titulo}</h1>
+      <Miolo largura="cheia">
+        <CabecalhoDaTela
+          titulo={
+            <span className="flex items-center gap-2.5">
+              {titulo}
           <AjudaDaTela
             titulo="Como funciona Produtos"
             resumo="O catálogo é a lista do que a organização vende. Ele serve a três leitores: o bot, a equipe no Inbox e o funil de vendas."
@@ -148,43 +144,13 @@ export default async function Pagina({
               vendas antigas continuam apontando para ele. Estoque e imposto ficam de fora de propósito.
             </p>
           </AjudaDaTela>
-        </div>
-        <p className="mt-1.5 mb-6 text-[13px] leading-6 text-dim">
-          O que a empresa vende, com preço, foto e link. O bot usa esta lista para dizer quanto custa e mandar
-          o card do produto na conversa, e a equipe manda o mesmo card pelo Inbox.
-        </p>
-
-        {loja?.ativa && (
-          /*
-           * Com Magento ligada, o bot e o Inbox buscam na loja, ao vivo, e esta
-           * lista não é preenchida com os produtos dela: 600 itens copiados
-           * seriam 600 preços e estoques envelhecendo. Ela segue sendo o
-           * vocabulário do funil.
-           */
-          <div className="mb-5 flex flex-wrap items-center gap-x-3 gap-y-1 rounded-[14px] border border-primary/25 bg-primary/[0.06] px-4 py-3 text-[12.5px] leading-6">
-            <span className="flex-1">
-              <strong>O catálogo desta organização vem da loja Magento.</strong>{' '}
-              <span className="text-muted">
-                O bot e o Inbox buscam os produtos lá, ao vivo. Esta lista serve ao funil de vendas.
-              </span>
             </span>
-            <Link
-              href={`/clientes/${cliente.id}/loja/magento`}
-              className="app-secondary-button px-3 py-1.5 text-[11.5px]"
-            >
-              Ver a loja
-            </Link>
-          </div>
-        )}
-
-        {materiais && <CardapioEmArquivo clienteId={cliente.id} materiais={materiais} />}
-
-        <section className="app-card overflow-hidden">
-          <header className="flex flex-wrap items-center justify-between gap-4 border-b border-line px-5 py-4">
-            <div className="flex flex-wrap items-center gap-3">
-              <h2 className="text-[14.5px] font-bold">
-                {ativos.length} {ativos.length === 1 ? 'item ativo' : 'itens ativos'}
-              </h2>
+          }
+          contagem={<Contagem>{ativos.length} {ativos.length === 1 ? 'item ativo' : 'itens ativos'}</Contagem>}
+          descricao={<>O que a empresa vende, com preço, foto e link. O bot usa esta lista para dizer quanto custa e mandar
+          o card do produto na conversa, e a equipe manda o mesmo card pelo Inbox.</>}
+          acoes={
+            <>
               <div role="group" aria-label="Como ver o catálogo" className="flex rounded-lg border border-line bg-panel p-0.5">
                 {(
                   [
@@ -204,8 +170,6 @@ export default async function Pagina({
                   </Link>
                 ))}
               </div>
-            </div>
-            <div className="flex items-center gap-2">
               <ImportarPlanilha clienteId={cliente.id} />
               <ModalFormulario
               botao="+ Novo item"
@@ -259,8 +223,36 @@ export default async function Pagina({
                 </span>
               </label>
               </ModalFormulario>
-            </div>
-          </header>
+            </>
+          }
+        />
+
+        {loja?.ativa && (
+          /*
+           * Com Magento ligada, o bot e o Inbox buscam na loja, ao vivo, e esta
+           * lista não é preenchida com os produtos dela: 600 itens copiados
+           * seriam 600 preços e estoques envelhecendo. Ela segue sendo o
+           * vocabulário do funil.
+           */
+          <div className="mb-5 flex flex-wrap items-center gap-x-3 gap-y-1 rounded-[14px] border border-primary/25 bg-primary/[0.06] px-4 py-3 text-[12.5px] leading-6">
+            <span className="flex-1">
+              <strong>O catálogo desta organização vem da loja Magento.</strong>{' '}
+              <span className="text-muted">
+                O bot e o Inbox buscam os produtos lá, ao vivo. Esta lista serve ao funil de vendas.
+              </span>
+            </span>
+            <Link
+              href={`/clientes/${cliente.id}/loja/magento`}
+              className="app-secondary-button px-3 py-1.5 text-[11.5px]"
+            >
+              Ver a loja
+            </Link>
+          </div>
+        )}
+
+        {materiais && <CardapioEmArquivo clienteId={cliente.id} materiais={materiais} />}
+
+        <section className="app-card overflow-hidden">
 
           {ativos.length === 0 ? (
             <div className="px-5 py-14 text-center">
@@ -378,7 +370,7 @@ export default async function Pagina({
             </ul>
           </section>
         )}
-      </main>
+      </Miolo>
     </ClienteShell>
   )
 }

@@ -1,6 +1,7 @@
+import { CabecalhoDaTela } from '@/components/design/cabecalho-da-tela'
+import { Miolo } from '@/components/design/miolo'
 import { notFound } from 'next/navigation'
 import { AjustesShell } from '@/components/design/ajustes-shell'
-import { Trilha } from '@/components/design/trilha'
 import { Dropdown } from '@/components/design/dropdown'
 import { BotaoPerigo } from '@/components/design/botao-perigo'
 import { ModalFormulario, RotuloCampo } from '@/components/design/modal-formulario'
@@ -85,24 +86,18 @@ export default async function Pagina({ params }: { params: Promise<{ clienteId: 
 
   return (
     <AjustesShell cliente={cliente} ativa="chaves">
-      <main className="w-full max-w-[1280px] px-4 md:px-[42px] pt-[26px] pb-[42px]">
+      <Miolo largura="larga">
 
-        <div className="mb-[30px] flex flex-wrap items-end justify-between gap-4">
-          <div>
-            <Trilha
-          caminho={[
+        <CabecalhoDaTela
+          trilha={[
             { rotulo: 'Configurações', href: `/clientes/${cliente.id}/ajustes` },
             { rotulo: 'Chaves de API' },
           ]}
-        />
-            <h1 className="text-[25px] font-bold tracking-[-0.02em]">Chaves de API</h1>
-            <p className="mt-1.5 max-w-[560px] text-[13px] leading-6 text-dim">
-              As chaves que os blocos de API usam para falar com os sistemas deste cliente. O valor
+          titulo={<>Chaves de API</>}
+          descricao={<>As chaves que os blocos de API usam para falar com os sistemas deste cliente. O valor
               é guardado num cofre e <strong className="text-soft">nunca volta para esta tela</strong>:
-              para trocar, grave de novo.
-            </p>
-          </div>
-
+              para trocar, grave de novo.</>}
+          acoes={
           <ModalFormulario
             botao="+ Nova chave"
             titulo="Nova chave"
@@ -151,7 +146,8 @@ export default async function Pagina({ params }: { params: Promise<{ clienteId: 
               </span>
             </label>
           </ModalFormulario>
-        </div>
+          }
+        />
 
         {/*
           A agenda ganha cartão próprio, e as outras credenciais não.
@@ -296,7 +292,7 @@ export default async function Pagina({ params }: { params: Promise<{ clienteId: 
             })}
           </ul>
         )}
-      </main>
+      </Miolo>
     </AjustesShell>
   )
 }
