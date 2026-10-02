@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { Lead } from '@/server/repos/leads'
-import { juntarNaPagina, naoLidasVivas } from './fila-viva'
+import { juntarNaPagina, naoLidasVivas, naoLidasVivasAgora, zerarNaoLidaViva } from './fila-viva'
 
 describe('naoLidasVivas', () => {
   it('o número vivo vale por cima do servidor', () => {
@@ -12,6 +12,15 @@ describe('naoLidasVivas', () => {
     const juntas = naoLidasVivas(new Map([['a', 2], ['b', 1]]), new Map([['a', 0], ['c', 0]]))
     expect(juntas.size).toBe(1)
     expect(juntas.get('b')).toBe(1)
+  })
+})
+
+describe('zerarNaoLidaViva', () => {
+  it('abrir zera também o número que só o servidor tinha (Duan, PCYES, 02/out)', () => {
+    // O "2" veio do desenho da página, sem nada vivo para o contato ainda.
+    const doServidor = new Map([['duan', 2]])
+    zerarNaoLidaViva('duan')
+    expect(naoLidasVivas(doServidor, naoLidasVivasAgora()).has('duan')).toBe(false)
   })
 })
 

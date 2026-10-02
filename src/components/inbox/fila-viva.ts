@@ -179,6 +179,11 @@ export function juntarNaPagina(
   return { leads: [...novas, ...juntas].sort((a, b) => data(b) - data(a)), novas: 0 }
 }
 
+/** As contagens vivas de agora, para conferir de fora do React (testes). */
+export function naoLidasVivasAgora(): ReadonlyMap<string, number> {
+  return estado.naoLidas
+}
+
 /**
  * A conversa foi aberta (ou acabou de ser deixada): nada nela está por ler.
  *
@@ -188,7 +193,9 @@ export function juntarNaPagina(
  * busca da conversa aberta; aqui é o espelho disso na tela.
  */
 export function zerarNaoLidaViva(contatoId: string) {
-  if (!estado.naoLidas.get(contatoId)) return
+  // Grava o zero mesmo sem número vivo: o "2" pode ter vindo só do desenho da
+  // página, e sem o zero aqui ele voltava ao sair da conversa (Duan, 02/out).
+  if (estado.naoLidas.get(contatoId) === 0) return
   const naoLidas = new Map(estado.naoLidas)
   naoLidas.set(contatoId, 0)
   estado = { ...estado, naoLidas }
