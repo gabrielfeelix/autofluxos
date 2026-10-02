@@ -136,7 +136,7 @@ export const PALAVRAS_DE_SAIDA_DA_IA = [
 ]
 
 const MENSAGEM_TRANSFERENCIA = 'Vou te passar para um atendente. Só um instante!'
-const MENSAGEM_NAO_ENTENDI = 'Desculpa, não entendi. Pode escolher uma das opções abaixo?'
+const MENSAGEM_NAO_ENTENDI = 'Para seguir com o seu atendimento, escolha uma das opções abaixo 👇'
 
 /** Quando chega figurinha no meio de uma pergunta. Ver a Regra B, em `executar`. */
 const MENSAGEM_SO_TEXTO =
@@ -674,23 +674,14 @@ function responderPergunta(
   const escolhida = escolher(opcoes, entrada)
 
   /*
-   * Escreveu em vez de tocar, e o desenho sabe o que fazer com isso
-   * (`entendeTextoLivre`): segue pela saída "escreveu outra coisa", com a frase
-   * guardada, em vez de repetir o menu. Só texto de verdade: vazio continua
-   * sendo "não entendi".
+   * **Menu é para tocar** (decisão do dono, 02/out/2026). Texto que não é uma
+   * das opções não vai mais para a saída "escreveu outra coisa" (a triagem com
+   * IA): ganha a frase de "escolha uma das opções" e o menu de novo. Foi a
+   * triagem atendendo "Conseguem me ajudar?" em 46 s enquanto a pessoa já
+   * tocava em "Drivers e manuais" (Washington, PCYES). Texto igual a uma opção
+   * continua valendo como escolha (`escolher`). `entendeTextoLivre` segue no
+   * desenho, sem efeito no menu.
    */
-  if (!escolhida && entrada.tipo === 'texto' && entrada.texto.trim() !== '' && no.data.entendeTextoLivre) {
-    const livre = proximo(fluxo, no.id, SAIDA_TEXTO_LIVRE)
-    if (livre) {
-      if (salvarEm) {
-        s.vars[salvarEm] = entrada.texto
-        acoes.push({ tipo: 'salvar_campo', campo: salvarEm, valor: entrada.texto })
-      }
-      s.tentativas = 0
-      return avancar(contexto, fluxo, porId, s, acoes, livre, { no, saida: SAIDA_TEXTO_LIVRE })
-    }
-  }
-
   if (!escolhida) {
     s.tentativas += 1
     if (s.tentativas >= MAX_TENTATIVAS) {

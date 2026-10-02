@@ -1192,8 +1192,8 @@ export const SAIDA_MIDIA = 'midia'
 
 /**
  * A saída de quando a pessoa **escreve** em vez de tocar numa opção
- * (`entendeTextoLivre`). Sem aresta ligada nela, vale o de sempre: a frase
- * de "não entendi" e as opções de novo.
+ * (`entendeTextoLivre`). **Sem efeito no menu desde 02/out/2026**: menu é para
+ * tocar, e o motor responde "escolha uma das opções" com o menu de novo.
  */
 export const SAIDA_TEXTO_LIVRE = 'texto-livre'
 

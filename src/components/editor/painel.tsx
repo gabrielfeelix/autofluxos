@@ -905,9 +905,9 @@ export function Painel({
             ninguém perde de vista o que configurou.
           */}
           <SecaoAvancada
-            resumo="foto em cima, texto livre, arquivo como resposta, prazo"
+            resumo="foto em cima, arquivo como resposta, prazo"
             temConteudo={
-              !!no.data.aceitaMidia || !!no.data.entendeTextoLivre || !!no.data.timeoutMinutos || !!no.data.imagem
+              !!no.data.aceitaMidia || !!no.data.timeoutMinutos || !!no.data.imagem
             }
           >
             <Linha
@@ -927,34 +927,8 @@ export function Painel({
               aceitaVariavel
               conhecidas={variaveis}
             />
-            {no.data.opcoes.length > 0 && (
-              <LinhaLigaDesliga
-                titulo="Entender o que a pessoa escrever"
-                descricao="Cria a saída “escreveu outra coisa” no bloco."
-                marcada={no.data.entendeTextoLivre ?? false}
-                aoMudar={(marcada) => aoMudarDados({ entendeTextoLivre: marcada || undefined })}
-                ajuda={
-                  <AjudaDoCampo
-                    titulo="Entender o que a pessoa escrever"
-                    secao="perguntas"
-                    texto="Quem escreve em vez de tocar num botão segue pela saída “escreveu outra coisa”."
-                    detalhes={
-                      <>
-                        <p>
-                          Muitos contatos não tocam no botão: escreve “meu mouse parou de funcionar”. Sem
-                          isto, o bot responde “toca numa das opções” e manda o menu de novo.
-                        </p>
-                        <p>
-                          Ligue a saída <strong>“escreveu outra coisa”</strong> num bloco de IA que
-                          entende o pedido e leva a pessoa ao assunto certo. O que ela escreveu fica
-                          guardado na mesma variável da resposta.
-                        </p>
-                      </>
-                    }
-                  />
-                }
-              />
-            )}
+            {/* "Entender o que a pessoa escrever" saiu em 02/out/2026: menu é para
+                tocar, e texto fora das opções pede a escolha de novo (motor). */}
             <LinhaLigaDesliga
               titulo="Aceitar foto, áudio ou documento"
               descricao="Cria a saída “mandou arquivo” no bloco."

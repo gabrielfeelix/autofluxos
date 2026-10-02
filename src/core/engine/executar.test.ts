@@ -327,7 +327,7 @@ describe('as três garantias que impedem a pessoa de ficar presa', () => {
 
       if (i < MAX_TENTATIVAS) {
         expect(sessao.status).toBe('ativa')
-        expect(textos(acoes)[0]).toContain('não entendi')
+        expect(textos(acoes)[0]).toContain('escolha uma das opções')
       }
     }
 
@@ -2237,15 +2237,17 @@ describe('menu que entende texto livre', () => {
     return r.acoes.flatMap((a) => (a.tipo === 'enviar_texto' ? [a.texto] : []))
   }
 
-  it('frase que não é opção segue pela saída "escreveu outra coisa", guardada', () => {
-    expect(textos(menu(true), 'meu mouse parou de funcionar')).toEqual(['livre: meu mouse parou de funcionar'])
+  it('menu é para tocar: frase que não é opção pede a escolha de novo, sem ir para a IA (dono, 02/out)', () => {
+    const r = textos(menu(true), 'meu mouse parou de funcionar')
+    expect(r[0]).toBe('Para seguir com o seu atendimento, escolha uma das opções abaixo 👇')
+    expect(r).not.toContain('livre: meu mouse parou de funcionar')
   })
   it('a opção digitada continua saindo pela opção', () => {
     expect(textos(menu(true), 'suporte')).toEqual(['opção'])
   })
   it('desligado, ou sem aresta, é o "não entendi" de sempre', () => {
-    expect(textos(menu(false), 'meu mouse parou')[0]).toBe('Desculpa, não entendi. Pode escolher uma das opções abaixo?')
-    expect(textos(menu(true, false), 'meu mouse parou')[0]).toBe('Desculpa, não entendi. Pode escolher uma das opções abaixo?')
+    expect(textos(menu(false), 'meu mouse parou')[0]).toBe('Para seguir com o seu atendimento, escolha uma das opções abaixo 👇')
+    expect(textos(menu(true, false), 'meu mouse parou')[0]).toBe('Para seguir com o seu atendimento, escolha uma das opções abaixo 👇')
   })
 })
 
@@ -2334,6 +2336,6 @@ describe('menu que não entendeu a resposta', () => {
     expect(textoDaRecusa(menu('Toque numa opção ou escreva inicio.'))).toBe('Toque numa opção ou escreva inicio.')
   })
   it('sem frase no bloco, a padrão de sempre', () => {
-    expect(textoDaRecusa(menu())).toBe('Desculpa, não entendi. Pode escolher uma das opções abaixo?')
+    expect(textoDaRecusa(menu())).toBe('Para seguir com o seu atendimento, escolha uma das opções abaixo 👇')
   })
 })

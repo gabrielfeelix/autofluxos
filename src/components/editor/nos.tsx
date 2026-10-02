@@ -381,11 +381,15 @@ function NoPergunta({ data, selected }: NodeProps) {
         </>
       )}
 
-      {/* Só aparece quando o desenho pediu: saída que ninguém usa é fio a mais
-          para desviar com o mouse em todo bloco de pergunta do fluxo. */}
+      {/* Desde 02/out/2026 o menu não segue por esta saída (menu é para tocar).
+          Ela só continua desenhada em fluxo antigo que já a ligou, para o fio
+          não sumir sem explicação, e diz que não tem efeito. */}
       {d.entendeTextoLivre && d.opcoes.length > 0 && (
         <Saida id={SAIDA_TEXTO_LIVRE}>
-          <span className="text-[11px] text-info">escreveu outra coisa</span>
+          <span className="text-[11px] text-dim line-through" title="Menu é para tocar: texto fora das opções pede a escolha de novo">
+            escreveu outra coisa
+          </span>
+          <span className="text-[10.5px] text-dim">sem efeito</span>
         </Saida>
       )}
       {d.aceitaMidia && (
