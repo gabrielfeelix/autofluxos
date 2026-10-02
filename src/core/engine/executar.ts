@@ -237,7 +237,15 @@ export function executar(
 
   const porId = indexar(fluxo)
 
-  if (entrada.tipo === 'texto' && pediuAtendente(entrada.texto)) {
+  /*
+   * **Parado no menu, nada passa para uma pessoa** (decisão do dono,
+   * 02/out/2026). Texto, foto, áudio, vídeo, figurinha, "quero um atendente":
+   * o que não for uma das opções recebe a frase de escolha e o menu de novo,
+   * quantas vezes for preciso. A pessoa só sai do menu tocando numa opção.
+   */
+  const menu = paradaNoMenu(porId, s)
+
+  if (!menu && entrada.tipo === 'texto' && pediuAtendente(entrada.texto)) {
     return transferir(s, acoes, 'a pessoa pediu para falar com um atendente', contexto)
   }
 
@@ -331,6 +339,11 @@ export function executar(
      * A saída "mandou arquivo" continua ganhando desta regra, logo acima: se o
      * desenho disse o que fazer com a imagem, figurinha é imagem.
      */
+    if (menu) {
+      acoes.push(...repetirMenu(menu, s))
+      return { acoes, sessao: s }
+    }
+
     if (entrada.formato === 'sticker' && parada?.type === 'pergunta') {
       s.tentativas += 1
       if (s.tentativas >= MAX_TENTATIVAS) {
@@ -687,21 +700,9 @@ function responderPergunta(
    * desenho, sem efeito no menu.
    */
   if (!escolhida) {
-    s.tentativas += 1
-    if (s.tentativas >= MAX_TENTATIVAS) {
-      return transferir(
-        s,
-        acoes,
-        `o bot não entendeu a resposta ${MAX_TENTATIVAS} vezes seguidas`,
-        contexto,
-      )
-    }
-    // A frase de "não entendi" do bloco, quando quem desenhou escreveu uma;
-    // senão a padrão. Antes a do bloco só valia para resposta com formato, e o
-    // menu ignorava o que estava escrito nele.
-    const recusa = (no.data.mensagemDeErro ?? '').trim()
-    acoes.push({ tipo: 'enviar_texto', texto: recusa === '' ? MENSAGEM_NAO_ENTENDI : interpolar(recusa, s.vars) })
-    acoes.push(...perguntar(no, s))
+    // Sem teto de tentativas: no menu nada passa para uma pessoa (ver o
+    // começo de `executar`).
+    acoes.push(...repetirMenu(no, s))
     return { acoes, sessao: s }
   }
 
@@ -1642,6 +1643,26 @@ function ehOpcaoDaParada(porId: Map<string, No>, s: Sessao, texto: string): bool
   if (parada?.type !== 'pergunta') return false
   const t = normalizar(texto)
   return resolverOpcoes(parada, s.vars).some((o) => normalizar(o.rotulo) === t)
+}
+
+/** A pergunta com opções em que a conversa está parada, esperando o toque. */
+function paradaNoMenu(porId: Map<string, No>, s: Sessao): NoPergunta | null {
+  if (s.status !== 'ativa' || s.noAtual === null) return null
+  const no = porId.get(s.noAtual)
+  if (no?.type !== 'pergunta') return null
+  return resolverOpcoes(no, s.vars).length > 0 ? no : null
+}
+
+/**
+ * A frase de escolha e o menu de novo. A frase do bloco vence a padrão quando
+ * quem desenhou escreveu uma.
+ */
+function repetirMenu(no: NoPergunta, s: Sessao): Acao[] {
+  const recusa = (no.data.mensagemDeErro ?? '').trim()
+  return [
+    { tipo: 'enviar_texto', texto: recusa === '' ? MENSAGEM_NAO_ENTENDI : interpolar(recusa, s.vars) },
+    ...perguntar(no, s),
+  ]
 }
 
 /** O pedido ao modelo que o bloco de IA faz, na entrada e em cada volta da conversa livre. */

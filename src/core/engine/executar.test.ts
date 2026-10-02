@@ -203,17 +203,25 @@ describe('caminhos até o fim', () => {
 })
 
 describe('as três garantias que impedem a pessoa de ficar presa', () => {
-  it('pedir atendente transfere de qualquer ponto, sem estar no desenho', () => {
+  /*
+   * No menu nada passa para uma pessoa (dono, 02/out/2026): nem o pedido de
+   * atendente. Fora do menu o pedido continua transferindo.
+   */
+  it('pedir atendente no menu repete o menu; fora dele, transfere', () => {
     const { sessao, acoes } = conversar(triagem, [
       { tipo: 'inicio' },
       { tipo: 'texto', texto: 'quero falar com um atendente por favor' },
     ])
 
-    expect(sessao.status).toBe('humano')
-    expect(acoes).toContainEqual({
-      tipo: 'transferir_humano',
-      motivo: 'a pessoa pediu para falar com um atendente',
+    expect(sessao.status).toBe('ativa')
+    expect(tipos(acoes)).not.toContain('transferir_humano')
+    expect(acoes.at(-1)?.tipo).toBe('enviar_opcoes')
+
+    const fora = executar(triagem, { ...sessaoNova(), noAtual: null }, {
+      tipo: 'texto',
+      texto: 'quero falar com um atendente por favor',
     })
+    expect(fora.sessao.status).toBe('humano')
   })
 
   /*
@@ -272,65 +280,39 @@ describe('as três garantias que impedem a pessoa de ficar presa', () => {
     expect(volta.sessao.vars.nome).toBe('Gabriel')
   })
 
-  it('áudio vai direto para uma pessoa em vez de "não entendi"', () => {
-    const { sessao, acoes } = conversar(triagem, [
-      { tipo: 'inicio' },
-      { tipo: 'midia', formato: 'audio' },
-    ])
-
-    expect(sessao.status).toBe('humano')
-    expect(acoes).toContainEqual({
-      tipo: 'transferir_humano',
-      motivo: 'a pessoa mandou audio e o bot só lê texto',
-    })
-  })
-
   /*
-   * O teste da MGM em 22/set/2026: figurinha no meio do menu chamou uma pessoa
-   * para responder um polegar para cima, e tirou quem estava conversando do
-   * fluxo que ela mesma tinha aberto.
+   * PCYES, 02/out/2026: a pessoa mandou um print no menu e o bot passou para
+   * um atendente na hora; depois ela tocou em "Meu pedido" e já era tarde.
+   * No menu, foto, áudio, vídeo, documento, figurinha e texto solto só
+   * repetem o menu, quantas vezes vierem.
    */
-  it('figurinha não transfere: o bot diz que não lê e repete a pergunta', () => {
-    const { sessao, acoes } = conversar(triagem, [
-      { tipo: 'inicio' },
-      { tipo: 'midia', formato: 'sticker' },
-    ])
+  it('no menu, qualquer mídia repete o menu e nunca transfere', () => {
+    for (const formato of ['image', 'audio', 'video', 'document', 'sticker'] as const) {
+      const { sessao, acoes } = conversar(triagem, [
+        { tipo: 'inicio' },
+        { tipo: 'midia', formato },
+      ])
 
-    expect(sessao.status).not.toBe('humano')
-    expect(acoes.some((a) => a.tipo === 'transferir_humano')).toBe(false)
-    expect(textos(acoes).join(' ')).toContain('figurinha')
-    // Repetiu a pergunta em vez de deixar a pessoa no escuro.
-    expect(acoes.at(-1)?.tipo).toBe('enviar_opcoes')
-  })
-
-  it(`figurinha ${MAX_TENTATIVAS} vezes seguidas ainda vai para uma pessoa`, () => {
-    const { sessao } = conversar(triagem, [
-      { tipo: 'inicio' },
-      ...Array.from({ length: MAX_TENTATIVAS }, () => ({ tipo: 'midia' as const, formato: 'sticker' as const })),
-    ])
-
-    expect(sessao.status).toBe('humano')
-  })
-
-  it(`transfere na ${MAX_TENTATIVAS}ª resposta que o bot não entende`, () => {
-    let sessao = sessaoNova()
-    let acoes: Acao[] = []
-
-    sessao = executar(triagem, sessao, { tipo: 'inicio' }).sessao
-
-    for (let i = 1; i <= MAX_TENTATIVAS; i++) {
-      const r = executar(triagem, sessao, { tipo: 'texto', texto: 'blablabla' })
-      sessao = r.sessao
-      acoes = r.acoes
-
-      if (i < MAX_TENTATIVAS) {
-        expect(sessao.status).toBe('ativa')
-        expect(textos(acoes)[0]).toContain('escolha uma das opções')
-      }
+      expect(sessao.status).toBe('ativa')
+      expect(tipos(acoes)).not.toContain('transferir_humano')
+      expect(textos(acoes)[0]).toContain('escolha uma das opções')
+      expect(acoes.at(-1)?.tipo).toBe('enviar_opcoes')
     }
+  })
 
-    expect(sessao.status).toBe('humano')
-    expect(tipos(acoes)).toContain('transferir_humano')
+  it('no menu, texto fora das opções repete o menu sem teto de tentativas', () => {
+    let sessao = executar(triagem, sessaoNova(), { tipo: 'inicio' }).sessao
+
+    for (let i = 1; i <= MAX_TENTATIVAS * 3; i++) {
+      const r = i % 2 === 0
+        ? executar(triagem, sessao, { tipo: 'texto', texto: 'blablabla' })
+        : executar(triagem, sessao, { tipo: 'midia', formato: 'image' })
+      sessao = r.sessao
+
+      expect(sessao.status).toBe('ativa')
+      expect(tipos(r.acoes)).not.toContain('transferir_humano')
+      expect(textos(r.acoes)[0]).toContain('escolha uma das opções')
+    }
   })
 
   it('fluxo com ciclo não prende ninguém: estoura a trava e chama humano', () => {
@@ -921,14 +903,13 @@ describe('pergunta com opções dinâmicas', () => {
     expect(textos(r.acoes)).toContain('Esse dia não tem horário livre 😕')
   })
 
-  it('resposta que não casa insiste, e na terceira vez chama uma pessoa', () => {
+  it('resposta que não casa insiste e nunca chama uma pessoa', () => {
     let s = executar(agenda, comHorarios('7h00;10h00'), { tipo: 'inicio' }).sessao
-    for (let i = 0; i < MAX_TENTATIVAS - 1; i++) {
+    for (let i = 0; i < MAX_TENTATIVAS * 2; i++) {
       s = executar(agenda, s, { tipo: 'texto', texto: 'meia noite' }).sessao
     }
-    const r = executar(agenda, s, { tipo: 'texto', texto: 'meia noite' })
 
-    expect(r.sessao.status).toBe('humano')
+    expect(s.status).toBe('ativa')
   })
 })
 

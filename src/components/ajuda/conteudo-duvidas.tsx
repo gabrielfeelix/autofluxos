@@ -129,9 +129,10 @@ export function SecaoDuvidas() {
 
         <Duvida p="O bot fica repetindo a pergunta para sempre?">
           <p>
-            Não. Depois de {MAX_TENTATIVAS} respostas seguidas que ele não entendeu, a conversa vai
-            para a fila do Inbox com esse motivo registrado. Vale tanto para formato quanto para
-            menu que ninguém acerta.
+            No menu, sim: texto, foto, áudio, vídeo ou figurinha que não seja uma das opções recebe
+            o pedido de escolha e o menu de novo, sem nunca passar para uma pessoa. Na pergunta
+            com formato (data, e-mail, CPF), depois de {MAX_TENTATIVAS} respostas seguidas fora do
+            formato a conversa vai para a fila do Inbox com esse motivo registrado.
           </p>
         </Duvida>
 
