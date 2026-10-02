@@ -55,9 +55,11 @@ export function SeloDoAtendimento({
   const { atendimento, donoNome } = useAtendimentoVivo(doServidor, donoDoServidor)
   const tom = atendimento.rotulo === 'Atendimento manual' ? TOM.encerrado : TOM[atendimento.estado]
   return (
-    <span className={`inline-flex max-w-full items-center gap-1 truncate rounded-full border px-2 py-0.5 text-[11px] font-bold ${tom}`}>
-      {atendimento.rotulo}
-      <span className="truncate font-semibold opacity-80">
+    // Sem espaço, quem encolhe é o estado, e não o dono: "com Fulano" é o que
+    // muda ao passar a conversa, e cortado ele escondia a transferência.
+    <span className={`inline-flex max-w-full items-center gap-1 overflow-hidden rounded-full border px-2 py-0.5 text-[11px] font-bold ${tom}`}>
+      <span className="min-w-0 truncate">{atendimento.rotulo}</span>
+      <span className="shrink-0 font-semibold opacity-80">
         {donoNome ? `· com ${donoNome}` : '· sem responsável'}
       </span>
     </span>

@@ -3,6 +3,7 @@
 import { useState, type ReactNode } from 'react'
 import { useConversaAberta } from '@/components/inbox/conversa-local'
 import { Dropdown } from '@/components/design/dropdown'
+import { AvisoFlutuante } from '@/components/design/aviso-flutuante'
 
 /**
  * O botão que faz alguém **virar** atendente.
@@ -136,15 +137,26 @@ export function PassarPara({
    */
   const conversa = useConversaAberta()
   const [erro, setErro] = useState<string | null>(null)
+  /*
+   * A confirmação do gesto. O seletor sempre volta a ler "Transferir para…" e
+   * o selo do cabeçalho corta o nome quando falta largura: sem este aviso, a
+   * transferência acontecia e a tela parecia não ter mudado nada (02/out/2026).
+   */
+  const [passadoPara, setPassadoPara] = useState<string | null>(null)
 
   // Escolher no seletor já transfere: o botão "Transferir" ao lado era um
   // clique a mais para um gesto que a escolha já deixa claro (30/set/2026).
   const transferir = (para: string) => {
     if (para === '') return
     setErro(null)
+    const nome = equipe.find((membro) => membro.id === para)?.nome ?? null
+    setPassadoPara(para === conversa.usuarioId ? 'você' : nome)
     const formData = new FormData()
     formData.set('usuarioId', para)
-    void conversa.agir({ atribuidoA: para }, () => atribuir(formData)).then(setErro)
+    void conversa.agir({ atribuidoA: para }, () => atribuir(formData)).then((falha) => {
+      setErro(falha)
+      if (falha) setPassadoPara(null)
+    })
   }
 
   return (
@@ -172,6 +184,12 @@ export function PassarPara({
         <span role="alert" className="max-w-[160px] text-[11.5px] leading-4 text-perigo">
           {erro}
         </span>
+      )}
+      <span role="status" className="sr-only">{passadoPara ? `Conversa passada para ${passadoPara}` : ''}</span>
+      {passadoPara && (
+        <AvisoFlutuante duracao={3500} aoSumir={() => setPassadoPara(null)}>
+          Conversa passada para <strong className="font-semibold">{passadoPara}</strong>.
+        </AvisoFlutuante>
       )}
     </div>
   )

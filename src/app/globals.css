@@ -253,16 +253,6 @@
   --sobre-casca-suave: rgb(255 255 255 / 0.78);
   --casca-hover: rgb(255 255 255 / 0.14);
   --casca-linha: rgb(255 255 255 / 0.25);
-  /*
-   * O vidro: branco translúcido com desfoque. O quadro deixa o azul passar um
-   * pouco; a barra, que é navegação e precisa de contraste, passa menos.
-   */
-  --vidro: rgb(255 255 255 / 0.78);
-  --vidro-forte: rgb(255 255 255 / 0.9);
-  --vidro-borda: rgb(255 255 255 / 0.6);
-  --vidro-cartao: rgb(255 255 255 / 0.9);
-  /* O mesmo tom já composto sobre o azul, sólido: para cartão dentro de cartão. */
-  --vidro-cartao-solido: #e9eefc;
   --sombra-ilha: 0 20px 44px -24px rgb(8 20 70 / 0.65);
   /* O número que pede ação na barra: coral sólido, para ler de longe. */
   --contador: #e5484d;
@@ -364,11 +354,6 @@
 
   /* No escuro a casca vira marinho: o azul cheio cansaria a vista à noite. */
   --casca: linear-gradient(135deg, #0a1433 0%, #0f1d47 50%, #172c6b 100%);
-  --vidro: rgb(14 20 31 / 0.82);
-  --vidro-forte: rgb(17 23 34 / 0.92);
-  --vidro-borda: rgb(255 255 255 / 0.06);
-  --vidro-cartao: rgb(17 23 34 / 0.86);
-  --vidro-cartao-solido: #121a2b;
   --sombra-ilha: 0 20px 44px -24px rgb(0 0 0 / 0.8);
 }
 
@@ -1986,8 +1971,8 @@ textarea::placeholder {
  * ---------------------------------------------------------------------------
  *
  * O fundo azul da conta (opção C de 02/out/2026, `docs/DECISIONS.md`): a barra
- * é uma ilha de vidro, o cabeçalho mora direto no azul e as telas ficam num
- * quadro de vidro único. Trocar para a opção A (barra no azul, folha clara)
+ * é uma ilha branca, o cabeçalho e as telas moram direto no azul, e os
+ * cartões flutuam brancos. Trocar para a opção A (barra no azul, folha clara)
  * deve ser mudança deste bloco e da barra, não das telas.
  */
 .app-casca {
@@ -2080,42 +2065,21 @@ textarea::placeholder {
   }
 
   /*
-   * O cartão é vidro claro: branco quase cheio, deixando o azul passar de leve.
-   * Sem `backdrop-filter`, que viraria referência de `position: fixed` para o
-   * que mora dentro do cartão; sobre um degradê liso o desfoque não somaria.
+   * O cartão é **branco cheio** sobre o azul: tabela e lista se leem melhor
+   * assim (o dono rejeitou o branco a 90%, que puxava para o lilás). A
+   * transparência fica com as faixas claras, como "Defina o objetivo", que
+   * usam `--primary-weak` e aqui viram branco a 16% com texto branco.
    */
-  .app-quadro :is(.bg-panel, .app-card, .crm-section) {
-    background-color: var(--vidro-cartao);
-  }
 
   /*
-   * Translúcido só o cartão de fora. Dentro dele (coluna fixa de tabela,
-   * cabeçalho grudado, linha), vidro sobre vidro clareia e deixa ver o que rola
-   * por baixo: o de dentro é o mesmo tom, sólido.
-   */
-  .app-quadro :is(.bg-panel, .app-card, .crm-section) :is(.bg-panel, .app-card, .crm-section) {
-    background-color: var(--vidro-cartao-solido);
-  }
-
-  /*
-   * A inbox é um quadro branco cheio, inteiro: fila, conversa e ficha juntas.
-   * Ferramenta de trabalho o dia todo pede o branco firme, não o vidro.
+   * A inbox é um quadro branco inteiro: fila, conversa e ficha juntas, com a
+   * mesma folga e o mesmo canto da barra.
    */
   .app-quadro .app-inbox {
     height: calc(100% - 12px);
     margin: 0 12px 12px 0;
     border-radius: 22px;
     box-shadow: var(--sombra-ilha);
-  }
-  .app-quadro .app-inbox,
-  .app-quadro .app-inbox :is(.bg-panel, .app-card) {
-    background-color: var(--panel);
-  }
-
-  /* O que flutua por cima da tela (menu, diálogo, popover) é branco cheio. */
-  .app-quadro :is(dialog, [popover], .quadro-popover, .app-dropdown-menu),
-  .app-quadro :is(dialog, [popover], .quadro-popover, .app-dropdown-menu) :is(.bg-panel, .app-card) {
-    background-color: var(--panel);
   }
 
   /* Botão primário solto no azul: fundo branco, texto azul. Em cartão, volta. */

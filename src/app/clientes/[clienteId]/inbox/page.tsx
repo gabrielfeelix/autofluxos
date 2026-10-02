@@ -1,3 +1,4 @@
+import { EsqueletoDeInbox } from '@/components/design/esqueleto'
 import { Fragment, Suspense } from 'react'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
@@ -130,11 +131,15 @@ export default async function Pagina({
         fazia a tela parecer que recomeçava do zero.
 
         A fronteira continua aqui, com `key={chaveDoFiltro}`, porque ela ainda
-        isola a troca de filtro, e sem `fallback` o React segura a tela anterior
-        enquanto o filtro novo vem, que é o comportamento certo para quem trocou
-        de aba do rail: a fila some e volta era justamente o que incomodava.
+        isola a troca de filtro.
+
+        **E tem `fallback`, o mesmo esqueleto do `loading.tsx`, no mesmo lugar**
+        (02/out/2026). Sem ele, a fronteira que monta pela primeira vez não
+        segura nada: entre o esqueleto da rota sumir e a fila chegar, o miolo
+        ficava vazio, e sobre a casca azul isso é um buraco na tela. Sendo o
+        mesmo desenho, a troca é contínua e não parece recomeçar.
       */}
-      <Suspense key={chaveDoFiltro}>
+      <Suspense key={chaveDoFiltro} fallback={<EsqueletoDaTela />}>
         <Tela cliente={cliente} busca={busca} />
       </Suspense>
     </ClienteShell>
@@ -724,5 +729,14 @@ async function Conteudo({
       temFicha={Boolean(selecionado)}
       conversaPedida={conversaPedida}
     />
+  )
+}
+
+/** O mesmo miolo do `loading.tsx` da rota, para as duas esperas serem uma só. */
+function EsqueletoDaTela() {
+  return (
+    <div className="flex min-h-0 flex-1 flex-col p-3 md:p-4">
+      <EsqueletoDeInbox />
+    </div>
   )
 }
