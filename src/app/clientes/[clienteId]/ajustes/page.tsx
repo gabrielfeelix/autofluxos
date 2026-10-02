@@ -15,7 +15,6 @@ import { listarEtiquetas } from '@/server/repos/etiquetas'
 import { acharCliente, contarOQueSomeCom } from '@/server/repos/clientes'
 import { recursosDaConta } from '@/server/repos/recursos'
 import { listarConexoes } from '@/server/repos/conexoes'
-import { listarChavesDeApi } from '@/server/repos/chaves-de-api'
 import { paginasDaConta } from '@/server/repos/paginas-de-lead'
 import { listarCanais } from '@/server/repos/conversas'
 import { listarFluxos } from '@/server/repos/fluxos'
@@ -63,8 +62,6 @@ export default async function Pagina({
       catalogoDeIntegracoes(cliente.id),
     ])
   const semContexto = cliente.contextoNegocio.trim() === ''
-  // Selo, não tela: sem a tabela (ambiente sem a 0120) o índice abre igual.
-  const chavesDeApi = (await listarChavesDeApi(cliente.id).catch(() => [])).filter((chave) => !chave.revogadaEm).length
 
   const trilha = trilhaDeConfiguracao({
     empresa: cliente,
@@ -260,19 +257,6 @@ export default async function Pagina({
                 {conexoes.length === 0
                   ? 'nenhuma'
                   : `${conexoes.length} ${conexoes.length === 1 ? 'credencial' : 'credenciais'}`}
-              </Selo>
-            }
-          />
-          <Cartao
-            href={`/clientes/${cliente.id}/ajustes/api`}
-            icone={ICONE_DA_TELA['api']}
-            titulo="API"
-            descricao="Chaves para o seu sistema, formulário ou parceiro cadastrar contatos e disparar automações."
-            estado={
-              <Selo tom={chavesDeApi === 0 ? 'neutro' : 'ok'}>
-                {chavesDeApi === 0
-                  ? 'nenhuma chave'
-                  : `${chavesDeApi} ${chavesDeApi === 1 ? 'chave ativa' : 'chaves ativas'}`}
               </Selo>
             }
           />
