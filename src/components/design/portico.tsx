@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react'
-import { Marca } from './marca'
+import Image from 'next/image'
 
 /**
  * A moldura das telas de porta: entrar e criar conta.
@@ -9,8 +9,9 @@ import { Marca } from './marca'
  * que a tela anuncia já esteve errada uma vez, e ter duas cópias dela é ter duas
  * chances de errar de novo.
  *
- * O lado esquerdo some abaixo de `md`: em 390px ele empurraria o formulário
- * para fora da tela, e quem chega no celular vem para entrar, não para ler.
+ * Mora na casca azul, como a conta (decisão de 02/out): a apresentação fica
+ * solta no azul e o formulário num cartão branco. Abaixo de `md` sobra só a
+ * marca no topo: em 390px o texto empurraria o formulário para fora da tela.
  */
 export function Portico({
   titulo,
@@ -24,55 +25,48 @@ export function Portico({
   children: ReactNode
 }) {
   return (
-    <main className="flex min-h-screen bg-canvas md:h-screen md:min-h-[700px] md:overflow-hidden">
-      <section className="relative hidden min-w-0 flex-[1.15] flex-col justify-between overflow-hidden px-[52px] py-11 md:flex">
-        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(rgba(19,25,34,.06)_1px,transparent_1.3px)] bg-[length:26px_26px]" />
-
-        <div className="relative flex items-center gap-2.5">
-          <Marca compacta />
-          <span className="ml-0.5 rounded-md border border-line px-2 py-0.5 font-mono text-[10px] text-dim">
-            by 4YU
+    <main className="app-casca flex min-h-screen flex-col md:flex-row md:items-stretch">
+      {/* No azul, a apresentação; no celular fica só a marca, por cima do cartão. */}
+      <section className="relative flex min-w-0 flex-col justify-between px-6 pt-6 text-white md:flex-[1.1] md:px-14 md:py-12">
+        <div className="flex items-center gap-2.5">
+          <span className="flex size-9 items-center justify-center rounded-xl bg-white">
+            <Image src="/logos/logo-autofluxos-marca.png" alt="" width={24} height={24} priority />
           </span>
+          <span className="text-[17px] font-bold tracking-[-0.01em]">AutoFluxos</span>
         </div>
 
-        <div className="relative max-w-[540px]">
+        <div className="hidden max-w-[520px] md:block">
           <h1 className="text-[44px] leading-[1.08] font-bold tracking-[-0.03em] text-balance">
             O atendimento dos seus clientes, desenhado bloco a bloco.
           </h1>
-          <p className="mt-4 max-w-[430px] text-[14.5px] leading-[1.6] text-muted">
-            Fluxos de conversa no WhatsApp, o bot conduz, coleta o que importa e passa para uma
-            pessoa na hora certa.
+          <p className="mt-4 max-w-[440px] text-[16px] leading-[1.6] text-white/85">
+            Fluxos de conversa no WhatsApp: o bot conduz, coleta o que importa e passa para a sua
+            equipe na hora certa.
           </p>
-          <div className="mt-7 flex gap-[22px] font-mono text-[11px] text-dim">
-            {/* Oito desde que o bloco de mídia entrou. Contagem errada na porta
-                de entrada é a primeira coisa que alguém confere, já anunciou
-                seis quando eram sete. */}
-            <span>
-              <strong className="font-normal text-primary">8</strong> tipos de bloco
-            </span>
-            <span>
-              <strong className="font-normal text-primary">1</strong> arrasto = 1 ramificação
-            </span>
-            <span>handoff sempre garantido</span>
-          </div>
+          <ul className="mt-8 space-y-3 text-[14.5px] text-white/90">
+            {['API oficial do WhatsApp Business', 'Bot e equipe na mesma conversa', 'O seu número continua sendo o seu'].map((item) => (
+              <li key={item} className="flex items-center gap-3">
+                <span aria-hidden className="flex size-6 items-center justify-center rounded-full bg-white/15 ring-1 ring-white/30">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round"><path d="m5 12.5 4.5 4.5L19 7.5" /></svg>
+                </span>
+                {item}
+              </li>
+            ))}
+          </ul>
         </div>
 
-        <p className="relative font-mono text-[10.5px] text-dim">© 2026 4YU · uso interno</p>
+        <p className="hidden text-[12.5px] text-white/70 md:block">Um produto da 4YU</p>
       </section>
 
-      <section className="flex w-full shrink-0 items-center justify-center border-line bg-panel p-6 md:w-[440px] md:border-l md:p-10">
-        <div className="app-page-enter w-full max-w-[312px]">
-          <div className="mb-6 md:hidden">
-            <Marca />
-          </div>
-
-          <h2 className="text-[21px] font-bold tracking-[-0.02em]">{titulo}</h2>
-          <p className="mt-1 mb-[26px] text-[12.5px] text-muted">{descricao}</p>
+      <section className="flex flex-1 items-start justify-center p-4 pt-6 md:w-[520px] md:flex-none md:items-center md:p-10">
+        <div className="app-page-enter w-full max-w-[400px] rounded-[24px] bg-panel px-6 py-8 text-ink shadow-[var(--sombra-ilha)] md:px-9 md:py-10">
+          <h2 className="text-[22px] font-bold tracking-[-0.02em]">{titulo}</h2>
+          <p className="mt-1 mb-[26px] text-[13.5px] leading-[1.55] text-muted">{descricao}</p>
 
           {children}
 
           {rodape && (
-            <div className="mt-[22px] border-t border-line pt-4 text-[11.5px] leading-[1.6] text-dim">
+            <div className="mt-[22px] border-t border-line pt-4 text-[12.5px] leading-[1.6] text-dim">
               {rodape}
             </div>
           )}

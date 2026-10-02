@@ -48,11 +48,11 @@ export default function Erro({
   }, [error])
 
   return (
-    <main className="flex min-h-screen items-center justify-center p-10 text-center">
-      <div className="app-page-enter max-w-[430px]">
+    <main className="app-casca flex min-h-screen items-center justify-center p-4 text-center">
+      <div className="app-page-enter w-full max-w-[460px] rounded-[24px] bg-panel px-7 py-10 text-ink shadow-[var(--sombra-ilha)] md:px-10">
       <span className="mx-auto mb-4 flex size-11 items-center justify-center rounded-full border border-rose-400/30 bg-rose-400/10 text-lg font-bold text-perigo">!</span>
-      <h1 className="text-[19px] font-bold">Alguma coisa quebrou aqui.</h1>
-      <p className="mt-2 mb-5 text-[12.5px] leading-[1.65] text-muted">
+      <h1 className="text-[21px] font-bold tracking-[-0.02em]">Alguma coisa quebrou aqui.</h1>
+      <p className="mt-2 mb-6 text-[14px] leading-[1.6] text-muted">
         {jaTentou
           ? 'Ainda não foi. Recarregar a página joga fora o que ficou pela metade, e costuma resolver quando tentar de novo não resolveu.'
           : 'Nada do que você digitou se perdeu: rascunho de fluxo é salvo sozinho. Tentar de novo costuma resolver quando é falha de rede.'}

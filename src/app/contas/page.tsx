@@ -49,10 +49,11 @@ export default async function Contas() {
   )
 
   return (
-    <div className="min-h-screen bg-canvas">
+    <div className="app-casca min-h-screen pb-3 md:pb-0">
       <FaixaDeImpersonacao />
 
-      <main className="app-page-enter mx-auto max-w-[1180px] px-4 pt-[40px] pb-[64px] md:px-8">
+      {/* O miolo mora no azul, como a conta: texto solto branco, cartões brancos. */}
+      <main className="app-quadro app-page-enter mx-auto max-w-[1180px] px-4 pt-[40px] pb-[64px] md:px-8">
         <div className="mb-10 flex items-center justify-between gap-4">
           <Marca />
           <div className="flex items-center gap-1">

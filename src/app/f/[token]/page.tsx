@@ -94,10 +94,11 @@ export default async function Pagina({ params }: { params: Promise<{ token: stri
   const destinos = await destinosPossiveis()
 
   return (
-    <main className="mx-auto min-h-screen w-full max-w-[760px] px-4 py-10 md:px-8 md:py-14">
+    <div className="app-casca min-h-screen p-3 md:p-6">
+    <main className="mx-auto w-full max-w-[820px] rounded-[28px] bg-panel px-5 py-8 text-ink shadow-[var(--sombra-ilha)] md:px-10 md:py-12">
       <div className="mb-8 flex items-center gap-2.5">
         <Marca compacta />
-        <span className="rounded-md border border-line px-2 py-0.5 font-mono text-[10px] text-dim">
+        <span className="rounded-md border border-line px-2 py-0.5 text-[12px] text-dim">
           fluxo compartilhado
         </span>
       </div>
@@ -207,6 +208,7 @@ export default async function Pagina({ params }: { params: Promise<{ token: stri
         atendimento no WhatsApp desenhado bloco a bloco.
       </p>
     </main>
+    </div>
   )
 }
 
@@ -226,12 +228,14 @@ function Selo({ children, destaque = false }: { children: React.ReactNode; desta
 
 function Aviso({ titulo, texto, children }: { titulo: string; texto: string; children?: ReactNode }) {
   return (
-    <main className="mx-auto flex min-h-screen w-full max-w-[480px] flex-col items-center justify-center px-6 text-center">
+    <div className="app-casca flex min-h-screen items-center justify-center p-4">
+    <main className="flex w-full max-w-[460px] flex-col items-center rounded-[24px] bg-panel px-7 py-10 text-center text-ink shadow-[var(--sombra-ilha)]">
       <Marca compacta />
       <h1 className="mt-7 text-[20px] font-bold tracking-[-0.02em]">{titulo}</h1>
       <p className="mt-2 text-[13px] leading-[1.7] text-dim">{texto}</p>
       {children && <div className="mt-5 flex flex-wrap items-center justify-center gap-2">{children}</div>}
     </main>
+    </div>
   )
 }
 
