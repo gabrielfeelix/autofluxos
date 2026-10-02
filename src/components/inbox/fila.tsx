@@ -1,7 +1,6 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { useCallback, useDeferredValue, useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { comoFalta, dentroDaPortaDeEntrada, restaDaJanela } from "@/channels/janela";
 import { Dica } from "@/components/design/dica";
@@ -32,6 +31,7 @@ import { linhaViva, useRemendos } from "@/components/inbox/conversa-local";
 import { esquecerContadoresVivos, juntarComVivas, juntarNaPagina, naoLidasVivas, useFilaViva, zerarNaoLidaViva } from "@/components/inbox/fila-viva";
 import { ajustarContagem } from "@/components/design/contagens-local";
 import { cabeNoRecorte } from "@/components/inbox/recorte";
+import { abrirConversa, preCarregarConversa, useAberta } from "@/components/inbox/aberta-local";
 import type { MensagemAgendada } from "@/server/repos/mensagens-agendadas";
 
 export type Contagem = {
@@ -200,58 +200,39 @@ export function Fila({
     [localDoServidor, viva.linhas, remendos],
   );
   /*
-   * A linha clicada acende no clique, antes de a conversa chegar.
-   *
-   * Trocar de conversa segura a conversa anterior na tela até a nova vir (sem
-   * esqueleto, como o WhatsApp Web), e sem isto a linha só mudaria junto, o
-   * que parece "não clicou". Vale até o servidor confirmar a escolha.
+   * Qual conversa está aberta é do navegador, não do servidor: clicar numa
+   * linha abre a conversa sem navegar (`aberta-local.ts`), e a linha acende no
+   * mesmo quadro. Até a página semear a loja, vale o que o servidor desenhou.
    */
-  const [abrindo, setAbrindo] = useState<string | null>(null);
-  const [abertaNoServidor, setAbertaNoServidor] = useState(selecionado?.contatoId ?? null);
-  if (abertaNoServidor !== (selecionado?.contatoId ?? null)) {
-    setAbertaNoServidor(selecionado?.contatoId ?? null);
-    setAbrindo(null);
-  }
+  const aberta = useAberta();
+  const abertaId = aberta.iniciada ? aberta.id : (selecionado?.contatoId ?? null);
 
   /*
-   * A conversa aberta nunca aparece como não lida, e a que acabou de ser
-   * clicada também não: o número some no clique, como no WhatsApp, e não
-   * quando o servidor terminar de desenhar a conversa.
+   * A conversa aberta nunca aparece como não lida: o número some no clique,
+   * como no WhatsApp, e não quando a conversa termina de chegar.
    */
   const naoLidas = useMemo(() => {
     const juntas = naoLidasVivas(naoLidasDoServidor, viva.naoLidas);
-    const esconder = [selecionado?.contatoId, abrindo].filter(
-      (id): id is string => Boolean(id) && juntas.has(id as string),
-    );
-    if (esconder.length === 0) return juntas;
+    if (!abertaId || !juntas.has(abertaId)) return juntas;
     const semAberta = new Map(juntas);
-    for (const id of esconder) semAberta.delete(id);
+    semAberta.delete(abertaId);
     return semAberta;
-  }, [naoLidasDoServidor, viva.naoLidas, selecionado, abrindo]);
+  }, [naoLidasDoServidor, viva.naoLidas, abertaId]);
 
   /*
-   * Pré-carrega a conversa quando o ponteiro chega na linha, e não quando ela
-   * entra na tela. Pré-carregar tudo o que estava à vista era uma renderização
-   * inteira do Inbox no servidor por linha, refeita a cada atualização da fila,
-   * e o que ficava guardado podia ter cinco minutos no clique. O passar do
-   * mouse dá ao servidor os ~200 ms até o clique, com a conversa fresca.
+   * O número da barra lateral desconta a conversa que o servidor abriu já
+   * lida. A que o clique abre desconta no clique (`abrir`).
    */
-  const router = useRouter();
-  const preCarregar = useCallback(
-    (href: string) => router.prefetch(href, { kind: "full" } as Parameters<typeof router.prefetch>[1]),
-    [router],
-  );
-
-  // Abriu, está lida; e continua lida ao sair (ver `zerarNaoLidaViva`).
-  const abertaId = selecionado?.contatoId ?? null;
+  const abertaNoServidor = selecionado?.contatoId ?? null;
   const atribuidaDaAberta = selecionado?.atribuidoA ?? null;
   const abertaConta = selecionado?.estadoEfetivo === "aberta";
   useEffect(() => {
-    if (!abertaId || !abertaEstavaSemLer || !abertaConta) return;
+    if (!abertaNoServidor || !abertaEstavaSemLer || !abertaConta) return;
     if (atribuidaDaAberta === null) ajustarContagem("sem-dono", -1);
     else if (atribuidaDaAberta === usuarioId) ajustarContagem("minhas", -1);
-  }, [abertaId, abertaEstavaSemLer, abertaConta, atribuidaDaAberta, usuarioId]);
+  }, [abertaNoServidor, abertaEstavaSemLer, abertaConta, atribuidaDaAberta, usuarioId]);
 
+  // Abriu, está lida; e continua lida ao sair (ver `zerarNaoLidaViva`).
   useEffect(() => {
     if (!abertaId) return;
     zerarNaoLidaViva(abertaId);
@@ -338,8 +319,8 @@ export function Fila({
 
   const semLerDe = useCallback(
     (contatoId: string) =>
-      contatoId === abrindo ? 0 : (remendoDeNaoLidas.get(contatoId) ?? naoLidas.get(contatoId) ?? 0),
-    [remendoDeNaoLidas, naoLidas, abrindo],
+      contatoId === abertaId ? 0 : (remendoDeNaoLidas.get(contatoId) ?? naoLidas.get(contatoId) ?? 0),
+    [remendoDeNaoLidas, naoLidas, abertaId],
   );
 
   /** Quando esta pessoa fixou a conversa, ou `null` se ela não está fixada. */
@@ -414,6 +395,28 @@ export function Fila({
   );
 
   /*
+   * O clique numa linha: abre a conversa sem navegar. O endereço guarda os
+   * filtros que já estão nele e troca só a conversa, para recarregar ou copiar
+   * o link continuar caindo no mesmo lugar.
+   */
+  const abrir = useCallback(
+    (lead: Lead) => {
+      if (lead.contatoId !== abertaId && semLerDe(lead.contatoId) > 0 && lead.estadoEfetivo === "aberta") {
+        if (lead.atribuidoA === null) ajustarContagem("sem-dono", -1);
+        else if (lead.atribuidoA === usuarioId) ajustarContagem("minhas", -1);
+      }
+      const endereco = new URL(window.location.href);
+      endereco.searchParams.set("conversa", lead.contatoId);
+      abrirConversa(
+        clienteId,
+        { lead, canal: canalPeloContato(lead.waId, canalDoContato.get(lead.contatoId)) },
+        `${endereco.pathname}${endereco.search}`,
+      );
+    },
+    [abertaId, semLerDe, usuarioId, clienteId, canalDoContato],
+  );
+
+  /*
    * Os números de não lidas contam o que a pessoa **consegue achar**.
    *
    * Contavam toda conversa com mensagem sem ler, inclusive a resolvida pelo
@@ -448,7 +451,7 @@ export function Fila({
     return () => {
       document.title = document.title.replace(/^\(\d+\+?\)\s*/, "");
     };
-  }, [abertasSemLer, selecionado]);
+  }, [abertasSemLer, abertaId]);
 
   /*
    * As conversas em que o termo foi dito, perguntadas ao servidor. A fila
@@ -508,9 +511,7 @@ export function Fila({
 
   /** O endereço de uma aba do rail, preservando a conversa aberta. */
   const comBusca = termo === "" ? "" : `&busca=${encodeURIComponent(termo)}`;
-  const conversaAberta = selecionado
-    ? `&conversa=${encodeURIComponent(selecionado.contatoId)}`
-    : "";
+  const conversaAberta = abertaId ? `&conversa=${encodeURIComponent(abertaId)}` : "";
   /*
    * Os dois eixos convivem no endereço: trocar de dono não pode jogar a pessoa
    * de volta para a fila aberta, nem trocar de estado perder o filtro de quem
@@ -629,7 +630,7 @@ export function Fila({
               estadoInicial={estado}
               atribuicaoInicial={atribuicao}
               busca={termo}
-              conversaAberta={selecionado?.contatoId ?? null}
+              conversaAberta={abertaId}
               equipe={equipe}
               usuarioId={usuarioId}
               rotuloDeTodos={rotuloDeTodos}
@@ -764,13 +765,7 @@ export function Fila({
           <form method="get" className="relative">
             <input type="hidden" name="de" value={atribuicao} />
             <input type="hidden" name="estado" value={estado} />
-            {selecionado && (
-              <input
-                type="hidden"
-                name="conversa"
-                value={selecionado.contatoId}
-              />
-            )}
+            {abertaId && <input type="hidden" name="conversa" value={abertaId} />}
             <Lupa />
             <input
               type="search"
@@ -849,7 +844,7 @@ export function Fila({
           className="min-h-0 flex-1 overflow-y-auto py-1.5"
         >
           {naTela.map((lead) => {
-            const ativa = lead.contatoId === (abrindo ?? selecionado?.contatoId);
+            const ativa = lead.contatoId === abertaId;
             const nome = lead.nome ?? "sem nome";
             const semLer = semLerDe(lead.contatoId);
             const presa = fixadaEm(lead.contatoId) !== null;
@@ -871,19 +866,22 @@ export function Fila({
                 }`}
               >
               {/*
-                Sem prefetch ao entrar na tela, com prefetch ao apontar: ver
-                `preCarregar`.
+                Um `Link` de verdade para abrir em nova aba e copiar o endereço;
+                o clique comum abre sem navegar (`abrir`), e apontar para a
+                linha já busca a conversa, para o clique encontrá-la pronta.
               */}
               <Link
                 href={`/clientes/${clienteId}/inbox?conversa=${encodeURIComponent(lead.contatoId)}`}
                 aria-current={ativa ? "page" : undefined}
                 scroll={false}
                 prefetch={false}
-                onPointerEnter={(evento) => preCarregar(evento.currentTarget.getAttribute("href") ?? "")}
-                onFocus={(evento) => preCarregar(evento.currentTarget.getAttribute("href") ?? "")}
+                onPointerEnter={() => preCarregarConversa(clienteId, lead.contatoId)}
+                onFocus={() => preCarregarConversa(clienteId, lead.contatoId)}
                 onClick={(evento) => {
+                  // Nova aba e afins continuam sendo um link de verdade.
                   if (evento.metaKey || evento.ctrlKey || evento.shiftKey || evento.button !== 0) return;
-                  setAbrindo(lead.contatoId);
+                  evento.preventDefault();
+                  abrir(lead);
                 }}
                 className="flex min-w-0 flex-1 items-start gap-3 rounded-[10px] px-3 py-2.5"
               >

@@ -343,6 +343,20 @@ extração explícito para os objetos de `public`.
   objetos, ACLs, policies e funções de `app_verandi`: **35** migrations,
   **40** tabelas, **16** policies de `storage.objects`. `DATABASE_URL` da
   Vercel voltou para `autofluxos_login` no mesmo dia.
+- **a `0119` foi aplicada em 02/out/2026**, com autorização explícita do dono,
+  pela Management API. Aditiva: `public.clients.canal_ao_vivo` (uuid sorteado,
+  nome do canal) e o gatilho `avisar_inbox_ao_vivo` em `public.messages`, que
+  chama `realtime.send` (Broadcast público, payload só com o id do contato).
+  **Primeiro uso do Realtime no projeto**: a Verandi não usa, e nada na
+  configuração do Realtime mudou. A função é `security definer` com
+  `search_path` fixo, `execute` revogado de `public`, `anon` e `authenticated`,
+  e engole qualquer erro para nunca barrar a gravação de mensagem. Ensaio em
+  transação com `rollback` limpo antes. Conferido depois: 8 de 8 contas com
+  canal; aviso recebido por um assinante com a chave publicável; `channels` e
+  `app_verandi.conta` 200 na Data API; `clients` 401 com a chave pública.
+  Desfazer: `drop trigger avisar_inbox_ao_vivo on public.messages`, `drop
+  function public.avisar_inbox_ao_vivo()`, `alter table public.clients drop
+  column canal_ao_vivo`.
 - **a `0118` foi aplicada em 01/out/2026**, com autorização explícita do dono,
   pela Management API. Aditiva: cria `public.chamadas` (sinalização da ligação
   de voz do chat do site), RLS ligada sem políticas, `grant` só para

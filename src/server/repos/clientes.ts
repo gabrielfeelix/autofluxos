@@ -443,3 +443,32 @@ export async function atualizarHorario(
 
   if (error) throw new Error(`não deu para salvar o horário: ${error.message}`)
 }
+
+/**
+ * Onde o Inbox desta conta escuta as mudanças ao vivo (Broadcast do Supabase,
+ * ver a 0119): a URL do projeto, a chave publicável e o nome do canal.
+ *
+ * A chave publicável é pública por desenho, e aqui não abre nada: `anon` não
+ * alcança tabela nem função de `public` desde a 0041, e o aviso não leva
+ * conteúdo. O nome do canal é sorteado, não é o id do cliente.
+ *
+ * `null` quando falta qualquer peça, inclusive a coluna antes da 0119: a tela
+ * continua no pulso por SSE, que é o plano B de sempre.
+ */
+export async function inboxAoVivo(
+  clienteId: string,
+): Promise<{ url: string; chave: string; canal: string } | null> {
+  const url = process.env.SUPABASE_URL
+  const chave = process.env.SUPABASE_PUBLISHABLE_KEY
+  if (!url || !chave) return null
+
+  const { data, error } = await db()
+    .from('clients')
+    .select('canal_ao_vivo')
+    .eq('id', clienteId)
+    .maybeSingle()
+  if (error || !data) return null
+
+  const canal = (data as { canal_ao_vivo: string | null }).canal_ao_vivo
+  return canal ? { url, chave, canal } : null
+}

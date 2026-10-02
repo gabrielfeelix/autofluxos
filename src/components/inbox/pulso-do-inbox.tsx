@@ -97,8 +97,14 @@ const REDESENHO_PREGUICOSO_MS = 30_000
 export function PulsoDoInbox({
   clienteId,
   pulsoNaTela,
+  aoVivo,
 }: {
   clienteId: string
+  /**
+   * Onde escutar as mudanças ao vivo (Broadcast do Supabase, 0119), ou `null`
+   * para ficar só no stream. Ver `inboxAoVivo`.
+   */
+  aoVivo: { url: string; chave: string; canal: string } | null
   /**
    * O pulso no instante em que o servidor desenhou esta página.
    *
@@ -117,6 +123,78 @@ export function PulsoDoInbox({
 }) {
   /** Quando a página foi redesenhada pela última vez, para não repetir à toa. */
   const ultimoRedesenho = useRef(0)
+  /** O pulso à vista, para o efeito do ao vivo, que não remonta a cada desenho. */
+  const pulsoAtual = useRef(pulsoNaTela)
+  useEffect(() => {
+    pulsoAtual.current = pulsoNaTela
+  }, [pulsoNaTela])
+
+  /*
+   * ---------------------------------------------------------------------------
+   * O aviso ao vivo, e por que ele não substitui o stream
+   * ---------------------------------------------------------------------------
+   *
+   * O stream pergunta ao banco a cada segundo e só então avisa: a mensagem
+   * levava de um a três segundos para aparecer, somando a volta da fila e a da
+   * conversa. Com a 0119, o próprio banco avisa no instante em que grava, pelo
+   * Broadcast do Supabase, como o WhatsApp empurra a mensagem em vez de esperar
+   * o aparelho perguntar.
+   *
+   * O aviso diz só **qual contato mudou**; o conteúdo continua vindo das rotas
+   * do painel, com sessão e alcance. O stream fica como está: ele carrega as
+   * ligações tocando, a carona das agendadas, e é o plano B se o WebSocket cair.
+   * Aviso repetido pelos dois caminhos não custa nada, `buscarMudancas` pede
+   * só o que mudou desde o pulso à vista.
+   */
+  const urlAoVivo = aoVivo?.url ?? null
+  const chaveAoVivo = aoVivo?.chave ?? null
+  const canalAoVivo = aoVivo?.canal ?? null
+  useEffect(() => {
+    if (!urlAoVivo || !chaveAoVivo || !canalAoVivo) return
+    let ativo = true
+    let juntando: number | null = null
+    const contatos = new Set<string>()
+    let desligar: (() => void) | null = null
+
+    // Uma rajada (mensagem, tique de entregue, tique de lida) vira uma busca só.
+    const aoAviso = (contato: string | null) => {
+      if (contato) contatos.add(contato)
+      if (juntando !== null) return
+      juntando = window.setTimeout(() => {
+        juntando = null
+        if (!ativo) return
+        const aberta = new URLSearchParams(window.location.search).get('conversa')
+        // Sem conversa no endereço, a aberta é a primeira da fila: pergunta.
+        if (!aberta || contatos.has(aberta)) pedirNovas(null)
+        contatos.clear()
+        void buscarMudancas(clienteId, pulsoDaTela(pulsoAtual.current))
+      }, 120)
+    }
+
+    void import('@supabase/realtime-js').then(({ RealtimeClient }) => {
+      if (!ativo) return
+      const cliente = new RealtimeClient(`${urlAoVivo.replace(/^http/, 'ws')}/realtime/v1`, {
+        params: { apikey: chaveAoVivo },
+      })
+      const canal = cliente
+        .channel(`inbox:${canalAoVivo}`, { config: { private: false } })
+        .on('broadcast', { event: 'mudou' }, (mensagem) => {
+          const contato = (mensagem.payload as { contato?: unknown } | undefined)?.contato
+          aoAviso(typeof contato === 'string' ? contato : null)
+        })
+        .subscribe()
+      desligar = () => {
+        void cliente.removeChannel(canal)
+        cliente.disconnect()
+      }
+    })
+
+    return () => {
+      ativo = false
+      if (juntando !== null) window.clearTimeout(juntando)
+      desligar?.()
+    }
+  }, [clienteId, urlAoVivo, chaveAoVivo, canalAoVivo])
 
   useEffect(() => {
     let ativo = true

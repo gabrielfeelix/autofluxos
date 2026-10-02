@@ -1,50 +1,18 @@
-import { Fragment, Suspense, type ReactNode } from 'react'
-import { EntradaDeAnotacao, ListaDeAnotacoes, ProvedorDeAnotacoes } from '@/components/inbox/anotacoes'
-import { LIMITE_DA_NOTA } from '@/core/flow/limites'
-import { anotacoesDoContato } from '@/server/repos/eventos'
-import { acaoAnotar } from '@/server/acoes-crm'
+import { Fragment, Suspense } from 'react'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
-import { comoFalta, restaDaJanela } from '@/channels/janela'
-import { Assumir, PassarPara, TravaDaResposta } from '@/components/inbox/assumir'
-import { ProvedorDaConversa } from '@/components/inbox/conversa-local'
-import { EtiquetasAplicadas } from '@/components/etiquetas/seletor'
 import { membrosDaConta, type MembroDaConta } from '@/server/repos/usuarios'
 import { sessaoAtual } from '@/server/sessao'
 import { acessoCompleto } from '@/server/permissoes'
 import { alcanceDaTela, espiando, quemPossoEspiar } from '@/server/espiar'
-import { FaixaDeEspiar, MenuDeEspiar, RodapeDeEspiar } from '@/components/inbox/espiar'
+import { FaixaDeEspiar, MenuDeEspiar } from '@/components/inbox/espiar'
 import { alcancaDono } from '@/core/permissoes'
 import { ClienteShell } from '@/components/design/cliente-shell'
-import { Dica } from '@/components/design/dica'
 import { IlustracaoInbox } from '@/components/design/ilustracoes'
 import { recemConectado } from '@/core/coexistencia-na-tela'
 import { coexistenciaDoCliente } from '@/server/repos/coexistencia'
-import { CamposColetados } from '@/components/lead/campos-coletados'
-import { camposSemOrigem } from '@/core/contatos/origem'
-import type { AnuncioEmCache, Passagem } from '@/core/anuncios'
-import { passagensDoContato } from '@/server/repos/passagens'
-import { resolverAnuncios } from '@/server/resolver-anuncios'
-import { tokenDeAnuncios } from '@/server/token-de-anuncios'
-import { QuemE } from '@/components/lead/quem-e'
-import { CaixaDeResposta } from '@/components/lead/responder'
-import { ProvedorDeCitacao } from '@/components/lead/citacao'
-import { ProvedorDeEntrega } from '@/components/lead/entrega-de-arquivos'
-import {
-  acaoAssumirAtendimento,
-  acaoAtribuirPara,
-  acaoAlternarAutomacaoDoLead,
-  acaoEncerrarAtendimento,
-  acaoLiberarAtendimento,
-  acaoResponderLead,
-} from '@/server/acoes'
-import { acharCliente, type Cliente } from '@/server/repos/clientes'
-import { contextoDeResposta, sessaoComPessoa } from '@/server/repos/conversas'
-import {
-  agendadasDaConta as listarAgendadasDaConta,
-  agendadasDoContato,
-  type MensagemAgendada,
-} from '@/server/repos/mensagens-agendadas'
+import { acharCliente, inboxAoVivo, type Cliente } from '@/server/repos/clientes'
+import { agendadasDaConta as listarAgendadasDaConta } from '@/server/repos/mensagens-agendadas'
 import {
   acharLead,
   contarPorAtribuicao,
@@ -52,36 +20,25 @@ import {
   filaInteira,
   leadsPorContatos,
   limparBusca,
-  lerConversa,
   paginarLeads,
   pulsoDaConta,
   type FiltroDeEstado,
   type Lead,
 } from '@/server/repos/leads'
 import { listarRespostasRapidas, type RespostaRapida } from '@/server/repos/respostas-rapidas'
-import { lojaDaConta } from '@/server/repos/lojas'
-import { CartaoDoAtendimento, SeloDoAtendimento } from '@/components/atendimento/estado'
-import { estadoDoAtendimento, type Atendimento } from '@/core/estado-do-atendimento'
 import type { EtiquetaEscolhivel } from '@/components/etiquetas/seletor'
-import { AcoesRapidas } from '@/components/inbox/acoes-rapidas'
-import { hrefDaFicha } from '@/core/volta-da-ficha'
-import { Avatar } from '@/components/inbox/avatar'
-import { ColunaDaFicha, MolduraDoInbox, SoSemFicha } from '@/components/inbox/moldura'
+import { MolduraDoInbox } from '@/components/inbox/moldura'
 import { cabeNoRecorte } from '@/components/inbox/recorte'
-import { telefoneLegivel } from '@/core/contatos/telefone'
-import { AbasDaFicha } from '@/components/inbox/abas-da-ficha'
 import { Fila, type Contagem } from '@/components/inbox/fila'
 import { clienteTemAutomacao } from '@/server/repos/fluxos'
 import { listarEtiquetas } from '@/server/repos/etiquetas'
-import { listarQuadros, quadrosDoContato } from '@/server/repos/quadros'
-import { FunilDaConversa, type FunilDoContato } from '@/components/inbox/funil-da-conversa'
 import { naoLidasPorContato } from '@/server/repos/leituras'
-import { favoritasEntre, fixadasDoUsuario } from '@/server/repos/marcadores'
+import { fixadasDoUsuario } from '@/server/repos/marcadores'
 import { canaisDosContatos } from '@/server/repos/canais-site'
 import { canalPeloContato, type CanalId } from '@/core/canais'
-import { ajustesDaConta } from '@/server/repos/distribuicao'
 import { FaixaDeCanalCaido } from '@/components/inbox/faixa-canal-caido'
-import { Historico } from '@/components/inbox/historico'
+import { PainelDaConversa } from '@/components/inbox/painel-da-conversa'
+import { lerConversaAberta } from '@/server/conversa-aberta'
 import { PulsoDoInbox } from '@/components/inbox/pulso-do-inbox'
 import { TelefoneDoInbox } from '@/components/inbox/telefone-do-inbox'
 
@@ -305,7 +262,11 @@ async function Tela({ cliente, busca }: { cliente: Cliente; busca: Busca }) {
    * envelheceu: lê-lo depois seria comparar a tela com um relógio posterior a
    * ela.
    */
-  const [sessao, pulso] = await Promise.all([sessaoAtual(), pulsoDaConta(clienteId)])
+  const [sessao, pulso, aoVivo] = await Promise.all([
+    sessaoAtual(),
+    pulsoDaConta(clienteId),
+    inboxAoVivo(clienteId),
+  ])
 
   /**
    * Quem atende nesta conta, para a tela dizer **nomes** em vez de uuid.
@@ -435,7 +396,7 @@ async function Tela({ cliente, busca }: { cliente: Cliente; busca: Busca }) {
         contatos a cada mensagem que chega seria intromissão. O Inbox é a única
         tela cujo conteúdo é a conversa acontecendo agora.
       */}
-      <PulsoDoInbox clienteId={cliente.id} pulsoNaTela={pulso} />
+      <PulsoDoInbox clienteId={cliente.id} pulsoNaTela={pulso} aoVivo={aoVivo} />
       <TelefoneDoInbox clienteId={cliente.id} />
       <FaixaDeCanalCaido clienteId={cliente.id} />
       {espiao && <FaixaDeEspiar clienteId={cliente.id} nome={espiao.alvo.nome} />}
@@ -647,19 +608,24 @@ async function Conteudo({
   // Mesmo alcance da `Tela`: `alcanceDaTela` é `cache`, então não relê nada.
   const alcance = await alcanceDaTela(clienteId)
   /*
-   * Tudo o que ainda vai sair nesta conta.
-   *
-   * A promessa começa **antes** do bloco abaixo e é esperada depois: assim ela
-   * corre junto da leitura da conversa em vez de somar uma ida de rede em série.
-   * Não entra naquele `Promise.all` porque ele é condicional ao `selecionado`,
-   * e o contador da barra existe mesmo sem nenhuma conversa aberta.
+   * Tudo o que ainda vai sair nesta conta, junto da conversa aberta: em série
+   * seria uma ida de rede a mais antes do primeiro pixel.
    *
    * Vem inteiro e não contado porque o número da barra é um botão: clicar abre
    * a lista com o cancelar. O teto de 200 está no repositório.
    */
-  const agendadasDaContaPromessa = listarAgendadasDaConta(clienteId)
-
-  const agendadasDaConta = await agendadasDaContaPromessa
+  const [agendadasDaConta, inicial] = await Promise.all([
+    listarAgendadasDaConta(clienteId),
+    selecionado
+      ? lerConversaAberta({
+          clienteId,
+          lead: selecionado,
+          usuarioId,
+          temAutomacao,
+          canal: canalPeloContato(selecionado.waId, canalDoContato.get(selecionado.contatoId)),
+        })
+      : Promise.resolve(null),
+  ])
 
   /*
    * Conta a fila inteira quando ela veio, e não a página: a linha diz "N
@@ -720,43 +686,22 @@ async function Conteudo({
         />
       }
       conversa={
-        selecionado ? (
-          /*
-            **Trocar de conversa não mostra esqueleto.**
-
-            Até 30/set/2026 esta coluna tinha um `<Suspense key={contato}>` com
-            esqueleto próprio: todo clique em conversa cujo prefetch tinha
-            vencido apagava a coluna e desenhava cartões cinza, e o dono lia
-            isso como "a página recarregou". Sem a fronteira, a coluna suspende
-            na do filtro, que já está na tela, e a navegação do Next é uma
-            transição: o React segura a conversa anterior até a nova chegar,
-            como o WhatsApp Web. A linha clicada acende na hora (`Fila`).
-
-            A `key` continua, num `Fragment`: nada da conversa antiga (rascunho,
-            rolagem, remendos) vaza para a nova.
-          */
-          <Fragment key={selecionado.contatoId}>
-            <ColunaDaConversa
-            clienteId={clienteId}
-            lead={selecionado}
-            canal={canalPeloContato(selecionado.waId, canalDoContato.get(selecionado.contatoId))}
-            equipe={equipe}
-            usuarioId={usuarioId}
-            etiquetas={etiquetas}
-            temAutomacao={temAutomacao}
-            respostasRapidas={respostasRapidas}
-            espiado={espiado}
-          />
-          </Fragment>
-        ) : (
-          <section className="flex min-w-0 items-center justify-center p-10 text-center">
-            <p className="max-w-[280px] text-[13px] leading-6 text-dim">
-              Nenhuma conversa nesta seleção.
-              <br />
-              Limpe a busca ou escolha outro filtro à esquerda.
-            </p>
-          </section>
-        )
+        /*
+          **Trocar de conversa não navega.** A página desenha a primeira; as
+          próximas o navegador abre sozinho, com a lista parada (ver
+          `aberta-local.ts`). Antes cada clique refazia o Inbox inteiro no
+          servidor para mudar só esta coluna.
+        */
+        <PainelDaConversa
+          inicial={inicial}
+          clienteId={clienteId}
+          equipe={equipe}
+          usuarioId={usuarioId}
+          etiquetas={etiquetas}
+          temAutomacao={temAutomacao}
+          respostasRapidas={respostasRapidas}
+          espiado={espiado}
+        />
       }
       /*
         A ficha não vem mais por aqui: ela é irmã da conversa, dentro da mesma
@@ -767,701 +712,4 @@ async function Conteudo({
       conversaPedida={conversaPedida}
     />
   )
-}
-
-/**
- * O cabeçalho da conversa: quem é, de quem é, e o que dá para fazer.
- *
- * **As três coisas em duas linhas, e a segunda é a do canal.** O desenho de
- * referência põe o canal como aba sublinhada acima das mensagens, e ele acerta:
- * a mesma pessoa pode escrever por caminhos diferentes, e "por onde esta
- * conversa está acontecendo" é a primeira coisa que muda o que se pode
- * responder, janela de 24h, botões, mídia. Estava dito em lugar nenhum.
- */
-/**
- * A coluna da conversa e a ficha do contato, tudo que muda ao clicar noutra
- * pessoa, e nada além disso.
- *
- * ---------------------------------------------------------------------------
- * Por que ela existe como componente
- * ---------------------------------------------------------------------------
- *
- * Isto morava dentro de `Conteudo`, e por isso as consultas da conversa
- * (histórico, contexto da janela, funis, agendadas, anúncios) eram feitas no
- * mesmo `await` que monta a fila. Clicar noutra conversa renavega, muda
- * `?conversa=`, e refazia **a tela inteira** sem fronteira nenhuma no meio: a
- * pessoa clicava e ficava olhando a conversa anterior, parada, até tudo voltar.
- *
- * Separada, ela tem `<Suspense key={contatoId}>` só para si. O esqueleto
- * aparece no clique, e a fila ao lado nem sabe que houve troca, que é
- * exatamente a preocupação registrada na `key` do Suspense de cima: *apagar a
- * fila para um cinza a cada clique seria piscar a coluna que a pessoa está
- * usando justamente enquanto ela a usa*.
- *
- * ---------------------------------------------------------------------------
- * A ficha vem junto, e não separada
- * ---------------------------------------------------------------------------
- *
- * `DadosDoLead` lê os mesmos funis e o mesmo histórico de anúncios deste
- * contato. Deixá-la fora da fronteira só mudaria quem segura a tela, ela
- * passaria a ser a peça lenta. As duas dependem do mesmo clique, então vivem
- * sob a mesma espera.
- */
-async function ColunaDaConversa({
-  clienteId,
-  lead,
-  canal,
-  equipe,
-  usuarioId,
-  etiquetas,
-  temAutomacao,
-  respostasRapidas,
-  espiado,
-}: {
-  clienteId: string
-  /** Espiando: no lugar da caixa de resposta, o aviso de só leitura. */
-  espiado: string | null
-  /** A conversa aberta. Nunca `null` aqui: quem decide isso é quem renderiza. */
-  lead: Lead
-  /** Por onde a pessoa fala. Muda o selo e o que o campo de resposta oferece. */
-  canal: CanalId
-  equipe: MembroDaConta[]
-  usuarioId: string | null
-  etiquetas: EtiquetaEscolhivel[]
-  temAutomacao: boolean
-  respostasRapidas: RespostaRapida[]
-}) {
-  // `lead` veio de `paginarLeads(clienteId, ...)` ou de `acharLead(clienteId, ...)`.
-  // Só depois desse vínculo cliente–contato confirmado é seguro ler as mensagens
-  // pelo id do contato.
-  const [conversa, contexto, posicoes, quadros, agendadasDaConversa, anotacoes, comPessoa] = await Promise.all([
-    lerConversa(lead.contatoId),
-    contextoDeResposta(clienteId, lead.contatoId),
-    /*
-     * Onde este contato está no funil, e as etapas de cada quadro para o menu
-     * de mover. As duas juntas porque uma sem a outra não desenha nada: a
-     * posição diz "está em Contactado", e só a lista de etapas diz para onde
-     * dá para ir.
-     */
-    quadrosDoContato(clienteId, lead.contatoId),
-    listarQuadros(clienteId),
-    // O que já está marcado para esta conversa: a barra de ações mostra o
-    // ícone aceso, e o painel lista com o botão de cancelar.
-    agendadasDoContato(clienteId, lead.contatoId),
-    anotacoesDoContato(clienteId, lead.contatoId),
-    // A terceira fonte do estado do atendimento (8.1): a sessão com uma pessoa.
-    sessaoComPessoa(lead.contatoId),
-  ])
-
-  const atendimento = estadoDoAtendimento({
-    automacaoAtiva: lead.automacaoAtiva,
-    aguardando: lead.aguardando,
-    atribuidoA: lead.atribuidoA,
-    sessaoComPessoa: comPessoa,
-    estado: lead.estadoEfetivo,
-    temAutomacao,
-    usuarioId,
-  })
-
-  /*
-   * Quais destas bolhas **eu** guardei.
-   *
-   * Depois do `Promise.all`, e não dentro dele, porque a pergunta é sobre os ids
-   * que a conversa devolveu, não dá para perguntar antes de saber quais são. É
-   * uma consulta por id em lista, no máximo `TETO_DE_MENSAGENS` deles.
-   */
-  const favoritas = await favoritasEntre(
-    usuarioId,
-    conversa.mensagens.map((mensagem) => mensagem.id),
-  )
-
-  /*
-   * A trava de "só quem assumiu responde", se a conta a ligou.
-   *
-   * A recusa também existe no servidor (`podeResponderAgora`), e as duas não são
-   * repetição: a de lá impede o envio, e esta impede a pessoa de escrever três
-   * parágrafos antes de descobrir que não podia. Campo que aceita texto e recusa
-   * no fim é a pior forma de dizer não.
-   */
-  const ajustesDeAtendimento = await ajustesDaConta(clienteId)
-  // O botão de status do pedido só existe onde há loja on-line para consultar.
-  const lojaDosPedidos = await lojaDaConta(clienteId).catch(() => null)
-  const temPedidos = Boolean(lojaDosPedidos?.ativa && lojaDosPedidos.conexaoId)
-  // Quem decide se trava é `TravaDaResposta`, no cliente: assumir destrava no
-  // clique, sem esperar a página voltar do servidor.
-
-  /*
-   * O nome da campanha, só do contato aberto.
-   *
-   * **Um id, e não a fila inteira**, de propósito. Resolver as 200 conversas
-   * encheria o cache de nomes que ninguém vai ler, a origem aparece na coluna
-   * do contato, que mostra uma pessoa por vez.
-   */
-  const { passagens, nomesDosAnuncios } = await historicoDoContatoAberto(clienteId, lead.contatoId)
-
-  /*
-   * Junta a posição do contato com as etapas do quadro dela. Quadro que sumiu
-   * entre uma consulta e outra é descartado em vez de virar um menu vazio,
-   * `flatMap` com `[]` é o jeito de dizer isso sem um `filter` a mais.
-   */
-  const funis: FunilDoContato[] = posicoes.flatMap((posicao) => {
-    const quadro = quadros.find((q) => q.id === posicao.quadroId)
-    if (!quadro) return []
-    return [{ ...posicao, etapas: quadro.etapas.map((e) => ({ id: e.id, nome: e.nome })) }]
-  })
-
-  /*
-   * Uma leitura do relógio para as duas contas abaixo. Chamar `Date.now()` duas
-   * vezes daria dois instantes diferentes, e o fim da janela ficaria alguns
-   * milissegundos fora do que a pílula diz que falta.
-   * Ler o relógio no render é o que se quer: cada render recalcula o prazo.
-   */
-  // eslint-disable-next-line react-hooks/purity
-  const agora = Date.now()
-  const restante = restaDaJanela(contexto ?? { ultimaEntradaEm: null }, agora)
-  // Chat do site: sem janela. O texto não aparece em pílula nenhuma (o
-  // cabeçalho a esconde para o site); ele só diz ao compositor que está livre.
-  const semJanela = contexto?.semJanela ?? false
-  const janela = semJanela ? 'sem prazo' : restante && restante > 0 ? comoFalta(restante) : null
-  /*
-   * Abaixo de duas horas a contagem muda de cor.
-   *
-   * Não é enfeite: "22h18" e "1h04" são a mesma frase e significam coisas
-   * opostas, uma diz que dá tempo de pensar, a outra que a conversa está
-   * prestes a exigir modelo aprovado. Quem olha de relance lê a cor, não o
-   * número.
-   */
-  const apertado = restante !== null && restante > 0 && restante < 2 * 60 * 60 * 1000
-  const primeiroNome = lead.nome?.split(' ')[0] ?? 'esta pessoa'
-  /*
-   * O instante em que a janela fecha, e não quanto falta.
-   *
-   * A pílula do cabeçalho quer a frase pronta ("22h18"); o agendamento quer o
-   * instante, para comparar com o horário que a pessoa escolheu. Derivar um do
-   * outro seria refazer a subtração com menos informação.
-   *
-   * Sai de `restante`, e não de `ultimaEntradaEm + JANELA_MS`, para a conta do
-   * prazo morar num lugar só. As 72h do anúncio **não** entram aqui: elas são
-   * gratuidade, não autorização de texto livre, e foi somá-las que abria o
-   * compositor para quem nunca escreveu. Ver o cabeçalho de `channels/janela`.
-   */
-  const fimDaJanela = semJanela
-    ? new Date(agora + 365 * 24 * 60 * 60 * 1000).toISOString()
-    : restante !== null && restante > 0
-      ? new Date(agora + restante).toISOString()
-      : null
-
-  if (!conversa) {
-    return (
-      <section className="flex min-w-0 items-center justify-center p-10 text-center">
-        <p className="max-w-[280px] text-[13px] leading-6 text-dim">
-          Não deu para abrir esta conversa.
-        </p>
-      </section>
-    )
-  }
-
-  const selecionado = lead
-
-  return (
-    <ProvedorDeAnotacoes
-      iniciais={anotacoes}
-      antiga={lead.notas}
-      autor={equipe.find((membro) => membro.id === usuarioId)?.nome ?? null}
-      anotar={acaoAnotar.bind(null, clienteId, lead.contatoId)}
-    >
-      <ProvedorDaConversa
-        contatoId={lead.contatoId}
-        doServidor={{
-          estado: lead.estadoEfetivo,
-          automacaoAtiva: lead.automacaoAtiva,
-          atribuidoA: lead.atribuidoA,
-          sessaoComPessoa: comPessoa,
-          aguardando: lead.aguardando,
-          etiquetas: lead.etiquetasManuais.map((etiqueta) => etiqueta.id),
-        }}
-        usuarioId={usuarioId}
-        temAutomacao={temAutomacao}
-        equipe={equipe.map((membro) => ({ id: membro.id, nome: membro.nome }))}
-      >
-      <section className="flex min-h-0 min-w-0 flex-col border-r border-line">
-        <CabecalhoDaConversa
-          clienteId={clienteId}
-          lead={selecionado}
-          canal={canal}
-          equipe={equipe}
-          usuarioId={usuarioId}
-          etiquetas={etiquetas}
-          temAutomacao={temAutomacao}
-          atendimento={atendimento}
-          janela={janela}
-          janelaApertada={apertado}
-          fimDaJanela={fimDaJanela}
-          agendadas={agendadasDaConversa}
-          espiando={espiado !== null}
-        />
-        {/*
-          `flex-col-reverse` é o que faz a conversa abrir na mensagem mais
-          recente, e não lá em cima nas antigas.
-
-          É CSS e não JavaScript de propósito. Um `scrollTo` num efeito
-          precisaria tornar isto um Client Component, e ainda assim
-          apareceria no topo por um quadro antes de pular, o flash que todo
-          chat feito assim tem. Com a coluna invertida o navegador ancora o
-          scroll no fim desde o primeiro render, sem piscar e sem JS.
-
-          O `Historico` fica em ordem NORMAL. Como ele é filho único deste
-          container, a inversão daqui não mexe na ordem das mensagens, ela
-          só decide de que ponta o scroll nasce. Inverter os dois (o que
-          esta tela já fez) inverte a conversa de verdade: a mensagem de
-          duas horas atrás aparecia acima da de três.
-        */}
-        {/*
-          O provedor envolve a conversa **e** a caixa porque a citação
-          nasce numa e é usada na outra.
-
-          A `key` é o que faz trocar de conversa esquecer a citação. Sem
-          ela, citar aqui, clicar noutra pessoa e responder mandaria a
-          resposta citando a mensagem de alguém que não é essa.
-        */}
-        <ProvedorDeCitacao key={selecionado.contatoId}>
-          {/*
-            Arrastar um arquivo para dentro da conversa cai aqui, e o painel
-            de revisão abre **dentro desta coluna**, sem escurecer a fila
-            da esquerda nem o cabeçalho de quem está do outro lado.
-
-            A `key` do provedor de cima também protege este: trocar de
-            conversa não pode levar junto um anexo escolhido para outra
-            pessoa.
-          */}
-          <ProvedorDeEntrega clienteId={clienteId} contatoId={selecionado.contatoId}>
-            {/*
-              `overflow-x-hidden`, e não `overflow-auto` nos dois eixos.
-
-              Uma URL de anúncio com 180 caracteres e nenhum espaço não tem
-              onde quebrar: ela esticava a bolha para além da coluna, o
-              contêiner ganhava rolagem horizontal, e arrastar de lado
-              deslocava a conversa inteira para fora da moldura. O `max-w` da
-              bolha não segurava porque `overflow-wrap` nasce em `normal`,
-              palavra sem espaço simplesmente transborda.
-
-              A quebra é resolvida na bolha (`[overflow-wrap:anywhere]`); isto
-              aqui é a garantia de que nenhum outro conteúdo largo, uma
-              tabela colada, um anexo fora de medida, reintroduza o mesmo
-              defeito.
-            */}
-            <div className="app-conversa flex min-h-0 flex-1 flex-col-reverse overflow-x-hidden overflow-y-auto p-5">
-              <Historico
-                mensagens={conversa.mensagens}
-                cortada={conversa.cortada}
-                nome={selecionado.nome}
-                clienteId={clienteId}
-                contatoId={selecionado.contatoId}
-                favoritas={favoritas}
-              />
-            </div>
-            {espiado !== null ? (
-              <RodapeDeEspiar nome={espiado} />
-            ) : (
-            <TravaDaResposta exigeAssumir={ajustesDeAtendimento.exigeAssumir}>
-            <CaixaDeResposta
-              /*
-                A `key` é a conversa, e sem ela o rascunho de uma vazava para a
-                outra: o `<textarea>` não é controlado, então trocar de conversa
-                remontava o campo vazio enquanto o estado do React continuava
-                dizendo "tem texto aqui". O efeito visível era o microfone
-                sumido com o campo vazio, e o botão de enviar no lugar dele.
-              */
-              key={selecionado.contatoId}
-              canal={canal}
-              acao={acaoResponderLead.bind(null, clienteId, selecionado.contatoId)}
-              restaDaJanela={janela}
-              nome={primeiroNome}
-              respostasRapidas={respostasRapidas}
-              temAutomacao={temAutomacao}
-              anexo={{ clienteId, contatoId: selecionado.contatoId }}
-              temPedidos={temPedidos}
-            />
-            </TravaDaResposta>
-            )}
-          </ProvedorDeEntrega>
-        </ProvedorDeCitacao>
-      </section>
-      <ColunaDaFicha>
-        <DadosDoLead
-          clienteId={clienteId}
-          lead={selecionado}
-          canal={canal}
-          funis={funis}
-          atendimento={atendimento}
-          donoNome={equipe.find((membro) => membro.id === lead.atribuidoA)?.nome ?? null}
-          passagens={passagens}
-          nomesDosAnuncios={nomesDosAnuncios}
-          etiquetas={etiquetas}
-        />
-      </ColunaDaFicha>
-      </ProvedorDaConversa>
-    </ProvedorDeAnotacoes>
-  )
-}
-
-function CabecalhoDaConversa({
-  clienteId,
-  lead,
-  canal,
-  equipe,
-  usuarioId,
-  etiquetas,
-  temAutomacao,
-  atendimento,
-  janela,
-  janelaApertada,
-  fimDaJanela,
-  agendadas,
-  espiando,
-}: {
-  clienteId: string
-  /** No modo espiar o cabeçalho só informa: assumir, passar e as ações somem. */
-  espiando: boolean
-  lead: Lead
-  canal: CanalId
-  equipe: MembroDaConta[]
-  usuarioId: string | null
-  etiquetas: EtiquetaEscolhivel[]
-  temAutomacao: boolean
-  /** O estado do atendimento, o mesmo da coluna ao lado e da ficha (8.1). */
-  atendimento: Atendimento
-  /**
-   * Quanto falta da janela de 24h, já escrito (`22h18`). `null` = fora dela, e
-   * aí quem avisa é a caixa de resposta, que vira um aviso e não abre campo.
-   *
-   * **Morava no rodapé da caixa de resposta e subiu para cá.** Lá ela era lida
-   * só por quem já ia escrever, no fim de uma frase sobre outro assunto. A
-   * janela não é sobre responder: ela limita anexar, reagir e agendar, e quem
-   * abre a conversa precisa dela antes de decidir o que fazer.
-   */
-  janela: string | null
-  /** Menos de duas horas, a contagem muda de cor. */
-  janelaApertada: boolean
-  /** O instante em que a janela fecha, para o agendamento comparar. */
-  fimDaJanela: string | null
-  /** O que já está marcado nesta conversa. */
-  agendadas: MensagemAgendada[]
-}) {
-  const nome = lead.nome ?? 'sem nome'
-  const responsavel = equipe.find((membro) => membro.id === lead.atribuidoA) ?? null
-
-  return (
-    <>
-      {/*
-        Quebra linha quando falta largura. Sem isso, em 1440 px com a coluna do
-        contato aberta, o nome encolhia a nada e os ícones da direita passavam
-        por baixo da coluna do contato, sem dar para clicar (visto na 5.9).
-      */}
-      <header className="flex min-h-[62px] flex-wrap items-center gap-x-3 gap-y-2 border-b border-line px-4 py-2">
-        <Avatar nome={lead.nome} alerta={Boolean(lead.aguardando)} tamanho={40} canal={canal} />
-        <div className="min-w-[140px] flex-1">
-          <h2 className="truncate text-[13.5px] font-bold">
-            {nome}
-            {/*
-              O telefone morava numa faixa própria embaixo do cabeçalho, junto
-              de uma aba "WhatsApp" fixa (errada em conversa do Instagram). O
-              canal virou selo no avatar e o número foi para o topo da coluna
-              do contato; aqui ele só aparece quando essa coluna está fechada.
-            */}
-            {canal === 'whatsapp' && (
-              <SoSemFicha>
-                <span className="ml-2 font-mono text-[11.5px] font-normal text-dim">
-                  {telefoneLegivel(lead.waId)}
-                </span>
-              </SoSemFicha>
-            )}
-          </h2>
-          {/*
-            De quem é a conversa fica **embaixo do nome**, e não num botão à
-            direita. É estado, não ação: quem lê o cabeçalho precisa saber se
-            alguém já está nessa antes de decidir responder.
-          */}
-          <p className="mt-0.5 flex items-center gap-2 truncate text-[12px] text-dim">
-            {/*
-              Estado e dono juntos, pela mesma função da coluna ao lado e da
-              ficha (8.1): antes o cabeçalho dizia "robô pausado" só por haver
-              responsável, e a coluna dizia "BOT RESPONDENDO".
-            */}
-            <SeloDoAtendimento
-              atendimento={atendimento}
-              donoNome={
-                responsavel?.nome ?? (lead.atribuidoA ? 'alguém fora da equipe' : null)
-              }
-            />
-            {janela && canal !== 'site' && (
-              <Dica texto="Depois disso o WhatsApp só aceita modelo aprovado pela Meta">
-                <span
-                  className={`flex shrink-0 items-center gap-1 rounded-full px-1.5 py-0.5 text-[11px] font-semibold tabular-nums ${
-                    janelaApertada ? 'bg-amber-400/15 text-aviso' : 'bg-surface text-muted'
-                  }`}
-                >
-                  <span aria-hidden>🕐</span>
-                  {janela}
-                </span>
-              </Dica>
-            )}
-          </p>
-        </div>
-
-        {/*
-          Assumir e passar continuam sendo botão de texto: mudam **de quem é** a
-          conversa, que é a única decisão desta tela que afeta o trabalho de
-          outra pessoa, e a que mais precisa dizer em palavras o que vai fazer.
-          Só aparecem quando há para quem passar.
-        */}
-        {!espiando && equipe.length > 1 && (
-          <PassarPara
-            atribuir={acaoAtribuirPara.bind(null, clienteId, lead.contatoId)}
-            equipe={equipe}
-          />
-        )}
-
-        {!espiando && (usuarioId || responsavel) && (
-          <Assumir
-            assumir={acaoAssumirAtendimento.bind(null, clienteId, lead.contatoId)}
-            liberar={acaoLiberarAtendimento.bind(null, clienteId, lead.contatoId)}
-            responsavel={responsavel?.nome ?? null}
-            souEu={Boolean(usuarioId) && lead.atribuidoA === usuarioId}
-          />
-        )}
-
-        {!espiando && (
-          <AcoesRapidas
-            clienteId={clienteId}
-            contatoId={lead.contatoId}
-            etiquetas={etiquetas}
-            temAutomacao={temAutomacao}
-            fimDaJanela={fimDaJanela}
-            agendadas={agendadas}
-            nomeDoContato={lead.nome?.split(' ')[0] ?? 'esta pessoa'}
-          />
-        )}
-      </header>
-
-    </>
-  )
-}
-
-
-/**
- * A coluna da direita: quem é a pessoa, e tudo que o sistema sabe dela.
- *
- * ---------------------------------------------------------------------------
- * Ela é de leitura, e isso é a decisão
- * ---------------------------------------------------------------------------
- *
- * Aqui havia dois editores, o seletor de etiquetas e a anotação da equipe, e
- * os dois foram para as ações rápidas do cabeçalho. Não por espaço: **cada um
- * deles guarda estado local semeado pelo servidor**, e ter a mesma etiqueta
- * editável em dois lugares da mesma tela significa duas cópias que divergem no
- * primeiro clique, marcar aqui não marcaria lá, e uma das duas estaria
- * mentindo até a próxima navegação.
- *
- * Um editor por informação. Esta coluna mostra o resultado.
- *
- * ---------------------------------------------------------------------------
- * A ordem
- * ---------------------------------------------------------------------------
- *
- * Estado do atendimento primeiro, porque é o que muda o que fazer agora. Depois
- * quem é a pessoa, e só então o que foi acumulado sobre ela, etiquetas, funil,
- * anotação, campos. É a ordem em que alguém que abre uma conversa pergunta.
- */
-function DadosDoLead({
-  clienteId,
-  lead,
-  canal,
-  funis,
-  atendimento,
-  donoNome,
-  passagens,
-  nomesDosAnuncios,
-  etiquetas,
-}: {
-  clienteId: string
-  lead: Lead
-  canal: CanalId
-  /** As da conta, para dar nome às aplicadas (inclusive as que se marcam agora). */
-  etiquetas: EtiquetaEscolhivel[]
-  /** Por onde o contato já chegou, da mais recente para a mais antiga. */
-  passagens: Passagem[]
-  /** Nomes da Marketing API por `ad_id`. Vazio quando a conta não conectou o Ads. */
-  nomesDosAnuncios: Map<string, AnuncioEmCache>
-  /** Um por quadro em que o contato está. Vazio = fora de todo funil. */
-  funis: FunilDoContato[]
-  /**
-   * O estado do atendimento (8.1). Já considera se a conta tem automação: sem
-   * isso o card dizia "BOT RESPONDENDO" numa conta sem fluxo nenhum.
-   */
-  atendimento: Atendimento
-  donoNome: string | null
-}) {
-  /*
-   * Sem as chaves de origem: elas já aparecem em destaque no `QuemE`, logo
-   * abaixo. Repetir gastaria o teto de quatro campos visíveis dizendo duas
-   * vezes a mesma coisa.
-   */
-  const campos = camposSemOrigem(Object.entries(lead.campos))
-
-  return (
-    // Rola por dentro, como as outras duas colunas: agora que a moldura tem
-    // teto, a ficha de um lead com muitos campos seria cortada sem isto.
-    <aside className="min-w-0 overflow-y-auto border-l border-line bg-panel">
-      {/*
-        O topo repete foto e nome de propósito, é o mesmo gesto do desenho de
-        referência. A coluna rola, e depois de duas telas de campos coletados
-        nada nela dizia mais de quem era aquela ficha.
-      */}
-      {/*
-        O topo em uma linha: foto à esquerda, nome em cima e número embaixo, o
-        arranjo da referência (24/set). Centralizado e com foto de 56px, ele
-        gastava 150px de altura para dizer o que o cabeçalho da conversa, logo
-        ao lado, já dizia, e empurrava o resto da coluna para baixo da dobra.
-      */}
-      <div className="flex items-center gap-3 border-b border-line px-4 py-3.5">
-        <Avatar nome={lead.nome} tamanho={40} canal={canal} />
-        <div className="min-w-0 flex-1">
-          <h2 className="truncate text-[14.5px] leading-5 font-semibold">{lead.nome ?? 'sem nome'}</h2>
-          <p className="truncate font-mono text-[12px] text-dim">
-            {canal === 'whatsapp' ? telefoneLegivel(lead.waId) : canal === 'site' ? 'Chat do site' : 'Instagram'}
-          </p>
-        </div>
-        <Link
-          href={hrefDaFicha(clienteId, lead.contatoId, {
-            volta: `/clientes/${clienteId}/inbox?conversa=${lead.contatoId}`,
-          })}
-          title="Abrir a ficha completa"
-          className="app-secondary-button shrink-0 px-2.5 py-1 text-[12px]"
-        >
-          Ficha
-        </Link>
-      </div>
-
-      <AbasDaFicha
-        anotacoes={
-          <>
-            <div className="mb-3">
-              <EntradaDeAnotacao limite={LIMITE_DA_NOTA} />
-            </div>
-            <ListaDeAnotacoes vazio="Ninguém anotou nada sobre esta pessoa ainda." />
-          </>
-        }
-        contato={
-      <>
-        {/*
-          Sem automação a tag é a resposta inteira: não há bot, então não há o
-          que ligar, desligar ou explicar. O card vira rótulo e para por aí,
-          antes ele dizia "BOT RESPONDENDO" numa conta sem fluxo nenhum.
-        */}
-        <CartaoDoAtendimento
-          atendimento={atendimento}
-          donoNome={donoNome}
-          aguardando={lead.aguardando}
-          automacaoAtiva={lead.automacaoAtiva}
-          finalizar={acaoEncerrarAtendimento.bind(null, clienteId, lead.contatoId)}
-          alternarBot={acaoAlternarAutomacaoDoLead.bind(null, clienteId, lead.contatoId)}
-        />
-
-        {/*
-          Quem é a pessoa vem antes de tudo que se faz com ela.
-
-          A coluna abria em "Etiquetas", e o telefone não aparecia em tela
-          nenhuma do Inbox, para ver o número era preciso sair daqui e abrir a
-          Ficha, no meio de um atendimento.
-        */}
-        <QuemE
-          waId={lead.waId}
-          criadoEm={lead.criadoEm}
-          ultimaEntradaEm={lead.ultimaEntradaEm}
-          campos={lead.campos}
-          passagens={passagens}
-          nomesDosAnuncios={nomesDosAnuncios}
-        />
-
-        <Secao titulo="Etiquetas do contato" vazio="Nenhuma etiqueta aplicada.">
-          <EtiquetasAplicadas
-            contatoId={lead.contatoId}
-            aplicadas={lead.etiquetasManuais.map((etiqueta) => etiqueta.id)}
-            disponiveis={etiquetas}
-            vazio="Nenhuma etiqueta aplicada."
-          />
-        </Secao>
-
-        <FunilDaConversa clienteId={clienteId} funis={funis} />
-
-
-        <div className="mt-5">
-          <h3 className="text-[12px] font-bold text-soft">O que o fluxo coletou</h3>
-          <CamposColetados campos={campos} />
-        </div>
-      </>
-        }
-      />
-    </aside>
-  )
-}
-
-/**
- * Uma seção da coluna, com o que dizer quando ela está vazia.
- *
- * O vazio é escrito, e não omitido: "Nenhuma etiqueta aplicada" responde a
- * pergunta; a seção sumindo faz a pessoa procurar onde ficaram as etiquetas.
- * O caminho para preencher é o ícone lá em cima, e por isso o rótulo diz o
- * mesmo nome que o `title` do botão.
- */
-function Secao({
-  titulo,
-  vazio,
-  children,
-}: {
-  titulo: string
-  vazio: string
-  children: ReactNode
-}) {
-  return (
-    <div className="mt-5">
-      <h3 className="mb-1.5 text-[12px] font-bold text-soft">{titulo}</h3>
-      {children || <p className="text-[12px] text-dim">{vazio}</p>}
-    </div>
-  )
-}
-
-/**
- * O histórico de chegadas do contato aberto, com o nome de cada anúncio.
- *
- * Três saídas sem rede, na ordem em que cortam mais: nenhum contato aberto,
- * contato que nunca chegou por anúncio, e conta que não conectou o Ads, que é
- * o caso da esmagadora maioria. Só o que sobra chega em `resolverAnuncios`, e
- * mesmo ali o cache costuma responder sem falar com a Meta.
- *
- * Sem token, as passagens voltam mesmo assim: cada uma tem o título que a
- * pessoa leu no dia, e é isso que a lista mostra. Conectar o Ads melhora o
- * rótulo; não conectar não esconde o histórico.
- */
-async function historicoDoContatoAberto(
-  clienteId: string,
-  contatoId: string | null,
-): Promise<{ passagens: Passagem[]; nomesDosAnuncios: Map<string, AnuncioEmCache> }> {
-  const vazio = { passagens: [], nomesDosAnuncios: new Map<string, AnuncioEmCache>() }
-  if (!contatoId) return vazio
-
-  const passagens = await passagensDoContato(contatoId)
-  if (passagens.length === 0) return vazio
-
-  const token = await tokenDeAnuncios(clienteId)
-  if (!token) return { passagens, nomesDosAnuncios: new Map() }
-
-  const nomesDosAnuncios = await resolverAnuncios({
-    clienteId,
-    adIds: passagens.map((p) => p.adId),
-    token,
-  })
-
-  return { passagens, nomesDosAnuncios }
 }
