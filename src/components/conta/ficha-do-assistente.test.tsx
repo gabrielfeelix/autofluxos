@@ -21,7 +21,7 @@ function desenhar() {
         nunca: marcadasDaLista(listas[1]!, ficha.listas.nunca),
         passar: marcadasDaLista(listas[2]!, ficha.listas.passar),
       }}
-      placar={{ ...placar, faltam: placar.faltam.map((p) => p.titulo.toLowerCase()) }}
+      placar={{ ...placar, faltam: placar.faltam.map((p) => ({ id: p.id, rotulo: p.pergunta })) }}
       salvar={async () => ({})}
       testar={async () => ({})}
     />,

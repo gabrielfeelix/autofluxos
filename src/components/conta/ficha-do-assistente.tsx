@@ -26,7 +26,7 @@ export function FichaDoAssistente({
   ficha: Ficha
   /** O que está marcado em cada lista, já com o padrão e as travadas. */
   marcadas: Record<ListaDaFicha['id'], string[]>
-  placar: { respondidas: number; total: number; faltam: string[] }
+  placar: { respondidas: number; total: number; faltam: { id: string; rotulo: string }[] }
   salvar: (estado: EstadoSalvar, formData: FormData) => Promise<EstadoSalvar>
   testar: (estado: EstadoDoTeste) => Promise<EstadoDoTeste>
 }) {
@@ -41,11 +41,24 @@ export function FichaDoAssistente({
             <p className="text-[15px] font-bold">
               O assistente responde {placar.respondidas} de {placar.total} perguntas comuns
             </p>
-            <p className="mt-0.5 text-[12px] text-dim">
-              {completo
-                ? 'Todas as perguntas do seu ramo têm resposta.'
-                : `Faltam: ${placar.faltam.join(', ')}. Sem resposta, o assistente passa para uma pessoa.`}
-            </p>
+            {completo ? (
+              <p className="mt-0.5 text-[12px] text-dim">Todas as perguntas do seu ramo têm resposta.</p>
+            ) : (
+              <p className="mt-0.5 text-[12px] text-dim">
+                {/* Com o mesmo texto do campo e levando até ele: com o nome curto da
+                    seção ("rastreio") ninguém achava o campo vazio na ficha. */}
+                Sem resposta na ficha:{' '}
+                {placar.faltam.map((f, i) => (
+                  <span key={f.id}>
+                    {i > 0 && ', '}
+                    <a href={`#ficha-${f.id}`} className="font-semibold text-soft underline underline-offset-2">
+                      {f.rotulo}
+                    </a>
+                  </span>
+                ))}
+                . Sem resposta, o assistente passa para uma pessoa.
+              </p>
+            )}
           </div>
           <form action={rodarTeste}>
             <button disabled={testando} className="app-secondary-button px-4 py-2 text-[12.5px] disabled:opacity-60">
@@ -83,7 +96,14 @@ export function FichaDoAssistente({
               {perguntas.map((p) => (
                 <div key={p.id}>
                   <input type="hidden" name={`titulo:${p.id}`} value={ficha.respostas[p.id]?.titulo ?? p.titulo} />
-                  <Campo rotulo={p.pergunta} nome={`resposta:${p.id}`} valor={ficha.respostas[p.id]?.texto ?? ''} exemplo={p.exemplo} />
+                  <Campo
+                    id={`ficha-${p.id}`}
+                    rotulo={p.pergunta}
+                    nome={`resposta:${p.id}`}
+                    valor={ficha.respostas[p.id]?.texto ?? ''}
+                    exemplo={p.exemplo}
+                    marcarVazio
+                  />
                 </div>
               ))}
 
@@ -123,11 +143,43 @@ export function FichaDoAssistente({
   )
 }
 
-function Campo({ rotulo, nome, valor, exemplo, linhas = 3 }: { rotulo: string; nome: string; valor: string; exemplo: string; linhas?: number }) {
+function Campo({
+  id,
+  rotulo,
+  nome,
+  valor,
+  exemplo,
+  linhas = 3,
+  marcarVazio = false,
+}: {
+  id?: string
+  rotulo: string
+  nome: string
+  valor: string
+  exemplo: string
+  linhas?: number
+  marcarVazio?: boolean
+}) {
+  /*
+   * O exemplo cinza parecia resposta: "Até 7 dias depois de receber, pelo
+   * site..." num campo vazio fazia o dono achar que já tinha respondido, e o
+   * placar dizendo que faltava virava mentira da tela (PCYES, 02/out/2026).
+   */
+  const vazio = marcarVazio && valor.trim() === ''
+  const comExemplo = /^exemplo:/i.test(exemplo) ? exemplo : `Exemplo: ${exemplo}`
   return (
-    <label className="flex flex-col gap-1.5">
-      <span className="text-[12.5px] font-semibold text-soft">{rotulo}</span>
-      <textarea name={nome} rows={linhas} defaultValue={valor} placeholder={exemplo} className="app-field resize-y px-3.5 py-2.5 text-[13px] leading-6" />
+    <label id={id} className="flex scroll-mt-20 flex-col gap-1.5">
+      <span className="flex items-center gap-2 text-[12.5px] font-semibold text-soft">
+        {rotulo}
+        {vazio && <span className="text-[11px] font-semibold text-aviso">Sem resposta</span>}
+      </span>
+      <textarea
+        name={nome}
+        rows={linhas}
+        defaultValue={valor}
+        placeholder={comExemplo}
+        className="app-field resize-y px-3.5 py-2.5 text-[13px] leading-6"
+      />
     </label>
   )
 }
