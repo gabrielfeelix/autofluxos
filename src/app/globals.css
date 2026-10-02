@@ -758,6 +758,11 @@ textarea::placeholder {
   display: none;
 }
 
+/* A ficha na grade acende a terceira coluna. Ver `MolduraDoInbox`. */
+.app-inbox:has(> [data-ficha]) {
+  --coluna-da-ficha: 296px;
+}
+
 @media (max-width: 767.98px) {
   .app-miolo-com-barra {
     padding-bottom: calc(76px + env(safe-area-inset-bottom));
@@ -2455,6 +2460,55 @@ textarea::placeholder {
   }
   .topo-acoes .alternador {
     min-height: 40px;
+  }
+}
+/*
+ * O vidro: o trilho do alternador emprestado a um controle solto no azul
+ * (02/out/2026, "acho chique", liberado pelo dono). Fundo `--surface` (branco
+ * a 13% na casca) com borda `--line`, e o aceso em branco sólido com tinta
+ * escura, igual à opção acesa do alternador. Só fora de cartão: dentro do
+ * branco os tokens voltam e ele vira cinza claro, que não é o desenho.
+ *
+ * `chip-vidro`: atalho de filtro que liga e desliga ("Vencidas 32").
+ */
+@layer components {
+  .chip-vidro {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    height: 32px;
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    padding: 0 13px;
+    background: var(--surface);
+    color: var(--ink);
+    font-size: 12.5px;
+    font-weight: 600;
+    white-space: nowrap;
+    cursor: pointer;
+    transition:
+      background 150ms ease,
+      color 150ms ease,
+      border-color 150ms ease;
+  }
+  .chip-vidro:hover {
+    background: var(--surface-strong);
+  }
+  .chip-vidro:is([aria-pressed='true'], [aria-current='page']) {
+    border-color: transparent;
+    background: var(--panel);
+    color: var(--p-ink);
+    box-shadow: 0 1px 2px rgb(19 25 34 / 0.1);
+  }
+  .chip-vidro:focus-visible {
+    outline: 2px solid var(--primary);
+    outline-offset: 2px;
+  }
+  .chip-vidro-conta {
+    font-size: 11.5px;
+    font-weight: 500;
+    opacity: 0.75;
+    font-variant-numeric: tabular-nums;
   }
 }
 @layer components {

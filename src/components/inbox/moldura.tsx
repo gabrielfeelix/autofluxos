@@ -74,7 +74,13 @@ export const useFicha = () => useContext(Contexto)
 export function ColunaDaFicha({ children }: { children: ReactNode }) {
   const { aberta } = useFicha()
   if (!aberta) return null
-  return <>{children}</>
+  // `contents`: quem entra na grade é a ficha, e o atributo é o que acende a
+  // terceira coluna pelo CSS (`.app-inbox:has(> [data-ficha])`).
+  return (
+    <div data-ficha className="contents">
+      {children}
+    </div>
+  )
 }
 
 /**
@@ -196,9 +202,17 @@ export function MolduraDoInbox({
             O padrão vive dentro do próprio `var()`: sem nada gravado, não há
             variável, e o CSS cai nele.
           */
-          gridTemplateColumns: `var(${LARGURA_DA_FILA.variavel}, ${LARGURA_DA_FILA.padrao}px) minmax(380px, 1fr)${
-            mostrandoFicha ? ' 296px' : ''
-          }`,
+          /*
+            A terceira faixa vem de `--coluna-da-ficha`, e não só de
+            `mostrandoFicha`: a conversa troca no navegador sem passar pelo
+            servidor, e quem entrava no Inbox sem conversa aberta e tocava
+            numa ficava com duas colunas e três itens. A ficha caía embaixo da
+            fila e a conversa encolhia (MGM, 02/out/2026). Agora a ficha
+            presente acende a coluna sozinha (`globals.css`), e
+            `mostrandoFicha` só a reserva enquanto ela carrega.
+          */
+          gridTemplateColumns: `var(${LARGURA_DA_FILA.variavel}, ${LARGURA_DA_FILA.padrao}px) minmax(380px, 1fr) var(--coluna-da-ficha,)`,
+          ...(mostrandoFicha ? { '--coluna-da-ficha': '296px' } : {}),
           gridTemplateRows: 'auto minmax(0, 1fr)',
         }}
         /*
@@ -216,7 +230,7 @@ export function MolduraDoInbox({
       >
         {fila}
         {conversa}
-        {mostrandoFicha && ficha}
+        {mostrandoFicha && ficha && <ColunaDaFicha>{ficha}</ColunaDaFicha>}
       </div>
     </Contexto.Provider>
   )
