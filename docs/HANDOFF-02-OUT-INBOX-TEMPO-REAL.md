@@ -95,6 +95,10 @@ Para o próximo agente. Tudo abaixo está commitado, publicado e em produção
    unique key" (em `MolduraDoInbox`, filho vindo de `Conteudo`; e em `Fila`,
    vindo de `Tela`). Não se sabe se já existiam antes de hoje: confira com
    `git stash`/checkout de `05cc0fa` antes de corrigir.
+   **Conferido em 02/out:** Inbox carregado do zero em 1440 e 390, duas
+   rodadas em `05cc0fa` e duas em `c5b98d0`, zero avisos nos dois. O aviso de
+   key só apareceu uma vez, logo depois de editar arquivo com o `next dev`
+   ligado: é o recarregamento a quente, não o código. Nada a corrigir.
 4. **Lint com erro anterior a hoje** em `src/components/inbox/telefone-do-inbox.tsx`
    (`react-hooks/refs`, linha ~42, do commit `5235e79`).
 5. **Esqueleto das telas de cada canal** (`canais/whatsapp`, `instagram`,
