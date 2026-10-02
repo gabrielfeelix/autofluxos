@@ -117,9 +117,9 @@ export function SecaoComoFunciona() {
           <li key={etapa.titulo} className="app-card relative p-4">
             <span
               aria-hidden
-              className="font-mono text-[11px] font-bold tracking-[0.1em] text-primary"
+              className="flex size-7 items-center justify-center rounded-full bg-primary-weak text-[13px] font-bold text-primary"
             >
-              {String(i + 1).padStart(2, '0')}
+              {i + 1}
             </span>
             <strong className="mt-1.5 block text-[13.5px] font-bold text-ink">{etapa.titulo}</strong>
             <p className="mt-1 text-[12.5px] leading-[1.6]">{etapa.texto}</p>

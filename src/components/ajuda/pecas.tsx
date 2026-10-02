@@ -20,10 +20,15 @@ import type { TipoNo } from '@/core/flow/schema'
 
 /* ─────────────────────────── estrutura ─────────────────────────── */
 
+/**
+ * O corpo de um artigo. Título, categoria e trilha vêm do catálogo
+ * (`artigos.ts`) e quem desenha é a página do artigo; aqui fica a chamada,
+ * em corpo maior, e o texto.
+ *
+ * `etiqueta` e `titulo` continuam aceitos para os corpos se lerem sozinhos no
+ * código, mas não aparecem: a página usa o título do catálogo.
+ */
 export function Secao({
-  id,
-  etiqueta,
-  titulo,
   chamada,
   children,
 }: {
@@ -34,25 +39,33 @@ export function Secao({
   children: ReactNode
 }) {
   return (
-    <section id={id} className="scroll-mt-[86px] border-t border-line pt-11 first:border-0">
-      <p className="font-mono text-[10.5px] font-bold tracking-[0.16em] text-primary uppercase">
-        {etiqueta}
-      </p>
-      <h2 className="mt-2 text-[24px] leading-[1.15] font-bold tracking-[-0.025em] text-balance md:text-[29px]">
-        {titulo}
-      </h2>
-      {chamada && (
-        <p className="mt-3 max-w-[62ch] text-[14.5px] leading-[1.65] text-soft">{chamada}</p>
-      )}
-      <div className="mt-6 space-y-5 text-[13.5px] leading-[1.7] text-muted">{children}</div>
-    </section>
+    <div className="artigo-de-ajuda">
+      {chamada && <p className="text-[17px] leading-[1.65] text-soft">{chamada}</p>}
+      <div className="mt-7 space-y-5 text-[15px] leading-[1.75] text-muted">{children}</div>
+    </div>
   )
 }
 
-/** Um subtítulo dentro de uma seção. */
+/** O endereço de um subtítulo: "E o 31 de fevereiro?" vira `e-o-31-de-fevereiro`. */
+export function ancoraDe(texto: string): string {
+  return texto
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-|-$/g, '')
+}
+
+/** Um subtítulo do artigo. Ganha âncora para o sumário ao lado apontar. */
 export function Sub({ children }: { children: ReactNode }) {
+  const id = typeof children === 'string' ? ancoraDe(children) : undefined
   return (
-    <h3 className="pt-2 text-[16px] font-bold tracking-[-0.015em] text-ink">{children}</h3>
+    <h2
+      id={id}
+      className="scroll-mt-[96px] pt-6 text-[21px] leading-[1.25] font-bold tracking-[-0.02em] text-ink"
+    >
+      {children}
+    </h2>
   )
 }
 
@@ -83,7 +96,7 @@ export function Codigo({ titulo, children }: { titulo?: string; children: string
   return (
     <div className="overflow-hidden rounded-xl border border-line bg-surface">
       {titulo && (
-        <p className="border-b border-line px-3.5 py-2 font-mono text-[10.5px] tracking-[0.08em] text-dim uppercase">
+        <p className="border-b border-line px-3.5 py-2 text-[12.5px] font-semibold text-muted">
           {titulo}
         </p>
       )}
@@ -297,13 +310,13 @@ export function Espelho({
     <div className="app-card overflow-hidden">
       <div className="grid gap-6 p-5 md:grid-cols-[300px_1fr] md:items-start md:gap-7">
         <div>
-          <p className="mb-2.5 font-mono text-[10px] tracking-[0.12em] text-dim uppercase">
+          <p className="mb-2.5 text-[12.5px] font-semibold text-muted">
             O que a pessoa vê
           </p>
           {conversa}
         </div>
         <div className="min-w-0 md:border-l md:border-line md:pl-7">
-          <p className="mb-2.5 font-mono text-[10px] tracking-[0.12em] text-dim uppercase">
+          <p className="mb-2.5 text-[12.5px] font-semibold text-muted">
             O que você desenha
           </p>
           <div className="space-y-3">{desenho}</div>
@@ -379,7 +392,7 @@ export function Tabela({ cabecalho, children }: { cabecalho: string[]; children:
               <th
                 key={coluna}
                 scope="col"
-                className="px-3.5 py-2.5 font-mono text-[10px] font-bold tracking-[0.09em] text-dim uppercase"
+                className="px-3.5 py-2.5 text-[12.5px] font-semibold text-ink"
               >
                 {coluna}
               </th>

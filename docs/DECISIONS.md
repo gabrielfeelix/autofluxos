@@ -157,3 +157,18 @@ Append-only. Cada entrada: data, decisão, porquê, onde está no código.
 - Privacidade, termos e exclusão de dados (`pagina-legal.tsx`,
   `privacidade.module.css`) seguem o mesmo esquema: capa no azul, texto no
   quadro branco.
+
+## 02/out/2026: central de ajuda no formato de help center
+
+- **"Cara de IA, não profissional"** (Gabriel). A página única com índice e
+  texto corrido virou central no desenho de Intercom/Zendesk: home com busca
+  grande no topo azul, categorias em cartões com a lista de artigos, mais
+  procurados e contato; cada assunto é um artigo em `/ajuda/<id>` com trilha,
+  artigos da categoria, sumário, anterior/próximo e relacionados.
+- **Uma lista só:** `src/components/ajuda/artigos.ts` (categorias, artigos,
+  busca e o `INDICE` da gaveta). O corpo de cada artigo continua nos
+  `conteudo-*.tsx`, ligado pelo id em `corpos.tsx`.
+- **Links antigos seguem vivos:** `/ajuda#datas` (gaveta, `AjudaDoCampo`,
+  mensagens já mandadas) cai em `/ajuda/datas` pelo `RedirecionarAncoraAntiga`.
+- Saíram os rótulos em monoespaçada caixa-alta do texto (código continua em
+  mono). A réplica do bloco do editor ficou como está, porque espelha a tela.
