@@ -76,7 +76,7 @@ export function ImportarJson({
         onClick={() => entrada.current?.click()}
         disabled={rodando}
         title="Trazer uma automação de um arquivo JSON exportado daqui"
-        className="app-secondary-button px-3 py-2 text-[12.5px] disabled:opacity-50"
+        className="botao-secundario botao-md"
       >
         {rodando ? 'importando…' : 'Importar JSON'}
       </button>

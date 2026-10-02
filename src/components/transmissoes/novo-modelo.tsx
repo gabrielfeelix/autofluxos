@@ -96,7 +96,7 @@ export function NovoModelo({ clienteId }: { clienteId: string }) {
       <button
         type="button"
         onClick={abrir}
-        className="app-primary-button shrink-0 px-[18px] py-2.5 text-[13px]"
+        className="botao-primario botao-md shrink-0"
       >
         Novo modelo
       </button>
@@ -453,7 +453,7 @@ function ConfirmarDaMeta({
         <button
           type="button"
           onClick={aoVoltar}
-          className="app-secondary-button flex-1 px-4 py-2.5 text-[13px]"
+          className="botao-secundario botao-md flex-1"
         >
           Voltar
         </button>
@@ -471,7 +471,7 @@ function ConfirmarDaMeta({
               ? 'Preencha o que cada botão precisa antes de criar.'
               : undefined
           }
-          className="app-primary-button flex-[1.35] px-4 py-2.5 text-[13px] disabled:cursor-not-allowed disabled:opacity-50"
+          className="botao-primario botao-md flex-[1.35]"
         >
           {salvando ? 'Criando…' : 'Usar este modelo'}
         </button>
@@ -579,7 +579,7 @@ function Ajuste({
         <button
           type="button"
           onClick={aoVoltar}
-          className="app-secondary-button flex-1 px-4 py-2.5 text-[13px]"
+          className="botao-secundario botao-md flex-1"
         >
           Voltar
         </button>
@@ -587,7 +587,7 @@ function Ajuste({
           type="button"
           onClick={enviar}
           disabled={salvando || corpo.trim() === ''}
-          className="app-primary-button flex-[1.35] px-4 py-2.5 text-[13px] disabled:opacity-50"
+          className="botao-primario botao-md flex-[1.35]"
         >
           {salvando ? 'Enviando…' : 'Enviar para a Meta'}
         </button>

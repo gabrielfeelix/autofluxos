@@ -389,7 +389,7 @@ export function EditorDeAcesso({
           type="button"
           onClick={salvar}
           disabled={rodando}
-          className="rounded-lg bg-primary px-3.5 py-2 text-[12.5px] font-bold text-primary-ink transition hover:bg-primary-strong disabled:opacity-50"
+          className="botao-primario botao-md"
         >
           {rodando ? 'Salvando…' : confirmandoSemAlcance ? 'Salvar mesmo assim' : 'Salvar acesso'}
         </button>

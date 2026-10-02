@@ -6,6 +6,7 @@ import { LinhaClicavel } from '@/components/lead/linha-clicavel'
 import { rotuloDoCampo } from '@/core/contatos/rotulo-do-campo'
 import { telefoneLegivel } from '@/core/contatos/telefone'
 import { notFound } from 'next/navigation'
+import { Pilula } from '@/components/design/pilula'
 import { ClienteShell } from '@/components/design/cliente-shell'
 import { IlustracaoContatos } from '@/components/design/ilustracoes'
 import { cache, Suspense } from 'react'
@@ -270,7 +271,7 @@ function CabecalhoDaTela({ titulo, filtro, chave, totalDaConta }: { titulo: stri
           <Contagem filtro={filtro} totalDaConta={totalDaConta} />
         </Suspense>
       )}
-      <div className="ml-auto flex items-center gap-2">
+      <div className="topo-acoes ml-auto flex items-center gap-2">
         <Link
           href={`/clientes/${clienteId}/leads/importar`}
           className="quadro-tool"
@@ -352,16 +353,12 @@ async function Contagem({ filtro, totalDaConta }: { filtro: Filtro; totalDaConta
   const esperando = leads.filter((lead) => lead.aguardando).length
   return (
     <>
-      <span className="rounded-full border border-line bg-surface px-3 py-1 text-[11px] font-semibold text-muted tabular-nums">
+      <Pilula>
         {filtrando(filtro)
           ? `${total} de ${totalDaConta} ${totalDaConta === 1 ? 'contato' : 'contatos'}`
           : `${total} ${total === 1 ? 'contato' : 'contatos'}`}
-      </span>
-      {esperando > 0 && (
-        <span className="rounded-full border border-rose-400/25 bg-rose-400/[0.09] px-3 py-1 text-[11px] font-bold text-perigo">
-          {esperando} aguardando atendente nesta página
-        </span>
-      )}
+      </Pilula>
+      {esperando > 0 && <Pilula tom="perigo">{esperando} aguardando atendente nesta página</Pilula>}
     </>
   )
 }
@@ -657,7 +654,7 @@ function PrimeiraVez({ clienteId, temCanal }: { clienteId: string; temCanal: boo
               ele ensina que o produto não sabe para onde mandar a pessoa. */}
           <Link
             href={`/clientes/${clienteId}/conversas/canais/whatsapp`}
-            className="app-secondary-button mt-5 inline-block px-5 py-2.5 text-[13px]"
+            className="botao-secundario botao-md mt-5"
           >
             Conectar um número
           </Link>

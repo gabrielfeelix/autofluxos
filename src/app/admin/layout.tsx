@@ -6,6 +6,7 @@ import { ContextoDaAdministracao, MarcaDaAdministracao } from '@/components/admi
 import { ITENS_DA_ADMINISTRACAO } from '@/components/design/secoes-da-administracao'
 import { contarAlertasAbertos } from '@/server/repos/alertas'
 import { exigirAdminDaPlataforma } from '@/server/sessao'
+import { Badge, teto } from '@/components/design/pilula'
 
 /**
  * A administração da plataforma: uma casca só, a mesma `BarraLateral` do app
@@ -35,9 +36,9 @@ export default async function LayoutDoAdmin({ children }: { children: ReactNode 
             ...item,
             contador:
               item.chave === 'alertas' && alertas > 0 ? (
-                <span className="grid h-[18px] min-w-[18px] place-items-center rounded-full bg-aviso/15 px-1 text-[10.5px] font-bold text-aviso tabular-nums">
-                  {alertas > 99 ? '99+' : alertas}
-                </span>
+                <Badge tom="alerta" rotulo={`${alertas} alertas não vistos`}>
+                  {teto(alertas)}
+                </Badge>
               ) : undefined,
           }))}
           rodape={

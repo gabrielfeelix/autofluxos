@@ -137,7 +137,7 @@ export function Distribuicao({
               setTrava(evento.target.checked)
               mudarConta({ exigeAssumir: evento.target.checked })
             }}
-            className="mt-0.5 size-4 shrink-0 accent-[var(--cor-primaria,#2f6bff)]"
+            className="mt-0.5 caixa-de-marcar"
           />
           <span>
             <span className="block text-[12.5px] font-semibold text-soft">
@@ -228,7 +228,7 @@ function LinhaDoAtendente({
             setEntra(evento.target.checked)
             gravar({ entra: evento.target.checked, teto })
           }}
-          className="size-4 shrink-0 accent-[var(--cor-primaria,#2f6bff)]"
+          className="caixa-de-marcar"
         />
         <span className="min-w-0">
           <span className="block truncate text-[12.5px] font-semibold text-soft">

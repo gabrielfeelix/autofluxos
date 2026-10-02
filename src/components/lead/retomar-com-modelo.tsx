@@ -163,7 +163,7 @@ export function RetomarComModelo({
             type="button"
             onClick={enviar}
             disabled={enviando || !escolhido}
-            className="app-primary-button shrink-0 px-4 py-2.5 text-[13px] disabled:opacity-50"
+            className="botao-primario botao-md shrink-0"
           >
             {enviando ? 'Enviando…' : 'Retomar'}
           </button>

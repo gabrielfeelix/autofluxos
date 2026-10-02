@@ -111,6 +111,34 @@ Append-only. Cada entrada: data, decisão, porquê, onde está no código.
   soltos no azul viram pastilha clara com a cor do estado; `.quadro-seletor`
   (seletor de funil) é título branco no azul.
 
+## 02/out/2026: escala de botão e componentes de base
+
+- **Uma escala de botão, três medidas** (`globals.css`, "A escala de botão"):
+  `botao-lg` 40px/14px (topo da tela), `botao-md` 36px/13px (seção, cartão,
+  formulário, barra de busca), `botao-sm` 30px/12px (linha de tabela, inline).
+  Cor pela variante: `botao-primario`, `botao-secundario`, `quadro-tool`
+  (ferramenta), `botao-fantasma`, `botao-perigo`. Substituiu 67 combinações
+  de `px/py/text` escritas à mão; `app-primary-button` e `app-secondary-button`
+  deixaram de existir. Tudo em `@layer components` para `w-full`/`flex-1` de
+  quem usa continuarem valendo. Componente: `design/botao.tsx`
+  (`Botao`, `classesDoBotao`).
+- **Topo é sempre lg sem a tela lembrar:** o contêiner de ações do
+  `CabecalhoDaTela` tem `topo-acoes`, e o CSS põe qualquer botão ali em 40px
+  (diálogo e menu dentro dele ficam de fora). `ModalFormulario` ganhou
+  `tamanho`.
+- **Barra de busca fora do cartão**, logo abaixo do topo, em todas as listas:
+  `BarraDeLista` aceita `acoes` (na mesma linha, à direita, ex. "Marcar como
+  vistos" de Alertas). Campo único `CampoDeBusca`; a lupa sumia no azul porque
+  herdava `--dim` branco (agora `.campo-de-busca` volta os tokens claros).
+- **Peças de base:** `MenuSuspenso` (`GrupoDoMenu`, `ItemDoMenu`,
+  `ItemMarcavel`, no painel do Filtros; título de grupo em negrito e tinta
+  cheia), `.caixa-de-marcar` (única caixa de seleção, máscara do tique em
+  `--primary-ink` para ler na casca), `Pilula` e `Badge` (`design/pilula.tsx`;
+  badge sempre sólido com texto branco, o de Alertas era âmbar sobre azul e não
+  lia), barra de rolagem fina dentro de painel.
+- **Barra lateral anda:** largura em 200ms; ao recolher o texto some antes, ao
+  expandir aparece depois (`.barra-que-anda`), nada com `prefers-reduced-motion`.
+
 ## 02/out/2026: landing e páginas legais na casca azul
 
 - **"Não somos dark mode"** (Gabriel). A landing saiu da paleta escura com

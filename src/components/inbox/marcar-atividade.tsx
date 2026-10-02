@@ -116,7 +116,7 @@ export function MarcarAtividade({
       <button
         type="submit"
         disabled={valores.titulo.trim() === ''}
-        className="app-primary-button w-full px-3 py-2 text-[12.5px] disabled:opacity-50"
+        className="botao-primario botao-md w-full"
       >
         Marcar
       </button>

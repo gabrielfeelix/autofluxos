@@ -2,6 +2,9 @@ import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { Suspense } from 'react'
 import { ClienteShell } from '@/components/design/cliente-shell'
+import { CabecalhoDaTela } from '@/components/design/cabecalho-da-tela'
+import { Pilula } from '@/components/design/pilula'
+import { IconeDoQuadro } from '@/components/quadros/popover-do-quadro'
 import { Dropdown } from '@/components/design/dropdown'
 import { LinhaClicavel } from '@/components/lead/linha-clicavel'
 import { rotuloDoCampo } from '@/core/contatos/rotulo-do-campo'
@@ -139,43 +142,24 @@ export default async function Pagina({
           Com `flex` de verdade, a descrição ocupa o que precisa e as ações
           ficam à direita, descendo para baixo dela no celular.
         */}
-        <div className="mb-5 flex flex-wrap items-start justify-between gap-x-6 gap-y-3">
-          <div className="min-w-0">
-            {/*
-              A trilha, e não só um botão "voltar": esta tela tem duas portas de
-              entrada (o cartão da automação e o topo do editor), e "voltar"
-              significaria coisas diferentes em cada uma. A trilha diz onde a
-              pessoa está e deixa ela subir um nível de cada vez.
-            */}
-            <nav aria-label="Trilha" className="mb-2 flex flex-wrap items-center gap-1.5 text-[11.5px] text-dim">
-              <Link
-                href={`/clientes/${cliente.id}/fluxos`}
-                className="rounded transition hover:text-primary"
-              >
-                Automações
-              </Link>
-              {daConta && (
-                <>
-                  <span aria-hidden>›</span>
-                  <Link
-                    href={`/clientes/${cliente.id}/fluxos/${daConta.id}`}
-                    className="max-w-[240px] truncate rounded transition hover:text-primary"
-                  >
-                    {daConta.nome}
-                  </Link>
-                </>
-              )}
-              <span aria-hidden>›</span>
-              <span className="text-muted">Respostas</span>
-            </nav>
-            <h1 className="text-[20px] font-bold tracking-[-0.02em] md:text-[25px]">Respostas</h1>
-            <p className="mt-1 max-w-[640px] text-[12px] text-muted">
-              Uma linha por conversa, com o que a pessoa respondeu naquela passagem. A tela de
-              Contatos guarda o valor mais recente de cada pessoa; aqui fica o histórico, resposta
-              por resposta.
-            </p>
-          </div>
-        </div>
+        {/*
+          A trilha só aparece filtrada por uma automação: é quando esta tela tem
+          de onde voltar além do caminho do cabeçalho ("Automações › Respostas
+          coletadas"), que sem filtro ela só repetiria.
+        */}
+        <CabecalhoDaTela
+          trilha={
+            daConta
+              ? [
+                  { rotulo: 'Automações', href: `/clientes/${cliente.id}/fluxos` },
+                  { rotulo: daConta.nome, href: `/clientes/${cliente.id}/fluxos/${daConta.id}` },
+                  { rotulo: 'Respostas coletadas' },
+                ]
+              : undefined
+          }
+          titulo="Respostas coletadas"
+          descricao="Uma linha por conversa, com o que a pessoa respondeu naquela passagem. A tela de Contatos guarda o valor mais recente de cada pessoa; aqui fica o histórico, resposta por resposta."
+        />
 
         <Suspense
           key={`${fluxo}-${termo}-${desfecho}-${pagina}`}
@@ -245,7 +229,7 @@ async function Tabela({
         </p>
         <Link
           href={`/clientes/${clienteId}/fluxos`}
-          className="app-primary-button mt-4 inline-block px-4 py-2 text-[12px]"
+          className="botao-primario botao-md mt-4"
         >
           Ir para Automações
         </Link>
@@ -289,17 +273,20 @@ async function Tabela({
             ]}
           />
         </span>
-        <label className="min-w-[200px] flex-1">
+        <label className="campo-de-busca relative min-w-[200px] flex-1 sm:max-w-[380px]">
           <span className="sr-only">Buscar por nome ou telefone</span>
+          <span className="pointer-events-none absolute top-1/2 left-3 -translate-y-1/2 text-dim">
+            <IconeDoQuadro tipo="busca" />
+          </span>
           <input
             type="search"
             name="busca"
             defaultValue={termo}
             placeholder="Buscar por nome ou telefone"
-            className="app-field px-3 py-2 text-[12.5px]"
+            className="app-field h-9 py-2 pr-3 pl-9 text-[13px]"
           />
         </label>
-        <button type="submit" className="app-secondary-button px-4 py-2 text-[12px]">
+        <button type="submit" className="botao-secundario botao-md">
           Filtrar
         </button>
         {filtrando && (
@@ -313,13 +300,13 @@ async function Tabela({
         )}
 
         <span className="ml-auto flex items-center gap-2">
-          <span className="whitespace-nowrap rounded-full border border-line bg-surface px-3 py-1 text-[11px] font-semibold text-muted">
+          <Pilula>
             {total} {total === 1 ? 'resposta' : 'respostas'}
             {filtrando && ' no filtro'}
-          </span>
+          </Pilula>
           <a
             href={enderecoDoCsv(clienteId, { fluxo, busca: termo, desfecho })}
-            className="app-secondary-button whitespace-nowrap px-3 py-1.5 text-[11.5px]"
+            className="botao-secundario botao-md"
             title="Baixar como planilha exatamente o que este filtro mostra"
           >
             Baixar CSV
@@ -566,7 +553,7 @@ function Passo({
     )
   }
   return (
-    <Link href={href} scroll={false} className="app-secondary-button px-3 py-1.5 text-[11.5px]">
+    <Link href={href} scroll={false} className="botao-secundario botao-sm">
       {children}
     </Link>
   )

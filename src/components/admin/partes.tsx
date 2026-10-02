@@ -1,9 +1,8 @@
 import Link from 'next/link'
 import { iniciais as iniciaisDoNome } from '@/core/iniciais'
 import type { ReactNode } from 'react'
-import { RolagemDaTabela } from '@/components/lead/rolagem-da-tabela'
 import { Esqueleto } from '@/components/design/esqueleto'
-import { enderecoDaLista } from '@/core/lista-de-fluxos'
+import { CabecalhoDaTela } from '@/components/design/cabecalho-da-tela'
 
 /**
  * As peças que toda tela da administração usa: a moldura do miolo, o número
@@ -32,13 +31,7 @@ export function TelaDaAdministracao({
   return (
     <main className="flex min-h-full w-full flex-col px-4 pt-[26px] pb-[42px] md:px-[42px]">
       {antes}
-      <header className="mb-5 flex flex-wrap items-end justify-between gap-x-4 gap-y-3">
-        <div className="min-w-0">
-          <h1 className="text-[20px] font-bold tracking-[-0.02em] md:text-[25px]">{titulo}</h1>
-          {descricao && <p className="mt-1 max-w-[720px] text-[13px] leading-6 text-muted">{descricao}</p>}
-        </div>
-        {acoes && <div className="flex flex-wrap items-center gap-2">{acoes}</div>}
-      </header>
+      <CabecalhoDaTela titulo={titulo} descricao={descricao} acoes={acoes} />
       {children}
     </main>
   )
@@ -74,78 +67,8 @@ export function Numero({
   )
 }
 
-export const CLASSE_DO_CABECALHO =
-  'px-4 py-3 text-[10.5px] font-bold tracking-[0.06em] whitespace-nowrap text-dim uppercase'
-
-/** Mesmo fundo das linhas de Contatos, escrito por extenso (o Tailwind lê o texto). */
-export const FUNDO_DA_LINHA = 'hover:bg-[color-mix(in_oklab,var(--surface)_75%,var(--panel))]'
-export const FUNDO_DA_FIXA = 'bg-panel group-hover:bg-[color-mix(in_oklab,var(--surface)_75%,var(--panel))]'
-/** A primeira coluna, presa na esquerda quando a tabela rola de lado. */
-export const COLUNA_FIXA =
-  'sticky left-0 z-[2] min-w-[200px] max-w-[320px] group-data-[rolada=sim]/rolagem:shadow-[inset_-1px_0_0_var(--line)]'
-
-/** O cartão da tabela: cresce até o fim da página e rola por dentro. */
-export function Tabela({ largura = 760, children }: { largura?: number; children: ReactNode }) {
-  return (
-    <div className="app-card flex min-h-0 flex-1 flex-col overflow-hidden">
-      <RolagemDaTabela>
-        <table className="w-full border-collapse text-left" style={{ minWidth: largura }}>
-          {children}
-        </table>
-      </RolagemDaTabela>
-    </div>
-  )
-}
-
-export function Th({ children, className = '', fixa = false }: { children?: ReactNode; className?: string; fixa?: boolean }) {
-  return (
-    <th scope="col" className={`${CLASSE_DO_CABECALHO} sticky top-0 z-[1] bg-panel ${fixa ? `${COLUNA_FIXA} left-0 z-[3]` : ''} ${className}`}>
-      {children}
-    </th>
-  )
-}
-
-/**
- * O cabeçalho que ordena. É um link, não um botão: a ordem mora no endereço,
- * então voltar no navegador e mandar o link para alguém devolvem a mesma lista.
- */
-export function ThOrdenavel({
-  base,
-  parametros,
-  chave,
-  children,
-  fixa = false,
-  className = '',
-}: {
-  base: string
-  parametros: Record<string, string>
-  chave: string
-  children: ReactNode
-  fixa?: boolean
-  className?: string
-}) {
-  const ativa = parametros.ordem === chave
-  const desc = ativa && parametros.direcao !== 'asc'
-  const proxima = ativa ? (desc ? 'asc' : 'desc') : 'desc'
-  return (
-    <th
-      scope="col"
-      aria-sort={ativa ? (desc ? 'descending' : 'ascending') : undefined}
-      className={`${CLASSE_DO_CABECALHO} sticky top-0 z-[1] bg-panel ${fixa ? `${COLUNA_FIXA} left-0 z-[3]` : ''} ${className}`}
-    >
-      <Link
-        href={enderecoDaLista(base, { ...parametros, ordem: chave, direcao: proxima })}
-        scroll={false}
-        className={`inline-flex items-center gap-1 transition hover:text-ink ${ativa ? 'text-ink' : ''}`}
-      >
-        {children}
-        <span aria-hidden className={ativa ? 'text-primary' : 'opacity-0'}>
-          {desc ? '↓' : '↑'}
-        </span>
-      </Link>
-    </th>
-  )
-}
+// A tabela mora em `design/tabela.tsx`; o nome antigo continua valendo aqui.
+export { CLASSE_DO_CABECALHO, COLUNA_FIXA, FUNDO_DA_FIXA, FUNDO_DA_LINHA, Tabela, Th, ThOrdenavel } from '@/components/design/tabela'
 
 /** A lista vazia por filtro: diz o que aconteceu e oferece o caminho de volta. */
 export function SemResultado({ titulo, limpar }: { titulo: string; limpar?: string }) {

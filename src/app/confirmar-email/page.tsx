@@ -33,7 +33,7 @@ export default async function ConfirmarEmail({ searchParams }: PageProps<'/confi
           : 'Este link venceu ou já foi usado. Entre com a sua senha: se ainda faltar confirmar, mandamos outro.'
       }
     >
-      <Link href="/entrar" className="app-primary-button block px-4 py-3 text-center text-[13.5px]">
+      <Link href="/entrar" className="botao-primario botao-md flex text-center">
         Entrar
       </Link>
     </Portico>

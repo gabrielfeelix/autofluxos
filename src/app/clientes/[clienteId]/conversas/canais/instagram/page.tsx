@@ -182,7 +182,7 @@ export default async function Pagina({
               <button
                 type="submit"
                 disabled={!configurado}
-                className="rounded-[9px] bg-primary px-4 py-2.5 text-[13px] font-semibold text-white transition hover:bg-primary-strong disabled:cursor-not-allowed disabled:opacity-40"
+                className="botao-primario botao-md"
               >
                 Conectar conta do Instagram
               </button>

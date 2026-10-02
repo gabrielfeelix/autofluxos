@@ -81,7 +81,7 @@ export function AntesDePublicar({
                     {item.link && (
                       <Link
                         href={`/clientes/${clienteId}${item.link.caminho}`}
-                        className="rounded-lg border border-line px-2 py-1 text-[11px] font-semibold text-primary transition hover:border-primary/50"
+                        className="botao-secundario botao-sm"
                       >
                         {item.link.rotulo}
                       </Link>

@@ -28,21 +28,20 @@ export default async function Alertas({ searchParams }: { searchParams: Promise<
   })
   const temFiltro = !!(parametros.busca || parametros.situacao || parametros.ambiente)
   const abertos = todos.filter((alerta) => alerta.vistoEm === null).length
+  const barra = {
+    base: BASE,
+    parametros,
+    busca: { chave: 'busca', placeholder: 'Buscar por webhook, número ou erro', rotulo: 'Buscar alerta' },
+    grupos: [
+      { chave: 'situacao', titulo: 'Situação', opcoes: [{ valor: 'abertos', rotulo: 'Não vistos' }, { valor: 'vistos', rotulo: 'Vistos' }] },
+      ...(ambientes.length > 1 ? [{ chave: 'ambiente', titulo: 'Ambiente', opcoes: ambientes.map((valor) => ({ valor, rotulo: valor })) }] : []),
+    ],
+    resumo: temFiltro ? `${lista.length} de ${todos.length}` : `${todos.length} ${todos.length === 1 ? 'alerta' : 'alertas'} · ${abertos} não ${abertos === 1 ? 'visto' : 'vistos'}`,
+  }
 
   return (
     <TelaDaAdministracao titulo="Alertas" descricao="Falhas que o produto registrou sozinho: webhook que não processou, entrega recusada pela Meta, credencial que o cofre não devolveu. Somem depois de 90 dias.">
-      <div className="mb-3">
-        <BarraDeLista
-          base={BASE}
-          parametros={parametros}
-          busca={{ chave: 'busca', placeholder: 'Exemplo: webhook, número ou mensagem de erro', rotulo: 'Buscar alerta' }}
-          grupos={[
-            { chave: 'situacao', titulo: 'Situação', opcoes: [{ valor: 'abertos', rotulo: 'Não vistos' }, { valor: 'vistos', rotulo: 'Vistos' }] },
-            ...(ambientes.length > 1 ? [{ chave: 'ambiente', titulo: 'Ambiente', opcoes: ambientes.map((valor) => ({ valor, rotulo: valor })) }] : []),
-          ]}
-          resumo={temFiltro ? `${lista.length} de ${todos.length}` : `${todos.length} ${todos.length === 1 ? 'alerta' : 'alertas'} · ${abertos} não ${abertos === 1 ? 'visto' : 'vistos'}`}
-        />
-      </div>
+      {lista.length === 0 && <BarraDeLista {...barra} />}
       {lista.length === 0 ? (
         temFiltro ? (
           <SemResultado titulo="Nenhum alerta com estes filtros" limpar={BASE} />
@@ -57,7 +56,7 @@ export default async function Alertas({ searchParams }: { searchParams: Promise<
         )
       ) : (
         <TabelaDeAlertas
-          key={JSON.stringify(parametros)}
+          barra={barra}
           alertas={lista.map((alerta) => ({
             id: alerta.id,
             titulo: alerta.titulo,

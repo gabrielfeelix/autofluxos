@@ -141,7 +141,7 @@ export function TabelaDeSegmentos({ clienteId, inicial, topo }: { clienteId: str
       acoes={
         <>
           {topo.acoes}
-          <button type="button" onClick={() => setEditando('novo')} className="app-primary-button h-9 px-4 text-[13px]">
+          <button type="button" onClick={() => setEditando('novo')} className="botao-primario botao-md">
             + Novo segmento
           </button>
         </>
@@ -157,7 +157,7 @@ export function TabelaDeSegmentos({ clienteId, inicial, topo }: { clienteId: str
             Segmento é uma regra que escolhe contatos sozinha, como “quem não compra há 90 dias” ou “quem veio de
             anúncio este mês”. A lista se atualiza todo dia, sem ninguém mexer.
           </p>
-          <button type="button" onClick={() => setEditando('novo')} className="app-primary-button mt-5 h-9 px-4 text-[13px]">
+          <button type="button" onClick={() => setEditando('novo')} className="botao-primario botao-md mt-5">
             Criar o primeiro segmento
           </button>
         </div>

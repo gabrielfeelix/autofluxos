@@ -298,7 +298,7 @@ export function CaixaDeSelecao({ id, rotulo }: { id: string; rotulo: string }) {
       disabled={ocupado}
       onChange={() => alternar(id)}
       aria-label={`Selecionar ${rotulo}`}
-      className="block size-3.5 accent-[#a78bfa]"
+      className="caixa-de-marcar"
     />
   )
 }
@@ -322,7 +322,7 @@ export function CaixaDeTodos({ ids }: { ids: string[] }) {
       onChange={() => definir(todos ? [] : ids)}
       aria-label={`Selecionar os ${ids.length} contatos desta página`}
       title={`Seleciona os ${ids.length} desta página, não os das outras páginas`}
-      className="block size-3.5 accent-[#a78bfa]"
+      className="caixa-de-marcar"
     />
   )
 }

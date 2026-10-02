@@ -200,7 +200,7 @@ export function Compartilhar({
             ? 'Gerar um link de leitura desta automação'
             : 'Publique primeiro, o link aponta para uma versão publicada, não para o rascunho'
         }
-        className="app-secondary-button px-3 py-1.5 text-[11.5px] disabled:opacity-40"
+        className="botao-secundario botao-sm"
       >
         Compartilhar
       </button>
@@ -261,7 +261,7 @@ export function Compartilhar({
               type="button"
               onClick={criar}
               disabled={rodando}
-              className="app-primary-button shrink-0 px-4 py-2.5 text-[12.5px] whitespace-nowrap"
+              className="botao-primario botao-md shrink-0"
             >
               {rodando ? 'gerando…' : 'Gerar link e copiar'}
             </button>
@@ -319,7 +319,7 @@ export function Compartilhar({
                           <button
                             type="button"
                             onClick={() => copiar(link.token)}
-                            className="app-secondary-button shrink-0 px-2.5 py-1.5 text-[11px]"
+                            className="botao-secundario botao-sm shrink-0"
                           >
                             {copiado === link.token ? 'copiado!' : 'copiar'}
                           </button>
@@ -330,7 +330,7 @@ export function Compartilhar({
                             onClick={() => mostrarQr(link.id)}
                             disabled={rodando}
                             title="Mostrar um QR para abrir este link no celular"
-                            className="app-secondary-button shrink-0 px-2.5 py-1.5 text-[11px]"
+                            className="botao-secundario botao-sm shrink-0"
                           >
                             {qr?.linkId === link.id ? 'fechar QR' : 'QR'}
                           </button>
@@ -388,14 +388,14 @@ export function Compartilhar({
               onClick={exportar}
               disabled={!publicada}
               title="Baixar o desenho publicado como arquivo JSON, sem as credenciais"
-              className="app-secondary-button px-3.5 py-2 text-[12px]"
+              className="botao-secundario botao-md"
             >
               Exportar JSON
             </button>
             <button
               type="button"
               onClick={() => dialogo.current?.close()}
-              className="app-secondary-button px-4 py-2 text-[12px]"
+              className="botao-secundario botao-md"
             >
               Fechar
             </button>

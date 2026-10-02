@@ -38,7 +38,7 @@ export function FormularioSalvar({
     <form action={enviar} onInput={() => setMexeuDepois(true)} onSubmit={() => setMexeuDepois(false)}>
       {children}
       <div className="mt-3.5 flex items-center gap-3">
-        <button disabled={pendente} className="app-primary-button px-[18px] py-2.5 text-[13px] disabled:opacity-60">
+        <button disabled={pendente} className="botao-primario botao-md">
           {pendente ? 'Salvando…' : rotulo}
         </button>
 

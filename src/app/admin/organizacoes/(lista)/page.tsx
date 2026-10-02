@@ -174,7 +174,7 @@ export default async function Organizacoes({
                   <span title={horaExata(organizacao.criadaEm)}>{dataCurta(organizacao.criadaEm)}</span>
                 </td>
                 <td className="px-3 py-3 text-right">
-                  <Link href={`/clientes/${organizacao.id}`} className="app-secondary-button px-2.5 py-1 text-[11.5px] whitespace-nowrap" title="Abrir como Suporte 4YU">
+                  <Link href={`/clientes/${organizacao.id}`} className="botao-secundario botao-sm" title="Abrir como Suporte 4YU">
                     Abrir
                   </Link>
                 </td>

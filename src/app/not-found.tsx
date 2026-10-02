@@ -17,7 +17,7 @@ export default function NaoEncontrado() {
       <p className="mt-2 mb-[22px] text-[12.5px] leading-[1.65] text-muted">
         O endereço pode estar errado, ou apontar para algo que foi apagado.
       </p>
-      <Link href="/voltar" className="app-secondary-button inline-block px-5 py-2.5 text-[13px]">
+      <Link href="/voltar" className="botao-secundario botao-md">
         Voltar para o início
       </Link>
       </div>

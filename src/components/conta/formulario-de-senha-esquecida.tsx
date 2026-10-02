@@ -51,7 +51,7 @@ export function FormularioDePedido() {
         />
       </label>
       <Erro texto={estado.erro} />
-      <button type="submit" disabled={pendente} className="app-primary-button mt-1 px-4 py-3 text-[13.5px]">
+      <button type="submit" disabled={pendente} className="botao-primario botao-md mt-1">
         {pendente ? 'Enviando…' : 'Mandar o link'}
       </button>
     </form>
@@ -74,7 +74,7 @@ export function FormularioDeRedefinicao({ token }: { token: string }) {
       />
       <CampoDeSenha rotulo="Repita a senha nova" nome="confirmacao" minimo={10} autoComplete="new-password" />
       <Erro texto={estado.erro} />
-      <button type="submit" disabled={pendente} className="app-primary-button mt-1 px-4 py-3 text-[13.5px]">
+      <button type="submit" disabled={pendente} className="botao-primario botao-md mt-1">
         {pendente ? 'Salvando…' : 'Salvar a senha nova'}
       </button>
     </form>

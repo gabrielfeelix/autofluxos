@@ -42,7 +42,7 @@ export function BotaoArquivar({
             if (!r.ok) setErro(r.erro ?? 'não deu')
           })
         }}
-        className="rounded-lg border border-line px-2.5 py-1 text-[11px] font-semibold text-muted transition hover:bg-white/[0.04] disabled:opacity-50"
+        className="botao-secundario botao-sm"
       >
         {arquivar ? 'Arquivar' : 'Desarquivar'}
       </button>

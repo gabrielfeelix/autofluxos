@@ -138,7 +138,7 @@ export function PlanoDaOrganizacao({
           <p className="min-w-0 flex-1 text-[12.5px] leading-5 text-soft">
             <strong className="font-semibold">Descida agendada para o {nome(descida.plano)}</strong> em {diaPorExtenso(descida.para)}. Até lá, tudo continua como está; a organização é avisada 7 dias e 1 dia antes.
           </p>
-          <button type="button" onClick={desfazerDescida} className="app-secondary-button px-3.5 py-2 text-[12.5px]">
+          <button type="button" onClick={desfazerDescida} className="botao-secundario botao-md">
             Cancelar descida
           </button>
         </section>
@@ -172,7 +172,7 @@ export function PlanoDaOrganizacao({
                     ) : descida?.plano === item.id ? (
                       <p className="text-[12px] text-dim">Vale em {diaPorExtenso(descida.para)}</p>
                     ) : (
-                      <button type="button" onClick={() => setEscolha({ para: item.id })} className="app-secondary-button w-full px-3 py-2 text-[12.5px]">
+                      <button type="button" onClick={() => setEscolha({ para: item.id })} className="botao-secundario botao-md w-full">
                         Mudar para {item.nome}
                       </button>
                     )}
@@ -210,7 +210,7 @@ export function PlanoDaOrganizacao({
                     <button type="button" onClick={() => recusar(pedido.id)} className="rounded-[8px] px-2.5 py-1.5 text-[12px] font-semibold text-muted transition hover:bg-surface hover:text-perigo">
                       Recusar
                     </button>
-                    <button type="button" onClick={() => setEscolha({ para: pedido.para, pedidoId: pedido.id })} className="app-primary-button px-3 py-1.5 text-[12px]">
+                    <button type="button" onClick={() => setEscolha({ para: pedido.para, pedidoId: pedido.id })} className="botao-primario botao-sm">
                       Atender
                     </button>
                   </span>

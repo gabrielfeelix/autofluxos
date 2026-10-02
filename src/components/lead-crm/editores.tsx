@@ -124,7 +124,7 @@ export function EditarTextoDoContato({
             </button>
             <button
               type="submit"
-              className="app-primary-button px-4 py-2 text-xs"
+              className="botao-primario botao-md"
             >
               Salvar alterações
             </button>
@@ -256,7 +256,7 @@ export function DetalhesDaOportunidade({
             </button>
             <button
               type="submit"
-              className="app-primary-button px-4 py-2 text-xs"
+              className="botao-primario botao-md"
             >
               Salvar alterações
             </button>

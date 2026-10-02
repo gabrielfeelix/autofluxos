@@ -58,21 +58,8 @@ export function ListaDeTransmissoes({
   for (const [chave, valor] of Object.entries(filtro)) if (valor) parametros[chave] = valor
 
   return (
-    <section className="app-card overflow-hidden">
-      {/* Título e "Nova transmissão" moram no topo da tela (`CabecalhoDaTela`). */}
-
-      {aprovados.length === 0 && (
-        /*
-          Sem modelo aprovado não existe transmissão possível. Dizer isso aqui
-          evita que a pessoa procure um botão que não faria nada.
-        */
-        <p className="border-b border-line bg-amber-500/[0.06] px-5 py-3 text-[12.5px] leading-5 text-dim">
-          Crie um modelo na aba <strong>Modelos aprovados</strong> para poder transmitir.
-        </p>
-      )}
-
+    <>
       {transmissoes.length > 0 && (
-        <div className="border-b border-line px-5 py-3">
           <BarraDeLista
             base={`/clientes/${clienteId}/transmissoes`}
             parametros={parametros}
@@ -94,8 +81,20 @@ export function ListaDeTransmissoes({
             ]}
             resumo={filtrando ? `${visiveis.length} de ${transmissoes.length}` : undefined}
           />
-        </div>
       )}
+    <section className="app-card overflow-hidden">
+      {/* Título e "Nova transmissão" moram no topo da tela (`CabecalhoDaTela`). */}
+
+      {aprovados.length === 0 && (
+        /*
+          Sem modelo aprovado não existe transmissão possível. Dizer isso aqui
+          evita que a pessoa procure um botão que não faria nada.
+        */
+        <p className="border-b border-line bg-amber-500/[0.06] px-5 py-3 text-[12.5px] leading-5 text-dim">
+          Crie um modelo na aba <strong>Modelos aprovados</strong> para poder transmitir.
+        </p>
+      )}
+
 
       {transmissoes.length === 0 ? (
         <div className="px-5 py-14 text-center">
@@ -120,6 +119,7 @@ export function ListaDeTransmissoes({
         </ul>
       )}
     </section>
+    </>
   )
 }
 

@@ -176,7 +176,7 @@ export function LojaMagento({
             type="button"
             onClick={aoDesligar}
             disabled={pendente}
-            className="app-secondary-button mt-3 px-[14px] py-2 text-[12.5px] disabled:opacity-60"
+            className="botao-secundario botao-md mt-3"
           >
             Desligar
           </button>
@@ -213,7 +213,7 @@ export function LojaMagento({
           type="button"
           onClick={aoTestar}
           disabled={pendente || endereco.trim() === '' || termo.trim() === ''}
-          className="app-primary-button mt-4 px-[18px] py-2.5 text-[13px] disabled:opacity-60"
+          className="botao-primario botao-md mt-4"
         >
           {pendente ? 'Aguarde…' : 'Testar conexão'}
         </button>
@@ -243,7 +243,7 @@ export function LojaMagento({
               type="button"
               onClick={aoLigar}
               disabled={pendente}
-              className="app-primary-button mt-4 px-[18px] py-2.5 text-[13px] disabled:opacity-60"
+              className="botao-primario botao-md mt-4"
             >
               {pendente ? 'Salvando…' : ativa ? 'Salvar este endereço' : 'Ligar no bot'}
             </button>
@@ -285,7 +285,7 @@ export function LojaMagento({
                   type="button"
                   onClick={aoDesconectarToken}
                   disabled={pendente}
-                  className="app-secondary-button mt-3 px-[14px] py-2 text-[12.5px] disabled:opacity-60"
+                  className="botao-secundario botao-md mt-3"
                 >
                   Desconectar
                 </button>
@@ -318,7 +318,7 @@ export function LojaMagento({
                   type="button"
                   onClick={aoConectarToken}
                   disabled={pendente || token.trim() === '' || skuDeProva === ''}
-                  className="app-primary-button mt-3 px-[18px] py-2.5 text-[13px] disabled:opacity-60"
+                  className="botao-primario botao-md mt-3"
                 >
                   {pendente ? 'Conferindo…' : 'Testar e salvar'}
                 </button>

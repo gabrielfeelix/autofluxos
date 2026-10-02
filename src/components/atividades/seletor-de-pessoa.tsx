@@ -109,7 +109,7 @@ export function SeletorDePessoa({
         {achadas.length === 0 && <li className="px-3 py-2 text-[12.5px] text-dim">Ninguém com esse nome.</li>}
       </ul>
       <div className="mt-3 flex justify-end">
-        <button type="button" onClick={() => dialogo.current?.close()} className="app-secondary-button px-4 py-2 text-[12.5px]">
+        <button type="button" onClick={() => dialogo.current?.close()} className="botao-secundario botao-md">
           Voltar
         </button>
       </div>

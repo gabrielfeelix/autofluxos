@@ -88,7 +88,7 @@ export function Assistente({ clienteId, nome, inicial, nichoAtual = null, temQua
         {concluido.quadroId && <Proximo href={`${base}/quadros?q=${concluido.quadroId}`} titulo="Abrir seu funil" descricao="Confira as etapas e adicione o primeiro contato quando quiser." />}
         <Proximo href={`${base}/ajustes/horario`} titulo="Definir horário e preparar respostas" descricao="Confira seu expediente. Em Configurações você também encontra Respostas rápidas e Conhecimento da IA." />
       </div>
-      <Link href={`${base}/inbox`} className="app-primary-button mt-7 inline-flex px-5 py-3 text-sm">Ir para o Inbox →</Link>
+      <Link href={`${base}/inbox`} className="botao-primario botao-md mt-7">Ir para o Inbox →</Link>
     </section> : <>
       <div className="mb-7"><h1 ref={titulo} tabIndex={-1} className={headingClass}>Vamos preparar seu sistema</h1><p className="mt-2 text-sm leading-6 text-muted">Poucas escolhas para começar com o que faz sentido para sua empresa.</p></div>
       <ol aria-label="Etapas da preparação" className="mb-7 grid grid-cols-4 gap-2">
@@ -140,7 +140,7 @@ export function Assistente({ clienteId, nome, inicial, nichoAtual = null, temQua
         </fieldset>
         <footer className="flex flex-wrap items-center justify-between gap-3 border-t border-line bg-surface/40 p-5 md:px-8">
           <button type="button" disabled={salvando} onClick={() => void salvar('adiar')} className="text-xs text-muted underline underline-offset-4 disabled:opacity-50">Continuar depois</button>
-          <div className="flex gap-2">{etapa > 0 && <button type="button" disabled={salvando} onClick={() => void salvar('salvar', etapa - 1)} className="app-secondary-button px-4 py-2.5 text-sm">Voltar</button>}<button type="submit" disabled={salvando} className="app-primary-button px-4 py-2.5 text-sm disabled:opacity-50">{salvando ? 'Salvando…' : etapa === 3 ? 'Preparar meu sistema' : 'Continuar →'}</button></div>
+          <div className="flex gap-2">{etapa > 0 && <button type="button" disabled={salvando} onClick={() => void salvar('salvar', etapa - 1)} className="botao-secundario botao-md">Voltar</button>}<button type="submit" disabled={salvando} className="botao-primario botao-md">{salvando ? 'Salvando…' : etapa === 3 ? 'Preparar meu sistema' : 'Continuar →'}</button></div>
         </footer>
       </form>
       <p className="mt-4 text-center text-[11px] leading-5 text-dim">O progresso é salvo por organização ao avançar ou continuar depois.</p>

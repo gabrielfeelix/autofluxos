@@ -59,7 +59,7 @@ export function AjudaDaTela({
           <button
             type="button"
             onClick={() => setAberto(false)}
-            className="app-secondary-button w-full py-2.5 text-[13px]"
+            className="botao-secundario botao-md w-full"
           >
             Entendi
           </button>

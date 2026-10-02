@@ -141,7 +141,7 @@ export default async function Pagina({ params }: { params: Promise<{ clienteId: 
 
         {configura && onboarding?.status !== 'concluido' && <section className="mb-5 flex flex-wrap items-center justify-between gap-4 rounded-xl border border-primary/20 bg-primary-weak p-5">
           <div><h2 className="text-sm font-bold">{onboarding ? 'Continue preparando sua organização' : 'Defina o objetivo da organização'}</h2><p className="mt-1 text-xs leading-5 text-muted">Escolha como atender e quais modelos ajudam sua rotina. O que você já configurou será preservado.</p></div>
-          <Link href={`/clientes/${cliente.id}/configurar`} className="app-primary-button px-4 py-2.5 text-xs">{onboarding ? 'Continuar preparação' : 'Objetivo e recursos'} →</Link>
+          <Link href={`/clientes/${cliente.id}/configurar`} className="botao-primario botao-md">{onboarding ? 'Continuar preparação' : 'Objetivo e recursos'} →</Link>
         </section>}
         {!configura && <section className="app-card mb-5 p-5"><h2 className="text-sm font-bold">Sua rotina começa aqui</h2><p className="mt-2 text-sm leading-6 text-muted">Responda conversas no Inbox, acompanhe seus lembretes em Atividades e consulte os dados em Contatos.</p><div className="mt-3 flex flex-wrap gap-4 text-sm text-primary"><Link href={`/clientes/${cliente.id}/inbox`}>Abrir Inbox →</Link><Link href={`/clientes/${cliente.id}/atividades`}>Ver atividades →</Link><Link href={`/clientes/${cliente.id}/leads`}>Ver contatos →</Link></div></section>}
 

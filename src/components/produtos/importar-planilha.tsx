@@ -105,7 +105,7 @@ export function ImportarPlanilha({ clienteId }: { clienteId: string }) {
 
   return (
     <>
-      <button type="button" onClick={abrir} className="app-secondary-button px-3 py-1.5 text-[11.5px]">
+      <button type="button" onClick={abrir} className="botao-secundario botao-sm">
         Importar
       </button>
       <dialog
@@ -156,13 +156,13 @@ export function ImportarPlanilha({ clienteId }: { clienteId: string }) {
               <span className="text-dim">Modelo para preencher:</span>
               <a
                 href="/api/modelos/produtos?formato=xlsx"
-                className="app-secondary-button px-3 py-1.5 text-[11.5px]"
+                className="botao-secundario botao-sm"
               >
                 Excel (.xlsx)
               </a>
               <a
                 href="/api/modelos/produtos?formato=csv"
-                className="app-secondary-button px-3 py-1.5 text-[11.5px]"
+                className="botao-secundario botao-sm"
               >
                 CSV
               </a>
@@ -269,7 +269,7 @@ export function ImportarPlanilha({ clienteId }: { clienteId: string }) {
                   setArquivo(null)
                   setEtapa({ tipo: 'escolher' })
                 }}
-                className="app-secondary-button flex-1 py-2.5 text-[13px]"
+                className="botao-secundario botao-md flex-1"
               >
                 Outro arquivo
               </button>
@@ -277,7 +277,7 @@ export function ImportarPlanilha({ clienteId }: { clienteId: string }) {
                 type="button"
                 disabled={pendente || nada}
                 onClick={() => void importar()}
-                className="app-primary-button flex-1 py-2.5 text-[13px] disabled:opacity-50"
+                className="botao-primario botao-md flex-1"
               >
                 {pendente ? 'Importando…' : 'Importar'}
               </button>
@@ -287,7 +287,7 @@ export function ImportarPlanilha({ clienteId }: { clienteId: string }) {
               type="button"
               disabled={pendente}
               onClick={fechar}
-              className="app-secondary-button flex-1 py-2.5 text-[13px]"
+              className="botao-secundario botao-md flex-1"
             >
               {etapa.tipo === 'feito' ? 'Fechar' : 'Cancelar'}
             </button>

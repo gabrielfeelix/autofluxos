@@ -83,6 +83,7 @@ export function ListaDeNegocios({
             },
           ]}
           resumo={visiveis.length !== cartoes.length ? `${visiveis.length} de ${cartoes.length}` : undefined}
+          className=""
         />
         </div>
         <p className="text-[12px] text-muted tabular-nums sm:pt-2">

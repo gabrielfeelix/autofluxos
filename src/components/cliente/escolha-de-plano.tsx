@@ -340,7 +340,7 @@ function Cartao({
               ? `Pedir mudança para o plano ${plano.nome}`
               : 'Só o proprietário ou um administrador da organização pede mudança de plano'
           }
-          className="app-secondary-button w-full px-4 py-2.5 text-[13px] disabled:cursor-not-allowed disabled:opacity-50"
+          className="botao-secundario botao-md w-full"
         >
           {rodando ? 'Enviando...' : `Mudar para ${plano.nome}`}
         </button>

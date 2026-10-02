@@ -384,7 +384,7 @@ export function BotaoDeMicrofone({
           onClick={() => parar(false)}
           title="Enviar o áudio"
           aria-label="Enviar o áudio"
-          className="app-primary-button shrink-0 rounded-full px-3.5 py-2 text-[13.5px]"
+          className="botao-primario botao-md shrink-0 rounded-full"
         >
           ➤
         </button>

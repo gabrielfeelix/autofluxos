@@ -95,7 +95,7 @@ export function ImportarFluxo({
             }
             setEscolhendo(true)
           }}
-          className="app-primary-button self-start px-[18px] py-2.5 text-[13px] whitespace-nowrap"
+          className="botao-primario botao-md self-start"
         >
           {rodando ? 'importando…' : 'Importar para minha conta'}
         </button>

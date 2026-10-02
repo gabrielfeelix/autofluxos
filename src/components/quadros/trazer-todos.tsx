@@ -60,7 +60,7 @@ export function TrazerTodos({
                 }
               })
             }
-            className="app-secondary-button ml-auto px-3 py-1 text-[11.5px] disabled:opacity-50"
+            className="botao-secundario botao-sm ml-auto"
           >
             {rodando ? 'trazendo…' : 'Trazer todos'}
           </button>

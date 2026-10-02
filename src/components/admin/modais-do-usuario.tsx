@@ -31,7 +31,7 @@ function Erro({ texto }: { texto: string | null }) {
 function Botoes({ aoFechar, rotulo, desligado, perigo }: { aoFechar: () => void; rotulo: string; desligado?: boolean; perigo?: boolean }) {
   return (
     <div className="mt-1 flex gap-2.5">
-      <button type="button" onClick={aoFechar} className="app-secondary-button flex-1 px-4 py-2.5 text-[13px]">
+      <button type="button" onClick={aoFechar} className="botao-secundario botao-md flex-1">
         Cancelar
       </button>
       <button
@@ -40,7 +40,7 @@ function Botoes({ aoFechar, rotulo, desligado, perigo }: { aoFechar: () => void;
         className={
           perigo
             ? 'flex-[1.35] rounded-[10px] border border-rose-400/40 bg-rose-400/[0.16] px-4 py-2.5 text-[13px] font-bold text-perigo transition hover:bg-rose-400/[0.24] disabled:cursor-not-allowed disabled:opacity-40'
-            : 'app-primary-button flex-[1.35] px-4 py-2.5 text-[13px] disabled:cursor-not-allowed disabled:opacity-50'
+            : 'botao-primario botao-md flex-[1.35]'
         }
       >
         {rotulo}
@@ -100,7 +100,7 @@ export function RedefinirSenha({ usuario, aoFechar, aoPronto }: { usuario: Usuar
           <p className="rounded-[12px] border border-line bg-surface px-4 py-3 text-[12.5px] leading-5 text-soft">
             Senha redefinida. Passe para {usuario.nome}: <strong className="font-mono text-ink select-all">{senha}</strong>
           </p>
-          <button type="button" onClick={aoFechar} className="app-primary-button px-4 py-2.5 text-[13px]">
+          <button type="button" onClick={aoFechar} className="botao-primario botao-md">
             Pronto
           </button>
         </div>
@@ -122,7 +122,7 @@ export function RedefinirSenha({ usuario, aoFechar, aoPronto }: { usuario: Usuar
             <RotuloCampo>Senha provisória</RotuloCampo>
             <span className="flex gap-2">
               <input value={senha} onChange={(evento) => setSenha(evento.target.value)} required minLength={10} autoComplete="new-password" placeholder="Exemplo: 10 caracteres ou mais" className={`${CAMPO} min-w-0 flex-1 font-mono`} />
-              <button type="button" onClick={() => setSenha(senhaAleatoria())} className="app-secondary-button shrink-0 px-3.5 text-[12.5px]">
+              <button type="button" onClick={() => setSenha(senhaAleatoria())} className="botao-secundario botao-md shrink-0">
                 Gerar
               </button>
             </span>
@@ -221,7 +221,7 @@ export function OrganizacoesDoUsuario({
                   setNova(livres.find((organizacao) => organizacao.id !== nova)?.id ?? '')
                   aplicar([...lista, { id: alvo.id, nome: alvo.nome, funcao: funcaoNova }], () => acaoAdminPorNaOrganizacao(usuario.id, alvo.id, funcaoNova))
                 }}
-                className="app-secondary-button px-4 py-2 text-[12.5px] disabled:opacity-50"
+                className="botao-secundario botao-md"
               >
                 Pôr
               </button>
@@ -229,7 +229,7 @@ export function OrganizacoesDoUsuario({
           </div>
         )}
         <Erro texto={erro} />
-        <button type="button" onClick={aoFechar} className="app-secondary-button px-4 py-2.5 text-[13px]">
+        <button type="button" onClick={aoFechar} className="botao-secundario botao-md">
           Fechar
         </button>
       </div>

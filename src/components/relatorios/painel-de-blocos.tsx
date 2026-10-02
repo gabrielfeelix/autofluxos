@@ -82,11 +82,7 @@ export function PainelDeBlocos({
           type="button"
           onClick={() => setEditando((e) => !e)}
           aria-pressed={editando}
-          className={`inline-flex h-9 shrink-0 items-center gap-2 self-start rounded-lg px-3.5 text-[12.5px] font-semibold transition ${
-            editando
-              ? 'app-primary-button'
-              : 'border border-line bg-panel text-soft shadow-sm hover:border-strong hover:text-ink'
-          }`}
+          className={`botao-md shrink-0 self-start ${editando ? 'botao-primario' : 'botao-secundario'}`}
         >
           {editando ? <IconeFeito /> : <IconeBlocos />}
           {editando ? 'Pronto' : 'Personalizar'}
@@ -132,7 +128,7 @@ export function PainelDeBlocos({
       {visiveis.length === 0 ? (
         <section className="app-card mt-5 px-5 py-14 text-center">
           <p className="text-[14px] font-semibold text-soft">Todos os blocos estão escondidos</p>
-          <button type="button" onClick={restaurar} className="app-primary-button mt-4 h-9 px-4 text-[13px]">
+          <button type="button" onClick={restaurar} className="botao-primario botao-md mt-4">
             Mostrar todos
           </button>
         </section>

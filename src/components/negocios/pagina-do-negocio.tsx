@@ -649,7 +649,7 @@ export function PaginaDoNegocio(props: Props) {
                   'Ainda não escreveu'
                 )}
               </p>
-              <Link href={conversa} className="app-primary-button mt-3 flex w-full justify-center px-3 py-2 text-[12.5px]">
+              <Link href={conversa} className="botao-primario botao-md mt-3 flex w-full">
                 Abrir conversa
               </Link>
             </Cartao>
@@ -1000,7 +1000,7 @@ function NovaAnotacao({
       />
       <div className="flex items-center justify-between gap-2">
         <span className="text-[11px] text-dim">Fica no histórico do negócio e na ficha da pessoa.</span>
-        <button type="submit" disabled={!limpo} className="app-primary-button px-3.5 py-1.5 text-[12.5px] disabled:opacity-50">
+        <button type="submit" disabled={!limpo} className="botao-primario botao-sm">
           Anotar
         </button>
       </div>
@@ -1183,7 +1183,7 @@ function NovaAtividade({
         <button
           type="submit"
           disabled={valores.titulo.trim() === ''}
-          className="app-primary-button mt-1 w-full px-3 py-2 text-[12.5px] disabled:opacity-50"
+          className="botao-primario botao-md mt-1 w-full"
         >
           Marcar atividade
         </button>

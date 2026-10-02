@@ -48,7 +48,7 @@ export function ImportarContatos({
         <button
           type="submit"
           disabled={enviando}
-          className="app-primary-button px-5 py-2.5 text-[13.5px] disabled:opacity-50"
+          className="botao-primario botao-md"
         >
           {enviando ? 'Importando…' : 'Importar'}
         </button>
@@ -146,7 +146,7 @@ function Recusadas({
       <button
         type="submit"
         disabled={enviando}
-        className="app-primary-button mt-3 px-4 py-2 text-[13px] disabled:opacity-50"
+        className="botao-primario botao-md mt-3"
       >
         {enviando
           ? 'Importando…'

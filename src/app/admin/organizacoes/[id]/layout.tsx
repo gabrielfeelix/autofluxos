@@ -47,7 +47,7 @@ export default async function LayoutDaOrganizacao({ children, params }: { childr
             <span className="ml-1 truncate">{organizacao.responsavel || organizacao.email || 'sem responsável no cadastro'}</span>
           </p>
         </div>
-        <Link href={`/clientes/${organizacao.id}`} className="app-primary-button w-full px-4 py-2.5 text-center text-[13px] sm:w-auto">
+        <Link href={`/clientes/${organizacao.id}`} className="botao-primario botao-md w-full text-center sm:w-auto">
           Abrir como suporte
         </Link>
       </header>

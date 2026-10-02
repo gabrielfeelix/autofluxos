@@ -243,7 +243,7 @@ export default async function Pagina({
             </span>
             <Link
               href={`/clientes/${cliente.id}/loja/magento`}
-              className="app-secondary-button px-3 py-1.5 text-[11.5px]"
+              className="botao-secundario botao-sm"
             >
               Ver a loja
             </Link>

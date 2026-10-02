@@ -1,8 +1,11 @@
 'use client'
 
 import { useRouter } from 'next/navigation'
-import { useEffect, useRef, useState, useTransition } from 'react'
+import { useEffect, useRef, useState, useTransition, type ReactNode } from 'react'
 import { IconeDoQuadro, PopoverDoQuadro } from '@/components/quadros/popover-do-quadro'
+import { CampoDeBusca, ChipDeFiltro } from './campo-de-busca'
+import { GrupoDoMenu, ItemDoMenu } from './menu-suspenso'
+import { Badge } from './pilula'
 import { enderecoDaLista } from '@/core/lista-de-fluxos'
 
 /** Quanto esperar a pessoa parar de digitar antes de buscar (o mesmo de Contatos). */
@@ -29,6 +32,8 @@ export function BarraDeLista({
   busca: config,
   grupos = [],
   resumo,
+  acoes,
+  className = 'mb-3',
 }: {
   base: string
   /** O que está no endereço agora, inclusive o que a barra não mexe (`aba`). */
@@ -36,7 +41,11 @@ export function BarraDeLista({
   busca: { chave: string; placeholder: string; rotulo: string }
   grupos?: GrupoDeFiltro[]
   /** "8 de 12", quando há filtro. */
-  resumo?: string
+  resumo?: ReactNode
+  /** Ações da lista ("Marcar todos como vistos"), na mesma linha, à direita. */
+  acoes?: ReactNode
+  /** A folga até o cartão. A barra mora fora dele, logo abaixo do topo. */
+  className?: string
 }) {
   const router = useRouter()
   const [carregando, comecar] = useTransition()
@@ -79,30 +88,18 @@ export function BarraDeLista({
   const limpar = Object.fromEntries([config.chave, ...grupos.map((g) => g.chave)].map((c) => [c, '']))
 
   return (
-    <div className="flex flex-col gap-2.5" aria-busy={carregando}>
+    <div className={`flex flex-col gap-2.5 ${className}`} aria-busy={carregando}>
       <div className="flex flex-wrap items-center gap-2">
-        <form
-          role="search"
-          onSubmit={(e) => {
-            e.preventDefault()
+        <CampoDeBusca
+          valor={busca}
+          aoDigitar={digitar}
+          aoEnviar={() => {
             if (espera.current) window.clearTimeout(espera.current)
             ir({ [config.chave]: busca.trim() })
           }}
-          className="relative w-full sm:max-w-[320px] sm:flex-1"
-        >
-          <span className="pointer-events-none absolute top-1/2 left-3 -translate-y-1/2 text-dim">
-            <IconeDoQuadro tipo="busca" />
-          </span>
-          <input
-            type="search"
-            value={busca}
-            onChange={(e) => digitar(e.currentTarget.value)}
-            placeholder={config.placeholder}
-            aria-label={config.rotulo}
-            maxLength={80}
-            className="app-field h-9 py-2 pr-3 pl-9 text-[12.5px]"
-          />
-        </form>
+          placeholder={config.placeholder}
+          rotulo={config.rotulo}
+        />
         {grupos.length > 0 && (
           <PopoverDoQuadro
             rotulo="Filtros da lista"
@@ -111,47 +108,36 @@ export function BarraDeLista({
               <>
                 <IconeDoQuadro tipo="filtro" />
                 <span>Filtros</span>
-                {ativos.length > 0 && (
-                  <span className="grid size-4 place-items-center rounded bg-primary text-[10px] text-white">
-                    {ativos.length}
-                  </span>
-                )}
+                {ativos.length > 0 && <Badge>{ativos.length}</Badge>}
               </>
             }
           >
-            {grupos.map((grupo, i) => (
-              <div key={grupo.chave}>
-                <p className={`quadro-menu-label ${i > 0 ? 'mt-1 border-t border-line pt-2' : ''}`}>{grupo.titulo}</p>
-                {[{ valor: '', rotulo: 'Qualquer' }, ...grupo.opcoes].map((opcao) => {
-                  const ativa = (parametros[grupo.chave] ?? '') === opcao.valor
-                  return (
-                    <button
-                      key={opcao.valor || 'qualquer'}
-                      type="button"
-                      data-fechar-popover
-                      aria-pressed={ativa}
-                      onClick={() => ir({ [grupo.chave]: opcao.valor })}
-                      className="quadro-menu-item"
-                    >
-                      <span className="flex-1 truncate">{opcao.rotulo}</span>
-                      {ativa && <span className="text-primary">✓</span>}
-                    </button>
-                  )
-                })}
-              </div>
+            {grupos.map((grupo) => (
+              <GrupoDoMenu key={grupo.chave} titulo={grupo.titulo}>
+                {[{ valor: '', rotulo: 'Qualquer' }, ...grupo.opcoes].map((opcao) => (
+                  <ItemDoMenu
+                    key={opcao.valor || 'qualquer'}
+                    ativo={(parametros[grupo.chave] ?? '') === opcao.valor}
+                    aoEscolher={() => ir({ [grupo.chave]: opcao.valor })}
+                  >
+                    {opcao.rotulo}
+                  </ItemDoMenu>
+                ))}
+              </GrupoDoMenu>
             ))}
           </PopoverDoQuadro>
         )}
-        {resumo && <span className="text-[11.5px] text-dim tabular-nums">{resumo}</span>}
-        {carregando && <span className="text-[11.5px] text-dim">carregando…</span>}
+        {resumo && <span className="text-[12.5px] text-muted tabular-nums">{resumo}</span>}
+        {carregando && <span className="text-[12px] text-dim">carregando…</span>}
+        {acoes && <div className="flex flex-wrap items-center gap-2 sm:ml-auto">{acoes}</div>}
       </div>
 
       {temFiltro && (
-        <div className="flex flex-wrap items-center gap-2 text-[11.5px]">
+        <div className="flex flex-wrap items-center gap-2 text-[12px]">
           <span className="text-dim">Filtros ativos:</span>
-          {atual && <Chip rotulo={`Busca: ${atual}`} aoTirar={() => ir({ [config.chave]: '' })} />}
+          {atual && <ChipDeFiltro rotulo={`Busca: ${atual}`} aoTirar={() => ir({ [config.chave]: '' })} />}
           {ativos.map((a) => (
-            <Chip key={a.chave} rotulo={a.rotulo} aoTirar={() => ir({ [a.chave]: '' })} />
+            <ChipDeFiltro key={a.chave} rotulo={a.rotulo} aoTirar={() => ir({ [a.chave]: '' })} />
           ))}
           <button
             type="button"
@@ -163,19 +149,5 @@ export function BarraDeLista({
         </div>
       )}
     </div>
-  )
-}
-
-function Chip({ rotulo, aoTirar }: { rotulo: string; aoTirar: () => void }) {
-  return (
-    <button
-      type="button"
-      onClick={aoTirar}
-      aria-label={`Remover filtro ${rotulo}`}
-      className="flex max-w-[260px] items-center gap-1.5 rounded-md border border-primary/15 bg-primary/[0.06] px-2 py-1 text-primary"
-    >
-      <span className="truncate">{rotulo}</span>
-      <span aria-hidden>×</span>
-    </button>
   )
 }

@@ -184,7 +184,7 @@ function ConteudoDaConfirmacao({
           className={
             perigo
               ? 'rounded-[9px] border border-rose-400/30 bg-rose-400/[0.12] px-3.5 py-2 text-[12.5px] font-bold text-perigo transition hover:bg-rose-400/[0.2] disabled:opacity-50'
-              : 'app-primary-button px-3.5 py-2 text-[12.5px] disabled:opacity-50'
+              : 'botao-primario botao-md'
           }
         >
           {rodando ? 'Aguarde…' : pedido.rotulo}

@@ -86,7 +86,7 @@ export function LojaNuvemshop({
                 type="button"
                 onClick={irParaNuvemshop}
                 disabled={indo}
-                className="app-primary-button inline-flex items-center gap-1.5 px-4 py-2.5 text-[12.5px] disabled:opacity-60"
+                className="botao-primario botao-md gap-1.5"
               >
                 {indo ? 'Abrindo a Nuvemshop…' : 'Conectar com a Nuvemshop'} <span aria-hidden>›</span>
               </button>
@@ -96,7 +96,7 @@ export function LojaNuvemshop({
                   A conexão com a Nuvemshop está sendo liberada. Enquanto isso, os produtos cadastrados à mão já
                   deixam o bot responder sobre eles.
                 </p>
-                <Link href={catalogoHref} className="app-primary-button inline-flex items-center gap-1.5 px-4 py-2.5 text-[12.5px]">
+                <Link href={catalogoHref} className="botao-primario botao-md gap-1.5">
                   Cadastrar produtos <span aria-hidden>›</span>
                 </Link>
               </>

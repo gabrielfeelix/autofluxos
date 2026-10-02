@@ -812,11 +812,11 @@ export function AdicionarContato({
         title={aparencia === 'icone' ? `Adicionar contato em ${etapaNome}` : undefined}
         className={
           aparencia === 'principal'
-            ? 'app-primary-button h-9 px-4 text-xs'
+            ? 'botao-primario botao-md'
             : aparencia === 'icone'
               ? 'grid size-7 shrink-0 place-items-center rounded-md text-lg text-dim transition hover:bg-surface-strong hover:text-ink'
               : aparencia === 'botao'
-                ? 'app-secondary-button px-4 py-2 text-[12.5px]'
+                ? 'botao-secundario botao-md'
                 : 'shrink-0 rounded-b-xl border-t border-line px-3 py-2 text-center text-[11.5px] text-dim transition hover:bg-surface hover:text-soft'
         }
       >
@@ -891,7 +891,7 @@ export function AdicionarContato({
           <button
             type="button"
             onClick={fechar}
-            className="app-secondary-button flex-1 px-4 py-2.5 text-[13px]"
+            className="botao-secundario botao-md flex-1"
           >
             Cancelar
           </button>
@@ -913,7 +913,7 @@ export function AdicionarContato({
                 }
               })
             }}
-            className="app-primary-button flex-[1.35] px-4 py-2.5 text-[13px] disabled:opacity-50"
+            className="botao-primario botao-md flex-[1.35]"
           >
             {rodando
               ? 'adicionando…'
@@ -973,7 +973,7 @@ function NovaEtapa({ clienteId, quadroId }: { clienteId: string; quadroId: strin
           <button
             type="button"
             onClick={fechar}
-            className="app-secondary-button flex-1 px-4 py-2.5 text-[13px]"
+            className="botao-secundario botao-md flex-1"
           >
             Cancelar
           </button>
@@ -981,7 +981,7 @@ function NovaEtapa({ clienteId, quadroId }: { clienteId: string; quadroId: strin
             type="button"
             disabled={rodando}
             onClick={salvar}
-            className="app-primary-button flex-[1.35] px-4 py-2.5 text-[13px]"
+            className="botao-primario botao-md flex-[1.35]"
           >
             {rodando ? 'criando…' : 'Criar etapa'}
           </button>
@@ -1206,7 +1206,7 @@ function MenuDaEtapa({
           <button
             type="button"
             onClick={() => setConfigurando(false)}
-            className="app-secondary-button flex-1 px-4 py-2.5 text-[13px]"
+            className="botao-secundario botao-md flex-1"
           >
             Cancelar
           </button>
@@ -1228,7 +1228,7 @@ function MenuDaEtapa({
                 return acaoDefinirCorDaEtapa(clienteId, quadroId, etapa.id, cor)
               })
             }}
-            className="app-primary-button flex-[1.35] px-4 py-2.5 text-[13px]"
+            className="botao-primario botao-md flex-[1.35]"
           >
             Salvar
           </button>
@@ -1259,7 +1259,7 @@ function MenuDaEtapa({
           <button
             type="button"
             onClick={() => setRenomeando(false)}
-            className="app-secondary-button flex-1 px-4 py-2.5 text-[13px]"
+            className="botao-secundario botao-md flex-1"
           >
             Cancelar
           </button>
@@ -1269,7 +1269,7 @@ function MenuDaEtapa({
               setRenomeando(false)
               agir(() => acaoRenomearEtapa(clienteId, quadroId, etapa.id, nome))
             }}
-            className="app-primary-button flex-[1.35] px-4 py-2.5 text-[13px]"
+            className="botao-primario botao-md flex-[1.35]"
           >
             Salvar
           </button>
@@ -1607,7 +1607,7 @@ function TrazerMeusContatos({
           }
         })
       }
-      className="app-primary-button px-4 py-2 text-[12.5px] disabled:opacity-50"
+      className="botao-primario botao-md"
     >
       {rodando ? 'trazendo…' : 'Trazer meus contatos'}
     </button>

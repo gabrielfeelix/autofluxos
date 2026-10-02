@@ -327,7 +327,7 @@ export function EditarPerfil({
             type="button"
             onClick={salvar}
             disabled={rodando}
-            className="rounded-lg bg-primary px-3.5 py-2 text-[12.5px] font-bold text-primary-ink transition hover:bg-primary-strong disabled:opacity-50"
+            className="botao-primario botao-md"
           >
             {rodando ? 'Salvando…' : 'Salvar'}
           </button>
@@ -363,7 +363,7 @@ export function TrocarSenha({ aoFechar }: { aoFechar: () => void }) {
             <button
               type="button"
               onClick={aoFechar}
-              className="rounded-lg bg-primary px-3.5 py-2 text-[12.5px] font-bold text-primary-ink transition hover:bg-primary-strong"
+              className="botao-primario botao-md"
             >
               Fechar
             </button>
@@ -395,7 +395,7 @@ export function TrocarSenha({ aoFechar }: { aoFechar: () => void }) {
             <button
               type="submit"
               disabled={rodando}
-              className="rounded-lg bg-primary px-3.5 py-2 text-[12.5px] font-bold text-primary-ink transition hover:bg-primary-strong disabled:opacity-50"
+              className="botao-primario botao-md"
             >
               {rodando ? 'Trocando…' : 'Trocar senha'}
             </button>

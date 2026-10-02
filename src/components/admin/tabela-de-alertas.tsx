@@ -1,6 +1,7 @@
 'use client'
 
-import { Fragment, useState, useTransition } from 'react'
+import { Fragment, useState, useTransition, type ComponentProps } from 'react'
+import { BarraDeLista } from '@/components/design/barra-de-lista'
 import { AvisoFlutuante } from '@/components/design/aviso-flutuante'
 import { RolagemDaTabela } from '@/components/lead/rolagem-da-tabela'
 import { acaoVerAlerta } from '@/server/acoes-alertas'
@@ -22,9 +23,30 @@ export type AlertaNaTabela = {
  * detalhe (um stack que quase ninguém abre) abre embaixo da linha, e não num
  * modal, para dar para selecionar e copiar sem perder a lista de vista.
  */
-export function TabelaDeAlertas({ alertas: iniciais }: { alertas: AlertaNaTabela[] }) {
+export function TabelaDeAlertas({
+  alertas: iniciais,
+  barra,
+}: {
+  alertas: AlertaNaTabela[]
+  /**
+   * A barra de busca e filtros, desenhada aqui para "Marcar todos como vistos"
+   * morar na mesma linha dela, à direita, e esmaecer a tabela na hora.
+   */
+  barra: Omit<ComponentProps<typeof BarraDeLista>, 'acoes'>
+}) {
   const [alertas, setAlertas] = useState(iniciais)
   const [aberto, setAberto] = useState<string | null>(null)
+  /*
+    A lista nova que chega do servidor (outro filtro) manda no estado. Sem
+    `key` no componente de propósito: remontar a cada filtro tiraria o foco do
+    campo de busca no meio da digitação.
+  */
+  const [vindos, setVindos] = useState(iniciais)
+  if (vindos !== iniciais) {
+    setVindos(iniciais)
+    setAlertas(iniciais)
+    setAberto(null)
+  }
   const [aviso, setAviso] = useState<string | null>(null)
   const [, comecar] = useTransition()
   const abertos = alertas.filter((alerta) => !alerta.visto).length
@@ -48,13 +70,16 @@ export function TabelaDeAlertas({ alertas: iniciais }: { alertas: AlertaNaTabela
 
   return (
     <>
-      {abertos > 0 && (
-        <div className="mb-3 flex justify-end">
-          <button type="button" onClick={() => ver()} className="app-secondary-button px-3.5 py-2 text-[12.5px]">
-            Marcar {abertos} como {abertos === 1 ? 'visto' : 'vistos'}
-          </button>
-        </div>
-      )}
+      <BarraDeLista
+        {...barra}
+        acoes={
+          abertos > 0 && (
+            <button type="button" onClick={() => ver()} className="botao-secundario botao-md">
+              Marcar {abertos} como {abertos === 1 ? 'visto' : 'vistos'}
+            </button>
+          )
+        }
+      />
       <div className="app-card flex min-h-0 flex-1 flex-col overflow-hidden">
         <RolagemDaTabela>
           <table className="w-full min-w-[860px] border-collapse text-left">
@@ -109,7 +134,7 @@ export function TabelaDeAlertas({ alertas: iniciais }: { alertas: AlertaNaTabela
                           {aberto === alerta.id ? 'Esconder' : 'Detalhe'}
                         </button>
                         {!alerta.visto && (
-                          <button type="button" onClick={() => ver(alerta.id)} className="app-secondary-button px-2.5 py-1.5 text-[12px] whitespace-nowrap">
+                          <button type="button" onClick={() => ver(alerta.id)} className="botao-secundario botao-sm">
                             Marcar como visto
                           </button>
                         )}

@@ -61,7 +61,7 @@ export function FichaDoAssistente({
             )}
           </div>
           <form action={rodarTeste}>
-            <button disabled={testando} className="app-secondary-button px-4 py-2 text-[12.5px] disabled:opacity-60">
+            <button disabled={testando} className="botao-secundario botao-md">
               {testando ? 'Testando…' : 'Testar o assistente'}
             </button>
           </form>
@@ -119,6 +119,7 @@ export function FichaDoAssistente({
                           value={opcao.texto}
                           defaultChecked={opcao.travada || marcadas[lista.id].includes(opcao.texto)}
                           disabled={opcao.travada}
+                          className="caixa-de-marcar"
                         />
                         <span>{opcao.texto}</span>
                         {opcao.travada && <span className="text-[11px] text-muted">(sempre, por segurança)</span>}

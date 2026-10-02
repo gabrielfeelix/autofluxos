@@ -3,6 +3,9 @@
 import { useRouter } from 'next/navigation'
 import { useEffect, useRef, useState, useTransition, type ReactNode } from 'react'
 import { IconeDoQuadro, PopoverDoQuadro } from '@/components/quadros/popover-do-quadro'
+import { Badge } from '@/components/design/pilula'
+import { CampoDeBusca, ChipDeFiltro } from '@/components/design/campo-de-busca'
+import { GrupoDoMenu, ItemDoMenu } from '@/components/design/menu-suspenso'
 import { NIVEIS, ROTULO_DO_NIVEL } from '@/core/relacionamento'
 import type { EtiquetaDeLead } from '@/server/repos/leads'
 import { enderecoDosContatos, type FiltroDeContatos } from '@/core/contatos/filtro'
@@ -84,28 +87,16 @@ export function BarraDeContatos({
   return (
     <div className="mb-3 flex flex-col gap-2.5" aria-busy={carregando}>
       <div className="flex flex-wrap items-center gap-2">
-        <form
-          role="search"
-          onSubmit={(e) => {
-            e.preventDefault()
+        <CampoDeBusca
+          valor={busca}
+          aoDigitar={digitar}
+          aoEnviar={() => {
             if (espera.current) window.clearTimeout(espera.current)
             ir({ busca: busca.trim() })
           }}
-          className="relative w-full sm:max-w-[360px] sm:flex-1"
-        >
-          <span className="pointer-events-none absolute top-1/2 left-3 -translate-y-1/2 text-dim">
-            <IconeDoQuadro tipo="busca" />
-          </span>
-          <input
-            type="search"
-            value={busca}
-            onChange={(e) => digitar(e.currentTarget.value)}
-            placeholder="Buscar por nome ou telefone"
-            aria-label="Buscar contato por nome ou telefone"
-            maxLength={80}
-            className="app-field h-9 py-2 pr-3 pl-9 text-[12.5px]"
-          />
-        </form>
+          placeholder="Buscar por nome ou telefone"
+          rotulo="Buscar contato por nome ou telefone"
+        />
         <PopoverDoQuadro
           rotulo="Filtros dos contatos"
           largura={300}
@@ -114,9 +105,7 @@ export function BarraDeContatos({
               <IconeDoQuadro tipo="filtro" />
               <span>Filtros</span>
               {noPopover > 0 && (
-                <span className="grid size-4 place-items-center rounded bg-primary text-[10px] text-white">
-                  {noPopover}
-                </span>
+<Badge>{noPopover}</Badge>
               )}
             </>
           }
@@ -126,75 +115,75 @@ export function BarraDeContatos({
             diferentes ("quanto já me deu" e "o que marcaram nela") e somam:
             escolher Ouro não desmarca a etiqueta.
           */}
-          <p className="quadro-menu-label">Cliente</p>
-          {[{ valor: null, rotulo: 'Qualquer' }, ...NIVEIS.map((n) => ({ valor: n, rotulo: ROTULO_DO_NIVEL[n] }))].map(
-            (opcao) => (
-              <Opcao
-                key={opcao.valor ?? 'qualquer'}
-                ativa={filtro.nivel === opcao.valor}
-                aoEscolher={() => ir({ nivel: opcao.valor })}
+          <GrupoDoMenu titulo="Cliente">
+            {[{ valor: null, rotulo: 'Qualquer' }, ...NIVEIS.map((n) => ({ valor: n, rotulo: ROTULO_DO_NIVEL[n] }))].map(
+              (opcao) => (
+                <ItemDoMenu
+                  key={opcao.valor ?? 'qualquer'}
+                  ativo={filtro.nivel === opcao.valor}
+                  aoEscolher={() => ir({ nivel: opcao.valor })}
+                >
+                  {opcao.rotulo}
+                </ItemDoMenu>
+              ),
+            )}
+          </GrupoDoMenu>
+
+          <GrupoDoMenu titulo="Etiquetas automáticas">
+            {AUTOMATICAS.map((opcao) => (
+              <ItemDoMenu
+                key={opcao.etiqueta}
+                ativo={filtro.etiqueta === opcao.etiqueta}
+                aoEscolher={() => ir({ etiqueta: filtro.etiqueta === opcao.etiqueta ? null : opcao.etiqueta })}
               >
                 {opcao.rotulo}
-              </Opcao>
-            ),
-          )}
-
-          <p className="quadro-menu-label mt-1 border-t border-line pt-2">Etiquetas automáticas</p>
-          {AUTOMATICAS.map((opcao) => (
-            <Opcao
-              key={opcao.etiqueta}
-              ativa={filtro.etiqueta === opcao.etiqueta}
-              aoEscolher={() => ir({ etiqueta: filtro.etiqueta === opcao.etiqueta ? null : opcao.etiqueta })}
-            >
-              {opcao.rotulo}
-            </Opcao>
-          ))}
+              </ItemDoMenu>
+            ))}
+          </GrupoDoMenu>
 
           {manuais.length > 0 && (
-            <>
-              <p className="quadro-menu-label mt-1 border-t border-line pt-2">Suas etiquetas</p>
+            <GrupoDoMenu titulo="Suas etiquetas">
               {manuais.map((opcao) => (
-                <Opcao
+                <ItemDoMenu
                   key={opcao.id}
-                  ativa={filtro.marca === opcao.id}
+                  ativo={filtro.marca === opcao.id}
                   aoEscolher={() => ir({ marca: filtro.marca === opcao.id ? null : opcao.id })}
                   contagem={opcao.contatos ?? 0}
                 >
                   {opcao.nome}
-                </Opcao>
+                </ItemDoMenu>
               ))}
-            </>
+            </GrupoDoMenu>
           )}
 
           {segmentos.length > 0 && (
-            <>
-              <p className="quadro-menu-label mt-1 border-t border-line pt-2">Segmentos</p>
+            <GrupoDoMenu titulo="Segmentos">
               {segmentos.map((opcao) => (
-                <Opcao
+                <ItemDoMenu
                   key={opcao.id}
-                  ativa={filtro.segmento === opcao.id}
+                  ativo={filtro.segmento === opcao.id}
                   aoEscolher={() => ir({ segmento: filtro.segmento === opcao.id ? null : opcao.id })}
                 >
                   {opcao.nome}
-                </Opcao>
+                </ItemDoMenu>
               ))}
-            </>
+            </GrupoDoMenu>
           )}
         </PopoverDoQuadro>
         {colunas}
-        {carregando && <span className="text-[11.5px] text-dim">carregando…</span>}
+        {carregando && <span className="text-[12px] text-dim">carregando…</span>}
       </div>
 
       {temFiltro && (
-        <div className="flex flex-wrap items-center gap-2 text-[11.5px]">
+        <div className="flex flex-wrap items-center gap-2 text-[12px]">
           <span className="text-dim">Filtros ativos:</span>
-          {filtro.busca && <Chip rotulo={`Busca: ${filtro.busca}`} aoTirar={() => ir({ busca: '' })} />}
+          {filtro.busca && <ChipDeFiltro rotulo={`Busca: ${filtro.busca}`} aoTirar={() => ir({ busca: '' })} />}
           {filtro.nivel && (
-            <Chip rotulo={`Cliente: ${ROTULO_DO_NIVEL[filtro.nivel]}`} aoTirar={() => ir({ nivel: null })} />
+            <ChipDeFiltro rotulo={`Cliente: ${ROTULO_DO_NIVEL[filtro.nivel]}`} aoTirar={() => ir({ nivel: null })} />
           )}
-          {automatica && <Chip rotulo={`Etiqueta: ${automatica.rotulo}`} aoTirar={() => ir({ etiqueta: null })} />}
-          {manual && <Chip rotulo={`Etiqueta: ${manual}`} aoTirar={() => ir({ marca: null })} />}
-          {doSegmento && <Chip rotulo={`Segmento: ${doSegmento}`} aoTirar={() => ir({ segmento: null })} />}
+          {automatica && <ChipDeFiltro rotulo={`Etiqueta: ${automatica.rotulo}`} aoTirar={() => ir({ etiqueta: null })} />}
+          {manual && <ChipDeFiltro rotulo={`Etiqueta: ${manual}`} aoTirar={() => ir({ marca: null })} />}
+          {doSegmento && <ChipDeFiltro rotulo={`Segmento: ${doSegmento}`} aoTirar={() => ir({ segmento: null })} />}
           <button
             type="button"
             onClick={() => ir({ busca: '', nivel: null, etiqueta: null, marca: null, segmento: null })}
@@ -205,39 +194,5 @@ export function BarraDeContatos({
         </div>
       )}
     </div>
-  )
-}
-
-function Opcao({
-  ativa,
-  aoEscolher,
-  contagem,
-  children,
-}: {
-  ativa: boolean
-  aoEscolher: () => void
-  contagem?: number
-  children: ReactNode
-}) {
-  return (
-    <button type="button" data-fechar-popover aria-pressed={ativa} onClick={aoEscolher} className="quadro-menu-item">
-      <span className="flex-1 truncate">{children}</span>
-      {contagem !== undefined && <span className="text-[11px] text-dim tabular-nums">{contagem}</span>}
-      {ativa && <span className="text-primary">✓</span>}
-    </button>
-  )
-}
-
-function Chip({ rotulo, aoTirar }: { rotulo: string; aoTirar: () => void }) {
-  return (
-    <button
-      type="button"
-      onClick={aoTirar}
-      aria-label={`Remover filtro ${rotulo}`}
-      className="flex max-w-[260px] items-center gap-1.5 rounded-md border border-primary/15 bg-primary/[0.06] px-2 py-1 text-primary"
-    >
-      <span className="truncate">{rotulo}</span>
-      <span aria-hidden>×</span>
-    </button>
   )
 }

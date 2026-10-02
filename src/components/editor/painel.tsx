@@ -495,7 +495,7 @@ export function Painel({
           ) : (
             <button
               onClick={aoDefinirInicio}
-              className="rounded-lg border border-line px-2.5 py-1 text-[10px] font-semibold whitespace-nowrap text-muted transition hover:border-primary/40 hover:text-primary"
+              className="botao-secundario botao-sm whitespace-nowrap"
             >
               Tornar início
             </button>

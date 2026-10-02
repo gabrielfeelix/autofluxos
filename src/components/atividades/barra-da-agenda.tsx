@@ -133,7 +133,7 @@ export function BarraDaAgenda({
             if (espera.current) window.clearTimeout(espera.current)
             ir({ busca: busca.trim() })
           }}
-          className="relative w-full sm:max-w-[360px] sm:flex-1"
+          className="campo-de-busca relative w-full sm:max-w-[380px] sm:flex-1"
         >
           <span className="pointer-events-none absolute top-1/2 left-3 -translate-y-1/2 text-dim">
             <IconeDoQuadro tipo="busca" />
@@ -145,7 +145,7 @@ export function BarraDaAgenda({
             placeholder="Buscar por título ou contato"
             aria-label="Buscar atividade por título, nome ou telefone do contato"
             maxLength={80}
-            className="app-field h-9 py-2 pr-3 pl-9 text-[12.5px]"
+            className="app-field h-9 py-2 pr-3 pl-9 text-[13px]"
           />
         </form>
         <div className="w-[120px] shrink-0 sm:w-[136px]">

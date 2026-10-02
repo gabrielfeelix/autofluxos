@@ -197,7 +197,7 @@ export function ModalDeTroca({
       )}
 
       <div className="mt-5 flex gap-2.5">
-        <button type="button" onClick={aoFechar} className="app-secondary-button flex-1 px-4 py-2.5 text-[13px]">
+        <button type="button" onClick={aoFechar} className="botao-secundario botao-md flex-1">
           {bloqueado ? 'Fechar' : 'Cancelar'}
         </button>
         {!bloqueado && (
@@ -205,7 +205,7 @@ export function ModalDeTroca({
             type="button"
             disabled={!podeConfirmar}
             onClick={() => aoConfirmar({ ciente, motivo })}
-            className="app-primary-button flex-[1.35] px-4 py-2.5 text-[13px] disabled:cursor-not-allowed disabled:opacity-50"
+            className="botao-primario botao-md flex-[1.35]"
           >
             {quem === 'organizacao' ? 'Enviar pedido' : desce ? `Agendar para ${virada}` : `Mudar para ${paraNome}`}
           </button>

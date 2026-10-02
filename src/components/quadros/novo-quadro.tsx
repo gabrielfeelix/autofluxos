@@ -112,8 +112,8 @@ export function NovoQuadro({
           onClick={() => setAberto(true)}
           className={
             primeiro
-              ? 'app-primary-button px-4 py-2.5 text-[13px]'
-              : 'app-secondary-button px-3.5 py-2 text-[12.5px]'
+              ? 'botao-primario botao-md'
+              : 'botao-secundario botao-md'
           }
         >
           + Novo funil
@@ -228,7 +228,7 @@ export function NovoQuadro({
               <button
                 type="button"
                 onClick={fechar}
-                className="app-secondary-button px-3.5 py-2 text-[12.5px]"
+                className="botao-secundario botao-md"
               >
                 Cancelar
               </button>
@@ -236,7 +236,7 @@ export function NovoQuadro({
                 type="button"
                 disabled={rodando}
                 onClick={criar}
-                className="app-primary-button px-4 py-2 text-[12.5px] disabled:opacity-50"
+                className="botao-primario botao-md"
               >
                 {rodando ? 'criando…' : 'Criar funil'}
               </button>

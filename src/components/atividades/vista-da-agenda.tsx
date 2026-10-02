@@ -104,13 +104,13 @@ export function VistaDaAgenda({
     <>
       <div className="mb-3 flex flex-wrap items-center gap-2">
         <div className="flex items-center gap-1">
-          <Link href={endereco({ dia: intervalo.anterior })} aria-label={escala === 'semana' ? 'Semana anterior' : 'Mês anterior'} className="app-secondary-button grid size-9 place-items-center text-[15px]">
+          <Link href={endereco({ dia: intervalo.anterior })} aria-label={escala === 'semana' ? 'Semana anterior' : 'Mês anterior'} className="botao-secundario botao-md botao-icone text-[15px]">
             ‹
           </Link>
-          <Link href={endereco({ dia: '' })} className="app-secondary-button px-3 py-2 text-[12px]">
+          <Link href={endereco({ dia: '' })} className="botao-secundario botao-md">
             Hoje
           </Link>
-          <Link href={endereco({ dia: intervalo.seguinte })} aria-label={escala === 'semana' ? 'Próxima semana' : 'Próximo mês'} className="app-secondary-button grid size-9 place-items-center text-[15px]">
+          <Link href={endereco({ dia: intervalo.seguinte })} aria-label={escala === 'semana' ? 'Próxima semana' : 'Próximo mês'} className="botao-secundario botao-md botao-icone text-[15px]">
             ›
           </Link>
         </div>
@@ -321,7 +321,7 @@ function DialogoDaAtividade({ aoFechar, children }: { aoFechar: () => void; chil
     >
       {children}
       <div className="flex justify-end px-4 pb-2">
-        <button type="button" onClick={() => dialogo.current?.close()} className="app-secondary-button px-4 py-2 text-[12.5px]">
+        <button type="button" onClick={() => dialogo.current?.close()} className="botao-secundario botao-md">
           Fechar
         </button>
       </div>

@@ -98,7 +98,7 @@ export function Assumir({
             ? 'Devolve a conversa para a fila. O bot continua calado até alguém finalizar o atendimento.'
             : 'A conversa passa a ser sua e o bot para de responder. Ele só volta quando alguém finalizar o atendimento.'
         }
-        className="rounded-[8px] border border-line px-2.5 py-1.5 text-[11.5px] font-semibold text-muted transition hover:border-primary/40 hover:text-primary disabled:opacity-50"
+        className="botao-secundario botao-sm"
       >
         {meu ? 'Devolver à fila' : temOutroDono ? 'Assumir mesmo assim' : 'Assumir'}
       </button>

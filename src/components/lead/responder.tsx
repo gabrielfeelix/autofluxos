@@ -531,7 +531,7 @@ export function CaixaDeResposta({
             type="submit"
             disabled={enviando || !livre}
             aria-label={enviando ? 'Enviando' : livre ? 'Enviar a mensagem' : 'Texto livre fechado'}
-            className="app-primary-button flex size-9 shrink-0 items-center justify-center rounded-full text-[13.5px] leading-none disabled:opacity-50"
+            className="botao-primario botao-md botao-icone shrink-0 rounded-full text-[13.5px]"
           >
             {enviando ? '…' : '➤'}
           </button>

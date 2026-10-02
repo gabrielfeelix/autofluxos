@@ -87,7 +87,7 @@ export function GerenciadorDeRespostasRapidas({ clienteId, inicial, topo }: { cl
       {...topo}
       contagem={<Contagem>{lista.length} {lista.length === 1 ? 'resposta' : 'respostas'}</Contagem>}
       acoes={
-        <button type="button" onClick={() => setEditando('nova')} className="app-primary-button h-9 px-4 text-[13px]">
+        <button type="button" onClick={() => setEditando('nova')} className="botao-primario botao-md">
           + Nova resposta
         </button>
       }
@@ -102,7 +102,7 @@ export function GerenciadorDeRespostasRapidas({ clienteId, inicial, topo }: { cl
             Cadastre a frase que a equipe repete todo dia, como o endereço, o horário ou o primeiro passo do orçamento.
             Na conversa, ela entra com um clique.
           </p>
-          <button type="button" onClick={() => setEditando('nova')} className="app-primary-button mt-5 h-9 px-4 text-[13px]">
+          <button type="button" onClick={() => setEditando('nova')} className="botao-primario botao-md mt-5">
             Criar a primeira resposta
           </button>
         </div>
@@ -241,10 +241,10 @@ function FormularioDaResposta({
         )}
 
         <div className="flex justify-end gap-2 pt-1">
-          <button type="button" onClick={aoFechar} className="app-secondary-button h-9 px-4 text-[13px]">
+          <button type="button" onClick={aoFechar} className="botao-secundario botao-md">
             Cancelar
           </button>
-          <button type="submit" disabled={vazio} className="app-primary-button h-9 px-4 text-[13px]">
+          <button type="submit" disabled={vazio} className="botao-primario botao-md">
             {resposta ? 'Salvar' : 'Criar resposta'}
           </button>
         </div>

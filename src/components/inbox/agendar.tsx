@@ -261,7 +261,7 @@ export function AgendarMensagem({
         type="button"
         disabled={Boolean(recusa)}
         onClick={marcar}
-        className="app-primary-button w-full py-2 text-[12.5px]"
+        className="botao-primario botao-md w-full"
       >
         Agendar mensagem
       </button>

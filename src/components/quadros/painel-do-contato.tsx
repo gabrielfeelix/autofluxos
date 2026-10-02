@@ -400,7 +400,7 @@ export function PainelDoContato({
       <footer className="flex shrink-0 gap-2 border-t border-line bg-panel px-5 py-4 sm:px-6">
         <Link
           href={`/clientes/${clienteId}/negocios/${cartao.id}`}
-          className="app-primary-button flex flex-1 items-center justify-center px-3 py-2 text-[12.5px]"
+          className="botao-primario botao-md flex flex-1"
         >
           Abrir negócio
         </Link>

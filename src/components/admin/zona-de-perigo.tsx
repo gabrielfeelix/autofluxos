@@ -169,7 +169,7 @@ function Apagar({ organizacao, pessoas, aoFechar }: { organizacao: { id: string;
         </p>
       )}
       <div className="mt-5 flex gap-2.5">
-        <button type="button" onClick={aoFechar} className="app-secondary-button flex-1 px-4 py-2.5 text-[13px]">
+        <button type="button" onClick={aoFechar} className="botao-secundario botao-md flex-1">
           Cancelar
         </button>
         <button

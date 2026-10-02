@@ -83,7 +83,7 @@ export function EscolherTipoDeNegocio({
             Muda os nomes do menu, os modelos oferecidos e a ficha do assistente para toda a equipe.
             Nada é apagado e nada é criado.
           </p>
-          <button type="button" onClick={confirmar} disabled={rodando} className="app-primary-button px-4 py-2 text-[12.5px] disabled:opacity-60">
+          <button type="button" onClick={confirmar} disabled={rodando} className="botao-primario botao-md">
             {rodando ? 'Trocando…' : 'Trocar'}
           </button>
           <button type="button" onClick={() => setPendente(undefined)} disabled={rodando} className="text-[12.5px] font-semibold text-muted hover:text-soft">

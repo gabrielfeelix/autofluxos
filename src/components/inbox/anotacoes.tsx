@@ -234,7 +234,7 @@ export function EntradaDeAnotacao({ limite, aoAnotar }: { limite: number; aoAnot
         <button
           type="submit"
           disabled={texto.trim() === ''}
-          className="rounded-lg bg-primary px-3 py-1.5 text-[12px] font-semibold text-white disabled:opacity-50"
+          className="botao-primario botao-sm"
         >
           Anotar
         </button>

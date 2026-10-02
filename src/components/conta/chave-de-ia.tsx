@@ -108,7 +108,7 @@ export function ChaveDeIa({
                 setFeito('')
                 setTrocando(true)
               }}
-              className="rounded-lg border border-line px-2.5 py-1 text-[11.5px] font-semibold text-muted transition hover:border-primary/40 hover:text-primary"
+              className="botao-secundario botao-sm"
             >
               Trocar
             </button>
@@ -124,7 +124,7 @@ export function ChaveDeIa({
                   else setFeito('Chave do cliente apagada. A conta voltou para a chave da 4YU.')
                 })
               }
-              className="rounded-lg border border-line px-2.5 py-1 text-[11.5px] font-semibold text-muted transition hover:border-perigo/40 hover:text-perigo disabled:opacity-50"
+              className="botao-perigo botao-sm"
             >
               usar a chave da 4YU
             </button>

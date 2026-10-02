@@ -342,7 +342,7 @@ function CamposDoFluxo({
         </button>
         <button
           type="submit"
-          className="rounded-[10px] bg-primary px-4 py-2 text-[12.5px] font-bold text-white transition hover:bg-primary-strong"
+          className="botao-primario botao-md"
         >
           Criar e abrir
         </button>
@@ -460,7 +460,7 @@ export function NovaAutomacao({
       <button
         type="button"
         onClick={abrir}
-        className="rounded-[10px] bg-primary px-3.5 py-2 text-[12.5px] font-bold text-white transition hover:bg-primary-strong"
+        className="botao-primario botao-md"
       >
         + Criar automação
       </button>

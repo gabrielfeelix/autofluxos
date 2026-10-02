@@ -183,7 +183,7 @@ export default async function Pagina({
                 <p className="text-[13px] text-muted">Nada com estes filtros.</p>
                 <Link
                   href={endereco({ busca: '', tipo: null, responsavel: null, recorte: null, situacao: 'aberta', pagina: 1 })}
-                  className="app-secondary-button mt-4 inline-block px-4 py-2 text-[12px]"
+                  className="botao-secundario botao-md mt-4"
                 >
                   Limpar filtros
                 </Link>

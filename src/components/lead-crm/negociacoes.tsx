@@ -132,7 +132,7 @@ export function Negociacoes({
                   <button
                     type="button"
                     onClick={() => setFechando({ cartao: negociacao, situacao: 'perdida' })}
-                    className="rounded-[9px] border border-line bg-surface px-3 py-1.5 text-[11.5px] font-bold text-muted transition hover:border-strong"
+                    className="botao-secundario botao-sm"
                   >
                     Perder
                   </button>

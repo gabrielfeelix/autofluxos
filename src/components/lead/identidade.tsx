@@ -170,11 +170,11 @@ export function NomeDoContato({
                 setErro(null)
                 dialogo.current?.close()
               }}
-              className="app-secondary-button flex-1 px-4 py-2.5 text-[13.5px]"
+              className="botao-secundario botao-md flex-1"
             >
               Cancelar
             </button>
-            <button type="submit" className="app-primary-button flex-[1.35] px-4 py-2.5 text-[13.5px]">
+            <button type="submit" className="botao-primario botao-md flex-[1.35]">
               Salvar
             </button>
           </div>

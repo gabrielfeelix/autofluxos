@@ -127,7 +127,7 @@ export function Diario({
           <button
             type="button"
             onClick={() => setAberta(true)}
-            className="rounded-lg border border-line px-2 py-0.5 text-[10.5px] font-semibold text-muted transition hover:border-primary/40 hover:text-primary"
+            className="botao-secundario botao-sm"
           >
             Anotar
           </button>
@@ -159,7 +159,7 @@ export function Diario({
                 de baixo.
               */}
               <div className="mt-3.5 flex items-center gap-3">
-                <button type="submit" className="app-primary-button px-[18px] py-2.5 text-[13px]">
+                <button type="submit" className="botao-primario botao-md">
                   Salvar anotação
                 </button>
                 <button

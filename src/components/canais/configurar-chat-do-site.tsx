@@ -445,7 +445,7 @@ export function ConfigurarChatDoSite({
             type="button"
             onClick={salvar}
             disabled={salvando || !mudou}
-            className="rounded-[10px] bg-primary px-5 py-2.5 text-[13.5px] font-bold text-white transition hover:bg-primary-strong disabled:opacity-45"
+            className="botao-primario botao-md"
           >
             {salvando ? 'Salvando' : 'Salvar alterações'}
           </button>

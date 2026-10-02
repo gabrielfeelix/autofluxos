@@ -246,7 +246,7 @@ export function SeletorDeArquivo({
             type="button"
             disabled={enviando}
             onClick={() => entrada.current?.click()}
-            className="app-secondary-button mt-2 px-3 py-1.5 text-[11.5px] disabled:opacity-50"
+            className="botao-secundario botao-sm mt-2"
           >
             Escolher do computador
           </button>

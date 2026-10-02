@@ -510,7 +510,7 @@ function DadosDoLead({
             volta: `/clientes/${clienteId}/inbox?conversa=${lead.contatoId}`,
           })}
           title="Abrir a ficha completa"
-          className="app-secondary-button shrink-0 px-2.5 py-1 text-[12px]"
+          className="botao-secundario botao-sm shrink-0"
         >
           Ficha
         </Link>

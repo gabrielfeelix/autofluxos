@@ -124,7 +124,7 @@ export function AcoesDaLinha({
                 />
               </div>
               <p className="text-[11px] leading-4 text-dim">Hora é opcional. Sem dia, vira &quot;algum dia&quot;.</p>
-              <button type="submit" data-fechar-popover className="app-primary-button px-3 py-2 text-[12px]">
+              <button type="submit" data-fechar-popover className="botao-primario botao-md">
                 Salvar prazo
               </button>
             </form>

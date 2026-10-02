@@ -121,7 +121,7 @@ export function TabelaDeEtiquetas({ clienteId, inicial }: { clienteId: string; i
         <h2 className="text-[14.5px] font-bold">
           {lista.length} {lista.length === 1 ? 'etiqueta' : 'etiquetas'}
         </h2>
-        <button type="button" onClick={() => setEdicao({ tipo: 'nova' })} className="app-primary-button h-9 px-4 text-[13px]">
+        <button type="button" onClick={() => setEdicao({ tipo: 'nova' })} className="botao-primario botao-md">
           + Nova etiqueta
         </button>
       </header>
@@ -134,7 +134,7 @@ export function TabelaDeEtiquetas({ clienteId, inicial }: { clienteId: string; i
             Etiqueta é a sua lista: quem já recebeu proposta, quem é aluno antigo, quem não quer mais mensagem. Ela vira
             filtro em Contatos e público de transmissão.
           </p>
-          <button type="button" onClick={() => setEdicao({ tipo: 'nova' })} className="app-primary-button mt-5 h-9 px-4 text-[13px]">
+          <button type="button" onClick={() => setEdicao({ tipo: 'nova' })} className="botao-primario botao-md mt-5">
             Criar a primeira etiqueta
           </button>
         </div>
@@ -308,10 +308,10 @@ function FormularioDaEtiqueta({
           </p>
         </div>
         <div className="flex justify-end gap-2 pt-1">
-          <button type="button" onClick={aoFechar} className="app-secondary-button h-9 px-4 text-[13px]">
+          <button type="button" onClick={aoFechar} className="botao-secundario botao-md">
             Cancelar
           </button>
-          <button type="submit" disabled={vazio} className="app-primary-button h-9 px-4 text-[13px]">
+          <button type="submit" disabled={vazio} className="botao-primario botao-md">
             {rotulo}
           </button>
         </div>
@@ -380,10 +380,10 @@ function FormularioDeJuntar({
           </p>
         )}
         <div className="flex justify-end gap-2 pt-1">
-          <button type="button" onClick={aoFechar} disabled={rodando} className="app-secondary-button h-9 px-4 text-[13px]">
+          <button type="button" onClick={aoFechar} disabled={rodando} className="botao-secundario botao-md">
             Cancelar
           </button>
-          <button type="submit" disabled={rodando || !escolhida} className="app-primary-button h-9 px-4 text-[13px]">
+          <button type="submit" disabled={rodando || !escolhida} className="botao-primario botao-md">
             {rodando ? 'Juntando…' : 'Juntar etiquetas'}
           </button>
         </div>

@@ -9,12 +9,15 @@ export function PopoverDoQuadro({
   children,
   className = '',
   largura = 264,
+  titulo,
 }: {
   rotulo: string
   gatilho: ReactNode
   children: ReactNode
   className?: string
   largura?: number
+  /** A dica do gatilho, quando o rótulo não basta. */
+  titulo?: string
 }) {
   const id = useId()
   const painel = useRef<HTMLDivElement>(null)
@@ -52,6 +55,7 @@ export function PopoverDoQuadro({
         type="button"
         popoverTarget={id}
         aria-label={rotulo}
+        title={titulo}
         aria-expanded={aberto}
         aria-controls={id}
         className={`quadro-tool ${className}`}

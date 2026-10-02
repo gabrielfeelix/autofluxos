@@ -196,7 +196,7 @@ export function SeletorDePedido({
                 type="button"
                 onClick={() => void enviar()}
                 disabled={enviando}
-                className="mt-2 w-full rounded-[9px] bg-primary px-3 py-2 text-[12.5px] font-semibold text-white transition hover:bg-primary/90 disabled:opacity-60"
+                className="botao-primario botao-md mt-2 w-full"
               >
                 {enviando ? 'Enviando…' : 'Enviar status na conversa'}
               </button>

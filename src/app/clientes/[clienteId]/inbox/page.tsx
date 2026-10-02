@@ -520,7 +520,7 @@ function EstadoVazio({
             As conversas do WhatsApp, do Instagram e do site chegam aqui.
           </p>
         </div>
-        <Link href={`/clientes/${clienteId}/leads`} className="app-secondary-button inline-flex h-9 shrink-0 items-center px-4 text-[13px]">
+        <Link href={`/clientes/${clienteId}/leads`} className="botao-secundario botao-md shrink-0">
           Ver Leads
         </Link>
       </header>

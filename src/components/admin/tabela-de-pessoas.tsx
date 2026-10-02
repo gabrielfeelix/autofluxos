@@ -147,7 +147,7 @@ export function TabelaDePessoas({
     ) : null
 
   const botaoDeDarAcesso = darAcesso && (
-    <button type="button" onClick={() => setDando(true)} className="app-primary-button px-4 py-2 text-[12.5px]">
+    <button type="button" onClick={() => setDando(true)} className="botao-primario botao-md">
       + Dar acesso
     </button>
   )
@@ -170,7 +170,7 @@ export function TabelaDePessoas({
         {pessoas.length} {pessoas.length === 1 ? 'pessoa' : 'pessoas'}
       </p>
       {darAcesso && (
-        <button type="button" onClick={() => setDando(true)} className="app-primary-button px-4 py-2 text-[12.5px]">
+        <button type="button" onClick={() => setDando(true)} className="botao-primario botao-md">
           + Dar acesso
         </button>
       )}
@@ -403,10 +403,10 @@ function DarAcesso({
           </p>
         )}
         <div className="mt-1 flex gap-2.5">
-          <button type="button" onClick={aoFechar} className="app-secondary-button flex-1 px-4 py-2.5 text-[13px]">
+          <button type="button" onClick={aoFechar} className="botao-secundario botao-md flex-1">
             Cancelar
           </button>
-          <button type="submit" disabled={enviando} className="app-primary-button flex-[1.35] px-4 py-2.5 text-[13px]">
+          <button type="submit" disabled={enviando} className="botao-primario botao-md flex-[1.35]">
             {enviando ? 'Dando acesso…' : 'Dar acesso'}
           </button>
         </div>

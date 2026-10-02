@@ -19,7 +19,7 @@ type Passo =
   | { qual: 'qr'; qr: string; chave: string; codigos: string[] }
   | { qual: 'pronto' }
 
-const BOTAO = 'app-primary-button px-4 py-2.5 text-[13px] disabled:opacity-50'
+const BOTAO = 'botao-primario botao-md'
 const SECUNDARIO =
   'rounded-lg border border-line px-3.5 py-2 text-[12.5px] font-semibold text-dim transition hover:text-muted'
 

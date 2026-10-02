@@ -112,7 +112,7 @@ export function GerenciadorDoAcervo({
             type="button"
             disabled={enviando}
             onClick={() => entrada.current?.click()}
-            className="app-secondary-button mt-2.5 px-3.5 py-1.5 text-[12px] disabled:opacity-50"
+            className="botao-secundario botao-sm mt-2.5"
           >
             Escolher do computador
           </button>

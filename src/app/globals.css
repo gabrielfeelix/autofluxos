@@ -724,68 +724,6 @@ textarea::placeholder {
   background: var(--surface);
 }
 
-.app-primary-button {
-  border: 0;
-  border-radius: 10px;
-  background: var(--primary);
-  color: var(--primary-ink);
-  /*
-   * 800 era o peso que o ciano exigia para se segurar sobre o escuro. O azul
-   * sólido com texto branco já tem contraste de sobra, e 700 é o peso em que
-   * o Outfit ainda desenha a letra em vez de fechar o contorno.
-   */
-  font-weight: 700;
-  cursor: pointer;
-  transition: background 150ms ease, opacity 150ms ease, transform 100ms ease;
-}
-
-.app-primary-button:hover:not(:disabled) {
-  background: var(--primary-strong);
-}
-
-.app-primary-button:active:not(:disabled) {
-  background: var(--primary-strong);
-  transform: translateY(1px);
-}
-
-.app-primary-button:focus-visible {
-  outline: none;
-  box-shadow: 0 0 0 3px color-mix(in oklab, var(--primary) 30%, transparent);
-}
-
-.app-primary-button:disabled {
-  cursor: not-allowed;
-  opacity: 0.4;
-}
-
-.app-secondary-button {
-  border: 1px solid var(--line);
-  border-radius: 10px;
-  background: var(--panel);
-  color: var(--soft);
-  font-weight: 600;
-  cursor: pointer;
-  transition: background 150ms ease, border-color 150ms ease, color 150ms ease,
-    transform 100ms ease;
-}
-
-.app-secondary-button:hover:not(:disabled) {
-  border-color: color-mix(in oklab, var(--primary) 45%, transparent);
-  background: var(--primary-weak);
-  color: var(--primary-strong);
-}
-
-.app-secondary-button:active:not(:disabled) {
-  background: var(--primary-weak);
-  transform: translateY(1px);
-}
-
-.app-secondary-button:focus-visible {
-  outline: none;
-  border-color: var(--primary);
-  box-shadow: 0 0 0 3px color-mix(in oklab, var(--primary) 16%, transparent);
-}
-
 .app-page-enter {
   animation: fade-up 350ms ease both;
 }
@@ -1451,23 +1389,33 @@ textarea::placeholder {
 }
 
 /* Funil: controles compactos e ações na top layer, inclusive dentro das colunas. */
-.quadro-tool {
-  display: inline-flex;
-  min-height: 36px;
-  align-items: center;
-  justify-content: center;
-  gap: 7px;
-  border: 1px solid var(--line);
-  border-radius: 8px;
-  padding: 7px 11px;
-  background: var(--panel);
-  color: var(--soft);
-  font-size: 12px;
-  font-weight: 500;
-  cursor: pointer;
-  transition:
-    background 150ms ease,
-    border-color 150ms ease;
+/*
+ * O botão de ferramenta (Filtros, Colunas, Importar) é o secundário claro da
+ * escala `md`: mesma altura do campo de busca ao lado. Em camada para
+ * `botao-lg` e `botao-sm` mudarem a medida no topo da tela ou numa linha.
+ */
+@layer components {
+  .quadro-tool,
+  .crm-button {
+    display: inline-flex;
+    min-height: 36px;
+    align-items: center;
+    justify-content: center;
+    gap: 7px;
+    border: 1px solid var(--line);
+    border-radius: 9px;
+    padding: 0 13px;
+    background: var(--panel);
+    color: var(--soft);
+    font-size: 13px;
+    font-weight: 600;
+    line-height: 1.1;
+    white-space: nowrap;
+    cursor: pointer;
+    transition:
+      background 150ms ease,
+      border-color 150ms ease;
+  }
 }
 .quadro-tool:hover {
   background: var(--surface);
@@ -1481,9 +1429,11 @@ textarea::placeholder {
 .quadro-tool[aria-expanded='true'] {
   background: var(--surface);
 }
-.quadro-icon-button {
-  width: 36px;
-  padding: 7px;
+@layer components {
+  .quadro-icon-button {
+    width: 36px;
+    padding: 0;
+  }
 }
 .quadro-seletor {
   border: 0;
@@ -1505,14 +1455,6 @@ textarea::placeholder {
   box-shadow:
     0 12px 40px rgb(19 25 34 / 14%),
     0 2px 6px rgb(19 25 34 / 4%);
-}
-.quadro-menu-label {
-  padding: 7px 9px;
-  color: var(--muted);
-  font-size: 10px;
-  font-weight: 600;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
 }
 .quadro-menu-item {
   display: flex;
@@ -1636,21 +1578,6 @@ textarea::placeholder {
   padding: 8px 10px;
   font-size: 12px;
   border-radius: 8px;
-}
-.crm-button {
-  display: inline-flex;
-  min-height: 36px;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  border: 1px solid var(--line);
-  border-radius: 8px;
-  padding: 8px 12px;
-  background: var(--panel);
-  font-size: 12px;
-  font-weight: 500;
-  cursor: pointer;
-  transition: background 150ms;
 }
 .crm-button:hover {
   background: var(--surface);
@@ -2028,9 +1955,11 @@ textarea::placeholder {
       .bg-canvas,
       .app-card,
       .app-field,
+      .campo-de-busca,
       .app-dropdown-trigger,
       .app-dropdown-menu,
-      .app-secondary-button,
+      .botao-secundario,
+      .botao-perigo,
       .quadro-tool,
       .quadro-popover,
       .crm-section,
@@ -2193,6 +2122,290 @@ textarea::placeholder {
 }
 @media (prefers-reduced-motion: reduce) {
   .gaveta-de-ajuda[open] {
+    animation: none;
+  }
+}
+
+/*
+ * ---------------------------------------------------------------------------
+ * A escala de botão (02/out/2026, `docs/DECISIONS.md`)
+ * ---------------------------------------------------------------------------
+ *
+ * Uma medida por papel, e só três. Cada tela escrevia a sua (67 combinações de
+ * `px/py/text` no `app-primary-button`), e no topo de Fluxos o "+ Criar
+ * automação" saía maior que o "+ Nova pasta" ao lado.
+ *
+ * - `lg` (40px, 14px): ações do topo da tela, primária e secundária iguais.
+ * - `md` (36px, 13px): cabeçalho de seção, cartão, formulário, barra de busca.
+ * - `sm` (30px, 12px): ação de linha de tabela e inline ("Editar", "Apagar").
+ *
+ * A cor vem da variante: `botao-primario`, `botao-secundario`, `quadro-tool`
+ * (ferramenta clara), `botao-fantasma`, `botao-perigo`. O componente `Botao` (`design/botao.tsx`) junta as duas.
+ * Tudo em camada, depois das variantes, para a medida ganhar o empate e o
+ * `w-full`/`flex-1` de quem usa continuar valendo.
+ */
+@layer components {
+  .botao-primario {
+    border: 0;
+    background: var(--primary);
+    color: var(--primary-ink);
+    font-weight: 700;
+    cursor: pointer;
+    transition: background 150ms ease, opacity 150ms ease, transform 100ms ease;
+  }
+  .botao-secundario {
+    border: 1px solid var(--line);
+    background: var(--panel);
+    color: var(--soft);
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 150ms ease, border-color 150ms ease, color 150ms ease, transform 100ms ease;
+  }
+  .botao-fantasma {
+    border: 1px solid transparent;
+    background: transparent;
+    color: var(--muted);
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 150ms ease, color 150ms ease;
+  }
+  .botao-perigo {
+    border: 1px solid var(--line);
+    background: var(--panel);
+    color: var(--muted);
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 150ms ease, border-color 150ms ease, color 150ms ease;
+  }
+
+  .botao-lg,
+  .botao-md,
+  .botao-sm {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 1.1;
+    white-space: nowrap;
+  }
+  .botao-lg {
+    min-height: 40px;
+    gap: 8px;
+    border-radius: 10px;
+    padding: 0 18px;
+    font-size: 14px;
+  }
+  .botao-md {
+    min-height: 36px;
+    gap: 7px;
+    border-radius: 9px;
+    padding: 0 14px;
+    font-size: 13px;
+  }
+  .botao-sm {
+    min-height: 30px;
+    gap: 5px;
+    border-radius: 8px;
+    padding: 0 10px;
+    font-size: 12px;
+  }
+  /* Só ícone: quadrado na altura da escala. */
+  .botao-lg.botao-icone {
+    width: 40px;
+    padding: 0;
+  }
+  .botao-md.botao-icone {
+    width: 36px;
+    padding: 0;
+  }
+  .botao-sm.botao-icone {
+    width: 30px;
+    padding: 0;
+  }
+}
+
+.botao-primario:hover:not(:disabled) {
+  background: var(--primary-strong);
+}
+.botao-secundario:hover:not(:disabled) {
+  border-color: color-mix(in oklab, var(--primary) 45%, transparent);
+  background: var(--primary-weak);
+  color: var(--primary-strong);
+}
+.botao-fantasma:hover:not(:disabled),
+.botao-fantasma[aria-expanded='true'] {
+  background: var(--surface-strong);
+  color: var(--ink);
+}
+.botao-perigo:hover:not(:disabled) {
+  border-color: rgb(251 113 133 / 0.4);
+  background: rgb(251 113 133 / 0.09);
+  color: var(--perigo);
+}
+.botao-primario:active:not(:disabled),
+.botao-secundario:active:not(:disabled) {
+  transform: translateY(1px);
+}
+:is(.botao-primario, .botao-secundario, .botao-fantasma, .botao-perigo):focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px color-mix(in oklab, var(--primary) 30%, transparent);
+}
+:is(.botao-primario, .botao-secundario, .botao-fantasma, .botao-perigo, .quadro-tool):disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
+}
+
+/*
+ * O topo da tela é sempre `lg`: qualquer botão nas ações de `CabecalhoDaTela`
+ * (ou com `topo-acoes` no contêiner) sai em 40px/14px, primário e secundário
+ * iguais, sem a tela precisar lembrar. Menu e diálogo que moram ali dentro
+ * ficam de fora.
+ */
+@layer components {
+  .topo-acoes
+    :is(.botao-primario, .botao-secundario, .botao-fantasma, .botao-perigo, .quadro-tool, .crm-button):not(
+      :is(dialog, [popover]) *
+    ) {
+    min-height: 40px;
+    gap: 8px;
+    border-radius: 10px;
+    padding: 0 18px;
+    font-size: 14px;
+  }
+  .topo-acoes :is(.botao-icone, .quadro-icon-button):not(:is(dialog, [popover]) *) {
+    width: 40px;
+    padding: 0;
+  }
+}
+
+/*
+ * A caixa de marcar, a única do produto (tabela, menu, formulário). Continua
+ * `<input type="checkbox">`: `appearance: none` só apaga o desenho do sistema.
+ * O tique é máscara pintada com `--primary-ink`, para virar azul sobre branco
+ * quando a caixa está solta na casca (lá o `--primary` é branco).
+ */
+@layer components {
+  .caixa-de-marcar {
+    display: inline-grid;
+    flex-shrink: 0;
+    place-content: center;
+    width: 16px;
+    height: 16px;
+    margin: 0;
+    border: 1.5px solid var(--line-strong);
+    border-radius: 5px;
+    background: var(--panel);
+    cursor: pointer;
+    appearance: none;
+    transition:
+      background 120ms ease,
+      border-color 120ms ease,
+      box-shadow 120ms ease;
+  }
+  .caixa-de-marcar::before {
+    width: 11px;
+    height: 11px;
+    background: var(--primary-ink);
+    content: '';
+    opacity: 0;
+    mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='m3.2 8.2 2.8 2.8 6.8-6.8' fill='none' stroke='black' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E")
+      center / contain no-repeat;
+    transition: opacity 120ms ease;
+  }
+  .caixa-de-marcar:hover:not(:disabled) {
+    border-color: color-mix(in oklab, var(--primary) 60%, var(--line-strong));
+  }
+  .caixa-de-marcar:checked {
+    border-color: var(--primary);
+    background: var(--primary);
+  }
+  .caixa-de-marcar:checked::before {
+    opacity: 1;
+  }
+  .caixa-de-marcar:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 3px color-mix(in oklab, var(--primary) 22%, transparent);
+  }
+  .caixa-de-marcar:disabled {
+    cursor: not-allowed;
+    opacity: 0.45;
+  }
+}
+
+/*
+ * Menu suspenso (`design/menu-suspenso.tsx`): o painel é o `.quadro-popover`
+ * do Filtros, que o dono aprovou pelo respiro. O título de grupo tem que ler
+ * como título, e não como mais um item apagado: caixa alta, negrito, tinta
+ * cheia, e uma folga maior em cima do que entre itens.
+ */
+.quadro-menu-label {
+  padding: 10px 9px 5px;
+  color: var(--ink);
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+}
+.quadro-menu-label:first-child {
+  padding-top: 5px;
+}
+.menu-grupo + .menu-grupo {
+  margin-top: 4px;
+  border-top: 1px solid var(--line);
+  padding-top: 2px;
+}
+.quadro-menu-item[aria-pressed='true'] {
+  font-weight: 600;
+}
+
+/*
+ * Barra de rolagem dentro de menu, painel e diálogo: fina, redonda e sem o
+ * trilho, com a borda na cor do painel (a global usa `--canvas`).
+ */
+:is(.quadro-popover, .app-dropdown-menu, dialog, .bg-panel, .app-card)::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+:is(.quadro-popover, .app-dropdown-menu, dialog, .bg-panel, .app-card)::-webkit-scrollbar-thumb {
+  border: 2px solid var(--panel);
+  border-radius: 8px;
+}
+
+/*
+ * O movimento da barra lateral (`barra-lateral.tsx`): a largura anda em 200ms;
+ * ao recolher o texto some antes (`data-fechando`), ao expandir ele aparece
+ * depois (`data-abrindo`). `nowrap` para o rótulo não quebrar linha enquanto
+ * a largura passa por ele.
+ */
+.barra-que-anda {
+  overflow-x: hidden;
+  transition:
+    width 200ms ease-out,
+    padding 200ms ease-out;
+}
+.barra-que-anda .barra-texto {
+  white-space: nowrap;
+  transition: opacity 120ms ease-out;
+}
+.barra-que-anda[data-fechando] .barra-texto {
+  opacity: 0;
+}
+.barra-que-anda[data-abrindo] .barra-texto {
+  animation: barra-texto-entra 160ms ease-out 140ms both;
+}
+@keyframes barra-texto-entra {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .barra-que-anda,
+  .barra-que-anda .barra-texto {
+    transition: none;
+  }
+  .barra-que-anda[data-abrindo] .barra-texto {
     animation: none;
   }
 }

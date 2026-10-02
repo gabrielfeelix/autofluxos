@@ -168,7 +168,7 @@ export default async function Pagina({
               <form action={acaoConectarComFacebook.bind(null, clienteId)}>
                 <button
                   type="submit"
-                  className="rounded-lg bg-primary px-3.5 py-2 text-[12.5px] font-bold text-white transition hover:bg-primary-strong"
+                  className="botao-primario botao-md"
                 >
                   {temToken
                     ? "Reconectar com Facebook"

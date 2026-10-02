@@ -719,7 +719,7 @@ export function Conversa({
               className={
                 modo === 'conversa'
                   ? 'flex size-9 shrink-0 items-center justify-center rounded-full text-sm text-[#54656f] transition hover:bg-black/[0.05] disabled:opacity-40'
-                  : 'app-secondary-button flex size-9 shrink-0 items-center justify-center px-0 text-sm disabled:opacity-40'
+                  : 'botao-secundario botao-md botao-icone shrink-0 text-sm'
               }
             >
               🎤
@@ -744,7 +744,7 @@ export function Conversa({
               className={
                 modo === 'conversa'
                   ? 'flex size-9 shrink-0 items-center justify-center rounded-full text-sm text-[#54656f] transition hover:bg-black/[0.05] disabled:opacity-40'
-                  : 'app-secondary-button flex size-9 shrink-0 items-center justify-center px-0 text-sm disabled:opacity-40'
+                  : 'botao-secundario botao-md botao-icone shrink-0 text-sm'
               }
             >
               📷
@@ -766,7 +766,7 @@ export function Conversa({
                 className={
                   modo === 'conversa'
                     ? 'flex size-9 shrink-0 items-center justify-center rounded-full text-sm text-[#54656f] transition hover:bg-black/[0.05] disabled:opacity-40'
-                    : 'app-secondary-button flex size-9 shrink-0 items-center justify-center px-0 text-sm disabled:opacity-40'
+                    : 'botao-secundario botao-md botao-icone shrink-0 text-sm'
                 }
               >
                 ⏱
@@ -778,7 +778,7 @@ export function Conversa({
               className={
                 modo === 'conversa'
                   ? 'flex size-9 shrink-0 items-center justify-center rounded-full bg-[#00a884] px-0 text-base text-white transition hover:bg-[#008f72] disabled:opacity-40'
-                  : 'app-primary-button flex size-9 shrink-0 items-center justify-center px-0 text-lg disabled:opacity-40'
+                  : 'botao-primario botao-md botao-icone shrink-0 text-lg'
               }
             >
               {modo === 'conversa' ? '➤' : '›'}

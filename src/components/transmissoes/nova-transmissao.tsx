@@ -74,7 +74,7 @@ export function NovaTransmissao({
             ? 'Só dá para transmitir com um modelo aprovado pela Meta.'
             : undefined
         }
-        className="app-primary-button shrink-0 px-[18px] py-2.5 text-[13px] disabled:cursor-not-allowed disabled:opacity-50"
+        className="botao-primario botao-md shrink-0"
       >
         Nova transmissão
       </button>
@@ -348,7 +348,7 @@ function Formulario({
             type="button"
             onClick={enviar}
             disabled={salvando || !veredito.pode || publicos === null}
-            className="app-primary-button px-[18px] py-2.5 text-[13px] disabled:cursor-not-allowed disabled:opacity-50"
+            className="botao-primario botao-md"
           >
             {salvando
               ? 'Criando…'

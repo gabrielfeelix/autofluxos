@@ -122,7 +122,7 @@ export function VendasVazio({ clienteId }: { clienteId: string }) {
         Quando um negócio for marcado como ganho ou perdido, esta tela mostra quanto entrou por mês, em que etapa os
         negócios param, por que foram perdidos e quem da equipe mais fecha.
       </p>
-      <Link href={`/clientes/${clienteId}/quadros`} className="app-primary-button mt-6 inline-flex h-9 items-center px-4 text-[13px]">
+      <Link href={`/clientes/${clienteId}/quadros`} className="botao-primario botao-md mt-6">
         Criar negócio
       </Link>
     </section>

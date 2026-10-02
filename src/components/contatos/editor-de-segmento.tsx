@@ -150,7 +150,7 @@ export function EditorDeSegmento({
               { campo: CAMPOS[0].chave, operador: 'igual', valor: '' },
             ])
           }
-          className="app-secondary-button mt-2.5 h-9 px-3.5 text-[12.5px]"
+          className="botao-secundario botao-md mt-2.5"
         >
           + Adicionar condição
         </button>
@@ -168,7 +168,7 @@ export function EditorDeSegmento({
             type="checkbox"
             checked={comModelo}
             onChange={(e) => setComModelo(e.target.checked)}
-            className="mt-0.5 accent-[var(--color-primary)]"
+            className="mt-0.5 caixa-de-marcar"
           />
           <span>
             O envio usa modelo aprovado
@@ -183,7 +183,7 @@ export function EditorDeSegmento({
           type="button"
           disabled={rodando}
           onClick={previsualizar}
-          className="app-secondary-button h-9 px-3.5 text-[12.5px] disabled:opacity-50"
+          className="botao-secundario botao-md"
         >
           {rodando ? 'Calculando…' : 'Ver quem entra'}
         </button>
@@ -218,7 +218,7 @@ export function EditorDeSegmento({
 
       <div className="flex justify-end gap-2">
         {aoCancelar && (
-          <button type="button" onClick={aoCancelar} disabled={rodando} className="app-secondary-button h-9 px-4 text-[13px]">
+          <button type="button" onClick={aoCancelar} disabled={rodando} className="botao-secundario botao-md">
             Cancelar
           </button>
         )}
@@ -226,7 +226,7 @@ export function EditorDeSegmento({
           type="button"
           disabled={rodando || nome.trim() === ''}
           onClick={salvar}
-          className="app-primary-button h-9 px-4 text-[13px] disabled:opacity-50"
+          className="botao-primario botao-md"
         >
           {segmentoId ? 'Salvar segmento' : 'Criar segmento'}
         </button>

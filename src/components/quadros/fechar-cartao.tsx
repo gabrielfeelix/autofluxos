@@ -116,14 +116,14 @@ export function FecharCartao({
       )}
 
       <div className="mt-4 flex gap-2.5">
-        <button type="button" onClick={aoFechar} className="app-secondary-button flex-1 px-4 py-2.5 text-[13px]">
+        <button type="button" onClick={aoFechar} className="botao-secundario botao-md flex-1">
           Cancelar
         </button>
         <button
           type="button"
           disabled={rodando}
           onClick={salvar}
-          className="app-primary-button flex-[1.35] px-4 py-2.5 text-[13px] disabled:opacity-50"
+          className="botao-primario botao-md flex-[1.35]"
         >
           {rodando ? 'salvando…' : ganhou ? 'Marcar como ganho' : 'Marcar como perdido'}
         </button>

@@ -174,7 +174,7 @@ export function SeletorDeEtiquetas({
           <button
             type="button"
             onClick={() => void criar()}
-            className="app-secondary-button shrink-0 px-2.5 py-1.5 text-[11px]"
+            className="botao-secundario botao-sm shrink-0"
           >
             Criar
           </button>

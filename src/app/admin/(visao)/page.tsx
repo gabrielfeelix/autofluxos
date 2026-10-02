@@ -87,7 +87,7 @@ export default async function VisaoGeral() {
               <p className="mt-0.5 text-[12px] leading-5 text-dim">Todas as contas da plataforma.</p>
             </div>
             <form action={acaoCriarExemplo} className="shrink-0">
-              <button type="submit" className="app-secondary-button px-4 py-2 text-[13px]">
+              <button type="submit" className="botao-secundario botao-md">
                 Criar exemplo
               </button>
             </form>
@@ -144,7 +144,7 @@ export default async function VisaoGeral() {
                           <strong className="text-[26px] leading-none font-bold tabular-nums">{resumo?.esperandoPessoa}</strong>{' '}
                           <span className="text-[12.5px] font-semibold">esperando</span>
                         </p>
-                        <Link href={`/clientes/${organizacao.id}/inbox`} className="app-secondary-button px-3 py-1.5 text-[12px]">
+                        <Link href={`/clientes/${organizacao.id}/inbox`} className="botao-secundario botao-sm">
                           Abrir o Inbox
                         </Link>
                       </div>

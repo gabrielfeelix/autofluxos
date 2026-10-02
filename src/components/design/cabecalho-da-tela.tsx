@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react'
 import { Trilha } from './trilha'
+import { Pilula } from './pilula'
 
 /**
  * O topo de toda tela da conta: título, contagem, uma frase do que a tela faz
@@ -48,14 +49,16 @@ export function CabecalhoDaTela({
     {/* Só com link de volta: sem ele, a trilha repete o caminho do cabeçalho. */}
     {trilha?.some((pedaco) => pedaco.href) && <Trilha caminho={trilha} />}
     <header className={`mb-5 flex flex-wrap items-start gap-x-4 gap-y-3 ${className}`}>
-      <div className="min-w-0 flex-1">
+      {/* No celular o título ocupa a linha e as ações descem; senão a descrição
+          espremia numa coluna de 80px ao lado dos botões. */}
+      <div className="min-w-0 flex-1 basis-full md:basis-0">
         <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
           <h1 className="text-[20px] font-bold tracking-[-0.02em] md:text-[25px]">{titulo}</h1>
           {contagem}
         </div>
         {descricao && <div className="mt-1 max-w-[80ch] text-[13.5px] leading-5 text-muted">{descricao}</div>}
       </div>
-      {acoes && <div className="flex flex-wrap items-center gap-2 md:pt-0.5">{acoes}</div>}
+      {acoes && <div className="topo-acoes flex flex-wrap items-center gap-2 md:pt-0.5">{acoes}</div>}
     </header>
     </>
   )
@@ -64,6 +67,6 @@ export function CabecalhoDaTela({
 /** A pílula de quantidade ao lado do título ("64 contatos"). */
 export function Contagem({ children }: { children: ReactNode }) {
   return (
-    <span className="rounded-full bg-surface px-2.5 py-1 text-[12px] font-semibold text-muted tabular-nums">{children}</span>
+<Pilula>{children}</Pilula>
   )
 }

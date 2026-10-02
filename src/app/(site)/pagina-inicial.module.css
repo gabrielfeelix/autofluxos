@@ -121,20 +121,17 @@
 
 /* ─────────────────────────── cabeçalho ─────────────────────────── */
 
+/*
+ * O cabeçalho é uma ilha, como as do produto: vidro claro solto no azul
+ * (branco a 14%, borda a 25%, cantos 16px), sem faixa de ponta a ponta.
+ * Depois que a página rola ele passa por cima do quadro branco, onde o vidro
+ * sumiria; aí vira ilha branca com os tokens de papel. O JS liga a classe.
+ */
 .cabecalho {
   position: sticky;
   top: 0;
   z-index: 50;
-  backdrop-filter: blur(14px);
-  background: rgb(29 78 216 / 0.92);
-  border-bottom: 1px solid transparent;
-  transition: border-color 0.3s var(--curva);
-}
-
-/* A borda só aparece depois que a página rola, antes disso ela seria uma
-   linha solta cortando a capa. O JS liga a classe. */
-.cabecalhoRolado {
-  border-bottom-color: var(--line);
+  padding-top: 12px;
 }
 
 .cabecalhoInterno {
@@ -142,7 +139,28 @@
   align-items: center;
   justify-content: space-between;
   gap: 16px;
-  padding: 14px 0;
+  padding: 10px 10px 10px 16px;
+  border-radius: 16px;
+  border: 1px solid rgb(255 255 255 / 0.25);
+  background: rgb(255 255 255 / 0.14);
+  backdrop-filter: blur(14px) saturate(1.2);
+  transition:
+    background 0.3s var(--curva),
+    border-color 0.3s var(--curva),
+    box-shadow 0.3s var(--curva);
+}
+
+.cabecalhoRolado .cabecalhoInterno {
+  --veu: 16 32 84;
+  --accent: #1d4ed8;
+  --panel: #ffffff;
+  --ink: #0c1838;
+  --muted: #56617c;
+  --line: rgb(16 32 84 / 0.12);
+  --surface: #f6f8fd;
+  background: rgb(255 255 255 / 0.96);
+  border-color: rgb(16 32 84 / 0.08);
+  box-shadow: var(--sombra-ilha);
 }
 
 .marca {

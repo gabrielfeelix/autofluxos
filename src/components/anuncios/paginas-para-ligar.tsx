@@ -43,7 +43,7 @@ export function PaginasParaLigar({ clienteId, paginas }: { clienteId: string; pa
             type="button"
             disabled={ligando !== null}
             onClick={() => ligar(p)}
-            className="rounded-lg bg-primary px-3.5 py-1.5 text-[12px] font-bold text-white transition hover:bg-primary-strong disabled:opacity-60"
+            className="botao-primario botao-sm"
           >
             {ligando === p.id ? 'Ligando…' : 'Ligar'}
           </button>

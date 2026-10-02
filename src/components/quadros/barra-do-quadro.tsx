@@ -44,7 +44,7 @@ export function BarraDoQuadro({
   return (
     <div className="quadro-toolbar mb-4 flex shrink-0 flex-col gap-2.5 border-y border-line py-3">
       <div className="flex flex-wrap items-center gap-2">
-        <div className="relative w-full sm:w-[240px]">
+        <div className="campo-de-busca relative w-full sm:w-[280px]">
           <span className="pointer-events-none absolute top-1/2 left-3 -translate-y-1/2 text-dim">
             <IconeDoQuadro tipo="busca" />
           </span>
@@ -53,7 +53,7 @@ export function BarraDoQuadro({
             onChange={(evento) => aoFiltrar({ ...filtro, busca: evento.currentTarget.value })}
             placeholder="Buscar negócio ou contato…"
             aria-label="Buscar cartão por nome, telefone ou negociação"
-            className="app-field h-9 py-2 pr-8 pl-9 text-xs"
+            className="app-field h-9 py-2 pr-8 pl-9 text-[13px]"
           />
           {filtro.busca && (
             <button

@@ -12,6 +12,7 @@ export function RenomearPasta({ clienteId, pastaId, nome }: { clienteId: string;
       descricao="Só o nome muda. As automações continuam nela."
       rotuloEnviar="Salvar nome"
       variante="secundario"
+      tamanho="sm"
       action={(dados) => acaoRenomearPasta(clienteId, pastaId, String(dados.get('nome') ?? ''))}
     >
       <label>

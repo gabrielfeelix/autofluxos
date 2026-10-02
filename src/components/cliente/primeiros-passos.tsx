@@ -109,8 +109,8 @@ export function PrimeirosPassos({ passos }: { passos: PassoDaConta[] }) {
                         href={acao.href}
                         className={
                           indice === 0
-                            ? 'app-primary-button px-3.5 py-1.5 text-[12px]'
-                            : 'app-secondary-button px-3.5 py-1.5 text-[12px]'
+                            ? 'botao-primario botao-sm'
+                            : 'botao-secundario botao-sm'
                         }
                       >
                         {acao.rotulo}

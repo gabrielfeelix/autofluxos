@@ -87,7 +87,7 @@ export function NovaAtividade({
       <button
         type="button"
         onClick={() => setAberto(true)}
-        className="app-primary-button ml-auto shrink-0 px-3.5 py-2 text-[12.5px] md:px-4"
+        className="botao-primario botao-md ml-auto shrink-0"
       >
         + Nova atividade
       </button>
@@ -350,14 +350,14 @@ function DialogoDeNovaAtividade({
           <button
             type="button"
             onClick={() => dialogo.current?.close()}
-            className="app-secondary-button flex-1 px-4 py-2.5 text-[13px]"
+            className="botao-secundario botao-md flex-1"
           >
             Voltar
           </button>
           <button
             type="submit"
             disabled={rodando || !contato || valores.titulo.trim() === ''}
-            className="app-primary-button flex-[1.3] px-4 py-2.5 text-[13px] disabled:opacity-50"
+            className="botao-primario botao-md flex-[1.3]"
           >
             {rodando ? 'Criando…' : 'Criar atividade'}
           </button>

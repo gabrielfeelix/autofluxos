@@ -636,8 +636,8 @@ function PainelDeRevisao({
                   : `Enviar ${anexos.length} arquivos`
             }
             title={houveTentativa ? 'Tentar de novo só os que faltam' : undefined}
-            className={`app-primary-button relative flex h-9 shrink-0 items-center justify-center rounded-full text-[13.5px] leading-none disabled:opacity-50 ${
-              houveTentativa && !ocupado ? 'px-3.5 text-[12.5px] font-semibold' : 'w-9'
+            className={`botao-primario botao-md relative shrink-0 rounded-full ${
+              houveTentativa && !ocupado ? '' : 'botao-icone'
             }`}
           >
             {ocupado ? '…' : houveTentativa ? 'Tentar de novo' : '➤'}

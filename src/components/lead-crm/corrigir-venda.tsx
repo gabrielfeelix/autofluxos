@@ -140,7 +140,7 @@ export function CorrigirVenda({
         <button
           type="button"
           onClick={aoFechar}
-          className="app-secondary-button flex-1 px-4 py-2.5 text-[13px]"
+          className="botao-secundario botao-md flex-1"
         >
           Voltar
         </button>
@@ -148,7 +148,7 @@ export function CorrigirVenda({
           type="button"
           disabled={rodando || destino === ''}
           onClick={salvar}
-          className="app-primary-button flex-[1.35] px-4 py-2.5 text-[13px] disabled:opacity-50"
+          className="botao-primario botao-md flex-[1.35]"
         >
           {rodando ? 'cancelando…' : 'Cancelar a venda'}
         </button>

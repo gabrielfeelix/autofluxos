@@ -98,7 +98,7 @@ function SemLojaAinda({ clienteId }: { clienteId: string }) {
       </div>
       <Link
         href={`/clientes/${clienteId}/loja/catalogo`}
-        className="app-primary-button inline-flex shrink-0 items-center justify-center gap-1.5 px-4 py-2.5 text-[12.5px]"
+        className="botao-primario botao-md shrink-0 gap-1.5"
       >
         Cadastrar produtos
         <span aria-hidden>›</span>

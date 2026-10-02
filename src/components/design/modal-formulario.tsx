@@ -43,6 +43,7 @@ export function ModalFormulario({
   children,
   rotuloEnviar = 'Criar e abrir',
   variante = 'primario',
+  tamanho,
 }: {
   botao: ReactNode
   titulo: string
@@ -66,6 +67,12 @@ export function ModalFormulario({
    * para a ação de uma linha de lista, no tamanho do `BotaoPerigo` ao lado.
    */
   variante?: 'primario' | 'secundario' | 'linha' | 'cartao'
+  /**
+   * A medida do botão na escala da casa (`botao-sm|md|lg`, `globals.css`).
+   * Sem ela, `md`, e `sm` na variante `linha`. No topo da tela não precisa
+   * passar: as ações de `CabecalhoDaTela` saem em `lg` pelo CSS.
+   */
+  tamanho?: 'sm' | 'md' | 'lg'
 }) {
   const dialogo = useRef<HTMLDialogElement>(null)
   const fundo = useCliqueNoFundo(dialogo, () => tentarFechar())
@@ -153,13 +160,13 @@ export function ModalFormulario({
         onClick={abrir}
         className={
           variante === 'primario'
-            ? 'app-primary-button px-[18px] py-2.5 text-[13px]'
+            ? `botao-primario botao-${tamanho ?? 'md'}`
             : variante === 'linha'
-              ? 'rounded-lg border border-line px-2.5 py-1 text-[11px] font-semibold text-muted transition hover:bg-surface-strong hover:text-ink'
+              ? `botao-secundario botao-${tamanho ?? 'sm'}`
               : variante === 'cartao'
                 ? // Ocupa a célula inteira de uma grade de cartões: é o "adicionar" no fim dela.
                   'group flex h-full min-h-[184px] w-full flex-col items-center justify-center gap-2.5 rounded-[16px] border border-dashed border-strong text-[13px] font-semibold text-muted transition hover:border-primary hover:bg-primary-weak hover:text-primary'
-                : 'app-secondary-button px-3 py-1.5 text-[11.5px]'
+                : `botao-secundario botao-${tamanho ?? 'md'}`
         }
       >
         {botao}
@@ -193,14 +200,14 @@ export function ModalFormulario({
               type="button"
               onClick={tentarFechar}
               disabled={pendente}
-              className="app-secondary-button flex-1 px-4 py-2.5 text-[13px] disabled:opacity-60"
+              className="botao-secundario botao-md flex-1"
             >
               Cancelar
             </button>
             <button
               type="submit"
               disabled={pendente}
-              className="app-primary-button flex-[1.35] px-4 py-2.5 text-[13px] disabled:opacity-60"
+              className="botao-primario botao-md flex-[1.35]"
             >
               {pendente ? 'Enviando…' : rotuloEnviar}
             </button>

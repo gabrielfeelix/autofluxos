@@ -109,7 +109,7 @@ export default async function Contas() {
                   Leva menos de um minuto para criar a do seu negócio.
                 </p>
               </div>
-              <Link href="/primeiro-acesso" className="app-primary-button shrink-0 px-[18px] py-2.5 text-[13px]">
+              <Link href="/primeiro-acesso" className="botao-primario botao-md shrink-0">
                 Criar companhia
               </Link>
             </header>

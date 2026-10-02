@@ -167,7 +167,7 @@ export function PeriodoPersonalizado({
             >
               Cancelar
             </button>
-            <button type="submit" disabled={Boolean(erro)} className="app-primary-button h-9 px-4 text-[13px] disabled:opacity-50">
+            <button type="submit" disabled={Boolean(erro)} className="botao-primario botao-md">
               Aplicar
             </button>
           </div>

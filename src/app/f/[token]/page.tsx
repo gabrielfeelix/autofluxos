@@ -75,7 +75,7 @@ export default async function Pagina({ params }: { params: Promise<{ token: stri
         titulo={`Este link ${validadeDoLink(link)}`}
         texto={`Peça um link novo a ${link.origem}: quem compartilhou gera outro no editor da automação, em "Compartilhar".`}
       >
-        <Link href="/entrar" className="app-secondary-button px-4 py-2 text-[12.5px]">
+        <Link href="/entrar" className="botao-secundario botao-md">
           Entrar no AutoFluxos
         </Link>
         <Link href="/ajuda" className="px-3 py-2 text-[12.5px] font-semibold text-primary hover:opacity-80">

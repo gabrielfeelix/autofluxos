@@ -70,7 +70,7 @@ export function DialogoDeCancelar({
           placeholder="Ex.: cliente desistiu da aula experimental"
         />
         <div className="mt-5 flex gap-2.5">
-          <button type="button" onClick={() => dialogo.current?.close()} className="app-secondary-button flex-1 px-4 py-2.5 text-[13px]">
+          <button type="button" onClick={() => dialogo.current?.close()} className="botao-secundario botao-md flex-1">
             Voltar
           </button>
           <button

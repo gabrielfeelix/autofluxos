@@ -63,7 +63,7 @@ export default async function Usuarios({ searchParams }: { searchParams: Promise
       titulo="Usuários"
       descricao="Os logins da plataforma, as organizações de cada um e a função em cada uma. Convite por e-mail ainda não existe: a senha provisória é combinada fora daqui."
       acoes={
-        <Link href="/criar-conta" className="app-primary-button px-[18px] py-2.5 text-[13px]">
+        <Link href="/criar-conta" className="botao-primario botao-md">
           + Cadastrar usuário
         </Link>
       }

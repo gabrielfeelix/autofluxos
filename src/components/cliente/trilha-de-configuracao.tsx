@@ -61,8 +61,8 @@ export function TrilhaDeConfiguracao({ clienteId, passos }: { clienteId: string;
                 {passo.estado === 'pendente' && (
                   <Link
                     href={`/clientes/${clienteId}${passo.href}`}
-                    className={`mt-1 self-start text-[12px] ${
-                      ehProximo ? 'app-primary-button px-3 py-1.5' : 'font-semibold text-primary hover:opacity-80'
+                    className={`mt-1 self-start ${
+                      ehProximo ? 'botao-primario botao-sm' : 'text-[12px] font-semibold text-primary hover:opacity-80'
                     }`}
                   >
                     {ehProximo ? 'Fazer agora' : 'Abrir'}

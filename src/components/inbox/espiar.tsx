@@ -112,7 +112,7 @@ export function FaixaDeEspiar({ clienteId, nome }: { clienteId: string; nome: st
         type="button"
         onClick={sair}
         disabled={saindo}
-        className="shrink-0 rounded-lg bg-primary px-3 py-1.5 text-[12px] font-semibold text-white transition hover:opacity-90 disabled:opacity-60"
+        className="botao-primario botao-sm shrink-0"
       >
         {saindo ? 'Saindo…' : 'Sair do modo espiar'}
       </button>

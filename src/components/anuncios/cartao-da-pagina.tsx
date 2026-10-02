@@ -66,7 +66,7 @@ export function CartaoDaPagina({
               setResultado(r.ok ? (r.resumo ?? 'pronto') : (r.erro ?? 'não deu'))
             })
           }
-          className="rounded-lg border border-line px-3 py-1.5 text-[11.5px] text-soft transition hover:border-strong disabled:opacity-50"
+          className="botao-secundario botao-sm"
           title="Traz os leads que já existiam antes de ligar, a Meta guarda 90 dias"
         >
           {importando ? 'Importando…' : 'Importar leads antigos'}
@@ -77,7 +77,7 @@ export function CartaoDaPagina({
         type="button"
         disabled={saindo}
         onClick={() => comecar(() => void acaoDesligarPagina(clienteId, pageId))}
-        className="rounded-lg border border-line px-3 py-1.5 text-[11.5px] text-soft transition hover:border-strong disabled:opacity-50"
+        className="botao-secundario botao-sm"
       >
         {saindo ? 'Desligando…' : 'Desligar'}
       </button>

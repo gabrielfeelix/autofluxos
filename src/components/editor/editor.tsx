@@ -1702,7 +1702,7 @@ export function Editor({
                 ? 'O que está no ar já é este desenho'
                 : 'Publicar este desenho'
           }
-          className="app-primary-button px-[18px] py-2 text-[13px]"
+          className="botao-primario botao-md"
         >
           {publicando ? 'publicando…' : `Publicar v${proximaVersao}`}
         </button>
@@ -2321,7 +2321,7 @@ function BarraDoSelecionado({
           <button
             type="button"
             onClick={aoRemoverLigacao}
-            className="rounded-lg border border-line px-2.5 py-1 text-[11.5px] font-semibold text-perigo transition hover:border-rose-400/40 hover:bg-rose-400/[0.09]"
+            className="botao-perigo botao-sm"
           >
             Remover ligação
           </button>

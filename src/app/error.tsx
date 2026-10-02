@@ -68,11 +68,11 @@ export default function Erro({
             setJaTentou(true)
             reset()
           }}
-          className="app-primary-button px-5 py-2.5 text-[13px]"
+          className="botao-primario botao-md"
         >
           {jaTentou ? 'Recarregar a página' : 'Tentar de novo'}
         </button>
-        <Link href={volta.href} className="app-secondary-button px-5 py-2.5 text-[13px]">
+        <Link href={volta.href} className="botao-secundario botao-md">
           {volta.rotulo}
         </Link>
       </div>

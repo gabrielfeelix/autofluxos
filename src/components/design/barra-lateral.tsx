@@ -86,6 +86,27 @@ export function BarraLateral({ base, area = 'cliente', itens: itensRecebidos = [
   const aceso = base && area === 'cliente' ? acesoDoCaminho(caminho, base, busca, eu) : (acesoRecebido ?? null)
   const itens = base ? itensRecebidos.map((item) => ({ ...item, acesa: item.chave === abaAcesa })) : itensRecebidos
   const recolhida = usePreferencia('barra', recolhidaInicial)
+  /*
+    O movimento de recolher e expandir. Recolher: o texto some primeiro
+    (`fechando`), e só então a largura anda. Expandir: a largura anda e o
+    texto aparece depois (`abrindo`), sem quebrar linha no meio do caminho.
+    Com `prefers-reduced-motion` tudo é na hora (`globals.css`).
+  */
+  const [fechando, setFechando] = useState(false)
+  const [abrindo, setAbrindo] = useState(false)
+  const [recolhidaAntes, setRecolhidaAntes] = useState(recolhida)
+  if (recolhidaAntes !== recolhida) {
+    setRecolhidaAntes(recolhida)
+    setAbrindo(!recolhida)
+  }
+  const recolher = () => {
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return definirPreferencia('barra', true)
+    setFechando(true)
+    window.setTimeout(() => {
+      definirPreferencia('barra', true)
+      setFechando(false)
+    }, 120)
+  }
   const painel = useRef<HTMLDialogElement>(null)
   // A escolhida agora vale na hora; a do servidor, no próximo carregamento.
   const presenca = usePresenca(presencaDoServidor) ?? undefined
@@ -98,7 +119,7 @@ export function BarraLateral({ base, area = 'cliente', itens: itensRecebidos = [
     <Link key={item.chave} href={item.href} aria-disabled={carregando || undefined} tabIndex={carregando ? -1 : undefined} onClick={(event) => { if (carregando) event.preventDefault() }} aria-current={item.acesa ? 'page' : undefined} aria-label={item.rotulo} {...(recolhida ? dica.gatilho(item.rotulo) : {})}
       className={`relative flex h-11 shrink-0 items-center gap-3 rounded-xl px-3 text-[15px] font-medium transition [&_svg]:size-5 ${recolhida ? 'size-11 justify-center px-0' : ''} ${item.acesa ? 'bg-primary font-semibold text-white' : 'text-muted hover:bg-surface hover:text-ink'}`}>
       <span aria-hidden className={item.acesa ? 'text-white' : 'text-dim'}>{item.icone}</span>
-      <span className={recolhida ? 'hidden' : ''}>{item.rotulo}</span>
+      <span className={recolhida ? 'hidden' : 'barra-texto'}>{item.rotulo}</span>
       {item.contador && <span className={recolhida ? 'absolute -right-1 -top-1' : 'ml-auto'}>{item.contador}</span>}
     </Link>
   )
@@ -109,7 +130,7 @@ export function BarraLateral({ base, area = 'cliente', itens: itensRecebidos = [
         {perfil ? <Avatar nome={perfil.nome} imagem={perfil.imagem} tamanho={32} /> : <span className="flex size-8 items-center justify-center rounded-full border border-line"><svg aria-hidden width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6"><circle cx="12" cy="8" r="4"/><path d="M4 21v-2a8 8 0 0 1 16 0v2"/></svg></span>}
         {presenca && <span className={`absolute bottom-0 right-0 size-2.5 rounded-full border-2 border-panel ${disponivel ? 'bg-emerald-500' : 'bg-dim'}`} />}
       </span>
-      {!recolhida && <span className="min-w-0"><span className="block truncate text-xs font-semibold">{nomeNoBotao}</span><span className="block text-[11px] text-dim">{presenca ? (disponivel ? 'Disponível' : 'Ausente') : 'Perfil e preferências'}</span></span>}
+      {!recolhida && <span className="barra-texto min-w-0"><span className="block truncate text-xs font-semibold">{nomeNoBotao}</span><span className="block text-[11px] text-dim">{presenca ? (disponivel ? 'Disponível' : 'Ausente') : 'Perfil e preferências'}</span></span>}
     </button>
   )
   return (
@@ -120,7 +141,13 @@ export function BarraLateral({ base, area = 'cliente', itens: itensRecebidos = [
       saiu junto: cinco atalhos fixos e uma gaveta cabem em qualquer largura.
     */}
     <BarraDoCelular base={area === 'cliente' ? base : undefined} secoes={secoes} aceso={aceso} embaixo={area === 'administracao' ? EMBAIXO_DA_ADMINISTRACAO : undefined} voltarRotulo={voltarRotulo} rotuloDaNavegacao={area === 'administracao' ? 'Administração' : undefined} itens={itens} contaNoTopo={contaNoTopo} voltarHref={voltarHref} presenca={presenca} carregando={carregando} aoAbrirVoce={() => painel.current?.showModal()} />
-    <aside className={`app-ilha hidden shrink-0 flex-col py-5 md:flex ${recolhida ? 'w-[72px] px-3' : 'w-[264px] px-3.5'}`}>
+    <aside
+      data-fechando={fechando || undefined}
+      data-abrindo={abrindo || undefined}
+      onTransitionEnd={(evento) => {
+        if (evento.target === evento.currentTarget && evento.propertyName === 'width') setAbrindo(false)
+      }}
+      className={`app-ilha barra-que-anda hidden shrink-0 flex-col py-5 md:flex ${recolhida ? 'w-[72px] px-3' : 'w-[264px] px-3.5'}`}>
       {recolhida ? (
         // Recolhida, a logo é o botão de abrir: passando o mouse, o símbolo
         // dá lugar ao ícone de expandir, como na Brevo.
@@ -131,13 +158,13 @@ export function BarraLateral({ base, area = 'cliente', itens: itensRecebidos = [
         </button>
       ) : (
         <div className="mb-5 flex items-center justify-between gap-2 pl-2.5">
-          <span className="min-w-0">{marca}</span>
-          <button type="button" onClick={() => definirPreferencia('barra', true)} aria-label="Recolher a barra lateral" aria-expanded title="Recolher menu"
+          <span className="barra-texto min-w-0">{marca}</span>
+          <button type="button" onClick={recolher} aria-label="Recolher a barra lateral" aria-expanded title="Recolher menu"
             className="flex size-8 shrink-0 items-center justify-center rounded-lg text-dim transition hover:bg-surface hover:text-ink"><IconeDoPainel /></button>
         </div>
       )}
-      {!recolhida && voltar}
-      {!recolhida && contaNoTopo && <div className="mb-3">{contaNoTopo}</div>}
+      {!recolhida && voltar && <div className="barra-texto">{voltar}</div>}
+      {!recolhida && contaNoTopo && <div className="barra-texto mb-3">{contaNoTopo}</div>}
       <nav aria-label={area === 'administracao' ? 'Administração' : 'Seções do cliente'} className="sem-barra flex min-h-0 flex-1 flex-col gap-0.5 overflow-y-auto">
         {secoes ? (
           <NavegacaoPorSecoes secoes={secoes} aceso={aceso} recolhida={recolhida} carregando={carregando} dica={dica} />
@@ -146,7 +173,7 @@ export function BarraLateral({ base, area = 'cliente', itens: itensRecebidos = [
             {itens.filter((item) => item.chave === 'inicio').map(link)}
             {GRUPOS_DA_ADMINISTRACAO.filter((grupo) => itens.some((item) => grupo.chaves.includes(item.chave))).map((grupo) => (
               <div key={grupo.nome}>
-                <p className={`mt-5 mb-1.5 px-2.5 text-[10px] font-semibold uppercase tracking-[0.08em] text-dim ${recolhida ? 'hidden' : ''}`}>{grupo.nome}</p>
+                <p className={`mt-5 mb-1.5 px-2.5 text-[10px] font-semibold uppercase tracking-[0.08em] text-dim ${recolhida ? 'hidden' : 'barra-texto'}`}>{grupo.nome}</p>
                 {itens.filter((item) => grupo.chaves.includes(item.chave)).map(link)}
               </div>
             ))}
@@ -242,7 +269,7 @@ function NavegacaoPorSecoes({ secoes, aceso, recolhida, carregando, dica }: { se
     const conteudo = (
       <>
         <span aria-hidden className={aberta && (secao.solta || recolhida) ? 'text-white' : aberta ? 'text-primary' : 'text-dim'}>{secao.icone}</span>
-        {!recolhida && <span className="flex-1">{secao.rotulo}</span>}
+        {!recolhida && <span className="barra-texto flex-1">{secao.rotulo}</span>}
         {secao.ponto && (recolhida || !aberta) && (
           <span className={recolhida ? 'absolute top-1.5 right-1.5' : 'flex'}>{secao.ponto}</span>
         )}
@@ -291,7 +318,7 @@ function NavegacaoPorSecoes({ secoes, aceso, recolhida, carregando, dica }: { se
           // automática não se anima, e medir em JavaScript faria a barra
           // esperar o React para abrir.
           <div className={`grid transition-[grid-template-rows] duration-200 ease-out motion-reduce:transition-none ${aberta ? 'grid-rows-[1fr]' : 'grid-rows-[0fr]'}`}>
-            <ul className="ml-[22px] min-h-0 overflow-hidden border-l border-line pl-2.5" inert={!aberta}>
+            <ul className="barra-texto ml-[22px] min-h-0 overflow-hidden border-l border-line pl-2.5" inert={!aberta}>
               {secao.itens.map((item, posicao) => {
                 const itemAceso = aberta && aceso?.item === item.id
                 return (

@@ -131,7 +131,7 @@ function Envio({ clienteId, tipo, atual }: { clienteId: string; tipo: TipoDeMate
             type="button"
             disabled={rodando}
             onClick={() => entrada.current?.click()}
-            className="app-secondary-button px-3 py-1.5 text-[11.5px] disabled:opacity-50"
+            className="botao-secundario botao-sm"
           >
             {rodando ? 'Enviando…' : atual ? 'Trocar' : 'Enviar'}
           </button>
@@ -141,7 +141,7 @@ function Envio({ clienteId, tipo, atual }: { clienteId: string; tipo: TipoDeMate
                 href={atual.url}
                 target="_blank"
                 rel="noreferrer"
-                className="rounded-lg border border-line px-2.5 py-1 text-[11px] font-semibold text-muted transition hover:bg-white/[0.04]"
+                className="botao-secundario botao-sm"
               >
                 Abrir
               </a>
@@ -150,7 +150,7 @@ function Envio({ clienteId, tipo, atual }: { clienteId: string; tipo: TipoDeMate
                 disabled={rodando}
                 onClick={remover}
                 title="O bot deixa de mandar. O arquivo continua no acervo."
-                className="rounded-lg border border-line px-2.5 py-1 text-[11px] font-semibold text-muted transition hover:bg-white/[0.04] disabled:opacity-50"
+                className="botao-secundario botao-sm"
               >
                 Tirar
               </button>

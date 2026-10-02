@@ -702,11 +702,8 @@ async function ConteudoDaAba({
         )}
 
         {aba === 'fluxos' && (
-        <section className="app-card overflow-hidden">
-          
-
+        <>
           {fluxos.length > 0 && (
-            <div className="border-b border-line px-5 py-3">
               <BarraDeLista
                 base={`/clientes/${cliente.id}/fluxos`}
                 parametros={parametros}
@@ -740,8 +737,10 @@ async function ConteudoDaAba({
                 ]}
                 resumo={filtrando ? `${visiveis.length} de ${fluxos.length}` : undefined}
               />
-            </div>
           )}
+        <section className="app-card overflow-hidden">
+          
+
 
           {fluxos.length === 0 && pastas.length === 0 ? (
             <div className="px-5 py-14 text-center">
@@ -916,11 +915,11 @@ async function ConteudoDaAba({
           )}
 
         </section>
+        </>
         )}
 
         {aba === 'palavras' && (
-        <section className="app-card overflow-hidden">
-          
+        <>
           {gatilhos.length > 0 && (
             <BuscaDaAba
               base={`/clientes/${cliente.id}/fluxos`}
@@ -930,6 +929,9 @@ async function ConteudoDaAba({
               total={gatilhos.length}
             />
           )}
+        <section className="app-card overflow-hidden">
+          
+          <NadaNaBusca parametros={parametros} visiveis={gatilhosVisiveis.length} />
 
           {gatilhos.length === 0 ? (
             <div className="border-b border-line px-5 py-12 text-center">
@@ -987,11 +989,11 @@ async function ConteudoDaAba({
 
 
         </section>
+        </>
         )}
 
         {aba === 'eventos' && (
-        <section className="app-card overflow-hidden">
-          
+        <>
           {gatilhosDeEvento.length > 0 && (
             <BuscaDaAba
               base={`/clientes/${cliente.id}/fluxos`}
@@ -1001,6 +1003,9 @@ async function ConteudoDaAba({
               total={gatilhosDeEvento.length}
             />
           )}
+        <section className="app-card overflow-hidden">
+          
+          <NadaNaBusca parametros={parametros} visiveis={eventosVisiveis.length} />
 
           {gatilhosDeEvento.length === 0 ? (
             <div className="border-b border-line px-5 py-12 text-center">
@@ -1059,11 +1064,11 @@ async function ConteudoDaAba({
             endereco={`${enderecoDoPainel()}/api/webhook/entrada/${cliente.id}`}
           />
         </section>
+        </>
         )}
 
         {aba === 'campanhas' && (
-        <section className="app-card overflow-hidden">
-          
+        <>
           {campanhas.length > 0 && (
             <BuscaDaAba
               base={`/clientes/${cliente.id}/fluxos`}
@@ -1073,6 +1078,9 @@ async function ConteudoDaAba({
               total={campanhas.length}
             />
           )}
+        <section className="app-card overflow-hidden">
+          
+          <NadaNaBusca parametros={parametros} visiveis={campanhasVisiveis.length} />
 
           {campanhas.length === 0 ? (
             <div className="border-b border-line px-5 py-12 text-center">
@@ -1131,11 +1139,11 @@ async function ConteudoDaAba({
 
 
         </section>
+        </>
         )}
 
         {aba === 'sequencias' && (
-        <section className="app-card overflow-hidden">
-          
+        <>
           {sequencias.length > 0 && (
             <BuscaDaAba
               base={`/clientes/${cliente.id}/fluxos`}
@@ -1145,6 +1153,9 @@ async function ConteudoDaAba({
               total={sequencias.length}
             />
           )}
+        <section className="app-card overflow-hidden">
+          
+          <NadaNaBusca parametros={parametros} visiveis={sequenciasVisiveis.length} />
 
           {sequencias.length === 0 ? (
             <div className="border-b border-line px-5 py-12 text-center">
@@ -1358,6 +1369,7 @@ async function ConteudoDaAba({
 
 
         </section>
+        </>
         )}
     </>
   )
@@ -1417,7 +1429,7 @@ function AvisoDoDestino({
   return <span className="mt-1 block text-[11px] font-medium text-aviso">{texto}</span>
 }
 
-/** A busca por texto das abas de gatilhos e sequências, com o vazio do filtro. */
+/** A busca por texto das abas de gatilhos e sequências, fora do cartão. */
 function BuscaDaAba({
   base,
   parametros,
@@ -1433,20 +1445,17 @@ function BuscaDaAba({
 }) {
   const buscando = (parametros.q ?? '') !== ''
   return (
-    <>
-      <div className="border-b border-line px-5 py-3">
-        <BarraDeLista
-          base={base}
-          parametros={parametros}
-          busca={{ chave: 'q', placeholder, rotulo: placeholder }}
-          resumo={buscando ? `${visiveis} de ${total}` : undefined}
-        />
-      </div>
-      {buscando && visiveis === 0 && (
-        <p className="border-b border-line px-5 py-8 text-center text-[12.5px] text-dim">
-          Nada com essa busca.
-        </p>
-      )}
-    </>
+    <BarraDeLista
+      base={base}
+      parametros={parametros}
+      busca={{ chave: 'q', placeholder, rotulo: placeholder }}
+      resumo={buscando ? `${visiveis} de ${total}` : undefined}
+    />
   )
+}
+
+/** O vazio da busca, dentro do cartão, no lugar da lista. */
+function NadaNaBusca({ parametros, visiveis }: { parametros: Record<string, string>; visiveis: number }) {
+  if ((parametros.q ?? '') === '' || visiveis > 0) return null
+  return <p className="border-b border-line px-5 py-8 text-center text-[12.5px] text-dim">Nada com essa busca.</p>
 }

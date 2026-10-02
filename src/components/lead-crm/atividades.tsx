@@ -132,7 +132,7 @@ export function Atividades({
           <button
             type="submit"
             disabled={titulo.trim() === ''}
-            className="app-secondary-button px-3 py-2 text-[12px] disabled:opacity-50"
+            className="botao-secundario botao-md"
           >
             Criar
           </button>
@@ -198,7 +198,7 @@ export function Atividades({
                 <button
                   type="button"
                   onClick={() => resolver(atividade.id, 'concluida')}
-                  className="rounded-lg border border-line px-2.5 py-1 text-[11px] font-semibold text-muted transition hover:bg-white/[0.04] disabled:opacity-50"
+                  className="botao-secundario botao-sm"
                 >
                   Concluir
                 </button>

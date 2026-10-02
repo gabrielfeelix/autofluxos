@@ -44,7 +44,7 @@ export function BotaoPerigo({
             aoConfirmar: acao,
           })
         }
-        className="rounded-lg border border-line px-2.5 py-1 text-[11px] font-semibold text-muted transition hover:border-rose-400/40 hover:bg-rose-400/[0.09] hover:text-perigo disabled:opacity-50"
+        className="botao-perigo botao-sm"
       >
         {rodando ? '…' : rotulo}
       </button>

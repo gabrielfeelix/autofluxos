@@ -89,7 +89,7 @@ export function TabelaDePedidos({ pedidos: iniciais, nomes }: { pedidos: PedidoN
                       <button type="button" onClick={() => responder(pedido, false)} className="rounded-[8px] px-2.5 py-1.5 text-[12px] font-semibold text-muted transition hover:bg-surface hover:text-perigo">
                         Recusar
                       </button>
-                      <button type="button" onClick={() => setAtendendo(pedido)} className="app-primary-button px-3 py-1.5 text-[12px] whitespace-nowrap">
+                      <button type="button" onClick={() => setAtendendo(pedido)} className="botao-primario botao-sm">
                         Atender
                       </button>
                     </span>

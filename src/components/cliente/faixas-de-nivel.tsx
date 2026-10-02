@@ -93,7 +93,7 @@ export function FaixasDeNivelDaConta({
             type="button"
             disabled={rodando}
             onClick={salvar}
-            className="app-primary-button px-4 py-2 text-[12.5px]"
+            className="botao-primario botao-md"
           >
             {rodando ? 'salvando…' : 'Salvar'}
           </button>

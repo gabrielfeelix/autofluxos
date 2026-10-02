@@ -1,6 +1,7 @@
 'use client'
 
 import { useContagem, type Contagem } from './contagens-local'
+import { Badge, teto } from './pilula'
 
 const DIZ: Record<Contagem, [string, string]> = {
   minhas: ['conversa sua com mensagem não lida', 'conversas suas com mensagem não lida'],
@@ -20,8 +21,8 @@ export function NumeroDaBarra({ qual, doServidor }: { qual: Contagem; doServidor
   // Coral sólido em todos: é o número que pede ação, e precisa ler de longe,
   // inclusive sobre o item aceso, que é azul cheio.
   return (
-    <span title={rotulo} aria-label={rotulo} className="min-w-[22px] rounded-full bg-contador px-1.5 py-0.5 text-center text-[11.5px] font-bold text-white tabular-nums">
-      {quantidade > 99 ? '99+' : quantidade}
-    </span>
+    <Badge tom="alerta" rotulo={rotulo}>
+      {teto(quantidade)}
+    </Badge>
   )
 }

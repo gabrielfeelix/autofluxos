@@ -111,7 +111,7 @@ export function Versoes({
         type="button"
         onClick={() => dialogo.current?.showModal()}
         title="Ver o histórico de publicações desta automação"
-        className="app-secondary-button px-3 py-1.5 text-[11.5px]"
+        className="botao-secundario botao-sm"
       >
         Histórico
       </button>
@@ -187,7 +187,7 @@ export function Versoes({
                       type="button"
                       disabled={voltando !== null}
                       onClick={() => setConfirmando(aberta.id)}
-                      className="app-secondary-button mt-3 w-full px-3 py-1.5 text-[11.5px]"
+                      className="botao-secundario botao-sm mt-3 w-full"
                     >
                       Voltar para esta
                     </button>
@@ -230,7 +230,7 @@ export function Versoes({
                             disabled={carregando !== null}
                             onClick={() => ver(v.id)}
                             title="Abrir o desenho desta versão, só para ler"
-                            className="app-secondary-button px-2.5 py-1 text-[11px]"
+                            className="botao-secundario botao-sm"
                           >
                             {carregando === v.id ? 'abrindo…' : 'Ver'}
                           </button>
@@ -240,7 +240,7 @@ export function Versoes({
                             type="button"
                             disabled={voltando !== null}
                             onClick={() => pedirConfirmacao(v.id)}
-                            className="app-secondary-button px-2.5 py-1 text-[11px]"
+                            className="botao-secundario botao-sm"
                           >
                             Voltar para esta
                           </button>
@@ -274,7 +274,7 @@ export function Versoes({
             <button
               type="button"
               onClick={fechar}
-              className="app-secondary-button mt-5 w-full px-4 py-2.5 text-[13px]"
+              className="botao-secundario botao-md mt-5 w-full"
             >
               Fechar
             </button>
@@ -322,7 +322,7 @@ function Confirmacao({
           type="button"
           onClick={aoCancelar}
           disabled={republicando}
-          className="app-secondary-button flex-1 px-3 py-1.5 text-[11.5px]"
+          className="botao-secundario botao-sm flex-1"
         >
           Cancelar
         </button>
@@ -330,7 +330,7 @@ function Confirmacao({
           type="button"
           onClick={aoConfirmar}
           disabled={republicando}
-          className="app-primary-button flex-[1.35] px-3 py-1.5 text-[11.5px]"
+          className="botao-primario botao-sm flex-[1.35]"
         >
           {republicando ? 'publicando…' : `Publicar como v${proxima}`}
         </button>

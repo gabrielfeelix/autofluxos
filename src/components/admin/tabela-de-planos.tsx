@@ -128,7 +128,7 @@ export function TabelaDePlanos({
           type="button"
           disabled={!editavel}
           onClick={() => setEdicao({ modo: 'criar', plano: VAZIO })}
-          className="app-primary-button px-[18px] py-2.5 text-[13px] disabled:cursor-not-allowed disabled:opacity-45"
+          className="botao-primario botao-md"
         >
           + Novo plano
         </button>
@@ -179,7 +179,7 @@ export function TabelaDePlanos({
                         type="button"
                         disabled={!editavel || provisorio(plano)}
                         onClick={() => setEdicao({ modo: 'editar', plano })}
-                        className="app-secondary-button px-3 py-1.5 text-[12px] disabled:cursor-not-allowed disabled:opacity-45"
+                        className="botao-secundario botao-sm"
                       >
                         Editar
                       </button>
@@ -358,7 +358,7 @@ function EditarPlano({
                   type="checkbox"
                   checked={recursos.includes(recurso.chave)}
                   onChange={() => setRecursos((lista) => (lista.includes(recurso.chave) ? lista.filter((item) => item !== recurso.chave) : [...lista, recurso.chave]))}
-                  className="size-3.5 accent-[var(--primary)]"
+                  className="caixa-de-marcar"
                 />
                 {recurso.rotulo}
               </label>
@@ -370,14 +370,14 @@ function EditarPlano({
           <textarea name="itens" rows={4} defaultValue={plano.itens.join('\n')} placeholder={'Exemplo: Até 3.000 conversas por mês'} className={`${campo} resize-y leading-6`} />
         </label>
         <label className="flex cursor-pointer items-center gap-2.5 text-[13px]">
-          <input type="checkbox" checked={ativo} onChange={(evento) => setAtivo(evento.target.checked)} className="size-4 accent-[var(--primary)]" />
+          <input type="checkbox" checked={ativo} onChange={(evento) => setAtivo(evento.target.checked)} className="caixa-de-marcar" />
           À venda (aparece para as organizações escolherem)
         </label>
         <div className="mt-1 flex gap-2.5">
-          <button type="button" onClick={aoFechar} className="app-secondary-button flex-1 px-4 py-2.5 text-[13px]">
+          <button type="button" onClick={aoFechar} className="botao-secundario botao-md flex-1">
             Cancelar
           </button>
-          <button type="submit" className="app-primary-button flex-[1.35] px-4 py-2.5 text-[13px]">
+          <button type="submit" className="botao-primario botao-md flex-[1.35]">
             {modo === 'criar' ? 'Criar plano' : 'Salvar plano'}
           </button>
         </div>
@@ -476,7 +476,7 @@ function ExcluirPlano({
                     opcoes={outros.map((item) => ({ valor: item.id, rotulo: item.nome, detalhe: item.ativo ? reais(item.preco) : 'fora de venda' }))}
                   />
                 </div>
-                <button type="button" disabled={!destino || movendo} onClick={mover} className="app-secondary-button px-4 py-2.5 text-[12.5px] disabled:opacity-50">
+                <button type="button" disabled={!destino || movendo} onClick={mover} className="botao-secundario botao-md">
                   Mover todas
                 </button>
               </div>
@@ -499,7 +499,7 @@ function ExcluirPlano({
         </div>
       )}
       <div className="mt-5 flex gap-2.5">
-        <button type="button" onClick={aoFechar} className="app-secondary-button flex-1 px-4 py-2.5 text-[13px]">
+        <button type="button" onClick={aoFechar} className="botao-secundario botao-md flex-1">
           {pode ? 'Cancelar' : 'Fechar'}
         </button>
         {pode && (
