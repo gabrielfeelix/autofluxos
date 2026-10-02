@@ -6,6 +6,19 @@ import { recusaDoPlano } from './recursos-do-plano'
 import { registrar } from './repos/auditoria'
 import { criarChaveDeApi, revogarChaveDeApi, type ChaveDeApi } from './repos/chaves-de-api'
 import { exigirAcessoAoCliente, podeAdministrarConta } from './sessao'
+import { ehEventoDeWebhook, WEBHOOKS_POR_ORGANIZACAO, type EventoDeWebhook } from '@/core/api/webhooks'
+import { conferirEndereco } from './efeitos/rede'
+import {
+  apagarWebhook,
+  criarWebhook,
+  editarWebhook,
+  listarWebhooks,
+  trocarSegredoDoWebhook,
+  ultimasEntregas,
+  type EntregaDeWebhook,
+  type WebhookDeSaida,
+} from './repos/webhooks-de-saida'
+import { enviarTeste } from './webhooks-de-saida'
 
 /**
  * Criar e revogar chaves da API pública (Configurações > API).
@@ -89,5 +102,167 @@ export async function acaoRevogarChaveDeApi(
   } catch (erro) {
     console.error('[api] não deu para revogar a chave:', erro instanceof Error ? erro.message : erro)
     return { ok: false, erro: 'Não deu para revogar agora. Tente de novo.' }
+  }
+}
+
+/* ------------------------------------------------------------ webhooks */
+
+/*
+ * Webhooks de saída (fase 3). Mesma regra das chaves: só quem administra, com
+ * o plano liberando a API, e tudo na auditoria. O segredo aparece uma vez, na
+ * criação e na troca, e nunca vai para a auditoria.
+ */
+
+type Acesso = Awaited<ReturnType<typeof exigirAcessoAoCliente>>
+
+async function exigirAdminComApi(clienteId: string): Promise<{ ok: true; acesso: Acesso } | { ok: false; erro: string }> {
+  const acesso = await exigirAcessoAoCliente(clienteId)
+  if (!podeAdministrarConta(acesso)) return { ok: false, erro: 'Só quem administra a organização pode mexer nos webhooks.' }
+  const recusa = await recusaDoPlano(clienteId, 'api')
+  if (recusa) return { ok: false, erro: recusa }
+  return { ok: true, acesso }
+}
+
+async function conferirUrlEEventos(
+  url: unknown,
+  eventos: unknown,
+): Promise<{ ok: true; url: string; eventos: EventoDeWebhook[] } | { ok: false; erro: string }> {
+  const limpa = String(url ?? '').trim()
+  if (!/^https:\/\//i.test(limpa)) return { ok: false, erro: 'O endereço precisa começar com https://.' }
+  if (limpa.length > 2000) return { ok: false, erro: 'Endereço longo demais.' }
+  // A conferência de verdade é no envio (o DNS pode mudar). Aqui é para a
+  // pessoa saber já, e não pela primeira entrega falhando.
+  const veredito = await conferirEndereco(limpa)
+  if (!veredito.ok) return { ok: false, erro: `Endereço recusado: ${veredito.motivo}.` }
+  const lista = [...new Set(Array.isArray(eventos) ? eventos : [])]
+  if (lista.length === 0) return { ok: false, erro: 'Marque ao menos um evento.' }
+  if (!lista.every(ehEventoDeWebhook)) return { ok: false, erro: 'Evento desconhecido.' }
+  return { ok: true, url: limpa, eventos: lista as EventoDeWebhook[] }
+}
+
+function auditar(acesso: Acesso, clienteId: string, acao: string, webhook: WebhookDeSaida, detalhes?: Record<string, unknown>) {
+  return registrar({
+    acao,
+    autorId: acesso.sessao.usuario.id,
+    autorEmail: acesso.sessao.usuario.email,
+    contaId: clienteId,
+    alvoTipo: 'webhook_de_saida',
+    alvoId: webhook.id,
+    alvoNome: webhook.url,
+    ...(detalhes ? { detalhes } : {}),
+    impersonadoPor: acesso.sessao.impersonadoPor,
+  })
+}
+
+export async function acaoCriarWebhook(
+  clienteId: string,
+  dados: { url: string; eventos: string[] },
+): Promise<{ ok: true; webhook: WebhookDeSaida; segredo: string } | { ok: false; erro: string }> {
+  const porta = await exigirAdminComApi(clienteId)
+  if (!porta.ok) return porta
+  const conferido = await conferirUrlEEventos(dados?.url, dados?.eventos)
+  if (!conferido.ok) return conferido
+
+  try {
+    if ((await listarWebhooks(clienteId)).length >= WEBHOOKS_POR_ORGANIZACAO) {
+      return { ok: false, erro: `No máximo ${WEBHOOKS_POR_ORGANIZACAO} webhooks por organização.` }
+    }
+    const { webhook, segredo } = await criarWebhook(clienteId, {
+      url: conferido.url,
+      eventos: conferido.eventos,
+      autorId: porta.acesso.sessao.usuario.id,
+    })
+    await auditar(porta.acesso, clienteId, 'criou_webhook_de_saida', webhook, { eventos: webhook.eventos })
+    return { ok: true, webhook, segredo }
+  } catch (erro) {
+    console.error('[api] não deu para criar o webhook:', erro instanceof Error ? erro.message : erro)
+    return { ok: false, erro: 'Não deu para criar o webhook agora. Tente de novo.' }
+  }
+}
+
+export async function acaoEditarWebhook(
+  clienteId: string,
+  webhookId: string,
+  dados: { url?: string; eventos?: string[]; ativo?: boolean },
+): Promise<{ ok: true; webhook: WebhookDeSaida } | { ok: false; erro: string }> {
+  const porta = await exigirAdminComApi(clienteId)
+  if (!porta.ok) return porta
+  if (!z.guid().safeParse(webhookId).success) return { ok: false, erro: 'Webhook inválido.' }
+
+  const mudanca: { url?: string; eventos?: EventoDeWebhook[]; ativo?: boolean } = {}
+  if (dados?.url !== undefined || dados?.eventos !== undefined) {
+    const conferido = await conferirUrlEEventos(dados.url, dados.eventos)
+    if (!conferido.ok) return conferido
+    mudanca.url = conferido.url
+    mudanca.eventos = conferido.eventos
+  }
+  if (typeof dados?.ativo === 'boolean') mudanca.ativo = dados.ativo
+
+  try {
+    const webhook = await editarWebhook(clienteId, webhookId, mudanca)
+    if (!webhook) return { ok: false, erro: 'Este webhook não existe mais.' }
+    await auditar(porta.acesso, clienteId, 'editou_webhook_de_saida', webhook, {
+      eventos: webhook.eventos,
+      ativo: webhook.ativo,
+    })
+    return { ok: true, webhook }
+  } catch (erro) {
+    console.error('[api] não deu para editar o webhook:', erro instanceof Error ? erro.message : erro)
+    return { ok: false, erro: 'Não deu para salvar agora. Tente de novo.' }
+  }
+}
+
+export async function acaoApagarWebhook(clienteId: string, webhookId: string): Promise<{ ok: true } | { ok: false; erro: string }> {
+  const porta = await exigirAdminComApi(clienteId)
+  if (!porta.ok) return porta
+  if (!z.guid().safeParse(webhookId).success) return { ok: false, erro: 'Webhook inválido.' }
+  try {
+    const webhook = await apagarWebhook(clienteId, webhookId)
+    if (!webhook) return { ok: false, erro: 'Este webhook não existe mais.' }
+    await auditar(porta.acesso, clienteId, 'apagou_webhook_de_saida', webhook)
+    return { ok: true }
+  } catch (erro) {
+    console.error('[api] não deu para apagar o webhook:', erro instanceof Error ? erro.message : erro)
+    return { ok: false, erro: 'Não deu para apagar agora. Tente de novo.' }
+  }
+}
+
+export async function acaoTrocarSegredoDoWebhook(
+  clienteId: string,
+  webhookId: string,
+): Promise<{ ok: true; segredo: string } | { ok: false; erro: string }> {
+  const porta = await exigirAdminComApi(clienteId)
+  if (!porta.ok) return porta
+  if (!z.guid().safeParse(webhookId).success) return { ok: false, erro: 'Webhook inválido.' }
+  try {
+    const segredo = await trocarSegredoDoWebhook(clienteId, webhookId)
+    if (!segredo) return { ok: false, erro: 'Este webhook não existe mais.' }
+    const webhook = (await listarWebhooks(clienteId)).find((w) => w.id === webhookId)
+    if (webhook) await auditar(porta.acesso, clienteId, 'editou_webhook_de_saida', webhook, { segredo: 'trocado' })
+    return { ok: true, segredo }
+  } catch (erro) {
+    console.error('[api] não deu para trocar o segredo:', erro instanceof Error ? erro.message : erro)
+    return { ok: false, erro: 'Não deu para trocar o segredo agora. Tente de novo.' }
+  }
+}
+
+/** Manda um evento de teste na hora e devolve as entregas atualizadas. */
+export async function acaoTestarWebhook(
+  clienteId: string,
+  webhookId: string,
+): Promise<{ ok: true; entrega: EntregaDeWebhook | null; entregas: EntregaDeWebhook[] } | { ok: false; erro: string }> {
+  const porta = await exigirAdminComApi(clienteId)
+  if (!porta.ok) return porta
+  if (!z.guid().safeParse(webhookId).success) return { ok: false, erro: 'Webhook inválido.' }
+  try {
+    if (!(await listarWebhooks(clienteId)).some((w) => w.id === webhookId)) {
+      return { ok: false, erro: 'Este webhook não existe mais.' }
+    }
+    const id = await enviarTeste(clienteId, webhookId)
+    const entregas = await ultimasEntregas(clienteId)
+    return { ok: true, entrega: entregas.find((e) => e.id === id) ?? null, entregas }
+  } catch (erro) {
+    console.error('[api] não deu para testar o webhook:', erro instanceof Error ? erro.message : erro)
+    return { ok: false, erro: 'Não deu para enviar o teste agora. Tente de novo.' }
   }
 }

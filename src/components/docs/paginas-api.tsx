@@ -559,6 +559,166 @@ function EnviarTemplate() {
   )
 }
 
+/* ------------------------------------------------------- webhooks de saída */
+
+const CORPO_WEBHOOK = {
+  id: '0d6b1f7e-3c2a-4b8e-9f10-5a7c2e9d4b11',
+  evento: 'contato.criado',
+  criado_em: '2026-10-02T13:20:42.004Z',
+  organizacao_id: 'a3f0c1d2-7b8e-4c9a-b1d2-e3f4a5b6c7d8',
+  dados: { contato: CONTATO_EXEMPLO, origem: 'WhatsApp' },
+}
+
+const DADOS_POR_EVENTO: { evento: string; quando: string; dados: Record<string, unknown> }[] = [
+  { evento: 'contato.criado', quando: 'Alguém novo chegou por WhatsApp, Instagram, chat do site ou API.', dados: { contato: '{ … }', origem: 'WhatsApp' } },
+  {
+    evento: 'contato.etapa_mudou',
+    quando: 'Um negócio mudou de etapa no funil.',
+    dados: { contato: '{ … }', oportunidade_id: '9b2e…', de: 'Novo contato', para: 'Aula experimental' },
+  },
+  {
+    evento: 'oportunidade.ganha',
+    quando: 'Um negócio foi marcado como ganho.',
+    dados: { contato: '{ … }', oportunidade_id: '9b2e…', funil: 'Vendas', etapa: 'Fechamento', valor: 450 },
+  },
+  {
+    evento: 'oportunidade.perdida',
+    quando: 'Um negócio foi marcado como perdido.',
+    dados: { contato: '{ … }', oportunidade_id: '9b2e…', funil: 'Vendas', etapa: 'Proposta', motivo: 'Preço' },
+  },
+]
+
+const CONFERIR_ASSINATURA: Trecho[] = [
+  {
+    rotulo: 'Node.js',
+    linguagem: 'js',
+    codigo: `import { createHmac, timingSafeEqual } from 'node:crypto'
+
+// Use o corpo CRU, como chegou. JSON.parse e JSON.stringify de novo
+// mudam espaços e ordem, e a assinatura deixa de bater.
+export function webhookValido(corpoCru, cabecalhos, segredo) {
+  const timestamp = cabecalhos['x-autofluxos-timestamp']
+  const assinatura = cabecalhos['x-autofluxos-assinatura'] ?? ''
+  if (Math.abs(Date.now() / 1000 - Number(timestamp)) > 300) return false
+
+  const esperada = 'sha256=' + createHmac('sha256', segredo)
+    .update(\`\${timestamp}.\${corpoCru}\`)
+    .digest('hex')
+  const a = Buffer.from(assinatura)
+  const b = Buffer.from(esperada)
+  return a.length === b.length && timingSafeEqual(a, b)
+}`,
+  },
+  {
+    rotulo: 'Python',
+    linguagem: 'python',
+    codigo: `import hmac, hashlib, time
+
+def webhook_valido(corpo_cru: bytes, cabecalhos, segredo: str) -> bool:
+    timestamp = cabecalhos.get("x-autofluxos-timestamp", "0")
+    assinatura = cabecalhos.get("x-autofluxos-assinatura", "")
+    if abs(time.time() - int(timestamp)) > 300:
+        return False
+    esperada = "sha256=" + hmac.new(
+        segredo.encode(),
+        f"{timestamp}.".encode() + corpo_cru,
+        hashlib.sha256,
+    ).hexdigest()
+    return hmac.compare_digest(assinatura, esperada)`,
+  },
+]
+
+function WebhooksDeSaida() {
+  return (
+    <>
+      <P>
+        O AutoFluxos faz um <Cod>POST</Cod> com JSON no endereço do seu sistema quando algo acontece na
+        organização. É o caminho para levar o lead do WhatsApp ao seu CRM ou planilha sem consultar a API de
+        tempos em tempos.
+      </P>
+      <Passos>
+        <Passo n={1} titulo="Cadastre o endereço no painel">
+          <p>
+            Em <strong className="text-ink">Configurações › API › Webhooks</strong>, clique em{' '}
+            <strong className="text-ink">Adicionar webhook</strong>, informe a URL (só https) e marque os eventos.
+            Até 5 webhooks por organização. Quem configura é o proprietário ou um administrador.
+          </p>
+        </Passo>
+        <Passo n={2} titulo="Guarde o segredo">
+          <p>
+            Ele aparece <strong className="text-ink">uma vez</strong>, no formato <Cod>whsec_…</Cod>, e serve para
+            conferir que cada envio veio do AutoFluxos. Perdeu? Gere outro em Editar.
+          </p>
+        </Passo>
+        <Passo n={3} titulo="Teste">
+          <p>
+            O botão <strong className="text-ink">Testar</strong> manda na hora um evento <Cod>webhook.teste</Cod>{' '}
+            com um contato de exemplo e mostra o que o seu endereço respondeu.
+          </p>
+        </Passo>
+      </Passos>
+
+      <Sub>Eventos</Sub>
+      <ul className="divide-y divide-line rounded-xl border border-line">
+        {DADOS_POR_EVENTO.map((item) => (
+          <li key={item.evento} className="px-4 py-3">
+            <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
+              <code className="font-mono text-[13px] font-semibold text-ink">{item.evento}</code>
+              <span className="text-[13.5px] text-muted">{item.quando}</span>
+            </div>
+            <code className="mt-1 block font-mono text-[12px] text-muted">dados: {JSON.stringify(item.dados)}</code>
+          </li>
+        ))}
+      </ul>
+      <P>
+        Todo corpo tem <Cod>id</Cod> (único por evento), <Cod>evento</Cod>, <Cod>criado_em</Cod>,{' '}
+        <Cod>organizacao_id</Cod> e <Cod>dados.contato</Cod>, no mesmo formato de{' '}
+        <Link href="/ajuda/desenvolvedores/api-ler-contato">Consultar um contato</Link>. O contato é como estava
+        quando o evento aconteceu.
+      </P>
+
+      <Sub>Cabeçalhos</Sub>
+      <ListaDeCampos
+        campos={[
+          { nome: 'x-autofluxos-assinatura', tipo: 'string', descricao: <><Cod>sha256=</Cod> e o HMAC-SHA256, em hexadecimal, de <Cod>{'"<timestamp>.<corpo>"'}</Cod> com o segredo.</> },
+          { nome: 'x-autofluxos-timestamp', tipo: 'string', descricao: 'Segundos desde 1970 (UTC), do momento da assinatura. Recuse envio com mais de 5 minutos.' },
+          { nome: 'x-autofluxos-evento', tipo: 'string', descricao: <>O mesmo valor de <Cod>evento</Cod> no corpo.</> },
+          { nome: 'x-autofluxos-entrega', tipo: 'string', descricao: 'Id desta entrega. Igual em todas as tentativas do mesmo envio.' },
+        ]}
+      />
+
+      <Sub>Conferir a assinatura</Sub>
+      <BlocoDeCodigo trechos={CONFERIR_ASSINATURA} />
+
+      <Sub>Resposta, novas tentativas e pausa</Sub>
+      <ul className="ml-5 list-disc space-y-2">
+        <li>
+          Responda <strong className="text-ink">2xx em até 10 segundos</strong>. Grave o evento e processe depois: o
+          que demora mais que isso conta como falha.
+        </li>
+        <li>
+          Qualquer outra resposta, redirecionamento incluído, é falha. O envio é repetido depois de 1 min, 5 min, 30
+          min, 2 h e 12 h. A tentativa pode sair um pouco depois do horário, nunca antes.
+        </li>
+        <li>
+          Depois de 20 falhas seguidas o webhook <strong className="text-ink">pausa sozinho</strong> e o painel avisa.
+          Corrija, use Testar e religue.
+        </li>
+        <li>
+          O mesmo evento pode chegar mais de uma vez (a resposta se perdeu no caminho, por exemplo). Use o{' '}
+          <Cod>id</Cod> do corpo para ignorar o repetido.
+        </li>
+      </ul>
+      <Nota tom="dica" titulo="Endereços aceitos">
+        <p>
+          Só <Cod>https</Cod> com endereço público. Rede interna e localhost são recusados. Para testar sem servidor,
+          use um serviço como webhook.site.
+        </p>
+      </Nota>
+    </>
+  )
+}
+
 export const PAGINAS_API: PaginaDev[] = [
   { slug: 'api-autenticacao', grupo: 'API', titulo: 'Autenticação', resumo: 'Crie a chave no painel e envie como Bearer.', Corpo: Autenticacao },
   { slug: 'api-erros', grupo: 'API', titulo: 'Erros e limites', resumo: 'O formato de erro, cada código e quando repetir.', Corpo: ErrosELimites },
@@ -632,6 +792,17 @@ export const PAGINAS_API: PaginaDev[] = [
     painel: [
       { trechos: trechos('POST', '/mensagens/template', CORPO_TEMPLATE, IDEMPOTENCIA), titulo: 'Requisição' },
       { trechos: [json('202', ENVIO_EXEMPLO)], titulo: 'Resposta' },
+    ],
+  },
+  {
+    slug: 'webhooks-de-saida',
+    grupo: 'Webhooks de saída',
+    titulo: 'Receber eventos',
+    resumo: 'O AutoFluxos avisa o seu sistema: contato novo, etapa do funil, oportunidade ganha ou perdida.',
+    Corpo: WebhooksDeSaida,
+    painel: [
+      { trechos: [json('POST', CORPO_WEBHOOK)], titulo: 'Corpo enviado' },
+      { trechos: CONFERIR_ASSINATURA, titulo: 'Conferir a assinatura' },
     ],
   },
 ]

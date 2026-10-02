@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { ChavesDeApi } from '@/components/api/chaves-de-api'
+import { WebhooksDeSaida } from '@/components/api/webhooks-de-saida'
 import { AjustesShell } from '@/components/design/ajustes-shell'
 import { classesDoBotao } from '@/components/design/botao'
 import { CabecalhoDaTela } from '@/components/design/cabecalho-da-tela'
@@ -10,6 +11,7 @@ import { Pilula } from '@/components/design/pilula'
 import { recusaDoPlano } from '@/server/recursos-do-plano'
 import { listarChavesDeApi, type ChaveDeApi } from '@/server/repos/chaves-de-api'
 import { acharCliente } from '@/server/repos/clientes'
+import { listarWebhooks, ultimasEntregas } from '@/server/repos/webhooks-de-saida'
 import { exigirAcessoAoCliente, podeAdministrarConta } from '@/server/sessao'
 
 export const dynamic = 'force-dynamic'
@@ -19,7 +21,7 @@ const DOCS = '/ajuda/desenvolvedores'
 
 /**
  * Configurações > API: as chaves que deixam outro sistema falar com esta
- * organização (fase 1 de `docs/HANDOFF-02-OUT-API-PUBLICA.md`).
+ * organização, e os webhooks que avisam o sistema dela (`docs/HANDOFF-02-OUT-API-PUBLICA.md`).
  *
  * Sem o recurso no plano, a tela explica o que a API faz e manda para os
  * planos, em vez de esconder o item: quem procura "tem API?" precisa achar a
@@ -30,13 +32,15 @@ export default async function Pagina({ params }: { params: Promise<{ clienteId: 
   const [cliente, acesso] = await Promise.all([acharCliente(clienteId), exigirAcessoAoCliente(clienteId)])
   if (!cliente) notFound()
 
-  const [recusa, chaves] = await Promise.all([
+  const [recusa, chaves, webhooks, entregas] = await Promise.all([
     recusaDoPlano(cliente.id, 'api'),
     // A tabela pode ainda não existir num ambiente sem a 0120: lista vazia.
     listarChavesDeApi(cliente.id).catch((erro: unknown): ChaveDeApi[] => {
       console.error('[api] não deu para listar as chaves', erro instanceof Error ? erro.message : erro)
       return []
     }),
+    listarWebhooks(cliente.id).catch(() => []),
+    ultimasEntregas(cliente.id).catch(() => []),
   ])
   const administra = podeAdministrarConta(acesso)
 
@@ -47,7 +51,7 @@ export default async function Pagina({ params }: { params: Promise<{ clienteId: 
           trilha={[{ rotulo: 'Configurações', href: `/clientes/${cliente.id}/ajustes` }, { rotulo: 'API' }]}
           titulo="API"
           contagem={recusa ? undefined : <Pilula tom="destaque">REST · v1</Pilula>}
-          descricao="Conecte o seu sistema, formulário ou parceiro: cadastrar contatos, consultar dados e disparar automações por chamada HTTP."
+          descricao="Conecte o seu sistema, formulário ou parceiro: cadastrar contatos, enviar modelos, mover o funil e receber avisos do que acontece aqui."
           acoes={
             <Link href={DOCS} className={classesDoBotao({ variante: 'secundario', tamanho: 'lg' })}>
               Documentação
@@ -61,10 +65,13 @@ export default async function Pagina({ params }: { params: Promise<{ clienteId: 
           <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_340px]">
             <div className="min-w-0">
               {administra ? (
-                <ChavesDeApi clienteId={cliente.id} iniciais={chaves} />
+                <>
+                  <ChavesDeApi clienteId={cliente.id} iniciais={chaves} />
+                  <WebhooksDeSaida clienteId={cliente.id} iniciais={webhooks} entregasIniciais={entregas} />
+                </>
               ) : (
                 <p className="rounded-[14px] border border-line bg-panel px-5 py-4 text-[13px] text-muted">
-                  Só quem administra a organização cria e revoga chaves de API. Peça a um administrador.
+                  Só quem administra a organização cria chaves de API e configura webhooks. Peça a um administrador.
                 </p>
               )}
             </div>
@@ -125,7 +132,7 @@ function SemPlano({ clienteId, recusa }: { clienteId: string; recusa: string }) 
   const itens = [
     { titulo: 'Contatos', texto: 'Seu formulário, landing page ou sistema cadastra e atualiza contatos com campos e etiquetas.' },
     { titulo: 'Automações', texto: 'Quando algo acontece no seu sistema, uma automação começa no WhatsApp do contato.' },
-    { titulo: 'Chaves por sistema', texto: 'Cada integração com a sua chave e só as permissões que precisa. Revogar é imediato.' },
+    { titulo: 'Webhooks', texto: 'O seu CRM ou planilha recebe na hora cada contato novo e cada oportunidade ganha ou perdida.' },
   ]
   return (
     <section className="overflow-hidden rounded-[18px] border border-line bg-panel">

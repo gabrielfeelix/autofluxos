@@ -2,6 +2,7 @@ import { z } from 'zod'
 import { chamadasTocando } from '@/server/chamadas'
 import { enviarAgendadas } from '@/server/enviar-agendadas'
 import { passadaDeTransmissoes, POR_CARONA } from '@/server/passada-de-transmissoes'
+import { POR_CARONA as WEBHOOKS_POR_CARONA, processarEntregas } from '@/server/webhooks-de-saida'
 import { chatDoSite } from '@/server/repos/canais-site'
 import { pulsoDaConta } from '@/server/repos/leads'
 import { exigirCapacidade, recusou } from '@/server/permissoes'
@@ -210,6 +211,11 @@ export async function GET(
          */
         void passadaDeTransmissoes({ porPassada: POR_CARONA }).catch((erro) => {
           console.error('[stream] a carona das transmissões falhou', erro)
+        })
+        // As novas tentativas dos webhooks de saída (1 min, 5 min...) pegam a
+        // mesma carona: sem ela, só o cron diário as repetiria.
+        void processarEntregas(WEBHOOKS_POR_CARONA).catch((erro) => {
+          console.error('[stream] a carona dos webhooks falhou', erro)
         })
       }, PASSADA_DAS_AGENDADAS_MS)
 

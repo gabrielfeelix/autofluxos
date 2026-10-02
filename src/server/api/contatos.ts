@@ -54,7 +54,7 @@ function paraContato(linha: Linha): ContatoDaApi {
   }
 }
 
-async function lerPorId(clienteId: string, contatoId: string): Promise<ContatoDaApi | null> {
+export async function lerContatoDaApi(clienteId: string, contatoId: string): Promise<ContatoDaApi | null> {
   const { data, error } = await db()
     .from('contacts')
     .select(COLUNAS)
@@ -69,7 +69,7 @@ async function lerPorId(clienteId: string, contatoId: string): Promise<ContatoDa
 
 export async function lerContatoPeloTelefone(clienteId: string, telefone: string): Promise<ContatoDaApi | null> {
   const id = await acharContatoPeloTelefone(clienteId, telefone)
-  return id ? lerPorId(clienteId, id) : null
+  return id ? lerContatoDaApi(clienteId, id) : null
 }
 
 export type EntradaDeContato = {
@@ -161,7 +161,7 @@ export async function gravarContatoDaApi(clienteId: string, entrada: EntradaDeCo
     await porNoQuadroPadrao({ id: contatoId, clienteId })
   }
 
-  const contato = await lerPorId(clienteId, contatoId)
+  const contato = await lerContatoDaApi(clienteId, contatoId)
   if (!contato) throw new Error('o contato sumiu depois de gravado')
   return { ok: true, criado, contato, avisos }
 }

@@ -34,6 +34,17 @@ export async function anotar(
   } catch (erro) {
     console.error('[eventos] não deu para anotar:', erro)
   }
+
+  /*
+   * Webhook de saída (fase 3 da API): contato criado e mudança de etapa saem
+   * daqui, o ponto por onde todo evento já passa. Import dinâmico para não
+   * fechar ciclo (o webhook lê o contato, que anota). Só os dois tipos pagam o
+   * import; o resto da linha do tempo não muda de custo.
+   */
+  if (tipo === 'chegou' || tipo === 'mudou-de-etapa') {
+    const { emitirPelaAnotacao } = await import('../webhooks-de-saida')
+    await emitirPelaAnotacao(clienteId, contatoId, tipo, dados)
+  }
 }
 
 /** Vários contatos, o mesmo fato. O caminho é a seleção em lote da tela. */

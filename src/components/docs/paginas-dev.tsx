@@ -95,7 +95,7 @@ function Visao() {
   return (
     <>
       <P>
-        O AutoFluxos conversa com outros sistemas de quatro formas. Escolha pela direção em que o
+        O AutoFluxos conversa com outros sistemas de cinco formas. Escolha pela direção em que o
         dado anda.
       </P>
       <ul className="ml-5 list-disc space-y-2">
@@ -103,6 +103,11 @@ function Visao() {
           <strong className="text-ink">O seu sistema chama o AutoFluxos.</strong> Cadastra contatos,
           consulta dados e dispara automações com uma chave da organização. Use a{' '}
           <a className="font-medium text-primary hover:underline" href="/ajuda/desenvolvedores/api-autenticacao">API</a>.
+        </li>
+        <li>
+          <strong className="text-ink">O AutoFluxos avisa o seu sistema.</strong> Contato novo, mudança de
+          etapa e oportunidade ganha ou perdida chegam ao seu CRM ou planilha num POST assinado. Use os{' '}
+          <a className="font-medium text-primary hover:underline" href="/ajuda/desenvolvedores/webhooks-de-saida">webhooks de saída</a>.
         </li>
         <li>
           <strong className="text-ink">O seu sistema avisa o AutoFluxos.</strong> Um evento (vaga
@@ -395,7 +400,7 @@ function Verandi() {
 }
 
 export const PAGINAS_DEV: PaginaDev[] = [
-  { slug: 'visao-geral', grupo: 'Introdução', titulo: 'Visão geral', resumo: 'As quatro formas de integrar um sistema com o AutoFluxos.', Corpo: Visao },
+  { slug: 'visao-geral', grupo: 'Introdução', titulo: 'Visão geral', resumo: 'As cinco formas de integrar um sistema com o AutoFluxos.', Corpo: Visao },
   ...PAGINAS_API,
   { slug: 'webhook-de-entrada', grupo: 'Webhook de entrada', titulo: 'Configurar o webhook', resumo: 'Receba eventos do seu sistema e abra uma automação no WhatsApp do contato.', Corpo: ConfigurarWebhook },
   { slug: 'assinatura', grupo: 'Webhook de entrada', titulo: 'Assinar a requisição', resumo: 'Como calcular o HMAC-SHA256 que autentica cada chamada.', Corpo: Assinatura },

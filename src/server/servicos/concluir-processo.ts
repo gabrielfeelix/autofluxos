@@ -1,4 +1,5 @@
 import 'server-only'
+import { emitirEvento } from '../webhooks-de-saida'
 import { conferirFechamento, type Situacao } from '@/core/crm'
 import { db } from '../db'
 import { listarMotivos } from '../repos/motivos-de-perda'
@@ -242,6 +243,19 @@ export async function concluirProcesso(
       conclusao.contatoId,
       pedido.situacao === 'ganha' ? 'ganhou' : 'perdeu',
       pedido.autor ?? null,
+    )
+    // Webhook de saída (fase 3 da API). O evento da linha do tempo é gravado
+    // pelo banco (0072), então o aviso sai daqui, e só na primeira vez.
+    await emitirEvento(
+      pedido.clienteId,
+      pedido.situacao === 'ganha' ? 'oportunidade.ganha' : 'oportunidade.perdida',
+      conclusao.contatoId,
+      {
+        oportunidade_id: conclusao.cartaoId,
+        funil: conclusao.quadroNome,
+        etapa: conclusao.colunaNome,
+        ...(pedido.situacao === 'ganha' ? { valor: pedido.valor ?? null } : { motivo: conclusao.motivo }),
+      },
     )
   }
 

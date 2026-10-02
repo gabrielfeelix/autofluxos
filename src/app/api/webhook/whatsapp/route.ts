@@ -11,6 +11,7 @@ import {
 } from '@/server/receber-status-de-template'
 import { enviarAgendadas } from '@/server/enviar-agendadas'
 import { passadaDeTransmissoes, POR_CARONA } from '@/server/passada-de-transmissoes'
+import { POR_CARONA as WEBHOOKS_POR_CARONA, processarEntregas } from '@/server/webhooks-de-saida'
 import { passadaDeRetomadaDoBot } from '@/server/passada-de-retomada-do-bot'
 import { rodarTarefas } from '@/server/tarefas'
 import { guardarEventoDeLigacao } from '@/server/sonda-ligacao'
@@ -245,6 +246,16 @@ export async function POST(req: Request) {
       await passadaDeTransmissoes({ porPassada: POR_CARONA })
     } catch (erro) {
       console.error('[webhook] a carona das transmissões falhou', erro)
+    }
+
+    /*
+     * As novas tentativas dos webhooks de saída, pela mesma carona e pelo
+     * mesmo motivo: cron uma vez por dia não repete em 1 minuto.
+     */
+    try {
+      await processarEntregas(WEBHOOKS_POR_CARONA)
+    } catch (erro) {
+      console.error('[webhook] a carona dos webhooks de saída falhou', erro)
     }
   })
 

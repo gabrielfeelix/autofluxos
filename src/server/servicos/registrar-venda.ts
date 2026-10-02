@@ -1,4 +1,5 @@
 import 'server-only'
+import { emitirEvento } from '../webhooks-de-saida'
 import { conferirVenda, type ItemDaVenda } from '@/core/vendas'
 import { db } from '../db'
 
@@ -128,6 +129,15 @@ export async function registrarVendaEConcluir(
       ok: false,
       motivo: 'esta oportunidade não está aberta. Reabra antes de registrar a venda.',
     }
+  }
+
+  if (primeira.o_repetida !== true) {
+    // Webhook de saída (fase 3 da API): ganhar com venda é ganhar.
+    await emitirEvento(pedido.clienteId, 'oportunidade.ganha', primeira.o_contact_id, {
+      oportunidade_id: primeira.o_cartao_id,
+      valor: primeira.o_valor_total === null ? null : Number(primeira.o_valor_total),
+      data_da_venda: primeira.o_data_da_venda,
+    })
   }
 
   return {

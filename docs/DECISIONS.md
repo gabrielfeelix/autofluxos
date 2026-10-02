@@ -267,3 +267,23 @@ Append-only. Cada entrada: data, decisão, porquê, onde está no código.
   errado para o cliente de outro sistema.
 - Na conversa, a mensagem aparece com autor "API"; na linha do tempo,
   `mensagem-enviada {modelo, via: 'API'}`.
+
+## 02/out/2026: API pública fase 3, webhooks de saída
+
+- Tabelas `webhooks_de_saida` (segredo `whsec_` no Vault, mostrado uma vez,
+  trocável) e `entregas_de_webhook` (`0122`). Corpo montado **na emissão**:
+  repetição manda o evento como era, não o estado atual.
+- Emissão: `anotar` para `chegou`/`mudou-de-etapa` (import dinâmico, sem
+  ciclo; só esses dois tipos pagam a consulta de assinantes). Ganhar/perder o
+  banco grava direto (0072/0080), então quem emite é `concluirProcesso` e
+  `registrarVendaEConcluir`, só quando não é repetida.
+- Envio: `conferirEndereco` + conexão fixada no IP (`agenteFixadoEm`, agora
+  exportado de `efeitos/http.ts`), redirecionamento é falha, 10 s. Assinatura
+  `sha256=HMAC("timestamp.corpo")`. Esperas 1 min, 5 min, 30 min, 2 h, 12 h;
+  20 falhas seguidas pausam o webhook. Teste (`webhook.teste`) não repete nem
+  conta para a pausa.
+- **Hobby só dispara cron 1x/dia**: 1ª tentativa no `after()` da emissão; novas
+  tentativas de carona no webhook do WhatsApp e no pulso do Inbox (5 por vez);
+  cron diário `/api/manutencao/webhooks` de piso (também limpa
+  `api_idempotencia` vencida). Nova tentativa pode atrasar, nunca adiantar.
+  `pegar_entregas_de_webhook` trava com `for update skip locked` + 60 s.

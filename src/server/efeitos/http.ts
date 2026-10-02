@@ -287,7 +287,7 @@ export async function chamarHttp(
  * isso o certificado não bateria e todo https quebraria. O undici cuida disso
  * sozinho porque a URL continua com o hostname; só o `lookup` é que mente.
  */
-function agenteFixadoEm(
+export function agenteFixadoEm(
   enderecos: { address: string; family: 4 | 6 }[],
   registro: Agent[],
 ): Agent {
