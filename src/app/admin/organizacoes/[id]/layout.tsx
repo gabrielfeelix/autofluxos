@@ -1,3 +1,4 @@
+import { Trilha } from '@/components/design/trilha'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import type { ReactNode } from 'react'
@@ -25,13 +26,7 @@ export default async function LayoutDaOrganizacao({ children, params }: { childr
 
   return (
     <main className="flex min-h-full w-full flex-col px-4 pt-[26px] pb-[42px] md:px-[42px]">
-      <nav aria-label="Trilha" className="mb-3 text-[12px] text-dim">
-        <Link href="/admin/organizacoes" className="transition hover:text-primary">
-          Organizações
-        </Link>
-        <span aria-hidden className="mx-1.5">›</span>
-        <span className="text-muted">{organizacao.nome}</span>
-      </nav>
+      <Trilha caminho={[{ rotulo: 'Organizações', href: '/admin/organizacoes' }, { rotulo: organizacao.nome }]} />
       <header className="mb-4 flex flex-wrap items-center gap-x-4 gap-y-3">
         <LogoDoCliente cliente={organizacao} tamanho={48} />
         <div className="min-w-0 flex-1">

@@ -1,4 +1,5 @@
-import { Esqueleto } from '@/components/design/esqueleto'
+import { Trilha } from '@/components/design/trilha'
+import { Esqueleto, EsqueletoDeAlternador, EsqueletoDeBusca } from '@/components/design/esqueleto'
 import { ABAS_DA_ORGANIZACAO } from './abas'
 
 /**
@@ -19,7 +20,7 @@ function Aviso({ children }: { children: string }) {
 export function EsqueletoDoDetalhe() {
   return (
     <main className="flex min-h-full w-full flex-col px-4 pt-[26px] pb-[42px] md:px-[42px]">
-      <Esqueleto className="mb-3 h-3 w-40" />
+      <Trilha caminho={[{ rotulo: 'Organizações' }, { rotulo: '…' }]} />
       <header className="mb-4 flex items-center gap-4">
         <Esqueleto className="size-12 shrink-0 rounded-full" />
         <span className="flex flex-1 flex-col gap-2">
@@ -28,13 +29,7 @@ export function EsqueletoDoDetalhe() {
         </span>
         <Esqueleto className="hidden h-10 w-40 rounded-[10px] sm:block" />
       </header>
-      <div aria-hidden className="mb-5 flex gap-1 overflow-hidden border-b border-line whitespace-nowrap">
-        {ABAS_DA_ORGANIZACAO.map((aba, i) => (
-          <span key={aba.chave} className={`-mb-px border-b-2 px-3 py-2.5 text-[13px] font-semibold sm:px-3.5 ${i === 0 ? 'border-primary text-primary' : 'border-transparent text-dim'}`}>
-            {aba.rotulo}
-          </span>
-        ))}
-      </div>
+      <EsqueletoDeAlternador opcoes={ABAS_DA_ORGANIZACAO.map((aba) => aba.rotulo)} className="mb-5 max-w-full overflow-hidden" />
       <EsqueletoDoResumo />
       <Aviso>Carregando a organização…</Aviso>
     </main>
@@ -101,20 +96,25 @@ export function EsqueletoDaTabelaSolta({
   colunas,
   rotulo,
   comBotao = false,
-  comBarra = false,
+  comBarra,
 }: {
   colunas: number
   rotulo: string
   comBotao?: boolean
-  comBarra?: boolean
+  /** O texto de exemplo da busca; sem ele, não há barra. */
+  comBarra?: string
 }) {
   return (
     <div className="flex min-h-0 flex-1 flex-col">
-      {(comBotao || comBarra) && (
-        <div className="mb-3 flex items-center justify-between gap-2">
-          {comBarra ? <Esqueleto className="h-9 w-full rounded-[10px] sm:w-[320px]" /> : <Esqueleto className="h-3 w-20" />}
-          {comBotao && <Esqueleto className="h-9 w-32 shrink-0 rounded-[10px]" />}
-        </div>
+      {comBarra ? (
+        <EsqueletoDeBusca placeholder={comBarra} filtros acoes={comBotao ? ['w-32'] : []} />
+      ) : (
+        comBotao && (
+          <div className="mb-3 flex items-center justify-between gap-2">
+            <Esqueleto className="h-3 w-20" />
+            <Esqueleto className="h-9 w-32 shrink-0 rounded-[9px]" />
+          </div>
+        )
       )}
       <div className="app-card flex min-h-0 flex-1 flex-col overflow-hidden">
         <div className="flex h-11 items-center gap-6 border-b border-line px-4">

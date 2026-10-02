@@ -1,7 +1,7 @@
 import Link from 'next/link'
 import { iniciais as iniciaisDoNome } from '@/core/iniciais'
 import type { ReactNode } from 'react'
-import { Esqueleto } from '@/components/design/esqueleto'
+import { Esqueleto, EsqueletoDeBusca, TopoCarregando } from '@/components/design/esqueleto'
 import { CabecalhoDaTela } from '@/components/design/cabecalho-da-tela'
 
 /**
@@ -150,29 +150,38 @@ export function ordenar<T>(
   })
 }
 
-/** O esqueleto de uma tela de lista: título real, barra de filtros e a tabela. */
+/**
+ * O esqueleto de uma tela de lista do admin: o topo de verdade (título,
+ * descrição e o osso dos botões), a barra de busca com o texto de exemplo,
+ * os números quando a tela tem, e a tabela. A descrição era osso, e piscava
+ * ao trocar pelo texto que nunca dependeu de consulta (02/out/2026).
+ */
 export function EsqueletoDeTabela({
   titulo,
+  descricao,
+  acoes = [],
+  busca,
   colunas = 5,
   linhas = 8,
-  comNumeros = false,
-  comBarra = true,
+  numeros = 0,
 }: {
   titulo: string
+  descricao: string
+  /** Larguras dos botões do topo. */
+  acoes?: string[]
+  /** O texto de exemplo da busca; sem ele, a tela não tem barra. */
+  busca?: string
   colunas?: number
   linhas?: number
-  comNumeros?: boolean
-  comBarra?: boolean
+  /** Quantos cartões de número vêm antes da tabela. */
+  numeros?: number
 }) {
   return (
     <main className="flex min-h-full w-full flex-col px-4 pt-[26px] pb-[42px] md:px-[42px]">
-      <header className="mb-5">
-        <h1 className="text-[20px] font-bold tracking-[-0.02em] md:text-[25px]">{titulo}</h1>
-        <Esqueleto className="mt-2.5 h-3 w-72 max-w-full" />
-      </header>
-      {comNumeros && (
-        <div className="mb-5 grid grid-cols-2 gap-3 lg:grid-cols-4">
-          {[0, 1, 2, 3].map((i) => (
+      <TopoCarregando titulo={titulo} descricao={descricao} acoes={acoes} />
+      {numeros > 0 && (
+        <div className={`mb-5 grid grid-cols-2 gap-3 ${numeros === 5 ? 'lg:grid-cols-5' : 'lg:grid-cols-4'}`}>
+          {Array.from({ length: numeros }, (_, i) => (
             <div key={i} className="app-card flex flex-col gap-2.5 px-4 py-3.5">
               <Esqueleto className="h-2.5 w-24" />
               <Esqueleto className="h-6 w-16" />
@@ -180,12 +189,7 @@ export function EsqueletoDeTabela({
           ))}
         </div>
       )}
-      {comBarra && (
-        <div className="mb-3 flex items-center gap-2">
-          <Esqueleto className="h-9 w-full rounded-[10px] sm:w-[320px]" />
-          <Esqueleto className="h-9 w-24 shrink-0 rounded-[10px]" />
-        </div>
-      )}
+      {busca && <EsqueletoDeBusca placeholder={busca} filtros />}
       <div className="app-card flex min-h-0 flex-1 flex-col overflow-hidden">
         <div className="flex h-11 items-center gap-6 border-b border-line px-4">
           {Array.from({ length: colunas }, (_, i) => (

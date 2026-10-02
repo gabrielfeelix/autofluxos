@@ -1,13 +1,14 @@
-import { Esqueleto } from '@/components/design/esqueleto'
+import { Esqueleto, TopoCarregando } from '@/components/design/esqueleto'
 
 /** A Visão geral enquanto vem: título real, os quatro números e os cartões. */
 export default function Carregando() {
   return (
     <main className="flex min-h-full w-full flex-col px-4 pt-[26px] pb-[42px] md:px-[42px]">
-      <header className="mb-5">
-        <h1 className="text-[20px] font-bold tracking-[-0.02em] md:text-[25px]">Visão geral</h1>
-        <Esqueleto className="mt-2.5 h-3 w-80 max-w-full" />
-      </header>
+      <TopoCarregando
+        titulo="Visão geral"
+        descricao="A plataforma hoje: contas com cliente aguardando, o uso do mês e o que precisa de atenção."
+        acoes={['w-44']}
+      />
       <div className="mb-7 grid grid-cols-2 gap-3 lg:grid-cols-4">
         {[0, 1, 2, 3].map((i) => (
           <div key={i} className="app-card flex flex-col gap-2.5 px-4 py-3.5">
