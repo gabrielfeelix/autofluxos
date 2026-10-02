@@ -73,7 +73,41 @@ cartão, nenhum título repetido dentro do cartão, contraste no azul.
 Conhecidos: "Respostas coletadas" tem "Automações › Respostas" duas vezes e o
 título diverge do menu ("Respostas" × "Respostas coletadas").
 
-### 4. Depois, se sobrar
+### 4. Componentes de base: parar de escrever à mão
+
+O dono, 02/out: "padrão de tabela, de botão, de buscador, de pill, de badge,
+são coisas que precisamos padronizar e tá muito hardcoded". Cada item abaixo
+vira componente ou classe com variável, e as telas passam a usar:
+
+- **Menu suspenso (popover/dropdown).** O de **Filtros** (`.quadro-popover` +
+  `.quadro-menu-label`) é a referência de respiro interno, o dono gostou. Só
+  falta o **título de grupo** ler como título: `.quadro-menu-label` é 10px,
+  `muted`, caixa alta; suba para semibold com contraste claro de item
+  (`ink` mais forte, ou separação maior), porque hoje não se distingue item
+  de cabeçalho de grupo. O de **Colunas** (`lead/colunas-da-tabela.tsx:128`,
+  `py-1.5` e sem folga lateral) está grudado no topo e nas laterais: passe a
+  usar o mesmo painel e o mesmo rótulo de grupo do Filtros. Um componente
+  `MenuSuspenso` (painel, grupo, item, item com check, divisória) para todos.
+- **Barra de rolagem** própria dentro de menu e painel (hoje é a nativa no de
+  Colunas): fina, arredondada, na cor dos tokens `--barra`/`--barra-forte`.
+- **Checkbox** próprio (há 15 `type="checkbox"` nativos): quadrado com canto
+  levemente maior (~5px), borda `--line-strong`, marcado em `--primary` com
+  check branco, foco visível. Mesmo componente em tabela, menu e formulário.
+- **Botão** (item 1), **campo de busca** (o da barra de Contatos), **pílula**
+  (`Contagem`, selos de estado, etiquetas) e **badge** (contador coral da
+  barra, `+10` do Colunas): uma escala e um componente cada.
+- **Tabela**: cabeçalho, altura de linha, célula, ação da linha, seleção, com
+  a tabela de Contatos como referência.
+
+### 5. Movimento da barra lateral
+
+Recolher e expandir a barra está "muito bruto": a largura troca de 264px para
+72px num quadro (`design/barra-lateral.tsx`, classes `w-[264px]`/`w-[72px]`
+no `<aside>`). Animar a largura (~200 ms, ease-out), e o texto dos itens
+sumir com opacidade antes de a barra fechar e aparecer depois de abrir, sem
+o rótulo quebrar linha no meio do caminho. Respeitar `prefers-reduced-motion`.
+
+### 6. Depois, se sobrar
 
 - **Celular** ainda está no fundo antigo (casca só `md+`).
 - Hidratação: botão de perfil renderiza "perfil" no servidor e "Gabriel Teste"
