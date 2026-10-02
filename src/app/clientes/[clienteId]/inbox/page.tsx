@@ -3,7 +3,6 @@ import { EntradaDeAnotacao, ListaDeAnotacoes, ProvedorDeAnotacoes } from '@/comp
 import { LIMITE_DA_NOTA } from '@/core/flow/limites'
 import { anotacoesDoContato } from '@/server/repos/eventos'
 import { acaoAnotar } from '@/server/acoes-crm'
-import { after } from 'next/server'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { comoFalta, restaDaJanela } from '@/channels/janela'
@@ -76,12 +75,11 @@ import { clienteTemAutomacao } from '@/server/repos/fluxos'
 import { listarEtiquetas } from '@/server/repos/etiquetas'
 import { listarQuadros, quadrosDoContato } from '@/server/repos/quadros'
 import { FunilDaConversa, type FunilDoContato } from '@/components/inbox/funil-da-conversa'
-import { marcarComoLida, naoLidasPorContato, quandoLeu } from '@/server/repos/leituras'
+import { naoLidasPorContato } from '@/server/repos/leituras'
 import { favoritasEntre, fixadasDoUsuario } from '@/server/repos/marcadores'
 import { canaisDosContatos } from '@/server/repos/canais-site'
 import { canalPeloContato, type CanalId } from '@/core/canais'
 import { ajustesDaConta } from '@/server/repos/distribuicao'
-import { avisarQueLeu } from '@/server/recibo-de-leitura'
 import { FaixaDeCanalCaido } from '@/components/inbox/faixa-canal-caido'
 import { Historico } from '@/components/inbox/historico'
 import { PulsoDoInbox } from '@/components/inbox/pulso-do-inbox'
@@ -342,50 +340,17 @@ async function Tela({ cliente, busca }: { cliente: Cliente; busca: Busca }) {
    * lida no mesmo desenho em que ela está visível é o tipo de detalhe que faz
    * a insígnia perder credibilidade e todo mundo parar de olhar para ela.
    *
-   * Escrever durante a renderização é aceitável **aqui** porque a escrita é
-   * idempotente (`lida_em = now()`) e a rota é `force-dynamic`: rodar duas
-   * vezes na mesma navegação escreve o mesmo relógio duas vezes. Sem usuário,
-   * quem ainda não tem usuário na conta, as duas funções não fazem nada.
+   * **A renderização não escreve "li" nem manda o visto.** O `Link` de cada
+   * linha da fila tem prefetch completo, e no Next 16 ele renderiza esta
+   * página sem nada que o diferencie de uma navegação: marcar aqui fazia toda
+   * conversa à vista na lista virar lida, com visto azul para o cliente, sem
+   * ninguém abrir (02/out/2026). Quem marca é o navegador, com a conversa
+   * montada e a aba visível (o `POST` de `inbox/conversa`, chamado pelo
+   * `Historico`).
+   * Aqui a conversa aberta só é descontada da contagem, logo abaixo.
    */
   // Espiando, a tela é a do espiado: as não lidas e as fixadas são as dele.
-  // Quem escreve "li" é o bloco abaixo, e ele não roda espiando.
   const usuarioId = espiao ? espiao.alvo.id : (sessao?.usuario.id ?? null)
-  if (selecionado && !espiao) {
-    /*
-     * A ordem importa: **ler o relógio antes de empurrá-lo.**
-     *
-     * `marcarComoLida` escreve `now()`. Se o recibo de leitura do WhatsApp
-     * fosse decidido depois disso, a comparação "chegou algo desde a última
-     * olhada?" sempre daria não, e o tique azul nunca sairia.
-     */
-    const leuAntesEm = await quandoLeu(usuarioId, selecionado.contatoId)
-
-    /*
-     * **A marca de lida sai do caminho do desenho.**
-     *
-     * Ela era `await` aqui: uma **escrita** no banco entre o clique e o
-     * primeiro pixel da conversa, em toda troca de conversa. Quem lê não
-     * precisa esperar o registro de que leu, o que importa nesta renderização
-     * é `leuAntesEm`, que já foi lido acima, e a contagem logo abaixo, que
-     * desconta a conversa aberta por conta própria.
-     *
-     * Continua idempotente (`lida_em = now()`) e continua antes da contagem na
-     * ordem que importa: a leitura de `quandoLeu` permanece em série, porque
-     * empurrar o relógio antes de lê-lo faria o tique azul nunca sair.
-     */
-    after(() => marcarComoLida(usuarioId, selecionado.contatoId))
-
-    /*
-     * O tique azul sai **depois** da resposta, pelo `after`: é uma chamada de
-     * rede à Meta, e ela não pode entrar no caminho de desenhar a conversa.
-     *
-     * Sem usuário na sessão não há de quem saber "quando leu", e sem isso cada
-     * atualização da tela mandaria outro recibo. Fica sem, o bot ainda marca
-     * lida quando vai responder.
-     */
-    const contatoAberto = selecionado.contatoId
-    if (usuarioId) after(() => avisarQueLeu(clienteId, contatoAberto, leuAntesEm))
-  }
   /*
    * **As não lidas cobrem a fila local, não só a página do servidor.**
    *
@@ -450,10 +415,9 @@ async function Tela({ cliente, busca }: { cliente: Cliente; busca: Busca }) {
   /*
    * **A conversa aberta nunca aparece como não lida.**
    *
-   * Antes isso acontecia por efeito colateral: `marcarComoLida` era um `await`
-   * logo acima, então a contagem já vinha do banco sem ela. Agora a marca sai
-   * pelo `after()`, depois da resposta, e a contagem aqui ainda enxergaria as
-   * mensagens da conversa que está visível na tela.
+   * A marca de lida vem do navegador depois do desenho (o `POST` de `inbox/conversa`),
+   * e a contagem aqui ainda enxerga as mensagens da conversa que está visível
+   * na tela.
    *
    * O desconto é explícito, e é a mesma verdade de antes dita no lugar certo:
    * o que a pessoa está lendo agora não está por ler. Vale mesmo sem usuário na

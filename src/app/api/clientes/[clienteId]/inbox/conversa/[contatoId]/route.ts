@@ -129,3 +129,43 @@ export async function GET(
     },
   )
 }
+
+/**
+ * A pessoa está com a conversa aberta na tela: está lida, e o cliente recebe o
+ * visto azul.
+ *
+ * Isto morava na renderização do Inbox, e lá era um defeito grave: o `Link` de
+ * cada linha da fila tem prefetch completo, e no Next 16 o prefetch completo
+ * renderiza a página inteira **sem cabeçalho nenhum que o diferencie de uma
+ * navegação** (`segment-cache/cache.js`, `FetchStrategy.Full`). Cada conversa
+ * que aparecia na lista virava lida e mandava o visto para o cliente sem
+ * ninguém abrir (02/out/2026). Quem chama agora é o `Historico`, com a conversa
+ * montada e a aba visível, que é a definição de ler.
+ */
+export async function POST(
+  _req: Request,
+  contexto: RouteContext<'/api/clientes/[clienteId]/inbox/conversa/[contatoId]'>,
+) {
+  const params = paramsSchema.safeParse(await contexto.params)
+  if (!params.success) return Response.json({ erro: 'conversa inválida' }, { status: 400 })
+  const { clienteId, contatoId } = params.data
+
+  const acesso = await exigirCapacidade(clienteId, 'atender', 'proprios')
+  if (recusou(acesso)) return Response.json({ erro: 'não encontrado' }, { status: 404 })
+
+  // Mesmo alcance da leitura: atendente não manda visto em conversa de colega.
+  const lead = await acharLead(clienteId, contatoId, await alcanceDeConversas(clienteId, acesso))
+  if (!lead) return Response.json({ erro: 'não encontrado' }, { status: 404 })
+
+  // Espiando, nada vira lido e o cliente não recebe o visto (`server/espiar.ts`).
+  if (await espiando(clienteId)) return new Response(null, { status: 204 })
+
+  const usuarioId = (await sessaoAtual())?.usuario.id ?? null
+  if (!usuarioId) return new Response(null, { status: 204 })
+
+  // Ler o relógio antes de empurrá-lo, senão o visto azul nunca sai.
+  const leuAntesEm = await quandoLeu(usuarioId, contatoId)
+  await marcarComoLida(usuarioId, contatoId)
+  after(() => avisarQueLeu(clienteId, contatoId, leuAntesEm))
+  return new Response(null, { status: 204 })
+}

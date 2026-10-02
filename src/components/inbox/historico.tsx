@@ -76,6 +76,31 @@ export function Historico({
   /** Os ids que **eu** guardei, para a estrela nascer cheia. Ver a 0063. */
   favoritas: Set<string>
 }) {
+  /*
+   * Abrir é ler: a conversa montada, com a aba à vista, vira lida e o cliente
+   * recebe o visto. Mora aqui, e não na renderização do servidor, porque o
+   * prefetch da fila renderiza a página de cada conversa à vista na lista sem
+   * ninguém abrir nenhuma (ver o `POST` de `inbox/conversa`). Aba escondida
+   * espera voltar: visto é para quem olhou. É `fetch` e não Server Action
+   * porque ação passa pela fila do roteador, e ali seguraria a próxima troca
+   * de conversa.
+   */
+  useEffect(() => {
+    let feito = false
+    const marcar = () => {
+      if (feito || document.visibilityState !== 'visible') return
+      feito = true
+      void fetch(`/api/clientes/${clienteId}/inbox/conversa/${contatoId}`, {
+        method: 'POST',
+        credentials: 'same-origin',
+        keepalive: true,
+      }).catch(() => {})
+    }
+    marcar()
+    document.addEventListener('visibilitychange', marcar)
+    return () => document.removeEventListener('visibilitychange', marcar)
+  }, [clienteId, contatoId])
+
   /**
    * O que chegou depois do desenho do servidor.
    *

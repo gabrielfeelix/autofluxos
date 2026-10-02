@@ -74,8 +74,8 @@ export async function acaoFixarConversa(
  * Devolve a insígnia à conversa, para a pessoa voltar nela depois.
  *
  * **Não é o inverso de abrir a conversa**, e essa diferença aparece na tela: a
- * página do Inbox marca como lida ao desenhar a conversa aberta (ver o
- * `marcarComoLida` em `page.tsx`). Marcar como não lida a conversa que está
+ * conversa aberta é marcada como lida pelo navegador enquanto está à vista
+ * (o `POST` de `inbox/conversa`). Marcar como não lida a conversa que está
  * aberta seria desfeito no próximo quadro, e por isso quem chama é a linha da
  * fila, não a conversa.
  */

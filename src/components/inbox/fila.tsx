@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useCallback, useDeferredValue, useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { comoFalta, dentroDaPortaDeEntrada, restaDaJanela } from "@/channels/janela";
 import { Dica } from "@/components/design/dica";
@@ -198,17 +199,6 @@ export function Fila({
         : null,
     [localDoServidor, viva.linhas, remendos],
   );
-  // A conversa aberta nunca aparece como não lida, como no desenho do servidor.
-  const naoLidas = useMemo(() => {
-    const juntas = naoLidasVivas(naoLidasDoServidor, viva.naoLidas);
-    if (selecionado && juntas.has(selecionado.contatoId)) {
-      const semAberta = new Map(juntas);
-      semAberta.delete(selecionado.contatoId);
-      return semAberta;
-    }
-    return juntas;
-  }, [naoLidasDoServidor, viva.naoLidas, selecionado]);
-
   /*
    * A linha clicada acende no clique, antes de a conversa chegar.
    *
@@ -222,6 +212,35 @@ export function Fila({
     setAbertaNoServidor(selecionado?.contatoId ?? null);
     setAbrindo(null);
   }
+
+  /*
+   * A conversa aberta nunca aparece como não lida, e a que acabou de ser
+   * clicada também não: o número some no clique, como no WhatsApp, e não
+   * quando o servidor terminar de desenhar a conversa.
+   */
+  const naoLidas = useMemo(() => {
+    const juntas = naoLidasVivas(naoLidasDoServidor, viva.naoLidas);
+    const esconder = [selecionado?.contatoId, abrindo].filter(
+      (id): id is string => Boolean(id) && juntas.has(id as string),
+    );
+    if (esconder.length === 0) return juntas;
+    const semAberta = new Map(juntas);
+    for (const id of esconder) semAberta.delete(id);
+    return semAberta;
+  }, [naoLidasDoServidor, viva.naoLidas, selecionado, abrindo]);
+
+  /*
+   * Pré-carrega a conversa quando o ponteiro chega na linha, e não quando ela
+   * entra na tela. Pré-carregar tudo o que estava à vista era uma renderização
+   * inteira do Inbox no servidor por linha, refeita a cada atualização da fila,
+   * e o que ficava guardado podia ter cinco minutos no clique. O passar do
+   * mouse dá ao servidor os ~200 ms até o clique, com a conversa fresca.
+   */
+  const router = useRouter();
+  const preCarregar = useCallback(
+    (href: string) => router.prefetch(href, { kind: "full" } as Parameters<typeof router.prefetch>[1]),
+    [router],
+  );
 
   // Abriu, está lida; e continua lida ao sair (ver `zerarNaoLidaViva`).
   const abertaId = selecionado?.contatoId ?? null;
@@ -319,8 +338,8 @@ export function Fila({
 
   const semLerDe = useCallback(
     (contatoId: string) =>
-      remendoDeNaoLidas.get(contatoId) ?? naoLidas.get(contatoId) ?? 0,
-    [remendoDeNaoLidas, naoLidas],
+      contatoId === abrindo ? 0 : (remendoDeNaoLidas.get(contatoId) ?? naoLidas.get(contatoId) ?? 0),
+    [remendoDeNaoLidas, naoLidas, abrindo],
   );
 
   /** Quando esta pessoa fixou a conversa, ou `null` se ela não está fixada. */
@@ -852,19 +871,16 @@ export function Fila({
                 }`}
               >
               {/*
-                `prefetch` ligado: sem ele o Next só pré-carrega o `loading` da
-                rota, e a conversa inteira começa do zero no clique. Com ele, a
-                navegação já encontra parte do trabalho feito.
-
-                A fila tem no máximo `CONVERSAS_POR_PAGINA` itens visíveis e o
-                prefetch acontece quando o link entra em viewport, então o custo
-                é limitado à página que a pessoa está vendo.
+                Sem prefetch ao entrar na tela, com prefetch ao apontar: ver
+                `preCarregar`.
               */}
               <Link
                 href={`/clientes/${clienteId}/inbox?conversa=${encodeURIComponent(lead.contatoId)}`}
                 aria-current={ativa ? "page" : undefined}
                 scroll={false}
-                prefetch
+                prefetch={false}
+                onPointerEnter={(evento) => preCarregar(evento.currentTarget.getAttribute("href") ?? "")}
+                onFocus={(evento) => preCarregar(evento.currentTarget.getAttribute("href") ?? "")}
                 onClick={(evento) => {
                   if (evento.metaKey || evento.ctrlKey || evento.shiftKey || evento.button !== 0) return;
                   setAbrindo(lead.contatoId);
@@ -1049,7 +1065,7 @@ export function Fila({
                 {/*
                   Marcar como não lida **não aparece na conversa aberta**, e
                   isso não é economia de espaço: abrir a conversa marca como
-                  lida ao desenhar (ver `marcarComoLida` no `page.tsx`), então
+                  lida assim que ela aparece (`POST` de `inbox/conversa`), então
                   o gesto seria desfeito no quadro seguinte. Um botão que se
                   desfaz sozinho ensina que a tela está quebrada.
                 */}
