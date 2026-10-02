@@ -2182,7 +2182,6 @@
 .cursorPonto {
   width: 6px;
   height: 6px;
-  margin: -3px 0 0 -3px;
   border-radius: 50%;
   background: var(--accent);
   box-shadow: 0 0 12px color-mix(in srgb, var(--accent) 70%, transparent);
@@ -2191,16 +2190,15 @@
 .cursorAnel {
   width: 30px;
   height: 30px;
-  margin: -15px 0 0 -15px;
   border-radius: 50%;
   border: 1px solid color-mix(in srgb, var(--accent) 55%, transparent);
   /* A opacidade é do JS; a borda e o fundo transicionam sozinhos para o
-     estado de hover não pular. */
+     estado de hover não pular. Sem margem negativa: quem centraliza é o
+     `translate(-50%, -50%)` do JS, e as duas juntas tiravam o anel do ponto. */
   transition:
     opacity 0.25s var(--curva),
     width 0.25s var(--curva),
     height 0.25s var(--curva),
-    margin 0.25s var(--curva),
     border-color 0.25s var(--curva),
     background 0.25s var(--curva);
 }
@@ -2210,7 +2208,6 @@
 .cursorAtivo {
   width: 46px;
   height: 46px;
-  margin: -23px 0 0 -23px;
   border-color: color-mix(in srgb, var(--accent) 85%, transparent);
   background: color-mix(in srgb, var(--accent) 12%, transparent);
 }
