@@ -71,3 +71,26 @@ export function avisarQueDeuConta() {
   if (typeof window === 'undefined') return
   window.dispatchEvent(new Event(DEU_CONTA))
 }
+
+/**
+ * A resposta que acabou de sair do campo, antes de o servidor confirmar.
+ *
+ * Como no WhatsApp (dono, 02/out/2026): o campo limpa na hora e a bolha
+ * aparece com o relógio de "enviando". Deu certo, ela some quando a leitura
+ * do servidor trouxer a de verdade; deu erro, fica vermelha com o motivo.
+ */
+export const ENVIO = 'inbox:envio'
+
+export type Envio = {
+  /** Id local, só para casar o "saindo" com o desfecho. */
+  local: string
+  contatoId: string
+  estado: 'saindo' | 'saiu' | 'falhou'
+  texto?: string
+  erro?: string
+}
+
+export function avisarEnvio(envio: Envio) {
+  if (typeof window === 'undefined') return
+  window.dispatchEvent(new CustomEvent<Envio>(ENVIO, { detail: envio }))
+}

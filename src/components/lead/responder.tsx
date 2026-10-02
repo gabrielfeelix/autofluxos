@@ -5,7 +5,7 @@ import { BotaoDeAnexo } from '@/components/lead/botao-de-anexo'
 import { BotaoDeMicrofone } from '@/components/lead/botao-de-microfone'
 import { useCitacao } from '@/components/lead/citacao'
 import { RetomarComModelo } from '@/components/lead/retomar-com-modelo'
-import { pedirNovas } from '@/components/inbox/sinal-de-conversa'
+import { avisarEnvio, pedirNovas } from '@/components/inbox/sinal-de-conversa'
 import { SeletorDeEmoji } from '@/components/lead/seletor-de-emoji'
 import { SeletorDeProduto } from '@/components/lead/seletor-de-produto'
 import { SeletorDePedido } from '@/components/lead/seletor-de-pedido'
@@ -241,6 +241,43 @@ export function CaixaDeResposta({
      * daria o mesmo resultado e mais um lugar para os dois saírem de sincronia.
      */
     if (citacao?.citando) dados.set('cita', citacao.citando.waMessageId)
+
+    /*
+     * **Como no WhatsApp** (dono, 02/out/2026): o campo limpa na hora e a
+     * bolha aparece na conversa com o relógio de "enviando" (`ENVIO`, ver
+     * `Historico`). Antes o campo travava com "…" até o servidor responder.
+     * Deu erro, a bolha fica vermelha com o motivo e o texto volta para o
+     * campo, se ele ainda estiver vazio.
+     *
+     * Sem conversa (`ids`), não há onde desenhar a bolha: espera como antes.
+     */
+    const texto = String(dados.get('texto') ?? '')
+    if (ids && livre && texto.trim() !== '') {
+      const local = `local-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`
+      avisarEnvio({ local, contatoId: ids.contatoId, estado: 'saindo', texto })
+      if (campo.current) campo.current.value = ''
+      conferirTexto()
+      citacao?.limpar()
+      void acao(dados)
+        .then((r) => {
+          if (r.ok) {
+            pedirNovas()
+            avisarEnvio({ local, contatoId: ids.contatoId, estado: 'saiu' })
+            return
+          }
+          throw new Error(r.erro ?? 'não deu para enviar')
+        })
+        .catch((falha: unknown) => {
+          const motivo = falha instanceof Error && falha.message ? falha.message : 'não deu para enviar'
+          avisarEnvio({ local, contatoId: ids.contatoId, estado: 'falhou', erro: motivo })
+          setErro(motivo)
+          if (campo.current && campo.current.value.trim() === '') {
+            campo.current.value = texto
+            conferirTexto()
+          }
+        })
+      return
+    }
 
     comecar(async () => {
       const r = await acao(dados)

@@ -21,7 +21,9 @@ import { etiquetasDeDia, horaDoRelogio, horaExata } from '@/lib/quando'
 import type { MensagemDoLead } from '@/server/repos/leads'
 import {
   avisarQueDeuConta,
+  ENVIO,
   PEDIDO,
+  type Envio,
   type PedidoDeNovas,
 } from '@/components/inbox/sinal-de-conversa'
 
@@ -284,6 +286,31 @@ export function Historico({
   }, [conferir])
 
   /*
+   * As respostas que saíram do campo e o servidor ainda não confirmou (ver
+   * `ENVIO`). "saiu" só tira a bolha depois de a leitura trazer a de verdade,
+   * para não haver um instante sem nenhuma das duas.
+   */
+  const [pendentes, setPendentes] = useState<{ local: string; texto: string; erro?: string }[]>([])
+  useEffect(() => {
+    const aoEnviar = (evento: Event) => {
+      const envio = (evento as CustomEvent<Envio>).detail
+      if (envio.contatoId !== contatoId) return
+      if (envio.estado === 'saindo') {
+        // Mandar de novo tira as que falharam antes: o texto voltou ao campo.
+        setPendentes((atuais) => [...atuais.filter((p) => !p.erro), { local: envio.local, texto: envio.texto ?? '' }])
+      } else if (envio.estado === 'falhou') {
+        setPendentes((atuais) => atuais.map((p) => (p.local === envio.local ? { ...p, erro: envio.erro ?? 'não deu para enviar' } : p)))
+      } else {
+        void Promise.resolve(conferirRef.current(null)).finally(() =>
+          setPendentes((atuais) => atuais.filter((p) => p.local !== envio.local)),
+        )
+      }
+    }
+    window.addEventListener(ENVIO, aoEnviar)
+    return () => window.removeEventListener(ENVIO, aoEnviar)
+  }, [contatoId])
+
+  /*
    * Ao abrir a conversa, busca na hora o que veio depois do desenho.
    *
    * Voltar para uma conversa aberta há pouco reaproveita a cópia que o
@@ -307,14 +334,48 @@ export function Historico({
   }, [lista, conferir])
 
   return (
-    <ListaDeMensagens
-      mensagens={lista}
-      cortada={cortada}
-      nome={nome}
-      clienteId={clienteId}
-      contatoId={contatoId}
-      favoritas={favoritas}
-    />
+    <>
+      <ListaDeMensagens
+        mensagens={lista}
+        cortada={cortada}
+        nome={nome}
+        clienteId={clienteId}
+        contatoId={contatoId}
+        favoritas={favoritas}
+      />
+      {pendentes.map((p) => (
+        <BolhaSaindo key={p.local} texto={p.texto} erro={p.erro} />
+      ))}
+    </>
+  )
+}
+
+/** A resposta a caminho: relógio enquanto sai, vermelha com o motivo se falhou. */
+function BolhaSaindo({ texto, erro }: { texto: string; erro?: string }) {
+  return (
+    <div className="mt-2 flex flex-col items-end gap-1">
+      <p
+        className={`relative max-w-[78%] rounded-[15px_15px_4px_15px] px-3.5 py-2 font-texto text-[14.5px] leading-[1.45] whitespace-pre-wrap [overflow-wrap:anywhere] ${
+          erro ? 'border border-perigo/40 bg-perigo/10 text-ink' : 'bolha-nossa'
+        }`}
+      >
+        <TextoDoWhatsApp texto={texto} />
+        <span className="ml-2 inline-flex translate-y-[2px] items-center gap-1 text-[11px] opacity-75" aria-label={erro ? 'Não enviada' : 'Enviando'}>
+          {erro ? (
+            <svg viewBox="0 0 16 16" className="size-3.5 text-perigo" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden>
+              <circle cx="8" cy="8" r="6.2" />
+              <path d="M8 4.8v3.6M8 10.9v.1" strokeLinecap="round" />
+            </svg>
+          ) : (
+            <svg viewBox="0 0 16 16" className="size-3.5" fill="none" stroke="currentColor" strokeWidth="1.6" aria-hidden>
+              <circle cx="8" cy="8" r="6.2" />
+              <path d="M8 4.6V8l2.2 1.4" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+          )}
+        </span>
+      </p>
+      {erro && <span className="text-[11.5px] font-semibold text-perigo">Não enviada: {erro}</span>}
+    </div>
   )
 }
 
