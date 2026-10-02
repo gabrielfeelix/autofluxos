@@ -84,6 +84,6 @@ Todas para a casca azul, com o cartão branco no centro:
   2x2 para revisar barato; abra em tamanho real só o que precisar.
 - `npx tsc --noEmit -p .` e o teste do arquivo mexido; **não rode a suíte
   inteira**. Um processo pesado por vez.
-- Sem travessão (—) em texto nenhum. Commit, push e conferir o deploy na
+- Sem travessão em texto nenhum. Commit, push e conferir o deploy na
   Vercel (projeto `autofluxos`) ao fim de cada frente. Registrar a decisão da
   LP e da ajuda em `docs/DECISIONS.md`.
