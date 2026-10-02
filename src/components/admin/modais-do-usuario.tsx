@@ -1,5 +1,6 @@
 'use client'
 
+import { senhaAleatoria } from '@/lib/senha-aleatoria'
 import Link from 'next/link'
 import { useEffect, useState } from 'react'
 import { Dropdown } from '@/components/design/dropdown'
@@ -75,12 +76,6 @@ export function EditarUsuario({ usuario, aoFechar, aoMudar }: { usuario: Usuario
       </form>
     </Modal>
   )
-}
-
-function senhaAleatoria(): string {
-  const letras = 'abcdefghjkmnpqrstuvwxyzABCDEFGHJKMNPQRSTUVWXYZ23456789'
-  const bytes = crypto.getRandomValues(new Uint8Array(14))
-  return Array.from(bytes, (byte) => letras[byte % letras.length]).join('')
 }
 
 /**

@@ -13,6 +13,7 @@ import { RemoverComDestino } from '@/components/conta/remover-com-destino'
 import { CLASSE_DO_CABECALHO, COLUNA_FIXA, FUNDO_DA_FIXA, FUNDO_DA_LINHA, Selo } from './partes'
 import { dataCurta, horaExata, quando } from '@/lib/quando'
 import { IlustracaoEquipe } from '@/components/design/ilustracoes'
+import { senhaAleatoria } from '@/lib/senha-aleatoria'
 
 /** O seletor de função na linha, mais baixo que o do formulário. */
 const DROPDOWN_COMPACTO = '[&_.app-dropdown-trigger]:min-h-9! [&_.app-dropdown-trigger]:py-1.5! [&_.app-dropdown-trigger]:text-[12.5px]'
@@ -354,6 +355,7 @@ function DarAcesso({
   enviar: (dados: FormData) => Promise<{ ok?: boolean; erro?: string }>
 }) {
   const [erro, setErro] = useState<string | null>(null)
+  const [senha, setSenha] = useState('')
   const [enviando, comecar] = useTransition()
   const padrao = funcoes.some((funcao) => funcao.valor === 'atendente') ? 'atendente' : (funcoes[funcoes.length - 1]?.valor ?? '')
   return (
@@ -389,10 +391,31 @@ function DarAcesso({
           <RotuloCampo>Nome (só para login novo)</RotuloCampo>
           <input name="nome" placeholder="Exemplo: Ana Souza" className="app-field px-[13px] py-[11px] text-[13.5px]" />
         </label>
-        <label>
-          <RotuloCampo>Senha provisória (só para login novo, mín. 10 caracteres)</RotuloCampo>
-          <input name="senha" type="password" minLength={10} autoComplete="new-password" className="app-field px-[13px] py-[11px] text-[13.5px]" />
-        </label>
+        <div>
+          <label htmlFor="dar-acesso-senha">
+            <RotuloCampo>Senha provisória (só para login novo, mín. 10 caracteres)</RotuloCampo>
+          </label>
+          {/* Visível de propósito: quem dá o acesso precisa passar a senha adiante. */}
+          <div className="relative">
+            <input
+              id="dar-acesso-senha"
+              name="senha"
+              value={senha}
+              onChange={(evento) => setSenha(evento.target.value)}
+              minLength={10}
+              autoComplete="new-password"
+              spellCheck={false}
+              className="app-field py-[11px] pr-[72px] pl-[13px] font-mono text-[13.5px]"
+            />
+            <button
+              type="button"
+              onClick={() => setSenha(senhaAleatoria())}
+              className="botao-fantasma absolute top-1/2 right-1.5 -translate-y-1/2 rounded-md px-2.5 py-1 text-[12.5px]"
+            >
+              Gerar
+            </button>
+          </div>
+        </div>
         <div>
           <RotuloCampo>Função</RotuloCampo>
           <Dropdown nome="funcao" rotuloAcessivel="Função" valorInicial={padrao} opcoes={funcoes} />
