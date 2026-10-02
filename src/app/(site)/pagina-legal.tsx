@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import type { ReactNode } from 'react'
 import { IndiceAtivo } from './indice-ativo'
+import { Revelar } from './revelar'
 import s from './privacidade.module.css'
 
 /**
@@ -51,6 +52,7 @@ export function PaginaLegal({
 }) {
   return (
     <div className={s.pagina}>
+      <Revelar seletorCabecalho={s.cabecalho} classeRolado={s.cabecalhoRolado} />
       <IndiceAtivo seletorSecao={s.secao} classeAtivo={s.indiceAtivo} />
 
       <header className={s.cabecalho}>

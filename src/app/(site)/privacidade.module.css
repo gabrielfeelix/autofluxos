@@ -81,13 +81,12 @@
 
 /* ── cabeçalho, igual ao da landing ── */
 
+/* A mesma ilha de vidro da landing; ao rolar vira ilha branca (ver lá). */
 .cabecalho {
   position: sticky;
   top: 0;
   z-index: 50;
-  backdrop-filter: blur(14px);
-  background: rgb(29 78 216 / 0.92);
-  border-bottom: 1px solid var(--line);
+  padding-top: 12px;
 }
 
 .cabecalhoInterno {
@@ -95,7 +94,29 @@
   align-items: center;
   justify-content: space-between;
   gap: 16px;
-  padding: 14px 0;
+  padding: 10px 10px 10px 16px;
+  border-radius: 16px;
+  border: 1px solid rgb(255 255 255 / 0.25);
+  background: rgb(255 255 255 / 0.14);
+  backdrop-filter: blur(14px) saturate(1.2);
+  transition:
+    background 0.3s var(--curva),
+    border-color 0.3s var(--curva),
+    box-shadow 0.3s var(--curva);
+}
+
+.cabecalhoRolado .cabecalhoInterno {
+  --veu: 16 32 84;
+  --accent: #1d4ed8;
+  --panel: #ffffff;
+  --ink: #0c1838;
+  --soft: #344161;
+  --muted: #56617c;
+  --line: rgb(16 32 84 / 0.12);
+  --surface: #f6f8fd;
+  background: rgb(255 255 255 / 0.96);
+  border-color: rgb(16 32 84 / 0.08);
+  box-shadow: var(--sombra-ilha);
 }
 
 .marca {
