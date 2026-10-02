@@ -612,7 +612,7 @@ function ListaDeMensagens({
                 Na saída acrescenta, e muito, mas o rótulo antigo era
                 "atendimento" em toda mensagem, do bot ou de gente. Não dizia
                 nada e parecia dizer. Agora sai o nome de quem respondeu, ou
-                "automação" quando foi o fluxo; quando não sabemos (mensagem
+                "chatbot" quando foi o fluxo; quando não sabemos (mensagem
                 antiga, ou o eco do que o dono mandou pelo celular), fica só a
                 hora, ver `core/autor-da-mensagem.ts`.
               */}

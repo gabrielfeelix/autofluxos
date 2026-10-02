@@ -1327,19 +1327,20 @@ function RelogioDaJanela({
  * São três casos, e o terceiro é comum o bastante para não ser exceção:
  *
  * - **pessoa**: o primeiro nome, que é o que o colega reconhece;
- * - **automação**: a palavra, em minúscula, porque é estado e não nome próprio;
- * - **saiu daqui e não sabemos por quem**: volta a ser "atendimento". É o eco
- *   da coexistência, quando alguém respondeu pelo **celular** em vez do painel:
- *   a mensagem chega pelo webhook sem passar por `registrarSaida`, e não tem
- *   autor nenhum. Em 16/set eram 496 das 568 saídas da produção, então tratar
- *   isso como raro deixaria a maioria das linhas sem rótulo.
+ * - **bot**: "chatbot", em minúscula, porque é estado e não nome próprio;
+ * - **saiu daqui e não sabemos por quem**: "celular". É o eco da coexistência,
+ *   quando alguém respondeu pelo WhatsApp do **celular** em vez do painel: a
+ *   mensagem chega pelo webhook sem passar por `registrarSaida`, e não tem
+ *   autor nenhum. Em 16/set eram 496 das 568 saídas da produção. Até 02/out
+ *   dizia "atendimento", e o dono leu como se fosse o bot. Não dá para dizer
+ *   o nome: qualquer pessoa com o aparelho na mão manda por ali.
  */
 function quemFalou(lead: Lead): string | null {
   if (lead.ultimaDirecao !== "saida") return null;
-  if (lead.ultimoAutorTipo === "automacao") return "automação";
+  if (lead.ultimoAutorTipo === "automacao") return "chatbot";
   const nome = (lead.ultimoAutorNome ?? "").trim();
   if (nome) return nome.split(/\s+/)[0]!;
-  return "atendimento";
+  return "celular";
 }
 
 /**

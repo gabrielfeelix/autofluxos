@@ -69,11 +69,11 @@ export function autorDoPayload(payload: unknown): AutorDaSaida | null {
 /**
  * O rótulo embaixo da bolha. `null` = não escreva nada.
  *
- * "automação" em minúscula e sem enfeite: é um estado, não um nome próprio, e
+ * "chatbot" em minúscula e sem enfeite: é um estado, não um nome próprio, e
  * ele divide a linha com a hora.
  */
 export function comoChamarOAutor(autor: AutorDaSaida | null): string | null {
   if (!autor) return null
-  if (autor.tipo === 'automacao') return 'automação'
+  if (autor.tipo === 'automacao') return 'chatbot'
   return nomeCurto(autor.nome) || null
 }
