@@ -106,7 +106,8 @@ export async function acaoEnviarPedidoDoInbox(
     contatoId,
     sessaoId: contexto.sessaoId,
     texto: comBotao || !paginaDePedidos ? texto : `${texto}\n\nAcompanhe em ${paginaDePedidos}`,
-    payload: { pedido: achado.pedido.numero },
+    // O botão vai junto no registro, para o Inbox desenhá-lo como o cliente viu.
+    payload: { pedido: achado.pedido.numero, ...(comBotao ? { botao: { rotulo, url: paginaDePedidos! } } : {}) },
     autor: autorDaPessoa(quemResponde?.usuario),
   })
 

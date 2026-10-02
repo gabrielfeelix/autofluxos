@@ -1798,7 +1798,10 @@ async function aplicar(
           sessaoId,
           autor: AUTOR_AUTOMACAO,
           texto,
-          payload: { encaminhamento: { nome: acao.nome, telefone: acao.telefone, link: acao.link } },
+          payload: {
+            encaminhamento: { nome: acao.nome, telefone: acao.telefone, link: acao.link },
+            ...(enviarBotao ? { botao: { rotulo: acao.rotulo, url: acao.link } } : {}),
+          },
         })
         const entrega = await entregar(
           () => (enviarBotao ? enviarBotao(contato.waId, acao.texto, acao.rotulo, acao.link) : canal.enviarTexto(contato.waId, texto)),

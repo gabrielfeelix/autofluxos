@@ -141,6 +141,9 @@ export type EtiquetaDeLead = (typeof ETIQUETAS_DE_LEAD)[number]
  */
 export type ProdutoNaMensagem = { nome: string; foto: string | null; titulo: string; detalhe: string; link: string | null }
 
+/** O botão de link (`cta_url`) que saiu embaixo do texto, como a pessoa viu. */
+export type BotaoNaMensagem = { rotulo: string; url: string }
+
 /** O arquivo de uma mensagem, quando ela tem um. `texto` é a legenda. */
 export type AnexoDaMensagem = {
   midia: TipoDeMidia
@@ -199,6 +202,12 @@ export type MensagemDoLead = {
    * cliente recebeu no WhatsApp.
    */
   produtos?: ProdutoNaMensagem[]
+  /**
+   * O botão de link que foi junto ("Rastrear entrega"). Sem isto a bolha só
+   * mostrava o texto, e quem atende não via nem podia abrir o que o cliente
+   * tinha para tocar (02/out/2026).
+   */
+  botao?: BotaoNaMensagem
   /**
    * O lugar que ela mandou. Ausente em quase toda linha.
    *
@@ -1128,6 +1137,7 @@ export async function lerConversa(
       .map((m) => {
         const anexo = anexoDoPayload(m.payload)
         const produtos = produtosDoPayload(m.payload)
+        const botao = botaoDoPayload(m.payload)
         const local = localDoPayload(m.payload)
         const cartoes = cartoesDoPayload(m.payload)
 
@@ -1182,6 +1192,7 @@ export async function lerConversa(
           ...(m.situacao ? { situacao: m.situacao } : {}),
           ...(anexo ? { anexo } : {}),
           ...(produtos.length ? { produtos } : {}),
+          ...(botao ? { botao } : {}),
           ...(recebido ? { recebido } : {}),
           ...(semCopia ? { semCopia: true as const } : {}),
           ...(naoSuportada ? { naoSuportada: true as const } : {}),
@@ -1261,6 +1272,13 @@ function anexoDoPayload(payload: unknown): AnexoDaMensagem | null {
 }
 
 /** Os cards de produto em `payload.produtos`; foto e link só `https`, e sem os dois não é card. */
+/** O botão de link em `payload.botao`; só `https`, o resto não vira link na tela. */
+function botaoDoPayload(payload: unknown): BotaoNaMensagem | null {
+  const b = (payload as { botao?: { rotulo?: unknown; url?: unknown } } | null)?.botao
+  if (typeof b?.rotulo !== 'string' || typeof b.url !== 'string' || !b.url.startsWith('https://')) return null
+  return { rotulo: b.rotulo, url: b.url }
+}
+
 function produtosDoPayload(payload: unknown): ProdutoNaMensagem[] {
   const lista = (payload as { produtos?: unknown } | null)?.produtos
   if (!Array.isArray(lista)) return []

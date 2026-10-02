@@ -571,12 +571,34 @@ function ListaDeMensagens({
             {mensagem.menu && (
               <MenuNaConversa menu={mensagem.menu} respondido={indice < mensagens.length - 1} />
             )}
+            {mensagem.botao && <BotaoDeLinkNaConversa botao={mensagem.botao} />}
           </div>
           </Fragment>
         )
       })}
 
     </div>
+  )
+}
+
+/**
+ * O botão de link que saiu com a mensagem, pendurado embaixo dela como no
+ * WhatsApp. É link de verdade: quem atende abre e vê para onde o cliente vai.
+ */
+function BotaoDeLinkNaConversa({ botao }: { botao: NonNullable<MensagemDoLead['botao']> }) {
+  return (
+    <a
+      href={botao.url}
+      target="_blank"
+      rel="noreferrer"
+      title={botao.url}
+      className="mt-1 flex w-full max-w-[min(78%,300px)] items-center justify-center gap-1.5 rounded-[12px] border border-line bg-surface px-3 py-1.5 text-[13px] leading-5 font-semibold text-primary transition hover:bg-primary-weak"
+    >
+      <svg aria-hidden width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M14 4h6v6M20 4l-9 9M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5" />
+      </svg>
+      {botao.rotulo}
+    </a>
   )
 }
 

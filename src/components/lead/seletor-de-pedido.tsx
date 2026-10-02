@@ -53,21 +53,41 @@ export function SeletorDePedido({
     }
   }, [aberto])
 
-  async function buscar() {
-    if (numero.trim() === '' || buscando) return
+  /*
+   * Busca sozinha enquanto digita (02/out/2026: "pq eu tenho que digitar
+   * tudo?"). A partir de 3 dígitos, meio segundo depois da última tecla; Enter
+   * e o botão continuam buscando na hora. `ultima` descarta a resposta de uma
+   * busca que já foi trocada por outra, para "197" não pintar por cima de
+   * "1976".
+   */
+  const ultima = useRef('')
+  async function buscar(consulta = numero) {
+    const limpo = consulta.replace(/^#/, '').trim()
+    if (limpo === '') return
+    ultima.current = limpo
     setBuscando(true)
     setErro(null)
     setAchado(null)
     try {
-      const r = await acaoBuscarPedidoDoInbox(clienteId, contatoId, numero)
+      const r = await acaoBuscarPedidoDoInbox(clienteId, contatoId, limpo)
+      if (ultima.current !== limpo) return
       if (r.ok) setAchado(r)
       else setErro(r.erro)
     } catch {
-      setErro('não deu para buscar agora, tente de novo')
+      if (ultima.current === limpo) setErro('não deu para buscar agora, tente de novo')
     } finally {
-      setBuscando(false)
+      if (ultima.current === limpo) setBuscando(false)
     }
   }
+
+  useEffect(() => {
+    const limpo = numero.replace(/^#/, '').trim()
+    if (!/^\d{3,20}$/.test(limpo) || limpo === ultima.current) return
+    const espera = setTimeout(() => void buscar(limpo), 500)
+    return () => clearTimeout(espera)
+    // `buscar` muda a cada render; quem dispara é o número.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [numero])
 
   async function enviar() {
     if (!achado || enviando) return
@@ -78,6 +98,7 @@ export function SeletorDePedido({
       if (r.ok) {
         setAberto(false)
         setNumero('')
+        ultima.current = ''
         setAchado(null)
       } else setErro(r.erro ?? 'não deu para enviar')
     } catch {
@@ -139,7 +160,7 @@ export function SeletorDePedido({
             <button
               type="button"
               onClick={() => void buscar()}
-              disabled={buscando || numero.trim() === ''}
+              disabled={numero.trim() === ''}
               className="shrink-0 rounded-[9px] border border-line px-2.5 text-[12px] font-semibold text-soft transition hover:border-primary/40 hover:text-primary disabled:opacity-50"
             >
               {buscando ? 'Buscando…' : 'Buscar'}
