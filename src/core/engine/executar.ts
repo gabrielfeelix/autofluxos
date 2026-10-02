@@ -396,7 +396,15 @@ export function executar(
     const frase = entrada.texto?.trim() ?? ''
     if (frase !== '' && !soCumprimento(frase) && inicio.sessao.status === 'ativa' && parada?.type === 'pergunta') {
       const opcoes = resolverOpcoes(parada, inicio.sessao.vars)
-      const leTexto = parada.data.entendeTextoLivre && proximo(fluxo, parada.id, SAIDA_TEXTO_LIVRE) !== null
+      /*
+       * Ler a frase como assunto pede que ela **tenha** um. "Boa tarde, alguma
+       * previsão" (Mario, PCYES, 02/out/2026) passou por não ser só
+       * cumprimento, e a triagem teve de perguntar do que se tratava, quando o
+       * menu já dava a opção "Meu pedido". Frase vaga abre o menu; frase igual
+       * a uma opção continua valendo como escolha.
+       */
+      const leTexto =
+        parada.data.entendeTextoLivre && proximo(fluxo, parada.id, SAIDA_TEXTO_LIVRE) !== null && temAssunto(frase)
       if (leTexto || escolher(opcoes, { tipo: 'texto', texto: frase })) {
         const repetida = perguntar(parada, inicio.sessao).length
         const antes = inicio.acoes.slice(0, inicio.acoes.length - repetida)
@@ -1705,6 +1713,31 @@ export function soCumprimento(texto: string): boolean {
     .map((p) => p.replace(/(.)\1+/g, '$1'))
   return palavras.every((p) => CUMPRIMENTO.has(p))
 }
+
+/**
+ * A frase diz do que se trata? Pede duas palavras de conteúdo, fora do
+ * cumprimento e das palavras que só puxam assunto ("alguma", "queria saber",
+ * "uma dúvida"). "Suporte não responde" passa; "alguma previsão" não.
+ */
+export function temAssunto(texto: string): boolean {
+  const palavras = texto
+    .normalize('NFKD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .replace(/[^a-z\s]/g, ' ')
+    .split(/\s+/)
+    .filter(Boolean)
+    .map((p) => p.replace(/(.)\1+/g, '$1'))
+  return palavras.filter((p) => !CUMPRIMENTO.has(p) && !VAZIAS.has(p)).length >= 2
+}
+
+const VAZIAS = new Set([
+  'alguma', 'algum', 'algumas', 'alguns', 'uma', 'um', 'umas', 'uns', 'de', 'do', 'da', 'dos', 'das', 'no', 'na',
+  'nos', 'nas', 'em', 'pra', 'para', 'pro', 'que', 'qual', 'quais', 'eu', 'me', 'meu', 'minha', 'mim', 'nao', 'ja',
+  'so', 'mais', 'isso', 'esse', 'essa', 'aqui', 'ainda', 'sobre', 'tem', 'tenho', 'teria', 'queria', 'quero',
+  'gostaria', 'poderia', 'pode', 'podem', 'preciso', 'saber', 'informacao', 'informacoes', 'info', 'duvida',
+  'duvidas', 'pergunta', 'ajuda', 'ajudar', 'tb', 'tbm', 'tambem', 'la', 'ver', 'falar', 'atendimento',
+])
 
 const CUMPRIMENTO = new Set([
   'oi', 'oie', 'ola', 'alo', 'alou', 'opa', 'eai', 'e', 'ai', 'salve', 'hey', 'hi', 'hello',

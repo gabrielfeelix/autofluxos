@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { fluxoSchema, type Fluxo } from '../flow/schema'
-import { executar, MAX_TENTATIVAS, pediuReinicio, pediuSaidaDaIa, soCumprimento } from './executar'
+import { executar, MAX_TENTATIVAS, pediuReinicio, pediuSaidaDaIa, soCumprimento, temAssunto } from './executar'
 import { sessaoNova, type Acao, type Entrada, type Sessao } from './types'
 
 const p = { x: 0, y: 0 }
@@ -2269,6 +2269,16 @@ describe('conversa nova aberta com o assunto', () => {
   it('menu que não lê texto ignora a frase, como antes', () => {
     expect(abrir(menu(false), 'meu mouse parou')).not.toContain('Desculpa, não entendi. Pode escolher uma das opções abaixo?')
   })
+  it('frase vaga abre o menu, e não a triagem (Mario, PCYES, 02/out)', () => {
+    for (const vaga of ['Boa tarde, alguma previsão', 'Oi, tenho uma dúvida', 'Bom dia, queria saber uma informação']) {
+      expect(abrir(menu(true), vaga)).toContain('(menu)')
+      expect(abrir(menu(true), vaga)).not.toContain('livre: ' + vaga)
+    }
+  })
+  it('frase que diz o assunto continua indo direto', () => {
+    expect(abrir(menu(true), 'Meu pedido não chegou')).toEqual(['livre: Meu pedido não chegou'])
+    expect(abrir(menu(true), 'alguma previsão de entrega?')).toEqual(['livre: alguma previsão de entrega?'])
+  })
 })
 
 describe('foto com legenda', () => {
@@ -2285,6 +2295,14 @@ describe('foto com legenda', () => {
     const r = executar(f, r0.sessao, { tipo: 'midia', formato: 'image', legenda: 'GT 730 suporta 2560x1080?' })
     expect(r.acoes.flatMap((a) => (a.tipo === 'enviar_texto' ? [a.texto] : []))).toEqual(['buscando GT 730 suporta 2560x1080?'])
     expect(r.sessao.status).not.toBe('humano')
+  })
+})
+
+describe('temAssunto', () => {
+  it('pede duas palavras que digam alguma coisa', () => {
+    expect(temAssunto('Boa tarde, alguma previsão')).toBe(false)
+    expect(temAssunto('Suporte não responde.')).toBe(true)
+    expect(temAssunto('O software do mouse Fenner está com defeito')).toBe(true)
   })
 })
 
