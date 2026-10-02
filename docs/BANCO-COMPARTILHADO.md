@@ -357,6 +357,18 @@ extração explícito para os objetos de `public`.
   Desfazer: `drop trigger avisar_inbox_ao_vivo on public.messages`, `drop
   function public.avisar_inbox_ao_vivo()`, `alter table public.clients drop
   column canal_ao_vivo`.
+- **a `0120` foi aplicada em 02/out/2026** (API pública, fase 1), com
+  autorização explícita do dono, pela Management API, numa transação. Aditiva:
+  `public.chaves_de_api` (RLS ligada sem políticas, grants só `postgres` e
+  `service_role`) e `public.registrar_uso_da_chave(uuid)` (`security invoker`,
+  `execute` revogado de `public`, `anon`, `authenticated`). Ensaio em transação
+  com `rollback` antes (nada sobrou). Depois: `public` de 77 para 78 tabelas; 8
+  contas e 260 contatos intactos; Verandi com 40 tabelas, 40 migrations (última
+  `0069`) e 16 policies de `storage.objects`, iguais a antes. Data API:
+  `chaves_de_api` 200 com a chave secreta e 401 com a publicável, RPC 204,
+  `app_verandi.conta` 200. Na mesma autorização, `planos.recursos` de
+  `operacao` e `escala` ganharam `api`. Desfazer: `drop function
+  public.registrar_uso_da_chave(uuid); drop table public.chaves_de_api;`.
 - **a `0118` foi aplicada em 01/out/2026**, com autorização explícita do dono,
   pela Management API. Aditiva: cria `public.chamadas` (sinalização da ligação
   de voz do chat do site), RLS ligada sem políticas, `grant` só para

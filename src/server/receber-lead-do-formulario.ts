@@ -2,8 +2,8 @@ import 'server-only'
 import { lerLeadDoFormularioNaMeta } from '@/channels/marketing-api'
 import { lerLeadDoFormulario, type AvisoDeLead } from '@/core/lead-ads'
 import { alertar } from './alertar'
-import { db } from './db'
 import { porNoQuadroPadrao } from './quadro-de-entrada'
+import { acharContatoPeloTelefone } from './repos/contato-por-telefone'
 import { guardarCampo } from './repos/conversas'
 import { criarContato } from './repos/leads'
 import { anotarFormulario } from './repos/paginas-de-lead'
@@ -216,18 +216,4 @@ async function registrarAnuncio(
       contato: alvo,
     })
   }
-}
-
-async function acharContatoPeloTelefone(
-  clienteId: string,
-  telefone: string,
-): Promise<string | null> {
-  const { data } = await db()
-    .from('contacts')
-    .select('id')
-    .eq('client_id', clienteId)
-    .eq('wa_id', telefone)
-    .maybeSingle()
-
-  return (data as { id: string } | null)?.id ?? null
 }

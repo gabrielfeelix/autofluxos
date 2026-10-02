@@ -224,7 +224,7 @@ export function SecaoDuvidas() {
           <p>
             Sim. O bloco de {NOMES.http} fala com qualquer API que aceite JSON, e existe um preset de{' '}
             <strong className="text-soft">Webhook</strong> para começar. Se o sistema pedir token,
-            cadastre em Chaves de API como <Cod>bearer</Cod>.
+            cadastre em Credenciais de sistemas como <Cod>bearer</Cod>.
           </p>
         </Duvida>
       </div>

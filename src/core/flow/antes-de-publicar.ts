@@ -104,9 +104,9 @@ export function antesDePublicar(entrada: EntradaAntesDePublicar): ItemAntesDePub
         chave: 'conexoes',
         estado: 'pendente',
         titulo: `${blocos(chaveQuebrada.length)} sem a chave de acesso`,
-        detalhe: 'Escolha uma chave desta conta no bloco, ou crie uma em Chaves de API.',
+        detalhe: 'Escolha uma credencial desta conta no bloco, ou crie uma em Credenciais de sistemas.',
         noIds: chaveQuebrada,
-        link: { caminho: '/ajustes/chaves', rotulo: 'Abrir chaves de API' },
+        link: { caminho: '/ajustes/chaves', rotulo: 'Abrir credenciais de sistemas' },
       })
     } else if (httpSemChave.length > 0) {
       itens.push({

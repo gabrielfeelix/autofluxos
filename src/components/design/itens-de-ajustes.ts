@@ -6,6 +6,7 @@ export type TelaDeAjustes =
   | 'integracoes'
   | 'anuncios'
   | 'chaves'
+  | 'api'
   | 'negocio'
   | 'equipe'
   | 'plano'
@@ -44,10 +45,13 @@ export const GRUPOS: { titulo: string | null; itens: { chave: TelaDeAjustes; rot
   {
     titulo: 'Conexões e APIs',
     itens: [
-      // "Todas" primeiro porque é a visão, e as outras duas são o detalhe dela.
+      // "Todas" primeiro porque é a visão, e as outras são o detalhe dela.
       { chave: 'integracoes', rotulo: 'Todas as conexões' },
       { chave: 'anuncios', rotulo: 'Anúncios' },
-      { chave: 'chaves', rotulo: 'Chaves de API' },
+      // "Credenciais" e não "Chaves": são as senhas que o bloco Chama um
+      // sistema usa, e "chave" agora é a da API, logo abaixo.
+      { chave: 'chaves', rotulo: 'Credenciais de sistemas' },
+      { chave: 'api', rotulo: 'API' },
     ],
   },
 ]

@@ -348,7 +348,7 @@ export async function usoDaOrganizacao(
     if (error) console.error('[plano] não deu para medir o uso:', error)
     return count ?? 0
   }
-  const [consumo, numeros, fluxosComIa, transcricoes, transmissoes, conexoes, webhooks, cliente] = await Promise.all([
+  const [consumo, numeros, fluxosComIa, transcricoes, transmissoes, conexoes, webhooks, chavesDeApi, cliente] = await Promise.all([
     consumoJaLido ?? consumoDaConta(clienteId, agora),
     contar(db().from('channels').select('id', { count: 'exact', head: true }).eq('client_id', clienteId).eq('status', 'ativo').eq('provider', 'cloud-api')),
     contar(db().from('flows').select('id', { count: 'exact', head: true }).eq('client_id', clienteId).eq('ativo', true).eq('ia_habilitada', true)),
@@ -363,6 +363,7 @@ export async function usoDaOrganizacao(
     contar(db().from('transmissoes').select('id', { count: 'exact', head: true }).eq('cliente_id', clienteId).in('estado', ['agendada', 'enviando'])),
     contar(db().from('connections').select('id', { count: 'exact', head: true }).eq('client_id', clienteId)),
     contar(db().from('webhooks_de_entrada').select('id', { count: 'exact', head: true }).eq('client_id', clienteId).eq('ativo', true)),
+    contar(db().from('chaves_de_api').select('id', { count: 'exact', head: true }).eq('client_id', clienteId).is('revogada_em', null)),
     db().from('clients').select('ia_chave_ref').eq('id', clienteId).maybeSingle(),
   ])
   return {
@@ -373,6 +374,7 @@ export async function usoDaOrganizacao(
     transmissoes,
     conexoes,
     webhooks,
+    chavesDeApi,
     chavePropria: Boolean((cliente.data as { ia_chave_ref: string | null } | null)?.ia_chave_ref),
   }
 }

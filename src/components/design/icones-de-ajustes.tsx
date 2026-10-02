@@ -122,6 +122,13 @@ export const ICONE_DA_TELA: Record<TelaDeAjustes | 'whatsapp' | 'instagram' | 'r
       <path d="M20.5 12v2" />
     </Svg>
   ),
+  api: (
+    <Svg>
+      <path d="M8 7 3 12l5 5" />
+      <path d="m16 7 5 5-5 5" />
+      <path d="m13.5 5-3 14" />
+    </Svg>
+  ),
   negocio: (
     <Svg>
       <path d="M4 9.5 5.5 5h13L20 9.5" />

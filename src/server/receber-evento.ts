@@ -1,8 +1,7 @@
 import 'server-only'
-import { chavesDoTelefone } from '@/core/contatos/telefone'
 import { alertar } from './alertar'
-import { db, ehIdInvalido } from './db'
 import { abrirFluxoParaContato, type FabricaDeCanal } from './receber-mensagem'
+import { acharContatoPeloTelefone } from './repos/contato-por-telefone'
 import { acrescentarNota } from './repos/leads'
 import { acharGatilhoDeEvento, contarDisparoDeEvento } from './repos/webhooks-de-entrada'
 
@@ -151,37 +150,6 @@ export async function tratarEvento(
     evento: entrada.evento,
   })
   return 'nao_abriu'
-}
-
-/**
- * O contato pelo telefone, aceitando as grafias que significam o mesmo aparelho.
- *
- * `chavesDoTelefone` resolve o nono dígito: o sistema do outro lado pode ter
- * cadastrado `11 8765-4321` e o WhatsApp guardou `5511987654321`. Casar só pela
- * forma exata faria o aviso não sair para metade da base por um dígito que o
- * Brasil acrescentou em 2012.
- */
-async function acharContatoPeloTelefone(
-  clienteId: string,
-  telefone: string,
-): Promise<string | null> {
-  const chaves = chavesDoTelefone(telefone)
-  // Lista vazia = número que não dá para casar com segurança (sem DDD, por
-  // exemplo). Chutar aqui casaria o evento de uma pessoa com o cadastro de
-  // outra, que é pior que não avisar.
-  if (chaves.length === 0) return null
-
-  const { data, error } = await db()
-    .from('contacts')
-    .select('id')
-    .eq('client_id', clienteId)
-    .in('wa_id', chaves)
-    .limit(1)
-    .maybeSingle()
-
-  if (ehIdInvalido(error)) return null
-  if (error) throw new Error(`não deu para achar o contato: ${error.message}`)
-  return data ? (data as { id: string }).id : null
 }
 
 /**

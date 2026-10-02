@@ -206,3 +206,46 @@ Append-only. Cada entrada: data, decisão, porquê, onde está no código.
   status em sanfona; passos com linha vertical; sanfona com altura animada.
   Movimento só em resposta a gesto, parado com `prefers-reduced-motion`
   (`docs.css`).
+
+## 02/out/2026: API pública, fase 1 (chaves, contatos, disparar fluxo)
+
+- Plano em `docs/HANDOFF-02-OUT-API-PUBLICA.md`. Chave `af_live_<publico 12>_<segredo 43>`,
+  base62; banco guarda só o SHA-256 do segredo e os 4 últimos (`0120_chaves_de_api.sql`),
+  sem Vault porque nunca é lida de volta. Comparação em tempo constante, sem cache:
+  revogar vale na chamada seguinte.
+- **O limite de 120/min é chaveado pelo `publico`, não pelo id da linha**: sai do
+  cabeçalho sem ir ao banco, então o limite vem antes da conferência da chave, na
+  ordem tamanho, limite, chave, escopo, plano (`src/server/api/autenticar.ts`).
+- O `clienteId` sai sempre da chave. `/api/v1/` aberto no `proxy.ts`.
+- Recurso de plano novo `api` (`core/planos.ts`), no Escala por padrão do código;
+  a tabela `planos` de produção só ganha quando o dono marcar no admin.
+- Contato pela API: campos gravados com origem `importacao` (perdem para gente e
+  para o contato, RB-19); `origem = 'API'` só no novo e congelada depois; etiqueta
+  inexistente não é criada, volta em `avisos`; etiqueta aplicada mexe em sequência
+  como na tela.
+- `acharContatoPeloTelefone` virou repo (`repos/contato-por-telefone.ts`): o lead do
+  formulário casava só pela forma exata, agora aceita as grafias do nono dígito.
+- Item "Chaves de API" de Configurações renomeado para "Credenciais de sistemas":
+  duas coisas chamadas "chave" confundiam.
+
+## 02/out/2026: esqueleto com a forma da tela, e o vidro
+
+- **Regra do carregamento:** o `loading.tsx` desenha a tela que vai chegar.
+  Topo é `TopoCarregando` (o `CabecalhoDaTela` de verdade): título e descrição
+  escritos, só contagem e botões viram osso. Busca é `EsqueletoDeBusca`, fora
+  do cartão, com o texto de exemplo real. Troca de modo é
+  `EsqueletoDeAlternador` com os rótulos reais. Osso dentro de cartão branco
+  quando a tela tem cartão (`EsqueletoDeLinhas`). Título que muda com o ramo
+  ("Alunos", "Cardápio") fica em osso. Peças em `design/esqueleto.tsx`;
+  `EsqueletoDeAbas` saiu (`b9cf256`).
+- **Uma espera só por tela:** a espera do `Suspense` da página usa a mesma peça
+  do `loading.tsx` (`EsqueletoDoFunil`, `EsqueletoDeInbox`), senão a tela
+  parece recomeçar.
+- **Vidro (`.chip-vidro`, `globals.css`):** trilho translúcido do alternador
+  (`--surface` + `--line`, aceso branco sólido) num controle solto no azul.
+  Primeiro uso: atalhos de prazo de Atividades. Nunca dentro de cartão branco.
+  Mostrado ao dono antes de espalhar.
+- **Admin:** `EsqueletoDeTabela` (`admin/partes.tsx`) pede descrição e texto da
+  busca reais; abas da organização viraram `Alternador`.
+- **Inbox sem conversa pedida abre a do topo** (`502c5e0`): abrir a primeira que
+  esperava atendente parecia "abriu a segunda".

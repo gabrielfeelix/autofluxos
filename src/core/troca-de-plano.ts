@@ -38,6 +38,8 @@ export type UsoDaOrganizacao = {
   conexoes: number
   /** Webhooks de entrada ligados. */
   webhooks: number
+  /** Chaves da API pública ativas. */
+  chavesDeApi: number
   /** Chave de IA própria configurada. */
   chavePropria: boolean
 }
@@ -75,6 +77,8 @@ export function usoDoRecurso(recurso: RecursoDoPlano, uso: UsoDaOrganizacao): st
       return uso.conexoes > 0 ? `${plural(uso.conexoes, 'conexão ligada', 'conexões ligadas')}` : null
     case 'webhook':
       return uso.webhooks > 0 ? `${plural(uso.webhooks, 'webhook de entrada ligado', 'webhooks de entrada ligados')}` : null
+    case 'api':
+      return uso.chavesDeApi > 0 ? `${plural(uso.chavesDeApi, 'chave de API ativa', 'chaves de API ativas')}` : null
     case 'chave_propria':
       return uso.chavePropria ? 'chave de IA própria configurada' : null
     case 'varios_numeros':

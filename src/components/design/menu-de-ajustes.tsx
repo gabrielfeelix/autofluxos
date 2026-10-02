@@ -16,6 +16,8 @@ const sinonimos: Partial<Record<TelaDeAjustes, string>> = {
   horario: 'retomada inatividade expediente',
   equipe: 'equipe usuarios membros papeis permissoes',
   integracoes: 'integracao integracoes magento loja',
+  chaves: 'chaves credenciais senha token bloco sistema',
+  api: 'api chave desenvolvedor rest bearer integracao token',
 }
 
 const TELAS = new Set<string>(GRUPOS.flatMap((grupo) => grupo.itens.map((item) => item.chave)))

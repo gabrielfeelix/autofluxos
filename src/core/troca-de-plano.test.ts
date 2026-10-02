@@ -10,6 +10,7 @@ const PARADO: UsoDaOrganizacao = {
   transmissoes: 0,
   conexoes: 0,
   webhooks: 0,
+  chavesDeApi: 0,
   chavePropria: false,
 }
 
@@ -36,7 +37,7 @@ describe('impactoDaTroca', () => {
   it('descer sem nada em uso lista o que sai e não pede ciência', () => {
     const r = impactoDaTroca(operacao, essencial, PARADO)
     expect(r.sentido).toBe('desce')
-    expect(r.perde.map((p) => p.recurso)).toEqual(['ia', 'transcricao', 'transmissoes', 'integracoes'])
+    expect(r.perde.map((p) => p.recurso)).toEqual(['ia', 'transcricao', 'transmissoes', 'integracoes', 'api'])
     expect(r.perde.every((p) => p.emUso === null)).toBe(true)
     expect(r.bloqueios).toEqual([])
     expect(r.exigeCiencia).toBe(false)

@@ -162,6 +162,14 @@ describe('a porta do painel', () => {
     expect(seguiu(await proxy(pedir('/apple-icon.png')))).toBe(true)
   })
 
+  it('a API pública abre sem sessão, quem chama é outro sistema', async () => {
+    // A rota se defende sozinha pela chave Bearer (`server/api/autenticar.ts`).
+    expect(seguiu(await proxy(pedir('/api/v1/contatos')))).toBe(true)
+    expect(seguiu(await proxy(pedir('/api/v1/fluxos/123/disparar')))).toBe(true)
+    // Com barra: um vizinho parecido continua fechado.
+    expect(seguiu(await proxy(pedir('/api/v1-interna')))).toBe(false)
+  })
+
   it('a abertura do webhook é de prefixo com barra, e não pega vizinho parecido', async () => {
     // `/api/webhook/` e não `/api/webhook`: sem a barra, uma rota futura
     // chamada `/api/webhooks-admin` nasceria pública sem ninguém notar.

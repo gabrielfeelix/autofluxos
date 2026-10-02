@@ -91,9 +91,9 @@ export default async function Pagina({ params }: { params: Promise<{ clienteId: 
         <CabecalhoDaTela
           trilha={[
             { rotulo: 'Configurações', href: `/clientes/${cliente.id}/ajustes` },
-            { rotulo: 'Chaves de API' },
+            { rotulo: 'Credenciais de sistemas' },
           ]}
-          titulo={<>Chaves de API</>}
+          titulo={<>Credenciais de sistemas</>}
           descricao={<>As chaves que os blocos de API usam para falar com os sistemas deste cliente. O valor
               é guardado num cofre e <strong className="text-soft">nunca volta para esta tela</strong>:
               para trocar, grave de novo.</>}

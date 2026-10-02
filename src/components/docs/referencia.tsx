@@ -80,30 +80,54 @@ function LinhaDeCampo({ campo }: { campo: Campo }) {
   )
 }
 
-/** Uma resposta possível, fechada por padrão menos a de sucesso. */
+/**
+ * Uma resposta possível, fechada por padrão menos a de sucesso.
+ *
+ * `corpo` é o JSON que a rota devolve de verdade. Sem corpo e sem texto, a
+ * linha não abre e não mostra a seta: uma sanfona que abre vazia parece
+ * quebrada (foi o relato de 02/out na página Disparar um evento).
+ */
 export function Resposta({
   status,
   descricao,
   aberta,
+  corpo,
   children,
 }: {
   status: number
   descricao: string
   aberta?: boolean
+  corpo?: string
   children?: ReactNode
 }) {
   const ok = status < 300
+  const ponto = <span aria-hidden className={`size-2 shrink-0 rounded-full ${ok ? 'bg-emerald-500' : status < 500 ? 'bg-amber-500' : 'bg-rose-500'}`} />
+  const rotulo = (
+    <>
+      {ponto}
+      <span className="font-mono text-[13px] font-semibold text-ink">{status}</span>
+      <span className="text-[14px] text-muted">{descricao}</span>
+    </>
+  )
+
+  if (!children && !corpo) {
+    return <div className="flex items-center gap-3 border-b border-line px-4 py-3.5 last:border-b-0">{rotulo}</div>
+  }
+
   return (
     <details open={aberta} className="docs-resposta group border-b border-line last:border-b-0">
       <summary className="flex cursor-pointer list-none items-center gap-3 px-4 py-3.5 [&::-webkit-details-marker]:hidden">
-        <span aria-hidden className={`size-2 rounded-full ${ok ? 'bg-emerald-500' : status < 500 ? 'bg-amber-500' : 'bg-rose-500'}`} />
-        <span className="font-mono text-[13px] font-semibold text-ink">{status}</span>
-        <span className="text-[14px] text-muted">{descricao}</span>
-        <svg aria-hidden width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" className="ml-auto text-dim transition-transform duration-200 group-open:rotate-180">
+        {rotulo}
+        <svg aria-hidden width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" className="ml-auto shrink-0 text-dim transition-transform duration-200 group-open:rotate-180">
           <path d="m6 9 6 6 6-6" />
         </svg>
       </summary>
-      {children && <div className="px-4 pb-4 text-[14px] leading-[1.6] text-muted">{children}</div>}
+      <div className="space-y-3 px-4 pb-4 text-[14px] leading-[1.6] text-muted">
+        {children}
+        {corpo && (
+          <pre className="overflow-x-auto rounded-lg border border-line bg-surface px-3 py-2.5 font-mono text-[12.5px] leading-5 text-soft">{corpo}</pre>
+        )}
+      </div>
     </details>
   )
 }

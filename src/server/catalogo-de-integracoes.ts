@@ -120,7 +120,7 @@ export async function catalogoDeIntegracoes(clienteId: string): Promise<ItemDoCa
     },
     {
       chave: 'chaves',
-      nome: 'Chaves de API',
+      nome: 'Credenciais de sistemas',
       categoria: 'API',
       descricao: 'As chaves que os blocos de Serviços externos usam para falar com os sistemas deste cliente.',
       href: '/ajustes/chaves',

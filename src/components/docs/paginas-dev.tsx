@@ -1,15 +1,17 @@
 import type { ComponentType, ReactNode } from 'react'
 import { Cod, Nota, Passo, Passos, Sub } from '@/components/ajuda/pecas'
 import { BlocoDeCodigo, type Trecho } from './codigo'
+import { PAGINAS_API } from './paginas-api'
 import { Endpoint, ListaDeCampos, Resposta, Respostas, SeloDeMetodo, type Metodo } from './referencia'
 
 /**
  * A documentação para desenvolvedores.
  *
- * **Só o que existe no código.** O AutoFluxos não tem API REST pública nem
- * chave de API: quem integra recebe eventos pelo webhook de entrada
- * (`src/app/api/webhook/entrada/[clienteId]/route.ts`), é chamado pelo bloco
- * "Chama um sistema" (`src/server/efeitos/http.ts`) ou instala o chat do site.
+ * **Só o que existe no código.** Quem integra chama a API pública com chave
+ * (`src/app/api/v1/`, páginas em `paginas-api.tsx`), avisa pelo webhook de
+ * entrada (`src/app/api/webhook/entrada/[clienteId]/route.ts`), é chamado pelo
+ * bloco "Chama um sistema" (`src/server/efeitos/http.ts`) ou instala o chat do
+ * site.
  * Cada número aqui (limites, prazos, status) sai desses arquivos; se o código
  * mudar, esta página muda junto.
  */
@@ -93,14 +95,20 @@ function Visao() {
   return (
     <>
       <P>
-        O AutoFluxos conversa com outros sistemas de três formas. Escolha pela direção em que o
+        O AutoFluxos conversa com outros sistemas de quatro formas. Escolha pela direção em que o
         dado anda.
       </P>
       <ul className="ml-5 list-disc space-y-2">
         <li>
+          <strong className="text-ink">O seu sistema chama o AutoFluxos.</strong> Cadastra contatos,
+          consulta dados e dispara automações com uma chave da organização. Use a{' '}
+          <a className="font-medium text-primary hover:underline" href="/ajuda/desenvolvedores/api-autenticacao">API</a>.
+        </li>
+        <li>
           <strong className="text-ink">O seu sistema avisa o AutoFluxos.</strong> Um evento (vaga
-          aberta, pedido enviado, consulta confirmada) abre uma conversa no WhatsApp do contato.
-          Use o <a className="font-medium text-primary hover:underline" href="/ajuda/desenvolvedores/webhook-de-entrada">webhook de entrada</a>.
+          aberta, pedido enviado, consulta confirmada) abre uma conversa no WhatsApp do contato,
+          sem chave, só com um segredo de assinatura. Use o{' '}
+          <a className="font-medium text-primary hover:underline" href="/ajuda/desenvolvedores/webhook-de-entrada">webhook de entrada</a>.
         </li>
         <li>
           <strong className="text-ink">O AutoFluxos consulta o seu sistema.</strong> No meio da
@@ -113,13 +121,9 @@ function Visao() {
           <a className="font-medium text-primary hover:underline" href="/ajuda/desenvolvedores/chat-do-site">Chat do site</a>.
         </li>
       </ul>
-      <Nota tom="atencao" titulo="Não há API REST pública">
-        <p>
-          Hoje não existe chave de API para ler ou criar contatos de fora. As integrações acima
-          cobrem os casos que os clientes usam; se precisar de outro, fale com a equipe.
-        </p>
-      </Nota>
-      <Sub>Endereço base</Sub>
+      <Sub>API</Sub>
+      <Endpoint metodo="GET" caminho={`${BASE}/api/v1`} />
+      <Sub>Webhook de entrada</Sub>
       <Endpoint metodo="POST" caminho={`${BASE}/api/webhook/entrada/{clienteId}`} />
     </>
   )
@@ -227,11 +231,21 @@ function DispararEvento() {
             enviado e o motivo fica registrado no painel.
           </p>
         </Resposta>
-        <Resposta status={400} descricao="Corpo ilegível, JSON inválido ou sem evento e telefone" />
-        <Resposta status={401} descricao="Assinatura ausente ou inválida" />
-        <Resposta status={403} descricao="O plano da organização não inclui webhook de entrada" />
-        <Resposta status={413} descricao="Corpo acima de 64 KB" />
-        <Resposta status={429} descricao="Mais de 120 chamadas por minuto para a organização" />
+        <Resposta status={400} descricao="Corpo ilegível, JSON inválido ou sem evento e telefone" corpo={`{
+  "erro": "corpo inválido: espera { evento, telefone }"
+}`} />
+        <Resposta status={401} descricao="Assinatura ausente ou inválida" corpo={`{
+  "erro": "assinatura inválida"
+}`} />
+        <Resposta status={403} descricao="O plano da organização não inclui webhook de entrada" corpo={`{
+  "erro": "webhook pausado: o plano da organização não inclui webhook de entrada"
+}`} />
+        <Resposta status={413} descricao="Corpo acima de 64 KB" corpo={`{
+  "erro": "corpo excede 64 KB"
+}`} />
+        <Resposta status={429} descricao="Mais de 120 chamadas por minuto para a organização" corpo={`{
+  "erro": "muitas chamadas"
+}`} />
       </Respostas>
     </>
   )
@@ -381,7 +395,8 @@ function Verandi() {
 }
 
 export const PAGINAS_DEV: PaginaDev[] = [
-  { slug: 'visao-geral', grupo: 'Introdução', titulo: 'Visão geral', resumo: 'As três formas de integrar um sistema com o AutoFluxos.', Corpo: Visao },
+  { slug: 'visao-geral', grupo: 'Introdução', titulo: 'Visão geral', resumo: 'As quatro formas de integrar um sistema com o AutoFluxos.', Corpo: Visao },
+  ...PAGINAS_API,
   { slug: 'webhook-de-entrada', grupo: 'Webhook de entrada', titulo: 'Configurar o webhook', resumo: 'Receba eventos do seu sistema e abra uma automação no WhatsApp do contato.', Corpo: ConfigurarWebhook },
   { slug: 'assinatura', grupo: 'Webhook de entrada', titulo: 'Assinar a requisição', resumo: 'Como calcular o HMAC-SHA256 que autentica cada chamada.', Corpo: Assinatura },
   {

@@ -98,6 +98,7 @@ export const RECURSOS_DO_PLANO = [
   { chave: 'varios_numeros', rotulo: 'Vários números e unidades' },
   { chave: 'chave_propria', rotulo: 'Chave de IA própria' },
   { chave: 'webhook', rotulo: 'Webhook de entrada e auditoria' },
+  { chave: 'api', rotulo: 'API para desenvolvedores' },
 ] as const
 
 export type RecursoDoPlano = (typeof RECURSOS_DO_PLANO)[number]['chave']
@@ -138,7 +139,7 @@ export const PLANOS: Plano[] = [
     numeros: 1,
     precoExcedente: 0.3,
     precoAnual: 5970,
-    recursos: ['crm', 'ia', 'transcricao', 'transmissoes', 'integracoes'],
+    recursos: ['crm', 'ia', 'transcricao', 'transmissoes', 'integracoes', 'api'],
     resumo: 'Para quem já tem uma equipe de atendimento e precisa de organização.',
     itens: [
       'Tudo do Essencial',
@@ -148,6 +149,7 @@ export const PLANOS: Plano[] = [
       'Transcrição de áudio',
       'Transmissões e modelos da Meta',
       'Conexão com seus sistemas',
+      'API para desenvolvedores',
     ],
   },
   {
@@ -158,7 +160,7 @@ export const PLANOS: Plano[] = [
     numeros: 5,
     precoExcedente: 0.2,
     precoAnual: 11970,
-    recursos: ['crm', 'ia', 'transcricao', 'transmissoes', 'integracoes', 'varios_numeros', 'chave_propria', 'webhook'],
+    recursos: ['crm', 'ia', 'transcricao', 'transmissoes', 'integracoes', 'varios_numeros', 'chave_propria', 'webhook', 'api'],
     resumo: 'Para operação com mais de um número, volume alto e dado sensível.',
     itens: [
       'Tudo da Operação',

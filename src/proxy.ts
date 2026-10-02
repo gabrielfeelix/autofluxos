@@ -229,6 +229,15 @@ const PREFIXOS_ABERTOS = [
    * `app/api/site/[chave]/`.
    */
   '/api/site/',
+  /**
+   * A API pública (`docs/HANDOFF-02-OUT-API-PUBLICA.md`). Quem chama é o
+   * servidor de outro sistema, que nunca terá cookie de sessão.
+   *
+   * Não afrouxa nada: toda rota de `/api/v1` começa por `autenticarChave`
+   * (`server/api/autenticar.ts`), que confere a chave Bearer, o escopo e o
+   * plano. Com barra no fim, pelo mesmo motivo do webhook.
+   */
+  '/api/v1/',
   // O script do balão, em `public/chat/`: a loja o carrega sem sessão nenhuma.
   '/chat/',
   '/logos/',
