@@ -21,7 +21,7 @@ import { urlsAssinadas } from './midia-recebida'
 import { naoLidasPorContato } from './leituras'
 import { TIPOS_DE_MIDIA, type TipoDeMidia } from '@/core/flow/schema'
 import { casarReacoes } from '@/core/reacoes'
-import { linhasDoCard, type ProdutoDaLoja } from '@/core/loja'
+import { linhasDoCard, textoDoCard, type ProdutoDaLoja } from '@/core/loja'
 import { db, ehIdInvalido } from '../db'
 import type { AlcanceDeConversas } from '@/core/permissoes'
 
@@ -202,6 +202,12 @@ export type MensagemDoLead = {
    * cliente recebeu no WhatsApp.
    */
   produtos?: ProdutoNaMensagem[]
+  /**
+   * A frase que saiu junto dos cards na mesma mensagem ("Não temos o
+   * Jadefire, olha a Sentinel"). Ela está no `texto` gravado, antes do texto
+   * dos cards, e a bolha de card não mostrava (Gabe, PCYES, 02/out/2026).
+   */
+  fraseDosCards?: string
   /**
    * O botão de link que foi junto ("Rastrear entrega"). Sem isto a bolha só
    * mostrava o texto, e quem atende não via nem podia abrir o que o cliente
@@ -1192,6 +1198,7 @@ export async function lerConversa(
           ...(m.situacao ? { situacao: m.situacao } : {}),
           ...(anexo ? { anexo } : {}),
           ...(produtos.length ? { produtos } : {}),
+          ...(produtos.length && fraseDosCards(m.texto, m.payload) ? { fraseDosCards: fraseDosCards(m.texto, m.payload)! } : {}),
           ...(botao ? { botao } : {}),
           ...(recebido ? { recebido } : {}),
           ...(semCopia ? { semCopia: true as const } : {}),
@@ -1277,6 +1284,19 @@ function botaoDoPayload(payload: unknown): BotaoNaMensagem | null {
   const b = (payload as { botao?: { rotulo?: unknown; url?: unknown } } | null)?.botao
   if (typeof b?.rotulo !== 'string' || typeof b.url !== 'string' || !b.url.startsWith('https://')) return null
   return { rotulo: b.rotulo, url: b.url }
+}
+
+/**
+ * O que vem antes do texto dos cards em `texto`. Grava-se `[frase, ...cards]`
+ * juntos (`receber-mensagem.ts`); sem frase, o texto é só o dos cards.
+ */
+function fraseDosCards(texto: string | null, payload: unknown): string | null {
+  const lista = (payload as { produtos?: unknown } | null)?.produtos
+  if (!texto || !Array.isArray(lista) || lista.length === 0) return null
+  const cards = (lista as ProdutoDaLoja[]).map(textoDoCard).join('\n\n')
+  if (!texto.endsWith(cards) || texto.length === cards.length) return null
+  const frase = texto.slice(0, -cards.length).trim()
+  return frase === '' ? null : frase
 }
 
 function produtosDoPayload(payload: unknown): ProdutoNaMensagem[] {

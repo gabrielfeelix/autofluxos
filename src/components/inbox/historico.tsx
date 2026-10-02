@@ -463,6 +463,14 @@ function ListaDeMensagens({
                 favorita={favoritas.has(mensagem.id)}
             >
             {mensagem.produtos?.length ? (
+              <>
+              {mensagem.fraseDosCards && (
+                <p className={`mb-1.5 max-w-full font-texto text-[14.5px] leading-[1.45] whitespace-pre-wrap [overflow-wrap:anywhere] ${
+                  nossa ? 'bolha-nossa rounded-[15px_15px_4px_15px] px-3.5 py-2' : 'bolha-deles rounded-[15px_15px_15px_4px] px-3.5 py-2'
+                }`}>
+                  <TextoDoWhatsApp texto={mensagem.fraseDosCards} />
+                </p>
+              )}
               <CardsDeProduto
                 produtos={mensagem.produtos}
                 nossa={nossa}
@@ -471,6 +479,7 @@ function ListaDeMensagens({
                 autor={nossa ? mensagem.autor : null}
                 naoConfirmado={nossa && !mensagem.entregue}
               />
+              </>
             ) : (
             <p title={mensagem.toque ? 'Tocou numa opção do menu' : undefined} className={`relative max-w-full font-texto text-[14.5px] leading-[1.45] whitespace-pre-wrap [overflow-wrap:anywhere] ${
               midiaSolta
