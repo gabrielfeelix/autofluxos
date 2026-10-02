@@ -475,7 +475,7 @@ export function executar(
 
   if (atual.type === 'ia') {
     if (entrada.tipo === 'ia_respondeu') {
-      acoes.push({ tipo: 'enviar_texto', texto: entrada.texto })
+      const fala: Acao = { tipo: 'enviar_texto', texto: entrada.texto }
       if (atual.data.salvarEm) s.vars[atual.data.salvarEm] = entrada.texto
 
       /*
@@ -514,11 +514,25 @@ export function executar(
         s.vars[conversar.concluir.salvarEm] = entrada.concluido
         s.tentativas = 0
         const desenhada = proximo(fluxo, atual.id, SAIDA_CONCLUIDO)
-        return desenhada !== null
-          ? avancar(contexto, fluxo, porId, s, acoes, desenhada, { no: atual, saida: SAIDA_CONCLUIDO })
-          : avancar(contexto, fluxo, porId, s, acoes, proximo(fluxo, atual.id), { no: atual })
+        const antes = acoes.length
+        const r =
+          desenhada !== null
+            ? avancar(contexto, fluxo, porId, s, acoes, desenhada, { no: atual, saida: SAIDA_CONCLUIDO })
+            : avancar(contexto, fluxo, porId, s, acoes, proximo(fluxo, atual.id), { no: atual })
+        const depois = r.acoes.slice(antes)
+        /*
+         * Concluiu e **passou a conversa adiante** (outro fluxo ou uma pessoa):
+         * quem recebe é quem fala. A triagem da PCYES respondia "Para tratar da
+         * garantia, entre em contato…" e logo o fluxo de Suporte dizia o mesmo
+         * com o botão, duas mensagens cobradas para começar (02/out/2026).
+         * Seguindo no mesmo fluxo, a frase final sai como sempre ("Enviado!" e
+         * o resumo do pedido).
+         */
+        if (depois.some((acao) => acao.tipo === 'ir_para_fluxo' || acao.tipo === 'transferir_humano')) return r
+        return { ...r, acoes: [...r.acoes.slice(0, antes), fala, ...depois] }
       }
 
+      acoes.push(fala)
       if (conversar && s.tentativas + 1 < conversar.maxTurnos) {
         s.tentativas += 1
         s.noAtual = atual.id

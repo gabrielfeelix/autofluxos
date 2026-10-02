@@ -2121,6 +2121,20 @@ describe('IA contínua que conclui', () => {
     expect(textos(acoes)).toEqual(['Enviado!', 'Saiu pelo normal.'])
   })
 
+  it('triagem que passa para outro fluxo não fala antes dele (PCYES, 02/out)', () => {
+    const triagem = fluxoSchema.parse({
+      inicio: 'ia',
+      nodes: [
+        { id: 'ia', type: 'ia', position: p, data: { instrucao: 'Descubra o assunto.', conversar: { maxTurnos: 4, concluir: { salvarEm: 'assunto' } } } },
+        { id: 'vai', type: 'ir-fluxo', position: p, data: { rotulo: 'Suporte', fluxoId: '8850e2ad-4cc5-4632-baf8-633169d8f6a2' } },
+      ],
+      edges: [{ id: 'a1', source: 'ia', sourceHandle: 'concluido', target: 'vai' }],
+    })
+    const { acoes } = conversar(triagem, [{ tipo: 'inicio' }, { tipo: 'ia_respondeu', texto: 'Para tratar da garantia, fale com o suporte.', concluido: 'suporte' }])
+    expect(textos(acoes)).toEqual([])
+    expect(acoes.some((a) => a.tipo === 'ir_para_fluxo')).toBe(true)
+  })
+
   it('a ligação normal nunca é confundida com a de concluído: responder sem concluir fica na conversa', () => {
     const { sessao } = conversar(fluxo(true, true), [{ tipo: 'inicio' }, { tipo: 'ia_respondeu', texto: 'Oi!' }])
     expect(sessao.noAtual).toBe('ia')
