@@ -357,6 +357,23 @@ extração explícito para os objetos de `public`.
   Desfazer: `drop trigger avisar_inbox_ao_vivo on public.messages`, `drop
   function public.avisar_inbox_ao_vivo()`, `alter table public.clients drop
   column canal_ao_vivo`.
+- **a `0121` e a `0122` foram aplicadas em 02/out/2026** (API pública, fases
+  2 e 3), com autorização explícita do dono, pela Management API, numa
+  transação só. Aditivas: `public.api_idempotencia`, a coluna
+  `public.clients.teto_api_diario`, `public.webhooks_de_saida`,
+  `public.entregas_de_webhook` (RLS ligada sem políticas, grants só
+  `service_role`) e `public.pegar_entregas_de_webhook(integer, uuid[])`
+  (`security invoker`, `execute` só `postgres` e `service_role`). Ensaio em
+  transação com `rollback` antes (nada sobrou). Depois: `public` de 78 para 81
+  tabelas; 8 contas e 261 contatos intactos; Verandi com 40 tabelas, 40
+  migrations (última `0069`) e 16 policies de `storage.objects`, iguais a
+  antes. Data API: as três tabelas 200 com a chave secreta e 401 com a
+  publicável, RPC 200, `app_verandi.conta` 200. Desfazer: `drop function
+  public.pegar_entregas_de_webhook(integer, uuid[]); drop table
+  public.entregas_de_webhook, public.webhooks_de_saida,
+  public.api_idempotencia; alter table public.clients drop column
+  teto_api_diario;` (os segredos dos webhooks ficam no Vault: apagar antes por
+  `segredo_id`).
 - **a `0120` foi aplicada em 02/out/2026** (API pública, fase 1), com
   autorização explícita do dono, pela Management API, numa transação. Aditiva:
   `public.chaves_de_api` (RLS ligada sem políticas, grants só `postgres` e
