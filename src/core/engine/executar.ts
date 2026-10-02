@@ -39,8 +39,12 @@ import { comoCabecalho, comoJson, comoUrl, interpolar, normalizar } from './inte
 import { resultadoDaConta } from './conta'
 import type { Acao, Entrada, Resultado, Sessao } from './types'
 
-/** Na terceira vez que o motor não entende, a conversa vai para uma pessoa. */
-export const MAX_TENTATIVAS = 3
+/**
+ * Na quinta vez seguida que o motor não entende, a conversa vai para uma
+ * pessoa. Era 3; o dono subiu para 5 em 02/out/2026, quando o menu passou a
+ * pedir a escolha de novo em vez de mandar o texto para a IA.
+ */
+export const MAX_TENTATIVAS = 5
 
 /** Trava contra ciclo no desenho. Fluxo real não chega perto disso. */
 export const MAX_PASSOS = 100

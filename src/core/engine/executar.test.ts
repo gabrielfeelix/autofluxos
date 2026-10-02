@@ -306,9 +306,7 @@ describe('as três garantias que impedem a pessoa de ficar presa', () => {
   it(`figurinha ${MAX_TENTATIVAS} vezes seguidas ainda vai para uma pessoa`, () => {
     const { sessao } = conversar(triagem, [
       { tipo: 'inicio' },
-      { tipo: 'midia', formato: 'sticker' },
-      { tipo: 'midia', formato: 'sticker' },
-      { tipo: 'midia', formato: 'sticker' },
+      ...Array.from({ length: MAX_TENTATIVAS }, () => ({ tipo: 'midia' as const, formato: 'sticker' as const })),
     ])
 
     expect(sessao.status).toBe('humano')
@@ -714,11 +712,13 @@ describe('pergunta livre que confere o formato', () => {
 
   // Insistir para sempre com quem não consegue responder é a definição de bot
   // ruim. A régua é a mesma do menu que ninguém acerta.
-  it('na terceira recusa a conversa vai para uma pessoa', () => {
+  it(`na ${MAX_TENTATIVAS}ª recusa seguida a conversa vai para uma pessoa`, () => {
     const fluxo = agendar({ formato: 'data' })
     let r = executar(fluxo, sessaoNova(), { tipo: 'inicio' })
-    r = executar(fluxo, r.sessao, { tipo: 'texto', texto: 'amanhã' })
-    r = executar(fluxo, r.sessao, { tipo: 'texto', texto: 'depois' })
+    for (let i = 1; i < MAX_TENTATIVAS; i++) {
+      r = executar(fluxo, r.sessao, { tipo: 'texto', texto: 'sei lá' })
+      expect(r.sessao.status).not.toBe('humano')
+    }
     r = executar(fluxo, r.sessao, { tipo: 'texto', texto: 'sei lá' })
 
     expect(r.sessao.status).toBe('humano')
