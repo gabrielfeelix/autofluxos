@@ -2,6 +2,7 @@ export type TelaDeAjustes =
   | 'inicio'
   | 'contexto'
   | 'horario'
+  | 'distribuicao'
   | 'acervo'
   | 'integracoes'
   | 'anuncios'
@@ -39,6 +40,7 @@ export const GRUPOS: { titulo: string | null; itens: { chave: TelaDeAjustes; rot
     itens: [
       { chave: 'contexto', rotulo: 'Conhecimento da IA' },
       { chave: 'horario', rotulo: 'Horário e retomada' },
+      { chave: 'distribuicao', rotulo: 'Distribuição' },
       { chave: 'acervo', rotulo: 'Arquivos e mídias' },
     ],
   },

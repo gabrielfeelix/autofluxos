@@ -3,7 +3,6 @@ import { notFound } from 'next/navigation'
 import { AjustesShell } from '@/components/design/ajustes-shell'
 import Link from 'next/link'
 import { TabelaDePessoas } from '@/components/admin/tabela-de-pessoas'
-import { Distribuicao, type PessoaNaDistribuicao } from '@/components/conta/distribuicao'
 import { acaoDarAcessoNaOrganizacao, acaoTrocarFuncao } from '@/server/acoes-pessoas'
 import { acaoPendenciasDoMembro } from '@/server/acoes-acesso'
 import { atorNaOrganizacao, pessoasNaHierarquia } from '@/server/pessoas'
@@ -12,8 +11,6 @@ import { pessoasDaOrganizacao } from '@/server/repos/organizacoes'
 import { funcoesAtribuiveis, podeEditarPessoa, podeGerenciarPessoas, podeVerPessoa } from '@/core/funcoes'
 import { acharCliente } from '@/server/repos/clientes'
 import { membrosDaConta, type MembroDaConta } from '@/server/repos/usuarios'
-import { ajustesDaConta, atendentesDaConta } from '@/server/repos/distribuicao'
-import { contarAbertasPorAtendente } from '@/server/repos/leads'
 import { conferirAcessoAoCliente, podeAdministrarConta } from '@/server/sessao'
 import { capacidadesPorMembro, equipesPorMembro, listarEquipes } from '@/server/repos/equipes'
 import { GerenciarEquipes } from '@/components/conta/gerenciar-equipes'
@@ -43,42 +40,19 @@ export default async function Pagina({ params }: { params: Promise<{ clienteId: 
   }
 
   /*
-   * A distribuição é lida sempre, e não só quando há equipe: uma conta de uma
-   * pessoa também pode ter ligado a trava de "só quem assumiu responde", e
-   * esconder o cartão nesse caso deixaria a chave ligada sem tela para
-   * desligá-la.
-   *
    * As equipes e as sobrescritas entram aqui, e não numa busca por linha: a
    * tela desenha a lista inteira de uma vez, e uma consulta por pessoa daria
-   * N+1 idas ao banco para montar a mesma resposta.
+   * N+1 idas ao banco para montar a mesma resposta. Todas degradam sozinhas:
+   * esta tela não pode parar de abrir porque uma leitura falhou.
    *
-   * As três primeiras degradam sozinhas (ver os repositórios) e as duas novas
-   * também: esta tela não pode parar de abrir porque a leitura de equipe
-   * falhou. Sem elas, o editor abre vazio, que é o estado de quem ainda não
-   * configurou nada, e é honesto.
+   * A distribuição saiu daqui em 02/out (`ajustes/distribuicao`).
    */
-  const [ajustes, configurados, abertas, equipesDaConta, porMembro, capacidades] =
+  const [equipesDaConta, porMembro, capacidades] =
     await Promise.all([
-      ajustesDaConta(clienteId),
-      atendentesDaConta(clienteId),
-      contarAbertasPorAtendente(clienteId).catch(() => new Map<string, number>()),
       listarEquipes(clienteId).catch(() => []),
       equipesPorMembro(clienteId).catch(() => new Map<string, string[]>()),
       capacidadesPorMembro(clienteId).catch(() => new Map()),
     ])
-
-  const pessoas: PessoaNaDistribuicao[] = equipe.map((membro) => {
-    const ajuste = configurados.get(membro.id)
-    return {
-      id: membro.id,
-      nome: membro.nome,
-      papel: membro.papel,
-      presenca: membro.presenca,
-      entraNoRodizio: ajuste?.entraNoRodizio ?? null,
-      tetoSimultaneo: ajuste?.tetoSimultaneo ?? null,
-      abertas: abertas.get(membro.id) ?? 0,
-    }
-  })
 
   /*
    * Quem cada equipe leva junto ao ser arquivada (E15). "Fica sem alcance" é
@@ -180,14 +154,6 @@ export default async function Pagina({ params }: { params: Promise<{ clienteId: 
         {podeMexer && (
           <GerenciarEquipes clienteId={clienteId} equipes={equipesDaConta} perda={perdaPorEquipe} />
         )}
-
-        <Distribuicao
-          clienteId={clienteId}
-          distribuicao={ajustes.distribuicao}
-          exigeAssumir={ajustes.exigeAssumir}
-          pessoas={pessoas}
-          podeMexer={podeMexer}
-        />
 
       </Miolo>
     </AjustesShell>

@@ -35,7 +35,19 @@ export type Candidato = {
   entraNoRodizio: boolean | null
   /** Máximo de conversas simultâneas; `0` e `null` querem dizer sem teto. */
   tetoSimultaneo: number | null
+  /** Quando recebeu o último lead pela distribuição (ISO), para o rodízio. */
+  ultimoLeadEm?: string | null
 }
+
+/**
+ * Os dois jeitos de escolher entre quem está apto.
+ *
+ * - `balanceado`: quem tem menos conversa aberta agora.
+ * - `rodizio`: um de cada vez, em ordem; recebe quem recebeu há mais tempo.
+ *   Quem nunca recebeu vem primeiro. Ignora a carga de propósito: é o modo de
+ *   quem quer a divisão igual, e o teto continua valendo para quem precisa.
+ */
+export type ModoDeEscolha = 'balanceado' | 'rodizio'
 
 /**
  * O padrão de quem nunca foi configurado: gestor acompanha, quem atende atende.
@@ -82,9 +94,21 @@ export function podeReceber(candidato: Candidato): boolean {
  * de entrada produzir saídas diferentes: impossível de testar, e pior de
  * explicar para quem perguntar por que a conversa foi para fulano.
  */
-export function escolherAtendente(candidatos: Candidato[]): string | null {
+export function escolherAtendente(
+  candidatos: Candidato[],
+  modo: ModoDeEscolha = 'balanceado',
+): string | null {
   const aptos = candidatos.filter(podeReceber)
   if (aptos.length === 0) return null
+
+  if (modo === 'rodizio') {
+    // Nunca recebeu = '' (vem antes de qualquer data ISO).
+    const quando = (c: Candidato) => c.ultimoLeadEm ?? ''
+    return aptos.reduce((melhor, atual) => {
+      if (quando(atual) !== quando(melhor)) return quando(atual) < quando(melhor) ? atual : melhor
+      return atual.usuarioId < melhor.usuarioId ? atual : melhor
+    }).usuarioId
+  }
 
   return aptos.reduce((melhor, atual) => {
     if (atual.abertas !== melhor.abertas) return atual.abertas < melhor.abertas ? atual : melhor

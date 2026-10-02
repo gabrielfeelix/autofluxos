@@ -6,26 +6,26 @@ import { entraPorPadrao } from '@/core/rodizio'
 import {
   acaoDefinirAtendente,
   acaoDefinirDistribuicao,
+  acaoPassarConversas,
 } from '@/server/acoes-distribuicao'
+import { Botao } from '@/components/design/botao'
 
 /**
  * Como esta conta reparte os leads novos.
  *
  * ---------------------------------------------------------------------------
- * Por que fica na tela da Equipe, e não numa seção própria
+ * Por que tem tela própria, em Atendimento e IA
  * ---------------------------------------------------------------------------
  *
- * Distribuição só existe quando há mais de uma pessoa, e a lista de pessoas é
- * esta. Numa seção separada, a conta de um atendente só encontraria uma tela de
- * regras para uma equipe que ela não tem, e a conta de quatro teria que
- * atravessar o painel para ligar duas chaves que falam da gente que está ali em
- * cima.
+ * Morou na tela Pessoas até 02/out. Quem configura o atendimento procurava
+ * aqui, ao lado do horário, e não lá: quem recebe a conversa quando o bot
+ * passa adiante é regra de atendimento, não cadastro de gente.
  *
  * ---------------------------------------------------------------------------
  * O que a tela promete, e o que ela não esconde
  * ---------------------------------------------------------------------------
  *
- * Os controles por pessoa só aparecem com o balanceado ligado, porque no manual
+ * Os controles por pessoa só aparecem com um modo automático, porque no manual
  * eles não decidem nada, e controle que não faz nada ensina que a tela mente.
  * Mas o cartão inteiro continua visível, com a explicação do que o balanceado
  * faz: sumir com a seção deixaria a conta sem como descobrir que a distribuição
@@ -55,6 +55,11 @@ const MODOS = [
     rotulo: 'Quem tem menos conversa aberta',
     detalhe: 'o lead novo vai para quem está com a mão mais livre',
   },
+  {
+    valor: 'rodizio',
+    rotulo: 'Um de cada vez, em ordem',
+    detalhe: 'cada lead vai para o próximo da lista, e a vez passa adiante',
+  },
 ]
 
 export function Distribuicao({
@@ -72,6 +77,11 @@ export function Distribuicao({
 }) {
   const [modo, setModo] = useState(distribuicao)
   const [trava, setTrava] = useState(exigeAssumir)
+  // Quem entra mora aqui em cima para a frase "todo lead vai para X" saber.
+  const [entram, setEntram] = useState<Record<string, boolean>>(() =>
+    Object.fromEntries(pessoas.map((p) => [p.id, p.entraNoRodizio ?? entraPorPadrao(p.papel)])),
+  )
+  const marcadas = pessoas.filter((p) => entram[p.id])
   const [erro, setErro] = useState<string | null>(null)
   // Sem travar os controles enquanto grava (25/set): a tela já mudou, e o
   // servidor não redesenha mais a página (`gestoSemRecarregar`).
@@ -81,7 +91,7 @@ export function Distribuicao({
     setErro(null)
     salvar(async () => {
       const r = await acaoDefinirDistribuicao(clienteId, {
-        distribuicao: ajustes.distribuicao as 'manual' | 'balanceado' | undefined,
+        distribuicao: ajustes.distribuicao as 'manual' | 'balanceado' | 'rodizio' | undefined,
         exigeAssumir: ajustes.exigeAssumir,
       })
       if (!r.ok) {
@@ -94,7 +104,7 @@ export function Distribuicao({
   }
 
   return (
-    <section className="app-card mt-6 overflow-hidden">
+    <section className="app-card overflow-hidden">
       <header className="border-b border-line px-5 py-4">
         <h2 className="text-[14.5px] font-bold">Distribuição do atendimento</h2>
         <p className="mt-1 max-w-[640px] text-[12px] leading-5 text-dim">
@@ -158,11 +168,11 @@ export function Distribuicao({
         )}
       </div>
 
-      {modo === 'balanceado' && (
+      {modo !== 'manual' && (
         <div className="border-t border-line">
           <p className="px-5 pt-4 pb-2 text-[11.5px] leading-5 text-dim">
-            Quem entra no rodízio. Quem está ausente fica de fora enquanto isso e
-            mantém as conversas que já são dele.
+            Quem recebe. Quem está ausente fica de fora enquanto isso e mantém as
+            conversas que já são dele.
           </p>
           <ul className="flex flex-col">
             {pessoas.map((pessoa) => (
@@ -171,9 +181,18 @@ export function Distribuicao({
                 clienteId={clienteId}
                 pessoa={pessoa}
                 podeMexer={podeMexer}
+                entra={entram[pessoa.id] ?? false}
+                aoMudarEntra={(valor) => setEntram((atual) => ({ ...atual, [pessoa.id]: valor }))}
               />
             ))}
           </ul>
+          <p className="border-t border-line px-5 py-3 text-[12px] leading-5 text-soft">
+            {marcadas.length === 0
+              ? 'Ninguém marcado: os leads novos ficam em "Sem dono".'
+              : marcadas.length === 1
+                ? <>Todo lead novo vai para <strong>{marcadas[0]?.nome}</strong>.</>
+                : `${marcadas.length} pessoas recebendo.`}
+          </p>
         </div>
       )}
     </section>
@@ -183,21 +202,23 @@ export function Distribuicao({
 /**
  * Uma pessoa, com as duas chaves que a colocam ou tiram da fila de recebimento.
  *
- * O estado é local a esta linha, e não um mapa lá em cima: mexer no teto de uma
- * pessoa não pode redesenhar a lista inteira, e um erro numa linha não deve
- * apagar o que a pessoa acabou de digitar na outra.
+ * O teto é local a esta linha: um erro numa linha não deve apagar o que a
+ * pessoa acabou de digitar na outra. Quem entra sobe para o cartão, que diz
+ * para quem os leads estão indo.
  */
 function LinhaDoAtendente({
   clienteId,
   pessoa,
   podeMexer,
+  entra,
+  aoMudarEntra,
 }: {
   clienteId: string
   pessoa: PessoaNaDistribuicao
   podeMexer: boolean
+  entra: boolean
+  aoMudarEntra: (valor: boolean) => void
 }) {
-  const padrao = entraPorPadrao(pessoa.papel)
-  const [entra, setEntra] = useState(pessoa.entraNoRodizio ?? padrao)
   const [teto, setTeto] = useState(String(pessoa.tetoSimultaneo ?? 0))
   const [erro, setErro] = useState<string | null>(null)
   // Sem travar os controles enquanto grava (25/set): a tela já mudou, e o
@@ -225,7 +246,7 @@ function LinhaDoAtendente({
           checked={entra}
           disabled={!podeMexer}
           onChange={(evento) => {
-            setEntra(evento.target.checked)
+            aoMudarEntra(evento.target.checked)
             gravar({ entra: evento.target.checked, teto })
           }}
           className="caixa-de-marcar"
@@ -241,7 +262,7 @@ function LinhaDoAtendente({
               por que a pessoa marcada não está recebendo nada. Sem ela, a chave
               ligada e a fila parada pareceriam defeito.
             */}
-            {ausente && ' · ausente agora, fora do rodízio'}
+            {ausente && ' · ausente agora, não recebe'}
           </span>
         </span>
       </label>
@@ -268,5 +289,96 @@ function LinhaDoAtendente({
         </p>
       )}
     </li>
+  )
+}
+
+/**
+ * Passa as conversas para uma pessoa de uma vez: o caminho de quem acabou de
+ * ligar a distribuição e tem um estoque de conversas sem dono de antes dela.
+ */
+export function PassarConversas({
+  clienteId,
+  pessoas,
+  semDono,
+  todas,
+  podeMexer,
+}: {
+  clienteId: string
+  pessoas: { id: string; nome: string }[]
+  semDono: number
+  todas: number
+  podeMexer: boolean
+}) {
+  const [para, setPara] = useState(pessoas[0]?.id ?? '')
+  const [escopo, setEscopo] = useState<'sem-dono' | 'todas'>('sem-dono')
+  const [aviso, setAviso] = useState<{ tom: 'ok' | 'erro'; texto: string } | null>(null)
+  const [contagem, setContagem] = useState({ semDono, todas })
+  const [passando, passar] = useTransition()
+  const n = escopo === 'sem-dono' ? contagem.semDono : contagem.todas
+  const nome = pessoas.find((p) => p.id === para)?.nome.split(' ')[0] ?? ''
+
+  return (
+    <section className="app-card overflow-hidden">
+      <header className="border-b border-line px-5 py-4">
+        <h2 className="text-[14.5px] font-bold">Passar conversas para alguém</h2>
+        <p className="mt-1 max-w-[640px] text-[12px] leading-5 text-dim">
+          A pessoa vira dona dos contatos: as conversas aparecem com ela no Inbox e
+          voltam para ela no próximo contato.
+        </p>
+      </header>
+      <div className="flex flex-col gap-4 px-5 py-4">
+        <div className="grid gap-3 sm:grid-cols-2">
+          <div className="flex flex-col gap-1.5">
+            <span className="text-[12.5px] font-semibold text-soft">Para</span>
+            <Dropdown
+              opcoes={pessoas.map((p) => ({ valor: p.id, rotulo: p.nome }))}
+              valor={para}
+              aoMudar={setPara}
+              desabilitado={!podeMexer}
+              rotuloAcessivel="Para quem passar as conversas"
+            />
+          </div>
+          <div className="flex flex-col gap-1.5">
+            <span className="text-[12.5px] font-semibold text-soft">Quais</span>
+            <Dropdown
+              opcoes={[
+                { valor: 'sem-dono', rotulo: `Só as sem dono (${contagem.semDono})` },
+                { valor: 'todas', rotulo: `Todas, inclusive de outras pessoas (${contagem.todas})` },
+              ]}
+              valor={escopo}
+              aoMudar={(valor) => setEscopo(valor as 'sem-dono' | 'todas')}
+              desabilitado={!podeMexer}
+              rotuloAcessivel="Quais conversas passar"
+            />
+          </div>
+        </div>
+        <div className="flex flex-wrap items-center gap-3">
+          <Botao
+            variante="primario"
+            disabled={!podeMexer || !para || n === 0 || passando}
+            onClick={() => {
+              setAviso(null)
+              passar(async () => {
+                const r = await acaoPassarConversas(clienteId, para, escopo).catch(() => ({
+                  ok: false,
+                  erro: 'sem conexão com o servidor',
+                  passaram: 0,
+                }))
+                if (!r.ok) return setAviso({ tom: 'erro', texto: r.erro ?? 'não deu para passar' })
+                setAviso({ tom: 'ok', texto: `${r.passaram ?? 0} ${r.passaram === 1 ? 'conversa passou' : 'conversas passaram'} para ${nome}.` })
+                setContagem((atual) => ({ semDono: 0, todas: atual.todas }))
+              })
+            }}
+          >
+            {passando ? 'Passando…' : n === 0 ? 'Nada para passar' : `Passar ${n} para ${nome}`}
+          </Botao>
+          {aviso && (
+            <p role={aviso.tom === 'erro' ? 'alert' : 'status'} className={`text-[12px] ${aviso.tom === 'erro' ? 'text-perigo' : 'text-ok'}`}>
+              {aviso.texto}
+            </p>
+          )}
+        </div>
+      </div>
+    </section>
   )
 }

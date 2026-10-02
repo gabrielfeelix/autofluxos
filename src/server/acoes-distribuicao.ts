@@ -1,10 +1,14 @@
 'use server'
 
 import {
+  MODOS_DE_DISTRIBUICAO,
   definirAjustesDaConta,
   definirAtendente,
+  passarContatos,
+  type EscopoDaPassagem,
   type ModoDeDistribuicao,
 } from './repos/distribuicao'
+import { membrosDaConta } from './repos/usuarios'
 import { exigirAcessoAoCliente, podeAdministrarConta } from './sessao'
 
 /**
@@ -29,7 +33,7 @@ export async function acaoDefinirDistribuicao(
   const { erro } = await exigirAdministracao(clienteId)
   if (erro) return { ok: false, erro }
 
-  if (ajustes.distribuicao && !['manual', 'balanceado'].includes(ajustes.distribuicao)) {
+  if (ajustes.distribuicao && !MODOS_DE_DISTRIBUICAO.includes(ajustes.distribuicao)) {
     return { ok: false, erro: 'modo de distribuição que não existe' }
   }
 
@@ -62,6 +66,27 @@ export async function acaoDefinirAtendente(
     tetoSimultaneo: teto,
   })
   return r
+}
+
+/**
+ * Passa as conversas da conta para uma pessoa, de uma vez (o "tudo para o
+ * Daniel" de quem acabou de entrar). A pessoa tem que ser da conta: o id vem
+ * da tela e entra num filtro do banco.
+ */
+export async function acaoPassarConversas(
+  clienteId: string,
+  usuarioId: string,
+  escopo: EscopoDaPassagem,
+): Promise<{ ok: boolean; erro?: string; passaram?: number }> {
+  const { erro } = await exigirAdministracao(clienteId)
+  if (erro) return { ok: false, erro }
+  if (escopo !== 'sem-dono' && escopo !== 'todas') return { ok: false, erro: 'escolha quais conversas passar' }
+
+  const equipe = await membrosDaConta(clienteId)
+  if (!equipe.some((membro) => membro.id === usuarioId)) {
+    return { ok: false, erro: 'esta pessoa não está nesta organização' }
+  }
+  return passarContatos(clienteId, usuarioId, escopo)
 }
 
 /*

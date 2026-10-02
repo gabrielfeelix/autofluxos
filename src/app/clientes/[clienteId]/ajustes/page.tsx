@@ -24,6 +24,13 @@ import { automacaoNoAr, trilhaDeConfiguracao } from '@/core/trilha-de-configurac
 import { TrilhaDeConfiguracao } from '@/components/cliente/trilha-de-configuracao'
 import { planoDaConta } from '@/server/repos/plano'
 import { membrosDaConta, type MembroDaConta } from '@/server/repos/usuarios'
+import { ajustesDaConta, type ModoDeDistribuicao } from '@/server/repos/distribuicao'
+
+const ROTULO_DA_DISTRIBUICAO: Record<ModoDeDistribuicao, string> = {
+  manual: 'sem dono',
+  balanceado: 'quem tem menos',
+  rodizio: 'em ordem',
+}
 
 export const dynamic = 'force-dynamic'
 
@@ -48,7 +55,7 @@ export default async function Pagina({
   const cliente = await acharCliente(clienteId)
   if (!cliente) notFound()
 
-  const [conexoes, canais, acervo, etiquetas, estrago, paginasDeLead, plano, recursos, fluxos, contatos, catalogo] =
+  const [conexoes, canais, acervo, etiquetas, estrago, paginasDeLead, plano, recursos, fluxos, contatos, catalogo, distribuicao] =
     await Promise.all([
       listarConexoes(cliente.id),
       listarCanais(cliente.id),
@@ -61,6 +68,7 @@ export default async function Pagina({
       listarFluxos(cliente.id),
       contarLeads(cliente.id),
       catalogoDeIntegracoes(cliente.id),
+      ajustesDaConta(cliente.id),
     ])
   const semContexto = cliente.contextoNegocio.trim() === ''
   // Selo, não tela: sem a tabela (ambiente sem a 0120) o índice abre igual.
@@ -132,7 +140,7 @@ export default async function Pagina({
             href={`/clientes/${cliente.id}/ajustes/equipe`}
             icone={ICONE_DA_TELA['equipe']}
             titulo="Pessoas"
-            descricao="Quem entra nesta conta, o que cada pessoa pode fazer, equipes e distribuição do atendimento."
+            descricao="Quem entra nesta conta, o que cada pessoa pode fazer e as equipes."
             estado={
               <Selo tom={equipe.length === 0 ? 'alerta' : 'ok'}>
                 {equipe.length === 0
@@ -192,6 +200,17 @@ export default async function Pagina({
                   <Selo tom="alerta">não volta sozinho</Selo>
                 )}
               </span>
+            }
+          />
+          <Cartao
+            href={`/clientes/${cliente.id}/ajustes/distribuicao`}
+            icone={ICONE_DA_TELA['distribuicao']}
+            titulo="Distribuição"
+            descricao="Quem recebe a conversa quando o bot passa para uma pessoa, e passar conversas em lote."
+            estado={
+              <Selo tom={distribuicao.distribuicao === 'manual' ? 'neutro' : 'ok'}>
+                {ROTULO_DA_DISTRIBUICAO[distribuicao.distribuicao]}
+              </Selo>
             }
           />
           <Cartao

@@ -14,6 +14,7 @@ const sinonimos: Partial<Record<TelaDeAjustes, string>> = {
   negocio: 'cadastro cnpj empresa organização',
   anuncios: 'leads meta facebook anuncios captacao formulario',
   horario: 'retomada inatividade expediente',
+  distribuicao: 'distribuicao rodizio lead responsavel dono atribuir fila sem dono',
   equipe: 'equipe usuarios membros papeis permissoes',
   integracoes: 'integracao integracoes magento loja',
   chaves: 'chaves credenciais senha token bloco sistema',

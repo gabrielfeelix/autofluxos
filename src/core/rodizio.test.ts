@@ -76,3 +76,25 @@ describe('escolherAtendente', () => {
     expect(escolherAtendente([{ ...base, papel: 'owner' }])).toBeNull()
   })
 })
+
+describe('escolherAtendente em ordem (rodízio)', () => {
+  it('entrega para quem recebeu há mais tempo, ignorando a carga', () => {
+    const equipe = [
+      { ...base, usuarioId: 'ana', abertas: 0, ultimoLeadEm: '2026-10-02T12:00:00+00:00' },
+      { ...base, usuarioId: 'bia', abertas: 9, ultimoLeadEm: '2026-10-02T09:00:00+00:00' },
+    ]
+    expect(escolherAtendente(equipe, 'rodizio')).toBe('bia')
+  })
+
+  it('quem nunca recebeu vem primeiro', () => {
+    const equipe = [
+      { ...base, usuarioId: 'ana', ultimoLeadEm: '2026-10-01T09:00:00+00:00' },
+      { ...base, usuarioId: 'bia', ultimoLeadEm: null },
+    ]
+    expect(escolherAtendente(equipe, 'rodizio')).toBe('bia')
+  })
+
+  it('dono marcado sozinho recebe tudo', () => {
+    expect(escolherAtendente([{ ...base, usuarioId: 'daniel', papel: 'owner', entraNoRodizio: true }], 'rodizio')).toBe('daniel')
+  })
+})

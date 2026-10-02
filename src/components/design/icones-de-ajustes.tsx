@@ -71,6 +71,15 @@ export const ICONE_DA_TELA: Record<TelaDeAjustes | 'whatsapp' | 'instagram' | 'r
       <path d="M12 7.5V12l3 1.8" />
     </Svg>
   ),
+  // Uma entrada que se abre em três: o lead chega e vai para alguém.
+  distribuicao: (
+    <Svg>
+      <path d="M3.5 12H10" />
+      <path d="M10 12c3 0 4-5.5 7-5.5h3.5" />
+      <path d="M10 12h10.5" />
+      <path d="M10 12c3 0 4 5.5 7 5.5h3.5" />
+    </Svg>
+  ),
   'respostas-rapidas': (
     <Svg>
       <path d="M20 14.5a2.5 2.5 0 0 1-2.5 2.5H9l-4 3.5V6.5A2.5 2.5 0 0 1 7.5 4h10A2.5 2.5 0 0 1 20 6.5Z" />

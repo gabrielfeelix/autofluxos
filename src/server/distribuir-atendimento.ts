@@ -1,7 +1,7 @@
 import 'server-only'
 import { escolherAtendente, type Candidato } from '@/core/rodizio'
 import { atribuirContato } from './repos/conversas'
-import { ajustesDaConta, atendentesDaConta } from './repos/distribuicao'
+import { ajustesDaConta, atendentesDaConta, marcarUltimoLead, ultimosLeadsDaConta } from './repos/distribuicao'
 import { contarAbertasPorAtendente, donoDoContato } from './repos/leads'
 import { membrosDaConta } from './repos/usuarios'
 
@@ -44,16 +44,18 @@ export async function distribuirSeSemDono(
 ): Promise<string | null> {
   try {
     const ajustes = await ajustesDaConta(clienteId)
-    if (ajustes.distribuicao !== 'balanceado') return null
+    if (ajustes.distribuicao === 'manual') return null
+    const modo = ajustes.distribuicao
 
     const dono = await donoDoContato(clienteId, contatoId)
     // `undefined` = o contato não é desta conta. `string` = a carteira decide.
     if (dono !== null) return null
 
-    const [equipe, configurados, abertas] = await Promise.all([
+    const [equipe, configurados, abertas, ultimos] = await Promise.all([
       membrosDaConta(clienteId),
       atendentesDaConta(clienteId),
       contarAbertasPorAtendente(clienteId),
+      modo === 'rodizio' ? ultimosLeadsDaConta(clienteId) : Promise.resolve(new Map<string, string>()),
     ])
 
     const candidatos: Candidato[] = equipe.map((membro) => {
@@ -65,10 +67,11 @@ export async function distribuirSeSemDono(
         abertas: abertas.get(membro.id) ?? 0,
         entraNoRodizio: ajuste?.entraNoRodizio ?? null,
         tetoSimultaneo: ajuste?.tetoSimultaneo ?? null,
+        ultimoLeadEm: ultimos.get(membro.id) ?? null,
       }
     })
 
-    const escolhido = escolherAtendente(candidatos)
+    const escolhido = escolherAtendente(candidatos, modo)
     /*
      * Ninguém apto é resposta comum e legítima: equipe inteira ausente de
      * madrugada, todo mundo no teto numa terça de campanha. A conversa fica sem
@@ -78,6 +81,7 @@ export async function distribuirSeSemDono(
     if (!escolhido) return null
 
     const deu = await atribuirContato(clienteId, contatoId, escolhido)
+    if (deu) await marcarUltimoLead(clienteId, escolhido)
     return deu ? escolhido : null
   } catch (erro) {
     console.error(
