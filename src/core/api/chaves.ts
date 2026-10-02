@@ -31,7 +31,7 @@ export const ESCOPOS_DA_API = [
     chave: 'contatos:ler',
     grupo: 'Contatos',
     rotulo: 'Ler contatos',
-    explicacao: 'Consultar um contato pelo telefone: nome, campos, etiquetas e etapa do funil.',
+    explicacao: 'Consultar e listar contatos e etiquetas: nome, campos, etiquetas e etapa do funil.',
     fase: 1,
   },
   {
@@ -55,6 +55,20 @@ export const ESCOPOS_DA_API = [
     explicacao: 'Mandar um modelo aprovado pela Meta, mesmo fora da janela de 24h: lembrete, confirmação, cobrança.',
     aviso: 'Cada mensagem é cobrada pela Meta na conta do WhatsApp da organização.',
     fase: 2,
+  },
+  {
+    chave: 'funil:ler',
+    grupo: 'Funil',
+    rotulo: 'Ler o funil',
+    explicacao: 'Ver os funis, as etapas e em que oportunidade cada contato está.',
+    fase: 4,
+  },
+  {
+    chave: 'funil:escrever',
+    grupo: 'Funil',
+    rotulo: 'Mover o funil',
+    explicacao: 'Abrir oportunidade, mudar de etapa e marcar como ganha ou perdida.',
+    fase: 4,
   },
 ] as const satisfies readonly {
   chave: string

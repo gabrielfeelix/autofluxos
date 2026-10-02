@@ -43,20 +43,22 @@ export function TetoDaApi({ organizacaoId, inicial, padrao }: { organizacaoId: s
           salvar()
         }}
       >
-        <input
-          type="number"
-          inputMode="numeric"
-          min={0}
-          max={100000}
-          value={valor}
-          onChange={(e) => {
-            setValor(e.target.value)
-            setMensagem(null)
-          }}
-          placeholder={`Exemplo: ${padrao}`}
-          aria-label="Modelos por dia"
-          className="app-field w-40 px-3 py-2 text-[13px] tabular-nums"
-        />
+        <div className="w-36">
+          <input
+            type="number"
+            inputMode="numeric"
+            min={0}
+            max={100000}
+            value={valor}
+            onChange={(e) => {
+              setValor(e.target.value)
+              setMensagem(null)
+            }}
+            placeholder={`Exemplo: ${padrao}`}
+            aria-label="Modelos por dia"
+            className="app-field px-3 py-2 text-[13px] tabular-nums"
+          />
+        </div>
         <span className="text-[12.5px] text-muted">por dia</span>
         <Botao type="submit" variante="secundario" disabled={rodando || valor.trim() === salvo}>
           {rodando ? 'Salvando…' : 'Salvar'}

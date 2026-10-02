@@ -23,7 +23,13 @@ vi.mock('next/server', () => ({ after: (fn: () => unknown) => fn() }))
 vi.mock('@/server/limite', () => ({ consumirLimite: vi.fn() }))
 vi.mock('@/server/recursos-do-plano', () => ({ recusaDoPlano: vi.fn() }))
 vi.mock('@/server/repos/chaves-de-api', () => ({ conferirChaveDeApi: vi.fn(), registrarUsoDaChave: vi.fn() }))
-vi.mock('@/server/api/contatos', () => ({ gravarContatoDaApi: vi.fn(), lerContatoPeloTelefone: vi.fn() }))
+vi.mock('@/server/api/contatos', () => ({
+  LIMITE_PADRAO_DA_LISTA: 50,
+  LIMITE_MAXIMO_DA_LISTA: 100,
+  gravarContatoDaApi: vi.fn(),
+  lerContatoPeloTelefone: vi.fn(),
+  listarContatosDaApi: vi.fn(),
+}))
 vi.mock('@/server/repos/contato-por-telefone', () => ({ acharContatoPeloTelefone: vi.fn() }))
 vi.mock('@/server/repos/fluxos', () => ({ acharFluxo: vi.fn(), listarFluxos: vi.fn() }))
 vi.mock('@/server/receber-mensagem', () => ({ abrirFluxoParaContato: vi.fn() }))

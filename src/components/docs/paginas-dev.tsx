@@ -101,7 +101,7 @@ function Visao() {
       <ul className="ml-5 list-disc space-y-2">
         <li>
           <strong className="text-ink">O seu sistema chama o AutoFluxos.</strong> Cadastra contatos,
-          consulta dados e dispara automações com uma chave da organização. Use a{' '}
+          consulta dados, envia modelos aprovados, move o funil e dispara automações com uma chave da organização. Use a{' '}
           <a className="font-medium text-primary hover:underline" href="/ajuda/desenvolvedores/api-autenticacao">API</a>.
         </li>
         <li>

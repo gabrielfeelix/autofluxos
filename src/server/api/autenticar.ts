@@ -54,6 +54,13 @@ export type CodigoDeErro =
   | 'teto_diario'
   | 'sem_numero'
   | 'meta_recusou'
+  | 'cursor_invalido'
+  | 'etiqueta_nao_encontrada'
+  | 'funil_nao_encontrado'
+  | 'etapa_nao_encontrada'
+  | 'oportunidade_nao_encontrada'
+  | 'oportunidade_fechada'
+  | 'motivo_invalido'
   | 'erro_interno'
 
 /** O formato de erro de toda a API: `codigo` estável, `mensagem` para gente. */

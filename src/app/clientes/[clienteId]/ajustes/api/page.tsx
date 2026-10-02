@@ -62,7 +62,7 @@ export default async function Pagina({ params }: { params: Promise<{ clienteId: 
         {recusa ? (
           <SemPlano clienteId={cliente.id} recusa={recusa} />
         ) : (
-          <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_340px]">
+          <div className="grid grid-cols-[minmax(0,1fr)] gap-6 lg:grid-cols-[minmax(0,1fr)_340px]">
             <div className="min-w-0">
               {administra ? (
                 <>

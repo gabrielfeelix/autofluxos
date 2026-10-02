@@ -187,3 +187,95 @@ async function aplicarEtiquetas(clienteId: string, contatoId: string, nomes: str
   }
   return avisos
 }
+
+/* ------------------------------------------------------------- listagem (fase 4) */
+
+export const LIMITE_PADRAO_DA_LISTA = 50
+export const LIMITE_MAXIMO_DA_LISTA = 100
+
+export type FiltroDaLista = {
+  limite: number
+  cursor?: string
+  etiqueta?: string
+  criadoDesde?: string
+  criadoAte?: string
+}
+
+export type ResultadoDaLista =
+  | { ok: true; contatos: ContatoDaApi[]; proximo_cursor: string | null }
+  | { ok: false; motivo: 'cursor_invalido' | 'etiqueta_nao_encontrada' }
+
+/**
+ * O cursor é opaco para quem chama: o `criado_em` e o `id` do último contato
+ * da página, em base64url. Ordem do mais antigo para o mais novo, que é o que
+ * uma sincronização quer: contato novo entra no fim e não desloca as páginas
+ * já lidas, como faria um `offset`.
+ */
+const INSTANTE = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d{1,6})?(Z|[+-]\d{2}:\d{2})$/
+
+export function codificarCursor(criadoEm: string, id: string): string {
+  return Buffer.from(JSON.stringify([criadoEm, id])).toString('base64url')
+}
+
+export function lerCursor(cursor: string): { criadoEm: string; id: string } | null {
+  try {
+    const valor = JSON.parse(Buffer.from(cursor, 'base64url').toString('utf8')) as unknown
+    if (!Array.isArray(valor) || valor.length !== 2) return null
+    const [criadoEm, id] = valor as unknown[]
+    // O instante como o banco devolveu, com microssegundos: passar por `Date`
+    // cortaria para milissegundos, e o último contato da página voltaria na
+    // seguinte. A forma é conferida aqui porque o valor entra no filtro.
+    if (typeof criadoEm !== 'string' || !INSTANTE.test(criadoEm)) return null
+    if (typeof id !== 'string' || !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id)) return null
+    return { criadoEm, id: id.toLowerCase() }
+  } catch {
+    return null
+  }
+}
+
+export async function listarContatosDaApi(clienteId: string, filtro: FiltroDaLista): Promise<ResultadoDaLista> {
+  const depois = filtro.cursor ? lerCursor(filtro.cursor) : null
+  if (filtro.cursor && !depois) return { ok: false, motivo: 'cursor_invalido' }
+
+  let etiquetaId: string | null = null
+  if (filtro.etiqueta) {
+    const procurada = filtro.etiqueta.trim().toLocaleLowerCase('pt-BR')
+    const achada = (await listarEtiquetas(clienteId)).find((e) => e.nome.trim().toLocaleLowerCase('pt-BR') === procurada)
+    if (!achada) return { ok: false, motivo: 'etiqueta_nao_encontrada' }
+    etiquetaId = achada.id
+  }
+
+  // Com filtro de etiqueta, a junção vira `inner` só para filtrar; as
+  // etiquetas mostradas continuam vindo da junção completa.
+  const colunas = etiquetaId ? `${COLUNAS}, filtro:contato_etiquetas!inner(etiqueta_id)` : COLUNAS
+  let consulta = db()
+    .from('contacts')
+    .select(colunas)
+    .eq('client_id', clienteId)
+    .order('criado_em', { ascending: true })
+    .order('id', { ascending: true })
+    .limit(filtro.limite + 1)
+
+  if (etiquetaId) consulta = consulta.eq('filtro.etiqueta_id', etiquetaId)
+  if (filtro.criadoDesde) consulta = consulta.gte('criado_em', filtro.criadoDesde)
+  if (filtro.criadoAte) consulta = consulta.lt('criado_em', filtro.criadoAte)
+  if (depois) consulta = consulta.or(`criado_em.gt.${depois.criadoEm},and(criado_em.eq.${depois.criadoEm},id.gt.${depois.id})`)
+
+  const { data, error } = await consulta
+  if (error) throw new Error(`não deu para listar os contatos: ${error.message}`)
+
+  const linhas = (data ?? []) as unknown as Linha[]
+  const pagina = linhas.slice(0, filtro.limite)
+  const ultima = pagina[pagina.length - 1]
+  return {
+    ok: true,
+    contatos: pagina.map(paraContato),
+    proximo_cursor: linhas.length > filtro.limite && ultima ? codificarCursor(ultima.criado_em, ultima.id) : null,
+  }
+}
+
+export type EtiquetaDaApi = { id: string; nome: string; cor: string }
+
+export async function listarEtiquetasDaApi(clienteId: string): Promise<EtiquetaDaApi[]> {
+  return (await listarEtiquetas(clienteId)).map((e) => ({ id: e.id, nome: e.nome, cor: e.cor }))
+}

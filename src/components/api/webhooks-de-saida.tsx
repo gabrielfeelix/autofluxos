@@ -159,18 +159,21 @@ export function WebhooksDeSaida({
         <ul className="overflow-hidden rounded-[14px] border border-line bg-panel">
           {webhooks.map((webhook) => (
             <li key={webhook.id} className="border-b border-line px-5 py-4 last:border-0">
-              <div className="flex flex-col gap-3 md:flex-row md:items-center">
+              <div className="flex items-start gap-3">
                 <span
                   aria-hidden
-                  className={`grid size-10 shrink-0 place-items-center rounded-[10px] ${webhook.ativo ? 'bg-primary-weak text-primary' : 'bg-surface text-dim'}`}
+                  className={`grid size-9 shrink-0 place-items-center rounded-[10px] ${webhook.ativo ? 'bg-primary-weak text-primary' : 'bg-surface text-dim'}`}
                 >
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
                     <path d="M7 17 17 7M9 7h8v8" />
                   </svg>
                 </span>
                 <div className="min-w-0 flex-1">
-                  <div className="flex min-w-0 flex-wrap items-center gap-2">
-                    <code className={`min-w-0 truncate font-mono text-[12.5px] font-semibold ${webhook.ativo ? 'text-ink' : 'text-dim'}`}>
+                  <div className="flex min-w-0 items-center gap-2">
+                    <code
+                      title={webhook.url}
+                      className={`min-w-0 flex-1 truncate font-mono text-[12.5px] font-semibold leading-9 ${webhook.ativo ? 'text-ink' : 'text-dim'}`}
+                    >
                       {webhook.url}
                     </code>
                     {webhook.pausadoEm ? (
@@ -181,35 +184,35 @@ export function WebhooksDeSaida({
                       <Pilula>desligado</Pilula>
                     )}
                   </div>
-                  <div className="mt-2 flex flex-wrap gap-1.5">
+                  <div className="mt-1 flex flex-wrap gap-1.5">
                     {webhook.eventos.map((evento) => (
                       <Pilula key={evento} tom={webhook.ativo ? 'destaque' : 'neutro'}>
                         {ROTULO_DO_EVENTO[evento]}
                       </Pilula>
                     ))}
                   </div>
-                </div>
-                <div className="flex shrink-0 flex-wrap gap-2 self-start md:self-center">
-                  <Botao variante="secundario" tamanho="sm" onClick={() => testar(webhook)} disabled={testando === webhook.id || !webhook.ativo}>
-                    {testando === webhook.id ? 'Enviando…' : 'Testar'}
-                  </Botao>
-                  <Botao variante="secundario" tamanho="sm" onClick={() => alternar(webhook)}>
-                    {webhook.ativo ? 'Desligar' : 'Religar'}
-                  </Botao>
-                  <Botao variante="fantasma" tamanho="sm" onClick={() => setEditando(webhook)}>
-                    Editar
-                  </Botao>
+                  <div className="mt-3 flex flex-wrap items-center gap-2">
+                    <Botao variante="secundario" tamanho="sm" onClick={() => testar(webhook)} disabled={testando === webhook.id || !webhook.ativo}>
+                      {testando === webhook.id ? 'Enviando…' : 'Testar'}
+                    </Botao>
+                    <Botao variante="secundario" tamanho="sm" onClick={() => alternar(webhook)}>
+                      {webhook.ativo ? 'Desligar' : 'Religar'}
+                    </Botao>
+                    <Botao variante="fantasma" tamanho="sm" onClick={() => setEditando(webhook)}>
+                      Editar
+                    </Botao>
+                    {aviso?.webhookId === webhook.id && (
+                      <span role="status" className={`text-[12px] ${aviso.tom === 'ok' ? 'text-ok' : 'text-perigo'}`}>
+                        {aviso.texto}
+                      </span>
+                    )}
+                  </div>
                 </div>
               </div>
               {webhook.pausadoEm && (
                 <p className="mt-3 rounded-[10px] border border-rose-400/25 bg-rose-400/[0.07] px-3.5 py-2.5 text-[12px] leading-5 text-soft">
                   Pausado sozinho em {hora(webhook.pausadoEm)} depois de {FALHAS_ATE_PAUSAR} falhas seguidas. Confira o
                   endereço, use Testar e religue.
-                </p>
-              )}
-              {aviso?.webhookId === webhook.id && (
-                <p role="status" className={`mt-2 text-[12px] ${aviso.tom === 'ok' ? 'text-ok' : 'text-perigo'}`}>
-                  {aviso.texto}
                 </p>
               )}
             </li>
@@ -284,16 +287,20 @@ function UltimasEntregas({ entregas, webhooks }: { entregas: EntregaDeWebhook[];
       ) : (
         <ul className="overflow-hidden rounded-[14px] border border-line bg-panel">
           {entregas.slice(0, 15).map((entrega) => (
-            <li key={entrega.id} className="flex flex-wrap items-center gap-x-3 gap-y-1 border-b border-line px-5 py-2.5 text-[12.5px] last:border-0">
-              <span className="w-[150px] shrink-0 font-semibold">{ROTULO_DO_EVENTO[entrega.evento] ?? entrega.evento}</span>
-              <span className="min-w-0 flex-1 truncate font-mono text-[11.5px] text-muted">{anfitriao(urlDe.get(entrega.webhookId) ?? '')}</span>
-              <span className="text-[11.5px] text-dim tabular-nums">
-                {entrega.tentativas > 1 ? `${entrega.tentativas} tentativas · ` : ''}
-                {hora(entrega.criadoEm)}
-              </span>
-              <SituacaoDaEntrega entrega={entrega} />
+            <li key={entrega.id} className="border-b border-line px-5 py-2.5 last:border-0">
+              <div className="flex min-w-0 items-center gap-3 text-[12.5px]">
+                <span className="min-w-0 flex-1 truncate">
+                  <span className="font-semibold">{ROTULO_DO_EVENTO[entrega.evento] ?? entrega.evento}</span>
+                  <span className="ml-2 font-mono text-[11.5px] text-muted">{anfitriao(urlDe.get(entrega.webhookId) ?? '')}</span>
+                </span>
+                <span className="hidden shrink-0 text-[11.5px] text-dim tabular-nums sm:inline">
+                  {entrega.tentativas > 1 ? `${entrega.tentativas} tentativas · ` : ''}
+                  {hora(entrega.criadoEm)}
+                </span>
+                <SituacaoDaEntrega entrega={entrega} />
+              </div>
               {entrega.status !== 'entregue' && entrega.resposta && (
-                <span className="w-full truncate pl-0 text-[11.5px] text-muted md:pl-[162px]">{entrega.resposta}</span>
+                <p className="mt-0.5 truncate text-[11.5px] text-muted">{entrega.resposta}</p>
               )}
             </li>
           ))}

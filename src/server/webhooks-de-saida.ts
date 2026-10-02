@@ -226,7 +226,9 @@ async function postar(
       // Corpo ilegível não muda o veredito: o status já disse.
     }
     const status = resposta.statusCode
-    const resumo = status >= 300 && status < 400 ? `Redirecionamento (${status}) não é seguido. Use o endereço final.` : texto || null
+    // Página HTML de erro não diz nada na lista de entregas: o status já basta.
+    const legivel = /^\s*</.test(texto) ? `Respondeu ${status} com uma página HTML.` : texto.replace(/\s+/g, ' ').trim()
+    const resumo = status >= 300 && status < 400 ? `Redirecionamento (${status}) não é seguido. Use o endereço final.` : legivel || null
     return { statusHttp: status, resposta: resumo }
   } catch (erro) {
     const nome = erro instanceof Error ? erro.name : ''

@@ -124,7 +124,17 @@ function Autenticacao() {
       <Sub>Permissões</Sub>
       <ListaDeCampos
         campos={[
-          { nome: 'contatos:ler', tipo: 'escopo', descricao: <>Consultar um contato: <Link href="/ajuda/desenvolvedores/api-ler-contato">GET /contatos/{'{telefone}'}</Link>.</> },
+          {
+            nome: 'contatos:ler',
+            tipo: 'escopo',
+            descricao: (
+              <>
+                Consultar e listar contatos e etiquetas: <Link href="/ajuda/desenvolvedores/api-ler-contato">GET /contatos/{'{telefone}'}</Link>,{' '}
+                <Link href="/ajuda/desenvolvedores/api-listar-contatos">GET /contatos</Link> e{' '}
+                <Link href="/ajuda/desenvolvedores/api-listar-etiquetas">GET /etiquetas</Link>.
+              </>
+            ),
+          },
           { nome: 'contatos:escrever', tipo: 'escopo', descricao: <>Criar e atualizar contatos: <Link href="/ajuda/desenvolvedores/api-gravar-contato">POST /contatos</Link>.</> },
           {
             nome: 'fluxos:disparar',
@@ -144,6 +154,26 @@ function Autenticacao() {
                 Listar e enviar modelos aprovados: <Link href="/ajuda/desenvolvedores/api-listar-templates">GET /templates</Link> e{' '}
                 <Link href="/ajuda/desenvolvedores/api-enviar-template">POST /mensagens/template</Link>. Vem desmarcada na
                 criação da chave: cada envio é cobrado pela Meta.
+              </>
+            ),
+          },
+          {
+            nome: 'funil:ler',
+            tipo: 'escopo',
+            descricao: (
+              <>
+                Ver funis, etapas e oportunidades: <Link href="/ajuda/desenvolvedores/api-funil">GET /funil</Link> e{' '}
+                <Link href="/ajuda/desenvolvedores/api-oportunidades">GET /funil/oportunidades</Link>.
+              </>
+            ),
+          },
+          {
+            nome: 'funil:escrever',
+            tipo: 'escopo',
+            descricao: (
+              <>
+                Abrir, mover, ganhar e perder: <Link href="/ajuda/desenvolvedores/api-abrir-oportunidade">POST /funil/oportunidades</Link> e{' '}
+                <Link href="/ajuda/desenvolvedores/api-mudar-oportunidade">PATCH /funil/oportunidades/{'{id}'}</Link>.
               </>
             ),
           },
@@ -171,6 +201,11 @@ function ErrosELimites() {
     [403, 'escopo_insuficiente', 'A chave não tem a permissão que o endpoint pede.'],
     [403, 'plano_sem_api', 'O plano da organização não inclui a API.'],
     [404, 'contato_nao_encontrado', 'Nenhum contato com este telefone na organização.'],
+    [404, 'etiqueta_nao_encontrada', 'Filtro por etiqueta com um nome que não existe na organização.'],
+    [404, 'funil_nao_encontrado', 'O funil_id não é de um funil desta organização.'],
+    [404, 'etapa_nao_encontrada', 'O etapa_id não é de uma etapa daquele funil.'],
+    [404, 'oportunidade_nao_encontrada', 'O id não é de uma oportunidade desta organização.'],
+    [409, 'oportunidade_fechada', 'A oportunidade já foi ganha ou perdida. Reabra no painel para mudar.'],
     [404, 'fluxo_nao_encontrado', 'O id não é de uma automação publicada e ligada desta organização.'],
     [409, 'janela_fechada', 'Mais de 24 horas desde a última mensagem do contato.'],
     [409, 'sem_conversa', 'O contato nunca conversou com um número da organização.'],
@@ -184,6 +219,8 @@ function ErrosELimites() {
     [413, 'corpo_grande', 'Corpo acima de 64 KB.'],
     [422, 'corpo_invalido', 'Campo obrigatório faltando ou com tipo errado. A mensagem diz qual.'],
     [422, 'telefone_invalido', 'Telefone sem DDD ou incompleto.'],
+    [422, 'cursor_invalido', 'O cursor da paginação foi alterado ou não veio de uma resposta anterior.'],
+    [422, 'motivo_invalido', 'Motivo de perda que não está na lista da organização. A mensagem traz os válidos.'],
     [422, 'idioma_obrigatorio', 'O modelo existe em mais de um idioma e o campo idioma não veio.'],
     [422, 'valores_incompletos', 'A quantidade de valores não bate com as variáveis do modelo.'],
     [422, 'template_com_midia', 'Modelo com imagem, vídeo ou documento no cabeçalho, que a API ainda não envia.'],
@@ -719,6 +756,225 @@ function WebhooksDeSaida() {
   )
 }
 
+/* ----------------------------------------------------------- leitura e funil */
+
+const FUNIL_EXEMPLO = {
+  id: '5c9d2e1f-8a7b-4c3d-9e0f-1a2b3c4d5e6f',
+  nome: 'Vendas',
+  padrao: true,
+  finalidade: 'comercial',
+  etapas: [
+    { id: 'c1d2e3f4-a5b6-4c7d-8e9f-0a1b2c3d4e5f', nome: 'Novo contato', ordem: 0 },
+    { id: 'd2e3f4a5-b6c7-4d8e-9f0a-1b2c3d4e5f6a', nome: 'Aula experimental', ordem: 1 },
+    { id: 'e3f4a5b6-c7d8-4e9f-8a1b-2c3d4e5f6a7b', nome: 'Proposta', ordem: 2 },
+  ],
+}
+
+const OPORTUNIDADE_EXEMPLO = {
+  id: '9b2e7c4a-1d3f-4e5a-8b6c-7d8e9f0a1b2c',
+  contato_id: CONTATO_EXEMPLO.id,
+  funil: { id: FUNIL_EXEMPLO.id, nome: 'Vendas' },
+  etapa: { id: FUNIL_EXEMPLO.etapas[1]!.id, nome: 'Aula experimental' },
+  situacao: 'aberta',
+  titulo: null,
+  valor: null,
+  entrou_na_etapa_em: '2026-10-02T14:05:10.221Z',
+}
+
+const LISTA_EXEMPLO = { contatos: [CONTATO_EXEMPLO], proximo_cursor: 'WyIyMDI2LTEwLTAyVDEzOjIwOjQxLjUxMiswMDowMCIsIjZmMWMuLi4iXQ' }
+
+function ListarContatos() {
+  return (
+    <>
+      <Endpoint metodo="GET" caminho="/api/v1/contatos" />
+      <P>
+        Os contatos da organização, do mais antigo para o mais novo, em páginas. Para sincronizar com outro sistema,
+        percorra as páginas até <Cod>proximo_cursor</Cod> vir nulo e guarde o último cursor: na próxima vez, comece
+        dele e venham só os contatos novos.
+      </P>
+      <ListaDeCampos
+        titulo="Parâmetros"
+        campos={[
+          { nome: 'limite', tipo: 'número', descricao: 'Quantos por página, de 1 a 100. Padrão 50.' },
+          { nome: 'cursor', tipo: 'string', descricao: <>O <Cod>proximo_cursor</Cod> da resposta anterior, sem alterar.</> },
+          { nome: 'etiqueta', tipo: 'string', descricao: 'Só quem tem esta etiqueta, pelo nome (maiúscula não importa).' },
+          { nome: 'criado_desde', tipo: 'ISO 8601', descricao: <>Criados a partir deste instante, como <Cod>2026-09-01T00:00:00-03:00</Cod>.</> },
+          { nome: 'criado_ate', tipo: 'ISO 8601', descricao: 'Criados antes deste instante.' },
+        ]}
+      />
+      <Respostas>
+        <Resposta status={200} descricao="Uma página de contatos" aberta corpo={JSON.stringify(LISTA_EXEMPLO, null, 2)} />
+        <Resposta status={404} descricao="etiqueta_nao_encontrada" corpo={`{
+  "erro": {
+    "codigo": "etiqueta_nao_encontrada",
+    "mensagem": "Nenhuma etiqueta \\"VIP\\" nesta conta."
+  }
+}`} />
+        <Resposta status={422} descricao="Parâmetro fora do formato, ou cursor_invalido" corpo={`{
+  "erro": {
+    "codigo": "cursor_invalido",
+    "mensagem": "Cursor inválido. Use o proximo_cursor da resposta anterior, sem alterar."
+  }
+}`} />
+      </Respostas>
+    </>
+  )
+}
+
+function ListarEtiquetas() {
+  return (
+    <>
+      <Endpoint metodo="GET" caminho="/api/v1/etiquetas" />
+      <P>
+        As etiquetas da organização, em ordem alfabética. Use os nomes exatos em{' '}
+        <Link href="/ajuda/desenvolvedores/api-gravar-contato">Criar ou atualizar contato</Link> e no filtro de{' '}
+        <Link href="/ajuda/desenvolvedores/api-listar-contatos">Listar contatos</Link>. Etiquetas são criadas no painel.
+      </P>
+      <Respostas>
+        <Resposta status={200} descricao="Lista de etiquetas" aberta corpo={JSON.stringify({ etiquetas: [{ id: '2cf62f40-27c8-4e69-b457-d249bf90262f', nome: 'Aluno novo', cor: 'verde' }] }, null, 2)} />
+        <Resposta status={403} descricao="Sem contatos:ler, ou plano sem API" corpo={`{
+  "erro": {
+    "codigo": "escopo_insuficiente",
+    "mensagem": "Esta chave não tem o escopo contatos:ler."
+  }
+}`} />
+      </Respostas>
+    </>
+  )
+}
+
+function Funil() {
+  return (
+    <>
+      <Endpoint metodo="GET" caminho="/api/v1/funil" />
+      <P>
+        Os funis da organização e as etapas de cada um, em ordem. É de onde saem o <Cod>funil_id</Cod> e o{' '}
+        <Cod>etapa_id</Cod> que as outras chamadas do funil pedem. O funil com <Cod>padrao: true</Cod> é o que recebe
+        contato novo.
+      </P>
+      <Respostas>
+        <Resposta status={200} descricao="Funis e etapas" aberta corpo={JSON.stringify({ funis: [FUNIL_EXEMPLO] }, null, 2)} />
+        <Resposta status={403} descricao="Sem funil:ler, ou plano sem API" corpo={`{
+  "erro": {
+    "codigo": "escopo_insuficiente",
+    "mensagem": "Esta chave não tem o escopo funil:ler."
+  }
+}`} />
+      </Respostas>
+    </>
+  )
+}
+
+function Oportunidades() {
+  return (
+    <>
+      <Endpoint metodo="GET" caminho="/api/v1/funil/oportunidades" />
+      <P>As oportunidades de um contato, em todos os funis. Por padrão, só as abertas.</P>
+      <ListaDeCampos
+        titulo="Parâmetros"
+        campos={[
+          { nome: 'telefone', tipo: 'string', obrigatorio: true, descricao: 'Telefone do contato, em qualquer grafia do mesmo número.' },
+          { nome: 'funil_id', tipo: 'string', descricao: 'Só deste funil.' },
+          { nome: 'situacao', tipo: 'string', descricao: <><Cod>aberta</Cod> (padrão), <Cod>ganha</Cod>, <Cod>perdida</Cod> ou <Cod>todas</Cod>.</> },
+        ]}
+      />
+      <Respostas>
+        <Resposta status={200} descricao="Oportunidades do contato" aberta corpo={JSON.stringify({ oportunidades: [OPORTUNIDADE_EXEMPLO] }, null, 2)} />
+        <Resposta status={404} descricao="contato_nao_encontrado" corpo={`{
+  "erro": {
+    "codigo": "contato_nao_encontrado",
+    "mensagem": "Nenhum contato com este telefone nesta conta."
+  }
+}`} />
+      </Respostas>
+    </>
+  )
+}
+
+function AbrirOportunidade() {
+  return (
+    <>
+      <Endpoint metodo="POST" caminho="/api/v1/funil/oportunidades" />
+      <P>
+        Garante que o contato tem uma oportunidade aberta no funil, na etapa pedida. Um contato tem no máximo uma
+        oportunidade aberta por funil: se ela já existe, a resposta é 200 com ela (e a etapa muda, se você mandou
+        outra). Telefone que ainda não é contato vira contato, como em{' '}
+        <Link href="/ajuda/desenvolvedores/api-gravar-contato">Criar ou atualizar contato</Link>.
+      </P>
+      <ListaDeCampos
+        titulo="Corpo"
+        campos={[
+          { nome: 'telefone', tipo: 'string', obrigatorio: true, descricao: <>Com DDD, de preferência com DDI: <Cod>{TELEFONE}</Cod>.</> },
+          { nome: 'funil_id', tipo: 'string', descricao: 'O funil. Sem ele, o funil padrão da organização.' },
+          { nome: 'etapa_id', tipo: 'string', descricao: 'A etapa, daquele funil. Sem ela, a primeira.' },
+        ]}
+      />
+      <Respostas>
+        <Resposta status={201} descricao="Oportunidade aberta" aberta corpo={JSON.stringify({ oportunidade: OPORTUNIDADE_EXEMPLO }, null, 2)} />
+        <Resposta status={200} descricao="Já existia uma aberta neste funil" corpo={JSON.stringify({ oportunidade: OPORTUNIDADE_EXEMPLO }, null, 2)} />
+        <Resposta status={404} descricao="funil_nao_encontrado ou etapa_nao_encontrada" corpo={`{
+  "erro": {
+    "codigo": "etapa_nao_encontrada",
+    "mensagem": "Nenhuma etapa com este id no funil Vendas."
+  }
+}`} />
+        <Resposta status={422} descricao="Corpo fora do formato, ou telefone sem DDD" corpo={`{
+  "erro": {
+    "codigo": "telefone_invalido",
+    "mensagem": "Telefone sem DDD ou incompleto. Exemplo: 5511987654321."
+  }
+}`} />
+      </Respostas>
+    </>
+  )
+}
+
+function MudarOportunidade() {
+  return (
+    <>
+      <Endpoint metodo="PATCH" caminho="/api/v1/funil/oportunidades/{id}" />
+      <P>
+        Uma mudança por chamada: mudar de etapa, marcar como ganha ou marcar como perdida. Vale a mesma regra do
+        painel: ganhar e perder mudam o estágio do contato e, se o funil estiver encadeado, abrem a oportunidade no
+        funil seguinte. No histórico do contato, o autor aparece como API.
+      </P>
+      <ListaDeCampos
+        titulo="Corpo, uma das três formas"
+        campos={[
+          { nome: 'etapa_id', tipo: 'string', descricao: <>Muda de etapa, no mesmo funil: <Cod>{'{ "etapa_id": "…" }'}</Cod>.</> },
+          { nome: 'situacao: "ganha"', tipo: 'objeto', descricao: <>Com <Cod>valor</Cod> opcional, em reais: <Cod>{'{ "situacao": "ganha", "valor": 450 }'}</Cod>.</> },
+          {
+            nome: 'situacao: "perdida"',
+            tipo: 'objeto',
+            descricao: <>Com <Cod>motivo</Cod> obrigatório, um dos motivos de perda da organização: <Cod>{'{ "situacao": "perdida", "motivo": "Preço" }'}</Cod>.</>,
+          },
+        ]}
+      />
+      <Respostas>
+        <Resposta status={200} descricao="Oportunidade atualizada" aberta corpo={JSON.stringify({ oportunidade: { ...OPORTUNIDADE_EXEMPLO, situacao: 'ganha', valor: 450 } }, null, 2)} />
+        <Resposta status={404} descricao="oportunidade_nao_encontrada ou etapa_nao_encontrada" corpo={`{
+  "erro": {
+    "codigo": "oportunidade_nao_encontrada",
+    "mensagem": "Nenhuma oportunidade com este id nesta conta."
+  }
+}`} />
+        <Resposta status={409} descricao="oportunidade_fechada" corpo={`{
+  "erro": {
+    "codigo": "oportunidade_fechada",
+    "mensagem": "Esta oportunidade já está ganha. Reabra no painel para mudar."
+  }
+}`} />
+        <Resposta status={422} descricao="Corpo misturado, ou motivo_invalido" corpo={`{
+  "erro": {
+    "codigo": "motivo_invalido",
+    "mensagem": "Use um dos motivos de perda da conta: Preço, Sem retorno, Comprou de outro."
+  }
+}`} />
+      </Respostas>
+    </>
+  )
+}
+
 export const PAGINAS_API: PaginaDev[] = [
   { slug: 'api-autenticacao', grupo: 'API', titulo: 'Autenticação', resumo: 'Crie a chave no painel e envie como Bearer.', Corpo: Autenticacao },
   { slug: 'api-erros', grupo: 'API', titulo: 'Erros e limites', resumo: 'O formato de erro, cada código e quando repetir.', Corpo: ErrosELimites },
@@ -744,6 +1000,30 @@ export const PAGINAS_API: PaginaDev[] = [
     painel: [
       { trechos: trechos('GET', `/contatos/${TELEFONE}`), titulo: 'Requisição' },
       { trechos: [json('200', { contato: CONTATO_EXEMPLO })], titulo: 'Resposta' },
+    ],
+  },
+  {
+    slug: 'api-listar-contatos',
+    grupo: 'API',
+    titulo: 'Listar contatos',
+    resumo: 'Todos os contatos, em páginas, com filtro por etiqueta e data.',
+    metodo: 'GET',
+    Corpo: ListarContatos,
+    painel: [
+      { trechos: trechos('GET', '/contatos?limite=50&etiqueta=Aluno%20novo'), titulo: 'Requisição' },
+      { trechos: [json('200', LISTA_EXEMPLO)], titulo: 'Resposta' },
+    ],
+  },
+  {
+    slug: 'api-listar-etiquetas',
+    grupo: 'API',
+    titulo: 'Listar etiquetas',
+    resumo: 'Os nomes exatos das etiquetas da organização.',
+    metodo: 'GET',
+    Corpo: ListarEtiquetas,
+    painel: [
+      { trechos: trechos('GET', '/etiquetas'), titulo: 'Requisição' },
+      { trechos: [json('200', { etiquetas: [{ id: '2cf62f40-27c8-4e69-b457-d249bf90262f', nome: 'Aluno novo', cor: 'verde' }] })], titulo: 'Resposta' },
     ],
   },
   {
@@ -792,6 +1072,54 @@ export const PAGINAS_API: PaginaDev[] = [
     painel: [
       { trechos: trechos('POST', '/mensagens/template', CORPO_TEMPLATE, IDEMPOTENCIA), titulo: 'Requisição' },
       { trechos: [json('202', ENVIO_EXEMPLO)], titulo: 'Resposta' },
+    ],
+  },
+  {
+    slug: 'api-funil',
+    grupo: 'API',
+    titulo: 'Funis e etapas',
+    resumo: 'Os funis da organização e as etapas de cada um.',
+    metodo: 'GET',
+    Corpo: Funil,
+    painel: [
+      { trechos: trechos('GET', '/funil'), titulo: 'Requisição' },
+      { trechos: [json('200', { funis: [FUNIL_EXEMPLO] })], titulo: 'Resposta' },
+    ],
+  },
+  {
+    slug: 'api-oportunidades',
+    grupo: 'API',
+    titulo: 'Oportunidades do contato',
+    resumo: 'Em que funil e etapa o contato está.',
+    metodo: 'GET',
+    Corpo: Oportunidades,
+    painel: [
+      { trechos: trechos('GET', `/funil/oportunidades?telefone=${TELEFONE}`), titulo: 'Requisição' },
+      { trechos: [json('200', { oportunidades: [OPORTUNIDADE_EXEMPLO] })], titulo: 'Resposta' },
+    ],
+  },
+  {
+    slug: 'api-abrir-oportunidade',
+    grupo: 'API',
+    titulo: 'Abrir oportunidade',
+    resumo: 'Põe o contato num funil, na etapa que você escolher.',
+    metodo: 'POST',
+    Corpo: AbrirOportunidade,
+    painel: [
+      { trechos: trechos('POST', '/funil/oportunidades', { telefone: TELEFONE, etapa_id: FUNIL_EXEMPLO.etapas[1]!.id }), titulo: 'Requisição' },
+      { trechos: [json('201', { oportunidade: OPORTUNIDADE_EXEMPLO })], titulo: 'Resposta' },
+    ],
+  },
+  {
+    slug: 'api-mudar-oportunidade',
+    grupo: 'API',
+    titulo: 'Mover, ganhar ou perder',
+    resumo: 'Muda a etapa ou fecha a oportunidade.',
+    metodo: 'PATCH',
+    Corpo: MudarOportunidade,
+    painel: [
+      { trechos: trechos('PATCH', `/funil/oportunidades/${OPORTUNIDADE_EXEMPLO.id}`, { situacao: 'ganha', valor: 450 }), titulo: 'Requisição' },
+      { trechos: [json('200', { oportunidade: { ...OPORTUNIDADE_EXEMPLO, situacao: 'ganha', valor: 450 } })], titulo: 'Resposta' },
     ],
   },
   {

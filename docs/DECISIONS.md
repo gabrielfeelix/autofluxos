@@ -287,3 +287,20 @@ Append-only. Cada entrada: data, decisão, porquê, onde está no código.
   cron diário `/api/manutencao/webhooks` de piso (também limpa
   `api_idempotencia` vencida). Nova tentativa pode atrasar, nunca adiantar.
   `pegar_entregas_de_webhook` trava com `for update skip locked` + 60 s.
+
+## 02/out/2026: API pública fase 4, leitura e funil
+
+- Rotas em `/funil/oportunidades` (não `/funil/cartoes` do plano): o painel e
+  os webhooks já dizem "oportunidade"; `cartão` é nome de banco.
+- `GET /contatos` em ordem **crescente** de `criado_em, id`, cursor opaco com
+  o instante **exato** do banco (microssegundos; passar por `Date` cortaria e
+  repetiria o último da página) validado por regex antes de entrar no `or`.
+  Filtro de etiqueta por nome via junção `!inner` com alias. Provado no
+  PostgREST local.
+- `POST /funil/oportunidades` garante uma aberta por funil: existente volta
+  200 (e muda de etapa se pedido), nova 201; contato inexistente é criado e
+  pode cair sozinho no funil padrão, por isso a procura vem depois de gravar.
+- `PATCH` aceita uma forma por vez (`etapa_id` | ganha+valor | perdida+motivo
+  da lista da conta), via `moverCartao`/`concluirProcesso`, autor "API".
+- Tela API: grade de uma coluna ganhou `minmax(0,1fr)`; o `<pre>` do cURL
+  alargava a página para 502px em 390 (defeito da fase 1).

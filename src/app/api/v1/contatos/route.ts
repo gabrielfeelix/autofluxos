@@ -1,6 +1,54 @@
 import { z } from 'zod'
-import { gravarContatoDaApi } from '@/server/api/contatos'
+import {
+  gravarContatoDaApi,
+  LIMITE_MAXIMO_DA_LISTA,
+  LIMITE_PADRAO_DA_LISTA,
+  listarContatosDaApi,
+} from '@/server/api/contatos'
 import { autenticarChave, erroDaApi, frasesDoZod, lerCorpo } from '@/server/api/autenticar'
+
+/**
+ * `GET /api/v1/contatos`: os contatos da organização, do mais antigo para o
+ * mais novo, em páginas por cursor. Filtros: `etiqueta` (nome), `criado_desde`
+ * e `criado_ate` (ISO 8601). Para sincronizar, guarde o `proximo_cursor` e
+ * continue dali na próxima vez.
+ */
+
+const filtroSchema = z.object({
+  limite: z.coerce.number().int().min(1).max(LIMITE_MAXIMO_DA_LISTA).default(LIMITE_PADRAO_DA_LISTA),
+  cursor: z.string().trim().min(1).max(300).optional(),
+  etiqueta: z.string().trim().min(1).max(60).optional(),
+  criado_desde: z.iso.datetime({ offset: true }).optional(),
+  criado_ate: z.iso.datetime({ offset: true }).optional(),
+})
+
+export async function GET(request: Request) {
+  const acesso = await autenticarChave(request, 'contatos:ler')
+  if (acesso instanceof Response) return acesso
+
+  const parametros = Object.fromEntries(new URL(request.url).searchParams)
+  const analise = filtroSchema.safeParse(parametros)
+  if (!analise.success) return erroDaApi(422, 'corpo_invalido', frasesDoZod(analise.error.issues))
+
+  try {
+    const resultado = await listarContatosDaApi(acesso.clienteId, {
+      limite: analise.data.limite,
+      ...(analise.data.cursor ? { cursor: analise.data.cursor } : {}),
+      ...(analise.data.etiqueta ? { etiqueta: analise.data.etiqueta } : {}),
+      ...(analise.data.criado_desde ? { criadoDesde: analise.data.criado_desde } : {}),
+      ...(analise.data.criado_ate ? { criadoAte: analise.data.criado_ate } : {}),
+    })
+    if (!resultado.ok) {
+      return resultado.motivo === 'cursor_invalido'
+        ? erroDaApi(422, 'cursor_invalido', 'Cursor inválido. Use o proximo_cursor da resposta anterior, sem alterar.')
+        : erroDaApi(404, 'etiqueta_nao_encontrada', `Nenhuma etiqueta "${analise.data.etiqueta}" nesta conta.`)
+    }
+    return Response.json({ contatos: resultado.contatos, proximo_cursor: resultado.proximo_cursor })
+  } catch (erro) {
+    console.error(`[api] GET contatos falhou (chave ${acesso.publico}):`, erro instanceof Error ? erro.message : erro)
+    return erroDaApi(500, 'erro_interno', 'Não deu para listar os contatos agora. Tente de novo.')
+  }
+}
 
 /**
  * `POST /api/v1/contatos`: cria ou atualiza um contato pelo telefone.
