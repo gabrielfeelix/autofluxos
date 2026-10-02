@@ -310,17 +310,46 @@ export type PedidoNaLista = {
   total: string
   /** O telefone da compra é o desta conversa. */
   confere: boolean
+  /** Já chegou na casa de quem comprou (não só na transportadora). */
+  entregue: boolean
+}
+
+/**
+ * Entregue para quem comprou. "Entregue à transportadora" (`delivered_carrier`,
+ * PCYES) ainda está a caminho, por isso a transportadora fica de fora.
+ */
+export function pedidoEntregue(codigo: unknown, rotulo: unknown): boolean {
+  const c = typeof codigo === 'string' ? codigo.toLowerCase() : ''
+  if (c === 'delivered' || c === 'entregue' || c === 'delivered_customer') return true
+  const r = typeof rotulo === 'string' ? rotulo.normalize('NFD').replace(/\p{M}/gu, '').toLowerCase() : ''
+  return /\bentregue\b/.test(r) && !/transportadora/.test(r)
+}
+
+/**
+ * O padrão do `like` que acha o telefone em qualquer máscara: os últimos 8
+ * dígitos partidos em 4 e 4, que é onde cai o hífen de "99999-9999" e de
+ * "3333-4444". Com menos de 8 dígitos não há busca.
+ */
+export function padraoDoTelefone(telefone: string): string | null {
+  const d = soDigitos(telefone)
+  if (d.length < 8) return null
+  const fim = d.slice(-8)
+  return `%${fim.slice(0, 4)}%${fim.slice(4)}`
 }
 
 /**
  * Os pedidos de quem está na conversa, para a equipe escolher sem digitar o
  * número (Inbox, "Status do pedido").
  *
- * **Não é por telefone, porque o Magento não deixa.** O `/V1/orders` só filtra
- * pelas colunas do próprio pedido, e o telefone mora no endereço. As chaves
- * que o pedido tem e a ficha às vezes tem são o CPF (`customer_taxvat`) e o
- * e-mail (`customer_email`): vão as duas no mesmo grupo, que o Magento lê
- * como "ou". O telefone entra depois, para marcar quais conferem.
+ * **O telefone da conversa vem primeiro** (dono, 02/out/2026: a ficha quase
+ * nunca tem CPF na primeira conversa). O `/V1/orders` não filtra por telefone,
+ * que mora no endereço, mas o `/V1/customers/search` filtra pelo
+ * `billing_telephone` do cadastro: o telefone acha o cliente, e o e-mail e o
+ * CPF dele acham os pedidos. Pedido de convidado não tem cadastro e só aparece
+ * pelo CPF ou e-mail da ficha, ou pelo número digitado.
+ *
+ * As chaves vão todas no mesmo grupo, que o Magento lê como "ou". O telefone
+ * entra de novo no fim, para marcar quais conferem.
  */
 export async function listarPedidosDaPessoa(
   dados: { endereco: string; credencial: CredencialDaChamada | null },
@@ -329,17 +358,31 @@ export async function listarPedidosDaPessoa(
 ): Promise<ResultadoDaLoja<PedidoNaLista[]>> {
   if (!dados.credencial) return { ok: false, motivo: 'a loja desta conta não tem token conectado' }
 
-  const documento = soDigitos(quem.documento ?? '')
-  const email = (quem.email ?? '').trim().toLowerCase()
   const valores: [string, string][] = []
-  if (documento.length === 11 || documento.length === 14) {
+  const jaTem = new Set<string>()
+  function porDocumento(bruto: unknown) {
+    const documento = soDigitos(bruto)
+    if ((documento.length !== 11 && documento.length !== 14) || jaTem.has(documento)) return
+    jaTem.add(documento)
     const mascara =
       documento.length === 11
         ? documento.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4')
         : documento.replace(/(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})/, '$1.$2.$3/$4-$5')
     valores.push(['customer_taxvat', documento], ['customer_taxvat', mascara])
   }
-  if (/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) valores.push(['customer_email', email])
+  function porEmail(bruto: unknown) {
+    const email = typeof bruto === 'string' ? bruto.trim().toLowerCase() : ''
+    if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email) || jaTem.has(email)) return
+    jaTem.add(email)
+    valores.push(['customer_email', email])
+  }
+
+  porDocumento(quem.documento)
+  porEmail(quem.email)
+  for (const cliente of await clientesPeloTelefone(dados, quem.telefone, chamar)) {
+    porEmail(cliente.email)
+    porDocumento(cliente.taxvat)
+  }
   if (valores.length === 0) return { ok: true, valor: [] }
 
   const g = 'searchCriteria[filterGroups][0][filters]'
@@ -377,7 +420,39 @@ export async function listarPedidosDaPessoa(
         feitoEm: recorte.feitoEm,
         total: recorte.total,
         confere: conferePedido(p, { telefone: quem.telefone }),
+        entregue: pedidoEntregue(p.status, p.status_label),
       }
     }),
   }
+}
+
+/**
+ * Os cadastros da loja com este telefone. Falha aqui (token sem permissão de
+ * clientes, loja fora) não derruba a lista: volta vazio e a busca segue pelo
+ * que a ficha tiver.
+ */
+async function clientesPeloTelefone(
+  dados: { endereco: string; credencial: CredencialDaChamada | null },
+  telefone: string,
+  chamar: Chamar,
+): Promise<{ email?: unknown; taxvat?: unknown }[]> {
+  const padrao = padraoDoTelefone(telefone)
+  if (!padrao) return []
+  const f = 'searchCriteria[filterGroups][0][filters][0]'
+  const r = await chamar(
+    {
+      tipo: 'chamar_http',
+      metodo: 'GET',
+      url:
+        `${dados.endereco}/rest/V1/customers/search?${f}[field]=billing_telephone` +
+        `&${f}[value]=${encodeURIComponent(padrao)}&${f}[conditionType]=like&searchCriteria[pageSize]=5`,
+      cabecalhos: [],
+      corpo: '',
+      mapear: [],
+      aoFalhar: 'humano',
+    },
+    { deTeste: false, credencial: dados.credencial, comJson: true },
+  )
+  if (!r.ok) return []
+  return (r.json as { items?: { email?: unknown; taxvat?: unknown }[] } | null)?.items ?? []
 }

@@ -249,8 +249,8 @@ function PedidosDoContatoNaLista({
     return (
       <p className="px-1.5 pb-1.5 text-[12px] leading-5 text-dim">
         {resposta.semChave
-          ? 'A ficha não tem CPF nem e-mail para achar os pedidos dela. Digite o número. '
-          : 'Nenhum pedido com o CPF ou e-mail da ficha. Digite o número. '}
+          ? 'Sem telefone, CPF ou e-mail para achar os pedidos. Digite o número. '
+          : 'Nenhum pedido com o telefone desta conversa nem com o CPF ou e-mail da ficha. Digite o número. '}
         {dica}
       </p>
     )
@@ -263,11 +263,23 @@ function PedidosDoContatoNaLista({
             <button
               type="button"
               onClick={() => aoEscolher(pedido.numero)}
-              className="flex w-full items-center gap-2 rounded-[8px] px-1.5 py-2 text-left transition hover:bg-surface"
+              className={`flex w-full items-center gap-2 rounded-[8px] px-1.5 py-2 text-left transition ${
+                pedido.entregue ? 'bg-ok/10 hover:bg-ok/15' : 'hover:bg-surface'
+              }`}
             >
+              {pedido.entregue && (
+                <span
+                  aria-label="Entregue"
+                  className="grid size-5 shrink-0 place-items-center rounded-full bg-ok text-white"
+                >
+                  <svg viewBox="0 0 16 16" className="size-3" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                    <path d="M3.5 8.5l3 3 6-7" />
+                  </svg>
+                </span>
+              )}
               <span className="min-w-0 flex-1">
                 <span className="block text-[12.5px] font-semibold text-ink tabular-nums">#{pedido.numero}</span>
-                <span className="block truncate text-[11.5px] text-dim">
+                <span className={`block truncate text-[11.5px] ${pedido.entregue ? 'font-semibold text-ok' : 'text-dim'}`}>
                   {pedido.situacao}
                   {pedido.feitoEm && ` · ${pedido.feitoEm.split('-').reverse().join('/')}`}
                 </span>

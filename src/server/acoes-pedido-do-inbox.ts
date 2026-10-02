@@ -79,9 +79,9 @@ function campoDaFicha(campos: Record<string, string>, padrao: RegExp): string | 
 
 /**
  * Os pedidos de quem está nesta conversa, para "Status do pedido" abrir com a
- * lista em vez de pedir o número. A chave é o CPF ou o e-mail da ficha (o
- * Magento não procura pedido por telefone); `semChave` diz que a ficha não tem
- * nenhum dos dois, e a tela pede o número.
+ * lista em vez de pedir o número. Primeiro pelo telefone da conversa (via
+ * cadastro da loja), depois pelo CPF ou e-mail da ficha; `semChave` diz que
+ * não há nem telefone nem ficha, e a tela pede o número.
  */
 export async function acaoListarPedidosDoContato(clienteId: string, contatoId: string): Promise<PedidosDoContato> {
   await exigirAcessoAoCliente(clienteId)
@@ -89,7 +89,7 @@ export async function acaoListarPedidosDoContato(clienteId: string, contatoId: s
   if (!lead) return { ok: false, erro: 'contato não encontrado' }
   const documento = campoDaFicha(lead.campos, /^(cpf|cnpj|cpf_cnpj|documento)$/i)
   const email = campoDaFicha(lead.campos, /^e-?mail$/i)
-  if (!documento && !email) return { ok: true, pedidos: [], semChave: true }
+  if (!lead.waId && !documento && !email) return { ok: true, pedidos: [], semChave: true }
   const r = await listarPedidosDaConta(clienteId, { telefone: lead.waId, documento, email })
   if (!r.ok) return { ok: false, erro: r.motivo }
   return { ok: true, pedidos: r.valor, semChave: false }

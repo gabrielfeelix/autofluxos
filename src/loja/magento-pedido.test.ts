@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest'
-import { consultarPedido, listarPedidosDaPessoa, mesmoTelefone } from './magento-pedido'
+import { consultarPedido, listarPedidosDaPessoa, mesmoTelefone, pedidoEntregue } from './magento-pedido'
 
 /**
  * A consulta de pedido só pode mostrar o pedido para quem comprou. O resto é
@@ -126,22 +126,47 @@ describe('listarPedidosDaPessoa', () => {
       { telefone: '554498775978', documento: '12345678909', email: 'Ana@Loja.com ' },
       chamar as never,
     )
-    const url = decodeURIComponent((chamar.mock.calls[0]![0] as { url: string }).url)
+    const url = decodeURIComponent((chamar.mock.calls.at(-1)![0] as { url: string }).url)
     expect(url).toContain('[0][field]=customer_taxvat&searchCriteria[filterGroups][0][filters][0][value]=12345678909')
     expect(url).toContain('[value]=123.456.789-09')
     expect(url).toContain('[2][field]=customer_email&searchCriteria[filterGroups][0][filters][2][value]=ana@loja.com')
     expect(r).toEqual({
       ok: true,
       valor: [
-        { numero: '000000123', situacao: 'Pagamento aprovado, em separação', feitoEm: '2026-09-20', total: expect.any(String), confere: true },
-        { numero: '000000124', situacao: 'Pagamento aprovado, em separação', feitoEm: '2026-09-20', total: expect.any(String), confere: false },
+        { numero: '000000123', situacao: 'Pagamento aprovado, em separação', feitoEm: '2026-09-20', total: expect.any(String), confere: true, entregue: false },
+        { numero: '000000124', situacao: 'Pagamento aprovado, em separação', feitoEm: '2026-09-20', total: expect.any(String), confere: false, entregue: false },
       ],
     })
   })
 
-  it('sem CPF nem e-mail não chama a loja', async () => {
+  // Dono, 02/out/2026: a ficha quase nunca tem CPF na primeira conversa.
+  it('sem CPF nem e-mail na ficha, acha pelo telefone via cadastro da loja', async () => {
+    const chamar = vi.fn(async (acao: { url: string }) =>
+      acao.url.includes('/V1/customers/search')
+        ? { ok: true as const, json: { items: [{ email: 'ana@loja.com', taxvat: '123.456.789-09' }] } }
+        : { ok: true as const, json: { items: [{ ...pedido, status: 'delivered', status_label: 'Entregue' }] } },
+    )
+    const r = await listarPedidosDaPessoa(dados, { telefone: '5544998775978' }, chamar as never)
+
+    const cliente = decodeURIComponent((chamar.mock.calls[0]![0] as { url: string }).url)
+    expect(cliente).toContain('[field]=billing_telephone')
+    expect(cliente).toContain('[value]=%9877%5978&')
+    expect(cliente).toContain('[conditionType]=like')
+    const pedidos = decodeURIComponent((chamar.mock.calls[1]![0] as { url: string }).url)
+    expect(pedidos).toContain('=ana@loja.com')
+    expect(pedidos).toContain('=12345678909')
+    expect(r.ok && r.valor[0]?.entregue).toBe(true)
+  })
+
+  it('telefone sem cadastro e ficha vazia não busca pedido', async () => {
     const chamar = lojaCom([pedido])
     expect(await listarPedidosDaPessoa(dados, { telefone: '554498775978' }, chamar as never)).toEqual({ ok: true, valor: [] })
-    expect(chamar).not.toHaveBeenCalled()
+    expect(chamar.mock.calls.every(([a]) => !a.url.includes('/V1/orders'))).toBe(true)
+  })
+
+  it('entregue à transportadora não conta como entregue', () => {
+    expect(pedidoEntregue('delivered_carrier', 'Entregue à transportadora')).toBe(false)
+    expect(pedidoEntregue('entregue', '')).toBe(true)
+    expect(pedidoEntregue('complete', 'Pedido entregue')).toBe(true)
   })
 })
