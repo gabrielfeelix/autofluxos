@@ -52,6 +52,15 @@ READY na Vercel).
    checkbox para `caixa-de-marcar`. O arquivo não é meu; confira se a outra
    sessão manteve.
 
+7. **Inbox vazio sem ilustração** (pedido do dono, 02/out). Com um filtro
+   que não acha nada ("Meus atendimentos", por exemplo), a lista diz só
+   "Nenhuma conversa neste filtro." (`components/inbox/fila.tsx:1079`) e o
+   painel da direita só "Nenhuma conversa nesta seleção."
+   (`components/inbox/painel-da-conversa.tsx:90`). As outras telas vazias
+   têm ilustração com animação leve: usar a `IlustracaoInbox` de
+   `components/design/ilustracoes.tsx` no painel da direita, que é onde
+   sobra espaço, no mesmo formato das outras telas.
+
 ## Como conferir esqueleto (o que funcionou)
 
 Atraso de rede no Playwright **não** mostra o `loading.tsx` no dev: o Next
