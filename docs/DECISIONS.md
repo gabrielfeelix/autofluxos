@@ -84,3 +84,11 @@ Append-only. Cada entrada: data, decisão, porquê, onde está no código.
   único por trás; a tela de conversa é **um** quadro unindo lista, chat e
   ficha, nunca três blocos soltos. Trocar para A deve continuar possível: tudo
   passa por token.
+- **Corrigido no mesmo dia:** a primeira versão pôs um quadro de vidro geral
+  atrás das telas e a barra em vidro; o dono rejeitou ("perde a
+  personalidade"). Ficou: barra **branca sólida**, miolo **direto no azul**,
+  cartões em vidro claro (`--vidro-cartao`, branco a 90%), inbox num quadro
+  branco único. Mecânica: os tokens de uso (`--ink`, `--primary`...) apontam
+  para `--p-*`; `.app-quadro` os troca por brancos e todo painel dentro dele
+  volta aos `--p-*` (`globals.css`, bloco "A casca"). Nenhuma tela foi editada.
+  Celular segue no fundo antigo.

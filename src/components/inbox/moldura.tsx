@@ -202,9 +202,9 @@ export function MolduraDoInbox({
           gridTemplateRows: 'auto minmax(0, 1fr)',
         }}
         /*
-          Sem canto redondo, sem sombra e sem borda externa: ela não é um cartão
-          sobre a página, ela **é** a página. Quem a separa da barra lateral é a
-          borda que a barra já tem, desenhar outra aqui daria uma linha dupla.
+          Um quadro branco só para fila, conversa e ficha: são uma ferramenta,
+          não três cartões. No computador ele flutua na casca azul com margem e
+          canto (`.app-quadro .app-inbox`, em `globals.css`).
         */
         ref={grade}
         onClickCapture={(evento) => {
