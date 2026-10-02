@@ -53,7 +53,7 @@ export function GraficoDiario({ serie, cruzaAno }: { serie: DiaDoRelatorio[]; cr
         <h2 id="titulo-serie" className="text-[14px] font-bold">
           {atual.rotulo} por dia
         </h2>
-        <div role="tablist" aria-label="Medida do gráfico" className="flex flex-wrap gap-1 rounded-lg bg-surface-strong p-1">
+        <div role="tablist" aria-label="Medida do gráfico" className="alternador alternador-sm flex-wrap">
           {MEDIDAS.map((m) => (
             <button
               key={m.chave}
@@ -61,9 +61,7 @@ export function GraficoDiario({ serie, cruzaAno }: { serie: DiaDoRelatorio[]; cr
               role="tab"
               aria-selected={m.chave === medida}
               onClick={() => setMedida(m.chave)}
-              className={`rounded-md px-2.5 py-1 text-[12px] font-semibold transition ${
-                m.chave === medida ? 'bg-surface text-ink shadow-sm' : 'text-dim hover:text-ink'
-              }`}
+              className="alternador-opcao"
             >
               {m.rotulo}
             </button>

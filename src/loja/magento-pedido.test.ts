@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest'
-import { consultarPedido, mesmoTelefone } from './magento-pedido'
+import { consultarPedido, listarPedidosDaPessoa, mesmoTelefone } from './magento-pedido'
 
 /**
  * A consulta de pedido só pode mostrar o pedido para quem comprou. O resto é
@@ -114,6 +114,34 @@ describe('consultarPedido só com o CPF', () => {
     const chamar = lojaCom([pedido])
     const r = await consultarPedido(dados, { numero: '', telefone: '554498775978', documento: '123' }, chamar as never)
     expect(r.ok && r.valor.encontrado).toBe(false)
+    expect(chamar).not.toHaveBeenCalled()
+  })
+})
+
+describe('listarPedidosDaPessoa', () => {
+  it('busca por CPF (com e sem máscara) e e-mail num grupo só e marca o telefone que confere', async () => {
+    const chamar = lojaCom([pedido, { ...pedido, increment_id: '000000124', billing_address: { telephone: '11 90000-0000' } }])
+    const r = await listarPedidosDaPessoa(
+      dados,
+      { telefone: '554498775978', documento: '12345678909', email: 'Ana@Loja.com ' },
+      chamar as never,
+    )
+    const url = decodeURIComponent((chamar.mock.calls[0]![0] as { url: string }).url)
+    expect(url).toContain('[0][field]=customer_taxvat&searchCriteria[filterGroups][0][filters][0][value]=12345678909')
+    expect(url).toContain('[value]=123.456.789-09')
+    expect(url).toContain('[2][field]=customer_email&searchCriteria[filterGroups][0][filters][2][value]=ana@loja.com')
+    expect(r).toEqual({
+      ok: true,
+      valor: [
+        { numero: '000000123', situacao: 'Pagamento aprovado, em separação', feitoEm: '2026-09-20', total: expect.any(String), confere: true },
+        { numero: '000000124', situacao: 'Pagamento aprovado, em separação', feitoEm: '2026-09-20', total: expect.any(String), confere: false },
+      ],
+    })
+  })
+
+  it('sem CPF nem e-mail não chama a loja', async () => {
+    const chamar = lojaCom([pedido])
+    expect(await listarPedidosDaPessoa(dados, { telefone: '554498775978' }, chamar as never)).toEqual({ ok: true, valor: [] })
     expect(chamar).not.toHaveBeenCalled()
   })
 })

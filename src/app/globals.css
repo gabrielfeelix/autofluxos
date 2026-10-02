@@ -1917,90 +1917,6 @@ textarea::placeholder {
   }
 
   /*
-   * O miolo mora direto no azul. Os tokens de uso viram brancos aqui: título,
-   * texto solto, borda e botão primário que ficam fora de cartão leem sobre a
-   * casca sem nenhuma tela mudar. O botão primário vira branco com texto azul.
-   */
-  .app-quadro {
-    --ink: #ffffff;
-    --soft: rgb(255 255 255 / 0.94);
-    --muted: rgb(255 255 255 / 0.86);
-    --dim: rgb(255 255 255 / 0.76);
-    --placeholder: rgb(255 255 255 / 0.62);
-    --line: rgb(255 255 255 / 0.22);
-    --line-soft: rgb(255 255 255 / 0.14);
-    --line-strong: rgb(255 255 255 / 0.34);
-    --surface: rgb(255 255 255 / 0.13);
-    --surface-strong: rgb(255 255 255 / 0.2);
-    --surface-hover: rgb(255 255 255 / 0.2);
-    --primary: #ffffff;
-    --primary-strong: #e6edff;
-    --primary-weak: rgb(255 255 255 / 0.16);
-    --primary-ink: #1d4ed8;
-    --perigo: #fecaca;
-    --aviso: #fde68a;
-    --ok: #a7f3d0;
-    --info: #bae6fd;
-    --barra: rgb(255 255 255 / 0.3);
-    --barra-forte: rgb(255 255 255 / 0.45);
-    color: var(--ink);
-  }
-
-  /* Dentro de cartão, menu e diálogo tudo volta ao normal. */
-  .app-quadro
-    :is(
-      .bg-panel,
-      [class*='bg-panel/'],
-      .bg-white,
-      .bg-canvas,
-      .app-card,
-      .app-field,
-      .campo-de-busca,
-      .app-dropdown-trigger,
-      .app-dropdown-menu,
-      .botao-secundario,
-      .botao-perigo,
-      .quadro-tool,
-      .quadro-popover,
-      .crm-section,
-      .crm-opportunity,
-      .crm-button,
-      .gaveta-de-ajuda,
-      dialog,
-      [popover]
-    ) {
-    --primary: var(--p-primary);
-    --primary-strong: var(--p-primary-strong);
-    --primary-weak: var(--p-primary-weak);
-    --primary-ink: var(--p-primary-ink);
-    --surface: var(--p-surface);
-    --surface-strong: var(--p-surface-strong);
-    --surface-hover: var(--p-surface-hover);
-    --line: var(--p-line);
-    --line-soft: var(--p-line-soft);
-    --line-strong: var(--p-line-strong);
-    --ink: var(--p-ink);
-    --soft: var(--p-soft);
-    --muted: var(--p-muted);
-    --dim: var(--p-dim);
-    --placeholder: var(--p-placeholder);
-    --perigo: var(--p-perigo);
-    --aviso: var(--p-aviso);
-    --ok: var(--p-ok);
-    --info: var(--p-info);
-    --barra: var(--p-barra);
-    --barra-forte: var(--p-barra-forte);
-    color: var(--ink);
-  }
-
-  /*
-   * O cartão é **branco cheio** sobre o azul: tabela e lista se leem melhor
-   * assim (o dono rejeitou o branco a 90%, que puxava para o lilás). A
-   * transparência fica com as faixas claras, como "Defina o objetivo", que
-   * usam `--primary-weak` e aqui viram branco a 16% com texto branco.
-   */
-
-  /*
    * A inbox é um quadro branco inteiro: fila, conversa e ficha juntas, com a
    * mesma folga e o mesmo canto da barra.
    */
@@ -2010,80 +1926,160 @@ textarea::placeholder {
     border-radius: 22px;
     box-shadow: var(--sombra-ilha);
   }
-
-  /*
-   * Selo e cartão **de estado** soltos no azul (aguardando, ganho, com a
-   * equipe, finalizar atendimento). Eles são tinta clara a 7-15% feita para o
-   * branco: sobre o azul o tom some e o texto, já clareado, não lê. Aqui
-   * viram pastilha clara, com a cor do estado forte por cima. Dentro de
-   * cartão nada muda.
-   */
-  .app-quadro
-    :is(
-      [class*='bg-rose-'][class*='/'],
-      [class*='bg-amber-'][class*='/'],
-      [class*='bg-emerald-'][class*='/'],
-      [class*='bg-red-'][class*='/'],
-      [class*='bg-sky-'][class*='/'],
-      [class*='bg-perigo/'],
-      [class*='bg-aviso/'],
-      [class*='bg-info/'],
-      [class*='bg-ok/']
-    ):not(:is(.bg-panel, .app-card, .crm-section, .app-inbox, dialog, [popover], .quadro-popover) *) {
-    --primary: var(--p-primary);
-    --primary-strong: var(--p-primary-strong);
-    --primary-weak: var(--p-primary-weak);
-    --primary-ink: var(--p-primary-ink);
-    --surface: var(--p-surface);
-    --surface-strong: var(--p-surface-strong);
-    --surface-hover: var(--p-surface-hover);
-    --line: var(--p-line);
-    --line-soft: var(--p-line-soft);
-    --line-strong: var(--p-line-strong);
-    --ink: var(--p-ink);
-    --soft: var(--p-soft);
-    --muted: var(--p-muted);
-    --dim: var(--p-dim);
-    --placeholder: var(--p-placeholder);
-    --perigo: var(--p-perigo);
-    --aviso: var(--p-aviso);
-    --ok: var(--p-ok);
-    --info: var(--p-info);
-    --barra: var(--p-barra);
-    --barra-forte: var(--p-barra-forte);
-    background-color: color-mix(in oklab, currentColor 7%, var(--panel));
-  }
-
-  /*
-   * O seletor de funil (e quem mais usar `.quadro-seletor`) é título: mora no
-   * azul com texto branco, e o hover é uma pastilha translúcida com respiro,
-   * não o branco chapado do botão de ferramenta.
-   */
-  .app-quadro .quadro-seletor {
-    --ink: #ffffff;
-    margin-left: -8px;
-    padding: 2px 8px;
-    border-radius: 10px;
-    color: #ffffff;
-  }
-  .app-quadro .quadro-seletor:hover,
-  .app-quadro .quadro-seletor[aria-expanded='true'] {
-    background: rgb(255 255 255 / 0.14);
-    border-color: transparent;
-  }
-
-  /* Botão primário solto no azul: fundo branco, texto azul. Em cartão, volta. */
-  .app-quadro .bg-primary.text-white {
-    color: var(--primary-ink);
-  }
 }
 
-/* No celular a casca fica atrás do topo; o miolo segue no fundo de sempre. */
-@media (max-width: 767.98px) {
-  .app-quadro {
-    background: var(--canvas);
-  }
+/*
+ * O miolo mora direto no azul, do celular ao desktop (no celular o topo e a
+ * barra de baixo são brancos, no papel da ilha). Os tokens de uso viram brancos aqui: título,
+ * texto solto, borda e botão primário que ficam fora de cartão leem sobre a
+ * casca sem nenhuma tela mudar. O botão primário vira branco com texto azul.
+ */
+.app-quadro {
+  --ink: #ffffff;
+  --soft: rgb(255 255 255 / 0.94);
+  --muted: rgb(255 255 255 / 0.86);
+  --dim: rgb(255 255 255 / 0.76);
+  --placeholder: rgb(255 255 255 / 0.62);
+  --line: rgb(255 255 255 / 0.22);
+  --line-soft: rgb(255 255 255 / 0.14);
+  --line-strong: rgb(255 255 255 / 0.34);
+  --surface: rgb(255 255 255 / 0.13);
+  --surface-strong: rgb(255 255 255 / 0.2);
+  --surface-hover: rgb(255 255 255 / 0.2);
+  --primary: #ffffff;
+  --primary-strong: #e6edff;
+  --primary-weak: rgb(255 255 255 / 0.16);
+  --primary-ink: #1d4ed8;
+  --perigo: #fecaca;
+  --aviso: #fde68a;
+  --ok: #a7f3d0;
+  --info: #bae6fd;
+  --barra: rgb(255 255 255 / 0.3);
+  --barra-forte: rgb(255 255 255 / 0.45);
+  color: var(--ink);
 }
+
+/* Dentro de cartão, menu e diálogo tudo volta ao normal. */
+.app-quadro
+  :is(
+    .bg-panel,
+    [class*='bg-panel/'],
+    .bg-white,
+    .bg-canvas,
+    .app-card,
+    .app-field,
+    .campo-de-busca,
+    .app-dropdown-trigger,
+    .app-dropdown-menu,
+    .botao-secundario,
+    .botao-perigo,
+    .quadro-tool,
+    .quadro-popover,
+    .crm-section,
+    .crm-opportunity,
+    .crm-button,
+    .gaveta-de-ajuda,
+    dialog,
+    [popover]
+  ) {
+  --primary: var(--p-primary);
+  --primary-strong: var(--p-primary-strong);
+  --primary-weak: var(--p-primary-weak);
+  --primary-ink: var(--p-primary-ink);
+  --surface: var(--p-surface);
+  --surface-strong: var(--p-surface-strong);
+  --surface-hover: var(--p-surface-hover);
+  --line: var(--p-line);
+  --line-soft: var(--p-line-soft);
+  --line-strong: var(--p-line-strong);
+  --ink: var(--p-ink);
+  --soft: var(--p-soft);
+  --muted: var(--p-muted);
+  --dim: var(--p-dim);
+  --placeholder: var(--p-placeholder);
+  --perigo: var(--p-perigo);
+  --aviso: var(--p-aviso);
+  --ok: var(--p-ok);
+  --info: var(--p-info);
+  --barra: var(--p-barra);
+  --barra-forte: var(--p-barra-forte);
+  color: var(--ink);
+}
+
+/*
+ * O cartão é **branco cheio** sobre o azul: tabela e lista se leem melhor
+ * assim (o dono rejeitou o branco a 90%, que puxava para o lilás). A
+ * transparência fica com as faixas claras, como "Defina o objetivo", que
+ * usam `--primary-weak` e aqui viram branco a 16% com texto branco.
+ */
+
+/*
+ * Selo e cartão **de estado** soltos no azul (aguardando, ganho, com a
+ * equipe, finalizar atendimento). Eles são tinta clara a 7-15% feita para o
+ * branco: sobre o azul o tom some e o texto, já clareado, não lê. Aqui
+ * viram pastilha clara, com a cor do estado forte por cima. Dentro de
+ * cartão nada muda.
+ */
+.app-quadro
+  :is(
+    [class*='bg-rose-'][class*='/'],
+    [class*='bg-amber-'][class*='/'],
+    [class*='bg-emerald-'][class*='/'],
+    [class*='bg-red-'][class*='/'],
+    [class*='bg-sky-'][class*='/'],
+    [class*='bg-perigo/'],
+    [class*='bg-aviso/'],
+    [class*='bg-info/'],
+    [class*='bg-ok/']
+  ):not(:is(.bg-panel, .app-card, .crm-section, .app-inbox, dialog, [popover], .quadro-popover) *) {
+  --primary: var(--p-primary);
+  --primary-strong: var(--p-primary-strong);
+  --primary-weak: var(--p-primary-weak);
+  --primary-ink: var(--p-primary-ink);
+  --surface: var(--p-surface);
+  --surface-strong: var(--p-surface-strong);
+  --surface-hover: var(--p-surface-hover);
+  --line: var(--p-line);
+  --line-soft: var(--p-line-soft);
+  --line-strong: var(--p-line-strong);
+  --ink: var(--p-ink);
+  --soft: var(--p-soft);
+  --muted: var(--p-muted);
+  --dim: var(--p-dim);
+  --placeholder: var(--p-placeholder);
+  --perigo: var(--p-perigo);
+  --aviso: var(--p-aviso);
+  --ok: var(--p-ok);
+  --info: var(--p-info);
+  --barra: var(--p-barra);
+  --barra-forte: var(--p-barra-forte);
+  background-color: color-mix(in oklab, currentColor 7%, var(--panel));
+}
+
+/*
+ * O seletor de funil (e quem mais usar `.quadro-seletor`) é título: mora no
+ * azul com texto branco, e o hover é uma pastilha translúcida com respiro,
+ * não o branco chapado do botão de ferramenta.
+ */
+.app-quadro .quadro-seletor {
+  --ink: #ffffff;
+  margin-left: -8px;
+  padding: 2px 8px;
+  border-radius: 10px;
+  color: #ffffff;
+}
+.app-quadro .quadro-seletor:hover,
+.app-quadro .quadro-seletor[aria-expanded='true'] {
+  background: rgb(255 255 255 / 0.14);
+  border-color: transparent;
+}
+
+/* Botão primário solto no azul: fundo branco, texto azul. Em cartão, volta. */
+.app-quadro .bg-primary.text-white {
+  color: var(--primary-ink);
+}
+
+
 
 /*
  * A gaveta de ajuda: `<dialog>` modal encostado à direita, altura cheia. O
@@ -2407,5 +2403,69 @@ textarea::placeholder {
   }
   .barra-que-anda[data-abrindo] .barra-texto {
     animation: none;
+  }
+}
+
+/*
+ * O alternador (`design/alternador.tsx`): escolher um entre poucos modos
+ * ("Quadro | Lista", "Minhas | Equipe", "30 dias | 90 dias"). Desenho do
+ * "Quadro | Lista" de Negócios, que o dono escolheu: trilho translúcido, a
+ * opção acesa é branca e sólida com tinta escura, as outras são fantasmas.
+ * No azul o trilho é branco a 13%; dentro de cartão, o cinza claro.
+ */
+@layer components {
+  .alternador {
+    display: inline-flex;
+    flex-shrink: 0;
+    align-items: stretch;
+    gap: 2px;
+    min-height: 36px;
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    padding: 3px;
+    background: var(--surface);
+    font-size: 13px;
+    font-weight: 600;
+  }
+  .alternador-opcao {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    border-radius: 7px;
+    padding: 0 12px;
+    color: var(--muted);
+    white-space: nowrap;
+    cursor: pointer;
+    transition:
+      background 150ms ease,
+      color 150ms ease;
+  }
+  .alternador-opcao:hover {
+    color: var(--ink);
+  }
+  .alternador-opcao:is([aria-current='page'], [aria-pressed='true'], [aria-selected='true'], [aria-checked='true']) {
+    background: var(--panel);
+    color: var(--p-ink);
+    box-shadow: 0 1px 2px rgb(19 25 34 / 0.1);
+  }
+  .alternador-opcao:focus-visible {
+    outline: 2px solid var(--primary);
+    outline-offset: 1px;
+  }
+  .topo-acoes .alternador {
+    min-height: 40px;
+  }
+}
+@layer components {
+  /* Dentro de cartão apertado (cabeçalho de gráfico): a medida `sm` da escala. */
+  .alternador-sm {
+    min-height: 30px;
+    padding: 2px;
+    font-size: 12px;
+  }
+  .alternador-sm .alternador-opcao {
+    padding: 0 9px;
+    border-radius: 6px;
   }
 }

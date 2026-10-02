@@ -43,15 +43,13 @@ export function BarraDoPeriodo({
   return (
     <div className="flex flex-col gap-2">
       <div className="flex flex-wrap items-center gap-2">
-        <nav aria-label="Período" className="flex gap-1 rounded-lg bg-surface-strong p-1">
+        <nav aria-label="Período" className="alternador">
           {atalhos.map((dias) => (
             <Link
               key={dias}
               href={endereco(dias === padrao ? {} : { dias: String(dias) })}
               aria-current={periodo.atalho === dias ? 'page' : undefined}
-              className={`rounded-md px-3 py-1 text-[12.5px] font-semibold whitespace-nowrap transition ${
-                periodo.atalho === dias ? 'bg-surface text-ink shadow-sm' : 'text-dim hover:text-ink'
-              }`}
+              className="alternador-opcao"
             >
               {rotuloDoAtalho(dias)}
             </Link>

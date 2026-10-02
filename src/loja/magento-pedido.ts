@@ -301,3 +301,83 @@ export async function consultarPedido(
     },
   }
 }
+
+/** Um pedido na lista de "Status do pedido" da Inbox: o bastante para escolher. */
+export type PedidoNaLista = {
+  numero: string
+  situacao: string
+  feitoEm: string
+  total: string
+  /** O telefone da compra é o desta conversa. */
+  confere: boolean
+}
+
+/**
+ * Os pedidos de quem está na conversa, para a equipe escolher sem digitar o
+ * número (Inbox, "Status do pedido").
+ *
+ * **Não é por telefone, porque o Magento não deixa.** O `/V1/orders` só filtra
+ * pelas colunas do próprio pedido, e o telefone mora no endereço. As chaves
+ * que o pedido tem e a ficha às vezes tem são o CPF (`customer_taxvat`) e o
+ * e-mail (`customer_email`): vão as duas no mesmo grupo, que o Magento lê
+ * como "ou". O telefone entra depois, para marcar quais conferem.
+ */
+export async function listarPedidosDaPessoa(
+  dados: { endereco: string; credencial: CredencialDaChamada | null },
+  quem: { telefone: string; documento?: string; email?: string },
+  chamar: Chamar,
+): Promise<ResultadoDaLoja<PedidoNaLista[]>> {
+  if (!dados.credencial) return { ok: false, motivo: 'a loja desta conta não tem token conectado' }
+
+  const documento = soDigitos(quem.documento ?? '')
+  const email = (quem.email ?? '').trim().toLowerCase()
+  const valores: [string, string][] = []
+  if (documento.length === 11 || documento.length === 14) {
+    const mascara =
+      documento.length === 11
+        ? documento.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4')
+        : documento.replace(/(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})/, '$1.$2.$3/$4-$5')
+    valores.push(['customer_taxvat', documento], ['customer_taxvat', mascara])
+  }
+  if (/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) valores.push(['customer_email', email])
+  if (valores.length === 0) return { ok: true, valor: [] }
+
+  const g = 'searchCriteria[filterGroups][0][filters]'
+  const consulta =
+    valores
+      .map(([campo, valor], i) => `${g}[${i}][field]=${campo}&${g}[${i}][value]=${encodeURIComponent(valor)}&${g}[${i}][conditionType]=eq`)
+      .join('&') +
+    '&searchCriteria[sortOrders][0][field]=created_at&searchCriteria[sortOrders][0][direction]=DESC&searchCriteria[pageSize]=5'
+
+  const r = await chamar(
+    {
+      tipo: 'chamar_http',
+      metodo: 'GET',
+      url: `${dados.endereco}/rest/V1/orders?${consulta}`,
+      cabecalhos: [],
+      corpo: '',
+      mapear: [],
+      aoFalhar: 'humano',
+    },
+    { deTeste: false, credencial: dados.credencial, comJson: true },
+  )
+  if (!r.ok) {
+    if (/respondeu (401|403)/.test(r.motivo)) return { ok: false, motivo: 'o token da loja não tem permissão para ler pedidos' }
+    return { ok: false, motivo: `a loja não respondeu: ${r.motivo}` }
+  }
+
+  const lista = (r.json as { items?: PedidoDoMagento[] } | null)?.items ?? []
+  return {
+    ok: true,
+    valor: lista.map((p) => {
+      const recorte = recortarPedido(p, [])
+      return {
+        numero: recorte.numero,
+        situacao: recorte.situacao,
+        feitoEm: recorte.feitoEm,
+        total: recorte.total,
+        confere: conferePedido(p, { telefone: quem.telefone }),
+      }
+    }),
+  }
+}

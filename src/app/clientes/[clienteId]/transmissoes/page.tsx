@@ -1,3 +1,4 @@
+import { Alternador } from '@/components/design/alternador'
 import { Miolo } from '@/components/design/miolo'
 import { Suspense } from 'react'
 import { notFound } from 'next/navigation'
@@ -126,22 +127,12 @@ async function Conteudo({
           )
         }
       />
-      <nav className="mb-5 flex gap-1 border-b border-line" aria-label="Seções">
-        {ABAS.map((item) => (
-          <a
-            key={item.chave}
-            href={`/clientes/${cliente.id}/transmissoes?aba=${item.chave}`}
-            aria-current={item.chave === aba ? 'page' : undefined}
-            className={`-mb-px border-b-2 px-3 py-2 text-[13px] font-semibold ${
-              item.chave === aba
-                ? 'border-accent text-ink'
-                : 'border-transparent text-dim hover:text-ink'
-            }`}
-          >
-            {item.rotulo}
-          </a>
-        ))}
-      </nav>
+      <Alternador
+        rotulo="Seções"
+        ativa={aba}
+        className="mb-5"
+        opcoes={ABAS.map((item) => ({ chave: item.chave, rotulo: item.rotulo, href: `/clientes/${cliente.id}/transmissoes?aba=${item.chave}` }))}
+      />
 
       {aba === 'modelos' ? (
         <ListaDeTemplates clienteId={cliente.id} templates={templates} />

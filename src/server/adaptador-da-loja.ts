@@ -3,7 +3,7 @@ import { enriquecer, type Complemento } from '@/loja/enriquecer'
 import { lojaCatalogo } from '@/loja/catalogo'
 import { lojaMagento } from '@/loja/magento'
 import { lojaAdmin } from '@/loja/magento-admin'
-import { consultarPedido, type ConsultaDePedido } from '@/loja/magento-pedido'
+import { consultarPedido, listarPedidosDaPessoa, type ConsultaDePedido, type PedidoNaLista } from '@/loja/magento-pedido'
 import { listarCupons, vendasDoCupom, type CupomDaLoja } from '@/loja/magento-cupons'
 import type { Periodo } from '@/core/relatorios'
 import { cuponsMandados, type Responsaveis } from './repos/relatorios'
@@ -58,6 +58,23 @@ export async function consultarPedidoDaConta(
   const rastreio = linkDoRastreio(r.valor.pedido)
   const pedido = { ...r.valor.pedido, ...(entrega ? { entrega } : {}), ...(rastreio ? { linkDoRastreio: rastreio } : {}) }
   return { ok: true, valor: { ...r.valor, pedido } }
+}
+
+/** Os pedidos de quem está na conversa, pela ficha (CPF ou e-mail). Ver `listarPedidosDaPessoa`. */
+export async function listarPedidosDaConta(
+  clienteId: string,
+  quem: { telefone: string; documento?: string; email?: string },
+): Promise<{ ok: true; valor: PedidoNaLista[] } | { ok: false; motivo: string }> {
+  const loja = await lojaDaConta(clienteId)
+  if (!loja || !loja.ativa) return { ok: false, motivo: 'a loja desta conta não está ligada' }
+  if (!loja.conexaoId) return { ok: false, motivo: 'a loja desta conta não tem token conectado' }
+  let credencial = null
+  try {
+    credencial = await lerCredencial(loja.conexaoId, clienteId)
+  } catch {
+    return { ok: false, motivo: 'não deu para ler o token da loja' }
+  }
+  return listarPedidosDaPessoa({ endereco: loja.endereco, credencial }, quem, chamarHttp)
 }
 
 /**

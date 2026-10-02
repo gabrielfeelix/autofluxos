@@ -681,19 +681,17 @@ async function ConteudoDaAba({
         <CabecalhoDaTela titulo={tituloDaTela} descricao={topo.descricao} acoes={topo.acoes} />
         {principal === 'gatilhos' && (
           <div className="mb-5 flex flex-col gap-2.5 md:flex-row md:items-center md:justify-between">
-            <nav aria-label="Tipos de gatilho" className="flex max-w-full gap-1 self-start overflow-x-auto rounded-[10px] border border-line bg-panel p-1 whitespace-nowrap md:self-auto">
+            <nav aria-label="Tipos de gatilho" className="alternador max-w-full self-start overflow-x-auto md:self-auto">
               {TIPOS.map((item) => (
                 <Link
                   key={item.chave}
                   href={`/clientes/${cliente.id}/fluxos?${consultaDaAba(item.chave)}`}
                   aria-current={item.chave === aba ? 'page' : undefined}
-                  className={`shrink-0 rounded-[7px] px-2.5 py-1.5 text-[12.5px] font-semibold transition sm:px-3 ${
-                    item.chave === aba ? 'bg-primary-weak text-primary' : 'text-dim hover:text-soft'
-                  }`}
+                  className="alternador-opcao shrink-0"
                 >
                   {item.rotulo}
                   {item.contagem > 0 && (
-                    <span className="ml-1.5 text-[11px] font-normal text-dim">{item.contagem}</span>
+                    <span className="text-[11.5px] font-medium opacity-70 tabular-nums">{item.contagem}</span>
                   )}
                 </Link>
               ))}

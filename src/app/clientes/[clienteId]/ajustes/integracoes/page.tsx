@@ -1,3 +1,4 @@
+import { Alternador } from '@/components/design/alternador'
 import { Miolo } from '@/components/design/miolo'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
@@ -104,14 +105,15 @@ export default async function Pagina({
           entregam e recebem dado. Cada cartão leva para onde se liga e se confere.
         </p>
 
-        <div className="mt-6 mb-5 flex gap-1 border-b border-line">
-          <Tab href={`?aba=conectadas`} ativa={aba === 'conectadas'}>
-            Conectadas ({conectadas.length})
-          </Tab>
-          <Tab href={`?aba=disponiveis`} ativa={aba === 'disponiveis'}>
-            Disponíveis ({disponiveis.length})
-          </Tab>
-        </div>
+        <Alternador
+          rotulo="Quais integrações"
+          ativa={aba}
+          className="mt-6 mb-5"
+          opcoes={[
+            { chave: 'conectadas', rotulo: 'Conectadas', contagem: conectadas.length, href: '?aba=conectadas' },
+            { chave: 'disponiveis', rotulo: 'Disponíveis', contagem: disponiveis.length, href: '?aba=disponiveis' },
+          ]}
+        />
 
         {lista.length === 0 ? (
           <p className="app-card px-5 py-8 text-center text-[13px] text-muted">
@@ -129,34 +131,6 @@ export default async function Pagina({
   )
 }
 
-function Tab({
-  href,
-  ativa,
-  children,
-}: {
-  href: string
-  ativa: boolean
-  children: ReactNode
-}) {
-  return (
-    /*
-      Aba é link, e não botão com estado no navegador: assim ela tem endereço
-      próprio, volta no histórico e sobrevive a um F5, e a tela inteira
-      continua sendo desenhada no servidor.
-    */
-    <Link
-      href={href}
-      aria-current={ativa ? 'page' : undefined}
-      className={`-mb-px border-b-2 px-3 pb-2.5 text-[13px] transition ${
-        ativa
-          ? 'border-primary font-bold text-primary'
-          : 'border-transparent font-medium text-muted hover:text-ink'
-      }`}
-    >
-      {children}
-    </Link>
-  )
-}
 
 function Cartao({ clienteId, item }: { clienteId: string; item: ItemDoCatalogo }) {
   const { estado } = item

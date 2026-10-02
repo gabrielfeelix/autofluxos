@@ -85,7 +85,7 @@ export function Alternador<T extends string>({
   rotulo: string
 }) {
   return (
-    <div role="tablist" aria-label={rotulo} className="flex shrink-0 gap-0.5 rounded-lg bg-surface-strong p-0.5">
+    <div role="tablist" aria-label={rotulo} className="alternador alternador-sm">
       {opcoes.map((o) => (
         <button
           key={o.chave}
@@ -93,9 +93,7 @@ export function Alternador<T extends string>({
           role="tab"
           aria-selected={o.chave === valor}
           onClick={() => aoMudar(o.chave)}
-          className={`rounded-md px-2.5 py-1 text-[11.5px] font-semibold whitespace-nowrap transition ${
-            o.chave === valor ? 'bg-panel text-ink shadow-sm' : 'text-dim hover:text-ink'
-          }`}
+          className="alternador-opcao"
         >
           {o.rotulo}
         </button>

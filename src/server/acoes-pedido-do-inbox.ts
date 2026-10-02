@@ -4,7 +4,10 @@ import { dentroDaJanela } from '@/channels/janela'
 import { autorDaPessoa } from '@/core/autor-da-mensagem'
 import { linkDoRastreio, mensagemDoPedido } from '@/core/pedido-na-conversa'
 import type { PedidoDaLoja } from '@/loja/magento-pedido'
-import { consultarPedidoDaConta } from './adaptador-da-loja'
+import { consultarPedidoDaConta, listarPedidosDaConta } from './adaptador-da-loja'
+import type { PedidoNaLista } from '@/loja/magento-pedido'
+import { acharLead } from './repos/leads'
+import { meuAlcance } from './permissoes'
 import { adaptadorDoCanal } from './adaptador-do-canal'
 import { podeResponderAgora } from './distribuir-atendimento'
 import {
@@ -62,6 +65,34 @@ export async function acaoBuscarPedidoDoInbox(
 ): Promise<RespostaDoPedido> {
   await exigirAcessoAoCliente(clienteId)
   return buscar(clienteId, contatoId, numero)
+}
+
+export type PedidosDoContato =
+  | { ok: true; pedidos: PedidoNaLista[]; semChave: boolean }
+  | { ok: false; erro: string }
+
+/** A primeira chave da ficha que parece com o que se procura (`cpf`, `cpf_cnpj`, `email`...). */
+function campoDaFicha(campos: Record<string, string>, padrao: RegExp): string | undefined {
+  const chave = Object.keys(campos).find((nome) => padrao.test(nome))
+  return chave ? campos[chave] : undefined
+}
+
+/**
+ * Os pedidos de quem está nesta conversa, para "Status do pedido" abrir com a
+ * lista em vez de pedir o número. A chave é o CPF ou o e-mail da ficha (o
+ * Magento não procura pedido por telefone); `semChave` diz que a ficha não tem
+ * nenhum dos dois, e a tela pede o número.
+ */
+export async function acaoListarPedidosDoContato(clienteId: string, contatoId: string): Promise<PedidosDoContato> {
+  await exigirAcessoAoCliente(clienteId)
+  const lead = await acharLead(clienteId, contatoId, await meuAlcance(clienteId))
+  if (!lead) return { ok: false, erro: 'contato não encontrado' }
+  const documento = campoDaFicha(lead.campos, /^(cpf|cnpj|cpf_cnpj|documento)$/i)
+  const email = campoDaFicha(lead.campos, /^e-?mail$/i)
+  if (!documento && !email) return { ok: true, pedidos: [], semChave: true }
+  const r = await listarPedidosDaConta(clienteId, { telefone: lead.waId, documento, email })
+  if (!r.ok) return { ok: false, erro: r.motivo }
+  return { ok: true, pedidos: r.valor, semChave: false }
 }
 
 export async function acaoEnviarPedidoDoInbox(

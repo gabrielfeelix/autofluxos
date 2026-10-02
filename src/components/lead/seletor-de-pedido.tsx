@@ -7,6 +7,8 @@ import { IconeLocalizacao } from '@/components/lead/icones-da-barra'
 import {
   acaoBuscarPedidoDoInbox,
   acaoEnviarPedidoDoInbox,
+  acaoListarPedidosDoContato,
+  type PedidosDoContato,
   type RespostaDoPedido,
 } from '@/server/acoes-pedido-do-inbox'
 
@@ -36,6 +38,13 @@ export function SeletorDePedido({
   const [enviando, setEnviando] = useState(false)
   const [erro, setErro] = useState<string | null>(null)
   const caixa = useRef<HTMLDivElement>(null)
+  /*
+    Os pedidos de quem está na conversa, lidos uma vez quando o painel abre
+    (pelo CPF ou e-mail da ficha, ver `acaoListarPedidosDoContato`). `null` é
+    "ainda lendo".
+  */
+  const [doContato, setDoContato] = useState<PedidosDoContato | null>(null)
+  const lido = useRef(false)
 
   useEffect(() => {
     if (!aberto) return
@@ -114,7 +123,14 @@ export function SeletorDePedido({
         <button
           type="button"
           disabled={desabilitado}
-          onClick={() => setAberto((a) => !a)}
+          onClick={() => {
+            setAberto((a) => !a)
+            if (lido.current) return
+            lido.current = true
+            acaoListarPedidosDoContato(clienteId, contatoId)
+              .then(setDoContato)
+              .catch(() => setDoContato({ ok: false, erro: 'não deu para ler os pedidos agora' }))
+          }}
           aria-label="Mandar o status de um pedido"
           aria-expanded={aberto}
           className={BOTAO_DA_BARRA}
@@ -146,7 +162,10 @@ export function SeletorDePedido({
               autoFocus
               onChange={(e) => {
                 setNumero(e.target.value)
-                setAchado(null)
+                // Voltar ao número que já está na tela não apaga o resultado: a
+                // busca automática não roda de novo para o mesmo número, e a
+                // caixa ficaria vazia sem motivo.
+                if (e.target.value.replace(/^#/, '').trim() !== ultima.current) setAchado(null)
               }}
               onKeyDown={(evento) => {
                 if (evento.key !== 'Enter') return
@@ -170,9 +189,13 @@ export function SeletorDePedido({
           {erro && <p className="px-1.5 pb-1.5 text-[12px] leading-5 text-perigo">{erro}</p>}
 
           {!achado && !erro && !buscando && (
-            <p className="px-1.5 pb-1.5 text-[12px] leading-5 text-dim">
-              Busca na loja e na transportadora. Você confere antes de mandar.
-            </p>
+            <PedidosDoContatoNaLista
+              resposta={doContato}
+              aoEscolher={(numeroDoPedido) => {
+                setNumero(numeroDoPedido)
+                void buscar(numeroDoPedido)
+              }}
+            />
           )}
 
           {achado && (
@@ -204,6 +227,59 @@ export function SeletorDePedido({
           )}
         </div>
       )}
+    </div>
+  )
+}
+
+/**
+ * A lista de pedidos de quem está na conversa, embaixo do campo. Escolher um
+ * busca o status completo, como se o número tivesse sido digitado.
+ */
+function PedidosDoContatoNaLista({
+  resposta,
+  aoEscolher,
+}: {
+  resposta: PedidosDoContato | null
+  aoEscolher: (numero: string) => void
+}) {
+  const dica = 'Busca na loja e na transportadora. Você confere antes de mandar.'
+  if (resposta === null) return <p className="px-1.5 pb-1.5 text-[12px] leading-5 text-dim">Procurando os pedidos desta pessoa…</p>
+  if (!resposta.ok) return <p className="px-1.5 pb-1.5 text-[12px] leading-5 text-dim">{dica}</p>
+  if (resposta.pedidos.length === 0)
+    return (
+      <p className="px-1.5 pb-1.5 text-[12px] leading-5 text-dim">
+        {resposta.semChave
+          ? 'A ficha não tem CPF nem e-mail para achar os pedidos dela. Digite o número. '
+          : 'Nenhum pedido com o CPF ou e-mail da ficha. Digite o número. '}
+        {dica}
+      </p>
+    )
+  return (
+    <div className="pb-0.5">
+      <p className="px-1.5 pb-1 text-[11px] font-bold tracking-[0.06em] text-ink uppercase">Pedidos desta pessoa</p>
+      <ul className="max-h-[min(260px,40vh)] overflow-y-auto">
+        {resposta.pedidos.map((pedido) => (
+          <li key={pedido.numero}>
+            <button
+              type="button"
+              onClick={() => aoEscolher(pedido.numero)}
+              className="flex w-full items-center gap-2 rounded-[8px] px-1.5 py-2 text-left transition hover:bg-surface"
+            >
+              <span className="min-w-0 flex-1">
+                <span className="block text-[12.5px] font-semibold text-ink tabular-nums">#{pedido.numero}</span>
+                <span className="block truncate text-[11.5px] text-dim">
+                  {pedido.situacao}
+                  {pedido.feitoEm && ` · ${pedido.feitoEm.split('-').reverse().join('/')}`}
+                </span>
+              </span>
+              <span className="text-right">
+                <span className="block text-[12px] font-semibold text-soft tabular-nums">{pedido.total}</span>
+                {!pedido.confere && <span className="block text-[10.5px] text-aviso">outro telefone</span>}
+              </span>
+            </button>
+          </li>
+        ))}
+      </ul>
     </div>
   )
 }

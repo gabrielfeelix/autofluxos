@@ -172,3 +172,16 @@ Append-only. Cada entrada: data, decisão, porquê, onde está no código.
   mensagens já mandadas) cai em `/ajuda/datas` pelo `RedirecionarAncoraAntiga`.
 - Saíram os rótulos em monoespaçada caixa-alta do texto (código continua em
   mono). A réplica do bloco do editor ficou como está, porque espelha a tela.
+- **Alternador único** (`design/alternador.tsx`, `.alternador` /
+  `.alternador-opcao` / `.alternador-sm`): toda troca de modo (Quadro|Lista,
+  Minhas|Equipe, Lista|Agenda, Grade|Lista, tipos de gatilho, período de
+  relatório, Conectadas|Disponíveis, seções de Transmissões) usa o desenho do
+  "Quadro | Lista" de Negócios, escolhido pelo dono: trilho translúcido,
+  opção acesa branca sólida, demais em ghost. Aba sublinhada fica só para
+  abas dentro de cartão (ficha do negócio).
+- **Casca no celular:** os tokens do miolo valem em qualquer largura; topo e
+  barra de baixo do celular seguem brancos, no papel da ilha.
+- **Pedidos do contato na Inbox:** o Magento não filtra `/V1/orders` por
+  telefone (fica no endereço). A lista de "Status do pedido" busca pelo CPF
+  ou e-mail da ficha (`listarPedidosDaPessoa`) e marca os que têm o telefone
+  da conversa; sem CPF nem e-mail, pede o número. Não testado contra a PCYES.

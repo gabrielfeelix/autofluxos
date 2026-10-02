@@ -105,7 +105,7 @@ export function CabecalhoDoQuadro({
         {atual && (
           <nav
             aria-label="Ver negócios como"
-            className="flex rounded-lg border border-line bg-surface p-0.5 text-[12.5px] font-semibold"
+            className="alternador"
           >
             {(
               [
@@ -117,9 +117,7 @@ export function CabecalhoDoQuadro({
                 key={chave}
                 href={`/clientes/${clienteId}/quadros?q=${atual.id}${chave === 'lista' ? '&ver=lista' : ''}`}
                 aria-current={visao === chave ? 'page' : undefined}
-                className={`rounded-md px-3 py-1.5 transition ${
-                  visao === chave ? 'bg-panel text-ink shadow-[0_1px_2px_rgba(19,25,34,0.08)]' : 'text-muted hover:text-soft'
-                }`}
+                className="alternador-opcao"
               >
                 {rotulo}
               </Link>

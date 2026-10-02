@@ -217,7 +217,7 @@ export function BarraDaAgenda({
           />
         )}
         {podeVerEquipe && (
-          <div role="group" aria-label="De quem" className="flex rounded-lg border border-line bg-panel p-0.5">
+          <div role="group" aria-label="De quem" className="alternador">
             {(
               [
                 { valor: 'minhas', rotulo: 'Minhas' },
@@ -229,9 +229,7 @@ export function BarraDaAgenda({
                 type="button"
                 aria-pressed={filtro.alcance === opcao.valor}
                 onClick={() => ir({ alcance: opcao.valor, responsavel: null })}
-                className={`rounded-md px-3 py-1.5 text-[12px] font-semibold transition ${
-                  filtro.alcance === opcao.valor ? 'bg-primary-weak text-primary' : 'text-muted hover:text-ink'
-                }`}
+                className="alternador-opcao"
               >
                 {opcao.rotulo}
               </button>
@@ -239,7 +237,7 @@ export function BarraDaAgenda({
           </div>
         )}
         {carregando && <span className="text-[11.5px] text-dim">carregando…</span>}
-        <div role="group" aria-label="Como mostrar" className="flex rounded-lg border border-line bg-panel p-0.5 sm:ml-auto">
+        <div role="group" aria-label="Como mostrar" className="alternador sm:ml-auto">
           {(
             [
               { valor: 'lista', rotulo: 'Lista' },
@@ -251,9 +249,7 @@ export function BarraDaAgenda({
               type="button"
               aria-pressed={filtro.vista === opcao.valor}
               onClick={() => ir({ vista: opcao.valor })}
-              className={`flex items-center gap-1.5 rounded-md px-3 py-1.5 text-[12px] font-semibold transition ${
-                filtro.vista === opcao.valor ? 'bg-primary-weak text-primary' : 'text-muted hover:text-ink'
-              }`}
+              className="alternador-opcao"
             >
               <IconeDaVista vista={opcao.valor} />
               {opcao.rotulo}

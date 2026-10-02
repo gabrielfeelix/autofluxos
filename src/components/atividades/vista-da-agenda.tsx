@@ -115,7 +115,7 @@ export function VistaDaAgenda({
           </Link>
         </div>
         <h2 className="text-[15px] font-bold first-letter:uppercase">{tituloDoIntervalo(intervalo, escala)}</h2>
-        <div role="group" aria-label="Tamanho do calendário" className="ml-auto flex rounded-lg border border-line bg-panel p-0.5">
+        <div role="group" aria-label="Tamanho do calendário" className="alternador ml-auto">
           {(
             [
               { valor: 'semana', rotulo: 'Semana', href: endereco({ escala: 'semana' }) },
@@ -126,9 +126,7 @@ export function VistaDaAgenda({
               key={opcao.valor}
               href={opcao.href}
               aria-current={escala === opcao.valor ? 'page' : undefined}
-              className={`rounded-md px-3 py-1.5 text-[12px] font-semibold transition ${
-                escala === opcao.valor ? 'bg-primary-weak text-primary' : 'text-muted hover:text-ink'
-              }`}
+              className="alternador-opcao"
             >
               {opcao.rotulo}
             </Link>

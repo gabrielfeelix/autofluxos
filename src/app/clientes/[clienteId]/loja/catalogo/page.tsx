@@ -151,7 +151,7 @@ export default async function Pagina({
           o card do produto na conversa, e a equipe manda o mesmo card pelo Inbox.</>}
           acoes={
             <>
-              <div role="group" aria-label="Como ver o catálogo" className="flex rounded-lg border border-line bg-panel p-0.5">
+              <div role="group" aria-label="Como ver o catálogo" className="alternador">
                 {(
                   [
                     { valor: 'grade', rotulo: 'Grade' },
@@ -162,9 +162,7 @@ export default async function Pagina({
                     key={opcao.valor}
                     href={`/clientes/${cliente.id}/loja/catalogo?visao=${opcao.valor}`}
                     aria-current={visao === opcao.valor ? 'page' : undefined}
-                    className={`rounded-md px-3 py-1 text-[12px] font-semibold transition ${
-                      visao === opcao.valor ? 'bg-primary-weak text-primary' : 'text-muted hover:text-ink'
-                    }`}
+                    className="alternador-opcao"
                   >
                     {opcao.rotulo}
                   </Link>

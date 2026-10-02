@@ -37,7 +37,7 @@ export function Vitrine({
   return (
     <section className="mt-[18px]">
       <div
-        className="flex w-fit rounded-xl border border-line bg-surface p-0.5"
+        className="alternador w-fit"
         role="tablist"
         aria-label="Como ver este fluxo"
       >
@@ -48,9 +48,7 @@ export function Vitrine({
             role="tab"
             aria-selected={aba === opcao}
             onClick={() => setAba(opcao)}
-            className={`rounded-[10px] px-3.5 py-2 text-[12px] font-bold transition ${
-              aba === opcao ? 'bg-surface-strong text-ink shadow-sm' : 'text-dim hover:text-soft'
-            }`}
+            className="alternador-opcao"
           >
             {opcao === 'conversa' ? 'Conversar' : 'Passo a passo'}
           </button>
