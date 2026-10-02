@@ -352,8 +352,12 @@
   --shadow-menu: 0 14px 34px rgba(0, 0, 0, 0.55), 0 2px 8px rgba(0, 0, 0, 0.4);
   --shadow-modal: 0 28px 70px rgba(0, 0, 0, 0.6), 0 4px 14px rgba(0, 0, 0, 0.45);
 
-  /* No escuro a casca vira marinho: o azul cheio cansaria a vista à noite. */
-  --casca: linear-gradient(135deg, #0a1433 0%, #0f1d47 50%, #172c6b 100%);
+  /*
+   * No escuro a casca é o mesmo degradê do claro, um tom abaixo: azul profundo
+   * que ainda é azul. O marinho de antes (#0a1433) lia como preto morto, e o
+   * dono pediu "um degradê de azul mais escuro" (02/out/2026).
+   */
+  --casca: linear-gradient(135deg, #0c1e5c 0%, #12318f 48%, #1f4bc4 100%);
   --sombra-ilha: 0 20px 44px -24px rgb(0 0 0 / 0.8);
 }
 
@@ -2470,6 +2474,10 @@ textarea::placeholder {
  * branco os tokens voltam e ele vira cinza claro, que não é o desenho.
  *
  * `chip-vidro`: atalho de filtro que liga e desliga ("Vencidas 32").
+ * `chip-vidro-sm`: o filtro ligado com ✕ embaixo da busca ("Busca: ana ×").
+ *
+ * O dono aprovou e pediu em mais lugares (02/out/2026, "gostei MUITO"):
+ * controle solto no azul usa vidro; dentro de cartão, o `Alternador`.
  */
 @layer components {
   .chip-vidro {
@@ -2503,6 +2511,13 @@ textarea::placeholder {
   .chip-vidro:focus-visible {
     outline: 2px solid var(--primary);
     outline-offset: 2px;
+  }
+  .chip-vidro-sm {
+    height: 28px;
+    max-width: 260px;
+    gap: 6px;
+    padding: 0 11px;
+    font-size: 12px;
   }
   .chip-vidro-conta {
     font-size: 11.5px;

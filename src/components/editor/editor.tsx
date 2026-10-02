@@ -2066,16 +2066,16 @@ export function Editor({
           </aside>
         ) : (
         <aside className="flex w-[420px] shrink-0 flex-col border-l border-line bg-panel max-md:absolute max-md:inset-0 max-md:z-30 max-md:w-full">
-          <div className="flex shrink-0 items-center gap-1 border-b border-line px-3 pt-2.5 text-xs">
+          <div className="flex shrink-0 items-center gap-2 border-b border-line px-3 py-2.5">
+            {/* O trilho do `Alternador` (02/out/2026), como Lista | Agenda. */}
+            <div role="group" aria-label="Painel do fluxo" className="alternador alternador-sm min-w-0 flex-1">
             {abas.map((chave) => (
               <button
                 key={chave}
+                type="button"
+                aria-pressed={aba === chave}
                 onClick={() => setAba(chave)}
-                className={`rounded-t-lg border-b-2 px-4 py-2.5 font-bold transition ${
-                  aba === chave
-                    ? 'border-primary text-ink'
-                    : 'border-transparent text-muted hover:text-ink'
-                }`}
+                className="alternador-opcao flex-1"
               >
                 {ROTULO_DA_ABA[chave]}
                 {chave === 'antes' && faltamAntes > 0 && (
@@ -2085,11 +2085,12 @@ export function Editor({
                 )}
               </button>
             ))}
+            </div>
             <button
               onClick={() => setPainelAberto(false)}
               title="Recolher o painel e ver o desenho inteiro"
               aria-label="Recolher o painel"
-              className="mb-1 ml-auto rounded-lg px-2 py-1 text-[13px] leading-4 text-dim transition hover:bg-surface-strong hover:text-ink"
+              className="ml-auto rounded-lg px-2 py-1 text-[13px] leading-4 text-dim transition hover:bg-surface-strong hover:text-ink"
             >
               −
             </button>

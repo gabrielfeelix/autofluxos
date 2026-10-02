@@ -34,13 +34,17 @@ export function AbasDaFicha({ contato, anotacoes }: { contato: ReactNode; anotac
 
   return (
     <>
-      <div role="tablist" aria-label="Sobre o contato" className="flex border-b border-line px-4">
+      {/* O trilho do `Alternador`, como Lista | Agenda: o dono escolheu este
+          desenho para toda troca de modo (02/out/2026). Fica `role="tab"`. */}
+      <div className="px-4 pt-4">
+      <div role="tablist" aria-label="Sobre o contato" className="alternador flex w-full">
         <Aba ativa={aba === 'contato'} aoClicar={() => setAba('contato')}>
           Contato
         </Aba>
         <Aba ativa={aba === 'anotacoes'} aoClicar={() => setAba('anotacoes')}>
           Anotações
         </Aba>
+      </div>
       </div>
       <div role="tabpanel" hidden={aba !== 'contato'} className="p-4">
         {contato}
@@ -67,9 +71,7 @@ function Aba({
       role="tab"
       aria-selected={ativa}
       onClick={aoClicar}
-      className={`-mb-px flex-1 border-b-2 px-2 py-2.5 text-[13px] font-semibold transition ${
-        ativa ? 'border-primary text-primary' : 'border-transparent text-muted hover:text-ink'
-      }`}
+      className="alternador-opcao flex-1"
     >
       {children}
     </button>

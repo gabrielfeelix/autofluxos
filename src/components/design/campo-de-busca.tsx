@@ -59,10 +59,10 @@ export function ChipDeFiltro({ rotulo, aoTirar }: { rotulo: string; aoTirar: () 
       type="button"
       onClick={aoTirar}
       aria-label={`Remover filtro ${rotulo}`}
-      className="flex h-7 max-w-[260px] items-center gap-1.5 rounded-full border border-primary/20 bg-primary-weak px-2.5 font-semibold text-primary transition hover:border-primary/40"
+      className="chip-vidro chip-vidro-sm"
     >
       <span className="truncate">{rotulo}</span>
-      <span aria-hidden>×</span>
+      <span aria-hidden className="opacity-70">×</span>
     </button>
   )
 }

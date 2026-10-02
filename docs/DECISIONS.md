@@ -304,3 +304,18 @@ Append-only. Cada entrada: data, decisão, porquê, onde está no código.
   da lista da conta), via `moverCartao`/`concluirProcesso`, autor "API".
 - Tela API: grade de uma coluna ganhou `minmax(0,1fr)`; o `<pre>` do cURL
   alargava a página para 502px em 390 (defeito da fase 1).
+
+## 02/out/2026: vidro e Alternador aprovados como padrão
+
+- Dono aprovou com entusiasmo os atalhos de prazo em vidro (`.chip-vidro`,
+  Atividades) e o `Alternador` de "Minhas | Equipe" e "Lista | Agenda". Pediu
+  "em vários lugares".
+- Regra: controle **solto no azul** (filtro que liga/desliga, filtro ativo
+  com ✕) usa vidro; troca de modo **em qualquer lugar**, inclusive painel
+  dentro de cartão, usa o trilho do `Alternador`. Aba sublinhada
+  (`border-b-2`) saiu do DS.
+- Aplicado: `ChipDeFiltro` → `.chip-vidro .chip-vidro-sm`
+  (`campo-de-busca.tsx`); abas da ficha na Inbox (`abas-da-ficha.tsx`) e do
+  painel do editor (`editor.tsx`) → `.alternador`.
+- Dark: casca passou de marinho `#0a1433` (lia preto) para degradê azul
+  profundo `#0c1e5c → #1f4bc4` (`globals.css`, `--casca` do escuro).
