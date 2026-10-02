@@ -45,6 +45,11 @@ for (const [largura, altura, sufixo] of (process.env.LARGURAS ? JSON.parse(proce
     const caminho = destino.split('?')[0]
     await p.goto(B + partida(n), { timeout: 180000 })
     await p.waitForLoadState('networkidle', { timeout: 30000 }).catch(() => {})
+    // `router.push` antes da hidratação acaba no "Can't perform a React state
+    // update on a component that hasn't mounted yet" (o "1 Issue" do Next) e a
+    // navegação às vezes nem sai. Espera o roteador e um respiro.
+    await p.waitForFunction(() => window.next?.router, null, { timeout: 60000 })
+    await p.waitForTimeout(1500)
 
     await ctx.addCookies([{ name: 'revisao-atraso-ms', value: '6000', url: p.url() }])
     await p.evaluate((u) => window.next.router.push(u), destino)

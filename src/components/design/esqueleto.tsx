@@ -36,7 +36,7 @@ export function Esqueleto({ className = '' }: { className?: string }) {
  * Um por esqueleto, e não um por bloco: `role="status"` repetido vira uma
  * enxurrada de avisos sobre a mesma espera.
  */
-function Aviso({ children }: { children: ReactNode }) {
+export function Aviso({ children }: { children: ReactNode }) {
   return (
     <span role="status" className="sr-only">
       {children}
@@ -479,6 +479,36 @@ export function EsqueletoDeAjuste({
       />
       {children ?? <EsqueletoDeFormulario />}
     </Miolo>
+  )
+}
+
+/**
+ * A ficha de cadastro da organização (`FichaDoCliente`) em leitura: cabeçalho
+ * com "Editar", o logo e os campos em duas colunas. Não é formulário: quem
+ * abre a tela vê texto, e o campo só aparece depois do "Editar".
+ */
+export function EsqueletoDaFicha({ observacoes = false }: { observacoes?: boolean }) {
+  return (
+    <div className="app-card mb-5 overflow-hidden">
+      <div className="flex items-center justify-between gap-3 border-b border-line px-4 py-4 sm:px-6">
+        <span className="flex flex-col gap-1.5">
+          <Esqueleto className="h-3.5 w-20" />
+          <Esqueleto className="h-2.5 w-64 max-w-full" />
+        </span>
+        <Esqueleto className="h-8 w-16 shrink-0 rounded-lg" />
+      </div>
+      <div className="flex flex-col items-start gap-6 p-4 sm:flex-row sm:p-6">
+        <Esqueleto className="size-[72px] shrink-0 rounded-[14px]" />
+        <div className="grid w-full min-w-0 flex-1 grid-cols-1 gap-x-6 gap-y-4 sm:grid-cols-2">
+          {Array.from({ length: observacoes ? 5 : 4 }, (_, i) => (
+            <span key={i} className="flex flex-col gap-2">
+              <Esqueleto className="h-2.5 w-24" />
+              <Esqueleto className="h-3 w-32" />
+            </span>
+          ))}
+        </div>
+      </div>
+    </div>
   )
 }
 

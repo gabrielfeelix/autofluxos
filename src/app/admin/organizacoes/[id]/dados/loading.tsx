@@ -1,5 +1,10 @@
-import { EsqueletoDeFormulario } from '@/components/admin/esqueletos'
+import { Aviso, EsqueletoDaFicha } from '@/components/design/esqueleto'
 
 export default function Carregando() {
-  return <EsqueletoDeFormulario />
+  return (
+    <div className="max-w-[1100px]">
+      <EsqueletoDaFicha observacoes />
+      <Aviso>Carregando os dados…</Aviso>
+    </div>
+  )
 }

@@ -16,6 +16,7 @@ import {
 import { acaoCancelarTransmissao } from '@/server/acoes-transmissoes'
 import type { Template } from '@/server/repos/templates'
 import type { Progresso, Transmissao } from '@/server/repos/transmissoes'
+import { Pilula } from '@/components/design/pilula'
 import { Numeros, ProximaAcao, ROTULO_DO_ESTADO } from '@/components/transmissoes/numeros'
 import { useConfirmar } from '@/components/design/confirmar'
 import { IlustracaoTransmissoes } from '@/components/design/ilustracoes'
@@ -180,9 +181,7 @@ function Linha({
             >
               {transmissao.nome}
             </Link>
-            <span className={`rounded-full px-2 py-0.5 text-[11px] font-semibold ${estado.cor}`}>
-              {estado.texto}
-            </span>
+            <Pilula tom={estado.tom}>{estado.texto}</Pilula>
           </div>
 
           {progresso && <Numeros progresso={progresso} />}

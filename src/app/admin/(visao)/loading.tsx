@@ -39,17 +39,30 @@ export default function Carregando() {
             ))}
           </div>
         </section>
-        <section>
-          <Esqueleto className="mb-3 h-4 w-44" />
-          <div className="app-card flex flex-col gap-4 p-4">
-            {[0, 1, 2].map((i) => (
-              <span key={i} className="flex flex-col gap-2">
-                <Esqueleto className="h-3 w-[70%]" />
-                <Esqueleto className="h-1.5 w-full rounded-full" />
-              </span>
-            ))}
-          </div>
-        </section>
+        <div className="flex flex-col gap-7">
+          <section>
+            <Esqueleto className="mb-3 h-4 w-44" />
+            <div className="app-card flex flex-col gap-4 p-4">
+              {[0, 1].map((i) => (
+                <span key={i} className="flex flex-col gap-2">
+                  <Esqueleto className="h-3 w-[70%]" />
+                  <Esqueleto className="h-1.5 w-full rounded-full" />
+                </span>
+              ))}
+            </div>
+          </section>
+          <section>
+            <Esqueleto className="mb-3 h-4 w-40" />
+            <div className="app-card flex flex-col gap-3.5 p-4">
+              {[0, 1, 2, 3, 4].map((i) => (
+                <span key={i} className="flex items-center justify-between gap-3">
+                  <Esqueleto className="h-3 w-[65%]" />
+                  <Esqueleto className="h-2.5 w-10" />
+                </span>
+              ))}
+            </div>
+          </section>
+        </div>
       </div>
       <span role="status" className="sr-only">
         Carregando a visão geral…

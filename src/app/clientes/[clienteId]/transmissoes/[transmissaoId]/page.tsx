@@ -3,6 +3,8 @@ import Link from 'next/link'
 import { hrefDaFicha } from '@/core/volta-da-ficha'
 import { notFound } from 'next/navigation'
 import { ClienteShell } from '@/components/design/cliente-shell'
+import { CabecalhoDaTela } from '@/components/design/cabecalho-da-tela'
+import { Pilula, type TomDaPilula } from '@/components/design/pilula'
 import { Paginacao } from '@/components/atividades/paginacao'
 import {
   Numeros,
@@ -26,13 +28,13 @@ export const dynamic = 'force-dynamic'
 
 const POR_PAGINA = 50
 
-const ROTULO_DO_DESTINATARIO: Record<EstadoDoDestinatario, { texto: string; cor: string }> = {
-  na_fila: { texto: 'Na fila', cor: 'bg-line text-dim' },
-  aceita: { texto: 'Saiu', cor: 'bg-sky-500/15 text-sky-600' },
-  retida: { texto: 'Meta avaliando', cor: 'bg-amber-500/15 text-amber-600' },
-  entregue: { texto: 'Chegou', cor: 'bg-emerald-500/15 text-emerald-600' },
-  lida: { texto: 'Lida', cor: 'bg-emerald-500/15 text-emerald-600' },
-  falhou: { texto: 'Não recebeu', cor: 'bg-red-500/15 text-red-600' },
+const ROTULO_DO_DESTINATARIO: Record<EstadoDoDestinatario, { texto: string; tom: TomDaPilula }> = {
+  na_fila: { texto: 'Na fila', tom: 'neutro' },
+  aceita: { texto: 'Saiu', tom: 'destaque' },
+  retida: { texto: 'Meta avaliando', tom: 'aviso' },
+  entregue: { texto: 'Chegou', tom: 'ok' },
+  lida: { texto: 'Lida', tom: 'ok' },
+  falhou: { texto: 'Não recebeu', tom: 'perigo' },
 }
 
 /**
@@ -113,29 +115,26 @@ async function Detalhe({
 
   return (
     <Miolo largura="leitura">
-      <Link
-        href={`/clientes/${clienteId}/transmissoes?aba=transmissoes`}
-        className="text-[12.5px] font-semibold text-dim hover:text-ink"
-      >
-        ‹ Transmissões
-      </Link>
+      <CabecalhoDaTela
+        trilha={[
+          { rotulo: 'Transmissões', href: `/clientes/${clienteId}/transmissoes?aba=transmissoes` },
+          { rotulo: transmissao.nome },
+        ]}
+        titulo={transmissao.nome}
+        contagem={<Pilula tom={rotulo.tom}>{rotulo.texto}</Pilula>}
+        descricao={
+          <>
+            Modelo {template ? `"${template.nome.replace(/_/g, ' ')}"` : 'apagado'}
+            {' · '}
+            {transmissao.quando
+              ? `marcada para ${diaEHora(transmissao.quando)}`
+              : `criada em ${diaEHora(transmissao.criadaEm)}`}
+            {transmissao.criadaPorNome ? ` por ${transmissao.criadaPorNome}` : ''}
+          </>
+        }
+      />
 
-      <div className="mt-2 flex flex-wrap items-center gap-2">
-        <h1 className="text-[20px] font-bold tracking-[-0.02em] md:text-[25px]">{transmissao.nome}</h1>
-        <span className={`rounded-full px-2 py-0.5 text-[11px] font-semibold ${rotulo.cor}`}>
-          {rotulo.texto}
-        </span>
-      </div>
-      <p className="mt-1 text-[12.5px] leading-5 text-dim">
-        Modelo {template ? `"${template.nome.replace(/_/g, ' ')}"` : 'apagado'}
-        {' · '}
-        {transmissao.quando
-          ? `marcada para ${diaEHora(transmissao.quando)}`
-          : `criada em ${diaEHora(transmissao.criadaEm)}`}
-        {transmissao.criadaPorNome ? ` por ${transmissao.criadaPorNome}` : ''}
-      </p>
-
-      <section className="app-card mt-5 px-5 py-4">
+      <section className="app-card px-5 py-4">
         <Numeros progresso={progresso} />
         {transmissao.erro && (
           <p className="mt-2 rounded-[10px] bg-red-500/10 px-3 py-2 text-[12px] leading-5 text-red-700 dark:text-red-300">
@@ -198,7 +197,7 @@ async function Detalhe({
                   </div>
                   <div className="flex shrink-0 items-center gap-2 text-[11.5px] text-dim">
                     {d.enviadaEm && <span className="tabular-nums">{diaEHora(d.enviadaEm)}</span>}
-                    <span className={`rounded-full px-2 py-0.5 font-semibold ${selo.cor}`}>{selo.texto}</span>
+                    <Pilula tom={selo.tom}>{selo.texto}</Pilula>
                   </div>
                 </li>
               )

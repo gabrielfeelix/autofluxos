@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import type { TomDaPilula } from '@/components/design/pilula'
 import type { EstadoDaTransmissao, Progresso } from '@/server/repos/transmissoes'
 
 /*
@@ -7,13 +8,13 @@ import type { EstadoDaTransmissao, Progresso } from '@/server/repos/transmissoes
  * ler uma constante exportada de um módulo `'use client'`.
  */
 
-export const ROTULO_DO_ESTADO: Record<EstadoDaTransmissao, { texto: string; cor: string }> = {
-  rascunho: { texto: 'Rascunho', cor: 'bg-line text-dim' },
-  agendada: { texto: 'Agendada', cor: 'bg-sky-500/15 text-sky-600' },
-  enviando: { texto: 'Enviando', cor: 'bg-amber-500/15 text-amber-600' },
-  concluida: { texto: 'Concluída', cor: 'bg-emerald-500/15 text-emerald-600' },
-  cancelada: { texto: 'Cancelada', cor: 'bg-line text-dim' },
-  falhou: { texto: 'Parou', cor: 'bg-red-500/15 text-red-600' },
+export const ROTULO_DO_ESTADO: Record<EstadoDaTransmissao, { texto: string; tom: TomDaPilula }> = {
+  rascunho: { texto: 'Rascunho', tom: 'neutro' },
+  agendada: { texto: 'Agendada', tom: 'destaque' },
+  enviando: { texto: 'Enviando', tom: 'aviso' },
+  concluida: { texto: 'Concluída', tom: 'ok' },
+  cancelada: { texto: 'Cancelada', tom: 'neutro' },
+  falhou: { texto: 'Parou', tom: 'perigo' },
 }
 
 /** O que fazer depois, com o link quando existe tela para resolver. */
