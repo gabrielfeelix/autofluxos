@@ -210,15 +210,23 @@ async function Conteudo({
       />
 
       {!aberto ? (
-        <section className="app-card px-5 py-16 text-center">
-          <IlustracaoQuadros />
-          <p className="mt-6 text-[13.5px] font-semibold text-soft">Nenhum funil ainda</p>
-          <p className="mx-auto mt-1.5 max-w-[440px] text-xs leading-5 text-dim">
-            Um funil é o seu processo desenhado: as etapas por onde um contato passa, do primeiro
-            contato até o desfecho. Etiqueta é um fato sobre a pessoa e ela pode ter várias; etapa é
-            onde ela está, e é uma só.
-          </p>
-          <span className="mt-6 inline-block">{novoQuadro}</span>
+        <section className="app-card overflow-hidden">
+          <header className="flex items-start justify-between gap-4 border-b border-line px-5 py-4">
+            <div>
+              <h2 className="text-[14.5px] font-bold">Funis</h2>
+              <p className="mt-0.5 text-[12px] leading-5 text-dim">
+                As etapas por onde um contato passa, do primeiro contato até o desfecho.
+              </p>
+            </div>
+            <span className="shrink-0">{novoQuadro}</span>
+          </header>
+          <div className="px-5 py-14 text-center">
+            <IlustracaoQuadros />
+            <p className="mt-6 text-[13.5px] font-semibold text-soft">Nenhum funil ainda</p>
+            <p className="mx-auto mt-1.5 max-w-[440px] text-xs leading-5 text-dim">
+              Etiqueta é um fato sobre a pessoa e ela pode ter várias; etapa é onde ela está, e é uma só.
+            </p>
+          </div>
         </section>
       ) : visao === 'lista' ? (
         <ListaDeNegocios

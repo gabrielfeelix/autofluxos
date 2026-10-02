@@ -104,6 +104,15 @@ Para o próximo agente. Tudo abaixo está commitado, publicado e em produção
    conversa. Foi entendido como "ponha na sua lista de tarefas". Se era para
    lançar algo na tela de Atividades do app, pergunte o quê.
 
+7. **Melhorar as notificações de "esperando atendimento"** (pedido do dono,
+   02/out, com print): chegou "Um contato está esperando atendimento / a IA
+   não soube responder, em \"loja_detalhes\": \"produtoId\" não é um
+   identificador que apareceu nesta consulta". Falta dizer **de qual conta**
+   (ele não soube se era a PCYES), **quem** escreveu (nome ou número) e **o
+   que** a pessoa pediu; e o erro interno da ferramenta da IA não pode virar
+   texto para o usuário. Texto montado em `textoDoAviso`
+   (`src/core/aviso-de-handoff.ts:94`), que hoje usa o motivo cru.
+
 ## Regras do dono que valem aqui
 
 Implementar inline, sem subagente; não rodar a suíte inteira (tsc, lint do

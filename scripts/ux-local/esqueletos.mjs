@@ -27,6 +27,7 @@ const TELAS = {
   inicio: '', inbox: '/inbox', atividades: '/atividades', agenda: '/atividades?vista=agenda', contatos: '/leads', ficha: `/leads/${CT}`,
   funil: '/quadros', fluxos: '/fluxos', editor: `/fluxos/${FL}`, transmissoes: '/transmissoes', relatorios: '/relatorios',
   respostas: '/respostas', favoritas: '/favoritas', ajustes: '/ajustes', whatsapp: '/ajustes/whatsapp', equipe: '/ajustes/equipe',
+  canalwhatsapp: '/conversas/canais/whatsapp', canalinstagram: '/conversas/canais/instagram', canalsite: '/conversas/canais/site',
   negocio: '/ajustes/negocio', integracoes: '/ajustes/integracoes', plano: '/ajustes/plano', etiquetas: '/ajustes/etiquetas',
 }
 // Parte de uma tela diferente da de destino, para o Next navegar de verdade.

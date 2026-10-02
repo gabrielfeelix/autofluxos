@@ -508,7 +508,7 @@ function EstadoVazio({
       página (02/out/2026).
     */
     <section className="app-card overflow-hidden">
-      <header className="flex flex-wrap items-start justify-between gap-4 border-b border-line px-5 py-4">
+      <header className="flex items-start justify-between gap-4 border-b border-line px-5 py-4">
         <div className="min-w-0">
           <h2 className="text-[14.5px] font-bold">Caixa de Entrada</h2>
           <p className="mt-0.5 text-[12px] leading-5 text-dim">

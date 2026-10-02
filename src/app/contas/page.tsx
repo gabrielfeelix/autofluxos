@@ -101,9 +101,21 @@ export default async function Contas() {
         </header>
 
         {contas.length === 0 ? (
-          <section className="app-card px-5 py-14 text-center">
-            <IlustracaoOrganizacoes />
-            <p className="mt-6 text-[14px] font-semibold text-soft">Nenhuma organização ainda</p>
+          <section className="app-card overflow-hidden">
+            <header className="flex items-start justify-between gap-4 border-b border-line px-5 py-4">
+              <div>
+                <h2 className="text-[14.5px] font-bold">Suas companhias</h2>
+                <p className="mt-0.5 text-[12px] leading-5 text-dim">
+                  Leva menos de um minuto para criar a do seu negócio.
+                </p>
+              </div>
+              <Link href="/primeiro-acesso" className="app-primary-button shrink-0 px-[18px] py-2.5 text-[13px]">
+                Criar companhia
+              </Link>
+            </header>
+            <div className="px-5 py-14 text-center">
+              <IlustracaoOrganizacoes />
+              <p className="mt-6 text-[13.5px] font-semibold text-soft">Nenhuma organização ainda</p>
             {/*
               O estado vazio conta **o que fazer**, e o que fazer mudou quando o
               cadastro abriu ao público: antes a conta nascia junto com a venda e
@@ -111,15 +123,10 @@ export default async function Contas() {
               dela, e mandá-la pedir a alguém seria ensinar o caminho errado,
               que é pior que estado vazio mudo.
             */}
-            <p className="mx-auto mt-1.5 max-w-md text-[12.5px] leading-6 text-dim">
-              Crie a companhia do seu negócio para começar, leva menos de um minuto. Se você
-              deveria fazer parte de uma que já existe, peça a quem cuida dela para adicionar o
-              seu e-mail.
-            </p>
-            <div className="mt-5 flex justify-center">
-              <Link href="/primeiro-acesso" className="app-primary-button px-[18px] py-2.5 text-[13px]">
-                Criar minha companhia
-              </Link>
+              <p className="mx-auto mt-1.5 max-w-md text-[12.5px] leading-6 text-dim">
+                Crie a companhia do seu negócio para começar. Se você deveria fazer parte de uma que já
+                existe, peça a quem cuida dela para adicionar o seu e-mail.
+              </p>
             </div>
           </section>
         ) : (

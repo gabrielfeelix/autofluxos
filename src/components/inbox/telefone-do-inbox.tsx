@@ -37,7 +37,10 @@ export function TelefoneDoInbox({ clienteId }: { clienteId: string }) {
   const alto = useRef<HTMLAudioElement | null>(null)
   const recusadas = useRef(new Set<string>())
   const faseAtual = useRef(fase)
-  faseAtual.current = fase
+  // Antes dos outros efeitos: eles leem a fase pelo ref, e efeito roda na ordem.
+  useEffect(() => {
+    faseAtual.current = fase
+  }, [fase])
 
   const base = `/api/clientes/${clienteId}/chamadas`
 

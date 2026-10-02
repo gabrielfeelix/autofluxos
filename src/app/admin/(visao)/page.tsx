@@ -80,17 +80,25 @@ export default async function VisaoGeral() {
       </section>
 
       {organizacoes.length === 0 ? (
-        <section className="app-card px-5 py-14 text-center">
-          <IlustracaoOrganizacoes />
-          <p className="mt-6 text-[14px] font-semibold text-soft">Nenhuma organização ainda</p>
-          <p className="mx-auto mt-1.5 max-w-md text-[12.5px] leading-6 text-dim">
-            Crie uma organização vazia ou comece com o exemplo pronto para conhecer o fluxo completo.
-          </p>
-          <form action={acaoCriarExemplo} className="mt-5">
-            <button type="submit" className="app-primary-button px-5 py-2.5 text-[13px]">
-              Criar organização de exemplo
-            </button>
-          </form>
+        <section className="app-card overflow-hidden">
+          <header className="flex items-start justify-between gap-4 border-b border-line px-5 py-4">
+            <div>
+              <h2 className="text-[14.5px] font-bold">Organizações</h2>
+              <p className="mt-0.5 text-[12px] leading-5 text-dim">Todas as contas da plataforma.</p>
+            </div>
+            <form action={acaoCriarExemplo} className="shrink-0">
+              <button type="submit" className="app-secondary-button px-4 py-2 text-[13px]">
+                Criar exemplo
+              </button>
+            </form>
+          </header>
+          <div className="px-5 py-14 text-center">
+            <IlustracaoOrganizacoes />
+            <p className="mt-6 text-[13.5px] font-semibold text-soft">Nenhuma organização ainda</p>
+            <p className="mx-auto mt-1.5 max-w-md text-[12.5px] leading-6 text-dim">
+              Crie uma organização vazia ou comece com o exemplo pronto para conhecer o fluxo completo.
+            </p>
+          </div>
         </section>
       ) : (
         <div className="grid gap-7 xl:grid-cols-[minmax(0,1fr)_360px]">
