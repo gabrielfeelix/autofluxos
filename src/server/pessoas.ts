@@ -80,7 +80,10 @@ export type Ator = NaHierarquia & { politica: Politica; acesso: AcessoCompleto; 
 export async function atorNaOrganizacao(clienteId: string): Promise<Ator> {
   const acesso = await acessoCompleto(clienteId)
   const usuarioId = acesso.sessao.usuario.id
-  if (acesso.papel === null && ehAdminDaPlataforma(acesso.sessao)) {
+  // O suporte fica fora da escada mesmo quando também é membro da conta (caso
+  // de quem configura o cliente por dentro): senão vira Administrador e o
+  // proprietário some da tela dele.
+  if (ehAdminDaPlataforma(acesso.sessao)) {
     return { usuarioId, nivel: NIVEL_DO_SUPORTE, equipes: [], politica: POLITICAS.owner, acesso, suporte: true }
   }
   const pessoas = await pessoasNaHierarquia(clienteId)
