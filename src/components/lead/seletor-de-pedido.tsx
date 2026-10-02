@@ -174,13 +174,13 @@ export function SeletorDePedido({
                 void buscar()
               }}
               placeholder="Número do pedido. Exemplo: 1955"
-              className="min-w-0 flex-1 rounded-[9px] border border-line bg-surface px-2.5 py-1.5 text-[12.5px] outline-none placeholder:text-dim focus:border-primary/40"
+              className="app-field h-8 min-w-0 flex-1 px-2.5 text-[12.5px]"
             />
             <button
               type="button"
               onClick={() => void buscar()}
               disabled={numero.trim() === ''}
-              className="shrink-0 rounded-[9px] border border-line px-2.5 text-[12px] font-semibold text-soft transition hover:border-primary/40 hover:text-primary disabled:opacity-50"
+              className="botao-secundario botao-sm shrink-0"
             >
               {buscando ? 'Buscando…' : 'Buscar'}
             </button>

@@ -2,6 +2,9 @@
 
 import Link from 'next/link'
 import { useState, useTransition, type ReactNode } from 'react'
+import { CabecalhoDaTela } from '@/components/design/cabecalho-da-tela'
+import { Miolo } from '@/components/design/miolo'
+import { Pilula } from '@/components/design/pilula'
 import type { EstadoDaPlataforma, FichaDaPlataforma, PlataformaDeLoja } from '@/core/plataformas-de-loja'
 
 export type CartaoDePlataforma = {
@@ -37,12 +40,11 @@ export function ConectarLoja({
   const emBreve = cartoes.filter((c) => c.estado === 'em_breve')
 
   return (
-    <main className="w-full max-w-[1440px] px-4 pt-[26px] pb-[42px] md:px-[42px]">
-      <h1 className="text-[20px] font-bold tracking-[-0.02em] md:text-[25px]">Integrações</h1>
-      <p className="mt-1.5 mb-6 max-w-[680px] text-[13px] leading-6 text-dim">
-        Ligue a sua loja on-line e o bot passa a responder com o que está nela: o produto certo, o preço, o estoque e o
-        link para comprar. Ele só lê a loja; quem fecha a compra é o site.
-      </p>
+    <Miolo largura="cheia">
+      <CabecalhoDaTela
+        titulo="Integrações"
+        descricao="Ligue a sua loja on-line e o bot passa a responder com o que está nela: o produto certo, o preço, o estoque e o link para comprar. Ele só lê a loja; quem fecha a compra é o site."
+      />
 
       <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_340px]">
         <div className="flex min-w-0 flex-col gap-5">
@@ -81,7 +83,7 @@ export function ConectarLoja({
 
         <OQueRende />
       </div>
-    </main>
+    </Miolo>
   )
 }
 
@@ -149,11 +151,7 @@ function CartaoLargo({
         )}
         <Link
           href={`/clientes/${clienteId}${ficha.href}`}
-          className={`inline-flex items-center justify-center gap-1.5 rounded-[10px] px-4 py-2 text-[12.5px] font-bold transition ${
-            estado === 'conectada'
-              ? 'border border-line text-ink hover:bg-surface'
-              : 'bg-primary text-white hover:bg-primary-strong'
-          }`}
+          className={`botao-md ${estado === 'conectada' ? 'botao-secundario' : 'botao-primario'}`}
         >
           {estado === 'conectada' ? 'Abrir a conexão' : estado === 'configurada' ? 'Ligar de novo' : 'Conectar'}
           <span aria-hidden>›</span>
@@ -178,9 +176,7 @@ function Cartao({
       <div className="mb-4 flex items-start justify-between gap-3">
         <Marca id={ficha.id} />
         {ficha.brasileira && (
-          <span className="shrink-0 rounded-full border border-line bg-surface px-2.5 py-1 text-[10.5px] font-bold text-muted">
-            Brasil
-          </span>
+          <Pilula>Brasil</Pilula>
         )}
       </div>
       <h3 className="text-[15px] font-bold tracking-[-0.01em]">{ficha.nome}</h3>
@@ -236,7 +232,7 @@ function QueroEsta({
       <button
         type="button"
         onClick={pedir}
-        className="inline-flex items-center justify-center self-start rounded-[10px] border border-line px-3.5 py-2 text-[12.5px] font-bold text-ink transition hover:bg-surface"
+        className="botao-secundario botao-md self-start"
       >
         Quero esta
       </button>
@@ -250,13 +246,15 @@ function QueroEsta({
 }
 
 function SeloDoEstado({ estado }: { estado: EstadoDaPlataforma }) {
-  const [texto, cor] = {
-    conectada: ['Conectada', 'border-emerald-400/25 bg-emerald-400/[0.08] text-ok'],
-    configurada: ['Desligada', 'border-amber-300/30 bg-amber-300/[0.1] text-aviso'],
-    disponivel: ['Disponível', 'border-primary/25 bg-primary-weak text-primary'],
-    em_breve: ['Em breve', 'border-line bg-surface text-muted'],
-  }[estado]
-  return <span className={`shrink-0 rounded-full border px-2.5 py-1 text-[10.5px] font-bold ${cor}`}>{texto}</span>
+  const [texto, tom] = (
+    {
+      conectada: ['Conectada', 'ok'],
+      configurada: ['Desligada', 'aviso'],
+      disponivel: ['Disponível', 'destaque'],
+      em_breve: ['Em breve', 'neutro'],
+    } as const
+  )[estado]
+  return <Pilula tom={tom}>{texto}</Pilula>
 }
 
 /**

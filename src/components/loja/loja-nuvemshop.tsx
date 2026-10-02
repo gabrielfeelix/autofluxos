@@ -201,9 +201,7 @@ function Conectada({
         <button
           type="button"
           onClick={alternar}
-          className={`inline-flex shrink-0 items-center justify-center rounded-[10px] px-4 py-2 text-[12.5px] font-bold transition ${
-            loja.ativa ? 'border border-line text-ink hover:bg-surface' : 'bg-primary text-white hover:bg-primary-strong'
-          }`}
+          className={`botao-md shrink-0 ${loja.ativa ? 'botao-secundario' : 'botao-primario'}`}
         >
           {loja.ativa ? 'Desligar o bot' : 'Ligar o bot'}
         </button>

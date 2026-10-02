@@ -2,7 +2,10 @@
 
 import { useRouter } from 'next/navigation'
 import { useEffect, useRef, useState, useTransition } from 'react'
+import { Alternador } from '@/components/design/alternador'
+import { ChipDeFiltro } from '@/components/design/campo-de-busca'
 import { Dropdown } from '@/components/design/dropdown'
+import { Badge } from '@/components/design/pilula'
 import { IconeDoQuadro, PopoverDoQuadro } from '@/components/quadros/popover-do-quadro'
 import {
   NOME_DO_TIPO,
@@ -19,13 +22,6 @@ const ROTULO_DO_RECORTE: Record<RecorteDaAgenda, string> = {
   hoje: 'Hoje',
   proximas: 'Próximas',
   'sem-prazo': 'Sem prazo',
-}
-
-const TOM_DO_RECORTE: Record<RecorteDaAgenda, string> = {
-  vencidas: 'text-perigo',
-  hoje: 'text-aviso',
-  proximas: 'text-muted',
-  'sem-prazo': 'text-muted',
 }
 
 const SITUACOES = [
@@ -110,16 +106,15 @@ export function BarraDaAgenda({
               type="button"
               aria-pressed={ativo}
               onClick={() => ir({ recorte: ativo ? null : recorte, situacao: 'aberta' })}
-              className={`flex items-center gap-2 rounded-full border px-3.5 py-1.5 text-[12px] font-semibold transition ${
-                ativo
-                  ? 'border-primary/40 bg-primary/10 text-primary'
-                  : 'border-line bg-panel text-muted hover:border-strong hover:text-ink'
-              }`}
+              className="chip-vidro"
             >
               {ROTULO_DO_RECORTE[recorte]}
-              <span className={`tabular-nums ${ativo ? 'text-primary' : TOM_DO_RECORTE[recorte]}`}>
-                {contagens[recorte]}
-              </span>
+              {/* Vencida é a única que pede ação: ela ganha o badge coral. */}
+              {recorte === 'vencidas' && contagens[recorte] > 0 && !ativo ? (
+                <Badge tom="alerta">{contagens[recorte]}</Badge>
+              ) : (
+                <span className="chip-vidro-conta">{contagens[recorte]}</span>
+              )}
             </button>
           )
         })}
@@ -164,11 +159,7 @@ export function BarraDaAgenda({
             <>
               <IconeDoQuadro tipo="filtro" />
               <span>Filtros</span>
-              {filtrosNoPopover > 0 && (
-                <span className="grid size-4 place-items-center rounded bg-primary text-[10px] text-white">
-                  {filtrosNoPopover}
-                </span>
-              )}
+              {filtrosNoPopover > 0 && <Badge>{filtrosNoPopover}</Badge>}
             </>
           }
         >
@@ -217,62 +208,45 @@ export function BarraDaAgenda({
           />
         )}
         {podeVerEquipe && (
-          <div role="group" aria-label="De quem" className="alternador">
-            {(
-              [
-                { valor: 'minhas', rotulo: 'Minhas' },
-                { valor: 'equipe', rotulo: 'Equipe' },
-              ] as const
-            ).map((opcao) => (
-              <button
-                key={opcao.valor}
-                type="button"
-                aria-pressed={filtro.alcance === opcao.valor}
-                onClick={() => ir({ alcance: opcao.valor, responsavel: null })}
-                className="alternador-opcao"
-              >
-                {opcao.rotulo}
-              </button>
-            ))}
-          </div>
+          <Alternador
+            rotulo="De quem"
+            ativa={filtro.alcance}
+            aoEscolher={(alcance) => ir({ alcance, responsavel: null })}
+            opcoes={[
+              { chave: 'minhas', rotulo: 'Minhas' },
+              { chave: 'equipe', rotulo: 'Equipe' },
+            ]}
+          />
         )}
         {carregando && <span className="text-[11.5px] text-dim">carregando…</span>}
-        <div role="group" aria-label="Como mostrar" className="alternador sm:ml-auto">
-          {(
-            [
-              { valor: 'lista', rotulo: 'Lista' },
-              { valor: 'agenda', rotulo: 'Agenda' },
-            ] as const
-          ).map((opcao) => (
-            <button
-              key={opcao.valor}
-              type="button"
-              aria-pressed={filtro.vista === opcao.valor}
-              onClick={() => ir({ vista: opcao.valor })}
-              className="alternador-opcao"
-            >
-              <IconeDaVista vista={opcao.valor} />
-              {opcao.rotulo}
-            </button>
-          ))}
-        </div>
+        <Alternador
+          rotulo="Como mostrar"
+          className="sm:ml-auto"
+          ativa={filtro.vista}
+          aoEscolher={(vista) => ir({ vista })}
+          opcoes={(['lista', 'agenda'] as const).map((vista) => ({
+            chave: vista,
+            rotulo: vista === 'lista' ? 'Lista' : 'Agenda',
+            icone: <IconeDaVista vista={vista} />,
+          }))}
+        />
       </div>
 
       {temFiltro && (
         <div className="flex flex-wrap items-center gap-2 text-[11.5px]">
           <span className="text-dim">Filtros ativos:</span>
           {filtro.recorte && (
-            <Chip rotulo={`Prazo: ${ROTULO_DO_RECORTE[filtro.recorte]}`} aoTirar={() => ir({ recorte: null })} />
+            <ChipDeFiltro rotulo={`Prazo: ${ROTULO_DO_RECORTE[filtro.recorte]}`} aoTirar={() => ir({ recorte: null })} />
           )}
           {filtro.situacao !== 'aberta' && (
-            <Chip
+            <ChipDeFiltro
               rotulo={`Situação: ${SITUACOES.find((s) => s.valor === filtro.situacao)?.rotulo}`}
               aoTirar={() => ir({ situacao: 'aberta' })}
             />
           )}
-          {filtro.busca && <Chip rotulo={`Busca: ${filtro.busca}`} aoTirar={() => ir({ busca: '' })} />}
-          {filtro.tipo && <Chip rotulo={`Tipo: ${NOME_DO_TIPO[filtro.tipo]}`} aoTirar={() => ir({ tipo: null })} />}
-          {responsavel && <Chip rotulo={`Responsável: ${responsavel}`} aoTirar={() => ir({ responsavel: null })} />}
+          {filtro.busca && <ChipDeFiltro rotulo={`Busca: ${filtro.busca}`} aoTirar={() => ir({ busca: '' })} />}
+          {filtro.tipo && <ChipDeFiltro rotulo={`Tipo: ${NOME_DO_TIPO[filtro.tipo]}`} aoTirar={() => ir({ tipo: null })} />}
+          {responsavel && <ChipDeFiltro rotulo={`Responsável: ${responsavel}`} aoTirar={() => ir({ responsavel: null })} />}
           <button
             type="button"
             onClick={() => ir({ busca: '', tipo: null, responsavel: null, recorte: null, situacao: 'aberta' })}
@@ -298,19 +272,5 @@ function IconeDaVista({ vista }: { vista: 'lista' | 'agenda' }) {
         </>
       )}
     </svg>
-  )
-}
-
-function Chip({ rotulo, aoTirar }: { rotulo: string; aoTirar: () => void }) {
-  return (
-    <button
-      type="button"
-      onClick={aoTirar}
-      aria-label={`Remover filtro ${rotulo}`}
-      className="flex max-w-[260px] items-center gap-1.5 rounded-md border border-primary/15 bg-primary/[0.06] px-2 py-1 text-primary"
-    >
-      <span className="truncate">{rotulo}</span>
-      <span aria-hidden>×</span>
-    </button>
   )
 }

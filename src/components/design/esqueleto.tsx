@@ -20,6 +20,10 @@
  * entre o clique e o conteúdo.
  */
 import type { ReactNode } from 'react'
+import { IconeDoQuadro } from '@/components/quadros/popover-do-quadro'
+import { CabecalhoDaTela } from './cabecalho-da-tela'
+import { Trilha } from './trilha'
+import { Miolo, type LarguraDoMiolo } from './miolo'
 
 /** Um bloco cinza. A base de todo o resto. */
 export function Esqueleto({ className = '' }: { className?: string }) {
@@ -128,26 +132,36 @@ export function EsqueletoDeCartoes({
   )
 }
 
-/** As colunas do funil, cada uma com alguns cartões. */
+/**
+ * As colunas do funil, cada uma com alguns cartões: coluna em vidro (o
+ * `bg-surface` da coluna real) e cartão branco, na mesma largura de 300px.
+ */
 export function EsqueletoDeQuadro({
-  colunas = 4,
+  colunas = 5,
   rotulo = 'Carregando o funil…',
 }: {
   colunas?: number
   rotulo?: string
 }) {
   return (
-    <div className="flex gap-3 overflow-hidden">
+    <div className="flex min-h-0 flex-1 gap-3 overflow-hidden">
       {Array.from({ length: colunas }, (_, coluna) => (
-        <div key={coluna} className="app-card flex w-[264px] shrink-0 flex-col gap-3 p-3">
-          <span className="flex items-center justify-between">
+        <div
+          key={coluna}
+          className="flex w-[290px] shrink-0 flex-col gap-2.5 rounded-xl border border-line/60 bg-surface p-2.5 sm:w-[300px]"
+        >
+          <span className="flex items-center justify-between px-1 py-1.5">
             <Esqueleto className="h-3 w-24" />
-            <Esqueleto className="h-3 w-6 rounded-full" />
+            <Esqueleto className="h-4 w-10 rounded-full" />
           </span>
-          {Array.from({ length: 3 - (coluna % 2) }, (_, cartao) => (
-            <div key={cartao} className="flex flex-col gap-2 rounded-[10px] border border-line p-3">
-              <Esqueleto className="h-3 w-[70%]" />
-              <Esqueleto className="h-2.5 w-[45%]" />
+          {Array.from({ length: coluna === 0 ? 1 : 4 - (coluna % 2) }, (_, cartao) => (
+            <div key={cartao} className="app-card flex flex-col gap-2.5 p-3">
+              <Esqueleto className="h-3 w-[60%]" />
+              <Esqueleto className="h-3 w-20" />
+              <span className="flex items-center gap-2">
+                <Esqueleto className="size-5 rounded-full" />
+                <Esqueleto className="h-2.5 w-[55%]" />
+              </span>
             </div>
           ))}
         </div>
@@ -158,7 +172,38 @@ export function EsqueletoDeQuadro({
 }
 
 /**
- * O Inbox: a fila à esquerda e a conversa à direita.
+ * O funil inteiro enquanto vem: topo com o nome do funil, Quadro | Lista e as
+ * ações, a barra de busca e as colunas. Usado pelo `loading.tsx` e pela
+ * espera da página, para os dois serem a mesma coisa.
+ */
+export function EsqueletoDoFunil() {
+  return (
+    <>
+    <header className="mb-4 flex shrink-0 flex-wrap items-center gap-3">
+      <Esqueleto className="size-9 rounded-[9px]" />
+      <span className="flex flex-col gap-1">
+        <span className="text-[11px] font-semibold tracking-[0.06em] text-dim uppercase">Negócios</span>
+        <Esqueleto className="h-6 w-36 rounded-lg" />
+      </span>
+      <span className="topo-acoes ml-auto flex flex-wrap items-center gap-2">
+        <EsqueletoDeAlternador opcoes={['Quadro', 'Lista']} />
+        <EsqueletoDeBotao largura="w-24" />
+        <EsqueletoDeBotao largura="w-24" />
+        <EsqueletoDeBotao largura="w-9" />
+      </span>
+    </header>
+    <EsqueletoDeBusca placeholder="Buscar negócio ou contato…" filtros className="mb-4">
+      <Esqueleto className="h-9 w-[120px] rounded-[10px]" />
+    </EsqueletoDeBusca>
+    <EsqueletoDeQuadro />
+    </>
+  )
+}
+
+/**
+ * O Inbox: um quadro branco só, como a `MolduraDoInbox`, com a barra de
+ * cima atravessando, a fila à esquerda, a conversa no meio e a ficha à
+ * direita. O título "Caixa de Entrada" vai escrito: não depende de consulta.
  *
  * As bolhas alternam lado porque uma coluna de blocos alinhados à esquerda não
  * se parece com conversa nenhuma, e é o alternado que faz o olho reconhecer a
@@ -166,34 +211,61 @@ export function EsqueletoDeQuadro({
  */
 export function EsqueletoDeInbox({ rotulo = 'Carregando as conversas…' }: { rotulo?: string }) {
   return (
-    <div className="flex min-h-0 flex-1 gap-3 overflow-hidden">
-      <div className="app-card hidden w-[320px] shrink-0 flex-col overflow-hidden md:flex">
-        <div className="border-b border-line p-3">
-          <Esqueleto className="h-8 w-full rounded-lg" />
+    <div className="app-inbox flex min-h-[420px] flex-col overflow-hidden bg-panel md:h-full">
+      <div className="border-b border-line">
+        <div className="flex items-center gap-3 px-4 pt-3.5 pb-2.5">
+          <span className="text-[17px] font-bold tracking-[-0.02em]">Caixa de Entrada</span>
+          <Esqueleto className="h-6 w-9 rounded-full" />
         </div>
-        {Array.from({ length: 6 }, (_, i) => (
-          <div key={i} className="flex items-center gap-3 border-b border-line px-3.5 py-3">
-            <Esqueleto className="size-11 shrink-0 rounded-full" />
-            <span className="flex min-w-0 flex-1 flex-col gap-2.5">
-              <Esqueleto className="h-3.5 w-32" />
-              <Esqueleto className="h-3 w-full" />
-            </span>
-          </div>
-        ))}
-      </div>
-
-      <div className="app-card flex min-w-0 flex-1 flex-col overflow-hidden">
-        <div className="flex items-center gap-3 border-b border-line px-4 py-3">
-          <Esqueleto className="size-9 rounded-full" />
-          <Esqueleto className="h-3 w-40" />
-        </div>
-        <div className="flex flex-1 flex-col gap-3 p-4">
-          {[0, 1, 2, 3].map((i) => (
-            <Esqueleto
-              key={i}
-              className={`h-12 max-w-[62%] rounded-[14px] ${i % 2 === 0 ? 'w-[48%]' : 'w-[56%] self-end'}`}
-            />
+        <div className="flex gap-2 overflow-hidden px-4 pb-3">
+          {['w-36', 'w-40', 'w-24', 'w-44'].map((largura, i) => (
+            <Esqueleto key={i} className={`h-8 shrink-0 rounded-full ${largura}`} />
           ))}
+        </div>
+      </div>
+      <div className="flex min-h-0 flex-1">
+        <div className="flex w-full shrink-0 flex-col overflow-hidden border-line md:w-[320px] md:border-r">
+          <div className="p-3">
+            <Esqueleto className="h-9 w-full rounded-[10px]" />
+          </div>
+          {Array.from({ length: 7 }, (_, i) => (
+            <div key={i} className="flex items-center gap-3 px-3.5 py-3">
+              <Esqueleto className="size-11 shrink-0 rounded-full" />
+              <span className="flex min-w-0 flex-1 flex-col gap-2.5">
+                <Esqueleto className="h-3.5 w-32" />
+                <Esqueleto className="h-3 w-full" />
+              </span>
+            </div>
+          ))}
+        </div>
+        <div className="hidden min-w-0 flex-1 flex-col md:flex">
+          <div className="flex items-center gap-3 border-b border-line px-4 py-3">
+            <Esqueleto className="size-10 rounded-full" />
+            <Esqueleto className="h-3.5 w-40" />
+            <Esqueleto className="ml-auto h-9 w-40 rounded-[10px]" />
+          </div>
+          <div className="flex flex-1 flex-col gap-3 p-4">
+            {[0, 1, 2, 3].map((i) => (
+              <Esqueleto
+                key={i}
+                className={`h-12 max-w-[62%] rounded-[14px] ${i % 2 === 0 ? 'w-[48%]' : 'w-[56%] self-end'}`}
+              />
+            ))}
+          </div>
+          <div className="p-4 pt-0">
+            <Esqueleto className="h-[92px] w-full rounded-[14px]" />
+          </div>
+        </div>
+        <div className="hidden w-[296px] shrink-0 flex-col gap-4 border-l border-line p-4 xl:flex">
+          <span className="flex items-center gap-3">
+            <Esqueleto className="size-10 rounded-full" />
+            <span className="flex flex-1 flex-col gap-2">
+              <Esqueleto className="h-3.5 w-28" />
+              <Esqueleto className="h-3 w-24" />
+            </span>
+          </span>
+          <Esqueleto className="h-24 w-full rounded-xl" />
+          <Esqueleto className="h-28 w-full rounded-xl" />
         </div>
       </div>
       <Aviso>{rotulo}</Aviso>
@@ -202,31 +274,120 @@ export function EsqueletoDeInbox({ rotulo = 'Carregando as conversas…' }: { ro
 }
 
 /**
- * A barra de abas enquanto o conteúdo vem.
+ * O topo da tela enquanto ela vem: o `CabecalhoDaTela` de verdade.
  *
- * **Os rótulos são os de verdade, não blocos cinzas.** Eles não dependem de
- * consulta nenhuma, e trocá-los por cinza faria a barra piscar a cada clique ,
- * apagando justamente a única parte da tela que a pessoa acabou de usar. Só a
- * contagem, que vem do banco, vira um pastilha cinza.
+ * **Título e descrição vão escritos, não em cinza.** Eles não dependem de
+ * consulta, e trocá-los por osso fazia o topo piscar a cada clique e a tela
+ * "pular" quando chegava (02/out/2026). Só o que vem do banco vira osso: a
+ * contagem ao lado do título e os botões, que dependem de permissão.
+ *
+ * `acoes` são as larguras dos botões da direita, na ordem da tela pronta.
  */
-export function EsqueletoDeAbas({
-  abas,
-  ativa,
+export function TopoCarregando({
+  titulo,
+  descricao,
+  contagem = false,
+  acoes = [],
+  trilha,
 }: {
-  abas: readonly { chave: string; rotulo: string }[]
-  ativa: string
+  titulo: ReactNode
+  descricao?: ReactNode
+  contagem?: boolean
+  acoes?: string[]
+  /** O caminho de volta ("Configurações", "Funções"): escrito, sem link, porque o loading não sabe a conta. */
+  trilha?: string[]
 }) {
   return (
-    <div aria-hidden className="mb-5 flex gap-1 overflow-x-auto border-b border-line whitespace-nowrap">
-      {abas.map((item) => (
-        <span
-          key={item.chave}
-          className={`-mb-px flex shrink-0 items-center gap-1.5 border-b-2 px-3 py-2.5 sm:px-3.5 text-[13px] font-semibold ${
-            item.chave === ativa ? 'border-primary text-primary' : 'border-transparent text-dim'
-          }`}
-        >
-          {item.rotulo}
-          <Esqueleto className="h-3.5 w-5 rounded-full" />
+    <>
+    {trilha && <Trilha caminho={trilha.map((rotulo) => ({ rotulo }))} />}
+    <CabecalhoDaTela
+      titulo={titulo}
+      descricao={descricao}
+      contagem={contagem ? <Esqueleto className="h-6 w-20 rounded-full" /> : undefined}
+      acoes={
+        acoes.length > 0 ? (
+          <>
+            {acoes.map((largura, i) => (
+              <EsqueletoDeBotao key={i} largura={largura} />
+            ))}
+          </>
+        ) : undefined
+      }
+    />
+    </>
+  )
+}
+
+/** Um botão `md` (36px) enquanto vem. */
+export function EsqueletoDeBotao({ largura = 'w-28' }: { largura?: string }) {
+  return <Esqueleto className={`h-9 rounded-[9px] ${largura}`} />
+}
+
+/**
+ * A barra de busca da `BarraDeLista`, **fora do cartão**, com o texto de
+ * exemplo escrito: é a mesma caixa branca que vai chegar, só sem resposta.
+ */
+export function EsqueletoDeBusca({
+  placeholder,
+  filtros = false,
+  acoes = [],
+  className = 'mb-3',
+  children,
+}: {
+  placeholder: string
+  filtros?: boolean
+  /** Larguras dos botões à direita da barra. */
+  acoes?: string[]
+  className?: string
+  /** O que mora na mesma linha, depois de Filtros (um alternador). */
+  children?: ReactNode
+}) {
+  return (
+    <div aria-hidden className={`flex flex-wrap items-center gap-2 ${className}`}>
+      <span className="campo-de-busca relative block w-full sm:max-w-[380px] sm:flex-1">
+        <span className="pointer-events-none absolute top-1/2 left-3 -translate-y-1/2 text-dim">
+          <IconeDoQuadro tipo="busca" />
+        </span>
+        <span className="app-field flex h-9 items-center py-2 pr-3 pl-9 text-[13px] text-dim">{placeholder}</span>
+      </span>
+      {filtros && (
+        <span className="quadro-tool">
+          <IconeDoQuadro tipo="filtro" />
+          <span>Filtros</span>
+        </span>
+      )}
+      {children}
+      {acoes.length > 0 && (
+        <span className="flex flex-wrap items-center gap-2 sm:ml-auto">
+          {acoes.map((largura, i) => (
+            <EsqueletoDeBotao key={i} largura={largura} />
+          ))}
+        </span>
+      )}
+    </div>
+  )
+}
+
+/**
+ * O `Alternador` enquanto o conteúdo vem, com os rótulos de verdade e a opção
+ * certa acesa: é a parte da tela que a pessoa acabou de clicar, e ela não pode
+ * piscar. Substitui as abas sublinhadas, que nenhuma tela usa mais.
+ */
+export function EsqueletoDeAlternador({
+  opcoes,
+  ativa = 0,
+  className = '',
+}: {
+  opcoes: readonly string[]
+  /** O índice da opção acesa. */
+  ativa?: number
+  className?: string
+}) {
+  return (
+    <div aria-hidden className={`alternador ${className}`}>
+      {opcoes.map((rotulo, i) => (
+        <span key={rotulo} className="alternador-opcao" aria-current={i === ativa ? 'page' : undefined}>
+          {rotulo}
         </span>
       ))}
     </div>
@@ -234,22 +395,98 @@ export function EsqueletoDeAbas({
 }
 
 /**
- * Uma tela de Configurações enquanto ela vem: caminho, título, a frase do que
- * a tela ajusta e dois cartões de formulário.
+ * Linhas de lista dentro de cartão branco, sem cabeçalho: o cabeçalho mora
+ * fora do cartão (`TopoCarregando`). `colunas` desenha uma faixa de títulos de
+ * tabela em cima, para quando a tela pronta é tabela.
+ */
+export function EsqueletoDeLinhas({
+  linhas = 5,
+  comRosto = false,
+  colunas = 0,
+  altura = 'h-14',
+  rotulo = 'Carregando…',
+  className = '',
+}: {
+  linhas?: number
+  comRosto?: boolean
+  colunas?: number
+  altura?: string
+  rotulo?: string
+  className?: string
+}) {
+  return (
+    <div className={`app-card overflow-hidden ${className}`}>
+      {colunas > 0 && (
+        <div className="flex h-10 items-center gap-6 border-b border-line px-5">
+          {Array.from({ length: colunas }, (_, i) => (
+            <Esqueleto key={i} className={`h-2.5 ${i === 0 ? 'w-24' : 'w-16'} ${i > 1 ? 'hidden md:block' : ''}`} />
+          ))}
+        </div>
+      )}
+      {Array.from({ length: linhas }, (_, i) => (
+        <div key={i} className={`flex ${altura} items-center gap-3 border-b border-line px-5 last:border-b-0`}>
+          {comRosto && <Esqueleto className="size-8 shrink-0 rounded-full" />}
+          <span className="flex min-w-0 flex-1 flex-col gap-2">
+            <Esqueleto className={`h-3 ${['w-44', 'w-56', 'w-36', 'w-48'][i % 4]} max-w-[60%]`} />
+            <Esqueleto className="h-2.5 w-24 max-w-[40%]" />
+          </span>
+          <Esqueleto className="hidden h-3 w-20 md:block" />
+          <Esqueleto className="h-7 w-16 rounded-lg" />
+        </div>
+      ))}
+      <Aviso>{rotulo}</Aviso>
+    </div>
+  )
+}
+
+/**
+ * Uma tela de Configurações enquanto ela vem: caminho, título e frase de
+ * verdade (`TopoCarregando`), e o corpo. Sem `children`, o corpo são dois
+ * cartões de formulário, que é o formato da maioria delas.
  *
  * Era um bloco de seis linhas de texto solto, que não parecia com nenhuma das
- * telas daqui: todas têm o caminho "Configurações › …", título, descrição e o
- * conteúdo em cartão (02/out/2026).
+ * telas daqui; depois virou caminho e título em osso, que piscavam ao chegar
+ * (02/out/2026). Cada subtela tem o seu `loading.tsx` com o próprio título.
  */
-export function EsqueletoDeAjuste({ rotulo = 'Carregando a configuração…' }: { rotulo?: string }) {
+export function EsqueletoDeAjuste({
+  titulo,
+  descricao,
+  trilha = ['Configurações'],
+  acoes,
+  contagem,
+  largura = 'leitura',
+  rotulo = 'Carregando a configuração…',
+  children,
+}: {
+  titulo?: ReactNode
+  descricao?: ReactNode
+  trilha?: string[]
+  acoes?: string[]
+  contagem?: boolean
+  largura?: LarguraDoMiolo
+  rotulo?: string
+  children?: ReactNode
+}) {
   return (
-    <div className="w-full max-w-[1100px] px-4 pt-[26px] pb-[42px] md:px-[42px]">
+    <Miolo largura={largura}>
       <Aviso>{rotulo}</Aviso>
-      <Esqueleto className="mb-4 h-3 w-40 rounded" />
-      <Esqueleto className="h-[30px] w-64 rounded-lg" />
-      <Esqueleto className="mt-3 h-3.5 w-full max-w-[560px] rounded" />
-      <Esqueleto className="mt-2 mb-6 h-3.5 w-2/3 max-w-[420px] rounded" />
-      {[3, 2].map((campos, cartao) => (
+      <TopoCarregando
+        trilha={titulo && trilha.length > 0 ? [...trilha, String(titulo)] : undefined}
+        titulo={titulo ?? <Esqueleto className="my-1 h-[26px] w-56 rounded-lg" />}
+        descricao={descricao ?? <Esqueleto className="mt-1.5 h-3 w-full max-w-[520px]" />}
+        acoes={acoes}
+        contagem={contagem}
+      />
+      {children ?? <EsqueletoDeFormulario />}
+    </Miolo>
+  )
+}
+
+/** Dois cartões de formulário: título, frase e campos em duas colunas. */
+export function EsqueletoDeFormulario({ cartoes = [3, 2] }: { cartoes?: number[] }) {
+  return (
+    <>
+      {cartoes.map((campos, cartao) => (
         <div key={cartao} className="app-card mb-5 p-5">
           <Esqueleto className="h-4 w-44 rounded" />
           <Esqueleto className="mt-2 mb-5 h-3 w-72 max-w-full rounded" />
@@ -263,6 +500,6 @@ export function EsqueletoDeAjuste({ rotulo = 'Carregando a configuração…' }:
           </div>
         </div>
       ))}
-    </div>
+    </>
   )
 }

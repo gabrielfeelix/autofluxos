@@ -1,3 +1,4 @@
+import { CabecalhoDaTela } from '@/components/design/cabecalho-da-tela'
 import { headers } from 'next/headers'
 import { notFound } from 'next/navigation'
 import { ClienteShell } from '@/components/design/cliente-shell'
@@ -40,13 +41,10 @@ export default async function Pagina({ params }: { params: Promise<{ clienteId: 
             { rotulo: 'Site' },
           ]}
         />
-        <header className="mb-6">
-          <h1 className="text-[20px] font-bold tracking-[-0.02em] md:text-[25px]">Chat no site</h1>
-          <p className="mt-1.5 max-w-[680px] text-[13px] leading-6 text-dim">
-            {DEFINICAO_DO_CANAL.site.resumo} O visitante conversa com os mesmos fluxos e a mesma IA do WhatsApp, e a
-            equipe responde pelo Inbox.
-          </p>
-        </header>
+        <CabecalhoDaTela
+          titulo="Chat no site"
+          descricao={`${DEFINICAO_DO_CANAL.site.resumo} O visitante conversa com os mesmos fluxos e a mesma IA do WhatsApp, e a equipe responde pelo Inbox.`}
+        />
 
         <ConfigurarChatDoSite
           clienteId={cliente.id}

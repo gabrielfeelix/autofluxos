@@ -1,5 +1,6 @@
 'use client'
 
+import { Badge } from '@/components/design/pilula'
 import { Dropdown } from '@/components/design/dropdown'
 import { comoDinheiro } from '@/core/crm'
 import { DIAS_PARA_MARCAR_PARADO } from '@/core/quadros'
@@ -82,9 +83,7 @@ export function BarraDoQuadro({
               <IconeDoQuadro tipo="filtro" />
               <span className="hidden sm:inline">Filtros</span>
               {filtro.responsavel && (
-                <span className="grid size-4 place-items-center rounded bg-primary text-[10px] text-white">
-                  1
-                </span>
+                <Badge>1</Badge>
               )}
             </>
           }

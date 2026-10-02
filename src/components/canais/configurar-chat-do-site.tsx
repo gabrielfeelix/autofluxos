@@ -196,9 +196,7 @@ export function ConfigurarChatDoSite({
             type="button"
             onClick={alternar}
             disabled={salvando}
-            className={`rounded-[10px] px-4 py-2 text-[13px] font-bold transition disabled:opacity-60 ${
-              ligado ? 'border border-line text-ink hover:bg-surface' : 'bg-primary text-white hover:bg-primary-strong'
-            }`}
+            className={`botao-md ${ligado ? 'botao-secundario' : 'botao-primario'}`}
           >
             {ligado ? 'Pausar' : inicial.existe || chave ? 'Religar' : 'Ligar o chat do site'}
           </button>
@@ -733,7 +731,7 @@ function Previa({
       aria-label="Prévia do balão"
       className="relative overflow-hidden rounded-[18px] border border-line bg-[linear-gradient(180deg,var(--surface)_0%,var(--canvas-deep)_100%)] p-5"
     >
-      <div role="tablist" aria-label="Tela da prévia" className="mx-auto mb-4 flex w-fit rounded-[10px] bg-panel p-[3px] shadow-[0_0_0_1px_var(--line)]">
+      <div role="tablist" aria-label="Tela da prévia" className="alternador mx-auto mb-4 flex w-fit">
         {(
           [
             ['inicio', 'Início'],
@@ -748,9 +746,7 @@ function Previa({
             aria-selected={abaVisivel === id}
             disabled={id === 'ficha' && formulario.length === 0}
             onClick={() => setAba(id)}
-            className={`rounded-[8px] px-3 py-1.5 text-[12px] font-semibold transition disabled:opacity-40 ${
-              abaVisivel === id ? 'bg-primary text-white' : 'text-dim hover:text-ink'
-            }`}
+            className="alternador-opcao disabled:opacity-40"
           >
             {rotulo}
           </button>

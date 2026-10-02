@@ -158,13 +158,13 @@ export function Abas({
         `sem-barra` esconde o desenho e `overflow-y-hidden` fecha o eixo que
         nunca deveria estar aberto; o gesto lateral do celular continua.
       */}
-      <div className="flex items-center justify-between gap-2 border-b border-line pb-0">
+      <div className="flex items-center justify-between gap-2">
         <div
           ref={tablist}
           role="tablist"
           aria-label="Seções da ficha"
           onKeyDown={aoTeclar}
-          className="sem-barra flex min-w-0 items-center gap-1 overflow-x-auto overflow-y-hidden"
+          className="alternador sem-barra min-w-0 max-w-full overflow-x-auto overflow-y-hidden"
         >
           {abas.map((aba) => {
             const escolhida = aba.chave === atual
@@ -179,19 +179,13 @@ export function Abas({
                 aria-controls={`${base}-${aba.chave}-painel`}
                 tabIndex={escolhida ? 0 : -1}
                 onClick={() => setAtual(aba.chave)}
-                className={`-mb-px flex shrink-0 items-center gap-1.5 whitespace-nowrap border-b-2 px-3.5 py-2.5 text-[12.5px] font-semibold transition ${
-                  escolhida
-                    ? 'border-primary text-primary'
-                    : 'border-transparent text-muted hover:text-ink'
-                }`}
+                className="alternador-opcao shrink-0"
               >
                 {aba.rotulo}
                 {aba.contagem !== undefined && aba.contagem > 0 && (
                   <span
                     title={aba.contagemRotulo}
-                    className={`rounded-full px-1.5 text-[10px] tabular-nums ${
-                      escolhida ? 'bg-primary/15 text-primary' : 'bg-surface-strong text-dim'
-                    }`}
+                    className="text-[11.5px] font-medium opacity-70 tabular-nums"
                   >
                     <span aria-hidden={aba.contagemRotulo ? true : undefined}>{aba.contagem}</span>
                     {aba.contagemRotulo && <span className="sr-only">: {aba.contagemRotulo}</span>}

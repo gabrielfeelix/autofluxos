@@ -1,3 +1,5 @@
+import { CabecalhoDaTela } from '@/components/design/cabecalho-da-tela'
+import { Miolo } from '@/components/design/miolo'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { AjudaDaTela, type PassoDaAjuda } from '@/components/design/ajuda-da-tela'
@@ -563,9 +565,12 @@ export default async function Pagina({
 
   return (
     <ClienteShell cliente={cliente} ativa="relatorios">
-      <main className="mx-auto w-full max-w-[1280px] px-4 pt-[26px] pb-[42px] md:px-[42px]">
-        <div className="flex items-center gap-2.5">
-          <h1 className="text-[20px] font-bold tracking-[-0.02em] md:text-[25px]">Relatórios</h1>
+      <Miolo largura="larga">
+        <CabecalhoDaTela
+          className="mb-0"
+          titulo={
+            <span className="flex items-center gap-2.5">
+              Relatórios
           <AjudaDaTela
             titulo="Como ler os relatórios"
             resumo="Números do atendimento no período escolhido, comparados com o período anterior."
@@ -579,14 +584,16 @@ export default async function Pagina({
               <strong className="text-ink">Cada número tem um ?</strong> com a definição exata do que ele conta.
             </p>
           </AjudaDaTela>
-        </div>
-        <p className="mt-1.5 text-[13px] leading-6 text-dim">
-          {contaInteira
-            ? 'Como o atendimento andou no período.'
-            : escopo.tipo === 'proprios'
-              ? 'Só os contatos que estão com você. Os números da organização inteira ficam com quem gerencia.'
-              : 'Só os contatos das suas equipes.'}
-        </p>
+            </span>
+          }
+          descricao={
+            contaInteira
+              ? 'Como o atendimento andou no período.'
+              : escopo.tipo === 'proprios'
+                ? 'Só os contatos que estão com você. Os números da organização inteira ficam com quem gerencia.'
+                : 'Só os contatos das suas equipes.'
+          }
+        />
 
         <div className="mt-4">
           <PainelDeBlocos
@@ -596,7 +603,7 @@ export default async function Pagina({
             blocos={blocos}
           />
         </div>
-      </main>
+      </Miolo>
     </ClienteShell>
   )
 }

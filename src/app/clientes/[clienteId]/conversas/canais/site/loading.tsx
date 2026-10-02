@@ -54,7 +54,7 @@ export default function Carregando() {
           </div>
 
           <aside className="flex min-w-0 flex-col gap-5">
-            <section className="app-card px-5 py-5">
+            <section className="rounded-[14px] border border-line bg-surface px-5 py-5">
               <div className="mx-auto flex w-fit gap-2 rounded-[10px] border border-line p-1">
                 {['w-[52px]', 'w-[76px]', 'w-[68px]'].map((largura, j) => (
                   <Esqueleto key={j} className={`h-7 ${largura} rounded-[8px]`} />

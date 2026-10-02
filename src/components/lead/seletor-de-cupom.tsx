@@ -129,7 +129,7 @@ export function SeletorDeCupom({
               }
             }}
             placeholder="Exemplo: BEMVINDO"
-            className="mb-2 w-full rounded-[9px] border border-line bg-surface px-2.5 py-1.5 text-[12.5px] outline-none placeholder:text-dim focus:border-primary/40"
+            className="app-field mb-2 h-8 px-2.5 text-[12.5px]"
           />
 
           {erro && <p className="px-1.5 pb-1.5 text-[12px] leading-5 text-perigo">{erro}</p>}

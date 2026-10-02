@@ -1,3 +1,5 @@
+import { Miolo } from '@/components/design/miolo'
+import { CabecalhoDaTela } from '@/components/design/cabecalho-da-tela'
 import Link from 'next/link'
 import { hrefDaFicha } from '@/core/volta-da-ficha'
 import { acessoCompleto, filtroDoAcesso, type AcessoCompleto } from '@/server/permissoes'
@@ -125,19 +127,17 @@ export default async function Pagina({ params }: { params: Promise<{ clienteId: 
 
   return (
     <ClienteShell cliente={cliente} ativa="inicio">
-      <main className="mx-auto w-full max-w-[1280px] px-4 pt-[26px] pb-[42px] md:px-[42px]">
-        <header className="mb-5">
-          <h1 className="text-[22px] font-bold tracking-[-0.02em] md:text-[27px]">
-            {faltaPasso
+      <Miolo largura="larga">
+        <CabecalhoDaTela
+          titulo={
+            faltaPasso
               ? `Que bom ter você aqui${primeiroNome ? `, ${primeiroNome}` : ''}!`
-              : `Olá${primeiroNome ? `, ${primeiroNome}` : ''}`}
-          </h1>
-          <p className="mt-1 text-[13px] text-muted">
-            {faltaPasso
-              ? `Vamos organizar o atendimento de ${cliente.nome}.`
-              : `O atendimento de ${cliente.nome}, hoje.`}
-          </p>
-        </header>
+              : `Olá${primeiroNome ? `, ${primeiroNome}` : ''}`
+          }
+          descricao={
+            faltaPasso ? `Vamos organizar o atendimento de ${cliente.nome}.` : `O atendimento de ${cliente.nome}, hoje.`
+          }
+        />
 
         {configura && onboarding?.status !== 'concluido' && <section className="mb-5 flex flex-wrap items-center justify-between gap-4 rounded-xl border border-primary/20 bg-primary-weak p-5">
           <div><h2 className="text-sm font-bold">{onboarding ? 'Continue preparando sua organização' : 'Defina o objetivo da organização'}</h2><p className="mt-1 text-xs leading-5 text-muted">Escolha como atender e quais modelos ajudam sua rotina. O que você já configurou será preservado.</p></div>
@@ -190,7 +190,7 @@ export default async function Pagina({ params }: { params: Promise<{ clienteId: 
             </Link>
           </aside>
         </div>
-      </main>
+      </Miolo>
     </ClienteShell>
   )
 }

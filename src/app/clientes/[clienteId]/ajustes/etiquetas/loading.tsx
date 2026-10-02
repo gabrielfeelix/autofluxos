@@ -1,17 +1,14 @@
-import { Miolo } from '@/components/design/miolo'
-import { MioloCarregando } from '@/components/design/esqueleto-do-cliente'
-import { EsqueletoDeTexto } from '@/components/design/esqueleto'
+import { EsqueletoDeAjuste, EsqueletoDeLinhas } from '@/components/design/esqueleto'
 
-/**
- * A tela de Etiquetas enquanto vem. A barra mora no layout e continua na tela; aqui só troca o miolo.
- * Sem `params`: loading não recebe parâmetro nenhum (ver `ajustes/loading.tsx`).
- */
+/** Etiquetas enquanto vem: o caminho, o título e a frase de verdade, e a tabela. */
 export default function Carregando() {
   return (
-    <MioloCarregando>
-      <Miolo largura="cheia">
-        <EsqueletoDeTexto linhas={6} />
-      </Miolo>
-    </MioloCarregando>
+    <EsqueletoDeAjuste
+      titulo="Etiquetas"
+      descricao="As etiquetas que a equipe cria e aplica, como “cliente antigo”, “orçamento enviado” ou “não insistir”. Elas viram filtro em Contatos: clique no número para ver quem tem cada uma."
+      largura="cheia"
+    >
+      <EsqueletoDeLinhas linhas={5} colunas={4} altura="h-12" rotulo="Carregando as etiquetas…" />
+    </EsqueletoDeAjuste>
   )
 }

@@ -1,22 +1,32 @@
-import Link from 'next/link'
-import { notFound } from 'next/navigation'
-import { BarraDaAgenda } from '@/components/atividades/barra-da-agenda'
-import { ListaDaAgenda } from '@/components/atividades/lista-da-agenda'
-import { NovaAtividade } from '@/components/atividades/nova-atividade'
-import { VistaDaAgenda } from '@/components/atividades/vista-da-agenda'
-import { Paginacao } from '@/components/atividades/paginacao'
-import { AjudaDaTela, type PassoDaAjuda } from '@/components/design/ajuda-da-tela'
-import { SemAcesso } from '@/components/design/sem-acesso'
-import { ClienteShell } from '@/components/design/cliente-shell'
-import { intervaloDaVista, lerFiltroDaAgenda, paraParametros, POR_PAGINA_DA_AGENDA } from '@/core/atividades'
-import { capacidadeNaPagina, filtroDoAcesso } from '@/server/permissoes'
-import { responsaveisDoEscopo } from '@/server/repos/relatorios'
-import { agendaDoIntervalo, paginaDaAgenda } from '@/server/repos/atividades'
-import { acharCliente } from '@/server/repos/clientes'
-import { membrosDaConta } from '@/server/repos/usuarios'
-import { IlustracaoAtividades } from '@/components/design/ilustracoes'
+import { CabecalhoDaTela } from "@/components/design/cabecalho-da-tela";
+import { Miolo } from "@/components/design/miolo";
+import Link from "next/link";
+import { notFound } from "next/navigation";
+import { BarraDaAgenda } from "@/components/atividades/barra-da-agenda";
+import { ListaDaAgenda } from "@/components/atividades/lista-da-agenda";
+import { NovaAtividade } from "@/components/atividades/nova-atividade";
+import { VistaDaAgenda } from "@/components/atividades/vista-da-agenda";
+import { Paginacao } from "@/components/atividades/paginacao";
+import {
+  AjudaDaTela,
+  type PassoDaAjuda,
+} from "@/components/design/ajuda-da-tela";
+import { SemAcesso } from "@/components/design/sem-acesso";
+import { ClienteShell } from "@/components/design/cliente-shell";
+import {
+  intervaloDaVista,
+  lerFiltroDaAgenda,
+  paraParametros,
+  POR_PAGINA_DA_AGENDA,
+} from "@/core/atividades";
+import { capacidadeNaPagina, filtroDoAcesso } from "@/server/permissoes";
+import { responsaveisDoEscopo } from "@/server/repos/relatorios";
+import { agendaDoIntervalo, paginaDaAgenda } from "@/server/repos/atividades";
+import { acharCliente } from "@/server/repos/clientes";
+import { membrosDaConta } from "@/server/repos/usuarios";
+import { IlustracaoAtividades } from "@/components/design/ilustracoes";
 
-export const dynamic = 'force-dynamic'
+export const dynamic = "force-dynamic";
 
 /**
  * A agenda da equipe como tela de trabalho (plano de UX de 23/09, fase 1).
@@ -31,125 +41,167 @@ export const dynamic = 'force-dynamic'
 
 const PASSOS_DA_AJUDA: PassoDaAjuda[] = [
   {
-    titulo: 'O que é uma atividade',
-    texto: 'Um lembrete da equipe sobre um contato: ligar, marcar reunião, fazer visita, mandar proposta.',
+    titulo: "O que é uma atividade",
+    texto:
+      "Um lembrete da equipe sobre um contato: ligar, marcar reunião, fazer visita, mandar proposta.",
   },
   {
-    titulo: 'Onde ela nasce',
-    texto: 'Na ficha do contato, na barra do Inbox ou pelo botão Nova atividade desta tela.',
+    titulo: "Onde ela nasce",
+    texto:
+      "Na ficha do contato, na barra do Inbox ou pelo botão Nova atividade desta tela.",
   },
   {
-    titulo: 'Lista ou agenda',
-    texto: 'A lista mostra 50 por página, na ordem do prazo. A agenda mostra a semana ou o mês, com os mesmos filtros.',
+    titulo: "Lista ou agenda",
+    texto:
+      "A lista mostra 50 por página, na ordem do prazo. A agenda mostra a semana ou o mês, com os mesmos filtros.",
   },
   {
-    titulo: 'Como ela sai daqui',
-    texto: 'Concluída ou cancelada (com motivo). As duas ficam guardadas e dá para reabrir.',
+    titulo: "Como ela sai daqui",
+    texto:
+      "Concluída ou cancelada (com motivo). As duas ficam guardadas e dá para reabrir.",
   },
-]
+];
 
 function agoraDoServidor(): number {
-  return Date.now()
+  return Date.now();
 }
 
 export default async function Pagina({
   params,
   searchParams,
 }: {
-  params: Promise<{ clienteId: string }>
-  searchParams: Promise<Record<string, string | string[] | undefined>>
+  params: Promise<{ clienteId: string }>;
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
-  const { clienteId } = await params
-  const cliente = await acharCliente(clienteId)
-  if (!cliente) notFound()
+  const { clienteId } = await params;
+  const cliente = await acharCliente(clienteId);
+  if (!cliente) notFound();
 
-  const acesso = await capacidadeNaPagina(clienteId, 'atender', 'proprios')
+  const acesso = await capacidadeNaPagina(clienteId, "atender", "proprios");
   if (!acesso) {
     return (
       <ClienteShell cliente={cliente} ativa="atividades">
         <SemAcesso clienteId={clienteId} oQue="Atividades" />
       </ClienteShell>
-    )
+    );
   }
-  const escopo = filtroDoAcesso(acesso, 'atender')
-  const podeVerEquipe = escopo.tipo === 'tudo' || escopo.tipo === 'equipes'
+  const escopo = filtroDoAcesso(acesso, "atender");
+  const podeVerEquipe = escopo.tipo === "tudo" || escopo.tipo === "equipes";
   // Criar e escolher responsável seguem a capacidade da ação, não a da tela.
-  const escopoDeCriar = filtroDoAcesso(acesso, 'criar_oportunidade')
-  const podeCriar = escopoDeCriar.tipo !== 'impossivel'
-  const podeCriarParaOutros = escopoDeCriar.tipo === 'tudo' || escopoDeCriar.tipo === 'equipes'
+  const escopoDeCriar = filtroDoAcesso(acesso, "criar_oportunidade");
+  const podeCriar = escopoDeCriar.tipo !== "impossivel";
+  const podeCriarParaOutros =
+    escopoDeCriar.tipo === "tudo" || escopoDeCriar.tipo === "equipes";
 
-  const lido = lerFiltroDaAgenda(await searchParams)
+  const lido = lerFiltroDaAgenda(await searchParams);
   // Sem escopo de equipe, "equipe" e responsável de outra pessoa não existem.
-  const filtro = podeVerEquipe ? lido : { ...lido, alcance: 'minhas' as const, responsavel: null }
+  const filtro = podeVerEquipe
+    ? lido
+    : { ...lido, alcance: "minhas" as const, responsavel: null };
 
-  const agora = agoraDoServidor()
-  const noCalendario = filtro.vista === 'agenda'
-  const intervalo = intervaloDaVista(filtro.escala, filtro.dia, agora)
+  const agora = agoraDoServidor();
+  const noCalendario = filtro.vista === "agenda";
+  const intervalo = intervaloDaVista(filtro.escala, filtro.dia, agora);
   const [pagina, calendario, membros] = await Promise.all([
     noCalendario
       ? null
-      : paginaDaAgenda(clienteId, escopo, acesso.sessao.usuario.id, filtro, agora),
+      : paginaDaAgenda(
+          clienteId,
+          escopo,
+          acesso.sessao.usuario.id,
+          filtro,
+          agora,
+        ),
     noCalendario
-      ? agendaDoIntervalo(clienteId, escopo, acesso.sessao.usuario.id, filtro, agora, intervalo)
+      ? agendaDoIntervalo(
+          clienteId,
+          escopo,
+          acesso.sessao.usuario.id,
+          filtro,
+          agora,
+          intervalo,
+        )
       : null,
     podeVerEquipe || podeCriarParaOutros
       ? // O gestor escolhe responsável entre a equipe dele, não entre a conta
         // inteira: a consulta já não mostraria as atividades dos outros.
-        Promise.all([membrosDaConta(clienteId), responsaveisDoEscopo(clienteId, escopo)]).then(
-          ([membros, alcancados]) =>
-            alcancados === null ? membros : membros.filter((membro) => alcancados.includes(membro.id)),
+        Promise.all([
+          membrosDaConta(clienteId),
+          responsaveisDoEscopo(clienteId, escopo),
+        ]).then(([membros, alcancados]) =>
+          alcancados === null
+            ? membros
+            : membros.filter((membro) => alcancados.includes(membro.id)),
         )
       : Promise.resolve([]),
-  ])
+  ]);
 
-  const base = `/clientes/${cliente.id}/atividades`
+  const base = `/clientes/${cliente.id}/atividades`;
   const endereco = (novo: Partial<typeof filtro>) => {
-    const p = paraParametros({ ...filtro, ...novo }).toString()
-    return p ? `${base}?${p}` : base
-  }
-  const aqui = endereco({})
+    const p = paraParametros({ ...filtro, ...novo }).toString();
+    return p ? `${base}?${p}` : base;
+  };
+  const aqui = endereco({});
   const filtrando =
-    filtro.busca !== '' || filtro.tipo !== null || filtro.responsavel !== null || filtro.recorte !== null
-  const equipe = membros.map((m) => ({ id: m.id, nome: m.nome || m.email }))
+    filtro.busca !== "" ||
+    filtro.tipo !== null ||
+    filtro.responsavel !== null ||
+    filtro.recorte !== null;
+  const equipe = membros.map((m) => ({ id: m.id, nome: m.nome || m.email }));
 
   return (
     <ClienteShell cliente={cliente} ativa="atividades">
-      <main className="flex min-h-full w-full flex-col px-4 pt-[26px] pb-[42px] md:px-[42px]">
-        <div className="flex items-center gap-2.5">
-          <h1 className="text-[20px] font-bold tracking-[-0.02em] md:text-[25px]">Atividades</h1>
-          <AjudaDaTela
-            titulo="Como funciona a agenda"
-            resumo="Atividades são lembretes internos da equipe sobre um contato. Nenhuma delas manda mensagem ao cliente."
-            passos={PASSOS_DA_AJUDA}
-          >
-            <p>
-              <strong className="text-ink">Atividade não é mensagem agendada.</strong> Para o sistema mandar texto ao
-              cliente numa hora marcada, use <em>Agendar mensagem</em> na conversa do Inbox.
-            </p>
-            <p>
-              <strong className="text-ink">Vencida e hoje contam pelo dia, não pela hora.</strong> Marcada para hoje às
-              9h continua sendo de hoje às 9h01. Sem prazo é &quot;algum dia&quot; e nunca fica vencida.
-            </p>
-            <p>
-              <strong className="text-ink">O número no menu lateral</strong> soma as vencidas e as de hoje que você
-              pode ver.
-            </p>
-          </AjudaDaTela>
-          {podeCriar && (
-            <NovaAtividade
-              clienteId={cliente.id}
-              usuarioId={acesso.sessao.usuario.id}
-              equipe={equipe}
-              podeAtribuir={podeCriarParaOutros}
-              base={base}
-              filtro={filtro}
-              idsNaTela={(pagina?.itens ?? [...calendario!.itens, ...calendario!.semPrazo]).map((i) => i.id)}
-            />
-          )}
-        </div>
-        <p className="mt-1.5 mb-5 text-[13px] leading-6 text-dim">
-          Lembretes internos da equipe. Nada aqui é enviado ao cliente.
-        </p>
+      <Miolo largura="toda" className="flex min-h-full flex-col">
+        <CabecalhoDaTela
+          titulo={
+            <span className="flex items-center gap-2.5">
+              Atividades
+              <AjudaDaTela
+                titulo="Como funciona a agenda"
+                resumo="Atividades são lembretes internos da equipe sobre um contato. Nenhuma delas manda mensagem ao cliente."
+                passos={PASSOS_DA_AJUDA}
+              >
+                <p>
+                  <strong className="text-ink">
+                    Atividade não é mensagem agendada.
+                  </strong>{" "}
+                  Para o sistema mandar texto ao cliente numa hora marcada, use{" "}
+                  <em>Agendar mensagem</em> na conversa do Inbox.
+                </p>
+                <p>
+                  <strong className="text-ink">
+                    Vencida e hoje contam pelo dia, não pela hora.
+                  </strong>{" "}
+                  Marcada para hoje às 9h continua sendo de hoje às 9h01. Sem
+                  prazo é &quot;algum dia&quot; e nunca fica vencida.
+                </p>
+                <p>
+                  <strong className="text-ink">O número no menu lateral</strong>{" "}
+                  soma as vencidas e as de hoje que você pode ver.
+                </p>
+              </AjudaDaTela>
+            </span>
+          }
+          descricao="Lembretes internos da equipe. Nada aqui é enviado ao cliente."
+          acoes={
+            podeCriar ? (
+              <NovaAtividade
+                clienteId={cliente.id}
+                usuarioId={acesso.sessao.usuario.id}
+                equipe={equipe}
+                podeAtribuir={podeCriarParaOutros}
+                base={base}
+                filtro={filtro}
+                idsNaTela={(
+                  pagina?.itens ?? [
+                    ...calendario!.itens,
+                    ...calendario!.semPrazo,
+                  ]
+                ).map((i) => i.id)}
+              />
+            ) : undefined
+          }
+        />
 
         <BarraDaAgenda
           base={base}
@@ -178,11 +230,20 @@ export default async function Pagina({
 
         {pagina && pagina.itens.length === 0 && (
           <div className="app-card px-5 py-12 text-center">
-            {filtrando || filtro.situacao !== 'aberta' ? (
+            {filtrando || filtro.situacao !== "aberta" ? (
               <>
-                <p className="text-[13px] text-muted">Nada com estes filtros.</p>
+                <p className="text-[13px] text-muted">
+                  Nada com estes filtros.
+                </p>
                 <Link
-                  href={endereco({ busca: '', tipo: null, responsavel: null, recorte: null, situacao: 'aberta', pagina: 1 })}
+                  href={endereco({
+                    busca: "",
+                    tipo: null,
+                    responsavel: null,
+                    recorte: null,
+                    situacao: "aberta",
+                    pagina: 1,
+                  })}
                   className="botao-secundario botao-md mt-4"
                 >
                   Limpar filtros
@@ -191,9 +252,12 @@ export default async function Pagina({
             ) : (
               <>
                 <IlustracaoAtividades />
-                <p className="mt-6 text-[13.5px] font-semibold text-soft">Nenhuma atividade aberta</p>
+                <p className="mt-6 text-[13.5px] font-semibold text-soft">
+                  Nenhuma atividade aberta
+                </p>
                 <p className="mx-auto mt-1.5 max-w-[440px] text-xs leading-5 text-dim">
-                  Crie uma pela ficha do contato, pelo Inbox ou pelo botão acima.
+                  Crie uma pela ficha do contato, pelo Inbox ou pelo botão
+                  acima.
                 </p>
               </>
             )}
@@ -220,7 +284,7 @@ export default async function Pagina({
             rotulo="Páginas da agenda"
           />
         )}
-      </main>
+      </Miolo>
     </ClienteShell>
-  )
+  );
 }

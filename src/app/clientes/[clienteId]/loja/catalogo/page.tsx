@@ -3,6 +3,7 @@ import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { AjudaDaTela, type PassoDaAjuda } from '@/components/design/ajuda-da-tela'
 import { ClienteShell } from '@/components/design/cliente-shell'
+import { Alternador } from '@/components/design/alternador'
 import { CabecalhoDaTela, Contagem } from '@/components/design/cabecalho-da-tela'
 import { Dropdown } from '@/components/design/dropdown'
 import { ModalFormulario, RotuloCampo } from '@/components/design/modal-formulario'
@@ -151,23 +152,14 @@ export default async function Pagina({
           o card do produto na conversa, e a equipe manda o mesmo card pelo Inbox.</>}
           acoes={
             <>
-              <div role="group" aria-label="Como ver o catálogo" className="alternador">
-                {(
-                  [
-                    { valor: 'grade', rotulo: 'Grade' },
-                    { valor: 'lista', rotulo: 'Lista' },
-                  ] as const
-                ).map((opcao) => (
-                  <Link
-                    key={opcao.valor}
-                    href={`/clientes/${cliente.id}/loja/catalogo?visao=${opcao.valor}`}
-                    aria-current={visao === opcao.valor ? 'page' : undefined}
-                    className="alternador-opcao"
-                  >
-                    {opcao.rotulo}
-                  </Link>
-                ))}
-              </div>
+              <Alternador
+                rotulo="Como ver o catálogo"
+                ativa={visao}
+                opcoes={[
+                  { chave: 'grade', rotulo: 'Grade', href: `/clientes/${cliente.id}/loja/catalogo?visao=grade` },
+                  { chave: 'lista', rotulo: 'Lista', href: `/clientes/${cliente.id}/loja/catalogo?visao=lista` },
+                ]}
+              />
               <ImportarPlanilha clienteId={cliente.id} />
               <ModalFormulario
               botao="+ Novo item"

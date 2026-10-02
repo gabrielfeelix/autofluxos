@@ -3,7 +3,7 @@ import { Miolo } from '@/components/design/miolo'
 import { Suspense } from 'react'
 import { notFound } from 'next/navigation'
 import { ClienteShell } from '@/components/design/cliente-shell'
-import { EsqueletoDeAbas, EsqueletoDeLista } from '@/components/design/esqueleto'
+import { EsqueletoDeAlternador, EsqueletoDeBotao, EsqueletoDeLinhas } from '@/components/design/esqueleto'
 import { ListaDeTemplates } from '@/components/transmissoes/lista-de-templates'
 import { NovoModelo } from '@/components/transmissoes/novo-modelo'
 import { NovaTransmissao } from '@/components/transmissoes/nova-transmissao'
@@ -83,9 +83,9 @@ const DESCRICAO = 'Mandar mensagem para uma lista de contatos, com modelo aprova
 function Espera({ aba }: { aba: Aba }) {
   return (
     <>
-      <CabecalhoDaTela titulo="Transmissões" descricao={DESCRICAO} />
-      <EsqueletoDeAbas abas={ABAS} ativa={aba} />
-      <EsqueletoDeLista
+      <CabecalhoDaTela titulo="Transmissões" descricao={DESCRICAO} acoes={<EsqueletoDeBotao largura="w-32" />} />
+      <EsqueletoDeAlternador opcoes={ABAS.map((item) => item.rotulo)} ativa={ABAS.findIndex((item) => item.chave === aba)} className="mb-5" />
+      <EsqueletoDeLinhas
         linhas={4}
         rotulo={aba === 'modelos' ? 'Carregando os modelos…' : 'Carregando as transmissões…'}
       />

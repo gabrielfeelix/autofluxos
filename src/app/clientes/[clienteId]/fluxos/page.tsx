@@ -19,7 +19,8 @@ import { ListaOrdenavel } from '@/components/fluxos/lista-ordenavel'
 import { RenomearPasta } from '@/components/fluxos/renomear-pasta'
 import { ClienteShell } from '@/components/design/cliente-shell'
 import {
-  EsqueletoDeLista,
+  EsqueletoDeBotao,
+  EsqueletoDeLinhas,
 } from '@/components/design/esqueleto'
 import { IlustracaoAnuncios, IlustracaoAutomacoes, IlustracaoEventos, IlustracaoPalavrasChave, IlustracaoSequencias } from '@/components/design/ilustracoes'
 import { BotaoPerigo } from '@/components/design/botao-perigo'
@@ -203,8 +204,8 @@ export default async function Pagina({
 function Espera({ titulo }: { titulo?: string }) {
   return (
     <>
-      <CabecalhoDaTela titulo={titulo} />
-      <EsqueletoDeLista linhas={4} rotulo="Carregando as automações…" />
+      <CabecalhoDaTela titulo={titulo} acoes={<EsqueletoDeBotao largura="w-40" />} />
+      <EsqueletoDeLinhas linhas={6} rotulo="Carregando as automações…" />
     </>
   )
 }

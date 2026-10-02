@@ -1,3 +1,4 @@
+import { CabecalhoDaTela } from '@/components/design/cabecalho-da-tela'
 import { Miolo } from '@/components/design/miolo'
 import { VoltaDoReparo } from '@/components/conexoes/volta-do-reparo'
 import { voltaInterna } from '@/core/volta-da-ficha'
@@ -174,9 +175,7 @@ export default async function Pagina({
           ]}
         />
         <VoltaDoReparo clienteId={cliente.id} volta={voltaInterna(volta, cliente.id)} />
-        <h1 className="mb-5 text-[20px] font-bold tracking-[-0.02em] md:text-[25px]">
-          WhatsApp
-        </h1>
+        <CabecalhoDaTela titulo="WhatsApp" />
 
         <div className="mb-5">
           <CamadasDaConexao

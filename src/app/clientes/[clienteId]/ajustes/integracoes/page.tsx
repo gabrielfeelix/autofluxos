@@ -1,4 +1,6 @@
 import { Alternador } from '@/components/design/alternador'
+import { CabecalhoDaTela } from '@/components/design/cabecalho-da-tela'
+import { Pilula } from '@/components/design/pilula'
 import { Miolo } from '@/components/design/miolo'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
@@ -52,6 +54,11 @@ export const dynamic = 'force-dynamic'
 
 type Aba = 'conectadas' | 'disponiveis'
 
+/** O topo. O `loading.tsx` repete as duas frases: mudou aqui, muda lá. */
+const TITULO = 'Todas as conexões'
+const DESCRICAO =
+  'Tudo com que esta conta fala, os canais por onde a conversa passa e os sistemas que entregam e recebem dado. Cada cartão leva para onde se liga e se confere.'
+
 const LOGO: Record<ChaveDaIntegracao, ReactNode> = {
   whatsapp: <LogoWhatsApp />,
   instagram: <LogoInstagram />,
@@ -99,16 +106,12 @@ export default async function Pagina({
   return (
     <AjustesShell cliente={cliente} ativa="integracoes">
       <Miolo largura="leitura">
-        <h1 className="text-[22px] font-bold tracking-[-0.02em] md:text-[28px]">Todas as conexões</h1>
-        <p className="mt-1.5 max-w-[640px] text-[13px] leading-6 text-dim">
-          Tudo com que esta conta fala, os canais por onde a conversa passa e os sistemas que
-          entregam e recebem dado. Cada cartão leva para onde se liga e se confere.
-        </p>
+        <CabecalhoDaTela titulo={TITULO} descricao={DESCRICAO} />
 
         <Alternador
           rotulo="Quais integrações"
           ativa={aba}
-          className="mt-6 mb-5"
+          className="mb-5"
           opcoes={[
             { chave: 'conectadas', rotulo: 'Conectadas', contagem: conectadas.length, href: '?aba=conectadas' },
             { chave: 'disponiveis', rotulo: 'Disponíveis', contagem: disponiveis.length, href: '?aba=disponiveis' },
@@ -139,7 +142,7 @@ function Cartao({ clienteId, item }: { clienteId: string; item: ItemDoCatalogo }
     <>
       <div className="mb-3 flex items-start justify-between gap-3">
         {LOGO[item.chave]}
-        <Selo tom={selo.tom}>{selo.texto}</Selo>
+        <Pilula tom={TOM_DO_SELO[selo.tom]}>{selo.texto}</Pilula>
       </div>
       <p className="text-[13.5px] font-bold tracking-[-0.01em]">{item.nome}</p>
       <p className="mt-0.5 text-[11px] font-semibold text-dim">{item.categoria}</p>
@@ -197,23 +200,4 @@ function acaoDoCartao(item: ItemDoCatalogo): string {
   return item.estado.configurado ? 'Configurar ›' : 'Conectar ›'
 }
 
-function Selo({
-  children,
-  tom,
-}: {
-  children: ReactNode
-  tom: 'ok' | 'alerta' | 'perigo' | 'neutro'
-}) {
-  const cor = {
-    ok: 'border-emerald-400/25 bg-emerald-400/[0.08] text-ok',
-    alerta: 'border-amber-300/30 bg-amber-300/[0.1] text-aviso',
-    perigo: 'border-rose-400/30 bg-rose-400/[0.09] text-perigo',
-    neutro: 'border-line bg-surface text-muted',
-  }[tom]
-
-  return (
-    <span className={`shrink-0 rounded-full border px-2.5 py-1 text-[10.5px] font-bold ${cor}`}>
-      {children}
-    </span>
-  )
-}
+const TOM_DO_SELO = { ok: 'ok', alerta: 'aviso', perigo: 'perigo', neutro: 'neutro' } as const

@@ -1,3 +1,4 @@
+import { CabecalhoDaTela } from '@/components/design/cabecalho-da-tela'
 import { Miolo } from '@/components/design/miolo'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
@@ -14,6 +15,7 @@ import { listarEtiquetas } from '@/server/repos/etiquetas'
 import { acharCliente, contarOQueSomeCom } from '@/server/repos/clientes'
 import { recursosDaConta } from '@/server/repos/recursos'
 import { listarConexoes } from '@/server/repos/conexoes'
+import { listarChavesDeApi } from '@/server/repos/chaves-de-api'
 import { paginasDaConta } from '@/server/repos/paginas-de-lead'
 import { listarCanais } from '@/server/repos/conversas'
 import { listarFluxos } from '@/server/repos/fluxos'
@@ -61,6 +63,8 @@ export default async function Pagina({
       catalogoDeIntegracoes(cliente.id),
     ])
   const semContexto = cliente.contextoNegocio.trim() === ''
+  // Selo, não tela: sem a tabela (ambiente sem a 0120) o índice abre igual.
+  const chavesDeApi = (await listarChavesDeApi(cliente.id).catch(() => [])).filter((chave) => !chave.revogadaEm).length
 
   const trilha = trilhaDeConfiguracao({
     empresa: cliente,
@@ -91,13 +95,11 @@ export default async function Pagina({
   return (
     <AjustesShell cliente={cliente} ativa="inicio">
       <Miolo largura="leitura">
-        <h1 className="text-[22px] font-bold tracking-[-0.02em] md:text-[28px]">
-          Configurações
-        </h1>
-        <p className="mt-1.5 mb-7 max-w-[640px] text-[13px] leading-6 text-dim">
-          O que se ajusta uma vez: quem é a organização e quem tem acesso, o que o bot sabe
-          responder e com quem o sistema fala.
-        </p>
+        <CabecalhoDaTela
+          className="mb-7"
+          titulo="Configurações"
+          descricao="O que se ajusta uma vez: quem é a organização e quem tem acesso, o que o bot sabe responder e com quem o sistema fala."
+        />
 
         {faltaNaTrilha && <TrilhaDeConfiguracao clienteId={cliente.id} passos={trilha} />}
 
@@ -251,13 +253,26 @@ export default async function Pagina({
           <Cartao
             href={`/clientes/${cliente.id}/ajustes/chaves`}
             icone={ICONE_DA_TELA['chaves']}
-            titulo="Chaves de API"
-            descricao="Gerencie credenciais para conectar suas automações a outros sistemas."
+            titulo="Credenciais de sistemas"
+            descricao="As senhas e tokens que o bloco Chama um sistema usa para falar com outros sistemas."
             estado={
               <Selo tom={conexoes.length === 0 ? 'neutro' : 'ok'}>
                 {conexoes.length === 0
                   ? 'nenhuma'
-                  : `${conexoes.length} ${conexoes.length === 1 ? 'chave' : 'chaves'}`}
+                  : `${conexoes.length} ${conexoes.length === 1 ? 'credencial' : 'credenciais'}`}
+              </Selo>
+            }
+          />
+          <Cartao
+            href={`/clientes/${cliente.id}/ajustes/api`}
+            icone={ICONE_DA_TELA['api']}
+            titulo="API"
+            descricao="Chaves para o seu sistema, formulário ou parceiro cadastrar contatos e disparar automações."
+            estado={
+              <Selo tom={chavesDeApi === 0 ? 'neutro' : 'ok'}>
+                {chavesDeApi === 0
+                  ? 'nenhuma chave'
+                  : `${chavesDeApi} ${chavesDeApi === 1 ? 'chave ativa' : 'chaves ativas'}`}
               </Selo>
             }
           />

@@ -2,7 +2,7 @@ import { Suspense } from 'react'
 import { notFound } from 'next/navigation'
 import { BotaoPerigo } from '@/components/design/botao-perigo'
 import { ClienteShell } from '@/components/design/cliente-shell'
-import { Esqueleto, EsqueletoDeQuadro } from '@/components/design/esqueleto'
+import { EsqueletoDoFunil } from '@/components/design/esqueleto'
 import { IlustracaoQuadros } from '@/components/design/ilustracoes'
 import { CabecalhoDoQuadro } from '@/components/quadros/cabecalho-do-quadro'
 import { Quadro, AdicionarContato } from '@/components/quadros/quadro'
@@ -90,23 +90,7 @@ export default async function Pagina({
 
 /** A moldura do funil enquanto as colunas vêm. */
 function Espera() {
-  return (
-    <>
-      <header className="mb-5 flex shrink-0 items-center justify-between gap-4">
-        <div>
-          <h1 className="mb-1 text-[11px] font-semibold tracking-[0.06em] text-dim uppercase">
-            Negócios
-          </h1>
-          <Esqueleto className="h-7 w-36 rounded-lg" />
-        </div>
-        <span className="flex gap-2">
-          <Esqueleto className="h-9 w-24 rounded-lg" />
-          <Esqueleto className="h-9 w-9 rounded-lg" />
-        </span>
-      </header>
-      <EsqueletoDeQuadro />
-    </>
-  )
+  return <EsqueletoDoFunil />
 }
 
 async function Conteudo({

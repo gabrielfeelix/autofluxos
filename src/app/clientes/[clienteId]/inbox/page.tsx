@@ -734,9 +734,5 @@ async function Conteudo({
 
 /** O mesmo miolo do `loading.tsx` da rota, para as duas esperas serem uma só. */
 function EsqueletoDaTela() {
-  return (
-    <div className="flex min-h-0 flex-1 flex-col p-3 md:p-4">
-      <EsqueletoDeInbox />
-    </div>
-  )
+  return <EsqueletoDeInbox />
 }

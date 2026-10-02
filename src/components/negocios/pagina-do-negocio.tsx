@@ -1,5 +1,7 @@
 'use client'
 
+import { Alternador } from '@/components/design/alternador'
+import { Trilha } from '@/components/design/trilha'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useRef, useState, useTransition, type ReactNode, type RefObject } from 'react'
@@ -289,13 +291,7 @@ export function PaginaDoNegocio(props: Props) {
 
   return (
     <main className="w-full px-4 pt-[22px] pb-12 md:px-7">
-      <nav aria-label="Caminho" className="mb-3 flex items-center gap-1.5 text-[12px] text-dim">
-        <Link href={voltar} className="text-muted transition hover:text-primary">
-          ← Negócios
-        </Link>
-        <span aria-hidden>/</span>
-        <span className="truncate">{quadro.nome}</span>
-      </nav>
+      <Trilha caminho={[{ rotulo: 'Negócios', href: voltar }, { rotulo: quadro.nome }]} />
 
       {/* O topo: o que é, quanto vale, em que pé está, e as ações. */}
       <header className="app-card mb-4 px-5 py-5 md:px-6">
@@ -421,25 +417,16 @@ export function PaginaDoNegocio(props: Props) {
         </p>
       )}
 
-      <div role="tablist" aria-label="Seções do negócio" className="mb-4 flex gap-1 border-b border-line">
-        {(
-          [
-            ['geral', 'Visão geral'],
-            ['historico', `Histórico · ${historico.length}`],
-          ] as const
-        ).map(([chave, rotulo]) => (
-          <button
-            key={chave}
-            type="button"
-            role="tab"
-            aria-selected={aba === chave}
-            onClick={() => setAba(chave)}
-            className={`-mb-px border-b-2 px-3 py-2 text-[13px] font-semibold transition ${aba === chave ? 'border-primary text-primary' : 'border-transparent text-muted hover:text-soft'}`}
-          >
-            {rotulo}
-          </button>
-        ))}
-      </div>
+      <Alternador
+        rotulo="Seções do negócio"
+        className="mb-4"
+        ativa={aba}
+        aoEscolher={setAba}
+        opcoes={[
+          { chave: 'geral', rotulo: 'Visão geral' },
+          { chave: 'historico', rotulo: 'Histórico', contagem: historico.length },
+        ]}
+      />
 
       {aba === 'historico' ? (
         <Historico historico={historico} filtro={filtro} aoFiltrar={setFiltro} agora={agora} />
@@ -936,19 +923,13 @@ function Historico({
 
   return (
     <section className="app-card px-5 py-4 md:px-6">
-      <div role="group" aria-label="Filtrar histórico" className="mb-5 flex flex-wrap gap-1.5">
-        {FILTROS_DO_HISTORICO.map((f) => (
-          <button
-            key={f}
-            type="button"
-            aria-pressed={filtro === f}
-            onClick={() => aoFiltrar(f)}
-            className={`rounded-full border px-3 py-1 text-[12px] font-semibold transition ${filtro === f ? 'border-primary bg-primary text-white' : 'border-line text-muted hover:border-strong hover:text-soft'}`}
-          >
-            {NOME_DO_FILTRO[f]} <span className={`tabular-nums ${filtro === f ? 'text-white/80' : 'text-dim'}`}>{contagem(f)}</span>
-          </button>
-        ))}
-      </div>
+      <Alternador
+        rotulo="Filtrar histórico"
+        className="alternador-sm mb-5 max-w-full overflow-x-auto"
+        ativa={filtro}
+        aoEscolher={aoFiltrar}
+        opcoes={FILTROS_DO_HISTORICO.map((f) => ({ chave: f, rotulo: NOME_DO_FILTRO[f], contagem: contagem(f) }))}
+      />
       {visiveis.length === 0 ? (
         <p className="py-6 text-center text-[12.5px] text-dim">Nada deste tipo ainda.</p>
       ) : (

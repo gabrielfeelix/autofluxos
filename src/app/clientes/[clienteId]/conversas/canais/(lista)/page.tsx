@@ -1,3 +1,4 @@
+import { CabecalhoDaTela } from '@/components/design/cabecalho-da-tela'
 import { Miolo } from '@/components/design/miolo'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
@@ -37,11 +38,10 @@ export default async function Pagina({ params }: { params: Promise<{ clienteId: 
   return (
     <ClienteShell cliente={cliente} ativa="canais">
       <Miolo largura="cheia">
-        <h1 className="text-[20px] font-bold tracking-[-0.02em] md:text-[25px]">Canais</h1>
-        <p className="mt-1.5 mb-6 max-w-[650px] text-[13px] leading-6 text-dim">
-          Por onde as conversas chegam. Cada cartão diz se o canal está conectado, quando chegou a última mensagem e o
-          que fazer se algo parou.
-        </p>
+        <CabecalhoDaTela
+          titulo="Canais"
+          descricao="Por onde as conversas chegam. Cada cartão diz se o canal está conectado, quando chegou a última mensagem e o que fazer se algo parou."
+        />
         <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
           {canais.map((item) => (
             <CartaoDoCanal key={item.chave} clienteId={cliente.id} item={item} />
@@ -95,11 +95,7 @@ function CartaoDoCanal({ clienteId, item }: { clienteId: string; item: ItemDoCat
       {acao && (
         <Link
           href={`/clientes/${clienteId}${acao.href}`}
-          className={`mt-2 inline-flex items-center justify-center gap-1 self-start rounded-[10px] px-3.5 py-2 text-[12.5px] font-bold transition ${
-            estado.falha || !estado.configurado
-              ? 'bg-primary text-white hover:bg-primary-strong'
-              : 'border border-line text-ink hover:bg-surface'
-          }`}
+          className={`botao-md mt-2 self-start ${estado.falha || !estado.configurado ? 'botao-primario' : 'botao-secundario'}`}
         >
           {acao.texto} <span aria-hidden>›</span>
         </Link>

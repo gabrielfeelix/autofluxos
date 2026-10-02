@@ -1,3 +1,5 @@
+import { Miolo } from '@/components/design/miolo'
+import { CabecalhoDaTela } from '@/components/design/cabecalho-da-tela'
 import { notFound } from 'next/navigation'
 import { AjudaDaTela, type PassoDaAjuda } from '@/components/design/ajuda-da-tela'
 import { ClienteShell } from '@/components/design/cliente-shell'
@@ -142,9 +144,12 @@ export default async function Pagina({
 
   return (
     <ClienteShell cliente={cliente} ativa="vendas">
-      <main className="mx-auto w-full max-w-[1280px] px-4 pt-[26px] pb-[42px] md:px-[42px]">
-        <div className="flex items-center gap-2.5">
-          <h1 className="text-[20px] font-bold tracking-[-0.02em] md:text-[25px]">Vendas</h1>
+      <Miolo largura="larga">
+        <CabecalhoDaTela
+          className="mb-0"
+          titulo={
+            <span className="flex items-center gap-2.5">
+              Vendas
           <AjudaDaTela
             titulo="Como ler as vendas"
             resumo="O resultado dos negócios no período escolhido, comparado com o período anterior do mesmo tamanho."
@@ -158,14 +163,16 @@ export default async function Pagina({
               <strong className="text-ink">Cada número tem um ?</strong> com a definição exata do que ele conta.
             </p>
           </AjudaDaTela>
-        </div>
-        <p className="mt-1.5 text-[13px] leading-6 text-dim">
-          {contaInteira
-            ? 'Quanto entrou, onde os negócios param e quem vende.'
-            : escopo.tipo === 'proprios'
-              ? 'Só os negócios que estão com você. Os números da organização inteira ficam com quem gerencia.'
-              : 'Só os negócios das suas equipes.'}
-        </p>
+            </span>
+          }
+          descricao={
+            contaInteira
+              ? 'Quanto entrou, onde os negócios param e quem vende.'
+              : escopo.tipo === 'proprios'
+                ? 'Só os negócios que estão com você. Os números da organização inteira ficam com quem gerencia.'
+                : 'Só os negócios das suas equipes.'
+          }
+        />
 
         {!temNegocio ? (
           <div className="mt-5">
@@ -204,7 +211,7 @@ export default async function Pagina({
             </div>
           </>
         )}
-      </main>
+      </Miolo>
     </ClienteShell>
   )
 }

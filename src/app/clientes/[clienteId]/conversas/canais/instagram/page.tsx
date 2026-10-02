@@ -1,3 +1,4 @@
+import { CabecalhoDaTela } from '@/components/design/cabecalho-da-tela'
 import { notFound } from 'next/navigation'
 import { ClienteShell } from '@/components/design/cliente-shell'
 import { Trilha } from '@/components/design/trilha'
@@ -88,12 +89,7 @@ export default async function Pagina({
             { rotulo: 'Instagram' },
           ]}
         />
-        <header className="mb-7">
-          <h1 className="text-[25px] font-bold tracking-[-0.02em]">Instagram</h1>
-          <p className="mt-1 text-[13px] text-muted">
-            {DEFINICAO_DO_CANAL.instagram.resumo}
-          </p>
-        </header>
+        <CabecalhoDaTela titulo="Instagram" descricao={DEFINICAO_DO_CANAL.instagram.resumo} />
 
         {aviso && (
           <p

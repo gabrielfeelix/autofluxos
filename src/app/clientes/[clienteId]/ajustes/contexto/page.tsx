@@ -1,3 +1,4 @@
+import { CabecalhoDaTela } from '@/components/design/cabecalho-da-tela'
 import { Miolo } from '@/components/design/miolo'
 import { notFound } from 'next/navigation'
 import { AjustesShell } from '@/components/design/ajustes-shell'
@@ -66,20 +67,22 @@ export default async function Pagina({ params }: { params: Promise<{ clienteId: 
             { rotulo: 'Conhecimento da IA' },
           ]}
         />
-        <h1 className="text-[25px] font-bold tracking-[-0.02em]">Conhecimento da IA</h1>
-        {pacote ? (
-          <p className="mt-1.5 mb-6 max-w-[620px] text-[13px] leading-6 text-dim">
-            Responda o que o seu cliente sempre pergunta. O assistente usa só o que estiver aqui; para
-            qualquer outra coisa, passa a conversa para uma pessoa.
-          </p>
-        ) : (
-        <p className="mt-1.5 mb-6 max-w-[620px] text-[13px] leading-6 text-dim">
-          É a <strong className="text-soft">única fonte de verdade</strong> do bloco de IA. Ela
-          responde só com o que estiver escrito aqui; para qualquer outra coisa, passa a conversa
-          para uma pessoa. Escreva como você explicaria o negócio para alguém no primeiro dia de
-          trabalho, incluindo o que ela <em>não</em> deve responder.
-        </p>
-        )}
+        <CabecalhoDaTela
+          className="mb-6"
+          titulo="Conhecimento da IA"
+          descricao={
+            pacote ? (
+              'Responda o que o seu cliente sempre pergunta. O assistente usa só o que estiver aqui; para qualquer outra coisa, passa a conversa para uma pessoa.'
+            ) : (
+              <>
+                É a <strong className="text-soft">única fonte de verdade</strong> do bloco de IA. Ela responde só com o
+                que estiver escrito aqui; para qualquer outra coisa, passa a conversa para uma pessoa. Escreva como você
+                explicaria o negócio para alguém no primeiro dia de trabalho, incluindo o que ela <em>não</em> deve
+                responder.
+              </>
+            )
+          }
+        />
 
         {pacote ? (
           <FichaNaTela clienteId={clienteId} texto={cliente.contextoNegocio} pacote={pacote} />

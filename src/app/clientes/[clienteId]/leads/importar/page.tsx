@@ -1,3 +1,4 @@
+import { CabecalhoDaTela } from '@/components/design/cabecalho-da-tela'
 import { Miolo } from '@/components/design/miolo'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
@@ -42,11 +43,10 @@ export default async function Pagina({ params }: { params: Promise<{ clienteId: 
         >
           ← Contatos
         </Link>
-        <h1 className="text-[25px] font-bold tracking-[-0.02em]">Importar contatos</h1>
-        <p className="mt-1.5 mb-6 max-w-[680px] text-[13px] leading-6 text-dim">
-          O WhatsApp entrega o nome que a pessoa escolheu para si, e nem sempre é o nome pelo qual
-          o negócio a conhece. A planilha do cliente tem o nome certo; esta tela liga os dois.
-        </p>
+        <CabecalhoDaTela
+          titulo="Importar contatos"
+          descricao="O WhatsApp entrega o nome que a pessoa escolheu para si, e nem sempre é o nome pelo qual o negócio a conhece. A planilha do cliente tem o nome certo; esta tela liga os dois."
+        />
 
         <ImportarContatos acao={acaoImportarContatos.bind(null, cliente.id)} />
       </Miolo>

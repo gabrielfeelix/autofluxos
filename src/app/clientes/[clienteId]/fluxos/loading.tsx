@@ -1,15 +1,30 @@
+import { CabecalhoDaTela } from '@/components/design/cabecalho-da-tela'
+import { Miolo } from '@/components/design/miolo'
 import { MioloCarregando } from '@/components/design/esqueleto-do-cliente'
-import { EsqueletoDeCartoes } from '@/components/design/esqueleto'
+import { Esqueleto, EsqueletoDeBotao, EsqueletoDeBusca, EsqueletoDeLinhas } from '@/components/design/esqueleto'
 
-/** As automações enquanto vêm. */
+/**
+ * As automações enquanto vêm: topo, busca e a lista em cartão. O subitem
+ * (Fluxos, Gatilhos, Sequências) vem na busca do endereço, que o loading não
+ * lê: título e descrição esperam em osso.
+ */
 export default function Carregando() {
   return (
     <MioloCarregando>
-      <main className="flex min-h-full flex-col px-4 pt-[26px] pb-[42px] md:px-[42px]">
-        {/* O subitem (Fluxos, Gatilhos, Sequências) vem na busca, que o loading não lê: o título espera. */}
-        <span className="app-esqueleto mb-5 block h-[30px] w-40 rounded-lg" />
-        <EsqueletoDeCartoes />
-      </main>
+      <Miolo largura="cheia">
+        <CabecalhoDaTela
+          titulo={<Esqueleto className="my-1 h-[26px] w-32 rounded-lg" />}
+          descricao={<Esqueleto className="mt-1.5 h-3 w-full max-w-[460px]" />}
+          acoes={
+            <>
+              <EsqueletoDeBotao largura="w-28" />
+              <EsqueletoDeBotao largura="w-40" />
+            </>
+          }
+        />
+        <EsqueletoDeBusca placeholder="Buscar automação pelo nome" filtros />
+        <EsqueletoDeLinhas linhas={7} rotulo="Carregando as automações…" />
+      </Miolo>
     </MioloCarregando>
   )
 }

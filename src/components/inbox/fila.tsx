@@ -1,5 +1,6 @@
 "use client";
 
+import { Badge, Pilula, teto } from '@/components/design/pilula'
 import Link from "next/link";
 import { useCallback, useDeferredValue, useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { comoFalta, dentroDaPortaDeEntrada, restaDaJanela } from "@/channels/janela";
@@ -570,12 +571,7 @@ export function Fila({
           <h2 className="shrink-0 text-[17px] font-bold tracking-[-0.02em]">
             Caixa de Entrada
           </h2>
-          <span
-            title={`${contagem.total} conversa(s) nesta conta`}
-            className="shrink-0 rounded-full border border-line bg-surface px-2 py-0.5 font-mono text-[11px] text-muted"
-          >
-            {contagem.total}
-          </span>
+          <Pilula titulo={`${contagem.total} conversa(s) nesta conta`}>{contagem.total}</Pilula>
 
           {/*
             A engrenagem leva para os ajustes de atendimento, etiquetas,
@@ -953,15 +949,9 @@ export function Fila({
                     que abrir agora.
                   */}
                     {semLer > 0 && (
-                      <span
-                        title={`${semLer} ${semLer === 1 ? "mensagem nova" : "mensagens novas"} desde a última vez que você abriu`}
-                        aria-label={`${semLer} não ${semLer === 1 ? "lida" : "lidas"} para você`}
-                        className="flex h-5 min-w-5 shrink-0 items-center justify-center rounded-full bg-primary px-1.5 text-[11.5px] font-bold text-white"
-                      >
-                        {semLer > TETO_DA_INSIGNIA
-                          ? `${TETO_DA_INSIGNIA}+`
-                          : semLer}
-                      </span>
+                      <Badge rotulo={`${semLer} ${semLer === 1 ? "mensagem nova" : "mensagens novas"} desde a última vez que você abriu`}>
+                        {teto(semLer, TETO_DA_INSIGNIA)}
+                      </Badge>
                     )}
                   </span>
                   {lead.aguardando && (

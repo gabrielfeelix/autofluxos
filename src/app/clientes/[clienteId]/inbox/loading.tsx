@@ -17,9 +17,7 @@ import { EsqueletoDeInbox } from '@/components/design/esqueleto'
 export default function Carregando() {
   return (
     <MioloCarregando>
-      <div className="flex min-h-0 flex-1 flex-col p-3 md:p-4">
-        <EsqueletoDeInbox />
-      </div>
+      <EsqueletoDeInbox />
     </MioloCarregando>
   )
 }
