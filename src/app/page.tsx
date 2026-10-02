@@ -87,7 +87,6 @@ export default function PaginaInicial() {
         <section className={s.capa}>
           <DerivaDeParticulas className={s.campo} />
           <div className={s.veu} aria-hidden />
-          <div className={s.grade} aria-hidden />
 
           <div className={`${s.faixa} ${s.capaInterno}`}>
             <p className={s.selo} data-revela>
@@ -137,343 +136,345 @@ API oficial do WhatsApp Business
           </span>
         </section>
 
-        <section className={s.secao}>
-          <div className={`${s.focoLuz} ${s.focoDireita}`} aria-hidden />
-          <div className={s.faixa}>
-            <div className={s.cabecaSecao}>
-              <span className={s.olho} data-revela>
-                Na prática
-              </span>
-              <h2 className={`${s.tituloSecao} ${s.tituloSecaoCentro}`} data-revela data-como="desfoque" data-atraso="60">
-                Isto é o que a sua equipe vê
-              </h2>
-              <span className={`${s.risco} ${s.riscoCentro}`} data-revela data-atraso="90" aria-hidden />
-              <p className={`${s.chamada} ${s.chamadaCentro}`} data-revela data-atraso="100">
-                Uma tela com as conversas de todo mundo. Quem espera resposta sobe para o
-                topo, o histórico fica ao lado, e a ficha diz quem é a pessoa antes de você
-                digitar a primeira palavra.
-              </p>
-            </div>
-            <Desktop />
-          </div>
-        </section>
-
-        <section className={s.secao} id="produto">
-          <div className={s.faixa}>
-            <div className={s.cabecaSecao}>
-              <span className={s.olho} data-revela>
-                O problema
-              </span>
-              <h2 className={`${s.tituloSecao} ${s.tituloSecaoCentro}`} data-revela data-como="desfoque" data-atraso="60">
-                Você já sabe a resposta antes de ler a pergunta
-              </h2>
-              <span className={`${s.risco} ${s.riscoCentro}`} data-revela data-atraso="90" aria-hidden />
-              <p className={`${s.chamada} ${s.chamadaCentro}`} data-revela data-atraso="100">
-                “Que horas vocês abrem?” pela oitava vez antes do almoço. Você responde,
-                volta para o que estava fazendo, e às sete da noite descobre que alguém
-                perguntando de orçamento ficou sem resposta desde as onze.
-              </p>
-            </div>
-
-            <div className={s.numeros}>
-              <Numero
-                valor="70%"
-                rotulo="das mensagens que chegam são as mesmas cinco perguntas"
-                atraso={0}
-              />
-              <Numero
-                valor="24/7"
-                rotulo="responde domingo de manhã e na véspera de feriado"
-                atraso={110}
-              />
-              <Numero
-                valor="1 número"
-                rotulo="o seu. Ninguém precisa decorar um número novo"
-                atraso={220}
-              />
-              <Numero
-                valor="0 linhas"
-                rotulo="de código. Você arrasta blocos e testa ali mesmo"
-                atraso={330}
-              />
-            </div>
-          </div>
-        </section>
-
-        <section className={s.secao}>
-          <div className={`${s.focoLuz} ${s.focoEsquerda}`} aria-hidden />
-          <div className={s.faixa}>
-            <span className={s.olho} data-revela>
-              O que ele faz
-            </span>
-            <h2 className={s.tituloSecao} data-revela data-como="desfoque" data-atraso="60">
-              Cinco peças que trabalham juntas
-            </h2>
-              <span className={s.risco} data-revela data-atraso="90" aria-hidden />
-
-            <div className={s.bento}>
-              <Caixa
-                larga
-                arte={<ArteFluxo />}
-                titulo="Fluxos montados bloco a bloco"
-                texto="Você arrasta mensagem, pergunta, condição e espera até a conversa ficar do jeito que você atende. Testa ali mesmo. Cada publicação vira uma versão, então dá para voltar quando algo sai errado."
-                atraso={0}
-              />
-              <Caixa
-                larga
-                arte={<ArteFila />}
-                titulo="Caixa de entrada da equipe"
-                texto="Todas as conversas numa tela. Quem espera sobe para o topo, cada atendente vê o que é dele, e quem assume no meio lê o que já foi dito antes de responder."
-                atraso={80}
-              />
-              <Caixa
-                arte={<ArteIA />}
-                titulo="IA com coleira"
-                texto="Para o que não cabe num roteiro fixo. Ela responde dentro do que você escrever e chama alguém quando não sabe, em vez de arriscar."
-                atraso={160}
-              />
-              <Caixa
-                arte={<ArteFicha />}
-                titulo="Ficha de cada contato"
-                texto="Sete conversas anteriores, as etiquetas que você criou e o que já foi combinado. Quem entra no meio não pergunta de novo."
-                atraso={200}
-              />
-              <Caixa
-                arte={<ArteConexao />}
-                titulo="Conecta no seu sistema"
-                texto="O fluxo abre a sua agenda no meio da conversa e responde com o horário que está livre agora, não com um horário genérico."
-                atraso={240}
-              />
-            </div>
-          </div>
-        </section>
-
-        <section className={s.secao} id="como">
-          <div className={`${s.focoLuz} ${s.focoDireita}`} aria-hidden />
-          <div className={s.faixa}>
-            <div className={s.passos}>
-              <div className={s.passosFixo}>
-                <span className={s.olho} data-revela data-como="lado">
-                  Como funciona
+        <div className={s.quadro}>
+          <section className={s.secao}>
+            <div className={`${s.focoLuz} ${s.focoDireita}`} aria-hidden />
+            <div className={s.faixa}>
+              <div className={s.cabecaSecao}>
+                <span className={s.olho} data-revela>
+                  Na prática
                 </span>
-                <h2 className={s.tituloSecao} data-revela data-como="desfoque" data-atraso="60">
-                  Do seu número, não do nosso
+                <h2 className={`${s.tituloSecao} ${s.tituloSecaoCentro}`} data-revela data-como="desfoque" data-atraso="60">
+                  Isto é o que a sua equipe vê
                 </h2>
-              <span className={s.risco} data-revela data-atraso="90" aria-hidden />
-                <p className={s.chamada} data-revela data-atraso="100">
-                  O atendimento acontece no WhatsApp da sua empresa. Seus clientes continuam
-                  falando com o número que já está no cartão, no site e no Google. E você
-                  desconecta quando quiser.
+                <span className={`${s.risco} ${s.riscoCentro}`} data-revela data-atraso="90" aria-hidden />
+                <p className={`${s.chamada} ${s.chamadaCentro}`} data-revela data-atraso="100">
+                  Uma tela com as conversas de todo mundo. Quem espera resposta sobe para o
+                  topo, o histórico fica ao lado, e a ficha diz quem é a pessoa antes de você
+                  digitar a primeira palavra.
                 </p>
+              </div>
+              <Desktop />
+            </div>
+          </section>
 
-                <ProgressoDosPassos
-                  seletorPasso={s.passo}
-                  classes={{
-                    caixa: s.progresso,
-                    conta: s.progressoConta,
-                    atual: s.progressoAtual,
-                    total: s.progressoTotal,
-                    trilho: s.progressoTrilho,
-                    segmento: s.progressoSegmento,
-                    segmentoAtivo: s.progressoSegmentoAtivo,
-                    rotulo: s.progressoRotulo,
-                  }}
-                  rotulos={[
-                    'Você conecta o seu número',
-                    'Montamos o primeiro fluxo com você',
-                    'Sua equipe entra na caixa de entrada',
-                    'Você ajusta olhando o que aconteceu',
-                  ]}
-                />
+          <section className={s.secao} id="produto">
+            <div className={s.faixa}>
+              <div className={s.cabecaSecao}>
+                <span className={s.olho} data-revela>
+                  O problema
+                </span>
+                <h2 className={`${s.tituloSecao} ${s.tituloSecaoCentro}`} data-revela data-como="desfoque" data-atraso="60">
+                  Você já sabe a resposta antes de ler a pergunta
+                </h2>
+                <span className={`${s.risco} ${s.riscoCentro}`} data-revela data-atraso="90" aria-hidden />
+                <p className={`${s.chamada} ${s.chamadaCentro}`} data-revela data-atraso="100">
+                  “Que horas vocês abrem?” pela oitava vez antes do almoço. Você responde,
+                  volta para o que estava fazendo, e às sete da noite descobre que alguém
+                  perguntando de orçamento ficou sem resposta desde as onze.
+                </p>
               </div>
 
-              <ol className={s.passosLista}>
-                <Passo
-                  rotulo="Conectar"
-                  arte={<JanelaConexao />}
-                  titulo="Você conecta o seu número"
-                  texto="A autorização acontece dentro do WhatsApp, com a sua conta. Nunca pedimos
-senha. Você corta o acesso quando quiser, no painel da Meta, sem precisar nos
-contatar."
+              <div className={s.numeros}>
+                <Numero
+                  valor="70%"
+                  rotulo="das mensagens que chegam são as mesmas cinco perguntas"
                   atraso={0}
                 />
-                <Passo
-                  rotulo="Desenhar"
-                  arte={<JanelaDesenho />}
-                  titulo="Montamos o primeiro fluxo com você"
-                  texto="Você não abre o sistema numa tela vazia. Sentamos junto e montamos o
-atendimento com as perguntas que chegam no seu WhatsApp de verdade."
+                <Numero
+                  valor="24/7"
+                  rotulo="responde domingo de manhã e na véspera de feriado"
+                  atraso={110}
+                />
+                <Numero
+                  valor="1 número"
+                  rotulo="o seu. Ninguém precisa decorar um número novo"
+                  atraso={220}
+                />
+                <Numero
+                  valor="0 linhas"
+                  rotulo="de código. Você arrasta blocos e testa ali mesmo"
+                  atraso={330}
+                />
+              </div>
+            </div>
+          </section>
+
+          <section className={s.secao}>
+            <div className={`${s.focoLuz} ${s.focoEsquerda}`} aria-hidden />
+            <div className={s.faixa}>
+              <span className={s.olho} data-revela>
+                O que ele faz
+              </span>
+              <h2 className={s.tituloSecao} data-revela data-como="desfoque" data-atraso="60">
+                Cinco peças que trabalham juntas
+              </h2>
+                <span className={s.risco} data-revela data-atraso="90" aria-hidden />
+
+              <div className={s.bento}>
+                <Caixa
+                  larga
+                  arte={<ArteFluxo />}
+                  titulo="Fluxos montados bloco a bloco"
+                  texto="Você arrasta mensagem, pergunta, condição e espera até a conversa ficar do jeito que você atende. Testa ali mesmo. Cada publicação vira uma versão, então dá para voltar quando algo sai errado."
+                  atraso={0}
+                />
+                <Caixa
+                  larga
+                  arte={<ArteFila />}
+                  titulo="Caixa de entrada da equipe"
+                  texto="Todas as conversas numa tela. Quem espera sobe para o topo, cada atendente vê o que é dele, e quem assume no meio lê o que já foi dito antes de responder."
                   atraso={80}
                 />
-                <Passo
-                  rotulo="Atender"
-                  arte={<JanelaAtendimento />}
-                  titulo="Sua equipe entra na caixa de entrada"
-                  texto="Cada pessoa entra com o próprio acesso. O que o fluxo não resolveu chega ali
-com a conversa inteira do lado, e ninguém pergunta duas vezes a mesma coisa."
+                <Caixa
+                  arte={<ArteIA />}
+                  titulo="IA com coleira"
+                  texto="Para o que não cabe num roteiro fixo. Ela responde dentro do que você escrever e chama alguém quando não sabe, em vez de arriscar."
                   atraso={160}
                 />
-                <Passo
-                  rotulo="Ajustar"
-                  arte={<JanelaNumeros />}
-                  titulo="Você ajusta olhando o que aconteceu"
-                  texto="Em que bloco as pessoas param de responder, o que perguntaram e o fluxo não
-sabia, quanto tempo alguém levou para assumir. Você corrige olhando isso."
+                <Caixa
+                  arte={<ArteFicha />}
+                  titulo="Ficha de cada contato"
+                  texto="Sete conversas anteriores, as etiquetas que você criou e o que já foi combinado. Quem entra no meio não pergunta de novo."
+                  atraso={200}
+                />
+                <Caixa
+                  arte={<ArteConexao />}
+                  titulo="Conecta no seu sistema"
+                  texto="O fluxo abre a sua agenda no meio da conversa e responde com o horário que está livre agora, não com um horário genérico."
                   atraso={240}
                 />
-              </ol>
+              </div>
             </div>
-          </div>
-        </section>
+          </section>
 
-        <section className={s.secao}>
-          <div className={s.faixa}>
-            <div className={s.cabecaSecao}>
-              <span className={s.olho} data-revela>
-                Para quem é
-              </span>
-              <h2 className={`${s.tituloSecao} ${s.tituloSecaoCentro}`} data-revela data-como="desfoque" data-atraso="60">
-  Para quem atende no WhatsApp o dia inteiro
-              </h2>
-              <span className={`${s.risco} ${s.riscoCentro}`} data-revela data-atraso="90" aria-hidden />
+          <section className={s.secao} id="como">
+            <div className={`${s.focoLuz} ${s.focoDireita}`} aria-hidden />
+            <div className={s.faixa}>
+              <div className={s.passos}>
+                <div className={s.passosFixo}>
+                  <span className={s.olho} data-revela data-como="lado">
+                    Como funciona
+                  </span>
+                  <h2 className={s.tituloSecao} data-revela data-como="desfoque" data-atraso="60">
+                    Do seu número, não do nosso
+                  </h2>
+                <span className={s.risco} data-revela data-atraso="90" aria-hidden />
+                  <p className={s.chamada} data-revela data-atraso="100">
+                    O atendimento acontece no WhatsApp da sua empresa. Seus clientes continuam
+                    falando com o número que já está no cartão, no site e no Google. E você
+                    desconecta quando quiser.
+                  </p>
+
+                  <ProgressoDosPassos
+                    seletorPasso={s.passo}
+                    classes={{
+                      caixa: s.progresso,
+                      conta: s.progressoConta,
+                      atual: s.progressoAtual,
+                      total: s.progressoTotal,
+                      trilho: s.progressoTrilho,
+                      segmento: s.progressoSegmento,
+                      segmentoAtivo: s.progressoSegmentoAtivo,
+                      rotulo: s.progressoRotulo,
+                    }}
+                    rotulos={[
+                      'Você conecta o seu número',
+                      'Montamos o primeiro fluxo com você',
+                      'Sua equipe entra na caixa de entrada',
+                      'Você ajusta olhando o que aconteceu',
+                    ]}
+                  />
+                </div>
+
+                <ol className={s.passosLista}>
+                  <Passo
+                    rotulo="Conectar"
+                    arte={<JanelaConexao />}
+                    titulo="Você conecta o seu número"
+                    texto="A autorização acontece dentro do WhatsApp, com a sua conta. Nunca pedimos
+  senha. Você corta o acesso quando quiser, no painel da Meta, sem precisar nos
+  contatar."
+                    atraso={0}
+                  />
+                  <Passo
+                    rotulo="Desenhar"
+                    arte={<JanelaDesenho />}
+                    titulo="Montamos o primeiro fluxo com você"
+                    texto="Você não abre o sistema numa tela vazia. Sentamos junto e montamos o
+  atendimento com as perguntas que chegam no seu WhatsApp de verdade."
+                    atraso={80}
+                  />
+                  <Passo
+                    rotulo="Atender"
+                    arte={<JanelaAtendimento />}
+                    titulo="Sua equipe entra na caixa de entrada"
+                    texto="Cada pessoa entra com o próprio acesso. O que o fluxo não resolveu chega ali
+  com a conversa inteira do lado, e ninguém pergunta duas vezes a mesma coisa."
+                    atraso={160}
+                  />
+                  <Passo
+                    rotulo="Ajustar"
+                    arte={<JanelaNumeros />}
+                    titulo="Você ajusta olhando o que aconteceu"
+                    texto="Em que bloco as pessoas param de responder, o que perguntaram e o fluxo não
+  sabia, quanto tempo alguém levou para assumir. Você corrige olhando isso."
+                    atraso={240}
+                  />
+                </ol>
+              </div>
             </div>
-          </div>
+          </section>
 
-          <div className={s.faixa}>
-            <div className={s.setores}>
-              <Setor
-                icone={<IconeAgenda />}
-                nome="Clínicas e estúdios"
-                pergunta="Tem horário sábado de manhã?"
-                resposta="Sábado das 8h às 12h. Tenho 9h e 10h30 livres. Qual prefere?"
-                atraso={0}
-              />
-              <Setor
-                icone={<IconeCaixa />}
-                nome="Lojas e e-commerce"
-                pergunta="Meu pedido já saiu?"
-                resposta="Pedido 4471 saiu ontem às 16h. Chega até quinta."
-                atraso={70}
-              />
-              <Setor
-                icone={<IconeCorte />}
-                nome="Salões e barbearias"
-                pergunta="Quanto tá o corte com barba?"
-                resposta="Corte e barba R$ 75. Quer que eu marque com o Diego?"
-                atraso={140}
-              />
-              <Setor
-                icone={<IconeAlvo />}
-                nome="Times de vendas"
-                pergunta="Queria saber sobre o serviço de vocês"
-                resposta="Claro! Me conta o tamanho da sua operação que eu chamo alguém."
-                atraso={210}
-              />
-              <Setor
-                icone={<IconeChave />}
-                nome="Imobiliárias"
-                pergunta="Ainda tem o apê do anúncio?"
-                resposta="O da Rua Palmeiras está disponível. Quer agendar visita?"
-                atraso={280}
-              />
-              <Setor
-                icone={<IconePrato />}
-                nome="Restaurantes e delivery"
-                pergunta="Vocês entregam no Zona 7?"
-                resposta="Entregamos! Taxa R$ 6, hoje saindo em 40 minutos."
-                atraso={350}
-              />
+          <section className={s.secao}>
+            <div className={s.faixa}>
+              <div className={s.cabecaSecao}>
+                <span className={s.olho} data-revela>
+                  Para quem é
+                </span>
+                <h2 className={`${s.tituloSecao} ${s.tituloSecaoCentro}`} data-revela data-como="desfoque" data-atraso="60">
+    Para quem atende no WhatsApp o dia inteiro
+                </h2>
+                <span className={`${s.risco} ${s.riscoCentro}`} data-revela data-atraso="90" aria-hidden />
+              </div>
             </div>
-          </div>
 
-          <div className={s.faixa}>
-            <p className={`${s.chamada} ${s.chamadaCentro}`} style={{ marginTop: 34 }} data-revela>
-              Ele não emite nota fiscal, não controla estoque e não substitui o seu sistema de
-              gestão. Cuida do atendimento, e cuida inteiro.
-            </p>
-          </div>
-        </section>
+            <div className={s.faixa}>
+              <div className={s.setores}>
+                <Setor
+                  icone={<IconeAgenda />}
+                  nome="Clínicas e estúdios"
+                  pergunta="Tem horário sábado de manhã?"
+                  resposta="Sábado das 8h às 12h. Tenho 9h e 10h30 livres. Qual prefere?"
+                  atraso={0}
+                />
+                <Setor
+                  icone={<IconeCaixa />}
+                  nome="Lojas e e-commerce"
+                  pergunta="Meu pedido já saiu?"
+                  resposta="Pedido 4471 saiu ontem às 16h. Chega até quinta."
+                  atraso={70}
+                />
+                <Setor
+                  icone={<IconeCorte />}
+                  nome="Salões e barbearias"
+                  pergunta="Quanto tá o corte com barba?"
+                  resposta="Corte e barba R$ 75. Quer que eu marque com o Diego?"
+                  atraso={140}
+                />
+                <Setor
+                  icone={<IconeAlvo />}
+                  nome="Times de vendas"
+                  pergunta="Queria saber sobre o serviço de vocês"
+                  resposta="Claro! Me conta o tamanho da sua operação que eu chamo alguém."
+                  atraso={210}
+                />
+                <Setor
+                  icone={<IconeChave />}
+                  nome="Imobiliárias"
+                  pergunta="Ainda tem o apê do anúncio?"
+                  resposta="O da Rua Palmeiras está disponível. Quer agendar visita?"
+                  atraso={280}
+                />
+                <Setor
+                  icone={<IconePrato />}
+                  nome="Restaurantes e delivery"
+                  pergunta="Vocês entregam no Zona 7?"
+                  resposta="Entregamos! Taxa R$ 6, hoje saindo em 40 minutos."
+                  atraso={350}
+                />
+              </div>
+            </div>
 
-        <section className={s.secao} id="precos">
-          <div className={`${s.focoLuz} ${s.focoEsquerda}`} aria-hidden />
-          <div className={s.faixa}>
-            <div className={s.cabecaSecao}>
-              <span className={s.olho} data-revela>
-                Preços
-              </span>
-              <h2 className={`${s.tituloSecao} ${s.tituloSecaoCentro}`} data-revela data-como="desfoque" data-atraso="60">
-Um preço que cabe antes de dar resultado
-              </h2>
-              <span className={`${s.risco} ${s.riscoCentro}`} data-revela data-atraso="90" aria-hidden />
-              <p className={`${s.chamada} ${s.chamadaCentro}`} data-revela data-atraso="100">
-                Sem fidelidade e sem cobrar por atendente. O que muda entre os planos é
-                quantas conversas cabem no seu mês.
+            <div className={s.faixa}>
+              <p className={`${s.chamada} ${s.chamadaCentro}`} style={{ marginTop: 34 }} data-revela>
+                Ele não emite nota fiscal, não controla estoque e não substitui o seu sistema de
+                gestão. Cuida do atendimento, e cuida inteiro.
               </p>
             </div>
+          </section>
 
-            <div className={s.planos}>
-              {PLANOS.map((plano, indice) => (
-                <Plano
-                  key={plano.id}
-                  nome={plano.nome}
-                  preco={String(plano.preco)}
-                  anual={anualDoPlano(plano)}
-                  resumo={plano.resumo}
-                  itens={plano.itens}
-                  destaque={plano.id === PLANO_EM_DESTAQUE}
-                  atraso={indice * 80}
+          <section className={s.secao} id="precos">
+            <div className={`${s.focoLuz} ${s.focoEsquerda}`} aria-hidden />
+            <div className={s.faixa}>
+              <div className={s.cabecaSecao}>
+                <span className={s.olho} data-revela>
+                  Preços
+                </span>
+                <h2 className={`${s.tituloSecao} ${s.tituloSecaoCentro}`} data-revela data-como="desfoque" data-atraso="60">
+  Um preço que cabe antes de dar resultado
+                </h2>
+                <span className={`${s.risco} ${s.riscoCentro}`} data-revela data-atraso="90" aria-hidden />
+                <p className={`${s.chamada} ${s.chamadaCentro}`} data-revela data-atraso="100">
+                  Sem fidelidade e sem cobrar por atendente. O que muda entre os planos é
+                  quantas conversas cabem no seu mês.
+                </p>
+              </div>
+
+              <div className={s.planos}>
+                {PLANOS.map((plano, indice) => (
+                  <Plano
+                    key={plano.id}
+                    nome={plano.nome}
+                    preco={String(plano.preco)}
+                    anual={anualDoPlano(plano)}
+                    resumo={plano.resumo}
+                    itens={plano.itens}
+                    destaque={plano.id === PLANO_EM_DESTAQUE}
+                    atraso={indice * 80}
+                  />
+                ))}
+              </div>
+
+              <p className={s.notaPreco}>
+                {O_QUE_E_CONVERSA} No mensal não há fidelidade; no anual você paga
+                o ano de uma vez, com desconto. Sem taxa de instalação. Fazemos a conta da tarifa da Meta com o seu volume antes de você
+                assinar.
+              </p>
+            </div>
+          </section>
+
+          <section className={s.secao} id="duvidas">
+            <div className={s.faixa}>
+              <div className={s.cabecaSecao}>
+                <span className={s.olho} data-revela>
+                  Dúvidas
+                </span>
+                <h2 className={`${s.tituloSecao} ${s.tituloSecaoCentro}`} data-revela data-como="desfoque" data-atraso="60">
+  O que perguntam antes de assinar
+                </h2>
+                <span className={`${s.risco} ${s.riscoCentro}`} data-revela data-atraso="90" aria-hidden />
+              </div>
+
+              <div className={s.perguntas}>
+                <Pergunta
+                  pergunta="Vou perder o meu número atual?"
+                  resposta="Não. O atendimento acontece no seu próprio número, o mesmo que está no cartão e no Google. Você autoriza a conexão dentro do WhatsApp e desfaz quando quiser."
                 />
-              ))}
+                <Pergunta
+                  pergunta="Preciso saber programar?"
+                  resposta="Não. O fluxo se monta arrastando blocos, e configuramos o primeiro com você. Quem ajusta depois é quem atende, não um técnico."
+                />
+                <Pergunta
+                  pergunta="A IA pode inventar coisa e falar besteira com meu cliente?"
+                  resposta="Ela responde dentro dos limites que você escrever e chama uma pessoa quando não sabe, em vez de arriscar. Você também pode rodar o produto inteiro sem IA. Muitos fluxos não precisam dela."
+                />
+                <Pergunta
+                  pergunta="Continuo conseguindo atender pessoalmente?"
+                  resposta="Sim, e é para isso que ele existe. Quando a conversa sai do previsto, ela cai na caixa de entrada com o histórico junto. A pessoa assume no meio e o cliente não repete nada."
+                />
+                <Pergunta
+                  pergunta="Quanto tempo até estar no ar?"
+                  resposta="A autorização do número na Meta costuma levar alguns dias. O primeiro fluxo desenhamos juntos numa conversa de uma hora."
+                />
+                <Pergunta
+                  pergunta="E os meus dados?"
+                  resposta="As conversas ficam na sua conta e cada empresa vê só as próprias. O que fazemos com dado pessoal está na política de privacidade, sem letra miúda."
+                />
+              </div>
             </div>
-
-            <p className={s.notaPreco}>
-              {O_QUE_E_CONVERSA} No mensal não há fidelidade; no anual você paga
-              o ano de uma vez, com desconto. Sem taxa de instalação. Fazemos a conta da tarifa da Meta com o seu volume antes de você
-              assinar.
-            </p>
-          </div>
-        </section>
-
-        <section className={s.secao} id="duvidas">
-          <div className={s.faixa}>
-            <div className={s.cabecaSecao}>
-              <span className={s.olho} data-revela>
-                Dúvidas
-              </span>
-              <h2 className={`${s.tituloSecao} ${s.tituloSecaoCentro}`} data-revela data-como="desfoque" data-atraso="60">
-O que perguntam antes de assinar
-              </h2>
-              <span className={`${s.risco} ${s.riscoCentro}`} data-revela data-atraso="90" aria-hidden />
-            </div>
-
-            <div className={s.perguntas}>
-              <Pergunta
-                pergunta="Vou perder o meu número atual?"
-                resposta="Não. O atendimento acontece no seu próprio número, o mesmo que está no cartão e no Google. Você autoriza a conexão dentro do WhatsApp e desfaz quando quiser."
-              />
-              <Pergunta
-                pergunta="Preciso saber programar?"
-                resposta="Não. O fluxo se monta arrastando blocos, e configuramos o primeiro com você. Quem ajusta depois é quem atende, não um técnico."
-              />
-              <Pergunta
-                pergunta="A IA pode inventar coisa e falar besteira com meu cliente?"
-                resposta="Ela responde dentro dos limites que você escrever e chama uma pessoa quando não sabe, em vez de arriscar. Você também pode rodar o produto inteiro sem IA. Muitos fluxos não precisam dela."
-              />
-              <Pergunta
-                pergunta="Continuo conseguindo atender pessoalmente?"
-                resposta="Sim, e é para isso que ele existe. Quando a conversa sai do previsto, ela cai na caixa de entrada com o histórico junto. A pessoa assume no meio e o cliente não repete nada."
-              />
-              <Pergunta
-                pergunta="Quanto tempo até estar no ar?"
-                resposta="A autorização do número na Meta costuma levar alguns dias. O primeiro fluxo desenhamos juntos numa conversa de uma hora."
-              />
-              <Pergunta
-                pergunta="E os meus dados?"
-                resposta="As conversas ficam na sua conta e cada empresa vê só as próprias. O que fazemos com dado pessoal está na política de privacidade, sem letra miúda."
-              />
-            </div>
-          </div>
-        </section>
+          </section>
+        </div>
 
         <section className={s.faixa} id="conversar">
           <div className={s.fechamento}>

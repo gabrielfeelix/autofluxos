@@ -17,44 +17,61 @@
 /* Tres vezes o mesmo nome: ver o comentario dentro do bloco. */
 .pagina.pagina.pagina {
   /*
-   * **A landing continua escura, e agora ela diz isso em vez de herdar.**
-   *
-   * Os tokens de `globals.css` viraram claros: o painel é branco, fundo sólido
-   * e azul de marca. Esta página não acompanhou de propósito, ela é peça de
-   * venda, com partículas, brilho e cursor próprio, e nada disso existe sem
-   * fundo escuro. Herdar o claro não a deixaria clara, deixaria ilegível.
-   *
-   * Os valores são exatamente os que o painel usava antes da virada. Ficam
-   * aqui, no escopo da página, porque é aqui que alguém que mexer no visual
-   * dela vai procurar, e porque assim a landing deixa de quebrar toda vez que
-   * o produto decide sua própria cor.
+   * **Mesma casca da landing** (`pagina-inicial.module.css`): cabeçalho e capa
+   * soltos no azul, o texto num quadro branco por cima. O degradê está escrito
+   * aqui para não seguir o tema escuro do painel. `--veu` é branco no azul e
+   * marinho no quadro, e toda borda translúcida sai dele.
    *
    * **O nome aparece três vezes no seletor** para a especificidade (0,3,0)
    * passar na frente do `:root[data-theme='escuro']` de `globals.css` (0,2,0).
-   * Sem isso, quem ligasse o tema escuro no painel e viesse para cá receberia
-   * metade desta paleta e metade da do produto, os dois escuros, e nenhum
-   * dos dois inteiro.
    */
-  color-scheme: dark;
-  --accent: #56d0f5;
-  --canvas: #080b10;
-  --canvas-deep: #070a0e;
-  --panel: #0e131c;
-  --ink: #e9eef5;
-  --soft: #b9c2d0;
-  --muted: #8a94a6;
-  --dim: #7d8799;
-  --line: rgba(255, 255, 255, 0.08);
-  --line-soft: rgba(255, 255, 255, 0.055);
-  --surface: rgba(255, 255, 255, 0.028);
-  --surface-hover: rgba(255, 255, 255, 0.05);
+  color-scheme: light;
+  --veu: 255 255 255;
+  --accent: #ffffff;
+  --sobre-accent: #1d4ed8;
+  --canvas: #1d4ed8;
+  --canvas-deep: rgb(255 255 255 / 0.1);
+  --panel: rgb(255 255 255 / 0.12);
+  --ink: #ffffff;
+  --soft: rgb(255 255 255 / 0.88);
+  --muted: rgb(255 255 255 / 0.78);
+  --dim: rgb(255 255 255 / 0.7);
+  --line: rgb(255 255 255 / 0.24);
+  --line-soft: rgb(255 255 255 / 0.12);
+  --surface: rgb(255 255 255 / 0.08);
+  --surface-hover: rgb(255 255 255 / 0.14);
 
   --largura: 1080px;
   --curva: cubic-bezier(0.44, 0, 0.56, 1);
   min-height: 100svh;
-  background: var(--canvas);
+  background:
+    var(--casca-fios),
+    linear-gradient(135deg, #1a3fb8 0%, #1d4ed8 45%, #3a6cf0 100%);
   color: var(--ink);
   overflow-x: clip;
+}
+
+/* O quadro branco do texto, com os tokens de papel. */
+.quadro {
+  --veu: 16 32 84;
+  --accent: #1d4ed8;
+  --sobre-accent: #ffffff;
+  --canvas: #ffffff;
+  --canvas-deep: #f5f7fc;
+  --panel: #ffffff;
+  --ink: #0c1838;
+  --soft: #344161;
+  --muted: #56617c;
+  --dim: #66708a;
+  --line: rgb(16 32 84 / 0.12);
+  --line-soft: rgb(16 32 84 / 0.07);
+  --surface: #f6f8fd;
+  --surface-hover: #eef2fb;
+  margin-inline: clamp(8px, 1.6vw, 24px);
+  border-radius: 32px;
+  background: #ffffff;
+  color: var(--ink);
+  box-shadow: var(--sombra-ilha);
 }
 
 .faixa {
@@ -69,7 +86,7 @@
   top: 0;
   z-index: 50;
   backdrop-filter: blur(14px);
-  background: color-mix(in srgb, var(--canvas) 78%, transparent);
+  background: rgb(29 78 216 / 0.92);
   border-bottom: 1px solid var(--line);
 }
 
@@ -134,18 +151,6 @@
   overflow: hidden;
 }
 
-.capaGrade {
-  position: absolute;
-  inset: 0;
-  z-index: -1;
-  background-image:
-    linear-gradient(var(--line-soft) 1px, transparent 1px),
-    linear-gradient(90deg, var(--line-soft) 1px, transparent 1px);
-  background-size: 64px 64px;
-  mask-image: radial-gradient(ellipse 70% 90% at 30% 0%, #000 10%, transparent 72%);
-  pointer-events: none;
-}
-
 .capaBrilho {
   position: absolute;
   left: 12%;
@@ -153,7 +158,7 @@
   z-index: -1;
   width: min(760px, 110vw);
   aspect-ratio: 1;
-  background: radial-gradient(circle, rgba(86, 208, 245, 0.11), transparent 62%);
+  background: radial-gradient(circle, rgb(var(--veu) / 0.11), transparent 62%);
   filter: blur(20px);
   pointer-events: none;
 }
@@ -200,8 +205,8 @@
   gap: 8px;
   padding: 7px 14px;
   border-radius: 999px;
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgb(var(--veu) / 0.08);
+  background: rgb(var(--veu) / 0.03);
   font-size: 12.5px;
   color: var(--soft);
 }
@@ -282,13 +287,13 @@
 
 .indiceLink:hover {
   color: var(--soft);
-  background: rgba(255, 255, 255, 0.03);
+  background: rgb(var(--veu) / 0.03);
 }
 
 .indiceAtivo {
   color: var(--ink);
   border-left-color: var(--accent);
-  background: rgba(255, 255, 255, 0.04);
+  background: rgb(var(--veu) / 0.04);
 }
 
 .indiceAtivo::before {
@@ -309,7 +314,7 @@
   overflow: hidden;
   padding: 28px 30px;
   border-radius: 18px;
-  border: 1px solid rgba(255, 255, 255, 0.06);
+  border: 1px solid rgb(var(--veu) / 0.06);
   background: var(--canvas-deep);
   scroll-margin-top: 96px;
   transition: border-color 0.4s var(--curva);
@@ -320,12 +325,12 @@
   content: '';
   position: absolute;
   inset: 0;
-  background: linear-gradient(114deg, rgba(255, 255, 255, 0.055) 0%, rgba(255, 255, 255, 0) 44%);
+  background: linear-gradient(114deg, rgb(var(--veu) / 0.055) 0%, rgb(var(--veu) / 0) 44%);
   pointer-events: none;
 }
 
 .secao:hover {
-  border-color: rgba(255, 255, 255, 0.11);
+  border-color: rgb(var(--veu) / 0.11);
 }
 
 .secao > * {
@@ -374,7 +379,7 @@
   text-underline-offset: 4px;
 }
 
-/* As listas viram itens com marcador próprio: o disco padrão some no escuro. */
+/* As listas viram itens com marcador próprio: o disco padrão some no fundo colorido. */
 .lista {
   display: grid;
   gap: 11px;
@@ -406,7 +411,7 @@
   margin-top: 20px;
   padding: 30px;
   border-radius: 18px;
-  border: 1px solid rgba(255, 255, 255, 0.06);
+  border: 1px solid rgb(var(--veu) / 0.06);
   background: var(--canvas-deep);
   text-align: center;
 }
@@ -426,7 +431,7 @@
   padding: 0 22px;
   border-radius: 12px;
   background: var(--accent);
-  color: #04202b;
+  color: var(--sobre-accent);
   font-size: 14.5px;
   font-weight: 600;
   text-decoration: none;

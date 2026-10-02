@@ -71,8 +71,8 @@ export function DerivaDeParticulas({ className }: { className?: string }) {
     let altura = 0
     let particulas: Particula[] = []
 
-    // O ciano do produto (`--accent`), em componentes para caber no rgba().
-    const COR = '86, 208, 245'
+    // Branco: a capa mora na casca azul e as partículas são os fios dela.
+    const COR = '255, 255, 255'
     /** Acima desta distância dois pontos não se ligam. */
     const ALCANCE = 158
     /** Até onde o cursor puxa. */

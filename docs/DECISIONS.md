@@ -110,3 +110,22 @@ Append-only. Cada entrada: data, decisão, porquê, onde está no código.
 - **Casca:** selo e cartão de estado tingidos (rose/amber/emerald/perigo...)
   soltos no azul viram pastilha clara com a cor do estado; `.quadro-seletor`
   (seletor de funil) é título branco no azul.
+
+## 02/out/2026: landing e páginas legais na casca azul
+
+- **"Não somos dark mode"** (Gabriel). A landing saiu da paleta escura com
+  ciano e foi para a casca azul do produto. Capa, fechamento e rodapé ficam
+  soltos no azul; o miolo de leitura (problema até dúvidas) fica num quadro
+  branco de cantos 32px por cima, como o quadro das telas da conta.
+  `src/app/page.tsx` (`s.quadro`), `src/app/(site)/pagina-inicial.module.css`.
+- **Um token muda de chão, não cem regras:** `--veu` é `255 255 255` no azul e
+  `16 32 84` no quadro; toda borda e superfície translúcida virou
+  `rgb(var(--veu) / a)`. Luz de cartão usa `--luz` (sempre branco), senão o
+  brilho vira sujeira cinza no papel.
+- **O degradê está escrito na página**, não lido de `--casca`: no tema escuro
+  do painel a casca vira marinho, e a página de venda não acompanha.
+- Saiu a grade de 64px da capa (dobrava com os fios). Partículas em branco.
+  Cursor azul com contorno branco, para aparecer nos dois chãos.
+- Privacidade, termos e exclusão de dados (`pagina-legal.tsx`,
+  `privacidade.module.css`) seguem o mesmo esquema: capa no azul, texto no
+  quadro branco.

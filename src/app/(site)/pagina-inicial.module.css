@@ -1,11 +1,16 @@
 /*
  * A landing pública do AutoFluxos.
  *
- * **Ela usa os tokens do painel de propósito.** Quem clica em "Entrar" tem que
- * sentir que continuou no mesmo lugar, a landing verde que existiu antes
- * dessa não era cor de produto nenhum, era a paleta da Verandi escurecida.
- * `--accent`, `--canvas` e `--panel` vêm de `globals.css` e mudam junto com o
- * app.
+ * **Ela mora na casca azul, a mesma de dentro do produto** (decisão de 02/out
+ * em `docs/DECISIONS.md`). Quem clica em "Entrar" tem que sentir que continuou
+ * no mesmo lugar. A capa, o fechamento e o rodapé ficam soltos no azul; o miolo
+ * que pede leitura (do problema às dúvidas) fica num quadro branco por cima,
+ * como o quadro das telas da conta.
+ *
+ * As cores são tokens que mudam de valor conforme o chão: `--veu` é o branco
+ * em componentes sobre o azul e o marinho dentro do quadro, e todo véu, borda
+ * e superfície translúcida da página sai dele. Uma regra de CSS escrita uma vez
+ * funciona nos dois chãos.
  *
  * O motion todo respeita `prefers-reduced-motion` no fim do arquivo: quem pede
  * para o sistema parar de animar recebe a página parada, não uma versão
@@ -15,37 +20,34 @@
 /* Tres vezes o mesmo nome: ver o comentario dentro do bloco. */
 .pagina.pagina.pagina {
   /*
-   * **A landing continua escura, e agora ela diz isso em vez de herdar.**
-   *
-   * Os tokens de `globals.css` viraram claros: o painel é branco, fundo sólido
-   * e azul de marca. Esta página não acompanhou de propósito, ela é peça de
-   * venda, com partículas, brilho e cursor próprio, e nada disso existe sem
-   * fundo escuro. Herdar o claro não a deixaria clara, deixaria ilegível.
-   *
-   * Os valores são exatamente os que o painel usava antes da virada. Ficam
-   * aqui, no escopo da página, porque é aqui que alguém que mexer no visual
-   * dela vai procurar, e porque assim a landing deixa de quebrar toda vez que
-   * o produto decide sua própria cor.
+   * **A landing não segue o tema escuro do painel.** A marca é o azul; à noite
+   * o painel escurece a casca para marinho, mas a página de venda é uma só.
+   * Por isso o degradê está escrito aqui e não lido de `--casca`.
    *
    * **O nome aparece três vezes no seletor** para a especificidade (0,3,0)
    * passar na frente do `:root[data-theme='escuro']` de `globals.css` (0,2,0).
-   * Sem isso, quem ligasse o tema escuro no painel e viesse para cá receberia
-   * metade desta paleta e metade da do produto, os dois escuros, e nenhum
-   * dos dois inteiro.
    */
-  color-scheme: dark;
-  --accent: #56d0f5;
-  --canvas: #080b10;
-  --canvas-deep: #070a0e;
-  --panel: #0e131c;
-  --ink: #e9eef5;
-  --soft: #b9c2d0;
-  --muted: #8a94a6;
-  --dim: #7d8799;
-  --line: rgba(255, 255, 255, 0.08);
-  --line-soft: rgba(255, 255, 255, 0.055);
-  --surface: rgba(255, 255, 255, 0.028);
-  --surface-hover: rgba(255, 255, 255, 0.05);
+  color-scheme: light;
+  --lp-casca: linear-gradient(135deg, #1a3fb8 0%, #1d4ed8 45%, #3a6cf0 100%);
+  --azul: #1d4ed8;
+  --veu: 255 255 255;
+  /* A luz dos cartões e focos: branco nos dois chãos, senão vira sujeira cinza no quadro. */
+  --luz: 255 255 255;
+  --accent: #ffffff;
+  --accent-hover: #e8eefc;
+  --sobre-accent: #1d4ed8;
+  --canvas: #1d4ed8;
+  --canvas-deep: rgb(255 255 255 / 0.1);
+  --panel: rgb(255 255 255 / 0.12);
+  --ink: #ffffff;
+  --soft: rgb(255 255 255 / 0.88);
+  --muted: rgb(255 255 255 / 0.78);
+  --dim: rgb(255 255 255 / 0.7);
+  --line: rgb(255 255 255 / 0.24);
+  --line-soft: rgb(255 255 255 / 0.12);
+  --surface: rgb(255 255 255 / 0.08);
+  --surface-hover: rgb(255 255 255 / 0.14);
+  --sombra-janela: 0 40px 80px -40px rgb(8 20 70 / 0.7);
 
   --largura: 1200px;
   --raio: 20px;
@@ -53,9 +55,42 @@
      cubic-bezier(.44,0,.56,1) como padrão) e é simétrica: acelera e desacelera
      igual, que é o que faz o movimento parecer mecânico em vez de elástico. */
   --curva: cubic-bezier(0.44, 0, 0.56, 1);
-  background: var(--canvas);
+  background: var(--casca-fios), var(--lp-casca);
+  background-attachment: scroll;
   color: var(--ink);
   overflow-x: clip;
+}
+
+/*
+ * O quadro branco do miolo. Os mesmos tokens, com valores de papel: o véu vira
+ * marinho, o acento vira o azul da marca e o botão principal fica azul com
+ * texto branco, como dentro da conta.
+ */
+.quadro {
+  --veu: 16 32 84;
+  --accent: #1d4ed8;
+  --accent-hover: #1a43c0;
+  --sobre-accent: #ffffff;
+  --canvas: #ffffff;
+  --canvas-deep: #f5f7fc;
+  --panel: #ffffff;
+  --ink: #0c1838;
+  --soft: #344161;
+  --muted: #56617c;
+  --dim: #66708a;
+  --line: rgb(16 32 84 / 0.12);
+  --line-soft: rgb(16 32 84 / 0.07);
+  --surface: #f6f8fd;
+  --surface-hover: #eef2fb;
+  --sombra-janela: 0 40px 80px -48px rgb(16 32 84 / 0.35), 0 2px 8px rgb(16 32 84 / 0.06);
+  position: relative;
+  margin-inline: clamp(8px, 1.6vw, 24px);
+  border-radius: 32px;
+  background: #ffffff;
+  color: var(--ink);
+  box-shadow: var(--sombra-ilha);
+  isolation: isolate;
+  overflow: clip;
 }
 
 .faixa {
@@ -63,35 +98,14 @@
   margin-inline: auto;
 }
 
-/* ─────────────────────────── grid de fundo ─────────────────────────── */
-
-/*
- * O grid é do <body> da capa, não uma imagem: duas linhas repetidas de 1px em
- * 64px. A máscara radial apaga as bordas, senão o padrão bate no fim da tela
- * com uma linha reta e denuncia que é CSS.
- */
-.grade {
-  position: absolute;
-  inset: 0;
-  background-image:
-    linear-gradient(var(--line-soft) 1px, transparent 1px),
-    linear-gradient(90deg, var(--line-soft) 1px, transparent 1px);
-  background-size: 64px 64px;
-  mask-image: radial-gradient(ellipse 80% 60% at 50% 30%, #000 20%, transparent 75%);
-  pointer-events: none;
-  z-index: -1;
-  opacity: 0.5;
-}
-
-
-/* Focos soltos no meio da página, para o preto nunca ficar liso. */
+/* Focos soltos no meio da página, para o fundo nunca ficar liso. */
 .focoLuz {
   position: absolute;
   width: min(760px, 100vw);
   aspect-ratio: 1;
   border-radius: 50%;
   pointer-events: none;
-  background: radial-gradient(circle, rgba(255, 255, 255, 0.055), transparent 62%);
+  background: radial-gradient(circle, rgb(var(--luz) / 0.055), transparent 62%);
   filter: blur(20px);
 }
 
@@ -112,7 +126,7 @@
   top: 0;
   z-index: 50;
   backdrop-filter: blur(14px);
-  background: color-mix(in srgb, var(--canvas) 72%, transparent);
+  background: rgb(29 78 216 / 0.92);
   border-bottom: 1px solid transparent;
   transition: border-color 0.3s var(--curva);
 }
@@ -197,12 +211,12 @@
 
 .botaoPrincipal {
   background: var(--accent);
-  color: #04202b;
+  color: var(--sobre-accent);
 }
 
 .botaoPrincipal:hover {
   transform: translateY(-2px);
-  background: color-mix(in srgb, var(--accent) 85%, #fff);
+  background: var(--accent-hover);
 }
 
 .botaoVazado {
@@ -263,8 +277,7 @@
   z-index: -1;
   pointer-events: none;
   background:
-    radial-gradient(ellipse 62% 52% at 50% 48%, rgba(8, 11, 16, 0.94), rgba(8, 11, 16, 0.5) 62%, transparent 82%),
-    linear-gradient(180deg, var(--canvas) 0%, transparent 22%, transparent 74%, var(--canvas) 100%);
+    radial-gradient(ellipse 58% 50% at 50% 46%, rgb(26 63 184 / 0.55), rgb(26 63 184 / 0.18) 62%, transparent 82%);
 }
 
 .capaInterno {
@@ -305,7 +318,7 @@
   font-weight: 600;
 }
 
-/* A segunda linha do título em ciano: o olho para nela, e é a metade que
+/* A segunda linha do título no acento: o olho para nela, e é a metade que
    carrega a promessa ("até a hora de não responder"). */
 .tituloDestaque {
   color: var(--accent);
@@ -520,13 +533,13 @@
 /*
  * O card do knotch, e a graça dele são **duas camadas de luz**, não uma cor.
  *
- * O fundo é quase preto; por cima vem um degradê diagonal que sobe para o
+ * O fundo é a superfície; por cima vem um degradê diagonal que sobe para o
  * branco translúcido num canto só. Isso lê como textura, luz batendo de
  * viés, em vez de "caixa cinza". O `::after` acrescenta um foco no topo, que
  * é o que dá a impressão de volume.
  *
  * Os valores vieram do bundle do knotch: `linear-gradient(114deg, rgba(255,
- * 255,255,.2), transparent)` e borda `rgba(255,255,255,.06)`.
+ * 255,255,.2), transparent)` e borda `rgb(var(--veu) / .06)`.
  */
 .caixa {
   position: relative;
@@ -534,7 +547,7 @@
   grid-column: span 2;
   padding: 26px;
   border-radius: var(--raio);
-  border: 1px solid rgba(255, 255, 255, 0.06);
+  border: 1px solid rgb(var(--veu) / 0.06);
   background: var(--canvas-deep);
   display: flex;
   flex-direction: column;
@@ -570,7 +583,7 @@
   content: '';
   position: absolute;
   inset: 0;
-  background: linear-gradient(114deg, rgba(255, 255, 255, 0.11) 0%, rgba(255, 255, 255, 0) 46%);
+  background: linear-gradient(114deg, rgb(var(--luz) / 0.11) 0%, rgb(var(--luz) / 0) 46%);
   pointer-events: none;
   transition: opacity 0.4s var(--curva);
 }
@@ -580,12 +593,12 @@
   content: '';
   position: absolute;
   inset: 0;
-  background: radial-gradient(58% 46% at 50% 0%, rgba(255, 255, 255, 0.09), transparent 72%);
+  background: radial-gradient(58% 46% at 50% 0%, rgb(var(--luz) / 0.09), transparent 72%);
   pointer-events: none;
 }
 
 .caixa:hover {
-  border-color: rgba(255, 255, 255, 0.14);
+  border-color: rgb(var(--veu) / 0.14);
   transform: translateY(-3px);
 }
 
@@ -659,8 +672,8 @@
   background: linear-gradient(
     180deg,
     transparent,
-    rgba(255, 255, 255, 0.11) 22%,
-    rgba(255, 255, 255, 0.11) 78%,
+    rgb(var(--veu) / 0.11) 22%,
+    rgb(var(--veu) / 0.11) 78%,
     transparent
   );
 }
@@ -749,7 +762,7 @@
   overflow: hidden;
   padding: 22px;
   border-radius: var(--raio);
-  border: 1px solid rgba(255, 255, 255, 0.06);
+  border: 1px solid rgb(var(--veu) / 0.06);
   background: var(--canvas-deep);
   transition:
     border-color 0.4s var(--curva),
@@ -760,7 +773,7 @@
   content: '';
   position: absolute;
   inset: 0;
-  background: linear-gradient(114deg, rgba(255, 255, 255, 0.09) 0%, rgba(255, 255, 255, 0) 44%);
+  background: linear-gradient(114deg, rgb(var(--luz) / 0.09) 0%, rgb(var(--luz) / 0) 44%);
   pointer-events: none;
 }
 
@@ -768,12 +781,12 @@
   content: '';
   position: absolute;
   inset: 0;
-  background: radial-gradient(60% 40% at 50% 0%, rgba(255, 255, 255, 0.07), transparent 70%);
+  background: radial-gradient(60% 40% at 50% 0%, rgb(var(--luz) / 0.07), transparent 70%);
   pointer-events: none;
 }
 
 .passo:hover {
-  border-color: rgba(255, 255, 255, 0.14);
+  border-color: rgb(var(--veu) / 0.14);
   transform: translateY(-3px);
 }
 
@@ -786,8 +799,8 @@
   margin-bottom: 16px;
   padding: 4px 11px;
   border-radius: 999px;
-  border: 1px solid rgba(255, 255, 255, 0.09);
-  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgb(var(--veu) / 0.09);
+  background: rgb(var(--veu) / 0.04);
   font-family: var(--font-jetbrains-mono), ui-monospace, monospace;
   font-size: 11px;
   letter-spacing: 0.06em;
@@ -840,7 +853,7 @@
   overflow: hidden;
   padding: 30px 28px;
   border-radius: var(--raio);
-  border: 1px solid rgba(255, 255, 255, 0.06);
+  border: 1px solid rgb(var(--veu) / 0.06);
   background: var(--canvas-deep);
   transition:
     border-color 0.4s var(--curva),
@@ -851,7 +864,7 @@
   content: '';
   position: absolute;
   inset: 0;
-  background: linear-gradient(114deg, rgba(255, 255, 255, 0.08) 0%, rgba(255, 255, 255, 0) 44%);
+  background: linear-gradient(114deg, rgb(var(--luz) / 0.08) 0%, rgb(var(--luz) / 0) 44%);
   pointer-events: none;
 }
 
@@ -864,22 +877,22 @@
   transform: translateY(-3px);
 }
 
-/* O plano do meio é o que queremos vender: borda ciano e um degradê de fundo
+/* O plano do meio é o que queremos vender: borda no acento e um degradê de fundo
    que os outros dois não têm. */
 /*
  * O plano do meio, e o destaque vem de **luz**, não de cor chapada: um foco
- * branco descendo do topo, que é o truque do knotch. Chapar ciano no fundo
+ * branco descendo do topo, que é o truque do knotch. Chapar o acento no fundo
  * empurraria o preço para o segundo plano; a luz faz o contrário.
  */
 .planoDestaque {
-  border-color: rgba(255, 255, 255, 0.16);
+  border-color: rgb(var(--veu) / 0.16);
 }
 
 .planoDestaque::after {
   content: '';
   position: absolute;
   inset: 0;
-  background: radial-gradient(62% 44% at 50% 0%, rgba(255, 255, 255, 0.13), transparent 74%);
+  background: radial-gradient(62% 44% at 50% 0%, rgb(var(--luz) / 0.13), transparent 74%);
   pointer-events: none;
 }
 
@@ -894,7 +907,7 @@
   padding: 3px 11px;
   border-radius: 999px;
   background: var(--accent);
-  color: #04202b;
+  color: var(--sobre-accent);
   font-size: 11px;
   font-weight: 700;
   letter-spacing: 0.05em;
@@ -995,7 +1008,7 @@
 */
 .planoItemHerda {
   font-weight: 600;
-  color: var(--strong, #fff);
+  color: var(--ink);
 }
 
 .planoCheque {
@@ -1029,14 +1042,14 @@
 
 .pergunta {
   border-radius: 15px;
-  border: 1px solid rgba(255, 255, 255, 0.06);
+  border: 1px solid rgb(var(--veu) / 0.06);
   background: var(--canvas-deep);
   overflow: hidden;
   transition: border-color 0.3s var(--curva);
 }
 
 .pergunta[open] {
-  border-color: rgba(255, 255, 255, 0.14);
+  border-color: rgb(var(--veu) / 0.14);
 }
 
 .perguntaTitulo {
@@ -1115,13 +1128,13 @@
   background:
     radial-gradient(
       ellipse 60% 100% at 50% 100%,
-      rgba(86, 208, 245, 0.13),
-      rgba(86, 208, 245, 0.05) 42%,
+      color-mix(in srgb, var(--accent) 13%, transparent),
+      color-mix(in srgb, var(--accent) 5%, transparent) 42%,
       transparent 72%
     ),
     radial-gradient(
       ellipse 44% 80% at 50% 100%,
-      rgba(255, 255, 255, 0.08),
+      rgb(var(--veu) / 0.08),
       transparent 66%
     );
   pointer-events: none;
@@ -1242,8 +1255,8 @@
   gap: 10px;
   padding: 11px 13px;
   border-radius: 11px;
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  background: rgba(255, 255, 255, 0.035);
+  border: 1px solid rgb(var(--veu) / 0.08);
+  background: rgb(var(--veu) / 0.035);
   font-size: 12.5px;
   color: var(--soft);
   animation: acender 4s var(--curva) infinite;
@@ -1261,9 +1274,9 @@
   0%,
   58%,
   100% {
-    border-color: rgba(255, 255, 255, 0.08);
-    background: rgba(255, 255, 255, 0.035);
-    box-shadow: 0 0 0 rgba(86, 208, 245, 0);
+    border-color: rgb(var(--veu) / 0.08);
+    background: rgb(var(--veu) / 0.035);
+    box-shadow: 0 0 0 color-mix(in srgb, var(--accent) 0%, transparent);
     transform: translateX(0);
   }
   18%,
@@ -1288,7 +1301,7 @@
   position: relative;
   height: 3px;
   border-radius: 2px;
-  background: rgba(255, 255, 255, 0.1);
+  background: rgb(var(--veu) / 0.1);
   flex: 1;
   overflow: hidden;
 }
@@ -1338,8 +1351,8 @@
   gap: 10px;
   padding: 10px 12px;
   border-radius: 10px;
-  border: 1px solid rgba(255, 255, 255, 0.07);
-  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgb(var(--veu) / 0.07);
+  background: rgb(var(--veu) / 0.03);
   animation: resolver 5s var(--curva) infinite;
 }
 
@@ -1360,7 +1373,7 @@
   6% {
     opacity: 1;
     transform: none;
-    border-color: rgba(255, 255, 255, 0.07);
+    border-color: rgb(var(--veu) / 0.07);
   }
   12% {
     opacity: 1;
@@ -1371,12 +1384,12 @@
   90% {
     opacity: 0.22;
     transform: translateX(14px);
-    border-color: rgba(255, 255, 255, 0.04);
+    border-color: rgb(var(--veu) / 0.04);
   }
   100% {
     opacity: 1;
     transform: none;
-    border-color: rgba(255, 255, 255, 0.07);
+    border-color: rgb(var(--veu) / 0.07);
   }
 }
 
@@ -1384,7 +1397,7 @@
   width: 22px;
   height: 22px;
   border-radius: 50%;
-  background: rgba(255, 255, 255, 0.1);
+  background: rgb(var(--veu) / 0.1);
   flex: none;
 }
 
@@ -1397,12 +1410,12 @@
 .barraFila {
   height: 5px;
   border-radius: 3px;
-  background: rgba(255, 255, 255, 0.13);
+  background: rgb(var(--veu) / 0.13);
 }
 
 .barraFilaCurta {
   width: 55%;
-  background: rgba(255, 255, 255, 0.07);
+  background: rgb(var(--veu) / 0.07);
 }
 
 .selinhoFila {
@@ -1484,7 +1497,7 @@
   width: 6px;
   height: 6px;
   border-radius: 50%;
-  background: rgba(255, 255, 255, 0.3);
+  background: rgb(var(--veu) / 0.3);
   animation: pensar 1.4s ease-in-out infinite;
 }
 
@@ -1515,8 +1528,8 @@
   max-width: 250px;
   padding: 16px;
   border-radius: 14px;
-  border: 1px solid rgba(255, 255, 255, 0.07);
-  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgb(var(--veu) / 0.07);
+  background: rgb(var(--veu) / 0.03);
 }
 
 .fichaTopo {
@@ -1524,7 +1537,7 @@
   align-items: center;
   gap: 10px;
   padding-bottom: 12px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  border-bottom: 1px solid rgb(var(--veu) / 0.06);
 }
 
 .fichaAvatar {
@@ -1550,7 +1563,7 @@
 .etiqueta {
   padding: 3px 9px;
   border-radius: 999px;
-  border: 1px solid rgba(255, 255, 255, 0.09);
+  border: 1px solid rgb(var(--veu) / 0.09);
   font-size: 10.5px;
   color: var(--muted);
   animation: aparecer 4s var(--curva) infinite;
@@ -1597,8 +1610,8 @@
   width: 44px;
   height: 44px;
   border-radius: 13px;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgb(var(--veu) / 0.1);
+  background: rgb(var(--veu) / 0.05);
   color: var(--soft);
   flex: none;
   z-index: 1;
@@ -1614,9 +1627,9 @@
   0%,
   70%,
   100% {
-    border-color: rgba(255, 255, 255, 0.1);
+    border-color: rgb(var(--veu) / 0.1);
     color: var(--soft);
-    box-shadow: 0 0 0 rgba(86, 208, 245, 0);
+    box-shadow: 0 0 0 color-mix(in srgb, var(--accent) 0%, transparent);
   }
   12%,
   32% {
@@ -1630,7 +1643,7 @@
   position: relative;
   flex: 1;
   height: 1px;
-  background: rgba(255, 255, 255, 0.12);
+  background: rgb(var(--veu) / 0.12);
   overflow: hidden;
 }
 
@@ -1658,7 +1671,7 @@
 
 .janela {
   border-radius: 14px;
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  border: 1px solid rgb(var(--veu) / 0.08);
   background: var(--canvas-deep);
   overflow: hidden;
 }
@@ -1668,15 +1681,15 @@
   align-items: center;
   gap: 6px;
   padding: 10px 13px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
-  background: rgba(255, 255, 255, 0.02);
+  border-bottom: 1px solid rgb(var(--veu) / 0.06);
+  background: rgb(var(--veu) / 0.02);
 }
 
 .janelaPonto {
   width: 7px;
   height: 7px;
   border-radius: 50%;
-  background: rgba(255, 255, 255, 0.14);
+  background: rgb(var(--veu) / 0.14);
 }
 
 .janelaTitulo {
@@ -1704,7 +1717,7 @@
   flex: 1;
   height: 5px;
   border-radius: 3px;
-  background: rgba(255, 255, 255, 0.07);
+  background: rgb(var(--veu) / 0.07);
   overflow: hidden;
 }
 
@@ -1796,7 +1809,7 @@
   gap: 10px 30px;
   margin-top: 32px;
   padding-top: 22px;
-  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  border-top: 1px solid rgb(var(--veu) / 0.06);
 }
 
 .tira {
@@ -1863,17 +1876,17 @@
   position: relative;
   margin-top: 44px;
   border-radius: 18px;
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  border: 1px solid rgb(var(--veu) / 0.08);
   background: var(--canvas-deep);
   overflow: hidden;
-  box-shadow: 0 50px 100px -40px rgba(0, 0, 0, 0.9);
+  box-shadow: var(--sombra-janela);
 }
 
 .desktop::after {
   content: '';
   position: absolute;
   inset: 0;
-  background: linear-gradient(114deg, rgba(255, 255, 255, 0.055) 0%, rgba(255, 255, 255, 0) 42%);
+  background: linear-gradient(114deg, rgb(var(--luz) / 0.055) 0%, rgb(var(--luz) / 0) 42%);
   pointer-events: none;
 }
 
@@ -1882,15 +1895,15 @@
   align-items: center;
   gap: 7px;
   padding: 11px 15px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
-  background: rgba(255, 255, 255, 0.022);
+  border-bottom: 1px solid rgb(var(--veu) / 0.06);
+  background: rgb(var(--veu) / 0.022);
 }
 
 .desktopEndereco {
   margin-left: 10px;
   padding: 3px 12px;
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.04);
+  background: rgb(var(--veu) / 0.04);
   font-family: var(--font-jetbrains-mono), ui-monospace, monospace;
   font-size: 11px;
   color: var(--dim);
@@ -1923,7 +1936,7 @@
 /* ── coluna da esquerda: as conversas ── */
 
 .colunaLista {
-  border-right: 1px solid rgba(255, 255, 255, 0.06);
+  border-right: 1px solid rgb(var(--veu) / 0.06);
   padding: 14px 12px;
   display: grid;
   gap: 4px;
@@ -1961,8 +1974,8 @@
 }
 
 .itemListaAtivo {
-  background: rgba(255, 255, 255, 0.05);
-  border-color: rgba(255, 255, 255, 0.09);
+  background: rgb(var(--veu) / 0.05);
+  border-color: rgb(var(--veu) / 0.09);
 }
 
 .avatarLista {
@@ -1971,7 +1984,7 @@
   width: 30px;
   height: 30px;
   border-radius: 50%;
-  background: rgba(255, 255, 255, 0.07);
+  background: rgb(var(--veu) / 0.07);
   font-size: 11px;
   font-weight: 600;
   color: var(--soft);
@@ -2039,7 +2052,7 @@
   align-items: center;
   gap: 11px;
   padding: 14px 18px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  border-bottom: 1px solid rgb(var(--veu) / 0.06);
 }
 
 .threadNome {
@@ -2059,8 +2072,8 @@
   margin-left: auto;
   padding: 5px 12px;
   border-radius: 999px;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgb(var(--veu) / 0.1);
+  background: rgb(var(--veu) / 0.04);
   font-size: 11.5px;
   color: var(--soft);
 }
@@ -2079,15 +2092,15 @@
   align-items: center;
   gap: 10px;
   padding: 13px 18px;
-  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  border-top: 1px solid rgb(var(--veu) / 0.06);
 }
 
 .campoFalso {
   flex: 1;
   padding: 9px 14px;
   border-radius: 999px;
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgb(var(--veu) / 0.08);
+  background: rgb(var(--veu) / 0.03);
   font-size: 12.5px;
   color: var(--dim);
 }
@@ -2099,14 +2112,14 @@
   height: 34px;
   border-radius: 50%;
   background: var(--accent);
-  color: #04202b;
+  color: var(--sobre-accent);
   flex: none;
 }
 
 /* ── coluna da direita: a ficha ── */
 
 .colunaFicha {
-  border-left: 1px solid rgba(255, 255, 255, 0.06);
+  border-left: 1px solid rgb(var(--veu) / 0.06);
   padding: 16px 15px;
   display: grid;
   gap: 18px;
@@ -2119,7 +2132,7 @@
   justify-items: center;
   text-align: center;
   padding-bottom: 16px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  border-bottom: 1px solid rgb(var(--veu) / 0.06);
 }
 
 .fichaAvatarGrande {
@@ -2183,15 +2196,18 @@
   width: 6px;
   height: 6px;
   border-radius: 50%;
-  background: var(--accent);
-  box-shadow: 0 0 12px color-mix(in srgb, var(--accent) 70%, transparent);
+  /* Azul com contorno branco: o cursor passa pelo azul e pelo quadro branco,
+     e precisa aparecer nos dois. */
+  background: var(--azul);
+  box-shadow: 0 0 0 1.5px #ffffff;
 }
 
 .cursorAnel {
   width: 30px;
   height: 30px;
   border-radius: 50%;
-  border: 1px solid color-mix(in srgb, var(--accent) 55%, transparent);
+  border: 1px solid rgb(29 78 216 / 0.55);
+  box-shadow: 0 0 0 1px rgb(255 255 255 / 0.6);
   /* A opacidade é do JS; a borda e o fundo transicionam sozinhos para o
      estado de hover não pular. Sem margem negativa: quem centraliza é o
      `translate(-50%, -50%)` do JS, e as duas juntas tiravam o anel do ponto. */
@@ -2208,8 +2224,8 @@
 .cursorAtivo {
   width: 46px;
   height: 46px;
-  border-color: color-mix(in srgb, var(--accent) 85%, transparent);
-  background: color-mix(in srgb, var(--accent) 12%, transparent);
+  border-color: rgb(29 78 216 / 0.85);
+  background: rgb(29 78 216 / 0.1);
 }
 
 @media (pointer: coarse), (prefers-reduced-motion: reduce) {
@@ -2242,7 +2258,7 @@
   overflow: hidden;
   padding: 24px;
   border-radius: var(--raio);
-  border: 1px solid rgba(255, 255, 255, 0.06);
+  border: 1px solid rgb(var(--veu) / 0.06);
   background: var(--canvas-deep);
   transition:
     border-color 0.45s var(--curva),
@@ -2253,12 +2269,12 @@
   content: '';
   position: absolute;
   inset: 0;
-  background: linear-gradient(114deg, rgba(255, 255, 255, 0.085) 0%, rgba(255, 255, 255, 0) 44%);
+  background: linear-gradient(114deg, rgb(var(--luz) / 0.085) 0%, rgb(var(--luz) / 0) 44%);
   pointer-events: none;
 }
 
 .setor:hover {
-  border-color: rgba(255, 255, 255, 0.15);
+  border-color: rgb(var(--veu) / 0.15);
   transform: translateY(-3px);
 }
 
@@ -2280,8 +2296,8 @@
   width: 34px;
   height: 34px;
   border-radius: 10px;
-  border: 1px solid rgba(255, 255, 255, 0.09);
-  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgb(var(--veu) / 0.09);
+  background: rgb(var(--veu) / 0.05);
   color: var(--accent);
   flex: none;
   transition: all 0.45s var(--curva);
@@ -2315,7 +2331,7 @@
 .setorPergunta {
   justify-self: start;
   max-width: 88%;
-  background: rgba(255, 255, 255, 0.045);
+  background: rgb(var(--veu) / 0.045);
   border-bottom-left-radius: 4px;
   color: var(--soft);
 }
@@ -2385,7 +2401,7 @@
   position: relative;
   overflow: hidden;
   margin-top: clamp(40px, 6vw, 80px);
-  border-top: 1px solid rgba(255, 255, 255, 0.07);
+  border-top: 1px solid rgb(var(--veu) / 0.07);
   padding-top: clamp(44px, 6vw, 70px);
 }
 
@@ -2443,8 +2459,8 @@
   gap: 8px;
   padding: 5px 12px 5px 10px;
   border-radius: 999px;
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgb(var(--veu) / 0.08);
+  background: rgb(var(--veu) / 0.03);
   font-size: 12px;
   color: var(--soft);
   justify-self: start;
@@ -2538,7 +2554,7 @@
   position: relative;
   margin-top: clamp(48px, 7vw, 84px);
   padding-bottom: clamp(14px, 2vw, 22px);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+  border-bottom: 1px solid rgb(var(--veu) / 0.07);
   overflow: hidden;
 }
 
@@ -2558,9 +2574,9 @@
   font-weight: 600;
   background: linear-gradient(
     180deg,
-    rgba(233, 238, 245, 0.92) 0%,
-    rgba(233, 238, 245, 0.24) 62%,
-    rgba(233, 238, 245, 0.05) 100%
+    color-mix(in srgb, var(--ink) 92%, transparent) 0%,
+    color-mix(in srgb, var(--ink) 24%, transparent) 62%,
+    color-mix(in srgb, var(--ink) 5%, transparent) 100%
   );
   -webkit-background-clip: text;
   background-clip: text;
@@ -2643,7 +2659,7 @@
 
 .progressoSegmento {
   border-radius: 2px;
-  background: rgba(255, 255, 255, 0.09);
+  background: rgb(var(--veu) / 0.09);
   transition:
     background 0.45s var(--curva),
     box-shadow 0.45s var(--curva);
@@ -2729,7 +2745,7 @@
   background: linear-gradient(
     114deg,
     transparent 30%,
-    rgba(255, 255, 255, 0.13) 46%,
+    rgb(var(--veu) / 0.13) 46%,
     transparent 62%
   );
   transform: translateX(-130%);

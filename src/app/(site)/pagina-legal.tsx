@@ -69,7 +69,6 @@ export function PaginaLegal({
       </header>
 
       <section className={s.capa}>
-        <div className={s.capaGrade} aria-hidden />
         <div className={s.capaBrilho} aria-hidden />
 
         <div className={s.faixa}>
@@ -92,6 +91,7 @@ export function PaginaLegal({
         </div>
       </section>
 
+      <div className={s.quadro}>
       <main className={`${s.faixa} ${s.corpo}`}>
         <nav className={s.indice} aria-label={rotuloDoIndice}>
           <span className={s.indiceTitulo}>Nesta página</span>
@@ -128,6 +128,7 @@ export function PaginaLegal({
           </div>
         </div>
       </main>
+      </div>
 
       <footer className={s.rodape}>
         <div className={s.faixa}>
