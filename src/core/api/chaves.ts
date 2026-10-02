@@ -48,7 +48,22 @@ export const ESCOPOS_DA_API = [
     explicacao: 'Começar uma automação publicada para um contato com a conversa aberta.',
     fase: 1,
   },
-] as const
+  {
+    chave: 'mensagens:enviar',
+    grupo: 'Mensagens',
+    rotulo: 'Enviar modelos aprovados',
+    explicacao: 'Mandar um modelo aprovado pela Meta, mesmo fora da janela de 24h: lembrete, confirmação, cobrança.',
+    aviso: 'Cada mensagem é cobrada pela Meta na conta do WhatsApp da organização.',
+    fase: 2,
+  },
+] as const satisfies readonly {
+  chave: string
+  grupo: string
+  rotulo: string
+  explicacao: string
+  aviso?: string
+  fase: number
+}[]
 
 export type EscopoDaApi = (typeof ESCOPOS_DA_API)[number]['chave']
 

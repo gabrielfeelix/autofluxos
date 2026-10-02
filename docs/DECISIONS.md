@@ -249,3 +249,21 @@ Append-only. Cada entrada: data, decisão, porquê, onde está no código.
   busca reais; abas da organização viraram `Alternador`.
 - **Inbox sem conversa pedida abre a do topo** (`502c5e0`): abrir a primeira que
   esperava atendente parecia "abriu a segunda".
+
+## 02/out/2026: API pública fase 2, enviar modelo aprovado
+
+- `POST /api/v1/mensagens/template` exige `Idempotency-Key` (tabela
+  `api_idempotencia`, `0121`, 24h). Resposta guardada **só quando enviou**
+  (202); qualquer recusa (teto, modelo pausado, Meta) libera a chave, porque
+  nada saiu e a repetição deve poder tentar. Mesma chave com outro corpo: 422
+  `idempotencia_conflito`; chamada simultânea: 409 `requisicao_em_andamento`.
+- Teto diário por organização: `clients.teto_api_diario` (nulo = 500), via
+  `consumirLimite` com o dia de Brasília na chave (zera à meia-noite, não 24h
+  depois do primeiro envio). Ajuste em admin > organização > Plano.
+- Modelo achado por **nome** (+ idioma quando há mais de um), status conferido
+  na hora; cabeçalho de mídia recusado com 422 `template_com_midia` (precisa de
+  upload, fica para depois). Quantidade de valores tem que bater com as
+  variáveis: preencher sozinho com "tudo bem", como faz a tela, mandaria texto
+  errado para o cliente de outro sistema.
+- Na conversa, a mensagem aparece com autor "API"; na linha do tempo,
+  `mensagem-enviada {modelo, via: 'API'}`.

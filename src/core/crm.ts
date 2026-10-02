@@ -414,7 +414,7 @@ export function comoFrase(evento: Evento): string {
     case 'mensagem-recebida':
       return 'mandou mensagem'
     case 'mensagem-enviada':
-      return 'recebeu mensagem'
+      return d.modelo ? `recebeu o modelo ${d.modelo}${d.via ? ` pela ${d.via}` : ''}` : 'recebeu mensagem'
     case 'mudou-de-etapa':
       return d.de ? `saiu de ${d.de} para ${d.para}` : `entrou em ${d.para}`
     case 'mudou-de-estagio':

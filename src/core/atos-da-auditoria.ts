@@ -43,6 +43,12 @@ export const VERBOS_DA_AUDITORIA: Record<string, string> = {
   redefiniu_senha: 'redefiniu a senha',
   ligou_duas_etapas: 'ligou a verificação em duas etapas',
   desligou_duas_etapas: 'desligou a verificação em duas etapas',
+  criou_chave_de_api: 'criou a chave de API',
+  revogou_chave_de_api: 'revogou a chave de API',
+  mudou_teto_da_api: 'mudou o teto diário de modelos pela API de',
+  criou_webhook_de_saida: 'criou o webhook de saída',
+  editou_webhook_de_saida: 'editou o webhook de saída',
+  apagou_webhook_de_saida: 'apagou o webhook de saída',
 }
 
 export function verboDoAto(acao: string): string {

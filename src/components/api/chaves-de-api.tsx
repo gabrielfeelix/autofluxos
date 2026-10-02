@@ -288,6 +288,9 @@ function CriarChave({
                           <span className="min-w-0">
                             <span className="block text-[13px] font-semibold">{escopo.rotulo}</span>
                             <span className="block text-[11.5px] leading-4 text-muted">{escopo.explicacao}</span>
+                            {'aviso' in escopo && (
+                              <span className="mt-1 block text-[11.5px] font-medium leading-4 text-aviso">{escopo.aviso}</span>
+                            )}
                             <code className="mt-0.5 block font-mono text-[10.5px] text-dim">{escopo.chave}</code>
                           </span>
                         </label>

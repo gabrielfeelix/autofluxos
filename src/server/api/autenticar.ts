@@ -43,6 +43,17 @@ export type CodigoDeErro =
   | 'automacao_pausada'
   | 'atendimento_humano'
   | 'ocupado'
+  | 'idempotencia_obrigatoria'
+  | 'idempotencia_conflito'
+  | 'requisicao_em_andamento'
+  | 'template_nao_encontrado'
+  | 'template_nao_aprovado'
+  | 'template_com_midia'
+  | 'idioma_obrigatorio'
+  | 'valores_incompletos'
+  | 'teto_diario'
+  | 'sem_numero'
+  | 'meta_recusou'
   | 'erro_interno'
 
 /** O formato de erro de toda a API: `codigo` estável, `mensagem` para gente. */

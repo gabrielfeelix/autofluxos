@@ -5,6 +5,7 @@ import { headers } from 'next/headers'
 import { redirect } from 'next/navigation'
 import type { EstadoSalvar } from '@/components/design/formulario-salvar'
 import { acaoRemoverLogo, acaoSalvarCadastro, acaoSalvarLogo } from './acoes'
+import { db } from './db'
 import { registrar } from './repos/auditoria'
 import { acharCliente, atualizarObservacoes, criarCliente } from './repos/clientes'
 import { definirSuspensao } from './repos/organizacoes'
@@ -831,3 +832,29 @@ export async function acaoAdminExcluirUsuario(usuarioId: string): Promise<{ ok: 
 
 /** O que "dar acesso" devolve: a pessoa, para a tabela pôr a linha sem recarregar. */
 export type ResultadoDoAcesso = EstadoSalvar & { pessoa?: { id: string; nome: string; email: string; funcao: string } }
+
+/**
+ * Quantos modelos a organização manda pela API por dia (0121). Nulo volta ao
+ * padrão do código. O teto existe porque cada modelo é cobrado pela Meta, e uma
+ * integração com defeito em laço pode gastar o mês em uma tarde.
+ */
+export async function acaoAdminSalvarTetoDaApi(organizacaoId: string, teto: number | null): Promise<{ ok: boolean; erro?: string }> {
+  const sessao = await exigirAdminDaPlataforma()
+  if (teto !== null && (!Number.isInteger(teto) || teto < 0 || teto > 100000)) {
+    return { ok: false, erro: 'Use um número inteiro entre 0 e 100.000.' }
+  }
+  const { error } = await db().from('clients').update({ teto_api_diario: teto }).eq('id', organizacaoId)
+  if (error) {
+    return { ok: false, erro: error.code === '42703' ? 'O banco ainda não tem este campo (migration 0121).' : 'Não deu para salvar agora.' }
+  }
+  await registrar({
+    acao: 'mudou_teto_da_api',
+    autorId: sessao.usuario.id,
+    autorEmail: sessao.usuario.email,
+    contaId: organizacaoId,
+    alvoTipo: 'client',
+    alvoId: organizacaoId,
+    detalhes: { teto },
+  })
+  return { ok: true }
+}
