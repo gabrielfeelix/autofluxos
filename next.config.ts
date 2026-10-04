@@ -1,4 +1,5 @@
 import type { NextConfig } from 'next'
+import { versaoDoDeploy } from './src/lib/versao-do-deploy'
 
 /**
  * Cabeçalhos de segurança do painel.
@@ -96,6 +97,18 @@ const SAIRAM_DE_CONFIGURACOES: { de: string; para: string }[] = [
 ]
 
 const config: NextConfig = {
+  /**
+   * O id do deploy, que liga a proteção de versão do Next.
+   *
+   * Com ele, a aba aberta antes de um deploy que navega depois dele recebe uma
+   * recarga inteira em vez de pedir ao servidor novo um pedaço da tela velha,
+   * que era o "às vezes não carrega" logo depois de cada push. Quando a Vercel
+   * já injeta `NEXT_DEPLOYMENT_ID` o Next usa o dela, e por isso aqui fica
+   * `undefined`: dois valores diferentes fazem o build recusar (E971).
+   * O aviso visível de versão nova é `AvisoDeVersaoNova`.
+   */
+  deploymentId: process.env.NEXT_DEPLOYMENT_ID ? undefined : versaoDoDeploy() ?? undefined,
+
   /**
    * Sem `x-powered-by: Next.js`. Não protege nada sozinho, mas é de graça: quem
    * varre a internet atrás de versão vulnerável do Next começa por esse

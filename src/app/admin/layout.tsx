@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react'
+import { AvisoDeVersaoNova } from '@/components/conta/aviso-de-versao-nova'
 import { FaixaDeImpersonacao } from '@/components/conta/faixa-impersonacao'
 import { PainelVoce, PerfilDaSessao } from '@/components/conta/voce'
 import { BarraLateral } from '@/components/design/barra-lateral'
@@ -51,6 +52,7 @@ export default async function LayoutDoAdmin({ children }: { children: ReactNode 
         <div className="app-quadro flex min-h-0 min-w-0 flex-1 flex-col md:mt-3">
           <div className="app-miolo-com-barra relative min-w-0 flex-1 md:overflow-auto">
             <FaixaDeImpersonacao />
+            <AvisoDeVersaoNova />
             <div className="app-page-enter flex min-h-full flex-col md:h-full">{children}</div>
           </div>
         </div>

@@ -3,6 +3,7 @@ import { Suspense, type ReactNode } from 'react'
 import { BarraDoCliente } from '@/components/design/barra-do-cliente'
 import { CabecalhoDoCliente } from '@/components/design/cabecalho-do-cliente'
 import { MolduraDoCliente } from '@/components/design/moldura-do-cliente'
+import { AvisoDeVersaoNova } from '@/components/conta/aviso-de-versao-nova'
 import { FaixaDeImpersonacao } from '@/components/conta/faixa-impersonacao'
 import { FaixaDeSuporte } from '@/components/conta/faixa-de-suporte'
 import { FaixaDoPlano } from '@/components/conta/faixa-do-plano'
@@ -35,6 +36,7 @@ export default async function LayoutDoCliente({
       faixas={
         <>
           <FaixaDeImpersonacao />
+          <AvisoDeVersaoNova />
           <FaixaDeSuporte clienteId={cliente.id} />
           {/* Não segura a tela: o aviso chega quando chegar. */}
           <Suspense fallback={null}>
