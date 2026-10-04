@@ -40,6 +40,7 @@ export async function CabecalhoDoCliente({ clienteId }: { clienteId: string }) {
       }}
     >
       <Cabecalho
+        clienteId={clienteId}
         base={base}
         email={acesso.sessao.usuario.email}
         papel={suporte ? ROTULO_DO_SUPORTE : (acesso.regras.nomeDaFuncao ?? resumoDoAcesso(acesso.regras).perfil)}

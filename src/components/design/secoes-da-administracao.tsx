@@ -18,6 +18,7 @@ export type AbaDaAdministracao =
   | 'usuarios'
   | 'planos'
   | 'pedidos'
+  | 'sugestoes'
   | 'funcoes'
   | 'consumo'
   | 'alertas'
@@ -34,6 +35,7 @@ export const ITENS_DA_ADMINISTRACAO: {
   { chave: 'usuarios', rotulo: 'Usuários', href: '/admin/usuarios', icone: <IconeUsuarios /> },
   { chave: 'planos', rotulo: 'Planos', href: '/admin/planos', icone: <IconePlanos /> },
   { chave: 'pedidos', rotulo: 'Pedidos de plano', href: '/admin/pedidos', icone: <IconePedidos /> },
+  { chave: 'sugestoes', rotulo: 'Sugestões', href: '/admin/sugestoes', icone: <IconeSugestoes /> },
   { chave: 'funcoes', rotulo: 'Funções', href: '/admin/funcoes', icone: <IconeFuncoes /> },
   { chave: 'consumo', rotulo: 'Consumo', href: '/admin/consumo', icone: <IconeConsumo /> },
   { chave: 'alertas', rotulo: 'Alertas', href: '/admin/alertas', icone: <IconeAlertas /> },
@@ -42,7 +44,7 @@ export const ITENS_DA_ADMINISTRACAO: {
 
 export const GRUPOS_DA_ADMINISTRACAO = [
   { nome: 'Operação', chaves: ['organizacoes', 'usuarios'] },
-  { nome: 'Comercial', chaves: ['planos', 'pedidos'] },
+  { nome: 'Comercial', chaves: ['planos', 'pedidos', 'sugestoes'] },
   { nome: 'Sistema', chaves: ['funcoes', 'consumo', 'alertas', 'auditoria'] },
 ]
 
@@ -105,6 +107,16 @@ function IconePlanos() {
     <Svg>
       <path d="M7.5 1.6 13 4.4 7.5 7.2 2 4.4Z" />
       <path d="m2 7.5 5.5 2.8L13 7.5M2 10.6l5.5 2.8 5.5-2.8" opacity=".6" />
+    </Svg>
+  )
+}
+
+/** O balão com o sinal de mais, o mesmo do "Sentiu falta de algo?" do cliente. */
+function IconeSugestoes() {
+  return (
+    <Svg>
+      <path d="M2.2 3.4c0-.8.6-1.4 1.4-1.4h7.8c.8 0 1.4.6 1.4 1.4v5.4c0 .8-.6 1.4-1.4 1.4H6.4L3.6 12.6v-2.4h0c-.8 0-1.4-.6-1.4-1.4Z" />
+      <path d="M7.5 4.2v3.8M5.6 6.1h3.8" />
     </Svg>
   )
 }

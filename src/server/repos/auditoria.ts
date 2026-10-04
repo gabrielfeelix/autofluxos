@@ -63,6 +63,18 @@ export type LinhaDeAuditoria = AtoAuditado & { id: string; quando: string }
  * investigar uma linha faltando encontra o motivo no log da função.
  */
 export async function registrar(ato: AtoAuditado): Promise<void> {
+  await registrarConfirmando(ato)
+}
+
+/**
+ * O mesmo registro, dizendo se gravou.
+ *
+ * Para o ato que **é** a ação, e não o rastro dela: uma sugestão enviada pela
+ * tela "Sentiu falta de algo?" não existe fora desta linha, e responder
+ * "recebido" sem ela gravada seria mentir para o cliente. Continua sem
+ * estourar; quem chama decide o que dizer com o `false`.
+ */
+export async function registrarConfirmando(ato: AtoAuditado): Promise<boolean> {
   try {
     const origem = ato.ip === undefined || ato.agente === undefined ? await origemDaRequisicao() : null
     const { error } = await db()
@@ -83,11 +95,13 @@ export async function registrar(ato: AtoAuditado): Promise<void> {
       })
 
     if (error) throw new Error(error.message)
+    return true
   } catch (erro) {
     console.error(
       `[auditoria] não deu para registrar "${ato.acao}"`,
       erro instanceof Error ? erro.message : erro,
     )
+    return false
   }
 }
 

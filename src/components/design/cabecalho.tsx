@@ -7,6 +7,7 @@ import { acaoSair } from '@/server/acoes-conta'
 import { LinhaDePresenca } from '@/components/conta/linha-de-presenca'
 import { usePresenca } from '@/components/conta/presenca'
 import { EditarPerfil, TrocarSenha, useMudarPerfil, usePerfil } from '@/components/conta/voce'
+import { IconeSentiuFalta, SentiuFalta } from '@/components/conta/sentiu-falta'
 import { PopoverDoQuadro } from '@/components/quadros/popover-do-quadro'
 import { INDICE } from '@/components/ajuda/indice'
 import { Avatar } from './avatar'
@@ -40,6 +41,7 @@ const WHATSAPP_DA_4YU = 'https://wa.me/5544998775978'
 const EMAIL_DA_4YU = 'contato@4yu.com.br'
 
 export function Cabecalho({
+  clienteId,
   base,
   email,
   papel,
@@ -51,6 +53,7 @@ export function Cabecalho({
   sino,
   avisosDoNavegador,
 }: {
+  clienteId: string
   base: string
   email: string
   /** "Proprietário", "Consultor"... */
@@ -68,12 +71,20 @@ export function Cabecalho({
   avisosDoNavegador: ReactNode
 }) {
   const [ajudaAberta, setAjudaAberta] = useState(false)
+  const [sugestaoAberta, setSugestaoAberta] = useState(false)
 
   return (
     <header className="cabecalho-do-cliente hidden h-16 shrink-0 items-center gap-3 pr-5 pl-3 text-sobre-casca md:flex">
       <OndeEstou base={base} />
 
       <div className="ml-auto flex items-center gap-1">
+        {/* Escrito por extenso, e não só ícone: a pergunta é o convite. Num
+            ícone sem texto ninguém adivinha que dá para pedir coisa. */}
+        <button type="button" onClick={() => setSugestaoAberta(true)} className="cabecalho-acao px-2.5">
+          <IconeSentiuFalta />
+          <span className="max-lg:hidden">Sentiu falta de algo?</span>
+          <span className="sr-only lg:hidden">Sentiu falta de algo?</span>
+        </button>
         {planoHref && (
           <Link href={planoHref} className="cabecalho-acao px-2.5">
             <IconeUso />
@@ -102,7 +113,15 @@ export function Cabecalho({
         />
       </div>
 
-      <GavetaDeAjuda aberta={ajudaAberta} aoFechar={() => setAjudaAberta(false)} />
+      <GavetaDeAjuda
+        aberta={ajudaAberta}
+        aoFechar={() => setAjudaAberta(false)}
+        aoSugerir={() => {
+          setAjudaAberta(false)
+          setSugestaoAberta(true)
+        }}
+      />
+      <SentiuFalta clienteId={clienteId} aberta={sugestaoAberta} aoFechar={() => setSugestaoAberta(false)} />
     </header>
   )
 }
@@ -400,7 +419,7 @@ function haQuanto(iso: string): string {
  * aparece no meio de um trabalho, e mandar para outra página perde o lugar.
  * É `<dialog>` modal para o foco ficar preso nela e o Esc fechar de graça.
  */
-function GavetaDeAjuda({ aberta, aoFechar }: { aberta: boolean; aoFechar: () => void }) {
+function GavetaDeAjuda({ aberta, aoFechar, aoSugerir }: { aberta: boolean; aoFechar: () => void; aoSugerir: () => void }) {
   const ref = useRef<HTMLDialogElement>(null)
   const [busca, setBusca] = useState('')
 
@@ -456,6 +475,15 @@ function GavetaDeAjuda({ aberta, aoFechar }: { aberta: boolean; aoFechar: () => 
               <PortaDeAjuda icone={<IconeLivro />} titulo="Central de ajuda" texto="Como montar automações, perguntas, datas e integrações, com exemplo." href="/ajuda" />
               <PortaDeAjuda icone={<IconeWhatsapp />} titulo="Falar com o suporte" texto="Atendimento da equipe 4YU no WhatsApp, em horário comercial." href={WHATSAPP_DA_4YU} externo />
               <PortaDeAjuda icone={<IconeEnvelope />} titulo="Escrever para a 4YU" texto={`Para pedido com calma, print ou planilha: ${EMAIL_DA_4YU}.`} href={`mailto:${EMAIL_DA_4YU}`} externo />
+              <button type="button" onClick={aoSugerir} className="flex gap-3.5 rounded-xl px-3 py-3 text-left transition hover:bg-surface">
+                <span aria-hidden className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-primary-weak text-primary">
+                  <IconeSentiuFalta tamanho={18} />
+                </span>
+                <span className="min-w-0">
+                  <strong className="block text-[13.5px] font-semibold text-ink">Sentiu falta de algo?</strong>
+                  <span className="mt-0.5 block text-[12px] leading-5 text-dim">Sugira um recurso ou uma melhoria. A equipe lê cada uma.</span>
+                </span>
+              </button>
             </div>
           )}
 
