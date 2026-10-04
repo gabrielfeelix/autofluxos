@@ -22,7 +22,9 @@ export default function Carregando() {
   return (
     <MioloCarregando>
       <main className="w-full px-4 pt-[22px] pb-12 md:px-7">
-        <Trilha caminho={[{ rotulo: 'Negócios' }, { rotulo: '…' }]} />
+        <div className="md:hidden">
+          <Trilha caminho={[{ rotulo: 'Negócios' }, { rotulo: '…' }]} />
+        </div>
         <div className="app-card mb-4 flex flex-col gap-4 px-5 py-5 md:px-6 lg:flex-row lg:items-start">
           <span className="flex min-w-0 flex-1 flex-col gap-3">
             <Esqueleto className="h-7 w-64 max-w-full rounded-lg" />

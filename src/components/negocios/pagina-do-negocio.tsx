@@ -2,6 +2,7 @@
 
 import { Alternador } from '@/components/design/alternador'
 import { Trilha } from '@/components/design/trilha'
+import { FimDaTrilha } from '@/components/design/fim-da-trilha'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useEffect, useRef, useState, useTransition, type ReactNode, type RefObject } from 'react'
@@ -325,7 +326,12 @@ export function PaginaDoNegocio(props: Props) {
 
   return (
     <main className="w-full px-4 pt-[22px] pb-12 md:px-7">
-      <Trilha caminho={[{ rotulo: 'Negócios', href: voltar }, { rotulo: quadro.nome }]} />
+      {/* No computador o caminho mora no cabeçalho ("CRM › Negócios › Comercial ›
+          o negócio"); a trilha da página fica para o celular, que não tem cabeçalho. */}
+      <FimDaTrilha caminho={[{ rotulo: quadro.nome, href: voltar }, { rotulo: titulo.texto }]} />
+      <div className="md:hidden">
+        <Trilha caminho={[{ rotulo: 'Negócios', href: voltar }, { rotulo: quadro.nome }]} />
+      </div>
 
       {/* O topo: o que é, quanto vale, em que pé está, e as ações. */}
       <header className="app-card mb-4 px-5 py-5 md:px-6">

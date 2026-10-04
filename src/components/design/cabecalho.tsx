@@ -12,6 +12,7 @@ import { PopoverDoQuadro } from '@/components/quadros/popover-do-quadro'
 import { INDICE } from '@/components/ajuda/indice'
 import { Avatar } from './avatar'
 import { acesoDoCaminho } from './aba-do-caminho'
+import { useFimDaTrilha } from './fim-da-trilha'
 import { SECOES } from './secoes-do-cliente'
 import { definirPreferencia, usePreferencia } from './tema'
 
@@ -126,28 +127,59 @@ export function Cabecalho({
   )
 }
 
-/** "CRM › Contatos": o mesmo item que a barra acende, lido do endereço. */
+/**
+ * "CRM › Contatos": o mesmo item que a barra acende, lido do endereço.
+ *
+ * Quando a página diz mais (`FimDaTrilha`), a trilha continua:
+ * "CRM › Negócios › Comercial › Negócio de Ana". Aí o item da seção vira link,
+ * porque deixou de ser o lugar onde a pessoa está e passou a ser o caminho de
+ * volta. Só o último pedaço encolhe com reticências: é ele que tem nome longo.
+ */
 function OndeEstou({ base }: { base: string }) {
   const caminho = usePathname()
   const busca = useSearchParams()
+  const fim = useFimDaTrilha()
   const aceso = acesoDoCaminho(caminho, base, busca)
   const secao = SECOES.find((s) => s.chave === aceso?.secao)
   if (!secao) return <span className="min-w-0 flex-1" />
   const item = secao.itens.find((i) => i.id === aceso?.item)
 
+  if (secao.solta || !item) {
+    return (
+      <nav aria-label="Onde você está" className="flex min-w-0 flex-1 items-center gap-2 text-[14.5px]">
+        <span className="truncate font-semibold text-sobre-casca">{item?.rotulo ?? secao.rotulo}</span>
+      </nav>
+    )
+  }
+
+  const pedacos = [
+    { rotulo: secao.rotulo },
+    { rotulo: item.rotulo, href: fim.length > 0 ? `${base}${item.href}` : undefined },
+    ...fim,
+  ]
   return (
     <nav aria-label="Onde você está" className="flex min-w-0 flex-1 items-center gap-2 text-[14.5px]">
-      {secao.solta || !item ? (
-        <span className="truncate font-semibold text-sobre-casca">{item?.rotulo ?? secao.rotulo}</span>
-      ) : (
-        <>
-          <span className="truncate text-sobre-casca-suave">{secao.rotulo}</span>
-          <span aria-hidden className="text-sobre-casca-suave">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"><path d="m9 6 6 6-6 6" /></svg>
+      {pedacos.map((pedaco, indice) => {
+        const ultimo = indice === pedacos.length - 1
+        return (
+          <span key={`${indice}-${pedaco.rotulo}`} className={`flex items-center gap-2 ${ultimo ? 'min-w-0' : 'shrink-0'}`}>
+            {indice > 0 && (
+              <span aria-hidden className="text-sobre-casca-suave">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"><path d="m9 6 6 6-6 6" /></svg>
+              </span>
+            )}
+            {ultimo ? (
+              <span aria-current="page" className="truncate font-semibold text-sobre-casca">{pedaco.rotulo}</span>
+            ) : pedaco.href ? (
+              <Link href={pedaco.href} className="max-w-[220px] truncate text-sobre-casca-suave transition hover:text-sobre-casca hover:underline">
+                {pedaco.rotulo}
+              </Link>
+            ) : (
+              <span className="max-w-[220px] truncate text-sobre-casca-suave">{pedaco.rotulo}</span>
+            )}
           </span>
-          <span className="truncate font-semibold text-sobre-casca">{item.rotulo}</span>
-        </>
-      )}
+        )
+      })}
     </nav>
   )
 }
