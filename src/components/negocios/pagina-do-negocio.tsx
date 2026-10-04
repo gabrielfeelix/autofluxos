@@ -4,7 +4,7 @@ import { Alternador } from '@/components/design/alternador'
 import { Trilha } from '@/components/design/trilha'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { useRef, useState, useTransition, type ReactNode, type RefObject } from 'react'
+import { useEffect, useRef, useState, useTransition, type ReactNode, type RefObject } from 'react'
 import { Avatar } from '@/components/inbox/avatar'
 import { Dropdown } from '@/components/design/dropdown'
 import { Modal } from '@/components/design/modal'
@@ -47,6 +47,9 @@ import {
   acaoPreverFechamento,
   acaoTrocarDeFunil,
 } from '@/server/acoes-negocio'
+
+/** Quanto o "pronto" da troca de funil fica na tela antes de sumir sozinho. */
+const TEMPO_DA_CONFIRMACAO = 6000
 
 export type ItemDoHistorico = {
   id: string
@@ -125,12 +128,37 @@ export function PaginaDoNegocio(props: Props) {
   const [negocio, setNegocio] = useState(props.negocio)
   const [historico, setHistorico] = useState(props.historico)
   const [atividades, setAtividades] = useState(props.atividades)
+  /**
+   * O funil para onde o negócio está indo, enquanto a página do funil novo
+   * não chega.
+   *
+   * A troca de funil é a única ação desta página que **não** é otimista: outro
+   * funil é outra régua de etapas, e a régua vem do servidor. Até 03/10/2026 o
+   * aviso "Levando para o funil…" era ligado no clique e nunca desligado no
+   * sucesso, então ficava na tela para sempre, sem dizer se tinha terminado.
+   * Agora quem desliga é a chegada das props do funil de destino: o aviso de
+   * "pronto" só aparece quando a régua nova já está desenhada.
+   */
+  const [levando, setLevando] = useState<{ id: string; nome: string } | null>(null)
+  const [confirmacao, setConfirmacao] = useState<string | null>(null)
   if (doServidor !== props) {
     setDoServidor(props)
     setNegocio(props.negocio)
     setHistorico(props.historico)
     setAtividades(props.atividades)
+    if (levando && props.quadro.id === levando.id) {
+      setLevando(null)
+      setConfirmacao(`Negócio agora está no funil ${levando.nome}.`)
+    }
   }
+
+  // A confirmação é passageira: ela responde "terminou?", e depois de lida
+  // só ocupa espaço em cima da página.
+  useEffect(() => {
+    if (!confirmacao) return
+    const relogio = setTimeout(() => setConfirmacao(null), TEMPO_DA_CONFIRMACAO)
+    return () => clearTimeout(relogio)
+  }, [confirmacao])
 
   const [aba, setAba] = useState<'geral' | 'historico'>('geral')
   const [filtro, setFiltro] = useState<FiltroDoHistorico>('tudo')
@@ -272,16 +300,20 @@ export function PaginaDoNegocio(props: Props) {
 
   function trocarDeFunil(quadroId: string) {
     const destino = props.outrosFunis.find((f) => f.id === quadroId)
+    if (!destino) return
     setErro(null)
-    setAviso(destino ? `Levando para o funil ${destino.nome}…` : null)
+    setAviso(null)
+    setConfirmacao(null)
+    setLevando({ id: destino.id, nome: destino.nome })
     comecar(async () => {
       const r = await acaoTrocarDeFunil(clienteId, negocio.id, quadroId)
       if (!r.ok) {
-        setAviso(null)
+        setLevando(null)
         setErro(r.erro ?? 'não deu para trocar de funil')
         return
       }
-      // Outro funil é outra régua de etapas: aqui sim a página precisa do servidor.
+      // Outro funil é outra régua de etapas: aqui sim a página precisa do
+      // servidor. O aviso sai quando as props do funil novo chegarem.
       router.refresh()
     })
   }
@@ -408,14 +440,31 @@ export function PaginaDoNegocio(props: Props) {
         </div>
       </header>
 
-      {(erro || aviso) && (
+      {erro ? (
         <p
-          role={erro ? 'alert' : 'status'}
-          className={`mb-3 rounded-lg border px-3 py-2 text-[12px] ${erro ? 'border-rose-300/50 bg-rose-50 font-semibold text-perigo dark:bg-rose-400/10' : 'border-line bg-surface text-soft'}`}
+          role="alert"
+          className="mb-3 rounded-lg border border-rose-300/50 bg-rose-50 px-3 py-2 text-[12px] font-semibold text-perigo dark:bg-rose-400/10"
         >
-          {erro ?? aviso}
+          {erro}
         </p>
-      )}
+      ) : levando ? (
+        <p role="status" className="mb-3 flex items-center gap-2 rounded-lg border border-line bg-surface px-3 py-2 text-[12px] text-soft">
+          <span aria-hidden className="size-3.5 shrink-0 animate-spin rounded-full border-2 border-line border-t-primary" />
+          Levando para o funil <strong className="font-semibold text-ink">{levando.nome}</strong>…
+        </p>
+      ) : aviso || confirmacao ? (
+        <p
+          role="status"
+          className={`mb-3 flex items-center gap-2 rounded-lg border px-3 py-2 text-[12px] ${confirmacao && !aviso ? 'border-emerald-300/50 bg-emerald-50 text-emerald-800 dark:bg-emerald-400/10 dark:text-emerald-200' : 'border-line bg-surface text-soft'}`}
+        >
+          {confirmacao && !aviso && (
+            <svg aria-hidden viewBox="0 0 24 24" className="size-3.5 shrink-0" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="m5 12.5 4.5 4.5L19 7.5" />
+            </svg>
+          )}
+          {aviso ?? confirmacao}
+        </p>
+      ) : null}
 
       <Alternador
         rotulo="Seções do negócio"
