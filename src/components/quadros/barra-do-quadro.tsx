@@ -2,8 +2,9 @@
 
 import { Badge } from '@/components/design/pilula'
 import { Dropdown } from '@/components/design/dropdown'
+import { definirPreferencia, usePreferencia } from '@/components/design/tema'
 import { comoDinheiro } from '@/core/crm'
-import { DIAS_PARA_MARCAR_PARADO } from '@/core/quadros'
+import { DIAS_PARA_MARCAR_PARADO, NOME_DA_ATENCAO } from '@/core/quadros'
 import type { FiltroDoQuadro, OrdemDoQuadro, SituacaoFiltro } from '@/core/quadros'
 import { IconeDoQuadro, PopoverDoQuadro } from './popover-do-quadro'
 
@@ -38,6 +39,7 @@ export function BarraDoQuadro({
   somaAberta: number
   escondidos: number
 }) {
+  const comResumo = usePreferencia('resumoDasEtapas')
   const responsavel =
     filtro.responsavel === 'ninguem'
       ? 'Sem responsável'
@@ -132,6 +134,26 @@ export function BarraDoQuadro({
             </button>
           ))}
         </PopoverDoQuadro>
+        {/*
+          O resumo das etapas é escolha de quem olha, e não do funil: tem quem
+          trabalhe o dia todo com ele e quem ache que só polui. Lembrado neste
+          navegador (`resumoDasEtapas`), como o tema.
+        */}
+        <button
+          type="button"
+          aria-pressed={comResumo}
+          title={comResumo ? 'Esconder o resumo de cada etapa' : 'Mostrar, em cada etapa, quantos estão parados, sem atividade e com atividade atrasada'}
+          onClick={() => {
+            definirPreferencia('resumoDasEtapas', !comResumo)
+            // Desligar o resumo com um filtro dele ligado deixaria o funil
+            // filtrado sem o botão que explica por quê.
+            if (comResumo && filtro.atencao) aoFiltrar({ ...filtro, atencao: null })
+          }}
+          className="quadro-tool"
+        >
+          <IconeResumo />
+          <span className="hidden sm:inline">Resumo</span>
+        </button>
         <span aria-live="polite" className="ml-auto flex items-center gap-2 text-[11px] text-dim">
           <span className="font-medium tabular-nums">
             {visiveis === 1 ? '1 negócio' : `${visiveis} negócios`}
@@ -154,7 +176,7 @@ export function BarraDoQuadro({
           </p>
         </PopoverDoQuadro>
       </div>
-      {(responsavel || ordem !== 'espera' || escondidos > 0) && (
+      {(responsavel || filtro.atencao || ordem !== 'espera' || escondidos > 0) && (
         <div className="flex flex-wrap items-center gap-2 text-[11px] text-muted">
           {responsavel && (
             <button
@@ -167,11 +189,22 @@ export function BarraDoQuadro({
               <span className="ml-2">×</span>
             </button>
           )}
+          {filtro.atencao && (
+            <button
+              type="button"
+              onClick={() => aoFiltrar({ ...filtro, atencao: null })}
+              aria-label={`Remover filtro: ${NOME_DA_ATENCAO[filtro.atencao].filtro}`}
+              className="rounded-md border border-primary/15 bg-primary/[0.06] px-2 py-1 text-primary"
+            >
+              {NOME_DA_ATENCAO[filtro.atencao].filtro}
+              <span className="ml-2">×</span>
+            </button>
+          )}
           {ordem !== 'espera' && <span>{ORDENS.find((item) => item.valor === ordem)?.rotulo}</span>}
           {escondidos > 0 && (
             <button
               type="button"
-              onClick={() => aoFiltrar({ busca: '', responsavel: null, situacao: 'todas' })}
+              onClick={() => aoFiltrar({ busca: '', responsavel: null, situacao: 'todas', atencao: null })}
               className="hover:text-primary"
             >
               Mostrar todos · limpar filtros
@@ -180,5 +213,14 @@ export function BarraDoQuadro({
         </div>
       )}
     </div>
+  )
+}
+
+/** Três barras de alturas diferentes: "os números de cada coluna". */
+function IconeResumo() {
+  return (
+    <svg aria-hidden viewBox="0 0 24 24" className="size-4 shrink-0" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round">
+      <path d="M6 19v-6M12 19V5M18 19v-9" />
+    </svg>
   )
 }

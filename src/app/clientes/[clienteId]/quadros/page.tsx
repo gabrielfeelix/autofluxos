@@ -17,6 +17,8 @@ import { nichoDaConta } from '@/server/repos/recursos'
 import { destaqueDeFunis, pacoteDo, rotuloNaBarra } from '@/core/nichos'
 import { contarForaDoQuadro, listarCartoes, listarQuadros } from '@/server/repos/quadros'
 import { listarMotivos } from '@/server/repos/motivos-de-perda'
+import { atividadesAbertasDoQuadro } from '@/server/repos/atividades'
+import { resumirAtividadesDosCartoes } from '@/core/atividades'
 import { membrosDaConta } from '@/server/repos/usuarios'
 
 export const dynamic = 'force-dynamic'
@@ -88,6 +90,27 @@ export default async function Pagina({
   )
 }
 
+/**
+ * Os cartões do funil com as atividades abertas de cada um já contadas, para
+ * o resumo das etapas.
+ *
+ * As duas leituras vão juntas, e a das atividades **não derruba o funil**: se
+ * ela falhar, os cartões vêm sem `agenda`, e o resumo escreve "–" em vez de
+ * inventar "todos sem atividade" (ver `resumoDaEtapa`).
+ */
+async function comAgenda(clienteId: string, quadroId: string, agora: number) {
+  const [cartoes, atividades] = await Promise.all([
+    listarCartoes(clienteId, quadroId),
+    atividadesAbertasDoQuadro(clienteId, quadroId).catch((erro: unknown) => {
+      console.error('[funil] sem o resumo das atividades:', erro instanceof Error ? erro.message : erro)
+      return null
+    }),
+  ])
+  if (!atividades) return cartoes
+  const resumo = resumirAtividadesDosCartoes(atividades, agora)
+  return cartoes.map((cartao) => ({ ...cartao, agenda: resumo.get(cartao.id) ?? { abertas: 0, atrasadas: 0 } }))
+}
+
 /** A moldura do funil enquanto as colunas vêm. */
 function Espera() {
   return <EsqueletoDoFunil />
@@ -111,7 +134,7 @@ async function Conteudo({
   // Id que não é deste cliente cai no primeiro em vez de dar erro: o valor vem
   // da URL, e link velho não pode virar tela quebrada.
   const aberto = quadros.find((quadro) => quadro.id === q) ?? quadros[0] ?? null
-  const cartoes = aberto ? await listarCartoes(cliente.id, aberto.id) : []
+  const cartoes = aberto ? await comAgenda(cliente.id, aberto.id, agora) : []
 
   /*
    * Equipe e motivos vêm com a página, e não sob demanda no menu.

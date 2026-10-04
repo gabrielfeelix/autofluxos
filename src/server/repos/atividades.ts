@@ -667,3 +667,30 @@ export async function resolverAoFechar(
   if (error) throw new Error(`não deu para resolver as atividades: ${error.message}`)
   return { resolvidas: (data as { id: string }[]).length }
 }
+
+/**
+ * As atividades abertas dos negócios de um funil, para o resumo das etapas.
+ *
+ * O filtro é pela **junção** com `quadro_cartoes` (`!inner`), e não por uma
+ * lista de ids de cartão: funil grande passa de mil cartões, e mil UUIDs num
+ * `in.(...)` estouram o tamanho da URL do PostgREST. Só duas colunas voltam;
+ * quem conta é `resumirAtividadesDosCartoes`.
+ */
+export async function atividadesAbertasDoQuadro(
+  clienteId: string,
+  quadroId: string,
+): Promise<{ cartaoId: string; prazo: string | null }[]> {
+  const { data, error } = await db()
+    .from('atividades')
+    .select('cartao_id, prazo, quadro_cartoes!inner(quadro_id)')
+    .eq('client_id', clienteId)
+    .eq('situacao', 'aberta')
+    .eq('quadro_cartoes.quadro_id', quadroId)
+
+  if (ehIdInvalido(error)) return []
+  if (error) throw new Error(`não deu para ler as atividades do funil: ${error.message}`)
+
+  return ((data ?? []) as { cartao_id: string | null; prazo: string | null }[])
+    .filter((linha): linha is { cartao_id: string; prazo: string | null } => linha.cartao_id !== null)
+    .map((linha) => ({ cartaoId: linha.cartao_id, prazo: linha.prazo }))
+}

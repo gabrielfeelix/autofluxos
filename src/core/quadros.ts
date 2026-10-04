@@ -181,6 +181,16 @@ export type Cartao = {
   criadoEm?: string
   /** `YYYY-MM-DD` de quando se espera fechar (0101). `null` = ninguém previu. */
   previsao?: string | null
+
+  /**
+   * As atividades abertas presas a este negócio, já contadas no servidor
+   * (`resumirAtividadesDosCartoes`). É o que alimenta o resumo das etapas.
+   *
+   * `undefined` é "não foi lido", e não "nenhuma": quem desenha o resumo
+   * precisa distinguir os dois, senão uma leitura que falhou viraria "todos
+   * sem próxima atividade", que é alarme falso no funil inteiro.
+   */
+  agenda?: { abertas: number; atrasadas: number }
 }
 
 /** Ver `core/crm.ts`. Repetido aqui como tipo para o cartão não importar o CRM. */
@@ -417,12 +427,19 @@ export type FiltroDoQuadro = {
   /** `null` = qualquer um · `'ninguem'` = os sem dono · id = aquela pessoa. */
   responsavel: string | null
   situacao: SituacaoFiltro
+  /**
+   * Só o que pede atenção, escolhido no resumo das etapas. Fica fora de
+   * `passaNoFiltro` porque "parado" depende do limite da etapa de cada
+   * cartão; quem aplica é `precisaDeAtencao`, que recebe a etapa.
+   */
+  atencao?: AtencaoDoQuadro | null
 }
 
 export const FILTRO_VAZIO: FiltroDoQuadro = {
   busca: '',
   responsavel: null,
   situacao: 'abertas',
+  atencao: null,
 }
 
 /**
@@ -481,4 +498,69 @@ export function filtrarCartoes(cartoes: Cartao[], filtro: FiltroDoQuadro): Carta
 /** Quantos cartões sobraram de fora do filtro. A barra precisa dizer isso. */
 export function escondidosPeloFiltro(cartoes: Cartao[], filtro: FiltroDoQuadro): number {
   return cartoes.length - filtrarCartoes(cartoes, filtro).length
+}
+
+// ---------------------------------------------------------------------------
+// O resumo das etapas: o que pede atenção em cada coluna
+// ---------------------------------------------------------------------------
+
+/**
+ * As três perguntas que o resumo de cada etapa responde, na ordem em que a
+ * tela as mostra (03/10/2026, pedido do Eduardo a partir das "estatísticas das
+ * etapas" do RD):
+ *
+ * - **parados**: há mais tempo na etapa do que a paciência dela (`estaParado`),
+ *   o mesmo âmbar da barra do cartão;
+ * - **sem atividade**: aberto e sem nenhuma próxima ação marcada. É a métrica
+ *   que mais importa em venda: negócio sem próximo passo é negócio esquecido;
+ * - **atrasadas**: com atividade que já passou do dia.
+ *
+ * Só negócio **aberto** conta. Ganho sem atividade não é problema de ninguém.
+ */
+export const ATENCOES_DO_QUADRO = ['parados', 'sem-atividade', 'atrasadas'] as const
+
+export type AtencaoDoQuadro = (typeof ATENCOES_DO_QUADRO)[number]
+
+export const NOME_DA_ATENCAO: Record<AtencaoDoQuadro, { um: string; varios: string; filtro: string }> = {
+  parados: { um: 'parado', varios: 'parados', filtro: 'Só os parados' },
+  'sem-atividade': { um: 'sem atividade', varios: 'sem atividade', filtro: 'Só os sem próxima atividade' },
+  atrasadas: { um: 'atrasada', varios: 'atrasadas', filtro: 'Só os com atividade atrasada' },
+}
+
+function aberto(cartao: Cartao): boolean {
+  return !cartao.situacao || cartao.situacao === 'aberta'
+}
+
+/** Este cartão entra na pergunta? `undefined` em `agenda` nunca responde sim. */
+export function precisaDeAtencao(
+  cartao: Cartao,
+  atencao: AtencaoDoQuadro,
+  etapa: Pick<Etapa, 'limiteDeDias'> | undefined,
+  agora: number,
+): boolean {
+  if (!aberto(cartao)) return false
+  if (atencao === 'parados') return estaParado(cartao.entrouNaColunaEm, agora, etapa?.limiteDeDias)
+  if (!cartao.agenda) return false
+  if (atencao === 'sem-atividade') return cartao.agenda.abertas === 0
+  return cartao.agenda.atrasadas > 0
+}
+
+/**
+ * Quantos de cada, numa etapa. `null` quando a agenda não foi lida, para a
+ * tela escrever "–" em vez de um zero que seria mentira.
+ */
+export function resumoDaEtapa(
+  cartoes: Cartao[],
+  etapa: Pick<Etapa, 'limiteDeDias'>,
+  agora: number,
+): Record<AtencaoDoQuadro, number | null> {
+  const abertos = cartoes.filter(aberto)
+  const agendaLida = abertos.every((cartao) => cartao.agenda !== undefined)
+  const contar = (atencao: AtencaoDoQuadro) =>
+    abertos.filter((cartao) => precisaDeAtencao(cartao, atencao, etapa, agora)).length
+  return {
+    parados: contar('parados'),
+    'sem-atividade': agendaLida ? contar('sem-atividade') : null,
+    atrasadas: agendaLida ? contar('atrasadas') : null,
+  }
 }

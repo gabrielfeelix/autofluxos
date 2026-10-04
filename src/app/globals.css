@@ -1438,6 +1438,25 @@ textarea::placeholder {
 .quadro-tool[aria-expanded='true'] {
   background: var(--surface);
 }
+/* Interruptor ligado na barra do funil (o "Resumo"): o mesmo azul fraco do item aceso. */
+.quadro-tool[aria-pressed='true'] {
+  border-color: color-mix(in srgb, var(--primary) 35%, transparent);
+  background: var(--primary-weak);
+  color: var(--primary);
+}
+
+/*
+ * O resumo de cada etapa do funil (`quadro.tsx`). Desenhado sempre e mostrado
+ * pelo atributo que o script do `<head>` põe antes da primeira pintura
+ * (`resumoDasEtapas` em `tema.tsx`): decidido no React, as colunas nasceriam
+ * sem ele e cresceriam na frente da pessoa.
+ */
+.resumo-da-etapa {
+  display: none;
+}
+:root[data-resumo-das-etapas='sim'] .resumo-da-etapa {
+  display: grid;
+}
 @layer components {
   .quadro-icon-button {
     width: 36px;

@@ -19,6 +19,12 @@ import { BARRA_RECOLHIDA, COOKIE_DA_BARRA } from './cookie-da-barra'
 export const PREFERENCIAS = {
   tema: { chave: 'autofluxos:tema', atributo: 'data-tema', quandoVale: 'escuro' },
   barra: { chave: 'autofluxos:barra', atributo: 'data-barra', quandoVale: BARRA_RECOLHIDA },
+  /**
+   * O resumo das etapas no funil (parados, sem atividade, atrasadas). Mora
+   * aqui pelo mesmo motivo do tema: lido tarde, as colunas nasceriam sem o
+   * resumo e cresceriam na frente da pessoa, empurrando os cartões.
+   */
+  resumoDasEtapas: { chave: 'autofluxos:resumo-das-etapas', atributo: 'data-resumo-das-etapas', quandoVale: 'sim' },
 } as const
 
 export type Preferencia = keyof typeof PREFERENCIAS
@@ -88,6 +94,8 @@ export const SCRIPT_DAS_PREFERENCIAS =
   `try{var w=parseInt(localStorage.getItem('${LARGURA_DA_FILA.chave}'),10);` +
   `if(w>=${LARGURA_DA_FILA.minimo}&&w<=${LARGURA_DA_FILA.maximo})` +
   `d.style.setProperty('${LARGURA_DA_FILA.variavel}',w+'px')}catch(e){}` +
+  `try{if(localStorage.getItem('${PREFERENCIAS.resumoDasEtapas.chave}')==='${PREFERENCIAS.resumoDasEtapas.quandoVale}')` +
+  `d.setAttribute('${PREFERENCIAS.resumoDasEtapas.atributo}','${PREFERENCIAS.resumoDasEtapas.quandoVale}')}catch(e){}` +
   `try{if(localStorage.getItem('${MARCA_DE_ADMIN.chave}')==='${MARCA_DE_ADMIN.quandoVale}')` +
   `d.setAttribute('${MARCA_DE_ADMIN.atributo}','${MARCA_DE_ADMIN.quandoVale}')}catch(e){}`
 

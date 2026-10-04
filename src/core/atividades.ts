@@ -207,6 +207,27 @@ export const NOME_DO_STATUS: Record<StatusDaAtividade, string> = {
 }
 
 /**
+ * As atividades abertas de cada negócio, contadas para o funil.
+ *
+ * Recebe as linhas cruas (só as abertas, já filtradas no banco) e devolve,
+ * por cartão, quantas há e quantas estão atrasadas, na mesma régua de
+ * `urgenciaDe`: o funil e a agenda nunca discordam sobre o que é atrasada.
+ */
+export function resumirAtividadesDosCartoes(
+  linhas: readonly { cartaoId: string; prazo: string | null }[],
+  agora: number = Date.now(),
+): Map<string, { abertas: number; atrasadas: number }> {
+  const resumo = new Map<string, { abertas: number; atrasadas: number }>()
+  for (const linha of linhas) {
+    const atual = resumo.get(linha.cartaoId) ?? { abertas: 0, atrasadas: 0 }
+    atual.abertas += 1
+    if (urgenciaDe({ prazo: linha.prazo, situacao: 'aberta' }, agora) === 'vencida') atual.atrasadas += 1
+    resumo.set(linha.cartaoId, atual)
+  }
+  return resumo
+}
+
+/**
  * O prazo em palavras, para o resumo da ficha e os próximos passos.
  *
  * **Dia sem hora nunca ganha hora.** A versão anterior contava horas até o

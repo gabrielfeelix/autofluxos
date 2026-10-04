@@ -5,6 +5,7 @@ import {
   ehTipoDeAtividade,
   prazoEmPalavras,
   proximaAcao,
+  resumirAtividadesDosCartoes,
   statusDaAtividade,
   urgenciaDe,
   type Atividade,
@@ -163,5 +164,22 @@ describe('statusDaAtividade', () => {
     expect(
       statusDaAtividade(atividade({ prazo: passado, situacao: 'cancelada', concluidaEm: passado }), HOJE),
     ).toBe('cancelada')
+  })
+})
+
+describe('resumirAtividadesDosCartoes', () => {
+  it('conta as abertas e as atrasadas de cada negócio, na régua da agenda', () => {
+    const resumo = resumirAtividadesDosCartoes(
+      [
+        { cartaoId: 'n1', prazo: '2026-09-19T23:00:00Z' },
+        { cartaoId: 'n1', prazo: '2026-09-20T09:00:00Z' },
+        { cartaoId: 'n1', prazo: null },
+        { cartaoId: 'n2', prazo: '2026-09-25T12:00:00Z' },
+      ],
+      HOJE,
+    )
+    expect(resumo.get('n1')).toEqual({ abertas: 3, atrasadas: 1 })
+    expect(resumo.get('n2')).toEqual({ abertas: 1, atrasadas: 0 })
+    expect(resumo.has('n3')).toBe(false)
   })
 })

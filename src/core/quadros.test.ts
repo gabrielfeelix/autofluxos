@@ -9,7 +9,9 @@ import {
   diasParado,
   estaParado,
   etapasEmOrdem,
+  precisaDeAtencao,
   proximaOrdem,
+  resumoDaEtapa,
   trocaDeLugar,
   type Cartao,
   type Etapa,
@@ -230,5 +232,45 @@ describe('aoArrastarPara: arrastar para conclusão guarda a volta (RB-23)', () =
       situacao: 'perdida',
       voltarPara: 'em-conversa',
     })
+  })
+})
+
+describe('o resumo das etapas', () => {
+  const AGORA = Date.parse('2026-10-03T15:00:00Z')
+  const diasAtras = (dias: number) => new Date(AGORA - dias * 86_400_000).toISOString()
+  const negocio = (id: string, extras: Partial<Cartao> = {}): Cartao => ({
+    id,
+    contatoId: `p-${id}`,
+    colunaId: 'novo',
+    nome: id,
+    telefone: '',
+    entrouNaColunaEm: diasAtras(0),
+    situacao: 'aberta',
+    agenda: { abertas: 1, atrasadas: 0 },
+    ...extras,
+  })
+  const etapaComum = { limiteDeDias: null }
+
+  it('conta parados, sem atividade e atrasadas, só entre os abertos', () => {
+    const cartoes = [
+      negocio('a', { entrouNaColunaEm: diasAtras(10) }),
+      negocio('b', { agenda: { abertas: 0, atrasadas: 0 } }),
+      negocio('c', { agenda: { abertas: 2, atrasadas: 1 } }),
+      // Ganho, parado e sem atividade: não pede atenção de ninguém.
+      negocio('d', { situacao: 'ganha', entrouNaColunaEm: diasAtras(30), agenda: { abertas: 0, atrasadas: 0 } }),
+    ]
+    expect(resumoDaEtapa(cartoes, etapaComum, AGORA)).toEqual({ parados: 1, 'sem-atividade': 1, atrasadas: 1 })
+  })
+
+  it('parado respeita a paciência da etapa', () => {
+    const cartao = negocio('a', { entrouNaColunaEm: diasAtras(DIAS_PARA_MARCAR_PARADO + 1) })
+    expect(precisaDeAtencao(cartao, 'parados', { limiteDeDias: null }, AGORA)).toBe(true)
+    expect(precisaDeAtencao(cartao, 'parados', { limiteDeDias: 30 }, AGORA)).toBe(false)
+  })
+
+  it('agenda não lida não vira "todos sem atividade"', () => {
+    const cartoes = [negocio('a', { agenda: undefined }), negocio('b', { agenda: undefined })]
+    expect(resumoDaEtapa(cartoes, etapaComum, AGORA)).toEqual({ parados: 0, 'sem-atividade': null, atrasadas: null })
+    expect(precisaDeAtencao(cartoes[0]!, 'sem-atividade', etapaComum, AGORA)).toBe(false)
   })
 })

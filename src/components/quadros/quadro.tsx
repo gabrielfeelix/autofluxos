@@ -15,6 +15,11 @@ import {
   filtrarCartoes,
   estaParado,
   aoArrastarPara,
+  ATENCOES_DO_QUADRO,
+  NOME_DA_ATENCAO,
+  precisaDeAtencao,
+  resumoDaEtapa,
+  type AtencaoDoQuadro,
   type Cartao,
   type CorDaEtapa,
   type Etapa,
@@ -148,8 +153,20 @@ export function Quadro({
     setCartoes(cartoesIniciais)
   }
 
-  const visiveis = filtrarCartoes(cartoes, filtro)
+  /*
+   * O filtro de atenção (escolhido no resumo das etapas) vem depois dos
+   * outros, porque "parado" depende do limite da etapa de cada cartão. E o
+   * resumo conta **antes** dele: escolher "atrasadas" não pode zerar os outros
+   * dois números, senão a pessoa perde o caminho de volta.
+   */
+  const semAtencao = filtrarCartoes(cartoes, filtro)
+  const atencao = filtro.atencao ?? null
+  const etapaPorId = new Map(etapas.map((etapa) => [etapa.id, etapa]))
+  const visiveis = atencao
+    ? semAtencao.filter((cartao) => precisaDeAtencao(cartao, atencao, etapaPorId.get(cartao.colunaId), agora))
+    : semAtencao
   const porEtapa = cartoesPorEtapa(visiveis, ordem)
+  const paraOResumo = atencao ? cartoesPorEtapa(semAtencao, ordem) : porEtapa
 
   /*
    * Só quem tem cartão aqui aparece na barra. Uma conta com doze pessoas e um
@@ -417,6 +434,14 @@ export function Quadro({
                 />
               </header>
 
+              <ResumoDaEtapa
+                resumo={resumoDaEtapa(paraOResumo.get(etapa.id) ?? [], etapa, agora)}
+                ativa={atencao}
+                aoEscolher={(escolhida) =>
+                  setFiltro((atual) => ({ ...atual, atencao: atual.atencao === escolhida ? null : escolhida }))
+                }
+              />
+
               <ul className="flex min-h-[52px] flex-1 flex-col gap-2 overflow-y-auto px-2 pb-2">
                 {daEtapa.length === 0 ? (
                   <li className="shrink-0 rounded-lg border border-dashed border-line px-2 py-4 text-center text-[11px] leading-4 text-dim">
@@ -550,14 +575,38 @@ export function Quadro({
                                 </span>
                               )}
 
-                              {cartao.responsavelNome && (
-                                <span
-                                  title={cartao.responsavelNome}
-                                  className="ml-auto shrink-0 rounded-full border border-line px-1.5 text-[9.5px] font-bold text-muted"
-                                >
-                                  {iniciais(cartao.responsavelNome)}
-                                </span>
-                              )}
+                              <span className="ml-auto flex shrink-0 items-center gap-1.5">
+                                {/* Atividade atrasada no próprio cartão: o resumo da
+                                    coluna diz quantos, isto diz quais. */}
+                                {!!cartao.agenda?.atrasadas &&
+                                  (!cartao.situacao || cartao.situacao === 'aberta') && (
+                                    <span
+                                      title={
+                                        cartao.agenda.atrasadas === 1
+                                          ? '1 atividade atrasada'
+                                          : `${cartao.agenda.atrasadas} atividades atrasadas`
+                                      }
+                                      className="flex items-center gap-0.5 text-[10px] font-bold text-perigo tabular-nums"
+                                    >
+                                      <svg aria-hidden viewBox="0 0 24 24" className="size-3" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round">
+                                        <circle cx="12" cy="12" r="9" />
+                                        <path d="M12 7v5.5M12 16.5h.01" />
+                                      </svg>
+                                      {cartao.agenda.atrasadas > 1 && cartao.agenda.atrasadas}
+                                      <span className="sr-only">
+                                        {cartao.agenda.atrasadas === 1 ? 'atividade atrasada' : 'atividades atrasadas'}
+                                      </span>
+                                    </span>
+                                  )}
+                                {cartao.responsavelNome && (
+                                  <span
+                                    title={cartao.responsavelNome}
+                                    className="rounded-full border border-line px-1.5 text-[9.5px] font-bold text-muted"
+                                  >
+                                    {iniciais(cartao.responsavelNome)}
+                                  </span>
+                                )}
+                              </span>
                             </span>
                           </span>
                         </button>
@@ -732,6 +781,71 @@ function espera(cartao: Cartao, agora: number): string {
 function parado(cartao: Cartao, etapa: Etapa, agora: number): boolean {
   if (cartao.situacao && cartao.situacao !== 'aberta') return false
   return estaParado(cartao.entrouNaColunaEm, agora, etapa.limiteDeDias)
+}
+
+/**
+ * O resumo de uma etapa: três números pequenos sob o nome da coluna (pedido
+ * de 03/10/2026, a partir das "estatísticas das etapas" do RD).
+ *
+ * Do RD veio a pergunta, não o desenho: lá são cinco linhas de texto em cada
+ * coluna, e aqui são três pastilhas com o número em destaque, que se lê de
+ * relance sem ler rótulo. Cada uma é botão e filtra o funil inteiro por ela,
+ * porque número que só informa vira decoração depois da primeira semana.
+ *
+ * Aparece só com "Resumo" ligado na barra, pelo CSS (`.resumo-da-etapa`).
+ */
+function ResumoDaEtapa({
+  resumo,
+  ativa,
+  aoEscolher,
+}: {
+  resumo: Record<AtencaoDoQuadro, number | null>
+  ativa: AtencaoDoQuadro | null
+  aoEscolher: (atencao: AtencaoDoQuadro) => void
+}) {
+  const TOM: Record<AtencaoDoQuadro, string> = {
+    parados: 'text-aviso',
+    'sem-atividade': 'text-ink',
+    atrasadas: 'text-perigo',
+  }
+  return (
+    <div className="resumo-da-etapa shrink-0 grid-cols-3 gap-1 px-2 pb-2">
+      {ATENCOES_DO_QUADRO.map((atencao) => {
+        const n = resumo[atencao]
+        const nomes = NOME_DA_ATENCAO[atencao]
+        const pressionada = ativa === atencao
+        const vazia = n === null || n === 0
+        return (
+          <button
+            key={atencao}
+            type="button"
+            aria-pressed={pressionada}
+            disabled={vazia && !pressionada}
+            onClick={() => aoEscolher(atencao)}
+            title={
+              n === null
+                ? 'Não deu para ler as atividades agora'
+                : pressionada
+                  ? 'Mostrar todos de novo'
+                  : `${n} ${n === 1 ? nomes.um : nomes.varios} nesta etapa. Clique para ver só eles no funil.`
+            }
+            className={`flex min-w-0 flex-col items-start rounded-lg border px-2 py-1.5 text-left transition ${
+              pressionada
+                ? 'border-primary/40 bg-primary-weak'
+                : 'border-line/70 bg-panel enabled:hover:border-strong disabled:cursor-default'
+            }`}
+          >
+            <span className={`text-[15px] leading-none font-bold tabular-nums ${vazia ? 'text-dim/70' : TOM[atencao]}`}>
+              {n ?? '–'}
+            </span>
+            <span className={`mt-1 truncate text-[10px] leading-tight font-semibold ${pressionada ? 'text-primary' : 'text-dim'}`}>
+              {n === 1 ? nomes.um : nomes.varios}
+            </span>
+          </button>
+        )
+      })}
+    </div>
+  )
 }
 
 function somaDosAbertos(cartoes: Cartao[]): number {
