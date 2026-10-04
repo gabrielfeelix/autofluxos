@@ -270,11 +270,32 @@ export async function consultarPedido(
   if (!achados.ok) return achados
 
   const lista = (achados.valor as { items?: PedidoDoMagento[] } | null)?.items ?? []
-  const conferido =
+  let conferido =
     numero !== ''
       ? lista.find((p) => conferePedido(p, entrada))
       : lista.find((p) => conferePedido(p, { telefone: entrada.telefone }))
-  const pedido = conferido ?? (entrada.daEquipe && numero !== '' ? lista[0] : undefined)
+  let pedido = conferido ?? (entrada.daEquipe && numero !== '' ? lista[0] : undefined)
+
+  /*
+   * O número não achou nada, mas a pessoa pode ter mandado o CPF onde se
+   * pedia "número ou CPF", e o modelo passou como número (PCYES, 02/out/2026:
+   * `10306066920` buscado como pedido duas vezes, e o pedido existia). Tenta
+   * pelo documento, com a mesma regra de sempre: só com o telefone da conversa.
+   */
+  const digitosDoNumero = soDigitos(numero)
+  const documentoReserva =
+    documento.length === 11 || documento.length === 14
+      ? documento
+      : digitosDoNumero.length === 11 || digitosDoNumero.length === 14
+        ? digitosDoNumero
+        : ''
+  if (!pedido && numero !== '' && documentoReserva !== '') {
+    const porDocumento = await ler(`/rest/V1/orders?${filtroPorDocumento(documentoReserva)}`)
+    if (!porDocumento.ok) return porDocumento
+    const outros = (porDocumento.valor as { items?: PedidoDoMagento[] } | null)?.items ?? []
+    conferido = outros.find((p) => conferePedido(p, { telefone: entrada.telefone }))
+    pedido = conferido
+  }
   if (!pedido) return { ok: true, valor: { encontrado: false, motivo: 'nao_achei_ou_nao_confere' } }
 
   // Rastreio é melhor-esforço: o status sozinho já responde a pergunta, e um

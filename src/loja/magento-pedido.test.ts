@@ -110,6 +110,29 @@ describe('consultarPedido só com o CPF', () => {
     expect(r).toEqual({ ok: true, valor: { encontrado: false, motivo: 'nao_achei_ou_nao_confere' } })
   })
 
+  // PCYES, 02/out/2026: o CPF veio no campo do número e a busca parou ali.
+  it('CPF passado como número: o número não acha, e a busca vai pelo documento', async () => {
+    const chamar = vi.fn(async (acao: { url: string }) =>
+      decodeURIComponent(acao.url).includes('[field]=increment_id')
+        ? { ok: true as const, json: { items: [] } }
+        : { ok: true as const, json: { items: [pedido] } },
+    )
+    const r = await consultarPedido(dados, { numero: '12345678909', telefone: '554498775978' }, chamar as never)
+    expect(r.ok && r.valor.encontrado).toBe(true)
+    const porDocumento = decodeURIComponent((chamar.mock.calls[1] as unknown as [{ url: string }])[0].url)
+    expect(porDocumento).toContain('[field]=customer_taxvat')
+  })
+
+  it('CPF passado como número, com telefone de outra pessoa, não mostra nada', async () => {
+    const chamar = vi.fn(async (acao: { url: string }) =>
+      decodeURIComponent(acao.url).includes('[field]=increment_id')
+        ? { ok: true as const, json: { items: [] } }
+        : { ok: true as const, json: { items: [pedido] } },
+    )
+    const r = await consultarPedido(dados, { numero: '123.456.789-09', telefone: '5511911001414' }, chamar as never)
+    expect(r).toEqual({ ok: true, valor: { encontrado: false, motivo: 'nao_achei_ou_nao_confere' } })
+  })
+
   it('sem número e sem documento válido nem consulta a loja', async () => {
     const chamar = lojaCom([pedido])
     const r = await consultarPedido(dados, { numero: '', telefone: '554498775978', documento: '123' }, chamar as never)

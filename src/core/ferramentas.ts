@@ -680,7 +680,7 @@ export const FERRAMENTAS: Ferramenta[] = [
       {
         nome: 'numero',
         tipo: 'texto',
-        descricao: 'O número do pedido, como a pessoa escreveu. Vazio se ela só informou o CPF.',
+        descricao: 'O número do pedido, como a pessoa escreveu. Vazio se ela só informou o CPF: 11 dígitos (ou 14, CNPJ) é documento, e vai em `documento`, não aqui.',
         obrigatorio: false,
       },
       {
