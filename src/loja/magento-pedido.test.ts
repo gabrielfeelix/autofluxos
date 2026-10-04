@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest'
-import { consultarPedido, listarPedidosDaPessoa, mesmoTelefone, pedidoEntregue } from './magento-pedido'
+import { consultarPedido, listarPedidosDaPessoa, mesmoTelefone, pedidoEntregue, proximoPassoDoPedido } from './magento-pedido'
 
 /**
  * A consulta de pedido só pode mostrar o pedido para quem comprou. O resto é
@@ -55,7 +55,7 @@ describe('consultarPedido', () => {
   it('esconde o pedido de outro telefone, com a mesma resposta de "não achei"', async () => {
     const chamar = lojaCom([pedido])
     const r = await consultarPedido(dados, { numero: '000000123', telefone: '5511911001414' }, chamar as never)
-    expect(r).toEqual({ ok: true, valor: { encontrado: false, motivo: 'nao_achei_ou_nao_confere' } })
+    expect(r).toEqual({ ok: true, valor: { encontrado: false, motivo: 'nao_achei_ou_nao_confere', proximoPasso: 'pedir_cpf' } })
     // Sem conferir, nem o envio é consultado.
     expect(chamar).toHaveBeenCalledTimes(1)
   })
@@ -87,6 +87,26 @@ describe('consultarPedido', () => {
   })
 })
 
+describe('proximoPassoDoPedido', () => {
+  // Dono, 04/out/2026: o time só depois de tentar número e CPF juntos.
+  it('pede o que falta e só chama o time com os dois em mãos', () => {
+    expect(proximoPassoDoPedido(false, false)).toBe('pedir_numero_ou_cpf')
+    expect(proximoPassoDoPedido(true, false)).toBe('pedir_cpf')
+    expect(proximoPassoDoPedido(false, true)).toBe('pedir_numero_do_pedido')
+    expect(proximoPassoDoPedido(true, true)).toBe('oferecer_atendente')
+  })
+
+  it('número e CPF, telefone de outra pessoa, e o CPF não é o da compra: chama o time', async () => {
+    const chamar = lojaCom([pedido])
+    const r = await consultarPedido(
+      dados,
+      { numero: '000000123', telefone: '5511911001414', documento: '98765432100' },
+      chamar as never,
+    )
+    expect(r.ok && !r.valor.encontrado && r.valor.proximoPasso).toBe('oferecer_atendente')
+  })
+})
+
 describe('mesmoTelefone', () => {
   it('recusa número curto demais para identificar alguém', () => {
     expect(mesmoTelefone('5978', '554498775978')).toBe(false)
@@ -107,7 +127,7 @@ describe('consultarPedido só com o CPF', () => {
   it('CPF certo com telefone de outra pessoa não mostra nada', async () => {
     const chamar = lojaCom([pedido])
     const r = await consultarPedido(dados, { numero: '', telefone: '5511911001414', documento: '12345678909' }, chamar as never)
-    expect(r).toEqual({ ok: true, valor: { encontrado: false, motivo: 'nao_achei_ou_nao_confere' } })
+    expect(r).toEqual({ ok: true, valor: { encontrado: false, motivo: 'nao_achei_ou_nao_confere', proximoPasso: 'pedir_numero_do_pedido' } })
   })
 
   // PCYES, 02/out/2026: o CPF veio no campo do número e a busca parou ali.
@@ -130,7 +150,7 @@ describe('consultarPedido só com o CPF', () => {
         : { ok: true as const, json: { items: [pedido] } },
     )
     const r = await consultarPedido(dados, { numero: '123.456.789-09', telefone: '5511911001414' }, chamar as never)
-    expect(r).toEqual({ ok: true, valor: { encontrado: false, motivo: 'nao_achei_ou_nao_confere' } })
+    expect(r).toEqual({ ok: true, valor: { encontrado: false, motivo: 'nao_achei_ou_nao_confere', proximoPasso: 'pedir_numero_do_pedido' } })
   })
 
   it('sem número e sem documento válido nem consulta a loja', async () => {

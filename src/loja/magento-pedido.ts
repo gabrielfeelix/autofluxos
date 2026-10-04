@@ -53,7 +53,25 @@ export type PedidoDaLoja = {
 export type ConsultaDePedido =
   /** `confere`: o telefone ou documento do pedido é o da conversa (busca da equipe). */
   | { encontrado: true; pedido: PedidoDaLoja; confere?: boolean }
-  | { encontrado: false; motivo: 'nao_achei_ou_nao_confere' }
+  | { encontrado: false; motivo: 'nao_achei_ou_nao_confere'; proximoPasso: ProximoPassoDoPedido }
+
+/**
+ * O que o bot faz quando não achou, decidido aqui e não pelo modelo. A ordem
+ * é a de loja grande: pede o que falta para conferir quem é, e só depois de
+ * ter os dois (número e CPF) e ainda assim não achar, chama o time.
+ */
+export type ProximoPassoDoPedido =
+  | 'pedir_numero_ou_cpf'
+  | 'pedir_cpf'
+  | 'pedir_numero_do_pedido'
+  | 'oferecer_atendente'
+
+export function proximoPassoDoPedido(temNumero: boolean, temDocumento: boolean): ProximoPassoDoPedido {
+  if (temNumero && temDocumento) return 'oferecer_atendente'
+  if (temNumero) return 'pedir_cpf'
+  if (temDocumento) return 'pedir_numero_do_pedido'
+  return 'pedir_numero_ou_cpf'
+}
 
 /** O que cada status padrão do Magento quer dizer para quem comprou. */
 const SITUACOES: Record<string, string> = {
@@ -237,8 +255,28 @@ export async function consultarPedido(
 
   const numero = entrada.numero.replace(/^#/, '').trim()
   const documento = soDigitos(entrada.documento ?? '')
+
+  /*
+   * A pessoa pode ter mandado o CPF onde se pedia "número ou CPF", e o modelo
+   * passou como número (PCYES, 02/out/2026: `10306066920` buscado como pedido
+   * duas vezes, e o pedido existia). 11 ou 14 dígitos no número contam como
+   * documento se o documento veio vazio.
+   */
+  const digitosDoNumero = soDigitos(numero)
+  const numeroEhDocumento = digitosDoNumero.length === 11 || digitosDoNumero.length === 14
+  const documentoReserva =
+    documento.length === 11 || documento.length === 14 ? documento : numeroEhDocumento ? digitosDoNumero : ''
+  const naoAchei = {
+    ok: true as const,
+    valor: {
+      encontrado: false as const,
+      motivo: 'nao_achei_ou_nao_confere' as const,
+      proximoPasso: proximoPassoDoPedido(numero !== '' && !numeroEhDocumento, documentoReserva !== ''),
+    },
+  }
+
   const semNumeroNemDocumento = numero === '' && documento.length !== 11 && documento.length !== 14
-  if (semNumeroNemDocumento) return { ok: true, valor: { encontrado: false, motivo: 'nao_achei_ou_nao_confere' } }
+  if (semNumeroNemDocumento) return naoAchei
 
   async function ler(caminho: string): Promise<ResultadoDaLoja<unknown>> {
     const r = await chamar(
@@ -276,19 +314,8 @@ export async function consultarPedido(
       : lista.find((p) => conferePedido(p, { telefone: entrada.telefone }))
   let pedido = conferido ?? (entrada.daEquipe && numero !== '' ? lista[0] : undefined)
 
-  /*
-   * O número não achou nada, mas a pessoa pode ter mandado o CPF onde se
-   * pedia "número ou CPF", e o modelo passou como número (PCYES, 02/out/2026:
-   * `10306066920` buscado como pedido duas vezes, e o pedido existia). Tenta
-   * pelo documento, com a mesma regra de sempre: só com o telefone da conversa.
-   */
-  const digitosDoNumero = soDigitos(numero)
-  const documentoReserva =
-    documento.length === 11 || documento.length === 14
-      ? documento
-      : digitosDoNumero.length === 11 || digitosDoNumero.length === 14
-        ? digitosDoNumero
-        : ''
+  // O número não achou: tenta pelo documento, com a regra de sempre, só com
+  // o telefone da conversa.
   if (!pedido && numero !== '' && documentoReserva !== '') {
     const porDocumento = await ler(`/rest/V1/orders?${filtroPorDocumento(documentoReserva)}`)
     if (!porDocumento.ok) return porDocumento
@@ -296,7 +323,7 @@ export async function consultarPedido(
     conferido = outros.find((p) => conferePedido(p, { telefone: entrada.telefone }))
     pedido = conferido
   }
-  if (!pedido) return { ok: true, valor: { encontrado: false, motivo: 'nao_achei_ou_nao_confere' } }
+  if (!pedido) return naoAchei
 
   // Rastreio é melhor-esforço: o status sozinho já responde a pergunta, e um
   // envio ilegível não pode esconder que o pedido existe e foi pago.
