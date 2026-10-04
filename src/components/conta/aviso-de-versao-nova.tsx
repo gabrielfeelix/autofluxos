@@ -66,31 +66,33 @@ export function AvisoDeVersaoNova() {
 
   if (!nova || fechadaPara === nova) return null
 
+  /*
+   * Cartão claro, e não faixa tingida: ela mora em cima da casca azul, onde o
+   * tom "info" (azul-claro sobre azul) sumia. Visto no teste de 04/10/2026.
+   */
   return (
-    <div role="status" className="flex flex-wrap items-center justify-between gap-x-4 gap-y-1.5 border-b border-info/30 bg-info/10 px-4 py-2 text-info md:px-6">
-      <p className="flex min-w-0 flex-1 items-center gap-2 text-[12.5px] leading-5">
-        <svg aria-hidden viewBox="0 0 24 24" className="size-4 shrink-0" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
-          <path d="M20 11a8 8 0 1 0-2.3 5.7" />
-          <path d="M20 4v7h-7" />
-        </svg>
+    <div role="status" className="mx-3 mt-3 flex flex-wrap items-center justify-between gap-x-4 gap-y-2 rounded-xl border border-line bg-panel px-4 py-2.5 text-soft shadow-[0_6px_20px_rgba(19,25,34,0.12)] md:mx-4">
+      <p className="flex min-w-0 flex-1 items-center gap-2.5 text-[12.5px] leading-5">
+        <span aria-hidden className="grid size-7 shrink-0 place-items-center rounded-full bg-primary-weak text-primary">
+          <svg viewBox="0 0 24 24" className="size-4" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M20 11a8 8 0 1 0-2.3 5.7" />
+            <path d="M20 4v7h-7" />
+          </svg>
+        </span>
         <span>
-          <strong className="font-semibold">Saiu uma versão nova do AutoFluxos.</strong> Atualize a página para usar a mais
+          <strong className="font-semibold text-ink">Saiu uma versão nova do AutoFluxos.</strong> Atualize a página para usar a mais
           recente; o que você já salvou continua lá.
         </span>
       </p>
-      <span className="flex items-center gap-1">
-        <button
-          type="button"
-          onClick={() => window.location.reload()}
-          className="rounded-lg border border-current/40 px-2.5 py-1 text-[11.5px] font-bold transition hover:bg-current/10"
-        >
+      <span className="flex items-center gap-1.5">
+        <button type="button" onClick={() => window.location.reload()} className="botao-primario botao-sm">
           Atualizar agora
         </button>
         <button
           type="button"
           aria-label="Fechar aviso"
           onClick={() => setFechadaPara(nova)}
-          className="rounded-lg px-2 py-1 text-[14px] leading-none opacity-70 transition hover:opacity-100"
+          className="grid size-8 place-items-center rounded-lg text-[16px] leading-none text-muted transition hover:bg-surface hover:text-ink"
         >
           ×
         </button>
