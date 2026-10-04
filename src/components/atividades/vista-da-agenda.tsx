@@ -22,7 +22,7 @@ const DIAS_DA_SEMANA = ['seg', 'ter', 'qua', 'qui', 'sex', 'sáb', 'dom']
 /** Quantas atividades um dia do mês mostra antes do "+N". */
 const CABEM_NO_DIA_DO_MES = 3
 
-/** A borda da esquerda diz a urgência; o texto ("vencida") vem no diálogo e na lista. */
+/** A borda da esquerda diz a urgência; o texto ("Atrasada") vem no diálogo e na lista. */
 const BORDA: Record<Urgencia, string> = {
   vencida: 'border-l-rose-500',
   hoje: 'border-l-amber-400',

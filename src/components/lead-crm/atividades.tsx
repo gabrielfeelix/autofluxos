@@ -44,7 +44,7 @@ const TOM: Record<Urgencia, string> = {
 }
 
 const ROTULO: Record<Urgencia, string> = {
-  vencida: 'vencida',
+  vencida: 'atrasada',
   hoje: 'hoje',
   futura: '',
   'sem-prazo': 'sem prazo',
@@ -138,7 +138,7 @@ export function Atividades({
           </button>
         </div>
         <span className="text-[10.5px] leading-4 text-dim">
-          Sem data é <strong>algum dia</strong>, e não fica vencida por isso.
+          Sem data é <strong>algum dia</strong>, e não fica atrasada por isso.
         </span>
       </form>
 

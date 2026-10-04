@@ -18,7 +18,7 @@ import {
 import { SeletorDePessoa } from './seletor-de-pessoa'
 
 const ROTULO_DO_RECORTE: Record<RecorteDaAgenda, string> = {
-  vencidas: 'Vencidas',
+  vencidas: 'Atrasadas',
   hoje: 'Hoje',
   proximas: 'Próximas',
   'sem-prazo': 'Sem prazo',
@@ -109,7 +109,7 @@ export function BarraDaAgenda({
               className="chip-vidro"
             >
               {ROTULO_DO_RECORTE[recorte]}
-              {/* Vencida é a única que pede ação: ela ganha o badge coral. */}
+              {/* Atrasada é a única que pede ação: ela ganha o badge coral. */}
               {recorte === 'vencidas' && contagens[recorte] > 0 && !ativo ? (
                 <Badge tom="alerta">{contagens[recorte]}</Badge>
               ) : (

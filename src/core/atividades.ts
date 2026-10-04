@@ -172,6 +172,41 @@ export function urgenciaDe(
 }
 
 /**
+ * O status que a tela escreve ao lado de cada atividade.
+ *
+ * É a régua de `urgenciaDe` com nome de gente, mais as duas situações de quem
+ * já saiu da fila. Pedido de 03/10/2026 (Eduardo, comparando com o RD): quem
+ * cobra o vendedor precisa ler "Atrasada" na linha, e não deduzir pela cor de
+ * um ponto. **Atrasada** e não "vencida": é a palavra que o sino, a barra e a
+ * equipe de vendas já usam, e duas palavras para a mesma coisa fazem parecer
+ * que são duas coisas.
+ *
+ * **Pendente** junta "futura" e "sem prazo": as duas são a mesma resposta para
+ * quem cobra ("ainda não é hora"), e a data na coluna ao lado diz qual delas.
+ */
+export type StatusDaAtividade = 'atrasada' | 'hoje' | 'pendente' | 'concluida' | 'cancelada'
+
+export function statusDaAtividade(
+  atividade: Pick<Atividade, 'prazo' | 'situacao'>,
+  agora: number = Date.now(),
+): StatusDaAtividade {
+  if (atividade.situacao === 'concluida') return 'concluida'
+  if (atividade.situacao === 'cancelada') return 'cancelada'
+  const urgencia = urgenciaDe(atividade, agora)
+  if (urgencia === 'vencida') return 'atrasada'
+  if (urgencia === 'hoje') return 'hoje'
+  return 'pendente'
+}
+
+export const NOME_DO_STATUS: Record<StatusDaAtividade, string> = {
+  atrasada: 'Atrasada',
+  hoje: 'Hoje',
+  pendente: 'Pendente',
+  concluida: 'Concluída',
+  cancelada: 'Cancelada',
+}
+
+/**
  * O prazo em palavras, para o resumo da ficha e os próximos passos.
  *
  * **Dia sem hora nunca ganha hora.** A versão anterior contava horas até o

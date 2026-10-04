@@ -170,14 +170,14 @@ export default async function Pagina({
                 </p>
                 <p>
                   <strong className="text-ink">
-                    Vencida e hoje contam pelo dia, não pela hora.
+                    Atrasada e hoje contam pelo dia, não pela hora.
                   </strong>{" "}
                   Marcada para hoje às 9h continua sendo de hoje às 9h01. Sem
-                  prazo é &quot;algum dia&quot; e nunca fica vencida.
+                  prazo é &quot;algum dia&quot; e nunca fica atrasada.
                 </p>
                 <p>
                   <strong className="text-ink">O número no menu lateral</strong>{" "}
-                  soma as vencidas e as de hoje que você pode ver.
+                  soma as atrasadas e as de hoje que você pode ver.
                 </p>
               </AjudaDaTela>
             </span>

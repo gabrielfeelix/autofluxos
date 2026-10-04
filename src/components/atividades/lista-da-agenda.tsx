@@ -14,7 +14,7 @@ import {
 } from '@/server/acoes-atividades'
 import { AcoesDaLinha, type PedidoDaLinha } from './acoes-da-linha'
 import { DialogoDeCancelar } from './cancelar-atividade'
-import { CartaoDaAgenda, LinhaDaAgenda } from './linha-da-agenda'
+import { CartaoDaAgenda, COLUNAS_DA_AGENDA, LinhaDaAgenda } from './linha-da-agenda'
 
 /** Quanto tempo o "Desfazer" fica na tela depois de concluir ou cancelar. */
 const TEMPO_DO_DESFAZER = 6000
@@ -250,7 +250,7 @@ export function ListaDaAgenda({
         <table className="w-full border-collapse text-left">
           <thead>
             <tr className="border-b border-line">
-              {['Prazo', 'Atividade', 'Contato', 'Responsável'].map((coluna) => (
+              {COLUNAS_DA_AGENDA.map((coluna) => (
                 <th key={coluna} scope="col" className="px-4 py-3 text-[10.5px] font-bold tracking-[0.06em] text-dim uppercase">
                   {coluna}
                 </th>

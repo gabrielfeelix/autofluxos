@@ -5,6 +5,7 @@ import {
   ehTipoDeAtividade,
   prazoEmPalavras,
   proximaAcao,
+  statusDaAtividade,
   urgenciaDe,
   type Atividade,
 } from './atividades'
@@ -140,5 +141,27 @@ describe('prazoEmPalavras', () => {
 
   it('sem prazo', () => {
     expect(prazoEmPalavras(atividade({ prazo: null }), HOJE).texto).toBe('sem prazo')
+  })
+})
+
+describe('statusDaAtividade', () => {
+  it('ontem aberta é Atrasada; hoje é Hoje', () => {
+    expect(statusDaAtividade(atividade({ prazo: '2026-09-19T23:00:00Z' }), HOJE)).toBe('atrasada')
+    expect(statusDaAtividade(atividade({ prazo: '2026-09-20T09:00:00Z' }), HOJE)).toBe('hoje')
+  })
+
+  it('futura e sem prazo são Pendente, nunca Atrasada', () => {
+    expect(statusDaAtividade(atividade({ prazo: '2026-09-25T12:00:00Z' }), HOJE)).toBe('pendente')
+    expect(statusDaAtividade(atividade({ prazo: null }), HOJE)).toBe('pendente')
+  })
+
+  it('feita ou cancelada sai da régua, mesmo com prazo no passado', () => {
+    const passado = '2026-09-01T12:00:00Z'
+    expect(
+      statusDaAtividade(atividade({ prazo: passado, situacao: 'concluida', concluidaEm: passado }), HOJE),
+    ).toBe('concluida')
+    expect(
+      statusDaAtividade(atividade({ prazo: passado, situacao: 'cancelada', concluidaEm: passado }), HOJE),
+    ).toBe('cancelada')
   })
 })

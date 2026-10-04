@@ -590,7 +590,7 @@ async function Fila({
         <p className="border-t border-line-soft px-5 py-8 text-center text-[13px] text-muted">
           {contatos === 0
             ? 'Ninguém escreveu ainda. A primeira conversa aparece aqui assim que chegar.'
-            : 'Ninguém esperando. Nenhuma conversa sem resposta e nada vencido na agenda.'}
+            : 'Ninguém esperando. Nenhuma conversa sem resposta e nada atrasado na agenda.'}
         </p>
       ) : (
         <ul className="border-t border-line-soft py-1">

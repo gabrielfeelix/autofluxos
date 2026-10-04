@@ -2,31 +2,20 @@ import { hrefDaFicha } from '@/core/volta-da-ficha'
 import Link from 'next/link'
 import type { ReactNode } from 'react'
 import { iniciaisDe } from '@/components/design/logo-cliente'
-import { NOME_DO_TIPO, urgenciaDe, type TipoDeAtividade, type Urgencia } from '@/core/atividades'
+import { NOME_DO_TIPO, statusDaAtividade, type TipoDeAtividade } from '@/core/atividades'
 import { horaDoRelogio } from '@/lib/quando'
 import type { ItemDaAgenda } from '@/server/repos/atividades'
+import { SeloDoStatus } from './selo-do-status'
 
 /**
  * Uma atividade da agenda: linha de tabela no desktop, cartão no celular.
  *
- * As duas formas saem do mesmo `PartesDaLinha`, para o conteúdo não divergir
- * entre elas. Cor de urgência nunca vem sozinha: sempre há a palavra
- * ("vencida", "hoje") ao lado, para quem não distingue vermelho de âmbar.
+ * As duas formas saem do mesmo `partes`, para o conteúdo não divergir entre
+ * elas. O status é um selo com ícone e palavra (`SeloDoStatus`), na coluna
+ * própria: até 03/10/2026 ele era um ponto colorido com "vencida" miúdo
+ * embaixo da data, e quem cobra a equipe precisava deduzir o que estava
+ * atrasado pela cor.
  */
-
-const PONTO: Record<Urgencia, string> = {
-  vencida: 'bg-rose-500',
-  hoje: 'bg-amber-400',
-  futura: 'bg-line',
-  'sem-prazo': 'bg-line',
-}
-
-const PALAVRA: Record<Urgencia, { texto: string; classe: string } | null> = {
-  vencida: { texto: 'vencida', classe: 'text-perigo' },
-  hoje: { texto: 'hoje', classe: 'text-aviso' },
-  futura: null,
-  'sem-prazo': null,
-}
 
 const DIA = 86_400_000
 
@@ -165,22 +154,19 @@ function Erro({ texto }: { texto: string }) {
 }
 
 function partes({ item, agora, clienteId, volta }: Props) {
-  const urgencia = urgenciaDe(item, agora)
-  const palavra = PALAVRA[urgencia]
+  const status = statusDaAtividade(item, agora)
   const resolvida = item.situacao !== 'aberta'
   const hrefDoContato = hrefDaFicha(clienteId, item.contatoId, { aba: 'atividades', volta })
 
+  const selo = <SeloDoStatus status={status} />
+
   const prazo = (
-    <span className="flex items-start gap-2">
-      <span aria-hidden className={`mt-[5px] size-2 shrink-0 rounded-full ${resolvida ? 'bg-line' : PONTO[urgencia]}`} />
-      <span className="min-w-0">
-        <span className={`block text-[12.5px] font-semibold tabular-nums ${resolvida ? 'text-dim' : 'text-ink'}`}>
-          {rotuloDoPrazo(item, agora)}
-        </span>
-        {!resolvida && palavra && <span className={`block text-[11px] font-semibold ${palavra.classe}`}>{palavra.texto}</span>}
-        {item.situacao === 'concluida' && <span className="block text-[11px] text-ok">concluída</span>}
-        {item.situacao === 'cancelada' && <span className="block text-[11px] text-dim">cancelada</span>}
-      </span>
+    <span
+      className={`block text-[12.5px] font-semibold tabular-nums ${
+        resolvida ? 'text-dim' : status === 'atrasada' ? 'text-perigo' : item.prazo ? 'text-ink' : 'text-dim'
+      }`}
+    >
+      {rotuloDoPrazo(item, agora)}
     </span>
   )
 
@@ -227,16 +213,20 @@ function partes({ item, agora, clienteId, volta }: Props) {
     </span>
   )
 
-  return { prazo, atividade, contato, responsavel: <Responsavel nome={item.responsavelNome} /> }
+  return { selo, prazo, atividade, contato, responsavel: <Responsavel nome={item.responsavelNome} /> }
 }
+
+/** Os títulos das colunas, na ordem de `LinhaDaAgenda`. */
+export const COLUNAS_DA_AGENDA = ['Status', 'Data e hora', 'Atividade', 'Contato', 'Responsável'] as const
 
 export function LinhaDaAgenda(props: Props) {
   const p = partes(props)
-  const colunas = props.acoes !== undefined ? 5 : 4
+  const colunas = COLUNAS_DA_AGENDA.length + (props.acoes !== undefined ? 1 : 0)
   return (
     <>
       <tr className={`align-top hover:bg-surface/60 ${props.erro ? '' : 'border-b border-line last:border-0'}`}>
-        <td className="w-[150px] px-4 py-3.5">{p.prazo}</td>
+        <td className="w-[136px] px-4 py-3.5">{p.selo}</td>
+        <td className="w-[136px] px-4 py-[17px]">{p.prazo}</td>
         <td className="px-4 py-3.5">{p.atividade}</td>
         <td className="w-[210px] max-w-[210px] px-4 py-3.5">{p.contato}</td>
         <td className="w-[170px] max-w-[170px] px-4 py-3.5">{p.responsavel}</td>
@@ -257,8 +247,11 @@ export function CartaoDaAgenda(props: Props) {
   const p = partes(props)
   return (
     <li className="border-b border-line px-4 py-3.5 last:border-0">
-      <div className="flex items-start justify-between gap-3">
-        {p.prazo}
+      <div className="flex items-center justify-between gap-3">
+        <span className="flex min-w-0 items-center gap-2.5">
+          {p.selo}
+          {p.prazo}
+        </span>
         {props.acoes}
       </div>
       <div className="mt-2.5">{p.atividade}</div>

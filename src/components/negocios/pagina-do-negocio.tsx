@@ -19,7 +19,9 @@ import {
   VALORES_VAZIOS,
   type ValoresDaAtividade,
 } from '@/components/atividades/campos-da-atividade'
-import { NOME_DO_TIPO, type TipoDeAtividade } from '@/core/atividades'
+import { NOME_DO_TIPO, statusDaAtividade, type TipoDeAtividade } from '@/core/atividades'
+import { IconeDoTipo, rotuloDoPrazo } from '@/components/atividades/linha-da-agenda'
+import { SeloDoStatus } from '@/components/atividades/selo-do-status'
 import { comoDinheiro, lerValor, LIMITE_DO_TITULO } from '@/core/crm'
 import { CLASSE_DA_COR as COR_DA_ETIQUETA, type CorDeEtiqueta } from '@/core/etiquetas'
 import { CLASSE_DA_COR, aoArrastarPara, type Cartao, type CorDaEtapa, type TipoDeEtapa } from '@/core/quadros'
@@ -38,7 +40,7 @@ import {
 } from '@/core/negocios'
 import { telefoneLegivel } from '@/core/contatos/telefone'
 import { LIMITE_DA_NOTA } from '@/core/flow/limites'
-import { dataCurta, dataEHora, dataEHoraComRelativo, horaExata, quando } from '@/lib/quando'
+import { dataEHora, dataEHoraComRelativo, horaExata, quando } from '@/lib/quando'
 import { acaoMoverCartao, acaoTirarDoQuadro } from '@/server/acoes'
 import { acaoAtribuirCartao, acaoDescreverCartao, acaoReabrirCartao } from '@/server/acoes-crm'
 import { acaoCriarAtividade } from '@/server/acoes-atividades'
@@ -705,19 +707,24 @@ export function PaginaDoNegocio(props: Props) {
               {atividades.length === 0 ? (
                 <p className="text-[12px] leading-5 text-dim">Nada marcado. Uma ligação ou proposta combinada entra aqui.</p>
               ) : (
-                <ul className="flex flex-col gap-2.5">
-                  {atividades.map((a) => (
-                    <li key={a.id} className="flex items-start gap-2.5">
-                      <span aria-hidden className="mt-1.5 size-1.5 shrink-0 rounded-full bg-primary" />
-                      <span className="min-w-0">
-                        <span className="block truncate text-[12.5px] font-semibold">{a.titulo}</span>
-                        <span className={`block text-[11px] ${a.prazo && Date.parse(a.prazo) < agora ? 'font-semibold text-perigo' : 'text-dim'}`}>
-                          {NOME_DO_TIPO[a.tipo]}
-                          {a.prazo ? ` · ${a.horaMarcada ? horaExata(a.prazo) : dataCurta(a.prazo)}` : ' · sem prazo'}
+                <ul className="flex flex-col gap-3">
+                  {atividades.map((a) => {
+                    const status = statusDaAtividade({ prazo: a.prazo, situacao: 'aberta' }, agora)
+                    return (
+                      <li key={a.id} className="flex items-start gap-2.5">
+                        <span className="mt-px grid size-6 shrink-0 place-items-center rounded-md bg-surface text-muted" title={NOME_DO_TIPO[a.tipo]}>
+                          <IconeDoTipo tipo={a.tipo} className="size-3.5" />
                         </span>
-                      </span>
-                    </li>
-                  ))}
+                        <span className="min-w-0 flex-1">
+                          <span className="block truncate text-[12.5px] font-semibold">{a.titulo}</span>
+                          <span className={`block text-[11px] tabular-nums ${status === 'atrasada' ? 'font-semibold text-perigo' : 'text-dim'}`}>
+                            {rotuloDoPrazo(a, agora)}
+                          </span>
+                        </span>
+                        <SeloDoStatus status={status} compacto className="mt-0.5" />
+                      </li>
+                    )
+                  })}
                 </ul>
               )}
             </Cartao>

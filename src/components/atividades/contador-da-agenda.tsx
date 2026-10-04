@@ -18,7 +18,7 @@ export function ContadorDaAgenda({
   destino: string
 }) {
   const router = useRouter()
-  const rotulo = `${quantidade} ${quantidade === 1 ? 'atividade vencida ou de hoje' : 'atividades vencidas ou de hoje'}`
+  const rotulo = `${quantidade} ${quantidade === 1 ? 'atividade atrasada ou de hoje' : 'atividades atrasadas ou de hoje'}`
   return (
     <span
       title={rotulo}

@@ -23,7 +23,7 @@ export default function Carregando() {
           acoes={['w-36']}
         />
         <div aria-hidden className="mb-3 flex flex-wrap gap-2">
-          {['Vencidas', 'Hoje', 'Próximas', 'Sem prazo'].map((rotulo) => (
+          {['Atrasadas', 'Hoje', 'Próximas', 'Sem prazo'].map((rotulo) => (
             <span key={rotulo} className="chip-vidro">
               {rotulo}
               <Esqueleto className="h-3 w-4" />
