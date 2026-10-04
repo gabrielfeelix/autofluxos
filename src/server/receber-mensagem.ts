@@ -81,6 +81,7 @@ import {
 } from './repos/conversas'
 import { ESPERA_DA_MENSAGEM_MS, travarContato } from './repos/travas'
 import { JANELA_DA_RAJADA_MS, textoDaRajada } from '@/core/rajada'
+import { comCitacao } from '@/core/citacao-para-ia'
 import { inscreverNoEvento, sairPelaEtiqueta, sairPorEvento } from './sequencias'
 import { marcarContatos } from './repos/etiquetas'
 import { porContatoNaEtapa } from './repos/quadros'
@@ -1559,6 +1560,9 @@ async function prepararIa(
     iaHabilitada: fluxo?.iaHabilitada ?? false,
     clienteId: canalSalvo.clienteId,
   })
+  const mensagensComCitacao = conversa.mensagens.map((m) =>
+    m.direcao === 'entrada' && m.cita ? { ...m, texto: comCitacao(m.texto, m.cita) } : m,
+  )
 
   return {
     modelo,
@@ -1571,10 +1575,12 @@ async function prepararIa(
     contextoNegocio: cliente?.contextoNegocio ?? '',
     // A rajada inteira, não só o último envio: quem mandou "Olá", "Tudo bem"
     // e "?" fez uma pergunta só, e a IA responde uma vez.
+    // A resposta em cima de uma mensagem anterior leva a citada junto: "."
+    // citando um link é uma pergunta sobre aquele produto.
     perguntaDaPessoa: perguntaDaPessoa
-      ? (textoDaRajada(conversa.mensagens) ?? perguntaDaPessoa)
+      ? (textoDaRajada(mensagensComCitacao) ?? perguntaDaPessoa)
       : undefined,
-    historico: conversa.mensagens.flatMap((m): Turno[] => {
+    historico: mensagensComCitacao.flatMap((m): Turno[] => {
       if (m.direcao === 'entrada') return [{ de: 'pessoa', texto: m.texto ?? '(áudio ou imagem)' }]
       if (!m.produtos?.length) return [{ de: 'bot', texto: m.texto ?? '(áudio ou imagem)' }]
       /*
