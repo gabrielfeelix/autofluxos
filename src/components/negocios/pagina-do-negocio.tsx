@@ -38,7 +38,7 @@ import {
 } from '@/core/negocios'
 import { telefoneLegivel } from '@/core/contatos/telefone'
 import { LIMITE_DA_NOTA } from '@/core/flow/limites'
-import { dataCurta, horaExata, quando } from '@/lib/quando'
+import { dataCurta, dataEHora, dataEHoraComRelativo, horaExata, quando } from '@/lib/quando'
 import { acaoMoverCartao, acaoTirarDoQuadro } from '@/server/acoes'
 import { acaoAtribuirCartao, acaoDescreverCartao, acaoReabrirCartao } from '@/server/acoes-crm'
 import { acaoCriarAtividade } from '@/server/acoes-atividades'
@@ -498,7 +498,7 @@ export function PaginaDoNegocio(props: Props) {
                 ) : (
                   <>
                     {negocio.situacao === 'ganha' ? 'Ganho' : 'Perdido'}
-                    {negocio.fechadoEm && ` em ${dataCurta(negocio.fechadoEm)}`}
+                    {negocio.fechadoEm && ` em ${dataEHora(negocio.fechadoEm, agora)}`}
                     {negocio.situacao === 'perdida' && negocio.motivo && ` · motivo: ${negocio.motivo}`}
                   </>
                 )}
@@ -639,11 +639,15 @@ export function PaginaDoNegocio(props: Props) {
                   <span className={contato.origem ? 'text-soft' : 'text-dim'}>{contato.origem ?? 'Não registrada'}</span>
                 </Campo>
                 <Campo rotulo="Criado em">
-                  <span className="text-soft">{negocio.criadoEm ? dataCurta(negocio.criadoEm) : '·'}</span>
+                  <span className="text-soft tabular-nums">{negocio.criadoEm ? dataEHora(negocio.criadoEm, agora) : '·'}</span>
                 </Campo>
                 <Campo rotulo="Última alteração">
-                  <span className="text-soft" title={historico[0] ? horaExata(historico[0].quando) : undefined}>
-                    {historico[0] ? quando(historico[0].quando, agora) : negocio.criadoEm ? dataCurta(negocio.criadoEm) : '·'}
+                  <span className="text-soft tabular-nums">
+                    {historico[0]
+                      ? dataEHoraComRelativo(historico[0].quando, agora)
+                      : negocio.criadoEm
+                        ? dataEHora(negocio.criadoEm, agora)
+                        : '·'}
                   </span>
                 </Campo>
               </dl>
@@ -945,7 +949,13 @@ function LinhaDoTempo({ itens, agora }: { itens: ItemDoHistorico[]; agora: numbe
               {item.frase}
             </p>
             <p className="mt-0.5 text-[11px] text-dim">
-              <span title={horaExata(item.quando)}>{item.pendente ? 'salvando…' : quando(item.quando, agora)}</span>
+              {item.pendente ? (
+                'salvando…'
+              ) : (
+                <time dateTime={item.quando} className="tabular-nums">
+                  {dataEHoraComRelativo(item.quando, agora)}
+                </time>
+              )}
               {item.autor && ` · ${item.autor}`}
             </p>
           </div>

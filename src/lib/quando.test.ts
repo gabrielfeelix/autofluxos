@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { diaDaMensagem, diaEHoraComFuso, etiquetasDeDia, horaDoRelogio, rotuloDoDia } from './quando'
+import { dataEHora, dataEHoraComRelativo, diaDaMensagem, diaEHoraComFuso, etiquetasDeDia, horaDoRelogio, rotuloDoDia } from './quando'
 
 /**
  * O fuso é o miolo destes testes, não um detalhe.
@@ -107,5 +107,35 @@ describe('diaEHoraComFuso', () => {
 
   it('22h de Brasília continua no mesmo dia, mesmo já sendo o dia seguinte em UTC', () => {
     expect(diaEHoraComFuso('2026-09-17T01:00:00Z')).toBe('16 set às 22:00 (Brasília)')
+  })
+})
+
+describe('dataEHora', () => {
+  const agora = new Date('2026-10-03T22:50:00.000Z').getTime()
+
+  it('escreve dia, mês e hora no fuso de São Paulo, sem o ano corrente', () => {
+    // 03/10/2026, 19:46 em São Paulo.
+    expect(dataEHora('2026-10-03T22:46:00.000Z', agora)).toBe('03/10 às 19:46')
+  })
+
+  it('a noite de São Paulo continua no dia de São Paulo', () => {
+    expect(dataEHora(NOITE_DE_SP, agora)).toBe('15/09 às 22:30')
+  })
+
+  it('põe o ano quando não é o corrente', () => {
+    expect(dataEHora('2025-12-31T12:00:00.000Z', agora)).toBe('31/12/2025 às 09:00')
+  })
+})
+
+describe('dataEHoraComRelativo', () => {
+  const agora = new Date('2026-10-03T22:50:00.000Z').getTime()
+
+  it('junta o relativo enquanto ele ajuda', () => {
+    expect(dataEHoraComRelativo('2026-10-03T22:47:00.000Z', agora)).toBe('03/10 às 19:47 · há 3 min')
+    expect(dataEHoraComRelativo('2026-10-03T22:49:40.000Z', agora)).toBe('03/10 às 19:49 · agora')
+  })
+
+  it('depois de uma semana fica só a data e a hora', () => {
+    expect(dataEHoraComRelativo('2026-09-20T15:00:00.000Z', agora)).toBe('20/09 às 12:00')
   })
 })

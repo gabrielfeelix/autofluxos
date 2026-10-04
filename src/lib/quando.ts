@@ -180,3 +180,47 @@ const dataComAno = new Intl.DateTimeFormat('pt-BR', { day: '2-digit', month: 'sh
 export function dataCurta(iso: string | Date): string {
   return dataComAno.format(typeof iso === 'string' ? new Date(iso) : iso)
 }
+
+/*
+ * -----------------------------------------------------------------------------
+ * Data e hora de registro
+ * -----------------------------------------------------------------------------
+ *
+ * O histórico de um negócio é prova, e "agora", "há 3 min" não sobrevivem a um
+ * print nem respondem "quando foi?". O RD, que o Eduardo usou de régua em
+ * 03/10/2026, escreve "18/02/2026 às 12:14" em todo registro, e é isso que a
+ * equipe de vendas espera ler. O relativo continua ao lado enquanto é útil
+ * (até uma semana): ele responde "faz tempo?" num relance.
+ */
+
+const diaEMes = new Intl.DateTimeFormat('pt-BR', { day: '2-digit', month: '2-digit', timeZone: FUSO })
+const diaMesEAno = new Intl.DateTimeFormat('pt-BR', {
+  day: '2-digit',
+  month: '2-digit',
+  year: 'numeric',
+  timeZone: FUSO,
+})
+
+/** Uma semana: depois disso "há 12 dias" é conta que a data já faz melhor. */
+const RELATIVO_ATE_MINUTOS = 7 * 24 * 60
+
+/**
+ * "03/10 às 19:46", no fuso de São Paulo. O ano só aparece quando não é o
+ * corrente, pela mesma razão de `rotuloDoDia`: repetir 2026 em toda linha é
+ * ruído, mas "03/10" de outro ano sem ano é ambíguo.
+ */
+export function dataEHora(iso: string | Date, agora = Date.now()): string {
+  const data = typeof iso === 'string' ? new Date(iso) : iso
+  const ano = diaISO.format(data).slice(0, 4)
+  const anoDeHoje = diaISO.format(new Date(agora)).slice(0, 4)
+  const dia = (ano === anoDeHoje ? diaEMes : diaMesEAno).format(data)
+  return `${dia} às ${relogio.format(data)}`
+}
+
+/** "03/10 às 19:46 · há 3 min"; passada uma semana, só a data e a hora. */
+export function dataEHoraComRelativo(iso: string, agora = Date.now()): string {
+  const base = dataEHora(iso, agora)
+  const minutos = (agora - new Date(iso).getTime()) / 60000
+  if (minutos < 0 || minutos >= RELATIVO_ATE_MINUTOS) return base
+  return `${base} · ${quando(iso, agora)}`
+}
