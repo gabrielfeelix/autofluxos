@@ -135,6 +135,10 @@ describe('dataEHoraComRelativo', () => {
     expect(dataEHoraComRelativo('2026-10-03T22:49:40.000Z', agora)).toBe('03/10 às 19:49 · agora')
   })
 
+  it('o que leva o relógio do navegador, segundos à frente, é agora', () => {
+    expect(dataEHoraComRelativo('2026-10-03T22:50:20.000Z', agora)).toBe('03/10 às 19:50 · agora')
+  })
+
   it('depois de uma semana fica só a data e a hora', () => {
     expect(dataEHoraComRelativo('2026-09-20T15:00:00.000Z', agora)).toBe('20/09 às 12:00')
   })

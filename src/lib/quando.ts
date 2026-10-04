@@ -217,10 +217,17 @@ export function dataEHora(iso: string | Date, agora = Date.now()): string {
   return `${dia} às ${relogio.format(data)}`
 }
 
-/** "03/10 às 19:46 · há 3 min"; passada uma semana, só a data e a hora. */
+/**
+ * "03/10 às 19:46 · há 3 min"; passada uma semana, só a data e a hora.
+ *
+ * Instante **depois** de `agora` é "agora", e não silêncio: a anotação recém
+ * feita leva o relógio do navegador, que costuma estar segundos à frente do
+ * `agora` que o servidor mandou, e sem isto a linha mais nova era a única do
+ * histórico sem "· agora" (visto no teste de 04/10/2026).
+ */
 export function dataEHoraComRelativo(iso: string, agora = Date.now()): string {
   const base = dataEHora(iso, agora)
   const minutos = (agora - new Date(iso).getTime()) / 60000
-  if (minutos < 0 || minutos >= RELATIVO_ATE_MINUTOS) return base
-  return `${base} · ${quando(iso, agora)}`
+  if (minutos >= RELATIVO_ATE_MINUTOS) return base
+  return `${base} · ${minutos < 0 ? 'agora' : quando(iso, agora)}`
 }
