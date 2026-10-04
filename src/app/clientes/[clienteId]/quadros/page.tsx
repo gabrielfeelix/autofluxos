@@ -95,7 +95,7 @@ export default async function Pagina({
  * o resumo das etapas.
  *
  * As duas leituras vão juntas, e a das atividades **não derruba o funil**: se
- * ela falhar, os cartões vêm sem `agenda`, e o resumo escreve "–" em vez de
+ * ela falhar, os cartões vêm sem `agenda`, e o resumo escreve "·" em vez de
  * inventar "todos sem atividade" (ver `resumoDaEtapa`).
  */
 async function comAgenda(clienteId: string, quadroId: string, agora: number) {

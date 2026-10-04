@@ -836,7 +836,7 @@ function ResumoDaEtapa({
             }`}
           >
             <span className={`text-[15px] leading-none font-bold tabular-nums ${vazia ? 'text-dim/70' : TOM[atencao]}`}>
-              {n ?? '–'}
+              {n ?? '·'}
             </span>
             <span className={`mt-1 truncate text-[10px] leading-tight font-semibold ${pressionada ? 'text-primary' : 'text-dim'}`}>
               {n === 1 ? nomes.um : nomes.varios}

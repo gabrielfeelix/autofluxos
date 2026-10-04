@@ -547,7 +547,7 @@ export function precisaDeAtencao(
 
 /**
  * Quantos de cada, numa etapa. `null` quando a agenda não foi lida, para a
- * tela escrever "–" em vez de um zero que seria mentira.
+ * tela escrever "·" em vez de um zero que seria mentira.
  */
 export function resumoDaEtapa(
   cartoes: Cartao[],
