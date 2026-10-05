@@ -50,7 +50,7 @@ export function TemperaturaDoContato({
     <span className="flex flex-col">
       <span
         role="radiogroup"
-        aria-label="Quanto esta venda está quente"
+        aria-label="Qualificação da venda"
         className="flex gap-1.5"
       >
         {TEMPERATURAS.map((valor) => {

@@ -71,7 +71,7 @@ export const CAMPOS = [
   { chave: 'ultima_compra_em', rotulo: 'última compra', tipo: 'data' },
   { chave: 'produto_comprado', rotulo: 'produto comprado', tipo: 'texto' },
   // Da oportunidade. Ver `MESMA_OCORRENCIA`.
-  { chave: 'oportunidade_temperatura', rotulo: 'temperatura da oportunidade', tipo: 'opcao', opcoes: ['frio', 'morno', 'quente'] },
+  { chave: 'oportunidade_temperatura', rotulo: 'qualificação da oportunidade', tipo: 'opcao', opcoes: ['frio', 'morno', 'quente'] },
   { chave: 'oportunidade_situacao', rotulo: 'situação da oportunidade', tipo: 'opcao', opcoes: ['aberta', 'ganha', 'perdida'] },
   { chave: 'oportunidade_quadro', rotulo: 'processo da oportunidade', tipo: 'texto' },
 ] as const satisfies readonly DefinicaoDeCampo[]

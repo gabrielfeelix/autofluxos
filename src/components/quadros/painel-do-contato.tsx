@@ -235,7 +235,7 @@ export function PainelDoContato({
               </p>
             )}
             <div className="crm-field">
-              <span>Temperatura</span>
+              <span>Qualificação</span>
               <TemperaturaDaOportunidade
                 clienteId={clienteId}
                 cartaoId={cartao.id}

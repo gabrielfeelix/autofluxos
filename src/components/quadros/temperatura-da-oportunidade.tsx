@@ -59,7 +59,7 @@ export function TemperaturaDaOportunidade({
     <span className="flex flex-col">
       <span
         role="group"
-        aria-label="Quanto esta negociação está quente"
+        aria-label="Qualificação da negociação"
         className="flex gap-1 rounded-lg border border-line bg-surface p-1"
       >
         {VALORES.map((valor) => {

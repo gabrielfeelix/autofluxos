@@ -73,7 +73,7 @@ export function ListaDeNegocios({
             },
             {
               chave: 'temperatura',
-              titulo: 'Temperatura',
+              titulo: 'Qualificação',
               opcoes: [
                 { valor: 'quente', rotulo: 'Quente' },
                 { valor: 'morno', rotulo: 'Morno' },
@@ -117,7 +117,7 @@ export function ListaDeNegocios({
                 <th scope="col" className={CABECALHO}>Etapa</th>
                 <th scope="col" className={`${CABECALHO} text-right`}>Valor</th>
                 <th scope="col" className={CABECALHO}>Responsável</th>
-                <th scope="col" className={CABECALHO}>Temperatura</th>
+                <th scope="col" className={CABECALHO}>Qualificação</th>
                 <th scope="col" className={CABECALHO}>Na etapa</th>
                 <th scope="col" className={CABECALHO}>Previsão</th>
               </tr>

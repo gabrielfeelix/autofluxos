@@ -535,7 +535,7 @@ export function Quadro({
                               </span>
                               {cartao.temperatura && (
                                 <span
-                                  title={`Temperatura: ${cartao.temperatura}`}
+                                  title={`Qualificação: ${cartao.temperatura}`}
                                   className={`shrink-0 rounded-full px-1.5 text-[9.5px] font-bold capitalize ${
                                     cartao.temperatura === 'quente'
                                       ? 'bg-rose-400/15 text-rose-600'
