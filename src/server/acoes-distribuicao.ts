@@ -9,7 +9,7 @@ import {
   type ModoDeDistribuicao,
 } from './repos/distribuicao'
 import { membrosDaConta } from './repos/usuarios'
-import { exigirAcessoAoCliente, podeAdministrarConta } from './sessao'
+import { exigirCapacidade, recusou } from './permissoes'
 
 /**
  * Quem mexe na distribuição é quem administra a conta.
@@ -17,21 +17,20 @@ import { exigirAcessoAoCliente, podeAdministrarConta } from './sessao'
  * Não é frescura de papel: ligar "só quem assumiu responde" muda o que o colega
  * ao lado consegue fazer, e quem tem o poder de mudar o trabalho dos outros é
  * quem já tem o poder de tirá-los da conta.
+ *
+ * A pergunta é `configurar_empresa` no escopo `todos`, a mesma régua do antigo
+ * `podeAdministrarConta`, e mora em cada ação, e não num ajudante: a trava de
+ * `acoes.test.ts` lê o corpo da ação, e a guarda dentro de outra função era
+ * invisível para ela.
  */
-async function exigirAdministracao(clienteId: string) {
-  const acesso = await exigirAcessoAoCliente(clienteId)
-  if (!podeAdministrarConta(acesso)) {
-    return { acesso, erro: 'só quem administra a conta muda a distribuição' }
-  }
-  return { acesso, erro: null }
-}
+const SO_QUEM_ADMINISTRA = 'só quem administra a conta muda a distribuição'
 
 export async function acaoDefinirDistribuicao(
   clienteId: string,
   ajustes: { distribuicao?: ModoDeDistribuicao; exigeAssumir?: boolean },
 ): Promise<{ ok: boolean; erro?: string }> {
-  const { erro } = await exigirAdministracao(clienteId)
-  if (erro) return { ok: false, erro }
+  const acesso = await exigirCapacidade(clienteId, 'configurar_empresa', 'todos')
+  if (recusou(acesso)) return { ok: false, erro: SO_QUEM_ADMINISTRA }
 
   if (ajustes.distribuicao && !MODOS_DE_DISTRIBUICAO.includes(ajustes.distribuicao)) {
     return { ok: false, erro: 'modo de distribuição que não existe' }
@@ -46,8 +45,8 @@ export async function acaoDefinirAtendente(
   usuarioId: string,
   ajuste: { entraNoRodizio: boolean; tetoSimultaneo: number },
 ): Promise<{ ok: boolean; erro?: string }> {
-  const { erro } = await exigirAdministracao(clienteId)
-  if (erro) return { ok: false, erro }
+  const acesso = await exigirCapacidade(clienteId, 'configurar_empresa', 'todos')
+  if (recusou(acesso)) return { ok: false, erro: SO_QUEM_ADMINISTRA }
 
   const id = usuarioId?.trim() ?? ''
   if (id === '') return { ok: false, erro: 'não deu para saber de quem é o ajuste' }
@@ -78,8 +77,8 @@ export async function acaoPassarConversas(
   usuarioId: string,
   escopo: EscopoDaPassagem,
 ): Promise<{ ok: boolean; erro?: string; passaram?: number }> {
-  const { erro } = await exigirAdministracao(clienteId)
-  if (erro) return { ok: false, erro }
+  const acesso = await exigirCapacidade(clienteId, 'configurar_empresa', 'todos')
+  if (recusou(acesso)) return { ok: false, erro: SO_QUEM_ADMINISTRA }
   if (escopo !== 'sem-dono' && escopo !== 'todas') return { ok: false, erro: 'escolha quais conversas passar' }
 
   const equipe = await membrosDaConta(clienteId)

@@ -7,7 +7,7 @@ import type { PedidoDaLoja } from '@/loja/magento-pedido'
 import { consultarPedidoDaConta, listarPedidosDaConta } from './adaptador-da-loja'
 import type { PedidoNaLista } from '@/loja/magento-pedido'
 import { acharLead } from './repos/leads'
-import { meuAlcance } from './permissoes'
+import { exigirCapacidade, meuAlcance, recusou } from './permissoes'
 import { adaptadorDoCanal } from './adaptador-do-canal'
 import { podeResponderAgora } from './distribuir-atendimento'
 import {
@@ -18,7 +18,7 @@ import {
   registrarSaida,
 } from './repos/conversas'
 import { lojaDaConta } from './repos/lojas'
-import { exigirAcessoAoCliente, sessaoAtual } from './sessao'
+import { sessaoAtual } from './sessao'
 
 /**
  * Status do pedido pela Inbox (pedido do dono da PCYES em 30/set/2026): quem
@@ -30,6 +30,8 @@ import { exigirAcessoAoCliente, sessaoAtual } from './sessao'
  * não seja o da conversa, e diz isso na tela (`confere`) junto do nome de quem
  * comprou. Quem decide mandar é a pessoa; o bot, sem ninguém olhando, continua
  * exigindo que o telefone ou o CPF confira.
+ *
+ * As três são do Inbox, então a porta é `atender`, a mesma de responder.
  */
 
 export type RespostaDoPedido =
@@ -63,7 +65,8 @@ export async function acaoBuscarPedidoDoInbox(
   contatoId: string,
   numero: string,
 ): Promise<RespostaDoPedido> {
-  await exigirAcessoAoCliente(clienteId)
+  const acesso = await exigirCapacidade(clienteId, 'atender', 'proprios')
+  if (recusou(acesso)) return acesso
   return buscar(clienteId, contatoId, numero)
 }
 
@@ -84,7 +87,8 @@ function campoDaFicha(campos: Record<string, string>, padrao: RegExp): string | 
  * não há nem telefone nem ficha, e a tela pede o número.
  */
 export async function acaoListarPedidosDoContato(clienteId: string, contatoId: string): Promise<PedidosDoContato> {
-  await exigirAcessoAoCliente(clienteId)
+  const acesso = await exigirCapacidade(clienteId, 'atender', 'proprios')
+  if (recusou(acesso)) return acesso
   const lead = await acharLead(clienteId, contatoId, await meuAlcance(clienteId))
   if (!lead) return { ok: false, erro: 'contato não encontrado' }
   const documento = campoDaFicha(lead.campos, /^(cpf|cnpj|cpf_cnpj|documento)$/i)
@@ -100,7 +104,8 @@ export async function acaoEnviarPedidoDoInbox(
   contatoId: string,
   numero: string,
 ): Promise<{ ok: boolean; erro?: string }> {
-  const acesso = await exigirAcessoAoCliente(clienteId)
+  const acesso = await exigirCapacidade(clienteId, 'atender', 'proprios')
+  if (recusou(acesso)) return acesso
 
   const trava = await podeResponderAgora(clienteId, contatoId, acesso.sessao.usuario.id)
   if (!trava.ok) return trava

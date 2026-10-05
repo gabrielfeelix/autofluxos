@@ -3,7 +3,7 @@
 import { dentroDoTetoDaConta, RECADO_DO_TETO_DA_CONTA } from '@/server/limite'
 import { revalidatePath } from 'next/cache'
 import { transcreverAudio } from './transcrever-audio'
-import { exigirAcessoAoCliente } from './sessao'
+import { exigirCapacidade, recusou } from './permissoes'
 
 /**
  * Transcrever um áudio recebido, sob demanda.
@@ -22,7 +22,8 @@ export async function acaoTranscreverAudio(
   contatoId: string,
   mensagemId: string,
 ): Promise<{ ok: boolean; texto?: string; erro?: string }> {
-  await exigirAcessoAoCliente(clienteId)
+  const acesso = await exigirCapacidade(clienteId, 'atender', 'proprios')
+  if (recusou(acesso)) return acesso
   if (!(await dentroDoTetoDaConta(clienteId, 'transcrever'))) return { ok: false, erro: RECADO_DO_TETO_DA_CONTA }
 
   const r = await transcreverAudio(clienteId, contatoId, mensagemId)

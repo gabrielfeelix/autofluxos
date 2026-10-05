@@ -172,9 +172,23 @@ describe('toda ação pergunta quem é antes de agir', () => {
      *
      * Desceu para 26 quando a trava passou a ler a porta da hierarquia
      * (`declaraHierarquia`): as cinco ações da tela Pessoas dizem o que exigem.
+     *
+     * **Chegou a 0 em 04/out/2026, e o teto foi junto.** Antes de descer, a
+     * lista tinha subido para 40: ações novas (webhooks, cupom, pedido e
+     * produto pelo Inbox) entraram com a fronteira antiga, e as de webhook nem
+     * a primeira pergunta faziam no corpo, porque a guarda morava num ajudante
+     * que esta trava não lê. A varredura trocou cada uma pela capacidade que
+     * repete a régua de antes: `configurar_empresa`/`todos` onde havia
+     * `podeAdministrarConta`, `configurar_operacao`/`todos` nas integrações que
+     * qualquer membro já ligava, `atender` no Inbox, `exportar` no público da
+     * transmissão e `criar_oportunidade` nos motivos de perda. Nenhum papel
+     * padrão ganhou nem perdeu acesso.
+     *
+     * Com zero, o teto deixa de ser contagem e vira regra: ação nova que
+     * receba `clienteId` diz a capacidade que exige, ou este teste cai.
      */
     expect(semCapacidade.length, `ainda sem capacidade: ${semCapacidade.join(', ')}`)
-      .toBeLessThanOrEqual(26)
+      .toBeLessThanOrEqual(0)
   })
 
   /**

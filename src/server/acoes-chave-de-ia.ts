@@ -3,7 +3,7 @@
 import { revalidatePath } from 'next/cache'
 import type { EstadoSalvar } from '@/components/design/formulario-salvar'
 import { apagarChave, guardarChave } from './repos/chave-de-ia'
-import { exigirAcessoAoCliente, podeAdministrarConta } from './sessao'
+import { exigirCapacidade, recusou } from './permissoes'
 
 /**
  * A chave de IA da conta, em arquivo próprio.
@@ -16,6 +16,8 @@ import { exigirAcessoAoCliente, podeAdministrarConta } from './sessao'
  * chave muda para onde vai a conversa de todo mundo daquela conta, e apagar
  * devolve o tráfego para a nossa conta free, onde o Google treina modelo. Quem
  * atende no Inbox não deveria poder fazer nem uma coisa nem outra sem querer.
+ * A pergunta é `configurar_empresa` no escopo `todos`, a mesma régua do antigo
+ * `podeAdministrarConta`: dono e administrador passam, `member` não.
  */
 
 export async function acaoGuardarChaveDeIa(
@@ -23,8 +25,8 @@ export async function acaoGuardarChaveDeIa(
   _estado: EstadoSalvar,
   formData: FormData,
 ): Promise<EstadoSalvar> {
-  const acesso = await exigirAcessoAoCliente(clienteId)
-  if (!podeAdministrarConta(acesso)) {
+  const acesso = await exigirCapacidade(clienteId, 'configurar_empresa', 'todos')
+  if (recusou(acesso)) {
     return { erro: 'só quem administra a conta pode trocar a chave' }
   }
 
@@ -44,8 +46,8 @@ export async function acaoGuardarChaveDeIa(
 export async function acaoApagarChaveDeIa(
   clienteId: string,
 ): Promise<{ ok: boolean; erro?: string }> {
-  const acesso = await exigirAcessoAoCliente(clienteId)
-  if (!podeAdministrarConta(acesso)) {
+  const acesso = await exigirCapacidade(clienteId, 'configurar_empresa', 'todos')
+  if (recusou(acesso)) {
     return { ok: false, erro: 'só quem administra a conta pode apagar a chave' }
   }
 

@@ -3,7 +3,8 @@
 import { conferirAgendamento, MOTIVO_DA_RECUSA } from '@/core/agendamento'
 import { agendar, cancelarAgendada, type MensagemAgendada } from './repos/mensagens-agendadas'
 import { contextoDeResposta } from './repos/conversas'
-import { exigirAcessoAoCliente, sessaoAtual } from './sessao'
+import { exigirCapacidade, recusou } from './permissoes'
+import { sessaoAtual } from './sessao'
 
 /**
  * Marcar uma mensagem para depois.
@@ -26,7 +27,10 @@ export async function acaoAgendarMensagem(
   contatoId: string,
   formData: FormData,
 ): Promise<{ ok: boolean; erro?: string; agendada?: MensagemAgendada }> {
-  await exigirAcessoAoCliente(clienteId)
+  // Marcar mensagem é responder a conversa mais tarde: a mesma porta de
+  // responder agora (`atender`, pelo menos sobre o que é dela).
+  const acesso = await exigirCapacidade(clienteId, 'atender', 'proprios')
+  if (recusou(acesso)) return acesso
 
   const texto = String(formData.get('texto') ?? '')
   const quandoBruto = String(formData.get('quando') ?? '').trim()
@@ -91,7 +95,8 @@ export async function acaoCancelarAgendada(
   clienteId: string,
   id: string,
 ): Promise<{ ok: boolean; erro?: string }> {
-  await exigirAcessoAoCliente(clienteId)
+  const acesso = await exigirCapacidade(clienteId, 'atender', 'proprios')
+  if (recusou(acesso)) return acesso
 
   const deu = await cancelarAgendada(clienteId, id)
   if (!deu) return { ok: false, erro: 'esta mensagem já saiu ou já tinha sido cancelada' }

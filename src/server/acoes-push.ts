@@ -3,6 +3,7 @@
 import { z } from 'zod'
 import { apagarAssinatura, guardarAssinatura } from './repos/assinaturas-de-push'
 import { papelNaConta } from './repos/usuarios'
+import { exigirCapacidade, recusou } from './permissoes'
 import { sessaoAtual } from './sessao'
 
 /**
@@ -43,6 +44,17 @@ export async function acaoAssinarAvisos(
    */
   const papel = await papelNaConta(clienteId, sessao.usuario.id)
   if (!papel) return { ok: false }
+
+  /*
+   * E, sendo da conta, poder atender: o aviso é da fila do Inbox e traz o nome
+   * do contato. Vem **depois** de `papelNaConta`, e não no lugar dela, para
+   * quem não é da conta continuar recebendo `{ ok: false }` em silêncio (o
+   * navegador chama isto sozinho, e um 404 ali seria barulho), e para o
+   * suporte 4YU, que passa em `exigirCapacidade` sem ser membro, continuar
+   * sem assinar avisos de conta alheia.
+   */
+  const acesso = await exigirCapacidade(clienteId, 'atender', 'proprios')
+  if (recusou(acesso)) return { ok: false }
 
   const conferida = assinaturaSchema.safeParse(bruta)
   if (!conferida.success) return { ok: false }

@@ -9,7 +9,7 @@ import { iniciarConexao } from './instagram/estado'
 import { importarLeadsAntigos } from './importar-leads-antigos'
 import { tokenDeAnuncios } from './token-de-anuncios'
 import { assinarLeadsDaPagina, lerNomesDoAnuncio, listarPaginasDoToken } from '@/channels/marketing-api'
-import { exigirAcessoAoCliente } from './sessao'
+import { exigirCapacidade, recusou } from './permissoes'
 import { criarConexao, listarConexoes, trocarValor } from './repos/conexoes'
 import { clientePelaPagina, desligarPagina, ligarPagina } from './repos/paginas-de-lead'
 import { NOME_DA_CONEXAO_DE_ADS } from './token-de-anuncios'
@@ -29,6 +29,16 @@ import { NOME_DA_CONEXAO_DE_ADS } from './token-de-anuncios'
  *
  * O preço é o cliente colar um token uma vez. Vale: é meia dúzia de cliques a
  * mais no primeiro dia contra uma quebra silenciosa a cada dois meses.
+ *
+ * ---------------------------------------------------------------------------
+ * Quem pode
+ * ---------------------------------------------------------------------------
+ *
+ * `configurar_operacao` no escopo `todos`, a mesma porta das integrações de
+ * loja (`acoes-loja.ts`): ligar uma fonte de leads muda como a operação
+ * funciona. Não é `configurar_empresa` de propósito: até aqui qualquer membro
+ * ligava a conta de anúncios, e `member` tem `configurar_operacao`, mas não
+ * `configurar_empresa`. Trocar para a segunda tiraria o acesso de quem já usa.
  */
 
 /**
@@ -43,7 +53,8 @@ export async function acaoLigarAds(
   clienteId: string,
   formData: FormData,
 ): Promise<{ ok: boolean; erro?: string }> {
-  await exigirAcessoAoCliente(clienteId)
+  const acesso = await exigirCapacidade(clienteId, 'configurar_operacao', 'todos')
+  if (recusou(acesso)) return acesso
 
   const token = String(formData.get('token') ?? '').trim()
   if (token === '') return { ok: false, erro: 'cole o token gerado no Business Manager' }
@@ -94,7 +105,8 @@ export async function acaoLigarPagina(
   clienteId: string,
   formData: FormData,
 ): Promise<{ ok: boolean; erro?: string }> {
-  await exigirAcessoAoCliente(clienteId)
+  const acesso = await exigirCapacidade(clienteId, 'configurar_operacao', 'todos')
+  if (recusou(acesso)) return acesso
 
   const pageId = String(formData.get('pageId') ?? '').trim()
   let nome = String(formData.get('nome') ?? '').trim()
@@ -136,7 +148,8 @@ export async function acaoDesligarPagina(
   clienteId: string,
   pageId: string,
 ): Promise<{ ok: boolean; erro?: string }> {
-  await exigirAcessoAoCliente(clienteId)
+  const acesso = await exigirCapacidade(clienteId, 'configurar_operacao', 'todos')
+  if (recusou(acesso)) return acesso
 
   const saiu = await desligarPagina(clienteId, pageId)
   if (!saiu) return { ok: false, erro: 'esta página não está ligada a esta conta' }
@@ -154,7 +167,9 @@ export async function acaoDesligarPagina(
  * funcionarem sem cada uma ter a sua variável. Mesmo padrão do WhatsApp.
  */
 export async function acaoConectarComFacebook(clienteId: string): Promise<void> {
-  await exigirAcessoAoCliente(clienteId)
+  const acesso = await exigirCapacidade(clienteId, 'configurar_operacao', 'todos')
+  // Sem forma de devolver erro: quem não pode simplesmente não sai daqui.
+  if (recusou(acesso)) return
 
   const cabecalhos = await headers()
   const host = cabecalhos.get('x-forwarded-host') ?? cabecalhos.get('host')
@@ -175,7 +190,8 @@ export async function acaoImportarLeadsAntigos(
   clienteId: string,
   pageId: string,
 ): Promise<{ ok: boolean; erro?: string; resumo?: string }> {
-  await exigirAcessoAoCliente(clienteId)
+  const acesso = await exigirCapacidade(clienteId, 'configurar_operacao', 'todos')
+  if (recusou(acesso)) return acesso
   if (!(await dentroDoTetoDaConta(clienteId, 'importar'))) return { ok: false, erro: RECADO_DO_TETO_DA_CONTA }
 
   /*

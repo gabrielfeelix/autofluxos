@@ -12,7 +12,8 @@ import {
   definirStatusDaSessao,
   registrarSaida,
 } from './repos/conversas'
-import { exigirAcessoAoCliente, sessaoAtual } from './sessao'
+import { exigirCapacidade, recusou } from './permissoes'
+import { sessaoAtual } from './sessao'
 
 /**
  * Mandar foto, vídeo, áudio ou PDF pela caixa de resposta do Inbox.
@@ -47,7 +48,8 @@ export async function acaoEnviarMidiaDoInbox(
   contatoId: string,
   entrada: { url: string; midia: string; legenda?: string; nomeArquivo?: string },
 ): Promise<{ ok: boolean; erro?: string }> {
-  const acesso = await exigirAcessoAoCliente(clienteId)
+  const acesso = await exigirCapacidade(clienteId, 'atender', 'proprios')
+  if (recusou(acesso)) return acesso
 
   /*
    * A mesma trava do texto: mandar foto na conversa de outra pessoa é o mesmo

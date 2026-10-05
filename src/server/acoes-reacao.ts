@@ -4,7 +4,7 @@ import { podeReagir } from '@/channels/janela'
 import { adaptadorDoCanal } from './adaptador-do-canal'
 import { confirmarEntrega, contextoDeResposta, registrarSaida } from './repos/conversas'
 import { acharMensagemParaReagir } from './repos/leads'
-import { exigirAcessoAoCliente } from './sessao'
+import { exigirCapacidade, recusou } from './permissoes'
 
 /**
  * Reagir a uma mensagem da conversa, pelo Inbox.
@@ -36,7 +36,8 @@ export async function acaoReagir(
   contatoId: string,
   entrada: { waMessageId: string; emoji: string },
 ): Promise<{ ok: boolean; erro?: string }> {
-  await exigirAcessoAoCliente(clienteId)
+  const acesso = await exigirCapacidade(clienteId, 'atender', 'proprios')
+  if (recusou(acesso)) return acesso
 
   const waMessageId = entrada.waMessageId?.trim() ?? ''
   if (waMessageId === '') return { ok: false, erro: 'não deu para saber a qual mensagem reagir' }

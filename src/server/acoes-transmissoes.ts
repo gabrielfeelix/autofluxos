@@ -56,7 +56,7 @@ import {
   registrarSaida,
 } from './repos/conversas'
 import { exigirCapacidade, recusou } from './permissoes'
-import { exigirAcessoAoCliente, sessaoAtual } from './sessao'
+import { sessaoAtual } from './sessao'
 
 /**
  * As ações de modelo aprovado e transmissão, em arquivo próprio.
@@ -266,7 +266,10 @@ export async function acaoListarBiblioteca(
   clienteId: string,
   busca?: string,
 ): Promise<{ modelos: ModeloDaBiblioteca[]; erro: string | null }> {
-  await exigirAcessoAoCliente(clienteId)
+  // A galeria serve a quem cria modelo, e criar modelo é `configurar_operacao`
+  // (ver `acaoCriarDaBiblioteca`): listar exige o mesmo que usar a lista.
+  const acesso = await exigirCapacidade(clienteId, 'configurar_operacao', 'todos')
+  if (recusou(acesso)) return { modelos: [], erro: acesso.erro }
 
   const conta = await contaNaMeta(clienteId)
   if ('erro' in conta) return { modelos: [], erro: conta.erro }
@@ -529,9 +532,16 @@ export async function acaoCancelarTransmissao(
   }
 }
 
-/** A lista para a tela. */
+/**
+ * A lista para a tela.
+ *
+ * A porta é `atender`, e não `exportar`: quem chama é o Inbox (agendar com
+ * modelo) e a ficha do contato, além da tela de Transmissões. Exigir
+ * `exportar` tiraria o modelo de quem só atende. Recusa devolve lista vazia.
+ */
 export async function acaoListarTemplates(clienteId: string) {
-  await exigirAcessoAoCliente(clienteId)
+  const acesso = await exigirCapacidade(clienteId, 'atender', 'proprios')
+  if (recusou(acesso)) return []
   return listarTemplates(clienteId)
 }
 
@@ -542,9 +552,13 @@ export async function acaoListarTemplates(clienteId: string) {
  * 1.200 contatos são escolhas completamente diferentes, e quem está montando
  * uma campanha precisa do número *antes* de escolher, é ele que diz se a
  * transmissão cabe no teto do dia.
+ *
+ * Exige o mesmo que criar a transmissão (`exportar`, `todos`): a lista só
+ * serve para isso, e a contagem por etiqueta já é um retrato da base.
  */
 export async function acaoPublicosPossiveis(clienteId: string) {
-  await exigirAcessoAoCliente(clienteId)
+  const acesso = await exigirCapacidade(clienteId, 'exportar', 'todos')
+  if (recusou(acesso)) return []
   const etiquetas = await listarEtiquetasComContagem(clienteId)
   // Etiqueta sem ninguém não é público: deixá-la na lista é oferecer uma
   // escolha que só pode dar em "nenhum contato foi selecionado".

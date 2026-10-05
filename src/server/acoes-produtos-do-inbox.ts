@@ -8,7 +8,8 @@ import { lojaAtivaDaConta } from './adaptador-da-loja'
 import { adaptadorDoCanal } from './adaptador-do-canal'
 import { podeResponderAgora } from './distribuir-atendimento'
 import { confirmarEntrega, contextoDeResposta, definirStatusDaSessao, registrarSaida } from './repos/conversas'
-import { exigirAcessoAoCliente, sessaoAtual } from './sessao'
+import { exigirCapacidade, recusou } from './permissoes'
+import { sessaoAtual } from './sessao'
 
 /**
  * Produtos no Inbox: quem atende busca por nome ou SKU e manda o card.
@@ -19,7 +20,8 @@ import { exigirAcessoAoCliente, sessaoAtual } from './sessao'
  *
  * O envio segue `acoes-midia-do-inbox.ts` em tudo que não é o produto: a trava
  * de quem está atendendo, a janela de 24h, gravar antes de enviar, o id da
- * Meta na confirmação e a conversa passando para humano.
+ * Meta na confirmação e a conversa passando para humano. A porta também é a
+ * mesma: `atender`.
  */
 
 export type RespostaDaBusca =
@@ -33,7 +35,8 @@ export async function acaoBuscarProdutosDoInbox(
   termo: string,
   pagina = 1,
 ): Promise<RespostaDaBusca> {
-  await exigirAcessoAoCliente(clienteId)
+  const acesso = await exigirCapacidade(clienteId, 'atender', 'proprios')
+  if (recusou(acesso)) return acesso
 
   const loja = await lojaAtivaDaConta(clienteId)
   if (!loja) {
@@ -51,7 +54,8 @@ export async function acaoEnviarProdutoDoInbox(
   contatoId: string,
   produtoId: string,
 ): Promise<{ ok: boolean; erro?: string }> {
-  const acesso = await exigirAcessoAoCliente(clienteId)
+  const acesso = await exigirCapacidade(clienteId, 'atender', 'proprios')
+  if (recusou(acesso)) return acesso
 
   const trava = await podeResponderAgora(clienteId, contatoId, acesso.sessao.usuario.id)
   if (!trava.ok) return trava

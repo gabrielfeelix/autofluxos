@@ -11,7 +11,7 @@ import {
   fixar,
   soltar,
 } from './repos/marcadores'
-import { exigirAcessoAoCliente } from './sessao'
+import { exigirCapacidade, recusou } from './permissoes'
 
 /**
  * As marcações que cada atendente faz para si: o alfinete, a estrela e o
@@ -27,9 +27,10 @@ import { exigirAcessoAoCliente } from './sessao'
  * quem marcar: quem marca é sempre quem clicou, e aceitar isso por parâmetro
  * seria abrir um jeito de marcar coisa na tela dos outros.
  *
- * `exigirAcessoAoCliente` vem primeiro em todas pelo motivo de sempre: sem
+ * `exigirCapacidade` vem primeiro em todas pelo motivo de sempre: sem
  * direito à conta, o id de contato que veio na chamada não devia nem ser
- * consultado.
+ * consultado. A capacidade é `atender`, a porta do Inbox: são marcações da
+ * fila de quem atende.
  */
 
 /**
@@ -45,7 +46,9 @@ export async function acaoFixarConversa(
   contatoId: string,
   grudar: boolean,
 ): Promise<{ ok: boolean; erro?: string }> {
-  const { sessao } = await exigirAcessoAoCliente(clienteId)
+  const acesso = await exigirCapacidade(clienteId, 'atender', 'proprios')
+  if (recusou(acesso)) return acesso
+  const { sessao } = acesso
   const usuarioId = sessao.usuario.id
 
   const [permitido] = await contatosDaConta(clienteId, [contatoId])
@@ -83,7 +86,9 @@ export async function acaoMarcarNaoLida(
   clienteId: string,
   contatoId: string,
 ): Promise<{ ok: boolean; erro?: string }> {
-  const { sessao } = await exigirAcessoAoCliente(clienteId)
+  const acesso = await exigirCapacidade(clienteId, 'atender', 'proprios')
+  if (recusou(acesso)) return acesso
+  const { sessao } = acesso
 
   const [permitido] = await contatosDaConta(clienteId, [contatoId])
   if (!permitido) return { ok: false, erro: 'esta conversa não é desta conta' }
@@ -106,7 +111,9 @@ export async function acaoMarcarTodasComoLidas(
   clienteId: string,
   contatos: string[],
 ): Promise<{ ok: boolean; erro?: string }> {
-  const { sessao } = await exigirAcessoAoCliente(clienteId)
+  const acesso = await exigirCapacidade(clienteId, 'atender', 'proprios')
+  if (recusou(acesso)) return acesso
+  const { sessao } = acesso
 
   const permitidos = await contatosDaConta(clienteId, contatos)
   if (permitidos.length === 0) return { ok: true }
@@ -129,7 +136,9 @@ export async function acaoFavoritarMensagem(
   mensagemId: string,
   guardar: boolean,
 ): Promise<{ ok: boolean; erro?: string }> {
-  const { sessao } = await exigirAcessoAoCliente(clienteId)
+  const acesso = await exigirCapacidade(clienteId, 'atender', 'proprios')
+  if (recusou(acesso)) return acesso
+  const { sessao } = acesso
   const usuarioId = sessao.usuario.id
 
   const id = mensagemId?.trim() ?? ''

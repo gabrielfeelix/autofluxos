@@ -13,12 +13,15 @@ import {
   definirStatusDaSessao,
   registrarSaida,
 } from './repos/conversas'
-import { exigirAcessoAoCliente, sessaoAtual } from './sessao'
+import { exigirCapacidade, recusou } from './permissoes'
+import { sessaoAtual } from './sessao'
 
 /**
  * Cupom pela Inbox (pedido do dono da PCYES em 30/set/2026): o ícone abre os
  * cupons ativos da loja, quem atende clica e o cupom sai numa mensagem curta.
  * Um clique, sem prévia: diferente do pedido, cupom não é dado de ninguém.
+ *
+ * As duas são do Inbox, então a porta é `atender`, a mesma de responder.
  */
 
 export type CupomNaTela = CupomDaLoja & { mensagem: string }
@@ -26,7 +29,8 @@ export type CupomNaTela = CupomDaLoja & { mensagem: string }
 export async function acaoListarCuponsDoInbox(
   clienteId: string,
 ): Promise<{ ok: true; cupons: CupomNaTela[] } | { ok: false; erro: string }> {
-  await exigirAcessoAoCliente(clienteId)
+  const acesso = await exigirCapacidade(clienteId, 'atender', 'proprios')
+  if (recusou(acesso)) return acesso
   const r = await cuponsDaConta(clienteId)
   if (!r.ok) return { ok: false, erro: r.motivo }
   return { ok: true, cupons: r.valor.map((c) => ({ ...c, mensagem: mensagemDoCupom(c) })) }
@@ -37,7 +41,8 @@ export async function acaoEnviarCupomDoInbox(
   contatoId: string,
   codigo: string,
 ): Promise<{ ok: boolean; erro?: string }> {
-  const acesso = await exigirAcessoAoCliente(clienteId)
+  const acesso = await exigirCapacidade(clienteId, 'atender', 'proprios')
+  if (recusou(acesso)) return acesso
 
   const trava = await podeResponderAgora(clienteId, contatoId, acesso.sessao.usuario.id)
   if (!trava.ok) return trava

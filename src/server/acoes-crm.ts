@@ -35,7 +35,7 @@ import {
   quadrosDoContato,
   trazerTodosParaOQuadro,
 } from './repos/quadros'
-import { exigirAcessoAoCliente, sessaoAtual } from './sessao'
+import { sessaoAtual } from './sessao'
 import { exigirCapacidade, recusou } from './permissoes'
 import { pode } from '@/core/permissoes'
 import { notFound } from 'next/navigation'
@@ -274,11 +274,18 @@ export async function acaoDefinirFaixas(
   return { ok: true }
 }
 
-/** A lista de motivos da conta, semeada na primeira leitura. */
+/**
+ * A lista de motivos da conta, semeada na primeira leitura.
+ *
+ * Motivo de perda é coisa de negócio, então a porta é a do CRM
+ * (`criar_oportunidade`). Recusa devolve lista vazia: a forma de retorno não
+ * tem erro, e nenhum motivo é o que a tela já sabe mostrar.
+ */
 export async function acaoListarMotivos(
   clienteId: string,
 ): Promise<{ motivos: { id: string; nome: string }[] }> {
-  await exigirAcessoAoCliente(clienteId)
+  const acesso = await exigirCapacidade(clienteId, 'criar_oportunidade', 'proprios')
+  if (recusou(acesso)) return { motivos: [] }
   const motivos = await listarMotivos(clienteId)
   return { motivos: motivos.map(({ id, nome }) => ({ id, nome })) }
 }
