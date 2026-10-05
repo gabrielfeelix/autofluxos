@@ -527,6 +527,39 @@ export async function ultimaFalaDaEquipe(contatoId: string): Promise<Date | null
   return data ? new Date((data as { ts: string }).ts) : null
 }
 
+/**
+ * O dono respondeu esta pessoa **pelo celular** desde `desde`?
+ *
+ * Só o eco da coexistência conta (a linha guarda o payload cru da Meta, que tem
+ * `from`). É a única fala humana que pode acontecer sem sessão nenhuma: quem
+ * responde pelo painel já leva a sessão a `humano` por `acoes.ts`. O envio pela
+ * API grava autor de pessoa ("API") e é lembrete automático, não alguém
+ * conversando; usar `ultimaFalaDaEquipe` aqui calaria o bot a cada lembrete.
+ *
+ * Fica de fora o histórico importado e a saudação/ausência automática do app,
+ * que começa com U+200E (ver `ehMensagemAutomaticaDoApp`).
+ *
+ * Erro vira `false`: na dúvida, o bot responde, como em `chegouEntradaDepois`.
+ */
+export async function donoFalouPeloCelularDesde(contatoId: string, desde: Date): Promise<boolean> {
+  const { data, error } = await db()
+    .from('messages')
+    .select('texto')
+    .eq('contact_id', contatoId)
+    .eq('direcao', 'saida')
+    .not('payload->>from', 'is', null)
+    .or('historico.is.null,historico.eq.false')
+    .gte('ts', desde.toISOString())
+    .order('ts', { ascending: false })
+    .limit(20)
+
+  if (error) {
+    console.error('[conversas] não deu para ler a fala do dono pelo celular', error.message)
+    return false
+  }
+  return ((data ?? []) as { texto: string | null }[]).some((linha) => !(linha.texto ?? '').startsWith('‎'))
+}
+
 export async function acharSessao(sessaoId: string): Promise<SessaoComContexto | null> {
   const { data, error } = await db()
     .from('sessions')

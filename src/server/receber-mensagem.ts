@@ -18,7 +18,8 @@ import { comLinkRastreado } from './link-de-produto'
 import { juntarFraseAosCards, juntarTextosSeguidos } from '@/core/juntar-cards'
 import type { Turno } from '@/server/ia/types'
 import { guardarComentario, guardarNota } from './repos/avaliacoes'
-import { acharCliente, horarioDoCliente } from './repos/clientes'
+import { acharCliente, horarioDoCliente, retomadaDoCliente } from './repos/clientes'
+import { MINUTOS_DE_RETOMADA_PADRAO } from '@/core/retomada'
 import { acharFluxo, acharVersao, type VersaoPublicada } from './repos/fluxos'
 import { acrescentarNota, definirEstadoDaConversa, lerConversa } from './repos/leads'
 import {
@@ -58,6 +59,7 @@ import {
   acharSessao,
   acharOuCriarContato,
   contextoDeResposta,
+  donoFalouPeloCelularDesde,
   alterarAutomacaoDoContato,
   criarSessao,
   definirStatusDaSessao,
@@ -921,6 +923,26 @@ async function avancarConversa(
   }
 
   const viva = anterior && anterior.sessao.status !== 'encerrada' ? anterior : null
+
+  /*
+   * O dono respondeu pelo celular há pouco, e não havia bot conversando.
+   *
+   * O eco cala a sessão viva (`calarBotNaConversa`), mas sem sessão viva não há
+   * o que calar, e a mensagem seguinte da pessoa abria a saudação no meio da
+   * conversa dele. MGM, 05/out/2026: o Daniel respondeu o Marcelo às 08:15, o
+   * Marcelo agradeceu às 08:47 e recebeu "Bem-vindo(a) à MGM Pilates".
+   *
+   * O prazo é o mesmo da retomada da conta: é o tempo que ela escolheu para o
+   * bot esperar depois da equipe, e conta da última mensagem do dono, então
+   * enquanto ele conversa o bot não volta. Vale contra gatilho, pelo mesmo
+   * motivo da sessão em `humano` acima.
+   */
+  if (!viva) {
+    const conta = await retomadaDoCliente(canalSalvo.clienteId)
+    const minutos = conta?.minutos ?? MINUTOS_DE_RETOMADA_PADRAO
+    if (await donoFalouPeloCelularDesde(contato.id, new Date(Date.now() - minutos * 60_000))) return
+  }
+
   // "Início" recomeça pelo fluxo principal do número, e não pelo começo do
   // fluxo em que a conversa está (ver `pediuInicioDoAtendimento`): tratar a
   // conversa viva como se não existisse faz o principal abrir, e a viva morrer
