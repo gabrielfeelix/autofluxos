@@ -109,6 +109,12 @@ export function RodapeDaMensagem({
   const [copiado, setCopiado] = useState(false)
   /** Perto do fim da área que rola, o menu abre para cima, como no WhatsApp. */
   const [paraCima, setParaCima] = useState(false)
+  /**
+   * O menu sai da seta para o lado vazio da conversa, como no WhatsApp: na
+   * bolha do cliente, para a direita. Só volta para a borda da bolha quando à
+   * direita não cabe (bolha larga num painel estreito).
+   */
+  const [naSeta, setNaSeta] = useState(true)
   const caixa = useRef<HTMLDivElement>(null)
   /** `null` fora do provedor, a tela que não monta citação ainda reage. */
   const citacao = useCitacao()
@@ -159,6 +165,7 @@ export function RodapeDaMensagem({
   function reagir(emoji: string) {
     if (!waMessageId) return
     setEmojisAbertos(false)
+    setMenuAberto(false)
 
     /*
      * Clicar no emoji que já está lá **remove**, string vazia é como a Meta
@@ -206,7 +213,10 @@ export function RodapeDaMensagem({
         onClick={() => {
           limparErro()
           setEmojisAbertos(false)
-          if (!menuAberto && caixa.current) setParaCima(espacoAbaixo(caixa.current) < 230)
+          if (!menuAberto && caixa.current) {
+            setParaCima(espacoAbaixo(caixa.current) < (podeReagir && waMessageId ? 290 : 230))
+            setNaSeta(espacoADireita(caixa.current) >= LARGURA_DO_MENU)
+          }
           setMenuAberto((a) => !a)
         }}
         title="Mais opções"
@@ -234,10 +244,34 @@ export function RodapeDaMensagem({
         </span>
       )}
 
+      {/*
+        Menu e reações rápidas juntos, saindo da seta: para o lado vazio da
+        conversa, e para cima quando embaixo não cabe. As reações ficam sempre
+        por cima do menu, como no WhatsApp.
+      */}
       {menuAberto && (
         <div
+          className={`absolute ${paraCima ? 'bottom-full mb-1' : 'top-8'} ${nossa || !naSeta ? lado : 'left-[calc(100%-2rem)]'} z-30 flex flex-col gap-1.5 ${nossa ? 'items-end' : 'items-start'}`}
+        >
+          {podeReagir && waMessageId && (
+            <div role="menu" aria-label="Reagir" className="flex gap-1 rounded-full border border-line bg-panel px-2 py-1.5 shadow-[0_8px_28px_rgba(19,25,34,0.16)]">
+              {EMOJIS.map((emoji) => (
+                <button
+                  key={emoji}
+                  type="button"
+                  role="menuitem"
+                  onClick={() => reagir(emoji)}
+                  title={emoji === minhaReacao ? 'Tirar a reação' : `Reagir com ${emoji}`}
+                  className={`grid h-9 w-9 place-items-center rounded-full text-[22px] leading-none transition hover:scale-125 ${emoji === minhaReacao ? 'bg-primary/20' : ''}`}
+                >
+                  {emoji}
+                </button>
+              ))}
+            </div>
+          )}
+        <div
           role="menu"
-          className={`absolute ${paraCima ? 'bottom-full mb-1' : 'top-8'} ${lado} z-30 min-w-[196px] overflow-hidden rounded-[12px] border border-line bg-panel py-1.5 shadow-[0_8px_28px_rgba(19,25,34,0.16)]`}
+          className="min-w-[196px] overflow-hidden rounded-[12px] border border-line bg-panel py-1.5 shadow-[0_8px_28px_rgba(19,25,34,0.16)]"
         >
           {citacao && waMessageId && (
             <button
@@ -286,6 +320,7 @@ export function RodapeDaMensagem({
           >
             <IconeEstrela cheia={guardada} /> {guardada ? 'Desfavoritar' : 'Favoritar'}
           </button>
+        </div>
         </div>
       )}
 
@@ -347,6 +382,19 @@ export function RodapeDaMensagem({
       )}
     </div>
   )
+}
+
+/** A largura do menu, para saber se ele cabe saindo da seta. */
+const LARGURA_DO_MENU = 300
+
+/** Quanto cabe entre a seta (a 2rem da borda direita da bolha) e o fim da área que rola. */
+function espacoADireita(el: HTMLElement): number {
+  const seta = el.getBoundingClientRect().right - 32
+  for (let pai = el.parentElement; pai; pai = pai.parentElement) {
+    const { overflowY } = getComputedStyle(pai)
+    if (overflowY === 'auto' || overflowY === 'scroll') return pai.getBoundingClientRect().right - seta
+  }
+  return window.innerWidth - seta
 }
 
 /** Quanto cabe entre o topo da bolha e o fim do primeiro ancestral que rola. */
