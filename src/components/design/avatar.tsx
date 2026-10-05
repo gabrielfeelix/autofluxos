@@ -1,5 +1,5 @@
 import { iniciais as iniciaisDoNome } from '@/core/iniciais'
-import { retratoDe } from '@/lib/retrato'
+import { fonteDoRetrato } from '@/lib/retrato'
 
 /**
  * A foto da pessoa, ou o retrato ilustrado quando ela não subiu foto
@@ -22,7 +22,7 @@ export function Avatar({
     return (
       // eslint-disable-next-line @next/next/no-img-element
       <img
-        src={imagem || retratoDe(nome)}
+        src={fonteDoRetrato(imagem, nome)}
         alt=""
         style={estilo}
         className="shrink-0 rounded-full border border-line object-cover"

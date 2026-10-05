@@ -1,5 +1,6 @@
 'use client'
 
+import { PREFIXO_DO_AVATAR, SEMENTES_DA_GALERIA, retratoDe } from '@/lib/retrato'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { createContext, useContext, useState, useTransition, type ReactNode } from 'react'
@@ -217,10 +218,14 @@ export function EditarPerfil({
   const [nome, setNome] = useState(perfil.nome)
   const [foto, setFoto] = useState<{ arquivo: File; previa: string } | null>(null)
   const [tirarFoto, setTirarFoto] = useState(false)
+  /** O avatar escolhido na galeria, ainda não salvo. */
+  const [avatar, setAvatar] = useState<string | null>(null)
   const [erro, setErro] = useState<string | null>(null)
   const [rodando, comecar] = useTransition()
 
-  const imagemNaTela = foto?.previa ?? (tirarFoto ? null : perfil.imagem)
+  const imagemNaTela =
+    foto?.previa ?? (avatar ? `${PREFIXO_DO_AVATAR}${avatar}` : tirarFoto ? null : perfil.imagem)
+  const ehAvatar = imagemNaTela?.startsWith(PREFIXO_DO_AVATAR) ?? false
 
   const escolher = async (arquivo: File | undefined) => {
     setErro(null)
@@ -237,6 +242,7 @@ export function EditarPerfil({
       const quadrada = await recortarQuadrada(arquivo)
       setFoto({ arquivo: quadrada, previa: URL.createObjectURL(quadrada) })
       setTirarFoto(false)
+      setAvatar(null)
     } catch (e) {
       setErro(e instanceof Error ? e.message : 'não deu para ler a imagem')
     }
@@ -254,6 +260,7 @@ export function EditarPerfil({
     const dados = new FormData()
     dados.set('nome', nome)
     if (foto) dados.set('foto', foto.arquivo)
+    else if (avatar) dados.set('avatar', avatar)
     if (tirarFoto) dados.set('tirarFoto', '1')
     comecar(async () => {
       const r = await acaoEditarPerfil(dados)
@@ -287,14 +294,61 @@ export function EditarPerfil({
                 type="button"
                 onClick={() => {
                   setFoto(null)
+                  setAvatar(null)
                   setTirarFoto(true)
                 }}
                 className="text-[11.5px] font-semibold text-dim underline-offset-2 hover:underline"
               >
-                Tirar foto
+                {ehAvatar ? 'Voltar ao avatar padrão' : 'Tirar foto'}
               </button>
             )}
             <span className="text-[11px] text-dim">jpg, png ou webp, até 2 MB</span>
+          </div>
+        </div>
+
+        {/*
+          A galeria de avatares: um clique troca a imagem do alto na hora, e
+          só grava no Salvar, como a foto. Os mesmos robôs para todo mundo
+          (`SEMENTES_DA_GALERIA`), para a escolha de ontem estar aqui hoje.
+        */}
+        <div>
+          <RotuloCampo>Ou escolha um avatar</RotuloCampo>
+          <div role="radiogroup" aria-label="Avatares" className="grid grid-cols-6 gap-2">
+            {SEMENTES_DA_GALERIA.map((semente) => {
+              const escolhido = imagemNaTela === `${PREFIXO_DO_AVATAR}${semente}`
+              return (
+                <button
+                  key={semente}
+                  type="button"
+                  role="radio"
+                  aria-checked={escolhido}
+                  aria-label={`Avatar ${semente}`}
+                  onClick={() => {
+                    setAvatar(semente)
+                    setFoto(null)
+                    setTirarFoto(false)
+                  }}
+                  className={`relative justify-self-center rounded-full transition ${
+                    escolhido
+                      ? 'ring-2 ring-primary ring-offset-2 ring-offset-panel'
+                      : 'opacity-85 hover:scale-105 hover:opacity-100'
+                  }`}
+                >
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={retratoDe(semente)} alt="" className="size-11 rounded-full border border-line" />
+                  {escolhido && (
+                    <span
+                      aria-hidden
+                      className="absolute -right-0.5 -bottom-0.5 flex size-4 items-center justify-center rounded-full bg-primary text-white ring-2 ring-panel"
+                    >
+                      <svg viewBox="0 0 16 16" className="size-2.5">
+                        <path d="m3.5 8.5 3 3 6-7" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" />
+                      </svg>
+                    </span>
+                  )}
+                </button>
+              )
+            })}
           </div>
         </div>
 

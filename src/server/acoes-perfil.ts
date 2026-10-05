@@ -1,5 +1,6 @@
 'use server'
 
+import { PREFIXO_DO_AVATAR, SEMENTES_DA_GALERIA } from '@/lib/retrato'
 import { headers } from 'next/headers'
 import { revalidatePath } from 'next/cache'
 import QRCode from 'qrcode'
@@ -55,6 +56,14 @@ export async function acaoEditarPerfil(formData: FormData): Promise<Resultado> {
       return { ok: false, erro: 'não deu para guardar a foto agora, tente de novo' }
     }
     imagem = db().storage.from(BUCKET_DOS_AVATARES).getPublicUrl(caminho).data.publicUrl
+  } else if (formData.get('avatar')) {
+    // Só as sementes da galeria: o campo vira `src` de imagem em toda tela, e
+    // texto livre aqui seria um endereço qualquer escolhido por quem pede.
+    const semente = String(formData.get('avatar'))
+    if (!(SEMENTES_DA_GALERIA as readonly string[]).includes(semente)) {
+      return { ok: false, erro: 'esse avatar não existe' }
+    }
+    imagem = `${PREFIXO_DO_AVATAR}${semente}`
   } else if (formData.get('tirarFoto') === '1') {
     imagem = null
   }
