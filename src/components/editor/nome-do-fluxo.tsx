@@ -1,8 +1,11 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
 import { acaoRenomearFluxo } from '@/server/acoes'
 import { LIMITE_NOME_DO_FLUXO } from '@/core/flow/limites'
+import { Modal } from '@/components/design/modal'
+import { RotuloCampo } from '@/components/design/modal-formulario'
 
 /**
  * O nome da automação, editável onde ele aparece.
@@ -29,7 +32,10 @@ export function NomeDoFluxo({
   clienteId: string
   fluxoId: string
   nome: string
-  /** `titulo` é o cabeçalho do editor; `linha` é o lápis da lista. */
+  /**
+   * `titulo` é o cabeçalho do editor, que edita no lugar. `linha` é a lista:
+   * mostra o nome e o lápis, e o lápis abre um modal.
+   */
   variante?: 'titulo' | 'linha'
 }) {
   const [editando, setEditando] = useState(false)
@@ -97,27 +103,80 @@ export function NomeDoFluxo({
         className="group flex items-center gap-1.5 rounded-lg px-1 py-0.5 text-left transition hover:bg-surface-strong"
       >
         <span className="text-sm font-bold tracking-[-0.01em]">{salvo}</span>
-        <span aria-hidden className="text-[11px] text-dim opacity-0 transition group-hover:opacity-100">
+        <span
+          aria-hidden
+          className="text-[11px] text-dim opacity-0 transition group-hover:opacity-100"
+        >
           ✎
         </span>
         <span className="sr-only">Renomear</span>
       </button>
     ) : (
-      <button
-        type="button"
-        onClick={() => setEditando(true)}
-        title={`Renomear "${salvo}"`}
-        /*
-          `pointer-events-auto` porque a linha da lista desliga o clique do
-          conteúdo para ele atravessar até o link que cobre a linha. Quem é
-          interativo devolve o clique para si mesmo, senão o lápis abriria a
-          automação em vez de renomear.
-        */
-        className="pointer-events-auto flex size-6 shrink-0 items-center justify-center rounded-md text-[11px] text-dim opacity-0 transition group-hover/linha:opacity-100 hover:bg-surface-strong hover:text-primary focus-visible:opacity-100"
-      >
-        <span aria-hidden>✎</span>
-        <span className="sr-only">Renomear {salvo}</span>
-      </button>
+      <ListaComLapis salvo={salvo} aoAbrir={() => setEditando(true)} />
+    )
+  }
+
+  /*
+   * Na lista, modal, e não campo na linha. O campo abria ao lado do nome, que
+   * continuava ali: dois "Meu pedido" lado a lado, um deles editável, e a
+   * linha pulando de altura. O pedido do Gabriel (05/out) foi esse: "podia
+   * abrir um modal de renomear".
+   */
+  if (variante === 'linha') {
+    return (
+      <>
+        <ListaComLapis salvo={salvo} aoAbrir={() => setEditando(true)} />
+        {/*
+          Por portal: a linha desliga o clique dos filhos (`pointer-events-none`)
+          e está dentro de um `<strong>`, e o modal herdaria os dois.
+        */}
+        {createPortal(
+          <Modal
+            aberto
+            aoFechar={cancelar}
+            titulo="Renomear automação"
+            descricao="Só o nome muda. O desenho e o que está publicado continuam iguais."
+          >
+            <form
+              onSubmit={(e) => {
+                e.preventDefault()
+                void confirmar()
+              }}
+            >
+              <label className="block">
+                <RotuloCampo>Nome da automação</RotuloCampo>
+                <input
+                  ref={campo}
+                  value={valor}
+                  disabled={rodando}
+                  required
+                  maxLength={LIMITE_NOME_DO_FLUXO}
+                  onChange={(e) => setValor(e.target.value)}
+                  className={`app-field w-full px-[13px] py-[11px] text-[13.5px] ${erro ? 'border-rose-400/40' : ''}`}
+                />
+              </label>
+              {erro && (
+                <p role="alert" className="mt-2 text-[12px] leading-5 text-perigo">
+                  {erro}
+                </p>
+              )}
+              <div className="mt-5 flex items-center justify-end gap-2">
+                <button type="button" onClick={cancelar} className="botao-secundario botao-md">
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  disabled={rodando || !valor.trim()}
+                  className="botao-primario botao-md"
+                >
+                  {rodando ? 'Salvando…' : 'Salvar nome'}
+                </button>
+              </div>
+            </form>
+          </Modal>,
+          document.body,
+        )}
+      </>
     )
   }
 
@@ -162,5 +221,35 @@ export function NomeDoFluxo({
         </span>
       )}
     </span>
+  )
+}
+
+/**
+ * O nome na linha da lista, com o lápis ao lado.
+ *
+ * O nome mora aqui, e não na página, para mudar na hora em que o modal salva:
+ * a lista é renderizada no servidor e só veria o nome novo no próximo
+ * carregamento.
+ */
+function ListaComLapis({ salvo, aoAbrir }: { salvo: string; aoAbrir: () => void }) {
+  return (
+    <>
+      <span className="truncate">{salvo}</span>
+      <button
+        type="button"
+        onClick={aoAbrir}
+        title={`Renomear "${salvo}"`}
+        /*
+          `pointer-events-auto` porque a linha da lista desliga o clique do
+          conteúdo para ele atravessar até o link que cobre a linha. Quem é
+          interativo devolve o clique para si mesmo, senão o lápis abriria a
+          automação em vez de renomear.
+        */
+        className="pointer-events-auto flex size-6 shrink-0 items-center justify-center rounded-md text-[11px] text-dim opacity-0 transition group-hover/linha:opacity-100 hover:bg-surface-strong hover:text-primary focus-visible:opacity-100"
+      >
+        <span aria-hidden>✎</span>
+        <span className="sr-only">Renomear {salvo}</span>
+      </button>
+    </>
   )
 }

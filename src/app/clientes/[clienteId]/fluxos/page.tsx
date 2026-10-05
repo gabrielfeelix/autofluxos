@@ -841,7 +841,6 @@ async function ConteudoDaAba({
                             automações da mesma conta podem ser de canais
                             diferentes. */}
                         <strong className="flex flex-wrap items-center gap-1.5 text-[13.5px] font-semibold">
-                          <span className="truncate">{fluxo.nome}</span>
                           <NomeDoFluxo
                             clienteId={cliente.id}
                             fluxoId={fluxo.id}
