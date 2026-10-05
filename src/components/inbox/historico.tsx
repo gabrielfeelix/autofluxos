@@ -1,6 +1,7 @@
 'use client'
 
 import { Fragment, useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
+import { useSearchParams } from 'next/navigation'
 import { EnvioNaoConfirmado } from './reenviar'
 import { podeReagir } from '@/channels/janela'
 import { assinaturaDasReacoes } from '@/core/reacoes'
@@ -379,6 +380,37 @@ function BolhaSaindo({ texto, erro }: { texto: string; erro?: string }) {
   )
 }
 
+/** O realce da mensagem aberta por Mensagens salvas. Literal, para o Tailwind achar. */
+const REALCE_DA_GUARDADA = ['rounded-[16px]', 'bg-amber-400/15', 'ring-2', 'ring-amber-400/60', 'ring-offset-4', 'ring-offset-transparent']
+
+/**
+ * Leva a conversa até a mensagem de `?mensagem=`, que é como Mensagens salvas
+ * abre a conversa. Sem isto o clique caía nas últimas mensagens, e a pessoa
+ * tinha de rolar procurando a frase que guardou justamente para não procurar.
+ *
+ * Roda uma vez por mensagem pedida: a conversa ao vivo continua chegando, e
+ * puxar a tela de volta a cada mensagem nova atrapalharia quem já está lendo.
+ */
+function RolarAteAGuardada({ total }: { total: number }) {
+  const pedida = useSearchParams().get('mensagem')
+  const feita = useRef<string | null>(null)
+
+  useEffect(() => {
+    if (!pedida || feita.current === pedida) return
+    const linha = document.querySelector<HTMLElement>(`[data-mensagem="${CSS.escape(pedida)}"]`)
+    if (!linha) return
+    feita.current = pedida
+    linha.scrollIntoView({ block: 'center' })
+    // A linha ocupa a largura toda; o realce vai na bolha, que é o primeiro filho.
+    const alvo = (linha.firstElementChild as HTMLElement | null) ?? linha
+    alvo.classList.add(...REALCE_DA_GUARDADA)
+    const tempo = setTimeout(() => alvo.classList.remove(...REALCE_DA_GUARDADA), 2600)
+    return () => clearTimeout(tempo)
+  }, [pedida, total])
+
+  return null
+}
+
 function ListaDeMensagens({
   mensagens,
   cortada,
@@ -439,6 +471,7 @@ function ListaDeMensagens({
      * precisa comunicar.
      */
     <div className="flex w-full flex-col gap-2.5">
+      <RolarAteAGuardada total={mensagens.length} />
       {cortada && (
         <p className="mb-1 self-center rounded-full border border-dashed border-strong px-3 py-1.5 text-center font-mono text-[11px] text-dim">
           mostrando as 500 mensagens mais recentes
@@ -486,6 +519,7 @@ function ListaDeMensagens({
              * toda.
              */}
           <div
+            data-mensagem={mensagem.id}
             className={`flex min-w-0 max-w-full flex-col gap-0 ${nossa ? 'items-end' : 'items-start'}`}
           >
             {/*

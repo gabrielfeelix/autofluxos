@@ -102,11 +102,11 @@ export default async function Pagina({
                 <li key={favorita.mensagemId}>
                   {/*
                     A linha inteira é o caminho de volta: o `?conversa=` é o
-                    endereço que a fila usa, então clicar abre a conversa no
-                    Inbox, com o que veio antes da frase guardada.
+                    endereço que a fila usa, e o `&mensagem=` leva a conversa
+                    até a frase guardada, com o que veio antes dela.
                   */}
                   <Link
-                    href={`/clientes/${clienteId}/inbox?conversa=${encodeURIComponent(favorita.contatoId)}`}
+                    href={`/clientes/${clienteId}/inbox?conversa=${encodeURIComponent(favorita.contatoId)}&mensagem=${encodeURIComponent(favorita.mensagemId)}`}
                     className="block px-5 py-3.5 transition hover:bg-surface"
                   >
                     <span className="flex items-baseline gap-2">
