@@ -2,6 +2,8 @@ import { describe, expect, it } from 'vitest'
 import {
   BOTOES_SEGUROS_NO_DESKTOP,
   botoesIncompletos,
+  linkParaAMeta,
+  problemaDoBotao,
   componentesParaMeta,
   condutaPara,
   explicarErro,
@@ -496,12 +498,31 @@ describe('os botões de um modelo da biblioteca', () => {
 
 describe('telefoneParaAMeta', () => {
   it('tira a máscara que todo brasileiro digita', () => {
-    expect(telefoneParaAMeta('(11) 99999-0000')).toBe('+11999990000')
+    expect(telefoneParaAMeta('(11) 99999-0000')).toBe('+5511999990000')
     expect(telefoneParaAMeta('+55 11 99999-0000')).toBe('+5511999990000')
   })
 
   it('vazio continua vazio, em vez de virar um "+" sozinho', () => {
     expect(telefoneParaAMeta('')).toBe('')
     expect(telefoneParaAMeta('abc')).toBe('')
+  })
+})
+
+describe('valor do botão', () => {
+  const link = { tipo: 'URL', rotulo: 'Ver', precisaDeValor: true, pergunta: '', exemplo: '' }
+  const fone = { tipo: 'PHONE_NUMBER', rotulo: 'Ligar', precisaDeValor: true, pergunta: '', exemplo: '' }
+
+  it('recusa texto que não é link, e aceita domínio sem https', () => {
+    expect(problemaDoBotao(link, 'teste')).not.toBeNull()
+    expect(problemaDoBotao(link, '')).toBe('falta o link')
+    expect(problemaDoBotao(link, 'seusite.com.br/agenda')).toBeNull()
+    expect(problemaDoBotao(link, 'https://x.com')).toBeNull()
+    expect(linkParaAMeta('seusite.com.br')).toBe('https://seusite.com.br')
+    expect(linkParaAMeta('http://a.com')).toBe('http://a.com')
+  })
+
+  it('pede telefone com DDD', () => {
+    expect(problemaDoBotao(fone, '9999')).not.toBeNull()
+    expect(problemaDoBotao(fone, '(11) 99999-0000')).toBeNull()
   })
 })

@@ -585,7 +585,7 @@ export function pedidosDeBotao(
         rotulo: botao.rotulo,
         precisaDeValor: true,
         pergunta: 'Para qual endereço este botão leva?',
-        exemplo: 'https://seusite.com.br/agenda',
+        exemplo: 'seusite.com.br/agenda',
       }
     }
 
@@ -595,7 +595,7 @@ export function pedidosDeBotao(
         rotulo: botao.rotulo,
         precisaDeValor: true,
         pergunta: 'Qual telefone este botão liga?',
-        exemplo: '+55 11 99999-0000',
+        exemplo: '(11) 99999-0000',
       }
     }
 
@@ -627,11 +627,46 @@ export function botoesIncompletos(
 ): number[] {
   const faltando: number[] = []
   pedidos.forEach((pedido, indice) => {
-    if (pedido.precisaDeValor && (valores[indice] ?? '').trim() === '') {
-      faltando.push(indice)
-    }
+    if (problemaDoBotao(pedido, valores[indice] ?? '') !== null) faltando.push(indice)
   })
   return faltando
+}
+
+/**
+ * O link como a Meta quer: com `https://`. Quem digita "seusite.com.br"
+ * quer dizer o site, e não um erro; o protocolo entra sozinho.
+ */
+export function linkParaAMeta(bruto: string): string {
+  const limpo = bruto.trim()
+  if (limpo === '') return ''
+  return /^https?:\/\//i.test(limpo) ? limpo : `https://${limpo}`
+}
+
+/**
+ * O que está errado com o valor deste botão, numa frase, ou `null`.
+ *
+ * Vazio não basta conferir: "teste" passava, liberava o "Usar este modelo" e a
+ * Meta recusava na volta. Link precisa de um domínio com ponto; telefone, de
+ * DDD e número.
+ */
+export function problemaDoBotao(pedido: PedidoDeBotao, valor: string): string | null {
+  if (!pedido.precisaDeValor) return null
+  const limpo = valor.trim()
+  if (limpo === '') return pedido.tipo === 'URL' ? 'falta o link' : 'falta o telefone'
+  if (pedido.tipo === 'URL') {
+    try {
+      const url = new URL(linkParaAMeta(limpo))
+      if (!/^[^.\s]+(\.[^.\s]+)+$/.test(url.hostname) || /\s/.test(limpo)) throw new Error()
+      return null
+    } catch {
+      return 'não parece um link. Exemplo: seusite.com.br/agenda'
+    }
+  }
+  if (pedido.tipo === 'PHONE_NUMBER') {
+    const digitos = limpo.replace(/\D/g, '')
+    return digitos.length >= 10 && digitos.length <= 15 ? null : 'telefone com DDD. Exemplo: (11) 99999-0000'
+  }
+  return null
 }
 
 /**
@@ -643,5 +678,8 @@ export function botoesIncompletos(
 export function telefoneParaAMeta(bruto: string): string {
   const digitos = bruto.replace(/\D/g, '')
   if (digitos === '') return ''
+  // DDD + número sem o país (10 ou 11 dígitos) é Brasil: sem o 55, a Meta
+  // ligaria para outro país.
+  if (!bruto.trim().startsWith('+') && (digitos.length === 10 || digitos.length === 11)) return `+55${digitos}`
   return `+${digitos}`
 }

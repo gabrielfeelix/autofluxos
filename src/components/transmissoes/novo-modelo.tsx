@@ -18,6 +18,8 @@ import {
 import type { EntradaDeBotao, ModeloDaBiblioteca } from '@/channels/templates-api'
 import {
   botoesIncompletos,
+  linkParaAMeta,
+  problemaDoBotao,
   pedidosDeBotao,
   telefoneParaAMeta,
   type Categoria,
@@ -358,6 +360,8 @@ function ConfirmarDaMeta({
   const pedidos = pedidosDeBotao(modelo.botoes)
   const [valores, setValores] = useState<string[]>(() => pedidos.map(() => ''))
   const faltando = botoesIncompletos(pedidos, valores)
+  /** Erro de formato só aparece depois que a pessoa sai do campo, não a cada letra. */
+  const [tocados, setTocados] = useState<Record<number, boolean>>({})
 
   function criar() {
     setErro(null)
@@ -380,7 +384,7 @@ function ConfirmarDaMeta({
                 if (pedido.tipo === 'URL') {
                   return {
                     type: 'URL',
-                    url: { base_url: valor, url_suffix_example: valor },
+                    url: { base_url: linkParaAMeta(valor), url_suffix_example: linkParaAMeta(valor) },
                   }
                 }
 
@@ -408,42 +412,85 @@ function ConfirmarDaMeta({
         <span className="mb-1.5 block text-[11px] font-bold tracking-[0.05em] text-muted uppercase">
           Como o cliente recebe
         </span>
-        <p className="rounded-[12px] bg-[#dcf8c6] px-3 py-2.5 text-[13px] leading-[1.5] whitespace-pre-wrap text-[#111b21]">
+        <p
+          className={`bg-[#dcf8c6] px-3 py-2.5 text-[13px] leading-[1.5] whitespace-pre-wrap text-[#111b21] ${
+            pedidos.length > 0 ? 'rounded-t-[12px]' : 'rounded-[12px]'
+          }`}
+        >
           {modelo.corpo}
         </p>
+        {/*
+          Os botões colados no balão, como o WhatsApp desenha. Antes eram uma
+          frase solta ("Com o botão: Verificar a conta.") e o campo embaixo não
+          parecia ter dono.
+        */}
+        {pedidos.length > 0 && (
+          <span className="flex flex-col divide-y divide-[#c9e9b3] overflow-hidden rounded-b-[12px] border-t border-[#c9e9b3] bg-[#dcf8c6]">
+            {pedidos.map((pedido, indice) => (
+              <span
+                key={`${pedido.rotulo}-${indice}`}
+                className="flex items-center justify-center gap-1.5 py-2 text-[13px] font-semibold text-[#0b7a6a]"
+              >
+                <svg aria-hidden viewBox="0 0 24 24" className="size-3.5" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  {pedido.tipo === 'URL' ? (
+                    <>
+                      <path d="M14 4h6v6" />
+                      <path d="M20 4 11 13" />
+                      <path d="M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5" />
+                    </>
+                  ) : pedido.tipo === 'PHONE_NUMBER' ? (
+                    <path d="M5 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L15 13l5 2v4a1 1 0 0 1-1 1A16 16 0 0 1 4 5a1 1 0 0 1 1-1Z" />
+                  ) : (
+                    <path d="M9 14 4 9l5-5M4 9h11a5 5 0 0 1 0 10h-3" />
+                  )}
+                </svg>
+                {pedido.rotulo}
+              </span>
+            ))}
+          </span>
+        )}
       </div>
 
       {/*
         `modelo.botoes` é objeto, não texto. O `.join()` que estava aqui
         imprimia "[object Object]" na tela para o cliente ler.
       */}
-      {pedidos.length > 0 && (
-        <div className="space-y-2.5">
-          <p className="text-[11.5px] leading-5 text-muted">
-            Com {pedidos.length === 1 ? 'o botão' : 'os botões'}:{' '}
-            {pedidos.map((p) => p.rotulo).join(', ')}.
-          </p>
-
-          {pedidos.map((pedido, indice) =>
-            pedido.precisaDeValor ? (
+      {pedidos.some((pedido) => pedido.precisaDeValor) && (
+        <div className="space-y-3">
+          {pedidos.map((pedido, indice) => {
+            if (!pedido.precisaDeValor) return null
+            const valor = valores[indice] ?? ''
+            const problema = problemaDoBotao(pedido, valor)
+            const mostrar = problema !== null && (tocados[indice] ?? false)
+            return (
               <label key={`${pedido.rotulo}-${indice}`} className="block">
-                <span className="mb-1 block text-[12px] text-soft">
-                  {pedido.rotulo}: {pedido.pergunta}
+                <span className="mb-1 block text-[11px] font-bold tracking-[0.04em] text-dim uppercase">
+                  {pedido.tipo === 'URL' ? 'Para onde' : 'Para qual telefone'}{' '}
+                  <span className="normal-case">“{pedido.rotulo}”</span>{' '}
+                  {pedido.tipo === 'URL' ? 'leva' : 'liga'}
                 </span>
                 <input
                   type={pedido.tipo === 'URL' ? 'url' : 'tel'}
-                  value={valores[indice] ?? ''}
-                  placeholder={pedido.exemplo}
+                  value={valor}
+                  aria-label={`${pedido.rotulo}: ${pedido.pergunta}`}
+                  aria-invalid={mostrar}
+                  placeholder={`Exemplo: ${pedido.exemplo}`}
+                  onBlur={() => setTocados((atuais) => ({ ...atuais, [indice]: true }))}
                   onChange={(e) => {
                     const proximos = [...valores]
                     proximos[indice] = e.target.value
                     setValores(proximos)
                   }}
-                  className="app-field w-full text-[13px]"
+                  className={`app-field w-full px-3 py-2.5 text-[13px] ${mostrar ? 'border-perigo/60' : ''}`}
                 />
+                <span className={`mt-1 block text-[11px] leading-4 first-letter:uppercase ${mostrar ? 'text-perigo' : 'text-dim'}`}>
+                  {mostrar
+                    ? problema
+                    : 'O botão já vem no modelo da Meta, e ela só aprova com o destino preenchido.'}
+                </span>
               </label>
-            ) : null,
-          )}
+            )
+          })}
         </div>
       )}
 
