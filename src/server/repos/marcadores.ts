@@ -1,4 +1,5 @@
 import 'server-only'
+import { nomeParaMostrar } from '@/core/contatos/nome-para-mostrar'
 import { db, ehIdInvalido } from '../db'
 
 /**
@@ -243,7 +244,7 @@ export async function listarFavoritas(
    */
   const { data: contatos, error: erroDosContatos } = await db()
     .from('contacts')
-    .select('id, nome, wa_id')
+    .select('id, nome, nome_real, wa_id')
     .eq('client_id', clienteId)
     .in('id', [...new Set(achadas.map((m) => m.contact_id))])
 
@@ -252,7 +253,7 @@ export async function listarFavoritas(
   }
 
   const porContato = new Map(
-    ((contatos ?? []) as { id: string; nome: string | null; wa_id: string }[]).map((c) => [c.id, c]),
+    ((contatos ?? []) as { id: string; nome: string | null; nome_real: string | null; wa_id: string }[]).map((c) => [c.id, c]),
   )
 
   return achadas
@@ -262,7 +263,11 @@ export async function listarFavoritas(
       return {
         mensagemId: linha.id,
         contatoId: linha.contact_id,
-        nomeDoContato: contato.nome,
+        // O corrigido pela equipe ganha do perfil; perfil que é só emoji ("🥇")
+        // não identifica ninguém, e aí vale o telefone.
+        nomeDoContato: /\p{L}/u.test(nomeParaMostrar({ nomeReal: contato.nome_real, nome: contato.nome }))
+          ? nomeParaMostrar({ nomeReal: contato.nome_real, nome: contato.nome })
+          : null,
         waId: contato.wa_id,
         direcao: linha.direcao,
         texto: linha.texto,

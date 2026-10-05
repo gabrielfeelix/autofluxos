@@ -7,7 +7,10 @@ import { ClienteShell } from '@/components/design/cliente-shell'
 import { acharCliente } from '@/server/repos/clientes'
 import { listarFavoritas } from '@/server/repos/marcadores'
 import { exigirAcessoAoCliente } from '@/server/sessao'
-import { quando } from '@/lib/quando'
+import { horaExata, quando } from '@/lib/quando'
+import { Avatar } from '@/components/inbox/avatar'
+import { COLUNA_FIXA, FUNDO_DA_FIXA, FUNDO_DA_LINHA, Tabela, Th } from '@/components/design/tabela'
+import { telefoneLegivel } from '@/core/contatos/telefone'
 
 export const dynamic = 'force-dynamic'
 
@@ -81,13 +84,12 @@ export default async function Pagina({
           }
         />
 
-        <section className="app-card overflow-hidden">
-
-          {favoritas.length === 0 ? (
-            /*
+        {favoritas.length === 0 ? (
+          <section className="app-card overflow-hidden">
+            {/*
               O vazio explica **o gesto**, e não a ausência: quem chegou aqui
               provavelmente não sabe onde fica a estrela.
-            */
+            */}
             <div className="px-5 py-14 text-center">
               <IlustracaoGuardadas />
               <p className="mt-6 text-[13.5px] font-semibold text-soft">Nada guardado ainda</p>
@@ -96,42 +98,81 @@ export default async function Pagina({
                 que você vai precisar achar semana que vem.
               </p>
             </div>
-          ) : (
-            <ul className="divide-y divide-line">
-              {favoritas.map((favorita) => (
-                <li key={favorita.mensagemId}>
-                  {/*
-                    A linha inteira é o caminho de volta: o `?conversa=` é o
-                    endereço que a fila usa, e o `&mensagem=` leva a conversa
-                    até a frase guardada, com o que veio antes dela.
-                  */}
-                  <Link
-                    href={`/clientes/${clienteId}/inbox?conversa=${encodeURIComponent(favorita.contatoId)}&mensagem=${encodeURIComponent(favorita.mensagemId)}`}
-                    className="block px-5 py-3.5 transition hover:bg-surface"
-                  >
-                    <span className="flex items-baseline gap-2">
-                      <strong className="min-w-0 flex-1 truncate text-[13px] text-ink">
-                        {favorita.nomeDoContato ?? favorita.waId}
-                      </strong>
-                      {/*
-                        Quem falou, porque a mesma frase muda de sentido conforme
-                        a direção: "pode ser amanhã" dito pelo cliente é um
-                        pedido, e dito por nós é uma promessa.
-                      */}
-                      <small className="shrink-0 text-[11px] text-muted">
-                        {favorita.direcao === 'entrada' ? 'recebida' : 'enviada'} ·{' '}
-                        {quando(favorita.ts)}
-                      </small>
-                    </span>
-                    <p className="mt-1 line-clamp-3 font-texto text-[13.5px] leading-[1.45] whitespace-pre-wrap text-soft">
-                      {favorita.texto ?? 'mensagem sem texto'}
-                    </p>
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          )}
-        </section>
+          </section>
+        ) : (
+          /*
+            Tabela, como Contatos: a lista abria cada linha com o nome de perfil
+            do WhatsApp, e perfil que é só um emoji ("🥇") não dizia de quem era
+            a mensagem. Agora quem, com telefone, o que, de que lado e quando.
+          */
+          <Tabela largura={860}>
+            <thead>
+              <tr className="border-b border-line">
+                <Th fixa>Contato</Th>
+                <Th>Mensagem</Th>
+                <Th>Quem falou</Th>
+                <Th>Quando</Th>
+                <Th className="w-36">
+                  <span className="sr-only">Ações</span>
+                </Th>
+              </tr>
+            </thead>
+            <tbody>
+              {favoritas.map((favorita) => {
+                /*
+                  O `?conversa=` é o endereço que a fila usa, e o `&mensagem=`
+                  leva a conversa até a frase guardada, com o que veio antes.
+                */
+                const conversa = `/clientes/${clienteId}/inbox?conversa=${encodeURIComponent(favorita.contatoId)}&mensagem=${encodeURIComponent(favorita.mensagemId)}`
+                const telefone = telefoneLegivel(favorita.waId)
+                return (
+                  <tr key={favorita.mensagemId} className={`group border-b border-line align-top last:border-0 ${FUNDO_DA_LINHA}`}>
+                    <td className={`${COLUNA_FIXA} ${FUNDO_DA_FIXA} px-4 py-3`}>
+                      <Link href={conversa} className="flex items-center gap-2.5">
+                        <Avatar nome={favorita.nomeDoContato ?? telefone} tamanho={32} />
+                        <span className="min-w-0">
+                          <span className="block truncate text-[13px] font-semibold text-ink group-hover:text-primary">
+                            {favorita.nomeDoContato ?? telefone}
+                          </span>
+                          {favorita.nomeDoContato && (
+                            <span className="block truncate text-[11.5px] text-dim tabular-nums">{telefone}</span>
+                          )}
+                        </span>
+                      </Link>
+                    </td>
+                    <td className="min-w-[320px] px-4 py-3">
+                      <Link href={conversa} className="line-clamp-2 font-texto text-[13px] leading-[1.45] text-soft">
+                        {favorita.texto ?? 'mensagem sem texto'}
+                      </Link>
+                    </td>
+                    {/*
+                      Quem falou, porque a mesma frase muda de sentido conforme
+                      a direção: "pode ser amanhã" dito pelo cliente é um
+                      pedido, e dito por nós é uma promessa.
+                    */}
+                    <td className="px-4 py-3 whitespace-nowrap">
+                      <span
+                        className={`rounded-full px-2 py-0.5 text-[11px] font-semibold ${
+                          favorita.direcao === 'entrada' ? 'bg-surface text-muted' : 'bg-primary/10 text-primary'
+                        }`}
+                      >
+                        {favorita.direcao === 'entrada' ? 'Cliente' : 'Equipe'}
+                      </span>
+                    </td>
+                    <td className="px-4 py-3 text-[12px] whitespace-nowrap text-dim tabular-nums" title={horaExata(favorita.ts)}>
+                      {quando(favorita.ts)}
+                    </td>
+                    <td className="px-4 py-3 text-right">
+                      <Link href={conversa} className="botao-secundario botao-sm whitespace-nowrap">
+                        Abrir conversa
+                      </Link>
+                    </td>
+                  </tr>
+                )
+              })}
+            </tbody>
+          </Tabela>
+        )}
       </Miolo>
     </ClienteShell>
   )
