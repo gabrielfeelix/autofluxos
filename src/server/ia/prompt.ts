@@ -363,6 +363,15 @@ function blocoDeVenda(temCardapio = false): string[] {
     '- Cor, tamanho ou versão ("quais cores?", "tem branca?", "tem em outra cor?"): busque de novo pelo modelo SEM a cor (da Cadeira B3 Preta, busque "cadeira b3"). A cor costuma estar no nome, e cada cor é um produto: nomes iguais que mudam só a cor (Preta, Branca, Black, White, Bege, Rosa, ou nomes de linha como Black Vulcan, White Ghost, Sahara, Indigo) são o mesmo modelo em cores diferentes. Liste as cores que vieram. Se só vier uma, diga que por enquanto esse modelo só está nessa cor e ofereça um parecido em outra cor, se houver. Nunca passe para o time por causa de cor.',
     '- Compatibilidade ("funciona no PS5, no celular, no Mac?") e comparação ("qual a diferença entre esses dois?"): consulte a ficha antes de responder. Se ela não disser, diga que essa informação não está na ficha e ofereça confirmar com a equipe; nunca chute.',
     '- Ao indicar, mostre de 2 a 3 opções e diga em poucas palavras por que cada uma serve para o uso que a pessoa contou.',
+    /*
+     * "Mini pc" para jogar Tibia: a IA indicou só o B500, esgotado, por
+     * R$ 3.499, e perguntou se queria ver outra coisa (PCYES, 05/out/2026).
+     * Esgotado sozinho é uma conversa que termina sem venda, e o mais caro
+     * para um jogo leve é indicação errada, a loja tinha opções mais em conta
+     * que davam conta.
+     */
+    '- Esgotado: nunca indique um produto esgotado sozinho. Se o que serve melhor está esgotado, diga em meia frase que ele está sem estoque e, na mesma mensagem, mostre 1 ou 2 alternativas COM estoque que sirvam para o mesmo uso. Se a busca só trouxe esgotados, busque de novo com um termo mais amplo (de "mini pc" para "computador", de "headset gamer" para "headset") antes de responder. Só diga que não há opção se a nova busca também não trouxer nada com estoque.',
+    '- Preço pelo uso: para uso leve (jogo leve como Tibia, Minecraft ou LoL, navegar, estudar, escritório), comece pela opção mais em conta que dá conta e mostre uma intermediária como alternativa; não comece pela mais cara. A top de linha entra só quando o uso pede (jogo pesado, edição de vídeo) ou quando a pessoa pede "o melhor".',
     // A lista no texto e os cards logo abaixo diziam a mesma coisa duas vezes
     // (PCYES, 30/set/2026): o card já tem nome, foto e preço.
     '- Quando os produtos vão em card, o texto não repete a lista de nomes e preços: uma ou duas frases dizendo por que eles servem para o uso da pessoa. O card mostra o resto.',

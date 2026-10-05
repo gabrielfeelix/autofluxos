@@ -1607,9 +1607,9 @@ async function executarNaLoja(
      * catálogo próprio filtra por categoria; nas lojas on-line nada muda.
      */
     const buscarNaLoja = async (termo: string) => {
-      const r = await loja.buscar(termo, filtro)
-      if (!filtro || !r.ok || r.valor.length > 0) return r
-      return loja.buscar(termo)
+      const primeira = await loja.buscar(termo, filtro)
+      const r = !filtro || !primeira.ok || primeira.valor.length > 0 ? primeira : await loja.buscar(termo)
+      return r.ok ? { ...r, valor: comEstoquePrimeiro(r.valor) } : r
     }
     if (termos.length <= 1) {
       const termo = termos[0] ?? ''
@@ -1654,6 +1654,18 @@ async function executarNaLoja(
 
   const r = await loja.combinaCom(valores.produtoId ?? '')
   return r.ok ? { ok: true, json: { produtos: r.valor } } : r
+}
+
+/**
+ * O que tem estoque vem antes do esgotado, na ordem em que a loja devolveu.
+ *
+ * "Mini pc para Tibia" trouxe o B500 esgotado em primeiro, e a IA indicou só
+ * ele, sem alternativa (PCYES, 05/out/2026). A loja ordena por relevância e
+ * não sabe que o atendimento quer vender o que dá para comprar hoje. O
+ * esgotado continua na lista: a pessoa pode ter perguntado justamente dele.
+ */
+function comEstoquePrimeiro(produtos: ProdutoDaLoja[]): ProdutoDaLoja[] {
+  return [...produtos.filter((p) => p.emEstoque !== false), ...produtos.filter((p) => p.emEstoque === false)]
 }
 
 /**
