@@ -262,7 +262,7 @@ export function EscolhaDePlano({
                   >
                     {valor === 'mensal' ? 'Mensal' : 'Anual'}
                     {valor === 'anual' && descontoAnual > 0 && (
-                      <span className={`ml-1.5 text-[11px] font-semibold ${aceso ? 'text-ok' : 'text-dim'}`}>{descontoAnual}% a menos</span>
+                      <span className="ml-1.5 rounded-full bg-emerald-600 px-1.5 py-0.5 text-[10.5px] font-bold text-white">{descontoAnual}% a menos</span>
                     )}
                   </button>
                 )
