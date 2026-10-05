@@ -61,3 +61,12 @@ Inline no Opus, `tsc` + `eslint`, commit e push por frente. Migration de
 
 | # | Onde | Sintoma | Status |
 |---|---|---|---|
+| 1 | `leads/page.tsx` paginação | Trocar de página com segmento ativo perdia o segmento | corrigido `adbc30c` |
+| 2 | `anuncios/cartao-da-pagina.tsx` | Falha ao desligar Página não aparecia | corrigido `adbc30c` |
+| 3 | `conta/distribuicao.tsx` | Falha ao gravar teto/rodízio deixava valor que não está no banco | corrigido `adbc30c` |
+| 4 | `acoes-conta.ts` cadastro | Conta criada, login falha: tela de erro e "não deu para criar" na volta | corrigido `4c837c7` |
+| 5 | `acoes.ts` horário | Salvar não revalidava `ajustes/horario` | corrigido `4c837c7` |
+| 6 | `cliente/ficha.tsx` tirar logo | Sem retorno visível de sucesso/erro | aberto, baixo |
+| 7 | `transmissoes` | Filtro aplicado no navegador, não na consulta (lento com volume) | aberto, baixo |
+
+Fase 1 concluída: 8 áreas lidas; fluxos e inbox sem achado real.
