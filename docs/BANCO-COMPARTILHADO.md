@@ -1323,6 +1323,16 @@ extração explícito para os objetos de `public`.
   **Docker local:** o container do Storage é mais velho que o schema `storage`
   dele e o upload dá `42P10`; contorno só local: `create unique index on
   storage.objects (name, bucket_id)` como `supabase_admin`.
+- **a `0129` e a `0130` foram aplicadas em 05/out/2026**, juntas, com
+  autorização explícita do dono, pela Management API. Ensaio em transação
+  antes (`rollback`; o nome do `operacao` seguiu "Profissional" depois, prova
+  de que não gravou). Só `public`: `funcoes` com as checagens de id e nível
+  alargadas e a linha `leitor` (nível 0); `planos` com `ia_ferramentas` e
+  `sequencias` somados em `operacao` e `escala`, nome "Operação" e os textos
+  novos. Releitura depois: os três planos e o `leitor` como esperado,
+  `app_verandi.migrations_aplicadas` **40**, igual a antes. Desfazer: tirar as
+  duas chaves de `recursos`, `delete from public.funcoes where id = 'leitor'`
+  (antes, trocar quem for Leitor) e voltar as checagens para 1 a 4.
 
 ### Testar migration antes de produção, em Docker
 
