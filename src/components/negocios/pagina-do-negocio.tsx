@@ -1117,6 +1117,14 @@ function NovaAnotacao({
 }
 
 /** O título no lugar: clicar vira campo, Enter grava, Esc desiste. */
+/**
+ * O título, com o lápis ao lado que abre um modal pequeno: o mesmo gesto do
+ * nome na ficha do contato. Antes o próprio título virava um campo do tamanho
+ * da linha ao clicar, e um "editar" aparecia no hover desbotando o título.
+ *
+ * O título provisório (gerado do nome do contato) sai em branco como os
+ * outros: desbotado sobre o azul, ele parecia desabilitado.
+ */
 function TituloEditavel({
   titulo,
   provisorio,
@@ -1129,49 +1137,61 @@ function TituloEditavel({
   const [editando, setEditando] = useState(false)
   const [texto, setTexto] = useState(titulo)
 
-  if (editando) {
-    const gravar = () => {
-      setEditando(false)
-      if (texto.trim() !== titulo) aoSalvar(texto.trim())
-    }
-    return (
-      <input
-        autoFocus
-        value={texto}
-        maxLength={LIMITE_DO_TITULO}
-        onChange={(e) => setTexto(e.currentTarget.value)}
-        onBlur={gravar}
-        onKeyDown={(e) => {
-          if (e.key === 'Enter') gravar()
-          if (e.key === 'Escape') {
-            setTexto(titulo)
-            setEditando(false)
-          }
-        }}
-        aria-label="Título do negócio"
-        placeholder="Exemplo: Plano anual com 2 aulas por semana"
-        className="app-field w-full px-2.5 py-1.5 text-[22px] font-bold tracking-[-0.03em]"
-      />
-    )
-  }
-
   return (
-    <button
-      type="button"
-      onClick={() => {
-        setTexto(titulo)
-        setEditando(true)
-      }}
-      title="Clique para editar o título"
-      className="group -mx-1.5 flex max-w-full items-center gap-2 rounded-lg px-1.5 py-0.5 text-left transition hover:bg-surface"
-    >
-      <h1 className={`min-w-0 text-[24px] leading-tight font-bold tracking-[-0.03em] break-words ${provisorio ? 'text-dim' : 'text-ink'}`}>
-        {provisorio ?? titulo}
+    <>
+      <h1 className="flex flex-wrap items-center gap-2 text-[21px] font-bold tracking-[-0.02em] text-ink">
+        <span className="min-w-0 break-words">{provisorio ?? titulo}</span>
+        <button
+          type="button"
+          onClick={() => {
+            setTexto(titulo)
+            setEditando(true)
+          }}
+          title="Editar o título"
+          aria-label="Editar o título"
+          className="grid size-7 shrink-0 place-items-center rounded-lg border border-line text-muted transition hover:border-primary/40 hover:text-primary"
+        >
+          <svg aria-hidden="true" viewBox="0 0 16 16" className="size-3.5">
+            <path
+              d="M11.2 2.3a1.4 1.4 0 0 1 2 2l-6.6 6.6-2.7.7.7-2.7 6.6-6.6ZM10 3.6l2.4 2.4"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.4"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+          </svg>
+        </button>
       </h1>
-      <span aria-hidden className="shrink-0 text-[12px] text-dim opacity-0 transition group-hover:opacity-100">
-        editar
-      </span>
-    </button>
+      <Modal aberto={editando} aoFechar={() => setEditando(false)} titulo="Título do negócio">
+        <form
+          className="flex flex-col gap-4"
+          onSubmit={(e) => {
+            e.preventDefault()
+            setEditando(false)
+            if (texto.trim() !== titulo) aoSalvar(texto.trim())
+          }}
+        >
+          <input
+            autoFocus
+            value={texto}
+            maxLength={LIMITE_DO_TITULO}
+            onChange={(e) => setTexto(e.currentTarget.value)}
+            aria-label="Título do negócio"
+            placeholder="Exemplo: Plano anual com 2 aulas por semana"
+            className="app-field px-3 py-2 text-[13.5px]"
+          />
+          <span className="flex justify-end gap-2">
+            <button type="button" onClick={() => setEditando(false)} className="botao-secundario botao-md">
+              Cancelar
+            </button>
+            <button type="submit" className="botao-primario botao-md">
+              Salvar
+            </button>
+          </span>
+        </form>
+      </Modal>
+    </>
   )
 }
 
