@@ -9,7 +9,7 @@ import { Esqueleto, EsqueletoDeAlternador, EsqueletoDeBotao, TopoCarregando } fr
 export default function Carregando() {
   return (
     <MioloCarregando>
-      <Miolo largura="larga">
+      <Miolo largura="toda">
         <TopoCarregando titulo="Relatórios" descricao={<Esqueleto className="mt-1.5 h-3 w-64" />} />
         <div aria-hidden className="mt-4 mb-4 flex flex-wrap items-center gap-2">
           <EsqueletoDeAlternador opcoes={['7 dias', '30 dias', '90 dias']} ativa={1} />

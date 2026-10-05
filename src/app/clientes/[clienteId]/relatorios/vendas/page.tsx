@@ -144,7 +144,7 @@ export default async function Pagina({
 
   return (
     <ClienteShell cliente={cliente} ativa="vendas">
-      <Miolo largura="larga">
+      <Miolo largura="toda">
         <CabecalhoDaTela
           className="mb-0"
           titulo={
