@@ -406,9 +406,9 @@ export function PainelDoContato({
         </Link>
         <Link
           href={hrefDaFicha(clienteId, contatoId, { volta })}
-          className="crm-button flex-1 justify-between"
+          className="botao-secundario botao-md flex flex-1"
         >
-          Ficha do contato <span aria-hidden>↗</span>
+          Ficha do contato
         </Link>
       </footer>
     </dialog>
