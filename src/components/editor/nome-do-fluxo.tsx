@@ -180,24 +180,23 @@ export function NomeDoFluxo({
     )
   }
 
+  /*
+   * No cabeçalho do editor: campo e Salvar **na mesma linha**, na altura do
+   * nome. A legenda "Enter salva · Esc desiste" embaixo aumentava a altura do
+   * cabeçalho e cortava o campo na borda da tela. Enter e Esc continuam
+   * valendo, só não ocupam espaço. O erro flutua embaixo, sem empurrar nada.
+   */
   return (
-    <span
-      className={
-        variante === 'titulo'
-          ? 'block'
-          : 'pointer-events-auto inline-flex flex-col items-start gap-1'
-      }
-    >
+    <span className="relative flex items-center gap-1.5">
       <input
         ref={campo}
         value={valor}
         disabled={rodando}
+        maxLength={LIMITE_NOME_DO_FLUXO}
         aria-label="Nome da automação"
         onChange={(e) => setValor(e.target.value)}
         onBlur={() => void confirmar()}
         onKeyDown={(e) => {
-          // Enter confirma e Esc desiste. Sem o Esc, quem abriu sem querer só
-          // sai apagando o que digitou e torcendo para lembrar o nome antigo.
           if (e.key === 'Enter') {
             e.preventDefault()
             void confirmar()
@@ -207,17 +206,25 @@ export function NomeDoFluxo({
             cancelar()
           }
         }}
-        className={`app-field px-2 py-1 text-[13px] font-bold ${
-          variante === 'titulo' ? 'w-[280px]' : 'w-[200px]'
-        } ${erro ? 'border-rose-400/40' : ''}`}
+        className={`app-field h-6 w-[240px] px-2 text-[13px] font-bold ${erro ? 'border-rose-400/40' : ''}`}
       />
-      {erro ? (
-        <span role="alert" className="mt-0.5 block text-[10px] leading-4 text-perigo">
+      <button
+        type="button"
+        // Sem isto o clique tira o foco do campo antes, e o `onBlur` salva
+        // primeiro: o botão some no meio do próprio clique.
+        onMouseDown={(e) => e.preventDefault()}
+        onClick={() => void confirmar()}
+        disabled={rodando || !valor.trim()}
+        className="botao-primario h-6 shrink-0 rounded-md px-2.5 text-[11.5px]"
+      >
+        {rodando ? 'Salvando…' : 'Salvar'}
+      </button>
+      {erro && (
+        <span
+          role="alert"
+          className="absolute top-full left-0 z-30 mt-1 rounded-md border border-rose-400/30 bg-panel px-2 py-1 text-[11px] whitespace-nowrap text-perigo shadow-md"
+        >
           {erro}
-        </span>
-      ) : (
-        <span className="mt-0.5 block text-[10px] text-dim">
-          Enter salva · Esc desiste · até {LIMITE_NOME_DO_FLUXO} caracteres
         </span>
       )}
     </span>
