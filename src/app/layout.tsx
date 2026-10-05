@@ -1,5 +1,5 @@
 import type { Metadata } from 'next'
-import { Inter, JetBrains_Mono, Outfit } from 'next/font/google'
+import { Inter, JetBrains_Mono, Noto_Color_Emoji, Outfit } from 'next/font/google'
 import type { ReactNode } from 'react'
 import { SCRIPT_DAS_PREFERENCIAS } from '@/components/design/tema'
 import './globals.css'
@@ -39,6 +39,24 @@ const jetBrainsMono = JetBrains_Mono({
   display: 'swap',
 })
 
+/**
+ * Os emojis, iguais em todo aparelho.
+ *
+ * Emoji é caractere, e quem desenha é a fonte do sistema: no Windows saía o
+ * 3D da Microsoft, no Mac o da Apple, e o painel não parecia o WhatsApp de
+ * ninguém. A Noto entra no fim de cada pilha, então só pega o que a fonte do
+ * texto não tem. O Google Fonts corta o arquivo por faixa de caractere, e o
+ * navegador só baixa os pedaços dos emojis que aparecem. Sem `preload` pelo
+ * mesmo motivo: carregar antes seria pagar por todos.
+ */
+const emoji = Noto_Color_Emoji({
+  weight: '400',
+  subsets: ['emoji'],
+  variable: '--font-emoji',
+  display: 'swap',
+  preload: false,
+})
+
 export const metadata: Metadata = {
   title: 'AutoFluxos, atendimento desenhado bloco a bloco',
   description: 'Automação visual de atendimento no WhatsApp.',
@@ -59,7 +77,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
     */
     <html
       lang="pt-BR"
-      className={`${outfit.variable} ${inter.variable} ${jetBrainsMono.variable}`}
+      className={`${outfit.variable} ${inter.variable} ${jetBrainsMono.variable} ${emoji.variable}`}
       suppressHydrationWarning
     >
       <head>

@@ -39,13 +39,13 @@
  * valor: uma cor, um lugar.
  */
 @theme inline {
-  --font-sans: var(--font-outfit);
+  --font-sans: var(--font-outfit), var(--font-emoji);
   /*
    * `font-texto` é o utilitário que a bolha e o campo de resposta usam. Nome
    * pelo papel e não pela fonte: o dia em que a escolha mudar, muda aqui e não
    * em cada bolha.
    */
-  --font-texto: var(--font-inter);
+  --font-texto: var(--font-inter), var(--font-emoji);
   --font-mono: var(--font-jetbrains-mono);
   --color-primary: var(--primary);
   --color-primary-strong: var(--primary-strong);
@@ -422,7 +422,7 @@ body {
   margin: 0;
   background: var(--canvas);
   color: var(--ink);
-  font-family: var(--font-outfit), sans-serif;
+  font-family: var(--font-outfit), var(--font-emoji), sans-serif;
   font-size: 14px;
   -webkit-font-smoothing: antialiased;
 }
