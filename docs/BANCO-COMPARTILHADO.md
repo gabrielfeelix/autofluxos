@@ -320,6 +320,21 @@ extração explícito para os objetos de `public`.
   `public` com **75** tabelas; **8** contas, **0** com frente. Data API depois
   do `notify`: `clients?select=nicho` **200** com a chave secreta;
   `app_verandi.conta` **200**.
+- **a `0123` foi aplicada em 04/out/2026** (distribuição em rodízio), com
+  autorização explícita do dono, pela Management API, numa transação. Troca o
+  check de `clients.distribuicao` para aceitar `rodizio` e cria
+  `af_atendentes.ultimo_lead_em` (nula). Ensaio em transação com `rollback`
+  antes (nada sobrou). Depois: 8 contas com `manual`/`balanceado` intactas, 2
+  atendentes; `public` com **92** tabelas e Verandi com **42** tabelas,
+  **40** migrations e **16** policies de `storage.objects`, iguais a antes.
+  Data API depois do `notify`: `af_atendentes` 200 com a chave secreta e 401
+  com a publicável, `app_verandi.conta` 200. Desfazer: `alter table
+  public.af_atendentes drop column ultimo_lead_em` e voltar o check para
+  `('manual', 'balanceado')` (só depois de tirar `rodizio` de quem escolheu).
+- **a `0110`, a `0116` e a `0117` estão na produção sem registro aqui**:
+  conferido em 04/out/2026 pelos objetos (`planos.preco_anual`,
+  `messages.situacao`, `channels.historico_recusado_em`, todos presentes).
+  Quem aplicou não anotou; o objeto é a prova, este parágrafo só a registra.
 - **a `0115` foi aplicada em 30/set/2026**, com autorização explícita do dono,
   pela Management API. Conserta a P5: relatórios, análise de vendas, lista de
   organizações, juntar etiquetas e remover membro faziam SQL de dados pelo
