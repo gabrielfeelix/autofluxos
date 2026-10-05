@@ -3,6 +3,8 @@
 import { Handle, Position, type NodeProps, type NodeTypes } from '@xyflow/react'
 import { createContext, useContext, useState, type ReactNode } from 'react'
 import { CORES, ICONES, NOMES } from '@/core/flow/blocos'
+import { ROTULO_PADRAO_DO_ENCAMINHAMENTO } from '@/core/encaminhar'
+import type { TipoNo } from '@/core/flow/schema'
 import { exigeCredencial, presetDoBloco } from '@/core/presets'
 import { RealceDeVariaveis } from './realce-de-variaveis'
 import { partesDaMensagem } from '@/core/flow/mensagem'
@@ -584,6 +586,32 @@ function NoHandoff({ data, selected }: NodeProps) {
 }
 
 /**
+ * O bloco Encaminhar contato no desenho.
+ *
+ * Faltou no `tiposDeNo` quando o bloco nasceu (1a166c2), e o React Flow
+ * desenhava no lugar a caixa padrão dele: um retângulo branco sem nada. O
+ * card mostra o que a pessoa recebe (o texto e o botão) e para quem vai.
+ */
+function NoEncaminhar({ data, selected }: NodeProps) {
+  const d = data as { texto?: string; nome?: string; telefone?: string; rotulo?: string }
+  const destino = [d.nome?.trim(), d.telefone?.trim()].filter(Boolean).join(' · ')
+  return (
+    <Caixa tipo="encaminhar" selecionado={!!selected}>
+      {d.texto?.trim() ? (
+        <p className="line-clamp-2 text-[12.5px] leading-5 text-soft">{d.texto}</p>
+      ) : (
+        <p className="text-[12.5px] leading-5 text-dim">Sem texto ainda</p>
+      )}
+      <span className="mt-1.5 inline-flex items-center gap-1 rounded-md border border-line bg-surface px-2 py-0.5 text-[11px] font-semibold text-muted">
+        <span aria-hidden>↗</span>
+        {d.rotulo?.trim() || ROTULO_PADRAO_DO_ENCAMINHAMENTO}
+      </span>
+      <p className="mt-1 truncate text-[10px] text-dim">{destino ? `para ${destino}` : 'sem WhatsApp do time'}</p>
+    </Caixa>
+  )
+}
+
+/**
  * O bloco de Serviços externos no desenho.
  *
  * **Ele diz qual integração está ligada, e não só o endereço.** Quem monta
@@ -748,7 +776,11 @@ function SeloDeRespostas({ variavel }: { variavel: string }) {
   )
 }
 
-export const tiposDeNo: NodeTypes = {
+/**
+ * Um desenho por tipo de bloco, **tipado por `TipoNo`**: bloco novo sem desenho
+ * não compila. Sem isso o Encaminhar contato foi ao ar como caixa vazia.
+ */
+export const tiposDeNo = {
   mensagem: NoMensagem,
   midia: NoMidia,
   pergunta: NoPergunta,
@@ -756,6 +788,7 @@ export const tiposDeNo: NodeTypes = {
   'salvar-campo': NoSalvarCampo,
   ia: NoIa,
   handoff: NoHandoff,
+  encaminhar: NoEncaminhar,
   http: NoHttp,
   etapa: NoEtapa,
   etiqueta: NoEtiqueta,
@@ -763,4 +796,4 @@ export const tiposDeNo: NodeTypes = {
   'ir-fluxo': NoIrFluxo,
   voltar: NoVoltar,
   nps: NoNps,
-}
+} satisfies Record<TipoNo, NodeTypes[string]>
