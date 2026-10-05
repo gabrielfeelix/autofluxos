@@ -143,14 +143,23 @@ export function IlustracaoAutomacoes() {
  * do lugar.
  */
 const BALAO_DIREITA =
-  'M110 64h68a6 6 0 0 1 6 6v20a6 6 0 0 1-6 6h-56l-11 8V70a6 6 0 0 1 6-6Z'
+  'M117 64h61a6 6 0 0 1 6 6v20a6 6 0 0 1-6 6h-56l-11 8V70a6 6 0 0 1 6-6Z'
 
 /** Inbox: a conversa, balões dos dois lados. */
+/**
+ * Inbox: o cliente pergunta, e a resposta acontece na frente de quem olha.
+ *
+ * A peça que se mexe é **a resposta**, em três tempos de um ciclo só: os três
+ * pontos de "digitando", o texto que se escreve linha a linha e os dois tiques
+ * de lida. É o que o Inbox faz, contado sem palavra nenhuma, e fecha em loop
+ * para o vazio nunca parecer travado. Os tempos moram em `globals.css`
+ * (`ilu-digita`, `ilu-escreve`, `ilu-lida`), todos no mesmo período de 6 s.
+ */
 export function IlustracaoInbox() {
   return (
-    <Tela titulo="Uma conversa com mensagens dos dois lados">
+    <Tela titulo="Uma pergunta chegando e a resposta sendo escrita">
       {/* Quem chega, à esquerda, com a ponta virada para fora */}
-      <path d="M16 16h74a6 6 0 0 1 6 6v20a6 6 0 0 1-6 6H32l-11 8V22a6 6 0 0 1 6-6Z" {...TRACO} />
+      <path d="M27 16h63a6 6 0 0 1 6 6v20a6 6 0 0 1-6 6H32l-11 8V22a6 6 0 0 1 6-6Z" {...TRACO} />
       <rect x={28} y={26} width={48} height={4.5} rx={2.2} fill="currentColor" opacity={0.5} />
       <rect x={28} y={36} width={32} height={4.5} rx={2.2} fill="currentColor" opacity={0.3} />
 
@@ -158,8 +167,20 @@ export function IlustracaoInbox() {
       <g className="ilu-flutua">
         <path d={BALAO_DIREITA} fill="currentColor" opacity={0.2} />
         <path d={BALAO_DIREITA} {...TRACO} opacity={0.85} />
-        <rect x={122} y={74} width={44} height={4.5} rx={2.2} fill="currentColor" opacity={0.5} />
-        <rect x={122} y={84} width={30} height={4.5} rx={2.2} fill="currentColor" opacity={0.3} />
+
+        {/* 1. Digitando */}
+        <g className="ilu-digita">
+          {[135, 147, 159].map((cx, i) => (
+            <circle key={cx} cx={cx} cy={80} r={3} fill="currentColor" opacity={0.7} className="ilu-pula" style={{ animationDelay: `${i * 150}ms` }} />
+          ))}
+        </g>
+
+        {/* 2. O texto se escrevendo, da esquerda para a direita */}
+        <rect x={122} y={72} width={44} height={4.5} rx={2.2} fill="currentColor" opacity={0.5} className="ilu-escreve" />
+        <rect x={122} y={81} width={30} height={4.5} rx={2.2} fill="currentColor" opacity={0.3} className="ilu-escreve" style={{ animationDelay: '250ms' }} />
+
+        {/* 3. Lida */}
+        <path d="M163 90.5l1.8 1.8 3.4-3.8M167.5 90.5l1.8 1.8 3.4-3.8" {...TRACO} strokeWidth={1.3} className="ilu-lida" />
       </g>
     </Tela>
   )
@@ -177,7 +198,7 @@ export function IlustracaoGuardadas() {
   return (
     <Tela titulo="Mensagens com uma delas marcada com estrela">
       {/* A mensagem guardada, com a estrela embaixo */}
-      <path d="M16 14h74a6 6 0 0 1 6 6v20a6 6 0 0 1-6 6H32l-11 8V20a6 6 0 0 1 6-6Z" {...TRACO} />
+      <path d="M27 14h63a6 6 0 0 1 6 6v20a6 6 0 0 1-6 6H32l-11 8V20a6 6 0 0 1 6-6Z" {...TRACO} />
       <rect x={28} y={24} width={48} height={4.5} rx={2.2} fill="currentColor" opacity={0.5} />
       <rect x={28} y={34} width={32} height={4.5} rx={2.2} fill="currentColor" opacity={0.3} />
 
@@ -193,7 +214,7 @@ export function IlustracaoGuardadas() {
       />
 
       {/* Outra mensagem, sem estrela, para a de cima ter com o que contrastar */}
-      <path d="M110 76h74a6 6 0 0 1 6 6v20a6 6 0 0 1-6 6h-58l-11 8V82a6 6 0 0 1 6-6Z" {...TRACO} opacity={0.45} />
+      <path d="M121 76h63a6 6 0 0 1 6 6v20a6 6 0 0 1-6 6h-58l-11 8V82a6 6 0 0 1 6-6Z" {...TRACO} opacity={0.45} />
       <rect x={122} y={86} width={44} height={4.5} rx={2.2} fill="currentColor" opacity={0.25} />
       <rect x={122} y={96} width={30} height={4.5} rx={2.2} fill="currentColor" opacity={0.18} />
     </Tela>

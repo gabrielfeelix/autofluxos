@@ -1,5 +1,6 @@
 'use client'
 
+import { IlustracaoInbox } from '@/components/design/ilustracoes'
 import Link from 'next/link'
 import { Fragment, useEffect, useMemo, useRef, type ReactNode } from 'react'
 import { EntradaDeAnotacao, ListaDeAnotacoes, ProvedorDeAnotacoes } from '@/components/inbox/anotacoes'
@@ -85,10 +86,10 @@ export function PainelDaConversa({
 
   if (!id) {
     return (
-      <section className="flex min-w-0 items-center justify-center p-10 text-center">
-        <p className="max-w-[280px] text-[13px] leading-6 text-dim">
-          Nenhuma conversa nesta seleção.
-          <br />
+      <section className="flex min-w-0 flex-col items-center justify-center p-10 text-center">
+        <IlustracaoInbox />
+        <p className="mt-6 text-[13.5px] font-semibold text-soft">Nenhuma conversa nesta seleção</p>
+        <p className="mx-auto mt-1.5 max-w-[300px] text-[12.5px] leading-5 text-dim">
           Limpe a busca ou escolha outro filtro à esquerda.
         </p>
       </section>

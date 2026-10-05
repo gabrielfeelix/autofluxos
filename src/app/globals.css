@@ -1850,6 +1850,77 @@ textarea::placeholder {
   }
 }
 
+/*
+ * A resposta do Inbox, num ciclo de 6 s: digitando até 40%, o texto se escreve
+ * de 46% a 58%, os tiques de lida acendem em 64%, e tudo se apaga no fim para
+ * recomeçar.
+ */
+.ilu-digita {
+  animation: ilu-digita 6s ease-in-out infinite;
+}
+.ilu-pula {
+  transform-box: fill-box;
+  animation: ilu-pula 0.9s ease-in-out infinite;
+}
+.ilu-escreve {
+  transform-box: fill-box;
+  transform-origin: left center;
+  animation: ilu-escreve 6s ease-out infinite;
+}
+.ilu-lida {
+  animation: ilu-lida 6s ease-out infinite;
+}
+@keyframes ilu-digita {
+  0%,
+  40% {
+    opacity: 1;
+  }
+  46%,
+  94% {
+    opacity: 0;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+@keyframes ilu-pula {
+  0%,
+  60%,
+  100% {
+    transform: translateY(0);
+  }
+  30% {
+    transform: translateY(-2.5px);
+  }
+}
+@keyframes ilu-escreve {
+  0%,
+  44% {
+    transform: scaleX(0);
+  }
+  56%,
+  92% {
+    transform: scaleX(1);
+  }
+  98%,
+  100% {
+    transform: scaleX(0);
+  }
+}
+@keyframes ilu-lida {
+  0%,
+  62% {
+    opacity: 0;
+  }
+  68%,
+  92% {
+    opacity: 0.85;
+  }
+  98%,
+  100% {
+    opacity: 0;
+  }
+}
 /* De um passo ao outro, com pausa em cada um: é o intervalo da sequência. */
 @keyframes ilu-percorre {
   0%,
@@ -1870,6 +1941,10 @@ textarea::placeholder {
   .ilu,
   .ilu * {
     animation: none !important;
+  }
+  /* Parado, a resposta fica escrita: os pontos de "digitando" saem. */
+  .ilu-digita {
+    display: none;
   }
 }
 
