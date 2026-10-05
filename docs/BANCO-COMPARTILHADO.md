@@ -1308,6 +1308,18 @@ extração explícito para os objetos de `public`.
   recriar o índice sem `and not avulso` (exige não haver dois abertos do
   mesmo contato no mesmo quadro), `alter table public.quadro_cartoes drop
   column avulso, drop column origem` e esvaziar e apagar o bucket.
+- **a `0128` foi aplicada em 05/out/2026**, com autorização explícita do
+  dono, pela Management API. Conferida antes pelo ensaio em transação contra a
+  produção (`rollback`), e relida depois para provar que o ensaio não gravou.
+  Só `public`: colunas `planos.atendentes`, `preco_atendente_extra`, `teto_ia`,
+  `teto_transmissoes` e `clients.teste_ate`; update das três linhas de plano
+  (tabela de 05/out, `docs/PLANO-PRECOS-05-OUT.md`). Releitura depois: planos
+  com os valores novos, nenhum grant para `anon`/`authenticated` em `planos`
+  ou `clients`, Verandi com **42** tabelas, igual a antes. Desfazer: `alter
+  table public.planos drop column atendentes, drop column
+  preco_atendente_extra, drop column teto_ia, drop column teto_transmissoes`,
+  `alter table public.clients drop column teste_ate` e regravar as três linhas
+  com os valores da 0099/0110 (nome "Operação", recursos antigos, anual 10x).
   **Docker local:** o container do Storage é mais velho que o schema `storage`
   dele e o upload dá `42P10`; contorno só local: `create unique index on
   storage.objects (name, bucket_id)` como `supabase_admin`.
