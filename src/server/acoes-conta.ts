@@ -950,7 +950,17 @@ export async function acaoCadastrarSe(
    * as mesmas duas coisas duas vezes seguidas. E o passo seguinte, criar a
    * empresa, exige sessão: sem ela o primeiro acesso começaria deslogado.
    */
-  await autenticacao().api.signInEmail({ body: { email, password: senha }, headers: cabecalhos })
+  try {
+    await autenticacao().api.signInEmail({ body: { email, password: senha }, headers: cabecalhos })
+  } catch (erro) {
+    /*
+     * A conta já existe neste ponto. Devolver o erro para o formulário faria a
+     * pessoa tentar de novo e ouvir "não deu para criar a conta com este
+     * e-mail", que é falso. O caminho certo é a tela de entrar.
+     */
+    console.error('[cadastro] criou, mas não entrou:', motivo(erro))
+    redirect('/entrar?conta=criada')
+  }
 
   /*
    * O telefone é **da pessoa**, e ainda não há empresa onde guardá-lo: ele só

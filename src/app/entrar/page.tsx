@@ -29,7 +29,9 @@ export default async function Entrar({ searchParams }: PageProps<'/entrar'>) {
       descricao={
         (await searchParams).senha === 'nova'
           ? 'Senha nova salva. Entre com ela.'
-          : 'Sua conta do AutoFluxos.'
+          : (await searchParams).conta === 'criada'
+            ? 'Conta criada. Entre com o e-mail e a senha que você acabou de cadastrar.'
+            : 'Sua conta do AutoFluxos.'
       }
       rodape={
         <>

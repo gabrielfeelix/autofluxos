@@ -2935,6 +2935,7 @@ export async function acaoSalvarHorario(
 
   await atualizarHorario(clienteId, analise.data)
   revalidatePath(`/clientes/${clienteId}`)
+  revalidatePath(`/clientes/${clienteId}/ajustes/horario`)
   return { ok: true }
 }
 
