@@ -158,7 +158,7 @@ export function RetomarComModelo({
 
           {/*
             A caixa de escrever, travada com o texto do modelo: é o que vai
-            sair, no lugar onde a mensagem normalmente se escreve. O Retomar
+            sair, no lugar onde a mensagem normalmente se escreve. O Enviar
             mora onde o Enviar moraria. O nome do contato, que entra no lugar
             das lacunas, vem destacado para se ver o que muda de uma pessoa
             para outra.
@@ -194,11 +194,21 @@ export function RetomarComModelo({
               {componentes?.rodape && <span className="mt-1 block text-[12px] text-dim">{componentes.rodape}</span>}
             </div>
             <div className="flex items-center gap-2 border-t border-line px-2.5 py-2">
-              <span className="flex min-w-0 flex-1 flex-wrap gap-1.5">
+              {/*
+                "Verificar a conta" sozinho parecia um aviso do sistema pedindo
+                para quem atende verificar algo. É o botão que vai junto na
+                mensagem do cliente, e a frase diz isso.
+              */}
+              <span className="flex min-w-0 flex-1 flex-wrap items-center gap-1.5">
+                {componentes?.botoes && componentes.botoes.length > 0 && (
+                  <span className="text-[11px] text-dim">
+                    {componentes.botoes.length === 1 ? 'Vai com o botão' : 'Vai com os botões'}
+                  </span>
+                )}
                 {componentes?.botoes?.map((botao, i) => (
                   <span
                     key={`${botao.texto}-${i}`}
-                    title="Botão que vai junto com a mensagem"
+                    title="O cliente vê este botão embaixo da mensagem"
                     className="inline-flex items-center gap-1 rounded-full border border-line bg-surface px-2 py-0.5 text-[11.5px] font-semibold text-muted"
                   >
                     <svg aria-hidden viewBox="0 0 24 24" className="size-3" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -224,7 +234,7 @@ export function RetomarComModelo({
                 disabled={enviando || !escolhido}
                 className="botao-primario botao-sm shrink-0"
               >
-                {enviando ? 'Enviando…' : 'Retomar'}
+                {enviando ? 'Enviando…' : 'Enviar'}
               </button>
             </div>
           </div>
