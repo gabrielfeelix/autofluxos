@@ -401,13 +401,21 @@ function Cartao({
   const anual = anualDoPlano(plano)
   return (
     <article
-      className={`app-card flex flex-col p-4 ${ehOAtual ? 'border-primary/50 bg-primary/[0.04]' : ''}`}
+      /*
+        Verde, e não azul: a página tem fundo azul, e borda azul some nele. É a
+        cor de "ativo" no resto do painel, e lê de longe sem desalinhar o
+        cartão dos vizinhos (uma faixa no topo empurrava o conteúdo).
+      */
+      className={`app-card flex flex-col p-4 ${ehOAtual ? 'outline-2 outline-ok' : ''}`}
     >
       <div className="flex items-baseline justify-between gap-2">
         <h3 className="text-[14.5px] font-bold">{plano.nome}</h3>
         {ehOAtual && (
-          <span className="rounded-md bg-primary/[0.14] px-1.5 py-0.5 text-[10.5px] font-semibold text-primary">
-            atual
+          <span className="inline-flex items-center gap-1 rounded-full bg-ok px-2 py-0.5 text-[11px] font-semibold text-panel">
+            <svg aria-hidden viewBox="0 0 16 16" className="size-3">
+              <path d="m3.5 8.5 3 3 6-7" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+            Em uso
           </span>
         )}
       </div>
@@ -488,7 +496,9 @@ function Cartao({
       <div aria-hidden className="flex-1" />
 
       {ehOAtual && !(anual && ciclo === 'anual') ? (
-        <p className="text-center text-[12px] text-dim">É o plano desta organização</p>
+        <p className="rounded-[10px] bg-ok/10 py-2.5 text-center text-[12.5px] font-semibold text-ok">
+          É o plano desta organização
+        </p>
       ) : pedido ? (
         /*
           "Pedido enviado" e não "plano alterado": nada mudou no banco, e dizer o
