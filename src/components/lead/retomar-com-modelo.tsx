@@ -77,7 +77,6 @@ export function RetomarComModelo({
   // As lacunas viram o nome do contato, como o servidor faz ao enviar.
   const comNome = (texto: string) => texto.replace(/\{\{\d+\}\}/g, nome)
   const componentes = modelo?.componentes ?? null
-  const previa = componentes?.corpo.trim() ? comNome(componentes.corpo) : null
 
   function enviar() {
     setErro(null)
@@ -141,80 +140,115 @@ export function RetomarComModelo({
           . A Meta costuma revisar em até 24h, e os modelos da biblioteca dela saem na hora.
         </p>
       ) : (
-        <div className="mt-2.5 flex flex-wrap items-center gap-2">
-          <div className="min-w-[190px] flex-1">
-            <Dropdown
-              opcoes={aprovados.map((t) => ({
-                valor: t.id,
-                rotulo: tituloDoModelo(t.nome),
-                // O começo da mensagem embaixo do nome: "Boas-vindas" e "Teste"
-                // não dizem o que vai sair, o texto diz.
-                ...(t.componentes.corpo.trim()
-                  ? { detalhe: comNome(t.componentes.corpo).replace(/\s+/g, ' ').trim().slice(0, 90) }
-                  : {}),
-              }))}
-              valor={escolhido}
-              aoMudar={setEscolhido}
-              rotuloAcessivel="Modelo para retomar a conversa"
-            />
-          </div>
+        <div className="mt-2.5 flex flex-col gap-2">
+          <Dropdown
+            opcoes={aprovados.map((t) => ({
+              valor: t.id,
+              rotulo: tituloDoModelo(t.nome),
+              // O começo da mensagem embaixo do nome: "Boas-vindas" e "Teste"
+              // não dizem o que vai sair, o texto diz.
+              ...(t.componentes.corpo.trim()
+                ? { detalhe: comNome(t.componentes.corpo).replace(/\s+/g, ' ').trim().slice(0, 90) }
+                : {}),
+            }))}
+            valor={escolhido}
+            aoMudar={setEscolhido}
+            rotuloAcessivel="Modelo para retomar a conversa"
+          />
+
           {/*
-            O que vai sair, para quem, antes do clique (X05): as variáveis do
-            modelo viram o nome do contato, como o servidor faz ao enviar.
+            A caixa de escrever, travada com o texto do modelo: é o que vai
+            sair, no lugar onde a mensagem normalmente se escreve. O Retomar
+            mora onde o Enviar moraria. O nome do contato, que entra no lugar
+            das lacunas, vem destacado para se ver o que muda de uma pessoa
+            para outra.
           */}
-          {componentes && (
-            <div className="order-last w-full rounded-[12px] border border-line bg-surface px-3 py-2.5">
-              <span className="mb-1.5 block text-[11px] font-bold text-dim">Como chega para {nome}</span>
-              {previa ? (
-                <div className="ml-auto w-fit max-w-[min(420px,88%)]">
-                  {/* O mesmo balão de mensagem enviada da conversa. */}
-                  <div className="rounded-[16px] rounded-br-[6px] bg-primary px-3.5 py-2.5 text-[13px] leading-[1.45] text-white">
-                    {componentes.cabecalho?.tipo === 'texto' && (
-                      <strong className="mb-1 block">{comNome(componentes.cabecalho.texto)}</strong>
-                    )}
-                    {componentes.cabecalho && componentes.cabecalho.tipo !== 'texto' && (
-                      <span className="mb-1.5 block rounded-[8px] bg-white/15 px-2 py-3 text-center text-[11.5px]">
-                        {componentes.cabecalho.tipo === 'imagem' ? 'Imagem' : componentes.cabecalho.tipo === 'video' ? 'Vídeo' : 'Documento'}
-                      </span>
-                    )}
-                    <span className="block whitespace-pre-line">{previa}</span>
-                    {componentes.rodape && (
-                      <span className="mt-1 block text-[11.5px] text-white/70">{componentes.rodape}</span>
-                    )}
-                  </div>
-                  {componentes.botoes && componentes.botoes.length > 0 && (
-                    <div className="mt-1 flex flex-col gap-1">
-                      {componentes.botoes.map((botao, i) => (
-                        <span
-                          key={`${botao.texto}-${i}`}
-                          className="rounded-[12px] border border-line bg-panel px-3 py-1.5 text-center text-[12.5px] font-semibold text-primary"
-                        >
-                          {botao.texto}
-                        </span>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              ) : (
-                <span className="block text-[12px] text-dim">
-                  Sem prévia: a Meta não devolveu o texto deste modelo agora. O envio funciona
-                  igual.
+          <div className="rounded-[16px] border border-strong bg-panel">
+            <span className="flex items-center gap-1.5 px-3.5 pt-2.5 text-[11px] font-semibold text-dim">
+              <svg aria-hidden viewBox="0 0 24 24" className="size-3.5" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
+                <rect x="5" y="10.5" width="14" height="10" rx="2" />
+                <path d="M8 10.5V8a4 4 0 0 1 8 0v2.5" />
+              </svg>
+              Texto do modelo aprovado, não dá para editar
+            </span>
+            <div className="max-h-[180px] overflow-y-auto px-3.5 pt-1.5 pb-2.5 text-[13.5px] leading-[1.5] text-soft">
+              {componentes?.cabecalho?.tipo === 'texto' && (
+                <strong className="mb-0.5 block text-ink">
+                  <ComLacunas texto={componentes.cabecalho.texto} nome={nome} />
+                </strong>
+              )}
+              {componentes?.cabecalho && componentes.cabecalho.tipo !== 'texto' && (
+                <span className="mb-1 block text-[12px] text-dim">
+                  Com {componentes.cabecalho.tipo === 'imagem' ? 'imagem' : componentes.cabecalho.tipo === 'video' ? 'vídeo' : 'documento'} no topo
                 </span>
               )}
+              {componentes?.corpo.trim() ? (
+                <span className="block whitespace-pre-line">
+                  <ComLacunas texto={componentes.corpo} nome={nome} />
+                </span>
+              ) : (
+                <span className="block text-[12.5px] text-dim">
+                  Sem prévia: a Meta não devolveu o texto deste modelo agora. O envio funciona igual.
+                </span>
+              )}
+              {componentes?.rodape && <span className="mt-1 block text-[12px] text-dim">{componentes.rodape}</span>}
             </div>
-          )}
-          <button
-            type="button"
-            onClick={enviar}
-            disabled={enviando || !escolhido}
-            className="botao-primario botao-md shrink-0"
-          >
-            {enviando ? 'Enviando…' : 'Retomar'}
-          </button>
+            <div className="flex items-center gap-2 border-t border-line px-2.5 py-2">
+              <span className="flex min-w-0 flex-1 flex-wrap gap-1.5">
+                {componentes?.botoes?.map((botao, i) => (
+                  <span
+                    key={`${botao.texto}-${i}`}
+                    title="Botão que vai junto com a mensagem"
+                    className="inline-flex items-center gap-1 rounded-full border border-line bg-surface px-2 py-0.5 text-[11.5px] font-semibold text-muted"
+                  >
+                    <svg aria-hidden viewBox="0 0 24 24" className="size-3" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      {botao.tipo === 'URL' ? (
+                        <>
+                          <path d="M14 4h6v6" />
+                          <path d="M20 4 11 13" />
+                          <path d="M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5" />
+                        </>
+                      ) : botao.tipo === 'PHONE_NUMBER' ? (
+                        <path d="M5 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L15 13l5 2v4a1 1 0 0 1-1 1A16 16 0 0 1 4 5a1 1 0 0 1 1-1Z" />
+                      ) : (
+                        <path d="M9 14 4 9l5-5M4 9h11a5 5 0 0 1 0 10h-3" />
+                      )}
+                    </svg>
+                    {botao.texto}
+                  </span>
+                ))}
+              </span>
+              <button
+                type="button"
+                onClick={enviar}
+                disabled={enviando || !escolhido}
+                className="botao-primario botao-sm shrink-0"
+              >
+                {enviando ? 'Enviando…' : 'Retomar'}
+              </button>
+            </div>
+          </div>
         </div>
       )}
 
       {erro && <p className="mt-2 text-[12.5px] leading-5 text-perigo">{erro}</p>}
     </div>
+  )
+}
+
+/** O texto com as lacunas trocadas pelo nome, que vem destacado. */
+function ComLacunas({ texto, nome }: { texto: string; nome: string }) {
+  return (
+    <>
+      {texto.split(/(\{\{\d+\}\})/g).map((parte, i) =>
+        /^\{\{\d+\}\}$/.test(parte) ? (
+          <mark key={i} className="rounded-[4px] bg-primary/10 px-0.5 font-semibold text-primary">
+            {nome}
+          </mark>
+        ) : (
+          <span key={i}>{parte}</span>
+        ),
+      )}
+    </>
   )
 }
