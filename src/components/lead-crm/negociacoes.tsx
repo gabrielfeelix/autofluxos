@@ -3,10 +3,11 @@
 import { useRouter } from 'next/navigation'
 import { useState } from 'react'
 import { depoisDaTela } from '@/components/inbox/conversa-local'
-import { comoDinheiro, type Situacao } from '@/core/crm'
+import { comoDinheiro, lerValor, LIMITE_DO_TITULO, type Situacao } from '@/core/crm'
 import { comoParado, estaParado } from '@/core/quadros'
 import { FecharCartao } from '@/components/quadros/fechar-cartao'
-import { acaoReabrirCartao } from '@/server/acoes-crm'
+import { acaoDescreverCartao, acaoReabrirCartao } from '@/server/acoes-crm'
+import { useAoSalvar, useEdicao } from './modo-de-edicao'
 import { IconeDaSecao, iconeFunil } from './icones'
 import { VazioDoCartao } from './vazio-do-cartao'
 import { IlustracaoQuadros } from '@/components/design/ilustracoes'
@@ -56,6 +57,7 @@ export function Negociacoes({
   motivos: { id: string; nome: string }[]
 }) {
   const router = useRouter()
+  const { editando, versao } = useEdicao()
   const [fechando, setFechando] = useState<{
     cartao: NegociacaoDoContato
     situacao: Exclude<Situacao, 'aberta'>
@@ -113,7 +115,9 @@ export function Negociacoes({
                 </span>
               </strong>
 
-              {(negociacao.titulo || negociacao.valor !== null) && (
+              {editando ? (
+                <EdicaoDaNegociacao key={versao} clienteId={clienteId} negociacao={negociacao} />
+              ) : (negociacao.titulo || negociacao.valor !== null) && (
                 <span className="mt-1.5 block text-[12.5px] leading-5">
                   {negociacao.titulo || 'sem título'}
                   {negociacao.valor !== null && (
@@ -219,4 +223,45 @@ export function Negociacoes({
       },
     )
   }
+}
+
+/**
+ * Título e valor da negociação, no modo de edição da ficha. Etapa, ganho e
+ * perda continuam nos botões e no funil: são decisões, não correções de texto.
+ */
+function EdicaoDaNegociacao({ clienteId, negociacao }: { clienteId: string; negociacao: NegociacaoDoContato }) {
+  const valorInicial = negociacao.valor == null ? '' : String(negociacao.valor).replace('.', ',')
+  const [titulo, setTitulo] = useState(negociacao.titulo ?? '')
+  const [valor, setValor] = useState(valorInicial)
+
+  useAoSalvar(`negociacao-${negociacao.cartaoId}`, async () => {
+    if (titulo.trim() === (negociacao.titulo ?? '').trim() && valor.trim() === valorInicial) return null
+    if (valor.trim() !== '') {
+      const lido = lerValor(valor)
+      if (!lido.ok) return `${negociacao.quadro}: ${lido.motivo}`
+    }
+    const r = await acaoDescreverCartao(clienteId, negociacao.cartaoId, { titulo: titulo.trim(), valor: valor.trim() })
+    return r.ok ? null : `${negociacao.quadro}: ${r.erro ?? 'não deu para salvar'}`
+  })
+
+  return (
+    <span className="mt-2 flex flex-wrap gap-2">
+      <input
+        value={titulo}
+        onChange={(e) => setTitulo(e.target.value)}
+        maxLength={LIMITE_DO_TITULO}
+        aria-label={`Título da negociação em ${negociacao.quadro}`}
+        placeholder="Exemplo: Plano anual"
+        className="app-field min-w-0 flex-[2] px-2.5 py-1.5 text-[12.5px]"
+      />
+      <input
+        value={valor}
+        onChange={(e) => setValor(e.target.value)}
+        inputMode="decimal"
+        aria-label={`Valor da negociação em ${negociacao.quadro}`}
+        placeholder="Exemplo: 1.500,00"
+        className="app-field w-[120px] min-w-0 flex-1 px-2.5 py-1.5 text-[12.5px] tabular-nums"
+      />
+    </span>
+  )
 }

@@ -6,6 +6,7 @@ import { IconeDaSecao, iconeFormulario } from './icones'
 import { ValorDoCampo } from './valor-do-campo'
 import { VazioDoCartao } from './vazio-do-cartao'
 import { IlustracaoRespostas } from '@/components/design/ilustracoes'
+import { DadosEditaveis } from './campos-editaveis'
 
 /**
  * O que o fluxo coletou.
@@ -24,7 +25,15 @@ import { IlustracaoRespostas } from '@/components/design/ilustracoes'
  * eram a maior parte da altura da seção e não diziam nada a quem lê. Ver
  * `ehCampoTecnico`.
  */
-export function DadosColetados({ campos }: { campos: [string, string][] }) {
+export function DadosColetados({
+  clienteId,
+  contatoId,
+  campos,
+}: {
+  clienteId: string
+  contatoId: string
+  campos: [string, string][]
+}) {
   const daPessoa = campos.filter(([chave, valor]) => !ehCampoTecnico(chave, valor))
   const tecnicos = campos.filter(([chave, valor]) => ehCampoTecnico(chave, valor))
 
@@ -44,14 +53,16 @@ export function DadosColetados({ campos }: { campos: [string, string][] }) {
                 que a pessoa respondeu.
               </p>
               <p>
-                São <strong>dados dela</strong>, não campos que a equipe edita. Ficam no contato e
-                continuam disponíveis na conversa seguinte, inclusive para outras automações.
+                São <strong>dados dela</strong>: ficam no contato e continuam disponíveis na
+                conversa seguinte, inclusive para outras automações. Para corrigir ou completar,
+                use o Editar no topo da ficha.
               </p>
             </>
           }
         />
       </h2>
 
+      <DadosEditaveis clienteId={clienteId} contatoId={contatoId} campos={campos}>
       {campos.length === 0 ? (
         <VazioDoCartao ilustracao={<IlustracaoRespostas />}>
           Nada coletado: a conversa não chegou a preencher nenhuma variável. As respostas que a
@@ -75,6 +86,7 @@ export function DadosColetados({ campos }: { campos: [string, string][] }) {
           )}
         </>
       )}
+      </DadosEditaveis>
     </section>
   )
 }

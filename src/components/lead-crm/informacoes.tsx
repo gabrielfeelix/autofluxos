@@ -3,6 +3,7 @@ import { AcoesDoTelefone } from './acoes-do-telefone'
 import { telefoneLegivel } from '@/core/contatos/telefone'
 import { horaExata, quando } from '@/lib/quando'
 import { IconeDaSecao, iconeFicha } from './icones'
+import { LinhaDeOrigem } from './campos-editaveis'
 
 /**
  * Quem é a pessoa, em fatos datados.
@@ -25,6 +26,8 @@ import { IconeDaSecao, iconeFicha } from './icones'
  * como um CRM começa a mentir.
  */
 export function Informacoes({
+  clienteId,
+  contatoId,
   waId,
   campos,
   criadoEm,
@@ -34,6 +37,8 @@ export function Informacoes({
   adiadaAte,
   adiadaNota,
 }: {
+  clienteId: string
+  contatoId: string
   waId: string
   campos: Record<string, string>
   criadoEm: string
@@ -71,16 +76,8 @@ export function Informacoes({
 
         <Linha rotulo="Canal">WhatsApp</Linha>
 
-        {origem && (
-          <Linha rotulo="Origem">
-            <span className="font-semibold">{origem.nome}</span>
-            {origem.titulo && (
-              <span className="mt-0.5 block text-[11.5px] font-normal text-dim">
-                {origem.titulo}
-              </span>
-            )}
-          </Linha>
-        )}
+        {/* Some sem origem medida; no modo de edição aparece para escolher. */}
+        <LinhaDeOrigem clienteId={clienteId} contatoId={contatoId} origem={origem} />
 
         <Linha rotulo="Chegou">
           <span title={horaExata(criadoEm)}>{quando(criadoEm)}</span>

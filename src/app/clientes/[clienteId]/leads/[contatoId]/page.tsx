@@ -85,7 +85,8 @@ import {
 } from '@/components/lead/anexo'
 import { NomeDoContato } from '@/components/lead/identidade'
 import { CartaoDeAnotacoes, ProvedorDeAnotacoes } from '@/components/inbox/anotacoes'
-import { EditarContato } from '@/components/lead-crm/editar-contato'
+import { BarraDeEdicao, BotaoDeEditar, ProvedorDeEdicao } from '@/components/lead-crm/modo-de-edicao'
+import { NomeEditavel } from '@/components/lead-crm/campos-editaveis'
 import { anotacoesDoContato } from '@/server/repos/eventos'
 import { etiquetasDeDia, horaComFuso, horaDoRelogio, horaExata, quando } from '@/lib/quando'
 import { MenuNaConversa } from '@/components/inbox/historico'
@@ -250,6 +251,7 @@ export default async function Pagina({
         autor={sessaoDaFicha?.usuario.nome ?? null}
         anotar={acaoAnotar.bind(null, clienteId, contatoId)}
       >
+      <ProvedorDeEdicao>
       <Miolo largura="toda">
         <Link
           href={volta.href}
@@ -261,13 +263,15 @@ export default async function Pagina({
         <header className="mb-[18px] flex flex-wrap items-center gap-3.5">
           <Avatar nome={lead.nome} tamanho={52} />
           <div className="min-w-0">
-            <NomeDoContato
-              nome={lead.nome}
-              nomeDoPerfil={lead.nomeDoPerfil}
-              nomeReal={lead.nomeReal}
-              waId={lead.waId}
-              salvar={acaoCorrigirNome.bind(null, clienteId, contatoId)}
-            />
+            <NomeEditavel clienteId={clienteId} contatoId={contatoId} nome={lead.nome}>
+              <NomeDoContato
+                nome={lead.nome}
+                nomeDoPerfil={lead.nomeDoPerfil}
+                nomeReal={lead.nomeReal}
+                waId={lead.waId}
+                salvar={acaoCorrigirNome.bind(null, clienteId, contatoId)}
+              />
+            </NomeEditavel>
             {/* Canal e origem embaixo do nome. **O telefone não entra aqui**:
                 `NomeDoContato` já o imprime, e o mesmo número duas vezes em
                 duas linhas seguidas é ruído que parece defeito. */}
@@ -288,7 +292,7 @@ export default async function Pagina({
           {/* As ações sobre o contato, no alto e à direita, o lugar em que a
               ficha do Brevo e a do RD as põem, e pelo mesmo motivo: é onde o
               olho chega depois de ler quem é a pessoa. */}
-          <EditarContato clienteId={clienteId} contatoId={contatoId} nome={lead.nome} campos={lead.campos} />
+          <BotaoDeEditar />
           <AcoesDaFicha
             clienteId={clienteId}
             contatoId={contatoId}
@@ -474,6 +478,8 @@ export default async function Pagina({
                       motivos={motivos.map(({ id, nome: comoSeChama }) => ({ id, nome: comoSeChama }))}
                     />
                     <Informacoes
+                      clienteId={clienteId}
+                      contatoId={contatoId}
                       waId={lead.waId}
                       campos={lead.campos}
                       criadoEm={lead.criadoEm}
@@ -644,7 +650,7 @@ export default async function Pagina({
                 /* Lado a lado no desktop: as respostas são a lista longa, a
                    jornada é curta e não precisa da largura inteira. */
                 <div className="grid grid-cols-1 items-start gap-[18px] lg:grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)]">
-                  <DadosColetados campos={campos} />
+                  <DadosColetados clienteId={clienteId} contatoId={contatoId} campos={campos} />
                   <section className="app-card overflow-hidden">
                     <h2 className="flex items-center gap-2 border-b border-line px-[18px] py-3.5 text-[13px] font-bold">
                       <IconeDaSecao>{iconeAlvo}</IconeDaSecao>
@@ -711,7 +717,9 @@ export default async function Pagina({
             },
           ]}
         />
+        <BarraDeEdicao />
       </Miolo>
+      </ProvedorDeEdicao>
       </ProvedorDeAnotacoes>
       </ProvedorDaConversa>
     </ClienteShell>
