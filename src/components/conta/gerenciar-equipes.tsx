@@ -11,7 +11,7 @@ import { RotuloCampo } from '@/components/design/modal-formulario'
 import { FUNDO_DA_LINHA, Tabela, Th } from '@/components/design/tabela'
 
 type Equipe = { id: string; nome: string; pessoas: number }
-type Membro = { nome: string; semAlcance: boolean }
+type Membro = { nome: string; imagem: string | null; semAlcance: boolean }
 
 /**
  * As equipes da conta (RB-40), a aba "Equipes" de Configurações › Pessoas.
@@ -159,7 +159,7 @@ export function GerenciarEquipes({
                             <div className="flex -space-x-2">
                               {membros.slice(0, 4).map((membro) => (
                                 <span key={membro.nome} className="rounded-full ring-2 ring-panel">
-                                  <Avatar nome={membro.nome} imagem={null} tamanho={26} />
+                                  <Avatar nome={membro.nome} imagem={membro.imagem} tamanho={26} />
                                 </span>
                               ))}
                             </div>

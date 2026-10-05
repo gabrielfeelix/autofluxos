@@ -38,6 +38,7 @@ export default async function Pessoas({ params }: { params: Promise<{ id: string
           id: pessoa.id,
           nome: pessoa.nome,
           email: pessoa.email,
+          imagem: pessoa.imagem,
           funcao: naHierarquia?.funcao ?? 'atendente',
           equipes: (naHierarquia?.equipes ?? []).map((equipe) => nomeDaEquipe.get(equipe) ?? 'equipe'),
           suspensa: pessoa.banido,

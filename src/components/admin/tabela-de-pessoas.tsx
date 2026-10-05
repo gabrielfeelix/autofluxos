@@ -22,6 +22,8 @@ export type PessoaNaTabela = {
   id: string
   nome: string
   email: string
+  /** Foto que a pessoa subiu; sem ela, o retrato ilustrado. */
+  imagem: string | null
   funcao: string
   equipes: string[]
   suspensa: boolean
@@ -194,7 +196,7 @@ export function TabelaDePessoas({
           const nova = r.pessoa
           setPessoas((lista) => [
             ...lista.filter((pessoa) => pessoa.id !== nova.id),
-            { ...nova, equipes: [], suspensa: false, voce: false, desde: new Date().toISOString(), ultimoAcesso: null, podeEditar: true },
+            { imagem: null, ...nova, equipes: [], suspensa: false, voce: false, desde: new Date().toISOString(), ultimoAcesso: null, podeEditar: true },
           ])
         }
         return r
@@ -224,7 +226,7 @@ export function TabelaDePessoas({
       {pessoas.map((pessoa) => (
         <li key={pessoa.id} className="px-4 py-3.5">
           <div className="flex items-center gap-3">
-            <Avatar nome={pessoa.nome} imagem={null} tamanho={36} />
+            <Avatar nome={pessoa.nome} imagem={pessoa.imagem} tamanho={36} />
             <div className="min-w-0 flex-1">
               <p className="flex items-center gap-1.5 text-[13.5px] font-bold">
                 <span className="truncate">{pessoa.nome}</span>
@@ -279,7 +281,7 @@ export function TabelaDePessoas({
               <tr key={pessoa.id} className={`group border-b border-line last:border-0 ${FUNDO_DA_LINHA}`}>
                 <td className={`${COLUNA_FIXA} ${FUNDO_DA_FIXA} px-4 py-3`}>
                   <div className="flex items-center gap-3">
-                    <Avatar nome={pessoa.nome} imagem={null} tamanho={32} />
+                    <Avatar nome={pessoa.nome} imagem={pessoa.imagem} tamanho={32} />
                     <div className="min-w-0">
                       <p className="flex items-center gap-1.5 truncate text-[13px] font-bold">
                         <span className="truncate">{pessoa.nome}</span>

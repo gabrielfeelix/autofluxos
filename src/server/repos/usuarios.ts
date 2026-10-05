@@ -160,6 +160,8 @@ export type MembroDaConta = {
   papel: string
   /** `disponivel` | `ausente`. É o que decide a quem o Inbox oferece a conversa. */
   presenca: string
+  /** A foto que a pessoa subiu em Você, ou `null` (aí vale o retrato ilustrado). */
+  imagem: string | null
 }
 
 /**
@@ -174,7 +176,7 @@ export type MembroDaConta = {
  */
 export async function membrosDaConta(contaId: string): Promise<MembroDaConta[]> {
   const { rows } = await bancoDoLogin().query(
-    `select u.id, u."name" as nome, u.email, m."role" as papel, u."presenca"
+    `select u.id, u."name" as nome, u.email, m."role" as papel, u."presenca", u.image as imagem
        from public.af_membros m
        join public.af_usuarios u on u.id = m."userId"
       where m."organizationId" = $1
@@ -189,6 +191,7 @@ export async function membrosDaConta(contaId: string): Promise<MembroDaConta[]> 
     email: String(linha.email),
     papel: String(linha.papel),
     presenca: String(linha.presenca),
+    imagem: linha.imagem ? String(linha.imagem) : null,
   }))
 }
 

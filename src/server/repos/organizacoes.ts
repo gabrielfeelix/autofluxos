@@ -103,6 +103,7 @@ export type PessoaDaOrganizacao = {
   banido: boolean
   desde: string
   ultimoAcesso: string | null
+  imagem: string | null
 }
 
 /**
@@ -116,6 +117,7 @@ export async function pessoasDaOrganizacao(id: string): Promise<PessoaDaOrganiza
     `select u.id,
             u."name" as nome,
             u.email,
+            u.image as imagem,
             m."role" as papel,
             to_jsonb(m) ->> 'funcao_id' as funcao_id,
             coalesce(u."banned", false) as banido,
@@ -136,6 +138,7 @@ export async function pessoasDaOrganizacao(id: string): Promise<PessoaDaOrganiza
     banido: Boolean(linha.banido),
     desde: new Date(linha.desde).toISOString(),
     ultimoAcesso: linha.ultimo ? new Date(linha.ultimo).toISOString() : null,
+    imagem: linha.imagem ? String(linha.imagem) : null,
   }))
 }
 

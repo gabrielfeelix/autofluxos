@@ -79,6 +79,7 @@ export default async function Pagina({
         time.id,
         dentro.map((membro) => ({
           nome: membro.nome,
+          imagem: membro.imagem,
           semAlcance: resumoDoAcesso({
             papel: ehPapelDaConta(membro.papel) ? membro.papel : null,
             usuarioId: membro.id,
@@ -158,6 +159,7 @@ export default async function Pagina({
               id: membro.id,
               nome: membro.nome,
               email: membro.email,
+              imagem: membro.imagem,
               funcao: hierarquia.get(membro.id)?.funcao ?? 'atendente',
               equipes: (porMembro.get(membro.id) ?? []).map((id) => nomeDaEquipe.get(id) ?? 'equipe'),
               suspensa: false,
