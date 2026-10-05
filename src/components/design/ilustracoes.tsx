@@ -1303,3 +1303,34 @@ function RelatorioFechamentos() {
     </Tela>
   )
 }
+
+/**
+ * Saiu porque a conta entrou em outro aparelho: o computador apagado, com a
+ * tomada fora, e o celular aceso do outro lado, com o selo de quem entrou.
+ * A seta vai do novo para o velho porque é o novo que tomou o lugar.
+ */
+export function IlustracaoOutroAparelho() {
+  return (
+    <Tela titulo="Um computador desconectado e um celular que acabou de entrar na conta">
+      {/* O computador, apagado: tela vazia e tracejada. */}
+      <rect x={14} y={30} width={74} height={50} rx={6} {...TRACO} opacity={0.4} />
+      <rect x={22} y={38} width={58} height={34} rx={3} {...TRACO} strokeDasharray="3 3" opacity={0.35} />
+      <path d="M6 86h90" {...TRACO} opacity={0.4} />
+      <path d="M42 86v-6h18v6" {...TRACO} opacity={0.4} />
+      {/* O "x" de desconectado, no meio da tela. */}
+      <path d="m45 49 12 12M57 49 45 61" {...TRACO} strokeWidth={2} opacity={0.55} />
+
+      {/* A seta do novo para o velho. */}
+      <path d="M134 56h-28" {...TRACO} strokeDasharray="2 4" opacity={0.6} />
+      <path d="m111 51-5 5 5 5" {...TRACO} opacity={0.6} />
+
+      {/* O celular, aceso. */}
+      <rect x={142} y={18} width={44} height={82} rx={8} {...TRACO} />
+      <rect x={149} y={28} width={30} height={56} rx={3} fill="currentColor" opacity={0.15} />
+      <circle cx={164} cy={92} r={2.2} fill="currentColor" opacity={0.6} />
+      {/* O selo de "entrou" sobre a tela do celular. */}
+      <circle cx={164} cy={52} r={11} fill="currentColor" opacity={0.9} />
+      <path d="m158.5 52.2 3.8 3.8 7.2-7.6" fill="none" stroke="white" strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round" />
+    </Tela>
+  )
+}

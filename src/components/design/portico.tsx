@@ -17,8 +17,11 @@ export function Portico({
   titulo,
   descricao,
   rodape,
+  topo,
   children,
 }: {
+  /** Acima do título, dentro do cartão: a ilustração de um aviso. */
+  topo?: ReactNode
   titulo: string
   descricao: string
   rodape?: ReactNode
@@ -60,6 +63,7 @@ export function Portico({
 
       <section className="flex flex-1 items-start justify-center p-4 pt-6 md:w-[520px] md:flex-none md:items-center md:p-10">
         <div className="app-page-enter w-full max-w-[400px] rounded-[24px] bg-panel px-6 py-8 text-ink shadow-[var(--sombra-ilha)] md:px-9 md:py-10">
+          {topo}
           <h2 className="text-[22px] font-bold tracking-[-0.02em]">{titulo}</h2>
           <p className="mt-1 mb-[26px] text-[13.5px] leading-[1.55] text-muted">{descricao}</p>
 

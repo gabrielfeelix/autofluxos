@@ -1,8 +1,9 @@
 import 'server-only'
-import { headers } from 'next/headers'
+import { cookies, headers } from 'next/headers'
 import { notFound, redirect } from 'next/navigation'
 import { autenticacao, bancoDoLogin } from './auth'
 import { organizacaoSuspensa } from './repos/organizacoes'
+import { foiDerrubada } from './limite-de-sessoes'
 
 /**
  * Quem está aí do outro lado.
@@ -169,10 +170,27 @@ export async function sessaoAtual(): Promise<SessaoAtual | null> {
   }
 }
 
+/**
+ * Para onde vai quem não tem sessão: a tela de entrar, com o aviso de outro
+ * aparelho quando foi o limite de aparelhos que a encerrou
+ * (`limite-de-sessoes.ts`). Erro na consulta vira a tela de entrar comum:
+ * o aviso é cortesia, e não pode impedir ninguém de chegar ao login.
+ */
+export async function telaDeEntrar(): Promise<string> {
+  try {
+    const jar = await cookies()
+    const valor = jar.get('__Secure-better-auth.session_token')?.value ?? jar.get('better-auth.session_token')?.value
+    if (await foiDerrubada(bancoDoLogin(), valor)) return '/entrar?motivo=outro-aparelho'
+  } catch (erro) {
+    console.error('[sessoes] não deu para ler o motivo da saída', erro)
+  }
+  return '/entrar'
+}
+
 /** Sessão obrigatória. Sem ela, vai para a tela de entrar. */
 export async function exigirUsuario(): Promise<SessaoAtual> {
   const sessao = await sessaoAtual()
-  if (!sessao) redirect('/entrar')
+  if (!sessao) redirect(await telaDeEntrar())
   return sessao
 }
 
@@ -338,7 +356,7 @@ export async function exigirAcessoAoCliente(contaId: string): Promise<AcessoAoCl
 
   // Sem sessão nenhuma é "entre"; com sessão e sem direito é "não existe".
   if (sessao) notFound()
-  redirect('/entrar')
+  redirect(await telaDeEntrar())
 }
 
 /**
@@ -390,6 +408,6 @@ export function podeAdministrarConta(acesso: AcessoAoCliente): boolean {
  */
 export async function exigirOperadorDa4YU(): Promise<void> {
   const sessao = await sessaoAtual()
-  if (!sessao) redirect('/entrar')
+  if (!sessao) redirect(await telaDeEntrar())
   if (!ehAdminDaPlataforma(sessao)) redirect('/contas')
 }

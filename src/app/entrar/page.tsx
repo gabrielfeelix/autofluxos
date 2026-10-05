@@ -2,6 +2,7 @@ import Link from 'next/link'
 import { redirect } from 'next/navigation'
 import { FormularioDeConta } from '@/components/conta/formulario'
 import { Portico } from '@/components/design/portico'
+import { IlustracaoOutroAparelho } from '@/components/design/ilustracoes'
 import { acaoEntrar } from '@/server/acoes-conta'
 import { destinoAposEntrar } from '@/server/permissoes'
 import { sessaoAtual } from '@/server/sessao'
@@ -23,13 +24,31 @@ export default async function Entrar({ searchParams }: PageProps<'/entrar'>) {
   const sessao = await sessaoAtual()
   if (sessao) redirect(await destinoAposEntrar(sessao))
 
+  const busca = await searchParams
+  const outroAparelho = busca.motivo === 'outro-aparelho'
+
   return (
     <Portico
-      titulo="Entrar"
+      /*
+       * Derrubado pelo limite de aparelhos (`limite-de-sessoes.ts`). Sem este
+       * aviso a pessoa caía aqui do nada, no meio do trabalho, e lia defeito.
+       * O "se não foi você" é a parte que importa: é assim que se descobre
+       * uma senha dividida ou vazada.
+       */
+      topo={
+        outroAparelho ? (
+          <div className="mb-5 rounded-[16px] bg-primary-weak px-3 py-4">
+            <IlustracaoOutroAparelho />
+          </div>
+        ) : undefined
+      }
+      titulo={outroAparelho ? 'Sua conta entrou em outro aparelho' : 'Entrar'}
       descricao={
-        (await searchParams).senha === 'nova'
+        outroAparelho
+          ? 'Cada pessoa fica conectada em até 3 aparelhos ao mesmo tempo, e este era o mais antigo. Entre de novo para continuar. Se não foi você, troque a senha logo depois de entrar.'
+          : busca.senha === 'nova'
           ? 'Senha nova salva. Entre com ela.'
-          : (await searchParams).conta === 'criada'
+          : busca.conta === 'criada'
             ? 'Conta criada. Entre com o e-mail e a senha que você acabou de cadastrar.'
             : 'Sua conta do AutoFluxos.'
       }
