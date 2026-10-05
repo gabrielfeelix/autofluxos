@@ -12,6 +12,7 @@ export type TelaDeAjustes =
   | 'equipe'
   | 'plano'
   | 'recursos'
+  | 'funis'
 
 export const GRUPOS: { titulo: string | null; itens: { chave: TelaDeAjustes; rotulo: string }[] }[] = [
   // O índice fica solto no topo, sem rótulo de grupo: ele não é um assunto, é
@@ -32,6 +33,11 @@ export const GRUPOS: { titulo: string | null; itens: { chave: TelaDeAjustes; rot
       { chave: 'recursos', rotulo: 'Objetivo e recursos' },
       { chave: 'plano', rotulo: 'Plano e consumo' },
     ],
+  },
+  {
+    // O desenho dos funis mora aqui; trabalhar neles é no Funil de vendas.
+    titulo: 'Vendas',
+    itens: [{ chave: 'funis', rotulo: 'Funis de venda' }],
   },
   {
     // Canais, Respostas rápidas, Etiquetas e Catálogo saíram para a barra

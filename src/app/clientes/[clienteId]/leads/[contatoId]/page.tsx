@@ -30,7 +30,8 @@ import { contextoDeResposta, sessaoComPessoa } from '@/server/repos/conversas'
 import { acharLead, lerConversa, LIMITE_DA_NOTA } from '@/server/repos/leads'
 import { listarRespostasRapidas } from '@/server/repos/respostas-rapidas'
 import { listarEtiquetas } from '@/server/repos/etiquetas'
-import { quadrosDoContato } from '@/server/repos/quadros'
+import { listarQuadros, quadrosDoContato } from '@/server/repos/quadros'
+import { contagemDeArquivos } from '@/server/repos/arquivos-do-negocio'
 import { estagioDoContato, resumoDoContato } from '@/server/repos/crm'
 import { acompanhamentosDoContato } from '@/server/repos/sequencias'
 import { faixasDaConta } from '@/server/repos/relacionamento'
@@ -134,6 +135,7 @@ export default async function Pagina({
     anotacoes,
     sessaoDaFicha,
     comPessoa,
+    funis,
   ] = await Promise.all([
     acharCliente(clienteId),
     // Contato de outra pessoa, fora do alcance, cai no `notFound` abaixo.
@@ -163,8 +165,14 @@ export default async function Pagina({
     anotacoesDoContato(clienteId, contatoId),
     sessaoAtual(),
     sessaoComPessoa(contatoId),
+    // Para o "+ Nova negociação": em qual funil ela abre.
+    listarQuadros(clienteId),
   ])
   if (!cliente || !lead) notFound()
+  const arquivosPorNegocio = await contagemDeArquivos(
+    clienteId,
+    noQuadro.map((posicao) => posicao.cartaoId),
+  )
 
   // O mesmo estado do Inbox (8.1), pela mesma função.
   const atendimento = estadoDoAtendimento({
@@ -458,6 +466,11 @@ export default async function Pagina({
                   <div className="flex flex-col gap-[18px]">
                     <Negociacoes
                       clienteId={clienteId}
+                      contatoId={contatoId}
+                      funis={[...funis]
+                        .filter((quadro) => quadro.etapas.length > 0)
+                        .sort((a, b) => Number(b.padrao) - Number(a.padrao))
+                        .map((quadro) => ({ id: quadro.id, nome: quadro.nome, primeiraEtapa: quadro.etapas[0]?.nome ?? '' }))}
                       nome={nome}
                       negociacoes={noQuadro.map((posicao) => ({
                         cartaoId: posicao.cartaoId,
@@ -467,6 +480,8 @@ export default async function Pagina({
                         titulo: posicao.titulo,
                         valor: posicao.valor,
                         situacao: posicao.situacao,
+                        origem: posicao.origem,
+                        arquivos: arquivosPorNegocio.get(posicao.cartaoId) ?? 0,
                       }))}
                       motivos={motivos.map(({ id, nome: comoSeChama }) => ({ id, nome: comoSeChama }))}
                     />

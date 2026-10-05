@@ -138,6 +138,12 @@ export const ICONE_DA_TELA: Record<TelaDeAjustes | 'whatsapp' | 'instagram' | 'r
       <path d="m13.5 5-3 14" />
     </Svg>
   ),
+  // Um funil: largo em cima, estreito embaixo.
+  funis: (
+    <Svg>
+      <path d="M4 5h16l-6 7.5V19l-4-2v-4.5Z" />
+    </Svg>
+  ),
   negocio: (
     <Svg>
       <path d="M4 9.5 5.5 5h13L20 9.5" />

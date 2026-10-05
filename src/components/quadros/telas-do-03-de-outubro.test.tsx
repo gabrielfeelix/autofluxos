@@ -93,6 +93,7 @@ describe('a página do negócio', () => {
       outrosFunis={[{ id: 'q2', nome: 'Pós-venda' }]}
       contato={{ id: 'p-n1', nome: 'Ana', telefone: '5544999990000', ultimaEntradaEm: null, origem: null, etiquetas: [] }}
       historico={[{ id: 'h1', tipo: 'nota', frase: 'pediu desconto', autor: 'Eduardo', quando: '2026-10-03T22:46:00Z' }]}
+      arquivos={[]}
       atividades={[{ id: 'a1', tipo: 'ligacao', titulo: 'Retornar', prazo: '2026-10-01T15:00:00Z', horaMarcada: true }]}
       outrosNegocios={[]}
       equipe={[]}

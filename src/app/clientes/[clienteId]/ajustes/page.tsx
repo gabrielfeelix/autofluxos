@@ -20,6 +20,7 @@ import { paginasDaConta } from '@/server/repos/paginas-de-lead'
 import { listarCanais } from '@/server/repos/conversas'
 import { listarFluxos } from '@/server/repos/fluxos'
 import { contarLeads } from '@/server/repos/leads'
+import { listarQuadros } from '@/server/repos/quadros'
 import { automacaoNoAr, trilhaDeConfiguracao } from '@/core/trilha-de-configuracao'
 import { TrilhaDeConfiguracao } from '@/components/cliente/trilha-de-configuracao'
 import { planoDaConta } from '@/server/repos/plano'
@@ -55,7 +56,7 @@ export default async function Pagina({
   const cliente = await acharCliente(clienteId)
   if (!cliente) notFound()
 
-  const [conexoes, canais, acervo, etiquetas, estrago, paginasDeLead, plano, recursos, fluxos, contatos, catalogo, distribuicao] =
+  const [conexoes, canais, acervo, etiquetas, estrago, paginasDeLead, plano, recursos, fluxos, contatos, catalogo, distribuicao, funis] =
     await Promise.all([
       listarConexoes(cliente.id),
       listarCanais(cliente.id),
@@ -69,6 +70,7 @@ export default async function Pagina({
       contarLeads(cliente.id),
       catalogoDeIntegracoes(cliente.id),
       ajustesDaConta(cliente.id),
+      listarQuadros(cliente.id),
     ])
   const semContexto = cliente.contextoNegocio.trim() === ''
   // Selo, não tela: sem a tabela (ambiente sem a 0120) o índice abre igual.
@@ -162,6 +164,23 @@ export default async function Pagina({
             titulo="Plano e consumo"
             descricao="Em que plano esta organização está, quanto já foi usado neste mês, e como pedir para mudar de faixa."
             estado={<Selo tom="neutro">{(await planoVigente(plano)).nome}</Selo>}
+          />
+        </Grupo>
+
+        <Grupo
+          titulo="Vendas"
+          descricao="Os funis por onde os negócios andam: etapas, cores, o funil padrão e o que acontece ao ganhar."
+        >
+          <Cartao
+            href={`/clientes/${cliente.id}/ajustes/funis`}
+            icone={ICONE_DA_TELA['funis']}
+            titulo="Funis de venda"
+            descricao="Crie, renomeie e exclua funis, monte as etapas e escolha qual recebe contato novo."
+            estado={
+              <Selo tom={funis.length === 0 ? 'neutro' : 'ok'}>
+                {funis.length === 0 ? 'nenhum' : `${funis.length} ${funis.length === 1 ? 'funil' : 'funis'}`}
+              </Selo>
+            }
           />
         </Grupo>
 

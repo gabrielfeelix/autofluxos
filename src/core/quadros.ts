@@ -149,6 +149,8 @@ export type Cartao = {
    */
   titulo?: string | null
   valor?: number | null
+  /** De onde veio este negócio (0127). Nulo = não informado. */
+  origem?: string | null
   situacao?: Situacao
   responsavelId?: string | null
   responsavelNome?: string | null

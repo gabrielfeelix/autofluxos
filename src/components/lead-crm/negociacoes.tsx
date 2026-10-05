@@ -12,6 +12,11 @@ import { IconeDaSecao, iconeFunil } from './icones'
 import { VazioDoCartao } from './vazio-do-cartao'
 import { IlustracaoQuadros } from '@/components/design/ilustracoes'
 import { CampoDeDinheiro } from '@/components/design/campo-de-dinheiro'
+import { Modal } from '@/components/design/modal'
+import { Dropdown } from '@/components/design/dropdown'
+import Link from 'next/link'
+import { ORIGENS_DO_NEGOCIO } from '@/core/origens-do-negocio'
+import { acaoCriarNegocioAvulso } from '@/server/acoes-negocio'
 
 /** Um cartão desta pessoa, como `quadrosDoContato` devolve. */
 export type NegociacaoDoContato = {
@@ -22,7 +27,15 @@ export type NegociacaoDoContato = {
   titulo: string | null
   valor: number | null
   situacao: Situacao
+  /** De onde veio este negócio (0127). */
+  origem?: string | null
+  /** Quantos arquivos estão guardados nele. */
+  arquivos?: number
+  /** Acabou de ser criado nesta aba: ainda sem id do servidor. */
+  pendente?: boolean
 }
+
+type Funil = { id: string; nome: string; primeiraEtapa: string }
 
 /**
  * As negociações da pessoa, na ficha dela.
@@ -47,11 +60,16 @@ export type NegociacaoDoContato = {
  */
 export function Negociacoes({
   clienteId,
+  contatoId,
+  funis,
   nome,
-  negociacoes,
+  negociacoes: doServidor,
   motivos,
 }: {
   clienteId: string
+  contatoId: string
+  /** Onde um negócio novo pode abrir; o padrão vem primeiro. */
+  funis: Funil[]
   /** O nome da pessoa, para o título do modal dizer de quem é a venda. */
   nome: string
   negociacoes: NegociacaoDoContato[]
@@ -59,6 +77,62 @@ export function Negociacoes({
 }) {
   const router = useRouter()
   const { editando, versao } = useEdicao()
+  /*
+   * Os negócios criados nesta aba entram na lista no clique, por cima dos do
+   * servidor, sem recarregar a ficha. Um mesmo id que o servidor já mandou
+   * sai daqui para não aparecer duas vezes.
+   */
+  const [criadas, setCriadas] = useState<NegociacaoDoContato[]>([])
+  const [criando, setCriando] = useState(false)
+  const idsDoServidor = new Set(doServidor.map((n) => n.cartaoId))
+  const negociacoes = [...criadas.filter((n) => !idsDoServidor.has(n.cartaoId)), ...doServidor]
+  const podeCriar = funis.length > 0
+  const botaoDeCriar = podeCriar && (
+    <button
+      type="button"
+      onClick={() => setCriando(true)}
+      className="ml-auto text-[12px] font-semibold text-primary hover:underline"
+    >
+      + Nova negociação
+    </button>
+  )
+  const modalDeCriar = (
+    <Modal
+      aberto={criando}
+      aoFechar={() => setCriando(false)}
+      titulo="Nova negociação"
+      descricao="Um negócio a mais com esta pessoa: pode ser no mesmo funil de outro que já está aberto."
+    >
+      {criando && (
+        <NovaNegociacao
+          funis={funis}
+          aoCancelar={() => setCriando(false)}
+          aoCriar={async (dados) => {
+            const r = await acaoCriarNegocioAvulso(clienteId, contatoId, dados)
+            if (!r.ok) return r.erro
+            const funil = funis.find((f) => f.id === dados.quadroId)
+            const lido = lerValor(dados.valor)
+            setCriadas((atuais) => [
+              {
+                cartaoId: r.id,
+                quadro: funil?.nome ?? '',
+                etapa: funil?.primeiraEtapa ?? '',
+                entrouEm: new Date().toISOString(),
+                titulo: dados.titulo.trim(),
+                valor: lido.ok ? lido.valor : null,
+                situacao: 'aberta',
+                origem: dados.origem || null,
+                arquivos: 0,
+              },
+              ...atuais,
+            ])
+            setCriando(false)
+            return null
+          }}
+        />
+      )}
+    </Modal>
+  )
   const [fechando, setFechando] = useState<{
     cartao: NegociacaoDoContato
     situacao: Exclude<Situacao, 'aberta'>
@@ -81,13 +155,18 @@ export function Negociacoes({
         <h2 className="flex items-center gap-2 border-b border-line px-[18px] py-3.5 text-[13px] font-bold">
         <IconeDaSecao>{iconeFunil}</IconeDaSecao>
         Negociações
+        {botaoDeCriar}
       </h2>
-        {/* Fora de todo funil a frase diz onde se resolve isso, e não só que
-            está vazio: pôr alguém num funil é decisão de quem vende. */}
         <VazioDoCartao ilustracao={<IlustracaoQuadros />}>
-          Esta pessoa não está em nenhum funil. Ela entra pela tela de Funil de vendas, arrastando o
-          cartão, ou pelo botão de trazer os contatos que ainda estão de fora.
+          Nenhuma negociação com esta pessoa ainda. Abra uma para acompanhar o que ela está
+          comprando, em que etapa está e quanto vale.
+          {podeCriar && (
+            <button type="button" onClick={() => setCriando(true)} className="botao-secundario botao-sm mt-1">
+              Nova negociação
+            </button>
+          )}
         </VazioDoCartao>
+        {modalDeCriar}
       </section>
     )
   }
@@ -97,6 +176,7 @@ export function Negociacoes({
       <h2 className="flex items-center gap-2 border-b border-line px-[18px] py-3.5 text-[13px] font-bold">
         <IconeDaSecao>{iconeFunil}</IconeDaSecao>
         Negociações
+        {botaoDeCriar}
       </h2>
 
       <ul>
@@ -118,11 +198,31 @@ export function Negociacoes({
 
               {editando ? (
                 <EdicaoDaNegociacao key={versao} clienteId={clienteId} negociacao={negociacao} />
-              ) : (negociacao.titulo || negociacao.valor !== null) && (
-                <span className="mt-1.5 block text-[12.5px] leading-5">
-                  {negociacao.titulo || 'sem título'}
+              ) : (
+                <Link
+                  href={`/clientes/${clienteId}/negocios/${negociacao.cartaoId}`}
+                  className="mt-1.5 block text-[12.5px] leading-5 hover:text-primary"
+                  title="Abrir os detalhes do negócio"
+                >
+                  <span className="underline decoration-line decoration-dotted underline-offset-2">
+                    {negociacao.titulo || 'Sem título'}
+                  </span>
                   {negociacao.valor !== null && (
                     <span className="font-semibold"> · {comoDinheiro(negociacao.valor)}</span>
+                  )}
+                </Link>
+              )}
+              {!editando && (negociacao.origem || (negociacao.arquivos ?? 0) > 0) && (
+                <span className="mt-1 flex flex-wrap items-center gap-1.5 text-[11px] text-dim">
+                  {negociacao.origem && (
+                    <span className="rounded-full border border-line bg-surface px-2 py-0.5 font-semibold text-muted">
+                      {negociacao.origem}
+                    </span>
+                  )}
+                  {(negociacao.arquivos ?? 0) > 0 && (
+                    <span>
+                      {negociacao.arquivos} {negociacao.arquivos === 1 ? 'arquivo' : 'arquivos'}
+                    </span>
                   )}
                 </span>
               )}
@@ -176,6 +276,8 @@ export function Negociacoes({
           {aviso}
         </p>
       )}
+
+      {modalDeCriar}
 
       {/* A `key` reseta os campos do modal entre uma venda e outra, ver o
           comentário em `fechar-cartao.tsx`. */}
@@ -265,5 +367,109 @@ function EdicaoDaNegociacao({ clienteId, negociacao }: { clienteId: string; nego
         />
       </span>
     </span>
+  )
+}
+
+function NovaNegociacao({
+  funis,
+  aoCriar,
+  aoCancelar,
+}: {
+  funis: Funil[]
+  /** Devolve a frase de erro, ou `null` se criou. */
+  aoCriar: (dados: { quadroId: string; titulo: string; valor: string; origem: string }) => Promise<string | null>
+  aoCancelar: () => void
+}) {
+  const [titulo, setTitulo] = useState('')
+  const [valor, setValor] = useState('')
+  const [quadroId, setQuadroId] = useState(funis[0]?.id ?? '')
+  const [origem, setOrigem] = useState('')
+  const [erro, setErro] = useState<string | null>(null)
+  const [salvando, setSalvando] = useState(false)
+
+  async function criar() {
+    if (titulo.trim() === '') {
+      setErro('dê um nome ao negócio')
+      return
+    }
+    setErro(null)
+    setSalvando(true)
+    try {
+      const falhou = await aoCriar({ quadroId, titulo, valor, origem })
+      if (falhou) setErro(falhou)
+    } catch {
+      setErro('sem conexão com o servidor')
+    } finally {
+      setSalvando(false)
+    }
+  }
+
+  const rotulo = 'mb-1 block text-[11px] font-bold tracking-[0.04em] text-dim uppercase'
+  return (
+    <form
+      onSubmit={(e) => {
+        e.preventDefault()
+        void criar()
+      }}
+      className="flex flex-col gap-3"
+    >
+      <label>
+        <span className={rotulo}>O que está negociando</span>
+        <input
+          autoFocus
+          value={titulo}
+          onChange={(e) => setTitulo(e.target.value)}
+          maxLength={LIMITE_DO_TITULO}
+          placeholder="Exemplo: Mesa de jantar"
+          className="app-field w-full px-3 py-2.5 text-[12.5px]"
+        />
+      </label>
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+        <label>
+          <span className={rotulo}>
+            Valor <span className="font-normal normal-case">(opcional)</span>
+          </span>
+          <CampoDeDinheiro valor={valor} aoMudar={setValor} placeholder="0,00" className="app-field px-3 py-2.5 text-[12.5px]" />
+        </label>
+        <div>
+          <span className={rotulo}>De onde veio</span>
+          <Dropdown
+            rotuloAcessivel="De onde veio este negócio"
+            valor={origem}
+            aoMudar={setOrigem}
+            className="w-full"
+            opcoes={[{ valor: '', rotulo: 'Não informada' }, ...ORIGENS_DO_NEGOCIO.map((o) => ({ valor: o, rotulo: o }))]}
+          />
+        </div>
+      </div>
+      {funis.length > 1 && (
+        <div>
+          <span className={rotulo}>Funil</span>
+          <Dropdown
+            rotuloAcessivel="Funil do negócio"
+            valor={quadroId}
+            aoMudar={setQuadroId}
+            className="w-full"
+            opcoes={funis.map((f) => ({ valor: f.id, rotulo: f.nome }))}
+          />
+          <span className="mt-1 block text-[11px] text-dim">
+            Abre na primeira etapa: {funis.find((f) => f.id === quadroId)?.primeiraEtapa}.
+          </span>
+        </div>
+      )}
+      {erro && (
+        <p role="alert" className="text-[11.5px] text-perigo">
+          {erro}
+        </p>
+      )}
+      <span className="mt-1 flex justify-end gap-2">
+        <button type="button" onClick={aoCancelar} className="botao-secundario botao-md">
+          Cancelar
+        </button>
+        <button type="submit" disabled={salvando} className="botao-primario botao-md">
+          {salvando ? 'Criando…' : 'Criar negociação'}
+        </button>
+      </span>
+    </form>
   )
 }

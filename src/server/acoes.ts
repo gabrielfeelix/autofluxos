@@ -1,5 +1,6 @@
 'use server'
 
+import { apagarTodosDoNegocio } from './repos/arquivos-do-negocio'
 import { dentroDoTetoDaConta, RECADO_DO_TETO_DA_CONTA } from '@/server/limite'
 import { recusaDoPlano } from './recursos-do-plano'
 import { podeLigar } from '@/core/entrada'
@@ -1817,6 +1818,8 @@ export async function acaoTirarDoQuadro(
   const acesso = await exigirCapacidade(clienteId, 'criar_oportunidade', 'proprios')
   if (recusou(acesso)) return acesso
 
+  // Os arquivos do negócio (0127) saem do bucket antes: a linha cai em cascata, o objeto não.
+  await apagarTodosDoNegocio(clienteId, cartaoId)
   const tirou = await tirarDoQuadro(clienteId, cartaoId)
   revalidatePath(`/clientes/${clienteId}/quadros`)
   return tirou ? { ok: true } : { ok: false, erro: 'este cartão não existe mais' }

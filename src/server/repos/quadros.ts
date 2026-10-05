@@ -573,6 +573,8 @@ type LinhaDoCartao = {
   criado_em: string
   /** Só existe depois da 0101. Lido por `*`, então a falta dela não derruba a tela. */
   previsao_de_fechamento?: string | null
+  /** Só existe depois da 0127, lido por `*` como a previsão. */
+  origem?: string | null
   produtos: { nome: string | null } | null
   contacts: {
     nome_real: string | null
@@ -648,6 +650,7 @@ function paraCartao(linha: LinhaDoCartao): Cartao {
     // `null` aqui é "não avaliada", e a tela precisa dizer isso em vez de
     // desenhar "morno" (0079). Ver o comentário do tipo em core/quadros.ts.
     temperatura: ehTemperaturaDoCartao(linha.temperatura) ? linha.temperatura : null,
+    origem: linha.origem ?? null,
     produtoId: linha.produto_id,
     produtoNome: linha.produtos?.nome ?? null,
     criadoEm: linha.criado_em,
@@ -795,6 +798,8 @@ async function jaAbertosNoQuadro(
     .select('contact_id')
     .eq('quadro_id', quadroId)
     .eq('situacao', 'aberta')
+    // Negócio avulso (0127) é da equipe, criado à mão: não conta como "já está".
+    .eq('avulso', false)
     .in('contact_id', contatos)
 
   if (error) throw new Error(`não deu para conferir quem já está no quadro: ${error.message}`)
@@ -1169,6 +1174,11 @@ export async function porContatoNaEtapa(
     .select('id')
     .eq('quadro_id', quadroId)
     .eq('contact_id', contatoId)
+    // A automação anda com o cartão do funil, nunca com um negócio avulso
+    // (0127). O mais novo, para recompra não estourar o `maybeSingle`.
+    .eq('avulso', false)
+    .order('criado_em', { ascending: false })
+    .limit(1)
     .maybeSingle()
 
   if (erroDoCartao) {
@@ -1210,6 +1220,8 @@ export type PosicaoNoFunil = {
   titulo: string | null
   valor: number | null
   situacao: Situacao
+  /** De onde veio este negócio (0127). */
+  origem: string | null
 }
 
 /**
@@ -1235,11 +1247,12 @@ export async function quadrosDoContato(
   const { data, error } = await db()
     .from('quadro_cartoes')
     .select(
-      'id, entrou_na_coluna_em, titulo, valor, situacao, ' +
+      'id, entrou_na_coluna_em, titulo, valor, situacao, origem, criado_em, ' +
         'quadros!inner (id, nome), quadro_colunas!inner (id, nome)',
     )
     .eq('client_id', clienteId)
     .eq('contact_id', contatoId)
+    .order('criado_em', { ascending: false })
 
   if (ehIdInvalido(error)) return []
   if (error) throw new Error(`não deu para ler os quadros do contato: ${error.message}`)
@@ -1251,6 +1264,7 @@ export async function quadrosDoContato(
       titulo: string | null
       valor: string | number | null
       situacao: Situacao | null
+      origem: string | null
       quadros: { id: string; nome: string }
       quadro_colunas: { id: string; nome: string }
     }[]
@@ -1264,7 +1278,80 @@ export async function quadrosDoContato(
     titulo: linha.titulo,
     valor: linha.valor === null || linha.valor === undefined ? null : Number(linha.valor),
     situacao: linha.situacao ?? 'aberta',
+    origem: linha.origem ?? null,
   }))
+}
+
+/**
+ * Um negócio aberto à mão pela equipe, na ficha do contato (0127).
+ *
+ * Nasce `avulso`: fica fora do "um aberto por contato e funil", então "vendi a
+ * cadeira, agora estou vendendo a mesa" vira dois negócios no mesmo funil. E
+ * nenhuma automação o procura: o fluxo continua andando com o cartão dele.
+ */
+export async function criarNegocioAvulso(
+  clienteId: string,
+  dados: {
+    contatoId: string
+    quadroId: string
+    titulo: string
+    valor: number | null
+    origem: string | null
+    responsavel: string | null
+  },
+): Promise<{ ok: true; id: string } | { ok: false; motivo: string }> {
+  const titulo = dados.titulo.trim().slice(0, LIMITE_DO_TITULO)
+  if (titulo === '') return { ok: false, motivo: 'dê um nome ao negócio' }
+
+  const quadro = await acharQuadro(clienteId, dados.quadroId)
+  if (!quadro) return { ok: false, motivo: 'este funil não existe mais' }
+  const primeira = quadro.etapas[0]
+  if (!primeira) return { ok: false, motivo: 'este funil ainda não tem etapas' }
+
+  const { data: contato } = await db()
+    .from('contacts')
+    .select('id')
+    .eq('client_id', clienteId)
+    .eq('id', dados.contatoId)
+    .maybeSingle()
+  if (!contato) return { ok: false, motivo: 'este contato não existe mais' }
+
+  const { data, error } = await db()
+    .from('quadro_cartoes')
+    .insert({
+      client_id: clienteId,
+      quadro_id: quadro.id,
+      coluna_id: primeira.id,
+      contact_id: dados.contatoId,
+      titulo,
+      valor: dados.valor,
+      origem: dados.origem?.trim().slice(0, 60) || null,
+      responsavel: dados.responsavel,
+      avulso: true,
+    })
+    .select('id')
+    .single()
+
+  if (error) throw new Error(`não deu para criar o negócio: ${error.message}`)
+  return { ok: true, id: (data as { id: string }).id }
+}
+
+/** De onde veio este negócio. Vazio apaga. */
+export async function definirOrigemDoNegocio(
+  clienteId: string,
+  cartaoId: string,
+  origem: string,
+): Promise<{ ok: true } | { ok: false; motivo: string }> {
+  const limpa = origem.trim().slice(0, 60)
+  const { data, error } = await db()
+    .from('quadro_cartoes')
+    .update({ origem: limpa || null })
+    .eq('client_id', clienteId)
+    .eq('id', cartaoId)
+    .select('id')
+    .maybeSingle()
+  if (error) throw new Error(`não deu para gravar a origem: ${error.message}`)
+  return data ? { ok: true } : { ok: false, motivo: 'este negócio não existe mais' }
 }
 
 // ---------------------------------------------------------------------------

@@ -7,6 +7,7 @@ import { pode } from '@/core/permissoes'
 import { acharCliente } from '@/server/repos/clientes'
 import { acharCartao, acharQuadro, listarQuadros, quadrosDoContato } from '@/server/repos/quadros'
 import { historicoDoNegocio } from '@/server/repos/negocios'
+import { arquivosDoNegocio } from '@/server/repos/arquivos-do-negocio'
 import { atividadesDoCartao } from '@/server/repos/atividades'
 import { fichaDoContato } from '@/server/repos/crm'
 import { etiquetasDeContatos } from '@/server/repos/etiquetas'
@@ -43,7 +44,7 @@ export default async function Pagina({
 
   const agora = agoraDoServidor()
 
-  const [quadro, quadros, ficha, eventos, atividades, funis, porContato, equipe, motivos, acesso] =
+  const [quadro, quadros, ficha, eventos, atividades, funis, porContato, equipe, motivos, acesso, arquivos] =
     await Promise.all([
       acharQuadro(clienteId, cartao.quadroId),
       listarQuadros(clienteId),
@@ -55,6 +56,7 @@ export default async function Pagina({
       membrosDaConta(clienteId),
       listarMotivos(clienteId),
       acessoCompleto(clienteId),
+      arquivosDoNegocio(clienteId, cartao.id),
     ])
   if (!quadro) notFound()
 
@@ -114,6 +116,7 @@ export default async function Pagina({
           etiquetas: (porContato.get(cartao.contatoId) ?? []).map(({ id, nome, cor }) => ({ id, nome, cor })),
         }}
         historico={historico}
+        arquivos={arquivos}
         atividades={atividades
           .filter((a) => a.situacao === 'aberta')
           .map(({ id, tipo, titulo, prazo, horaMarcada }) => ({ id, tipo, titulo, prazo, horaMarcada }))}

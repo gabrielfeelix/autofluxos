@@ -52,8 +52,12 @@ import { acaoCriarAtividade } from '@/server/acoes-atividades'
 import {
   acaoAnotarNoNegocio,
   acaoPreverFechamento,
+  acaoDefinirOrigemDoNegocio,
   acaoTrocarDeFunil,
 } from '@/server/acoes-negocio'
+import { ArquivosDoNegocio, ID_DO_SELETOR_DE_ARQUIVO } from '@/components/negocios/arquivos-do-negocio'
+import type { ArquivoDoNegocio } from '@/server/repos/arquivos-do-negocio'
+import { ORIGENS_DO_NEGOCIO } from '@/core/origens-do-negocio'
 
 /** Quanto o "pronto" da troca de funil fica na tela antes de sumir sozinho. */
 const TEMPO_DA_CONFIRMACAO = 6000
@@ -103,6 +107,7 @@ type Props = {
     etiquetas: { id: string; nome: string; cor: CorDeEtiqueta }[]
   }
   historico: ItemDoHistorico[]
+  arquivos: ArquivoDoNegocio[]
   atividades: AtividadeAberta[]
   outrosNegocios: {
     cartaoId: string
@@ -401,6 +406,15 @@ export function PaginaDoNegocio(props: Props) {
             }
           />
           <AcaoDaFicha
+            rotulo="Anexar"
+            titulo="Guardar um PDF ou imagem neste negócio"
+            aoClicar={() => {
+              setAba('geral')
+              requestAnimationFrame(() => document.getElementById(ID_DO_SELETOR_DE_ARQUIVO)?.click())
+            }}
+            icone={<path d="m20 11.5-7.8 7.8a5 5 0 0 1-7.1-7.1l8.5-8.5a3.3 3.3 0 0 1 4.7 4.7l-8.5 8.5a1.7 1.7 0 0 1-2.4-2.4l7.8-7.8" />}
+          />
+          <AcaoDaFicha
             rotulo="Atividade"
             titulo="Para a equipe: marcar atividade"
             aoClicar={() => setNovaAtividade(true)}
@@ -640,6 +654,8 @@ export function PaginaDoNegocio(props: Props) {
               )}
             </Cartao>
 
+            <ArquivosDoNegocio clienteId={clienteId} cartaoId={negocio.id} iniciais={props.arquivos} agora={agora} />
+
             <Cartao
               titulo="Histórico recente"
               acao={
@@ -732,8 +748,30 @@ export function PaginaDoNegocio(props: Props) {
                     }}
                   />
                 </Campo>
-                <Campo rotulo="Origem do lead">
-                  <span className={contato.origem ? 'text-soft' : 'text-dim'}>{contato.origem ?? 'Não registrada'}</span>
+                {/*
+                  A origem é deste negócio, não do contato: a mesma pessoa
+                  comprou uma vez pelo Instagram e outra pelo site. A do
+                  contato (a primeira chegada) fica embaixo, como referência.
+                */}
+                <Campo rotulo="Origem do negócio">
+                  <Dropdown
+                    rotuloAcessivel="Origem do negócio"
+                    valor={negocio.origem ?? ''}
+                    aoMudar={(origem) =>
+                      mudar({ origem: origem || null }, () => acaoDefinirOrigemDoNegocio(clienteId, negocio.id, origem))
+                    }
+                    className="w-full"
+                    opcoes={[
+                      { valor: '', rotulo: 'Não informada' },
+                      ...[...new Set([...(negocio.origem ? [negocio.origem] : []), ...ORIGENS_DO_NEGOCIO])].map((o) => ({
+                        valor: o,
+                        rotulo: o,
+                      })),
+                    ]}
+                  />
+                  {contato.origem && (
+                    <span className="mt-1 block text-[11px] text-dim">O contato chegou por: {contato.origem}</span>
+                  )}
                 </Campo>
                 <Campo rotulo="Criado em">
                   <span className="text-soft tabular-nums">{negocio.criadoEm ? dataEHora(negocio.criadoEm, agora) : '·'}</span>
