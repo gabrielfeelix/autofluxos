@@ -2076,7 +2076,11 @@ textarea::placeholder {
     .app-dropdown-menu,
     .botao-secundario,
     .botao-perigo,
-    .quadro-tool,
+    /*
+     * O "⋮" da etapa é `quadro-tool` sem fundo, sentado na casca ao lado do
+     * "+": voltar ao token do cartão o deixava escuro sobre o azul.
+     */
+    .quadro-tool:not(.quadro-stage-menu),
     .quadro-popover,
     .crm-section,
     .crm-opportunity,
