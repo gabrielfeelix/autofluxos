@@ -240,6 +240,9 @@ export function RodapeDaMensagem({
   return (
     <div
       ref={caixa}
+      // `data-favorita` dá à bolha uma folga em cima para a estrela não colar
+      // na hora (`.bolha-*` em `globals.css`).
+      data-favorita={guardada || undefined}
       className={`group relative flex min-w-0 max-w-[78%] flex-col ${nossa ? 'items-end' : 'items-start'}`}
     >
       {children}
@@ -280,7 +283,7 @@ export function RodapeDaMensagem({
         <span
           title="Favoritada"
           aria-label="Mensagem favoritada"
-          className={`pointer-events-none absolute top-2 right-2.5 text-[13px] leading-none transition [@media(hover:hover)]:group-hover:opacity-0 [@media(hover:none)]:right-9 ${menuAberto ? 'opacity-0' : ''} ${nossa && !bolhaClara ? 'text-amber-300 drop-shadow-[0_1px_1px_rgba(0,0,0,0.25)]' : 'text-amber-500'}`}
+          className={`pointer-events-none absolute top-[5px] right-2.5 text-[15px] leading-none transition [@media(hover:hover)]:group-hover:opacity-0 [@media(hover:none)]:right-9 ${menuAberto ? 'opacity-0' : ''} ${nossa && !bolhaClara ? 'text-amber-300 drop-shadow-[0_1px_1px_rgba(0,0,0,0.25)]' : 'text-amber-500'}`}
         >
           ★
         </span>

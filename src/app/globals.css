@@ -2779,3 +2779,10 @@ textarea::placeholder {
     border-radius: 6px;
   }
 }
+
+/* Mensagem favoritada: folga em cima e à direita para a estrela do canto
+   (`rodape-da-mensagem.tsx`) não encostar na hora nem no texto. */
+[data-favorita] > :is(.bolha-nossa, .bolha-deles, .bolha-toque) {
+  padding-top: 16px;
+  padding-right: 26px;
+}
