@@ -1,4 +1,5 @@
 import 'server-only'
+import { nomeParaMostrar } from '@/core/contatos/nome-para-mostrar'
 import { db, ehIdInvalido } from '../db'
 
 /**
@@ -48,6 +49,28 @@ type LinhaDaFila = {
 }
 
 /**
+ * Quem o escopo alcança: `null` é a conta inteira; uma lista são as pessoas da
+ * equipe (ou só a própria), **mais o que ainda não tem dono**, porque conversa
+ * sem responsável é de quem pegar primeiro e esconder dela é deixar esperando.
+ * Os ids saem de `responsaveisDoEscopo`, lidos do banco, nunca da tela.
+ */
+export type Donos = readonly string[] | null
+
+type ConsultaComDono = { or: (f: string) => unknown; is: (c: string, v: null) => unknown }
+
+/*
+ * O tipo genérico do construtor do supabase-js estoura o limite de
+ * instanciação do TypeScript quando atravessa uma função genérica; por isso a
+ * consulta entra e sai com o próprio tipo, e só o miolo vê a forma mínima.
+ */
+function noEscopo<Q>(q: Q, donos: Donos, coluna = 'atribuido_a'): Q {
+  if (donos === null) return q
+  const c = q as unknown as ConsultaComDono
+  if (donos.length === 0) return c.is(coluna, null) as Q
+  return c.or(`${coluna}.is.null,${coluna}.in.(${donos.join(',')})`) as Q
+}
+
+/**
  * Quem precisa de uma pessoa, do mais antigo para o mais recente.
  *
  * **Duas leituras, e não uma com `or`.** As duas famílias têm critérios de
@@ -62,19 +85,21 @@ type LinhaDaFila = {
 export async function filaDoPainel(
   clienteId: string,
   limite = ITENS_NA_FILA,
+  donos: Donos = null,
 ): Promise<FilaDoPainel> {
   const campos = 'contact_id, nome, wa_id, handoff_motivo, handoff_em, ultima_em'
+  const doEscopo = <Q,>(q: Q) => noEscopo(q, donos)
 
   const [pediram, devendo, quantosPediram, quantosDevendo] = await Promise.all([
-    db()
+    doEscopo(db()
       .from('leads')
       .select(campos)
       .eq('client_id', clienteId)
       .not('handoff_em', 'is', null)
       .order('handoff_em', { ascending: true })
-      .limit(limite),
+      .limit(limite)),
 
-    db()
+    doEscopo(db()
       .from('leads')
       .select(campos)
       .eq('client_id', clienteId)
@@ -82,21 +107,21 @@ export async function filaDoPainel(
       .eq('ultima_direcao', 'entrada')
       .is('handoff_em', null)
       .order('ultima_em', { ascending: true })
-      .limit(limite),
+      .limit(limite)),
 
-    db()
+    doEscopo(db()
       .from('leads')
       .select('contact_id', { count: 'exact', head: true })
       .eq('client_id', clienteId)
-      .not('handoff_em', 'is', null),
+      .not('handoff_em', 'is', null)),
 
-    db()
+    doEscopo(db()
       .from('leads')
       .select('contact_id', { count: 'exact', head: true })
       .eq('client_id', clienteId)
       .eq('estado_efetivo', 'aberta')
       .eq('ultima_direcao', 'entrada')
-      .is('handoff_em', null),
+      .is('handoff_em', null)),
   ])
 
   // Id torto na URL é 404 da tela, não erro do painel: devolver fila vazia
@@ -173,6 +198,8 @@ export async function fechamentos(
     .eq('client_id', clienteId)
     .in('situacao', ['ganha', 'perdida'])
     .gte('fechado_em', desde)
+    // Com teto, a mesma função mede a janela anterior: é só passar outro `agora`.
+    .lt('fechado_em', agora.toISOString())
 
   const vazio = { ganhos: 0, perdidos: 0, valor: null, dias }
   if (ehIdInvalido(error)) return vazio
@@ -194,4 +221,120 @@ export async function fechamentos(
   }
 
   return { ganhos, perdidos, valor, dias }
+}
+
+// ---------------------------------------------------------------------------
+// Negócios parados
+// ---------------------------------------------------------------------------
+
+export type NegocioParado = {
+  cartaoId: string
+  nome: string
+  titulo: string | null
+  etapa: string | null
+  desde: string
+}
+
+/** Uma semana na mesma etapa: menos que isso é ritmo normal de venda. */
+export const DIAS_PARADO = 7
+
+/**
+ * Negócio em aberto que não anda há uma semana, do mais esquecido primeiro.
+ *
+ * É a pendência do funil que ninguém vê: o cartão não grita, só fica. No
+ * escopo de quem lê, pelo responsável **do cartão**, e o sem responsável
+ * entra junto, pelo mesmo motivo da fila.
+ */
+export async function negociosParados(
+  clienteId: string,
+  donos: Donos,
+  limite = 5,
+  agora = new Date(),
+): Promise<{ itens: NegocioParado[]; total: number }> {
+  const corte = new Date(agora.getTime() - DIAS_PARADO * 24 * 60 * 60 * 1000).toISOString()
+  const base = <Q,>(q: Q) => noEscopo(q, donos, 'responsavel')
+
+  const [lista, contagem] = await Promise.all([
+    base(
+      db()
+        .from('quadro_cartoes')
+        .select('id, titulo, entrou_na_coluna_em, contacts (nome_real, nome, wa_id), quadro_colunas (nome)')
+        .eq('client_id', clienteId)
+        .eq('situacao', 'aberta')
+        .lt('entrou_na_coluna_em', corte),
+    )
+      .order('entrou_na_coluna_em', { ascending: true })
+      .limit(limite),
+    base(
+      db()
+        .from('quadro_cartoes')
+        .select('id', { count: 'exact', head: true })
+        .eq('client_id', clienteId)
+        .eq('situacao', 'aberta')
+        .lt('entrou_na_coluna_em', corte),
+    ),
+  ])
+
+  const erro = lista.error ?? contagem.error
+  if (ehIdInvalido(erro)) return { itens: [], total: 0 }
+  if (erro) throw new Error(`não deu para ler os negócios parados: ${erro.message}`)
+
+  type Linha = {
+    id: string
+    titulo: string | null
+    entrou_na_coluna_em: string
+    contacts: { nome_real: string | null; nome: string | null; wa_id: string | null } | null
+    quadro_colunas: { nome: string } | null
+  }
+
+  return {
+    itens: ((lista.data ?? []) as unknown as Linha[]).map((linha) => ({
+      cartaoId: linha.id,
+      nome: nomeParaMostrar({
+        nomeReal: linha.contacts?.nome_real,
+        nome: linha.contacts?.nome,
+        waId: linha.contacts?.wa_id,
+      }),
+      titulo: linha.titulo,
+      etapa: linha.quadro_colunas?.nome ?? null,
+      desde: linha.entrou_na_coluna_em,
+    })),
+    total: contagem.count ?? 0,
+  }
+}
+
+// ---------------------------------------------------------------------------
+// A fila por pessoa, para quem coordena
+// ---------------------------------------------------------------------------
+
+/**
+ * Quantas conversas esperam com cada pessoa, e quantas sem ninguém.
+ *
+ * É a pergunta de quem coordena: não "quanto a equipe atendeu no mês", e sim
+ * "quem está afogado agora e quem está livre". Lê só a coluna do dono das
+ * conversas que esperam, e soma aqui.
+ */
+export async function filaPorPessoa(
+  clienteId: string,
+  donos: Donos,
+): Promise<{ semDono: number; porPessoa: Map<string, number> }> {
+  const { data, error } = await noEscopo(
+    db()
+      .from('leads')
+      .select('atribuido_a')
+      .eq('client_id', clienteId)
+      .or('handoff_em.not.is.null,and(estado_efetivo.eq.aberta,ultima_direcao.eq.entrada)'),
+    donos,
+  ).limit(2000)
+
+  const porPessoa = new Map<string, number>()
+  if (ehIdInvalido(error)) return { semDono: 0, porPessoa }
+  if (error) throw new Error(`não deu para ler a fila da equipe: ${error.message}`)
+
+  let semDono = 0
+  for (const { atribuido_a } of (data ?? []) as { atribuido_a: string | null }[]) {
+    if (atribuido_a === null) semDono += 1
+    else porPessoa.set(atribuido_a, (porPessoa.get(atribuido_a) ?? 0) + 1)
+  }
+  return { semDono, porPessoa }
 }

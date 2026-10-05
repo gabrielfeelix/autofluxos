@@ -2,7 +2,7 @@ import { Miolo } from '@/components/design/miolo'
 import { CabecalhoDaTela } from '@/components/design/cabecalho-da-tela'
 import Link from 'next/link'
 import { hrefDaFicha } from '@/core/volta-da-ficha'
-import { acessoCompleto, filtroDoAcesso, type AcessoCompleto } from '@/server/permissoes'
+import { acessoCompleto, alcanceDeConversas, filtroDoAcesso, type AcessoCompleto } from '@/server/permissoes'
 import { pode, type FiltroDeEscopo } from '@/core/permissoes'
 import { onboardingDaConta } from '@/server/repos/onboarding'
 import { passosDoOnboarding } from '@/core/onboarding'
@@ -14,7 +14,6 @@ import { listarMateriais } from '@/server/repos/materiais'
 import { notFound } from 'next/navigation'
 import { Suspense } from 'react'
 import { ComoFunciona } from '@/components/cliente/como-funciona'
-import { IconeAutomacao, IconeConversa, IconeFunil } from '@/components/cliente/icones'
 import { PrimeirosPassos, type PassoDaConta } from '@/components/cliente/primeiros-passos'
 import { ClienteShell } from '@/components/design/cliente-shell'
 import { EsqueletoDeLista } from '@/components/design/esqueleto'
@@ -33,7 +32,18 @@ import { ultimaMensagemRecebida } from '@/server/repos/ultimos-eventos'
 import { automacaoNoAr } from '@/core/trilha-de-configuracao'
 import { listarFluxos } from '@/server/repos/fluxos'
 import { contarLeads } from '@/server/repos/leads'
-import { filaDoPainel, type ItemDaFila } from '@/server/repos/painel'
+import {
+  DIAS_PARADO,
+  fechamentos,
+  filaDoPainel,
+  filaPorPessoa,
+  negociosParados,
+  type Donos,
+  type ItemDaFila,
+} from '@/server/repos/painel'
+import { totaisDoPeriodo } from '@/server/repos/relatorios'
+import { membrosDaConta } from '@/server/repos/usuarios'
+import { hojeEmSaoPaulo } from '@/core/relatorios'
 import { clientesSumidos, faixasDaConta } from '@/server/repos/relacionamento'
 import {
   CLASSE_DO_NIVEL,
@@ -45,7 +55,6 @@ import {
 } from '@/core/relacionamento'
 import { listarQuadros } from '@/server/repos/quadros'
 import { crmVisivel, recursosDaConta } from '@/server/repos/recursos'
-import { type AbaDoCliente, abasVisiveis } from '@/components/design/secoes-do-cliente'
 import { sessaoAtual } from '@/server/sessao'
 
 export const dynamic = 'force-dynamic'
@@ -125,6 +134,15 @@ export default async function Pagina({ params }: { params: Promise<{ clienteId: 
   })
   const faltaPasso = passos.some((passo) => !passo.feito)
 
+  const alcance = await alcanceDeConversas(cliente.id, acesso)
+  const atende = alcance.tipo !== 'nada'
+  const donos: Donos = alcance.tipo === 'tudo' ? null : alcance.tipo === 'nada' ? [] : alcance.donos
+  // Quem enxerga a conta inteira, ou equipes, coordena: vê a fila por pessoa.
+  const escopo = filtroDoAcesso(acesso, 'atender')
+  const coordena = escopo.tipo === 'tudo' || escopo.tipo === 'equipes'
+  // Dinheiro fechado é da conta inteira: só para quem a enxerga toda.
+  const veFechamentos = crm && escopo.tipo === 'tudo' && pode(acesso.regras, 'ler_valores')
+
   return (
     <ClienteShell cliente={cliente} ativa="inicio">
       <Miolo largura="toda">
@@ -139,55 +157,79 @@ export default async function Pagina({ params }: { params: Promise<{ clienteId: 
           }
         />
 
-        {configura && onboarding?.status !== 'concluido' && <section className="mb-5 flex flex-wrap items-center justify-between gap-4 rounded-xl border border-primary/20 bg-primary-weak p-5">
+        {/*
+          O assistente só se oferece enquanto a conta não está de pé. Antes ele
+          olhava apenas o próprio registro de conclusão, e conta montada por
+          Configurações, ou antes de o assistente existir, era convidada a
+          "definir o objetivo" para sempre, com tudo funcionando.
+        */}
+        {configura && faltaPasso && onboarding?.status !== 'concluido' && <section className="mb-5 flex flex-wrap items-center justify-between gap-4 rounded-xl border border-primary/20 bg-primary-weak p-5">
           <div><h2 className="text-sm font-bold">{onboarding ? 'Continue preparando sua organização' : 'Defina o objetivo da organização'}</h2><p className="mt-1 text-xs leading-5 text-muted">Escolha como atender e quais modelos ajudam sua rotina. O que você já configurou será preservado.</p></div>
           <Link href={`/clientes/${cliente.id}/configurar`} className="botao-primario botao-md">{onboarding ? 'Continuar preparação' : 'Objetivo e recursos'} →</Link>
         </section>}
-        {!configura && <section className="app-card mb-5 p-5"><h2 className="text-sm font-bold">Sua rotina começa aqui</h2><p className="mt-2 text-sm leading-6 text-muted">Responda conversas no Inbox, acompanhe seus lembretes em Atividades e consulte os dados em Contatos.</p><div className="mt-3 flex flex-wrap gap-4 text-sm text-primary"><Link href={`/clientes/${cliente.id}/inbox`}>Abrir Inbox →</Link><Link href={`/clientes/${cliente.id}/atividades`}>Ver atividades →</Link><Link href={`/clientes/${cliente.id}/leads`}>Ver contatos →</Link></div></section>}
 
-        <Estado
-          clienteId={cliente.id}
-          fluxos={fluxos.length}
-          publicados={publicados}
-          canais={canais.length}
-          atendendo={atendendo}
-          contatos={contatos}
-          ultimaMensagem={ultimaMensagem}
-        />
+        {configura && (
+          <Estado
+            clienteId={cliente.id}
+            fluxos={fluxos.length}
+            publicados={publicados}
+            canais={canais.length}
+            atendendo={atendendo}
+          />
+        )}
 
-        <div className="mt-5 grid items-start gap-5 lg:grid-cols-[minmax(0,1fr)_336px]">
+        <div className="grid items-start gap-5 lg:grid-cols-[minmax(0,1fr)_336px]">
           <div className="flex min-w-0 flex-col gap-5">
-            <Atalhos clienteId={cliente.id} visiveis={abasVisiveis({ crmVisivel: crm, regras: acesso.regras })} />
-
             <Suspense fallback={<EsqueletoDeLista linhas={3} comRosto rotulo="Carregando a fila…" />}>
-              <Fila clienteId={cliente.id} contatos={contatos} acesso={acesso} canais={canais} configura={configura} />
+              <Fila
+                clienteId={cliente.id}
+                contatos={contatos}
+                acesso={acesso}
+                canais={canais}
+                configura={configura}
+                donos={donos}
+                atende={atende}
+                ultimaMensagem={ultimaMensagem}
+              />
             </Suspense>
 
-            <ComoFunciona />
+            {crm && atende && (
+              <Suspense fallback={null}>
+                <NegociosParados clienteId={cliente.id} donos={donos} />
+              </Suspense>
+            )}
+
+            {coordena && (
+              <Suspense fallback={null}>
+                <EquipeAgora clienteId={cliente.id} donos={donos} />
+              </Suspense>
+            )}
+
+            {/* A explicação é para quem está chegando; depois da estreia ela
+                ocupava o melhor lugar da tela repetindo o que a pessoa já sabe. */}
+            {faltaPasso && <ComoFunciona />}
           </div>
 
           <aside className="flex min-w-0 flex-col gap-5">
             {configura && faltaPasso && <PrimeirosPassos passos={passos} />}
 
-            {/* Logo abaixo dos passos: quem já comprou e está sumindo é pendência
-                com nome e link, e não número de período. Os números do mês
-                moram em Relatórios (plano de UX, 11.1). */}
+            {atende && (
+              <Suspense fallback={<div className="app-card h-[188px] animate-pulse" />}>
+                <Hoje clienteId={cliente.id} donos={donos} contaInteira={alcance.tipo === 'tudo'} />
+              </Suspense>
+            )}
+
+            {veFechamentos && (
+              <Suspense fallback={null}>
+                <Fechamentos clienteId={cliente.id} />
+              </Suspense>
+            )}
+
+            {/* Quem já comprou e está sumindo é pendência com nome e link, e
+                não número de período (plano de UX, 11.1). */}
             <Suspense fallback={null}>
               <ClientesSumindo clienteId={cliente.id} />
             </Suspense>
-
-            <Link
-              href={`/clientes/${cliente.id}/relatorios`}
-              className="app-card app-card-interactive flex items-center justify-between gap-3 px-5 py-4"
-            >
-              <span>
-                <span className="block text-[13px] font-bold">Ver relatórios</span>
-                <span className="mt-0.5 block text-[12px] text-dim">
-                  Conversas, espera, satisfação e fechamentos por período.
-                </span>
-              </span>
-              <span aria-hidden className="text-primary">→</span>
-            </Link>
           </aside>
         </div>
       </Miolo>
@@ -370,16 +412,12 @@ function Estado({
   publicados,
   canais,
   atendendo,
-  contatos,
-  ultimaMensagem,
 }: {
   clienteId: string
   fluxos: number
   publicados: number
   canais: number
   atendendo: number
-  contatos: number
-  ultimaMensagem: string | null
 }) {
   // A ordem importa: a primeira peça que falta é a que adianta resolver. Listar
   // tudo que está errado de uma vez faz parecer que há quatro problemas quando
@@ -395,124 +433,28 @@ function Estado({
             ? { texto: 'O canal ligado não aponta para uma automação publicada.', href: '/ajustes' }
             : null
 
+  /*
+   * Só existe quando há o que consertar. A faixa verde "Configurado" ficava
+   * na tela todo dia dizendo a mesma coisa, e aviso que nunca muda ensina a
+   * não olhar: no dia em que ficasse amarela, ninguém notaria a troca.
+   */
+  if (!pendencia) return null
+
   return (
-    <section
-      className={`flex flex-wrap items-center gap-x-6 gap-y-2 rounded-[14px] border px-5 py-3.5 ${
-        pendencia ? 'border-amber-300/35 bg-amber-300/[0.07]' : 'border-line bg-surface'
-      }`}
-    >
+    <section className="mb-5 flex flex-wrap items-center gap-x-6 gap-y-2 rounded-[14px] border border-amber-300/35 bg-amber-300/[0.07] px-5 py-3.5">
       <p className="flex items-center gap-2.5 text-[14px] font-bold">
-        <span
-          aria-hidden
-          className={`size-2.5 rounded-full ${pendencia ? 'bg-amber-300' : 'bg-emerald-400'}`}
-        />
-        {/*
-          "Atendendo agora" era lido como "está recebendo agora", e só dizia que
-          existe cadastro (C01). O selo diz o que se sabe: está configurado, e
-          a última mensagem chegou há tanto tempo. Canal quieto não é falha.
-        */}
-        {pendencia ? 'Ainda não está atendendo' : 'Configurado'}
+        <span aria-hidden className="size-2.5 rounded-full bg-amber-300" />
+        Ainda não está atendendo
       </p>
-
-      <p className="text-[12.5px] text-muted">
-        {pendencia ? (
-          pendencia.texto
-        ) : (
-          <>
-            {ultimaMensagem
-              ? `Última mensagem recebida ${idadeDoEvento(ultimaMensagem)}`
-              : 'Nenhuma mensagem recebida ainda'}{' '}
-            ·{' '}
-            {publicados} {publicados === 1 ? 'automação no ar' : 'automações no ar'} · {canais}{' '}
-            {canais === 1 ? 'canal ligado' : 'canais ligados'} · {contatos}{' '}
-            {contatos === 1 ? 'contato' : 'contatos'}
-          </>
-        )}
-      </p>
-
+      <p className="text-[12.5px] text-muted">{pendencia.texto}</p>
       <span className="flex-1" />
-
-      {pendencia && (
-        <Link
-          href={`/clientes/${clienteId}${pendencia.href}`}
-          className="rounded-lg border border-amber-300/40 bg-amber-300/[0.12] px-3 py-1.5 text-[12px] font-bold transition hover:bg-amber-300/20 active:translate-y-px active:bg-amber-300/30"
-        >
-          Resolver
-        </Link>
-      )}
+      <Link
+        href={`/clientes/${clienteId}${pendencia.href}`}
+        className="rounded-lg border border-amber-300/40 bg-amber-300/[0.12] px-3 py-1.5 text-[12px] font-bold transition hover:bg-amber-300/20 active:translate-y-px active:bg-amber-300/30"
+      >
+        Resolver
+      </Link>
     </section>
-  )
-}
-
-// ---------------------------------------------------------------------------
-// Atalhos
-// ---------------------------------------------------------------------------
-
-/**
- * Os três caminhos que alguém abre a conta para percorrer.
- *
- * Três, e não seis: a barra lateral já lista tudo. Isto aqui é a aposta de para
- * onde a pessoa ia clicar de qualquer jeito, e uma aposta com seis opções não é
- * aposta nenhuma.
- */
-function Atalhos({ clienteId, visiveis }: { clienteId: string; visiveis: AbaDoCliente[] }) {
-  // Só o que a barra também mostra (7.2): atalho para uma tela de "sem acesso"
-  // é convite para um beco.
-  const atalhos = [
-    {
-      href: `/clientes/${clienteId}/inbox`,
-      titulo: 'Conversas',
-      texto: 'Responder quem está falando com o negócio agora.',
-      icone: <IconeConversa className="size-[18px]" />,
-      secao: 'inbox' as const,
-    },
-    {
-      href: `/clientes/${clienteId}/quadros`,
-      titulo: 'Negócios',
-      texto: 'Ver em que ponto cada negociação está.',
-      icone: <IconeFunil className="size-[18px]" />,
-      secao: 'quadros' as const,
-    },
-    {
-      href: `/clientes/${clienteId}/fluxos`,
-      titulo: 'Automações',
-      texto: 'Desenhar e publicar o que o bot responde.',
-      icone: <IconeAutomacao className="size-[18px]" />,
-      secao: 'fluxos' as const,
-    },
-  ].filter((atalho) => visiveis.includes(atalho.secao))
-  if (atalhos.length === 0) return null
-
-  return (
-    <nav aria-label="Atalhos" className={`grid gap-3 ${atalhos.length === 3 ? 'sm:grid-cols-3' : 'sm:grid-cols-2'}`}>
-      {atalhos.map((atalho) => (
-        <Link
-          key={atalho.href}
-          href={atalho.href}
-          className="app-card app-card-interactive group flex items-start gap-3 px-4 py-3.5"
-        >
-          <span
-            aria-hidden
-            className="mt-px grid size-8 shrink-0 place-items-center rounded-[10px] bg-primary-weak text-primary-strong transition group-hover:bg-primary group-hover:text-white"
-          >
-            {atalho.icone}
-          </span>
-
-          <span className="min-w-0 flex-1">
-            <span className="flex items-center justify-between text-[13.5px] font-bold">
-              {atalho.titulo}
-              <span
-                aria-hidden
-                className="text-[13px] text-dim transition group-hover:translate-x-0.5 group-hover:text-primary"
-              >
-                ›
-              </span>
-            </span>
-            <span className="mt-1 block text-[11.5px] leading-[1.45] text-dim">{atalho.texto}</span>
-          </span>
-        </Link>
-      ))}
-    </nav>
   )
 }
 
@@ -546,17 +488,23 @@ async function Fila({
   acesso,
   canais,
   configura,
+  donos,
+  atende: podeAtender,
+  ultimaMensagem,
 }: {
   clienteId: string
   contatos: number
   acesso: AcessoCompleto
   canais: CanalSalvo[]
   configura: boolean
+  donos: Donos
+  atende: boolean
+  ultimaMensagem: string | null
 }) {
   const atende = filtroDoAcesso(acesso, 'atender')
-  const podeAtender = atende.tipo !== 'impossivel'
   const [fila, agenda] = await Promise.all([
-    podeAtender ? filaDoPainel(clienteId) : null,
+    // O mesmo recorte do Inbox: o número daqui bate com o que abre do outro lado.
+    podeAtender ? filaDoPainel(clienteId, undefined, donos) : null,
     podeAtender ? agendaDeHoje(clienteId, atende, acesso.sessao.usuario.id) : null,
   ])
   const pendencias = pendenciasDoInicio({
@@ -575,6 +523,13 @@ async function Fila({
         <h2 id="titulo-fila" className="text-[15px] font-bold tracking-[-0.01em]">
           Precisa de você
         </h2>
+        {/* O que sobrou da faixa "Configurado" que ainda responde alguma
+            coisa: a mensagem mais recente diz que o canal está vivo. */}
+        {ultimaMensagem && (
+          <span className="hidden text-[11.5px] text-dim sm:inline">
+            última mensagem recebida {idadeDoEvento(ultimaMensagem)}
+          </span>
+        )}
         <span className="flex-1" />
         {podeAtender && (
           <Link
@@ -770,6 +725,252 @@ async function ClientesSumindo({ clienteId }: { clienteId: string }) {
       >
         Montar uma régua de retomada →
       </Link>
+    </section>
+  )
+}
+
+// ---------------------------------------------------------------------------
+// Negócios parados e a fila da equipe, na coluna do meio
+// ---------------------------------------------------------------------------
+
+/**
+ * O funil que não anda. A fila de conversas grita sozinha (o cliente escreve
+ * de novo); o cartão parado não grita, só esfria. Some quando não há nenhum.
+ */
+async function NegociosParados({ clienteId, donos }: { clienteId: string; donos: Donos }) {
+  const { itens, total } = await negociosParados(clienteId, donos)
+  if (itens.length === 0) return null
+  const restantes = total - itens.length
+
+  return (
+    <section className="app-card overflow-hidden" aria-labelledby="titulo-parados">
+      <header className="flex items-center gap-3 px-5 py-3.5">
+        <h2 id="titulo-parados" className="text-[15px] font-bold tracking-[-0.01em]">
+          Negócios parados
+        </h2>
+        <span className="rounded-full bg-amber-300/15 px-2 py-0.5 text-[11px] font-bold text-aviso">{total}</span>
+        <span className="hidden text-[11.5px] text-dim sm:inline">
+          há mais de {DIAS_PARADO} dias na mesma etapa
+        </span>
+        <span className="flex-1" />
+        <Link
+          href={`/clientes/${clienteId}/quadros`}
+          className="text-[12px] font-semibold text-primary transition hover:opacity-80 active:opacity-60"
+        >
+          Abrir o funil
+        </Link>
+      </header>
+      <ul>
+        {itens.map((item) => (
+          <li key={item.cartaoId} className="border-t border-line-soft">
+            <Link
+              href={`/clientes/${clienteId}/negocios/${item.cartaoId}`}
+              className="flex flex-wrap items-center gap-x-3.5 gap-y-1 px-5 py-2.5 transition hover:bg-surface active:bg-surface-strong"
+            >
+              <Avatar nome={item.nome} tamanho={32} />
+              <span className="min-w-[120px] flex-1">
+                <span className="block truncate text-[13.5px] font-semibold">{item.nome}</span>
+                {item.titulo && <span className="block truncate text-[11.5px] text-dim">{item.titulo}</span>}
+              </span>
+              {item.etapa && (
+                <span className="shrink-0 truncate rounded-md bg-surface px-2 py-0.5 text-[11.5px] font-medium text-soft">
+                  {item.etapa}
+                </span>
+              )}
+              <span className="w-[84px] shrink-0 text-right text-[12px] text-dim">{haQuantoTempo(item.desde)}</span>
+            </Link>
+          </li>
+        ))}
+      </ul>
+      {restantes > 0 && (
+        <p className="border-t border-line-soft px-5 py-2.5 text-[12px]">
+          <Link href={`/clientes/${clienteId}/quadros`} className="font-semibold text-primary transition hover:opacity-80">
+            {restantes === 1 ? 'ver mais 1 parado' : `ver os outros ${restantes} parados`}
+          </Link>
+        </p>
+      )}
+    </section>
+  )
+}
+
+/**
+ * Quem está afogado e quem está livre, agora. É a pergunta de quem coordena, e
+ * a resposta muda decisão no minuto: passar conversa de uma pessoa para outra.
+ * Só com duas pessoas ou mais no alcance: com uma, é a própria fila de novo.
+ */
+async function EquipeAgora({ clienteId, donos }: { clienteId: string; donos: Donos }) {
+  const [membros, fila] = await Promise.all([membrosDaConta(clienteId), filaPorPessoa(clienteId, donos)])
+  const noAlcance = donos === null ? membros : membros.filter((m) => donos.includes(m.id))
+  if (noAlcance.length < 2) return null
+
+  const linhas = noAlcance
+    .map((m) => ({ ...m, esperando: fila.porPessoa.get(m.id) ?? 0 }))
+    .sort((a, b) => b.esperando - a.esperando || a.nome.localeCompare(b.nome))
+  const maior = Math.max(1, fila.semDono, ...linhas.map((l) => l.esperando))
+  if (fila.semDono === 0 && linhas.every((l) => l.esperando === 0)) return null
+
+  return (
+    <section className="app-card overflow-hidden" aria-labelledby="titulo-equipe">
+      <header className="flex items-center gap-3 px-5 py-3.5">
+        <h2 id="titulo-equipe" className="text-[15px] font-bold tracking-[-0.01em]">
+          Fila da equipe agora
+        </h2>
+        <span className="flex-1" />
+        <Link
+          href={`/clientes/${clienteId}/inbox`}
+          className="text-[12px] font-semibold text-primary transition hover:opacity-80 active:opacity-60"
+        >
+          Distribuir no Inbox
+        </Link>
+      </header>
+      <ul className="border-t border-line-soft py-2">
+        {fila.semDono > 0 && (
+          <LinhaDaEquipe nome="Sem responsável" esperando={fila.semDono} maior={maior} alerta />
+        )}
+        {linhas.map((l) => (
+          <LinhaDaEquipe
+            key={l.id}
+            nome={l.nome}
+            esperando={l.esperando}
+            maior={maior}
+            disponivel={l.presenca === 'disponivel'}
+          />
+        ))}
+      </ul>
+    </section>
+  )
+}
+
+function LinhaDaEquipe({
+  nome,
+  esperando,
+  maior,
+  alerta = false,
+  disponivel,
+}: {
+  nome: string
+  esperando: number
+  maior: number
+  alerta?: boolean
+  disponivel?: boolean
+}) {
+  return (
+    <li className="flex items-center gap-3 px-5 py-1.5">
+      {alerta ? (
+        <span aria-hidden className="grid size-7 shrink-0 place-items-center rounded-full bg-amber-300/20 text-[12px] font-bold text-aviso">
+          ?
+        </span>
+      ) : (
+        <span className="relative shrink-0">
+          <Avatar nome={nome} tamanho={28} />
+          <span
+            title={disponivel ? 'Disponível' : 'Ausente'}
+            className={`absolute -right-0.5 -bottom-0.5 size-2.5 rounded-full ring-2 ring-panel ${disponivel ? 'bg-emerald-400' : 'bg-surface-strong'}`}
+          />
+        </span>
+      )}
+      <span className={`w-[132px] shrink-0 truncate text-[13px] ${alerta ? 'font-semibold text-aviso' : 'font-medium'}`}>
+        {nome}
+      </span>
+      <span className="h-1.5 min-w-0 flex-1 overflow-hidden rounded-full bg-surface">
+        <span
+          className={`block h-full rounded-full ${alerta ? 'bg-amber-300' : 'bg-primary/70'}`}
+          style={{ width: `${(esperando / maior) * 100}%` }}
+        />
+      </span>
+      <span className="w-8 shrink-0 text-right text-[12.5px] font-semibold tabular-nums">{esperando}</span>
+    </li>
+  )
+}
+
+// ---------------------------------------------------------------------------
+// A coluna do dia
+// ---------------------------------------------------------------------------
+
+/**
+ * O dia em três números, no alcance de quem lê. Cada um com a base ao lado
+ * (nada de "%" solto, `docs/PLANO-HOMEPAGE.md` §6), e o tempo sempre em
+ * mediana e média juntas, para a conversa esquecida não sumir na mediana.
+ */
+async function Hoje({ clienteId, donos, contaInteira }: { clienteId: string; donos: Donos; contaInteira: boolean }) {
+  const hoje = hojeEmSaoPaulo()
+  const totais = await totaisDoPeriodo(clienteId, { de: hoje, ate: hoje, dias: 1, atalho: null }, donos)
+  const { conversas, desfechos, tempos } = totais
+
+  return (
+    <section className="app-card px-5 py-4" aria-labelledby="titulo-hoje">
+      <h2 id="titulo-hoje" className="flex items-baseline justify-between gap-2">
+        <span className="text-[12.5px] font-bold text-muted">Hoje</span>
+        <span className="text-[11px] text-dim">{contaInteira ? 'na conta toda' : 'nas suas conversas'}</span>
+      </h2>
+
+      {conversas === 0 ? (
+        <p className="mt-3 text-[13px] leading-6 text-muted">Nenhuma conversa hoje ainda.</p>
+      ) : (
+        <dl className="mt-3 flex flex-col gap-3">
+          <div className="flex items-baseline justify-between gap-3">
+            <dt className="text-[12.5px] text-soft">Conversas</dt>
+            <dd className="text-[20px] font-bold tracking-[-0.02em] tabular-nums">{conversas}</dd>
+          </div>
+          <div className="flex items-baseline justify-between gap-3">
+            <dt className="text-[12.5px] text-soft">Resolvidas pela IA</dt>
+            <dd className="tabular-nums">
+              <span className="text-[17px] font-bold tracking-[-0.02em] text-primary">{desfechos.bot}</span>
+              <span className="text-[12px] text-dim"> de {conversas}</span>
+            </dd>
+          </div>
+          {tempos.responderam > 0 && (
+            <div className="flex items-baseline justify-between gap-3">
+              <dt className="text-[12.5px] text-soft">Até a primeira resposta</dt>
+              <dd className="text-right tabular-nums">
+                <span className="text-[17px] font-bold tracking-[-0.02em]">{comoDuracao(tempos.medianaAteResponder)}</span>
+                <span className="block text-[11px] text-dim">média {comoDuracao(tempos.mediaAteResponder)}</span>
+              </dd>
+            </div>
+          )}
+        </dl>
+      )}
+
+      <Link
+        href={`/clientes/${clienteId}/relatorios`}
+        className="mt-4 inline-block text-[11.5px] font-semibold text-primary hover:underline"
+      >
+        Ver relatórios →
+      </Link>
+    </section>
+  )
+}
+
+/**
+ * Só o que **fechou**, ganho ou perdido, contra os 30 dias anteriores. Valor
+ * de funil aberto fica de fora de propósito (`PLANO-HOMEPAGE.md` §6): cresce
+ * sozinho quando ninguém arquiva o que morreu.
+ */
+async function Fechamentos({ clienteId }: { clienteId: string }) {
+  const agora = new Date()
+  const [atual, antes] = await Promise.all([
+    fechamentos(clienteId, 30, agora),
+    fechamentos(clienteId, 30, new Date(agora.getTime() - 30 * 24 * 60 * 60 * 1000)),
+  ])
+  if (atual.ganhos + atual.perdidos + antes.ganhos + antes.perdidos === 0) return null
+
+  return (
+    <section className="app-card px-5 py-4" aria-labelledby="titulo-fechamentos">
+      <h2 id="titulo-fechamentos" className="flex items-baseline justify-between gap-2">
+        <span className="text-[12.5px] font-bold text-muted">Fechamentos</span>
+        <span className="text-[11px] text-dim">últimos 30 dias</span>
+      </h2>
+      <p className="mt-3 text-[22px] leading-none font-bold tracking-[-0.02em] text-ok tabular-nums">
+        {atual.valor !== null ? comoDinheiro(atual.valor) : `${atual.ganhos} ${atual.ganhos === 1 ? 'ganho' : 'ganhos'}`}
+      </p>
+      <p className="mt-2 text-[12px] text-soft">
+        {atual.valor !== null && `${atual.ganhos} ${atual.ganhos === 1 ? 'ganho' : 'ganhos'} · `}
+        {atual.perdidos} {atual.perdidos === 1 ? 'perdido' : 'perdidos'}
+      </p>
+      <p className="mt-2 border-t border-line-soft pt-2 text-[11.5px] text-dim">
+        30 dias antes: {antes.ganhos} {antes.ganhos === 1 ? 'ganho' : 'ganhos'}
+        {antes.valor !== null && `, ${comoDinheiro(antes.valor)}`}
+      </p>
     </section>
   )
 }

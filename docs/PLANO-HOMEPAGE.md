@@ -216,3 +216,28 @@ estado do Painel, e nada fica órfão.
    existe.
 3. **Acabamento** — "Quem atendeu" só com dois, contagens do topo clicáveis para
    o Inbox já filtrado.
+
+---
+
+## 9. Revisão de 05/out/2026: o Início pelo alcance de quem lê
+
+Pedido do dono, olhando a tela como usuário. O que mudou, e o que continua
+valendo deste plano:
+
+- **A faixa de estado só aparece com problema.** O "Configurado" verde ficava na
+  tela todo dia; aviso que nunca muda ensina a não olhar. A "última mensagem
+  recebida" foi para o cabeçalho da fila. Só quem configura vê a faixa.
+- **O convite do assistente** (`/configurar`) some quando a conta está de pé.
+  Antes olhava só `clients.onboarding.status`, e conta montada por
+  Configurações era chamada a "definir o objetivo" para sempre.
+- **Uma página, montada pelo alcance**, e não uma página por cargo: os cargos
+  são regras configuráveis, e página fixa por cargo quebra no primeiro cargo
+  personalizado. A fila usa `alcanceDeConversas`, o mesmo recorte do Inbox.
+- **Entram:** Negócios parados (7 dias na etapa, por responsável do cartão),
+  Fila da equipe agora (quem coordena, duas pessoas ou mais), Hoje (conversas,
+  resolvidas pela IA com a base, mediana e média até responder) e Fechamentos
+  de 30 dias contra os 30 anteriores (só quem vê a conta toda e `ler_valores`).
+- **Saem:** os Atalhos (repetiam a barra lateral), o cartão de Relatórios (virou
+  link no bloco Hoje) e "Como funciona", que agora só aparece enquanto falta
+  passo. Isso revoga a linha "fica sempre" do §4.
+- **Continua valendo o §6:** nada de valor de funil aberto, nada de "%" sem base.
