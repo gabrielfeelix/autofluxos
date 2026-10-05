@@ -40,7 +40,7 @@ export function MenuDeAjustes({ clienteId, ativa: ativaRecebida }: { clienteId?:
   const router = useRouter()
   const endereco = (chave: TelaDeAjustes) => `/clientes/${clienteId}/ajustes${chave === 'inicio' ? '' : `/${chave}`}`
   const grupos = GRUPOS.map((grupo) => ({ ...grupo, itens: grupo.itens.filter((item) => normalizar(`${grupo.titulo ?? ''} ${item.rotulo} ${sinonimos[item.chave] ?? ''}`).includes(normalizar(busca.trim()))) })).filter((grupo) => grupo.itens.length)
-  return <nav aria-label="Configurações" className="shrink-0 border-b border-line p-4 md:w-[228px] md:border-b-0 md:border-r md:px-4 md:py-6">
+  return <nav aria-label="Configurações" className="shrink-0 border-b border-line p-4 md:h-full md:w-[228px] md:overflow-y-auto md:border-b-0 md:border-r md:px-4 md:py-6">
     <label htmlFor="buscar-configuracao" className="mb-2 block text-xs font-semibold text-muted">Buscar configuração</label>
     <input id="buscar-configuracao" type="search" value={busca} onChange={(event) => setBusca(event.target.value)} placeholder="Nome ou assunto…" className="mb-3 w-full rounded-lg border border-line bg-panel px-3 py-2 text-xs outline-none focus:border-primary" />
     <label className="block md:hidden"><span className="sr-only">Seção de configurações</span><select disabled={!clienteId} value={ativa} onChange={(event) => router.push(endereco(event.target.value as TelaDeAjustes))} className="w-full rounded-lg border border-line bg-panel p-2.5 text-sm">

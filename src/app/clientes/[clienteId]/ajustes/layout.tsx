@@ -22,10 +22,15 @@ export default async function LayoutDeAjustes({
   const acesso = await acessoCompleto(clienteId)
   if (!liberaSecao(acesso.regras, 'ajustes')) return children
 
+  /*
+   * Duas rolagens, uma por coluna: o menu das configurações fica parado
+   * enquanto a tela ao lado rola, e rola sozinho se um dia não couber. Antes
+   * os dois eram filhos da mesma rolagem do miolo e subiam juntos.
+   */
   return (
-    <div className="flex min-h-full flex-col md:flex-row">
+    <div className="flex min-h-full flex-col md:h-full md:flex-row">
       <MenuDeAjustes clienteId={clienteId} />
-      <div className="min-w-0 flex-1">{children}</div>
+      <div className="min-w-0 flex-1 md:h-full md:overflow-y-auto">{children}</div>
     </div>
   )
 }
