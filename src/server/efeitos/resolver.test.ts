@@ -1260,3 +1260,60 @@ describe('cardápio próprio do bloco de IA', () => {
     expect(pdf?.tipo === 'enviar_midia' && pdf.nomeArquivo).toBe('Cardápio Burger.pdf')
   })
 })
+
+describe('toque num menu antigo quando o fluxo abre com uma consulta', () => {
+  /*
+   * MGM, 05/out/2026: o fluxo reconhece o número na Verandi antes do menu. A
+   * Luana tocou "Aula experimental" no menu anterior e recebeu a saudação de
+   * novo, porque o motor parou na consulta e a escolha se perdeu.
+   */
+  const comConsulta = fluxoSchema.parse({
+    inicio: 'reconhecer',
+    nodes: [
+      { id: 'reconhecer', type: 'http', position: { x: 0, y: 0 }, data: { url: 'https://e.com' } },
+      {
+        id: 'menu',
+        type: 'pergunta',
+        position: { x: 0, y: 0 },
+        data: {
+          texto: 'O que você procura?',
+          opcoes: [
+            { id: 'experimental', rotulo: 'Aula experimental' },
+            { id: 'saber-mais', rotulo: 'Quero saber mais' },
+          ],
+        },
+      },
+      { id: 'exp', type: 'mensagem', position: { x: 0, y: 0 }, data: { texto: 'Vamos marcar sua aula' } },
+      { id: 'info', type: 'mensagem', position: { x: 0, y: 0 }, data: { texto: 'Sobre o estúdio' } },
+    ],
+    edges: [
+      { id: 'a1', source: 'reconhecer', target: 'menu' },
+      { id: 'a2', source: 'menu', target: 'exp', sourceHandle: 'experimental' },
+      { id: 'a3', source: 'menu', target: 'info', sourceHandle: 'saber-mais' },
+    ],
+  })
+
+  const semIa = { modelo: null, contextoNegocio: '', origem: 'whatsapp' as const }
+
+  beforeEach(() => {
+    chamarHttp.mockReset()
+    chamarHttp.mockResolvedValue({ ok: true, valores: {} })
+  })
+
+  it('a opção tocada vale como resposta depois da consulta, sem repetir o menu', async () => {
+    const r = await executarComEfeitos(comConsulta, sessaoNova(), { tipo: 'inicio', opcaoId: 'experimental' }, semIa)
+    expect(r.acoes.some((a) => a.tipo === 'enviar_opcoes')).toBe(false)
+    expect(r.acoes).toContainEqual(expect.objectContaining({ tipo: 'enviar_texto', texto: 'Vamos marcar sua aula' }))
+  })
+
+  it('opção que o menu não tem mostra o menu', async () => {
+    const r = await executarComEfeitos(comConsulta, sessaoNova(), { tipo: 'inicio', opcaoId: 'reagendar' }, semIa)
+    expect(r.acoes.some((a) => a.tipo === 'enviar_opcoes')).toBe(true)
+    expect(r.sessao.noAtual).toBe('menu')
+  })
+
+  it('sem opção, o menu de sempre', async () => {
+    const r = await executarComEfeitos(comConsulta, sessaoNova(), { tipo: 'inicio' }, semIa)
+    expect(r.acoes.some((a) => a.tipo === 'enviar_opcoes')).toBe(true)
+  })
+})

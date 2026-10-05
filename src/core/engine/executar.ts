@@ -413,28 +413,8 @@ export function executar(
     s.tentativas = 0
     const inicio = avancar(contexto, fluxo, porId, s, acoes, fluxo.inicio)
 
-    /*
-     * Conversa nova aberta pelo toque numa opção de um menu antigo.
-     *
-     * Acontece depois de um fluxo que termina (o Encaminhar da PCYES): a
-     * conversa acabou, o menu anterior continua na tela, e a pessoa toca em
-     * outra opção. Recomeçar com a saudação ignora o que ela escolheu e a faz
-     * tocar de novo. Então, se o início para numa pergunta que tem essa mesma
-     * opção, a pergunta não é repetida e a escolha vale como resposta. Opção
-     * que o menu de hoje não tem cai no recomeço de sempre.
-     */
-    const parada = inicio.sessao.noAtual === null ? undefined : porId.get(inicio.sessao.noAtual)
-    if (
-      entrada.opcaoId &&
-      inicio.sessao.status === 'ativa' &&
-      parada?.type === 'pergunta' &&
-      resolverOpcoes(parada, inicio.sessao.vars).some((o) => o.id === entrada.opcaoId)
-    ) {
-      const repetida = perguntar(parada, inicio.sessao).length
-      const antes = inicio.acoes.slice(0, inicio.acoes.length - repetida)
-      const escolha = executar(fluxo, inicio.sessao, { tipo: 'opcao', opcaoId: entrada.opcaoId }, contexto)
-      return { acoes: [...antes, ...escolha.acoes], sessao: escolha.sessao }
-    }
+    const escolha = entrada.opcaoId ? escolhaNoMenuDoInicio(fluxo, inicio, entrada.opcaoId, contexto) : null
+    if (escolha) return escolha
     /*
      * **A primeira mensagem sempre abre o menu**, diga ela o que disser
      * (decisão do dono, 02/out/2026). A frase não é resposta: a pessoa ainda
@@ -1735,6 +1715,42 @@ function conversandoComIa(porId: Map<string, No>, s: Sessao): NoIa | null {
 export function pediuSaidaDaIa(texto: string): boolean {
   const sozinha = normalizar(texto).replace(/[^\p{L}\s]/gu, '').replace(/\s+/g, ' ').trim()
   return PALAVRAS_DE_SAIDA_DA_IA.includes(sozinha)
+}
+
+/**
+ * Conversa nova aberta pelo toque numa opção de um menu antigo.
+ *
+ * Acontece depois de um fluxo que termina (o Encaminhar da PCYES): a conversa
+ * acabou, o menu anterior continua na tela, e a pessoa toca em outra opção.
+ * Recomeçar com a saudação ignora o que ela escolheu e a faz tocar de novo.
+ * Então, se o início parou numa pergunta que tem essa mesma opção, a pergunta
+ * não é repetida e a escolha vale como resposta. Opção que o menu de hoje não
+ * tem devolve `null`, e cai no recomeço de sempre.
+ *
+ * Exportada porque o início nem sempre para no menu dentro do motor: fluxo que
+ * abre consultando outro sistema (a MGM reconhece o número na Verandi) para no
+ * bloco de API, e o menu só aparece depois que o resolvedor traz a resposta.
+ * Sem chamar isto de lá, a escolha se perdia: Luana, MGM, 05/out/2026, tocou
+ * "Aula experimental" e recebeu a saudação de novo.
+ */
+export function escolhaNoMenuDoInicio(
+  fluxo: Fluxo,
+  inicio: Resultado,
+  opcaoId: string,
+  contexto: ContextoDoAtendimento = ATENDIMENTO_SEMPRE_ABERTO,
+): Resultado | null {
+  const parada = inicio.sessao.noAtual === null ? undefined : indexar(fluxo).get(inicio.sessao.noAtual)
+  if (
+    inicio.sessao.status !== 'ativa' ||
+    parada?.type !== 'pergunta' ||
+    !resolverOpcoes(parada, inicio.sessao.vars).some((o) => o.id === opcaoId)
+  ) {
+    return null
+  }
+  const repetida = perguntar(parada, inicio.sessao).length
+  const antes = inicio.acoes.slice(0, inicio.acoes.length - repetida)
+  const escolha = executar(fluxo, inicio.sessao, { tipo: 'opcao', opcaoId }, contexto)
+  return { acoes: [...antes, ...escolha.acoes], sessao: escolha.sessao }
 }
 
 function indexar(fluxo: Fluxo): Map<string, No> {

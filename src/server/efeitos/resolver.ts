@@ -1,7 +1,7 @@
 import 'server-only'
 import { legendaDoManual, manualEmPdf, nomeDoArquivoDoManual } from '@/core/manuais'
 import { envioDoCardapio } from '@/core/materiais'
-import { ATENDIMENTO_SEMPRE_ABERTO, avisoDeForaDoHorario, executar } from '@/core/engine/executar'
+import { ATENDIMENTO_SEMPRE_ABERTO, avisoDeForaDoHorario, escolhaNoMenuDoInicio, executar } from '@/core/engine/executar'
 import type { ContextoDoAtendimento } from '@/core/engine/executar'
 import type { Acao, Entrada, Resultado, Sessao } from '@/core/engine/types'
 import type { FonteDoCatalogo, Fluxo } from '@/core/flow/schema'
@@ -282,6 +282,28 @@ async function rodar(
 
   let resultado = executar(fluxo, sessao, entrada, atendimento)
 
+  /*
+   * O toque num menu antigo que abriu esta conversa, guardado até o menu chegar.
+   *
+   * O motor já aproveita a escolha quando o início para direto no menu. Quando
+   * para antes, numa consulta (a MGM reconhece o número na Verandi), o menu só
+   * aparece depois da resposta, e é ali que a escolha vale. Só se guarda se o
+   * motor parou numa consulta: se não parou, ele já decidiu, e reaplicar
+   * poderia responder uma segunda pergunta que tenha a mesma opção.
+   */
+  let escolhaAdiada =
+    entrada.tipo === 'inicio' && entrada.opcaoId && resultado.acoes.some((a) => a.tipo === 'chamar_http' && !a.simulada)
+      ? entrada.opcaoId
+      : undefined
+  /** Depois de cada consulta: o menu chegou? Então a escolha vale (uma vez só). */
+  const comEscolhaAdiada = (seguinte: Resultado): Resultado => {
+    if (!escolhaAdiada) return seguinte
+    if (seguinte.acoes.some((a) => a.tipo === 'chamar_http' && !a.simulada)) return seguinte
+    const opcaoId = escolhaAdiada
+    escolhaAdiada = undefined
+    return escolhaNoMenuDoInicio(fluxoAtual, seguinte, opcaoId, atendimento) ?? seguinte
+  }
+
   /**
    * O fluxo pode trocar no meio da rodada, e a partir daí é ele que vale.
    *
@@ -321,7 +343,7 @@ async function rodar(
        * tela dizer "chamaria" em vez de calar um passo do desenho.
        */
       if (opcoes.semRede) {
-        const seguinte = executar(
+        const seguinte = comEscolhaAdiada(executar(
           fluxoAtual,
           resultado.sessao,
           {
@@ -331,7 +353,7 @@ async function rodar(
             ),
           },
           atendimento,
-        )
+        ))
 
         resultado = {
           acoes: [
@@ -423,7 +445,7 @@ async function rodar(
       // texto. Zerar explicitamente importa, sem isso, uma segunda chamada que
       // falha deixaria o valor da primeira em pé, e a mensagem para o cliente
       // mostraria dado velho como se fosse fresco.
-      const seguinte = executar(
+      const seguinte = comEscolhaAdiada(executar(
         fluxoAtual,
         resultado.sessao,
         {
@@ -433,7 +455,7 @@ async function rodar(
             : Object.fromEntries(chamadaHttp.mapear.map((m) => [m.variavel, ''])),
         },
         atendimento,
-      )
+      ))
 
       resultado = {
         acoes: [...semEfeito(resultado.acoes, 'chamar_http'), ...seguinte.acoes],
