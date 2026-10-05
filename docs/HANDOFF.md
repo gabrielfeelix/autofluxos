@@ -1,5 +1,9 @@
 # Handoff: 19/ago/2026, atualizado em 04/set
 
+> **Rodada de 05/out/2026 (UI, IA, login, MGM/Verandi):** o que entrou, o bug
+> de sessão do "Adicionar usuário" e o que falta ver em print em
+> [HANDOFF-05-OUT-SESSAO.md](HANDOFF-05-OUT-SESSAO.md).
+
 > **Ligação pelo WhatsApp no Inbox (01/out/2026): PAUSADA pelo dono.** Fase 0
 > pela metade (sonda pronta, nunca testada com ligação real). Onde parou e como
 > retomar em [HANDOFF-01-OUT-LIGACAO-WHATSAPP.md](HANDOFF-01-OUT-LIGACAO-WHATSAPP.md).
