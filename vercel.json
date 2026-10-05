@@ -19,6 +19,10 @@
     {
       "path": "/api/manutencao/webhooks",
       "schedule": "45 7 * * *"
+    },
+    {
+      "path": "/api/manutencao/duvidas",
+      "schedule": "0 8 * * *"
     }
   ]
 }

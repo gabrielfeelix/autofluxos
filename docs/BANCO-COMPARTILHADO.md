@@ -1275,6 +1275,27 @@ extração explícito para os objetos de `public`.
 - nunca deve executar o aplicador da Verandi nem registrar versão em
   `app_verandi.migrations_aplicadas`.
 
+- **a `0125` e a `0126` foram aplicadas em 05/out/2026**, com autorização
+  explícita do dono, pela Management API, nessa ordem. Antes, conferido pelos
+  objetos que a `0123` (`af_atendentes.ultimo_lead_em`) e a `0124`
+  (`public.preparar_onboarding`) já estavam na produção. A **`0125`** cria
+  `public.duvidas`, `public.duvidas_lidas` e `public.apelidos_de_tema`
+  (dúvidas do atendimento, ver `src/core/duvidas.ts`), aditiva, RLS ligada,
+  só `service_role`. A **`0126`** conserta o que a `0125` esqueceu: o pool dos
+  relatórios entra como `autofluxos_dados` (0115), e não como `service_role`;
+  dá o mínimo por tabela (`duvidas` select/insert; `duvidas_lidas`
+  select/insert/update; `apelidos_de_tema` os quatro) e a política
+  `dados_do_autofluxos`. **Quem criar tabela nova lida por `bancoDeDados()`
+  precisa da mesma concessão**, senão o relatório quebra com
+  `permission denied`. Conferidas pelo ensaio em transação contra a produção
+  (cada uma com `rollback`, releitura em zero) e, depois de aplicar, pelo
+  catálogo: RLS ligada nas três, `anon`/`authenticated` sem privilégio, os
+  grants de `autofluxos_dados` exatamente os acima, três políticas.
+  `set role autofluxos_dados` pela Management API é recusado (o usuário da API
+  não é membro), então a prova de acesso real fica para o primeiro uso.
+  Verandi com **42** tabelas, igual a antes. Desfazer: `drop table
+  public.apelidos_de_tema, public.duvidas_lidas, public.duvidas`.
+
 ### Testar migration antes de produção, em Docker
 
 O projeto de produção é dividido com a Verandi e **não tem backup**. Antes de

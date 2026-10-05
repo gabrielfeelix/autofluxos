@@ -17,6 +17,8 @@ import { capacidadeNaPagina, filtroDoAcesso } from '@/server/permissoes'
 import { SemAcesso } from '@/components/design/sem-acesso'
 import { acharCliente } from '@/server/repos/clientes'
 import { arranjoDaAnalise } from '@/server/preferencias'
+import { duvidasDoPeriodo, perguntasQueAIANaoSoube } from '@/server/repos/duvidas'
+import { PerguntasSemResposta, PrincipaisDuvidas } from '@/components/relatorios/duvidas'
 import { lojaVisivel } from '@/server/repos/recursos'
 import {
   atendimentosPorPessoa,
@@ -125,6 +127,26 @@ export default async function Pagina({
   const porConversa = enviadas.conversas === 0 ? null : enviadas.total / enviadas.conversas
   const cupons = await cuponsDoChat(clienteId, periodo, responsaveis)
   const arranjo = await arranjoDaAnalise('atendimento')
+  // Tabela da 0125: antes de ela existir, o card mostra o vazio em vez de
+  // derrubar o relatório inteiro.
+  const naoSoube = await perguntasQueAIANaoSoube(clienteId, periodo, responsaveis).catch((erro) => {
+    console.error('[relatorios] perguntas que a IA não soube:', erro)
+    return []
+  })
+  const duvidas = await duvidasDoPeriodo(clienteId, periodo, responsaveis).catch((erro) => {
+    console.error('[relatorios] dúvidas do período:', erro)
+    return []
+  })
+  const podeEnsinar = pode(acesso.regras, 'configurar_operacao', 'todos')
+  // As lacunas vêm de dois lugares: a passagem gravada quando a IA disse "não
+  // sei" (com a resposta que a equipe deu depois) e as dúvidas classificadas
+  // que a IA não respondeu. As duas são o que falta no conhecimento.
+  const lacunas = [
+    ...naoSoube,
+    ...duvidas
+      .filter((d) => d.resolvidaPor !== 'ia')
+      .map((d) => ({ contatoId: d.contatoId, pergunta: d.pergunta, respostaDaEquipe: null, em: d.em })),
+  ]
 
   const blocos: Bloco[] = [
     {
@@ -230,6 +252,18 @@ export default async function Pagina({
           )}
         </CaixaDoBloco>
       ),
+    },
+    {
+      id: 'duvidas',
+      titulo: 'Principais dúvidas',
+      largura: 'metade',
+      conteudo: <PrincipaisDuvidas clienteId={clienteId} duvidas={duvidas} podeEditar={podeEnsinar} />,
+    },
+    {
+      id: 'nao-soube',
+      titulo: 'IA não respondeu',
+      largura: 'metade',
+      conteudo: <PerguntasSemResposta clienteId={clienteId} perguntas={lacunas} podeEditar={podeEnsinar} />,
     },
     {
       id: 'horarios',
