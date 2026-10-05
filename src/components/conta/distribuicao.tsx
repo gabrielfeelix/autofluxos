@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useTransition } from 'react'
+import { useRef, useState, useTransition } from 'react'
 import { Dropdown } from '@/components/design/dropdown'
 import { entraPorPadrao } from '@/core/rodizio'
 import {
@@ -221,6 +221,9 @@ function LinhaDoAtendente({
 }) {
   const [teto, setTeto] = useState(String(pessoa.tetoSimultaneo ?? 0))
   const [erro, setErro] = useState<string | null>(null)
+  // O último par que o servidor aceitou: se a gravação falha, a tela volta
+  // para ele, em vez de mostrar um valor que não está no banco.
+  const gravado = useRef({ entra, teto })
   // Sem travar os controles enquanto grava (25/set): a tela já mudou, e o
   // servidor não redesenha mais a página (`gestoSemRecarregar`).
   const [, salvar] = useTransition()
@@ -232,7 +235,13 @@ function LinhaDoAtendente({
         entraNoRodizio: proximo.entra,
         tetoSimultaneo: Number(proximo.teto) || 0,
       })
-      if (!r.ok) setErro(r.erro ?? 'não deu para salvar')
+      if (r.ok) {
+        gravado.current = proximo
+        return
+      }
+      setErro(r.erro ?? 'não deu para salvar')
+      setTeto(gravado.current.teto)
+      aoMudarEntra(gravado.current.entra)
     })
   }
 

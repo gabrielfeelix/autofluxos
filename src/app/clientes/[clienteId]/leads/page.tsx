@@ -422,7 +422,7 @@ function colunasDosCampos(leads: Lead[]): string[] {
 }
 
 async function Tabela({ filtro, etiquetasDaConta }: { filtro: Filtro; etiquetasDaConta: Etiqueta[] }) {
-  const { clienteId, etiqueta, marca, termo, nivel } = filtro
+  const { clienteId, etiqueta, marca, termo, nivel, segmento } = filtro
   const [{ leads, total, pagina, paginas, faixas }, quadrosDaConta, equipe] = await Promise.all([
     ler(filtro),
     listarQuadros(clienteId),
@@ -448,7 +448,7 @@ async function Tabela({ filtro, etiquetasDaConta }: { filtro: Filtro; etiquetasD
   const ultimoDaPagina = primeiroDaPagina + leads.length - 1
   const base = `/clientes/${clienteId}/leads`
   const daPagina = (n: number) => {
-    const endereco = enderecoDosContatos(base, { etiqueta, marca, busca: termo, nivel })
+    const endereco = enderecoDosContatos(base, { etiqueta, marca, busca: termo, nivel, segmento })
     return n > 1 ? `${endereco}${endereco.includes('?') ? '&' : '?'}pagina=${n}` : endereco
   }
 

@@ -69,7 +69,12 @@ export function CartaoDaPagina({
           <button
             type="button"
             disabled={saindo}
-            onClick={() => comecar(() => void acaoDesligarPagina(clienteId, pageId))}
+            onClick={() =>
+              comecar(async () => {
+                const r = await acaoDesligarPagina(clienteId, pageId).catch(() => ({ ok: false, erro: 'sem conexão com o servidor' }))
+                if (!r.ok) setResultado(r.erro ?? 'não deu para desligar a página')
+              })
+            }
             className="botao-secundario botao-sm"
           >
             {saindo ? 'Desligando…' : 'Desligar'}
