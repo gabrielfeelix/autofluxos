@@ -80,24 +80,23 @@ select nullif(trim(q.motivo), '') as motivo, count(*)::int as n
  group by 1`
 
 /*
- * Quem vendeu: o responsável do negócio, e na falta dele quem registrou a
- * venda, e na falta dos dois quem é dono do contato. Em 05/out/2026 nenhum
- * dos 107 negócios de produção tinha responsável: o cartão nasce sem dono, e o
- * ranking só mostraria "sem responsável" numa conta que tem equipe atendendo.
+ * Quem vendeu: o responsável do negócio, e na falta dele quem é dono do
+ * contato. Em 05/out/2026 nenhum dos 107 negócios de produção tinha
+ * responsável: o cartão nasce sem dono, e o ranking só mostraria "sem
+ * responsável" numa conta que tem equipe atendendo.
+ *
+ * Quem registrou a venda (`vendas.autor`) ficou de fora: o papel que lê os
+ * relatórios (`autofluxos_dados`) não tem `select` em `vendas`, e a consulta
+ * derrubou a tela em produção.
  */
 const SQL_DA_EQUIPE = `
 with ${LIMITES}
-select coalesce(q.responsavel, v.autor, c.atribuido_a) as usuario_id,
+select coalesce(q.responsavel, c.atribuido_a) as usuario_id,
        count(*) filter (where q.situacao = 'ganha')::int as ganhos,
        count(*) filter (where q.situacao = 'perdida')::int as perdidos,
        sum(q.valor) filter (where q.situacao = 'ganha') as valor,
        avg(extract(epoch from (q.fechado_em - q.criado_em))) filter (where q.situacao = 'ganha')::bigint as segundos_ate_ganhar
   from public.quadro_cartoes q
-  left join lateral (
-    select vv.autor from public.vendas vv
-     where vv.cartao_id = q.id and vv.client_id = $1 and vv.situacao = 'valida'
-     order by vv.criado_em desc limit 1
-  ) v on true
   left join public.contacts c on c.id = q.contact_id,
        lim
  where ${DO_RECORTE}
@@ -285,39 +284,19 @@ select col.id, col.nome, col.ordem,
  order by col.ordem`
 
 /*
- * O que vendeu: os itens da venda registrada, quando o ganho teve venda com
- * itens; senão, o produto de interesse do negócio. Lia só o produto de
- * interesse, e uma venda registrada com três produtos contava como nenhum.
- * `n` é quantos negócios levaram o produto, `valor` é o que ele somou.
+ * O que vendeu, pelo produto de interesse do negócio. Os itens da venda
+ * registrada (`venda_itens`) seriam a fonte melhor, mas o papel dos
+ * relatórios ainda não lê `vendas`: ver o comentário de `SQL_DA_EQUIPE`.
  */
 const SQL_DOS_PRODUTOS = `
-with ${LIMITES},
-ganhos as (
-  select q.id, q.produto_id, q.valor
-    from public.quadro_cartoes q, lim
-   where ${DO_RECORTE}
-     and q.situacao = 'ganha'
-     and q.fechado_em >= lim.ini and q.fechado_em < lim.fim
-),
-itens as (
-  select g.id as cartao,
-         coalesce(p.nome, nullif(btrim(i.descricao), '')) as produto,
-         i.quantidade * i.valor_unitario as valor
-    from ganhos g
-    join public.vendas v on v.cartao_id = g.id and v.client_id = $1 and v.situacao = 'valida'
-    join public.venda_itens i on i.venda_id = v.id
-    left join public.produtos p on p.id = i.produto_id
-),
-linhas as (
-  select cartao, produto, valor from itens
-  union all
-  select g.id, p.nome, g.valor
-    from ganhos g
-    left join public.produtos p on p.id = g.produto_id
-   where not exists (select 1 from itens i where i.cartao = g.id)
-)
-select produto, count(distinct cartao)::int as n, sum(valor) as valor
-  from linhas
+with ${LIMITES}
+select p.nome as produto, count(*)::int as n, sum(q.valor) as valor
+  from public.quadro_cartoes q
+  left join public.produtos p on p.id = q.produto_id,
+       lim
+ where ${DO_RECORTE}
+   and q.situacao = 'ganha'
+   and q.fechado_em >= lim.ini and q.fechado_em < lim.fim
  group by 1`
 
 const SQL_DA_ORIGEM = `

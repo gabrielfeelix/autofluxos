@@ -229,11 +229,27 @@ export function PainelDeEmojis({
         style={{ fontFamily: 'var(--font-emoji)' }}
       >
         {categorias === null ? (
-          <p className="py-10 text-center text-[12.5px] text-dim">Carregando os emojis…</p>
+          /*
+            O esqueleto da grade, e não só a frase. A frase saía na fonte de
+            emoji que o contêiner usa para os botões, enorme e quebrada em duas
+            linhas (05/out/2026): o texto aqui leva a fonte da interface.
+          */
+          <div role="status" className="pt-3" style={{ fontFamily: 'var(--font-outfit), sans-serif' }}>
+            <div className="mb-2 h-3 w-20 animate-pulse rounded bg-surface-strong" />
+            <div className="grid grid-cols-9 gap-1.5">
+              {Array.from({ length: 36 }, (_, i) => (
+                <span key={i} className="mx-auto size-7 animate-pulse rounded-full bg-surface" />
+              ))}
+            </div>
+            <p className="mt-3 text-center text-[12px] text-dim">Carregando os emojis…</p>
+          </div>
         ) : procurando ? (
           <Secao nome={achados.length > 0 ? 'Resultados' : undefined}>
             {achados.length === 0 ? (
-              <p className="col-span-9 px-1 py-8 text-center text-[12.5px] leading-5 text-dim">
+              <p
+                className="col-span-9 px-1 py-8 text-center text-[12.5px] leading-5 text-dim"
+                style={{ fontFamily: 'var(--font-outfit), sans-serif' }}
+              >
                 Nada com esse nome. Tente uma palavra só, como &ldquo;festa&rdquo;, &ldquo;obrigado&rdquo; ou &ldquo;dinheiro&rdquo;.
               </p>
             ) : (
@@ -257,7 +273,10 @@ export function PainelDeEmojis({
 function Secao({ chave, nome, children }: { chave?: string; nome?: string; children: ReactNode }) {
   return (
     <section data-secao={chave} className="[content-visibility:auto] [contain-intrinsic-size:auto_400px]">
-      {nome && <h3 className="px-1 pt-3 pb-1.5 font-sans text-[12px] font-semibold text-muted">{nome}</h3>}
+      {nome && <h3
+          className="px-1 pt-3 pb-1.5 text-[12px] font-semibold text-muted"
+          style={{ fontFamily: 'var(--font-outfit), sans-serif' }}
+        >{nome}</h3>}
       <div className="grid grid-cols-9">{children}</div>
     </section>
   )
