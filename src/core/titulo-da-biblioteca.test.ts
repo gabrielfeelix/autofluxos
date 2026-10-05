@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { tituloDaBiblioteca } from './titulo-da-biblioteca'
+import { tituloDaBiblioteca, tituloDoModelo } from './titulo-da-biblioteca'
 
 describe('tituloDaBiblioteca', () => {
   it('usa a tabela e ignora o número no fim', () => {
@@ -15,5 +15,14 @@ describe('tituloDaBiblioteca', () => {
 
   it('mantém o original quando sobra palavra desconhecida', () => {
     expect(tituloDaBiblioteca('loyalty_points_update')).toBe('Loyalty points update')
+  })
+})
+
+describe('tituloDoModelo', () => {
+  it('tira o carimbo e a versão e traduz', () => {
+    expect(tituloDoModelo('account_creation_confirmation_3_202610051827')).toBe('Confirmação de conta criada')
+  })
+  it('modelo nosso em português só perde os sublinhados', () => {
+    expect(tituloDoModelo('lembrete_de_consulta_202610051827')).toBe('Lembrete de consulta')
   })
 })

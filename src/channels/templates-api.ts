@@ -1,7 +1,9 @@
 import {
   componentesParaMeta,
+  LIMITE_POR_TIPO_DE_BOTAO,
   statusDaMeta,
   type Categoria,
+  type TipoDeBotao,
   type Componentes,
   type Exemplos,
   type StatusDoTemplate,
@@ -269,6 +271,61 @@ export async function listarTemplatesDaMeta(entrada: {
 export type RespostaSimples = { ok: true } | { ok: false; erro: ErroDaMeta }
 
 /**
+ * Os componentes de um template já criado, como a Meta guardou.
+ *
+ * O modelo pronto da biblioteca nasce com o texto **dela**, que não passa por
+ * nós na criação. Sem ler de volta, a lista mostrava o modelo sem mensagem
+ * nenhuma. `null` quando a Meta não respondeu: o texto é conforto, não regra.
+ */
+export async function lerComponentesDaMeta(entrada: {
+  wabaTemplateId: string
+  token: string
+  versaoGraph?: string
+}): Promise<Componentes | null> {
+  try {
+    const url = new URL(`https://graph.facebook.com/${versaoGraph(entrada.versaoGraph)}/${entrada.wabaTemplateId}`)
+    url.searchParams.set('fields', 'components')
+    const resposta = await fetch(url, {
+      headers: { Authorization: `Bearer ${entrada.token}` },
+      signal: AbortSignal.timeout(TIMEOUT_MS),
+    })
+    const corpo = (await resposta.json().catch(() => null)) as { components?: unknown[] } | null
+    if (!resposta.ok || !Array.isArray(corpo?.components)) return null
+    return componentesDaMeta(corpo.components)
+  } catch {
+    return null
+  }
+}
+
+/** O `components` da Meta no nosso formato. */
+export function componentesDaMeta(lista: unknown[]): Componentes {
+  const componentes: Componentes = { corpo: '' }
+  for (const bruto of lista) {
+    const item = bruto as Record<string, unknown>
+    const tipo = texto(item.type).toUpperCase()
+    if (tipo === 'BODY') componentes.corpo = texto(item.text)
+    if (tipo === 'FOOTER') componentes.rodape = texto(item.text)
+    if (tipo === 'HEADER') {
+      const formato = texto(item.format).toUpperCase()
+      if (formato === 'TEXT') componentes.cabecalho = { tipo: 'texto', texto: texto(item.text) }
+      if (formato === 'IMAGE') componentes.cabecalho = { tipo: 'imagem' }
+      if (formato === 'VIDEO') componentes.cabecalho = { tipo: 'video' }
+      if (formato === 'DOCUMENT') componentes.cabecalho = { tipo: 'documento' }
+    }
+    if (tipo === 'BUTTONS' && Array.isArray(item.buttons)) {
+      componentes.botoes = item.buttons.flatMap((b) => {
+        const botao = b as Record<string, unknown>
+        const tipoDoBotao = texto(botao.type).toUpperCase()
+        if (!(tipoDoBotao in LIMITE_POR_TIPO_DE_BOTAO)) return []
+        const valor = texto(botao.url) || texto(botao.phone_number)
+        return [{ tipo: tipoDoBotao as TipoDeBotao, texto: texto(botao.text), ...(valor ? { valor } : {}) }]
+      })
+    }
+  }
+  return componentes
+}
+
+/**
  * Apaga o template na Meta.
  *
  * **Apagar não devolve o nome na hora.** A Meta guarda o nome por 30 dias
@@ -367,7 +424,7 @@ export type BotaoDaBiblioteca = {
  * rótulo já é da Meta.
  */
 export type EntradaDeBotao =
-  | { type: 'URL'; url: { base_url: string; url_suffix_example: string } }
+  | { type: 'URL'; url: { base_url: string; url_suffix_example?: string } }
   | { type: 'PHONE_NUMBER'; phone_number: string }
   | { type: 'QUICK_REPLY' }
 

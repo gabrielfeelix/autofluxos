@@ -6,6 +6,9 @@ import { acaoApagarTemplate } from '@/server/acoes-transmissoes'
 import type { Template } from '@/server/repos/templates'
 import { useConfirmar } from '@/components/design/confirmar'
 import { IlustracaoModelos } from '@/components/design/ilustracoes'
+import { FUNDO_DA_FIXA, FUNDO_DA_LINHA, COLUNA_FIXA, Tabela, Th } from '@/components/design/tabela'
+import { categoriaLegivel, idiomaLegivel, tituloDoModelo } from '@/core/titulo-da-biblioteca'
+import { dataEHora } from '@/lib/quando'
 
 /**
  * A lista de modelos aprovados, e o formulário de criar um.
@@ -50,43 +53,65 @@ export function ListaDeTemplates({
   clienteId: string
   templates: Template[]
 }) {
-  return (
-    <section className="app-card overflow-hidden">
-      {/* Título e "Novo modelo" moram no topo da tela (`CabecalhoDaTela`). */}
-
-      {templates.length === 0 ? (
+  if (templates.length === 0) {
+    return (
+      <section className="app-card overflow-hidden">
+        {/* Título e "Novo modelo" moram no topo da tela (`CabecalhoDaTela`). */}
         <div className="px-5 py-14 text-center">
           <IlustracaoModelos />
           <p className="mt-6 text-[13.5px] font-semibold text-soft">Nenhum modelo ainda</p>
         </div>
-      ) : (
-        <ul className="divide-y divide-line">
-          {templates.map((template) => (
-            <Linha key={template.id} clienteId={clienteId} template={template} />
-          ))}
-        </ul>
-      )}
-    </section>
+      </section>
+    )
+  }
+
+  /*
+    Tabela, e não lista de nomes técnicos. A linha abria com
+    `account_creation_confirmation_3_202610051827` em fonte de código: é o
+    nome que a Meta exige (minúsculas e sublinhado), e quem lê precisa do
+    título. O nome da Meta continua ali, pequeno, embaixo do título, porque é
+    ele que aparece no Gerenciador do WhatsApp e no suporte da Meta.
+  */
+  return (
+    <Tabela largura={920}>
+      <thead>
+        <tr className="border-b border-line">
+          <Th fixa>Modelo</Th>
+          <Th>Mensagem</Th>
+          <Th>Categoria</Th>
+          <Th>Idioma</Th>
+          <Th>Status</Th>
+          <Th>Criado em</Th>
+          <Th className="w-24">
+            <span className="sr-only">Ações</span>
+          </Th>
+        </tr>
+      </thead>
+      <tbody>
+        {templates.map((template) => (
+          <Linha key={template.id} clienteId={clienteId} template={template} />
+        ))}
+      </tbody>
+    </Tabela>
   )
 }
 
 function Linha({ clienteId, template }: { clienteId: string; template: Template }) {
   const router = useRouter()
   /*
-    O pendente e o erro agora são do modal de confirmação: ele desabilita os
-    próprios botões enquanto a ação roda e mostra a recusa sem fechar. Um
-    `useTransition` e um `erro` aqui ficariam presos em `false`/`null` para
-    sempre, dizendo "Apagar" durante um apagamento em curso.
+    O pendente e o erro são do modal de confirmação: ele desabilita os
+    próprios botões enquanto a ação roda e mostra a recusa sem fechar.
   */
   const { confirmar, dialogo, rodando: apagando } = useConfirmar()
   const status = ROTULO_DO_STATUS[template.status]
   const explicacao = EXPLICACAO[template.status]
+  const titulo = tituloDoModelo(template.nome)
 
   function apagar() {
     // Trinta dias é o prazo real da Meta para liberar o nome, e ele é longo o
     // bastante para a pessoa merecer saber antes e não depois.
     confirmar({
-      titulo: `Apagar "${template.nome}"?`,
+      titulo: `Apagar "${titulo}"?`,
       descricao:
         'A Meta segura o nome por 30 dias antes de liberá-lo: você não vai conseguir criar outro com o mesmo nome nesse período.',
       rotulo: 'Apagar modelo',
@@ -99,53 +124,52 @@ function Linha({ clienteId, template }: { clienteId: string; template: Template 
   }
 
   return (
-    <li className="px-5 py-4">
-      {dialogo}
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <div className="min-w-0">
-          <div className="flex flex-wrap items-center gap-2">
-            <span className="font-mono text-[13px] font-semibold">{template.nome}</span>
-            <span className={`rounded-full px-2 py-0.5 text-[11px] font-semibold ${status.cor}`}>
-              {status.texto}
-            </span>
-            <span className="text-[11px] text-dim">
-              {template.idioma} · {template.categoria}
-            </span>
-          </div>
-
-          <p className="mt-1.5 max-w-[78ch] whitespace-pre-wrap text-[12.5px] leading-5 text-dim">
-            {template.componentes.corpo}
-          </p>
-
-          {explicacao && <p className="mt-1.5 text-[12px] leading-5 text-dim">{explicacao}</p>}
-
-          {/*
-            O motivo da recusa aparece INTEIRO, e essa é a decisão mais
-            importante desta tela.
-
-            Quando a Meta recusa por formato, ela manda a explicação E a
-            recomendação do que consertar, a melhor informação que ela dá em
-            qualquer lugar da plataforma. Resumir aqui, ou trocar por um
-            "recusado" genérico, jogaria fora exatamente o que faz a pessoa
-            conseguir consertar sem abrir a documentação em inglês.
-          */}
-          {template.motivoRecusa && (
-            <p className="mt-2 rounded-[10px] bg-red-500/10 px-3 py-2 text-[12px] leading-5 text-red-700 dark:text-red-300">
-              <strong>Por que foi recusado:</strong> {template.motivoRecusa}
-            </p>
-          )}
-
-        </div>
-
+    <tr className={`group border-b border-line align-top last:border-0 ${FUNDO_DA_LINHA}`}>
+      <td className={`${COLUNA_FIXA} ${FUNDO_DA_FIXA} !max-w-[240px] px-4 py-3`}>
+        {dialogo}
+        <span className="block truncate text-[13px] font-semibold text-ink">{titulo}</span>
+        <span className="mt-0.5 block truncate font-mono text-[10.5px] text-dim">{template.nome}</span>
+      </td>
+      <td className="min-w-[260px] max-w-[340px] px-4 py-3">
+        {template.componentes.corpo ? (
+          // Numa linha só no resumo: com as quebras do texto, "Oi, {{1}}," enchia
+          // as duas linhas e o resto virava reticências.
+          <span className="line-clamp-2 text-[12.5px] leading-5 text-soft">
+            {template.componentes.corpo.replace(/\s+/g, ' ').trim()}
+          </span>
+        ) : (
+          <span className="text-[12px] text-dim">Texto do modelo pronto da Meta</span>
+        )}
+        {/*
+          O motivo da recusa aparece INTEIRO: quando a Meta recusa por formato,
+          ela manda a explicação e o que consertar, a melhor informação que ela
+          dá em qualquer lugar da plataforma.
+        */}
+        {template.motivoRecusa && (
+          <span className="mt-2 block rounded-[10px] bg-red-500/10 px-3 py-2 text-[12px] leading-5 text-red-700 dark:text-red-300">
+            <strong>Por que foi recusado:</strong> {template.motivoRecusa}
+          </span>
+        )}
+      </td>
+      <td className="px-4 py-3 text-[12.5px] whitespace-nowrap text-soft">{categoriaLegivel(template.categoria)}</td>
+      <td className="px-4 py-3 text-[12.5px] whitespace-nowrap text-soft">{idiomaLegivel(template.idioma)}</td>
+      <td className="max-w-[190px] px-4 py-3">
+        <span className={`inline-block rounded-full px-2 py-0.5 text-[11px] font-semibold whitespace-nowrap ${status.cor}`}>
+          {status.texto}
+        </span>
+        {explicacao && <span className="mt-1 block text-[11px] leading-4 text-dim">{explicacao}</span>}
+      </td>
+      <td className="px-4 py-3 text-[12px] whitespace-nowrap text-dim tabular-nums">{dataEHora(template.criadoEm)}</td>
+      <td className="px-4 py-3 text-right">
         <button
           type="button"
           onClick={apagar}
           disabled={apagando}
-          className="shrink-0 text-[12px] font-semibold text-dim hover:text-red-600 disabled:opacity-50"
+          className="text-[12px] font-semibold text-dim hover:text-red-600 disabled:opacity-50"
         >
           {apagando ? 'Apagando…' : 'Apagar'}
         </button>
-      </div>
-    </li>
+      </td>
+    </tr>
   )
 }

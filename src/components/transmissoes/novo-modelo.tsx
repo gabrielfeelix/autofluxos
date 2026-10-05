@@ -373,7 +373,10 @@ function ConfirmarDaMeta({
                 if (pedido.tipo === 'URL') {
                   return {
                     type: 'URL',
-                    url: { base_url: linkParaAMeta(valor), url_suffix_example: linkParaAMeta(valor) },
+                    // Só o link fixo. Com `url_suffix_example` a Meta cria o
+                    // botão com `{{1}}` no fim, e o envio (que não manda
+                    // variável de botão) seria recusado em toda mensagem.
+                    url: { base_url: linkParaAMeta(valor) },
                   }
                 }
 

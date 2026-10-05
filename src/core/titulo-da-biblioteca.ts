@@ -127,3 +127,37 @@ export function tituloDaBiblioteca(nome: string): string {
   const principal = (traduzidas as string[])[0] ?? ''
   return maiuscula(`${frase} ${feminino(principal) ? participio[1] : participio[0]}`)
 }
+
+/**
+ * O título de um modelo já criado, a partir do nome que ele tem na Meta.
+ *
+ * O nome leva um carimbo de data no fim (`_202610051827`, ver
+ * `nomeAutomatico`) para nunca colidir; ele sai antes de traduzir. O que não
+ * é da biblioteca (os nossos, em português) só perde os sublinhados.
+ */
+export function tituloDoModelo(nome: string): string {
+  return tituloDaBiblioteca(nome.replace(/_\d{8,}$/, ''))
+}
+
+const CATEGORIAS: Record<string, string> = {
+  UTILITY: 'Utilidade',
+  MARKETING: 'Marketing',
+  AUTHENTICATION: 'Autenticação',
+}
+
+export function categoriaLegivel(categoria: string): string {
+  return CATEGORIAS[categoria.toUpperCase()] ?? categoria
+}
+
+const IDIOMAS: Record<string, string> = {
+  pt_BR: 'Português',
+  pt_PT: 'Português (Portugal)',
+  en_US: 'Inglês',
+  en: 'Inglês',
+  es: 'Espanhol',
+  es_ES: 'Espanhol',
+}
+
+export function idiomaLegivel(idioma: string): string {
+  return IDIOMAS[idioma] ?? idioma
+}

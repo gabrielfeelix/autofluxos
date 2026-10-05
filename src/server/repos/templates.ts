@@ -199,6 +199,12 @@ export async function marcarSubmetido(
   if (error) throw error
 }
 
+/** O texto como a Meta guardou (modelo pronto da biblioteca, lido de volta). */
+export async function gravarComponentes(id: string, componentes: Componentes): Promise<void> {
+  const { error } = await db().from('templates').update({ componentes }).eq('id', id)
+  if (error) throw error
+}
+
 /**
  * O que o webhook `message_template_status_update` sabe dizer.
  *

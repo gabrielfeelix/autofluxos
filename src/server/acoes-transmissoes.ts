@@ -6,6 +6,7 @@ import {
   apagarTemplateNaMeta,
   criarDaBibliotecaNaMeta,
   criarTemplateNaMeta,
+  lerComponentesDaMeta,
   listarBibliotecaDaMeta,
   type EntradaDeBotao,
   type ModeloDaBiblioteca,
@@ -32,6 +33,7 @@ import { lerTokenDoCanal, listarCanais } from './repos/conversas'
 import {
   apagarTemplate,
   criarRascunho,
+  gravarComponentes,
   lerTemplate,
   listarTemplates,
   marcarSubmetido,
@@ -334,9 +336,8 @@ export async function acaoCriarDaBiblioteca(
       nome,
       idioma,
       categoria: dados.categoria,
-      // O corpo fica vazio de propósito: o texto é da Meta, e copiá-lo aqui
-      // criaria uma segunda versão que envelheceria sozinha se ela mudar o
-      // dela. A reconciliação preenche o que interessa.
+      // Vazio até a Meta aceitar: aí o texto é lido de volta dela, que é a
+      // versão que vale (ver `lerComponentesDaMeta` abaixo).
       componentes: { corpo: '' },
     })
   } catch {
@@ -363,6 +364,14 @@ export async function acaoCriarDaBiblioteca(
     status: resposta.template.status === 'desconhecido' ? 'pendente' : resposta.template.status,
     categoria: resposta.template.categoria,
   })
+
+  // Sem isto a lista mostrava o modelo sem mensagem nenhuma. Falhar aqui não
+  // desfaz a criação: o modelo existe na Meta de qualquer jeito.
+  const componentes = await lerComponentesDaMeta({
+    wabaTemplateId: resposta.template.wabaTemplateId,
+    token: conta.token,
+  })
+  if (componentes) await gravarComponentes(rascunho.id, componentes).catch(() => {})
 
   telas(clienteId)
   return { ok: true, templateId: rascunho.id }
