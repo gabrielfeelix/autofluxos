@@ -127,3 +127,99 @@ export function franquiaDoMes(pontos: PontoDaMeta[], mes: string): FranquiaDoNum
     })
     .sort((a, b) => b.usadas - a.usadas)
 }
+
+/**
+ * O preço de cada modelo enviado a número brasileiro, em reais, pela tabela
+ * oficial em BRL da Meta (1/jul/2026): marketing R$ 0,3217; utilidade e
+ * autenticação R$ 0,035. Marketing **não tem franquia**: paga desde o primeiro.
+ * A fatura é da Meta, isto é estimativa para a tela avisar antes de enviar.
+ */
+export const TARIFA_DO_MODELO_BR = {
+  MARKETING: 0.3217,
+  UTILITY: TARIFA_DE_SERVICO_BR,
+  AUTHENTICATION: TARIFA_DE_SERVICO_BR,
+} as const
+
+/** Quanto custa um envio de modelo desta categoria. Desconhecida, a de marketing: melhor avisar a mais. */
+export function tarifaDoModelo(categoria: string): number {
+  const chave = categoria.toUpperCase()
+  return chave in TARIFA_DO_MODELO_BR
+    ? TARIFA_DO_MODELO_BR[chave as keyof typeof TARIFA_DO_MODELO_BR]
+    : TARIFA_DO_MODELO_BR.MARKETING
+}
+
+/** "R$ 0,32", "R$ 12,40". Abaixo de um real com centavo de fração, três casas: "R$ 0,035". */
+export function emReais(valor: number): string {
+  const casas = valor > 0 && valor < 0.1 && Math.round(valor * 100) !== valor * 100 ? 3 : 2
+  return valor.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL', minimumFractionDigits: casas, maximumFractionDigits: casas })
+}
+
+export type GastoPorTipo = {
+  /** MARKETING, UTILITY, AUTHENTICATION ou SERVICE. */
+  categoria: string
+  /** Mensagens que a Meta cobrou no período. */
+  cobradas: number
+  custo: number
+}
+
+export type GastoDoPeriodo = {
+  total: number
+  porTipo: GastoPorTipo[]
+  /** Serviço grátis usado no período (dentro da franquia). */
+  servicoGratis: number
+}
+
+/**
+ * Quanto a conta gastou com a Meta entre `de` e `ate` (`YYYY-MM-DD`).
+ *
+ * `pontos` precisa começar no **dia 1 do mês de `de`**: a franquia de serviço
+ * é mensal, e saber se a mensagem do dia 20 já passou das 1.000 exige contar
+ * as dos dias 1 a 19, mesmo que estejam fora do período.
+ *
+ * Modelo conta pela tarifa só quando a Meta o marcou `REGULAR` (cobrado); os
+ * tipos `FREE_*` são as janelas grátis dela. Serviço conta pela franquia, por
+ * número e por mês, e só depois de 1/out/2026.
+ */
+export function gastoDoPeriodo(pontos: PontoDaMeta[], de: string, ate: string): GastoDoPeriodo {
+  const porTipo = new Map<string, GastoPorTipo>()
+  const somar = (categoria: string, cobradas: number, custo: number) => {
+    const atual = porTipo.get(categoria) ?? { categoria, cobradas: 0, custo: 0 }
+    atual.cobradas += cobradas
+    atual.custo += custo
+    porTipo.set(categoria, atual)
+  }
+
+  let servicoGratis = 0
+  const usadasNoMes = new Map<string, number>()
+  const ordenados = [...pontos].sort((a, b) => a.dia.localeCompare(b.dia))
+
+  for (const ponto of ordenados) {
+    const dentro = ponto.dia >= de && ponto.dia <= ate
+    const categoria = ponto.categoria.toUpperCase()
+
+    if (contaParaFranquia(ponto)) {
+      const chave = `${ponto.telefone}|${ponto.dia.slice(0, 7)}`
+      const antes = usadasNoMes.get(chave) ?? 0
+      usadasNoMes.set(chave, antes + ponto.volume)
+      if (!dentro) continue
+      const valendo = ponto.dia >= INICIO_DA_COBRANCA
+      const gratis = valendo ? Math.max(0, Math.min(ponto.volume, FRANQUIA_DE_SERVICO - antes)) : ponto.volume
+      servicoGratis += gratis
+      const cobradas = ponto.volume - gratis
+      if (cobradas > 0) somar('SERVICE', cobradas, cobradas * TARIFA_DE_SERVICO_BR)
+      continue
+    }
+
+    if (!dentro || categoria === 'SERVICE' || ponto.tipo.toUpperCase() !== 'REGULAR') continue
+    somar(categoria, ponto.volume, ponto.volume * tarifaDoModelo(categoria))
+  }
+
+  const lista = [...porTipo.values()]
+    .map((t) => ({ ...t, custo: Math.round(t.custo * 100) / 100 }))
+    .sort((a, b) => b.custo - a.custo)
+  return {
+    total: Math.round(lista.reduce((s, t) => s + t.custo, 0) * 100) / 100,
+    porTipo: lista,
+    servicoGratis,
+  }
+}

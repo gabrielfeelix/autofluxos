@@ -1,5 +1,6 @@
 'use client'
 
+import { emReais, tarifaDoModelo } from '@/core/franquia-da-meta'
 import { linkComLacuna, recadoDoLinkComLacuna } from '@/core/templates'
 import { tituloDoModelo } from '@/core/titulo-da-biblioteca'
 import { useEffect, useState, useTransition } from 'react'
@@ -203,6 +204,14 @@ export function RetomarComModelo({
                 mensagem do cliente, e a frase diz isso.
               */}
               <span className="flex min-w-0 flex-1 flex-wrap items-center gap-1.5">
+                {modelo && (
+                  <span
+                    title="Envio de modelo é cobrado pela Meta desde o primeiro, fora da franquia de respostas grátis"
+                    className="text-[11px] text-dim tabular-nums"
+                  >
+                    {emReais(tarifaDoModelo(modelo.categoria))} pela Meta
+                  </span>
+                )}
                 {componentes?.botoes && componentes.botoes.length > 0 && (
                   <span className="text-[11px] text-dim">
                     {componentes.botoes.length === 1 ? 'Vai com o botão' : 'Vai com os botões'}

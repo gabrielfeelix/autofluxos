@@ -172,3 +172,28 @@ export async function consumoDaMetaDeTodas(agora = new Date()): Promise<Map<stri
   }
   return porConta
 }
+
+/**
+ * Os pontos de uma conta para o relatório de `de` a `ate`, a partir do dia 1
+ * do mês de `de`: a franquia é mensal, ver `gastoDoPeriodo`. Degrada para vazio.
+ */
+export async function consumoDaMetaParaOPeriodo(clienteId: string, de: string, ate: string): Promise<PontoDaMeta[]> {
+  const { data, error } = await db()
+    .from('consumo_da_meta')
+    .select('telefone, dia, categoria, tipo, volume, custo')
+    .eq('client_id', clienteId)
+    .gte('dia', `${de.slice(0, 7)}-01`)
+    .lte('dia', ate)
+  if (error) {
+    console.error('[consumo-da-meta] não deu para ler o consumo do período', error.message)
+    return []
+  }
+  return ((data ?? []) as Record<string, unknown>[]).map((l) => ({
+    telefone: l.telefone as string,
+    dia: l.dia as string,
+    categoria: l.categoria as string,
+    tipo: l.tipo as string,
+    volume: Number(l.volume),
+    custo: l.custo === null ? null : Number(l.custo),
+  }))
+}

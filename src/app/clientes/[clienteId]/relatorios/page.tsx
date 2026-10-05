@@ -10,6 +10,8 @@ import { PainelDeBlocos, type Bloco } from '@/components/relatorios/painel-de-bl
 import { BarraDoPeriodo, Cartao, Mudanca, MudancaDeTempo, MudancaEmPontos } from '@/components/relatorios/pecas'
 import { DEFINICAO_DO_CANAL } from '@/core/canais'
 import { comoDinheiro } from '@/core/crm'
+import { FRANQUIA_DE_SERVICO, TARIFA_DO_MODELO_BR, emReais, gastoDoPeriodo } from '@/core/franquia-da-meta'
+import { consumoDaMetaParaOPeriodo } from '@/server/consumo-da-meta'
 import { taxaDeAutomacao, terminadas } from '@/core/desfecho-da-conversa'
 import { pode } from '@/core/permissoes'
 import { comoDuracao, completarDias, hojeEmSaoPaulo, lerPeriodo, periodoAnterior } from '@/core/relatorios'
@@ -50,6 +52,14 @@ export const dynamic = 'force-dynamic'
  *
  * Sem exportação nesta rodada, de propósito (decisão do plano).
  */
+
+/** Como cada categoria da Meta aparece no cartão de gasto. */
+const NOME_DO_GASTO: Record<string, string> = {
+  MARKETING: 'Modelos de marketing',
+  UTILITY: 'Modelos de utilidade',
+  AUTHENTICATION: 'Códigos de acesso',
+  SERVICE: 'Respostas além da franquia',
+}
 
 const PASSOS_DA_AJUDA: PassoDaAjuda[] = [
   {
@@ -126,6 +136,11 @@ export default async function Pagina({
   const enviadasAntes = await mensagensEnviadas(clienteId, anterior, responsaveis)
   const porConversa = enviadas.conversas === 0 ? null : enviadas.total / enviadas.conversas
   const cupons = await cuponsDoChat(clienteId, periodo, responsaveis)
+  // Gasto é da conta, não de quem atende: só aparece para quem vê a conta inteira e valores.
+  const gasto =
+    contaInteira && podeVerValor
+      ? gastoDoPeriodo(await consumoDaMetaParaOPeriodo(clienteId, periodo.de, periodo.ate), periodo.de, periodo.ate)
+      : null
   const arranjo = await arranjoDaAnalise('atendimento')
   // Tabela da 0125: antes de ela existir, o card mostra o vazio em vez de
   // derrubar o relatório inteiro.
@@ -470,13 +485,53 @@ export default async function Pagina({
                 </span>
               </div>
               <p className="mt-auto pt-5 text-[11.5px] leading-4 text-dim">
-                Desde 1/out/2026 a Meta cobra cada mensagem enviada pelo WhatsApp. O que sai pelo aplicativo do celular não entra aqui.
+                O que sai pelo aplicativo do celular não entra aqui. Quanto a Meta cobra está em Gasto com WhatsApp.
               </p>
             </div>
           )}
         </CaixaDoBloco>
       ),
     },
+    ...(gasto
+      ? [
+          {
+            id: 'gasto-meta',
+            titulo: 'Gasto com WhatsApp',
+            largura: 'metade' as const,
+            conteudo: (
+              <CaixaDoBloco
+                titulo="Gasto com WhatsApp"
+                subtitulo="Estimativa pela tabela da Meta em reais. A fatura chega pela Meta, na forma de pagamento do WhatsApp."
+              >
+                <div className="flex flex-1 flex-col">
+                  <p className="text-[34px] leading-none font-bold tracking-[-0.03em] tabular-nums text-ink">
+                    {emReais(gasto.total)}
+                  </p>
+                  <p className="mt-1.5 text-[14px] font-semibold tabular-nums text-soft">
+                    {gasto.servicoGratis.toLocaleString('pt-BR')} respostas dentro da franquia grátis
+                  </p>
+                  {gasto.porTipo.length > 0 && (
+                    <ul className="mt-5 space-y-2 text-[12.5px] tabular-nums">
+                      {gasto.porTipo.map((t) => (
+                        <li key={t.categoria} className="flex items-baseline justify-between gap-3">
+                          <span className="text-soft">
+                            {NOME_DO_GASTO[t.categoria] ?? t.categoria}{' '}
+                            <span className="text-dim">({t.cobradas.toLocaleString('pt-BR')})</span>
+                          </span>
+                          <strong className="text-ink">{emReais(t.custo)}</strong>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                  <p className="mt-auto pt-5 text-[11.5px] leading-4 text-dim">
+                    Cada número tem {FRANQUIA_DE_SERVICO.toLocaleString('pt-BR')} respostas grátis por mês. Modelo de marketing ({emReais(TARIFA_DO_MODELO_BR.MARKETING)}) e de utilidade ({emReais(TARIFA_DO_MODELO_BR.UTILITY)}) pagam desde o primeiro envio.
+                  </p>
+                </div>
+              </CaixaDoBloco>
+            ),
+          },
+        ]
+      : []),
     ...(cupons
       ? [
           {

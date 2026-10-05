@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { franquiaDoMes, lerPontosDaMeta, type PontoDaMeta } from './franquia-da-meta'
+import { emReais, franquiaDoMes, gastoDoPeriodo, lerPontosDaMeta, type PontoDaMeta } from './franquia-da-meta'
 
 const p = (dia: string, volume: number, categoria = 'SERVICE', tipo = 'REGULAR'): PontoDaMeta => ({
   telefone: '5511999990000',
@@ -54,5 +54,56 @@ describe('franquiaDoMes', () => {
   it('antes de outubro mostra o uso sem cobrar', () => {
     const [n] = franquiaDoMes([p('2026-09-10', 850)], '2026-09-01')
     expect(n).toMatchObject({ usadas: 850, excedentes: 0, custoEstimado: 0, nivel: 'perto', valendo: false })
+  })
+})
+
+describe('gastoDoPeriodo', () => {
+  const ponto = (dia: string, categoria: string, tipo: string, volume: number): PontoDaMeta => ({
+    telefone: '5544999990000',
+    dia,
+    categoria,
+    tipo,
+    volume,
+    custo: null,
+  })
+
+  it('cobra modelo de marketing e utilidade pela tarifa, desde o primeiro', () => {
+    const g = gastoDoPeriodo(
+      [ponto('2026-10-03', 'MARKETING', 'REGULAR', 10), ponto('2026-10-03', 'UTILITY', 'REGULAR', 100)],
+      '2026-10-01',
+      '2026-10-31',
+    )
+    expect(g.porTipo).toEqual([
+      { categoria: 'UTILITY', cobradas: 100, custo: 3.5 },
+      { categoria: 'MARKETING', cobradas: 10, custo: 3.22 },
+    ])
+    expect(g.total).toBe(6.72)
+  })
+
+  it('serviço só paga o que passa das 1.000 do mês, contando dias fora do período', () => {
+    const g = gastoDoPeriodo(
+      [ponto('2026-10-02', 'SERVICE', 'FREE_TIER', 900), ponto('2026-10-20', 'SERVICE', 'REGULAR', 300)],
+      '2026-10-15',
+      '2026-10-31',
+    )
+    expect(g.servicoGratis).toBe(100)
+    expect(g.porTipo).toEqual([{ categoria: 'SERVICE', cobradas: 200, custo: 7 }])
+  })
+
+  it('janela grátis da Meta não entra na conta', () => {
+    const g = gastoDoPeriodo(
+      [ponto('2026-10-03', 'MARKETING', 'FREE_ENTRY_POINT', 50), ponto('2026-10-03', 'SERVICE', 'FREE_ENTRY_POINT', 50)],
+      '2026-10-01',
+      '2026-10-31',
+    )
+    expect(g.total).toBe(0)
+  })
+})
+
+describe('emReais', () => {
+  it('mostra três casas só quando o centavo tem fração', () => {
+    expect(emReais(0.035)).toBe('R$ 0,035')
+    expect(emReais(0.3217)).toBe('R$ 0,32')
+    expect(emReais(12.4)).toBe('R$ 12,40')
   })
 })

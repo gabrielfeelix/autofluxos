@@ -1,5 +1,6 @@
 'use client'
 
+import { emReais, tarifaDoModelo } from '@/core/franquia-da-meta'
 import { Dropdown } from '@/components/design/dropdown'
 import { linkComLacuna, recadoDoLinkComLacuna } from '@/core/templates'
 import { tituloDoModelo } from '@/core/titulo-da-biblioteca'
@@ -233,7 +234,8 @@ export function AgendarMensagem({
           */}
           {modelo ? (
             <p className="text-[11.5px] leading-4 text-muted">
-              Se {nome} não escrever antes da hora marcada, vai este modelo no lugar do texto. Se
+              Se {nome} não escrever antes da hora marcada, vai este modelo no lugar do texto
+              {modeloEscolhido ? `, cobrado pela Meta (${emReais(tarifaDoModelo(modeloEscolhido.categoria))})` : ''}. Se
               escrever, vai o texto.
             </p>
           ) : (

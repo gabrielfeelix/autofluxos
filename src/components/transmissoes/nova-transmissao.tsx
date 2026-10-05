@@ -1,5 +1,6 @@
 'use client'
 
+import { emReais, tarifaDoModelo } from '@/core/franquia-da-meta'
 import { tituloDoModelo } from '@/core/titulo-da-biblioteca'
 import { useEffect, useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
@@ -319,7 +320,7 @@ function Formulario({
             }`}
           >
             {tamanho <= cabem
-              ? `Cabem ${cabem} hoje. Esta lista tem ${tamanho}.`
+              ? `Cabem ${cabem} hoje. Esta lista tem ${tamanho}. A Meta cobra cerca de ${emReais(tamanho * tarifaDoModelo(template.categoria))} (${emReais(tarifaDoModelo(template.categoria))} por envio).`
               : cabem === 0
                 ? `O limite de ${LIMITE_PADRAO} de hoje já foi usado. Escolha um horário a partir de amanhã.`
                 : `Passa do limite de hoje em ${tamanho - cabem}. Hoje já saíram ${jaEnviadas} de ${LIMITE_PADRAO}.`}

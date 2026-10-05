@@ -1,5 +1,6 @@
 'use client'
 
+import { emReais, tarifaDoModelo } from '@/core/franquia-da-meta'
 import { NICHOS, pacoteDo, type Nicho } from '@/core/nichos'
 import { tituloDaBiblioteca } from '@/core/titulo-da-biblioteca'
 import { useState, useTransition } from 'react'
@@ -185,12 +186,15 @@ function Cartao({
   resumo,
   texto,
   selo,
+  preco,
   aoClicar,
 }: {
   titulo: string
   resumo?: string
   texto: string
   selo?: boolean
+  /** Quanto a Meta cobra por envio, na categoria do modelo. */
+  preco: number
   aoClicar: () => void
 }) {
   return (
@@ -202,6 +206,12 @@ function Cartao({
       <span className="flex flex-wrap items-center gap-1.5">
         <strong className="text-[13px] font-semibold">{titulo}</strong>
         {selo && <SeloImediato />}
+        <span
+          title="Quanto a Meta cobra por envio deste modelo"
+          className="ml-auto text-[11px] font-semibold text-dim tabular-nums"
+        >
+          {emReais(preco)} por envio
+        </span>
       </span>
       {resumo && <span className="mt-0.5 block text-[11.5px] leading-4 text-dim">{resumo}</span>}
       {/*
@@ -289,6 +299,7 @@ function Galeria({
                   titulo={tituloDaBiblioteca(modelo.nome)}
                   texto={modelo.corpo}
                   selo
+                  preco={tarifaDoModelo(modelo.categoria)}
                   aoClicar={() => aoEscolherDaMeta(modelo)}
                 />
               ))}
@@ -325,6 +336,7 @@ function Galeria({
                   titulo={modelo.titulo}
                   resumo={modelo.resumo}
                   texto={previa(modelo.corpo)}
+                  preco={tarifaDoModelo(modelo.categoria)}
                   aoClicar={() => aoEscolher(modelo)}
                 />
               ))}
