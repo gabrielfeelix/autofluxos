@@ -114,10 +114,12 @@ export function RodapeDaMensagem({
   const [paraCima, setParaCima] = useState(false)
   /**
    * O menu sai da seta para o lado vazio da conversa, como no WhatsApp: na
-   * bolha do cliente, para a direita. Só volta para a borda da bolha quando à
-   * direita não cabe (bolha larga num painel estreito).
+   * bolha do cliente, para a direita. Quando à direita não cabe (bolha larga),
+   * ele se alinha à borda direita da bolha, embaixo da seta, e cresce para a
+   * esquerda. Só vai para a borda esquerda quando nem assim cabe (bolha curta
+   * no celular).
    */
-  const [naSeta, setNaSeta] = useState(true)
+  const [ancora, setAncora] = useState<'seta' | 'fim' | 'inicio'>('seta')
   const caixa = useRef<HTMLDivElement>(null)
   /** `null` fora do provedor, a tela que não monta citação ainda reage. */
   const citacao = useCitacao()
@@ -198,6 +200,8 @@ export function RodapeDaMensagem({
     ...(minhaReacao ? [{ chave: 'nossa', emoji: minhaReacao, dono: 'atendimento' }] : []),
   ]
   const lado = nossa ? 'right-0' : 'left-0'
+  const posicaoDoMenu =
+    nossa || ancora === 'fim' ? 'right-0' : ancora === 'inicio' ? 'left-0' : 'left-[calc(100%-2rem)]'
 
   /** Os seis de sempre e o "+", que abre a grade inteira no mesmo lugar. */
   const linhaDeReacoes = (posicao: string) => (
@@ -220,7 +224,7 @@ export function RodapeDaMensagem({
         onClick={() => {
           if (caixa.current) {
             setParaCima(espacoAbaixo(caixa.current) < 340)
-            setNaSeta(espacoADireita(caixa.current) >= LARGURA_DO_MENU)
+            setAncora(ancoraDoMenu(caixa.current))
           }
           setMenuAberto(false)
           setEmojisAbertos(false)
@@ -259,7 +263,7 @@ export function RodapeDaMensagem({
           setEmojisAbertos(false)
           if (!menuAberto && caixa.current) {
             setParaCima(espacoAbaixo(caixa.current) < (podeReagir && waMessageId ? 290 : 230))
-            setNaSeta(espacoADireita(caixa.current) >= LARGURA_DO_MENU)
+            setAncora(ancoraDoMenu(caixa.current))
           }
           setMenuAberto((a) => !a)
         }}
@@ -296,7 +300,7 @@ export function RodapeDaMensagem({
       */}
       {menuAberto && (
         <div
-          className={`absolute ${paraCima ? 'bottom-full mb-1' : 'top-8'} ${nossa || !naSeta ? lado : 'left-[calc(100%-2rem)]'} z-30 flex flex-col gap-1.5 ${nossa ? 'items-end' : 'items-start'}`}
+          className={`absolute ${paraCima ? 'bottom-full mb-1' : 'top-8'} ${posicaoDoMenu} z-30 flex flex-col gap-1.5 ${nossa || ancora === 'fim' ? 'items-end' : 'items-start'}`}
         >
           {podeReagir && waMessageId && linhaDeReacoes('')}
         <div
@@ -360,7 +364,7 @@ export function RodapeDaMensagem({
         <PainelDeEmojis
           aoEscolher={reagir}
           placeholder="Pesquisar reação"
-          className={`absolute ${paraCima ? 'bottom-full mb-1' : 'top-8'} ${nossa || !naSeta ? lado : 'left-[calc(100%-2rem)]'} z-30`}
+          className={`absolute ${paraCima ? 'bottom-full mb-1' : 'top-8'} ${posicaoDoMenu} z-30`}
         />
       )}
 
@@ -414,6 +418,22 @@ function espacoADireita(el: HTMLElement): number {
     if (overflowY === 'auto' || overflowY === 'scroll') return pai.getBoundingClientRect().right - seta
   }
   return window.innerWidth - seta
+}
+
+/** De onde o menu sai, na bolha do cliente: da seta, da borda direita ou da esquerda. */
+function ancoraDoMenu(el: HTMLElement): 'seta' | 'fim' | 'inicio' {
+  if (espacoADireita(el) >= LARGURA_DO_MENU) return 'seta'
+  return espacoAEsquerda(el) >= LARGURA_DO_MENU ? 'fim' : 'inicio'
+}
+
+/** Quanto cabe entre a borda direita da bolha e o começo da área que rola. */
+function espacoAEsquerda(el: HTMLElement): number {
+  const fim = el.getBoundingClientRect().right
+  for (let pai = el.parentElement; pai; pai = pai.parentElement) {
+    const { overflowY } = getComputedStyle(pai)
+    if (overflowY === 'auto' || overflowY === 'scroll') return fim - pai.getBoundingClientRect().left
+  }
+  return fim
 }
 
 /** Quanto cabe entre o topo da bolha e o fim do primeiro ancestral que rola. */
