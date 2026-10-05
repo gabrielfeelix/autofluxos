@@ -64,8 +64,11 @@ export type ModeloPronto = {
   resumo: string
   corpo: string
   categoria: Categoria
-  /** O ramo da conta para quem o modelo faz sentido (`core/nichos.ts`). */
-  ramo: Nicho
+  /**
+   * O ramo da conta para quem o modelo faz sentido (`core/nichos.ts`). Sem
+   * ramo, serve a qualquer negócio.
+   */
+  ramo?: Nicho
   /** Para a busca achar pelo que a pessoa chama, e não pelo que nomeamos. */
   sinonimos?: readonly string[]
 }
@@ -80,6 +83,25 @@ export type ModeloPronto = {
  * aqui é caro, porque a Meta reclassifica e a conta vem diferente.
  */
 export const MODELOS_PRONTOS: readonly ModeloPronto[] = [
+  // -------------------------------------------------------------------------
+  // Qualquer negócio
+  // -------------------------------------------------------------------------
+  {
+    /*
+     * **Marketing, e não utilidade, de propósito.** A Meta só aceita como
+     * utilidade a mensagem presa a uma transação específica (pedido, horário,
+     * pagamento). "Voltando à nossa conversa" não é, e ela reclassifica para
+     * marketing sozinha: declarar utilidade só adiaria a mesma cobrança.
+     */
+    id: 'retomar-conversa',
+    titulo: 'Retomar a conversa',
+    resumo: 'Depois de 24h sem resposta, para continuar o atendimento. Exige aceite de marketing.',
+    corpo:
+      'Oi {nome}, tudo bem? Estou retomando a nossa conversa por aqui. Ainda posso te ajudar com o que você precisava?',
+    categoria: 'MARKETING',
+    sinonimos: ['retomar', 'continuar', 'follow up', 'sumiu', 'janela', '24h'],
+  },
+
   // -------------------------------------------------------------------------
   // Aulas e serviços com horário: pilates, academia, estúdio, escola, clínica
   // -------------------------------------------------------------------------
@@ -460,11 +482,11 @@ export const MODELOS_PRONTOS: readonly ModeloPronto[] = [
  *
  * Com ramo, **só os do ramo**: pedido do Gabriel em 05/out, "se eu sou do
  * nicho de e-commerce NÃO é para aparecer template de remarcar aula". É a
- * mesma regra dos fluxos (`modelosDeFluxo` em `core/nichos.ts`). Sem ramo,
- * todos, porque não há como saber qual serve.
+ * mesma regra dos fluxos (`modelosDeFluxo` em `core/nichos.ts`). Os sem ramo
+ * vão para todos. Conta sem ramo vê todos, porque não há como saber qual serve.
  */
 export function modelosDoRamo(nicho: Nicho | null | undefined): readonly ModeloPronto[] {
-  return nicho ? MODELOS_PRONTOS.filter((m) => m.ramo === nicho) : MODELOS_PRONTOS
+  return nicho ? MODELOS_PRONTOS.filter((m) => !m.ramo || m.ramo === nicho) : MODELOS_PRONTOS
 }
 
 // ---------------------------------------------------------------------------

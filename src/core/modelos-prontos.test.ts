@@ -184,8 +184,8 @@ describe('camposDoCorpoDaMeta, de volta do jargão da Meta', () => {
 
 describe('cada ramo vê só os seus modelos', () => {
   for (const nicho of NICHOS) {
-    it(`"${nicho}" tem de 8 a 10 modelos`, () => {
-      const n = modelosDoRamo(nicho).length
+    it(`"${nicho}" tem de 8 a 10 modelos próprios`, () => {
+      const n = modelosDoRamo(nicho).filter((m) => m.ramo === nicho).length
       expect(n).toBeGreaterThanOrEqual(8)
       expect(n).toBeLessThanOrEqual(10)
     })
@@ -194,6 +194,12 @@ describe('cada ramo vê só os seus modelos', () => {
   it('loja virtual não vê modelo de aula', () => {
     const textos = modelosDoRamo('ecommerce').map((m) => `${m.titulo} ${m.corpo}`.toLowerCase())
     expect(textos.some((t) => t.includes('aula'))).toBe(false)
+  })
+
+  it('retomar a conversa aparece para todo ramo', () => {
+    for (const nicho of NICHOS) {
+      expect(modelosDoRamo(nicho).map((m) => m.id)).toContain('retomar-conversa')
+    }
   })
 
   it('sem ramo, a galeria mostra todos', () => {
