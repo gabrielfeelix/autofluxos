@@ -149,6 +149,15 @@ export function CabecalhoDoQuadro({
               <IconeDoQuadro tipo="ajustes" />
               Configurações do funil
             </button>
+            {/* Todos os funis e as etapas numa tela só, em Configurações > Funis de venda. */}
+            <Link
+              href={`/clientes/${clienteId}/ajustes/funis`}
+              data-fechar-popover
+              className="quadro-menu-item"
+            >
+              <IconeDoQuadro tipo="quadro" />
+              Funis e etapas
+            </Link>
             <button
               type="button"
               data-fechar-popover
