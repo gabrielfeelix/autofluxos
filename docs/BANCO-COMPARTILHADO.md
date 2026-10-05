@@ -320,6 +320,17 @@ extração explícito para os objetos de `public`.
   `public` com **75** tabelas; **8** contas, **0** com frente. Data API depois
   do `notify`: `clients?select=nicho` **200** com a chave secreta;
   `app_verandi.conta` **200**.
+- **a `0124` foi aplicada em 04/out/2026**, com autorização explícita do dono,
+  pela Management API, numa transação. Defeito em produção: o onboarding da
+  frente de loja virtual marca o chatbot `atendimento-loja`, e a
+  `preparar_onboarding` da 0109 tinha lista fechada sem ele, então salvar,
+  adiar ou concluir respondia "Respostas inválidas". Recria a função a partir
+  da definição da produção, só ampliando a lista; assinatura, lock, sem
+  `security definer`, `execute` só `postgres` e `service_role`, iguais. Ensaio
+  em transação com `rollback` antes (nada sobrou). Depois: 8 contas, `public`
+  com **92** tabelas, Verandi com **42** tabelas, **40** migrations e **16**
+  policies de `storage.objects`, iguais; RPC com a chave publicável **404**,
+  `app_verandi.conta` 200.
 - **a `0123` foi aplicada em 04/out/2026** (distribuição em rodízio), com
   autorização explícita do dono, pela Management API, numa transação. Troca o
   check de `clients.distribuicao` para aceitar `rodizio` e cria

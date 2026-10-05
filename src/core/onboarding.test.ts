@@ -1,4 +1,4 @@
-import { readFileSync } from 'node:fs'
+import { readdirSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { describe, it, expect } from 'vitest'
 import { respostasOnboardingSchema, RESPOSTAS_INICIAIS, objetivoDoOnboarding, lerOnboarding, passosDoOnboarding, marcadoPelaFrente, nichoDoOnboarding, CHATBOTS_DO_ONBOARDING, CHATBOTS_DAS_FRENTES, FUNIS_DAS_FRENTES } from './onboarding'
@@ -64,8 +64,14 @@ describe('preparação da empresa', () => {
   it('recusa frente que não existe', () => {
     expect(respostasOnboardingSchema.safeParse({ ...RESPOSTAS_INICIAIS, nicho: 'saude' }).success).toBe(false)
   })
-  it('a 0109 aceita todo modelo e funil das frentes, e toda frente', () => {
-    const sql = readFileSync(join(__dirname, '../../supabase/migrations/0109_onboarding_frentes.sql'), 'utf8')
-    for (const id of [...CHATBOTS_DAS_FRENTES, ...FUNIS_DAS_FRENTES, ...NICHOS]) expect(sql, id).toContain(`'${id}'`)
+  it('a preparar_onboarding vigente aceita todo chatbot oferecido, todo funil das frentes e toda frente', () => {
+    // Vigente = a última migration que recria a função (0109, 0124, ...): modelo
+    // novo numa frente exige migration nova ampliando a lista do banco.
+    const pasta = join(__dirname, '../../supabase/migrations')
+    const vigente = readdirSync(pasta).filter((nome) => nome.endsWith('.sql')).sort()
+      .filter((nome) => readFileSync(join(pasta, nome), 'utf8').includes('FUNCTION public.preparar_onboarding(')).at(-1)
+    expect(vigente).toBeDefined()
+    const sql = readFileSync(join(pasta, vigente!), 'utf8')
+    for (const id of [...CHATBOTS_DO_ONBOARDING, ...FUNIS_DAS_FRENTES, ...NICHOS]) expect(sql, `${vigente}: ${id}`).toContain(`'${id}'`)
   })
 })
