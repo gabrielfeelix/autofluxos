@@ -10,6 +10,7 @@ import { Avatar } from '@/components/inbox/avatar'
 import { Dropdown } from '@/components/design/dropdown'
 import { Modal } from '@/components/design/modal'
 import { IconeDoQuadro, PopoverDoQuadro } from '@/components/quadros/popover-do-quadro'
+import { AcaoDaFicha } from '@/components/lead-crm/acoes-da-ficha'
 import { FecharCartao } from '@/components/quadros/fechar-cartao'
 import { RegistrarVenda } from '@/components/quadros/registrar-venda'
 import { TemperaturaDaOportunidade } from '@/components/quadros/temperatura-da-oportunidade'
@@ -333,118 +334,172 @@ export function PaginaDoNegocio(props: Props) {
         <Trilha caminho={[{ rotulo: 'Negociações', href: voltar }, { rotulo: quadro.nome }]} />
       </div>
 
-      {/* O topo: o que é, quanto vale, em que pé está, e as ações. */}
-      <header className="app-card mb-4 px-5 py-5 md:px-6">
-        <div className="flex flex-col gap-4 lg:flex-row lg:items-start">
-          <div className="min-w-0 flex-1">
-            <TituloEditavel
-              titulo={negocio.titulo ?? ''}
-              provisorio={titulo.provisorio ? titulo.texto : null}
-              aoSalvar={(novo) =>
-                mudar({ titulo: novo || null }, () =>
-                  acaoDescreverCartao(clienteId, negocio.id, {
-                    titulo: novo,
-                    valor: negocio.valor == null ? '' : String(negocio.valor).replace('.', ','),
-                  }),
-                )
+      {/*
+        O topo mora direto no azul, sem cartão, como o da ficha do contato: o
+        que é, quanto vale, em que pé está e, à direita, as ações com ícone em
+        cima e palavra embaixo. Ganho e Perdido ficam à vista porque são as
+        duas coisas que se fazem com um negócio; o menu guarda só o raro.
+      */}
+      <header className="mb-[18px] flex flex-wrap items-center gap-x-3.5 gap-y-3">
+        <span
+          aria-hidden
+          className="grid size-[52px] shrink-0 place-items-center rounded-[14px] bg-primary-weak text-ink"
+        >
+          <svg viewBox="0 0 24 24" className="size-6" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M4 8.5h16v10a1.5 1.5 0 0 1-1.5 1.5h-13A1.5 1.5 0 0 1 4 18.5v-10Z" />
+            <path d="M9 8.5V6.2A1.7 1.7 0 0 1 10.7 4.5h2.6A1.7 1.7 0 0 1 15 6.2v2.3M4 13h16" />
+          </svg>
+        </span>
+        <div className="min-w-[12rem] flex-1">
+          <TituloEditavel
+            titulo={negocio.titulo ?? ''}
+            provisorio={titulo.provisorio ? titulo.texto : null}
+            aoSalvar={(novo) =>
+              mudar({ titulo: novo || null }, () =>
+                acaoDescreverCartao(clienteId, negocio.id, {
+                  titulo: novo,
+                  valor: negocio.valor == null ? '' : String(negocio.valor).replace('.', ','),
+                }),
+              )
+            }
+          />
+          <div className="mt-1.5 flex flex-wrap items-center gap-x-2.5 gap-y-1.5 text-[12px] text-dim">
+            <SeloDaSituacao situacao={negocio.situacao ?? 'aberta'} />
+            {podeVerValor && (
+              <span className={`text-[15px] font-bold tabular-nums ${negocio.valor == null ? 'text-dim' : 'text-ink'}`}>
+                {negocio.valor == null ? 'Sem valor' : comoDinheiro(negocio.valor)}
+              </span>
+            )}
+            {negocio.temperatura && <SeloDaTemperatura temperatura={negocio.temperatura} />}
+            <span aria-hidden>·</span>
+            <span className="flex items-center gap-1.5">
+              <Avatar nome={contato.nome} tamanho={18} />
+              {contato.nome}
+            </span>
+          </div>
+        </div>
+
+        {/* No celular as ações descem para a linha delas, inteira; no desktop ficam à direita do título. */}
+        <div className="flex w-full items-center justify-between sm:w-auto sm:justify-end">
+        <span role="group" aria-label="Para a equipe" className="flex items-center">
+          <AcaoDaFicha
+            rotulo="Anotar"
+            titulo="Para a equipe: anotar"
+            aoClicar={() => {
+              setAba('geral')
+              // O próximo quadro já tem a caixa na tela; focar antes dele
+              // pintar acharia o elemento da aba anterior.
+              requestAnimationFrame(() => caixaDeNota.current?.focus())
+            }}
+            icone={
+              <>
+                <path d="M4.5 19.5h15" />
+                <path d="M6 15.2 15.4 5.8a2 2 0 0 1 2.8 2.8L8.8 18 5 19l1-3.8Z" />
+              </>
+            }
+          />
+          <AcaoDaFicha
+            rotulo="Atividade"
+            titulo="Para a equipe: marcar atividade"
+            aoClicar={() => setNovaAtividade(true)}
+            icone={
+              <>
+                <circle cx="12" cy="12" r="8.5" />
+                <path d="m8.5 12.2 2.4 2.4 4.6-4.9" />
+              </>
+            }
+          />
+          <AcaoDaFicha
+            rotulo="Mensagem"
+            titulo="Abrir a conversa com o contato"
+            aoClicar={() => router.push(conversa)}
+            icone={<path d="M5 5.5h14A1.5 1.5 0 0 1 20.5 7v8.5A1.5 1.5 0 0 1 19 17h-9l-4.5 3.5V17H5a1.5 1.5 0 0 1-1.5-1.5V7A1.5 1.5 0 0 1 5 5.5Z" />}
+          />
+        </span>
+        <span aria-hidden className="h-8 w-px bg-line max-sm:hidden" />
+        <span role="group" aria-label="O negócio" className="flex items-center">
+          {aberto ? (
+            <>
+              <AcaoDaFicha
+                rotulo="Ganho"
+                titulo="Marcar como ganho"
+                aoClicar={() => setFechando({ situacao: 'ganha' })}
+                icone={
+                  <>
+                    <path d="M8 4.5h8v4.2a4 4 0 0 1-8 0V4.5Z" />
+                    <path d="M8 6.2H5.5v1.3A2.6 2.6 0 0 0 8 10.1M16 6.2h2.5v1.3a2.6 2.6 0 0 1-2.5 2.6" />
+                    <path d="M12 12.7v3.3M9 19.5h6M10 16h4" />
+                  </>
+                }
+              />
+              <AcaoDaFicha
+                rotulo="Perdido"
+                titulo="Marcar como perdido"
+                aoClicar={() => setFechando({ situacao: 'perdida' })}
+                icone={
+                  <>
+                    <circle cx="12" cy="12" r="8.5" />
+                    <path d="m9.3 9.3 5.4 5.4M14.7 9.3l-5.4 5.4" />
+                  </>
+                }
+              />
+            </>
+          ) : (
+            <AcaoDaFicha
+              rotulo="Reabrir"
+              titulo="Reabrir negócio"
+              aoClicar={reabrir}
+              icone={
+                <>
+                  <path d="M4.8 12a7.2 7.2 0 1 0 2.1-5.1" />
+                  <path d="M4.8 4.6v3.6h3.6" />
+                </>
               }
             />
-            <div className="mt-2.5 flex flex-wrap items-center gap-x-3 gap-y-2">
-              <SeloDaSituacao situacao={negocio.situacao ?? 'aberta'} />
-              {podeVerValor && (
-                <span
-                  className={`text-[20px] leading-none font-bold tracking-[-0.02em] tabular-nums ${negocio.valor == null ? 'text-dim' : 'text-ink'}`}
-                >
-                  {negocio.valor == null ? 'Sem valor' : comoDinheiro(negocio.valor)}
-                </span>
-              )}
-              {negocio.temperatura && <SeloDaTemperatura temperatura={negocio.temperatura} />}
-              <span className="flex items-center gap-1.5 text-[12px] text-muted">
-                <Avatar nome={contato.nome} tamanho={20} />
-                {contato.nome}
-              </span>
-            </div>
-          </div>
-
-          {/* No celular as quatro ações cabem numa linha, em grade; no desktop, lado a lado. */}
-          <div className="grid grid-cols-[repeat(3,minmax(0,1fr))_auto] items-center gap-1.5 sm:flex sm:gap-2 [&>*]:justify-center max-sm:[&>*]:px-2">
-            <button
-              type="button"
-              className="quadro-tool"
-              onClick={() => {
-                setAba('geral')
-                // O próximo quadro já tem a caixa na tela; focar antes dele
-                // pintar acharia o elemento da aba anterior.
-                requestAnimationFrame(() => caixaDeNota.current?.focus())
-              }}
-            >
-              <IconeAnotacao /> Anotação
-            </button>
-            <Link href={conversa} className="quadro-tool">
-              <IconeMensagem /> Mensagem
-            </Link>
-            <button type="button" className="quadro-tool" onClick={() => setNovaAtividade(true)}>
-              <IconeMais /> Atividade
-            </button>
+          )}
+          {props.outrosFunis.length > 0 && (
             <PopoverDoQuadro
-              rotulo="Mais ações do negócio"
-              gatilho={<IconeDoQuadro tipo="menu" />}
-              className="quadro-icon-button"
+              rotulo="Levar para outro funil"
+              gatilho={
+                <>
+                  <svg aria-hidden viewBox="0 0 24 24" className="size-[19px]" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M4.5 8h12M13 4.5 16.5 8 13 11.5M19.5 16h-12M11 12.5 7.5 16l3.5 3.5" />
+                  </svg>
+                  Funil
+                </>
+              }
+              className="flex w-[54px] flex-col items-center gap-1 rounded-lg px-1 py-1.5 text-[10.5px] text-muted sm:w-[62px] transition hover:bg-surface hover:text-primary"
               largura={250}
             >
-              {aberto ? (
-                <>
-                  <button
-                    type="button"
-                    data-fechar-popover
-                    className="quadro-menu-item text-ok"
-                    onClick={() => setFechando({ situacao: 'ganha' })}
-                  >
-                    Marcar como ganho
-                  </button>
-                  <button
-                    type="button"
-                    data-fechar-popover
-                    className="quadro-menu-item"
-                    onClick={() => setFechando({ situacao: 'perdida' })}
-                  >
-                    Marcar como perdido
-                  </button>
-                </>
-              ) : (
-                <button type="button" data-fechar-popover className="quadro-menu-item" onClick={reabrir}>
-                  Reabrir negócio
-                </button>
-              )}
-              {props.outrosFunis.length > 0 && (
-                <>
-                  <p className="quadro-menu-label mt-1 border-t border-line pt-2">Levar para outro funil</p>
-                  {props.outrosFunis.map((f) => (
-                    <button
-                      key={f.id}
-                      type="button"
-                      data-fechar-popover
-                      className="quadro-menu-item"
-                      onClick={() => trocarDeFunil(f.id)}
-                    >
-                      <IconeDoQuadro tipo="quadro" />
-                      <span className="min-w-0 flex-1 truncate">{f.nome}</span>
-                    </button>
-                  ))}
-                </>
-              )}
-              <div className="quadro-danger mt-1 border-t border-line pt-1">
+              <p className="quadro-menu-label">Levar para outro funil</p>
+              {props.outrosFunis.map((f) => (
                 <button
+                  key={f.id}
                   type="button"
                   data-fechar-popover
-                  className="quadro-menu-item text-perigo"
-                  onClick={() => setExcluindo(true)}
+                  className="quadro-menu-item"
+                  onClick={() => trocarDeFunil(f.id)}
                 >
-                  Excluir negócio
+                  <IconeDoQuadro tipo="quadro" />
+                  <span className="min-w-0 flex-1 truncate">{f.nome}</span>
                 </button>
-              </div>
+              ))}
             </PopoverDoQuadro>
-          </div>
+          )}
+        </span>
+        {/* A única ação sem volta, em vermelho cheio, como "Apagar" na ficha do contato. */}
+        <AcaoDaFicha
+          rotulo="Excluir"
+          titulo="Excluir negócio"
+          tom="perigo"
+          aoClicar={() => setExcluindo(true)}
+          icone={
+            <>
+              <path d="M5 7h14M10 7V5.2h4V7" />
+              <path d="m7 7 .8 12h8.4L17 7" />
+            </>
+          }
+        />
         </div>
       </header>
 
@@ -1251,39 +1306,6 @@ function NovaAtividade({
 // ---------------------------------------------------------------------------
 // Ícones
 // ---------------------------------------------------------------------------
-
-function Svg({ children }: { children: ReactNode }) {
-  return (
-    <svg aria-hidden viewBox="0 0 24 24" className="size-[15px] max-sm:hidden" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-      {children}
-    </svg>
-  )
-}
-
-function IconeAnotacao() {
-  return (
-    <Svg>
-      <path d="M5 4h10l4 4v12H5z" />
-      <path d="M9 12h6M9 16h4" />
-    </Svg>
-  )
-}
-
-function IconeMensagem() {
-  return (
-    <Svg>
-      <path d="M4 5h16v11H9l-5 4z" />
-    </Svg>
-  )
-}
-
-function IconeMais() {
-  return (
-    <Svg>
-      <path d="M12 5v14M5 12h14" />
-    </Svg>
-  )
-}
 
 /** Um ponto de cor por categoria: a linha do tempo se lê pela cor antes do texto. */
 function IconeDoEvento({ tipo }: { tipo: string }) {

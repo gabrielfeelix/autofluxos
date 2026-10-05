@@ -1562,7 +1562,7 @@ function MenuDoCartao({
                   href={`/clientes/${clienteId}/negocios/${cartao.id}`}
                   className="truncate rounded px-2 py-1.5 text-left text-[12px] transition hover:bg-surface-strong"
                 >
-                  Abrir negócio
+                  Detalhes do negócio
                 </Link>
 
                 <span className="my-1 border-t border-line" />

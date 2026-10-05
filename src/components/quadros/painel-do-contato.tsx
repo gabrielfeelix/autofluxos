@@ -438,7 +438,7 @@ export function PainelDoContato({
           href={`/clientes/${clienteId}/negocios/${cartao.id}`}
           className="botao-primario botao-md flex flex-1"
         >
-          Abrir negócio
+          Detalhes do negócio
         </Link>
         <Link
           href={hrefDaFicha(clienteId, contatoId, { volta })}

@@ -222,7 +222,7 @@ export function AcaoDaFicha({
       type="button"
       onClick={aoClicar}
       title={titulo ?? rotulo}
-      className={`group relative flex w-[62px] flex-col items-center gap-1 rounded-lg px-1 py-1.5 text-[10.5px] transition ${
+      className={`group relative flex w-[54px] flex-col sm:w-[62px] items-center gap-1 rounded-lg px-1 py-1.5 text-[10.5px] transition ${
         tom === 'perigo'
           ? 'ml-1 bg-[#c62828] font-semibold text-white hover:bg-[#a51f1f]'
           : 'text-muted hover:bg-surface hover:text-primary'
