@@ -45,6 +45,7 @@ export async function CabecalhoDoCliente({ clienteId }: { clienteId: string }) {
         email={acesso.sessao.usuario.email}
         papel={suporte ? ROTULO_DO_SUPORTE : (acesso.regras.nomeDaFuncao ?? resumoDoAcesso(acesso.regras).perfil)}
         suporte={suporte}
+        duasEtapas={acesso.sessao.usuario.duasEtapas === true}
         presenca={presenca}
         planoHref={administra ? `${base}/ajustes/plano` : null}
         ajustesHref={liberaSecao(acesso.regras, 'ajustes') ? `${base}/ajustes` : null}

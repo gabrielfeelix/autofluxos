@@ -1,12 +1,13 @@
 'use client'
 
 import Link from 'next/link'
-import { usePathname, useSearchParams } from 'next/navigation'
+import { usePathname, useRouter, useSearchParams } from 'next/navigation'
 import { useEffect, useMemo, useRef, useState, useSyncExternalStore, type ReactNode } from 'react'
 import { acaoSair } from '@/server/acoes-conta'
 import { LinhaDePresenca } from '@/components/conta/linha-de-presenca'
 import { usePresenca } from '@/components/conta/presenca'
 import { EditarPerfil, TrocarSenha, useMudarPerfil, usePerfil } from '@/components/conta/voce'
+import { ModalDeDuasEtapas } from '@/components/conta/duas-etapas'
 import { IconeSentiuFalta, SentiuFalta } from '@/components/conta/sentiu-falta'
 import { PopoverDoQuadro } from '@/components/quadros/popover-do-quadro'
 import { INDICE } from '@/components/ajuda/indice'
@@ -47,6 +48,7 @@ export function Cabecalho({
   email,
   papel,
   suporte,
+  duasEtapas = false,
   presenca,
   planoHref,
   ajustesHref,
@@ -61,6 +63,8 @@ export function Cabecalho({
   papel: string
   /** Entrou pela administração, sem ser membro. */
   suporte: boolean
+  /** A verificação em duas etapas está ligada para esta pessoa. */
+  duasEtapas?: boolean
   presenca: string | null
   /** Só para quem administra a conta. */
   planoHref: string | null
@@ -106,6 +110,7 @@ export function Cabecalho({
           email={email}
           papel={papel}
           suporte={suporte}
+          duasEtapas={duasEtapas}
           presenca={presenca}
           planoHref={planoHref}
           ajustesHref={ajustesHref}
@@ -190,6 +195,7 @@ function MenuDoPerfil({
   email,
   papel,
   suporte,
+  duasEtapas,
   presenca: presencaDoServidor,
   planoHref,
   ajustesHref,
@@ -199,6 +205,7 @@ function MenuDoPerfil({
   email: string
   papel: string
   suporte: boolean
+  duasEtapas: boolean
   presenca: string | null
   planoHref: string | null
   ajustesHref: string | null
@@ -208,7 +215,8 @@ function MenuDoPerfil({
   const perfil = usePerfil()
   const mudar = useMudarPerfil()
   const escuro = usePreferencia('tema')
-  const [aberto, setAberto] = useState<'perfil' | 'senha' | null>(null)
+  const [aberto, setAberto] = useState<'perfil' | 'senha' | 'duas-etapas' | null>(null)
+  const router = useRouter()
   const nome = perfil?.nome ?? 'Você'
   const primeiroNome = nome.split(' ')[0] || nome
   const presenca = usePresenca(presencaDoServidor)
@@ -256,6 +264,17 @@ function MenuDoPerfil({
         <Grupo>
           <ItemDoMenu icone={<IconePessoa />} aoClicar={() => setAberto('perfil')}>Meu perfil</ItemDoMenu>
           <ItemDoMenu icone={<IconeChave />} aoClicar={() => setAberto('senha')}>Trocar senha</ItemDoMenu>
+          {/* Fora para o suporte: a 2FA dele é a da administração (`/ativar-duas-etapas`). */}
+          {!suporte && (
+            <ItemDoMenu icone={<IconeEscudo />} aoClicar={() => setAberto('duas-etapas')}>
+              <span className="flex w-full items-center justify-between gap-2">
+                Verificação em duas etapas
+                <span className={`text-[11px] font-bold ${duasEtapas ? 'text-ok' : 'text-dim'}`}>
+                  {duasEtapas ? 'ligada' : 'desligada'}
+                </span>
+              </span>
+            </ItemDoMenu>
+          )}
           <div className="flex items-center gap-2.5 px-[9px] py-1.5">
             <span aria-hidden className="text-dim">{escuro ? <IconeLua /> : <IconeSol />}</span>
             <span className="flex-1 text-[12.5px] font-medium text-soft">Tema</span>
@@ -298,6 +317,16 @@ function MenuDoPerfil({
         <EditarPerfil perfil={perfil} mudar={mudar} aoFechar={() => setAberto(null)} />
       )}
       {aberto === 'senha' && <TrocarSenha aoFechar={() => setAberto(null)} />}
+      {aberto === 'duas-etapas' && (
+        <ModalDeDuasEtapas
+          ligada={duasEtapas}
+          aoFechar={() => {
+            setAberto(null)
+            // O servidor mudou o estado; o "ligada/desligada" relê da sessão.
+            router.refresh()
+          }}
+        />
+      )}
     </>
   )
 }
@@ -576,6 +605,7 @@ const IconeEngrenagem = ({ tamanho = 18 }: { tamanho?: number }) => <Traco taman
 const IconeSino = () => <Traco><path d="M6 8a6 6 0 1 1 12 0c0 7 3 9 3 9H3s3-2 3-9" /><path d="M10.3 21a1.9 1.9 0 0 0 3.4 0" /></Traco>
 const IconePessoa = () => <Traco tamanho={16}><circle cx="12" cy="8" r="4" /><path d="M4 21v-1a8 8 0 0 1 16 0v1" /></Traco>
 const IconeChave = () => <Traco tamanho={16}><circle cx="7.5" cy="15.5" r="4.5" /><path d="m10.7 12.3 9.3-9.3M17 6l3 3M14.5 8.5l2 2" /></Traco>
+const IconeEscudo = () => <Traco tamanho={16}><path d="M12 3.5 5 6.2v5.3c0 4.3 3 7.6 7 9 4-1.4 7-4.7 7-9V6.2L12 3.5Z" /><path d="m9 12 2.2 2.2L15.5 10" /></Traco>
 const IconeCartao = () => <Traco tamanho={16}><rect x="3" y="5" width="18" height="14" rx="2" /><path d="M3 10h18" /></Traco>
 const IconeTrocar = () => <Traco tamanho={16}><path d="M4 7h13l-3-3M20 17H7l3 3" /></Traco>
 const IconeSair = () => <Traco tamanho={16}><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9" /></Traco>
