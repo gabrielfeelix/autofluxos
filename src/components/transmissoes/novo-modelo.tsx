@@ -1,5 +1,6 @@
 'use client'
 
+import { tituloDaBiblioteca } from '@/core/titulo-da-biblioteca'
 import { useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
 import { Modal } from '@/components/design/modal'
@@ -281,7 +282,7 @@ function Galeria({
               {daMeta.slice(0, 6).map((modelo) => (
                 <Cartao
                   key={modelo.nome}
-                  titulo={tituloLegivel(modelo.nome)}
+                  titulo={tituloDaBiblioteca(modelo.nome)}
                   texto={modelo.corpo}
                   selo
                   aoClicar={() => aoEscolherDaMeta(modelo)}
@@ -316,18 +317,6 @@ function Galeria({
       </div>
     </div>
   )
-}
-
-/**
- * O nome da Meta vira título de tela.
- *
- * Ela nomeia em `snake_case` e em inglês (`appointment_reminder_2`). Mostrar o
- * cru faria a galeria parecer um dump de API ao lado dos nossos, que têm nome
- * de gente.
- */
-function tituloLegivel(nome: string): string {
-  const limpo = nome.replace(/_\d+$/, '').replaceAll('_', ' ').trim()
-  return limpo.charAt(0).toUpperCase() + limpo.slice(1)
 }
 
 /**
