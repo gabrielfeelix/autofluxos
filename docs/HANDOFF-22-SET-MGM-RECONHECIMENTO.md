@@ -1,4 +1,4 @@
-# Handoff 22/set/2026 — MGM: retomada do bot, reconhecimento por telefone, menu de dias
+# Handoff 22/set/2026: MGM: retomada do bot, reconhecimento por telefone, menu de dias
 
 Para quem for continuar nos fluxos da MGM. Começa pela última seção, que é o
 que ficou aberto.
