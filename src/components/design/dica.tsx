@@ -172,6 +172,9 @@ export function Dica({
     */
     <span
       ref={alvo}
+      // A dica global de texto cortado (`dica-do-truncado.tsx`) não age aqui
+      // dentro: esta já cuida, e as duas juntas eram dois balões iguais.
+      data-dica=""
       className={soSeCortado ? 'relative block min-w-0 flex-1' : 'relative inline-flex shrink-0'}
       onMouseEnter={() => mostrar(400)}
       onMouseLeave={esconder}

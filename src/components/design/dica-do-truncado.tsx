@@ -23,6 +23,8 @@ function cortado(el: HTMLElement): boolean {
 
 function achar(alvo: EventTarget | null): HTMLElement | null {
   let el = alvo instanceof HTMLElement ? alvo : null
+  // Dentro de uma `Dica` do produto, ela já mostra o balão dela.
+  if (el?.closest('[data-dica]')) return null
   for (let i = 0; el && i < SUBIDA; i++, el = el.parentElement) {
     // Quem já tem `title` ganha a dica nativa; duas ao mesmo tempo seria ruído.
     if (el.title) return null
