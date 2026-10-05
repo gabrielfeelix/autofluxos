@@ -214,13 +214,20 @@ export async function transcreverAudio(
  * Três tentativas com espera entre elas transformariam um clique numa espera de
  * um minuto e meio para, provavelmente, o mesmo resultado.
  */
-async function comReserva(chave: string, bytes: Uint8Array, mime: string): Promise<string> {
+export async function comReserva(
+  chave: string,
+  bytes: Uint8Array,
+  mime: string,
+  /** O pedido ao modelo. A leitura de imagem (`ler-imagem.ts`) passa o dela. */
+  instrucao: string = INSTRUCAO,
+  timeoutMs: number = TIMEOUT_MS,
+): Promise<string> {
   try {
-    return await pedirAoGemini(chave, bytes, mime, MODELO)
+    return await pedirAoGemini(chave, bytes, mime, MODELO, instrucao, timeoutMs)
   } catch (erro) {
     if (!(erro instanceof Error) || !erro.message.startsWith('ocupado')) throw erro
-    console.warn('[transcricao] o modelo principal estava ocupado; indo para a reserva')
-    return pedirAoGemini(chave, bytes, mime, MODELO_RESERVA)
+    console.warn('[gemini] o modelo principal estava ocupado; indo para a reserva')
+    return pedirAoGemini(chave, bytes, mime, MODELO_RESERVA, instrucao, timeoutMs)
   }
 }
 
@@ -229,13 +236,15 @@ async function pedirAoGemini(
   bytes: Uint8Array,
   mime: string,
   modelo: string,
+  instrucao: string,
+  timeoutMs: number,
 ): Promise<string> {
   const corpo = {
     contents: [
       {
         role: 'user',
         parts: [
-          { text: INSTRUCAO },
+          { text: instrucao },
           {
             inline_data: {
               mime_type: mime,
@@ -255,7 +264,7 @@ async function pedirAoGemini(
     generationConfig: { temperature: 0 },
   }
 
-  const corte = AbortSignal.timeout(TIMEOUT_MS)
+  const corte = AbortSignal.timeout(timeoutMs)
   const resposta = await fetch(`${ENDERECO}/${modelo}:generateContent`, {
     method: 'POST',
     headers: { 'content-type': 'application/json', 'x-goog-api-key': chave },

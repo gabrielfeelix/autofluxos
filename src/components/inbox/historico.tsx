@@ -574,6 +574,16 @@ function ListaDeMensagens({
                   inicial={mensagem.transcricao ?? null}
                 />
               )}
+              {/*
+                A foto que a IA leu na conversa com ela (`server/ler-imagem.ts`):
+                quem abre a conversa depois vê o que o bot entendeu da imagem,
+                e não precisa adivinhar por que ele mandou aqueles cards.
+              */}
+              {mensagem.recebido?.midia === 'imagem' && mensagem.transcricao && (
+                <p className="mt-1.5 text-[11px] leading-4 whitespace-pre-line text-dim">
+                  <span className="font-semibold">Lido pela IA:</span> {mensagem.transcricao}
+                </p>
+              )}
               {mensagem.semCopia && <ArquivoSemCopia nossa={nossa} />}
               {mensagem.naoSuportada && <MensagemNaoSuportada motivo={mensagem.motivoNaoSuportada} />}
               {mensagem.local && <LocalNaBolha local={mensagem.local} />}

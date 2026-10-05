@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { fluxoSchema, type Fluxo } from '../flow/schema'
-import { executar, MAX_TENTATIVAS, pediuReinicio, pediuSaidaDaIa, soCumprimento } from './executar'
+import { executar, MAX_TENTATIVAS, MENSAGEM_IMAGEM_ILEGIVEL, pediuReinicio, pediuSaidaDaIa, soCumprimento } from './executar'
 import { sessaoNova, type Acao, type Entrada, type Sessao } from './types'
 
 const p = { x: 0, y: 0 }
@@ -1956,6 +1956,30 @@ describe('IA contínua (conversar)', () => {
     expect(sessao.status).toBe('ativa')
     expect(sessao.tentativas).toBe(1)
     expect(sessao.vars['r']).toBe('Oi! Temos calabresa.')
+  })
+
+  it('foto lida pelo servidor volta ao modelo, sem passar para a equipe', () => {
+    const { sessao, acoes } = conversar(continua, [
+      { tipo: 'inicio' },
+      { tipo: 'ia_respondeu', texto: 'Oi!' },
+      { tipo: 'midia', formato: 'image', lida: 'Print de carrinho: Pizza calabresa x2' },
+    ])
+    expect(tipos(acoes)).toEqual(['chamar_ia'])
+    expect(sessao.status).toBe('aguardando_ia')
+    expect(sessao.noAtual).toBe('pizzaria')
+    expect(sessao.tentativas).toBe(1)
+  })
+
+  it('foto que não deu para ler pede para escrever e fica na conversa', () => {
+    const { sessao, acoes } = conversar(continua, [
+      { tipo: 'inicio' },
+      { tipo: 'ia_respondeu', texto: 'Oi!' },
+      { tipo: 'midia', formato: 'image' },
+    ])
+    expect(textos(acoes)).toEqual([MENSAGEM_IMAGEM_ILEGIVEL])
+    expect(tipos(acoes)).not.toContain('transferir_humano')
+    expect(sessao.status).toBe('ativa')
+    expect(sessao.noAtual).toBe('pizzaria')
   })
 
   it('a mensagem seguinte volta ao modelo, no mesmo bloco', () => {

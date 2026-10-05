@@ -146,6 +146,10 @@ const MENSAGEM_NAO_ENTENDI = 'Para seguir com o seu atendimento, escolha uma das
 const MENSAGEM_SO_TEXTO =
   'Ainda não sei ler figurinha. 😅 Pode me responder por aqui mesmo?'
 
+/** A imagem chegou na conversa com a IA e não deu para ler o que tem nela. */
+export const MENSAGEM_IMAGEM_ILEGIVEL =
+  'Não consegui ler essa imagem. 😕 Pode me escrever o nome do produto ou o que você procura?'
+
 /**
  * O que o motor precisa saber sobre **o mundo em volta** para transferir bem.
  *
@@ -358,6 +362,37 @@ export function executar(
       acoes.push({ tipo: 'enviar_texto', texto: MENSAGEM_SO_TEXTO })
       acoes.push(...perguntar(parada, s))
       return { acoes, sessao: s }
+    }
+
+    /*
+     * Foto na conversa com a IA: a IA lê a imagem, e quem não deu para ler
+     * recebe um pedido para escrever.
+     *
+     * Antes toda foto aqui ia para a equipe com "o bot só lê texto". Um
+     * cliente da PCYES mandou o print do carrinho do site com "gostaria
+     * desses" e caiu na fila, quando a IA, que tem a loja na mão, podia ter
+     * mandado os cards. O servidor lê a imagem antes do motor
+     * (`server/ler-imagem.ts`) e a leitura vai para o histórico da conversa;
+     * aqui só se decide o caminho.
+     *
+     * Sem leitura e com legenda, segue o caminho da legenda logo abaixo, que
+     * já sabia tratar "quero falar com atendente" escrito embaixo da foto. Sem
+     * leitura e sem legenda, a pessoa fica na conversa e lê que pode escrever:
+     * passar calado para a equipe era o que deixava a foto sem resposta.
+     */
+    const naIa = conversandoComIa(porId, s)
+    if (naIa && entrada.formato === 'image') {
+      if ((entrada.lida ?? '').trim() !== '') {
+        // `tentativas` não zera: aqui ela conta as respostas da IA, e a foto
+        // é uma volta da conversa como uma frase escrita.
+        acoes.push(chamarIa(naIa, s))
+        s.status = 'aguardando_ia'
+        return { acoes, sessao: s }
+      }
+      if ((entrada.legenda ?? '').trim() === '') {
+        acoes.push({ tipo: 'enviar_texto', texto: MENSAGEM_IMAGEM_ILEGIVEL })
+        return { acoes, sessao: s }
+      }
     }
 
     /*

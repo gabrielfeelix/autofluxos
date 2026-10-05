@@ -12,6 +12,7 @@ import { alertar, type ContextoDoAlerta } from './alertar'
 import { avisarHandoff } from './avisar-handoff'
 import { executarComEfeitos, type OpcoesDeEfeitos } from './efeitos/resolver'
 import { guardarMidiaRecebida } from './guardar-midia-recebida'
+import { comoTextoDaImagem, lerImagemRecebida } from './ler-imagem'
 import { escolherModelo } from './ia/modelo'
 import { comLinkRastreado } from './link-de-produto'
 import { juntarFraseAosCards, juntarTextosSeguidos } from '@/core/juntar-cards'
@@ -1009,8 +1010,32 @@ async function avancarConversa(
      * viagem a mais no relógio de toda mensagem; em paralelo com o preparo da IA,
      * não custa nada.
      */
+    /*
+     * Foto na conversa com a IA: lida antes de o motor rodar.
+     *
+     * O motor não faz rede, então a leitura acontece aqui e chega a ele como
+     * `lida`; a mesma leitura vira o texto da pergunta para a IA. Só quando a
+     * conversa está parada num bloco de IA conversando: num menu ou numa
+     * pergunta comum a foto segue a Regra B de sempre, e ler ali seria gastar
+     * uma chamada que ninguém vai usar. Ver `ler-imagem.ts`.
+     */
+    let entradaDoMotor = entrada
+    let textoDaPessoa = texto
+    if (
+      !conversaNova &&
+      entrada.tipo === 'midia' &&
+      entrada.formato === 'image' &&
+      paradaNaConversaComIa(versao.grafo, salva.sessao)
+    ) {
+      const lida = await lerImagemRecebida(canalSalvo.clienteId, contato.id, mensagemId)
+      if (lida) {
+        entradaDoMotor = { ...entrada, lida }
+        textoDaPessoa = comoTextoDaImagem(lida, entrada.legenda)
+      }
+    }
+
     const [opcoesDeIa, horarioGuardado] = await Promise.all([
-      prepararIa(canalSalvo, contato.id, versao, texto),
+      prepararIa(canalSalvo, contato.id, versao, textoDaPessoa),
       horarioDoCliente(canalSalvo.clienteId),
     ])
 
@@ -1046,7 +1071,7 @@ async function avancarConversa(
             ...(entrada.tipo === 'texto' ? { texto: entrada.texto } : {}),
             ...(entrada.tipo === 'midia' && entrada.legenda ? { texto: entrada.legenda } : {}),
           }
-        : entrada,
+        : entradaDoMotor,
       {
         ...opcoesDeIa,
         atendimento: contextoDeAtendimento(horario),
@@ -1567,9 +1592,12 @@ async function prepararIa(
     iaHabilitada: fluxo?.iaHabilitada ?? false,
     clienteId: canalSalvo.clienteId,
   })
-  const mensagensComCitacao = conversa.mensagens.map((m) =>
-    m.direcao === 'entrada' && m.cita ? { ...m, texto: comCitacao(m.texto, m.cita) } : m,
-  )
+  const mensagensComCitacao = conversa.mensagens.map((m) => {
+    // A foto lida e o áudio transcrito entram como o que dizem: é a leitura
+    // que faz a IA responder "gostaria desses" com os produtos do print.
+    const lida = m.direcao === 'entrada' && m.transcricao ? { ...m, texto: textoDaEntrada(m) } : m
+    return lida.direcao === 'entrada' && lida.cita ? { ...lida, texto: comCitacao(lida.texto, lida.cita) } : lida
+  })
 
   return {
     modelo,
@@ -1588,7 +1616,7 @@ async function prepararIa(
       ? (textoDaRajada(mensagensComCitacao) ?? perguntaDaPessoa)
       : undefined,
     historico: mensagensComCitacao.flatMap((m): Turno[] => {
-      if (m.direcao === 'entrada') return [{ de: 'pessoa', texto: m.texto ?? '(áudio ou imagem)' }]
+      if (m.direcao === 'entrada') return [{ de: 'pessoa', texto: textoDaEntrada(m) }]
       if (!m.produtos?.length) return [{ de: 'bot', texto: m.texto ?? '(áudio ou imagem)' }]
       /*
        * O card gravado como texto (nome, preço, link) ensinava o modelo a
@@ -1606,6 +1634,25 @@ async function prepararIa(
       return frase ? [{ de: 'bot', texto: frase }, mostrados] : [mostrados]
     }),
   }
+}
+
+/** A conversa está parada num bloco de IA conversando, esperando a pessoa. */
+function paradaNaConversaComIa(grafo: Fluxo, sessao: Sessao): boolean {
+  if (sessao.status !== 'ativa' || sessao.noAtual === null) return false
+  const no = grafo.nodes.find((n) => n.id === sessao.noAtual)
+  return no?.type === 'ia' && Boolean(no.data.conversar)
+}
+
+/** O que uma mensagem recebida diz, para o histórico que a IA lê. */
+function textoDaEntrada(m: { texto: string | null; transcricao?: string | null; arquivo?: unknown }): string {
+  if (m.transcricao) {
+    // A legenda da foto fica em `texto`, e vai junto da leitura: "gostaria
+    // desses" sem o que está no print não diz quais.
+    const midia = (m.arquivo as { midia?: string } | null)?.midia
+    if (midia === 'imagem') return comoTextoDaImagem(m.transcricao, m.texto)
+    if (m.texto == null) return `[Áudio transcrito] ${m.transcricao}`
+  }
+  return m.texto ?? '(áudio ou imagem)'
 }
 
 /** O texto padrão antes de uma pessoa assumir. */

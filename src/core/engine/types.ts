@@ -127,6 +127,12 @@ export const entradaSchema = z.discriminatedUnion('tipo', [
     midiaId: z.string().optional(),
     /** A legenda que a pessoa escreveu junto com a foto, quando escreveu. */
     legenda: z.string().optional(),
+    /**
+     * O que o servidor conseguiu ler da imagem, quando a conversa está com a
+     * IA (`server/ler-imagem.ts`). Ausente = não leu, ou nem tentou: o motor
+     * não faz rede, então quem lê é o servidor e aqui só chega o resultado.
+     */
+    lida: z.string().optional(),
   }),
   /** o servidor chamou o modelo e trouxe a resposta de volta */
   z.object({

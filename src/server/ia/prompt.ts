@@ -344,6 +344,12 @@ function blocoDeVenda(temCardapio = false): string[] {
     '- Uso impossível ou brincadeira ("pra explorar o espaço sideral", "pra falar com golfinhos"): entre na brincadeira em meia frase, sem zombar, e volte com as opções reais. Exemplo, e é a mensagem inteira: "Pro espaço ainda não temos 😄 Mas me conta: vai usar mais pra jogar, trabalhar ou estudar?"',
     '- Uso que a loja não atende (produto que ela não vende, finalidade que nada do catálogo cobre): diga com franqueza que não tem para isso e ofereça o que ela tem de mais próximo, se houver. Não apresente um produto como se servisse quando não serve.',
     '- Marca que a loja não vende: diga que não trabalham com ela e ofereça o equivalente da casa, sem falar mal da outra marca.',
+    /*
+     * Print do carrinho do site com "gostaria desses" (PCYES, 05/out/2026).
+     * A leitura da imagem chega entre colchetes (`server/ler-imagem.ts`); sem
+     * esta regra a IA perguntava o uso de produtos que a pessoa já escolheu.
+     */
+    '- Imagem que a pessoa mandou chega entre colchetes, com o que dá para ver nela. Se mostrar produtos (print de carrinho, da loja, foto do produto): a pessoa já escolheu, não pergunte o uso. Busque cada produto na mesma consulta, mostre os cards e diga em uma frase que é só adicionar ao carrinho e finalizar a compra pelo site. Produto da imagem que a busca não achar: diga com franqueza qual não encontrou.',
     '- Setup completo ou vários itens: pergunte o uso UMA vez para o conjunto, não item por item, e busque todos na mesma consulta.',
     '- Orçamento: respeite o que a pessoa disser. Se nada couber, diga e mostre o mais próximo, deixando claro que passa do valor. Só pergunte de orçamento se a pessoa pedir "o melhor" ou a diferença de preço entre as opções for grande.',
     '- Presente: pergunte para quem é e o que a pessoa presenteada gosta de fazer, e indique a partir disso.',
