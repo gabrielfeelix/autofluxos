@@ -1,5 +1,6 @@
 'use client'
 
+import { PainelDeEmojis } from '@/components/lead/seletor-de-emoji'
 import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { useAcaoOtimista } from '@/components/design/acao-otimista'
 import { useCitacao } from '@/components/lead/citacao'
@@ -106,6 +107,8 @@ export function RodapeDaMensagem({
 }) {
   const [menuAberto, setMenuAberto] = useState(menuAbertoDeInicio)
   const [emojisAbertos, setEmojisAbertos] = useState(false)
+  /** O "+" das reações: a grade inteira, com busca, como no WhatsApp. */
+  const [todosAbertos, setTodosAbertos] = useState(false)
   const [copiado, setCopiado] = useState(false)
   /** Perto do fim da área que rola, o menu abre para cima, como no WhatsApp. */
   const [paraCima, setParaCima] = useState(false)
@@ -141,18 +144,17 @@ export function RodapeDaMensagem({
 
   // Clique fora ou Esc fecha o que estiver aberto, como no WhatsApp.
   useEffect(() => {
-    if (!menuAberto && !emojisAbertos) return
+    if (!menuAberto && !emojisAbertos && !todosAbertos) return
+    const fechar = () => {
+      setMenuAberto(false)
+      setEmojisAbertos(false)
+      setTodosAbertos(false)
+    }
     const fora = (evento: MouseEvent) => {
-      if (!caixa.current?.contains(evento.target as Node)) {
-        setMenuAberto(false)
-        setEmojisAbertos(false)
-      }
+      if (!caixa.current?.contains(evento.target as Node)) fechar()
     }
     const esc = (evento: KeyboardEvent) => {
-      if (evento.key === 'Escape') {
-        setMenuAberto(false)
-        setEmojisAbertos(false)
-      }
+      if (evento.key === 'Escape') fechar()
     }
     document.addEventListener('mousedown', fora)
     document.addEventListener('keydown', esc)
@@ -160,12 +162,13 @@ export function RodapeDaMensagem({
       document.removeEventListener('mousedown', fora)
       document.removeEventListener('keydown', esc)
     }
-  }, [menuAberto, emojisAbertos])
+  }, [menuAberto, emojisAbertos, todosAbertos])
 
   function reagir(emoji: string) {
     if (!waMessageId) return
     setEmojisAbertos(false)
     setMenuAberto(false)
+    setTodosAbertos(false)
 
     /*
      * Clicar no emoji que já está lá **remove**, string vazia é como a Meta
@@ -195,6 +198,44 @@ export function RodapeDaMensagem({
     ...(minhaReacao ? [{ chave: 'nossa', emoji: minhaReacao, dono: 'atendimento' }] : []),
   ]
   const lado = nossa ? 'right-0' : 'left-0'
+
+  /** Os seis de sempre e o "+", que abre a grade inteira no mesmo lugar. */
+  const linhaDeReacoes = (posicao: string) => (
+    <div role="menu" aria-label="Reagir" className={`flex items-center gap-1 rounded-full border border-line bg-panel px-2 py-1.5 shadow-[0_8px_28px_rgba(19,25,34,0.16)] ${posicao}`}>
+      {EMOJIS.map((emoji) => (
+        <button
+          key={emoji}
+          type="button"
+          role="menuitem"
+          onClick={() => reagir(emoji)}
+          title={emoji === minhaReacao ? 'Tirar a reação' : `Reagir com ${emoji}`}
+          className={`grid h-9 w-9 place-items-center rounded-full text-[22px] leading-none transition hover:scale-125 ${emoji === minhaReacao ? 'bg-primary/20' : ''}`}
+        >
+          {emoji}
+        </button>
+      ))}
+      <button
+        type="button"
+        role="menuitem"
+        onClick={() => {
+          if (caixa.current) {
+            setParaCima(espacoAbaixo(caixa.current) < 340)
+            setNaSeta(espacoADireita(caixa.current) >= LARGURA_DO_MENU)
+          }
+          setMenuAberto(false)
+          setEmojisAbertos(false)
+          setTodosAbertos(true)
+        }}
+        title="Mais reações"
+        aria-label="Mais reações"
+        className="grid h-9 w-9 place-items-center rounded-full text-muted transition hover:bg-surface-strong hover:text-ink"
+      >
+        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" aria-hidden="true">
+          <path d="M12 5v14M5 12h14" />
+        </svg>
+      </button>
+    </div>
+  )
 
   return (
     <div
@@ -253,22 +294,7 @@ export function RodapeDaMensagem({
         <div
           className={`absolute ${paraCima ? 'bottom-full mb-1' : 'top-8'} ${nossa || !naSeta ? lado : 'left-[calc(100%-2rem)]'} z-30 flex flex-col gap-1.5 ${nossa ? 'items-end' : 'items-start'}`}
         >
-          {podeReagir && waMessageId && (
-            <div role="menu" aria-label="Reagir" className="flex gap-1 rounded-full border border-line bg-panel px-2 py-1.5 shadow-[0_8px_28px_rgba(19,25,34,0.16)]">
-              {EMOJIS.map((emoji) => (
-                <button
-                  key={emoji}
-                  type="button"
-                  role="menuitem"
-                  onClick={() => reagir(emoji)}
-                  title={emoji === minhaReacao ? 'Tirar a reação' : `Reagir com ${emoji}`}
-                  className={`grid h-9 w-9 place-items-center rounded-full text-[22px] leading-none transition hover:scale-125 ${emoji === minhaReacao ? 'bg-primary/20' : ''}`}
-                >
-                  {emoji}
-                </button>
-              ))}
-            </div>
-          )}
+          {podeReagir && waMessageId && linhaDeReacoes('')}
         <div
           role="menu"
           className="min-w-[196px] overflow-hidden rounded-[12px] border border-line bg-panel py-1.5 shadow-[0_8px_28px_rgba(19,25,34,0.16)]"
@@ -324,25 +350,14 @@ export function RodapeDaMensagem({
         </div>
       )}
 
-      {emojisAbertos && (
-        <div
-          role="menu"
-          aria-label="Reagir"
-          className={`absolute bottom-full ${lado} z-30 mb-1.5 flex gap-1 rounded-full border border-line bg-panel px-2 py-1.5 shadow-[0_8px_28px_rgba(19,25,34,0.16)]`}
-        >
-          {EMOJIS.map((emoji) => (
-            <button
-              key={emoji}
-              type="button"
-              role="menuitem"
-              onClick={() => reagir(emoji)}
-              title={emoji === minhaReacao ? 'Tirar a reação' : `Reagir com ${emoji}`}
-              className={`grid h-9 w-9 place-items-center rounded-full text-[22px] leading-none transition hover:scale-125 ${emoji === minhaReacao ? 'bg-primary/20' : ''}`}
-            >
-              {emoji}
-            </button>
-          ))}
-        </div>
+      {emojisAbertos && linhaDeReacoes(`absolute bottom-full ${lado} z-30 mb-1.5`)}
+
+      {todosAbertos && (
+        <PainelDeEmojis
+          aoEscolher={reagir}
+          placeholder="Pesquisar reação"
+          className={`absolute ${paraCima ? 'bottom-full mb-1' : 'top-8'} ${nossa || !naSeta ? lado : 'left-[calc(100%-2rem)]'} z-30`}
+        />
       )}
 
       {/*

@@ -37,8 +37,6 @@ export function SeletorDeEmoji({
   desabilitado?: boolean
 }) {
   const [aberto, setAberto] = useState(false)
-  const [grupo, setGrupo] = useState(0)
-  const [busca, setBusca] = useState('')
   const caixa = useRef<HTMLDivElement>(null)
 
   /*
@@ -67,11 +65,6 @@ export function SeletorDeEmoji({
     }
   }, [aberto])
 
-  const procurando = busca.trim() !== ''
-  const emojis = procurando
-    ? buscarEmojis(busca)
-    : (GRUPOS_DE_EMOJI[grupo]?.itens ?? []).map(emojiDoItem)
-
   return (
     <div className="relative shrink-0" ref={caixa}>
       <Dica texto="Emoji" lado="cima">
@@ -88,87 +81,115 @@ export function SeletorDeEmoji({
       </Dica>
 
       {aberto && (
-        <div
-          role="dialog"
-          aria-label="Emojis"
+        <PainelDeEmojis
+          aoEscolher={aoEscolher}
           /*
            * Abre para cima porque o campo de resposta mora no rodapé da tela:
            * para baixo, a telinha nasceria fora da janela.
            */
-          className="absolute bottom-full left-0 z-30 mb-2 w-[286px] rounded-[12px] border border-line bg-panel p-2 shadow-[0_10px_30px_rgba(19,25,34,0.11)]"
-        >
-          <input
-            type="search"
-            value={busca}
-            autoFocus
-            onChange={(e) => setBusca(e.target.value)}
-            onKeyDown={(evento) => {
-              /*
-               * **Enter aqui não pode enviar a mensagem.**
-               *
-               * Esta telinha abre de dentro do `<form>` da resposta, e um
-               * `Enter` em campo de formulário dispara o `submit`, quem
-               * digitasse "festa" e apertasse Enter para buscar mandaria a
-               * resposta pela metade para o cliente. O Enter escolhe o
-               * primeiro resultado, que é o que a mão esperava.
-               */
-              if (evento.key !== 'Enter') return
-              evento.preventDefault()
-              const primeiro = buscarEmojis(busca)[0]
-              if (primeiro) aoEscolher(primeiro)
-            }}
-            placeholder="Procurar: festa, obrigado, foto…"
-            className="app-field mb-2 h-8 px-2.5 text-[12.5px]"
-          />
+          className="absolute bottom-full left-0 z-30 mb-2"
+        />
+      )}
+    </div>
+  )
+}
 
-          {!procurando && (
-            <div className="mb-1.5 flex gap-0.5" role="tablist" aria-label="Categorias">
-              {GRUPOS_DE_EMOJI.map((g, i) => (
-                <button
-                  key={g.nome}
-                  type="button"
-                  role="tab"
-                  aria-selected={i === grupo}
-                  title={g.nome}
-                  onClick={() => setGrupo(i)}
-                  className={`flex-1 rounded-[8px] py-1 text-[14px] leading-none transition ${
-                    i === grupo ? 'bg-primary/20' : 'hover:bg-surface-strong'
-                  }`}
-                >
-                  {g.aba}
-                </button>
-              ))}
-            </div>
-          )}
+/**
+ * A busca, as abas e a grade, sem o botão: o mesmo painel serve o campo de
+ * resposta e o "+" das reações rápidas, que no WhatsApp abre esta mesma tela.
+ */
+export function PainelDeEmojis({
+  aoEscolher,
+  placeholder = 'Procurar: festa, obrigado, foto…',
+  className = '',
+}: {
+  aoEscolher: (emoji: string) => void
+  placeholder?: string
+  className?: string
+}) {
+  const [grupo, setGrupo] = useState(0)
+  const [busca, setBusca] = useState('')
+  const procurando = busca.trim() !== ''
+  const emojis = procurando
+    ? buscarEmojis(busca)
+    : (GRUPOS_DE_EMOJI[grupo]?.itens ?? []).map(emojiDoItem)
 
-          <div className="grid max-h-[190px] grid-cols-8 gap-0.5 overflow-y-auto">
-            {emojis.map((emoji) => (
-              <button
-                key={emoji}
-                type="button"
-                onClick={() => {
-                  aoEscolher(emoji)
-                  /*
-                   * A telinha **fica aberta**: mandar três emojis seguidos é
-                   * caso normal, e fechar a cada clique obrigaria a reabrir
-                   * três vezes. Quem terminou clica fora, ou aperta Esc.
-                   */
-                }}
-                title={emoji}
-                className="rounded-[7px] py-1 text-[18px] leading-none transition hover:bg-surface-strong"
-              >
-                {emoji}
-              </button>
-            ))}
-            {emojis.length === 0 && (
-              <p className="col-span-8 px-1 py-4 text-center text-[12px] text-dim">
-                Nada com esse nome. Tente uma palavra só, &ldquo;festa&rdquo;,
-                &ldquo;obrigado&rdquo;, &ldquo;dinheiro&rdquo;.
-              </p>
-            )}
-          </div>
+  return (
+    <div
+      role="dialog"
+      aria-label="Emojis"
+      className={`w-[286px] rounded-[12px] border border-line bg-panel p-2 shadow-[0_10px_30px_rgba(19,25,34,0.11)] ${className}`}
+    >
+      <input
+        type="search"
+        value={busca}
+        autoFocus
+        onChange={(e) => setBusca(e.target.value)}
+        onKeyDown={(evento) => {
+          /*
+           * **Enter aqui não pode enviar a mensagem.**
+           *
+           * Esta telinha abre de dentro do `<form>` da resposta, e um
+           * `Enter` em campo de formulário dispara o `submit`, quem
+           * digitasse "festa" e apertasse Enter para buscar mandaria a
+           * resposta pela metade para o cliente. O Enter escolhe o
+           * primeiro resultado, que é o que a mão esperava.
+           */
+          if (evento.key !== 'Enter') return
+          evento.preventDefault()
+          const primeiro = buscarEmojis(busca)[0]
+          if (primeiro) aoEscolher(primeiro)
+        }}
+        placeholder={placeholder}
+        className="app-field mb-2 h-8 px-2.5 text-[12.5px]"
+      />
+
+      {!procurando && (
+        <div className="mb-1.5 flex gap-0.5" role="tablist" aria-label="Categorias">
+          {GRUPOS_DE_EMOJI.map((g, i) => (
+            <button
+              key={g.nome}
+              type="button"
+              role="tab"
+              aria-selected={i === grupo}
+              title={g.nome}
+              onClick={() => setGrupo(i)}
+              className={`flex-1 rounded-[8px] py-1 text-[14px] leading-none transition ${
+                i === grupo ? 'bg-primary/20' : 'hover:bg-surface-strong'
+              }`}
+            >
+              {g.aba}
+            </button>
+          ))}
         </div>
       )}
+
+      <div className="grid max-h-[190px] grid-cols-8 gap-0.5 overflow-y-auto">
+        {emojis.map((emoji) => (
+          <button
+            key={emoji}
+            type="button"
+            onClick={() => {
+              aoEscolher(emoji)
+              /*
+               * A telinha **fica aberta**: mandar três emojis seguidos é
+               * caso normal, e fechar a cada clique obrigaria a reabrir
+               * três vezes. Quem terminou clica fora, ou aperta Esc.
+               */
+            }}
+            title={emoji}
+            className="rounded-[7px] py-1 text-[18px] leading-none transition hover:bg-surface-strong"
+          >
+            {emoji}
+          </button>
+        ))}
+        {emojis.length === 0 && (
+          <p className="col-span-8 px-1 py-4 text-center text-[12px] text-dim">
+            Nada com esse nome. Tente uma palavra só, &ldquo;festa&rdquo;,
+            &ldquo;obrigado&rdquo;, &ldquo;dinheiro&rdquo;.
+          </p>
+        )}
+      </div>
     </div>
   )
 }
