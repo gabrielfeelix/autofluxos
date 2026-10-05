@@ -127,7 +127,7 @@ export default async function Pagina({ params }: { params: Promise<{ clienteId: 
 
   return (
     <ClienteShell cliente={cliente} ativa="inicio">
-      <Miolo largura="larga">
+      <Miolo largura="toda">
         <CabecalhoDaTela
           titulo={
             faltaPasso

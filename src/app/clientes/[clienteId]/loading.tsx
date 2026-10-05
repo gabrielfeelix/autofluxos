@@ -11,7 +11,7 @@ import { Esqueleto, EsqueletoDeLinhas } from '@/components/design/esqueleto'
 export default function Carregando() {
   return (
     <MioloCarregando>
-      <Miolo largura="larga">
+      <Miolo largura="toda">
         <CabecalhoDaTela
           titulo={<Esqueleto className="my-1 h-[26px] w-44 rounded-lg" />}
           descricao={<Esqueleto className="mt-1.5 h-3 w-64" />}
