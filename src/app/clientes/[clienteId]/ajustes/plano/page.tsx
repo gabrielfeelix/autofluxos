@@ -59,8 +59,8 @@ export default async function Pagina({ params }: { params: Promise<{ clienteId: 
   const plano = contrato.plano
   // Só o pedido que a administração ainda não respondeu (A5). Atendido ou
   // recusado, some da tela; pedido para o plano que já vale também.
-  const aberto = pedidos.find((pedido) => pedido.situacao === 'aberto' && pedido.para !== plano)
-  const pedidoAberto = aberto ? { para: aberto.para as IdDoPlano, quando: aberto.quando, por: aberto.quemPediu } : null
+  const aberto = pedidos.find((pedido) => pedido.situacao === 'aberto' && (pedido.para !== plano || pedido.ciclo === 'anual'))
+  const pedidoAberto = aberto ? { para: aberto.para as IdDoPlano, ciclo: aberto.ciclo, quando: aberto.quando, por: aberto.quemPediu } : null
 
   return (
     <AjustesShell cliente={cliente} ativa="plano">

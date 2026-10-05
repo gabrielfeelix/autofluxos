@@ -42,7 +42,7 @@ export default async function Pedidos({ searchParams }: { searchParams: Promise<
         <TabelaDePedidos
           key={JSON.stringify(parametros)}
           nomes={Object.fromEntries(planos.map((plano) => [plano.id, plano.nome]))}
-          pedidos={lista.map(({ id, quando, organizacaoId, organizacaoNome, quemPediu, de, para, situacao: estado, respondidoPor }) => ({ id, quando, organizacaoId, organizacaoNome, quemPediu, de, para, situacao: estado, respondidoPor }))}
+          pedidos={lista.map(({ id, quando, organizacaoId, organizacaoNome, quemPediu, de, para, ciclo, situacao: estado, respondidoPor }) => ({ id, quando, organizacaoId, organizacaoNome, quemPediu, de, para, ciclo, situacao: estado, respondidoPor }))}
         />
       )}
     </TelaDaAdministracao>

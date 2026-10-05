@@ -14,7 +14,7 @@ import {
 import type { ConsumoDoMes } from '@/server/repos/plano'
 import { previsaoDaTroca, usoDoRecurso, type UsoDaOrganizacao } from '@/core/troca-de-plano'
 import { diaPorExtenso, excedente, fraseDoExcedente, reais } from '@/core/contrato-do-plano'
-import { anualDoPlano, custoDaEquipe, RECURSOS_DO_PLANO } from '@/core/planos'
+import { anualDoPlano, custoDaEquipe, RECURSOS_DO_PLANO, type CicloDeCobranca } from '@/core/planos'
 import { ModalDeTroca } from '@/components/plano/modal-de-troca'
 import { FranquiaDaMeta } from '@/components/plano/franquia-da-meta'
 import type { FranquiaDoNumero } from '@/core/franquia-da-meta'
@@ -65,8 +65,8 @@ export function EscolhaDePlano({
   consumo: ConsumoDoMes
   podeMexer: boolean
   /** O último pedido de troca ainda não atendido, lido da auditoria. */
-  pedidoAberto: { para: IdDoPlano; quando: string; por: string } | null
-  pedirTroca: (desejado: IdDoPlano, ciente: boolean) => Promise<{ ok: boolean; erro?: string }>
+  pedidoAberto: { para: IdDoPlano; ciclo: CicloDeCobranca; quando: string; por: string } | null
+  pedirTroca: (desejado: IdDoPlano, ciente: boolean, ciclo: CicloDeCobranca) => Promise<{ ok: boolean; erro?: string }>
   /** O uso medido junto da página: o modal calcula o impacto na hora, sem ir ao servidor. */
   uso: UsoDaOrganizacao
   conexoesHref: string
@@ -87,10 +87,21 @@ export function EscolhaDePlano({
   const teste = testeAte ? { ate: testeAte, vencido: testeAte < hoje } : null
   const descida = contrato.planoAgendado && contrato.planoAgendadoPara ? { plano: acharPlano(contrato.planoAgendado), para: contrato.planoAgendadoPara } : null
 
-  const [pedido, setPedido] = useState<IdDoPlano | null>(null)
+  const [pedido, setPedido] = useState<{ para: IdDoPlano; ciclo: CicloDeCobranca } | null>(null)
   const [erro, setErro] = useState<string | null>(null)
   const [rodando, comecar] = useTransition()
   const [escolhido, setEscolhido] = useState<IdDoPlano | null>(null)
+  /*
+   * O ciclo é escolhido na tela, antes do clique: o botão já diz "Mudar para
+   * Operação anual", e o modal só confirma o impacto. Uma pergunta a menos
+   * dentro do modal, e o preço que a pessoa vê é o que ela pede.
+   */
+  const temAnual = planos.some((p) => anualDoPlano(p))
+  const [ciclo, setCiclo] = useState<CicloDeCobranca>('mensal')
+  const descontoAnual = Math.max(0, ...planos.map((p) => anualDoPlano(p)?.desconto ?? 0))
+  // Um estado só para todos os cartões: abertos juntos, eles continuam alinhados.
+  const [verTudo, setVerTudo] = useState(false)
+  const aberto = pedido ?? pedidoAberto
 
   // Otimista: o cartão já diz "pedido enviado" e volta atrás, com o motivo, se
   // o servidor recusar (bloqueio que apareceu depois de o modal abrir).
@@ -98,10 +109,10 @@ export function EscolhaDePlano({
     setErro(null)
     setEscolhido(null)
     const anterior = pedido
-    setPedido(desejado)
+    setPedido({ para: desejado, ciclo })
     comecar(async () => {
       try {
-        const r = await pedirTroca(desejado, ciente)
+        const r = await pedirTroca(desejado, ciente, ciclo)
         if (!r.ok) {
           setPedido(anterior)
           setErro(r.erro ?? 'não deu para enviar o pedido')
@@ -230,16 +241,42 @@ export function EscolhaDePlano({
       </section>
 
       <section aria-labelledby="titulo-solicitar">
-        <h2 id="titulo-solicitar" className="text-[15px] font-bold tracking-[-0.01em]">
-          Solicitar alteração
-        </h2>
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <h2 id="titulo-solicitar" className="text-[15px] font-bold tracking-[-0.01em]">
+            Solicitar alteração
+          </h2>
+          {temAnual && (
+            <span role="radiogroup" aria-label="Como pagar" className="flex rounded-[11px] border border-line bg-surface p-0.5">
+              {(['mensal', 'anual'] as const).map((valor) => {
+                const aceso = ciclo === valor
+                return (
+                  <button
+                    key={valor}
+                    type="button"
+                    role="radio"
+                    aria-checked={aceso}
+                    onClick={() => setCiclo(valor)}
+                    className={`rounded-[9px] px-3 py-1.5 text-[12px] font-semibold transition ${
+                      aceso ? 'bg-panel text-ink shadow-sm' : 'text-muted hover:text-soft'
+                    }`}
+                  >
+                    {valor === 'mensal' ? 'Mensal' : 'Anual'}
+                    {valor === 'anual' && descontoAnual > 0 && (
+                      <span className={`ml-1.5 text-[11px] font-semibold ${aceso ? 'text-ok' : 'text-dim'}`}>{descontoAnual}% a menos</span>
+                    )}
+                  </button>
+                )
+              })}
+            </span>
+          )}
+        </div>
         <p className="mt-1 mb-3 max-w-[650px] text-[12.5px] leading-6 text-dim">
           {podeMexer
             ? 'O pedido vai para a 4YU, que confirma com você antes de mudar a cobrança.'
             : 'Só o proprietário ou um administrador da organização pede mudança de plano. Os planos ficam aqui para consulta.'}
         </p>
 
-        {(pedido ?? pedidoAberto) && (
+        {aberto && (
           <p
             role="status"
             className="mb-3 flex max-w-[650px] items-start gap-2 rounded-[11px] border border-primary/20 bg-primary-weak px-4 py-3 text-[12.5px] leading-5 text-soft"
@@ -247,8 +284,8 @@ export function EscolhaDePlano({
             <span aria-hidden className="mt-1.5 size-1.5 shrink-0 rounded-full bg-primary" />
             <span>
               {pedido
-                ? `Pedido para o plano ${acharPlano(pedido).nome} enviado agora. A 4YU entra em contato.`
-                : `Pedido para o plano ${acharPlano(pedidoAberto!.para).nome} enviado em ${new Date(
+                ? `Pedido para o plano ${acharPlano(pedido.para).nome} ${pedido.ciclo} enviado agora. A 4YU entra em contato.`
+                : `Pedido para o plano ${acharPlano(pedidoAberto!.para).nome} ${pedidoAberto!.ciclo} enviado em ${new Date(
                     pedidoAberto!.quando,
                   ).toLocaleDateString('pt-BR')}${pedidoAberto!.por ? ` por ${pedidoAberto!.por}` : ''}. Aguardando a 4YU.`}
             </span>
@@ -259,8 +296,12 @@ export function EscolhaDePlano({
             <Cartao
               key={p.id}
               plano={p}
+              planos={planos}
+              ciclo={ciclo}
+              verTudo={verTudo}
+              aoVerTudo={() => setVerTudo((v) => !v)}
               ehOAtual={p.id === atual}
-              pedido={(pedido ?? pedidoAberto?.para) === p.id}
+              pedido={aberto?.para === p.id}
               podeMexer={podeMexer}
               rodando={rodando}
               aoPedir={() => setEscolhido(p.id)}
@@ -271,7 +312,7 @@ export function EscolhaDePlano({
         {escolhido && (
           <ModalDeTroca
             quem="organizacao"
-            paraNome={acharPlano(escolhido).nome}
+            paraNome={`${acharPlano(escolhido).nome} ${anualDoPlano(acharPlano(escolhido)) ? ciclo : 'mensal'}`}
             previsao={previsaoDaTroca(plano, acharPlano(escolhido), uso, contrato.precoContratado)}
             aoFechar={() => setEscolhido(null)}
             aoConfirmar={({ ciente }) => pedir(escolhido, ciente)}
@@ -291,8 +332,38 @@ export function EscolhaDePlano({
   )
 }
 
+/**
+ * As linhas que "Tudo do Essencial" resume, para o "Ver tudo".
+ *
+ * Herda os itens dos planos de baixo, menos o que o plano de cima substitui:
+ * franquia (começa com número ou "Até"), a própria linha de herança, e o item
+ * de limite ("Assunto: ...") cujo assunto um plano de cima repete
+ * ("Transmissões: 2.000" some diante de "Transmissões sem limite").
+ */
+function herdados(plano: Plano, planos: readonly Plano[]): string[] {
+  const indice = planos.findIndex((p) => p.id === plano.id)
+  const assunto = (item: string) => (item.split(/[: ]/)[0] ?? '').toLowerCase()
+  // Do plano mais perto para o mais longe: o assunto que um plano de cima já
+  // disse substitui o item "Assunto: limite" de baixo.
+  const acima = new Set(plano.itens.map(assunto))
+  const porPlano: string[][] = []
+  for (const de of planos.slice(0, Math.max(0, indice)).reverse()) {
+    porPlano.unshift(
+      de.itens.filter(
+        (item) => !item.startsWith('Tudo d') && !/^(\d|Até )/.test(item) && !(item.includes(':') && acima.has(assunto(item))),
+      ),
+    )
+    for (const item of de.itens) acima.add(assunto(item))
+  }
+  return [...new Set(porPlano.flat())]
+}
+
 function Cartao({
   plano,
+  planos,
+  ciclo,
+  verTudo,
+  aoVerTudo,
   ehOAtual,
   pedido,
   podeMexer,
@@ -300,12 +371,17 @@ function Cartao({
   aoPedir,
 }: {
   plano: Plano
+  planos: readonly Plano[]
+  ciclo: CicloDeCobranca
+  verTudo: boolean
+  aoVerTudo: () => void
   ehOAtual: boolean
   pedido: boolean
   podeMexer: boolean
   rodando: boolean
   aoPedir: () => void
 }) {
+  const anual = anualDoPlano(plano)
   return (
     <article
       className={`app-card flex flex-col p-4 ${ehOAtual ? 'border-primary/50 bg-primary/[0.04]' : ''}`}
@@ -319,22 +395,31 @@ function Cartao({
         )}
       </div>
 
-      <p className="mt-1 text-[17px] font-bold tracking-[-0.02em]">
-        R$ {plano.preco.toLocaleString('pt-BR')}
-        <span className="text-[12px] font-normal text-dim"> por mês</span>
-      </p>
-      {(() => {
-        const anual = anualDoPlano(plano)
-        return (
-          anual && (
-            <p className="mt-0.5 text-[11.5px] text-dim">
-              ou R$ {anual.porMes.toLocaleString('pt-BR')} por mês no anual ({anual.desconto}% a menos)
-            </p>
-          )
-        )
-      })()}
+      {anual && ciclo === 'anual' ? (
+        <>
+          <p className="mt-1 text-[17px] font-bold tracking-[-0.02em]">
+            R$ {anual.porMes.toLocaleString('pt-BR')}
+            <span className="text-[12px] font-normal text-dim"> por mês no anual</span>
+          </p>
+          <p className="mt-0.5 text-[11.5px] text-dim">
+            R$ {anual.porAno.toLocaleString('pt-BR')} por ano, {anual.desconto}% a menos que o mensal
+          </p>
+        </>
+      ) : (
+        <>
+          <p className="mt-1 text-[17px] font-bold tracking-[-0.02em]">
+            R$ {plano.preco.toLocaleString('pt-BR')}
+            <span className="text-[12px] font-normal text-dim"> por mês</span>
+          </p>
+          <p className="mt-0.5 text-[11.5px] text-dim">
+            {anual
+              ? `ou R$ ${anual.porMes.toLocaleString('pt-BR')} por mês no anual (${anual.desconto}% a menos)`
+              : 'Só mensal'}
+          </p>
+        </>
+      )}
 
-      <ul className="mt-3 mb-4 flex flex-1 flex-col gap-1.5">
+      <ul className="mt-3 mb-4 flex flex-col gap-1.5">
         {plano.itens.map((item) => {
           /*
             A linha de herança em negrito, e não como mais um item.
@@ -345,6 +430,7 @@ function Cartao({
             por isso que ninguém a lia na terceira posição.
           */
           const herda = item.startsWith('Tudo d')
+          const abertos = herda && verTudo ? herdados(plano, planos) : []
           return (
             <li
               key={item}
@@ -355,12 +441,34 @@ function Cartao({
               }
             >
               {item}
+              {abertos.length > 0 && (
+                <ul className="mt-1 mb-1 flex flex-col gap-1 border-l border-line pl-2.5">
+                  {abertos.map((herdado) => (
+                    <li key={herdado} className="text-[12px] leading-5 font-normal text-muted">
+                      {herdado}
+                    </li>
+                  ))}
+                </ul>
+              )}
             </li>
           )
         })}
       </ul>
 
-      {ehOAtual ? (
+      {plano.itens.some((item) => item.startsWith('Tudo d')) && (
+        <button
+          type="button"
+          onClick={aoVerTudo}
+          aria-expanded={verTudo}
+          className="-mt-2 mb-4 self-start text-[12px] font-semibold text-primary hover:underline"
+        >
+          {verTudo ? 'Ver menos' : 'Ver tudo o que inclui'}
+        </button>
+      )}
+      {/* O botão de pedir fica no pé do cartão, com a lista curta ou aberta. */}
+      <div aria-hidden className="flex-1" />
+
+      {ehOAtual && !(anual && ciclo === 'anual') ? (
         <p className="text-center text-[12px] text-dim">É o plano desta organização</p>
       ) : pedido ? (
         /*
@@ -377,12 +485,16 @@ function Cartao({
           onClick={aoPedir}
           title={
             podeMexer
-              ? `Pedir mudança para o plano ${plano.nome}`
+              ? `Pedir mudança para o plano ${plano.nome}, pagamento ${anual ? ciclo : 'mensal'}`
               : 'Só o proprietário ou um administrador da organização pede mudança de plano'
           }
           className="botao-secundario botao-md w-full"
         >
-          {rodando ? 'Enviando...' : `Mudar para ${plano.nome}`}
+          {rodando
+            ? 'Enviando...'
+            : ehOAtual
+              ? `Passar o ${plano.nome} para anual`
+              : `Mudar para ${plano.nome} ${anual ? ciclo : 'mensal'}`}
         </button>
       )}
     </article>

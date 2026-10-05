@@ -22,6 +22,8 @@ export type PedidoDePlano = {
   quemPediu: string
   de: string
   para: string
+  /** Mensal ou anual. Pedido anterior a 05/out/2026 não tinha: mensal. */
+  ciclo: 'mensal' | 'anual'
   situacao: SituacaoDoPedido
   respondidoEm: string | null
   respondidoPor: string | null
@@ -82,6 +84,7 @@ export async function pedidosDePlano(opcoes: { organizacaoId?: string } = {}): P
         quemPediu: linha.autor_email,
         de: String(linha.detalhes?.de ?? ''),
         para: String(linha.detalhes?.para ?? ''),
+        ciclo: linha.detalhes?.ciclo === 'anual' ? 'anual' : 'mensal',
         situacao: !resposta ? 'aberto' : resposta.acao === 'atendeu_pedido_de_plano' ? 'atendido' : 'recusado',
         respondidoEm: resposta?.quando ?? null,
         respondidoPor: resposta?.autor_email ?? null,

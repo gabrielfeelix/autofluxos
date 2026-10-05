@@ -1,7 +1,7 @@
 'use server'
 
 import { revalidatePath } from 'next/cache'
-import { ehIdDePlano, type IdDoPlano } from '@/core/planos'
+import { anualDoPlano, ehCicloDeCobranca, ehIdDePlano, type CicloDeCobranca, type IdDoPlano } from '@/core/planos'
 import { planosVigentes } from './repos/planos'
 import { registrar } from './repos/auditoria'
 import { planoDaConta } from './repos/plano'
@@ -37,7 +37,9 @@ export async function acaoPedirTrocaDePlano(
   clienteId: string,
   desejado: IdDoPlano,
   ciente = false,
+  cicloPedido: CicloDeCobranca = 'mensal',
 ): Promise<{ ok: boolean; erro?: string }> {
+  const ciclo: CicloDeCobranca = ehCicloDeCobranca(cicloPedido) ? cicloPedido : 'mensal'
   const acesso = await exigirCapacidade(clienteId, 'configurar_empresa', 'todos')
   if (recusou(acesso)) {
     return { ok: false, erro: 'só quem administra a organização pode pedir mudança de plano' }
@@ -45,9 +47,12 @@ export async function acaoPedirTrocaDePlano(
 
   const destino = ehIdDePlano(desejado) ? (await planosVigentes()).find((plano) => plano.id === desejado && plano.ativo) : undefined
   if (!destino) return { ok: false, erro: 'esse plano não existe' }
+  if (ciclo === 'anual' && !anualDoPlano(destino)) return { ok: false, erro: `o plano ${destino.nome} não tem pagamento anual` }
 
+  // O mesmo plano só vale como pedido para passar ao anual: o ciclo de hoje
+  // não está gravado, e quem confere é a 4YU ao atender.
   const atual = await planoDaConta(clienteId)
-  if (atual === desejado) {
+  if (atual === desejado && ciclo === 'mensal') {
     return { ok: false, erro: 'a organização já está neste plano' }
   }
 
@@ -70,7 +75,7 @@ export async function acaoPedirTrocaDePlano(
     contaId: clienteId,
     alvoTipo: 'plano',
     alvoNome: destino.nome,
-    detalhes: { de: atual, para: desejado, ...resumoDaTroca(previsao) },
+    detalhes: { de: atual, para: desejado, ciclo, ...resumoDaTroca(previsao) },
   })
 
   revalidatePath(`/clientes/${clienteId}/ajustes/plano`)

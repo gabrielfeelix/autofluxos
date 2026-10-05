@@ -398,6 +398,13 @@ export function idDoNome(nome: string): string {
  * desconto isso é sobre doze mensalidades. `null` quando o plano não tem anual,
  * ou quando o anual não sai mais barato (aí anunciar "desconto" seria mentira).
  */
+/** Como a organização paga o plano. O pedido de troca leva o ciclo escolhido. */
+export type CicloDeCobranca = 'mensal' | 'anual'
+
+export function ehCicloDeCobranca(valor: unknown): valor is CicloDeCobranca {
+  return valor === 'mensal' || valor === 'anual'
+}
+
 export function anualDoPlano(plano: Pick<Plano, 'preco' | 'precoAnual'>): { porMes: number; porAno: number; desconto: number } | null {
   if (plano.precoAnual === null || plano.preco <= 0) return null
   const desconto = Math.round((1 - plano.precoAnual / (plano.preco * 12)) * 100)

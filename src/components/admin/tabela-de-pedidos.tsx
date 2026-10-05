@@ -17,6 +17,7 @@ export type PedidoNaTabela = {
   quemPediu: string
   de: string
   para: string
+  ciclo: 'mensal' | 'anual'
   situacao: 'aberto' | 'atendido' | 'recusado'
   respondidoPor: string | null
 }
@@ -73,7 +74,8 @@ export function TabelaDePedidos({ pedidos: iniciais, nomes }: { pedidos: PedidoN
                   </Link>
                 </td>
                 <td className="px-4 py-3 text-[12.5px] whitespace-nowrap">
-                  <span className="text-muted">{nome(pedido.de)}</span> <span aria-hidden className="text-dim">→</span> <strong className="font-semibold">{nome(pedido.para)}</strong>
+                  <span className="text-muted">{nome(pedido.de)}</span> <span aria-hidden className="text-dim">→</span> <strong className="font-semibold">{nome(pedido.para)}</strong>{' '}
+                  <span className="text-dim">{pedido.ciclo}</span>
                 </td>
                 <td className="max-w-[220px] truncate px-4 py-3 text-[12.5px] text-muted">{pedido.quemPediu || 'alguém'}</td>
                 <td className="px-4 py-3 text-[12px] whitespace-nowrap text-muted">
