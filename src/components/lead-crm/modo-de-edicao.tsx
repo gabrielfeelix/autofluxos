@@ -2,6 +2,7 @@
 
 import { useRouter } from 'next/navigation'
 import { createContext, useContext, useEffect, useRef, useState, useTransition, type ReactNode } from 'react'
+import { createPortal } from 'react-dom'
 import { AcaoDaFicha } from '@/components/lead-crm/acoes-da-ficha'
 
 /**
@@ -144,21 +145,28 @@ export function BotaoDeEditar() {
   )
 }
 
-/** A barra que flutua embaixo enquanto a ficha está em edição. */
+/**
+ * A barra que flutua embaixo enquanto a ficha está em edição.
+ *
+ * **Vai para o `body` por portal.** Dentro da ficha, um ancestral com
+ * `transform` vira o bloco de referência do `fixed`, e a barra ficava parada
+ * no meio da página em vez de acompanhar o rodapé da tela.
+ */
 export function BarraDeEdicao() {
   const controle = useContext(Controles)
-  if (!controle?.editando) return null
+  if (!controle?.editando || typeof document === 'undefined') return null
   return (
     <>
     {/* A altura da barra, no fim da página: sem ela o último campo ficava escondido atrás. */}
     <div aria-hidden className="h-28" />
+    {createPortal(
     <div className="fixed inset-x-0 bottom-5 z-40 flex justify-center px-4 max-md:bottom-[84px]">
       <div
         role="region"
         aria-label="Edição do contato"
         className="flex w-full max-w-[640px] flex-wrap items-center gap-x-4 gap-y-2 rounded-[16px] border border-line bg-panel px-4 py-3 text-ink shadow-[0_12px_40px_rgba(19,25,34,0.28)]"
       >
-        <span className="min-w-0 flex-1">
+        <span className="min-w-[220px] flex-1">
           <strong className="block text-[13px]">Editando o contato</strong>
           {controle.erro ? (
             <span role="alert" className="block text-[11.5px] font-semibold text-perigo">
@@ -170,7 +178,7 @@ export function BarraDeEdicao() {
             </span>
           )}
         </span>
-        <span className="flex gap-2">
+        <span className="flex gap-2 max-sm:w-full max-sm:[&>*]:flex-1">
           <button type="button" onClick={controle.descartar} disabled={controle.salvando} className="botao-secundario botao-md">
             Descartar
           </button>
@@ -179,7 +187,9 @@ export function BarraDeEdicao() {
           </button>
         </span>
       </div>
-    </div>
+    </div>,
+    document.body,
+    )}
     </>
   )
 }

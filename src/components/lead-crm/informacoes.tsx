@@ -3,7 +3,7 @@ import { AcoesDoTelefone } from './acoes-do-telefone'
 import { telefoneLegivel } from '@/core/contatos/telefone'
 import { horaExata, quando } from '@/lib/quando'
 import { IconeDaSecao, iconeFicha } from './icones'
-import { LinhaDeOrigem } from './campos-editaveis'
+import { ExtrasEditaveis, InformacoesExtras, LinhaDeOrigem } from './campos-editaveis'
 
 /**
  * Quem é a pessoa, em fatos datados.
@@ -79,6 +79,9 @@ export function Informacoes({
         {/* Some sem origem medida; no modo de edição aparece para escolher. */}
         <LinhaDeOrigem clienteId={clienteId} contatoId={contatoId} origem={origem} />
 
+        {/* Indicado por, e-mail, empresa, cidade: o que a equipe soma ao canal. */}
+        <InformacoesExtras clienteId={clienteId} contatoId={contatoId} campos={campos} />
+
         <Linha rotulo="Chegou">
           <span title={horaExata(criadoEm)}>{quando(criadoEm)}</span>
         </Linha>
@@ -118,6 +121,7 @@ export function Informacoes({
           )}
         </Linha>
       </dl>
+      <ExtrasEditaveis clienteId={clienteId} contatoId={contatoId} campos={campos} />
     </section>
   )
 }

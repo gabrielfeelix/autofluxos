@@ -250,3 +250,127 @@ function EditorDeDados({ clienteId, contatoId, campos }: { clienteId: string; co
     </div>
   )
 }
+
+/**
+ * O que a equipe acrescenta sobre a pessoa além do que o canal diz: quem
+ * indicou, e-mail, empresa, cidade. O canal segue travado (é por onde a
+ * conversa chegou); "veio pelo WhatsApp e foi indicado pela Ana" vira
+ * `indicado_por` ao lado dele.
+ */
+const INFORMACOES_EXTRAS: { chave: string; rotulo: string; exemplo: string }[] = [
+  { chave: 'indicado_por', rotulo: 'Indicado por', exemplo: 'Exemplo: Ana Souza' },
+  { chave: 'email', rotulo: 'E-mail', exemplo: 'Exemplo: maria@empresa.com.br' },
+  { chave: 'empresa', rotulo: 'Empresa', exemplo: 'Exemplo: Padaria Central' },
+  { chave: 'cidade', rotulo: 'Cidade', exemplo: 'Exemplo: Londrina' },
+]
+
+/** As linhas extras na grade do cartão Informações, fora da edição. */
+export function InformacoesExtras({
+  clienteId,
+  contatoId,
+  campos,
+}: {
+  clienteId: string
+  contatoId: string
+  campos: Record<string, string>
+}) {
+  const { editando } = useEdicao()
+  if (editando) return null
+  return (
+    <>
+      {INFORMACOES_EXTRAS.filter((extra) => (campos[extra.chave] ?? '').trim() !== '').map((extra) => (
+        <div key={extra.chave} className="bg-panel px-[18px] py-[11px] sm:last:odd:col-span-2">
+          <dt className="text-[10.5px] font-semibold text-dim">{extra.rotulo}</dt>
+          <dd className="mt-1 break-words text-[12.5px] font-semibold">{campos[extra.chave]}</dd>
+        </div>
+      ))}
+    </>
+  )
+}
+
+/**
+ * Os mesmos extras em edição, embaixo da grade: dentro dela o editor ocupava
+ * a linha inteira e deixava uma célula vazia ao lado da Origem.
+ */
+export function ExtrasEditaveis({
+  clienteId,
+  contatoId,
+  campos,
+}: {
+  clienteId: string
+  contatoId: string
+  campos: Record<string, string>
+}) {
+  const { editando, versao } = useEdicao()
+  if (!editando) return null
+  return <EditorDeExtras key={versao} clienteId={clienteId} contatoId={contatoId} campos={campos} />
+}
+
+function EditorDeExtras({
+  clienteId,
+  contatoId,
+  campos,
+}: {
+  clienteId: string
+  contatoId: string
+  campos: Record<string, string>
+}) {
+  const [valores, setValores] = useState<Record<string, string>>(() =>
+    Object.fromEntries(
+      INFORMACOES_EXTRAS.filter((extra) => (campos[extra.chave] ?? '').trim() !== '').map((extra) => [
+        extra.chave,
+        campos[extra.chave] ?? '',
+      ]),
+    ),
+  )
+
+  useAoSalvar('informacoes', async () => {
+    const mudou: Record<string, string> = {}
+    for (const [chave, valor] of Object.entries(valores)) {
+      if (valor.trim() !== (campos[chave] ?? '').trim()) mudou[chave] = valor.trim()
+    }
+    if (Object.keys(mudou).length === 0) return null
+    const r = await acaoPreencherCampos(clienteId, contatoId, mudou)
+    if (!r.ok) return r.erro ?? 'não deu para salvar as informações'
+    if (r.recusados && r.recusados.length > 0) {
+      return `não entrou: ${r.recusados.map((x) => `${rotuloDoCampo(x.chave) || x.chave} (${x.motivo})`).join('; ')}`
+    }
+    return null
+  })
+
+  const abertas = INFORMACOES_EXTRAS.filter((extra) => extra.chave in valores)
+  const faltam = INFORMACOES_EXTRAS.filter((extra) => !(extra.chave in valores))
+
+  return (
+    <div className="flex flex-col gap-2.5 border-t border-line px-[18px] py-[13px]">
+      {abertas.map((extra) => (
+        <label key={extra.chave} className="flex flex-col gap-1">
+          <span className="text-[10.5px] font-semibold text-dim">{extra.rotulo}</span>
+          <input
+            value={valores[extra.chave]}
+            onChange={(e) => setValores((atuais) => ({ ...atuais, [extra.chave]: e.target.value }))}
+            placeholder={extra.exemplo}
+            maxLength={200}
+            className="app-field w-full px-2.5 py-1.5 text-[12.5px] font-semibold"
+          />
+        </label>
+      ))}
+      {faltam.length > 0 && (
+        <div className="flex flex-wrap items-center gap-1.5">
+          <span className="mr-1 text-[11px] font-semibold text-dim">Adicionar:</span>
+          {faltam.map((extra) => (
+            <button
+              key={extra.chave}
+              type="button"
+              onClick={() => setValores((atuais) => ({ ...atuais, [extra.chave]: '' }))}
+              className="rounded-full border border-dashed border-strong px-2.5 py-1 text-[11.5px] font-semibold text-muted transition hover:border-primary/40 hover:text-primary"
+            >
+              + {extra.rotulo}
+            </button>
+          ))}
+        </div>
+      )}
+      <p className="text-[11px] text-dim">Outros dados, com o nome que quiser, na aba Dados e origem.</p>
+    </div>
+  )
+}
