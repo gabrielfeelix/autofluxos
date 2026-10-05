@@ -1,5 +1,6 @@
 'use client'
 
+import { tituloDoModelo } from '@/core/titulo-da-biblioteca'
 import { useEffect, useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
 import { Dropdown } from '@/components/design/dropdown'
@@ -142,7 +143,7 @@ export function RetomarComModelo({
             <Dropdown
               opcoes={aprovados.map((t) => ({
                 valor: t.id,
-                rotulo: t.nome.replace(/_/g, ' '),
+                rotulo: tituloDoModelo(t.nome),
               }))}
               valor={escolhido}
               aoMudar={setEscolhido}

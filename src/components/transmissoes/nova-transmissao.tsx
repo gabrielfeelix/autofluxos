@@ -1,5 +1,6 @@
 'use client'
 
+import { tituloDoModelo } from '@/core/titulo-da-biblioteca'
 import { useEffect, useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
 import { Dropdown } from '@/components/design/dropdown'
@@ -228,7 +229,7 @@ function Formulario({
           <Dropdown
             opcoes={aprovados.map((t) => ({
               valor: t.id,
-              rotulo: t.nome.replace(/_/g, ' '),
+              rotulo: tituloDoModelo(t.nome),
               detalhe: previa(t.componentes.corpo).slice(0, 60),
             }))}
             valor={templateId}
