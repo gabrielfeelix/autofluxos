@@ -6,6 +6,7 @@ import { admin, haveIBeenPwned, organization, twoFactor } from 'better-auth/plug
 import { Pool } from 'pg'
 import { enviarConfirmacaoDeEmail, enviarRedefinicaoDeSenha } from './email'
 import { registrar } from './repos/auditoria'
+import { limitarSessoes } from './limite-de-sessoes'
 
 /**
  * Login por usuário.
@@ -173,6 +174,27 @@ function montar() {
     },
     account: { modelName: 'af_contas' },
     verification: { modelName: 'af_verificacoes' },
+
+    /*
+     * No máximo três aparelhos por pessoa (`limite-de-sessoes.ts`). No gancho
+     * de criação, e não na ação de entrar, para valer em todo caminho que abre
+     * sessão: senha, código de duas etapas, cadastro. Depois da resposta, para
+     * não disputar a conexão única do pool com o próprio login, e um erro aqui
+     * vira log: falhar a limpeza não pode impedir ninguém de entrar.
+     */
+    databaseHooks: {
+      session: {
+        create: {
+          after: async (sessao) => {
+            after(() =>
+              limitarSessoes(bancoDoLogin(), sessao as { userId: string; impersonatedBy?: string | null }).catch(
+                (erro) => console.error('[sessoes] não deu para limitar os aparelhos', erro),
+              ),
+            )
+          },
+        },
+      },
+    },
 
     plugins: [
       /**
