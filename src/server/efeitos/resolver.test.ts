@@ -988,7 +988,12 @@ describe('IA contínua que conclui', () => {
         : { tipo: 'usar_ferramenta', nome: 'concluir_conversa', argumentos: { resumo: '1 calabresa grande, Rua B, Pix' } },
     )
 
-  it('a IA conclui: a frase final sai, o resumo vai para a variável e segue pela saída "concluiu"', async () => {
+  /*
+   * Concluiu e passou para uma pessoa: quem recebe a conversa é quem fala
+   * (0d89ff1d, 02/out/2026). A frase final da IA não sai antes da mensagem da
+   * transferência, senão a pessoa lê duas confirmações seguidas.
+   */
+  it('a IA conclui: o resumo vai para a variável, segue pela saída "concluiu" e só a transferência fala', async () => {
     const modelo = modeloQueConclui()
     const r = await executarComEfeitos(comConcluir(true), sessaoNova(), { tipo: 'inicio' }, {
       modelo,
@@ -997,7 +1002,7 @@ describe('IA contínua que conclui', () => {
 
     expect(modelo.pedidos[0]?.ferramentas?.map((f) => f.nome)).toEqual(['concluir_conversa'])
     const textos = r.acoes.flatMap((a) => (a.tipo === 'enviar_texto' ? [a.texto] : []))
-    expect(textos[0]).toBe('Pedido enviado! 🙌')
+    expect(textos).toEqual(['A equipe já está com seu pedido.'])
     expect(r.sessao.vars.pedido).toBe('1 calabresa grande, Rua B, Pix')
     const saida = r.acoes.find((a) => a.tipo === 'transferir_humano')
     expect(saida?.tipo === 'transferir_humano' && saida.motivo).toBe('Novo pedido: 1 calabresa grande, Rua B, Pix')

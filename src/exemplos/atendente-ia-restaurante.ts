@@ -17,15 +17,17 @@ import { fluxoSchema, type Fluxo } from '@/core/flow/schema'
  *
  * A IA fecha o pedido sozinha (`conversar.concluir`, PLANO-NICHOS etapa 6):
  * com itens, endereço e pagamento conferidos pela pessoa, ela chama
- * `concluir_conversa` com o resumo, escreve a frase de fechamento, e a conversa
- * segue pela saída "concluiu" para a nota no contato e uma pessoa com o motivo
- * "Novo pedido". A pessoa não precisa saber palavra nenhuma nem tocar em botão
- * para mandar o que já combinou.
+ * `concluir_conversa` com o resumo, e a conversa segue pela saída "concluiu"
+ * para a nota no contato e uma pessoa com o motivo "Novo pedido". Quem confirma
+ * o pedido para o cliente é a mensagem da transferência: a frase final da IA
+ * não sai quando a conversa passa para uma pessoa, senão seriam duas
+ * confirmações seguidas (02/out/2026). A pessoa não precisa saber palavra
+ * nenhuma nem tocar em botão para mandar o que já combinou.
  *
  * O caminho que parece mais curto, a IA responder a marca de "não sei" para
- * passar a conversa, foi descartado: a frase de confirmação do pedido sumiria,
- * trocada pelo aviso genérico de transferência, e a equipe leria "a IA não
- * soube responder" no motivo de um pedido que deu certo.
+ * passar a conversa, foi descartado: a confirmação do pedido sumiria, trocada
+ * pelo aviso genérico de transferência, e a equipe leria "a IA não soube
+ * responder" no motivo de um pedido que deu certo.
  *
  * A outra saída, a de sempre, é *menu* escrito ou o teto de respostas: aí a
  * pessoa escolhe entre continuar ou chamar alguém, e quem atende recebe a

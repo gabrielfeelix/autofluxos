@@ -157,7 +157,9 @@ describe('atendente de restaurante com IA', () => {
     expect(c.sessao().noAtual).toBe('menu')
   })
 
-  it('a IA fecha o pedido: a frase final sai, o resumo vai para a nota e a equipe recebe "Novo pedido"', () => {
+  // Concluir e passar para a equipe: a mensagem da transferência é a que
+  // confirma o pedido; a frase final da IA não sai antes dela (0d89ff1d).
+  it('a IA fecha o pedido: o resumo vai para a nota, a equipe recebe "Novo pedido" e a transferência confirma', () => {
     const c = conversa(atendenteIaRestaurante)
     c.passo({ tipo: 'inicio' })
     c.passo({ tipo: 'texto', texto: 'quero uma calabresa grande, Rua B, 10, cartão' })
@@ -168,7 +170,8 @@ describe('atendente de restaurante com IA', () => {
     })
 
     const falas = textos(acoes)
-    expect(falas[0]).toBe('Pedido enviado para a cozinha! 🙌')
+    expect(falas).not.toContain('Pedido enviado para a cozinha! 🙌')
+    expect(falas[0]).toMatch(/^A equipe já está com o seu pedido/)
     const nota = acoes.find((a) => a.tipo === 'escrever_nota')
     expect(nota?.tipo === 'escrever_nota' && nota.texto).toContain('1 calabresa grande. Entrega: Rua B, 10')
     const saida = acoes.find((a) => a.tipo === 'transferir_humano')

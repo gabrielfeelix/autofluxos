@@ -97,6 +97,11 @@ describe('semMarcacaoDeCard', () => {
     )
   })
 
+  it('sem marca, os dois pontos que apontam para o card de verdade ficam', () => {
+    expect(semMarcacaoDeCard('Olha ele aqui:')).toBe('Olha ele aqui:')
+    expect(semMarcacaoDeCard('Olha ele aqui: [Card: Headset CM500]')).toBe('Olha ele aqui.')
+  })
+
   it('não mexe em colchete que não é rótulo de card', () => {
     expect(semMarcacaoDeCard('Use o código [VIP] no carrinho.')).toBe('Use o código [VIP] no carrinho.')
   })

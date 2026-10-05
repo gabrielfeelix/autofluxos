@@ -141,7 +141,8 @@ function normalizar(texto: string): string {
  */
 export function semMarcacaoDeCard(texto: string): string {
   const marca = String.raw`\[\s*(?:card|cards|produto|produtos|imagem|foto|vitrine|link)\b[^\]\n]*\]`
-  return texto
+  const tinhaMarca = new RegExp(marca, 'i').test(texto)
+  const limpo = texto
     // "por aqui:" apontava para a marca; sem ela, a frase termina ali.
     .replace(new RegExp(String.raw`:[ \t]*(?:\n[ \t]*)*` + marca, 'gi'), '.')
     .replace(new RegExp(marca, 'gi'), '')
@@ -150,8 +151,13 @@ export function semMarcacaoDeCard(texto: string): string {
     .join('\n')
     .replace(/[ \t]{2,}/g, ' ')
     .replace(/\n{3,}/g, '\n\n')
-    .replace(/:\s*$/, '.')
     .trim()
+  /*
+   * Os dois pontos no fim só ficam sem destino quando a marca saiu. Sem marca,
+   * "Olha ele aqui:" aponta para o card de verdade que vai logo depois, e
+   * trocar por ponto mudava a frase da IA sem motivo.
+   */
+  return tinhaMarca ? limpo.replace(/:\s*$/, '.') : limpo
 }
 
 /**
