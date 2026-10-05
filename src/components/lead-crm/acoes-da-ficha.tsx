@@ -7,6 +7,8 @@ import { Modal } from '@/components/design/modal'
 import { AvisoFlutuante } from '@/components/design/aviso-flutuante'
 import type { MensagemAgendada } from '@/server/repos/mensagens-agendadas'
 import { useAgendadas } from '@/components/inbox/agendadas-local'
+import { EntradaDeAnotacao } from '@/components/inbox/anotacoes'
+import { SeletorDeEtiquetas, type EtiquetaEscolhivel } from '@/components/etiquetas/seletor'
 
 /**
  * As ações sobre o contato, no alto e à direita.
@@ -33,16 +35,24 @@ export function AcoesDaFicha({
   nome,
   fimDaJanela,
   agendadas,
+  etiquetas,
+  etiquetasAplicadas,
+  limiteDaNota,
 }: {
   clienteId: string
   contatoId: string
   nome: string
+  etiquetas: EtiquetaEscolhivel[]
+  etiquetasAplicadas: string[]
+  limiteDaNota: number
   /** Quando a janela de 24h fecha, em ISO. `null` = já fechou. */
   fimDaJanela: string | null
   agendadas: MensagemAgendada[]
 }) {
   const [agendando, setAgendando] = useState(false)
   const [marcando, setMarcando] = useState(false)
+  const [anotando, setAnotando] = useState(false)
+  const [etiquetando, setEtiquetando] = useState(false)
   const [erroDaAtividade, setErroDaAtividade] = useState<string | null>(null)
   const pendentes = useAgendadas(agendadas, contatoId)
   const temAgendada = pendentes.some((a) => a.estado === 'agendada' || a.estado === 'enviando')
@@ -75,7 +85,7 @@ export function AcoesDaFicha({
           <AcaoDaFicha
             rotulo="Anotar"
             titulo="Para a equipe: anotar"
-            aoClicar={() => focar('anotacao')}
+            aoClicar={() => setAnotando(true)}
             icone={
               <>
                 <path d="M4.5 19.5h15" />
@@ -86,7 +96,7 @@ export function AcoesDaFicha({
           <AcaoDaFicha
             rotulo="Etiquetar"
             titulo="Para a equipe: etiquetar"
-            aoClicar={() => focar('etiquetas')}
+            aoClicar={() => setEtiquetando(true)}
             icone={
               <>
                 <path d="M4.5 10.2V5.2a.7.7 0 0 1 .7-.7h5l9 9a1.6 1.6 0 0 1 0 2.3l-4.2 4.2a1.6 1.6 0 0 1-2.3 0l-8-8Z" />
@@ -152,20 +162,36 @@ export function AcoesDaFicha({
           aoFalhar={setErroDaAtividade}
         />
       </Modal>
+      <Modal
+        aberto={anotando}
+        aoFechar={() => setAnotando(false)}
+        titulo={`Anotar sobre ${nome}`}
+        descricao="Fica nas Anotações da equipe, com a data e o seu nome. Nada é enviado ao cliente."
+      >
+        {anotando && (
+          <EntradaDeAnotacao
+            limite={limiteDaNota}
+            abertaDeInicio
+            aoAnotar={() => setAnotando(false)}
+            aoCancelar={() => setAnotando(false)}
+          />
+        )}
+      </Modal>
+      <Modal
+        aberto={etiquetando}
+        aoFechar={() => setEtiquetando(false)}
+        titulo={`Etiquetas de ${nome}`}
+        descricao="Marque ou desmarque. Muda na hora, e nada é enviado ao cliente."
+      >
+        <SeletorDeEtiquetas
+          clienteId={clienteId}
+          contatoId={contatoId}
+          disponiveis={etiquetas}
+          aplicadas={etiquetasAplicadas}
+        />
+      </Modal>
     </>
   )
-}
-
-/**
- * Pede a aba que contém o bloco, e o foco nele.
- *
- * **Quem troca a aba é quem foca**, em `abas.tsx`: aqui só sai o pedido. A
- * versão anterior disparava o evento e procurava o bloco no quadro seguinte,
- * que ainda é cedo demais, o painel continuava `hidden`, e "Anotar" não fazia
- * nada em produção.
- */
-function focar(id: string) {
-  window.dispatchEvent(new CustomEvent('ficha:aba', { detail: { aba: 'visao', focar: id } }))
 }
 
 export function AcaoDaFicha({

@@ -84,7 +84,7 @@ import {
   MensagemApagada, SemTexto,
 } from '@/components/lead/anexo'
 import { NomeDoContato } from '@/components/lead/identidade'
-import { CartaoDeAnotacoes } from '@/components/inbox/anotacoes'
+import { CartaoDeAnotacoes, ProvedorDeAnotacoes } from '@/components/inbox/anotacoes'
 import { anotacoesDoContato } from '@/server/repos/eventos'
 import { etiquetasDeDia, horaComFuso, horaDoRelogio, horaExata, quando } from '@/lib/quando'
 import { MenuNaConversa } from '@/components/inbox/historico'
@@ -243,6 +243,12 @@ export default async function Pagina({
         temAutomacao={temAutomacao}
         equipe={equipe.map((membro) => ({ id: membro.id, nome: membro.nome }))}
       >
+      <ProvedorDeAnotacoes
+        iniciais={anotacoes}
+        antiga={lead.notas}
+        autor={sessaoDaFicha?.usuario.nome ?? null}
+        anotar={acaoAnotar.bind(null, clienteId, contatoId)}
+      >
       <Miolo largura="toda">
         <Link
           href={volta.href}
@@ -287,6 +293,9 @@ export default async function Pagina({
             nome={nome}
             fimDaJanela={contexto?.ultimaEntradaEm ?? null}
             agendadas={agendadas}
+            etiquetas={etiquetas}
+            etiquetasAplicadas={lead.etiquetasManuais.map((etiqueta) => etiqueta.id)}
+            limiteDaNota={LIMITE_DA_NOTA}
           />
           {/* O pedido de exclusão da LGPD vira este botão. A pergunta diz o que
               some junto porque não existe desfazer: a conversa não está copiada
@@ -701,6 +710,7 @@ export default async function Pagina({
           ]}
         />
       </Miolo>
+      </ProvedorDeAnotacoes>
       </ProvedorDaConversa>
     </ClienteShell>
   )

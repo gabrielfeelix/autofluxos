@@ -1,6 +1,6 @@
 'use client'
 
-import { createContext, useContext, useEffect, useState, type ReactNode } from 'react'
+import { createContext, useContext, useEffect, useRef, useState, type ReactNode } from 'react'
 import type { Anotacao } from '@/core/anotacoes'
 import { diaEHora } from '@/core/datas'
 import { VazioDoCartao } from '@/components/lead-crm/vazio-do-cartao'
@@ -129,9 +129,32 @@ export function useTemAnotacao(): boolean {
  *
  * Depois de anotar ela limpa e fecha; a nota já está na lista ao lado.
  */
-export function EntradaDeAnotacao({ limite, aoAnotar }: { limite: number; aoAnotar?: () => void }) {
+export function EntradaDeAnotacao({
+  limite,
+  aoAnotar,
+  aoCancelar,
+  abertaDeInicio = false,
+}: {
+  limite: number
+  aoAnotar?: () => void
+  /** Quem abriu a entrada de fora (o modal da ficha) fecha junto no Cancelar. */
+  aoCancelar?: () => void
+  abertaDeInicio?: boolean
+}) {
   const { anotar, entradas } = useAnotacoes()
-  const [aberta, setAberta] = useState(false)
+  const [aberta, setAberta] = useState(abertaDeInicio)
+  const campo = useRef<HTMLTextAreaElement>(null)
+
+  /*
+   * Dentro de um `<dialog>`, o `showModal()` do pai roda depois do `autoFocus`
+   * e leva o foco para o primeiro botão ("Fechar"). Focar no quadro seguinte
+   * deixa a pessoa já escrevendo, que é o motivo de ter clicado em Anotar.
+   */
+  useEffect(() => {
+    if (!abertaDeInicio) return
+    const quadro = requestAnimationFrame(() => campo.current?.focus())
+    return () => cancelAnimationFrame(quadro)
+  }, [abertaDeInicio])
   const [texto, setTexto] = useState('')
   const [ultima, setUltima] = useState<string | null>(null)
 
@@ -207,6 +230,7 @@ export function EntradaDeAnotacao({ limite, aoAnotar }: { limite: number; aoAnot
       }}
     >
       <textarea
+        ref={campo}
         autoFocus
         value={texto}
         maxLength={limite}
@@ -228,6 +252,7 @@ export function EntradaDeAnotacao({ limite, aoAnotar }: { limite: number; aoAnot
           onClick={() => {
             setTexto('')
             setAberta(false)
+            aoCancelar?.()
           }}
           className="rounded-lg px-2.5 py-1.5 text-[12px] text-dim hover:text-soft"
         >
@@ -322,22 +347,32 @@ export function CartaoDeAnotacoes({
   limite: number
   titulo: ReactNode
 }) {
+  /*
+   * A ficha abre um provedor acima do cartão, para o modal "Anotar" do
+   * cabeçalho e este cartão dividirem a mesma lista: anotou no modal, aparece
+   * aqui no mesmo clique. Sem provedor acima, o cartão traz o dele.
+   */
+  const jaTemProvedor = useContext(Contexto) !== null
+  const cartao = (
+    <section className="app-card p-4">
+      <header className="mb-1">{titulo}</header>
+      <div className="mb-3">
+        <EntradaDeAnotacao limite={limite} />
+      </div>
+      <ListaDeAnotacoes
+        vazio={
+          <VazioDoCartao className="" ilustracao={<IlustracaoAnotacoes />}>
+            Ninguém anotou nada sobre esta pessoa ainda. O que a equipe escrever aqui fica com a
+            data e o nome de quem escreveu.
+          </VazioDoCartao>
+        }
+      />
+    </section>
+  )
+  if (jaTemProvedor) return cartao
   return (
     <ProvedorDeAnotacoes iniciais={iniciais} antiga={antiga} autor={autor} anotar={anotar}>
-      <section className="app-card p-4">
-        <header className="mb-1">{titulo}</header>
-        <div className="mb-3">
-          <EntradaDeAnotacao limite={limite} />
-        </div>
-        <ListaDeAnotacoes
-          vazio={
-            <VazioDoCartao className="" ilustracao={<IlustracaoAnotacoes />}>
-              Ninguém anotou nada sobre esta pessoa ainda. O que a equipe escrever aqui fica com a
-              data e o nome de quem escreveu.
-            </VazioDoCartao>
-          }
-        />
-      </section>
+      {cartao}
     </ProvedorDeAnotacoes>
   )
 }
