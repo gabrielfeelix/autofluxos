@@ -69,4 +69,13 @@ Inline no Opus, `tsc` + `eslint`, commit e push por frente. Migration de
 | 6 | `cliente/ficha.tsx` tirar logo | Sem retorno visível de sucesso/erro | aberto, baixo |
 | 7 | `transmissoes` | Filtro aplicado no navegador, não na consulta (lento com volume) | aberto, baixo |
 
+| 8 | Brevo `autofluxos.mail.4yu.com.br` | Domínio nunca autenticado: redefinição de senha e confirmação de e-mail davam erro em produção | corrigido: 4 registros DNS na Hostinger, domínio autenticado, teste entregue |
+| 9 | `scripts/ux-local/cadastro.mjs` | Rótulo velho ("Nome da empresa") | corrigido |
+
 Fase 1 concluída: 8 áreas lidas; fluxos e inbox sem achado real.
+
+Fase 2 (local, 05/out): 43 páginas abrem sem erro 500, erro de console ou tela de erro.
+Gravam, aparecem no banco e sobrevivem ao recarregar: Negócio (cadastro), Contexto,
+Horário, Retomada, Recursos (objetivo, nicho, CRM), Distribuição (modo, rodízio, teto),
+Equipe (função, inclusive troca de proprietário). Faltam: Etiquetas, Chaves/API, Acervo,
+Configurar, e os specs e2e existentes (um por vez, sem o dev server).
