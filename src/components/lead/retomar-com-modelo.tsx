@@ -163,7 +163,7 @@ export function RetomarComModelo({
             das lacunas, vem destacado para se ver o que muda de uma pessoa
             para outra.
           */}
-          <div className="rounded-[16px] border border-strong bg-panel">
+          <div className="rounded-[16px] border border-line bg-surface">
             <span className="flex items-center gap-1.5 px-3.5 pt-2.5 text-[11px] font-semibold text-dim">
               <svg aria-hidden viewBox="0 0 24 24" className="size-3.5" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
                 <rect x="5" y="10.5" width="14" height="10" rx="2" />
@@ -171,9 +171,9 @@ export function RetomarComModelo({
               </svg>
               Texto do modelo aprovado, não dá para editar
             </span>
-            <div className="max-h-[180px] overflow-y-auto px-3.5 pt-1.5 pb-2.5 text-[13.5px] leading-[1.5] text-soft">
+            <div aria-disabled title="O texto do modelo aprovado não pode ser editado" className="max-h-[180px] cursor-not-allowed overflow-y-auto px-3.5 pt-1.5 pb-2.5 text-[13.5px] leading-[1.5] text-muted select-none">
               {componentes?.cabecalho?.tipo === 'texto' && (
-                <strong className="mb-0.5 block text-ink">
+                <strong className="mb-0.5 block text-soft">
                   <ComLacunas texto={componentes.cabecalho.texto} nome={nome} />
                 </strong>
               )}
