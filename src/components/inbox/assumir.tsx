@@ -2,8 +2,10 @@
 
 import { useState, type ReactNode } from 'react'
 import { useConversaAberta } from '@/components/inbox/conversa-local'
-import { Dropdown } from '@/components/design/dropdown'
 import { AvisoFlutuante } from '@/components/design/aviso-flutuante'
+import { Dica } from '@/components/design/dica'
+import { Modal } from '@/components/design/modal'
+import { Avatar } from '@/components/inbox/avatar'
 
 /**
  * O botão que faz alguém **virar** atendente.
@@ -122,6 +124,13 @@ export function Assumir({
  * Quem está ausente aparece marcado, e não escondido: às vezes é exatamente
  * para essa pessoa que a conversa precisa ir, e sumir com o nome obrigaria a
  * perguntar no grupo do time por que ela não aparece.
+ *
+ * **Ícone que abre uma janela, e não um seletor no cabeçalho** (05/out/2026).
+ * O dropdown "Transferir para…" ocupava 170px do cabeçalho para um gesto raro
+ * e lia como campo de formulário. O avião de papel diz "mandar para alguém",
+ * e a janela mostra a equipe com espaço para nome, presença e quem já está
+ * com a conversa. Escolher um nome já transfere: confirmar seria um clique a
+ * mais para um gesto que a escolha já deixa claro.
  */
 export function PassarPara({
   atribuir,
@@ -143,11 +152,10 @@ export function PassarPara({
    * transferência acontecia e a tela parecia não ter mudado nada (02/out/2026).
    */
   const [passadoPara, setPassadoPara] = useState<string | null>(null)
+  const [aberto, setAberto] = useState(false)
 
-  // Escolher no seletor já transfere: o botão "Transferir" ao lado era um
-  // clique a mais para um gesto que a escolha já deixa claro (30/set/2026).
   const transferir = (para: string) => {
-    if (para === '') return
+    setAberto(false)
     setErro(null)
     const nome = equipe.find((membro) => membro.id === para)?.nome ?? null
     setPassadoPara(para === conversa.usuarioId ? 'você' : nome)
@@ -161,25 +169,74 @@ export function PassarPara({
 
   return (
     <div className="flex shrink-0 items-center gap-1.5">
-      <Dropdown
-        rotuloAcessivel="Transferir a conversa para"
-        className="w-[170px]"
-        valor=""
-        aoMudar={transferir}
-        /*
-         * Sempre mostra "Transferir para…": sem isto aparecia o primeiro nome
-         * da equipe, e o seletor lia como "o responsável é fulano" numa
-         * conversa sem responsável nenhum. Quem é o responsável diz o selo.
-         */
-        opcoes={[
-          { valor: '', rotulo: 'Transferir para…' },
-          ...equipe.map((membro) => ({
-            valor: membro.id,
-            rotulo: membro.nome,
-            detalhe: membro.presenca === 'disponivel' ? undefined : 'ausente',
-          })),
-        ]}
-      />
+      <Dica texto="Transferir conversa">
+        <button
+          type="button"
+          onClick={() => setAberto(true)}
+          aria-label="Transferir conversa"
+          className="botao-secundario botao-sm botao-icone"
+        >
+          {/* Avião de papel: mandar para alguém. */}
+          <svg
+            aria-hidden
+            viewBox="0 0 24 24"
+            className="size-[16px]"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.8"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
+            <path d="M21 3 10.5 13.5" />
+            <path d="M21 3 14.5 21l-4-7.5L3 9.5 21 3Z" />
+          </svg>
+        </button>
+      </Dica>
+      <Modal
+        aberto={aberto}
+        aoFechar={() => setAberto(false)}
+        titulo="Transferir conversa"
+        descricao="A conversa passa para a pessoa escolhida, que vira a responsável. O cliente não é avisado."
+      >
+        <ul className="-mx-1 flex max-h-[360px] flex-col overflow-y-auto">
+          {equipe.map((membro) => {
+            const atual = membro.id === conversa.valor.atribuidoA
+            const ausente = membro.presenca !== 'disponivel'
+            return (
+              <li key={membro.id}>
+                <button
+                  type="button"
+                  disabled={atual}
+                  onClick={() => transferir(membro.id)}
+                  className="flex w-full items-center gap-3 rounded-[10px] px-2 py-2 text-left transition hover:bg-surface disabled:cursor-default disabled:hover:bg-transparent"
+                >
+                  <Avatar nome={membro.nome} tamanho={32} />
+                  <span className="min-w-0 flex-1">
+                    <span className="block truncate text-[13px] font-semibold text-ink">
+                      {membro.nome}
+                      {membro.id === conversa.usuarioId && (
+                        <span className="font-normal text-dim"> (você)</span>
+                      )}
+                    </span>
+                    <span className="flex items-center gap-1.5 text-[11px] text-dim">
+                      <span
+                        aria-hidden
+                        className={`size-1.5 rounded-full ${ausente ? 'bg-dim' : 'bg-emerald-400'}`}
+                      />
+                      {ausente ? 'Ausente' : 'Disponível'}
+                    </span>
+                  </span>
+                  {atual && (
+                    <span className="shrink-0 rounded-full bg-surface px-2 py-0.5 text-[10.5px] font-semibold text-muted">
+                      Responsável
+                    </span>
+                  )}
+                </button>
+              </li>
+            )
+          })}
+        </ul>
+      </Modal>
       {erro && (
         <span role="alert" className="max-w-[160px] text-[11.5px] leading-4 text-perigo">
           {erro}

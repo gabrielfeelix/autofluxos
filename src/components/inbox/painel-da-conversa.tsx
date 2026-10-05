@@ -430,9 +430,9 @@ function CabecalhoDaConversa({
       </div>
 
       {/*
-        Assumir e passar continuam sendo botão de texto: mudam **de quem é** a
-        conversa, a única decisão desta tela que afeta o trabalho de outra
-        pessoa. Só aparecem quando há para quem passar.
+        Assumir é botão de texto, porque é o gesto de todo dia; transferir é
+        o avião de papel que abre a janela da equipe, porque é raro e exige
+        escolher quem. Transferir só aparece quando há para quem passar.
       */}
       {!espiando && equipe.length > 1 && (
         <PassarPara atribuir={acaoAtribuirPara.bind(null, clienteId, lead.contatoId)} equipe={equipe} />
