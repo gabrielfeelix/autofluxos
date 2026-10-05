@@ -62,7 +62,12 @@ import { CORES, ICONES, NOMES, NomesDeEtiquetaProvider, RespostasPorVariavelProv
 import { NomeDoFluxo } from './nome-do-fluxo'
 import { organizar, type AlcasDoBloco } from './organizar'
 import { PuxadorDeLargura } from './puxador'
-import { useLarguraGuardada } from './largura-guardada'
+import {
+  LARGURA_MAXIMA_DOS_BLOCOS,
+  LARGURA_MINIMA_DOS_BLOCOS,
+  LARGURA_PADRAO_DOS_BLOCOS,
+  useLarguraDosBlocos,
+} from './largura-guardada'
 import { Painel } from './painel'
 import type {
   ConexaoDoCliente,
@@ -477,12 +482,7 @@ export function Editor({
   const catalogo = useMemo(() => filtrarCatalogo(buscaDeBloco), [buscaDeBloco])
 
   // A largura da barra de blocos, lembrada no navegador de quem usa.
-  const [larguraDosBlocos, mudarLarguraDosBlocos] = useLarguraGuardada(
-    CHAVE_DA_LARGURA,
-    LARGURA_PADRAO_DOS_BLOCOS,
-    LARGURA_MINIMA_DOS_BLOCOS,
-    LARGURA_MAXIMA_DOS_BLOCOS,
-  )
+  const [larguraDosBlocos, mudarLarguraDosBlocos] = useLarguraDosBlocos()
   const [salvamento, setSalvamento] = useState<'salvo' | 'salvando' | 'pendente' | 'erro'>('salvo')
   /**
    * Quando o último salvamento automático deu certo (A07). "salvo" sozinho não
@@ -2564,20 +2564,8 @@ function ConfirmarApagar({
  * mensagem), então vale a maior. Errar para cima só afasta um pouco o bloco
  * novo; errar para baixo devolve a sobreposição.
  */
-/**
- * Os limites da barra de blocos.
- *
- * O mínimo é onde o nome do bloco ainda cabe ao lado do ícone; abaixo disso a
- * lista vira dez quadradinhos iguais e deixa de ser um catálogo. O máximo é o
- * ponto em que ela começa a disputar espaço com o desenho, que é o que se veio
- * ver.
- */
-const LARGURA_PADRAO_DOS_BLOCOS = 232
-const LARGURA_MINIMA_DOS_BLOCOS = 132
-const LARGURA_MAXIMA_DOS_BLOCOS = 380
 /** Abaixo disto a descrição de cada bloco sai, e sobra o ícone com o nome. */
 const LARGURA_SEM_DESCRICAO = 190
-const CHAVE_DA_LARGURA = 'autofluxos:largura-dos-blocos'
 
 const LARGURA_NO = 248
 const ALTURA_NO = 140

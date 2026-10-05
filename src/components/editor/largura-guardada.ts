@@ -102,3 +102,26 @@ export function useLarguraGuardada(
 
   return [largura, mudar]
 }
+
+/**
+ * Os limites da barra de blocos.
+ *
+ * O mínimo é onde o nome do bloco ainda cabe ao lado do ícone; abaixo disso a
+ * lista vira dez quadradinhos iguais e deixa de ser um catálogo. O máximo é o
+ * ponto em que ela começa a disputar espaço com o desenho, que é o que se veio
+ * ver.
+ */
+export const LARGURA_PADRAO_DOS_BLOCOS = 232
+export const LARGURA_MINIMA_DOS_BLOCOS = 132
+export const LARGURA_MAXIMA_DOS_BLOCOS = 380
+const CHAVE_DA_LARGURA = 'autofluxos:largura-dos-blocos'
+
+/**
+ * A largura da barra de blocos do editor, lembrada no navegador de quem usa.
+ * Mora aqui, e não no editor, porque o esqueleto do editor também a lê: abrir
+ * a tela com a barra em 232 e ela pular para 365 era a troca que dava a
+ * impressão de tela errada.
+ */
+export function useLarguraDosBlocos(): [number, (largura: number) => void] {
+  return useLarguraGuardada(CHAVE_DA_LARGURA, LARGURA_PADRAO_DOS_BLOCOS, LARGURA_MINIMA_DOS_BLOCOS, LARGURA_MAXIMA_DOS_BLOCOS)
+}
