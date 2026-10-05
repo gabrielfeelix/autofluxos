@@ -3,6 +3,7 @@
 import { iniciais as iniciaisDoNome } from '@/core/iniciais'
 import Link from 'next/link'
 import { useEffect, useRef, useState, useTransition } from 'react'
+import { createPortal } from 'react-dom'
 import {
   CLASSE_DA_COR,
   CORES_DA_ETAPA,
@@ -1432,8 +1433,11 @@ function MenuDoCartao({
    * posicionado por mais alto que seja o `z-index`. O resultado era o menu
    * aparecendo dentro do próprio cartão, com metade das opções invisíveis.
    *
-   * `fixed` escapa do corte porque sai do fluxo da coluna, e como nenhum
-   * ancestral usa `transform`, ele fica preso à janela, que é o que se quer.
+   * `fixed` escapa do corte porque sai do fluxo da coluna. **E vai para o
+   * `body` por portal** (05/out/2026): dentro do quadro, um ancestral com
+   * `transform`, `filter` ou `backdrop-filter` vira a referência do `fixed`,
+   * e o menu abria longe dos três pontinhos, deslocado pela posição da coluna.
+   * No `body` não há ancestral nenhum para isso acontecer de novo.
    */
   const botao = useRef<HTMLButtonElement>(null)
   const [onde, setOnde] = useState<{ topo: number; direita: number } | null>(null)
@@ -1496,7 +1500,8 @@ function MenuDoCartao({
         <IconeDoQuadro tipo="menu" />
       </button>
 
-      {aberto && (
+      {aberto &&
+        createPortal(
         <>
           <span className="fixed inset-0 z-40" onClick={() => setAberto(false)} />
           <span
@@ -1637,7 +1642,8 @@ function MenuDoCartao({
               </>
             )}
           </span>
-        </>
+        </>,
+        document.body,
       )}
     </span>
   )
