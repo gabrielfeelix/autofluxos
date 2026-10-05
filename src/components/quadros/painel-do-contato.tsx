@@ -173,7 +173,11 @@ export function PainelDoContato({
       <div className="min-h-0 flex-1 space-y-5 overflow-y-auto overscroll-contain px-5 py-5 sm:px-6">
         <section className="crm-opportunity">
           <div className="mb-3 flex flex-wrap items-center gap-2">
-            <span className="crm-eyebrow">{funil?.quadro ?? 'Oportunidade'}</span>
+            {dados || falhou ? (
+              <span className="crm-eyebrow">{funil?.quadro ?? 'Oportunidade'}</span>
+            ) : (
+              <span className="h-3 w-28 animate-pulse rounded bg-surface-strong" />
+            )}
             <span
               className={`crm-badge ml-auto ${aberta ? 'text-primary' : cartao.situacao === 'ganha' ? 'text-ok' : 'text-perigo'}`}
             >
@@ -246,10 +250,7 @@ export function PainelDoContato({
             </button>
           </div>
         ) : !ficha ? (
-          <div role="status" aria-label="Carregando dados do contato" className="space-y-3">
-            <div className="h-4 w-32 animate-pulse rounded bg-surface-strong" />
-            <div className="h-24 animate-pulse rounded-xl bg-surface" />
-          </div>
+          <EsqueletoDoPainel />
         ) : (
           <>
             <Secao titulo="Qualificação da oportunidade">
@@ -446,6 +447,54 @@ function Numero({ titulo, valor }: { titulo: string; valor: string }) {
     <div className="crm-section">
       <p className="text-lg font-semibold tabular-nums">{valor}</p>
       <p className="mt-1 text-[11px] text-muted">{titulo}</p>
+    </div>
+  )
+}
+/** Mesmo desenho das seções que chegam, para nada pular quando os dados entram. */
+function EsqueletoDoPainel() {
+  const barra = 'animate-pulse rounded bg-surface-strong'
+  return (
+    <div role="status" aria-label="Carregando dados do contato" className="space-y-5">
+      <section className="crm-section">
+        <div className={`mb-5 h-4 w-48 ${barra}`} />
+        <div className={`h-3 w-20 ${barra}`} />
+        <div className={`mt-2 h-10 ${barra} rounded-lg`} />
+        <div className={`mt-5 h-3 w-44 ${barra}`} />
+        <div className="mt-3 flex items-center justify-between">
+          <div className={`h-3 w-24 ${barra}`} />
+          <div className={`h-9 w-20 ${barra} rounded-lg`} />
+        </div>
+      </section>
+      <section className="crm-section">
+        <div className={`mb-5 h-4 w-32 ${barra}`} />
+        <div className="grid grid-cols-1 gap-4 min-[380px]:grid-cols-2">
+          {[0, 1].map((i) => (
+            <div key={i}>
+              <div className={`h-3 w-28 ${barra}`} />
+              <div className={`mt-2 h-10 ${barra} rounded-lg`} />
+            </div>
+          ))}
+        </div>
+        <div className="mt-4 space-y-3 border-t border-line pt-4">
+          {[0, 1].map((i) => (
+            <div key={i} className="flex justify-between">
+              <div className={`h-3 w-24 ${barra}`} />
+              <div className={`h-3 w-28 ${barra}`} />
+            </div>
+          ))}
+        </div>
+      </section>
+      <section className="crm-section">
+        <div className={`mb-5 h-4 w-24 ${barra}`} />
+        <div className="flex gap-2">
+          <div className={`h-7 w-20 ${barra} rounded-full`} />
+          <div className={`h-7 w-16 ${barra} rounded-full`} />
+        </div>
+      </section>
+      <section className="crm-section">
+        <div className={`mb-5 h-4 w-40 ${barra}`} />
+        <div className={`h-20 ${barra} rounded-lg`} />
+      </section>
     </div>
   )
 }
