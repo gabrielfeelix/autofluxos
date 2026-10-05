@@ -1,4 +1,5 @@
 import 'server-only'
+import { nomeParaMostrar } from '@/core/contatos/nome-para-mostrar'
 import {
   DIAS_PARA_INATIVAR,
   estagioDepoisDe,
@@ -212,7 +213,7 @@ export async function fichaDoContato(
   return {
     // `nome_real` (o que a equipe corrigiu) ganha de `nome` (o do perfil do
     // WhatsApp, que a própria pessoa muda quando quer), como no cartão.
-    nome: (linha.nome_real ?? '').trim() || linha.nome || linha.wa_id,
+    nome: nomeParaMostrar({ nomeReal: linha.nome_real, nome: linha.nome, waId: linha.wa_id }),
     waId: linha.wa_id,
     estagio: linha.estagio as Estagio,
     estagioDesde: linha.estagio_mudou_em,

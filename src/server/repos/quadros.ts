@@ -1,4 +1,6 @@
 import 'server-only'
+import { nomeParaMostrar } from '@/core/contatos/nome-para-mostrar'
+import { ehVisitanteDoSite } from '@/core/contatos/visitante-do-site'
 import {
   ETAPAS_INICIAIS,
   etapasEmOrdem,
@@ -631,8 +633,9 @@ function paraCartao(linha: LinhaDoCartao): Cartao {
     // `nome_real` (o que a equipe corrigiu) ganha de `nome` (o do perfil do
     // WhatsApp, que a própria pessoa muda quando quer). Sem nenhum dos dois, o
     // telefone, cartão sem identificação nenhuma não dá para usar.
-    nome: linha.contacts?.nome_real || linha.contacts?.nome || linha.contacts?.wa_id || '',
-    telefone: linha.contacts?.wa_id ?? '',
+    nome: nomeParaMostrar({ nomeReal: linha.contacts?.nome_real, nome: linha.contacts?.nome, waId: linha.contacts?.wa_id }),
+    // Visitante do site não tem telefone: o endereço é um hash, e o nome já diz de onde veio.
+    telefone: ehVisitanteDoSite(linha.contacts?.wa_id) ? '' : (linha.contacts?.wa_id ?? ''),
     entrouNaColunaEm: linha.entrou_na_coluna_em,
     titulo: linha.titulo,
     // `numeric` chega como string no supabase-js. Sem converter, o cabeçalho da
@@ -925,7 +928,7 @@ export async function contatosForaDoQuadro(
     .slice(0, limite)
     .map((linha) => ({
       id: linha.id,
-      nome: linha.nome_real || linha.nome || linha.wa_id,
+      nome: nomeParaMostrar({ nomeReal: linha.nome_real, nome: linha.nome, waId: linha.wa_id }),
       telefone: linha.wa_id,
     }))
 }
