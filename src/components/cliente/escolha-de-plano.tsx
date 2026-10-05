@@ -333,6 +333,23 @@ export function EscolhaDePlano({
 }
 
 /**
+ * A marca de cada item: check azul num círculo claro. A linha de herança
+ * ("Tudo do Essencial") leva o círculo cheio, porque resume um plano inteiro.
+ */
+function MarcaDoItem({ cheia }: { cheia: boolean }) {
+  return (
+    <span
+      aria-hidden
+      className={`mt-[2px] grid size-4 shrink-0 place-items-center rounded-full ${cheia ? 'bg-primary text-white' : 'bg-primary/[0.12] text-primary'}`}
+    >
+      <svg viewBox="0 0 12 12" className="size-2.5">
+        <path d="M2.5 6.2 4.9 8.5 9.5 3.8" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+      </svg>
+    </span>
+  )
+}
+
+/**
  * As linhas que "Tudo do Essencial" resume, para o "Ver tudo".
  *
  * Herda os itens dos planos de baixo, menos o que o plano de cima substitui:
@@ -419,7 +436,7 @@ function Cartao({
         </>
       )}
 
-      <ul className="mt-3 mb-4 flex flex-col gap-1.5">
+      <ul className="mt-4 mb-4 flex flex-col gap-2 border-t border-line pt-4">
         {plano.itens.map((item) => {
           /*
             A linha de herança em negrito, e não como mais um item.
@@ -432,24 +449,23 @@ function Cartao({
           const herda = item.startsWith('Tudo d')
           const abertos = herda && verTudo ? herdados(plano, planos) : []
           return (
-            <li
-              key={item}
-              className={
-                herda
-                  ? 'text-[12px] leading-5 font-semibold text-soft'
-                  : 'text-[12px] leading-5 text-muted'
-              }
-            >
-              {item}
-              {abertos.length > 0 && (
-                <ul className="mt-1 mb-1 flex flex-col gap-1 border-l border-line pl-2.5">
-                  {abertos.map((herdado) => (
-                    <li key={herdado} className="text-[12px] leading-5 font-normal text-muted">
-                      {herdado}
-                    </li>
-                  ))}
-                </ul>
-              )}
+            <li key={item} className="flex gap-2.5">
+              <MarcaDoItem cheia={herda} />
+              <span className="min-w-0 flex-1">
+                <span className={herda ? 'text-[12.5px] leading-5 font-semibold text-soft' : 'text-[12.5px] leading-5 text-muted'}>
+                  {item}
+                </span>
+                {abertos.length > 0 && (
+                  <ul className="mt-2 mb-0.5 flex flex-col gap-1.5 rounded-[9px] bg-primary/[0.04] px-2.5 py-2">
+                    {abertos.map((herdado) => (
+                      <li key={herdado} className="flex gap-2 text-[12px] leading-5 text-muted">
+                        <span aria-hidden className="mt-[7px] size-1.5 shrink-0 rounded-full bg-primary/45" />
+                        {herdado}
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </span>
             </li>
           )
         })}
@@ -460,9 +476,12 @@ function Cartao({
           type="button"
           onClick={aoVerTudo}
           aria-expanded={verTudo}
-          className="-mt-2 mb-4 self-start text-[12px] font-semibold text-primary hover:underline"
+          className="-mt-1 mb-4 inline-flex items-center gap-1 self-start rounded-md text-[12px] font-semibold text-primary hover:underline"
         >
           {verTudo ? 'Ver menos' : 'Ver tudo o que inclui'}
+          <svg aria-hidden viewBox="0 0 12 12" className={`size-3 transition-transform ${verTudo ? 'rotate-180' : ''}`}>
+            <path d="M3 4.5 6 7.5l3-3" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
         </button>
       )}
       {/* O botão de pedir fica no pé do cartão, com a lista curta ou aberta. */}
