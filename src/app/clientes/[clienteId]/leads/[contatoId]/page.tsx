@@ -85,6 +85,7 @@ import {
 } from '@/components/lead/anexo'
 import { NomeDoContato } from '@/components/lead/identidade'
 import { CartaoDeAnotacoes, ProvedorDeAnotacoes } from '@/components/inbox/anotacoes'
+import { EditarContato } from '@/components/lead-crm/editar-contato'
 import { anotacoesDoContato } from '@/server/repos/eventos'
 import { etiquetasDeDia, horaComFuso, horaDoRelogio, horaExata, quando } from '@/lib/quando'
 import { MenuNaConversa } from '@/components/inbox/historico'
@@ -287,6 +288,7 @@ export default async function Pagina({
           {/* As ações sobre o contato, no alto e à direita, o lugar em que a
               ficha do Brevo e a do RD as põem, e pelo mesmo motivo: é onde o
               olho chega depois de ler quem é a pessoa. */}
+          <EditarContato clienteId={clienteId} contatoId={contatoId} nome={lead.nome} campos={lead.campos} />
           <AcoesDaFicha
             clienteId={clienteId}
             contatoId={contatoId}
