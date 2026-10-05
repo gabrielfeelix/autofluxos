@@ -2,6 +2,7 @@ import type { Metadata } from 'next'
 import { Inter, JetBrains_Mono, Noto_Color_Emoji, Outfit } from 'next/font/google'
 import type { ReactNode } from 'react'
 import { SCRIPT_DAS_PREFERENCIAS } from '@/components/design/tema'
+import { DicaDoTruncado } from '@/components/design/dica-do-truncado'
 import './globals.css'
 
 const outfit = Outfit({
@@ -88,7 +89,11 @@ export default function RootLayout({ children }: { children: ReactNode }) {
         */}
         <script dangerouslySetInnerHTML={{ __html: SCRIPT_DAS_PREFERENCIAS }} />
       </head>
-      <body>{children}</body>
+      <body>
+        {children}
+        {/* Texto cortado com "…" mostra o inteiro com o mouse parado em cima, em toda tela. */}
+        <DicaDoTruncado />
+      </body>
     </html>
   )
 }
