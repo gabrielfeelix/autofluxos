@@ -579,15 +579,43 @@ async function Fila({
         </ul>
       )}
 
-      {itens.length > 0 && (
+      {/*
+        Dois grupos, pelo que dá para fazer (05/out/2026). Era uma lista só,
+        "na fila há mais tempo", com o motivo técnico do handoff ("o modelo
+        demorou demais", "fetch failed") e "há 5 dias": a primeira tela enchia
+        de conversas que ninguém mais podia responder de graça, e o motivo era
+        o log do sistema, não o que fazer. Agora a janela de 24h decide: dá
+        para responder, com quanto tempo resta, ou venceu e só volta com
+        modelo. O motivo técnico continua no `title` da linha.
+      */}
+      {itens.some((i) => !i.vencida) && (
         <>
-          <h3 className="border-t border-line-soft px-5 pt-3 pb-1 text-[11px] font-bold tracking-[0.08em] text-dim uppercase">
-            Na fila há mais tempo
+          <h3 className="flex items-center gap-2 border-t border-line-soft px-5 pt-3 pb-1 text-[11px] font-bold tracking-[0.08em] text-dim uppercase">
+            <span aria-hidden className="size-1.5 rounded-full bg-emerald-400" />
+            Responder agora
           </h3>
           <ul>
-            {itens.map((item) => (
-              <LinhaDaFila key={item.contatoId} item={item} clienteId={clienteId} />
-            ))}
+            {itens
+              .filter((i) => !i.vencida)
+              .map((item) => (
+                <LinhaDaFila key={item.contatoId} item={item} clienteId={clienteId} />
+              ))}
+          </ul>
+        </>
+      )}
+      {itens.some((i) => i.vencida) && (
+        <>
+          <h3 className="flex items-center gap-2 border-t border-line-soft px-5 pt-3 pb-1 text-[11px] font-bold tracking-[0.08em] text-dim uppercase">
+            <span aria-hidden className="size-1.5 rounded-full bg-surface-strong" />
+            Janela vencida
+            <span className="font-medium tracking-normal normal-case">· só dá para retomar com modelo aprovado</span>
+          </h3>
+          <ul>
+            {itens
+              .filter((i) => i.vencida)
+              .map((item) => (
+                <LinhaDaFila key={item.contatoId} item={item} clienteId={clienteId} />
+              ))}
           </ul>
         </>
       )}
@@ -622,37 +650,58 @@ const agora = () => Date.now()
 
 function LinhaDaFila({ item, clienteId }: { item: ItemDaFila; clienteId: string }) {
   const pediu = item.motivo === 'pediu-pessoa'
+  const apertado = !item.vencida && item.minutosRestantes < 120
 
   return (
     <li className="border-t border-line-soft">
       <Link
         href={`/clientes/${clienteId}/inbox?conversa=${encodeURIComponent(item.contatoId)}`}
-        className="flex flex-wrap items-center gap-x-3.5 gap-y-1 px-5 py-2.5 transition hover:bg-surface active:bg-surface-strong"
+        title={pediu && item.detalhe ? `Por que veio para a equipe: ${item.detalhe}` : undefined}
+        className={`flex flex-wrap items-center gap-x-3.5 gap-y-1 px-5 py-2.5 transition hover:bg-surface active:bg-surface-strong ${item.vencida ? 'opacity-80' : ''}`}
       >
         {/*
           As iniciais, e não uma foto: a Cloud API não entrega foto de perfil de
-          contato, o único `profile_picture_url` que existe é o do próprio
-          negócio. O avatar é o mesmo do Inbox de propósito, com a mesma cor por
+          contato. O avatar é o mesmo do Inbox de propósito, com a mesma cor por
           nome, para a pessoa que você viu aqui ser reconhecida lá.
         */}
-        <Avatar nome={item.nome} alerta={pediu} tamanho={32} />
+        <Avatar nome={item.nome} alerta={pediu && !item.vencida} tamanho={32} />
 
-        <span className="min-w-[120px] flex-1 truncate text-[13.5px] font-semibold">
-          {item.nome ?? telefoneLegivel(item.telefone)}
+        <span className="min-w-[120px] flex-1">
+          <span className="block truncate text-[13.5px] font-semibold">
+            {item.nome ?? telefoneLegivel(item.telefone)}
+          </span>
+          <span className={`block text-[11.5px] ${pediu ? 'font-medium text-aviso' : 'text-dim'}`}>
+            {pediu ? 'Pediu atendimento' : 'Esperando resposta'} {haQuantoTempo(item.desde)}
+          </span>
         </span>
 
-        <span
-          className={`shrink-0 truncate text-[12px] ${pediu ? 'font-semibold text-aviso' : 'text-muted'}`}
-        >
-          {pediu ? (item.detalhe ?? 'pediu uma pessoa') : 'esperando resposta'}
-        </span>
-
-        <span className="w-[84px] shrink-0 text-right text-[12px] text-dim">
-          {haQuantoTempo(item.desde)}
-        </span>
+        {item.vencida ? (
+          <span className="flex shrink-0 items-center gap-2.5">
+            <span className="rounded-full bg-surface px-2 py-0.5 text-[11px] font-semibold text-muted">Vencida</span>
+            <span className="text-[12px] font-semibold text-primary">Retomar com modelo →</span>
+          </span>
+        ) : (
+          <span
+            className={`flex shrink-0 items-center gap-1.5 rounded-full px-2.5 py-1 text-[11.5px] font-semibold tabular-nums ${
+              apertado ? 'bg-perigo/10 text-perigo' : 'bg-surface text-soft'
+            }`}
+          >
+            <svg aria-hidden viewBox="0 0 24 24" className="size-3.5" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+              <circle cx="12" cy="12" r="8.5" />
+              <path d="M12 7.5V12l3 1.8" />
+            </svg>
+            {restaDaJanela(item.minutosRestantes)}
+          </span>
+        )}
       </Link>
     </li>
   )
+}
+
+/** "fecha em 3h", "fecha em 25 min": o prazo da janela, curto para caber. */
+function restaDaJanela(minutos: number): string {
+  if (minutos < 60) return `fecha em ${minutos} min`
+  return `fecha em ${Math.floor(minutos / 60)}h`
 }
 
 // ---------------------------------------------------------------------------

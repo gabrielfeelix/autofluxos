@@ -27,6 +27,15 @@ export type ItemDaFila = {
   detalhe: string | null
   /** Desde quando espera, em ISO. É daqui que sai o "há 3 dias" da tela. */
   desde: string
+  /**
+   * Quando fecha a janela de 24h do WhatsApp, em ISO. `null` = a pessoa nunca
+   * escreveu. Depois disso só sai modelo aprovado pela Meta.
+   */
+  fechaEm: string | null
+  /** A janela já fechou: responder agora exige modelo. */
+  vencida: boolean
+  /** Minutos até fechar, contados aqui e não no render. `0` quando vencida. */
+  minutosRestantes: number
 }
 
 export type FilaDoPainel = {
@@ -46,6 +55,7 @@ type LinhaDaFila = {
   handoff_motivo: string | null
   handoff_em: string | null
   ultima_em: string | null
+  ultima_entrada_em: string | null
 }
 
 /**
@@ -86,8 +96,15 @@ export async function filaDoPainel(
   clienteId: string,
   limite = ITENS_NA_FILA,
   donos: Donos = null,
+  agora = new Date(),
 ): Promise<FilaDoPainel> {
-  const campos = 'contact_id, nome, wa_id, handoff_motivo, handoff_em, ultima_em'
+  const campos = 'contact_id, nome, wa_id, handoff_motivo, handoff_em, ultima_em, ultima_entrada_em'
+  /*
+   * Lê mais que a tela mostra: a ordem final é "janela aberta primeiro", e os
+   * mais antigos costumam ser justamente os de janela vencida. Pegar só os
+   * seis mais antigos enchia a lista de conversas que ninguém pode responder.
+   */
+  const lote = Math.max(limite, 40)
   const doEscopo = <Q,>(q: Q) => noEscopo(q, donos)
 
   const [pediram, devendo, quantosPediram, quantosDevendo] = await Promise.all([
@@ -97,7 +114,7 @@ export async function filaDoPainel(
       .eq('client_id', clienteId)
       .not('handoff_em', 'is', null)
       .order('handoff_em', { ascending: true })
-      .limit(limite)),
+      .limit(lote)),
 
     doEscopo(db()
       .from('leads')
@@ -107,7 +124,7 @@ export async function filaDoPainel(
       .eq('ultima_direcao', 'entrada')
       .is('handoff_em', null)
       .order('ultima_em', { ascending: true })
-      .limit(limite)),
+      .limit(lote)),
 
     doEscopo(db()
       .from('leads')
@@ -141,6 +158,7 @@ export async function filaDoPainel(
       motivo: 'pediu-pessoa',
       detalhe: linha.handoff_motivo,
       desde: linha.handoff_em,
+      ...janelaDe(linha.ultima_entrada_em, agora),
     })
   }
 
@@ -153,16 +171,38 @@ export async function filaDoPainel(
       motivo: 'esperando-resposta',
       detalhe: null,
       desde: linha.ultima_em,
+      ...janelaDe(linha.ultima_entrada_em, agora),
     })
   }
 
-  // Quem pediu pessoa vem inteiro na frente, mesmo que espere há menos tempo:
-  // é o único caso em que o bot já disse que não dá conta.
+  /*
+   * A ordem é a do que dá para fazer agora: janela aberta primeiro, a que fecha
+   * mais cedo na frente; vencida depois. Dentro de cada grupo, quem pediu
+   * pessoa vem antes, porque é o caso em que o bot já disse que não dá conta.
+   */
+  const ordenados = [...itens].sort((a, b) => {
+    if (a.vencida !== b.vencida) return a.vencida ? 1 : -1
+    if (a.motivo !== b.motivo) return a.motivo === 'pediu-pessoa' ? -1 : 1
+    return a.vencida ? b.desde.localeCompare(a.desde) : a.minutosRestantes - b.minutosRestantes
+  })
   return {
-    itens: itens.slice(0, limite),
+    itens: ordenados.slice(0, limite),
     total: (quantosPediram.count ?? 0) + (quantosDevendo.count ?? 0),
     pedindoPessoa: quantosPediram.count ?? 0,
   }
+}
+
+const JANELA_MS = 24 * 60 * 60 * 1000
+
+/** A janela de 24h a partir da última mensagem da pessoa. */
+function janelaDe(
+  ultimaEntradaEm: string | null,
+  agora: Date,
+): Pick<ItemDaFila, 'fechaEm' | 'vencida' | 'minutosRestantes'> {
+  if (!ultimaEntradaEm) return { fechaEm: null, vencida: true, minutosRestantes: 0 }
+  const fecha = new Date(ultimaEntradaEm).getTime() + JANELA_MS
+  const restam = Math.floor((fecha - agora.getTime()) / 60_000)
+  return { fechaEm: new Date(fecha).toISOString(), vencida: restam <= 0, minutosRestantes: Math.max(0, restam) }
 }
 
 export type Fechamentos = {
