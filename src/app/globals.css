@@ -2081,8 +2081,10 @@ textarea::placeholder {
     /*
      * O "⋮" da etapa é `quadro-tool` sem fundo, sentado na casca ao lado do
      * "+": voltar ao token do cartão o deixava escuro sobre o azul.
+     * `:where` porque `:not` somaria especificidade, e esta regra passaria a
+     * ganhar de `.app-quadro .quadro-seletor`, o título branco do funil.
      */
-    .quadro-tool:not(.quadro-stage-menu),
+    .quadro-tool:where(:not(.quadro-stage-menu)),
     .quadro-popover,
     .crm-section,
     .crm-opportunity,
