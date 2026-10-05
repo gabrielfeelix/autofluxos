@@ -28,6 +28,14 @@ export async function acaoTrocarFuncao(clienteId: string, usuarioId: string, fun
   const conferida = conferirTrocaDeFuncao(r.ator, r.alvo, funcao)
   if (!conferida.ok) return { ok: false, erro: conferida.motivo }
 
+  // Leitor que vira outra função passa a contar como atendente.
+  if (r.alvo.funcao === 'leitor' && funcao !== 'leitor') {
+    const plano = await planoVigente(await planoDaConta(clienteId))
+    if (custoDaEquipe(plano, (await tamanhoDaEquipe(clienteId)) + 1).enterprise) {
+      return { ok: false, erro: `acima de ${LIMITE_DE_ATENDENTES_SEM_CONTRATO} atendentes a conta vira Enterprise: fale com a 4YU para ampliar a equipe` }
+    }
+  }
+
   const gravada = await definirFuncaoDoMembro(clienteId, usuarioId, funcao, r.ator.usuarioId)
   if (!gravada.ok) return { ok: false, erro: gravada.motivo }
 
@@ -73,13 +81,14 @@ export async function acaoDarAcessoNaOrganizacao(
   }
 
   /*
-   * Atendente conta desde 05/out (0128). Passar do incluso não bloqueia: a
+   * Atendente conta desde 05/out (0128); Leitor não. Passar do incluso não bloqueia: a
    * primeira tentativa devolve o custo, e só a segunda, com o aceite, liga a
    * pessoa. Acima do limite sem contrato, é conversa de Enterprise.
    */
+  // Leitor não conta: entra de graça e sem limite.
   const equipe = await tamanhoDaEquipe(clienteId)
   const plano = await planoVigente(await planoDaConta(clienteId))
-  const custo = custoDaEquipe(plano, equipe + 1)
+  const custo = custoDaEquipe(plano, funcao === 'leitor' ? equipe : equipe + 1)
   if (custo.enterprise) {
     return { erro: `acima de ${LIMITE_DE_ATENDENTES_SEM_CONTRATO} atendentes a conta vira Enterprise: fale com a 4YU para ampliar a equipe` }
   }

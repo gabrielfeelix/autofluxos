@@ -408,8 +408,9 @@ API oficial do WhatsApp Business
                 </h2>
                 <span className={`${s.risco} ${s.riscoCentro}`} data-revela data-atraso="90" aria-hidden />
                 <p className={`${s.chamada} ${s.chamadaCentro}`} data-revela data-atraso="100">
-                  {DIAS_DE_TESTE} dias grátis, sem cartão, e montamos o primeiro robô com você. O que muda
-                  entre os planos é o tamanho da equipe e quantas conversas cabem no seu mês.
+                  Organize, automatize, decida. A IA é a mesma em todos os planos: o que sobe é o que ela
+                  faz sozinha, o tamanho da equipe e quantas conversas cabem no mês. {DIAS_DE_TESTE} dias
+                  grátis, sem cartão, e quem só acompanha (sócio, financeiro) entra de graça.
                 </p>
               </div>
 
@@ -927,6 +928,21 @@ function Setor({
   )
 }
 
+/**
+ * A primeira frase do resumo é a promessa (Organizar / Automatizar / Decidir),
+ * e vira título; o resto é o subtítulo. Um campo só porque a administração
+ * edita o plano numa linha (`planos.resumo`).
+ */
+function PromessaDoPlano({ resumo }: { resumo: string }) {
+  const corte = resumo.indexOf('. ')
+  if (corte < 0) return <p className={s.planoResumo}>{resumo}</p>
+  return (
+    <p className={s.planoResumo}>
+      <strong className={s.planoPromessa}>{resumo.slice(0, corte + 1)}</strong> {resumo.slice(corte + 2)}
+    </p>
+  )
+}
+
 function Plano({
   nome,
   preco,
@@ -975,7 +991,7 @@ function Plano({
         </p>
       )}
 
-      <p className={s.planoResumo}>{resumo}</p>
+      <PromessaDoPlano resumo={resumo} />
 
       {/*
         A tarifa da Meta aparece aqui, dentro do card, e não numa nota de rodapé.

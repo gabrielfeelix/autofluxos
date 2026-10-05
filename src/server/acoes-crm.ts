@@ -36,7 +36,7 @@ import {
   trazerTodosParaOQuadro,
 } from './repos/quadros'
 import { sessaoAtual } from './sessao'
-import { exigirCapacidade, recusou } from './permissoes'
+import { exigirCapacidade, recusou, exigirLeitura } from './permissoes'
 import { pode } from '@/core/permissoes'
 import { notFound } from 'next/navigation'
 
@@ -284,7 +284,7 @@ export async function acaoDefinirFaixas(
 export async function acaoListarMotivos(
   clienteId: string,
 ): Promise<{ motivos: { id: string; nome: string }[] }> {
-  const acesso = await exigirCapacidade(clienteId, 'criar_oportunidade', 'proprios')
+  const acesso = await exigirLeitura(clienteId, 'criar_oportunidade', 'proprios')
   if (recusou(acesso)) return { motivos: [] }
   const motivos = await listarMotivos(clienteId)
   return { motivos: motivos.map(({ id, nome }) => ({ id, nome })) }

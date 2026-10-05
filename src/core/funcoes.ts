@@ -6,8 +6,12 @@
  * ---------------------------------------------------------------------------
  *
  * Uma função é um conjunto nomeado de capacidades com escopo, e tem um
- * **nível**: Proprietário 4, Administrador 3, Gestor 2, Atendente 1. O nível
- * é o que decide quem mexe em quem.
+ * **nível**: Proprietário 4, Administrador 3, Gestor 2, Atendente 1, Leitor 0.
+ * O nível é o que decide quem mexe em quem.
+ *
+ * O Leitor (05/out/2026) é o sócio ou o financeiro que acompanha: vê Início,
+ * contatos, funis e relatórios da organização inteira, com valores, e não
+ * escreve nada nem abre a Inbox. Não conta como atendente no plano.
  *
  * No banco, `af_membros.role` continua `owner`/`admin`/`member` (é do plugin
  * de organização do Better Auth). A função é derivada dele e das exceções da
@@ -35,11 +39,12 @@ import {
   MODELOS_EXTRA,
   POLITICAS,
   alcancaPeloMenos,
+  type Escopo,
   type PapelDaConta,
   type Politica,
 } from './permissoes'
 
-export const FUNCOES = ['proprietario', 'administrador', 'gestor', 'atendente'] as const
+export const FUNCOES = ['proprietario', 'administrador', 'gestor', 'atendente', 'leitor'] as const
 
 export type IdDaFuncao = (typeof FUNCOES)[number]
 
@@ -52,6 +57,7 @@ export const NIVEL_DA_FUNCAO: Record<IdDaFuncao, number> = {
   administrador: 3,
   gestor: 2,
   atendente: 1,
+  leitor: 0,
 }
 
 /** O nível do administrador da plataforma: acima de qualquer função. */
@@ -62,6 +68,7 @@ export const ROTULO_DA_FUNCAO: Record<IdDaFuncao, string> = {
   administrador: 'Administrador',
   gestor: 'Gestor',
   atendente: 'Atendente',
+  leitor: 'Leitor',
 }
 
 export const DESCRICAO_DA_FUNCAO: Record<IdDaFuncao, string> = {
@@ -69,6 +76,7 @@ export const DESCRICAO_DA_FUNCAO: Record<IdDaFuncao, string> = {
   administrador: 'Faz tudo na organização, menos mexer no proprietário.',
   gestor: 'Cuida da equipe dele: vê e atende as conversas da equipe e promove atendentes.',
   atendente: 'Atende as conversas dele e as que estão sem dono.',
+  leitor: 'Acompanha contatos, funis e relatórios, com valores, sem alterar nada. Não conta como atendente.',
 }
 
 export type Funcao = {
@@ -91,6 +99,19 @@ export const FUNCOES_PADRAO: Record<IdDaFuncao, Funcao> = {
   administrador: { id: 'administrador', nome: ROTULO_DA_FUNCAO.administrador, nivel: 3, descricao: DESCRICAO_DA_FUNCAO.administrador, capacidades: POLITICAS.admin },
   gestor: { id: 'gestor', nome: ROTULO_DA_FUNCAO.gestor, nivel: 2, descricao: DESCRICAO_DA_FUNCAO.gestor, capacidades: MODELOS_EXTRA.gestor },
   atendente: { id: 'atendente', nome: ROTULO_DA_FUNCAO.atendente, nivel: 1, descricao: DESCRICAO_DA_FUNCAO.atendente, capacidades: MODELOS_EXTRA.operador },
+  leitor: { id: 'leitor', nome: ROTULO_DA_FUNCAO.leitor, nivel: 0, descricao: DESCRICAO_DA_FUNCAO.leitor, capacidades: MODELOS_EXTRA.leitor },
+}
+
+/**
+ * O quanto cada função **lê**, além do que as capacidades dão.
+ *
+ * Ler contatos, funis e relatórios sempre veio junto de `atender` e
+ * `criar_oportunidade`. O Leitor lê a organização inteira sem nenhuma das
+ * duas: por isso a leitura dele é separada (`Acesso.leitura`) e só vale para
+ * consulta, nunca para ação (`pode` não a enxerga).
+ */
+export const LEITURA_DA_FUNCAO: Partial<Record<IdDaFuncao, Escopo>> = {
+  leitor: 'todos',
 }
 
 /** O papel do Better Auth que acompanha cada função. */
@@ -99,6 +120,7 @@ export const PAPEL_DA_FUNCAO: Record<IdDaFuncao, PapelDaConta> = {
   administrador: 'admin',
   gestor: 'member',
   atendente: 'member',
+  leitor: 'member',
 }
 
 /** `a` cabe dentro de `b`? Toda capacidade de `a` alcança no máximo o que `b` alcança. */
@@ -124,6 +146,7 @@ export function funcaoDerivada(
   if (papel === 'owner') return 'proprietario'
   if (papel === 'admin') return 'administrador'
   if (politicaCabe(politicaEfetiva, funcoes.atendente.capacidades)) return 'atendente'
+  if (politicaCabe(politicaEfetiva, funcoes.leitor.capacidades)) return 'leitor'
   if (politicaCabe(politicaEfetiva, funcoes.gestor.capacidades)) return 'gestor'
   return 'administrador'
 }
@@ -175,11 +198,15 @@ export function podeEditarPessoa(ator: NaHierarquia, alvo: NaHierarquia): boolea
  *
  * Até o próprio nível, e o Proprietário só pelo proprietário (que, ao dar,
  * passa a posse e vira Administrador) ou pelo suporte.
+ *
+ * O Leitor é nível 0, mas lê a organização inteira com valores: mais do que o
+ * gestor alcança. Por isso só administrador para cima o atribui.
  */
 export function podeAtribuirFuncao(ator: Pick<NaHierarquia, 'nivel'>, funcao: IdDaFuncao): boolean {
   if (ator.nivel >= NIVEL_DO_SUPORTE) return true
   if (ator.nivel < NIVEL_DA_FUNCAO.gestor) return false
   if (funcao === 'proprietario') return ator.nivel === NIVEL_DA_FUNCAO.proprietario
+  if (funcao === 'leitor') return ator.nivel >= NIVEL_DA_FUNCAO.administrador
   return NIVEL_DA_FUNCAO[funcao] <= ator.nivel
 }
 

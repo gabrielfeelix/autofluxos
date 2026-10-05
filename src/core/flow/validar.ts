@@ -77,6 +77,12 @@ export type Capacidades = {
    */
   iaHabilitada?: boolean
   /**
+   * O plano inclui IA que consulta e age (`ia_ferramentas`, 05/out/2026)?
+   * `undefined` = não sei, e não avisa. `false` vira aviso, não erro: o bloco
+   * publica e a IA só conversa, sem consulta.
+   */
+  iaComFerramentas?: boolean
+  /**
    * Ids das conexões que existem para este cliente.
    *
    * `undefined` significa "não sei" e o validador não cobra, é o caso do
@@ -174,6 +180,7 @@ export type Capacidades = {
 export function validar(fluxo: Fluxo, capacidades: Capacidades = {}): ResultadoValidacao {
   const {
     iaHabilitada = false,
+    iaComFerramentas,
     conexoes,
     temContextoDeNegocio,
     etapas,
@@ -383,6 +390,18 @@ export function validar(fluxo: Fluxo, capacidades: Capacidades = {}): ResultadoV
       erros.push({
         codigo: 'IA_NAO_CONTRATADA',
         mensagem: `${descrever(no)} usa IA, que é um plano à parte e não está contratado para este cliente.`,
+        noId: no.id,
+      })
+    }
+
+    if (
+      no.type === 'ia' &&
+      iaComFerramentas === false &&
+      (no.data.ferramentas.length > 0 || Boolean(no.data.conversar?.cobranca))
+    ) {
+      avisos.push({
+        codigo: 'IA_SEM_FERRAMENTAS_NO_PLANO',
+        mensagem: `${descrever(no)} consulta ou age (agenda, loja, pedido, cobrança), e isso é do plano Operação para cima. Neste plano a IA só conversa com o contexto.`,
         noId: no.id,
       })
     }

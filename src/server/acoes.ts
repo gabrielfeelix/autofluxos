@@ -1365,6 +1365,9 @@ export async function acaoCriarSequencia(
 ): Promise<EstadoSalvar> {
   const acesso = await exigirCapacidade(clienteId, 'configurar_operacao', 'todos')
   if (recusou(acesso)) return acesso
+  // Sequência é do plano Operação para cima; quem perdeu fica só leitura.
+  const foraDoPlano = await recusaDoPlano(clienteId, 'sequencias')
+  if (foraDoPlano) return { erro: foraDoPlano }
 
   const evento = String(formData.get('evento') ?? '')
   if (!ehEventoDeSequencia(evento)) return { erro: 'escolha o que dispara a sequência' }
@@ -1423,6 +1426,11 @@ export async function acaoAlternarSequencia(
 ): Promise<{ ok: boolean; erro?: string }> {
   const acesso = await exigirCapacidade(clienteId, 'configurar_operacao', 'todos')
   if (recusou(acesso)) return acesso
+  // Desligar sempre pode; ligar é do plano Operação para cima.
+  if (ativa) {
+    const foraDoPlano = await recusaDoPlano(clienteId, 'sequencias')
+    if (foraDoPlano) return { ok: false, erro: foraDoPlano }
+  }
 
   const mudou = await alternarSequencia(clienteId, sequenciaId, ativa)
   // Interruptor otimista na tela: sem recarregar. Ver `gestoSemRecarregar`.
@@ -1459,6 +1467,8 @@ export async function acaoCriarPassoDaSequencia(
 ): Promise<EstadoSalvar> {
   const acesso = await exigirCapacidade(clienteId, 'configurar_operacao', 'todos')
   if (recusou(acesso)) return acesso
+  const foraDoPlano = await recusaDoPlano(clienteId, 'sequencias')
+  if (foraDoPlano) return { erro: foraDoPlano }
 
   const horas = Number(formData.get('horas') ?? 0)
   const minutos = Number(formData.get('minutos') ?? 0)
@@ -1503,6 +1513,8 @@ export async function acaoEditarPassoDaSequencia(
 ): Promise<EstadoSalvar & { remarcadas?: number }> {
   const acesso = await exigirCapacidade(clienteId, 'configurar_operacao', 'todos')
   if (recusou(acesso)) return acesso
+  const foraDoPlano = await recusaDoPlano(clienteId, 'sequencias')
+  if (foraDoPlano) return { erro: foraDoPlano }
 
   const horas = Number(formData.get('horas') ?? 0)
   const minutos = Number(formData.get('minutos') ?? 0)

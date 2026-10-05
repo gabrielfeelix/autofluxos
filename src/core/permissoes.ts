@@ -236,6 +236,11 @@ export const MODELOS_EXTRA = {
     atender: 'proprios',
     criar_oportunidade: 'proprios',
   }),
+
+  // O Leitor não age em nada: só vê valor. O que ele lê vem de `Acesso.leitura`.
+  leitor: politica({
+    ler_valores: 'todos',
+  }),
 } as const satisfies Record<string, Politica>
 
 // ---------------------------------------------------------------------------
@@ -269,6 +274,12 @@ export type Acesso = {
   politicaBase?: Politica
   /** O nome da função gravada, para a tela dizer "Atendente" e não o perfil derivado. */
   nomeDaFuncao?: string
+  /**
+   * O que esta pessoa **lê** de contatos, funis e relatórios, além do que
+   * `atender` e `criar_oportunidade` já dão (`LEITURA_DA_FUNCAO`). Vale para
+   * consulta (`filtroDe`, `podeVer`), nunca para ação (`pode`). Ausente = nada.
+   */
+  leitura?: Escopo
   /** As equipes de que esta pessoa faz parte. Vazio = nenhuma. */
   equipes?: readonly string[]
   usuarioId?: string
@@ -300,6 +311,31 @@ export function pode(
 ): boolean {
   if (minimo === 'nenhum') return true
   return alcancaPeloMenos(escopoDe(acesso, capacidade), minimo)
+}
+
+/** As capacidades cuja leitura o `Acesso.leitura` estende. */
+const CAPACIDADES_DE_LEITURA: readonly Capacidade[] = ['atender', 'criar_oportunidade']
+
+/**
+ * O escopo que esta pessoa **lê** desta capacidade: o da capacidade ou o da
+ * leitura, o maior. É o que filtra consulta; a ação continua em `escopoDe`.
+ */
+export function escopoDeLeitura(acesso: Acesso, capacidade: Capacidade): Escopo {
+  const escopo = escopoDe(acesso, capacidade)
+  const leitura = acesso.leitura
+  if (!leitura || !CAPACIDADES_DE_LEITURA.includes(capacidade)) return escopo
+  return alcancaPeloMenos(escopo, leitura) ? escopo : leitura
+}
+
+/** **Pode ver?** O `pode` da consulta: abre tela e lista, não libera ação. */
+export function podeVer(acesso: Acesso, capacidade: Capacidade, minimo: Escopo = 'proprios'): boolean {
+  if (minimo === 'nenhum') return true
+  return alcancaPeloMenos(escopoDeLeitura(acesso, capacidade), minimo)
+}
+
+/** Esta pessoa só lê (o Leitor)? Lê alguma coisa e não atende nem cria nada. */
+export function soLeitura(acesso: Acesso): boolean {
+  return !!acesso.leitura && acesso.leitura !== 'nenhum' && !pode(acesso, 'atender') && !pode(acesso, 'criar_oportunidade')
 }
 
 /**
@@ -357,7 +393,9 @@ export type FiltroDeEscopo =
   | { tipo: 'proprios'; usuarioId: string }
 
 export function filtroDe(acesso: Acesso, capacidade: Capacidade): FiltroDeEscopo {
-  const escopo = escopoDe(acesso, capacidade)
+  // Filtro é consulta: a leitura do Leitor entra aqui. Toda ação confere
+  // `pode` antes (`exigirCapacidade`), e lá a leitura não conta.
+  const escopo = escopoDeLeitura(acesso, capacidade)
 
   switch (escopo) {
     case 'nenhum':
@@ -434,6 +472,7 @@ export function rotuloDoPapel(papel: string | null | undefined): string {
 export const ROTULO_DO_MODELO: Record<keyof typeof MODELOS_EXTRA, string> = {
   gestor: 'Acesso de gestão',
   operador: 'Acesso de atendimento',
+  leitor: 'Acesso de leitura',
 }
 
 // ---------------------------------------------------------------------------

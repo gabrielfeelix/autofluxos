@@ -353,6 +353,7 @@ export function Editor({
   publicadaInicial,
   versoesIniciais,
   iaHabilitada,
+  iaComFerramentas,
   entradaLigada = true,
   podeContratarIa,
   contextoNegocio,
@@ -418,6 +419,8 @@ export function Editor({
   inicial: Fluxo
   /** Etapa 2 é plano à parte: sem contratar, fluxo com nó de IA não publica. */
   iaHabilitada: boolean
+  /** O plano inclui IA que consulta e age? Sem, o bloco de IA só conversa (aviso). */
+  iaComFerramentas?: boolean
   /**
    * A automação abre conversa nova (`flows.ativo`). Mora ao lado da publicação
    * no cabeçalho (A03): publicada e desligada é um estado real, e sem isto o
@@ -621,6 +624,7 @@ export function Editor({
     () => {
       const doDesenho = validar(fluxo, {
         iaHabilitada: comIa,
+        iaComFerramentas,
         conexoes: idsDeConexao,
         temContextoDeNegocio,
         fluxos,
@@ -656,7 +660,7 @@ export function Editor({
         avisos: [...doDesenho.avisos, ...daPublicacao.avisos],
       }
     },
-    [fluxo, comIa, idsDeConexao, idsDeEtapa, idsDeEtiqueta, temContextoDeNegocio, fluxos, fluxoId, variaveisDaConta, canal],
+    [fluxo, comIa, iaComFerramentas, idsDeConexao, idsDeEtapa, idsDeEtiqueta, temContextoDeNegocio, fluxos, fluxoId, variaveisDaConta, canal],
   )
 
   const itensAntes = useMemo(

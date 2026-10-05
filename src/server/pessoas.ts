@@ -135,7 +135,11 @@ export async function definirFuncaoDoMembro(
     const r = await definirPapelNaConta(clienteId, alvo, papel)
     if (!r.ok) return r
     const gravou = funcoes.daTabela && (await gravarFuncaoDoMembro(clienteId, alvo, nova))
-    const desejada = gravou ? POLITICAS[papel] : (funcoes.porId[nova]?.capacidades ?? FUNCOES_PADRAO[nova].capacidades)
+    // O Leitor leva a política dele também como exceção, com a tabela ou sem:
+    // se a leitura da função falhar, ele cai para o `member` (que atende,
+    // vende e exporta) e a exceção é o que o segura.
+    const daFuncao = funcoes.porId[nova]?.capacidades ?? FUNCOES_PADRAO[nova].capacidades
+    const desejada = gravou && nova !== 'leitor' ? POLITICAS[papel] : daFuncao
     return definirCapacidades(clienteId, alvo, desejada, POLITICAS[papel], autor)
   }
 

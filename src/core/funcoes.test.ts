@@ -1,10 +1,11 @@
 import { describe, expect, it } from 'vitest'
-import { MODELOS_EXTRA, POLITICAS } from './permissoes'
+import { MODELOS_EXTRA, POLITICAS, escopoDeLeitura, filtroDe, pode, podeVer, soLeitura, type Acesso } from './permissoes'
 import {
   conferirExcecoes,
   conferirTrocaDeFuncao,
   funcaoDerivada,
   funcoesAtribuiveis,
+  LEITURA_DA_FUNCAO,
   NIVEL_DO_SUPORTE,
   podeAtribuirFuncao,
   podeEditarPessoa,
@@ -85,8 +86,12 @@ describe('quais funções cada um atribui (regras 2 e 3)', () => {
     expect(funcoesAtribuiveis(gestor)).toEqual(['gestor', 'atendente'])
   })
 
+  it('o gestor não cria Leitor: ele lê a organização inteira, mais do que o gestor', () => {
+    expect(podeAtribuirFuncao(gestor, 'leitor')).toBe(false)
+  })
+
   it('o administrador dá até administrador, e não passa a posse', () => {
-    expect(funcoesAtribuiveis(admin)).toEqual(['administrador', 'gestor', 'atendente'])
+    expect(funcoesAtribuiveis(admin)).toEqual(['administrador', 'gestor', 'atendente', 'leitor'])
     expect(podeAtribuirFuncao(admin, 'proprietario')).toBe(false)
   })
 
@@ -138,5 +143,45 @@ describe('exceções por pessoa', () => {
 
   it('o suporte passa', () => {
     expect(conferirExcecoes({ nivel: NIVEL_DO_SUPORTE, politica: MODELOS_EXTRA.operador }, POLITICAS.owner)).toEqual({ ok: true })
+  })
+})
+
+describe('o Leitor', () => {
+  const leitor: Acesso = {
+    papel: 'member',
+    usuarioId: 'u-leitor',
+    politicaBase: MODELOS_EXTRA.leitor,
+    sobrescritas: MODELOS_EXTRA.leitor,
+    leitura: LEITURA_DA_FUNCAO.leitor,
+  }
+
+  it('lê a organização inteira, com valores', () => {
+    expect(escopoDeLeitura(leitor, 'atender')).toBe('todos')
+    expect(escopoDeLeitura(leitor, 'criar_oportunidade')).toBe('todos')
+    expect(filtroDe(leitor, 'atender')).toEqual({ tipo: 'tudo' })
+    expect(podeVer(leitor, 'atender', 'todos')).toBe(true)
+    expect(pode(leitor, 'ler_valores', 'todos')).toBe(true)
+  })
+
+  it('não age em nada', () => {
+    for (const capacidade of ['atender', 'criar_oportunidade', 'registrar_venda', 'corrigir_venda', 'exportar', 'configurar_operacao', 'configurar_empresa'] as const) {
+      expect(pode(leitor, capacidade)).toBe(false)
+    }
+    expect(soLeitura(leitor)).toBe(true)
+  })
+
+  it('a leitura não estende o que não é consulta', () => {
+    expect(filtroDe(leitor, 'exportar')).toEqual({ tipo: 'impossivel' })
+  })
+
+  it('sem a função gravada, as exceções seguram: não lê nem age', () => {
+    const semTabela: Acesso = { papel: 'member', usuarioId: 'u-leitor', sobrescritas: MODELOS_EXTRA.leitor }
+    expect(filtroDe(semTabela, 'atender')).toEqual({ tipo: 'impossivel' })
+    expect(pode(semTabela, 'atender')).toBe(false)
+  })
+
+  it('é derivado da política, abaixo do atendente', () => {
+    expect(funcaoDerivada('member', MODELOS_EXTRA.leitor)).toBe('leitor')
+    expect(funcaoDerivada('member', MODELOS_EXTRA.operador)).toBe('atendente')
   })
 })

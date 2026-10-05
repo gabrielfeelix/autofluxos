@@ -37,7 +37,7 @@ describe('impactoDaTroca', () => {
   it('descer sem nada em uso lista o que sai e não pede ciência', () => {
     const r = impactoDaTroca(operacao, essencial, PARADO)
     expect(r.sentido).toBe('desce')
-    expect(r.perde.map((p) => p.recurso)).toEqual(['integracoes', 'varios_numeros', 'api'])
+    expect(r.perde.map((p) => p.recurso)).toEqual(['ia_ferramentas', 'sequencias', 'integracoes', 'varios_numeros', 'api'])
     expect(r.perde.every((p) => p.emUso === null)).toBe(true)
     expect(r.bloqueios).toEqual([])
     expect(r.exigeCiencia).toBe(false)

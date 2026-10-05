@@ -54,7 +54,10 @@ export type Plano = {
    * chegar, este é o lugar de corrigir, e é uma linha.
    */
   conversas: number
-  /** Para quem é, em uma frase, na landing. */
+  /**
+   * A promessa do plano, na landing. A primeira frase é o título do card
+   * (Organizar / Automatizar / Decidir, 05/out/2026); o resto é o subtítulo.
+   */
   resumo: string
   /**
    * O que o card mostra.
@@ -116,6 +119,8 @@ export const RECURSOS_DO_PLANO = [
   { chave: 'ia', rotulo: 'Respostas com IA' },
   { chave: 'transcricao', rotulo: 'Transcrição de áudio' },
   { chave: 'transmissoes', rotulo: 'Transmissões e modelos da Meta' },
+  { chave: 'ia_ferramentas', rotulo: 'IA que consulta e age: agenda, loja, pedido' },
+  { chave: 'sequencias', rotulo: 'Sequências de acompanhamento' },
   { chave: 'integracoes', rotulo: 'Conexão com outros sistemas' },
   { chave: 'varios_numeros', rotulo: 'Vários números e unidades' },
   { chave: 'chave_propria', rotulo: 'Chave de IA própria' },
@@ -147,38 +152,40 @@ export const PLANOS: Plano[] = [
     precoAtendenteExtra: 69,
     tetoIa: 1500,
     tetoTransmissoes: 2000,
-    resumo: 'Para organizar o atendimento e parar de repetir horário e preço.',
+    resumo: 'Organize sua operação comercial. Centralize contatos, atendimento, funil e atividades em um único lugar.',
     itens: [
       'Até 1.000 conversas por mês',
       '3 atendentes inclusos',
+      'Leitores ilimitados, sem custo',
       '1 número de WhatsApp e chat do site',
-      'Robôs ilimitados, com modelos prontos do seu ramo',
-      'IA respondendo e transcrevendo áudio',
       'CRM com funil, etiquetas e atividades',
+      'Robôs ilimitados, com modelos prontos do seu ramo',
+      'IA que conversa e transcreve áudio',
       'Transmissões: 2.000 envios por mês',
     ],
   },
   {
     id: 'operacao',
-    nome: 'Profissional',
+    nome: 'Operação',
     preco: 597,
     conversas: 3000,
     numeros: 2,
     precoExcedente: 0.3,
     precoAnual: 5964,
-    recursos: ['crm', 'ia', 'transcricao', 'transmissoes', 'integracoes', 'varios_numeros', 'api'],
+    recursos: ['crm', 'ia', 'transcricao', 'transmissoes', 'ia_ferramentas', 'sequencias', 'integracoes', 'varios_numeros', 'api'],
     atendentes: 10,
     precoAtendenteExtra: 59,
     tetoIa: 3000,
     tetoTransmissoes: null,
-    resumo: 'Para vender pelo WhatsApp com a equipe inteira no mesmo lugar.',
+    resumo: 'Automatize o que hoje depende da equipe. Use chatbot, IA, sequências e automações para ganhar velocidade e consistência.',
     itens: [
       'Tudo do Essencial',
       'Até 3.000 conversas por mês',
       '10 atendentes inclusos',
       '2 números de WhatsApp',
-      'IA que consulta catálogo, marca horário e aprende com a equipe',
-      'Sequências e transmissões sem limite',
+      'IA que consulta e age: agenda, catálogo e pedido',
+      'Sequências de acompanhamento',
+      'Transmissões sem limite',
       'Origem de cada cliente por anúncio',
       'Distribuição automática e análise de vendas',
       'Integrações prontas e API',
@@ -192,20 +199,20 @@ export const PLANOS: Plano[] = [
     numeros: 5,
     precoExcedente: 0.2,
     precoAnual: 11964,
-    recursos: ['crm', 'ia', 'transcricao', 'transmissoes', 'integracoes', 'varios_numeros', 'chave_propria', 'webhook', 'api'],
+    recursos: ['crm', 'ia', 'transcricao', 'transmissoes', 'ia_ferramentas', 'sequencias', 'integracoes', 'varios_numeros', 'chave_propria', 'webhook', 'api'],
     atendentes: 25,
     precoAtendenteExtra: 49,
     tetoIa: 6000,
     tetoTransmissoes: null,
-    resumo: 'Para equipe grande, mais de um número e loja virtual.',
+    resumo: 'Transforme dados em decisões. Gerencie múltiplos canais, permissões, integrações e inteligência com mais controle.',
     itens: [
-      'Tudo do Profissional',
+      'Tudo da Operação',
       'Até 8.000 conversas por mês',
       '25 atendentes inclusos',
       'Até 5 números de WhatsApp',
       'Loja conectada: frete, pedido e cupom no chat',
       'Sua própria chave de IA, sem teto de respostas',
-      'Webhooks, equipes e permissões por pessoa',
+      'Webhooks e acesso por pessoa',
       'Suporte prioritário',
     ],
   },

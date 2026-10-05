@@ -862,10 +862,18 @@ async function responderComFerramentas({
   opcoes: OpcoesDeEfeitos
   vars: Record<string, string>
 }): Promise<RespostaFinal> {
+  /*
+   * Consultar e agir (agenda, loja, pedido, cobrança) é do plano Operação para
+   * cima (05/out/2026): o modelo é o mesmo em todo plano, o que sobe é a
+   * autonomia. Sem o recurso a IA conversa com o contexto, sem ferramenta, e o
+   * fluxo não quebra. O simulador mostra o bloco inteiro; o editor avisa.
+   */
+  const comFerramentas =
+    !opcoes.clienteId || opcoes.origem === 'simulador' || (await recursoLiberado(opcoes.clienteId, 'ia_ferramentas'))
   // `concluir_conversa` não é do catálogo: vem do bloco, e só do que conversa.
   const permitidas = [
-    ...ferramentasPermitidas(chamada.ferramentas),
-    ...(chamada.cobranca ? [ferramentaDeCobranca(chamada.cobranca.ajustes)] : []),
+    ...(comFerramentas ? ferramentasPermitidas(chamada.ferramentas) : []),
+    ...(comFerramentas && chamada.cobranca ? [ferramentaDeCobranca(chamada.cobranca.ajustes)] : []),
     ...(chamada.concluir ? [CONCLUIR_CONVERSA] : []),
   ]
 

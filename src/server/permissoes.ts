@@ -6,6 +6,7 @@ import {
   ehPapelDaConta,
   filtroDe,
   pode,
+  podeVer,
   type Acesso,
   type AlcanceDeConversas,
   type Capacidade,
@@ -26,7 +27,7 @@ import {
 import { destinoNaConta } from '@/components/design/secoes-do-cliente'
 import { responsaveisDoEscopo } from './repos/relatorios'
 import { funcoesGravadas, funcoesVigentes } from './repos/funcoes'
-import type { IdDaFuncao } from '@/core/funcoes'
+import { LEITURA_DA_FUNCAO, type IdDaFuncao } from '@/core/funcoes'
 
 /**
  * A autorização de negócio (RB-40 a RB-42).
@@ -105,7 +106,12 @@ async function regrasDe(acesso: AcessoAoCliente, clienteId: string): Promise<Ace
   const gravada = gravadas.get(usuarioId)
   const daTabela = funcoes.daTabela && gravada ? funcoes.porId[gravada] : undefined
 
-  return { papel, usuarioId, equipes, sobrescritas, politicaBase: daTabela?.capacidades, nomeDaFuncao: daTabela?.nome }
+  // A leitura do Leitor só vem da função gravada. Sem ela (tabela fora do ar),
+  // ele fica com as exceções que o restringem e sem leitura: vê nada, nunca
+  // mais do que devia (`definirFuncaoDoMembro`).
+  const leitura = daTabela && gravada ? LEITURA_DA_FUNCAO[gravada] : undefined
+
+  return { papel, usuarioId, equipes, sobrescritas, politicaBase: daTabela?.capacidades, nomeDaFuncao: daTabela?.nome, leitura }
 }
 
 /** As equipes desta pessoa nesta conta. Arquivada não conta. */
@@ -257,8 +263,22 @@ export async function capacidadeNaPagina(
   capacidade: Capacidade,
   minimo: Escopo = 'proprios',
 ): Promise<AcessoCompleto | null> {
-  const r = await exigirCapacidade(clienteId, capacidade, minimo)
+  const r = await exigirLeitura(clienteId, capacidade, minimo)
   return recusou(r) ? null : r
+}
+
+/**
+ * `exigirCapacidade` para quem só **consulta**: aceita a leitura do Leitor.
+ * Página e ação de leitura usam esta; ação que escreve usa `exigirCapacidade`.
+ */
+export async function exigirLeitura(
+  clienteId: string,
+  capacidade: Capacidade,
+  minimo: Escopo = 'proprios',
+): Promise<AcessoCompleto | Recusa> {
+  const acesso = await acessoCompleto(clienteId)
+  if (!podeVer(acesso.regras, capacidade, minimo)) return { ok: false, erro: SEM_PERMISSAO }
+  return acesso
 }
 
 /**

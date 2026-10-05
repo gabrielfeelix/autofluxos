@@ -7,7 +7,7 @@ import type { PedidoDaLoja } from '@/loja/magento-pedido'
 import { consultarPedidoDaConta, listarPedidosDaConta } from './adaptador-da-loja'
 import type { PedidoNaLista } from '@/loja/magento-pedido'
 import { acharLead } from './repos/leads'
-import { exigirCapacidade, meuAlcance, recusou } from './permissoes'
+import { exigirCapacidade, meuAlcance, recusou, exigirLeitura } from './permissoes'
 import { adaptadorDoCanal } from './adaptador-do-canal'
 import { podeResponderAgora } from './distribuir-atendimento'
 import {
@@ -87,7 +87,7 @@ function campoDaFicha(campos: Record<string, string>, padrao: RegExp): string | 
  * não há nem telefone nem ficha, e a tela pede o número.
  */
 export async function acaoListarPedidosDoContato(clienteId: string, contatoId: string): Promise<PedidosDoContato> {
-  const acesso = await exigirCapacidade(clienteId, 'atender', 'proprios')
+  const acesso = await exigirLeitura(clienteId, 'atender', 'proprios')
   if (recusou(acesso)) return acesso
   const lead = await acharLead(clienteId, contatoId, await meuAlcance(clienteId))
   if (!lead) return { ok: false, erro: 'contato não encontrado' }

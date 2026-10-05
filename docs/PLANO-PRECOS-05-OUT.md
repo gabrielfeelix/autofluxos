@@ -8,7 +8,7 @@ conversa não cobre isso.
 
 ## A tabela
 
-| | Essencial | Profissional (id `operacao`) | Escala | Enterprise |
+| | Essencial | Operação (id `operacao`) | Escala | Enterprise |
 |---|---|---|---|---|
 | Mensal | R$ 297 | R$ 597 | R$ 1.197 | a partir de R$ 2.500, sob consulta |
 | Anual | 2.970 (247/mês) | 5.970 (497/mês) | 11.970 (997/mês) | contrato |
@@ -22,11 +22,11 @@ conversa não cobre isso.
 
 Recursos (`RECURSOS_DO_PLANO`):
 - Essencial: `crm`, `ia`, `transcricao`, `transmissoes`
-- Profissional: + `integracoes`, `api`, `varios_numeros` (2 números)
+- Operação: + `ia_ferramentas`, `sequencias`, `integracoes`, `api`, `varios_numeros` (2 números)
 - Escala: + `chave_propria`, `webhook`
 
-**Id `operacao` fica**: `clients.plano` tem FK para `planos.id`. Só o **nome**
-muda para "Profissional".
+**Id `operacao` fica**: `clients.plano` tem FK para `planos.id`. O nome foi
+"Profissional" na 0128 e voltou a "Operação" na 0130.
 
 ## Regras novas
 1. **Atendente conta**: membro da organização com capacidade `atender`, exceto
@@ -72,3 +72,34 @@ muda para "Profissional".
 - Comparação nominal com concorrente no site: conferir cada preço antes
   (pesquisa feita por agente Haiku teve dados contraditórios: SURI, Kommo).
 - Preço de fundador, migração grátis, página por nicho: venda, não código.
+
+## Planos v2 (05/out/2026, à tarde)
+
+Mesma tabela, quatro pontos do documento do sócio (migrations `0129` e `0130`):
+
+- **Leitor**: função nova, ilimitada e grátis. Vê Início, contatos, funis e
+  relatórios com valores; não escreve nem abre a Inbox; não conta como
+  atendente. Só administrador para cima atribui.
+- **Autonomia sobe, modelo não**: `ia_ferramentas` (IA que consulta e age) e
+  `sequencias` só do Operação para cima. No Essencial a IA conversa com
+  contexto, sem ferramenta, e nenhuma sequência nova inscreve ninguém.
+- **Nome**: o plano do meio voltou a ser **Operação**.
+- **Narrativa**: Organizar (Essencial) / Automatizar (Operação) / Decidir
+  (Escala), no `resumo` de cada plano.
+
+## Quando o preço sobe
+
+O Escala vende hoje só o que existe. Cada item abaixo, quando existir, entra no
+card do Escala e justifica subir o preço dele:
+
+| Recurso | O que é |
+|---|---|
+| Meta Conversions API | devolver a venda fechada para a Meta otimizar o anúncio |
+| Atribuição campanha → venda → receita | quanto cada campanha trouxe em dinheiro, não só em lead |
+| Copiloto de vendas | a IA sugerindo o próximo passo do negócio para o vendedor |
+| Lead scoring | nota de chance de fechar em cada contato |
+| Dashboards customizados | o dono monta o painel com os números dele |
+
+Antes de mexer em preço, medir com as 15 primeiras empresas: adoção (quem usa
+o quê), retenção, uso de IA, volume de conversa, chamados de suporte e custo
+por conta. O preço sobe com dado, não com lista de recurso.

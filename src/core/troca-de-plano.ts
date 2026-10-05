@@ -42,6 +42,8 @@ export type UsoDaOrganizacao = {
   chavesDeApi: number
   /** Chave de IA própria configurada. */
   chavePropria: boolean
+  /** Sequências ligadas. Opcional: medição nova (05/out/2026). */
+  sequencias?: number
 }
 
 export type PerdaDeRecurso = {
@@ -83,6 +85,12 @@ export function usoDoRecurso(recurso: RecursoDoPlano, uso: UsoDaOrganizacao): st
       return uso.chavePropria ? 'chave de IA própria configurada' : null
     case 'varios_numeros':
       return uso.numeros > 1 ? `${plural(uso.numeros, 'número conectado', 'números conectados')}` : null
+    case 'sequencias':
+      return (uso.sequencias ?? 0) > 0 ? `${plural(uso.sequencias ?? 0, 'sequência ligada', 'sequências ligadas')}: ninguém novo entra` : null
+    case 'ia_ferramentas':
+      // Medir quais blocos usam consulta pede ler cada fluxo; o aviso vale
+      // para quem tem IA ligada, que é onde a consulta mora.
+      return uso.fluxosComIa > 0 ? 'a IA para de consultar agenda, loja e pedido e só conversa' : null
     case 'crm':
       return 'fluxos, Inbox e CRM em uso'
   }

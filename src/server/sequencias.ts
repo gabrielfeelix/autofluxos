@@ -7,6 +7,7 @@ import {
 } from '@/core/sequencias'
 import { chaveDoPasso } from '@/core/tarefas'
 import { agendar, cancelarPorChave } from './repos/tarefas'
+import { recursoLiberado } from './recursos-do-plano'
 import {
   inscrever,
   sairDasSequencias,
@@ -47,6 +48,10 @@ export async function inscreverNoEvento(
   if (contatos.length === 0) return
 
   try {
+    // Fora do plano (Essencial, teste vencido), ninguém novo entra. Quem já
+    // estava dentro termina o que começou: cortar no meio é pior para o
+    // contato do que deixar o acompanhamento acabar.
+    if (!(await recursoLiberado(clienteId, 'sequencias'))) return
     const sequencias = await sequenciasDoEvento(clienteId, evento, etiquetaId)
     if (sequencias.length === 0) return
 

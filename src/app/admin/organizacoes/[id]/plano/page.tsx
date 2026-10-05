@@ -34,7 +34,7 @@ export default async function Plano({ params }: { params: Promise<{ id: string }
       <TesteGratis
         organizacaoId={id}
         inicial={testeAte}
-        planoDoTeste={planos.find((plano) => plano.id === PLANO_DO_TESTE)?.nome ?? 'Profissional'}
+        planoDoTeste={planos.find((plano) => plano.id === PLANO_DO_TESTE)?.nome ?? 'Operação'}
       />
       <TetoDaApi organizacaoId={id} inicial={tetoDaApi} padrao={TETO_DIARIO_PADRAO} />
     </div>

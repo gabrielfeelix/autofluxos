@@ -34,6 +34,26 @@ describe('a tabela de planos', () => {
   })
 
   /*
+   * O modelo é o mesmo em todo plano; o que sobe é autonomia (05/out/2026).
+   * O Essencial conversa com IA, e consultar/agir e sequência começam no
+   * Operação.
+   */
+  it('IA que age e sequências começam no Operação', () => {
+    const tem = (id: string, recurso: string) => PLANOS.find((p) => p.id === id)!.recursos.includes(recurso as never)
+    expect(tem('essencial', 'ia')).toBe(true)
+    expect(tem('essencial', 'ia_ferramentas')).toBe(false)
+    expect(tem('essencial', 'sequencias')).toBe(false)
+    for (const id of ['operacao', 'escala']) {
+      expect(tem(id, 'ia_ferramentas')).toBe(true)
+      expect(tem(id, 'sequencias')).toBe(true)
+    }
+  })
+
+  it('o plano do meio se chama Operação', () => {
+    expect(PLANOS.map((p) => p.nome)).toEqual(['Essencial', 'Operação', 'Escala'])
+  })
+
+  /*
    * Atendente conta desde 05/out (reverte o "ilimitado" de 16/set). O card diz
    * a equipe inclusa, e o número bate com o campo que a cobrança lê.
    */

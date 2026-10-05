@@ -2,7 +2,7 @@
 
 import { revalidatePath } from 'next/cache'
 import type { Condicao } from '@/core/qualificacao'
-import { exigirCapacidade, recusou } from './permissoes'
+import { exigirCapacidade, recusou, exigirLeitura } from './permissoes'
 import { avaliacoesDoContato, avaliarContato, criteriosDaConta, publicarCriterios } from './repos/qualificacoes'
 import { sessaoAtual } from './sessao'
 
@@ -46,7 +46,7 @@ export async function acaoPublicarCriterios(
 export async function acaoListarCriterios(
   clienteId: string,
 ): Promise<{ ok: boolean; erro?: string; criterios?: Awaited<ReturnType<typeof criteriosDaConta>> }> {
-  const acesso = await exigirCapacidade(clienteId, 'atender', 'proprios')
+  const acesso = await exigirLeitura(clienteId, 'atender', 'proprios')
   if (recusou(acesso)) return acesso
 
   return { ok: true, criterios: await criteriosDaConta(clienteId) }
@@ -92,7 +92,7 @@ export async function acaoLerQualificacoes(
   clienteId: string,
   contatoId: string,
 ): Promise<{ ok: boolean; erro?: string; avaliacoes?: Awaited<ReturnType<typeof avaliacoesDoContato>> }> {
-  const acesso = await exigirCapacidade(clienteId, 'atender', 'proprios')
+  const acesso = await exigirLeitura(clienteId, 'atender', 'proprios')
   if (recusou(acesso)) return acesso
 
   return { ok: true, avaliacoes: await avaliacoesDoContato(clienteId, contatoId) }

@@ -984,11 +984,28 @@
 }
 
 .planoResumo {
-  margin: 12px 0 0;
+  margin: 14px 0 0;
   font-size: 14px;
   line-height: 1.55;
   color: var(--muted);
-  min-height: 42px;
+  min-height: 112px;
+}
+
+/* A promessa do plano (Organizar / Automatizar / Decidir): título do card. */
+.planoPromessa {
+  display: block;
+  margin-bottom: 6px;
+  font-size: 18px;
+  font-weight: 600;
+  line-height: 1.3;
+  letter-spacing: -0.01em;
+  color: var(--ink);
+}
+
+@media (max-width: 900px) {
+  .planoResumo {
+    min-height: 0;
+  }
 }
 
 .planoTarifa {

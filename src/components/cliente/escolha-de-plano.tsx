@@ -42,10 +42,13 @@ export function EscolhaDePlano({
   franquiaDaMeta = null,
   planos = PLANOS,
   equipe = 0,
+  leitores = 0,
   testeAte = null,
 }: {
-  /** Quantas pessoas a organização tem: o plano compara com `atendentes` (0128). */
+  /** Quantos atendentes a organização tem: o plano compara com `atendentes` (0128). */
   equipe?: number
+  /** Quantos leitores: não contam no plano, aparecem para ninguém achar que contam. */
+  leitores?: number
   /** Fim do teste grátis, `aaaa-mm-dd`. Nulo = sem teste. */
   testeAte?: string | null
   /** O contrato (0102): descida agendada e preço. */
@@ -195,6 +198,7 @@ export function EscolhaDePlano({
         <div className="mt-4 flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1 border-t border-line pt-3">
           <span className="text-[13px] font-semibold text-soft">
             {equipe.toLocaleString('pt-BR')} de {plano.atendentes.toLocaleString('pt-BR')} atendentes inclusos
+            {leitores > 0 && ` · ${leitores.toLocaleString('pt-BR')} ${leitores === 1 ? 'leitor' : 'leitores'} sem custo`}
           </span>
           <span className={`text-[12px] ${custoEquipe.extras > 0 ? 'text-aviso' : 'text-dim'}`}>
             {custoEquipe.extras > 0

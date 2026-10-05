@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react'
-import { pode, type Acesso, type Capacidade, type Escopo } from '@/core/permissoes'
+import { pode, podeVer, type Acesso, type Capacidade, type Escopo } from '@/core/permissoes'
 import { ocultoNaBarra, pacoteDo, type IconeDoComercio, type LugarDaBarra, type Nicho, type PacoteDoNicho } from '@/core/nichos'
 
 /**
@@ -235,7 +235,10 @@ export function liberaSecao(regras: Acesso | undefined, chave: AbaDoCliente): bo
   if (!regras) return true
   const exigencia = EXIGENCIA_DA_SECAO[chave]
   if (!exigencia) return true
-  return exigencia.capacidades.some((capacidade) => pode(regras, capacidade, exigencia.minimo))
+  // A Inbox é trabalho, não consulta: o Leitor não abre (e o stream dela
+  // consulta o banco a cada segundo). As outras portas aceitam a leitura.
+  const confere = chave === 'inbox' ? pode : podeVer
+  return exigencia.capacidades.some((capacidade) => confere(regras, capacidade, exigencia.minimo))
 }
 
 /**

@@ -2,6 +2,7 @@ import 'server-only'
 import { PLANO_DE_ENTRADA, type IdDoPlano } from '@/core/planos'
 import type { UsoDaOrganizacao } from '@/core/troca-de-plano'
 import { db, ehIdInvalido } from '../db'
+import { bancoDoLogin } from '../auth'
 
 /**
  * Em que plano a conta está, e quanto ela consumiu (a 0066).
@@ -385,7 +386,7 @@ export async function usoDaOrganizacao(
     if (error) console.error('[plano] não deu para medir o uso:', error)
     return count ?? 0
   }
-  const [consumo, numeros, fluxosComIa, transcricoes, transmissoes, conexoes, webhooks, chavesDeApi, cliente] = await Promise.all([
+  const [consumo, numeros, fluxosComIa, transcricoes, transmissoes, conexoes, webhooks, chavesDeApi, cliente, sequencias] = await Promise.all([
     consumoJaLido ?? consumoDaConta(clienteId, agora),
     contar(db().from('channels').select('id', { count: 'exact', head: true }).eq('client_id', clienteId).eq('status', 'ativo').eq('provider', 'cloud-api')),
     contar(db().from('flows').select('id', { count: 'exact', head: true }).eq('client_id', clienteId).eq('ativo', true).eq('ia_habilitada', true)),
@@ -402,6 +403,7 @@ export async function usoDaOrganizacao(
     contar(db().from('webhooks_de_entrada').select('id', { count: 'exact', head: true }).eq('client_id', clienteId).eq('ativo', true)),
     contar(db().from('chaves_de_api').select('id', { count: 'exact', head: true }).eq('client_id', clienteId).is('revogada_em', null)),
     db().from('clients').select('ia_chave_ref').eq('id', clienteId).maybeSingle(),
+    contar(db().from('sequencias').select('id', { count: 'exact', head: true }).eq('client_id', clienteId).eq('ativa', true)),
   ])
   return {
     conversas: consumo.conversas,
@@ -413,6 +415,7 @@ export async function usoDaOrganizacao(
     webhooks,
     chavesDeApi,
     chavePropria: Boolean((cliente.data as { ia_chave_ref: string | null } | null)?.ia_chave_ref),
+    sequencias,
   }
 }
 
@@ -438,13 +441,26 @@ export async function organizacoesNoPlano(planoId: string): Promise<{ id: string
  * leitura conta zero: não trava quem dá acesso.
  */
 export async function tamanhoDaEquipe(clienteId: string): Promise<number> {
-  const { count, error } = await db()
-    .from('af_membros')
-    .select('userId', { count: 'exact', head: true })
-    .eq('organizationId', clienteId)
-  if (error) {
-    if (!ehIdInvalido(error)) console.error('[plano] não deu para contar a equipe', error.message)
-    return 0
+  return (await composicaoDaEquipe(clienteId)).atendentes
+}
+
+/**
+ * Quem conta no plano e quem não conta. Leitor (05/out/2026) acompanha de
+ * graça e sem limite: só os outros são atendentes. `funcao_id` nulo é quem
+ * nunca teve função gravada, e conta.
+ */
+export async function composicaoDaEquipe(clienteId: string): Promise<{ atendentes: number; leitores: number }> {
+  try {
+    const { rows } = await bancoDoLogin().query(
+      `select count(*) filter (where coalesce(to_jsonb(m) ->> 'funcao_id', '') <> 'leitor')::int as atendentes,
+              count(*) filter (where to_jsonb(m) ->> 'funcao_id' = 'leitor')::int as leitores
+         from public.af_membros m
+        where m."organizationId" = $1`,
+      [clienteId],
+    )
+    return { atendentes: Number(rows[0]?.atendentes ?? 0), leitores: Number(rows[0]?.leitores ?? 0) }
+  } catch (erro) {
+    console.error('[plano] não deu para contar a equipe', erro instanceof Error ? erro.message : erro)
+    return { atendentes: 0, leitores: 0 }
   }
-  return count ?? 0
 }

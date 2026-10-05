@@ -24,7 +24,7 @@ import { paginarLeads } from './repos/leads'
 import { oportunidadesAbertasDoContato } from './repos/quadros'
 import { telefoneLegivel } from '@/core/contatos/telefone'
 import type { FiltroDeEscopo } from '@/core/permissoes'
-import { alcanceDeConversas, exigirCapacidade, filtroDoAcesso, recusou } from './permissoes'
+import { alcanceDeConversas, exigirCapacidade, filtroDoAcesso, recusou, exigirLeitura } from './permissoes'
 import { sessaoAtual } from './sessao'
 
 /**
@@ -314,7 +314,7 @@ export async function acaoLerAtividades(
   clienteId: string,
   contatoId: string,
 ): Promise<{ ok: true; atividades: Atividade[] } | { ok: false; erro: string }> {
-  const acesso = await exigirCapacidade(clienteId, 'atender', 'proprios')
+  const acesso = await exigirLeitura(clienteId, 'atender', 'proprios')
   if (recusou(acesso)) return { ok: false, erro: acesso.erro ?? 'sem acesso' }
 
   return { ok: true, atividades: await atividadesDoContato(clienteId, contatoId) }
