@@ -5,6 +5,8 @@ import type { MensagemAgendada } from '@/server/repos/mensagens-agendadas'
 import { horaComFuso } from '@/lib/quando'
 import { AjudaDoCampo } from '@/components/design/ajuda-do-campo'
 import { IconeDaSecao, iconeRelogio } from './icones'
+import { VazioDoCartao } from './vazio-do-cartao'
+import { IlustracaoEventos } from '@/components/design/ilustracoes'
 
 /**
  * O que está marcado para acontecer, na visão geral.
@@ -63,9 +65,9 @@ export function ProximosPassos({
       </h2>
 
       {vazio ? (
-        <p className="px-[18px] py-[22px] text-xs leading-5 text-dim">
+        <VazioDoCartao ilustracao={<IlustracaoEventos />}>
           Nada marcado com esta pessoa. Crie uma tarefa em Atividades ou agende uma mensagem.
-        </p>
+        </VazioDoCartao>
       ) : (
         <div className="divide-y divide-line">
           {/*

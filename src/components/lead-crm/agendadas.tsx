@@ -4,6 +4,8 @@ import type { MensagemAgendada } from '@/server/repos/mensagens-agendadas'
 import { horaComFuso } from '@/lib/quando'
 import { CabecalhoDoTipo } from './tipo-do-passo'
 import { useAgendadas } from '@/components/inbox/agendadas-local'
+import { VazioDoCartao } from './vazio-do-cartao'
+import { IlustracaoTransmissoes } from '@/components/design/ilustracoes'
 
 /**
  * O que já está marcado para sair.
@@ -38,7 +40,10 @@ export function Agendadas({
         descricao="Saem sozinhas para o WhatsApp da pessoa. Para marcar ou cancelar, use Agendar no alto da ficha."
       />
       {agendadas.length === 0 && (
-        <p className="px-5 py-4 text-[12px] leading-5 text-dim">Nenhuma mensagem agendada.</p>
+        <VazioDoCartao ilustracao={<IlustracaoTransmissoes />}>
+          Nenhuma mensagem agendada. Use Agendar no alto da ficha para marcar uma mensagem que sai
+          sozinha na hora certa.
+        </VazioDoCartao>
       )}
       <ul>
         {agendadas.map((agendada) => (

@@ -3,6 +3,8 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from 'react'
 import type { Anotacao } from '@/core/anotacoes'
 import { diaEHora } from '@/core/datas'
+import { VazioDoCartao } from '@/components/lead-crm/vazio-do-cartao'
+import { IlustracaoAnotacoes } from '@/components/design/ilustracoes'
 
 /**
  * Anotações da equipe como histórico (tarefa 5.9).
@@ -248,14 +250,15 @@ export function ListaDeAnotacoes({
   vazio = 'Sem anotação.',
   tom = 'neutro',
 }: {
-  vazio?: string
+  /** Texto curto no Inbox; a ficha passa o vazio com ilustração. */
+  vazio?: ReactNode
   /** `nota`: fundo de papel, para o que alguém escreveu não se confundir com o que o sistema gravou. */
   tom?: 'neutro' | 'nota'
 }) {
   const { entradas, tentarDeNovo, antiga } = useAnotacoes()
 
   if (entradas.length === 0 && antiga === '') {
-    return <p className="text-[12px] text-dim">{vazio}</p>
+    return typeof vazio === 'string' ? <p className="text-[12px] text-dim">{vazio}</p> : vazio
   }
 
   return (
@@ -326,7 +329,14 @@ export function CartaoDeAnotacoes({
         <div className="mb-3">
           <EntradaDeAnotacao limite={limite} />
         </div>
-        <ListaDeAnotacoes vazio="Ninguém anotou nada sobre esta pessoa ainda." />
+        <ListaDeAnotacoes
+          vazio={
+            <VazioDoCartao className="" ilustracao={<IlustracaoAnotacoes />}>
+              Ninguém anotou nada sobre esta pessoa ainda. O que a equipe escrever aqui fica com a
+              data e o nome de quem escreveu.
+            </VazioDoCartao>
+          }
+        />
       </section>
     </ProvedorDeAnotacoes>
   )

@@ -1,5 +1,7 @@
 import type { Evento } from '@/core/crm'
 import { LinhaDoTempo, agruparEventos } from './linha-do-tempo'
+import { VazioDoCartao } from './vazio-do-cartao'
+import { IlustracaoSequencias } from '@/components/design/ilustracoes'
 
 /**
  * A linha do tempo do contato, na aba Histórico.
@@ -15,10 +17,10 @@ import { LinhaDoTempo, agruparEventos } from './linha-do-tempo'
 export function Historico({ eventos }: { eventos: Evento[] }) {
   if (eventos.length === 0) {
     return (
-      <p className="text-xs leading-5 text-muted">
+      <VazioDoCartao className="" ilustracao={<IlustracaoSequencias />}>
         Nada registrado ainda. A partir de agora, mudança de etapa, quem assumiu e o que foi ganho
         ou perdido aparecem aqui.
-      </p>
+      </VazioDoCartao>
     )
   }
   return <LinhaDoTempo grupos={agruparEventos(eventos)} />

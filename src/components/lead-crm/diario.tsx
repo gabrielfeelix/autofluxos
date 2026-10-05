@@ -5,6 +5,8 @@ import type { EstadoSalvar } from '@/components/design/formulario-salvar'
 import { depoisDaTela } from '@/components/inbox/conversa-local'
 import { AjudaDoCampo } from '@/components/design/ajuda-do-campo'
 import type { Evento } from '@/core/crm'
+import { VazioDoCartao } from './vazio-do-cartao'
+import { IlustracaoAnotacoes } from '@/components/design/ilustracoes'
 
 type Acao = (estado: EstadoSalvar, formData: FormData) => Promise<EstadoSalvar>
 
@@ -183,9 +185,9 @@ export function Diario({
         )}
 
         {notas.length === 0 ? (
-          <p className="text-[12px] leading-5 text-dim">
+          <VazioDoCartao className="" ilustracao={<IlustracaoAnotacoes />}>
             Nada anotado ainda. O que for escrito aqui fica com a data e o nome de quem escreveu.
-          </p>
+          </VazioDoCartao>
         ) : (
           <ol className="flex flex-col gap-3.5">
             {notas.map((nota) => (

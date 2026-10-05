@@ -404,6 +404,38 @@ export function IlustracaoAtividades() {
   )
 }
 
+/** Anotações: a folha de papel com linhas escritas e o lápis por cima. */
+export function IlustracaoAnotacoes() {
+  return (
+    <Tela titulo="Uma folha com anotações e um lápis">
+      <rect x={46} y={14} width={86} height={94} rx={7} fill="currentColor" opacity={0.08} />
+      <rect x={46} y={14} width={86} height={94} rx={7} {...TRACO} />
+      {[34, 48, 62, 76].map((y, i) => (
+        <rect
+          key={y}
+          x={58}
+          y={y}
+          width={[56, 46, 60, 30][i]}
+          height={4.5}
+          rx={2.2}
+          fill="currentColor"
+          opacity={i === 0 ? 0.6 : 0.32}
+        />
+      ))}
+      <g className="ilu-balanca" style={{ transformOrigin: '150px 90px' }}>
+        <g transform="rotate(38 150 60)">
+          <rect x={144} y={22} width={12} height={62} rx={2.5} fill="currentColor" opacity={0.16} />
+          <rect x={144} y={22} width={12} height={62} rx={2.5} {...TRACO} />
+          <path d="M144 32h12" {...TRACO} opacity={0.6} />
+          <path d="M144 84l6 11 6-11" {...TRACO} />
+        </g>
+      </g>
+      <Brilho x={30} y={30} />
+      <Brilho x={170} y={22} r={3} atraso={900} />
+    </Tela>
+  )
+}
+
 /** Uma etiqueta, apontando para a esquerda, com o furo do barbante. */
 function Etiqueta({ x, y, cheia }: { x: number; y: number; cheia?: boolean }) {
   const d = `M${x} ${y + 13}l13-13h57a5 5 0 0 1 5 5v16a5 5 0 0 1-5 5h-57Z`

@@ -8,6 +8,8 @@ import { comoParado, estaParado } from '@/core/quadros'
 import { FecharCartao } from '@/components/quadros/fechar-cartao'
 import { acaoReabrirCartao } from '@/server/acoes-crm'
 import { IconeDaSecao, iconeFunil } from './icones'
+import { VazioDoCartao } from './vazio-do-cartao'
+import { IlustracaoQuadros } from '@/components/design/ilustracoes'
 
 /** Um cartão desta pessoa, como `quadrosDoContato` devolve. */
 export type NegociacaoDoContato = {
@@ -79,10 +81,10 @@ export function Negociacoes({
       </h2>
         {/* Fora de todo funil a frase diz onde se resolve isso, e não só que
             está vazio: pôr alguém num funil é decisão de quem vende. */}
-        <p className="px-[18px] py-[22px] text-xs leading-5 text-dim">
+        <VazioDoCartao ilustracao={<IlustracaoQuadros />}>
           Esta pessoa não está em nenhum funil. Ela entra pela tela de Funil de vendas, arrastando o
           cartão, ou pelo botão de trazer os contatos que ainda estão de fora.
-        </p>
+        </VazioDoCartao>
       </section>
     )
   }

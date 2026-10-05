@@ -1,5 +1,7 @@
 import { passagensComNome, type AnuncioEmCache, type Passagem } from '@/core/anuncios'
 import { horaExata, quando } from '@/lib/quando'
+import { VazioDoCartao } from './vazio-do-cartao'
+import { IlustracaoAnuncios } from '@/components/design/ilustracoes'
 
 /**
  * Por onde a pessoa chegou, todas as vezes.
@@ -25,10 +27,10 @@ export function Jornada({
 }) {
   if (passagens.length === 0) {
     return (
-      <p className="text-xs leading-5 text-muted">
+      <VazioDoCartao className="" ilustracao={<IlustracaoAnuncios />}>
         Nenhuma passagem por anúncio registrada: a pessoa chegou direto, ou antes de o registro
         começar. Quando ela vier por um anúncio de WhatsApp, a passagem aparece aqui.
-      </p>
+      </VazioDoCartao>
     )
   }
 

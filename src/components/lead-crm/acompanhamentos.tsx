@@ -1,6 +1,8 @@
 import { FRASE_DA_SAIDA, podeRetomar, porQueNaoRetoma } from '@/core/politica-de-acompanhamento'
 import type { AcompanhamentoDoContato } from '@/server/repos/sequencias'
 import { CabecalhoDoTipo } from './tipo-do-passo'
+import { VazioDoCartao } from './vazio-do-cartao'
+import { IlustracaoSequencias } from '@/components/design/ilustracoes'
 
 /**
  * Os acompanhamentos deste contato (UI-23/UI-24, T7.3).
@@ -60,9 +62,10 @@ export function Acompanhamentos({
         descricao="As sequências por que esta pessoa passou, e por que cada uma parou. É daqui que vem a mensagem automática que aparece no histórico."
       />
       {acompanhamentos.length === 0 && (
-        <p className="px-5 py-4 text-[12px] leading-5 text-dim">
-          Esta pessoa não entrou em nenhuma sequência.
-        </p>
+        <VazioDoCartao ilustracao={<IlustracaoSequencias />}>
+          Esta pessoa não entrou em nenhuma sequência. Quando entrar, cada mensagem automática e o
+          motivo de a sequência parar aparecem aqui.
+        </VazioDoCartao>
       )}
 
       <ul>

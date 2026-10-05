@@ -13,6 +13,8 @@ import { horaDoRelogio } from '@/lib/quando'
 import { NOME_DO_TIPO, urgenciaDe, type Atividade, type Urgencia } from '@/core/atividades'
 import { acaoReabrirAtividade, acaoResolverAtividade } from '@/server/acoes-atividades'
 import { CabecalhoDoTipo } from './tipo-do-passo'
+import { VazioDoCartao } from './vazio-do-cartao'
+import { IlustracaoAtividades } from '@/components/design/ilustracoes'
 
 /**
  * As atividades de um contato (UI-13, T5.3).
@@ -102,10 +104,10 @@ export function Atividades({
       />
 
       {abertas.length === 0 ? (
-        <p className="px-5 py-4 text-[12px] leading-5 text-dim">
+        <VazioDoCartao ilustracao={<IlustracaoAtividades />}>
           Nada marcado para esta pessoa. Use <strong className="text-muted">+ Atividade</strong>{' '}
           para combinar o próximo passo.
-        </p>
+        </VazioDoCartao>
       ) : (
         <ul>
           {abertas.map((atividade) => {

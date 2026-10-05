@@ -4,6 +4,8 @@ import { AjudaDoCampo } from '@/components/design/ajuda-do-campo'
 import { ehVariavelDeNome, nomeComoSeEscreve } from '@/core/engine/interpolar'
 import { IconeDaSecao, iconeFormulario } from './icones'
 import { ValorDoCampo } from './valor-do-campo'
+import { VazioDoCartao } from './vazio-do-cartao'
+import { IlustracaoRespostas } from '@/components/design/ilustracoes'
 
 /**
  * O que o fluxo coletou.
@@ -51,9 +53,10 @@ export function DadosColetados({ campos }: { campos: [string, string][] }) {
       </h2>
 
       {campos.length === 0 ? (
-        <p className="px-[18px] py-4 text-xs leading-5 text-muted">
-          Nada coletado: a conversa não chegou a preencher nenhuma variável.
-        </p>
+        <VazioDoCartao ilustracao={<IlustracaoRespostas />}>
+          Nada coletado: a conversa não chegou a preencher nenhuma variável. As respostas que a
+          pessoa der ao bot aparecem aqui.
+        </VazioDoCartao>
       ) : (
         <>
           {daPessoa.length > 0 && <Lista campos={daPessoa} />}
