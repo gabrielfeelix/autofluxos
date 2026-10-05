@@ -467,7 +467,7 @@ extração explícito para os objetos de `public`.
 - **a `0084` e a `0085` foram aplicadas em 20/set/2026**, na execução da F7, com
   autorização explícita do dono (pedida para a `0084` e estendida por ele às
   seguintes da F7/F8). As duas conferidas pelos **dois** testes: replay do zero em
-  Docker (`0001`–`0085` em ordem, sem erro) e ensaio em transação contra a
+  Docker (`0001` a `0085` em ordem, sem erro) e ensaio em transação contra a
   produção, os dois limpos.
 
   A **`0084`** acrescenta `clients.objetivo` (default `atender`, com check de
@@ -515,11 +515,11 @@ extração explícito para os objetos de `public`.
   **A migration entrou antes do push nas duas**, e não depois: o código da T7.1 lê
   `objetivo`/`crm_ativo` e o da T7.3 lê `cartao_id`, então o intervalo entre `git
   push` e o SQL seria a tela caindo, como caiu com a `0071`. A produção está,
-  hoje, com `0001`–`0085` inteiras;
+  hoje, com `0001` a `0085` inteiras;
 - **a `0086` foi aplicada em 21/set/2026**, na execução da T8.2, com autorização
   explícita do dono pedida naquela sessão: a autorização anterior cobria as
   migrations da F7 que já tinham entrado, e não se estendia a esta. Conferida
-  pelos **dois** testes: replay do zero em Docker (`0001`–`0086` em ordem, sem
+  pelos **dois** testes: replay do zero em Docker (`0001` a `0086` em ordem, sem
   erro) e ensaio em transação contra a produção, os dois limpos.
 
   Ela acrescenta `public.handoffs.origem` (`text`, **anulável, sem default e sem
@@ -558,10 +558,10 @@ extração explícito para os objetos de `public`.
 
   **A migration entrou antes do push**, e não depois: o código da T8.2 lê os dois
   objetos novos, então o intervalo seria a tela de início caindo, como caiu com a
-  `0071`. A produção está, hoje, com `0001`–`0086` inteiras;
+  `0071`. A produção está, hoje, com `0001` a `0086` inteiras;
 - **a `0089` foi aplicada em 20/set/2026**, com autorização explícita do dono
   pedida nesta sessão: a autorização da `0088` valeu só para ela. Conferida
-  pelos **dois** testes: replay do zero em Docker (`0001`–`0089` em ordem, sem
+  pelos **dois** testes: replay do zero em Docker (`0001` a `0089` em ordem, sem
   erro) e ensaio em transação contra a produção, os dois limpos.
 
   Ela acrescenta `clients.onboarding` (`jsonb` anulável) e a função
@@ -646,7 +646,7 @@ extração explícito para os objetos de `public`.
 
 - **a `0093` foi aplicada em 23/set/2026**, com autorização explícita do dono
   pedida nesta sessão ("Sim, autorizo"). Conferida pelos **dois** testes:
-  replay do zero em Docker (`0001`–`0093`, sem erro) e ensaio em transação
+  replay do zero em Docker (`0001` a `0093`, sem erro) e ensaio em transação
   contra a produção, limpo.
 
   Ela acrescenta a `public.produtos` quatro colunas anuláveis sem default
@@ -673,7 +673,7 @@ extração explícito para os objetos de `public`.
 
 - **a `0088` foi aplicada em 20/set/2026**, com autorização explícita do dono
   pedida nesta sessão. Conferida pelos **dois** testes: replay do zero em Docker
-  (`0001`–`0088` em ordem, sem erro) e ensaio em transação contra a produção,
+  (`0001` a `0088` em ordem, sem erro) e ensaio em transação contra a produção,
   os dois limpos.
 
   Ela é aditiva: duas colunas anuláveis em `public.atividades`, `onde` (texto,
@@ -695,7 +695,7 @@ extração explícito para os objetos de `public`.
 - **a `0087` foi aplicada em 22/set/2026**, na execução da T9.1 (F9), com
   autorização explícita do dono pedida naquela sessão: a autorização da `0086`
   valeu só para ela. Conferida pelos **dois** testes: replay do zero em Docker
-  (`0001`–`0087` em ordem, sem erro) e ensaio em transação contra a produção,
+  (`0001` a `0087` em ordem, sem erro) e ensaio em transação contra a produção,
   os dois limpos.
 
   Ela só **revoga** privilégio: `revoke execute ... from public, anon,
@@ -751,7 +751,7 @@ extração explícito para os objetos de `public`.
   **Aqui o código foi empurrado antes da migration, e é a exceção que confirma a
   regra da `0071`:** um revoke não muda contrato e nenhum código lê objeto novo,
   então não existe o intervalo em que a tela cai. A produção está, hoje, com
-  `0001`–`0087` inteiras;
+  `0001` a `0087` inteiras;
 - **as `0071` a `0083` foram aplicadas em 20/set/2026**, uma por vez, pela
   Management API, com autorização explícita do dono para a execução da F5/F6.
   São treze: `0071` (finalidade e vendas), `0072` (conclusão de processo),
@@ -760,7 +760,7 @@ extração explícito para os objetos de `public`.
   `0079` (catálogo e temperatura da oportunidade), `0080` (venda atômica),
   `0081` (atividades), `0082` (`contatos_comerciais`) e `0083` (segmentos).
 
-  **O handoff dizia que só faltavam a `0074`–`0078`, e ele estava errado.**
+  **O handoff dizia que só faltavam a `0074` a `0078`, e ele estava errado.**
   Conferido objeto a objeto antes de aplicar: `vendas`, `venda_itens`,
   `conclusoes_de_processo` e `equipes` **não existiam** na produção, e
   `quadros.finalidade` também não. Ou seja, a `0071`, a `0072` e a `0073`
@@ -780,7 +780,7 @@ extração explícito para os objetos de `public`.
   `git push` e a migration entrar.
 
   Cada uma foi conferida pelos **dois** testes: replay do zero em Docker
-  (`0001`–`0083` em ordem, sem erro) e ensaio em transação contra a produção
+  (`0001` a `0083` em ordem, sem erro) e ensaio em transação contra a produção
   (`begin; <a migration sem o notify>; rollback;`), os treze limpos. Depois,
   releitura objeto a objeto.
 
@@ -812,9 +812,9 @@ extração explícito para os objetos de `public`.
   **A `0059` deixou de estar pendente**, e o buraco da numeração fechou: a
   produção tem `templates` com 3 linhas e `transmissoes`, então o que o registro
   da `0060` descrevia como pendente foi aplicado em algum momento entre 15/set e
-  20/set. A produção está, hoje, com `0001`–`0083` inteiras;
+  20/set. A produção está, hoje, com `0001` a `0083` inteiras;
 - **a `0055` foi aplicada em 15/set/2026**, com autorização explícita do dono e
-  conferida pelos dois testes: replay ordenado em Docker (as `0043`–`0055`
+  conferida pelos dois testes: replay ordenado em Docker (as `0043` a `0055`
   aplicadas em sequência sobre o stack local, que já tinha até a `0042`) e
   verificação objeto a objeto **na** produção. Bucket `autofluxos-recebidos`
   com `public = false`, teto de 16 MB e 18 mime types; coluna
@@ -837,7 +837,7 @@ extração explícito para os objetos de `public`.
   Ela só amplia a lista de `allowed_mime_types` do `autofluxos-acervo` para
   incluir `audio/mp4` e `audio/aac`, o formato que o navegador grava quando
   quem atende manda um áudio pela caixa de resposta. Conferida pelos dois
-  testes: replay em Docker (as `0043`–`0056` aplicadas em sequência sobre o
+  testes: replay em Docker (as `0043` a `0056` aplicadas em sequência sobre o
   stack local) e verificação na produção depois. Estado final lá: acervo com
   **9 mime types**, `audio/mp4` e `audio/aac` presentes, `public = true` e teto
   de 16 MB **inalterados**; `autofluxos-recebidos` seguindo privado com 18 mime
@@ -862,7 +862,7 @@ extração explícito para os objetos de `public`.
   coluna anulável, sem tocar em dado existente.
 
   Conferida pelos **dois** testes. Replay do zero em Docker, com `npx supabase db
-  reset` aplicou `0001`–`0057` em ordem, sem erro. Ensaio em transação contra a
+  reset` aplicou `0001` a `0057` em ordem, sem erro. Ensaio em transação contra a
   produção (`begin; <a migration sem o notify>; rollback;`), que voltou limpo:
   nem a tabela nem a coluna sobraram depois do rollback.
 
@@ -896,7 +896,7 @@ extração explícito para os objetos de `public`.
 
   **É aditiva, mas mexe em tabela que já tem dado**, e por isso o replay em
   Docker não era opcional aqui, ao contrário da `0048`. Feitos os dois: replay
-  do zero (`0001`–`0058` em ordem, sem erro) e ensaio em transação contra a
+  do zero (`0001` a `0058` em ordem, sem erro) e ensaio em transação contra a
   produção, que voltou limpo.
 
   O que a produção mostrou depois de aplicar: as 3 + 2 + 6 colunas presentes, as
@@ -921,7 +921,7 @@ extração explícito para os objetos de `public`.
   existente alterada, nenhuma linha reescrita.
 
   **A produção ficou com um buraco na numeração, e isso é deliberado, mas
-  precisa ser sabido.** Aplicadas: `0001`–`0058` e `0060`. A `0059` segue
+  precisa ser sabido.** Aplicadas: `0001` a `0058` e `0060`. A `0059` segue
   **pendente**, e foi conferido na produção que `templates` e `transmissoes` não
   existem lá. Aplicar fora de ordem só é seguro porque a `0060` é
   autocontida: ela não lê, não altera e não referencia nada que a `0059` cria.
@@ -931,7 +931,7 @@ extração explícito para os objetos de `public`.
   diretório. Na produção, hoje, não é.
 
   Conferida pelos **dois** testes. Replay do zero em Docker (`npx supabase db
-  reset` aplicou `0001`–`0060` em ordem, sem erro), onde também foram provados
+  reset` aplicou `0001` a `0060` em ordem, sem erro), onde também foram provados
   os dois `check`, com nota 11 e `origem` inventada recusadas, e a régua do NPS
   nas bordas: 10 e 9 caem em promotor, 8 e 7 em neutro, 6 e 0 em detrator. É a
   borda do 7 que engana, e é por isso que ela é testada. Depois, ensaio em
@@ -1222,7 +1222,7 @@ extração explícito para os objetos de `public`.
 - **as `0059` e `0061` foram aplicadas em 15/set/2026**, com autorização
   explícita do dono, e **nessa ordem**, porque a `0061` adiciona
   `sequencia_passos.template_id` referenciando `public.templates`, que só existe
-  depois da `0059`. Com isso a produção tem `0001`–`0061` e o buraco da
+  depois da `0059`. Com isso a produção tem `0001` a `0061` e o buraco da
   numeração fechou.
 
   **O replay em Docker pegou duas bombas que a produção não teria perdoado**, e
@@ -1245,7 +1245,7 @@ extração explícito para os objetos de `public`.
   só **usa** a função existente. Conferido depois na produção: `prosecdef = f` e
   `proconfig = {search_path=""}`, intactos.
 
-  Conferidas pelos **dois** testes. Replay do zero em Docker (`0001`–`0061` em
+  Conferidas pelos **dois** testes. Replay do zero em Docker (`0001` a `0061` em
   ordem, sem erro), onde também foram provados os quatro casos do `check` da
   `0061`: 4320min sem modelo **recusa**, 4320min com modelo **aceita**, 60min sem
   modelo **aceita**, e 43201min (acima de 30 dias) **recusa mesmo com modelo**.
