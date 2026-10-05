@@ -449,16 +449,18 @@ body {
 
 ::-webkit-scrollbar-thumb {
   /*
-   * A borda é da cor do fundo, e não transparente: ela é o que dá folga ao
-   * polegar sem precisar de um trilho desenhado.
+   * A borda transparente, com o fundo recortado nela, dá folga ao polegar sem
+   * trilho desenhado. Era da cor do fundo (`--canvas`), e sobre a casca azul
+   * ou o vidro das colunas virava um contorno branco em volta da barra.
    */
-  border: 3px solid var(--canvas);
+  border: 3px solid transparent;
+  background-clip: padding-box;
   border-radius: 8px;
-  background: var(--barra);
+  background-color: var(--barra);
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: var(--barra-forte);
+  background-color: var(--barra-forte);
 }
 
 ::-webkit-scrollbar-track {
@@ -2462,14 +2464,14 @@ textarea::placeholder {
 
 /*
  * Barra de rolagem dentro de menu, painel e diálogo: fina, redonda e sem o
- * trilho, com a borda na cor do painel (a global usa `--canvas`).
+ * trilho, com folga menor que a global.
  */
 :is(.quadro-popover, .app-dropdown-menu, dialog, .bg-panel, .app-card)::-webkit-scrollbar {
   width: 8px;
   height: 8px;
 }
 :is(.quadro-popover, .app-dropdown-menu, dialog, .bg-panel, .app-card)::-webkit-scrollbar-thumb {
-  border: 2px solid var(--panel);
+  border: 2px solid transparent;
   border-radius: 8px;
 }
 
