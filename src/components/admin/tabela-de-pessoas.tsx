@@ -1,7 +1,7 @@
 'use client'
 
 import { CabecalhoDaTela, Contagem, type TopoDaTela } from '@/components/design/cabecalho-da-tela'
-import { useState, useTransition } from 'react'
+import { useState, useTransition, type ReactNode } from 'react'
 import { EditorDeAcesso, type MembroParaAcesso } from '@/components/conta/editor-de-acesso'
 import { Avatar } from '@/components/design/avatar'
 import { AvisoFlutuante } from '@/components/design/aviso-flutuante'
@@ -52,6 +52,7 @@ export function TabelaDePessoas({
   darAcesso,
   acesso,
   topo,
+  abaixoDoTopo,
 }: {
   /**
    * O topo da tela, quando a tabela é a tela (Configurações › Pessoas). Com
@@ -59,6 +60,8 @@ export function TabelaDePessoas({
    * conta, e a contagem vira a pílula ao lado do título.
    */
   topo?: TopoDaTela
+  /** O que fica entre o topo e a tabela (as abas de Configurações › Pessoas). */
+  abaixoDoTopo?: ReactNode
   remover?: (clienteId: string, usuarioId: string, destino: string | null) => Promise<{ ok: boolean; erro?: string }>
   /** Sem ela, a tabela não mostra o botão (quem pede não dá acesso). */
   darAcesso?: (formData: FormData) => Promise<{ ok?: boolean; erro?: string; pessoa?: { id: string; nome: string; email: string; funcao: string } }>
@@ -153,6 +156,7 @@ export function TabelaDePessoas({
     </button>
   )
   const cabecalho = topo ? (
+    <>
     <CabecalhoDaTela
       trilha={topo.trilha}
       titulo={topo.titulo}
@@ -165,6 +169,8 @@ export function TabelaDePessoas({
         </>
       }
     />
+    {abaixoDoTopo}
+    </>
   ) : (
     <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
       <p className="text-[12px] text-dim tabular-nums">

@@ -15,11 +15,24 @@ import { conferirAcessoAoCliente, podeAdministrarConta } from '@/server/sessao'
 import { capacidadesPorMembro, equipesPorMembro, listarEquipes } from '@/server/repos/equipes'
 import { GerenciarEquipes } from '@/components/conta/gerenciar-equipes'
 import { ehPapelDaConta, resumoDoAcesso } from '@/core/permissoes'
+import { Alternador } from '@/components/design/alternador'
 
 export const dynamic = 'force-dynamic'
 
-export default async function Pagina({ params }: { params: Promise<{ clienteId: string }> }) {
+const DESCRICAO_DAS_PESSOAS =
+  'Quem trabalha nesta organização e com qual função. Você vê e muda só quem está abaixo de você. Só quem está aqui aparece para assumir conversa no Inbox.'
+const DESCRICAO_DAS_EQUIPES =
+  'Equipes agrupam pessoas para o escopo "da equipe dela" no acesso. Uma pessoa pode estar em mais de uma.'
+
+export default async function Pagina({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ clienteId: string }>
+  searchParams: Promise<{ aba?: string }>
+}) {
   const { clienteId } = await params
+  const { aba: abaPedida } = await searchParams
   const cliente = await acharCliente(clienteId)
   if (!cliente) notFound()
 
@@ -94,25 +107,52 @@ export default async function Pagina({ params }: { params: Promise<{ clienteId: 
   const desdeDe = new Map(datas.map((pessoa) => [pessoa.id, pessoa.desde]))
   const ultimoDe = new Map(datas.map((pessoa) => [pessoa.id, pessoa.ultimoAcesso]))
 
+  /*
+   * Usuários e Equipes em abas, cada uma com a própria ação no topo. Equipe só
+   * aparece para quem administra a conta, que é quem pode criar e arquivar.
+   */
+  const aba = podeMexer && abaPedida === 'equipes' ? 'equipes' : 'usuarios'
+  const base = `/clientes/${cliente.id}/ajustes/equipe`
+  const trilha = [{ rotulo: 'Configurações', href: `/clientes/${cliente.id}/ajustes` }, { rotulo: 'Pessoas' }]
+  const abas = podeMexer ? (
+    <Alternador
+      rotulo="Seções"
+      ativa={aba}
+      className="mb-5"
+      opcoes={[
+        { chave: 'usuarios', rotulo: 'Usuários', href: base },
+        { chave: 'equipes', rotulo: 'Equipes', href: `${base}?aba=equipes` },
+      ]}
+    />
+  ) : null
+
   return (
     <AjustesShell cliente={cliente} ativa="equipe">
       <Miolo largura="toda">
         <div className="mb-8 flex min-h-[320px] flex-col">
+          {aba === 'equipes' ? (
+            <GerenciarEquipes
+              key="equipes"
+              clienteId={clienteId}
+              equipes={equipesDaConta}
+              perda={perdaPorEquipe}
+              topo={{ trilha, titulo: 'Pessoas', descricao: DESCRICAO_DAS_EQUIPES }}
+              abaixoDoTopo={abas}
+            />
+          ) : (
           <TabelaDePessoas
+            key="usuarios"
             topo={{
-              trilha: [
-                { rotulo: 'Configurações', href: `/clientes/${cliente.id}/ajustes` },
-                { rotulo: 'Pessoas' },
-              ],
+              trilha,
               titulo: 'Pessoas',
-              descricao:
-                'Quem trabalha nesta organização e com qual função. Você vê e muda só quem está abaixo de você. Só quem está aqui aparece para assumir conversa no Inbox.',
+              descricao: DESCRICAO_DAS_PESSOAS,
               acoes: (
                 <Link href={`/clientes/${cliente.id}/ajustes/equipe/funcoes`} className="quadro-tool">
                   Funções
                 </Link>
               ),
             }}
+            abaixoDoTopo={abas}
             clienteId={clienteId}
             pessoas={visiveis.map((membro) => ({
               id: membro.id,
@@ -149,12 +189,8 @@ export default async function Pagina({ params }: { params: Promise<{ clienteId: 
               ),
             }}
           />
+          )}
         </div>
-
-        {podeMexer && (
-          <GerenciarEquipes clienteId={clienteId} equipes={equipesDaConta} perda={perdaPorEquipe} />
-        )}
-
       </Miolo>
     </AjustesShell>
   )
