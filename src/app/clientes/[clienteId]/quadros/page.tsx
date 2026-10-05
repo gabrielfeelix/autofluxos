@@ -130,7 +130,7 @@ async function Conteudo({
   const visao = busca.ver === 'lista' ? 'lista' : 'quadro'
   const [quadros, nicho] = await Promise.all([listarQuadros(cliente.id), nichoDaConta(cliente.id)])
   const destaque = destaqueDeFunis(pacoteDo(nicho))
-  const titulo = rotuloNaBarra(pacoteDo(nicho), 'negocios', 'Negócios')
+  const titulo = rotuloNaBarra(pacoteDo(nicho), 'negocios', 'Negociações')
   // Id que não é deste cliente cai no primeiro em vez de dar erro: o valor vem
   // da URL, e link velho não pode virar tela quebrada.
   const aberto = quadros.find((quadro) => quadro.id === q) ?? quadros[0] ?? null

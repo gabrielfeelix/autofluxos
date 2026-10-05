@@ -330,7 +330,7 @@ export function PaginaDoNegocio(props: Props) {
           o negócio"); a trilha da página fica para o celular, que não tem cabeçalho. */}
       <FimDaTrilha caminho={[{ rotulo: quadro.nome, href: voltar }, { rotulo: titulo.texto }]} />
       <div className="md:hidden">
-        <Trilha caminho={[{ rotulo: 'Negócios', href: voltar }, { rotulo: quadro.nome }]} />
+        <Trilha caminho={[{ rotulo: 'Negociações', href: voltar }, { rotulo: quadro.nome }]} />
       </div>
 
       {/* O topo: o que é, quanto vale, em que pé está, e as ações. */}

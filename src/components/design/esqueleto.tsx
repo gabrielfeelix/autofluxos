@@ -182,7 +182,7 @@ export function EsqueletoDoFunil() {
     <header className="mb-4 flex shrink-0 flex-wrap items-center gap-3">
       <Esqueleto className="size-9 rounded-[9px]" />
       <span className="flex flex-col gap-1">
-        <span className="text-[11px] font-semibold tracking-[0.06em] text-dim uppercase">Negócios</span>
+        <span className="text-[11px] font-semibold tracking-[0.06em] text-dim uppercase">Negociações</span>
         <Esqueleto className="h-6 w-36 rounded-lg" />
       </span>
       <span className="topo-acoes ml-auto flex flex-wrap items-center gap-2">

@@ -18,7 +18,7 @@ export function CabecalhoDoQuadro({
   fora,
   visao = 'quadro',
   destaqueDeFunis = null,
-  titulo = 'Negócios',
+  titulo = 'Negociações',
 }: {
   clienteId: string
   quadros: { id: string; nome: string }[]

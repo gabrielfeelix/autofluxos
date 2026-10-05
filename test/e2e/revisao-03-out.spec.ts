@@ -144,7 +144,7 @@ test('6, 2, 3 e 1. a página do negócio: trilha, data e hora, status e troca de
   await page.goto(`${painel}/negocios/${ids.atrasado}`)
   const trilha = page.getByRole('navigation', { name: 'Onde você está' })
   await expect(trilha).toContainText('CRM')
-  await expect(trilha.getByRole('link', { name: 'Negócios' })).toBeVisible()
+  await expect(trilha.getByRole('link', { name: 'Negociações' })).toBeVisible()
   await expect(trilha.getByRole('link', { name: 'Comercial' })).toBeVisible()
   await expect(trilha).toContainText('Consultoria')
 
