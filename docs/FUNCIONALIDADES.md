@@ -385,18 +385,23 @@ docs de desenvolvedor.
 
 ## 19. Planos e consumo
 
-| Plano | R$/mês | R$/ano | Conversas/mês | Números | Excedente |
-|---|---|---|---|---|---|
-| Essencial | 297 | 2.970 | 1.000 | 1 | R$ 0,40 |
-| Operação | 597 | 5.970 | 3.000 | 1 | R$ 0,30 |
-| Escala | 1.197 | 11.970 | 8.000 | 5 | R$ 0,20 |
+Tabela de 05/out/2026 (`docs/PLANO-PRECOS-05-OUT.md`, migration `0128`).
 
-- Atendentes ilimitados em todos.
-- Recursos: Essencial = CRM. Operação = + IA, transcrição, transmissões, integrações, API. Escala = + vários números, chave de IA própria, webhooks.
-- Perder um recurso deixa só leitura; nada é apagado; consumo nunca trava (vira excedente).
-- Tela **Plano e consumo**: uso do mês, excedente, **franquia de serviço da Meta** por número (1.000 grátis, aviso em 800) e pedido de troca.
-- Avisos em 80% e 100% do consumo. Subida vale na hora; descida na virada do mês.
-- **(parcial)** Sem cobrança automática: troca de plano é feita pela 4YU.
+| Plano | R$/mês | Anual (por mês) | Atendentes | Extra | Conversas | Números | IA/30 dias |
+|---|---|---|---|---|---|---|---|
+| Essencial | 297 | 247 | 3 | R$ 69 | 1.000 | 1 | 1.500 |
+| Profissional | 597 | 497 | 10 | R$ 59 | 3.000 | 2 | 3.000 |
+| Escala | 1.197 | 997 | 25 | R$ 49 | 8.000 | 5 | 6.000 |
+| Enterprise | a partir de 2.500 | contrato | acima de 50 | negociado | sob medida | sob medida | sob medida |
+
+- Recursos: Essencial = CRM, IA, transcrição, transmissões (2.000 envios/mês). Profissional = + integrações, vários números, API. Escala = + chave de IA própria (sem teto de IA), webhooks.
+- Conversa excedente: R$ 0,40 / 0,30 / 0,20. Disparo sem resposta não conta.
+- Atendente além do incluso: o modal de dar acesso mostra o custo e pede aceite.
+- Transcrição desconta do teto de IA, salvo com chave própria.
+- **Teste grátis de 14 dias** no Profissional, ativado pelo admin; vencido sem plano, IA, transmissões, integrações e API pausam.
+- Perder um recurso deixa só leitura; nada é apagado; consumo nunca trava.
+- Tela **Plano e consumo**: conversas, atendentes usados e custo extra, franquia da Meta, teste, pedido de troca.
+- **(parcial)** Sem cobrança automática: troca de plano e cobrança de extras são feitas pela 4YU.
 
 ---
 

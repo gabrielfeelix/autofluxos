@@ -205,7 +205,44 @@ export async function definirPlano(
     .eq('id', clienteId)
 
   if (error) return { ok: false, erro: `não deu para trocar o plano: ${error.message}` }
+  // Escolher plano encerra o teste. Separado, para a troca não falhar antes da 0128.
+  await encerrarTeste(clienteId)
   return { ok: true }
+}
+
+/**
+ * O fim do teste grátis da conta (0128), em `aaaa-mm-dd`. Nulo = sem teste.
+ *
+ * Erro de leitura, inclusive a coluna ainda não existir, é "sem teste": o lado
+ * de não travar nada que já funcionava.
+ */
+export async function testeDaConta(clienteId: string): Promise<string | null> {
+  const { data, error } = await db().from('clients').select('teste_ate').eq('id', clienteId).maybeSingle()
+  if (error) return null
+  return (data as { teste_ate?: string | null } | null)?.teste_ate ?? null
+}
+
+/** Põe a conta no plano do teste até `ate`. */
+export async function iniciarTeste(clienteId: string, plano: IdDoPlano, ate: string): Promise<{ ok: boolean; erro?: string }> {
+  const { error } = await db()
+    .from('clients')
+    .update({
+      plano,
+      teste_ate: ate,
+      plano_agendado: null,
+      plano_agendado_para: null,
+      atualizado_em: new Date().toISOString(),
+    })
+    .eq('id', clienteId)
+  if (error) {
+    return { ok: false, erro: error.code === '42703' ? 'O banco ainda não tem este campo (migration 0128).' : `não deu para iniciar o teste: ${error.message}` }
+  }
+  return { ok: true }
+}
+
+export async function encerrarTeste(clienteId: string): Promise<void> {
+  const { error } = await db().from('clients').update({ teste_ate: null }).eq('id', clienteId)
+  if (error && error.code !== '42703') console.error('[plano] não deu para encerrar o teste', error.message)
 }
 
 /**
@@ -393,4 +430,21 @@ export async function organizacoesNoPlano(planoId: string): Promise<{ id: string
     precoContratado: linha.preco_contratado,
     agendada: linha.plano !== planoId,
   }))
+}
+
+/**
+ * Quantas pessoas a organização tem hoje: o número que o plano compara com
+ * `atendentes` (0128). O suporte da 4YU não é membro e não conta. Falha de
+ * leitura conta zero: não trava quem dá acesso.
+ */
+export async function tamanhoDaEquipe(clienteId: string): Promise<number> {
+  const { count, error } = await db()
+    .from('af_membros')
+    .select('userId', { count: 'exact', head: true })
+    .eq('organizationId', clienteId)
+  if (error) {
+    if (!ehIdInvalido(error)) console.error('[plano] não deu para contar a equipe', error.message)
+    return 0
+  }
+  return count ?? 0
 }

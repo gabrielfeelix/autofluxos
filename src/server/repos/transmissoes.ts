@@ -697,3 +697,22 @@ export async function transmissoesVencidas(agora = new Date()): Promise<Transmis
   if (error) throw error
   return (data as Linha[]).map(paraTransmissao)
 }
+
+/**
+ * Quantos destinatários as transmissões criadas neste mês (Brasília) têm,
+ * para o teto do plano (0128). Cancelada não conta: quem cancelou não mandou.
+ */
+export async function destinatariosDoMes(clienteId: string, agora: Date = new Date()): Promise<number> {
+  const mes = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Sao_Paulo', year: 'numeric', month: '2-digit' }).format(agora)
+  const { count, error } = await db()
+    .from('transmissao_destinatarios')
+    .select('id, transmissoes!inner(cliente_id, criada_em, estado)', { count: 'exact', head: true })
+    .eq('transmissoes.cliente_id', clienteId)
+    .gte('transmissoes.criada_em', `${mes}-01T00:00:00-03:00`)
+    .neq('transmissoes.estado', 'cancelada')
+  if (error) {
+    if (ehIdInvalido(error)) return 0
+    throw error
+  }
+  return count ?? 0
+}

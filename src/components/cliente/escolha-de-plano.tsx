@@ -14,7 +14,7 @@ import {
 import type { ConsumoDoMes } from '@/server/repos/plano'
 import { previsaoDaTroca, usoDoRecurso, type UsoDaOrganizacao } from '@/core/troca-de-plano'
 import { diaPorExtenso, excedente, fraseDoExcedente, reais } from '@/core/contrato-do-plano'
-import { anualDoPlano, RECURSOS_DO_PLANO } from '@/core/planos'
+import { anualDoPlano, custoDaEquipe, RECURSOS_DO_PLANO } from '@/core/planos'
 import { ModalDeTroca } from '@/components/plano/modal-de-troca'
 import { FranquiaDaMeta } from '@/components/plano/franquia-da-meta'
 import type { FranquiaDoNumero } from '@/core/franquia-da-meta'
@@ -41,7 +41,13 @@ export function EscolhaDePlano({
   contrato,
   franquiaDaMeta = null,
   planos = PLANOS,
+  equipe = 0,
+  testeAte = null,
 }: {
+  /** Quantas pessoas a organização tem: o plano compara com `atendentes` (0128). */
+  equipe?: number
+  /** Fim do teste grátis, `aaaa-mm-dd`. Nulo = sem teste. */
+  testeAte?: string | null
   /** O contrato (0102): descida agendada e preço. */
   contrato: {
     planoAgendado: IdDoPlano | null
@@ -73,6 +79,9 @@ export function EscolhaDePlano({
   const pausados = RECURSOS_DO_PLANO.filter((recurso) => !plano.recursos.includes(recurso.chave))
     .map((recurso) => ({ rotulo: recurso.rotulo, emUso: usoDoRecurso(recurso.chave, uso) }))
     .filter((recurso) => recurso.emUso && recurso.rotulo)
+  const custoEquipe = custoDaEquipe(plano, equipe)
+  const hoje = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Sao_Paulo' }).format(new Date())
+  const teste = testeAte ? { ate: testeAte, vencido: testeAte < hoje } : null
   const descida = contrato.planoAgendado && contrato.planoAgendadoPara ? { plano: acharPlano(contrato.planoAgendado), para: contrato.planoAgendadoPara } : null
 
   const [pedido, setPedido] = useState<IdDoPlano | null>(null)
@@ -124,6 +133,22 @@ export function EscolhaDePlano({
           </p>
         </div>
 
+        {teste && (
+          <p role="status" className="mt-4 rounded-[11px] border border-amber-400/30 bg-amber-400/[0.07] px-4 py-3 text-[12.5px] leading-5 text-soft">
+            {teste.vencido ? (
+              <>
+                <strong className="font-semibold">O teste grátis terminou em {diaPorExtenso(teste.ate)}.</strong> IA, transcrição,
+                transmissões, integrações e API estão pausadas, com a configuração guardada. Escolha um plano abaixo para religar.
+              </>
+            ) : (
+              <>
+                <strong className="font-semibold">Teste grátis do {plano.nome} até {diaPorExtenso(teste.ate)}.</strong> Escolha um
+                plano antes disso para nada pausar.
+              </>
+            )}
+          </p>
+        )}
+
         {descida && (
           <p role="status" className="mt-4 rounded-[11px] border border-amber-400/30 bg-amber-400/[0.07] px-4 py-3 text-[12.5px] leading-5 text-soft">
             <strong className="font-semibold">Em {diaPorExtenso(descida.para)}, a organização passa para o plano {descida.plano.nome}.</strong>{' '}
@@ -165,6 +190,17 @@ export function EscolhaDePlano({
                 ? `Você usou ${Math.round(fracao * 100)}% da faixa. Nada é bloqueado: acima dela, cada conversa custa ${reais(plano.precoExcedente)} na fatura seguinte.`
                 : O_QUE_E_CONVERSA}
           </p>
+        </div>
+
+        <div className="mt-4 flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1 border-t border-line pt-3">
+          <span className="text-[13px] font-semibold text-soft">
+            {equipe.toLocaleString('pt-BR')} de {plano.atendentes.toLocaleString('pt-BR')} atendentes inclusos
+          </span>
+          <span className={`text-[12px] ${custoEquipe.extras > 0 ? 'text-aviso' : 'text-dim'}`}>
+            {custoEquipe.extras > 0
+              ? `${custoEquipe.extras} ${custoEquipe.extras === 1 ? 'extra' : 'extras'}: ${reais(custoEquipe.valor)} por mês além do plano`
+              : `Atendente extra: ${reais(plano.precoAtendenteExtra)} por mês`}
+          </span>
         </div>
 
         {pausados.length > 0 && (

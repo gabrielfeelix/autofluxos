@@ -319,3 +319,21 @@ Append-only. Cada entrada: data, decisão, porquê, onde está no código.
   painel do editor (`editor.tsx`) → `.alternador`.
 - Dark: casca passou de marinho `#0a1433` (lia preto) para degradê azul
   profundo `#0c1e5c → #1f4bc4` (`globals.css`, `--casca` do escuro).
+
+## 05/out/2026: atendente passa a contar no plano
+
+- **Reverte** o "atendente ilimitado" de 16/set. Motivo: custo que a conversa
+  não cobre. Cada Inbox aberto consulta o banco 1x/s (stream SSE); 200 pessoas
+  no Essencial seriam 200 consultas/s por R$ 297, no Supabase compartilhado
+  com a Verandi.
+- Inclusos 3 / 10 / 25; extra R$ 69 / 59 / 49 por pessoa; acima de 50 é
+  Enterprise (`LIMITE_DE_ATENDENTES_SEM_CONTRATO`). Não bloqueia: o modal de
+  dar acesso mostra o custo e pede aceite (`acoes-pessoas.ts`).
+- Essencial ganha IA, transcrição e transmissões (teto 2.000 envios/mês):
+  todo concorrente pesquisado tem IA no plano de entrada.
+- Teto de IA vira número do plano (1.500 / 3.000 / 6.000), soma transcrição,
+  e some com chave própria (`tetoDeIaDaConta`).
+- Teste grátis de 14 dias no Profissional, ativado pelo admin; vencido, os
+  recursos pagos pausam (`recursos-do-plano.ts`).
+- "Operação" vira "Profissional" só no nome; id `operacao` fica.
+- Detalhe e pesquisa: `docs/PLANO-PRECOS-05-OUT.md`, migration `0128`.

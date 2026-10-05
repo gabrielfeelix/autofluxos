@@ -47,6 +47,8 @@ export const VERBOS_DA_AUDITORIA: Record<string, string> = {
   criou_chave_de_api: 'criou a chave de API',
   revogou_chave_de_api: 'revogou a chave de API',
   mudou_teto_da_api: 'mudou o teto diário de modelos pela API de',
+  iniciou_teste: 'iniciou o teste grátis de',
+  encerrou_teste: 'encerrou o teste grátis de',
   criou_webhook_de_saida: 'criou o webhook de saída',
   editou_webhook_de_saida: 'editou o webhook de saída',
   apagou_webhook_de_saida: 'apagou o webhook de saída',

@@ -23,13 +23,13 @@ describe('impactoDaTroca', () => {
     const r = impactoDaTroca(essencial, operacao, PARADO)
     expect(r.sentido).toBe('sobe')
     expect(r.diferenca).toBe(300)
-    expect(r.ganha).toContain('Respostas com IA')
+    expect(r.ganha).toContain('API para desenvolvedores')
     expect(r.perde).toEqual([])
     expect(r.exigeCiencia).toBe(false)
   })
 
   it('subir para vários números não repete a linha de números', () => {
-    const r = impactoDaTroca(operacao, escala, PARADO)
+    const r = impactoDaTroca(essencial, escala, PARADO)
     expect(r.ganha).toContain('Vários números e unidades')
     expect(r.ganha.some((g) => g.includes('números de WhatsApp'))).toBe(false)
   })
@@ -37,27 +37,27 @@ describe('impactoDaTroca', () => {
   it('descer sem nada em uso lista o que sai e não pede ciência', () => {
     const r = impactoDaTroca(operacao, essencial, PARADO)
     expect(r.sentido).toBe('desce')
-    expect(r.perde.map((p) => p.recurso)).toEqual(['ia', 'transcricao', 'transmissoes', 'integracoes', 'api'])
+    expect(r.perde.map((p) => p.recurso)).toEqual(['integracoes', 'varios_numeros', 'api'])
     expect(r.perde.every((p) => p.emUso === null)).toBe(true)
     expect(r.bloqueios).toEqual([])
     expect(r.exigeCiencia).toBe(false)
   })
 
   it('descer com recurso em uso diz o que está em uso e pede ciência', () => {
-    const r = impactoDaTroca(operacao, essencial, { ...PARADO, fluxosComIa: 3, transmissoes: 1 })
-    expect(r.perde.find((p) => p.recurso === 'ia')?.emUso).toBe('3 fluxos respondem com IA')
-    expect(r.perde.find((p) => p.recurso === 'transmissoes')?.emUso).toBe('1 transmissão agendada')
+    const r = impactoDaTroca(operacao, essencial, { ...PARADO, conexoes: 3, chavesDeApi: 1 })
+    expect(r.perde.find((p) => p.recurso === 'integracoes')?.emUso).toBe('3 conexões ligadas')
+    expect(r.perde.find((p) => p.recurso === 'api')?.emUso).toBe('1 chave de API ativa')
     expect(r.exigeCiencia).toBe(true)
   })
 
   it('mais números conectados do que o destino comporta bloqueia', () => {
-    const r = impactoDaTroca(escala, operacao, { ...PARADO, numeros: 3 })
+    const r = impactoDaTroca(escala, operacao, { ...PARADO, numeros: 4 })
     expect(r.bloqueios).toHaveLength(1)
     expect(r.bloqueios[0]).toContain('Desconecte 2 números')
   })
 
   it('números no limite do destino não bloqueiam', () => {
-    expect(impactoDaTroca(escala, operacao, { ...PARADO, numeros: 1 }).bloqueios).toEqual([])
+    expect(impactoDaTroca(escala, operacao, { ...PARADO, numeros: 2 }).bloqueios).toEqual([])
   })
 
   it('conversas acima da faixa do destino avisam sem bloquear', () => {

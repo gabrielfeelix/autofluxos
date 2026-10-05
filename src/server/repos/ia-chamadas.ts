@@ -1,6 +1,8 @@
 import 'server-only'
 import { db } from '../db'
-import { acharPlano, tetoDeIaDaConta } from '@/core/planos'
+import { tetoDeIaDaConta } from '@/core/planos'
+import { comoEsta } from './chave-de-ia'
+import { planoVigente } from './planos'
 
 /**
  * O registro do que a IA fez no sistema de um cliente.
@@ -91,6 +93,13 @@ export async function registrarChamada(chamada: ChamadaDeIa): Promise<void> {
  */
 export const FERRAMENTA_RESPOSTA = 'resposta'
 
+/**
+ * Uma transcrição de áudio feita com a chave da 4YU (0128). Conta no teto da
+ * conta junto com as respostas, e não no limite por contato: quem transcreve é
+ * a equipe, clicando, não o cliente conversando.
+ */
+export const FERRAMENTA_TRANSCRICAO = 'transcricao'
+
 /** A janela do limite: as últimas 24 horas, e não o dia do calendário. */
 const JANELA_DO_LIMITE_MS = 24 * 60 * 60 * 1_000
 
@@ -170,11 +179,24 @@ export async function registrarRespostaDaIa(clienteId: string, contatoId: string
   })
 }
 
+/** Grava uma transcrição feita com a chave da 4YU, para o teto da conta. */
+export async function registrarTranscricao(clienteId: string, contatoId: string): Promise<void> {
+  await registrarChamada({
+    clienteId,
+    contatoId,
+    ferramenta: FERRAMENTA_TRANSCRICAO,
+    argumentos: {},
+    decididoPor: 'ia',
+    ok: true,
+  })
+}
+
 /**
  * Quanto a IA já respondeu na conta inteira, nos últimos 30 dias, e o teto.
  *
  * O limite por contato não segura quem troca de número; este segura. O teto
- * vem do preço contratado (`clients.preco_contratado`), e sem ele do plano.
+ * vem do plano (`tetoIa`, 0128), soma as transcrições e não existe para quem
+ * usa chave própria.
  *
  * Erro de leitura é "sem teto", pela mesma razão do limite por contato: banco
  * lento não pode derrubar o atendimento de todas as contas.
@@ -184,7 +206,7 @@ export async function cotaDeIaDaConta(clienteId: string): Promise<{ teto: number
   try {
     const { data: conta, error: erroConta } = await db()
       .from('clients')
-      .select('plano, preco_contratado')
+      .select('plano')
       .eq('id', clienteId)
       .maybeSingle()
     if (erroConta || !conta) {
@@ -192,16 +214,25 @@ export async function cotaDeIaDaConta(clienteId: string): Promise<{ teto: number
       return semTeto
     }
 
-    const { plano, preco_contratado } = conta as { plano: string | null; preco_contratado: number | null }
-    const preco = typeof preco_contratado === 'number' ? preco_contratado : acharPlano(plano ?? '').preco
-    const teto = tetoDeIaDaConta({ preco })
+    /*
+     * O teto é do plano (0128), e some com chave própria: aí a IA é paga pelo
+     * cliente. Falha ao ler o cofre conta como "sem chave própria", o lado de
+     * aplicar o teto.
+     */
+    const { plano } = conta as { plano: string | null }
+    const [vigente, chave] = await Promise.all([
+      planoVigente(plano ?? ''),
+      comoEsta(clienteId).catch(() => ({ propria: false })),
+    ])
+    const teto = tetoDeIaDaConta(vigente, chave.propria)
+    if (teto === null) return semTeto
 
     const desde = new Date(Date.now() - JANELA_DA_CONTA_MS).toISOString()
     const { count, error } = await db()
       .from('ia_chamadas')
       .select('id', { count: 'exact', head: true })
       .eq('client_id', clienteId)
-      .eq('ferramenta', FERRAMENTA_RESPOSTA)
+      .in('ferramenta', [FERRAMENTA_RESPOSTA, FERRAMENTA_TRANSCRICAO])
       .gte('criado_em', desde)
     if (error) {
       console.error('[ia] não deu para contar as respostas da conta', error.message)

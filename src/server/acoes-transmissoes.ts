@@ -44,8 +44,11 @@ import {
   lerTransmissao,
   mudarEstadoDaTransmissao,
   enviadasHojePelaConta,
+  destinatariosDoMes,
   progressoDa,
 } from './repos/transmissoes'
+import { planoDaConta } from './repos/plano'
+import { planoVigente } from './repos/planos'
 import { autorDaPessoa } from '@/core/autor-da-mensagem'
 import { podeEnviar, variaveisDe as variaveisDoCorpo } from '@/core/templates'
 import { adaptadorDoCanal } from './adaptador-do-canal'
@@ -448,6 +451,22 @@ export async function acaoCriarTransmissao(
 
   const foraDoPlano = await recusaDoPlano(clienteId, 'transmissoes')
   if (foraDoPlano) return { ok: false, erro: foraDoPlano }
+
+  // O teto de envios do mês (0128). Só o Essencial tem; nos outros é nulo.
+  const plano = await planoVigente(await planoDaConta(clienteId))
+  if (plano.tetoTransmissoes !== null) {
+    const usados = await destinatariosDoMes(clienteId)
+    const sobra = Math.max(0, plano.tetoTransmissoes - usados)
+    if (dados.contatoIds.length > sobra) {
+      const n = (valor: number) => valor.toLocaleString('pt-BR')
+      return {
+        ok: false,
+        erro:
+          `O plano ${plano.nome} inclui ${n(plano.tetoTransmissoes)} envios de transmissão por mês, e restam ${n(sobra)}. ` +
+          `Este público tem ${n(dados.contatoIds.length)} contatos. Diminua o público ou suba de plano para enviar sem limite.`,
+      }
+    }
+  }
 
   const nome = dados.nome.trim()
   if (!nome) return { ok: false, erro: 'Dê um nome para esta transmissão.' }

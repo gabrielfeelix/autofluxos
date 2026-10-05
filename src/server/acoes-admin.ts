@@ -15,11 +15,11 @@ import { acharUsuarioPorEmail, organizacoesSoDele, papelNaConta, removerComDesti
 import { acharUsuario, exigirAdminDaPlataforma } from './sessao'
 import { autenticacao } from './auth'
 import { definirFuncaoDoMembro } from './pessoas'
-import { agendarDescida, agendarPreco, cancelarDescida, congelarPreco, contratoDaConta, definirPlano, organizacoesNoPlano } from './repos/plano'
+import { agendarDescida, agendarPreco, cancelarDescida, congelarPreco, contratoDaConta, definirPlano, encerrarTeste, iniciarTeste, organizacoesNoPlano } from './repos/plano'
 import { criarPlano, excluirPlano, planosVigentes, salvarPlano, type EdicaoDePlano } from './repos/planos'
 import { DIAS_DE_AVISO_DO_PRECO, diaDeHoje, proximaVirada, somarDias } from '@/core/contrato-do-plano'
 import { preverTroca, recusaDaTroca, resumoDaTroca, type PrevisaoDaTroca } from './troca-de-plano'
-import { ehIdDePlano, ehRecursoDoPlano, idDoNome, PLANO_DE_ENTRADA } from '@/core/planos'
+import { ehIdDePlano, ehRecursoDoPlano, idDoNome, DIAS_DE_TESTE, PLANO_DE_ENTRADA, PLANO_DO_TESTE } from '@/core/planos'
 import { CAPACIDADES, ehEscopo, type Politica } from '@/core/permissoes'
 import { funcoesVigentes, salvarFuncao } from './repos/funcoes'
 import { acharPedido, pedidosDePlano } from './repos/pedidos-de-plano'
@@ -438,6 +438,13 @@ export type DadosDoPlano = {
   precoExcedente: number
   /** Reais por ano no anual; `null` = sem opção anual. */
   precoAnual: number | null
+  /** Atendentes inclusos; acima, `precoAtendenteExtra` por pessoa (0128). */
+  atendentes: number
+  precoAtendenteExtra: number
+  /** Respostas de IA em 30 dias, com a chave da 4YU. */
+  tetoIa: number
+  /** Envios de transmissão por mês; `null` = sem teto. */
+  tetoTransmissoes: number | null
   resumo: string
   itens: string[]
   recursos: string[]
@@ -462,11 +469,21 @@ function validarPlano(dados: DadosDoPlano): { ok: true; edicao: EdicaoDePlano } 
   if (dados.precoAnual !== null && dados.precoAnual !== undefined && precoAnual === null) {
     return { ok: false, erro: 'o preço anual é um número inteiro de reais, ou vazio para não ter anual' }
   }
+  const atendentes = inteiro(dados.atendentes, 1)
+  if (atendentes === null) return { ok: false, erro: 'o plano inclui pelo menos 1 atendente' }
+  const precoAtendenteExtra = Math.round(Number(dados.precoAtendenteExtra) * 100) / 100
+  if (!Number.isFinite(precoAtendenteExtra) || precoAtendenteExtra < 0) return { ok: false, erro: 'o atendente extra é em reais, zero ou mais' }
+  const tetoIa = inteiro(dados.tetoIa, 0)
+  if (tetoIa === null) return { ok: false, erro: 'o teto de IA é um número inteiro, zero ou mais' }
+  const tetoTransmissoes = dados.tetoTransmissoes === null || dados.tetoTransmissoes === undefined ? null : inteiro(dados.tetoTransmissoes, 0)
+  if (dados.tetoTransmissoes !== null && dados.tetoTransmissoes !== undefined && tetoTransmissoes === null) {
+    return { ok: false, erro: 'o teto de transmissão é um número inteiro, ou vazio para não ter teto' }
+  }
   const recursos = (dados.recursos ?? []).filter(ehRecursoDoPlano)
   const itens = (dados.itens ?? []).map((item) => String(item).trim()).filter(Boolean).slice(0, 20)
   return {
     ok: true,
-    edicao: { nome, preco, conversas, numeros, precoExcedente, precoAnual, resumo: String(dados.resumo ?? '').trim(), itens, recursos, ativo: dados.ativo !== false },
+    edicao: { nome, preco, conversas, numeros, precoExcedente, precoAnual, atendentes, precoAtendenteExtra, tetoIa, tetoTransmissoes, resumo: String(dados.resumo ?? '').trim(), itens, recursos, ativo: dados.ativo !== false },
   }
 }
 
@@ -839,6 +856,44 @@ export type ResultadoDoAcesso = EstadoSalvar & { pessoa?: { id: string; nome: st
  * padrão do código. O teto existe porque cada modelo é cobrado pela Meta, e uma
  * integração com defeito em laço pode gastar o mês em uma tarde.
  */
+/**
+ * Teste grátis (0128): a conta fica no plano do teste por `DIAS_DE_TESTE`
+ * dias. Ao vencer sem plano escolhido, os recursos pagos pausam
+ * (`recursos-do-plano.ts`). Trocar de plano encerra o teste.
+ */
+export async function acaoAdminIniciarTeste(organizacaoId: string): Promise<{ ok: boolean; erro?: string; ate?: string }> {
+  const sessao = await exigirAdminDaPlataforma()
+  const fim = new Date(Date.now() + DIAS_DE_TESTE * 24 * 60 * 60 * 1000)
+  const ate = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Sao_Paulo' }).format(fim)
+  const r = await iniciarTeste(organizacaoId, PLANO_DO_TESTE, ate)
+  if (!r.ok) return r
+  await registrar({
+    acao: 'iniciou_teste',
+    autorId: sessao.usuario.id,
+    autorEmail: sessao.usuario.email,
+    contaId: organizacaoId,
+    alvoTipo: 'client',
+    alvoId: organizacaoId,
+    detalhes: { plano: PLANO_DO_TESTE, ate },
+  })
+  return { ok: true, ate }
+}
+
+export async function acaoAdminEncerrarTeste(organizacaoId: string): Promise<{ ok: boolean; erro?: string }> {
+  const sessao = await exigirAdminDaPlataforma()
+  await encerrarTeste(organizacaoId)
+  await registrar({
+    acao: 'encerrou_teste',
+    autorId: sessao.usuario.id,
+    autorEmail: sessao.usuario.email,
+    contaId: organizacaoId,
+    alvoTipo: 'client',
+    alvoId: organizacaoId,
+    detalhes: {},
+  })
+  return { ok: true }
+}
+
 export async function acaoAdminSalvarTetoDaApi(organizacaoId: string, teto: number | null): Promise<{ ok: boolean; erro?: string }> {
   const sessao = await exigirAdminDaPlataforma()
   if (teto !== null && (!Number.isInteger(teto) || teto < 0 || teto > 100000)) {

@@ -4,6 +4,8 @@ import type { ReactNode } from 'react'
 import {
   anualDoPlano,
   O_QUE_E_CONVERSA,
+  DIAS_DE_TESTE,
+  ENTERPRISE,
   PLANOS,
   PLANO_EM_DESTAQUE,
   TARIFA_DA_META,
@@ -406,8 +408,8 @@ API oficial do WhatsApp Business
                 </h2>
                 <span className={`${s.risco} ${s.riscoCentro}`} data-revela data-atraso="90" aria-hidden />
                 <p className={`${s.chamada} ${s.chamadaCentro}`} data-revela data-atraso="100">
-                  Sem fidelidade e sem cobrar por atendente. O que muda entre os planos é
-                  quantas conversas cabem no seu mês.
+                  {DIAS_DE_TESTE} dias grátis, sem cartão, e montamos o primeiro robô com você. O que muda
+                  entre os planos é o tamanho da equipe e quantas conversas cabem no seu mês.
                 </p>
               </div>
 
@@ -416,7 +418,7 @@ API oficial do WhatsApp Business
                   <Plano
                     key={plano.id}
                     nome={plano.nome}
-                    preco={String(plano.preco)}
+                    preco={plano.preco.toLocaleString('pt-BR')}
                     anual={anualDoPlano(plano)}
                     resumo={plano.resumo}
                     itens={plano.itens}
@@ -426,10 +428,36 @@ API oficial do WhatsApp Business
                 ))}
               </div>
 
+              <aside className={s.enterprise} data-revela>
+                <div>
+                  <h3 className={s.enterpriseNome}>{ENTERPRISE.nome}</h3>
+                  <p className={s.enterpriseResumo}>
+                    {ENTERPRISE.resumo} A partir de R$ {ENTERPRISE.aPartirDe.toLocaleString('pt-BR')} por mês.
+                  </p>
+                  <ul className={s.enterpriseItens}>
+                    {ENTERPRISE.itens.map((item) => (
+                      <li key={item}>{item}</li>
+                    ))}
+                  </ul>
+                </div>
+                <a
+                  className={`${s.botao} ${s.botaoVazado}`}
+                  href={`mailto:contato@4yu.com.br?subject=${encodeURIComponent('AutoFluxos: plano Enterprise')}`}
+                >
+                  Fale conosco
+                </a>
+              </aside>
+
+              <ul className={s.semLetraMiuda} aria-label="O que não cobramos">
+                <li>Sem taxa de implantação</li>
+                <li>Sem fidelidade no mensal</li>
+                <li>Tarifa da Meta sem acréscimo</li>
+                <li>Disparo sem resposta não conta</li>
+              </ul>
+
               <p className={s.notaPreco}>
-                {O_QUE_E_CONVERSA} No mensal não há fidelidade; no anual você paga
-                o ano de uma vez, com desconto. Sem taxa de instalação. Fazemos a conta da tarifa da Meta com o seu volume antes de você
-                assinar.
+                {O_QUE_E_CONVERSA} No anual você paga o ano de uma vez, com desconto. Fazemos a conta da
+                tarifa da Meta com o seu volume antes de você assinar.
               </p>
             </div>
           </section>
@@ -973,9 +1001,9 @@ function Plano({
 
       <a
         className={`${s.botao} ${destaque ? s.botaoPrincipal : s.botaoVazado} ${s.planoBotao}`}
-        href={`mailto:contato@4yu.com.br?subject=${encodeURIComponent(`AutoFluxos: plano ${nome}`)}`}
+        href={`mailto:contato@4yu.com.br?subject=${encodeURIComponent(`AutoFluxos: teste grátis do plano ${nome}`)}`}
       >
-        {preco ? 'Começar' : 'Fale conosco'}
+        {preco ? `Testar ${DIAS_DE_TESTE} dias grátis` : 'Fale conosco'}
       </a>
     </article>
   )

@@ -32,6 +32,10 @@ const VAZIO: PlanoNaTabela = {
   numeros: 1,
   precoExcedente: 0.4,
   precoAnual: null,
+  atendentes: 3,
+  precoAtendenteExtra: 69,
+  tetoIa: 1500,
+  tetoTransmissoes: 2000,
   resumo: '',
   itens: [],
   recursos: ['crm'],
@@ -286,6 +290,10 @@ function EditarPlano({
               numeros: Number(dados.get('numeros')),
               precoExcedente: Number(String(dados.get('precoExcedente') ?? '0').replace(',', '.')),
               precoAnual: String(dados.get('precoAnual') ?? '').trim() === '' ? null : Number(dados.get('precoAnual')),
+              atendentes: Number(dados.get('atendentes')),
+              precoAtendenteExtra: Number(String(dados.get('precoAtendenteExtra') ?? '0').replace(',', '.')),
+              tetoIa: Number(dados.get('tetoIa')),
+              tetoTransmissoes: String(dados.get('tetoTransmissoes') ?? '').trim() === '' ? null : Number(dados.get('tetoTransmissoes')),
               resumo: String(dados.get('resumo') ?? ''),
               itens: String(dados.get('itens') ?? '').split('\n'),
               recursos,
@@ -319,6 +327,22 @@ function EditarPlano({
           <label>
             <RotuloCampo>Números de WhatsApp</RotuloCampo>
             <input name="numeros" type="number" min={1} step={1} required defaultValue={plano.numeros} placeholder="Exemplo: 1" className={campo} />
+          </label>
+          <label>
+            <RotuloCampo>Atendentes inclusos</RotuloCampo>
+            <input name="atendentes" type="number" min={1} step={1} required defaultValue={plano.atendentes} placeholder="Exemplo: 10" className={campo} />
+          </label>
+          <label>
+            <RotuloCampo>Atendente extra por mês (R$)</RotuloCampo>
+            <input name="precoAtendenteExtra" type="number" min={0} step={0.01} required defaultValue={plano.precoAtendenteExtra} placeholder="Exemplo: 59" className={campo} />
+          </label>
+          <label>
+            <RotuloCampo>Respostas de IA em 30 dias</RotuloCampo>
+            <input name="tetoIa" type="number" min={0} step={1} required defaultValue={plano.tetoIa} placeholder="Exemplo: 3000" className={campo} />
+          </label>
+          <label>
+            <RotuloCampo>Envios de transmissão por mês, vazio = sem teto</RotuloCampo>
+            <input name="tetoTransmissoes" type="number" min={0} step={1} defaultValue={plano.tetoTransmissoes ?? ''} placeholder="Exemplo: 2000" className={campo} />
           </label>
         </div>
 

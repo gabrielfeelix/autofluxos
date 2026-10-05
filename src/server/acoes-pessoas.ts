@@ -5,6 +5,10 @@ import { conferirTrocaDeFuncao, ehFuncao, PAPEL_DA_FUNCAO, podeAtribuirFuncao, p
 import { autenticacao } from './auth'
 import { atorNaOrganizacao, definirFuncaoDoMembro, exigirHierarquia } from './pessoas'
 import { registrar } from './repos/auditoria'
+import { planoDaConta, tamanhoDaEquipe } from './repos/plano'
+import { planoVigente } from './repos/planos'
+import { custoDaEquipe, LIMITE_DE_ATENDENTES_SEM_CONTRATO } from '@/core/planos'
+import { reais } from '@/core/contrato-do-plano'
 import { acharUsuarioPorEmail, papelNaConta } from './repos/usuarios'
 import { acharUsuario } from './sessao'
 
@@ -50,7 +54,7 @@ export async function acaoTrocarFuncao(clienteId: string, usuarioId: string, fun
 export async function acaoDarAcessoNaOrganizacao(
   clienteId: string,
   formData: FormData,
-): Promise<{ ok?: boolean; erro?: string; pessoa?: { id: string; nome: string; email: string; funcao: string } }> {
+): Promise<{ ok?: boolean; erro?: string; custo?: string; pessoa?: { id: string; nome: string; email: string; funcao: string } }> {
   const ator = await atorNaOrganizacao(clienteId)
   if (!podeGerenciarPessoas(ator)) return { erro: 'só gestor, administrador ou proprietário dá acesso' }
 
@@ -66,6 +70,21 @@ export async function acaoDarAcessoNaOrganizacao(
   let usuarioId = existente?.id ?? null
   if (usuarioId && (await papelNaConta(clienteId, usuarioId)) !== null) {
     return { erro: 'esta pessoa já está na organização: mude a função dela na tabela' }
+  }
+
+  /*
+   * Atendente conta desde 05/out (0128). Passar do incluso não bloqueia: a
+   * primeira tentativa devolve o custo, e só a segunda, com o aceite, liga a
+   * pessoa. Acima do limite sem contrato, é conversa de Enterprise.
+   */
+  const equipe = await tamanhoDaEquipe(clienteId)
+  const plano = await planoVigente(await planoDaConta(clienteId))
+  const custo = custoDaEquipe(plano, equipe + 1)
+  if (custo.enterprise) {
+    return { erro: `acima de ${LIMITE_DE_ATENDENTES_SEM_CONTRATO} atendentes a conta vira Enterprise: fale com a 4YU para ampliar a equipe` }
+  }
+  if (custo.extras > 0 && formData.get('aceitouCusto') !== '1') {
+    return { custo: frasesDoCusto(plano.nome, plano.atendentes, plano.precoAtendenteExtra, custo.extras, custo.valor) }
   }
   if (!usuarioId) {
     if (nome === '') return { erro: 'escreva o nome de quem vai entrar' }
@@ -98,4 +117,11 @@ export async function acaoDarAcessoNaOrganizacao(
     impersonadoPor: sessao.impersonadoPor,
   })
   return { ok: true, pessoa: { id: usuarioId, nome: existente?.nome ?? nome, email, funcao } }
+}
+
+function frasesDoCusto(planoNome: string, inclusos: number, porPessoa: number, extras: number, total: number): string {
+  return (
+    `O plano ${planoNome} inclui ${inclusos} atendentes. Esta pessoa é atendente extra: ${reais(porPessoa)} por mês. ` +
+    `Com ela, a conta terá ${extras} ${extras === 1 ? 'atendente extra' : 'atendentes extras'}, ${reais(total)} por mês além do plano.`
+  )
 }

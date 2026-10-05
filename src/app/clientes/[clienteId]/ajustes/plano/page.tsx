@@ -8,7 +8,7 @@ import { acharCliente } from '@/server/repos/clientes'
 import { consumoDaMetaDoMes } from '@/server/consumo-da-meta'
 import { franquiaDoMes } from '@/core/franquia-da-meta'
 import { listarCanais } from '@/server/repos/conversas'
-import { chaveDoMes, consumoDaConta, contratoDaConta, usoDaOrganizacao } from '@/server/repos/plano'
+import { chaveDoMes, consumoDaConta, contratoDaConta, tamanhoDaEquipe, testeDaConta, usoDaOrganizacao } from '@/server/repos/plano'
 import { pedidosDePlano } from '@/server/repos/pedidos-de-plano'
 import { planosVigentes } from '@/server/repos/planos'
 import type { IdDoPlano } from '@/core/planos'
@@ -41,7 +41,7 @@ export default async function Pagina({ params }: { params: Promise<{ clienteId: 
   const podeMexer = acesso !== null && podeAdministrarConta(acesso)
 
   const lendoConsumo = consumoDaConta(clienteId)
-  const [contrato, consumo, pedidos, planos, uso, canais, pontosDaMeta] = await Promise.all([
+  const [contrato, consumo, pedidos, planos, uso, canais, pontosDaMeta, equipe, testeAte] = await Promise.all([
     contratoDaConta(clienteId),
     lendoConsumo,
     pedidosDePlano({ organizacaoId: clienteId }).catch(() => []),
@@ -50,6 +50,8 @@ export default async function Pagina({ params }: { params: Promise<{ clienteId: 
     usoDaOrganizacao(clienteId, undefined, lendoConsumo),
     listarCanais(clienteId).catch(() => []),
     consumoDaMetaDoMes(clienteId),
+    tamanhoDaEquipe(clienteId),
+    testeDaConta(clienteId),
   ])
   // Só aparece para quem tem número na API oficial: é a conta que a Meta cobra.
   const temWhatsAppOficial = canais.some((canal) => canal.provider === 'cloud-api')
@@ -82,6 +84,8 @@ export default async function Pagina({ params }: { params: Promise<{ clienteId: 
           uso={uso}
           contrato={contrato}
           franquiaDaMeta={franquiaDaMeta}
+          equipe={equipe}
+          testeAte={testeAte}
           conexoesHref={`/clientes/${cliente.id}/ajustes/integracoes`}
           planos={planos.filter((p) => p.ativo || p.id === plano)}
         />

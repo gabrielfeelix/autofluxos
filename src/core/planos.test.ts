@@ -2,6 +2,8 @@ import { describe, expect, it } from 'vitest'
 
 import {
   anualDoPlano,
+  custoDaEquipe,
+  tetoDeIaDaConta,
   PLANOS,
   comoTamanho,
   PLANO_DE_ENTRADA,
@@ -31,10 +33,21 @@ describe('a tabela de planos', () => {
     expect(new Set(conversas).size).toBe(conversas.length)
   })
 
-  it('promete atendente ilimitado nos três, que é a decisão de 16/set', () => {
+  /*
+   * Atendente conta desde 05/out (reverte o "ilimitado" de 16/set). O card diz
+   * a equipe inclusa, e o número bate com o campo que a cobrança lê.
+   */
+  it('diz a equipe inclusa, e ela bate com o campo', () => {
+    expect(PLANOS.map((p) => p.atendentes)).toEqual([3, 10, 25])
     for (const plano of PLANOS) {
-      expect(plano.itens).toContain('Atendentes ilimitados')
+      expect(plano.itens).toContain(`${plano.atendentes} atendentes inclusos`)
+      expect(plano.itens.join(' ')).not.toMatch(/atendentes? ilimitad/i)
     }
+  })
+
+  it('o atendente extra fica mais barato quanto maior o plano', () => {
+    const extras = PLANOS.map((p) => p.precoAtendenteExtra)
+    expect(extras).toEqual([69, 59, 49])
   })
 
   /*
@@ -142,5 +155,32 @@ describe('o anual do plano', () => {
 
   it('todo plano do código tem anual mais barato que doze mensalidades', () => {
     for (const plano of PLANOS) expect(anualDoPlano(plano)).not.toBeNull()
+  })
+})
+
+describe('custoDaEquipe', () => {
+  const essencial = PLANOS[0]!
+
+  it('não cobra nada até a equipe inclusa', () => {
+    expect(custoDaEquipe(essencial, 3)).toEqual({ extras: 0, valor: 0, enterprise: false })
+  })
+
+  it('cobra cada pessoa acima, pelo extra do plano', () => {
+    expect(custoDaEquipe(essencial, 5)).toEqual({ extras: 2, valor: 138, enterprise: false })
+  })
+
+  it('acima de 50 pessoas é conversa de Enterprise', () => {
+    expect(custoDaEquipe(essencial, 51).enterprise).toBe(true)
+    expect(custoDaEquipe(essencial, 50).enterprise).toBe(false)
+  })
+})
+
+describe('tetoDeIaDaConta', () => {
+  it('é o número do plano com a chave da 4YU', () => {
+    expect(PLANOS.map((p) => tetoDeIaDaConta(p))).toEqual([1500, 3000, 6000])
+  })
+
+  it('some com chave própria: quem paga a IA é o cliente', () => {
+    expect(tetoDeIaDaConta(PLANOS[0]!, true)).toBeNull()
   })
 })

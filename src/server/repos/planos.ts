@@ -26,6 +26,10 @@ type Linha = {
   numeros: number | string
   preco_excedente?: number | string | null
   preco_anual?: number | string | null
+  atendentes?: number | string | null
+  preco_atendente_extra?: number | string | null
+  teto_ia?: number | string | null
+  teto_transmissoes?: number | string | null
   resumo: string | null
   itens: unknown
   recursos: unknown
@@ -38,8 +42,13 @@ function doCodigo(): PlanoVigente[] {
   return PLANOS.map((plano, ordem) => ({ ...plano, ativo: true, ordem, atualizadoEm: null }))
 }
 
+function numeroOu(valor: number | string | null | undefined, reserva: number): number {
+  return valor === null || valor === undefined ? reserva : Number(valor)
+}
+
 function paraPlano(linha: Linha): PlanoVigente {
   const base = PLANOS.find((plano) => plano.id === linha.id)
+  const entrada = PLANOS[0]!
   const lista = (valor: unknown) => (Array.isArray(valor) ? valor.filter((item): item is string => typeof item === 'string') : [])
   return {
     id: linha.id as IdDoPlano,
@@ -52,6 +61,20 @@ function paraPlano(linha: Linha): PlanoVigente {
     resumo: linha.resumo ?? base?.resumo ?? '',
     itens: lista(linha.itens),
     recursos: lista(linha.recursos).filter(ehRecursoDoPlano),
+    /*
+     * As colunas da 0128 caem no código quando faltam, campo a campo: o código
+     * sobe antes da migration, e um plano criado no admin antes dela não tem
+     * base no código, então cai no plano de entrada.
+     */
+    atendentes: numeroOu(linha.atendentes, base?.atendentes ?? entrada.atendentes),
+    precoAtendenteExtra: numeroOu(linha.preco_atendente_extra, base?.precoAtendenteExtra ?? entrada.precoAtendenteExtra),
+    tetoIa: numeroOu(linha.teto_ia, base?.tetoIa ?? entrada.tetoIa),
+    tetoTransmissoes:
+      linha.teto_transmissoes === undefined
+        ? (base?.tetoTransmissoes ?? entrada.tetoTransmissoes)
+        : linha.teto_transmissoes === null
+          ? null
+          : Number(linha.teto_transmissoes),
     ativo: linha.ativo,
     ordem: linha.ordem,
     atualizadoEm: linha.atualizado_em,
@@ -63,7 +86,13 @@ export const planosVigentes = cache(async (): Promise<PlanoVigente[]> => {
   try {
     const { data, error } = await db()
       .from('planos')
-      .select('id, nome, preco, conversas, numeros, preco_excedente, preco_anual, resumo, itens, recursos, ativo, ordem, atualizado_em')
+      /*
+       * `*` e não a lista de colunas: com a lista, o código novo pedindo uma
+       * coluna que a migration ainda não criou faz a consulta falhar inteira, e
+       * a tela passa a mostrar os planos do código no lugar do que o admin
+       * editou. Com `*`, a coluna que falta só vem vazia.
+       */
+      .select('*')
       .order('ordem', { ascending: true })
     if (error || !data || data.length === 0) return doCodigo()
     return (data as Linha[]).map(paraPlano)
@@ -82,25 +111,35 @@ export async function planoVigente(id: string): Promise<PlanoVigente> {
   return todos.find((plano) => plano.id === id) ?? todos.find((plano) => plano.id === 'essencial') ?? todos[0]!
 }
 
-export type EdicaoDePlano = Pick<Plano, 'nome' | 'preco' | 'conversas' | 'numeros' | 'precoExcedente' | 'precoAnual' | 'resumo' | 'itens' | 'recursos'> & { ativo: boolean }
+export type EdicaoDePlano = Pick<
+  Plano,
+  'nome' | 'preco' | 'conversas' | 'numeros' | 'precoExcedente' | 'precoAnual' | 'atendentes' | 'precoAtendenteExtra' | 'tetoIa' | 'tetoTransmissoes' | 'resumo' | 'itens' | 'recursos'
+> & { ativo: boolean }
+
+function colunas(edicao: EdicaoDePlano) {
+  return {
+    nome: edicao.nome,
+    preco: edicao.preco,
+    conversas: edicao.conversas,
+    numeros: edicao.numeros,
+    preco_excedente: edicao.precoExcedente,
+    preco_anual: edicao.precoAnual,
+    atendentes: edicao.atendentes,
+    preco_atendente_extra: edicao.precoAtendenteExtra,
+    teto_ia: edicao.tetoIa,
+    teto_transmissoes: edicao.tetoTransmissoes,
+    resumo: edicao.resumo,
+    itens: edicao.itens,
+    recursos: edicao.recursos,
+    ativo: edicao.ativo,
+  }
+}
 
 export async function salvarPlano(id: IdDoPlano, edicao: EdicaoDePlano): Promise<{ ok: boolean; motivo?: string }> {
   const { error, count } = await db()
     .from('planos')
     .update(
-      {
-        nome: edicao.nome,
-        preco: edicao.preco,
-        conversas: edicao.conversas,
-        numeros: edicao.numeros,
-        preco_excedente: edicao.precoExcedente,
-        preco_anual: edicao.precoAnual,
-        resumo: edicao.resumo,
-        itens: edicao.itens,
-        recursos: edicao.recursos,
-        ativo: edicao.ativo,
-        atualizado_em: new Date().toISOString(),
-      },
+      { ...colunas(edicao), atualizado_em: new Date().toISOString() },
       { count: 'exact' },
     )
     .eq('id', id)
@@ -119,20 +158,7 @@ export async function criarPlano(id: string, edicao: EdicaoDePlano): Promise<{ o
   const ordem = Math.max(-1, ...(await planosVigentes()).map((plano) => plano.ordem)) + 1
   const { error } = await db()
     .from('planos')
-    .insert({
-      id,
-      nome: edicao.nome,
-      preco: edicao.preco,
-      conversas: edicao.conversas,
-      numeros: edicao.numeros,
-      preco_excedente: edicao.precoExcedente,
-      preco_anual: edicao.precoAnual,
-      resumo: edicao.resumo,
-      itens: edicao.itens,
-      recursos: edicao.recursos,
-      ativo: edicao.ativo,
-      ordem,
-    })
+    .insert({ id, ...colunas(edicao), ordem })
   if (error) return { ok: false, motivo: error.code === '23505' ? 'já existe um plano com esse nome' : error.message }
   return { ok: true }
 }

@@ -1048,6 +1048,69 @@
   color: var(--dim);
 }
 
+/*
+ * Enterprise é faixa, não quarto cartão: quatro colunas de 280px não cabem na
+ * largura do site sem quebrar 3 + 1, e o Enterprise não é escolha de tabela, é
+ * conversa. Uma linha embaixo diz que ele existe sem disputar com os três.
+ */
+.enterprise {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px 28px;
+  margin-top: 16px;
+  padding: 24px 28px;
+  border-radius: var(--raio);
+  border: 1px solid rgb(var(--veu) / 0.06);
+  background: var(--canvas-deep);
+}
+
+.enterpriseNome {
+  font-size: 17px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+
+.enterpriseResumo {
+  margin-top: 4px;
+  font-size: 14px;
+  line-height: 1.55;
+  color: var(--dim);
+}
+
+.enterpriseItens {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 18px;
+  margin-top: 10px;
+  font-size: 13px;
+  color: var(--dim);
+}
+
+.enterpriseItens li:not(:first-child)::before {
+  content: '·';
+  margin-right: 8px;
+  opacity: 0.6;
+}
+
+/* O que a concorrência cobra e nós não: quatro fatos, sem adjetivo. */
+.semLetraMiuda {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 10px;
+  margin-top: 26px;
+}
+
+.semLetraMiuda li {
+  padding: 7px 14px;
+  border-radius: 999px;
+  border: 1px solid rgb(var(--veu) / 0.08);
+  font-size: 13px;
+  font-weight: 600;
+}
+
 /* ─────────────────────────── perguntas ─────────────────────────── */
 
 .perguntas {

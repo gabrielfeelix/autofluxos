@@ -11,12 +11,17 @@
  * aritmética, e dado tem que dar para testar sem subir servidor.
  *
  * As decisões que este arquivo materializa estão em
- * `docs/PLANO-16-SET-PRODUTO-E-PRECO.md`. As três que importam para quem ler só
- * o código:
+ * `docs/PLANO-16-SET-PRODUTO-E-PRECO.md` e `docs/PLANO-PRECOS-05-OUT.md`. As
+ * três que importam para quem ler só o código:
  *
- * 1. **A unidade é conversa, e atendente é ilimitado nos três.** O produto
- *    existe para o cliente precisar de menos gente atendendo; cobrar por
- *    atendente é cobrar pela métrica que o produto promete reduzir.
+ * 1. **A unidade é conversa, e atendente conta desde 05/out/2026.** Até ali o
+ *    atendente era ilimitado, com o argumento de que cobrar por atendente é
+ *    cobrar pela métrica que o produto promete reduzir. Caiu porque o custo de
+ *    uma equipe grande não aparece na conversa: cada Inbox aberto consulta o
+ *    banco uma vez por segundo, e 200 pessoas no plano de entrada são 200
+ *    consultas por segundo pagas por R$ 297. Cada plano inclui uma equipe
+ *    (`atendentes`), e quem passa paga `precoAtendenteExtra` por pessoa. Não
+ *    bloqueia: avisa o custo antes de dar o acesso.
  * 2. **O eixo que separa as faixas é custo, não recurso.** O que é software
  *    puro vai em todos; o que custa dinheiro por uso sobe de plano. Recurso
  *    barato preso no plano alto só faz o cliente pequeno achar o produto
@@ -80,6 +85,23 @@ export type Plano = {
   precoAnual: number | null
   /** O que o plano libera, na lista fechada de `RECURSOS_DO_PLANO`. */
   recursos: RecursoDoPlano[]
+  /**
+   * Quantos atendentes o preço já inclui (0128). Atendente é quem tem acesso à
+   * organização, menos o suporte da 4YU. Passar daqui não trava: cada pessoa a
+   * mais custa `precoAtendenteExtra` por mês.
+   */
+  atendentes: number
+  /** Reais por mês por atendente acima de `atendentes`. */
+  precoAtendenteExtra: number
+  /**
+   * Respostas de IA em 30 dias corridos, somando transcrição de áudio (0128).
+   * Só vale para a chave da 4YU: quem usa chave própria paga a IA e não tem
+   * teto. Antes era 5 por real de mensalidade; virou número do plano porque o
+   * Essencial passou a ter IA e a conta por real deixava de dizer a verdade.
+   */
+  tetoIa: number
+  /** Envios de transmissão por mês. `null` = sem teto. */
+  tetoTransmissoes: number | null
 }
 
 /**
@@ -119,37 +141,47 @@ export const PLANOS: Plano[] = [
     conversas: 1000,
     numeros: 1,
     precoExcedente: 0.4,
-    precoAnual: 2970,
-    recursos: ['crm'],
-    resumo: 'Para quem atende sozinho e quer parar de repetir horário e preço.',
+    precoAnual: 2964,
+    recursos: ['crm', 'ia', 'transcricao', 'transmissoes'],
+    atendentes: 3,
+    precoAtendenteExtra: 69,
+    tetoIa: 1500,
+    tetoTransmissoes: 2000,
+    resumo: 'Para organizar o atendimento e parar de repetir horário e preço.',
     itens: [
       'Até 1.000 conversas por mês',
-      'Atendentes ilimitados',
-      '1 número de WhatsApp',
-      'Fluxos, Inbox e CRM completos',
-      'Etiquetas, respostas rápidas e horário de atendimento',
-      'Suporte por WhatsApp',
+      '3 atendentes inclusos',
+      '1 número de WhatsApp e chat do site',
+      'Robôs ilimitados, com modelos prontos do seu ramo',
+      'IA respondendo e transcrevendo áudio',
+      'CRM com funil, etiquetas e atividades',
+      'Transmissões: 2.000 envios por mês',
     ],
   },
   {
     id: 'operacao',
-    nome: 'Operação',
+    nome: 'Profissional',
     preco: 597,
     conversas: 3000,
-    numeros: 1,
+    numeros: 2,
     precoExcedente: 0.3,
-    precoAnual: 5970,
-    recursos: ['crm', 'ia', 'transcricao', 'transmissoes', 'integracoes', 'api'],
-    resumo: 'Para quem já tem uma equipe de atendimento e precisa de organização.',
+    precoAnual: 5964,
+    recursos: ['crm', 'ia', 'transcricao', 'transmissoes', 'integracoes', 'varios_numeros', 'api'],
+    atendentes: 10,
+    precoAtendenteExtra: 59,
+    tetoIa: 3000,
+    tetoTransmissoes: null,
+    resumo: 'Para vender pelo WhatsApp com a equipe inteira no mesmo lugar.',
     itens: [
       'Tudo do Essencial',
       'Até 3.000 conversas por mês',
-      'Atendentes ilimitados',
-      'Respostas com IA',
-      'Transcrição de áudio',
-      'Transmissões e modelos da Meta',
-      'Conexão com seus sistemas',
-      'API para desenvolvedores',
+      '10 atendentes inclusos',
+      '2 números de WhatsApp',
+      'IA que consulta catálogo, marca horário e aprende com a equipe',
+      'Sequências e transmissões sem limite',
+      'Origem de cada cliente por anúncio',
+      'Distribuição automática e análise de vendas',
+      'Integrações prontas e API',
     ],
   },
   {
@@ -159,20 +191,69 @@ export const PLANOS: Plano[] = [
     conversas: 8000,
     numeros: 5,
     precoExcedente: 0.2,
-    precoAnual: 11970,
+    precoAnual: 11964,
     recursos: ['crm', 'ia', 'transcricao', 'transmissoes', 'integracoes', 'varios_numeros', 'chave_propria', 'webhook', 'api'],
-    resumo: 'Para operação com mais de um número, volume alto e dado sensível.',
+    atendentes: 25,
+    precoAtendenteExtra: 49,
+    tetoIa: 6000,
+    tetoTransmissoes: null,
+    resumo: 'Para equipe grande, mais de um número e loja virtual.',
     itens: [
-      'Tudo da Operação',
+      'Tudo do Profissional',
       'Até 8.000 conversas por mês',
-      'Atendentes ilimitados',
-      'Múltiplos números e unidades',
-      'Sua própria chave de IA, e a conversa não vai para treino',
-      'Webhook de entrada e auditoria',
-      'Acompanhamento dedicado',
+      '25 atendentes inclusos',
+      'Até 5 números de WhatsApp',
+      'Loja conectada: frete, pedido e cupom no chat',
+      'Sua própria chave de IA, sem teto de respostas',
+      'Webhooks, equipes e permissões por pessoa',
+      'Suporte prioritário',
     ],
   },
 ]
+
+/**
+ * Acima disto a conta é Enterprise: a tela não oferece mais atendente extra e
+ * pede para falar com a 4YU. É onde preço por pessoa deixa de ser a conversa
+ * certa, e onde a carga no banco pede olhar caso a caso.
+ */
+export const LIMITE_DE_ATENDENTES_SEM_CONTRATO = 50
+
+/** O que a tabela diz do Enterprise. Sem preço fechado: é contrato. */
+export const ENTERPRISE = {
+  nome: 'Enterprise',
+  aPartirDe: 2500,
+  resumo: 'Para operação acima de 50 atendentes ou com integração sob medida.',
+  itens: [
+    'Conversas, números e atendentes sob medida',
+    'Integração com o seu sistema',
+    'Robôs montados pela 4YU',
+    'Gerente de conta',
+  ],
+} as const
+
+/**
+ * Quanto a equipe custa além do plano, em reais por mês.
+ *
+ * Zero até `atendentes`; acima, cada pessoa a mais custa o extra do plano.
+ * `enterprise` liga quando a equipe passa do que se vende sem contrato.
+ */
+export function custoDaEquipe(
+  plano: Pick<Plano, 'atendentes' | 'precoAtendenteExtra'>,
+  pessoas: number,
+): { extras: number; valor: number; enterprise: boolean } {
+  const extras = Math.max(0, pessoas - plano.atendentes)
+  return {
+    extras,
+    valor: Math.round(extras * plano.precoAtendenteExtra * 100) / 100,
+    enterprise: pessoas > LIMITE_DE_ATENDENTES_SEM_CONTRATO,
+  }
+}
+
+/** Duração do teste grátis, em dias, e o teto de conversa dele. */
+export const DIAS_DE_TESTE = 14
+export const CONVERSAS_NO_TESTE = 100
+/** O plano liberado durante o teste. */
+export const PLANO_DO_TESTE: IdDoPlano = 'operacao'
 
 /**
  * O plano em que uma conta nova nasce, e o default da coluna no banco.
@@ -227,23 +308,20 @@ export function acharPlano(id: IdDoPlano | string): Plano {
 }
 
 /**
- * Quantas respostas de IA a conta pode dar em 30 dias corridos.
+ * Quantas respostas de IA a conta pode dar em 30 dias corridos, somando
+ * transcrição de áudio.
  *
- * **Não é produto, é trava de custo.** Qualquer pessoa pode mandar mensagem
- * para o WhatsApp de um cliente, e cada resposta de IA é paga pela 4YU. Sem
- * teto por conta, um robô trocando de número a noite inteira é conta sem
- * fundo (OWASP LLM10, "consumo sem limite"). O número é folgado de propósito:
- * uso normal nunca encosta nele; encostar é sinal de abuso ou de fluxo errado,
- * e nos dois casos uma pessoa precisa olhar.
+ * **É produto e trava de custo ao mesmo tempo.** Cada resposta com a chave da
+ * 4YU é paga pela 4YU, e qualquer pessoa pode mandar mensagem para o WhatsApp
+ * de um cliente: sem teto, um robô trocando de número a noite inteira é conta
+ * sem fundo (OWASP LLM10). Até 05/out o teto era 5 por real de mensalidade e
+ * ninguém via; agora é número do plano (`tetoIa`), anunciado na tabela.
  *
- * Cinco respostas por real de mensalidade, com piso no Essencial (1.500). Vale
- * para plano criado no admin sem precisar de coluna nova.
+ * Quem usa chave própria não tem teto: quem chama passa `chavePropria`.
  */
-export const RESPOSTAS_DE_IA_POR_REAL = 5
-export const PISO_DE_RESPOSTAS_DE_IA = 1_500
-
-export function tetoDeIaDaConta(plano: Pick<Plano, 'preco'>): number {
-  return Math.max(PISO_DE_RESPOSTAS_DE_IA, Math.round(plano.preco * RESPOSTAS_DE_IA_POR_REAL))
+export function tetoDeIaDaConta(plano: Pick<Plano, 'tetoIa'>, chavePropria = false): number | null {
+  if (chavePropria) return null
+  return plano.tetoIa
 }
 
 /**

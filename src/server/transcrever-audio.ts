@@ -3,6 +3,7 @@ import { recusaDoPlano } from './recursos-do-plano'
 import { ehArquivoGuardado } from '@/core/midia-recebida'
 import { db } from './db'
 import { lerChave } from './repos/chave-de-ia'
+import { cotaDeIaDaConta, registrarTranscricao } from './repos/ia-chamadas'
 import { baixarArquivo } from './repos/midia-recebida'
 
 /**
@@ -161,6 +162,21 @@ export async function transcreverAudio(
   } catch (erro) {
     console.error('[transcricao] não deu para ler a chave do cliente:', erro)
   }
+  /*
+   * Com a nossa chave, a transcrição conta no teto de IA do plano (0128): é a
+   * mesma conta paga pela 4YU que a resposta do robô. Com a do cliente, não
+   * conta nem registra.
+   */
+  const naNossaChave = chave === null
+  if (naNossaChave) {
+    const cota = await cotaDeIaDaConta(clienteId)
+    if (cota.teto !== null && cota.usadas >= cota.teto) {
+      return {
+        ok: false,
+        erro: 'a conta usou as respostas de IA do plano nestes 30 dias. Para continuar, suba de plano ou use sua própria chave de IA',
+      }
+    }
+  }
   chave ??= process.env.GEMINI_API_KEY ?? null
   if (!chave) return { ok: false, erro: 'falta GEMINI_API_KEY no ambiente' }
 
@@ -189,6 +205,7 @@ export async function transcreverAudio(
   }
 
   if (texto.trim() === '') return { ok: false, erro: 'o modelo não devolveu nada' }
+  if (naNossaChave) await registrarTranscricao(clienteId, contatoId)
 
   /*
    * Guardar é o ponto da funcionalidade, e um erro ao guardar **não** invalida

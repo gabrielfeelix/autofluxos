@@ -64,7 +64,7 @@ export function TabelaDePessoas({
   abaixoDoTopo?: ReactNode
   remover?: (clienteId: string, usuarioId: string, destino: string | null) => Promise<{ ok: boolean; erro?: string }>
   /** Sem ela, a tabela não mostra o botão (quem pede não dá acesso). */
-  darAcesso?: (formData: FormData) => Promise<{ ok?: boolean; erro?: string; pessoa?: { id: string; nome: string; email: string; funcao: string } }>
+  darAcesso?: (formData: FormData) => Promise<{ ok?: boolean; erro?: string; custo?: string; pessoa?: { id: string; nome: string; email: string; funcao: string } }>
   clienteId: string
   pessoas: PessoaNaTabela[]
   /** As funções que quem pede pode atribuir, na ordem da hierarquia. */
@@ -358,9 +358,11 @@ function DarAcesso({
 }: {
   funcoes: { valor: string; rotulo: string; detalhe?: string }[]
   aoFechar: () => void
-  enviar: (dados: FormData) => Promise<{ ok?: boolean; erro?: string }>
+  enviar: (dados: FormData) => Promise<{ ok?: boolean; erro?: string; custo?: string }>
 }) {
   const [erro, setErro] = useState<string | null>(null)
+  /** O custo do atendente extra, quando a ação pediu o aceite. Mostrado, a próxima tentativa vai com ele. */
+  const [custo, setCusto] = useState<string | null>(null)
   const [senha, setSenha] = useState('')
   const [enviando, comecar] = useTransition()
   const padrao = funcoes.some((funcao) => funcao.valor === 'atendente') ? 'atendente' : (funcoes[funcoes.length - 1]?.valor ?? '')
@@ -377,11 +379,13 @@ function DarAcesso({
         onSubmit={(evento) => {
           evento.preventDefault()
           const dados = new FormData(evento.currentTarget)
+          if (custo) dados.set('aceitouCusto', '1')
           setErro(null)
           comecar(async () => {
             try {
               const r = await enviar(dados)
-              if (r.erro || r.ok === false) setErro(r.erro ?? 'não deu para adicionar o usuário')
+              if (r.custo) setCusto(r.custo)
+              else if (r.erro || r.ok === false) setErro(r.erro ?? 'não deu para adicionar o usuário')
               else aoFechar()
             } catch {
               setErro('sem conexão com o servidor')
@@ -426,6 +430,11 @@ function DarAcesso({
           <RotuloCampo>Função</RotuloCampo>
           <Dropdown nome="funcao" rotuloAcessivel="Função" valorInicial={padrao} opcoes={funcoes} />
         </div>
+        {custo && (
+          <p role="status" className="rounded-[10px] border border-amber-400/30 bg-amber-400/[0.08] px-3 py-2.5 text-[12px] leading-5 text-soft">
+            {custo}
+          </p>
+        )}
         {erro && (
           <p role="alert" className="rounded-[10px] border border-rose-400/25 bg-rose-400/[0.08] px-3 py-2.5 text-[12px] leading-5 text-perigo">
             {erro}
@@ -436,7 +445,7 @@ function DarAcesso({
             Cancelar
           </button>
           <button type="submit" disabled={enviando} className="botao-primario botao-md flex-[1.35]">
-            {enviando ? 'Adicionando…' : 'Adicionar usuário'}
+            {enviando ? 'Adicionando…' : custo ? 'Adicionar com o custo' : 'Adicionar usuário'}
           </button>
         </div>
       </form>

@@ -1,11 +1,13 @@
 import { notFound } from 'next/navigation'
 import { PlanoDaOrganizacao } from '@/components/admin/plano-da-organizacao'
+import { TesteGratis } from '@/components/admin/teste-gratis'
 import { TetoDaApi } from '@/components/admin/teto-da-api'
+import { PLANO_DO_TESTE } from '@/core/planos'
 import { TETO_DIARIO_PADRAO, tetoConfiguradoDaApi } from '@/server/api/templates'
 import { acharOrganizacao } from '@/server/repos/organizacoes'
 import { pedidosDePlano } from '@/server/repos/pedidos-de-plano'
 import { planosVigentes } from '@/server/repos/planos'
-import { contratoDaConta, usoDaOrganizacao } from '@/server/repos/plano'
+import { contratoDaConta, testeDaConta, usoDaOrganizacao } from '@/server/repos/plano'
 
 export const dynamic = 'force-dynamic'
 
@@ -15,7 +17,7 @@ export default async function Plano({ params }: { params: Promise<{ id: string }
   const organizacao = await acharOrganizacao(id)
   if (!organizacao) notFound()
   // O uso vem junto da página para o modal de troca abrir na hora.
-  const [planos, pedidos, uso, contrato, tetoDaApi] = await Promise.all([planosVigentes(), pedidosDePlano({ organizacaoId: id }).catch(() => []), usoDaOrganizacao(id), contratoDaConta(id), tetoConfiguradoDaApi(id)])
+  const [planos, pedidos, uso, contrato, tetoDaApi, testeAte] = await Promise.all([planosVigentes(), pedidosDePlano({ organizacaoId: id }).catch(() => []), usoDaOrganizacao(id), contratoDaConta(id), tetoConfiguradoDaApi(id), testeDaConta(id)])
 
   return (
     <div className="flex flex-col gap-6">
@@ -28,6 +30,11 @@ export default async function Plano({ params }: { params: Promise<{ id: string }
         planos={planos.filter((plano) => plano.ativo || plano.id === contrato.plano || plano.id === contrato.planoAgendado).map(({ id: planoId, nome, preco, conversas, numeros, precoExcedente, resumo, recursos }) => ({ id: planoId, nome, preco, conversas, numeros, precoExcedente, resumo, recursos }))}
         uso={uso}
         pedidos={pedidos.map(({ id: pedidoId, quando, quemPediu, de, para, situacao }) => ({ id: pedidoId, quando, quemPediu, de, para, situacao }))}
+      />
+      <TesteGratis
+        organizacaoId={id}
+        inicial={testeAte}
+        planoDoTeste={planos.find((plano) => plano.id === PLANO_DO_TESTE)?.nome ?? 'Profissional'}
       />
       <TetoDaApi organizacaoId={id} inicial={tetoDaApi} padrao={TETO_DIARIO_PADRAO} />
     </div>

@@ -18,6 +18,7 @@ vi.mock('../db', () => ({
         select: () => consulta,
         eq: (...args: unknown[]) => (filtros.push(['eq', ...args]), consulta),
         gte: (...args: unknown[]) => (filtros.push(['gte', ...args]), consulta),
+        in: (...args: unknown[]) => (filtros.push(['in', ...args]), consulta),
         maybeSingle: async () => respostas[tabela],
         then: (ok: (r: Resposta) => unknown) => Promise.resolve(respostas[tabela]).then(ok),
       }
@@ -26,10 +27,18 @@ vi.mock('../db', () => ({
   }),
 }))
 
+let chavePropria = false
+vi.mock('./chave-de-ia', () => ({ comoEsta: async () => ({ propria: chavePropria, fim: null }) }))
+vi.mock('./planos', async () => {
+  const { PLANOS } = await import('@/core/planos')
+  return { planoVigente: async (id: string) => PLANOS.find((plano) => plano.id === id) ?? PLANOS[0] }
+})
+
 const { cotaDeIaDoContato, cotaDeIaDaConta, LIMITE_PADRAO_POR_CONTATO } = await import('./ia-chamadas')
 
 beforeEach(() => {
   filtros.length = 0
+  chavePropria = false
   vi.spyOn(console, 'error').mockImplementation(() => {})
 })
 
@@ -65,20 +74,28 @@ describe('cotaDeIaDoContato', () => {
 })
 
 describe('cotaDeIaDaConta', () => {
-  it('teto pelo preço contratado, contando a conta inteira em 30 dias', async () => {
-    respostas.clients = { data: { plano: 'essencial', preco_contratado: 597 }, error: null }
+  it('teto do plano, somando transcrição, na conta inteira em 30 dias', async () => {
+    respostas.clients = { data: { plano: 'operacao' }, error: null }
     respostas.ia_chamadas = { count: 120, error: null }
 
-    expect(await cotaDeIaDaConta('c1')).toEqual({ teto: 2985, usadas: 120 })
+    expect(await cotaDeIaDaConta('c1')).toEqual({ teto: 3000, usadas: 120 })
     expect(filtros.some((f) => f[1] === 'contato_id')).toBe(false)
+    expect(filtros).toContainEqual(['in', 'ferramenta', ['resposta', 'transcricao']])
     const desde = filtros.find((f) => f[0] === 'gte')?.[2] as string
     expect(Date.now() - Date.parse(desde)).toBeGreaterThanOrEqual(30 * 24 * 60 * 60 * 1_000 - 1_000)
   })
 
-  it('sem preço contratado, usa o do plano, com piso', async () => {
-    respostas.clients = { data: { plano: 'essencial', preco_contratado: null }, error: null }
+  it('no Essencial, o teto do Essencial', async () => {
+    respostas.clients = { data: { plano: 'essencial' }, error: null }
     respostas.ia_chamadas = { count: 0, error: null }
     expect(await cotaDeIaDaConta('c1')).toEqual({ teto: 1500, usadas: 0 })
+  })
+
+  it('com chave própria não há teto: a IA é paga pelo cliente', async () => {
+    chavePropria = true
+    respostas.clients = { data: { plano: 'essencial' }, error: null }
+    respostas.ia_chamadas = { count: 9999, error: null }
+    expect(await cotaDeIaDaConta('c1')).toEqual({ teto: null, usadas: 0 })
   })
 
   it('erro ao ler é sem teto', async () => {
