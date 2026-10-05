@@ -5,10 +5,12 @@ import { Trilha } from '@/components/design/trilha'
 import { FimDaTrilha } from '@/components/design/fim-da-trilha'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { useEffect, useRef, useState, useTransition, type ReactNode, type RefObject } from 'react'
+import { useEffect, useState, useTransition, type ReactNode } from 'react'
 import { Avatar } from '@/components/inbox/avatar'
 import { Dropdown } from '@/components/design/dropdown'
 import { Modal } from '@/components/design/modal'
+import { VazioDoCartao } from '@/components/lead-crm/vazio-do-cartao'
+import { IlustracaoAnotacoes } from '@/components/design/ilustracoes'
 import { IconeDoQuadro, PopoverDoQuadro } from '@/components/quadros/popover-do-quadro'
 import { AcaoDaFicha } from '@/components/lead-crm/acoes-da-ficha'
 import { CampoDeDinheiro } from '@/components/design/campo-de-dinheiro'
@@ -173,7 +175,9 @@ export function PaginaDoNegocio(props: Props) {
   const [novaAtividade, setNovaAtividade] = useState(false)
   const [excluindo, setExcluindo] = useState(false)
   const [, comecar] = useTransition()
-  const caixaDeNota = useRef<HTMLTextAreaElement>(null)
+  /** O modal "Anotar"; `rascunho` volta para ele se a anotação não gravar. */
+  const [anotando, setAnotando] = useState(false)
+  const [rascunho, setRascunho] = useState('')
 
   const aberto = !negocio.situacao || negocio.situacao === 'aberta'
   const titulo = tituloDoNegocio(negocio)
@@ -182,6 +186,8 @@ export function PaginaDoNegocio(props: Props) {
   const naEtapa = diasDesde(negocio.entrouNaColunaEm, agora)
   const abertoHa = negocio.criadoEm ? diasDesde(negocio.criadoEm, agora) : null
   const ehVenda = fechando?.situacao === 'ganha' && quadro.finalidade === 'comercial'
+  const anotacoes = historico.filter((item) => item.tipo === 'nota')
+  const semNotas = historico.filter((item) => item.tipo !== 'nota')
 
   function registrar(item: Omit<ItemDoHistorico, 'id' | 'quando' | 'autor'>): string {
     const id = `local:${crypto.randomUUID()}`
@@ -386,12 +392,7 @@ export function PaginaDoNegocio(props: Props) {
           <AcaoDaFicha
             rotulo="Anotar"
             titulo="Para a equipe: anotar"
-            aoClicar={() => {
-              setAba('geral')
-              // O próximo quadro já tem a caixa na tela; focar antes dele
-              // pintar acharia o elemento da aba anterior.
-              requestAnimationFrame(() => caixaDeNota.current?.focus())
-            }}
+            aoClicar={() => setAnotando(true)}
             icone={
               <>
                 <path d="M4.5 19.5h15" />
@@ -603,21 +604,53 @@ export function PaginaDoNegocio(props: Props) {
               )}
             </Cartao>
 
-            <Cartao titulo="Anotação">
-              <NovaAnotacao caixa={caixaDeNota} aoAnotar={anotar} />
+            {/*
+              As anotações moram num cartão delas, da mais nova para a mais
+              antiga, e não no histórico recente: anotação é o que a equipe
+              sabe do negócio, o histórico é o que aconteceu com ele. Escrever
+              é pelo "Anotar" do cabeçalho, num modal.
+            */}
+            <Cartao
+              titulo="Anotações"
+              acao={
+                anotacoes.length > 0 && (
+                  <button type="button" className="text-[12px] font-semibold text-primary hover:underline" onClick={() => setAnotando(true)}>
+                    + Anotar
+                  </button>
+                )
+              }
+            >
+              {anotacoes.length === 0 ? (
+                <VazioDoCartao className="" ilustracao={<IlustracaoAnotacoes />}>
+                  Nenhuma anotação neste negócio ainda. Use o Anotar no alto para guardar o que a
+                  equipe precisa saber; fica com a data e o nome de quem escreveu.
+                </VazioDoCartao>
+              ) : (
+                <ol className="flex flex-col gap-2" aria-label="Anotações do negócio">
+                  {anotacoes.map((nota) => (
+                    <li key={nota.id} className={`crm-nota rounded-[10px] border px-2.5 py-2 ${nota.pendente ? 'opacity-60' : ''}`}>
+                      <p className="text-[12.5px] leading-5 whitespace-pre-line text-soft">{nota.frase}</p>
+                      <p className="mt-1 text-[11px] text-dim">
+                        {nota.autor ?? 'Alguém da equipe'} · {dataEHora(nota.quando)}
+                        {nota.pendente && <span className="ml-1">· guardando…</span>}
+                      </p>
+                    </li>
+                  ))}
+                </ol>
+              )}
             </Cartao>
 
             <Cartao
               titulo="Histórico recente"
               acao={
-                historico.length > 5 && (
+                semNotas.length > 5 && (
                   <button type="button" className="text-[12px] font-semibold text-primary hover:underline" onClick={() => setAba('historico')}>
                     Ver tudo
                   </button>
                 )
               }
             >
-              <LinhaDoTempo itens={historico.slice(0, 5)} agora={agora} />
+              <LinhaDoTempo itens={semNotas.slice(0, 5)} agora={agora} />
             </Cartao>
           </div>
 
@@ -820,6 +853,28 @@ export function PaginaDoNegocio(props: Props) {
         </div>
       )}
 
+      <Modal
+        aberto={anotando}
+        aoFechar={() => setAnotando(false)}
+        titulo="Anotar no negócio"
+        descricao="Fica nas Anotações deste negócio e na ficha da pessoa, com a data e o seu nome. Nada é enviado ao cliente."
+      >
+        {anotando && (
+          <NovaAnotacao
+            inicial={rascunho}
+            aoCancelar={() => setAnotando(false)}
+            aoAnotar={(texto) => {
+              setRascunho('')
+              setAnotando(false)
+              anotar(texto, (devolvido) => {
+                setRascunho(devolvido)
+                setAnotando(true)
+              })
+            }}
+          />
+        )}
+      </Modal>
+
       <RegistrarVenda
         key={`venda:${fechando ? 'aberto' : 'fechado'}`}
         clienteId={clienteId}
@@ -1003,7 +1058,7 @@ function Degraus({
 
 function LinhaDoTempo({ itens, agora }: { itens: ItemDoHistorico[]; agora: number }) {
   if (itens.length === 0) {
-    return <p className="text-[12px] leading-5 text-dim">O que acontecer com este negócio aparece aqui: etapas, anotações, atividades.</p>
+    return <p className="text-[12px] leading-5 text-dim">O que acontecer com este negócio aparece aqui: etapas, atividades, mudanças.</p>
   }
   return (
     <ol className="flex flex-col">
@@ -1068,19 +1123,19 @@ function Historico({
 }
 
 function NovaAnotacao({
-  caixa,
+  inicial,
   aoAnotar,
+  aoCancelar,
 }: {
-  caixa: RefObject<HTMLTextAreaElement | null>
-  aoAnotar: (texto: string, aoFalhar: (texto: string) => void) => void
+  inicial: string
+  aoAnotar: (texto: string) => void
+  aoCancelar: () => void
 }) {
-  const [texto, setTexto] = useState('')
+  const [texto, setTexto] = useState(inicial)
   const limpo = texto.trim()
 
   function enviar() {
-    if (!limpo) return
-    setTexto('')
-    aoAnotar(limpo, (devolvido) => setTexto(devolvido))
+    if (limpo) aoAnotar(limpo)
   }
 
   return (
@@ -1089,10 +1144,10 @@ function NovaAnotacao({
         e.preventDefault()
         enviar()
       }}
-      className="flex flex-col gap-2"
+      className="flex flex-col gap-3"
     >
       <textarea
-        ref={caixa}
+        autoFocus
         value={texto}
         onChange={(e) => setTexto(e.currentTarget.value)}
         onKeyDown={(e) => {
@@ -1102,17 +1157,19 @@ function NovaAnotacao({
           }
         }}
         maxLength={LIMITE_DA_NOTA}
-        rows={2}
+        rows={4}
         aria-label="Nova anotação sobre o negócio"
         placeholder="Exemplo: pediu desconto à vista, retornar na sexta."
-        className="app-field min-h-[64px] resize-y px-3 py-2 text-[13px] leading-5"
+        className="app-field min-h-[104px] resize-y px-3 py-2 text-[13px] leading-5"
       />
-      <div className="flex items-center justify-between gap-2">
-        <span className="text-[11px] text-dim">Fica no histórico do negócio e na ficha da pessoa.</span>
-        <button type="submit" disabled={!limpo} className="botao-primario botao-sm">
-          Anotar
+      <span className="flex justify-end gap-2">
+        <button type="button" onClick={aoCancelar} className="botao-secundario botao-md">
+          Cancelar
         </button>
-      </div>
+        <button type="submit" disabled={!limpo} className="botao-primario botao-md">
+          Salvar anotação
+        </button>
+      </span>
     </form>
   )
 }
