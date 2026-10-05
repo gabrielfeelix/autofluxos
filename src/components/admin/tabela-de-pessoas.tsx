@@ -56,7 +56,7 @@ export function TabelaDePessoas({
 }: {
   /**
    * O topo da tela, quando a tabela é a tela (Configurações › Pessoas). Com
-   * ele, "+ Dar acesso" sobe para a linha do título, como em toda tela da
+   * ele, "+ Adicionar usuário" sobe para a linha do título, como em toda tela da
    * conta, e a contagem vira a pílula ao lado do título.
    */
   topo?: TopoDaTela
@@ -152,7 +152,7 @@ export function TabelaDePessoas({
 
   const botaoDeDarAcesso = darAcesso && (
     <button type="button" onClick={() => setDando(true)} className="botao-primario botao-md">
-      + Dar acesso
+      + Adicionar usuário
     </button>
   )
   const cabecalho = topo ? (
@@ -178,7 +178,7 @@ export function TabelaDePessoas({
       </p>
       {darAcesso && (
         <button type="button" onClick={() => setDando(true)} className="botao-primario botao-md">
-          + Dar acesso
+          + Adicionar usuário
         </button>
       )}
     </div>
@@ -368,7 +368,7 @@ function DarAcesso({
     <Modal
       aberto
       aoFechar={aoFechar}
-      titulo="Dar acesso"
+      titulo="Adicionar usuário"
       descricao="E-mail que já tem login só ganha acesso a esta organização. E-mail novo cria o login com a senha provisória abaixo: combine com a pessoa e peça para trocar no primeiro acesso."
       largura={460}
     >
@@ -381,7 +381,7 @@ function DarAcesso({
           comecar(async () => {
             try {
               const r = await enviar(dados)
-              if (r.erro || r.ok === false) setErro(r.erro ?? 'não deu para dar acesso')
+              if (r.erro || r.ok === false) setErro(r.erro ?? 'não deu para adicionar o usuário')
               else aoFechar()
             } catch {
               setErro('sem conexão com o servidor')
@@ -436,7 +436,7 @@ function DarAcesso({
             Cancelar
           </button>
           <button type="submit" disabled={enviando} className="botao-primario botao-md flex-[1.35]">
-            {enviando ? 'Dando acesso…' : 'Dar acesso'}
+            {enviando ? 'Adicionando…' : 'Adicionar usuário'}
           </button>
         </div>
       </form>

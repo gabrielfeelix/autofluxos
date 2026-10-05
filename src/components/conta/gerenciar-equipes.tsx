@@ -21,7 +21,7 @@ type Membro = { nome: string; semAlcance: boolean }
  * ela mora **na mesma tela** das pessoas, numa aba ao lado, e não numa página
  * própria: quem descobre que precisa de equipe é quem está editando permissão.
  *
- * Criar é o botão do topo, como "+ Dar acesso" na outra aba, e não um campo
+ * Criar é o botão do topo, como "+ Adicionar usuário" na outra aba, e não um campo
  * solto no meio do cartão.
  *
  * Arquivar em vez de apagar: há oportunidade e histórico apontando para ela, e
