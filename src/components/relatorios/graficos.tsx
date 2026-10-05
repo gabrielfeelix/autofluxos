@@ -2,6 +2,7 @@
 
 import { iniciais as iniciaisDoNome } from '@/core/iniciais'
 import { useId, useState, type ReactNode } from 'react'
+import { createPortal } from 'react-dom'
 import { comoDinheiro } from '@/core/crm'
 import { azul, dinheiroCurto, type Fatia } from './formatos'
 import { IlustracaoDeRelatorio, type DesenhoDeRelatorio } from '@/components/design/ilustracoes'
@@ -577,6 +578,13 @@ const DIAS_LONGOS = ['segunda', 'terça', 'quarta', 'quinta', 'sexta', 'sábado'
  */
 export function MapaDeHorarios({ celulas, unidade }: { celulas: number[][]; unidade: [string, string] }) {
   const [foco, setFoco] = useState<[number, number] | null>(null)
+  /*
+   * O balão em cima do quadradinho, como o mapa de contribuições do GitHub:
+   * o número aparece onde o olho está, e não só na legenda do rodapé. Vai
+   * para o `body`, porque a grade rola de lado e o `overflow` cortaria o
+   * balão da primeira linha.
+   */
+  const [balao, setBalao] = useState<{ x: number; y: number } | null>(null)
   const maximo = Math.max(...celulas.flat(), 0)
   const total = celulas.flat().reduce((s, n) => s + n, 0)
   let pico: [number, number] = [0, 0]
@@ -607,7 +615,13 @@ export function MapaDeHorarios({ celulas, unidade }: { celulas: number[][]; unid
         </p>
       </div>
       <div className="overflow-x-auto pb-1">
-        <div className="min-w-[520px]" onMouseLeave={() => setFoco(null)}>
+        <div
+          className="min-w-[520px]"
+          onMouseLeave={() => {
+            setFoco(null)
+            setBalao(null)
+          }}
+        >
           {celulas.map((linha, d) => (
             <div key={d} className="flex items-center gap-2">
               <span className="w-7 shrink-0 text-[10.5px] font-semibold text-dim">{DIAS[d]}</span>
@@ -615,7 +629,11 @@ export function MapaDeHorarios({ celulas, unidade }: { celulas: number[][]; unid
                 {linha.map((n, h) => (
                   <div
                     key={h}
-                    onMouseEnter={() => setFoco([d, h])}
+                    onMouseEnter={(evento) => {
+                      setFoco([d, h])
+                      const caixa = evento.currentTarget.getBoundingClientRect()
+                      setBalao({ x: caixa.left + caixa.width / 2, y: caixa.top })
+                    }}
                     className={`aspect-square max-h-6 w-full rounded-[4px] transition-shadow ${foco && fd === d && fh === h ? 'ring-2 ring-ink/70' : ''}`}
                     style={{
                       background: n === 0 ? 'var(--surface)' : azul(18 + (n / maximo) * 82),
@@ -637,6 +655,20 @@ export function MapaDeHorarios({ celulas, unidade }: { celulas: number[][]; unid
           </div>
         </div>
       </div>
+      {foco &&
+        balao &&
+        createPortal(
+          <span
+            aria-hidden
+            style={{ left: balao.x, top: balao.y - 8 }}
+            className="pointer-events-none fixed z-[70] -translate-x-1/2 -translate-y-full rounded-[8px] bg-ink px-2 py-1 text-[11px] font-semibold whitespace-nowrap text-panel shadow-menu"
+          >
+            <span className="tabular-nums">{nFoco}</span> {nFoco === 1 ? unidade[0] : unidade[1]} ·{' '}
+            {DIAS_LONGOS[fd]}, {fh}h às {fh + 1}h
+            <span className="absolute top-[calc(100%-3px)] left-1/2 size-1.5 -translate-x-1/2 rotate-45 bg-ink" />
+          </span>,
+          document.body,
+        )}
       <div className="mt-auto flex flex-wrap items-center justify-between gap-3 pt-3 text-[11.5px]">
         <p className="text-soft" aria-live="polite">
           <span className="text-dim">
