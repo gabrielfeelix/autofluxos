@@ -199,12 +199,6 @@ export default async function Pagina({ params }: { params: Promise<{ clienteId: 
               </Suspense>
             )}
 
-            {coordena && (
-              <Suspense fallback={null}>
-                <EquipeAgora clienteId={cliente.id} donos={donos} />
-              </Suspense>
-            )}
-
             {/* A explicação é para quem está chegando; depois da estreia ela
                 ocupava o melhor lugar da tela repetindo o que a pessoa já sabe. */}
             {faltaPasso && <ComoFunciona />}
@@ -216,6 +210,14 @@ export default async function Pagina({ params }: { params: Promise<{ clienteId: 
             {atende && (
               <Suspense fallback={<div className="app-card h-[188px] animate-pulse" />}>
                 <Hoje clienteId={cliente.id} donos={donos} contaInteira={alcance.tipo === 'tudo'} />
+              </Suspense>
+            )}
+
+            {/* Embaixo do dia, e não na coluna larga: é um número por pessoa,
+                cabe em 336px e se lê junto com "Hoje". */}
+            {coordena && (
+              <Suspense fallback={null}>
+                <EquipeAgora clienteId={cliente.id} donos={donos} />
               </Suspense>
             )}
 
@@ -730,7 +732,7 @@ async function ClientesSumindo({ clienteId }: { clienteId: string }) {
 }
 
 // ---------------------------------------------------------------------------
-// Negócios parados e a fila da equipe, na coluna do meio
+// Negócios parados (coluna larga) e a fila da equipe (coluna do dia)
 // ---------------------------------------------------------------------------
 
 /**
@@ -738,58 +740,117 @@ async function ClientesSumindo({ clienteId }: { clienteId: string }) {
  * de novo); o cartão parado não grita, só esfria. Some quando não há nenhum.
  */
 async function NegociosParados({ clienteId, donos }: { clienteId: string; donos: Donos }) {
-  const { itens, total } = await negociosParados(clienteId, donos)
+  const { itens, total } = await negociosParados(clienteId, donos, 6)
   if (itens.length === 0) return null
   const restantes = total - itens.length
 
   return (
     <section className="app-card overflow-hidden" aria-labelledby="titulo-parados">
-      <header className="flex items-center gap-3 px-5 py-3.5">
-        <h2 id="titulo-parados" className="text-[15px] font-bold tracking-[-0.01em]">
-          Negócios parados
-        </h2>
-        <span className="rounded-full bg-amber-300/15 px-2 py-0.5 text-[11px] font-bold text-aviso">{total}</span>
-        <span className="hidden text-[11.5px] text-dim sm:inline">
-          há mais de {DIAS_PARADO} dias na mesma etapa
+      <header className="flex items-center gap-3 px-5 pt-4 pb-3">
+        <span aria-hidden className="grid size-8 shrink-0 place-items-center rounded-[10px] bg-primary/10 text-primary">
+          <IconeDeGelo className="size-[17px]" />
+        </span>
+        <span className="min-w-0">
+          <h2 id="titulo-parados" className="flex items-center gap-2 text-[15px] font-bold tracking-[-0.01em]">
+            Negócios parados
+            <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[11px] font-bold text-primary tabular-nums">{total}</span>
+          </h2>
+          <span className="block text-[11.5px] text-dim">Mais de {DIAS_PARADO} dias na mesma etapa. Quanto mais tempo, mais frio.</span>
         </span>
         <span className="flex-1" />
         <Link
           href={`/clientes/${clienteId}/quadros`}
-          className="text-[12px] font-semibold text-primary transition hover:opacity-80 active:opacity-60"
+          className="shrink-0 text-[12px] font-semibold text-primary transition hover:opacity-80 active:opacity-60"
         >
           Abrir o funil
         </Link>
       </header>
-      <ul>
-        {itens.map((item) => (
-          <li key={item.cartaoId} className="border-t border-line-soft">
-            <Link
-              href={`/clientes/${clienteId}/negocios/${item.cartaoId}`}
-              className="flex flex-wrap items-center gap-x-3.5 gap-y-1 px-5 py-2.5 transition hover:bg-surface active:bg-surface-strong"
-            >
-              <Avatar nome={item.nome} tamanho={32} />
-              <span className="min-w-[120px] flex-1">
-                <span className="block truncate text-[13.5px] font-semibold">{item.nome}</span>
-                {item.titulo && <span className="block truncate text-[11.5px] text-dim">{item.titulo}</span>}
-              </span>
-              {item.etapa && (
-                <span className="shrink-0 truncate rounded-md bg-surface px-2 py-0.5 text-[11.5px] font-medium text-soft">
-                  {item.etapa}
+      <ul className="grid grid-cols-1 gap-3 px-5 pb-5 sm:grid-cols-2 2xl:grid-cols-3">
+        {itens.map((item) => {
+          const { dias } = item
+          const frio = nivelDeFrio(dias)
+          return (
+            <li key={item.cartaoId}>
+              <Link
+                href={`/clientes/${clienteId}/negocios/${item.cartaoId}`}
+                className="group flex h-full flex-col gap-3 rounded-[14px] border border-line p-3.5 transition hover:-translate-y-px hover:border-primary/40 hover:shadow-[0_10px_28px_rgba(19,25,34,0.08)] active:translate-y-0"
+                style={{ background: `linear-gradient(160deg, color-mix(in oklab, ${frio.cor} ${frio.tinta}%, var(--panel)) 0%, var(--panel) 62%)` }}
+              >
+                <span className="flex items-start justify-between gap-2">
+                  <span className="flex items-baseline gap-1.5">
+                    <span className="text-[26px] leading-none font-bold tracking-[-0.03em] tabular-nums" style={{ color: frio.cor }}>
+                      {dias}
+                    </span>
+                    <span className="text-[11.5px] text-dim">dias sem andar</span>
+                  </span>
+                  <span
+                    className="flex shrink-0 items-center gap-1 rounded-full px-2 py-0.5 text-[10.5px] font-bold"
+                    style={{ color: frio.cor, background: `color-mix(in oklab, ${frio.cor} 12%, transparent)` }}
+                  >
+                    <IconeDeGelo className="size-3" />
+                    {frio.rotulo}
+                  </span>
                 </span>
-              )}
-              <span className="w-[84px] shrink-0 text-right text-[12px] text-dim">{haQuantoTempo(item.desde)}</span>
-            </Link>
-          </li>
-        ))}
+                {/* O termômetro: três gomos, um por faixa de frio. */}
+                <span aria-hidden className="grid grid-cols-3 gap-1">
+                  {[1, 2, 3].map((g) => (
+                    <span
+                      key={g}
+                      className="h-1 rounded-full"
+                      style={{ background: g <= frio.nivel ? frio.cor : 'var(--surface-strong)' }}
+                    />
+                  ))}
+                </span>
+                <span className="flex min-w-0 items-center gap-2.5">
+                  <Avatar nome={item.nome} tamanho={30} />
+                  <span className="min-w-0 flex-1">
+                    <span className="block truncate text-[13.5px] font-semibold group-hover:text-primary">{item.nome}</span>
+                    {item.titulo && <span className="block truncate text-[11.5px] text-dim">{item.titulo}</span>}
+                  </span>
+                </span>
+                <span className="mt-auto flex items-center justify-between gap-2 border-t border-line-soft pt-2.5 text-[11.5px]">
+                  <span className="min-w-0 truncate text-muted">
+                    {item.funil && <span className="text-dim">{item.funil} › </span>}
+                    <span className="font-medium text-soft">{item.etapa ?? 'sem etapa'}</span>
+                  </span>
+                  {item.valor !== null && (
+                    <span className="shrink-0 font-bold tabular-nums">{comoDinheiro(item.valor)}</span>
+                  )}
+                </span>
+              </Link>
+            </li>
+          )
+        })}
       </ul>
       {restantes > 0 && (
         <p className="border-t border-line-soft px-5 py-2.5 text-[12px]">
           <Link href={`/clientes/${clienteId}/quadros`} className="font-semibold text-primary transition hover:opacity-80">
-            {restantes === 1 ? 'ver mais 1 parado' : `ver os outros ${restantes} parados`}
+            {restantes === 1 ? 'ver mais 1 parado no funil' : `ver os outros ${restantes} parados no funil`}
           </Link>
         </p>
       )}
     </section>
+  )
+}
+
+/**
+ * O frio do negócio pelo tempo parado. Três faixas, porque é o que o olho
+ * separa de relance: o que ainda dá para esquentar com uma mensagem, o que
+ * precisa de ligação, e o que provavelmente já foi para outro lugar.
+ */
+function nivelDeFrio(dias: number): { nivel: 1 | 2 | 3; rotulo: string; cor: string; tinta: number } {
+  if (dias >= 30) return { nivel: 3, rotulo: 'Congelado', cor: '#4f46e5', tinta: 16 }
+  if (dias >= 14) return { nivel: 2, rotulo: 'Frio', cor: '#0284c7', tinta: 13 }
+  return { nivel: 1, rotulo: 'Esfriando', cor: '#0d9488', tinta: 11 }
+}
+
+/** Um floco de neve em traço, na família dos ícones da barra. */
+function IconeDeGelo({ className }: { className?: string }) {
+  return (
+    <svg aria-hidden viewBox="0 0 24 24" className={className} fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M12 3v18M4.2 7.5l15.6 9M4.2 16.5l15.6-9" />
+      <path d="m9.5 4.5 2.5 2 2.5-2M9.5 19.5l2.5-2 2.5 2M4.6 10.6l3.1-.5-1.1-3M19.4 13.4l-3.1.5 1.1 3M6.6 17.1l1.1-3-3.1-.5M17.4 6.9l-1.1 3 3.1.5" />
+    </svg>
   )
 }
 
@@ -810,20 +871,17 @@ async function EquipeAgora({ clienteId, donos }: { clienteId: string; donos: Don
   if (fila.semDono === 0 && linhas.every((l) => l.esperando === 0)) return null
 
   return (
-    <section className="app-card overflow-hidden" aria-labelledby="titulo-equipe">
-      <header className="flex items-center gap-3 px-5 py-3.5">
-        <h2 id="titulo-equipe" className="text-[15px] font-bold tracking-[-0.01em]">
-          Fila da equipe agora
-        </h2>
-        <span className="flex-1" />
+    <section className="app-card px-5 py-4" aria-labelledby="titulo-equipe">
+      <h2 id="titulo-equipe" className="flex items-baseline justify-between gap-2">
+        <span className="text-[12.5px] font-bold text-muted">Fila da equipe agora</span>
         <Link
           href={`/clientes/${clienteId}/inbox`}
-          className="text-[12px] font-semibold text-primary transition hover:opacity-80 active:opacity-60"
+          className="text-[11px] font-semibold text-primary transition hover:opacity-80 active:opacity-60"
         >
-          Distribuir no Inbox
+          Distribuir →
         </Link>
-      </header>
-      <ul className="border-t border-line-soft py-2">
+      </h2>
+      <ul className="mt-3 flex flex-col gap-2.5">
         {fila.semDono > 0 && (
           <LinhaDaEquipe nome="Sem responsável" esperando={fila.semDono} maior={maior} alerta />
         )}
@@ -841,6 +899,7 @@ async function EquipeAgora({ clienteId, donos }: { clienteId: string; donos: Don
   )
 }
 
+/** Uma pessoa: rosto, nome e a barra da fila embaixo do nome, que cabe em 336px. */
 function LinhaDaEquipe({
   nome,
   esperando,
@@ -855,7 +914,7 @@ function LinhaDaEquipe({
   disponivel?: boolean
 }) {
   return (
-    <li className="flex items-center gap-3 px-5 py-1.5">
+    <li className="flex items-center gap-2.5">
       {alerta ? (
         <span aria-hidden className="grid size-7 shrink-0 place-items-center rounded-full bg-amber-300/20 text-[12px] font-bold text-aviso">
           ?
@@ -869,16 +928,18 @@ function LinhaDaEquipe({
           />
         </span>
       )}
-      <span className={`w-[132px] shrink-0 truncate text-[13px] ${alerta ? 'font-semibold text-aviso' : 'font-medium'}`}>
-        {nome}
+      <span className="min-w-0 flex-1">
+        <span className="flex items-baseline justify-between gap-2">
+          <span className={`truncate text-[12.5px] ${alerta ? 'font-semibold text-aviso' : 'font-medium text-soft'}`}>{nome}</span>
+          <span className="shrink-0 text-[13px] font-bold tabular-nums">{esperando}</span>
+        </span>
+        <span className="mt-1 block h-1 overflow-hidden rounded-full bg-surface">
+          <span
+            className={`block h-full rounded-full ${alerta ? 'bg-amber-300' : 'bg-primary/70'}`}
+            style={{ width: `${(esperando / maior) * 100}%` }}
+          />
+        </span>
       </span>
-      <span className="h-1.5 min-w-0 flex-1 overflow-hidden rounded-full bg-surface">
-        <span
-          className={`block h-full rounded-full ${alerta ? 'bg-amber-300' : 'bg-primary/70'}`}
-          style={{ width: `${(esperando / maior) * 100}%` }}
-        />
-      </span>
-      <span className="w-8 shrink-0 text-right text-[12.5px] font-semibold tabular-nums">{esperando}</span>
     </li>
   )
 }

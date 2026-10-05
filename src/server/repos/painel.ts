@@ -232,7 +232,13 @@ export type NegocioParado = {
   nome: string
   titulo: string | null
   etapa: string | null
+  /** O nome do funil, para "Vendas › Proposta" quando a conta tem mais de um. */
+  funil: string | null
+  valor: number | null
+  temperatura: string | null
   desde: string
+  /** Dias inteiros na etapa, contados aqui: relógio no render muda a cada pintura. */
+  dias: number
 }
 
 /** Uma semana na mesma etapa: menos que isso é ritmo normal de venda. */
@@ -258,7 +264,7 @@ export async function negociosParados(
     base(
       db()
         .from('quadro_cartoes')
-        .select('id, titulo, entrou_na_coluna_em, contacts (nome_real, nome, wa_id), quadro_colunas (nome)')
+        .select('id, titulo, valor, temperatura, entrou_na_coluna_em, contacts (nome_real, nome, wa_id), quadro_colunas (nome), quadros (nome)')
         .eq('client_id', clienteId)
         .eq('situacao', 'aberta')
         .lt('entrou_na_coluna_em', corte),
@@ -282,9 +288,12 @@ export async function negociosParados(
   type Linha = {
     id: string
     titulo: string | null
+    valor: number | string | null
+    temperatura: string | null
     entrou_na_coluna_em: string
     contacts: { nome_real: string | null; nome: string | null; wa_id: string | null } | null
     quadro_colunas: { nome: string } | null
+    quadros: { nome: string } | null
   }
 
   return {
@@ -297,7 +306,11 @@ export async function negociosParados(
       }),
       titulo: linha.titulo,
       etapa: linha.quadro_colunas?.nome ?? null,
+      funil: linha.quadros?.nome ?? null,
+      valor: linha.valor === null || linha.valor === undefined ? null : Number(linha.valor),
+      temperatura: linha.temperatura,
       desde: linha.entrou_na_coluna_em,
+      dias: Math.max(DIAS_PARADO, Math.floor((agora.getTime() - new Date(linha.entrou_na_coluna_em).getTime()) / 86_400_000)),
     })),
     total: contagem.count ?? 0,
   }
