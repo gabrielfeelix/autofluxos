@@ -1,5 +1,6 @@
 'use server'
 
+import { cadastrarSemTrocarDeSessao } from './cadastro-por-outra-pessoa'
 import { revalidatePath } from 'next/cache'
 import { headers } from 'next/headers'
 import { alertar } from './alertar'
@@ -369,9 +370,7 @@ export async function acaoCriarPrimeiroAdministrador(
    */
 
   try {
-    const criado = await autenticacao().api.signUpEmail({
-      body: { name: nome, email, password: senha },
-    })
+    const criado = await cadastrarSemTrocarDeSessao({ nome, email, senha })
 
     /**
      * O papel de plataforma entra por SQL, e é o único lugar do código que faz

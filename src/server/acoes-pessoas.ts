@@ -1,5 +1,6 @@
 'use server'
 
+import { cadastrarSemTrocarDeSessao } from './cadastro-por-outra-pessoa'
 import { conferirTrocaDeFuncao, ehFuncao, PAPEL_DA_FUNCAO, podeAtribuirFuncao, podeGerenciarPessoas } from '@/core/funcoes'
 import { autenticacao } from './auth'
 import { atorNaOrganizacao, definirFuncaoDoMembro, exigirHierarquia } from './pessoas'
@@ -70,7 +71,7 @@ export async function acaoDarAcessoNaOrganizacao(
     if (nome === '') return { erro: 'escreva o nome de quem vai entrar' }
     if (senha.length < 10) return { erro: 'a senha precisa de pelo menos 10 caracteres' }
     try {
-      const criado = await autenticacao().api.signUpEmail({ body: { name: nome, email, password: senha } })
+      const criado = await cadastrarSemTrocarDeSessao({ nome, email, senha })
       usuarioId = criado.user.id
     } catch (erro) {
       return { erro: erro instanceof Error ? erro.message : 'não deu para cadastrar' }
