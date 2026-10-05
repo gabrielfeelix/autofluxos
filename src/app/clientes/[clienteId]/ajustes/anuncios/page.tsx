@@ -21,7 +21,8 @@ import { listarPaginasDoToken } from "@/channels/marketing-api";
 import { ultimaChegadaDeAnuncio } from "@/server/repos/ultimos-eventos";
 import { CamadasDaConexao } from "@/components/conexoes/camadas";
 import { estadoDaConexao } from "@/core/conexoes";
-import { IlustracaoAnuncios } from "@/components/design/ilustracoes";
+import { CartaoDeConexao, GRADE_DE_CONEXOES } from "@/components/conexoes/cartao";
+import { Pilula } from "@/components/design/pilula";
 
 export const dynamic = "force-dynamic";
 
@@ -128,34 +129,20 @@ export default async function Pagina({
           que houve lead, e é o token que busca o dado. Ligar a Página antes
           seria dizer de onde vêm leads que ninguém consegue ler.
         */}
-        <div className="app-card mb-4 px-5 py-4">
-          <div className="flex flex-wrap items-center gap-3">
-            <LogoMeta />
-            <div className="min-w-0 flex-1 basis-[calc(100%-56px)] sm:basis-auto">
-              <p className="text-[13.5px] font-bold">Conta da Meta</p>
-              <p className="mt-0.5 text-[11.5px] leading-4 text-dim">
-                {temToken ? (
-                  doToken === null ? (
-                    "Ligada, mas a Meta não respondeu agora. Se continuar, troque o token."
-                  ) : (
-                    <>
-                      Ligada. Enxerga{" "}
-                      <strong className="text-soft">
-                        {doToken.length === 1
-                          ? "1 Página"
-                          : `${doToken.length} Páginas`}
-                      </strong>
-                      {doToken.length > 0 &&
-                        `: ${doToken.map((p) => p.nome).join(", ")}`}
-                      .
-                    </>
-                  )
-                ) : (
-                  "Conecte a conta da Meta para os leads dos formulários entrarem aqui, com a campanha de onde vieram."
-                )}
-              </p>
-            </div>
-
+        <div className={GRADE_DE_CONEXOES}>
+          <CartaoDeConexao
+            logo={<LogoMeta />}
+            selo={
+              temToken ? (
+                doToken === null ? <Pilula tom="aviso">sem resposta</Pilula> : <Pilula tom="ok">ligada</Pilula>
+              ) : (
+                <Pilula>não ligada</Pilula>
+              )
+            }
+            titulo="Conta da Meta"
+            categoria="Acesso aos leads"
+            rodape={
+              <>
             {/*
               O botão da Meta vem primeiro, e o de colar token vira segunda via.
 
@@ -164,11 +151,10 @@ export default async function Pagina({
               vídeo do App Review. Colar token continua existindo para quem quer
               um acesso que nunca vence (usuário do sistema).
             */}
-            <div className="flex w-full flex-wrap items-center gap-2 sm:w-auto">
               <form action={acaoConectarComFacebook.bind(null, clienteId)}>
                 <button
                   type="submit"
-                  className="botao-primario botao-md"
+                  className="botao-primario botao-sm"
                 >
                   {temToken
                     ? "Reconectar com Facebook"
@@ -233,8 +219,55 @@ export default async function Pagina({
                   />
                 </label>
               </ModalFormulario>
-            </div>
-          </div>
+              </>
+            }
+          >
+
+                {temToken ? (
+                  doToken === null ? (
+                    "Ligada, mas a Meta não respondeu agora. Se continuar, troque o token."
+                  ) : (
+                    <>
+                      Ligada. Enxerga{" "}
+                      <strong className="text-soft">
+                        {doToken.length === 1
+                          ? "1 Página"
+                          : `${doToken.length} Páginas`}
+                      </strong>
+                      {doToken.length > 0 &&
+                        `: ${doToken.map((p) => p.nome).join(", ")}`}
+                      .
+                    </>
+                  )
+                ) : (
+                  "Conecte a conta da Meta para os leads dos formulários entrarem aqui, com a campanha de onde vieram."
+                )}
+          </CartaoDeConexao>
+
+          {paginas.map((pagina) => (
+            <CartaoDaPagina
+              key={pagina.pageId}
+              clienteId={clienteId}
+              pageId={pagina.pageId}
+              nome={pagina.nome}
+              temToken={temToken}
+              foto={doToken?.find((p) => p.id === pagina.pageId)?.foto ?? null}
+            />
+          ))}
+
+          {/* O lugar da primeira Página, no formato do cartão que ela vai ocupar. */}
+          {paginas.length === 0 && (
+            <CartaoDeConexao
+              tracejado
+              logo={<span className="flex size-10 items-center justify-center rounded-[12px] border border-dashed border-strong text-[18px] text-dim">+</span>}
+              titulo="Nenhuma Página ligada ainda"
+              categoria="Página do Facebook"
+            >
+              {temToken
+                ? 'Ligue uma das Páginas abaixo. Enquanto isso, os leads de formulário não entram; o WhatsApp segue normal.'
+                : 'Ligue a conta da Meta primeiro e as Páginas dela aparecem aqui para escolher.'}
+            </CartaoDeConexao>
+          )}
         </div>
 
         {paraLigar.length > 0 && (
@@ -249,42 +282,6 @@ export default async function Pagina({
           </>
         )}
 
-        <div className="mb-3 mt-7">
-          <h2 className="text-[15px] font-bold">Páginas ligadas</h2>
-          <p className="mt-1 max-w-[560px] text-[12px] leading-5 text-dim">
-            Os leads dos formulários destas Páginas entram aqui, com o telefone
-            e a campanha de onde vieram.
-          </p>
-        </div>
-
-        {paginas.length === 0 ? (
-          <div className="app-card px-5 py-12 text-center">
-            <IlustracaoAnuncios />
-            <p className="mt-6 text-[13px] font-bold">
-              Nenhuma Página ligada ainda
-            </p>
-            <p className="mx-auto mt-1.5 max-w-[420px] text-[11.5px] leading-5 text-dim">
-              {temToken
-                ? "Ligue uma das Páginas acima. Enquanto isso, os leads de formulário não entram; o WhatsApp segue normal."
-                : "Ligue a conta da Meta acima e as Páginas dela aparecem aqui para escolher."}
-            </p>
-          </div>
-        ) : (
-          <div className="space-y-2.5">
-            {paginas.map((pagina) => (
-              <CartaoDaPagina
-                key={pagina.pageId}
-                clienteId={clienteId}
-                pageId={pagina.pageId}
-                nome={pagina.nome}
-                temToken={temToken}
-                foto={
-                  doToken?.find((p) => p.id === pagina.pageId)?.foto ?? null
-                }
-              />
-            ))}
-          </div>
-        )}
       </Miolo>
     </AjustesShell>
   );

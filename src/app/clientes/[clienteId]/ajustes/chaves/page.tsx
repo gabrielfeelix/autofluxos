@@ -22,7 +22,9 @@ import {
   PREFIXO_DA_CHAVE,
 } from '@/core/agenda'
 import { testeDaChave } from '@/core/conexoes'
-import { IlustracaoChaves } from '@/components/design/ilustracoes'
+import { CartaoDeConexao, GRADE_DE_CONEXOES } from '@/components/conexoes/cartao'
+import { LogoAgenda, LogoChave } from '@/components/design/logos-de-marca'
+import { Pilula } from '@/components/design/pilula'
 
 export const dynamic = 'force-dynamic'
 
@@ -157,6 +159,7 @@ export default async function Pagina({ params }: { params: Promise<{ clienteId: 
           ouvir a resposta. Uma credencial de CRM genérica não tem para onde a
           gente ligar sem inventar um endereço.
         */}
+        <div className={GRADE_DE_CONEXOES}>
         {daAgenda ? (
           <CartaoDaAgenda
             clienteId={clienteId}
@@ -165,16 +168,12 @@ export default async function Pagina({ params }: { params: Promise<{ clienteId: 
             fluxosQueUsam={usoPorConexao.get(daAgenda.id)?.fluxos ?? 0}
           />
         ) : (
-          <div className="app-card mb-4 flex flex-wrap items-center gap-3 px-5 py-4">
-            <span aria-hidden className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-surface text-[15px]">
-              📅
-            </span>
-            <div className="min-w-0 flex-1">
-              <p className="text-[13.5px] font-bold">Agenda, {NOME_DA_AGENDA}</p>
-              <p className="mt-0.5 text-[11.5px] leading-4 text-dim">
-                Não ligada. Sem ela, o bot não sabe horário livre, professor nem quem já é cliente.
-              </p>
-            </div>
+          <CartaoDeConexao
+            logo={<LogoAgenda />}
+            selo={<Pilula>não ligada</Pilula>}
+            titulo={NOME_DA_AGENDA}
+            categoria="Agenda"
+            rodape={
             <ModalFormulario
               botao={`Ligar a ${NOME_DA_AGENDA}`}
               variante="secundario"
@@ -199,20 +198,24 @@ export default async function Pagina({ params }: { params: Promise<{ clienteId: 
                 </span>
               </label>
             </ModalFormulario>
-          </div>
+            }
+          >
+            Sem ela, o bot não sabe horário livre, professor nem quem já é cliente.
+          </CartaoDeConexao>
         )}
 
         {conexoes.length === 0 ? (
-          <div className="app-card px-6 py-12 text-center">
-            <IlustracaoChaves />
-            <p className="mt-6 text-[13.5px] font-semibold text-soft">Nenhuma chave ainda</p>
-            <p className="mx-auto mt-2 max-w-[440px] text-[12.5px] leading-6 text-dim">
-              Enquanto não houver, os blocos de API só alcançam endereços que não pedem chave, como
-              webhook, ou uma planilha publicada pelo Apps Script.
-            </p>
-          </div>
+          <CartaoDeConexao
+            tracejado
+            logo={<LogoChave />}
+            titulo="Nenhuma chave ainda"
+            categoria="Chave de API"
+          >
+            Enquanto não houver, os blocos de API só alcançam endereços que não pedem chave, como
+            webhook, ou uma planilha publicada pelo Apps Script.
+          </CartaoDeConexao>
         ) : (
-          <ul className="space-y-2.5">
+          <>
             {conexoes.map((conexao) => {
               const uso = usoPorConexao.get(conexao.id)
               const teste = testeDaChave(conexao, conexao.id === daAgenda?.id)
@@ -222,45 +225,14 @@ export default async function Pagina({ params }: { params: Promise<{ clienteId: 
                 ? `Os blocos de API que usam esta chave param de funcionar, em: ${uso.nomes.join(', ')}.`
                 : 'Nenhum bloco usa esta chave hoje, nada para de funcionar.'
               return (
-              <li key={conexao.id} className="app-card flex flex-wrap items-center gap-x-4 gap-y-3 px-5 py-4">
-                <div className="min-w-0 flex-1 basis-[260px]">
-                  <p className="text-[13.5px] font-bold">{conexao.nome}</p>
-                  <p className="mt-0.5 font-mono text-[11px] text-dim">
-                    {COMO_ENTRA[conexao.tipo](conexao.campo)}
-                  </p>
-                  {/*
-                    Cadastrada, usada e testada são perguntas diferentes. Uma
-                    credencial que nenhum bloco aponta não faz nada, e a lista
-                    mostrava as duas exatamente igual.
-                  */}
-                  <p className="mt-1 text-[11px] text-dim">
-                    {uso ? (
-                      <>
-                        usada em <strong className="text-soft">{uso.blocos}</strong>{' '}
-                        {uso.blocos === 1 ? 'bloco' : 'blocos'} de{' '}
-                        <strong className="text-soft">{uso.fluxos}</strong>{' '}
-                        {uso.fluxos === 1 ? 'automação' : 'automações'}
-                      </>
-                    ) : (
-                      <span className="text-aviso">nenhum bloco usa</span>
-                    )}
-                    {' · '}
-                    <span
-                      className={
-                        teste.tom === 'bom' ? 'text-ok' : teste.tom === 'ruim' ? 'text-perigo' : ''
-                      }
-                      title={
-                        teste.tom === 'neutro' && conexao.id !== daAgenda?.id
-                          ? 'Só a agenda tem endereço conhecido. Para testar esta, rode o bloco que a usa pelo Testar da automação.'
-                          : undefined
-                      }
-                    >
-                      {teste.texto}
-                    </span>
-                  </p>
-                </div>
-
-                <div className="flex items-center gap-2">
+              <CartaoDeConexao
+                key={conexao.id}
+                logo={<LogoChave />}
+                selo={uso ? <Pilula tom="ok">em uso</Pilula> : <Pilula tom="aviso">sem uso</Pilula>}
+                titulo={conexao.nome}
+                categoria="Chave de API"
+                rodape={
+                  <>
                   <ModalFormulario
                     botao="Trocar segredo"
                     variante="secundario"
@@ -286,12 +258,41 @@ export default async function Pagina({ params }: { params: Promise<{ clienteId: 
                     pergunta={`Excluir a chave "${conexao.nome}"? ${efeito} O segredo sai do cofre e não dá para desfazer.`}
                     acao={acaoApagarConexao.bind(null, clienteId, conexao.id)}
                   />
-                </div>
-              </li>
+                  </>
+                }
+              >
+                <p className="font-mono text-[11px] text-dim">{COMO_ENTRA[conexao.tipo](conexao.campo)}</p>
+                  <p className="mt-1.5 text-[11px] text-dim">
+                    {uso ? (
+                      <>
+                        usada em <strong className="text-soft">{uso.blocos}</strong>{' '}
+                        {uso.blocos === 1 ? 'bloco' : 'blocos'} de{' '}
+                        <strong className="text-soft">{uso.fluxos}</strong>{' '}
+                        {uso.fluxos === 1 ? 'automação' : 'automações'}
+                      </>
+                    ) : (
+                      <span className="text-aviso">nenhum bloco usa</span>
+                    )}
+                    {' · '}
+                    <span
+                      className={
+                        teste.tom === 'bom' ? 'text-ok' : teste.tom === 'ruim' ? 'text-perigo' : ''
+                      }
+                      title={
+                        teste.tom === 'neutro' && conexao.id !== daAgenda?.id
+                          ? 'Só a agenda tem endereço conhecido. Para testar esta, rode o bloco que a usa pelo Testar da automação.'
+                          : undefined
+                      }
+                    >
+                      {teste.texto}
+                    </span>
+                  </p>
+              </CartaoDeConexao>
               )
             })}
-          </ul>
+          </>
         )}
+        </div>
       </Miolo>
     </AjustesShell>
   )

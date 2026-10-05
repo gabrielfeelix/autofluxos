@@ -3,6 +3,9 @@
 import { useState, useTransition } from 'react'
 import { acaoConferirAgenda, type RespostaDaAgenda } from '@/server/acoes'
 import { NOME_DA_AGENDA } from '@/core/agenda'
+import { CartaoDeConexao } from './cartao'
+import { LogoAgenda } from '@/components/design/logos-de-marca'
+import { Pilula } from '@/components/design/pilula'
 
 /**
  * O cartão que responde "está ligado?".
@@ -38,14 +41,29 @@ export function CartaoDaAgenda({
   const usada = blocosQueUsam > 0
 
   return (
-    <div className="app-card mb-4 px-5 py-4">
-      <div className="flex flex-wrap items-center gap-3">
-        <span aria-hidden className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-primary/[0.12] text-[15px]">
-          📅
-        </span>
-        <div className="min-w-0 flex-1">
-          <p className="text-[13.5px] font-bold">Agenda, {NOME_DA_AGENDA}</p>
-          <p className="mt-0.5 text-[11.5px] leading-4 text-dim">
+    <CartaoDeConexao
+      logo={<LogoAgenda />}
+      selo={usada ? <Pilula tom="ok">em uso</Pilula> : <Pilula tom="aviso">sem uso</Pilula>}
+      titulo={NOME_DA_AGENDA}
+      categoria="Agenda"
+      rodape={
+        <button
+          type="button"
+          disabled={conferindo}
+          onClick={() => {
+            setResultado(null)
+            comecar(async () => {
+              setResultado(await acaoConferirAgenda(clienteId, conexaoId))
+            })
+          }}
+          title="Chama a agenda agora com a chave guardada e diz o que ela respondeu"
+          className="botao-secundario botao-sm"
+        >
+          {conferindo ? 'conferindo…' : 'Testar agora'}
+        </button>
+      }
+    >
+
             {usada ? (
               <>
                 Usada em <strong className="text-soft">{blocosQueUsam}</strong>{' '}
@@ -65,24 +83,6 @@ export function CartaoDaAgenda({
                 não consulta a agenda até um bloco apontar para cá.
               </>
             )}
-          </p>
-        </div>
-
-        <button
-          type="button"
-          disabled={conferindo}
-          onClick={() => {
-            setResultado(null)
-            comecar(async () => {
-              setResultado(await acaoConferirAgenda(clienteId, conexaoId))
-            })
-          }}
-          title="Chama a agenda agora com a chave guardada e diz o que ela respondeu"
-          className="botao-secundario botao-sm shrink-0"
-        >
-          {conferindo ? 'conferindo…' : 'Testar agora'}
-        </button>
-      </div>
 
       {resultado && !resultado.ok && (
         <p
@@ -133,7 +133,7 @@ export function CartaoDaAgenda({
           escolha esta credencial no campo do bloco.
         </p>
       )}
-    </div>
+    </CartaoDeConexao>
   )
 }
 

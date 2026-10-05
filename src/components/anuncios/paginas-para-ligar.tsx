@@ -4,6 +4,8 @@ import { useState, useTransition } from 'react'
 import { acaoLigarPagina } from '@/server/acoes-lead-ads'
 import type { PaginaDoToken } from '@/channels/marketing-api'
 import { FotoDaPagina } from './foto-da-pagina'
+import { CartaoDeConexao, GRADE_DE_CONEXOES } from '@/components/conexoes/cartao'
+import { Pilula } from '@/components/design/pilula'
 
 /**
  * As Páginas que a conta de anúncios enxerga, cada uma com o seu botão.
@@ -31,24 +33,28 @@ export function PaginasParaLigar({ clienteId, paginas }: { clienteId: string; pa
   }
 
   return (
-    <div className="app-card divide-y divide-line">
+    <div className={GRADE_DE_CONEXOES}>
       {paginas.map((p) => (
-        <div key={p.id} className="flex flex-wrap items-center gap-3 px-5 py-3">
-          <FotoDaPagina foto={p.foto} nome={p.nome} />
-          <div className="min-w-0 flex-1">
-            <p className="truncate text-[13px] font-bold">{p.nome || 'Página sem nome'}</p>
-            <p className="mt-0.5 text-[11px] text-dim">Página do Facebook</p>
-          </div>
-          <button
-            type="button"
-            disabled={ligando !== null}
-            onClick={() => ligar(p)}
-            className="botao-primario botao-sm"
-          >
-            {ligando === p.id ? 'Ligando…' : 'Ligar'}
-          </button>
-          {erro?.id === p.id && <p className="w-full text-[11px] text-perigo">{erro.texto}</p>}
-        </div>
+        <CartaoDeConexao
+          key={p.id}
+          logo={<FotoDaPagina foto={p.foto} nome={p.nome} />}
+          selo={<Pilula>não ligada</Pilula>}
+          titulo={p.nome || 'Página sem nome'}
+          categoria="Página do Facebook"
+          rodape={
+            <button
+              type="button"
+              disabled={ligando !== null}
+              onClick={() => ligar(p)}
+              className="botao-primario botao-sm"
+            >
+              {ligando === p.id ? 'Ligando…' : 'Ligar esta Página'}
+            </button>
+          }
+        >
+          A conta da Meta enxerga esta Página. Ligue para os leads dela entrarem aqui.
+          {erro?.id === p.id && <p className="mt-2 text-[11px] text-perigo">{erro.texto}</p>}
+        </CartaoDeConexao>
       ))}
     </div>
   )

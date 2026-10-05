@@ -1,6 +1,8 @@
 'use client'
 
 import { FotoDaPagina } from './foto-da-pagina'
+import { CartaoDeConexao } from '@/components/conexoes/cartao'
+import { Pilula } from '@/components/design/pilula'
 import { useState, useTransition } from 'react'
 import { acaoDesligarPagina, acaoImportarLeadsAntigos } from '@/server/acoes-lead-ads'
 
@@ -30,66 +32,59 @@ export function CartaoDaPagina({
   const [resultado, setResultado] = useState<string | null>(null)
 
   return (
-    <div className="app-card flex flex-wrap items-center gap-3 px-5 py-3.5">
-      <FotoDaPagina foto={foto} nome={nome} />
-
-      <div className="min-w-0 flex-1">
-        <p className="truncate text-[13px] font-bold">{nome !== '' ? nome : 'Página sem nome'}</p>
-        <p className="mt-0.5 text-[11px] text-dim">Página do Facebook</p>
-      </div>
-
-      {temToken ? (
-        <span className="rounded-full bg-primary/[0.12] px-2.5 py-1 text-[10.5px] font-bold text-primary">
-          recebendo
-        </span>
-      ) : (
-        <span
-          className="rounded-full bg-surface-strong px-2.5 py-1 text-[10.5px] font-bold text-dim"
-          title="Ligue a conta de anúncios acima para os leads desta página entrarem"
-        >
-          falta o acesso
-        </span>
-      )}
-
+    <CartaoDeConexao
+      logo={<FotoDaPagina foto={foto} nome={nome} />}
+      selo={
+        temToken ? (
+          <Pilula tom="ok">recebendo</Pilula>
+        ) : (
+          <Pilula titulo="Ligue a conta de anúncios para os leads desta página entrarem">falta o acesso</Pilula>
+        )
+      }
+      titulo={nome !== '' ? nome : 'Página sem nome'}
+      categoria="Página do Facebook"
+      rodape={
+        <>
+          {/*
+            Importar só aparece com o acesso ligado, porque sem token não há o
+            que buscar, e um botão que só sabe dizer "ligue antes" é um botão
+            que ensina a errar.
+          */}
+          {temToken && (
+            <button
+              type="button"
+              disabled={importando}
+              onClick={() =>
+                importar(async () => {
+                  const r = await acaoImportarLeadsAntigos(clienteId, pageId)
+                  setResultado(r.ok ? (r.resumo ?? 'pronto') : (r.erro ?? 'não deu'))
+                })
+              }
+              className="botao-secundario botao-sm"
+              title="Traz os leads que já existiam antes de ligar, a Meta guarda 90 dias"
+            >
+              {importando ? 'Importando…' : 'Importar leads antigos'}
+            </button>
+          )}
+          <button
+            type="button"
+            disabled={saindo}
+            onClick={() => comecar(() => void acaoDesligarPagina(clienteId, pageId))}
+            className="botao-secundario botao-sm"
+          >
+            {saindo ? 'Desligando…' : 'Desligar'}
+          </button>
+        </>
+      }
+    >
+      {temToken
+        ? 'Os leads dos formulários desta Página entram aqui, com o telefone e a campanha.'
+        : 'Ligada, mas sem a conta da Meta os leads não entram.'}
       {/*
-        Importar só aparece com o acesso ligado, porque sem token não há o que
-        buscar, e um botão que só sabe dizer "ligue antes" é um botão que
-        ensina a errar.
+        O resultado fica no próprio cartão, e não some sozinho: quem importou
+        precisa poder ler com calma quantos entraram, e conferir depois.
       */}
-      {temToken && (
-        <button
-          type="button"
-          disabled={importando}
-          onClick={() =>
-            importar(async () => {
-              const r = await acaoImportarLeadsAntigos(clienteId, pageId)
-              setResultado(r.ok ? (r.resumo ?? 'pronto') : (r.erro ?? 'não deu'))
-            })
-          }
-          className="botao-secundario botao-sm"
-          title="Traz os leads que já existiam antes de ligar, a Meta guarda 90 dias"
-        >
-          {importando ? 'Importando…' : 'Importar leads antigos'}
-        </button>
-      )}
-
-      <button
-        type="button"
-        disabled={saindo}
-        onClick={() => comecar(() => void acaoDesligarPagina(clienteId, pageId))}
-        className="botao-secundario botao-sm"
-      >
-        {saindo ? 'Desligando…' : 'Desligar'}
-      </button>
-
-      {/*
-        O resultado fica na própria linha da Página, e não some sozinho: quem
-        importou precisa poder ler com calma quantos entraram, e conferir
-        depois, na lista de leads, se bate.
-      */}
-      {resultado !== null && (
-        <p className="w-full text-[11px] text-dim">{resultado}</p>
-      )}
-    </div>
+      {resultado !== null && <p className="mt-2 text-[11px] text-dim">{resultado}</p>}
+    </CartaoDeConexao>
   )
 }
