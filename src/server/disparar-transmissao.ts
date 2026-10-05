@@ -7,7 +7,7 @@ import {
   RITMO_INICIAL,
   type Decisao,
 } from '@/core/disparo'
-import { condutaPara, explicarErro, podeEnviar, variaveisDe } from '@/core/templates'
+import { condutaPara, explicarErro, linkComLacuna, podeEnviar, recadoDoLinkComLacuna, variaveisDe } from '@/core/templates'
 import { adaptadorDoCanal } from './adaptador-do-canal'
 import { alertar } from './alertar'
 import { db } from './db'
@@ -152,6 +152,13 @@ export async function dispararTransmissao(
    */
   if (!podeEnviar(template.status)) {
     const motivo = `o modelo está ${template.status} na Meta, e só modelo aprovado entrega`
+    await pararTransmissao(transmissao, motivo)
+    return { ...resumo, terminou: true, parou: motivo }
+  }
+
+  const lacuna = linkComLacuna(template.componentes)
+  if (lacuna) {
+    const motivo = recadoDoLinkComLacuna(lacuna)
     await pararTransmissao(transmissao, motivo)
     return { ...resumo, terminou: true, parou: motivo }
   }

@@ -4,7 +4,7 @@ import { chaveDoPasso, dadosDoPassoSchema } from '@/core/tarefas'
 import { abrirFluxoParaContato, type FabricaDeCanal } from './receber-mensagem'
 import { agendar } from './repos/tarefas'
 import { adaptadorDoCanal } from './adaptador-do-canal'
-import { podeEnviar, variaveisDe } from '@/core/templates'
+import { linkComLacuna, podeEnviar, variaveisDe } from '@/core/templates'
 import { lerTemplate } from './repos/templates'
 import { acharContato, contextoDeResposta } from './repos/conversas'
 import {
@@ -197,6 +197,7 @@ async function mandarModeloDoPasso(
   // Nenhum dos três passa sozinho.
   if (!template || template.clienteId !== clienteId) return 'sem_modelo'
   if (!podeEnviar(template.status)) return 'sem_modelo'
+  if (linkComLacuna(template.componentes)) return 'sem_modelo'
 
   const contexto = await contextoDeResposta(clienteId, contatoId)
   if (!contexto) return 'sem_contexto'

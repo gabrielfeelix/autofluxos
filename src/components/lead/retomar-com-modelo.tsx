@@ -1,5 +1,6 @@
 'use client'
 
+import { linkComLacuna, recadoDoLinkComLacuna } from '@/core/templates'
 import { tituloDoModelo } from '@/core/titulo-da-biblioteca'
 import { useEffect, useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
@@ -77,6 +78,8 @@ export function RetomarComModelo({
   // As lacunas viram o nome do contato, como o servidor faz ao enviar.
   const comNome = (texto: string) => texto.replace(/\{\{\d+\}\}/g, nome)
   const componentes = modelo?.componentes ?? null
+  // Barrado aqui e no servidor: a Meta recusa sem o final do link (ver `linkComLacuna`).
+  const lacuna = linkComLacuna(componentes)
 
   function enviar() {
     setErro(null)
@@ -231,7 +234,7 @@ export function RetomarComModelo({
               <button
                 type="button"
                 onClick={enviar}
-                disabled={enviando || !escolhido}
+                disabled={enviando || !escolhido || lacuna !== null}
                 className="botao-primario botao-sm shrink-0"
               >
                 {enviando ? 'Enviando…' : 'Enviar'}
@@ -241,6 +244,11 @@ export function RetomarComModelo({
         </div>
       )}
 
+      {lacuna && (
+        <p className="mt-2 rounded-[10px] border border-amber-400/30 bg-amber-400/[0.09] px-2.5 py-2 text-[12px] leading-[1.45] text-aviso">
+          {recadoDoLinkComLacuna(lacuna)}
+        </p>
+      )}
       {erro && <p className="mt-2 text-[12.5px] leading-5 text-perigo">{erro}</p>}
     </div>
   )

@@ -42,6 +42,28 @@ export function podeEnviar(status: StatusDoTemplate): boolean {
   return status === 'aprovado'
 }
 
+/**
+ * O botão de link que termina numa lacuna (`https://site.com.br/{{1}}`), ou
+ * `null`.
+ *
+ * A Meta exige o valor dessa lacuna em todo envio e recusa sem ele com 131008
+ * ("Button at index 0 of type Url requires a parameter"). Este produto não
+ * tem de onde tirar esse valor: não é o nome do contato, e inventar um final
+ * de link mandaria o cliente para uma página que não existe. Por isso o modelo
+ * é barrado antes de chegar na Meta, com um recado que diz o que fazer.
+ * Modelo novo não nasce assim desde `a91d4aa`; isto pega os antigos.
+ */
+export function linkComLacuna(componentes: { botoes?: Botao[] } | null | undefined): Botao | null {
+  return (
+    componentes?.botoes?.find((b) => b.tipo === 'URL' && variaveisDe(b.valor ?? '').length > 0) ?? null
+  )
+}
+
+/** O recado para quem tenta enviar um modelo com `linkComLacuna`. */
+export function recadoDoLinkComLacuna(botao: Botao): string {
+  return `O link do botão "${botao.texto}" deste modelo tem uma parte variável que a Meta exige preencher em cada envio. Apague o modelo e crie de novo com o link completo.`
+}
+
 // ---------------------------------------------------------------------------
 // Os limites da Meta
 // ---------------------------------------------------------------------------

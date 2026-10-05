@@ -17,7 +17,7 @@ import {
   registrarSaida,
 } from './repos/conversas'
 import { lerTemplate } from './repos/templates'
-import { podeEnviar, variaveisDe as variaveisDoCorpo } from '@/core/templates'
+import { linkComLacuna, podeEnviar, recadoDoLinkComLacuna, variaveisDe as variaveisDoCorpo } from '@/core/templates'
 
 /**
  * A passada que manda o que venceu.
@@ -168,6 +168,9 @@ async function enviarPeloModelo(
       `o modelo escolhido está ${template.status} na Meta, e só modelo aprovado entrega`,
     )
   }
+
+  const lacuna = linkComLacuna(template.componentes)
+  if (lacuna) throw new Error(recadoDoLinkComLacuna(lacuna))
 
   const contato = await acharContato(agendada.contatoId)
   const quantas = variaveisDoCorpo(template.componentes.corpo).length

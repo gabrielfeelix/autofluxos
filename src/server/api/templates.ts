@@ -1,6 +1,6 @@
 import 'server-only'
 import { hojeNaConta } from '@/core/horario'
-import { podeEnviar, variaveisDe, type Categoria, type StatusDoTemplate } from '@/core/templates'
+import { linkComLacuna, podeEnviar, recadoDoLinkComLacuna, variaveisDe, type Categoria, type StatusDoTemplate } from '@/core/templates'
 import type { AutorDaSaida } from '@/core/autor-da-mensagem'
 import { adaptadorDoCanal } from '../adaptador-do-canal'
 import { db } from '../db'
@@ -153,6 +153,8 @@ export async function enviarModeloPelaApi(clienteId: string, pedido: PedidoDeEnv
   if (template.componentes.cabecalho && template.componentes.cabecalho.tipo !== 'texto') {
     return recusa(422, 'template_com_midia', 'Modelos com imagem, vídeo ou documento no cabeçalho ainda não podem ser enviados pela API.')
   }
+  const lacuna = linkComLacuna(template.componentes)
+  if (lacuna) return recusa(422, 'link_com_lacuna', recadoDoLinkComLacuna(lacuna))
 
   const valoresDoCorpo = pedido.valores?.corpo ?? []
   const valoresDoCabecalho = pedido.valores?.cabecalho ?? []

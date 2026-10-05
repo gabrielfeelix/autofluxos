@@ -49,6 +49,7 @@ export type CodigoDeErro =
   | 'template_nao_encontrado'
   | 'template_nao_aprovado'
   | 'template_com_midia'
+  | 'link_com_lacuna'
   | 'idioma_obrigatorio'
   | 'valores_incompletos'
   | 'teto_diario'

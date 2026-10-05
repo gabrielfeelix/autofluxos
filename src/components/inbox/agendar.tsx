@@ -1,6 +1,7 @@
 'use client'
 
 import { Dropdown } from '@/components/design/dropdown'
+import { linkComLacuna, recadoDoLinkComLacuna } from '@/core/templates'
 import { tituloDoModelo } from '@/core/titulo-da-biblioteca'
 import { useEffect, useState, useTransition } from 'react'
 import { criarAgendada, ehProvisoria, marcarCancelada, useAgendadas } from './agendadas-local'
@@ -68,6 +69,7 @@ export function AgendarMensagem({
   const recusa = conferirAgendamento({ texto, quando })
   const avisar = foraDaJanela(quando, fimDaJanela)
   const modeloEscolhido = aprovados?.find((t) => t.id === modelo) ?? null
+  const lacuna = linkComLacuna(modeloEscolhido?.componentes)
 
   /*
    * A lista de modelos só é buscada quando o horário escolhido cai fora da
@@ -274,6 +276,11 @@ export function AgendarMensagem({
                   className="mt-1.5 max-h-[96px] cursor-not-allowed overflow-y-auto rounded-[10px] border border-line bg-panel px-2.5 py-1.5 text-[12px] leading-[1.45] whitespace-pre-line text-muted select-none"
                 >
                   {modeloEscolhido.componentes.corpo.replace(/\{\{\d+\}\}/g, nome)}
+                </p>
+              )}
+              {lacuna && (
+                <p className="mt-1.5 text-[11.5px] leading-4 text-aviso">
+                  {recadoDoLinkComLacuna(lacuna)}
                 </p>
               )}
             </div>

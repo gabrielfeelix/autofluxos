@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import {
   BOTOES_SEGUROS_NO_DESKTOP,
   botoesIncompletos,
+  linkComLacuna,
   linkParaAMeta,
   problemaDoBotao,
   componentesParaMeta,
@@ -524,5 +525,19 @@ describe('valor do botão', () => {
   it('pede telefone com DDD', () => {
     expect(problemaDoBotao(fone, '9999')).not.toBeNull()
     expect(problemaDoBotao(fone, '(11) 99999-0000')).toBeNull()
+  })
+})
+
+describe('linkComLacuna', () => {
+  it('acha o botão de link que termina numa lacuna', () => {
+    const botao = { tipo: 'URL' as const, texto: 'Verificar a conta', valor: 'https://www.pcyes.com.br/{{1}}' }
+    expect(linkComLacuna({ botoes: [botao] })).toEqual(botao)
+  })
+
+  it('deixa passar link fixo, outros botões e modelo sem botão', () => {
+    expect(linkComLacuna({ botoes: [{ tipo: 'URL', texto: 'Site', valor: 'https://www.pcyes.com.br/' }] })).toBeNull()
+    expect(linkComLacuna({ botoes: [{ tipo: 'QUICK_REPLY', texto: 'Sim' }] })).toBeNull()
+    expect(linkComLacuna({})).toBeNull()
+    expect(linkComLacuna(null)).toBeNull()
   })
 })

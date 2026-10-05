@@ -53,7 +53,7 @@ import {
 import { planoDaConta } from './repos/plano'
 import { planoVigente } from './repos/planos'
 import { autorDaPessoa } from '@/core/autor-da-mensagem'
-import { podeEnviar, variaveisDe as variaveisDoCorpo } from '@/core/templates'
+import { linkComLacuna, podeEnviar, recadoDoLinkComLacuna, variaveisDe as variaveisDoCorpo } from '@/core/templates'
 import { adaptadorDoCanal } from './adaptador-do-canal'
 import {
   acharContato,
@@ -676,6 +676,9 @@ export async function acaoRetomarComModelo(
       erro: `Este modelo está ${template.status} na Meta, e só modelo aprovado entrega.`,
     }
   }
+
+  const lacuna = linkComLacuna(template.componentes)
+  if (lacuna) return { ok: false, erro: recadoDoLinkComLacuna(lacuna) }
 
   const contexto = await contextoDeResposta(clienteId, contatoId)
   if (!contexto) return { ok: false, erro: 'Este contato não tem um número conectado.' }
