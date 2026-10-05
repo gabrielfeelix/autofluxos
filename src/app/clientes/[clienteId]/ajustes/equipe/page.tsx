@@ -118,7 +118,7 @@ export default async function Pagina({
     <Alternador
       rotulo="Seções"
       ativa={aba}
-      className="mb-5"
+      className="mb-5 self-start"
       opcoes={[
         { chave: 'usuarios', rotulo: 'Usuários', href: base },
         { chave: 'equipes', rotulo: 'Equipes', href: `${base}?aba=equipes` },
