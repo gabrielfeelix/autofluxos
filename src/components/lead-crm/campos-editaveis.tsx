@@ -265,15 +265,7 @@ const INFORMACOES_EXTRAS: { chave: string; rotulo: string; exemplo: string }[] =
 ]
 
 /** As linhas extras na grade do cartão Informações, fora da edição. */
-export function InformacoesExtras({
-  clienteId,
-  contatoId,
-  campos,
-}: {
-  clienteId: string
-  contatoId: string
-  campos: Record<string, string>
-}) {
+export function InformacoesExtras({ campos }: { campos: Record<string, string> }) {
   const { editando } = useEdicao()
   if (editando) return null
   return (

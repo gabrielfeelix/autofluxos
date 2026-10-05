@@ -80,7 +80,7 @@ export function Informacoes({
         <LinhaDeOrigem clienteId={clienteId} contatoId={contatoId} origem={origem} />
 
         {/* Indicado por, e-mail, empresa, cidade: o que a equipe soma ao canal. */}
-        <InformacoesExtras clienteId={clienteId} contatoId={contatoId} campos={campos} />
+        <InformacoesExtras campos={campos} />
 
         <Linha rotulo="Chegou">
           <span title={horaExata(criadoEm)}>{quando(criadoEm)}</span>
