@@ -115,7 +115,7 @@ export function AcoesRapidas({
       <AcaoComPainel
         rotulo="Etiquetas do contato"
         icone={<IconeEtiqueta />}
-        marcada={conversa.valor.etiquetas.length > 0}
+        contador={conversa.valor.etiquetas.length}
         largura={272}
       >
         <p className="mb-2 text-[12px] font-bold text-soft">Etiquetas do contato</p>
@@ -299,6 +299,7 @@ function DestinoDoPainel({ children }: { children: ReactNode }) {
 function BotaoDeIcone({
   rotulo,
   marcada = false,
+  contador = 0,
   desabilitado = false,
   aoClicar,
   children,
@@ -306,6 +307,12 @@ function BotaoDeIcone({
   rotulo: string
   /** Estado ligado: o gesto já foi feito, ou o painel está aberto. */
   marcada?: boolean
+  /**
+   * Quantos itens já existem (as etiquetas do contato). Vira a bolinha azul no
+   * canto, e **não** o fundo de "pressionado": o ícone com fundo parecia um
+   * botão ligado, e o pedido do Gabriel (05/out) foi o número no canto.
+   */
+  contador?: number
   desabilitado?: boolean
   aoClicar?: () => void
   children: ReactNode
@@ -314,15 +321,23 @@ function BotaoDeIcone({
     <Dica texto={rotulo}>
       <button
         type="button"
-        aria-label={rotulo}
+        aria-label={contador > 0 ? `${rotulo} (${contador})` : rotulo}
         aria-pressed={marcada}
         disabled={desabilitado}
         onClick={aoClicar}
-        className={`flex size-8 shrink-0 items-center justify-center rounded-[9px] transition disabled:opacity-40 ${
+        className={`relative flex size-8 shrink-0 items-center justify-center rounded-[9px] transition disabled:opacity-40 ${
           marcada ? 'bg-primary-weak text-primary' : 'text-muted hover:bg-surface hover:text-ink'
         }`}
       >
         {children}
+        {contador > 0 && (
+          <span
+            aria-hidden
+            className="absolute -top-1 -right-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-primary px-1 text-[9.5px] leading-none font-bold text-white tabular-nums ring-2 ring-panel"
+          >
+            {contador > 9 ? '9+' : contador}
+          </span>
+        )}
       </button>
     </Dica>
   )
@@ -340,6 +355,7 @@ function AcaoComPainel({
   icone,
   largura,
   marcada = false,
+  contador = 0,
   recolhido = false,
   children,
 }: {
@@ -347,6 +363,7 @@ function AcaoComPainel({
   icone: ReactNode
   largura: number
   marcada?: boolean
+  contador?: number
   recolhido?: boolean
   children: ReactNode | ((fechar: () => void) => ReactNode)
 }) {
@@ -386,7 +403,12 @@ function AcaoComPainel({
 
   return (
     <div ref={caixa} className="relative shrink-0">
-      <BotaoDeIcone rotulo={rotulo} marcada={marcada || aberto} aoClicar={() => setAberto((x) => !x)}>
+      <BotaoDeIcone
+        rotulo={rotulo}
+        marcada={marcada || aberto}
+        contador={contador}
+        aoClicar={() => setAberto((x) => !x)}
+      >
         {icone}
       </BotaoDeIcone>
 
