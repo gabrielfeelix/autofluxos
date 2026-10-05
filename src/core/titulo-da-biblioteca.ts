@@ -124,6 +124,6 @@ export function tituloDaBiblioteca(nome: string): string {
 
   const frase = (traduzidas as string[]).reverse().join(' de ')
   if (!participio) return maiuscula(frase)
-  const principal = (traduzidas as string[])[0]
+  const principal = (traduzidas as string[])[0] ?? ''
   return maiuscula(`${frase} ${feminino(principal) ? participio[1] : participio[0]}`)
 }
