@@ -73,8 +73,11 @@ export function RetomarComModelo({
     }
   }, [clienteId])
 
-  const corpo = aprovados?.find((t) => t.id === escolhido)?.componentes.corpo ?? null
-  const previa = corpo ? corpo.replace(/\{\{\d+\}\}/g, nome) : null
+  const modelo = aprovados?.find((t) => t.id === escolhido) ?? null
+  // As lacunas viram o nome do contato, como o servidor faz ao enviar.
+  const comNome = (texto: string) => texto.replace(/\{\{\d+\}\}/g, nome)
+  const componentes = modelo?.componentes ?? null
+  const previa = componentes?.corpo.trim() ? comNome(componentes.corpo) : null
 
   function enviar() {
     setErro(null)
@@ -144,6 +147,11 @@ export function RetomarComModelo({
               opcoes={aprovados.map((t) => ({
                 valor: t.id,
                 rotulo: tituloDoModelo(t.nome),
+                // O começo da mensagem embaixo do nome: "Boas-vindas" e "Teste"
+                // não dizem o que vai sair, o texto diz.
+                ...(t.componentes.corpo.trim()
+                  ? { detalhe: comNome(t.componentes.corpo).replace(/\s+/g, ' ').trim().slice(0, 90) }
+                  : {}),
               }))}
               valor={escolhido}
               aoMudar={setEscolhido}
@@ -154,11 +162,46 @@ export function RetomarComModelo({
             O que vai sair, para quem, antes do clique (X05): as variáveis do
             modelo viram o nome do contato, como o servidor faz ao enviar.
           */}
-          {previa && (
-            <p className="order-last w-full rounded-[10px] border border-line bg-surface px-3 py-2 text-[12px] leading-5 whitespace-pre-line text-muted">
-              <span className="mb-0.5 block text-[11px] font-bold text-dim">Para {nome}:</span>
-              {previa}
-            </p>
+          {componentes && (
+            <div className="order-last w-full rounded-[12px] border border-line bg-surface px-3 py-2.5">
+              <span className="mb-1.5 block text-[11px] font-bold text-dim">Como chega para {nome}</span>
+              {previa ? (
+                <div className="ml-auto w-fit max-w-[min(420px,88%)]">
+                  {/* O mesmo balão de mensagem enviada da conversa. */}
+                  <div className="rounded-[16px] rounded-br-[6px] bg-primary px-3.5 py-2.5 text-[13px] leading-[1.45] text-white">
+                    {componentes.cabecalho?.tipo === 'texto' && (
+                      <strong className="mb-1 block">{comNome(componentes.cabecalho.texto)}</strong>
+                    )}
+                    {componentes.cabecalho && componentes.cabecalho.tipo !== 'texto' && (
+                      <span className="mb-1.5 block rounded-[8px] bg-white/15 px-2 py-3 text-center text-[11.5px]">
+                        {componentes.cabecalho.tipo === 'imagem' ? 'Imagem' : componentes.cabecalho.tipo === 'video' ? 'Vídeo' : 'Documento'}
+                      </span>
+                    )}
+                    <span className="block whitespace-pre-line">{previa}</span>
+                    {componentes.rodape && (
+                      <span className="mt-1 block text-[11.5px] text-white/70">{componentes.rodape}</span>
+                    )}
+                  </div>
+                  {componentes.botoes && componentes.botoes.length > 0 && (
+                    <div className="mt-1 flex flex-col gap-1">
+                      {componentes.botoes.map((botao, i) => (
+                        <span
+                          key={`${botao.texto}-${i}`}
+                          className="rounded-[12px] border border-line bg-panel px-3 py-1.5 text-center text-[12.5px] font-semibold text-primary"
+                        >
+                          {botao.texto}
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <span className="block text-[12px] text-dim">
+                  Sem prévia: a Meta não devolveu o texto deste modelo agora. O envio funciona
+                  igual.
+                </span>
+              )}
+            </div>
           )}
           <button
             type="button"

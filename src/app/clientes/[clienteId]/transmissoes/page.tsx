@@ -11,6 +11,7 @@ import { CabecalhoDaTela } from '@/components/design/cabecalho-da-tela'
 import { ListaDeTransmissoes } from '@/components/transmissoes/lista-de-transmissoes'
 import { acharCliente, type Cliente } from '@/server/repos/clientes'
 import { listarTemplates } from '@/server/repos/templates'
+import { completarTextos } from '@/server/textos-dos-modelos'
 import {
   enviadasHojePelaConta,
   listarTransmissoes,
@@ -103,7 +104,7 @@ async function Conteudo({
   filtro: { q?: string; estado?: string; periodo?: string }
 }) {
   const [templates, transmissoes, enviadasHoje] = await Promise.all([
-    listarTemplates(cliente.id),
+    listarTemplates(cliente.id).then((lista) => completarTextos(cliente.id, lista)),
     listarTransmissoes(cliente.id),
     enviadasHojePelaConta(cliente.id),
   ])

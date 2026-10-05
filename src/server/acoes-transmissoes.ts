@@ -1,5 +1,6 @@
 'use server'
 
+import { completarTextos } from './textos-dos-modelos'
 import { revalidatePath } from 'next/cache'
 import { recusaDoPlano } from './recursos-do-plano'
 import {
@@ -570,7 +571,7 @@ export async function acaoCancelarTransmissao(
 export async function acaoListarTemplates(clienteId: string) {
   const acesso = await exigirCapacidade(clienteId, 'atender', 'proprios')
   if (recusou(acesso)) return []
-  return listarTemplates(clienteId)
+  return completarTextos(clienteId, await listarTemplates(clienteId))
 }
 
 /**
