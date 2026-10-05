@@ -1,7 +1,9 @@
 import { iniciais as iniciaisDoNome } from '@/core/iniciais'
+import { retratoDe } from '@/lib/retrato'
 
 /**
- * A foto da pessoa, ou as iniciais quando não há foto.
+ * A foto da pessoa, ou o retrato ilustrado quando ela não subiu foto
+ * (`lib/retrato.ts`). As iniciais ficam para quem nem nome tem.
  *
  * Sem hook de propósito: serve ao servidor e ao cliente, e o tamanho vem de
  * fora porque o mesmo rosto aparece no rodapé (32 px) e no "Você" (56 px).
@@ -16,11 +18,11 @@ export function Avatar({
   tamanho?: number
 }) {
   const estilo = { width: tamanho, height: tamanho, fontSize: Math.round(tamanho * 0.36) }
-  if (imagem) {
+  if (imagem || nome.trim() !== '') {
     return (
       // eslint-disable-next-line @next/next/no-img-element
       <img
-        src={imagem}
+        src={imagem || retratoDe(nome)}
         alt=""
         style={estilo}
         className="shrink-0 rounded-full border border-line object-cover"
