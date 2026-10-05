@@ -33,6 +33,7 @@ import { listarProdutos } from '@/server/repos/produtos'
 import { IlustracaoProdutos } from '@/components/design/ilustracoes'
 import { BotoesDeOrdem } from '@/components/produtos/botoes-de-ordem'
 import { CardapioEmArquivo } from '@/components/produtos/cardapio-em-arquivo'
+import { CampoDeDinheiro } from '@/components/design/campo-de-dinheiro'
 
 export const dynamic = 'force-dynamic'
 
@@ -201,10 +202,9 @@ export default async function Pagina({
               </label>
               <label>
                 <RotuloCampo>Preço (opcional)</RotuloCampo>
-                <input
+                <CampoDeDinheiro
                   name="preco"
-                  inputMode="decimal"
-                  placeholder="ex.: 150,00"
+                  placeholder="0,00"
                   className="app-field px-[13px] py-[11px] text-[13.5px]"
                 />
                 <span className="mt-1.5 block text-[11px] leading-5 text-dim">
@@ -398,12 +398,11 @@ function AcoesDoItem({ clienteId, produto }: { clienteId: string; produto: Produ
       >
         <label>
           <RotuloCampo>Preço</RotuloCampo>
-          <input
+          <CampoDeDinheiro
             name="preco"
             autoFocus
-            inputMode="decimal"
-            defaultValue={produto.preco === null ? '' : produto.preco.toFixed(2).replace('.', ',')}
-            placeholder="ex.: 150,00"
+            valorInicial={produto.preco === null ? '' : produto.preco.toFixed(2).replace('.', ',')}
+            placeholder="0,00"
             className="app-field px-[13px] py-[11px] text-[13.5px]"
           />
           <span className="mt-1.5 block text-[11px] leading-5 text-dim">

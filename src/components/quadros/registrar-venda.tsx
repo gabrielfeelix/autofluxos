@@ -6,6 +6,7 @@ import type { Produto } from '@/core/produtos'
 import { selecionaveis } from '@/core/produtos'
 import { acaoListarProdutos } from '@/server/acoes-produtos'
 import { acaoRegistrarVenda } from '@/server/acoes-vendas'
+import { CampoDeDinheiro } from '@/components/design/campo-de-dinheiro'
 
 /**
  * Registrar a venda (UI-10, T5.2).
@@ -99,12 +100,11 @@ export function RegistrarVenda({
             <span className="mb-1 block text-[11px] font-bold tracking-[0.04em] text-dim uppercase">
               Valor total <span className="font-normal normal-case">(opcional)</span>
             </span>
-            <input
-              value={valorTotal}
-              onChange={(e) => setValorTotal(e.target.value)}
-              inputMode="decimal"
-              placeholder="não informado"
-              className="app-field w-full px-3 py-2.5 text-[12.5px]"
+            <CampoDeDinheiro
+              valor={valorTotal}
+              aoMudar={setValorTotal}
+              placeholder="0,00"
+              className="app-field px-3 py-2.5 text-[12.5px]"
             />
           </label>
         </div>
@@ -152,14 +152,15 @@ export function RegistrarVenda({
                   aria-label={`Quantidade do item ${i + 1}`}
                   className="app-field w-[64px] px-2 py-2 text-[12px]"
                 />
-                <input
-                  value={linha.valorUnitario}
-                  onChange={(e) => trocar(i, { valorUnitario: e.target.value })}
-                  inputMode="decimal"
-                  placeholder="unit."
-                  aria-label={`Valor unitário do item ${i + 1}`}
-                  className="app-field w-[84px] px-2 py-2 text-[12px]"
-                />
+                <span className="w-[112px] shrink-0">
+                  <CampoDeDinheiro
+                    valor={linha.valorUnitario}
+                    aoMudar={(texto) => trocar(i, { valorUnitario: texto })}
+                    placeholder="0,00"
+                    aria-label={`Valor unitário do item ${i + 1}`}
+                    className="app-field px-2 py-2 text-[12px]"
+                  />
+                </span>
               </div>
             ))}
           </div>

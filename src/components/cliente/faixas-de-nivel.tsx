@@ -5,6 +5,7 @@ import { AjudaDoCampo } from '@/components/design/ajuda-do-campo'
 import { CLASSE_DO_NIVEL, type FaixasDeNivel } from '@/core/relacionamento'
 import { comoDinheiro } from '@/core/crm'
 import { acaoDefinirFaixas } from '@/server/acoes-crm'
+import { CampoDeDinheiro } from '@/components/design/campo-de-dinheiro'
 
 /**
  * O que é ouro, o que é prata, nesta conta.
@@ -139,13 +140,11 @@ function Campo({
         {rotulo}
       </span>
       <span className="flex items-center gap-1.5">
-        <span className="text-[12.5px] text-dim">R$</span>
-        <input
-          value={valor}
-          onChange={(e) => aoMudar(e.target.value.replace(/[^\d.,]/g, ''))}
-          inputMode="decimal"
+        <CampoDeDinheiro
+          valor={valor}
+          aoMudar={aoMudar}
           aria-label={rotulo}
-          className="app-field w-full px-3 py-2 text-[12.5px]"
+          className="app-field px-3 py-2 text-[12.5px]"
         />
       </span>
     </label>

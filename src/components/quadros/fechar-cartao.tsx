@@ -5,6 +5,7 @@ import { LIMITE_DO_TITULO } from '@/core/crm'
 import { Dropdown } from '@/components/design/dropdown'
 import { Modal } from '@/components/design/modal'
 import { acaoFecharCartao } from '@/server/acoes-crm'
+import { CampoDeDinheiro } from '@/components/design/campo-de-dinheiro'
 
 /**
  * Ganhar e perder, no mesmo modal.
@@ -82,12 +83,11 @@ export function FecharCartao({
             <span className="mb-1 block text-[11px] font-bold tracking-[0.04em] text-dim uppercase">
               Valor <span className="font-normal normal-case">(opcional)</span>
             </span>
-            <input
-              value={valor}
-              onChange={(e) => setValor(e.target.value)}
-              inputMode="decimal"
-              placeholder="ex.: 1.500 ou 89,90"
-              className="app-field w-full px-3 py-2.5 text-[12.5px]"
+            <CampoDeDinheiro
+              valor={valor}
+              aoMudar={setValor}
+              placeholder="0,00"
+              className="app-field px-3 py-2.5 text-[12.5px]"
             />
           </label>
         </div>

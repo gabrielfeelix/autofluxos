@@ -11,6 +11,7 @@ import { Dropdown } from '@/components/design/dropdown'
 import { Modal } from '@/components/design/modal'
 import { IconeDoQuadro, PopoverDoQuadro } from '@/components/quadros/popover-do-quadro'
 import { AcaoDaFicha } from '@/components/lead-crm/acoes-da-ficha'
+import { CampoDeDinheiro } from '@/components/design/campo-de-dinheiro'
 import { FecharCartao } from '@/components/quadros/fechar-cartao'
 import { RegistrarVenda } from '@/components/quadros/registrar-venda'
 import { TemperaturaDaOportunidade } from '@/components/quadros/temperatura-da-oportunidade'
@@ -684,7 +685,7 @@ export function PaginaDoNegocio(props: Props) {
                     ]}
                   />
                 </Campo>
-                <Campo rotulo="Temperatura">
+                <Campo rotulo="Qualificação">
                   <TemperaturaDaOportunidade
                     clienteId={clienteId}
                     cartaoId={negocio.id}
@@ -1230,23 +1231,42 @@ function TextoEditavel({
     }
     return (
       <span className="flex flex-col gap-1">
-        <input
-          autoFocus
-          value={texto}
-          inputMode={inputMode}
-          onChange={(e) => {
-            setTexto(e.currentTarget.value)
-            setErro(null)
-          }}
-          onBlur={gravar}
-          onKeyDown={(e) => {
-            if (e.key === 'Enter') gravar()
-            if (e.key === 'Escape') setEditando(false)
-          }}
-          aria-label={rotulo}
-          placeholder={placeholder}
-          className="app-field h-8 px-2.5 text-[13px]"
-        />
+        {inputMode === 'decimal' ? (
+          <CampoDeDinheiro
+            autoFocus
+            valor={texto}
+            aoMudar={(novo) => {
+              setTexto(novo)
+              setErro(null)
+            }}
+            onBlur={gravar}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') gravar()
+              if (e.key === 'Escape') setEditando(false)
+            }}
+            aria-label={rotulo}
+            placeholder="0,00"
+            className="app-field h-8 px-2.5 text-[13px]"
+          />
+        ) : (
+          <input
+            autoFocus
+            value={texto}
+            inputMode={inputMode}
+            onChange={(e) => {
+              setTexto(e.currentTarget.value)
+              setErro(null)
+            }}
+            onBlur={gravar}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') gravar()
+              if (e.key === 'Escape') setEditando(false)
+            }}
+            aria-label={rotulo}
+            placeholder={placeholder}
+            className="app-field h-8 px-2.5 text-[13px]"
+          />
+        )}
         {erro && <span role="alert" className="text-[11px] text-perigo">{erro}</span>}
       </span>
     )

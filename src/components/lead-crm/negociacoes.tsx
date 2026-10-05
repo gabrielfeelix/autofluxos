@@ -11,6 +11,7 @@ import { useAoSalvar, useEdicao } from './modo-de-edicao'
 import { IconeDaSecao, iconeFunil } from './icones'
 import { VazioDoCartao } from './vazio-do-cartao'
 import { IlustracaoQuadros } from '@/components/design/ilustracoes'
+import { CampoDeDinheiro } from '@/components/design/campo-de-dinheiro'
 
 /** Um cartão desta pessoa, como `quadrosDoContato` devolve. */
 export type NegociacaoDoContato = {
@@ -254,14 +255,15 @@ function EdicaoDaNegociacao({ clienteId, negociacao }: { clienteId: string; nego
         placeholder="Exemplo: Plano anual"
         className="app-field min-w-0 flex-[2] px-2.5 py-1.5 text-[12.5px]"
       />
-      <input
-        value={valor}
-        onChange={(e) => setValor(e.target.value)}
-        inputMode="decimal"
-        aria-label={`Valor da negociação em ${negociacao.quadro}`}
-        placeholder="Exemplo: 1.500,00"
-        className="app-field w-[120px] min-w-0 flex-1 px-2.5 py-1.5 text-[12.5px] tabular-nums"
-      />
+      <span className="flex w-[140px] min-w-0 flex-1">
+        <CampoDeDinheiro
+          valor={valor}
+          aoMudar={setValor}
+          aria-label={`Valor da negociação em ${negociacao.quadro}`}
+          placeholder="0,00"
+          className="app-field px-2.5 py-1.5 text-[12.5px]"
+        />
+      </span>
     </span>
   )
 }

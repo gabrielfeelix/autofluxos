@@ -7,6 +7,7 @@ import { acaoCorrigirNome, acaoSalvarNotas } from '@/server/acoes'
 import { acaoDescreverCartao } from '@/server/acoes-crm'
 import { comoDinheiro, lerValor, LIMITE_DO_TITULO } from '@/core/crm'
 import { LIMITE_DA_NOTA } from '@/core/flow/limites'
+import { CampoDeDinheiro } from '@/components/design/campo-de-dinheiro'
 
 export function EditarTextoDoContato({
   clienteId,
@@ -240,13 +241,12 @@ export function DetalhesDaOportunidade({
             />
           </label>
           <label className="crm-field">
-            <span>Valor estimado (R$)</span>
-            <input
-              inputMode="decimal"
+            <span>Valor estimado</span>
+            <CampoDeDinheiro
               className="app-field px-3 py-2.5 text-sm"
-              value={preco}
-              onChange={(e) => setPreco(e.target.value)}
-              placeholder="Não informado"
+              valor={preco}
+              aoMudar={setPreco}
+              placeholder="0,00"
             />
           </label>
           {erro && (
