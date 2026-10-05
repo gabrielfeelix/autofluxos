@@ -181,7 +181,12 @@ export function AcaoDaFicha({
   aoClicar: () => void
   /** O ponto que diz "já tem coisa aqui", mesma régua da barra do Inbox. */
   marcada?: boolean
-  /** `perigo` pinta o hover de vermelho: usado por "Apagar contato". */
+  /**
+   * `perigo` é vermelho cheio com texto branco: usado por "Apagar contato".
+   * Vermelho só no hover deixava a ação mais destrutiva da ficha com a mesma
+   * cara das neutras. Cor fixa, e não o token `perigo`, porque o token clareia
+   * no tema escuro e o branco perderia contraste.
+   */
   tom?: 'normal' | 'perigo'
   /** O `title` do botão, quando o rótulo curto não basta para explicar. */
   titulo?: string
@@ -191,10 +196,10 @@ export function AcaoDaFicha({
       type="button"
       onClick={aoClicar}
       title={titulo ?? rotulo}
-      className={`group relative flex w-[62px] flex-col items-center gap-1 rounded-lg px-1 py-1.5 text-[10.5px] text-muted transition ${
+      className={`group relative flex w-[62px] flex-col items-center gap-1 rounded-lg px-1 py-1.5 text-[10.5px] transition ${
         tom === 'perigo'
-          ? 'hover:bg-rose-400/[0.09] hover:text-perigo'
-          : 'hover:bg-surface hover:text-primary'
+          ? 'ml-1 bg-[#c62828] font-semibold text-white hover:bg-[#a51f1f]'
+          : 'text-muted hover:bg-surface hover:text-primary'
       }`}
     >
       <svg

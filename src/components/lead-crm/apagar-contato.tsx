@@ -9,7 +9,7 @@ import { useConfirmar } from '@/components/design/confirmar'
  * Era um botão com borda e rótulo ao lado de "Agendar", "Anotar" e "Etiquetar",
  * que são ícone em cima e palavra embaixo: quatro ações na mesma fileira, três
  * com uma forma e a quarta com outra, o que faz a quarta parecer de outro
- * lugar. Aqui é o mesmo item, com o vermelho aparecendo no hover.
+ * lugar. Aqui é o mesmo item, em vermelho cheio, porque é a única sem volta.
  *
  * **A confirmação continua obrigatória** e diz o que some junto, porque não
  * existe desfazer: a conversa não está copiada em lugar nenhum. O pedido de

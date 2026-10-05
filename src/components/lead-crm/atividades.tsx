@@ -1,24 +1,18 @@
 'use client'
 
-import { Dropdown } from '@/components/design/dropdown'
-
 import { useEffect, useState } from 'react'
+import { Modal } from '@/components/design/modal'
+import { AvisoFlutuante } from '@/components/design/aviso-flutuante'
 import { depoisDaTela } from '@/components/inbox/conversa-local'
-import { ATIVIDADE_CRIADA, type AtividadeCriada } from '@/components/inbox/marcar-atividade'
+import {
+  ATIVIDADE_CRIADA,
+  MarcarAtividade,
+  type AtividadeCriada,
+} from '@/components/inbox/marcar-atividade'
 import { horaDoRelogio } from '@/lib/quando'
-import {
-  NOME_DO_TIPO,
-  TIPOS_DE_ATIVIDADE,
-  urgenciaDe,
-  type Atividade,
-  type TipoDeAtividade,
-  type Urgencia,
-} from '@/core/atividades'
-import {
-  acaoCriarAtividade,
-  acaoReabrirAtividade,
-  acaoResolverAtividade,
-} from '@/server/acoes-atividades'
+import { NOME_DO_TIPO, urgenciaDe, type Atividade, type Urgencia } from '@/core/atividades'
+import { acaoReabrirAtividade, acaoResolverAtividade } from '@/server/acoes-atividades'
+import { CabecalhoDoTipo } from './tipo-do-passo'
 
 /**
  * As atividades de um contato (UI-13, T5.3).
@@ -35,12 +29,18 @@ import {
  *
  * As cores da urgência acompanham a palavra, nunca a substituem: "vencida"
  * está escrita, e quem não distingue vermelho continua lendo.
+ *
+ * **Criar é um botão no cabeçalho, e não um formulário no topo.** O campo e o
+ * dropdown sempre abertos ocupavam o lugar da lista, que é o que se vem ler, e
+ * eram uma versão pobre do painel "Marcar atividade" (sem hora, sem onde, sem
+ * responsável). Agora o botão abre o mesmo painel do Inbox e do alto da ficha:
+ * um jeito só de marcar atividade no produto inteiro.
  */
 const TOM: Record<Urgencia, string> = {
-  vencida: 'border-rose-400/50 text-rose-700',
-  hoje: 'border-amber-400/50 text-amber-700',
-  futura: 'border-line text-dim',
-  'sem-prazo': 'border-line text-dim',
+  vencida: 'bg-perigo/10 text-perigo',
+  hoje: 'bg-amber-400/15 text-aviso',
+  futura: 'bg-surface text-muted',
+  'sem-prazo': 'bg-surface text-muted',
 }
 
 const ROTULO: Record<Urgencia, string> = {
@@ -53,21 +53,19 @@ const ROTULO: Record<Urgencia, string> = {
 export function Atividades({
   clienteId,
   contatoId,
-  cartaoId,
+  nome,
   atividadesIniciais,
   /** Calculado no servidor: data relativa no cliente diverge na hidratação. */
   agora,
 }: {
   clienteId: string
   contatoId: string
-  cartaoId?: string | null
+  nome: string
   atividadesIniciais: Atividade[]
   agora: number
 }) {
   const [atividades, setAtividades] = useState(atividadesIniciais)
-  const [titulo, setTitulo] = useState('')
-  const [tipo, setTipo] = useState<TipoDeAtividade>('tarefa')
-  const [prazo, setPrazo] = useState('')
+  const [marcando, setMarcando] = useState(false)
   const [erro, setErro] = useState<string | null>(null)
 
   // "Marcar atividade" (cabeçalho da ficha, Inbox) avisa por evento quando o
@@ -86,93 +84,55 @@ export function Atividades({
   const resolvidas = atividades.filter((a) => a.situacao !== 'aberta')
 
   return (
-    <div className="flex flex-col gap-3">
-      <form
-        onSubmit={(e) => {
-          e.preventDefault()
-          criar()
-        }}
-        className="flex flex-col gap-2"
-      >
-        <input
-          value={titulo}
-          onChange={(e) => setTitulo(e.target.value)}
-          placeholder="o que precisa ser feito"
-          aria-label="O que precisa ser feito"
-          className="app-field w-full px-3 py-2.5 text-[12.5px]"
-        />
-        <div className="flex gap-2">
-          {/*
-            O `Dropdown` do produto, não o `<select>` do sistema: a lista nativa
-            abre com a tipografia e o azul do sistema operacional, que não são
-            os nossos, e no print ficava uma faixa azul-royal no meio de uma tela
-            que não tem essa cor em lugar nenhum.
-
-            O prazo continua `<input type="date">`, e isso é deliberado: o
-            calendário nativo traz teclado, formato local e acessibilidade que um
-            calendário próprio teria de reconstruir inteiro. A aparência do campo
-            fechado é nossa; só a folhinha que abre é do navegador.
-          */}
-          <span className="flex-1">
-            <Dropdown
-              valor={tipo}
-              aoMudar={(novo) => setTipo(novo as TipoDeAtividade)}
-              rotuloAcessivel="Tipo da atividade"
-              className="w-full text-[12px]"
-              opcoes={TIPOS_DE_ATIVIDADE.map((t) => ({ valor: t, rotulo: NOME_DO_TIPO[t] }))}
-            />
-          </span>
-          <input
-            type="date"
-            value={prazo}
-            onChange={(e) => setPrazo(e.target.value)}
-            aria-label="Prazo"
-            className="app-field flex-1 px-2 py-2 text-[12px]"
-          />
+    <section className="app-card overflow-hidden">
+      <CabecalhoDoTipo
+        titulo="Atividades da equipe"
+        quemFaz="uma pessoa da equipe"
+        contagem={abertas.length}
+        descricao="Lembretes do que alguém precisa fazer: ligar, mandar proposta, visitar. Nada é enviado ao cliente."
+        acao={
           <button
-            type="submit"
-            disabled={titulo.trim() === ''}
-            className="botao-secundario botao-md"
+            type="button"
+            onClick={() => setMarcando(true)}
+            className="botao-primario botao-sm shrink-0"
           >
-            Criar
+            + Atividade
           </button>
-        </div>
-        <span className="text-[10.5px] leading-4 text-dim">
-          Sem data é <strong>algum dia</strong>, e não fica atrasada por isso.
-        </span>
-      </form>
-
-      {erro && (
-        <p role="alert" className="text-[11.5px] leading-5 text-perigo">
-          {erro}
-        </p>
-      )}
+        }
+      />
 
       {abertas.length === 0 ? (
-        <p className="py-3 text-center text-[11.5px] leading-5 text-dim">
-          Nada marcado para esta pessoa.
+        <p className="px-5 py-4 text-[12px] leading-5 text-dim">
+          Nada marcado para esta pessoa. Use <strong className="text-muted">+ Atividade</strong>{' '}
+          para combinar o próximo passo.
         </p>
       ) : (
-        <ul className="flex flex-col gap-1.5">
+        <ul>
           {abertas.map((atividade) => {
             const urgencia = urgenciaDe(atividade, agora)
             return (
               <li
                 key={atividade.id}
-                className={`flex items-center gap-2 rounded-lg border px-3 py-2 ${TOM[urgencia]}`}
+                className="flex items-center gap-3 border-b border-line px-5 py-3 last:border-0"
               >
-                <span className="flex-1">
-                  <span className="block text-[12.5px] text-fg">{atividade.titulo}</span>
-                  <span className="block text-[10.5px] leading-4">
-                    {NOME_DO_TIPO[atividade.tipo]}
-                    {ROTULO[urgencia] && ` · ${ROTULO[urgencia]}`}
+                <span className="min-w-0 flex-1">
+                  <span className="block text-[13px] font-semibold text-ink">{atividade.titulo}</span>
+                  <span className="mt-1 flex flex-wrap items-center gap-1.5 text-[11px] text-dim">
+                    <span
+                      className={`rounded-full px-1.5 py-px text-[10.5px] font-semibold ${TOM[urgencia]}`}
+                    >
+                      {NOME_DO_TIPO[atividade.tipo]}
+                      {ROTULO[urgencia] && ` · ${ROTULO[urgencia]}`}
+                    </span>
                     {/*
                       A hora só aparece quando foi combinada. `prazo` é um
                       instante e sempre tem uma, então imprimi-la sempre faria
                       "14 de out, 12:00" para uma proposta que só tem dia.
                     */}
-                    {atividade.horaMarcada && atividade.prazo && ` · ${horaDoRelogio(atividade.prazo)}`}
-                    {atividade.responsavelNome && ` · ${atividade.responsavelNome}`}
+                    {atividade.horaMarcada && atividade.prazo && (
+                      <span>{horaDoRelogio(atividade.prazo)}</span>
+                    )}
+                    {atividade.responsavelNome && <span>{atividade.responsavelNome}</span>}
                   </span>
                   {/*
                     O link da reunião e o endereço da visita ficam à vista: o
@@ -185,12 +145,12 @@ export function Atividades({
                         href={atividade.onde}
                         target="_blank"
                         rel="noreferrer noopener"
-                        className="mt-0.5 block truncate text-[11px] text-primary underline"
+                        className="mt-1 block truncate text-[11.5px] text-primary underline"
                       >
                         {atividade.onde}
                       </a>
                     ) : (
-                      <span className="mt-0.5 block truncate text-[11px] text-muted">
+                      <span className="mt-1 block truncate text-[11.5px] text-muted">
                         {atividade.onde}
                       </span>
                     ))}
@@ -198,7 +158,7 @@ export function Atividades({
                 <button
                   type="button"
                   onClick={() => resolver(atividade.id, 'concluida')}
-                  className="botao-secundario botao-sm"
+                  className="botao-secundario botao-sm shrink-0"
                 >
                   Concluir
                 </button>
@@ -209,22 +169,20 @@ export function Atividades({
       )}
 
       {resolvidas.length > 0 && (
-        <details>
-          <summary className="cursor-pointer text-[11px] text-dim">
+        <details className="border-t border-line">
+          <summary className="cursor-pointer px-5 py-3 text-[11.5px] font-semibold text-dim transition hover:text-muted">
             {resolvidas.length} resolvida{resolvidas.length === 1 ? '' : 's'}
           </summary>
-          <ul className="mt-1.5 flex flex-col gap-1">
+          <ul className="flex flex-col pb-2">
             {resolvidas.map((atividade) => (
-              <li key={atividade.id} className="flex items-center gap-2 px-1 py-1">
-                <span className="flex-1 text-[11.5px] text-dim line-through">
-                  {atividade.titulo}
-                </span>
+              <li key={atividade.id} className="flex items-center gap-2 px-5 py-1.5">
+                <span className="flex-1 text-[12px] text-dim line-through">{atividade.titulo}</span>
                 <button
                   type="button"
                   onClick={() => reabrir(atividade.id)}
-                  className="text-[10.5px] text-dim underline disabled:opacity-50"
+                  className="text-[11px] text-dim underline transition hover:text-primary"
                 >
-                  reabrir
+                  Reabrir
                 </button>
               </li>
             ))}
@@ -232,65 +190,31 @@ export function Atividades({
         </details>
       )}
 
+      {erro && (
+        <AvisoFlutuante tom="erro" aoSumir={() => setErro(null)}>
+          {erro}
+        </AvisoFlutuante>
+      )}
       {/*
-        RB-33 escrita na tela: numa tela de CRM ligada ao WhatsApp, "lembrar de
-        ligar quinta" parece que alguma coisa sai no WhatsApp quinta.
+        O mesmo painel do Inbox e do alto da ficha. Ele avisa por
+        `ATIVIDADE_CRIADA` quando o banco confirma, e o efeito acima põe a
+        nova na lista sem recarregar.
       */}
-      <p className="rounded-lg border border-line bg-surface px-3 py-2 text-[10.5px] leading-4 text-dim">
-        Isto é um lembrete para a equipe. <strong>Nada é enviado ao cliente.</strong>{' '}
-        Para mandar mensagem numa hora marcada, use <em>Agendar mensagem</em>.
-      </p>
-    </div>
+      <Modal
+        aberto={marcando}
+        aoFechar={() => setMarcando(false)}
+        titulo={`Marcar atividade para ${nome}`}
+        descricao="É um lembrete para a equipe, e aparece nesta aba. Nada é enviado ao cliente."
+      >
+        <MarcarAtividade
+          clienteId={clienteId}
+          contatoId={contatoId}
+          aoFechar={() => setMarcando(false)}
+          aoFalhar={setErro}
+        />
+      </Modal>
+    </section>
   )
-
-  /**
-   * Otimista desde 25/set: a linha aparece no clique com id provisório, que
-   * troca pelo do banco quando ele responde. Antes esperava o servidor com
-   * "…" no botão, e a linha criada ficava com um id que não dava para
-   * concluir até recarregar a ficha.
-   */
-  function criar() {
-    if (titulo.trim() === '') return
-    setErro(null)
-    const provisoria: Atividade = {
-      id: `nova:${Date.now()}`,
-      contatoId,
-      cartaoId: cartaoId ?? null,
-      tipo,
-      titulo: titulo.trim(),
-      nota: null,
-      onde: null,
-      horaMarcada: false,
-      prazo: prazo ? `${prazo}T12:00:00.000Z` : null,
-      responsavelId: null,
-      responsavelNome: null,
-      situacao: 'aberta',
-      concluidaEm: null,
-      motivoDoCancelamento: null,
-      criadoEm: new Date().toISOString(),
-    }
-    const pedido = { contatoId, cartaoId: cartaoId ?? null, tipo, titulo, prazo }
-    setAtividades((atuais) => [...atuais, provisoria])
-    setTitulo('')
-    setPrazo('')
-
-    const desfazer = (motivo: string) => {
-      setAtividades((atuais) => atuais.filter((a) => a.id !== provisoria.id))
-      setTitulo(pedido.titulo)
-      setPrazo(pedido.prazo)
-      setErro(motivo)
-    }
-    depoisDaTela(() => acaoCriarAtividade(clienteId, pedido)).then(
-      (r) => {
-        if (!r.ok || !r.criada) return desfazer(r.erro ?? 'não deu para criar')
-        const criada = r.criada
-        setAtividades((atuais) =>
-          atuais.map((a) => (a.id === provisoria.id ? { ...a, id: criada.id, prazo: criada.prazo } : a)),
-        )
-      },
-      () => desfazer('sem conexão com o servidor'),
-    )
-  }
 
   function resolver(atividadeId: string, situacao: 'concluida' | 'cancelada') {
     setErro(null)

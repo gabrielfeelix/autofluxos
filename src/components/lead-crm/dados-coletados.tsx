@@ -51,7 +51,7 @@ export function DadosColetados({ campos }: { campos: [string, string][] }) {
       </h2>
 
       {campos.length === 0 ? (
-        <p className="px-[18px] py-[22px] text-xs leading-5 text-dim">
+        <p className="px-[18px] py-4 text-xs leading-5 text-muted">
           Nada coletado: a conversa não chegou a preencher nenhuma variável.
         </p>
       ) : (
@@ -76,14 +76,19 @@ export function DadosColetados({ campos }: { campos: [string, string][] }) {
   )
 }
 
-/** A grade de campos. Uma célula por campo, com o valor desenhado pelo tipo. */
+/**
+ * Os campos como propriedades em linha, rótulo à esquerda, o mesmo desenho do
+ * painel do negócio (`.crm-props`). Era uma grade de três colunas com fio de
+ * 1px entre as células: com cinco campos sobrava uma célula cinza vazia no fim,
+ * e o rótulo em cima do valor fazia a ficha parecer formulário.
+ */
 function Lista({ campos }: { campos: [string, string][] }) {
   return (
-    <dl className="grid grid-cols-1 gap-px bg-line sm:grid-cols-2 lg:grid-cols-3">
+    <dl className="crm-props crm-props-largo px-[18px] py-2">
       {campos.map(([chave, valor]) => (
-        <div key={chave} className="bg-panel px-[18px] py-3">
-          <dt className="text-[10.5px] font-semibold text-dim">{rotuloDoCampo(chave) || chave}</dt>
-          <dd className="mt-1">
+        <div key={chave}>
+          <dt>{rotuloDoCampo(chave) || chave}</dt>
+          <dd>
             <ValorDoCampo valor={ehVariavelDeNome(chave) ? nomeComoSeEscreve(valor) : valor} />
           </dd>
         </div>

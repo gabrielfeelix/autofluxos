@@ -13,7 +13,7 @@
  * volta para Contatos como antes.
  */
 
-export const ABAS_DA_FICHA = ['visao', 'atividades', 'historico', 'dados', 'conversa'] as const
+export const ABAS_DA_FICHA = ['visao', 'atividades', 'automatico', 'historico', 'dados', 'conversa'] as const
 export type AbaDaFicha = (typeof ABAS_DA_FICHA)[number]
 
 export function abaDaFicha(bruto: unknown): AbaDaFicha {

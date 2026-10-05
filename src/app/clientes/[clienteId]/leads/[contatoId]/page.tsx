@@ -50,7 +50,6 @@ import { origemDoContato } from '@/core/contatos/origem'
 import { Avatar } from '@/components/inbox/avatar'
 import { Abas, IrParaAba } from '@/components/lead-crm/abas'
 import { abaDaFicha, voltaDaFicha } from '@/core/volta-da-ficha'
-import { CabecalhoDoTipo } from '@/components/lead-crm/tipo-do-passo'
 import { prazoEmPalavras, proximaAcao } from '@/core/atividades'
 import { EstagioDoContato } from '@/components/lead-crm/estagio-do-contato'
 import { Historico as HistoricoDoContato } from '@/components/lead-crm/historico'
@@ -194,7 +193,6 @@ export default async function Pagina({
   const abertas = atividades.filter((a) => a.situacao === 'aberta').length
   const aSair = agendadas.filter((a) => a.estado === 'agendada' || a.estado === 'enviando').length
   const sequenciasAtivas = acompanhamentos.filter((a) => a.estado === 'ativa').length
-  const pendentesDaAba = abertas + aSair + sequenciasAtivas
 
   const campos = Object.entries(lead.campos)
   const nome = lead.nome ?? 'sem nome'
@@ -245,7 +243,7 @@ export default async function Pagina({
         temAutomacao={temAutomacao}
         equipe={equipe.map((membro) => ({ id: membro.id, nome: membro.nome }))}
       >
-      <Miolo largura="cheia">
+      <Miolo largura="toda">
         <Link
           href={volta.href}
           className="mb-3.5 inline-block text-[12.5px] text-muted transition hover:text-primary"
@@ -293,7 +291,7 @@ export default async function Pagina({
           {/* O pedido de exclusão da LGPD vira este botão. A pergunta diz o que
               some junto porque não existe desfazer: a conversa não está copiada
               em lugar nenhum. Mesma forma dos três vizinhos: ícone em cima,
-              palavra embaixo, o vermelho aparece no hover. */}
+              palavra embaixo, mas em vermelho cheio: é a única ação sem volta. */}
           <ApagarContato
             acao={acaoApagarContato.bind(null, clienteId, contatoId)}
             titulo="Apaga a pessoa, a conversa inteira e o que o fluxo coletou. Não dá para desfazer."
@@ -374,11 +372,11 @@ export default async function Pagina({
           <div className="crm-field">
             <span>Mensagem agendada</span>
             {mensagemFalhou ? (
-              <IrParaAba aba="atividades" className="text-left text-[12.5px] font-semibold text-perigo">
+              <IrParaAba aba="automatico" className="text-left text-[12.5px] font-semibold text-perigo">
                 uma mensagem não saiu
               </IrParaAba>
             ) : proximaMensagem ? (
-              <IrParaAba aba="atividades" className="text-left text-[12.5px] text-ink hover:text-primary">
+              <IrParaAba aba="automatico" className="text-left text-[12.5px] text-ink hover:text-primary">
                 sai em {horaComFuso(proximaMensagem.quando)}
               </IrParaAba>
             ) : (
@@ -549,37 +547,36 @@ export default async function Pagina({
             {
               chave: 'atividades',
               rotulo: 'Atividades',
-              contagem: pendentesDaAba,
+              contagem: abertas,
+              conteudo: (
+                <Atividades
+                  clienteId={clienteId}
+                  contatoId={contatoId}
+                  nome={nome}
+                  atividadesIniciais={atividades}
+                  agora={agoraDaFicha}
+                />
+              ),
+            },
+            {
+              /*
+                **O que acontece sem ninguém da equipe.** Mensagem agendada e
+                acompanhamento moravam na aba Atividades, abaixo das atividades:
+                três cartões com três "quem faz" diferentes, e a aba mais aberta
+                da ficha virava uma página longa onde o que era trabalho de
+                alguém se misturava com o que o sistema faz sozinho. Separados,
+                Atividades responde "o que eu preciso fazer" e esta aba responde
+                "o que vai sair sozinho".
+              */
+              chave: 'automatico',
+              rotulo: 'Automático',
+              contagem: aSair + sequenciasAtivas,
               contagemRotulo: [
-                `${abertas} ${abertas === 1 ? 'atividade aberta' : 'atividades abertas'}`,
                 `${aSair} ${aSair === 1 ? 'mensagem a sair' : 'mensagens a sair'}`,
                 `${sequenciasAtivas} ${sequenciasAtivas === 1 ? 'sequência em andamento' : 'sequências em andamento'}`,
               ].join(', '),
               conteudo: (
-                /*
-                 * Três tipos, três cartões, cada um dizendo quem faz (8.3):
-                 * a atividade é de uma pessoa, a mensagem sai sozinha na hora
-                 * marcada, o acompanhamento é de uma sequência. A contagem da
-                 * aba soma o que está pendente nos três e a dica diz quanto
-                 * de cada.
-                 */
-                <div className="flex flex-col gap-[18px]">
-                  <section className="app-card overflow-hidden">
-                    <CabecalhoDoTipo
-                      titulo="Atividades da equipe"
-                      quemFaz="uma pessoa da equipe"
-                      contagem={abertas}
-                      descricao="Lembretes do que alguém precisa fazer: ligar, mandar proposta, visitar."
-                    />
-                    <div className="px-5 py-4">
-                      <Atividades
-                        clienteId={clienteId}
-                        contatoId={contatoId}
-                        atividadesIniciais={atividades}
-                        agora={agoraDaFicha}
-                      />
-                    </div>
-                  </section>
+                <div className="grid grid-cols-1 items-start gap-[18px] lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
                   <Agendadas agendadas={agendadas} contatoId={contatoId} />
                   <Acompanhamentos acompanhamentos={acompanhamentos} />
                 </div>
@@ -633,7 +630,9 @@ export default async function Pagina({
               chave: 'dados',
               rotulo: 'Dados e origem',
               conteudo: (
-                <div className="flex flex-col gap-[18px]">
+                /* Lado a lado no desktop: as respostas são a lista longa, a
+                   jornada é curta e não precisa da largura inteira. */
+                <div className="grid grid-cols-1 items-start gap-[18px] lg:grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)]">
                   <DadosColetados campos={campos} />
                   <section className="app-card overflow-hidden">
                     <h2 className="flex items-center gap-2 border-b border-line px-[18px] py-3.5 text-[13px] font-bold">

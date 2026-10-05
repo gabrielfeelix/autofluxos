@@ -14,15 +14,19 @@ export function CabecalhoDoTipo({
   quemFaz,
   descricao,
   contagem,
+  acao,
 }: {
   titulo: string
   quemFaz: string
   descricao: ReactNode
   /** O que está pendente deste tipo. Zero não é mostrado. */
   contagem?: number
+  /** O botão de criar, à direita do título. */
+  acao?: ReactNode
 }) {
   return (
-    <header className="border-b border-line px-5 py-4">
+    <header className="flex items-start gap-3 border-b border-line px-5 py-4">
+      <div className="min-w-0 flex-1">
       <div className="flex flex-wrap items-center gap-2">
         <h2 className="text-[14.5px] font-bold">{titulo}</h2>
         {contagem ? (
@@ -35,6 +39,8 @@ export function CabecalhoDoTipo({
         </span>
       </div>
       <p className="mt-0.5 text-[12px] leading-5 text-dim">{descricao}</p>
+      </div>
+      {acao}
     </header>
   )
 }

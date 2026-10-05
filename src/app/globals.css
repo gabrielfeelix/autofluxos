@@ -1648,6 +1648,28 @@ textarea::placeholder {
   border-color: var(--line);
   background: var(--surface);
 }
+/* Variante de tela larga: rótulo pode ser uma pergunta inteira do fluxo, então
+   ganha coluna maior, e cada linha leva fio embaixo para o olho não pular de
+   linha numa lista de vinte campos. No celular o rótulo vai para cima. */
+.crm-props-largo > div {
+  grid-template-columns: minmax(0, 1fr);
+  align-items: start;
+  gap: 2px;
+  padding: 9px 0;
+  border-bottom: 1px solid var(--line);
+}
+.crm-props-largo > div:last-child {
+  border-bottom: 0;
+}
+.crm-props-largo dd {
+  padding: 0;
+}
+@media (min-width: 640px) {
+  .crm-props-largo > div {
+    grid-template-columns: minmax(140px, 240px) minmax(0, 1fr);
+    gap: 16px;
+  }
+}
 /* Papel, não sistema: o que alguém da equipe escreveu. */
 .crm-nota {
   border-color: color-mix(in oklab, var(--aviso) 22%, var(--line));

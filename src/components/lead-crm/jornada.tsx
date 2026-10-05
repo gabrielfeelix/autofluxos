@@ -25,8 +25,9 @@ export function Jornada({
 }) {
   if (passagens.length === 0) {
     return (
-      <p className="rounded-xl border border-dashed border-line px-4 py-8 text-center text-[12px] leading-5 text-dim">
-        Esta pessoa não chegou por anúncio, ou chegou antes de o sistema passar a registrar isso.
+      <p className="text-xs leading-5 text-muted">
+        Nenhuma passagem por anúncio registrada: a pessoa chegou direto, ou antes de o registro
+        começar. Quando ela vier por um anúncio de WhatsApp, a passagem aparece aqui.
       </p>
     )
   }
