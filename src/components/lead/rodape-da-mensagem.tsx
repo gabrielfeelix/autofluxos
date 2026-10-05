@@ -270,8 +270,9 @@ export function RodapeDaMensagem({
       </button>
 
       {/*
-        A estrela de favorita mora no canto de cima da bolha, clarinha: branca
-        na nossa (azul), cinza na do cliente. No hover a seta entra no lugar;
+        A estrela de favorita mora no canto de cima da bolha, sempre amarela
+        (05/out/2026): branca ou cinza ela lia como enfeite, e a cor é o que diz
+        "esta eu guardei" de relance, como no WhatsApp. No hover a seta entra no lugar;
         no celular, onde a seta fica sempre, ela vai para o lado da seta.
         Embaixo da bolha ela ficava solta e torta (pedido de 01/out/2026).
       */}
@@ -279,7 +280,7 @@ export function RodapeDaMensagem({
         <span
           title="Favoritada"
           aria-label="Mensagem favoritada"
-          className={`pointer-events-none absolute top-2 right-2.5 text-[12px] leading-none transition [@media(hover:hover)]:group-hover:opacity-0 [@media(hover:none)]:right-9 ${menuAberto ? 'opacity-0' : ''} ${nossa && !bolhaClara ? 'text-white/80' : nossa ? 'text-primary/70' : 'text-muted'}`}
+          className={`pointer-events-none absolute top-2 right-2.5 text-[13px] leading-none transition [@media(hover:hover)]:group-hover:opacity-0 [@media(hover:none)]:right-9 ${menuAberto ? 'opacity-0' : ''} ${nossa && !bolhaClara ? 'text-amber-300 drop-shadow-[0_1px_1px_rgba(0,0,0,0.25)]' : 'text-amber-500'}`}
         >
           ★
         </span>
@@ -472,6 +473,7 @@ function IconeEstrela({ cheia }: { cheia: boolean }) {
       <path
         d="m12 3 2.8 5.7 6.2.9-4.5 4.4 1 6.2L12 17.3 6.5 20.2l1-6.2L3 9.6l6.2-.9L12 3Z"
         fill={cheia ? 'currentColor' : 'none'}
+        className={cheia ? 'text-amber-500' : undefined}
       />
     </Svg>
   )
