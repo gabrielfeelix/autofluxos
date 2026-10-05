@@ -60,7 +60,7 @@ export function FecharCartao({
     <Modal
       aberto={cartao !== null}
       aoFechar={aoFechar}
-      titulo={ganhou ? `Ganhar, ${cartao?.nome ?? ''}` : `Perder, ${cartao?.nome ?? ''}`}
+      titulo={ganhou ? 'Marcar como ganha' : 'Marcar como perdida'}
     >
       <Efeitos ganhou={ganhou} seguinte={seguinte} />
 
@@ -75,7 +75,7 @@ export function FecharCartao({
               value={titulo}
               onChange={(e) => setTitulo(e.target.value)}
               maxLength={LIMITE_DO_TITULO}
-              placeholder="ex.: Plano trimestral"
+              placeholder="Exemplo: Plano trimestral"
               className="app-field w-full px-3 py-2.5 text-[12.5px]"
             />
           </label>

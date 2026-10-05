@@ -263,15 +263,18 @@ export default async function Pagina({
         <header className="mb-[18px] flex flex-wrap items-center gap-3.5">
           <Avatar nome={lead.nome} tamanho={52} />
           <div className="min-w-0">
-            <NomeEditavel clienteId={clienteId} contatoId={contatoId} nome={lead.nome}>
-              <NomeDoContato
-                nome={lead.nome}
-                nomeDoPerfil={lead.nomeDoPerfil}
-                nomeReal={lead.nomeReal}
-                waId={lead.waId}
-                salvar={acaoCorrigirNome.bind(null, clienteId, contatoId)}
-              />
-            </NomeEditavel>
+            <div className="flex flex-wrap items-center gap-x-2.5 gap-y-1">
+              <NomeEditavel clienteId={clienteId} contatoId={contatoId} nome={lead.nome}>
+                <NomeDoContato
+                  nome={lead.nome}
+                  nomeDoPerfil={lead.nomeDoPerfil}
+                  nomeReal={lead.nomeReal}
+                  waId={lead.waId}
+                  salvar={acaoCorrigirNome.bind(null, clienteId, contatoId)}
+                />
+              </NomeEditavel>
+              <SeloDoAtendimento aoLadoDoNome atendimento={atendimento} donoNome={donoNome} />
+            </div>
             {/* Canal e origem embaixo do nome. **O telefone não entra aqui**:
                 `NomeDoContato` já o imprime, e o mesmo número duas vezes em
                 duas linhas seguidas é ruído que parece defeito. */}
@@ -344,13 +347,21 @@ export default async function Pagina({
           <div className="crm-field">
             <span>Atendimento</span>
             {/*
-              Altura igual à dos dois dropdowns ao lado para as três colunas
-              assentarem na mesma linha de base. O selo diz quem está com a
-              conversa agora; o que fazer a respeito continua nas faixas
-              abaixo, que é onde mora o botão.
+              Altura mínima igual à dos dois dropdowns ao lado para as três
+              colunas assentarem na mesma linha de base. O selo diz quem está
+              com a conversa; o botão ao lado, o que fazer a respeito.
             */}
-            <span className="flex h-[38px] items-center">
+            <span className="flex min-h-[38px] flex-wrap items-center gap-2">
               <SeloDoAtendimento atendimento={atendimento} donoNome={donoNome} />
+              <CartaoDoAtendimento
+                compacto
+                atendimento={atendimento}
+                donoNome={donoNome}
+                aguardando={lead.aguardando}
+                automacaoAtiva={lead.automacaoAtiva}
+                finalizar={acaoEncerrarAtendimento.bind(null, clienteId, contatoId)}
+                alternarBot={acaoAlternarAutomacaoDoLead.bind(null, clienteId, contatoId)}
+              />
             </span>
           </div>
           {/*
@@ -399,24 +410,6 @@ export default async function Pagina({
             )}
           </div>
         </section>
-
-        {/*
-          Um cartão só para o estado do atendimento (8.1), o mesmo da coluna do
-          Inbox. Eram duas faixas: uma para quem pediu pessoa, com "Atendimento
-          finalizado", e outra com o interruptor do bot, que dizia "Bot
-          respondendo" mesmo com a sessão nas mãos de alguém.
-        */}
-        <div className="mb-[18px]">
-          <CartaoDoAtendimento
-            largo
-            atendimento={atendimento}
-            donoNome={donoNome}
-            aguardando={lead.aguardando}
-            automacaoAtiva={lead.automacaoAtiva}
-            finalizar={acaoEncerrarAtendimento.bind(null, clienteId, contatoId)}
-            alternarBot={acaoAlternarAutomacaoDoLead.bind(null, clienteId, contatoId)}
-          />
-        </div>
 
         {/*
           **A ficha é um documento, não um chat com notas na margem.** Ela era um

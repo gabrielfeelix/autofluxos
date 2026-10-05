@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useRef, useState, useTransition } from 'react'
+import { Fragment, useEffect, useRef, useState, useTransition } from 'react'
 import { Modal } from '@/components/design/modal'
 import type { Produto } from '@/core/produtos'
 import { selecionaveis } from '@/core/produtos'
@@ -79,7 +79,7 @@ export function RegistrarVenda({
     <Modal
       aberto={cartao !== null}
       aoFechar={aoFechar}
-      titulo={`Registrar venda, ${cartao?.nome ?? ''}`}
+      titulo="Registrar venda"
       descricao="A oportunidade é marcada como ganha na mesma operação. Se este funil entrega a outro, o cartão de lá abre sozinho. A conversa não é encerrada e o bot continua como está."
     >
       <div className="flex flex-col gap-3">
@@ -113,55 +113,68 @@ export function RegistrarVenda({
           <span className="mb-1 block text-[11px] font-bold tracking-[0.04em] text-dim uppercase">
             O que foi vendido <span className="font-normal normal-case">(opcional)</span>
           </span>
-          <div className="flex flex-col gap-2">
+          {/*
+            Um campo só para o item, com o catálogo como sugestão. Eram um
+            select ("livre" + produtos) e uma descrição lado a lado, e na
+            largura do modal os dois encolhiam a um quadradinho sem texto.
+            Escolher um nome do catálogo liga o produto; digitar outro fica
+            como descrição livre, que é o que o "livre" do select fazia.
+          */}
+          <datalist id="produtos-da-venda">
+            {ativos.map((produto) => (
+              <option key={produto.id} value={produto.nome} />
+            ))}
+          </datalist>
+          <div className="grid grid-cols-[64px_minmax(0,1fr)_28px] items-center gap-2 sm:grid-cols-[minmax(0,1fr)_56px_112px_28px]">
+            {/* No celular o item ocupa a linha e quantidade e valor descem; os rótulos das colunas só fazem sentido lado a lado. */}
+            <span className="text-[10.5px] font-semibold text-dim max-sm:hidden">Item</span>
+            <span className="text-[10.5px] font-semibold text-dim max-sm:hidden">Qtd</span>
+            <span className="text-[10.5px] font-semibold text-dim max-sm:hidden">Valor unitário</span>
+            <span className="max-sm:hidden" />
             {linhas.map((linha, i) => (
-              <div key={i} className="flex gap-2">
-                <select
-                  value={linha.produtoId}
-                  onChange={(e) => {
-                    const produto = ativos.find((p) => p.id === e.target.value)
-                    trocar(i, {
-                      produtoId: e.target.value,
-                      // O nome entra na descrição, e é o nome **da época**: a
-                      // venda guarda o texto, não uma busca no catálogo.
-                      descricao: produto?.nome ?? linha.descricao,
-                    })
-                  }}
-                  aria-label={`Item ${i + 1}`}
-                  className="app-field min-w-0 flex-[1.4] px-2 py-2 text-[12px]"
-                >
-                  <option value="">livre</option>
-                  {ativos.map((produto) => (
-                    <option key={produto.id} value={produto.id}>
-                      {produto.nome}
-                    </option>
-                  ))}
-                </select>
+              <Fragment key={i}>
                 <input
                   value={linha.descricao}
-                  onChange={(e) => trocar(i, { descricao: e.target.value })}
-                  placeholder="descrição"
-                  aria-label={`Descrição do item ${i + 1}`}
-                  className="app-field min-w-0 flex-[1.6] px-2 py-2 text-[12px]"
+                  list="produtos-da-venda"
+                  onChange={(e) => {
+                    const produto = ativos.find((p) => p.nome === e.target.value)
+                    // O nome entra na descrição, e é o nome **da época**: a
+                    // venda guarda o texto, não uma busca no catálogo.
+                    trocar(i, { descricao: e.target.value, produtoId: produto?.id ?? '' })
+                  }}
+                  placeholder={ativos.length > 0 ? 'Escolha ou escreva o item' : 'Exemplo: Plano anual'}
+                  aria-label={`Item ${i + 1}`}
+                  className="app-field min-w-0 px-2.5 py-2 text-[12px] max-sm:col-span-3 max-sm:mt-1.5"
                 />
                 <input
                   value={linha.quantidade}
                   onChange={(e) => trocar(i, { quantidade: e.target.value })}
                   inputMode="decimal"
-                  placeholder="qtd"
+                  placeholder="Qtd"
                   aria-label={`Quantidade do item ${i + 1}`}
-                  className="app-field w-[64px] px-2 py-2 text-[12px]"
+                  className="app-field min-w-0 px-2.5 py-2 text-[12px]"
                 />
-                <span className="w-[112px] shrink-0">
-                  <CampoDeDinheiro
-                    valor={linha.valorUnitario}
-                    aoMudar={(texto) => trocar(i, { valorUnitario: texto })}
-                    placeholder="0,00"
-                    aria-label={`Valor unitário do item ${i + 1}`}
-                    className="app-field px-2 py-2 text-[12px]"
-                  />
-                </span>
-              </div>
+                <CampoDeDinheiro
+                  valor={linha.valorUnitario}
+                  aoMudar={(texto) => trocar(i, { valorUnitario: texto })}
+                  placeholder="0,00"
+                  aria-label={`Valor unitário do item ${i + 1}`}
+                  className="app-field px-2 py-2 text-[12px]"
+                />
+                <button
+                  type="button"
+                  onClick={() =>
+                    setLinhas((atual) => (atual.length === 1 ? [{ ...LINHA_VAZIA }] : atual.filter((_, j) => j !== i)))
+                  }
+                  title="Tirar este item"
+                  aria-label={`Tirar o item ${i + 1}`}
+                  className="grid size-7 place-items-center rounded-lg text-dim transition hover:bg-surface hover:text-perigo"
+                >
+                  <svg aria-hidden viewBox="0 0 24 24" className="size-3.5" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+                    <path d="M6 6l12 12M18 6 6 18" />
+                  </svg>
+                </button>
+              </Fragment>
             ))}
           </div>
           <button
@@ -169,7 +182,7 @@ export function RegistrarVenda({
             onClick={() => setLinhas((atual) => [...atual, { ...LINHA_VAZIA }])}
             className="mt-2 rounded-lg border border-line px-2.5 py-1 text-[11px] font-semibold text-muted transition hover:bg-white/[0.04]"
           >
-            + item
+            + Item
           </button>
           <span className="mt-1.5 block text-[11px] leading-4 text-dim">
             Quantidade e valor em branco ficam como <strong>não informado</strong>, e
@@ -185,7 +198,7 @@ export function RegistrarVenda({
           <input
             value={nota}
             onChange={(e) => setNota(e.target.value)}
-            placeholder="ex.: número do pedido"
+            placeholder="Exemplo: pedido 1234"
             className="app-field w-full px-3 py-2.5 text-[12.5px]"
           />
         </label>

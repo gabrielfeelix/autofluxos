@@ -10,6 +10,9 @@ import { resumoDoMotivo } from '@/core/aviso-de-handoff'
 
 type Resultado = { ok: boolean; erro?: string }
 
+const ESTILO_COMPACTO =
+  'shrink-0 rounded-[8px] border border-line bg-panel px-2.5 py-1 text-[11.5px] font-bold text-soft transition hover:border-primary/40 hover:text-primary disabled:opacity-50'
+
 const TOM = {
   aguardando_humano: 'border-rose-400/35 bg-rose-400/[0.07] text-perigo',
   com_humano: 'border-amber-400/35 bg-amber-400/[0.07] text-aviso',
@@ -48,11 +51,26 @@ function useAtendimentoVivo(atendimento: Atendimento, donoNome: string | null) {
 export function SeloDoAtendimento({
   atendimento: doServidor,
   donoNome: donoDoServidor,
+  aoLadoDoNome = false,
 }: {
   atendimento: Atendimento
   donoNome: string | null
+  /** Ao lado do nome na ficha: só o estado, e só quando há pessoa no meio. */
+  aoLadoDoNome?: boolean
 }) {
   const { atendimento, donoNome } = useAtendimentoVivo(doServidor, donoDoServidor)
+  if (aoLadoDoNome) {
+    if (atendimento.estado !== 'com_humano' && atendimento.estado !== 'aguardando_humano') return null
+    if (atendimento.rotulo === 'Atendimento manual') return null
+    return (
+      <span
+        title={donoNome ? `${atendimento.rotulo} com ${donoNome}` : atendimento.rotulo}
+        className={`inline-flex shrink-0 items-center rounded-full border px-2 py-0.5 text-[10.5px] font-bold tracking-[0.03em] uppercase ${TOM[atendimento.estado]}`}
+      >
+        {atendimento.rotulo}
+      </span>
+    )
+  }
   const tom = atendimento.rotulo === 'Atendimento manual' ? TOM.encerrado : TOM[atendimento.estado]
   return (
     // Sem espaço, quem encolhe é o estado, e não o dono: "com Fulano" é o que
@@ -78,6 +96,7 @@ export function CartaoDoAtendimento({
   finalizar,
   alternarBot,
   largo = false,
+  compacto = false,
 }: {
   atendimento: Atendimento
   donoNome: string | null
@@ -89,6 +108,12 @@ export function CartaoDoAtendimento({
   alternarBot: (ativa: boolean) => Promise<Resultado>
   /** Na ficha: texto à esquerda e botões à direita, numa faixa. */
   largo?: boolean
+  /**
+   * Na ficha, dentro da célula Atendimento do topo: só os botões, pequenos.
+   * O estado já está no selo ao lado deles e ao lado do nome; a faixa larga
+   * entre o resumo e as abas repetia os dois.
+   */
+  compacto?: boolean
 }) {
   const { confirmar, dialogo, rodando } = useConfirmar()
   const { atendimento, donoNome, aberta } = useAtendimentoVivo(doServidor, donoDoServidor)
@@ -127,6 +152,69 @@ export function CartaoDoAtendimento({
     atendimento.estado === 'aguardando_humano' ||
     (atendimento.estado === 'com_humano' && atendimento.rotulo === 'Em atendimento')
 
+  const botaoFinalizar = podeFinalizar && (
+        <button
+          type="button"
+          disabled={rodando}
+          title={atendimento.efeito}
+          onClick={() =>
+            confirmar({
+              titulo: 'Finalizar o atendimento?',
+              descricao: manual
+                ? 'A conversa sai da fila de quem espera pessoa.'
+                : 'Na próxima mensagem o bot volta a responder. O histórico continua como está.',
+              rotulo: 'Finalizar atendimento',
+              tom: 'normal',
+              /*
+                Finalizar não é otimista: dispara o pós-atendimento, que pode
+                mandar mensagem ao cliente. O modal mostra "Aguarde…" até o
+                "ok", e só então o cartão muda, sem recarregar a página.
+              */
+              aoConfirmar: async () => {
+                const r = await finalizar()
+                if (!(r && (r.ok === false || r.erro))) {
+                  aberta?.mudar({ aguardando: null, sessaoComPessoa: false })
+                }
+                return r
+              },
+            })
+          }
+          className={compacto ? ESTILO_COMPACTO : 'mt-2.5 w-full rounded-[8px] border border-current/30 bg-white/60 px-2.5 py-2 text-[12px] font-bold transition hover:bg-white disabled:opacity-50 dark:bg-transparent'}
+        >
+          Finalizar atendimento
+        </button>
+      )
+  const botaoDoBot = !manual && (atendimento.estado === 'bot' || atendimento.proximaAcao === 'religar_bot') && (
+        <button
+          type="button"
+          disabled={bot.pendente}
+          title={
+            bot.valor
+              ? 'As próximas mensagens entram no histórico, sem resposta automática.'
+              : 'O bot volta a responder a partir da próxima mensagem.'
+          }
+          onClick={() => bot.agir(!bot.valor, () => alternarBot(!bot.valor))}
+          className={compacto ? ESTILO_COMPACTO : 'mt-2.5 w-full rounded-[8px] border border-current/30 px-2.5 py-2 text-[12px] font-bold transition hover:bg-white/60 disabled:opacity-50'}
+        >
+          {bot.valor ? 'Pausar bot' : 'Religar bot'}
+        </button>
+      )
+
+  if (compacto) {
+    return (
+      <span className="flex flex-wrap items-center gap-2">
+        {botaoFinalizar}
+        {botaoDoBot}
+        {bot.erro && (
+          <span role="alert" className="text-[11.5px] text-perigo">
+            {bot.erro}
+          </span>
+        )}
+        {dialogo}
+      </span>
+    )
+  }
+
   return (
     <div
       className={`rounded-[11px] border px-3 py-2.5 ${tom} ${largo ? 'flex flex-wrap items-center gap-x-4 gap-y-2 px-[17px] py-[13px]' : ''}`}
@@ -156,54 +244,8 @@ export function CartaoDoAtendimento({
       </div>
       <div className={largo ? 'flex shrink-0 flex-wrap gap-2 [&>button]:mt-0 [&>button]:w-auto [&>button]:px-3.5' : ''}>
 
-      {podeFinalizar && (
-        <button
-          type="button"
-          disabled={rodando}
-          title={atendimento.efeito}
-          onClick={() =>
-            confirmar({
-              titulo: 'Finalizar o atendimento?',
-              descricao: manual
-                ? 'A conversa sai da fila de quem espera pessoa.'
-                : 'Na próxima mensagem o bot volta a responder. O histórico continua como está.',
-              rotulo: 'Finalizar atendimento',
-              tom: 'normal',
-              /*
-                Finalizar não é otimista: dispara o pós-atendimento, que pode
-                mandar mensagem ao cliente. O modal mostra "Aguarde…" até o
-                "ok", e só então o cartão muda, sem recarregar a página.
-              */
-              aoConfirmar: async () => {
-                const r = await finalizar()
-                if (!(r && (r.ok === false || r.erro))) {
-                  aberta?.mudar({ aguardando: null, sessaoComPessoa: false })
-                }
-                return r
-              },
-            })
-          }
-          className="mt-2.5 w-full rounded-[8px] border border-current/30 bg-white/60 px-2.5 py-2 text-[12px] font-bold transition hover:bg-white disabled:opacity-50 dark:bg-transparent"
-        >
-          Finalizar atendimento
-        </button>
-      )}
-
-      {!manual && (atendimento.estado === 'bot' || atendimento.proximaAcao === 'religar_bot') && (
-        <button
-          type="button"
-          disabled={bot.pendente}
-          title={
-            bot.valor
-              ? 'As próximas mensagens entram no histórico, sem resposta automática.'
-              : 'O bot volta a responder a partir da próxima mensagem.'
-          }
-          onClick={() => bot.agir(!bot.valor, () => alternarBot(!bot.valor))}
-          className="mt-2.5 w-full rounded-[8px] border border-current/30 px-2.5 py-2 text-[12px] font-bold transition hover:bg-white/60 disabled:opacity-50"
-        >
-          {bot.valor ? 'Pausar bot' : 'Religar bot'}
-        </button>
-      )}
+      {botaoFinalizar}
+      {botaoDoBot}
       </div>
       {bot.erro && (
         <p role="alert" className="mt-1.5 text-[11.5px] text-perigo">
