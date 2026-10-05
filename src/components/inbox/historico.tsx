@@ -11,7 +11,7 @@ import {
   CartoesNaBolha,
   CitacaoNaBolha,
   LocalNaBolha,
-  SemTexto,
+  MensagemApagada, SemTexto,
 } from '@/components/lead/anexo'
 import { RodapeDaMensagem } from '@/components/lead/rodape-da-mensagem'
 import { Transcricao } from '@/components/lead/transcricao'
@@ -598,7 +598,7 @@ function ListaDeMensagens({
                 !mensagem.anexo &&
                 !mensagem.recebido &&
                 !mensagem.semCopia &&
-                !mensagem.naoSuportada && <SemTexto />
+                !mensagem.naoSuportada && (mensagem.apagada ? <MensagemApagada /> : <SemTexto />)
               )}
               {/*
                 O rodapé da bolha diz a hora, e **quem escreveu só quando isso

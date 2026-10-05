@@ -250,6 +250,12 @@ export type MensagemDoLead = {
    * nenhum dos dois descreve isto.
    */
   naoSuportada?: true
+  /**
+   * A pessoa apagou uma mensagem "para todos" (`type: 'revoke'`). A Meta não
+   * diz qual, e o conteúdo não volta: a bolha diz isso, e não "(áudio,
+   * imagem ou documento)", que fazia parecer mídia perdida.
+   */
+  apagada?: true
   /** O que era o `unsupported`, quando a Meta disse. Ver `motivoDoNaoSuportado`. */
   motivoNaoSuportada?: string
   /**
@@ -1203,6 +1209,7 @@ export async function lerConversa(
           ...(recebido ? { recebido } : {}),
           ...(semCopia ? { semCopia: true as const } : {}),
           ...(naoSuportada ? { naoSuportada: true as const } : {}),
+          ...(tipoDaMeta === 'revoke' ? { apagada: true as const } : {}),
           ...(motivo ? { motivoNaoSuportada: motivo } : {}),
           ...(menu ? { menu } : {}),
           ...(toque ? { toque: true as const } : {}),

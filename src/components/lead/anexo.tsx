@@ -98,6 +98,11 @@ export function AnexoNaConversa({ anexo, solta = false }: { anexo: AnexoDaMensag
  * o arquivo da Meta, então não há o que mostrar. Aí a frase antiga continua
  * sendo a verdade.
  */
+/** A pessoa apagou a mensagem para todos, como o WhatsApp escreve. */
+export function MensagemApagada() {
+  return <span className="italic text-muted">🚫 Esta mensagem foi apagada</span>
+}
+
 export function SemTexto() {
   return <span className="italic text-muted">(áudio, imagem ou documento)</span>
 }

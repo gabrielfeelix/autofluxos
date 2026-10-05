@@ -550,6 +550,13 @@ export async function tratarUma(
    */
   if (mensagem.reaction) return
 
+  /*
+   * Apagar "para todos" também não é a pessoa falando. Chegava ao motor como
+   * mídia, e o bot respondia o apagar com o menu de boas-vindas (MGM, 05/out).
+   * A linha já está gravada acima, e a tela a mostra como apagada.
+   */
+  if (mensagem.type === 'revoke') return
+
   /**
    * Quem responde sai das sequências (0031).
    *

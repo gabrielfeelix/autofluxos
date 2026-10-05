@@ -82,7 +82,7 @@ import {
   CartoesNaBolha,
   CitacaoNaBolha,
   LocalNaBolha,
-  SemTexto,
+  MensagemApagada, SemTexto,
 } from '@/components/lead/anexo'
 import { NomeDoContato } from '@/components/lead/identidade'
 import { CartaoDeAnotacoes } from '@/components/inbox/anotacoes'
@@ -817,7 +817,7 @@ async function Historico({
                 !mensagem.local &&
                 !mensagem.cartoes &&
                 !mensagem.semCopia &&
-                !mensagem.naoSuportada && <SemTexto />
+                !mensagem.naoSuportada && (mensagem.apagada ? <MensagemApagada /> : <SemTexto />)
               )}
               {/*
                 Mesma regra do Inbox: a hora sempre, o autor só na saída e só
