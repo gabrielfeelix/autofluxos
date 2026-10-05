@@ -40,6 +40,12 @@ describe('a ficha na tela', () => {
 
   it('as opções de segurança vêm marcadas e travadas', () => {
     const html = desenhar()
-    expect(html).toMatch(/disabled="" name="lista:nunca" checked="" value="Pedir número de cartão, senha ou código"/)
+    // A caixa inteira, atributo por atributo: a ordem deles muda quando o
+    // markup ganha classe (a .caixa-de-marcar entrou no meio), e não importa.
+    const caixa = html.match(/<input[^>]*value="Pedir número de cartão, senha ou código"[^>]*\/>/)?.[0]
+    expect(caixa).toBeDefined()
+    expect(caixa).toContain('name="lista:nunca"')
+    expect(caixa).toContain('checked=""')
+    expect(caixa).toContain('disabled=""')
   })
 })

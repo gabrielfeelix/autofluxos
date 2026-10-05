@@ -16,7 +16,16 @@ import { RodapeDaMensagem } from './rodape-da-mensagem'
  * Agora é o que o comentário sempre prometeu, e este arquivo é o que mantém a
  * promessa. Sem `.tsx` no include do vitest, é `createElement` na mão, feio, e
  * ainda assim mais barato que descobrir de novo em produção.
+ *
+ * Desde 01/out/2026 reagir e citar moram no menu da seta da bolha, como no
+ * WhatsApp, e o menu só abre no clique. Sem DOM para clicar, o teste desenha
+ * com `menuAbertoDeInicio`; a seta em si é o que tem que aparecer sempre.
  */
+
+const SETA = 'Mais opções desta mensagem'
+/** O item do menu termina no texto dele, logo depois do ícone. */
+const REAGIR = /<\/svg> Reagir<\/button>/
+const CITAR = /<\/svg> Responder<\/button>/
 
 function rodape(extra: Record<string, unknown> = {}) {
   return createElement(RodapeDaMensagem, {
@@ -29,6 +38,9 @@ function rodape(extra: Record<string, unknown> = {}) {
     texto: 'quanto custa?',
     deQuem: 'a Maria',
     nossa: false,
+    mensagemId: 'm1',
+    favorita: false,
+    menuAbertoDeInicio: true,
     ...extra,
   } as never)
 }
@@ -37,8 +49,8 @@ describe('o rodapé da mensagem', () => {
   it('mostra reagir e citar dentro do provedor', () => {
     const html = renderToStaticMarkup(createElement(ProvedorDeCitacao, null, rodape()))
 
-    expect(html).toContain('Reagir a esta mensagem')
-    expect(html).toContain('Responder citando esta mensagem')
+    expect(html).toMatch(REAGIR)
+    expect(html).toMatch(CITAR)
   })
 
   /*
@@ -47,17 +59,17 @@ describe('o rodapé da mensagem', () => {
    */
   it('continua aparecendo quando os filhos nascem fora do provedor', () => {
     const filhos = rodape()
-    expect(renderToStaticMarkup(createElement(ProvedorDeCitacao, null, filhos))).toContain(
-      'Reagir a esta mensagem',
-    )
+    const html = renderToStaticMarkup(createElement(ProvedorDeCitacao, null, filhos))
+    expect(html).toMatch(REAGIR)
+    expect(html).toMatch(CITAR)
   })
 
   /* Sem provedor, reagir fica e só citar sai. Era a promessa que o código quebrava. */
   it('sem provedor de citação, reagir sobrevive', () => {
     const html = renderToStaticMarkup(rodape())
 
-    expect(html).toContain('Reagir a esta mensagem')
-    expect(html).not.toContain('Responder citando esta mensagem')
+    expect(html).toMatch(REAGIR)
+    expect(html).not.toMatch(CITAR)
   })
 
   it('esconde o reagir depois dos 30 dias, e mantém o citar', () => {
@@ -65,8 +77,16 @@ describe('o rodapé da mensagem', () => {
       createElement(ProvedorDeCitacao, null, rodape({ podeReagir: false })),
     )
 
-    expect(html).not.toContain('Reagir a esta mensagem')
-    expect(html).toContain('Responder citando esta mensagem')
+    expect(html).not.toMatch(REAGIR)
+    expect(html).toMatch(CITAR)
+  })
+
+  /* A seta é a porta do menu: fechado ou sem provedor, ela continua lá. */
+  it('a seta do menu aparece sempre, mesmo fechado e fora do provedor', () => {
+    const html = renderToStaticMarkup(rodape({ menuAbertoDeInicio: false }))
+
+    expect(html).toContain(SETA)
+    expect(html).not.toMatch(REAGIR)
   })
 
   it('desenha a reação de cada lado, dizendo de quem ela é', () => {
@@ -92,7 +112,7 @@ describe('o rodapé da mensagem', () => {
       createElement(ProvedorDeCitacao, null, rodape({ waMessageId: null })),
     )
 
-    expect(html).not.toContain('Reagir a esta mensagem')
-    expect(html).not.toContain('Responder citando esta mensagem')
+    expect(html).not.toMatch(REAGIR)
+    expect(html).not.toMatch(CITAR)
   })
 })

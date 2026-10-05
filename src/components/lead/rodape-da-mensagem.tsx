@@ -68,6 +68,7 @@ export function RodapeDaMensagem({
   mensagemId,
   favorita,
   bolhaClara = false,
+  menuAbertoDeInicio = false,
   children,
 }: {
   clienteId: string
@@ -94,10 +95,16 @@ export function RodapeDaMensagem({
   favorita: boolean
   /** A nossa bolha é clara nesta tela (a do lead): a estrela sai azul, não branca. */
   bolhaClara?: boolean
+  /**
+   * Nasce com o menu da seta aberto. A tela nunca passa isto: existe para o
+   * teste, que desenha sem DOM e não tem como clicar na seta para ver se
+   * Responder e Reagir estão lá.
+   */
+  menuAbertoDeInicio?: boolean
   /** A bolha. Ela vem com `max-w-full`: a largura máxima é deste invólucro. */
   children: ReactNode
 }) {
-  const [menuAberto, setMenuAberto] = useState(false)
+  const [menuAberto, setMenuAberto] = useState(menuAbertoDeInicio)
   const [emojisAbertos, setEmojisAbertos] = useState(false)
   const [copiado, setCopiado] = useState(false)
   /** Perto do fim da área que rola, o menu abre para cima, como no WhatsApp. */
