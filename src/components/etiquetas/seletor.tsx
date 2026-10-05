@@ -191,6 +191,20 @@ export function SeletorDeEtiquetas({
           >
             Criar
           </button>
+          {/* Desistir precisa de um lugar para clicar: o Esc existe, mas
+              ninguém adivinha que ele existe. */}
+          <button
+            type="button"
+            aria-label="Cancelar a nova etiqueta"
+            title="Cancelar"
+            onClick={() => {
+              setNova('')
+              setCriando(false)
+            }}
+            className="grid size-[30px] shrink-0 place-items-center rounded-lg text-[16px] leading-none text-dim transition hover:bg-surface hover:text-ink"
+          >
+            ×
+          </button>
         </div>
       ) : compacto ? null : (
         <button
