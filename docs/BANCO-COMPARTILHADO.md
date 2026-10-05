@@ -1295,6 +1295,22 @@ extração explícito para os objetos de `public`.
   não é membro), então a prova de acesso real fica para o primeiro uso.
   Verandi com **42** tabelas, igual a antes. Desfazer: `drop table
   public.apelidos_de_tema, public.duvidas_lidas, public.duvidas`.
+- **a `0127` foi aplicada em 05/out/2026**, com autorização explícita do
+  dono, pela Management API. Conferida antes pelo ensaio em transação contra a
+  produção (`rollback`) e testada no Docker local com o fluxo inteiro na tela.
+  Cria `quadro_cartoes.avulso` (negócio criado à mão fica fora do
+  `quadro_cartoes_aberto_unico_idx`, que passou a ter `and not avulso`) e
+  `quadro_cartoes.origem`, a tabela `public.negocio_arquivos` (RLS ligada, só
+  `service_role`) e o bucket **privado** `autofluxos-negocios` (10 MB, PDF e
+  imagem). Storage é global: bucket novo com o nome do produto, nenhum
+  existente tocado. Releitura depois: Verandi com **42** tabelas, igual a
+  antes; 0 cartões avulsos. Desfazer: `drop table public.negocio_arquivos`,
+  recriar o índice sem `and not avulso` (exige não haver dois abertos do
+  mesmo contato no mesmo quadro), `alter table public.quadro_cartoes drop
+  column avulso, drop column origem` e esvaziar e apagar o bucket.
+  **Docker local:** o container do Storage é mais velho que o schema `storage`
+  dele e o upload dá `42P10`; contorno só local: `create unique index on
+  storage.objects (name, bucket_id)` como `supabase_admin`.
 
 ### Testar migration antes de produção, em Docker
 
