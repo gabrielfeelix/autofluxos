@@ -11,6 +11,7 @@ import { CabecalhoDaTela } from '@/components/design/cabecalho-da-tela'
 import { ListaDeTransmissoes } from '@/components/transmissoes/lista-de-transmissoes'
 import { acharCliente, type Cliente } from '@/server/repos/clientes'
 import { listarTemplates } from '@/server/repos/templates'
+import { nichoDaConta } from '@/server/repos/recursos'
 import { completarTextos } from '@/server/textos-dos-modelos'
 import {
   enviadasHojePelaConta,
@@ -103,10 +104,11 @@ async function Conteudo({
   aba: Aba
   filtro: { q?: string; estado?: string; periodo?: string }
 }) {
-  const [templates, transmissoes, enviadasHoje] = await Promise.all([
+  const [templates, transmissoes, enviadasHoje, nicho] = await Promise.all([
     listarTemplates(cliente.id).then((lista) => completarTextos(cliente.id, lista)),
     listarTransmissoes(cliente.id),
     enviadasHojePelaConta(cliente.id),
+    nichoDaConta(cliente.id),
   ])
 
   /*
@@ -122,7 +124,7 @@ async function Conteudo({
         descricao={DESCRICAO}
         acoes={
           aba === 'modelos' ? (
-            <NovoModelo clienteId={cliente.id} />
+            <NovoModelo clienteId={cliente.id} nicho={nicho} />
           ) : (
             <NovaTransmissao clienteId={cliente.id} templates={templates} enviadasHoje={enviadasHoje} />
           )

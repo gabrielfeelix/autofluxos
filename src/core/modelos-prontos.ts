@@ -1,3 +1,4 @@
+import type { Nicho } from './nichos'
 import type { Categoria } from './templates'
 
 /**
@@ -63,6 +64,8 @@ export type ModeloPronto = {
   resumo: string
   corpo: string
   categoria: Categoria
+  /** O ramo da conta para quem o modelo faz sentido (`core/nichos.ts`). */
+  ramo: Nicho
   /** Para a busca achar pelo que a pessoa chama, e não pelo que nomeamos. */
   sinonimos?: readonly string[]
 }
@@ -77,65 +80,392 @@ export type ModeloPronto = {
  * aqui é caro, porque a Meta reclassifica e a conta vem diferente.
  */
 export const MODELOS_PRONTOS: readonly ModeloPronto[] = [
+  // -------------------------------------------------------------------------
+  // Aulas e serviços com horário: pilates, academia, estúdio, escola, clínica
+  // -------------------------------------------------------------------------
   {
-    id: 'lembrete-consulta',
-    titulo: 'Lembrete de consulta',
+    id: 'aulas-lembrete',
+    ramo: 'aulas',
+    titulo: 'Lembrete de aula',
     resumo: 'Avisa na véspera e pede confirmação.',
-    corpo: 'Oi {nome}! Passando para lembrar da sua consulta dia {data} às {hora}. Pode confirmar?',
+    corpo: 'Oi {nome}! Passando para lembrar da sua aula dia {data} às {hora}. Pode confirmar sua presença?',
     categoria: 'UTILITY',
-    sinonimos: ['agendamento', 'horário', 'marcado', 'véspera'],
+    sinonimos: ['lembrete', 'véspera', 'presença', 'consulta'],
   },
   {
-    id: 'confirmacao-agendamento',
-    titulo: 'Confirmação de agendamento',
+    id: 'aulas-horario-confirmado',
+    ramo: 'aulas',
+    titulo: 'Horário confirmado',
     resumo: 'Confirma na hora que o horário foi marcado.',
     corpo: 'Oi {nome}, seu horário está confirmado para {data} às {hora}. Até lá!',
     categoria: 'UTILITY',
-    sinonimos: ['marcado', 'agendou', 'reserva'],
+    sinonimos: ['agendamento', 'marcado', 'agendou'],
   },
   {
-    id: 'cobranca-amigavel',
-    titulo: 'Aviso de vencimento',
-    resumo: 'Lembra de uma parcela antes de vencer.',
+    id: 'aulas-experimental',
+    ramo: 'aulas',
+    titulo: 'Aula experimental marcada',
+    resumo: 'Para quem vai conhecer o espaço pela primeira vez.',
+    corpo:
+      'Oi {nome}! Sua aula experimental está marcada para {data} às {hora}. Venha com roupa confortável e chegue 10 minutos antes.',
+    categoria: 'UTILITY',
+    sinonimos: ['experimental', 'primeira aula', 'conhecer', 'teste'],
+  },
+  {
+    id: 'aulas-remarcar',
+    ramo: 'aulas',
+    titulo: 'Remarcar aula',
+    resumo: 'Quando é preciso trocar o horário combinado.',
+    corpo: 'Oi {nome}, precisamos remarcar sua aula do dia {data}. Qual outro horário fica melhor para você?',
+    categoria: 'UTILITY',
+    sinonimos: ['remarcar', 'reagendar', 'trocar horário'],
+  },
+  {
+    id: 'aulas-cancelada',
+    ramo: 'aulas',
+    titulo: 'Aula cancelada',
+    resumo: 'Avisa um cancelamento e oferece reposição.',
+    corpo:
+      'Oi {nome}, a aula do dia {data} às {hora} foi cancelada. Sua reposição está garantida: me diga qual horário prefere.',
+    categoria: 'UTILITY',
+    sinonimos: ['cancelamento', 'reposição', 'feriado'],
+  },
+  {
+    id: 'aulas-falta',
+    ramo: 'aulas',
+    titulo: 'Faltou na aula',
+    resumo: 'No mesmo dia, para quem não apareceu.',
+    corpo: 'Oi {nome}, sentimos sua falta na aula de hoje. Quer remarcar para outro dia desta semana?',
+    categoria: 'UTILITY',
+    sinonimos: ['falta', 'não compareceu', 'ausência', 'no show'],
+  },
+  {
+    id: 'aulas-matricula',
+    ramo: 'aulas',
+    titulo: 'Matrícula confirmada',
+    resumo: 'Boas-vindas para quem acabou de fechar.',
+    corpo:
+      'Oi {nome}, sua matrícula está confirmada! Suas aulas começam dia {data}. Qualquer dúvida, é só chamar aqui.',
+    categoria: 'UTILITY',
+    sinonimos: ['matrícula', 'boas-vindas', 'novo aluno', 'inscrição'],
+  },
+  {
+    id: 'aulas-mensalidade',
+    ramo: 'aulas',
+    titulo: 'Mensalidade vencendo',
+    resumo: 'Lembra da mensalidade antes de vencer.',
+    corpo: 'Oi {nome}, sua mensalidade de {valor} vence dia {data}. Qualquer coisa, é só chamar aqui.',
+    categoria: 'UTILITY',
+    sinonimos: ['cobrança', 'boleto', 'pagamento', 'mensalidade', 'vencimento'],
+  },
+  {
+    id: 'aulas-renovacao',
+    ramo: 'aulas',
+    titulo: 'Renovação do plano',
+    resumo: 'Avisa que o plano está terminando.',
+    corpo: 'Oi {nome}, seu plano termina dia {data}. Quer renovar e manter os seus horários?',
+    categoria: 'UTILITY',
+    sinonimos: ['renovar', 'plano', 'pacote', 'vencimento'],
+  },
+  {
+    id: 'aulas-volta',
+    ramo: 'aulas',
+    titulo: 'Convite para voltar',
+    resumo: 'Para aluno que parou de vir. Exige aceite de marketing.',
+    corpo: 'Oi {nome}, faz um tempo que não te vemos por aqui. Que tal voltar? Temos horários livres nesta semana.',
+    categoria: 'MARKETING',
+    sinonimos: ['inativo', 'sumiu', 'reativar', 'voltar'],
+  },
+
+  // -------------------------------------------------------------------------
+  // Loja virtual
+  // -------------------------------------------------------------------------
+  {
+    id: 'ecommerce-pedido-recebido',
+    ramo: 'ecommerce',
+    titulo: 'Pedido recebido',
+    resumo: 'Confirma a compra logo depois de fechada.',
+    corpo: 'Oi {nome}! Recebemos seu pedido {codigo}. Assim que ele for enviado, avisamos por aqui.',
+    categoria: 'UTILITY',
+    sinonimos: ['compra', 'confirmação', 'pedido'],
+  },
+  {
+    id: 'ecommerce-aguardando-pagamento',
+    ramo: 'ecommerce',
+    titulo: 'Aguardando pagamento',
+    resumo: 'Pix ou boleto gerado e ainda não pago.',
+    corpo:
+      'Oi {nome}, seu pedido {codigo} está aguardando o pagamento de {valor}. Para concluir, acesse {link} e finalize por lá.',
+    categoria: 'UTILITY',
+    sinonimos: ['pix', 'boleto', 'pendente', 'pagamento'],
+  },
+  {
+    id: 'ecommerce-pagamento-aprovado',
+    ramo: 'ecommerce',
+    titulo: 'Pagamento aprovado',
+    resumo: 'Avisa que o pagamento caiu e o pedido segue.',
+    corpo: 'Oi {nome}, o pagamento do pedido {codigo} foi aprovado. Já estamos separando os seus produtos.',
+    categoria: 'UTILITY',
+    sinonimos: ['aprovado', 'pago', 'pagamento'],
+  },
+  {
+    id: 'ecommerce-enviado',
+    ramo: 'ecommerce',
+    titulo: 'Pedido enviado',
+    resumo: 'Manda o rastreio quando o pedido sai.',
+    corpo: 'Oi {nome}! Seu pedido {codigo} foi enviado. Acompanhe a entrega em {link} quando quiser.',
+    categoria: 'UTILITY',
+    sinonimos: ['envio', 'rastreio', 'transportadora', 'correios'],
+  },
+  {
+    id: 'ecommerce-entregue',
+    ramo: 'ecommerce',
+    titulo: 'Pedido entregue',
+    resumo: 'Confirma a entrega e abre espaço para problema.',
+    corpo: 'Oi {nome}, seu pedido {codigo} foi entregue. Se algo não estiver certo, é só responder esta mensagem.',
+    categoria: 'UTILITY',
+    sinonimos: ['entrega', 'chegou', 'recebido'],
+  },
+  {
+    id: 'ecommerce-troca',
+    ramo: 'ecommerce',
+    titulo: 'Troca ou devolução',
+    resumo: 'Confirma que o pedido de troca foi recebido.',
+    corpo:
+      'Oi {nome}, recebemos a sua solicitação de troca do pedido {codigo}. Vamos te orientar sobre os próximos passos por aqui.',
+    categoria: 'UTILITY',
+    sinonimos: ['troca', 'devolução', 'defeito', 'arrependimento'],
+  },
+  {
+    id: 'ecommerce-reembolso',
+    ramo: 'ecommerce',
+    titulo: 'Reembolso feito',
+    resumo: 'Avisa que o dinheiro foi devolvido.',
+    corpo:
+      'Oi {nome}, o reembolso de {valor} do pedido {codigo} foi feito. Pode levar alguns dias para aparecer na sua fatura.',
+    categoria: 'UTILITY',
+    sinonimos: ['estorno', 'reembolso', 'devolução do dinheiro'],
+  },
+  {
+    id: 'ecommerce-avaliacao',
+    ramo: 'ecommerce',
+    titulo: 'O que achou da compra',
+    resumo: 'Alguns dias depois da entrega.',
+    corpo: 'Oi {nome}! O pedido {codigo} chegou bem? Conta pra gente o que achou da compra.',
+    categoria: 'UTILITY',
+    sinonimos: ['avaliação', 'pesquisa', 'satisfação', 'feedback'],
+  },
+  {
+    id: 'ecommerce-carrinho',
+    ramo: 'ecommerce',
+    titulo: 'Carrinho abandonado',
+    resumo: 'Para quem parou antes de pagar. Exige aceite de marketing.',
+    corpo:
+      'Oi {nome}, você deixou alguns produtos no carrinho. Para finalizar a compra, acesse {link} quando quiser.',
+    categoria: 'MARKETING',
+    sinonimos: ['carrinho', 'abandono', 'desistiu', 'checkout'],
+  },
+  {
+    id: 'ecommerce-novidade',
+    ramo: 'ecommerce',
+    titulo: 'Novidade ou promoção',
+    resumo: 'Divulga lançamento ou oferta. Exige aceite de marketing.',
+    corpo: 'Oi {nome}! Chegaram novidades que combinam com você. Para ver, acesse {link} antes que acabe.',
+    categoria: 'MARKETING',
+    sinonimos: ['oferta', 'desconto', 'lançamento', 'campanha', 'cupom'],
+  },
+
+  // -------------------------------------------------------------------------
+  // Restaurante, lanchonete, delivery
+  // -------------------------------------------------------------------------
+  {
+    id: 'restaurante-pedido-recebido',
+    ramo: 'restaurante',
+    titulo: 'Pedido recebido',
+    resumo: 'Confirma que o pedido entrou na cozinha.',
+    corpo: 'Oi {nome}! Recebemos seu pedido {codigo} e ele já está sendo preparado.',
+    categoria: 'UTILITY',
+    sinonimos: ['pedido', 'confirmação', 'cozinha'],
+  },
+  {
+    id: 'restaurante-saiu',
+    ramo: 'restaurante',
+    titulo: 'Saiu para entrega',
+    resumo: 'Avisa que o motoboy está a caminho.',
+    corpo: 'Oi {nome}, seu pedido {codigo} saiu para entrega e chega em breve. Bom apetite!',
+    categoria: 'UTILITY',
+    sinonimos: ['entrega', 'motoboy', 'delivery', 'a caminho'],
+  },
+  {
+    id: 'restaurante-retirada',
+    ramo: 'restaurante',
+    titulo: 'Pronto para retirada',
+    resumo: 'Para quem vem buscar no balcão.',
+    corpo: 'Oi {nome}, seu pedido {codigo} está pronto para retirada no balcão. Até já!',
+    categoria: 'UTILITY',
+    sinonimos: ['retirada', 'balcão', 'buscar', 'pronto'],
+  },
+  {
+    id: 'restaurante-atraso',
+    ramo: 'restaurante',
+    titulo: 'Pedido vai atrasar',
+    resumo: 'Avisa antes que o cliente pergunte.',
+    corpo: 'Oi {nome}, seu pedido {codigo} vai atrasar alguns minutos. Pedimos desculpas, ele já está quase pronto.',
+    categoria: 'UTILITY',
+    sinonimos: ['atraso', 'demora', 'desculpas'],
+  },
+  {
+    id: 'restaurante-reserva',
+    ramo: 'restaurante',
+    titulo: 'Reserva confirmada',
+    resumo: 'Confirma a mesa na hora que foi reservada.',
+    corpo: 'Oi {nome}, sua reserva está confirmada para {data} às {hora}. Estamos te esperando!',
+    categoria: 'UTILITY',
+    sinonimos: ['reserva', 'mesa', 'confirmação'],
+  },
+  {
+    id: 'restaurante-lembrete-reserva',
+    ramo: 'restaurante',
+    titulo: 'Lembrete de reserva',
+    resumo: 'No dia, para confirmar se a mesa continua de pé.',
+    corpo: 'Oi {nome}! Lembrete da sua reserva de hoje às {hora}. Podemos manter a mesa?',
+    categoria: 'UTILITY',
+    sinonimos: ['lembrete', 'reserva', 'mesa'],
+  },
+  {
+    id: 'restaurante-avaliacao',
+    ramo: 'restaurante',
+    titulo: 'O que achou do pedido',
+    resumo: 'Depois da refeição, pede a opinião.',
+    corpo: 'Oi {nome}! O que achou do pedido de hoje? Sua opinião ajuda a gente a melhorar.',
+    categoria: 'UTILITY',
+    sinonimos: ['avaliação', 'pesquisa', 'satisfação', 'feedback'],
+  },
+  {
+    id: 'restaurante-cardapio',
+    ramo: 'restaurante',
+    titulo: 'Cardápio do dia',
+    resumo: 'Divulga o prato ou a promoção de hoje. Exige aceite de marketing.',
+    corpo: 'Oi {nome}! O cardápio de hoje já está no ar. Para pedir, acesse {link} e escolha o seu.',
+    categoria: 'MARKETING',
+    sinonimos: ['cardápio', 'prato do dia', 'promoção', 'menu'],
+  },
+  {
+    id: 'restaurante-volta',
+    ramo: 'restaurante',
+    titulo: 'Convite para pedir de novo',
+    resumo: 'Para cliente que não pede há um tempo. Exige aceite de marketing.',
+    corpo: 'Oi {nome}, faz tempo que você não pede com a gente. Que tal matar a saudade hoje?',
+    categoria: 'MARKETING',
+    sinonimos: ['inativo', 'sumiu', 'saudade', 'voltar'],
+  },
+
+  // -------------------------------------------------------------------------
+  // Loja física, comércio: loja de bairro, papelaria, pet shop
+  // -------------------------------------------------------------------------
+  {
+    id: 'comercio-orcamento',
+    ramo: 'comercio',
+    titulo: 'Orçamento pronto',
+    resumo: 'Responde o orçamento pedido.',
+    corpo: 'Oi {nome}, seu orçamento ficou no valor de {valor}. Posso separar os itens para você?',
+    categoria: 'UTILITY',
+    sinonimos: ['orçamento', 'cotação', 'preço'],
+  },
+  {
+    id: 'comercio-separado',
+    ramo: 'comercio',
+    titulo: 'Pedido separado',
+    resumo: 'Avisa que dá para buscar na loja.',
+    corpo: 'Oi {nome}, seu pedido {codigo} está separado e pronto para retirada na loja.',
+    categoria: 'UTILITY',
+    sinonimos: ['retirada', 'separado', 'buscar', 'pronto'],
+  },
+  {
+    id: 'comercio-encomenda',
+    ramo: 'comercio',
+    titulo: 'Encomenda chegou',
+    resumo: 'O produto que faltava chegou na loja.',
+    corpo: 'Oi {nome}! O produto que você encomendou chegou. Pode passar na loja para retirar quando quiser.',
+    categoria: 'UTILITY',
+    sinonimos: ['encomenda', 'chegou', 'reposição', 'estoque'],
+  },
+  {
+    id: 'comercio-entrega',
+    ramo: 'comercio',
+    titulo: 'Saiu para entrega',
+    resumo: 'Avisa que a entrega está a caminho.',
+    corpo: 'Oi {nome}! Seu pedido {codigo} saiu para entrega e chega hoje.',
+    categoria: 'UTILITY',
+    sinonimos: ['entrega', 'a caminho', 'motoboy'],
+  },
+  {
+    id: 'comercio-horario',
+    ramo: 'comercio',
+    titulo: 'Horário confirmado',
+    resumo: 'Para serviço com hora marcada, como banho e tosa.',
+    corpo: 'Oi {nome}, seu horário está confirmado para {data} às {hora}. Até lá!',
+    categoria: 'UTILITY',
+    sinonimos: ['agendamento', 'banho', 'tosa', 'serviço', 'marcado'],
+  },
+  {
+    id: 'comercio-pagamento',
+    ramo: 'comercio',
+    titulo: 'Pagamento recebido',
+    resumo: 'Confirma o Pix ou o pagamento feito.',
+    corpo: 'Oi {nome}, recebemos seu pagamento de {valor}. Obrigado pela compra!',
+    categoria: 'UTILITY',
+    sinonimos: ['pix', 'pagamento', 'comprovante', 'recebido'],
+  },
+  {
+    id: 'comercio-parcela',
+    ramo: 'comercio',
+    titulo: 'Parcela vencendo',
+    resumo: 'Lembra do crediário antes de vencer.',
     corpo: 'Oi {nome}, sua parcela de {valor} vence dia {data}. Qualquer coisa, é só chamar aqui.',
     categoria: 'UTILITY',
-    sinonimos: ['cobrança', 'boleto', 'pagamento', 'fatura', 'vencer'],
+    sinonimos: ['crediário', 'parcela', 'cobrança', 'boleto', 'fiado'],
   },
   {
-    id: 'pedido-a-caminho',
-    titulo: 'Pedido a caminho',
-    resumo: 'Avisa que saiu para entrega.',
-    corpo:
-      'Oi {nome}! Seu pedido {codigo} saiu para entrega e chega hoje. Acompanhe em {link} se quiser.',
+    id: 'comercio-pos-venda',
+    ramo: 'comercio',
+    titulo: 'Depois da compra',
+    resumo: 'Alguns dias depois, pergunta se deu tudo certo.',
+    corpo: 'Oi {nome}! Gostou da sua compra? Se precisar de alguma coisa, é só responder por aqui.',
     categoria: 'UTILITY',
-    sinonimos: ['entrega', 'envio', 'rastreio', 'encomenda'],
+    sinonimos: ['pós-venda', 'satisfação', 'feedback', 'avaliação'],
   },
   {
-    id: 'retomar-conversa',
-    titulo: 'Retomar conversa parada',
-    resumo: 'Para quem sumiu no meio do atendimento.',
-    corpo: 'Oi {nome}, tudo bem? Vi que nossa conversa ficou pela metade. Ainda posso ajudar?',
-    categoria: 'UTILITY',
-    sinonimos: ['sumiu', 'parou', 'follow up', 'retomada'],
-  },
-  {
-    id: 'pos-atendimento',
-    titulo: 'Depois do atendimento',
-    resumo: 'Pergunta como foi, no dia seguinte.',
-    corpo: 'Oi {nome}! Como foi seu atendimento do dia {data}? Sua opinião é muito importante para nós.',
-    categoria: 'UTILITY',
-    sinonimos: ['pesquisa', 'satisfação', 'feedback', 'avaliação', 'nps'],
-  },
-  {
-    id: 'novidade',
-    titulo: 'Novidade ou promoção',
-    resumo: 'Divulga algo novo. Exige aceite de marketing.',
-    corpo:
-      'Oi {nome}! Temos uma novidade que combina com você. É só abrir {link} para ver.',
+    id: 'comercio-promocao',
+    ramo: 'comercio',
+    titulo: 'Promoção da semana',
+    resumo: 'Divulga as ofertas. Exige aceite de marketing.',
+    corpo: 'Oi {nome}! Esta semana tem promoção na loja. Para ver as ofertas, acesse {link} e aproveite.',
     categoria: 'MARKETING',
-    sinonimos: ['oferta', 'desconto', 'lançamento', 'campanha'],
+    sinonimos: ['oferta', 'desconto', 'promoção', 'campanha'],
+  },
+  {
+    id: 'comercio-volta',
+    ramo: 'comercio',
+    titulo: 'Convite para voltar',
+    resumo: 'Para cliente que não aparece há um tempo. Exige aceite de marketing.',
+    corpo: 'Oi {nome}, sentimos sua falta por aqui! Passe na loja para ver as novidades da semana.',
+    categoria: 'MARKETING',
+    sinonimos: ['inativo', 'sumiu', 'saudade', 'voltar'],
   },
 ]
+
+/**
+ * Os modelos que a galeria mostra para a conta.
+ *
+ * Com ramo, **só os do ramo**: pedido do Gabriel em 05/out, "se eu sou do
+ * nicho de e-commerce NÃO é para aparecer template de remarcar aula". É a
+ * mesma regra dos fluxos (`modelosDeFluxo` em `core/nichos.ts`). Sem ramo,
+ * todos, porque não há como saber qual serve.
+ */
+export function modelosDoRamo(nicho: Nicho | null | undefined): readonly ModeloPronto[] {
+  return nicho ? MODELOS_PRONTOS.filter((m) => m.ramo === nicho) : MODELOS_PRONTOS
+}
 
 // ---------------------------------------------------------------------------
 // A tradução dos marcadores

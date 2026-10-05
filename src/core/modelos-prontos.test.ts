@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import {
   CAMPOS,
   MODELOS_PRONTOS,
+  modelosDoRamo,
   camposDoCorpoDaMeta,
   camposUsados,
   exemplosPara,
@@ -9,6 +10,8 @@ import {
   paraFormatoDaMeta,
   previa,
 } from './modelos-prontos'
+import { NICHOS } from './nichos'
+import { bibliotecaServeAoRamo } from './titulo-da-biblioteca'
 import { numeracaoContinua, validarTemplate, variaveisDe, temErro } from './templates'
 
 describe('os campos que a pessoa insere', () => {
@@ -176,5 +179,41 @@ describe('camposDoCorpoDaMeta, de volta do jargão da Meta', () => {
       const devolta = camposDoCorpoDaMeta(corpo)
       expect(devolta.map((c) => c?.id)).toEqual(campos)
     }
+  })
+})
+
+describe('cada ramo vê só os seus modelos', () => {
+  for (const nicho of NICHOS) {
+    it(`"${nicho}" tem de 8 a 10 modelos`, () => {
+      const n = modelosDoRamo(nicho).length
+      expect(n).toBeGreaterThanOrEqual(8)
+      expect(n).toBeLessThanOrEqual(10)
+    })
+  }
+
+  it('loja virtual não vê modelo de aula', () => {
+    const textos = modelosDoRamo('ecommerce').map((m) => `${m.titulo} ${m.corpo}`.toLowerCase())
+    expect(textos.some((t) => t.includes('aula'))).toBe(false)
+  })
+
+  it('sem ramo, a galeria mostra todos', () => {
+    expect(modelosDoRamo(null)).toHaveLength(MODELOS_PRONTOS.length)
+  })
+})
+
+describe('a biblioteca da Meta filtrada pelo ramo', () => {
+  it('consulta remarcada fica só para aulas', () => {
+    expect(bibliotecaServeAoRamo('appointment_reschedule_2', 'aulas')).toBe(true)
+    expect(bibliotecaServeAoRamo('appointment_reschedule_2', 'ecommerce')).toBe(false)
+  })
+
+  it('pedido enviado não aparece para aulas', () => {
+    expect(bibliotecaServeAoRamo('order_shipped', 'ecommerce')).toBe(true)
+    expect(bibliotecaServeAoRamo('order_shipped', 'aulas')).toBe(false)
+  })
+
+  it('modelo de banco não serve a ramo nenhum, e sem ramo tudo passa', () => {
+    for (const nicho of NICHOS) expect(bibliotecaServeAoRamo('low_balance_warning', nicho)).toBe(false)
+    expect(bibliotecaServeAoRamo('low_balance_warning', null)).toBe(true)
   })
 })

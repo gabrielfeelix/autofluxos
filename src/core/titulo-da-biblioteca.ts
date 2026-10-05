@@ -1,3 +1,5 @@
+import type { Nicho } from './nichos'
+
 /**
  * O nome de um modelo da biblioteca da Meta em português, para a galeria.
  *
@@ -160,4 +162,31 @@ const IDIOMAS: Record<string, string> = {
 
 export function idiomaLegivel(idioma: string): string {
   return IDIOMAS[idioma] ?? idioma
+}
+
+/**
+ * Os temas da biblioteca que cada ramo vê, pela primeira palavra do nome.
+ *
+ * A biblioteca da Meta é uma só para todo mundo, e a loja virtual via
+ * "Consulta remarcada" e o estúdio de pilates via "Pedido enviado". O pedido
+ * do Gabriel em 05/out vale para ela também: cada ramo vê só o que faz sentido
+ * para ele, como acontece com os nossos modelos (`modelosDoRamo`).
+ *
+ * É lista de permissão, e não de bloqueio: tema novo que a Meta lançar fica
+ * escondido até alguém decidir para quem ele serve, em vez de aparecer para
+ * todos. Os de banco (`statement`, `low_balance`, `transaction_alert`) não
+ * servem a ramo nenhum daqui.
+ */
+const TEMAS_DO_RAMO: Record<Nicho, readonly string[]> = {
+  aulas: ['appointment', 'event', 'payment', 'auto_pay', 'feedback'],
+  ecommerce: ['order', 'delivery', 'shipment', 'shipping', 'purchase', 'refund', 'return', 'payment', 'address', 'account', 'feedback'],
+  restaurante: ['order', 'delivery', 'reservation', 'payment', 'purchase', 'feedback'],
+  comercio: ['order', 'delivery', 'purchase', 'payment', 'refund', 'return', 'feedback'],
+}
+
+/** O modelo da biblioteca serve ao ramo da conta? Sem ramo, todos servem. */
+export function bibliotecaServeAoRamo(nome: string, nicho: Nicho | null | undefined): boolean {
+  if (!nicho) return true
+  const limpo = nome.toLowerCase()
+  return TEMAS_DO_RAMO[nicho].some((tema) => limpo === tema || limpo.startsWith(`${tema}_`))
 }

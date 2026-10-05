@@ -1,12 +1,13 @@
 'use client'
 
+import { NICHOS, pacoteDo, type Nicho } from '@/core/nichos'
 import { tituloDaBiblioteca } from '@/core/titulo-da-biblioteca'
 import { useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
 import { Modal } from '@/components/design/modal'
 import {
   CAMPOS,
-  MODELOS_PRONTOS,
+  modelosDoRamo,
   camposUsados,
   previa,
   type ModeloPronto,
@@ -61,7 +62,7 @@ type Etapa =
    */
   | { tipo: 'confirmar'; modelo: ModeloDaBiblioteca }
 
-export function NovoModelo({ clienteId }: { clienteId: string }) {
+export function NovoModelo({ clienteId, nicho }: { clienteId: string; nicho: Nicho | null }) {
   const [aberto, setAberto] = useState(false)
   const [etapa, setEtapa] = useState<Etapa>({ tipo: 'galeria' })
   const [daMeta, setDaMeta] = useState<ModeloDaBiblioteca[]>([])
@@ -125,6 +126,7 @@ export function NovoModelo({ clienteId }: { clienteId: string }) {
       >
         {etapa.tipo === 'galeria' && (
           <Galeria
+            nicho={nicho}
             daMeta={daMeta}
             buscando={buscando}
             aoEscolher={(modelo) => setEtapa({ tipo: 'ajuste', modelo })}
@@ -225,11 +227,13 @@ function Cartao({
  * brasileiro fala.
  */
 function Galeria({
+  nicho,
   daMeta,
   buscando,
   aoEscolher,
   aoEscolherDaMeta,
 }: {
+  nicho: Nicho | null
   daMeta: ModeloDaBiblioteca[]
   buscando: boolean
   aoEscolher: (modelo: ModeloPronto) => void
@@ -303,17 +307,28 @@ function Galeria({
             Escritos por nós
           </p>
         )}
-        <div className="grid gap-2 sm:grid-cols-2">
-          {MODELOS_PRONTOS.map((modelo) => (
-            <Cartao
-              key={modelo.id}
-              titulo={modelo.titulo}
-              resumo={modelo.resumo}
-              texto={previa(modelo.corpo)}
-              aoClicar={() => aoEscolher(modelo)}
-            />
-          ))}
-        </div>
+        {/*
+          Com ramo, só os dele (`modelosDoRamo`). Sem ramo vão todos, mas
+          agrupados pelo ramo: 39 cartões soltos não dizem qual serve para quem.
+        */}
+        {(nicho ? [nicho] : NICHOS).map((ramo) => (
+          <div key={ramo} className="mb-4 last:mb-0">
+            {!nicho && (
+              <p className="mb-2 text-[12px] font-semibold text-muted">{pacoteDo(ramo)?.tituloDosModelos}</p>
+            )}
+            <div className="grid gap-2 sm:grid-cols-2">
+              {modelosDoRamo(ramo).map((modelo) => (
+                <Cartao
+                  key={modelo.id}
+                  titulo={modelo.titulo}
+                  resumo={modelo.resumo}
+                  texto={previa(modelo.corpo)}
+                  aoClicar={() => aoEscolher(modelo)}
+                />
+              ))}
+            </div>
+          </div>
+        ))}
       </div>
     </div>
   )

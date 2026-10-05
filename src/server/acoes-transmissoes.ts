@@ -53,6 +53,8 @@ import {
 import { planoDaConta } from './repos/plano'
 import { planoVigente } from './repos/planos'
 import { autorDaPessoa } from '@/core/autor-da-mensagem'
+import { bibliotecaServeAoRamo } from '@/core/titulo-da-biblioteca'
+import { nichoDaConta } from './repos/recursos'
 import { linkComLacuna, podeEnviar, recadoDoLinkComLacuna, variaveisDe as variaveisDoCorpo } from '@/core/templates'
 import { adaptadorDoCanal } from './adaptador-do-canal'
 import {
@@ -299,8 +301,11 @@ export async function acaoListarBiblioteca(
    * que não está em português sai da lista. Quando não sobra nenhum, a seção
    * some e ficam os nossos, que são escritos em português.
    */
-  const emPortugues = r.modelos.filter((m) => m.idioma.toLowerCase().startsWith('pt'))
-  return { modelos: emPortugues, erro: null }
+  const nicho = await nichoDaConta(clienteId)
+  const servem = r.modelos.filter(
+    (m) => m.idioma.toLowerCase().startsWith('pt') && bibliotecaServeAoRamo(m.nome, nicho),
+  )
+  return { modelos: servem, erro: null }
 }
 
 /**
