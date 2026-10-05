@@ -1581,6 +1581,114 @@ textarea::placeholder {
   background: var(--panel);
   box-shadow: 0 2px 8px rgb(19 25 34 / 3%);
 }
+/*
+ * O painel do contato abaixo do cartão da negociação: uma folha só, seções
+ * separadas por linha. Eram cinco cartões brancos iguais, e iguais diziam que
+ * tudo pesava o mesmo; o único cartão em destaque agora é a negociação.
+ */
+.crm-folha {
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--panel);
+  padding: 0 18px;
+}
+.crm-folha-secao {
+  padding: 18px 0;
+}
+.crm-folha-secao + .crm-folha-secao {
+  border-top: 1px solid var(--line);
+}
+.crm-folha-titulo {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+  font-size: 10.5px;
+  line-height: 1.5;
+  font-weight: 600;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+/* Propriedades em linha, rótulo à esquerda: lê-se como ficha, não como formulário. */
+.crm-props {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.crm-props > div {
+  display: grid;
+  grid-template-columns: 116px minmax(0, 1fr);
+  align-items: center;
+  min-height: 34px;
+  font-size: 12.5px;
+}
+.crm-props dt {
+  color: var(--muted);
+}
+.crm-props dd {
+  min-width: 0;
+  padding: 0 9px;
+  color: var(--ink);
+  overflow-wrap: anywhere;
+}
+.crm-props dd:has(.app-dropdown-trigger) {
+  padding: 0;
+}
+/* O controle só se mostra controle no hover: parado, é um valor como os outros. */
+.crm-props .app-dropdown-trigger {
+  min-height: 32px;
+  padding: 5px 8px;
+  border-color: transparent;
+  background: transparent;
+  border-radius: 8px;
+  font-size: 12.5px;
+}
+.crm-props .app-dropdown-trigger:hover:not(:disabled) {
+  border-color: var(--line);
+  background: var(--surface);
+}
+/* Papel, não sistema: o que alguém da equipe escreveu. */
+.crm-nota {
+  border-color: color-mix(in oklab, var(--aviso) 22%, var(--line));
+  background: color-mix(in oklab, var(--aviso) 6%, var(--panel));
+}
+.crm-linha {
+  display: flex;
+  flex-direction: column;
+}
+.crm-linha > li {
+  position: relative;
+  display: flex;
+  gap: 10px;
+  padding-bottom: 12px;
+}
+.crm-linha > li:last-child {
+  padding-bottom: 0;
+}
+.crm-linha > li:not(:last-child)::before {
+  content: '';
+  position: absolute;
+  top: 26px;
+  bottom: 2px;
+  left: 11.5px;
+  width: 1px;
+  background: var(--line);
+}
+.crm-linha-marca {
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  width: 24px;
+  height: 24px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--panel);
+}
+.crm-linha-marca svg {
+  width: 12px;
+  height: 12px;
+}
 .crm-badge {
   display: inline-flex;
   align-items: center;

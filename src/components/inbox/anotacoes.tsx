@@ -244,7 +244,14 @@ export function EntradaDeAnotacao({ limite, aoAnotar }: { limite: number; aoAnot
 }
 
 /** O histórico, da mais nova para a mais antiga, com autor e hora. */
-export function ListaDeAnotacoes({ vazio = 'Sem anotação.' }: { vazio?: string }) {
+export function ListaDeAnotacoes({
+  vazio = 'Sem anotação.',
+  tom = 'neutro',
+}: {
+  vazio?: string
+  /** `nota`: fundo de papel, para o que alguém escreveu não se confundir com o que o sistema gravou. */
+  tom?: 'neutro' | 'nota'
+}) {
   const { entradas, tentarDeNovo, antiga } = useAnotacoes()
 
   if (entradas.length === 0 && antiga === '') {
@@ -257,7 +264,11 @@ export function ListaDeAnotacoes({ vazio = 'Sem anotação.' }: { vazio?: string
         <li
           key={entrada.id}
           className={`rounded-[10px] border px-2.5 py-2 ${
-            entrada.estado === 'erro' ? 'border-perigo/40 bg-perigo/5' : 'border-line bg-surface'
+            entrada.estado === 'erro'
+              ? 'border-perigo/40 bg-perigo/5'
+              : tom === 'nota'
+                ? 'crm-nota'
+                : 'border-line bg-surface'
           }`}
         >
           <p className="text-[12.5px] leading-5 whitespace-pre-line text-soft">{entrada.texto}</p>
@@ -276,7 +287,9 @@ export function ListaDeAnotacoes({ vazio = 'Sem anotação.' }: { vazio?: string
         </li>
       ))}
       {antiga !== '' && (
-        <li className="rounded-[10px] border border-dashed border-line px-2.5 py-2">
+        <li
+          className={`rounded-[10px] border border-dashed px-2.5 py-2 ${tom === 'nota' ? 'crm-nota' : 'border-line'}`}
+        >
           <p className="text-[12.5px] leading-5 whitespace-pre-line text-soft">{antiga}</p>
           <p className="mt-1 text-[11px] text-dim">Anotação de antes do histórico, sem data</p>
         </li>

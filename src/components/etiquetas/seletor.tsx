@@ -60,11 +60,14 @@ export function SeletorDeEtiquetas({
   contatoId,
   disponiveis,
   aplicadas,
+  compacto = false,
 }: {
   clienteId: string
   contatoId: string
   disponiveis: EtiquetaEscolhivel[]
   aplicadas: string[]
+  /** "+ Etiqueta" como mais uma ficha da fileira, e não um botão da largura toda. */
+  compacto?: boolean
 }) {
   /*
    * A marcação mora em `inbox/conversa-local.ts`, por contato: o ícone do
@@ -150,6 +153,16 @@ export function SeletorDeEtiquetas({
             </button>
           )
         })}
+        {compacto && !criando && (
+          <button
+            type="button"
+            data-foco
+            onClick={() => setCriando(true)}
+            className="inline-flex items-center rounded-full border border-dashed border-strong px-2 py-0.5 text-[10.5px] font-semibold text-dim transition hover:border-primary/40 hover:text-primary"
+          >
+            + Nova
+          </button>
+        )}
       </div>
 
       {criando ? (
@@ -179,7 +192,7 @@ export function SeletorDeEtiquetas({
             Criar
           </button>
         </div>
-      ) : (
+      ) : compacto ? null : (
         <button
           type="button"
           data-foco

@@ -13,7 +13,16 @@ import { LIMITE_DA_NOTA } from '@/core/flow/limites'
 import { TemperaturaDaOportunidade } from './temperatura-da-oportunidade'
 import { InteresseDaOportunidade } from './interesse-da-oportunidade'
 import { SeletorDeEtiquetas } from '@/components/etiquetas/seletor'
-import { comoDinheiro, comoFrase } from '@/core/crm'
+import { comoDinheiro, comoFrase, type Evento } from '@/core/crm'
+import {
+  IconeDaSecao,
+  iconeEtiqueta,
+  iconeFicha,
+  iconeFunil,
+  iconeLapis,
+  iconeLinhaDoTempo,
+  iconeRelogio,
+} from '@/components/lead-crm/icones'
 import { comoParado, type Temperatura } from '@/core/quadros'
 import { telefoneLegivel } from '@/core/contatos/telefone'
 import { origemDoContato } from '@/core/contatos/origem'
@@ -101,7 +110,7 @@ export function PainelDoContato({
   const funil = dados?.funis.find((item) => item.cartaoId === cartao.id)
   const aberta = !cartao.situacao || cartao.situacao === 'aberta'
   const origem = ficha ? origemDoContato(ficha.campos) : null
-  const eventos = historicoCompleto ? dados?.eventos : dados?.eventos.slice(0, 5)
+  const grupos = agrupar(dados?.eventos ?? [])
 
   return (
     <dialog
@@ -170,7 +179,9 @@ export function PainelDoContato({
           </div>
         </div>
       </header>
-      <div className="min-h-0 flex-1 space-y-5 overflow-y-auto overscroll-contain px-5 py-5 sm:px-6">
+      <div className="min-h-0 flex-1 space-y-4 overflow-y-auto overscroll-contain px-5 py-5 sm:px-6">
+        {/* Tudo o que é da negociação mora num cartão só, o único em destaque:
+            os dados do contato, embaixo, são consulta; aqui é onde se age. */}
         <section className="crm-opportunity">
           <div className="mb-3 flex flex-wrap items-center gap-2">
             {dados || falhou ? (
@@ -192,10 +203,15 @@ export function PainelDoContato({
             valor={cartao.valor ?? null}
             aoSalvar={aoAtualizarCartao}
           />
-          <div className="mt-4 border-t border-line pt-3">
+          <div className="mt-4 space-y-4 border-t border-line pt-4">
             {aoMover && etapas.length > 0 ? (
               <div className="crm-field">
-                <span>Etapa no funil</span>
+                <span className="flex items-baseline justify-between gap-3">
+                  Etapa no funil
+                  <span className="text-[10.5px] font-normal text-dim">
+                    {comoParado(cartao.entrouNaColunaEm)} nesta etapa
+                  </span>
+                </span>
                 <Dropdown
                   rotuloAcessivel="Etapa no funil"
                   valor={cartao.colunaId}
@@ -205,19 +221,38 @@ export function PainelDoContato({
                 />
               </div>
             ) : (
-              <p className="text-xs font-medium">{etapaNome ?? funil?.etapa ?? 'No funil'}</p>
+              <div>
+                <p className="text-xs font-medium">{etapaNome ?? funil?.etapa ?? 'No funil'}</p>
+                <p className="mt-1 text-[10.5px] text-dim">
+                  {comoParado(cartao.entrouNaColunaEm)} nesta etapa
+                </p>
+              </div>
             )}
-            <p className="mt-2 text-[11px] text-muted">
-              {comoParado(cartao.entrouNaColunaEm)} nesta etapa
-            </p>
             {erroDeMovimento && (
-              <p role="alert" className="mt-2 text-xs text-perigo">
+              <p role="alert" className="-mt-2 text-xs text-perigo">
                 {erroDeMovimento}
               </p>
             )}
+            <div className="crm-field">
+              <span>Temperatura</span>
+              <TemperaturaDaOportunidade
+                clienteId={clienteId}
+                cartaoId={cartao.id}
+                temperatura={cartao.temperatura ?? null}
+              />
+            </div>
+            <div className="crm-field">
+              <span>Produto ou serviço de interesse</span>
+              <InteresseDaOportunidade
+                clienteId={clienteId}
+                cartaoId={cartao.id}
+                produtoId={cartao.produtoId ?? null}
+                produtoNome={cartao.produtoNome ?? null}
+              />
+            </div>
           </div>
           {aberta && (
-            <div className="mt-4 flex gap-2">
+            <div className="mt-5 flex gap-2">
               <button
                 type="button"
                 onClick={() => aoGanharOuPerder('ganha')}
@@ -236,7 +271,7 @@ export function PainelDoContato({
           )}
         </section>
         {falhou ? (
-          <div role="alert" className="crm-section">
+          <div role="alert" className="crm-folha">
             <p className="text-sm text-muted">Não foi possível carregar os dados deste contato.</p>
             <button
               type="button"
@@ -252,61 +287,71 @@ export function PainelDoContato({
         ) : !ficha ? (
           <EsqueletoDoPainel />
         ) : (
-          <>
-            <Secao titulo="Qualificação da oportunidade">
-              <div className="crm-field">
-                <span>Temperatura</span>
-                <TemperaturaDaOportunidade
-                  clienteId={clienteId}
-                  cartaoId={cartao.id}
-                  temperatura={cartao.temperatura ?? null}
-                />
-              </div>
-              <div className="crm-field mt-4">
-                <span>Produto ou serviço de interesse</span>
-                <InteresseDaOportunidade
-                  clienteId={clienteId}
-                  cartaoId={cartao.id}
-                  produtoId={cartao.produtoId ?? null}
-                  produtoNome={cartao.produtoNome ?? null}
-                />
-              </div>
-            </Secao>
-            <Secao titulo="Relacionamento">
-              <div className="grid grid-cols-1 gap-4 min-[380px]:grid-cols-2">
-                <div className="crm-field">
-                  <span>Estágio do contato</span>
-                  <EstagioDoContato
-                    clienteId={clienteId}
-                    contatoId={contatoId}
-                    estagio={ficha.estagio}
-                    expandido
-                  />
+          /* Uma folha só, com as seções separadas por linha: cinco cartões
+             brancos iguais diziam que tudo pesava o mesmo. */
+          <div className="crm-folha">
+            <Secao titulo="Contato" icone={iconeFicha}>
+              <dl className="crm-props">
+                <div>
+                  <dt>Estágio</dt>
+                  <dd>
+                    <EstagioDoContato
+                      clienteId={clienteId}
+                      contatoId={contatoId}
+                      estagio={ficha.estagio}
+                      expandido
+                    />
+                  </dd>
                 </div>
-                <div className="crm-field">
-                  <span>Responsável pelo contato</span>
-                  <ResponsavelDoContato
-                    clienteId={clienteId}
-                    contatoId={contatoId}
-                    equipe={dados?.equipe ?? []}
-                    responsavelId={ficha.atribuidoA}
-                    expandido
-                  />
+                <div>
+                  <dt>Responsável</dt>
+                  <dd>
+                    <ResponsavelDoContato
+                      clienteId={clienteId}
+                      contatoId={contatoId}
+                      equipe={dados?.equipe ?? []}
+                      responsavelId={ficha.atribuidoA}
+                      expandido
+                    />
+                  </dd>
                 </div>
-              </div>
-              <dl className="mt-4 space-y-3 border-t border-line pt-4">
-                <Linha rotulo="Contato desde">{quando(ficha.criadoEm)}</Linha>
-                <Linha rotulo="Última interação">
-                  {ficha.ultimaEntradaEm ? quando(ficha.ultimaEntradaEm) : 'Ainda não escreveu'}
-                </Linha>
-                {origem && <Linha rotulo="Origem">{origem.titulo || origem.nome}</Linha>}
+                <div>
+                  <dt>Contato desde</dt>
+                  <dd title={horaExata(ficha.criadoEm)}>{quando(ficha.criadoEm)}</dd>
+                </div>
+                <div>
+                  <dt>Última interação</dt>
+                  <dd title={ficha.ultimaEntradaEm ? horaExata(ficha.ultimaEntradaEm) : undefined}>
+                    {ficha.ultimaEntradaEm ? quando(ficha.ultimaEntradaEm) : 'Ainda não escreveu'}
+                  </dd>
+                </div>
+                {origem && (
+                  <div>
+                    <dt>Origem</dt>
+                    <dd>{origem.titulo || origem.nome}</dd>
+                  </div>
+                )}
+                {resumo && resumo.compras !== null && resumo.compras > 0 && (
+                  <div>
+                    <dt>Compras</dt>
+                    <dd>
+                      <span className="font-semibold text-ok tabular-nums">
+                        {comoDinheiro(resumo.total)}
+                      </span>
+                      <span className="text-dim">
+                        {' '}
+                        · {resumo.compras} {resumo.compras === 1 ? 'compra' : 'compras'}
+                      </span>
+                    </dd>
+                  </div>
+                )}
               </dl>
             </Secao>
             {dados && dados.agendadas.length > 0 && (
-              <Secao titulo="Mensagens agendadas">
+              <Secao titulo="Mensagens agendadas" icone={iconeRelogio} tom="primary">
                 <ul className="space-y-3">
                   {dados.agendadas.map((a) => (
-                    <li key={a.id}>
+                    <li key={a.id} className="rounded-[10px] bg-surface px-3 py-2">
                       <p
                         className={`text-xs font-medium ${a.estado === 'falhou' ? 'text-perigo' : 'text-primary'}`}
                       >
@@ -318,15 +363,16 @@ export function PainelDoContato({
                 </ul>
               </Secao>
             )}
-            <Secao titulo="Etiquetas">
+            <Secao titulo="Etiquetas" icone={iconeEtiqueta}>
               <SeletorDeEtiquetas
                 clienteId={clienteId}
                 contatoId={contatoId}
                 disponiveis={dados?.etiquetas ?? []}
                 aplicadas={dados?.aplicadas ?? []}
+                compacto
               />
             </Secao>
-            <Secao titulo="Anotações da equipe">
+            <Secao titulo="Anotações da equipe" icone={iconeLapis} tom="aviso">
               {/* A mesma lista do Inbox e da ficha (5.9): anotar aqui aparece lá. */}
               <ProvedorDeAnotacoes
                 iniciais={dados?.anotacoes ?? []}
@@ -337,64 +383,86 @@ export function PainelDoContato({
                 <div className="mb-2">
                   <EntradaDeAnotacao limite={LIMITE_DA_NOTA} />
                 </div>
-                <ListaDeAnotacoes vazio="Registre preferências e combinados importantes para o próximo atendimento." />
+                <ListaDeAnotacoes
+                  tom="nota"
+                  vazio="Registre preferências e combinados importantes para o próximo atendimento."
+                />
               </ProvedorDeAnotacoes>
             </Secao>
-          </>
-        )}
-        {resumo && resumo.compras !== null && resumo.compras > 0 && (
-          <div className="grid grid-cols-2 gap-3">
-            <Numero titulo="Total em compras" valor={comoDinheiro(resumo.total)} />
-            <Numero titulo="Compras realizadas" valor={String(resumo.compras)} />
-          </div>
-        )}
-        {dados && dados.funis.length > 1 && (
-          <Secao titulo="Outros funis">
-            <ul className="space-y-3">
-              {dados.funis
-                .filter((f) => f.cartaoId !== cartao.id)
-                .map((f) => (
-                  <li key={f.cartaoId} className="flex justify-between gap-3 text-xs">
-                    <span className="font-medium">{f.quadro}</span>
-                    <span className="text-muted">
-                      {f.etapa} · {f.situacao === 'aberta' ? 'em aberto' : f.situacao}
-                    </span>
-                  </li>
-                ))}
-            </ul>
-          </Secao>
-        )}
-        {dados && (
-          <Secao titulo="Histórico recente">
-            <ol className="space-y-4">
-              {eventos?.map((evento) => (
-                <li key={evento.id} className="relative border-l border-line pl-4">
-                  <span className="absolute top-1.5 -left-[3px] size-[5px] rounded-full bg-primary/40" />
-                  <p className="text-xs leading-5">{comoFrase(evento)}</p>
-                  <p className="mt-1 text-[11px] text-dim">
-                    {horaExata(evento.criadoEm)}
-                    {evento.autor && ` · ${evento.autor}`}
+            {dados && dados.funis.length > 1 && (
+              <Secao titulo="Outros funis" icone={iconeFunil}>
+                <ul className="space-y-2">
+                  {dados.funis
+                    .filter((f) => f.cartaoId !== cartao.id)
+                    .map((f) => (
+                      <li
+                        key={f.cartaoId}
+                        className="flex items-center justify-between gap-3 rounded-[10px] bg-surface px-3 py-2 text-xs"
+                      >
+                        <span className="font-medium">{f.quadro}</span>
+                        <span className="text-muted">
+                          {f.etapa} · {f.situacao === 'aberta' ? 'em aberto' : f.situacao}
+                        </span>
+                      </li>
+                    ))}
+                </ul>
+              </Secao>
+            )}
+            {dados && (
+              <Secao titulo="Histórico recente" icone={iconeLinhaDoTempo}>
+                {grupos.length === 0 ? (
+                  <p className="text-xs leading-5 text-muted">
+                    As próximas movimentações deste contato aparecerão aqui.
                   </p>
-                </li>
-              ))}
-            </ol>
-            {dados.eventos.length === 0 && (
-              <p className="text-xs leading-5 text-muted">
-                As próximas movimentações deste contato aparecerão aqui.
-              </p>
+                ) : (
+                  <ol className="crm-linha">
+                    {(historicoCompleto ? grupos : grupos.slice(0, 5)).map(({ evento, vezes }) => {
+                      const marca = marcaDoEvento(evento.tipo)
+                      return (
+                        <li key={evento.id}>
+                          <span className={`crm-linha-marca ${marca.tom}`} aria-hidden>
+                            <svg
+                              viewBox="0 0 24 24"
+                              fill="none"
+                              stroke="currentColor"
+                              strokeWidth="2"
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                            >
+                              {marca.desenho}
+                            </svg>
+                          </span>
+                          <div className="min-w-0 flex-1 pt-px">
+                            <p className="text-xs leading-5 text-soft first-letter:uppercase">
+                              {comoFrase(evento)}
+                              {vezes > 1 && (
+                                <span className="ml-1.5 rounded-full bg-surface px-1.5 py-px text-[10px] font-semibold text-muted">
+                                  ×{vezes}
+                                </span>
+                              )}
+                            </p>
+                            <p className="text-[11px] text-dim" title={horaExata(evento.criadoEm)}>
+                              {quando(evento.criadoEm)}
+                              {evento.autor && ` · ${evento.autor}`}
+                            </p>
+                          </div>
+                        </li>
+                      )
+                    })}
+                  </ol>
+                )}
+                {grupos.length > 5 && (
+                  <button
+                    type="button"
+                    className="crm-edit mt-3"
+                    onClick={() => setHistoricoCompleto((v) => !v)}
+                  >
+                    {historicoCompleto ? 'Mostrar menos' : `Ver mais ${grupos.length - 5} registros`}
+                  </button>
+                )}
+              </Secao>
             )}
-            {dados.eventos.length > 5 && (
-              <button
-                type="button"
-                className="crm-edit mt-4"
-                onClick={() => setHistoricoCompleto((v) => !v)}
-              >
-                {historicoCompleto
-                  ? 'Mostrar menos'
-                  : `Ver mais ${dados.eventos.length - 5} registros`}
-              </button>
-            )}
-          </Secao>
+          </div>
         )}
       </div>
       {/* O diálogo é o gesto rápido; a página é onde se trabalha o negócio (F2). */}
@@ -417,83 +485,123 @@ export function PainelDoContato({
 }
 function Secao({
   titulo,
-  acao,
+  icone,
+  tom,
   children,
 }: {
   titulo: string
-  acao?: ReactNode
+  icone: ReactNode
+  tom?: 'neutro' | 'primary' | 'aviso'
   children: ReactNode
 }) {
   return (
-    <section className="crm-section">
-      <header className="mb-4 flex items-center justify-between gap-3">
-        <h3 className="crm-section-title">{titulo}</h3>
-        {acao}
-      </header>
+    <section className="crm-folha-secao">
+      <h3 className="crm-folha-titulo">
+        <IconeDaSecao tom={tom}>{icone}</IconeDaSecao>
+        {titulo}
+      </h3>
       {children}
     </section>
   )
 }
-function Linha({ rotulo, children }: { rotulo: string; children: ReactNode }) {
-  return (
-    <div className="flex justify-between gap-4 text-xs">
-      <dt className="shrink-0 text-muted">{rotulo}</dt>
-      <dd className="break-words text-right text-soft">{children}</dd>
-    </div>
-  )
+
+/**
+ * O mesmo evento repetido em sequência vira uma linha só com "×3": três
+ * "automação pausada" no mesmo minuto empurravam para fora o que importava.
+ */
+function agrupar(eventos: Evento[]): { evento: Evento; vezes: number }[] {
+  const grupos: { evento: Evento; vezes: number; chave: string }[] = []
+  for (const evento of eventos) {
+    const chave = `${comoFrase(evento)}|${evento.autor ?? ''}`
+    const ultimo = grupos.at(-1)
+    if (ultimo && ultimo.chave === chave) ultimo.vezes += 1
+    else grupos.push({ evento, vezes: 1, chave })
+  }
+  return grupos
 }
-function Numero({ titulo, valor }: { titulo: string; valor: string }) {
-  return (
-    <div className="crm-section">
-      <p className="text-lg font-semibold tabular-nums">{valor}</p>
-      <p className="mt-1 text-[11px] text-muted">{titulo}</p>
-    </div>
-  )
+
+/** Um desenho por tipo de fato, para se achar "ganhou" sem ler a lista inteira. */
+function marcaDoEvento(tipo: string): { desenho: ReactNode; tom: string } {
+  switch (tipo) {
+    case 'mudou-de-etapa':
+    case 'entrou-no-quadro':
+    case 'saiu-do-quadro':
+      return { desenho: <path d="M5 12h14M13 6l6 6-6 6" />, tom: 'text-primary' }
+    case 'ganhou':
+      return { desenho: <path d="M5 12.5l4.5 4.5L19 7.5" />, tom: 'text-ok' }
+    case 'perdeu':
+      return { desenho: <path d="M7 7l10 10M17 7 7 17" />, tom: 'text-perigo' }
+    case 'mensagem-recebida':
+    case 'mensagem-enviada':
+    case 'agendou':
+      return {
+        desenho: <path d="M5 6.5h14v9H10l-4 3v-3H5z" />,
+        tom: 'text-muted',
+      }
+    case 'automacao':
+      return { desenho: <path d="M13 3.5 6 13h5l-1 7.5L18 11h-5l1-7.5Z" />, tom: 'text-aviso' }
+    case 'assumiu':
+      return {
+        desenho: (
+          <>
+            <circle cx="12" cy="8.5" r="3.5" />
+            <path d="M5 19.5c1.2-3.3 3.8-5 7-5s5.8 1.7 7 5" />
+          </>
+        ),
+        tom: 'text-muted',
+      }
+    case 'mudou-de-temperatura':
+      return {
+        desenho: <path d="M10 13.5V5a2 2 0 1 1 4 0v8.5a4 4 0 1 1-4 0Z" />,
+        tom: 'text-perigo',
+      }
+    case 'nota':
+      return { desenho: iconeLapis, tom: 'text-aviso' }
+    default:
+      return { desenho: <circle cx="12" cy="12" r="3" />, tom: 'text-dim' }
+  }
 }
-/** Mesmo desenho das seções que chegam, para nada pular quando os dados entram. */
+
+/** Mesmo desenho do que chega, para nada pular quando os dados entram. */
 function EsqueletoDoPainel() {
   const barra = 'animate-pulse rounded bg-surface-strong'
   return (
-    <div role="status" aria-label="Carregando dados do contato" className="space-y-5">
-      <section className="crm-section">
-        <div className={`mb-5 h-4 w-48 ${barra}`} />
-        <div className={`h-3 w-20 ${barra}`} />
-        <div className={`mt-2 h-10 ${barra} rounded-lg`} />
-        <div className={`mt-5 h-3 w-44 ${barra}`} />
-        <div className="mt-3 flex items-center justify-between">
-          <div className={`h-3 w-24 ${barra}`} />
-          <div className={`h-9 w-20 ${barra} rounded-lg`} />
-        </div>
-      </section>
-      <section className="crm-section">
-        <div className={`mb-5 h-4 w-32 ${barra}`} />
-        <div className="grid grid-cols-1 gap-4 min-[380px]:grid-cols-2">
-          {[0, 1].map((i) => (
-            <div key={i}>
-              <div className={`h-3 w-28 ${barra}`} />
-              <div className={`mt-2 h-10 ${barra} rounded-lg`} />
-            </div>
-          ))}
-        </div>
-        <div className="mt-4 space-y-3 border-t border-line pt-4">
-          {[0, 1].map((i) => (
-            <div key={i} className="flex justify-between">
-              <div className={`h-3 w-24 ${barra}`} />
-              <div className={`h-3 w-28 ${barra}`} />
+    <div role="status" aria-label="Carregando dados do contato" className="crm-folha">
+      <section className="crm-folha-secao">
+        <div className={`mb-4 h-3 w-20 ${barra}`} />
+        <div className="space-y-3">
+          {[24, 28, 20, 24].map((w, i) => (
+            <div key={i} className="flex items-center gap-3">
+              <div className={`h-3 w-24 shrink-0 ${barra}`} />
+              <div className={`h-3 ${barra}`} style={{ width: `${w * 4}px` }} />
             </div>
           ))}
         </div>
       </section>
-      <section className="crm-section">
-        <div className={`mb-5 h-4 w-24 ${barra}`} />
-        <div className="flex gap-2">
-          <div className={`h-7 w-20 ${barra} rounded-full`} />
-          <div className={`h-7 w-16 ${barra} rounded-full`} />
+      <section className="crm-folha-secao">
+        <div className={`mb-4 h-3 w-20 ${barra}`} />
+        <div className="flex gap-1.5">
+          <div className={`h-5 w-20 ${barra} rounded-full`} />
+          <div className={`h-5 w-16 ${barra} rounded-full`} />
+          <div className={`h-5 w-14 ${barra} rounded-full`} />
         </div>
       </section>
-      <section className="crm-section">
-        <div className={`mb-5 h-4 w-40 ${barra}`} />
-        <div className={`h-20 ${barra} rounded-lg`} />
+      <section className="crm-folha-secao">
+        <div className={`mb-4 h-3 w-36 ${barra}`} />
+        <div className={`h-9 ${barra} rounded-lg`} />
+        <div className={`mt-2 h-14 ${barra} rounded-lg`} />
+      </section>
+      <section className="crm-folha-secao">
+        <div className={`mb-4 h-3 w-28 ${barra}`} />
+        {[0, 1, 2].map((i) => (
+          <div key={i} className="mb-3 flex gap-3">
+            <div className={`size-6 shrink-0 ${barra} rounded-full`} />
+            <div className="flex-1 space-y-1.5 pt-1">
+              <div className={`h-3 w-40 ${barra}`} />
+              <div className={`h-2.5 w-20 ${barra}`} />
+            </div>
+          </div>
+        ))}
       </section>
     </div>
   )
