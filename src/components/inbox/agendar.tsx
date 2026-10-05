@@ -1,5 +1,7 @@
 'use client'
 
+import { Dropdown } from '@/components/design/dropdown'
+import { tituloDoModelo } from '@/core/titulo-da-biblioteca'
 import { useEffect, useState, useTransition } from 'react'
 import { criarAgendada, ehProvisoria, marcarCancelada, useAgendadas } from './agendadas-local'
 import {
@@ -65,6 +67,7 @@ export function AgendarMensagem({
   const quando = quandoBruto === '' ? null : new Date(quandoBruto)
   const recusa = conferirAgendamento({ texto, quando })
   const avisar = foraDaJanela(quando, fimDaJanela)
+  const modeloEscolhido = aprovados?.find((t) => t.id === modelo) ?? null
 
   /*
    * A lista de modelos só é buscada quando o horário escolhido cai fora da
@@ -216,11 +219,27 @@ export function AgendarMensagem({
         precisava esperar o cliente responder seria gastar sem necessidade.
       */}
       {avisar && (
-        <div className="mb-2 rounded-[8px] border border-amber-400/30 bg-amber-400/[0.09] px-2 py-1.5">
-          <p className="text-[11.5px] leading-4 text-aviso">
-            <strong>Isso cai fora da janela de 24h.</strong> Sem modelo, se {nome} não
-            escrever de novo antes da hora marcada, o WhatsApp recusa.
-          </p>
+        <div
+          className={`mb-2 rounded-[10px] border px-2.5 py-2 ${
+            modelo ? 'border-line bg-surface' : 'border-amber-400/30 bg-amber-400/[0.09]'
+          }`}
+        >
+          {/*
+            O amarelo é para o risco, e só existe sem modelo. Com modelo
+            escolhido não há risco a avisar: a faixa vira neutra e diz o que
+            acontece.
+          */}
+          {modelo ? (
+            <p className="text-[11.5px] leading-4 text-muted">
+              Se {nome} não escrever antes da hora marcada, vai este modelo no lugar do texto. Se
+              escrever, vai o texto.
+            </p>
+          ) : (
+            <p className="text-[11.5px] leading-4 text-aviso">
+              <strong>Isso cai fora da janela de 24h.</strong> Sem modelo, se {nome} não
+              escrever de novo antes da hora marcada, o WhatsApp recusa.
+            </p>
+          )}
 
           {aprovados === null ? (
             <p className="mt-1.5 text-[11px] text-dim">Vendo os modelos aprovados…</p>
@@ -230,23 +249,34 @@ export function AgendarMensagem({
               agendar fora da janela.
             </p>
           ) : (
-            <label className="mt-1.5 block">
-              <span className="mb-1 block text-[11px] text-muted">
-                Mandar por um modelo, se a janela estiver fechada na hora:
-              </span>
-              <select
-                value={modelo}
-                onChange={(e) => setModelo(e.target.value)}
-                className="app-field w-full px-2 py-1 text-[12.5px]"
-              >
-                <option value="">Sem modelo, e aceito o risco de falhar</option>
-                {aprovados.map((t) => (
-                  <option key={t.id} value={t.id}>
-                    {t.nome}
-                  </option>
-                ))}
-              </select>
-            </label>
+            <div className="mt-2">
+              <span className="mb-1 block text-[11px] font-semibold text-muted">Modelo, se a janela estiver fechada</span>
+              <Dropdown
+                rotuloAcessivel="Modelo, se a janela estiver fechada"
+                valor={modelo}
+                aoMudar={setModelo}
+                className="w-full"
+                opcoes={[
+                  { valor: '', rotulo: 'Sem modelo', detalhe: 'Arrisca falhar se a janela estiver fechada' },
+                  ...aprovados.map((t) => ({
+                    valor: t.id,
+                    rotulo: tituloDoModelo(t.nome),
+                    ...(t.componentes.corpo.trim()
+                      ? { detalhe: t.componentes.corpo.replace(/\{\{\d+\}\}/g, nome).replace(/\s+/g, ' ').trim().slice(0, 80) }
+                      : {}),
+                  })),
+                ]}
+              />
+              {modeloEscolhido?.componentes.corpo.trim() && (
+                <p
+                  aria-disabled
+                  title="O texto do modelo aprovado não pode ser editado"
+                  className="mt-1.5 max-h-[96px] cursor-not-allowed overflow-y-auto rounded-[10px] border border-line bg-panel px-2.5 py-1.5 text-[12px] leading-[1.45] whitespace-pre-line text-muted select-none"
+                >
+                  {modeloEscolhido.componentes.corpo.replace(/\{\{\d+\}\}/g, nome)}
+                </p>
+              )}
+            </div>
           )}
         </div>
       )}
@@ -265,6 +295,13 @@ export function AgendarMensagem({
       >
         Agendar mensagem
       </button>
+      {recusa === 'sem_texto' && quando && (
+        <p className="mt-1.5 text-[11px] leading-4 text-dim">
+          {modelo
+            ? `Escreva a mensagem: ela é a que vai se ${nome} responder antes.`
+            : 'Escreva a mensagem para agendar.'}
+        </p>
+      )}
 
       {/*
         A promessa honesta de quando ela sai.
