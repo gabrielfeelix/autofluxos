@@ -1333,6 +1333,13 @@ extração explícito para os objetos de `public`.
   `app_verandi.migrations_aplicadas` **40**, igual a antes. Desfazer: tirar as
   duas chaves de `recursos`, `delete from public.funcoes where id = 'leitor'`
   (antes, trocar quem for Leitor) e voltar as checagens para 1 a 4.
+- **a `0131` foi aplicada em 06/out/2026**, com autorização explícita do
+  dono, pela Management API, antes do código (`d07ac3e4`). Só `public`:
+  `sequencia_passos.template_parametros jsonb not null default '{}'`.
+  Releitura depois: coluna com o tipo e o padrão esperados. Sem ensaio em
+  Docker (indisponível na WSL nesse dia); é `add column if not exists`.
+  Desfazer: `alter table public.sequencia_passos drop column template_parametros`
+  depois de tirar o código que a lê.
 
 ### Testar migration antes de produção, em Docker
 
