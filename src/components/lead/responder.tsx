@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState, useTransition } from 'react'
 import { BotaoDeAnexo } from '@/components/lead/botao-de-anexo'
+import { useEntrega } from '@/components/lead/entrega-de-arquivos'
 import { BotaoDeMicrofone } from '@/components/lead/botao-de-microfone'
 import { useCitacao } from '@/components/lead/citacao'
 import { RetomarComModelo } from '@/components/lead/retomar-com-modelo'
@@ -132,6 +133,8 @@ export function CaixaDeResposta({
   const [enviando, comecar] = useTransition()
   /** `null` fora do provedor, porque a tela da Ficha não monta citação. */
   const citacao = useCitacao()
+  /** A revisão de arquivos da conversa, para o Ctrl+V de imagem. `null` na Ficha. */
+  const entrega = useEntrega()
   /*
    * Escolheu responder a uma mensagem: o cursor vai para o campo, no fim do
    * que já está escrito, como no WhatsApp. Antes era tocar em Responder e
@@ -477,6 +480,16 @@ export function CaixaDeResposta({
             não volta.
           */
           onBlur={conferirTexto}
+          /*
+           * Ctrl+V de imagem (print, foto copiada) abre a mesma revisão do clipe
+           * e de arrastar, em vez de não fazer nada. Texto colado segue normal.
+           */
+          onPaste={(evento) => {
+            const arquivos = [...evento.clipboardData.files]
+            if (arquivos.length === 0 || !entrega || !livre || !anexo) return
+            evento.preventDefault()
+            entrega.adicionar(arquivos)
+          }}
           onKeyDown={(evento) => {
             // `/` no campo vazio abre as respostas rápidas, sem tirar a mão do
             // teclado. Com texto, a barra é só uma barra.

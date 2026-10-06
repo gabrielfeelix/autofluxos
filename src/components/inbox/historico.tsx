@@ -591,7 +591,8 @@ function ListaDeMensagens({
             ) : (
             <p title={mensagem.toque ? 'Tocou numa opção do menu' : undefined} className={`relative max-w-full font-texto text-[14.5px] leading-[1.45] whitespace-pre-wrap [overflow-wrap:anywhere] ${
               midiaSolta
-                ? ''
+                ? // Do tamanho da foto: a hora vai no canto dela, e não no da coluna.
+                  'w-fit'
                 : nossa
                 ? 'bolha-nossa rounded-[15px_15px_4px_15px] px-3.5 py-2'
                 : mensagem.toque
