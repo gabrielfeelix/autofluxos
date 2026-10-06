@@ -1,5 +1,8 @@
 # Handoff: 19/ago/2026, atualizado em 04/set
 
+> **Licença acompanhada e Voltei de Licença na MGM (06/out/2026):** o handoff
+> mora na Verandi, `verandi/docs/HANDOFF-06-OUT-LICENCA-E-TESTE.md`.
+
 > **Rodada de 05/out/2026 (UI, IA, login, MGM/Verandi):** o que entrou, o bug
 > de sessão do "Adicionar usuário" e o que falta ver em print em
 > [HANDOFF-05-OUT-SESSAO.md](HANDOFF-05-OUT-SESSAO.md).
