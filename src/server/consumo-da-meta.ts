@@ -55,16 +55,24 @@ async function lerDaMeta(wabaId: string, token: string, inicio: number, fim: num
   const campo =
     `pricing_analytics.start(${inicio}).end(${fim}).granularity(DAILY)` +
     `.dimensions(["PRICING_CATEGORY","PRICING_TYPE","PHONE"])`
-  const url = `https://graph.facebook.com/${VERSAO}/${wabaId}?fields=${encodeURIComponent(campo)}`
+  const url = `https://graph.facebook.com/${VERSAO}/${wabaId}?fields=${encodeURIComponent(`currency,${campo}`)}`
   const resposta = await fetch(url, {
     headers: { Authorization: `Bearer ${token}` },
     signal: AbortSignal.timeout(15_000),
   })
-  const corpo = (await resposta.json().catch(() => null)) as { error?: { message?: string } } | null
+  const corpo = (await resposta.json().catch(() => null)) as { error?: { message?: string }; currency?: string } | null
   if (!resposta.ok || corpo?.error) {
     throw new Error(corpo?.error?.message ?? `HTTP ${resposta.status}`)
   }
-  return lerPontosDaMeta(corpo)
+  /*
+   * O `cost` vem na moeda da WABA. A tela soma em reais, então custo em outra
+   * moeda não é guardado: o relatório cai na tarifa BRL, que é a estimativa
+   * de antes, em vez de somar dólar como se fosse real.
+   */
+  const pontos = lerPontosDaMeta(corpo)
+  if (corpo?.currency === 'BRL') return pontos
+  console.warn(`[consumo-da-meta] WABA ${wabaId} cobra em ${corpo?.currency ?? 'moeda desconhecida'}: custo não guardado`)
+  return pontos.map((p) => ({ ...p, custo: null }))
 }
 
 /** Meia-noite de São Paulo do primeiro dia do mês de `chave` (`YYYY-MM-01`), em segundos. */

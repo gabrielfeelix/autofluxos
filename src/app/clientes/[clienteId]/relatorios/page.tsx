@@ -501,7 +501,11 @@ export default async function Pagina({
             conteudo: (
               <CaixaDoBloco
                 titulo="Gasto com WhatsApp"
-                subtitulo="Estimativa pela tabela da Meta em reais. A fatura chega pela Meta, na forma de pagamento do WhatsApp."
+                subtitulo={
+                  gasto.estimado
+                    ? 'Estimativa pela tabela da Meta em reais, até ela informar o valor cobrado. A fatura chega pela Meta, na forma de pagamento do WhatsApp.'
+                    : 'Valor que a Meta informou, com um ou dois dias de atraso. A fatura chega pela Meta, na forma de pagamento do WhatsApp.'
+                }
               >
                 <div className="flex flex-1 flex-col">
                   <p className="text-[34px] leading-none font-bold tracking-[-0.03em] tabular-nums text-ink">

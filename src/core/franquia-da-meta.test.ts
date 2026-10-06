@@ -107,3 +107,30 @@ describe('emReais', () => {
     expect(emReais(12.4)).toBe('R$ 12,40')
   })
 })
+
+describe('gastoDoPeriodo com o custo da Meta', () => {
+  const ponto = (categoria: string, tipo: string, volume: number, custo: number | null): PontoDaMeta => ({
+    telefone: '5544999990000',
+    dia: '2026-10-03',
+    categoria,
+    tipo,
+    volume,
+    custo,
+  })
+
+  it('usa o valor cobrado quando a Meta já informou, e não é estimativa', () => {
+    const g = gastoDoPeriodo([ponto('MARKETING', 'REGULAR', 10, 3.1)], '2026-10-01', '2026-10-31')
+    expect(g.total).toBe(3.1)
+    expect(g.estimado).toBe(false)
+  })
+
+  it('cai na tarifa onde a Meta ainda não informou, e avisa que é estimativa', () => {
+    const g = gastoDoPeriodo(
+      [ponto('MARKETING', 'REGULAR', 10, 3.1), ponto('UTILITY', 'REGULAR', 100, null)],
+      '2026-10-01',
+      '2026-10-31',
+    )
+    expect(g.total).toBe(6.6)
+    expect(g.estimado).toBe(true)
+  })
+})

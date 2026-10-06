@@ -167,6 +167,11 @@ export type GastoDoPeriodo = {
   porTipo: GastoPorTipo[]
   /** Serviço grátis usado no período (dentro da franquia). */
   servicoGratis: number
+  /**
+   * Alguma parte do total saiu da tarifa, e não do valor que a Meta cobrou.
+   * A Meta manda o custo com um ou dois dias de atraso, e só para WABA em BRL.
+   */
+  estimado: boolean
 }
 
 /**
@@ -190,6 +195,9 @@ export function gastoDoPeriodo(pontos: PontoDaMeta[], de: string, ate: string): 
   }
 
   let servicoGratis = 0
+  let estimado = false
+  // O que a Meta cobrou de fato, quando ela já disse (`custo` > 0, WABA em BRL).
+  const real = (ponto: PontoDaMeta) => (ponto.custo !== null && ponto.custo > 0 ? ponto.custo : null)
   const usadasNoMes = new Map<string, number>()
   const ordenados = [...pontos].sort((a, b) => a.dia.localeCompare(b.dia))
 
@@ -206,12 +214,19 @@ export function gastoDoPeriodo(pontos: PontoDaMeta[], de: string, ate: string): 
       const gratis = valendo ? Math.max(0, Math.min(ponto.volume, FRANQUIA_DE_SERVICO - antes)) : ponto.volume
       servicoGratis += gratis
       const cobradas = ponto.volume - gratis
-      if (cobradas > 0) somar('SERVICE', cobradas, cobradas * TARIFA_DE_SERVICO_BR)
+      const cobrado = real(ponto)
+      if (cobrado !== null) somar('SERVICE', ponto.volume, cobrado)
+      else if (cobradas > 0) {
+        estimado = true
+        somar('SERVICE', cobradas, cobradas * TARIFA_DE_SERVICO_BR)
+      }
       continue
     }
 
     if (!dentro || categoria === 'SERVICE' || ponto.tipo.toUpperCase() !== 'REGULAR') continue
-    somar(categoria, ponto.volume, ponto.volume * tarifaDoModelo(categoria))
+    const cobrado = real(ponto)
+    if (cobrado === null) estimado = true
+    somar(categoria, ponto.volume, cobrado ?? ponto.volume * tarifaDoModelo(categoria))
   }
 
   const lista = [...porTipo.values()]
@@ -221,5 +236,6 @@ export function gastoDoPeriodo(pontos: PontoDaMeta[], de: string, ate: string): 
     total: Math.round(lista.reduce((s, t) => s + t.custo, 0) * 100) / 100,
     porTipo: lista,
     servicoGratis,
+    estimado,
   }
 }
