@@ -20,7 +20,7 @@ import {
   registrarMensagemDeCoexistencia,
   type ContatoDaAgenda,
   existeCanalComWaba,
-  pareceSaudacaoDoApp,
+  ecoColadoNoBot,
 } from './repos/coexistencia'
 
 /**
@@ -706,18 +706,14 @@ async function tratarEcos(
     const contato = await acharOuCriarContato(canal.clienteId, waId, null)
 
     /*
-     * Nem toda saudação traz a marca (PCYES, 06/out). A segunda regra é a do
-     * comportamento: texto repetido de outro contato, logo depois de o
-     * cliente escrever. Falha na consulta não pode calar ninguém por engano
-     * nem derrubar o lote: na dúvida, vale o de antes, cala.
+     * Nem toda automação traz a marca (PCYES, 06/out): eco que chega até 15 s
+     * depois de o bot falar não é gente, ver `ecoColadoNoBot`. Falha na
+     * consulta não derruba o lote: na dúvida, vale o de antes, cala.
      */
-    const corpo = (mensagem as { text?: { body?: unknown } } | null)?.text?.body
-    const automatica =
-      typeof corpo === 'string' &&
-      (await pareceSaudacaoDoApp(canal.clienteId, contato.id, corpo).catch((erro) => {
-        console.warn('[coexistencia] não deu para conferir a saudação', erro instanceof Error ? erro.message : erro)
-        return false
-      }))
+    const automatica = await ecoColadoNoBot(contato.id).catch((erro) => {
+      console.warn('[coexistencia] não deu para conferir o eco', erro instanceof Error ? erro.message : erro)
+      return false
+    })
     if (automatica) continue
 
     await calarBotNaConversa(contato.id)

@@ -582,49 +582,33 @@ export async function anotarIdentidade(
   if (error) throw new Error(`não deu para anotar a identidade do número: ${error.message}`)
 }
 
-/** Quanto depois da mensagem do cliente a saudação do app ainda conta como dela. */
-const JANELA_DA_SAUDACAO_MS = 2 * 60 * 1000
+/**
+ * Abaixo disto, um eco depois da mensagem do bot não é gente: ninguém lê a
+ * resposta do bot e digita outra em 15 segundos.
+ */
+const RESPIRO_DEPOIS_DO_BOT_MS = 15 * 1000
 
 /**
- * O eco tem cara de saudação automática do app WhatsApp Business: o mesmo
- * texto já saiu para **outro** contato desta conta, e este eco chegou logo
- * depois de o cliente escrever.
+ * O eco chegou colado numa mensagem do bot, cedo demais para ser uma pessoa.
  *
- * Existe porque a marca U+200E (`ehMensagemAutomaticaDoApp`) não vem sempre:
- * a saudação da PCYES de 05/out ("Bem-Vindo a PCYES!...") chegou sem ela, e
- * calou o bot de quem tinha acabado de escolher "Meu pedido" (Marcio, 06/out).
+ * Caso real (Marcio, PCYES, 06/out): o bot mandou o menu às 09:20:25 e às
+ * 09:20:31 uma automação da Meta ligada ao número mandou "Bem-Vindo a
+ * PCYES!...". Era eco como outro qualquer, sem a marca U+200E, e calou o bot:
+ * o "Meu pedido" que o cliente escolheu no menu ficou sem resposta.
  *
- * O erro possível é o de menos: uma resposta pronta que alguém mande à mão
- * logo depois do cliente escrever não cala o bot. O erro do outro lado é
- * cliente sem resposta nenhuma.
+ * O id da mensagem não separa os dois casos (atendente no WhatsApp Web e a
+ * automação saem pelo mesmo aparelho conectado); o tempo separa.
  */
-export async function pareceSaudacaoDoApp(
-  clienteId: string,
-  contatoId: string,
-  texto: string,
-  agora: Date = new Date(),
-): Promise<boolean> {
-  if (texto.trim() === '') return false
-
-  const desde = new Date(agora.getTime() - JANELA_DA_SAUDACAO_MS).toISOString()
-  const { data: recente, error: erroDaEntrada } = await db()
+export async function ecoColadoNoBot(contatoId: string, agora: Date = new Date()): Promise<boolean> {
+  const desde = new Date(agora.getTime() - RESPIRO_DEPOIS_DO_BOT_MS).toISOString()
+  const { data, error } = await db()
     .from('messages')
     .select('id')
     .eq('contact_id', contatoId)
-    .eq('direcao', 'entrada')
+    .eq('direcao', 'saida')
+    .eq('payload->autor->>tipo', 'automacao')
     .gte('ts', desde)
     .limit(1)
-  if (erroDaEntrada) throw new Error(`não deu para ler a entrada recente: ${erroDaEntrada.message}`)
-  if (!recente?.length) return false
-
-  const { data: repetida, error } = await db()
-    .from('messages')
-    .select('id, contacts!inner(client_id)')
-    .eq('contacts.client_id', clienteId)
-    .eq('direcao', 'saida')
-    .eq('texto', texto)
-    .neq('contact_id', contatoId)
-    .limit(1)
-  if (error) throw new Error(`não deu para procurar a saudação repetida: ${error.message}`)
-  return Boolean(repetida?.length)
+  if (error) throw new Error(`não deu para ler a última mensagem do bot: ${error.message}`)
+  return Boolean(data?.length)
 }
