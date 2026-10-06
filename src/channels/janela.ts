@@ -122,6 +122,15 @@ export function restaDaJanela(janela: Janela, agora: number = Date.now()): numbe
 }
 
 /**
+ * A janela abriu e já fechou. Conversa esperando pessoa assim é "Conversa
+ * expirada", não "Aguardando atendente": por texto não há mais o que
+ * responder (06/out/2026). Quem nunca escreveu não expira, nunca teve janela.
+ */
+export function janelaExpirada(janela: Janela, agora: number = Date.now()): boolean {
+  return restaDaJanela(janela, agora) === 0
+}
+
+/**
  * O que a tela precisa saber antes de a pessoa digitar, em uma resposta só.
  *
  * ---------------------------------------------------------------------------

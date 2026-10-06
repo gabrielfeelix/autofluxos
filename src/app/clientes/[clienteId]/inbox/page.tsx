@@ -1,4 +1,5 @@
 import { EsqueletoDeInbox } from '@/components/design/esqueleto'
+import { janelaExpirada } from '@/channels/janela'
 import { Fragment, Suspense } from 'react'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
@@ -653,7 +654,8 @@ async function Conteudo({
    * para zero em "Resolvidas", que é verdade sobre a aba e mentira sobre o
    * que precisa de alguém.
    */
-  const esperando = (local ?? leads).filter((lead) => lead.aguardando).length
+  // Expirada não conta: ninguém consegue responder por texto (06/out).
+  const esperando = (local ?? leads).filter((lead) => lead.aguardando && !janelaExpirada(lead)).length
 
   return (
     /*

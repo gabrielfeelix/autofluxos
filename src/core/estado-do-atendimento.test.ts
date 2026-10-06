@@ -52,3 +52,22 @@ describe('estadoDoAtendimento', () => {
     expect(r).toMatchObject({ estado: 'com_humano', rotulo: 'Atendimento manual', botCalado: true })
   })
 })
+
+describe('conversa expirada', () => {
+  const aguardando = { motivo: 'pediu atendente', desde: '2026-10-01T10:00:00Z' }
+
+  it('esperando pessoa com a janela fechada vira "Conversa expirada", e finalizar é a saída', () => {
+    const a = estadoDoAtendimento({ ...base, aguardando, janelaFechada: true })
+    expect(a.estado).toBe('expirada')
+    expect(a.rotulo).toBe('Conversa expirada')
+    expect(a.proximaAcao).toBe('finalizar')
+  })
+
+  it('com a janela aberta continua aguardando', () => {
+    expect(estadoDoAtendimento({ ...base, aguardando, janelaFechada: false }).estado).toBe('aguardando_humano')
+  })
+
+  it('conversa só com o bot não expira', () => {
+    expect(estadoDoAtendimento({ ...base, janelaFechada: true }).estado).toBe('bot')
+  })
+})

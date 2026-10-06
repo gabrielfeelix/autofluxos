@@ -1,5 +1,6 @@
 'use client'
 
+import { janelaExpirada } from '@/channels/janela'
 import { IlustracaoInbox } from '@/components/design/ilustracoes'
 import Link from 'next/link'
 import { Fragment, useEffect, useMemo, useRef, type ReactNode } from 'react'
@@ -149,7 +150,7 @@ function ConversaChegando({ previa, falhou }: { previa: Previa | null; falhou: b
         </span>
         <header className="flex min-h-[62px] items-center gap-3 border-b border-line px-4 py-2">
           {previa ? (
-            <Avatar nome={previa.lead.nome} alerta={Boolean(previa.lead.aguardando)} tamanho={40} canal={previa.canal} />
+            <Avatar nome={previa.lead.nome} alerta={Boolean(previa.lead.aguardando) && !janelaExpirada(previa.lead)} tamanho={40} canal={previa.canal} />
           ) : (
             <Esqueleto className="size-10 rounded-full" />
           )}
@@ -386,7 +387,7 @@ function CabecalhoDaConversa({
       por baixo da coluna do contato, sem dar para clicar (visto na 5.9).
     */
     <header className="flex min-h-[62px] flex-wrap items-center gap-x-3 gap-y-2 border-b border-line px-4 py-2">
-      <Avatar nome={lead.nome} alerta={Boolean(lead.aguardando)} tamanho={40} canal={canal} />
+      <Avatar nome={lead.nome} alerta={Boolean(lead.aguardando) && !janelaExpirada(lead)} tamanho={40} canal={canal} />
       <div className="min-w-[140px] flex-1">
         <h2 className="truncate text-[13.5px] font-bold">
           {nome}

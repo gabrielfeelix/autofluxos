@@ -3,7 +3,7 @@
 import { Badge, Pilula, teto } from '@/components/design/pilula'
 import Link from "next/link";
 import { useCallback, useDeferredValue, useEffect, useMemo, useRef, useState, useTransition } from "react";
-import { comoFalta, dentroDaPortaDeEntrada, restaDaJanela } from "@/channels/janela";
+import { comoFalta, dentroDaPortaDeEntrada, janelaExpirada, restaDaJanela } from "@/channels/janela";
 import { Dica } from "@/components/design/dica";
 import { LARGURA_DA_FILA } from "@/components/design/tema";
 import { canalPeloContato, type CanalId } from "@/core/canais";
@@ -884,7 +884,7 @@ export function Fila({
               >
                 <Avatar
                   nome={lead.nome}
-                  alerta={Boolean(lead.aguardando)}
+                  alerta={Boolean(lead.aguardando) && !janelaExpirada(lead)}
                   tamanho={44}
                   canal={canalPeloContato(lead.waId, canalDoContato.get(lead.contatoId))}
                 />
@@ -1298,7 +1298,7 @@ function RelogioDaJanela({
         onde está a ação: alguém precisa atender.
       */
       <span className="mt-0.5 block text-[12px] text-dim">
-        janela fechada, só modelo aprovado
+        conversa expirada, só modelo aprovado
       </span>
     );
   }
@@ -1367,7 +1367,9 @@ function ResumoDaConversa({ lead }: { lead: Lead }) {
 function textoDoBalao(lead: Lead): string {
   const quem = quemFalou(lead);
   const texto = `${quem ? `${quem}: ` : ""}${textoDaConversa(lead)}`;
-  return lead.aguardando ? `${texto}\n\nAguardando atendente: ${resumoDoMotivo(lead.aguardando.motivo)}` : texto;
+  if (!lead.aguardando) return texto;
+  if (janelaExpirada(lead)) return `${texto}\n\nConversa expirada: a janela de 24h fechou, só dá para retomar com modelo aprovado.`;
+  return `${texto}\n\nAguardando atendente: ${resumoDoMotivo(lead.aguardando.motivo)}`;
 }
 
 /** O texto da última mensagem, sem quem falou. */
@@ -1472,8 +1474,9 @@ function ordenar(leads: Lead[], ordem: Ordem): Lead[] {
       // Quem tem handoff aberto sobe, e entre eles ganha quem espera há mais
       // tempo. `desde` é a hora em que o bot desistiu, que é quando a espera
       // dessa pessoa realmente começou.
-      const esperaA = a.aguardando ? Date.parse(a.aguardando.desde) : null;
-      const esperaB = b.aguardando ? Date.parse(b.aguardando.desde) : null;
+      // Expirada não sobe: por texto não há o que responder.
+      const esperaA = a.aguardando && !janelaExpirada(a) ? Date.parse(a.aguardando.desde) : null;
+      const esperaB = b.aguardando && !janelaExpirada(b) ? Date.parse(b.aguardando.desde) : null;
       if (esperaA !== null && esperaB !== null) return esperaA - esperaB;
       if (esperaA !== null) return -1;
       if (esperaB !== null) return 1;

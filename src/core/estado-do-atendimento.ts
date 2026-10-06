@@ -19,7 +19,7 @@
  * "robô pausado" só por haver um nome.
  */
 
-export type EstadoDoAtendimento = 'bot' | 'aguardando_humano' | 'com_humano' | 'encerrado'
+export type EstadoDoAtendimento = 'bot' | 'aguardando_humano' | 'com_humano' | 'expirada' | 'encerrado'
 
 export type AcaoDoAtendimento = 'assumir' | 'finalizar' | 'religar_bot'
 
@@ -35,6 +35,11 @@ export type Atendimento = {
   botCalado: boolean
   /** A ação que muda este estado. `null` quando não há o que fazer. */
   proximaAcao: AcaoDoAtendimento | null
+  /**
+   * O que entrou em `janelaFechada`, devolvido para a tela recalcular no
+   * clique (finalizar, assumir) sem precisar saber de janela.
+   */
+  janelaFechada: boolean
 }
 
 export type EntradaDoAtendimento = {
@@ -48,13 +53,44 @@ export type EntradaDoAtendimento = {
   temAutomacao: boolean
   /** Quem está olhando a tela. */
   usuarioId: string | null
+  /**
+   * A janela de 24h do cliente fechou: ele escreveu por aqui e já passou um
+   * dia. Ausente ou `false` quando ainda está aberta, quando não há janela
+   * (chat do site) ou quando ele nunca escreveu.
+   */
+  janelaFechada?: boolean
 }
 
 const VOLTA_NA_PROXIMA = 'Depois de finalizar, o bot volta a responder na próxima mensagem.'
 
 export function estadoDoAtendimento(e: EntradaDoAtendimento): Atendimento {
+  return { ...decidir(e), janelaFechada: e.janelaFechada ?? false }
+}
+
+function decidir(e: EntradaDoAtendimento): Omit<Atendimento, 'janelaFechada'> {
   const donoId = e.atribuidoA
   const souDono = Boolean(e.usuarioId) && donoId === e.usuarioId
+
+  /*
+   * Esperando uma pessoa, mas o cliente já não pode receber resposta: a
+   * janela de 24h fechou. "Aguardando atendente" ali era uma promessa que
+   * ninguém consegue cumprir por texto (06/out). O que resta é retomar com
+   * modelo aprovado ou encerrar, e o selo diz isso.
+   *
+   * Só quando havia gente no meio: conversa com o bot que expira não pede
+   * ação de ninguém.
+   */
+  if (e.janelaFechada && (e.aguardando || e.sessaoComPessoa) && e.estado !== 'resolvida') {
+    return {
+      estado: 'expirada',
+      rotulo: 'Conversa expirada',
+      donoId,
+      efeito:
+        'O cliente não escreve há mais de 24h, e o WhatsApp só aceita retomar com um modelo aprovado. Sem o que retomar, finalize.',
+      botCalado: true,
+      proximaAcao: 'finalizar',
+    }
+  }
 
   if (e.aguardando) {
     return {

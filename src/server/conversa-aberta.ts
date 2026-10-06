@@ -146,6 +146,7 @@ export async function lerConversaAberta({
     estado: lead.estadoEfetivo,
     temAutomacao,
     usuarioId,
+    janelaFechada: !(contexto?.semJanela ?? false) && restaDaJanela(contexto ?? { ultimaEntradaEm: null }) === 0,
   })
 
   /*

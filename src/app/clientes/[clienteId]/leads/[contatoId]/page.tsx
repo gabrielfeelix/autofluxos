@@ -174,6 +174,11 @@ export default async function Pagina({
     noQuadro.map((posicao) => posicao.cartaoId),
   )
 
+  const contexto = await contextoDeResposta(clienteId, contatoId)
+  const restante = restaDaJanela(contexto ?? { ultimaEntradaEm: null })
+  // Chat do site: sem janela, a caixa de resposta fica livre e a pílula some.
+  const semJanela = contexto?.semJanela ?? false
+
   // O mesmo estado do Inbox (8.1), pela mesma função.
   const atendimento = estadoDoAtendimento({
     automacaoAtiva: lead.automacaoAtiva,
@@ -183,6 +188,7 @@ export default async function Pagina({
     estado: lead.estadoEfetivo,
     temAutomacao,
     usuarioId: sessaoDaFicha?.usuario.id ?? null,
+    janelaFechada: !semJanela && restante === 0,
   })
   const donoNome = equipe.find((membro) => membro.id === lead.atribuidoA)?.nome ?? null
 
@@ -224,10 +230,6 @@ export default async function Pagina({
    */
   const jornada = await jornadaDoContato(clienteId, contatoId)
 
-  const contexto = await contextoDeResposta(clienteId, contatoId)
-  const restante = restaDaJanela(contexto ?? { ultimaEntradaEm: null })
-  // Chat do site: sem janela, a caixa de resposta fica livre e a pílula some.
-  const semJanela = contexto?.semJanela ?? false
   const janela = restante && restante > 0 ? comoFalta(restante) : null
   /** Menos de duas horas, a contagem muda de cor. Mesma régua do Inbox. */
   const apertado = restante !== null && restante > 0 && restante < 2 * 60 * 60 * 1000

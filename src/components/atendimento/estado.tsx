@@ -16,6 +16,8 @@ const ESTILO_COMPACTO =
 const TOM = {
   aguardando_humano: 'border-rose-400/35 bg-rose-400/[0.07] text-perigo',
   com_humano: 'border-amber-400/35 bg-amber-400/[0.07] text-aviso',
+  // Cinza: não há o que responder por texto, e vermelho gritaria uma urgência que não existe.
+  expirada: 'border-strong bg-surface text-muted',
   bot: 'border-emerald-500/30 bg-emerald-400/[0.07] text-ok',
   encerrado: 'border-line bg-surface text-muted',
 } as const
@@ -40,6 +42,8 @@ function useAtendimentoVivo(atendimento: Atendimento, donoNome: string | null) {
     estado: v.estado,
     temAutomacao: aberta.temAutomacao,
     usuarioId: aberta.usuarioId,
+    // A janela só reabre com mensagem do cliente, e mensagem nova recarrega o servidor.
+    janelaFechada: atendimento.janelaFechada,
   })
   const nome = v.atribuidoA
     ? (aberta.equipe.find((membro) => membro.id === v.atribuidoA)?.nome ?? 'alguém fora da equipe')
@@ -60,7 +64,7 @@ export function SeloDoAtendimento({
 }) {
   const { atendimento, donoNome } = useAtendimentoVivo(doServidor, donoDoServidor)
   if (aoLadoDoNome) {
-    if (atendimento.estado !== 'com_humano' && atendimento.estado !== 'aguardando_humano') return null
+    if (atendimento.estado !== 'com_humano' && atendimento.estado !== 'aguardando_humano' && atendimento.estado !== 'expirada') return null
     if (atendimento.rotulo === 'Atendimento manual') return null
     return (
       <span
@@ -150,6 +154,7 @@ export function CartaoDoAtendimento({
   const tom = manual ? TOM.encerrado : TOM[atendimento.estado]
   const podeFinalizar =
     atendimento.estado === 'aguardando_humano' ||
+    atendimento.estado === 'expirada' ||
     (atendimento.estado === 'com_humano' && atendimento.rotulo === 'Em atendimento')
 
   const botaoFinalizar = podeFinalizar && (
@@ -236,10 +241,16 @@ export function CartaoDoAtendimento({
           </span>
         )}
       </p>
-      {aguardando && (
-        <p className="mt-0.5 truncate text-[11.5px] text-muted first-letter:uppercase" title={`${aguardando.motivo} (${horaExata(aguardando.desde)})`}>
-          {resumoDoMotivo(aguardando.motivo)}
+      {atendimento.estado === 'expirada' ? (
+        <p className="mt-0.5 text-[11.5px] leading-4 text-muted">
+          Janela de 24h fechada. Retome com um modelo aprovado ou finalize.
         </p>
+      ) : (
+        aguardando && (
+          <p className="mt-0.5 truncate text-[11.5px] text-muted first-letter:uppercase" title={`${aguardando.motivo} (${horaExata(aguardando.desde)})`}>
+            {resumoDoMotivo(aguardando.motivo)}
+          </p>
+        )
       )}
       </div>
       <div className={largo ? 'flex shrink-0 flex-wrap gap-2 [&>button]:mt-0 [&>button]:w-auto [&>button]:px-3.5' : ''}>
