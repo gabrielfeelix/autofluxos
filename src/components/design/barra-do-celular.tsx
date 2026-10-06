@@ -375,7 +375,7 @@ function useConversasEsperando(base: string | undefined): number {
 const DE_BAIXO: { id: string; rotulo: string; icone: ReactNode }[] = [
   { id: 'atividades', rotulo: 'Atividades', icone: <IconeDeAgenda /> },
   { id: 'contatos', rotulo: 'Contatos', icone: <IconeDePessoas /> },
-  { id: 'negocios', rotulo: 'Negociações', icone: <IconeDeNegocios /> },
+  { id: 'negocios', rotulo: 'Negócios', icone: <IconeDeNegocios /> },
   { id: 'fluxos', rotulo: 'Automações', icone: <IconeDeFluxo /> },
   { id: 'atendimento', rotulo: 'Análise', icone: <IconeDeGrafico /> },
 ]
