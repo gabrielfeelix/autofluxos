@@ -34,7 +34,8 @@ export type PedidoDaLoja = {
   situacaoCodigo: string
   feitoEm: string
   total: string
-  itens: { nome: string; quantidade: number }[]
+  /** `sku` é o que acha a foto do item na loja (o card do status). */
+  itens: { nome: string; quantidade: number; sku?: string }[]
   rastreios: { transportadora: string; codigo: string }[]
   /** Onde a entrega está, pela Frete Rápido. Ausente sem token ou sem frete. */
   entrega?: RastreioDaFreteRapido
@@ -126,7 +127,7 @@ type PedidoDoMagento = {
   customer_firstname?: unknown
   customer_lastname?: unknown
   status_histories?: { comment?: unknown; created_at?: unknown }[]
-  items?: { name?: unknown; qty_ordered?: unknown; parent_item_id?: unknown }[]
+  items?: { name?: unknown; sku?: unknown; qty_ordered?: unknown; parent_item_id?: unknown }[]
   extension_attributes?: {
     shipping_assignments?: { shipping?: { address?: EnderecoDoMagento } }[]
   }
@@ -199,7 +200,11 @@ export function recortarPedido(
     // Item filho de configurável repete o pai; só os de primeiro nível contam.
     itens: (pedido.items ?? [])
       .filter((i) => i.parent_item_id == null)
-      .map((i) => ({ nome: String(i.name ?? ''), quantidade: Number(i.qty_ordered ?? 0) }))
+      .map((i) => ({
+        nome: String(i.name ?? ''),
+        quantidade: Number(i.qty_ordered ?? 0),
+        ...(typeof i.sku === 'string' && i.sku !== '' ? { sku: i.sku } : {}),
+      }))
       .filter((i) => i.nome !== ''),
     rastreios,
     ...(andamento.length > 0 ? { andamento } : {}),

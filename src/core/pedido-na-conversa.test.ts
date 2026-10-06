@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { andamentoDoPedido } from '@/loja/magento-pedido'
-import { dataCurta, linkDoRastreio, mensagemDoPedido, nomeCurto } from './pedido-na-conversa'
+import { dataComDia, dataCurta, etapaDoPedido, linkDoRastreio, mensagemDoPedido, nomeCurto } from './pedido-na-conversa'
 
 describe('status do pedido na conversa', () => {
   it('junta situação, entrega, andamento, itens e total numa mensagem', () => {
@@ -18,15 +18,46 @@ describe('status do pedido na conversa', () => {
     expect(texto).toBe(
       [
         '📦 *Pedido #000001955*',
-        'Situação: *Entregue à transportadora*',
-        'Transportadora: Braspress',
-        'Previsão de entrega: *02/10*',
-        'Última atualização: Em Transferência, 28/09 às 21:32',
         '',
-        '• 2x Placa de Vídeo RX 550',
-        'Total: R$ 1.238,90',
+        '✅ Pagamento aprovado',
+        '✅ Pedido separado',
+        '🚚 *Com a transportadora*',
+        '⚪ Entregue',
+        '',
+        '📅 Previsão de entrega: *sex, 02/10*',
+        '🚛 Braspress',
+        '📍 Em Transferência, 28/09 às 21:32',
+        '',
+        '2x Placa de Vídeo RX 550',
+        '*Total: R$ 1.238,90*',
       ].join('\n'),
     )
+  })
+
+  it('fora do caminho feliz não desenha linha do tempo', () => {
+    const texto = mensagemDoPedido({
+      numero: '1',
+      situacao: 'Cancelado',
+      situacaoCodigo: 'canceled',
+      feitoEm: '',
+      total: '',
+      itens: [],
+      rastreios: [],
+    })
+    expect(texto).toBe('📦 *Pedido #1*\n\nSituação: *Cancelado*')
+  })
+
+  it('entregue pela Frete Rápido fecha a linha do tempo e some a previsão', () => {
+    const entrega = {
+      transportadora: 'JAMEF',
+      codigo: '',
+      previsao: '2026-10-08',
+      ultima: { situacao: 'Entregue', quando: '2026-10-07', detalhe: '' },
+      ocorrencias: [],
+    }
+    expect(etapaDoPedido({ situacaoCodigo: 'delivered_carrier', entrega })).toBe(3)
+    expect(etapaDoPedido({ situacaoCodigo: 'delivered_carrier' })).toBe(2)
+    expect(dataComDia('2026-10-08')).toBe('qui, 08/10')
   })
 
   it('lê o andamento do histórico e ignora nota interna', () => {

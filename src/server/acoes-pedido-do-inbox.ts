@@ -4,7 +4,7 @@ import { dentroDaJanela } from '@/channels/janela'
 import { autorDaPessoa } from '@/core/autor-da-mensagem'
 import { linkDoRastreio, mensagemDoPedido } from '@/core/pedido-na-conversa'
 import type { PedidoDaLoja } from '@/loja/magento-pedido'
-import { consultarPedidoDaConta, listarPedidosDaConta } from './adaptador-da-loja'
+import { consultarPedidoDaConta, listarPedidosDaConta, lojaAtivaDaConta } from './adaptador-da-loja'
 import type { PedidoNaLista } from '@/loja/magento-pedido'
 import { acharLead } from './repos/leads'
 import { exigirCapacidade, meuAlcance, recusou, exigirLeitura } from './permissoes'
@@ -99,6 +99,33 @@ export async function acaoListarPedidosDoContato(clienteId: string, contatoId: s
   return { ok: true, pedidos: r.valor, semChave: false }
 }
 
+/**
+ * A foto do item principal do pedido (o primeiro), para o cabeçalho do card.
+ *
+ * Pelo SKU e, se a loja não devolver (o SKU do pedido de um configurável é o
+ * da variação, que a busca da vitrine esconde), pelo nome exato. Nome
+ * parecido não vale: foto de outro produto no pedido de alguém é pior que
+ * card sem foto. Melhor-esforço: qualquer falha manda o card sem foto.
+ */
+async function fotoDoPedido(clienteId: string, pedido: PedidoDaLoja): Promise<string | null> {
+  const item = pedido.itens[0]
+  if (!item) return null
+  try {
+    const loja = await lojaAtivaDaConta(clienteId, 'loja')
+    if (!loja) return null
+    if (item.sku) {
+      const r = await loja.lerPorSku([item.sku])
+      const foto = r.ok ? r.valor.find((p) => p.foto)?.foto : undefined
+      if (foto) return foto
+    }
+    const r = await loja.buscar(item.nome)
+    const mesmo = (n: string) => n.trim().toLowerCase() === item.nome.trim().toLowerCase()
+    return (r.ok ? r.valor.find((p) => mesmo(p.nome) && p.foto)?.foto : undefined) ?? null
+  } catch {
+    return null
+  }
+}
+
 export async function acaoEnviarPedidoDoInbox(
   clienteId: string,
   contatoId: string,
@@ -136,6 +163,7 @@ export async function acaoEnviarPedidoDoInbox(
     return { ok: false, erro: erro instanceof Error ? erro.message : String(erro) }
   }
   const comBotao = paginaDePedidos ? canal.enviarBotaoDeLink?.bind(canal) : undefined
+  const foto = comBotao ? await fotoDoPedido(clienteId, achado.pedido) : null
   const quemResponde = await sessaoAtual()
 
   const registro = await registrarSaida({
@@ -143,14 +171,18 @@ export async function acaoEnviarPedidoDoInbox(
     sessaoId: contexto.sessaoId,
     texto: comBotao || !paginaDePedidos ? texto : `${texto}\n\nAcompanhe em ${paginaDePedidos}`,
     // O botão vai junto no registro, para o Inbox desenhá-lo como o cliente viu.
-    payload: { pedido: achado.pedido.numero, ...(comBotao ? { botao: { rotulo, url: paginaDePedidos! } } : {}) },
+    payload: {
+      pedido: achado.pedido.numero,
+      ...(comBotao ? { botao: { rotulo, url: paginaDePedidos! } } : {}),
+      ...(foto ? { midia: 'imagem', url: foto } : {}),
+    },
     autor: autorDaPessoa(quemResponde?.usuario),
   })
 
   let waMessageId: string | null
   try {
     waMessageId = comBotao
-      ? await comBotao(contexto.waId, texto, rotulo, paginaDePedidos!)
+      ? await comBotao(contexto.waId, texto, rotulo, paginaDePedidos!, foto ?? undefined)
       : await canal.enviarTexto(
           contexto.waId,
           paginaDePedidos ? `${texto}\n\nAcompanhe em ${paginaDePedidos}` : texto,
