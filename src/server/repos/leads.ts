@@ -1201,7 +1201,8 @@ export async function lerConversa(
               }
             : null
         const tipoDaMeta = (m.payload as { type?: string } | null)?.type
-        const semCopia = !recebido && midiaDoTipo(tipoDaMeta) !== null
+        // Só entrada: a mídia que sai leva `type` desde 06/out (a prévia da fila) e mora no `anexo`.
+        const semCopia = m.direcao === 'entrada' && !recebido && midiaDoTipo(tipoDaMeta) !== null
         /*
          * `unsupported` é uma resposta da Meta, não uma falha nossa, e a bolha
          * precisa dizer isso com essa palavra. Antes ela caía no genérico

@@ -959,6 +959,9 @@ export async function chegouEntradaDepois(contatoId: string, mensagemId: string)
  *
  * Devolve o id para `confirmarEntrega`.
  */
+/** A `midia` do nosso payload no `type` da Cloud API, que a prévia entende. */
+const TIPO_DA_MIDIA: Record<string, string> = { imagem: 'image', video: 'video', documento: 'document', audio: 'audio' }
+
 export async function registrarSaida(dados: {
   contatoId: string
   sessaoId: string | null
@@ -985,9 +988,17 @@ export async function registrarSaida(dados: {
    */
   const payloadBase =
     dados.payload && typeof dados.payload === 'object' ? (dados.payload as object) : null
+  /*
+   * O `type` da Meta para a mídia que sai. A prévia da fila lê `payload.type`
+   * (a view da 0074), que só a mensagem recebida trazia: o PDF mandado pela
+   * Inbox aparecia como "mensagem sem texto" em vez de "📄 documento".
+   */
+  const midia = (payloadBase as { midia?: unknown; type?: unknown } | null)?.midia
+  const tipo =
+    typeof midia === 'string' && !(payloadBase as { type?: unknown }).type ? TIPO_DA_MIDIA[midia] : undefined
   const payload =
     dados.autor || payloadBase
-      ? { ...(payloadBase ?? {}), ...(dados.autor ? { autor: dados.autor } : {}) }
+      ? { ...(payloadBase ?? {}), ...(tipo ? { type: tipo } : {}), ...(dados.autor ? { autor: dados.autor } : {}) }
       : (dados.payload ?? null)
 
   const { data, error } = await db()
