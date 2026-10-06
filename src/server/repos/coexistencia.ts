@@ -581,3 +581,50 @@ export async function anotarIdentidade(
 
   if (error) throw new Error(`não deu para anotar a identidade do número: ${error.message}`)
 }
+
+/** Quanto depois da mensagem do cliente a saudação do app ainda conta como dela. */
+const JANELA_DA_SAUDACAO_MS = 2 * 60 * 1000
+
+/**
+ * O eco tem cara de saudação automática do app WhatsApp Business: o mesmo
+ * texto já saiu para **outro** contato desta conta, e este eco chegou logo
+ * depois de o cliente escrever.
+ *
+ * Existe porque a marca U+200E (`ehMensagemAutomaticaDoApp`) não vem sempre:
+ * a saudação da PCYES de 05/out ("Bem-Vindo a PCYES!...") chegou sem ela, e
+ * calou o bot de quem tinha acabado de escolher "Meu pedido" (Marcio, 06/out).
+ *
+ * O erro possível é o de menos: uma resposta pronta que alguém mande à mão
+ * logo depois do cliente escrever não cala o bot. O erro do outro lado é
+ * cliente sem resposta nenhuma.
+ */
+export async function pareceSaudacaoDoApp(
+  clienteId: string,
+  contatoId: string,
+  texto: string,
+  agora: Date = new Date(),
+): Promise<boolean> {
+  if (texto.trim() === '') return false
+
+  const desde = new Date(agora.getTime() - JANELA_DA_SAUDACAO_MS).toISOString()
+  const { data: recente, error: erroDaEntrada } = await db()
+    .from('messages')
+    .select('id')
+    .eq('contact_id', contatoId)
+    .eq('direcao', 'entrada')
+    .gte('ts', desde)
+    .limit(1)
+  if (erroDaEntrada) throw new Error(`não deu para ler a entrada recente: ${erroDaEntrada.message}`)
+  if (!recente?.length) return false
+
+  const { data: repetida, error } = await db()
+    .from('messages')
+    .select('id, contacts!inner(client_id)')
+    .eq('contacts.client_id', clienteId)
+    .eq('direcao', 'saida')
+    .eq('texto', texto)
+    .neq('contact_id', contatoId)
+    .limit(1)
+  if (error) throw new Error(`não deu para procurar a saudação repetida: ${error.message}`)
+  return Boolean(repetida?.length)
+}

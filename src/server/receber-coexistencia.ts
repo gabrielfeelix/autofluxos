@@ -20,6 +20,7 @@ import {
   registrarMensagemDeCoexistencia,
   type ContatoDaAgenda,
   existeCanalComWaba,
+  pareceSaudacaoDoApp,
 } from './repos/coexistencia'
 
 /**
@@ -703,6 +704,22 @@ async function tratarEcos(
     if (ehMensagemAutomaticaDoApp(mensagem)) continue
 
     const contato = await acharOuCriarContato(canal.clienteId, waId, null)
+
+    /*
+     * Nem toda saudação traz a marca (PCYES, 06/out). A segunda regra é a do
+     * comportamento: texto repetido de outro contato, logo depois de o
+     * cliente escrever. Falha na consulta não pode calar ninguém por engano
+     * nem derrubar o lote: na dúvida, vale o de antes, cala.
+     */
+    const corpo = (mensagem as { text?: { body?: unknown } } | null)?.text?.body
+    const automatica =
+      typeof corpo === 'string' &&
+      (await pareceSaudacaoDoApp(canal.clienteId, contato.id, corpo).catch((erro) => {
+        console.warn('[coexistencia] não deu para conferir a saudação', erro instanceof Error ? erro.message : erro)
+        return false
+      }))
+    if (automatica) continue
+
     await calarBotNaConversa(contato.id)
   }
 }
