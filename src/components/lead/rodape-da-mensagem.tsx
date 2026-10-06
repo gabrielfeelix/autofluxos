@@ -386,7 +386,7 @@ export function RodapeDaMensagem({
       )}
 
       {(chips.length > 0 || erro || erroDaEstrela) && (
-        <span className={`-mt-1.5 flex flex-wrap items-center gap-1 px-2 ${nossa ? 'flex-row-reverse' : ''}`}>
+        <span className={`relative z-10 -mt-1.5 flex flex-wrap items-center gap-1 px-2 ${nossa ? 'flex-row-reverse' : ''}`}>
           {chips.map((chip) => (
             <span
               key={chip.chave}
