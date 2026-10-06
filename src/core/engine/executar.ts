@@ -1064,7 +1064,7 @@ function avancar(
         // mesma regra do bloco de etapa, e pelo mesmo motivo: a defesa aqui é
         // para o grafo que já estava no ar quando a etiqueta foi apagada.
         if (no.data.etiquetaId) {
-          acoes.push({ tipo: 'aplicar_etiqueta', etiquetaId: no.data.etiquetaId })
+          acoes.push({ tipo: 'aplicar_etiqueta', etiquetaId: no.data.etiquetaId, ...(no.data.tirar ? { tirar: true as const } : {}) })
         }
         atual = seguir(no)
         break

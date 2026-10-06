@@ -898,6 +898,12 @@ export const noEtiquetaSchema = z.object({
   type: z.literal('etiqueta'),
   data: z.object({
     etiquetaId: z.string().default(''),
+    /**
+     * Tirar em vez de pôr (06/out/2026). Etiqueta de assunto que deixou de
+     * valer: a IA de vendas da PCYES manda a pessoa para o comercial, e
+     * "Quer comprar" ficava junto de "Empresa (B2B)".
+     */
+    tirar: z.boolean().optional(),
   }),
 })
 

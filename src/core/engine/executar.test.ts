@@ -1795,6 +1795,22 @@ describe('os blocos de etiqueta e anotação (0044)', () => {
     expect(r.acoes.some((a) => a.tipo === 'enviar_texto' && a.texto === 'Pronto!')).toBe(true)
   })
 
+  it('bloco de tirar descreve a retirada, e a conversa segue', () => {
+    // PCYES, 06/out/2026: a IA de vendas manda ao comercial e "Quer comprar" sai.
+    const fluxo = fluxoSchema.parse({
+      inicio: 'tira',
+      nodes: [
+        { id: 'tira', type: 'etiqueta', position: p, data: { etiquetaId: 'et1', tirar: true } },
+        { id: 'fim', type: 'mensagem', position: p, data: { partes: [{ tipo: 'texto', texto: 'Pronto!' }] } },
+      ],
+      edges: [{ id: 'e', source: 'tira', target: 'fim' }],
+    })
+
+    const r = executar(fluxo, sessaoNova(), { tipo: 'inicio' })
+    expect(r.acoes).toContainEqual({ tipo: 'aplicar_etiqueta', etiquetaId: 'et1', tirar: true })
+    expect(r.acoes.some((a) => a.tipo === 'enviar_texto' && a.texto === 'Pronto!')).toBe(true)
+  })
+
   it('etiqueta não escolhida não marca ninguém, e a conversa não morre', () => {
     // O grafo que já estava no ar quando a etiqueta foi apagada. Seguir é o
     // único desfecho aceitável: a alternativa é a conversa de alguém morrer

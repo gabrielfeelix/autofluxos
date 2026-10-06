@@ -1250,6 +1250,16 @@ export function Painel({
           ) : (
             <>
               <Dropdown
+                valor={no.data.tirar ? 'tirar' : 'por'}
+                aoMudar={(modo) => aoMudarDados({ tirar: modo === 'tirar' })}
+                rotuloAcessivel="Pôr ou tirar"
+                opcoes={[
+                  { valor: 'por', rotulo: 'Pôr a etiqueta no contato' },
+                  { valor: 'tirar', rotulo: 'Tirar a etiqueta do contato' },
+                ]}
+              />
+              <div className="h-2" />
+              <Dropdown
                 valor={no.data.etiquetaId}
                 aoMudar={(etiquetaId) => aoMudarDados({ etiquetaId })}
                 rotuloAcessivel="Etiqueta"

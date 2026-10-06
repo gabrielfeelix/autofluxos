@@ -359,7 +359,7 @@ export type Acao =
    * etiqueta é estado vivo, e o cartão precisa cair na etiqueta que existe
    * hoje. Etiqueta apagada depois da publicação é nada-a-fazer do lado de fora.
    */
-  | { tipo: 'aplicar_etiqueta'; etiquetaId: string }
+  | { tipo: 'aplicar_etiqueta'; etiquetaId: string; /** Tirar em vez de pôr. */ tirar?: true }
   /**
    * Escrever na anotação do contato (0044).
    *

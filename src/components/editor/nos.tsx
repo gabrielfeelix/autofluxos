@@ -516,11 +516,12 @@ function NoEtapa({ data, selected }: NodeProps) {
  * Flow caía no nó padrão: uma caixa branca vazia, sem tipo nem conteúdo.
  */
 function NoEtiqueta({ data, selected }: NodeProps) {
-  const d = data as { etiquetaId: string }
+  const d = data as { etiquetaId: string; tirar?: boolean }
   const nome = useContext(NomesDeEtiqueta)[d.etiquetaId]
   return (
     <Caixa tipo="etiqueta" selecionado={!!selected}>
       <p className={`truncate text-[12.5px] leading-5 ${d.etiquetaId && !nome ? 'text-perigo' : 'text-soft'}`}>
+        {d.tirar && d.etiquetaId ? 'Tira: ' : ''}
         {!d.etiquetaId ? '(nenhuma etiqueta escolhida)' : (nome ?? 'etiqueta que não existe nesta conta')}
       </p>
     </Caixa>

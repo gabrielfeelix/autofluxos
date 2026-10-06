@@ -2244,6 +2244,13 @@ async function aplicar(
          * publicação é nada-a-fazer, como a etapa sumida: `marcarContatos`
          * devolve `ok: false` e a conversa segue.
          */
+        // Tirar não mexe em sequência: é o assunto que deixou de valer, e não
+        // um evento novo da pessoa. Quem não tem a etiqueta segue igual.
+        if (acao.tirar) {
+          const tirou = await marcarContatos(contato.clienteId, acao.etiquetaId, [contato.id], false)
+          if (!tirou.ok) console.error('[etiquetas] a etiqueta do fluxo não existe mais', acao.etiquetaId)
+          break
+        }
         const marcou = await marcarContatos(
           contato.clienteId,
           acao.etiquetaId,

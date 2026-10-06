@@ -226,7 +226,7 @@ export function detalhesDoBloco(no: No): Detalhe[] {
       ]
 
     case 'etiqueta':
-      return [{ rotulo: 'Etiqueta', valor: texto(no.data.etiquetaId, '(não escolhida)') }]
+      return [{ rotulo: no.data.tirar ? 'Tirar etiqueta' : 'Etiqueta', valor: texto(no.data.etiquetaId, '(não escolhida)') }]
 
     case 'encaminhar':
       return [
