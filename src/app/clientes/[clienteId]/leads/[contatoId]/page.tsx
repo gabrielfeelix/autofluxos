@@ -82,7 +82,7 @@ import {
   CartoesNaBolha,
   CitacaoNaBolha,
   LocalNaBolha,
-  MensagemApagada, SemTexto,
+  MensagemApagada, EdicaoSemTexto, SemTexto,
 } from '@/components/lead/anexo'
 import { NomeDoContato } from '@/components/lead/identidade'
 import { CartaoDeAnotacoes, ProvedorDeAnotacoes } from '@/components/inbox/anotacoes'
@@ -844,7 +844,7 @@ async function Historico({
                 !mensagem.local &&
                 !mensagem.cartoes &&
                 !mensagem.semCopia &&
-                !mensagem.naoSuportada && (mensagem.apagada ? <MensagemApagada /> : <SemTexto />)
+                !mensagem.naoSuportada && (mensagem.apagada ? <MensagemApagada /> : mensagem.editada ? <EdicaoSemTexto /> : <SemTexto />)
               )}
               {/*
                 Mesma regra do Inbox: a hora sempre, o autor só na saída e só
@@ -853,6 +853,7 @@ async function Historico({
               */}
               <span className="ml-2 text-[9.5px] text-muted" title={horaExata(mensagem.ts)}>
                 {nossa && mensagem.autor ? `${mensagem.autor} · ` : ''}
+                {mensagem.editada && mensagem.texto !== null ? 'Editada · ' : ''}
                 {horaDoRelogio(mensagem.ts)}
               </span>
               {nossa && !mensagem.entregue && (

@@ -103,6 +103,11 @@ export function MensagemApagada() {
   return <span className="italic text-muted">🚫 Esta mensagem foi apagada</span>
 }
 
+/** Edição que chegou sem o texto novo (gravada antes de 06/out/2026). */
+export function EdicaoSemTexto() {
+  return <span className="italic text-muted">✏️ A pessoa editou uma mensagem</span>
+}
+
 export function SemTexto() {
   return <span className="italic text-muted">(áudio, imagem ou documento)</span>
 }

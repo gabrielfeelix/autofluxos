@@ -199,6 +199,32 @@ const mensagemSchema = z.object({
    */
   unsupported: z.unknown().optional(),
   errors: z.unknown().optional(),
+  /*
+   * A pessoa editou ou apagou uma mensagem que já mandou.
+   *
+   * Os dois trazem `original_message_id`, o `wa_message_id` da mensagem
+   * mexida, e a edição traz a mensagem nova inteira em `edit.message`. Antes
+   * eles não estavam no schema, o parse os jogava fora, e a edição do Hugo
+   * (PCYES, 06/out) virou uma bolha "(áudio, imagem ou documento)" que ainda
+   * acordou o bot. Guardados soltos: quem interpreta é `correcaoDoPayload`.
+   */
+  edit: z
+    .object({
+      original_message_id: z.string().optional(),
+      message: z
+        .object({
+          type: z.string().optional(),
+          text: z.object({ body: z.string() }).optional(),
+          image: anexoSchema.optional(),
+          video: anexoSchema.optional(),
+          document: anexoSchema.optional(),
+        })
+        .passthrough()
+        .optional(),
+    })
+    .passthrough()
+    .optional(),
+  revoke: z.object({ original_message_id: z.string().optional() }).passthrough().optional(),
 })
 
 export const webhookSchema = z.object({
@@ -559,6 +585,14 @@ export async function tratarUma(
    * A linha já está gravada acima, e a tela a mostra como apagada.
    */
   if (mensagem.type === 'revoke') return
+
+  /*
+   * Editar também não. A pessoa corrigiu o que já disse, e o bot respondia a
+   * correção como se fosse fala nova (Hugo, PCYES, 06/out: o "fora do
+   * horário" saiu de novo). A tela troca o texto da original e marca
+   * "Editada".
+   */
+  if (mensagem.type === 'edit') return
 
   /**
    * Quem responde sai das sequências (0031).
@@ -2328,6 +2362,17 @@ function paraEntrada(mensagem: Mensagem): { entrada: Entrada; texto: string | nu
       entrada: { tipo: 'midia', formato: 'reaction' },
       texto: emoji === '' ? null : emoji,
     }
+  }
+
+  /*
+   * A edição: o `texto` é o que a mensagem diz agora, para a coluna e para a
+   * prévia da fila. Como na reação, quem chama para antes do motor, e a
+   * `Entrada` só existe porque o tipo de retorno a exige.
+   */
+  if (mensagem.type === 'edit') {
+    const nova = mensagem.edit?.message
+    const legenda = nova?.image?.caption ?? nova?.video?.caption ?? nova?.document?.caption
+    return { entrada: { tipo: 'midia', formato: 'edit' }, texto: nova?.text?.body ?? legenda ?? null }
   }
 
   /*

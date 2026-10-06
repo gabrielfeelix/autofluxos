@@ -12,7 +12,7 @@ import {
   CartoesNaBolha,
   CitacaoNaBolha,
   LocalNaBolha,
-  MensagemApagada, SemTexto,
+  MensagemApagada, EdicaoSemTexto, SemTexto,
 } from '@/components/lead/anexo'
 import { RodapeDaMensagem } from '@/components/lead/rodape-da-mensagem'
 import { Transcricao } from '@/components/lead/transcricao'
@@ -642,7 +642,7 @@ function ListaDeMensagens({
                 !mensagem.anexo &&
                 !mensagem.recebido &&
                 !mensagem.semCopia &&
-                !mensagem.naoSuportada && (mensagem.apagada ? <MensagemApagada /> : <SemTexto />)
+                !mensagem.naoSuportada && (mensagem.apagada ? <MensagemApagada /> : mensagem.editada ? <EdicaoSemTexto /> : <SemTexto />)
               )}
               {/*
                 O rodapé da bolha diz a hora, e **quem escreveu só quando isso
@@ -675,6 +675,7 @@ function ListaDeMensagens({
               ) : (
                 <RodapeDaBolha titulo={horaExata(mensagem.ts)} sobreMidia={midiaSolta}>
                   {nossa && mensagem.autor ? `${mensagem.autor} · ` : ''}
+                  {mensagem.editada && mensagem.texto !== null ? 'Editada · ' : ''}
                   {horaDoRelogio(mensagem.ts)}
                   {nossa && <Tiques situacao={mensagem.situacao} />}
                 </RodapeDaBolha>

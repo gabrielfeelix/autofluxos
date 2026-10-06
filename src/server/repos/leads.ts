@@ -256,6 +256,13 @@ export type MensagemDoLead = {
    * imagem ou documento)", que fazia parecer mídia perdida.
    */
   apagada?: true
+  /**
+   * A pessoa editou esta mensagem (`type: 'edit'`), e `texto` já é o novo. A
+   * bolha marca "Editada", como o WhatsApp. A edição chegada antes de o
+   * schema guardar o corpo (Hugo, PCYES, 06/out) vem sem `texto`, e a bolha
+   * diz só que houve edição.
+   */
+  editada?: true
   /** O que era o `unsupported`, quando a Meta disse. Ver `motivoDoNaoSuportado`. */
   motivoNaoSuportada?: string
   /**
@@ -1131,6 +1138,22 @@ export async function lerConversa(
    */
   const toques = casarToques(visiveis)
 
+  /*
+   * Edição e apagar viram estado da mensagem original, como a reação: a
+   * linha própria some quando a original está na tela. Percorre em ordem, a
+   * última edição vence.
+   */
+  const correcoes = new Map<string, { texto: string | null } | 'apagada'>()
+  for (const m of visiveis) {
+    const correcao = correcaoDoPayload(m.payload)
+    if (!correcao?.alvo || !porWaId.has(correcao.alvo)) continue
+    correcoes.set(correcao.alvo, correcao.tipo === 'revoke' ? 'apagada' : { texto: m.texto })
+  }
+  const absorvida = (m: { payload: unknown }) => {
+    const alvo = correcaoDoPayload(m.payload)?.alvo
+    return alvo !== undefined && porWaId.has(alvo)
+  }
+
   const caminhos = visiveis
     .map((m) => (ehArquivoGuardado(m.arquivo) ? m.arquivo.caminho : null))
     .filter((caminho): caminho is string => caminho !== null)
@@ -1145,8 +1168,12 @@ export async function lerConversa(
        * Reação removida (`reacao === ''`) some junto e não gruda em nada:
        * `casarReacoes` já a descartou.
        */
-      .filter((m) => m.reagiu_a === null)
+      .filter((m) => m.reagiu_a === null && !absorvida(m))
       .map((m) => {
+        const correcao = m.wa_message_id ? correcoes.get(m.wa_message_id) : undefined
+        const tipoProprio = (m.payload as { type?: string } | null)?.type
+        const editada = tipoProprio === 'edit' || (correcao !== undefined && correcao !== 'apagada')
+        const apagada = tipoProprio === 'revoke' || correcao === 'apagada'
         const anexo = anexoDoPayload(m.payload)
         const produtos = produtosDoPayload(m.payload)
         const botao = botaoDoPayload(m.payload)
@@ -1195,10 +1222,24 @@ export async function lerConversa(
          */
         const toque = m.direcao === 'entrada' && toqueDoPayload(m.payload) !== null
         const cita = m.cita && !toque ? citadaDoHistorico(m.cita, porWaId) : null
+        // Apagada para todos: a bolha diz isso e mais nada, nem a foto que ela era.
+        if (apagada) {
+          return {
+            id: m.id,
+            direcao: direcaoSchema.parse(m.direcao),
+            texto: null,
+            ts: m.ts,
+            entregue: m.entregue,
+            apagada: true as const,
+            ...(autor ? { autor } : {}),
+            ...(m.wa_message_id ? { waMessageId: m.wa_message_id } : {}),
+            ...(reacoes?.length ? { reacoes } : {}),
+          }
+        }
         return {
           id: m.id,
           direcao: direcaoSchema.parse(m.direcao),
-          texto: m.texto,
+          texto: typeof correcao === 'object' ? (correcao.texto ?? m.texto) : m.texto,
           ts: m.ts,
           entregue: m.entregue,
           ...(m.situacao ? { situacao: m.situacao } : {}),
@@ -1209,7 +1250,7 @@ export async function lerConversa(
           ...(recebido ? { recebido } : {}),
           ...(semCopia ? { semCopia: true as const } : {}),
           ...(naoSuportada ? { naoSuportada: true as const } : {}),
-          ...(tipoDaMeta === 'revoke' ? { apagada: true as const } : {}),
+          ...(editada ? { editada: true as const } : {}),
           ...(motivo ? { motivoNaoSuportada: motivo } : {}),
           ...(menu ? { menu } : {}),
           ...(toque ? { toque: true as const } : {}),
@@ -1243,6 +1284,19 @@ function comMidiaNaCitacao<M extends { id: string; anexo?: AnexoDaMensagem; rece
     if (!m.cita || !midia || (midia.midia !== 'imagem' && midia.midia !== 'video')) return m
     return { ...m, cita: { ...m.cita, midia: { tipo: midia.midia, url: midia.url } } }
   })
+}
+
+/**
+ * A edição ou o apagar "para todos", e a mensagem que eles mexem.
+ *
+ * `alvo` falta nas linhas gravadas antes de o schema guardar `edit` e
+ * `revoke` (06/out/2026): elas ficam como linha própria na conversa.
+ */
+function correcaoDoPayload(payload: unknown): { tipo: 'edit' | 'revoke'; alvo?: string } | null {
+  const p = payload as { type?: string; edit?: { original_message_id?: string }; revoke?: { original_message_id?: string } } | null
+  if (p?.type === 'edit') return { tipo: 'edit', ...(p.edit?.original_message_id ? { alvo: p.edit.original_message_id } : {}) }
+  if (p?.type === 'revoke') return { tipo: 'revoke', ...(p.revoke?.original_message_id ? { alvo: p.revoke.original_message_id } : {}) }
+  return null
 }
 
 /**
