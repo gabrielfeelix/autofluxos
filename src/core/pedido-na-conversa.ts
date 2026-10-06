@@ -48,16 +48,20 @@ export function mensagemDoPedido(pedido: PedidoDaLoja): string {
   return linhas.join('\n')
 }
 
-/** As quatro etapas, com o rótulo de quando já passou e de quando é a atual. */
+/**
+ * As quatro etapas: o rótulo de quando já passou, de quando é a atual e de
+ * quando ainda vem. O de depois é escrito no futuro: "⚪ Entregue" numa lista
+ * lia como entrega feita (06/out/2026, revisão do card).
+ */
 const ETAPAS = [
-  { feita: 'Pagamento aprovado', atual: '⏳ *Aguardando pagamento*' },
-  { feita: 'Pedido separado', atual: '📦 *Em separação*' },
-  { feita: 'Com a transportadora', atual: '🚚 *Com a transportadora*' },
-  { feita: 'Entregue', atual: '🏠 *Entregue*' },
+  { feita: 'Pagamento aprovado', atual: '⏳ *Aguardando pagamento*', depois: 'Aprovação do pagamento' },
+  { feita: 'Pedido separado', atual: '📦 *Em separação*', depois: 'Separação do pedido' },
+  { feita: 'Com a transportadora', atual: '🚚 *Com a transportadora*', depois: 'Envio pela transportadora' },
+  { feita: 'Entregue', atual: '🏠 *Entregue*', depois: 'Entrega no seu endereço' },
 ] as const
 
 function linhaDoTempo(etapa: number): string[] {
-  return ETAPAS.map((e, i) => (i < etapa ? `✅ ${e.feita}` : i === etapa ? e.atual : `⚪ ${e.feita}`))
+  return ETAPAS.map((e, i) => (i < etapa ? `✅ ${e.feita}` : i === etapa ? e.atual : `⚪ ${e.depois}`))
 }
 
 /**

@@ -22,7 +22,7 @@ describe('status do pedido na conversa', () => {
         '✅ Pagamento aprovado',
         '✅ Pedido separado',
         '🚚 *Com a transportadora*',
-        '⚪ Entregue',
+        '⚪ Entrega no seu endereço',
         '',
         '📅 Previsão de entrega: *sex, 02/10*',
         '🚛 Braspress',
