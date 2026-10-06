@@ -694,13 +694,14 @@ function ListaDeMensagens({
                   {nossa && <Tiques situacao={mensagem.situacao} />}
                 </RodapeDaBolha>
               )}
+              {/* Dentro da bolha, como o WhatsApp desenha o `cta_url`: largura toda, linha fina em cima. */}
+              {mensagem.botao && <BotaoDeLinkNaConversa botao={mensagem.botao} />}
             </p>
             )}
             </RodapeDaMensagem>
             {mensagem.menu && (
               <MenuNaConversa menu={mensagem.menu} respondido={indice < mensagens.length - 1} />
             )}
-            {mensagem.botao && <BotaoDeLinkNaConversa botao={mensagem.botao} />}
           </div>
           </Fragment>
         )
@@ -721,7 +722,7 @@ function BotaoDeLinkNaConversa({ botao }: { botao: NonNullable<MensagemDoLead['b
       target="_blank"
       rel="noreferrer"
       title={botao.url}
-      className="mt-1 flex w-full max-w-[min(78%,300px)] items-center justify-center gap-1.5 rounded-[12px] border border-line bg-surface px-3 py-1.5 text-[13px] leading-5 font-semibold text-primary transition hover:bg-primary-weak"
+      className="-mx-3.5 -mb-2 mt-2 flex items-center justify-center gap-1.5 border-t border-current/15 py-2 text-[13.5px] leading-5 font-semibold whitespace-normal transition hover:opacity-75"
     >
       <svg aria-hidden width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
         <path d="M14 4h6v6M20 4l-9 9M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5" />
