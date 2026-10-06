@@ -10,7 +10,6 @@ Continua `docs/HANDOFF-06-OUT.md` (regras de trabalho e ambiente local lá).
 | `9482315` | Retomar e Agendar: um campo por lacuna (`CamposDasLacunas` em `components/lead/lacunas-do-modelo.tsx`), `{{1}}` começa no nome, resto vazio, Enviar trava. Servidor: `conferirValores` em `core/templates.ts`; agendada grava `template_valores` |
 | `d07ac3e` | Sequência: passo guarda `template_parametros` (migration **0131**, aplicada) no contrato de `transmissoes.parametros` (`{nome}` = nome do contato); envio usa `valoresPara` |
 | `48bebb2` | Estado `expirada` em `core/estado-do-atendimento.ts` ("Conversa expirada"): aguardando ou com pessoa + janela fechada (`janelaExpirada` em `channels/janela.ts`). Fora da contagem "esperando", sem alerta no avatar, não sobe na ordem por espera |
-
 | `42396fb` | Gasto com WhatsApp usa o custo da Meta onde ela já informou (copiador lê `currency`, só guarda custo em BRL); `estimado` no subtítulo. Até 06/out só há serviço grátis |
 | `c2f9749` | Barras de Relatórios com chave + posição (aviso `key`); ficha sem lápis do nome (Editar já edita); preços de plano com `CampoDeDinheiro` |
 | `830ab60` | Coexistência: eco até 15 s depois de mensagem do bot não cala o bot (`ecoColadoNoBot`). Caso Marcio/PCYES: "Bem-Vindo a PCYES!" saiu de aparelho conectado (id `3EB0...`), 6 s depois do menu. Substitui a regra de texto repetido (`5cf9839`) |
