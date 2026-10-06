@@ -771,7 +771,7 @@ export function Fila({
               onChange={(e) => setDigitado(e.target.value)}
               placeholder="Buscar por nome ou número"
               aria-label="Pesquisar em conversas"
-              className="app-field rounded-full py-2 pr-9 pl-9 text-[13px]"
+              className="app-field rounded-full py-2 pr-9 pl-9 text-[13px] [&::-webkit-search-cancel-button]:appearance-none"
             />
             {digitado !== "" && (
               <button
