@@ -1,10 +1,12 @@
 'use server'
 
 import { podeReagir } from '@/channels/janela'
+import { autorDaPessoa } from '@/core/autor-da-mensagem'
 import { adaptadorDoCanal } from './adaptador-do-canal'
 import { confirmarEntrega, contextoDeResposta, registrarSaida } from './repos/conversas'
 import { acharMensagemParaReagir } from './repos/leads'
 import { exigirCapacidade, recusou } from './permissoes'
+import { sessaoAtual } from './sessao'
 
 /**
  * Reagir a uma mensagem da conversa, pelo Inbox.
@@ -103,12 +105,16 @@ export async function acaoReagir(
    * chega. Dois formatos fariam a reação do atendente sumir da conversa
    * enquanto a do contato aparece, que é a lição da camada 1.
    */
+  // Com autor, como a resposta: sem ele a fila lia "celular: ❤️" para a
+  // reação dada pela Inbox (06/out/2026), o rótulo do eco do aparelho.
+  const quemReagiu = await sessaoAtual()
   const registro = await registrarSaida({
     contatoId,
     sessaoId: contexto.sessaoId,
     texto: emoji === '' ? '' : emoji,
     reagiuA: waMessageId,
     reacao: emoji,
+    autor: autorDaPessoa(quemReagiu?.usuario),
   })
 
   try {

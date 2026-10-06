@@ -970,11 +970,14 @@ export function Fila({
                     Abrir a conversa zera a sua insígnia e **não** muda esta
                     linha: ler nunca atribui.
                   */}
-                  {nomeDe(lead.atribuidoA) && (
+                  {/*
+                    "responsável: você" não sai (06/out/2026): na sua fila é
+                    óbvio, e em toda linha era ruído. O de outra pessoa fica,
+                    porque é o que evita pegar conversa que já tem dono.
+                  */}
+                  {nomeDe(lead.atribuidoA) && lead.atribuidoA !== usuarioId && (
                     <span className="mt-0.5 block truncate text-[12px] text-dim">
-                      {lead.atribuidoA === usuarioId
-                        ? "responsável: você"
-                        : `responsável: ${nomeDe(lead.atribuidoA)}`}
+                      {`responsável: ${nomeDe(lead.atribuidoA)}`}
                     </span>
                   )}
                   {/*
@@ -1306,6 +1309,12 @@ function RelogioDaJanela({
   // Duas horas é o limite em que avisar ainda muda a decisão de alguém. Acima
   // disso, cor de alerta em toda linha treina a pessoa a ignorar a cor.
   const apertado = restante < 2 * 60 * 60 * 1000;
+  /*
+   * Com folga, o prazo não sai na fila (06/out/2026): "responder em 23h39" em
+   * toda linha é ruído, e o cabeçalho da conversa já mostra a janela. Sai
+   * quando muda a decisão: menos de 2h, ou já expirada (acima).
+   */
+  if (!apertado && !gratis) return null;
 
   return (
     <span
