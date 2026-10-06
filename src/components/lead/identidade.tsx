@@ -1,102 +1,31 @@
 'use client'
 
-import { useRef, useState } from 'react'
-import type { EstadoSalvar } from '@/components/design/formulario-salvar'
-import { Avatar } from '@/components/inbox/avatar'
 import { telefoneLegivel } from '@/core/contatos/telefone'
-import { depoisDaTela } from '@/components/inbox/conversa-local'
-import { useCliqueNoFundo } from '@/components/design/clique-no-fundo'
-
-type Acao = (estado: EstadoSalvar, formData: FormData) => Promise<EstadoSalvar>
 
 /**
  * O nome do contato, e a correção dele.
  *
  * O WhatsApp entrega o nome que a pessoa escolheu para si, e numa lista de
  * atendimento isso vira "Rodrigão comedor delas" onde deveria estar "Rodrigo".
- * A correção mora aqui, a um clique, e **não substitui** o nome do perfil: ele
+ * A correção mora no Editar da ficha (`NomeEditavel`), e **não substitui** o nome do perfil: ele
  * continua visível abaixo, porque é o que identifica a conta do WhatsApp e o
  * que quem atende reconhece na notificação do celular.
  */
 export function NomeDoContato({
-  nome: nomeDoServidor,
+  nome,
   nomeDoPerfil,
-  nomeReal: nomeRealDoServidor,
+  nomeReal,
   waId,
-  salvar,
 }: {
   nome: string | null
   nomeDoPerfil: string | null
   nomeReal: string
   waId: string
-  salvar: Acao
 }) {
-  const dialogo = useRef<HTMLDialogElement>(null)
-  const [erro, setErro] = useState<string | null>(null)
-  const fundo = useCliqueNoFundo(dialogo, () => {
-    setErro(null)
-    dialogo.current?.close()
-  })
-  /** O nome que esta aba acabou de salvar, por cima do que o servidor desenhou. */
-  const [salvo, setSalvo] = useState<string | null>(null)
-  const nomeReal = salvo ?? nomeRealDoServidor
-  const nome = salvo === null ? nomeDoServidor : salvo || nomeDoPerfil
-
-  /*
-   * Otimista desde 25/set. Era: o modal esperava o servidor, e o nome no
-   * título só mudava quando a ficha voltava redesenhada. Agora o título muda e
-   * o modal fecha no clique; se o servidor recusar, o nome antigo volta e o
-   * modal reabre com o motivo.
-   */
-  function enviar(dados: FormData) {
-    setErro(null)
-    const antes = salvo
-    setSalvo(String(dados.get('nome') ?? '').trim())
-    dialogo.current?.close()
-    const desfazer = (motivo: string) => {
-      setSalvo(antes)
-      setErro(motivo)
-      dialogo.current?.showModal()
-    }
-    depoisDaTela(() => salvar({}, dados)).then(
-      (r) => {
-        if (r && r.erro) desfazer(r.erro)
-      },
-      () => desfazer('sem conexão com o servidor'),
-    )
-  }
-
   return (
     <div className="min-w-0">
       <h1 className="flex flex-wrap items-center gap-2 text-[21px] font-bold tracking-[-0.02em]">
         <span className="min-w-0 break-words">{nome ?? telefoneLegivel(waId)}</span>
-        {/*
-          Um lápis, e não a caixa escrita "corrigir nome".
-
-          A caixa dizia o que fazer e ocupava o lugar de um título: ao lado de um
-          nome de duas palavras ela competia com o próprio nome, e em nome longo
-          ela caía para a linha de baixo sozinha. O lápis ao lado de um texto é
-          convenção que ninguém precisa ler, e o `title` diz o resto para quem
-          passar o mouse.
-        */}
-        <button
-          type="button"
-          onClick={() => dialogo.current?.showModal()}
-          title={nomeReal === '' ? 'Corrigir o nome' : 'Editar o nome'}
-          aria-label={nomeReal === '' ? 'Corrigir o nome' : 'Editar o nome'}
-          className="grid size-7 shrink-0 place-items-center rounded-lg border border-line text-muted transition hover:border-primary/40 hover:text-primary"
-        >
-          <svg aria-hidden="true" viewBox="0 0 16 16" className="size-3.5">
-            <path
-              d="M11.2 2.3a1.4 1.4 0 0 1 2 2l-6.6 6.6-2.7.7.7-2.7 6.6-6.6ZM10 3.6l2.4 2.4"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="1.4"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            />
-          </svg>
-        </button>
       </h1>
       <p className="mt-0.5 font-mono text-[12px] text-dim">
         {telefoneLegivel(waId)}
@@ -111,75 +40,6 @@ export function NomeDoContato({
           </span>
         )}
       </p>
-
-      {/*
-        O editor é modal, e não a troca do cabeçalho por um formulário no lugar.
-
-        Trocando no lugar, **o nome sumia justamente enquanto era editado**: a
-        tela perdia a única referência do que se está corrigindo, e o campo
-        aparecia colado no telefone, sem título nem fronteira. O modal mostra a
-        pessoa inteira enquanto se digita, avatar, nome atual, e o do perfil do
-        WhatsApp embaixo, que é a informação que explica por que corrigir.
-      */}
-      <dialog
-        ref={dialogo}
-        {...fundo}
-        className="app-dialog m-auto w-[380px] rounded-[18px] border border-line bg-panel p-[26px] text-ink shadow-[0_40px_100px_rgba(19,25,34,0.132)]"
-      >
-        <div className="flex items-center gap-3">
-          <Avatar nome={nome} tamanho={44} />
-          <span className="min-w-0 flex-1">
-            <span className="block truncate text-[15px] font-bold">
-              {nome ?? telefoneLegivel(waId)}
-            </span>
-            <span className="block font-mono text-[12px] text-dim">{telefoneLegivel(waId)}</span>
-          </span>
-        </div>
-
-        <form action={enviar} className="mt-5 space-y-3.5">
-          <label className="block">
-            <span className="mb-1.5 block text-[12px] font-semibold tracking-[0.05em] text-muted uppercase">
-              Nome de verdade
-            </span>
-            <input
-              name="nome"
-              autoFocus
-              defaultValue={nomeReal}
-              maxLength={120}
-              placeholder={nomeDoPerfil ?? 'Nome de verdade'}
-              className="app-field w-full px-3 py-2 text-[14px] font-semibold"
-            />
-          </label>
-
-          <p className="text-[12.5px] leading-5 text-muted">
-            {nomeDoPerfil
-              ? `No WhatsApp ela se chama “${nomeDoPerfil}”. Vazio volta a mostrar esse nome.`
-              : 'Vazio volta a mostrar o nome do perfil do WhatsApp.'}
-          </p>
-
-          {erro && (
-            <p className="rounded-[10px] border border-rose-400/25 bg-rose-400/[0.08] px-3 py-2.5 text-[12.5px] leading-5 text-perigo">
-              {erro}
-            </p>
-          )}
-
-          <div className="flex gap-2.5 pt-1">
-            <button
-              type="button"
-              onClick={() => {
-                setErro(null)
-                dialogo.current?.close()
-              }}
-              className="botao-secundario botao-md flex-1"
-            >
-              Cancelar
-            </button>
-            <button type="submit" className="botao-primario botao-md flex-[1.35]">
-              Salvar
-            </button>
-          </div>
-        </form>
-      </dialog>
     </div>
   )
 }

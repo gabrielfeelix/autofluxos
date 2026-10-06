@@ -3,6 +3,8 @@
 import { useEffect, useState, useTransition } from 'react'
 import { AvisoFlutuante } from '@/components/design/aviso-flutuante'
 import { Dropdown } from '@/components/design/dropdown'
+import { CampoDeDinheiro } from '@/components/design/campo-de-dinheiro'
+import { lerValor } from '@/core/crm'
 import { Modal } from '@/components/design/modal'
 import { RotuloCampo } from '@/components/design/modal-formulario'
 import { RolagemDaTabela } from '@/components/lead/rolagem-da-tabela'
@@ -262,7 +264,7 @@ function EditarPlano({
   const [preco, setPreco] = useState(String(plano.preco))
   const [quemJaEsta, setQuemJaEsta] = useState<PrecoParaQuemJaEsta>('manter')
   const campo = 'app-field px-[13px] py-[10px] text-[13.5px]'
-  const mudouPreco = modo === 'editar' && plano.organizacoes > 0 && preco !== '' && Number(preco) !== plano.preco
+  const mudouPreco = modo === 'editar' && plano.organizacoes > 0 && preco !== '' && emReaisDigitados(preco) !== plano.preco
   const quantas = `${plano.organizacoes} ${plano.organizacoes === 1 ? 'organização' : 'organizações'}`
 
   return (
@@ -285,13 +287,13 @@ function EditarPlano({
           aoSalvar(
             {
               nome: String(dados.get('nome') ?? ''),
-              preco: Number(dados.get('preco')),
+              preco: emReaisDigitados(dados.get('preco')) ?? Number.NaN,
               conversas: Number(dados.get('conversas')),
               numeros: Number(dados.get('numeros')),
-              precoExcedente: Number(String(dados.get('precoExcedente') ?? '0').replace(',', '.')),
-              precoAnual: String(dados.get('precoAnual') ?? '').trim() === '' ? null : Number(dados.get('precoAnual')),
+              precoExcedente: emReaisDigitados(dados.get('precoExcedente')) ?? Number.NaN,
+              precoAnual: emReaisDigitados(dados.get('precoAnual')),
               atendentes: Number(dados.get('atendentes')),
-              precoAtendenteExtra: Number(String(dados.get('precoAtendenteExtra') ?? '0').replace(',', '.')),
+              precoAtendenteExtra: emReaisDigitados(dados.get('precoAtendenteExtra')) ?? Number.NaN,
               tetoIa: Number(dados.get('tetoIa')),
               tetoTransmissoes: String(dados.get('tetoTransmissoes') ?? '').trim() === '' ? null : Number(dados.get('tetoTransmissoes')),
               resumo: String(dados.get('resumo') ?? ''),
@@ -310,11 +312,16 @@ function EditarPlano({
           </label>
           <label>
             <RotuloCampo>Preço por mês (R$)</RotuloCampo>
-            <input name="preco" type="number" min={0} step={1} required value={preco} onChange={(evento) => setPreco(evento.target.value)} placeholder="Exemplo: 597" className={campo} />
+            <CampoDeDinheiro name="preco" required valor={preco} aoMudar={setPreco} placeholder="Exemplo: 597" className={campo} />
           </label>
           <label>
             <RotuloCampo>Preço por ano (R$), vazio = sem anual</RotuloCampo>
-            <input name="precoAnual" type="number" min={0} step={1} defaultValue={plano.precoAnual ?? ''} placeholder={preco ? `Exemplo: ${Number(preco) * 10} (10 meses)` : 'Exemplo: 5970'} className={campo} />
+            <CampoDeDinheiro
+              name="precoAnual"
+              valorInicial={plano.precoAnual === null ? '' : String(plano.precoAnual)}
+              placeholder={emReaisDigitados(preco) ? `Exemplo: ${(emReaisDigitados(preco)! * 10).toLocaleString('pt-BR')} (10 meses)` : 'Exemplo: 5.970'}
+              className={campo}
+            />
           </label>
           <label>
             <RotuloCampo>Conversas por mês</RotuloCampo>
@@ -322,7 +329,7 @@ function EditarPlano({
           </label>
           <label>
             <RotuloCampo>Excedente por conversa (R$)</RotuloCampo>
-            <input name="precoExcedente" type="number" min={0} step={0.01} required defaultValue={plano.precoExcedente} placeholder="Exemplo: 0,30" className={campo} />
+            <CampoDeDinheiro name="precoExcedente" required valorInicial={String(plano.precoExcedente)} placeholder="Exemplo: 0,30" className={campo} />
           </label>
           <label>
             <RotuloCampo>Números de WhatsApp</RotuloCampo>
@@ -334,7 +341,7 @@ function EditarPlano({
           </label>
           <label>
             <RotuloCampo>Atendente extra por mês (R$)</RotuloCampo>
-            <input name="precoAtendenteExtra" type="number" min={0} step={0.01} required defaultValue={plano.precoAtendenteExtra} placeholder="Exemplo: 59" className={campo} />
+            <CampoDeDinheiro name="precoAtendenteExtra" required valorInicial={String(plano.precoAtendenteExtra)} placeholder="Exemplo: 59" className={campo} />
           </label>
           <label>
             <RotuloCampo>Respostas de IA em 30 dias</RotuloCampo>
@@ -538,4 +545,14 @@ function ExcluirPlano({
       </div>
     </Modal>
   )
+}
+
+/**
+ * O valor de um `CampoDeDinheiro` ("1.500", "0,40"), pelo mesmo `lerValor` do
+ * CRM. Vazio é `null`; texto que não é dinheiro vira `NaN`, e o servidor
+ * recusa com o motivo.
+ */
+function emReaisDigitados(bruto: FormDataEntryValue | string | null): number | null {
+  const lido = lerValor(String(bruto ?? ''))
+  return lido.ok ? lido.valor : Number.NaN
 }

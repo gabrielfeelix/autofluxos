@@ -505,7 +505,9 @@ export function ListaEmBarras({
               const v = de(l)
               const lider = ranking && i === 0 && !l.apagada && v > 0
               return (
-                <li key={l.chave} className="flex items-center gap-3">
+                // Chave com a posição: a mesma campanha pode vir como nula e
+                // vazia, e o mesmo produto em dois links (aviso `key`, 06/out).
+                <li key={`${l.chave}:${i}`} className="flex items-center gap-3">
                   {ranking && (
                     <span
                       className={`flex size-8 shrink-0 items-center justify-center rounded-full text-[11px] font-bold ${

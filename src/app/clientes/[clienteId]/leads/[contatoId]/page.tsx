@@ -19,7 +19,6 @@ import { assinaturaDasReacoes } from '@/core/reacoes'
 import { ProvedorDeCitacao } from '@/components/lead/citacao'
 import {
   acaoApagarContato,
-  acaoCorrigirNome,
   acaoAlternarAutomacaoDoLead,
   acaoEncerrarAtendimento,
   acaoResponderLead,
@@ -280,7 +279,6 @@ export default async function Pagina({
                   nomeDoPerfil={lead.nomeDoPerfil}
                   nomeReal={lead.nomeReal}
                   waId={lead.waId}
-                  salvar={acaoCorrigirNome.bind(null, clienteId, contatoId)}
                 />
               </NomeEditavel>
               <SeloDoAtendimento aoLadoDoNome atendimento={atendimento} donoNome={donoNome} />
