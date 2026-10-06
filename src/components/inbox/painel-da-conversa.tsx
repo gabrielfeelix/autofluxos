@@ -6,7 +6,7 @@ import Link from 'next/link'
 import { Fragment, useEffect, useMemo, useRef, type ReactNode } from 'react'
 import { EntradaDeAnotacao, ListaDeAnotacoes, ProvedorDeAnotacoes } from '@/components/inbox/anotacoes'
 import { Assumir, PassarPara, TravaDaResposta } from '@/components/inbox/assumir'
-import { ProvedorDaConversa } from '@/components/inbox/conversa-local'
+import { ProvedorDaConversa, useConversaAberta } from '@/components/inbox/conversa-local'
 import { RodapeDeEspiar } from '@/components/inbox/espiar'
 import { AcoesRapidas } from '@/components/inbox/acoes-rapidas'
 import { Avatar } from '@/components/inbox/avatar'
@@ -351,6 +351,7 @@ function ColunaDaConversa({
             dados={dados}
             donoNome={equipe.find((membro) => membro.id === lead.atribuidoA)?.nome ?? null}
             etiquetas={etiquetas}
+            equipe={equipe}
           />
         </ColunaDaFicha>
       </ProvedorDaConversa>
@@ -479,14 +480,20 @@ function DadosDoLead({
   dados,
   donoNome,
   etiquetas,
+  equipe,
 }: {
   clienteId: string
   dados: ConversaAberta
   /** As da conta, para dar nome às aplicadas (inclusive as que se marcam agora). */
   etiquetas: EtiquetaEscolhivel[]
   donoNome: string | null
+  /** Para mostrar o responsável com nome e foto. */
+  equipe: MembroDaConta[]
 }) {
   const { lead, canal, atendimento, funis, passagens } = dados
+  // Ao vivo: "Assumir" e "Passar para" trocam a linha na hora, sem recarregar.
+  const atribuidoA = useConversaAberta().valor.atribuidoA
+  const responsavel = equipe.find((membro) => membro.id === atribuidoA) ?? null
   const nomesDosAnuncios = useMemo(() => new Map(dados.nomesDosAnuncios), [dados.nomesDosAnuncios])
   // Sem as chaves de origem: elas já aparecem em destaque no `QuemE`.
   const campos = camposSemOrigem(Object.entries(lead.campos))
@@ -541,6 +548,13 @@ function DadosDoLead({
 
             {/* Quem é a pessoa vem antes de tudo que se faz com ela. */}
             <QuemE
+              responsavel={
+                responsavel
+                  ? { nome: responsavel.nome, imagem: responsavel.imagem }
+                  : atribuidoA
+                    ? { nome: 'alguém fora da equipe', imagem: null }
+                    : null
+              }
               waId={lead.waId}
               criadoEm={lead.criadoEm}
               ultimaEntradaEm={lead.ultimaEntradaEm}

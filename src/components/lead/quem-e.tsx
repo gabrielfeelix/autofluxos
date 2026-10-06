@@ -1,3 +1,4 @@
+import { Avatar } from '@/components/design/avatar'
 import { passagensComNome, type AnuncioEmCache, type Passagem } from '@/core/anuncios'
 import { origemDoContato } from '@/core/contatos/origem'
 import { telefoneLegivel } from '@/core/contatos/telefone'
@@ -41,6 +42,7 @@ import { horaExata, quando } from '@/lib/quando'
  * ninguém mediu, o mesmo erro que o comentário antigo evitava com razão.
  */
 export function QuemE({
+  responsavel,
   waId,
   criadoEm,
   ultimaEntradaEm,
@@ -69,11 +71,34 @@ export function QuemE({
    * guardado, a lista nunca fica vazia por causa disso.
    */
   nomesDosAnuncios?: Map<string, AnuncioEmCache>
+  /**
+   * Quem cuida desta conversa (a atribuição), com a foto. `undefined` = a tela
+   * não mostra a linha; `null` = ninguém ainda.
+   */
+  responsavel?: { nome: string; imagem: string | null } | null
 }) {
   const origem = origemDoContato(campos)
 
   return (
     <dl className="mt-4 space-y-1.5 rounded-[11px] border border-line bg-panel px-3 py-2.5">
+      {/*
+        Primeira linha: de quem é a conversa é a pergunta antes de qualquer
+        outra numa equipe. "Responsável", e não "pelo lead": o painel inteiro
+        já é deste contato, e é a palavra que a fila usa.
+      */}
+      {responsavel !== undefined && (
+        <Linha rotulo="Responsável">
+          {responsavel ? (
+            <span className="flex min-w-0 items-center gap-1.5 text-[12px] font-medium text-ink">
+              <Avatar nome={responsavel.nome} imagem={responsavel.imagem} tamanho={20} />
+              <span className="truncate">{responsavel.nome}</span>
+            </span>
+          ) : (
+            <span className="text-[12px] text-dim">ninguém ainda</span>
+          )}
+        </Linha>
+      )}
+
       <Linha rotulo="Telefone">
         {/*
           `tel:` e não texto solto: num celular o toque liga, e no desktop o
