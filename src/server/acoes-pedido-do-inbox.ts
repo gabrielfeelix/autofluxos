@@ -4,7 +4,8 @@ import { dentroDaJanela } from '@/channels/janela'
 import { autorDaPessoa } from '@/core/autor-da-mensagem'
 import { linkDoRastreio, mensagemDoPedido } from '@/core/pedido-na-conversa'
 import type { PedidoDaLoja } from '@/loja/magento-pedido'
-import { consultarPedidoDaConta, listarPedidosDaConta, lojaAtivaDaConta } from './adaptador-da-loja'
+import { consultarPedidoDaConta, listarPedidosDaConta } from './adaptador-da-loja'
+import { cardDoPedido } from './card-do-pedido'
 import type { PedidoNaLista } from '@/loja/magento-pedido'
 import { acharLead } from './repos/leads'
 import { exigirCapacidade, meuAlcance, recusou, exigirLeitura } from './permissoes'
@@ -17,7 +18,6 @@ import {
   definirStatusDaSessao,
   registrarSaida,
 } from './repos/conversas'
-import { lojaDaConta } from './repos/lojas'
 import { sessaoAtual } from './sessao'
 
 /**
@@ -99,33 +99,6 @@ export async function acaoListarPedidosDoContato(clienteId: string, contatoId: s
   return { ok: true, pedidos: r.valor, semChave: false }
 }
 
-/**
- * A foto do item principal do pedido (o primeiro), para o cabeçalho do card.
- *
- * Pelo SKU e, se a loja não devolver (o SKU do pedido de um configurável é o
- * da variação, que a busca da vitrine esconde), pelo nome exato. Nome
- * parecido não vale: foto de outro produto no pedido de alguém é pior que
- * card sem foto. Melhor-esforço: qualquer falha manda o card sem foto.
- */
-async function fotoDoPedido(clienteId: string, pedido: PedidoDaLoja): Promise<string | null> {
-  const item = pedido.itens[0]
-  if (!item) return null
-  try {
-    const loja = await lojaAtivaDaConta(clienteId, 'loja')
-    if (!loja) return null
-    if (item.sku) {
-      const r = await loja.lerPorSku([item.sku])
-      const foto = r.ok ? r.valor.find((p) => p.foto)?.foto : undefined
-      if (foto) return foto
-    }
-    const r = await loja.buscar(item.nome)
-    const mesmo = (n: string) => n.trim().toLowerCase() === item.nome.trim().toLowerCase()
-    return (r.ok ? r.valor.find((p) => mesmo(p.nome) && p.foto)?.foto : undefined) ?? null
-  } catch {
-    return null
-  }
-}
-
 export async function acaoEnviarPedidoDoInbox(
   clienteId: string,
   contatoId: string,
@@ -146,15 +119,10 @@ export async function acaoEnviarPedidoDoInbox(
   // Relê na hora de mandar: entre a busca e o clique a entrega pode ter andado.
   const achado = await buscar(clienteId, contatoId, numero)
   if (!achado.ok) return achado
-  const texto = achado.previa
-
-  // O rastreio da Frete Rápido quando o envio traz o código; senão a página
-  // de pedidos da loja, que pede login.
-  const rastreio = linkDoRastreio(achado.pedido)
-  const loja = rastreio ? null : await lojaDaConta(clienteId)
-  const paginaDePedidos =
-    rastreio ?? (loja?.endereco ? `${loja.endereco.replace(/\/+$/, '')}/sales/order/history/` : null)
-  const rotulo = rastreio ? 'Rastrear entrega' : 'Ver meus pedidos'
+  const card = await cardDoPedido(clienteId, achado.pedido)
+  const texto = card.texto
+  const paginaDePedidos = card.link
+  const rotulo = card.rotulo
 
   let canal
   try {
@@ -163,7 +131,7 @@ export async function acaoEnviarPedidoDoInbox(
     return { ok: false, erro: erro instanceof Error ? erro.message : String(erro) }
   }
   const comBotao = paginaDePedidos ? canal.enviarBotaoDeLink?.bind(canal) : undefined
-  const foto = comBotao ? await fotoDoPedido(clienteId, achado.pedido) : null
+  const foto = comBotao ? card.foto : null
   const quemResponde = await sessaoAtual()
 
   const registro = await registrarSaida({

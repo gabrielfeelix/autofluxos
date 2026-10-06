@@ -50,6 +50,7 @@ import { consumirLimite } from '../limite'
 import { chamarHttp } from './http'
 import { lerCredencial } from '../repos/conexoes'
 import { consultarPedidoDaConta, lojaAtivaDaConta } from '../adaptador-da-loja'
+import { cardDoPedido } from '../card-do-pedido'
 import { listarMateriais } from '../repos/materiais'
 
 /**
@@ -1228,7 +1229,9 @@ async function responderComFerramentas({
     }
     if (
       ferramenta.chamada.tipo === 'loja' &&
-      (ferramenta.chamada.operacao === 'manual' || ferramenta.chamada.operacao === 'cardapio')
+      (ferramenta.chamada.operacao === 'manual' ||
+        ferramenta.chamada.operacao === 'cardapio' ||
+        ferramenta.chamada.operacao === 'pedido')
     ) {
       // Um arquivo por rodada: pedir o mesmo duas vezes não manda dois PDFs.
       for (const anexo of anexosDe(disparo.json)) {
@@ -1516,7 +1519,34 @@ async function executarNaLoja(
       telefone: valores.telefone ?? '',
       ...(valores.documento ? { documento: valores.documento } : {}),
     })
-    return r.ok ? { ok: true, json: r.valor } : r
+    if (!r.ok) return r
+    if (!r.valor.encontrado) return { ok: true, json: r.valor }
+
+    /*
+     * O status vai no card que a Inbox também manda (foto, linha do tempo e
+     * botão), escrito pelo servidor e não pelo modelo. O modelo ainda recebe
+     * o pedido, para responder a pergunta seguinte, e é instruído a só
+     * apresentar o card.
+     */
+    const card = await cardDoPedido(opcoes.clienteId, r.valor.pedido)
+    return {
+      ok: true,
+      json: {
+        ...r.valor,
+        enviado: card.link !== null,
+        ...(card.link
+          ? {
+              anexo: {
+                tipo: 'enviar_link',
+                texto: card.texto,
+                rotulo: card.rotulo,
+                url: card.link,
+                ...(card.foto ? { imagem: card.foto } : {}),
+              } satisfies AnexoDaIa,
+            }
+          : {}),
+      },
+    }
   }
   const loja = await lojaAtivaDaConta(opcoes.clienteId, fonteDoCatalogo)
   if (!loja) {

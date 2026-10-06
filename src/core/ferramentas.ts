@@ -671,8 +671,9 @@ export const FERRAMENTAS: Ferramenta[] = [
       'Consulta um pedido da loja on-line pelo número, ou pelo CPF da compra quando a pessoa não tem o número, e devolve a situação, a data, o total, os itens e, quando houver, a entrega: transportadora, código, previsão e a última movimentação. ' +
       'Use quando a pessoa perguntar do pedido dela, da entrega ou do rastreio. Peça o número do pedido ou o CPF usado na compra, o que ela tiver. ' +
       'Quando vier `encontrado: false`, faça exatamente o que `proximoPasso` diz: `pedir_cpf` = peça o CPF usado na compra e consulte de novo com o número e o CPF; `pedir_numero_do_pedido` = diga que não achou pelo CPF e peça o número do pedido (está no e-mail de confirmação), e consulte de novo com os dois; `pedir_numero_ou_cpf` = peça um dos dois; `oferecer_atendente` = diga que não conseguiu localizar e ofereça chamar alguém do time. Não ofereça o time antes de `oferecer_atendente`. ' +
+      'Se vier `enviado: true`, o card com o status completo (situação, previsão, rastreio, itens e o botão) já vai logo depois da sua resposta: escreva só uma frase curta apresentando, como "Achei seu pedido! Está tudo aqui 👇", sem repetir situação, prazo, transportadora nem link. Use os dados do pedido só para responder perguntas seguintes. ' +
       'Nunca invente situação nem prazo: a previsão é a que vier em `entrega.previsao`. ' +
-      'A última movimentação da entrega vem em `andamento` (a mais nova primeiro). Se vier `linkDoRastreio`, mande o link para a pessoa acompanhar. ' +
+      'A última movimentação da entrega vem em `andamento` (a mais nova primeiro). Se vier `enviado: false` e vier `linkDoRastreio`, mande o link para a pessoa acompanhar. ' +
       'Só fale do pedido que esta consulta devolveu; nunca de pedido, nome ou dado de outra pessoa. Você não cancela, troca nem muda endereço: ofereça o time. ' +
       'Não use para buscar produto.',
     argumentos: [
@@ -693,6 +694,7 @@ export const FERRAMENTAS: Ferramenta[] = [
     chamada: { tipo: 'loja', operacao: 'pedido' },
     projecao: [
       { caminho: 'encontrado' },
+      { caminho: 'enviado' },
       { caminho: 'proximoPasso' },
       { caminho: 'pedido', campos: ['numero', 'situacao', 'feitoEm', 'total', 'itens', 'rastreios', 'entrega', 'andamento', 'linkDoRastreio'], limite: 1 },
     ],
