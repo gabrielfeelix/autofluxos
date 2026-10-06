@@ -51,6 +51,7 @@ import { chamarHttp } from './http'
 import { lerCredencial } from '../repos/conexoes'
 import { consultarPedidoDaConta, lojaAtivaDaConta } from '../adaptador-da-loja'
 import { cardDoPedido } from '../card-do-pedido'
+import { comCortesia } from '../ia/cortesia'
 import { listarMateriais } from '../repos/materiais'
 
 /**
@@ -851,7 +852,7 @@ function semPedido(resposta: Resposta): RespostaFinal {
  * uma resposta que não vem.
  */
 async function responderComFerramentas({
-  modelo,
+  modelo: modeloDaConta,
   chamada,
   pergunta,
   opcoes,
@@ -869,6 +870,8 @@ async function responderComFerramentas({
    * autonomia. Sem o recurso a IA conversa com o contexto, sem ferramenta, e o
    * fluxo não quebra. O simulador mostra o bloco inteiro; o editor avisa.
    */
+  // Agradecimento recusado como "fora do assunto" é perguntado de novo (`ia/cortesia.ts`).
+  const modelo = comCortesia(modeloDaConta)
   const comFerramentas =
     !opcoes.clienteId || opcoes.origem === 'simulador' || (await recursoLiberado(opcoes.clienteId, 'ia_ferramentas'))
   // `concluir_conversa` não é do catálogo: vem do bloco, e só do que conversa.
