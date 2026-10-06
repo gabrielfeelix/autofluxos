@@ -84,6 +84,8 @@ export async function agendar(dados: {
   criadaPorNome: string | null
   /** O modelo a usar se a janela estiver fechada na hora. Ver `0067`. */
   templateId?: string | null
+  /** O que vai em cada lacuna do modelo, ver `conferirValores`. */
+  templateValores?: { cabecalho: string[]; corpo: string[] } | null
 }): Promise<MensagemAgendada> {
   const { data, error } = await db()
     .from('mensagens_agendadas')
@@ -95,6 +97,7 @@ export async function agendar(dados: {
       criada_por: dados.criadaPor,
       criada_por_nome: dados.criadaPorNome,
       template_id: dados.templateId ?? null,
+      template_valores: dados.templateValores ?? null,
     })
     .select(COLUNAS)
     .single()

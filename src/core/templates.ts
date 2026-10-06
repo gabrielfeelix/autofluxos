@@ -167,6 +167,83 @@ export function numeracaoContinua(variaveis: number[]): boolean {
 }
 
 // ---------------------------------------------------------------------------
+// Os valores, na hora de enviar para uma pessoa
+// ---------------------------------------------------------------------------
+
+/**
+ * O que preenche cada lacuna, na ordem: `corpo[0]` vai para o `{{1}}` do
+ * corpo. Cabeçalho e corpo numeram separado, ver `ValoresDoTemplate`.
+ */
+export type ValoresDasLacunas = { cabecalho: string[]; corpo: string[] }
+
+/** Teto de cada valor. O do cabeçalho é o da Meta (60 no texto inteiro). */
+export const LIMITE_DO_VALOR = { cabecalho: 60, corpo: 200 } as const
+
+/** Quantas lacunas o envio precisa preencher. Cabeçalho de mídia não tem. */
+export function lacunasDoModelo(componentes: Componentes | null | undefined): { cabecalho: number; corpo: number } {
+  const cabecalho = componentes?.cabecalho
+  return {
+    cabecalho: cabecalho?.tipo === 'texto' ? variaveisDe(cabecalho.texto).length : 0,
+    corpo: variaveisDe(componentes?.corpo ?? '').length,
+  }
+}
+
+/**
+ * O ponto de partida dos campos: o `{{1}}` do corpo com o nome do contato,
+ * que é o uso de quase todo modelo ("Olá {{1}}"), e o resto vazio.
+ *
+ * Antes **toda** lacuna virava o nome, e "seu pedido {{2}} saiu" chegava ao
+ * cliente como "seu pedido Ana saiu". Vazio obriga a escrever o que falta.
+ */
+export function valoresIniciais(componentes: Componentes | null | undefined, nome: string): ValoresDasLacunas {
+  const { cabecalho, corpo } = lacunasDoModelo(componentes)
+  return {
+    cabecalho: Array.from({ length: cabecalho }, () => ''),
+    corpo: Array.from({ length: corpo }, (_, i) => (i === 0 ? nome.trim() : '')),
+  }
+}
+
+/**
+ * Como a Meta aceita o valor: sem quebra de linha, sem tab e sem mais de
+ * quatro espaços seguidos (132000 nos três casos). Juntar o branco é o que
+ * resolve os três de uma vez.
+ */
+export function normalizarValor(bruto: string): string {
+  return bruto.replace(/\s+/g, ' ').trim()
+}
+
+export function preencherLacunas(texto: string, valores: string[]): string {
+  return valores.reduce((saida, valor, i) => saida.replaceAll(`{{${i + 1}}}`, valor), texto)
+}
+
+/**
+ * Confere o que veio da tela contra o modelo **de agora**: entre abrir a
+ * caixa e enviar, o modelo pode ter sido trocado. Devolve os valores já
+ * normalizados, ou o recado.
+ */
+export function conferirValores(
+  componentes: Componentes,
+  bruto: unknown,
+): { ok: true; valores: ValoresDasLacunas } | { ok: false; erro: string } {
+  const esperado = lacunasDoModelo(componentes)
+  const recebido = (bruto ?? {}) as { cabecalho?: unknown; corpo?: unknown }
+  const lista = (v: unknown) => (Array.isArray(v) && v.every((x) => typeof x === 'string') ? v.map(normalizarValor) : null)
+  const cabecalho = lista(recebido.cabecalho ?? [])
+  const corpo = lista(recebido.corpo ?? [])
+
+  if (!cabecalho || !corpo || cabecalho.length !== esperado.cabecalho || corpo.length !== esperado.corpo) {
+    return { ok: false, erro: 'O modelo mudou desde que a tela abriu. Escolha de novo e preencha os campos.' }
+  }
+  if ([...cabecalho, ...corpo].some((v) => v === '')) {
+    return { ok: false, erro: 'Preencha todos os campos do modelo antes de enviar.' }
+  }
+  if (cabecalho.some((v) => v.length > LIMITE_DO_VALOR.cabecalho) || corpo.some((v) => v.length > LIMITE_DO_VALOR.corpo)) {
+    return { ok: false, erro: 'Um dos campos do modelo passou do tamanho que a Meta aceita.' }
+  }
+  return { ok: true, valores: { cabecalho, corpo } }
+}
+
+// ---------------------------------------------------------------------------
 // A validação
 // ---------------------------------------------------------------------------
 

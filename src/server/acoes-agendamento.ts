@@ -5,6 +5,8 @@ import { agendar, cancelarAgendada, type MensagemAgendada } from './repos/mensag
 import { contextoDeResposta } from './repos/conversas'
 import { exigirCapacidade, recusou } from './permissoes'
 import { sessaoAtual } from './sessao'
+import { lerTemplate } from './repos/templates'
+import { conferirValores, type ValoresDasLacunas } from '@/core/templates'
 
 /**
  * Marcar uma mensagem para depois.
@@ -67,11 +69,34 @@ export async function acaoAgendarMensagem(
    */
   const templateId = String(formData.get('templateId') ?? '').trim() || null
 
+  /*
+   * Os valores das lacunas, conferidos contra o modelo agora. O envio confere
+   * de novo na hora (o modelo pode mudar até lá), mas campo vazio é erro que
+   * já se sabe hoje, e esperar a semana para avisar seria pior.
+   */
+  let templateValores: ValoresDasLacunas | null = null
+  if (templateId) {
+    const template = await lerTemplate(templateId)
+    if (!template || template.clienteId !== clienteId) return { ok: false, erro: 'Este modelo não existe.' }
+    let bruto: unknown = null
+    try {
+      bruto = JSON.parse(String(formData.get('templateValores') ?? 'null'))
+    } catch {
+      bruto = null
+    }
+    if (bruto !== null) {
+      const conferidos = conferirValores(template.componentes, bruto)
+      if (!conferidos.ok) return { ok: false, erro: conferidos.erro }
+      templateValores = conferidos.valores
+    }
+  }
+
   const agendada = await agendar({
     clienteId,
     contatoId,
     texto: texto.trim(),
     templateId,
+    templateValores,
     // `quando` já é um instante absoluto, o navegador resolveu o fuso de quem
     // marcou antes de mandar. Daqui para a frente não há fuso para errar.
     quando: (quando as Date).toISOString(),

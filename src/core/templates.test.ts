@@ -1,6 +1,9 @@
 import { describe, expect, it } from 'vitest'
 import {
   BOTOES_SEGUROS_NO_DESKTOP,
+  conferirValores,
+  preencherLacunas,
+  valoresIniciais,
   botoesIncompletos,
   linkComLacuna,
   linkParaAMeta,
@@ -539,5 +542,31 @@ describe('linkComLacuna', () => {
     expect(linkComLacuna({ botoes: [{ tipo: 'QUICK_REPLY', texto: 'Sim' }] })).toBeNull()
     expect(linkComLacuna({})).toBeNull()
     expect(linkComLacuna(null)).toBeNull()
+  })
+})
+
+describe('valores das lacunas', () => {
+  const componentes = {
+    cabecalho: { tipo: 'texto' as const, texto: 'Pedido {{1}}' },
+    corpo: 'Olá {{1}}, seu pedido {{2}} saiu.',
+  }
+
+  it('começa com o nome só no {{1}} do corpo, e o resto vazio', () => {
+    expect(valoresIniciais(componentes, ' Ana ')).toEqual({ cabecalho: [''], corpo: ['Ana', ''] })
+  })
+
+  it('aceita os valores e junta o branco que a Meta recusa', () => {
+    const r = conferirValores(componentes, { cabecalho: ['#12'], corpo: ['Ana', ' 123\n\n45 '] })
+    expect(r).toEqual({ ok: true, valores: { cabecalho: ['#12'], corpo: ['Ana', '123 45'] } })
+  })
+
+  it('recusa campo vazio e quantidade que não bate com o modelo', () => {
+    expect(conferirValores(componentes, { cabecalho: ['#12'], corpo: ['Ana', '  '] }).ok).toBe(false)
+    expect(conferirValores(componentes, { cabecalho: ['#12'], corpo: ['Ana'] }).ok).toBe(false)
+    expect(conferirValores(componentes, 'lixo').ok).toBe(false)
+  })
+
+  it('preenche cada lacuna com o seu valor', () => {
+    expect(preencherLacunas(componentes.corpo, ['Ana', '123'])).toBe('Olá Ana, seu pedido 123 saiu.')
   })
 })

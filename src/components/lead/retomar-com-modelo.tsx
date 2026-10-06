@@ -1,7 +1,8 @@
 'use client'
 
 import { emReais, tarifaDoModelo } from '@/core/franquia-da-meta'
-import { linkComLacuna, recadoDoLinkComLacuna } from '@/core/templates'
+import { linkComLacuna, recadoDoLinkComLacuna, valoresIniciais, type ValoresDasLacunas } from '@/core/templates'
+import { CamposDasLacunas, faltaPreencher } from '@/components/lead/lacunas-do-modelo'
 import { tituloDoModelo } from '@/core/titulo-da-biblioteca'
 import { useEffect, useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
@@ -56,6 +57,8 @@ export function RetomarComModelo({
   const [escolhido, setEscolhido] = useState('')
   const [erro, setErro] = useState<string | null>(null)
   const [pronto, setPronto] = useState(false)
+  // O que foi digitado em cada modelo: trocar de modelo e voltar não apaga.
+  const [digitados, setDigitados] = useState<Record<string, ValoresDasLacunas>>({})
   const [enviando, comecar] = useTransition()
 
   useEffect(() => {
@@ -76,16 +79,17 @@ export function RetomarComModelo({
   }, [clienteId])
 
   const modelo = aprovados?.find((t) => t.id === escolhido) ?? null
-  // As lacunas viram o nome do contato, como o servidor faz ao enviar.
-  const comNome = (texto: string) => texto.replace(/\{\{\d+\}\}/g, nome)
+  const comNome = (texto: string) => texto.replace(/\{\{\d+\}\}/g, '___')
   const componentes = modelo?.componentes ?? null
+  const valores = modelo ? (digitados[modelo.id] ?? valoresIniciais(modelo.componentes, nome)) : null
+  const falta = valores ? faltaPreencher(valores) : false
   // Barrado aqui e no servidor: a Meta recusa sem o final do link (ver `linkComLacuna`).
   const lacuna = linkComLacuna(componentes)
 
   function enviar() {
     setErro(null)
     comecar(async () => {
-      const r = await acaoRetomarComModelo(clienteId, contatoId, escolhido)
+      const r = await acaoRetomarComModelo(clienteId, contatoId, escolhido, valores ?? undefined)
       if (!r.ok) {
         setErro(r.erro ?? 'Não deu para retomar.')
         return
@@ -160,12 +164,19 @@ export function RetomarComModelo({
             rotuloAcessivel="Modelo para retomar a conversa"
           />
 
+          {modelo && valores && (
+            <CamposDasLacunas
+              componentes={modelo.componentes}
+              valores={valores}
+              aoMudar={(novos) => setDigitados((atual) => ({ ...atual, [modelo.id]: novos }))}
+            />
+          )}
+
           {/*
             A caixa de escrever, travada com o texto do modelo: é o que vai
             sair, no lugar onde a mensagem normalmente se escreve. O Enviar
-            mora onde o Enviar moraria. O nome do contato, que entra no lugar
-            das lacunas, vem destacado para se ver o que muda de uma pessoa
-            para outra.
+            mora onde o Enviar moraria. O que foi digitado nas lacunas vem
+            destacado, e a lacuna vazia, em amarelo.
           */}
           <div className="rounded-[16px] border border-line bg-surface">
             <span className="flex items-center gap-1.5 px-3.5 pt-2.5 text-[11px] font-semibold text-dim">
@@ -178,7 +189,7 @@ export function RetomarComModelo({
             <div aria-disabled title="O texto do modelo aprovado não pode ser editado" className="max-h-[180px] cursor-not-allowed overflow-y-auto px-3.5 pt-1.5 pb-2.5 text-[13.5px] leading-[1.5] text-muted select-none">
               {componentes?.cabecalho?.tipo === 'texto' && (
                 <strong className="mb-0.5 block text-soft">
-                  <ComLacunas texto={componentes.cabecalho.texto} nome={nome} />
+                  <ComLacunas texto={componentes.cabecalho.texto} valores={valores?.cabecalho ?? []} />
                 </strong>
               )}
               {componentes?.cabecalho && componentes.cabecalho.tipo !== 'texto' && (
@@ -188,7 +199,7 @@ export function RetomarComModelo({
               )}
               {componentes?.corpo.trim() ? (
                 <span className="block whitespace-pre-line">
-                  <ComLacunas texto={componentes.corpo} nome={nome} />
+                  <ComLacunas texto={componentes.corpo} valores={valores?.corpo ?? []} />
                 </span>
               ) : (
                 <span className="block text-[12.5px] text-dim">
@@ -243,7 +254,7 @@ export function RetomarComModelo({
               <button
                 type="button"
                 onClick={enviar}
-                disabled={enviando || !escolhido || lacuna !== null}
+                disabled={enviando || !escolhido || lacuna !== null || falta}
                 className="botao-primario botao-sm shrink-0"
               >
                 {enviando ? 'Enviando…' : 'Enviar'}
@@ -263,19 +274,27 @@ export function RetomarComModelo({
   )
 }
 
-/** O texto com as lacunas trocadas pelo nome, que vem destacado. */
-function ComLacunas({ texto, nome }: { texto: string; nome: string }) {
+/**
+ * O texto com as lacunas trocadas pelo que foi digitado, em destaque. Lacuna
+ * vazia fica marcada em amarelo, para se ver o que falta antes de enviar.
+ */
+function ComLacunas({ texto, valores }: { texto: string; valores: string[] }) {
   return (
     <>
-      {texto.split(/(\{\{\d+\}\})/g).map((parte, i) =>
-        /^\{\{\d+\}\}$/.test(parte) ? (
+      {texto.split(/(\{\{\d+\}\})/g).map((parte, i) => {
+        const n = /^\{\{(\d+)\}\}$/.exec(parte)?.[1]
+        if (!n) return <span key={i}>{parte}</span>
+        const valor = valores[Number(n) - 1]?.trim()
+        return valor ? (
           <mark key={i} className="rounded-[4px] bg-primary/10 px-0.5 font-semibold text-primary">
-            {nome}
+            {valor}
           </mark>
         ) : (
-          <span key={i}>{parte}</span>
-        ),
-      )}
+          <mark key={i} className="rounded-[4px] bg-amber-400/20 px-1 font-semibold text-aviso">
+            ___
+          </mark>
+        )
+      })}
     </>
   )
 }

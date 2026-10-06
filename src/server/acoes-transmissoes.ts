@@ -55,7 +55,15 @@ import { planoVigente } from './repos/planos'
 import { autorDaPessoa } from '@/core/autor-da-mensagem'
 import { bibliotecaServeAoRamo } from '@/core/titulo-da-biblioteca'
 import { nichoDaConta } from './repos/recursos'
-import { linkComLacuna, podeEnviar, recadoDoLinkComLacuna, variaveisDe as variaveisDoCorpo } from '@/core/templates'
+import {
+  conferirValores,
+  lacunasDoModelo,
+  linkComLacuna,
+  podeEnviar,
+  preencherLacunas,
+  recadoDoLinkComLacuna,
+  type ValoresDasLacunas,
+} from '@/core/templates'
 import { adaptadorDoCanal } from './adaptador-do-canal'
 import {
   acharContato,
@@ -661,6 +669,8 @@ export async function acaoRetomarComModelo(
   clienteId: string,
   contatoId: string,
   templateId: string,
+  /** O que vai em cada lacuna, digitado na tela. Ver `conferirValores`. */
+  valoresDaTela?: ValoresDasLacunas,
 ): Promise<{ ok: boolean; erro?: string }> {
   const acesso = await exigirCapacidade(clienteId, 'exportar', 'todos')
   if (recusou(acesso)) return acesso
@@ -693,19 +703,29 @@ export async function acaoRetomarComModelo(
     return { ok: false, erro: 'O canal conectado não sabe enviar modelo aprovado.' }
   }
 
+  /*
+   * Os valores vêm da tela, um por lacuna. Sem eles (aba aberta antes desta
+   * versão), vale o de antes: o nome em todas.
+   */
   const contato = await acharContato(contatoId)
+  const nome = contato?.nome || 'tudo bem'
+  const conferidos = valoresDaTela ? conferirValores(template.componentes, valoresDaTela) : null
+  if (conferidos && !conferidos.ok) return { ok: false, erro: conferidos.erro }
+  const { cabecalho: lacunasDoCabecalho, corpo: quantas } = lacunasDoModelo(template.componentes)
+  const valores = conferidos?.ok
+    ? conferidos.valores
+    : {
+        cabecalho: Array.from({ length: lacunasDoCabecalho }, () => nome),
+        corpo: Array.from({ length: quantas }, () => nome),
+      }
   const quem = await sessaoAtual()
-  const quantas = variaveisDoCorpo(template.componentes.corpo).length
 
   /*
-   * O texto que vai para o histórico é o corpo do modelo com o nome no lugar
-   * dos buracos: é o que o cliente recebe, e é o que o colega precisa ler na
-   * bolha. Guardar "{{1}}" ali deixaria o histórico em jargão de API.
+   * O texto que vai para o histórico é o corpo do modelo com os valores no
+   * lugar dos buracos: é o que o cliente recebe, e é o que o colega precisa ler
+   * na bolha. Guardar "{{1}}" ali deixaria o histórico em jargão de API.
    */
-  let textoGravado = template.componentes.corpo
-  for (let i = 1; i <= quantas; i += 1) {
-    textoGravado = textoGravado.replaceAll(`{{${i}}}`, contato?.nome || 'tudo bem')
-  }
+  const textoGravado = preencherLacunas(template.componentes.corpo, valores.corpo)
 
   const registro = await registrarSaida({
     contatoId,
@@ -718,12 +738,11 @@ export async function acaoRetomarComModelo(
     await canal.enviarTemplate(contexto.waId, {
       nome: template.nome,
       idioma: template.idioma,
-      ...(quantas > 0
+      ...(quantas > 0 || lacunasDoCabecalho > 0
         ? {
-            // Vazio a Meta recusa com 132000; "tudo bem" é o que sobra quando o
-            // contato não tem nome gravado.
             valores: {
-              corpo: Array.from({ length: quantas }, () => contato?.nome || 'tudo bem'),
+              ...(lacunasDoCabecalho > 0 ? { cabecalho: valores.cabecalho } : {}),
+              ...(quantas > 0 ? { corpo: valores.corpo } : {}),
             },
           }
         : {}),

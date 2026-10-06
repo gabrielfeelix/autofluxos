@@ -2,7 +2,8 @@
 
 import { emReais, tarifaDoModelo } from '@/core/franquia-da-meta'
 import { Dropdown } from '@/components/design/dropdown'
-import { linkComLacuna, recadoDoLinkComLacuna } from '@/core/templates'
+import { linkComLacuna, preencherLacunas, recadoDoLinkComLacuna, valoresIniciais, type ValoresDasLacunas } from '@/core/templates'
+import { CamposDasLacunas, faltaPreencher } from '@/components/lead/lacunas-do-modelo'
 import { tituloDoModelo } from '@/core/titulo-da-biblioteca'
 import { useEffect, useState, useTransition } from 'react'
 import { criarAgendada, ehProvisoria, marcarCancelada, useAgendadas } from './agendadas-local'
@@ -65,12 +66,18 @@ export function AgendarMensagem({
   const [modelo, setModelo] = useState('')
   const [aprovados, setAprovados] = useState<Template[] | null>(null)
   const [erro, setErro] = useState<string | null>(null)
+  const [digitados, setDigitados] = useState<Record<string, ValoresDasLacunas>>({})
 
   const quando = quandoBruto === '' ? null : new Date(quandoBruto)
   const recusa = conferirAgendamento({ texto, quando })
   const avisar = foraDaJanela(quando, fimDaJanela)
   const modeloEscolhido = aprovados?.find((t) => t.id === modelo) ?? null
   const lacuna = linkComLacuna(modeloEscolhido?.componentes)
+  const valores = modeloEscolhido
+    ? (digitados[modeloEscolhido.id] ?? valoresIniciais(modeloEscolhido.componentes, nome))
+    : null
+  // Modelo só trava quando vai mesmo ser usado: horário dentro da janela ignora.
+  const faltaNoModelo = avisar && valores !== null && faltaPreencher(valores)
 
   /*
    * A lista de modelos só é buscada quando o horário escolhido cai fora da
@@ -115,6 +122,7 @@ export function AgendarMensagem({
       e cobrar da conta um envio que o texto livre entregaria de graça.
     */
     dados.set('templateId', avisar ? modelo : '')
+    if (avisar && valores) dados.set('templateValores', JSON.stringify(valores))
 
     /*
      * Otimista (25/set): o painel fecha e a linha aparece no clique; o banco
@@ -132,12 +140,13 @@ export function AgendarMensagem({
       enviadaEm: null,
       erro: null,
       templateId: avisar && modelo ? modelo : null,
-      templateValores: null,
+      templateValores: avisar && valores ? valores : null,
       nomeDoContato: nome,
     })
     setTexto('')
     setQuandoBruto('')
     setModelo('')
+    setDigitados({})
     aoFechar()
 
     acaoAgendarMensagem(clienteId, contatoId, dados).then(
@@ -266,7 +275,7 @@ export function AgendarMensagem({
                     valor: t.id,
                     rotulo: tituloDoModelo(t.nome),
                     ...(t.componentes.corpo.trim()
-                      ? { detalhe: t.componentes.corpo.replace(/\{\{\d+\}\}/g, nome).replace(/\s+/g, ' ').trim().slice(0, 80) }
+                      ? { detalhe: t.componentes.corpo.replace(/\{\{\d+\}\}/g, '___').replace(/\s+/g, ' ').trim().slice(0, 80) }
                       : {}),
                   })),
                 ]}
@@ -277,8 +286,20 @@ export function AgendarMensagem({
                   title="O texto do modelo aprovado não pode ser editado"
                   className="mt-1.5 max-h-[96px] cursor-not-allowed overflow-y-auto rounded-[10px] border border-line bg-panel px-2.5 py-1.5 text-[12px] leading-[1.45] whitespace-pre-line text-muted select-none"
                 >
-                  {modeloEscolhido.componentes.corpo.replace(/\{\{\d+\}\}/g, nome)}
+                  {preencherLacunas(
+                    modeloEscolhido.componentes.corpo,
+                    (valores?.corpo ?? []).map((v) => v.trim() || '___'),
+                  )}
                 </p>
+              )}
+              {modeloEscolhido && valores && (
+                <div className="mt-2">
+                  <CamposDasLacunas
+                    componentes={modeloEscolhido.componentes}
+                    valores={valores}
+                    aoMudar={(novos) => setDigitados((atual) => ({ ...atual, [modeloEscolhido.id]: novos }))}
+                  />
+                </div>
               )}
               {lacuna && (
                 <p className="mt-1.5 text-[11.5px] leading-4 text-aviso">
@@ -298,7 +319,7 @@ export function AgendarMensagem({
 
       <button
         type="button"
-        disabled={Boolean(recusa)}
+        disabled={Boolean(recusa) || faltaNoModelo}
         onClick={marcar}
         className="botao-primario botao-md w-full"
       >

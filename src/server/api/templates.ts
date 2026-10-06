@@ -1,6 +1,6 @@
 import 'server-only'
 import { hojeNaConta } from '@/core/horario'
-import { linkComLacuna, podeEnviar, recadoDoLinkComLacuna, variaveisDe, type Categoria, type StatusDoTemplate } from '@/core/templates'
+import { linkComLacuna, podeEnviar, preencherLacunas as preencher, recadoDoLinkComLacuna, variaveisDe, type Categoria, type StatusDoTemplate } from '@/core/templates'
 import type { AutorDaSaida } from '@/core/autor-da-mensagem'
 import { adaptadorDoCanal } from '../adaptador-do-canal'
 import { db } from '../db'
@@ -128,10 +128,6 @@ function confereValores(esperado: number, recebido: string[] | undefined, onde: 
     'valores_incompletos',
     `O ${onde === 'corpo' ? 'corpo' : 'cabeçalho'} do modelo tem ${esperado} ${esperado === 1 ? 'variável' : 'variáveis'} e chegaram ${quantos} em valores.${onde}.`,
   )
-}
-
-function preencher(texto: string, valores: string[]): string {
-  return valores.reduce((saida, valor, i) => saida.replaceAll(`{{${i + 1}}}`, valor), texto)
 }
 
 /**

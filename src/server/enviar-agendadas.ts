@@ -17,7 +17,14 @@ import {
   registrarSaida,
 } from './repos/conversas'
 import { lerTemplate } from './repos/templates'
-import { linkComLacuna, podeEnviar, recadoDoLinkComLacuna, variaveisDe as variaveisDoCorpo } from '@/core/templates'
+import {
+  conferirValores,
+  lacunasDoModelo,
+  linkComLacuna,
+  podeEnviar,
+  preencherLacunas,
+  recadoDoLinkComLacuna,
+} from '@/core/templates'
 
 /**
  * A passada que manda o que venceu.
@@ -172,18 +179,27 @@ async function enviarPeloModelo(
   const lacuna = linkComLacuna(template.componentes)
   if (lacuna) throw new Error(recadoDoLinkComLacuna(lacuna))
 
+  /*
+   * Os valores que quem agendou digitou, conferidos contra o modelo de agora.
+   * Agendada antiga (sem valores) ou modelo que mudou de lacunas desde então:
+   * vale o de antes, o nome em todas, porque falhar em silêncio seria pior.
+   */
   const contato = await acharContato(agendada.contatoId)
-  const quantas = variaveisDoCorpo(template.componentes.corpo).length
   const nome = contato?.nome || 'tudo bem'
+  const guardados = agendada.templateValores ? conferirValores(template.componentes, agendada.templateValores) : null
+  const { cabecalho: lacunasDoCabecalho, corpo: quantas } = lacunasDoModelo(template.componentes)
+  const valores = guardados?.ok
+    ? guardados.valores
+    : {
+        cabecalho: Array.from({ length: lacunasDoCabecalho }, () => nome),
+        corpo: Array.from({ length: quantas }, () => nome),
+      }
 
   /*
    * O histórico recebe o corpo com os buracos preenchidos, e não "{{1}}": é o
    * que o cliente recebeu, e é o que o colega precisa ler na bolha.
    */
-  let textoGravado = template.componentes.corpo
-  for (let i = 1; i <= quantas; i += 1) {
-    textoGravado = textoGravado.replaceAll(`{{${i}}}`, nome)
-  }
+  const textoGravado = preencherLacunas(template.componentes.corpo, valores.corpo)
 
   const registro = await registrarSaida({
     contatoId: agendada.contatoId,
@@ -195,14 +211,11 @@ async function enviarPeloModelo(
   await canal.enviarTemplate(contexto.waId, {
     nome: template.nome,
     idioma: template.idioma,
-    ...(quantas > 0
+    ...(quantas > 0 || lacunasDoCabecalho > 0
       ? {
-          // Vazio a Meta recusa com 132000, e "tudo bem" é o que sobra quando o
-          // contato não tem nome gravado.
           valores: {
-            corpo:
-              agendada.templateValores?.corpo ??
-              Array.from({ length: quantas }, () => nome),
+            ...(lacunasDoCabecalho > 0 ? { cabecalho: valores.cabecalho } : {}),
+            ...(quantas > 0 ? { corpo: valores.corpo } : {}),
           },
         }
       : {}),
