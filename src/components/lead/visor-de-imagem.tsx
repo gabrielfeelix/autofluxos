@@ -81,7 +81,7 @@ export function ImagemDaConversa({
           alt={nome}
           className={
             solta
-              ? 'block max-h-80 w-auto max-w-[min(300px,100%)] rounded-[16px] object-cover'
+              ? 'block max-h-80 w-auto max-w-[min(300px,70vw)] rounded-[16px] object-cover'
               : `max-h-56 w-full rounded-lg border border-line ${produto ? 'aspect-square bg-white object-contain p-2' : 'object-cover'}`
           }
         />

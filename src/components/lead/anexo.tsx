@@ -50,7 +50,7 @@ export function AnexoNaConversa({ anexo, solta = false }: { anexo: AnexoDaMensag
         controls
         className={
           solta
-            ? 'block max-h-80 w-auto max-w-[min(300px,100%)] rounded-[16px] bg-black'
+            ? 'block max-h-80 w-auto max-w-[min(300px,70vw)] rounded-[16px] bg-black'
             : 'mb-1.5 max-h-56 w-full rounded-lg border border-line bg-black'
         }
       />
