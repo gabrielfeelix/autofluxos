@@ -26,12 +26,18 @@ type LinhaDaSequencia = {
   coluna_id: string | null
   ativa: boolean
   sequencia_passos:
-    | { id: string; atraso_minutos: number; flow_id: string; template_id: string | null }[]
+    | {
+        id: string
+        atraso_minutos: number
+        flow_id: string
+        template_id: string | null
+        template_parametros: Record<string, string> | null
+      }[]
     | null
 }
 
 const COLUNAS =
-  'id, nome, evento, etiqueta_id, etiqueta_de_saida_id, coluna_id, ativa, sequencia_passos (id, atraso_minutos, flow_id, template_id)'
+  'id, nome, evento, etiqueta_id, etiqueta_de_saida_id, coluna_id, ativa, sequencia_passos (id, atraso_minutos, flow_id, template_id, template_parametros)'
 
 function paraSequencia(linha: LinhaDaSequencia): Sequencia | null {
   // Evento que esta versão do código não conhece: a sequência some da lista em
@@ -53,6 +59,7 @@ function paraSequencia(linha: LinhaDaSequencia): Sequencia | null {
         atrasoMinutos: passo.atraso_minutos,
         fluxoId: passo.flow_id,
         templateId: passo.template_id,
+        templateParametros: passo.template_parametros ?? {},
       })),
     ),
   }
@@ -253,7 +260,12 @@ export async function apagarSequencia(clienteId: string, sequenciaId: string): P
 export async function criarPasso(
   clienteId: string,
   sequenciaId: string,
-  passo: { atrasoMinutos: number; fluxoId: string; templateId?: string | null },
+  passo: {
+    atrasoMinutos: number
+    fluxoId: string
+    templateId?: string | null
+    templateParametros?: Record<string, string>
+  },
 ): Promise<{ ok: true } | { ok: false; motivo: string }> {
   const sequencia = await acharSequencia(clienteId, sequenciaId)
   if (!sequencia) return { ok: false, motivo: 'esta sequência não existe mais' }
@@ -276,6 +288,7 @@ export async function criarPasso(
       atraso_minutos: passo.atrasoMinutos,
       flow_id: passo.fluxoId,
       template_id: passo.templateId ?? null,
+      template_parametros: passo.templateId ? (passo.templateParametros ?? {}) : {},
     })
 
   if (error?.code === '23505') return { ok: false, motivo: 'já existe um passo neste mesmo tempo' }
@@ -313,7 +326,12 @@ export async function criarPasso(
 export async function editarPasso(
   clienteId: string,
   passoId: string,
-  mudanca: { atrasoMinutos?: number; fluxoId?: string | null; templateId?: string | null },
+  mudanca: {
+    atrasoMinutos?: number
+    fluxoId?: string | null
+    templateId?: string | null
+    templateParametros?: Record<string, string>
+  },
 ): Promise<{ ok: true; remarcadas: number } | { ok: false; motivo: string }> {
   const { data: linha, error: erroDoPasso } = await db()
     .from('sequencia_passos')
@@ -335,6 +353,7 @@ export async function editarPasso(
   const fluxoId = mudanca.fluxoId ?? atual.fluxoId
   // `undefined` mantém o modelo; `null` tira.
   const templateId = mudanca.templateId === undefined ? atual.templateId : mudanca.templateId
+  const templateParametros = templateId ? (mudanca.templateParametros ?? atual.templateParametros ?? {}) : {}
 
   const outros = sequencia.passos.filter((passo) => passo.id !== passoId).map((passo) => passo.atrasoMinutos)
   const regua = conferirAtraso(atraso, outros, templateId)
@@ -357,7 +376,12 @@ export async function editarPasso(
 
   const { error } = await db()
     .from('sequencia_passos')
-    .update({ atraso_minutos: atraso, flow_id: fluxoId, template_id: templateId })
+    .update({
+      atraso_minutos: atraso,
+      flow_id: fluxoId,
+      template_id: templateId,
+      template_parametros: templateParametros,
+    })
     .eq('id', passoId)
     .eq('sequencia_id', sequencia.id)
 

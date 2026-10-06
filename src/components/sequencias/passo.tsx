@@ -5,10 +5,19 @@ import { Dropdown, type OpcaoDropdown } from '@/components/design/dropdown'
 import { ModalFormulario, RotuloCampo } from '@/components/design/modal-formulario'
 import { AvisoFlutuante } from '@/components/design/aviso-flutuante'
 import { acaoEditarPassoDaSequencia } from '@/server/acoes'
+import { trechoDaLacuna } from '@/components/lead/lacunas-do-modelo'
+import { LIMITE_DO_VALOR, variaveisDe } from '@/core/templates'
 
-export type ModeloNaLista = { id: string; nome: string; idioma: string }
+export type ModeloNaLista = { id: string; nome: string; idioma: string; corpo: string }
 
-type Inicial = { atrasoMinutos: number; fluxoId: string; templateId?: string | null }
+type Inicial = {
+  atrasoMinutos: number
+  fluxoId: string
+  templateId?: string | null
+  templateParametros?: Record<string, string>
+}
+
+const NOME = '{nome}'
 
 /**
  * Os campos de um passo, os mesmos na criação e na edição.
@@ -25,6 +34,17 @@ export function CamposDoPasso({
   modelos: ModeloNaLista[]
   inicial?: Inicial
 }) {
+  const [templateId, setTemplateId] = useState(inicial?.templateId ?? '')
+  const [parametros, setParametros] = useState<Record<string, string>>(inicial?.templateParametros ?? {})
+  const modelo = modelos.find((m) => m.id === templateId) ?? null
+  const lacunas = modelo ? variaveisDe(modelo.corpo) : []
+  /*
+   * Sem nada guardado, o `{{1}}` é o nome do contato e o resto pede texto:
+   * o uso de quase todo modelo é "Olá {{1}}".
+   */
+  const valorDe = (n: number) => parametros[String(n)] ?? (n === 1 ? NOME : '')
+  const enviados = Object.fromEntries(lacunas.map((n) => [String(n), valorDe(n)]))
+
   return (
     <>
       <div className="grid grid-cols-2 gap-3">
@@ -85,7 +105,11 @@ export function CamposDoPasso({
           <Dropdown
             nome="templateId"
             rotuloAcessivel="Modelo aprovado deste passo"
-            valorInicial={inicial?.templateId ?? ''}
+            valor={templateId}
+            aoMudar={(id) => {
+              setTemplateId(id)
+              setParametros({})
+            }}
             opcoes={[
               { valor: '', rotulo: 'Nenhum, o passo fica até 24h' },
               ...modelos.map((item) => ({ valor: item.id, rotulo: item.nome, detalhe: item.idioma })),
@@ -93,6 +117,64 @@ export function CamposDoPasso({
           />
         )}
       </div>
+      {/*
+        Um campo por lacuna do modelo. Antes todas viravam o nome do contato,
+        e "seu pedido {{2}} saiu" chegava como "seu pedido Ana saiu". Cada
+        lacuna escolhe: o nome de cada contato, ou um texto igual para todos.
+      */}
+      <input type="hidden" name="templateParametros" value={JSON.stringify(enviados)} />
+      {modelo && lacunas.length > 0 && (
+        <div className="flex flex-col gap-2.5">
+          <RotuloCampo>{lacunas.length === 1 ? 'Campo do modelo' : 'Campos do modelo'}</RotuloCampo>
+          {lacunas.map((n) => {
+            const valor = valorDe(n)
+            const ehNome = valor === NOME
+            const mudar = (v: string) => setParametros((atual) => ({ ...atual, [String(n)]: v }))
+            return (
+              <div key={n} className="flex flex-col gap-1">
+                <span className="truncate text-[12px] text-dim" title={trechoDaLacuna(modelo.corpo, n)}>
+                  {trechoDaLacuna(modelo.corpo, n)}
+                </span>
+                <div className="flex gap-1.5">
+                  <div role="radiogroup" aria-label={`Lacuna ${n}`} className="flex shrink-0 rounded-[10px] border border-line bg-surface p-0.5">
+                    {[
+                      { rotulo: 'Nome do contato', ativo: ehNome, aoClicar: () => mudar(NOME) },
+                      { rotulo: 'Texto', ativo: !ehNome, aoClicar: () => ehNome && mudar('') },
+                    ].map((opcao) => (
+                      <button
+                        key={opcao.rotulo}
+                        type="button"
+                        role="radio"
+                        aria-checked={opcao.ativo}
+                        onClick={opcao.aoClicar}
+                        className={`rounded-[8px] px-2.5 py-1 text-[12px] font-semibold transition ${
+                          opcao.ativo ? 'bg-primary-weak text-primary' : 'text-muted hover:text-soft'
+                        }`}
+                      >
+                        {opcao.rotulo}
+                      </button>
+                    ))}
+                  </div>
+                  {ehNome ? (
+                    <span className="flex min-w-0 flex-1 items-center truncate px-1 text-[12.5px] text-dim">
+                      O nome de cada contato
+                    </span>
+                  ) : (
+                    <input
+                      value={valor}
+                      required
+                      maxLength={LIMITE_DO_VALOR.corpo}
+                      onChange={(e) => mudar(e.target.value)}
+                      aria-label={`Texto da lacuna ${n}`}
+                      className="app-field min-w-0 flex-1 px-2.5 py-1.5 text-[13px]"
+                    />
+                  )}
+                </div>
+              </div>
+            )
+          })}
+        </div>
+      )}
     </>
   )
 }

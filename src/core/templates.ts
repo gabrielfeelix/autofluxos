@@ -217,6 +217,22 @@ export function preencherLacunas(texto: string, valores: string[]): string {
 }
 
 /**
+ * Os parâmetros de quem envia para muitos (sequência, transmissão):
+ * `{"1": "{nome}", "2": "texto fixo"}`, e `{nome}` vira o nome de cada
+ * contato no envio, ver `valoresPara`. Lixo vira `{}`, que é o nome em todas.
+ */
+export function limparParametros(bruto: unknown): Record<string, string> {
+  if (!bruto || typeof bruto !== 'object' || Array.isArray(bruto)) return {}
+  const limpos: Record<string, string> = {}
+  for (const [chave, valor] of Object.entries(bruto)) {
+    if (!/^\d{1,2}$/.test(chave) || typeof valor !== 'string') continue
+    const normal = normalizarValor(valor).slice(0, LIMITE_DO_VALOR.corpo)
+    if (normal) limpos[chave] = normal
+  }
+  return limpos
+}
+
+/**
  * Confere o que veio da tela contra o modelo **de agora**: entre abrir a
  * caixa e enviar, o modelo pode ter sido trocado. Devolve os valores já
  * normalizados, ou o recado.

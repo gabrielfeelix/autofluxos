@@ -4,7 +4,8 @@ import { chaveDoPasso, dadosDoPassoSchema } from '@/core/tarefas'
 import { abrirFluxoParaContato, type FabricaDeCanal } from './receber-mensagem'
 import { agendar } from './repos/tarefas'
 import { adaptadorDoCanal } from './adaptador-do-canal'
-import { linkComLacuna, podeEnviar, variaveisDe } from '@/core/templates'
+import { linkComLacuna, podeEnviar } from '@/core/templates'
+import { valoresPara } from './disparar-transmissao'
 import { lerTemplate } from './repos/templates'
 import { acharContato, contextoDeResposta } from './repos/conversas'
 import {
@@ -80,7 +81,7 @@ export async function rodarPassoDeSequencia(
    * esta mudança existe para atender.
    */
   if (passo.templateId) {
-    const saiu = await mandarModeloDoPasso(inscricao.clienteId, contatoId, passo.templateId)
+    const saiu = await mandarModeloDoPasso(inscricao.clienteId, contatoId, passo.templateId, passo.templateParametros ?? {})
 
     if (saiu === 'sem_contexto' || saiu === 'sem_modelo') {
       // Número fora do ar, ou modelo apagado/reprovado. Nada disso passa
@@ -183,14 +184,15 @@ export async function rodarPassoDeSequencia(
  * que é o ponto inteiro dele. Conferir aqui recriaria o bloqueio que esta
  * mudança remove.
  *
- * As variáveis do modelo são preenchidas com o nome do contato, e só. Um passo
- * de sequência não tem de onde tirar mais nada, quem precisa de valor por
- * pessoa usa transmissão, onde a tela pergunta.
+ * As variáveis seguem o que o passo guardou (0131), no contrato da
+ * transmissão: `{nome}` vira o nome do contato, o resto é texto fixo. Passo
+ * sem parâmetros é o comportamento antigo, o nome em todas.
  */
 async function mandarModeloDoPasso(
   clienteId: string,
   contatoId: string,
   templateId: string,
+  parametros: Record<string, string>,
 ): Promise<'ok' | 'sem_contexto' | 'sem_modelo' | 'erro'> {
   const template = await lerTemplate(templateId)
   // Modelo apagado, de outro cliente, ou que a Meta pausou depois de aprovado.
@@ -210,19 +212,10 @@ async function mandarModeloDoPasso(
     const canal = await adaptadorDoCanal(contexto.canal)
     if (!canal.enviarTemplate) return 'sem_modelo'
 
-    const quantas = variaveisDe(template.componentes.corpo).length
     await canal.enviarTemplate(contexto.waId, {
       nome: template.nome,
       idioma: template.idioma,
-      ...(quantas > 0
-        ? {
-            valores: {
-              // Vazio a Meta recusa com 132000; "tudo bem" é o que sobra quando
-              // o contato não tem nome gravado.
-              corpo: Array.from({ length: quantas }, () => contato?.nome || 'tudo bem'),
-            },
-          }
-        : {}),
+      valores: valoresPara(parametros, { nome: contato?.nome ?? null }, template.componentes.corpo),
     })
 
     return 'ok'

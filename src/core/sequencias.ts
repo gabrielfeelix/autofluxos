@@ -118,6 +118,8 @@ export type PassoDaSequencia = {
    * sem entregar nada.
    */
   templateId?: string | null
+  /** O que vai em cada lacuna do modelo, ver `limparParametros` (0131). */
+  templateParametros?: Record<string, string>
 }
 
 export type Sequencia = {

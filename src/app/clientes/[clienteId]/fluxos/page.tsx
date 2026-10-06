@@ -314,7 +314,7 @@ async function ConteudoDaAba({
     rotulo: item.nome,
     ...(item.versaoPublicadaId ? {} : { detalhe: 'rascunho' }),
   }))
-  const modelosDoPasso = templatesAprovados.map(({ id, nome, idioma }) => ({ id, nome, idioma }))
+  const modelosDoPasso = templatesAprovados.map(({ id, nome, idioma, componentes }) => ({ id, nome, idioma, corpo: componentes.corpo }))
 
   /*
    * As duas conferências, como no editor (T7.2).

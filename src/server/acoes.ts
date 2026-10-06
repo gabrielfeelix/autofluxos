@@ -135,6 +135,7 @@ import {
 } from '@/core/sequencias'
 import { PAPEIS_DO_NUMERO, type PapelDoNumero } from '@/core/papeis-do-numero'
 import { conferirEtapa } from '@/core/quadros'
+import { limparParametros } from '@/core/templates'
 import {
   acharQuadro,
   apagarEtapa,
@@ -1491,6 +1492,7 @@ export async function acaoCriarPassoDaSequencia(
     atrasoMinutos: total,
     fluxoId: String(formData.get('fluxoId') ?? ''),
     templateId,
+    templateParametros: parametrosDoFormulario(formData),
   })
   if (!r.ok) return { erro: r.motivo }
 
@@ -1527,11 +1529,21 @@ export async function acaoEditarPassoDaSequencia(
     atrasoMinutos: total,
     fluxoId: fluxoId || undefined,
     templateId,
+    templateParametros: parametrosDoFormulario(formData),
   })
   if (!r.ok) return { erro: r.motivo }
 
   revalidatePath(`/clientes/${clienteId}/fluxos`)
   return { ok: true, remarcadas: r.remarcadas }
+}
+
+/** O campo escondido com o valor de cada lacuna do modelo do passo. */
+function parametrosDoFormulario(formData: FormData): Record<string, string> {
+  try {
+    return limparParametros(JSON.parse(String(formData.get('templateParametros') ?? '{}')))
+  } catch {
+    return {}
+  }
 }
 
 export async function acaoApagarPassoDaSequencia(
