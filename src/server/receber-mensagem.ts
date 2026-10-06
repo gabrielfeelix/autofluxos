@@ -1081,7 +1081,7 @@ async function avancarConversa(
       !conversaNova &&
       entrada.tipo === 'midia' &&
       entrada.formato === 'image' &&
-      paradaNaConversaComIa(versao.grafo, salva.sessao)
+      (paradaNaConversaComIa(versao.grafo, salva.sessao) || paradaNumaPerguntaAberta(versao.grafo, salva.sessao))
     ) {
       const lida = await lerImagemRecebida(canalSalvo.clienteId, contato.id, mensagemId)
       if (lida) {
@@ -1697,6 +1697,17 @@ function paradaNaConversaComIa(grafo: Fluxo, sessao: Sessao): boolean {
   if (sessao.status !== 'ativa' || sessao.noAtual === null) return false
   const no = grafo.nodes.find((n) => n.id === sessao.noAtual)
   return no?.type === 'ia' && Boolean(no.data.conversar)
+}
+
+/**
+ * Parada numa pergunta de resposta escrita, sem opções. A foto ali é lida
+ * também (06/out/2026): "Qual é o produto?" respondido com a foto da caixa do
+ * fone Nebulla ia para a equipe, quando o nome estava escrito na caixa.
+ */
+function paradaNumaPerguntaAberta(grafo: Fluxo, sessao: Sessao): boolean {
+  if (sessao.status !== 'ativa' || sessao.noAtual === null) return false
+  const no = grafo.nodes.find((n) => n.id === sessao.noAtual)
+  return no?.type === 'pergunta' && (no.data.opcoes?.length ?? 0) === 0
 }
 
 /** O que uma mensagem recebida diz, para o histórico que a IA lê. */

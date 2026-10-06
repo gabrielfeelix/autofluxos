@@ -146,6 +146,9 @@ const MENSAGEM_NAO_ENTENDI = 'Para seguir com o seu atendimento, escolha uma das
 const MENSAGEM_SO_TEXTO =
   'Ainda não sei ler figurinha. 😅 Pode me responder por aqui mesmo?'
 
+/** Foto numa pergunta de resposta escrita, sem leitura possível. */
+export const MENSAGEM_IMAGEM_NA_PERGUNTA = 'Não consegui ver a imagem por aqui. 😕 Pode me escrever a resposta?'
+
 /** A imagem chegou na conversa com a IA e não deu para ler o que tem nela. */
 export const MENSAGEM_IMAGEM_ILEGIVEL =
   'Não consegui ler essa imagem. 😕 Pode me escrever o nome do produto ou o que você procura?'
@@ -404,6 +407,25 @@ export function executar(
     const legenda = (entrada.legenda ?? '').trim()
     if (legenda !== '' && entrada.formato !== 'sticker') {
       return executar(fluxo, s, { tipo: 'texto', texto: legenda }, contexto)
+    }
+
+    /*
+     * Foto numa pergunta de resposta escrita (06/out/2026, PCYES): "Qual é o
+     * produto?" respondido com a foto da caixa do fone Nebulla ia para a
+     * equipe com "o bot só lê texto", e a pessoa escreveu o nome logo depois,
+     * já na fila. O servidor lê a foto antes do motor: a leitura vira a
+     * resposta. Sem leitura, o bot pede para escrever e pergunta de novo;
+     * transferir fica para quem insistir, pela régua de sempre.
+     */
+    if (parada?.type === 'pergunta' && entrada.formato === 'image') {
+      const lida = (entrada.lida ?? '').trim()
+      if (lida !== '') return executar(fluxo, s, { tipo: 'texto', texto: lida }, contexto)
+      s.tentativas += 1
+      if (s.tentativas < MAX_TENTATIVAS) {
+        acoes.push({ tipo: 'enviar_texto', texto: MENSAGEM_IMAGEM_NA_PERGUNTA })
+        acoes.push(...perguntar(parada, s))
+        return { acoes, sessao: s }
+      }
     }
 
     return transferir(s, acoes, `a pessoa mandou ${entrada.formato} e o bot só lê texto`, contexto)

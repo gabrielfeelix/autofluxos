@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { fluxoSchema, type Fluxo } from '../flow/schema'
-import { executar, MAX_TENTATIVAS, MENSAGEM_IMAGEM_ILEGIVEL, pediuReinicio, pediuSaidaDaIa, soCumprimento } from './executar'
+import { executar, MAX_TENTATIVAS, MENSAGEM_IMAGEM_ILEGIVEL, pediuReinicio, pediuSaidaDaIa, soCumprimento, MENSAGEM_IMAGEM_NA_PERGUNTA } from './executar'
 import { sessaoNova, type Acao, type Entrada, type Sessao } from './types'
 
 const p = { x: 0, y: 0 }
@@ -1521,13 +1521,35 @@ describe('a foto como resposta', () => {
       ],
     })
 
-  it('sem saída ligada, foto continua indo para uma pessoa, como sempre foi', () => {
+  it('sem saída ligada e sem leitura, foto pede para escrever e pergunta de novo', () => {
+    // PCYES, 06/out/2026: a foto da caixa do fone ia para a equipe.
     const fluxo = fluxoCom({ salvarEm: 'resposta' }, false)
     let r = executar(fluxo, sessaoNova(), { tipo: 'inicio' })
     r = executar(fluxo, r.sessao, { tipo: 'midia', formato: 'image', midiaId: 'wamid.1' })
 
+    expect(r.sessao.status).not.toBe('humano')
+    expect(r.acoes.some((a) => a.tipo === 'transferir_humano')).toBe(false)
+    expect(r.acoes.some((a) => a.tipo === 'enviar_texto' && a.texto === MENSAGEM_IMAGEM_NA_PERGUNTA)).toBe(true)
+
+    // Quem insiste continua indo para uma pessoa, pela régua de sempre.
+    for (let i = 2; i <= MAX_TENTATIVAS; i++) {
+      r = executar(fluxo, r.sessao, { tipo: 'midia', formato: 'image', midiaId: `wamid.${i}` })
+    }
     expect(r.sessao.status).toBe('humano')
-    expect(r.acoes.some((a) => a.tipo === 'transferir_humano')).toBe(true)
+  })
+
+  it('foto lida pelo servidor vira a resposta escrita', () => {
+    const fluxo = fluxoCom({ salvarEm: 'resposta' }, false)
+    let r = executar(fluxo, sessaoNova(), { tipo: 'inicio' })
+    r = executar(fluxo, r.sessao, {
+      tipo: 'midia',
+      formato: 'image',
+      midiaId: 'wamid.1',
+      lida: 'Caixa do fone in-ear PCYES Nebulla',
+    })
+
+    expect(r.sessao.status).not.toBe('humano')
+    expect(r.sessao.vars.resposta).toBe('Caixa do fone in-ear PCYES Nebulla')
   })
 
   it('com a saída ligada, a conversa segue e guarda a referência do arquivo', () => {
