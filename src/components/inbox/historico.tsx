@@ -1,5 +1,6 @@
 'use client'
 
+import { useConversaAbertaOuNada } from './conversa-local'
 import { Fragment, useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { EnvioNaoConfirmado } from './reenviar'
@@ -168,6 +169,12 @@ export function Historico({
    * (Saraiva, 30/set/2026). Com isto a busca começa antes dela.
    */
   const pendenteDesde = useRef<string | null>(null)
+  /** O store da conversa aberta, lido dentro da busca sem refazê-la a cada mudança. */
+  const aberta = useConversaAbertaOuNada()
+  const abertaRef = useRef(aberta)
+  useEffect(() => {
+    abertaRef.current = aberta
+  })
   useEffect(() => {
     ultimoTs.current = lista.at(-1)?.ts ?? null
     const limite = Date.now() - JANELA_DE_CONFIRMACAO_MS
@@ -234,8 +241,14 @@ export function Historico({
         const corpo = (await resposta.json()) as {
           novas?: MensagemDoLead[]
           situacoes?: Record<string, MensagemDoLead['situacao']>
+          etiquetas?: string[]
         }
         if (corpo.situacoes) setSituacoes(corpo.situacoes)
+        // Etiqueta que o bot pôs (ou a equipe, noutra aba) aparece no painel já.
+        const aberta = abertaRef.current
+        if (corpo.etiquetas && aberta && !mesmasEtiquetas(aberta.valor.etiquetas, corpo.etiquetas)) {
+          aberta.mudar({ etiquetas: corpo.etiquetas })
+        }
         const novas = corpo.novas ?? []
         if (novas.length === 0) return
 
@@ -855,4 +868,8 @@ function RodapeDaBolha({
       </span>
     </>
   )
+}
+
+function mesmasEtiquetas(a: string[], b: string[]): boolean {
+  return a.length === b.length && [...a].sort().join() === [...b].sort().join()
 }

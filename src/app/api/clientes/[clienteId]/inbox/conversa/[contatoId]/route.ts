@@ -119,7 +119,17 @@ export async function GET(
   )
 
   return Response.json(
-    { novas, cortada: conversa.cortada, situacoes },
+    {
+      novas,
+      cortada: conversa.cortada,
+      situacoes,
+      /*
+       * As etiquetas de agora. O bot põe etiqueta no meio da conversa ("Empresa
+       * (B2B)" ao encaminhar), e sem isto o painel só a mostrava depois de
+       * reabrir a conversa: a página não se redesenha mais a cada mensagem.
+       */
+      etiquetas: lead.etiquetasManuais.map((etiqueta) => etiqueta.id),
+    },
     {
       headers: {
         // Conversa em cache é conversa parada, o mesmo defeito que a rota do
