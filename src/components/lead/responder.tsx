@@ -132,6 +132,19 @@ export function CaixaDeResposta({
   const [enviando, comecar] = useTransition()
   /** `null` fora do provedor, porque a tela da Ficha não monta citação. */
   const citacao = useCitacao()
+  /*
+   * Escolheu responder a uma mensagem: o cursor vai para o campo, no fim do
+   * que já está escrito, como no WhatsApp. Antes era tocar em Responder e
+   * depois clicar no campo para começar a digitar.
+   */
+  const citandoAgora = citacao?.citando ?? null
+  useEffect(() => {
+    const textarea = campo.current
+    if (!citandoAgora || !textarea) return
+    textarea.focus()
+    const fim = textarea.value.length
+    textarea.setSelectionRange(fim, fim)
+  }, [citandoAgora])
   const [rapidasAbertas, setRapidasAbertas] = useState(false)
   // O que o leitor de tela ouve quando uma resposta rápida entra no campo.
   const [anuncio, setAnuncio] = useState('')
