@@ -93,14 +93,14 @@ export function Negociacoes({
       onClick={() => setCriando(true)}
       className="ml-auto text-[12px] font-semibold text-primary hover:underline"
     >
-      + Nova negociação
+      + Novo negócio
     </button>
   )
   const modalDeCriar = (
     <Modal
       aberto={criando}
       aoFechar={() => setCriando(false)}
-      titulo="Nova negociação"
+      titulo="Novo negócio"
       descricao="Um negócio a mais com esta pessoa: pode ser no mesmo funil de outro que já está aberto."
     >
       {criando && (
@@ -154,15 +154,15 @@ export function Negociacoes({
       <section className="app-card overflow-hidden">
         <h2 className="flex items-center gap-2 border-b border-line px-[18px] py-3.5 text-[13px] font-bold">
         <IconeDaSecao>{iconeFunil}</IconeDaSecao>
-        Negociações
+        Negócios
         {botaoDeCriar}
       </h2>
         <VazioDoCartao ilustracao={<IlustracaoQuadros />}>
-          Nenhuma negociação com esta pessoa ainda. Abra uma para acompanhar o que ela está
+          Nenhum negócio com esta pessoa ainda. Abra um para acompanhar o que ela está
           comprando, em que etapa está e quanto vale.
           {podeCriar && (
             <button type="button" onClick={() => setCriando(true)} className="botao-secundario botao-sm mt-1">
-              Nova negociação
+              Novo negócio
             </button>
           )}
         </VazioDoCartao>
@@ -175,7 +175,7 @@ export function Negociacoes({
     <section className="app-card overflow-hidden">
       <h2 className="flex items-center gap-2 border-b border-line px-[18px] py-3.5 text-[13px] font-bold">
         <IconeDaSecao>{iconeFunil}</IconeDaSecao>
-        Negociações
+        Negócios
         {botaoDeCriar}
       </h2>
 
@@ -353,7 +353,7 @@ function EdicaoDaNegociacao({ clienteId, negociacao }: { clienteId: string; nego
         value={titulo}
         onChange={(e) => setTitulo(e.target.value)}
         maxLength={LIMITE_DO_TITULO}
-        aria-label={`Título da negociação em ${negociacao.quadro}`}
+        aria-label={`Título do negócio em ${negociacao.quadro}`}
         placeholder="Exemplo: Plano anual"
         className="app-field min-w-0 flex-[2] px-2.5 py-1.5 text-[12.5px]"
       />
@@ -361,7 +361,7 @@ function EdicaoDaNegociacao({ clienteId, negociacao }: { clienteId: string; nego
         <CampoDeDinheiro
           valor={valor}
           aoMudar={setValor}
-          aria-label={`Valor da negociação em ${negociacao.quadro}`}
+          aria-label={`Valor do negócio em ${negociacao.quadro}`}
           placeholder="0,00"
           className="app-field px-2.5 py-1.5 text-[12.5px]"
         />
@@ -467,7 +467,7 @@ function NovaNegociacao({
           Cancelar
         </button>
         <button type="submit" disabled={salvando} className="botao-primario botao-md">
-          {salvando ? 'Criando…' : 'Criar negociação'}
+          {salvando ? 'Criando…' : 'Criar negócio'}
         </button>
       </span>
     </form>
