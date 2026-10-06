@@ -1,5 +1,5 @@
 import 'server-only'
-import { legendaDoManual, manualEmPdf, nomeDoArquivoDoManual } from '@/core/manuais'
+import { cardDosDownloads, legendaDoManual, manualEmPdf, nomeDoArquivoDoManual } from '@/core/manuais'
 import { envioDoCardapio } from '@/core/materiais'
 import { ATENDIMENTO_SEMPRE_ABERTO, avisoDeForaDoHorario, escolhaNoMenuDoInicio, executar } from '@/core/engine/executar'
 import type { ContextoDoAtendimento } from '@/core/engine/executar'
@@ -1576,13 +1576,15 @@ async function executarNaLoja(
     const r = await loja.downloads(valores.manualId ?? '')
     if (!r.ok) return r
     if (!r.valor) return { ok: true, json: { enviado: false, motivo: 'produto não encontrado na página de downloads' } }
-    const { nome, pagina, arquivos } = r.valor
+    const { nome, pagina, foto, arquivos } = r.valor
     const pdf = manualEmPdf(arquivos)
     const temDriver = arquivos.some((a) => a.secao === 'driver')
+    // Sem PDF para anexar, o card com a foto e o botão da página leva tudo.
+    const card = pdf ? null : cardDosDownloads(nome, arquivos)
     return {
       ok: true,
       json: {
-        enviado: pdf !== null,
+        enviado: pdf !== null || card !== null,
         produto: nome,
         temDriver,
         paginaDeDownloads: pagina,
@@ -1596,7 +1598,17 @@ async function executarNaLoja(
                 legenda: legendaDoManual(nome, pagina, temDriver),
               } satisfies AnexoDaIa,
             }
-          : {}),
+          : card
+            ? {
+                anexo: {
+                  tipo: 'enviar_link',
+                  texto: card.texto,
+                  rotulo: card.rotulo,
+                  url: pagina,
+                  ...(foto ? { imagem: foto } : {}),
+                } satisfies AnexoDaIa,
+              }
+            : {}),
       },
     }
   }
@@ -1708,7 +1720,11 @@ function anexosDe(json: unknown): AnexoDaIa[] {
   const lista = [...(bruto?.anexo ? [bruto.anexo] : []), ...(Array.isArray(bruto?.anexos) ? bruto.anexos : [])]
   return lista.filter(
     (a): a is AnexoDaIa =>
-      typeof a === 'object' && a !== null && a.tipo === 'enviar_midia' && typeof a.url === 'string' && a.url.startsWith('https://'),
+      typeof a === 'object' &&
+      a !== null &&
+      (a.tipo === 'enviar_midia' || a.tipo === 'enviar_link') &&
+      typeof a.url === 'string' &&
+      a.url.startsWith('https://'),
   )
 }
 
@@ -1732,6 +1748,7 @@ function ehEnvio(acao: Acao): boolean {
     acao.tipo === 'enviar_midia' ||
     acao.tipo === 'enviar_opcoes' ||
     acao.tipo === 'enviar_produtos' ||
+    acao.tipo === 'enviar_link' ||
     acao.tipo === 'encaminhar_contato'
   )
 }
@@ -1773,8 +1790,8 @@ function comCards(acoes: Acao[], texto: string, produtos: ProdutoDaLoja[], anexo
   return [...acoes.slice(0, posicao + 1), ...extras, ...acoes.slice(posicao + 1)]
 }
 
-/** O manual em PDF, como ação de mídia que o canal já sabe mandar. */
-type AnexoDaIa = Extract<Acao, { tipo: 'enviar_midia' }>
+/** O manual em PDF, ou o card da página de downloads quando não há PDF. */
+type AnexoDaIa = Extract<Acao, { tipo: 'enviar_midia' | 'enviar_link' }>
 
 async function logar({
   opcoes,

@@ -737,8 +737,8 @@ export const FERRAMENTAS: Ferramenta[] = [
     descricao:
       'Manda na conversa o manual em PDF do produto, com o link da página onde ficam o driver e os outros arquivos. ' +
       'Use depois de `loja_manuais`, quando já souber qual é o produto da pessoa. ' +
-      'Se vier `enviado: true`, responda só uma frase curta, sem link nem nome de arquivo: o PDF e a legenda já levam tudo. ' +
-      'Se vier `enviado: false` e vier `paginaDeDownloads`, diga que esse produto não tem manual em PDF e mande o link da página, onde está o driver. ' +
+      'Se vier `enviado: true`, responda só uma frase curta, sem link nem nome de arquivo: o PDF, ou o card com a foto e o botão da página, já levam tudo. ' +
+      'Se vier `enviado: false` e vier `paginaDeDownloads`, diga que não achou arquivo para baixar e mande o link da página. ' +
       'Não use duas vezes para o mesmo produto: o arquivo já foi.',
     argumentos: [
       {

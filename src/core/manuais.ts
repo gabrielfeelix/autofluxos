@@ -85,9 +85,12 @@ export function lerBuscaDeDownloads(html: string): ItemDeDownload[] {
  * driver é executável, que o WhatsApp não entrega, e vai pela página. Só
  * `https`: o link sai daqui direto para o celular de alguém.
  */
-export function lerPaginaDeDownloads(html: string): { nome: string; arquivos: ArquivoDeDownload[] } {
+export function lerPaginaDeDownloads(html: string): { nome: string; foto: string | null; arquivos: ArquivoDeDownload[] } {
   const titulo = texto(/<title>([\s\S]*?)<\/title>/i.exec(html)?.[1] ?? '')
   const nome = titulo.split(/\s+[|–-]\s+/)[0] ?? titulo
+  // A foto do topo da página, a mesma da loja. Só `https`: vai de cabeçalho
+  // do card no WhatsApp, e a Meta busca o endereço como veio.
+  const foto = /<img\s+src="(https:\/\/[^"\s]+)"[^>]*class="product-image"/.exec(html)?.[1] ?? null
 
   const arquivos: ArquivoDeDownload[] = []
   const secoes = html.split(/<h2 class="download-section-title">/).slice(1)
@@ -109,7 +112,7 @@ export function lerPaginaDeDownloads(html: string): { nome: string; arquivos: Ar
       })
     }
   }
-  return { nome, arquivos }
+  return { nome, foto, arquivos }
 }
 
 /**
@@ -145,4 +148,32 @@ export function legendaDoManual(produto: string, paginaDeDownloads: string, temD
     '',
     temDriver ? `💾 Driver e outros arquivos:\n${paginaDeDownloads}` : `Outros arquivos do produto:\n${paginaDeDownloads}`,
   ].join('\n')
+}
+
+/** Rótulo do botão do card: até 20 caracteres, o limite do `cta_url`. */
+const ROTULOS = { driver: 'Baixar driver', manual: 'Ver manual', ambos: 'Ver downloads' } as const
+
+/**
+ * O card de quando não há manual em PDF para anexar: a foto do produto, o que
+ * existe para baixar e um botão para a página. Em 06/out/2026 o cooler Duley
+ * Black Vulcan da PCYES tinha driver `.exe` e manual `.doc`, nenhum dos dois
+ * anexável, e a IA respondia com o endereço solto no meio da frase.
+ *
+ * Escrito aqui e não pelo modelo, pelo mesmo motivo da legenda do manual: o
+ * link nunca é inventado. `null` quando a página não tem arquivo nenhum.
+ */
+export function cardDosDownloads(produto: string, arquivos: ArquivoDeDownload[]): { texto: string; rotulo: string } | null {
+  const temDriver = arquivos.some((a) => a.secao === 'driver')
+  const temManual = arquivos.some((a) => a.secao === 'manual')
+  if (arquivos.length === 0) return null
+  const linhas = [
+    ...(temDriver ? ['💾 Driver para instalar no computador'] : []),
+    ...(temManual ? ['📄 Manual do produto'] : []),
+    ...(!temDriver && !temManual ? ['📁 Arquivos do produto'] : []),
+  ]
+  const rotulo = temDriver === temManual ? ROTULOS.ambos : temDriver ? ROTULOS.driver : ROTULOS.manual
+  return {
+    texto: [`*${produto}*`, '', ...linhas, '', 'Tudo na página oficial de downloads, é só tocar no botão.'].join('\n'),
+    rotulo,
+  }
 }

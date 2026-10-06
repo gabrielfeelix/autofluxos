@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import {
+  cardDosDownloads,
   legendaDoManual,
   lerBuscaDeDownloads,
   lerPaginaDeDownloads,
@@ -87,5 +88,37 @@ describe('página de um produto', () => {
     const legenda = legendaDoManual('Mouse Basaran', 'https://loja.com.br/drivers/index/view/id/1/', true)
     expect(legenda).toContain('*Manual: Mouse Basaran*')
     expect(legenda).toContain('Driver e outros arquivos:\nhttps://loja.com.br/drivers/index/view/id/1/')
+  })
+})
+
+describe('card da página de downloads', () => {
+  it('lê a foto do topo da página e ignora as da descrição', () => {
+    const html = `
+      <img src="https://cdn.oderco.com.br/produtos/340620/3D45"
+           alt="Cooler"
+           class="product-image" />
+      <div class="pcyes-heroMedia"><img src="https://cdn.oderco.com.br/produtos/340620/4D29" alt="Cooler"></div>`
+    expect(lerPaginaDeDownloads(html).foto).toBe('https://cdn.oderco.com.br/produtos/340620/3D45')
+    expect(lerPaginaDeDownloads('<img src="http://x/y" class="product-image">').foto).toBeNull()
+  })
+
+  it('driver e manual sem PDF: lista os dois e o botão leva aos downloads', () => {
+    // O cooler Duley da PCYES em 06/out/2026: driver .exe, manual .doc.
+    const card = cardDosDownloads('Cooler PCYES DULEY', [
+      { secao: 'driver', nome: 'Driver', url: 'https://x/a.exe', formato: 'exe' },
+      { secao: 'manual', nome: 'Manual', url: 'https://x/b.doc', formato: 'doc' },
+    ])
+    expect(card?.rotulo).toBe('Ver downloads')
+    expect(card?.texto).toContain('*Cooler PCYES DULEY*')
+    expect(card?.texto).toContain('Driver')
+    expect(card?.texto).toContain('Manual')
+    expect(card?.texto).not.toContain('https://')
+  })
+
+  it('só driver: botão de baixar driver; nada: sem card', () => {
+    expect(cardDosDownloads('Mouse', [{ secao: 'driver', nome: 'D', url: 'https://x/a.exe', formato: 'exe' }])?.rotulo).toBe(
+      'Baixar driver',
+    )
+    expect(cardDosDownloads('Mouse', [])).toBeNull()
   })
 })

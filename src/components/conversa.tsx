@@ -357,6 +357,16 @@ export function Conversa({
             })
           }
           break
+        case 'enviar_link':
+          // Sem botão de link no simulador: a foto como anexo e o link no texto.
+          adicionar({
+            chave,
+            de: 'bot',
+            texto: `${acao.texto}\n\n${acao.rotulo}: ${acao.url}`,
+            hora: horaAtual(),
+            ...(acao.imagem ? { anexo: { midia: 'imagem' as const, url: acao.imagem } } : {}),
+          })
+          break
         case 'encaminhar_contato':
           // O simulador não tem botão de link nem cartão: mostra o que o
           // canal sem esses recursos mandaria, o texto com o link e o número.

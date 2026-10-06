@@ -1942,6 +1942,53 @@ async function aplicar(
         break
       }
 
+      case 'enviar_link': {
+        if (acao.atrasoMs && mensagemId) {
+          await canal.aguardarResposta({ mensagemId, contato: contato.waId }, acao.atrasoMs)
+        }
+
+        /*
+         * Foto, texto e botão numa mensagem só onde o canal tem `cta_url`. Nos
+         * outros, a foto sai antes e o link vai escrito no fim do texto: a
+         * pessoa chega na página do mesmo jeito.
+         */
+        const enviarBotao = canal.enviarBotaoDeLink?.bind(canal)
+        if (acao.imagem && !enviarBotao) {
+          const foto = await registrarSaida({
+            contatoId: contato.id,
+            sessaoId,
+            autor: AUTOR_AUTOMACAO,
+            texto: '',
+            payload: { midia: 'imagem', url: acao.imagem },
+          })
+          const envio = await entregar(() => canal.enviarMidia(contato.waId, { midia: 'imagem', url: acao.imagem! }), alvo)
+          if (!envio.ok) return pararNoHumano(envio.motivo)
+          await confirmarEntrega(foto, envio.waMessageId)
+        }
+
+        const texto = enviarBotao ? acao.texto : `${acao.texto}\n\n${acao.url}`
+        const registro = await registrarSaida({
+          contatoId: contato.id,
+          sessaoId,
+          autor: AUTOR_AUTOMACAO,
+          texto,
+          // O Inbox desenha foto, texto e botão na mesma bolha, como o celular viu.
+          ...(enviarBotao
+            ? { payload: { botao: { rotulo: acao.rotulo, url: acao.url }, ...(acao.imagem ? { midia: 'imagem', url: acao.imagem } : {}) } }
+            : {}),
+        })
+        const entrega = await entregar(
+          () =>
+            enviarBotao
+              ? enviarBotao(contato.waId, acao.texto, acao.rotulo, acao.url, acao.imagem)
+              : canal.enviarTexto(contato.waId, texto),
+          alvo,
+        )
+        if (!entrega.ok) return pararNoHumano(entrega.motivo)
+        await confirmarEntrega(registro, entrega.waMessageId)
+        break
+      }
+
       case 'enviar_midia': {
         if (acao.atrasoMs && mensagemId) {
           await canal.aguardarResposta({ mensagemId, contato: contato.waId }, acao.atrasoMs)

@@ -235,6 +235,22 @@ export type Acao =
       texto?: string
     }
   /**
+   * Um botão que abre uma página, com foto opcional em cima: a página de
+   * downloads do produto quando não há manual em PDF (`cardDosDownloads`).
+   *
+   * Nunca sai do motor: quem escreve é o resolvedor, com o link lido da loja.
+   * O canal decide a forma: `cta_url` onde existe, texto com o link nos outros.
+   */
+  | {
+      tipo: 'enviar_link'
+      texto: string
+      rotulo: string
+      url: string
+      /** A foto do cabeçalho (`https://`). */
+      imagem?: string
+      atrasoMs?: number
+    }
+  /**
    * Mandar a pessoa para o WhatsApp de outro time (bloco `encaminhar`).
    *
    * Já resolvido pelo motor: texto e link interpolados, telefone só em

@@ -720,12 +720,13 @@ export function canalCloudApi(config: ConfigCloudApi): Canal {
       return idDoEnvio(resposta)
     },
 
-    async enviarBotaoDeLink(para, texto, rotulo, url) {
+    async enviarBotaoDeLink(para, texto, rotulo, url, imagem) {
       const resposta = await mandar({
         to: para,
         type: 'interactive',
         interactive: {
           type: 'cta_url',
+          ...(imagem ? { header: { type: 'image', image: { link: imagem } } } : {}),
           body: { text: cortarCaracteres(texto, LIMITE_CORPO_CTA) },
           action: { name: 'cta_url', parameters: { display_text: cortarCaracteres(rotulo, LIMITE_ROTULO), url } },
         },

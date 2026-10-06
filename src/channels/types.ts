@@ -164,12 +164,12 @@ export type Canal = {
    */
   enviarProdutoComBotao?(para: string, produto: ProdutoDaLoja): Promise<string | null>
   /**
-   * Texto com um botão que abre um link (o `cta_url` do WhatsApp). Hoje é o
-   * bloco "Encaminhar contato": o botão abre a conversa com outro time já com
-   * a mensagem escrita. Opcional: sem ele, quem chama manda o texto com o
-   * link escrito.
+   * Texto com um botão que abre um link (o `cta_url` do WhatsApp): o bloco
+   * "Encaminhar contato" (o botão abre a conversa com outro time) e a página
+   * de downloads do produto, com a foto em `imagem`. Opcional: sem ele, quem
+   * chama manda o texto com o link escrito.
    */
-  enviarBotaoDeLink?(para: string, texto: string, rotulo: string, url: string): Promise<string | null>
+  enviarBotaoDeLink?(para: string, texto: string, rotulo: string, url: string, imagem?: string): Promise<string | null>
   /**
    * O cartão de contato (`contacts` do WhatsApp): nome e telefone, com os
    * botões "Conversar" e "Adicionar" que o próprio app desenha. `telefone` só

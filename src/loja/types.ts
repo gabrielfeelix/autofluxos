@@ -40,7 +40,7 @@ export type Loja = {
   manuais?(termo: string): Promise<ResultadoDaLoja<{ itens: ItemDeDownload[]; busca: string }>>
   /** Os arquivos de um produto da página de downloads. `null` = id que não existe. */
   downloads?(manualId: string): Promise<
-    ResultadoDaLoja<{ nome: string; pagina: string; arquivos: ArquivoDeDownload[] } | null>
+    ResultadoDaLoja<{ nome: string; pagina: string; foto: string | null; arquivos: ArquivoDeDownload[] } | null>
   >
   /** A página de busca da loja para este termo. Sem rede. */
   linkDaBusca(termo: string): string

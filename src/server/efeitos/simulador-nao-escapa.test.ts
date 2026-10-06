@@ -83,6 +83,9 @@ describe('o catálogo de efeitos do motor', () => {
     // com botão para o wa.me de outro time e, opcional, o cartão de contato).
     // Não escreve em lugar nenhum nem chama rede fora do canal.
     'encaminhar_contato',
+    // Auditado em 06/out/2026: botão para a página de downloads da loja, com
+    // a foto do produto. Só entrega mensagem; o link vem lido da loja (GET).
+    'enviar_link',
     'salvar_campo',
     'pausar_automacao',
     'chamar_ia',
