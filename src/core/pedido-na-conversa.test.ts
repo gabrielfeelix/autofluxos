@@ -17,21 +17,37 @@ describe('status do pedido na conversa', () => {
     })
     expect(texto).toBe(
       [
-        '📦 *Pedido #000001955*',
+        '🚚 *Seu pedido está a caminho*',
+        'Previsão de entrega: *sexta, 02/10*',
         '',
         '✅ Pagamento aprovado',
         '✅ Pedido separado',
-        '🚚 *Com a transportadora*',
+        '🔵 *Em Transferência*',
         '⚪ Entrega no seu endereço',
         '',
-        '📅 Previsão de entrega: *sex, 02/10*',
-        '🚛 Braspress',
-        '📍 Em Transferência, 28/09 às 21:32',
+        'Transportadora: Braspress',
         '',
+        '*Pedido #000001955* · R$ 1.238,90',
         '2x Placa de Vídeo RX 550',
-        '*Total: R$ 1.238,90*',
       ].join('\n'),
     )
+  })
+
+  it('aguardando coleta não diz "a caminho" e corta nome longo na palavra', () => {
+    const texto = mensagemDoPedido({
+      numero: '000002025',
+      situacao: 'Entregue à transportadora',
+      situacaoCodigo: 'delivered_carrier',
+      feitoEm: '',
+      total: 'R$ 1.718,10',
+      itens: [{ nome: 'Cadeira Ergonômica de Massagem Sublime Backrobo Preta', quantidade: 1 }],
+      rastreios: [{ transportadora: 'JAMEF', codigo: 'https://ondeestameupedido.com.br/FR261005PJ5ZR' }],
+      andamento: [{ texto: 'Aguardando coleta / postagem', quando: '05/10 14:19' }],
+    })
+    expect(texto.split('\n')[0]).toBe('📦 *Seu pedido está pronto para envio*')
+    expect(texto).toContain('🔵 *Aguardando a transportadora*')
+    expect(texto).toContain('Código de rastreio: FR261005PJ5ZR')
+    expect(texto).toContain('1x Cadeira Ergonômica de Massagem…')
   })
 
   it('fora do caminho feliz não desenha linha do tempo', () => {
@@ -44,7 +60,7 @@ describe('status do pedido na conversa', () => {
       itens: [],
       rastreios: [],
     })
-    expect(texto).toBe('📦 *Pedido #1*\n\nSituação: *Cancelado*')
+    expect(texto).toBe('📦 *Situação do pedido: Cancelado*\n\n*Pedido #1*')
   })
 
   it('entregue pela Frete Rápido fecha a linha do tempo e some a previsão', () => {

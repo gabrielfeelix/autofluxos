@@ -3,49 +3,79 @@ import type { PedidoDaLoja } from '@/loja/magento-pedido'
 /**
  * O status do pedido como sai no WhatsApp, quando quem atende manda pela Inbox.
  *
- * Tudo o que a pessoa costuma perguntar numa mensagem só (desde 1/out/2026 cada
- * uma é cobrada): em que pé está, quando chega, com quem, o que foi comprado e
- * quanto deu. Vai como corpo do card com a foto do produto e o botão de
- * rastreio (`acoes-pedido-do-inbox.ts`). Marcação do WhatsApp: *negrito* com
- * um asterisco.
+ * Vai como corpo do card com a foto do produto e o botão de rastreio
+ * (`acoes-pedido-do-inbox.ts`). A ordem é a da pergunta de quem recebe:
  *
- * A linha do tempo (pago, separado, transportadora, entregue) é o desenho que
- * loja grande usa no app, feito com o que o WhatsApp tem: emoji e quebra de
- * linha. Situação fora do caminho feliz (cancelado, em análise) não ganha
- * linha do tempo, que mentiria um progresso: sai só a situação.
+ * 1. **A resposta, na primeira linha**: é ela que aparece na notificação e na
+ *    lista de conversas. "📦 Pedido #000002025" ali não dizia nada.
+ * 2. A previsão, logo embaixo.
+ * 3. A linha do tempo, com a etapa atual em 🔵. Na etapa da transportadora, o
+ *    rótulo é o último andamento real: o status "Entregue à transportadora"
+ *    da PCYES sai antes da coleta, e "Com a transportadora" ao lado de
+ *    "Aguardando coleta" se contradizia (revisão de 06/out/2026).
+ * 4. Transportadora e código com rótulo escrito: código solto não diz o que é.
+ * 5. Número e total no fim, como comprovante, e os itens em uma linha cada.
+ *
+ * Situação fora do caminho feliz (cancelado, em análise) não ganha linha do
+ * tempo, que mentiria um progresso. Marcação do WhatsApp: *negrito*.
  */
 export function mensagemDoPedido(pedido: PedidoDaLoja): string {
-  const linhas = [`📦 *Pedido #${pedido.numero}*`, '']
-
   const etapa = etapaDoPedido(pedido)
-  if (etapa === null) linhas.push(`Situação: *${pedido.situacao}*`)
-  else linhas.push(...linhaDoTempo(etapa))
+  const evento = ultimoAndamento(pedido)
+  const linhas = [tituloDoPedido(pedido, etapa, evento)]
 
-  const detalhes: string[] = []
-  const previsao = etapa === 3 ? '' : dataComDia(pedido.entrega?.previsao ?? '')
-  if (previsao) detalhes.push(`📅 Previsão de entrega: *${previsao}*`)
+  const previsao = etapa === 3 ? '' : dataComDia(pedido.entrega?.previsao ?? '', 'longo')
+  if (previsao) linhas.push(`Previsão de entrega: *${previsao}*`)
+
+  if (etapa !== null) linhas.push('', ...linhaDoTempo(etapa, evento))
 
   const transportadora = nomeCurto(pedido.entrega?.transportadora || pedido.rastreios[0]?.transportadora || '')
   // Link no lugar do código não vai no texto: o botão já leva a ele.
   const bruto = pedido.rastreios[0]?.codigo || pedido.entrega?.codigo || ''
   const codigo = codigoDaFreteRapido(bruto) ?? (/^https?:\/\//i.test(bruto) ? '' : bruto)
-  const envio = [transportadora, codigo].filter(Boolean).join(' · ')
-  if (envio) detalhes.push(`🚛 ${envio}`)
+  const envio = [
+    ...(transportadora ? [`Transportadora: ${transportadora}`] : []),
+    ...(codigo ? [`Código de rastreio: ${codigo}`] : []),
+  ]
+  if (envio.length > 0) linhas.push('', ...envio)
 
-  const ultima = pedido.andamento?.[0]
-  if (ultima) detalhes.push(`📍 ${ultima.texto}, ${ultima.quando}`)
-  else if (pedido.entrega?.ultima) {
-    const { situacao, quando } = pedido.entrega.ultima
-    detalhes.push(`📍 ${situacao}${quando ? `, ${dataCurta(quando)}` : ''}`)
-  }
-  if (detalhes.length > 0) linhas.push('', ...detalhes)
-
-  if (pedido.itens.length > 0) {
-    linhas.push('', ...pedido.itens.slice(0, 5).map((i) => `${i.quantidade}x ${i.nome}`))
-    if (pedido.itens.length > 5) linhas.push(`e mais ${pedido.itens.length - 5} item(ns)`)
-  }
-  if (pedido.total) linhas.push(`*Total: ${pedido.total}*`)
+  linhas.push('', [`*Pedido #${pedido.numero}*`, pedido.total].filter(Boolean).join(' · '))
+  linhas.push(...pedido.itens.slice(0, 3).map((i) => `${i.quantidade}x ${cortar(i.nome, LIMITE_DO_ITEM)}`))
+  if (pedido.itens.length > 3) linhas.push(`e mais ${pedido.itens.length - 3} item(ns)`)
   return linhas.join('\n')
+}
+
+/** Cabe numa linha do WhatsApp no celular, com o "1x " na frente. */
+const LIMITE_DO_ITEM = 34
+
+/** Corta na última palavra inteira que cabe: "Sublim…" lia como erro. */
+function cortar(texto: string, limite: number): string {
+  const limpo = texto.trim()
+  if (limpo.length <= limite) return limpo
+  const corte = limpo.slice(0, limite)
+  const espaco = corte.lastIndexOf(' ')
+  return `${(espaco > limite / 2 ? corte.slice(0, espaco) : corte).trimEnd()}…`
+}
+
+/** A resposta em uma frase: o que aparece na notificação. */
+function tituloDoPedido(pedido: PedidoDaLoja, etapa: number | null, evento: string): string {
+  switch (etapa) {
+    case 0:
+      return '⏳ *Aguardando a confirmação do pagamento*'
+    case 1:
+      return '📦 *Estamos separando seu pedido*'
+    case 2:
+      return /aguardando coleta/i.test(evento) ? '📦 *Seu pedido está pronto para envio*' : '🚚 *Seu pedido está a caminho*'
+    case 3:
+      return '🏠 *Seu pedido foi entregue*'
+    default:
+      return `📦 *Situação do pedido: ${pedido.situacao}*`
+  }
+}
+
+/** O andamento mais recente, da loja ou da Frete Rápido. Vazio sem nenhum. */
+function ultimoAndamento(pedido: PedidoDaLoja): string {
+  return (pedido.andamento?.[0]?.texto ?? pedido.entrega?.ultima?.situacao ?? '').trim()
 }
 
 /**
@@ -54,14 +84,26 @@ export function mensagemDoPedido(pedido: PedidoDaLoja): string {
  * lia como entrega feita (06/out/2026, revisão do card).
  */
 const ETAPAS = [
-  { feita: 'Pagamento aprovado', atual: '⏳ *Aguardando pagamento*', depois: 'Aprovação do pagamento' },
-  { feita: 'Pedido separado', atual: '📦 *Em separação*', depois: 'Separação do pedido' },
-  { feita: 'Com a transportadora', atual: '🚚 *Com a transportadora*', depois: 'Envio pela transportadora' },
-  { feita: 'Entregue', atual: '🏠 *Entregue*', depois: 'Entrega no seu endereço' },
+  { feita: 'Pagamento aprovado', atual: 'Aguardando pagamento', depois: 'Aprovação do pagamento' },
+  { feita: 'Pedido separado', atual: 'Em separação', depois: 'Separação do pedido' },
+  { feita: 'Enviado pela transportadora', atual: 'Com a transportadora', depois: 'Envio pela transportadora' },
+  { feita: 'Entregue', atual: 'Entregue', depois: 'Entrega no seu endereço' },
 ] as const
 
-function linhaDoTempo(etapa: number): string[] {
-  return ETAPAS.map((e, i) => (i < etapa ? `✅ ${e.feita}` : i === etapa ? e.atual : `⚪ ${e.depois}`))
+function linhaDoTempo(etapa: number, evento: string): string[] {
+  return ETAPAS.map((e, i) => {
+    if (i < etapa || etapa === 3) return `✅ ${e.feita}`
+    if (i > etapa) return `⚪ ${e.depois}`
+    // Na transportadora, o andamento real diz mais que o rótulo fixo.
+    const atual = i === 2 && evento ? rotuloDoAndamento(evento) : e.atual
+    return `🔵 *${atual}*`
+  })
+}
+
+/** "Aguardando coleta / postagem" é jargão de frete; o resto passa como veio. */
+function rotuloDoAndamento(evento: string): string {
+  if (/aguardando coleta/i.test(evento)) return 'Aguardando a transportadora'
+  return evento.charAt(0).toUpperCase() + evento.slice(1)
 }
 
 /**
@@ -88,13 +130,14 @@ export function etapaDoPedido(pedido: Pick<PedidoDaLoja, 'situacaoCodigo' | 'ent
 }
 
 const DIAS = ['dom', 'seg', 'ter', 'qua', 'qui', 'sex', 'sáb'] as const
+const DIAS_LONGOS = ['domingo', 'segunda', 'terça', 'quarta', 'quinta', 'sexta', 'sábado'] as const
 
-/** "2026-10-08" vira "qua, 08/10"; o que não é data passa como `dataCurta`. */
-export function dataComDia(data: string): string {
+/** "2026-10-08" vira "qui, 08/10" (ou "quinta, 08/10"); o que não é data passa como `dataCurta`. */
+export function dataComDia(data: string, formato: 'curto' | 'longo' = 'curto'): string {
   const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(data.trim())
   if (!m) return dataCurta(data)
   const dia = new Date(Date.UTC(Number(m[1]), Number(m[2]) - 1, Number(m[3]))).getUTCDay()
-  return `${DIAS[dia]}, ${m[3]}/${m[2]}`
+  return `${(formato === 'longo' ? DIAS_LONGOS : DIAS)[dia]}, ${m[3]}/${m[2]}`
 }
 
 /**
