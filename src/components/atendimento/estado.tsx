@@ -151,11 +151,18 @@ export function CartaoDoAtendimento({
       }
     : semProvedor
   const manual = atendimento.rotulo === 'Atendimento manual'
+  const pausado = atendimento.rotulo === 'Bot pausado'
   const tom = manual ? TOM.encerrado : TOM[atendimento.estado]
   const podeFinalizar =
     atendimento.estado === 'aguardando_humano' ||
     atendimento.estado === 'expirada' ||
-    (atendimento.estado === 'com_humano' && atendimento.rotulo === 'Em atendimento')
+    (atendimento.estado === 'com_humano' && atendimento.rotulo === 'Em atendimento') ||
+    /*
+     * Bot pausado também finaliza (06/out/2026): quem pausou para atender
+     * ficava só com "Religar bot", sem como encerrar o atendimento. Finalizar
+     * aqui encerra e religa, porque é o que "terminei" quer dizer.
+     */
+    pausado
 
   const botaoFinalizar = podeFinalizar && (
         <button
@@ -167,7 +174,9 @@ export function CartaoDoAtendimento({
               titulo: 'Finalizar o atendimento?',
               descricao: manual
                 ? 'A conversa sai da fila de quem espera pessoa.'
-                : 'Na próxima mensagem o bot volta a responder. O histórico continua como está.',
+                : pausado
+                  ? 'O bot é religado e volta a responder na próxima mensagem. O histórico continua como está.'
+                  : 'Na próxima mensagem o bot volta a responder. O histórico continua como está.',
               rotulo: 'Finalizar atendimento',
               tom: 'normal',
               /*
@@ -177,9 +186,9 @@ export function CartaoDoAtendimento({
               */
               aoConfirmar: async () => {
                 const r = await finalizar()
-                if (!(r && (r.ok === false || r.erro))) {
-                  aberta?.mudar({ aguardando: null, sessaoComPessoa: false })
-                }
+                if (r && (r.ok === false || r.erro)) return r
+                aberta?.mudar({ aguardando: null, sessaoComPessoa: false })
+                if (pausado) bot.agir(true, () => alternarBot(true))
                 return r
               },
             })
