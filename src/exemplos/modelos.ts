@@ -13,6 +13,7 @@ import { naoComparecimento } from './nao-comparecimento'
 import { pesquisaNps } from './pesquisa-nps'
 import { qualificarSdr } from './qualificar-sdr'
 import { reagendamento } from './reagendamento'
+import { volteiDeLicenca } from './voltei-de-licenca'
 import { statusDoPedido } from './status-do-pedido'
 import { atendimentoLoja } from './atendimento-loja'
 import { triagem } from './triagem'
@@ -266,6 +267,17 @@ export const MODELOS: Modelo[] = [
       'retorno', 'reativar', 'cancelar contrato', 'aula',
     ],
     grafo: alunoInativo,
+  },
+  {
+    id: 'voltei-de-licenca',
+    nome: 'Voltei de licença',
+    resumo:
+      'A pessoa avisa que voltou. O bot oferece marcar uma aula com os dias que têm vaga; marcou, a licença fecha na agenda. Se não quiser agora, a licença fica aberta em Pendências e a conversa vai para a equipe. Precisa da credencial da Verandi.',
+    etiquetas: ['WhatsApp', 'Agenda', 'Precisa de integração'],
+    sinonimos: [
+      'licença', 'licenca', 'voltei', 'retorno', 'voltar', 'afastamento', 'aula',
+    ],
+    grafo: volteiDeLicenca,
   },
   {
     id: 'lembrete',

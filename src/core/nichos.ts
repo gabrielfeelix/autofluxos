@@ -209,7 +209,7 @@ export const PACOTES: Record<Nicho, PacoteDoNicho> = {
     visaoDoCatalogo: 'lista',
     materiais: false,
     tituloDosModelos: 'Para aulas e horários',
-    modelosDeFluxo: ['agendamento', 'reagendamento', 'nao-comparecimento', 'lembrete', 'aluno-inativo'],
+    modelosDeFluxo: ['agendamento', 'reagendamento', 'nao-comparecimento', 'lembrete', 'aluno-inativo', 'voltei-de-licenca'],
     modeloDeFunil: 'agendamento',
     passosDoInicio: ['ficha'],
     ficha: {

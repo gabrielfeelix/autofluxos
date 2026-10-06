@@ -711,6 +711,29 @@ export const PRESETS: Preset[] = [
     },
   },
   {
+    id: 'verandi-voltei-de-licenca',
+    grupo: 'agenda',
+    nome: 'Verandi · avisar que voltou de licença',
+    resumo:
+      'Conta para a agenda que a pessoa voltou. Com "reagendou" true a licença fecha; com false ela continua aberta e sobe para o topo de Pendências, para o estúdio ligar.',
+    exige: 'A mesma credencial “bearer”. O `pessoa_id` sai do bloco de reconhecer.',
+    credencial: 'bearer',
+    dados: {
+      metodo: 'POST',
+      url: `${ENDERECO_DA_AGENDA}/licencas`,
+      cabecalhos: [{ chave: 'Content-Type', valor: 'application/json' }],
+      // O padrão é o caminho de quem não marcou: é o que pede gente, e errar
+      // para o lado de "alguém liga" é o lado seguro. O modelo troca para true
+      // no ramo em que a aula foi marcada.
+      corpo: `{
+  "pessoaId": "{{pessoa_id}}",
+  "reagendou": false
+}`,
+      mapear: [{ variavel: 'licenca_aberta', caminho: 'licencaAberta' }],
+      aoFalhar: 'humano',
+    },
+  },
+  {
     id: 'webhook',
     grupo: 'outros',
     /*
