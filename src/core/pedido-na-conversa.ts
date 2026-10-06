@@ -134,10 +134,14 @@ const DIAS_LONGOS = ['domingo', 'segunda', 'terça', 'quarta', 'quinta', 'sexta'
 
 /** "2026-10-08" vira "qui, 08/10" (ou "quinta, 08/10"); o que não é data passa como `dataCurta`. */
 export function dataComDia(data: string, formato: 'curto' | 'longo' = 'curto'): string {
-  const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(data.trim())
-  if (!m) return dataCurta(data)
-  const dia = new Date(Date.UTC(Number(m[1]), Number(m[2]) - 1, Number(m[3]))).getUTCDay()
-  return `${(formato === 'longo' ? DIAS_LONGOS : DIAS)[dia]}, ${m[3]}/${m[2]}`
+  // "2026-10-08" ou "08/10/2026": a Frete Rápido manda a previsão no segundo
+  // jeito, e o card saía com "08/10/2026" em vez de "quinta, 08/10".
+  const iso = /^(\d{4})-(\d{2})-(\d{2})/.exec(data.trim())
+  const br = /^(\d{2})\/(\d{2})\/(\d{4})/.exec(data.trim())
+  const [ano, mes, dia] = iso ? [iso[1], iso[2], iso[3]] : br ? [br[3], br[2], br[1]] : []
+  if (!ano || !mes || !dia) return dataCurta(data)
+  const semana = new Date(Date.UTC(Number(ano), Number(mes) - 1, Number(dia))).getUTCDay()
+  return `${(formato === 'longo' ? DIAS_LONGOS : DIAS)[semana]}, ${dia}/${mes}`
 }
 
 /**

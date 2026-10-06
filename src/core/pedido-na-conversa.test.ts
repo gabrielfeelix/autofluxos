@@ -74,6 +74,8 @@ describe('status do pedido na conversa', () => {
     expect(etapaDoPedido({ situacaoCodigo: 'delivered_carrier', entrega })).toBe(3)
     expect(etapaDoPedido({ situacaoCodigo: 'delivered_carrier' })).toBe(2)
     expect(dataComDia('2026-10-08')).toBe('qui, 08/10')
+    // Como a Frete Rápido manda.
+    expect(dataComDia('08/10/2026', 'longo')).toBe('quinta, 08/10')
   })
 
   it('lê o andamento do histórico e ignora nota interna', () => {

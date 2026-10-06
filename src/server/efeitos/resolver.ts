@@ -1545,6 +1545,7 @@ async function executarNaLoja(
                 rotulo: card.rotulo,
                 url: card.link,
                 ...(card.foto ? { imagem: card.foto } : {}),
+                substituiFrase: true,
               } satisfies AnexoDaIa,
             }
           : {}),
@@ -1796,6 +1797,11 @@ function comCards(acoes: Acao[], texto: string, produtos: ProdutoDaLoja[], anexo
   if (extras.length === 0) return acoes
   const posicao = acoes.findIndex((a) => a.tipo === 'enviar_texto' && a.texto === texto)
   if (posicao === -1) return [...acoes, ...extras]
+
+  // Card que responde sozinho (o status do pedido): ele toma o lugar da frase.
+  if (anexos.some((a) => a.tipo === 'enviar_link' && a.substituiFrase)) {
+    return [...acoes.slice(0, posicao), ...extras, ...acoes.slice(posicao + 1)]
+  }
 
   /*
    * Catálogo sem loja on-line (todo produto sem link): as fotos saem uma a

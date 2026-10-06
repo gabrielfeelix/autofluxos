@@ -249,6 +249,12 @@ export type Acao =
       /** A foto do cabeçalho (`https://`). */
       imagem?: string
       atrasoMs?: number
+      /**
+       * O card responde sozinho e a frase da IA da mesma resposta não sai: o
+       * status do pedido. Mandado na instrução para ser "só uma frase", o
+       * modelo repetia o status inteiro em texto antes do card (06/out/2026).
+       */
+      substituiFrase?: true
     }
   /**
    * Mandar a pessoa para o WhatsApp de outro time (bloco `encaminhar`).
