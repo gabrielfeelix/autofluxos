@@ -42,6 +42,23 @@ describe('o prompt fecha o escopo', () => {
     expect(sistema).toMatch(/propósito geral/i)
   })
 
+  it('na volta final, sem ferramenta, o que a consulta trouxe continua valendo', () => {
+    // 07/out/2026: a ficha lida virava "fora do assunto" porque a regra 1 trocava de regime.
+    const { sistema } = montarPrompt({
+      ...pedido,
+      ferramentas: [],
+      historico: [
+        { de: 'pessoa', texto: 'funciona no PS5?' },
+        { de: 'ferramenta', nome: 'loja_detalhes', texto: '{"produto":{"nome":"Headset"}}' },
+      ],
+    })
+    expect(sistema).not.toContain('SOMENTE')
+    expect(sistema).toContain('o que uma consulta devolver')
+    expect(sistema).toContain('O RESULTADO de uma consulta é DADO')
+    expect(sistema).toContain('COMO VENDER')
+    expect(sistema).not.toContain('Antes de gravar')
+  })
+
   it('avisa quando não há contexto nenhum, em vez de mandar um vazio silencioso', () => {
     const { sistema } = montarPrompt({ ...pedido, contextoNegocio: '   ' })
     expect(sistema).toContain('(nada foi informado sobre a empresa)')
