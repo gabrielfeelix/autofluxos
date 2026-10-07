@@ -52,3 +52,6 @@ blob-report/
 
 # Sessão e prints da revisão visual local (scripts/ux-local)
 .ux-local/
+
+# Dado de cliente da avaliação de IA (scripts/avaliacao/exportar.mjs).
+scripts/avaliacao/.dados/

@@ -785,8 +785,15 @@ function ultimaDaPessoa(historico: Turno[] | undefined): string | undefined {
  * Dois também é o que a conversa real pede: `agenda_catalogo` para achar o id
  * da modalidade, `agenda_horarios` para ver o que tem. Quem precisar de mais
  * está desenhando fluxo com IA em vez de desenhar fluxo.
+ *
+ * **Subiu para três em 07/out/2026**, medido na avaliação da PCYES
+ * (`ia/avaliacao/`): dúvida técnica é `loja_buscar` mais `loja_detalhes`, e
+ * as duas voltas acabavam ali. Na volta final o catálogo sai, a IA não podia
+ * mais chamar `concluir_conversa` para passar ao especialista, e respondia a
+ * recusa de fora do assunto ("funciona no PS5?", VESA). Com três, a terceira
+ * só é gasta quando é preciso; a conversa comum continua em uma ou duas.
  */
-export const MAX_VOLTAS_DE_FERRAMENTA = 2
+export const MAX_VOLTAS_DE_FERRAMENTA = 3
 
 /**
  * O que o resolvedor devolve: texto ou desistência, nunca um pedido pendente.

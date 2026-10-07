@@ -184,7 +184,7 @@ describe('ferramentas de loja no laço da IA', () => {
     const r = await rodar(fluxo(['loja_buscar', 'loja_detalhes']), modelo)
 
     expect(JSON.stringify(modelo.pedidos[1])).toContain('loja_buscar')
-    expect(modelo.pedidos[3]?.ferramentas).toEqual([])
+    expect(modelo.pedidos).toHaveLength(4)
     expect(r.acoes.some((a) => a.tipo === 'transferir_humano')).toBe(false)
     expect(textos(r)).toContain('O CM500 é USB.')
   })
