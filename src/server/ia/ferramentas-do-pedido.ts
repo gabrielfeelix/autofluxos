@@ -32,7 +32,15 @@ export type ChamadaMontada = {
 
 export type Conferencia =
   | { ok: true; chamada: ChamadaMontada }
-  | { ok: false; motivo: string }
+  | {
+      ok: false
+      motivo: string
+      /**
+       * A recusa que o modelo consegue consertar sozinho, com a instrução de
+       * como. Hoje só o id que não veio de consulta: ver `conferirValor`.
+       */
+      corrigivel?: string
+    }
 
 /**
  * O que a conversa já viu, e que o modelo pode usar.
@@ -121,7 +129,19 @@ export function conferirPedido({
     }
 
     const problema = conferirValor(argumento, valor, memoria)
-    if (problema) return { ok: false, motivo: `em "${nome}": ${problema}` }
+    if (problema) {
+      return {
+        ok: false,
+        motivo: `em "${nome}": ${problema}`,
+        ...(argumento.soDeResultadoAnterior && !memoria.ids.has(valor)
+          ? {
+              corrigivel:
+                `"${valor}" não veio de uma consulta desta resposta. ${argumento.descricao} ` +
+                'Faça antes essa consulta (pelo nome do produto ou serviço que a pessoa citou) e use o id que vier no resultado. Não invente id.',
+            }
+          : {}),
+      }
+    }
 
     valores[argumento.nome] = valor
   }

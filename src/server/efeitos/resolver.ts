@@ -957,7 +957,11 @@ async function responderComFerramentas({
   let cobranca: Cobranca | null = null
   const conclusao = () => ({ ...(concluido === null ? {} : { concluido }), ...(cobranca === null ? {} : { cobranca }) })
 
-  for (let volta = 0; volta <= MAX_VOLTAS_DE_FERRAMENTA; volta++) {
+  /** Sobe uma vez quando a IA tem que refazer um pedido com id inventado. */
+  let teto = MAX_VOLTAS_DE_FERRAMENTA
+  let corrigiu = false
+
+  for (let volta = 0; volta <= teto; volta++) {
     let resposta = await modelo.responder({
       ...base,
       historico: conversa,
@@ -966,7 +970,7 @@ async function responderComFerramentas({
       // executar, e a conversa terminaria em silêncio.
       // Concluída a conversa, a consulta de concluir sai: o que falta é a frase.
       ferramentas:
-        volta === MAX_VOLTAS_DE_FERRAMENTA
+        volta === teto
           ? []
           : concluido === null
             ? permitidas
@@ -1066,6 +1070,27 @@ async function responderComFerramentas({
       injetados: vars,
       memoria,
     })
+
+    /*
+     * A exceção: id que não veio de consulta, com a consulta que o traria
+     * autorizada no bloco. 06/out/2026, PCYES: a pessoa citou o produto pelo
+     * nome inteiro, a IA pulou `loja_buscar`, chamou `loja_detalhes` com id
+     * chutado e a conversa foi para a equipe às 18h46, fora do horário, com a
+     * resposta a uma busca de distância. Aqui o erro volta para o modelo uma
+     * vez só, com uma volta a mais para buscar e ler; o id inventado continua
+     * sem chegar à rede, e a segunda recusa na mesma resposta segue abaixo.
+     */
+    if (!conferida.ok && conferida.corrigivel && !corrigiu) {
+      console.warn(`[ia] consulta recusada, devolvida ao modelo: ${conferida.motivo}`)
+      corrigiu = true
+      teto += 1
+      conversa.push({
+        de: 'ferramenta',
+        nome: resposta.nome,
+        texto: JSON.stringify({ recusada: true, aviso: conferida.corrigivel }),
+      })
+      continue
+    }
 
     if (!conferida.ok) {
       /*

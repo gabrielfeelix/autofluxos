@@ -35,6 +35,8 @@ vi.mock('../repos/ia-chamadas', () => ({ registrarChamada: async () => {} }))
 const listarMateriais = vi.hoisted(() => vi.fn())
 vi.mock('../repos/materiais', () => ({ listarMateriais }))
 vi.mock('../alertar', () => ({ alertar: async () => {} }))
+// O gate do plano (05/out) lê o banco; aqui toda conta tem as ferramentas.
+vi.mock('../recursos-do-plano', () => ({ recursoLiberado: async () => true }))
 
 const { executarComEfeitos } = await import('./resolver')
 
@@ -168,6 +170,25 @@ describe('ferramentas de loja no laço da IA', () => {
     expect(combina).not.toHaveBeenCalled()
   })
 
+  it('id chutado volta para o modelo, que busca e responde em vez de ir para a equipe', async () => {
+    // 06/out/2026, PCYES: produto citado pelo nome, `loja_detalhes` sem busca antes.
+    const loja = lojaFalsa({ produtos: [headset, suporte] })
+    lojaAtivaDaConta.mockResolvedValue(loja)
+    const modelo = modeloComRoteiro([
+      { tipo: 'usar_ferramenta', nome: 'loja_detalhes', argumentos: { produtoId: 'cm500' } },
+      { tipo: 'usar_ferramenta', nome: 'loja_buscar', argumentos: { termo: 'cm500' } },
+      { tipo: 'usar_ferramenta', nome: 'loja_detalhes', argumentos: { produtoId: '330107' } },
+      { tipo: 'texto', texto: 'O CM500 é USB.' },
+    ])
+
+    const r = await rodar(fluxo(['loja_buscar', 'loja_detalhes']), modelo)
+
+    expect(JSON.stringify(modelo.pedidos[1])).toContain('loja_buscar')
+    expect(modelo.pedidos[3]?.ferramentas).toEqual([])
+    expect(r.acoes.some((a) => a.tipo === 'transferir_humano')).toBe(false)
+    expect(textos(r)).toContain('O CM500 é USB.')
+  })
+
   it('SKU que veio da busca passa, e o complemento chega ao modelo', async () => {
     const loja = lojaFalsa({ produtos: [headset, suporte], complementos: { '330107': ['195230'] } })
     lojaAtivaDaConta.mockResolvedValue(loja)
@@ -216,6 +237,8 @@ describe('ferramentas de loja no laço da IA', () => {
     lojaAtivaDaConta.mockResolvedValue(loja)
     const modelo = modeloComRoteiro([
       { tipo: 'usar_ferramenta', nome: 'loja_mostrar', argumentos: { produtoId: '330107' } },
+      // Avisado uma vez, insiste no id inventado: aí vai para uma pessoa.
+      { tipo: 'usar_ferramenta', nome: 'loja_mostrar', argumentos: { produtoId: '330108' } },
       { tipo: 'texto', texto: 'não devia chegar aqui' },
     ])
 
