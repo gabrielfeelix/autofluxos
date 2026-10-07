@@ -1,5 +1,10 @@
 # Handoff: 19/ago/2026, atualizado em 04/set
 
+> **Próximo passo (07/out/2026, noite): formatação no campo de resposta da
+> Inbox** (listas, numeração e negrito ao vivo), com as decisões já tomadas, e o
+> que entrou no dia (IA da PCYES, avaliação, prévia da fila) em
+> [HANDOFF-07-OUT-NOITE.md](HANDOFF-07-OUT-NOITE.md).
+
 > **Licença acompanhada e Voltei de Licença na MGM (06/out/2026):** o handoff
 > mora na Verandi, `verandi/docs/HANDOFF-06-OUT-LICENCA-E-TESTE.md`.
 
