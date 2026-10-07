@@ -76,6 +76,7 @@ import {
   trocarBsuid,
   ultimaEntradaDeTexto,
   chegouEntradaDepois,
+  encaminhouHaPouco,
   type CanalSalvo,
   type Contato,
   type IdentidadeDoWhatsApp,
@@ -1237,6 +1238,9 @@ async function avancarConversa(
  *
  * Menos que isso e o aviso repete a frase do handoff que ela acabou de ler.
  */
+/** Dentro disto, o mesmo encaminhamento não sai de novo para a mesma pessoa. */
+const JANELA_DO_ENCAMINHAMENTO_REPETIDO_MS = 10 * 60_000
+
 const ESPERA_ANTES_DO_AVISO_MS = 2 * 60_000
 
 /** O que a pessoa lê quando escreve de novo e ninguém do time respondeu. */
@@ -1916,6 +1920,12 @@ async function aplicar(
          * pessoa leu e, no cartão, o nome e o número, para o Inbox mostrar
          * para onde ela foi mandada.
          */
+        // O mesmo encaminhamento não sai duas vezes seguidas (ver `encaminhouHaPouco`).
+        if (await encaminhouHaPouco(contato.id, acao.link, JANELA_DO_ENCAMINHAMENTO_REPETIDO_MS)) {
+          console.warn('[encaminhar] repetido em menos de 10 min, não saiu de novo', contato.id)
+          break
+        }
+
         const enviarBotao = canal.enviarBotaoDeLink?.bind(canal)
         const enviarCartao = canal.enviarContato?.bind(canal)
         const texto = enviarBotao ? acao.texto : encaminhamentoEmTexto(acao)

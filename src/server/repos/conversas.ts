@@ -929,6 +929,28 @@ export async function ultimaEntradaDeTexto(contatoId: string): Promise<string | 
  * Rodrigo (PCYES), uma foto com legenda, ficou sem resposta por isso.
  * Erro vira `false`: na dúvida, responder.
  */
+/**
+ * O mesmo encaminhamento (mesmo link) já saiu para esta pessoa há pouco?
+ *
+ * PCYES, 07/out/2026: o toque em "Compra para empresa" encaminhou para o time
+ * corporativo; o texto que chegou no meio abriu a retomada, a IA leu o
+ * histórico, concluiu "empresa" (com razão) e o fluxo mandou o mesmo
+ * encaminhamento 19 s depois. A intenção estava certa; repetir a mensagem não.
+ * Erro vira `false`: na dúvida, encaminha.
+ */
+export async function encaminhouHaPouco(contatoId: string, link: string, janelaMs: number): Promise<boolean> {
+  const { data, error } = await db()
+    .from('messages')
+    .select('id')
+    .eq('contact_id', contatoId)
+    .eq('direcao', 'saida')
+    .eq('payload->encaminhamento->>link', link)
+    .gt('ts', new Date(Date.now() - janelaMs).toISOString())
+    .limit(1)
+  if (error || !data) return false
+  return data.length > 0
+}
+
 export async function chegouEntradaDepois(contatoId: string, mensagemId: string): Promise<boolean> {
   const { data: esta, error } = await db().from('messages').select('ts').eq('id', mensagemId).maybeSingle()
   if (error || !esta) return false
