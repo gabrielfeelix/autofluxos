@@ -13,6 +13,8 @@ import { SeletorDePedido } from '@/components/lead/seletor-de-pedido'
 import { SeletorDeCupom } from '@/components/lead/seletor-de-cupom'
 import { SeletorDeRespostaRapida } from '@/components/lead/seletor-de-resposta-rapida'
 import { alternarMarca, type Marca } from '@/components/editor/formatar'
+import { EspelhoDoCampo } from '@/components/lead/espelho-do-campo'
+import { marcadorAoDigitarEspaco, quebraNaLista, type Edicao } from '@/core/flow/listas'
 import { DEFINICAO_DO_CANAL, type CanalId } from '@/core/canais'
 
 /**
@@ -109,6 +111,9 @@ export function CaixaDeResposta({
     restaDaJanela !== null ? 'livre' : ids ? 'modelo' : 'bloqueado'
   const livre = modo === 'livre'
   const campo = useRef<HTMLTextAreaElement>(null)
+  /** A camada que desenha a formatação por cima do campo (`EspelhoDoCampo`). */
+  const espelho = useRef<HTMLDivElement>(null)
+  const escreverNoEspelho = useRef<((texto: string) => void) | null>(null)
   const [erro, setErro] = useState<string | null>(null)
   /*
    * **Um booleano, e o campo continua não controlado.**
@@ -211,6 +216,31 @@ export function CaixaDeResposta({
     const desejada = textarea.scrollHeight
     textarea.style.height = `${Math.min(desejada, TETO_DA_ALTURA)}px`
     textarea.style.overflowY = desejada > TETO_DA_ALTURA ? 'auto' : 'hidden'
+    acompanharEspelho(textarea)
+  }
+
+  /**
+   * O espelho segue o campo: mesmo texto, mesma rolagem, e a mesma largura
+   * útil. Quando a barra de rolagem aparece ela come largura do textarea, e
+   * sem descontá-la do espelho as linhas quebrariam em lugares diferentes.
+   */
+  function acompanharEspelho(textarea: HTMLTextAreaElement) {
+    escreverNoEspelho.current?.(textarea.value)
+    const div = espelho.current
+    if (!div) return
+    div.style.right = `${textarea.offsetWidth - textarea.clientWidth}px`
+    div.scrollTop = textarea.scrollTop
+  }
+
+  /**
+   * Os atalhos de lista (`core/flow/listas.ts`) escrevem por aqui:
+   * `setRangeText` no trecho, como a resposta rápida, e o mesmo teto.
+   */
+  function editar(textarea: HTMLTextAreaElement, edicao: Edicao) {
+    const tamanho = textarea.value.length - (edicao.fim - edicao.inicio) + edicao.texto.length
+    if (tamanho > 4096) return
+    textarea.setRangeText(edicao.texto, edicao.inicio, edicao.fim, 'end')
+    conferirTexto()
   }
 
   /**
@@ -439,8 +469,12 @@ export function CaixaDeResposta({
           uma frase perderia a frase. Ele continua no formulário, só sai de
           vista.
         */}
+        {/*
+          O campo some enquanto grava junto com o espelho, por isso o
+          `hidden` mora no invólucro.
+        */}
+        <div hidden={gravando} className="relative">
         <textarea
-          hidden={gravando}
           ref={campo}
           name="texto"
           rows={1}
@@ -464,11 +498,19 @@ export function CaixaDeResposta({
             outra faz a mensagem "mudar" ao ser enviada, e quem escreve passa a
             revisar duas vezes o mesmo parágrafo.
           */
-          className="block min-h-11 w-full resize-none rounded-t-[16px] bg-transparent px-3.5 pt-3 pb-1 font-texto text-[14.5px] leading-[1.45] outline-none placeholder:text-dim disabled:opacity-50"
+          /*
+            No WhatsApp o texto do campo é transparente e quem se lê é o
+            espelho; o cursor continua do textarea (`caret-ink`). As classes de
+            texto daqui e de `CAMADA_DE_TEXTO` são as mesmas, de propósito.
+          */
+          className={`peer block min-h-11 w-full resize-none rounded-t-[16px] bg-transparent ${CAMADA_DE_TEXTO} outline-none placeholder:text-dim disabled:opacity-50 ${formata ? 'text-transparent caret-ink' : ''}`}
           onChange={(evento) => {
             setTemTexto(evento.currentTarget.value.trim() !== '')
             ajustarAltura(evento.currentTarget)
             guardarRascunho(evento.currentTarget.value)
+          }}
+          onScroll={(evento) => {
+            if (espelho.current) espelho.current.scrollTop = evento.currentTarget.scrollTop
           }}
           /*
             Ao sair do campo, reconfere.
@@ -502,6 +544,33 @@ export function CaixaDeResposta({
               setRapidasAbertas(true)
               return
             }
+            /*
+              Listas por atalho: `* ` ou `- ` no começo da linha vira `• `, e
+              Enter num item abre o próximo (ou encerra a lista, se o item está
+              vazio) em vez de mandar. A regra é `core/flow/listas.ts`.
+            */
+            const textarea = evento.currentTarget
+            if (
+              evento.key === ' ' &&
+              !evento.ctrlKey &&
+              !evento.metaKey &&
+              textarea.selectionStart === textarea.selectionEnd
+            ) {
+              const edicao = marcadorAoDigitarEspaco(textarea.value, textarea.selectionStart)
+              if (edicao) {
+                evento.preventDefault()
+                editar(textarea, edicao)
+                return
+              }
+            }
+            if (evento.key === 'Enter' && !evento.nativeEvent.isComposing) {
+              const edicao = quebraNaLista(textarea.value, textarea.selectionStart, textarea.selectionEnd)
+              if (edicao) {
+                evento.preventDefault()
+                editar(textarea, edicao)
+                return
+              }
+            }
             // Enter manda, Shift+Enter quebra linha, o hábito de todo mundo que
             // usa WhatsApp. `requestSubmit` para o `action` do form valer.
             if (formata && (evento.ctrlKey || evento.metaKey) && !evento.altKey) {
@@ -523,6 +592,14 @@ export function CaixaDeResposta({
             }
           }}
         />
+        {formata && (
+          <EspelhoDoCampo
+            ref={espelho}
+            controleRef={escreverNoEspelho}
+            className={`pointer-events-none absolute inset-0 overflow-hidden text-ink peer-disabled:opacity-50 ${CAMADA_DE_TEXTO}`}
+          />
+        )}
+        </div>
 
         <div className="flex items-center gap-0.5 px-1.5 pb-1.5">
         {livre && anexo && !gravando && <BotaoDeAnexo desabilitado={enviando} />}
@@ -619,6 +696,15 @@ export function CaixaDeResposta({
     </form>
   )
 }
+
+/**
+ * O que o campo e o espelho têm que ter igual, letra por letra, para o cursor
+ * cair em cima do texto: fonte, tamanho, entrelinha, `padding` e a regra de
+ * quebra. Uma diferença de meio pixel aqui vira cursor fora do lugar no fim de
+ * um parágrafo.
+ */
+const CAMADA_DE_TEXTO =
+  'px-3.5 pt-3 pb-1 font-texto text-[14.5px] leading-[1.45] whitespace-pre-wrap break-words'
 
 /**
  * Um botão de formato da barra do campo.

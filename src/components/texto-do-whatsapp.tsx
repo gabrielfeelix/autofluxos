@@ -1,5 +1,6 @@
 import { Fragment, type ReactNode } from 'react'
 import { partirPorEndereco } from '@/core/enderecos'
+import { classificarLinha, temBlocos } from '@/core/flow/listas'
 import { interpretarMarcacao, type Trecho } from '@/core/flow/marcacao'
 
 /**
@@ -31,6 +32,52 @@ import { interpretarMarcacao, type Trecho } from '@/core/flow/marcacao'
  * dia de quem manda campanha.
  */
 export function TextoDoWhatsApp({ texto }: { texto: string }) {
+  if (temBlocos(texto)) return <ComBlocos texto={texto} />
+  return <Inline texto={texto} />
+}
+
+/**
+ * Mensagem com lista ou citação: cada linha vira um bloco, como o WhatsApp
+ * desenha.
+ *
+ * Item com o marcador pendurado (a segunda linha de um item comprido começa
+ * debaixo do texto, não do `•`), citação com a barra à esquerda. A linha
+ * vazia ganha um espaço de largura zero, senão o bloco some e o parágrafo
+ * gruda no de cima. O `\n` entre linhas sai, porque o bloco já quebra.
+ */
+function ComBlocos({ texto }: { texto: string }) {
+  return (
+    <>
+      {texto.split('\n').map((bruta, i) => {
+        const linha = classificarLinha(bruta)
+        if (linha.tipo === 'item') {
+          return (
+            <span key={i} className="flex gap-1.5">
+              <span className="shrink-0 tabular-nums">{linha.simbolo}</span>
+              <span className="min-w-0">
+                <Inline texto={linha.conteudo} />
+              </span>
+            </span>
+          )
+        }
+        if (linha.tipo === 'citacao') {
+          return (
+            <span key={i} className="my-0.5 block border-l-[3px] border-current/30 pl-2 opacity-80">
+              <Inline texto={linha.conteudo || '\u200b'} />
+            </span>
+          )
+        }
+        return (
+          <span key={i} className="block">
+            <Inline texto={linha.conteudo || '\u200b'} />
+          </span>
+        )
+      })}
+    </>
+  )
+}
+
+function Inline({ texto }: { texto: string }) {
   return (
     <>
       {partirPorEndereco(texto).map((pedaco, i) =>
