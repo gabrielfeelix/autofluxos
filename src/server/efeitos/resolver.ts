@@ -5,7 +5,7 @@ import { ATENDIMENTO_SEMPRE_ABERTO, avisoDeForaDoHorario, escolhaNoMenuDoInicio,
 import type { ContextoDoAtendimento } from '@/core/engine/executar'
 import type { Acao, Entrada, Resultado, Sessao } from '@/core/engine/types'
 import type { FonteDoCatalogo, Fluxo } from '@/core/flow/schema'
-import { MARCA_DE_MOSTRAR, cepLimpo, semMarcaDeMostrar, vitrineDoTexto, type ProdutoDaLoja } from '@/core/loja'
+import { MARCA_DE_MOSTRAR, PROMETE_LINK, cepLimpo, produtosPrometidos, semMarcaDeMostrar, vitrineDoTexto, type ProdutoDaLoja } from '@/core/loja'
 import { semElogioDeAbertura, semMarcacaoDeCard, semRepetirOsCards } from '@/core/juntar-cards'
 import { VARIAVEIS_DE_DATA } from '@/core/datas'
 import { VARIAVEIS_DO_ATENDIMENTO, varsDoAtendimento } from '@/core/vars-do-atendimento'
@@ -1005,6 +1005,33 @@ async function responderComFerramentas({
         if (vitrine.produtos.length > 0) console.warn(`[ia] lista em texto virou vitrine: ${vitrine.produtos.length} produto(s)`)
         cards.push(...vitrine.produtos)
         resposta = { ...resposta, texto: vitrine.texto }
+      }
+    }
+
+    /*
+     * A frase promete link ou card e nenhum saiu: o servidor cumpre a
+     * promessa com o produto que a busca trouxe, pelo mesmo `loja_mostrar`
+     * (preço e foto relidos, a mesma trava de id). Ver `PROMETE_LINK`.
+     */
+    if (resposta.tipo === 'texto' && cards.length === 0 && podeMostrar && buscados.length > 0 && PROMETE_LINK.test(resposta.texto)) {
+      const prometidos = produtosPrometidos(buscados, base.pergunta, resposta.texto)
+      const mostrar = permitidas.find((f) => f.chamada.tipo === 'loja' && f.chamada.operacao === 'mostrar')
+      if (prometidos.length > 0 && mostrar) {
+        const [a, b, c] = prometidos
+        const disparo = await dispararFerramenta({
+          ferramenta: mostrar,
+          argumentos: { produtoId: a!.produtoId, produtoId2: b?.produtoId ?? '', produtoId3: c?.produtoId ?? '' },
+          vars,
+          conexaoId: chamada.conexaoId,
+          fonteDoCatalogo: chamada.fonteDoCatalogo,
+          opcoes,
+          decididoPor: 'ia',
+          idsConhecidos: memoria.ids,
+        })
+        if (disparo.ok) {
+          console.warn(`[ia] a frase prometeu link e não mostrou: o servidor mandou ${prometidos.length} card(s)`)
+          cards.push(...produtosDe(disparo.json))
+        }
       }
     }
 

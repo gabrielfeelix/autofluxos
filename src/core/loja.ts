@@ -560,6 +560,41 @@ function alternarPorParte(produtos: readonly ProdutoDaLoja[], maximo: number): P
   return saida
 }
 
+/**
+ * A frase promete um link ou card que não saiu: "pelo link abaixo", "no card
+ * aqui embaixo", "👇".
+ *
+ * 07/out/2026, PCYES: "Suporte Para Tablet ... PLMSA01A" esgotado. A IA buscou,
+ * escreveu "você pode acessar a página dele pelo link abaixo" e não chamou
+ * `loja_mostrar`; a pessoa ficou sem link nenhum. Ver `produtosPrometidos`.
+ */
+export const PROMETE_LINK =
+  /\b(link|card|bot[aã]o|p[aá]gina)\b[^.\n]{0,40}\b(abaixo|embaixo|a seguir)\b|\bpelo link\b|👇/i
+
+/**
+ * Quais dos produtos buscados a frase prometeu, para o servidor mandar o card.
+ *
+ * Só o que dá para afirmar: o produto cujo código de modelo (palavra com letra
+ * e número, como `PLMSA01A` ou `ST-LDA33GT`) aparece no que a pessoa escreveu
+ * ou na frase, ou o único que a busca trouxe. Na dúvida, nenhum: card errado é
+ * pior do que card faltando.
+ */
+export function produtosPrometidos(
+  buscados: readonly ProdutoDaLoja[],
+  pergunta: string,
+  frase: string,
+  maximo = 3,
+): ProdutoDaLoja[] {
+  const norm = (t: string) => t.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, '')
+  const unicos = buscados.filter((p, i) => buscados.findIndex((q) => q.produtoId === p.produtoId) === i)
+  const onde = norm(`${pergunta} ${frase}`)
+  const codigos = (nome: string) =>
+    nome.split(/\s+/).map(norm).filter((t) => t.length >= 5 && /\d/.test(t) && /[a-z]/.test(t))
+  const citados = unicos.filter((p) => codigos(p.nome).some((c) => onde.includes(c)))
+  if (citados.length > 0) return citados.slice(0, maximo)
+  return unicos.length === 1 ? unicos : []
+}
+
 export function vitrineDoTexto(
   texto: string,
   buscados: readonly ProdutoDaLoja[],

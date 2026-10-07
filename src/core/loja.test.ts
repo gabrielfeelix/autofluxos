@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import {
+  PROMETE_LINK,
+  produtosPrometidos,
   botaoDePedido,
   pedidoDoBotao,
   comoMandarProduto,
@@ -337,5 +339,25 @@ describe('vitrine pela marca de chamada escrita', () => {
   })
   it('sem produto para mostrar, a marca só some', () => {
     expect(vitrineDoTexto(`Oi\n${MARCA_DE_MOSTRAR}`, [])).toEqual({ texto: 'Oi', produtos: [] })
+  })
+})
+
+describe('a frase que promete link sem card', () => {
+  const tablet = { produtoId: '1', nome: 'Suporte Para Tablet 7.9" a 10.5" PCYes - PLMSA01A', emEstoque: false, link: 'https://x/1' }
+  const outro = { produtoId: '2', nome: 'Suporte Para Celular PCYes PLMSC02B', emEstoque: true, link: 'https://x/2' }
+
+  it('reconhece a promessa', () => {
+    expect(PROMETE_LINK.test('Você pode acessar a página dele pelo link abaixo')).toBe(true)
+    expect(PROMETE_LINK.test('Separei para você 👇')).toBe(true)
+    expect(PROMETE_LINK.test('Ele está sem estoque no momento.')).toBe(false)
+  })
+
+  it('escolhe o produto pelo código citado', () => {
+    expect(produtosPrometidos([outro, tablet], 'Suporte Para Tablet PCYes - PLMSA01A', 'pelo link abaixo').map((p) => p.produtoId)).toEqual(['1'])
+  })
+
+  it('sem código citado, só o único que a busca trouxe', () => {
+    expect(produtosPrometidos([tablet], 'suporte de tablet', 'pelo link abaixo')).toHaveLength(1)
+    expect(produtosPrometidos([tablet, outro], 'suporte', 'pelo link abaixo')).toEqual([])
   })
 })

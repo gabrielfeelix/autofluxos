@@ -189,6 +189,21 @@ describe('ferramentas de loja no laço da IA', () => {
     expect(textos(r)).toContain('O CM500 é USB.')
   })
 
+  it('frase que promete link sem mostrar: o servidor manda o card do produto citado', async () => {
+    // 07/out/2026, PCYES: "pelo link abaixo" e nenhum link.
+    const loja = lojaFalsa({ produtos: [headset, suporte] })
+    lojaAtivaDaConta.mockResolvedValue(loja)
+    const modelo = modeloComRoteiro([
+      { tipo: 'usar_ferramenta', nome: 'loja_buscar', argumentos: { termo: 'cm500' } },
+      { tipo: 'texto', texto: 'Ele está disponível. Você pode acessar a página dele pelo link abaixo.' },
+    ])
+
+    const r = await rodar(fluxo(['loja_buscar', 'loja_mostrar']), modelo)
+
+    const cards = r.acoes.flatMap((a) => (a.tipo === 'enviar_produtos' ? a.produtos.map((p) => p.produtoId) : []))
+    expect(cards).toEqual(['330107'])
+  })
+
   it('SKU que veio da busca passa, e o complemento chega ao modelo', async () => {
     const loja = lojaFalsa({ produtos: [headset, suporte], complementos: { '330107': ['195230'] } })
     lojaAtivaDaConta.mockResolvedValue(loja)
