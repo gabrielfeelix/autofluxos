@@ -151,3 +151,42 @@ describe('o aluno nunca digita uma data', () => {
     expect(opcoesDe(r.acoes)).toEqual(['📅 Ver outro período', '💬 Chamar a recepção'])
   })
 })
+
+const HORARIOS = {
+  livres: [{ sessaoId: 's1', data: '2026-08-21', hora: '07:00', servico: 'Pilates solo', profissional: 'Ana' }],
+  cheios: [],
+}
+
+const corpoChamado = (acoes: Acao[]) =>
+  acoes.flatMap((a) => (a.tipo === 'chamar_http' ? [JSON.parse(a.corpo)] : []))[0]
+
+/** Da faixa até o "Sim, pode marcar", devolvendo o que foi enviado à agenda. */
+function ateGravar(r: Resultado) {
+  r = executar(reagendamento, r.sessao, { tipo: 'opcao', opcaoId: 'esta' })
+  r = responder(r, 'verandi-dias', DIAS)
+  r = executar(reagendamento, r.sessao, { tipo: 'opcao', opcaoId: 'd1' })
+  r = responder(r, 'verandi-horarios', HORARIOS)
+  r = executar(reagendamento, r.sessao, { tipo: 'opcao', opcaoId: 'd1' })
+  r = executar(reagendamento, r.sessao, { tipo: 'opcao', opcaoId: 'sim' })
+  return corpoChamado(r.acoes)
+}
+
+/*
+ * Sem dizer qual falta está sendo reposta, a Verandi grava avulso e o crédito
+ * continua aberto: a falta seguia "para repor" depois de remarcada.
+ */
+describe('remarcar gasta a reposição', () => {
+  it('com uma reposição, marca contra ela', () => {
+    expect(ateGravar(ateAFaixa())).toEqual({
+      pessoaId: '77c0', sessaoId: 's1', origem: 'reposicao', reposicaoDeId: 'r1',
+    })
+  })
+
+  it('sem reposição, a aula oferecida é avulsa', () => {
+    let r = executar(reagendamento, comeco(), { tipo: 'inicio' })
+    r = responder(r, 'verandi-quem-e', ACHOU)
+    r = responder(r, 'verandi-minha-agenda', { ...UMA_REPOSICAO, reposicoesAbertas: [] })
+    r = executar(reagendamento, r.sessao, { tipo: 'opcao', opcaoId: 'marcar' })
+    expect(ateGravar(r)).toEqual({ pessoaId: '77c0', sessaoId: 's1' })
+  })
+})

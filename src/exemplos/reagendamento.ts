@@ -360,7 +360,31 @@ export const reagendamento: Fluxo = fluxoSchema.parse({
       },
     },
 
+    /*
+     * Quem tem uma reposição em aberto marca **contra ela**. Sem dizer qual
+     * falta está sendo reposta, a Verandi grava a aula como avulsa e o crédito
+     * continua aberto: a mesma falta aparecia "para repor" depois de remarcada,
+     * e podia ser remarcada de novo. Quem tem zero chegou aqui pela oferta de
+     * aula avulsa, e marca como avulsa mesmo.
+     */
+    {
+      id: 'repoe-qual',
+      type: 'condicao',
+      position: em(10.5, 1),
+      data: { variavel: 'quantas_reposicoes', operador: 'igual', valor: '0' },
+    },
     comPreset('verandi-marcar', { id: 'marcar', position: em(11, 0) }),
+    (() => {
+      const no = comPreset('verandi-marcar', { id: 'marcar-reposicao', position: em(11, 1) })
+      // aqui há exatamente uma reposição, então `reposicoes_id` é um id só
+      no.data.corpo = `{
+  "pessoaId": "{{pessoa_id}}",
+  "sessaoId": "{{sessao_id}}",
+  "origem": "reposicao",
+  "reposicaoDeId": "{{reposicoes_id}}"
+}`
+      return no
+    })(),
 
     // 6, "data, horário, nome, e pronto, acabou."
     {
@@ -469,9 +493,12 @@ export const reagendamento: Fluxo = fluxoSchema.parse({
     { id: 'e20', source: 'sem-vaga', sourceHandle: 'outro-dia', target: 'dia-do-menu' },
     { id: 'e21', source: 'sem-vaga', sourceHandle: 'falar', target: 'recepcao' },
     { id: 'e22', source: 'sem-vaga', sourceHandle: 'timeout', target: 'recepcao' },
-    { id: 'e23', source: 'confere', sourceHandle: 'sim', target: 'marcar' },
+    { id: 'e23', source: 'confere', sourceHandle: 'sim', target: 'repoe-qual' },
+    { id: 'e23a', source: 'repoe-qual', sourceHandle: 'verdadeiro', target: 'marcar' },
+    { id: 'e23b', source: 'repoe-qual', sourceHandle: 'falso', target: 'marcar-reposicao' },
     { id: 'e24', source: 'confere', sourceHandle: 'nao', target: 'dia-do-menu' },
     { id: 'e25', source: 'confere', sourceHandle: 'timeout', target: 'recepcao' },
     { id: 'e26', source: 'marcar', target: 'confirmado' },
+    { id: 'e26b', source: 'marcar-reposicao', target: 'confirmado' },
   ],
 })
