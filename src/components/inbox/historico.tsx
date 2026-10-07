@@ -808,7 +808,14 @@ function EtiquetaDoDia({ rotulo }: { rotulo: string }) {
  *
  * Falha não desenha tique: quem mostra a falha é o "envio não confirmado".
  */
-function Tiques({ situacao }: { situacao?: MensagemDoLead['situacao'] }) {
+export function Tiques({
+  situacao,
+  claro = false,
+}: {
+  situacao?: MensagemDoLead['situacao'] | null
+  /** Fundo claro (a prévia da fila): lida no azul do WhatsApp, e não no ciano da bolha. */
+  claro?: boolean
+}) {
   if (situacao === 'falhou') return null
   const dois = situacao === 'entregue' || situacao === 'lida'
   const rotulo = situacao === 'lida' ? 'Lida' : situacao === 'entregue' ? 'Entregue' : 'Enviada'
@@ -819,7 +826,7 @@ function Tiques({ situacao }: { situacao?: MensagemDoLead['situacao'] }) {
       title={rotulo}
       /* Lida em ciano claro, e não no azul do WhatsApp: a bolha já é azul, e
          azul sobre azul some. O cinza vira o branco translúcido da bolha. */
-      className={`ml-1 inline-flex align-[-2px] ${situacao === 'lida' ? 'text-[#7ee8fa]' : 'text-dim'}`}
+      className={`${claro ? 'mr-1' : 'ml-1'} inline-flex align-[-2px] ${situacao === 'lida' ? (claro ? 'text-[#53bdeb]' : 'text-[#7ee8fa]') : 'text-dim'}`}
     >
       <svg width={dois ? 16 : 11} height="11" viewBox={dois ? '0 0 16 11' : '0 0 11 11'} fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
         <path d="M1 6l3 3 6-7" />

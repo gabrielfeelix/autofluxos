@@ -35,6 +35,7 @@ import { cabeNoRecorte } from "@/components/inbox/recorte";
 import { abrirConversa, preCarregarConversa, useAberta } from "@/components/inbox/aberta-local";
 import type { MensagemAgendada } from "@/server/repos/mensagens-agendadas";
 import { resumoDoMotivo } from "@/core/aviso-de-handoff";
+import { Tiques } from "./historico";
 
 export type Contagem = {
   total: number;
@@ -1363,6 +1364,9 @@ function ResumoDaConversa({ lead }: { lead: Lead }) {
   const quem = quemFalou(lead);
   return (
     <>
+      {/* Os tiques antes de tudo, como na lista do WhatsApp. Reação não tem
+          tique lá, e aqui também não. */}
+      {lead.ultimaDirecao === "saida" && !lead.ultimaEReacao && <Tiques situacao={lead.ultimaSituacao} claro />}
       {quem && <span className="font-semibold text-primary/80">{quem}: </span>}
       {textoDaConversa(lead)}
     </>
@@ -1383,6 +1387,8 @@ function textoDoBalao(lead: Lead): string {
 
 /** O texto da última mensagem, sem quem falou. */
 function textoDaConversa(lead: Lead): string {
+  // "Gabriel: ❤️" parecia uma mensagem com um coração; é uma reação.
+  if (lead.ultimaEReacao) return lead.ultimoTexto ? `reagiu com ${lead.ultimoTexto} a uma mensagem` : "reagiu a uma mensagem";
   if (lead.ultimoTexto) return lead.ultimoTexto;
   if (!lead.ultimaEm) return "sem mensagem";
 

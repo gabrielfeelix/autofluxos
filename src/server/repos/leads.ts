@@ -103,6 +103,14 @@ export type Lead = {
    */
   ultimoAutorTipo: string | null
   ultimoAutorNome: string | null
+  /**
+   * Os tiques da última mensagem, quando ela é nossa: `enviada`, `entregue`,
+   * `lida` ou `falhou`, do webhook `statuses` da Meta. `null` na mensagem
+   * antiga, de antes da 0116, que fica com um tique só (0132).
+   */
+  ultimaSituacao: 'enviada' | 'entregue' | 'lida' | 'falhou' | null
+  /** A última mensagem é uma reação: a prévia diz "reagiu com ❤️" (0132). */
+  ultimaEReacao: boolean
   /** `false` quando a última saída não teve confirmação do canal. */
   ultimaEntregue: boolean | null
   /** Pausa persistente do bot para este contato. */
@@ -358,6 +366,8 @@ type Linha = {
   ultimo_texto: string | null
   ultimo_autor_tipo: string | null
   ultimo_autor_nome: string | null
+  ultima_situacao: string | null
+  ultima_e_reacao: boolean | null
   ultima_entregue: boolean | null
   automacao_ativa: boolean
   handoff_motivo: string | null
@@ -371,7 +381,7 @@ type Linha = {
 // tipo para saber o formato do retorno, e concatenação vira `string` genérica,
 // aí o tipo do `data` desanda e o `tsc` acusa.
 const COLUNAS =
-  'contact_id, client_id, wa_id, nome, nome_real, notas, campos, criado_em, ultima_em, ultima_entrada_em, ultima_direcao, ultimo_texto, ultimo_tipo, ultimo_autor_tipo, ultimo_autor_nome, handoff_motivo, handoff_em, ultima_entregue, automacao_ativa, atribuido_a, estado, estado_efetivo, adiada_ate, adiada_nota, porta_de_entrada_em'
+  'contact_id, client_id, wa_id, nome, nome_real, notas, campos, criado_em, ultima_em, ultima_entrada_em, ultima_direcao, ultimo_texto, ultimo_tipo, ultimo_autor_tipo, ultimo_autor_nome, handoff_motivo, handoff_em, ultima_entregue, automacao_ativa, atribuido_a, estado, estado_efetivo, adiada_ate, adiada_nota, porta_de_entrada_em, ultima_situacao, ultima_e_reacao'
 
 /**
  * `campos` é `jsonb`: o banco aceita qualquer coisa ali. Hoje só o motor
@@ -422,6 +432,8 @@ function paraLead(linha: Linha): Lead {
     ultimoTipo: linha.ultimo_tipo,
     ultimoAutorTipo: linha.ultimo_autor_tipo,
     ultimoAutorNome: linha.ultimo_autor_nome,
+    ultimaSituacao: (['enviada', 'entregue', 'lida', 'falhou'] as const).find((x) => x === linha.ultima_situacao) ?? null,
+    ultimaEReacao: linha.ultima_e_reacao === true,
     ultimaEntregue: linha.ultima_entregue,
     automacaoAtiva: linha.automacao_ativa,
     aguardando:
