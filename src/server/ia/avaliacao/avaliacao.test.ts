@@ -21,7 +21,8 @@ import { CASOS, type Caso, type Registro, type Turno } from './casos-pcyes'
  *   AVALIACAO=1 AVALIACAO_SAIDA=/tmp/antes.json npm run avaliacao
  */
 
-const DADOS = new URL('../../../../scripts/avaliacao/.dados/pcyes.json', import.meta.url)
+// `AVALIACAO_DADOS=pcyes-v17` avalia uma instrução candidata sem publicar nada.
+const DADOS = new URL(`../../../../scripts/avaliacao/.dados/${process.env.AVALIACAO_DADOS ?? 'pcyes'}.json`, import.meta.url)
 const chave = process.env.GEMINI_API_KEY
 const ligado = Boolean(process.env.AVALIACAO && chave && existsSync(DADOS))
 

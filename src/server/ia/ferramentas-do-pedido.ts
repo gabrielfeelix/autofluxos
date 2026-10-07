@@ -136,8 +136,8 @@ export function conferirPedido({
         ...(argumento.soDeResultadoAnterior && !memoria.ids.has(valor)
           ? {
               corrigivel:
-                `"${valor}" não veio de uma consulta desta resposta. ${argumento.descricao} ` +
-                'Faça antes essa consulta (pelo nome do produto ou serviço que a pessoa citou) e use o id que vier no resultado. Não invente id.',
+                // Fato, não ordem, pelo mesmo motivo do aviso de consulta repetida.
+                `"${valor}" não veio de uma consulta desta resposta, e só id de resultado de consulta é aceito. ${argumento.descricao}`,
             }
           : {}),
       }

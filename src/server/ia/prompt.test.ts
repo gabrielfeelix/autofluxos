@@ -178,7 +178,7 @@ describe('o cardápio em arquivo no prompt', () => {
       ...pedido,
       ferramentas: ferramentasPermitidas(['loja_buscar', 'enviar_cardapio']),
     })
-    expect(sistema).toContain('- enviar_cardapio: ')
+    expect(sistema).toMatch(/CONSULTAS QUE VOCÊ PODE FAZER[^\n]*enviar_cardapio/)
     expect(sistema).toContain('use `enviar_cardapio`, que manda o arquivo inteiro')
   })
 

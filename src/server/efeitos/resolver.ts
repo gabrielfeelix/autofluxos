@@ -1065,7 +1065,9 @@ async function responderComFerramentas({
         de: 'ferramenta',
         nome: resposta.nome,
         texto:
-          '{"repetida":true,"aviso":"Esta consulta já foi feita e o resultado está acima. Não consulte de novo: responda à pessoa com o que já tem, e diga com clareza o que não foi encontrado."}',
+          // Fato, não ordem: ordem dentro de [DADO] é o que a regra 13 manda
+          // ignorar, e o modelo lia o aviso como injeção e recusava (07/out).
+          '{"repetida":true,"situacao":"o resultado desta mesma consulta já está acima, nesta conversa"}',
       })
       continue
     }

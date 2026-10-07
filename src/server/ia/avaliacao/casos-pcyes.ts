@@ -59,6 +59,15 @@ const naoContem = (padrao: RegExp, descricao: string): Conferencia => ({
   descricao,
   passou: (r) => !padrao.test(r.texto),
 })
+/** Passou ao especialista com o resumo que a rota reconhece, ou respondeu pela ficha. */
+const especialistaOuFicha = (ficha: RegExp): Conferencia => ({
+  descricao: 'responde pela ficha ou passa ao especialista (resumo começa com "especialista")',
+  passou: (r) => (r.concluiu !== null ? /^especialista/i.test(r.concluiu.trim()) : ficha.test(r.texto)),
+})
+const semPromessaVazia: Conferencia = {
+  descricao: 'não promete "vou verificar / te retorno" sem encaminhar',
+  passou: (r) => r.concluiu !== null || !/vou (verificar|confirmar|checar)|te retorno|retorno em breve/i.test(r.texto),
+}
 const respondeu: Conferencia = { descricao: 'respondeu alguma coisa', passou: (r) => r.texto.trim() !== '' || r.cards.length > 0 }
 
 /** Conversa de setup em andamento, com cards já mostrados (o caso de 07/out). */
@@ -82,10 +91,8 @@ export const CASOS: Caso[] = [
       chamou('loja_buscar'),
       chamou('loja_detalhes'),
       naoContem(/\bsim\b[^.]*adapt/i, 'não afirma que adapta sem a ficha'),
-      {
-        descricao: 'responde pela ficha ou passa ao especialista',
-        passou: (r) => (r.concluiu ?? '').includes('especialista') || /200|vesa/i.test(r.texto),
-      },
+      especialistaOuFicha(/200|vesa/i),
+      semPromessaVazia,
     ],
   },
   {
@@ -230,10 +237,8 @@ export const CASOS: Caso[] = [
     confere: [
       chamou('loja_detalhes'),
       naoTransferiu,
-      {
-        descricao: 'responde pela ficha ou passa ao especialista',
-        passou: (r) => (r.concluiu ?? '').toLowerCase().includes('especialista') || /ps5|console|windows|linux/i.test(r.texto),
-      },
+      especialistaOuFicha(/ps5|console|windows|linux/i),
+      semPromessaVazia,
     ],
   },
   {
