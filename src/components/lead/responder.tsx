@@ -592,11 +592,18 @@ export function CaixaDeResposta({
             }
           }}
         />
+        {/*
+          `peer-placeholder-shown:invisible`: campo vazio, espelho fora. O envio
+          roda dentro da transição do `<form action>`, então o texto do espelho
+          pode limpar um quadro (ou uma suspensão) depois do campo, e o reset
+          automático do formulário nem passa por ele. Sem esta trava, a
+          mensagem enviada ficava desenhada por cima do placeholder.
+        */}
         {formata && (
           <EspelhoDoCampo
             ref={espelho}
             controleRef={escreverNoEspelho}
-            className={`pointer-events-none absolute inset-0 overflow-hidden text-ink peer-disabled:opacity-50 ${CAMADA_DE_TEXTO}`}
+            className={`pointer-events-none absolute inset-0 overflow-hidden text-ink peer-placeholder-shown:invisible peer-disabled:opacity-50 ${CAMADA_DE_TEXTO}`}
           />
         )}
         </div>

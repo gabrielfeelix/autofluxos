@@ -119,7 +119,7 @@ export function lojaMagento(dados: DadosDaLoja, chamar: Chamar = chamarHttp): Lo
       const { pagina, porPagina } = paginaDaBusca(opcoes)
       const r = await graphql(QUERY_BUSCA, { termo: limpo, porPagina, pagina })
       if (r.ok && (pagina - 1) * porPagina >= totalDe(r.valor)) return { ok: true, valor: [] }
-      return r.ok ? { ok: true, valor: traduzirProdutos(r.valor, dados.endereco, dados.sufixo) } : r
+      return r.ok ? { ok: true, valor: traduzirProdutos(r.valor, dados.endereco, dados.sufixo, porPagina) } : r
     },
     async combinaCom(sku) {
       const r = await graphql(QUERY_RECOMENDACOES, { sku })

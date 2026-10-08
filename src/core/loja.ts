@@ -216,11 +216,20 @@ function itensDe(json: unknown): unknown[] {
   return Array.isArray(items) ? items : []
 }
 
-export function traduzirProdutos(json: unknown, endereco: string, sufixo: string): ProdutoDaLoja[] {
+/**
+ * O teto é o tamanho da página pedida: o bot pede os 5 de sempre, o seletor
+ * do Inbox pede 20. Cortar sempre em 5 escondia o resto do seletor.
+ */
+export function traduzirProdutos(
+  json: unknown,
+  endereco: string,
+  sufixo: string,
+  limite = LIMITE_DE_PRODUTOS,
+): ProdutoDaLoja[] {
   return itensDe(json)
     .map((i) => traduzirItem(i, endereco, sufixo))
     .filter((p): p is ProdutoDaLoja => p !== null)
-    .slice(0, LIMITE_DE_PRODUTOS)
+    .slice(0, limite)
 }
 
 /**
