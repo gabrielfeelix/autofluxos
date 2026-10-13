@@ -182,7 +182,13 @@ const mensagemSchema = z.object({
    * aponta para algo que não está no nosso histórico, e a tela precisa
    * aguentar isso, ver `citadaDoPayload` em `repos/leads.ts`.
    */
-  context: z.object({ id: z.string() }).optional(),
+  /*
+   * `id` opcional: a mensagem **encaminhada** chega com `context: { forwarded:
+   * true }` e sem `id`. Com o `id` obrigatório o webhook inteiro falhava no
+   * parse e era descartado calado, e o áudio encaminhado nunca chegava ao
+   * painel (4YU Tech, 13/out/2026).
+   */
+  context: z.object({ id: z.string().optional() }).optional(),
   /*
    * A reação.
    *
@@ -326,7 +332,14 @@ export async function receberMensagem(
   fabricaDeCanal: FabricaDeCanal = canalPadrao,
 ): Promise<void> {
   const analise = webhookSchema.safeParse(payload)
-  if (!analise.success) return
+  if (!analise.success) {
+    // Descartar calado foi o que escondeu o áudio encaminhado: um campo novo
+    // da Meta derrubava o evento inteiro e ninguém ficava sabendo.
+    await alertar('webhook do WhatsApp recusado na leitura', analise.error, {
+      problemas: analise.error.issues.slice(0, 5).map((p) => `${p.path.join('.')}: ${p.message}`).join(' | '),
+    })
+    return
+  }
 
   for (const entrada of analise.data.entry) {
     for (const mudanca of entrada.changes) {
@@ -518,7 +531,7 @@ export async function tratarUma(
     ...(mensagem.reaction
       ? { reagiuA: mensagem.reaction.message_id, reacao: mensagem.reaction.emoji ?? '' }
       : {}),
-    ...(mensagem.context ? { cita: mensagem.context.id } : {}),
+    ...(mensagem.context?.id ? { cita: mensagem.context.id } : {}),
   })
   // A Meta reenviou algo que já processamos. Sair aqui é o que impede a
   // conversa de andar duas vezes. Vem **antes** da trava de propósito: reenvio
