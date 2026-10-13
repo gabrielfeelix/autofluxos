@@ -425,7 +425,9 @@ export function Fila({
    * Contavam toda conversa com mensagem sem ler, inclusive a resolvida pelo
    * bot (encaminhada ao Suporte e encerrada): a aba dizia "(2)", a pílula
    * "Não lidas 2", e a lista de abertas não tinha bolinha nenhuma (30/set/2026).
-   * A pílula conta o recorte que está na tela; a aba, as conversas abertas.
+   * A pílula conta o recorte que está na tela; a aba, as conversas abertas
+   * do dono escolhido. Sem o dono, a aba dizia "(1)" por uma conversa de outro
+   * atendente que a lista de "minhas" escondia (13/out/2026).
    */
   const naoLidasNoRecorte = useMemo(
     () => (local ? recorte : leads).filter((lead) => semLerDe(lead.contatoId) > 0).length,
@@ -434,9 +436,9 @@ export function Fila({
   const abertasSemLer = useMemo(
     () =>
       (local ?? leads).filter(
-        (lead) => lead.estadoEfetivo === "aberta" && semLerDe(lead.contatoId) > 0,
+        (lead) => cabeNoRecorte(lead, "aberta", atribuicao) && semLerDe(lead.contatoId) > 0,
       ).length,
-    [local, leads, semLerDe],
+    [local, leads, semLerDe, atribuicao],
   );
 
   /*
