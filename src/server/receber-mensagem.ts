@@ -1,4 +1,6 @@
 import 'server-only'
+import { motivoDoNaoSuportado } from '@/core/payload-da-mensagem'
+import { db } from './db'
 import { encaminhamentoEmTexto, telefoneLegivel } from '@/core/encaminhar'
 import { z } from 'zod'
 import { distribuirSeSemDono } from './distribuir-atendimento'
@@ -594,6 +596,18 @@ export async function tratarUma(
    * "Editada".
    */
   if (mensagem.type === 'edit') return
+
+  /*
+   * A mensagem que a Meta avisa e não entrega (erro 131051: enquete, evento,
+   * visualização única, tipo novo do WhatsApp). O conteúdo não chega por API
+   * nenhuma, e o bot respondia "Não entendi 😅" com o menu, como se a pessoa
+   * tivesse escrito errado (4YU Tech, 13/out/2026). O certo é dizer o que
+   * aconteceu e pedir de novo num formato que chega, sem acordar o motor.
+   */
+  // Contato novo, sem conversa ainda, segue para as boas-vindas normalmente.
+  if (mensagem.type === 'unsupported') {
+    if (await pedirOutroFormato(canalSalvo, contato, mensagemId, motivoDoNaoSuportado(mensagem), fabricaDeCanal)) return
+  }
 
   /**
    * Quem responde sai das sequências (0031).
@@ -1256,6 +1270,51 @@ export const AVISO_DE_ESPERA = 'Nossa equipe já foi avisada e responde por aqui
  *
  * Melhor-esforço: falhar aqui não pode impedir a mensagem de ficar registrada.
  */
+/** Uma vez a cada 10 minutos: duas enquetes seguidas não pedem dois avisos. */
+const INTERVALO_DO_PEDIDO_DE_FORMATO_MS = 10 * 60_000
+
+const PEDIDO_DE_OUTRO_FORMATO =
+  'Recebemos sua mensagem, mas este formato não pode ser aberto por aqui. Poderia enviar novamente como texto, foto, vídeo ou áudio?'
+
+/**
+ * Pede de novo o que a Meta não entregou, dizendo o tipo quando ela conta.
+ *
+ * Melhor-esforço como o aviso de espera: falhar aqui não pode impedir a
+ * mensagem de ficar registrada, e a bolha "veja no celular" continua avisando
+ * quem atende.
+ */
+async function pedirOutroFormato(
+  canalSalvo: CanalSalvo,
+  contato: Contato,
+  mensagemId: string,
+  motivo: string | null,
+  fabricaDeCanal: FabricaDeCanal,
+): Promise<boolean> {
+  try {
+    const salva = await ultimaSessao(contato.id, canalSalvo.id)
+    if (!salva) return false
+    const desde = new Date(Date.now() - INTERVALO_DO_PEDIDO_DE_FORMATO_MS).toISOString()
+    const { data: recente } = await db()
+      .from('messages')
+      .select('id')
+      .eq('contact_id', contato.id)
+      .eq('direcao', 'saida')
+      .like('texto', 'Recebemos sua mensagem, mas %')
+      .gte('ts', desde)
+      .limit(1)
+    if (recente && recente.length > 0) return true
+
+    const texto = motivo
+      ? `Recebemos sua mensagem (${motivo}), mas este formato não pode ser aberto por aqui. Poderia enviar novamente como texto, foto, vídeo ou áudio?`
+      : PEDIDO_DE_OUTRO_FORMATO
+    await aplicar(fabricaDeCanal(canalSalvo), contato, salva.id, mensagemId, [{ tipo: 'enviar_texto', texto }], null)
+    return true
+  } catch (erro) {
+    await alertar('não foi possível pedir outro formato da mensagem', erro, { contato: contato.id })
+    return true
+  }
+}
+
 async function avisarQueAEquipeVem(
   canalSalvo: CanalSalvo,
   contato: Contato,
