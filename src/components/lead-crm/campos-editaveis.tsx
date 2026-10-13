@@ -229,8 +229,8 @@ function EditorDeDados({ clienteId, contatoId, campos }: { clienteId: string; co
           <button
             type="button"
             onClick={() => (linha.nova ? setLinhas((atuais) => atuais.filter((_, j) => j !== i)) : mudar(i, { valor: '' }))}
-            title={linha.nova ? 'Tirar esta linha' : 'Apagar este dado'}
-            aria-label={linha.nova ? 'Tirar esta linha' : `Apagar ${linha.rotulo}`}
+            title={linha.nova ? 'Remover esta linha' : 'Apagar este dado'}
+            aria-label={linha.nova ? 'Remover esta linha' : `Apagar ${linha.rotulo}`}
             className="grid size-8 shrink-0 place-items-center rounded-lg text-dim transition hover:bg-surface hover:text-perigo"
           >
             <svg aria-hidden viewBox="0 0 24 24" className="size-4" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">

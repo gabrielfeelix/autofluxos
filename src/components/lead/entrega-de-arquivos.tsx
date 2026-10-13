@@ -695,7 +695,7 @@ function PainelDeRevisao({
                 <button
                   type="button"
                   onClick={() => aoRemover(anexo.id)}
-                  aria-label={`Tirar ${anexo.arquivo.name} da leva`}
+                  aria-label={`Remover ${anexo.arquivo.name} da leva`}
                   className="absolute -top-1.5 -right-1.5 flex size-[22px] items-center justify-center rounded-full border border-line bg-panel text-[11px] leading-none text-dim opacity-0 shadow-sm transition group-focus-within:opacity-100 group-hover:opacity-100 hover:text-perigo focus-visible:opacity-100 pointer-coarse:size-6 pointer-coarse:opacity-100"
                 >
                   ✕

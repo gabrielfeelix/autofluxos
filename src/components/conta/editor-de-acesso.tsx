@@ -127,11 +127,14 @@ export function EditorDeAcesso({
   membro,
   equipesDaConta,
   aoFechar,
+  aoSalvar,
 }: {
   clienteId: string
   membro: MembroParaAcesso | null
   equipesDaConta: { id: string; nome: string }[]
   aoFechar: () => void
+  /** O acesso como ficou, para a tela mudar já, sem esperar a página voltar. */
+  aoSalvar?: (atualizado: MembroParaAcesso) => void
 }) {
   const papel: PapelDaConta =
     membro?.papel === 'owner' || membro?.papel === 'admin' ? membro.papel : 'member'
@@ -210,6 +213,7 @@ export function EditorDeAcesso({
         setErro(r.erro ?? 'não deu para salvar o acesso')
         return
       }
+      aoSalvar?.({ ...membro, equipes, sobrescritas })
       aoFechar()
     })
   }

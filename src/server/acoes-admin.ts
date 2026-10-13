@@ -809,7 +809,7 @@ export async function acaoAdminPorNaOrganizacao(usuarioId: string, organizacaoId
   dados.set('email', alvo.email)
   dados.set('funcao', funcao)
   const r = await acaoAdminDarAcesso(organizacaoId, dados)
-  return r.ok ? { ok: true } : { ok: false, erro: r.erro ?? 'não deu para pôr na organização' }
+  return r.ok ? { ok: true } : { ok: false, erro: r.erro ?? 'não deu para adicionar à organização' }
 }
 
 /** O que impede excluir o login: as organizações em que ele é o único dono. */

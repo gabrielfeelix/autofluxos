@@ -521,7 +521,7 @@ function NoEtiqueta({ data, selected }: NodeProps) {
   return (
     <Caixa tipo="etiqueta" selecionado={!!selected}>
       <p className={`truncate text-[12.5px] leading-5 ${d.etiquetaId && !nome ? 'text-perigo' : 'text-soft'}`}>
-        {d.tirar && d.etiquetaId ? 'Tira: ' : ''}
+        {d.tirar && d.etiquetaId ? 'Remove: ' : ''}
         {!d.etiquetaId ? '(nenhuma etiqueta escolhida)' : (nome ?? 'etiqueta que não existe nesta conta')}
       </p>
     </Caixa>

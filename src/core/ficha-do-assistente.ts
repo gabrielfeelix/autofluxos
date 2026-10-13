@@ -82,7 +82,7 @@ export const LISTAS_DA_FICHA: ListaDaFicha[] = [
     titulo: 'O QUE O ASSISTENTE PODE FAZER',
     rotulo: 'O que o assistente pode fazer',
     opcoes: [
-      { texto: 'Tirar dúvidas com o que está nesta ficha' },
+      { texto: 'Responder dúvidas com o que está nesta ficha' },
       { texto: 'Mostrar produtos, fotos e preços do catálogo' },
       { texto: 'Ajudar a montar um pedido' },
       { texto: 'Informar horário e endereço' },

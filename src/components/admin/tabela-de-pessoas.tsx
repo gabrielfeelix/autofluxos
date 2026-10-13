@@ -84,6 +84,23 @@ export function TabelaDePessoas({
   const [, comecar] = useTransition()
   const [dando, setDando] = useState(false)
   const [ajustando, setAjustando] = useState<MembroParaAcesso | null>(null)
+  /*
+   * O acesso de cada pessoa como esta aba o conhece. Salvar no modal muda a
+   * coluna Equipe na hora; antes ela seguia "sem equipe" até o F5, com o modal
+   * já tendo gravado (Maria Rita, 13/out/2026).
+   */
+  const [porPessoa, setPorPessoa] = useState(acesso?.porPessoa ?? {})
+  const nomeDaEquipe = new Map((acesso?.equipesDaConta ?? []).map((equipe) => [equipe.id, equipe.nome]))
+  const salvouAcesso = (atualizado: MembroParaAcesso) => {
+    setPorPessoa((antes) => ({ ...antes, [atualizado.id]: atualizado }))
+    setPessoas((antes) =>
+      antes.map((pessoa) =>
+        pessoa.id === atualizado.id
+          ? { ...pessoa, equipes: atualizado.equipes.flatMap((id) => nomeDaEquipe.get(id) ?? []) }
+          : pessoa,
+      ),
+    )
+  }
   const [removendo, setRemovendo] = useState<{ pessoa: PessoaNaTabela; pendencias: { conversas: number; cartoes: number; atividades: number } } | null>(null)
   const rotulo = new Map(funcoes.map((funcao) => [funcao.valor, funcao.rotulo]))
 
@@ -127,10 +144,10 @@ export function TabelaDePessoas({
   }
 
   const ajustarDa = (pessoa: PessoaNaTabela) =>
-    pessoa.podeEditar && acesso?.porPessoa[pessoa.id] ? (
+    pessoa.podeEditar && porPessoa[pessoa.id] ? (
       <button
         type="button"
-        onClick={() => setAjustando(acesso.porPessoa[pessoa.id] ?? null)}
+        onClick={() => setAjustando(porPessoa[pessoa.id] ?? null)}
         className="shrink-0 rounded-[8px] px-2.5 py-1.5 text-[12px] font-semibold whitespace-nowrap text-muted transition hover:bg-surface hover:text-ink"
       >
         Ajustar acesso
@@ -142,8 +159,8 @@ export function TabelaDePessoas({
       <button
         type="button"
         onClick={() => pedirRemocao(pessoa)}
-        title={`Tirar ${pessoa.nome} da organização`}
-        aria-label={`Tirar ${pessoa.nome} da organização`}
+        title={`Remover ${pessoa.nome} da organização`}
+        aria-label={`Remover ${pessoa.nome} da organização`}
         className="flex size-8 shrink-0 items-center justify-center rounded-lg text-dim transition hover:bg-rose-400/[0.08] hover:text-perigo"
       >
         <svg aria-hidden width="15" height="15" viewBox="0 0 15 15" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
@@ -342,7 +359,7 @@ export function TabelaDePessoas({
         />
       )}
       {ajustando && acesso && (
-        <EditorDeAcesso clienteId={clienteId} membro={ajustando} equipesDaConta={acesso.equipesDaConta} aoFechar={() => setAjustando(null)} />
+        <EditorDeAcesso clienteId={clienteId} membro={ajustando} equipesDaConta={acesso.equipesDaConta} aoFechar={() => setAjustando(null)} aoSalvar={salvouAcesso} />
       )}
       {aviso && (
         <AvisoFlutuante tom="erro" aoSumir={() => setAviso(null)}>

@@ -299,7 +299,7 @@ export function EditarPerfil({
                 }}
                 className="text-[11.5px] font-semibold text-dim underline-offset-2 hover:underline"
               >
-                {ehAvatar ? 'Voltar ao avatar padrão' : 'Tirar foto'}
+                {ehAvatar ? 'Voltar ao avatar padrão' : 'Remover foto'}
               </button>
             )}
             <span className="text-[11px] text-dim">jpg, png ou webp, até 2 MB</span>

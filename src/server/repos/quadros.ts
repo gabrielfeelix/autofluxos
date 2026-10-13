@@ -1129,7 +1129,7 @@ export async function tirarDoQuadro(clienteId: string, cartaoId: string): Promis
     .maybeSingle()
 
   if (ehIdInvalido(error)) return false
-  if (error) throw new Error(`não deu para tirar do quadro: ${error.message}`)
+  if (error) throw new Error(`não deu para remover do quadro: ${error.message}`)
   return data !== null
 }
 

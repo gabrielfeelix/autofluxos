@@ -212,7 +212,7 @@ export function RodapeDaMensagem({
           type="button"
           role="menuitem"
           onClick={() => reagir(emoji)}
-          title={emoji === minhaReacao ? 'Tirar a reação' : `Reagir com ${emoji}`}
+          title={emoji === minhaReacao ? 'Remover a reação' : `Reagir com ${emoji}`}
           className={`grid h-9 w-9 place-items-center rounded-full text-[22px] leading-none transition hover:scale-125 ${emoji === minhaReacao ? 'bg-primary/20' : ''}`}
         >
           {emoji}

@@ -470,7 +470,7 @@ function ExcluirPlano({
   }
 
   return (
-    <Modal aberto aoFechar={aoFechar} titulo={`Excluir ${plano.nome}`} descricao="Excluir não tem volta. Tirar de venda é o caminho sem perda: quem está no plano fica, ninguém novo entra." largura={500}>
+    <Modal aberto aoFechar={aoFechar} titulo={`Excluir ${plano.nome}`} descricao="Excluir não tem volta. Remover da venda é o caminho sem perda: quem está no plano fica, ninguém novo entra." largura={500}>
       {!estado ? (
         <div className="flex flex-col gap-3" aria-busy>
           <div className="h-14 animate-pulse rounded-[12px] bg-surface" />

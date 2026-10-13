@@ -327,7 +327,7 @@ export async function marcarContatos(
       .eq('etiqueta_id', etiquetaId)
       .in('contato_id', validos)
       .select('contato_id')
-    if (error) throw new Error(`não deu para tirar a etiqueta: ${error.message}`)
+    if (error) throw new Error(`não deu para remover a etiqueta: ${error.message}`)
     mudaram = data?.length ?? 0
   }
 

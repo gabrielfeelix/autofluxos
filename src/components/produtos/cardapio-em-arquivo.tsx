@@ -97,7 +97,7 @@ function Envio({ clienteId, tipo, atual }: { clienteId: string; tipo: TipoDeMate
     setErro(null)
     comecar(async () => {
       const r = await acaoRemoverMaterial(clienteId, tipo)
-      if (!r.ok) setErro(r.erro ?? 'não deu para tirar')
+      if (!r.ok) setErro(r.erro ?? 'não deu para remover')
     })
   }
 

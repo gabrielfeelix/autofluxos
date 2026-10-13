@@ -88,7 +88,7 @@ export function SelecaoDeContatos({
       try {
         const r = await acaoPorNoQuadro(clienteId, quadroId, marcados)
         if (!r.ok) {
-          setErro(r.erro ?? 'não deu para pôr no quadro')
+          setErro(r.erro ?? 'não deu para adicionar ao quadro')
           return
         }
         const nome = quadros.find((q) => q.id === quadroId)?.nome ?? 'o quadro'
@@ -127,7 +127,7 @@ export function SelecaoDeContatos({
         )
         setMarcados([])
       } catch {
-        setErro('não deu para pôr no quadro agora')
+        setErro('não deu para adicionar ao quadro agora')
       }
     })
   }
@@ -196,8 +196,8 @@ export function SelecaoDeContatos({
                       type="button"
                       disabled={ocupado}
                       onClick={() => etiquetar(etiqueta.id, false)}
-                      title={`Tirar “${etiqueta.nome}” dos selecionados`}
-                      aria-label={`Tirar ${etiqueta.nome} dos selecionados`}
+                      title={`Remover “${etiqueta.nome}” dos selecionados`}
+                      aria-label={`Remover ${etiqueta.nome} dos selecionados`}
                       className="rounded-full border border-line px-1.5 py-0.5 text-[11.5px] font-bold text-dim transition hover:border-strong hover:text-muted disabled:opacity-50"
                     >
                       −

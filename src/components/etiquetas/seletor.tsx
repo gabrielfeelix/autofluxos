@@ -137,8 +137,8 @@ export function SeletorDeEtiquetas({
               key={etiqueta.id}
               type="button"
               aria-pressed={acesa}
-              aria-label={acesa ? `Tirar "${etiqueta.nome}" deste contato` : `Colocar "${etiqueta.nome}" neste contato`}
-              title={acesa ? 'Tirar deste contato (a etiqueta continua existindo)' : 'Colocar neste contato'}
+              aria-label={acesa ? `Remover "${etiqueta.nome}" deste contato` : `Adicionar "${etiqueta.nome}" a este contato`}
+              title={acesa ? 'Remover deste contato (a etiqueta continua existindo)' : 'Adicionar a este contato'}
               onClick={() => alternar(etiqueta.id)}
               className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10.5px] font-semibold transition ${
                 acesa

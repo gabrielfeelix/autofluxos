@@ -59,7 +59,7 @@ export function RemoverComDestino({
         destino === null || destino === SEM_RESPONSAVEL ? null : destino,
       )
       if (!r.ok) {
-        setErro(r.erro ?? 'não deu para tirar da organização')
+        setErro(r.erro ?? 'não deu para remover da organização')
         return
       }
       aoFechar(true)
@@ -70,7 +70,7 @@ export function RemoverComDestino({
     <Modal
       aberto
       aoFechar={() => aoFechar()}
-      titulo={`Tirar ${membro.nome} desta organização?`}
+      titulo={`Remover ${membro.nome} desta organização?`}
       descricao="A pessoa continua existindo no sistema e o histórico dela fica como está."
       largura={460}
     >
@@ -120,7 +120,7 @@ export function RemoverComDestino({
           disabled={rodando || (temPendencia && destino === null)}
           className="rounded-lg bg-perigo px-3.5 py-2 text-[12.5px] font-bold text-white transition hover:opacity-90 disabled:opacity-40"
         >
-          {rodando ? 'Tirando…' : 'Tirar da organização'}
+          {rodando ? 'Removendo…' : 'Remover da organização'}
         </button>
       </div>
     </Modal>

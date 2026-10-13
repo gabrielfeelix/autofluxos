@@ -280,11 +280,11 @@ export function Quadro({
         const r = await acaoTirarDoQuadro(clienteId, cartaoId)
         if (!r.ok) {
           setCartoes(antes)
-          setErro(r.erro ?? 'não deu para tirar do funil')
+          setErro(r.erro ?? 'não deu para remover do funil')
         }
       } catch {
         setCartoes(antes)
-        setErro('não deu para tirar do funil agora')
+        setErro('não deu para remover do funil agora')
       }
     })
   }

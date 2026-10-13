@@ -326,7 +326,7 @@ export async function desfavoritar(
 
   if (error) {
     console.error('[marcadores] não deu para desfavoritar', error.message)
-    return { ok: false, erro: 'não deu para tirar a estrela' }
+    return { ok: false, erro: 'não deu para remover a estrela' }
   }
   return { ok: true }
 }

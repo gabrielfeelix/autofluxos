@@ -213,7 +213,7 @@ export const PACOTES: Record<Nicho, PacoteDoNicho> = {
     modeloDeFunil: 'agendamento',
     passosDoInicio: ['ficha'],
     ficha: {
-      pode: ['Tirar dúvidas com o que está nesta ficha', 'Explicar modalidades, planos e aula experimental', 'Mostrar planos e valores do catálogo', 'Informar horário e endereço'],
+      pode: ['Responder dúvidas com o que está nesta ficha', 'Explicar modalidades, planos e aula experimental', 'Mostrar planos e valores do catálogo', 'Informar horário e endereço'],
       perguntas: [
         p('oferta', 'O QUE OFERECEMOS', ['o que oferecemos', 'modalidades', 'servicos', 'aulas'], 'Que aulas e serviços vocês oferecem?', 'Pilates em aparelho em turma de até 5 pessoas, pilates individual e fisioterapia.', 'Quais aulas vocês têm?'),
         p('horarios', 'HORÁRIOS', ['horario', 'a grade', 'grade'], 'Qual o horário de funcionamento e a grade de aulas?', 'Segunda a sexta, das 7h às 21h. Sábado, das 8h às 12h.', 'Qual o horário de vocês?'),
@@ -241,7 +241,7 @@ export const PACOTES: Record<Nicho, PacoteDoNicho> = {
     modeloDeFunil: 'comercial',
     passosDoInicio: ['ficha'],
     ficha: {
-      pode: ['Tirar dúvidas com o que está nesta ficha', 'Mostrar produtos, fotos e preços do catálogo', 'Consultar o status de um pedido', 'Informar prazo de envio e frete'],
+      pode: ['Responder dúvidas com o que está nesta ficha', 'Mostrar produtos, fotos e preços do catálogo', 'Consultar o status de um pedido', 'Informar prazo de envio e frete'],
       perguntas: [
         p('oferta', 'O QUE VENDEMOS', ['o que vendemos', 'produtos'], 'O que a loja vende?', 'Eletrônicos e acessórios para casa e escritório.', 'O que vocês vendem?'),
         p('site', 'SITE', ['site', 'loja virtual'], 'Qual o endereço da loja virtual?', 'www.minhaloja.com.br', 'Qual o site de vocês?'),
@@ -280,7 +280,7 @@ export const PACOTES: Record<Nicho, PacoteDoNicho> = {
     modeloDeFunil: 'pedidos',
     passosDoInicio: ['pratos', 'cardapio', 'ficha'],
     ficha: {
-      pode: ['Tirar dúvidas com o que está nesta ficha', 'Mandar o cardápio e fotos dos pratos', 'Ajudar a montar um pedido', 'Informar horário, entrega e endereço'],
+      pode: ['Responder dúvidas com o que está nesta ficha', 'Mandar o cardápio e fotos dos pratos', 'Ajudar a montar um pedido', 'Informar horário, entrega e endereço'],
       perguntas: [
         p('horario', 'HORÁRIO', ['horario', 'funcionamento'], 'Qual o horário de funcionamento?', 'Terça a domingo, das 18h às 23h30.', 'Vocês estão abertos?'),
         p('entrega', 'ENTREGA', ['entrega', 'area de entrega', 'taxa de entrega', 'delivery'], 'Até onde vocês entregam e qual a taxa?', 'Entregamos até 5 km. Taxa de R$ 5 no centro e R$ 8 nos bairros.', 'Entregam no meu bairro? Qual a taxa?'),
@@ -311,7 +311,7 @@ export const PACOTES: Record<Nicho, PacoteDoNicho> = {
     modeloDeFunil: 'atendimento',
     passosDoInicio: ['ficha'],
     ficha: {
-      pode: ['Tirar dúvidas com o que está nesta ficha', 'Dizer se tem o produto e quanto custa', 'Informar horário e endereço'],
+      pode: ['Responder dúvidas com o que está nesta ficha', 'Dizer se tem o produto e quanto custa', 'Informar horário e endereço'],
       perguntas: [
         p('oferta', 'O QUE VENDEMOS', ['o que vendemos', 'o que oferecemos', 'produtos'], 'O que a loja vende?', 'Material escolar, papelaria e presentes.', 'O que vocês vendem?'),
         p('horario', 'HORÁRIO', ['horario', 'funcionamento'], 'Qual o horário de funcionamento?', 'Segunda a sexta, das 8h às 18h. Sábado, das 8h às 12h.', 'Que horas vocês abrem?'),

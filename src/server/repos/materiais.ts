@@ -65,6 +65,6 @@ export async function removerMaterial(
 ): Promise<{ ok: true } | { ok: false; motivo: string }> {
   const { error } = await db().from('materiais').delete().eq('client_id', clienteId).eq('tipo', tipo)
   if (ehIdInvalido(error)) return { ok: true }
-  if (error) return { ok: false, motivo: `não deu para tirar o arquivo: ${error.message}` }
+  if (error) return { ok: false, motivo: `não deu para remover o arquivo: ${error.message}` }
   return { ok: true }
 }

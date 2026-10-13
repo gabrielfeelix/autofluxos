@@ -1313,9 +1313,9 @@ async function ConteudoDaAba({
                                   inicial={passo}
                                 />
                                 <BotaoPerigo
-                                  rotulo="Tirar"
+                                  rotulo="Remover"
                                   titulo="Tira este passo. Quem já está no meio da sequência pode terminar antes."
-                                  pergunta={`Tirar o passo de ${comoAtraso(passo.atrasoMinutos)}? ${
+                                  pergunta={`Remover o passo de ${comoAtraso(passo.atrasoMinutos)}? ${
                                     quantosEsperam === 0
                                       ? 'Ninguém está esperando este passo agora.'
                                       : quantosEsperam === 1

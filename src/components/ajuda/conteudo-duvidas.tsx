@@ -91,7 +91,7 @@ export function SecaoDuvidas() {
         <Duvida p="O bot marcou no horário errado. Como isso acontece?">
           <p>
             Quase sempre é <strong className="text-soft">“sem repetir” numa lista pareada</strong>.
-            Se <Var>horarios</Var> tem “sem repetir” e <Var>horarios_id</Var> não, tirar um horário
+            Se <Var>horarios</Var> tem “sem repetir” e <Var>horarios_id</Var> não, remover um horário
             repetido de uma lista empurra os identificadores da outra, o segundo rótulo passa a
             valer o terceiro identificador.
           </p>

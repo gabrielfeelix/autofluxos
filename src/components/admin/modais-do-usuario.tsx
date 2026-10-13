@@ -203,7 +203,7 @@ export function OrganizacoesDoUsuario({
 
         {livres.length > 0 && (
           <div className="rounded-[12px] border border-line bg-surface px-3.5 py-3">
-            <p className="mb-2 text-[12px] font-semibold text-soft">Pôr em outra organização</p>
+            <p className="mb-2 text-[12px] font-semibold text-soft">Adicionar a outra organização</p>
             <div className="flex flex-wrap items-center gap-2">
               <Dropdown className="min-w-[180px] flex-1" rotuloAcessivel="Organização" valor={nova} aoMudar={setNova} opcoes={livres.map((organizacao) => ({ valor: organizacao.id, rotulo: organizacao.nome }))} />
               <Dropdown className="w-[160px]" rotuloAcessivel="Função" valor={funcaoNova} aoMudar={setFuncaoNova} opcoes={FUNCOES} />

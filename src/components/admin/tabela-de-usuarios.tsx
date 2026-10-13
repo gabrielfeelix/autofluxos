@@ -171,7 +171,7 @@ export function TabelaDeUsuarios({
                       <button type="button" data-fechar-popover onClick={() => setAberto({ tipo: 'organizacoes', usuario })} className="quadro-menu-item">
                         <span className="flex-1">
                           Organizações e função
-                          <span className="block text-[11px] font-normal text-dim">Pôr, trocar a função, tirar</span>
+                          <span className="block text-[11px] font-normal text-dim">Adicionar, trocar a função, remover</span>
                         </span>
                       </button>
                       <button type="button" data-fechar-popover onClick={() => setAberto({ tipo: 'senha', usuario })} className="quadro-menu-item">
@@ -184,7 +184,7 @@ export function TabelaDeUsuarios({
                           onClick={() => mudar(usuario, usuario.adminDaPlataforma ? 'tirar_admin' : 'tornar_admin', { adminDaPlataforma: !usuario.adminDaPlataforma })}
                           className="quadro-menu-item"
                         >
-                          <span className="flex-1">{usuario.adminDaPlataforma ? 'Tirar da administração' : 'Tornar administrador da plataforma'}</span>
+                          <span className="flex-1">{usuario.adminDaPlataforma ? 'Remover da administração' : 'Tornar administrador da plataforma'}</span>
                         </button>
                       )}
                       {usuario.sessoesAtivas > 0 && (

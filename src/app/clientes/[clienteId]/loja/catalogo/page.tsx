@@ -61,7 +61,7 @@ const PASSOS_DA_AJUDA: PassoDaAjuda[] = [
   {
     titulo: 'Reimportar atualiza, não duplica',
     texto:
-      'O item que já existe é reconhecido pelo SKU ou, sem SKU, pelo nome, e é atualizado. Célula em branco não apaga o que já estava lá: para tirar um preço, use o botão “Preço” do item.',
+      'O item que já existe é reconhecido pelo SKU ou, sem SKU, pelo nome, e é atualizado. Célula em branco não apaga o que já estava lá: para remover um preço, use o botão “Preço” do item.',
   },
   {
     titulo: 'Foto e link viram o card',

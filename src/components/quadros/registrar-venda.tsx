@@ -166,8 +166,8 @@ export function RegistrarVenda({
                   onClick={() =>
                     setLinhas((atual) => (atual.length === 1 ? [{ ...LINHA_VAZIA }] : atual.filter((_, j) => j !== i)))
                   }
-                  title="Tirar este item"
-                  aria-label={`Tirar o item ${i + 1}`}
+                  title="Remover este item"
+                  aria-label={`Remover o item ${i + 1}`}
                   className="grid size-7 place-items-center rounded-lg text-dim transition hover:bg-surface hover:text-perigo"
                 >
                   <svg aria-hidden viewBox="0 0 24 24" className="size-3.5" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
