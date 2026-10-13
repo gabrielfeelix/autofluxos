@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useTransition, type ReactNode } from 'react'
-import { acaoArquivarEquipe, acaoCriarEquipe } from '@/server/acoes-acesso'
+import { acaoArquivarEquipe, acaoCriarEquipe, acaoDefinirMembrosDaEquipe } from '@/server/acoes-acesso'
 import { useConfirmar } from '@/components/design/confirmar'
 import { IlustracaoEquipe } from '@/components/design/ilustracoes'
 import { Avatar } from '@/components/design/avatar'
@@ -11,7 +11,8 @@ import { RotuloCampo } from '@/components/design/modal-formulario'
 import { FUNDO_DA_LINHA, Tabela, Th } from '@/components/design/tabela'
 
 type Equipe = { id: string; nome: string; pessoas: number }
-type Membro = { nome: string; imagem: string | null; semAlcance: boolean }
+type Membro = { id: string; nome: string; imagem: string | null; semAlcance: boolean }
+type PessoaDaConta = { id: string; nome: string; imagem: string | null; podeEditar: boolean }
 
 /**
  * As equipes da conta (RB-40), a aba "Equipes" de Configurações › Pessoas.
@@ -31,7 +32,8 @@ type Membro = { nome: string; imagem: string | null; semAlcance: boolean }
 export function GerenciarEquipes({
   clienteId,
   equipes: iniciais,
-  perda = {},
+  perda: perdaInicial = {},
+  pessoasDaConta = [],
   topo,
   abaixoDoTopo,
 }: {
@@ -39,11 +41,16 @@ export function GerenciarEquipes({
   equipes: Equipe[]
   /** Por equipe, quem está nela e se fica sem alcance nenhum sem ela (E15). */
   perda?: Record<string, Membro[]>
+  pessoasDaConta?: PessoaDaConta[]
   topo: TopoDaTela
   abaixoDoTopo?: ReactNode
 }) {
   const [equipes, setEquipes] = useState(iniciais)
   const [criando, setCriando] = useState(false)
+  // Quem está em cada equipe como esta aba conhece: editar muda a linha na
+  // hora, sem esperar a página voltar do servidor.
+  const [perda, setPerda] = useState(perdaInicial)
+  const [editando, setEditando] = useState<Equipe | null>(null)
   const { confirmar, dialogo } = useConfirmar()
 
   const arquivar = (equipe: Equipe) => {
@@ -68,15 +75,49 @@ export function GerenciarEquipes({
     })
   }
 
-  const botaoDeArquivar = (equipe: Equipe) => (
-    <button type="button" onClick={() => arquivar(equipe)} className="botao-secundario botao-sm">
-      Arquivar
-    </button>
+  const botoesDa = (equipe: Equipe) => (
+    <div className="flex justify-end gap-2">
+      {pessoasDaConta.length > 0 && (
+        <button type="button" onClick={() => setEditando(equipe)} className="botao-secundario botao-sm">
+          Editar
+        </button>
+      )}
+      <button type="button" onClick={() => arquivar(equipe)} className="botao-secundario botao-sm">
+        Arquivar
+      </button>
+    </div>
   )
+
+  const salvouMembros = (equipe: Equipe, ids: string[]) => {
+    const porId = new Map(pessoasDaConta.map((pessoa) => [pessoa.id, pessoa]))
+    const anteriores = new Map((perda[equipe.id] ?? []).map((membro) => [membro.id, membro]))
+    setPerda((antes) => ({
+      ...antes,
+      [equipe.id]: ids.flatMap((id) => {
+        const pessoa = porId.get(id)
+        if (!pessoa) return []
+        return [{ id, nome: pessoa.nome, imagem: pessoa.imagem, semAlcance: anteriores.get(id)?.semAlcance ?? false }]
+      }),
+    }))
+    setEquipes((lista) => lista.map((item) => (item.id === equipe.id ? { ...item, pessoas: ids.length } : item)))
+  }
 
   return (
     <>
       {dialogo}
+      {editando && (
+        <EditarMembros
+          equipe={editando}
+          pessoas={pessoasDaConta}
+          membros={(perda[editando.id] ?? []).map((membro) => membro.id)}
+          aoFechar={() => setEditando(null)}
+          enviar={async (ids) => {
+            const r = await acaoDefinirMembrosDaEquipe(clienteId, editando.id, ids)
+            if (r.ok) salvouMembros(editando, ids)
+            return r
+          }}
+        />
+      )}
       <CabecalhoDaTela
         trilha={topo.trilha}
         titulo={topo.titulo}
@@ -125,7 +166,7 @@ export function GerenciarEquipes({
                   <p className="truncate text-[13.5px] font-bold">{equipe.nome}</p>
                   <p className="truncate text-[11.5px] text-dim">{nomesDa(perda[equipe.id], equipe.pessoas)}</p>
                 </div>
-                {botaoDeArquivar(equipe)}
+                {botoesDa(equipe)}
               </li>
             ))}
           </ul>
@@ -135,7 +176,7 @@ export function GerenciarEquipes({
                 <tr className="border-b border-line">
                   <Th>Equipe</Th>
                   <Th>Pessoas</Th>
-                  <Th className="w-28">
+                  <Th className="w-44">
                     <span className="sr-only">Ações</span>
                   </Th>
                 </tr>
@@ -158,7 +199,7 @@ export function GerenciarEquipes({
                           <div className="flex items-center gap-2.5">
                             <div className="flex -space-x-2">
                               {membros.slice(0, 4).map((membro) => (
-                                <span key={membro.nome} className="rounded-full ring-2 ring-panel">
+                                <span key={membro.id} className="rounded-full ring-2 ring-panel">
                                   <Avatar nome={membro.nome} imagem={membro.imagem} tamanho={26} />
                                 </span>
                               ))}
@@ -167,7 +208,7 @@ export function GerenciarEquipes({
                           </div>
                         )}
                       </td>
-                      <td className="px-4 py-3 text-right">{botaoDeArquivar(equipe)}</td>
+                      <td className="px-4 py-3 text-right">{botoesDa(equipe)}</td>
                     </tr>
                   )
                 })}
@@ -204,7 +245,7 @@ function CriarEquipe({
       aberto
       aoFechar={aoFechar}
       titulo="Criar equipe"
-      descricao="Uma pessoa pode estar em mais de uma equipe: quem cobre duas praças não precisa de uma função nova. Quem entra em cada uma se escolhe no acesso da pessoa."
+      descricao="Uma pessoa pode estar em mais de uma equipe: quem cobre duas praças não precisa de uma função nova. Quem entra em cada uma se escolhe em Editar, na lista de equipes, ou no acesso da pessoa."
       largura={440}
     >
       <form
@@ -247,6 +288,127 @@ function CriarEquipe({
           </button>
           <button type="submit" disabled={enviando || nome.trim() === ''} className="botao-primario botao-md flex-[1.35]">
             {enviando ? 'Criando…' : 'Criar equipe'}
+          </button>
+        </div>
+      </form>
+    </Modal>
+  )
+}
+
+/**
+ * Quem está nesta equipe, escolhido daqui (13/out/2026). Antes só dava pelo
+ * acesso de cada pessoa, um por um, e a tela de Equipes não tinha como editar.
+ *
+ * Quem a hierarquia não deixa mexer aparece travado, com o motivo: some da
+ * lista seria pior, porque a pessoa está na equipe e a tela mentiria.
+ */
+export function EditarMembros({
+  equipe,
+  pessoas,
+  membros,
+  aoFechar,
+  enviar,
+}: {
+  equipe: Equipe
+  pessoas: PessoaDaConta[]
+  membros: string[]
+  aoFechar: () => void
+  enviar: (ids: string[]) => Promise<{ ok: boolean; erro?: string }>
+}) {
+  const [escolhidos, setEscolhidos] = useState(() => new Set(membros))
+  const [erro, setErro] = useState<string | null>(null)
+  const [enviando, comecar] = useTransition()
+  const alternar = (id: string) =>
+    setEscolhidos((antes) => {
+      const novo = new Set(antes)
+      if (novo.has(id)) novo.delete(id)
+      else novo.add(id)
+      return novo
+    })
+  const mudou = escolhidos.size !== membros.length || membros.some((id) => !escolhidos.has(id))
+  return (
+    <Modal
+      aberto
+      aoFechar={aoFechar}
+      titulo={`Editar ${equipe.nome}`}
+      descricao="Marque quem faz parte desta equipe. Quem está nela alcança os contatos da equipe nas capacidades com escopo da equipe."
+      largura={480}
+    >
+      <form
+        className="flex flex-col gap-3.5"
+        onSubmit={(evento) => {
+          evento.preventDefault()
+          setErro(null)
+          comecar(async () => {
+            try {
+              const r = await enviar([...escolhidos])
+              if (!r.ok) setErro(r.erro ?? 'não foi possível salvar a equipe')
+              else aoFechar()
+            } catch {
+              setErro('sem conexão com o servidor')
+            }
+          })
+        }}
+      >
+        <div>
+          <div className="mb-1.5 flex items-baseline justify-between">
+            <RotuloCampo>Pessoas</RotuloCampo>
+            <span className="text-[11.5px] text-dim tabular-nums">
+              {escolhidos.size} {escolhidos.size === 1 ? 'selecionada' : 'selecionadas'}
+            </span>
+          </div>
+          <ul className="max-h-[320px] divide-y divide-line overflow-y-auto rounded-xl border border-line">
+            {pessoas.map((pessoa) => {
+              const marcada = escolhidos.has(pessoa.id)
+              return (
+                <li key={pessoa.id}>
+                  <button
+                    type="button"
+                    role="checkbox"
+                    aria-checked={marcada}
+                    disabled={!pessoa.podeEditar}
+                    onClick={() => alternar(pessoa.id)}
+                    title={pessoa.podeEditar ? undefined : 'Só quem está acima desta pessoa altera as equipes dela'}
+                    className={`flex w-full items-center gap-3 px-3 py-2.5 text-left transition disabled:cursor-not-allowed disabled:opacity-55 ${
+                      marcada ? 'bg-primary/[0.06]' : 'hover:bg-surface'
+                    }`}
+                  >
+                    <Avatar nome={pessoa.nome} imagem={pessoa.imagem} tamanho={30} />
+                    <span className="min-w-0 flex-1">
+                      <span className="block truncate text-[13px] font-semibold text-ink">{pessoa.nome}</span>
+                      {!pessoa.podeEditar && (
+                        <span className="block text-[11.5px] text-dim">sem permissão para alterar</span>
+                      )}
+                    </span>
+                    <span
+                      aria-hidden
+                      className={`grid size-5 shrink-0 place-items-center rounded-md border transition ${
+                        marcada ? 'border-primary bg-primary text-white' : 'border-line bg-panel'
+                      }`}
+                    >
+                      {marcada && (
+                        <svg viewBox="0 0 16 16" className="size-3" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
+                          <path d="M3.5 8.5l3 3 6-7" />
+                        </svg>
+                      )}
+                    </span>
+                  </button>
+                </li>
+              )
+            })}
+          </ul>
+        </div>
+        {erro && (
+          <p role="alert" className="rounded-[10px] border border-rose-400/25 bg-rose-400/[0.08] px-3 py-2.5 text-[12px] leading-5 text-perigo">
+            {erro}
+          </p>
+        )}
+        <div className="mt-1 flex gap-2.5">
+          <button type="button" onClick={aoFechar} className="botao-secundario botao-md flex-1">
+            Cancelar
+          </button>
+          <button type="submit" disabled={enviando || !mudou} className="botao-primario botao-md flex-[1.35]">
+            {enviando ? 'Salvando…' : 'Salvar equipe'}
           </button>
         </div>
       </form>

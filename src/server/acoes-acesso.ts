@@ -7,11 +7,14 @@ import { baseDaPessoa, exigirHierarquia } from './pessoas'
 import {
   arquivarEquipe,
   criarEquipe,
+  definirMembrosDaEquipe,
+  equipesPorMembro,
   definirCapacidades,
   definirEquipesDoMembro,
   pendenciasDoMembro,
 } from './repos/equipes'
 import { exigirCapacidade, recusou } from './permissoes'
+import { membrosDaConta } from './repos/usuarios'
 import { sessaoAtual } from './sessao'
 
 /**
@@ -66,6 +69,39 @@ export async function acaoArquivarEquipe(
  * equipe deixaria alguém com escopo `equipe` e nenhuma equipe, que é acesso a
  * nada, e parece bug em vez de configuração.
  */
+/**
+ * Quem está nesta equipe, editado pela tela de Equipes.
+ *
+ * A hierarquia vale para **cada pessoa que muda**, como no editor de acesso:
+ * entrar ou sair de equipe muda o alcance dela, e só quem está acima mexe
+ * nisso. Quem continua igual não é conferido, para o gestor poder editar uma
+ * equipe que tem gente acima dele sem mexer nessa gente.
+ */
+export async function acaoDefinirMembrosDaEquipe(
+  clienteId: string,
+  equipeId: string,
+  usuarios: string[],
+): Promise<{ ok: boolean; erro?: string }> {
+  const acesso = await exigirCapacidade(clienteId, 'configurar_empresa', 'todos')
+  if (recusou(acesso)) return acesso
+
+  const desejados = new Set(usuarios)
+  const porMembro = await equipesPorMembro(clienteId)
+  const atuais = new Set([...porMembro].filter(([, equipes]) => equipes.includes(equipeId)).map(([id]) => id))
+  const mudam = [...new Set([...desejados, ...atuais])].filter((id) => desejados.has(id) !== atuais.has(id))
+  for (const usuarioId of mudam) {
+    const permitido = await exigirHierarquia(clienteId, usuarioId)
+    if ('ok' in permitido) return permitido
+  }
+
+  const daConta = new Set((await membrosDaConta(clienteId)).map((membro) => membro.id))
+  const r = await definirMembrosDaEquipe(clienteId, equipeId, [...desejados], daConta)
+  if (!r.ok) return { ok: false, erro: r.motivo }
+
+  ajustes(clienteId)
+  return { ok: true }
+}
+
 export async function acaoSalvarAcesso(
   clienteId: string,
   usuarioId: string,

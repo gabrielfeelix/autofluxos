@@ -78,6 +78,7 @@ export default async function Pagina({
       return [
         time.id,
         dentro.map((membro) => ({
+          id: membro.id,
           nome: membro.nome,
           imagem: membro.imagem,
           semAlcance: resumoDoAcesso({
@@ -137,6 +138,12 @@ export default async function Pagina({
               clienteId={clienteId}
               equipes={equipesDaConta}
               perda={perdaPorEquipe}
+              pessoasDaConta={visiveis.map((membro) => ({
+                id: membro.id,
+                nome: membro.nome,
+                imagem: membro.imagem,
+                podeEditar: podeEditarPessoa(ator, hierarquia.get(membro.id)!),
+              }))}
               topo={{ trilha, titulo: 'Pessoas', descricao: DESCRICAO_DAS_EQUIPES }}
               abaixoDoTopo={abas}
             />

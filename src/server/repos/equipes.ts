@@ -138,6 +138,45 @@ export async function definirEquipesDoMembro(
   return { ok: true }
 }
 
+/**
+ * Quem está numa equipe, pelo lado da equipe: o conjunto inteiro, como em
+ * `definirEquipesDoMembro`. A equipe e as pessoas são conferidas contra a
+ * **mesma conta** antes de escrever, os ids chegam do navegador.
+ */
+export async function definirMembrosDaEquipe(
+  clienteId: string,
+  equipeId: string,
+  usuarios: readonly string[],
+  daConta: ReadonlySet<string>,
+): Promise<{ ok: true } | { ok: false; motivo: string }> {
+  const { data: equipe, error: erroDaEquipe } = await db()
+    .from('equipes')
+    .select('id')
+    .eq('client_id', clienteId)
+    .eq('id', equipeId)
+    .is('arquivada_em', null)
+    .maybeSingle()
+  if (erroDaEquipe && !ehIdInvalido(erroDaEquipe)) {
+    return { ok: false, motivo: `não foi possível conferir a equipe: ${erroDaEquipe.message}` }
+  }
+  if (!equipe) return { ok: false, motivo: 'esta equipe não existe mais' }
+  if (usuarios.some((id) => !daConta.has(id))) return { ok: false, motivo: 'alguma dessas pessoas não é desta organização' }
+
+  const { error: erroDoDelete } = await db()
+    .from('equipe_membros')
+    .delete()
+    .eq('client_id', clienteId)
+    .eq('equipe_id', equipeId)
+  if (erroDoDelete) return { ok: false, motivo: `não foi possível atualizar: ${erroDoDelete.message}` }
+  if (usuarios.length === 0) return { ok: true }
+
+  const { error } = await db()
+    .from('equipe_membros')
+    .insert(usuarios.map((usuarioId) => ({ equipe_id: equipeId, client_id: clienteId, usuario_id: usuarioId })))
+  if (error) return { ok: false, motivo: `não foi possível atualizar: ${error.message}` }
+  return { ok: true }
+}
+
 /** As equipes de cada pessoa da conta, para a tela desenhar a lista de uma vez. */
 export async function equipesPorMembro(clienteId: string): Promise<Map<string, string[]>> {
   const { data, error } = await db()
