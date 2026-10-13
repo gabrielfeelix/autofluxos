@@ -1370,7 +1370,7 @@ function ResumoDaConversa({ lead }: { lead: Lead }) {
           tique lá, e aqui também não. */}
       {lead.ultimaDirecao === "saida" && !lead.ultimaEReacao && <Tiques situacao={lead.ultimaSituacao} claro />}
       {quem && <span className="font-semibold text-primary/80">{quem}: </span>}
-      {textoDaConversa(lead)}
+      {opcaoTocada(lead) !== null ? <OpcaoTocada rotulo={opcaoTocada(lead)!} /> : textoDaConversa(lead)}
     </>
   );
 }
@@ -1387,14 +1387,38 @@ function textoDoBalao(lead: Lead): string {
   return `${texto}\n\nAguardando atendente: ${resumoDoMotivo(lead.aguardando.motivo)}`;
 }
 
+/**
+ * O rótulo da opção que a pessoa tocou no menu, quando a última mensagem foi
+ * isso. Tocar não é escrever: "Suporte técnico" solto na prévia parecia frase
+ * digitada (13/out/2026).
+ */
+function opcaoTocada(lead: Lead): string | null {
+  if (lead.ultimaDirecao !== "entrada" || !lead.ultimoTexto) return null;
+  return lead.ultimoTipo === "interactive" || lead.ultimoTipo === "button" ? lead.ultimoTexto : null;
+}
+
+/**
+ * A escolha do menu na prévia, com a cara da bolha de opção tocada da conversa:
+ * o mesmo verde e o visto. Encolhe junto com a linha, e o rótulo é que corta.
+ */
+function OpcaoTocada({ rotulo }: { rotulo: string }) {
+  return (
+    <span className="inline-flex max-w-full items-center gap-1 rounded-md bg-ok/10 px-1.5 align-[-1px] text-[12.5px] font-medium leading-[18px] text-ok">
+      <svg aria-hidden viewBox="0 0 16 16" className="size-3 shrink-0" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M3.5 8.5l3 3 6-7" />
+      </svg>
+      <span className="sr-only">escolheu </span>
+      <span className="min-w-0 truncate">{rotulo}</span>
+    </span>
+  );
+}
+
 /** O texto da última mensagem, sem quem falou. */
 function textoDaConversa(lead: Lead): string {
   // "Gabriel: ❤️" parecia uma mensagem com um coração; é uma reação.
   if (lead.ultimaEReacao) return lead.ultimoTexto ? `reagiu com ${lead.ultimoTexto} a uma mensagem` : "reagiu a uma mensagem";
-  // Tocar numa opção do menu não é escrever: "Suporte técnico" sozinho parecia
-  // frase digitada (13/out/2026).
-  const tocouEmOpcao = lead.ultimaDirecao === "entrada" && (lead.ultimoTipo === "interactive" || lead.ultimoTipo === "button");
-  if (tocouEmOpcao && lead.ultimoTexto) return `escolheu "${lead.ultimoTexto}"`;
+  const opcao = opcaoTocada(lead);
+  if (opcao !== null) return `escolheu "${opcao}"`;
   if (lead.ultimoTexto) return lead.ultimoTexto;
   if (!lead.ultimaEm) return "sem mensagem";
 
