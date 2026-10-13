@@ -15,6 +15,7 @@ import {
   type PapelDaConta,
   type Politica,
 } from '@/core/permissoes'
+import { Dropdown } from '@/components/design/dropdown'
 import { Modal } from '@/components/design/modal'
 import { RotuloCampo } from '@/components/design/modal-formulario'
 import { acaoSalvarAcesso } from '@/server/acoes-acesso'
@@ -93,6 +94,24 @@ export const ROTULO_DO_ESCOPO: Record<Escopo, string> = {
   todos: 'De toda a organização',
 }
 
+/**
+ * O alcance em uma ou duas palavras, para o seletor fechado e o selo do resumo.
+ * "De toda a organização" não cabia nos dois e cortava (13/out/2026); a frase
+ * inteira vai como detalhe na lista aberta.
+ */
+const ESCOPO_CURTO: Record<Escopo, string> = {
+  nenhum: 'Não pode',
+  proprios: 'Só as dela',
+  equipe: 'Da equipe',
+  todos: 'Todos',
+}
+
+const DETALHE_DO_ESCOPO: Partial<Record<Escopo, string>> = {
+  proprios: 'só o que está atribuído a ela',
+  equipe: 'o que é de quem está na equipe dela',
+  todos: 'tudo da organização',
+}
+
 export type MembroParaAcesso = {
   id: string
   nome: string
@@ -140,6 +159,7 @@ export function EditorDeAcesso({
   )
 
   const podeDeVerdade = efetivo.filter((linha) => linha.escopo !== 'nenhum')
+  const naoPode = efetivo.filter((linha) => linha.escopo === 'nenhum')
 
   const nomesDasEquipes = useMemo(
     () => Object.fromEntries(equipesDaConta.map((equipe) => [equipe.id, equipe.nome])),
@@ -278,8 +298,14 @@ export function EditorDeAcesso({
               const daSobrescrita = sobrescritas[capacidade]
               const doPapel = (membro?.base ?? POLITICAS[papel])[capacidade]
               return (
-                <label key={capacidade} className="flex items-start gap-3">
-                  <span className="min-w-0 flex-1">
+                /*
+                  Grade, e não flex: no flex o seletor engolia a linha e
+                  espremia o texto em uma palavra por linha (13/out/2026). Na
+                  grade a largura é a da coluna. `div`, e não `label`: o
+                  Dropdown é um botão, e o clique no texto o abriria.
+                */
+                <div key={capacidade} className="grid gap-1.5 sm:grid-cols-[minmax(0,1fr)_13.5rem] sm:items-start sm:gap-3">
+                  <span className="min-w-0">
                     <strong className="block text-[13px] font-semibold">
                       {ROTULO_DA_CAPACIDADE[capacidade].titulo}
                     </strong>
@@ -287,21 +313,17 @@ export function EditorDeAcesso({
                       {ROTULO_DA_CAPACIDADE[capacidade].detalhe}
                     </span>
                   </span>
-                  <select
-                    value={daSobrescrita ?? 'papel'}
-                    onChange={(e) => trocar(capacidade, e.target.value)}
-                    className="app-field shrink-0 px-2 py-1.5 text-[12px]"
-                  >
-                    <option value="papel">
-                      Igual à função ({ROTULO_DO_ESCOPO[doPapel].toLowerCase()})
-                    </option>
-                    {ESCOPOS.map((escopo) => (
-                      <option key={escopo} value={escopo}>
-                        {ROTULO_DO_ESCOPO[escopo]}
-                      </option>
-                    ))}
-                  </select>
-                </label>
+                  <Dropdown
+                    valor={daSobrescrita ?? 'papel'}
+                    aoMudar={(valor) => trocar(capacidade, valor)}
+                    rotuloAcessivel={ROTULO_DA_CAPACIDADE[capacidade].titulo}
+                    className="w-full"
+                    opcoes={[
+                      { valor: 'papel', rotulo: `Padrão (${ESCOPO_CURTO[doPapel].toLowerCase()})`, detalhe: 'o que a função dela já dá' },
+                      ...ESCOPOS.map((escopo) => ({ valor: escopo, rotulo: ESCOPO_CURTO[escopo], detalhe: DETALHE_DO_ESCOPO[escopo] })),
+                    ]}
+                  />
+                </div>
               )
             })}
           </section>
@@ -314,25 +336,52 @@ export function EditorDeAcesso({
         */}
         <aside className="rounded-xl border border-line bg-surface p-4 text-[12px] leading-5 md:sticky md:top-0 md:self-start">
           <strong className="block text-[11px] font-semibold tracking-[0.05em] text-muted uppercase">
-            Depois de salvar
+            Resumo do acesso
           </strong>
-          <span className="mt-1.5 block text-[13px] font-semibold text-claro">{resumo.perfil}</span>
-          <p className="mt-0.5 text-dim">{resumo.frases.join(' · ')}</p>
+          <div className="mt-2 flex flex-wrap items-center gap-2">
+            <span className="text-[14px] font-semibold text-ink">{membro.nome.split(' ')[0]}</span>
+            <span className="rounded-full bg-primary/10 px-2 py-px text-[11.5px] font-semibold text-primary">
+              {resumo.perfil}
+            </span>
+          </div>
+          <p className="mt-1 text-dim">Assim fica depois de salvar.</p>
 
           {podeDeVerdade.length === 0 ? (
-            <p className="mt-2 text-dim">
+            <p className="mt-4 rounded-lg border border-line bg-panel p-3 text-muted">
               Esta pessoa não vai conseguir fazer nada nesta conta. Ela continua
               entrando, e vê só o que não depende de permissão.
             </p>
           ) : (
-            <ul className="mt-2 flex flex-col gap-1.5">
-              {podeDeVerdade.map(({ capacidade, escopo }) => (
-                <li key={capacidade} className="text-muted">
-                  {ROTULO_DA_CAPACIDADE[capacidade].titulo}
-                  <span className="text-dim">, {ROTULO_DO_ESCOPO[escopo].toLowerCase()}</span>
-                </li>
-              ))}
-            </ul>
+            <>
+              <span className="mt-4 flex items-center gap-1.5 text-[12px] font-semibold text-ink">
+                <IconeDoResumo pode />
+                Pode
+              </span>
+              {/* Cada coisa que ela faz, com o alcance ao lado: "de quem" é a
+                  metade da resposta, e numa frase corrida ela se perdia. */}
+              <ul className="mt-2 divide-y divide-line overflow-hidden rounded-lg border border-line bg-panel">
+                {podeDeVerdade.map(({ capacidade, escopo }) => (
+                  <li key={capacidade} className="flex items-center justify-between gap-3 px-3 py-2">
+                    <span className="min-w-0 flex-1 text-[12.5px] text-ink">{ROTULO_DA_CAPACIDADE[capacidade].titulo}</span>
+                    <span className="shrink-0 rounded-full bg-ok/10 px-2 py-px text-[11px] font-medium whitespace-nowrap text-ok">
+                      {ESCOPO_CURTO[escopo]}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            </>
+          )}
+
+          {naoPode.length > 0 && (
+            <>
+              <span className="mt-4 flex items-center gap-1.5 text-[12px] font-semibold text-ink">
+                <IconeDoResumo pode={false} />
+                Não pode
+              </span>
+              <p className="mt-1 text-dim">
+                {naoPode.map(({ capacidade }) => ROTULO_DA_CAPACIDADE[capacidade].titulo).join(', ')}.
+              </p>
+            </>
           )}
 
           {escopoDeEquipeSemEquipe && (
@@ -351,8 +400,8 @@ export function EditorDeAcesso({
             Dizer isso aqui evita a descoberta pelo caminho caro.
           */}
           {efetivo.some((l) => l.capacidade === 'atender' && l.escopo === 'proprios') && (
-            <p className="mt-3 text-dim">
-              Com <strong className="text-muted">só o que é dela</strong> em Atender,
+            <p className="mt-4 rounded-lg border border-primary/15 bg-primary/5 p-2.5 text-muted">
+              Com <strong className="text-ink">Só as dela</strong> em Atender,
               ela não vê a fila de quem ninguém assumiu, só as conversas atribuídas
               a ela.
             </p>
@@ -420,5 +469,19 @@ function BotaoDeModelo({
     >
       {rotulo}
     </button>
+  )
+}
+
+/** O visto verde do que ela pode, e o traço apagado do que não pode. */
+function IconeDoResumo({ pode }: { pode: boolean }) {
+  return (
+    <span
+      aria-hidden
+      className={`grid size-4 place-items-center rounded-full ${pode ? 'bg-ok/15 text-ok' : 'bg-line text-dim'}`}
+    >
+      <svg viewBox="0 0 16 16" className="size-2.5" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
+        {pode ? <path d="M3.5 8.5l3 3 6-7" /> : <path d="M4.5 8h7" />}
+      </svg>
+    </span>
   )
 }
