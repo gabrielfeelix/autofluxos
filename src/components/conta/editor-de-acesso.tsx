@@ -224,9 +224,9 @@ export function EditorDeAcesso({
       aoFechar={aoFechar}
       titulo={`Acesso de ${membro.nome}`}
       descricao={`Papel na conta: ${ROTULO_DO_PAPEL[papel]}. Escolha um perfil; quem não tem acesso a uma tela não a vê no menu, e o servidor recusa a chamada direta.`}
-      largura={760}
+      largura={600}
     >
-      <div className="grid gap-5 md:grid-cols-[1fr_260px]">
+      <div className="flex flex-col gap-4">
         <div className="flex flex-col gap-4">
           <section>
             <RotuloCampo>Perfil de acesso</RotuloCampo>
@@ -338,17 +338,32 @@ export function EditorDeAcesso({
           A prévia. Ela responde a pergunta que a lista de chaves não responde:
           "depois de salvar, o que essa pessoa consegue fazer?"
         */}
-        <aside className="rounded-xl border border-line bg-surface p-4 text-[12px] leading-5 md:sticky md:top-0 md:self-start">
-          <strong className="block text-[11px] font-semibold tracking-[0.05em] text-muted uppercase">
-            Resumo do acesso
-          </strong>
-          <div className="mt-2 flex flex-wrap items-center gap-2">
-            <span className="text-[14px] font-semibold text-ink">{membro.nome.split(' ')[0]}</span>
+        {/*
+          Recolhido por padrão (13/out/2026): aberto ao lado, o resumo competia
+          com o que se está editando e parecia parte do formulário. Quem quer
+          conferir abre; o aviso de equipe sem alcance fica sempre à vista.
+        */}
+        <details className="group rounded-xl border border-line text-[12px] leading-5">
+          <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-3.5 py-2.5 text-[12.5px] font-semibold text-muted">
+            <span className="flex items-center gap-2">
+              <svg aria-hidden viewBox="0 0 16 16" className="size-3.5 shrink-0 text-dim" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round">
+                <circle cx="8" cy="8" r="6.25" />
+                <path d="M8 7.25v3.5M8 5.1v.05" />
+              </svg>
+              Como fica o acesso de {membro.nome.split(' ')[0]}
+            </span>
+            <span className="text-[11px] font-normal text-dim group-open:hidden">
+              pode {podeDeVerdade.length} de {efetivo.length}
+            </span>
+            <span className="hidden text-[11px] font-normal text-dim group-open:inline">recolher</span>
+          </summary>
+          <div className="border-t border-line px-3.5 py-3">
+          <div className="flex flex-wrap items-center gap-2">
             <span className="rounded-full bg-primary/10 px-2 py-px text-[11.5px] font-semibold text-primary">
               {resumo.perfil}
             </span>
+            <span className="text-dim">assim fica depois de salvar</span>
           </div>
-          <p className="mt-1 text-dim">Assim fica depois de salvar.</p>
 
           {podeDeVerdade.length === 0 ? (
             <p className="mt-4 rounded-lg border border-line bg-panel p-3 text-muted">
@@ -388,15 +403,6 @@ export function EditorDeAcesso({
             </>
           )}
 
-          {escopoDeEquipeSemEquipe && (
-            <p className="mt-3 rounded-lg border border-aviso/30 bg-aviso/10 p-2.5 text-aviso">
-              Alguma capacidade está no escopo da equipe, e esta pessoa não está em
-              equipe nenhuma. Na prática isso é não poder:{' '}
-              {equipesDaConta.length > 0
-                ? 'escolha uma equipe acima.'
-                : 'crie uma equipe no bloco Equipes, nesta página.'}
-            </p>
-          )}
 
           {/*
             A fila sem responsável não é de todos por acidente (RB-40): quem
@@ -410,7 +416,18 @@ export function EditorDeAcesso({
               a ela.
             </p>
           )}
-        </aside>
+          </div>
+        </details>
+          {escopoDeEquipeSemEquipe && (
+            <p className="rounded-lg border border-aviso/30 bg-aviso/10 p-2.5 text-aviso">
+              Alguma capacidade está no escopo da equipe, e esta pessoa não está em
+              equipe nenhuma. Na prática isso é não poder:{' '}
+              {equipesDaConta.length > 0
+                ? 'escolha uma equipe acima.'
+                : 'crie uma equipe no bloco Equipes, nesta página.'}
+            </p>
+          )}
+
       </div>
 
       {confirmandoSemAlcance && (
