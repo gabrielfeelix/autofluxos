@@ -1391,6 +1391,10 @@ function textoDoBalao(lead: Lead): string {
 function textoDaConversa(lead: Lead): string {
   // "Gabriel: ❤️" parecia uma mensagem com um coração; é uma reação.
   if (lead.ultimaEReacao) return lead.ultimoTexto ? `reagiu com ${lead.ultimoTexto} a uma mensagem` : "reagiu a uma mensagem";
+  // Tocar numa opção do menu não é escrever: "Suporte técnico" sozinho parecia
+  // frase digitada (13/out/2026).
+  const tocouEmOpcao = lead.ultimaDirecao === "entrada" && (lead.ultimoTipo === "interactive" || lead.ultimoTipo === "button");
+  if (tocouEmOpcao && lead.ultimoTexto) return `escolheu "${lead.ultimoTexto}"`;
   if (lead.ultimoTexto) return lead.ultimoTexto;
   if (!lead.ultimaEm) return "sem mensagem";
 
