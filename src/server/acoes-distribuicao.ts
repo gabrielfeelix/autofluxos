@@ -27,13 +27,20 @@ const SO_QUEM_ADMINISTRA = 'só quem administra a conta muda a distribuição'
 
 export async function acaoDefinirDistribuicao(
   clienteId: string,
-  ajustes: { distribuicao?: ModoDeDistribuicao; exigeAssumir?: boolean },
+  ajustes: { distribuicao?: ModoDeDistribuicao; exigeAssumir?: boolean; responsavelPadrao?: string | null },
 ): Promise<{ ok: boolean; erro?: string }> {
   const acesso = await exigirCapacidade(clienteId, 'configurar_empresa', 'todos')
   if (recusou(acesso)) return { ok: false, erro: SO_QUEM_ADMINISTRA }
 
   if (ajustes.distribuicao && !MODOS_DE_DISTRIBUICAO.includes(ajustes.distribuicao)) {
     return { ok: false, erro: 'modo de distribuição que não existe' }
+  }
+  // o id vem da tela: só vale gente desta conta
+  if (ajustes.responsavelPadrao) {
+    const equipe = await membrosDaConta(clienteId)
+    if (!equipe.some((membro) => membro.id === ajustes.responsavelPadrao)) {
+      return { ok: false, erro: 'esta pessoa não está nesta organização' }
+    }
   }
 
   const r = await definirAjustesDaConta(clienteId, ajustes)

@@ -18,9 +18,11 @@ export type AjustesDaConta = {
   distribuicao: ModoDeDistribuicao
   /** `true` = responder exige ser o dono da conversa. */
   exigeAssumir: boolean
+  /** Quem recebe todo contato novo que entra sem dono (0134). `null` = segue a distribuição. */
+  responsavelPadrao: string | null
 }
 
-const PADRAO: AjustesDaConta = { distribuicao: 'manual', exigeAssumir: false }
+const PADRAO: AjustesDaConta = { distribuicao: 'manual', exigeAssumir: false, responsavelPadrao: null }
 
 /**
  * Como esta conta distribui.
@@ -32,7 +34,7 @@ const PADRAO: AjustesDaConta = { distribuicao: 'manual', exigeAssumir: false }
 export async function ajustesDaConta(clienteId: string): Promise<AjustesDaConta> {
   const { data, error } = await db()
     .from('clients')
-    .select('distribuicao, exige_assumir')
+    .select('distribuicao, exige_assumir, responsavel_padrao')
     .eq('id', clienteId)
     .maybeSingle()
 
@@ -43,12 +45,15 @@ export async function ajustesDaConta(clienteId: string): Promise<AjustesDaConta>
   }
   if (!data) return PADRAO
 
-  const linha = data as { distribuicao: string | null; exige_assumir: boolean | null }
+  const linha = data as {
+    distribuicao: string | null; exige_assumir: boolean | null; responsavel_padrao: string | null
+  }
   return {
     distribuicao: (MODOS_DE_DISTRIBUICAO as string[]).includes(linha.distribuicao ?? '')
       ? (linha.distribuicao as ModoDeDistribuicao)
       : 'manual',
     exigeAssumir: linha.exige_assumir === true,
+    responsavelPadrao: linha.responsavel_padrao ?? null,
   }
 }
 
@@ -59,6 +64,7 @@ export async function definirAjustesDaConta(
   const mudanca: Record<string, unknown> = {}
   if (ajustes.distribuicao !== undefined) mudanca.distribuicao = ajustes.distribuicao
   if (ajustes.exigeAssumir !== undefined) mudanca.exige_assumir = ajustes.exigeAssumir
+  if (ajustes.responsavelPadrao !== undefined) mudanca.responsavel_padrao = ajustes.responsavelPadrao
   if (Object.keys(mudanca).length === 0) return { ok: true }
 
   const { error } = await db().from('clients').update(mudanca).eq('id', clienteId)

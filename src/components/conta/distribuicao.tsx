@@ -9,6 +9,7 @@ import {
   acaoPassarConversas,
 } from '@/server/acoes-distribuicao'
 import { Botao } from '@/components/design/botao'
+import { Avatar } from '@/components/inbox/avatar'
 
 /**
  * Como esta conta reparte os leads novos.
@@ -66,17 +67,20 @@ export function Distribuicao({
   clienteId,
   distribuicao,
   exigeAssumir,
+  responsavelPadrao,
   pessoas,
   podeMexer,
 }: {
   clienteId: string
   distribuicao: string
   exigeAssumir: boolean
+  responsavelPadrao: string | null
   pessoas: PessoaNaDistribuicao[]
   podeMexer: boolean
 }) {
   const [modo, setModo] = useState(distribuicao)
   const [trava, setTrava] = useState(exigeAssumir)
+  const [padrao, setPadrao] = useState(responsavelPadrao ?? '')
   // Quem entra mora aqui em cima para a frase "todo lead vai para X" saber.
   const [entram, setEntram] = useState<Record<string, boolean>>(() =>
     Object.fromEntries(pessoas.map((p) => [p.id, p.entraNoRodizio ?? entraPorPadrao(p.papel)])),
@@ -87,18 +91,22 @@ export function Distribuicao({
   // servidor não redesenha mais a página (`gestoSemRecarregar`).
   const [, salvar] = useTransition()
 
-  const mudarConta = (ajustes: { distribuicao?: string; exigeAssumir?: boolean }) => {
+  const mudarConta = (ajustes: {
+    distribuicao?: string; exigeAssumir?: boolean; responsavelPadrao?: string | null
+  }) => {
     setErro(null)
     salvar(async () => {
       const r = await acaoDefinirDistribuicao(clienteId, {
         distribuicao: ajustes.distribuicao as 'manual' | 'balanceado' | 'rodizio' | undefined,
         exigeAssumir: ajustes.exigeAssumir,
+        responsavelPadrao: ajustes.responsavelPadrao,
       })
       if (!r.ok) {
         setErro(r.erro ?? 'não foi possível salvar')
         // Desfaz a aposta: o estado que sobra é o que o servidor aceitou.
         setModo(distribuicao)
         setTrava(exigeAssumir)
+        setPadrao(responsavelPadrao ?? '')
       }
     })
   }
@@ -108,11 +116,42 @@ export function Distribuicao({
       <header className="border-b border-line px-5 py-4">
         <h2 className="text-[14.5px] font-bold">Distribuição do atendimento</h2>
         <p className="mt-1 max-w-[640px] text-[12px] leading-5 text-dim">
-          Quem recebe a conversa quando o bot desiste e alguém precisa atender.
+          Quem responde por cada conversa, e quem recebe quando o bot passa para uma pessoa.
         </p>
       </header>
 
       <div className="flex flex-col gap-4 px-5 py-4">
+        <div className="flex flex-col gap-1.5">
+          <span className="text-[12.5px] font-semibold text-soft">Responsável padrão</span>
+          <Dropdown
+            opcoes={[
+              {
+                valor: '',
+                rotulo: 'Nenhum',
+                detalhe: 'a conversa só ganha responsável pela distribuição abaixo',
+                icone: <Avatar nome={null} tamanho={22} />,
+              },
+              ...pessoas.map((pessoa) => ({
+                valor: pessoa.id,
+                rotulo: pessoa.nome,
+                icone: <Avatar nome={pessoa.nome} tamanho={22} />,
+              })),
+            ]}
+            valor={padrao}
+            aoMudar={(valor) => {
+              setPadrao(valor)
+              mudarConta({ responsavelPadrao: valor || null })
+            }}
+            desabilitado={!podeMexer}
+            rotuloAcessivel="Responsável padrão de toda conversa nova"
+            className="max-w-[420px]"
+          />
+          <span className="text-[11.5px] leading-5 text-dim">
+            Vale inclusive para a conversa que o bot resolve sozinho. Nenhuma fica
+            em &quot;Sem responsável&quot;.
+          </span>
+        </div>
+
         <div className="flex flex-col gap-1.5">
           <span className="text-[12.5px] font-semibold text-soft">Lead novo vai para</span>
           <Dropdown

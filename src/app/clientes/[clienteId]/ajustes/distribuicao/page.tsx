@@ -61,13 +61,14 @@ export default async function Pagina({ params }: { params: Promise<{ clienteId: 
             { rotulo: 'Distribuição' },
           ]}
           titulo={<>Distribuição</>}
-          descricao={<>Quem recebe a conversa quando o bot transfere para uma pessoa. Cada mudança salva sozinha.</>}
+          descricao={<>Quem responde por cada conversa, e quem recebe quando o bot transfere para uma pessoa. Cada mudança salva sozinha.</>}
         />
         <div className="flex flex-col gap-6">
           <Distribuicao
             clienteId={clienteId}
             distribuicao={ajustes.distribuicao}
             exigeAssumir={ajustes.exigeAssumir}
+            responsavelPadrao={ajustes.responsavelPadrao}
             pessoas={pessoas}
             podeMexer={podeMexer}
           />
