@@ -115,6 +115,8 @@ export function Historico({
   const [aoVivo, setAoVivo] = useState<MensagemDoLead[]>([])
   /** Os tiques que chegaram depois do desenho: "lida" muda mensagem antiga. */
   const [situacoes, setSituacoes] = useState<Record<string, MensagemDoLead['situacao']>>({})
+  /** As reações relidas: o coração do cliente cai numa bolha que já estava na tela. */
+  const [reacoes, setReacoes] = useState<Record<string, NonNullable<MensagemDoLead['reacoes']>>>({})
 
   const idsDoServidor = useMemo(
     () => new Set(mensagens.map((mensagem) => mensagem.id)),
@@ -143,14 +145,20 @@ export function Historico({
   const lista = useMemo(() => {
     const comTiques = (mensagem: MensagemDoLead) => {
       const situacao = situacoes[mensagem.id]
-      return situacao && situacao !== mensagem.situacao ? { ...mensagem, situacao } : mensagem
+      const comSituacao =
+        situacao && situacao !== mensagem.situacao ? { ...mensagem, situacao } : mensagem
+      const relidas = reacoes[mensagem.id]
+      if (!relidas) return comSituacao
+      return assinaturaDasReacoes(relidas) === assinaturaDasReacoes(comSituacao.reacoes)
+        ? comSituacao
+        : { ...comSituacao, reacoes: relidas }
     }
     if (aoVivo.length === 0) return mensagens.map(comTiques)
     const porId = new Map(aoVivo.map((mensagem) => [mensagem.id, mensagem]))
     const atualizadas = mensagens.map((mensagem) => comTiques(porId.get(mensagem.id) ?? mensagem))
     const ineditas = aoVivo.filter((mensagem) => !idsDoServidor.has(mensagem.id)).map(comTiques)
     return ineditas.length === 0 ? atualizadas : [...atualizadas, ...ineditas]
-  }, [mensagens, aoVivo, idsDoServidor, situacoes])
+  }, [mensagens, aoVivo, idsDoServidor, situacoes, reacoes])
 
   /**
    * O carimbo da última mensagem à vista, que é o "de onde continuar".
@@ -241,9 +249,11 @@ export function Historico({
         const corpo = (await resposta.json()) as {
           novas?: MensagemDoLead[]
           situacoes?: Record<string, MensagemDoLead['situacao']>
+          reacoes?: Record<string, NonNullable<MensagemDoLead['reacoes']>>
           etiquetas?: string[]
         }
         if (corpo.situacoes) setSituacoes(corpo.situacoes)
+        if (corpo.reacoes) setReacoes(corpo.reacoes)
         // Etiqueta que o bot pôs (ou a equipe, noutra aba) aparece no painel já.
         const aberta = abertaRef.current
         if (corpo.etiquetas && aberta && !mesmasEtiquetas(aberta.valor.etiquetas, corpo.etiquetas)) {

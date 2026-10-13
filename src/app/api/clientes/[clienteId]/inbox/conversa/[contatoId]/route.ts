@@ -118,11 +118,22 @@ export async function GET(
       .map((mensagem) => [mensagem.id, mensagem.situacao]),
   )
 
+  /*
+   * As reações de toda mensagem, pelo mesmo motivo dos tiques: o coração chega
+   * para uma bolha antiga, e a linha da reação some dentro dela na leitura. Só
+   * as novas deixava o coração de fora até o F5 (Rodrigo Leão, 13/out/2026).
+   * Vai `[]` para quem não tem, senão tirar a reação não apagava o emoji.
+   */
+  const reacoes = Object.fromEntries(
+    conversa.mensagens.map((mensagem) => [mensagem.id, mensagem.reacoes ?? []]),
+  )
+
   return Response.json(
     {
       novas,
       cortada: conversa.cortada,
       situacoes,
+      reacoes,
       /*
        * As etiquetas de agora. O bot põe etiqueta no meio da conversa ("Empresa
        * (B2B)" ao encaminhar), e sem isto o painel só a mostrava depois de
