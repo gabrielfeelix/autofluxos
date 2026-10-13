@@ -284,7 +284,7 @@ export default function Pagina() {
     <PaginaLegal
       titulo="Termos de Serviço"
       rotuloDoIndice="Índice dos termos"
-      resumo="O resumo em uma frase: você desenha o atendimento e é dono das conversas, nós rodamos a ferramenta com honestidade sobre o que ela garante, e quem usar isso para incomodar pessoas perde o acesso."
+      resumo="O resumo em uma frase: você desenha o atendimento e é titular das conversas, nós rodamos a ferramenta com honestidade sobre o que ela garante, e quem usar isso para incomodar pessoas perde o acesso."
       selos={[
         { icone: 'documento', texto: 'As conversas são suas' },
         { icone: 'proibido', texto: 'Nada de disparo em massa' },

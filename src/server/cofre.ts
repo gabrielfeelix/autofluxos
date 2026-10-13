@@ -15,7 +15,7 @@ import { db } from './db'
 
 export async function guardarNoCofre(valor: string, apelido: string): Promise<string> {
   const { data, error } = await db().rpc('criar_segredo', { valor, apelido })
-  if (error) throw new Error(`não deu para guardar no cofre: ${error.message}`)
+  if (error) throw new Error(`não foi possível guardar no cofre: ${error.message}`)
   if (typeof data !== 'string') throw new Error('o cofre não devolveu uma referência')
   return data
 }
@@ -28,7 +28,7 @@ export async function guardarNoCofre(valor: string, apelido: string): Promise<st
  */
 export async function lerDoCofre(id: string): Promise<string | null> {
   const { data, error } = await db().rpc('ler_segredo', { alvo: id })
-  if (error) throw new Error(`não deu para ler do cofre: ${error.message}`)
+  if (error) throw new Error(`não foi possível ler do cofre: ${error.message}`)
   return typeof data === 'string' && data !== '' ? data : null
 }
 

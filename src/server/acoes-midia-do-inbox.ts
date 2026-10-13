@@ -141,7 +141,7 @@ export async function acaoEnviarMidiaDoInbox(
       ...(entrada.nomeArquivo ? { nomeArquivo: entrada.nomeArquivo } : {}),
     })
   } catch (erro) {
-    return { ok: false, erro: erro instanceof Error ? erro.message : 'não deu para enviar' }
+    return { ok: false, erro: erro instanceof Error ? erro.message : 'não foi possível enviar' }
   }
 
   await confirmarEntrega(registro, waMessageId)

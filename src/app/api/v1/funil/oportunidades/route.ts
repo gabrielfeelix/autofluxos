@@ -34,7 +34,7 @@ export async function GET(request: Request) {
     return Response.json({ oportunidades })
   } catch (erro) {
     console.error(`[api] GET oportunidades falhou (chave ${acesso.publico}):`, erro instanceof Error ? erro.message : erro)
-    return erroDaApi(500, 'erro_interno', 'Não deu para ler as oportunidades agora. Tente de novo.')
+    return erroDaApi(500, 'erro_interno', 'Não foi possível ler as oportunidades agora. Tente de novo.')
   }
 }
 
@@ -64,6 +64,6 @@ export async function POST(request: Request) {
     return Response.json({ oportunidade: resultado.oportunidade }, { status: resultado.criada ? 201 : 200 })
   } catch (erro) {
     console.error(`[api] POST oportunidades falhou (chave ${acesso.publico}):`, erro instanceof Error ? erro.message : erro)
-    return erroDaApi(500, 'erro_interno', 'Não deu para abrir a oportunidade agora. Tente de novo.')
+    return erroDaApi(500, 'erro_interno', 'Não foi possível abrir a oportunidade agora. Tente de novo.')
   }
 }

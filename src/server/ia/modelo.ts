@@ -73,7 +73,7 @@ export async function escolherModelo({
       const doCliente = await lerChave(clienteId)
       if (doCliente) return { modelo: gemini({ chave: doCliente }), dono: 'cliente' }
     } catch (erro) {
-      console.error('[ia] não deu para ler a chave do cliente:', erro)
+      console.error('[ia] não foi possível ler a chave do cliente:', erro)
     }
   }
 

@@ -52,9 +52,9 @@ export function EntregaDoQuadro({
           comecar(async () => {
             try {
               const r = await acaoEncadearQuadro(clienteId, quadroId, destino)
-              if (!r.ok) setErro(r.erro ?? 'não deu para ligar os funis')
+              if (!r.ok) setErro(r.erro ?? 'não foi possível ligar os funis')
             } catch {
-              setErro('não deu para ligar os funis agora')
+              setErro('não foi possível ligar os funis agora')
             }
           })
         }}

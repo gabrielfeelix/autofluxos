@@ -73,7 +73,7 @@ export async function definirObjetivo(
 
   const { error } = await db().from('clients').update({ objetivo }).eq('id', clienteId)
 
-  if (error) return { ok: false, motivo: `não deu para gravar o objetivo: ${error.message}` }
+  if (error) return { ok: false, motivo: `não foi possível gravar o objetivo: ${error.message}` }
   return { ok: true }
 }
 
@@ -89,7 +89,7 @@ export async function definirCrmAtivo(
 ): Promise<{ ok: true } | { ok: false; motivo: string }> {
   const { error } = await db().from('clients').update({ crm_ativo: ativo }).eq('id', clienteId)
 
-  if (error) return { ok: false, motivo: `não deu para gravar: ${error.message}` }
+  if (error) return { ok: false, motivo: `não foi possível gravar: ${error.message}` }
   return { ok: true }
 }
 
@@ -141,7 +141,7 @@ export async function definirLojaAtiva(
 ): Promise<{ ok: true } | { ok: false; motivo: string }> {
   const { error } = await db().from('clients').update({ loja_ativa: ativa }).eq('id', clienteId)
 
-  if (error) return { ok: false, motivo: `não deu para gravar: ${error.message}` }
+  if (error) return { ok: false, motivo: `não foi possível gravar: ${error.message}` }
   return { ok: true }
 }
 
@@ -189,6 +189,6 @@ export async function definirNicho(
 
   const { error } = await db().from('clients').update({ nicho }).eq('id', clienteId)
 
-  if (error) return { ok: false, motivo: `não deu para gravar o tipo de negócio: ${error.message}` }
+  if (error) return { ok: false, motivo: `não foi possível gravar o tipo de negócio: ${error.message}` }
   return { ok: true }
 }

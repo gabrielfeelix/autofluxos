@@ -224,12 +224,12 @@ export function PaginaDoNegocio(props: Props) {
     comecar(async () => {
       try {
         const r = await acao()
-        if (!r.ok) throw new Error(r.erro ?? 'não deu para salvar')
+        if (!r.ok) throw new Error(r.erro ?? 'não foi possível salvar')
         if (id) confirmar(id)
       } catch (e) {
         setNegocio(antes)
         if (id) esquecer(id)
-        setErro(e instanceof Error && e.message ? e.message : 'não deu para salvar agora')
+        setErro(e instanceof Error && e.message ? e.message : 'não foi possível salvar agora')
       }
     })
   }
@@ -297,7 +297,7 @@ export function PaginaDoNegocio(props: Props) {
       } catch (e) {
         esquecer(id)
         aoFalhar(texto)
-        setErro(e instanceof Error && e.message ? e.message : 'não deu para guardar a anotação')
+        setErro(e instanceof Error && e.message ? e.message : 'não foi possível guardar a anotação')
       }
     })
   }
@@ -307,7 +307,7 @@ export function PaginaDoNegocio(props: Props) {
       const r = await acaoTirarDoQuadro(clienteId, negocio.id)
       if (!r.ok) {
         setExcluindo(false)
-        setErro(r.erro ?? 'não deu para excluir')
+        setErro(r.erro ?? 'não foi possível excluir')
         return
       }
       router.push(`/clientes/${clienteId}/quadros?q=${quadro.id}`)
@@ -325,7 +325,7 @@ export function PaginaDoNegocio(props: Props) {
       const r = await acaoTrocarDeFunil(clienteId, negocio.id, quadroId)
       if (!r.ok) {
         setLevando(null)
-        setErro(r.erro ?? 'não deu para trocar de funil')
+        setErro(r.erro ?? 'não foi possível trocar de funil')
         return
       }
       // Outro funil é outra régua de etapas: aqui sim a página precisa do
@@ -961,7 +961,7 @@ export function PaginaDoNegocio(props: Props) {
             } catch (e) {
               setAtividades((atual) => atual.filter((a) => a.id !== provisoria.id))
               esquecer(idDoHistorico)
-              setErro(e instanceof Error && e.message ? e.message : 'não deu para marcar a atividade')
+              setErro(e instanceof Error && e.message ? e.message : 'não foi possível marcar a atividade')
             }
           })
         }}

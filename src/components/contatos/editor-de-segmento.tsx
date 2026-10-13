@@ -259,7 +259,7 @@ export function EditorDeSegmento({
         ? await acaoSalvarSegmento(clienteId, segmentoId, nome, regra)
         : await acaoCriarSegmento(clienteId, nome, regra)
       if (!r.ok) {
-        setErro(r.erro ?? 'não deu para salvar')
+        setErro(r.erro ?? 'não foi possível salvar')
         return
       }
       if (r.segmento) aoSalvar?.(r.segmento)

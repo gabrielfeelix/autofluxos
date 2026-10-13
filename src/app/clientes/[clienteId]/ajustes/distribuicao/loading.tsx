@@ -5,7 +5,7 @@ export default function Carregando() {
   return (
     <EsqueletoDeAjuste
       titulo="Distribuição"
-      descricao="Quem recebe a conversa quando o bot passa para uma pessoa. Cada mudança salva sozinha."
+      descricao="Quem recebe a conversa quando o bot transfere para uma pessoa. Cada mudança salva sozinha."
     />
   )
 }

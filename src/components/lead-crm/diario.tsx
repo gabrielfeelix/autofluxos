@@ -85,7 +85,7 @@ export function Diario({
     }
     depoisDaTela(() => anotar({}, dados)).then(
       (r) => {
-        if (r.erro || r.ok === false) desfazer(r.erro ?? 'não deu para salvar')
+        if (r.erro || r.ok === false) desfazer(r.erro ?? 'não foi possível salvar')
       },
       () => desfazer('sem conexão com o servidor'),
     )

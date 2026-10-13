@@ -56,7 +56,7 @@ export async function guardarAssinatura(
       { onConflict: 'endpoint' },
     )
 
-  if (error) throw new Error(`não deu para guardar a assinatura de push: ${error.message}`)
+  if (error) throw new Error(`não foi possível guardar a assinatura de push: ${error.message}`)
 }
 
 /** Quem desligou o aviso naquele navegador. */
@@ -66,7 +66,7 @@ export async function apagarAssinatura(endpoint: string, usuarioId?: string): Pr
   let consulta = db().from('assinaturas_de_push').delete().eq('endpoint', endpoint)
   if (usuarioId) consulta = consulta.eq('usuario_id', usuarioId)
   const { error } = await consulta
-  if (error) throw new Error(`não deu para apagar a assinatura de push: ${error.message}`)
+  if (error) throw new Error(`não foi possível apagar a assinatura de push: ${error.message}`)
 }
 
 /**
@@ -88,7 +88,7 @@ export async function assinaturasDe(
     .eq('client_id', clienteId)
     .in('usuario_id', usuarioIds)
 
-  if (error) throw new Error(`não deu para ler as assinaturas de push: ${error.message}`)
+  if (error) throw new Error(`não foi possível ler as assinaturas de push: ${error.message}`)
 
   return (data ?? []).map((linha) => ({
     id: String(linha.id),

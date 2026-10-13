@@ -30,9 +30,9 @@ export async function anotar(
       dados,
       autor,
     })
-    if (error) console.error('[eventos] não deu para anotar:', error.message)
+    if (error) console.error('[eventos] não foi possível anotar:', error.message)
   } catch (erro) {
-    console.error('[eventos] não deu para anotar:', erro)
+    console.error('[eventos] não foi possível anotar:', erro)
   }
 
   /*
@@ -68,9 +68,9 @@ export async function anotarEmLote(
           autor,
         })),
       )
-    if (error) console.error('[eventos] não deu para anotar em lote:', error.message)
+    if (error) console.error('[eventos] não foi possível anotar em lote:', error.message)
   } catch (erro) {
-    console.error('[eventos] não deu para anotar em lote:', erro)
+    console.error('[eventos] não foi possível anotar em lote:', erro)
   }
 }
 
@@ -95,7 +95,7 @@ export async function linhaDoTempo(
     .limit(limite)
 
   if (ehIdInvalido(error)) return []
-  if (error) throw new Error(`não deu para ler a linha do tempo: ${error.message}`)
+  if (error) throw new Error(`não foi possível ler a linha do tempo: ${error.message}`)
 
   return (data as { id: string; tipo: string; dados: Record<string, unknown> | null; autor: string | null; criado_em: string }[]).map(
     (linha) => ({
@@ -132,7 +132,7 @@ export async function anotacoesDoContato(
     .limit(limite)
 
   if (ehIdInvalido(error)) return []
-  if (error) throw new Error(`não deu para ler as anotações: ${error.message}`)
+  if (error) throw new Error(`não foi possível ler as anotações: ${error.message}`)
 
   return (data as { id: string; dados: { texto?: unknown } | null; autor: string | null; criado_em: string }[]).map(
     (linha) => ({
@@ -166,7 +166,7 @@ export async function registrarAnotacao(
     .select('id, criado_em')
     .single()
 
-  if (error) throw new Error(`não deu para guardar a anotação: ${error.message}`)
+  if (error) throw new Error(`não foi possível guardar a anotação: ${error.message}`)
   const linha = data as { id: string; criado_em: string }
   return { id: linha.id, texto, autor, criadoEm: linha.criado_em }
 }

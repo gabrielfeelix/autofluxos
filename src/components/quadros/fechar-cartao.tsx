@@ -157,12 +157,12 @@ export function FecharCartao({
           chaveDaOperacao: chave.current ?? undefined,
         })
         if (!r.ok) {
-          setErro(r.erro ?? 'não deu para fechar')
+          setErro(r.erro ?? 'não foi possível fechar')
           return
         }
         aoConcluir({ abriuEm: r.abriuEm, motivo: ganhou ? undefined : motivo, titulo })
       } catch {
-        setErro('não deu para fechar agora, tente de novo')
+        setErro('não foi possível fechar agora, tente de novo')
       }
     })
   }

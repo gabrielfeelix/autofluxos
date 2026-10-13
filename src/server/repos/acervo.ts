@@ -67,7 +67,7 @@ export async function listarAcervo(clienteId: string): Promise<ArquivoDoAcervo[]
 
   // Pasta que nunca recebeu arquivo não existe no Storage e a listagem devolve
   // vazio, não erro. Cliente novo cai aqui, e vazio é a resposta certa.
-  if (error) throw new Error(`não deu para listar o acervo: ${error.message}`)
+  if (error) throw new Error(`não foi possível listar o acervo: ${error.message}`)
   if (!data) return []
 
   return data
@@ -163,7 +163,7 @@ export async function pedirEnvioAssinado(
     .createSignedUploadUrl(caminho)
 
   if (error || !data) {
-    return { ok: false, motivo: error?.message ?? 'não deu para preparar o envio' }
+    return { ok: false, motivo: error?.message ?? 'não foi possível preparar o envio' }
   }
 
   const { data: publico } = db().storage.from(BUCKET_DO_ACERVO).getPublicUrl(caminho)
@@ -229,7 +229,7 @@ export async function apagarDoAcervo(clienteId: string, caminho: string): Promis
   }
 
   const { error } = await db().storage.from(BUCKET_DO_ACERVO).remove([caminho])
-  if (error) throw new Error(`não deu para apagar o arquivo: ${error.message}`)
+  if (error) throw new Error(`não foi possível apagar o arquivo: ${error.message}`)
 }
 
 /**
@@ -248,5 +248,5 @@ export async function apagarAcervoDoCliente(clienteId: string): Promise<void> {
 
   // Não estoura: o cliente sair do banco importa mais do que o bucket ficar
   // limpo, e arquivo órfão dá para varrer depois. Mesma escolha da logo.
-  if (error) console.error('[acervo] não deu para limpar o acervo do cliente', error.message)
+  if (error) console.error('[acervo] não foi possível limpar o acervo do cliente', error.message)
 }

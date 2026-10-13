@@ -62,7 +62,7 @@ export async function registrarPassagem(entrada: {
     })
 
   if (!error || error.code === '23505') return
-  throw new Error(`não deu para registrar a passagem: ${error.message}`)
+  throw new Error(`não foi possível registrar a passagem: ${error.message}`)
 }
 
 /**
@@ -85,7 +85,7 @@ export async function passagensDoContato(contatoId: string): Promise<Passagem[]>
    */
   if (error) {
     if (ehIdInvalido(error)) return []
-    throw new Error(`não deu para ler as passagens: ${error.message}`)
+    throw new Error(`não foi possível ler as passagens: ${error.message}`)
   }
 
   return ((data ?? []) as Linha[]).map((linha) => ({

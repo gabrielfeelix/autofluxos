@@ -63,7 +63,7 @@ const CREDENCIAL_NAO_CONFERE = 'Credenciais não conferem. Verifique e tente de 
 
 function motivo(erro: unknown): string {
   if (erro instanceof Error && erro.message) return erro.message
-  return 'não deu para completar a operação'
+  return 'não foi possível completar a operação'
 }
 
 // ---------------------------------------------------------------------------
@@ -473,7 +473,7 @@ export async function acaoCriarCompanhia(
       // sozinho quando ninguém manda, mas aqui quem manda é a biblioteca.
       body: { name: nome, slug: sugerirSlug(nome) },
     })
-    if (!conta) return { ok: false, erro: 'não deu para criar a companhia' }
+    if (!conta) return { ok: false, erro: 'não foi possível criar a companhia' }
     id = conta.id
 
     await registrar({
@@ -936,7 +936,7 @@ export async function acaoCadastrarSe(
     if (ehSenhaVazada(erro)) return { erro: SENHA_VAZADA, email, nome, telefone }
     console.error('[cadastro] recusado:', motivo(erro))
     return {
-      erro: 'Não deu para criar a conta com este e-mail. Se você já tem conta, entre por "Entrar".',
+      erro: 'Não foi possível criar a conta com este e-mail. Se você já tem conta, entre por "Entrar".',
       email,
       nome,
       telefone,
@@ -955,7 +955,7 @@ export async function acaoCadastrarSe(
   } catch (erro) {
     /*
      * A conta já existe neste ponto. Devolver o erro para o formulário faria a
-     * pessoa tentar de novo e ouvir "não deu para criar a conta com este
+     * pessoa tentar de novo e ouvir "não foi possível criar a conta com este
      * e-mail", que é falso. O caminho certo é a tela de entrar.
      */
     console.error('[cadastro] criou, mas não entrou:', motivo(erro))
@@ -1024,7 +1024,7 @@ export async function acaoPrimeiroAcesso(
       headers: await headers(),
       body: { name: nome, slug: sugerirSlug(nome) },
     })
-    if (!conta) return { ok: false, erro: 'não deu para criar a empresa' }
+    if (!conta) return { ok: false, erro: 'não foi possível criar a empresa' }
     id = conta.id
 
     /*

@@ -40,7 +40,7 @@ export function lojaCatalogo(listar: () => Promise<Produto[]>): Loja {
         ),
       }
     } catch (e) {
-      return { ok: false, motivo: `não deu para ler o catálogo: ${e instanceof Error ? e.message : String(e)}` }
+      return { ok: false, motivo: `não foi possível ler o catálogo: ${e instanceof Error ? e.message : String(e)}` }
     }
   }
 

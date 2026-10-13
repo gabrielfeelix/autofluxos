@@ -79,7 +79,7 @@ export function NomeDoFluxo({
     setRodando(false)
 
     if (!r.ok) {
-      setErro(r.erro ?? 'não deu para renomear')
+      setErro(r.erro ?? 'não foi possível renomear')
       return
     }
     setSalvo(r.nome ?? limpo)
@@ -135,7 +135,7 @@ export function NomeDoFluxo({
             aberto
             aoFechar={cancelar}
             titulo="Renomear automação"
-            descricao="Só o nome muda. O desenho e o que está publicado continuam iguais."
+            descricao="Apenas o nome muda. O desenho e o que está publicado continuam iguais."
           >
             <form
               onSubmit={(e) => {

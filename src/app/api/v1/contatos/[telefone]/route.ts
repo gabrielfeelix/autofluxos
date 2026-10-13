@@ -16,6 +16,6 @@ export async function GET(request: Request, { params }: { params: Promise<{ tele
     return Response.json({ contato })
   } catch (erro) {
     console.error(`[api] GET contato falhou (chave ${acesso.publico}):`, erro instanceof Error ? erro.message : erro)
-    return erroDaApi(500, 'erro_interno', 'Não deu para ler o contato agora. Tente de novo.')
+    return erroDaApi(500, 'erro_interno', 'Não foi possível ler o contato agora. Tente de novo.')
   }
 }

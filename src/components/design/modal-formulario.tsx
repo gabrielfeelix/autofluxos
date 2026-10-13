@@ -110,7 +110,7 @@ export function ModalFormulario({
     try {
       const r = await action(dados)
       if (r && !r.ok) {
-        setErro(r.erro ?? 'não deu certo')
+        setErro(r.erro ?? 'não foi possível concluir')
         return
       }
       // Deu certo: o que está na tela virou registro, então fechar não perde

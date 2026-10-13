@@ -64,7 +64,7 @@ export function TabelaDeEtiquetas({ clienteId, inicial }: { clienteId: string; i
         setRecado({ texto: `Etiqueta “${criada.nome}” criada.` })
       } else {
         setLista((atual) => atual.filter((e) => e.id !== provisorio))
-        setRecado({ texto: r.erro ?? 'não deu para criar', erro: true })
+        setRecado({ texto: r.erro ?? 'não foi possível criar', erro: true })
       }
     })
   }
@@ -79,7 +79,7 @@ export function TabelaDeEtiquetas({ clienteId, inicial }: { clienteId: string; i
         setRecado({ texto: 'Etiqueta salva.' })
       } else {
         setLista((atual) => atual.map((e) => (e.id === antes.id ? antes : e)).sort(porNome))
-        setRecado({ texto: r.erro ?? 'não deu para salvar', erro: true })
+        setRecado({ texto: r.erro ?? 'não foi possível salvar', erro: true })
       }
     })
   }
@@ -349,7 +349,7 @@ function FormularioDeJuntar({
           setErro(null)
           comecar(async () => {
             const r = await aoJuntar(destino).catch(() => ({ ok: false, erro: 'sem conexão com o servidor' }))
-            if (!r.ok) setErro(r.erro ?? 'não deu para juntar')
+            if (!r.ok) setErro(r.erro ?? 'não foi possível juntar')
           })
         }}
       >

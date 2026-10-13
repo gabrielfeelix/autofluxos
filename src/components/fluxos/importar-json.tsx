@@ -44,14 +44,14 @@ export function ImportarJson({
         const texto = await arquivo.text()
         const r = await acaoImportarFluxoDeJson(clienteId, texto)
         if (!r.ok || !r.fluxoId) {
-          setErro(r.erro ?? 'não deu para importar este arquivo')
+          setErro(r.erro ?? 'não foi possível importar este arquivo')
           return
         }
         // Abre no editor: quem importou precisa olhar o desenho antes de
         // publicar, e é justamente isso que a importação não faz sozinha.
         router.push(`/clientes/${clienteId}/fluxos/${r.fluxoId}?origem=importado`)
       } catch {
-        setErro('não deu para ler este arquivo')
+        setErro('não foi possível ler este arquivo')
       } finally {
         // Sem isto, escolher o mesmo arquivo de novo não dispara `change` e a
         // tela parece travada depois de um erro.

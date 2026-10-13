@@ -14,6 +14,6 @@ export async function GET(request: Request) {
     return Response.json({ etiquetas: await listarEtiquetasDaApi(acesso.clienteId) })
   } catch (erro) {
     console.error(`[api] GET etiquetas falhou (chave ${acesso.publico}):`, erro instanceof Error ? erro.message : erro)
-    return erroDaApi(500, 'erro_interno', 'Não deu para listar as etiquetas agora. Tente de novo.')
+    return erroDaApi(500, 'erro_interno', 'Não foi possível listar as etiquetas agora. Tente de novo.')
   }
 }

@@ -120,7 +120,7 @@ export async function listarClientes(): Promise<Cliente[]> {
     .select(COLUNAS)
     .order('criado_em', { ascending: true })
 
-  if (error) throw new Error(`não deu para listar clientes: ${error.message}`)
+  if (error) throw new Error(`não foi possível listar clientes: ${error.message}`)
   return (data as Linha[]).map(paraCliente)
 }
 
@@ -154,7 +154,7 @@ export async function resumirAtendimento(): Promise<Map<string, ResumoDeAtendime
     .from('resumo_clientes')
     .select('client_id, contatos, esperando_pessoa, ultima_atividade')
 
-  if (error) throw new Error(`não deu para resumir o atendimento: ${error.message}`)
+  if (error) throw new Error(`não foi possível resumir o atendimento: ${error.message}`)
 
   const mapa = new Map<string, ResumoDeAtendimento>()
   for (const linha of data as LinhaDeResumo[]) {
@@ -191,7 +191,7 @@ export async function resumoDasContas(
     .in('client_id', ids)
 
   if (error) {
-    console.error('[clientes] não deu para resumir as contas:', error.message)
+    console.error('[clientes] não foi possível resumir as contas:', error.message)
     return mapa
   }
   for (const linha of data as LinhaDeResumo[]) {
@@ -208,7 +208,7 @@ export async function acharCliente(id: string): Promise<Cliente | null> {
   const { data, error } = await db().from('clients').select(COLUNAS).eq('id', id).maybeSingle()
 
   if (ehIdInvalido(error)) return null
-  if (error) throw new Error(`não deu para buscar o cliente: ${error.message}`)
+  if (error) throw new Error(`não foi possível buscar o cliente: ${error.message}`)
   return data ? paraCliente(data as Linha) : null
 }
 
@@ -219,7 +219,7 @@ export async function criarCliente(nome: string): Promise<Cliente> {
     .select(COLUNAS)
     .single()
 
-  if (error) throw new Error(`não deu para criar o cliente: ${error.message}`)
+  if (error) throw new Error(`não foi possível criar o cliente: ${error.message}`)
   return paraCliente(data as Linha)
 }
 
@@ -256,13 +256,13 @@ export async function atualizarCadastro(
     })
     .eq('id', id)
 
-  if (error) throw new Error(`não deu para salvar o cadastro: ${error.message}`)
+  if (error) throw new Error(`não foi possível salvar o cadastro: ${error.message}`)
 }
 
 /** A nota interna da 4YU sobre o cliente. Só a administração chama. */
 export async function atualizarObservacoes(id: string, observacoes: string): Promise<void> {
   const { error } = await db().from('clients').update({ observacoes: observacoes.trim() }).eq('id', id)
-  if (error) throw new Error(`não deu para salvar as observações: ${error.message}`)
+  if (error) throw new Error(`não foi possível salvar as observações: ${error.message}`)
 }
 
 export async function atualizarContexto(id: string, contexto: string): Promise<void> {
@@ -271,13 +271,13 @@ export async function atualizarContexto(id: string, contexto: string): Promise<v
     .update({ contexto_negocio: contexto })
     .eq('id', id)
 
-  if (error) throw new Error(`não deu para salvar o contexto: ${error.message}`)
+  if (error) throw new Error(`não foi possível salvar o contexto: ${error.message}`)
 }
 
 /** Aponta o cliente para a logo recém-guardada. Vazio volta para as iniciais. */
 export async function atualizarLogo(id: string, url: string): Promise<void> {
   const { error } = await db().from('clients').update({ logo_url: url }).eq('id', id)
-  if (error) throw new Error(`não deu para guardar a logo: ${error.message}`)
+  if (error) throw new Error(`não foi possível guardar a logo: ${error.message}`)
 }
 
 /** O tamanho do estrago, para a tela conseguir dizer o que vai sumir. */
@@ -304,14 +304,14 @@ export async function contarOQueSomeCom(id: string): Promise<EstragoDaExclusao> 
       .eq('client_id', id)
 
     if (ehIdInvalido(error)) return 0
-    if (error) throw new Error(`não deu para contar ${tabela}: ${error.message}`)
+    if (error) throw new Error(`não foi possível contar ${tabela}: ${error.message}`)
     return count ?? 0
   }
 
   const conectados = async () => {
     const { count, error } = await db().from('channels').select('id', { count: 'exact', head: true }).eq('client_id', id).eq('status', 'ativo')
     if (ehIdInvalido(error)) return 0
-    if (error) throw new Error(`não deu para contar os canais conectados: ${error.message}`)
+    if (error) throw new Error(`não foi possível contar os canais conectados: ${error.message}`)
     return count ?? 0
   }
 
@@ -349,7 +349,7 @@ export async function apagarCliente(id: string): Promise<boolean> {
     .maybeSingle()
 
   if (ehIdInvalido(error)) return false
-  if (error) throw new Error(`não deu para apagar o cliente: ${error.message}`)
+  if (error) throw new Error(`não foi possível apagar o cliente: ${error.message}`)
   if (!data) return false
 
   // Depois do banco, e sem derrubar a exclusão se falhar: a linha já foi. Ficar
@@ -384,7 +384,7 @@ export async function horarioDoCliente(
   if (error) {
     // Falhar aqui não pode derrubar a mensagem de alguém. Sem horário, o
     // atendimento é tratado como aberto, que é como o produto sempre agiu.
-    console.error('[clientes] não deu para ler o horário de atendimento', error.message)
+    console.error('[clientes] não foi possível ler o horário de atendimento', error.message)
     return null
   }
   return lerHorario((data as { horario_atendimento: unknown } | null)?.horario_atendimento)
@@ -408,7 +408,7 @@ export async function retomadaDoCliente(clienteId: string): Promise<ConfigDaCont
   if (error) {
     // Falhar a leitura não pode encerrar atendimento de ninguém. Sem resposta,
     // o varredor trata como desligada e a conversa fica como está.
-    console.error('[clientes] não deu para ler a retomada do bot', error.message)
+    console.error('[clientes] não foi possível ler a retomada do bot', error.message)
     return null
   }
   if (!data) return null
@@ -428,7 +428,7 @@ export async function atualizarRetomada(id: string, config: ConfigDaConta): Prom
     })
     .eq('id', id)
 
-  if (error) throw new Error(`não deu para salvar a retomada do bot: ${error.message}`)
+  if (error) throw new Error(`não foi possível salvar a retomada do bot: ${error.message}`)
 }
 
 /** Grava o expediente. `null` volta a "atende sempre". */
@@ -441,7 +441,7 @@ export async function atualizarHorario(
     .update({ horario_atendimento: horario })
     .eq('id', id)
 
-  if (error) throw new Error(`não deu para salvar o horário: ${error.message}`)
+  if (error) throw new Error(`não foi possível salvar o horário: ${error.message}`)
 }
 
 /**

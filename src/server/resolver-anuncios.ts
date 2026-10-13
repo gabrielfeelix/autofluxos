@@ -80,7 +80,7 @@ export async function resolverAnuncios(entrada: {
     const detalhe = erro instanceof Error ? erro.message : String(erro)
     await avisarUmaVez(
       `${clienteId}:cache`,
-      'não deu para ler os nomes de anúncio guardados',
+      'não foi possível ler os nomes de anúncio guardados',
       detalhe,
     )
     return new Map()
@@ -120,7 +120,7 @@ export async function resolverAnuncios(entrada: {
       } else if (!ehLimite) {
         await avisarUmaVez(
           `${clienteId}:${codigo ?? 'rede'}`,
-          'não deu para ler o nome do anúncio na Meta',
+          'não foi possível ler o nome do anúncio na Meta',
           `${resposta.erro.mensagem} (anúncio ${adId})`,
         )
       }
@@ -143,7 +143,7 @@ export async function resolverAnuncios(entrada: {
        * perguntar de novo depois do que descartar o que já foi pago em chamada.
        */
       const detalhe = erro instanceof Error ? erro.message : String(erro)
-      await avisarUmaVez(`${clienteId}:gravar`, 'não deu para guardar o nome do anúncio', detalhe)
+      await avisarUmaVez(`${clienteId}:gravar`, 'não foi possível guardar o nome do anúncio', detalhe)
     }
 
     cache.set(adId, {

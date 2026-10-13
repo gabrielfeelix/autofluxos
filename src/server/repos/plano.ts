@@ -73,7 +73,7 @@ export async function planoDaConta(clienteId: string): Promise<IdDoPlano> {
 
   if (ehIdInvalido(error)) return PLANO_DE_ENTRADA
   if (error) {
-    console.error('[plano] não deu para ler o plano da conta', error.message)
+    console.error('[plano] não foi possível ler o plano da conta', error.message)
     return PLANO_DE_ENTRADA
   }
 
@@ -120,14 +120,14 @@ function paraContrato(linha: LinhaDoContrato | null): ContratoDaConta {
 
 export async function contratoDaConta(clienteId: string): Promise<ContratoDaConta> {
   const { data, error } = await db().from('clients').select(COLUNAS_DO_CONTRATO).eq('id', clienteId).maybeSingle()
-  if (error && !ehIdInvalido(error)) console.error('[plano] não deu para ler o contrato da conta', error.message)
+  if (error && !ehIdInvalido(error)) console.error('[plano] não foi possível ler o contrato da conta', error.message)
   return paraContrato((error ? null : data) as LinhaDoContrato | null)
 }
 
 /** Os contratos de todas as organizações, para a passada diária. */
 export async function contratosDeTodas(): Promise<(ContratoDaConta & { clienteId: string; nome: string })[]> {
   const { data, error } = await db().from('clients').select(`id, nome, ${COLUNAS_DO_CONTRATO}`)
-  if (error) throw new Error(`não deu para ler os contratos: ${error.message}`)
+  if (error) throw new Error(`não foi possível ler os contratos: ${error.message}`)
   return ((data ?? []) as (LinhaDoContrato & { id: string; nome: string })[]).map((linha) => ({ clienteId: linha.id, nome: linha.nome, ...paraContrato(linha) }))
 }
 
@@ -137,7 +137,7 @@ export async function agendarDescida(clienteId: string, plano: IdDoPlano, para: 
     .from('clients')
     .update({ plano_agendado: plano, plano_agendado_para: para, atualizado_em: new Date().toISOString() })
     .eq('id', clienteId)
-  if (error) return { ok: false, erro: `não deu para agendar a descida: ${error.message}` }
+  if (error) return { ok: false, erro: `não foi possível agendar a descida: ${error.message}` }
   return { ok: true }
 }
 
@@ -146,7 +146,7 @@ export async function cancelarDescida(clienteId: string): Promise<{ ok: boolean;
     .from('clients')
     .update({ plano_agendado: null, plano_agendado_para: null, atualizado_em: new Date().toISOString() })
     .eq('id', clienteId)
-  if (error) return { ok: false, erro: `não deu para cancelar a descida: ${error.message}` }
+  if (error) return { ok: false, erro: `não foi possível cancelar a descida: ${error.message}` }
   return { ok: true }
 }
 
@@ -154,14 +154,14 @@ export async function cancelarDescida(clienteId: string): Promise<{ ok: boolean;
 export async function agendarPreco(clienteIds: string[], preco: number | null, para: string | null): Promise<{ ok: boolean; erro?: string }> {
   if (clienteIds.length === 0) return { ok: true }
   const { error } = await db().from('clients').update({ preco_agendado: preco, preco_agendado_para: para }).in('id', clienteIds)
-  if (error) return { ok: false, erro: `não deu para agendar o preço: ${error.message}` }
+  if (error) return { ok: false, erro: `não foi possível agendar o preço: ${error.message}` }
   return { ok: true }
 }
 
 /** Grava o preço contratado de quem ainda não tem (legado: o preço de antes). */
 export async function congelarPreco(planoId: string, preco: number): Promise<void> {
   const { error } = await db().from('clients').update({ preco_contratado: preco }).eq('plano', planoId).is('preco_contratado', null)
-  if (error) console.error('[plano] não deu para congelar o preço', error.message)
+  if (error) console.error('[plano] não foi possível congelar o preço', error.message)
 }
 
 /** Aplica o preço agendado que venceu. */
@@ -205,7 +205,7 @@ export async function definirPlano(
     })
     .eq('id', clienteId)
 
-  if (error) return { ok: false, erro: `não deu para trocar o plano: ${error.message}` }
+  if (error) return { ok: false, erro: `não foi possível trocar o plano: ${error.message}` }
   // Escolher plano encerra o teste. Separado, para a troca não falhar antes da 0128.
   await encerrarTeste(clienteId)
   return { ok: true }
@@ -236,14 +236,14 @@ export async function iniciarTeste(clienteId: string, plano: IdDoPlano, ate: str
     })
     .eq('id', clienteId)
   if (error) {
-    return { ok: false, erro: error.code === '42703' ? 'O banco ainda não tem este campo (migration 0128).' : `não deu para iniciar o teste: ${error.message}` }
+    return { ok: false, erro: error.code === '42703' ? 'O banco ainda não tem este campo (migration 0128).' : `não foi possível iniciar o teste: ${error.message}` }
   }
   return { ok: true }
 }
 
 export async function encerrarTeste(clienteId: string): Promise<void> {
   const { error } = await db().from('clients').update({ teste_ate: null }).eq('id', clienteId)
-  if (error && error.code !== '42703') console.error('[plano] não deu para encerrar o teste', error.message)
+  if (error && error.code !== '42703') console.error('[plano] não foi possível encerrar o teste', error.message)
 }
 
 /**
@@ -282,10 +282,10 @@ export async function consumoDaConta(
    * tela de configuração, e uma tela que não abre é pior que um número ausente.
    */
   if (conversas.error) {
-    console.error('[plano] não deu para ler as conversas do mês', conversas.error.message)
+    console.error('[plano] não foi possível ler as conversas do mês', conversas.error.message)
   }
   if (arquivos.error) {
-    console.error('[plano] não deu para ler os arquivos do mês', arquivos.error.message)
+    console.error('[plano] não foi possível ler os arquivos do mês', arquivos.error.message)
   }
 
   const linhaDeConversas = conversas.data as { conversas?: number | string } | null
@@ -326,7 +326,7 @@ export async function consumoDeTodasAsContas(
   ])
 
   if (contas.error) {
-    throw new Error(`não deu para listar as contas: ${contas.error.message}`)
+    throw new Error(`não foi possível listar as contas: ${contas.error.message}`)
   }
 
   const porConta = new Map<string, { conversas: number; arquivos: number; bytes: number }>()
@@ -383,7 +383,7 @@ export async function usoDaOrganizacao(
   const inicioDoMes = new Date(Date.UTC(agora.getUTCFullYear(), agora.getUTCMonth(), 1)).toISOString()
   const contar = async (consulta: PromiseLike<{ count: number | null; error: unknown }>) => {
     const { count, error } = await consulta
-    if (error) console.error('[plano] não deu para medir o uso:', error)
+    if (error) console.error('[plano] não foi possível medir o uso:', error)
     return count ?? 0
   }
   const [consumo, numeros, fluxosComIa, transcricoes, transmissoes, conexoes, webhooks, chavesDeApi, cliente, sequencias] = await Promise.all([
@@ -426,7 +426,7 @@ export async function organizacoesNoPlano(planoId: string): Promise<{ id: string
     .select('id, nome, plano, plano_agendado, preco_contratado')
     .or(`plano.eq.${planoId},plano_agendado.eq.${planoId}`)
     .order('nome', { ascending: true })
-  if (error) throw new Error(`não deu para listar as organizações do plano: ${error.message}`)
+  if (error) throw new Error(`não foi possível listar as organizações do plano: ${error.message}`)
   return ((data ?? []) as { id: string; nome: string; plano: string; plano_agendado: string | null; preco_contratado: number | null }[]).map((linha) => ({
     id: linha.id,
     nome: linha.nome,
@@ -460,7 +460,7 @@ export async function composicaoDaEquipe(clienteId: string): Promise<{ atendente
     )
     return { atendentes: Number(rows[0]?.atendentes ?? 0), leitores: Number(rows[0]?.leitores ?? 0) }
   } catch (erro) {
-    console.error('[plano] não deu para contar a equipe', erro instanceof Error ? erro.message : erro)
+    console.error('[plano] não foi possível contar a equipe', erro instanceof Error ? erro.message : erro)
     return { atendentes: 0, leitores: 0 }
   }
 }

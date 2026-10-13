@@ -77,7 +77,7 @@ export function Versoes({
       setGrafos((atuais) => ({ ...atuais, [versaoId]: r.grafo }))
       return true
     } catch {
-      setErro('não deu para abrir esta versão agora')
+      setErro('não foi possível abrir esta versão agora')
       return false
     } finally {
       setCarregando(null)

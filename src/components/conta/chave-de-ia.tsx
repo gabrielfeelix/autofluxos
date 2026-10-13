@@ -120,7 +120,7 @@ export function ChaveDeIa({
                   setErro('')
                   setFeito('')
                   const r = await apagar()
-                  if (!r.ok) setErro(r.erro ?? 'não deu para apagar')
+                  if (!r.ok) setErro(r.erro ?? 'não foi possível apagar')
                   else setFeito('Chave do cliente apagada. A conta voltou para a chave da 4YU.')
                 })
               }

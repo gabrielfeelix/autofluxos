@@ -357,7 +357,7 @@ export function Fila({
           const r = await acao();
           if (!r.ok) {
             desfazer();
-            setErroDaMarcacao(r.erro ?? "não deu para marcar");
+            setErroDaMarcacao(r.erro ?? "não foi possível marcar");
           }
         } catch {
           desfazer();
@@ -536,7 +536,7 @@ export function Fila({
     },
     {
       chave: "sem-dono",
-      rotulo: "Sem dono",
+      rotulo: "Sem responsável",
       descricao: "Ninguém assumiu ainda",
       contagem: contagem.semDono,
       href: linkDe("sem-dono"),

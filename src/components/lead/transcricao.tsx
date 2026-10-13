@@ -60,7 +60,7 @@ export function Transcricao({
           comecar(async () => {
             const r = await acaoTranscreverAudio(clienteId, contatoId, mensagemId)
             if (!r.ok) {
-              setErro(r.erro ?? 'não deu para transcrever')
+              setErro(r.erro ?? 'não foi possível transcrever')
               return
             }
             setTexto(r.texto ?? '')

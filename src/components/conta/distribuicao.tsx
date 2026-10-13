@@ -48,7 +48,7 @@ const MODOS = [
   {
     valor: 'manual',
     rotulo: 'Ninguém recebe sozinho',
-    detalhe: 'a conversa fica em "Sem dono" até alguém assumir',
+    detalhe: 'a conversa fica em "Sem responsável" até alguém assumir',
   },
   {
     valor: 'balanceado',
@@ -95,7 +95,7 @@ export function Distribuicao({
         exigeAssumir: ajustes.exigeAssumir,
       })
       if (!r.ok) {
-        setErro(r.erro ?? 'não deu para salvar')
+        setErro(r.erro ?? 'não foi possível salvar')
         // Desfaz a aposta: o estado que sobra é o que o servidor aceitou.
         setModo(distribuicao)
         setTrava(exigeAssumir)
@@ -188,7 +188,7 @@ export function Distribuicao({
           </ul>
           <p className="border-t border-line px-5 py-3 text-[12px] leading-5 text-soft">
             {marcadas.length === 0
-              ? 'Ninguém marcado: os leads novos ficam em "Sem dono".'
+              ? 'Ninguém marcado: os leads novos ficam em "Sem responsável".'
               : marcadas.length === 1
                 ? <>Todo lead novo vai para <strong>{marcadas[0]?.nome}</strong>.</>
                 : `${marcadas.length} pessoas recebendo.`}
@@ -239,7 +239,7 @@ function LinhaDoAtendente({
         gravado.current = proximo
         return
       }
-      setErro(r.erro ?? 'não deu para salvar')
+      setErro(r.erro ?? 'não foi possível salvar')
       setTeto(gravado.current.teto)
       aoMudarEntra(gravado.current.entra)
     })
@@ -329,9 +329,9 @@ export function PassarConversas({
   return (
     <section className="app-card overflow-hidden">
       <header className="border-b border-line px-5 py-4">
-        <h2 className="text-[14.5px] font-bold">Passar conversas para alguém</h2>
+        <h2 className="text-[14.5px] font-bold">Transferir conversas</h2>
         <p className="mt-1 max-w-[640px] text-[12px] leading-5 text-dim">
-          A pessoa vira dona dos contatos: as conversas aparecem com ela no Inbox e
+          A pessoa passa a ser a responsável pelos contatos: as conversas aparecem com ela no Inbox e
           voltam para ela no próximo contato.
         </p>
       </header>
@@ -344,20 +344,20 @@ export function PassarConversas({
               valor={para}
               aoMudar={setPara}
               desabilitado={!podeMexer}
-              rotuloAcessivel="Para quem passar as conversas"
+              rotuloAcessivel="Para quem transferir as conversas"
             />
           </div>
           <div className="flex flex-col gap-1.5">
             <span className="text-[12.5px] font-semibold text-soft">Quais</span>
             <Dropdown
               opcoes={[
-                { valor: 'sem-dono', rotulo: `Só as sem dono (${contagem.semDono})` },
+                { valor: 'sem-dono', rotulo: `Apenas sem responsável (${contagem.semDono})` },
                 { valor: 'todas', rotulo: `Todas que ainda não são dela (${naoSaoDela})` },
               ]}
               valor={escopo}
               aoMudar={(valor) => setEscopo(valor as 'sem-dono' | 'todas')}
               desabilitado={!podeMexer}
-              rotuloAcessivel="Quais conversas passar"
+              rotuloAcessivel="Quais conversas transferir"
             />
           </div>
         </div>
@@ -373,8 +373,8 @@ export function PassarConversas({
                   erro: 'sem conexão com o servidor',
                   passaram: 0,
                 }))
-                if (!r.ok) return setAviso({ tom: 'erro', texto: r.erro ?? 'não deu para passar' })
-                setAviso({ tom: 'ok', texto: `${r.passaram ?? 0} ${r.passaram === 1 ? 'conversa passou' : 'conversas passaram'} para ${nome}.` })
+                if (!r.ok) return setAviso({ tom: 'erro', texto: r.erro ?? 'não foi possível transferir' })
+                setAviso({ tom: 'ok', texto: `${r.passaram ?? 0} ${r.passaram === 1 ? 'conversa transferida' : 'conversas transferidas'} para ${nome}.` })
                 // Tudo o que passou agora é da pessoa: o número dela sobe e o resto zera.
                 setContagem((atual) => {
                   const porDono = escopo === 'todas'
@@ -385,7 +385,7 @@ export function PassarConversas({
               })
             }}
           >
-            {passando ? 'Passando…' : n === 0 ? 'Nada para passar' : `Passar ${n} para ${nome}`}
+            {passando ? 'Transferindo…' : n === 0 ? 'Nenhuma conversa para transferir' : `Transferir ${n} para ${nome}`}
           </Botao>
           {aviso && (
             <p role={aviso.tom === 'erro' ? 'alert' : 'status'} className={`text-[12px] ${aviso.tom === 'erro' ? 'text-perigo' : 'text-ok'}`}>

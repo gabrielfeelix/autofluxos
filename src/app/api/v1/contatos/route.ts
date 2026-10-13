@@ -46,7 +46,7 @@ export async function GET(request: Request) {
     return Response.json({ contatos: resultado.contatos, proximo_cursor: resultado.proximo_cursor })
   } catch (erro) {
     console.error(`[api] GET contatos falhou (chave ${acesso.publico}):`, erro instanceof Error ? erro.message : erro)
-    return erroDaApi(500, 'erro_interno', 'Não deu para listar os contatos agora. Tente de novo.')
+    return erroDaApi(500, 'erro_interno', 'Não foi possível listar os contatos agora. Tente de novo.')
   }
 }
 
@@ -92,6 +92,6 @@ export async function POST(request: Request) {
     )
   } catch (erro) {
     console.error(`[api] POST contatos falhou (chave ${acesso.publico}):`, erro instanceof Error ? erro.message : erro)
-    return erroDaApi(500, 'erro_interno', 'Não deu para gravar o contato agora. Tente de novo.')
+    return erroDaApi(500, 'erro_interno', 'Não foi possível gravar o contato agora. Tente de novo.')
   }
 }

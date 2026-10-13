@@ -46,7 +46,7 @@ export async function historicoDoNegocio(
 
   const { data, error } = await consulta
   if (ehIdInvalido(error)) return []
-  if (error) throw new Error(`não deu para ler o histórico do negócio: ${error.message}`)
+  if (error) throw new Error(`não foi possível ler o histórico do negócio: ${error.message}`)
 
   return (
     data as {

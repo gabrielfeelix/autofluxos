@@ -79,7 +79,7 @@ export function TabelaDePlanos({
         const r = await acaoAdminSalvarPlano(plano.id, dados, quemJaEsta)
         if (!r.ok) {
           setPlanos(antes)
-          setAviso({ tom: 'erro', texto: r.erro ?? 'não deu para salvar o plano' })
+          setAviso({ tom: 'erro', texto: r.erro ?? 'não foi possível salvar o plano' })
         } else if (r.avisadas) {
           setAviso({ tom: 'neutro', texto: `${r.avisadas} ${r.avisadas === 1 ? 'organização recebe' : 'organizações recebem'} o aviso do preço novo, que vale em 30 dias.` })
         }
@@ -99,7 +99,7 @@ export function TabelaDePlanos({
         const r = await acaoAdminCriarPlano(dados)
         if (!r.ok || !r.id) {
           setPlanos((lista) => lista.filter((item) => item.id !== provisorio))
-          setAviso({ tom: 'erro', texto: r.erro ?? 'não deu para criar o plano' })
+          setAviso({ tom: 'erro', texto: r.erro ?? 'não foi possível criar o plano' })
           return
         }
         setPlanos((lista) => lista.map((item) => (item.id === provisorio ? { ...item, id: r.id! } : item)))
@@ -118,7 +118,7 @@ export function TabelaDePlanos({
       const r = await acaoAdminExcluirPlano(plano.id).catch(() => ({ ok: false, erro: 'sem conexão com o servidor' }))
       if (!r.ok) {
         setPlanos(antes)
-        setAviso({ tom: 'erro', texto: r.erro ?? 'não deu para excluir o plano' })
+        setAviso({ tom: 'erro', texto: r.erro ?? 'não foi possível excluir o plano' })
       }
     })
   }
@@ -463,7 +463,7 @@ function ExcluirPlano({
     setMovendo(false)
     if (!r.ok) {
       setEstado(antes)
-      setErro(r.erro ?? 'não deu para mover')
+      setErro(r.erro ?? 'não foi possível mover')
       return
     }
     aoMover(destino, r.movidas ?? organizacoes.length)

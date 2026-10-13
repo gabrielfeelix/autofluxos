@@ -91,7 +91,7 @@ export function RetomarComModelo({
     comecar(async () => {
       const r = await acaoRetomarComModelo(clienteId, contatoId, escolhido, valores ?? undefined)
       if (!r.ok) {
-        setErro(r.erro ?? 'Não deu para retomar.')
+        setErro(r.erro ?? 'Não foi possível retomar.')
         return
       }
       /*

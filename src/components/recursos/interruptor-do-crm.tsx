@@ -39,7 +39,7 @@ export function InterruptorDoCrm({
       const r = await acaoDefinirCrm(clienteId, alvo)
       if (!r.ok) {
         setLigado(anterior)
-        setErro(r.erro ?? 'não deu para salvar')
+        setErro(r.erro ?? 'não foi possível salvar')
       }
     })
   }

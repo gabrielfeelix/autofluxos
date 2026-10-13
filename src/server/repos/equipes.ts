@@ -30,7 +30,7 @@ export async function listarEquipes(clienteId: string): Promise<Equipe[]> {
     .order('nome')
 
   if (ehIdInvalido(error)) return []
-  if (error) throw new Error(`não deu para ler as equipes: ${error.message}`)
+  if (error) throw new Error(`não foi possível ler as equipes: ${error.message}`)
 
   return (data as { id: string; nome: string; equipe_membros: { count: number }[] }[]).map(
     (linha) => ({
@@ -57,7 +57,7 @@ export async function criarEquipe(
   // 23505 é o índice de nome único entre as ativas: duas equipes "Vendas"
   // vivas ao mesmo tempo é erro de digitação, não intenção.
   if (error?.code === '23505') return { ok: false, motivo: `já existe uma equipe "${limpo}"` }
-  if (error) return { ok: false, motivo: `não deu para criar a equipe: ${error.message}` }
+  if (error) return { ok: false, motivo: `não foi possível criar a equipe: ${error.message}` }
 
   return { ok: true, id: (data as { id: string }).id }
 }
@@ -84,7 +84,7 @@ export async function arquivarEquipe(
     .maybeSingle()
 
   if (ehIdInvalido(error)) return { ok: false, motivo: 'esta equipe não existe mais' }
-  if (error) return { ok: false, motivo: `não deu para arquivar: ${error.message}` }
+  if (error) return { ok: false, motivo: `não foi possível arquivar: ${error.message}` }
   return data ? { ok: true } : { ok: false, motivo: 'esta equipe não existe mais' }
 }
 
@@ -109,7 +109,7 @@ export async function definirEquipesDoMembro(
     .in('id', equipes.length > 0 ? equipes : ['00000000-0000-0000-0000-000000000000'])
 
   if (erroDaConferencia && !ehIdInvalido(erroDaConferencia)) {
-    return { ok: false, motivo: `não deu para conferir as equipes: ${erroDaConferencia.message}` }
+    return { ok: false, motivo: `não foi possível conferir as equipes: ${erroDaConferencia.message}` }
   }
 
   const validas = ((daConta ?? []) as { id: string }[]).map((linha) => linha.id)
@@ -125,7 +125,7 @@ export async function definirEquipesDoMembro(
     .eq('client_id', clienteId)
     .eq('usuario_id', usuarioId)
 
-  if (erroDoDelete) return { ok: false, motivo: `não deu para atualizar: ${erroDoDelete.message}` }
+  if (erroDoDelete) return { ok: false, motivo: `não foi possível atualizar: ${erroDoDelete.message}` }
   if (validas.length === 0) return { ok: true }
 
   const { error } = await db()
@@ -134,7 +134,7 @@ export async function definirEquipesDoMembro(
       validas.map((equipeId) => ({ equipe_id: equipeId, client_id: clienteId, usuario_id: usuarioId })),
     )
 
-  if (error) return { ok: false, motivo: `não deu para atualizar: ${error.message}` }
+  if (error) return { ok: false, motivo: `não foi possível atualizar: ${error.message}` }
   return { ok: true }
 }
 
@@ -186,7 +186,7 @@ export async function equipesPorMembro(clienteId: string): Promise<Map<string, s
     .is('equipes.arquivada_em', null)
 
   if (error) {
-    console.error('[equipes] não deu para ler os vínculos:', error.message)
+    console.error('[equipes] não foi possível ler os vínculos:', error.message)
     return new Map()
   }
 
@@ -235,7 +235,7 @@ export async function definirCapacidades(
       .eq('client_id', clienteId)
       .eq('usuario_id', usuarioId)
       .in('capacidade', iguais)
-    if (error) return { ok: false, motivo: `não deu para salvar: ${error.message}` }
+    if (error) return { ok: false, motivo: `não foi possível salvar: ${error.message}` }
   }
 
   if (diferentes.length > 0) {
@@ -252,7 +252,7 @@ export async function definirCapacidades(
         })),
         { onConflict: 'client_id,usuario_id,capacidade' },
       )
-    if (error) return { ok: false, motivo: `não deu para salvar: ${error.message}` }
+    if (error) return { ok: false, motivo: `não foi possível salvar: ${error.message}` }
   }
 
   return { ok: true }
@@ -268,7 +268,7 @@ export async function capacidadesPorMembro(
     .eq('client_id', clienteId)
 
   if (error) {
-    console.error('[equipes] não deu para ler as capacidades:', error.message)
+    console.error('[equipes] não foi possível ler as capacidades:', error.message)
     return new Map()
   }
 

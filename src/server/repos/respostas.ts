@@ -144,7 +144,7 @@ export async function paginarRespostas(
 
   if (ehIdInvalido(erroDosFluxos)) return vazia
   if (erroDosFluxos) {
-    throw new Error(`não deu para listar as automações: ${erroDosFluxos.message}`)
+    throw new Error(`não foi possível listar as automações: ${erroDosFluxos.message}`)
   }
 
   const automacoes = (fluxos ?? []) as { id: string; nome: string }[]
@@ -165,7 +165,7 @@ export async function paginarRespostas(
 
   if (ehIdInvalido(erroDasVersoes)) return { ...vazia, automacoes }
   if (erroDasVersoes) {
-    throw new Error(`não deu para achar as versões das automações: ${erroDasVersoes.message}`)
+    throw new Error(`não foi possível achar as versões das automações: ${erroDasVersoes.message}`)
   }
 
   const fluxoDaVersao = new Map(
@@ -194,7 +194,7 @@ export async function paginarRespostas(
       .limit(500)
 
     if (error && !ehIdInvalido(error)) {
-      throw new Error(`não deu para buscar por "${termo}": ${error.message}`)
+      throw new Error(`não foi possível buscar por "${termo}": ${error.message}`)
     }
     contatosDaBusca = ((achados ?? []) as { id: string }[]).map((c) => c.id)
     if (contatosDaBusca.length === 0) return { ...vazia, automacoes }
@@ -225,7 +225,7 @@ export async function paginarRespostas(
     .range(de, de + porPagina - 1)
 
   if (ehIdInvalido(error)) return { ...vazia, automacoes }
-  if (error) throw new Error(`não deu para ler as respostas: ${error.message}`)
+  if (error) throw new Error(`não foi possível ler as respostas: ${error.message}`)
 
   const sessoes = (data ?? []) as LinhaDeSessao[]
   const total = count ?? sessoes.length
@@ -342,7 +342,7 @@ async function contatosDe(ids: string[]): Promise<Map<string, { nome: string | n
   const { data, error } = await db().from('contacts').select('id, nome, wa_id').in('id', unicos)
 
   if (ehIdInvalido(error)) return mapa
-  if (error) throw new Error(`não deu para ler os contatos das respostas: ${error.message}`)
+  if (error) throw new Error(`não foi possível ler os contatos das respostas: ${error.message}`)
 
   for (const linha of (data ?? []) as { id: string; nome: string | null; wa_id: string }[]) {
     mapa.set(linha.id, { nome: linha.nome, waId: linha.wa_id })

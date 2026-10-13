@@ -99,8 +99,8 @@ export async function autenticarChave(request: Request, escopo: EscopoDaApi): Pr
     conferida = await conferirChaveDeApi(lida.publico, lida.segredo)
   } catch (erro) {
     // Banco fora do ar fecha a porta. O motivo vai para o log, a chave não.
-    console.error(`[api] não deu para conferir a chave ${lida.publico}:`, erro instanceof Error ? erro.message : erro)
-    return erroDaApi(500, 'erro_interno', 'Não deu para conferir a chave agora. Tente de novo.')
+    console.error(`[api] não foi possível conferir a chave ${lida.publico}:`, erro instanceof Error ? erro.message : erro)
+    return erroDaApi(500, 'erro_interno', 'Não foi possível conferir a chave agora. Tente de novo.')
   }
   if (!conferida) {
     // A mesma resposta para chave inexistente, errada e revogada: separar os

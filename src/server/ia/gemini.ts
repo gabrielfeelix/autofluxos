@@ -405,7 +405,7 @@ async function tentar(
 
     const desistencia: Resposta = {
       tipo: 'nao_sei',
-      motivo: porTempo ? 'o modelo demorou demais' : 'não deu para falar com o modelo',
+      motivo: porTempo ? 'o modelo demorou demais' : 'não foi possível falar com o modelo',
       falhou: true,
     }
 

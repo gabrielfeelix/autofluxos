@@ -355,7 +355,7 @@ export function origemPermitida(
 /**
  * Lê a lista de domínios que a tela mandou, uma por linha ou por vírgula.
  *
- * Devolve os válidos, sem repetição, e os que não deu para ler, para a tela
+ * Devolve os válidos, sem repetição, e os que não foi possível ler, para a tela
  * dizer quais foram recusados em vez de sumir com eles calada.
  */
 export function lerListaDeDominios(texto: string): { validos: string[]; recusados: string[] } {

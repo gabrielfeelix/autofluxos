@@ -156,7 +156,7 @@ export async function acaoEnviarPedidoDoInbox(
           paginaDePedidos ? `${texto}\n\nAcompanhe em ${paginaDePedidos}` : texto,
         )
   } catch (erro) {
-    return { ok: false, erro: erro instanceof Error ? erro.message : 'não deu para enviar' }
+    return { ok: false, erro: erro instanceof Error ? erro.message : 'não foi possível enviar' }
   }
 
   await confirmarEntrega(registro, waMessageId)

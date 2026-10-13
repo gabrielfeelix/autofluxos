@@ -93,7 +93,7 @@ export async function criarLink(
     .maybeSingle()
 
   if (ehIdInvalido(erroDoFluxo)) return { ok: false, motivo: 'esta automação não existe mais' }
-  if (erroDoFluxo) throw new Error(`não deu para conferir o fluxo: ${erroDoFluxo.message}`)
+  if (erroDoFluxo) throw new Error(`não foi possível conferir o fluxo: ${erroDoFluxo.message}`)
   if (!fluxo) return { ok: false, motivo: 'esta automação não é deste cliente' }
 
   const versaoId = (fluxo as { versao_publicada_id: string | null }).versao_publicada_id
@@ -121,7 +121,7 @@ export async function criarLink(
     .select(COLUNAS)
     .single()
 
-  if (error) throw new Error(`não deu para criar o link: ${error.message}`)
+  if (error) throw new Error(`não foi possível criar o link: ${error.message}`)
   return { ok: true, link: paraLink(data as unknown as Linha) }
 }
 
@@ -135,7 +135,7 @@ export async function listarLinks(clienteId: string, fluxoId: string): Promise<L
     .order('criado_em', { ascending: false })
 
   if (ehIdInvalido(error)) return []
-  if (error) throw new Error(`não deu para listar os links: ${error.message}`)
+  if (error) throw new Error(`não foi possível listar os links: ${error.message}`)
   return (data as unknown as Linha[]).map(paraLink)
 }
 
@@ -157,7 +157,7 @@ export async function revogarLink(clienteId: string, linkId: string): Promise<bo
     .maybeSingle()
 
   if (ehIdInvalido(error)) return false
-  if (error) throw new Error(`não deu para revogar o link: ${error.message}`)
+  if (error) throw new Error(`não foi possível revogar o link: ${error.message}`)
   return data !== null
 }
 
@@ -216,7 +216,7 @@ export async function acharPorToken(token: string): Promise<LinkAberto | null> {
     .maybeSingle()
 
   if (ehIdInvalido(error)) return null
-  if (error) throw new Error(`não deu para abrir o link: ${error.message}`)
+  if (error) throw new Error(`não foi possível abrir o link: ${error.message}`)
   if (!data) return null
 
   const linha = data as unknown as {
@@ -254,10 +254,10 @@ export async function acharPorToken(token: string): Promise<LinkAberto | null> {
  */
 export async function contarAbertura(linkId: string): Promise<void> {
   const { error } = await db().rpc('contar_abertura_do_link', { p_link_id: linkId })
-  if (error) console.error('[compartilhar] não deu para contar a abertura', error.message)
+  if (error) console.error('[compartilhar] não foi possível contar a abertura', error.message)
 }
 
 export async function contarImportacao(linkId: string): Promise<void> {
   const { error } = await db().rpc('contar_importacao_do_link', { p_link_id: linkId })
-  if (error) console.error('[compartilhar] não deu para contar a importação', error.message)
+  if (error) console.error('[compartilhar] não foi possível contar a importação', error.message)
 }

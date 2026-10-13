@@ -112,7 +112,7 @@ export async function responsaveisDoEscopo(
     .select('usuario_id')
     .eq('client_id', clienteId)
     .in('equipe_id', [...escopo.equipes])
-  if (error) throw new Error(`não deu para ler as equipes: ${error.message}`)
+  if (error) throw new Error(`não foi possível ler as equipes: ${error.message}`)
   return [...new Set((data as { usuario_id: string }[]).map((m) => m.usuario_id))]
 }
 

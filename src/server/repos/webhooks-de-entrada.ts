@@ -59,7 +59,7 @@ export async function listarWebhooks(clienteId: string): Promise<WebhookDeEntrad
   if (error?.code === '42703') ({ data, error } = await ler(COLUNAS.replace(', recusada_em', '')))
 
   if (ehIdInvalido(error)) return []
-  if (error) throw new Error(`não deu para listar os webhooks: ${error.message}`)
+  if (error) throw new Error(`não foi possível listar os webhooks: ${error.message}`)
   return (data as unknown as Linha[]).map(paraWebhook)
 }
 
@@ -90,7 +90,7 @@ export async function criarWebhook(
     valor: segredo,
     apelido: `webhook_${crypto.randomUUID()}`,
   })
-  if (erroDoCofre) throw new Error(`não deu para guardar o segredo: ${erroDoCofre.message}`)
+  if (erroDoCofre) throw new Error(`não foi possível guardar o segredo: ${erroDoCofre.message}`)
   if (typeof segredoId !== 'string') throw new Error('o cofre não devolveu uma referência')
 
   const { data, error } = await db()
@@ -103,7 +103,7 @@ export async function criarWebhook(
     // O segredo já está no cofre e a linha não nasceu. Sem isto ele ficaria
     // órfão para sempre, a mesma correção de `criarConexao`.
     await db().rpc('apagar_segredo', { alvo: segredoId })
-    throw new Error(`não deu para criar o webhook: ${error.message}`)
+    throw new Error(`não foi possível criar o webhook: ${error.message}`)
   }
 
   return { ok: true, id: (data as { id: string }).id, segredo }
@@ -123,7 +123,7 @@ export async function alternarWebhook(
     .maybeSingle()
 
   if (ehIdInvalido(error)) return false
-  if (error) throw new Error(`não deu para alterar o webhook: ${error.message}`)
+  if (error) throw new Error(`não foi possível alterar o webhook: ${error.message}`)
   return data !== null
 }
 
@@ -145,7 +145,7 @@ export async function apagarWebhook(clienteId: string, webhookId: string): Promi
     .maybeSingle()
 
   if (ehIdInvalido(error)) return false
-  if (error) throw new Error(`não deu para apagar o webhook: ${error.message}`)
+  if (error) throw new Error(`não foi possível apagar o webhook: ${error.message}`)
   if (!data) return false
 
   await db().rpc('apagar_segredo', { alvo: (data as { secret_id: string }).secret_id })
@@ -177,7 +177,7 @@ export async function segredosAtivos(
     .eq('ativo', true)
 
   if (ehIdInvalido(error)) return []
-  if (error) throw new Error(`não deu para ler os webhooks: ${error.message}`)
+  if (error) throw new Error(`não foi possível ler os webhooks: ${error.message}`)
 
   const linhas = data as { id: string; secret_id: string }[]
   const segredos: { id: string; segredo: string }[] = []
@@ -203,7 +203,7 @@ export async function marcarChamada(webhookId: string): Promise<void> {
     .eq('id', webhookId)
 
   // Perder o carimbo não pode custar o evento. Vira log e a chamada segue.
-  if (error) console.error('[webhook] não deu para marcar a chamada', error.message)
+  if (error) console.error('[webhook] não foi possível marcar a chamada', error.message)
 }
 
 /**
@@ -222,7 +222,7 @@ export async function marcarRecusa(clienteId: string): Promise<void> {
     .eq('ativo', true)
 
   if (ehIdInvalido(error)) return
-  if (error) console.error('[webhook] não deu para marcar a recusa', error.message)
+  if (error) console.error('[webhook] não foi possível marcar a recusa', error.message)
 }
 
 // ---------------------------------------------------------------------------
@@ -265,7 +265,7 @@ export async function listarGatilhosDeEvento(clienteId: string): Promise<Gatilho
     .order('criado_em', { ascending: true })
 
   if (ehIdInvalido(error)) return []
-  if (error) throw new Error(`não deu para listar os gatilhos de evento: ${error.message}`)
+  if (error) throw new Error(`não foi possível listar os gatilhos de evento: ${error.message}`)
   return (data as LinhaDoGatilho[]).map(paraGatilho)
 }
 
@@ -290,7 +290,7 @@ export async function acharGatilhoDeEvento(
     .maybeSingle()
 
   if (ehIdInvalido(error)) return null
-  if (error) throw new Error(`não deu para achar o gatilho de evento: ${error.message}`)
+  if (error) throw new Error(`não foi possível achar o gatilho de evento: ${error.message}`)
   return data ? paraGatilho(data as LinhaDoGatilho) : null
 }
 
@@ -313,7 +313,7 @@ export async function criarGatilhoDeEvento(
     .maybeSingle()
 
   if (ehIdInvalido(erroDoFluxo)) return { ok: false, motivo: 'escolha um fluxo válido' }
-  if (erroDoFluxo) throw new Error(`não deu para conferir o fluxo: ${erroDoFluxo.message}`)
+  if (erroDoFluxo) throw new Error(`não foi possível conferir o fluxo: ${erroDoFluxo.message}`)
   if (!fluxo) return { ok: false, motivo: 'este fluxo não é deste cliente' }
 
   // Aponta para rascunho? Cadastra (dá para preparar antes de publicar), mas
@@ -329,7 +329,7 @@ export async function criarGatilhoDeEvento(
   if (error?.code === '23505') {
     return { ok: false, motivo: `já existe um gatilho para “${limpo}”` }
   }
-  if (error) throw new Error(`não deu para criar o gatilho de evento: ${error.message}`)
+  if (error) throw new Error(`não foi possível criar o gatilho de evento: ${error.message}`)
   return { ok: true, id: (data as { id: string }).id }
 }
 
@@ -347,7 +347,7 @@ export async function alternarGatilhoDeEvento(
     .maybeSingle()
 
   if (ehIdInvalido(error)) return false
-  if (error) throw new Error(`não deu para alterar o gatilho: ${error.message}`)
+  if (error) throw new Error(`não foi possível alterar o gatilho: ${error.message}`)
   return data !== null
 }
 
@@ -364,12 +364,12 @@ export async function apagarGatilhoDeEvento(
     .maybeSingle()
 
   if (ehIdInvalido(error)) return false
-  if (error) throw new Error(`não deu para apagar o gatilho: ${error.message}`)
+  if (error) throw new Error(`não foi possível apagar o gatilho: ${error.message}`)
   return data !== null
 }
 
 /** Conta o disparo. Perder a contagem nunca pode custar o evento. */
 export async function contarDisparoDeEvento(gatilhoId: string): Promise<void> {
   const { error } = await db().rpc('contar_disparo_de_evento', { p_gatilho: gatilhoId })
-  if (error) console.error('[webhook] não deu para contar o disparo', error.message)
+  if (error) console.error('[webhook] não foi possível contar o disparo', error.message)
 }

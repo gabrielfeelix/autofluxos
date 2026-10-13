@@ -46,7 +46,7 @@ async function criarUsuario(nome: string): Promise<string> {
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
   })
-  if (error) throw new Error(`não deu para criar o usuário: ${error.message}`)
+  if (error) throw new Error(`não foi possível criar o usuário: ${error.message}`)
   return id
 }
 

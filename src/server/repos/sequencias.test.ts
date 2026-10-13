@@ -180,10 +180,10 @@ describe.skipIf(!temCredencial)('o que uma sequência viva impede de apagar', ()
    */
   it('não apaga a etapa que dispara uma sequência, e diz qual é (A20)', async () => {
     const quadro = await criarQuadro(clienteId, `${marca} funil do A20`)
-    if (!quadro.ok) throw new Error(`não deu para criar o quadro: ${quadro.motivo}`)
+    if (!quadro.ok) throw new Error(`não foi possível criar o quadro: ${quadro.motivo}`)
 
     const criada = await criarEtapa(clienteId, quadro.id, 'Proposta enviada')
-    if (!criada.ok) throw new Error(`não deu para criar a etapa: ${criada.motivo}`)
+    if (!criada.ok) throw new Error(`não foi possível criar a etapa: ${criada.motivo}`)
 
     // `criarEtapa` devolve só `{ ok }`, sem o id: a etapa se acha relendo o
     // quadro, como o teste do gatilho por etapa mais abaixo já faz.

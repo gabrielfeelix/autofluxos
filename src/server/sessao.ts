@@ -103,7 +103,7 @@ export async function encerrarSessao(sessaoId: string | undefined): Promise<void
   try {
     await bancoDoLogin().query('delete from af_sessoes where id = $1', [sessaoId])
   } catch (erro) {
-    console.error('[sessao] não deu para encerrar a sessão', erro instanceof Error ? erro.message : erro)
+    console.error('[sessao] não foi possível encerrar a sessão', erro instanceof Error ? erro.message : erro)
   }
 }
 
@@ -163,7 +163,7 @@ export async function sessaoAtual(): Promise<SessaoAtual | null> {
     return sessao
   } catch (erro) {
     console.error(
-      '[sessao] não deu para ler a sessão, tratando como deslogado',
+      '[sessao] não foi possível ler a sessão, tratando como deslogado',
       erro instanceof Error ? erro.message : erro,
     )
     return null
@@ -182,7 +182,7 @@ export async function telaDeEntrar(): Promise<string> {
     const valor = jar.get('__Secure-better-auth.session_token')?.value ?? jar.get('better-auth.session_token')?.value
     if (await foiDerrubada(bancoDoLogin(), valor)) return '/entrar?motivo=outro-aparelho'
   } catch (erro) {
-    console.error('[sessoes] não deu para ler o motivo da saída', erro)
+    console.error('[sessoes] não foi possível ler o motivo da saída', erro)
   }
   return '/entrar'
 }

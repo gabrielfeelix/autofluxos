@@ -259,7 +259,7 @@ export function dadosPadrao(tipo: TipoNo): Record<string, unknown> {
     case 'handoff':
       return {
         motivo: 'pedido pelo fluxo',
-        mensagem: 'Vou te passar para um atendente. Só um instante!',
+        mensagem: 'Vou transferir você para um atendente. Só um instante!',
       }
     case 'http':
       // Nasce chamando o ViaCEP de verdade: dá para arrastar o bloco, abrir a
@@ -1307,7 +1307,7 @@ export function Editor({
       setSalvamento('salvo')
     } catch {
       setErrosDePublicacao([
-        { codigo: 'DESCARTE', mensagem: 'Não deu para descartar. Tente de novo.' },
+        { codigo: 'DESCARTE', mensagem: 'Não foi possível descartar. Tente de novo.' },
       ])
     } finally {
       setDescartando(false)
@@ -1335,7 +1335,7 @@ export function Editor({
         setErrosDePublicacao(r.erros)
       }
     } catch {
-      setErrosDePublicacao([{ codigo: 'FALHA', mensagem: 'Não deu para publicar. Tente de novo.' }])
+      setErrosDePublicacao([{ codigo: 'FALHA', mensagem: 'Não foi possível publicar. Tente de novo.' }])
     } finally {
       setPublicando(false)
     }
@@ -1374,7 +1374,7 @@ export function Editor({
       return true
     } catch {
       setErrosDePublicacao([
-        { codigo: 'FALHA', mensagem: 'Não deu para voltar para esta versão. Tente de novo.' },
+        { codigo: 'FALHA', mensagem: 'Não foi possível voltar para esta versão. Tente de novo.' },
       ])
       return false
     } finally {

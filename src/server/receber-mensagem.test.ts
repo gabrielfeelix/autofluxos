@@ -565,7 +565,7 @@ describe.skipIf(!temCredencial)('receber mensagem do WhatsApp', () => {
       .from('handoffs')
       .select('motivo')
       .eq('session_id', salva!.id)
-    expect(handoffs?.[0]?.motivo).toContain('não deu para entregar')
+    expect(handoffs?.[0]?.motivo).toContain('não foi possível entregar')
     expect(handoffs?.[0]?.motivo).toContain('131047')
   })
 

@@ -2008,7 +2008,7 @@ describe('IA contínua (conversar)', () => {
     expect(sessao.tentativas).toBe(1)
   })
 
-  it('foto que não deu para ler pede para escrever e fica na conversa', () => {
+  it('foto que não foi possível ler pede para escrever e fica na conversa', () => {
     const { sessao, acoes } = conversar(continua, [
       { tipo: 'inicio' },
       { tipo: 'ia_respondeu', texto: 'Oi!' },

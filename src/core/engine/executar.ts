@@ -149,7 +149,7 @@ const MENSAGEM_SO_TEXTO =
 /** Foto numa pergunta de resposta escrita, sem leitura possível. */
 export const MENSAGEM_IMAGEM_NA_PERGUNTA = 'Não consegui ver a imagem por aqui. 😕 Pode me escrever a resposta?'
 
-/** A imagem chegou na conversa com a IA e não deu para ler o que tem nela. */
+/** A imagem chegou na conversa com a IA e não foi possível ler o que tem nela. */
 export const MENSAGEM_IMAGEM_ILEGIVEL =
   'Não consegui ler essa imagem. 😕 Pode me escrever o nome do produto ou o que você procura?'
 
@@ -368,7 +368,7 @@ export function executar(
     }
 
     /*
-     * Foto na conversa com a IA: a IA lê a imagem, e quem não deu para ler
+     * Foto na conversa com a IA: a IA lê a imagem, e quem não foi possível ler
      * recebe um pedido para escrever.
      *
      * Antes toda foto aqui ia para a equipe com "o bot só lê texto". Um

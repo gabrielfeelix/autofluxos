@@ -118,7 +118,7 @@ export async function lerNomesDoAnuncio(entrada: {
   } catch (erro) {
     /*
      * `AbortError` é o timeout acima; o resto é rede. Os dois dizem a mesma
-     * coisa a quem chama, não deu para saber agora, e nenhum é motivo para
+     * coisa a quem chama, não foi possível saber agora, e nenhum é motivo para
      * apagar o nome que já está guardado.
      */
     const detalhe = erro instanceof Error ? erro.message : String(erro)

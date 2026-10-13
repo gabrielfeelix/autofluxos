@@ -96,7 +96,7 @@ export default async function Pagina({
           <p className="mb-4 rounded-[10px] border border-line bg-surface px-4 py-3 text-[12px] text-soft">
             {busca.erro === "cancelado"
               ? "A conexão foi cancelada na tela da Meta. Nada mudou."
-              : "Não deu para ligar a conta de anúncios. Tente de novo."}
+              : "Não foi possível ligar a conta de anúncios. Tente de novo."}
           </p>
         )}
 

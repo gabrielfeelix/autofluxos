@@ -36,7 +36,7 @@ export function ZonaDePerigo({
         const r = await acaoAdminSuspender(organizacao.id, !anterior)
         if (!r.ok) {
           setSuspensa(anterior)
-          setAviso(r.erro ?? 'não deu para gravar')
+          setAviso(r.erro ?? 'não foi possível gravar')
         }
       } catch {
         setSuspensa(anterior)
@@ -108,7 +108,7 @@ function Apagar({ organizacao, pessoas, aoFechar }: { organizacao: { id: string;
         if (vivo) setEstrago(resposta)
       })
       .catch(() => {
-        if (vivo) setErro('não deu para conferir o que some com esta organização')
+        if (vivo) setErro('não foi possível conferir o que some com esta organização')
       })
     return () => {
       vivo = false
@@ -179,7 +179,7 @@ function Apagar({ organizacao, pessoas, aoFechar }: { organizacao: { id: string;
             setErro(null)
             comecar(async () => {
               const r = await acaoApagarConta(organizacao.id)
-              if (!r.ok) setErro(r.erro ?? 'não deu para apagar')
+              if (!r.ok) setErro(r.erro ?? 'não foi possível apagar')
               else router.replace('/admin/organizacoes')
             })
           }}

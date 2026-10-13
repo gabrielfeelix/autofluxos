@@ -61,7 +61,7 @@ export function FichaDoCliente({
             {editando ? 'Fechar' : 'Editar'}
           </button>
         ) : (
-          <p className="text-[12px] text-dim">Só o proprietário ou um administrador da organização edita.</p>
+          <p className="text-[12px] text-dim">Apenas o proprietário ou um administrador da organização pode editar.</p>
         )}
       </header>
 
@@ -77,7 +77,7 @@ export function FichaDoCliente({
                 nome="responsavel"
                 valor={cliente.responsavel}
                 dica="a pessoa com quem a 4YU fala"
-                exemplo="Exemplo: Daniel, dono do estúdio"
+                exemplo="Exemplo: Daniel, proprietário do estúdio"
               />
               <Campo
                 rotulo="Telefone"

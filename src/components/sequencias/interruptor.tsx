@@ -53,12 +53,12 @@ export function InterruptorDeSequencia({
             (r) => {
               if (!r.ok) {
                 setAtual(antes)
-                setErro(r.erro ?? 'não deu para mudar a sequência')
+                setErro(r.erro ?? 'não foi possível mudar a sequência')
               }
             },
             () => {
               setAtual(antes)
-              setErro('não deu para mudar agora')
+              setErro('não foi possível mudar agora')
             },
           )
         }}

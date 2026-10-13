@@ -147,7 +147,7 @@ export async function registrarVenda(pedido: PedidoDeVenda): Promise<ResultadoDa
           'ou abra outra oportunidade para uma nova compra.',
       }
     }
-    return { ok: false, motivo: `não deu para registrar a venda: ${error.message}` }
+    return { ok: false, motivo: `não foi possível registrar a venda: ${error.message}` }
   }
 
   const venda = paraVenda(data as LinhaDaVenda)
@@ -172,7 +172,7 @@ export async function registrarVenda(pedido: PedidoDeVenda): Promise<ResultadoDa
      */
     if (erroDosItens) {
       await db().from('vendas').delete().eq('id', venda.id)
-      return { ok: false, motivo: `não deu para registrar os itens: ${erroDosItens.message}` }
+      return { ok: false, motivo: `não foi possível registrar os itens: ${erroDosItens.message}` }
     }
   }
 
@@ -192,7 +192,7 @@ export async function porChaveDaOperacao(
     .maybeSingle()
 
   if (ehIdInvalido(error)) return null
-  if (error) throw new Error(`não deu para conferir a operação: ${error.message}`)
+  if (error) throw new Error(`não foi possível conferir a operação: ${error.message}`)
   return data ? paraVenda(data as LinhaDaVenda) : null
 }
 
@@ -210,7 +210,7 @@ export async function vendaDoCartao(
     .maybeSingle()
 
   if (ehIdInvalido(error)) return null
-  if (error) throw new Error(`não deu para ler a venda: ${error.message}`)
+  if (error) throw new Error(`não foi possível ler a venda: ${error.message}`)
   return data ? paraVenda(data as LinhaDaVenda) : null
 }
 
@@ -241,7 +241,7 @@ export async function cancelarVenda(
     .eq('id', vendaId)
     .eq('situacao', 'valida')
 
-  if (error) return { ok: false, motivo: `não deu para cancelar: ${error.message}` }
+  if (error) return { ok: false, motivo: `não foi possível cancelar: ${error.message}` }
   return { ok: true }
 }
 
@@ -262,7 +262,7 @@ export async function resumoDeVendas(
     .eq('contact_id', contatoId)
 
   if (ehIdInvalido(error)) return resumirVendas([])
-  if (error) throw new Error(`não deu para ler as vendas: ${error.message}`)
+  if (error) throw new Error(`não foi possível ler as vendas: ${error.message}`)
 
   return resumirVendas(
     (data as { valor_total: string | number | null; situacao: string; data_da_venda: string }[]).map(

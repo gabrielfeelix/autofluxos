@@ -145,7 +145,7 @@ export async function filaDoPainel(
   // deixa o resto da página abrir.
   const erro = pediram.error ?? devendo.error ?? quantosPediram.error ?? quantosDevendo.error
   if (ehIdInvalido(erro)) return { itens: [], total: 0, pedindoPessoa: 0 }
-  if (erro) throw new Error(`não deu para montar a fila do painel: ${erro.message}`)
+  if (erro) throw new Error(`não foi possível montar a fila do painel: ${erro.message}`)
 
   const itens: ItemDaFila[] = []
 
@@ -243,7 +243,7 @@ export async function fechamentos(
 
   const vazio = { ganhos: 0, perdidos: 0, valor: null, dias }
   if (ehIdInvalido(error)) return vazio
-  if (error) throw new Error(`não deu para contar os fechamentos: ${error.message}`)
+  if (error) throw new Error(`não foi possível contar os fechamentos: ${error.message}`)
 
   let ganhos = 0
   let perdidos = 0
@@ -323,7 +323,7 @@ export async function negociosParados(
 
   const erro = lista.error ?? contagem.error
   if (ehIdInvalido(erro)) return { itens: [], total: 0 }
-  if (erro) throw new Error(`não deu para ler os negócios parados: ${erro.message}`)
+  if (erro) throw new Error(`não foi possível ler os negócios parados: ${erro.message}`)
 
   type Linha = {
     id: string
@@ -382,7 +382,7 @@ export async function filaPorPessoa(
 
   const porPessoa = new Map<string, number>()
   if (ehIdInvalido(error)) return { semDono: 0, porPessoa }
-  if (error) throw new Error(`não deu para ler a fila da equipe: ${error.message}`)
+  if (error) throw new Error(`não foi possível ler a fila da equipe: ${error.message}`)
 
   let semDono = 0
   for (const { atribuido_a } of (data ?? []) as { atribuido_a: string | null }[]) {

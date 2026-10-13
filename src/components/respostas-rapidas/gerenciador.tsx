@@ -56,7 +56,7 @@ export function GerenciadorDeRespostasRapidas({ clienteId, inicial, topo }: { cl
       resposta ? acaoEditarRespostaRapida(clienteId, resposta.id, dados) : acaoNovaRespostaRapida(clienteId, dados),
     ).then(
       (r) => {
-        if (!r.ok || !r.resposta) return desfazer(r.erro ?? 'não deu para salvar')
+        if (!r.ok || !r.resposta) return desfazer(r.erro ?? 'não foi possível salvar')
         const salva = r.resposta
         setLista((atual) => atual.map((x) => (x.id === provisoria.id ? salva : x)))
       },

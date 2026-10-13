@@ -71,9 +71,9 @@ export async function registrarChamada(chamada: ChamadaDeIa): Promise<void> {
         detalhe: chamada.detalhe ?? null,
       })
 
-    if (error) console.error('[ia] não deu para registrar a chamada', error.message)
+    if (error) console.error('[ia] não foi possível registrar a chamada', error.message)
   } catch (erro) {
-    console.error('[ia] não deu para registrar a chamada', erro)
+    console.error('[ia] não foi possível registrar a chamada', erro)
   }
 }
 
@@ -140,7 +140,7 @@ export async function cotaDeIaDoContato(
       .eq('id', clienteId)
       .maybeSingle()
     if (erroConta) {
-      console.error('[ia] não deu para ler o limite por contato', erroConta.message)
+      console.error('[ia] não foi possível ler o limite por contato', erroConta.message)
       return semLimite
     }
 
@@ -156,13 +156,13 @@ export async function cotaDeIaDoContato(
       .eq('ferramenta', FERRAMENTA_RESPOSTA)
       .gte('criado_em', desde)
     if (error) {
-      console.error('[ia] não deu para contar as respostas do contato', error.message)
+      console.error('[ia] não foi possível contar as respostas do contato', error.message)
       return semLimite
     }
 
     return { limite, usadas: count ?? 0 }
   } catch (erro) {
-    console.error('[ia] não deu para ler a cota de IA do contato', erro)
+    console.error('[ia] não foi possível ler a cota de IA do contato', erro)
     return semLimite
   }
 }
@@ -210,7 +210,7 @@ export async function cotaDeIaDaConta(clienteId: string): Promise<{ teto: number
       .eq('id', clienteId)
       .maybeSingle()
     if (erroConta || !conta) {
-      if (erroConta) console.error('[ia] não deu para ler o plano da conta', erroConta.message)
+      if (erroConta) console.error('[ia] não foi possível ler o plano da conta', erroConta.message)
       return semTeto
     }
 
@@ -235,13 +235,13 @@ export async function cotaDeIaDaConta(clienteId: string): Promise<{ teto: number
       .in('ferramenta', [FERRAMENTA_RESPOSTA, FERRAMENTA_TRANSCRICAO])
       .gte('criado_em', desde)
     if (error) {
-      console.error('[ia] não deu para contar as respostas da conta', error.message)
+      console.error('[ia] não foi possível contar as respostas da conta', error.message)
       return semTeto
     }
 
     return { teto, usadas: count ?? 0 }
   } catch (erro) {
-    console.error('[ia] não deu para ler o teto de IA da conta', erro)
+    console.error('[ia] não foi possível ler o teto de IA da conta', erro)
     return semTeto
   }
 }

@@ -20,7 +20,7 @@ export async function listarPastas(clienteId: string): Promise<Pasta[]> {
     .order('nome', { ascending: true })
 
   if (ehIdInvalido(error)) return []
-  if (error) throw new Error(`não deu para listar as pastas: ${error.message}`)
+  if (error) throw new Error(`não foi possível listar as pastas: ${error.message}`)
   return data as Pasta[]
 }
 
@@ -34,7 +34,7 @@ export async function criarPasta(
   const { error } = await db().from('pastas').insert({ client_id: clienteId, nome: limpo })
 
   if (error?.code === '23505') return { ok: false, motivo: `já existe uma pasta “${limpo}”` }
-  if (error) throw new Error(`não deu para criar a pasta: ${error.message}`)
+  if (error) throw new Error(`não foi possível criar a pasta: ${error.message}`)
   return { ok: true }
 }
 
@@ -59,7 +59,7 @@ export async function renomearPasta(
 
   if (error?.code === '23505') return { ok: false, motivo: `já existe uma pasta “${limpo}”` }
   if (ehIdInvalido(error)) return { ok: false, motivo: 'esta pasta não existe mais' }
-  if (error) throw new Error(`não deu para renomear a pasta: ${error.message}`)
+  if (error) throw new Error(`não foi possível renomear a pasta: ${error.message}`)
   return (data?.length ?? 0) === 1 ? { ok: true } : { ok: false, motivo: 'esta pasta não existe mais' }
 }
 
@@ -77,7 +77,7 @@ export async function apagarPasta(clienteId: string, pastaId: string): Promise<b
     .select('id')
 
   if (ehIdInvalido(error)) return false
-  if (error) throw new Error(`não deu para apagar a pasta: ${error.message}`)
+  if (error) throw new Error(`não foi possível apagar a pasta: ${error.message}`)
   return (data?.length ?? 0) === 1
 }
 
@@ -102,7 +102,7 @@ export async function moverFluxo(
       .maybeSingle()
 
     if (ehIdInvalido(error)) return { ok: false, motivo: 'esta pasta não existe' }
-    if (error) throw new Error(`não deu para conferir a pasta: ${error.message}`)
+    if (error) throw new Error(`não foi possível conferir a pasta: ${error.message}`)
     if (!pasta) return { ok: false, motivo: 'esta pasta não é deste cliente' }
   }
 
@@ -114,7 +114,7 @@ export async function moverFluxo(
     .select('id')
 
   if (ehIdInvalido(error)) return { ok: false, motivo: 'esta automação não existe mais' }
-  if (error) throw new Error(`não deu para mover o fluxo: ${error.message}`)
+  if (error) throw new Error(`não foi possível mover o fluxo: ${error.message}`)
   if ((data?.length ?? 0) !== 1) return { ok: false, motivo: 'esta automação não existe mais' }
   return { ok: true }
 }

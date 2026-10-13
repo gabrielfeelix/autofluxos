@@ -50,7 +50,7 @@ export async function acaoNovaRespostaRapida(
     conversas(clienteId)
     return { ok: true, resposta }
   } catch (erro) {
-    return { ok: false, erro: erro instanceof Error ? erro.message : 'não deu para criar' }
+    return { ok: false, erro: erro instanceof Error ? erro.message : 'não foi possível criar' }
   }
 }
 
@@ -71,7 +71,7 @@ export async function acaoEditarRespostaRapida(
     conversas(clienteId)
     return { ok: true, resposta }
   } catch (erro) {
-    return { ok: false, erro: erro instanceof Error ? erro.message : 'não deu para salvar' }
+    return { ok: false, erro: erro instanceof Error ? erro.message : 'não foi possível salvar' }
   }
 }
 

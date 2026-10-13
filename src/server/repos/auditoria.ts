@@ -98,7 +98,7 @@ export async function registrarConfirmando(ato: AtoAuditado): Promise<boolean> {
     return true
   } catch (erro) {
     console.error(
-      `[auditoria] não deu para registrar "${ato.acao}"`,
+      `[auditoria] não foi possível registrar "${ato.acao}"`,
       erro instanceof Error ? erro.message : erro,
     )
     return false
@@ -166,7 +166,7 @@ export async function listarAtos(
 
   const { data, error } = await consulta
   if (ehIdInvalido(error)) return []
-  if (error) throw new Error(`não deu para ler a auditoria: ${error.message}`)
+  if (error) throw new Error(`não foi possível ler a auditoria: ${error.message}`)
   return (data as Linha[]).map(paraAto)
 }
 
@@ -186,7 +186,7 @@ export async function ultimoAto(contaId: string, acao: string): Promise<LinhaDeA
     .order('quando', { ascending: false })
     .limit(1)
   if (ehIdInvalido(error)) return null
-  if (error) throw new Error(`não deu para ler a auditoria: ${error.message}`)
+  if (error) throw new Error(`não foi possível ler a auditoria: ${error.message}`)
   const [linha] = data as Linha[]
   return linha ? paraAto(linha) : null
 }
@@ -205,6 +205,6 @@ export async function listarImpersonacoes(limite = ATOS_POR_PAGINA): Promise<Lin
     .order('quando', { ascending: false })
     .limit(limite)
 
-  if (error) throw new Error(`não deu para ler as impersonações: ${error.message}`)
+  if (error) throw new Error(`não foi possível ler as impersonações: ${error.message}`)
   return (data as Linha[]).map(paraAto)
 }

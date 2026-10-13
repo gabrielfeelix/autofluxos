@@ -111,12 +111,12 @@ export function FaixasDeNivelDaConta({
       try {
         const r = await acaoDefinirFaixas(clienteId, ouro, prata)
         if (!r.ok) {
-          setErro(r.erro ?? 'não deu para salvar')
+          setErro(r.erro ?? 'não foi possível salvar')
           return
         }
         setSalvo(true)
       } catch {
-        setErro('não deu para salvar agora')
+        setErro('não foi possível salvar agora')
       }
     })
   }

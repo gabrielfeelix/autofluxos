@@ -337,7 +337,7 @@ export function ConfigurarChatDoSite({
                 onChange={(e) => setSaudacao(e.target.value)}
                 maxLength={TETO_DA_SAUDACAO}
                 rows={2}
-                placeholder="Exemplo: Olá! Procurando um periférico? Fale com a gente."
+                placeholder="Exemplo: Olá! Procurando um periférico? Fale conosco."
                 className="app-field mt-1.5 w-full resize-y px-[13px] py-[10px] text-[13.5px]"
               />
               <span className="mt-1 block text-[11.5px] text-dim">

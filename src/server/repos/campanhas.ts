@@ -41,7 +41,7 @@ export async function listarCampanhas(clienteId: string): Promise<Campanha[]> {
     .order('criado_em', { ascending: true })
 
   if (ehIdInvalido(error)) return []
-  if (error) throw new Error(`não deu para listar as campanhas: ${error.message}`)
+  if (error) throw new Error(`não foi possível listar as campanhas: ${error.message}`)
   return (data as Linha[]).map(paraCampanha)
 }
 
@@ -54,7 +54,7 @@ export async function campanhasAtivas(clienteId: string): Promise<Campanha[]> {
     .eq('ativa', true)
 
   if (ehIdInvalido(error)) return []
-  if (error) throw new Error(`não deu para ler as campanhas: ${error.message}`)
+  if (error) throw new Error(`não foi possível ler as campanhas: ${error.message}`)
   return (data as Linha[]).map(paraCampanha)
 }
 
@@ -77,7 +77,7 @@ export async function criarCampanha(
     .maybeSingle()
 
   if (ehIdInvalido(erroDoFluxo)) return { ok: false, motivo: 'escolha um fluxo válido' }
-  if (erroDoFluxo) throw new Error(`não deu para conferir o fluxo: ${erroDoFluxo.message}`)
+  if (erroDoFluxo) throw new Error(`não foi possível conferir o fluxo: ${erroDoFluxo.message}`)
   if (!fluxo) return { ok: false, motivo: 'este fluxo não é deste cliente' }
 
   // Aponta para rascunho? Cadastra (dá para preparar antes de publicar), mas
@@ -91,7 +91,7 @@ export async function criarCampanha(
   if (error?.code === '23505') {
     return { ok: false, motivo: 'já existe uma campanha com esta frase' }
   }
-  if (error) throw new Error(`não deu para criar a campanha: ${error.message}`)
+  if (error) throw new Error(`não foi possível criar a campanha: ${error.message}`)
   return { ok: true }
 }
 
@@ -109,7 +109,7 @@ export async function alternarCampanha(
     .select('id')
 
   if (ehIdInvalido(error)) return false
-  if (error) throw new Error(`não deu para mudar a campanha: ${error.message}`)
+  if (error) throw new Error(`não foi possível mudar a campanha: ${error.message}`)
   return (data?.length ?? 0) === 1
 }
 
@@ -122,14 +122,14 @@ export async function apagarCampanha(clienteId: string, campanhaId: string): Pro
     .select('id')
 
   if (ehIdInvalido(error)) return false
-  if (error) throw new Error(`não deu para apagar a campanha: ${error.message}`)
+  if (error) throw new Error(`não foi possível apagar a campanha: ${error.message}`)
   return (data?.length ?? 0) === 1
 }
 
 /** Como no gatilho: falhar a contagem não pode derrubar a conversa. */
 export async function contarDisparoDaCampanha(campanhaId: string): Promise<void> {
   const { error } = await db().rpc('contar_disparo_da_campanha', { p_campanha_id: campanhaId })
-  if (error) console.error('[campanhas] não deu para contar o disparo', error.message)
+  if (error) console.error('[campanhas] não foi possível contar o disparo', error.message)
 }
 
 /**
@@ -146,7 +146,7 @@ export async function atribuirCampanha(contatoId: string, campanhaId: string): P
     .eq('id', contatoId)
     .is('campanha_id', null)
 
-  if (error) console.error('[campanhas] não deu para atribuir o contato', error.message)
+  if (error) console.error('[campanhas] não foi possível atribuir o contato', error.message)
 }
 
 /** Quantos contatos cada campanha trouxe. É a coluna que diz se ela valeu. */
@@ -159,7 +159,7 @@ export async function contatosPorCampanha(clienteId: string): Promise<Map<string
 
   const total = new Map<string, number>()
   if (ehIdInvalido(error)) return total
-  if (error) throw new Error(`não deu para contar os contatos por campanha: ${error.message}`)
+  if (error) throw new Error(`não foi possível contar os contatos por campanha: ${error.message}`)
 
   for (const linha of data as { campanha_id: string }[]) {
     total.set(linha.campanha_id, (total.get(linha.campanha_id) ?? 0) + 1)

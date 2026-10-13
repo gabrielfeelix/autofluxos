@@ -168,7 +168,7 @@ export async function agirNaConversa(
     (r) => {
       if (r && (r.erro || r.ok === false)) {
         desfazer()
-        return r.erro ?? 'não deu para salvar'
+        return r.erro ?? 'não foi possível salvar'
       }
       return null
     },

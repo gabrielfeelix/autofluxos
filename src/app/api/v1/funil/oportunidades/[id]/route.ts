@@ -51,6 +51,6 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
     return Response.json({ oportunidade: resultado.oportunidade })
   } catch (erro) {
     console.error(`[api] PATCH oportunidade falhou (chave ${acesso.publico}):`, erro instanceof Error ? erro.message : erro)
-    return erroDaApi(500, 'erro_interno', 'Não deu para mudar a oportunidade agora. Tente de novo.')
+    return erroDaApi(500, 'erro_interno', 'Não foi possível mudar a oportunidade agora. Tente de novo.')
   }
 }

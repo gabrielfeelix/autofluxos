@@ -34,7 +34,7 @@ export async function listarMateriais(clienteId: string): Promise<Material[]> {
     .eq('client_id', clienteId)
 
   if (ehIdInvalido(error)) return []
-  if (error) throw new Error(`não deu para ler os materiais: ${error.message}`)
+  if (error) throw new Error(`não foi possível ler os materiais: ${error.message}`)
   return (data as LinhaDoMaterial[]).flatMap((l) => paraMaterial(l) ?? [])
 }
 
@@ -54,7 +54,7 @@ export async function salvarMaterial(
       { client_id: clienteId, tipo, url, nome_arquivo: nomeArquivo, atualizado_em: new Date().toISOString() },
       { onConflict: 'client_id,tipo' },
     )
-  if (error) return { ok: false, motivo: `não deu para salvar o arquivo: ${error.message}` }
+  if (error) return { ok: false, motivo: `não foi possível salvar o arquivo: ${error.message}` }
   return { ok: true }
 }
 
@@ -65,6 +65,6 @@ export async function removerMaterial(
 ): Promise<{ ok: true } | { ok: false; motivo: string }> {
   const { error } = await db().from('materiais').delete().eq('client_id', clienteId).eq('tipo', tipo)
   if (ehIdInvalido(error)) return { ok: true }
-  if (error) return { ok: false, motivo: `não deu para remover o arquivo: ${error.message}` }
+  if (error) return { ok: false, motivo: `não foi possível remover o arquivo: ${error.message}` }
   return { ok: true }
 }

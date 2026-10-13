@@ -20,7 +20,7 @@ import type { Resposta } from './types'
  * `gemini-flash-latest` quase passou despercebido.
  */
 function falhouPorInfra(r: Resposta): boolean {
-  return r.tipo === 'nao_sei' && /respondeu \d|demorou demais|não deu para falar/.test(r.motivo)
+  return r.tipo === 'nao_sei' && /respondeu \d|demorou demais|não foi possível falar/.test(r.motivo)
 }
 
 function descrever(r: Resposta): string {

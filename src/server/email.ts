@@ -45,7 +45,7 @@ export async function enviarEmail(
     if (!resposta.ok) console.error('[email] a Brevo recusou', resposta.status, await resposta.text().catch(() => ''))
     return resposta.ok
   } catch (erro) {
-    console.error('[email] não deu para enviar', erro)
+    console.error('[email] não foi possível enviar', erro)
     return false
   }
 }

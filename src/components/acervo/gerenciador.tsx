@@ -62,7 +62,7 @@ export function GerenciadorDoAcervo({
           bytes: arquivo.size,
         })
         if (!preparo.ok || !preparo.envio) {
-          setErro(preparo.erro ?? 'não deu para preparar o envio')
+          setErro(preparo.erro ?? 'não foi possível preparar o envio')
           return
         }
 
@@ -83,7 +83,7 @@ export function GerenciadorDoAcervo({
         await acaoConfirmarEnvio(clienteId)
         setEnviado(preparo.envio.nome)
       } catch (erro) {
-        setErro(erro instanceof Error ? erro.message : 'não deu para enviar')
+        setErro(erro instanceof Error ? erro.message : 'não foi possível enviar')
       }
     })
   }

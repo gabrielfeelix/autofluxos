@@ -64,7 +64,7 @@ export async function reconciliarTemplates(): Promise<ResumoDaReconciliacao> {
       resumo.corrigidos += corrigidos
     } catch (erro) {
       resumo.falhas += 1
-      console.error('[templates] não deu para reconciliar', conta.clienteId, erro)
+      console.error('[templates] não foi possível reconciliar', conta.clienteId, erro)
     }
   }
 

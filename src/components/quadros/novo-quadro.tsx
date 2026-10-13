@@ -88,7 +88,7 @@ export function NovoQuadro({
       try {
         const r = await acaoCriarQuadroComModelo(clienteId, limpo, modelo?.id ?? 'branco')
         if (!r.ok) {
-          setErro(r.erro ?? 'não deu para criar o funil')
+          setErro(r.erro ?? 'não foi possível criar o funil')
           return
         }
         fechar()
@@ -97,7 +97,7 @@ export function NovoQuadro({
         if (r.id) router.push(`?q=${r.id}`)
         router.refresh()
       } catch {
-        setErro('não deu para criar agora, tente de novo')
+        setErro('não foi possível criar agora, tente de novo')
       }
     })
   }

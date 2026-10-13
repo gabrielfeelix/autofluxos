@@ -49,7 +49,7 @@ export default async function Pagina({
   try {
     equipe = await membrosDaConta(clienteId)
   } catch (erro) {
-    console.error('[equipe] não deu para ler a equipe', erro instanceof Error ? erro.message : erro)
+    console.error('[equipe] não foi possível ler a equipe', erro instanceof Error ? erro.message : erro)
   }
 
   /*

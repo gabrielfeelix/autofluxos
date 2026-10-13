@@ -68,7 +68,7 @@ export async function passadaDeRetomada(): Promise<ResumoDaRetomada> {
     .eq('ativa', true)
     .limit(CONTAS_POR_PASSADA)
 
-  if (error) throw new Error(`não deu para ler as réguas de retomada: ${error.message}`)
+  if (error) throw new Error(`não foi possível ler as réguas de retomada: ${error.message}`)
 
   for (const regua of (data ?? []) as LinhaDaRegua[]) {
     if (!regua.dias_sem_conversa) continue
@@ -144,7 +144,7 @@ async function inscreverPorSumico(
 
   if (error?.code === '23505') return false
   if (error) {
-    console.error('[retomada] não deu para inscrever:', error.message)
+    console.error('[retomada] não foi possível inscrever:', error.message)
     return false
   }
   return true

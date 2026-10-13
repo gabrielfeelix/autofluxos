@@ -246,7 +246,7 @@ export function canalCloudApi(config: ConfigCloudApi): Canal {
       if (nome === 'TimeoutError' || nome === 'AbortError') {
         throw new Error(`a Cloud API não respondeu em ${timeoutMs / 1000}s`)
       }
-      throw new Error(`não deu para falar com a Cloud API: ${erro instanceof Error ? erro.message : erro}`)
+      throw new Error(`não foi possível falar com a Cloud API: ${erro instanceof Error ? erro.message : erro}`)
     }
 
     if (!resposta.ok) {
@@ -299,7 +299,7 @@ export function canalCloudApi(config: ConfigCloudApi): Canal {
     try {
       const arquivo = await fetch(endereco, { signal: prazo })
       if (!arquivo.ok) {
-        console.warn(`[whatsapp] não deu para ler o arquivo para subir (${arquivo.status})`)
+        console.warn(`[whatsapp] não foi possível ler o arquivo para subir (${arquivo.status})`)
         return null
       }
 
@@ -341,7 +341,7 @@ export function canalCloudApi(config: ConfigCloudApi): Canal {
       return dados.id ?? null
     } catch (erro) {
       console.warn(
-        '[whatsapp] não deu para subir a mídia',
+        '[whatsapp] não foi possível subir a mídia',
         erro instanceof Error ? erro.message : String(erro),
       )
       return null
@@ -368,7 +368,7 @@ export function canalCloudApi(config: ConfigCloudApi): Canal {
         // tratados no envio que vale; barrar a resposta por este pedido seria
         // transformar uma melhoria visual em indisponibilidade.
         console.warn(
-          '[whatsapp] não deu para mostrar digitando',
+          '[whatsapp] não foi possível mostrar digitando',
           erro instanceof Error ? erro.message : String(erro),
         )
       }
@@ -467,7 +467,7 @@ export function canalCloudApi(config: ConfigCloudApi): Canal {
         nomeArquivo = dados.file_name
       } catch (erro) {
         console.warn(
-          '[whatsapp] não deu para pedir a URL da mídia',
+          '[whatsapp] não foi possível pedir a URL da mídia',
           erro instanceof Error ? erro.message : String(erro),
         )
         return null
@@ -494,7 +494,7 @@ export function canalCloudApi(config: ConfigCloudApi): Canal {
         return { bytes, mime, ...(nomeArquivo ? { nomeArquivo } : {}) }
       } catch (erro) {
         console.warn(
-          '[whatsapp] não deu para baixar a mídia',
+          '[whatsapp] não foi possível baixar a mídia',
           erro instanceof Error ? erro.message : String(erro),
         )
         return null

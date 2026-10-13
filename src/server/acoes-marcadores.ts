@@ -142,7 +142,7 @@ export async function acaoFavoritarMensagem(
   const usuarioId = sessao.usuario.id
 
   const id = mensagemId?.trim() ?? ''
-  if (id === '') return { ok: false, erro: 'não deu para saber qual mensagem guardar' }
+  if (id === '') return { ok: false, erro: 'não foi possível saber qual mensagem guardar' }
 
   const r = guardar
     ? await favoritar(usuarioId, clienteId, id)

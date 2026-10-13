@@ -168,12 +168,12 @@ export function CorrigirVenda({
           motivoDaPerda: destino === 'perdida' ? motivoDaPerda : undefined,
         })
         if (!r.ok) {
-          setErro(r.erro ?? 'não deu para cancelar')
+          setErro(r.erro ?? 'não foi possível cancelar')
           return
         }
         aoConcluir()
       } catch {
-        setErro('não deu para cancelar agora, tente de novo')
+        setErro('não foi possível cancelar agora, tente de novo')
       }
     })
   }

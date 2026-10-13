@@ -57,12 +57,12 @@ export function InterruptorDeCampanha({
             (r) => {
               if (!r.ok) {
                 setAtual(antes)
-                setErro(r.erro ?? 'não deu para mudar a campanha')
+                setErro(r.erro ?? 'não foi possível mudar a campanha')
               }
             },
             () => {
               setAtual(antes)
-              setErro('não deu para mudar agora')
+              setErro('não foi possível mudar agora')
             },
           )
         }}

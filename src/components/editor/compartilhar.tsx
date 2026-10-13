@@ -77,7 +77,7 @@ export function Compartilhar({
       const r = await acaoListarLinksDoFluxo(clienteId, fluxoId)
       setLinks((r.links ?? []) as LinkNaLista[])
     } catch {
-      setErro('não deu para carregar os links')
+      setErro('não foi possível carregar os links')
       setLinks([])
     }
   }
@@ -88,13 +88,13 @@ export function Compartilhar({
       try {
         const r = await acaoCriarLinkDoFluxo(clienteId, fluxoId, prazo)
         if (!r.ok || !r.link) {
-          setErro(r.erro ?? 'não deu para criar o link')
+          setErro(r.erro ?? 'não foi possível criar o link')
           return
         }
         setLinks((atuais) => [r.link as LinkNaLista, ...(atuais ?? [])])
         await copiar(r.link.token)
       } catch {
-        setErro('não deu para criar o link agora')
+        setErro('não foi possível criar o link agora')
       }
     })
   }
@@ -105,7 +105,7 @@ export function Compartilhar({
       try {
         const r = await acaoRevogarLinkDoFluxo(clienteId, fluxoId, linkId)
         if (!r.ok) {
-          setErro(r.erro ?? 'não deu para revogar')
+          setErro(r.erro ?? 'não foi possível revogar')
           return
         }
         setLinks((atuais) =>
@@ -116,7 +116,7 @@ export function Compartilhar({
           ),
         )
       } catch {
-        setErro('não deu para revogar agora')
+        setErro('não foi possível revogar agora')
       }
     })
   }
@@ -137,12 +137,12 @@ export function Compartilhar({
       try {
         const r = await acaoQrDoLinkDoFluxo(clienteId, fluxoId, linkId)
         if (!r.ok || !r.svg || !r.endereco) {
-          setErro(r.erro ?? 'não deu para gerar o QR')
+          setErro(r.erro ?? 'não foi possível gerar o QR')
           return
         }
         setQr({ linkId, svg: r.svg, endereco: r.endereco })
       } catch {
-        setErro('não deu para gerar o QR agora')
+        setErro('não foi possível gerar o QR agora')
       }
     })
   }
@@ -185,7 +185,7 @@ export function Compartilhar({
     } catch {
       // Área de transferência bloqueada (http, permissão negada). O endereço
       // continua visível no campo ao lado, então isto não é um beco sem saída.
-      setErro('não deu para copiar automaticamente, selecione o endereço e copie')
+      setErro('não foi possível copiar automaticamente, selecione o endereço e copie')
     }
   }
 

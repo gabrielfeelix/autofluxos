@@ -116,8 +116,8 @@ export async function acaoSubirMascote(formData: FormData): Promise<Resultado<{ 
       bytes = await sharp(bytes, { animated: true }).webp({ quality: 82 }).toBuffer()
       contentType = 'image/webp'
     } catch (erro) {
-      console.error('[site] não deu para converter o GIF', erro)
-      return { ok: false, erro: 'não deu para converter este GIF; mande em WebP ou MP4' }
+      console.error('[site] não foi possível converter o GIF', erro)
+      return { ok: false, erro: 'não foi possível converter este GIF; mande em WebP ou MP4' }
     }
   }
 
@@ -127,8 +127,8 @@ export async function acaoSubirMascote(formData: FormData): Promise<Resultado<{ 
     .storage.from(BUCKET_DO_ACERVO)
     .upload(caminho, bytes, { contentType, upsert: false })
   if (error) {
-    console.error('[site] não deu para subir a animação:', error.message)
-    return { ok: false, erro: 'não deu para guardar o arquivo agora, tente de novo' }
+    console.error('[site] não foi possível subir a animação:', error.message)
+    return { ok: false, erro: 'não foi possível guardar o arquivo agora, tente de novo' }
   }
 
   const mascote: Mascote = {

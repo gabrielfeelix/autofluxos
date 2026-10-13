@@ -53,7 +53,7 @@ const SECOES: readonly SecaoLegal[] = [
             guardamos por ela e apagamos quando você ou ela pedir.
           </Item>
           <Item>
-            <strong>Você usa o painel</strong>, é dono ou faz parte do time de uma empresa
+            <strong>Você usa o painel</strong>, é proprietário ou faz parte da equipe de uma empresa
             cliente. Vá para a seção 3: dá para apagar sozinho, na hora, e também dá para pedir
             que a conta inteira suma.
           </Item>

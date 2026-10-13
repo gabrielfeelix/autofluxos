@@ -417,7 +417,7 @@ async function tratarTrocaDeIdentidade(
     await trocarBsuid(canal.clienteId, anterior, novo, sistema?.wa_id ?? null)
   } catch (erro) {
     const detalhe = erro instanceof Error ? erro.message : String(erro)
-    await alertar('não deu para trocar o BSUID do contato', detalhe, { canal: canal.id })
+    await alertar('não foi possível trocar o BSUID do contato', detalhe, { canal: canal.id })
   }
 }
 
@@ -428,7 +428,7 @@ async function guardarTelefoneDoCanal(canal: CanalSalvo, telefone: string | unde
     await salvarTelefoneDoCanal(canal.id, telefone)
   } catch (erro) {
     const detalhe = erro instanceof Error ? erro.message : String(erro)
-    await alertar('não deu para gravar o telefone do canal', detalhe, { canal: canal.id })
+    await alertar('não foi possível gravar o telefone do canal', detalhe, { canal: canal.id })
   }
 }
 
@@ -553,7 +553,7 @@ export async function tratarUma(
       )
     } catch (erro) {
       console.warn(
-        '[midia] não deu para montar o canal para baixar a mídia',
+        '[midia] não foi possível montar o canal para baixar a mídia',
         erro instanceof Error ? erro.message : String(erro),
       )
     }
@@ -712,7 +712,7 @@ async function atribuirOrigem(contato: Contato, referral?: Referral): Promise<Co
        * uma linha de contexto.
        */
       const detalhe = erro instanceof Error ? erro.message : String(erro)
-      await alertar('não deu para registrar a passagem pelo anúncio', detalhe, {
+      await alertar('não foi possível registrar a passagem pelo anúncio', detalhe, {
         contato: contato.id,
       })
     }
@@ -1225,7 +1225,7 @@ async function avancarConversa(
       try {
         await definirEstadoDaConversa(canalSalvo.clienteId, contato.id, 'resolvida')
       } catch (erro) {
-        console.error('[encaminhar] não deu para resolver a conversa encaminhada', erro)
+        console.error('[encaminhar] não foi possível resolver a conversa encaminhada', erro)
       }
     }
   } finally {
@@ -1271,7 +1271,7 @@ async function avisarQueAEquipeVem(
     const texto = avisoDeForaDoHorario(contextoDeAtendimento(horario)) ?? AVISO_DE_ESPERA
     await aplicar(fabricaDeCanal(canalSalvo), contato, sessaoId, mensagemId, [{ tipo: 'enviar_texto', texto }], null)
   } catch (erro) {
-    await alertar('não deu para avisar a pessoa que a equipe já vem', erro, {
+    await alertar('não foi possível avisar a pessoa que a equipe já vem', erro, {
       contato: contato.id,
       sessao: sessaoId,
     })
@@ -1459,7 +1459,7 @@ export async function rodarPosAtendimento(
     )
   } catch (erro) {
     const detalhe = erro instanceof Error ? erro.message : String(erro)
-    console.error('[pos-atendimento] não deu para rodar o fluxo', detalhe)
+    console.error('[pos-atendimento] não foi possível rodar o fluxo', detalhe)
     await alertar('o fluxo de pós-atendimento falhou', detalhe, { contato: contatoId })
   }
 }
@@ -1752,12 +1752,12 @@ async function entregar(
     const detalhe = erro instanceof Error ? erro.message : String(erro)
     // Fica no log porque o motivo do handoff aparece na tela do painel e o
     // texto da Meta é longo; a versão inteira é o que resolve a investigação.
-    console.error('[whatsapp] não deu para entregar a mensagem', detalhe)
+    console.error('[whatsapp] não foi possível entregar a mensagem', detalhe)
     // O handoff cobre a pessoa, mas token expirado e número bloqueado derrubam
     // *todas* as conversas do cliente ao mesmo tempo, é o tipo de falha que
     // precisa chegar em alguém antes de virar um dia inteiro de leads perdidos.
     await alertar('a Cloud API recusou a entrega', detalhe, contexto)
-    return { ok: false, motivo: `não deu para entregar a mensagem, ${detalhe.slice(0, 200)}` }
+    return { ok: false, motivo: `não foi possível entregar a mensagem, ${detalhe.slice(0, 200)}` }
   }
 }
 
@@ -1870,7 +1870,7 @@ async function aplicar(
         avisarUsuarioId,
       })
     } catch (erro) {
-      await alertar('não deu para avisar a equipe do handoff', erro, alvo)
+      await alertar('não foi possível avisar a equipe do handoff', erro, alvo)
     }
   }
 
@@ -2306,7 +2306,7 @@ async function aplicar(
         try {
           await acrescentarNota(contato.clienteId, contato.id, acao.texto)
         } catch (erro) {
-          await alertar('não deu para escrever a anotação do fluxo', erro, {
+          await alertar('não foi possível escrever a anotação do fluxo', erro, {
             contato: contato.id,
           })
         }

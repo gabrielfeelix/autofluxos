@@ -194,7 +194,7 @@ export function GerenciarEquipes({
                       </td>
                       <td className="px-4 py-3">
                         {membros.length === 0 ? (
-                          <span className="text-[12px] text-dim">ninguém ainda</span>
+                          <span className="text-[12px] text-dim">nenhuma pessoa</span>
                         ) : (
                           <div className="flex items-center gap-2.5">
                             <div className="flex -space-x-2">
@@ -223,7 +223,7 @@ export function GerenciarEquipes({
 
 /** "Ana, Bruno e mais 2", ou a contagem quando os nomes não vieram. */
 function nomesDa(membros: Membro[] | undefined, total: number): string {
-  if (!membros || membros.length === 0) return total === 0 ? 'ninguém ainda' : `${total} ${total === 1 ? 'pessoa' : 'pessoas'}`
+  if (!membros || membros.length === 0) return total === 0 ? 'nenhuma pessoa' : `${total} ${total === 1 ? 'pessoa' : 'pessoas'}`
   const nomes = membros.map((membro) => membro.nome.split(' ')[0])
   if (nomes.length === 1) return nomes[0]!
   if (nomes.length <= 3) return `${nomes.slice(0, -1).join(', ')} e ${nomes[nomes.length - 1]}`
@@ -258,7 +258,7 @@ function CriarEquipe({
           comecar(async () => {
             try {
               const r = await enviar(limpo)
-              if (!r.ok) setErro(r.erro ?? 'não deu para criar a equipe')
+              if (!r.ok) setErro(r.erro ?? 'não foi possível criar a equipe')
               else aoFechar()
             } catch {
               setErro('sem conexão com o servidor')

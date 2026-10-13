@@ -55,7 +55,7 @@ export async function listarGatilhos(clienteId: string): Promise<Gatilho[]> {
     .order('criado_em', { ascending: true })
 
   if (ehIdInvalido(error)) return []
-  if (error) throw new Error(`não deu para listar os gatilhos: ${error.message}`)
+  if (error) throw new Error(`não foi possível listar os gatilhos: ${error.message}`)
   return (data as Linha[]).map(paraGatilho)
 }
 
@@ -71,7 +71,7 @@ export async function gatilhosAtivos(clienteId: string): Promise<Gatilho[]> {
     .eq('ativo', true)
 
   if (ehIdInvalido(error)) return []
-  if (error) throw new Error(`não deu para ler os gatilhos: ${error.message}`)
+  if (error) throw new Error(`não foi possível ler os gatilhos: ${error.message}`)
   return (data as Linha[]).map(paraGatilho)
 }
 
@@ -97,7 +97,7 @@ export async function criarGatilho(
     .maybeSingle()
 
   if (ehIdInvalido(erroDoFluxo)) return { ok: false, motivo: 'escolha um fluxo válido' }
-  if (erroDoFluxo) throw new Error(`não deu para conferir o fluxo: ${erroDoFluxo.message}`)
+  if (erroDoFluxo) throw new Error(`não foi possível conferir o fluxo: ${erroDoFluxo.message}`)
   if (!fluxo) return { ok: false, motivo: 'este fluxo não é deste cliente' }
 
   // Aponta para rascunho? Cadastra (dá para preparar antes de publicar), mas
@@ -117,7 +117,7 @@ export async function criarGatilho(
   if (error?.code === '23505') {
     return { ok: false, motivo: `já existe um gatilho “${frase}” com este operador` }
   }
-  if (error) throw new Error(`não deu para criar o gatilho: ${error.message}`)
+  if (error) throw new Error(`não foi possível criar o gatilho: ${error.message}`)
   return { ok: true }
 }
 
@@ -135,7 +135,7 @@ export async function alternarGatilho(
     .select('id')
 
   if (ehIdInvalido(error)) return false
-  if (error) throw new Error(`não deu para mudar o gatilho: ${error.message}`)
+  if (error) throw new Error(`não foi possível mudar o gatilho: ${error.message}`)
   return (data?.length ?? 0) === 1
 }
 
@@ -149,7 +149,7 @@ export async function apagarGatilho(clienteId: string, gatilhoId: string): Promi
     .select('id')
 
   if (ehIdInvalido(error)) return false
-  if (error) throw new Error(`não deu para apagar o gatilho: ${error.message}`)
+  if (error) throw new Error(`não foi possível apagar o gatilho: ${error.message}`)
   return (data?.length ?? 0) === 1
 }
 
@@ -163,5 +163,5 @@ export async function apagarGatilho(clienteId: string, gatilhoId: string): Promi
  */
 export async function contarDisparo(gatilhoId: string): Promise<void> {
   const { error } = await db().rpc('contar_disparo_do_gatilho', { p_gatilho_id: gatilhoId })
-  if (error) console.error('[gatilhos] não deu para contar o disparo', error.message)
+  if (error) console.error('[gatilhos] não foi possível contar o disparo', error.message)
 }

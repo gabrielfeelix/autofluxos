@@ -101,7 +101,7 @@ export function FunisDeVenda({ clienteId, funis: doServidor }: { clienteId: stri
         if (!r.ok) throw new Error(r.erro)
       } catch (e) {
         setFunis(antes)
-        setErro(e instanceof Error && e.message ? e.message : 'não deu para salvar')
+        setErro(e instanceof Error && e.message ? e.message : 'não foi possível salvar')
       }
     })
   }
@@ -111,7 +111,7 @@ export function FunisDeVenda({ clienteId, funis: doServidor }: { clienteId: stri
     setErro(null)
     try {
       const r = await acao()
-      if (!r.ok) return r.erro ?? 'não deu para salvar'
+      if (!r.ok) return r.erro ?? 'não foi possível salvar'
       router.refresh()
       return null
     } catch {
@@ -149,7 +149,7 @@ export function FunisDeVenda({ clienteId, funis: doServidor }: { clienteId: stri
                 </span>
               )}
               {seguinte && (
-                <span className="text-[11.5px] text-dim">Ganho passa para {seguinte.nome}</span>
+                <span className="text-[11.5px] text-dim">Ao ganhar, move para {seguinte.nome}</span>
               )}
               <span className="flex-1" />
               <Link
@@ -184,7 +184,7 @@ export function FunisDeVenda({ clienteId, funis: doServidor }: { clienteId: stri
                   </ItemDoMenu>
                 </GrupoDoMenu>
                 <DivisoriaDoMenu />
-                <GrupoDoMenu titulo="Quando ganhar, passa para">
+                <GrupoDoMenu titulo="Ao ganhar, mover para">
                   <ItemDoMenu
                     ativo={funil.seguinteId === null}
                     aoEscolher={() =>

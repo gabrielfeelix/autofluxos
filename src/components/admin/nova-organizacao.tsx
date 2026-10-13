@@ -37,7 +37,7 @@ export function NovaOrganizacao({ planos }: { planos: { id: string; nome: string
       </div>
       <label>
         <RotuloCampo>E-mail do Proprietário</RotuloCampo>
-        <input name="email" type="email" required placeholder="Exemplo: dono@vegafilmes.com.br" className={CAMPO} />
+        <input name="email" type="email" required placeholder="Exemplo: contato@vegafilmes.com.br" className={CAMPO} />
       </label>
       <fieldset className="rounded-[12px] border border-line px-3.5 py-3">
         <legend className="px-1 text-[11.5px] text-dim">Só se o e-mail ainda não tem login</legend>

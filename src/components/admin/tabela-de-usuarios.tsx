@@ -61,7 +61,7 @@ export function TabelaDeUsuarios({
       const r = await acao().catch(() => ({ ok: false, erro: 'sem conexão com o servidor' }))
       if (!r.ok) {
         setUsuarios((lista) => lista.map((item) => (item.id === usuario.id ? anterior : item)))
-        setAviso(r.erro ?? 'não deu para fazer isso')
+        setAviso(r.erro ?? 'não foi possível fazer isso')
       }
     })
   }
@@ -74,7 +74,7 @@ export function TabelaDeUsuarios({
       const r = await acaoAdminExcluirUsuario(usuario.id).catch(() => ({ ok: false, erro: 'sem conexão com o servidor' }))
       if (!r.ok) {
         setUsuarios(antes)
-        setAviso(r.erro ?? 'não deu para excluir')
+        setAviso(r.erro ?? 'não foi possível excluir')
       }
     })
   }
@@ -87,7 +87,7 @@ export function TabelaDeUsuarios({
         const r = await acaoAdminUsuario(usuario.id, operacao)
         if (!r.ok) {
           setUsuarios((lista) => lista.map((item) => (item.id === usuario.id ? anterior : item)))
-          setAviso(r.erro ?? 'não deu para fazer isso')
+          setAviso(r.erro ?? 'não foi possível fazer isso')
         }
       } catch {
         setUsuarios((lista) => lista.map((item) => (item.id === usuario.id ? anterior : item)))

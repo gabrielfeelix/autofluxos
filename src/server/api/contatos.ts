@@ -63,7 +63,7 @@ export async function lerContatoDaApi(clienteId: string, contatoId: string): Pro
     .maybeSingle()
 
   if (ehIdInvalido(error)) return null
-  if (error) throw new Error(`não deu para ler o contato: ${error.message}`)
+  if (error) throw new Error(`não foi possível ler o contato: ${error.message}`)
   return data ? paraContato(data as unknown as Linha) : null
 }
 
@@ -120,14 +120,14 @@ export async function gravarContatoDaApi(clienteId: string, entrada: EntradaDeCo
       // Outra chamada criou o mesmo telefone neste instante: segue como update.
       contatoId = await acharContatoPeloTelefone(clienteId, entrada.telefone)
     } else if (error) {
-      throw new Error(`não deu para criar o contato: ${error.message}`)
+      throw new Error(`não foi possível criar o contato: ${error.message}`)
     } else {
       contatoId = (data as { id: string }).id
       criado = true
     }
   } else if (nome) {
     const { error } = await db().from('contacts').update({ nome_real: nome }).eq('id', contatoId).eq('client_id', clienteId)
-    if (error) throw new Error(`não deu para atualizar o nome: ${error.message}`)
+    if (error) throw new Error(`não foi possível atualizar o nome: ${error.message}`)
   }
 
   if (!contatoId) throw new Error('o contato sumiu entre a criação e a leitura')
@@ -262,7 +262,7 @@ export async function listarContatosDaApi(clienteId: string, filtro: FiltroDaLis
   if (depois) consulta = consulta.or(`criado_em.gt.${depois.criadoEm},and(criado_em.eq.${depois.criadoEm},id.gt.${depois.id})`)
 
   const { data, error } = await consulta
-  if (error) throw new Error(`não deu para listar os contatos: ${error.message}`)
+  if (error) throw new Error(`não foi possível listar os contatos: ${error.message}`)
 
   const linhas = (data ?? []) as unknown as Linha[]
   const pagina = linhas.slice(0, filtro.limite)

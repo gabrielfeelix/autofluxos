@@ -100,7 +100,7 @@ export const MENSAGEM_DATA_PASSADA =
 /**
  * Por que a resposta não serve.
  *
- * `formato`: não deu para ler o que a pessoa escreveu.
+ * `formato`: não foi possível ler o que a pessoa escreveu.
  * `passou`: deu para ler, é data de verdade, e ficou para trás.
  */
 export type MotivoDaRecusa = 'formato' | 'passou'

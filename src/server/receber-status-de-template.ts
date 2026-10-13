@@ -258,7 +258,7 @@ export async function receberStatusDeEntrega(payload: unknown): Promise<Resultad
         const situacao = SITUACAO_DO_ESTADO[estado]
         if (situacao) {
           await avancarSituacaoDaMensagem(wamid, situacao).catch((erro) =>
-            console.warn('[status] não deu para gravar a situação', erro instanceof Error ? erro.message : erro),
+            console.warn('[status] não foi possível gravar a situação', erro instanceof Error ? erro.message : erro),
           )
         }
 

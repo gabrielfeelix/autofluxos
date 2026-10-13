@@ -111,7 +111,7 @@ function EscolhaDeOrigem({
   useAoSalvar('origem', async () => {
     if (valor === inicial || valor === '') return null
     const r = await acaoPreencherCampos(clienteId, contatoId, { origem: valor })
-    return r.ok ? null : (r.erro ?? 'não deu para salvar a origem')
+    return r.ok ? null : (r.erro ?? 'não foi possível salvar a origem')
   })
   return (
     <select
@@ -187,7 +187,7 @@ function EditorDeDados({ clienteId, contatoId, campos }: { clienteId: string; co
     }
     if (Object.keys(valores).length === 0) return null
     const r = await acaoPreencherCampos(clienteId, contatoId, valores)
-    if (!r.ok) return r.erro ?? 'não deu para salvar os dados'
+    if (!r.ok) return r.erro ?? 'não foi possível salvar os dados'
     if (r.recusados && r.recusados.length > 0) {
       return `não entrou: ${r.recusados.map((x) => `${rotuloDoCampo(x.chave) || x.chave} (${x.motivo})`).join('; ')}`
     }
@@ -323,7 +323,7 @@ function EditorDeExtras({
     }
     if (Object.keys(mudou).length === 0) return null
     const r = await acaoPreencherCampos(clienteId, contatoId, mudou)
-    if (!r.ok) return r.erro ?? 'não deu para salvar as informações'
+    if (!r.ok) return r.erro ?? 'não foi possível salvar as informações'
     if (r.recusados && r.recusados.length > 0) {
       return `não entrou: ${r.recusados.map((x) => `${rotuloDoCampo(x.chave) || x.chave} (${x.motivo})`).join('; ')}`
     }

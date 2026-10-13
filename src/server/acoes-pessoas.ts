@@ -102,13 +102,13 @@ export async function acaoDarAcessoNaOrganizacao(
       const criado = await cadastrarSemTrocarDeSessao({ nome, email, senha })
       usuarioId = criado.user.id
     } catch (erro) {
-      return { erro: erro instanceof Error ? erro.message : 'não deu para cadastrar' }
+      return { erro: erro instanceof Error ? erro.message : 'não foi possível cadastrar' }
     }
   }
   try {
     await autenticacao().api.addMember({ body: { userId: usuarioId, role: PAPEL_DA_FUNCAO[funcao], organizationId: clienteId } })
   } catch (erro) {
-    if ((await papelNaConta(clienteId, usuarioId)) === null) return { erro: erro instanceof Error ? erro.message : 'não deu para ligar a pessoa' }
+    if ((await papelNaConta(clienteId, usuarioId)) === null) return { erro: erro instanceof Error ? erro.message : 'não foi possível ligar a pessoa' }
   }
   const r = await definirFuncaoDoMembro(clienteId, usuarioId, funcao, ator.usuarioId)
   if (!r.ok) return { erro: r.motivo }

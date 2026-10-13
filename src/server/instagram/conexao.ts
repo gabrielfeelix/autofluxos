@@ -134,7 +134,7 @@ async function pedir(url: string, init?: RequestInit): Promise<unknown> {
     if (nome === 'TimeoutError' || nome === 'AbortError') {
       throw new Error('o Instagram não respondeu a tempo; tente conectar de novo')
     }
-    throw new Error(`não deu para falar com o Instagram: ${erro instanceof Error ? erro.message : erro}`)
+    throw new Error(`não foi possível falar com o Instagram: ${erro instanceof Error ? erro.message : erro}`)
   }
 
   const texto = await resposta.text()
@@ -328,7 +328,7 @@ export async function nomeDoPerfil(opcoes: {
     const nome = perfil.name?.trim() || perfil.username?.trim()
     return nome ? nome : null
   } catch (erro) {
-    console.warn('[instagram] não deu para ler o nome de quem mandou', erro)
+    console.warn('[instagram] não foi possível ler o nome de quem mandou', erro)
     return null
   }
 }

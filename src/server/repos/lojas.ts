@@ -81,7 +81,7 @@ export async function lojaDaConta(
     .maybeSingle()
 
   if (ehIdInvalido(error)) return null
-  if (error) throw new Error(`não deu para ler a loja da conta: ${error.message}`)
+  if (error) throw new Error(`não foi possível ler a loja da conta: ${error.message}`)
   return data ? paraLoja(data as Linha) : null
 }
 
@@ -114,7 +114,7 @@ export async function salvarLoja(
     .select(COLUNAS)
     .single()
 
-  if (error) throw new Error(`não deu para salvar a loja: ${error.message}`)
+  if (error) throw new Error(`não foi possível salvar a loja: ${error.message}`)
   return paraLoja(data as Linha)
 }
 
@@ -134,7 +134,7 @@ export async function ligarLoja(
     .eq('client_id', clienteId)
     .eq('plataforma', plataforma)
 
-  if (error) throw new Error(`não deu para ${ativa ? 'ligar' : 'desligar'} a loja: ${error.message}`)
+  if (error) throw new Error(`não foi possível ${ativa ? 'ligar' : 'desligar'} a loja: ${error.message}`)
   return { ok: true }
 }
 
@@ -153,7 +153,7 @@ export async function ligarEstoqueExato(
     .eq('client_id', clienteId)
     .eq('plataforma', 'magento')
 
-  if (error) throw new Error(`não deu para ligar o estoque exato: ${error.message}`)
+  if (error) throw new Error(`não foi possível ligar o estoque exato: ${error.message}`)
 }
 
 /**
@@ -171,7 +171,7 @@ export async function desligarEstoqueExato(clienteId: string): Promise<{ conexao
     .eq('client_id', clienteId)
     .eq('plataforma', 'magento')
 
-  if (error) throw new Error(`não deu para desligar o estoque exato: ${error.message}`)
+  if (error) throw new Error(`não foi possível desligar o estoque exato: ${error.message}`)
   return { conexaoId: loja.conexaoId }
 }
 
@@ -199,7 +199,7 @@ export async function registrarPedidoDeLoja(
     .from('pedidos_de_loja')
     .upsert({ client_id: clienteId, plataforma }, { onConflict: 'client_id,plataforma', ignoreDuplicates: true })
 
-  if (error) return { ok: false, motivo: `não deu para gravar o pedido: ${error.message}` }
+  if (error) return { ok: false, motivo: `não foi possível gravar o pedido: ${error.message}` }
   return { ok: true }
 }
 
@@ -259,7 +259,7 @@ export async function salvarLojaNuvemshop(
   if (error?.code === '23505') {
     throw new Error('esta loja Nuvemshop já está conectada a outra conta do AutoFluxos')
   }
-  if (error) throw new Error(`não deu para salvar a loja: ${error.message}`)
+  if (error) throw new Error(`não foi possível salvar a loja: ${error.message}`)
 }
 
 /**
@@ -279,7 +279,7 @@ export async function soltarLojaNuvemshop(
     .eq('plataforma', 'nuvemshop')
   consulta = 'clienteId' in alvo ? consulta.eq('client_id', alvo.clienteId) : consulta.eq('id_na_plataforma', alvo.storeId)
   const { data, error } = await consulta.maybeSingle()
-  if (error) throw new Error(`não deu para achar a loja: ${error.message}`)
+  if (error) throw new Error(`não foi possível achar a loja: ${error.message}`)
   if (!data) return null
   const linha = data as { client_id: string; conexao_id: string | null }
 
@@ -288,7 +288,7 @@ export async function soltarLojaNuvemshop(
     .update({ ativa: false, conexao_id: null, id_na_plataforma: null, atualizado_em: new Date().toISOString() })
     .eq('client_id', linha.client_id)
     .eq('plataforma', 'nuvemshop')
-  if (erro) throw new Error(`não deu para desconectar a loja: ${erro.message}`)
+  if (erro) throw new Error(`não foi possível desconectar a loja: ${erro.message}`)
   return { clienteId: linha.client_id, conexaoId: linha.conexao_id }
 }
 

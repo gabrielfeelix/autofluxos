@@ -78,7 +78,7 @@ export async function definirFaixas(
     .update({ nivel_ouro: faixas.ouro, nivel_prata: faixas.prata })
     .eq('id', clienteId)
 
-  if (error) throw new Error(`não deu para salvar as faixas: ${error.message}`)
+  if (error) throw new Error(`não foi possível salvar as faixas: ${error.message}`)
   return { ok: true }
 }
 
@@ -105,7 +105,7 @@ export async function relacionamentoDeMuitos(
     .in('contact_id', contatoIds)
 
   if (ehIdInvalido(error)) return semCompraParaTodos(mapa, contatoIds, faixas, agora)
-  if (error) throw new Error(`não deu para ler o relacionamento: ${error.message}`)
+  if (error) throw new Error(`não foi possível ler o relacionamento: ${error.message}`)
 
   const porContato = new Map<string, LinhaComercial>()
   for (const linha of (data ?? []) as LinhaComercial[]) {
@@ -244,7 +244,7 @@ export async function clientesSumidos(
     .limit(limite)
 
   if (ehIdInvalido(error)) return []
-  if (error) throw new Error(`não deu para ler os clientes sumidos: ${error.message}`)
+  if (error) throw new Error(`não foi possível ler os clientes sumidos: ${error.message}`)
 
   return ((data ?? []) as LinhaComercial[]).map((linha) => ({
     contatoId: linha.contact_id,

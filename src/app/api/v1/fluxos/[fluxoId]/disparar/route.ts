@@ -70,6 +70,6 @@ export async function POST(request: Request, { params }: { params: Promise<{ flu
     return erroDaApi(409, recusa.codigo, recusa.mensagem)
   } catch (erro) {
     console.error(`[api] disparar fluxo falhou (chave ${acesso.publico}):`, erro instanceof Error ? erro.message : erro)
-    return erroDaApi(500, 'erro_interno', 'Não deu para disparar a automação agora. Tente de novo.')
+    return erroDaApi(500, 'erro_interno', 'Não foi possível disparar a automação agora. Tente de novo.')
   }
 }

@@ -53,7 +53,7 @@ export async function fixadasDoUsuario(usuarioId: string | null): Promise<Map<st
 
   if (ehIdInvalido(error)) return fixadas
   if (error) {
-    console.error('[marcadores] não deu para ler as fixadas', error.message)
+    console.error('[marcadores] não foi possível ler as fixadas', error.message)
     return fixadas
   }
 
@@ -90,7 +90,7 @@ export async function contarFixadasNoCliente(
     .in('id', [...fixadas.keys()])
 
   if (error) {
-    console.error('[marcadores] não deu para contar as fixadas da conta', error.message)
+    console.error('[marcadores] não foi possível contar as fixadas da conta', error.message)
     // Contar errado para menos libera um alfinete a mais; para mais, bloqueia
     // quem não devia. Na dúvida, libera: o custo do erro é uma linha a mais no
     // topo da fila de uma pessoa só.
@@ -110,8 +110,8 @@ export async function fixar(usuarioId: string, contatoId: string): Promise<{ ok:
     )
 
   if (error) {
-    console.error('[marcadores] não deu para fixar', error.message)
-    return { ok: false, erro: 'não deu para fixar a conversa' }
+    console.error('[marcadores] não foi possível fixar', error.message)
+    return { ok: false, erro: 'não foi possível fixar a conversa' }
   }
   return { ok: true }
 }
@@ -125,8 +125,8 @@ export async function soltar(usuarioId: string, contatoId: string): Promise<{ ok
     .eq('contato_id', contatoId)
 
   if (error) {
-    console.error('[marcadores] não deu para soltar', error.message)
-    return { ok: false, erro: 'não deu para soltar a conversa' }
+    console.error('[marcadores] não foi possível soltar', error.message)
+    return { ok: false, erro: 'não foi possível soltar a conversa' }
   }
   return { ok: true }
 }
@@ -157,7 +157,7 @@ export async function favoritasEntre(
 
   if (ehIdInvalido(error)) return marcadas
   if (error) {
-    console.error('[marcadores] não deu para ler as favoritas', error.message)
+    console.error('[marcadores] não foi possível ler as favoritas', error.message)
     return marcadas
   }
 
@@ -206,7 +206,7 @@ export async function listarFavoritas(
     .limit(teto)
 
   if (ehIdInvalido(error)) return []
-  if (error) throw new Error(`não deu para ler as favoritas: ${error.message}`)
+  if (error) throw new Error(`não foi possível ler as favoritas: ${error.message}`)
 
   const linhas = (marcadas ?? []) as { mensagem_id: string; favoritada_em: string }[]
   if (linhas.length === 0) return []
@@ -219,7 +219,7 @@ export async function listarFavoritas(
     .in('id', [...quando.keys()])
 
   if (erroDasMensagens) {
-    throw new Error(`não deu para ler as mensagens favoritas: ${erroDasMensagens.message}`)
+    throw new Error(`não foi possível ler as mensagens favoritas: ${erroDasMensagens.message}`)
   }
 
   type Linha = {
@@ -249,7 +249,7 @@ export async function listarFavoritas(
     .in('id', [...new Set(achadas.map((m) => m.contact_id))])
 
   if (erroDosContatos) {
-    throw new Error(`não deu para ler os contatos das favoritas: ${erroDosContatos.message}`)
+    throw new Error(`não foi possível ler os contatos das favoritas: ${erroDosContatos.message}`)
   }
 
   const porContato = new Map(
@@ -301,8 +301,8 @@ export async function favoritar(
     )
 
   if (error) {
-    console.error('[marcadores] não deu para favoritar', error.message)
-    return { ok: false, erro: 'não deu para guardar a mensagem' }
+    console.error('[marcadores] não foi possível favoritar', error.message)
+    return { ok: false, erro: 'não foi possível guardar a mensagem' }
   }
   return { ok: true }
 }
@@ -325,8 +325,8 @@ export async function desfavoritar(
     .eq('mensagem_id', mensagemId)
 
   if (error) {
-    console.error('[marcadores] não deu para desfavoritar', error.message)
-    return { ok: false, erro: 'não deu para remover a estrela' }
+    console.error('[marcadores] não foi possível desfavoritar', error.message)
+    return { ok: false, erro: 'não foi possível remover a estrela' }
   }
   return { ok: true }
 }
@@ -347,7 +347,7 @@ async function ehDestaConta(clienteId: string, mensagemId: string): Promise<bool
 
   if (ehIdInvalido(error)) return false
   if (error) {
-    console.error('[marcadores] não deu para achar a mensagem', error.message)
+    console.error('[marcadores] não foi possível achar a mensagem', error.message)
     return false
   }
 
@@ -362,7 +362,7 @@ async function ehDestaConta(clienteId: string, mensagemId: string): Promise<bool
     .maybeSingle()
 
   if (erroDoContato) {
-    console.error('[marcadores] não deu para conferir a conta da mensagem', erroDoContato.message)
+    console.error('[marcadores] não foi possível conferir a conta da mensagem', erroDoContato.message)
     return false
   }
   return Boolean(contato)

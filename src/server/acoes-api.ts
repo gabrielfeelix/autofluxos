@@ -74,8 +74,8 @@ export async function acaoCriarChaveDeApi(
     })
     return { ok: true, chave, inteira }
   } catch (erro) {
-    console.error('[api] não deu para criar a chave:', erro instanceof Error ? erro.message : erro)
-    return { ok: false, erro: 'Não deu para criar a chave agora. Tente de novo.' }
+    console.error('[api] não foi possível criar a chave:', erro instanceof Error ? erro.message : erro)
+    return { ok: false, erro: 'Não foi possível criar a chave agora. Tente de novo.' }
   }
 }
 
@@ -102,8 +102,8 @@ export async function acaoRevogarChaveDeApi(
     })
     return { ok: true, chave }
   } catch (erro) {
-    console.error('[api] não deu para revogar a chave:', erro instanceof Error ? erro.message : erro)
-    return { ok: false, erro: 'Não deu para revogar agora. Tente de novo.' }
+    console.error('[api] não foi possível revogar a chave:', erro instanceof Error ? erro.message : erro)
+    return { ok: false, erro: 'Não foi possível revogar agora. Tente de novo.' }
   }
 }
 
@@ -185,8 +185,8 @@ export async function acaoCriarWebhook(
     await auditar(acesso, clienteId, 'criou_webhook_de_saida', webhook, { eventos: webhook.eventos })
     return { ok: true, webhook, segredo }
   } catch (erro) {
-    console.error('[api] não deu para criar o webhook:', erro instanceof Error ? erro.message : erro)
-    return { ok: false, erro: 'Não deu para criar o webhook agora. Tente de novo.' }
+    console.error('[api] não foi possível criar o webhook:', erro instanceof Error ? erro.message : erro)
+    return { ok: false, erro: 'Não foi possível criar o webhook agora. Tente de novo.' }
   }
 }
 
@@ -219,8 +219,8 @@ export async function acaoEditarWebhook(
     })
     return { ok: true, webhook }
   } catch (erro) {
-    console.error('[api] não deu para editar o webhook:', erro instanceof Error ? erro.message : erro)
-    return { ok: false, erro: 'Não deu para salvar agora. Tente de novo.' }
+    console.error('[api] não foi possível editar o webhook:', erro instanceof Error ? erro.message : erro)
+    return { ok: false, erro: 'Não foi possível salvar agora. Tente de novo.' }
   }
 }
 
@@ -236,8 +236,8 @@ export async function acaoApagarWebhook(clienteId: string, webhookId: string): P
     await auditar(acesso, clienteId, 'apagou_webhook_de_saida', webhook)
     return { ok: true }
   } catch (erro) {
-    console.error('[api] não deu para apagar o webhook:', erro instanceof Error ? erro.message : erro)
-    return { ok: false, erro: 'Não deu para apagar agora. Tente de novo.' }
+    console.error('[api] não foi possível apagar o webhook:', erro instanceof Error ? erro.message : erro)
+    return { ok: false, erro: 'Não foi possível apagar agora. Tente de novo.' }
   }
 }
 
@@ -257,8 +257,8 @@ export async function acaoTrocarSegredoDoWebhook(
     if (webhook) await auditar(acesso, clienteId, 'editou_webhook_de_saida', webhook, { segredo: 'trocado' })
     return { ok: true, segredo }
   } catch (erro) {
-    console.error('[api] não deu para trocar o segredo:', erro instanceof Error ? erro.message : erro)
-    return { ok: false, erro: 'Não deu para trocar o segredo agora. Tente de novo.' }
+    console.error('[api] não foi possível trocar o segredo:', erro instanceof Error ? erro.message : erro)
+    return { ok: false, erro: 'Não foi possível trocar o segredo agora. Tente de novo.' }
   }
 }
 
@@ -280,7 +280,7 @@ export async function acaoTestarWebhook(
     const entregas = await ultimasEntregas(clienteId)
     return { ok: true, entrega: entregas.find((e) => e.id === id) ?? null, entregas }
   } catch (erro) {
-    console.error('[api] não deu para testar o webhook:', erro instanceof Error ? erro.message : erro)
-    return { ok: false, erro: 'Não deu para enviar o teste agora. Tente de novo.' }
+    console.error('[api] não foi possível testar o webhook:', erro instanceof Error ? erro.message : erro)
+    return { ok: false, erro: 'Não foi possível enviar o teste agora. Tente de novo.' }
   }
 }

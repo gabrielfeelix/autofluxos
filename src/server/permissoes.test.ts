@@ -43,7 +43,7 @@ beforeAll(async () => {
     })
     .select('id')
     .single()
-  if (error) throw new Error(`não deu para criar o usuário: ${error.message}`)
+  if (error) throw new Error(`não foi possível criar o usuário: ${error.message}`)
   pessoa = (usuario as { id: string }).id
 
   const { data: equipes, error: erroDasEquipes } = await db()

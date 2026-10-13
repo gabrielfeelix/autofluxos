@@ -71,7 +71,7 @@ export async function listarConexoes(clienteId: string): Promise<Conexao[]> {
   if (error?.code === '42703') ({ data, error } = await ler(COLUNAS))
 
   if (ehIdInvalido(error)) return []
-  if (error) throw new Error(`não deu para listar as conexões: ${error.message}`)
+  if (error) throw new Error(`não foi possível listar as conexões: ${error.message}`)
   return (data as unknown as Linha[]).map(paraConexao)
 }
 
@@ -90,7 +90,7 @@ export async function listarConexoesParaFluxos(clienteId: string): Promise<Conex
     db().from('lojas_integradas').select('conexao_id').eq('client_id', clienteId).not('conexao_id', 'is', null),
   ])
   if (ehIdInvalido(error)) return todas
-  if (error) throw new Error(`não deu para conferir o token da loja: ${error.message}`)
+  if (error) throw new Error(`não foi possível conferir o token da loja: ${error.message}`)
   const daLoja = new Set((data as { conexao_id: string }[]).map((l) => l.conexao_id))
   return todas.filter((c) => !daLoja.has(c.id))
 }
@@ -134,7 +134,7 @@ export async function criarConexao(entrada: {
     // sendo usada.
     await apagarDoCofre(segredoId)
     if (error.code === '23505') throw new Error(`já existe uma conexão chamada "${nome}"`)
-    throw new Error(`não deu para criar a conexão: ${error.message}`)
+    throw new Error(`não foi possível criar a conexão: ${error.message}`)
   }
 
   return paraConexao(data as Linha)
@@ -159,14 +159,14 @@ export async function trocarValor(id: string, clienteId: string, valor: string):
     .eq('client_id', clienteId)
     .maybeSingle()
 
-  if (error) throw new Error(`não deu para achar a conexão: ${error.message}`)
+  if (error) throw new Error(`não foi possível achar a conexão: ${error.message}`)
   if (!data) throw new Error('conexão não encontrada')
 
   const { error: erroDoCofre } = await db().rpc('trocar_segredo', {
     alvo: (data as { secret_id: string }).secret_id,
     valor,
   })
-  if (erroDoCofre) throw new Error(`não deu para trocar o valor: ${erroDoCofre.message}`)
+  if (erroDoCofre) throw new Error(`não foi possível trocar o valor: ${erroDoCofre.message}`)
 
   // O valor novo nunca foi testado: o teste do antigo não vale para ele.
   await marcarTeste(id, clienteId, null)
@@ -185,7 +185,7 @@ export async function marcarTeste(id: string, clienteId: string, ok: boolean | n
     .eq('id', id)
     .eq('client_id', clienteId)
   if (error && error.code !== '42703' && error.code !== 'PGRST204') {
-    throw new Error(`não deu para gravar o teste da conexão: ${error.message}`)
+    throw new Error(`não foi possível gravar o teste da conexão: ${error.message}`)
   }
 }
 
@@ -200,7 +200,7 @@ export async function apagarConexao(id: string, clienteId: string): Promise<void
     .update({ conexao_id: null, estoque_exato: 'desligado', estoque_id: null, atualizado_em: new Date().toISOString() })
     .eq('conexao_id', id)
     .eq('client_id', clienteId)
-  if (erroDaLoja) throw new Error(`não deu para desligar o estoque exato da loja: ${erroDaLoja.message}`)
+  if (erroDaLoja) throw new Error(`não foi possível desligar o estoque exato da loja: ${erroDaLoja.message}`)
 
   // O gatilho da migration apaga o segredo no cofre junto com a linha.
   const { error } = await db()
@@ -208,7 +208,7 @@ export async function apagarConexao(id: string, clienteId: string): Promise<void
     .delete()
     .eq('id', id)
     .eq('client_id', clienteId)
-  if (error) throw new Error(`não deu para apagar a conexão: ${error.message}`)
+  if (error) throw new Error(`não foi possível apagar a conexão: ${error.message}`)
 }
 
 /**
@@ -230,7 +230,7 @@ export async function lerCredencial(id: string, clienteId: string): Promise<Cred
     .eq('client_id', clienteId)
     .maybeSingle()
 
-  if (error) throw new Error(`não deu para achar a conexão: ${error.message}`)
+  if (error) throw new Error(`não foi possível achar a conexão: ${error.message}`)
   if (!data) return null
 
   const linha = data as { tipo: TipoDeConexao; campo: string | null; secret_id: string }

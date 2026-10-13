@@ -182,7 +182,7 @@ export async function consultarContatos(
   const { data, error, count } = await consulta.range(de, de + porPagina - 1)
 
   if (ehIdInvalido(error)) return { contatos: [], total: 0, pagina: 1, paginas: 1, em }
-  if (error) throw new Error(`não deu para consultar os contatos: ${error.message}`)
+  if (error) throw new Error(`não foi possível consultar os contatos: ${error.message}`)
 
   const total = count ?? 0
   return {
@@ -213,7 +213,7 @@ async function usuariosDoEscopo(pedido: PedidoDeConsulta): Promise<string[]> {
     .eq('client_id', pedido.clienteId)
     .in('equipe_id', [...pedido.escopo.equipes])
 
-  if (error) throw new Error(`não deu para ler as equipes: ${error.message}`)
+  if (error) throw new Error(`não foi possível ler as equipes: ${error.message}`)
   return [...new Set((data as { usuario_id: string }[]).map((m) => m.usuario_id))]
 }
 
@@ -331,7 +331,7 @@ async function idsPorOportunidade(clienteId: string, condicoes: Condicao[]): Pro
 
   const { data, error } = await consulta
   if (ehIdInvalido(error)) return []
-  if (error) throw new Error(`não deu para filtrar por oportunidade: ${error.message}`)
+  if (error) throw new Error(`não foi possível filtrar por oportunidade: ${error.message}`)
   return [...new Set((data as { contact_id: string }[]).map((l) => l.contact_id))]
 }
 
@@ -357,7 +357,7 @@ async function idsPorVenda(clienteId: string, condicoes: Condicao[]): Promise<st
 
   const { data, error } = await consulta
   if (ehIdInvalido(error)) return []
-  if (error) throw new Error(`não deu para filtrar por venda: ${error.message}`)
+  if (error) throw new Error(`não foi possível filtrar por venda: ${error.message}`)
   return [...new Set((data as { contact_id: string }[]).map((l) => l.contact_id))]
 }
 

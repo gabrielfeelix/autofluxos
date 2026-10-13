@@ -31,7 +31,7 @@ export function BotoesDeOrdem({
     setErro(null)
     comecar(async () => {
       const r = await acaoMoverProduto(clienteId, produtoId, direcao)
-      if (!r.ok) setErro(r.erro ?? 'não deu para mudar a ordem')
+      if (!r.ok) setErro(r.erro ?? 'não foi possível mudar a ordem')
     })
   }
 

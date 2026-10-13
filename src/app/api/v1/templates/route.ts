@@ -14,6 +14,6 @@ export async function GET(request: Request) {
     return Response.json({ templates: await listarTemplatesDaApi(acesso.clienteId) })
   } catch (erro) {
     console.error(`[api] GET templates falhou (chave ${acesso.publico}):`, erro instanceof Error ? erro.message : erro)
-    return erroDaApi(500, 'erro_interno', 'Não deu para listar os modelos agora. Tente de novo.')
+    return erroDaApi(500, 'erro_interno', 'Não foi possível listar os modelos agora. Tente de novo.')
   }
 }

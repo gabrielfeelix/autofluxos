@@ -38,7 +38,7 @@ export async function chatDoSite(clienteId: string): Promise<CanalDoSite | null>
     .limit(1)
     .maybeSingle()
 
-  if (error) throw new Error(`não deu para achar o chat do site: ${error.message}`)
+  if (error) throw new Error(`não foi possível achar o chat do site: ${error.message}`)
   return data ? paraCanalDoSite(data as Record<string, unknown>) : null
 }
 
@@ -58,7 +58,7 @@ export async function acharChatPorChave(chave: string): Promise<CanalDoSite | nu
     .eq('provider', 'site')
     .maybeSingle()
 
-  if (error) throw new Error(`não deu para achar o chat do site: ${error.message}`)
+  if (error) throw new Error(`não foi possível achar o chat do site: ${error.message}`)
   return data ? paraCanalDoSite(data as Record<string, unknown>) : null
 }
 
@@ -76,7 +76,7 @@ export async function ligarChatDoSite(clienteId: string): Promise<CanalDoSite> {
   const canal = await garantirChatDoSite(clienteId, 'ativo')
   if (canal.status !== 'ativo') {
     const { error } = await db().from('channels').update({ status: 'ativo' }).eq('id', canal.id)
-    if (error) throw new Error(`não deu para religar o chat do site: ${error.message}`)
+    if (error) throw new Error(`não foi possível religar o chat do site: ${error.message}`)
   }
   return { ...canal, status: 'ativo' }
 }
@@ -125,7 +125,7 @@ export async function garantirChatDoSite(
     .select(COLUNAS)
     .single()
 
-  if (error) throw new Error(`não deu para ligar o chat do site: ${error.message}`)
+  if (error) throw new Error(`não foi possível ligar o chat do site: ${error.message}`)
   return paraCanalDoSite(data as Record<string, unknown>)
 }
 
@@ -136,7 +136,7 @@ export async function pausarChatDoSite(clienteId: string): Promise<void> {
     .update({ status: 'pausado' })
     .eq('client_id', clienteId)
     .eq('provider', 'site')
-  if (error) throw new Error(`não deu para pausar o chat do site: ${error.message}`)
+  if (error) throw new Error(`não foi possível pausar o chat do site: ${error.message}`)
 }
 
 export async function salvarConfigDoSite(clienteId: string, config: ConfigDoSite): Promise<void> {
@@ -145,7 +145,7 @@ export async function salvarConfigDoSite(clienteId: string, config: ConfigDoSite
     .update({ site_config: config })
     .eq('client_id', clienteId)
     .eq('provider', 'site')
-  if (error) throw new Error(`não deu para salvar o chat do site: ${error.message}`)
+  if (error) throw new Error(`não foi possível salvar o chat do site: ${error.message}`)
 }
 
 /**
@@ -167,7 +167,7 @@ export async function canaisDosContatos(clienteId: string): Promise<Map<string, 
     .select('id, provider')
     .eq('client_id', clienteId)
     .in('provider', ['instagram', 'site'])
-  if (error) throw new Error(`não deu para listar os canais: ${error.message}`)
+  if (error) throw new Error(`não foi possível listar os canais: ${error.message}`)
   if (!canais || canais.length === 0) return mapa
 
   const canalDoId = new Map(
@@ -183,7 +183,7 @@ export async function canaisDosContatos(clienteId: string): Promise<Map<string, 
       .order('id')
       .range(inicio, inicio + PAGINA - 1)
 
-    if (erro) throw new Error(`não deu para achar o canal dos contatos: ${erro.message}`)
+    if (erro) throw new Error(`não foi possível achar o canal dos contatos: ${erro.message}`)
     for (const linha of data ?? []) {
       const canal = canalDoId.get(linha.channel_id as string)
       if (canal) mapa.set(linha.contact_id as string, canal)
@@ -206,7 +206,7 @@ export async function canaisDosContatos(clienteId: string): Promise<Map<string, 
         .order('id')
         .range(inicio, inicio + PAGINA - 1)
 
-      if (erro) throw new Error(`não deu para achar os visitantes do site: ${erro.message}`)
+      if (erro) throw new Error(`não foi possível achar os visitantes do site: ${erro.message}`)
       for (const linha of data ?? []) mapa.set(linha.id as string, 'site')
       if (!data || data.length < PAGINA) break
     }

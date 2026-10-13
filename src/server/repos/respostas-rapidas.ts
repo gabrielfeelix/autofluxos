@@ -24,7 +24,7 @@ export async function listarRespostasRapidas(clienteId: string): Promise<Respost
     .order('criado_em', { ascending: true })
 
   if (ehIdInvalido(error)) return []
-  if (error) throw new Error(`não deu para listar as respostas rápidas: ${error.message}`)
+  if (error) throw new Error(`não foi possível listar as respostas rápidas: ${error.message}`)
   return data as Linha[]
 }
 
@@ -45,7 +45,7 @@ export async function criarRespostaRapida(
   if (error?.code === '23505') {
     throw new Error(`já existe uma resposta rápida /${resposta.atalho} para este cliente`)
   }
-  if (error) throw new Error(`não deu para criar a resposta rápida: ${error.message}`)
+  if (error) throw new Error(`não foi possível criar a resposta rápida: ${error.message}`)
   // Devolvida para a tela acrescentar a linha sem refazer a página.
   return data as Linha
 }
@@ -68,7 +68,7 @@ export async function editarRespostaRapida(
     throw new Error(`já existe uma resposta rápida /${resposta.atalho} para este cliente`)
   }
   if (ehIdInvalido(error)) return null
-  if (error) throw new Error(`não deu para editar a resposta rápida: ${error.message}`)
+  if (error) throw new Error(`não foi possível editar a resposta rápida: ${error.message}`)
   return (data as Linha | null) ?? null
 }
 
@@ -82,6 +82,6 @@ export async function apagarRespostaRapida(respostaId: string, clienteId: string
     .select('id')
 
   if (ehIdInvalido(error)) return false
-  if (error) throw new Error(`não deu para apagar a resposta rápida: ${error.message}`)
+  if (error) throw new Error(`não foi possível apagar a resposta rápida: ${error.message}`)
   return (data?.length ?? 0) === 1
 }

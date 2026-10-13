@@ -56,7 +56,7 @@ export async function nomesGuardados(
    */
   if (error) {
     if (ehIdInvalido(error)) return new Map()
-    throw new Error(`não deu para ler os nomes de anúncio: ${error.message}`)
+    throw new Error(`não foi possível ler os nomes de anúncio: ${error.message}`)
   }
 
   const mapa = new Map<string, AnuncioEmCache>()
@@ -90,5 +90,5 @@ export async function guardarNomes(
       { onConflict: 'client_id,ad_id' },
     )
 
-  if (error) throw new Error(`não deu para guardar o nome do anúncio: ${error.message}`)
+  if (error) throw new Error(`não foi possível guardar o nome do anúncio: ${error.message}`)
 }

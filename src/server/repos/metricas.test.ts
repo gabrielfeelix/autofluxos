@@ -69,7 +69,7 @@ beforeAll(async () => {
   ]
 
   const { data, error } = await db().from('sessions').insert(sessoes).select('id, criado_em')
-  if (error) throw new Error(`não deu para montar as métricas: ${error.message}`)
+  if (error) throw new Error(`não foi possível montar as métricas: ${error.message}`)
 
   const encerradaPorHumano = data.find((linha) => linha.criado_em.startsWith('2026-08-07'))
   if (!encerradaPorHumano) throw new Error('faltou a sessão atendida por uma pessoa')
@@ -100,7 +100,7 @@ beforeAll(async () => {
       },
       { session_id: antigaSemOrigem.id, motivo: 'gravado antes da 0086' },
     ])
-  if (erroDoHandoff) throw new Error(`não deu para montar o handoff: ${erroDoHandoff.message}`)
+  if (erroDoHandoff) throw new Error(`não foi possível montar o handoff: ${erroDoHandoff.message}`)
 })
 
 afterAll(async () => {

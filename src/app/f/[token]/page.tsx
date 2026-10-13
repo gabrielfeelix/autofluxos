@@ -121,7 +121,7 @@ export default async function Pagina({ params }: { params: Promise<{ token: stri
           {resumo.temApi && <Selo>chama API</Selo>}
           {resumo.temIa && <Selo>usa IA</Selo>}
           <Selo destaque={resumo.temHandoff}>
-            {resumo.temHandoff ? 'passa para uma pessoa' : 'não chama ninguém'}
+            {resumo.temHandoff ? 'transfere para uma pessoa' : 'não chama ninguém'}
           </Selo>
         </ul>
 

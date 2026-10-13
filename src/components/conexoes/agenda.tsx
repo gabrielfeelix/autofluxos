@@ -89,7 +89,7 @@ export function CartaoDaAgenda({
           role="status"
           className="mt-2.5 rounded-[9px] border border-rose-400/25 bg-rose-400/[0.08] px-3 py-2 text-[11.5px] leading-4 text-perigo"
         >
-          ✕ {resultado.erro ?? 'não deu para conferir'}
+          ✕ {resultado.erro ?? 'não foi possível conferir'}
         </p>
       )}
 

@@ -36,7 +36,7 @@ export default async function Pagina({ params }: { params: Promise<{ clienteId: 
     recusaDoPlano(cliente.id, 'api'),
     // A tabela pode ainda não existir num ambiente sem a 0120: lista vazia.
     listarChavesDeApi(cliente.id).catch((erro: unknown): ChaveDeApi[] => {
-      console.error('[api] não deu para listar as chaves', erro instanceof Error ? erro.message : erro)
+      console.error('[api] não foi possível listar as chaves', erro instanceof Error ? erro.message : erro)
       return []
     }),
     listarWebhooks(cliente.id).catch(() => []),

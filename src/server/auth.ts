@@ -188,7 +188,7 @@ function montar() {
           after: async (sessao) => {
             after(() =>
               limitarSessoes(bancoDoLogin(), sessao as { userId: string; impersonatedBy?: string | null }).catch(
-                (erro) => console.error('[sessoes] não deu para limitar os aparelhos', erro),
+                (erro) => console.error('[sessoes] não foi possível limitar os aparelhos', erro),
               ),
             )
           },

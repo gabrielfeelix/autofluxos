@@ -156,7 +156,7 @@ export function canalTelegram(config: ConfigTelegram): Canal {
         throw new Error(`${descrever(metodo)} não respondeu em ${timeoutMs / 1000}s`)
       }
       throw new Error(
-        `não deu para falar com o ${descrever(metodo)}: ${erro instanceof Error ? erro.message : erro}`,
+        `não foi possível falar com o ${descrever(metodo)}: ${erro instanceof Error ? erro.message : erro}`,
       )
     }
 
@@ -197,7 +197,7 @@ export function canalTelegram(config: ConfigTelegram): Canal {
         // "Digitando" é conveniência, como nos outros canais. Barrar a resposta
         // por causa dele seria transformar melhoria visual em indisponibilidade.
         console.warn(
-          '[telegram] não deu para mostrar digitando',
+          '[telegram] não foi possível mostrar digitando',
           erro instanceof Error ? erro.message : String(erro),
         )
       }

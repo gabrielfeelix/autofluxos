@@ -139,7 +139,7 @@ export function CartaoDoAtendimento({
             (r) => {
               if (r.ok === false || r.erro) {
                 desfazer()
-                setErroDoBot(r.erro ?? 'não deu para salvar')
+                setErroDoBot(r.erro ?? 'não foi possível salvar')
               }
             },
             () => {

@@ -128,7 +128,7 @@ export function SeletorDeArquivo({
         })
 
         if (!preparo.ok || !preparo.envio) {
-          setErro(preparo.erro ?? 'não deu para preparar o envio')
+          setErro(preparo.erro ?? 'não foi possível preparar o envio')
           return
         }
 
@@ -163,7 +163,7 @@ export function SeletorDeArquivo({
           bytes: arquivo.size,
         })
       } catch (erro) {
-        setErro(erro instanceof Error ? erro.message : 'não deu para enviar')
+        setErro(erro instanceof Error ? erro.message : 'não foi possível enviar')
       }
     })
   }

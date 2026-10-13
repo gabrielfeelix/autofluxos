@@ -49,7 +49,7 @@ export async function acaoSalvarFicha(
   try {
     await atualizarContexto(clienteId, escreverFicha(ficha, perguntas))
   } catch (erro) {
-    return { erro: erro instanceof Error ? erro.message : 'não deu para salvar' }
+    return { erro: erro instanceof Error ? erro.message : 'não foi possível salvar' }
   }
 
   revalidatePath(`/clientes/${clienteId}/ajustes/contexto`)

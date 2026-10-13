@@ -60,12 +60,12 @@ export function InterruptorDeGatilho({
             (r) => {
               if (!r.ok) {
                 setAtual(antes)
-                setErro(r.erro ?? 'não deu para mudar o gatilho')
+                setErro(r.erro ?? 'não foi possível mudar o gatilho')
               }
             },
             () => {
               setAtual(antes)
-              setErro('não deu para mudar agora')
+              setErro('não foi possível mudar agora')
             },
           )
         }}

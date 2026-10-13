@@ -37,7 +37,7 @@ export async function aplicarFato(
     .maybeSingle()
 
   if (ehIdInvalido(error)) return null
-  if (error) throw new Error(`não deu para ler o estágio: ${error.message}`)
+  if (error) throw new Error(`não foi possível ler o estágio: ${error.message}`)
   if (!data) return null
 
   const atual = (data as LinhaDoContato).estagio as Estagio
@@ -61,7 +61,7 @@ export async function aplicarFato(
     .eq('client_id', clienteId)
     .eq('id', contatoId)
 
-  if (erroDaEscrita) throw new Error(`não deu para mudar o estágio: ${erroDaEscrita.message}`)
+  if (erroDaEscrita) throw new Error(`não foi possível mudar o estágio: ${erroDaEscrita.message}`)
 
   await anotar(clienteId, contatoId, 'mudou-de-estagio', { de: atual, para: novo }, autor)
   return novo
@@ -90,7 +90,7 @@ export async function estagioDoContato(
     .maybeSingle()
 
   if (ehIdInvalido(error)) return null
-  if (error) throw new Error(`não deu para ler o estágio: ${error.message}`)
+  if (error) throw new Error(`não foi possível ler o estágio: ${error.message}`)
   if (!data) return null
 
   const linha = data as { estagio: string; estagio_mudou_em: string | null }
@@ -113,7 +113,7 @@ export async function definirEstagio(
     .maybeSingle()
 
   if (ehIdInvalido(error)) return false
-  if (error) throw new Error(`não deu para mudar o estágio: ${error.message}`)
+  if (error) throw new Error(`não foi possível mudar o estágio: ${error.message}`)
   if (!data) return false
 
   await anotar(clienteId, contatoId, 'mudou-de-estagio', { para: estagio, manual: 'true' }, autor)
@@ -146,7 +146,7 @@ export async function definirTemperatura(
     .maybeSingle()
 
   if (ehIdInvalido(error)) return false
-  if (error) throw new Error(`não deu para mudar a temperatura: ${error.message}`)
+  if (error) throw new Error(`não foi possível mudar a temperatura: ${error.message}`)
   if (!data) return false
 
   await anotar(clienteId, contatoId, 'mudou-de-temperatura', { para: temperatura }, autor)
@@ -193,7 +193,7 @@ export async function fichaDoContato(
     .maybeSingle()
 
   if (ehIdInvalido(error)) return null
-  if (error) throw new Error(`não deu para ler a ficha do contato: ${error.message}`)
+  if (error) throw new Error(`não foi possível ler a ficha do contato: ${error.message}`)
   if (!data) return null
 
   const linha = data as unknown as {
@@ -275,7 +275,7 @@ export async function marcarUltimaMensagem(
     .eq('id', contatoId)
 
   if (error && !ehIdInvalido(error)) {
-    console.error('[crm] não deu para marcar a última mensagem:', error.message)
+    console.error('[crm] não foi possível marcar a última mensagem:', error.message)
   }
 }
 
@@ -365,7 +365,7 @@ export async function resumoDoContato(
   ])
 
   if (ehIdInvalido(error)) return { total: 0, compras: 0, ultimaEm: null }
-  if (error) throw new Error(`não deu para ler o resumo: ${error.message}`)
+  if (error) throw new Error(`não foi possível ler o resumo: ${error.message}`)
 
   const cartoesLegado = (legado ?? []) as {
     id: string
@@ -427,7 +427,7 @@ export async function contatosQueSumiram(clienteId: string, limite = 200): Promi
     .limit(limite)
 
   if (ehIdInvalido(error)) return []
-  if (error) throw new Error(`não deu para procurar quem sumiu: ${error.message}`)
+  if (error) throw new Error(`não foi possível procurar quem sumiu: ${error.message}`)
 
   return (data as { id: string }[]).map((linha) => linha.id)
 }
@@ -450,7 +450,7 @@ export async function contatosQueSumiram(clienteId: string, limite = 200): Promi
 export async function marcarQuemSumiu(limitePorConta = 200): Promise<number> {
   const { data, error } = await db().from('clients').select('id')
   if (error) {
-    console.error('[crm] não deu para listar as contas:', error.message)
+    console.error('[crm] não foi possível listar as contas:', error.message)
     return 0
   }
 
@@ -463,7 +463,7 @@ export async function marcarQuemSumiu(limitePorConta = 200): Promise<number> {
         if (novo) marcados += 1
       }
     } catch (erro) {
-      console.error('[crm] não deu para marcar inativos da conta', clienteId, erro)
+      console.error('[crm] não foi possível marcar inativos da conta', clienteId, erro)
     }
   }
 
@@ -490,6 +490,6 @@ export async function contatoEhDoCliente(clienteId: string, contatoId: string): 
     .maybeSingle()
 
   if (ehIdInvalido(error)) return false
-  if (error) throw new Error(`não deu para conferir o contato: ${error.message}`)
+  if (error) throw new Error(`não foi possível conferir o contato: ${error.message}`)
   return data !== null
 }

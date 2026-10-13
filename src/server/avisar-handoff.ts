@@ -181,12 +181,12 @@ export async function avisarHandoff({
         await apagarAssinatura(assinatura.endpoint).catch(() => {})
         continue
       }
-      await alertar('não deu para mandar o push de handoff', envio.reason, {
+      await alertar('não foi possível mandar o push de handoff', envio.reason, {
         contato: contatoId,
       })
     }
   } catch (erro) {
     // A regra que vale mais que tudo aqui: o handoff já está registrado.
-    await alertar('não deu para avisar do handoff', erro, { contato: contatoId })
+    await alertar('não foi possível avisar do handoff', erro, { contato: contatoId })
   }
 }

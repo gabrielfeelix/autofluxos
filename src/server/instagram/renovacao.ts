@@ -110,7 +110,7 @@ export async function renovarTokensDoInstagram(
       // de novo. O alerta existe para o caso de sobrar falha até o fim: sem
       // ele, a conta simplesmente para de responder um dia desses.
       await mundo.avisar(
-        `não deu para renovar o token do Instagram de ${canal.igUsername ?? canal.igUserId ?? canal.clienteId}`,
+        `não foi possível renovar o token do Instagram de ${canal.igUsername ?? canal.igUserId ?? canal.clienteId}`,
         erro,
       )
     }

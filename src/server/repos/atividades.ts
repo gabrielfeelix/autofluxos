@@ -116,7 +116,7 @@ export async function criarAtividade(pedido: PedidoDeAtividade): Promise<Resulta
     .select(COLUNAS)
     .single()
 
-  if (error) return { ok: false, motivo: `não deu para criar a atividade: ${error.message}` }
+  if (error) return { ok: false, motivo: `não foi possível criar a atividade: ${error.message}` }
   return { ok: true, atividade: paraAtividade(data as unknown as LinhaDaAtividade) }
 }
 
@@ -134,7 +134,7 @@ export async function atividadesDoContato(
     .order('prazo', { ascending: true, nullsFirst: false })
 
   if (ehIdInvalido(error)) return []
-  if (error) throw new Error(`não deu para ler as atividades: ${error.message}`)
+  if (error) throw new Error(`não foi possível ler as atividades: ${error.message}`)
   return (data as unknown as LinhaDaAtividade[]).map(paraAtividade)
 }
 
@@ -149,7 +149,7 @@ export async function abertasDoCartao(clienteId: string, cartaoId: string): Prom
     .order('prazo', { ascending: true, nullsFirst: false })
 
   if (ehIdInvalido(error)) return []
-  if (error) throw new Error(`não deu para ler as atividades: ${error.message}`)
+  if (error) throw new Error(`não foi possível ler as atividades: ${error.message}`)
   return (data as unknown as LinhaDaAtividade[]).map(paraAtividade)
 }
 
@@ -168,7 +168,7 @@ export async function atividadesDoCartao(clienteId: string, cartaoId: string): P
     .limit(100)
 
   if (ehIdInvalido(error)) return []
-  if (error) throw new Error(`não deu para ler as atividades: ${error.message}`)
+  if (error) throw new Error(`não foi possível ler as atividades: ${error.message}`)
   return (data as unknown as LinhaDaAtividade[]).map(paraAtividade)
 }
 
@@ -253,7 +253,7 @@ export async function paginaDaAgenda(
   ])
 
   if (ehIdInvalido(resposta.error)) return vazia
-  if (resposta.error) throw new Error(`não deu para ler a agenda: ${resposta.error.message}`)
+  if (resposta.error) throw new Error(`não foi possível ler a agenda: ${resposta.error.message}`)
 
   return {
     itens: (resposta.data as unknown as LinhaDaAgenda[]).map(paraItemDaAgenda),
@@ -318,7 +318,7 @@ export async function agendaDoIntervalo(
 
   for (const r of [comPrazo, semPrazo]) {
     if (ehIdInvalido(r.error)) return vazia
-    if (r.error) throw new Error(`não deu para ler a agenda: ${r.error.message}`)
+    if (r.error) throw new Error(`não foi possível ler a agenda: ${r.error.message}`)
   }
 
   const linhas = comPrazo.data as unknown as LinhaDaAgenda[]
@@ -369,7 +369,7 @@ async function contar({ comuns, doRecorte }: Preparo): Promise<Record<RecorteDaA
   const contado = { ...ZERADAS }
   RECORTES_DA_AGENDA.forEach((recorte, i) => {
     const c = respostas[i] as { count: number | null; error: { message: string } | null }
-    if (c.error) throw new Error(`não deu para contar a agenda: ${c.error.message}`)
+    if (c.error) throw new Error(`não foi possível contar a agenda: ${c.error.message}`)
     contado[recorte] = c.count ?? 0
   })
   return contado
@@ -397,7 +397,7 @@ async function prepararAgenda(
       .select('usuario_id')
       .eq('client_id', clienteId)
       .in('equipe_id', [...escopo.equipes])
-    if (error) throw new Error(`não deu para ler as equipes: ${error.message}`)
+    if (error) throw new Error(`não foi possível ler as equipes: ${error.message}`)
     responsaveis = [...new Set((membros as { usuario_id: string }[]).map((m) => m.usuario_id))]
   }
 
@@ -429,7 +429,7 @@ async function prepararAgenda(
         .or(partesDoContato.join(','))
         .limit(LIMITE_DE_CONTATOS_DA_BUSCA)
       if (ehIdInvalido(error)) return vazia
-      if (error) throw new Error(`não deu para buscar contatos: ${error.message}`)
+      if (error) throw new Error(`não foi possível buscar contatos: ${error.message}`)
       ids.push(...(data as { id: string }[]).map((c) => c.id))
     }
 
@@ -518,7 +518,7 @@ export async function resolverAtividade(
     .maybeSingle()
 
   if (ehIdInvalido(error)) return { ok: false, motivo: 'essa atividade não existe' }
-  if (error) throw new Error(`não deu para resolver a atividade: ${error.message}`)
+  if (error) throw new Error(`não foi possível resolver a atividade: ${error.message}`)
   return data ? { ok: true } : { ok: false, motivo: 'essa atividade já foi resolvida' }
 }
 
@@ -534,7 +534,7 @@ export async function donoDaAtividade(
     .eq('id', atividadeId)
     .maybeSingle()
   if (ehIdInvalido(error)) return null
-  if (error) throw new Error(`não deu para ler a atividade: ${error.message}`)
+  if (error) throw new Error(`não foi possível ler a atividade: ${error.message}`)
   if (!data) return null
   const linha = data as { contact_id: string; responsavel: string | null }
   return { contatoId: linha.contact_id, responsavelId: linha.responsavel }
@@ -583,7 +583,7 @@ export async function ehMembroDaConta(clienteId: string, usuarioId: string): Pro
     .eq('organizationId', clienteId)
     .eq('userId', usuarioId)
     .maybeSingle()
-  if (error && !ehIdInvalido(error)) throw new Error(`não deu para ler a equipe: ${error.message}`)
+  if (error && !ehIdInvalido(error)) throw new Error(`não foi possível ler a equipe: ${error.message}`)
   return Boolean(data)
 }
 
@@ -602,7 +602,7 @@ async function mudarAberta(
     .maybeSingle()
 
   if (ehIdInvalido(error)) return { ok: false, motivo: 'essa atividade não existe' }
-  if (error) throw new Error(`não deu para mudar a atividade: ${error.message}`)
+  if (error) throw new Error(`não foi possível mudar a atividade: ${error.message}`)
   if (data) return { ok: true }
 
   // Nada mudou: ou não existe nesta conta, ou não está aberta.
@@ -630,7 +630,7 @@ export async function reabrirAtividade(
     .maybeSingle()
 
   if (ehIdInvalido(error)) return { ok: false, motivo: 'essa atividade não existe' }
-  if (error) throw new Error(`não deu para reabrir: ${error.message}`)
+  if (error) throw new Error(`não foi possível reabrir: ${error.message}`)
   return data ? { ok: true } : { ok: false, motivo: 'essa atividade já está aberta' }
 }
 
@@ -664,7 +664,7 @@ export async function resolverAoFechar(
     .eq('situacao', 'aberta')
     .select('id')
 
-  if (error) throw new Error(`não deu para resolver as atividades: ${error.message}`)
+  if (error) throw new Error(`não foi possível resolver as atividades: ${error.message}`)
   return { resolvidas: (data as { id: string }[]).length }
 }
 
@@ -688,7 +688,7 @@ export async function atividadesAbertasDoQuadro(
     .eq('quadro_cartoes.quadro_id', quadroId)
 
   if (ehIdInvalido(error)) return []
-  if (error) throw new Error(`não deu para ler as atividades do funil: ${error.message}`)
+  if (error) throw new Error(`não foi possível ler as atividades do funil: ${error.message}`)
 
   return ((data ?? []) as { cartao_id: string | null; prazo: string | null }[])
     .filter((linha): linha is { cartao_id: string; prazo: string | null } => linha.cartao_id !== null)

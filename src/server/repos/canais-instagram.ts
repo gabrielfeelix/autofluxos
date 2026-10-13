@@ -45,7 +45,7 @@ export async function canalDoInstagram(clienteId: string): Promise<CanalSalvo | 
     .eq('provider', 'instagram')
     .maybeSingle()
 
-  if (error) throw new Error(`não deu para achar a conta do Instagram: ${error.message}`)
+  if (error) throw new Error(`não foi possível achar a conta do Instagram: ${error.message}`)
   if (!data) return null
 
   return paraCanal(data as Record<string, unknown>)
@@ -91,7 +91,7 @@ export async function salvarContaDoInstagram(entrada: {
       alvo: existente.tokenRef,
       valor: entrada.token,
     })
-    if (erroDoCofre) throw new Error(`não deu para guardar o token: ${erroDoCofre.message}`)
+    if (erroDoCofre) throw new Error(`não foi possível guardar o token: ${erroDoCofre.message}`)
 
     const { data, error } = await db()
       .from('channels')
@@ -105,7 +105,7 @@ export async function salvarContaDoInstagram(entrada: {
       .select(COLUNAS)
       .single()
 
-    if (error) throw new Error(`não deu para atualizar a conta: ${error.message}`)
+    if (error) throw new Error(`não foi possível atualizar a conta: ${error.message}`)
     return paraCanal(data as Record<string, unknown>)
   }
 
@@ -116,7 +116,7 @@ export async function salvarContaDoInstagram(entrada: {
     valor: entrada.token,
     apelido: `instagram_${crypto.randomUUID()}`,
   })
-  if (erroDoCofre) throw new Error(`não deu para guardar o token: ${erroDoCofre.message}`)
+  if (erroDoCofre) throw new Error(`não foi possível guardar o token: ${erroDoCofre.message}`)
 
   const tokenRef = segredo as string
 
@@ -141,7 +141,7 @@ export async function salvarContaDoInstagram(entrada: {
     // O segredo já está no cofre e a linha não nasceu. Sem isto ele ficaria
     // órfão para sempre, e token órfão é token que ninguém revoga.
     await db().rpc('apagar_segredo', { alvo: tokenRef })
-    throw new Error(`não deu para ligar a conta: ${error.message}`)
+    throw new Error(`não foi possível ligar a conta: ${error.message}`)
   }
 
   return paraCanal(data as Record<string, unknown>)
@@ -155,7 +155,7 @@ export async function desligarContaDoInstagram(clienteId: string): Promise<void>
     .eq('client_id', clienteId)
     .eq('provider', 'instagram')
 
-  if (error) throw new Error(`não deu para desligar a conta: ${error.message}`)
+  if (error) throw new Error(`não foi possível desligar a conta: ${error.message}`)
 }
 
 /**
@@ -178,7 +178,7 @@ export async function canaisDoInstagramQueVencemAte(limite: Date): Promise<Canal
     .not('token_expira_em', 'is', null)
     .lt('token_expira_em', limite.toISOString())
 
-  if (error) throw new Error(`não deu para listar as contas do Instagram: ${error.message}`)
+  if (error) throw new Error(`não foi possível listar as contas do Instagram: ${error.message}`)
   return (data ?? []).map((linha) => paraCanal(linha as Record<string, unknown>))
 }
 
@@ -206,14 +206,14 @@ export async function trocarTokenDoCanal(
     alvo: canal.tokenRef,
     valor: novo.token,
   })
-  if (erroDoCofre) throw new Error(`não deu para guardar o token renovado: ${erroDoCofre.message}`)
+  if (erroDoCofre) throw new Error(`não foi possível guardar o token renovado: ${erroDoCofre.message}`)
 
   const { error } = await db()
     .from('channels')
     .update({ token_expira_em: novo.expiraEm.toISOString() })
     .eq('id', canal.id)
 
-  if (error) throw new Error(`não deu para gravar a nova validade: ${error.message}`)
+  if (error) throw new Error(`não foi possível gravar a nova validade: ${error.message}`)
 }
 
 /**
@@ -259,7 +259,7 @@ export async function contatosDoInstagram(clienteId: string): Promise<Set<string
       .order('id')
       .range(inicio, inicio + PAGINA - 1)
 
-    if (error) throw new Error(`não deu para achar os contatos do Instagram: ${error.message}`)
+    if (error) throw new Error(`não foi possível achar os contatos do Instagram: ${error.message}`)
     for (const linha of data ?? []) contatos.add(linha.contact_id as string)
     if (!data || data.length < PAGINA) break
   }

@@ -52,7 +52,7 @@ export async function pedidosDePlano(opcoes: { organizacaoId?: string } = {}): P
 
   const { data, error } = await consulta
   if (ehIdInvalido(error)) return []
-  if (error) throw new Error(`não deu para ler os pedidos de plano: ${error.message}`)
+  if (error) throw new Error(`não foi possível ler os pedidos de plano: ${error.message}`)
 
   const linhas = data as Linha[]
   const respostas = new Map<string, Linha>()

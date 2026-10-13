@@ -94,7 +94,7 @@ export async function avaliarElegibilidade(
     .in('contact_id', [...contatoIds])
 
   if (ehIdInvalido(error)) return vazia
-  if (error) throw new Error(`não deu para avaliar a elegibilidade: ${error.message}`)
+  if (error) throw new Error(`não foi possível avaliar a elegibilidade: ${error.message}`)
 
   const linhas = data as {
     contact_id: string

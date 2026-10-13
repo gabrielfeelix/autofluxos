@@ -85,7 +85,7 @@ export function ModalDeTroca({
         </div>
       ) : !previsao || !impacto ? (
         <p role="alert" className="rounded-[10px] border border-perigo/30 bg-perigo/[0.06] px-3 py-2.5 text-[12.5px] leading-5 text-perigo">
-          {estado.erro ?? 'não deu para calcular o que muda'}
+          {estado.erro ?? 'não foi possível calcular o que muda'}
         </p>
       ) : (
         <div className="flex flex-col gap-4">

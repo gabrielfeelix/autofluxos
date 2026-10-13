@@ -111,14 +111,14 @@ export async function abrirOportunidadePelaApi(
   if (aberta) {
     if (pedido.etapaId && aberta.etapa.id !== etapa.id) {
       const movida = await moverCartao(clienteId, aberta.id, etapa.id, AUTOR)
-      if (!movida.ok) return recusa(409, 'oportunidade_fechada', `Não deu para mudar de etapa: ${movida.motivo}.`)
+      if (!movida.ok) return recusa(409, 'oportunidade_fechada', `Não foi possível mudar de etapa: ${movida.motivo}.`)
     }
     const atual = await oportunidadePorId(clienteId, contatoId, aberta.id)
     return { ok: true, criada: false, oportunidade: atual ?? aberta }
   }
 
   const posto = await porNaEtapa(clienteId, quadro.id, etapa.id, [contatoId])
-  if (!posto.ok) return recusa(409, 'oportunidade_fechada', `Não deu para abrir: ${posto.motivo}.`)
+  if (!posto.ok) return recusa(409, 'oportunidade_fechada', `Não foi possível abrir: ${posto.motivo}.`)
 
   const nova = (await oportunidadesDoContato(clienteId, contatoId)).find((o) => o.funil.id === quadro.id && o.situacao === 'aberta')
   if (!nova) throw new Error('a oportunidade sumiu depois de criada')
@@ -149,7 +149,7 @@ export async function mudarOportunidadePelaApi(
       return recusa(404, 'etapa_nao_encontrada', 'Nenhuma etapa com este id no funil desta oportunidade.')
     }
     const movida = await moverCartao(clienteId, oportunidadeId, mudanca.etapaId, AUTOR)
-    if (!movida.ok) return recusa(409, 'oportunidade_fechada', `Não deu para mudar de etapa: ${movida.motivo}.`)
+    if (!movida.ok) return recusa(409, 'oportunidade_fechada', `Não foi possível mudar de etapa: ${movida.motivo}.`)
   } else {
     if (mudanca.situacao === 'perdida') {
       const motivos = (await listarMotivos(clienteId)).map((m) => m.nome)
@@ -165,7 +165,7 @@ export async function mudarOportunidadePelaApi(
       motivo: mudanca.situacao === 'perdida' ? mudanca.motivo : null,
       autor: AUTOR,
     })
-    if (!r.ok) return recusa(409, 'oportunidade_fechada', `Não deu para concluir: ${r.motivo}.`)
+    if (!r.ok) return recusa(409, 'oportunidade_fechada', `Não foi possível concluir: ${r.motivo}.`)
   }
 
   const atual = await oportunidadePorId(clienteId, cartao.contatoId, oportunidadeId)

@@ -317,7 +317,7 @@ export function Negociacoes({
       (r) => {
         if (!r.ok) {
           marcar(cartaoId, antes)
-          setAviso(r.erro ?? 'não deu para reabrir')
+          setAviso(r.erro ?? 'não foi possível reabrir')
         }
       },
       () => {
@@ -344,7 +344,7 @@ function EdicaoDaNegociacao({ clienteId, negociacao }: { clienteId: string; nego
       if (!lido.ok) return `${negociacao.quadro}: ${lido.motivo}`
     }
     const r = await acaoDescreverCartao(clienteId, negociacao.cartaoId, { titulo: titulo.trim(), valor: valor.trim() })
-    return r.ok ? null : `${negociacao.quadro}: ${r.erro ?? 'não deu para salvar'}`
+    return r.ok ? null : `${negociacao.quadro}: ${r.erro ?? 'não foi possível salvar'}`
   })
 
   return (

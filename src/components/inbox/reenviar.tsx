@@ -38,7 +38,7 @@ export function EnvioNaoConfirmado({
             setErro(null)
             const r = await acaoReenviarMensagem(clienteId, contatoId, mensagemId)
             if (r.ok) setEstado('enviado')
-            else setErro(r.erro ?? 'não deu para enviar')
+            else setErro(r.erro ?? 'não foi possível enviar')
           })
         }
         className="ml-2 rounded-md border border-current/30 px-1.5 py-0.5 text-[11px] font-semibold underline-offset-2 hover:underline disabled:opacity-60"

@@ -116,7 +116,7 @@ export async function registrarVendaEConcluir(
           'ou abra outra oportunidade para uma nova compra.',
       }
     }
-    return { ok: false, motivo: `não deu para registrar a venda: ${error.message}` }
+    return { ok: false, motivo: `não foi possível registrar a venda: ${error.message}` }
   }
 
   // Conjunto vazio é recusa: cartão de outra conta, apagado, ou já fechado sem
@@ -204,7 +204,7 @@ export async function cancelarVendaEResolver(pedido: {
     p_autor: pedido.autor ?? null,
   })
 
-  if (error) return { ok: false, motivo: `não deu para cancelar: ${error.message}` }
+  if (error) return { ok: false, motivo: `não foi possível cancelar: ${error.message}` }
 
   const linhas = (data ?? []) as unknown as {
     o_venda_id: string

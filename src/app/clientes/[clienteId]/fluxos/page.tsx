@@ -466,7 +466,7 @@ async function ConteudoDaAba({
    */
   const topo = {
     fluxos: () => ({
-      descricao: <>O desenho do atendimento. Só o que está publicado atende clientes
+      descricao: <>O desenho do atendimento. Apenas o que está publicado atende clientes
                 reais.</>,
       acoes: <><span className="flex flex-wrap items-center gap-2">
             <ModalFormulario
@@ -1278,7 +1278,7 @@ async function ConteudoDaAba({
                                       manda o modelo{' '}
                                       <strong className="font-semibold text-muted">
                                         {templatesAprovados.find((t) => t.id === passo.templateId)
-                                          ?.nome ?? 'que sumiu'}
+                                          ?.nome ?? 'que foi excluído'}
                                       </strong>
                                     </>
                                   ) : (
@@ -1396,7 +1396,7 @@ function NomeDoDestino({
   clienteId: string
   volta: string
 }) {
-  if (!destino) return <strong className="font-semibold text-muted">um fluxo que sumiu</strong>
+  if (!destino) return <strong className="font-semibold text-muted">um fluxo excluído</strong>
   return (
     <Link
       href={`/clientes/${clienteId}/fluxos/${destino.id}?volta=${encodeURIComponent(volta)}`}

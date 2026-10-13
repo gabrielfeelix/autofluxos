@@ -46,7 +46,7 @@ export function EscolherObjetivo({
       const r = await acaoDefinirObjetivo(clienteId, objetivo)
       if (!r.ok) {
         setEscolhido(anterior)
-        setErro(r.erro ?? 'não deu para salvar')
+        setErro(r.erro ?? 'não foi possível salvar')
         return
       }
       setSalvo(true)

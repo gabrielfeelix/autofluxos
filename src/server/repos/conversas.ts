@@ -157,7 +157,7 @@ export async function salvarTelefoneDoCanal(canalId: string, telefone: string): 
     .eq('id', canalId)
     .is('display_phone_number', null)
 
-  if (error) throw new Error(`não deu para gravar o telefone do canal: ${error.message}`)
+  if (error) throw new Error(`não foi possível gravar o telefone do canal: ${error.message}`)
 }
 
 export async function acharCanalPorNumero(phoneNumberId: string): Promise<CanalSalvo | null> {
@@ -167,7 +167,7 @@ export async function acharCanalPorNumero(phoneNumberId: string): Promise<CanalS
     .eq('phone_number_id', phoneNumberId)
     .maybeSingle()
 
-  if (error) throw new Error(`não deu para achar o canal: ${error.message}`)
+  if (error) throw new Error(`não foi possível achar o canal: ${error.message}`)
   if (!data) return null
 
   return paraCanal(data as Record<string, unknown>)
@@ -189,7 +189,7 @@ export async function acharCanalPorContaDoInstagram(igUserId: string): Promise<C
     .eq('ig_user_id', igUserId)
     .maybeSingle()
 
-  if (error) throw new Error(`não deu para achar o canal do Instagram: ${error.message}`)
+  if (error) throw new Error(`não foi possível achar o canal do Instagram: ${error.message}`)
   if (!data) return null
 
   return paraCanal(data as Record<string, unknown>)
@@ -208,7 +208,7 @@ export async function lerTokenDoCanal(canal: CanalSalvo): Promise<string> {
   }
 
   const { data, error } = await db().rpc('ler_segredo', { alvo: canal.tokenRef })
-  if (error) throw new Error(`não deu para ler o token do canal: ${error.message}`)
+  if (error) throw new Error(`não foi possível ler o token do canal: ${error.message}`)
   if (!data) throw new Error('o cofre não devolveu o token do canal')
 
   return data as string
@@ -271,7 +271,7 @@ export async function acharOuCriarContato(
       .eq('client_id', clienteId)
       .eq('bsuid', bsuid)
       .maybeSingle()
-    if (error) throw new Error(`não deu para achar o contato pelo BSUID: ${error.message}`)
+    if (error) throw new Error(`não foi possível achar o contato pelo BSUID: ${error.message}`)
     if (data) {
       const achado = paraContato(data as Record<string, unknown>)
       return { ...(await atualizarIdentidade(achado, waId, nome, username)), criadoAgora: false }
@@ -307,7 +307,7 @@ export async function acharOuCriarContato(
   // `23505` é o caminho normal: o contato já existia. Qualquer outro erro é
   // erro de verdade e não pode virar "então crio de novo".
   if (erroAoInserir && erroAoInserir.code !== '23505') {
-    throw new Error(`não deu para registrar o contato: ${erroAoInserir.message}`)
+    throw new Error(`não foi possível registrar o contato: ${erroAoInserir.message}`)
   }
 
   // Criamos agora: a linha já veio inteira, e a segunda escrita seria uma ida
@@ -325,7 +325,7 @@ export async function acharOuCriarContato(
     .select(COLUNAS_DO_CONTATO)
     .single()
 
-  if (error) throw new Error(`não deu para registrar o contato: ${error.message}`)
+  if (error) throw new Error(`não foi possível registrar o contato: ${error.message}`)
 
   return { ...paraContato(data as Record<string, unknown>), criadoAgora: false }
 }
@@ -366,7 +366,7 @@ async function atualizarIdentidade(
     if (Object.keys(semTelefone).length === 0) return achado
     ;({ data, error } = await gravar(semTelefone))
   }
-  if (error) throw new Error(`não deu para atualizar o contato: ${error.message}`)
+  if (error) throw new Error(`não foi possível atualizar o contato: ${error.message}`)
 
   return paraContato(data as Record<string, unknown>)
 }
@@ -392,7 +392,7 @@ export async function trocarBsuid(
     .eq('client_id', clienteId)
     .eq('bsuid', anterior)
     .maybeSingle()
-  if (error) throw new Error(`não deu para achar o contato pelo BSUID: ${error.message}`)
+  if (error) throw new Error(`não foi possível achar o contato pelo BSUID: ${error.message}`)
   if (!data) return
 
   const achado = paraContato(data as Record<string, unknown>)
@@ -401,7 +401,7 @@ export async function trocarBsuid(
   else if (ehBsuid(achado.waId)) mudanca.wa_id = novo
 
   const { error: erro } = await db().from('contacts').update(mudanca).eq('id', achado.id)
-  if (erro) throw new Error(`não deu para trocar o BSUID do contato: ${erro.message}`)
+  if (erro) throw new Error(`não foi possível trocar o BSUID do contato: ${erro.message}`)
 }
 
 export async function acharContato(contatoId: string): Promise<Contato | null> {
@@ -411,7 +411,7 @@ export async function acharContato(contatoId: string): Promise<Contato | null> {
     .eq('id', contatoId)
     .maybeSingle()
 
-  if (error) throw new Error(`não deu para achar o contato: ${error.message}`)
+  if (error) throw new Error(`não foi possível achar o contato: ${error.message}`)
   if (!data) return null
 
   // Ler nunca cria: quem chega por aqui é contato que já existia.
@@ -475,7 +475,7 @@ export async function sessoesEmAtendimentoParado(limite: number): Promise<Sessao
     .order('atualizado_em', { ascending: true })
     .limit(limite)
 
-  if (error) throw new Error(`não deu para listar as conversas paradas: ${error.message}`)
+  if (error) throw new Error(`não foi possível listar as conversas paradas: ${error.message}`)
 
   type Linha = {
     id: string
@@ -523,7 +523,7 @@ export async function ultimaFalaDaEquipe(contatoId: string): Promise<Date | null
     .limit(1)
     .maybeSingle()
 
-  if (error) throw new Error(`não deu para achar a última fala da equipe: ${error.message}`)
+  if (error) throw new Error(`não foi possível achar a última fala da equipe: ${error.message}`)
   return data ? new Date((data as { ts: string }).ts) : null
 }
 
@@ -554,7 +554,7 @@ export async function donoFalouPeloCelularDesde(contatoId: string, desde: Date):
     .limit(20)
 
   if (error) {
-    console.error('[conversas] não deu para ler a fala do dono pelo celular', error.message)
+    console.error('[conversas] não foi possível ler a fala do dono pelo celular', error.message)
     return false
   }
   return ((data ?? []) as { texto: string | null }[]).some((linha) => !(linha.texto ?? '').startsWith('‎'))
@@ -568,7 +568,7 @@ export async function acharSessao(sessaoId: string): Promise<SessaoComContexto |
     .maybeSingle()
 
   if (ehIdInvalido(error)) return null
-  if (error) throw new Error(`não deu para achar a sessão: ${error.message}`)
+  if (error) throw new Error(`não foi possível achar a sessão: ${error.message}`)
   if (!data) return null
 
   return {
@@ -596,7 +596,7 @@ export async function acharCanal(canalId: string): Promise<CanalSalvo | null> {
     .maybeSingle()
 
   if (ehIdInvalido(error)) return null
-  if (error) throw new Error(`não deu para achar o canal: ${error.message}`)
+  if (error) throw new Error(`não foi possível achar o canal: ${error.message}`)
   if (!data) return null
   return paraCanal(data as Record<string, unknown>)
 }
@@ -615,7 +615,7 @@ export async function ultimaSessao(
     .limit(1)
     .maybeSingle()
 
-  if (error) throw new Error(`não deu para achar a sessão: ${error.message}`)
+  if (error) throw new Error(`não foi possível achar a sessão: ${error.message}`)
   if (!data) return null
 
   return {
@@ -660,7 +660,7 @@ export async function criarSessao(
     .select('id, flow_version_id')
     .single()
 
-  if (error) throw new Error(`não deu para criar a sessão: ${error.message}`)
+  if (error) throw new Error(`não foi possível criar a sessão: ${error.message}`)
   return { id: data.id as string, flowVersionId: data.flow_version_id as string, sessao }
 }
 
@@ -681,7 +681,7 @@ export async function sessaoComPessoa(contatoId: string): Promise<boolean> {
     .maybeSingle()
 
   if (ehIdInvalido(error)) return false
-  if (error) throw new Error(`não deu para ler a sessão do contato: ${error.message}`)
+  if (error) throw new Error(`não foi possível ler a sessão do contato: ${error.message}`)
   return (data as { status: string } | null)?.status === 'humano'
 }
 
@@ -711,7 +711,7 @@ export async function calarBotNaConversa(contatoId: string): Promise<boolean> {
     .select('id')
 
   if (ehIdInvalido(error)) return false
-  if (error) throw new Error(`não deu para calar o bot: ${error.message}`)
+  if (error) throw new Error(`não foi possível calar o bot: ${error.message}`)
   // A execução do bot que estiver no meio (esperando o modelo) confere a
   // revisão antes de gravar e de enviar; sem subir aqui, ela terminava depois e
   // devolvia a conversa ao bot. Aconteceu na PCYES em 30/set/2026.
@@ -766,7 +766,7 @@ export async function tomarSessaoParada(id: string): Promise<boolean> {
     .eq('id', id)
     .eq('status', 'humano')
     .select('id')
-  if (error) throw new Error(`não deu para encerrar a sessão parada: ${error.message}`)
+  if (error) throw new Error(`não foi possível encerrar a sessão parada: ${error.message}`)
   return (data ?? []).length > 0
 }
 
@@ -775,7 +775,7 @@ export async function definirStatusDaSessao(
   status: Sessao['status'],
 ): Promise<void> {
   const { error } = await db().from('sessions').update({ status }).eq('id', id)
-  if (error) throw new Error(`não deu para mudar o status da sessão: ${error.message}`)
+  if (error) throw new Error(`não foi possível mudar o status da sessão: ${error.message}`)
 }
 
 export async function guardarSessao(id: string, sessao: Sessao): Promise<void> {
@@ -796,7 +796,7 @@ export async function guardarSessao(id: string, sessao: Sessao): Promise<void> {
     })
     .eq('id', id)
 
-  if (error) throw new Error(`não deu para guardar a sessão: ${error.message}`)
+  if (error) throw new Error(`não foi possível guardar a sessão: ${error.message}`)
 }
 
 /**
@@ -815,7 +815,7 @@ export async function guardarSessao(id: string, sessao: Sessao): Promise<void> {
 export async function trocarVersaoDaSessao(id: string, versaoId: string): Promise<void> {
   const { error } = await db().from('sessions').update({ flow_version_id: versaoId }).eq('id', id)
 
-  if (error) throw new Error(`não deu para trocar a versão da sessão: ${error.message}`)
+  if (error) throw new Error(`não foi possível trocar a versão da sessão: ${error.message}`)
 }
 
 /**
@@ -865,7 +865,7 @@ export async function registrarEntrada(dados: {
 
   if (error) {
     if (error.code === '23505') return null
-    throw new Error(`não deu para registrar a mensagem: ${error.message}`)
+    throw new Error(`não foi possível registrar a mensagem: ${error.message}`)
   }
   return data.id as string
 }
@@ -1039,7 +1039,7 @@ export async function registrarSaida(dados: {
     .select('id')
     .single()
 
-  if (error) throw new Error(`não deu para registrar o envio: ${error.message}`)
+  if (error) throw new Error(`não foi possível registrar o envio: ${error.message}`)
   return data.id as string
 }
 
@@ -1059,10 +1059,10 @@ export async function confirmarEntrega(id: string, waMessageId?: string | null):
       .update({ entregue: true, wa_message_id: waMessageId })
       .eq('id', id)
     if (!error) return
-    if (error.code !== '23505') throw new Error(`não deu para confirmar a entrega: ${error.message}`)
+    if (error.code !== '23505') throw new Error(`não foi possível confirmar a entrega: ${error.message}`)
   }
   const { error } = await db().from('messages').update({ entregue: true }).eq('id', id)
-  if (error) throw new Error(`não deu para confirmar a entrega: ${error.message}`)
+  if (error) throw new Error(`não foi possível confirmar a entrega: ${error.message}`)
 }
 
 export type SituacaoDaMensagem = 'enviada' | 'entregue' | 'lida' | 'falhou'
@@ -1099,7 +1099,7 @@ export async function avancarSituacaoDaMensagem(
     .or(filtro)
     .select('id')
   if (ehIdInvalido(error)) return false
-  if (error) throw new Error(`não deu para gravar a situação da mensagem: ${error.message}`)
+  if (error) throw new Error(`não foi possível gravar a situação da mensagem: ${error.message}`)
   return (data ?? []).length > 0
 }
 
@@ -1109,7 +1109,7 @@ export async function guardarCampo(
   campos: Record<string, string>,
 ): Promise<void> {
   const { error } = await db().from('contacts').update({ campos }).eq('id', contatoId)
-  if (error) throw new Error(`não deu para guardar o campo: ${error.message}`)
+  if (error) throw new Error(`não foi possível guardar o campo: ${error.message}`)
 }
 
 /**
@@ -1133,7 +1133,7 @@ export async function registrarHandoff(
   const { error } = await db()
     .from('handoffs')
     .insert({ session_id: sessaoId, motivo, origem })
-  if (error) throw new Error(`não deu para registrar o handoff: ${error.message}`)
+  if (error) throw new Error(`não foi possível registrar o handoff: ${error.message}`)
 }
 
 /**
@@ -1156,7 +1156,7 @@ export async function handoffSemResposta(
     .order('criado_em', { ascending: false })
     .limit(1)
     .maybeSingle()
-  if (error) throw new Error(`não deu para ler o handoff: ${error.message}`)
+  if (error) throw new Error(`não foi possível ler o handoff: ${error.message}`)
   if (!handoff) return null
 
   const desde = handoff.criado_em as string
@@ -1166,7 +1166,7 @@ export async function handoffSemResposta(
     .eq('contact_id', contatoId)
     .eq('direcao', 'saida')
     .gt('ts', desde)
-  if (erroDaContagem) throw new Error(`não deu para contar as respostas: ${erroDaContagem.message}`)
+  if (erroDaContagem) throw new Error(`não foi possível contar as respostas: ${erroDaContagem.message}`)
 
   return (count ?? 0) === 0 ? desde : null
 }
@@ -1229,7 +1229,7 @@ export async function contextoDeResposta(
     .maybeSingle()
 
   if (ehIdInvalido(erroDoContato)) return null
-  if (erroDoContato) throw new Error(`não deu para achar o contato: ${erroDoContato.message}`)
+  if (erroDoContato) throw new Error(`não foi possível achar o contato: ${erroDoContato.message}`)
   if (!contato) return null
 
   const [
@@ -1298,9 +1298,9 @@ export async function contextoDeResposta(
         .maybeSingle(),
     ])
 
-  if (erroDaSessao) throw new Error(`não deu para achar a sessão: ${erroDaSessao.message}`)
-  if (erroDaEntrada) throw new Error(`não deu para achar a última mensagem: ${erroDaEntrada.message}`)
-  if (erroDaPorta) throw new Error(`não deu para achar a passagem: ${erroDaPorta.message}`)
+  if (erroDaSessao) throw new Error(`não foi possível achar a sessão: ${erroDaSessao.message}`)
+  if (erroDaEntrada) throw new Error(`não foi possível achar a última mensagem: ${erroDaEntrada.message}`)
+  if (erroDaPorta) throw new Error(`não foi possível achar a passagem: ${erroDaPorta.message}`)
 
   const canal = await canalDaResposta(
     clienteId,
@@ -1350,7 +1350,7 @@ async function canalDaResposta(
         .limit(1)
         .maybeSingle()
 
-  if (error) throw new Error(`não deu para achar o canal: ${error.message}`)
+  if (error) throw new Error(`não foi possível achar o canal: ${error.message}`)
   if (!data) return null
 
   return paraCanal(data as Record<string, unknown>)
@@ -1384,7 +1384,7 @@ export async function encerrarAtendimento(
     .maybeSingle()
 
   if (ehIdInvalido(erroDoContato)) return { ok: false }
-  if (erroDoContato) throw new Error(`não deu para achar o contato: ${erroDoContato.message}`)
+  if (erroDoContato) throw new Error(`não foi possível achar o contato: ${erroDoContato.message}`)
   if (!contato) return { ok: false }
 
   const { data: sessoes, error: erroDasSessoes } = await db()
@@ -1392,7 +1392,7 @@ export async function encerrarAtendimento(
     .select('id')
     .eq('contact_id', contatoId)
 
-  if (erroDasSessoes) throw new Error(`não deu para achar as sessões: ${erroDasSessoes.message}`)
+  if (erroDasSessoes) throw new Error(`não foi possível achar as sessões: ${erroDasSessoes.message}`)
 
   const ids = (sessoes as { id: string }[]).map((s) => s.id)
   if (ids.length === 0) return { ok: true }
@@ -1403,7 +1403,7 @@ export async function encerrarAtendimento(
     .in('session_id', ids)
     .is('resolvido_em', null)
 
-  if (erroDoHandoff) throw new Error(`não deu para resolver o handoff: ${erroDoHandoff.message}`)
+  if (erroDoHandoff) throw new Error(`não foi possível resolver o handoff: ${erroDoHandoff.message}`)
 
   const { error: erroDaSessao } = await db()
     .from('sessions')
@@ -1411,7 +1411,7 @@ export async function encerrarAtendimento(
     .in('id', ids)
     .eq('status', 'humano')
 
-  if (erroDaSessao) throw new Error(`não deu para encerrar a sessão: ${erroDaSessao.message}`)
+  if (erroDaSessao) throw new Error(`não foi possível encerrar a sessão: ${erroDaSessao.message}`)
 
   return { ok: true }
 }
@@ -1437,7 +1437,7 @@ export async function alterarAutomacaoDoContato(
     .maybeSingle()
 
   if (ehIdInvalido(erroDoContato)) return { ok: false, motivo: 'nao_encontrado' }
-  if (erroDoContato) throw new Error(`não deu para achar o contato: ${erroDoContato.message}`)
+  if (erroDoContato) throw new Error(`não foi possível achar o contato: ${erroDoContato.message}`)
   if (!contato) return { ok: false, motivo: 'nao_encontrado' }
 
   if (ativa) {
@@ -1446,7 +1446,7 @@ export async function alterarAutomacaoDoContato(
       .select('id')
       .eq('contact_id', contatoId)
 
-    if (erroDasSessoes) throw new Error(`não deu para achar as sessões: ${erroDasSessoes.message}`)
+    if (erroDasSessoes) throw new Error(`não foi possível achar as sessões: ${erroDasSessoes.message}`)
 
     const ids = (sessoes as { id: string }[]).map((sessao) => sessao.id)
     if (ids.length > 0) {
@@ -1458,7 +1458,7 @@ export async function alterarAutomacaoDoContato(
         .limit(1)
         .maybeSingle()
 
-      if (erroDoHandoff) throw new Error(`não deu para conferir o handoff: ${erroDoHandoff.message}`)
+      if (erroDoHandoff) throw new Error(`não foi possível conferir o handoff: ${erroDoHandoff.message}`)
       if (handoff) return { ok: false, motivo: 'handoff_aberto' }
     }
   }
@@ -1475,7 +1475,7 @@ export async function alterarAutomacaoDoContato(
       .eq('contact_id', contatoId)
       .eq('status', 'humano')
 
-    if (erroAoEncerrar) throw new Error(`não deu para preparar o bot: ${erroAoEncerrar.message}`)
+    if (erroAoEncerrar) throw new Error(`não foi possível preparar o bot: ${erroAoEncerrar.message}`)
   }
 
   const { error: erroDaAutomacao } = await db()
@@ -1484,7 +1484,7 @@ export async function alterarAutomacaoDoContato(
     .eq('id', contatoId)
     .eq('client_id', clienteId)
 
-  if (erroDaAutomacao) throw new Error(`não deu para mudar a automação: ${erroDaAutomacao.message}`)
+  if (erroDaAutomacao) throw new Error(`não foi possível mudar a automação: ${erroDaAutomacao.message}`)
 
   return { ok: true }
 }
@@ -1513,7 +1513,7 @@ export async function criarCanal(dados: {
     .select(COLUNAS_DO_CANAL)
     .single()
 
-  if (error) throw new Error(`não deu para conectar o número: ${error.message}`)
+  if (error) throw new Error(`não foi possível conectar o número: ${error.message}`)
   return paraCanal(data as Record<string, unknown>)
 }
 
@@ -1545,7 +1545,7 @@ export async function definirFluxosDoNumero(
       .in('id', escolhidos)
 
     if (ehIdInvalido(error)) return { ok: false, motivo: 'escolha um fluxo válido' }
-    if (error) throw new Error(`não deu para conferir os fluxos: ${error.message}`)
+    if (error) throw new Error(`não foi possível conferir os fluxos: ${error.message}`)
     if ((data?.length ?? 0) !== escolhidos.length) {
       return { ok: false, motivo: 'algum dos fluxos escolhidos não é deste cliente' }
     }
@@ -1564,7 +1564,7 @@ export async function definirFluxosDoNumero(
     .select('id')
 
   if (ehIdInvalido(error)) return { ok: false, motivo: 'este número não existe mais' }
-  if (error) throw new Error(`não deu para salvar os fluxos do número: ${error.message}`)
+  if (error) throw new Error(`não foi possível salvar os fluxos do número: ${error.message}`)
   if ((data?.length ?? 0) !== 1) return { ok: false, motivo: 'este número não existe mais' }
   return { ok: true }
 }
@@ -1591,7 +1591,7 @@ export async function desconectarNumero(
     .eq('channel_id', canalId)
 
   if (ehIdInvalido(erroDaContagem)) return { ok: false, motivo: 'este número não existe mais' }
-  if (erroDaContagem) throw new Error(`não deu para conferir as conversas: ${erroDaContagem.message}`)
+  if (erroDaContagem) throw new Error(`não foi possível conferir as conversas: ${erroDaContagem.message}`)
 
   if ((count ?? 0) > 0) {
     return {
@@ -1606,7 +1606,7 @@ export async function desconectarNumero(
     .eq('id', canalId)
     .eq('client_id', clienteId)
 
-  if (error) throw new Error(`não deu para desconectar o número: ${error.message}`)
+  if (error) throw new Error(`não foi possível desconectar o número: ${error.message}`)
   return { ok: true }
 }
 
@@ -1618,7 +1618,7 @@ export async function listarCanais(clienteId: string): Promise<CanalSalvo[]> {
     .order('criado_em', { ascending: true })
 
   if (ehIdInvalido(error)) return []
-  if (error) throw new Error(`não deu para listar os canais: ${error.message}`)
+  if (error) throw new Error(`não foi possível listar os canais: ${error.message}`)
   return (data as Record<string, unknown>[]).map(paraCanal)
 }
 
@@ -1648,7 +1648,7 @@ export async function atribuirContato(
     .maybeSingle()
 
   if (ehIdInvalido(error)) return false
-  if (error) throw new Error(`não deu para atribuir o contato: ${error.message}`)
+  if (error) throw new Error(`não foi possível atribuir o contato: ${error.message}`)
   return data !== null
 }
 
@@ -1697,7 +1697,7 @@ export async function assumirAtendimento(
   if (ehIdInvalido(error)) {
     return { ok: false, motivo: 'nao_encontrado', responsavelId: null }
   }
-  if (error) throw new Error(`não deu para assumir o atendimento: ${error.message}`)
+  if (error) throw new Error(`não foi possível assumir o atendimento: ${error.message}`)
 
   const linha = ((data ?? []) as LinhaDaTomada[])[0]
   if (!linha) return { ok: false, motivo: 'nao_encontrado', responsavelId: null }
@@ -1730,7 +1730,7 @@ export async function trocarControle(
   })
 
   if (ehIdInvalido(error)) return null
-  if (error) throw new Error(`não deu para trocar o controle: ${error.message}`)
+  if (error) throw new Error(`não foi possível trocar o controle: ${error.message}`)
   return typeof data === 'number' ? data : null
 }
 
@@ -1773,5 +1773,5 @@ export async function atribuirSeSemDono(clienteId: string, contatoId: string, us
     .eq('id', contatoId)
     .eq('client_id', clienteId)
     .is('atribuido_a', null)
-  if (error && !ehIdInvalido(error)) throw new Error(`não deu para atribuir o contato: ${error.message}`)
+  if (error && !ehIdInvalido(error)) throw new Error(`não foi possível atribuir o contato: ${error.message}`)
 }

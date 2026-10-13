@@ -322,7 +322,7 @@ export function RailsLocais<T extends LeadDoRail>({
     { chave: 'todos', rotulo: rotuloDeTodos, contagem: donos.total },
     {
       chave: 'sem-dono',
-      rotulo: 'Sem dono',
+      rotulo: 'Sem responsável',
       descricao: 'Ninguém assumiu ainda',
       contagem: donos.semDono,
     },

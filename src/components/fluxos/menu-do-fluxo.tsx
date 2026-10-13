@@ -78,7 +78,7 @@ export function MenuDoFluxo({
                   onClick={() =>
                     rodar(async () => {
                       const r = await acaoMoverFluxo(clienteId, fluxo.id, pasta.id)
-                      return r.ok ? null : { texto: r.erro ?? 'não deu para mover', erro: true }
+                      return r.ok ? null : { texto: r.erro ?? 'não foi possível mover', erro: true }
                     })
                   }
                   className="quadro-menu-item"
@@ -102,7 +102,7 @@ export function MenuDoFluxo({
                 const r = await acaoDuplicarFluxo(clienteId, fluxo.id)
                 return r.ok
                   ? { texto: `“${r.nome}” criada, desligada e sem publicar.` }
-                  : { texto: r.erro ?? 'não deu para duplicar', erro: true }
+                  : { texto: r.erro ?? 'não foi possível duplicar', erro: true }
               })
             }
             className="quadro-menu-item"

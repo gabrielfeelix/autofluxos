@@ -161,8 +161,8 @@ describe('motivoDoMicrofone', () => {
   })
 
   it('tem resposta para erro que não conhece, e para não-erro', () => {
-    expect(motivoDoMicrofone(comNome('CoisaNova'))).toBe('Não deu para abrir o microfone.')
-    expect(motivoDoMicrofone('texto solto')).toBe('Não deu para abrir o microfone.')
+    expect(motivoDoMicrofone(comNome('CoisaNova'))).toBe('Não foi possível abrir o microfone.')
+    expect(motivoDoMicrofone('texto solto')).toBe('Não foi possível abrir o microfone.')
   })
 })
 

@@ -108,7 +108,7 @@ export function ApagarCliente({
               setErro(null)
               comecar(async () => {
                 const r = await acao()
-                if (!r.ok) setErro(r.erro ?? 'não deu para apagar')
+                if (!r.ok) setErro(r.erro ?? 'não foi possível apagar')
               })
             }}
             className="flex-[1.35] rounded-[10px] border border-rose-400/40 bg-rose-400/[0.16] px-4 py-2.5 text-[13px] font-bold text-perigo transition hover:bg-rose-400/[0.24] disabled:cursor-not-allowed disabled:opacity-40"

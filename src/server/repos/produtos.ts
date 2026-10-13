@@ -110,7 +110,7 @@ export async function listarProdutos(clienteId: string): Promise<Produto[]> {
       .range(de, de + PAGINA - 1)
 
     if (ehIdInvalido(error)) return []
-    if (error) throw new Error(`não deu para ler o catálogo: ${error.message}`)
+    if (error) throw new Error(`não foi possível ler o catálogo: ${error.message}`)
     todos.push(...(data as LinhaDoProduto[]))
     if (data.length < PAGINA) break
   }
@@ -132,7 +132,7 @@ export async function temProdutoAtivo(clienteId: string): Promise<boolean> {
     .eq('client_id', clienteId)
     .is('arquivado_em', null)
   if (ehIdInvalido(error)) return false
-  if (error) throw new Error(`não deu para ler o catálogo: ${error.message}`)
+  if (error) throw new Error(`não foi possível ler o catálogo: ${error.message}`)
   return (count ?? 0) > 0
 }
 
@@ -146,7 +146,7 @@ export async function produtoPorId(clienteId: string, produtoId: string): Promis
     .maybeSingle()
 
   if (ehIdInvalido(error)) return null
-  if (error) throw new Error(`não deu para ler o item do catálogo: ${error.message}`)
+  if (error) throw new Error(`não foi possível ler o item do catálogo: ${error.message}`)
   return data ? paraProduto(data as LinhaDoProduto) : null
 }
 
@@ -180,7 +180,7 @@ export async function criarProduto(
   if (error?.code === '23505') {
     return { ok: false, motivo: `já existe "${conferido.nome}" no catálogo` }
   }
-  if (error) return { ok: false, motivo: `não deu para criar: ${error.message}` }
+  if (error) return { ok: false, motivo: `não foi possível criar: ${error.message}` }
 
   return { ok: true, produto: paraProduto(data as LinhaDoProduto) }
 }
@@ -205,7 +205,7 @@ export async function renomearProduto(
     return { ok: false, motivo: `já existe "${conferido.nome}" no catálogo` }
   }
   if (ehIdInvalido(error)) return { ok: false, motivo: 'esse item do catálogo não existe' }
-  if (error) return { ok: false, motivo: `não deu para renomear: ${error.message}` }
+  if (error) return { ok: false, motivo: `não foi possível renomear: ${error.message}` }
   if (!data) return { ok: false, motivo: 'esse item do catálogo não existe' }
 
   return { ok: true, produto: paraProduto(data as LinhaDoProduto) }
@@ -245,7 +245,7 @@ export async function definirPreco(
     .maybeSingle()
 
   if (ehIdInvalido(error)) return { ok: false, motivo: 'esse item do catálogo não existe' }
-  if (error) return { ok: false, motivo: `não deu para salvar o preço: ${error.message}` }
+  if (error) return { ok: false, motivo: `não foi possível salvar o preço: ${error.message}` }
   if (!data) return { ok: false, motivo: 'esse item do catálogo não existe' }
 
   return { ok: true, produto: paraProduto(data as LinhaDoProduto) }
@@ -276,7 +276,7 @@ export async function definirCategoria(
     .maybeSingle()
 
   if (ehIdInvalido(error)) return { ok: false, motivo: 'esse item do catálogo não existe' }
-  if (error) return { ok: false, motivo: `não deu para salvar a categoria: ${error.message}` }
+  if (error) return { ok: false, motivo: `não foi possível salvar a categoria: ${error.message}` }
   if (!data) return { ok: false, motivo: 'esse item do catálogo não existe' }
 
   return { ok: true, produto: paraProduto(data as LinhaDoProduto) }
@@ -312,7 +312,7 @@ export async function moverProduto(
       .update({ ordem, atualizado_em: agora })
       .eq('client_id', clienteId)
       .eq('id', id)
-    if (error) return { ok: false, motivo: `não deu para mudar a ordem: ${error.message}` }
+    if (error) return { ok: false, motivo: `não foi possível mudar a ordem: ${error.message}` }
   }
   return { ok: true }
 }
@@ -348,7 +348,7 @@ export async function arquivarProduto(
     }
   }
   if (ehIdInvalido(error)) return { ok: false, motivo: 'esse item do catálogo não existe' }
-  if (error) return { ok: false, motivo: `não deu para arquivar: ${error.message}` }
+  if (error) return { ok: false, motivo: `não foi possível arquivar: ${error.message}` }
   if (!data) return { ok: false, motivo: 'esse item do catálogo não existe' }
 
   return { ok: true, produto: paraProduto(data as LinhaDoProduto) }

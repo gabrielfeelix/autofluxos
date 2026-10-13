@@ -84,7 +84,7 @@ export async function agendar(tarefa: {
   // **Falhar aqui não pode derrubar a conversa.** Quem chama é o webhook, no
   // meio de uma mensagem que já foi deduplicada: uma exceção deixaria a pessoa
   // sem resposta para não ter conseguido agendar uma cobrança futura.
-  if (error) console.error('[tarefas] não deu para agendar', error.message)
+  if (error) console.error('[tarefas] não foi possível agendar', error.message)
 }
 
 /**
@@ -100,7 +100,7 @@ export async function cancelarPorChave(chave: string): Promise<void> {
     .eq('chave', chave)
     .eq('estado', 'pendente')
 
-  if (error) console.error('[tarefas] não deu para cancelar', error.message)
+  if (error) console.error('[tarefas] não foi possível cancelar', error.message)
 }
 
 /**
@@ -114,7 +114,7 @@ export async function pegarTarefas(limite = TAREFAS_POR_PASSADA): Promise<Tarefa
   const { data, error } = await db().rpc('pegar_tarefas', { p_limite: limite })
 
   if (ehIdInvalido(error)) return []
-  if (error) throw new Error(`não deu para pegar as tarefas: ${error.message}`)
+  if (error) throw new Error(`não foi possível pegar as tarefas: ${error.message}`)
 
   return (data as Linha[])
     .filter((linha) => ehTipoDeTarefa(linha.tipo))
@@ -134,7 +134,7 @@ export async function marcarFeita(tarefaId: string): Promise<void> {
     .update({ estado: 'feita', erro: null })
     .eq('id', tarefaId)
 
-  if (error) console.error('[tarefas] não deu para marcar como feita', error.message)
+  if (error) console.error('[tarefas] não foi possível marcar como feita', error.message)
 }
 
 /**
@@ -155,7 +155,7 @@ export async function marcarFalha(
     .update({ estado: desistiu ? 'falhou' : 'pendente', erro: motivo.slice(0, 500) })
     .eq('id', tarefaId)
 
-  if (error) console.error('[tarefas] não deu para registrar a falha', error.message)
+  if (error) console.error('[tarefas] não foi possível registrar a falha', error.message)
 }
 
 /**
@@ -172,5 +172,5 @@ export async function devolverDesconhecidas(): Promise<void> {
     .eq('estado', 'rodando')
     .lt('rodou_em', new Date(Date.now() - 10 * 60 * 1000).toISOString())
 
-  if (error) console.error('[tarefas] não deu para devolver as presas', error.message)
+  if (error) console.error('[tarefas] não foi possível devolver as presas', error.message)
 }

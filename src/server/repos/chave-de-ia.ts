@@ -88,7 +88,7 @@ export async function guardarChave(clienteId: string, chave: string): Promise<vo
     // fica órfã no cofre para sempre, e segredo que ninguém usa é segredo que
     // ninguém percebe sendo usado.
     await apagarDoCofre(nova)
-    if (error) throw new Error(`não deu para guardar a chave: ${error.message}`)
+    if (error) throw new Error(`não foi possível guardar a chave: ${error.message}`)
     throw new Error('esta conta não existe')
   }
 
@@ -105,7 +105,7 @@ export async function apagarChave(clienteId: string): Promise<void> {
     .update({ ia_chave_ref: null })
     .eq('id', clienteId)
 
-  if (error) throw new Error(`não deu para apagar a chave: ${error.message}`)
+  if (error) throw new Error(`não foi possível apagar a chave: ${error.message}`)
   await apagarDoCofre(ref)
 }
 
@@ -127,7 +127,7 @@ async function refDaConta(clienteId: string): Promise<string | null> {
     .eq('id', clienteId)
     .maybeSingle()
 
-  if (error) throw new Error(`não deu para achar a conta: ${error.message}`)
+  if (error) throw new Error(`não foi possível achar a conta: ${error.message}`)
   const ref = (data as { ia_chave_ref: string | null } | null)?.ia_chave_ref ?? null
   return ref === null || ref.trim() === '' ? null : ref
 }

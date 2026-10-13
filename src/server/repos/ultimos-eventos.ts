@@ -25,7 +25,7 @@ export async function ultimaMensagemRecebida(clienteId: string): Promise<string 
 
   if (error) {
     if (ehIdInvalido(error)) return null
-    throw new Error(`não deu para ler a última mensagem: ${error.message}`)
+    throw new Error(`não foi possível ler a última mensagem: ${error.message}`)
   }
   return (data as { ultima_mensagem_em: string } | null)?.ultima_mensagem_em ?? null
 }
@@ -42,7 +42,7 @@ export async function ultimaChegadaDeAnuncio(clienteId: string): Promise<string 
 
   if (error) {
     if (ehIdInvalido(error)) return null
-    throw new Error(`não deu para ler a última chegada de anúncio: ${error.message}`)
+    throw new Error(`não foi possível ler a última chegada de anúncio: ${error.message}`)
   }
   return (data as { criado_em: string } | null)?.criado_em ?? null
 }

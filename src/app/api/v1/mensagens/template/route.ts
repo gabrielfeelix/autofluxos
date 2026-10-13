@@ -66,7 +66,7 @@ export async function POST(request: Request) {
     reserva = await reservarIdempotencia({ clienteId: acesso.clienteId, chave, chaveApiId: acesso.chaveId, rota: ROTA, impressao })
   } catch (erro) {
     console.error(`[api] idempotência falhou (chave ${acesso.publico}):`, erro instanceof Error ? erro.message : erro)
-    return erroDaApi(500, 'erro_interno', 'Não deu para enviar agora. Tente de novo com a mesma Idempotency-Key.')
+    return erroDaApi(500, 'erro_interno', 'Não foi possível enviar agora. Tente de novo com a mesma Idempotency-Key.')
   }
 
   if (reserva.tipo === 'repetida') {
@@ -93,6 +93,6 @@ export async function POST(request: Request) {
   } catch (erro) {
     await liberarIdempotencia(acesso.clienteId, chave)
     console.error(`[api] POST mensagens/template falhou (chave ${acesso.publico}):`, erro instanceof Error ? erro.message : erro)
-    return erroDaApi(500, 'erro_interno', 'Não deu para enviar agora. Tente de novo com a mesma Idempotency-Key.')
+    return erroDaApi(500, 'erro_interno', 'Não foi possível enviar agora. Tente de novo com a mesma Idempotency-Key.')
   }
 }

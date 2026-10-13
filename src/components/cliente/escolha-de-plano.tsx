@@ -115,11 +115,11 @@ export function EscolhaDePlano({
         const r = await pedirTroca(desejado, ciente, ciclo)
         if (!r.ok) {
           setPedido(anterior)
-          setErro(r.erro ?? 'não deu para enviar o pedido')
+          setErro(r.erro ?? 'não foi possível enviar o pedido')
         }
       } catch {
         setPedido(anterior)
-        setErro('não deu para enviar o pedido agora')
+        setErro('não foi possível enviar o pedido agora')
       }
     })
   }
@@ -165,7 +165,7 @@ export function EscolhaDePlano({
 
         {descida && (
           <p role="status" className="mt-4 rounded-[11px] border border-amber-400/30 bg-amber-400/[0.07] px-4 py-3 text-[12.5px] leading-5 text-soft">
-            <strong className="font-semibold">Em {diaPorExtenso(descida.para)}, a organização passa para o plano {descida.plano.nome}.</strong>{' '}
+            <strong className="font-semibold">Em {diaPorExtenso(descida.para)}, a organização muda para o plano {descida.plano.nome}.</strong>{' '}
             Até lá, tudo continua funcionando: é o prazo para salvar e exportar. O que sai fica só leitura, com a configuração guardada, e nada é apagado.
           </p>
         )}
@@ -273,7 +273,7 @@ export function EscolhaDePlano({
         <p className="mt-1 mb-3 max-w-[650px] text-[12.5px] leading-6 text-dim">
           {podeMexer
             ? 'O pedido vai para a 4YU, que confirma com você antes de mudar a cobrança.'
-            : 'Só o proprietário ou um administrador da organização pede mudança de plano. Os planos ficam aqui para consulta.'}
+            : 'Apenas o proprietário ou um administrador da organização pode mudar o plano. Os planos ficam aqui para consulta.'}
         </p>
 
         {aberto && (
@@ -515,14 +515,14 @@ function Cartao({
           title={
             podeMexer
               ? `Pedir mudança para o plano ${plano.nome}, pagamento ${anual ? ciclo : 'mensal'}`
-              : 'Só o proprietário ou um administrador da organização pede mudança de plano'
+              : 'Apenas o proprietário ou um administrador da organização pode mudar o plano'
           }
           className="botao-secundario botao-md w-full"
         >
           {rodando
             ? 'Enviando...'
             : ehOAtual
-              ? `Passar o ${plano.nome} para anual`
+              ? `Mudar o ${plano.nome} para anual`
               : `Mudar para ${plano.nome} ${anual ? ciclo : 'mensal'}`}
         </button>
       )}

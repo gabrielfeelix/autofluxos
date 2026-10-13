@@ -107,7 +107,7 @@ export default async function Pagina({
     equipe = (await membrosDaConta(cliente.id)).map((m) => ({ id: m.id, nome: m.nome }))
   } catch (erro) {
     console.error(
-      '[editor] não deu para ler a equipe',
+      '[editor] não foi possível ler a equipe',
       erro instanceof Error ? erro.message : erro,
     )
   }

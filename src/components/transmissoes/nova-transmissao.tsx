@@ -198,7 +198,7 @@ function Formulario({
       })
 
       if (!r.ok) {
-        setErro(r.erro ?? 'Não deu para criar a transmissão.')
+        setErro(r.erro ?? 'Não foi possível criar a transmissão.')
         return
       }
 

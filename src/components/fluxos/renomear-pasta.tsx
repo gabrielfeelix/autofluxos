@@ -9,7 +9,7 @@ export function RenomearPasta({ clienteId, pastaId, nome }: { clienteId: string;
     <ModalFormulario
       botao="Renomear"
       titulo="Renomear pasta"
-      descricao="Só o nome muda. As automações continuam nela."
+      descricao="Apenas o nome muda. As automações continuam nela."
       rotuloEnviar="Salvar nome"
       variante="secundario"
       tamanho="sm"

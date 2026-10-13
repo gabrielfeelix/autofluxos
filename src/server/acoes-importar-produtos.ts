@@ -92,7 +92,7 @@ async function lerArquivo(
     return {
       ok: false,
       erro:
-        e instanceof Error && !/invalid zip/i.test(e.message) ? e.message : 'não deu para abrir esse arquivo',
+        e instanceof Error && !/invalid zip/i.test(e.message) ? e.message : 'não foi possível abrir esse arquivo',
     }
   }
   return {

@@ -33,7 +33,7 @@ export async function naoLidasPorContato(
     // **Degrada, não derruba.** A insígnia de não lidas é conforto; o Inbox é a
     // tela que alguém deixa aberta o dia inteiro, e ela não pode parar de abrir
     // porque uma contagem falhou.
-    console.error('[leituras] não deu para contar as não lidas', error.message)
+    console.error('[leituras] não foi possível contar as não lidas', error.message)
     return porContato
   }
 
@@ -64,7 +64,7 @@ export async function marcarComoLida(usuarioId: string | null, contatoId: string
       { onConflict: 'usuario_id,contato_id' },
     )
 
-  if (error) console.error('[leituras] não deu para marcar como lida', error.message)
+  if (error) console.error('[leituras] não foi possível marcar como lida', error.message)
 }
 
 /**
@@ -95,7 +95,7 @@ export async function quandoLeu(
 
   if (ehIdInvalido(error)) return null
   if (error) {
-    console.error('[leituras] não deu para saber quando foi lida', error.message)
+    console.error('[leituras] não foi possível saber quando foi lida', error.message)
     return null
   }
 
@@ -139,7 +139,7 @@ export async function marcarComoNaoLida(
     .maybeSingle()
 
   if (ehIdInvalido(error)) return { ok: false, erro: 'esta conversa não existe' }
-  if (error) return { ok: false, erro: 'não deu para ler a conversa' }
+  if (error) return { ok: false, erro: 'não foi possível ler a conversa' }
 
   const ultima = (data as { ts: string } | null)?.ts
   if (!ultima) return { ok: false, erro: 'ninguém falou nesta conversa ainda' }
@@ -154,8 +154,8 @@ export async function marcarComoNaoLida(
     )
 
   if (erroDaEscrita) {
-    console.error('[leituras] não deu para marcar como não lida', erroDaEscrita.message)
-    return { ok: false, erro: 'não deu para marcar como não lida' }
+    console.error('[leituras] não foi possível marcar como não lida', erroDaEscrita.message)
+    return { ok: false, erro: 'não foi possível marcar como não lida' }
   }
 
   return { ok: true }
@@ -194,8 +194,8 @@ export async function marcarTodasComoLidas(
     )
 
   if (error) {
-    console.error('[leituras] não deu para marcar todas como lidas', error.message)
-    return { ok: false, erro: 'não deu para marcar as conversas como lidas' }
+    console.error('[leituras] não foi possível marcar todas como lidas', error.message)
+    return { ok: false, erro: 'não foi possível marcar as conversas como lidas' }
   }
 
   return { ok: true }

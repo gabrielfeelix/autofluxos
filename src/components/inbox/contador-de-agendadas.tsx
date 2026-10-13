@@ -132,7 +132,7 @@ function Linha({
               comecar(async () => {
                 setErro(null)
                 const r = await acaoCancelarAgendada(clienteId, agendada.id)
-                if (!r.ok) setErro(r.erro ?? 'não deu para cancelar')
+                if (!r.ok) setErro(r.erro ?? 'não foi possível cancelar')
                 else marcarCancelada(agendada.id)
               })
             }

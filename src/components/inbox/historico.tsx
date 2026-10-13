@@ -323,7 +323,7 @@ export function Historico({
         // Mandar de novo tira as que falharam antes: o texto voltou ao campo.
         setPendentes((atuais) => [...atuais.filter((p) => !p.erro), { local: envio.local, texto: envio.texto ?? '' }])
       } else if (envio.estado === 'falhou') {
-        setPendentes((atuais) => atuais.map((p) => (p.local === envio.local ? { ...p, erro: envio.erro ?? 'não deu para enviar' } : p)))
+        setPendentes((atuais) => atuais.map((p) => (p.local === envio.local ? { ...p, erro: envio.erro ?? 'não foi possível enviar' } : p)))
       } else {
         void Promise.resolve(conferirRef.current(null)).finally(() =>
           setPendentes((atuais) => atuais.filter((p) => p.local !== envio.local)),

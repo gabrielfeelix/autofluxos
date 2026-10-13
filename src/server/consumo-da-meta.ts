@@ -27,7 +27,7 @@ async function contasComWaba(): Promise<Conta[]> {
     .select('client_id, waba_id, token_ref')
     .eq('provider', 'cloud-api')
     .not('waba_id', 'is', null)
-  if (error) throw new Error(`não deu para listar as contas do WhatsApp: ${error.message}`)
+  if (error) throw new Error(`não foi possível listar as contas do WhatsApp: ${error.message}`)
 
   // Uma WABA pode ter mais de um número; a consulta é por WABA.
   const porWaba = new Map<string, Conta>()
@@ -151,7 +151,7 @@ async function pontosDoMes(agora: Date, clienteId?: string): Promise<PontoDaCont
 
   const { data, error } = await consulta
   if (error) {
-    console.error('[consumo-da-meta] não deu para ler o consumo', error.message)
+    console.error('[consumo-da-meta] não foi possível ler o consumo', error.message)
     return []
   }
   return ((data ?? []) as Record<string, unknown>[]).map((l) => ({
@@ -193,7 +193,7 @@ export async function consumoDaMetaParaOPeriodo(clienteId: string, de: string, a
     .gte('dia', `${de.slice(0, 7)}-01`)
     .lte('dia', ate)
   if (error) {
-    console.error('[consumo-da-meta] não deu para ler o consumo do período', error.message)
+    console.error('[consumo-da-meta] não foi possível ler o consumo do período', error.message)
     return []
   }
   return ((data ?? []) as Record<string, unknown>[]).map((l) => ({

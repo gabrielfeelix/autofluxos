@@ -82,7 +82,7 @@ export async function importarLeadsAntigos(entrada: {
 
     if (!busca.ok) {
       await alertar(
-        'não deu para importar um formulário',
+        'não foi possível importar um formulário',
         `${busca.erro.mensagem} (formulário ${formulario.id})`,
         {},
       )

@@ -47,7 +47,7 @@ export function TrazerTodos({
                 try {
                   const r = await acaoTrazerTodosParaOQuadro(clienteId, quadroId)
                   if (!r.ok) {
-                    setResultado(r.erro ?? 'não deu para trazer')
+                    setResultado(r.erro ?? 'não foi possível trazer')
                     return
                   }
                   setResultado(
@@ -56,7 +56,7 @@ export function TrazerTodos({
                       : `${r.postos} trazidos para a primeira etapa.`,
                   )
                 } catch {
-                  setResultado('não deu para trazer agora, tente de novo')
+                  setResultado('não foi possível trazer agora, tente de novo')
                 }
               })
             }

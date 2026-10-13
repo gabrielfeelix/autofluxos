@@ -115,12 +115,12 @@ export async function gravarAlerta(entrada: {
       })
 
     if (error) {
-      console.error('[alerta] não deu para gravar', error.message)
+      console.error('[alerta] não foi possível gravar', error.message)
       return false
     }
     return true
   } catch (erro) {
-    console.error('[alerta] não deu para gravar', erro)
+    console.error('[alerta] não foi possível gravar', erro)
     return false
   }
 }
@@ -139,7 +139,7 @@ export async function listarAlertas(opcoes: {
   if (opcoes.apenasAbertos) consulta = consulta.is('visto_em', null)
 
   const { data, error } = await consulta
-  if (error) throw new Error(`não deu para listar os alertas: ${error.message}`)
+  if (error) throw new Error(`não foi possível listar os alertas: ${error.message}`)
   return (data as Linha[]).map(paraAlerta)
 }
 
@@ -150,7 +150,7 @@ export async function contarAlertasAbertos(): Promise<number> {
     .select('id', { count: 'exact', head: true })
     .is('visto_em', null)
 
-  if (error) throw new Error(`não deu para contar os alertas: ${error.message}`)
+  if (error) throw new Error(`não foi possível contar os alertas: ${error.message}`)
   return count ?? 0
 }
 
@@ -166,7 +166,7 @@ export async function marcarAlertaVisto(id?: string): Promise<void> {
   consulta = id ? consulta.eq('id', id) : consulta.is('visto_em', null)
 
   const { error } = await consulta
-  if (error) throw new Error(`não deu para marcar o alerta: ${error.message}`)
+  if (error) throw new Error(`não foi possível marcar o alerta: ${error.message}`)
 }
 
 /**
@@ -197,13 +197,13 @@ export async function limparAlertasVencidos(agora: Date = new Date()): Promise<n
     .lt('criado_em', limite.toISOString())
     .limit(TETO_POR_LIMPEZA)
 
-  if (error) throw new Error(`não deu para achar alertas vencidos: ${error.message}`)
+  if (error) throw new Error(`não foi possível achar alertas vencidos: ${error.message}`)
 
   const ids = (data as { id: string }[]).map((l) => l.id)
   if (ids.length === 0) return 0
 
   const { error: erroAoApagar } = await db().from('alertas').delete().in('id', ids)
-  if (erroAoApagar) throw new Error(`não deu para apagar alertas: ${erroAoApagar.message}`)
+  if (erroAoApagar) throw new Error(`não foi possível apagar alertas: ${erroAoApagar.message}`)
 
   return ids.length
 }

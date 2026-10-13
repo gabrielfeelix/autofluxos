@@ -50,7 +50,7 @@ export async function acaoAdminSalvarCadastro(
     try {
       await atualizarObservacoes(organizacaoId, String(formData.get('observacoes') ?? ''))
     } catch (erro) {
-      return { erro: erro instanceof Error ? erro.message : 'não deu para salvar' }
+      return { erro: erro instanceof Error ? erro.message : 'não foi possível salvar' }
     }
     await registrar({
       acao: 'editou_organizacao',
@@ -205,7 +205,7 @@ export async function acaoAdminDarAcesso(
       const criado = await cadastrarSemTrocarDeSessao({ nome, email, senha })
       usuarioId = criado.user.id
     } catch (erro) {
-      return { erro: erro instanceof Error ? erro.message : 'não deu para cadastrar' }
+      return { erro: erro instanceof Error ? erro.message : 'não foi possível cadastrar' }
     }
   }
 
@@ -214,7 +214,7 @@ export async function acaoAdminDarAcesso(
       await autenticacao().api.addMember({ body: { userId: usuarioId, role: PAPEL_DA_FUNCAO[funcao], organizationId: organizacaoId } })
     } catch (erro) {
       if ((await papelNaConta(organizacaoId, usuarioId)) === null) {
-        return { erro: erro instanceof Error ? erro.message : 'não deu para ligar a pessoa à organização' }
+        return { erro: erro instanceof Error ? erro.message : 'não foi possível ligar a pessoa à organização' }
       }
     }
   }
@@ -718,7 +718,7 @@ export async function acaoAdminUsuario(usuarioId: string, operacao: OperacaoDeUs
       await api.revokeUserSessions({ ...comHeaders, body: { userId: usuarioId } })
     }
   } catch (erro) {
-    return { ok: false, erro: erro instanceof Error ? erro.message : 'não deu para fazer isso' }
+    return { ok: false, erro: erro instanceof Error ? erro.message : 'não foi possível fazer isso' }
   }
 
   const acao = {
@@ -755,7 +755,7 @@ export async function acaoAdminEditarUsuario(usuarioId: string, dados: { nome: s
   try {
     await autenticacao().api.adminUpdateUser({ headers: await headers(), body: { userId: usuarioId, data: { name: nome, email } } })
   } catch (erro) {
-    return { ok: false, erro: erro instanceof Error ? erro.message : 'não deu para salvar' }
+    return { ok: false, erro: erro instanceof Error ? erro.message : 'não foi possível salvar' }
   }
   await registrar({
     acao: 'editou_usuario',
@@ -785,7 +785,7 @@ export async function acaoAdminRedefinirSenha(usuarioId: string, senha: string):
     await api.setUserPassword({ ...comHeaders, body: { userId: usuarioId, newPassword: senha } })
     if (usuarioId !== sessao.usuario.id) await api.revokeUserSessions({ ...comHeaders, body: { userId: usuarioId } })
   } catch (erro) {
-    return { ok: false, erro: erro instanceof Error ? erro.message : 'não deu para redefinir a senha' }
+    return { ok: false, erro: erro instanceof Error ? erro.message : 'não foi possível redefinir a senha' }
   }
   await registrar({
     acao: 'redefiniu_senha',
@@ -809,7 +809,7 @@ export async function acaoAdminPorNaOrganizacao(usuarioId: string, organizacaoId
   dados.set('email', alvo.email)
   dados.set('funcao', funcao)
   const r = await acaoAdminDarAcesso(organizacaoId, dados)
-  return r.ok ? { ok: true } : { ok: false, erro: r.erro ?? 'não deu para adicionar à organização' }
+  return r.ok ? { ok: true } : { ok: false, erro: r.erro ?? 'não foi possível adicionar à organização' }
 }
 
 /** O que impede excluir o login: as organizações em que ele é o único dono. */
@@ -843,7 +843,7 @@ export async function acaoAdminExcluirUsuario(usuarioId: string): Promise<{ ok: 
   try {
     await autenticacao().api.removeUser({ headers: await headers(), body: { userId: usuarioId } })
   } catch (erro) {
-    return { ok: false, erro: erro instanceof Error ? erro.message : 'não deu para excluir' }
+    return { ok: false, erro: erro instanceof Error ? erro.message : 'não foi possível excluir' }
   }
   return { ok: true }
 }
@@ -901,7 +901,7 @@ export async function acaoAdminSalvarTetoDaApi(organizacaoId: string, teto: numb
   }
   const { error } = await db().from('clients').update({ teto_api_diario: teto }).eq('id', organizacaoId)
   if (error) {
-    return { ok: false, erro: error.code === '42703' ? 'O banco ainda não tem este campo (migration 0121).' : 'Não deu para salvar agora.' }
+    return { ok: false, erro: error.code === '42703' ? 'O banco ainda não tem este campo (migration 0121).' : 'Não foi possível salvar agora.' }
   }
   await registrar({
     acao: 'mudou_teto_da_api',

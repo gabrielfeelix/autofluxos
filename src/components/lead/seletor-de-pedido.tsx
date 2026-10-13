@@ -83,7 +83,7 @@ export function SeletorDePedido({
       if (r.ok) setAchado(r)
       else setErro(r.erro)
     } catch {
-      if (ultima.current === limpo) setErro('não deu para buscar agora, tente de novo')
+      if (ultima.current === limpo) setErro('não foi possível buscar agora, tente de novo')
     } finally {
       if (ultima.current === limpo) setBuscando(false)
     }
@@ -109,9 +109,9 @@ export function SeletorDePedido({
         setNumero('')
         ultima.current = ''
         setAchado(null)
-      } else setErro(r.erro ?? 'não deu para enviar')
+      } else setErro(r.erro ?? 'não foi possível enviar')
     } catch {
-      setErro('não deu para enviar agora, tente de novo')
+      setErro('não foi possível enviar agora, tente de novo')
     } finally {
       setEnviando(false)
     }
@@ -129,7 +129,7 @@ export function SeletorDePedido({
             lido.current = true
             acaoListarPedidosDoContato(clienteId, contatoId)
               .then(setDoContato)
-              .catch(() => setDoContato({ ok: false, erro: 'não deu para ler os pedidos agora' }))
+              .catch(() => setDoContato({ ok: false, erro: 'não foi possível ler os pedidos agora' }))
           }}
           aria-label="Mandar o status de um pedido"
           aria-expanded={aberto}

@@ -70,7 +70,7 @@ export function ListaOrdenavel({
       const r = await acaoReordenarFluxos(clienteId, nova)
       if (!r.ok) {
         setOrdem(anterior)
-        setErro(r.erro ?? 'não deu para reordenar')
+        setErro(r.erro ?? 'não foi possível reordenar')
       }
     })
   }

@@ -36,7 +36,7 @@ export async function acaoGuardarChaveDeIa(
   try {
     await guardarChave(clienteId, chave)
   } catch (erro) {
-    return { erro: erro instanceof Error ? erro.message : 'não deu para guardar a chave' }
+    return { erro: erro instanceof Error ? erro.message : 'não foi possível guardar a chave' }
   }
 
   revalidatePath(`/clientes/${clienteId}/ajustes/contexto`)
@@ -54,7 +54,7 @@ export async function acaoApagarChaveDeIa(
   try {
     await apagarChave(clienteId)
   } catch (erro) {
-    return { ok: false, erro: erro instanceof Error ? erro.message : 'não deu para apagar' }
+    return { ok: false, erro: erro instanceof Error ? erro.message : 'não foi possível apagar' }
   }
 
   revalidatePath(`/clientes/${clienteId}/ajustes/contexto`)

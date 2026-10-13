@@ -42,7 +42,7 @@ export async function consultarPedidoDaConta(
   try {
     credencial = await lerCredencial(loja.conexaoId, clienteId)
   } catch {
-    return { ok: false, motivo: 'não deu para ler o token da loja' }
+    return { ok: false, motivo: 'não foi possível ler o token da loja' }
   }
   const r = await consultarPedido({ endereco: loja.endereco, credencial }, entrada, chamarHttp)
   if (!r.ok || !r.valor.encontrado) return r
@@ -72,7 +72,7 @@ export async function listarPedidosDaConta(
   try {
     credencial = await lerCredencial(loja.conexaoId, clienteId)
   } catch {
-    return { ok: false, motivo: 'não deu para ler o token da loja' }
+    return { ok: false, motivo: 'não foi possível ler o token da loja' }
   }
   return listarPedidosDaPessoa({ endereco: loja.endereco, credencial }, quem, chamarHttp)
 }
@@ -91,7 +91,7 @@ export async function cuponsDaConta(
   try {
     credencial = await lerCredencial(loja.conexaoId, clienteId)
   } catch {
-    return { ok: false, motivo: 'não deu para ler o token da loja' }
+    return { ok: false, motivo: 'não foi possível ler o token da loja' }
   }
   const hoje = new Date().toLocaleDateString('sv-SE', { timeZone: 'America/Sao_Paulo' })
   return listarCupons({ endereco: loja.endereco, credencial }, hoje, chamarHttp)
@@ -130,7 +130,7 @@ export async function cuponsDoChat(
   try {
     credencial = await lerCredencial(loja.conexaoId, clienteId)
   } catch {
-    return { ok: false, motivo: 'não deu para ler o token da loja' }
+    return { ok: false, motivo: 'não foi possível ler o token da loja' }
   }
   const noMagento = { de: `${periodo.de} 03:00:00`, ate: `${diaSeguinte(periodo.ate)} 03:00:00` }
 

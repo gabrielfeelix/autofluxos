@@ -44,7 +44,7 @@ export async function listarEtiquetas(clienteId: string): Promise<Etiqueta[]> {
     .order('nome', { ascending: true })
 
   if (ehIdInvalido(error)) return []
-  if (error) throw new Error(`não deu para listar as etiquetas: ${error.message}`)
+  if (error) throw new Error(`não foi possível listar as etiquetas: ${error.message}`)
   return (data as Linha[]).map(paraEtiqueta)
 }
 
@@ -68,7 +68,7 @@ export async function listarEtiquetasComContagem(clienteId: string): Promise<Eti
     .order('nome', { ascending: true })
 
   if (ehIdInvalido(error)) return []
-  if (error) throw new Error(`não deu para contar as etiquetas: ${error.message}`)
+  if (error) throw new Error(`não foi possível contar as etiquetas: ${error.message}`)
 
   return (data as (Linha & { criado_em: string; contato_etiquetas: { count: number }[] })[]).map((linha) => ({
     ...paraEtiqueta(linha),
@@ -159,7 +159,7 @@ export async function criarEtiqueta(
     .single()
 
   if (error?.code === '23505') return { ok: false, motivo: `já existe uma etiqueta “${nome}”` }
-  if (error) throw new Error(`não deu para criar a etiqueta: ${error.message}`)
+  if (error) throw new Error(`não foi possível criar a etiqueta: ${error.message}`)
 
   const criada = data as { id: string; nome: string; cor: CorDeEtiqueta }
   return { ok: true, etiqueta: criada }
@@ -189,7 +189,7 @@ export async function editarEtiqueta(
 
   if (ehIdInvalido(error)) return { ok: false, motivo: 'esta etiqueta não existe mais' }
   if (error?.code === '23505') return { ok: false, motivo: `já existe uma etiqueta “${nome}”` }
-  if (error) throw new Error(`não deu para editar a etiqueta: ${error.message}`)
+  if (error) throw new Error(`não foi possível editar a etiqueta: ${error.message}`)
   if ((data?.length ?? 0) !== 1) return { ok: false, motivo: 'esta etiqueta não existe mais' }
   return { ok: true }
 }
@@ -227,7 +227,7 @@ export async function apagarEtiqueta(
     .select('id')
 
   if (ehIdInvalido(error)) return { ok: false, motivo: 'esta etiqueta não existe mais' }
-  if (error) throw new Error(`não deu para apagar a etiqueta: ${error.message}`)
+  if (error) throw new Error(`não foi possível apagar a etiqueta: ${error.message}`)
   return (data?.length ?? 0) === 1
     ? { ok: true }
     : { ok: false, motivo: 'esta etiqueta não existe mais' }
@@ -251,7 +251,7 @@ export async function etiquetasDeContatos(
     .in('contato_id', contatos)
 
   if (ehIdInvalido(error)) return porContato
-  if (error) throw new Error(`não deu para ler as etiquetas dos contatos: ${error.message}`)
+  if (error) throw new Error(`não foi possível ler as etiquetas dos contatos: ${error.message}`)
 
   type Junta = { contato_id: string; etiquetas: Linha | Linha[] | null }
   for (const linha of data as unknown as Junta[]) {
@@ -299,8 +299,8 @@ export async function marcarContatos(
   if (ehIdInvalido(erroDaEtiqueta) || ehIdInvalido(erroDosContatos)) {
     return { ok: false, motivo: 'etiqueta ou contato inválido' }
   }
-  if (erroDaEtiqueta) throw new Error(`não deu para conferir a etiqueta: ${erroDaEtiqueta.message}`)
-  if (erroDosContatos) throw new Error(`não deu para conferir os contatos: ${erroDosContatos.message}`)
+  if (erroDaEtiqueta) throw new Error(`não foi possível conferir a etiqueta: ${erroDaEtiqueta.message}`)
+  if (erroDosContatos) throw new Error(`não foi possível conferir os contatos: ${erroDosContatos.message}`)
   if (!etiqueta) return { ok: false, motivo: 'esta etiqueta não é deste cliente' }
 
   const validos = (doCliente as { id: string }[]).map((c) => c.id)
@@ -318,7 +318,7 @@ export async function marcarContatos(
         { onConflict: 'contato_id,etiqueta_id', ignoreDuplicates: true },
       )
       .select('contato_id')
-    if (error) throw new Error(`não deu para etiquetar: ${error.message}`)
+    if (error) throw new Error(`não foi possível etiquetar: ${error.message}`)
     mudaram = data?.length ?? 0
   } else {
     const { data, error } = await db()
@@ -327,7 +327,7 @@ export async function marcarContatos(
       .eq('etiqueta_id', etiquetaId)
       .in('contato_id', validos)
       .select('contato_id')
-    if (error) throw new Error(`não deu para remover a etiqueta: ${error.message}`)
+    if (error) throw new Error(`não foi possível remover a etiqueta: ${error.message}`)
     mudaram = data?.length ?? 0
   }
 
@@ -357,6 +357,6 @@ export async function contatosComEtiqueta(
     .eq('contacts.client_id', clienteId)
 
   if (ehIdInvalido(error)) return []
-  if (error) throw new Error(`não deu para filtrar por etiqueta: ${error.message}`)
+  if (error) throw new Error(`não foi possível filtrar por etiqueta: ${error.message}`)
   return (data as { contato_id: string }[]).map((linha) => linha.contato_id)
 }

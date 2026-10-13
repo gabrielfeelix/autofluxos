@@ -37,7 +37,7 @@ export async function listarSugestoes(): Promise<Sugestao[]> {
     .limit(500)
 
   if (ehIdInvalido(error)) return []
-  if (error) throw new Error(`não deu para ler as sugestões: ${error.message}`)
+  if (error) throw new Error(`não foi possível ler as sugestões: ${error.message}`)
 
   return (data as Linha[]).map((linha) => {
     const detalhes = linha.detalhes ?? {}

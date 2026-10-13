@@ -128,7 +128,7 @@ export async function equipesDoUsuario(
 
   if (error) {
     // Falha fechada: sem equipe, o escopo `equipe` não alcança nada.
-    console.error('[permissoes] não deu para ler as equipes:', error.message)
+    console.error('[permissoes] não foi possível ler as equipes:', error.message)
     return []
   }
 
@@ -155,7 +155,7 @@ export async function sobrescritasDoUsuario(
     .eq('usuario_id', usuarioId)
 
   if (error) {
-    console.error('[permissoes] não deu para ler as capacidades:', error.message)
+    console.error('[permissoes] não foi possível ler as capacidades:', error.message)
     return {}
   }
 

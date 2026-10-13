@@ -59,7 +59,7 @@ export function TabelaDeAlertas({
         const r = await acaoVerAlerta(id)
         if (!r.ok) {
           setAlertas(anterior)
-          setAviso(r.erro ?? 'não deu para marcar')
+          setAviso(r.erro ?? 'não foi possível marcar')
         }
       } catch {
         setAlertas(anterior)

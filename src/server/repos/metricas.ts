@@ -59,7 +59,7 @@ export async function medirDesfechos(
 
   const vazio = (): DesfechoMensal => ({ atual: { ...SEM_CONVERSAS }, anterior: { ...SEM_CONVERSAS } })
   if (ehIdInvalido(error)) return vazio()
-  if (error) throw new Error(`não deu para medir os desfechos: ${error.message}`)
+  if (error) throw new Error(`não foi possível medir os desfechos: ${error.message}`)
 
   const resultado = vazio()
   for (const linha of (data ?? []) as LinhaDeDesfecho[]) {
@@ -112,7 +112,7 @@ export async function medirFunil(clienteId: string, agora = new Date()): Promise
     .in('mes', [mesAtual, mesAnterior])
 
   if (ehIdInvalido(error)) return { atual: vazio(), anterior: vazio() }
-  if (error) throw new Error(`não deu para medir o funil: ${error.message}`)
+  if (error) throw new Error(`não foi possível medir o funil: ${error.message}`)
 
   const funil = { atual: vazio(), anterior: vazio() }
   for (const linha of data as Linha[]) {
@@ -129,7 +129,7 @@ export async function contarExecucoesPorFluxo(clienteId: string): Promise<Map<st
     .eq('client_id', clienteId)
 
   if (ehIdInvalido(error)) return new Map()
-  if (error) throw new Error(`não deu para contar as execuções: ${error.message}`)
+  if (error) throw new Error(`não foi possível contar as execuções: ${error.message}`)
 
   const execucoes = new Map<string, number>()
   for (const linha of data as LinhaDeExecucoes[]) {
@@ -142,7 +142,7 @@ function chaveDoMes(data: Date): string {
   const partes = formatadorDoMes.formatToParts(data)
   const ano = partes.find((parte) => parte.type === 'year')?.value
   const mes = partes.find((parte) => parte.type === 'month')?.value
-  if (!ano || !mes) throw new Error('não deu para descobrir o mês das métricas')
+  if (!ano || !mes) throw new Error('não foi possível descobrir o mês das métricas')
   return `${ano}-${mes}-01`
 }
 
@@ -214,7 +214,7 @@ export async function medirTempos(
 
   const vazio = { atual: semTempos(), anterior: semTempos() }
   if (ehIdInvalido(error)) return vazio
-  if (error) throw new Error(`não deu para medir os tempos: ${error.message}`)
+  if (error) throw new Error(`não foi possível medir os tempos: ${error.message}`)
 
   const resultado = vazio
   for (const linha of data as Record<string, string | number | null>[]) {
@@ -260,7 +260,7 @@ export async function serieDiaria(
     .order('dia', { ascending: true })
 
   if (ehIdInvalido(error)) return []
-  if (error) throw new Error(`não deu para ler a série: ${error.message}`)
+  if (error) throw new Error(`não foi possível ler a série: ${error.message}`)
 
   const porDia = new Map<string, DiaDaSerie>()
   for (const linha of data as Record<string, string | number>[]) {
@@ -306,7 +306,7 @@ export async function medirPessoas(
     .eq('mes', chaveDoMes(agora))
 
   if (ehIdInvalido(error)) return []
-  if (error) throw new Error(`não deu para medir o desempenho: ${error.message}`)
+  if (error) throw new Error(`não foi possível medir o desempenho: ${error.message}`)
 
   return (data as Record<string, string | number>[])
     .map((linha) => ({
@@ -388,7 +388,7 @@ export async function medirSatisfacao(
 
   const vazio = { atual: semSatisfacao(), anterior: semSatisfacao() }
   if (ehIdInvalido(error)) return vazio
-  if (error) throw new Error(`não deu para medir a satisfação: ${error.message}`)
+  if (error) throw new Error(`não foi possível medir a satisfação: ${error.message}`)
 
   /*
    * Soma antes de calcular, porque a view quebra por origem.

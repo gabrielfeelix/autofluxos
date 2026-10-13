@@ -100,7 +100,7 @@ export async function listarWebhooks(clienteId: string): Promise<WebhookDeSaida[
     .eq('client_id', clienteId)
     .order('criado_em', { ascending: true })
   if (tabelaAusente(error) || ehIdInvalido(error)) return []
-  if (error) throw new Error(`não deu para listar os webhooks: ${error.message}`)
+  if (error) throw new Error(`não foi possível listar os webhooks: ${error.message}`)
   return (data as LinhaDoWebhook[]).map(paraWebhook)
 }
 
@@ -123,7 +123,7 @@ export async function criarWebhook(
     .single()
   if (error) {
     await apagarDoCofre(segredoId)
-    throw new Error(`não deu para criar o webhook: ${error.message}`)
+    throw new Error(`não foi possível criar o webhook: ${error.message}`)
   }
   return { webhook: paraWebhook(data as LinhaDoWebhook), segredo }
 }
@@ -153,7 +153,7 @@ export async function editarWebhook(
     .select(COLUNAS)
     .maybeSingle()
   if (ehIdInvalido(error)) return null
-  if (error) throw new Error(`não deu para editar o webhook: ${error.message}`)
+  if (error) throw new Error(`não foi possível editar o webhook: ${error.message}`)
   return data ? paraWebhook(data as LinhaDoWebhook) : null
 }
 
@@ -170,7 +170,7 @@ export async function trocarSegredoDoWebhook(clienteId: string, id: string): Pro
     .eq('id', id)
   if (error) {
     await apagarDoCofre(novoId)
-    throw new Error(`não deu para trocar o segredo: ${error.message}`)
+    throw new Error(`não foi possível trocar o segredo: ${error.message}`)
   }
   await apagarDoCofre(atual)
   return segredo
@@ -186,7 +186,7 @@ export async function apagarWebhook(clienteId: string, id: string): Promise<Webh
     .select(COLUNAS)
     .maybeSingle()
   if (ehIdInvalido(error)) return null
-  if (error) throw new Error(`não deu para apagar o webhook: ${error.message}`)
+  if (error) throw new Error(`não foi possível apagar o webhook: ${error.message}`)
   if (segredoId) await apagarDoCofre(segredoId)
   return data ? paraWebhook(data as LinhaDoWebhook) : null
 }
@@ -199,7 +199,7 @@ async function segredoIdDe(clienteId: string, id: string): Promise<string | null
     .eq('id', id)
     .maybeSingle()
   if (ehIdInvalido(error)) return null
-  if (error) throw new Error(`não deu para ler o webhook: ${error.message}`)
+  if (error) throw new Error(`não foi possível ler o webhook: ${error.message}`)
   return (data as { segredo_id: string } | null)?.segredo_id ?? null
 }
 
@@ -212,7 +212,7 @@ export async function ultimasEntregas(clienteId: string, limite = 30): Promise<E
     .order('criado_em', { ascending: false })
     .limit(limite)
   if (tabelaAusente(error) || ehIdInvalido(error)) return []
-  if (error) throw new Error(`não deu para listar as entregas: ${error.message}`)
+  if (error) throw new Error(`não foi possível listar as entregas: ${error.message}`)
   return (data as LinhaDaEntrega[]).map(paraEntrega)
 }
 
@@ -228,7 +228,7 @@ export async function assinantesDoEvento(
     .eq('ativo', true)
     .contains('eventos', [evento])
   if (tabelaAusente(error)) return []
-  if (error) throw new Error(`não deu para achar os assinantes: ${error.message}`)
+  if (error) throw new Error(`não foi possível achar os assinantes: ${error.message}`)
   return data as { id: string }[]
 }
 
@@ -243,7 +243,7 @@ export async function enfileirarEntregas(
     .from('entregas_de_webhook')
     .insert(webhookIds.map((webhookId) => ({ webhook_id: webhookId, client_id: clienteId, evento, corpo })))
     .select('id')
-  if (error) throw new Error(`não deu para enfileirar as entregas: ${error.message}`)
+  if (error) throw new Error(`não foi possível enfileirar as entregas: ${error.message}`)
   return (data as { id: string }[]).map((linha) => linha.id)
 }
 
@@ -260,7 +260,7 @@ export type EntregaParaEnviar = {
 export async function pegarEntregas(limite: number, ids?: string[]): Promise<EntregaParaEnviar[]> {
   const { data, error } = await db().rpc('pegar_entregas_de_webhook', { p_limite: limite, p_ids: ids ?? null })
   if (tabelaAusente(error) || error?.code === 'PGRST202') return []
-  if (error) throw new Error(`não deu para pegar as entregas: ${error.message}`)
+  if (error) throw new Error(`não foi possível pegar as entregas: ${error.message}`)
   return (
     (data ?? []) as { id: string; webhook_id: string; client_id: string; evento: string; corpo: unknown; tentativas: number }[]
   ).map((linha) => ({
@@ -282,7 +282,7 @@ export async function destinoDoWebhook(
     .select('url, segredo_id, ativo, falhas_seguidas')
     .eq('id', webhookId)
     .maybeSingle()
-  if (error) throw new Error(`não deu para ler o webhook: ${error.message}`)
+  if (error) throw new Error(`não foi possível ler o webhook: ${error.message}`)
   if (!data) return null
   const linha = data as { url: string; segredo_id: string; ativo: boolean; falhas_seguidas: number }
   return { url: linha.url, segredoId: linha.segredo_id, ativo: linha.ativo, falhasSeguidas: linha.falhas_seguidas }
@@ -310,13 +310,13 @@ export async function registrarTentativa(
       ...(dados.status === 'entregue' ? { entregue_em: new Date().toISOString() } : {}),
     })
     .eq('id', entregaId)
-  if (error) throw new Error(`não deu para registrar a tentativa: ${error.message}`)
+  if (error) throw new Error(`não foi possível registrar a tentativa: ${error.message}`)
 }
 
 /** Entregou: as falhas seguidas do webhook zeram. */
 export async function zerarFalhas(webhookId: string): Promise<void> {
   const { error } = await db().from('webhooks_de_saida').update({ falhas_seguidas: 0 }).eq('id', webhookId).gt('falhas_seguidas', 0)
-  if (error) console.error('[webhooks] não deu para zerar as falhas:', error.message)
+  if (error) console.error('[webhooks] não foi possível zerar as falhas:', error.message)
 }
 
 /** Mais uma falha; devolve se o webhook acabou de ser pausado. */
@@ -327,6 +327,6 @@ export async function somarFalha(webhookId: string, falhasAntes: number, teto: n
     .from('webhooks_de_saida')
     .update({ falhas_seguidas: falhas, ...(pausar ? { ativo: false, pausado_em: new Date().toISOString() } : {}) })
     .eq('id', webhookId)
-  if (error) console.error('[webhooks] não deu para somar a falha:', error.message)
+  if (error) console.error('[webhooks] não foi possível somar a falha:', error.message)
   return pausar
 }

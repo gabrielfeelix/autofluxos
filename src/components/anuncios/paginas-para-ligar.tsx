@@ -27,7 +27,7 @@ export function PaginasParaLigar({ clienteId, paginas }: { clienteId: string; pa
       dados.set('pageId', pagina.id)
       dados.set('nome', pagina.nome)
       const r = await acaoLigarPagina(clienteId, dados)
-      if (!r.ok) setErro({ id: pagina.id, texto: r.erro ?? 'não deu para ligar' })
+      if (!r.ok) setErro({ id: pagina.id, texto: r.erro ?? 'não foi possível ligar' })
       setLigando(null)
     })
   }

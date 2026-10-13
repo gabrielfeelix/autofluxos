@@ -49,7 +49,7 @@ export async function acaoDefinirAtendente(
   if (recusou(acesso)) return { ok: false, erro: SO_QUEM_ADMINISTRA }
 
   const id = usuarioId?.trim() ?? ''
-  if (id === '') return { ok: false, erro: 'não deu para saber de quem é o ajuste' }
+  if (id === '') return { ok: false, erro: 'não foi possível saber de quem é o ajuste' }
 
   /*
    * O teto é preso entre 0 e 200 aqui, e não só na tela.

@@ -112,7 +112,7 @@ export function TabelaDePessoas({
         const r = await trocarFuncao(pessoa.id, funcao)
         if (r.erro || r.ok === false) {
           setPessoas((lista) => lista.map((item) => (item.id === pessoa.id ? { ...item, funcao: anterior } : item)))
-          setAviso(r.erro ?? 'não deu para trocar a função')
+          setAviso(r.erro ?? 'não foi possível trocar a função')
         } else if (funcao === 'proprietario') {
           // A posse passou: quem era dono vira Administrador, e quem pediu
           // desce junto. A lista acompanha sem recarregar: a nova dona e os
@@ -136,7 +136,7 @@ export function TabelaDePessoas({
     comecar(async () => {
       const r = await pendencias(pessoa.id)
       if (!r.ok) {
-        setAviso(r.erro ?? 'não deu para conferir o que fica com esta pessoa')
+        setAviso(r.erro ?? 'não foi possível conferir o que fica com esta pessoa')
         return
       }
       setRemovendo({ pessoa, pendencias: { conversas: r.conversas ?? 0, cartoes: r.cartoes ?? 0, atividades: r.atividades ?? 0 } })
@@ -404,7 +404,7 @@ function DarAcesso({
             try {
               const r = await enviar(dados)
               if (r.custo) setCusto(r.custo)
-              else if (r.erro || r.ok === false) setErro(r.erro ?? 'não deu para adicionar o usuário')
+              else if (r.erro || r.ok === false) setErro(r.erro ?? 'não foi possível adicionar o usuário')
               else aoFechar()
             } catch {
               setErro('sem conexão com o servidor')

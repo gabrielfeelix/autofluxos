@@ -471,7 +471,7 @@ async function anotar(
   try {
     await anotarProgressoDoSync(canal.id, tipo, progresso)
   } catch (erro) {
-    await alertar('não deu para anotar o progresso da sincronização', erro, {
+    await alertar('não foi possível anotar o progresso da sincronização', erro, {
       cliente: canal.clienteId,
       sync: tipo,
     })
@@ -512,7 +512,7 @@ async function tratarHistorico(
     try {
       await anotarHistoricoRecusado(canal.id)
     } catch (erro) {
-      await alertar('não deu para anotar a recusa do histórico', erro, { canal: canal.id })
+      await alertar('não foi possível anotar a recusa do histórico', erro, { canal: canal.id })
     }
     return
   }
@@ -602,7 +602,7 @@ async function gravarMensagemImportada(
         })
       } catch (erro) {
         console.warn(
-          '[coexistencia] não deu para guardar a mídia do eco',
+          '[coexistencia] não foi possível guardar a mídia do eco',
           erro instanceof Error ? erro.message : String(erro),
         )
       }
@@ -711,7 +711,7 @@ async function tratarEcos(
      * consulta não derruba o lote: na dúvida, vale o de antes, cala.
      */
     const automatica = await ecoColadoNoBot(contato.id).catch((erro) => {
-      console.warn('[coexistencia] não deu para conferir o eco', erro instanceof Error ? erro.message : erro)
+      console.warn('[coexistencia] não foi possível conferir o eco', erro instanceof Error ? erro.message : erro)
       return false
     })
     if (automatica) continue
@@ -786,7 +786,7 @@ export async function tratarAtualizacaoDaConta(payload: unknown): Promise<void> 
       try {
         await marcarDesembarque(canal.id, evento === 'ACCOUNT_OFFBOARDED')
       } catch (erro) {
-        await alertar('não deu para marcar o desembarque do número', erro, {
+        await alertar('não foi possível marcar o desembarque do número', erro, {
           cliente: canal.clienteId,
           numero,
           evento,

@@ -89,7 +89,7 @@ export async function manterCopiaDoCrm(
     await atualizarHorario(clienteId, novo)
     return novo
   } catch (erro) {
-    console.error('[horario-do-crm] não deu para sincronizar', (erro as Error).message)
+    console.error('[horario-do-crm] não foi possível sincronizar', (erro as Error).message)
     return horario
   }
 }

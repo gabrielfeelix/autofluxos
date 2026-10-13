@@ -33,7 +33,7 @@ export function EscolherTipoDeNegocio({
     comecar(async () => {
       const r = await acaoDefinirNicho(clienteId, novo ?? '')
       if (!r.ok) {
-        setErro(r.erro ?? 'não deu para salvar')
+        setErro(r.erro ?? 'não foi possível salvar')
         return
       }
       setEscolhido(novo)
@@ -75,7 +75,7 @@ export function EscolherTipoDeNegocio({
         })}
       </fieldset>
 
-      {!podeTrocar && <p className="text-[12px] text-dim">Só o dono ou um administrador da organização troca o tipo de negócio.</p>}
+      {!podeTrocar && <p className="text-[12px] text-dim">Apenas o proprietário ou um administrador da organização troca o tipo de negócio.</p>}
 
       {pendente !== undefined && (
         <div className="flex flex-wrap items-center gap-3 rounded-xl border border-line px-3.5 py-3">

@@ -234,7 +234,7 @@ function ErrosELimites() {
     <>
       <P>
         Todo erro volta com o status HTTP certo e o mesmo formato. O <Cod>codigo</Cod> é estável e
-        serve para o seu sistema decidir; a <Cod>mensagem</Cod> é para gente ler e pode mudar.
+        serve para o seu sistema decidir; a <Cod>mensagem</Cod> é para pessoas lerem e pode mudar.
       </P>
       <BlocoDeCodigo trechos={[json('Erro', { erro: { codigo: 'janela_fechada', mensagem: 'Passaram mais de 24h desde a última mensagem do contato.' } })]} />
       <Sub>Códigos</Sub>

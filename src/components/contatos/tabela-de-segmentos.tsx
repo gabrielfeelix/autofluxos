@@ -100,7 +100,7 @@ export function TabelaDeSegmentos({ clienteId, inicial, topo }: { clienteId: str
         : acaoSalvarSegmento(clienteId, alvo.id, pedido.nome, pedido.regra),
     ).then(
       (r) => {
-        if (!r.ok || !r.segmento) return desfazer(r.erro ?? 'não deu para salvar')
+        if (!r.ok || !r.segmento) return desfazer(r.erro ?? 'não foi possível salvar')
         const salvo = r.segmento
         setLista((atual) =>
           atual.map((s) =>

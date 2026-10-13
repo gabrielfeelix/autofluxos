@@ -18,7 +18,7 @@ export function TesteGratis({ organizacaoId, inicial, planoDoTeste }: { organiza
     comecar(async () => {
       const r = await acaoAdminIniciarTeste(organizacaoId)
       if (!r.ok || !r.ate) {
-        setMensagem({ tom: 'erro', texto: r.erro ?? 'Não deu para iniciar.' })
+        setMensagem({ tom: 'erro', texto: r.erro ?? 'Não foi possível iniciar.' })
         return
       }
       setAte(r.ate)
@@ -32,7 +32,7 @@ export function TesteGratis({ organizacaoId, inicial, planoDoTeste }: { organiza
       const r = await acaoAdminEncerrarTeste(organizacaoId)
       if (!r.ok) {
         setAte(anterior)
-        setMensagem({ tom: 'erro', texto: r.erro ?? 'Não deu para encerrar.' })
+        setMensagem({ tom: 'erro', texto: r.erro ?? 'Não foi possível encerrar.' })
         return
       }
       setMensagem({ tom: 'ok', texto: 'Teste encerrado. A conta segue no plano atual.' })

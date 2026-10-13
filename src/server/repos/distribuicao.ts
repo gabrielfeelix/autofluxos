@@ -38,7 +38,7 @@ export async function ajustesDaConta(clienteId: string): Promise<AjustesDaConta>
 
   if (ehIdInvalido(error)) return PADRAO
   if (error) {
-    console.error('[distribuicao] não deu para ler os ajustes da conta', error.message)
+    console.error('[distribuicao] não foi possível ler os ajustes da conta', error.message)
     return PADRAO
   }
   if (!data) return PADRAO
@@ -64,8 +64,8 @@ export async function definirAjustesDaConta(
   const { error } = await db().from('clients').update(mudanca).eq('id', clienteId)
 
   if (error) {
-    console.error('[distribuicao] não deu para salvar os ajustes', error.message)
-    return { ok: false, erro: 'não deu para salvar a distribuição' }
+    console.error('[distribuicao] não foi possível salvar os ajustes', error.message)
+    return { ok: false, erro: 'não foi possível salvar a distribuição' }
   }
   return { ok: true }
 }
@@ -95,7 +95,7 @@ export async function atendentesDaConta(
 
   if (ehIdInvalido(error)) return porUsuario
   if (error) {
-    console.error('[distribuicao] não deu para ler os atendentes', error.message)
+    console.error('[distribuicao] não foi possível ler os atendentes', error.message)
     return porUsuario
   }
 
@@ -141,8 +141,8 @@ export async function definirAtendente(
     )
 
   if (error) {
-    console.error('[distribuicao] não deu para salvar o atendente', error.message)
-    return { ok: false, erro: 'não deu para salvar' }
+    console.error('[distribuicao] não foi possível salvar o atendente', error.message)
+    return { ok: false, erro: 'não foi possível salvar' }
   }
   return { ok: true }
 }
@@ -164,7 +164,7 @@ export async function ultimosLeadsDaConta(clienteId: string): Promise<Map<string
     .not('ultimo_lead_em', 'is', null)
 
   if (error) {
-    if (!ehIdInvalido(error)) console.error('[distribuicao] não deu para ler a ordem do rodízio', error.message)
+    if (!ehIdInvalido(error)) console.error('[distribuicao] não foi possível ler a ordem do rodízio', error.message)
     return porUsuario
   }
   for (const linha of data as { usuario_id: string; ultimo_lead_em: string }[]) {
@@ -188,7 +188,7 @@ export async function marcarUltimoLead(clienteId: string, usuarioId: string): Pr
       { cliente_id: clienteId, usuario_id: usuarioId, ultimo_lead_em: new Date().toISOString() },
       { onConflict: 'cliente_id,usuario_id' },
     )
-  if (error) console.error('[distribuicao] não deu para anotar a vez do rodízio', error.message)
+  if (error) console.error('[distribuicao] não foi possível anotar a vez do rodízio', error.message)
 }
 
 export type EscopoDaPassagem = 'sem-dono' | 'todas'
@@ -208,7 +208,7 @@ export async function contarParaPassar(
     else if (filtro.dono) consulta = consulta.eq('atribuido_a', filtro.dono)
     const { count, error } = await consulta
     if (error) {
-      if (!ehIdInvalido(error)) console.error('[distribuicao] não deu para contar os contatos', error.message)
+      if (!ehIdInvalido(error)) console.error('[distribuicao] não foi possível contar os contatos', error.message)
       return 0
     }
     return count ?? 0
@@ -245,8 +245,8 @@ export async function passarContatos(
       : await base.or(`atribuido_a.is.null,atribuido_a.neq.${usuarioId}`)
 
   if (error) {
-    console.error('[distribuicao] não deu para passar os contatos', error.message)
-    return { ok: false, erro: 'não deu para passar as conversas' }
+    console.error('[distribuicao] não foi possível passar os contatos', error.message)
+    return { ok: false, erro: 'não foi possível passar as conversas' }
   }
   return { ok: true, passaram: count ?? 0 }
 }

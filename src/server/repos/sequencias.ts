@@ -73,7 +73,7 @@ export async function listarSequencias(clienteId: string): Promise<Sequencia[]> 
     .order('criado_em', { ascending: true })
 
   if (ehIdInvalido(error)) return []
-  if (error) throw new Error(`não deu para listar as sequências: ${error.message}`)
+  if (error) throw new Error(`não foi possível listar as sequências: ${error.message}`)
   return (data as unknown as LinhaDaSequencia[])
     .map(paraSequencia)
     .filter((s): s is Sequencia => s !== null)
@@ -106,7 +106,7 @@ export async function sequenciasDoEvento(
   const { data, error } = await consulta
 
   if (ehIdInvalido(error)) return []
-  if (error) throw new Error(`não deu para ler as sequências: ${error.message}`)
+  if (error) throw new Error(`não foi possível ler as sequências: ${error.message}`)
 
   return (data as unknown as LinhaDaSequencia[])
     .map(paraSequencia)
@@ -129,7 +129,7 @@ export async function acharSequencia(
     .maybeSingle()
 
   if (ehIdInvalido(error)) return null
-  if (error) throw new Error(`não deu para buscar a sequência: ${error.message}`)
+  if (error) throw new Error(`não foi possível buscar a sequência: ${error.message}`)
   return data ? paraSequencia(data as unknown as LinhaDaSequencia) : null
 }
 
@@ -187,7 +187,7 @@ export async function criarSequencia(
     .select('id')
     .single()
 
-  if (error) throw new Error(`não deu para criar a sequência: ${error.message}`)
+  if (error) throw new Error(`não foi possível criar a sequência: ${error.message}`)
   return { ok: true, id: (data as { id: string }).id }
 }
 
@@ -201,7 +201,7 @@ async function etapaEhDoCliente(clienteId: string, colunaId: string): Promise<bo
     .maybeSingle()
 
   if (ehIdInvalido(error)) return false
-  if (error) throw new Error(`não deu para conferir a etapa: ${error.message}`)
+  if (error) throw new Error(`não foi possível conferir a etapa: ${error.message}`)
   return data !== null
 }
 
@@ -214,7 +214,7 @@ async function etiquetaEhDoCliente(clienteId: string, etiquetaId: string): Promi
     .maybeSingle()
 
   if (ehIdInvalido(error)) return false
-  if (error) throw new Error(`não deu para conferir a etiqueta: ${error.message}`)
+  if (error) throw new Error(`não foi possível conferir a etiqueta: ${error.message}`)
   return data !== null
 }
 
@@ -232,7 +232,7 @@ export async function alternarSequencia(
     .maybeSingle()
 
   if (ehIdInvalido(error)) return false
-  if (error) throw new Error(`não deu para mudar a sequência: ${error.message}`)
+  if (error) throw new Error(`não foi possível mudar a sequência: ${error.message}`)
   return data !== null
 }
 
@@ -253,7 +253,7 @@ export async function apagarSequencia(clienteId: string, sequenciaId: string): P
     .maybeSingle()
 
   if (ehIdInvalido(error)) return false
-  if (error) throw new Error(`não deu para apagar a sequência: ${error.message}`)
+  if (error) throw new Error(`não foi possível apagar a sequência: ${error.message}`)
   return data !== null
 }
 
@@ -278,7 +278,7 @@ export async function criarPasso(
     .maybeSingle()
 
   if (ehIdInvalido(erroDoFluxo)) return { ok: false, motivo: 'escolha um fluxo válido' }
-  if (erroDoFluxo) throw new Error(`não deu para conferir o fluxo: ${erroDoFluxo.message}`)
+  if (erroDoFluxo) throw new Error(`não foi possível conferir o fluxo: ${erroDoFluxo.message}`)
   if (!fluxo) return { ok: false, motivo: 'este fluxo não é deste cliente' }
 
   const { error } = await db()
@@ -303,7 +303,7 @@ export async function criarPasso(
       motivo: 'passo com mais de 24h precisa de um modelo aprovado pela Meta',
     }
   }
-  if (error) throw new Error(`não deu para criar o passo: ${error.message}`)
+  if (error) throw new Error(`não foi possível criar o passo: ${error.message}`)
   return { ok: true }
 }
 
@@ -340,7 +340,7 @@ export async function editarPasso(
     .maybeSingle()
 
   if (ehIdInvalido(erroDoPasso)) return { ok: false, motivo: 'este passo não existe mais' }
-  if (erroDoPasso) throw new Error(`não deu para buscar o passo: ${erroDoPasso.message}`)
+  if (erroDoPasso) throw new Error(`não foi possível buscar o passo: ${erroDoPasso.message}`)
   if (!linha) return { ok: false, motivo: 'este passo não existe mais' }
 
   // A conta vem da sequência: passo de outra conta responde igual a passo
@@ -370,7 +370,7 @@ export async function editarPasso(
       .maybeSingle()
 
     if (ehIdInvalido(erroDoFluxo)) return { ok: false, motivo: 'escolha um fluxo válido' }
-    if (erroDoFluxo) throw new Error(`não deu para conferir o fluxo: ${erroDoFluxo.message}`)
+    if (erroDoFluxo) throw new Error(`não foi possível conferir o fluxo: ${erroDoFluxo.message}`)
     if (!fluxo) return { ok: false, motivo: 'este fluxo não é deste cliente' }
   }
 
@@ -389,7 +389,7 @@ export async function editarPasso(
   if (error?.code === '23514') {
     return { ok: false, motivo: 'passo com mais de 24h precisa de um modelo aprovado pela Meta' }
   }
-  if (error) throw new Error(`não deu para editar o passo: ${error.message}`)
+  if (error) throw new Error(`não foi possível editar o passo: ${error.message}`)
 
   if (atraso === atual.atrasoMinutos) return { ok: true, remarcadas: 0 }
 
@@ -414,7 +414,7 @@ async function remarcarQuemEspera(sequenciaId: string, indice: number, atraso: n
     .eq('estado', 'ativa')
     .eq('passo_atual', indice)
 
-  if (error) throw new Error(`não deu para buscar quem está na sequência: ${error.message}`)
+  if (error) throw new Error(`não foi possível buscar quem está na sequência: ${error.message}`)
   if (!inscricoes || inscricoes.length === 0) return 0
 
   const { data: tarefas, error: erroDasTarefas } = await db()
@@ -424,7 +424,7 @@ async function remarcarQuemEspera(sequenciaId: string, indice: number, atraso: n
     .eq('estado', 'pendente')
     .in('chave', inscricoes.map((inscricao) => chaveDoPasso(inscricao.id as string)))
 
-  if (erroDasTarefas) throw new Error(`não deu para buscar os envios agendados: ${erroDasTarefas.message}`)
+  if (erroDasTarefas) throw new Error(`não foi possível buscar os envios agendados: ${erroDasTarefas.message}`)
 
   let remarcadas = 0
   for (const tarefa of tarefas ?? []) {
@@ -436,7 +436,7 @@ async function remarcarQuemEspera(sequenciaId: string, indice: number, atraso: n
       .update({ quando: quando.toISOString() })
       .eq('id', tarefa.id)
       .eq('estado', 'pendente')
-    if (erroAoRemarcar) throw new Error(`não deu para remarcar o envio: ${erroAoRemarcar.message}`)
+    if (erroAoRemarcar) throw new Error(`não foi possível remarcar o envio: ${erroAoRemarcar.message}`)
     remarcadas++
   }
   return remarcadas
@@ -457,7 +457,7 @@ export async function esperandoPorPasso(clienteId: string): Promise<Map<string, 
     .eq('estado', 'ativa')
 
   if (ehIdInvalido(error)) return new Map()
-  if (error) throw new Error(`não deu para contar quem espera cada passo: ${error.message}`)
+  if (error) throw new Error(`não foi possível contar quem espera cada passo: ${error.message}`)
 
   const contagem = new Map<string, number>()
   for (const linha of data ?? []) {
@@ -496,7 +496,7 @@ export async function apagarPasso(
     .maybeSingle()
 
   if (ehIdInvalido(error)) return false
-  if (error) throw new Error(`não deu para apagar o passo: ${error.message}`)
+  if (error) throw new Error(`não foi possível apagar o passo: ${error.message}`)
   return data !== null
 }
 
@@ -579,7 +579,7 @@ export async function inscrever(
     .maybeSingle()
 
   if (error?.code === '23505') return null
-  if (error) throw new Error(`não deu para inscrever na sequência: ${error.message}`)
+  if (error) throw new Error(`não foi possível inscrever na sequência: ${error.message}`)
   return data ? paraInscricao(data as LinhaDaInscricao) : null
 }
 
@@ -591,7 +591,7 @@ export async function acharInscricao(inscricaoId: string): Promise<Inscricao | n
     .maybeSingle()
 
   if (ehIdInvalido(error)) return null
-  if (error) throw new Error(`não deu para buscar a inscrição: ${error.message}`)
+  if (error) throw new Error(`não foi possível buscar a inscrição: ${error.message}`)
   return data ? paraInscricao(data as LinhaDaInscricao) : null
 }
 
@@ -602,7 +602,7 @@ export async function avancarInscricao(inscricaoId: string, proximoIndice: numbe
     .update({ passo_atual: proximoIndice, atualizado_em: new Date().toISOString() })
     .eq('id', inscricaoId)
 
-  if (error) throw new Error(`não deu para avançar a inscrição: ${error.message}`)
+  if (error) throw new Error(`não foi possível avançar a inscrição: ${error.message}`)
 }
 
 export async function encerrarInscricao(
@@ -615,7 +615,7 @@ export async function encerrarInscricao(
     .update({ estado, motivo, atualizado_em: new Date().toISOString() })
     .eq('id', inscricaoId)
 
-  if (error) throw new Error(`não deu para encerrar a inscrição: ${error.message}`)
+  if (error) throw new Error(`não foi possível encerrar a inscrição: ${error.message}`)
 }
 
 /**
@@ -651,7 +651,7 @@ export async function sairDasSequencias(
     // mensagem que já foi deduplicada e de ações de tela que já fizeram o que
     // importava; falhar aqui deixaria a pessoa sem resposta por causa de uma
     // limpeza. O custo do erro é uma mensagem de acompanhamento a mais.
-    console.error('[sequencias] não deu para sair das sequências', error.message)
+    console.error('[sequencias] não foi possível sair das sequências', error.message)
     return []
   }
 
@@ -683,7 +683,7 @@ export async function contarInscricoes(
     .eq('client_id', clienteId)
 
   if (ehIdInvalido(error)) return new Map()
-  if (error) throw new Error(`não deu para contar as inscrições: ${error.message}`)
+  if (error) throw new Error(`não foi possível contar as inscrições: ${error.message}`)
 
   const mapa = new Map<string, ContagemDaSequencia>()
   for (const linha of data as { sequencia_id: string; estado: string }[]) {
@@ -717,7 +717,7 @@ export async function sequenciasQueUsamOFluxo(fluxoId: string): Promise<string[]
     .eq('flow_id', fluxoId)
 
   if (ehIdInvalido(error)) return []
-  if (error) throw new Error(`não deu para conferir as sequências: ${error.message}`)
+  if (error) throw new Error(`não foi possível conferir as sequências: ${error.message}`)
 
   return [
     ...new Set((data as unknown as { sequencias: { nome: string } }[]).map((l) => l.sequencias.nome)),
@@ -736,7 +736,7 @@ export async function sequenciasQueUsamAEtiqueta(
     .eq('etiqueta_id', etiquetaId)
 
   if (ehIdInvalido(error)) return []
-  if (error) throw new Error(`não deu para conferir as sequências: ${error.message}`)
+  if (error) throw new Error(`não foi possível conferir as sequências: ${error.message}`)
   return (data as { nome: string }[]).map((linha) => linha.nome)
 }
 
@@ -762,7 +762,7 @@ export async function sequenciasQueUsamAEtapa(
     .eq('coluna_id', etapaId)
 
   if (ehIdInvalido(error)) return []
-  if (error) throw new Error(`não deu para conferir as sequências: ${error.message}`)
+  if (error) throw new Error(`não foi possível conferir as sequências: ${error.message}`)
   return (data as { nome: string }[]).map((linha) => linha.nome)
 }
 
@@ -788,7 +788,7 @@ export async function sairPorEtiquetaDeSaida(
 
   if (ehIdInvalido(erroDasSequencias)) return []
   if (erroDasSequencias) {
-    console.error('[sequencias] não deu para ler as de saída', erroDasSequencias.message)
+    console.error('[sequencias] não foi possível ler as de saída', erroDasSequencias.message)
     return []
   }
 
@@ -806,7 +806,7 @@ export async function sairPorEtiquetaDeSaida(
   if (error) {
     // Mesma razão de `sairDasSequencias`: quem chama já etiquetou, e falhar a
     // limpeza não pode desfazer isso.
-    console.error('[sequencias] não deu para sair pela etiqueta', error.message)
+    console.error('[sequencias] não foi possível sair pela etiqueta', error.message)
     return []
   }
 
@@ -864,7 +864,7 @@ export async function acompanhamentosDoContato(
     .limit(limite)
 
   if (ehIdInvalido(error)) return []
-  if (error) throw new Error(`não deu para ler os acompanhamentos: ${error.message}`)
+  if (error) throw new Error(`não foi possível ler os acompanhamentos: ${error.message}`)
 
   const linhas = (data ?? []) as {
     id: string

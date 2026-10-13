@@ -33,7 +33,7 @@ export function FormularioDeEmpresa({
     setPendente(true)
     const r = await action(dados)
     // Sucesso redireciona e nunca chega aqui; só a falha volta com mensagem.
-    if (r && r.ok === false) setErro(r.erro ?? 'não deu certo')
+    if (r && r.ok === false) setErro(r.erro ?? 'não foi possível concluir')
     setPendente(false)
   }
 

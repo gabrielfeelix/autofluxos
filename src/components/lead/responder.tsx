@@ -311,10 +311,10 @@ export function CaixaDeResposta({
             avisarEnvio({ local, contatoId: ids.contatoId, estado: 'saiu' })
             return
           }
-          throw new Error(r.erro ?? 'não deu para enviar')
+          throw new Error(r.erro ?? 'não foi possível enviar')
         })
         .catch((falha: unknown) => {
-          const motivo = falha instanceof Error && falha.message ? falha.message : 'não deu para enviar'
+          const motivo = falha instanceof Error && falha.message ? falha.message : 'não foi possível enviar'
           avisarEnvio({ local, contatoId: ids.contatoId, estado: 'falhou', erro: motivo })
           setErro(motivo)
           if (campo.current && campo.current.value.trim() === '') {
@@ -328,7 +328,7 @@ export function CaixaDeResposta({
     comecar(async () => {
       const r = await acao(dados)
       if (!r.ok) {
-        setErro(r.erro ?? 'não deu para enviar')
+        setErro(r.erro ?? 'não foi possível enviar')
         return
       }
       /*

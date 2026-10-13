@@ -190,7 +190,7 @@ async function qualWebhookAssinou(
     webhooks = await segredosAtivos(clienteId)
   } catch (erro) {
     // Cofre fora do ar fecha a porta em vez de abri-la.
-    console.error('[webhook-entrada] não deu para ler os segredos', erro)
+    console.error('[webhook-entrada] não foi possível ler os segredos', erro)
     return null
   }
 

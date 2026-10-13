@@ -400,7 +400,7 @@ async function rodar(
           // fluxo continua certo e todas as conversas que passam por ele caem em
           // handoff ao mesmo tempo. Quem vê isso pela tela do lead acha que é
           // problema de um contato só.
-          await alertar('não deu para ler a credencial do cofre', erro, {
+          await alertar('não foi possível ler a credencial do cofre', erro, {
             conexao: chamadaHttp.conexaoId,
             cliente: opcoes.clienteId,
           })
@@ -732,7 +732,7 @@ async function carregar(opcoes: OpcoesDeEfeitos, fluxoId: string) {
     // Banco fora do ar no meio de um salto não pode estourar daqui: a exceção
     // subiria até o `after()` do webhook, a sessão nunca seria salva e a
     // mensagem já foi deduplicada, a pessoa ficaria sem resposta nenhuma.
-    await alertar('não deu para carregar a automação de destino', erro, { fluxo: fluxoId })
+    await alertar('não foi possível carregar a automação de destino', erro, { fluxo: fluxoId })
     return null
   }
 }
@@ -910,7 +910,7 @@ async function responderComFerramentas({
     try {
       credencial = await lerCredencial(chamada.conexaoId, opcoes.clienteId)
     } catch (erro) {
-      await alertar('não deu para ler a credencial do cofre para a IA', erro, {
+      await alertar('não foi possível ler a credencial do cofre para a IA', erro, {
         conexao: chamada.conexaoId,
         cliente: opcoes.clienteId,
       })
@@ -1498,7 +1498,7 @@ async function dispararFerramenta({
     try {
       credencial = await lerCredencial(conexaoId, opcoes.clienteId)
     } catch (erro) {
-      await alertar('não deu para ler a credencial do cofre para a IA', erro, {
+      await alertar('não foi possível ler a credencial do cofre para a IA', erro, {
         conexao: conexaoId,
         cliente: opcoes.clienteId,
       })

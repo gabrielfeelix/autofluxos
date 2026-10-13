@@ -52,8 +52,8 @@ export async function acaoEditarPerfil(formData: FormData): Promise<Resultado> {
       .storage.from(BUCKET_DOS_AVATARES)
       .upload(caminho, foto, { contentType: foto.type, upsert: false })
     if (error) {
-      console.error('[perfil] não deu para subir a foto:', error.message)
-      return { ok: false, erro: 'não deu para guardar a foto agora, tente de novo' }
+      console.error('[perfil] não foi possível subir a foto:', error.message)
+      return { ok: false, erro: 'não foi possível guardar a foto agora, tente de novo' }
     }
     imagem = db().storage.from(BUCKET_DOS_AVATARES).getPublicUrl(caminho).data.publicUrl
   } else if (formData.get('avatar')) {
@@ -128,7 +128,7 @@ export async function acaoTrocarSenha(
       return { ok: false, erro: 'a senha atual não confere' }
     }
     console.error('[perfil] troca de senha falhou:', mensagem)
-    return { ok: false, erro: 'não deu para trocar a senha agora, tente de novo' }
+    return { ok: false, erro: 'não foi possível trocar a senha agora, tente de novo' }
   }
 }
 
@@ -148,7 +148,7 @@ export async function acaoComecarDuasEtapas(
 
   try {
     const r = await autenticacao().api.enableTwoFactor({ body: { password: senha }, headers: await headers() })
-    if (r.method !== 'totp') return { ok: false, erro: 'não deu para começar agora, tente de novo' }
+    if (r.method !== 'totp') return { ok: false, erro: 'não foi possível começar agora, tente de novo' }
     const chave = new URL(r.totpURI).searchParams.get('secret') ?? ''
     const qr = await QRCode.toDataURL(r.totpURI, { margin: 1, width: 220 })
     return { ok: true, qr, chave, codigos: r.backupCodes }
@@ -156,7 +156,7 @@ export async function acaoComecarDuasEtapas(
     const mensagem = erro instanceof Error ? erro.message : String(erro)
     if (/invalid password|incorrect/i.test(mensagem)) return { ok: false, erro: 'a senha não confere' }
     console.error('[perfil] 2FA não começou:', mensagem)
-    return { ok: false, erro: 'não deu para começar agora, tente de novo' }
+    return { ok: false, erro: 'não foi possível começar agora, tente de novo' }
   }
 }
 
@@ -188,7 +188,7 @@ export async function acaoDesligarDuasEtapas(senha: string): Promise<{ ok: true 
   } catch (erro) {
     const mensagem = erro instanceof Error ? erro.message : String(erro)
     if (/invalid password|incorrect/i.test(mensagem)) return { ok: false, erro: 'a senha não confere' }
-    return { ok: false, erro: 'não deu para desligar agora, tente de novo' }
+    return { ok: false, erro: 'não foi possível desligar agora, tente de novo' }
   }
   await registrar({ acao: 'desligou_duas_etapas', autorId: sessao.usuario.id, autorEmail: sessao.usuario.email, alvoTipo: 'usuario', alvoId: sessao.usuario.id })
   return { ok: true }

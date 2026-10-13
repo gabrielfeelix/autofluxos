@@ -600,7 +600,7 @@ function DuplicarExistente({
     comecar(async () => {
       const r = await acaoDuplicarFluxo(clienteId, id)
       if (!r.ok || !r.id) {
-        setErro(r.erro ?? 'não deu para duplicar')
+        setErro(r.erro ?? 'não foi possível duplicar')
         return
       }
       router.push(`/clientes/${clienteId}/fluxos/${r.id}?origem=duplicado`)

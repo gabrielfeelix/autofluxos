@@ -49,7 +49,7 @@ export function MatrizDeFuncoes({ funcoes: iniciais, editavel = false }: { funco
         const r = await acaoAdminSalvarFuncao(funcao.id, capacidades)
         if (!r.ok) {
           setFuncoes(antes)
-          setAviso(r.erro ?? 'não deu para salvar a função')
+          setAviso(r.erro ?? 'não foi possível salvar a função')
         }
       } catch {
         setFuncoes(antes)

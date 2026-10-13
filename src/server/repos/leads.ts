@@ -476,7 +476,7 @@ export async function listarAlertasDeHandoff(clienteId: string): Promise<AlertaD
     .order('handoff_em', { ascending: false })
 
   if (ehIdInvalido(error)) return []
-  if (error) throw new Error(`não deu para ler a fila de alertas: ${error.message}`)
+  if (error) throw new Error(`não foi possível ler a fila de alertas: ${error.message}`)
 
   return (data as {
     contact_id: string
@@ -545,10 +545,10 @@ async function etiquetasPorContato(
   ])
 
   if (entradas.error) {
-    throw new Error(`não deu para classificar as mensagens dos leads: ${entradas.error.message}`)
+    throw new Error(`não foi possível classificar as mensagens dos leads: ${entradas.error.message}`)
   }
   if (sessoes.error) {
-    throw new Error(`não deu para classificar os atendimentos dos leads: ${sessoes.error.message}`)
+    throw new Error(`não foi possível classificar os atendimentos dos leads: ${sessoes.error.message}`)
   }
 
   const contagemDeEntradas = new Map<string, number>()
@@ -578,7 +578,7 @@ async function etiquetasPorContato(
       .select('session_id')
       .in('session_id', sessoesIds)
 
-    if (error) throw new Error(`não deu para classificar os handoffs dos leads: ${error.message}`)
+    if (error) throw new Error(`não foi possível classificar os handoffs dos leads: ${error.message}`)
     for (const handoff of data as { session_id: string }[]) {
       const contatoId = contatoPorSessao.get(handoff.session_id)
       if (contatoId) contatosComHandoff.add(contatoId)
@@ -613,7 +613,7 @@ export async function listarLeads(clienteId: string): Promise<Lead[]> {
     .order('ultima_em', { ascending: false, nullsFirst: false })
 
   if (ehIdInvalido(error)) return []
-  if (error) throw new Error(`não deu para listar os leads: ${error.message}`)
+  if (error) throw new Error(`não foi possível listar os leads: ${error.message}`)
   return classificar((data as Linha[]).map(paraLead))
 }
 
@@ -625,7 +625,7 @@ export async function contarLeads(clienteId: string): Promise<number> {
     .eq('client_id', clienteId)
 
   if (ehIdInvalido(error)) return 0
-  if (error) throw new Error(`não deu para contar os leads: ${error.message}`)
+  if (error) throw new Error(`não foi possível contar os leads: ${error.message}`)
   return count ?? 0
 }
 
@@ -638,7 +638,7 @@ export async function contarEsperandoPessoa(clienteId: string): Promise<number> 
     .not('handoff_em', 'is', null)
 
   if (ehIdInvalido(error)) return 0
-  if (error) throw new Error(`não deu para contar quem espera atendimento: ${error.message}`)
+  if (error) throw new Error(`não foi possível contar quem espera atendimento: ${error.message}`)
   return count ?? 0
 }
 
@@ -776,7 +776,7 @@ export async function contatosPorMensagem(clienteId: string, bruto: string): Pro
     .order('ts', { ascending: false })
     .limit(500)
   if (ehIdInvalido(error)) return []
-  if (error) throw new Error(`não deu para buscar nas mensagens: ${error.message}`)
+  if (error) throw new Error(`não foi possível buscar nas mensagens: ${error.message}`)
   return [...new Set((data as { contact_id: string }[]).map((m) => m.contact_id))]
 }
 
@@ -889,7 +889,7 @@ export async function paginarLeads(
   // apaga um dígito não pode receber uma página vazia sem explicação.
   const { count: bruto, error: erroDaContagem } = await consulta().range(0, 0)
   if (ehIdInvalido(erroDaContagem)) return { leads: [], total: 0, pagina: 1, paginas: 1 }
-  if (erroDaContagem) throw new Error(`não deu para contar os leads: ${erroDaContagem.message}`)
+  if (erroDaContagem) throw new Error(`não foi possível contar os leads: ${erroDaContagem.message}`)
 
   const total = bruto ?? 0
   const paginas = Math.max(1, Math.ceil(total / porPagina))
@@ -898,7 +898,7 @@ export async function paginarLeads(
 
   const { data, error } = await consulta().range(inicio, inicio + porPagina - 1)
   if (ehIdInvalido(error)) return { leads: [], total: 0, pagina: 1, paginas: 1 }
-  if (error) throw new Error(`não deu para listar os leads: ${error.message}`)
+  if (error) throw new Error(`não foi possível listar os leads: ${error.message}`)
 
   return {
     leads: await classificar((data as Linha[]).map(paraLead)),
@@ -965,7 +965,7 @@ export async function pulsoDaConta(clienteId: string): Promise<string | null> {
     .limit(MENSAGENS_NO_PULSO)
 
   if (ehIdInvalido(error)) return null
-  if (error) throw new Error(`não deu para ler o pulso da conta: ${error.message}`)
+  if (error) throw new Error(`não foi possível ler o pulso da conta: ${error.message}`)
 
   const linhas = (data ?? []) as { ts: string; arquivo: unknown; situacao: string | null }[]
   const ultima = linhas[0]
@@ -992,7 +992,7 @@ async function contatosComEtiqueta(
   const { data, error } = await db().from('contacts').select('id').eq('client_id', clienteId)
 
   if (ehIdInvalido(error)) return []
-  if (error) throw new Error(`não deu para listar os contatos do cliente: ${error.message}`)
+  if (error) throw new Error(`não foi possível listar os contatos do cliente: ${error.message}`)
 
   const ids = (data as { id: string }[]).map((linha) => linha.id)
   const porContato = await etiquetasPorContato(ids)
@@ -1018,7 +1018,7 @@ export async function acharLead(
   ).maybeSingle()
 
   if (ehIdInvalido(error)) return null
-  if (error) throw new Error(`não deu para buscar o lead: ${error.message}`)
+  if (error) throw new Error(`não foi possível buscar o lead: ${error.message}`)
   if (!data) return null
   const [lead] = await classificar([paraLead(data as Linha)])
   return lead ?? null
@@ -1059,7 +1059,7 @@ export async function acharMensagemParaReagir(
     .maybeSingle()
 
   if (ehIdInvalido(erroDoContato)) return null
-  if (erroDoContato) throw new Error(`não deu para achar o contato: ${erroDoContato.message}`)
+  if (erroDoContato) throw new Error(`não foi possível achar o contato: ${erroDoContato.message}`)
   if (!contato) return null
 
   const { data, error } = await db()
@@ -1070,7 +1070,7 @@ export async function acharMensagemParaReagir(
     .maybeSingle()
 
   if (ehIdInvalido(error)) return null
-  if (error) throw new Error(`não deu para achar a mensagem: ${error.message}`)
+  if (error) throw new Error(`não foi possível achar a mensagem: ${error.message}`)
   if (!data) return null
 
   return { ts: (data as { ts: string }).ts }
@@ -1090,7 +1090,7 @@ export async function lerConversa(
     .limit(teto + 1)
 
   if (ehIdInvalido(error)) return { cortada: false, mensagens: [] }
-  if (error) throw new Error(`não deu para ler a conversa: ${error.message}`)
+  if (error) throw new Error(`não foi possível ler a conversa: ${error.message}`)
 
   const linhas = data as {
     id: string
@@ -1412,7 +1412,7 @@ export async function corrigirNome(
     .maybeSingle()
 
   if (ehIdInvalido(error)) return false
-  if (error) throw new Error(`não deu para corrigir o nome: ${error.message}`)
+  if (error) throw new Error(`não foi possível corrigir o nome: ${error.message}`)
   return data !== null
 }
 
@@ -1435,7 +1435,7 @@ export async function salvarNotas(
     .maybeSingle()
 
   if (ehIdInvalido(error)) return false
-  if (error) throw new Error(`não deu para salvar a anotação: ${error.message}`)
+  if (error) throw new Error(`não foi possível salvar a anotação: ${error.message}`)
   return data !== null
 }
 
@@ -1475,7 +1475,7 @@ export async function acrescentarNota(
     .maybeSingle()
 
   if (ehIdInvalido(error)) return false
-  if (error) throw new Error(`não deu para ler a anotação: ${error.message}`)
+  if (error) throw new Error(`não foi possível ler a anotação: ${error.message}`)
   if (!data) return false
 
   const anterior = ((data as { notas: string | null }).notas ?? '').trim()
@@ -1489,7 +1489,7 @@ export async function acrescentarNota(
     .eq('id', contatoId)
     .eq('client_id', clienteId)
 
-  if (erroAoSalvar) throw new Error(`não deu para acrescentar a anotação: ${erroAoSalvar.message}`)
+  if (erroAoSalvar) throw new Error(`não foi possível acrescentar a anotação: ${erroAoSalvar.message}`)
   return true
 }
 
@@ -1501,7 +1501,7 @@ export async function contatosConhecidos(clienteId: string): Promise<ContatoConh
     .eq('client_id', clienteId)
 
   if (ehIdInvalido(error)) return []
-  if (error) throw new Error(`não deu para ler os contatos: ${error.message}`)
+  if (error) throw new Error(`não foi possível ler os contatos: ${error.message}`)
 
   return (data as { id: string; wa_id: string; nome: string | null; nome_real: string }[]).map(
     (linha) => ({
@@ -1567,7 +1567,7 @@ export async function aplicarImportacao(
     // Corrida com uma mensagem que chegou entre a conciliação e o insert: o
     // contato passou a existir e a importação não deve estourar por isso.
     if (error?.code === '23505') continue
-    if (error) throw new Error(`não deu para criar o contato: ${error.message}`)
+    if (error) throw new Error(`não foi possível criar o contato: ${error.message}`)
     criados += 1
   }
 
@@ -1596,7 +1596,7 @@ export async function contarPorAtribuicao(
   )
 
   if (ehIdInvalido(error)) return { total: 0, semDono: 0, porUsuario: new Map() }
-  if (error) throw new Error(`não deu para contar as atribuições: ${error.message}`)
+  if (error) throw new Error(`não foi possível contar as atribuições: ${error.message}`)
 
   const linhas = data as { atribuido_a: string | null }[]
   const porUsuario = new Map<string, number>()
@@ -1650,7 +1650,7 @@ export async function criarContato(
     .maybeSingle()
 
   if (erroDaBusca && !ehIdInvalido(erroDaBusca)) {
-    throw new Error(`não deu para conferir o telefone: ${erroDaBusca.message}`)
+    throw new Error(`não foi possível conferir o telefone: ${erroDaBusca.message}`)
   }
   if (existente) {
     return { ok: false, motivo: 'este telefone já está na lista de contatos' }
@@ -1663,7 +1663,7 @@ export async function criarContato(
     .single()
 
   if (error?.code === '23505') return { ok: false, motivo: 'este telefone já está na lista' }
-  if (error) throw new Error(`não deu para criar o contato: ${error.message}`)
+  if (error) throw new Error(`não foi possível criar o contato: ${error.message}`)
   return { ok: true, contatoId: data.id as string }
 }
 
@@ -1698,7 +1698,7 @@ export async function adiarConversa(
     .eq('id', contatoId)
     .eq('client_id', clienteId)
 
-  if (error) throw new Error(`não deu para adiar a conversa: ${error.message}`)
+  if (error) throw new Error(`não foi possível adiar a conversa: ${error.message}`)
 }
 
 /**
@@ -1724,7 +1724,7 @@ export async function definirEstadoDaConversa(
     .eq('id', contatoId)
     .eq('client_id', clienteId)
 
-  if (error) throw new Error(`não deu para mudar o estado da conversa: ${error.message}`)
+  if (error) throw new Error(`não foi possível mudar o estado da conversa: ${error.message}`)
 }
 
 /**
@@ -1748,7 +1748,7 @@ export async function contarPorEstado(
 
   const vazio = { aberta: 0, adiada: 0, resolvida: 0 }
   if (ehIdInvalido(error)) return vazio
-  if (error) throw new Error(`não deu para contar por estado: ${error.message}`)
+  if (error) throw new Error(`não foi possível contar por estado: ${error.message}`)
 
   const contagem = { ...vazio }
   for (const linha of (data ?? []) as { estado_efetivo: string | null }[]) {
@@ -1795,7 +1795,7 @@ export async function filaInteira(
     .eq('client_id', clienteId)
 
   if (ehIdInvalido(erroDaContagem)) return []
-  if (erroDaContagem) throw new Error(`não deu para medir a fila: ${erroDaContagem.message}`)
+  if (erroDaContagem) throw new Error(`não foi possível medir a fila: ${erroDaContagem.message}`)
   if ((count ?? 0) > TETO_DA_FILA_LOCAL) return null
 
   /*
@@ -1837,7 +1837,7 @@ export async function contatosDaConta(clienteId: string, ids: string[]): Promise
     .in('id', ids)
 
   if (ehIdInvalido(error)) return []
-  if (error) throw new Error(`não deu para conferir os contatos: ${error.message}`)
+  if (error) throw new Error(`não foi possível conferir os contatos: ${error.message}`)
 
   return ((data ?? []) as { id: string }[]).map((linha) => linha.id)
 }
@@ -1861,7 +1861,7 @@ export async function leadsPorContatos(clienteId: string, ids: string[]): Promis
     .in('contact_id', ids)
 
   if (ehIdInvalido(error)) return []
-  if (error) throw new Error(`não deu para buscar os leads fixados: ${error.message}`)
+  if (error) throw new Error(`não foi possível buscar os leads fixados: ${error.message}`)
 
   return classificar((data as Linha[]).map(paraLead))
 }
@@ -1890,7 +1890,7 @@ export async function leadsMudadosDesde(
     .limit(TETO * 4)
 
   if (ehIdInvalido(error)) return { leads: [], completo: true }
-  if (error) throw new Error(`não deu para ler o que mudou na fila: ${error.message}`)
+  if (error) throw new Error(`não foi possível ler o que mudou na fila: ${error.message}`)
 
   const ids = [...new Set((data ?? []).map((linha) => linha.contact_id as string))]
   const completo = ids.length <= TETO && (data?.length ?? 0) < TETO * 4
@@ -1901,7 +1901,7 @@ export async function leadsMudadosDesde(
   const { data: linhas, error: erro } = await q
 
   if (ehIdInvalido(erro)) return { leads: [], completo }
-  if (erro) throw new Error(`não deu para ler as linhas da fila: ${erro.message}`)
+  if (erro) throw new Error(`não foi possível ler as linhas da fila: ${erro.message}`)
   return { leads: await classificar((linhas as Linha[]).map(paraLead)), completo }
 }
 
@@ -1927,7 +1927,7 @@ export async function contarAbertasPorAtendente(clienteId: string): Promise<Map<
 
   const porUsuario = new Map<string, number>()
   if (ehIdInvalido(error)) return porUsuario
-  if (error) throw new Error(`não deu para contar as conversas abertas: ${error.message}`)
+  if (error) throw new Error(`não foi possível contar as conversas abertas: ${error.message}`)
 
   for (const linha of data as { atribuido_a: string }[]) {
     porUsuario.set(linha.atribuido_a, (porUsuario.get(linha.atribuido_a) ?? 0) + 1)
@@ -1948,7 +1948,7 @@ export async function donoDoContato(
     .maybeSingle()
 
   if (ehIdInvalido(error)) return undefined
-  if (error) throw new Error(`não deu para saber de quem é a conversa: ${error.message}`)
+  if (error) throw new Error(`não foi possível saber de quem é a conversa: ${error.message}`)
   if (!data) return undefined
   return (data as { atribuido_a: string | null }).atribuido_a
 }
@@ -1973,7 +1973,7 @@ export async function contarConversasDaBarra(
     .or('estado_efetivo.is.null,estado_efetivo.eq.aberta')
     .or(`atribuido_a.is.null,atribuido_a.eq.${usuarioId}`)
   if (ehIdInvalido(error)) return { minhas: 0, semDono: 0 }
-  if (error) throw new Error(`não deu para contar as conversas: ${error.message}`)
+  if (error) throw new Error(`não foi possível contar as conversas: ${error.message}`)
 
   const linhas = (data ?? []) as { contact_id: string; atribuido_a: string | null }[]
   const naoLidas = await naoLidasPorContato(usuarioId, linhas.map((l) => l.contact_id))

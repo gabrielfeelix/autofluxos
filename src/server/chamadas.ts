@@ -77,7 +77,7 @@ async function contatoDoVisitante(canal: CanalDoSite, segredo: string): Promise<
     .eq('client_id', canal.clienteId)
     .eq('wa_id', enderecoDoVisitante(canal.id, segredo))
     .maybeSingle()
-  if (error) throw new Error(`não deu para achar o visitante: ${error.message}`)
+  if (error) throw new Error(`não foi possível achar o visitante: ${error.message}`)
   return data?.id ?? null
 }
 
@@ -109,7 +109,7 @@ export async function iniciarChamada(
     .insert({ client_id: canal.clienteId, contact_id: contatoId, channel_id: canal.id, oferta })
     .select('id')
     .single()
-  if (error) throw new Error(`não deu para abrir a chamada: ${error.message}`)
+  if (error) throw new Error(`não foi possível abrir a chamada: ${error.message}`)
   return { ok: true, id: data.id }
 }
 

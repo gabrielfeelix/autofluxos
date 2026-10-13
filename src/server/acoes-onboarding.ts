@@ -55,7 +55,7 @@ async function gravarFrente(
     if (anterior === nicho) return
     const r = await definirNicho(clienteId, nicho)
     if (!r.ok) {
-      console.error('[onboarding] não deu para gravar a frente:', r.motivo)
+      console.error('[onboarding] não foi possível gravar a frente:', r.motivo)
       return
     }
     await registrar({
@@ -69,6 +69,6 @@ async function gravarFrente(
       impersonadoPor: acesso.sessao?.impersonadoPor ?? null,
     })
   } catch (erro) {
-    console.error('[onboarding] não deu para gravar a frente:', erro)
+    console.error('[onboarding] não foi possível gravar a frente:', erro)
   }
 }

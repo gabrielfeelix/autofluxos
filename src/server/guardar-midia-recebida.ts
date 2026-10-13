@@ -66,7 +66,7 @@ export async function guardarMidiaRecebida(
     await guardarArquivo(clienteId, contatoId, mensagemId, arquivo, midia)
   } catch (erro) {
     console.warn(
-      '[midia] não deu para guardar a mídia recebida',
+      '[midia] não foi possível guardar a mídia recebida',
       erro instanceof Error ? erro.message : String(erro),
     )
   }

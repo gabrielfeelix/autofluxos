@@ -49,7 +49,7 @@ export function InteresseDaOportunidade({
         else setErroDoCatalogo(r.erro)
       })
       .catch(() => {
-        if (valeu) setErroDoCatalogo('não deu para ler o catálogo')
+        if (valeu) setErroDoCatalogo('não foi possível ler o catálogo')
       })
     return () => {
       valeu = false

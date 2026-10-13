@@ -33,7 +33,7 @@ export async function listarMotivos(clienteId: string): Promise<Motivo[]> {
     .order('criado_em', { ascending: true })
 
   if (ehIdInvalido(error)) return []
-  if (error) throw new Error(`não deu para listar os motivos: ${error.message}`)
+  if (error) throw new Error(`não foi possível listar os motivos: ${error.message}`)
 
   const achados = (data as Motivo[]) ?? []
   if (achados.length > 0) return achados
@@ -59,7 +59,7 @@ async function semear(clienteId: string): Promise<Motivo[]> {
     .insert(MOTIVOS_INICIAIS.map((nome, ordem) => ({ client_id: clienteId, nome, ordem })))
 
   if (error && error.code !== '23505') {
-    console.error('[motivos] não deu para semear:', error.message)
+    console.error('[motivos] não foi possível semear:', error.message)
   }
 
   const { data, error: erroDaLeitura } = await db()
@@ -69,7 +69,7 @@ async function semear(clienteId: string): Promise<Motivo[]> {
     .order('ordem', { ascending: true })
 
   if (erroDaLeitura) {
-    console.error('[motivos] não deu para reler:', erroDaLeitura.message)
+    console.error('[motivos] não foi possível reler:', erroDaLeitura.message)
     return []
   }
 
@@ -93,7 +93,7 @@ export async function criarMotivo(
     .from('motivos_de_perda')
     .insert({ client_id: clienteId, nome: limpo, ordem: atuais.length })
 
-  if (error) throw new Error(`não deu para criar o motivo: ${error.message}`)
+  if (error) throw new Error(`não foi possível criar o motivo: ${error.message}`)
   return { ok: true }
 }
 
@@ -112,6 +112,6 @@ export async function apagarMotivo(clienteId: string, motivoId: string): Promise
     .eq('id', motivoId)
 
   if (ehIdInvalido(error)) return false
-  if (error) throw new Error(`não deu para apagar o motivo: ${error.message}`)
+  if (error) throw new Error(`não foi possível apagar o motivo: ${error.message}`)
   return (count ?? 0) > 0
 }

@@ -73,7 +73,7 @@ export async function listarChavesDeApi(clienteId: string): Promise<ChaveDeApi[]
     .order('criada_em', { ascending: false })
 
   if (ehIdInvalido(error)) return []
-  if (error) throw new Error(`não deu para listar as chaves de API: ${error.message}`)
+  if (error) throw new Error(`não foi possível listar as chaves de API: ${error.message}`)
   const chaves = (data as Linha[]).map(paraChave)
   return [...chaves.filter((c) => !c.revogadaEm), ...chaves.filter((c) => c.revogadaEm)]
 }
@@ -108,10 +108,10 @@ export async function criarChaveDeApi(
       .single()
 
     if (error?.code === '23505') continue
-    if (error) throw new Error(`não deu para criar a chave de API: ${error.message}`)
+    if (error) throw new Error(`não foi possível criar a chave de API: ${error.message}`)
     return { chave: paraChave(data as Linha), inteira: montarChave(publico, segredo) }
   }
-  throw new Error('não deu para sortear um identificador livre para a chave')
+  throw new Error('não foi possível sortear um identificador livre para a chave')
 }
 
 /** Revoga na hora. Devolve a chave revogada, ou `null` se não é desta conta. */
@@ -126,7 +126,7 @@ export async function revogarChaveDeApi(clienteId: string, id: string): Promise<
     .maybeSingle()
 
   if (ehIdInvalido(error)) return null
-  if (error) throw new Error(`não deu para revogar a chave de API: ${error.message}`)
+  if (error) throw new Error(`não foi possível revogar a chave de API: ${error.message}`)
   return data ? paraChave(data as Linha) : null
 }
 
@@ -146,7 +146,7 @@ export async function conferirChaveDeApi(publico: string, segredo: string): Prom
     .eq('publico', publico)
     .maybeSingle()
 
-  if (error) throw new Error(`não deu para conferir a chave de API: ${error.message}`)
+  if (error) throw new Error(`não foi possível conferir a chave de API: ${error.message}`)
   if (!data) return null
 
   const linha = data as { id: string; client_id: string; hash: string; escopos: string[]; revogada_em: string | null }
@@ -163,8 +163,8 @@ export async function conferirChaveDeApi(publico: string, segredo: string): Prom
 export async function registrarUsoDaChave(chaveId: string): Promise<void> {
   try {
     const { error } = await db().rpc('registrar_uso_da_chave', { p_id: chaveId })
-    if (error) console.error('[api] não deu para registrar o uso da chave:', error.message)
+    if (error) console.error('[api] não foi possível registrar o uso da chave:', error.message)
   } catch (erro) {
-    console.error('[api] não deu para registrar o uso da chave:', erro)
+    console.error('[api] não foi possível registrar o uso da chave:', erro)
   }
 }

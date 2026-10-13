@@ -294,7 +294,7 @@ async function Tela({ cliente, busca }: { cliente: Cliente; busca: Busca }) {
       equipe = await membrosDaConta(cliente.id)
     } catch (erro) {
       console.error(
-        '[inbox] não deu para ler a equipe',
+        '[inbox] não foi possível ler a equipe',
         erro instanceof Error ? erro.message : erro,
       )
     }
@@ -687,8 +687,8 @@ async function Conteudo({
             alcance.tipo === 'tudo'
               ? 'Todos os atendentes'
               : alcance.tipo === 'donos' && alcance.donos.length > 1
-                ? 'Minha equipe e sem dono'
-                : 'Minhas e sem dono'
+                ? 'Minha equipe e sem responsável'
+                : 'Minhas e sem responsável'
           }
           contagem={contagem}
           porEstado={porEstado}

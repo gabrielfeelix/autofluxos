@@ -127,7 +127,7 @@ beforeAll(async () => {
   const conta = await criarCliente(`${marca} conta`)
   clienteId = conta.id
   const quadro = await criarQuadro(clienteId, `${marca} quadro`)
-  if (!quadro.ok) throw new Error(`não deu para criar o quadro: ${quadro.motivo}`)
+  if (!quadro.ok) throw new Error(`não foi possível criar o quadro: ${quadro.motivo}`)
   quadroId = quadro.id
   await definirQuadroPadrao(clienteId, quadroId)
   await definirEntradaNoFunil(clienteId, 'quadro_marcado')

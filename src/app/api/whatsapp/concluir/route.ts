@@ -167,8 +167,8 @@ export async function POST(req: Request) {
       }
     })
   } catch (erro) {
-    await alertar('não deu para concluir o onboarding do WhatsApp', erro, { cliente: clienteId })
-    return Response.json({ erro: 'não deu para concluir a conexão' }, { status: 500 })
+    await alertar('não foi possível concluir o onboarding do WhatsApp', erro, { cliente: clienteId })
+    return Response.json({ erro: 'não foi possível concluir a conexão' }, { status: 500 })
   }
 
   return Response.json({ ok: true, canalId })

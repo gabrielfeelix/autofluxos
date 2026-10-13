@@ -77,7 +77,7 @@ export function PlanoDaOrganizacao({
     comecar(async () => {
       try {
         const r = await acaoAdminTrocarPlano(organizacaoId, para, pedidoId, confirmacao)
-        if (!r.ok) voltar(r.erro ?? 'não deu para trocar o plano')
+        if (!r.ok) voltar(r.erro ?? 'não foi possível trocar o plano')
       } catch {
         voltar('sem conexão com o servidor')
       }
@@ -91,7 +91,7 @@ export function PlanoDaOrganizacao({
       const r = await acaoAdminCancelarDescida(organizacaoId).catch(() => ({ ok: false, erro: 'sem conexão com o servidor' }))
       if (!r.ok) {
         setDescida(antes)
-        setAviso(r.erro ?? 'não deu para cancelar a descida')
+        setAviso(r.erro ?? 'não foi possível cancelar a descida')
       }
     })
   }
@@ -105,7 +105,7 @@ export function PlanoDaOrganizacao({
       const r = await acaoAdminRecusarPedido(pedidoId).catch(() => ({ ok: false, erro: 'sem conexão com o servidor' }))
       if (!r.ok) {
         setPedidos(antes)
-        setAviso(r.erro ?? 'não deu para recusar')
+        setAviso(r.erro ?? 'não foi possível recusar')
       }
     })
   }

@@ -227,12 +227,12 @@ export function Quadro({
         if (!r.ok) {
           setCartoes(antes)
           setNoPainel((atual) => (atual?.id === cartaoId ? alvo : atual))
-          setErro(r.erro ?? 'não deu para mover')
+          setErro(r.erro ?? 'não foi possível mover')
         }
       } catch {
         setCartoes(antes)
         setNoPainel((atual) => (atual?.id === cartaoId ? alvo : atual))
-        setErro('não deu para mover agora, tente de novo')
+        setErro('não foi possível mover agora, tente de novo')
       }
     })
   }
@@ -280,11 +280,11 @@ export function Quadro({
         const r = await acaoTirarDoQuadro(clienteId, cartaoId)
         if (!r.ok) {
           setCartoes(antes)
-          setErro(r.erro ?? 'não deu para remover do funil')
+          setErro(r.erro ?? 'não foi possível remover do funil')
         }
       } catch {
         setCartoes(antes)
-        setErro('não deu para remover do funil agora')
+        setErro('não foi possível remover do funil agora')
       }
     })
   }
@@ -825,7 +825,7 @@ function ResumoDaEtapa({
             onClick={() => aoEscolher(atencao)}
             title={
               n === null
-                ? 'Não deu para ler as atividades agora'
+                ? 'Não foi possível ler as atividades agora'
                 : pressionada
                   ? 'Mostrar todos de novo'
                   : `${n} ${n === 1 ? nomes.um : nomes.varios} nesta etapa. Clique para ver só eles no funil.`
@@ -1019,12 +1019,12 @@ export function AdicionarContato({
                 try {
                   const r = await acaoPorNaEtapa(clienteId, quadroId, colunaId, marcados)
                   if (!r.ok) {
-                    setErro(r.erro ?? 'não deu para adicionar')
+                    setErro(r.erro ?? 'não foi possível adicionar')
                     return
                   }
                   fechar()
                 } catch {
-                  setErro('não deu para adicionar agora')
+                  setErro('não foi possível adicionar agora')
                 }
               })
             }}
@@ -1111,12 +1111,12 @@ function NovaEtapa({ clienteId, quadroId }: { clienteId: string; quadroId: strin
       try {
         const r = await acaoCriarEtapaDireto(clienteId, quadroId, nome)
         if (!r.ok) {
-          setErro(r.erro ?? 'não deu para criar')
+          setErro(r.erro ?? 'não foi possível criar')
           return
         }
         fechar()
       } catch {
-        setErro('não deu para criar agora')
+        setErro('não foi possível criar agora')
       }
     })
   }
@@ -1161,9 +1161,9 @@ function MenuDaEtapa({
     comecar(async () => {
       try {
         const r = await acao()
-        if (!r.ok) setErro(r.erro ?? 'não deu certo')
+        if (!r.ok) setErro(r.erro ?? 'não foi possível concluir')
       } catch {
-        setErro('não deu certo agora')
+        setErro('não foi possível concluir agora')
       }
     })
   }
@@ -1479,10 +1479,10 @@ function MenuDoCartao({
       try {
         const r = await acao()
         if (!r.ok) desfazer?.()
-        aoAvisar(r.ok ? (feito ?? null) : (r.erro ?? 'não deu certo'))
+        aoAvisar(r.ok ? (feito ?? null) : (r.erro ?? 'não foi possível concluir'))
       } catch {
         desfazer?.()
-        aoAvisar('não deu certo agora, tente de novo')
+        aoAvisar('não foi possível concluir agora, tente de novo')
       }
     })
   }
@@ -1714,7 +1714,7 @@ function TrazerMeusContatos({
           try {
             const r = await acaoTrazerTodosParaOQuadro(clienteId, quadroId)
             if (!r.ok) {
-              aoAvisar(r.erro ?? 'não deu para trazer')
+              aoAvisar(r.erro ?? 'não foi possível trazer')
               return
             }
             aoAvisar(
@@ -1723,7 +1723,7 @@ function TrazerMeusContatos({
                 : `${r.postos} trazidos para a primeira etapa.`,
             )
           } catch {
-            aoAvisar('não deu para trazer agora, tente de novo')
+            aoAvisar('não foi possível trazer agora, tente de novo')
           }
         })
       }

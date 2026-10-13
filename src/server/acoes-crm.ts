@@ -594,7 +594,7 @@ export async function acaoAnotar(
     return { ok: true, anotacao }
   } catch (erro) {
     console.error('[anotar]', erro instanceof Error ? erro.message : erro)
-    return { ok: false, erro: 'não deu para guardar agora' }
+    return { ok: false, erro: 'não foi possível guardar agora' }
   }
 }
 

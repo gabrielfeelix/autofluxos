@@ -97,7 +97,7 @@ export function ConectarWhatsapp({
 
       if (!resposta.ok) {
         const corpo = (await resposta.json().catch(() => ({}))) as { erro?: string }
-        setErro(corpo.erro ?? 'não deu para concluir a conexão')
+        setErro(corpo.erro ?? 'não foi possível concluir a conexão')
         setEstado('erro')
         return
       }
@@ -105,7 +105,7 @@ export function ConectarWhatsapp({
       // A tela lê o canal do servidor; `refresh` a repinta sem perder o lugar.
       router.refresh()
     } catch {
-      setErro('não deu para falar com o servidor; tente de novo')
+      setErro('não foi possível falar com o servidor; tente de novo')
       setEstado('erro')
     }
   }, [clienteId, router])

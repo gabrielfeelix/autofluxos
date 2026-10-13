@@ -303,7 +303,7 @@ export function ProvedorDeEntrega({
             bytes: arquivo.size,
           })
           if (!preparo.ok || !preparo.envio) {
-            falhou(anexo, preparo.erro ?? 'não deu para preparar o envio')
+            falhou(anexo, preparo.erro ?? 'não foi possível preparar o envio')
             return
           }
 
@@ -332,7 +332,7 @@ export function ProvedorDeEntrega({
             ...(texto !== '' && preparo.envio.midia !== 'audio' ? { legenda: texto } : {}),
           })
           if (!r.ok) {
-            falhou(anexo, r.erro ?? 'não deu para enviar')
+            falhou(anexo, r.erro ?? 'não foi possível enviar')
             return
           }
           marcar(anexo.id, 'enviado')

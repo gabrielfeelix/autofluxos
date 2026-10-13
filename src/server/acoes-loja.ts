@@ -255,7 +255,7 @@ export async function acaoTestarNuvemshop(
   const loja = await lojaNuvemshopDaConta(clienteId)
   if (!loja?.storeId || !loja.conexaoId) return { ok: false, motivo: 'conecte a loja antes de testar' }
   const credencial = await lerCredencial(loja.conexaoId, clienteId).catch(() => null)
-  if (!credencial) return { ok: false, motivo: 'o acesso à loja sumiu; conecte de novo' }
+  if (!credencial) return { ok: false, motivo: 'o acesso à loja não foi encontrado; conecte novamente' }
 
   const limpo = termo.trim()
   if (limpo.length < 2) return { ok: false, motivo: 'escreva o nome de um produto da loja' }
@@ -290,6 +290,6 @@ export async function acaoDesconectarNuvemshop(clienteId: string): Promise<{ ok:
     if (solta?.conexaoId) await apagarConexao(solta.conexaoId, clienteId)
     return { ok: true }
   } catch (erro) {
-    return { ok: false, motivo: erro instanceof Error ? erro.message : 'não deu para desconectar' }
+    return { ok: false, motivo: erro instanceof Error ? erro.message : 'não foi possível desconectar' }
   }
 }

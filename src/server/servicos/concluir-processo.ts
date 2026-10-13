@@ -214,7 +214,7 @@ export async function concluirProcesso(
     p_chave: pedido.chaveDaOperacao ?? null,
   })
 
-  if (error) return { ok: false, motivo: `não deu para concluir: ${error.message}` }
+  if (error) return { ok: false, motivo: `não foi possível concluir: ${error.message}` }
 
   // Conjunto vazio é recusa: cartão de outra conta, apagado, ou concluído por
   // um caminho que não gravou conclusão. Ver a 0033 sobre por que a função
@@ -340,7 +340,7 @@ export async function resolverContinuidade(
     p_conclusao_id: conclusaoId,
   })
 
-  if (error) throw new Error(`não deu para abrir o processo de destino: ${error.message}`)
+  if (error) throw new Error(`não foi possível abrir o processo de destino: ${error.message}`)
 
   const linhas = (data ?? []) as LinhaDaConclusao[]
   const primeira = linhas[0]
@@ -361,7 +361,7 @@ export async function conclusaoDoCartao(
 
   if (error) {
     if (error.code === '22P02') return null
-    throw new Error(`não deu para ler a conclusão: ${error.message}`)
+    throw new Error(`não foi possível ler a conclusão: ${error.message}`)
   }
   return data ? paraConclusao(data as unknown as LinhaDaConclusao) : null
 }
@@ -387,7 +387,7 @@ export async function continuidadesPendentes(
 
   if (error) {
     if (error.code === '22P02') return []
-    throw new Error(`não deu para ler as pendências: ${error.message}`)
+    throw new Error(`não foi possível ler as pendências: ${error.message}`)
   }
   return (data as unknown as LinhaDaConclusao[]).map(paraConclusao)
 }

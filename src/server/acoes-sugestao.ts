@@ -40,6 +40,6 @@ export async function acaoSugerirMelhoria(
     alvoNome: tela,
     detalhes: { texto: conferida.texto, tela, nome: acesso.sessao.usuario.nome },
   })
-  if (!gravou) return { ok: false, erro: 'não deu para enviar agora. Tente de novo em instantes.' }
+  if (!gravou) return { ok: false, erro: 'não foi possível enviar agora. Tente de novo em instantes.' }
   return { ok: true }
 }

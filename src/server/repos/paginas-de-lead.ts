@@ -29,7 +29,7 @@ export async function clientePelaPagina(pageId: string): Promise<string | null> 
 
   if (error) {
     if (ehIdInvalido(error)) return null
-    throw new Error(`não deu para achar a conta da página: ${error.message}`)
+    throw new Error(`não foi possível achar a conta da página: ${error.message}`)
   }
 
   return (data as { client_id: string } | null)?.client_id ?? null
@@ -45,7 +45,7 @@ export async function paginasDaConta(clienteId: string): Promise<PaginaDeLead[]>
 
   if (error) {
     if (ehIdInvalido(error)) return []
-    throw new Error(`não deu para listar as páginas: ${error.message}`)
+    throw new Error(`não foi possível listar as páginas: ${error.message}`)
   }
 
   return ((data ?? []) as { page_id: string; nome: string | null; criado_em: string }[]).map(
@@ -80,7 +80,7 @@ export async function ligarPagina(entrada: {
       { onConflict: 'page_id' },
     )
 
-  if (error) return { ok: false, motivo: `não deu para ligar a página: ${error.message}` }
+  if (error) return { ok: false, motivo: `não foi possível ligar a página: ${error.message}` }
   return { ok: true }
 }
 
@@ -92,7 +92,7 @@ export async function desligarPagina(clienteId: string, pageId: string): Promise
     .eq('page_id', pageId.trim())
     .eq('client_id', clienteId)
 
-  if (error) throw new Error(`não deu para desligar a página: ${error.message}`)
+  if (error) throw new Error(`não foi possível desligar a página: ${error.message}`)
   return (count ?? 0) > 0
 }
 
@@ -124,7 +124,7 @@ export async function formulariosAtivos(): Promise<
 
   if (error) {
     if (ehIdInvalido(error)) return []
-    throw new Error(`não deu para listar os formulários: ${error.message}`)
+    throw new Error(`não foi possível listar os formulários: ${error.message}`)
   }
 
   return ((data ?? []) as { client_id: string; page_id: string; form_id: string }[]).map((l) => ({

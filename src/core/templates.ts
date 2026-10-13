@@ -254,7 +254,7 @@ export function conferirValores(
     return { ok: false, erro: 'Preencha todos os campos do modelo antes de enviar.' }
   }
   if (cabecalho.some((v) => v.length > LIMITE_DO_VALOR.cabecalho) || corpo.some((v) => v.length > LIMITE_DO_VALOR.corpo)) {
-    return { ok: false, erro: 'Um dos campos do modelo passou do tamanho que a Meta aceita.' }
+    return { ok: false, erro: 'Um dos campos do modelo excede o tamanho aceito pela Meta.' }
   }
   return { ok: true, valores: { cabecalho, corpo } }
 }

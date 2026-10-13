@@ -72,7 +72,7 @@ export function CartaoDaPagina({
             onClick={() =>
               comecar(async () => {
                 const r = await acaoDesligarPagina(clienteId, pageId).catch(() => ({ ok: false, erro: 'sem conexão com o servidor' }))
-                if (!r.ok) setResultado(r.erro ?? 'não deu para desligar a página')
+                if (!r.ok) setResultado(r.erro ?? 'não foi possível desligar a página')
               })
             }
             className="botao-secundario botao-sm"

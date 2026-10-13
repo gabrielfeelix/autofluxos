@@ -115,7 +115,7 @@ async function umLead(
     await alertar(
       precisaReconectar
         ? 'o acesso aos leads venceu; reconecte para voltar a receber do formulário'
-        : 'não deu para buscar o lead do formulário na Meta',
+        : 'não foi possível buscar o lead do formulário na Meta',
       `${busca.erro.mensagem} (lead ${aviso.leadgenId})`,
       { lead: aviso.leadgenId },
     )
@@ -212,7 +212,7 @@ async function registrarAnuncio(
     })
   } catch (erro) {
     const detalhe = erro instanceof Error ? erro.message : String(erro)
-    await alertar('não deu para registrar a passagem do lead do formulário', detalhe, {
+    await alertar('não foi possível registrar a passagem do lead do formulário', detalhe, {
       contato: alvo,
     })
   }

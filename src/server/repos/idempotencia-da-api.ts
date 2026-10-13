@@ -39,7 +39,7 @@ export async function reservarIdempotencia(dados: {
     .eq('client_id', dados.clienteId)
     .eq('chave', dados.chave)
     .lt('criado_em', limite)
-  if (erroDaLimpeza) throw new Error(`não deu para limpar a idempotência: ${erroDaLimpeza.message}`)
+  if (erroDaLimpeza) throw new Error(`não foi possível limpar a idempotência: ${erroDaLimpeza.message}`)
 
   const { error } = await db().from('api_idempotencia').insert({
     client_id: dados.clienteId,
@@ -49,7 +49,7 @@ export async function reservarIdempotencia(dados: {
     impressao: dados.impressao,
   })
   if (!error) return { tipo: 'nova' }
-  if (error.code !== '23505') throw new Error(`não deu para reservar a idempotência: ${error.message}`)
+  if (error.code !== '23505') throw new Error(`não foi possível reservar a idempotência: ${error.message}`)
 
   const { data, error: erroDaLeitura } = await db()
     .from('api_idempotencia')
@@ -57,7 +57,7 @@ export async function reservarIdempotencia(dados: {
     .eq('client_id', dados.clienteId)
     .eq('chave', dados.chave)
     .maybeSingle()
-  if (erroDaLeitura) throw new Error(`não deu para ler a idempotência: ${erroDaLeitura.message}`)
+  if (erroDaLeitura) throw new Error(`não foi possível ler a idempotência: ${erroDaLeitura.message}`)
 
   const linha = data as Linha | null
   // Sumiu entre o insert e a leitura: a outra chamada falhou e liberou.
@@ -73,19 +73,19 @@ export async function concluirIdempotencia(clienteId: string, chave: string, sta
     .update({ status, resposta })
     .eq('client_id', clienteId)
     .eq('chave', chave)
-  if (error) console.error('[api] não deu para guardar a resposta idempotente:', error.message)
+  if (error) console.error('[api] não foi possível guardar a resposta idempotente:', error.message)
 }
 
 /** Falha nossa ou da Meta: nada saiu, então a repetição pode tentar de novo. */
 export async function liberarIdempotencia(clienteId: string, chave: string): Promise<void> {
   const { error } = await db().from('api_idempotencia').delete().eq('client_id', clienteId).eq('chave', chave)
-  if (error) console.error('[api] não deu para liberar a idempotência:', error.message)
+  if (error) console.error('[api] não foi possível liberar a idempotência:', error.message)
 }
 
 /** Para o cron: apaga o que passou de 24h. Devolve quantas linhas saíram. */
 export async function limparIdempotenciaVencida(): Promise<number> {
   const limite = new Date(Date.now() - VALIDADE_EM_HORAS * 3600_000).toISOString()
   const { data, error } = await db().from('api_idempotencia').delete().lt('criado_em', limite).select('chave')
-  if (error) throw new Error(`não deu para limpar a idempotência: ${error.message}`)
+  if (error) throw new Error(`não foi possível limpar a idempotência: ${error.message}`)
   return (data ?? []).length
 }

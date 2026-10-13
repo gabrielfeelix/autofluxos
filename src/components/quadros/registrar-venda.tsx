@@ -263,12 +263,12 @@ export function RegistrarVenda({
           chaveDaOperacao: chave.current ?? undefined,
         })
         if (!r.ok) {
-          setErro(r.erro ?? 'não deu para registrar')
+          setErro(r.erro ?? 'não foi possível registrar')
           return
         }
         aoConcluir()
       } catch {
-        setErro('não deu para registrar agora, tente de novo')
+        setErro('não foi possível registrar agora, tente de novo')
       }
     })
   }

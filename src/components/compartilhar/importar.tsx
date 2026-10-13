@@ -46,12 +46,12 @@ export function ImportarFluxo({
       try {
         const r = await acaoImportarFluxoCompartilhado(destino, token)
         if (!r.ok || !r.fluxoId) {
-          setErro(r.erro ?? 'não deu para importar')
+          setErro(r.erro ?? 'não foi possível importar')
           return
         }
         router.push(`/clientes/${destino}/fluxos/${r.fluxoId}?origem=importado`)
       } catch {
-        setErro('não deu para importar agora, tente de novo em instantes')
+        setErro('não foi possível importar agora, tente de novo em instantes')
       }
     })
   }

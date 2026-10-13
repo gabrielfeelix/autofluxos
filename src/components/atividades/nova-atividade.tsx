@@ -188,7 +188,7 @@ function DialogoDeNovaAtividade({
       if (este !== pedidoDaBusca.current) return
       setBuscando(false)
       setAchados(r.ok ? (r.contatos ?? []) : [])
-      if (!r.ok) setErro(r.erro ?? 'não deu para buscar')
+      if (!r.ok) setErro(r.erro ?? 'não foi possível buscar')
     }, ESPERA_DA_BUSCA)
   }
 
@@ -217,7 +217,7 @@ function DialogoDeNovaAtividade({
         ...pedidoDosCampos(valores),
       })
       if (!r.ok || !r.criada) {
-        setErro(r.erro ?? 'não deu para criar')
+        setErro(r.erro ?? 'não foi possível criar')
         return
       }
       aoCriar({

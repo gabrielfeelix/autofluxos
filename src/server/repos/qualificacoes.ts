@@ -38,7 +38,7 @@ export async function criteriosDoObjetivo(
     .maybeSingle()
 
   if (ehIdInvalido(error)) return null
-  if (error) throw new Error(`não deu para ler os critérios: ${error.message}`)
+  if (error) throw new Error(`não foi possível ler os critérios: ${error.message}`)
   if (!data) return null
 
   const linha = data as LinhaDosCriterios
@@ -60,7 +60,7 @@ export async function criteriosDaConta(clienteId: string): Promise<Criterios[]> 
 
   if (error) {
     if (ehIdInvalido(error)) return []
-    throw new Error(`não deu para ler os critérios: ${error.message}`)
+    throw new Error(`não foi possível ler os critérios: ${error.message}`)
   }
 
   return ((data ?? []) as LinhaDosCriterios[]).map((linha) => ({
@@ -116,7 +116,7 @@ export async function publicarCriterios(
       { onConflict: 'client_id,objetivo' },
     )
 
-  if (error) return { ok: false, problemas: [`não deu para gravar: ${error.message}`] }
+  if (error) return { ok: false, problemas: [`não foi possível gravar: ${error.message}`] }
   return { ok: true, versao: proposta.versao }
 }
 
@@ -170,7 +170,7 @@ export async function avaliarContato(
     autor_id: autorId,
   })
 
-  if (error) return { ok: false, motivo: `não deu para gravar a avaliação: ${error.message}` }
+  if (error) return { ok: false, motivo: `não foi possível gravar a avaliação: ${error.message}` }
   return { ok: true, avaliacao }
 }
 
@@ -208,7 +208,7 @@ export async function avaliacoesDoContato(
 
   if (error) {
     if (ehIdInvalido(error)) return []
-    throw new Error(`não deu para ler as avaliações: ${error.message}`)
+    throw new Error(`não foi possível ler as avaliações: ${error.message}`)
   }
 
   const porObjetivo = new Map<string, AvaliacaoGravada>()

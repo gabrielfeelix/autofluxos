@@ -84,15 +84,15 @@ export async function terminarOnboarding(entrada: {
       displayPhoneNumber: numero.display_phone_number ?? null,
       verifiedName: numero.verified_name ?? null,
     }).catch(async (erro) => {
-      await alertar('não deu para anotar o telefone de exibição do número', erro, contexto)
+      await alertar('não foi possível anotar o telefone de exibição do número', erro, contexto)
     })
   } catch (erro) {
     /*
-     * Não deu para perguntar. **Não assumimos que é coexistente**: seguir em
+     * Não foi possível perguntar. **Não assumimos que é coexistente**: seguir em
      * frente dispararia os dois syncs de um número que pode ser Cloud API
      * pura, gastando as duas chances por um palpite.
      */
-    await alertar('não deu para conferir se o número é coexistente', erro, contexto)
+    await alertar('não foi possível conferir se o número é coexistente', erro, contexto)
     return
   }
 
@@ -177,7 +177,7 @@ export async function terminarOnboarding(entrada: {
      */
     if (wabaId !== entrada.wabaId) {
       await anotarWaba(entrada.canalId, wabaId).catch(async (erro) => {
-        await alertar('não deu para corrigir a WABA do canal', erro, {
+        await alertar('não foi possível corrigir a WABA do canal', erro, {
           ...contexto,
           waba: wabaId,
         })
@@ -215,7 +215,7 @@ async function dispararUmaVez(
   try {
     reservado = await reservarSync(entrada.canalId, tipo)
   } catch (erro) {
-    await alertar('não deu para reservar o sync', erro, contexto)
+    await alertar('não foi possível reservar o sync', erro, contexto)
     return
   }
 
@@ -296,13 +296,13 @@ async function terminarCloudApiPura(
 
   if (wabaId !== entrada.wabaId) {
     await anotarWaba(entrada.canalId, wabaId).catch(async (erro) => {
-      await alertar('não deu para corrigir a WABA do canal', erro, { ...contexto, waba: wabaId })
+      await alertar('não foi possível corrigir a WABA do canal', erro, { ...contexto, waba: wabaId })
     })
   }
 
   if (!naCloudApi) {
     await registrarNumero(entrada.phoneNumberId, entrada.token).catch(async (erro) => {
-      await alertar('não deu para registrar o número na Cloud API', erro, contexto)
+      await alertar('não foi possível registrar o número na Cloud API', erro, contexto)
     })
   }
 }

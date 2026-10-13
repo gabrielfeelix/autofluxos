@@ -64,7 +64,7 @@ export function caminhoEhDoNegocio(caminho: string, clienteId: string, cartaoId:
 export async function urlDeEnvio(caminho: string): Promise<{ url: string } | null> {
   const { data, error } = await db().storage.from(BUCKET_DOS_NEGOCIOS).createSignedUploadUrl(caminho)
   if (error || !data) {
-    console.error('[arquivos do negócio] não deu para assinar o envio', error?.message)
+    console.error('[arquivos do negócio] não foi possível assinar o envio', error?.message)
     return null
   }
   return { url: data.signedUrl }
@@ -98,7 +98,7 @@ export async function registrar(
     .single()
 
   if (error) {
-    console.error('[arquivos do negócio] não deu para registrar', error.message)
+    console.error('[arquivos do negócio] não foi possível registrar', error.message)
     return null
   }
   const linha = data as Linha
@@ -124,7 +124,7 @@ export async function arquivosDoNegocio(clienteId: string, cartaoId: string): Pr
   // Degrada, não derruba: a página do negócio abre sem os arquivos.
   if (ehIdInvalido(error)) return []
   if (error) {
-    console.error('[arquivos do negócio] não deu para ler', error.message)
+    console.error('[arquivos do negócio] não foi possível ler', error.message)
     return []
   }
   const linhas = (data ?? []) as Linha[]
@@ -195,5 +195,5 @@ export async function apagarTodosDoNegocio(clienteId: string, cartaoId: string):
 async function apagarObjetos(caminhos: string[]): Promise<void> {
   if (caminhos.length === 0) return
   const { error } = await db().storage.from(BUCKET_DOS_NEGOCIOS).remove(caminhos)
-  if (error) console.error('[arquivos do negócio] não deu para apagar do bucket', error.message)
+  if (error) console.error('[arquivos do negócio] não foi possível apagar do bucket', error.message)
 }

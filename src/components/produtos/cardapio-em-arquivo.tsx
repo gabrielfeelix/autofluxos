@@ -65,7 +65,7 @@ function Envio({ clienteId, tipo, atual }: { clienteId: string; tipo: TipoDeMate
           bytes: arquivo.size,
         })
         if (!preparo.ok || !preparo.envio) {
-          setErro(preparo.erro ?? 'não deu para preparar o envio')
+          setErro(preparo.erro ?? 'não foi possível preparar o envio')
           return
         }
 
@@ -86,9 +86,9 @@ function Envio({ clienteId, tipo, atual }: { clienteId: string; tipo: TipoDeMate
         // O nome que o cliente vê é o original, com acento; o do acervo foi
         // normalizado para a URL e ninguém o lê.
         const salvo = await acaoSalvarMaterial(clienteId, tipo, preparo.envio.urlPublica, arquivo.name)
-        if (!salvo.ok) setErro(salvo.erro ?? 'não deu para salvar')
+        if (!salvo.ok) setErro(salvo.erro ?? 'não foi possível salvar')
       } catch (e) {
-        setErro(e instanceof Error ? e.message : 'não deu para enviar')
+        setErro(e instanceof Error ? e.message : 'não foi possível enviar')
       }
     })
   }
@@ -97,7 +97,7 @@ function Envio({ clienteId, tipo, atual }: { clienteId: string; tipo: TipoDeMate
     setErro(null)
     comecar(async () => {
       const r = await acaoRemoverMaterial(clienteId, tipo)
-      if (!r.ok) setErro(r.erro ?? 'não deu para remover')
+      if (!r.ok) setErro(r.erro ?? 'não foi possível remover')
     })
   }
 

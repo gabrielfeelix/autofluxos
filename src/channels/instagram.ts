@@ -113,7 +113,7 @@ export function canalInstagram(config: ConfigInstagram): Canal {
         throw new Error(`o Instagram não respondeu em ${timeoutMs / 1000}s`)
       }
       throw new Error(
-        `não deu para falar com o Instagram: ${erro instanceof Error ? erro.message : erro}`,
+        `não foi possível falar com o Instagram: ${erro instanceof Error ? erro.message : erro}`,
       )
     }
 
@@ -148,7 +148,7 @@ export function canalInstagram(config: ConfigInstagram): Canal {
         // "Digitando" é conveniência, como no WhatsApp. Barrar a resposta por
         // causa dele seria transformar melhoria visual em indisponibilidade.
         console.warn(
-          '[instagram] não deu para mostrar digitando',
+          '[instagram] não foi possível mostrar digitando',
           erro instanceof Error ? erro.message : String(erro),
         )
       }

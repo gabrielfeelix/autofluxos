@@ -53,7 +53,7 @@ export async function camposDoContato(
     .maybeSingle()
 
   if (ehIdInvalido(error)) return null
-  if (error) throw new Error(`não deu para ler os campos: ${error.message}`)
+  if (error) throw new Error(`não foi possível ler os campos: ${error.message}`)
   if (!data) return null
 
   const linha = data as {
@@ -140,7 +140,7 @@ export async function gravarCampos(
   })
 
   if (ehIdInvalido(error)) return { ok: false, motivo: 'nao_encontrado' }
-  if (error) throw new Error(`não deu para gravar os campos: ${error.message}`)
+  if (error) throw new Error(`não foi possível gravar os campos: ${error.message}`)
 
   const linha = ((data ?? []) as LinhaDaGravacao[])[0]
   if (!linha?.o_ok) return { ok: false, motivo: 'nao_encontrado' }
@@ -172,7 +172,7 @@ export async function definicoesDeCampo(clienteId: string): Promise<DefinicaoDeC
   // configuração, e uma conta sem nenhuma continua atendendo normalmente.
   if (error) {
     if (ehIdInvalido(error)) return []
-    throw new Error(`não deu para ler as definições: ${error.message}`)
+    throw new Error(`não foi possível ler as definições: ${error.message}`)
   }
 
   return ((data ?? []) as LinhaDaDefinicao[]).map((linha) => ({
@@ -208,7 +208,7 @@ export async function definirCampo(
       { onConflict: 'client_id,chave' },
     )
 
-  if (error) return { ok: false, motivo: `não deu para gravar: ${error.message}` }
+  if (error) return { ok: false, motivo: `não foi possível gravar: ${error.message}` }
   return { ok: true }
 }
 
@@ -231,7 +231,7 @@ export async function arquivarCampo(
     .select('chave')
     .maybeSingle()
 
-  if (error) return { ok: false, motivo: `não deu para arquivar: ${error.message}` }
+  if (error) return { ok: false, motivo: `não foi possível arquivar: ${error.message}` }
   if (!data) return { ok: false, motivo: 'esse campo não existe nesta conta' }
   return { ok: true }
 }

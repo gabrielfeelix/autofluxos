@@ -419,7 +419,7 @@ function ConfirmarDaMeta({
           : {}),
       })
       if (!r.ok) {
-        setErro(r.erro ?? 'Não deu para criar.')
+        setErro(r.erro ?? 'Não foi possível criar.')
         return
       }
       router.refresh()
@@ -580,7 +580,7 @@ function Ajuste({
         categoria: modelo.categoria,
       })
       if (!r.ok) {
-        setErro(r.erro ?? 'Não deu para criar.')
+        setErro(r.erro ?? 'Não foi possível criar.')
         return
       }
       router.refresh()

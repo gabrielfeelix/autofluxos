@@ -185,7 +185,7 @@ function oQueFicaSoLeitura(de: PlanoVigente | undefined, para: PlanoVigente): st
 /** Cancela as transmissões ainda agendadas da organização. Devolve quantas. */
 async function cancelarAgendadas(clienteId: string): Promise<number> {
   const { data, error } = await db().from('transmissoes').select('id').eq('cliente_id', clienteId).eq('estado', 'agendada')
-  if (error) throw new Error(`não deu para ler as transmissões agendadas: ${error.message}`)
+  if (error) throw new Error(`não foi possível ler as transmissões agendadas: ${error.message}`)
   const ids = ((data ?? []) as { id: string }[]).map((linha) => linha.id)
   for (const id of ids) await mudarEstadoDaTransmissao(id, 'cancelada', { erro: 'cancelada na descida de plano: o plano novo não inclui transmissões' })
   return ids.length

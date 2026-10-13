@@ -161,7 +161,7 @@ export async function conversaDoVisitante(
     .eq('wa_id', endereco)
     .maybeSingle()
 
-  if (error) throw new Error(`não deu para achar o visitante: ${error.message}`)
+  if (error) throw new Error(`não foi possível achar o visitante: ${error.message}`)
   const formulario = canal.config.formulario
   if (!contato) return { mensagens: [], identificado: false, faltam: camposQueFaltam(formulario, null) }
 
@@ -174,7 +174,7 @@ export async function conversaDoVisitante(
     .order('ts', { ascending: false })
     .limit(100)
 
-  if (erro) throw new Error(`não deu para ler a conversa: ${erro.message}`)
+  if (erro) throw new Error(`não foi possível ler a conversa: ${erro.message}`)
 
   const campos = (contato.campos ?? {}) as Record<string, string>
   const faltam = camposQueFaltam(formulario, { nome: contato.nome_real || contato.nome || null, campos })
@@ -219,7 +219,7 @@ export async function identificarVisitante(
     .eq('wa_id', endereco)
     .maybeSingle()
 
-  if (error) throw new Error(`não deu para achar o visitante: ${error.message}`)
+  if (error) throw new Error(`não foi possível achar o visitante: ${error.message}`)
   if (!data) return { ok: false, motivo: 'Mande uma mensagem antes.' }
 
   const campos = { ...((data.campos ?? {}) as Record<string, string>) }
@@ -232,7 +232,7 @@ export async function identificarVisitante(
     // equipe corrigiu, e não é sobrescrito por um formulário.
     .update({ nome, campos })
     .eq('id', data.id)
-  if (erro) throw new Error(`não deu para guardar o contato do visitante: ${erro.message}`)
+  if (erro) throw new Error(`não foi possível guardar o contato do visitante: ${erro.message}`)
 
   return { ok: true }
 }

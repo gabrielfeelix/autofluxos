@@ -71,7 +71,7 @@ export async function apagarContato(clienteId: string, contatoId: string): Promi
     .maybeSingle()
 
   if (ehIdInvalido(error)) return false
-  if (error) throw new Error(`não deu para apagar o contato: ${error.message}`)
+  if (error) throw new Error(`não foi possível apagar o contato: ${error.message}`)
   return data !== null
 }
 
@@ -102,7 +102,7 @@ export async function apagarContatos(
     .select('id')
 
   if (ehIdInvalido(error)) return 0
-  if (error) throw new Error(`não deu para apagar os contatos: ${error.message}`)
+  if (error) throw new Error(`não foi possível apagar os contatos: ${error.message}`)
   return data?.length ?? 0
 }
 
@@ -143,7 +143,7 @@ export async function apagarContatosVencidos(opcoes: {
 
   const { data, error } = await consulta
   if (ehIdInvalido(error)) return { apagados: 0, temMais: false }
-  if (error) throw new Error(`não deu para achar os contatos vencidos: ${error.message}`)
+  if (error) throw new Error(`não foi possível achar os contatos vencidos: ${error.message}`)
 
   const encontrados = (data as { contact_id: string }[]).map((linha) => linha.contact_id)
   const alvos = encontrados.slice(0, teto)
@@ -155,7 +155,7 @@ export async function apagarContatosVencidos(opcoes: {
     .in('id', alvos)
     .select('id')
 
-  if (erroAoApagar) throw new Error(`não deu para apagar os vencidos: ${erroAoApagar.message}`)
+  if (erroAoApagar) throw new Error(`não foi possível apagar os vencidos: ${erroAoApagar.message}`)
 
   return {
     apagados: (apagados as { id: string }[]).length,

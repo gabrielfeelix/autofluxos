@@ -66,7 +66,7 @@ async function pedir(url: string, init?: RequestInit): Promise<unknown> {
       throw new Error('a Meta não respondeu a tempo; tente conectar de novo')
     }
     throw new Error(
-      `não deu para falar com a Meta: ${erro instanceof Error ? erro.message : String(erro)}`,
+      `não foi possível falar com a Meta: ${erro instanceof Error ? erro.message : String(erro)}`,
     )
   }
 

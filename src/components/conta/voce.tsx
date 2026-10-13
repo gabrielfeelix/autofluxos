@@ -178,7 +178,7 @@ async function recortarQuadrada(arquivo: File): Promise<File> {
     const imagem = await new Promise<HTMLImageElement>((resolver, rejeitar) => {
       const i = new Image()
       i.onload = () => resolver(i)
-      i.onerror = () => rejeitar(new Error('não deu para ler a imagem'))
+      i.onerror = () => rejeitar(new Error('não foi possível ler a imagem'))
       i.src = url
     })
     const lado = Math.min(imagem.naturalWidth, imagem.naturalHeight)
@@ -199,7 +199,7 @@ async function recortarQuadrada(arquivo: File): Promise<File> {
         256,
       )
     const blob = await new Promise<Blob | null>((resolver) => tela.toBlob(resolver, 'image/webp', 0.9))
-    if (!blob) throw new Error('não deu para preparar a foto')
+    if (!blob) throw new Error('não foi possível preparar a foto')
     return new File([blob], 'foto.webp', { type: 'image/webp' })
   } finally {
     URL.revokeObjectURL(url)
@@ -244,7 +244,7 @@ export function EditarPerfil({
       setTirarFoto(false)
       setAvatar(null)
     } catch (e) {
-      setErro(e instanceof Error ? e.message : 'não deu para ler a imagem')
+      setErro(e instanceof Error ? e.message : 'não foi possível ler a imagem')
     }
   }
 

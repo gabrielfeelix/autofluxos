@@ -28,7 +28,7 @@ import { membrosDaConta, type MembroDaConta } from '@/server/repos/usuarios'
 import { ajustesDaConta, type ModoDeDistribuicao } from '@/server/repos/distribuicao'
 
 const ROTULO_DA_DISTRIBUICAO: Record<ModoDeDistribuicao, string> = {
-  manual: 'sem dono',
+  manual: 'sem responsável',
   balanceado: 'quem tem menos',
   rodizio: 'em ordem',
 }
@@ -99,7 +99,7 @@ export default async function Pagina({
   try {
     equipe = await membrosDaConta(cliente.id)
   } catch (erro) {
-    console.error('[ajustes] não deu para ler a equipe', erro instanceof Error ? erro.message : erro)
+    console.error('[ajustes] não foi possível ler a equipe', erro instanceof Error ? erro.message : erro)
   }
 
   return (
@@ -225,7 +225,7 @@ export default async function Pagina({
             href={`/clientes/${cliente.id}/ajustes/distribuicao`}
             icone={ICONE_DA_TELA['distribuicao']}
             titulo="Distribuição"
-            descricao="Quem recebe a conversa quando o bot passa para uma pessoa, e passar conversas em lote."
+            descricao="Quem recebe a conversa quando o bot transfere para uma pessoa, e transferência de conversas em lote."
             estado={
               <Selo tom={distribuicao.distribuicao === 'manual' ? 'neutro' : 'ok'}>
                 {ROTULO_DA_DISTRIBUICAO[distribuicao.distribuicao]}

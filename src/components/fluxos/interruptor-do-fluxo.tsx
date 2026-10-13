@@ -71,9 +71,9 @@ export function InterruptorDoFluxo({
           }
           depoisDaTela(() => acaoAlternarFluxoAtivo(clienteId, fluxo.id, !antes)).then(
             (r) => {
-              if (!r.ok) desfazer(r.erro ?? 'não deu para ligar ou desligar')
+              if (!r.ok) desfazer(r.erro ?? 'não foi possível ligar ou desligar')
             },
-            () => desfazer('não deu para ligar ou desligar agora'),
+            () => desfazer('não foi possível ligar ou desligar agora'),
           )
         }}
         className={`relative h-[18px] w-8 shrink-0 rounded-full border transition disabled:cursor-not-allowed disabled:opacity-50 ${

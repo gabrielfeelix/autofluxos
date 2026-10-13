@@ -188,12 +188,12 @@ export function TelefoneDoInbox({ clienteId }: { clienteId: string }) {
       })
       if (!envio.ok) {
         const { erro } = (await envio.json().catch(() => ({}))) as { erro?: string }
-        return terminar(chamada, erro ?? 'Não deu para atender')
+        return terminar(chamada, erro ?? 'Não foi possível atender')
       }
       setAgora(Date.now())
       setFase({ tipo: 'falando', chamada, desde: Date.now() })
     } catch {
-      terminar(chamada, 'Não deu para atender')
+      terminar(chamada, 'Não foi possível atender')
     }
   }
 

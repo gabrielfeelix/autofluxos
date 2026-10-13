@@ -61,7 +61,7 @@ export async function lerPoliticas(clienteId: string): Promise<Map<string, Polit
     .eq('client_id', clienteId)
 
   if (error || !data) {
-    if (error) console.error('[ia] não deu para ler as políticas', error.message)
+    if (error) console.error('[ia] não foi possível ler as políticas', error.message)
     return new Map()
   }
 

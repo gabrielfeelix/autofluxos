@@ -107,7 +107,7 @@ export async function tratarEvento(
         `evento “${entrada.evento}” chegou, mas a janela de 24h estava fechada, nada foi enviado.${resumo(entrada.dados)}`,
       )
     } catch (erro) {
-      await alertar('não deu para registrar o evento fora da janela', erro, {
+      await alertar('não foi possível registrar o evento fora da janela', erro, {
         cliente: entrada.clienteId,
         contato: contatoId,
       })
@@ -133,7 +133,7 @@ export async function tratarEvento(
         `evento “${entrada.evento}” chegou durante o atendimento e não foi enviado pelo bot.${resumo(entrada.dados)}`,
       )
     } catch (erro) {
-      await alertar('não deu para registrar o evento durante o atendimento', erro, {
+      await alertar('não foi possível registrar o evento durante o atendimento', erro, {
         cliente: entrada.clienteId,
         contato: contatoId,
       })

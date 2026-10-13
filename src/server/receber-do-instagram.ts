@@ -238,7 +238,7 @@ async function nomeDeQuemMandou(canal: CanalSalvo, igsid: string): Promise<strin
   try {
     nome = await nomeDoPerfil({ igsid, token: await lerTokenDoCanal(canal) })
   } catch (erro) {
-    console.warn('[instagram] não deu para ler o nome de quem mandou', erro)
+    console.warn('[instagram] não foi possível ler o nome de quem mandou', erro)
   }
 
   if (NOMES_VISTOS.size >= TETO_DE_NOMES) NOMES_VISTOS.clear()

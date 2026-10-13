@@ -90,7 +90,7 @@ export async function lerImagemRecebida(
   try {
     chave = await lerChave(clienteId)
   } catch (erro) {
-    console.error('[ler-imagem] não deu para ler a chave do cliente:', erro)
+    console.error('[ler-imagem] não foi possível ler a chave do cliente:', erro)
   }
   chave ??= process.env.GEMINI_API_KEY ?? null
   if (!chave) return null
@@ -112,7 +112,7 @@ export async function lerImagemRecebida(
     .update({ transcricao: texto })
     .eq('id', mensagemId)
   if (erroAoGuardar) {
-    console.error('[ler-imagem] não deu para guardar', mensagemId, erroAoGuardar.message)
+    console.error('[ler-imagem] não foi possível guardar', mensagemId, erroAoGuardar.message)
   }
   return texto
 }

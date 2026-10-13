@@ -136,7 +136,7 @@ export async function listarFluxos(clienteId: string): Promise<FluxoSalvo[]> {
     .order('criado_em', { ascending: true })
 
   if (ehIdInvalido(error)) return []
-  if (error) throw new Error(`não deu para listar os fluxos: ${error.message}`)
+  if (error) throw new Error(`não foi possível listar os fluxos: ${error.message}`)
   return (data as Linha[]).map(paraFluxo)
 }
 
@@ -144,7 +144,7 @@ export async function acharFluxo(id: string): Promise<FluxoSalvo | null> {
   const { data, error } = await db().from('flows').select(COLUNAS).eq('id', id).maybeSingle()
 
   if (ehIdInvalido(error)) return null
-  if (error) throw new Error(`não deu para buscar o fluxo: ${error.message}`)
+  if (error) throw new Error(`não foi possível buscar o fluxo: ${error.message}`)
   return data ? paraFluxo(data as Linha) : null
 }
 
@@ -167,7 +167,7 @@ export async function criarFluxo(
     .select(COLUNAS)
     .single()
 
-  if (error) throw new Error(`não deu para criar o fluxo: ${error.message}`)
+  if (error) throw new Error(`não foi possível criar o fluxo: ${error.message}`)
   return paraFluxo(data as Linha)
 }
 
@@ -185,7 +185,7 @@ export async function salvarRascunho(
     .select('id')
     .maybeSingle()
 
-  if (error) throw new Error(`não deu para salvar o rascunho: ${error.message}`)
+  if (error) throw new Error(`não foi possível salvar o rascunho: ${error.message}`)
   if (!data) throw new Error('esta automação não existe mais')
 }
 
@@ -197,7 +197,7 @@ export async function acharVersao(id: string): Promise<VersaoPublicada | null> {
     .maybeSingle()
 
   if (ehIdInvalido(error)) return null
-  if (error) throw new Error(`não deu para buscar a versão publicada: ${error.message}`)
+  if (error) throw new Error(`não foi possível buscar a versão publicada: ${error.message}`)
   if (!data) return null
 
   return {
@@ -229,7 +229,7 @@ export async function acharVersaoDoFluxo(
     .maybeSingle()
 
   if (ehIdInvalido(error)) return null
-  if (error) throw new Error(`não deu para buscar a versão publicada: ${error.message}`)
+  if (error) throw new Error(`não foi possível buscar a versão publicada: ${error.message}`)
   if (!data) return null
 
   return {
@@ -251,7 +251,7 @@ export async function listarVersoes(
     .order('versao', { ascending: false })
 
   if (ehIdInvalido(error)) return []
-  if (error) throw new Error(`não deu para listar as versões: ${error.message}`)
+  if (error) throw new Error(`não foi possível listar as versões: ${error.message}`)
   return (data as { id: string; versao: number; publicado_em: string }[]).map((v) => ({
     id: v.id,
     versao: v.versao,
@@ -268,7 +268,7 @@ export async function numerosDasVersoes(ids: string[]): Promise<Map<string, numb
   if (validos.length === 0) return new Map()
 
   const { data, error } = await db().from('flow_versions').select('id, versao').in('id', validos)
-  if (error) throw new Error(`não deu para ler o número das versões: ${error.message}`)
+  if (error) throw new Error(`não foi possível ler o número das versões: ${error.message}`)
   return new Map((data as { id: string; versao: number }[]).map((v) => [v.id, v.versao]))
 }
 
@@ -363,7 +363,7 @@ export async function publicar(
     p_grafo: analise.data,
   })
 
-  if (error) throw new Error(`não deu para publicar: ${error.message}`)
+  if (error) throw new Error(`não foi possível publicar: ${error.message}`)
 
   const linha = data as {
     id: string
@@ -421,7 +421,7 @@ export async function apagarFluxo(
     )
 
   if (ehIdInvalido(erroDosCanais)) return { ok: false, motivo: 'esta automação não existe mais' }
-  if (erroDosCanais) throw new Error(`não deu para conferir os números: ${erroDosCanais.message}`)
+  if (erroDosCanais) throw new Error(`não foi possível conferir os números: ${erroDosCanais.message}`)
 
   const ligados = (canais as { phone_number_id: string }[]) ?? []
   if (ligados.length > 0) {
@@ -464,7 +464,7 @@ export async function apagarFluxo(
   }
 
   const { error } = await db().from('flows').delete().eq('id', fluxoId).eq('client_id', clienteId)
-  if (error) throw new Error(`não deu para apagar a automação: ${error.message}`)
+  if (error) throw new Error(`não foi possível apagar a automação: ${error.message}`)
   return { ok: true }
 }
 
@@ -497,7 +497,7 @@ export async function fluxosQueSaltamPara(
     .neq('id', fluxoId)
 
   if (ehIdInvalido(error)) return []
-  if (error) throw new Error(`não deu para conferir os saltos: ${error.message}`)
+  if (error) throw new Error(`não foi possível conferir os saltos: ${error.message}`)
 
   const linhas = (data ?? []) as unknown as { id: string; nome: string; rascunho: unknown }[]
 
@@ -544,7 +544,7 @@ export async function definirAtivo(
     .maybeSingle()
 
   if (ehIdInvalido(error)) return false
-  if (error) throw new Error(`não deu para ligar/desligar a automação: ${error.message}`)
+  if (error) throw new Error(`não foi possível ligar/desligar a automação: ${error.message}`)
   return data !== null
 }
 
@@ -579,7 +579,7 @@ export async function renomearFluxo(
     .select('id')
 
   if (ehIdInvalido(error)) return { ok: false, motivo: 'esta automação não existe mais' }
-  if (error) throw new Error(`não deu para renomear a automação: ${error.message}`)
+  if (error) throw new Error(`não foi possível renomear a automação: ${error.message}`)
   if ((data?.length ?? 0) !== 1) return { ok: false, motivo: 'esta automação não existe mais' }
   return { ok: true, nome: limpo }
 }
@@ -637,7 +637,7 @@ export async function duplicarFluxo(
     .select('id, nome')
     .single()
 
-  if (error) throw new Error(`não deu para duplicar a automação: ${error.message}`)
+  if (error) throw new Error(`não foi possível duplicar a automação: ${error.message}`)
   return { ok: true, id: data.id as string, nome: data.nome as string }
 }
 
@@ -673,7 +673,7 @@ export async function reordenarFluxos(
       .eq('id', id)
       .eq('client_id', clienteId)
 
-    if (error) throw new Error(`não deu para reordenar as automações: ${error.message}`)
+    if (error) throw new Error(`não foi possível reordenar as automações: ${error.message}`)
   }
 }
 
@@ -691,7 +691,7 @@ export async function definirIa(
     .select('id')
     .maybeSingle()
 
-  if (error) throw new Error(`não deu para mudar a IA do fluxo: ${error.message}`)
+  if (error) throw new Error(`não foi possível mudar a IA do fluxo: ${error.message}`)
   if (!data) throw new Error('esta automação não existe mais')
 }
 
@@ -707,7 +707,7 @@ export type ResumoDeAutomacoes = { total: number; comIa: number }
 export async function resumirAutomacoes(): Promise<Map<string, ResumoDeAutomacoes>> {
   const { data, error } = await db().from('flows').select('client_id, ia_habilitada')
 
-  if (error) throw new Error(`não deu para contar as automações: ${error.message}`)
+  if (error) throw new Error(`não foi possível contar as automações: ${error.message}`)
 
   const mapa = new Map<string, ResumoDeAutomacoes>()
   for (const linha of data as { client_id: string; ia_habilitada: boolean }[]) {

@@ -113,7 +113,7 @@ export function SeletorDeEtiquetas({
     if (r.erro || !r.etiqueta) {
       trocarCriadas(criadas.filter((e) => e.id !== provisorio))
       desmarcar()
-      setErro(r.erro ?? 'não deu para criar a etiqueta')
+      setErro(r.erro ?? 'não foi possível criar a etiqueta')
       return
     }
 

@@ -59,7 +59,7 @@ export function RemoverComDestino({
         destino === null || destino === SEM_RESPONSAVEL ? null : destino,
       )
       if (!r.ok) {
-        setErro(r.erro ?? 'não deu para remover da organização')
+        setErro(r.erro ?? 'não foi possível remover da organização')
         return
       }
       aoFechar(true)

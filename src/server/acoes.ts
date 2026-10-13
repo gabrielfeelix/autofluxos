@@ -291,7 +291,7 @@ export async function acaoDescartarRascunho(
   }
 
   const versao = await acharVersaoDoFluxo(fluxo.versaoPublicadaId, fluxoId)
-  if (!versao) return { ok: false, erro: 'a versão publicada sumiu' }
+  if (!versao) return { ok: false, erro: 'a versão publicada não foi encontrada' }
 
   await salvarRascunho(fluxoId, clienteId, versao.grafo)
   revalidatePath(`/clientes/${clienteId}/fluxos/${fluxoId}`)
@@ -418,7 +418,7 @@ export async function acaoConectarNumero(
     return {
       erro: /duplicate key|23505/.test(mensagem)
         ? 'este número já está conectado a algum cliente'
-        : mensagem || 'não deu para conectar',
+        : mensagem || 'não foi possível conectar',
     }
   }
 
@@ -1281,7 +1281,7 @@ export async function acaoQrDoLinkDoFluxo(
 
   const cabecalhos = await headers()
   const host = cabecalhos.get('host')
-  if (!host) return { ok: false, erro: 'não deu para descobrir o endereço do painel' }
+  if (!host) return { ok: false, erro: 'não foi possível descobrir o endereço do painel' }
   const protocolo = cabecalhos.get('x-forwarded-proto') ?? 'https'
   const endereco = `${protocolo}://${host}/f/${link.token}`
 
@@ -1915,7 +1915,7 @@ export async function acaoLigarAgenda(
     // Conferida antes de guardar: nasce testada.
     await marcarTeste(conexao.id, clienteId, true)
   } catch (erro) {
-    return { ok: false, erro: erro instanceof Error ? erro.message : 'não deu para guardar' }
+    return { ok: false, erro: erro instanceof Error ? erro.message : 'não foi possível guardar' }
   }
 
   revalidatePath(`/clientes/${clienteId}/ajustes/chaves`)
@@ -2006,7 +2006,7 @@ export async function acaoCriarConexao(
       valor: String(formData.get('valor') ?? ''),
     })
   } catch (erro) {
-    return { ok: false, erro: erro instanceof Error ? erro.message : 'não deu para guardar' }
+    return { ok: false, erro: erro instanceof Error ? erro.message : 'não foi possível guardar' }
   }
 
   revalidatePath(`/clientes/${clienteId}/ajustes/chaves`)
@@ -2025,7 +2025,7 @@ export async function acaoTrocarValorDaConexao(
   try {
     await trocarValor(conexaoId, clienteId, String(formData.get('valor') ?? ''))
   } catch (erro) {
-    return { ok: false, erro: erro instanceof Error ? erro.message : 'não deu para trocar' }
+    return { ok: false, erro: erro instanceof Error ? erro.message : 'não foi possível trocar' }
   }
   revalidatePath(`/clientes/${clienteId}/ajustes/chaves`)
   return { ok: true }
@@ -2041,7 +2041,7 @@ export async function acaoApagarConexao(
   try {
     await apagarConexao(conexaoId, clienteId)
   } catch (erro) {
-    return { ok: false, erro: erro instanceof Error ? erro.message : 'não deu para excluir' }
+    return { ok: false, erro: erro instanceof Error ? erro.message : 'não foi possível excluir' }
   }
   revalidatePath(`/clientes/${clienteId}/ajustes/chaves`)
   return { ok: true }
@@ -2077,7 +2077,7 @@ export async function acaoCriarRespostaRapida(
   try {
     await criarRespostaRapida(clienteId, resultado.data)
   } catch (erro) {
-    return { erro: erro instanceof Error ? erro.message : 'não deu para criar a resposta rápida' }
+    return { erro: erro instanceof Error ? erro.message : 'não foi possível criar a resposta rápida' }
   }
 
   revalidatePath(`/clientes/${clienteId}/inbox`)
@@ -2097,7 +2097,7 @@ export async function acaoApagarRespostaRapida(
     const apagou = await apagarRespostaRapida(respostaId, clienteId)
     if (!apagou) return { ok: false, erro: 'esta resposta não existe neste cliente' }
   } catch (erro) {
-    return { ok: false, erro: erro instanceof Error ? erro.message : 'não deu para apagar' }
+    return { ok: false, erro: erro instanceof Error ? erro.message : 'não foi possível apagar' }
   }
 
   revalidatePath(`/clientes/${clienteId}/inbox`)
@@ -2218,7 +2218,7 @@ export async function acaoResponderLead(
   } catch (erro) {
     // O texto da Meta é específico e é ele que resolve. Engolir aqui devolveria
     // "não deu certo" para quem precisa saber que o token expirou.
-    return { ok: false, erro: erro instanceof Error ? erro.message : 'não deu para enviar' }
+    return { ok: false, erro: erro instanceof Error ? erro.message : 'não foi possível enviar' }
   }
 
   await confirmarEntrega(registro, waMessageId)
@@ -2226,7 +2226,7 @@ export async function acaoResponderLead(
   // Quem respondeu passa a ser o responsável, se a conversa não tinha um.
   if (quemResponde) {
     await atribuirSeSemDono(clienteId, contatoId, quemResponde.usuario.id).catch((erro) =>
-      console.error('[inbox] não deu para atribuir a quem respondeu', erro),
+      console.error('[inbox] não foi possível atribuir a quem respondeu', erro),
     )
   }
 
@@ -2284,7 +2284,7 @@ export async function acaoReenviarMensagem(
     .eq('id', mensagemId)
     .eq('contact_id', contatoId)
     .maybeSingle()
-  if (error) return { ok: false, erro: 'não deu para ler a mensagem' }
+  if (error) return { ok: false, erro: 'não foi possível ler a mensagem' }
   if (!linha || linha.direcao !== 'saida') return { ok: false, erro: 'mensagem não encontrada' }
   if (linha.entregue) return { ok: true }
 
@@ -2316,7 +2316,7 @@ export async function acaoReenviarMensagem(
       (linha.cita as string | null) ?? undefined,
     )
   } catch (erro) {
-    return { ok: false, erro: erro instanceof Error ? erro.message : 'não deu para enviar' }
+    return { ok: false, erro: erro instanceof Error ? erro.message : 'não foi possível enviar' }
   }
 
   await confirmarEntrega(linha.id as string, waMessageId)
@@ -2472,7 +2472,7 @@ export async function acaoSalvarContexto(
   try {
     await atualizarContexto(clienteId, String(formData.get('contexto') ?? ''))
   } catch (erro) {
-    return { erro: erro instanceof Error ? erro.message : 'não deu para salvar' }
+    return { erro: erro instanceof Error ? erro.message : 'não foi possível salvar' }
   }
 
   revalidatePath(`/clientes/${clienteId}/ajustes/contexto`)
@@ -2509,7 +2509,7 @@ export async function acaoSalvarCadastro(
       cnpj: String(formData.get('cnpj') ?? ''),
     })
   } catch (erro) {
-    return { erro: erro instanceof Error ? erro.message : 'não deu para salvar' }
+    return { erro: erro instanceof Error ? erro.message : 'não foi possível salvar' }
   }
 
   // A lista de clientes e o cabeçalho de toda tela deste cliente mostram o
@@ -2569,7 +2569,7 @@ export async function acaoSalvarLogo(
     const { data } = db().storage.from('logos').getPublicUrl(caminho)
     await atualizarLogo(clienteId, `${data.publicUrl}?v=${Date.now()}`)
   } catch (erro) {
-    return { erro: erro instanceof Error ? erro.message : 'não deu para guardar a logo' }
+    return { erro: erro instanceof Error ? erro.message : 'não foi possível guardar a logo' }
   }
 
   revalidatePath('/')
@@ -2690,7 +2690,7 @@ export async function acaoApagarDoAcervo(
   try {
     await apagarDoAcervo(clienteId, caminho)
   } catch (erro) {
-    return { ok: false, erro: erro instanceof Error ? erro.message : 'não deu para apagar' }
+    return { ok: false, erro: erro instanceof Error ? erro.message : 'não foi possível apagar' }
   }
   revalidatePath(`/clientes/${clienteId}/ajustes/acervo`)
   return { ok: true }
@@ -3023,7 +3023,7 @@ export async function acaoAdiarConversa(
   try {
     await adiarConversa(clienteId, contatoId, ate, nota ?? null)
   } catch (erro) {
-    return { ok: false, erro: erro instanceof Error ? erro.message : 'não deu para adiar' }
+    return { ok: false, erro: erro instanceof Error ? erro.message : 'não foi possível adiar' }
   }
 
   // Gesto rápido: sem recarregar a página, ver `gestoSemRecarregar`.
@@ -3052,7 +3052,7 @@ export async function acaoDefinirEstadoDaConversa(
   try {
     await definirEstadoDaConversa(clienteId, contatoId, estado)
   } catch (erro) {
-    return { ok: false, erro: erro instanceof Error ? erro.message : 'não deu para mudar' }
+    return { ok: false, erro: erro instanceof Error ? erro.message : 'não foi possível mudar' }
   }
 
   // Gesto rápido: sem recarregar a página, ver `gestoSemRecarregar`.
@@ -3164,7 +3164,7 @@ async function avisarQueEntrou(
     await confirmarEntrega(registro, await canal.enviarTexto(contexto.waId, aviso))
   } catch (erro) {
     console.error(
-      '[assumir] não deu para avisar que o atendente entrou',
+      '[assumir] não foi possível avisar que o atendente entrou',
       erro instanceof Error ? erro.message : erro,
     )
   }

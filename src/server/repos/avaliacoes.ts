@@ -63,7 +63,7 @@ export async function guardarNota(
     .single()
 
   if (error) {
-    console.error('[avaliacoes] não deu para guardar a nota', error.message)
+    console.error('[avaliacoes] não foi possível guardar a nota', error.message)
     return null
   }
   return (data as { id: string }).id
@@ -106,7 +106,7 @@ export async function guardarComentario(
     .eq('id', (data as { id: string }).id)
 
   if (erroDoUpdate) {
-    console.error('[avaliacoes] não deu para guardar o comentário', erroDoUpdate.message)
+    console.error('[avaliacoes] não foi possível guardar o comentário', erroDoUpdate.message)
   }
 }
 
@@ -125,7 +125,7 @@ export async function avaliacoesDoContato(
     .limit(limite)
 
   if (ehIdInvalido(error)) return []
-  if (error) throw new Error(`não deu para ler as avaliações: ${error.message}`)
+  if (error) throw new Error(`não foi possível ler as avaliações: ${error.message}`)
 
   return (data as Record<string, string | number | null>[]).map((linha) => ({
     id: String(linha.id),
@@ -165,7 +165,7 @@ export async function notasDaConta(
     .limit(limite)
 
   if (ehIdInvalido(error)) return []
-  if (error) throw new Error(`não deu para ler as notas: ${error.message}`)
+  if (error) throw new Error(`não foi possível ler as notas: ${error.message}`)
 
   return (data as { nota: number; criada_em: string }[]).map((linha) => ({
     nota: Number(linha.nota),
@@ -195,7 +195,7 @@ export async function comentariosDaConta(
     .limit(limite)
 
   if (ehIdInvalido(error)) return []
-  if (error) throw new Error(`não deu para ler os comentários: ${error.message}`)
+  if (error) throw new Error(`não foi possível ler os comentários: ${error.message}`)
 
   return (data as Record<string, unknown>[]).map((linha) => {
     const contato = linha.contacts as { nome: string | null; nome_real: string | null } | null

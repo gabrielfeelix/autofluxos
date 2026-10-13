@@ -20,7 +20,7 @@ export function TetoDaApi({ organizacaoId, inicial, padrao }: { organizacaoId: s
       const teto = limpo === '' ? null : Number(limpo)
       const r = await acaoAdminSalvarTetoDaApi(organizacaoId, teto)
       if (!r.ok) {
-        setMensagem({ tom: 'erro', texto: r.erro ?? 'Não deu para salvar.' })
+        setMensagem({ tom: 'erro', texto: r.erro ?? 'Não foi possível salvar.' })
         return
       }
       setSalvo(limpo)

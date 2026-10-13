@@ -66,12 +66,12 @@ export function useConfirmar() {
           try {
             const r = await pedido.aoConfirmar()
             if (r && r.ok === false) {
-              setErro(r.erro ?? 'não deu para concluir')
+              setErro(r.erro ?? 'não foi possível concluir')
               return
             }
             setPedido(null)
           } catch (e) {
-            setErro(e instanceof Error ? e.message : 'não deu para concluir')
+            setErro(e instanceof Error ? e.message : 'não foi possível concluir')
           } finally {
             setRodando(false)
           }
@@ -229,12 +229,12 @@ export function Confirmacao({
           try {
             const r = await pedido.aoConfirmar()
             if (r && r.ok === false) {
-              setErro(r.erro ?? 'não deu para concluir')
+              setErro(r.erro ?? 'não foi possível concluir')
               return
             }
             aoFechar()
           } catch (e) {
-            setErro(e instanceof Error ? e.message : 'não deu para concluir')
+            setErro(e instanceof Error ? e.message : 'não foi possível concluir')
           } finally {
             setRodando(false)
           }

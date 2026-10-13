@@ -101,7 +101,7 @@ export async function acaoAnotarNoNegocio(
     return { ok: true, anotacao }
   } catch (erro) {
     console.error('[anotar no negócio]', erro instanceof Error ? erro.message : erro)
-    return { ok: false, erro: 'não deu para guardar agora' }
+    return { ok: false, erro: 'não foi possível guardar agora' }
   }
 }
 
@@ -136,7 +136,7 @@ export async function acaoCriarNegocioAvulso(
     return { ok: true, id: r.id }
   } catch (erro) {
     console.error('[criar negócio]', erro instanceof Error ? erro.message : erro)
-    return { ok: false, erro: 'não deu para criar agora, tente de novo' }
+    return { ok: false, erro: 'não foi possível criar agora, tente de novo' }
   }
 }
 
@@ -176,7 +176,7 @@ export async function acaoPrepararArquivoDoNegocio(
 
   const caminho = caminhoNovo(clienteId, cartaoId, arquivo.mime)
   const envio = await urlDeEnvio(caminho)
-  if (!envio) return { ok: false, erro: 'não deu para preparar o envio, tente de novo' }
+  if (!envio) return { ok: false, erro: 'não foi possível preparar o envio, tente de novo' }
   return { ok: true, caminho, url: envio.url }
 }
 

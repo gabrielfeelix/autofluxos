@@ -77,7 +77,7 @@ export async function alertar(
   } catch (erro) {
     // O webhook falhou, e o alerta já está gravado, que é justamente o ponto
     // de gravar antes. Insistir aqui só transformaria uma falha em duas.
-    console.error('[alerta] não deu para avisar pelo webhook', erro)
+    console.error('[alerta] não foi possível avisar pelo webhook', erro)
   }
 }
 

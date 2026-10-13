@@ -28,6 +28,6 @@ export async function acaoVerAlerta(id?: string): Promise<{ ok: boolean; erro?: 
     await marcarAlertaVisto(id)
     return { ok: true }
   } catch (erro) {
-    return { ok: false, erro: erro instanceof Error ? erro.message : 'não deu para marcar' }
+    return { ok: false, erro: erro instanceof Error ? erro.message : 'não foi possível marcar' }
   }
 }

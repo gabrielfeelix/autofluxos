@@ -107,7 +107,7 @@ describe('lojaCatalogo, o resto da interface', () => {
     const quebrada = lojaCatalogo(async () => {
       throw new Error('timeout')
     })
-    expect(await quebrada.buscar('cadeira')).toEqual({ ok: false, motivo: 'não deu para ler o catálogo: timeout' })
+    expect(await quebrada.buscar('cadeira')).toEqual({ ok: false, motivo: 'não foi possível ler o catálogo: timeout' })
   })
 })
 

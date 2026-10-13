@@ -87,7 +87,7 @@ export async function emitirEvento(
     )
     agendarEnvio(ids)
   } catch (erro) {
-    console.error(`[webhooks] não deu para emitir ${evento}:`, erro instanceof Error ? erro.message : erro)
+    console.error(`[webhooks] não foi possível emitir ${evento}:`, erro instanceof Error ? erro.message : erro)
   }
 }
 
@@ -235,7 +235,7 @@ async function postar(
     const porTempo = ['HeadersTimeoutError', 'BodyTimeoutError', 'TimeoutError', 'AbortError'].includes(nome)
     return {
       statusHttp: null,
-      resposta: porTempo ? `Sem resposta em ${TEMPO_LIMITE_EM_MS / 1000} s.` : 'Não deu para conectar no endereço.',
+      resposta: porTempo ? `Sem resposta em ${TEMPO_LIMITE_EM_MS / 1000} s.` : 'Não foi possível conectar no endereço.',
     }
   } finally {
     await Promise.all(agentes.map((agente) => agente.close().catch(() => undefined)))

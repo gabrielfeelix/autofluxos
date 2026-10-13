@@ -29,7 +29,7 @@ export default async function Pagina({ params }: { params: Promise<{ clienteId: 
   try {
     equipe = await membrosDaConta(clienteId)
   } catch (erro) {
-    console.error('[distribuicao] não deu para ler a equipe', erro instanceof Error ? erro.message : erro)
+    console.error('[distribuicao] não foi possível ler a equipe', erro instanceof Error ? erro.message : erro)
   }
 
   const [ajustes, configurados, abertas, contagem] = await Promise.all([
@@ -61,7 +61,7 @@ export default async function Pagina({ params }: { params: Promise<{ clienteId: 
             { rotulo: 'Distribuição' },
           ]}
           titulo={<>Distribuição</>}
-          descricao={<>Quem recebe a conversa quando o bot passa para uma pessoa. Cada mudança salva sozinha.</>}
+          descricao={<>Quem recebe a conversa quando o bot transfere para uma pessoa. Cada mudança salva sozinha.</>}
         />
         <div className="flex flex-col gap-6">
           <Distribuicao

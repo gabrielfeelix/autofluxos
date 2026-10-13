@@ -65,7 +65,7 @@ export function SeletorDeCupom({
       if (r.ok) setCupons(r.cupons)
       else setErro(r.erro)
     } catch {
-      setErro('não deu para buscar os cupons agora, tente de novo')
+      setErro('não foi possível buscar os cupons agora, tente de novo')
     }
   }
 
@@ -78,9 +78,9 @@ export function SeletorDeCupom({
       if (r.ok) {
         setEnviado(codigo)
         setTimeout(() => setAberto(false), 900)
-      } else setErro(r.erro ?? 'não deu para enviar')
+      } else setErro(r.erro ?? 'não foi possível enviar')
     } catch {
-      setErro('não deu para enviar agora, tente de novo')
+      setErro('não foi possível enviar agora, tente de novo')
     } finally {
       setEnviando(null)
     }

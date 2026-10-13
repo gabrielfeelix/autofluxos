@@ -245,7 +245,7 @@ export default async function Pagina({
                   rotulo: 'Atendidas pela equipe',
                   n: atual.desfechos.prevista,
                   cor: 'var(--serie-3)',
-                  dica: 'O fluxo previa passar para uma pessoa, ou alguém assumiu pelo Inbox.',
+                  dica: 'O fluxo previa transferir para uma pessoa, ou alguém assumiu pelo Inbox.',
                 },
                 {
                   chave: 'falha',
@@ -562,7 +562,7 @@ export default async function Pagina({
                 rotuloQuantidade="Pedidos"
                 rotuloValor="Receita (R$)"
                 desenho="maisVendidos"
-                vazio={cupons.ok ? 'Nenhum cupom da loja foi mandado no período.' : `Não deu para ler a loja: ${cupons.motivo}.`}
+                vazio={cupons.ok ? 'Nenhum cupom da loja foi mandado no período.' : `Não foi possível ler a loja: ${cupons.motivo}.`}
               />
             ),
           } satisfies Bloco,

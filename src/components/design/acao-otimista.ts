@@ -69,7 +69,7 @@ export function useAcaoOtimista<T>(inicial: T) {
         // produto devolvem só `{ erro }` quando falham.
         if (r?.erro || r?.ok === false) {
           setValor(anterior)
-          setErro(r.erro ?? 'não deu para salvar')
+          setErro(r.erro ?? 'não foi possível salvar')
         }
       } catch {
         // Rede caiu no meio. A escrita pode ter acontecido, mas a tela não

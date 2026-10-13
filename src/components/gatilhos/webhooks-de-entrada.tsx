@@ -167,9 +167,9 @@ function LinhaDoWebhook({ clienteId, webhook }: { clienteId: string; webhook: We
     }
     depoisDaTela(() => acaoAlternarWebhookDeEntrada(clienteId, webhook.id, !antes)).then(
       (r) => {
-        if (!r.ok) desfazer(r.erro ?? 'não deu para mudar o webhook')
+        if (!r.ok) desfazer(r.erro ?? 'não foi possível mudar o webhook')
       },
-      () => desfazer('não deu para mudar agora'),
+      () => desfazer('não foi possível mudar agora'),
     )
   }
 

@@ -183,7 +183,7 @@ export async function definirSuspensao(id: string, suspensa: boolean): Promise<{
     if (/suspensa_em/.test(mensagem) && /does not exist|não existe/.test(mensagem)) {
       return { ok: false, motivo: 'a suspensão chega com a migration de planos, que ainda não foi aplicada neste banco' }
     }
-    return { ok: false, motivo: mensagem || 'não deu para gravar' }
+    return { ok: false, motivo: mensagem || 'não foi possível gravar' }
   }
 }
 

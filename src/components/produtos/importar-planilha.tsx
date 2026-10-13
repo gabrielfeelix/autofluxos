@@ -75,7 +75,7 @@ export function ImportarPlanilha({ clienteId }: { clienteId: string }) {
       if (r.ok) setEtapa({ tipo: 'previa', previa: r.previa })
       else setErro(r.erro)
     } catch {
-      setErro('não deu para ler o arquivo agora, tente de novo')
+      setErro('não foi possível ler o arquivo agora, tente de novo')
     } finally {
       setPendente(false)
     }
@@ -95,7 +95,7 @@ export function ImportarPlanilha({ clienteId }: { clienteId: string }) {
         })
       else setErro(r.erro)
     } catch {
-      setErro('não deu para importar agora; nada foi perdido, tente de novo')
+      setErro('não foi possível importar agora; nada foi perdido, tente de novo')
     } finally {
       setPendente(false)
     }

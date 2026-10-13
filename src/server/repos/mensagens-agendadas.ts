@@ -102,7 +102,7 @@ export async function agendar(dados: {
     .select(COLUNAS)
     .single()
 
-  if (error) throw new Error(`não deu para agendar a mensagem: ${error.message}`)
+  if (error) throw new Error(`não foi possível agendar a mensagem: ${error.message}`)
   return daLinha(data as Record<string, unknown>)
 }
 
@@ -127,7 +127,7 @@ export async function cancelarAgendada(clienteId: string, id: string): Promise<b
     .select('id')
 
   if (ehIdInvalido(error)) return false
-  if (error) throw new Error(`não deu para cancelar a mensagem: ${error.message}`)
+  if (error) throw new Error(`não foi possível cancelar a mensagem: ${error.message}`)
   return (data ?? []).length > 0
 }
 
@@ -145,7 +145,7 @@ export async function agendadasDoContato(
     .order('quando', { ascending: true })
 
   if (ehIdInvalido(error)) return []
-  if (error) throw new Error(`não deu para ler as mensagens agendadas: ${error.message}`)
+  if (error) throw new Error(`não foi possível ler as mensagens agendadas: ${error.message}`)
   return (data ?? []).map((linha) => daLinha(linha as Record<string, unknown>))
 }
 
@@ -167,7 +167,7 @@ export async function agendadasDaConta(
     .limit(200)
 
   if (ehIdInvalido(error)) return []
-  if (error) throw new Error(`não deu para ler as mensagens agendadas: ${error.message}`)
+  if (error) throw new Error(`não foi possível ler as mensagens agendadas: ${error.message}`)
 
   return (data ?? []).map((linha) => {
     const bruta = linha as Record<string, unknown>
@@ -194,7 +194,7 @@ async function devolverPresas(): Promise<void> {
     .eq('estado', 'enviando')
     .lt('pegada_em', limite)
 
-  if (error) console.error('[agendadas] não deu para devolver as presas', error.message)
+  if (error) console.error('[agendadas] não foi possível devolver as presas', error.message)
 }
 
 /**
@@ -230,7 +230,7 @@ export async function pegarVencidas(limite = AGENDADAS_POR_PASSADA): Promise<Men
 
   if (ehIdInvalido(erroDaLeitura)) return []
   if (erroDaLeitura) {
-    throw new Error(`não deu para olhar a fila de agendadas: ${erroDaLeitura.message}`)
+    throw new Error(`não foi possível olhar a fila de agendadas: ${erroDaLeitura.message}`)
   }
 
   const ids = (candidatas ?? []).map((linha) => (linha as { id: string }).id)
@@ -243,7 +243,7 @@ export async function pegarVencidas(limite = AGENDADAS_POR_PASSADA): Promise<Men
     .eq('estado', 'agendada')
     .select(COLUNAS)
 
-  if (error) throw new Error(`não deu para pegar a fila de agendadas: ${error.message}`)
+  if (error) throw new Error(`não foi possível pegar a fila de agendadas: ${error.message}`)
   return (data ?? []).map((linha) => daLinha(linha as Record<string, unknown>))
 }
 
@@ -253,7 +253,7 @@ export async function marcarEnviada(id: string): Promise<void> {
     .update({ estado: 'enviada', enviada_em: new Date().toISOString(), erro: null })
     .eq('id', id)
 
-  if (error) console.error('[agendadas] não deu para marcar como enviada', id, error.message)
+  if (error) console.error('[agendadas] não foi possível marcar como enviada', id, error.message)
 }
 
 /**
@@ -270,7 +270,7 @@ export async function marcarFalha(id: string, motivo: string): Promise<void> {
     .update({ estado: 'falhou', erro: motivo.slice(0, 500) })
     .eq('id', id)
 
-  if (error) console.error('[agendadas] não deu para marcar a falha', id, error.message)
+  if (error) console.error('[agendadas] não foi possível marcar a falha', id, error.message)
 }
 
 /** Quantas ainda vão sair nesta conta, o número da barra de filtros. */
@@ -283,7 +283,7 @@ export async function quantasAgendadas(clienteId: string): Promise<number> {
 
   if (ehIdInvalido(error)) return 0
   if (error) {
-    console.error('[agendadas] não deu para contar', error.message)
+    console.error('[agendadas] não foi possível contar', error.message)
     return 0
   }
   return count ?? 0

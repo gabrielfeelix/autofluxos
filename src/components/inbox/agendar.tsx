@@ -154,7 +154,7 @@ export function AgendarMensagem({
         if (r.ok && r.agendada) provisoria.confirmar(r.agendada)
         else {
           provisoria.desfazer()
-          aoFalhar(r.erro ?? 'não deu para agendar')
+          aoFalhar(r.erro ?? 'não foi possível agendar')
         }
       },
       () => {
@@ -408,7 +408,7 @@ function LinhaAgendada({
               comecar(async () => {
                 setErro(null)
                 const r = await acaoCancelarAgendada(clienteId, agendada.id)
-                if (!r.ok) setErro(r.erro ?? 'não deu para cancelar')
+                if (!r.ok) setErro(r.erro ?? 'não foi possível cancelar')
                 else marcarCancelada(agendada.id)
               })
             }

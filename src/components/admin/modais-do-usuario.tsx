@@ -108,7 +108,7 @@ export function RedefinirSenha({ usuario, aoFechar, aoPronto }: { usuario: Usuar
             setEnviando(true)
             const r = await acaoAdminRedefinirSenha(usuario.id, senha).catch(() => ({ ok: false, erro: 'sem conexão com o servidor' }))
             setEnviando(false)
-            if (!r.ok) return setErro(r.erro ?? 'não deu para redefinir')
+            if (!r.ok) return setErro(r.erro ?? 'não foi possível redefinir')
             setFeita(true)
             aoPronto(null)
           }}
@@ -161,7 +161,7 @@ export function OrganizacoesDoUsuario({
     if (!r.ok) {
       setLista(antes)
       aoMudar(antes)
-      setErro(r.erro ?? 'não deu para fazer isso')
+      setErro(r.erro ?? 'não foi possível fazer isso')
     }
   }
 
@@ -240,7 +240,7 @@ export function ExcluirUsuario({ usuario, aoFechar, aoExcluir }: { usuario: Usua
   useEffect(() => {
     let vivo = true
     acaoAdminImpedimentosDoUsuario(usuario.id)
-      .then((r) => vivo && (r.ok ? setSoDele(r.soDele ?? []) : setErro(r.erro ?? 'não deu para conferir')))
+      .then((r) => vivo && (r.ok ? setSoDele(r.soDele ?? []) : setErro(r.erro ?? 'não foi possível conferir')))
       .catch(() => vivo && setErro('sem conexão com o servidor'))
     return () => {
       vivo = false

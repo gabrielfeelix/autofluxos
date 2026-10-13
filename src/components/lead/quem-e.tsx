@@ -94,7 +94,7 @@ export function QuemE({
               <span className="truncate">{responsavel.nome}</span>
             </span>
           ) : (
-            <span className="text-[12px] text-dim">ninguém ainda</span>
+            <span className="text-[12px] text-dim">nenhuma pessoa</span>
           )}
         </Linha>
       )}

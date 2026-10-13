@@ -83,7 +83,7 @@ export async function inscreverNoEvento(
     }
   } catch (erro) {
     console.error(
-      '[sequencias] não deu para inscrever',
+      '[sequencias] não foi possível inscrever',
       erro instanceof Error ? erro.message : erro,
     )
   }
@@ -123,7 +123,7 @@ export async function sairPorEvento(
     const inscricoes = await sairDasSequencias(contatoId, motivo, cartaoId)
     for (const id of inscricoes) await cancelarPorChave(chaveDoPasso(id))
   } catch (erro) {
-    console.error('[sequencias] não deu para sair', erro instanceof Error ? erro.message : erro)
+    console.error('[sequencias] não foi possível sair', erro instanceof Error ? erro.message : erro)
   }
 }
 
@@ -138,7 +138,7 @@ export async function sairPelaEtiqueta(
     for (const id of inscricoes) await cancelarPorChave(chaveDoPasso(id))
   } catch (erro) {
     console.error(
-      '[sequencias] não deu para sair pela etiqueta',
+      '[sequencias] não foi possível sair pela etiqueta',
       erro instanceof Error ? erro.message : erro,
     )
   }

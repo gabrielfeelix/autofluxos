@@ -719,7 +719,7 @@ export function SecaoQuandoDaErrado() {
       </p>
       <Tabela cabecalho={['Escolha', 'O que acontece', 'Quando usar']}>
         <Linha>
-          <Cel forte>Passar para uma pessoa</Cel>
+          <Cel forte>Transferir para uma pessoa</Cel>
           <Cel>A conversa entra na fila do Inbox com o motivo registrado.</Cel>
           <Cel>
             Sempre que o resultado da chamada <em>é o assunto</em>: marcar, desmarcar, buscar
@@ -740,7 +740,7 @@ export function SecaoQuandoDaErrado() {
       <p>
         Acontece, e é o motivo de a vaga ser conferida <strong className="text-soft">na hora de
         gravar</strong> e não na hora de montar o menu. O bloco de marcar falha, e o certo é{' '}
-        <strong className="text-soft">passar para uma pessoa</strong>: prometer um horário que
+        <strong className="text-soft">transferir para uma pessoa</strong>: prometer um horário que
         encheu é o pior desfecho possível, e quem responde por uma vaga é quem está no balcão.
       </p>
 

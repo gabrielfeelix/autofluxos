@@ -40,7 +40,7 @@ export function TabelaDePedidos({ pedidos: iniciais, nomes }: { pedidos: PedidoN
         const r = atender ? await acaoAdminTrocarPlano(pedido.organizacaoId, pedido.para, pedido.id, confirmacao) : await acaoAdminRecusarPedido(pedido.id)
         if (!r.ok) {
           setPedidos(antes)
-          setAviso(r.erro ?? 'não deu para responder o pedido')
+          setAviso(r.erro ?? 'não foi possível responder o pedido')
         }
       } catch {
         setPedidos(antes)

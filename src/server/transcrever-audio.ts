@@ -62,7 +62,7 @@ const MODELO = 'gemini-flash-latest'
  * A segunda, no mesmo áudio, transcreveu inteiro. Congestionamento do free tier
  * é o modo normal de falhar aqui, não a exceção.
  *
- * Sem reserva, quem clicou lê "não deu para transcrever" num áudio que o modelo
+ * Sem reserva, quem clicou lê "não foi possível transcrever" num áudio que o modelo
  * transcreveria perfeitamente trinta segundos depois, e a conclusão de quem
  * usa é que o recurso não funciona.
  *
@@ -131,7 +131,7 @@ export async function transcreverAudio(
     .eq('contacts.client_id', clienteId)
     .maybeSingle()
 
-  if (error) return { ok: false, erro: 'não deu para achar esta mensagem' }
+  if (error) return { ok: false, erro: 'não foi possível achar esta mensagem' }
   if (!data) return { ok: false, erro: 'esta mensagem não é desta conversa' }
 
   const linha = data as { transcricao: string | null; arquivo: unknown }
@@ -160,7 +160,7 @@ export async function transcreverAudio(
   try {
     chave = await lerChave(clienteId)
   } catch (erro) {
-    console.error('[transcricao] não deu para ler a chave do cliente:', erro)
+    console.error('[transcricao] não foi possível ler a chave do cliente:', erro)
   }
   /*
    * Com a nossa chave, a transcrição conta no teto de IA do plano (0128): é a
@@ -200,7 +200,7 @@ export async function transcreverAudio(
       ok: false,
       erro: motivo.startsWith('ocupado')
         ? 'o modelo está congestionado agora; tente de novo em alguns segundos'
-        : 'não deu para transcrever agora; tente de novo',
+        : 'não foi possível transcrever agora; tente de novo',
     }
   }
 
@@ -218,7 +218,7 @@ export async function transcreverAudio(
     .eq('id', mensagemId)
 
   if (erroAoGuardar) {
-    console.error('[transcricao] não deu para guardar', mensagemId, erroAoGuardar.message)
+    console.error('[transcricao] não foi possível guardar', mensagemId, erroAoGuardar.message)
   }
 
   return { ok: true, texto }

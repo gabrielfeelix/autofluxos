@@ -54,7 +54,7 @@ export default function Erro({
       <h1 className="text-[21px] font-bold tracking-[-0.02em]">Alguma coisa quebrou aqui.</h1>
       <p className="mt-2 mb-6 text-[14px] leading-[1.6] text-muted">
         {jaTentou
-          ? 'Ainda não foi. Recarregar a página joga fora o que ficou pela metade, e costuma resolver quando tentar de novo não resolveu.'
+          ? 'Ainda não foi. Recarregar a página descarta o que ficou pela metade, e costuma resolver quando tentar de novo não resolveu.'
           : 'Nada do que você digitou se perdeu: rascunho de fluxo é salvo sozinho. Tentar de novo costuma resolver quando é falha de rede.'}
       </p>
 

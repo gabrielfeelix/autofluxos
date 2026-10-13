@@ -42,7 +42,7 @@ export async function acaoReagir(
   if (recusou(acesso)) return acesso
 
   const waMessageId = entrada.waMessageId?.trim() ?? ''
-  if (waMessageId === '') return { ok: false, erro: 'não deu para saber a qual mensagem reagir' }
+  if (waMessageId === '') return { ok: false, erro: 'não foi possível saber a qual mensagem reagir' }
 
   /*
    * String vazia é **remoção**, e é assim que a Meta faz: não existe endpoint
@@ -120,7 +120,7 @@ export async function acaoReagir(
   try {
     await canal.reagir(contexto.waId, waMessageId, emoji)
   } catch (erro) {
-    return { ok: false, erro: erro instanceof Error ? erro.message : 'não deu para reagir' }
+    return { ok: false, erro: erro instanceof Error ? erro.message : 'não foi possível reagir' }
   }
 
   await confirmarEntrega(registro)

@@ -125,9 +125,9 @@ export function useAcoesDaAgenda({
 
     depoisDaTela(acao).then(
       (r) => {
-        if (!r.ok) desfazer(r.erro ?? 'não deu certo')
+        if (!r.ok) desfazer(r.erro ?? 'não foi possível concluir')
       },
-      () => desfazer('não deu para falar com o servidor, tente de novo'),
+      () => desfazer('não foi possível falar com o servidor, tente de novo'),
     )
   }
 

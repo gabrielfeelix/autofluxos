@@ -89,7 +89,7 @@ export const ROTULO_DA_CAPACIDADE: Record<Capacidade, { titulo: string; detalhe:
 
 export const ROTULO_DO_ESCOPO: Record<Escopo, string> = {
   nenhum: 'Não pode',
-  proprios: 'Só o que é dela',
+  proprios: 'Apenas o que é dela',
   equipe: 'Da equipe dela',
   todos: 'De toda a organização',
 }
@@ -101,7 +101,7 @@ export const ROTULO_DO_ESCOPO: Record<Escopo, string> = {
  */
 const ESCOPO_CURTO: Record<Escopo, string> = {
   nenhum: 'Não pode',
-  proprios: 'Só as dela',
+  proprios: 'Apenas as dela',
   equipe: 'Da equipe',
   todos: 'Todos',
 }
@@ -210,7 +210,7 @@ export function EditorDeAcesso({
         capacidades: sobrescritas as Record<string, string>,
       })
       if (!r.ok) {
-        setErro(r.erro ?? 'não deu para salvar o acesso')
+        setErro(r.erro ?? 'não foi possível salvar o acesso')
         return
       }
       aoSalvar?.({ ...membro, equipes, sobrescritas })
@@ -405,7 +405,7 @@ export function EditorDeAcesso({
           */}
           {efetivo.some((l) => l.capacidade === 'atender' && l.escopo === 'proprios') && (
             <p className="mt-4 rounded-lg border border-primary/15 bg-primary/5 p-2.5 text-muted">
-              Com <strong className="text-ink">Só as dela</strong> em Atender,
+              Com <strong className="text-ink">Apenas as dela</strong> em Atender,
               ela não vê a fila de quem ninguém assumiu, só as conversas atribuídas
               a ela.
             </p>

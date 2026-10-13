@@ -54,7 +54,7 @@ export async function GET(req: Request) {
     await guardarTokenDeAnuncios({ clienteId, token, expiraEm })
   } catch (erro) {
     const detalhe = erro instanceof Error ? erro.message : String(erro)
-    await alertar('não deu para ligar a conta de anúncios', detalhe, {})
+    await alertar('não foi possível ligar a conta de anúncios', detalhe, {})
     redirect(`${destino}?erro=troca`)
   }
 

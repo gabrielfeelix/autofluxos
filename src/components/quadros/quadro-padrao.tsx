@@ -58,7 +58,7 @@ export function QuadroPadrao({
       const r = await acaoDefinirQuadroPadrao(clienteId, quadroId, marcado)
       if (!r.ok) {
         setPadrao(!marcado)
-        setErro(r.erro ?? 'não deu para salvar')
+        setErro(r.erro ?? 'não foi possível salvar')
       }
     })
   }

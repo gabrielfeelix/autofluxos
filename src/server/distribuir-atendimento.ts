@@ -85,7 +85,7 @@ export async function distribuirSeSemDono(
     return deu ? escolhido : null
   } catch (erro) {
     console.error(
-      '[distribuicao] não deu para distribuir a conversa',
+      '[distribuicao] não foi possível distribuir a conversa',
       erro instanceof Error ? erro.message : erro,
     )
     return null
@@ -157,7 +157,7 @@ export async function podeResponderAgora(
      * lado é uma resposta duplicada; o custo de errar fechado é a conta parada.
      */
     console.error(
-      '[distribuicao] não deu para conferir o dono da conversa',
+      '[distribuicao] não foi possível conferir o dono da conversa',
       erro instanceof Error ? erro.message : erro,
     )
     return { ok: true }

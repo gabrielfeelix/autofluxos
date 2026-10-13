@@ -80,5 +80,5 @@ export async function guardarEventoDeLigacao(payload: unknown): Promise<void> {
   const { error } = await db()
     .from('alertas')
     .insert(linhas.map((linha) => ({ ...linha, ambiente: ambienteAtual(), visto_em: agora })))
-  if (error) console.error('[sonda-ligacao] não deu para gravar', error.message)
+  if (error) console.error('[sonda-ligacao] não foi possível gravar', error.message)
 }

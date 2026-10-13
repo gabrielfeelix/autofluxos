@@ -2401,7 +2401,7 @@ export function Painel({
                   detalhes={
                     <>
                       <p>
-                        <strong>Passa para uma pessoa</strong> é o certo quando a conversa depende
+                        <strong>Transfere para uma pessoa</strong> é o certo quando a conversa depende
                         da resposta: sem os horários livres não há menu para mostrar, e seguir em
                         frente só produziria uma mensagem vazia.
                       </p>
@@ -2518,7 +2518,7 @@ function MensagensDoHandoff({
                 <AjudaDoCampo
                   titulo="Mensagem antes de passar"
                   secao="blocos"
-                  texto="A última fala do bot. Saem em ordem, e só depois a conversa passa para uma pessoa."
+                  texto="A última fala do bot. Saem em ordem, e só depois a conversa é transferida para uma pessoa."
                   detalhes={
                     <>
                       <p>

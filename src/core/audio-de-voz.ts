@@ -227,7 +227,7 @@ export function motivoDoMicrofone(erro: unknown): string {
   if (nome === 'NotReadableError' || nome === 'AbortError') {
     return 'Outro programa está usando o microfone. Feche-o e tente de novo.'
   }
-  return 'Não deu para abrir o microfone.'
+  return 'Não foi possível abrir o microfone.'
 }
 
 /** A frase de quando nenhum formato serve. Diz o que fazer, não o que faltou. */

@@ -27,7 +27,7 @@ export async function destinoPodeReceber(
     .maybeSingle()
 
   if (ehIdInvalido(error)) return { existe: false, publicado: false }
-  if (error) throw new Error(`não deu para conferir o destino: ${error.message}`)
+  if (error) throw new Error(`não foi possível conferir o destino: ${error.message}`)
   if (!data) return { existe: false, publicado: false }
   return { existe: true, publicado: data.versao_publicada_id !== null }
 }
@@ -53,7 +53,7 @@ export async function recusaParaLigar(
     .maybeSingle()
 
   if (ehIdInvalido(error)) return null
-  if (error) throw new Error(`não deu para conferir a entrada: ${error.message}`)
+  if (error) throw new Error(`não foi possível conferir a entrada: ${error.message}`)
   if (!data) return null
 
   const r = podeLigar(await destinoPodeReceber(clienteId, data.flow_id as string))

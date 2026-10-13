@@ -32,6 +32,6 @@ export async function acharContatoPeloTelefone(
     .maybeSingle()
 
   if (ehIdInvalido(error)) return null
-  if (error) throw new Error(`não deu para achar o contato: ${error.message}`)
+  if (error) throw new Error(`não foi possível achar o contato: ${error.message}`)
   return data ? (data as { id: string }).id : null
 }

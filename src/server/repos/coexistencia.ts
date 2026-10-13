@@ -71,7 +71,7 @@ export async function lerCoexistencia(canalId: string): Promise<EstadoDeCoexiste
     .maybeSingle()
 
   if (ehIdInvalido(error)) return null
-  if (error) throw new Error(`não deu para ler a coexistência: ${error.message}`)
+  if (error) throw new Error(`não foi possível ler a coexistência: ${error.message}`)
   return data ? paraEstado(data as Record<string, unknown>) : null
 }
 
@@ -82,7 +82,7 @@ export async function marcarCoexistente(canalId: string): Promise<void> {
     .update({ is_on_biz_app: true, coexistencia_em: new Date().toISOString() })
     .eq('id', canalId)
 
-  if (error) throw new Error(`não deu para marcar a coexistência: ${error.message}`)
+  if (error) throw new Error(`não foi possível marcar a coexistência: ${error.message}`)
 }
 
 /**
@@ -97,7 +97,7 @@ export async function marcarCoexistente(canalId: string): Promise<void> {
 export async function anotarWaba(canalId: string, wabaId: string): Promise<void> {
   const { error } = await db().from('channels').update({ waba_id: wabaId }).eq('id', canalId)
 
-  if (error) throw new Error(`não deu para corrigir a WABA do canal: ${error.message}`)
+  if (error) throw new Error(`não foi possível corrigir a WABA do canal: ${error.message}`)
 }
 
 /**
@@ -139,7 +139,7 @@ export async function reservarSync(
     .select('id')
 
   if (ehIdInvalido(error)) return false
-  if (error) throw new Error(`não deu para reservar o sync: ${error.message}`)
+  if (error) throw new Error(`não foi possível reservar o sync: ${error.message}`)
   return (data?.length ?? 0) > 0
 }
 
@@ -159,7 +159,7 @@ export async function guardarRequestIdDoSync(
     .update({ [coluna]: requestId })
     .eq('id', canalId)
 
-  if (error) throw new Error(`não deu para guardar o request_id: ${error.message}`)
+  if (error) throw new Error(`não foi possível guardar o request_id: ${error.message}`)
 }
 
 /**
@@ -177,7 +177,7 @@ export async function marcarDesembarque(canalId: string, desembarcado: boolean):
     .update({ desembarcado_em: desembarcado ? new Date().toISOString() : null })
     .eq('id', canalId)
 
-  if (error) throw new Error(`não deu para marcar o desembarque: ${error.message}`)
+  if (error) throw new Error(`não foi possível marcar o desembarque: ${error.message}`)
 }
 
 /* -------------------------------------------------------------------------- */
@@ -221,7 +221,7 @@ export async function guardarContatosDaAgenda(
     .upsert(linhas, { onConflict: 'client_id,phone_number' })
     .select('id')
 
-  if (error) throw new Error(`não deu para guardar a agenda: ${error.message}`)
+  if (error) throw new Error(`não foi possível guardar a agenda: ${error.message}`)
   return data?.length ?? 0
 }
 
@@ -244,7 +244,7 @@ export async function apagarContatosDaAgenda(
     .eq('client_id', clienteId)
     .in('phone_number', telefones)
 
-  if (error) throw new Error(`não deu para apagar da agenda: ${error.message}`)
+  if (error) throw new Error(`não foi possível apagar da agenda: ${error.message}`)
 }
 
 /**
@@ -266,7 +266,7 @@ export async function nomeNaAgenda(
     .maybeSingle()
 
   if (ehIdInvalido(error)) return null
-  if (error) throw new Error(`não deu para ler a agenda: ${error.message}`)
+  if (error) throw new Error(`não foi possível ler a agenda: ${error.message}`)
   if (!data) return null
 
   const linha = data as Record<string, unknown>
@@ -338,7 +338,7 @@ export async function registrarMensagemDeCoexistencia(dados: {
 
   if (error) {
     if (error.code === '23505') return null
-    throw new Error(`não deu para registrar a mensagem de coexistência: ${error.message}`)
+    throw new Error(`não foi possível registrar a mensagem de coexistência: ${error.message}`)
   }
   return data.id as string
 }
@@ -392,13 +392,13 @@ export async function salvarNumeroDoOnboarding(entrada: {
         alvo: linha.token_ref,
         valor: entrada.token,
       })
-      if (error) throw new Error(`não deu para guardar o token: ${error.message}`)
+      if (error) throw new Error(`não foi possível guardar o token: ${error.message}`)
     } else {
       const { data: segredo, error } = await db().rpc('criar_segredo', {
         valor: entrada.token,
         apelido: `whatsapp_${crypto.randomUUID()}`,
       })
-      if (error) throw new Error(`não deu para guardar o token: ${error.message}`)
+      if (error) throw new Error(`não foi possível guardar o token: ${error.message}`)
 
       const { error: erroDoVinculo } = await db()
         .from('channels')
@@ -406,7 +406,7 @@ export async function salvarNumeroDoOnboarding(entrada: {
         .eq('id', linha.id)
       if (erroDoVinculo) {
         await db().rpc('apagar_segredo', { alvo: segredo as string })
-        throw new Error(`não deu para ligar o token ao número: ${erroDoVinculo.message}`)
+        throw new Error(`não foi possível ligar o token ao número: ${erroDoVinculo.message}`)
       }
     }
 
@@ -421,7 +421,7 @@ export async function salvarNumeroDoOnboarding(entrada: {
       })
       .eq('id', linha.id)
 
-    if (error) throw new Error(`não deu para atualizar o número: ${error.message}`)
+    if (error) throw new Error(`não foi possível atualizar o número: ${error.message}`)
     return { canalId: linha.id }
   }
 
@@ -431,7 +431,7 @@ export async function salvarNumeroDoOnboarding(entrada: {
     valor: entrada.token,
     apelido: `whatsapp_${crypto.randomUUID()}`,
   })
-  if (erroDoCofre) throw new Error(`não deu para guardar o token: ${erroDoCofre.message}`)
+  if (erroDoCofre) throw new Error(`não foi possível guardar o token: ${erroDoCofre.message}`)
 
   const tokenRef = segredo as string
 
@@ -453,7 +453,7 @@ export async function salvarNumeroDoOnboarding(entrada: {
     // O segredo já está no cofre e a linha não nasceu. Sem isto ele ficaria
     // órfão para sempre, e token órfão é token que ninguém revoga.
     await db().rpc('apagar_segredo', { alvo: tokenRef })
-    throw new Error(`não deu para conectar o número: ${error.message}`)
+    throw new Error(`não foi possível conectar o número: ${error.message}`)
   }
 
   return { canalId: (data as { id: string }).id }
@@ -489,7 +489,7 @@ export async function anotarProgressoDoSync(
     })
     .eq('id', canalId)
 
-  if (error) throw new Error(`não deu para anotar o progresso: ${error.message}`)
+  if (error) throw new Error(`não foi possível anotar o progresso: ${error.message}`)
 }
 
 /** Grava que o histórico não foi compartilhado, uma vez só. */
@@ -499,7 +499,7 @@ export async function anotarHistoricoRecusado(canalId: string): Promise<void> {
     .update({ historico_recusado_em: new Date().toISOString() })
     .eq('id', canalId)
     .is('historico_recusado_em', null)
-  if (error) throw new Error(`não deu para anotar a recusa do histórico: ${error.message}`)
+  if (error) throw new Error(`não foi possível anotar a recusa do histórico: ${error.message}`)
 }
 
 /**
@@ -521,7 +521,7 @@ export async function coexistenciaDoCliente(
     .eq('client_id', clienteId)
 
   if (ehIdInvalido(error)) return {}
-  if (error) throw new Error(`não deu para ler a coexistência do cliente: ${error.message}`)
+  if (error) throw new Error(`não foi possível ler a coexistência do cliente: ${error.message}`)
 
   const mapa: Record<string, EstadoDeCoexistencia> = {}
   for (const linha of (data ?? []) as Record<string, unknown>[]) {
@@ -555,7 +555,7 @@ export async function existeCanalComWaba(wabaId: string): Promise<boolean> {
     .eq('waba_id', wabaId)
     .limit(1)
 
-  if (error) throw new Error(`não deu para procurar o canal pela WABA: ${error.message}`)
+  if (error) throw new Error(`não foi possível procurar o canal pela WABA: ${error.message}`)
   return (data?.length ?? 0) > 0
 }
 
@@ -579,7 +579,7 @@ export async function anotarIdentidade(
     })
     .eq('id', canalId)
 
-  if (error) throw new Error(`não deu para anotar a identidade do número: ${error.message}`)
+  if (error) throw new Error(`não foi possível anotar a identidade do número: ${error.message}`)
 }
 
 /**
@@ -609,6 +609,6 @@ export async function ecoColadoNoBot(contatoId: string, agora: Date = new Date()
     .eq('payload->autor->>tipo', 'automacao')
     .gte('ts', desde)
     .limit(1)
-  if (error) throw new Error(`não deu para ler a última mensagem do bot: ${error.message}`)
+  if (error) throw new Error(`não foi possível ler a última mensagem do bot: ${error.message}`)
   return Boolean(data?.length)
 }

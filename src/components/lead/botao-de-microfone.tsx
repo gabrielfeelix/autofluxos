@@ -161,7 +161,7 @@ export function BotaoDeMicrofone({
       })
 
       if (!preparo.ok || !preparo.envio) {
-        setErro(preparo.erro ?? 'não deu para preparar o envio')
+        setErro(preparo.erro ?? 'não foi possível preparar o envio')
         return
       }
 
@@ -184,7 +184,7 @@ export function BotaoDeMicrofone({
       })
 
       if (!r.ok) {
-        setErro(r.erro ?? 'não deu para enviar')
+        setErro(r.erro ?? 'não foi possível enviar')
         return
       }
 
@@ -215,7 +215,7 @@ export function BotaoDeMicrofone({
         const bytes = new Uint8Array(await gravado.arrayBuffer())
         const ogg = webmOpusParaOgg(bytes)
         if (!ogg) {
-          setErro('Não deu para preparar o áudio neste navegador. Tente pelo Firefox.')
+          setErro('Não foi possível preparar o áudio neste navegador. Tente pelo Firefox.')
           return
         }
         audio = new Blob([ogg as unknown as BlobPart])

@@ -69,7 +69,7 @@ export async function listarSegmentos(clienteId: string): Promise<SegmentoSalvo[
     .order('nome', { ascending: true })
 
   if (ehIdInvalido(error)) return []
-  if (error) throw new Error(`não deu para listar os segmentos: ${error.message}`)
+  if (error) throw new Error(`não foi possível listar os segmentos: ${error.message}`)
   return (data as Linha[]).map(paraSegmento)
 }
 
@@ -85,7 +85,7 @@ export async function acharSegmento(
     .maybeSingle()
 
   if (ehIdInvalido(error)) return null
-  if (error) throw new Error(`não deu para ler o segmento: ${error.message}`)
+  if (error) throw new Error(`não foi possível ler o segmento: ${error.message}`)
   return data ? paraSegmento(data as Linha) : null
 }
 
@@ -109,7 +109,7 @@ export async function criarSegmento(
     .single()
 
   if (error?.code === '23505') return { ok: false, motivo: `já existe um segmento "${limpo}"` }
-  if (error) return { ok: false, motivo: `não deu para criar: ${error.message}` }
+  if (error) return { ok: false, motivo: `não foi possível criar: ${error.message}` }
   return { ok: true, segmento: paraSegmento(data as Linha) }
 }
 
@@ -147,7 +147,7 @@ export async function salvarRegra(
 
   if (error?.code === '23505') return { ok: false, motivo: 'já existe um segmento com esse nome' }
   if (ehIdInvalido(error)) return { ok: false, motivo: 'esse segmento não existe' }
-  if (error) return { ok: false, motivo: `não deu para salvar: ${error.message}` }
+  if (error) return { ok: false, motivo: `não foi possível salvar: ${error.message}` }
   if (!data) return { ok: false, motivo: 'esse segmento não existe' }
 
   return { ok: true, segmento: paraSegmento(data as Linha) }
@@ -163,6 +163,6 @@ export async function apagarSegmento(clienteId: string, segmentoId: string): Pro
     .eq('id', segmentoId)
 
   if (ehIdInvalido(error)) return false
-  if (error) throw new Error(`não deu para apagar: ${error.message}`)
+  if (error) throw new Error(`não foi possível apagar: ${error.message}`)
   return true
 }

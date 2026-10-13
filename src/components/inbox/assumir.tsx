@@ -196,7 +196,7 @@ export function PassarPara({
         aberto={aberto}
         aoFechar={() => setAberto(false)}
         titulo="Transferir conversa"
-        descricao="A conversa passa para a pessoa escolhida, que vira a responsável. O cliente não é avisado."
+        descricao="A conversa é transferida para a pessoa escolhida, que passa a ser a responsável. O cliente não é avisado."
       >
         <ul className="-mx-1 flex max-h-[360px] flex-col overflow-y-auto">
           {equipe.map((membro) => {
@@ -285,7 +285,7 @@ export function TravaDaResposta({
   return (
     <div className="shrink-0 border-t border-line bg-panel px-4 py-5 text-center">
       <p className="text-[13px] font-semibold text-soft">
-        {nomeDoDono ? `${nomeDoDono} está atendendo` : 'esta conversa já tem dono'}
+        {nomeDoDono ? `${nomeDoDono} está atendendo` : 'esta conversa já tem responsável'}
       </p>
       <p className="mx-auto mt-1 max-w-[420px] text-[12.5px] leading-5 text-dim">
         Esta conta pediu que só quem assumiu responda, para duas pessoas não escreverem ao

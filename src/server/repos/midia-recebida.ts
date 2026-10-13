@@ -67,7 +67,7 @@ export async function guardarArquivo(
     .upload(caminho, arquivo.bytes, { contentType: mime, upsert: true })
 
   if (erroDoUpload) {
-    console.error('[midia] não deu para guardar o arquivo recebido', erroDoUpload.message)
+    console.error('[midia] não foi possível guardar o arquivo recebido', erroDoUpload.message)
     return null
   }
 
@@ -109,7 +109,7 @@ export async function urlAssinada(caminho: string): Promise<string | null> {
     .createSignedUrl(caminho, VALIDADE_DA_ASSINATURA_S)
 
   if (error) {
-    console.error('[midia] não deu para assinar a URL', error.message)
+    console.error('[midia] não foi possível assinar a URL', error.message)
     return null
   }
   return data?.signedUrl ?? null
@@ -133,7 +133,7 @@ export async function urlsAssinadas(caminhos: string[]): Promise<Map<string, str
   if (error) {
     // Degrada, não derruba: a conversa abre sem as imagens, com o aviso da
     // bolha. Uma tela de trabalho não pode fechar porque o Storage piscou.
-    console.error('[midia] não deu para assinar as URLs da conversa', error.message)
+    console.error('[midia] não foi possível assinar as URLs da conversa', error.message)
     return porCaminho
   }
 
@@ -161,7 +161,7 @@ export async function baixarArquivo(
   const { data, error } = await db().storage.from(BUCKET_DOS_RECEBIDOS).download(caminho)
 
   if (error || !data) {
-    console.error('[midia] não deu para baixar o arquivo', error?.message ?? 'sem corpo')
+    console.error('[midia] não foi possível baixar o arquivo', error?.message ?? 'sem corpo')
     return null
   }
 
@@ -195,7 +195,7 @@ export async function apagarArquivosDoContato(contatoId: string): Promise<number
 
   if (ehIdInvalido(error)) return 0
   if (error) {
-    console.error('[midia] não deu para listar os arquivos do contato', error.message)
+    console.error('[midia] não foi possível listar os arquivos do contato', error.message)
     return 0
   }
 
@@ -210,7 +210,7 @@ export async function apagarArquivosDoContato(contatoId: string): Promise<number
     .remove(caminhos)
 
   if (erroAoApagar) {
-    console.error('[midia] não deu para apagar os arquivos do contato', erroAoApagar.message)
+    console.error('[midia] não foi possível apagar os arquivos do contato', erroAoApagar.message)
     return 0
   }
 

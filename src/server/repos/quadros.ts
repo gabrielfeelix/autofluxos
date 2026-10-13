@@ -126,7 +126,7 @@ export async function listarQuadros(clienteId: string): Promise<Quadro[]> {
     .order('criado_em', { ascending: true })
 
   if (ehIdInvalido(error)) return []
-  if (error) throw new Error(`não deu para listar os quadros: ${error.message}`)
+  if (error) throw new Error(`não foi possível listar os quadros: ${error.message}`)
   return (data as unknown as LinhaDoQuadro[]).map(paraQuadro)
 }
 
@@ -139,7 +139,7 @@ export async function acharQuadro(clienteId: string, quadroId: string): Promise<
     .maybeSingle()
 
   if (ehIdInvalido(error)) return null
-  if (error) throw new Error(`não deu para buscar o quadro: ${error.message}`)
+  if (error) throw new Error(`não foi possível buscar o quadro: ${error.message}`)
   return data ? paraQuadro(data as unknown as LinhaDoQuadro) : null
 }
 
@@ -176,7 +176,7 @@ export async function criarQuadro(
     .single()
 
   if (error?.code === '23505') return { ok: false, motivo: 'já existe um quadro com este nome' }
-  if (error) throw new Error(`não deu para criar o quadro: ${error.message}`)
+  if (error) throw new Error(`não foi possível criar o quadro: ${error.message}`)
 
   const quadroId = (data as { id: string }).id
 
@@ -223,7 +223,7 @@ export async function renomearQuadro(
 
   if (error?.code === '23505') return { ok: false, motivo: 'já existe um quadro com este nome' }
   if (ehIdInvalido(error)) return { ok: false, motivo: 'este quadro não existe mais' }
-  if (error) throw new Error(`não deu para renomear o quadro: ${error.message}`)
+  if (error) throw new Error(`não foi possível renomear o quadro: ${error.message}`)
   return data ? { ok: true } : { ok: false, motivo: 'este quadro não existe mais' }
 }
 
@@ -245,7 +245,7 @@ export async function apagarQuadro(clienteId: string, quadroId: string): Promise
     .maybeSingle()
 
   if (ehIdInvalido(error)) return false
-  if (error) throw new Error(`não deu para apagar o quadro: ${error.message}`)
+  if (error) throw new Error(`não foi possível apagar o quadro: ${error.message}`)
   return data !== null
 }
 
@@ -309,7 +309,7 @@ export async function acharQuadroPadrao(clienteId: string): Promise<string | nul
       .maybeSingle()
 
     if (ehIdInvalido(error)) return null
-    if (error) throw new Error(`não deu para achar o quadro padrão: ${error.message}`)
+    if (error) throw new Error(`não foi possível achar o quadro padrão: ${error.message}`)
     return data ? (data as { id: string }).id : null
   }
 
@@ -321,7 +321,7 @@ export async function acharQuadroPadrao(clienteId: string): Promise<string | nul
   const { data, error } = await consulta.eq('padrao', true).limit(1).maybeSingle()
 
   if (ehIdInvalido(error)) return null
-  if (error) throw new Error(`não deu para achar o quadro padrão: ${error.message}`)
+  if (error) throw new Error(`não foi possível achar o quadro padrão: ${error.message}`)
   return data ? (data as { id: string }).id : null
 }
 
@@ -363,7 +363,7 @@ export async function definirEntradaNoFunil(
     .update({ entrada_no_funil: politica })
     .eq('id', clienteId)
 
-  if (error) return { ok: false, motivo: `não deu para gravar: ${error.message}` }
+  if (error) return { ok: false, motivo: `não foi possível gravar: ${error.message}` }
   return { ok: true }
 }
 
@@ -392,7 +392,7 @@ export async function definirQuadroPadrao(
     .eq('client_id', clienteId)
     .eq('padrao', true)
 
-  if (erroAoLimpar) throw new Error(`não deu para limpar o quadro padrão: ${erroAoLimpar.message}`)
+  if (erroAoLimpar) throw new Error(`não foi possível limpar o quadro padrão: ${erroAoLimpar.message}`)
   if (quadroId === null) return { ok: true }
 
   const { data, error } = await db()
@@ -404,7 +404,7 @@ export async function definirQuadroPadrao(
     .maybeSingle()
 
   if (ehIdInvalido(error)) return { ok: false, motivo: 'este quadro não existe mais' }
-  if (error) throw new Error(`não deu para definir o quadro padrão: ${error.message}`)
+  if (error) throw new Error(`não foi possível definir o quadro padrão: ${error.message}`)
   return data ? { ok: true } : { ok: false, motivo: 'este quadro não existe mais' }
 }
 
@@ -425,7 +425,7 @@ export async function criarEtapa(
     .insert({ quadro_id: quadroId, nome: nome.trim(), ordem: proximaOrdem(quadro.etapas) })
 
   if (error?.code === '23505') return { ok: false, motivo: 'já existe uma etapa com este nome' }
-  if (error) throw new Error(`não deu para criar a etapa: ${error.message}`)
+  if (error) throw new Error(`não foi possível criar a etapa: ${error.message}`)
   return { ok: true }
 }
 
@@ -449,7 +449,7 @@ export async function renomearEtapa(
     .eq('quadro_id', quadroId)
 
   if (error?.code === '23505') return { ok: false, motivo: 'já existe uma etapa com este nome' }
-  if (error) throw new Error(`não deu para renomear a etapa: ${error.message}`)
+  if (error) throw new Error(`não foi possível renomear a etapa: ${error.message}`)
   return { ok: true }
 }
 
@@ -479,7 +479,7 @@ export async function moverEtapa(
       { id: troca.b.id, quadro_id: quadroId, nome: troca.b.nome, ordem: troca.a.ordem },
     ])
 
-  if (error) throw new Error(`não deu para mover a etapa: ${error.message}`)
+  if (error) throw new Error(`não foi possível mover a etapa: ${error.message}`)
   return true
 }
 
@@ -512,7 +512,7 @@ export async function apagarEtapa(
     .select('id', { count: 'exact', head: true })
     .eq('coluna_id', etapaId)
 
-  if (erroDaContagem) throw new Error(`não deu para contar os cartões: ${erroDaContagem.message}`)
+  if (erroDaContagem) throw new Error(`não foi possível contar os cartões: ${erroDaContagem.message}`)
   if ((count ?? 0) > 0) {
     return {
       ok: false,
@@ -551,7 +551,7 @@ export async function apagarEtapa(
     .eq('id', etapaId)
     .eq('quadro_id', quadroId)
 
-  if (error) throw new Error(`não deu para apagar a etapa: ${error.message}`)
+  if (error) throw new Error(`não foi possível apagar a etapa: ${error.message}`)
   return { ok: true }
 }
 
@@ -622,7 +622,7 @@ export async function listarCartoes(clienteId: string, quadroId: string): Promis
     .eq('quadro_id', quadroId)
 
   if (ehIdInvalido(error)) return []
-  if (error) throw new Error(`não deu para listar os cartões: ${error.message}`)
+  if (error) throw new Error(`não foi possível listar os cartões: ${error.message}`)
 
   return (data as unknown as LinhaDoCartao[]).map(paraCartao)
 }
@@ -674,7 +674,7 @@ export async function acharCartao(
     .maybeSingle()
 
   if (ehIdInvalido(error)) return null
-  if (error) throw new Error(`não deu para ler o negócio: ${error.message}`)
+  if (error) throw new Error(`não foi possível ler o negócio: ${error.message}`)
   if (!data) return null
 
   const linha = data as unknown as LinhaDoCartao & {
@@ -714,7 +714,7 @@ export async function preverFechamento(
     .maybeSingle()
 
   if (ehIdInvalido(error)) return { ok: false, motivo: 'este negócio não existe mais' }
-  if (error) throw new Error(`não deu para gravar a previsão: ${error.message}`)
+  if (error) throw new Error(`não foi possível gravar a previsão: ${error.message}`)
   return linha ? { ok: true } : { ok: false, motivo: 'este negócio não existe mais' }
 }
 
@@ -747,7 +747,7 @@ export async function trocarDeFunil(
     return { ok: false, motivo: 'esta pessoa já tem um negócio aberto nesse funil' }
   }
   if (ehIdInvalido(error)) return { ok: false, motivo: 'este negócio não existe mais' }
-  if (error) throw new Error(`não deu para trocar de funil: ${error.message}`)
+  if (error) throw new Error(`não foi possível trocar de funil: ${error.message}`)
   if (!data) return { ok: false, motivo: 'este negócio não existe mais' }
 
   await anotar(
@@ -802,7 +802,7 @@ async function jaAbertosNoQuadro(
     .eq('avulso', false)
     .in('contact_id', contatos)
 
-  if (error) throw new Error(`não deu para conferir quem já está no quadro: ${error.message}`)
+  if (error) throw new Error(`não foi possível conferir quem já está no quadro: ${error.message}`)
   return new Set((data as { contact_id: string }[]).map((linha) => linha.contact_id))
 }
 
@@ -838,7 +838,7 @@ export async function porNoQuadro(
     .in('id', contatos)
 
   if (ehIdInvalido(erroDosContatos)) return { ok: false, motivo: 'contato inválido' }
-  if (erroDosContatos) throw new Error(`não deu para conferir os contatos: ${erroDosContatos.message}`)
+  if (erroDosContatos) throw new Error(`não foi possível conferir os contatos: ${erroDosContatos.message}`)
 
   const validos = (doCliente as { id: string }[]).map((c) => c.id)
   if (validos.length === 0) return { ok: false, motivo: 'nenhum contato deste cliente na seleção' }
@@ -866,7 +866,7 @@ export async function porNoQuadro(
   // insert. O índice parcial fez o seu trabalho, e o resultado é o mesmo que
   // o `ignoreDuplicates` dava antes, a pessoa está no quadro.
   if (error && error.code !== '23505') {
-    throw new Error(`não deu para pôr no quadro: ${error.message}`)
+    throw new Error(`não foi possível pôr no quadro: ${error.message}`)
   }
   const postos = (data as { id: string }[] | null)?.length ?? 0
   return {
@@ -918,14 +918,14 @@ export async function contatosForaDoQuadro(
 
   const { data, error } = await consulta
   if (ehIdInvalido(error)) return []
-  if (error) throw new Error(`não deu para buscar contatos: ${error.message}`)
+  if (error) throw new Error(`não foi possível buscar contatos: ${error.message}`)
 
   const { data: jaEstao, error: erroDosCartoes } = await db()
     .from('quadro_cartoes')
     .select('contact_id')
     .eq('quadro_id', quadroId)
 
-  if (erroDosCartoes) throw new Error(`não deu para ler o quadro: ${erroDosCartoes.message}`)
+  if (erroDosCartoes) throw new Error(`não foi possível ler o quadro: ${erroDosCartoes.message}`)
   const dentro = new Set((jaEstao as { contact_id: string }[]).map((l) => l.contact_id))
 
   return (data as { id: string; nome: string | null; nome_real: string | null; wa_id: string }[])
@@ -975,7 +975,7 @@ export async function porNaEtapa(
     .in('id', contatos)
 
   if (ehIdInvalido(erroDosContatos)) return { ok: false, motivo: 'contato inválido' }
-  if (erroDosContatos) throw new Error(`não deu para conferir os contatos: ${erroDosContatos.message}`)
+  if (erroDosContatos) throw new Error(`não foi possível conferir os contatos: ${erroDosContatos.message}`)
 
   const validos = (doCliente as { id: string }[]).map((c) => c.id)
   if (validos.length === 0) return { ok: false, motivo: 'nenhum contato deste cliente na seleção' }
@@ -1000,7 +1000,7 @@ export async function porNaEtapa(
     .select('id')
 
   if (error && error.code !== '23505') {
-    throw new Error(`não deu para pôr na etapa: ${error.message}`)
+    throw new Error(`não foi possível pôr na etapa: ${error.message}`)
   }
   const postos = (data as { id: string }[] | null)?.length ?? 0
   return {
@@ -1050,7 +1050,7 @@ export async function moverCartao(
   })
 
   if (ehIdInvalido(error)) return { ok: false, motivo: 'este cartão não existe mais' }
-  if (error) throw new Error(`não deu para mover o cartão: ${error.message}`)
+  if (error) throw new Error(`não foi possível mover o cartão: ${error.message}`)
 
   /**
    * **Lista vazia é a recusa**, e a função devolve `setof` justamente para
@@ -1129,7 +1129,7 @@ export async function tirarDoQuadro(clienteId: string, cartaoId: string): Promis
     .maybeSingle()
 
   if (ehIdInvalido(error)) return false
-  if (error) throw new Error(`não deu para remover do quadro: ${error.message}`)
+  if (error) throw new Error(`não foi possível remover do quadro: ${error.message}`)
   return data !== null
 }
 
@@ -1164,7 +1164,7 @@ export async function porContatoNaEtapa(
 
   if (ehIdInvalido(erroDaColuna)) return false
   if (erroDaColuna) {
-    console.error('[quadros] não deu para conferir a etapa', erroDaColuna.message)
+    console.error('[quadros] não foi possível conferir a etapa', erroDaColuna.message)
     return false
   }
   if (!coluna) return false
@@ -1182,7 +1182,7 @@ export async function porContatoNaEtapa(
     .maybeSingle()
 
   if (erroDoCartao) {
-    console.error('[quadros] não deu para achar o cartão', erroDoCartao.message)
+    console.error('[quadros] não foi possível achar o cartão', erroDoCartao.message)
     return false
   }
 
@@ -1201,7 +1201,7 @@ export async function porContatoNaEtapa(
   // Corrida com outra escrita para o mesmo contato: o índice único resolveu, e
   // "já está no quadro" é o resultado que se queria.
   if (error && error.code !== '23505') {
-    console.error('[quadros] não deu para pôr o contato na etapa', error.message)
+    console.error('[quadros] não foi possível pôr o contato na etapa', error.message)
     return false
   }
   return true
@@ -1255,7 +1255,7 @@ export async function quadrosDoContato(
     .order('criado_em', { ascending: false })
 
   if (ehIdInvalido(error)) return []
-  if (error) throw new Error(`não deu para ler os quadros do contato: ${error.message}`)
+  if (error) throw new Error(`não foi possível ler os quadros do contato: ${error.message}`)
 
   return (
     data as unknown as {
@@ -1332,7 +1332,7 @@ export async function criarNegocioAvulso(
     .select('id')
     .single()
 
-  if (error) throw new Error(`não deu para criar o negócio: ${error.message}`)
+  if (error) throw new Error(`não foi possível criar o negócio: ${error.message}`)
   return { ok: true, id: (data as { id: string }).id }
 }
 
@@ -1350,7 +1350,7 @@ export async function definirOrigemDoNegocio(
     .eq('id', cartaoId)
     .select('id')
     .maybeSingle()
-  if (error) throw new Error(`não deu para gravar a origem: ${error.message}`)
+  if (error) throw new Error(`não foi possível gravar a origem: ${error.message}`)
   return data ? { ok: true } : { ok: false, motivo: 'este negócio não existe mais' }
 }
 
@@ -1440,7 +1440,7 @@ export async function reabrirCartao(
     .maybeSingle()
 
   if (ehIdInvalido(error)) return { ok: false, motivo: 'este cartão não existe mais' }
-  if (error) throw new Error(`não deu para reabrir o cartão: ${error.message}`)
+  if (error) throw new Error(`não foi possível reabrir o cartão: ${error.message}`)
   if (!data) return { ok: false, motivo: 'este cartão não existe mais' }
 
   /*
@@ -1471,7 +1471,7 @@ export async function reabrirCartao(
   // visível é a próxima conclusão deste cartão ser recusada pelo índice, e
   // isso vira frase na tela, não estado inconsistente.
   if (erroDaConclusao) {
-    console.error('[quadros] não deu para limpar a conclusão:', erroDaConclusao.message)
+    console.error('[quadros] não foi possível limpar a conclusão:', erroDaConclusao.message)
   }
 
   return { ok: true }
@@ -1499,7 +1499,7 @@ export async function atribuirCartao(
     .maybeSingle()
 
   if (ehIdInvalido(error)) return { ok: false, motivo: 'este cartão não existe mais' }
-  if (error) throw new Error(`não deu para atribuir o cartão: ${error.message}`)
+  if (error) throw new Error(`não foi possível atribuir o cartão: ${error.message}`)
   if (!data) return { ok: false, motivo: 'este cartão não existe mais' }
 
   const linha = data as unknown as {
@@ -1537,7 +1537,7 @@ export async function descreverCartao(
     .maybeSingle()
 
   if (ehIdInvalido(error)) return { ok: false, motivo: 'este cartão não existe mais' }
-  if (error) throw new Error(`não deu para descrever o cartão: ${error.message}`)
+  if (error) throw new Error(`não foi possível descrever o cartão: ${error.message}`)
   return data ? { ok: true } : { ok: false, motivo: 'este cartão não existe mais' }
 }
 
@@ -1603,7 +1603,7 @@ export async function oportunidadesAbertasDoContato(
       .in('equipe_id', [...filtro.equipes])
 
     if (erroDosMembros) {
-      throw new Error(`não deu para ler as equipes: ${erroDosMembros.message}`)
+      throw new Error(`não foi possível ler as equipes: ${erroDosMembros.message}`)
     }
     const usuarios = [...new Set((membros as { usuario_id: string }[]).map((m) => m.usuario_id))]
     if (usuarios.length === 0) return []
@@ -1613,7 +1613,7 @@ export async function oportunidadesAbertasDoContato(
   const { data, error } = await consulta
 
   if (ehIdInvalido(error)) return []
-  if (error) throw new Error(`não deu para ler as oportunidades abertas: ${error.message}`)
+  if (error) throw new Error(`não foi possível ler as oportunidades abertas: ${error.message}`)
 
   return (
     data as unknown as {
@@ -1665,7 +1665,7 @@ export async function avaliarCartao(
     .maybeSingle()
 
   if (ehIdInvalido(error)) return { ok: false, motivo: 'esta oportunidade não existe mais' }
-  if (error) throw new Error(`não deu para avaliar a oportunidade: ${error.message}`)
+  if (error) throw new Error(`não foi possível avaliar a oportunidade: ${error.message}`)
   if (!data) return { ok: false, motivo: 'esta oportunidade não existe mais' }
 
   const linha = data as { id: string; contact_id: string }
@@ -1704,7 +1704,7 @@ export async function definirInteresse(
       .maybeSingle()
 
     if (ehIdInvalido(error)) return { ok: false, motivo: 'esse item do catálogo não existe' }
-    if (error) throw new Error(`não deu para conferir o catálogo: ${error.message}`)
+    if (error) throw new Error(`não foi possível conferir o catálogo: ${error.message}`)
     if (!data) return { ok: false, motivo: 'esse item do catálogo não existe' }
     if ((data as { arquivado_em: string | null }).arquivado_em !== null) {
       return { ok: false, motivo: 'esse item está arquivado. Desarquive antes de usá-lo.' }
@@ -1720,7 +1720,7 @@ export async function definirInteresse(
     .maybeSingle()
 
   if (ehIdInvalido(error)) return { ok: false, motivo: 'esta oportunidade não existe mais' }
-  if (error) throw new Error(`não deu para definir o interesse: ${error.message}`)
+  if (error) throw new Error(`não foi possível definir o interesse: ${error.message}`)
   return data ? { ok: true } : { ok: false, motivo: 'esta oportunidade não existe mais' }
 }
 
@@ -1741,7 +1741,7 @@ export async function encadearQuadro(
     .select('id, seguinte_id')
     .eq('client_id', clienteId)
 
-  if (error) throw new Error(`não deu para ler a cadeia: ${error.message}`)
+  if (error) throw new Error(`não foi possível ler a cadeia: ${error.message}`)
 
   const quadros = (data as { id: string; seguinte_id: string | null }[]) ?? []
   if (!quadros.some((q) => q.id === quadroId)) {
@@ -1761,7 +1761,7 @@ export async function encadearQuadro(
     .eq('client_id', clienteId)
     .eq('id', quadroId)
 
-  if (erroDaEscrita) throw new Error(`não deu para encadear: ${erroDaEscrita.message}`)
+  if (erroDaEscrita) throw new Error(`não foi possível encadear: ${erroDaEscrita.message}`)
   return { ok: true }
 }
 
@@ -1784,7 +1784,7 @@ export async function definirTipoDaEtapa(
     .eq('id', etapaId)
     .eq('quadro_id', quadroId)
 
-  if (error) throw new Error(`não deu para mudar a etapa: ${error.message}`)
+  if (error) throw new Error(`não foi possível mudar a etapa: ${error.message}`)
   return { ok: true }
 }
 
@@ -1813,7 +1813,7 @@ export async function definirCorDaEtapa(
     .eq('id', etapaId)
     .eq('quadro_id', quadroId)
 
-  if (error) throw new Error(`não deu para mudar a cor: ${error.message}`)
+  if (error) throw new Error(`não foi possível mudar a cor: ${error.message}`)
   return { ok: true }
 }
 
@@ -1842,8 +1842,8 @@ export async function contarForaDoQuadro(clienteId: string, quadroId: string): P
     ])
 
   if (ehIdInvalido(erroDosContatos) || ehIdInvalido(erroDosCartoes)) return 0
-  if (erroDosContatos) throw new Error(`não deu para contar os contatos: ${erroDosContatos.message}`)
-  if (erroDosCartoes) throw new Error(`não deu para ler o quadro: ${erroDosCartoes.message}`)
+  if (erroDosContatos) throw new Error(`não foi possível contar os contatos: ${erroDosContatos.message}`)
+  if (erroDosCartoes) throw new Error(`não foi possível ler o quadro: ${erroDosCartoes.message}`)
 
   return Math.max(0, (total ?? 0) - new Set((dentro as { contact_id: string }[]).map((l) => l.contact_id)).size)
 }
@@ -1874,14 +1874,14 @@ export async function trazerTodosParaOQuadro(
     .order('criado_em', { ascending: false })
 
   if (ehIdInvalido(error)) return { ok: false, motivo: 'conta inválida' }
-  if (error) throw new Error(`não deu para listar os contatos: ${error.message}`)
+  if (error) throw new Error(`não foi possível listar os contatos: ${error.message}`)
 
   const { data: jaEstao, error: erroDosCartoes } = await db()
     .from('quadro_cartoes')
     .select('contact_id')
     .eq('quadro_id', quadroId)
 
-  if (erroDosCartoes) throw new Error(`não deu para ler o quadro: ${erroDosCartoes.message}`)
+  if (erroDosCartoes) throw new Error(`não foi possível ler o quadro: ${erroDosCartoes.message}`)
 
   const dentro = new Set((jaEstao as { contact_id: string }[]).map((l) => l.contact_id))
   const fora = (data as { id: string }[]).map((l) => l.id).filter((id) => !dentro.has(id))

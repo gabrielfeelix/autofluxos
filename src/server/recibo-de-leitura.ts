@@ -64,7 +64,7 @@ export async function avisarQueLeu(
     await canal.marcarLida(contexto.ultimaEntradaWaId)
   } catch (erro) {
     console.warn(
-      '[leitura] não deu para marcar a conversa como lida no WhatsApp',
+      '[leitura] não foi possível marcar a conversa como lida no WhatsApp',
       erro instanceof Error ? erro.message : String(erro),
     )
   }

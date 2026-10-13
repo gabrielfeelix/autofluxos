@@ -35,7 +35,7 @@ export async function acaoEnsinarResposta(
     await atualizarContexto(clienteId, ensinarResposta(cliente.contextoNegocio, p, r))
     return { ok: true }
   } catch {
-    return { erro: 'não deu para salvar. Tente de novo.' }
+    return { erro: 'não foi possível salvar. Tente de novo.' }
   }
 }
 
@@ -57,6 +57,6 @@ export async function acaoRenomearTema(
     await renomearTema(clienteId, categoria, de, novo)
     return { ok: true }
   } catch {
-    return { erro: 'não deu para renomear. Tente de novo.' }
+    return { erro: 'não foi possível renomear. Tente de novo.' }
   }
 }

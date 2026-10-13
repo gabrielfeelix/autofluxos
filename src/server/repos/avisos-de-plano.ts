@@ -15,7 +15,7 @@ export async function marcarAviso(clienteId: string, chave: string): Promise<boo
   const { error } = await db().from('avisos_de_plano').insert({ client_id: clienteId, chave })
   if (!error) return true
   if (error.code === '23505') return false
-  throw new Error(`não deu para gravar o aviso: ${error.message}`)
+  throw new Error(`não foi possível gravar o aviso: ${error.message}`)
 }
 
 export async function marcarEmailEnviado(clienteId: string, chave: string): Promise<void> {

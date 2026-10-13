@@ -120,7 +120,7 @@ export const DESCRICOES: Record<TipoNo, string> = {
   encaminhar: 'Manda o WhatsApp de outro time',
   'ir-fluxo': 'Continua em outra',
   ia: 'Responde pelo contexto',
-  handoff: 'Passa para uma pessoa',
+  handoff: 'Transfere para uma pessoa',
   http: 'Chama um sistema',
   voltar: 'Volta ao menu',
   nps: 'Pergunta a nota',

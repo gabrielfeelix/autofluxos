@@ -120,7 +120,7 @@ export async function acaoEnviarProdutoDoInbox(
       ? await enviarCard(contexto.waId, [produto])
       : await canal.enviarTexto(contexto.waId, texto)
   } catch (erro) {
-    return { ok: false, erro: erro instanceof Error ? erro.message : 'não deu para enviar' }
+    return { ok: false, erro: erro instanceof Error ? erro.message : 'não foi possível enviar' }
   }
 
   await confirmarEntrega(registro, waMessageId)

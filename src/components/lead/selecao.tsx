@@ -65,7 +65,7 @@ export function SelecaoDeContatos({
     setAviso(null)
     comecar(async () => {
       const r = await acaoMarcarEtiqueta(clienteId, etiquetaId, marcados, aplicar)
-      if (!r.ok) setErro(r.erro ?? 'não deu para etiquetar')
+      if (!r.ok) setErro(r.erro ?? 'não foi possível etiquetar')
       else {
         const nome = etiquetas.find((e) => e.id === etiquetaId)?.nome ?? 'a etiqueta'
         setAviso(resumoDaEtiqueta(nome, aplicar, marcados.length, r.mudaram ?? 0, r.validos ?? marcados.length))
@@ -88,7 +88,7 @@ export function SelecaoDeContatos({
       try {
         const r = await acaoPorNoQuadro(clienteId, quadroId, marcados)
         if (!r.ok) {
-          setErro(r.erro ?? 'não deu para adicionar ao quadro')
+          setErro(r.erro ?? 'não foi possível adicionar ao quadro')
           return
         }
         const nome = quadros.find((q) => q.id === quadroId)?.nome ?? 'o quadro'
@@ -127,7 +127,7 @@ export function SelecaoDeContatos({
         )
         setMarcados([])
       } catch {
-        setErro('não deu para adicionar ao quadro agora')
+        setErro('não foi possível adicionar ao quadro agora')
       }
     })
   }

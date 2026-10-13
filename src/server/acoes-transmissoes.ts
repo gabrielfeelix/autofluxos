@@ -186,7 +186,7 @@ export async function acaoCriarTemplate(
       ok: false,
       erro: detalhe.includes('duplicate')
         ? `Já existe um modelo chamado "${nome}" em ${idioma} para este cliente.`
-        : 'Não deu para salvar o modelo.',
+        : 'Não foi possível salvar o modelo.',
     }
   }
 
@@ -355,7 +355,7 @@ export async function acaoCriarDaBiblioteca(
       componentes: { corpo: '' },
     })
   } catch {
-    return { ok: false, erro: 'Não deu para salvar o modelo.' }
+    return { ok: false, erro: 'Não foi possível salvar o modelo.' }
   }
 
   const resposta = await criarDaBibliotecaNaMeta({

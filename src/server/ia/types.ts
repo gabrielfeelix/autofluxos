@@ -70,7 +70,7 @@ export type Resposta =
       /**
        * Falha de transporte (cota, fora do ar, demora), e não decisão do
        * modelo. É o que faz a cadeia de provedores tentar o próximo: `nao_sei`
-       * de escopo é resposta, este é "não deu para perguntar".
+       * de escopo é resposta, este é "não foi possível perguntar".
        */
       falhou?: true
     }
