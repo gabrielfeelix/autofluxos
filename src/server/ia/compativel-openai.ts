@@ -126,6 +126,23 @@ export function esquecerPausas(): void {
   foraAte.clear()
 }
 
+function lerResposta(json: RespostaOpenai): Resposta {
+  const mensagem = json.choices?.[0]?.message
+
+  // Mesma precedência do Gemini: pedido de consulta ganha da frase de
+  // espera que vem junto, senão o bot promete olhar e nunca olha.
+  const chamada = mensagem?.tool_calls?.find((c) => c.function?.name)?.function
+  if (chamada?.name) {
+    return {
+      tipo: 'usar_ferramenta',
+      nome: chamada.name,
+      argumentos: comoTexto(lerJson(chamada.arguments)),
+    }
+  }
+
+  return interpretarResposta(mensagem?.content)
+}
+
 export function compativelOpenai({
   provedor,
   chave,
@@ -167,24 +184,30 @@ export function compativelOpenai({
             foraAte.set(provedor, Date.now() + segundos * 1000)
           }
 
+          /*
+           * 413 é o pedido maior que o balde por minuto do plano grátis
+           * (Groq: 8.000 tokens, e um turno de venda com histórico pede 8.682).
+           * Era a última reserva quando a Gemini caía, e recusava calada: o
+           * cliente recebia "Tive um probleminha" (PCYES, 13/out/2026). Uma
+           * segunda volta com o histórico curto e menos folga de resposta cabe.
+           */
+          if (resposta.status === 413 && (pedido.historico?.length ?? 0) > 0) {
+            const enxuto = { ...pedido, historico: pedido.historico?.slice(-4) }
+            const extras = { ...config.extras, max_completion_tokens: 700, reasoning_effort: 'low' }
+            const segunda = await fetch(endereco, {
+              method: 'POST',
+              headers: { 'content-type': 'application/json', authorization: `Bearer ${chave}` },
+              body: montarCorpo(enxuto, nome, extras),
+              signal: AbortSignal.timeout(TIMEOUT_MS),
+            })
+            if (segunda.ok) return lerResposta((await segunda.json()) as RespostaOpenai)
+            console.error(`[ia] ${provedor} respondeu ${segunda.status} também com o histórico curto`)
+          }
+
           return { tipo: 'nao_sei', motivo: `o modelo respondeu ${resposta.status}`, falhou: true }
         }
 
-        const json = (await resposta.json()) as RespostaOpenai
-        const mensagem = json.choices?.[0]?.message
-
-        // Mesma precedência do Gemini: pedido de consulta ganha da frase de
-        // espera que vem junto, senão o bot promete olhar e nunca olha.
-        const chamada = mensagem?.tool_calls?.find((c) => c.function?.name)?.function
-        if (chamada?.name) {
-          return {
-            tipo: 'usar_ferramenta',
-            nome: chamada.name,
-            argumentos: comoTexto(lerJson(chamada.arguments)),
-          }
-        }
-
-        return interpretarResposta(mensagem?.content)
+        return lerResposta((await resposta.json()) as RespostaOpenai)
       } catch (erro) {
         const porTempo = erro instanceof Error && erro.name === 'TimeoutError'
         console.error(`[ia] ${provedor} falhou`, erro)

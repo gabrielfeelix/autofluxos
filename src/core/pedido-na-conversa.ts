@@ -19,13 +19,21 @@ import type { PedidoDaLoja } from '@/loja/magento-pedido'
  * Situação fora do caminho feliz (cancelado, em análise) não ganha linha do
  * tempo, que mentiria um progresso. Marcação do WhatsApp: *negrito*.
  */
-export function mensagemDoPedido(pedido: PedidoDaLoja): string {
+export function mensagemDoPedido(pedido: PedidoDaLoja, hoje?: string): string {
   const etapa = etapaDoPedido(pedido)
   const evento = ultimoAndamento(pedido)
   const linhas = [tituloDoPedido(pedido, etapa, evento)]
 
+  /*
+   * Previsão que já passou não é previsão. O card dizia "Previsão de entrega:
+   * sexta, 09/10" no dia 13/10, e o cliente que reclamava do atraso lia uma
+   * loja que nem tinha notado (PCYES, Junior e Rodrigo Leão). `hoje` vem de
+   * quem chama, em AAAA-MM-DD: `core/` não tem relógio.
+   */
   const previsao = etapa === 3 ? '' : dataComDia(pedido.entrega?.previsao ?? '', 'longo')
-  if (previsao) linhas.push(`Previsão de entrega: *${previsao}*`)
+  const vencida = previsao !== '' && hoje !== undefined && (dataIso(pedido.entrega?.previsao ?? '') ?? hoje) < hoje
+  if (vencida) linhas.push(`⚠️ Entrega atrasada: a previsão era *${previsao}*`)
+  else if (previsao) linhas.push(`Previsão de entrega: *${previsao}*`)
 
   if (etapa !== null) linhas.push('', ...linhaDoTempo(etapa, evento))
 
@@ -133,6 +141,14 @@ const DIAS = ['dom', 'seg', 'ter', 'qua', 'qui', 'sex', 'sáb'] as const
 const DIAS_LONGOS = ['domingo', 'segunda', 'terça', 'quarta', 'quinta', 'sexta', 'sábado'] as const
 
 /** "2026-10-08" vira "qui, 08/10" (ou "quinta, 08/10"); o que não é data passa como `dataCurta`. */
+/** "08/10/2026" ou "2026-10-08" em AAAA-MM-DD, para comparar com hoje. */
+function dataIso(data: string): string | null {
+  const iso = /^(\d{4})-(\d{2})-(\d{2})/.exec(data.trim())
+  if (iso) return `${iso[1]}-${iso[2]}-${iso[3]}`
+  const br = /^(\d{2})\/(\d{2})\/(\d{4})/.exec(data.trim())
+  return br ? `${br[3]}-${br[2]}-${br[1]}` : null
+}
+
 export function dataComDia(data: string, formato: 'curto' | 'longo' = 'curto'): string {
   // "2026-10-08" ou "08/10/2026": a Frete Rápido manda a previsão no segundo
   // jeito, e o card saía com "08/10/2026" em vez de "quinta, 08/10".

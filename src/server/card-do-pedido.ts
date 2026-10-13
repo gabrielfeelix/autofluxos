@@ -1,4 +1,8 @@
 import { linkDoRastreio, mensagemDoPedido } from '@/core/pedido-na-conversa'
+import { hojeNaConta } from '@/core/horario'
+
+/** O relógio do card: a loja e o cliente estão no Brasil. */
+const FUSO_DA_LOJA = 'America/Sao_Paulo'
 import type { PedidoDaLoja } from '@/loja/magento-pedido'
 import { lojaAtivaDaConta } from './adaptador-da-loja'
 import { lojaDaConta } from './repos/lojas'
@@ -17,7 +21,7 @@ export async function cardDoPedido(
   clienteId: string,
   pedido: PedidoDaLoja,
 ): Promise<{ texto: string; rotulo: string; link: string | null; foto: string | null }> {
-  const texto = mensagemDoPedido(pedido)
+  const texto = mensagemDoPedido(pedido, hojeNaConta(FUSO_DA_LOJA))
   const rastreio = linkDoRastreio(pedido)
   if (rastreio) return { texto, rotulo: 'Rastrear entrega', link: rastreio, foto: await fotoDoPedido(clienteId, pedido) }
 

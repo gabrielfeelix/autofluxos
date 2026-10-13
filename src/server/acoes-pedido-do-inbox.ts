@@ -3,6 +3,10 @@
 import { dentroDaJanela } from '@/channels/janela'
 import { autorDaPessoa } from '@/core/autor-da-mensagem'
 import { linkDoRastreio, mensagemDoPedido } from '@/core/pedido-na-conversa'
+import { hojeNaConta } from '@/core/horario'
+
+/** O relógio do card: a loja e o cliente estão no Brasil. */
+const FUSO_DA_LOJA = 'America/Sao_Paulo'
 import type { PedidoDaLoja } from '@/loja/magento-pedido'
 import { consultarPedidoDaConta, listarPedidosDaConta } from './adaptador-da-loja'
 import { cardDoPedido } from './card-do-pedido'
@@ -55,7 +59,7 @@ async function buscar(clienteId: string, contatoId: string, numero: string): Pro
     ok: true,
     pedido: r.valor.pedido,
     confere: r.valor.confere ?? false,
-    previa: mensagemDoPedido(r.valor.pedido),
+    previa: mensagemDoPedido(r.valor.pedido, hojeNaConta(FUSO_DA_LOJA)),
     rastreio: linkDoRastreio(r.valor.pedido),
   }
 }

@@ -33,6 +33,23 @@ describe('status do pedido na conversa', () => {
     )
   })
 
+  it('previsão que já passou vira entrega atrasada', () => {
+    const pedido = {
+      numero: '000001955',
+      situacao: 'Entregue à transportadora',
+      situacaoCodigo: 'delivered_carrier',
+      feitoEm: '2026-09-28',
+      total: 'R$ 1.238,90',
+      itens: [{ nome: 'Placa de Vídeo RX 550', quantidade: 1 }],
+      rastreios: [],
+      entrega: { transportadora: 'Braspress', codigo: '', previsao: '09/10/2026', ultima: null, ocorrencias: [] },
+      andamento: [{ texto: 'Em Transferência', quando: '08/10 às 21:32' }],
+    }
+    expect(mensagemDoPedido(pedido, '2026-10-13')).toContain('⚠️ Entrega atrasada: a previsão era *sexta, 09/10*')
+    expect(mensagemDoPedido(pedido, '2026-10-09')).toContain('Previsão de entrega: *sexta, 09/10*')
+    expect(mensagemDoPedido(pedido)).toContain('Previsão de entrega: *sexta, 09/10*')
+  })
+
   it('aguardando coleta não diz "a caminho" e corta nome longo na palavra', () => {
     const texto = mensagemDoPedido({
       numero: '000002025',

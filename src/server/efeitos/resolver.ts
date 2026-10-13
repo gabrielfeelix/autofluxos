@@ -632,6 +632,11 @@ async function rodar(
       const parado = fluxoAtual.nodes.find((n) => n.id === resultado.sessao.noAtual)
       if (parado?.type === 'ia' && parado.data.conversar) {
         console.warn(`[ia] falha de transporte na conversa livre: ${resposta.motivo}`)
+        // Toda a cadeia de modelos caiu e o cliente leu "Tive um probleminha".
+        // Sem alerta isso passava calado (PCYES, 13/out/2026, duas vezes).
+        await alertar('todas as IAs falharam e o cliente recebeu o aviso de falha', resposta.motivo, {
+          no: parado.id,
+        })
         return {
           acoes: [...semEfeito(resultado.acoes, 'chamar_ia'), { tipo: 'enviar_texto', texto: AVISO_DE_FALHA_DA_IA }],
           sessao: { ...resultado.sessao, status: 'ativa' },
