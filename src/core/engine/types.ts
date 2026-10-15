@@ -215,6 +215,8 @@ export type Acao =
       /** O nome que a pessoa vê antes de baixar. Só `documento` usa. */
       nomeArquivo?: string
       atrasoMs?: number
+      /** A legenda responde sozinha e a frase da IA não sai. Ver `enviar_link`. */
+      substituiFrase?: true
     }
   /**
    * O card do produto da loja (Task 10b do plano do Magento).

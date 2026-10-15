@@ -113,6 +113,8 @@ export type OpcoesDeEfeitos = {
   modelo: Modelo | null
   /** O que o cliente escreveu sobre o próprio negócio. Fecha o escopo. */
   contextoNegocio: string
+  /** O número do canal em que a conversa acontece. Ver `PedidoDeIa.numeroDoCanal`. */
+  numeroDoCanal?: string
   /** A conversa até aqui, para a IA não repetir o que já foi dito. */
   historico?: Turno[]
   /**
@@ -899,6 +901,7 @@ async function responderComFerramentas({
     instrucao: chamada.instrucao,
     pergunta,
     hoje: opcoes.hoje,
+    numeroDoCanal: opcoes.numeroDoCanal,
   }
 
   if (permitidas.length === 0) {
@@ -1696,6 +1699,13 @@ async function executarNaLoja(
                 url: pdf.url,
                 nomeArquivo: nomeDoArquivoDoManual(nome),
                 legenda: legendaDoManual(nome, pagina, temDriver),
+                /*
+                 * A legenda já diz tudo ("Pronto! O manual está no arquivo
+                 * acima."). Em 15/out/2026 a IA escreveu "Esse produto não
+                 * possui driver ou manual" e o PDF do suporte PLMSC02 saiu um
+                 * segundo depois, para a Alline, do Sesc MS.
+                 */
+                substituiFrase: true,
               } satisfies AnexoDaIa,
             }
           : card
@@ -1864,8 +1874,8 @@ function comCards(acoes: Acao[], texto: string, produtos: ProdutoDaLoja[], anexo
   const posicao = acoes.findIndex((a) => a.tipo === 'enviar_texto' && a.texto === texto)
   if (posicao === -1) return [...acoes, ...extras]
 
-  // Card que responde sozinho (o status do pedido): ele toma o lugar da frase.
-  if (anexos.some((a) => a.tipo === 'enviar_link' && a.substituiFrase)) {
+  // Anexo que responde sozinho (o status do pedido, o manual): ele toma o lugar da frase.
+  if (anexos.some((a) => a.substituiFrase)) {
     return [...acoes.slice(0, posicao), ...extras, ...acoes.slice(posicao + 1)]
   }
 

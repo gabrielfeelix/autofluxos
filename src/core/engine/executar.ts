@@ -266,7 +266,8 @@ export function executar(
   const paradaNaIa = conversandoComIa(porId, s)
   if (paradaNaIa && entrada.tipo === 'texto' && pediuSaidaDaIa(entrada.texto)) {
     s.tentativas = 0
-    return avancar(contexto, fluxo, porId, s, acoes, proximo(fluxo, paradaNaIa.id), {
+    // Sem ligação depois da IA, o começo do fluxo: calar não é saída.
+    return avancar(contexto, fluxo, porId, s, acoes, proximo(fluxo, paradaNaIa.id) ?? fluxo.inicio, {
       no: paradaNaIa,
     })
   }
@@ -1731,6 +1732,20 @@ function conversandoComIa(porId: Map<string, No>, s: Sessao): NoIa | null {
   if (s.status !== 'ativa' || s.noAtual === null) return null
   const no = porId.get(s.noAtual)
   return no?.type === 'ia' && no.data.conversar ? no : null
+}
+
+/**
+ * "Voltar" dito na conversa com a IA, num bloco que não tem para onde voltar.
+ *
+ * A saída da IA leva à próxima ligação do bloco, e a IA que só tem a saída
+ * "concluído" (todas as da PCYES) não tem nenhuma: a conversa acabava ali,
+ * calada. Luiz escreveu "voltar" em 15/out/2026 e não recebeu nada; o servidor
+ * usa isto para recomeçar o atendimento pelo menu principal.
+ */
+export function saidaDaIaSemCaminho(fluxo: Fluxo, noId: string | null, texto: string): boolean {
+  if (noId === null || !pediuSaidaDaIa(texto)) return false
+  const no = fluxo.nodes.find((n) => n.id === noId)
+  return no?.type === 'ia' && Boolean(no.data.conversar) && proximo(fluxo, noId) === null
 }
 
 /** A pessoa quer sair da conversa livre com a IA. Ver `PALAVRAS_DE_SAIDA_DA_IA`. */

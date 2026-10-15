@@ -79,6 +79,12 @@ export function montarPrompt(pedido: PedidoDeIa): { sistema: string; usuario: st
     contexto === '' ? '(nada foi informado sobre a empresa)' : contexto,
     '',
     ...(pedido.hoje ? [`HOJE É ${pedido.hoje} (formato AAAA-MM-DD).`, ''] : []),
+    ...(pedido.numeroDoCanal
+      ? [
+          `ESTA CONVERSA É NO WHATSAPP ${pedido.numeroDoCanal}: a pessoa já está falando com a empresa por ele. Nunca indique este número como outro canal de contato.`,
+          '',
+        ]
+      : []),
     ...(ferramentas.length > 0 ? [...blocoDeFerramentas(ferramentas), ''] : []),
     ...(vende
       ? [...blocoDeVenda(temCardapio), '']

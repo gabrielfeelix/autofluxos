@@ -19,6 +19,14 @@ export type PedidoDeIa = {
    * Business API desde 15/jan/2026 (§6 da arquitetura).
    */
   contextoNegocio: string
+  /**
+   * O número em que esta conversa acontece, como a pessoa o vê.
+   *
+   * O contexto da PCYES lista "(44) 2101-1387 e (44) 2101-1428" como WhatsApp
+   * da empresa, e a IA mandou o Marco "falar com o suporte" no 1387, que é o
+   * próprio número em que ele já estava (15/out/2026).
+   */
+  numeroDoCanal?: string
   /** A instrução do bloco, já interpolada pelo motor. */
   instrucao: string
   /** A última coisa que a pessoa escreveu. */

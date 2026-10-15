@@ -29,6 +29,7 @@ import {
   avisoDeForaDoHorario,
   pediuAtendente,
   pediuInicioDoAtendimento,
+  saidaDaIaSemCaminho,
   type ContextoDoAtendimento,
 } from '@/core/engine/executar'
 import { tipoDoReferral } from '@/core/regras-de-entrada'
@@ -962,6 +963,13 @@ async function trocouDeAssunto(canalSalvo: CanalSalvo, viva: SessaoSalva, opcaoI
   return Boolean(versao && temOpcao(versao.grafo))
 }
 
+/** "Voltar" numa IA sem ligação depois dela: recomeça pelo menu. Ver `saidaDaIaSemCaminho`. */
+async function voltouDaIaSemCaminho(viva: SessaoSalva, texto: string): Promise<boolean> {
+  if (viva.sessao.status !== 'ativa') return false
+  const versao = await acharVersao(viva.flowVersionId)
+  return Boolean(versao && saidaDaIaSemCaminho(versao.grafo, viva.sessao.noAtual, texto))
+}
+
 async function avancarConversa(
   canalSalvo: CanalSalvo,
   contato: Contato,
@@ -1012,6 +1020,7 @@ async function avancarConversa(
   const recomecar =
     Boolean(viva) &&
     ((entrada.tipo === 'texto' && pediuInicioDoAtendimento(entrada.texto)) ||
+      (entrada.tipo === 'texto' && viva !== null && (await voltouDaIaSemCaminho(viva, entrada.texto))) ||
       (entrada.tipo === 'opcao' && viva !== null && (await trocouDeAssunto(canalSalvo, viva, entrada.opcaoId))))
   const abertura = await escolherAbertura(
     canalSalvo,
@@ -1740,6 +1749,7 @@ async function prepararIa(
     // o art. 20 cobra.
     contatoId,
     contextoNegocio: cliente?.contextoNegocio ?? '',
+    ...(canalSalvo.displayPhoneNumber ? { numeroDoCanal: canalSalvo.displayPhoneNumber } : {}),
     // A rajada inteira, não só o último envio: quem mandou "Olá", "Tudo bem"
     // e "?" fez uma pergunta só, e a IA responde uma vez.
     // A resposta em cima de uma mensagem anterior leva a citada junto: "."
@@ -1801,7 +1811,34 @@ function textoDaEntrada(m: { texto: string | null; transcricao?: string | null; 
 /** O texto padrão antes de uma pessoa assumir. */
 const AVISO_DE_HANDOFF = 'Vou te passar para um atendente. Só um instante!'
 
-type Entrega = { ok: true; waMessageId: string | null } | { ok: false; motivo: string }
+type Entrega =
+  | { ok: true; waMessageId: string | null; semConfirmacao?: true }
+  | { ok: false; motivo: string }
+
+/**
+ * Erro interno da Meta (5xx, o `#131000 Something went wrong`) **não diz que a
+ * mensagem não saiu**.
+ *
+ * Em 15/out/2026 três conversas da PCYES tomaram 500 no menu de boas-vindas, e
+ * duas das pessoas responderam tocando numa opção daquele mesmo menu: chegou. O
+ * motor tratava como recusa, passava a conversa para gente e ignorava o toque;
+ * Samara escolheu "Garantia e devolução", escreveu "Falar com humano" e ficou
+ * nove minutos sem resposta nenhuma.
+ *
+ * Repetir também não serve, pela mesma razão: na maioria das vezes a pessoa
+ * receberia duas. O registro honesto é "não confirmada", e a conversa segue no
+ * fluxo. Se a mensagem de fato não chegou, a pessoa escreve e o próprio fluxo
+ * pergunta de novo.
+ */
+function entregaIncerta(detalhe: string): boolean {
+  return /^Cloud API respondeu 5\d\d\b/.test(detalhe)
+}
+
+/** Confirma a linha gravada, menos quando a Meta não disse se entregou. */
+async function confirmarSeEntregue(registro: string, entrega: { waMessageId: string | null; semConfirmacao?: true }) {
+  if (entrega.semConfirmacao) return
+  await confirmarEntrega(registro, entrega.waMessageId)
+}
 
 /**
  * Manda, e devolve o que aconteceu em vez de estourar.
@@ -1828,6 +1865,10 @@ async function entregar(
     // O handoff cobre a pessoa, mas token expirado e número bloqueado derrubam
     // *todas* as conversas do cliente ao mesmo tempo, é o tipo de falha que
     // precisa chegar em alguém antes de virar um dia inteiro de leads perdidos.
+    if (entregaIncerta(detalhe)) {
+      await alertar('a Cloud API deu erro interno, a mensagem pode ter saído', detalhe, contexto)
+      return { ok: true, waMessageId: null, semConfirmacao: true }
+    }
     await alertar('a Cloud API recusou a entrega', detalhe, contexto)
     return { ok: false, motivo: `não foi possível entregar a mensagem, ${detalhe.slice(0, 200)}` }
   }
@@ -1980,7 +2021,7 @@ async function aplicar(
         // como não confirmada, que é o registro honesto do que se tentou.
         if (!entrega.ok) return pararNoHumano(entrega.motivo)
 
-        await confirmarEntrega(registro, entrega.waMessageId)
+        await confirmarSeEntregue(registro, entrega)
         break
       }
 
@@ -2017,7 +2058,7 @@ async function aplicar(
           alvo,
         )
         if (!entrega.ok) return pararNoHumano(entrega.motivo)
-        await confirmarEntrega(registro, entrega.waMessageId)
+        await confirmarSeEntregue(registro, entrega)
 
         if (enviarCartao && acao.cartao) {
           const cartao = await registrarSaida({
@@ -2030,7 +2071,7 @@ async function aplicar(
           // O botão já chegou com o link: o cartão é conveniência, e sem ele a
           // pessoa ainda tem como falar com o time. Falha aqui não para a
           // conversa na mão de alguém.
-          if (envio.ok) await confirmarEntrega(cartao, envio.waMessageId)
+          if (envio.ok) await confirmarSeEntregue(cartao, envio)
         }
         break
       }
@@ -2056,7 +2097,7 @@ async function aplicar(
           })
           const envio = await entregar(() => canal.enviarMidia(contato.waId, { midia: 'imagem', url: acao.imagem! }), alvo)
           if (!envio.ok) return pararNoHumano(envio.motivo)
-          await confirmarEntrega(foto, envio.waMessageId)
+          await confirmarSeEntregue(foto, envio)
         }
 
         const texto = enviarBotao ? acao.texto : `${acao.texto}\n\n${acao.url}`
@@ -2078,7 +2119,7 @@ async function aplicar(
           alvo,
         )
         if (!entrega.ok) return pararNoHumano(entrega.motivo)
-        await confirmarEntrega(registro, entrega.waMessageId)
+        await confirmarSeEntregue(registro, entrega)
         break
       }
 
@@ -2116,7 +2157,7 @@ async function aplicar(
         // depois de a foto do plano ter falhado entrega a conversa pela metade.
         if (!entrega.ok) return pararNoHumano(entrega.motivo)
 
-        await confirmarEntrega(registro, entrega.waMessageId)
+        await confirmarSeEntregue(registro, entrega)
         break
       }
 
@@ -2141,7 +2182,7 @@ async function aplicar(
           })
           const envio = await entregar(() => canal.enviarMidia(contato.waId, { midia: 'imagem', url: acao.imagem! }), alvo)
           if (!envio.ok) return pararNoHumano(envio.motivo)
-          await confirmarEntrega(foto, envio.waMessageId)
+          await confirmarSeEntregue(foto, envio)
         }
 
         const registro = await registrarSaida({
@@ -2163,7 +2204,7 @@ async function aplicar(
         )
         if (!entrega.ok) return pararNoHumano(entrega.motivo)
 
-        await confirmarEntrega(registro, entrega.waMessageId)
+        await confirmarSeEntregue(registro, entrega)
         break
       }
 
@@ -2202,7 +2243,7 @@ async function aplicar(
           })
           const entrega = await entregar(() => juntos(contato.waId, texto, produtos), alvo)
           if (!entrega.ok) return pararNoHumano(entrega.motivo)
-          await confirmarEntrega(registro, entrega.waMessageId)
+          await confirmarSeEntregue(registro, entrega)
           break
         }
         const enviarComBotao = canal.enviarProdutoComBotao?.bind(canal)
@@ -2223,7 +2264,7 @@ async function aplicar(
           })
           const entrega = await entregar(() => enviarCards(contato.waId, comFoto), alvo)
           if (!entrega.ok) return pararNoHumano(entrega.motivo)
-          await confirmarEntrega(registro, entrega.waMessageId)
+          await confirmarSeEntregue(registro, entrega)
         }
 
         // Foto sem link, com botão de pedir: um por mensagem, em ordem, cada um
@@ -2239,7 +2280,7 @@ async function aplicar(
           })
           const entrega = await entregar(() => enviarComBotao!(contato.waId, produto), alvo)
           if (!entrega.ok) return pararNoHumano(entrega.motivo)
-          await confirmarEntrega(registro, entrega.waMessageId)
+          await confirmarSeEntregue(registro, entrega)
         }
 
         // Foto sem link: a foto com o texto do card na legenda, sem botão.
@@ -2257,7 +2298,7 @@ async function aplicar(
             alvo,
           )
           if (!entrega.ok) return pararNoHumano(entrega.motivo)
-          await confirmarEntrega(registro, entrega.waMessageId)
+          await confirmarSeEntregue(registro, entrega)
         }
 
         for (const produto of semFoto) {
@@ -2271,7 +2312,7 @@ async function aplicar(
           })
           const entrega = await entregar(() => canal.enviarTexto(contato.waId, texto), alvo)
           if (!entrega.ok) return pararNoHumano(entrega.motivo)
-          await confirmarEntrega(registro, entrega.waMessageId)
+          await confirmarSeEntregue(registro, entrega)
         }
         break
       }
@@ -2432,7 +2473,7 @@ async function aplicar(
           texto: AVISO_DE_HANDOFF,
         })
         const entrega = await entregar(() => canal.enviarTexto(contato.waId, AVISO_DE_HANDOFF), alvo)
-        if (entrega.ok) await confirmarEntrega(registro, entrega.waMessageId)
+        if (entrega.ok) await confirmarSeEntregue(registro, entrega)
 
         return pararNoHumano(
           entrega.ok
@@ -2453,7 +2494,7 @@ async function aplicar(
           texto: AVISO_DE_HANDOFF,
         })
         const entrega = await entregar(() => canal.enviarTexto(contato.waId, AVISO_DE_HANDOFF), alvo)
-        if (entrega.ok) await confirmarEntrega(registro, entrega.waMessageId)
+        if (entrega.ok) await confirmarSeEntregue(registro, entrega)
 
         return pararNoHumano(
           entrega.ok

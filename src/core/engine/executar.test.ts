@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { fluxoSchema, type Fluxo } from '../flow/schema'
-import { executar, MAX_TENTATIVAS, MENSAGEM_IMAGEM_ILEGIVEL, pediuReinicio, pediuSaidaDaIa, soCumprimento, MENSAGEM_IMAGEM_NA_PERGUNTA } from './executar'
+import { executar, MAX_TENTATIVAS, MENSAGEM_IMAGEM_ILEGIVEL, pediuReinicio, pediuSaidaDaIa, saidaDaIaSemCaminho, soCumprimento, MENSAGEM_IMAGEM_NA_PERGUNTA } from './executar'
 import { sessaoNova, type Acao, type Entrada, type Sessao } from './types'
 
 const p = { x: 0, y: 0 }
@@ -2119,6 +2119,33 @@ describe('IA contínua (conversar)', () => {
     expect(() => montar({ maxTurnos: 0 })).toThrow()
     expect(() => montar({ maxTurnos: 31 })).toThrow()
     expect(() => montar({ maxTurnos: 30 })).not.toThrow()
+  })
+
+  /*
+   * A IA da PCYES só tem a saída "concluído". "Voltar" ali levava a lugar
+   * nenhum e a conversa morria calada (Luiz, 15/out/2026).
+   */
+  it('"voltar" numa IA sem ligação depois dela é sem caminho, e o motor volta ao começo', () => {
+    const soConcluido = fluxoSchema.parse({
+      inicio: 'menu',
+      nodes: [
+        { id: 'menu', type: 'pergunta', position: p, data: { texto: 'O que deseja?', opcoes: [{ id: 'o1', rotulo: 'Pedido' }] } },
+        { id: 'ia', type: 'ia', position: p, data: { instrucao: 'Consulte.', salvarEm: 'r', conversar: { maxTurnos: 3 } } },
+      ],
+      edges: [{ id: 'a', source: 'menu', sourceHandle: 'o1', target: 'ia' }],
+    })
+    expect(saidaDaIaSemCaminho(soConcluido, 'ia', 'voltar')).toBe(true)
+    expect(saidaDaIaSemCaminho(continua, 'pizzaria', 'voltar')).toBe(false)
+    expect(saidaDaIaSemCaminho(soConcluido, 'ia', 'quero voltar a comprar')).toBe(false)
+
+    const { sessao, acoes } = conversar(soConcluido, [
+      { tipo: 'inicio' },
+      { tipo: 'opcao', opcaoId: 'o1' },
+      { tipo: 'ia_respondeu', texto: 'Me passa o CPF?' },
+      { tipo: 'texto', texto: 'voltar' },
+    ])
+    expect(sessao.noAtual).toBe('menu')
+    expect(tipos(acoes)).toContain('enviar_opcoes')
   })
 
   it('pediuSaidaDaIa só aceita a mensagem inteira', () => {
