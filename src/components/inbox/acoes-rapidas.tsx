@@ -16,6 +16,7 @@ import type { MensagemAgendada } from '@/server/repos/mensagens-agendadas'
 import {
   acaoAdiarConversa,
   acaoAlternarAutomacaoDoLead,
+  acaoDevolverAoBot,
   acaoDefinirEstadoDaConversa,
 } from '@/server/acoes'
 
@@ -93,6 +94,7 @@ export function AcoesRapidas({
 
   const resolvida = conversa.valor.estado !== 'aberta'
   const botLigado = conversa.valor.automacaoAtiva
+  const comAtendente = conversa.valor.sessaoComPessoa
 
   const agir = (mudanca: Parameters<typeof conversa.agir>[0], acao: Parameters<typeof conversa.agir>[1]) => {
     setErro(null)
@@ -243,7 +245,26 @@ export function AcoesRapidas({
         {resolvida ? <IconeReabrir /> : <IconeTique />}
       </BotaoDeIcone>
 
-      {temAutomacao && (
+      {/*
+        Com gente atendendo, o bot já está calado: "pausar" ali não faz nada.
+        O gesto que falta é o contrário, devolver a conversa para o bot, que
+        retoma lendo o que foi dito e responde a última mensagem da pessoa
+        (ver `devolverAoBot`).
+      */}
+      {temAutomacao && comAtendente && (
+        <BotaoDeIcone
+          rotulo="Devolver para o bot"
+          aoClicar={() =>
+            agir({ sessaoComPessoa: false, aguardando: null, automacaoAtiva: true }, () =>
+              acaoDevolverAoBot(clienteId, contatoId),
+            )
+          }
+        >
+          <IconeTocar />
+        </BotaoDeIcone>
+      )}
+
+      {temAutomacao && !comAtendente && (
         <BotaoDeIcone
           rotulo={botLigado ? 'Pausar o bot nesta conversa' : 'Religar o bot nesta conversa'}
           marcada={!botLigado}

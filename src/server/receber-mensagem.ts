@@ -80,6 +80,7 @@ import {
   ultimaEntradaDeTexto,
   chegouEntradaDepois,
   encaminhouHaPouco,
+  encerrarAtendimento,
   type CanalSalvo,
   type Contato,
   type IdentidadeDoWhatsApp,
@@ -1690,6 +1691,100 @@ export async function abrirFluxoParaContato(
       null,
     )
     return 'aberto'
+  } finally {
+    await destravar()
+  }
+}
+
+/** O que aconteceu ao devolver a conversa ao bot. Ver `devolverAoBot`. */
+export type DevolucaoAoBot =
+  | 'respondeu'
+  | 'aguardando'
+  | 'sem_contexto'
+  | 'janela_fechada'
+  | 'sem_fluxo'
+  | 'ocupado'
+
+/**
+ * "Devolver para o bot": a equipe tira a conversa da fila e o bot **continua de
+ * onde ela está**, sem esperar a pessoa escrever de novo.
+ *
+ * Pedido do Gabriel em 15/out/2026, olhando a Renata (PCYES): ela tinha caído
+ * em atendente pelo erro 500 da Meta, a Maria respondeu, e o "Quero comprar"
+ * dela às 14:00 ficou sem resposta, porque com gente na conversa o bot cala.
+ * Pausar o bot ali não fazia sentido: ele já estava calado.
+ *
+ * A conversa reabre no fluxo principal como **retomada** (a mesma variável de
+ * quem volta a escrever logo depois de um atendimento), e é isso que faz a
+ * PCYES cair na triagem, que lê a conversa inteira, em vez do "Bem-vindo" com o
+ * menu. A IA recebe o histórico com o que a equipe escreveu.
+ *
+ * Só responde agora quando a última mensagem é da pessoa. Se quem falou por
+ * último foi a equipe, não há pergunta esperando: o bot fica pronto e responde
+ * a próxima mensagem dela, como no "Finalizar atendimento".
+ */
+export async function devolverAoBot(
+  clienteId: string,
+  contatoId: string,
+  fabricaDeCanal: FabricaDeCanal = canalPadrao,
+): Promise<DevolucaoAoBot> {
+  const contexto = await contextoDeResposta(clienteId, contatoId)
+  if (!contexto) return 'sem_contexto'
+
+  const contato = await acharContato(contatoId)
+  if (!contato) return 'sem_contexto'
+
+  const destravar = await travarContato(contatoId)
+  if (!destravar) return 'ocupado'
+
+  try {
+    // Sai da fila primeiro: é a parte que não pode deixar de acontecer, mesmo
+    // que o bot não tenha o que dizer agora.
+    await encerrarAtendimento(clienteId, contatoId)
+    if (!contato.automacaoAtiva) await alterarAutomacaoDoContato(clienteId, contatoId, true)
+
+    const anterior = await ultimaSessao(contatoId, contexto.canal.id)
+    if (anterior && anterior.sessao.status !== 'encerrada') {
+      await definirStatusDaSessao(anterior.id, 'encerrada')
+    }
+
+    const { mensagens } = await lerConversa(contatoId, 10)
+    const ultima = mensagens.at(-1)
+    if (!ultima || ultima.direcao !== 'entrada') return 'aguardando'
+    if (!dentroDaJanela(contexto)) return 'janela_fechada'
+
+    const fluxoId = contexto.canal.flowId
+    const fluxo = fluxoId ? await acharFluxo(fluxoId) : null
+    if (!fluxo || fluxo.clienteId !== clienteId || !fluxo.versaoPublicadaId || !fluxo.ativo) return 'sem_fluxo'
+    const versao = await acharVersao(fluxo.versaoPublicadaId)
+    if (!versao) return 'sem_fluxo'
+
+    const texto = textoDaEntrada(ultima)
+    const salva = await criarSessao(contatoId, contexto.canal.id, versao.id, {
+      ...sessaoNova(),
+      vars: { ...varsIniciais(contato), [VARIAVEL_DE_RETOMADA]: 'sim' },
+    })
+
+    const [opcoesDeIa, horario] = await Promise.all([
+      prepararIa(contexto.canal, contatoId, versao, texto),
+      horarioDoCliente(clienteId),
+    ])
+
+    const resultado = await executarComEfeitos(versao.grafo, salva.sessao, { tipo: 'inicio', texto }, {
+      ...opcoesDeIa,
+      atendimento: contextoDeAtendimento(horario),
+      hoje: hojeNaConta(horario?.fuso ?? SEMPRE_ABERTO.fuso),
+      datas: varsDeData(horario?.fuso ?? SEMPRE_ABERTO.fuso),
+      carregarFluxo: carregadorDeFluxo(clienteId),
+    })
+
+    if (resultado.destino) await trocarVersaoDaSessao(salva.id, resultado.destino.versaoId)
+
+    await guardarSessao(salva.id, resultado.sessao)
+    // `null` pelo mesmo motivo de `abrirFluxoParaContato`: foi alguém da
+    // equipe que pediu, agora, e não há execução de bot a invalidar.
+    await aplicar(fabricaDeCanal(contexto.canal), contato, salva.id, contexto.ultimaEntradaWaId, resultado.acoes, null)
+    return 'respondeu'
   } finally {
     await destravar()
   }

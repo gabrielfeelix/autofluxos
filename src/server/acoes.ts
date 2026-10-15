@@ -116,7 +116,7 @@ import {
 } from './repos/etiquetas'
 import { ehCorDeEtiqueta, type CorDeEtiqueta } from '@/core/etiquetas'
 import { OPERADORES_DE_GATILHO, type OperadorDeGatilho } from '@/core/gatilhos'
-import { rodarPosAtendimento } from './receber-mensagem'
+import { devolverAoBot, rodarPosAtendimento } from './receber-mensagem'
 import { inscreverNoEvento, sairPelaEtiqueta, sairPorEvento } from './sequencias'
 import {
   acharSequencia,
@@ -2356,6 +2356,39 @@ export async function acaoEncerrarAtendimento(
 
   // Gesto rápido: sem recarregar a página, ver `gestoSemRecarregar`.
   return { ok: true }
+}
+
+/**
+ * Tira a conversa de quem atende e o bot continua dela. Ver `devolverAoBot`.
+ *
+ * Sem pós-atendimento nem sequência de "atendimento encerrado": a conversa não
+ * acabou, ela mudou de mãos, e uma pesquisa de satisfação agora chegaria no
+ * meio do assunto.
+ */
+export async function acaoDevolverAoBot(
+  clienteId: string,
+  contatoId: string,
+): Promise<{ ok: boolean; erro?: string; respondeu?: boolean }> {
+  const acesso = await exigirCapacidade(clienteId, 'atender', 'proprios')
+  if (recusou(acesso)) return acesso
+
+  if (!z.string().uuid().safeParse(clienteId).success || !z.string().uuid().safeParse(contatoId).success) {
+    return { ok: false, erro: 'contato inválido' }
+  }
+
+  const r = await devolverAoBot(clienteId, contatoId)
+  if (r === 'respondeu') return { ok: true, respondeu: true }
+  // Já saiu da fila nos dois: o bot só não tinha o que responder agora.
+  if (r === 'aguardando' || r === 'janela_fechada') return { ok: true, respondeu: false }
+  return {
+    ok: false,
+    erro:
+      r === 'ocupado'
+        ? 'a conversa está ocupada; tente novamente em instantes'
+        : r === 'sem_fluxo'
+          ? 'este número não tem automação principal no ar'
+          : 'este contato não existe neste cliente',
+  }
 }
 
 /** Pausa ou religa o motor sem transformar a pausa em um handoff fictício. */
