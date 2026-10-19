@@ -27,4 +27,11 @@ describe('retomada da conversa que acabou de terminar', () => {
     expect(ehRetomada({ ...encerrada(5), sessao: { status: 'humano' } }, texto('x'), {}, agora)).toBe(false)
     expect(ehRetomada(null, texto('x'), {}, agora)).toBe(false)
   })
+  it('a equipe falou há pouco, mesmo sem sessão do bot, é retomada (Luiz, PCYES)', () => {
+    const haDezMinutos = new Date(agora - 10 * 60_000)
+    expect(ehRetomada(null, texto('ok, obrigado'), {}, agora, haDezMinutos)).toBe(true)
+    expect(ehRetomada(encerrada(300), texto('ok'), {}, agora, haDezMinutos)).toBe(true)
+    expect(ehRetomada(null, texto('oi'), {}, agora, new Date(agora - 3 * 60 * 60_000))).toBe(false)
+    expect(ehRetomada({ ...encerrada(5), sessao: { status: 'humano' } }, texto('x'), {}, agora, haDezMinutos)).toBe(false)
+  })
 })

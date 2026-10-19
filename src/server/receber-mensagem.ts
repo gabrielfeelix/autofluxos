@@ -63,6 +63,8 @@ import {
   acharOuCriarContato,
   contextoDeResposta,
   donoFalouPeloCelularDesde,
+  aberturaDaConversaAtual,
+  ultimaFalaDaEquipe,
   alterarAutomacaoDoContato,
   criarSessao,
   definirStatusDaSessao,
@@ -90,6 +92,7 @@ import {
 import { ESPERA_DA_MENSAGEM_MS, travarContato } from './repos/travas'
 import { JANELA_DA_RAJADA_MS, textoDaRajada } from '@/core/rajada'
 import { comCitacao } from '@/core/citacao-para-ia'
+import { recortarConversaAtual, semDecisoesAntigas, TETO_DA_CONVERSA_ATUAL } from '@/core/conversa-atual'
 import { inscreverNoEvento, sairPelaEtiqueta, sairPorEvento } from './sequencias'
 import { marcarContatos } from './repos/etiquetas'
 import { porContatoNaEtapa } from './repos/quadros'
@@ -1046,12 +1049,25 @@ async function avancarConversa(
     // A sessão nasce sabendo com quem está falando. Sem isto, `{{telefone}}` e
     // `{{nome}}` chegam vazios no primeiro bloco de toda conversa, e quem
     // depende deles falha em silêncio. Ver `core/contatos/vars-iniciais.ts`.
+    //
+    // A fala da equipe também conta como "acabou de ser atendida": sem sessão
+    // anterior nenhuma, a conversa que o dono começou pelo celular abria o
+    // menu com "Bem-vindo" na mensagem seguinte da pessoa (Luiz, PCYES,
+    // 19/out/2026). Só é lida quando pode mudar a resposta.
+    const podeSerRetomada = !anterior || anterior.sessao.status === 'encerrada'
+    const equipeFalouEm = podeSerRetomada ? await ultimaFalaDaEquipe(contato.id) : null
+    const retomada = ehRetomada(anterior, entrada, abertura, Date.now(), equipeFalouEm)
+    const versaoDaAbertura = retomada ? await acharVersao(abertura.versaoId) : null
+    const iniciais = varsIniciais(contato)
     salva = await criarSessao(contato.id, canalSalvo.id, abertura.versaoId, {
       ...sessaoNova(),
-      vars: {
-        ...varsIniciais(contato),
-        ...(ehRetomada(anterior, entrada, abertura, Date.now()) ? { [VARIAVEL_DE_RETOMADA]: 'sim' } : {}),
-      },
+      vars: retomada
+        ? {
+            // Continuação da conversa, sem as decisões dela: ver `semDecisoesAntigas`.
+            ...(versaoDaAbertura ? semDecisoesAntigas(iniciais, versaoDaAbertura.grafo) : iniciais),
+            [VARIAVEL_DE_RETOMADA]: 'sim',
+          }
+        : iniciais,
     })
     /*
      * Por onde a conversa entrou, na linha do tempo do contato.
@@ -1768,9 +1784,12 @@ export async function devolverAoBot(
     if (!versao) return 'sem_fluxo'
 
     const texto = textoDaEntrada(ultima)
+    // Sem as decisões da conversa anterior: o `assunto` do botão tocado meia
+    // hora antes fazia o fluxo de vendas abrir de novo com a pergunta genérica
+    // (Sueli, PCYES, 19/out/2026). Ver `semDecisoesAntigas`.
     const salva = await criarSessao(contatoId, contexto.canal.id, versao.id, {
       ...sessaoNova(),
-      vars: { ...varsIniciais(contato), [VARIAVEL_DE_RETOMADA]: 'sim' },
+      vars: { ...semDecisoesAntigas(varsIniciais(contato), versao.grafo), [VARIAVEL_DE_RETOMADA]: 'sim' },
     })
 
     const [opcoesDeIa, horario] = await Promise.all([
@@ -1823,11 +1842,16 @@ async function prepararIa(
   // gatilhos, `channels.flow_id` passou a ser só um dos fluxos possíveis, e
   // ler o contrato de IA dele decidiria pelo fluxo errado justamente no portão
   // que separa quem paga a Etapa 2 de quem não paga.
-  const [fluxo, cliente, conversa] = await Promise.all([
+  // A conversa de agora inteira, até o teto, e nada da anterior: as últimas 10
+  // cortavam a pergunta pendente numa conversa movimentada e traziam a de dois
+  // anos atrás num contato que voltou. Ver `core/conversa-atual.ts`.
+  const [fluxo, cliente, lida, abertaEm] = await Promise.all([
     acharFluxo(versao.fluxoId),
     acharCliente(canalSalvo.clienteId),
-    lerConversa(contatoId, 10),
+    lerConversa(contatoId, TETO_DA_CONVERSA_ATUAL),
+    aberturaDaConversaAtual(contatoId),
   ])
+  const conversa = { ...lida, mensagens: recortarConversaAtual(lida.mensagens, abertaEm) }
 
   // O plano é lido do fluxo **agora**, e não da versão publicada: contrato não
   // congela junto com o desenho. Desligar a IA tem que valer na próxima
@@ -2743,10 +2767,13 @@ export function ehRetomada(
   entrada: Entrada,
   abertura: { gatilhoId?: string | null; campanhaId?: string | null },
   agora: number,
+  equipeFalouEm: Date | null = null,
 ): boolean {
-  if (!anterior || anterior.sessao.status !== 'encerrada' || !anterior.atualizadoEm) return false
+  if (anterior && anterior.sessao.status !== 'encerrada') return false
   if (entrada.tipo !== 'texto' || pediuInicioDoAtendimento(entrada.texto)) return false
   if (abertura.gatilhoId || abertura.campanhaId) return false
-  const passou = agora - Date.parse(anterior.atualizadoEm)
-  return passou >= 0 && passou <= JANELA_DE_RETOMADA_MS
+  // O fim da conversa do bot ou a última fala da equipe, o que tiver acontecido
+  // dentro da janela: os dois são "acabou de ser atendida".
+  const marcos = [anterior?.atualizadoEm ? Date.parse(anterior.atualizadoEm) : NaN, equipeFalouEm?.getTime() ?? NaN]
+  return marcos.some((t) => Number.isFinite(t) && agora - t >= 0 && agora - t <= JANELA_DE_RETOMADA_MS)
 }

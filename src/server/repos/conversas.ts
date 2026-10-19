@@ -528,6 +528,27 @@ export async function ultimaFalaDaEquipe(contatoId: string): Promise<Date | null
 }
 
 /**
+ * Quando o bot abriu a conversa atual: a sessão mais recente que **não** é
+ * retomada. A retomada continua a conversa de antes, então quem marca o começo
+ * é a sessão que ela continua. Ver `core/conversa-atual.ts`.
+ *
+ * Erro vira `null`: sem o marco, o recorte ainda corta na pausa de 24h.
+ */
+export async function aberturaDaConversaAtual(contatoId: string): Promise<Date | null> {
+  const { data, error } = await db()
+    .from('sessions')
+    .select('criado_em')
+    .eq('contact_id', contatoId)
+    .is('vars->>retomada', null)
+    .order('criado_em', { ascending: false })
+    .limit(1)
+    .maybeSingle()
+
+  if (error || !data) return null
+  return new Date((data as { criado_em: string }).criado_em)
+}
+
+/**
  * O dono respondeu esta pessoa **pelo celular** desde `desde`?
  *
  * Só o eco da coexistência conta (a linha guarda o payload cru da Meta, que tem
