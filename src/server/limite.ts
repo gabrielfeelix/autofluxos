@@ -64,22 +64,49 @@ export function chaveDeLimite(
   return `${finalidade}:${endereco}`
 }
 
+/**
+ * O que a tela diz quando o banco não respondeu, e não quando alguém errou.
+ *
+ * Em 17/out/2026 o Supabase bloqueou o projeto por cota (402) e o login dizia
+ * "muitas tentativas" já na primeira: a porta fechava certo, mas o motivo
+ * estava errado, e quem lia achava que era a senha.
+ */
+export const SERVICO_INDISPONIVEL = 'Serviço temporariamente indisponível. Tente novamente em alguns minutos.'
+
+export type SituacaoDoLimite = 'livre' | 'excedido' | 'indisponivel'
+
+/**
+ * Consome uma tentativa no Postgres e diz **por que** a porta fechou.
+ *
+ * `excedido` é o teto de verdade: a função respondeu `false`, ou o próprio
+ * gateway devolveu 429. Qualquer outra falha (402 de cota, 5xx, rede caída) é
+ * `indisponivel`. A porta fecha nos dois casos; só a frase muda.
+ */
+export async function situacaoDoLimite(
+  chave: string,
+  teto = TETO_DE_TENTATIVAS,
+  janelaSegundos = JANELA_DE_TENTATIVAS_SEGUNDOS,
+): Promise<SituacaoDoLimite> {
+  try {
+    const { data, error, status } = await db().rpc('consumir_limite', {
+      p_chave: chave,
+      p_teto: teto,
+      p_janela_segundos: janelaSegundos,
+    })
+    if (error) return status === 429 ? 'excedido' : 'indisponivel'
+    return data === true ? 'livre' : 'excedido'
+  } catch {
+    return 'indisponivel'
+  }
+}
+
 /** Consome uma tentativa no Postgres; erro de infraestrutura fecha a porta. */
 export async function consumirLimite(
   chave: string,
   teto = TETO_DE_TENTATIVAS,
   janelaSegundos = JANELA_DE_TENTATIVAS_SEGUNDOS,
 ): Promise<boolean> {
-  try {
-    const { data, error } = await db().rpc('consumir_limite', {
-      p_chave: chave,
-      p_teto: teto,
-      p_janela_segundos: janelaSegundos,
-    })
-    return !error && data === true
-  } catch {
-    return false
-  }
+  return (await situacaoDoLimite(chave, teto, janelaSegundos)) === 'livre'
 }
 
 /**

@@ -6,7 +6,13 @@ import { headers } from 'next/headers'
 import { alertar } from './alertar'
 import { redirect } from 'next/navigation'
 import { autenticacao, bancoDoLogin, ehSenhaVazada, SENHA_VAZADA } from './auth'
-import { chaveDeLimite, consumirLimite, JANELA_DE_LOGIN_POR_CONTA_SEGUNDOS, TETO_DE_LOGIN_POR_CONTA } from './limite'
+import {
+  chaveDeLimite,
+  JANELA_DE_LOGIN_POR_CONTA_SEGUNDOS,
+  SERVICO_INDISPONIVEL,
+  situacaoDoLimite,
+  TETO_DE_LOGIN_POR_CONTA,
+} from './limite'
 import { registrar } from './repos/auditoria'
 import {
   acharCliente,
@@ -66,6 +72,33 @@ function motivo(erro: unknown): string {
   return 'não foi possível completar a operação'
 }
 
+const MUITAS_TENTATIVAS = 'Muitas tentativas, espere alguns minutos antes de tentar novamente.'
+
+/**
+ * A frase que barra a tentativa, ou `null` quando ela pode seguir.
+ *
+ * Teto de verdade e banco fora do ar fecham a porta igual, mas não podem
+ * dizer a mesma coisa: em 17/out/2026, com o Supabase bloqueado, a tela dizia
+ * "muitas tentativas" na primeira tentativa e todo mundo foi conferir a senha.
+ */
+async function barrado(chave: string, teto?: number, janelaSegundos?: number, frase = MUITAS_TENTATIVAS): Promise<string | null> {
+  const situacao = await situacaoDoLimite(chave, teto, janelaSegundos)
+  if (situacao === 'livre') return null
+  return situacao === 'indisponivel' ? SERVICO_INDISPONIVEL : frase
+}
+
+/**
+ * O login falhou porque a infraestrutura caiu, e não por causa da senha.
+ *
+ * Recusa da biblioteca chega como `APIError` com `statusCode` abaixo de 500
+ * (senha errada é 401). Banco fora do ar chega como 5xx ou como erro cru do
+ * `pg`, sem `statusCode` nenhum.
+ */
+function ehFalhaDeInfra(erro: unknown): boolean {
+  const codigo = (erro as { statusCode?: unknown } | null)?.statusCode
+  return typeof codigo !== 'number' || codigo >= 500
+}
+
 // ---------------------------------------------------------------------------
 // Entrar e sair
 // ---------------------------------------------------------------------------
@@ -93,9 +126,8 @@ export async function acaoEntrar(
   const senha = String(formData.get('senha') ?? '')
 
   const cabecalhos = await headers()
-  if (!(await consumirLimite(chaveDeLimite('login', cabecalhos)))) {
-    return { erro: 'Muitas tentativas, espere alguns minutos antes de tentar novamente.', email }
-  }
+  const barradoPorIp = await barrado(chaveDeLimite('login', cabecalhos))
+  if (barradoPorIp) return { erro: barradoPorIp, email }
   /*
    * O teto por IP não segura quem ataca **uma** conta a partir de muitos
    * endereços (rede de proxies, botnet): cada IP gasta 5 tentativas e passa a
@@ -104,9 +136,8 @@ export async function acaoEntrar(
    * computador, não se tranque, e curto o bastante para que adivinhar uma
    * senha de 10 caracteres vire trabalho de séculos.
    */
-  if (!(await consumirLimite(`login-conta:${email.toLowerCase()}`, TETO_DE_LOGIN_POR_CONTA, JANELA_DE_LOGIN_POR_CONTA_SEGUNDOS))) {
-    return { erro: 'Muitas tentativas, espere alguns minutos antes de tentar novamente.', email }
-  }
+  const barradoPorConta = await barrado(`login-conta:${email.toLowerCase()}`, TETO_DE_LOGIN_POR_CONTA, JANELA_DE_LOGIN_POR_CONTA_SEGUNDOS)
+  if (barradoPorConta) return { erro: barradoPorConta, email }
 
   let usuario: UsuarioDaSessao
   let pedeCodigo = false
@@ -166,6 +197,7 @@ export async function acaoEntrar(
     if ((erro as { body?: { code?: unknown } } | null)?.body?.code !== 'INVALID_EMAIL_OR_PASSWORD') {
       void alertar('Login falhou por erro interno', erro)
     }
+    if (ehFalhaDeInfra(erro)) return { erro: SERVICO_INDISPONIVEL, email }
     return { erro: CREDENCIAL_NAO_CONFERE, email }
   }
 
@@ -202,10 +234,14 @@ export async function acaoPedirRedefinicao(
   if (!email.includes('@')) return { erro: 'Digite o e-mail da sua conta.', email }
 
   const cabecalhos = await headers()
-  const porIp = await consumirLimite(chaveDeLimite('senha', cabecalhos), 5, 15 * 60)
-  const porEmail = porIp && (await consumirLimite(`senha-conta:${email}`, 3, 60 * 60))
+  const porIp = await situacaoDoLimite(chaveDeLimite('senha', cabecalhos), 5, 15 * 60)
+  const porEmail = porIp === 'livre' ? await situacaoDoLimite(`senha-conta:${email}`, 3, 60 * 60) : porIp
+  // Teto estourado continua respondendo "enviado", para não contar quem tem
+  // conta. Banco fora do ar não conta nada a ninguém, e dizer a verdade evita
+  // a pessoa esperar um e-mail que não vai sair.
+  if (porEmail === 'indisponivel') return { erro: SERVICO_INDISPONIVEL, email }
 
-  if (porIp && porEmail) {
+  if (porEmail === 'livre') {
     try {
       await autenticacao().api.requestPasswordReset({ body: { email, redirectTo: '/redefinir-senha' }, headers: cabecalhos })
     } catch (erro) {
@@ -232,9 +268,8 @@ export async function acaoRedefinirSenha(
   const confirmacao = String(formData.get('confirmacao') ?? '')
 
   const cabecalhos = await headers()
-  if (!(await consumirLimite(`redefinir:${chaveDeLimite('senha', cabecalhos)}`, 10, 15 * 60))) {
-    return { erro: 'Muitas tentativas, espere alguns minutos.' }
-  }
+  const barradoRedefinir = await barrado(`redefinir:${chaveDeLimite('senha', cabecalhos)}`, 10, 15 * 60, 'Muitas tentativas, espere alguns minutos.')
+  if (barradoRedefinir) return { erro: barradoRedefinir }
   if (!token) return { erro: 'Este link está incompleto. Peça outro em "Esqueci a senha".' }
   if (senha.length < 10) return { erro: 'A senha precisa de pelo menos 10 caracteres.' }
   if (senha !== confirmacao) return { erro: 'As duas senhas não são iguais.' }
@@ -273,9 +308,8 @@ export async function acaoConferirCodigo(
 ): Promise<{ erro?: string }> {
   const bruto = String(formData.get('codigo') ?? '').trim()
   const cabecalhos = await headers()
-  if (!(await consumirLimite(`codigo-2fa:${chaveDeLimite('login', cabecalhos)}`, 10, 5 * 60))) {
-    return { erro: 'Muitas tentativas, espere alguns minutos.' }
-  }
+  const barradoCodigo = await barrado(`codigo-2fa:${chaveDeLimite('login', cabecalhos)}`, 10, 5 * 60, 'Muitas tentativas, espere alguns minutos.')
+  if (barradoCodigo) return { erro: barradoCodigo }
 
   const soDigitos = bruto.replace(/\s/g, '')
   let usuario: { id: string; email: string; name: string; role?: string | null; banned?: boolean | null }
@@ -340,9 +374,8 @@ export async function acaoCriarPrimeiroAdministrador(
   const senha = String(formData.get('senha') ?? '')
 
   const cabecalhos = await headers()
-  if (!(await consumirLimite(chaveDeLimite('cadastro', cabecalhos)))) {
-    return { erro: 'Muitas tentativas, espere alguns minutos antes de tentar novamente.', email, nome }
-  }
+  const barradoCadastro = await barrado(chaveDeLimite('cadastro', cabecalhos))
+  if (barradoCadastro) return { erro: barradoCadastro, email, nome }
 
   if (nome === '' || email === '') {
     return { erro: 'Nome e e-mail são obrigatórios.', email, nome }
@@ -908,14 +941,8 @@ export async function acaoCadastrarSe(
   const senha = String(formData.get('senha') ?? '')
 
   const cabecalhos = await headers()
-  if (!(await consumirLimite(chaveDeLimite('cadastro', cabecalhos)))) {
-    return {
-      erro: 'Muitas tentativas, espere alguns minutos antes de tentar novamente.',
-      email,
-      nome,
-      telefone,
-    }
-  }
+  const barradoCadastro = await barrado(chaveDeLimite('cadastro', cabecalhos))
+  if (barradoCadastro) return { erro: barradoCadastro, email, nome, telefone }
 
   if (nome === '' || email === '') {
     return { erro: 'Nome e e-mail são obrigatórios.', email, nome, telefone }
