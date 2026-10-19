@@ -84,7 +84,7 @@ Ficou de fora, e é o próximo passo natural:
 3. **Cota da IA.** A chave grátis do Gemini acaba depois de algumas conversas
    seguidas, e ela é a mesma de todas as contas (MGM e PCYES atendem gente de
    verdade). Na Vercel existem `GEMINI_API_KEY` e `GROQ_API_KEY`. Criar
-   chaves grátis de Cerebras, Cloudflare e Mistral (a cadeia já as usa, ver
+   chave grátis do Cloudflare (a cadeia já a usa, ver
    `src/server/ia/`) é tarefa do Gabriel; o agente só pede.
 4. **Teste do celular** pelo Gabriel (QR), e a troca de nome e foto do número
    no Business Manager (ele disse que já fez).

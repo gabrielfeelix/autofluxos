@@ -86,7 +86,7 @@ card e explica o "Avise-me"): rode o script a partir do rascunho **atual**.
 ## O que entrou no código em 30/set (tudo no ar, último deploy `c1ab14f`)
 
 - Carrossel: frase da IA e cards numa mensagem (`src/core/juntar-cards.ts`).
-- Cadeia de IA grátis na ordem Cerebras, Gemini, Groq (`src/server/ia/modelo.ts`).
+- Cadeia de IA grátis na ordem Gemini, Groq (`src/server/ia/modelo.ts`).
   Groq grátis tem 8.000 tokens/min e estourava em turno de venda.
 - Envio que cai na rede repete 2x (`comRetentativaDeConexao`); Inbox tem
   "Tentar de novo" em envio não confirmado.
@@ -160,9 +160,7 @@ card e explica o "Avise-me"): rode o script a partir do rascunho **atual**.
    números da barra atualizando sem F5.
 4. **Métricas**: resolução sem humano, mensagens por conversa (custo desde
    1/out, a Meta cobra cada mensagem de serviço), clique no botão da loja.
-5. Chave grátis do **Cerebras** (`CEREBRAS_API_KEY`, o Gabriel cria em
-   cloud.cerebras.ai): mesmo modelo do Groq com cota maior, vai primeiro na
-   cadeia. IA paga só depois que a empresa aprovar o teste grátis.
+5. IA paga só depois que a empresa aprovar o teste grátis.
 6. O WhatsApp do Suporte (44) 2101-1428 pode não responder quem o bot manda
    para lá (Bruno Cunha: "Suporte não responde.", 30/set 13:21). Avisar o
    Gabriel se aparecer de novo.

@@ -6,8 +6,8 @@ import type { Modelo, PedidoDeIa, Resposta } from './types'
 /**
  * O adaptador dos provedores que falam o dialeto da OpenAI.
  *
- * Groq, Cerebras, Mistral e Cloudflare aceitam o mesmo `chat/completions`, com `tools` no
- * mesmo formato, então um arquivo atende os quatro. O que muda entre eles é
+ * Groq e Cloudflare aceitam o mesmo `chat/completions`, com `tools` no
+ * mesmo formato, então um arquivo atende os dois. O que muda entre eles é
  * endereço, nome do modelo e um ou outro parâmetro, e isso mora em
  * `PROVEDORES`, não em código espalhado.
  *
@@ -20,7 +20,7 @@ import type { Modelo, PedidoDeIa, Resposta } from './types'
  * fluxos o dia inteiro sem pagar.
  */
 
-export type NomeDoProvedor = 'groq' | 'cerebras' | 'mistral' | 'cloudflare'
+export type NomeDoProvedor = 'groq' | 'cloudflare'
 
 type Provedor = {
   /** Com `{conta}` quando o endereço leva o id da conta (`variavelDaConta`). */
@@ -37,9 +37,8 @@ type Provedor = {
 /**
  * Os provedores, com o modelo que cada um usa.
  *
- * `gpt-oss-120b` no Groq e no Cerebras: é o mesmo modelo nos dois, então o
- * comportamento que a suíte provar num vale para o outro, e o Cerebras vira
- * reserva de verdade em vez de um segundo modelo a validar.
+ * `gpt-oss-120b` no Groq e no Cloudflare: é o mesmo modelo nos dois, então o
+ * comportamento que a suíte provar num vale para o outro.
  *
  * `reasoning_effort: 'medium'`, e não `low`, é medido (25/set/2026, suíte de
  * escopo do `gemini.test.ts` contra o Groq): com `low` passou 7 de 11, trocou
@@ -47,10 +46,6 @@ type Provedor = {
  * `NAO_SEI`. Com `medium` passou 11 de 11, ainda em 0,4 a 0,9 s. O custo é
  * cota: o Groq grátis dá 8 mil tokens por minuto, e rajada de conversa bate
  * 429 ali. Por isso a pausa abaixo é curta e a cadeia segue para o próximo.
- *
- * Mistral por último entre os três: é o mais generoso em volume, mas no plano
- * grátis **treina com o que passa por ele, a menos que se desligue** no painel
- * (admin.mistral.ai → Privacy).
  */
 export const PROVEDORES: Record<NomeDoProvedor, Provedor> = {
   groq: {
@@ -59,27 +54,14 @@ export const PROVEDORES: Record<NomeDoProvedor, Provedor> = {
     variavel: 'GROQ_API_KEY',
     extras: { reasoning_effort: 'medium', max_completion_tokens: 1200 },
   },
-  cerebras: {
-    endereco: 'https://api.cerebras.ai/v1/chat/completions',
-    modelo: 'gpt-oss-120b',
-    variavel: 'CEREBRAS_API_KEY',
-    extras: { reasoning_effort: 'medium', max_completion_tokens: 1200 },
-  },
-  mistral: {
-    endereco: 'https://api.mistral.ai/v1/chat/completions',
-    modelo: 'mistral-medium-latest',
-    variavel: 'MISTRAL_API_KEY',
-    extras: { max_tokens: 1200 },
-  },
   /*
    * Workers AI, pela porta compatível com a OpenAI. Entrou em 26/set/2026
-   * porque Mistral e Cerebras recusaram cartão brasileiro no cadastro e o
-   * Cloudflare dá cota diária grátis sem cartão. O mesmo `gpt-oss-120b` do
+   * porque o Cloudflare dá cota diária grátis sem cartão. O mesmo `gpt-oss-120b` do
    * Groq, pelo motivo de cima. **Ainda não passou pela suíte de escopo**: sem
    * as duas variáveis no ambiente ele nem entra na cadeia, e antes de pôr as
    * duas em produção roda `IA_PROVEDOR=cloudflare` no `gemini.test.ts`. Só
    * `max_tokens` nos extras até a suíte provar que ele aceita os parâmetros de
-   * raciocínio dos outros dois.
+   * raciocínio do Groq.
    */
   cloudflare: {
     endereco: 'https://api.cloudflare.com/client/v4/accounts/{conta}/ai/v1/chat/completions',

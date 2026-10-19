@@ -183,7 +183,7 @@ docs de desenvolvedor.
 ## 6. Inteligência artificial
 
 ### Provedores
-- Cadeia com reserva automática: Cerebras, Gemini, Groq, Cloudflare Workers AI, Mistral (todos via modelo gpt-oss-120b ou Gemini Flash). `src/server/ia/cadeia.ts`
+- Cadeia com reserva automática: Gemini, Groq, Cloudflare Workers AI (gpt-oss-120b ou Gemini Flash-Lite). `src/server/ia/cadeia.ts`
 - **Chave própria do cliente** (só Gemini, plano Escala): guardada cifrada, tem prioridade sobre a da 4YU.
 - IA é liberada por automação pela 4YU e exige o recurso no plano. Teto de respostas de IA por plano.
 

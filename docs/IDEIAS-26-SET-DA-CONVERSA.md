@@ -60,14 +60,13 @@ não se toca daqui; o caso já está registrado na memória do projeto.
 ### 3. Mais uma IA grátis: Cloudflare
 
 - **O que é:** em 25/set a cota grátis da IA acabou no meio do teste do
-  atendimento da PCYES. O Eduardo pesquisou provedores grátis (Groq, Mistral,
-  Cloudflare, OpenRouter). O Groq já entrou; hoje o Gabriel contou que Mistral
-  e Cerebras recusaram cartão brasileiro, e o Eduardo pediu para testar o
+  atendimento da PCYES. O Eduardo pesquisou provedores grátis (Groq,
+  Cloudflare, OpenRouter). O Groq já entrou, e o Eduardo pediu para testar o
   Cloudflare.
 - **Faz sentido:** sim. Cada provedor tem sua cota, e a fila soma as cotas. O
   bot dos pagantes parar por cota é o pior lugar para faltar IA.
 - **Feito:** commit `49de3ed`. O Cloudflare entrou na fila (depois do Groq e do
-  Cerebras, antes do Mistral), com o mesmo modelo do Groq. Só entra se as duas
+  Gemini), com o mesmo modelo do Groq. Só entra se as duas
   variáveis existirem no ambiente.
 - **Falta (Gabriel ou Eduardo):** criar a conta no Cloudflare, gerar um token
   de Workers AI, pôr `CLOUDFLARE_API_TOKEN` e `CLOUDFLARE_ACCOUNT_ID` no `.env`,

@@ -298,7 +298,7 @@ duas vezes, e o pedido confirmado ia para um atendente como "a IA não soube"
 - Se a IA cair (cota, tempo), na conversa com a IA o cliente recebe "Tive um
   probleminha agora, pode me mandar de novo em instantes?" e segue com a IA.
   Localmente só há a chave do Gemini; na Vercel a cadeia de provedores grátis
-  (Groq, Cerebras, Cloudflare, Mistral, Gemini) vale para os que tiverem chave.
+  (Gemini, Groq, Cloudflare) vale para os que tiverem chave.
 
 ## Peças do motor usadas (26/set, com teste)
 
