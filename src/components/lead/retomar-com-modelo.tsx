@@ -53,6 +53,12 @@ export function RetomarComModelo({
 }) {
   const moldura = embutido ? 'mb-2.5' : 'border-t border-line px-[18px] py-3.5'
   const router = useRouter()
+  /*
+   * Começa recolhido. Aberto, o painel ocupa metade da altura do Inbox e
+   * cobre a conversa que a pessoa precisa ler para decidir o que mandar
+   * (19/out/2026). Recolhido, sobra uma linha com o motivo e o caminho.
+   */
+  const [aberto, setAberto] = useState(false)
   const [aprovados, setAprovados] = useState<Template[] | null>(null)
   const [escolhido, setEscolhido] = useState('')
   const [erro, setErro] = useState<string | null>(null)
@@ -117,6 +123,12 @@ export function RetomarComModelo({
 
   return (
     <div className={moldura}>
+      <button
+        type="button"
+        onClick={() => setAberto((a) => !a)}
+        aria-expanded={aberto}
+        className="flex w-full cursor-pointer items-start justify-between gap-3 text-left"
+      >
       <p className="text-[12.5px] leading-5 text-dim">
         {/*
           Não diz "passaram 24h": com coexistência, a mensagem que a pessoa
@@ -124,12 +136,25 @@ export function RetomarComModelo({
           janela, e a frase mentia numa conversa de horas atrás (MGM,
           30/set/2026). A janela só conta o que chegou por aqui.
         */}
-        <strong className="text-muted">Janela de 24h fechada.</strong> Ela abre quando {nome} escreve
-        para este número por aqui, e vale 24h. Fora dela, o WhatsApp só deixa retomar com um modelo
-        aprovado pela Meta.
+        <strong className="text-muted">Janela de 24h fechada.</strong>{' '}
+        {aberto ? (
+          <>
+            Ela abre quando {nome} escreve para este número por aqui, e vale 24h. Fora dela, o
+            WhatsApp só deixa retomar com um modelo aprovado pela Meta.
+          </>
+        ) : (
+          <>Para falar com {nome}, retome com um modelo aprovado pela Meta.</>
+        )}
       </p>
+        <span className="flex shrink-0 items-center gap-1 text-[12px] font-semibold text-primary">
+          {aberto ? 'Recolher' : 'Escolher modelo'}
+          <svg aria-hidden viewBox="0 0 24 24" className={`size-4 transition-transform ${aberto ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="m6 9 6 6 6-6" />
+          </svg>
+        </span>
+      </button>
 
-      {aprovados === null ? (
+      {!aberto ? null : aprovados === null ? (
         <p className="mt-2 text-[12.5px] text-dim">Vendo os modelos…</p>
       ) : aprovados.length === 0 ? (
         /*
@@ -264,7 +289,7 @@ export function RetomarComModelo({
         </div>
       )}
 
-      {lacuna && (
+      {aberto && lacuna && (
         <p className="mt-2 rounded-[10px] border border-amber-400/30 bg-amber-400/[0.09] px-2.5 py-2 text-[12px] leading-[1.45] text-aviso">
           {recadoDoLinkComLacuna(lacuna)}
         </p>
