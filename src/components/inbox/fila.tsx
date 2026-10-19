@@ -2,6 +2,7 @@
 
 import { Badge, Pilula, teto } from '@/components/design/pilula'
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useCallback, useDeferredValue, useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { comoFalta, dentroDaPortaDeEntrada, janelaExpirada, restaDaJanela } from "@/channels/janela";
 import { Dica } from "@/components/design/dica";
@@ -517,6 +518,31 @@ export function Fila({
   /** O endereço de uma aba do rail, preservando a conversa aberta. */
   const comBusca = termo === "" ? "" : `&busca=${encodeURIComponent(termo)}`;
   const conversaAberta = abertaId ? `&conversa=${encodeURIComponent(abertaId)}` : "";
+
+  /*
+   * **No modo paginado, a busca vai ao servidor sozinha** quando a pessoa para
+   * de digitar, sem Enter. Pedido do Gabriel em 19/out/2026: colou um número na
+   * busca da PCYES e a lista ficou parada, porque ali a fila não cabe no
+   * navegador e só o Enter buscava. O modo local já filtra a cada letra.
+   *
+   * `replace`, e não `push`: cada pausa na digitação não é uma página que o
+   * voltar do navegador deva visitar.
+   */
+  const router = useRouter();
+  const [, iniciarBusca] = useTransition();
+  useEffect(() => {
+    if (local || digitado.trim() === termo) return;
+    const espera = setTimeout(() => {
+      const busca = digitado.trim() === "" ? "" : `&busca=${encodeURIComponent(digitado.trim())}`;
+      iniciarBusca(() => {
+        router.replace(
+          `/clientes/${clienteId}/inbox?de=${encodeURIComponent(atribuicao)}&estado=${estado}${busca}${conversaAberta}`,
+          { scroll: false },
+        );
+      });
+    }, ESPERA_DA_BUSCA_MS);
+    return () => clearTimeout(espera);
+  }, [local, digitado, termo, router, clienteId, atribuicao, estado, conversaAberta]);
   /*
    * Os dois eixos convivem no endereço: trocar de dono não pode jogar a pessoa
    * de volta para a fila aberta, nem trocar de estado perder o filtro de quem
@@ -1431,6 +1457,9 @@ function textoDaConversa(lead: Lead): string {
 /* -------------------------------------------------------------------------- */
 /* A busca enquanto se digita                                                 */
 /* -------------------------------------------------------------------------- */
+
+/** A pausa na digitação que dispara a busca no servidor, no modo paginado. */
+const ESPERA_DA_BUSCA_MS = 350;
 
 /** Sem acento e em minúsculas: quem digita "fabricio" tem que achar "Fabrício". */
 const achatar = (texto: string) =>
