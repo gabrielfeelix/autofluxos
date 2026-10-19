@@ -284,6 +284,12 @@ export async function receberDoInstagram(
     for (const evento of entrada.messaging) {
       // `null` é o aviso que não é mensagem, leitura, reação, entrega.
       if (!evento?.message) continue
+      /*
+       * Eco antes da busca do canal: no eco, `recipient` é o contato e não a
+       * conta, e a busca falhava virando alerta falso de "conta não ligada"
+       * a cada resposta mandada pelo celular (16/out/2026).
+       */
+      if (evento.message.is_echo) continue
 
       // Armadilha 3: `recipient` é a conta do cliente; `sender` é quem
       // escreveu. Invertidos, a busca nunca acha canal nenhum e o produto fica

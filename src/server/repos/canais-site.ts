@@ -212,5 +212,30 @@ export async function canaisDosContatos(clienteId: string): Promise<Map<string, 
     }
   }
 
+  /*
+   * Contato do Instagram sem sessão, pelo mesmo motivo do site: conta sem
+   * fluxo ligado nunca abre sessão, e o contato caía no padrão WhatsApp (o
+   * Estúdio de exemplo, 19/out/2026, todo o Direct com selo de WhatsApp).
+   * O id do Instagram tem 16 dígitos ou mais; telefone E.164 tem no máximo 15.
+   */
+  if ([...canalDoId.values()].includes('instagram')) {
+    for (let inicio = 0; ; inicio += PAGINA) {
+      const { data, error: erro } = await db()
+        .from('contacts')
+        .select('id, wa_id')
+        .eq('client_id', clienteId)
+        .not('wa_id', 'like', `${PREFIXO_DO_SITE}%`)
+        .order('id')
+        .range(inicio, inicio + PAGINA - 1)
+
+      if (erro) throw new Error(`não foi possível achar os contatos do Instagram: ${erro.message}`)
+      for (const linha of data ?? []) {
+        const id = linha.id as string
+        if (!mapa.has(id) && /^\d{16,}$/.test(String(linha.wa_id))) mapa.set(id, 'instagram')
+      }
+      if (!data || data.length < PAGINA) break
+    }
+  }
+
   return mapa
 }
