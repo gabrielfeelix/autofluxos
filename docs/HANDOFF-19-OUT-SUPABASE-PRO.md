@@ -90,7 +90,12 @@ Desempenho, 249:
 3. ~~Juntar as políticas permissivas da Verandi~~ **feito em 19/out**:
    `0080_vr`. Avisos de desempenho que sobram: só FK sem índice em tabela
    pequena (de propósito), `unused_index` e `auth_db_connections_absolute`.
-4. Backup: testar restauração; levar ao Gabriel a decisão do PITR.
+4. ~~Backup~~ **resolvido em 19/out**: 8 backups diários consecutivos
+   `COMPLETED` (12 a 19/out), arquivamento de WAL com 0 falhas. Gabriel
+   decidiu: sem PITR por ora, sem teste de restauração em projeto novo (custo),
+   spend cap continua ligado. **Nunca** usar `POST .../database/backups/restore`
+   nem `restore-pitr`: restauram por cima da produção, nos dois produtos.
+   Backup do banco não inclui os arquivos do Storage.
 5. Ligar HIBP e decidir SSL enforcement/restrição de rede.
 6. Cada mudança: migration revisada, ensaio em transação com `rollback`
    contra produção antes de aplicar, registro no `BANCO-COMPARTILHADO.md`.
