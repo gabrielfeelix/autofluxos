@@ -1389,6 +1389,15 @@ extração explícito para os objetos de `public`.
   Ele só diz algo quando a tabela é grande. Não apague índice só por esse
   aviso; apague o coberto por outro, como a `0138` fez.
 
+- **SSL obrigatório desde 19/out/2026** (`PUT .../ssl-enforcement`), com
+  autorização do dono. Conexão sem TLS leva `ESSLREQUIRED`, inclusive pelo
+  pooler. Antes, o SQL direto do AutoFluxos passou a exigir TLS com o
+  certificado conferido contra a raiz do Supabase (`src/server/conexao-do-banco.ts`,
+  `991c700e`), porque o `pg` conectava sem criptografia quando a URL não
+  trazia `sslmode`. **Ligar ou desligar o SSL reinicia o Postgres**, nos dois
+  produtos: o banco ficou fora por cerca de 2 minutos (11h47 a 11h48 de Brasília) e as estatísticas do `pg_stat_statements` zeraram. Fora do horário
+  de uso, se precisar mexer de novo.
+
 ### Testar migration antes de produção, em Docker
 
 O projeto de produção é dividido com a Verandi e **não tem backup**. Antes de
