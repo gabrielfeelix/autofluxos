@@ -46,19 +46,19 @@ export async function acaoPedirExclusao(dados: {
 
   let organizacao: string
   let link: string
-  let clienteId: string | null = null
+  let contaDoPedido: string | null = null
 
   if (dados.alvo === 'organizacao') {
-    const id = String(dados.clienteId ?? '')
-    if (!UUID.test(id)) return { ok: false, erro: 'Organização inválida.' }
-    if ((await papelNaConta(id, usuario.id)) !== 'owner') {
+    const clienteId = String(dados.clienteId ?? '')
+    if (!UUID.test(clienteId)) return { ok: false, erro: 'Organização inválida.' }
+    if ((await papelNaConta(clienteId, usuario.id)) !== 'owner') {
       return { ok: false, erro: 'Só o proprietário pode pedir a exclusão da organização.' }
     }
-    const cliente = await acharCliente(id)
+    const cliente = await acharCliente(clienteId)
     if (!cliente) return { ok: false, erro: 'Esta organização não existe mais.' }
-    clienteId = id
+    contaDoPedido = clienteId
     organizacao = cliente.nome
-    link = linkDoPainel(`/admin/organizacoes/${id}/perigo`)
+    link = linkDoPainel(`/admin/organizacoes/${clienteId}/perigo`)
   } else {
     // Excluir o login deixaria sem dono a organização em que ele é o único
     // proprietário; a administração recusa (`acaoAdminExcluirUsuario`), então
@@ -79,10 +79,10 @@ export async function acaoPedirExclusao(dados: {
     acao: 'pediu_exclusao',
     autorId: usuario.id,
     autorEmail: usuario.email,
-    contaId: clienteId,
-    ...(clienteId ? { contaNome: organizacao } : {}),
+    contaId: contaDoPedido,
+    ...(contaDoPedido ? { contaNome: organizacao } : {}),
     alvoTipo: dados.alvo === 'organizacao' ? 'client' : 'usuario',
-    alvoId: clienteId ?? usuario.id,
+    alvoId: contaDoPedido ?? usuario.id,
     alvoNome: dados.alvo === 'organizacao' ? organizacao : usuario.nome,
     detalhes: { alvo: dados.alvo, ...(motivo ? { motivo } : {}) },
   })

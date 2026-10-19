@@ -96,7 +96,9 @@ const ACOES = lerAcoes(CODIGO)
 function declaraHierarquia(acao: Acao): boolean {
   return (
     acao.corpo.includes('await exigirHierarquia(clienteId') ||
-    (acao.corpo.includes('await atorNaOrganizacao(clienteId)') && acao.corpo.includes('podeGerenciarPessoas('))
+    (acao.corpo.includes('await atorNaOrganizacao(clienteId)') && acao.corpo.includes('podeGerenciarPessoas(')) ||
+    // Só o proprietário: mais forte que qualquer capacidade (pedir exclusão da organização).
+    (acao.corpo.includes('await papelNaConta(clienteId') && acao.corpo.includes("!== 'owner'"))
   )
 }
 
@@ -117,7 +119,8 @@ describe('toda ação pergunta quem é antes de agir', () => {
       const acao = ACOES.find((a) => a.nome === nome)!
       /*
        * `exigirCapacidade` chama `exigirAcessoAoCliente` por dentro: quem usa
-       * a primeira tem as duas fronteiras cobertas.
+       * a primeira tem as duas fronteiras cobertas. `exigirLeitura` é a mesma
+       * coisa para quem só consulta (aceita o Leitor), pelo mesmo caminho.
        *
        * As duas últimas formas apareceram quando a varredura passou a ler
        * todos os `acoes-*.ts`. Elas **são** conferência de acesso, por outro
@@ -130,6 +133,7 @@ describe('toda ação pergunta quem é antes de agir', () => {
       const confere =
         acao.corpo.includes('await exigirAcessoAoCliente(clienteId)') ||
         acao.corpo.includes('await exigirCapacidade(clienteId') ||
+        acao.corpo.includes('await exigirLeitura(clienteId') ||
         acao.corpo.includes('await exigirAdministracao(clienteId)') ||
         acao.corpo.includes('await papelNaConta(clienteId') ||
         declaraHierarquia(acao)
@@ -154,6 +158,7 @@ describe('toda ação pergunta quem é antes de agir', () => {
       (acao) =>
         acao.parametros.includes('clienteId') &&
         !acao.corpo.includes('await exigirCapacidade(clienteId') &&
+        !acao.corpo.includes('await exigirLeitura(clienteId') &&
         !declaraHierarquia(acao),
     ).map((a) => a.nome)
 
