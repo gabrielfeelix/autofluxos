@@ -1379,6 +1379,16 @@ extração explícito para os objetos de `public`.
     Docker. O AutoFluxos só usa a chave publicável no Realtime do Inbox, que
     não passa por essas funções.
 
+- **a `0138` foi aplicada em 19/out/2026**, com autorização explícita do dono,
+  junto com a `0081_vr`: índice em todas as 49 chaves estrangeiras de
+  `public` (gerado do catálogo, parcial onde a coluna aceita vazio) e fora 6
+  índices cobertos por outro que começa pelas mesmas colunas. Replay no Docker
+  e ensaio em transação antes. Aviso `unindexed_foreign_keys` 84 → 0.
+  **O aviso `unused_index` subiu para 107, e isso é esperado:** índice de
+  tabela pequena não é tocado, porque o Postgres prefere ler a tabela inteira.
+  Ele só diz algo quando a tabela é grande. Não apague índice só por esse
+  aviso; apague o coberto por outro, como a `0138` fez.
+
 ### Testar migration antes de produção, em Docker
 
 O projeto de produção é dividido com a Verandi e **não tem backup**. Antes de
