@@ -13,6 +13,7 @@ import {
 } from '@/server/limite'
 import { acharFluxo, acharVersao } from '@/server/repos/fluxos'
 import { conferirAcessoAoCliente, sessaoAtual } from '@/server/sessao'
+import { exigirCapacidade, recusou, SEM_PERMISSAO } from '@/server/permissoes'
 
 /**
  * Roda o motor sem WhatsApp nenhum.
@@ -147,6 +148,17 @@ export async function POST(req: Request) {
    */
   if (clienteId && !(await conferirAcessoAoCliente(clienteId))) {
     return Response.json({ erro: 'não achei essa automação' }, { status: 404 })
+  }
+  /*
+   * Ser da organização não basta. Com o `fluxoId`, o motor resolve as
+   * credenciais das integrações da conta e as manda para a URL que o desenho
+   * pedir, e o desenho vem do corpo: um Leitor ou Atendente postaria um bloco
+   * `chamar_http` apontando para fora e levaria a chave da integração
+   * (auditoria de 19/out/2026). Simular com credencial é o mesmo poder de
+   * editar a automação, então pede a mesma capacidade de salvar o rascunho.
+   */
+  if (clienteId && recusou(await exigirCapacidade(clienteId, 'configurar_operacao', 'todos'))) {
+    return Response.json({ erro: SEM_PERMISSAO }, { status: 403 })
   }
 
   // IA só com dono: sem uma automação de uma conta a que a pessoa tem acesso,

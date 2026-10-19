@@ -2,6 +2,7 @@ import { after } from 'next/server'
 import { alertar } from '@/server/alertar'
 import { salvarNumeroDoOnboarding } from '@/server/repos/coexistencia'
 import { conferirAcessoAoCliente } from '@/server/sessao'
+import { exigirCapacidade, recusou, SEM_PERMISSAO } from '@/server/permissoes'
 import { numerosDaWaba, trocarCodigoPorToken, wabasDoToken } from '@/server/whatsapp/conexao'
 import { terminarOnboarding } from '@/server/whatsapp/onboarding'
 
@@ -71,6 +72,10 @@ export async function POST(req: Request) {
   // Rota de API responde status, não redireciona, ver `sessao.ts`.
   if (!(await conferirAcessoAoCliente(clienteId))) {
     return Response.json({ erro: 'sem acesso a este cliente' }, { status: 403 })
+  }
+  // ligar número na organização é configurar a operação (auditoria de 19/out/2026)
+  if (recusou(await exigirCapacidade(clienteId, 'configurar_operacao', 'todos'))) {
+    return Response.json({ erro: SEM_PERMISSAO }, { status: 403 })
   }
 
   let canalId: string

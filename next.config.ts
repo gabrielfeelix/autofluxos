@@ -37,9 +37,12 @@ import { versaoDoDeploy } from './src/lib/versao-do-deploy'
  * falha calado.
  *
  * Não há CSP completa de propósito: o Next injeta script inline e uma política
- * escrita no chute quebraria a hidratação da página inteira. `frame-ancestors`
- * é a parte que dá para afirmar sem risco; a CSP inteira é tarefa própria, com
- * nonce, quando alguém puder testá-la de verdade.
+ * escrita no chute quebraria a hidratação da página inteira. O que entra é o
+ * que dá para afirmar sem tocar em script: `frame-ancestors`, e desde 19/out
+ * `object-src 'none'` (nada de plugin embutido), `base-uri 'self'` (um script
+ * injetado não troca a base dos endereços relativos) e `form-action 'self'`
+ * (formulário só envia para cá; conferido que nenhum envia para fora). A CSP
+ * inteira, com `script-src` e nonce, é tarefa própria.
  */
 export const cabecalhos = [
   /**
@@ -49,7 +52,7 @@ export const cabecalhos = [
    * a lista de preload é global e difícil de desfazer para o `4yu.com.br`.
    */
   { key: 'Strict-Transport-Security', value: 'max-age=63072000; includeSubDomains' },
-  { key: 'Content-Security-Policy', value: "frame-ancestors 'none'" },
+  { key: 'Content-Security-Policy', value: "frame-ancestors 'none'; object-src 'none'; base-uri 'self'; form-action 'self'" },
   { key: 'X-Frame-Options', value: 'DENY' },
   { key: 'X-Content-Type-Options', value: 'nosniff' },
   { key: 'Referrer-Policy', value: 'strict-origin-when-cross-origin' },

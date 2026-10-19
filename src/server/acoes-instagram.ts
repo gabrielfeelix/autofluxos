@@ -6,7 +6,7 @@ import { redirect } from 'next/navigation'
 import { instagramConfigurado, urlDeAutorizacao } from './instagram/conexao'
 import { iniciarConexao } from './instagram/estado'
 import { desligarContaDoInstagram } from './repos/canais-instagram'
-import { exigirAcessoAoCliente } from './sessao'
+import { exigirCapacidade, recusou } from './permissoes'
 
 /**
  * O que a tela de Instagram chama.
@@ -18,7 +18,10 @@ import { exigirAcessoAoCliente } from './sessao'
 
 export async function acaoConectarInstagram(dados: FormData): Promise<void> {
   const clienteId = String(dados.get('clienteId') ?? '')
-  await exigirAcessoAoCliente(clienteId)
+  // ligar e desligar canal é configurar a operação, como conectar número
+  // (auditoria de 19/out/2026: antes bastava ser da organização)
+  const acesso = await exigirCapacidade(clienteId, 'configurar_operacao', 'todos')
+  if (recusou(acesso)) throw new Error(acesso.erro)
 
   if (!instagramConfigurado()) {
     redirect(`/clientes/${clienteId}/conversas/canais/instagram?resultado=sem_app`)
@@ -43,7 +46,10 @@ export async function acaoConectarInstagram(dados: FormData): Promise<void> {
 
 export async function acaoDesligarInstagram(dados: FormData): Promise<void> {
   const clienteId = String(dados.get('clienteId') ?? '')
-  await exigirAcessoAoCliente(clienteId)
+  // ligar e desligar canal é configurar a operação, como conectar número
+  // (auditoria de 19/out/2026: antes bastava ser da organização)
+  const acesso = await exigirCapacidade(clienteId, 'configurar_operacao', 'todos')
+  if (recusou(acesso)) throw new Error(acesso.erro)
 
   await desligarContaDoInstagram(clienteId)
   revalidatePath(`/clientes/${clienteId}/conversas/canais/instagram`)

@@ -183,6 +183,10 @@ export async function acaoResolverAtividade(
     return { ok: false, erro: 'essa situação não existe' }
   }
 
+  // como reagendar e atribuir: com escopo "próprios", só a atividade da pessoa
+  const dono = await conferirDono(clienteId, atividadeId, filtroDoAcesso(acesso, 'criar_oportunidade'))
+  if (!dono.ok) return dono
+
   const r = await resolverAtividade(clienteId, atividadeId, situacao, motivo)
   if (!r.ok) return { ok: false, erro: r.motivo }
 
@@ -277,6 +281,9 @@ export async function acaoReabrirAtividade(
 ): Promise<RespostaDaAtividade> {
   const acesso = await exigirCapacidade(clienteId, 'criar_oportunidade', 'proprios')
   if (recusou(acesso)) return acesso
+
+  const dono = await conferirDono(clienteId, atividadeId, filtroDoAcesso(acesso, 'criar_oportunidade'))
+  if (!dono.ok) return dono
 
   const r = await reabrirAtividade(clienteId, atividadeId)
   if (!r.ok) return { ok: false, erro: r.motivo }

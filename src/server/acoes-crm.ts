@@ -141,6 +141,13 @@ export async function acaoAtribuirCartao(
   const acesso = await exigirCapacidade(clienteId, 'criar_oportunidade', 'proprios')
   if (recusou(acesso)) return acesso
 
+  // o responsável precisa ser da equipe: a chave estrangeira aceita qualquer
+  // usuário da plataforma, e a resposta devolveria o nome dele
+  if (usuarioId !== null) {
+    const equipe = await membrosDaConta(clienteId)
+    if (!equipe.some((m) => m.id === usuarioId)) return { ok: false, erro: 'essa pessoa não é da equipe' }
+  }
+
   const quemFez = await sessaoAtual()
   const r = await atribuirCartao(clienteId, cartaoId, usuarioId, quemFez?.usuario.nome ?? null)
   if (!r.ok) return { ok: false, erro: r.motivo }

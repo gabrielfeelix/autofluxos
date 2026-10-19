@@ -3,8 +3,8 @@
 import { headers } from 'next/headers'
 import { redirect } from 'next/navigation'
 import { iniciarConexao } from './instagram/estado'
-import { exigirAcessoAoCliente } from './sessao'
 import { urlDoOnboarding, whatsappConfigurado } from './whatsapp/conexao'
+import { exigirCapacidade, recusou } from './permissoes'
 
 /**
  * O que a tela do número chama para começar o Embedded Signup hospedado.
@@ -15,7 +15,10 @@ import { urlDoOnboarding, whatsappConfigurado } from './whatsapp/conexao'
  */
 export async function acaoConectarWhatsapp(dados: FormData): Promise<void> {
   const clienteId = String(dados.get('clienteId') ?? '')
-  await exigirAcessoAoCliente(clienteId)
+  // ligar e desligar canal é configurar a operação, como conectar número
+  // (auditoria de 19/out/2026: antes bastava ser da organização)
+  const acesso = await exigirCapacidade(clienteId, 'configurar_operacao', 'todos')
+  if (recusou(acesso)) throw new Error(acesso.erro)
 
   if (!whatsappConfigurado()) {
     redirect(`/clientes/${clienteId}/conversas/canais/whatsapp?resultado=sem_app`)
