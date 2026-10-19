@@ -87,8 +87,9 @@ Desempenho, 249:
 2. ~~Índices das FKs~~ **feito em 19/out**: `0137` (`messages.session_id`) e
    `0079_vr` (`participacao`, `sessao`). `sessions` e `contacts` ficaram sem,
    de propósito: abaixo de 1 ms com poucas centenas de linhas.
-3. Juntar as políticas permissivas da Verandi e trocar `auth.uid()` por
-   `(select auth.uid())`.
+3. ~~Juntar as políticas permissivas da Verandi~~ **feito em 19/out**:
+   `0080_vr`. Avisos de desempenho que sobram: só FK sem índice em tabela
+   pequena (de propósito), `unused_index` e `auth_db_connections_absolute`.
 4. Backup: testar restauração; levar ao Gabriel a decisão do PITR.
 5. Ligar HIBP e decidir SSL enforcement/restrição de rede.
 6. Cada mudança: migration revisada, ensaio em transação com `rollback`
