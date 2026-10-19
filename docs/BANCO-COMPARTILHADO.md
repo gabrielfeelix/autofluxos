@@ -1341,6 +1341,12 @@ extração explícito para os objetos de `public`.
   Desfazer: `alter table public.sequencia_passos drop column template_parametros`
   depois de tirar o código que a lê.
 
+- **a `0135` foi aplicada em 19/out/2026**, com autorização explícita do dono,
+  pela Management API. Aditiva: `public.sessions.fluxo_de_volta` (uuid
+  anulável, FK para `public.flows` com `on delete set null`), sem default e
+  sem tocar dado. O PostgREST pegou a coluna sozinho (REST 200 logo depois),
+  sem `notify pgrst`. Nada da Verandi foi tocado.
+
 ### Testar migration antes de produção, em Docker
 
 O projeto de produção é dividido com a Verandi e **não tem backup**. Antes de
