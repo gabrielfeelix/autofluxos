@@ -99,6 +99,12 @@ export const sessaoSchema = z.object({
       salvarEm: z.string().optional(),
     })
     .nullish(),
+  /**
+   * O fluxo de onde saiu o primeiro "ir para automação" (0135). "Voltar"
+   * dentro do destino salta de volta para ele, em vez de recomeçar o destino.
+   * Quem grava e limpa é o servidor ao trocar a versão; o motor só lê.
+   */
+  fluxoDeVolta: z.string().nullish(),
 })
 
 /** O que chegou. O motor não sabe se veio do WhatsApp ou do simulador. */

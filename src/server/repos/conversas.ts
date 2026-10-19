@@ -563,7 +563,7 @@ export async function donoFalouPeloCelularDesde(contatoId: string, desde: Date):
 export async function acharSessao(sessaoId: string): Promise<SessaoComContexto | null> {
   const { data, error } = await db()
     .from('sessions')
-    .select('id, contact_id, channel_id, flow_version_id, no_atual, vars, tentativas, status, ia_pendente, nps_pendente')
+    .select('id, contact_id, channel_id, flow_version_id, no_atual, vars, tentativas, status, ia_pendente, nps_pendente, fluxo_de_volta')
     .eq('id', sessaoId)
     .maybeSingle()
 
@@ -583,6 +583,7 @@ export async function acharSessao(sessaoId: string): Promise<SessaoComContexto |
       status: data.status,
       iaPendente: data.ia_pendente ?? null,
       npsPendente: data.nps_pendente ?? null,
+      fluxoDeVolta: data.fluxo_de_volta ?? null,
     }),
   }
 }
@@ -608,7 +609,7 @@ export async function ultimaSessao(
 ): Promise<SessaoSalva | null> {
   const { data, error } = await db()
     .from('sessions')
-    .select('id, flow_version_id, no_atual, vars, tentativas, status, ia_pendente, nps_pendente, atualizado_em')
+    .select('id, flow_version_id, no_atual, vars, tentativas, status, ia_pendente, nps_pendente, fluxo_de_volta, atualizado_em')
     .eq('contact_id', contatoId)
     .eq('channel_id', canalId)
     .order('criado_em', { ascending: false })
@@ -629,6 +630,7 @@ export async function ultimaSessao(
       status: data.status,
       iaPendente: data.ia_pendente ?? null,
       npsPendente: data.nps_pendente ?? null,
+      fluxoDeVolta: data.fluxo_de_volta ?? null,
     }),
   }
 }
@@ -813,7 +815,25 @@ export async function guardarSessao(id: string, sessao: Sessao): Promise<void> {
  * de toda conversa.
  */
 export async function trocarVersaoDaSessao(id: string, versaoId: string): Promise<void> {
-  const { error } = await db().from('sessions').update({ flow_version_id: versaoId }).eq('id', id)
+  /*
+   * O fluxo de volta (0135) anda junto com a troca: o primeiro salto guarda de
+   * onde a sessão saiu, e chegar de novo nesse fluxo limpa a marca. Saltos em
+   * cadeia (A para B para C) voltam para A, que é o menu que a pessoa viu.
+   */
+  const [{ data: atual }, { data: nova }] = await Promise.all([
+    db().from('sessions').select('fluxo_de_volta, flow_versions(flow_id)').eq('id', id).maybeSingle(),
+    db().from('flow_versions').select('flow_id').eq('id', versaoId).maybeSingle(),
+  ])
+  const linha = atual as { fluxo_de_volta: string | null; flow_versions: { flow_id: string } | null } | null
+  const deOnde = linha?.flow_versions?.flow_id ?? null
+  const paraOnde = (nova as { flow_id: string } | null)?.flow_id ?? null
+  const volta = linha?.fluxo_de_volta ?? null
+  const fluxoDeVolta = volta === null ? (deOnde !== paraOnde ? deOnde : null) : volta === paraOnde ? null : volta
+
+  const { error } = await db()
+    .from('sessions')
+    .update({ flow_version_id: versaoId, fluxo_de_volta: fluxoDeVolta })
+    .eq('id', id)
 
   if (error) throw new Error(`não foi possível trocar a versão da sessão: ${error.message}`)
 }

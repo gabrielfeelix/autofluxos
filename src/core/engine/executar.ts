@@ -286,6 +286,16 @@ export function executar(
    */
   if (entrada.tipo === 'texto' && pediuReinicio(entrada.texto) && !ehOpcaoDaParada(porId, s, entrada.texto)) {
     s.tentativas = 0
+    /*
+     * Dentro de uma automação chamada por outra, o início é o de quem chamou.
+     * Recomeçar a chamada prendia a pessoa: o Amilcar (MGM, 15/out/2026) disse
+     * "voltar" no Agendamento e recebeu a primeira pergunta dele três vezes.
+     */
+    if (s.fluxoDeVolta) {
+      acoes.push({ tipo: 'ir_para_fluxo', fluxoId: s.fluxoDeVolta })
+      s.status = 'ativa'
+      return { acoes, sessao: s }
+    }
     return avancar(contexto, fluxo, porId, s, acoes, fluxo.inicio)
   }
 

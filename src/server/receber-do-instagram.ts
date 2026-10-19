@@ -5,8 +5,11 @@ import { nomeDoPerfil } from './instagram/conexao'
 import {
   type CanalSalvo,
   acharCanalPorContaDoInstagram,
+  acharOuCriarContato,
   lerTokenDoCanal,
 } from './repos/conversas'
+import { registrarMensagemDeCoexistencia } from './repos/coexistencia'
+import { db } from './db'
 import { type FabricaDeCanal, type Mensagem, tratarUma } from './receber-mensagem'
 import { alertar } from './alertar'
 
@@ -287,9 +290,13 @@ export async function receberDoInstagram(
       /*
        * Eco antes da busca do canal: no eco, `recipient` é o contato e não a
        * conta, e a busca falhava virando alerta falso de "conta não ligada"
-       * a cada resposta mandada pelo celular (16/out/2026).
+       * a cada resposta mandada pelo celular (16/out/2026). Agora o eco vira
+       * mensagem de saída, para a Inbox mostrar o que foi respondido pelo app.
        */
-      if (evento.message.is_echo) continue
+      if (evento.message.is_echo) {
+        await gravarEco(evento.sender.id, evento.recipient.id, evento.message)
+        continue
+      }
 
       // Armadilha 3: `recipient` é a conta do cliente; `sender` é quem
       // escreveu. Invertidos, a busca nunca acha canal nenhum e o produto fica
@@ -350,4 +357,63 @@ function formaDoCorpo(payload: unknown): string {
   return JSON.stringify(payload, (chave, valor) =>
     typeof valor === 'string' && chave !== 'object' && chave !== 'field' ? `<texto ${valor.length}>` : valor,
   )
+}
+
+/**
+ * Quanto o eco espera antes de gravar.
+ *
+ * O Instagram ecoa também o que o bot e o painel mandaram, e às vezes o eco
+ * chega antes de `confirmarEntrega` gravar o `message_id` na linha. Esperar
+ * deixa a linha certa ficar com o id, e o eco cai no `unique`.
+ */
+const ESPERA_DO_ECO_MS = 4_000
+
+/**
+ * A resposta que saiu da conta do cliente, mandada pelo app do Instagram.
+ *
+ * Mesmo desenho do eco da coexistência no WhatsApp: linha de saída sem sessão,
+ * deduplicada pelo id da Meta. Texto igual mandado pelo painel no último
+ * minuto também conta como o mesmo envio: a legenda de uma mídia sai como
+ * mensagem própria e não tem o id guardado.
+ */
+async function gravarEco(
+  contaId: string,
+  contatoIgsid: string,
+  mensagem: z.infer<typeof mensagemDoInstagramSchema>,
+): Promise<void> {
+  try {
+    const canal = await acharCanalPorContaDoInstagram(contaId)
+    if (!canal || canal.status !== 'ativo') return
+
+    await new Promise((resolver) => setTimeout(resolver, ESPERA_DO_ECO_MS))
+
+    const nome = await nomeDeQuemMandou(canal, contatoIgsid)
+    const contato = await acharOuCriarContato(canal.clienteId, contatoIgsid, nome)
+    const texto = mensagem.text ?? null
+
+    if (texto) {
+      const { data: recente } = await db()
+        .from('messages')
+        .select('id')
+        .eq('contact_id', contato.id)
+        .eq('direcao', 'saida')
+        .eq('texto', texto)
+        .gte('ts', new Date(Date.now() - 60_000).toISOString())
+        .limit(1)
+      if (recente && recente.length > 0) return
+    }
+
+    const interna = paraMensagemInterna(contaId, { ...mensagem, is_echo: false })
+    await registrarMensagemDeCoexistencia({
+      contatoId: contato.id,
+      waMessageId: mensagem.mid,
+      direcao: 'saida',
+      texto,
+      payload: interna ?? mensagem,
+      ts: null,
+      historico: false,
+    })
+  } catch (erro) {
+    console.error('[webhook instagram] não foi possível gravar o eco', erro)
+  }
 }

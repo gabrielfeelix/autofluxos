@@ -280,6 +280,15 @@ describe('as três garantias que impedem a pessoa de ficar presa', () => {
     expect(volta.sessao.vars.nome).toBe('Gabriel')
   })
 
+  // MGM, 15/out/2026: "voltar" no Agendamento recomeçava o Agendamento.
+  it('dentro de automação chamada por outra, "voltar" salta para a de origem', () => {
+    const r = executar(triagem, sessaoNova(), { tipo: 'inicio' })
+    const volta = executar(triagem, { ...r.sessao, fluxoDeVolta: 'fluxo-principal' }, { tipo: 'texto', texto: 'voltar' })
+
+    expect(volta.acoes).toEqual([{ tipo: 'ir_para_fluxo', fluxoId: 'fluxo-principal' }])
+    expect(volta.sessao.status).toBe('ativa')
+  })
+
   /*
    * PCYES, 02/out/2026: a pessoa mandou um print no menu e o bot passou para
    * um atendente na hora; depois ela tocou em "Meu pedido" e já era tarde.

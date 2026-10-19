@@ -95,7 +95,7 @@ export function canalInstagram(config: ConfigInstagram): Canal {
   async function mandar(
     corpo: Record<string, unknown>,
     timeoutMs: number = TIMEOUT_MS,
-  ): Promise<void> {
+  ): Promise<string | null> {
     let resposta: Response
     try {
       resposta = await fetch(url, {
@@ -124,10 +124,17 @@ export function canalInstagram(config: ConfigInstagram): Canal {
       const detalhe = await resposta.text().catch(() => '')
       throw new Error(`Instagram respondeu ${resposta.status}: ${detalhe.slice(0, 400)}`)
     }
+    /*
+     * O `message_id` vira o `wa_message_id` da linha. É ele que faz o eco
+     * desta mesma mensagem (o Instagram ecoa tudo, inclusive o que a API
+     * mandou) cair no `unique` em vez de virar bolha duplicada.
+     */
+    const corpoDaResposta = (await resposta.json().catch(() => null)) as { message_id?: unknown } | null
+    return typeof corpoDaResposta?.message_id === 'string' ? corpoDaResposta.message_id : null
   }
 
-  async function mandarTexto(para: string, texto: string): Promise<void> {
-    await mandar({ recipient: { id: para }, message: { text: texto } })
+  async function mandarTexto(para: string, texto: string): Promise<string | null> {
+    return mandar({ recipient: { id: para }, message: { text: texto } })
   }
 
   return {
@@ -159,8 +166,7 @@ export function canalInstagram(config: ConfigInstagram): Canal {
     },
 
     async enviarTexto(para, texto) {
-      await mandarTexto(para, texto)
-      return null
+      return mandarTexto(para, texto)
     },
 
     async enviarMidia(para, { midia, url: endereco, legenda }: Midia) {
@@ -173,7 +179,7 @@ export function canalInstagram(config: ConfigInstagram): Canal {
        */
       if (legenda) await mandarTexto(para, legenda)
 
-      await mandar({
+      return mandar({
         recipient: { id: para },
         message: {
           attachment: {
@@ -185,7 +191,6 @@ export function canalInstagram(config: ConfigInstagram): Canal {
           },
         },
       })
-      return null
     },
 
     async enviarProdutos(para, produtos) {
