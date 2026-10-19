@@ -394,8 +394,12 @@ um dia por consulta) e no `pg_stat_statements` (zerado em 11/ago).
   lista de quem recebe é lida antes de apagar), teste grátis no início, 3 dias
   antes, na véspera e no dia seguinte ao fim (só até 2 dias depois, para não
   avisar teste antigo).
-- **Não há cancelamento pelo painel**: excluir conta é por e-mail
-  (`/exclusao-de-dados`). Botão próprio é decisão do Gabriel, não foi feito.
+- **Pedir exclusão pelo painel** (`src/server/acoes-exclusao.ts`, modelos #35
+  e #36): conta própria em Você, organização em Dados da organização (só
+  proprietário). **Pede, não apaga**: a 4YU executa pela administração depois
+  de conferir. Único proprietário não pede a conta antes de resolver a
+  organização. Gabriel recusou (19/out) avisar quando o suporte entra na conta
+  e e-mail de conversa esperando atendimento.
 - **Alerta `braces` (GHSA-vfj7-8cjw-p6xm) aceito**: sem versão corrigida, só
   no `eslint-config-next` (desenvolvimento). `brace-expansion` corrigido em
   `c6b607ad`.

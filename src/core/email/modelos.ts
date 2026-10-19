@@ -948,6 +948,87 @@ export const MODELOS = {
       link: 'https://autofluxos.4yu.com.br/clientes/exemplo/transmissoes/exemplo',
     },
   }),
+  // -------------------------------------------------------------------------
+  // Pedido de exclusão
+  // -------------------------------------------------------------------------
+
+  pedidoDeExclusao: definir<{ nome: string; alvo: 'usuario' | 'organizacao'; organizacao: string; email: string; quando: string }>({
+    nome: 'Pedido de exclusão recebido',
+    grupo: 'Conta',
+    montar: (p) => {
+      const daOrganizacao = p.alvo === 'organizacao'
+      return {
+        assunto: daOrganizacao ? `Recebemos o pedido de exclusão de ${p.organizacao}` : 'Recebemos o pedido de exclusão da sua conta',
+        previa: 'A 4YU confirma em até 2 dias úteis e conclui em até 15 dias.',
+        selo: { texto: 'Exclusão', tom: 'aviso' },
+        titulo: daOrganizacao ? 'Pedido de exclusão da organização recebido' : 'Pedido de exclusão da conta recebido',
+        blocos: [
+          {
+            tipo: 'texto',
+            texto: daOrganizacao
+              ? `${oi(p.nome)} Recebemos o pedido para apagar a organização **${p.organizacao}** do AutoFluxos, com os contatos, conversas, fluxos, quadros e arquivos dela.`
+              : `${oi(p.nome)} Recebemos o pedido para excluir a sua conta de acesso ao AutoFluxos (**${p.email}**). As conversas que você atendeu continuam com as organizações, que são as donas delas.`,
+          },
+          {
+            tipo: 'fatos',
+            linhas: [
+              { rotulo: 'Pedido feito em', valor: p.quando },
+              { rotulo: 'Confirmação da 4YU', valor: 'Até 2 dias úteis' },
+              { rotulo: 'Exclusão concluída', valor: 'Até 15 dias' },
+            ],
+          },
+          {
+            tipo: 'texto',
+            texto: daOrganizacao
+              ? 'Até a exclusão, tudo segue funcionando. É o prazo para exportar o que precisar. Desconecte o WhatsApp e o Instagram antes: o número continua sendo de vocês.'
+              : 'Até a exclusão, o acesso segue funcionando normalmente.',
+          },
+          { tipo: 'nota', tom: 'perigo', texto: '**Mudou de ideia ou não foi você?** Responda este e-mail ou escreva para contato@4yu.com.br, e o pedido é cancelado.' },
+        ],
+        motivo: 'Comprovante do pedido de exclusão. Guarde este e-mail.',
+      }
+    },
+    exemplo: { nome: 'Daniel Moreira', alvo: 'organizacao', organizacao: 'MGM Pilates', email: 'daniel@mgmpilates.com.br', quando: '19 de outubro, às 14:32' },
+  }),
+
+  pedidoDeExclusaoParaEquipe: definir<{ alvo: 'usuario' | 'organizacao'; quem: string; email: string; organizacao: string; motivo: string; link: string }>({
+    nome: 'Pedido de exclusão (equipe 4YU)',
+    grupo: 'Interno',
+    montar: (p) => {
+      const daOrganizacao = p.alvo === 'organizacao'
+      return {
+        assunto: daOrganizacao ? `Pedido de exclusão: organização ${p.organizacao}` : `Pedido de exclusão: conta de ${p.email}`,
+        previa: 'Prazo da LGPD: confirmar em 2 dias úteis, concluir em 15 dias.',
+        selo: { texto: 'Pedido novo', tom: 'aviso' },
+        titulo: daOrganizacao ? `Excluir a organização ${p.organizacao}` : 'Excluir uma conta de usuário',
+        blocos: [
+          {
+            tipo: 'texto',
+            texto: `**${p.quem}** (${p.email}) pediu pelo painel a exclusão ${daOrganizacao ? `da organização **${p.organizacao}**` : 'da própria conta de acesso'}. A pessoa recebeu o comprovante com os prazos.`,
+          },
+          {
+            tipo: 'fatos',
+            linhas: [
+              { rotulo: 'Tipo', valor: daOrganizacao ? 'Organização inteira' : 'Conta de usuário' },
+              { rotulo: daOrganizacao ? 'Organização' : 'Organizações em que entra', valor: p.organizacao },
+              { rotulo: 'Prazo', valor: 'Confirmar em 2 dias úteis, concluir em 15' },
+            ],
+          },
+          ...so(p.motivo, { tipo: 'nota', texto: `**Motivo informado:** ${p.motivo}` } as Bloco),
+          { tipo: 'botao', rotulo: 'Abrir na administração', link: p.link },
+        ],
+        motivo: 'Aviso interno da 4YU: um pedido de exclusão espera atendimento (LGPD).',
+      }
+    },
+    exemplo: {
+      alvo: 'organizacao',
+      quem: 'Daniel Moreira',
+      email: 'daniel@mgmpilates.com.br',
+      organizacao: 'MGM Pilates',
+      motivo: 'Encerramos as atividades da unidade.',
+      link: 'https://autofluxos.4yu.com.br/admin/organizacoes/exemplo/perigo',
+    },
+  }),
 } as const
 
 export type IdDoModelo = keyof typeof MODELOS

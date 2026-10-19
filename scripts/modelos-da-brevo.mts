@@ -45,7 +45,7 @@ async function brevo(caminho: string, init: RequestInit = {}) {
 }
 
 /** Campos que escolhem a variante do e-mail: ficam com o exemplo, como número e sim/não. */
-const VARIANTES = new Set(['momento', 'situacao'])
+const VARIANTES = new Set(['momento', 'situacao', 'alvo'])
 
 function comParametros<P extends Record<string, unknown>>(exemplo: P): P {
   return Object.fromEntries(

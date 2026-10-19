@@ -12,6 +12,7 @@ import { BotaoDeTema } from '@/components/design/tema'
 import { acaoSair } from '@/server/acoes-conta'
 import { acaoEditarPerfil, acaoTrocarSenha } from '@/server/acoes-perfil'
 import { ModalDeDuasEtapas } from './duas-etapas'
+import { ModalDePedirExclusao } from './pedir-exclusao'
 
 /**
  * "Você": o perfil de quem está usando, no rodapé da barra (tarefa 7.5).
@@ -75,7 +76,7 @@ export function PainelVoce({
 }) {
   const contexto = useContext(ContextoDoPerfil)
   const perfil = contexto?.perfil ?? { nome: '', imagem: null }
-  const [aberto, setAberto] = useState<'perfil' | 'senha' | 'duas-etapas' | null>(null)
+  const [aberto, setAberto] = useState<'perfil' | 'senha' | 'duas-etapas' | 'exclusao' | null>(null)
   const router = useRouter()
 
   return (
@@ -121,6 +122,17 @@ export function PainelVoce({
         {/* Ajuda aqui e não só no "?" de cada tela: é o lugar em que se procura
             "onde eu aprendo isso" sem estar numa tela específica (10.4). */}
         <Linha href="/ajuda">Ajuda</Linha>
+        {/* Perto do Sair e em cinza: é para achar quando se procura, não para
+            clicar de passagem. O suporte não pede pela pessoa. */}
+        {!suporte && (
+          <button
+            type="button"
+            onClick={() => setAberto('exclusao')}
+            className="flex w-full rounded-[10px] px-2 py-2 text-left text-[13px] font-semibold text-dim transition hover:bg-perigo/10 hover:text-perigo"
+          >
+            Pedir exclusão da minha conta
+          </button>
+        )}
         <form action={acaoSair}>
           <button
             type="submit"
@@ -135,6 +147,7 @@ export function PainelVoce({
         <EditarPerfil perfil={perfil} mudar={contexto.mudar} aoFechar={() => setAberto(null)} />
       )}
       {aberto === 'senha' && <TrocarSenha aoFechar={() => setAberto(null)} />}
+      {aberto === 'exclusao' && <ModalDePedirExclusao alvo="usuario" aoFechar={() => setAberto(null)} />}
       {aberto === 'duas-etapas' && (
         <ModalDeDuasEtapas
           ligada={duasEtapas}

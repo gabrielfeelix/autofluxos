@@ -10,6 +10,7 @@ import { pode } from '@/core/permissoes'
 import { FaixasDeNivelDaConta } from '@/components/cliente/faixas-de-nivel'
 import { faixasDaConta } from '@/server/repos/relacionamento'
 import { FAIXAS_PADRAO } from '@/core/relacionamento'
+import { ExclusaoDaOrganizacao } from '@/components/conta/pedir-exclusao'
 
 export const dynamic = 'force-dynamic'
 
@@ -34,6 +35,8 @@ export default async function Pagina({ params }: { params: Promise<{ clienteId: 
   ])
   if (!cliente) notFound()
   const podeEditar = pode(acesso.regras, 'configurar_empresa', 'todos')
+  // Só o proprietário pede a exclusão; a ação confere de novo.
+  const ehProprietario = acesso.papel === 'owner' && !acesso.sessao?.impersonadoPor
 
   return (
     <AjustesShell cliente={cliente} ativa="negocio">
@@ -64,6 +67,12 @@ export default async function Pagina({ params }: { params: Promise<{ clienteId: 
         <div className="mt-5">
           <FaixasDeNivelDaConta clienteId={cliente.id} faixas={faixas ?? FAIXAS_PADRAO} />
         </div>
+
+        {ehProprietario && (
+          <div className="mt-5">
+            <ExclusaoDaOrganizacao clienteId={cliente.id} organizacao={cliente.nome} />
+          </div>
+        )}
       </Miolo>
     </AjustesShell>
   )

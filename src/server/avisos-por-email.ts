@@ -318,3 +318,34 @@ export function avisarTransmissaoInterrompida(transmissao: { id: string; cliente
     })
   })
 }
+
+// ---------------------------------------------------------------------------
+// Pedido de exclusão
+// ---------------------------------------------------------------------------
+
+/** O comprovante para quem pediu e o pedido para a caixa da 4YU, que executa. */
+export function avisarPedidoDeExclusao(dados: {
+  pessoa: Destinatario
+  alvo: 'usuario' | 'organizacao'
+  organizacao: string
+  motivo: string
+  link: string
+}) {
+  return semFalhar('pedido de exclusão', async () => {
+    await enviarModelo(dados.pessoa, 'pedidoDeExclusao', {
+      nome: dados.pessoa.nome ?? '',
+      alvo: dados.alvo,
+      organizacao: dados.organizacao,
+      email: dados.pessoa.email,
+      quando: quando(),
+    })
+    await enviarModelo({ email: CONTATO, nome: '4YU' }, 'pedidoDeExclusaoParaEquipe', {
+      alvo: dados.alvo,
+      quem: dados.pessoa.nome || dados.pessoa.email,
+      email: dados.pessoa.email,
+      organizacao: dados.organizacao,
+      motivo: dados.motivo,
+      link: dados.link,
+    })
+  })
+}

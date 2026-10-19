@@ -121,7 +121,8 @@ const SECOES: readonly SecaoLegal[] = [
             Instagram, o token de acesso é apagado do cofre no mesmo instante.
           </Item>
           <Item>
-            <strong>A conta inteira:</strong> peça por{' '}
+            <strong>A conta inteira:</strong> o proprietário pede pelo painel, em Configurações, Dados da
+            organização, Pedir exclusão. Ou por{' '}
             <a href="mailto:contato@4yu.com.br?subject=Exclus%C3%A3o%20da%20conta">contato@4yu.com.br</a>{' '}
             usando o e-mail de administrador da conta. Apagamos a empresa e tudo que pende dela ,
             contatos, conversas, fluxos, quadros e sequências.
