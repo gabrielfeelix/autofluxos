@@ -1,5 +1,7 @@
 'use server'
 
+import { after } from 'next/server'
+import { avisarBoasVindas } from './avisos-por-email'
 import { cadastrarSemTrocarDeSessao } from './cadastro-por-outra-pessoa'
 import { revalidatePath } from 'next/cache'
 import { headers } from 'next/headers'
@@ -1085,6 +1087,8 @@ export async function acaoPrimeiroAcesso(
       detalhes: { origem: 'primeiro_acesso' },
       impersonadoPor: sessao.impersonadoPor,
     })
+    const organizacao = { id, nome }
+    if (!sessao.impersonadoPor) after(() => avisarBoasVindas({ email: sessao.usuario.email, nome: sessao.usuario.nome }, organizacao))
   } catch (erro) {
     return { ok: false, erro: motivo(erro) }
   }

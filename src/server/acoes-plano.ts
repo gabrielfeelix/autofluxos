@@ -1,5 +1,7 @@
 'use server'
 
+import { after } from 'next/server'
+import { avisarPedidoDePlano } from './avisos-por-email'
 import { revalidatePath } from 'next/cache'
 import { anualDoPlano, ehCicloDeCobranca, ehIdDePlano, type CicloDeCobranca, type IdDoPlano } from '@/core/planos'
 import { planosVigentes } from './repos/planos'
@@ -77,6 +79,9 @@ export async function acaoPedirTrocaDePlano(
     alvoNome: destino.nome,
     detalhes: { de: atual, para: desejado, ciclo, ...resumoDaTroca(previsao) },
   })
+  const nomeDeHoje = (await planosVigentes()).find((plano) => plano.id === atual)?.nome ?? atual
+  const pessoa = { email: acesso.sessao.usuario.email, nome: acesso.sessao.usuario.nome }
+  after(() => avisarPedidoDePlano(clienteId, { pessoa, de: nomeDeHoje, para: destino.nome, ciclo }))
 
   revalidatePath(`/clientes/${clienteId}/ajustes/plano`)
   return { ok: true }

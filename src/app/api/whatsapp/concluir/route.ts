@@ -1,4 +1,5 @@
 import { after } from 'next/server'
+import { avisarWhatsappConectado } from '@/server/avisos-por-email'
 import { alertar } from '@/server/alertar'
 import { salvarNumeroDoOnboarding } from '@/server/repos/coexistencia'
 import { conferirAcessoAoCliente } from '@/server/sessao'
@@ -163,6 +164,7 @@ export async function POST(req: Request) {
     after(async () => {
       try {
         await terminarOnboarding(paraDepois)
+        await avisarWhatsappConectado(clienteId)
       } catch (erro) {
         // `terminarOnboarding` já alerta por dentro; isto é a rede de baixo.
         await alertar('o onboarding do WhatsApp falhou depois de gravar o número', erro, {

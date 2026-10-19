@@ -1,5 +1,7 @@
 'use server'
 
+import { after } from 'next/server'
+import { avisarAcessoEncerrado } from './avisos-por-email'
 import { apagarTodosDoNegocio } from './repos/arquivos-do-negocio'
 import { dentroDoTetoDaConta, RECADO_DO_TETO_DA_CONTA } from '@/server/limite'
 import { recusaDoPlano } from './recursos-do-plano'
@@ -1865,9 +1867,13 @@ export async function acaoRemoverDaConta(
   if ('ok' in permitido) return permitido
   const acesso = permitido.ator.acesso
 
+  // Quem sai recebe o aviso: o e-mail tem que ser lido antes de a ligação sumir.
+  const removida = (await membrosDaConta(clienteId)).find((membro) => membro.id === usuarioId)
+
   // Reatribuir e remover juntos, numa transação (E15): ver `removerComDestino`.
   const r = await removerComDestino(clienteId, usuarioId, destino)
   if (!r.ok) return { ok: false, erro: r.motivo }
+  if (removida) after(() => avisarAcessoEncerrado({ email: removida.email, nome: removida.nome }, clienteId))
 
   await registrar({
     acao: 'removeu_membro',

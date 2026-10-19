@@ -1,4 +1,6 @@
 import 'server-only'
+import { CONTATO, montarEmail, type Email, type EmailMontado } from '@/core/email/layout'
+import { MODELOS, type IdDoModelo, type ParametrosDo } from '@/core/email/modelos'
 import { enderecoDoPainel } from './endereco'
 
 /**
@@ -6,26 +8,24 @@ import { enderecoDoPainel } from './endereco'
  *
  * **Sem `BREVO_API_KEY` e `EMAIL_REMETENTE` no ambiente, não envia e diz que
  * não enviou.** O remetente é `<algo>@autofluxos.mail.4yu.com.br` (a regra dos
- * namespaces em `4yu-apps/CLAUDE.md`), e esse domínio ainda não tem DKIM da
- * Brevo publicado (conferido em 24/set: NXDOMAIN). Até ter, o aviso vale só no
- * app, e quem chama registra que o e-mail não saiu. Mandar do domínio raiz
- * sujaria a reputação da caixa humana da 4YU, e isso não se desfaz.
+ * namespaces em `4yu-apps/CLAUDE.md`), autenticado na Brevo desde 05/out
+ * (antes disso a Brevo recusava: "sender is not valid"). Mandar do domínio
+ * raiz sujaria a reputação da caixa humana da 4YU, e isso não se desfaz.
+ *
+ * O desenho e os textos moram em `core/email/`; aqui só se envia.
  */
 export function emailConfigurado(): boolean {
   return Boolean(process.env.BREVO_API_KEY && process.env.EMAIL_REMETENTE)
 }
 
-export async function enviarEmail(
-  para: { email: string; nome?: string }[],
-  assunto: string,
-  texto: string,
-  html?: string,
-): Promise<boolean> {
+export type Destinatario = { email: string; nome?: string }
+
+async function enviarEmail(para: Destinatario[], email: EmailMontado, etiqueta: string): Promise<boolean> {
   if (!emailConfigurado() || para.length === 0) {
     // Local: sem chave, o texto (com o link) vai para o log do servidor, o
     // único jeito de percorrer "esqueci a senha" sem mandar e-mail de verdade.
     if (process.env.NODE_ENV !== 'production' && para.length > 0) {
-      console.info(`[email] não configurado; "${assunto}" para ${para[0]?.email}:\n${texto}`)
+      console.info(`[email] não configurado; "${email.assunto}" para ${para[0]?.email}:\n${email.texto}`)
     }
     return false
   }
@@ -35,10 +35,14 @@ export async function enviarEmail(
       headers: { 'api-key': process.env.BREVO_API_KEY!, 'content-type': 'application/json', accept: 'application/json' },
       body: JSON.stringify({
         sender: { email: process.env.EMAIL_REMETENTE, name: 'AutoFluxos' },
+        // O remetente é `nao-responda@`: quem responde cai na caixa humana da 4YU.
+        replyTo: { email: CONTATO, name: '4YU' },
         to: para.map(({ email, nome }) => (nome ? { email, name: nome } : { email })),
-        subject: assunto,
-        textContent: texto,
-        ...(html ? { htmlContent: html } : {}),
+        subject: email.assunto,
+        textContent: email.texto,
+        htmlContent: email.html,
+        // A etiqueta é o id do modelo: o relatório da Brevo separa por ela.
+        tags: [`autofluxos:${etiqueta}`],
       }),
       signal: AbortSignal.timeout(10_000),
     })
@@ -48,6 +52,26 @@ export async function enviarEmail(
     console.error('[email] não foi possível enviar', erro)
     return false
   }
+}
+
+/**
+ * Manda um dos modelos de `core/email/modelos.ts`. `true` se a Brevo aceitou.
+ *
+ * Não lança: nenhum e-mail daqui é o único caminho para o que ele carrega, e
+ * derrubar a ação de quem clicou porque a Brevo piscou trocaria uma falha
+ * pequena por uma grande.
+ *
+ * **Um envio por pessoa**, e não um com todos no `to`: com vários no `to`,
+ * cada um veria o e-mail dos outros, e numa organização isso é a lista da
+ * equipe inteira indo para quem não precisava dela.
+ */
+export async function enviarModelo<I extends IdDoModelo>(para: Destinatario | Destinatario[], id: I, parametros: ParametrosDo<I>): Promise<boolean> {
+  const lista = (Array.isArray(para) ? para : [para]).filter((pessoa) => pessoa.email.includes('@'))
+  if (lista.length === 0) return false
+  const modelo = MODELOS[id] as unknown as { montar: (p: ParametrosDo<I>) => Email }
+  const email = montarEmail(modelo.montar(parametros), enderecoParaEmail())
+  const enviados = await Promise.all(lista.map((pessoa) => enviarEmail([pessoa], email, id)))
+  return enviados.some(Boolean)
 }
 
 /**
@@ -63,52 +87,17 @@ export function enderecoParaEmail(): string {
   return enderecoDoPainel()
 }
 
-function escapar(texto: string): string {
-  return texto.replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]!)
+/** Um endereço do painel para botão de e-mail: `linkDoPainel('/entrar')`. */
+export function linkDoPainel(caminho: string): string {
+  return `${enderecoParaEmail()}${caminho}`
 }
 
-/** Um e-mail curto de conta: um botão, e o link por extenso embaixo. */
-function mensagemDeConta({ saudacao, corpo, botao, link, rodape }: { saudacao: string; corpo: string; botao: string; link: string; rodape: string }) {
-  const texto = `${saudacao}\n\n${corpo}\n\n${botao}: ${link}\n\n${rodape}\n\nAutoFluxos`
-  const html = `<!doctype html><html lang="pt-BR"><body style="margin:0;padding:32px 16px;background:#f6f6f4;font-family:-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;color:#1c1c1a">
-<table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr><td align="center">
-<table role="presentation" width="100%" style="max-width:480px;background:#ffffff;border-radius:12px;padding:32px" cellpadding="0" cellspacing="0"><tr><td>
-<p style="margin:0 0 20px;font-size:13px;font-weight:600;letter-spacing:.04em;color:#6b6b66">AUTOFLUXOS</p>
-<p style="margin:0 0 12px;font-size:15px;line-height:1.55">${escapar(saudacao)}</p>
-<p style="margin:0 0 24px;font-size:15px;line-height:1.55">${escapar(corpo)}</p>
-<p style="margin:0 0 24px"><a href="${escapar(link)}" style="display:inline-block;background:#1c1c1a;color:#ffffff;text-decoration:none;font-size:14px;font-weight:600;padding:12px 20px;border-radius:8px">${escapar(botao)}</a></p>
-<p style="margin:0 0 8px;font-size:12px;line-height:1.5;color:#6b6b66">Se o botão não abrir, copie este endereço no navegador:</p>
-<p style="margin:0 0 24px;font-size:12px;line-height:1.5;word-break:break-all;color:#6b6b66">${escapar(link)}</p>
-<p style="margin:0;font-size:12px;line-height:1.5;color:#6b6b66">${escapar(rodape)}</p>
-</td></tr></table></td></tr></table></body></html>`
-  return { texto, html }
+export async function enviarRedefinicaoDeSenha(para: Destinatario, token: string) {
+  const link = linkDoPainel(`/redefinir-senha?token=${encodeURIComponent(token)}`)
+  return enviarModelo(para, 'redefinirSenha', { nome: para.nome ?? '', link })
 }
 
-function oi(nome?: string): string {
-  const primeiro = nome?.trim().split(' ')[0]
-  return primeiro ? `Oi, ${primeiro}.` : 'Oi.'
-}
-
-export async function enviarRedefinicaoDeSenha(para: { email: string; nome?: string }, token: string) {
-  const link = `${enderecoParaEmail()}/redefinir-senha?token=${encodeURIComponent(token)}`
-  const { texto, html } = mensagemDeConta({
-    saudacao: oi(para.nome),
-    corpo: 'Alguém pediu para redefinir a senha da sua conta do AutoFluxos. O link vale por 1 hora e funciona uma vez só.',
-    botao: 'Criar uma senha nova',
-    link,
-    rodape: 'Se não foi você, ignore este e-mail: sua senha continua a mesma.',
-  })
-  return enviarEmail([para], 'Redefinir a senha do AutoFluxos', texto, html)
-}
-
-export async function enviarConfirmacaoDeEmail(para: { email: string; nome?: string }, token: string) {
-  const link = `${enderecoParaEmail()}/confirmar-email?token=${encodeURIComponent(token)}`
-  const { texto, html } = mensagemDeConta({
-    saudacao: oi(para.nome),
-    corpo: 'Confirme que este e-mail é seu para manter o acesso ao AutoFluxos. É por ele que você recupera a senha.',
-    botao: 'Confirmar meu e-mail',
-    link,
-    rodape: 'Se você não criou uma conta no AutoFluxos, ignore este e-mail.',
-  })
-  return enviarEmail([para], 'Confirme seu e-mail no AutoFluxos', texto, html)
+export async function enviarConfirmacaoDeEmail(para: Destinatario, token: string) {
+  const link = linkDoPainel(`/confirmar-email?token=${encodeURIComponent(token)}`)
+  return enviarModelo(para, 'confirmarEmail', { nome: para.nome ?? '', link })
 }

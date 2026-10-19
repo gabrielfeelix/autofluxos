@@ -2,6 +2,7 @@
 
 import { cadastrarSemTrocarDeSessao } from './cadastro-por-outra-pessoa'
 import { revalidatePath } from 'next/cache'
+import { after } from 'next/server'
 import { headers } from 'next/headers'
 import { redirect } from 'next/navigation'
 import type { EstadoSalvar } from '@/components/design/formulario-salvar'
@@ -17,7 +18,9 @@ import { autenticacao } from './auth'
 import { definirFuncaoDoMembro } from './pessoas'
 import { agendarDescida, agendarPreco, cancelarDescida, congelarPreco, contratoDaConta, definirPlano, encerrarTeste, iniciarTeste, organizacoesNoPlano } from './repos/plano'
 import { criarPlano, excluirPlano, planosVigentes, salvarPlano, type EdicaoDePlano } from './repos/planos'
-import { DIAS_DE_AVISO_DO_PRECO, diaDeHoje, proximaVirada, somarDias } from '@/core/contrato-do-plano'
+import { DIAS_DE_AVISO_DO_PRECO, diaDeHoje, diaPorExtenso, proximaVirada, reais, somarDias } from '@/core/contrato-do-plano'
+import { avisarAcessoEncerrado, avisarAcessoLiberado, avisarPedidoRecusado, avisarPlanoAtivado, avisarTrocaAgendada } from './avisos-por-email'
+import { oQueFicaSoLeitura } from './passada-do-plano'
 import { preverTroca, recusaDaTroca, resumoDaTroca, type PrevisaoDaTroca } from './troca-de-plano'
 import { ehIdDePlano, ehRecursoDoPlano, idDoNome, DIAS_DE_TESTE, PLANO_DE_ENTRADA, PLANO_DO_TESTE } from '@/core/planos'
 import { CAPACIDADES, ehEscopo, type Politica } from '@/core/permissoes'
@@ -162,6 +165,7 @@ export async function acaoAdminRemoverPessoa(
   destino: string | null,
 ): Promise<{ ok: boolean; erro?: string }> {
   const sessao = await exigirAdminDaPlataforma()
+  const removida = await acharUsuario(usuarioId)
   const r = await removerComDestino(organizacaoId, usuarioId, destino)
   if (!r.ok) return { ok: false, erro: r.motivo }
   await registrar({
@@ -171,9 +175,10 @@ export async function acaoAdminRemoverPessoa(
     contaId: organizacaoId,
     alvoTipo: 'usuario',
     alvoId: usuarioId,
-    alvoNome: (await acharUsuario(usuarioId))?.nome ?? '',
+    alvoNome: removida?.nome ?? '',
     impersonadoPor: sessao.impersonadoPor,
   })
+  if (removida) after(() => avisarAcessoEncerrado({ email: removida.email, nome: removida.nome }, organizacaoId))
   revalidatePath('/admin/organizacoes')
   return { ok: true }
 }
@@ -232,6 +237,15 @@ export async function acaoAdminDarAcesso(
     detalhes: { funcao, cadastrou: existente ? 'nao' : 'sim' },
     impersonadoPor: sessao.impersonadoPor,
   })
+  after(() =>
+    avisarAcessoLiberado({
+      pessoa: { email, nome: existente?.nome ?? nome },
+      clienteId: organizacaoId,
+      quem: 'A equipe da 4YU',
+      funcao,
+      contaNova: !existente,
+    }),
+  )
   revalidatePath('/admin/usuarios')
   return { ok: true, pessoa: { id: usuarioId, nome: existente?.nome ?? nome, email, funcao } }
 }
@@ -360,6 +374,18 @@ export async function acaoAdminTrocarPlano(
       },
       impersonadoPor: sessao.impersonadoPor,
     })
+    const origem = (await planosVigentes()).find((item) => item.id === de)
+    const valeEm = agendadaPara
+    after(() =>
+      valeEm
+        ? avisarTrocaAgendada(organizacaoId, {
+            de: origem?.nome ?? de,
+            para: destino.nome,
+            data: diaPorExtenso(valeEm),
+            oQueSai: oQueFicaSoLeitura(origem, destino),
+          })
+        : avisarPlanoAtivado(organizacaoId, { plano: destino.nome, preco: reais(destino.preco), desde: diaPorExtenso(diaDeHoje(new Date())) }),
+    )
   } else if (contrato.planoAgendado) {
     // Escolher o plano que já vale desfaz a descida agendada.
     await cancelarDescida(organizacaoId)
@@ -422,6 +448,8 @@ export async function acaoAdminRecusarPedido(pedidoId: string): Promise<{ ok: bo
     detalhes: { pedido: pedidoId, de: pedido.de, para: pedido.para },
     impersonadoPor: sessao.impersonadoPor,
   })
+  const nomeDoPlano = (await planosVigentes()).find((item) => item.id === pedido.para)?.nome ?? pedido.para
+  after(() => avisarPedidoRecusado(pedido.organizacaoId, nomeDoPlano))
   return { ok: true }
 }
 

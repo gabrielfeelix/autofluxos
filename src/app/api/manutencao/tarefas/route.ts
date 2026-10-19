@@ -1,4 +1,5 @@
 import { alertar } from '@/server/alertar'
+import { avisarFranquiaDaMeta } from '@/server/aviso-da-franquia'
 import { copiarConsumoDaMeta } from '@/server/consumo-da-meta'
 import { iguais } from '@/lib/segredo'
 import { enviarAgendadas } from '@/server/enviar-agendadas'
@@ -121,9 +122,16 @@ export async function GET(req: Request) {
       return null
     })
 
+    // Com o consumo de ontem copiado, avisa quem chegou a 800 ou passou de 1.000.
+    const franquiaDaMeta = await avisarFranquiaDaMeta().catch((erro) => {
+      console.error('[tarefas] o aviso da franquia da Meta falhou', erro)
+      return null
+    })
+
     return Response.json({
       ...(await rodarTarefas()),
       consumoDaMeta,
+      franquiaDaMeta,
       agendadas,
       transmissoes,
       retomada,

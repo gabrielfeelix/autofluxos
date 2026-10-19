@@ -1,5 +1,7 @@
 'use server'
 
+import { after } from 'next/server'
+import { avisarAcessoLiberado } from './avisos-por-email'
 import { cadastrarSemTrocarDeSessao } from './cadastro-por-outra-pessoa'
 import { conferirTrocaDeFuncao, ehFuncao, PAPEL_DA_FUNCAO, podeAtribuirFuncao, podeGerenciarPessoas } from '@/core/funcoes'
 import { autenticacao } from './auth'
@@ -125,6 +127,15 @@ export async function acaoDarAcessoNaOrganizacao(
     detalhes: { funcao, cadastrou: existente ? 'nao' : 'sim' },
     impersonadoPor: sessao.impersonadoPor,
   })
+  after(() =>
+    avisarAcessoLiberado({
+      pessoa: { email, nome: existente?.nome ?? nome },
+      clienteId,
+      quem: sessao.usuario.nome || sessao.usuario.email,
+      funcao,
+      contaNova: !existente,
+    }),
+  )
   return { ok: true, pessoa: { id: usuarioId, nome: existente?.nome ?? nome, email, funcao } }
 }
 

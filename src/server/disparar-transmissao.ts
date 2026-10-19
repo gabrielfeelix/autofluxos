@@ -1,4 +1,5 @@
 import 'server-only'
+import { avisarTransmissaoConcluida } from './avisos-por-email'
 import { ehVisitanteDoSite } from '@/core/contatos/visitante-do-site'
 import type { Canal, ValoresDoTemplate } from '@/channels/types'
 import {
@@ -368,6 +369,8 @@ async function concluirSeAcabou(transmissao: Transmissao): Promise<void> {
   const progresso = await progressoDa(transmissao.id)
   if (progresso.na_fila > 0) return
   await mudarEstadoDaTransmissao(transmissao.id, 'concluida')
+  // Só na passagem para concluída: a mesma transmissão não avisa duas vezes.
+  if (transmissao.estado !== 'concluida') await avisarTransmissaoConcluida({ ...transmissao, progresso })
 }
 
 function dormir(ms: number): Promise<void> {

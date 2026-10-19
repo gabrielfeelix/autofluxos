@@ -363,3 +363,25 @@ um dia por consulta) e no `pg_stat_statements` (zerado em 11/ago).
   requisições/dia. A Verandi soma ~600 mil linhas/dia em REST
   (`participacao`, `sessao`, `vaga`), pequeno em bytes; fica para olhar.
 - A org foi para o Pro (250 GB) em 19/out; isto é para não depender dele.
+
+## 19/out/2026: e-mails transacionais com desenho próprio, código como fonte
+
+- **20 modelos** em `src/core/email/modelos.ts`, um desenho só em
+  `src/core/email/layout.ts` (cores do tema claro do painel, logo, botão,
+  quadro de fatos, medidor). HTML e texto puro saem dos mesmos blocos.
+- **O código é a fonte da verdade, a Brevo guarda cópia** (modelos #5 a #24,
+  "[cópia, editar no código]", mesma convenção da Verandi). Publicar de novo:
+  `npx jiti scripts/modelos-da-brevo.mts`. Motivo: texto versionado e testado
+  (`modelos.test.ts`), sem divergência entre painel e produto.
+- **Um envio por pessoa**, nunca vários no `to`: a equipe não vê o e-mail dos
+  outros. `replyTo` é `contato@4yu.com.br`; etiqueta `autofluxos:<modelo>`.
+- Eventos ligados (`src/server/avisos-por-email.ts`, sempre em `after()`, nunca
+  lança): boas-vindas no primeiro acesso, senha alterada (redefinição e perfil),
+  duas etapas, acesso liberado e encerrado, chave de API criada, pedido de
+  plano (cliente e 4YU), plano ativado, troca agendada e recusada, WhatsApp
+  conectado, transmissão concluída. A passada diária do plano usa os modelos.
+- **Franquia da Meta avisa** (`src/server/aviso-da-franquia.ts`): 800 e 1.000
+  conversas de serviço por número, uma vez por nível por mês, chave
+  `meta:<mês>:<telefone>:<nível>` em `avisos_de_plano`. Antes só a tela mostrava.
+- Envio confirmado na Brevo desde 05/out (domínio autenticado); antes disso a
+  redefinição de 01/out foi recusada ("sender is not valid").

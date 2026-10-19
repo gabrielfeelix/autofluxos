@@ -1,4 +1,5 @@
 import 'server-only'
+import { avisarSenhaAlterada } from './avisos-por-email'
 import { betterAuth } from 'better-auth'
 import { after } from 'next/server'
 import { nextCookies } from 'better-auth/next-js'
@@ -139,6 +140,7 @@ function montar() {
       revokeSessionsOnPasswordReset: true,
       onPasswordReset: async ({ user }) => {
         await registrar({ acao: 'redefiniu_senha', autorId: user.id, autorEmail: user.email, alvoTipo: 'usuario', alvoId: user.id })
+        after(() => avisarSenhaAlterada({ email: user.email, nome: user.name }))
       },
     },
 

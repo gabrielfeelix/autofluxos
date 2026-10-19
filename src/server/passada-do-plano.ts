@@ -10,13 +10,14 @@ import {
 } from '@/core/contrato-do-plano'
 import { RECURSOS_DO_PLANO } from '@/core/planos'
 import { db } from './db'
-import { enviarEmail } from './email'
+import type { IdDoModelo, ParametrosDo } from '@/core/email/modelos'
+import { gestoresDaConta } from './avisos-por-email'
+import { enviarModelo, linkDoPainel } from './email'
 import { registrar } from './repos/auditoria'
 import { marcarAviso, marcarEmailEnviado } from './repos/avisos-de-plano'
 import { aplicarPreco, chaveDoMes, consumoDeTodasAsContas, contratosDeTodas, definirPlano } from './repos/plano'
 import { planosVigentes, type PlanoVigente } from './repos/planos'
 import { mudarEstadoDaTransmissao } from './repos/transmissoes'
-import { membrosDaConta } from './repos/usuarios'
 
 /**
  * A passada diária do plano, na carona da manutenção (`api/manutencao/retencao`).
@@ -50,17 +51,17 @@ export async function passadaDoPlano(agora = new Date()): Promise<ResumoDaPassad
   const conversas = new Map(consumos.map((consumo) => [consumo.clienteId, consumo.conversas]))
   const resumo: ResumoDaPassadaDoPlano = { descidas: 0, transmissoesCanceladas: 0, precos: 0, avisos: 0, emails: 0, falhas: 0 }
 
-  const avisar = async (clienteId: string, chave: string, assunto: string, texto: string) => {
+  const avisar = async <I extends IdDoModelo>(clienteId: string, chave: string, modelo: I, parametros: ParametrosDo<I>) => {
     if (!(await marcarAviso(clienteId, chave))) return
     resumo.avisos += 1
-    const quem = (await membrosDaConta(clienteId)).filter((membro) => membro.papel === 'owner' || membro.papel === 'admin')
-    if (await enviarEmail(quem, assunto, texto)) {
+    if (await enviarModelo(await gestoresDaConta(clienteId), modelo, parametros)) {
       resumo.emails += 1
       await marcarEmailEnviado(clienteId, chave)
     }
   }
 
   for (const contrato of contratos) {
+    const link = linkDoPainel(`/clientes/${contrato.clienteId}/ajustes/plano`)
     try {
       let vigente = plano(contrato.plano)
 
@@ -83,19 +84,14 @@ export async function passadaDoPlano(agora = new Date()): Promise<ResumoDaPassad
             alvoNome: destino.nome,
             detalhes: { de: contrato.plano, para: destino.id, transmissoesCanceladas: canceladas },
           })
-          await avisar(
-            contrato.clienteId,
-            `descida:${contrato.planoAgendadoPara}:aplicada`,
-            `Sua organização está no plano ${destino.nome}`,
-            [
-              `A partir de hoje, ${contrato.nome} está no plano ${destino.nome} (${reais(destino.preco)} por mês).`,
-              oQueFicaSoLeitura(vigente, destino),
-              canceladas > 0 ? `${canceladas} ${canceladas === 1 ? 'transmissão agendada foi cancelada' : 'transmissões agendadas foram canceladas'}, porque o plano novo não inclui transmissões.` : '',
-              'Nada foi apagado. Se subir de plano, tudo volta na hora.',
-            ]
-              .filter(Boolean)
-              .join('\n\n'),
-          )
+          await avisar(contrato.clienteId, `descida:${contrato.planoAgendadoPara}:aplicada`, 'trocaDePlanoAplicada', {
+            organizacao: contrato.nome,
+            plano: destino.nome,
+            preco: reais(destino.preco),
+            oQueSai: oQueFicaSoLeitura(vigente, destino),
+            canceladas,
+            link,
+          })
           vigente = destino
         }
       } else if (contrato.planoAgendado && contrato.planoAgendadoPara) {
@@ -103,18 +99,15 @@ export async function passadaDoPlano(agora = new Date()): Promise<ResumoDaPassad
         const destino = plano(contrato.planoAgendado)
         const dias = avisoDaDescida(contrato.planoAgendadoPara, agora)
         if (destino && dias) {
-          await avisar(
-            contrato.clienteId,
-            `descida:${contrato.planoAgendadoPara}:${dias}d`,
-            `Em ${dias === 1 ? '1 dia' : `${dias} dias`} sua organização desce para o plano ${destino.nome}`,
-            [
-              `Em ${diaPorExtenso(contrato.planoAgendadoPara)}, ${contrato.nome} passa do plano ${vigente?.nome ?? contrato.plano} para o ${destino.nome}.`,
-              oQueFicaSoLeitura(vigente, destino),
-              'Até lá, tudo continua funcionando: é o prazo para salvar e exportar o que precisar. Nada é apagado.',
-            ]
-              .filter(Boolean)
-              .join('\n\n'),
-          )
+          await avisar(contrato.clienteId, `descida:${contrato.planoAgendadoPara}:${dias}d`, 'trocaDePlanoAgendada', {
+            organizacao: contrato.nome,
+            de: vigente?.nome ?? contrato.plano,
+            para: destino.nome,
+            data: diaPorExtenso(contrato.planoAgendadoPara),
+            faltam: dias,
+            oQueSai: oQueFicaSoLeitura(vigente, destino),
+            link,
+          })
         }
       }
 
@@ -135,12 +128,14 @@ export async function passadaDoPlano(agora = new Date()): Promise<ResumoDaPassad
             detalhes: { de: contrato.precoContratado, para: contrato.precoAgendado },
           })
         } else {
-          await avisar(
-            contrato.clienteId,
-            `preco:${contrato.precoAgendadoPara}`,
-            `O preço do plano ${vigente?.nome ?? ''} muda em ${diaPorExtenso(contrato.precoAgendadoPara)}`,
-            `A partir de ${diaPorExtenso(contrato.precoAgendadoPara)}, o plano de ${contrato.nome} passa a custar ${reais(contrato.precoAgendado)} por mês${contrato.precoContratado !== null ? ` (hoje, ${reais(contrato.precoContratado)})` : ''}.`,
-          )
+          await avisar(contrato.clienteId, `preco:${contrato.precoAgendadoPara}`, 'precoVaiMudar', {
+            organizacao: contrato.nome,
+            plano: vigente?.nome ?? contrato.plano,
+            data: diaPorExtenso(contrato.precoAgendadoPara),
+            atual: contrato.precoContratado !== null ? reais(contrato.precoContratado) : null,
+            novo: reais(contrato.precoAgendado),
+            link,
+          })
         }
       }
 
@@ -150,18 +145,16 @@ export async function passadaDoPlano(agora = new Date()): Promise<ResumoDaPassad
         const faixa = faixaDoConsumo(usadas, vigente.conversas)
         if (faixa === 100) await marcarAviso(contrato.clienteId, `consumo:${mes}:80`)
         if (faixa) {
-          const conta = fraseDoExcedente(excedente(usadas, vigente))
-          await avisar(
-            contrato.clienteId,
-            `consumo:${mes}:${faixa}`,
-            faixa === 100 ? `Sua organização passou da faixa do plano ${vigente.nome}` : `Sua organização usou 80% da faixa do plano ${vigente.nome}`,
-            [
-              `${contrato.nome} teve ${usadas.toLocaleString('pt-BR')} conversas neste mês, de ${vigente.conversas.toLocaleString('pt-BR')} do plano ${vigente.nome}.`,
-              faixa === 100
-                ? `Nada é bloqueado. Cada conversa acima da faixa custa ${reais(vigente.precoExcedente)}, na fatura seguinte. ${conta ?? ''}`.trim()
-                : `Nada é bloqueado. Acima da faixa, cada conversa custa ${reais(vigente.precoExcedente)}, na fatura seguinte.`,
-            ].join('\n\n'),
-          )
+          await avisar(contrato.clienteId, `consumo:${mes}:${faixa}`, 'consumoDoPlano', {
+            organizacao: contrato.nome,
+            plano: vigente.nome,
+            usadas,
+            total: vigente.conversas,
+            faixa,
+            precoExcedente: reais(vigente.precoExcedente),
+            conta: faixa === 100 ? (fraseDoExcedente(excedente(usadas, vigente)) ?? '') : '',
+            link,
+          })
         }
       }
     } catch (erro) {
@@ -174,7 +167,7 @@ export async function passadaDoPlano(agora = new Date()): Promise<ResumoDaPassad
 }
 
 /** O que sai e fica só leitura na descida, em uma frase. Vazio se nada sai. */
-function oQueFicaSoLeitura(de: PlanoVigente | undefined, para: PlanoVigente): string {
+export function oQueFicaSoLeitura(de: PlanoVigente | undefined, para: PlanoVigente): string {
   if (!de) return ''
   const sai = de.recursos.filter((recurso) => !para.recursos.includes(recurso))
   if (sai.length === 0) return ''

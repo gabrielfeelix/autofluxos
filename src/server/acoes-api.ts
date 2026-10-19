@@ -1,5 +1,7 @@
 'use server'
 
+import { after } from 'next/server'
+import { avisarChaveDeApiCriada } from './avisos-por-email'
 import { z } from 'zod'
 import { ehEscopoDaApi, type EscopoDaApi } from '@/core/api/chaves'
 import { recusaDoPlano } from './recursos-do-plano'
@@ -72,6 +74,13 @@ export async function acaoCriarChaveDeApi(
       detalhes: { escopos: chave.escopos },
       impersonadoPor: acesso.sessao.impersonadoPor,
     })
+    after(() =>
+      avisarChaveDeApiCriada(clienteId, {
+        quem: acesso.sessao.usuario.nome || acesso.sessao.usuario.email,
+        chave: chave.nome,
+        escopos: chave.escopos,
+      }),
+    )
     return { ok: true, chave, inteira }
   } catch (erro) {
     console.error('[api] não foi possível criar a chave:', erro instanceof Error ? erro.message : erro)

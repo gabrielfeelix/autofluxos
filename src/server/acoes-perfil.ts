@@ -1,5 +1,7 @@
 'use server'
 
+import { after } from 'next/server'
+import { avisarDuasEtapas, avisarSenhaAlterada } from './avisos-por-email'
 import { PREFIXO_DO_AVATAR, SEMENTES_DA_GALERIA } from '@/lib/retrato'
 import { headers } from 'next/headers'
 import { revalidatePath } from 'next/cache'
@@ -120,6 +122,7 @@ export async function acaoTrocarSenha(
       body: { currentPassword: atual, newPassword: nova, revokeOtherSessions: true },
       headers: await headers(),
     })
+    after(() => avisarSenhaAlterada({ email: sessao.usuario.email, nome: sessao.usuario.nome }))
     return { ok: true }
   } catch (erro) {
     if (ehSenhaVazada(erro)) return { ok: false, erro: SENHA_VAZADA }
@@ -174,6 +177,7 @@ export async function acaoConfirmarDuasEtapas(codigo: string): Promise<{ ok: tru
     return { ok: false, erro: 'código não confere; confira se o relógio do celular está certo' }
   }
   await registrar({ acao: 'ligou_duas_etapas', autorId: sessao.usuario.id, autorEmail: sessao.usuario.email, alvoTipo: 'usuario', alvoId: sessao.usuario.id })
+  after(() => avisarDuasEtapas({ email: sessao.usuario.email, nome: sessao.usuario.nome }, true))
   return { ok: true }
 }
 
@@ -191,5 +195,6 @@ export async function acaoDesligarDuasEtapas(senha: string): Promise<{ ok: true 
     return { ok: false, erro: 'não foi possível desligar agora, tente de novo' }
   }
   await registrar({ acao: 'desligou_duas_etapas', autorId: sessao.usuario.id, autorEmail: sessao.usuario.email, alvoTipo: 'usuario', alvoId: sessao.usuario.id })
+  after(() => avisarDuasEtapas({ email: sessao.usuario.email, nome: sessao.usuario.nome }, false))
   return { ok: true }
 }
