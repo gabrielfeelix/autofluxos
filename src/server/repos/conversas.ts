@@ -297,15 +297,23 @@ export async function acharOuCriarContato(
    * devolvido = já existia. É atômico, então duas mensagens simultâneas da
    * mesma pessoa não podem **ambas** dizer que criaram, que é exatamente o
    * caso em que dois cartões apareceriam no quadro.
+   *
+   * Vira `ON CONFLICT DO NOTHING`: o contato que já existe não gera erro no
+   * Postgres. Um `insert` puro respondia `23505` em toda mensagem de quem já
+   * falou, centenas de ERROR por dia no log escondendo os erros de verdade.
    */
   const { data: inserido, error: erroAoInserir } = await db()
     .from('contacts')
-    .insert({ client_id: clienteId, wa_id: waId, ...extras })
+    .upsert(
+      { client_id: clienteId, wa_id: waId, ...extras },
+      { onConflict: 'client_id,wa_id', ignoreDuplicates: true },
+    )
     .select(COLUNAS_DO_CONTATO)
     .maybeSingle()
 
-  // `23505` é o caminho normal: o contato já existia. Qualquer outro erro é
-  // erro de verdade e não pode virar "então crio de novo".
+  // `23505` ainda pode vir de outro índice único (o do BSUID, por exemplo) e
+  // segue o caminho de "já existia". Qualquer outro erro é erro de verdade e
+  // não pode virar "então crio de novo".
   if (erroAoInserir && erroAoInserir.code !== '23505') {
     throw new Error(`não foi possível registrar o contato: ${erroAoInserir.message}`)
   }
