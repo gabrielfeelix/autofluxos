@@ -125,7 +125,7 @@ export async function acaoSubirMascote(formData: FormData): Promise<Resultado<{ 
   const caminho = `chat-do-site/${clienteId}/${Date.now()}.${aceito.extensao}`
   const { error } = await db()
     .storage.from(BUCKET_DO_ACERVO)
-    .upload(caminho, bytes, { contentType, upsert: false })
+    .upload(caminho, bytes, { contentType, upsert: false, cacheControl: '31536000' })
   if (error) {
     console.error('[site] não foi possível subir a animação:', error.message)
     return { ok: false, erro: 'não foi possível guardar o arquivo agora, tente de novo' }

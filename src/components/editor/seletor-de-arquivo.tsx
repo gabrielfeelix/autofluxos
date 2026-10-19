@@ -134,7 +134,7 @@ export function SeletorDeArquivo({
 
         const resposta = await fetch(preparo.envio.url, {
           method: 'PUT',
-          headers: { 'content-type': arquivo.type },
+          headers: { 'content-type': arquivo.type, 'cache-control': preparo.envio.cacheControl },
           body: arquivo,
         })
 

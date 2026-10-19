@@ -168,7 +168,7 @@ export function BotaoDeMicrofone({
       const subida = await fetch(preparo.envio.url, {
         method: 'PUT',
         body: audio,
-        headers: { 'content-type': mime },
+        headers: { 'content-type': mime, 'cache-control': preparo.envio.cacheControl },
       })
 
       if (!subida.ok) {

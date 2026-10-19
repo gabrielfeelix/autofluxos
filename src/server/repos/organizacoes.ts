@@ -10,11 +10,6 @@ import { chaveDoMes } from './plano'
  * Uma consulta só junta o que a tabela mostra (pessoas, automações no ar, quem
  * espera, conversas do mês): a tela de Organizações é a que mais se abre na
  * administração, e cinco idas ao banco por abertura somariam na hora errada.
- *
- * `suspensa_em` é lido por `to_jsonb(c) ->> 'suspensa_em'`, e não pelo nome da
- * coluna, **de propósito**: a coluna nasce numa migration nova (A6), e até ela
- * ser aplicada em produção a leitura precisa devolver nulo em vez de derrubar
- * a tela com "column does not exist".
  */
 
 export type OrganizacaoListada = {
@@ -47,7 +42,7 @@ export async function listarOrganizacoes(opcoes: { id?: string } = {}): Promise<
             coalesce(c.logo_url, '') as logo_url,
             coalesce(c.plano, '') as plano,
             c.criado_em,
-            to_jsonb(c) ->> 'suspensa_em' as suspensa_em,
+            c.suspensa_em,
             (select count(*)::int from public.af_membros m where m."organizationId" = c.id) as pessoas,
             (select count(*)::int
                from public.flows f
@@ -108,9 +103,6 @@ export type PessoaDaOrganizacao = {
 
 /**
  * Quem tem acesso a esta organização, com o último acesso de cada um.
- *
- * `funcao_id` vem por `to_jsonb(m)` pelo mesmo motivo de `suspensa_em`: a
- * coluna chega com a migration das funções (A7) e a tela não pode cair antes.
  */
 export async function pessoasDaOrganizacao(id: string): Promise<PessoaDaOrganizacao[]> {
   const { rows } = await bancoDoLogin().query(
@@ -119,7 +111,7 @@ export async function pessoasDaOrganizacao(id: string): Promise<PessoaDaOrganiza
             u.email,
             u.image as imagem,
             m."role" as papel,
-            to_jsonb(m) ->> 'funcao_id' as funcao_id,
+            m.funcao_id as funcao_id,
             coalesce(u."banned", false) as banido,
             m."createdAt" as desde,
             (select max(s."createdAt") from public.af_sessoes s where s."userId" = u.id) as ultimo
@@ -187,11 +179,15 @@ export async function definirSuspensao(id: string, suspensa: boolean): Promise<{
   }
 }
 
-/** Esta organização está suspensa? Falha aberta: sem a coluna, ninguém está. */
+/**
+ * Esta organização está suspensa? Roda em toda requisição autenticada, então
+ * lê só a coluna: montar a linha inteira com `to_jsonb(c)` custava ~0,8 ms a
+ * cada vez. Falha aberta: erro de banco não tranca ninguém para fora.
+ */
 export const organizacaoSuspensa = cache(async (id: string): Promise<boolean> => {
   try {
     const { rows } = await bancoDoLogin().query(
-      `select to_jsonb(c) ->> 'suspensa_em' as suspensa_em from public.clients c where c.id = $1`,
+      `select c.suspensa_em from public.clients c where c.id = $1`,
       [id],
     )
     return !!rows[0]?.suspensa_em

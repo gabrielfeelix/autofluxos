@@ -11,6 +11,14 @@ import { db } from '../db'
  */
 export const BUCKET_DO_ACERVO = 'autofluxos-acervo'
 
+/**
+ * Cache de um ano, imutável. Pode porque o conteúdo de um endereço do acervo
+ * nunca muda: o nome ganha sufixo aleatório e o envio é sem `upsert`. Sem
+ * isto o Storage gravava `no-cache` ou `max-age=60`, e cada abertura baixava o
+ * arquivo de novo do Supabase, gastando a cota de banda que estourou em 17/out.
+ */
+export const CACHE_DO_ACERVO = 'public, max-age=31536000, immutable'
+
 export type ArquivoDoAcervo = {
   /** Caminho dentro do bucket: `<clienteId>/<nome>`. É a chave para apagar. */
   caminho: string
@@ -113,6 +121,8 @@ export type EnvioAssinado = {
   url: string
   /** O endereço público que o fluxo vai guardar depois que o envio terminar. */
   urlPublica: string
+  /** Vai no cabeçalho `cache-control` do envio: o Storage grava e serve assim. */
+  cacheControl: string
   caminho: string
   nome: string
   midia: TipoDeMidia
@@ -173,6 +183,7 @@ export async function pedirEnvioAssinado(
     envio: {
       url: data.signedUrl,
       urlPublica: publico.publicUrl,
+      cacheControl: CACHE_DO_ACERVO,
       caminho,
       nome,
       midia: aceito.midia,
@@ -201,7 +212,7 @@ export async function guardarNoAcervo(
 
   const { error } = await db()
     .storage.from(BUCKET_DO_ACERVO)
-    .upload(caminho, arquivo, { contentType: arquivo.type, upsert: false })
+    .upload(caminho, arquivo, { contentType: arquivo.type, upsert: false, cacheControl: '31536000' })
 
   if (error) throw new Error(error.message)
 

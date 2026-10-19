@@ -64,10 +64,10 @@ export const funcoesVigentes = cache(async (): Promise<FuncoesVigentes> => {
   }
 })
 
-/** A função gravada de cada pessoa da organização (vazio sem a coluna). */
+/** A função gravada de cada pessoa da organização. */
 export const funcoesGravadas = cache(async (clienteId: string): Promise<Map<string, IdDaFuncao>> => {
   const { rows } = await bancoDoLogin().query(
-    `select m."userId" as usuario, to_jsonb(m) ->> 'funcao_id' as funcao
+    `select m."userId" as usuario, m.funcao_id as funcao
        from public.af_membros m
       where m."organizationId" = $1`,
     [clienteId],

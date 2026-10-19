@@ -452,8 +452,8 @@ export async function tamanhoDaEquipe(clienteId: string): Promise<number> {
 export async function composicaoDaEquipe(clienteId: string): Promise<{ atendentes: number; leitores: number }> {
   try {
     const { rows } = await bancoDoLogin().query(
-      `select count(*) filter (where coalesce(to_jsonb(m) ->> 'funcao_id', '') <> 'leitor')::int as atendentes,
-              count(*) filter (where to_jsonb(m) ->> 'funcao_id' = 'leitor')::int as leitores
+      `select count(*) filter (where coalesce(m.funcao_id, '') <> 'leitor')::int as atendentes,
+              count(*) filter (where m.funcao_id = 'leitor')::int as leitores
          from public.af_membros m
         where m."organizationId" = $1`,
       [clienteId],

@@ -48,7 +48,7 @@ export async function usuariosDaPlataforma(): Promise<UsuarioDaPlataforma[]> {
                           'id', c.id,
                           'nome', c.nome,
                           'papel', m."role",
-                          'funcao_id', to_jsonb(m) ->> 'funcao_id',
+                          'funcao_id', m.funcao_id,
                           'excecoes', (select json_object_agg(mc.capacidade, mc.escopo)
                                          from public.membro_capacidades mc
                                         where mc.client_id = c.id and mc.usuario_id = u.id)

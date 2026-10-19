@@ -315,7 +315,7 @@ export function ProvedorDeEntrega({
           const subida = await fetch(preparo.envio.url, {
             method: 'PUT',
             body: arquivo,
-            headers: { 'content-type': arquivo.type },
+            headers: { 'content-type': arquivo.type, 'cache-control': preparo.envio.cacheControl },
           })
           if (!subida.ok) {
             falhou(anexo, 'o arquivo não subiu')
