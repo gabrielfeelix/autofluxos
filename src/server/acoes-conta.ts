@@ -1,7 +1,7 @@
 'use server'
 
 import { after } from 'next/server'
-import { avisarBoasVindas } from './avisos-por-email'
+import { avisarBoasVindas, avisarOrganizacaoApagada, gestoresDaConta } from './avisos-por-email'
 import { cadastrarSemTrocarDeSessao } from './cadastro-por-outra-pessoa'
 import { revalidatePath } from 'next/cache'
 import { headers } from 'next/headers'
@@ -886,8 +886,11 @@ export async function acaoApagarConta(contaId: string): Promise<{ ok: boolean; e
     impersonadoPor: sessao.impersonadoPor,
   })
 
+  // Quem recebe a confirmação é lido antes: apagada a organização, os membros somem.
+  const gestores = await gestoresDaConta(contaId)
   const apagou = await apagarCliente(contaId)
   if (!apagou) return { ok: false, erro: 'esta conta não existe mais' }
+  after(() => avisarOrganizacaoApagada(gestores, cliente.nome))
 
   revalidatePath('/admin/organizacoes')
   revalidatePath('/admin/usuarios')

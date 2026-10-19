@@ -26,6 +26,7 @@ vi.mock('undici', () => ({ request: vi.fn(), Agent: class {} }))
 vi.mock('./efeitos/http', () => ({ agenteFixadoEm: () => ({ close: async () => undefined }) }))
 vi.mock('./efeitos/rede', () => ({ conferirEndereco: vi.fn() }))
 vi.mock('./cofre', () => ({ lerDoCofre: vi.fn() }))
+vi.mock('./avisos-por-email', () => ({ avisarWebhookPausado: vi.fn().mockResolvedValue(undefined) }))
 vi.mock('./api/contatos', () => ({ lerContatoDaApi: vi.fn() }))
 vi.mock('./repos/webhooks-de-saida', () => ({
   assinantesDoEvento: vi.fn(),

@@ -385,3 +385,17 @@ um dia por consulta) e no `pg_stat_statements` (zerado em 11/ago).
   `meta:<mês>:<telefone>:<nível>` em `avisos_de_plano`. Antes só a tela mostrava.
 - Envio confirmado na Brevo desde 05/out (domínio autenticado); antes disso a
   redefinição de 01/out foi recusada ("sender is not valid").
+- **Rodada 2, mesmo dia: o que dá errado também avisa** (modelos #25 a #34).
+  WhatsApp desconectado (`ACCOUNT_OFFBOARDED`), modelo da Meta aprovado,
+  recusado, pausado ou desativado (só quando o status muda de fato), webhook
+  pausado após 20 falhas, Instagram vencido (uma vez por vencimento),
+  transmissão interrompida. E o que a 4YU faz: função alterada, organização
+  suspensa ou reativada, organização apagada e conta excluída (comprovante; a
+  lista de quem recebe é lida antes de apagar), teste grátis no início, 3 dias
+  antes, na véspera e no dia seguinte ao fim (só até 2 dias depois, para não
+  avisar teste antigo).
+- **Não há cancelamento pelo painel**: excluir conta é por e-mail
+  (`/exclusao-de-dados`). Botão próprio é decisão do Gabriel, não foi feito.
+- **Alerta `braces` (GHSA-vfj7-8cjw-p6xm) aceito**: sem versão corrigida, só
+  no `eslint-config-next` (desenvolvimento). `brace-expansion` corrigido em
+  `c6b607ad`.

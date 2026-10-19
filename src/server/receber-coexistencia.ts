@@ -1,4 +1,5 @@
 import 'server-only'
+import { avisarWhatsappDesconectado } from './avisos-por-email'
 import { z } from 'zod'
 import { digitos } from '@/core/contatos/telefone'
 import { alertar } from './alertar'
@@ -785,6 +786,7 @@ export async function tratarAtualizacaoDaConta(payload: unknown): Promise<void> 
 
       try {
         await marcarDesembarque(canal.id, evento === 'ACCOUNT_OFFBOARDED')
+        if (evento === 'ACCOUNT_OFFBOARDED') await avisarWhatsappDesconectado(canal.clienteId, canal.displayPhoneNumber)
       } catch (erro) {
         await alertar('não foi possível marcar o desembarque do número', erro, {
           cliente: canal.clienteId,

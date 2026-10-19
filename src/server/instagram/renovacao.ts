@@ -1,4 +1,6 @@
 import 'server-only'
+import { avisarInstagramVencido } from '../avisos-por-email'
+import { marcarAviso } from '../repos/avisos-de-plano'
 import { alertar } from '../alertar'
 import {
   canaisDoInstagramQueVencemAte,
@@ -58,6 +60,8 @@ export type MundoDaRenovacao = {
   renovar: (token: string) => Promise<{ token: string; expiraEm: Date }>
   guardar: (canal: CanalSalvo, novo: { token: string; expiraEm: Date }) => Promise<void>
   avisar: (mensagem: string, erro?: unknown) => Promise<void>
+  /** O e-mail para quem administra, uma vez por vencimento. Fora dos testes. */
+  avisarDono?: (canal: CanalSalvo) => Promise<void>
 }
 
 const MUNDO: MundoDaRenovacao = {
@@ -66,6 +70,10 @@ const MUNDO: MundoDaRenovacao = {
   renovar: renovarToken,
   guardar: trocarTokenDoCanal,
   avisar: alertar,
+  avisarDono: async (canal) => {
+    if (!(await marcarAviso(canal.clienteId, `instagram:${canal.id}:${canal.tokenExpiraEm ?? 'vencido'}`))) return
+    await avisarInstagramVencido(canal.clienteId, canal.igUsername ? `@${canal.igUsername}` : 'conectado')
+  },
 }
 
 export function limiteDaRenovacao(agora: Date, dias: number = DIAS_DE_FOLGA): Date {
@@ -96,6 +104,7 @@ export async function renovarTokensDoInstagram(
       await mundo.avisar(
         `o token do Instagram de ${canal.igUsername ?? canal.igUserId ?? canal.clienteId} venceu; só reconectando a conta`,
       )
+      await mundo.avisarDono?.(canal).catch((erro) => console.error('[instagram] o e-mail do vencimento não saiu', erro))
       continue
     }
 

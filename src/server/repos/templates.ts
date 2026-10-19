@@ -229,6 +229,17 @@ export type AtualizacaoDeStatus = {
  * Manager e que nunca passaram por aqui. Estourar nesse caso encheria o alerta
  * de ruído por um evento que é normal.
  */
+/** Quem tem este modelo da Meta, e em que status está, antes de mudar. */
+export async function templatesDoWabaId(wabaTemplateId: string): Promise<{ clienteId: string; nome: string; status: StatusDoTemplate }[]> {
+  const { data, error } = await db().from('templates').select('cliente_id, nome, status').eq('waba_template_id', wabaTemplateId)
+  if (error) throw error
+  return ((data ?? []) as { cliente_id: string; nome: string; status: StatusDoTemplate }[]).map((linha) => ({
+    clienteId: linha.cliente_id,
+    nome: linha.nome,
+    status: linha.status,
+  }))
+}
+
 export async function atualizarStatusPorWabaId(
   wabaTemplateId: string,
   dados: AtualizacaoDeStatus,

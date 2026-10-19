@@ -211,3 +211,110 @@ export function avisarTransmissaoConcluida(transmissao: {
     })
   })
 }
+
+// ---------------------------------------------------------------------------
+// O que a 4YU ou a administração fez com a conta
+// ---------------------------------------------------------------------------
+
+export function avisarFuncaoAlterada(dados: { pessoa: Destinatario; clienteId: string; de: IdDaFuncao | null; para: IdDaFuncao }) {
+  if (dados.de === dados.para) return Promise.resolve()
+  return semFalhar('função alterada', async () =>
+    enviarModelo(dados.pessoa, 'funcaoAlterada', {
+      nome: dados.pessoa.nome ?? '',
+      organizacao: await nomeDaOrganizacao(dados.clienteId),
+      de: dados.de ? ROTULO_DA_FUNCAO[dados.de] : null,
+      para: ROTULO_DA_FUNCAO[dados.para],
+      link: linkDoPainel(`/clientes/${dados.clienteId}`),
+    }),
+  )
+}
+
+export function avisarSuspensao(clienteId: string, suspensa: boolean) {
+  return semFalhar('suspensão', async () =>
+    enviarModelo(await gestoresDaConta(clienteId), 'organizacaoSuspensa', {
+      organizacao: await nomeDaOrganizacao(clienteId),
+      suspensa,
+      link: linkDoPainel(`/clientes/${clienteId}`),
+    }),
+  )
+}
+
+/** Quem recebe é lido **antes** de apagar: depois, a lista de membros some junto. */
+export function avisarOrganizacaoApagada(gestores: Destinatario[], organizacao: string) {
+  return semFalhar('organização apagada', () => enviarModelo(gestores, 'organizacaoApagada', { organizacao, quando: quando() }))
+}
+
+export function avisarContaExcluida(pessoa: Destinatario) {
+  return semFalhar('conta excluída', () => enviarModelo(pessoa, 'contaExcluida', { nome: pessoa.nome ?? '', quando: quando() }))
+}
+
+export function avisarTesteGratis(clienteId: string, dados: { plano: string; ate: string; momento: 'comecou' | 'faltam3' | 'faltam1' | 'acabou' }) {
+  return semFalhar('teste grátis', async () =>
+    enviarModelo(await gestoresDaConta(clienteId), 'testeGratis', {
+      organizacao: await nomeDaOrganizacao(clienteId),
+      ...dados,
+      link: dados.momento === 'comecou' ? linkDoPainel(`/clientes/${clienteId}`) : linkDoPlano(clienteId),
+    }),
+  )
+}
+
+// ---------------------------------------------------------------------------
+// Algo deu errado
+// ---------------------------------------------------------------------------
+
+export function avisarWhatsappDesconectado(clienteId: string, numero: string | null) {
+  return semFalhar('WhatsApp desconectado', async () =>
+    enviarModelo(await gestoresDaConta(clienteId), 'whatsappDesconectado', {
+      organizacao: await nomeDaOrganizacao(clienteId),
+      numero: numero ?? 'oficial',
+      link: linkDoPainel(`/clientes/${clienteId}/conversas/canais/whatsapp`),
+    }),
+  )
+}
+
+export function avisarModeloDoWhatsapp(clienteId: string, dados: { modelo: string; situacao: 'aprovado' | 'recusado' | 'pausado' | 'desativado'; motivo: string | null }) {
+  return semFalhar('modelo do WhatsApp', async () =>
+    enviarModelo(await gestoresDaConta(clienteId), 'modeloDoWhatsapp', {
+      organizacao: await nomeDaOrganizacao(clienteId),
+      modelo: dados.modelo,
+      situacao: dados.situacao,
+      motivo: dados.motivo ?? '',
+      link: linkDoPainel(`/clientes/${clienteId}/transmissoes`),
+    }),
+  )
+}
+
+export function avisarInstagramVencido(clienteId: string, perfil: string) {
+  return semFalhar('Instagram vencido', async () =>
+    enviarModelo(await gestoresDaConta(clienteId), 'instagramVencido', {
+      organizacao: await nomeDaOrganizacao(clienteId),
+      perfil,
+      link: linkDoPainel(`/clientes/${clienteId}/conversas/canais/instagram`),
+    }),
+  )
+}
+
+export function avisarWebhookPausado(clienteId: string, endereco: string, falhas: number) {
+  return semFalhar('webhook pausado', async () =>
+    enviarModelo(await gestoresDaConta(clienteId), 'webhookPausado', {
+      organizacao: await nomeDaOrganizacao(clienteId),
+      endereco,
+      falhas,
+      link: linkDoPainel(`/clientes/${clienteId}/ajustes/api`),
+    }),
+  )
+}
+
+export function avisarTransmissaoInterrompida(transmissao: { id: string; clienteId: string; nome: string; criadaPor: string | null }, motivo: string) {
+  return semFalhar('transmissão interrompida', async () => {
+    if (!transmissao.criadaPor) return
+    const autor = (await membrosDaConta(transmissao.clienteId)).find((membro) => membro.id === transmissao.criadaPor)
+    if (!autor) return
+    await enviarModelo({ email: autor.email, nome: autor.nome }, 'transmissaoFalhou', {
+      nome: autor.nome,
+      transmissao: transmissao.nome,
+      motivo: motivo.charAt(0).toUpperCase() + motivo.slice(1),
+      link: linkDoPainel(`/clientes/${transmissao.clienteId}/transmissoes/${transmissao.id}`),
+    })
+  })
+}

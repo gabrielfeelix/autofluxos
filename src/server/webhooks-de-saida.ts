@@ -1,4 +1,5 @@
 import 'server-only'
+import { avisarWebhookPausado } from './avisos-por-email'
 import { createHmac, randomUUID } from 'node:crypto'
 import { after } from 'next/server'
 import { request } from 'undici'
@@ -177,7 +178,8 @@ async function enviarUma(entrega: EntregaParaEnviar): Promise<boolean> {
   })
   // O teste não conta para a pausa: é alguém configurando, não o destino caindo.
   if (entrega.evento !== 'webhook.teste') {
-    await somarFalha(entrega.webhookId, destino.falhasSeguidas, FALHAS_ATE_PAUSAR)
+    const pausou = await somarFalha(entrega.webhookId, destino.falhasSeguidas, FALHAS_ATE_PAUSAR)
+    if (pausou) await avisarWebhookPausado(entrega.clienteId, destino.url, FALHAS_ATE_PAUSAR)
   }
   return false
 }

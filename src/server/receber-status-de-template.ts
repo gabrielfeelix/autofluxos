@@ -3,7 +3,8 @@ import { z } from 'zod'
 import { condutaPara, statusDaMeta } from '@/core/templates'
 import { aplicarStatusPorWamid, type EstadoDoDestinatario } from './repos/transmissoes'
 import { avancarSituacaoDaMensagem, type SituacaoDaMensagem } from './repos/conversas'
-import { atualizarCategoriaPorWabaId, atualizarStatusPorWabaId } from './repos/templates'
+import { atualizarCategoriaPorWabaId, atualizarStatusPorWabaId, templatesDoWabaId } from './repos/templates'
+import { avisarModeloDoWhatsapp } from './avisos-por-email'
 
 /**
  * Os dois webhooks que contam a verdade sobre um template.
@@ -163,13 +164,23 @@ export async function receberStatusDeTemplate(payload: unknown): Promise<Resulta
       // transmissão saindo com modelo que não passou.
       if (status === 'desconhecido') continue
 
+      // O status de antes decide o e-mail: a Meta reenvia o mesmo evento, e
+      // aviso repetido de "aprovado" é ruído. Falhar a leitura não segura o status.
+      const antes = await templatesDoWabaId(String(wabaTemplateId)).catch(() => [])
+      const motivoRecusa = status === 'recusado' ? motivoLegivel(valor.data) : null
       const achou = await atualizarStatusPorWabaId(String(wabaTemplateId), {
         status,
         // Só limpa o motivo quando o template saiu da recusa: manter o texto
         // velho ao lado de "aprovado" confundiria mais do que ajuda.
-        motivoRecusa: status === 'recusado' ? motivoLegivel(valor.data) : null,
+        motivoRecusa,
       })
       if (achou) atualizados += 1
+      if (status === 'aprovado' || status === 'recusado' || status === 'pausado' || status === 'desativado') {
+        for (const modelo of antes) {
+          if (modelo.status === status) continue
+          await avisarModeloDoWhatsapp(modelo.clienteId, { modelo: modelo.nome, situacao: status, motivo: motivoRecusa })
+        }
+      }
     }
   }
 

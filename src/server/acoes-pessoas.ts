@@ -1,7 +1,7 @@
 'use server'
 
+import { avisarAcessoLiberado, avisarFuncaoAlterada } from './avisos-por-email'
 import { after } from 'next/server'
-import { avisarAcessoLiberado } from './avisos-por-email'
 import { cadastrarSemTrocarDeSessao } from './cadastro-por-outra-pessoa'
 import { conferirTrocaDeFuncao, ehFuncao, PAPEL_DA_FUNCAO, podeAtribuirFuncao, podeGerenciarPessoas } from '@/core/funcoes'
 import { autenticacao } from './auth'
@@ -53,6 +53,8 @@ export async function acaoTrocarFuncao(clienteId: string, usuarioId: string, fun
     detalhes: { funcao, de: r.alvo.funcao },
     impersonadoPor: sessao.impersonadoPor,
   })
+  const pessoa = await acharUsuario(usuarioId)
+  if (pessoa) after(() => avisarFuncaoAlterada({ pessoa: { email: pessoa.email, nome: pessoa.nome }, clienteId, de: r.alvo.funcao, para: funcao }))
   return { ok: true }
 }
 

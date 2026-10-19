@@ -21,7 +21,10 @@ vi.mock('./repos/templates', () => ({ lerTemplate: (...a: unknown[]) => lerTempl
 vi.mock('./repos/conversas', () => ({ listarCanais: vi.fn().mockResolvedValue([]) }))
 vi.mock('./adaptador-do-canal', () => ({ adaptadorDoCanal: vi.fn() }))
 vi.mock('./alertar', () => ({ alertar: vi.fn().mockResolvedValue(undefined) }))
-vi.mock('./avisos-por-email', () => ({ avisarTransmissaoConcluida: vi.fn().mockResolvedValue(undefined) }))
+vi.mock('./avisos-por-email', () => ({
+  avisarTransmissaoConcluida: vi.fn().mockResolvedValue(undefined),
+  avisarTransmissaoInterrompida: vi.fn().mockResolvedValue(undefined),
+}))
 
 /*
  * A revalidação do envio (RB-39) fala com o banco, e esta suíte é unitária de

@@ -14,7 +14,7 @@
  * Cada texto de exemplo vira `{{params.campo}}`, a sintaxe da Brevo, para a
  * cópia funcionar com parâmetros. Número e sim/não ficam com o valor de
  * exemplo: decidem o desenho (a barra do medidor, o texto de "estourou"), e
- * não dá para trocá-los depois de montado.
+ * não dá para trocá-los depois de montado. O mesmo vale para `VARIANTES`.
  *
  * Rodar duas vezes dá o mesmo resultado: o modelo é achado pelo nome.
  */
@@ -44,9 +44,12 @@ async function brevo(caminho: string, init: RequestInit = {}) {
   return corpo ? JSON.parse(corpo) : null
 }
 
+/** Campos que escolhem a variante do e-mail: ficam com o exemplo, como número e sim/não. */
+const VARIANTES = new Set(['momento', 'situacao'])
+
 function comParametros<P extends Record<string, unknown>>(exemplo: P): P {
   return Object.fromEntries(
-    Object.entries(exemplo).map(([campo, valor]) => [campo, typeof valor === 'string' ? `{{params.${campo}}}` : valor]),
+    Object.entries(exemplo).map(([campo, valor]) => [campo, typeof valor === 'string' && !VARIANTES.has(campo) ? `{{params.${campo}}}` : valor]),
   ) as P
 }
 

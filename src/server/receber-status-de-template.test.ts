@@ -13,7 +13,9 @@ const aplicarStatusPorWamid = vi.fn().mockResolvedValue(true)
 vi.mock('./repos/templates', () => ({
   atualizarStatusPorWabaId: (...args: unknown[]) => atualizarStatusPorWabaId(...args),
   atualizarCategoriaPorWabaId: (...args: unknown[]) => atualizarCategoriaPorWabaId(...args),
+  templatesDoWabaId: () => Promise.resolve([]),
 }))
+vi.mock('./avisos-por-email', () => ({ avisarModeloDoWhatsapp: () => Promise.resolve() }))
 vi.mock('./repos/transmissoes', () => ({
   aplicarStatusPorWamid: (...args: unknown[]) => aplicarStatusPorWamid(...args),
 }))

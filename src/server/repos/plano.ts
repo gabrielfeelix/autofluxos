@@ -124,6 +124,13 @@ export async function contratoDaConta(clienteId: string): Promise<ContratoDaCont
   return paraContrato((error ? null : data) as LinhaDoContrato | null)
 }
 
+/** As organizações com teste grátis marcado, para os lembretes da passada diária. */
+export async function testesDeTodas(): Promise<Map<string, string>> {
+  const { data, error } = await db().from('clients').select('id, teste_ate').not('teste_ate', 'is', null)
+  if (error) return new Map()
+  return new Map(((data ?? []) as { id: string; teste_ate: string }[]).map((linha) => [linha.id, linha.teste_ate]))
+}
+
 /** Os contratos de todas as organizações, para a passada diária. */
 export async function contratosDeTodas(): Promise<(ContratoDaConta & { clienteId: string; nome: string })[]> {
   const { data, error } = await db().from('clients').select(`id, nome, ${COLUNAS_DO_CONTRATO}`)

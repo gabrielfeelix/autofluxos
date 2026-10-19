@@ -1,5 +1,5 @@
 import 'server-only'
-import { avisarTransmissaoConcluida } from './avisos-por-email'
+import { avisarTransmissaoConcluida, avisarTransmissaoInterrompida } from './avisos-por-email'
 import { ehVisitanteDoSite } from '@/core/contatos/visitante-do-site'
 import type { Canal, ValoresDoTemplate } from '@/channels/types'
 import {
@@ -362,6 +362,7 @@ async function canalDoCliente(clienteId: string): Promise<Canal | null> {
 
 async function pararTransmissao(transmissao: Transmissao, motivo: string): Promise<void> {
   await mudarEstadoDaTransmissao(transmissao.id, 'falhou', { erro: motivo })
+  await avisarTransmissaoInterrompida(transmissao, motivo)
 }
 
 /** Só conclui quando a fila esvaziou de verdade. */

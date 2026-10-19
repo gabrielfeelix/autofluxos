@@ -20,7 +20,7 @@ import type { Bloco, Email } from './layout'
 type Modelo<P> = {
   /** Como aparece na Brevo, antes do sufixo de cópia. */
   nome: string
-  grupo: 'Conta' | 'Segurança' | 'Equipe' | 'Plano' | 'WhatsApp' | 'Transmissões' | 'Interno'
+  grupo: 'Conta' | 'Segurança' | 'Equipe' | 'Plano' | 'Teste grátis' | 'WhatsApp' | 'Instagram' | 'Integrações' | 'Transmissões' | 'Interno'
   montar: (p: P) => Email
   /** Dados de exemplo: a prévia local e a cópia da Brevo saem deles. */
   exemplo: P
@@ -653,6 +653,298 @@ export const MODELOS = {
       entregues: 401,
       lidas: 288,
       falhas: 6,
+      link: 'https://autofluxos.4yu.com.br/clientes/exemplo/transmissoes/exemplo',
+    },
+  }),
+  // -------------------------------------------------------------------------
+  // Organização e conta: o que a 4YU fez
+  // -------------------------------------------------------------------------
+
+  funcaoAlterada: definir<{ nome: string; organizacao: string; de: string | null; para: string; link: string }>({
+    nome: 'Função alterada',
+    grupo: 'Equipe',
+    montar: (p) => ({
+      assunto: `Sua função em ${p.organizacao} mudou para ${p.para}`,
+      previa: `${p.de ? `De ${p.de} para ${p.para}` : `Agora: ${p.para}`}. O que você vê no painel acompanha a mudança.`,
+      selo: { texto: 'Equipe', tom: 'marca' },
+      titulo: 'Sua função mudou',
+      blocos: [
+        { tipo: 'texto', texto: `${oi(p.nome)} Sua função na organização **${p.organizacao}** foi alterada por quem administra a conta.` },
+        {
+          tipo: 'fatos',
+          linhas: [...(p.de ? [{ rotulo: 'Antes', valor: p.de }] : []), { rotulo: 'Agora', valor: p.para }],
+        },
+        { tipo: 'texto', texto: 'O que você vê e pode fazer no painel já segue a função nova. Se a tela estiver aberta, recarregue a página.' },
+        { tipo: 'botao', rotulo: 'Abrir o AutoFluxos', link: p.link },
+      ],
+      motivo: 'Aviso enviado sempre que a sua função numa organização muda.',
+    }),
+    exemplo: { nome: 'Rodrigo Alves', organizacao: 'MGM Pilates', de: 'Atendente', para: 'Gestor', link: 'https://autofluxos.4yu.com.br/painel' },
+  }),
+
+  organizacaoSuspensa: definir<{ organizacao: string; suspensa: boolean; link: string }>({
+    nome: 'Organização suspensa ou reativada',
+    grupo: 'Conta',
+    montar: (p) =>
+      p.suspensa
+        ? {
+            assunto: `O acesso de ${p.organizacao} ao AutoFluxos foi suspenso`,
+            previa: 'O painel fica fechado até a situação ser resolvida com a 4YU.',
+            selo: { texto: 'Conta', tom: 'perigo' },
+            titulo: 'O acesso ao painel foi suspenso',
+            blocos: [
+              {
+                tipo: 'texto',
+                texto: `O acesso da equipe de **${p.organizacao}** ao painel do AutoFluxos foi suspenso pela 4YU. Ninguém da organização consegue entrar até a reativação.`,
+              },
+              { tipo: 'nota', tom: 'aviso', texto: 'Os fluxos e os canais **não foram desligados**: as conversas em andamento seguem sendo atendidas.' },
+              { tipo: 'texto', texto: 'Para entender o motivo e resolver, escreva para contato@4yu.com.br.' },
+            ],
+            motivo: MOTIVO_DE_GESTAO,
+          }
+        : {
+            assunto: `O acesso de ${p.organizacao} ao AutoFluxos foi reativado`,
+            previa: 'A equipe já pode entrar no painel normalmente.',
+            selo: { texto: 'Conta', tom: 'ok' },
+            titulo: 'O acesso ao painel voltou',
+            blocos: [
+              { tipo: 'texto', texto: `O acesso da equipe de **${p.organizacao}** ao painel do AutoFluxos foi reativado. Todos entram normalmente, com as mesmas funções de antes.` },
+              { tipo: 'botao', rotulo: 'Abrir o AutoFluxos', link: p.link },
+            ],
+            motivo: MOTIVO_DE_GESTAO,
+          },
+    exemplo: { organizacao: 'MGM Pilates', suspensa: true, link: 'https://autofluxos.4yu.com.br/painel' },
+  }),
+
+  organizacaoApagada: definir<{ organizacao: string; quando: string }>({
+    nome: 'Organização apagada',
+    grupo: 'Conta',
+    montar: (p) => ({
+      assunto: `A organização ${p.organizacao} foi apagada do AutoFluxos`,
+      previa: 'Confirmação da exclusão. Guarde este e-mail como comprovante.',
+      selo: { texto: 'Conta', tom: 'perigo' },
+      titulo: 'A organização foi apagada',
+      blocos: [
+        {
+          tipo: 'texto',
+          texto: `A organização **${p.organizacao}** foi apagada do AutoFluxos em **${p.quando}**, junto com os fluxos, contatos, conversas e arquivos dela.`,
+        },
+        { tipo: 'texto', texto: 'O seu login continua existindo se você participa de outras organizações. A exclusão não pode ser desfeita.' },
+        { tipo: 'nota', tom: 'perigo', texto: '**Não pediu esta exclusão?** Escreva agora para contato@4yu.com.br.' },
+      ],
+      motivo: 'Confirmação de exclusão enviada a quem administrava a organização. Guarde como comprovante.',
+    }),
+    exemplo: { organizacao: 'MGM Pilates', quando: '19 de outubro, às 14:32' },
+  }),
+
+  contaExcluida: definir<{ nome: string; quando: string }>({
+    nome: 'Conta de usuário excluída',
+    grupo: 'Conta',
+    montar: (p) => ({
+      assunto: 'Sua conta no AutoFluxos foi excluída',
+      previa: 'Confirmação da exclusão. Guarde este e-mail como comprovante.',
+      selo: { texto: 'Conta', tom: 'perigo' },
+      titulo: 'Sua conta foi excluída',
+      blocos: [
+        {
+          tipo: 'texto',
+          texto: `${oi(p.nome)} A sua conta de acesso ao AutoFluxos foi excluída em **${p.quando}**. Este e-mail não entra mais no painel, e as sessões abertas foram encerradas.`,
+        },
+        { tipo: 'texto', texto: 'As conversas que você atendeu continuam com a organização, que é a dona delas.' },
+        { tipo: 'nota', tom: 'perigo', texto: '**Não pediu esta exclusão?** Escreva agora para contato@4yu.com.br.' },
+      ],
+      motivo: 'Confirmação de exclusão de conta. Guarde como comprovante.',
+    }),
+    exemplo: { nome: 'Rodrigo Alves', quando: '19 de outubro, às 14:32' },
+  }),
+
+  // -------------------------------------------------------------------------
+  // Teste grátis
+  // -------------------------------------------------------------------------
+
+  testeGratis: definir<{ organizacao: string; plano: string; ate: string; momento: 'comecou' | 'faltam3' | 'faltam1' | 'acabou'; link: string }>({
+    nome: 'Teste grátis (início, 3 dias, 1 dia, fim)',
+    grupo: 'Teste grátis',
+    montar: (p) => {
+      const textos = {
+        comecou: {
+          assunto: `O teste grátis do plano ${p.plano} começou`,
+          previa: `Todos os recursos do ${p.plano} liberados até ${p.ate}.`,
+          titulo: `Teste do plano ${p.plano} liberado`,
+          tom: 'ok' as const,
+          texto: `**${p.organizacao}** está testando o plano **${p.plano}** sem custo até **${p.ate}**. Todos os recursos dele estão liberados desde agora.`,
+          depois: 'Aproveite para conectar o WhatsApp, publicar um fluxo e chamar a equipe. Antes do fim, você recebe um lembrete.',
+        },
+        faltam3: {
+          assunto: `Faltam 3 dias para o fim do teste do plano ${p.plano}`,
+          previa: `O teste acaba em ${p.ate}. Escolha o plano para não perder recursos.`,
+          titulo: 'O teste acaba em 3 dias',
+          tom: 'aviso' as const,
+          texto: `O teste grátis do plano **${p.plano}** de **${p.organizacao}** acaba em **${p.ate}**.`,
+          depois: 'Para seguir com tudo funcionando, escolha o plano antes dessa data. Sem escolha, Inbox, robôs e CRM continuam; IA, transcrição de áudio, transmissões, integrações e API param, com a configuração guardada. Nada é apagado.',
+        },
+        faltam1: {
+          assunto: `O teste do plano ${p.plano} acaba amanhã`,
+          previa: 'Último dia para escolher o plano sem interromper nenhum recurso.',
+          titulo: 'O teste acaba amanhã',
+          tom: 'aviso' as const,
+          texto: `Amanhã, **${p.ate}**, termina o teste grátis do plano **${p.plano}** de **${p.organizacao}**.`,
+          depois: 'Escolha o plano hoje para não interromper nada. Sem escolha, IA, transcrição de áudio, transmissões, integrações e API param amanhã, com a configuração guardada. Nada é apagado.',
+        },
+        acabou: {
+          assunto: `O teste do plano ${p.plano} terminou`,
+          previa: 'A organização voltou ao plano contratado. Nada foi apagado.',
+          titulo: 'O teste grátis terminou',
+          tom: 'marca' as const,
+          texto: `O teste grátis do plano **${p.plano}** de **${p.organizacao}** terminou em **${p.ate}**.`,
+          depois: 'Inbox, robôs e CRM continuam funcionando. IA, transcrição de áudio, transmissões, integrações e API pararam, com a configuração guardada. Escolhendo o plano, tudo volta na hora.',
+        },
+      }[p.momento]
+      return {
+        assunto: textos.assunto,
+        previa: textos.previa,
+        selo: { texto: 'Teste grátis', tom: textos.tom },
+        titulo: textos.titulo,
+        blocos: [
+          { tipo: 'texto', texto: textos.texto },
+          { tipo: 'texto', texto: textos.depois },
+          { tipo: 'botao', rotulo: p.momento === 'comecou' ? 'Abrir o AutoFluxos' : 'Escolher o plano', link: p.link },
+        ],
+        motivo: MOTIVO_DE_GESTAO,
+      }
+    },
+    exemplo: { organizacao: 'MGM Pilates', plano: 'Pro', ate: '2 de novembro', momento: 'faltam3', link: 'https://autofluxos.4yu.com.br/clientes/exemplo/ajustes/plano' },
+  }),
+
+  // -------------------------------------------------------------------------
+  // Algo deu errado
+  // -------------------------------------------------------------------------
+
+  whatsappDesconectado: definir<{ organizacao: string; numero: string; link: string }>({
+    nome: 'WhatsApp desconectado',
+    grupo: 'WhatsApp',
+    montar: (p) => ({
+      assunto: `O WhatsApp de ${p.organizacao} foi desconectado`,
+      previa: 'As mensagens do número pararam de chegar no AutoFluxos.',
+      selo: { texto: 'WhatsApp', tom: 'perigo' },
+      titulo: 'O WhatsApp foi desconectado',
+      blocos: [
+        {
+          tipo: 'texto',
+          texto: `A Meta avisou que o número **${p.numero}** de **${p.organizacao}** deixou de estar ligado ao AutoFluxos. Enquanto ele estiver desconectado, as mensagens não chegam no Inbox e os fluxos não respondem.`,
+        },
+        {
+          tipo: 'nota',
+          tom: 'perigo',
+          texto: 'Isso acontece quando alguém remove o acesso no Gerenciador do WhatsApp, troca o número de conta ou a Meta restringe a conta. Se ninguém fez isso de propósito, reconecte agora.',
+        },
+        { tipo: 'botao', rotulo: 'Reconectar o WhatsApp', link: p.link },
+      ],
+      motivo: MOTIVO_DE_GESTAO,
+    }),
+    exemplo: { organizacao: 'MGM Pilates', numero: '+55 44 99999-0000', link: 'https://autofluxos.4yu.com.br/clientes/exemplo/conversas/canais/whatsapp' },
+  }),
+
+  modeloDoWhatsapp: definir<{ organizacao: string; modelo: string; situacao: 'aprovado' | 'recusado' | 'pausado' | 'desativado'; motivo: string; link: string }>({
+    nome: 'Modelo de mensagem aprovado, recusado ou pausado',
+    grupo: 'WhatsApp',
+    montar: (p) => {
+      const t = {
+        aprovado: { assunto: `Modelo "${p.modelo}" aprovado pela Meta`, titulo: 'Modelo aprovado', tom: 'ok' as const, texto: `A Meta aprovou o modelo **${p.modelo}** de **${p.organizacao}**. Ele já pode ser usado em transmissões e para retomar conversas fora da janela de 24 horas.` },
+        recusado: { assunto: `Modelo "${p.modelo}" recusado pela Meta`, titulo: 'Modelo recusado', tom: 'perigo' as const, texto: `A Meta recusou o modelo **${p.modelo}** de **${p.organizacao}**. Ele não pode ser enviado até ser ajustado e aprovado.` },
+        pausado: { assunto: `Modelo "${p.modelo}" pausado pela Meta`, titulo: 'Modelo pausado', tom: 'aviso' as const, texto: `A Meta pausou o modelo **${p.modelo}** de **${p.organizacao}**, normalmente porque muitas pessoas bloquearam ou denunciaram a mensagem. Enquanto estiver pausado, ele não sai.` },
+        desativado: { assunto: `Modelo "${p.modelo}" desativado pela Meta`, titulo: 'Modelo desativado', tom: 'perigo' as const, texto: `A Meta desativou o modelo **${p.modelo}** de **${p.organizacao}** por baixa qualidade. Ele não pode mais ser enviado; crie um novo, com outro texto.` },
+      }[p.situacao]
+      return {
+        assunto: t.assunto,
+        previa: p.situacao === 'aprovado' ? 'Já pode ser usado em transmissões.' : 'Transmissões com este modelo não saem até resolver.',
+        selo: { texto: 'WhatsApp', tom: t.tom },
+        titulo: t.titulo,
+        blocos: [
+          { tipo: 'texto', texto: t.texto },
+          ...so(p.motivo, { tipo: 'nota', tom: 'perigo', texto: `**Motivo informado pela Meta:** ${p.motivo}` } as Bloco),
+          ...so(p.situacao !== 'aprovado', {
+            tipo: 'nota',
+            tom: 'aviso',
+            texto: 'Transmissões agendadas com este modelo não saem enquanto ele não estiver aprovado. Confira a lista de transmissões.',
+          } as Bloco),
+          { tipo: 'botao', rotulo: 'Ver as transmissões', link: p.link },
+        ],
+        motivo: MOTIVO_DE_GESTAO,
+      }
+    },
+    exemplo: {
+      organizacao: 'MGM Pilates',
+      modelo: 'lembrete_de_aula',
+      situacao: 'recusado',
+      motivo: 'O conteúdo parece promocional para a categoria Utilidade.',
+      link: 'https://autofluxos.4yu.com.br/clientes/exemplo/transmissoes',
+    },
+  }),
+
+  instagramVencido: definir<{ organizacao: string; perfil: string; link: string }>({
+    nome: 'Conexão do Instagram venceu',
+    grupo: 'Instagram',
+    montar: (p) => ({
+      assunto: `A conexão do Instagram ${p.perfil} venceu`,
+      previa: 'As mensagens do Direct pararam de chegar. Reconecte para voltar.',
+      selo: { texto: 'Instagram', tom: 'perigo' },
+      titulo: 'A conexão do Instagram venceu',
+      blocos: [
+        {
+          tipo: 'texto',
+          texto: `A autorização do perfil **${p.perfil}** de **${p.organizacao}** venceu e não pôde ser renovada. Até reconectar, as mensagens do Direct não chegam no Inbox.`,
+        },
+        { tipo: 'texto', texto: 'Reconectar leva um minuto: entre com a conta do Instagram e confirme as permissões.' },
+        { tipo: 'botao', rotulo: 'Reconectar o Instagram', link: p.link },
+      ],
+      motivo: MOTIVO_DE_GESTAO,
+    }),
+    exemplo: { organizacao: 'MGM Pilates', perfil: '@mgmpilates', link: 'https://autofluxos.4yu.com.br/clientes/exemplo/conversas/canais/instagram' },
+  }),
+
+  webhookPausado: definir<{ organizacao: string; endereco: string; falhas: number; link: string }>({
+    nome: 'Webhook pausado por falhas',
+    grupo: 'Integrações',
+    montar: (p) => ({
+      assunto: `Webhook de ${p.organizacao} pausado depois de ${p.falhas} falhas`,
+      previa: 'O sistema que recebe os eventos parou de responder.',
+      selo: { texto: 'Integrações', tom: 'perigo' },
+      titulo: 'Um webhook foi pausado',
+      blocos: [
+        {
+          tipo: 'texto',
+          texto: `O endereço que recebe os eventos do AutoFluxos falhou **${p.falhas} vezes seguidas**, e o envio foi pausado para não acumular erro. Os eventos novos não estão chegando lá.`,
+        },
+        { tipo: 'nota', tom: 'aviso', texto: `**Endereço:** ${p.endereco}` },
+        { tipo: 'texto', texto: 'Confira com quem cuida desse sistema se ele está no ar. Depois, religue o webhook na tela da API.' },
+        { tipo: 'botao', rotulo: 'Ver os webhooks', link: p.link },
+      ],
+      motivo: MOTIVO_DE_GESTAO,
+    }),
+    exemplo: { organizacao: 'MGM Pilates', endereco: 'https://sistema.exemplo.com.br/autofluxos', falhas: 20, link: 'https://autofluxos.4yu.com.br/clientes/exemplo/ajustes/api' },
+  }),
+
+  transmissaoFalhou: definir<{ nome: string; transmissao: string; motivo: string; link: string }>({
+    nome: 'Transmissão interrompida',
+    grupo: 'Transmissões',
+    montar: (p) => ({
+      assunto: `A transmissão "${p.transmissao}" foi interrompida`,
+      previa: 'Parte dos contatos pode não ter recebido. Veja o motivo.',
+      selo: { texto: 'Transmissão', tom: 'perigo' },
+      titulo: 'A transmissão parou no meio',
+      blocos: [
+        { tipo: 'texto', texto: `${oi(p.nome)} A transmissão **${p.transmissao}** foi interrompida antes de terminar. Os contatos que ainda estavam na fila não receberam a mensagem.` },
+        { tipo: 'nota', tom: 'perigo', texto: `**Motivo:** ${p.motivo}` },
+        { tipo: 'texto', texto: 'Na tela da transmissão está quem recebeu e quem ficou de fora, com o motivo de cada falha.' },
+        { tipo: 'botao', rotulo: 'Ver a transmissão', link: p.link },
+      ],
+      motivo: 'Você recebe este e-mail porque criou esta transmissão no AutoFluxos.',
+    }),
+    exemplo: {
+      nome: 'Daniel Moreira',
+      transmissao: 'Aulas experimentais de novembro',
+      motivo: 'O modelo de mensagem foi pausado pela Meta.',
       link: 'https://autofluxos.4yu.com.br/clientes/exemplo/transmissoes/exemplo',
     },
   }),

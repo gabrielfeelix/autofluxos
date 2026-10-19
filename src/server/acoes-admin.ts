@@ -19,7 +19,17 @@ import { definirFuncaoDoMembro } from './pessoas'
 import { agendarDescida, agendarPreco, cancelarDescida, congelarPreco, contratoDaConta, definirPlano, encerrarTeste, iniciarTeste, organizacoesNoPlano } from './repos/plano'
 import { criarPlano, excluirPlano, planosVigentes, salvarPlano, type EdicaoDePlano } from './repos/planos'
 import { DIAS_DE_AVISO_DO_PRECO, diaDeHoje, diaPorExtenso, proximaVirada, reais, somarDias } from '@/core/contrato-do-plano'
-import { avisarAcessoEncerrado, avisarAcessoLiberado, avisarPedidoRecusado, avisarPlanoAtivado, avisarTrocaAgendada } from './avisos-por-email'
+import {
+  avisarAcessoEncerrado,
+  avisarAcessoLiberado,
+  avisarContaExcluida,
+  avisarFuncaoAlterada,
+  avisarPedidoRecusado,
+  avisarPlanoAtivado,
+  avisarSuspensao,
+  avisarTesteGratis,
+  avisarTrocaAgendada,
+} from './avisos-por-email'
 import { oQueFicaSoLeitura } from './passada-do-plano'
 import { preverTroca, recusaDaTroca, resumoDaTroca, type PrevisaoDaTroca } from './troca-de-plano'
 import { ehIdDePlano, ehRecursoDoPlano, idDoNome, DIAS_DE_TESTE, PLANO_DE_ENTRADA, PLANO_DO_TESTE } from '@/core/planos'
@@ -112,6 +122,7 @@ export async function acaoAdminSuspender(
     alvoNome: organizacao.nome,
   })
   revalidatePath('/admin/organizacoes')
+  after(() => avisarSuspensao(organizacaoId, suspender))
   return { ok: true }
 }
 
@@ -151,6 +162,8 @@ export async function acaoAdminDefinirFuncao(
   const r = await definirFuncaoDoMembro(organizacaoId, usuarioId, funcao, sessao.usuario.id)
   if (!r.ok) return { ok: false, erro: r.motivo }
   await registrarTroca(sessao, organizacaoId, usuarioId, funcao)
+  const pessoa = await acharUsuario(usuarioId)
+  if (pessoa) after(() => avisarFuncaoAlterada({ pessoa: { email: pessoa.email, nome: pessoa.nome }, clienteId: organizacaoId, de: null, para: funcao }))
   return { ok: true }
 }
 
@@ -870,6 +883,7 @@ export async function acaoAdminExcluirUsuario(usuarioId: string): Promise<{ ok: 
   })
   try {
     await autenticacao().api.removeUser({ headers: await headers(), body: { userId: usuarioId } })
+    after(() => avisarContaExcluida({ email: alvo.email, nome: alvo.nome }))
   } catch (erro) {
     return { ok: false, erro: erro instanceof Error ? erro.message : 'não foi possível excluir' }
   }
@@ -904,6 +918,8 @@ export async function acaoAdminIniciarTeste(organizacaoId: string): Promise<{ ok
     alvoId: organizacaoId,
     detalhes: { plano: PLANO_DO_TESTE, ate },
   })
+  const planoDoTeste = (await planosVigentes()).find((item) => item.id === PLANO_DO_TESTE)?.nome ?? PLANO_DO_TESTE
+  after(() => avisarTesteGratis(organizacaoId, { plano: planoDoTeste, ate: diaPorExtenso(ate), momento: 'comecou' }))
   return { ok: true, ate }
 }
 

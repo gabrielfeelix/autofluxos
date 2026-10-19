@@ -15,8 +15,9 @@ import { gestoresDaConta } from './avisos-por-email'
 import { enviarModelo, linkDoPainel } from './email'
 import { registrar } from './repos/auditoria'
 import { marcarAviso, marcarEmailEnviado } from './repos/avisos-de-plano'
-import { aplicarPreco, chaveDoMes, consumoDeTodasAsContas, contratosDeTodas, definirPlano } from './repos/plano'
+import { aplicarPreco, chaveDoMes, consumoDeTodasAsContas, contratosDeTodas, definirPlano, testesDeTodas } from './repos/plano'
 import { planosVigentes, type PlanoVigente } from './repos/planos'
+import { PLANO_DO_TESTE } from '@/core/planos'
 import { mudarEstadoDaTransmissao } from './repos/transmissoes'
 
 /**
@@ -46,7 +47,7 @@ const SISTEMA = { autorEmail: 'sistema@autofluxos', autorId: null }
 export async function passadaDoPlano(agora = new Date()): Promise<ResumoDaPassadaDoPlano> {
   const hoje = diaDeHoje(agora)
   const mes = chaveDoMes(agora)
-  const [contratos, planos, consumos] = await Promise.all([contratosDeTodas(), planosVigentes(), consumoDeTodasAsContas(agora)])
+  const [contratos, planos, consumos, testes] = await Promise.all([contratosDeTodas(), planosVigentes(), consumoDeTodasAsContas(agora), testesDeTodas()])
   const plano = (id: string) => planos.find((item) => item.id === id)
   const conversas = new Map(consumos.map((consumo) => [consumo.clienteId, consumo.conversas]))
   const resumo: ResumoDaPassadaDoPlano = { descidas: 0, transmissoesCanceladas: 0, precos: 0, avisos: 0, emails: 0, falhas: 0 }
@@ -153,6 +154,24 @@ export async function passadaDoPlano(agora = new Date()): Promise<ResumoDaPassad
             faixa,
             precoExcedente: reais(vigente.precoExcedente),
             conta: faixa === 100 ? (fraseDoExcedente(excedente(usadas, vigente)) ?? '') : '',
+            link,
+          })
+        }
+      }
+
+      // 4. O teste grátis: 3 dias antes, na véspera, e no dia seguinte ao fim.
+      // O teste vale até o dia `teste_ate` inteiro (`recursos-do-plano.ts`).
+      const testeAte = testes.get(contrato.clienteId)
+      if (testeAte) {
+        const faltam = Math.round((Date.parse(`${testeAte}T12:00:00Z`) - Date.parse(`${hoje}T12:00:00Z`)) / 86_400_000)
+        // Teste que acabou há mais de dois dias não avisa: é organização antiga, não notícia.
+        const momento = faltam === 3 ? 'faltam3' : faltam === 1 ? 'faltam1' : faltam < 0 && faltam >= -2 ? 'acabou' : null
+        if (momento) {
+          await avisar(contrato.clienteId, `teste:${testeAte}:${momento}`, 'testeGratis', {
+            organizacao: contrato.nome,
+            plano: plano(PLANO_DO_TESTE)?.nome ?? PLANO_DO_TESTE,
+            ate: diaPorExtenso(testeAte),
+            momento,
             link,
           })
         }
