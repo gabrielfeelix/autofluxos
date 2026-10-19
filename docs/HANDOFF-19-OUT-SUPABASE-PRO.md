@@ -81,9 +81,12 @@ Desempenho, 249:
 
 ## Prioridade sugerida
 
-1. Fechar as 2 funções de `public` expostas e revisar as 9 da Verandi.
-2. Índices das FKs que aparecem em consulta quente (comece por `messages`,
-   `sessions`, `contacts`, `participacao`, `sessao`); medir antes e depois.
+1. ~~Fechar as funções expostas~~ **feito em 19/out**: `0136` e `0078_vr`.
+   `anon` não executa mais nenhuma `security definer`; as 6 de
+   `authenticated` são de propósito. Registro nos dois `BANCO-COMPARTILHADO.md`.
+2. ~~Índices das FKs~~ **feito em 19/out**: `0137` (`messages.session_id`) e
+   `0079_vr` (`participacao`, `sessao`). `sessions` e `contacts` ficaram sem,
+   de propósito: abaixo de 1 ms com poucas centenas de linhas.
 3. Juntar as políticas permissivas da Verandi e trocar `auth.uid()` por
    `(select auth.uid())`.
 4. Backup: testar restauração; levar ao Gabriel a decisão do PITR.

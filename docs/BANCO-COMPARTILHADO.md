@@ -80,8 +80,8 @@ extração explícito para os objetos de `public`.
 
    - `anon` e `authenticated` não alcançam mais nenhuma tabela, view, sequence
      ou função de `public`;
-   - o default do papel `postgres` no schema foi alterado, então **objeto novo
-     nasce fechado**, e não depende mais de alguém lembrar de revogar;
+   - o default do papel `postgres` no schema foi alterado, então **tabela,
+     view e sequence novas nascem fechadas**. Função nova **não** (ver abaixo);
    - `service_role` recebeu de volta, explicitamente, tudo o que o revoke
      tirou. Parte do que ele tinha vinha herdada de `PUBLIC`.
 
@@ -89,10 +89,21 @@ extração explícito para os objetos de `public`.
    Postgres concede `EXECUTE` a `PUBLIC` implicitamente na criação, e os dois
    papéis herdam de lá o que se revoga deles. A `0026` revogou `pegar_tarefas`
    dos dois e a função seguiu executável pelos dois por meses. A forma certa
-   inclui `public` na lista, como a `0040` fez. Migration nova em `public` já
-   nasce fechada pelo default; migration que cria função em qualquer outro
-   schema continua precisando escrever
-   `revoke all on function ... from public, anon, authenticated`.
+   inclui `public` na lista, como a `0040` fez.
+
+   **Toda migration que cria função, em `public` inclusive, escreve
+   `revoke all on function ... from public, anon, authenticated`.** Default
+   por schema só acrescenta privilégio, nunca tira o `EXECUTE` global de
+   `PUBLIC`. Este parágrafo dizia que função nova em `public` já nascia
+   fechada, e a `0134` confiou nisso: `contato_nasce_com_responsavel`, que é
+   `security definer`, ficou executável por `anon` até a `0136` (aviso do
+   painel, 19/out/2026). Trocar o default global do `postgres` resolveria de
+   vez, mas tiraria `EXECUTE` também de função de extensão criada depois, nos
+   dois produtos, e por isso não foi feito.
+
+   Conferir, depois de criar função:
+   `select proname from pg_proc where pronamespace = 'public'::regnamespace and has_function_privilege('anon', oid, 'execute');`
+   precisa voltar vazio.
 
    O default do papel `supabase_admin` continua concedendo tudo em `public`, e
    `postgres` não é membro dele. Objeto criado por nós nasce como `postgres`,
@@ -1346,6 +1357,27 @@ extração explícito para os objetos de `public`.
   anulável, FK para `public.flows` com `on delete set null`), sem default e
   sem tocar dado. O PostgREST pegou a coluna sozinho (REST 200 logo depois),
   sem `notify pgrst`. Nada da Verandi foi tocado.
+
+- **a `0136` e a `0137` foram aplicadas em 19/out/2026**, com autorização
+  explícita do dono, pela Management API, junto com a `0078_vr` e a `0079_vr`
+  da Verandi (aplicador dela). Conferidas pelos dois testes: replay do zero
+  no Docker com os dois repositórios no mesmo banco (Verandi `0030`→`0079`,
+  AutoFluxos `0001`→`0137`; a forma de tabelas, colunas, funções, políticas,
+  índices e gatilhos bateu com a produção) e ensaio em transação contra a
+  produção.
+  - `0136`: `contato_nasce_com_responsavel` fechada para `public`, `anon` e
+    `authenticated` (ver regra 6). No Docker: `anon` e `authenticated` levam
+    `permission denied`, e o insert do `service_role` em `contacts` segue
+    preenchendo `atribuido_a`. Avisos de função `security definer` executável
+    por `anon`: 11 → 0. Ficam 6 de `authenticated`, todas da Verandi e de
+    propósito.
+  - `0137`: `messages_session_idx`, parcial. Busca por sessão 5,3 → 0,43 ms.
+  - Efeito da `0078_vr` que alcança o AutoFluxos: pedido **anônimo** ao Storage
+    para listar bucket privado passa a levar 403 em vez de lista vazia, porque
+    as políticas da Verandi em `storage.objects` chamam funções que `anon` não
+    executa mais. Link público (`/object/public/...`) segue 200, testado no
+    Docker. O AutoFluxos só usa a chave publicável no Realtime do Inbox, que
+    não passa por essas funções.
 
 ### Testar migration antes de produção, em Docker
 
