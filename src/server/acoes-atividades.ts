@@ -24,7 +24,7 @@ import { paginarLeads } from './repos/leads'
 import { oportunidadesAbertasDoContato } from './repos/quadros'
 import { telefoneLegivel } from '@/core/contatos/telefone'
 import type { FiltroDeEscopo } from '@/core/permissoes'
-import { alcanceDeConversas, exigirCapacidade, filtroDoAcesso, recusou, exigirLeitura } from './permissoes'
+import { alcancaContato, alcanceDeConversas, exigirCapacidade, filtroDoAcesso, recusou, exigirLeitura } from './permissoes'
 import { sessaoAtual } from './sessao'
 
 /**
@@ -323,6 +323,8 @@ export async function acaoLerAtividades(
 ): Promise<{ ok: true; atividades: Atividade[] } | { ok: false; erro: string }> {
   const acesso = await exigirLeitura(clienteId, 'atender', 'proprios')
   if (recusou(acesso)) return { ok: false, erro: acesso.erro ?? 'sem acesso' }
+  // Fora do alcance é lista vazia, como contato que não existe.
+  if (!(await alcancaContato(clienteId, contatoId, acesso))) return { ok: true, atividades: [] }
 
   return { ok: true, atividades: await atividadesDoContato(clienteId, contatoId) }
 }

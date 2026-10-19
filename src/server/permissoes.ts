@@ -26,6 +26,7 @@ import {
 } from './sessao'
 import { destinoNaConta } from '@/components/design/secoes-do-cliente'
 import { responsaveisDoEscopo } from './repos/relatorios'
+import { contatoNoAlcance } from './repos/leads'
 import { funcoesGravadas, funcoesVigentes } from './repos/funcoes'
 import { LEITURA_DA_FUNCAO, type IdDaFuncao } from '@/core/funcoes'
 
@@ -319,6 +320,26 @@ export async function alcanceDasRegras(clienteId: string, regras: Acesso): Promi
   if (escopo.tipo === 'impossivel') return { tipo: 'nada' }
   const donos = await responsaveisDoEscopo(clienteId, escopo)
   return donos === null ? { tipo: 'tudo' } : { tipo: 'donos', donos }
+}
+
+/**
+ * Este contato está no alcance de conversas de quem pede?
+ *
+ * A porta das ações que recebem um `contatoId` solto: a capacidade `atender`
+ * com escopo `proprios` passa em `exigirCapacidade`, mas não alcança a
+ * conversa de colega. Sem esta conferência, quem só vê as próprias conversas
+ * abria o painel, lia atividades ou devolvia à fila a conversa de outra pessoa
+ * pelo id. As rotas fazem o mesmo com `acharLead(..., alcance)`.
+ */
+export async function alcancaContato(
+  clienteId: string,
+  contatoId: string,
+  acesso: AcessoCompleto,
+): Promise<boolean> {
+  const alcance = await alcanceDeConversas(clienteId, acesso)
+  // Quem vê a conta inteira: quem confere se o contato é desta conta é a ação.
+  if (alcance.tipo === 'tudo') return true
+  return contatoNoAlcance(clienteId, contatoId, alcance)
 }
 
 /**

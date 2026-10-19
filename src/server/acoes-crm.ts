@@ -36,7 +36,7 @@ import {
   trazerTodosParaOQuadro,
 } from './repos/quadros'
 import { sessaoAtual } from './sessao'
-import { exigirCapacidade, recusou, exigirLeitura } from './permissoes'
+import { alcancaContato, exigirCapacidade, recusou, exigirLeitura } from './permissoes'
 import { pode } from '@/core/permissoes'
 import { notFound } from 'next/navigation'
 
@@ -384,6 +384,7 @@ export async function acaoAbrirPainelDoContato(
    */
   const acesso = await exigirCapacidade(clienteId, 'atender', 'proprios')
   if (recusou(acesso)) notFound()
+  if (!(await alcancaContato(clienteId, contatoId, acesso))) notFound()
 
   const veValores = pode(acesso.regras, 'ler_valores')
 
@@ -543,6 +544,9 @@ export async function acaoAtribuirContato(
 ): Promise<{ ok: boolean; erro?: string }> {
   const acesso = await exigirCapacidade(clienteId, 'atender', 'proprios')
   if (recusou(acesso)) return acesso
+  if (!(await alcancaContato(clienteId, contatoId, acesso))) {
+    return { ok: false, erro: 'este contato não é deste cliente' }
+  }
 
   const equipe = await membrosDaConta(clienteId)
   const escolhido = usuarioId === null ? null : equipe.find((membro) => membro.id === usuarioId)

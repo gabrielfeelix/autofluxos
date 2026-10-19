@@ -23,7 +23,7 @@ import {
   ehAdminDaPlataforma,
   exigirOperadorDa4YU,
 } from './sessao'
-import { exigirCapacidade, recusou } from './permissoes'
+import { alcancaContato, exigirCapacidade, recusou } from './permissoes'
 import { fluxoNovo } from '@/core/flow/novo'
 import { DIAS_DA_SEMANA, emMinutos, horarioSchema } from '@/core/horario'
 import { MINUTOS_DE_RETOMADA_TETO } from '@/core/retomada'
@@ -3216,6 +3216,9 @@ export async function acaoLiberarAtendimento(
 ): Promise<{ ok: boolean; erro?: string }> {
   const acesso = await exigirCapacidade(clienteId, 'atender', 'proprios')
   if (recusou(acesso)) return acesso
+  if (!(await alcancaContato(clienteId, contatoId, acesso))) {
+    return { ok: false, erro: 'este contato não é deste cliente' }
+  }
 
   /*
    * `trocarControle` e não `atribuirContato`: devolver à fila **sobe a
@@ -3251,6 +3254,9 @@ export async function acaoAtribuirPara(
 ): Promise<{ ok: boolean; erro?: string }> {
   const acesso = await exigirCapacidade(clienteId, 'atender', 'proprios')
   if (recusou(acesso)) return acesso
+  if (!(await alcancaContato(clienteId, contatoId, acesso))) {
+    return { ok: false, erro: 'este contato não é deste cliente' }
+  }
 
   const usuarioId = String(formData.get('usuarioId') ?? '')
   if (usuarioId === '') return { ok: false, erro: 'escolha para quem passar' }

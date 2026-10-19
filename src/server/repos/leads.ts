@@ -761,19 +761,38 @@ export function limparBusca(bruto: string): string {
  *
  * A busca do Inbox lia nome, telefone e a última mensagem; quem procurava
  * "suporte técnico" não achava a conversa em que isso foi dito três mensagens
- * atrás (pedido de 01/out/2026). Devolve só ids: quem chama cruza com a fila
- * que a pessoa já pode ver, e a permissão continua sendo a da fila.
+ * atrás (pedido de 01/out/2026). Devolve só ids, e só das conversas no
+ * `alcance` de quem busca: a fila cruza depois, mas o id já teria contado que
+ * o termo aparece na conversa de um colega.
  *
  * Acento e caixa não importam (`padraoSemAcento`). Menos de três letras não
  * busca: "a" casaria com toda conversa da conta.
  */
-export async function contatosPorMensagem(clienteId: string, bruto: string): Promise<string[]> {
+export async function contatosPorMensagem(
+  clienteId: string,
+  bruto: string,
+  alcance?: AlcanceDeConversas,
+): Promise<string[]> {
   const termo = limparBusca(bruto)
   if (termo.length < 3) return []
-  const { data, error } = await db()
+  let consulta = db()
     .from('messages')
-    .select('contact_id, contacts!inner(client_id)')
+    .select('contact_id, contacts!inner(client_id, atribuido_a)')
     .eq('contacts.client_id', clienteId)
+  /*
+   * O alcance vai na consulta, e não na tela: devolver o id de uma conversa
+   * de colega já conta a quem busca que o termo aparece nela. Com `!inner`, o
+   * filtro no contato tira a mensagem inteira do resultado.
+   */
+  if (alcance && alcance.tipo !== 'tudo') {
+    consulta =
+      alcance.tipo === 'nada' || alcance.donos.length === 0
+        ? consulta.is('contacts.atribuido_a', null)
+        : consulta.or(`atribuido_a.is.null,atribuido_a.in.(${alcance.donos.join(',')})`, {
+            referencedTable: 'contacts',
+          })
+  }
+  const { data, error } = await consulta
     .filter('texto', 'imatch', padraoSemAcento(termo))
     .order('ts', { ascending: false })
     .limit(500)
@@ -1026,6 +1045,27 @@ export async function acharLead(
   if (!data) return null
   const [lead] = await classificar([paraLead(data as Linha)])
   return lead ?? null
+}
+
+/**
+ * Este contato é deste cliente e está no alcance de quem pede?
+ *
+ * É a pergunta de `acharLead` sem ler a conversa: as ações que mexem num
+ * contato (atribuir, liberar, abrir o painel) só precisam do sim ou não.
+ * Fora do alcance responde igual a "não existe", pelo mesmo motivo de lá.
+ */
+export async function contatoNoAlcance(
+  clienteId: string,
+  contatoId: string,
+  alcance: AlcanceDeConversas,
+): Promise<boolean> {
+  const { data, error } = await noAlcance(
+    db().from('contacts').select('id').eq('client_id', clienteId).eq('id', contatoId),
+    alcance,
+  ).maybeSingle()
+  if (ehIdInvalido(error)) return false
+  if (error) throw new Error(`não foi possível conferir o contato: ${error.message}`)
+  return data !== null
 }
 
 /**

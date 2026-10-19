@@ -5,6 +5,7 @@ import { db } from '../db'
 import { criarCliente } from './clientes'
 import {
   acharOuCriarContato,
+  atribuirContato,
   criarCanal,
   criarSessao,
   confirmarEntrega,
@@ -16,6 +17,8 @@ import {
 import { criarFluxo, publicar } from './fluxos'
 import {
   acharLead,
+  contatoNoAlcance,
+  contatosPorMensagem,
   contarEsperandoPessoa,
   contarLeads,
   lerConversa,
@@ -41,7 +44,29 @@ afterAll(async () => {
     // `on delete cascade` leva canal, contato, sessão, mensagem e handoff junto.
     await db().from('clients').delete().eq('id', id)
   }
+  if (pessoas.length > 0) await db().from('af_usuarios').delete().in('id', pessoas)
 })
+
+/** Uma pessoa de teste, para ser dona de conversa. Sai junto no fim. */
+async function criarPessoa(sufixo: string): Promise<string> {
+  const { data, error } = await db()
+    .from('af_usuarios')
+    .insert({
+      id: crypto.randomUUID(),
+      name: `${marca} ${sufixo}`,
+      email: `${marca}-${sufixo}@exemplo.test`,
+      emailVerified: false,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    })
+    .select('id')
+    .single()
+  if (error) throw new Error(error.message)
+  const id = (data as { id: string }).id
+  pessoas.push(id)
+  return id
+}
+const pessoas: string[] = []
 
 let sequencia = 0
 const idDeMensagem = () => `${marca}-msg-${++sequencia}`
@@ -365,6 +390,48 @@ describe.skipIf(!temCredencial)('leads contra o Supabase', () => {
     expect(await contarLeads(cliente.id)).toBe(2)
     expect(await contarEsperandoPessoa(cliente.id)).toBe(1)
   }, 10_000)
+
+  /**
+   * Atendente com escopo `proprios` alcança a conversa dele e a sem dono, e
+   * não a de colega: nem pelo id solto (painel, atribuir, liberar), nem pela
+   * busca nas mensagens, que contaria que o termo aparece na conversa dela.
+   */
+  it('confere o alcance do atendente pelo id e na busca nas mensagens', async () => {
+    const { cliente, canal, versaoId } = await montarCliente('alcance')
+    const [eu, colega] = await Promise.all([criarPessoa('eu'), criarPessoa('colega')])
+
+    const minha = await acharOuCriarContato(cliente.id, `${marca}-5544777001`, 'Minha')
+    const dela = await acharOuCriarContato(cliente.id, `${marca}-5544777002`, 'Dela')
+    const livre = await acharOuCriarContato(cliente.id, `${marca}-5544777003`, 'Livre')
+    expect(await atribuirContato(cliente.id, minha.id, eu)).toBe(true)
+    expect(await atribuirContato(cliente.id, dela.id, colega)).toBe(true)
+
+    for (const contato of [minha, dela, livre]) {
+      const sessao = await criarSessao(contato.id, canal.id, versaoId, sessaoNova())
+      await registrarEntrada({
+        contatoId: contato.id,
+        sessaoId: sessao.id,
+        waMessageId: idDeMensagem(),
+        texto: `quero o orçamento ${marca}`,
+        payload: {},
+      })
+    }
+
+    const meu = { tipo: 'donos', donos: [eu] } as const
+    expect(await contatoNoAlcance(cliente.id, minha.id, meu)).toBe(true)
+    expect(await contatoNoAlcance(cliente.id, livre.id, meu)).toBe(true)
+    expect(await contatoNoAlcance(cliente.id, dela.id, meu)).toBe(false)
+
+    const outra = await montarCliente('alcance-outra')
+    expect(await contatoNoAlcance(outra.cliente.id, minha.id, { tipo: 'tudo' })).toBe(false)
+
+    const achados = await contatosPorMensagem(cliente.id, `orçamento ${marca}`, meu)
+    expect(achados.sort()).toEqual([minha.id, livre.id].sort())
+    const nada = await contatosPorMensagem(cliente.id, `orçamento ${marca}`, { tipo: 'nada' })
+    expect(nada).toEqual([livre.id])
+    const tudo = await contatosPorMensagem(cliente.id, `orçamento ${marca}`, { tipo: 'tudo' })
+    expect(tudo.sort()).toEqual([minha.id, dela.id, livre.id].sort())
+  }, 15_000)
 })
 
 describe('limpeza do termo de busca', () => {
