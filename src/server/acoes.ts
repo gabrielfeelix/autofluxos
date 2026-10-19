@@ -53,6 +53,7 @@ import {
   criarContato,
   definirEstadoDaConversa,
   salvarNotas,
+  lerConversa,
 } from './repos/leads'
 import { adaptadorDoCanal } from './adaptador-do-canal'
 import { dentroDaJanela } from '@/channels/janela'
@@ -2402,7 +2403,7 @@ export async function acaoAlternarAutomacaoDoLead(
   clienteId: string,
   contatoId: string,
   ativa: boolean,
-): Promise<{ ok: boolean; erro?: string }> {
+): Promise<{ ok: boolean; erro?: string; respondeu?: boolean }> {
   const acesso = await exigirCapacidade(clienteId, 'atender', 'proprios')
   if (recusou(acesso)) return acesso
 
@@ -2432,10 +2433,29 @@ export async function acaoAlternarAutomacaoDoLead(
   // Pausar o bot cala o bot inteiro, e sequência é bot (0031). Só na pausa:
   // religar não devolve ninguém a um acompanhamento de que já saiu, quem
   // decide inscrever é o evento, não o interruptor.
-  if (!ativa) await sairPorEvento(contatoId, 'automacao_pausada')
-
   // Gesto rápido: sem recarregar a página, ver `gestoSemRecarregar`.
-  return { ok: true }
+  if (!ativa) {
+    await sairPorEvento(contatoId, 'automacao_pausada')
+    return { ok: true }
+  }
+
+  /*
+   * **Religar é uma ordem para o bot assumir agora**, e não só uma chave.
+   *
+   * Bruno (PCYES, 19/out/2026): a equipe falou pelo celular às 15:12, ele
+   * pediu um monitor às 16:02, e o bot ficou calado, porque a conta espera duas
+   * horas depois de uma fala da equipe. O Gabriel pausou e religou, e nada:
+   * religar só mudava a chave, e a mensagem dele continuava sem resposta.
+   *
+   * Só quando a última mensagem é da pessoa, que é quando há alguém esperando.
+   * Com a última fala sendo do bot ou da equipe, a sessão que está andando fica
+   * onde está: devolver ao bot a encerraria, e uma pergunta pendente (o CPF,
+   * por exemplo) perderia o lugar.
+   */
+  const { mensagens } = await lerConversa(contatoId, 1)
+  if (mensagens.at(-1)?.direcao !== 'entrada') return { ok: true, respondeu: false }
+  const r = await devolverAoBot(clienteId, contatoId)
+  return { ok: true, respondeu: r === 'respondeu' }
 }
 
 /**
