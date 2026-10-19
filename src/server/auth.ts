@@ -161,7 +161,17 @@ function montar() {
      * `connections` e `messages`. Com o gerador padrão do Better Auth (um id
      * curto próprio), todo insert de conta quebraria no casamento de tipos.
      */
-    advanced: { database: { generateId: 'uuid' } },
+    /*
+     * `validateSchema` desligado em produção, e é por causa da conta de egress.
+     *
+     * A conferência lê o catálogo de colunas do banco inteiro (as duas
+     * aplicações, ~875 linhas) a cada função fria. Em 19/out/2026 o
+     * `pg_stat_statements` contava 4.927 dessas leituras desde 11/ago, ~0,5 GB
+     * de egress para responder sempre a mesma coisa, num projeto que estourou
+     * a cota de 5 GB. O desenvolvimento continua conferindo, e quem mexe no
+     * schema do login roda `scripts/schema-do-auth.mjs`.
+     */
+    advanced: { database: { generateId: 'uuid', validateSchema: process.env.NODE_ENV !== 'production' } },
 
     user: { modelName: 'af_usuarios' },
     session: {

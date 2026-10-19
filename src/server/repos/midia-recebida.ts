@@ -116,6 +116,50 @@ export async function urlAssinada(caminho: string): Promise<string | null> {
 }
 
 /**
+ * O endereço com que a tela pede a mídia: uma rota nossa, estável.
+ *
+ * Até 19/out/2026 a conversa recebia uma URL assinada nova a cada abertura, e
+ * URL nova é cache vazio no navegador: em 13/out, 461 arquivos foram baixados
+ * 1.327 vezes (369 MB, ~3x cada), e isso ajudou a estourar a cota de egress do
+ * Supabase. O endereço estável deixa o navegador guardar a cópia; a rota
+ * confere quem pede a cada vez que ele não tiver, e o bucket continua privado.
+ */
+export function enderecoDaMidia(caminho: string, mensagemId: string): string {
+  const clienteId = caminho.split('/')[0] ?? ''
+  return `/api/clientes/${clienteId}/midia/${mensagemId}`
+}
+
+/**
+ * Lê o arquivo do bucket para a rota repassar ao navegador, com `Range`.
+ *
+ * Por `fetch` direto, e não pelo `download` do supabase-js: o áudio e o vídeo
+ * pedem pedaços (206) para tocar e avançar, e o `download` só sabe trazer o
+ * arquivo inteiro.
+ */
+export async function lerParaServir(caminho: string, range: string | null): Promise<Response | null> {
+  const url = process.env.SUPABASE_URL
+  const chave = process.env.SUPABASE_SECRET_KEY
+  if (!url || !chave) return null
+
+  const alvo = `${url}/storage/v1/object/authenticated/${BUCKET_DOS_RECEBIDOS}/${caminho
+    .split('/')
+    .map(encodeURIComponent)
+    .join('/')}`
+  try {
+    const resposta = await fetch(alvo, {
+      headers: { apikey: chave, authorization: `Bearer ${chave}`, ...(range ? { range } : {}) },
+      cache: 'no-store',
+    })
+    if (resposta.ok) return resposta
+    console.error('[midia] o Storage recusou a leitura', resposta.status)
+    return null
+  } catch (erro) {
+    console.error('[midia] não foi possível ler o arquivo', erro instanceof Error ? erro.message : erro)
+    return null
+  }
+}
+
+/**
  * Assina vários caminhos de uma vez, é o que a conversa precisa.
  *
  * Uma conversa com trinta fotos faria trinta chamadas se cada bolha assinasse a

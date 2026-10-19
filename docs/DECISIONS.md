@@ -337,3 +337,29 @@ Append-only. Cada entrada: data, decisão, porquê, onde está no código.
   recursos pagos pausam (`recursos-do-plano.ts`).
 - "Operação" vira "Profissional" só no nome; id `operacao` fica.
 - Detalhe e pesquisa: `docs/PLANO-PRECOS-05-OUT.md`, migration `0128`.
+
+## 19/out/2026: o que estourou o egress do Supabase (5 GB do gratuito)
+
+Medido nos logs da Management API (`analytics/endpoints/logs`, ClickHouse,
+um dia por consulta) e no `pg_stat_statements` (zerado em 11/ago).
+
+- **Storage, ~60%**: mídia recebida baixada de novo a cada abertura da
+  conversa, porque a URL assinada de 5 min muda toda vez e o navegador não
+  reaproveita cache. 13/out: 461 arquivos, 1.327 downloads, 369 MB (vídeo
+  118 MB). 05/out: 222 arquivos, 793 downloads, 206 MB. Correção: rota
+  própria `api/clientes/[clienteId]/midia/[mensagemId]` com endereço estável,
+  `private, max-age=30d, immutable` e `Range` repassado. Bucket segue privado;
+  inline só imagem/áudio/vídeo/PDF, o resto baixa como `octet-stream`
+  (arquivo do contato no nosso domínio não pode executar).
+- **Classificação dos leads**: lia o `payload` inteiro de todas as entradas
+  de cada lead da página (~115 mil linhas em 13/out, ~50 MB/dia). Agora só
+  `payload->>type`.
+- **Pulso do Inbox** (1x/s por aba): trazia o `arquivo` jsonb de 5 linhas;
+  agora só `arquivo->>caminho`.
+- **Better Auth `validateSchema`**: 4.927 leituras do catálogo do banco
+  inteiro (~875 linhas cada) desde 11/ago, uma por função fria. Desligado em
+  produção (`src/server/auth.ts`).
+- Não era laço de webhook nem cron: contagens por rota estáveis, 30 a 70 mil
+  requisições/dia. A Verandi soma ~600 mil linhas/dia em REST
+  (`participacao`, `sessao`, `vaga`), pequeno em bytes; fica para olhar.
+- A org foi para o Pro (250 GB) em 19/out; isto é para não depender dele.

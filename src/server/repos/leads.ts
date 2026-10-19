@@ -17,7 +17,7 @@ import {
 } from '@/core/payload-da-mensagem'
 import { autorDoPayload, comoChamarOAutor } from '@/core/autor-da-mensagem'
 import { ehArquivoGuardado, midiaDoTipo } from '@/core/midia-recebida'
-import { urlsAssinadas } from './midia-recebida'
+import { enderecoDaMidia } from './midia-recebida'
 import { naoLidasPorContato } from './leituras'
 import { TIPOS_DE_MIDIA, type TipoDeMidia } from '@/core/flow/schema'
 import { casarReacoes } from '@/core/reacoes'
@@ -454,10 +454,6 @@ function paraLead(linha: Linha): Lead {
   }
 }
 
-function tipoDaMensagem(payload: unknown): string | null {
-  if (!payload || typeof payload !== 'object' || !('type' in payload)) return null
-  return typeof payload.type === 'string' ? payload.type : null
-}
 
 /**
  * Fila enxuta para o alerta do Inbox.
@@ -536,7 +532,13 @@ async function etiquetasPorContato(
   const [entradas, sessoes] = await Promise.all([
     db()
       .from('messages')
-      .select('id, contact_id, payload, ts')
+      /*
+       * Só o tipo, nunca o `payload` inteiro: esta leitura traz **todas** as
+       * entradas de cada lead da página, e com o payload cru era a consulta
+       * que mais pesava no egress do banco (~115 mil linhas por dia em
+       * 13/out/2026, perto de 50 MB). O tipo é tudo o que a etiqueta usa.
+       */
+      .select('contact_id, tipo:payload->>type')
       .in('contact_id', contatos)
       .eq('direcao', 'entrada')
       .order('ts', { ascending: true })
@@ -552,14 +554,14 @@ async function etiquetasPorContato(
   }
 
   const contagemDeEntradas = new Map<string, number>()
-  const primeiraEntrada = new Map<string, unknown>()
-  for (const mensagem of entradas.data as { contact_id: string; payload: unknown }[]) {
+  const primeiraEntrada = new Map<string, string | null>()
+  for (const mensagem of entradas.data as { contact_id: string; tipo: string | null }[]) {
     contagemDeEntradas.set(
       mensagem.contact_id,
       (contagemDeEntradas.get(mensagem.contact_id) ?? 0) + 1,
     )
     if (!primeiraEntrada.has(mensagem.contact_id)) {
-      primeiraEntrada.set(mensagem.contact_id, mensagem.payload)
+      primeiraEntrada.set(mensagem.contact_id, mensagem.tipo)
     }
   }
 
@@ -587,7 +589,7 @@ async function etiquetasPorContato(
 
   for (const contatoId of contatos) {
     const etiquetas: EtiquetaDeLead[] = []
-    const tipoInicial = tipoDaMensagem(primeiraEntrada.get(contatoId))
+    const tipoInicial = primeiraEntrada.get(contatoId) ?? null
 
     // É a mesma fronteira da entrada do motor: texto e resposta interativa são
     // conversa; áudio, imagem, localização e qualquer outro formato vão para
@@ -959,7 +961,9 @@ const MENSAGENS_NO_PULSO = 5
 export async function pulsoDaConta(clienteId: string): Promise<string | null> {
   const { data, error } = await db()
     .from('messages')
-    .select('ts, arquivo, situacao, contacts!inner(client_id)')
+    // Só o caminho, não o `arquivo` inteiro: esta leitura roda a cada segundo
+    // por Inbox aberto, e o pulso só quer saber se a cópia já existe.
+    .select('ts, caminho:arquivo->>caminho, situacao, contacts!inner(client_id)')
     .eq('contacts.client_id', clienteId)
     .order('ts', { ascending: false })
     .limit(MENSAGENS_NO_PULSO)
@@ -967,11 +971,11 @@ export async function pulsoDaConta(clienteId: string): Promise<string | null> {
   if (ehIdInvalido(error)) return null
   if (error) throw new Error(`não foi possível ler o pulso da conta: ${error.message}`)
 
-  const linhas = (data ?? []) as { ts: string; arquivo: unknown; situacao: string | null }[]
+  const linhas = (data ?? []) as { ts: string; caminho: string | null; situacao: string | null }[]
   const ultima = linhas[0]
   if (!ultima) return null
 
-  const arquivos = linhas.map((linha) => (ehArquivoGuardado(linha.arquivo) ? '1' : '0')).join('')
+  const arquivos = linhas.map((linha) => (linha.caminho ? '1' : '0')).join('')
   // A situação entra no pulso para os tiques andarem sem recarregar: a
   // mensagem virou "lida" e a conversa aberta pergunta de novo (0116).
   const tiques = linhas.map((linha) => (linha.situacao ?? '-').charAt(0)).join('')
@@ -1140,14 +1144,6 @@ export async function lerConversa(
     })),
   )
 
-  /*
-   * As URLs são assinadas **em lote e aqui**, não numa por bolha.
-   *
-   * Uma conversa com trinta fotos faria trinta chamadas ao Storage se cada
-   * bolha assinasse a sua. E assinar aqui, e não gravar no banco, é a regra que
-   * não se dobra: URL assinada guardada em coluna é link público com um passo a
-   * mais, ela viaja em log e em backup e continua valendo até expirar.
-   */
   const toques = casarToques(visiveis)
 
   /*
@@ -1165,11 +1161,6 @@ export async function lerConversa(
     const alvo = correcaoDoPayload(m.payload)?.alvo
     return alvo !== undefined && porWaId.has(alvo)
   }
-
-  const caminhos = visiveis
-    .map((m) => (ehArquivoGuardado(m.arquivo) ? m.arquivo.caminho : null))
-    .filter((caminho): caminho is string => caminho !== null)
-  const assinadas = await urlsAssinadas(caminhos)
 
   const montadas = visiveis
       /*
@@ -1193,22 +1184,23 @@ export async function lerConversa(
         const cartoes = cartoesDoPayload(m.payload)
 
         /*
-         * Três estados, e a bolha precisa distinguir os três: temos o arquivo e
-         * a assinatura saiu; temos o registro mas a assinatura falhou; e chegou
-         * arquivo do qual nunca houve cópia, grande demais, download falhado,
-         * ou mensagem anterior à `0055`.
-         *
-         * Os dois últimos viram o mesmo aviso na tela, porque para quem lê dão
-         * no mesmo: o arquivo não está aqui.
+         * Dois estados: temos o arquivo, ou chegou arquivo do qual nunca houve
+         * cópia (grande demais, download falhado, mensagem anterior à `0055`).
+         * Storage fora do ar na hora de servir aparece como mídia que não
+         * carrega, e não mais como "sem cópia": o arquivo existe.
          */
         const autor = comoChamarOAutor(autorDoPayload(m.payload))
         const guardado = ehArquivoGuardado(m.arquivo) ? m.arquivo : null
-        const assinada = guardado ? assinadas.get(guardado.caminho) : undefined
+        /*
+         * Endereço da rota nossa, e não URL assinada: é estável entre aberturas,
+         * então o navegador guarda a cópia (ver `enderecoDaMidia`). Nada de URL
+         * gravada em coluna, a regra continua: ela é montada aqui, na leitura.
+         */
         const recebido =
-          guardado && assinada
+          guardado
             ? {
                 midia: guardado.midia,
-                url: assinada,
+                url: enderecoDaMidia(guardado.caminho, m.id),
                 ...(guardado.nomeArquivo ? { nomeArquivo: guardado.nomeArquivo } : {}),
               }
             : null
