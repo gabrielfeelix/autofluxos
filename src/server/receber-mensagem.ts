@@ -1,5 +1,5 @@
 import 'server-only'
-import { motivoDoNaoSuportado } from '@/core/payload-da-mensagem'
+import { motivoDoNaoSuportado, tipoDoNaoSuportado } from '@/core/payload-da-mensagem'
 import { db } from './db'
 import { encaminhamentoEmTexto, telefoneLegivel } from '@/core/encaminhar'
 import { z } from 'zod'
@@ -621,6 +621,11 @@ export async function tratarUma(
    */
   // Contato novo, sem conversa ainda, segue para as boas-vindas normalmente.
   if (mensagem.type === 'unsupported') {
+    /*
+     * Álbum é só o envelope: cada foto chega em seguida como mensagem própria.
+     * Pedir "outro formato" aqui diria que não recebemos fotos que chegaram.
+     */
+    if (tipoDoNaoSuportado(mensagem) === 'album') return
     if (await pedirOutroFormato(canalSalvo, contato, mensagemId, motivoDoNaoSuportado(mensagem), fabricaDeCanal)) return
   }
 
@@ -1316,6 +1321,9 @@ async function pedirOutroFormato(
   try {
     const salva = await ultimaSessao(contato.id, canalSalvo.id)
     if (!salva) return false
+    // Automação desligada ou conversa com uma pessoa: o bot não fala. A
+    // mensagem já está no histórico e quem atende vê o aviso na bolha.
+    if (!contato.automacaoAtiva || salva.sessao.status === 'humano') return true
     const desde = new Date(Date.now() - INTERVALO_DO_PEDIDO_DE_FORMATO_MS).toISOString()
     const { data: recente } = await db()
       .from('messages')

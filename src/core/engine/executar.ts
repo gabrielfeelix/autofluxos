@@ -1785,7 +1785,15 @@ export function escolhaNoMenuDoInicio(
     return null
   }
   const repetida = perguntar(parada, inicio.sessao).length
-  const antes = inicio.acoes.slice(0, inicio.acoes.length - repetida)
+  /*
+   * Do começo fica só o que não é mensagem (etiqueta, campo, etapa). A
+   * saudação também sai: o caminho escolhido já cumprimenta, e a MGM mandava
+   * "Oi, Thais! Que bom te ver" seguido de "Oi, Thais Natsue Yano! Vamos
+   * avisar da falta" (15/out/2026).
+   */
+  const antes = inicio.acoes
+    .slice(0, inicio.acoes.length - repetida)
+    .filter((acao) => !acao.tipo.startsWith('enviar_'))
   const escolha = executar(fluxo, inicio.sessao, { tipo: 'opcao', opcaoId }, contexto)
   return { acoes: [...antes, ...escolha.acoes], sessao: escolha.sessao }
 }

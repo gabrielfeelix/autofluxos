@@ -222,6 +222,13 @@ export function casarToques(
  * a bolha fica com o aviso genérico, que é verdade sempre. Chutar o nome
  * errado seria pior que não dizer.
  */
+/** O subtipo que a Meta põe em `unsupported.type` (`album`, `poll`, `edit`...). */
+export function tipoDoNaoSuportado(payload: unknown): string | null {
+  if (!payload || typeof payload !== 'object') return null
+  const tipo = ((payload as Record<string, unknown>).unsupported as Record<string, unknown> | undefined)?.type
+  return typeof tipo === 'string' ? tipo : null
+}
+
 export function motivoDoNaoSuportado(payload: unknown): string | null {
   if (!payload || typeof payload !== 'object') return null
   const tipo = ((payload as Record<string, unknown>).unsupported as Record<string, unknown> | undefined)?.type

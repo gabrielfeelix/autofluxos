@@ -2,6 +2,7 @@ import { iguais } from '@/lib/segredo'
 import { lerCorpoComTeto } from '@/server/corpo-com-teto'
 import { createHmac, timingSafeEqual } from 'node:crypto'
 import { after } from 'next/server'
+import { db } from '@/server/db'
 import { alertar } from '@/server/alertar'
 import { receberCoexistencia, tratarAtualizacaoDaConta } from '@/server/receber-coexistencia'
 import { receberMensagem } from '@/server/receber-mensagem'
@@ -104,6 +105,21 @@ export async function POST(req: Request) {
   } catch {
     // Corpo estranho não é motivo para a Meta ficar reenviando.
     return new Response('ok', { status: 200 })
+  }
+
+  /*
+   * O 200 só sai se o banco estiver respondendo.
+   *
+   * O processamento roda depois da resposta (`after`), então um 200 com o
+   * banco fora do ar é mensagem perdida: a Meta acha que entregou e não manda
+   * de novo. Foi o que aconteceu de 17/out 19:22 a 19/out 08:20 (Supabase
+   * bloqueado por cota, 402): o Inbox ficou com um buraco e o bot do MGM não
+   * respondeu ninguém. Com 503 a Meta reenvia por até 7 dias, e as mensagens
+   * chegam quando o banco voltar.
+   */
+  if (!(await bancoResponde())) {
+    console.error('[webhook] banco fora do ar, devolvendo 503 para a Meta reenviar')
+    return new Response('indisponível', { status: 503, headers: { 'retry-after': '60' } })
   }
 
   after(async () => {
@@ -260,6 +276,27 @@ export async function POST(req: Request) {
   })
 
   return new Response('ok', { status: 200 })
+}
+
+/**
+ * Uma leitura mínima, sem corpo, com prazo curto.
+ *
+ * Erro de dado (tabela, coluna) não é "fora do ar": só rede, 402, 5xx e
+ * estouro do prazo contam. Na dúvida de outro tipo, segue com 200, para não
+ * transformar um defeito nosso em reenvio infinito da Meta.
+ */
+async function bancoResponde(): Promise<boolean> {
+  try {
+    const { error, status } = await db()
+      .from('clients')
+      .select('id', { head: true })
+      .limit(1)
+      .abortSignal(AbortSignal.timeout(5_000))
+    if (!error) return true
+    return !(status === 0 || status === 402 || status >= 500)
+  } catch {
+    return false
+  }
 }
 
 function assinaturaConfere(corpo: string, cabecalho: string | null): boolean {
