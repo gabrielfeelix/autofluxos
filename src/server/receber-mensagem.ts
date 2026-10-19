@@ -98,7 +98,7 @@ import { marcarContatos } from './repos/etiquetas'
 import { porContatoNaEtapa } from './repos/quadros'
 import { porNoQuadroPadrao } from './quadro-de-entrada'
 import { aplicarFato, marcarUltimaMensagem } from './repos/crm'
-import { anotar } from './repos/eventos'
+import { anotar, religadoEm } from './repos/eventos'
 import { registrarPassagem } from './repos/passagens'
 
 /**
@@ -1019,7 +1019,13 @@ async function avancarConversa(
   if (!viva) {
     const conta = await retomadaDoCliente(canalSalvo.clienteId)
     const minutos = conta?.minutos ?? MINUTOS_DE_RETOMADA_PADRAO
-    if (await donoFalouPeloCelularDesde(contato.id, new Date(Date.now() - minutos * 60_000))) return
+    if (await donoFalouPeloCelularDesde(contato.id, new Date(Date.now() - minutos * 60_000))) {
+      // Religar o bot depois da fala libera o que veio antes: quem religou
+      // quer o bot de volta agora, não daqui a duas horas. Só conta a fala do
+      // celular **depois** do religar. Lido só aqui, quando o prazo calaria.
+      const religado = await religadoEm(contato.id)
+      if (!religado || (await donoFalouPeloCelularDesde(contato.id, religado))) return
+    }
   }
 
   // "Início" recomeça pelo fluxo principal do número, e não pelo começo do

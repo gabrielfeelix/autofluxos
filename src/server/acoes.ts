@@ -75,6 +75,7 @@ import {
   atribuirSeSemDono,
 } from './repos/conversas'
 import { travarContato } from './repos/travas'
+import { anotar, RELIGOU_O_BOT } from './repos/eventos'
 import { membrosDaConta, removerComDestino } from './repos/usuarios'
 import { exigirHierarquia } from './pessoas'
 import { registrar } from './repos/auditoria'
@@ -2383,6 +2384,7 @@ export async function acaoDevolverAoBot(
     return { ok: false, erro: 'contato inválido' }
   }
 
+  await anotar(clienteId, contatoId, 'automacao', RELIGOU_O_BOT, acesso.sessao.usuario.nome ?? null)
   const r = await devolverAoBot(clienteId, contatoId)
   if (r === 'respondeu') return { ok: true, respondeu: true }
   // Já saiu da fila nos dois: o bot só não tinha o que responder agora.
@@ -2438,6 +2440,11 @@ export async function acaoAlternarAutomacaoDoLead(
     await sairPorEvento(contatoId, 'automacao_pausada')
     return { ok: true }
   }
+
+  // O marco que faz a espera depois da fala pelo celular recomeçar daqui:
+  // ver `religadoEm`. Sem ele, religar com a última fala sendo da equipe
+  // deixava o bot calado na resposta seguinte da pessoa.
+  await anotar(clienteId, contatoId, 'automacao', RELIGOU_O_BOT, acesso.sessao.usuario.nome ?? null)
 
   /*
    * **Religar é uma ordem para o bot assumir agora**, e não só uma chave.

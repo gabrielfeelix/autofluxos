@@ -48,6 +48,30 @@ export async function anotar(
 }
 
 /** Vários contatos, o mesmo fato. O caminho é a seleção em lote da tela. */
+/** O que vai no evento `automacao` quando alguém da equipe religa o bot. */
+export const RELIGOU_O_BOT = { o_que: 'bot religado pela equipe', religou: true } as const
+
+/**
+ * Quando alguém da equipe religou o bot nesta conversa pela última vez, ou `null`.
+ *
+ * É o que faz o religar valer contra a espera depois da fala pelo celular: a
+ * fala de antes do religar já foi "liberada" por quem religou. Erro vira `null`,
+ * e aí vale a espera normal, que é o lado seguro (calar, não atropelar).
+ */
+export async function religadoEm(contatoId: string): Promise<Date | null> {
+  const { data, error } = await db()
+    .from('eventos_do_contato')
+    .select('criado_em')
+    .eq('contato_id', contatoId)
+    .eq('tipo', 'automacao')
+    .eq('dados->>religou', 'true')
+    .order('criado_em', { ascending: false })
+    .limit(1)
+    .maybeSingle()
+  if (error || !data) return null
+  return new Date((data as { criado_em: string }).criado_em)
+}
+
 export async function anotarEmLote(
   clienteId: string,
   contatos: string[],
