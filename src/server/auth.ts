@@ -4,6 +4,7 @@ import { after } from 'next/server'
 import { nextCookies } from 'better-auth/next-js'
 import { admin, haveIBeenPwned, organization, twoFactor } from 'better-auth/plugins'
 import { Pool } from 'pg'
+import { configuracaoDoPool } from './conexao-do-banco'
 import { enviarConfirmacaoDeEmail, enviarRedefinicaoDeSenha } from './email'
 import { registrar } from './repos/auditoria'
 import { limitarSessoes } from './limite-de-sessoes'
@@ -76,7 +77,7 @@ export function bancoDoLogin(): Pool {
     // como uma exceção do driver, que não diz o que está faltando.
     throw new Error('DATABASE_URL não está configurada, o login não funciona sem ela')
   }
-  poolCache = new Pool({ connectionString: url, max: 1 })
+  poolCache = new Pool(configuracaoDoPool(url))
   return poolCache
 }
 

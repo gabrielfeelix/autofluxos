@@ -1,5 +1,6 @@
 import 'server-only'
 import { Pool } from 'pg'
+import { configuracaoDoPool } from './conexao-do-banco'
 
 /**
  * O pool do SQL direto que **não** é login: relatórios, análise de vendas, a
@@ -26,6 +27,6 @@ export function bancoDeDados(): Pool {
   if (!url) {
     throw new Error('DATABASE_URL_DADOS não está configurada, relatórios e administração não funcionam sem ela')
   }
-  poolCache = new Pool({ connectionString: url, max: 1 })
+  poolCache = new Pool(configuracaoDoPool(url))
   return poolCache
 }
