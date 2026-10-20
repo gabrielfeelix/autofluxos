@@ -816,7 +816,11 @@ function EtiquetaDoDia({ rotulo }: { rotulo: string }) {
  * chegou no aparelho, dois azuis quando a pessoa leu. Vêm do webhook
  * `statuses` da Meta (migration 0116); mensagem antiga fica com um só.
  *
- * Falha não desenha tique: quem mostra a falha é o "envio não confirmado".
+ * **Falha desenha um aviso vermelho, e não nada.** A Meta aceita o envio e
+ * só depois devolve "falhou" (pagamento recusado, número bloqueado). Antes a
+ * bolha só perdia o tique, e em 20/out/2026 a PCYES passou a manhã inteira
+ * respondendo clientes sem saber que nada chegava. Círculo cheio de vermelho
+ * para aparecer tanto na bolha azul quanto na prévia clara da fila.
  */
 export function Tiques({
   situacao,
@@ -826,7 +830,18 @@ export function Tiques({
   /** Fundo claro (a prévia da fila): lida no azul do WhatsApp, e não no ciano da bolha. */
   claro?: boolean
 }) {
-  if (situacao === 'falhou') return null
+  if (situacao === 'falhou') {
+    return (
+      <span
+        role="img"
+        aria-label="Não entregue"
+        title="Não entregue: o WhatsApp recusou o envio"
+        className={`${claro ? 'mr-1' : 'ml-1'} inline-flex size-[13px] items-center justify-center rounded-full bg-perigo align-[-2px] text-[9px] font-bold leading-none text-white`}
+      >
+        !
+      </span>
+    )
+  }
   const dois = situacao === 'entregue' || situacao === 'lida'
   const rotulo = situacao === 'lida' ? 'Lida' : situacao === 'entregue' ? 'Entregue' : 'Enviada'
   return (
