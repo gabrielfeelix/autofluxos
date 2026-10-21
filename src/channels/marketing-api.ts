@@ -132,9 +132,79 @@ export async function lerNomesDoAnuncio(entrada: {
 /* Lead Ads: o formulário nativo                                               */
 /* -------------------------------------------------------------------------- */
 
+/** Uma caixa de aceite do formulário (`custom_disclaimer_responses`) e se a pessoa marcou. */
+export type AceiteDoLead = { chave: string; marcada: boolean }
+
 export type RespostaDeLead =
-  | { ok: true; fieldData: unknown; adId: string; criadoEm: string }
+  | { ok: true; fieldData: unknown; adId: string; criadoEm: string; formId: string; aceites: AceiteDoLead[] }
   | { ok: false; erro: ErroDaMarketingApi }
+
+function lerAceites(bruto: unknown): AceiteDoLead[] {
+  if (!Array.isArray(bruto)) return []
+  return bruto
+    .map((item) => item as { checkbox_key?: unknown; is_checked?: unknown })
+    .filter((item) => typeof item.checkbox_key === 'string')
+    .map((item) => ({
+      chave: item.checkbox_key as string,
+      // A Meta já mandou o booleano como texto ("1", "true") em campos parecidos.
+      marcada: item.is_checked === true || item.is_checked === 'true' || item.is_checked === '1',
+    }))
+}
+
+/**
+ * O texto da caixa de aceite do formulário, como a pessoa leu.
+ *
+ * Melhor-esforço: é o que transforma o aceite do anúncio em prova, mas a falta
+ * dele não pode custar o lead. Qualquer erro devolve `null`, e o aceite fica
+ * gravado com a chave da caixa no lugar do texto.
+ */
+export async function lerTextoDoAceiteNaMeta(entrada: {
+  formId: string
+  token: string
+  versaoGraph?: string
+}): Promise<string | null> {
+  if (!entrada.formId) return null
+  const versao = entrada.versaoGraph ?? process.env.META_GRAPH_VERSAO ?? VERSAO_PADRAO
+  const url = new URL(`https://graph.facebook.com/${versao}/${entrada.formId}`)
+  url.searchParams.set('fields', 'legal_content{custom_disclaimer{title,body{text},checkboxes{key,text}}}')
+
+  const controle = new AbortController()
+  const prazo = setTimeout(() => controle.abort(), TIMEOUT_MS)
+  try {
+    const resposta = await fetch(url, {
+      headers: { Authorization: `Bearer ${entrada.token}` },
+      signal: controle.signal,
+    })
+    if (!resposta.ok) return null
+    const corpo = (await resposta.json().catch(() => null)) as {
+      legal_content?: {
+        custom_disclaimer?: {
+          title?: unknown
+          body?: { text?: unknown } | null
+          checkboxes?: { data?: unknown } | unknown[] | null
+        } | null
+      } | null
+    } | null
+    const aviso = corpo?.legal_content?.custom_disclaimer
+    if (!aviso) return null
+
+    const caixas = Array.isArray(aviso.checkboxes)
+      ? aviso.checkboxes
+      : Array.isArray((aviso.checkboxes as { data?: unknown } | null)?.data)
+        ? ((aviso.checkboxes as { data: unknown[] }).data)
+        : []
+    const partes = [
+      texto(aviso.title),
+      texto(aviso.body?.text),
+      ...caixas.map((c) => texto((c as { text?: unknown }).text)),
+    ].filter((parte) => parte !== '')
+    return partes.length ? partes.join('\n') : null
+  } catch {
+    return null
+  } finally {
+    clearTimeout(prazo)
+  }
+}
 
 /**
  * Busca um lead pelo `leadgen_id`.
@@ -155,7 +225,9 @@ export async function lerLeadDoFormularioNaMeta(entrada: {
 }): Promise<RespostaDeLead> {
   const versao = entrada.versaoGraph ?? process.env.META_GRAPH_VERSAO ?? VERSAO_PADRAO
   const url = new URL(`https://graph.facebook.com/${versao}/${entrada.leadgenId}`)
-  url.searchParams.set('fields', 'id,created_time,ad_id,form_id,field_data')
+  // `custom_disclaimer_responses` só vem quando o formulário tem caixa de
+  // aceite própria; sem ela, a lista vem vazia ou ausente.
+  url.searchParams.set('fields', 'id,created_time,ad_id,form_id,field_data,custom_disclaimer_responses')
 
   const controle = new AbortController()
   const prazo = setTimeout(() => controle.abort(), TIMEOUT_MS)
@@ -168,6 +240,8 @@ export async function lerLeadDoFormularioNaMeta(entrada: {
 
     const corpo = (await resposta.json().catch(() => null)) as {
       field_data?: unknown
+      form_id?: unknown
+      custom_disclaimer_responses?: unknown
       ad_id?: unknown
       created_time?: unknown
       error?: { message?: unknown; code?: unknown } | null
@@ -189,6 +263,8 @@ export async function lerLeadDoFormularioNaMeta(entrada: {
       fieldData: corpo?.field_data ?? [],
       adId: texto(corpo?.ad_id),
       criadoEm: texto(corpo?.created_time),
+      formId: texto(corpo?.form_id),
+      aceites: lerAceites(corpo?.custom_disclaimer_responses),
     }
   } catch (erro) {
     const detalhe = erro instanceof Error ? erro.message : String(erro)

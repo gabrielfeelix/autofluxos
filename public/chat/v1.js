@@ -241,6 +241,8 @@
     '.campo .tel{display:flex;gap:8px}.campo .tel select{width:104px;flex:none;padding-right:6px}' +
     '.campo .erro{color:#E11D48;font-size:12.5px;margin-top:5px}' +
     '.campo.invalido input{border-color:#E11D48}' +
+    '.aceite{display:flex;gap:10px;align-items:flex-start;font-size:12.5px;line-height:1.45;color:var(--apagado);margin:2px 0 16px;cursor:pointer}' +
+    '.aceite input{width:18px;height:18px;flex:none;margin:1px 0 0;accent-color:var(--c);cursor:pointer}' +
     '.principal{width:100%;border:0;border-radius:12px;background:var(--c);color:#fff;font-weight:700;font-size:15px;padding:13px;cursor:pointer;margin-top:6px}' +
     '.principal:hover{background:var(--c-escuro)}' +
     '.principal:disabled{opacity:.6;cursor:default}' +
@@ -850,6 +852,19 @@
       f.appendChild(caixa)
     })
 
+    /* O aceite de promoções, desmarcado: aceite que já vem marcado não é
+       aceite. O texto vem do servidor, que grava esta mesma frase como prova. */
+    var aceite = null
+    if (config.aceite && entradas.telefone) {
+      var linhaDoAceite = el('label', 'aceite')
+      aceite = el('input')
+      aceite.type = 'checkbox'
+      aceite.checked = anterior.aceite === 'sim'
+      linhaDoAceite.appendChild(aceite)
+      linhaDoAceite.appendChild(el('span', null, config.aceite))
+      f.appendChild(linhaDoAceite)
+    }
+
     var ir = el('button', 'principal', 'Iniciar conversa')
     ir.type = 'submit'
     f.appendChild(ir)
@@ -884,6 +899,7 @@
         if (primeiro) primeiro.focus()
         return
       }
+      if (aceite && aceite.checked) valores.aceite = 'sim'
       ficha = valores
       gravar('ficha', '1')
       irPara('conversa', null)

@@ -86,7 +86,7 @@ export async function POST(req: Request, { params }: Contexto) {
         segredo,
         opcao ? { tipo: 'opcao', ref, opcaoId: opcao.id, rotulo: opcao.rotulo } : { tipo: 'texto', ref, texto: texto! },
         pagina ?? null,
-        ficha?.ok ? { nome: ficha.nome, campos: ficha.campos } : null,
+        ficha?.ok ? { nome: ficha.nome, campos: ficha.campos, aceitouPromocoes: analise.data.ficha?.aceite === 'sim' } : null,
       )
     } catch (erro) {
       console.error('[site] falhou ao processar a mensagem', erro)

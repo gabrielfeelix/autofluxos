@@ -429,6 +429,7 @@ export const MOTIVOS_DA_EXCLUSAO = [
   'sem_telefone',
   'janela_fechada_sem_modelo',
   'nunca_escreveu',
+  'pediu_para_sair',
 ] as const
 
 export type MotivoDaExclusao = (typeof MOTIVOS_DA_EXCLUSAO)[number]
@@ -437,6 +438,7 @@ export const FRASE_DO_MOTIVO: Record<MotivoDaExclusao, string> = {
   sem_telefone: 'sem número de WhatsApp',
   janela_fechada_sem_modelo: 'fora da janela de 24h, e o envio é de texto livre',
   nunca_escreveu: 'nunca escreveu para este número',
+  pediu_para_sair: 'pediu para não receber promoções',
 }
 
 /** `AAAA-MM-DD` que existe no calendário (31/02 não passa). */

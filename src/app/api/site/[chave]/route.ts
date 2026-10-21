@@ -1,3 +1,4 @@
+import { TEXTO_DO_ACEITE_DO_SITE } from '@/core/consentimento'
 import { abrirPorta, preflight, responder } from '@/server/api-do-site'
 
 export const dynamic = 'force-dynamic'
@@ -17,7 +18,10 @@ export async function GET(req: Request, { params }: Contexto) {
   if (!porta.ok) return porta.resposta
 
   const { titulo, cor, saudacao, formulario, prazo, ligacao, mascote, tema } = porta.canal.config
-  return responder(porta.origem, { titulo, cor, saudacao, formulario, prazo, ligacao, mascote, tema })
+  // A caixa de aceite só aparece quando o formulário pede WhatsApp: sem número,
+  // não há para onde mandar promoção, e a caixa seria um aceite de nada.
+  const aceite = formulario.some((campo) => campo.tipo === 'telefone') ? TEXTO_DO_ACEITE_DO_SITE : null
+  return responder(porta.origem, { titulo, cor, saudacao, formulario, prazo, ligacao, mascote, tema, aceite })
 }
 
 export async function OPTIONS(req: Request, { params }: Contexto) {

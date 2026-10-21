@@ -5,6 +5,7 @@ import { aplicarStatusPorWamid, type EstadoDoDestinatario } from './repos/transm
 import { avancarSituacaoDaMensagem, type SituacaoDaMensagem } from './repos/conversas'
 import { atualizarCategoriaPorWabaId, atualizarStatusPorWabaId, templatesDoWabaId } from './repos/templates'
 import { avisarModeloDoWhatsapp } from './avisos-por-email'
+import { saidaPelaMeta } from './consentimento'
 
 /**
  * Os dois webhooks que contam a verdade sobre um template.
@@ -270,6 +271,10 @@ export async function receberStatusDeEntrega(payload: unknown): Promise<Resultad
         if (codigo !== null && condutaPara(codigo) === 'template_pausado') {
           mortos.add(codigo)
         }
+
+        // A pessoa parou as promoções pelo próprio WhatsApp: vira a mesma
+        // saída do "SAIR", para a próxima transmissão já não tentar.
+        if (codigo === 131050) await saidaPelaMeta(wamid)
 
         // Os tiques da Inbox. Melhor-esforço: falhar aqui não pode derrubar o
         // webhook e fazer a Meta reenviar o lote.

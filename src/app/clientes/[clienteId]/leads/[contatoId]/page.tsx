@@ -72,7 +72,10 @@ import {
   iconeEtiqueta,
   iconeLapis,
   iconeLinhaDoTempo,
+  iconeMegafone,
 } from '@/components/lead-crm/icones'
+import { PromocoesDoContato } from '@/components/lead-crm/promocoes-do-contato'
+import { marketingDoContato } from '@/server/repos/consentimentos'
 import { SeletorDeEtiquetas } from '@/components/etiquetas/seletor'
 import {
   AnexoNaConversa,
@@ -135,6 +138,7 @@ export default async function Pagina({
     sessaoDaFicha,
     comPessoa,
     funis,
+    promocoes,
   ] = await Promise.all([
     acharCliente(clienteId),
     // Contato de outra pessoa, fora do alcance, cai no `notFound` abaixo.
@@ -166,6 +170,8 @@ export default async function Pagina({
     sessaoComPessoa(contatoId),
     // Para o "+ Nova negociação": em qual funil ela abre.
     listarQuadros(clienteId),
+    // Recebe promoções? O aceite e o "SAIR" (0059).
+    marketingDoContato(clienteId, contatoId),
   ])
   if (!cliente || !lead) notFound()
   const arquivosPorNegocio = await contagemDeArquivos(
@@ -563,6 +569,27 @@ export default async function Pagina({
                           disponiveis={etiquetas}
                           aplicadas={lead.etiquetasManuais.map((etiqueta) => etiqueta.id)}
                         />
+                      </div>
+                    </section>
+                    <section id="promocoes" className="app-card overflow-hidden">
+                      <h2 className="flex items-center gap-2 border-b border-line px-[18px] py-3.5 text-[13px] font-bold">
+                        <IconeDaSecao>{iconeMegafone}</IconeDaSecao>
+                        Promoções pelo WhatsApp
+                        <AjudaDoCampo
+                          titulo="Promoções pelo WhatsApp"
+                          texto="Se esta pessoa entra nas transmissões de marketing."
+                          detalhes={
+                            <p>
+                              Quem responde <strong>SAIR</strong> ou <strong>PARAR</strong> sai das
+                              promoções na hora e recebe a confirmação. Avisos de serviço, como
+                              mudança de horário, continuam chegando. O aceite feito no chat do site
+                              ou no formulário do anúncio fica registrado aqui, com a data.
+                            </p>
+                          }
+                        />
+                      </h2>
+                      <div className="px-[18px] py-4">
+                        <PromocoesDoContato clienteId={clienteId} contatoId={contatoId} estado={promocoes} />
                       </div>
                     </section>
                   </div>

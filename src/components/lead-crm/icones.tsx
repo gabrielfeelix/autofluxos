@@ -138,3 +138,12 @@ export function IconeWhatsApp({ className = 'size-[13px]' }: { className?: strin
     </svg>
   )
 }
+
+/** Promoções: o megafone, o que a transmissão manda. */
+export const iconeMegafone = (
+  <>
+    <path d="M4.5 10v4a1 1 0 0 0 1 1h2l6.5 4V5L7.5 9h-2a1 1 0 0 0-1 1Z" />
+    <path d="M17.5 9.2a4 4 0 0 1 0 5.6" />
+    <path d="M9 15.2 10 19.5" />
+  </>
+)

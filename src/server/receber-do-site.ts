@@ -10,6 +10,9 @@ import {
   type TipoDoFormulario,
 } from '@/core/chat-do-site'
 import { PREFIXO_DO_SITE } from '@/core/contatos/visitante-do-site'
+import { TEXTO_DO_ACEITE_DO_SITE } from '@/core/consentimento'
+import { alertar } from './alertar'
+import { mudarMarketing } from './consentimento'
 import { db } from './db'
 import { gravarCampos } from './repos/campos'
 import type { CanalDoSite } from './repos/canais-site'
@@ -70,8 +73,14 @@ export function paraMensagemInterna(endereco: string, chegou: ChegadaDoSite): Me
   return { ...base, type: 'text', text: { body: chegou.texto.slice(0, TETO_DA_MENSAGEM) } }
 }
 
-/** O formulário do balão, já conferido por `lerFicha`. */
-export type FichaDoVisitante = { nome: string | null; campos: Record<string, string> }
+/**
+ * O formulário do balão, já conferido por `lerFicha`.
+ *
+ * `aceitouPromocoes` é a caixa de aceite marcada (ver `TEXTO_DO_ACEITE_DO_SITE`).
+ * Fica fora de `campos` porque não é dado da pessoa, é prova de consentimento,
+ * e tem tabela própria.
+ */
+export type FichaDoVisitante = { nome: string | null; campos: Record<string, string>; aceitouPromocoes?: boolean }
 
 export async function receberDoSite(
   canal: CanalDoSite,
@@ -89,6 +98,7 @@ export async function receberDoSite(
   await tratarUma(canal, mensagem, ficha?.nome ?? null, () => canalDoSite())
 
   if (ficha && Object.keys(ficha.campos).length) await guardarFicha(canal.clienteId, endereco, ficha.campos)
+  if (ficha?.aceitouPromocoes) await guardarAceite(canal.clienteId, endereco)
   if (pagina) await lembrarPagina(canal.clienteId, endereco, pagina)
 }
 
@@ -114,6 +124,38 @@ async function guardarFicha(clienteId: string, endereco: string, campos: Record<
   const novos: Record<string, ValorDeCampo> = {}
   for (const [chave, valor] of Object.entries(campos)) novos[chave] = { valor, origem: 'contato', autorId: null, em }
   await gravarCampos(clienteId, data.id, novos)
+}
+
+/**
+ * A caixa de aceite do balão, gravada com o texto exato que ela mostrava.
+ *
+ * **Só no visitante, nunca no contato de WhatsApp com o mesmo número.** O
+ * número do formulário é digitado, não conferido: copiar o aceite para o
+ * WhatsApp deixaria qualquer um aceitar promoções em nome de outra pessoa, e
+ * pior, religar quem tinha mandado "SAIR".
+ *
+ * Melhor-esforço: o aceite que não gravou vira alerta, e a mensagem do
+ * visitante já foi atendida acima.
+ */
+async function guardarAceite(clienteId: string, endereco: string): Promise<void> {
+  try {
+    const { data } = await db()
+      .from('contacts')
+      .select('id')
+      .eq('client_id', clienteId)
+      .eq('wa_id', endereco)
+      .maybeSingle()
+    if (!data) return
+    await mudarMarketing({
+      clienteId,
+      contatoId: (data as { id: string }).id,
+      aceito: true,
+      origem: 'site',
+      textoExibido: TEXTO_DO_ACEITE_DO_SITE,
+    })
+  } catch (erro) {
+    await alertar('não foi possível gravar o aceite de promoções do chat do site', erro, {})
+  }
 }
 
 /**

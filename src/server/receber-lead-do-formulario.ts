@@ -1,7 +1,8 @@
 import 'server-only'
-import { lerLeadDoFormularioNaMeta } from '@/channels/marketing-api'
+import { lerLeadDoFormularioNaMeta, lerTextoDoAceiteNaMeta } from '@/channels/marketing-api'
 import { lerLeadDoFormulario, type AvisoDeLead } from '@/core/lead-ads'
 import { alertar } from './alertar'
+import { mudarMarketing } from './consentimento'
 import { porNoQuadroPadrao } from './quadro-de-entrada'
 import { acharContatoPeloTelefone } from './repos/contato-por-telefone'
 import { guardarCampo } from './repos/conversas'
@@ -142,6 +143,8 @@ async function umLead(
    */
   if (!criado.ok) {
     await registrarAnuncio(clienteId, null, lead.telefone, aviso, lead)
+    const existente = await acharContatoPeloTelefone(clienteId, lead.telefone).catch(() => null)
+    if (existente) await guardarAceite(clienteId, existente, busca, token)
     return 'repetidos'
   }
 
@@ -160,9 +163,43 @@ async function umLead(
   })
 
   await registrarAnuncio(clienteId, criado.contatoId, lead.telefone, aviso, lead)
+  await guardarAceite(clienteId, criado.contatoId, busca, token)
   await porNoQuadroPadrao({ id: criado.contatoId, clienteId })
 
   return 'criados'
+}
+
+/**
+ * A caixa de aceite do formulário, quando ele tem uma.
+ *
+ * **Sem caixa, nada é gravado.** Mandar o telefone num formulário é pedir
+ * contato, não aceitar promoção, e escrever "aceitou" ali seria criar uma prova
+ * que a pessoa não deu. Com caixa, vale o que ela marcou: todas marcadas é
+ * aceite; alguma desmarcada (a opcional de ofertas, tipicamente) é recusa.
+ *
+ * O formulário é de quem está logado no Facebook, então, ao contrário do chat
+ * do site, o aceite daqui vale também para quem já era contato.
+ */
+async function guardarAceite(
+  clienteId: string,
+  contatoId: string,
+  busca: Extract<Awaited<ReturnType<typeof lerLeadDoFormularioNaMeta>>, { ok: true }>,
+  token: string,
+): Promise<void> {
+  if (busca.aceites.length === 0) return
+  try {
+    const lido = await lerTextoDoAceiteNaMeta({ formId: busca.formId, token })
+    const marcadas = busca.aceites.map((a) => `${a.marcada ? '[x]' : '[ ]'} ${a.chave}`).join('\n')
+    await mudarMarketing({
+      clienteId,
+      contatoId,
+      aceito: busca.aceites.every((a) => a.marcada),
+      origem: 'lead_ads',
+      textoExibido: lido ? `${lido}\n\n${marcadas}` : marcadas,
+    })
+  } catch (erro) {
+    await alertar('não foi possível gravar o aceite do formulário do anúncio', erro, { contato: contatoId })
+  }
 }
 
 /**

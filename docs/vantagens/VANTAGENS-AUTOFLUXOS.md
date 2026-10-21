@@ -68,6 +68,13 @@ aqui fica o que o cliente ganha.
 - **Envio aos poucos**: X mensagens por hora, só no horário de atendimento, e
   as respostas chegam num ritmo que a equipe acompanha. *(21/out/2026)*
 - **Saber quem clicou no link** da transmissão. *(21/out/2026)*
+- **Sair com uma palavra**: quem responde SAIR ou PARAR deixa de receber
+  promoções na hora, recebe a confirmação e continua sendo atendido. As
+  transmissões de marketing pulam essa pessoa sozinhas, e o número da empresa
+  não perde qualidade com denúncia. *(21/out/2026)*
+- **Aceite com prova**: a caixa de aceite do chat do site e do formulário do
+  anúncio fica registrada com o texto exato e a data, visível na ficha do
+  contato. *(21/out/2026)*
 - **Cards de produto, cupons e carrinho abandonado** no WhatsApp.
 - **Lead Ads**: o formulário do Facebook e do Instagram vira contato no funil.
 

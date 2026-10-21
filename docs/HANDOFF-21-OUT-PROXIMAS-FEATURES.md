@@ -18,14 +18,22 @@ código.
 
 ## Fila, em ordem de prioridade
 
-### 1. Opt-out "SAIR" e registro de opt-in (2 dias)
-Exigência da Meta e proteção do número de todo cliente. A tabela
-`public.consentimentos` **já existe** (0059, guarda o texto exibido e a
-categoria) e **nenhum código a usa**. Falta: palavra "SAIR"/"PARAR" no
-recebimento marca o contato como fora de marketing e responde confirmando; a
-transmissão exclui quem saiu (motivo gravado em `motivo_da_exclusao`); ficha
-mostra o estado; formulário do site e Lead Ads gravam o aceite. Sem decisão
-pendente: pode fazer direto.
+### 1. Opt-out "SAIR" e registro de opt-in · **feito em 21/out**
+Sem migration (usa `public.consentimentos` da 0059). Núcleo em
+`src/core/consentimento.ts`, gravação em `src/server/consentimento.ts`.
+- "SAIR", "PARAR", "STOP", "parar promoções" e afins, **como mensagem
+  inteira**, no WhatsApp: grava a saída, confirma, não acorda o bot. Vence a
+  leitura de "sair da IA" de propósito.
+- Transmissão com modelo MARKETING exclui quem saiu (motivo `pediu_para_sair`);
+  modelo UTILITY continua chegando.
+- Erro `131050` da Meta (pessoa parou pelo próprio WhatsApp) virou `desistir`
+  (antes repetia) e grava a mesma saída, no envio e no webhook de status.
+- Ficha: cartão "Promoções pelo WhatsApp" com interruptor (origem `manual`).
+- Chat do site: caixa de aceite desmarcada quando o formulário pede WhatsApp;
+  grava só no visitante (número digitado não é prova de dono).
+- Lead Ads: lê `custom_disclaimer_responses`; sem caixa no formulário, nada é
+  gravado. **Não validado ao vivo**: o campo `legal_content` do formulário
+  (texto da caixa). Se falhar, grava só a chave da caixa.
 
 ### 2. Cobrança própria, camada 1 (10 a 14 dias) · decidir com o Gabriel antes
 Desenho já pesquisado em `MERCADO-COBRANCA-NO-CHAT.md`:

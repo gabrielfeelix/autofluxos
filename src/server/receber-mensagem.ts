@@ -101,6 +101,8 @@ import { aplicarFato, marcarUltimaMensagem } from './repos/crm'
 import { anotar, religadoEm } from './repos/eventos'
 import { registrarPassagem } from './repos/passagens'
 import { enviarEmailDoBloco } from './email-do-fluxo'
+import { ehPedidoDeSaida } from '@/core/consentimento'
+import { atenderPedidoDeSaida } from './consentimento'
 
 /**
  * O caminho de uma mensagem do WhatsApp até a resposta.
@@ -155,6 +157,12 @@ const mensagemSchema = z.object({
     .optional(),
   referral: referralSchema.optional(),
   text: z.object({ body: z.string() }).optional(),
+  /*
+   * O botão de resposta rápida de um **modelo** (`type: 'button'`), que não é
+   * o `interactive` das mensagens comuns. É por ele que chega o "Parar
+   * promoções" que a Meta põe nos modelos de marketing.
+   */
+  button: z.object({ text: z.string().optional(), payload: z.string().optional() }).optional(),
   interactive: z
     .object({
       button_reply: z.object({ id: z.string(), title: z.string().optional() }).optional(),
@@ -647,6 +655,17 @@ export async function tratarUma(
    * entrega da Meta decidir o acompanhamento do cliente.
    */
   await sairPorEvento(contato.id, 'respondeu')
+
+  /*
+   * "SAIR" sozinho tira a pessoa das promoções, e o bot não responde por cima
+   * (ver `core/consentimento.ts`). Depois de `sairPorEvento` de propósito: quem
+   * pede para sair também sai das sequências. Só no WhatsApp, que é por onde
+   * sai marketing; "sair" no chat do site é a pessoa fechando a conversa.
+   */
+  if (canalSalvo.provider === 'cloud-api' && texto && ehPedidoDeSaida(texto)) {
+    await atenderPedidoDeSaida(() => fabricaDeCanal(canalSalvo), contato, texto)
+    return
+  }
 
   /*
    * A rajada, ver `core/rajada.ts`: texto espera um pouco antes de acordar o
@@ -2721,7 +2740,9 @@ function paraEntrada(mensagem: Mensagem): { entrada: Entrada; texto: string | nu
       ...(anexo?.id ? { midiaId: anexo.id } : {}),
       ...(anexo?.caption ? { legenda: anexo.caption } : {}),
     },
-    texto: anexo?.caption ?? null,
+    // O botão do modelo entra como texto da linha, para a conversa mostrar o
+    // que a pessoa tocou; o motor segue tratando como antes.
+    texto: anexo?.caption ?? mensagem.button?.text ?? null,
   }
 }
 

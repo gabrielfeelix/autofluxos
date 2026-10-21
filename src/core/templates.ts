@@ -551,6 +551,7 @@ export function condutaPara(codigo: number): Conduta {
       return 'repetir'
 
     case 131026: // não entregável: não é usuário, bloqueou, ou app velho
+    case 131050: // a pessoa parou as promoções pelo próprio WhatsApp
       return 'desistir'
 
     case 131049: // limite de marketing por usuário, decisão da Meta, não nossa
@@ -584,6 +585,8 @@ export function explicarErro(codigo: number): string {
       return 'A conta está em manutenção na Meta. Vamos tentar de novo em instantes.'
     case 131026:
       return 'Este número não recebe: ou não tem WhatsApp, ou bloqueou a empresa.'
+    case 131050:
+      return 'A pessoa parou as promoções desta empresa pelo próprio WhatsApp.'
     case 131049:
       return 'A Meta segurou esta mensagem para não encher a caixa da pessoa. Tentamos de novo em 24h.'
     case 131056:

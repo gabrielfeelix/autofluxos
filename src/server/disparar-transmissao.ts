@@ -26,6 +26,7 @@ import { db } from './db'
 import { linkDoClique, modeloComClique } from './link-do-clique'
 import { horarioDoCliente } from './repos/clientes'
 import { revalidarComJanela } from './servicos/elegibilidade'
+import { mudarMarketing } from './consentimento'
 import { listarCanais } from './repos/conversas'
 import { lerTemplate, type Template as TemplateLido } from './repos/templates'
 import {
@@ -298,6 +299,9 @@ async function tentarUm(
     ? { recusa: 'visitante do chat do site, sem WhatsApp', textoLivre: false }
     : await revalidarComJanela(transmissao.clienteId, destinatario.contatoId, {
         comModelo: true,
+        // Quem pediu para sair das promoções não recebe modelo de marketing,
+        // e continua recebendo o de utilidade (aviso de aula, de pedido).
+        marketing: template.categoria === 'MARKETING',
       })
   if (recusa) {
     await marcarDestinatario(destinatario.id, { estado: 'falhou', erro: recusa })
@@ -384,6 +388,18 @@ async function tentarUm(
         erro: codigo !== null ? explicarErro(codigo) : null,
       })
       return { tipo: 'parar_tudo', motivo: decisao.motivo }
+    }
+
+    // A pessoa parou as promoções pelo próprio WhatsApp: a próxima
+    // transmissão já não tenta (ver `server/consentimento.ts`).
+    if (codigo === 131050) {
+      await mudarMarketing({
+        clienteId: transmissao.clienteId,
+        contatoId: destinatario.contatoId,
+        aceito: false,
+        origem: 'meta',
+        textoExibido: null,
+      }).catch((e) => console.error('[transmissao] não foi possível gravar a saída avisada pela Meta', e))
     }
 
     await marcarDestinatario(destinatario.id, {

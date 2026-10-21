@@ -2,6 +2,7 @@ import 'server-only'
 import { permissaoDeEnvio } from '@/channels/janela'
 import { FRASE_DO_MOTIVO as FRASES, type MotivoDaExclusao as Motivo } from '@/core/segmentos'
 import { db, ehIdInvalido } from '../db'
+import { marketingDosContatos } from '../repos/consentimentos'
 
 /**
  * Quem pode receber, e por que os outros não (T6.2, RB-39).
@@ -70,18 +71,22 @@ export type Previa = {
  * `comModelo` muda a resposta inteira, e é o parâmetro que mais se esquece:
  * com modelo aprovado, a janela fechada **não** exclui ninguém (é para isso que
  * o modelo existe); sem ele, o envio é texto livre e a janela é a lei.
+ *
+ * `marketing` (padrão `true`) exclui quem pediu para sair das promoções. Só a
+ * transmissão com modelo de utilidade passa `false`: "sua aula mudou de
+ * horário" é serviço, e quem saiu das promoções continua precisando receber.
  */
 export async function avaliarElegibilidade(
   clienteId: string,
   contatoIds: readonly string[],
-  opcoes: { comModelo: boolean; agora?: number },
+  opcoes: { comModelo: boolean; agora?: number; marketing?: boolean },
 ): Promise<Previa> {
   const agora = opcoes.agora ?? Date.now()
 
   const vazia: Previa = {
     correspondentes: contatoIds.length,
     elegiveis: 0,
-    excluidos: { sem_telefone: 0, janela_fechada_sem_modelo: 0, nunca_escreveu: 0 },
+    excluidos: { sem_telefone: 0, janela_fechada_sem_modelo: 0, nunca_escreveu: 0, pediu_para_sair: 0 },
     gratuitas: 0,
     naJanela: 0,
     custoNaoConfirmado: 0,
@@ -92,11 +97,14 @@ export async function avaliarElegibilidade(
   // A janela sai da view `leads`, que já resolve `porta_de_entrada_em` com o
   // filtro de tipo da 0074. Reimplementar a consulta aqui seria criar a
   // consulta gêmea que a F3 acabou de unificar.
-  const { data, error } = await db()
-    .from('leads')
-    .select('contact_id, wa_id, ultima_entrada_em, porta_de_entrada_em')
-    .eq('client_id', clienteId)
-    .in('contact_id', [...contatoIds])
+  const [{ data, error }, consentimentos] = await Promise.all([
+    db()
+      .from('leads')
+      .select('contact_id, wa_id, ultima_entrada_em, porta_de_entrada_em')
+      .eq('client_id', clienteId)
+      .in('contact_id', [...contatoIds]),
+    opcoes.marketing === false ? null : marketingDosContatos(clienteId, contatoIds),
+  ])
 
   if (ehIdInvalido(error)) return vazia
   if (error) throw new Error(`não foi possível avaliar a elegibilidade: ${error.message}`)
@@ -119,7 +127,8 @@ export async function avaliarElegibilidade(
       agora,
     )
 
-    const resultado = decidir(linha.wa_id, permissao, opcoes.comModelo)
+    const saiu = consentimentos?.get(linha.contact_id)?.aceito === false
+    const resultado = decidir(linha.wa_id, permissao, opcoes.comModelo, saiu)
 
     previa.detalhes.push({
       contatoId: linha.contact_id,
@@ -154,8 +163,13 @@ function decidir(
   waId: string | null,
   permissao: ReturnType<typeof permissaoDeEnvio>,
   comModelo: boolean,
+  saiuDoMarketing: boolean,
 ): { elegivel: boolean; motivo: Motivo | null } {
   if (!waId) return { elegivel: false, motivo: 'sem_telefone' }
+
+  // Antes do modelo de propósito: o modelo aprovado vence a janela de 24h,
+  // nunca o pedido de sair.
+  if (saiuDoMarketing) return { elegivel: false, motivo: 'pediu_para_sair' }
 
   // Com modelo aprovado, a janela fechada não impede: é exatamente para isso
   // que o modelo existe.
@@ -200,7 +214,7 @@ export async function revalidarNoEnvio(
 export async function revalidarComJanela(
   clienteId: string,
   contatoId: string,
-  opcoes: { comModelo: boolean; agora?: number },
+  opcoes: { comModelo: boolean; agora?: number; marketing?: boolean },
 ): Promise<{ recusa: string | null; textoLivre: boolean }> {
   const previa = await avaliarElegibilidade(clienteId, [contatoId], opcoes)
   const detalhe = previa.detalhes[0]
