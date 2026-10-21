@@ -5,7 +5,10 @@ fazer". Escrito em 21/out/2026 depois de ler o código de cada peça.
 
 **Estado em 21/out/2026:** itens 3 e 5 no ar (`274f2892`); itens 1, 2 e 4 em
 `708349e6`, com a migration `0139` aplicada em produção no mesmo dia, com
-autorização do Gabriel. Itens 6 a 9 ficam para depois.
+autorização do Gabriel. Itens 6 (`230cf02f`) e 9 (`7c03baee`) no ar no mesmo
+dia. Item 8 (`6fdd13ef`) depende da migration `0140`. Item 7 manda
+`LeadSubmitted` na primeira mudança de etapa e `Purchase` na venda ganha, e
+depende de o app da Meta ter `whatsapp_business_manage_events`.
 
 Limite conhecido do item 4: só conta clique em modelo **criado depois** pela
 biblioteca (o modelo escrito do zero na nossa tela ainda não tem botão), e na

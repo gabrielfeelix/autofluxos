@@ -389,6 +389,8 @@ export const TIPOS_DE_EVENTO = [
   'email-enviado',
   /** Voltou ao rodízio porque quem atendia ficou ausente. Ver `server/redistribuir-ausente.ts`. */
   'redistribuida',
+  /** Lead ou venda devolvidos à Meta pela Conversions API. Ver `server/conversoes-da-meta.ts`. */
+  'conversao-enviada',
 ] as const
 
 export type TipoDeEvento = (typeof TIPOS_DE_EVENTO)[number]
@@ -450,6 +452,8 @@ export function comoFrase(evento: Evento): string {
      */
     case 'abriu-produto':
       return d.produto ? `abriu o produto ${d.produto}` : 'abriu um produto'
+    case 'conversao-enviada':
+      return d.evento === 'Purchase' ? 'a venda foi contada para o anúncio de origem' : 'o lead foi contado para o anúncio de origem'
     case 'redistribuida':
       if (d.para) return `passou de ${d.de ?? 'quem atendia'} para ${d.para}, que estava disponível`
       return `ficou sem dono porque ${d.de ?? 'quem atendia'} ficou ausente`

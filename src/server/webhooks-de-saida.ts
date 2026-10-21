@@ -16,6 +16,7 @@ import { lerContatoDaApi, type ContatoDaApi } from './api/contatos'
 import { lerDoCofre } from './cofre'
 import { agenteFixadoEm } from './efeitos/http'
 import { conferirEndereco } from './efeitos/rede'
+import { avisarConversao } from './conversoes-da-meta'
 import {
   assinantesDoEvento,
   destinoDoWebhook,
@@ -69,6 +70,11 @@ export async function emitirEvento(
   contatoId: string,
   dados: Record<string, unknown> = {},
 ): Promise<void> {
+  // A Conversions API anda junto dos webhooks de saída, mas não depende de
+  // ninguém assinar: é a Meta que recebe. Ver `conversoes-da-meta.ts`.
+  if (evento === 'oportunidade.ganha') avisarConversao(clienteId, contatoId, 'Purchase', typeof dados.valor === 'number' ? dados.valor : null)
+  if (evento === 'contato.etapa_mudou') avisarConversao(clienteId, contatoId, 'LeadSubmitted')
+
   try {
     const assinantes = await assinantesDoEvento(clienteId, evento)
     if (assinantes.length === 0) return
