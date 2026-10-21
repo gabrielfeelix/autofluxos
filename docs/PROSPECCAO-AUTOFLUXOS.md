@@ -43,6 +43,10 @@ como **[CONTA]**, com a premissa escrita do lado.
 5. **Programa de indicação para contadores e agências**, com comissão
    recorrente. É como quase todos os concorrentes brasileiros crescem.
 
+**Foco e agenda:** primeiro nicho é estúdio de pilates (AutoFluxos e Verandi
+juntos), e o bot vende de dia enquanto o Gabriel fecha à noite e no sábado.
+Plano semanal na seção 10.
+
 **Quanto custa o mês 1:** cerca de **R$ 1.100 a R$ 1.600**, quase tudo anúncio
 (R$ 1.000 a R$ 1.500). Garimpo e WhatsApp ficam na cota grátis no volume
 proposto. Detalhe na seção 5.
@@ -424,6 +428,135 @@ ou o dinheiro no que marcou mais.
 
 ---
 
+## 10. O plano no horário do Gabriel (noite e fim de semana)
+
+Atualização de 21/out/2026. O Gabriel trabalha das 8h às 18h; vende das 19h30
+às 22h30 e no fim de semana. Isso muda o plano da seção 8: ligação e visita em
+horário comercial saem, e o trabalho do dia passa a ser feito pelo próprio
+AutoFluxos.
+
+### A tese: vender pilates, não "automação de WhatsApp"
+
+O primeiro nicho é **estúdio de pilates**, com AutoFluxos e Verandi juntos.
+
+- **Já está provado:** a MGM paga e usa agendamento, reagendamento, falta e
+  licença.
+- **O mercado é grande e cresce:** [OFICIAL] 62.718 CNPJs de atividade física
+  em 2025, contra 22.581 em 2015, a maioria com 1 unidade e até 10
+  funcionários ([Panorama Setorial Fitness Brasil, 20/02/2026](https://www.fitnessbrasil.com.br/newsfitbr/explosao-das-academias-no-brasil-setor-quase-triplica-em-10-anos-e-pode-ultrapassar-70-mil-cnpjs-ate-2027/)).
+  Pilates não tem CNAE próprio, então não existe contagem oficial de estúdios.
+  [TERCEIRO] Os check-ins de pilates no Wellhub subiram 277% de 2019 a 2024
+  ([Coluna Esplanada, 07/10/2025](https://www.colunaesplanada.com.br/pratica-de-pilates-no-brasil-cresce-277-em-cinco-anos/)).
+- **O buraco existe:** no estúdio pequeno, ninguém do que achamos oferece bot
+  pela API oficial que remarca aula e trata falta. O Software Pilates (mais de
+  4.200 estúdios, R$ 44,90) automatiza por Z-API, que é conexão não oficial
+  ([OFICIAL](https://www.softwarepilates.com.br/)). O argumento de venda é
+  "o seu número não cai".
+- **Clínica fica para depois:** odonto já tem secretária de IA vendida como
+  módulo pela Simples Dental e pela Clinicorp
+  ([OFICIAL](https://www.simplesdental.com/planos-e-precos),
+  [OFICIAL](https://www.clinicorp.com/)).
+- **Ameaças:** academia grande já tem IA no WhatsApp pela Next Fit, pela Pacto
+  e pelo GymBot ([OFICIAL](https://nextfit.com.br/),
+  [OFICIAL](https://gymbot.com.br/)), e a Meta lançou em 03/jun/2026 um agente
+  de IA próprio para o WhatsApp
+  ([TERCEIRO, ppc.land](https://ppc.land/meta-business-agent-brings-ai-customer-service-to-whatsapp-globally/)).
+  A defesa é o que um robô genérico não faz: ligar a agenda do estúdio
+  (Verandi) à conversa.
+
+### A máquina: o bot trabalha de dia, o Gabriel fecha à noite
+
+[TERCEIRO] Empresas que responderam o lead em até 1 hora tiveram cerca de
+7 vezes mais chance de qualificá-lo (1,25 milhão de leads, estudo publicado na
+HBR em 2011, [BYU](https://scholarsarchive.byu.edu/facpub/9711)). O Gabriel não
+consegue responder em 1 hora durante o expediente; o AutoFluxos consegue.
+
+1. **Anúncio de clique para o WhatsApp** roda o dia todo, com criativo que já
+   filtra ("Dono de estúdio de pilates: sua recepção remarca aula sozinha").
+   Depois dos cortes de segmentação da Meta em 2025, quem filtra é o criativo,
+   não o público ([TERCEIRO, Jon Loomer](https://www.jonloomer.com/how-advantage-plus-audience-works/)).
+2. **O bot da 4YU atende na hora:** pergunta se é dono, quantos alunos e
+   quantos atendem o WhatsApp, e manda um vídeo de 2 minutos da MGM funcionando.
+   A frase de venda é: "este atendimento que você acabou de receber é o
+   produto".
+3. **O bot oferece horário de demonstração** só nos horários do Gabriel: de
+   segunda a quinta às 21h e às 21h45, e sábado à tarde. Às 19h30 o dono de
+   estúdio costuma estar dando aula: academia tem pico depois das 18h
+   ([TERCEIRO, Correio Braziliense, jun/2026](https://www.correiobraziliense.com.br/economia/2026/06/7439909-fitness-sem-hora-marcada-como-as-academias-se-adaptam-a-sua-rotina.html)).
+4. **Na demonstração (20 min, por vídeo)**, o Gabriel mostra o fluxo da MGM e
+   oferece montar o do estúdio.
+
+### A oferta: tirar o motivo para dizer não
+
+- **"Eu monto o seu atendimento em até 48 horas"**, a partir do fluxo da MGM.
+  O dono não configura nada.
+- **Oferta de fundador para os 10 primeiros estúdios:** implantação grátis e
+  preço travado por 12 meses, em troca de depoimento em vídeo e de liberar o
+  caso. É regra da 4YU, não dado de mercado.
+- **14 dias grátis**, que o AutoFluxos já tem no Profissional
+  (`docs/FUNCIONALIDADES.md:386-404`).
+- **Indicação:** 1 mês grátis para quem indicar um estúdio que feche. Para
+  comparar, a Loja Integrada paga 35% recorrente ([OFICIAL](https://lojaintegrada.com.br/hub/programa-de-indicacoes-da-loja-integrada/))
+  e a Kommo de 35% a 50% (seção 6). Começar com a MGM.
+
+### A semana
+
+| Quando | O quê | Meta da semana |
+|---|---|---|
+| Seg 19h30 a 21h | Ler o que o bot qualificou no fim de semana, responder, ajustar o anúncio | |
+| Seg a Qui 21h a 22h30 | Demonstrações (até 2 por noite) | 4 a 6 demonstrações |
+| Ter e Qua 19h30 a 21h | WhatsApp manual do próprio celular para 10 estúdios por noite, da lista do Garimpo, cada mensagem escrita para aquele estúdio, com opção de sair | 20 mensagens |
+| Qui 19h30 a 21h | Parceiros: e-mail ou mensagem para fabricantes de equipamento, professoras de gestão de estúdio e formações | 3 contatos |
+| Sex | Folga | |
+| Sáb 9h a 13h | Visitar 4 a 6 estúdios perto de casa, com rota montada pelo Garimpo (ele grava latitude e longitude), mostrando o bot no celular | 5 visitas |
+| Sáb 14h a 17h | Implantar o estúdio que fechou (até 48h) | |
+| Dom 2h | Produzir os 3 posts da semana (Reels e carrossel) e anotar os números | 3 posts |
+
+São cerca de 20 horas por semana. E-mail escrito à noite sai agendado para
+8h30 (no Gmail, "programar envio"). [TERCEIRO] O melhor horário de e-mail B2B
+no Brasil é de manhã ([Selzy, compilando RD Station e Brevo](https://selzy.com/br/blog/melhor-horario-para-enviar-e-mail-marketing/)).
+
+### Onde os donos de estúdio se reúnem (canal de parceria, assíncrono)
+
+| Quem | Por quê | Fonte |
+|---|---|---|
+| Grupo VOLL (Campinas) | Diz ter mais de 90 mil formados presenciais, o Blog Pilates, um MBA de gestão e franquias | [OFICIAL](https://grupovoll.com.br/) |
+| 12º Encontro Brasileiro de Pilates (VOLL) | 27 a 29/ago/2027, Campinas, sexta a domingo; até 2.000 participantes; área de expositores com cota de patrocínio | [OFICIAL](https://encontropilates.com.br/lancamento2026/) |
+| Fitness Brasil Expo 2027 | 26 a 28/ago/2027, SP; 39.478 visitantes em 2026 | [OFICIAL](https://www.fitnessbrasil.com.br/fitness-brasil-expo-2027/) |
+| Metalife, Physio Pilates, Equipilates | Fabricantes de equipamento que falam com o dono na hora em que o estúdio abre (a Metalife faz consultoria de abertura) | [OFICIAL Metalife](https://metalifepilates.com.br/), [OFICIAL Physio Pilates](https://www.physiopilates.com/) |
+| Negócio Pilates / Revista Pilates | Mídia para quem abre ou amplia estúdio, aceita anúncio | [OFICIAL](https://negociopilates.com.br/gestao-estudio-pilates-panorama-fitness-2026/) |
+| Professoras de gestão de estúdio (Luana Bernardo, Taylana Fernandes, Janaína Cintas) | Afiliadas em potencial, com comissão recorrente | seção acima |
+| Redes médias (Inspire 39, The Pilates Studio 30 a 40, Studio E cerca de 30, New Pilates 27) | Venda de várias unidades de uma vez. Pure Pilates e VOLL têm sistema próprio | [TERCEIRO, cxfit](https://cxfit.com.br/pilates-no-brasil-franquias-estrategias-e-oportunidades/) |
+
+### Números do mês, se as premissas valerem
+
+[CONTA] Premissas não medidas: R$ 8 a 25 por conversa de anúncio (seção 5),
+30% das conversas são de donos, 50% dos donos marcam demonstração, 20% das
+demonstrações fecham.
+
+- **Anúncio:** R$ 40 por dia, ou cerca de R$ 1.200 no mês, rende de 48 a 150
+  conversas, de 7 a 22 demonstrações e de 1 a 4 clientes.
+- **WhatsApp manual e visitas:** mais 1 a 2 clientes no mês.
+- **Meta do mês 1:** 3 estúdios.
+- **Conta de retorno:** com 3 estúdios no Essencial (R$ 297), o custo de
+  aquisição é de cerca de R$ 400 por cliente. Isso se paga em menos de dois
+  meses de mensalidade. Se na 3ª semana o custo por conversa passar de R$ 40,
+  trocar o criativo antes de aumentar a verba.
+
+### O que o agente faz antes (de dia, sem o Gabriel)
+
+1. Opt-out por palavra e campo de opt-in no AutoFluxos (seção 8).
+2. Fluxo da 4YU: qualificar o dono, mandar o vídeo e oferecer só os horários do
+   Gabriel.
+3. Página `4yu.com.br/pilates` com o caso da MGM, o vídeo e o botão de
+   WhatsApp.
+4. Garimpo com a lista de estúdios de pilates da região do Gabriel e de SP,
+   priorizando celular, e a rota de sábado.
+5. Roteiro de demonstração de 20 minutos e texto da primeira mensagem manual.
+
+O Gabriel grava o vídeo de 2 minutos (tela do celular da MGM, com autorização
+do Daniel) e aprova o criativo.
+
 ## Não confirmado
 
 - Quantos bloqueios derrubam um número, e em quanto tempo. A Meta não publica;
@@ -447,3 +580,9 @@ ou o dinheiro no que marcou mais.
 - Preço do domínio `.com.br` no Registro.br.
 - Quanto a PCYES e a MGM pagam: não está nos docs.
 - Se o cron da esteira do Garimpo ainda roda e se os tokens da Meta venceram.
+- Número de estúdios de pilates no Brasil (não há CNAE; estimativas de 10 mil
+  e de 60 mil sem fonte primária).
+- Se a segmentação "proprietários de pequenas empresas" ainda existe na Meta.
+- Se dono de estúdio responde melhor à noite ou de manhã; se estúdio tem
+  movimento leve no sábado de manhã (validar nas primeiras visitas).
+- Preço do agente de IA da Next Fit e mensalidade do GymBot.
