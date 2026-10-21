@@ -128,7 +128,7 @@ docs de desenvolvedor.
 - **Checklist antes de publicar** e validador com cerca de 70 verificações (bloco órfão, sem saída humana, variável desconhecida, URL insegura, credencial faltando, etapa ou etiqueta inexistente, texto de exemplo esquecido etc.).
 - Limites por canal aplicados no editor (WhatsApp: 3 botões, 10 itens de lista, rótulo de 20 caracteres).
 
-### Os 15 blocos (`src/core/flow/schema.ts`)
+### Os 16 blocos (`src/core/flow/schema.ts`)
 
 | Grupo | Bloco | O que faz |
 |---|---|---|
@@ -144,6 +144,7 @@ docs de desenvolvedor.
 | | Etiqueta | Aplica etiqueta |
 | | Anotação | Escreve na ficha do contato |
 | Integrar | IA | Conversa com IA, com ferramentas, catálogo, cardápio e contexto da empresa |
+| | Enviar e-mail | Para o contato (`{{email}}`) ou para a equipe, com o nome da empresa como remetente; resposta vai para o e-mail da empresa; teto de 300 por conta em 24h (21/out/2026) |
 | | Serviços externos | Chamada HTTP (GET/POST/DELETE) com variáveis, credencial do cofre e mapeamento da resposta em variáveis |
 | | Transferir para atendente | Handoff com motivo, mensagens, aviso por push e retomada automática |
 | | Encaminhar contato | Manda o cliente para o WhatsApp de outro time, com mensagem pronta |
@@ -227,6 +228,7 @@ docs de desenvolvedor.
 ## 8. Transmissões e templates
 - **Templates (modelos da Meta)**: criar do zero (Marketing, Utilidade, Autenticação; até 10 botões), criar de modelos prontos (lembrete de consulta, confirmação, vencimento, pedido a caminho, retomar conversa, pós-atendimento, novidade), criar da biblioteca da Meta, apagar. Status sincronizado por webhook e conferência diária.
 - **Transmissão**: nome, template aprovado, público por etiqueta (com contagem), variáveis por contato, envio agora ou agendado, limite diário com aviso.
+- **Mensagem comum na janela** (0139): quem conversou nas últimas 24h recebe o modelo como texto comum, cobrado como serviço. **Ritmo aos poucos**: teto por hora, só no horário de atendimento. **Cliques**: modelo novo da biblioteca conta quem clicou no link (`/api/site/clique`).
 - Motor de disparo com ritmo controlado, escada de limite da Meta (250 a ilimitado), novas tentativas por tipo de erro, para tudo se o template for derrubado.
 - Lista com filtros e cancelamento; detalhe com cada destinatário (na fila, saiu, Meta avaliando, chegou, lida, não recebeu).
 - **(parcial)** Público só por etiqueta na tela; segmentos salvos ainda não são público de transmissão.
@@ -361,6 +363,7 @@ docs de desenvolvedor.
 - Remover pessoa escolhendo para onde vão as conversas e tarefas dela.
 
 ### Distribuição
+- Ficar **ausente** devolve ao rodízio as conversas dessa pessoa que esperam resposta (só na distribuição automática), com registro na ficha.
 - Manual ou **automática por rodízio balanceado** (menos conversas abertas primeiro), respeitando presença (disponível/ausente), quem entra no rodízio e teto por pessoa. Carteira: contato com dono volta para ele.
 - Passar conversas antigas em lote.
 
@@ -459,7 +462,7 @@ Mensagens agendadas, transmissões e retentativas também "pegam carona" no webh
 | Agenda | Google Calendar / iCal; lembrete de atividade por e-mail ou push |
 | Equipe | Convite por e-mail (acesso é criado com senha provisória) |
 | Avisos | E-mail de handoff (só push) |
-| Relatórios | Exportação dos relatórios; custo de IA visível |
-| Transmissões | Público por segmento; métricas de clique |
+| Relatórios | Custo de IA visível |
+| Transmissões | Público por segmento; clique em modelo antigo ou escrito do zero |
 | Mensagens | Editar mensagem enviada; encaminhar mensagem entre conversas |
 | App | PWA instalável (há push, falta manifest); login com Google |
