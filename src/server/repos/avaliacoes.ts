@@ -1,6 +1,9 @@
 import 'server-only'
 import { faixaDaNota } from '@/core/flow/schema'
+import { FUSO_DOS_RELATORIOS, type Periodo } from '@/core/relatorios'
+import { bancoDeDados } from '../banco-de-dados'
 import { db, ehIdInvalido } from '../db'
+import type { Responsaveis } from './relatorios'
 import type { NotaLida } from '@/core/nps'
 
 /**
@@ -209,6 +212,47 @@ export async function comentariosDaConta(
       criadaEm: String(linha.criada_em),
     }
   })
+}
+
+/**
+ * Os comentários do período do relatório, no escopo de quem olha.
+ *
+ * Irmã de `comentariosDaConta`, com o recorte que o relatório usa: dia de
+ * Brasília nas duas pontas e, para quem só vê os próprios atendimentos, só
+ * os contatos atribuídos a essas pessoas. Sem o escopo, um atendente leria o
+ * que o cliente do colega escreveu sobre o colega.
+ */
+export async function comentariosDoPeriodo(
+  clienteId: string,
+  periodo: Periodo,
+  responsaveis: Responsaveis,
+  limite = 60,
+): Promise<ComentarioLido[]> {
+  const { rows } = await bancoDeDados().query(
+    `select a.id, a.nota, a.comentario, a.criada_em, a.contato_id,
+            coalesce(c.nome_real, c.nome) as nome
+       from public.avaliacoes a
+       join public.contacts c on c.id = a.contato_id
+      where a.cliente_id = $1
+        and a.comentario is not null and btrim(a.comentario) <> ''
+        and a.criada_em >= ($2::date::timestamp at time zone '${FUSO_DOS_RELATORIOS}')
+        and a.criada_em < (($3::date + 1)::timestamp at time zone '${FUSO_DOS_RELATORIOS}')
+        and ($4::uuid[] is null or c.atribuido_a = any($4::uuid[]))
+      order by a.criada_em desc
+      limit ${Math.max(1, Math.floor(limite))}`,
+    [clienteId, periodo.de, periodo.ate, responsaveis === null ? null : [...responsaveis]],
+  )
+
+  return (rows as { id: string; nota: number; comentario: string; criada_em: Date; contato_id: string; nome: string | null }[]).map(
+    (r) => ({
+      id: r.id,
+      contatoId: r.contato_id,
+      nome: r.nome,
+      nota: Number(r.nota),
+      comentario: r.comentario.trim(),
+      criadaEm: new Date(r.criada_em).toISOString(),
+    }),
+  )
 }
 
 export type ComentarioLido = {

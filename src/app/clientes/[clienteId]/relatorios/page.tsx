@@ -21,6 +21,8 @@ import { acharCliente } from '@/server/repos/clientes'
 import { arranjoDaAnalise } from '@/server/preferencias'
 import { duvidasDoPeriodo, perguntasQueAIANaoSoube } from '@/server/repos/duvidas'
 import { PerguntasSemResposta, PrincipaisDuvidas } from '@/components/relatorios/duvidas'
+import { ComentariosDaPesquisa } from '@/components/relatorios/comentarios'
+import { comentariosDoPeriodo } from '@/server/repos/avaliacoes'
 import { lojaVisivel } from '@/server/repos/recursos'
 import {
   atendimentosPorPessoa,
@@ -103,7 +105,14 @@ export default async function Pagina({
   const podeVerValor = pode(acesso.regras, 'ler_valores', 'proprios')
 
   const hoje = hojeEmSaoPaulo()
-  const periodo = lerPeriodo(await searchParams, hoje)
+  const parametros = await searchParams
+  const periodo = lerPeriodo(parametros, hoje)
+  // A planilha recebe os mesmos parâmetros da tela, e a rota relê o período
+  // com a mesma `lerPeriodo`: o arquivo é o que está na tela.
+  const consultaDaPlanilha = new URLSearchParams(
+    Object.entries(parametros).flatMap(([chave, valor]) => (typeof valor === 'string' ? [[chave, valor]] : [])),
+  ).toString()
+  const podeBaixar = pode(acesso.regras, 'exportar', 'proprios')
   const anterior = periodoAnterior(periodo)
 
   const responsaveis = await responsaveisDoEscopo(clienteId, escopo)
@@ -150,6 +159,10 @@ export default async function Pagina({
   })
   const duvidas = await duvidasDoPeriodo(clienteId, periodo, responsaveis).catch((erro) => {
     console.error('[relatorios] dúvidas do período:', erro)
+    return []
+  })
+  const comentarios = await comentariosDoPeriodo(clienteId, periodo, responsaveis).catch((erro) => {
+    console.error('[relatorios] comentários da pesquisa:', erro)
     return []
   })
   const podeEnsinar = pode(acesso.regras, 'configurar_operacao', 'todos')
@@ -582,6 +595,12 @@ export default async function Pagina({
       ),
     },
     {
+      id: 'comentarios',
+      titulo: 'O que disseram',
+      largura: 'dois-tercos',
+      conteudo: <ComentariosDaPesquisa clienteId={clienteId} comentarios={comentarios} />,
+    },
+    {
       id: 'espera',
       titulo: 'Quanto esperaram',
       largura: 'terco',
@@ -661,6 +680,17 @@ export default async function Pagina({
       <Miolo largura="toda">
         <CabecalhoDaTela
           className="mb-0"
+          acoes={
+            podeBaixar ? (
+              <a
+                href={`/api/clientes/${cliente.id}/relatorios/csv${consultaDaPlanilha ? `?${consultaDaPlanilha}` : ''}`}
+                className="botao-secundario botao-sm"
+                download
+              >
+                Baixar planilha
+              </a>
+            ) : undefined
+          }
           titulo={
             <span className="flex items-center gap-2.5">
               Relatórios
