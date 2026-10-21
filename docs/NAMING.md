@@ -82,7 +82,14 @@ Derruba o nome:
   gíria, trocadilho forçado;
 - segunda palavra comprida (LeadAtendido, LeadAnotado);
 - repetir a palavra de um nome elogiado só pelo som ("leve");
-- "bot", "chat" ou "IA" no nome: a marca é maior que isso.
+- "bot", "chat" ou "IA" no nome: a marca é maior que isso;
+- nome focado em venda ou lead (LeadX, VendaX, Funil): tem que servir para
+  padaria e para quem só marca presença em aula;
+- "hq" no domínio: no Brasil, HQ é história em quadrinhos.
+
+Ocupados por concorrente: **Colmeia** (colmeia.cx, plataforma de atendimento
+omnichannel), Anota AI (o truque "verbo.ai" está saturado), Resolveu/ResolveAI,
+Delega (secretária virtual), Pilota.
 
 ## Finalistas até agora
 
