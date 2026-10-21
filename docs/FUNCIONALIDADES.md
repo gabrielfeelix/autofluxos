@@ -51,7 +51,7 @@ docs de desenvolvedor.
 - **Ligação de voz** do visitante para o atendente (seção 4).
 
 ### Telegram
-- **(parcial)** Adaptador de envio pronto (`src/channels/telegram.ts`); sem tela de conexão nem webhook.
+- Conectar colando o token do @BotFather (Conversas > Canais > Telegram); webhook `/api/webhook/telegram/<bot>` com segredo conferido; só conversa particular; mídia chega como texto (0140, 21/out/2026).
 
 ### Saúde das conexões
 - Cartão por canal em 4 camadas: configurado, autorização, último evento, falha. `src/core/saude-da-conexao.ts`
@@ -455,8 +455,8 @@ Mensagens agendadas, transmissões e retentativas também "pegam carona" no webh
 | Frete | Correios, Melhor Envio, consulta de CEP; frete fora do Magento |
 | Loja | Pedido gravado no banco; webhooks de pedido/carrinho; estoque e variantes no catálogo próprio; upload de foto |
 | Lojas | Tray, Loja Integrada, VTEX, WooCommerce, Shopify |
-| Anúncios | Conversions API (envio de eventos para a Meta) |
-| Canais | Telegram completo; Instagram aberto a qualquer cliente; ligação pelo WhatsApp |
+| Anúncios | Conversions API depende da permissão `whatsapp_business_manage_events` no app |
+| Canais | Arquivo de mídia no Telegram; Instagram aberto a qualquer cliente; ligação pelo WhatsApp |
 | CRM | Busca global; mesclar contatos duplicados; importar contatos por XLSX; mapear colunas na importação |
 | CRM sem tela | Campos personalizados tipados, criar motivos de perda, qualificação por critérios (existem no servidor) |
 | Agenda | Google Calendar / iCal; lembrete de atividade por e-mail ou push |
