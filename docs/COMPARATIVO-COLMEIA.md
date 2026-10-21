@@ -74,6 +74,26 @@ Legenda: **tem**, **parcial**, **não tem**, **?** (não confirmado).
 | Opt-out por "SAIR" e registro de opt-in | ? | não citado | não tem | `docs/PROSPECCAO-AUTOFLUXOS.md:55` |
 | Preço público e contratação sozinho | não | | tem | FUNCIONALIDADES.md:390-394 |
 
+## O que da Colmeia é fácil de fazer
+
+Ordem por esforço. Tudo reaproveita peça que já existe.
+
+| Recurso da Colmeia | O que já temos | Esforço |
+|---|---|---|
+| Envio grátis na janela de 24h ([Campaign](https://colmeia.cx/colmeia-campaign-omnichannel): "Free Form Meta") | janela respeitada em todo envio (FUNCIONALIDADES.md:39) | 1 a 2 dias: transmissão manda texto livre, sem template, para quem está com a janela aberta |
+| Cadência no disparo | limite diário (FUNCIONALIDADES.md:229) | 1 dia: espaçar envios ao longo do dia |
+| Exportar relatório (versão simples do BI deles) | relatórios na tela | 1 a 2 dias: baixar CSV |
+| Métrica de clique em transmissão | link rastreado nos cards de produto (FUNCIONALIDADES.md:295) | 2 dias |
+| Painel de satisfação | bloco de pesquisa NPS no fluxo (FUNCIONALIDADES.md:138) | 2 dias: juntar as notas num relatório |
+| E-mail como passo do fluxo | Brevo e domínio de envio (`src/server/email.ts`) | 2 a 3 dias |
+| Conversions API | `ctwa_clid` gravado (FUNCIONALIDADES.md:310) | 3 dias |
+| Telegram completo | adaptador de envio (`src/channels/telegram.ts`) | 3 a 5 dias, sem App Review |
+| Rebalancear fila quando atendente sai | rodízio com presença (FUNCIONALIDADES.md:364) | 3 a 4 dias |
+
+Não é fácil: Messenger (App Review da Meta, igual ao Instagram), pagamento,
+catálogo e Flows (planos próprios acima), SMS e RCS (custo), dados na nuvem do
+cliente e certificações ISO (coisa de empresa grande).
+
 ## O que temos e eles não mostram (argumento de venda)
 
 - **Coexistência**: o dono continua usando o WhatsApp do celular. Para pequeno
