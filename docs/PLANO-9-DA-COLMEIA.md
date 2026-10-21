@@ -1,8 +1,15 @@
 # Plano: os 9 recursos fáceis da Colmeia
 
 Origem: `docs/COMPARATIVO-COLMEIA.md`, seção "O que da Colmeia é fácil de
-fazer". Escrito em 21/out/2026 depois de ler o código de cada peça. Os itens 1
-a 5 estão sendo feitos agora; 6 a 9 ficam para depois.
+fazer". Escrito em 21/out/2026 depois de ler o código de cada peça.
+
+**Estado em 21/out/2026:** itens 3 e 5 no ar (`274f2892`); itens 1, 2 e 4 em
+`708349e6`, com a migration `0139` aplicada em produção no mesmo dia, com
+autorização do Gabriel. Itens 6 a 9 ficam para depois.
+
+Limite conhecido do item 4: só conta clique em modelo **criado depois** pela
+biblioteca (o modelo escrito do zero na nossa tela ainda não tem botão), e na
+mensagem comum dentro da janela.
 
 Banco: os itens 1, 2 e 4 precisam de colunas novas. Vão numa migration só
 (número tirado de `ls supabase/migrations | tail -1` na hora), que só entra em
