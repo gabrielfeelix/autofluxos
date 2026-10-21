@@ -107,6 +107,40 @@ resolve a nota. Os outros só se um cliente pedir.
   cobram, e as APIs desses sistemas são só de leitura, pagas ou sem aviso de
   pagamento.
 
+## Loja pequena
+
+Dois casos diferentes.
+
+**Com loja virtual (Nuvemshop, Loja Integrada, Shopify).** O pedido mora na
+loja, como em qualquer loja virtual: o robô monta o carrinho e cria o pedido
+lá, a loja cobra, baixa estoque e avisa. Na Nuvemshop já temos login e leitura
+(FUNCIONALIDADES.md:291); falta escrever o pedido. Atenção: a Nuvemshop tem o
+próprio [Nuvem Chat](https://www.nuvemshop.com.br/solucoes/nuvem-chat), com
+Pix no chat, competindo pelo mesmo lojista.
+
+**Sem loja virtual (vende pelo Instagram e pelo WhatsApp).** É a maioria, e
+ninguém guarda o pedido dela: hoje é caderno e print de Pix. Aqui a cobrança
+sozinha não basta, porque loja tem item, entrega e estoque. Precisa de
+**pedido leve**, por cima da cobrança:
+
+| Peça | Hoje | Falta |
+|---|---|---|
+| Produtos | catálogo próprio com planilha (FUNCIONALIDADES.md:285-287) | estoque simples e variação (tamanho, cor) |
+| Montar o pedido | IA monta e soma no servidor (FUNCIONALIDADES.md:296) | gravar o pedido |
+| Entrega | nada fora do Magento | retirada ou entrega com taxa por bairro ou fixa |
+| Pagamento | demonstração | a cobrança deste documento |
+| Acompanhar | nada | tela **Pedidos**: novo, pago, separando, enviado, entregue, cancelado; cliente avisado a cada passo |
+
+Pedido e cobrança são o mesmo objeto: a cobrança é o centro, o pedido é uma
+cobrança com itens e entrega. Assim a tela de estúdio e a de loja não viram
+dois produtos.
+
+Esforço: 6 a 8 dias depois da cobrança. Nota fiscal continua fora (inferência,
+a confirmar com contador: MEI não é obrigado a emitir nota para pessoa física).
+
+Ordem: cobrança primeiro (serve estúdio, serviço e loja), pedido leve depois,
+conector de loja virtual quando um cliente pedir.
+
 ## Não confirmado
 
 - Se a mensagem de pedido da Meta exige catálogo ligado ao número (a Meta diz
