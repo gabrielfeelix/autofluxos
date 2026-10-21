@@ -60,6 +60,8 @@ export function descrever(no: No): string {
       return 'O bloco de etiqueta'
     case 'nota':
       return rotular('Anotação', curto(no.data.texto))
+    case 'email':
+      return rotular('E-mail', curto(no.data.assunto || no.data.para))
     case 'encaminhar':
       return rotular('Encaminhar para', curto(no.data.nome || no.data.telefone))
     case 'ir-fluxo':

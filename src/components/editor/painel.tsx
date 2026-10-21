@@ -1273,6 +1273,35 @@ export function Painel({
         </div>
       )}
 
+      {no.type === 'email' && (
+        <>
+          <Linha
+            rotulo="Para"
+            valor={no.data.para}
+            aoMudar={(para) => aoMudarDados({ para })}
+            secao="blocos"
+            dica="{{email}} manda para quem está conversando. Para avisar a equipe, escreva o endereço. Exemplo: vendas@suaempresa.com.br."
+          />
+          <Linha
+            rotulo="Assunto"
+            valor={no.data.assunto}
+            aoMudar={(assunto) => aoMudarDados({ assunto })}
+            secao="blocos"
+            dica="Exemplo: Sua aula experimental está marcada, {{nome}}."
+          />
+          <Area
+            rotulo="Texto"
+            valor={no.data.texto}
+            limite={4000}
+            aoMudar={(texto) => aoMudarDados({ texto })}
+            conhecidas={variaveis}
+            secao="blocos"
+            exemplo="Oi, {{nome}}! Confirmamos sua aula de {{dia}} às {{hora}}."
+            dica="Sai com o nome da empresa como remetente. Quem responder cai no e-mail da empresa cadastrado em Ajustes."
+          />
+        </>
+      )}
+
       {no.type === 'nota' && (
         <>
           {/*
@@ -3070,6 +3099,8 @@ function resumoDoBloco(no: No): string {
       return 'Põe uma etiqueta'
     case 'nota':
       return curto(no.data.texto) || 'Escreve na anotação'
+    case 'email':
+      return curto(no.data.assunto) || 'Manda um e-mail'
     case 'encaminhar':
       return curto(no.data.nome ? `Encaminha para ${no.data.nome}` : '') || 'Encaminhar contato'
     case 'ir-fluxo':

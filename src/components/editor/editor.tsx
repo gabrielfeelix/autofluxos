@@ -224,6 +224,10 @@ export function dadosPadrao(tipo: TipoNo): Record<string, unknown> {
         rotulo: 'Abrir conversa',
         cartao: false,
       }
+    case 'email':
+      // Para quem conversa, que é o caso mais comum. Assunto e texto vazios:
+      // o validador recusa publicar sem eles, como na anotação.
+      return { para: '{{email}}', assunto: '', texto: '' }
     case 'nota':
       // Nasce vazia e o validador recusa publicar assim. Um texto de exemplo
       // que fosse publicado por engano escreveria a frase de exemplo na ficha

@@ -1876,6 +1876,31 @@ describe('os blocos de etiqueta e anotação (0044)', () => {
     expect(r.acoes).toContainEqual({ tipo: 'escrever_nota', texto: 'pediu pilates' })
   })
 
+  it('o e-mail interpola e diz se vai para a equipe', () => {
+    const fluxo = fluxoSchema.parse({
+      inicio: 'guarda',
+      nodes: [
+        { id: 'guarda', type: 'salvar-campo', position: p, data: { campo: 'email', valor: 'ana@exemplo.com' } },
+        { id: 'cliente', type: 'email', position: p, data: { para: '{{email}}', assunto: 'Aula de {{email}}', texto: 'Confirmado' } },
+        { id: 'equipe', type: 'email', position: p, data: { para: 'vendas@studio.com', assunto: 'Novo pedido', texto: 'Veja' } },
+      ],
+      edges: [
+        { id: 'e1', source: 'guarda', target: 'cliente' },
+        { id: 'e2', source: 'cliente', target: 'equipe' },
+      ],
+    })
+
+    const r = executar(fluxo, sessaoNova(), { tipo: 'inicio' })
+    expect(r.acoes).toContainEqual({
+      tipo: 'enviar_email',
+      para: 'ana@exemplo.com',
+      assunto: 'Aula de ana@exemplo.com',
+      texto: 'Confirmado',
+      paraAEquipe: false,
+    })
+    expect(r.acoes).toContainEqual({ tipo: 'enviar_email', para: 'vendas@studio.com', assunto: 'Novo pedido', texto: 'Veja', paraAEquipe: true })
+  })
+
   it('anotação vazia não vira ação', () => {
     // Acrescentar linha em branco à ficha de alguém é ruído com cara de
     // registro, e ninguém apaga o que não sabe de onde veio.

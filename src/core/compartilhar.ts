@@ -328,6 +328,10 @@ function textoDoBloco(no: No): string {
        */
       return 'escreve na anotação do contato'
     }
+    case 'email':
+      // Endereço e texto ficam fora do link público pelo mesmo motivo da
+      // anotação: o destino costuma ser o e-mail interno da equipe.
+      return 'manda um e-mail'
     case 'encaminhar':
       // O texto é o que o cliente lê, então pode aparecer. O telefone não: é
       // de um time da conta, às vezes o celular de uma pessoa, e o link é

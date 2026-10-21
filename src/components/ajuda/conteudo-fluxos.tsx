@@ -48,6 +48,7 @@ const ORDEM_DOS_BLOCOS: TipoNo[] = [
   'ia',
   'handoff',
   'http',
+  'email',
   'encaminhar',
   'nps',
 ]
@@ -65,6 +66,7 @@ const QUANDO_USAR: Record<TipoNo, string> = {
   etiqueta:
     'Marcar o que a pessoa é, "quer pilates", "já é aluno", para filtrar depois e para começar uma sequência.',
   nota: 'Deixar escrito na ficha o que a conversa apurou, para quem for atender ler antes de falar.',
+  email: 'Mandar a confirmação por e-mail para o cliente, ou avisar alguém da equipe que não fica no Inbox.',
   'ir-fluxo':
     'Mandar quem falou de fisioterapia para o fluxo de fisioterapia, sem duplicar o desenho.',
   ia: 'Responder pergunta aberta usando o contexto do negócio. Nunca para dado que precisa estar certo.',

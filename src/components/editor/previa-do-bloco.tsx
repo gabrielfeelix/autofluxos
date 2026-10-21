@@ -239,6 +239,13 @@ export function detalhesDoBloco(no: No): Detalhe[] {
     case 'nota':
       return [{ rotulo: 'Escreve', valor: texto(no.data.texto, '(nada, o texto está vazio)') }]
 
+    case 'email':
+      return [
+        { rotulo: 'Para', valor: texto(no.data.para, '(ninguém)') },
+        { rotulo: 'Assunto', valor: texto(no.data.assunto, '(sem assunto)') },
+        { rotulo: 'Texto', valor: texto(no.data.texto, '(vazio)') },
+      ]
+
     case 'nps':
       return [
         { rotulo: 'Pergunta', valor: texto(no.data.texto, '(sem pergunta)') },

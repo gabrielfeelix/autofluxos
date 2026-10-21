@@ -1137,6 +1137,20 @@ function avancar(
         break
       }
 
+      case 'email': {
+        // Interpolado aqui, como a anotação: "{{email}}" vira o endereço de
+        // quem conversa, "{{nome}}" no assunto vira o nome. Sem destino ou sem
+        // texto, nada sai; o validador já avisou antes de publicar.
+        const para = interpolar(no.data.para, s.vars).trim()
+        const assunto = interpolar(no.data.assunto, s.vars).trim()
+        const texto = interpolar(no.data.texto, s.vars).trim()
+        // Endereço escrito no bloco é da equipe; com variável, é de quem conversa.
+        const paraAEquipe = !no.data.para.includes('{{')
+        if (para && assunto && texto) acoes.push({ tipo: 'enviar_email', para, assunto, texto, paraAEquipe })
+        atual = seguir(no)
+        break
+      }
+
       /*
        * Voltar para um ponto anterior da mesma conversa.
        *

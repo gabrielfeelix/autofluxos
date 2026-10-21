@@ -929,6 +929,29 @@ export const noNotaSchema = z.object({
 })
 
 /**
+ * **Enviar e-mail**: o fluxo manda um e-mail, para o contato ou para a equipe.
+ *
+ * Os dois usos que pediram isto: a confirmação que o cliente guarda (o
+ * horário marcado, o pedido) e o aviso para alguém da empresa que não vive
+ * no Inbox ("chegou um orçamento de {{nome}}"). Por isso `para` é texto com
+ * variável: `{{email}}` manda para quem escreveu, um endereço fixo manda para
+ * a equipe.
+ *
+ * Não espera nada nem muda o caminho: como a anotação, é registro que sai e
+ * o fluxo segue. Quem responde o e-mail cai no e-mail da empresa cadastrado
+ * em Ajustes, nunca no remetente do AutoFluxos.
+ */
+export const noEmailSchema = z.object({
+  ...base,
+  type: z.literal('email'),
+  data: z.object({
+    para: z.string().default(''),
+    assunto: z.string().default(''),
+    texto: z.string().default(''),
+  }),
+})
+
+/**
  * **Encaminhar contato**: mandar a pessoa para o WhatsApp de outro time.
  *
  * O caso que pediu isto é a PCYES: suporte, comercial para empresa e
@@ -1102,6 +1125,7 @@ export const noSchema = z.discriminatedUnion('type', [
   noEtapaSchema,
   noEtiquetaSchema,
   noNotaSchema,
+  noEmailSchema,
   noEncaminharSchema,
   noIrFluxoSchema,
   noVoltarSchema,

@@ -383,6 +383,8 @@ export type Acao =
    * é justamente por isso que ele não pode mandar "substitua por isto".
    */
   | { tipo: 'escrever_nota'; texto: string }
+  /** O bloco Enviar e-mail. Já interpolado; o servidor confere o endereço e o teto do dia. */
+  | { tipo: 'enviar_email'; para: string; assunto: string; texto: string; paraAEquipe: boolean }
   /**
    * Continuar a conversa em **outra automação** (0036).
    *

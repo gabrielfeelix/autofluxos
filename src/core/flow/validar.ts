@@ -551,6 +551,28 @@ export function validar(fluxo: Fluxo, capacidades: Capacidades = {}): ResultadoV
       }
     }
 
+    if (no.type === 'email') {
+      const para = no.data.para.trim()
+      // Um endereço fixo é conferido aqui; `{{email}}` só se confere no envio.
+      const fixoInvalido = para !== '' && !para.includes('{{') && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(para)
+      if (para === '' || fixoInvalido) {
+        erros.push({
+          codigo: 'EMAIL_SEM_DESTINO',
+          mensagem: para === ''
+            ? `${descrever(no)}: diga para quem vai, um endereço ou {{email}} para quem está conversando.`
+            : `${descrever(no)}: "${para}" não é um endereço de e-mail.`,
+          noId: no.id,
+        })
+      }
+      if (no.data.assunto.trim() === '' || no.data.texto.trim() === '') {
+        erros.push({
+          codigo: 'EMAIL_VAZIO',
+          mensagem: `${descrever(no)}: o e-mail precisa de assunto e de texto.`,
+          noId: no.id,
+        })
+      }
+    }
+
     if (no.type === 'nota' && no.data.texto.trim() === '') {
       erros.push({
         codigo: 'NOTA_VAZIA',
@@ -1537,6 +1559,8 @@ function variaveisDoNo(no: No): string[] {
       return []
     case 'encaminhar':
       return [...variaveisCitadas(no.data.texto), ...variaveisCitadas(no.data.mensagemPronta)]
+    case 'email':
+      return [...variaveisCitadas(no.data.para), ...variaveisCitadas(no.data.assunto), ...variaveisCitadas(no.data.texto)]
     case 'nota':
       // Esta **interpola**, é a diferença entre "pediu {{servico}}" e uma
       // frase fixa repetida em todo contato. Então a citação é conferida como
@@ -1593,6 +1617,8 @@ function textosDoNo(no: No): string[] {
       return [no.data.url, no.data.corpo, ...no.data.cabecalhos.map((c) => c.valor)]
     case 'nota':
       return [no.data.texto]
+    case 'email':
+      return [no.data.para, no.data.assunto, no.data.texto]
     case 'encaminhar':
       return [no.data.texto, no.data.mensagemPronta, no.data.nome, no.data.rotulo ?? '']
     case 'nps':

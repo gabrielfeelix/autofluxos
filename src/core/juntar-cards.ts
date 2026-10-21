@@ -66,6 +66,7 @@ const SILENCIOSAS = new Set<Acao['tipo']>([
   'mover_etapa',
   'aplicar_etiqueta',
   'escrever_nota',
+  'enviar_email',
   'guardar_nota',
   'guardar_comentario',
 ])

@@ -1247,6 +1247,15 @@ describe('o bloco de etiqueta e o de anotação (0044)', () => {
     expect(r.erros.map((e) => e.codigo)).not.toContain('ETIQUETA_INEXISTENTE')
   })
 
+  it('e-mail precisa de destino válido, assunto e texto', () => {
+    const vazio = validar(comBloco({ type: 'email', data: { para: '', assunto: '', texto: '' } }))
+    expect(vazio.erros.map((e) => e.codigo)).toEqual(expect.arrayContaining(['EMAIL_SEM_DESTINO', 'EMAIL_VAZIO']))
+    const errado = validar(comBloco({ type: 'email', data: { para: 'vendas@', assunto: 'a', texto: 'b' } }))
+    expect(errado.erros.map((e) => e.codigo)).toContain('EMAIL_SEM_DESTINO')
+    const certo = validar(comBloco({ type: 'email', data: { para: '{{email}}', assunto: 'Oi', texto: 'Tudo certo' } }))
+    expect(certo.erros.map((e) => e.codigo)).not.toContain('EMAIL_SEM_DESTINO')
+  })
+
   it('recusa publicar anotação vazia', () => {
     const r = validar(comBloco({ type: 'nota', data: { texto: '   ' } }))
     expect(r.ok).toBe(false)

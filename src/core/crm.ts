@@ -385,6 +385,10 @@ export const TIPOS_DE_EVENTO = [
   'escolheu-no-fluxo',
   /** Clicou em "Ver produto" num card. Ver `server/link-de-produto.ts`. */
   'abriu-produto',
+  /** Um fluxo mandou e-mail, para o contato ou para a equipe. Ver `server/email-do-fluxo.ts`. */
+  'email-enviado',
+  /** Voltou ao rodízio porque quem atendia ficou ausente. Ver `server/redistribuir-ausente.ts`. */
+  'redistribuida',
 ] as const
 
 export type TipoDeEvento = (typeof TIPOS_DE_EVENTO)[number]
@@ -446,6 +450,12 @@ export function comoFrase(evento: Evento): string {
      */
     case 'abriu-produto':
       return d.produto ? `abriu o produto ${d.produto}` : 'abriu um produto'
+    case 'redistribuida':
+      if (d.para) return `passou de ${d.de ?? 'quem atendia'} para ${d.para}, que estava disponível`
+      return `ficou sem dono porque ${d.de ?? 'quem atendia'} ficou ausente`
+    case 'email-enviado':
+      if (d.equipe) return d.assunto ? `a equipe foi avisada por e-mail: "${d.assunto}"` : 'a equipe foi avisada por e-mail'
+      return d.assunto ? `recebeu o e-mail "${d.assunto}"` : 'recebeu um e-mail'
     case 'entrou-no-fluxo':
       return d.fluxo ? `entrou no fluxo ${d.fluxo}` : 'entrou num fluxo'
     case 'escolheu-no-fluxo':

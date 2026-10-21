@@ -100,6 +100,7 @@ import { porNoQuadroPadrao } from './quadro-de-entrada'
 import { aplicarFato, marcarUltimaMensagem } from './repos/crm'
 import { anotar, religadoEm } from './repos/eventos'
 import { registrarPassagem } from './repos/passagens'
+import { enviarEmailDoBloco } from './email-do-fluxo'
 
 /**
  * O caminho de uma mensagem do WhatsApp até a resposta.
@@ -2537,6 +2538,12 @@ async function aplicar(
         )
         break
       }
+
+      case 'enviar_email':
+        // O bloco Enviar e-mail. Nunca lança, e a Brevo tem 10s de prazo:
+        // e-mail que falhou vira alerta, e a conversa segue.
+        await enviarEmailDoBloco(contato, acao)
+        break
 
       case 'escrever_nota':
         /**

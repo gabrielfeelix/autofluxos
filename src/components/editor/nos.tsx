@@ -539,6 +539,20 @@ function NoNota({ data, selected }: NodeProps) {
   )
 }
 
+function NoEmail({ data, selected }: NodeProps) {
+  const d = data as { para: string; assunto: string }
+  return (
+    <Caixa tipo="email" selecionado={!!selected}>
+      <p className="truncate text-[11.5px] text-dim">
+        Para <RealceDeVariaveis texto={vazio(d.para, '(ninguém)')} />
+      </p>
+      <p className="line-clamp-2 text-[12.5px] leading-5 text-soft">
+        <RealceDeVariaveis texto={vazio(d.assunto, '(sem assunto)')} />
+      </p>
+    </Caixa>
+  )
+}
+
 function NoIa({ data, selected }: NodeProps) {
   const d = data as {
     instrucao: string
@@ -794,6 +808,7 @@ export const tiposDeNo = {
   etapa: NoEtapa,
   etiqueta: NoEtiqueta,
   nota: NoNota,
+  email: NoEmail,
   'ir-fluxo': NoIrFluxo,
   voltar: NoVoltar,
   nps: NoNps,

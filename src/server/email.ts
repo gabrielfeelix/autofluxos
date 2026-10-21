@@ -20,7 +20,19 @@ export function emailConfigurado(): boolean {
 
 export type Destinatario = { email: string; nome?: string }
 
-async function enviarEmail(para: Destinatario[], email: EmailMontado, etiqueta: string): Promise<boolean> {
+/**
+ * Quem assina e quem recebe a resposta. Ausente: o AutoFluxos assina e a
+ * resposta vai para a caixa humana da 4YU, que é o certo para e-mail do
+ * sistema e errado para e-mail que um fluxo do cliente manda (0139).
+ */
+type Assinatura = { remetenteNome: string; responderPara: string | null }
+
+async function enviarEmail(
+  para: Destinatario[],
+  email: EmailMontado,
+  etiqueta: string,
+  assinatura?: Assinatura,
+): Promise<boolean> {
   if (!emailConfigurado() || para.length === 0) {
     // Local: sem chave, o texto (com o link) vai para o log do servidor, o
     // único jeito de percorrer "esqueci a senha" sem mandar e-mail de verdade.
@@ -34,9 +46,16 @@ async function enviarEmail(para: Destinatario[], email: EmailMontado, etiqueta: 
       method: 'POST',
       headers: { 'api-key': process.env.BREVO_API_KEY!, 'content-type': 'application/json', accept: 'application/json' },
       body: JSON.stringify({
-        sender: { email: process.env.EMAIL_REMETENTE, name: 'AutoFluxos' },
-        // O remetente é `nao-responda@`: quem responde cai na caixa humana da 4YU.
-        replyTo: { email: CONTATO, name: '4YU' },
+        sender: { email: process.env.EMAIL_REMETENTE, name: assinatura?.remetenteNome ?? 'AutoFluxos' },
+        // O remetente é `nao-responda@`: quem responde cai na caixa humana da
+        // 4YU, ou na da empresa quando o e-mail é de um fluxo dela. Empresa
+        // sem e-mail cadastrado fica sem `replyTo`: mandar a resposta do
+        // cliente dela para a 4YU seria entregar a conversa a quem não é parte.
+        ...(assinatura
+          ? assinatura.responderPara
+            ? { replyTo: { email: assinatura.responderPara, name: assinatura.remetenteNome } }
+            : {}
+          : { replyTo: { email: CONTATO, name: '4YU' } }),
         to: para.map(({ email, nome }) => (nome ? { email, name: nome } : { email })),
         subject: email.assunto,
         textContent: email.texto,
@@ -100,4 +119,33 @@ export async function enviarRedefinicaoDeSenha(para: Destinatario, token: string
 export async function enviarConfirmacaoDeEmail(para: Destinatario, token: string) {
   const link = linkDoPainel(`/confirmar-email?token=${encodeURIComponent(token)}`)
   return enviarModelo(para, 'confirmarEmail', { nome: para.nome ?? '', link })
+}
+
+/**
+ * O e-mail que um fluxo manda, com o nome da empresa como remetente.
+ *
+ * Sem o desenho dos e-mails do sistema, de propósito: a logo e o rodapé do
+ * AutoFluxos numa confirmação de aula do estúdio fariam o cliente do estúdio
+ * achar que falou com outra empresa. Texto da pessoa, em parágrafos, e uma
+ * linha dizendo quem mandou.
+ */
+export async function enviarEmailDoFluxo(entrada: {
+  para: string
+  assunto: string
+  texto: string
+  empresa: string
+  responderPara: string | null
+}): Promise<boolean> {
+  const escapar = (t: string) => t.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+  const paragrafos = entrada.texto
+    .split(/\n{2,}/)
+    .map((p) => `<p style="margin:0 0 14px">${escapar(p).replace(/\n/g, '<br>')}</p>`)
+    .join('')
+  const html = `<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head><body style="margin:0;padding:24px;background:#ffffff;font-family:Arial,Helvetica,sans-serif;font-size:15px;line-height:1.55;color:#1f2933"><div style="max-width:560px">${paragrafos}<p style="margin:24px 0 0;font-size:12px;color:#7b8794">Enviado por ${escapar(entrada.empresa)}.</p></div></body></html>`
+  return enviarEmail(
+    [{ email: entrada.para }],
+    { assunto: entrada.assunto, html, texto: `${entrada.texto}\n\nEnviado por ${entrada.empresa}.` },
+    'fluxo',
+    { remetenteNome: entrada.empresa, responderPara: entrada.responderPara },
+  )
 }

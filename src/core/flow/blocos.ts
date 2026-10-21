@@ -61,6 +61,7 @@ export const NOMES: Record<TipoNo, string> = {
    * Nome diferente do campo faria parecer que existem dois lugares.
    */
   nota: 'Anotação',
+  email: 'Enviar e-mail',
   encaminhar: 'Encaminhar contato',
   /**
    * "Ir para outra automação", e não "sub-fluxo" nem "chamar fluxo".
@@ -101,6 +102,7 @@ export const ICONES: Record<TipoNo, string> = {
   etapa: '▤',
   etiqueta: '◆',
   nota: '✎',
+  email: '✉',
   encaminhar: '↗',
   'ir-fluxo': '⇥',
   voltar: '↺',
@@ -117,6 +119,7 @@ export const DESCRICOES: Record<TipoNo, string> = {
   etapa: 'Move no funil',
   etiqueta: 'Marca o contato',
   nota: 'Escreve na ficha',
+  email: 'Manda um e-mail',
   encaminhar: 'Manda o WhatsApp de outro time',
   'ir-fluxo': 'Continua em outra',
   ia: 'Responde pelo contexto',
@@ -145,6 +148,7 @@ export const CORES: Record<TipoNo, string> = {
   etapa: 'border-teal-400/30',
   etiqueta: 'border-amber-400/30',
   nota: 'border-stone-300/30',
+  email: 'border-sky-400/30',
   encaminhar: 'border-emerald-400/30',
   'ir-fluxo': 'border-indigo-400/30',
   voltar: 'border-slate-300/30',
@@ -164,7 +168,7 @@ export const GRUPOS_DE_BLOCOS: { nome: string; tipos: TipoNo[] }[] = [
   { nome: 'Conversar', tipos: ['mensagem', 'midia', 'pergunta', 'nps'] },
   { nome: 'Decidir', tipos: ['condicao', 'voltar', 'ir-fluxo'] },
   { nome: 'Organizar', tipos: ['salvar-campo', 'etapa', 'etiqueta', 'nota'] },
-  { nome: 'Integrar', tipos: ['ia', 'http', 'handoff', 'encaminhar'] },
+  { nome: 'Integrar', tipos: ['ia', 'http', 'email', 'handoff', 'encaminhar'] },
 ]
 
 function semAcento(texto: string): string {
