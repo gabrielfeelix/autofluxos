@@ -13,6 +13,7 @@ export type TelaDeAjustes =
   | 'plano'
   | 'recursos'
   | 'funis'
+  | 'pagamentos'
 
 export const GRUPOS: { titulo: string | null; itens: { chave: TelaDeAjustes; rotulo: string }[] }[] = [
   // O índice fica solto no topo, sem rótulo de grupo: ele não é um assunto, é
@@ -37,7 +38,11 @@ export const GRUPOS: { titulo: string | null; itens: { chave: TelaDeAjustes; rot
   {
     // O desenho dos funis mora aqui; trabalhar neles é no Funil de vendas.
     titulo: 'Vendas',
-    itens: [{ chave: 'funis', rotulo: 'Funis de venda' }],
+    itens: [
+      { chave: 'funis', rotulo: 'Funis de venda' },
+      // A conta onde cai o Pix da cobrança feita pela conversa.
+      { chave: 'pagamentos', rotulo: 'Pagamentos' },
+    ],
   },
   {
     // Canais, Respostas rápidas, Etiquetas e Catálogo saíram para a barra

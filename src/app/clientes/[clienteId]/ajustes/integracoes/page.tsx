@@ -12,6 +12,7 @@ import {
   LogoLoja,
   LogoMeta,
   LogoSite,
+  LogoMercadoPago,
   LogoTelegram,
   LogoWhatsApp,
 } from '@/components/design/logos-de-marca'
@@ -67,6 +68,7 @@ const LOGO: Record<ChaveDaIntegracao, ReactNode> = {
   magento: <LogoLoja />,
   telegram: <LogoTelegram />,
   site: <LogoSite />,
+  mercado_pago: <LogoMercadoPago />,
 }
 
 export default async function Pagina({

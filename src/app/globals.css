@@ -101,6 +101,7 @@
   --color-marca-instagram: var(--marca-instagram);
   --color-marca-meta: var(--marca-meta);
   --color-marca-telegram: var(--marca-telegram);
+  --color-marca-mercadopago: var(--marca-mercadopago);
 
   /* A casca azul (ver o bloco "A casca" mais abaixo). */
   --color-sobre-casca: var(--sobre-casca);
@@ -234,6 +235,7 @@
   --marca-instagram: #e1306c;
   --marca-meta: #0866ff;
   --marca-telegram: #229ed9;
+  --marca-mercadopago: #009ee3;
 
   /* O polegar da barra de rolagem: a borda dele é sempre a cor do fundo. */
   --p-barra: #c8cfd8;

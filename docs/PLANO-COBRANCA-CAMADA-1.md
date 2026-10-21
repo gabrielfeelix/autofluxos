@@ -1,7 +1,12 @@
 # Plano: cobrança no chat, camada 1
 
-Rascunho de 21/out/2026 para aprovação do Gabriel. **Nenhum código antes do
-"aprovado".** Base: `docs/MERCADO-COBRANCA-NO-CHAT.md` (por que assim) e
+Aprovado em 21/out/2026 com as 4 recomendações abaixo.
+
+**Andamento:** etapa A escrita (tela Ajustes > Pagamentos, OAuth, renovação
+diária, migration `0141`). Falta: `0141` em produção (autorização) e a
+aplicação do Mercado Pago com `MERCADO_PAGO_CLIENT_ID`/`_SECRET` no cofre e na
+Vercel. Sem as duas variáveis a tela mostra "em liberação". O recurso usa
+`integracoes` do plano (Operação para cima), sem dado novo em produção. Base: `docs/MERCADO-COBRANCA-NO-CHAT.md` (por que assim) e
 `src/core/cobranca.ts` (a IA já monta o pedido e soma pelo catálogo, em
 centavos; hoje o Pix só existe na demonstração).
 

@@ -102,6 +102,23 @@ export function LogoTelegram() {
   )
 }
 
+/** O Mercado Pago: o aperto de mãos dentro da forma oval, em branco sobre o azul da marca. */
+export function LogoMercadoPago() {
+  return (
+    <Moldura classe="text-marca-mercadopago">
+      <svg width="28" height="28" viewBox="0 0 24 24" fill="none" aria-hidden>
+        <ellipse cx="12" cy="12" rx="11" ry="7.6" fill="currentColor" />
+        <g className="stroke-white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M3.6 11.6 7 9.6l2.4.9 2.4-1.5h2.3l4.9 2.6" />
+          <path d="m20.4 11.6-1.8 1.3-4.6-3" />
+          <path d="M11.8 9 10 10.3a1 1 0 0 0 1.2 1.6l1.6-1.1" />
+          <path d="m7.4 12.6 1.5 1.3m.9-1.9 1.7 1.5m.7-1.4 1.7 1.4m.4-1.1 1.2 1" />
+        </g>
+      </svg>
+    </Moldura>
+  )
+}
+
 /**
  * O chat do site. Não é marca de ninguém: uma janela de navegador com o balão
  * de conversa, que é exatamente o que o visitante vê. A cor é a do canal em

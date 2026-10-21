@@ -7,6 +7,7 @@ import { marcarQuemSumiu } from '@/server/repos/crm'
 import { DIAS_PARA_INATIVAR } from '@/core/crm'
 import { reconciliarTemplates } from '@/server/reconciliar-templates'
 import { passadaDoPlano } from '@/server/passada-do-plano'
+import { renovarTokensDePagamento } from '@/server/pagamentos'
 
 export const dynamic = 'force-dynamic'
 
@@ -104,6 +105,13 @@ export async function GET(req: Request) {
      * o preço agendado no dia dele, e os avisos (7 e 1 dia antes da descida,
      * 80% e 100% do consumo) saem uma vez cada. Nunca lança por organização.
      */
+    /*
+     * E o acesso ao Mercado Pago de quem cobra pelo chat (0141), pelo motivo do
+     * Instagram: token que vence sozinho, e o sintoma de esquecer é Pix que
+     * não sai no meio da venda. Nunca lança.
+     */
+    const pagamentos = await renovarTokensDePagamento({ agora })
+
     const plano = await passadaDoPlano(agora).catch(async (erro) => {
       await alertar('a passada do plano falhou', erro)
       return null
@@ -119,6 +127,7 @@ export async function GET(req: Request) {
       diasParaInativar: DIAS_PARA_INATIVAR,
       templates,
       plano,
+      pagamentos,
     })
   } catch (erro) {
     // Ninguém está olhando quando isto roda às quatro da manhã. Uma limpeza que

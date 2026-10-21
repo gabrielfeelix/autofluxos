@@ -13,6 +13,7 @@ const sinonimos: Partial<Record<TelaDeAjustes, string>> = {
   recursos: 'recursos onboarding crm objetivo assistente personalizar sistema',
   negocio: 'cadastro cnpj empresa organização',
   anuncios: 'leads meta facebook anuncios captacao formulario',
+  pagamentos: 'mercado pago pix cobranca cobrar boleto cartao dinheiro',
   horario: 'retomada inatividade expediente',
   distribuicao: 'distribuicao rodizio lead responsavel dono atribuir fila sem dono',
   equipe: 'equipe usuarios membros papeis permissoes',

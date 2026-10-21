@@ -1,4 +1,5 @@
 import 'server-only'
+import { conexaoDePagamento } from './repos/pagamentos'
 import { estadoDaConexao, type EstadoDaConexao } from '@/core/conexoes'
 import { canalDoInstagram } from './repos/canais-instagram'
 import { canalDoTelegram } from './repos/canais-telegram'
@@ -10,7 +11,7 @@ import { paginasDaConta } from './repos/paginas-de-lead'
 import { ultimaChegadaDeAnuncio, ultimaMensagemRecebida } from './repos/ultimos-eventos'
 import { NOME_DA_CONEXAO_DE_ADS } from './token-de-anuncios'
 
-export type ChaveDaIntegracao = 'whatsapp' | 'instagram' | 'anuncios' | 'chaves' | 'magento' | 'telegram' | 'site'
+export type ChaveDaIntegracao = 'whatsapp' | 'instagram' | 'anuncios' | 'chaves' | 'magento' | 'telegram' | 'site' | 'mercado_pago'
 
 export type ItemDoCatalogo = {
   chave: ChaveDaIntegracao
@@ -51,6 +52,8 @@ export async function catalogoDeIntegracoes(clienteId: string): Promise<ItemDoCa
   // Fora do `Promise.all` de propósito: antes da 0140 a leitura volta nula, e
   // isso não pode atrasar nem derrubar o resto do catálogo.
   const botDoTelegram = await canalDoTelegram(clienteId)
+  // Também fora: antes da 0141 a tabela não existe, e a leitura volta nula.
+  const pagamento = await conexaoDePagamento(clienteId, 'mercado_pago').catch(() => null)
   const temTokenDeAnuncios = conexoes.some(
     (c) => c.nome.trim().toLowerCase() === NOME_DA_CONEXAO_DE_ADS && c.tipo === 'bearer',
   )
@@ -152,6 +155,15 @@ export async function catalogoDeIntegracoes(clienteId: string): Promise<ItemDoCa
       href: '/conversas/canais/telegram',
       disponivel: true,
       estado: estadoDaConexao({ tipo: 'cadastro', configurado: botDoTelegram !== null, href: '/conversas/canais/telegram' }),
+    },
+    {
+      chave: 'mercado_pago',
+      nome: 'Mercado Pago',
+      categoria: 'Pagamento',
+      descricao: 'Cobrança pela conversa, com Pix e link. O dinheiro cai direto na conta da empresa.',
+      href: '/ajustes/pagamentos',
+      disponivel: true,
+      estado: estadoDaConexao({ tipo: 'cadastro', configurado: pagamento !== null, href: '/ajustes/pagamentos' }),
     },
   ]
 }
