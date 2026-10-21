@@ -260,6 +260,13 @@ export async function receberStatusDeEntrega(payload: unknown): Promise<Resultad
         const erro = status.data.errors?.[0]
         const codigo = erro?.code ?? null
 
+        // O motivo da falha só existe neste webhook e não fica gravado em
+        // mensagem comum. Sem este log, "falhou" não diz se é pagamento,
+        // janela fechada ou número bloqueado (PCYES, 21/out/2026).
+        if (estado === 'falhou' || codigo !== null) {
+          console.warn('[status] falha da Meta', JSON.stringify({ wamid, codigo, titulo: erro?.title, detalhe: erro?.error_data?.details ?? erro?.message }))
+        }
+
         if (codigo !== null && condutaPara(codigo) === 'template_pausado') {
           mortos.add(codigo)
         }
