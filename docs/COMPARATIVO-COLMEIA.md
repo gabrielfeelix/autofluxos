@@ -5,20 +5,17 @@ código deste repositório. Nada foi implementado: é proposta para aprovação.
 
 ## Recomendação
 
-**Construir primeiro o bloco "Cobrar" (Pix e link de pagamento por gateway).**
+1. **Opt-out por "SAIR" e registro de opt-in** (2 dias). Barato, a Meta exige e
+   protege o número de todo cliente.
+2. **Cobrança em três camadas** (seção própria abaixo). Começar pela camada 1,
+   cobrança própria com a conta do dono no gateway: é o que deixa um estúdio sem
+   sistema cobrar pela conversa, e é o foco da prospecção (pilates).
+3. Conversions API, Flows de agendamento e catálogo oficial, nessa ordem.
 
-1. É o único item da lista que os dois clientes reais usariam no mês seguinte:
-   a MGM cobra mensalidade e aula avulsa, a PCYES fecha pedido na conversa e
-   hoje manda o cliente para o site pagar.
-2. O pedido já é montado e somado no servidor (FUNCIONALIDADES.md:296); falta só
-   a cobrança de verdade. O pagamento atual é demonstração (FUNCIONALIDADES.md:304).
-3. Foi o buraco de mercado já apontado em `docs/CONCORRENTES-22-SET-PROFUNDIDADE.md:22-40`:
-   os concorrentes brasileiros pedem para o dono montar requisição REST na mão.
-4. Não depende da Meta para funcionar. A versão "nativa" do WhatsApp (mensagem
-   `order_details` com Pix) vem por cima depois, usando o mesmo gateway.
-
-Junto, por ser barato e proteger o número: **opt-out por "SAIR" e registro de
-opt-in**. A Colmeia também não mostra isso no site, mas a Meta exige.
+Pagamento **não é um bloco só**: a pergunta é onde mora o pedido (no Magento, na
+Verandi, em outro sistema ou em lugar nenhum), e cada caso pede uma resposta.
+A primeira versão deste documento tratava como um bloco "Cobrar" de 5 a 8 dias;
+estava raso.
 
 ## Quem é a Colmeia
 
@@ -27,6 +24,18 @@ financeira, seguradora e faculdade: Banco Mercantil, Digio, Rodobens,
 ConCrédito, Uniube ([casos](https://colmeia.cx/casos-de-transformacao-digital/)).
 **Preço não é público**: só "agende uma demonstração", com formulário que
 começa em 5.000 atendimentos por mês ([integrações](https://colmeia.cx/integracoes/)).
+
+**Como ela opera:** é camada de conversa, fluxo e disparo ligada ao sistema do
+cliente. Não há, em nenhuma página lida, tela de pedidos, de cobranças, gateway
+próprio ou nota fiscal. Os gateways aparecem só como logos de "integração com as
+principais plataformas" ([soluções](https://colmeia.cx/solutions/)). O bot chama
+a API do cliente por "funções" configuráveis
+([portal do cliente](https://sites.google.com/colmeia.me/portaldocliente/documenta%C3%A7%C3%B5es/gerenciamento/integra%C3%A7%C3%B5esapis)),
+e a integração de cada cliente é projeto feito junto com o time deles: o
+[Desafio ColmeIA](https://colmeia.cx/desafio-colmeia/) pede "acessos a API's e
+suas documentações" e "executar o projeto em conjunto com a equipe ColmeIA".
+Os dados ficam na nuvem do cliente
+([ConCrédito](https://colmeia.cx/50-milhoes-o-case-concredito-colmeia/)).
 
 Não é concorrente direta: vende projeto para empresa grande. O AutoFluxos vende
 assinatura de R$ 297 a R$ 1.197 para pequeno negócio (FUNCIONALIDADES.md:390-394).
@@ -82,18 +91,34 @@ Esforço em dias de trabalho do agente, sem contar espera da Meta.
 
 | # | Lacuna | PCYES (loja) | MGM (estúdio) | Esforço | Depende da Meta? |
 |---|---|---|---|---|---|
-| 1 | **Bloco "Cobrar"**: Pix e link de pagamento por um gateway (Mercado Pago ou Asaas), webhook que marca pago e segue o fluxo | fecha pedido sem mandar ao site | mensalidade, aula avulsa, cobrança atrasada | 5 a 8 dias | não |
-| 2 | **Opt-out "SAIR" e opt-in por contato** | protege o número nas transmissões | idem | 2 dias | não, mas a política exige |
-| 3 | **WhatsApp Flows** em modelos prontos (agendar horário, cadastro, pesquisa), sem editor visual de Flow no começo | baixo | alto: escolher dia e horário num formulário nativo, ligado à Verandi | 6 a 10 dias | sim: publicar o Flow e subir a chave pública do número |
-| 4 | **Conversions API**: devolver "lead" e "compra" para a Meta usando o `ctwa_clid` que já gravamos | anúncio otimiza para venda | anúncio otimiza para matrícula | 3 dias | sim: conta de anúncios e conjunto de dados (pixel) |
+| 1 | **Opt-out "SAIR" e opt-in por contato** | protege o número nas transmissões | idem | 2 dias | não, mas a política exige |
+| 2 | **Cobrança, camada 1** (abaixo) | não usa: paga no Magento | não usa: usa a Verandi | 8 a 12 dias | não |
+| 3 | **Conversions API**: devolver "lead" e "compra" para a Meta usando o `ctwa_clid` que já gravamos | anúncio otimiza para venda | anúncio otimiza para matrícula | 3 dias | sim: conta de anúncios e conjunto de dados (pixel) |
+| 4 | **WhatsApp Flows** em modelos prontos (agendar horário, cadastro, pesquisa), sem editor visual de Flow no começo | baixo | alto: escolher dia e horário num formulário nativo, ligado à Verandi | 6 a 10 dias | sim: publicar o Flow e subir a chave pública do número |
 | 5 | **Catálogo oficial do WhatsApp**: sincronizar nosso catálogo e o da Nuvemshop com a Meta, mandar mensagem de produto e multiproduto, receber o carrinho | alto (a PCYES é Magento: precisaria sincronizar dele também) | baixo | 6 a 10 dias | sim: catálogo no Commerce Manager ligado ao número |
 
-Depois do item 1 estar em uso: **Payments BR da Meta** (mensagem `order_details`
-com Pix dinâmico, cartão e boleto, o cliente paga sem sair do WhatsApp). A Meta
-documenta para o Brasil
-([Payments BR](https://developers.facebook.com/documentation/business-messaging/whatsapp/payments/payments-br/overview.md));
-a conciliação é nossa com o gateway pelo `reference_id`, então reaproveita o
-gateway do item 1. Estimativa: 4 a 6 dias.
+A cobrança está em 2 mesmo sem servir aos dois clientes de hoje porque serve à
+prospecção: estúdio de pilates sem sistema é o alvo
+(`docs/PROSPECCAO-AUTOFLUXOS.md`), e é o que a Colmeia não oferece.
+
+## Cobrança: onde mora o pedido
+
+Regra fixa nas três camadas: **o AutoFluxos nunca toca no dinheiro.** O
+dinheiro cai na conta do dono no gateway; estorno, contestação e taxa são entre
+ele e o gateway. Receber e repassar faria de nós intermediador de pagamento, com
+regra do Banco Central. **Nota fiscal é sempre do dono**, como já é no balcão.
+
+| Camada | Para quem | Como funciona | Esforço |
+|---|---|---|---|
+| 1. Cobrança própria | estúdio sem sistema, autônomo, lojinha | dono conecta a conta dele no Mercado Pago ou no Asaas (só esses dois, para não abrir integração nova a cada cliente); robô ou atendente manda Pix ou link; pagamento confirmado segue o fluxo sozinho; tela **Cobranças** com pendente, paga e vencida. Não é tela de pedidos com estoque e entrega | 8 a 12 dias |
+| 2. Saída genérica | quem tem um sistema qualquer | evento "cobrança paga" sai pelo webhook e pela API v1 que já existem (FUNCIONALIDADES.md:324-352) | 1 a 2 dias, depois da camada 1 |
+| 3. Conector pronto | só onde há cliente pagando | **Magento (PCYES)**: carrinho na conversa vira pedido dentro do Magento, pago no checkout da loja; gateway, ERP e nota seguem com eles. Hoje só lemos do Magento (`src/loja/magento-pedido.ts`), então precisa permissão de escrita. **Verandi (MGM)**: a mensalidade cobrada entra no financeiro dela, que hoje registra recebimento à mão (`verandi/src/server/contratos/acoes.ts:133`) | por conector, sob demanda |
+
+Depois da camada 1 em uso: **Payments BR da Meta** (mensagem `order_details`
+com Pix dinâmico, cartão e boleto, o cliente paga sem sair do WhatsApp)
+([Payments BR](https://developers.facebook.com/documentation/business-messaging/whatsapp/payments/payments-br/overview.md)).
+A conciliação é nossa com o gateway pelo `reference_id`, então reaproveita o
+gateway da camada 1. Estimativa: 4 a 6 dias.
 
 ## Canais: e-mail, SMS e RCS
 
@@ -110,7 +135,9 @@ Colmeia.
 ## Não confirmado
 
 - Como a Colmeia cobra: link do gateway ou Payments BR nativo da Meta. O site
-  diz só "Pix, boleto ou Mercado Pago direto na conversa".
+  diz só "Pix, boleto ou Mercado Pago direto na conversa", sem caso descrito.
+  Faltou ler no portal do cliente "Criação de bots" e "Serviços e Canais";
+  confirmação definitiva só perguntando ao comercial deles.
 - Se a Colmeia usa o catálogo oficial com carrinho e para quê usa Flows: o site
   cita os nomes sem exemplo.
 - Se a Colmeia tem coexistência, atribuição de anúncio com nome e opt-out.
