@@ -493,7 +493,7 @@ export async function tratarUma(
    */
   await marcarUltimaMensagem(canalSalvo.clienteId, contato.id)
   if (contato.criadoAgora) {
-    await anotar(canalSalvo.clienteId, contato.id, 'chegou', { origem: canalSalvo.provider === 'instagram' ? 'Instagram' : canalSalvo.provider === 'site' ? 'Site' : 'WhatsApp' })
+    await anotar(canalSalvo.clienteId, contato.id, 'chegou', { origem: canalSalvo.provider === 'instagram' ? 'Instagram' : canalSalvo.provider === 'site' ? 'Site' : canalSalvo.provider === 'telegram' ? 'Telegram' : 'WhatsApp' })
   } else {
     await aplicarFato(canalSalvo.clienteId, contato.id, 'voltou-a-falar')
   }

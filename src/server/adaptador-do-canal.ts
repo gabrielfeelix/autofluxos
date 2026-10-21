@@ -2,6 +2,7 @@ import 'server-only'
 import { canalCloudApi } from '@/channels/cloud-api'
 import { canalInstagram } from '@/channels/instagram'
 import { canalDoSite } from '@/channels/site'
+import { canalTelegram } from '@/channels/telegram'
 import type { Canal } from '@/channels/types'
 import { type CanalSalvo, lerTokenDoCanal } from './repos/conversas'
 
@@ -30,6 +31,8 @@ export async function adaptadorDoCanal(canal: CanalSalvo): Promise<Canal> {
   // O site não fala com ninguém de fora: a linha gravada é a entrega. Ver
   // `channels/site.ts`.
   if (canal.provider === 'site') return canalDoSite()
+
+  if (canal.provider === 'telegram') return canalTelegram({ token: await lerTokenDoCanal(canal) })
 
   if (canal.provider === 'instagram') {
     if (!canal.igUserId) {

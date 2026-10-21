@@ -1,6 +1,7 @@
 import 'server-only'
 import { estadoDaConexao, type EstadoDaConexao } from '@/core/conexoes'
 import { canalDoInstagram } from './repos/canais-instagram'
+import { canalDoTelegram } from './repos/canais-telegram'
 import { chatDoSite } from './repos/canais-site'
 import { listarConexoes } from './repos/conexoes'
 import { listarCanais } from './repos/conversas'
@@ -47,6 +48,9 @@ export async function catalogoDeIntegracoes(clienteId: string): Promise<ItemDoCa
     ])
 
   const numeros = canais.filter((c) => c.provider === 'cloud-api')
+  // Fora do `Promise.all` de propósito: antes da 0140 a leitura volta nula, e
+  // isso não pode atrasar nem derrubar o resto do catálogo.
+  const botDoTelegram = await canalDoTelegram(clienteId)
   const temTokenDeAnuncios = conexoes.some(
     (c) => c.nome.trim().toLowerCase() === NOME_DA_CONEXAO_DE_ADS && c.tipo === 'bearer',
   )
@@ -145,10 +149,9 @@ export async function catalogoDeIntegracoes(clienteId: string): Promise<ItemDoCa
       nome: 'Telegram',
       categoria: 'Canal',
       descricao: 'Atendimento no Telegram, com teclado inline e sem janela de 24 horas.',
-      href: null,
-      disponivel: false,
-      emBreve: 'Telegram ainda não está disponível.',
-      estado: estadoDaConexao({ tipo: 'cadastro', configurado: false, href: '/ajustes/integracoes' }),
+      href: '/conversas/canais/telegram',
+      disponivel: true,
+      estado: estadoDaConexao({ tipo: 'cadastro', configurado: botDoTelegram !== null, href: '/conversas/canais/telegram' }),
     },
   ]
 }

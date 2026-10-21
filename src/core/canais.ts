@@ -119,21 +119,11 @@ export const DEFINICAO_DO_CANAL: Record<CanalId, DefinicaoDeCanal> = {
     resumo: 'Atende num bot @seu_negocio, sem número e sem custo por conversa.',
     cor: '#2AABEE',
     /*
-     * **O adaptador existe** (`channels/telegram.ts`, com teste). O que falta
-     * é onde guardar o bot: a tabela `channels` só aceita `provider` em
-     * ('cloud-api', 'instagram'), e o `check` da 0040 exige que toda linha
-     * tenha exatamente um entre `phone_number_id` e `ig_user_id`, um bot do
-     * Telegram não tem nenhum dos dois. Enquanto isso não mudar, não há linha
-     * de canal para o `adaptadorDoCanal` encontrar, e nenhum webhook de
-     * entrada.
-     *
-     * Manter `false` é a regra deste arquivo sendo cumprida, e não contornada:
-     * ligar agora deixaria alguém desenhar um fluxo inteiro de Telegram para
-     * descobrir na publicação que não há bot para conectar.
+     * Disponível desde a 0140: o bot é guardado em `channels` com
+     * `provider = telegram`, o token no Vault, e as mensagens chegam por
+     * `/api/webhook/telegram/<bot>`. Ver `server/receber-do-telegram.ts`.
      */
-    disponivel: false,
-    falta:
-      'lugar para guardar o bot: `provider = telegram` no check da migration 0040, uma coluna para o chat do bot, o campo do token nas Conexões e o webhook de entrada. O adaptador da Bot API já existe (`channels/telegram.ts`).',
+    disponivel: true,
     // Teclado inline não tem teto prático, e não existe janela de 24h: o
     // limite de 10 é nosso, para a lista continuar legível.
     limites: { botoes: 4, opcoes: 10, rotulo: 32, janelaHoras: null },
