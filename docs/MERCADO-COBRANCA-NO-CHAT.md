@@ -135,8 +135,23 @@ Pedido e cobrança são o mesmo objeto: a cobrança é o centro, o pedido é uma
 cobrança com itens e entrega. Assim a tela de estúdio e a de loja não viram
 dois produtos.
 
-Esforço: 6 a 8 dias depois da cobrança. Nota fiscal continua fora (inferência,
-a confirmar com contador: MEI não é obrigado a emitir nota para pessoa física).
+Esforço: 6 a 8 dias depois da cobrança.
+
+**Nota fiscal da loja pequena: não emitimos.**
+
+| Vende | Nota | Onde |
+|---|---|---|
+| Serviço | NFS-e | prefeitura ou emissor nacional |
+| Produto | NF-e ou NFC-e | Sefaz do estado, com certificado digital, inscrição estadual e NCM, CFOP e tributação por produto |
+
+Emitir faria de nós responsáveis pelo cadastro fiscal de cada produto de cada
+cliente; erro ali é problema fiscal do lojista. O caminho:
+
+1. MEI vendendo para pessoa física: sem nota (a confirmar com contador; é a
+   maior parte das lojinhas).
+2. Quem precisa emitir: o pedido sai do AutoFluxos para o sistema de gestão
+   dele (Bling, Tiny), que emite. É o padrão do mercado (RD Conversas com
+   Tiny). Conector sob demanda; API do Bling a confirmar.
 
 Ordem: cobrança primeiro (serve estúdio, serviço e loja), pedido leve depois,
 conector de loja virtual quando um cliente pedir.
