@@ -55,8 +55,51 @@ export function podeEnviar(status: StatusDoTemplate): boolean {
  */
 export function linkComLacuna(componentes: { botoes?: Botao[] } | null | undefined): Botao | null {
   return (
-    componentes?.botoes?.find((b) => b.tipo === 'URL' && variaveisDe(b.valor ?? '').length > 0) ?? null
+    // O botão que conta cliques tem lacuna de propósito, e quem envia a preenche.
+    componentes?.botoes?.find((b) => b.tipo === 'URL' && !b.destino && variaveisDe(b.valor ?? '').length > 0) ?? null
   )
+}
+
+/**
+ * O modelo escrito como mensagem comum, para quem está com a janela aberta.
+ *
+ * Dentro das 24h a Meta aceita texto livre, cobrado como serviço (R$ 0,035
+ * depois das 1.000 grátis do mês) e não como marketing (R$ 0,3217). A mesma
+ * campanha sai até nove vezes mais barata para quem conversou ontem.
+ *
+ * Só o que vira mensagem comum sem perder nada. `null` quando não vira:
+ *
+ * - cabeçalho de mídia: a mensagem comum não leva foto e texto juntos com o
+ *   mesmo desenho, e mandar só o texto tiraria a imagem da campanha;
+ * - cabeçalho com variável: a transmissão só preenche as do corpo;
+ * - botão de resposta rápida: o toque volta diferente de um botão de modelo,
+ *   e um fluxo que espera um não reconheceria o outro;
+ * - mais de um botão, ou telefone e código: a mensagem comum tem um botão de
+ *   link só.
+ *
+ * Um botão de link vira o `cta_url`, que mostra o mesmo botão.
+ */
+export type ModeloComoTexto =
+  | { tipo: 'texto'; texto: string }
+  | { tipo: 'link'; texto: string; rotulo: string; url: string }
+
+export function modeloComoTexto(componentes: Componentes, corpo: string[]): ModeloComoTexto | null {
+  const cabecalho = componentes.cabecalho
+  if (cabecalho && cabecalho.tipo !== 'texto') return null
+  if (cabecalho && variaveisDe(cabecalho.texto).length > 0) return null
+
+  const botoes = componentes.botoes ?? []
+  if (botoes.length > 1) return null
+  const botao = botoes[0]
+  const destino = botao?.destino ?? botao?.valor
+  if (botao && (botao.tipo !== 'URL' || !destino || variaveisDe(destino).length > 0)) return null
+
+  const preenchido = componentes.corpo.replace(/\{\{(\d+)\}\}/g, (_, n: string) => corpo[Number(n) - 1] ?? '')
+  const texto = [cabecalho ? `*${cabecalho.texto.trim()}*` : null, preenchido.trim(), componentes.rodape?.trim() || null]
+    .filter((parte): parte is string => !!parte)
+    .join('\n\n')
+
+  return botao && destino ? { tipo: 'link', texto, rotulo: botao.texto, url: destino } : { tipo: 'texto', texto }
 }
 
 /** O recado para quem tenta enviar um modelo com `linkComLacuna`. */
@@ -104,6 +147,52 @@ export type Botao = {
   texto: string
   /** URL para `URL`, telefone para `PHONE_NUMBER`. */
   valor?: string
+  /**
+   * O link de verdade de um botão que conta cliques (0139). Quando existe,
+   * `valor` é o nosso endereço de clique com `{{1}}` no fim, que é o que a
+   * Meta aprova, e é daqui que o redirecionamento lê o destino.
+   */
+  destino?: string
+}
+
+/** O endereço que conta o clique e redireciona. O fim variável é o código assinado. */
+export const ENDERECO_DO_CLIQUE = 'https://autofluxos.4yu.com.br/api/site/clique/'
+
+/**
+ * O botão de link reescrito para contar cliques: a Meta aprova o nosso
+ * endereço com uma lacuna no fim, e o destino fica guardado no próprio botão.
+ *
+ * Só vale para modelo criado assim. Um modelo já aprovado com o link direto
+ * não muda: o link é parte do que a Meta aprovou.
+ */
+export function comCliqueContado(botao: Botao): Botao {
+  if (botao.tipo !== 'URL' || !botao.valor || variaveisDe(botao.valor).length > 0) return botao
+  return { ...botao, valor: `${ENDERECO_DO_CLIQUE}{{1}}`, destino: botao.valor }
+}
+
+/**
+ * Os componentes relidos da Meta, com o destino dos botões contados de volta.
+ *
+ * A Meta só conhece o nosso endereço de clique; o destino de verdade existe
+ * só aqui. Quem regrava o texto lido de lá (o modelo da biblioteca, que nasce
+ * vazio) apagaria o destino, e todo clique daria "link inválido".
+ */
+export function manterDestinos(antes: { botoes?: Botao[] } | null | undefined, depois: Componentes): Componentes {
+  const comDestino = (antes?.botoes ?? []).filter((b) => b.destino)
+  if (comDestino.length === 0 || !depois.botoes) return depois
+  return {
+    ...depois,
+    botoes: depois.botoes.map((b) => {
+      const igual = comDestino.find((d) => d.valor === b.valor)
+      return igual ? { ...b, destino: igual.destino } : b
+    }),
+  }
+}
+
+/** A posição do botão que conta cliques, ou `null` se o modelo não tem um. */
+export function indiceDoBotaoContado(componentes: { botoes?: Botao[] } | null | undefined): number | null {
+  const i = (componentes?.botoes ?? []).findIndex((b) => b.tipo === 'URL' && !!b.destino && b.valor === `${ENDERECO_DO_CLIQUE}{{1}}`)
+  return i === -1 ? null : i
 }
 
 export type Componentes = {

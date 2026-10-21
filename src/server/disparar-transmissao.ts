@@ -3,19 +3,33 @@ import { avisarTransmissaoConcluida, avisarTransmissaoInterrompida } from './avi
 import { ehVisitanteDoSite } from '@/core/contatos/visitante-do-site'
 import type { Canal, ValoresDoTemplate } from '@/channels/types'
 import {
+  cabemNaHora,
   decidir,
+  expedienteDoRitmo,
   intervaloMs,
   RITMO_INICIAL,
   type Decisao,
 } from '@/core/disparo'
-import { condutaPara, explicarErro, linkComLacuna, podeEnviar, recadoDoLinkComLacuna, variaveisDe } from '@/core/templates'
+import { atendimentoAberto } from '@/core/horario'
+import {
+  condutaPara,
+  explicarErro,
+  linkComLacuna,
+  modeloComoTexto,
+  podeEnviar,
+  recadoDoLinkComLacuna,
+  variaveisDe,
+} from '@/core/templates'
 import { adaptadorDoCanal } from './adaptador-do-canal'
 import { alertar } from './alertar'
 import { db } from './db'
-import { revalidarNoEnvio } from './servicos/elegibilidade'
+import { linkDoClique, modeloComClique } from './link-do-clique'
+import { horarioDoCliente } from './repos/clientes'
+import { revalidarComJanela } from './servicos/elegibilidade'
 import { listarCanais } from './repos/conversas'
 import { lerTemplate, type Template as TemplateLido } from './repos/templates'
 import {
+  enviadosDesde,
   lerTransmissao,
   marcarDestinatario,
   mudarEstadoDaTransmissao,
@@ -181,7 +195,22 @@ export async function dispararTransmissao(
     await mudarEstadoDaTransmissao(transmissao.id, 'enviando')
   }
 
-  const fila = await proximosDaFila(transmissao.id, opcoes.porPassada ?? POR_PASSADA)
+  /*
+   * **O ritmo por hora** (0139). Quem escolheu "aos poucos" quer as respostas
+   * chegando num passo que a equipe acompanha, e nunca de madrugada: fora do
+   * expediente nada sai, e dentro dele só o que cabe na última hora corrida.
+   * A transmissão não para nem falha, a próxima passada continua.
+   */
+  let porPassada = opcoes.porPassada ?? POR_PASSADA
+  if (typeof transmissao.porHora === 'number') {
+    const expediente = expedienteDoRitmo(await horarioDoCliente(transmissao.clienteId))
+    if (!atendimentoAberto(expediente)) return resumo
+    const cabem = cabemNaHora(transmissao.porHora, await enviadosDesde(transmissao.id, new Date(Date.now() - 60 * 60 * 1000)))
+    if (cabem === 0) return resumo
+    porPassada = Math.min(porPassada, cabem)
+  }
+
+  const fila = await proximosDaFila(transmissao.id, porPassada)
   if (fila.length === 0) {
     await concluirSeAcabou(transmissao)
     return { ...resumo, terminou: true }
@@ -265,9 +294,9 @@ async function tentarUm(
    */
   // Visitante do site não tem WhatsApp: o endereço dele é um hash, e a Meta
   // recusaria com um erro que não diz o motivo verdadeiro.
-  const recusa = ehVisitanteDoSite(destinatario.waId)
-    ? 'visitante do chat do site, sem WhatsApp'
-    : await revalidarNoEnvio(transmissao.clienteId, destinatario.contatoId, {
+  const { recusa, textoLivre } = ehVisitanteDoSite(destinatario.waId)
+    ? { recusa: 'visitante do chat do site, sem WhatsApp', textoLivre: false }
+    : await revalidarComJanela(transmissao.clienteId, destinatario.contatoId, {
         comModelo: true,
       })
   if (recusa) {
@@ -281,12 +310,43 @@ async function tentarUm(
     return { tipo: 'falhou' }
   }
 
+  const valores = valoresPara(transmissao.parametros, destinatario, template.componentes.corpo)
+
+  /*
+   * **Na janela, mensagem comum** (0139). Quem escreveu nas últimas 24h pode
+   * receber texto livre, cobrado como serviço e não como marketing. Só quando
+   * a transmissão pediu, a janela está aberta **agora** e o modelo vira texto
+   * sem perder nada (`modeloComoTexto`); senão, o modelo, como sempre.
+   */
+  const comoTexto = transmissao.textoLivreNaJanela && textoLivre ? modeloComoTexto(template.componentes, valores.corpo ?? []) : null
+  if (comoTexto) {
+    try {
+      const wamid =
+        comoTexto.tipo === 'link' && canal.enviarBotaoDeLink
+          ? await canal.enviarBotaoDeLink(
+              destinatario.waId,
+              comoTexto.texto,
+              comoTexto.rotulo,
+              linkDoClique(template.id, destinatario.id),
+            )
+          : await canal.enviarTexto(
+              destinatario.waId,
+              comoTexto.tipo === 'link' ? `${comoTexto.texto}\n\n${linkDoClique(template.id, destinatario.id)}` : comoTexto.texto,
+            )
+      await marcarDestinatario(destinatario.id, { estado: 'aceita', wamid: wamid || null, enviadaComo: 'texto' })
+      return { tipo: 'aceita' }
+    } catch (erro) {
+      // A janela fechou entre a leitura e o envio, ou o texto foi recusado:
+      // segue para o modelo, que entrega fora da janela.
+      console.error('[transmissao] mensagem comum recusada, indo de modelo:', erro)
+    }
+  }
+
   try {
-    const envio = await canal.enviarTemplate!(destinatario.waId, {
-      nome: template.nome,
-      idioma: template.idioma,
-      valores: valoresPara(transmissao.parametros, destinatario, template.componentes.corpo),
-    })
+    const envio = await canal.enviarTemplate!(
+      destinatario.waId,
+      modeloComClique({ nome: template.nome, idioma: template.idioma, valores }, template, destinatario.id),
+    )
 
     /*
      * `retida` gravado como `retida`, e nunca como `aceita`. A diferença é
@@ -305,6 +365,7 @@ async function tentarUm(
     await marcarDestinatario(destinatario.id, {
       estado: envio.situacao,
       wamid: envio.wamid || null,
+      enviadaComo: 'modelo',
     })
     return { tipo: envio.situacao }
   } catch (erro) {

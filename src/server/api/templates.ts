@@ -10,6 +10,7 @@ import { anotar } from '../repos/eventos'
 import { listarTemplates, listarTemplatesAprovados, type Template } from '../repos/templates'
 import { gravarContatoDaApi } from './contatos'
 import type { CodigoDeErro } from './autenticar'
+import { modeloComClique } from '../link-do-clique'
 
 /**
  * Modelos aprovados pela API pública (fase 2). A rota cuida de quem pode chamar
@@ -189,7 +190,7 @@ export async function enviarModeloPelaApi(clienteId: string, pedido: PedidoDeEnv
 
   let envio
   try {
-    envio = await canal.enviarTemplate(contexto.waId, {
+    envio = await canal.enviarTemplate(contexto.waId, modeloComClique({
       nome: template.nome,
       idioma: template.idioma,
       ...(valoresDoCorpo.length > 0 || valoresDoCabecalho.length > 0
@@ -200,7 +201,7 @@ export async function enviarModeloPelaApi(clienteId: string, pedido: PedidoDeEnv
             },
           }
         : {}),
-    })
+    }, template))
   } catch (erro) {
     const detalhe = erro instanceof Error ? erro.message : String(erro)
     return recusa(502, 'meta_recusou', `A Meta recusou o envio: ${detalhe}`)

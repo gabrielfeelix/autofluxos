@@ -25,6 +25,7 @@ import {
   preencherLacunas,
   recadoDoLinkComLacuna,
 } from '@/core/templates'
+import { modeloComClique } from './link-do-clique'
 
 /**
  * A passada que manda o que venceu.
@@ -208,7 +209,7 @@ async function enviarPeloModelo(
     autor: autorDaPessoa({ nome: agendada.criadaPorNome }),
   })
 
-  await canal.enviarTemplate(contexto.waId, {
+  await canal.enviarTemplate(contexto.waId, modeloComClique({
     nome: template.nome,
     idioma: template.idioma,
     ...(quantas > 0 || lacunasDoCabecalho > 0
@@ -219,7 +220,7 @@ async function enviarPeloModelo(
           },
         }
       : {}),
-  })
+  }, template))
 
   await confirmarEntrega(registro)
   await marcarEnviada(agendada.id)

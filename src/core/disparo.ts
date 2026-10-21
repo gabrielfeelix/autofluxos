@@ -1,3 +1,5 @@
+import type { HorarioDeAtendimento } from './horario'
+
 /**
  * O ritmo da transmissão, as contas, sem rede e sem banco.
  *
@@ -235,4 +237,37 @@ export function podeTransmitir(entrada: {
   }
 
   return { pode: true, recado: null }
+}
+
+// ---------------------------------------------------------------------------
+// O ritmo por hora (0139)
+// ---------------------------------------------------------------------------
+
+/**
+ * O expediente do ritmo para a conta que não configurou o dela.
+ *
+ * Expediente vazio quer dizer "atende sempre" para o bot (ver
+ * `atendimentoAberto`), mas aqui seria mandar campanha às 4h, quando o cron
+ * diário passa. Quem pediu "aos poucos" pediu para não incomodar, então sem
+ * expediente o ritmo anda das 8h às 20h de Brasília, todo dia.
+ */
+export const EXPEDIENTE_DO_RITMO_PADRAO: HorarioDeAtendimento = {
+  fuso: 'America/Sao_Paulo',
+  dias: Array.from({ length: 7 }, () => [{ de: '08:00', ate: '20:00' }]),
+}
+
+/** O expediente que vale para o ritmo: o da conta, se ela configurou algum. */
+export function expedienteDoRitmo(daConta: HorarioDeAtendimento | null): HorarioDeAtendimento {
+  return daConta && daConta.dias.some((faixas) => faixas.length > 0) ? daConta : EXPEDIENTE_DO_RITMO_PADRAO
+}
+
+/**
+ * Quantos ainda cabem agora, numa janela corrida de uma hora.
+ *
+ * Corrida e não "da hora cheia": com a hora cheia, 100 por hora viravam 100
+ * às 10h59 e mais 100 às 11h00, duzentas respostas chegando juntas na equipe,
+ * que é o que o ritmo existe para evitar.
+ */
+export function cabemNaHora(porHora: number, saidasNaUltimaHora: number): number {
+  return Math.max(0, porHora - saidasNaUltimaHora)
 }

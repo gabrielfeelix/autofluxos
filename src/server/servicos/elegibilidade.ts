@@ -44,6 +44,8 @@ export type Elegibilidade = {
   motivo: Motivo | null
   /** `gratuita`, `paga` ou `desconhecido`. Ver `channels/janela.ts`. */
   cobranca: 'gratuita' | 'paga' | 'desconhecido'
+  /** A janela de 24h está aberta: pode receber mensagem comum (0139). */
+  textoLivre: boolean
 }
 
 export type Previa = {
@@ -55,6 +57,8 @@ export type Previa = {
   excluidos: Record<Motivo, number>
   /** Quantos sairiam de graça, dos elegíveis. */
   gratuitas: number
+  /** Quantos elegíveis estão com a janela de 24h aberta (0139). */
+  naJanela: number
   /** Quantos têm custo não confirmado. Ver a nota de `cobranca`. */
   custoNaoConfirmado: number
   detalhes: Elegibilidade[]
@@ -79,6 +83,7 @@ export async function avaliarElegibilidade(
     elegiveis: 0,
     excluidos: { sem_telefone: 0, janela_fechada_sem_modelo: 0, nunca_escreveu: 0 },
     gratuitas: 0,
+    naJanela: 0,
     custoNaoConfirmado: 0,
     detalhes: [],
   }
@@ -121,11 +126,13 @@ export async function avaliarElegibilidade(
       elegivel: resultado.elegivel,
       motivo: resultado.motivo,
       cobranca: permissao.cobranca,
+      textoLivre: permissao.textoLivre,
     })
 
     if (resultado.elegivel) {
       previa.elegiveis += 1
       if (permissao.cobranca === 'gratuita') previa.gratuitas += 1
+      if (permissao.textoLivre) previa.naJanela += 1
       // `desconhecido` não é `paga`: dizer "paga" seria prometer um custo que
       // ninguém calculou, e a tela precisa poder dizer "não confirmado".
       if (permissao.cobranca === 'desconhecido') previa.custoNaoConfirmado += 1
@@ -181,4 +188,24 @@ export async function revalidarNoEnvio(
   if (!detalhe) return FRASES.sem_telefone
   if (detalhe.elegivel) return null
   return detalhe.motivo ? FRASES[detalhe.motivo] : 'não elegível'
+}
+
+/**
+ * A mesma revalidação, dizendo também se a janela de 24h está aberta agora.
+ *
+ * É o que a transmissão usa para decidir entre modelo e mensagem comum
+ * (0139): a janela é lida no instante do envio, porque quem escreveu há 23h
+ * na hora de confirmar pode estar com ela fechada quando chegar a vez.
+ */
+export async function revalidarComJanela(
+  clienteId: string,
+  contatoId: string,
+  opcoes: { comModelo: boolean; agora?: number },
+): Promise<{ recusa: string | null; textoLivre: boolean }> {
+  const previa = await avaliarElegibilidade(clienteId, [contatoId], opcoes)
+  const detalhe = previa.detalhes[0]
+
+  if (!detalhe) return { recusa: FRASES.sem_telefone, textoLivre: false }
+  if (!detalhe.elegivel) return { recusa: detalhe.motivo ? FRASES[detalhe.motivo] : 'não elegível', textoLivre: false }
+  return { recusa: null, textoLivre: detalhe.textoLivre }
 }

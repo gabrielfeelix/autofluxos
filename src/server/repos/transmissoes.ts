@@ -54,6 +54,10 @@ export type Transmissao = {
   comecouEm: string | null
   terminouEm: string | null
   erro: string | null
+  /** Quem está com a janela de 24h aberta recebe texto comum (0139). */
+  textoLivreNaJanela: boolean
+  /** Teto de envios por hora, no horário de atendimento. `null`: tudo de uma vez (0139). */
+  porHora: number | null
 }
 
 type Linha = {
@@ -70,10 +74,12 @@ type Linha = {
   comecou_em: string | null
   terminou_em: string | null
   erro: string | null
+  texto_livre_na_janela: boolean | null
+  por_hora: number | null
 }
 
 const COLUNAS =
-  'id, cliente_id, nome, template_id, parametros, quando, estado, criada_por, criada_por_nome, criada_em, comecou_em, terminou_em, erro'
+  'id, cliente_id, nome, template_id, parametros, quando, estado, criada_por, criada_por_nome, criada_em, comecou_em, terminou_em, erro, texto_livre_na_janela, por_hora'
 
 function paraTransmissao(linha: Linha): Transmissao {
   return {
@@ -93,6 +99,8 @@ function paraTransmissao(linha: Linha): Transmissao {
     comecouEm: linha.comecou_em,
     terminouEm: linha.terminou_em,
     erro: linha.erro,
+    textoLivreNaJanela: linha.texto_livre_na_janela === true,
+    porHora: linha.por_hora ?? null,
   }
 }
 
@@ -132,6 +140,8 @@ export type NovaTransmissao = {
   quando?: string | null
   criadaPor?: string | null
   criadaPorNome?: string | null
+  textoLivreNaJanela?: boolean
+  porHora?: number | null
 }
 
 export async function criarTransmissao(nova: NovaTransmissao): Promise<Transmissao> {
@@ -146,6 +156,8 @@ export async function criarTransmissao(nova: NovaTransmissao): Promise<Transmiss
       estado: 'rascunho',
       criada_por: nova.criadaPor ?? null,
       criada_por_nome: nova.criadaPorNome ?? null,
+      texto_livre_na_janela: nova.textoLivreNaJanela ?? false,
+      por_hora: nova.porHora ?? null,
     })
     .select(COLUNAS)
     .single()
@@ -424,6 +436,7 @@ export async function marcarDestinatario(
     wamid?: string | null
     codigoErro?: number | null
     erro?: string | null
+    enviadaComo?: 'modelo' | 'texto'
   },
 ): Promise<void> {
   const saiu = dados.estado === 'aceita' || dados.estado === 'retida'
@@ -435,6 +448,7 @@ export async function marcarDestinatario(
       ...(dados.wamid !== undefined ? { wamid: dados.wamid } : {}),
       ...(dados.codigoErro !== undefined ? { codigo_erro: dados.codigoErro } : {}),
       ...(dados.erro !== undefined ? { erro: dados.erro } : {}),
+      ...(dados.enviadaComo !== undefined ? { enviada_como: dados.enviadaComo } : {}),
       ...(saiu ? { enviada_em: new Date().toISOString() } : {}),
       atualizada_em: new Date().toISOString(),
     })
@@ -549,6 +563,62 @@ export async function progressoDas(ids: string[]): Promise<Map<string, Progresso
   }
 
   return mapa
+}
+
+/**
+ * O que a 0139 acrescentou ao progresso: quantos saíram como mensagem comum
+ * dentro da janela e quantos clicaram no link.
+ *
+ * Contagem no banco (`head`), pelo mesmo motivo da 0096: ler as linhas para
+ * contar mente acima do `max_rows`.
+ */
+export async function extrasDa(transmissaoId: string): Promise<{ comoTexto: number; clicaram: number }> {
+  const contar = async (filtro: 'texto' | 'clique') => {
+    let consulta = db()
+      .from('transmissao_destinatarios')
+      .select('id', { count: 'exact', head: true })
+      .eq('transmissao_id', transmissaoId)
+    consulta = filtro === 'texto' ? consulta.eq('enviada_como', 'texto') : consulta.not('clicada_em', 'is', null)
+    const { count, error } = await consulta
+    if (error) {
+      if (ehIdInvalido(error)) return 0
+      throw error
+    }
+    return count ?? 0
+  }
+  return { comoTexto: await contar('texto'), clicaram: await contar('clique') }
+}
+
+/**
+ * Quantos já saíram desde um instante. É o que o ritmo por hora usa para
+ * saber quanto ainda cabe na hora corrente.
+ */
+export async function enviadosDesde(transmissaoId: string, desde: Date): Promise<number> {
+  const { count, error } = await db()
+    .from('transmissao_destinatarios')
+    .select('id', { count: 'exact', head: true })
+    .eq('transmissao_id', transmissaoId)
+    .gte('enviada_em', desde.toISOString())
+  if (error) {
+    if (ehIdInvalido(error)) return 0
+    throw error
+  }
+  return count ?? 0
+}
+
+/**
+ * Anota o primeiro clique de um destinatário no link da transmissão.
+ *
+ * Só o primeiro: `clicada_em` responde "quantos clicaram", e o segundo clique
+ * da mesma pessoa não muda essa resposta.
+ */
+export async function anotarClique(destinatarioId: string, agora: Date = new Date()): Promise<void> {
+  const { error } = await db()
+    .from('transmissao_destinatarios')
+    .update({ clicada_em: agora.toISOString() })
+    .eq('id', destinatarioId)
+    .is('clicada_em', null)
+  if (error && !ehIdInvalido(error)) throw error
 }
 
 /** A leitura de antes da 0096. Só existe como recuo de `progressoDas`. */

@@ -21,6 +21,8 @@ import {
   paraFormatoDaMeta,
 } from '@/core/modelos-prontos'
 import {
+  ENDERECO_DO_CLIQUE,
+  manterDestinos,
   normalizarNome,
   temErro,
   validarTemplate,
@@ -73,6 +75,8 @@ import {
 } from './repos/conversas'
 import { exigirCapacidade, recusou } from './permissoes'
 import { sessaoAtual } from './sessao'
+import { modeloComClique } from './link-do-clique'
+import { avaliarElegibilidade } from './servicos/elegibilidade'
 
 /**
  * As ações de modelo aprovado e transmissão, em arquivo próprio.
@@ -343,6 +347,25 @@ export async function acaoCriarDaBiblioteca(
   const nome = nomeAutomatico(dados.nomeNaBiblioteca)
   const idioma = dados.idioma || 'pt_BR'
 
+  /*
+   * **O primeiro botão de link passa a contar cliques** (0139). A Meta aprova
+   * o nosso endereço com uma lacuna no fim; o destino que a pessoa digitou
+   * fica guardado no botão, aqui, desde o rascunho. Se a releitura da Meta
+   * falhar, o destino já está gravado e o clique funciona.
+   */
+  const botoes = [...(dados.botoes ?? [])]
+  const iDoLink = botoes.findIndex((b) => b.type === 'URL' && !b.url.base_url.includes('{{'))
+  const destino = iDoLink === -1 ? null : (botoes[iDoLink] as Extract<EntradaDeBotao, { type: 'URL' }>).url.base_url
+  if (destino) {
+    botoes[iDoLink] = {
+      type: 'URL',
+      url: { base_url: `${ENDERECO_DO_CLIQUE}{{1}}`, url_suffix_example: `${ENDERECO_DO_CLIQUE}exemplo` },
+    }
+  }
+  const botaoContado = destino
+    ? { tipo: 'URL' as const, texto: '', valor: `${ENDERECO_DO_CLIQUE}{{1}}`, destino }
+    : null
+
   let rascunho
   try {
     rascunho = await criarRascunho({
@@ -352,7 +375,7 @@ export async function acaoCriarDaBiblioteca(
       categoria: dados.categoria,
       // Vazio até a Meta aceitar: aí o texto é lido de volta dela, que é a
       // versão que vale (ver `lerComponentesDaMeta` abaixo).
-      componentes: { corpo: '' },
+      componentes: botaoContado ? { corpo: '', botoes: [botaoContado] } : { corpo: '' },
     })
   } catch {
     return { ok: false, erro: 'Não foi possível salvar o modelo.' }
@@ -365,7 +388,7 @@ export async function acaoCriarDaBiblioteca(
     nomeNaBiblioteca: dados.nomeNaBiblioteca,
     idioma,
     categoria: dados.categoria,
-    ...(dados.botoes && dados.botoes.length > 0 ? { botoes: dados.botoes } : {}),
+    ...(botoes.length > 0 ? { botoes } : {}),
   })
 
   if (!resposta.ok) {
@@ -385,7 +408,9 @@ export async function acaoCriarDaBiblioteca(
     wabaTemplateId: resposta.template.wabaTemplateId,
     token: conta.token,
   })
-  if (componentes) await gravarComponentes(rascunho.id, componentes).catch(() => {})
+  if (componentes) {
+    await gravarComponentes(rascunho.id, manterDestinos(botaoContado ? { botoes: [botaoContado] } : null, componentes)).catch(() => {})
+  }
 
   telas(clienteId)
   return { ok: true, templateId: rascunho.id }
@@ -467,10 +492,19 @@ export async function acaoCriarTransmissao(
     quando?: string | null
     /** O teto de 24h do cliente. Vem da tela porque a Meta não o expõe por API. */
     limiteDiario?: number
+    /** Quem está na janela de 24h recebe mensagem comum (0139). */
+    textoLivreNaJanela?: boolean
+    /** Teto por hora, no horário de atendimento. Nulo: tudo de uma vez (0139). */
+    porHora?: number | null
   },
 ): Promise<ResultadoDaTransmissao> {
   const acesso = await exigirCapacidade(clienteId, 'exportar', 'todos')
   if (recusou(acesso)) return acesso
+
+  const porHora = dados.porHora ?? null
+  if (porHora !== null && (!Number.isInteger(porHora) || porHora < 1 || porHora > 100_000)) {
+    return { ok: false, erro: 'O ritmo precisa ser um número inteiro de envios por hora, de 1 para cima.' }
+  }
 
   const foraDoPlano = await recusaDoPlano(clienteId, 'transmissoes')
   if (foraDoPlano) return { ok: false, erro: foraDoPlano }
@@ -528,6 +562,8 @@ export async function acaoCriarTransmissao(
     quando: dados.quando ?? null,
     criadaPor: quem?.usuario.id ?? null,
     criadaPorNome: quem?.usuario.nome ?? null,
+    textoLivreNaJanela: dados.textoLivreNaJanela ?? false,
+    porHora,
   })
 
   await enfileirarDestinatarios(transmissao.id, contatoIds)
@@ -624,6 +660,8 @@ export async function acaoCriarTransmissaoPorEtiqueta(
     parametros?: Record<string, string>
     quando?: string | null
     limiteDiario?: number
+    textoLivreNaJanela?: boolean
+    porHora?: number | null
   },
 ): Promise<ResultadoDaTransmissao> {
   const acesso = await exigirCapacidade(clienteId, 'exportar', 'todos')
@@ -638,6 +676,32 @@ export async function acaoCriarTransmissaoPorEtiqueta(
   return acaoCriarTransmissao(clienteId, { ...resto, contatoIds })
 }
 
+
+/**
+ * Quantos do público estão com a janela de 24h aberta agora (0139).
+ *
+ * É o número que a nova transmissão mostra ao lado da opção "mensagem comum
+ * para quem conversou nas últimas 24h": sem ele, a economia é promessa. Em
+ * lotes, porque a consulta leva os ids no endereço e um público de milhares
+ * passaria do tamanho que o PostgREST aceita.
+ */
+export async function acaoJanelaDoPublico(
+  clienteId: string,
+  etiquetaId: string,
+): Promise<{ naJanela: number; elegiveis: number } | null> {
+  const acesso = await exigirCapacidade(clienteId, 'exportar', 'todos')
+  if (recusou(acesso)) return null
+
+  const contatoIds = await contatosComEtiqueta(clienteId, etiquetaId)
+  let naJanela = 0
+  let elegiveis = 0
+  for (let i = 0; i < contatoIds.length; i += 300) {
+    const previa = await avaliarElegibilidade(clienteId, contatoIds.slice(i, i + 300), { comModelo: true })
+    naJanela += previa.naJanela
+    elegiveis += previa.elegiveis
+  }
+  return { naJanela, elegiveis }
+}
 
 /**
  * Retomar uma conversa fora da janela de 24h, com um modelo aprovado.
@@ -735,7 +799,7 @@ export async function acaoRetomarComModelo(
   })
 
   try {
-    await canal.enviarTemplate(contexto.waId, {
+    await canal.enviarTemplate(contexto.waId, modeloComClique({
       nome: template.nome,
       idioma: template.idioma,
       ...(quantas > 0 || lacunasDoCabecalho > 0
@@ -746,7 +810,7 @@ export async function acaoRetomarComModelo(
             },
           }
         : {}),
-    })
+    }, template))
   } catch (erro) {
     const detalhe = erro instanceof Error ? erro.message : String(erro)
     return { ok: false, erro: `A Meta recusou o envio: ${detalhe}` }

@@ -21,6 +21,7 @@ import {
   type EstadoDoDestinatario,
   lerTransmissao,
   listarDestinatarios,
+  extrasDa,
   progressoDa,
 } from '@/server/repos/transmissoes'
 
@@ -88,8 +89,9 @@ async function Detalhe({
   // Id de outra conta responde igual a id que não existe: não confirma nada.
   if (!transmissao || transmissao.clienteId !== clienteId) notFound()
 
-  const [progresso, template, destinatarios] = await Promise.all([
+  const [progresso, extras, template, destinatarios] = await Promise.all([
     progressoDa(transmissao.id),
+    extrasDa(transmissao.id),
     lerTemplate(transmissao.templateId),
     listarDestinatarios(transmissao.id, { estado, pagina, porPagina: POR_PAGINA }),
   ])
@@ -135,7 +137,7 @@ async function Detalhe({
       />
 
       <section className="app-card px-5 py-4">
-        <Numeros progresso={progresso} />
+        <Numeros progresso={progresso} extras={extras} />
         {transmissao.erro && (
           <p className="mt-2 rounded-[10px] bg-red-500/10 px-3 py-2 text-[12px] leading-5 text-red-700 dark:text-red-300">
             <strong>Por que parou:</strong> {transmissao.erro}

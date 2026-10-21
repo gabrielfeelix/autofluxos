@@ -45,7 +45,14 @@ export function ProximaAcao({ acao }: { acao: { texto: string; link?: { rotulo: 
  * decidindo, e juntá-la a "chegou" é exatamente o erro que esta tela existe
  * para não cometer.
  */
-export function Numeros({ progresso }: { progresso: Progresso }) {
+export function Numeros({
+  progresso,
+  extras,
+}: {
+  progresso: Progresso
+  /** Mensagem comum na janela e cliques no link (0139). Só no detalhe. */
+  extras?: { comoTexto: number; clicaram: number }
+}) {
   const chegou = progresso.entregue + progresso.lida
 
   return (
@@ -59,6 +66,11 @@ export function Numeros({ progresso }: { progresso: Progresso }) {
           {progresso.lida > 0 && ` (${progresso.lida} lidas)`}
         </span>
       )}
+      {extras && extras.clicaram > 0 && (
+        <span>
+          <strong className="text-ink">{extras.clicaram}</strong> clicaram no link
+        </span>
+      )}
       {progresso.aceita > 0 && <span>{progresso.aceita} saíram</span>}
       {progresso.na_fila > 0 && <span>{progresso.na_fila} na fila</span>}
       {progresso.retida > 0 && (
@@ -70,6 +82,7 @@ export function Numeros({ progresso }: { progresso: Progresso }) {
           <strong>{progresso.retida}</strong> a Meta está avaliando, ainda podem não sair
         </span>
       )}
+      {extras && extras.comoTexto > 0 && <span>{extras.comoTexto} como mensagem comum, na janela de 24h</span>}
       {progresso.falhou > 0 && (
         <span className="text-red-600">
           <strong>{progresso.falhou}</strong> falharam

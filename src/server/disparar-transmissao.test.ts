@@ -36,8 +36,11 @@ vi.mock('./avisos-por-email', () => ({
  */
 const revalidarNoEnvio = vi.fn().mockResolvedValue(null)
 vi.mock('./servicos/elegibilidade', () => ({
-  revalidarNoEnvio: (...a: unknown[]) => revalidarNoEnvio(...a),
+  // O motor lê a recusa e a janela juntas (0139); estes testes são do modelo,
+  // então a janela vem sempre fechada.
+  revalidarComJanela: async (...a: unknown[]) => ({ recusa: await revalidarNoEnvio(...a), textoLivre: false }),
 }))
+vi.mock('./repos/clientes', () => ({ horarioDoCliente: vi.fn().mockResolvedValue(null) }))
 
 // O `update` do motivo da exclusão só roda quando há recusa. Encadeado para o
 // caminho feliz não precisar de banco.
@@ -164,6 +167,7 @@ describe('o disparo', () => {
     expect(marcarDestinatario).toHaveBeenCalledWith('d0', {
       estado: 'retida',
       wamid: 'w1',
+      enviadaComo: 'modelo',
     })
   })
 

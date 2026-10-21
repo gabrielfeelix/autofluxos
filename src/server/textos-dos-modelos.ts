@@ -2,6 +2,7 @@ import 'server-only'
 import { lerComponentesDaMeta } from '@/channels/templates-api'
 import { lerTokenDoCanal, listarCanais } from './repos/conversas'
 import { gravarComponentes, type Template } from './repos/templates'
+import { manterDestinos } from '@/core/templates'
 
 /**
  * Completa o texto dos modelos que estão sem ele, lendo da Meta.
@@ -24,8 +25,9 @@ export async function completarTextos(clienteId: string, templates: Template[]):
     const lidos = new Map<string, Template['componentes']>()
     await Promise.all(
       faltam.slice(0, 10).map(async (t) => {
-        const componentes = await lerComponentesDaMeta({ wabaTemplateId: t.wabaTemplateId as string, token })
-        if (!componentes || componentes.corpo.trim() === '') return
+        const lido = await lerComponentesDaMeta({ wabaTemplateId: t.wabaTemplateId as string, token })
+        if (!lido || lido.corpo.trim() === '') return
+        const componentes = manterDestinos(t.componentes, lido)
         lidos.set(t.id, componentes)
         await gravarComponentes(t.id, componentes).catch(() => {})
       }),

@@ -607,6 +607,15 @@ export function canalCloudApi(config: ConfigCloudApi): Canal {
         })
       }
 
+      for (const botao of valores?.botoes ?? []) {
+        componentes.push({
+          type: 'button',
+          sub_type: 'url',
+          index: String(botao.indice),
+          parameters: [{ type: 'text', text: botao.texto }],
+        })
+      }
+
       const resposta = await mandar({
         to: para,
         type: 'template',

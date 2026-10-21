@@ -62,6 +62,11 @@ export type ValoresDoTemplate = {
   /** O header aceita **uma** variável no máximo, ver `LIMITE_VARIAVEIS_NO_HEADER`. */
   cabecalho?: string[]
   corpo?: string[]
+  /**
+   * O fim variável de um botão de link, por posição do botão. É o código do
+   * clique contado (0139); a Meta recusa o modelo sem ele.
+   */
+  botoes?: { indice: number; texto: string }[]
 }
 
 /**

@@ -14,6 +14,7 @@ import {
   avancarInscricao,
   encerrarInscricao,
 } from './repos/sequencias'
+import { modeloComClique } from './link-do-clique'
 
 /**
  * A execução de um passo de sequência (0031).
@@ -212,11 +213,11 @@ async function mandarModeloDoPasso(
     const canal = await adaptadorDoCanal(contexto.canal)
     if (!canal.enviarTemplate) return 'sem_modelo'
 
-    await canal.enviarTemplate(contexto.waId, {
+    await canal.enviarTemplate(contexto.waId, modeloComClique({
       nome: template.nome,
       idioma: template.idioma,
       valores: valoresPara(parametros, { nome: contato?.nome ?? null }, template.componentes.corpo),
-    })
+    }, template))
 
     return 'ok'
   } catch (erro) {
