@@ -115,5 +115,6 @@ Tudo em produção, deploy conferido READY.
 
 1. Confirmar com o Gabriel se a MGM já sabe do bloqueio de pagamento e quem
    cadastra o cartão no portfólio deles; anotar em `PENDENCIAS-DO-GABRIEL.md`.
-2. Ler `verandi/docs/HANDOFF-13-OUT.md`: itens 3 (depende do Daniel) e 5 estavam
-   em aberto em 14/out; conferir no `git log` o que andou depois.
+2. Ler `verandi/docs/HANDOFF-13-OUT.md`: item 3 (faltas justificadas) foi
+   finalizado pelo Daniel (confirmado em 21/out). Item 5 (conferir logado)
+   continua em aberto.
