@@ -26,18 +26,20 @@ import { responderToque } from './telegram/bot-api'
 
 const usuarioSchema = z.object({ id: z.number(), first_name: z.string().optional(), last_name: z.string().optional(), username: z.string().optional() })
 const chatSchema = z.object({ id: z.number(), type: z.string() })
+/** Todo anexo do Telegram tem um `file_id`, que o adaptador troca pelo arquivo (`getFile`). */
+const arquivoSchema = z.object({ file_id: z.string() })
 const mensagemSchema = z.object({
   message_id: z.number(),
   from: usuarioSchema.optional(),
   chat: chatSchema,
   text: z.string().optional(),
   caption: z.string().optional(),
-  photo: z.array(z.unknown()).optional(),
-  voice: z.unknown().optional(),
-  audio: z.unknown().optional(),
-  video: z.unknown().optional(),
-  document: z.unknown().optional(),
-  sticker: z.unknown().optional(),
+  photo: z.array(arquivoSchema).optional(),
+  voice: arquivoSchema.optional(),
+  audio: arquivoSchema.optional(),
+  video: arquivoSchema.optional(),
+  document: arquivoSchema.optional(),
+  sticker: arquivoSchema.optional(),
 })
 export const updateDoTelegramSchema = z.object({
   update_id: z.number(),
@@ -58,10 +60,11 @@ function nomeDe(u: z.infer<typeof usuarioSchema> | undefined): string | null {
 /**
  * O update no formato interno, ou `null` quando não é conversa.
  *
- * Mídia vira texto que diz o que chegou, com a legenda se houver. O arquivo do
- * Telegram se baixa por outra API (`getFile`), e o caminho de mídia recebida
- * do produto fala a língua do WhatsApp; fingir um id de mídia aqui faria o
- * download falhar mais adiante, longe do motivo.
+ * Mídia chega no formato do WhatsApp (`image`, `audio`, `video`,
+ * `document`, `sticker`) com o `file_id` no lugar do id da Meta: o adaptador
+ * do Telegram baixa pelo `getFile`, e daí em diante foto, áudio e arquivo
+ * seguem o mesmo caminho das outras conversas (guardados, lidos pela IA,
+ * saída "mandou arquivo" do fluxo). Voz é áudio; da foto, a maior resolução.
  */
 export function paraMensagemDoTelegram(update: Update): { mensagem: Mensagem; nome: string | null } | null {
   const toque = update.callback_query
@@ -82,14 +85,27 @@ export function paraMensagemDoTelegram(update: Update): { mensagem: Mensagem; no
   if (!m || m.chat.type !== 'private') return null
   const base = { id: `tg-${m.chat.id}-${m.message_id}`, from: String(m.chat.id) }
 
-  let texto = m.text
-  if (texto === undefined) {
-    const oQue = m.photo ? 'uma foto' : m.voice || m.audio ? 'um áudio' : m.video ? 'um vídeo' : m.document ? 'um arquivo' : m.sticker ? 'uma figurinha' : null
-    if (!oQue) return null
-    texto = m.caption ? `(mandou ${oQue}) ${m.caption}` : `(mandou ${oQue})`
+  if (m.text !== undefined) {
+    return { nome: nomeDe(m.from), mensagem: { ...base, type: 'text', text: { body: m.text } } as Mensagem }
   }
 
-  return { nome: nomeDe(m.from), mensagem: { ...base, type: 'text', text: { body: texto } } as Mensagem }
+  // Legenda só onde o WhatsApp tem: voz e figurinha não carregam.
+  const legenda = m.caption ? { caption: m.caption } : {}
+  const voz = m.voice ?? m.audio
+  const foto = m.photo?.at(-1)
+  const anexo: { type: string; arquivo: { id: string; caption?: string } } | null = foto
+    ? { type: 'image', arquivo: { id: foto.file_id, ...legenda } }
+    : voz
+      ? { type: 'audio', arquivo: { id: voz.file_id } }
+      : m.video
+        ? { type: 'video', arquivo: { id: m.video.file_id, ...legenda } }
+        : m.document
+          ? { type: 'document', arquivo: { id: m.document.file_id, ...legenda } }
+          : m.sticker
+            ? { type: 'sticker', arquivo: { id: m.sticker.file_id } }
+            : null
+  if (!anexo) return null
+  return { nome: nomeDe(m.from), mensagem: { ...base, type: anexo.type, [anexo.type]: anexo.arquivo } as Mensagem }
 }
 
 export async function receberDoTelegram(botId: string, payload: unknown, fabricaDeCanal?: FabricaDeCanal): Promise<void> {

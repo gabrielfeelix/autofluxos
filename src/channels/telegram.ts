@@ -121,6 +121,24 @@ function cortarBytes(valor: string, teto: number): string {
   return corte
 }
 
+const MIME_POR_EXTENSAO: Record<string, string> = {
+  jpg: 'image/jpeg',
+  jpeg: 'image/jpeg',
+  png: 'image/png',
+  webp: 'image/webp',
+  oga: 'audio/ogg',
+  ogg: 'audio/ogg',
+  mp3: 'audio/mpeg',
+  m4a: 'audio/mp4',
+  mp4: 'video/mp4',
+  pdf: 'application/pdf',
+}
+
+export function mimeDaExtensao(nome: string): string {
+  const extensao = nome.split('.').pop()?.toLowerCase() ?? ''
+  return MIME_POR_EXTENSAO[extensao] ?? 'application/octet-stream'
+}
+
 export function canalTelegram(config: ConfigTelegram): Canal {
   const raiz = config.raiz ?? process.env.TELEGRAM_API_ROOT ?? RAIZ_PADRAO
   const base = `${raiz}/bot${config.token}`
@@ -177,6 +195,37 @@ export function canalTelegram(config: ConfigTelegram): Canal {
   }
 
   return {
+    /*
+     * O arquivo que a pessoa mandou, em dois passos: `getFile` troca o
+     * `file_id` pelo caminho, e o caminho se baixa em `/file/bot<token>/`. O
+     * Telegram entrega até 20 MB por bot; acima disso `getFile` recusa e a
+     * mensagem fica só com o tipo, como antes. Nunca lança.
+     */
+    async baixarMidia(fileId) {
+      try {
+        const pedido = await fetch(`${base}/getFile`, {
+          method: 'POST',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({ file_id: fileId }),
+          signal: AbortSignal.timeout(TIMEOUT_MS),
+        })
+        const lido = (await pedido.json().catch(() => ({}))) as { ok?: boolean; result?: { file_path?: string } }
+        const caminho = lido.ok ? lido.result?.file_path : undefined
+        if (!caminho) return null
+        const arquivo = await fetch(`${raiz}/file/bot${config.token}/${caminho}`, { signal: AbortSignal.timeout(30_000) })
+        if (!arquivo.ok) return null
+        const nomeArquivo = caminho.split('/').pop() ?? caminho
+        const doCabecalho = arquivo.headers.get('content-type')?.split(';')[0]?.trim()
+        // O Telegram costuma responder `application/octet-stream`; a extensão diz mais.
+        const mime = doCabecalho && doCabecalho !== 'application/octet-stream' ? doCabecalho : mimeDaExtensao(nomeArquivo)
+        return { bytes: new Uint8Array(await arquivo.arrayBuffer()), mime, nomeArquivo }
+      } catch (erro) {
+        // A mensagem de erro não leva a URL: o token mora nela.
+        console.warn('[telegram] não foi possível baixar a mídia', erro instanceof Error ? erro.name : 'erro')
+        return null
+      }
+    },
+
     async aguardarResposta({ contato }, atrasoMs) {
       try {
         /*

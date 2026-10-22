@@ -26,9 +26,19 @@ describe('paraMensagemDoTelegram (0140)', () => {
     expect(r?.mensagem).toMatchObject({ type: 'interactive', from: '4242', interactive: { button_reply: { id: 'agendar' } } })
   })
 
-  it('foto vira texto que diz o que chegou, com a legenda', () => {
-    const r = paraMensagemDoTelegram({ update_id: 3, message: { message_id: 9, chat, photo: [{}], caption: 'meu comprovante' } })
-    expect(r?.mensagem).toMatchObject({ type: 'text', text: { body: '(mandou uma foto) meu comprovante' } })
+  it('foto chega como imagem, a maior resolução, com a legenda', () => {
+    const r = paraMensagemDoTelegram({
+      update_id: 3,
+      message: { message_id: 9, chat, photo: [{ file_id: 'pequena' }, { file_id: 'grande' }], caption: 'meu comprovante' },
+    })
+    expect(r?.mensagem).toMatchObject({ type: 'image', image: { id: 'grande', caption: 'meu comprovante' } })
+  })
+
+  it('voz chega como áudio, e arquivo como documento', () => {
+    const voz = paraMensagemDoTelegram({ update_id: 5, message: { message_id: 10, chat, voice: { file_id: 'v1' } } })
+    expect(voz?.mensagem).toMatchObject({ type: 'audio', audio: { id: 'v1' } })
+    const pdf = paraMensagemDoTelegram({ update_id: 6, message: { message_id: 11, chat, document: { file_id: 'd1' } } })
+    expect(pdf?.mensagem).toMatchObject({ type: 'document', document: { id: 'd1' } })
   })
 
   it('grupo é ignorado', () => {

@@ -247,3 +247,24 @@ describe('o adaptador do Telegram', () => {
     ).resolves.toBeUndefined()
   })
 })
+
+describe('mídia recebida pelo Telegram', () => {
+  it('troca o file_id pelo caminho e baixa o arquivo, com o tipo pela extensão', async () => {
+    const espiao = fingirFetch(async () => new Response('{}'))
+    espiao
+      .mockResolvedValueOnce(new Response(JSON.stringify({ ok: true, result: { file_path: 'voice/file_3.oga' } })))
+      .mockResolvedValueOnce(new Response(new Uint8Array([1, 2, 3]), { headers: { 'content-type': 'application/octet-stream' } }))
+
+    const arquivo = await canal().baixarMidia!('arquivo-1')
+
+    expect(arquivo).toEqual({ bytes: new Uint8Array([1, 2, 3]), mime: 'audio/ogg', nomeArquivo: 'file_3.oga' })
+    expect(chamadas(espiao)[0]![0]).toBe(`https://api.telegram.org/bot${TOKEN}/getFile`)
+    expect(JSON.parse(String(chamadas(espiao)[0]![1].body))).toEqual({ file_id: 'arquivo-1' })
+    expect(chamadas(espiao)[1]![0]).toBe(`https://api.telegram.org/file/bot${TOKEN}/voice/file_3.oga`)
+  })
+
+  it('arquivo grande demais (getFile recusa) volta nulo, sem lançar', async () => {
+    fingirFetch(async () => new Response(JSON.stringify({ ok: false, description: 'file is too big' }), { status: 400 }))
+    expect(await canal().baixarMidia!('grande')).toBeNull()
+  })
+})
