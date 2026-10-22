@@ -32,6 +32,8 @@ import {
 } from '@/core/templates'
 import { coexistenciaDoCliente } from './repos/coexistencia'
 import { contatosComEtiqueta, listarEtiquetasComContagem } from './repos/etiquetas'
+import { contarContatos, idsDoSegmento } from './consultas/contatos'
+import { acharSegmento, listarSegmentos } from './repos/segmentos'
 import { lerTokenDoCanal, listarCanais } from './repos/conversas'
 import {
   apagarTemplate,
@@ -623,8 +625,29 @@ export async function acaoListarTemplates(clienteId: string) {
   return completarTextos(clienteId, await listarTemplates(clienteId))
 }
 
+/** Para quem vai a transmissão: uma etiqueta, ou um segmento salvo em Contatos. */
+export type PublicoDaTransmissao = { tipo: 'etiqueta' | 'segmento'; id: string }
+
+export type PublicoPossivel = PublicoDaTransmissao & { nome: string; contatos: number }
+
+/** A transmissão alcança a base inteira da conta, nunca o recorte de uma equipe. */
+const TODA_A_BASE = { tipo: 'tudo' } as const
+
 /**
- * Os públicos possíveis, com o tamanho de cada um.
+ * Os ids do público, resolvidos no servidor e cruzados com a conta. O
+ * segmento é lido agora e congelado na transmissão (RB-38): editar a regra
+ * depois não muda quem já está na fila.
+ */
+async function contatosDoPublico(clienteId: string, publico: PublicoDaTransmissao): Promise<string[]> {
+  if (publico.tipo === 'etiqueta') return contatosComEtiqueta(clienteId, publico.id)
+  const segmento = await acharSegmento(clienteId, publico.id)
+  if (!segmento) return []
+  return idsDoSegmento({ clienteId, segmento: segmento.regra, escopo: TODA_A_BASE })
+}
+
+/**
+ * Os públicos possíveis, com o tamanho de cada um: as etiquetas e os
+ * segmentos salvos em Contatos.
  *
  * **A contagem é metade da informação.** "Clientes" e "Clientes" com 4 e com
  * 1.200 contatos são escolhas completamente diferentes, e quem está montando
@@ -632,31 +655,42 @@ export async function acaoListarTemplates(clienteId: string) {
  * transmissão cabe no teto do dia.
  *
  * Exige o mesmo que criar a transmissão (`exportar`, `todos`): a lista só
- * serve para isso, e a contagem por etiqueta já é um retrato da base.
+ * serve para isso, e a contagem já é um retrato da base.
  */
-export async function acaoPublicosPossiveis(clienteId: string) {
+export async function acaoPublicosPossiveis(clienteId: string): Promise<PublicoPossivel[]> {
   const acesso = await exigirCapacidade(clienteId, 'exportar', 'todos')
   if (recusou(acesso)) return []
-  const etiquetas = await listarEtiquetasComContagem(clienteId)
-  // Etiqueta sem ninguém não é público: deixá-la na lista é oferecer uma
+  const [etiquetas, segmentos] = await Promise.all([listarEtiquetasComContagem(clienteId), listarSegmentos(clienteId)])
+  const comContagem = await Promise.all(
+    segmentos.map(async (s) => ({
+      tipo: 'segmento' as const,
+      id: s.id,
+      nome: s.nome,
+      contatos: await contarContatos({ clienteId, segmento: s.regra, escopo: TODA_A_BASE }).catch(() => 0),
+    })),
+  )
+  // Público sem ninguém não é público: deixá-lo na lista é oferecer uma
   // escolha que só pode dar em "nenhum contato foi selecionado".
-  return etiquetas.filter((e) => (e.contatos ?? 0) > 0)
+  return [
+    ...etiquetas.map((e) => ({ tipo: 'etiqueta' as const, id: e.id, nome: e.nome, contatos: e.contatos ?? 0 })),
+    ...comContagem,
+  ].filter((p) => p.contatos > 0)
 }
 
 /**
- * Cria a transmissão a partir de uma etiqueta.
+ * Cria a transmissão para uma etiqueta ou um segmento salvo.
  *
  * **O público é resolvido aqui, no servidor, e não na tela.** Mandar 1.200 ids
  * de contato pela rede para o navegador devolvê-los seria pagar duas vezes por
  * uma lista que o banco já tem, e abriria a porta para a tela mandar ids que
- * não são do cliente. Aqui `contatosComEtiqueta` já cruza com `client_id`.
+ * não são do cliente.
  */
-export async function acaoCriarTransmissaoPorEtiqueta(
+export async function acaoCriarTransmissaoParaPublico(
   clienteId: string,
   dados: {
     nome: string
     templateId: string
-    etiquetaId: string
+    publico: PublicoDaTransmissao
     parametros?: Record<string, string>
     quando?: string | null
     limiteDiario?: number
@@ -667,12 +701,12 @@ export async function acaoCriarTransmissaoPorEtiqueta(
   const acesso = await exigirCapacidade(clienteId, 'exportar', 'todos')
   if (recusou(acesso)) return acesso
 
-  const contatoIds = await contatosComEtiqueta(clienteId, dados.etiquetaId)
+  const contatoIds = await contatosDoPublico(clienteId, dados.publico)
   if (contatoIds.length === 0) {
-    return { ok: false, erro: 'Nenhum contato tem esta etiqueta agora.' }
+    return { ok: false, erro: 'Nenhum contato está neste público agora.' }
   }
 
-  const { etiquetaId: _ignorado, ...resto } = dados
+  const { publico: _ignorado, ...resto } = dados
   return acaoCriarTransmissao(clienteId, { ...resto, contatoIds })
 }
 
@@ -687,12 +721,12 @@ export async function acaoCriarTransmissaoPorEtiqueta(
  */
 export async function acaoJanelaDoPublico(
   clienteId: string,
-  etiquetaId: string,
+  publico: PublicoDaTransmissao,
 ): Promise<{ naJanela: number; elegiveis: number } | null> {
   const acesso = await exigirCapacidade(clienteId, 'exportar', 'todos')
   if (recusou(acesso)) return null
 
-  const contatoIds = await contatosComEtiqueta(clienteId, etiquetaId)
+  const contatoIds = await contatosDoPublico(clienteId, publico)
   let naJanela = 0
   let elegiveis = 0
   for (let i = 0; i < contatoIds.length; i += 300) {

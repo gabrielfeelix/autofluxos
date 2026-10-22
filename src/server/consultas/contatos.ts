@@ -194,6 +194,24 @@ export async function consultarContatos(
   }
 }
 
+/**
+ * Todos os ids que casam com o segmento, na mesma definição da lista. Para a
+ * transmissão, que congela o público na criação. `teto` protege de uma base
+ * inteira por engano.
+ */
+export async function idsDoSegmento(
+  pedido: Pick<PedidoDeConsulta, 'clienteId' | 'segmento' | 'escopo'>,
+  teto = 20_000,
+): Promise<string[]> {
+  const ids: string[] = []
+  for (let pagina = 1; ids.length < teto; pagina++) {
+    const r = await consultarContatos({ ...pedido, pagina, porPagina: 1_000, ordem: 'recentes' })
+    ids.push(...r.contatos.map((c) => c.contatoId))
+    if (pagina >= r.paginas) break
+  }
+  return ids.slice(0, teto)
+}
+
 /** A contagem, sem trazer ninguém. Mesma definição da lista, por construção. */
 export async function contarContatos(pedido: PedidoDeConsulta): Promise<number> {
   const r = await consultarContatos({ ...pedido, pagina: 1, porPagina: 1 })

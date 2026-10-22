@@ -12,11 +12,11 @@ import { Modal } from '@/components/design/modal'
 import { cabemHoje, podeTransmitir, saiNoDiaDeHoje } from '@/core/disparo'
 import { camposDoCorpoDaMeta, previa } from '@/core/modelos-prontos'
 import {
-  acaoCriarTransmissaoPorEtiqueta,
+  acaoCriarTransmissaoParaPublico,
   acaoJanelaDoPublico,
   acaoPublicosPossiveis,
 } from '@/server/acoes-transmissoes'
-import type { Etiqueta } from '@/server/repos/etiquetas'
+import type { PublicoDaTransmissao, PublicoPossivel } from '@/server/acoes-transmissoes'
 import type { Template } from '@/server/repos/templates'
 
 /**
@@ -97,6 +97,15 @@ export function NovaTransmissao({
   )
 }
 
+function chaveDoPublico(p: PublicoDaTransmissao): string {
+  return `${p.tipo}:${p.id}`
+}
+
+function publicoDaChave(chave: string): PublicoDaTransmissao | null {
+  const [tipo, id] = chave.split(':')
+  return (tipo === 'etiqueta' || tipo === 'segmento') && id ? { tipo, id } : null
+}
+
 function Formulario({
   clienteId,
   aprovados,
@@ -113,16 +122,17 @@ function Formulario({
 
   const [nome, setNome] = useState('')
   const [templateId, setTemplateId] = useState(aprovados[0]?.id ?? '')
-  const [etiquetaId, setEtiquetaId] = useState('')
+  /** `etiqueta:<id>` ou `segmento:<id>`: o valor do seletor de público. */
+  const [publicoId, setPublicoId] = useState('')
   const [quando, setQuando] = useState('')
   const [valores, setValores] = useState<Record<string, string>>({})
   const [erro, setErro] = useState<string | null>(null)
 
-  const [publicos, setPublicos] = useState<Etiqueta[] | null>(null)
+  const [publicos, setPublicos] = useState<PublicoPossivel[] | null>(null)
   const [comumNaJanela, setComumNaJanela] = useState(true)
   const [ritmo, setRitmo] = useState<'tudo' | 'aos-poucos'>('tudo')
   const [porHora, setPorHora] = useState('100')
-  const [janela, setJanela] = useState<{ etiquetaId: string; naJanela: number } | null>(null)
+  const [janela, setJanela] = useState<{ publicoId: string; naJanela: number } | null>(null)
 
   /*
    * Os públicos são buscados ao ABRIR, como a biblioteca da Meta em
@@ -136,7 +146,7 @@ function Formulario({
       .then((lista) => {
         if (!vivo) return
         setPublicos(lista)
-        setEtiquetaId((atual) => atual || (lista[0]?.id ?? ''))
+        setPublicoId((atual) => atual || (lista[0] ? chaveDoPublico(lista[0]) : ''))
       })
       .catch(() => {
         if (vivo) setPublicos([])
@@ -151,26 +161,27 @@ function Formulario({
    * número antes do clique. Lido de novo a cada troca de público.
    */
   useEffect(() => {
-    if (!etiquetaId) return
+    const escolhido = publicoDaChave(publicoId)
+    if (!escolhido) return
     let vivo = true
-    void acaoJanelaDoPublico(clienteId, etiquetaId)
+    void acaoJanelaDoPublico(clienteId, escolhido)
       .then((r) => {
-        if (vivo && r) setJanela({ etiquetaId, naJanela: r.naJanela })
+        if (vivo && r) setJanela({ publicoId, naJanela: r.naJanela })
       })
       .catch(() => {})
     return () => {
       vivo = false
     }
-  }, [clienteId, etiquetaId])
+  }, [clienteId, publicoId])
 
   const template = aprovados.find((t) => t.id === templateId)
   const corpo = template?.componentes.corpo ?? ''
   const campos = camposDoCorpoDaMeta(corpo)
-  const publico = publicos?.find((e) => e.id === etiquetaId)
+  const publico = publicos?.find((p) => chaveDoPublico(p) === publicoId)
   const tamanho = publico?.contatos ?? 0
   // O modelo vira mensagem comum sem perder nada? Foto e resposta rápida não.
   const viraTexto = template ? modeloComoTexto(template.componentes, []) !== null : false
-  const naJanelaAgora = janela?.etiquetaId === etiquetaId ? Math.min(janela.naJanela, tamanho) : null
+  const naJanelaAgora = janela?.publicoId === publicoId ? Math.min(janela.naJanela, tamanho) : null
   const comoTexto = comumNaJanela && viraTexto ? (naJanelaAgora ?? 0) : 0
   const porHoraNumero = Number.parseInt(porHora, 10)
 
@@ -202,7 +213,8 @@ function Formulario({
 
     if (!nome.trim()) return setErro('Dê um nome para esta transmissão.')
     if (!templateId) return setErro('Escolha o modelo.')
-    if (!etiquetaId) return setErro('Escolha para quem vai.')
+    const escolhido = publicoDaChave(publicoId)
+    if (!escolhido) return setErro('Escolha para quem vai.')
     if (faltaAlgum) return setErro('Preencha os campos da mensagem.')
     if (ritmo === 'aos-poucos' && !(porHoraNumero >= 1)) return setErro('Diga quantas mensagens por hora, no mínimo 1.')
 
@@ -218,10 +230,10 @@ function Formulario({
         parametros[numero] = campo?.automatico ? '{nome}' : (valores[numero] ?? '')
       })
 
-      const r = await acaoCriarTransmissaoPorEtiqueta(clienteId, {
+      const r = await acaoCriarTransmissaoParaPublico(clienteId, {
         nome: nome.trim(),
         templateId,
-        etiquetaId,
+        publico: escolhido,
         parametros,
         // Vazio quer dizer "manda agora", e o motor entende nulo assim.
         quando: quando ? new Date(quando).toISOString() : null,
@@ -310,18 +322,18 @@ function Formulario({
             <p className="text-[12.5px] text-dim">Carregando os públicos…</p>
           ) : publicos.length === 0 ? (
             <p className="rounded-[10px] bg-amber-500/[0.08] px-3 py-2.5 text-[12.5px] leading-5 text-dim">
-              Nenhuma etiqueta tem contato ainda. Marque contatos com uma etiqueta no Inbox para
-              poder transmitir para eles.
+              Nenhuma etiqueta nem segmento tem contato ainda. Marque contatos com uma etiqueta
+              no Inbox, ou salve um segmento em Contatos, para poder transmitir para eles.
             </p>
           ) : (
             <Dropdown
-              opcoes={publicos.map((e) => ({
-                valor: e.id,
-                rotulo: e.nome,
-                detalhe: `${e.contatos} ${e.contatos === 1 ? 'contato' : 'contatos'}`,
+              opcoes={publicos.map((p) => ({
+                valor: chaveDoPublico(p),
+                rotulo: p.nome,
+                detalhe: `${p.tipo === 'segmento' ? 'Segmento' : 'Etiqueta'} · ${p.contatos} ${p.contatos === 1 ? 'contato' : 'contatos'}`,
               }))}
-              valor={etiquetaId}
-              aoMudar={setEtiquetaId}
+              valor={publicoId}
+              aoMudar={setPublicoId}
               rotuloAcessivel="Público da transmissão"
             />
           )}
