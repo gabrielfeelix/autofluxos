@@ -31,9 +31,7 @@ Código: `src/server/ponte-verandi.ts`. Feita em 22/out/2026.
 
 ## Pendências
 
-- `presenca.falta` precisa da migration `0085_vr_evento_de_falta` da Verandi
-  em produção (lista fechada de tipos do outbox). Sem ela, a falta só não vira
-  aviso.
-- Fora das 24h o aviso vira nota na ficha e não sai: falta modelo aprovado
-  por evento (próximo passo natural).
-- Marcar aula pelo Inbox (humano) usando `disponibilidade` e `participacoes`.
+- `0085_vr_evento_de_falta` aplicada em produção em 22/out: `presenca.falta`
+  já sai.
+- Próxima rodada, aprovada: aviso fora das 24h por modelo aprovado e marcar
+  aula pelo Inbox. Plano em `docs/HANDOFF-22-OUT-PONTE-VERANDI-2.md`.
