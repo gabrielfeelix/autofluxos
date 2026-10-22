@@ -1,5 +1,6 @@
 import 'server-only'
 import { alertar } from './alertar'
+import { mandarAvisoPorModelo } from './aviso-por-modelo'
 import { abrirFluxoParaContato, type FabricaDeCanal } from './receber-mensagem'
 import { acharContatoPeloTelefone } from './repos/contato-por-telefone'
 import { acrescentarNota } from './repos/leads'
@@ -24,9 +25,11 @@ export type ResultadoDoEvento =
   | 'sem_gatilho'
   /** O telefone não é de nenhum contato desta conta. */
   | 'sem_contato'
+  /** Fora das 24h, e saiu pelo modelo aprovado do evento (`aviso-por-modelo.ts`). */
+  | 'por_modelo'
   /**
-   * Passou de 24h desde a última mensagem da pessoa. **Registrado, não
-   * enviado**, ver o comentário em `tratarEvento`.
+   * Passou de 24h desde a última mensagem da pessoa e não há modelo aprovado.
+   * **Registrado, não enviado**, ver o comentário em `tratarEvento`.
    */
   | 'janela_fechada'
   /** O contato pausou o bot, ou o fluxo do gatilho não está publicado/ativo. */
@@ -87,11 +90,12 @@ export async function tratarEvento(
   if (aberto === 'aberto') return 'aberto'
 
   /**
-   * **Fora da janela de 24h: registra e não promete.**
+   * **Fora da janela de 24h: modelo aprovado, ou registra e não promete.**
    *
-   * A Meta recusa texto livre depois de 24h sem mensagem da pessoa, e modelo
-   * aprovado só existe depois do app review. Então há três saídas, e duas são
-   * piores que não fazer nada:
+   * A Meta recusa texto livre depois de 24h sem mensagem da pessoa. Se a conta
+   * criou o modelo do evento e a Meta aprovou, ele sai (cobrado como
+   * utilidade). Sem modelo, há três saídas, e duas são piores que não fazer
+   * nada:
    *
    * - *mandar mesmo assim*, a Cloud API recusa, e a conversa fica com um
    *   registro de entrega falhada que ninguém pediu;
@@ -99,15 +103,23 @@ export async function tratarEvento(
    *   consertar, trocado de lugar;
    * - *gravar na ficha e deixar visível*, quem abrir o Inbox vê que a vaga
    *   abriu e decide se liga, manda modelo, ou deixa passar.
-   *
-   * A terceira é a única honesta enquanto o modelo aprovado não existir.
    */
   if (aberto === 'janela_fechada') {
+    const porModelo = await mandarAvisoPorModelo(
+      entrada.clienteId,
+      contatoId,
+      entrada.evento,
+      entrada.variaveis ?? {},
+      fabricaDeCanal,
+    ).catch(() => 'erro' as const)
+    if (porModelo === 'ok') return 'por_modelo'
     try {
       await acrescentarNota(
         entrada.clienteId,
         contatoId,
-        `evento “${entrada.evento}” chegou, mas a janela de 24h estava fechada, nada foi enviado.${resumo(entrada.dados)}`,
+        porModelo === 'erro'
+          ? `evento “${entrada.evento}” chegou fora da janela de 24h e o modelo aprovado não saiu.${resumo(entrada.dados)}`
+          : `evento “${entrada.evento}” chegou, mas a janela de 24h estava fechada, nada foi enviado.${resumo(entrada.dados)}`,
       )
     } catch (erro) {
       await alertar('não foi possível registrar o evento fora da janela', erro, {

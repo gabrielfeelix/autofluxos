@@ -316,6 +316,15 @@ aqui fica o que o cliente ganha.
   próximas aulas e quantas reposições ele tem, sem abrir outra aba. Em
   Análise, presença, experimental que virou matrícula e quem saiu.
   *(22/out/2026)*
+- **O aviso chega mesmo depois de 24 horas**: com um clique, o AutoFluxos
+  cria na Meta um modelo para cada aviso da Verandi. Aula cancelada, vaga
+  aberta e falta chegam ao aluno que não conversa há dias, e não só a quem
+  falou ontem. *(22/out/2026)*
+- **Marcar e desmarcar aula sem sair da conversa**: a recepção vê os horários
+  livres dos próximos 7 dias, só da modalidade do aluno, e marca em dois
+  toques. Se ele tem reposição em aberto, a aula já entra como reposição. Na
+  mesma tela desmarca e fica sabendo se sobrou reposição, e manda a
+  confirmação para o aluno com um toque. *(22/out/2026)*
 
 ## Começar e crescer
 

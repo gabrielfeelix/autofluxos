@@ -93,8 +93,19 @@ export type AlunoNaVerandi = {
   ultimaPresenca: string | null
   licenca: { inicio: string; voltaPrevista: string | null } | null
   horariosFixos: { diaSemana: number; hora: string; servico: string | null }[]
-  proximas: { data: string; hora: string; servico: string | null }[]
+  proximas: {
+    participacaoId: string
+    data: string
+    hora: string
+    servico: string | null
+    /** Desmarcar agora ainda deixa reposição? Vale para o instante da leitura. */
+    podeRepor: boolean
+  }[]
   reposicoesAbertas: number
+  /** A falta mais antiga ainda sem reposição: é ela que a próxima marcação repõe. */
+  reposicaoDeId: string | null
+  /** A modalidade, quando o contrato é de uma só: filtra os horários de marcar. */
+  modalidade: { servicoId: string; nome: string } | null
   link: string
 }
 
@@ -118,6 +129,7 @@ export async function alunoNaVerandi(clienteId: string, telefone: string): Promi
     const f = (await ficha.json()) as Record<string, unknown>
     const lista = (v: unknown) => (Array.isArray(v) ? (v as Record<string, unknown>[]) : [])
     const licenca = f.licenca as { inicio?: unknown; voltaPrevista?: unknown } | null
+    const modalidade = f.modalidadeUnica as { servicoId?: unknown; nome?: unknown } | null
     return {
       pessoaId: id,
       nome: texto(f.nome) ?? '',
@@ -131,9 +143,21 @@ export async function alunoNaVerandi(clienteId: string, telefone: string): Promi
         servico: texto(h.servico),
       })),
       proximas: lista(f.proximas)
-        .slice(0, 3)
-        .map((p) => ({ data: texto(p.data) ?? '', hora: texto(p.hora) ?? '', servico: texto(p.servico) })),
+        .filter((p) => texto(p.participacaoId))
+        .slice(0, 6)
+        .map((p) => ({
+          participacaoId: p.participacaoId as string,
+          data: texto(p.data) ?? '',
+          hora: texto(p.hora) ?? '',
+          servico: texto(p.servico),
+          podeRepor: p.podeReporSeCancelarAgora !== false,
+        })),
       reposicoesAbertas: lista(f.reposicoesAbertas).length,
+      reposicaoDeId:
+        lista(f.reposicoesAbertas)
+          .filter((r) => texto(r.participacaoId))
+          .sort((a, b) => String(a.data ?? '').localeCompare(String(b.data ?? '')))[0]?.participacaoId as string | undefined ?? null,
+      modalidade: modalidade && texto(modalidade.servicoId) ? { servicoId: modalidade.servicoId as string, nome: texto(modalidade.nome) ?? '' } : null,
       link: `${ENDERECO_DA_AGENDA.replace(/\/api\/v1$/, '')}/pessoas/${id}`,
     }
   } catch {

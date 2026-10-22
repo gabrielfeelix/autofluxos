@@ -3,10 +3,12 @@ import { canalMock } from '@/channels/mock'
 import { triagem } from '@/exemplos/triagem'
 import { db } from './db'
 import { tratarEvento } from './receber-evento'
+import { modeloDoEvento } from '@/core/eventos-da-verandi'
 import { criarCliente } from './repos/clientes'
 import { acharOuCriarContato, criarCanal, registrarEntrada } from './repos/conversas'
 import { criarFluxo, publicar } from './repos/fluxos'
 import { acharLead } from './repos/leads'
+import { criarRascunho } from './repos/templates'
 import {
   acharGatilhoDeEvento,
   apagarWebhook,
@@ -248,5 +250,30 @@ describe.skipIf(!temCredencial)('o evento vira conversa', () => {
     await tratarEvento({ clienteId, evento: 'vaga.aberta', telefone: `5511${seed}02` })
     const depois = (await acharGatilhoDeEvento(clienteId, 'vaga.aberta'))!.execucoes
     expect(depois).toBe(antes + 1)
+  })
+
+  it('fora da janela, com o modelo do evento aprovado, o aviso sai por ele', async () => {
+    // A aula cancelada quase sempre pega o aluno fora das 24h. Com o modelo
+    // `verandi_<evento>` aprovado, o aviso sai mesmo assim, preenchido.
+    const telefone = `5511${seed}05`
+    await acharOuCriarContato(clienteId, telefone, 'Ana Souza')
+    const modelo = await criarRascunho({
+      clienteId,
+      nome: 'verandi_vaga_aberta',
+      idioma: 'pt_BR',
+      categoria: 'UTILITY',
+      componentes: { corpo: modeloDoEvento('vaga.aberta')!.corpo },
+    })
+    await db().from('templates').update({ status: 'aprovado' }).eq('id', modelo.id)
+
+    mock.enviadas.length = 0
+    const variaveis = { aluno_nome: 'Ana Souza', aula_dia: 'sexta', aula_data: '23/10', aula_hora: '07:00', aula_servico: 'Pilates solo' }
+    const r = await tratarEvento({ clienteId, evento: 'vaga.aberta', telefone, variaveis }, () => mock)
+
+    expect(r).toBe('por_modelo')
+    expect(mock.enviadas).toEqual([
+      expect.objectContaining({ tipo: 'template', nome: 'verandi_vaga_aberta', valores: { corpo: ['Ana', 'sexta, 23/10', '07:00', 'Pilates solo'] } }),
+    ])
+    await db().from('templates').delete().eq('id', modelo.id)
   })
 })
