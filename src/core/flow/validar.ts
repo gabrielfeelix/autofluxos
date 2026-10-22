@@ -289,7 +289,9 @@ export function validar(fluxo: Fluxo, capacidades: Capacidades = {}): ResultadoV
     if (no.type === 'ia' && no.data.salvarEm) escritas.push(no.data.salvarEm)
     if (no.type === 'ia' && no.data.conversar?.concluir) escritas.push(no.data.conversar.concluir.salvarEm)
     if (no.type === 'nps') escritas.push(...[no.data.salvarEm, no.data.comentarioEm].filter((n): n is string => Boolean(n)))
-    if (no.type === 'mensagem') for (const parte of partesDaMensagem(no)) if (parte.tipo === 'salvar') escritas.push(parte.campo)
+    // Guardar vazio é limpar, e limpar não diz valor nenhum: as demos zeram o
+    // pedido antes de começar outro.
+    if (no.type === 'mensagem') for (const parte of partesDaMensagem(no)) if (parte.tipo === 'salvar' && parte.valor.trim() !== '') escritas.push(parte.campo)
     const proibida = escritas.find((nome) => reservadas.has(nome))
     if (proibida) {
       erros.push({
@@ -439,7 +441,7 @@ export function validar(fluxo: Fluxo, capacidades: Capacidades = {}): ResultadoV
       } else if (formularioDeAgendamento === false) {
         erros.push({
           codigo: 'AGENDAR_SEM_FORMULARIO',
-          mensagem: `${descrever(no)} precisa do formulário de agendamento ativado em Ajustes > Formulário de agendamento.`,
+          mensagem: `${descrever(no)} precisa do formulário de agendamento ativado em Configurações > Credenciais de sistemas, no cartão Formulário de agendamento.`,
           noId: no.id,
         })
       }

@@ -29,7 +29,7 @@ import { chaveDaAgenda } from './agenda'
 
 const VERSAO = process.env.META_GRAPH_VERSION ?? 'v25.0'
 
-type CanalDoNumero = { id: string; clienteId: string; phoneNumberId: string; wabaId: string; tokenRef: string }
+type CanalDoNumero = { id: string; clienteId: string; phoneNumberId: string; wabaId: string; tokenRef: string | null }
 
 async function graph(caminho: string, token: string, corpo: Record<string, unknown> | URLSearchParams): Promise<Record<string, unknown>> {
   const comoFormulario = corpo instanceof URLSearchParams
@@ -57,7 +57,11 @@ function errosDoFlow(resposta: Record<string, unknown>): string | null {
     .join('; ')
 }
 
-/** Os números de WhatsApp da conta que podem ter formulário: Cloud API, ativos, com WABA e token próprio. */
+/**
+ * Os números de WhatsApp da conta que podem ter formulário: Cloud API, ativos,
+ * com WABA. Sem token próprio é o número da 4YU, e vale o `WHATSAPP_TOKEN`,
+ * como no envio (`adaptador-do-canal.ts`).
+ */
 export async function numerosParaFormulario(clienteId: string): Promise<(CanalDoNumero & { telefone: string | null })[]> {
   const { data, error } = await db()
     .from('channels')
@@ -66,11 +70,10 @@ export async function numerosParaFormulario(clienteId: string): Promise<(CanalDo
     .eq('provider', 'cloud-api')
     .eq('status', 'ativo')
     .not('waba_id', 'is', null)
-    .not('token_ref', 'is', null)
     .not('phone_number_id', 'is', null)
   if (error) throw new Error(`não foi possível listar os números: ${error.message}`)
   return (
-    data as { id: string; client_id: string; phone_number_id: string; display_phone_number: string | null; waba_id: string; token_ref: string }[]
+    data as { id: string; client_id: string; phone_number_id: string; display_phone_number: string | null; waba_id: string; token_ref: string | null }[]
   ).map((l) => ({
     id: l.id,
     clienteId: l.client_id,
@@ -85,12 +88,13 @@ export type ResultadoDaAtivacao = { ok: true; formulario: FormularioDoWhatsapp }
 
 export async function ativarFormulario(clienteId: string, canalId: string): Promise<ResultadoDaAtivacao> {
   const numero = (await numerosParaFormulario(clienteId)).find((n) => n.id === canalId)
-  if (!numero) return { ok: false, erro: 'Este número não está conectado pela Cloud API com conta própria. Reconecte o WhatsApp em Canais.' }
+  if (!numero) return { ok: false, erro: 'Este número não está conectado pela Cloud API. Reconecte o WhatsApp em Canais.' }
   if (!(await chaveDaAgenda(clienteId))) return { ok: false, erro: 'Ligue a Verandi em Ajustes > Chaves antes de ativar o formulário.' }
   const appId = process.env.META_APP_ID
   if (!appId) return { ok: false, erro: 'Falta META_APP_ID no ambiente.' }
 
-  const token = await lerTokenDoCanal({ tokenRef: numero.tokenRef } as CanalSalvo)
+  const token = numero.tokenRef ? await lerTokenDoCanal({ tokenRef: numero.tokenRef } as CanalSalvo) : process.env.WHATSAPP_TOKEN
+  if (!token) return { ok: false, erro: 'Este número não tem token próprio e falta WHATSAPP_TOKEN no ambiente.' }
 
   // 1. A linha e a chave: reaproveita a do número, se já existe.
   let formulario = (await formulariosDaConta(clienteId)).find((f) => f.canalId === canalId && f.modelo === 'agendamento')

@@ -147,4 +147,18 @@ describe('validar o bloco Cobrar', () => {
     })
     expect(codigos(fluxo)).toContain('VARIAVEL_DA_COBRANCA')
   })
+
+  it('guardar vazio é limpar, e pode; guardar um valor não pode', () => {
+    const comValor = (valor: string) =>
+      fluxoSchema.parse({
+        inicio: 'm',
+        nodes: [
+          { id: 'm', type: 'mensagem', position: p, data: { partes: [{ tipo: 'salvar', campo: 'cobranca_total', valor }, { tipo: 'texto', texto: 'Oi' }] } },
+          { id: 'h', type: 'handoff', position: p, data: { motivo: 'x' } },
+        ],
+        edges: [{ id: 'e', source: 'm', target: 'h' }],
+      })
+    expect(codigos(comValor(''))).not.toContain('VARIAVEL_DA_COBRANCA')
+    expect(codigos(comValor('10,00'))).toContain('VARIAVEL_DA_COBRANCA')
+  })
 })

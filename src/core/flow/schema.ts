@@ -1161,7 +1161,7 @@ export const noCobrarSchema = z.object({
  * `{{horario_marcado}}` (a frase "Sexta, 23/10 às 07:00, Pilates com Carol.").
  *
  * Só WhatsApp: o formulário é da Meta. Precisa do formulário ativado no
- * número (Ajustes > Formulário de agendamento) e da Verandi ligada.
+ * número (Configurações > Credenciais de sistemas) e da Verandi ligada.
  */
 /** O token do formulário vale 72 horas; esperar mais não teria o que acordar. */
 export const MAX_HORAS_PARA_DESISTIR = 72
