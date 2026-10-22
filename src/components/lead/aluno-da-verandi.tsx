@@ -60,6 +60,7 @@ export function AlunoDaVerandi({ clienteId, contatoId }: { clienteId: string; co
   const [erroAoMarcar, setErroAoMarcar] = useState<string | null>(null)
   const [aviso, setAviso] = useState<Aviso | null>(null)
   const [desmarcar, setDesmarcar] = useState<string | null>(null)
+  const [todas, setTodas] = useState(false)
 
   const aluno = lido?.contatoId === contatoId ? lido.aluno : null
   if (!aluno) return null
@@ -142,114 +143,133 @@ export function AlunoDaVerandi({ clienteId, contatoId }: { clienteId: string; co
       })
   }
 
-  const fixos = aluno.horariosFixos.map((h) => `${DIAS[h.diaSemana] ?? ''} ${h.hora}`).join(', ')
+  const fixos = fixosAgrupados(aluno.horariosFixos)
+  const visiveis = todas ? aluno.proximas : aluno.proximas.slice(0, 3)
+  const ultima = aluno.ultimaPresenca ? partesDaData(aluno.ultimaPresenca) : null
+  // Todas da mesma modalidade: ela vai uma vez no título, e não em cada linha.
+  const servicos = [...new Set(aluno.proximas.map((p) => p.servico ?? ''))]
+  const servicoUnico = servicos.length === 1 && servicos[0] ? servicos[0] : null
+
   return (
     <section className="mt-5 rounded-[12px] border border-line bg-surface/50 p-3" aria-label="Na Verandi">
       <header className="flex items-center gap-2">
-        <h3 className="text-[12px] font-bold text-soft">Na Verandi</h3>
+        <h3 className="whitespace-nowrap text-[12px] font-bold text-soft">Na Verandi</h3>
         {aluno.situacao && <Pilula tom={tomDaSituacao(aluno.situacao, aluno.ativa)}>{aluno.situacao}</Pilula>}
         <span className="flex-1" />
-        {!marcando && (
-          <button
-            type="button"
-            onClick={() => {
-              setMarcando(true)
-              setAviso(null)
-              setErroAoMarcar(null)
-            }}
-            className="text-[11.5px] font-semibold text-primary hover:underline"
-          >
-            Marcar aula
-          </button>
-        )}
-        <a href={aluno.link} target="_blank" rel="noreferrer" className="text-[11.5px] font-semibold text-primary hover:underline">
+        <a href={aluno.link} target="_blank" rel="noreferrer" className="whitespace-nowrap text-[11.5px] font-semibold text-primary hover:underline">
           Abrir
         </a>
       </header>
-      <dl className="mt-2 space-y-1.5 text-[12px] leading-5">
-        {fixos && (
-          <div className="flex gap-2">
-            <dt className="w-[86px] shrink-0 text-dim">Horários</dt>
-            <dd className="min-w-0 text-soft">{fixos}</dd>
-          </div>
-        )}
-        <div className="flex gap-2">
-          <dt className="w-[86px] shrink-0 text-dim">Próximas</dt>
-          <dd className="min-w-0 flex-1 text-soft">
-            {aluno.proximas.length === 0 ? (
-              'nenhuma aula marcada'
+
+      {fixos && (
+        <p className="mt-2 text-[11.5px] leading-4 text-dim">
+          Horário fixo <span className="font-semibold text-soft">{fixos}</span>
+        </p>
+      )}
+
+      {aluno.licenca && (
+        <p className="mt-2 rounded-[8px] border border-amber-400/40 bg-panel px-2.5 py-1.5 text-[11.5px] leading-4 text-aviso">
+          De licença desde {diaCurto(aluno.licenca.inicio)}
+          {aluno.licenca.voltaPrevista ? `, volta ${diaCurto(aluno.licenca.voltaPrevista)}` : ''}
+        </p>
+      )}
+
+      <p className="mt-3 flex items-baseline gap-1.5 text-[10.5px] font-bold uppercase tracking-[0.06em] text-dim">
+        Próximas aulas
+        {servicoUnico && <span className="truncate font-semibold normal-case tracking-normal">· {servicoUnico}</span>}
+      </p>
+      {aluno.proximas.length === 0 ? (
+        <p className="mt-1 text-[12px] text-soft">Nenhuma aula marcada.</p>
+      ) : (
+        <ul className="mt-1.5 grid gap-1">
+          {visiveis.map((p) => {
+            const pendente = p.participacaoId.startsWith('marcando-')
+            const perguntando = desmarcar === p.participacaoId
+            const { semana, dia } = partesDaData(p.data)
+            return (
+              <li key={p.participacaoId} className={`rounded-[9px] border bg-panel px-1.5 py-1.5 ${perguntando ? 'border-rose-400/40' : 'border-line-soft'}`}>
+                <div className="flex items-center gap-2.5">
+                  <span className="flex w-[38px] shrink-0 flex-col items-center rounded-[7px] bg-surface py-0.5 leading-tight">
+                    <span className="text-[9.5px] font-bold uppercase text-dim">{semana}</span>
+                    <span className="text-[11.5px] font-bold tabular-nums text-ink">{dia}</span>
+                  </span>
+                  <span className="flex min-w-0 flex-1 items-baseline gap-2">
+                    <span className={`text-[12.5px] font-bold tabular-nums ${pendente ? 'text-dim' : 'text-ink'}`}>{p.hora}</span>
+                    {pendente ? (
+                      <span className="truncate text-[11px] text-dim">marcando…</span>
+                    ) : (
+                      !servicoUnico && p.servico && <span className="truncate text-[11px] text-dim">{p.servico}</span>
+                    )}
+                  </span>
+                  {!pendente && !perguntando && (
+                    <button
+                      type="button"
+                      onClick={() => setDesmarcar(p.participacaoId)}
+                      aria-label={`Desmarcar ${diaCurto(p.data)} ${p.hora}`}
+                      title="Desmarcar"
+                      className="grid size-6 shrink-0 place-items-center rounded-[7px] text-dim transition-colors hover:bg-rose-400/[0.12] hover:text-perigo"
+                    >
+                      <svg viewBox="0 0 16 16" className="size-3" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" aria-hidden>
+                        <path d="M4 4l8 8M12 4l-8 8" />
+                      </svg>
+                    </button>
+                  )}
+                </div>
+                {perguntando && (
+                  <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 border-t border-line-soft pt-1.5 text-[11px] leading-4">
+                    <span className={`flex-1 ${p.podeRepor ? 'text-soft' : 'text-aviso'}`}>
+                      {p.podeRepor ? 'Desmarcar e deixar reposição?' : 'Fora do prazo: desmarca sem reposição.'}
+                    </span>
+                    <button type="button" onClick={() => setDesmarcar(null)} className="font-semibold text-dim hover:text-ink">
+                      Voltar
+                    </button>
+                    <button type="button" onClick={() => confirmarDesmarcar(p.participacaoId)} className="font-semibold text-perigo hover:underline">
+                      Desmarcar
+                    </button>
+                  </div>
+                )}
+              </li>
+            )
+          })}
+        </ul>
+      )}
+      {aluno.proximas.length > 3 && (
+        <button type="button" onClick={() => setTodas(!todas)} className="mt-1 text-[11px] font-semibold text-dim hover:text-ink">
+          {todas ? 'Mostrar menos' : `Mais ${aluno.proximas.length - 3} ${aluno.proximas.length - 3 === 1 ? 'aula' : 'aulas'}`}
+        </button>
+      )}
+
+      <div className="mt-2.5 grid grid-cols-2 gap-1.5">
+        <div className={`rounded-[9px] border bg-panel px-2.5 py-1.5 ${aluno.reposicoesAbertas > 0 ? 'border-primary/40' : 'border-line-soft'}`}>
+          <p className={`text-[15px] font-bold tabular-nums leading-5 ${aluno.reposicoesAbertas > 0 ? 'text-primary' : 'text-ink'}`}>{aluno.reposicoesAbertas}</p>
+          <p className="text-[10.5px] leading-4 text-dim">{aluno.reposicoesAbertas === 1 ? 'reposição a marcar' : 'reposições a marcar'}</p>
+        </div>
+        <div className="rounded-[9px] border border-line-soft bg-panel px-2.5 py-1.5">
+          <p className="text-[15px] font-bold tabular-nums leading-5 text-ink">
+            {ultima ? (
+              <>
+                {ultima.dia} <span className="text-[11px] font-semibold text-dim">{ultima.semana}</span>
+              </>
             ) : (
-              <ul className="space-y-0.5">
-                {aluno.proximas.map((p) => {
-                  const pendente = p.participacaoId.startsWith('marcando-')
-                  const perguntando = desmarcar === p.participacaoId
-                  return (
-                    <li key={p.participacaoId} className="flex flex-wrap items-baseline gap-x-2">
-                      <span className={pendente ? 'text-dim' : undefined}>
-                        {diaCurto(p.data)} {p.hora}
-                      </span>
-                      <span className="flex-1" />
-                      {pendente ? (
-                        <span className="text-[11px] text-dim">marcando…</span>
-                      ) : perguntando ? (
-                        <span className="flex items-baseline gap-2 text-[11px]">
-                          {!p.podeRepor && <span className="text-aviso">sem reposição</span>}
-                          <button type="button" onClick={() => confirmarDesmarcar(p.participacaoId)} className="font-semibold text-perigo hover:underline">
-                            Confirmar
-                          </button>
-                          <button type="button" onClick={() => setDesmarcar(null)} className="font-semibold text-dim hover:text-ink">
-                            Voltar
-                          </button>
-                        </span>
-                      ) : (
-                        <button
-                          type="button"
-                          onClick={() => setDesmarcar(p.participacaoId)}
-                          className="text-[11px] font-semibold text-dim hover:text-perigo"
-                        >
-                          Desmarcar
-                        </button>
-                      )}
-                    </li>
-                  )
-                })}
-              </ul>
+              'nenhuma'
             )}
-          </dd>
+          </p>
+          <p className="text-[10.5px] leading-4 text-dim">{ultima ? 'última aula' : 'aula feita ainda'}</p>
         </div>
-        <div className="flex gap-2">
-          <dt className="w-[86px] shrink-0 text-dim">Reposições</dt>
-          <dd className={aluno.reposicoesAbertas > 0 ? 'font-semibold text-ink' : 'text-soft'}>
-            {aluno.reposicoesAbertas === 0
-              ? 'nenhuma em aberto'
-              : `${aluno.reposicoesAbertas} para marcar`}
-          </dd>
-        </div>
-        {aluno.ultimaPresenca && (
-          <div className="flex gap-2">
-            <dt className="w-[86px] shrink-0 text-dim">Última aula</dt>
-            <dd className="text-soft">{diaCurto(aluno.ultimaPresenca)}</dd>
-          </div>
-        )}
-        {aluno.licenca && (
-          <div className="flex gap-2">
-            <dt className="w-[86px] shrink-0 text-dim">Licença</dt>
-            <dd className="text-soft">
-              desde {diaCurto(aluno.licenca.inicio)}
-              {aluno.licenca.voltaPrevista ? `, volta ${diaCurto(aluno.licenca.voltaPrevista)}` : ''}
-            </dd>
-          </div>
-        )}
-      </dl>
+      </div>
 
       {aviso && (
         <AvisoDaAgenda
           key={'horario' in aviso ? aviso.horario.sessaoId : aviso.tipo}
           aviso={aviso}
-          clienteId={clienteId} contatoId={contatoId} nome={aluno.nome} onFechar={() => setAviso(null)} />
+          clienteId={clienteId}
+          contatoId={contatoId}
+          nome={aluno.nome}
+          onFechar={() => setAviso(null)}
+        />
       )}
 
-      {marcando && (
+      {marcando ? (
         <MarcarAulaNaVerandi
           clienteId={clienteId}
           contatoId={contatoId}
@@ -262,9 +282,42 @@ export function AlunoDaVerandi({ clienteId, contatoId }: { clienteId: string; co
             setErroAoMarcar(null)
           }}
         />
+      ) : (
+        <button
+          type="button"
+          onClick={() => {
+            setMarcando(true)
+            setAviso(null)
+            setErroAoMarcar(null)
+          }}
+          className="botao-primario botao-sm mt-3 w-full"
+        >
+          {aluno.reposicaoDeId ? 'Marcar reposição' : 'Marcar aula'}
+        </button>
       )}
     </section>
   )
+}
+
+/** `2026-10-27` vira `ter` e `27/10`, para o bloco de data. */
+function partesDaData(data: string): { semana: string; dia: string } {
+  const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(data)
+  if (!m) return { semana: '', dia: data }
+  return { semana: DIAS[new Date(Date.UTC(+m[1]!, +m[2]! - 1, +m[3]!, 12)).getUTCDay()]!, dia: `${m[3]}/${m[2]}` }
+}
+
+/** Os horários fixos juntos pela hora: `ter e qui, 07:00`, `seg, 07:00 · qua, 18:30`. */
+function fixosAgrupados(fixos: AlunoNaVerandi['horariosFixos']): string {
+  const porHora = new Map<string, number[]>()
+  for (const f of fixos) porHora.set(f.hora, [...(porHora.get(f.hora) ?? []), f.diaSemana])
+  return [...porHora.entries()]
+    .sort(([a], [b]) => a.localeCompare(b))
+    .map(([hora, dias]) => {
+      const nomes = [...new Set(dias)].sort().map((d) => DIAS[d] ?? '')
+      const juntos = nomes.length > 1 ? `${nomes.slice(0, -1).join(', ')} e ${nomes.at(-1)}` : nomes[0]
+      return `${juntos}, ${hora}`
+    })
+    .join(' · ')
 }
 
 type Aviso =
