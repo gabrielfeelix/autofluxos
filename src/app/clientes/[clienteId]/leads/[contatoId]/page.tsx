@@ -5,6 +5,7 @@ import { assinaturasDoContato } from '@/server/repos/assinaturas'
 import { sincronizarAdesao } from '@/server/mensalidades'
 import { listarProdutos } from '@/server/repos/produtos'
 import { AbaDeCobrancas, ResumoDeCobrancas } from '@/components/lead-crm/cobrancas-do-contato'
+import { AlunoDaVerandi } from '@/components/lead/aluno-da-verandi'
 import { recursoLiberado } from '@/server/recursos-do-plano'
 import { conexaoAtiva } from '@/server/repos/pagamentos'
 import { Fragment } from 'react'
@@ -540,6 +541,7 @@ export default async function Pagina({
                     {cobranca.visivel && (
                       <ResumoDeCobrancas clienteId={clienteId} cobrancas={cobrancas} conectado={cobranca.conectado} />
                     )}
+                    <AlunoDaVerandi clienteId={clienteId} contatoId={contatoId} />
                     <Informacoes
                       clienteId={clienteId}
                       contatoId={contatoId}

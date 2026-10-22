@@ -1846,6 +1846,8 @@ export async function abrirFluxoParaContato(
   contatoId: string,
   fluxoId: string,
   fabricaDeCanal: FabricaDeCanal = canalPadrao,
+  /** Variáveis que o evento traz (`{{aula_hora}}` da Verandi), por cima das do contato. */
+  varsDoEvento: Record<string, string> = {},
 ): Promise<AberturaPorNossaConta> {
   const contexto = await contextoDeResposta(clienteId, contatoId)
   if (!contexto) return 'sem_contexto'
@@ -1901,7 +1903,7 @@ export async function abrirFluxoParaContato(
 
     const salva = await criarSessao(contatoId, contexto.canal.id, versao.id, {
       ...sessaoNova(),
-      vars: varsIniciais(contato),
+      vars: { ...varsIniciais(contato), ...varsDoEvento },
     })
 
     const [opcoesDeIa, horario] = await Promise.all([

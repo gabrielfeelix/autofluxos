@@ -50,6 +50,7 @@ import { existeCobranca, recebidoPeloChat, vendidosPeloChat, type GanhosAgrupado
 import { membrosDaConta } from '@/server/repos/usuarios'
 import { existePedido, pedidosDoPeriodo } from '@/server/repos/pedidos'
 import { existeMensalidade, mensalidadesParaAnalise } from '@/server/repos/assinaturas'
+import { relatorioDaVerandi, temVerandi, type RelatorioDaVerandi } from '@/server/ponte-verandi'
 import { nichoDaConta } from '@/server/repos/recursos'
 
 export const dynamic = 'force-dynamic'
@@ -185,6 +186,13 @@ export default async function Pagina({
       )
     : []
 
+  // As aulas, pela ponte com a Verandi: só com a chave guardada e para quem
+  // vê a conta inteira. A Verandi fora do ar tira o bloco, não a tela.
+  const aulasAgora = contaInteira && (await temVerandi(cliente.id)) ? await relatorioDaVerandi(cliente.id, periodo.de, periodo.ate) : null
+  const deAulas = aulasAgora
+    ? [blocoDasAulas(aulasAgora, await relatorioDaVerandi(cliente.id, anterior.de, anterior.ate))]
+    : []
+
   // As mensalidades (0145): para quem vê a conta inteira, depois da primeira.
   const temMensalidade = contaInteira && (await existeMensalidade(cliente.id))
   const deMensalidades = temMensalidade
@@ -193,7 +201,7 @@ export default async function Pagina({
 
   const arranjo = await arranjoDaAnalise('vendas')
   const blocos = primeirosDoRamo(
-    [...deNegocios.slice(0, 1), ...doChatTudo, ...deMensalidades, ...dePedidos, ...deNegocios.slice(1)],
+    [...deNegocios.slice(0, 1), ...doChatTudo, ...deAulas, ...deMensalidades, ...dePedidos, ...deNegocios.slice(1)],
     // Quem já arrumou a tela fica com a arrumação dele.
     arranjo.ordem.length === 0 && arranjo.ocultos.length === 0 ? (pacoteDo(nicho)?.primeirosEmVendas ?? []) : [],
   )
@@ -232,7 +240,7 @@ export default async function Pagina({
           }
         />
 
-        {!temNegocio && !temCobranca && !temPedido && !temMensalidade ? (
+        {!temNegocio && !temCobranca && !temPedido && !temMensalidade && deAulas.length === 0 ? (
           <div className="mt-5">
             <VendasVazio clienteId={cliente.id} />
           </div>
@@ -399,6 +407,79 @@ function blocoDoRecebido(atual: RecebidoPeloChat | null, antes: RecebidoPeloChat
             valor={dinheiroCurto(atual.aguardandoValor / 100)}
             detalhe={`${atual.aguardando} ${atual.aguardando === 1 ? 'cobrança no prazo' : 'cobranças no prazo'}`}
             definicao="Cobranças enviadas que ainda estão dentro do prazo, hoje, independente do período escolhido."
+          />
+        </div>
+      </CaixaDoBloco>
+    ),
+  }
+}
+
+/**
+ * As aulas do período, vindas da Verandi (a ponte): presença, falta,
+ * reposição, experimental que virou matrícula, matrícula nova e quem saiu.
+ */
+function blocoDasAulas(atual: RelatorioDaVerandi, antes: RelatorioDaVerandi | null): Bloco {
+  const pct = (v: number | null) => (v === null ? null : Math.round(v * 100))
+  const presenca = pct(atual.taxaDePresenca)
+  const conversao = atual.experimentais === 0 ? null : Math.round((atual.experimentaisQueMatricularam / atual.experimentais) * 100)
+  const conversaoAntes =
+    !antes || antes.experimentais === 0 ? null : Math.round((antes.experimentaisQueMatricularam / antes.experimentais) * 100)
+  return {
+    id: 'aulas',
+    titulo: 'Aulas',
+    largura: 'inteira',
+    conteudo: (
+      <CaixaDoBloco
+        titulo="Aulas"
+        subtitulo="Da agenda na Verandi: quem veio, quem faltou, quem fez a experimental e se matriculou, e quem saiu no período."
+        acao={
+          <a href="https://verandi.4yu.com.br/aulas" target="_blank" rel="noreferrer" className="text-[12px] font-semibold text-primary hover:underline">
+            Abrir na Verandi
+          </a>
+        }
+      >
+        <div className="grid grid-cols-2 gap-3 pb-4 md:grid-cols-3 lg:gap-4 xl:grid-cols-5">
+          <Cartao
+            titulo="Presença"
+            vazio={presenca === null && 'Nenhuma chamada no período'}
+            valor={presenca === null ? 'sem dado' : `${presenca}%`}
+            medidor={presenca}
+            detalhe={`${atual.presencas} presenças, ${atual.faltas} faltas, ${atual.faltasAvisadas} avisadas`}
+            comparacao={<MudancaEmPontos atual={presenca} antes={pct(antes?.taxaDePresenca ?? null)} melhorQuando="sobe" />}
+            definicao="Das aulas que já aconteceram e não foram canceladas pelo estúdio, quantas tiveram o aluno presente. Licença fica fora da conta."
+          />
+          <Cartao
+            titulo="Experimental que matriculou"
+            vazio={atual.experimentais === 0 && 'Nenhuma experimental no período'}
+            valor={conversao === null ? 'sem dado' : `${conversao}%`}
+            medidor={conversao}
+            detalhe={`${atual.experimentaisQueMatricularam} de ${atual.experimentais} experimentais`}
+            comparacao={<MudancaEmPontos atual={conversao} antes={conversaoAntes} melhorQuando="sobe" />}
+            definicao="Quem fez aula experimental no período e tem contrato que começa no dia dela ou depois, até hoje."
+          />
+          <Cartao
+            titulo="Matrículas novas"
+            vazio={atual.matriculasNovas === 0 && 'Nenhuma no período'}
+            valor={String(atual.matriculasNovas)}
+            detalhe={`${atual.alunosAtivos} alunos com contrato ativo hoje`}
+            comparacao={<Mudanca atual={atual.matriculasNovas} antes={antes?.matriculasNovas ?? 0} />}
+            definicao="Pessoas cujo primeiro contrato começou no período. Renovação não conta."
+          />
+          <Cartao
+            titulo="Saíram"
+            vazio={atual.sairam === 0 && 'Ninguém saiu no período'}
+            valor={String(atual.sairam)}
+            detalhe="contrato encerrado sem outro vigente"
+            comparacao={<Mudanca atual={atual.sairam} antes={antes?.sairam ?? 0} />}
+            definicao="Contratos encerrados no período de quem não tem outro ativo ou pausado hoje. Trocar de plano não é sair."
+          />
+          <Cartao
+            titulo="Reposições feitas"
+            vazio={atual.reposicoesFeitas === 0 && 'Nenhuma no período'}
+            valor={String(atual.reposicoesFeitas)}
+            detalhe="aulas de reposição com o aluno presente"
+            comparacao={<Mudanca atual={atual.reposicoesFeitas} antes={antes?.reposicoesFeitas ?? 0} />}
+            definicao="Aulas marcadas como reposição de uma falta, em que o aluno veio."
           />
         </div>
       </CaixaDoBloco>

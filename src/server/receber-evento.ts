@@ -45,6 +45,8 @@ export async function tratarEvento(
     evento: string
     telefone: string
     dados?: Record<string, unknown>
+    /** Variáveis para o fluxo, quando quem manda sabe montá-las (a ponte da Verandi). */
+    variaveis?: Record<string, string>
   },
   /** Injetável só para o teste, como em `receberMensagem`. Em produção é o real. */
   fabricaDeCanal?: FabricaDeCanal,
@@ -80,6 +82,7 @@ export async function tratarEvento(
     contatoId,
     gatilho.fluxoId,
     fabricaDeCanal,
+    entrada.variaveis,
   )
   if (aberto === 'aberto') return 'aberto'
 

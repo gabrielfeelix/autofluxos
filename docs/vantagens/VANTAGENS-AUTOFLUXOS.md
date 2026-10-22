@@ -309,6 +309,13 @@ aqui fica o que o cliente ganha.
 - **Um login para várias empresas**, com função diferente em cada uma.
 - **Conta protegida**: senha vazada bloqueada, limite de tentativas, até 3
   aparelhos por pessoa e registro de cada ação importante.
+- **AutoFluxos e Verandi conversando de verdade**: um clique liga os avisos
+  da agenda. Aula cancelada pelo estúdio avisa cada aluno da turma com o dia
+  e a hora; falta vira "sentimos sua falta, quer repor?"; vaga aberta chama
+  quem estava na fila. Na conversa, a recepção vê os horários do aluno, as
+  próximas aulas e quantas reposições ele tem, sem abrir outra aba. Em
+  Análise, presença, experimental que virou matrícula e quem saiu.
+  *(22/out/2026)*
 
 ## Começar e crescer
 

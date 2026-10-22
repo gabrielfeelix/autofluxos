@@ -1,3 +1,4 @@
+import { EVENTOS_DA_VERANDI, rotuloDoEventoDaVerandi } from '@/core/eventos-da-verandi'
 import { Miolo } from '@/components/design/miolo'
 import Link from 'next/link'
 import { CabecalhoDaTela } from '@/components/design/cabecalho-da-tela'
@@ -569,9 +570,18 @@ async function ConteudoDaAba({
                     required
                     autoFocus
                     maxLength={120}
-                    placeholder="ex.: vaga.aberta"
+                    list="eventos-da-verandi"
+                    placeholder="Exemplo: presenca.falta"
                     className="app-field px-[13px] py-[11px] font-mono text-[13px]"
                   />
+                  <datalist id="eventos-da-verandi">
+                    {EVENTOS_DA_VERANDI.map((e) => (
+                      <option key={e.evento} value={e.evento} label={`Verandi: ${e.rotulo}`} />
+                    ))}
+                  </datalist>
+                  <span className="mt-1.5 block text-[11px] leading-5 text-dim">
+                    Da Verandi: {EVENTOS_DA_VERANDI.map((e) => `${e.evento} (${e.rotulo.toLowerCase()})`).join(', ')}.
+                  </span>
                 </label>
                 <div>
                   <RotuloCampo>Fluxo que ele abre</RotuloCampo>
@@ -1035,6 +1045,11 @@ async function ConteudoDaAba({
                       >
                         {gatilho.evento}
                       </strong>
+                      {rotuloDoEventoDaVerandi(gatilho.evento) && (
+                        <span className="mt-0.5 block truncate text-[11.5px] font-semibold text-soft">
+                          Verandi: {rotuloDoEventoDaVerandi(gatilho.evento)}
+                        </span>
+                      )}
                       <span className="mt-0.5 block truncate text-[11px] text-dim">
                         abre{' '}
                         <NomeDoDestino destino={destino} clienteId={cliente.id} volta={voltaDaAba} />

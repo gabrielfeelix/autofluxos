@@ -19,6 +19,7 @@ import { EtiquetasAplicadas, type EtiquetaEscolhivel } from '@/components/etique
 import { CartaoDoAtendimento, SeloDoAtendimento } from '@/components/atendimento/estado'
 import { Dica } from '@/components/design/dica'
 import { Esqueleto } from '@/components/design/esqueleto'
+import { AlunoDaVerandi } from '@/components/lead/aluno-da-verandi'
 import { CamposColetados } from '@/components/lead/campos-coletados'
 import { QuemE } from '@/components/lead/quem-e'
 import { CaixaDeResposta } from '@/components/lead/responder'
@@ -563,6 +564,8 @@ function DadosDoLead({
               passagens={passagens}
               nomesDosAnuncios={nomesDosAnuncios}
             />
+
+            <AlunoDaVerandi clienteId={clienteId} contatoId={lead.contatoId} />
 
             <Secao titulo="Etiquetas do contato" vazio="Nenhuma etiqueta aplicada.">
               <EtiquetasAplicadas

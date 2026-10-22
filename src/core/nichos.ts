@@ -236,8 +236,8 @@ export const PACOTES: Record<Nicho, PacoteDoNicho> = {
     modelosDeFluxo: ['agendamento', 'reagendamento', 'nao-comparecimento', 'lembrete', 'aluno-inativo', 'voltei-de-licenca'],
     modeloDeFunil: 'agendamento',
     pedidos: null,
-    // A matrícula, para quem cobra mensalidade pelo AutoFluxos.
-    primeirosEmVendas: ['mensalidades'],
+    // As aulas da Verandi (a ponte) e a matrícula, para quem cobra mensalidade pelo AutoFluxos.
+    primeirosEmVendas: ['aulas', 'mensalidades'],
     passosDoInicio: ['ficha'],
     ficha: {
       pode: ['Responder dúvidas com o que está nesta ficha', 'Explicar modalidades, planos e aula experimental', 'Mostrar planos e valores do catálogo', 'Informar horário e endereço'],

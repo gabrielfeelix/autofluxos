@@ -30,6 +30,7 @@ export function CartaoDaAgenda({
   blocosQueUsam,
   fluxosQueUsam,
   acoes,
+  rodape,
 }: {
   clienteId: string
   conexaoId: string
@@ -40,6 +41,8 @@ export function CartaoDaAgenda({
    * aparece na lista genérica de chaves: um cartão só por sistema.
    */
   acoes?: ReactNode
+  /** O que vem embaixo do cartão: os avisos da Verandi (a ponte). */
+  rodape?: ReactNode
 }) {
   const [resultado, setResultado] = useState<RespostaDaAgenda | null>(null)
   const [conferindo, comecar] = useTransition()
@@ -142,6 +145,7 @@ export function CartaoDaAgenda({
           escolha esta credencial no campo do bloco.
         </p>
       )}
+      {rodape}
     </CartaoDeConexao>
   )
 }

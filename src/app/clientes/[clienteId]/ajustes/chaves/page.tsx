@@ -16,6 +16,8 @@ import { listarConexoes, type Conexao } from '@/server/repos/conexoes'
 import { NOME_DA_CONEXAO_DE_ADS } from '@/server/token-de-anuncios'
 import { listarFluxos } from '@/server/repos/fluxos'
 import { CartaoDaAgenda } from '@/components/conexoes/agenda'
+import { AvisosDaVerandi } from '@/components/conexoes/avisos-da-verandi'
+import { webhookDaVerandi } from '@/server/ponte-verandi'
 import { CartaoDoFormularioDeAgendamento, type NumeroDoFormulario } from '@/components/conexoes/formulario-de-agendamento'
 import { numerosParaFormulario } from '@/server/formularios-do-whatsapp/ativar'
 import { formulariosDaConta } from '@/server/repos/formularios-do-whatsapp'
@@ -88,6 +90,7 @@ export default async function Pagina({ params }: { params: Promise<{ clienteId: 
   }
 
   const daAgenda = conexoes.find((c) => c.nome === NOME_DA_CREDENCIAL_DA_AGENDA) ?? null
+  const avisosDaVerandi = daAgenda ? await webhookDaVerandi(clienteId) : null
   // A agenda tem cartão próprio, com testar, trocar e desligar: fora da lista genérica.
   const outras = conexoes.filter((c) => c.id !== daAgenda?.id)
 
@@ -181,6 +184,7 @@ export default async function Pagina({ params }: { params: Promise<{ clienteId: 
             conexaoId={daAgenda.id}
             blocosQueUsam={usoPorConexao.get(daAgenda.id)?.blocos ?? 0}
             fluxosQueUsam={usoPorConexao.get(daAgenda.id)?.fluxos ?? 0}
+            rodape={<AvisosDaVerandi clienteId={clienteId} ligados={avisosDaVerandi !== null && avisosDaVerandi.ativo} ultimoEm={avisosDaVerandi?.ultimaEm ?? null} />}
             acoes={
               <>
                 <ModalFormulario
