@@ -12,6 +12,7 @@ import {
   LogoLoja,
   LogoMeta,
   LogoSite,
+  LogoAsaas,
   LogoMercadoPago,
   LogoTelegram,
   LogoWhatsApp,
@@ -69,6 +70,7 @@ const LOGO: Record<ChaveDaIntegracao, ReactNode> = {
   telegram: <LogoTelegram />,
   site: <LogoSite />,
   mercado_pago: <LogoMercadoPago />,
+  asaas: <LogoAsaas />,
 }
 
 export default async function Pagina({

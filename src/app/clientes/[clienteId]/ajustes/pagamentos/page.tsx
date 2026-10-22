@@ -3,15 +3,16 @@ import { mercadoPagoConfigurado } from '@/channels/mercado-pago'
 import { AjustesShell } from '@/components/design/ajustes-shell'
 import { CabecalhoDaTela } from '@/components/design/cabecalho-da-tela'
 import { CartaoDeConexao, GRADE_DE_CONEXOES } from '@/components/conexoes/cartao'
-import { LogoMercadoPago } from '@/components/design/logos-de-marca'
+import { LogoAsaas, LogoMercadoPago } from '@/components/design/logos-de-marca'
 import { Miolo } from '@/components/design/miolo'
 import { Pilula } from '@/components/design/pilula'
-import { DesconectarMercadoPago } from '@/components/pagamentos/desconectar'
+import { ConectarAsaas } from '@/components/pagamentos/conectar-asaas'
+import { DesconectarPagamento } from '@/components/pagamentos/desconectar'
 import { dataCurta } from '@/lib/quando'
 import { acaoConectarMercadoPago } from '@/server/acoes-pagamentos'
 import { recusaDoPlano } from '@/server/recursos-do-plano'
 import { acharCliente } from '@/server/repos/clientes'
-import { conexaoDePagamento } from '@/server/repos/pagamentos'
+import { conexaoAtiva } from '@/server/repos/pagamentos'
 
 export const dynamic = 'force-dynamic'
 
@@ -23,6 +24,9 @@ export const dynamic = 'force-dynamic'
  * direto para a conta dele, e o AutoFluxos não fica com nada no meio. É a
  * primeira coisa que um dono de negócio quer saber antes de ligar a conta do
  * banco em qualquer sistema.
+ *
+ * **Uma conta de recebimento por vez** (`conexaoAtiva`): com a outra ligada, o
+ * cartão diz o que fazer em vez de mostrar um botão que não funcionaria.
  */
 
 const RESULTADOS: Record<string, { texto: string; ok: boolean }> = {
@@ -43,10 +47,9 @@ export default async function Pagina({
   const cliente = await acharCliente(clienteId)
   if (!cliente) notFound()
 
-  const [conexao, recusa] = await Promise.all([
-    conexaoDePagamento(clienteId, 'mercado_pago'),
-    recusaDoPlano(clienteId, 'integracoes'),
-  ])
+  const [ativa, recusa] = await Promise.all([conexaoAtiva(clienteId), recusaDoPlano(clienteId, 'integracoes')])
+  const conexao = ativa?.gateway === 'mercado_pago' ? ativa : null
+  const asaas = ativa?.gateway === 'asaas' ? ativa : null
   const liberado = mercadoPagoConfigurado()
   const resultado = busca.resultado ? RESULTADOS[busca.resultado] : undefined
 
@@ -69,8 +72,8 @@ export default async function Pagina({
             titulo={<>Pagamentos</>}
             descricao={
               <>
-                Conecte a conta do Mercado Pago da empresa para cobrar pela conversa, com Pix e link de
-                pagamento. O dinheiro cai direto na sua conta, e o AutoFluxos não cobra porcentagem.
+                Conecte a conta da empresa no Mercado Pago ou no Asaas para cobrar pela conversa, com Pix e
+                link de pagamento. O dinheiro cai direto na sua conta, e o AutoFluxos não cobra porcentagem.
               </>
             }
           />
@@ -84,7 +87,7 @@ export default async function Pagina({
                 <Pilula>fora do plano</Pilula>
               ) : conexao ? (
                 <Pilula tom="ok">conectado</Pilula>
-              ) : liberado ? (
+              ) : asaas ? null : liberado ? (
                 <Pilula>não conectado</Pilula>
               ) : (
                 <Pilula tom="aviso">em liberação</Pilula>
@@ -93,7 +96,7 @@ export default async function Pagina({
             titulo="Mercado Pago"
             categoria="Pix, cartão e boleto"
             rodape={
-              recusa ? null : (
+              recusa || asaas ? null : (
                 <>
                   {liberado && (
                     <form action={acaoConectarMercadoPago.bind(null, clienteId)}>
@@ -102,7 +105,7 @@ export default async function Pagina({
                       </button>
                     </form>
                   )}
-                  {conexao && <DesconectarMercadoPago clienteId={clienteId} />}
+                  {conexao && <DesconectarPagamento clienteId={clienteId} gateway="mercado_pago" />}
                 </>
               )
             }
@@ -114,10 +117,52 @@ export default async function Pagina({
                 Conectado como <strong className="text-soft">{conexao.apelido ?? `conta ${conexao.contaNoGateway}`}</strong>
                 {conexao.expiraEm && <>. O acesso se renova sozinho; o atual vale até {dataCurta(conexao.expiraEm)}.</>}
               </>
+            ) : asaas ? (
+              'As cobranças saem pelo Asaas. Para receber pelo Mercado Pago, desconecte o Asaas antes.'
             ) : liberado ? (
               'Você entra na sua conta do Mercado Pago e autoriza. Nenhuma chave para copiar.'
             ) : (
               'A conexão com o Mercado Pago está sendo liberada pela equipe da 4YU.'
+            )}
+          </CartaoDeConexao>
+
+          <CartaoDeConexao
+            logo={<LogoAsaas />}
+            selo={
+              recusa ? (
+                <Pilula>fora do plano</Pilula>
+              ) : asaas ? (
+                <Pilula tom={asaas.ambiente === 'teste' ? 'aviso' : 'ok'}>
+                  {asaas.ambiente === 'teste' ? 'conectado em teste' : 'conectado'}
+                </Pilula>
+              ) : conexao ? null : (
+                <Pilula>não conectado</Pilula>
+              )
+            }
+            titulo="Asaas"
+            categoria="Pix, cartão, boleto e nota fiscal"
+            rodape={
+              recusa || conexao ? null : (
+                <>
+                  <ConectarAsaas clienteId={clienteId} trocar={Boolean(asaas)} />
+                  {asaas && <DesconectarPagamento clienteId={clienteId} gateway="asaas" />}
+                </>
+              )
+            }
+          >
+            {recusa ? (
+              recusa
+            ) : asaas ? (
+              <>
+                Conectado como <strong className="text-soft">{asaas.apelido ?? 'conta do Asaas'}</strong>.
+                {asaas.ambiente === 'teste'
+                  ? ' Chave de sandbox: as cobranças são de teste e nenhum dinheiro de verdade se move.'
+                  : ' A nota fiscal de serviço sai pelo próprio Asaas, se estiver ligada lá.'}
+              </>
+            ) : conexao ? (
+              'As cobranças saem pelo Mercado Pago. Para receber pelo Asaas, desconecte o Mercado Pago antes.'
+            ) : (
+              'Cole a chave de API da sua conta. O Asaas também emite a nota fiscal de serviço da cobrança paga.'
             )}
           </CartaoDeConexao>
         </div>

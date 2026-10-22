@@ -1,4 +1,5 @@
 import 'server-only'
+import { NOME_DO_GATEWAY, type AcessoAoGateway, type Ambiente, type Gateway } from '@/channels/pagamento'
 import { apagarDoCofre, guardarNoCofre, lerDoCofre } from '../cofre'
 import { db, ehIdInvalido } from '../db'
 
@@ -10,7 +11,7 @@ import { db, ehIdInvalido } from '../db'
  * na hora de cobrar, pede o token com `tokenDaConexao`.
  */
 
-export type Gateway = 'mercado_pago'
+export type { Gateway }
 
 export type ConexaoDePagamento = {
   id: string
@@ -18,6 +19,7 @@ export type ConexaoDePagamento = {
   contaNoGateway: string
   apelido: string | null
   expiraEm: string | null
+  ambiente: Ambiente
   criadoEm: string
 }
 
@@ -30,6 +32,8 @@ type Linha = {
   token_ref: string
   renovacao_ref: string | null
   expira_em: string | null
+  ambiente: Ambiente
+  aviso_no_gateway: string | null
   criado_em: string
 }
 
@@ -41,7 +45,8 @@ function tabelaAusente(error: { code?: string } | null): boolean {
   return error?.code === '42P01' || error?.code === 'PGRST205'
 }
 
-const COLUNAS = 'id, cliente_id, gateway, conta_no_gateway, apelido, token_ref, renovacao_ref, expira_em, criado_em'
+const COLUNAS =
+  'id, cliente_id, gateway, conta_no_gateway, apelido, token_ref, renovacao_ref, expira_em, ambiente, aviso_no_gateway, criado_em'
 
 function paraConexao(linha: Linha): ConexaoDePagamento {
   return {
@@ -50,6 +55,7 @@ function paraConexao(linha: Linha): ConexaoDePagamento {
     contaNoGateway: linha.conta_no_gateway,
     apelido: linha.apelido,
     expiraEm: linha.expira_em,
+    ambiente: linha.ambiente,
     criadoEm: linha.criado_em,
   }
 }
@@ -72,6 +78,37 @@ export async function conexaoDePagamento(clienteId: string, gateway: Gateway): P
 }
 
 /**
+ * A conta de recebimento da organização. **Uma por vez**: com duas, a pessoa
+ * da equipe teria de escolher em qual conta o dinheiro cai a cada cobrança, e
+ * a tela Pagamentos pede para desconectar uma antes de ligar a outra.
+ */
+export async function conexaoAtiva(clienteId: string): Promise<ConexaoDePagamento | null> {
+  const { data, error } = await db()
+    .from('conexoes_de_pagamento')
+    .select(COLUNAS)
+    .eq('cliente_id', clienteId)
+    .order('criado_em', { ascending: true })
+    .limit(1)
+  if (ehIdInvalido(error) || tabelaAusente(error)) return null
+  if (error) throw new Error(`não foi possível ler a conexão de pagamento: ${error.message}`)
+  const linha = (data as Linha[] | null)?.[0]
+  return linha ? paraConexao(linha) : null
+}
+
+/** Qual organização é dona desta conta do gateway. É como o aviso do Mercado Pago (`user_id`) acha a conta. */
+export async function clienteDaContaNoGateway(gateway: Gateway, contaNoGateway: string): Promise<string | null> {
+  const { data, error } = await db()
+    .from('conexoes_de_pagamento')
+    .select('cliente_id')
+    .eq('gateway', gateway)
+    .eq('conta_no_gateway', contaNoGateway)
+    .maybeSingle()
+  if (tabelaAusente(error)) return null
+  if (error) throw new Error(`não foi possível achar a conta do gateway: ${error.message}`)
+  return (data as { cliente_id: string } | null)?.cliente_id ?? null
+}
+
+/**
  * Liga (ou religa) a conta do dono.
  *
  * A ordem é a que não deixa sobra: os segredos novos entram no cofre, a linha
@@ -86,6 +123,8 @@ export async function salvarConexaoDePagamento(entrada: {
   token: string
   renovacao: string | null
   expiraEm: Date | null
+  ambiente?: Ambiente
+  avisoNoGateway?: string | null
 }): Promise<void> {
   const anterior = await linhaDaConta(entrada.clienteId, entrada.gateway)
   const tokenRef = await guardarNoCofre(entrada.token, `pagamento:${entrada.gateway}:${entrada.clienteId}`)
@@ -99,6 +138,8 @@ export async function salvarConexaoDePagamento(entrada: {
     token_ref: tokenRef,
     renovacao_ref: renovacaoRef,
     expira_em: entrada.expiraEm?.toISOString() ?? null,
+    ambiente: entrada.ambiente ?? 'producao',
+    ...(entrada.avisoNoGateway !== undefined ? { aviso_no_gateway: entrada.avisoNoGateway } : {}),
   }
   const { error } = anterior
     ? await db().from('conexoes_de_pagamento').update(valores).eq('id', anterior.id)
@@ -108,7 +149,7 @@ export async function salvarConexaoDePagamento(entrada: {
     await apagarDoCofre(tokenRef).catch(() => undefined)
     if (renovacaoRef) await apagarDoCofre(renovacaoRef).catch(() => undefined)
     // 23505: a mesma conta do gateway já está ligada a outra conta daqui.
-    if (error.code === '23505') throw new Error('esta conta do Mercado Pago já está ligada a outra conta')
+    if (error.code === '23505') throw new Error(`esta conta do ${NOME_DO_GATEWAY[entrada.gateway]} já está ligada a outra conta`)
     throw new Error(`não foi possível salvar a conexão de pagamento: ${error.message}`)
   }
 
@@ -128,6 +169,17 @@ export async function apagarConexaoDePagamento(clienteId: string, gateway: Gatew
 export async function tokenDaConexao(clienteId: string, gateway: Gateway): Promise<string | null> {
   const linha = await linhaDaConta(clienteId, gateway)
   return linha ? lerDoCofre(linha.token_ref) : null
+}
+
+/** Token e ambiente juntos, e o webhook criado no gateway, para quem vai cobrar ou desligar. */
+export async function acessoDaConexao(
+  clienteId: string,
+  gateway: Gateway,
+): Promise<(AcessoAoGateway & { avisoNoGateway: string | null }) | null> {
+  const linha = await linhaDaConta(clienteId, gateway)
+  if (!linha) return null
+  const token = await lerDoCofre(linha.token_ref)
+  return token ? { token, ambiente: linha.ambiente, avisoNoGateway: linha.aviso_no_gateway } : null
 }
 
 /**

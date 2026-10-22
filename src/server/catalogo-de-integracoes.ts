@@ -1,5 +1,5 @@
 import 'server-only'
-import { conexaoDePagamento } from './repos/pagamentos'
+import { conexaoAtiva } from './repos/pagamentos'
 import { estadoDaConexao, type EstadoDaConexao } from '@/core/conexoes'
 import { canalDoInstagram } from './repos/canais-instagram'
 import { canalDoTelegram } from './repos/canais-telegram'
@@ -11,7 +11,7 @@ import { paginasDaConta } from './repos/paginas-de-lead'
 import { ultimaChegadaDeAnuncio, ultimaMensagemRecebida } from './repos/ultimos-eventos'
 import { NOME_DA_CONEXAO_DE_ADS } from './token-de-anuncios'
 
-export type ChaveDaIntegracao = 'whatsapp' | 'instagram' | 'anuncios' | 'chaves' | 'magento' | 'telegram' | 'site' | 'mercado_pago'
+export type ChaveDaIntegracao = 'whatsapp' | 'instagram' | 'anuncios' | 'chaves' | 'magento' | 'telegram' | 'site' | 'mercado_pago' | 'asaas'
 
 export type ItemDoCatalogo = {
   chave: ChaveDaIntegracao
@@ -53,7 +53,7 @@ export async function catalogoDeIntegracoes(clienteId: string): Promise<ItemDoCa
   // isso não pode atrasar nem derrubar o resto do catálogo.
   const botDoTelegram = await canalDoTelegram(clienteId)
   // Também fora: antes da 0141 a tabela não existe, e a leitura volta nula.
-  const pagamento = await conexaoDePagamento(clienteId, 'mercado_pago').catch(() => null)
+  const pagamento = await conexaoAtiva(clienteId).catch(() => null)
   const temTokenDeAnuncios = conexoes.some(
     (c) => c.nome.trim().toLowerCase() === NOME_DA_CONEXAO_DE_ADS && c.tipo === 'bearer',
   )
@@ -163,7 +163,20 @@ export async function catalogoDeIntegracoes(clienteId: string): Promise<ItemDoCa
       descricao: 'Cobrança pela conversa, com Pix e link. O dinheiro cai direto na conta da empresa.',
       href: '/ajustes/pagamentos',
       disponivel: true,
-      estado: estadoDaConexao({ tipo: 'cadastro', configurado: pagamento !== null, href: '/ajustes/pagamentos' }),
+      estado: estadoDaConexao({
+        tipo: 'cadastro',
+        configurado: pagamento?.gateway === 'mercado_pago',
+        href: '/ajustes/pagamentos',
+      }),
+    },
+    {
+      chave: 'asaas',
+      nome: 'Asaas',
+      categoria: 'Pagamento',
+      descricao: 'Cobrança pela conversa, com Pix, link e nota fiscal de serviço. O dinheiro cai direto na conta da empresa.',
+      href: '/ajustes/pagamentos',
+      disponivel: true,
+      estado: estadoDaConexao({ tipo: 'cadastro', configurado: pagamento?.gateway === 'asaas', href: '/ajustes/pagamentos' }),
     },
   ]
 }

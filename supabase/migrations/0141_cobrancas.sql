@@ -3,8 +3,8 @@
 -- Duas tabelas, as duas novas, em `public`. Nenhuma linha existente muda e
 -- nada da Verandi é tocado.
 --
--- * `conexoes_de_pagamento`: a conta do dono no gateway (Mercado Pago, por
---   enquanto). O token **não** mora aqui: vai para o Vault, e a linha guarda só
+-- * `conexoes_de_pagamento`: a conta do dono no gateway (Mercado Pago por
+--   login, Asaas por chave de API). O token **não** mora aqui: vai para o Vault, e a linha guarda só
 --   a referência, como `channels.token_ref` (0040). Fica fora de
 --   `connections` (0006) de propósito: as Conexões aparecem para os blocos
 --   HTTP do fluxo, e o token de pagamento ali deixaria um bloco fazer estorno
@@ -24,18 +24,27 @@
 create table if not exists public.conexoes_de_pagamento (
   id                uuid primary key default gen_random_uuid(),
   cliente_id        uuid not null references public.clients (id) on delete cascade,
-  gateway           text not null check (gateway in ('mercado_pago')),
+  gateway           text not null check (gateway in ('mercado_pago', 'asaas')),
 
-  -- O `user_id` da conta no Mercado Pago. Único: a mesma conta ligada em duas
+  -- O `user_id` no Mercado Pago, o `walletId` no Asaas. Único: a mesma conta ligada em duas
   -- contas do AutoFluxos faria o aviso de pagamento de uma cair na outra.
   conta_no_gateway  text not null,
   -- Só para a tela: "conectado como loja@exemplo.com".
   apelido           text,
 
-  -- Vault. `renovacao_ref` é o refresh token: o de acesso vence em 180 dias.
+  -- Vault. `token_ref` é o token do login (Mercado Pago) ou a chave de API
+  -- (Asaas). `renovacao_ref` é o refresh token do Mercado Pago: o de acesso
+  -- vence em 180 dias. A chave do Asaas não vence.
   token_ref         uuid not null,
   renovacao_ref     uuid,
   expira_em         timestamptz,
+
+  -- `teste` é o sandbox do Asaas (chave `$aact_hmlg_`): cobra sem dinheiro de
+  -- verdade, e a tela avisa.
+  ambiente          text not null default 'producao' check (ambiente in ('producao', 'teste')),
+  -- O webhook que criamos no Asaas com a chave do dono, para apagar junto ao
+  -- desconectar. O Mercado Pago avisa pela aplicação, sem webhook por conta.
+  aviso_no_gateway  text,
 
   criado_em         timestamptz not null default now(),
   atualizado_em     timestamptz not null default now(),
@@ -57,7 +66,7 @@ create table if not exists public.cobrancas (
   -- `set null` e não `cascade`: apagar o contato não pode apagar a prova de
   -- que uma cobrança paga existiu.
   contato_id             uuid references public.contacts (id) on delete set null,
-  gateway                text not null check (gateway in ('mercado_pago')),
+  gateway                text not null check (gateway in ('mercado_pago', 'asaas')),
 
   valor_centavos         integer not null check (valor_centavos between 1 and 100000000),
   descricao              text not null check (length(trim(descricao)) between 1 and 200),
@@ -65,9 +74,10 @@ create table if not exists public.cobrancas (
   itens                  jsonb,
 
   status                 text not null default 'pendente'
-                         check (status in ('pendente', 'paga', 'vencida', 'cancelada')),
+                         check (status in ('pendente', 'paga', 'vencida', 'cancelada', 'estornada')),
 
-  -- O pagamento Pix e a preferência do link, como o Mercado Pago os chama.
+  -- O pagamento Pix e a preferência do link, como o Mercado Pago os chama. No
+  -- Asaas o pagamento é um só (Pix e link), e a preferência fica nula.
   pagamento_no_gateway   text,
   preferencia_no_gateway text,
   pix_copia_cola         text,
@@ -98,7 +108,9 @@ create index if not exists cobrancas_contato_id_fk_idx
   on public.cobrancas (contato_id);
 create index if not exists cobrancas_sessao_id_fk_idx
   on public.cobrancas (sessao_id);
--- O webhook acha a cobrança pelo id do pagamento no gateway.
+-- Um pagamento do gateway é de uma cobrança só. O aviso acha a cobrança pela
+-- referência que viaja no pagamento (o id daqui), e não por este índice:
+-- pago pelo link do Mercado Pago, o id é outro.
 create unique index if not exists cobrancas_pagamento_no_gateway
   on public.cobrancas (gateway, pagamento_no_gateway)
   where pagamento_no_gateway is not null;

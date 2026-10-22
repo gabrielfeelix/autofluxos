@@ -78,3 +78,44 @@ describe('webhook da Nuvemshop', () => {
     expect((await POST(pedirLoja(createHmac('sha256', '').update(corpo).digest('hex')))).status).toBe(401)
   })
 })
+
+describe('webhooks de pagamento', () => {
+  it('Asaas recusa sem o token, com token de outra organização e sem segredo no servidor', async () => {
+    vi.stubEnv('BETTER_AUTH_SECRET', 'segredo-certo')
+    const { POST } = await import('./asaas/[clienteId]/route')
+    const { segredoDoAviso } = await import('@/channels/asaas')
+    const conta = '11111111-1111-1111-1111-111111111111'
+    const outra = '22222222-2222-2222-2222-222222222222'
+    const pedirAsaas = (token?: string) =>
+      POST(
+        new Request(`https://x.test/api/webhook/asaas/${conta}`, {
+          method: 'POST',
+          headers: token ? { 'asaas-access-token': token } : {},
+          body: corpo,
+        }),
+        { params: Promise.resolve({ clienteId: conta }) },
+      )
+    expect((await pedirAsaas()).status).toBe(401)
+    expect((await pedirAsaas(segredoDoAviso(outra))).status).toBe(401)
+    vi.stubEnv('BETTER_AUTH_SECRET', '')
+    expect((await pedirAsaas('')).status).toBe(401)
+  })
+
+  it('Mercado Pago recusa sem assinatura e sem segredo no servidor', async () => {
+    const { POST } = await import('./mercado-pago/route')
+    const pedirMp = (assinatura?: string) =>
+      POST(
+        new Request('https://x.test/api/webhook/mercado-pago?data.id=1&type=payment', {
+          method: 'POST',
+          headers: assinatura ? { 'x-signature': assinatura, 'x-request-id': 'r' } : {},
+          body: corpo,
+        }),
+      )
+    vi.stubEnv('MERCADO_PAGO_WEBHOOK_SECRET', 'segredo-certo')
+    expect((await pedirMp()).status).toBe(401)
+    expect((await pedirMp('ts=1,v1=abc')).status).toBe(401)
+    vi.stubEnv('MERCADO_PAGO_WEBHOOK_SECRET', '')
+    const v1 = createHmac('sha256', '').update('id:1;request-id:r;ts:1;').digest('hex')
+    expect((await pedirMp(`ts=1,v1=${v1}`)).status).toBe(401)
+  })
+})

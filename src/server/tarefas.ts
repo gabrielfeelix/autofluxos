@@ -1,4 +1,5 @@
 import 'server-only'
+import { rodarVencimentoDeCobranca } from './cobrancas'
 import { rodarTimeoutDePergunta, type FabricaDeCanal } from './receber-mensagem'
 import { rodarPassoDeSequencia } from './sequencias-passo'
 import { rodarContinuidadeDeProcesso } from './servicos/concluir-processo'
@@ -84,5 +85,7 @@ async function executar(
       return rodarPassoDeSequencia(tarefa.dados, fabricaDeCanal)
     case 'continuidade_de_processo':
       return rodarContinuidadeDeProcesso(tarefa.dados)
+    case 'vencimento_de_cobranca':
+      return rodarVencimentoDeCobranca(tarefa.clienteId, tarefa.dados)
   }
 }

@@ -77,6 +77,13 @@ aqui fica o que o cliente ganha.
   contato. *(21/out/2026)*
 - **Cards de produto, cupons e carrinho abandonado** no WhatsApp.
 - **Lead Ads**: o formulário do Facebook e do Instagram vira contato no funil.
+- **Cobrar pela conversa**: botão Cobrar no Inbox manda Pix copia e cola e
+  link de cartão ou boleto. A cobrança vira paga sozinha quando o banco
+  confirma, e a tela Cobranças mostra quanto entrou e quanto falta. O dinheiro
+  cai direto na conta da empresa, no Mercado Pago ou no Asaas, sem
+  porcentagem para o AutoFluxos. *(22/out/2026)*
+- **Nota fiscal da cobrança paga** pelo Asaas, sem certificado digital nem
+  sistema de nota à parte. *(22/out/2026)*
 
 ## Medir
 

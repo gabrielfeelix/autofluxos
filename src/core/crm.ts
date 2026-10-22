@@ -395,6 +395,8 @@ export const TIPOS_DE_EVENTO = [
   'conversao-enviada',
   /** Aceitou ou recusou promoções. Ver `server/consentimento.ts`. */
   'consentimento',
+  /** Cobrança criada, paga, vencida, cancelada ou estornada. Ver `server/cobrancas.ts`. */
+  'cobranca',
 ] as const
 
 export type TipoDeEvento = (typeof TIPOS_DE_EVENTO)[number]
@@ -415,6 +417,19 @@ export type Evento = {
  * propósito: evento novo escrito por código futuro aparece feio, mas aparece, em
  * vez de sumir da tela sem ninguém notar.
  */
+const VERBO_DA_COBRANCA: Record<string, string> = {
+  criada: 'recebeu uma cobrança de',
+  paga: 'pagou',
+  vencida: 'deixou vencer a cobrança de',
+  cancelada: 'teve cancelada a cobrança de',
+  estornada: 'teve estornado o pagamento de',
+}
+
+function fraseDaCobranca(status: string, valor: string): string {
+  const verbo = VERBO_DA_COBRANCA[status]
+  return verbo ? `${verbo} ${valor}`.trim() : 'cobrança'
+}
+
 export function comoFrase(evento: Evento): string {
   const d = evento.dados as Record<string, string | undefined>
 
@@ -460,6 +475,8 @@ export function comoFrase(evento: Evento): string {
       return d.evento === 'Purchase' ? 'a venda foi contada para o anúncio de origem' : 'o lead foi contado para o anúncio de origem'
     case 'consentimento':
       return fraseDoConsentimento(d.aceito === 'true', d.origem ?? '')
+    case 'cobranca':
+      return fraseDaCobranca(d.status ?? '', d.valor ?? '')
     case 'redistribuida':
       if (d.para) return `passou de ${d.de ?? 'quem atendia'} para ${d.para}, que estava disponível`
       return `ficou sem dono porque ${d.de ?? 'quem atendia'} ficou ausente`

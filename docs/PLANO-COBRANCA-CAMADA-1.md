@@ -2,8 +2,14 @@
 
 Aprovado em 21/out/2026 com as 4 recomendações abaixo.
 
-**Andamento:** etapa A escrita (tela Ajustes > Pagamentos, OAuth, renovação
-diária, migration `0141`). Falta: `0141` em produção (autorização) e a
+**Andamento (22/out):** etapas A, B e C escritas, independentes de gateway
+(`src/channels/pagamento.ts`). Asaas por chave de API, com webhook criado
+sozinho na conta do dono; Mercado Pago etapa B escrita contra a documentação
+(Pix, Checkout Pro, `x-signature`, releitura antes de marcar paga). Botão
+Cobrar no Inbox (capacidade `registrar_venda`), CRM > Cobranças, cartão na
+ficha, vencimento pela fila de tarefas (`vencimento_de_cobranca`). Uma conta
+de recebimento por vez. Antes: etapa A (tela Ajustes > Pagamentos, OAuth,
+renovação diária, migration `0141`). Falta: `0141` em produção (autorização) e a
 aplicação do Mercado Pago com `MERCADO_PAGO_CLIENT_ID`/`_SECRET` no cofre e na
 Vercel. Sem as duas variáveis a tela mostra "em liberação". O recurso usa
 `integracoes` do plano (Operação para cima), sem dado novo em produção. Base: `docs/MERCADO-COBRANCA-NO-CHAT.md` (por que assim) e

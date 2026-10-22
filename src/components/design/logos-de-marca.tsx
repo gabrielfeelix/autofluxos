@@ -103,6 +103,21 @@ export function LogoTelegram() {
 }
 
 /** O Mercado Pago: o aperto de mãos dentro da forma oval, em branco sobre o azul da marca. */
+/** O Asaas: o "a" minúsculo da marca, branco no quadrado azul. */
+export function LogoAsaas() {
+  return (
+    <Moldura classe="text-marca-asaas">
+      <svg width="28" height="28" viewBox="0 0 24 24" fill="none" aria-hidden>
+        <rect x="2" y="2" width="20" height="20" rx="6" fill="currentColor" />
+        <g className="stroke-white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <circle cx="11.2" cy="13" r="3.6" />
+          <path d="M14.8 9.4V16.6" />
+        </g>
+      </svg>
+    </Moldura>
+  )
+}
+
 export function LogoMercadoPago() {
   return (
     <Moldura classe="text-marca-mercadopago">

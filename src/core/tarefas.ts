@@ -15,6 +15,8 @@ export const TIPOS_DE_TAREFA = [
   'passo_de_sequencia',
   /** Abrir a ocorrência no processo seguinte depois de uma conclusão (RB-25). */
   'continuidade_de_processo',
+  /** Uma cobrança chegou ao vencimento sem pagar (0141). Ver `server/cobrancas.ts`. */
+  'vencimento_de_cobranca',
 ] as const
 
 export type TipoDeTarefa = (typeof TIPOS_DE_TAREFA)[number]
