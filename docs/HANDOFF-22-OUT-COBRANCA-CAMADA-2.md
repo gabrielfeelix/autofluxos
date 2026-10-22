@@ -7,6 +7,13 @@ para o MGM Pilates nada muda de fato** (conta `5de5a891-790f-4c14-b60b-ce0a573fe
 ramo `aulas`, objetivo `atender`, 1 dono e 2 administradores com função
 personalizada).
 
+## Atualização, 22/out (tarde): concluído
+
+Pedidos (a) e a parte possível de Relatórios (b) foram feitos: `36a9e801`
+(0146 em produção), `3ecb7055` (pedidos, quadro, estoque), `5cade8f2`
+(blocos em Vendas). O que ficou de fora e por quê está no fim de
+`docs/PLANO-COBRANCA-CAMADA-2.md`. O que segue abaixo é o registro de antes.
+
 ## No ar (todos `READY` na Vercel)
 
 | Commit | O quê |
