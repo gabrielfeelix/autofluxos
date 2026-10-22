@@ -23,6 +23,7 @@ import {
   linkDaPaginaDeDownloads,
 } from '@/core/manuais'
 import { chamarHttp } from '@/server/efeitos/http'
+import { lerPecas, linkDoMonteSeuPc, urlDasPecas } from './monte-seu-pc'
 import type { DadosDaLoja, Loja, ResultadoDaLoja } from './types'
 
 type Chamar = typeof chamarHttp
@@ -154,6 +155,14 @@ export function lojaMagento(dados: DadosDaLoja, chamar: Chamar = chamarHttp): Lo
       if (!r.ok) return r
       const lida = lerPaginaDeDownloads(r.valor)
       return { ok: true, valor: lida.nome === '' && lida.arquivos.length === 0 ? null : { ...lida, pagina: endereco } }
+    },
+    async monteSeuPc(categoria, termo) {
+      const r = await chamar(
+        { tipo: 'chamar_http', metodo: 'GET', url: urlDasPecas(dados.endereco, categoria), cabecalhos: [], corpo: '', mapear: [], aoFalhar: 'humano' },
+        { deTeste: false, comJson: true },
+      )
+      if (!r.ok) return { ok: false, motivo: `o Monte seu PC não respondeu: ${r.motivo}` }
+      return { ok: true, valor: { pecas: lerPecas(r.json, termo), link: linkDoMonteSeuPc(dados.endereco) } }
     },
     linkDaBusca(termo) {
       return linkDaBusca(dados.endereco, termo)

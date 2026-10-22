@@ -211,6 +211,7 @@ export type OperacaoDeLoja =
   | 'manuais'
   | 'manual'
   | 'cardapio'
+  | 'monte_seu_pc'
 
 /** Os campos que as ferramentas de loja devolvem ao modelo. Allow-list. */
 const CAMPOS_DE_PRODUTO = [
@@ -660,6 +661,51 @@ export const FERRAMENTAS: Ferramenta[] = [
   },
   {
     /*
+     * O montador de PC da loja (`loja/monte-seu-pc.ts`). Processador, placa-mãe,
+     * memória e placa de vídeo de outras marcas não estão na busca: a PCYES só
+     * vende dentro de um PC montado. Regra do dono (22/out/2026): o bot orça,
+     * mas quem põe as peças no carrinho é a pessoa, no Monte seu PC. Por isso
+     * não há card nem link de produto, só o link do montador.
+     */
+    nome: 'loja_monte_seu_pc',
+    rotulo: 'Consultar peças do Monte seu PC',
+    escreve: false,
+    descricao:
+      'Lista as peças com estoque do Monte seu PC, o montador de computador do site, com nome e preço. ' +
+      'Use quando a pessoa pedir processador (Ryzen, Intel Core i3, i5, i7), placa-mãe, memória RAM, placa de vídeo ou SSD, ou quiser montar um PC, um setup ou um kit pronto. Uma consulta por categoria; para montar um PC, consulte as que precisar. ' +
+      'Processador, placa-mãe, memória e placa de vídeo de outras marcas a loja só vende dentro do Monte seu PC: nunca diga que a loja não vende, nem que dá para comprar essas peças avulsas. ' +
+      'Você pode orçar: sugira as peças, some os preços e diga o total. Mas quem escolhe as peças e finaliza a compra é a pessoa, no Monte seu PC: sempre mande o `link` e explique isso. Você não adiciona nada ao carrinho. ' +
+      'Sugira só peças que combinam pelo nome (soquete AM4, AM5, LGA 1700 ou LGA 1200; memória DDR4 ou DDR5). Na dúvida, diga que o Monte seu PC só mostra as peças compatíveis com o que ela já escolheu. ' +
+      'Use `termo` para estreitar pelo modelo ("ryzen 5", "i5", "rtx 4060"). Se vier `semEsseModelo`, esse modelo não tem agora: diga isso e ofereça os que vieram. ' +
+      'Não mostre card nem mande link de produto destas peças: elas são compradas pelo montador. ' +
+      'Para gabinete, fonte, cooler e periféricos da própria marca comprados avulsos, use `loja_buscar`.',
+    argumentos: [
+      {
+        nome: 'categoria',
+        tipo: 'texto',
+        descricao: 'Uma de: processador, placa_mae, memoria, placa_de_video, cooler, ssd, gabinete, fonte, perifericos.',
+        obrigatorio: true,
+      },
+      {
+        nome: 'termo',
+        tipo: 'texto',
+        descricao: 'O modelo ou a linha que a pessoa pediu, em até 3 palavras ("ryzen 5", "i5"). Vazio para ver a categoria toda.',
+        obrigatorio: false,
+      },
+    ],
+    injetados: [],
+    chamada: { tipo: 'loja', operacao: 'monte_seu_pc' },
+    projecao: [
+      { caminho: 'pecas', campos: ['nome', 'preco', 'precoDe'], limite: 20 },
+      { caminho: 'link' },
+      { caminho: 'semEsseModelo' },
+      { caminho: 'categorias' },
+    ],
+    credencial: 'nenhuma',
+    integracao: 'loja',
+  },
+  {
+    /*
      * O telefone é injetado, não argumento: é ele que prova que quem pergunta
      * é quem comprou. Se fosse argumento, bastaria o modelo ser convencido a
      * digitar o telefone de outra pessoa. Ver `loja/magento-pedido.ts`.
@@ -670,7 +716,7 @@ export const FERRAMENTAS: Ferramenta[] = [
     descricao:
       'Consulta um pedido da loja on-line pelo número, ou pelo CPF da compra quando a pessoa não tem o número, e devolve a situação, a data, o total, os itens e, quando houver, a entrega: transportadora, código, previsão e a última movimentação. ' +
       'Use quando a pessoa perguntar do pedido dela, da entrega ou do rastreio. Peça o número do pedido ou o CPF usado na compra, o que ela tiver. ' +
-      'Quando vier `encontrado: false`, faça exatamente o que `proximoPasso` diz: `pedir_cpf` = peça o CPF usado na compra e consulte de novo com o número e o CPF; `pedir_numero_do_pedido` = diga que não achou pelo CPF e peça o número do pedido (está no e-mail de confirmação), e consulte de novo com os dois; `pedir_numero_ou_cpf` = peça um dos dois; `oferecer_atendente` = diga que não conseguiu localizar e ofereça chamar alguém do time. Não ofereça o time antes de `oferecer_atendente`. ' +
+      'Quando vier `encontrado: false`, faça exatamente o que `proximoPasso` diz: `pedir_cpf` = peça o CPF usado na compra para confirmar que o pedido é dela ("Para confirmar que o pedido é seu, me informe o CPF usado na compra."), sem dizer que achou nem que não achou, e consulte de novo com o número e o CPF; `pedir_numero_do_pedido` = diga que não achou pelo CPF e peça o número do pedido (está no e-mail de confirmação), e consulte de novo com os dois; `pedir_numero_ou_cpf` = peça um dos dois; `oferecer_atendente` = diga que não conseguiu localizar e ofereça chamar alguém do time. Não ofereça o time antes de `oferecer_atendente`. ' +
       'Se vier `enviado: true`, o card com o status completo (situação, previsão, rastreio, itens e o botão) já vai logo depois da sua resposta: escreva só uma frase curta apresentando, como "Achei seu pedido! Está tudo aqui 👇", sem repetir situação, prazo, transportadora nem link. Use os dados do pedido só para responder perguntas seguintes. ' +
       'Nunca invente situação nem prazo: a previsão é a que vier em `entrega.previsao`. ' +
       'A última movimentação da entrega vem em `andamento` (a mais nova primeiro). Se vier `enviado: false` e vier `linkDoRastreio`, mande o link para a pessoa acompanhar. ' +
@@ -888,10 +934,13 @@ export function ferramentasPermitidas(nomes: readonly string[]): Ferramenta[] {
    * Quem pode buscar pode ler a ficha do que achou. É leitura da mesma loja,
    * com a mesma trava de id, e sem isto cada fluxo de venda já publicado
    * precisaria ser reeditado para a IA responder "funciona no PS5?".
+   * O Monte seu PC entra pelo mesmo motivo; quem o tira de loja sem montador
+   * é o resolvedor (`temMonteSeuPc`), que sabe qual é a loja da conta.
    */
   if (pedidas.has('loja_buscar')) {
     pedidas.add('loja_detalhes')
     pedidas.add('loja_frete')
+    pedidas.add('loja_monte_seu_pc')
   }
   return FERRAMENTAS.filter((f) => pedidas.has(f.nome))
 }

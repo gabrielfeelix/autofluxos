@@ -49,7 +49,8 @@ import { alertar } from '../alertar'
 import { consumirLimite } from '../limite'
 import { chamarHttp } from './http'
 import { lerCredencial } from '../repos/conexoes'
-import { consultarPedidoDaConta, lojaAtivaDaConta } from '../adaptador-da-loja'
+import { consultarPedidoDaConta, lojaAtivaDaConta, temMonteSeuPc } from '../adaptador-da-loja'
+import { CATEGORIAS_DO_MONTE_SEU_PC, categoriaDoMonteSeuPc } from '@/loja/monte-seu-pc'
 import { cardDoPedido } from '../card-do-pedido'
 import { comCortesia } from '../ia/cortesia'
 import { listarMateriais } from '../repos/materiais'
@@ -889,11 +890,15 @@ async function responderComFerramentas({
   const comFerramentas =
     !opcoes.clienteId || opcoes.origem === 'simulador' || (await recursoLiberado(opcoes.clienteId, 'ia_ferramentas'))
   // `concluir_conversa` não é do catálogo: vem do bloco, e só do que conversa.
-  const permitidas = [
+  let permitidas = [
     ...(comFerramentas ? ferramentasPermitidas(chamada.ferramentas) : []),
     ...(comFerramentas && chamada.cobranca ? [ferramentaDeCobranca(chamada.cobranca.ajustes)] : []),
     ...(chamada.concluir ? [CONCLUIR_CONVERSA] : []),
   ]
+  const ehMontador = (f: Ferramenta) => f.chamada.tipo === 'loja' && f.chamada.operacao === 'monte_seu_pc'
+  if (permitidas.some(ehMontador) && !(await temMonteSeuPc(opcoes.clienteId, chamada.fonteDoCatalogo))) {
+    permitidas = permitidas.filter((f) => !ehMontador(f))
+  }
 
   const base = {
     // O do bloco substitui o da conta, e não soma: ver `sobreAEmpresa` no schema.
@@ -1672,6 +1677,19 @@ async function executarNaLoja(
     // Vazio leva a página da busca, como `buscaNaLoja`: o nome que a pessoa
     // escreveu pode não bater com o cadastro, e ela procura por lá.
     return { ok: true, json: { itens, buscaDeDownloads: busca } }
+  }
+
+  if (operacao === 'monte_seu_pc') {
+    if (!loja.monteSeuPc) return { ok: false, motivo: 'esta loja não tem Monte seu PC' }
+    const categoria = categoriaDoMonteSeuPc(valores.categoria ?? '')
+    // Categoria que não existe não é falha da loja: devolve as que existem.
+    if (!categoria) return { ok: true, json: { pecas: [], categorias: Object.keys(CATEGORIAS_DO_MONTE_SEU_PC) } }
+    const termo = (valores.termo ?? '').trim()
+    const r = await loja.monteSeuPc(categoria, termo)
+    if (!r.ok || r.valor.pecas.length > 0 || termo === '') return r.ok ? { ok: true, json: r.valor } : r
+    // O modelo pedido não tem agora: a categoria inteira, para oferecer o que há.
+    const todas = await loja.monteSeuPc(categoria, '')
+    return todas.ok ? { ok: true, json: { ...todas.valor, semEsseModelo: termo } } : todas
   }
 
   if (operacao === 'manual') {

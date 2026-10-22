@@ -192,6 +192,17 @@ async function entregaDaFreteRapido(clienteId: string, numero: string): Promise<
  * conta que vende no site e atende um cardápio no WhatsApp; `loja` é só a loja
  * on-line, sem cair no catálogo. Ausente é a ordem acima, a de sempre.
  */
+/**
+ * A conta tem o Monte seu PC? É da Magento da PCYES (`loja/monte-seu-pc.ts`).
+ * Sem ele a ferramenta nem chega à IA: consulta que falha vira handoff, e uma
+ * pizzaria com `loja_buscar` não pode ganhar uma ferramenta de peça de PC.
+ */
+export async function temMonteSeuPc(clienteId: string | undefined, fonte?: FonteDoCatalogo): Promise<boolean> {
+  if (!clienteId || fonte === 'catalogo') return false
+  const loja = await lojaDaConta(clienteId)
+  return Boolean(loja?.ativa && loja.plataforma === 'magento')
+}
+
 export async function lojaAtivaDaConta(clienteId: string, fonte?: FonteDoCatalogo): Promise<Loja | null> {
   if (fonte === 'catalogo') return catalogoDaConta(clienteId)
   const loja = await lojaDaConta(clienteId)

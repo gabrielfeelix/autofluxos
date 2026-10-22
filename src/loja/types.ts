@@ -7,6 +7,7 @@
  */
 import type { FichaDoProduto, OpcaoDeFrete, ProdutoDaLoja } from '@/core/loja'
 import type { ArquivoDeDownload, ItemDeDownload } from '@/core/manuais'
+import type { CategoriaDoMonteSeuPc, PecaDoMonteSeuPc } from './monte-seu-pc'
 export type ResultadoDaLoja<T> = { ok: true; valor: T } | { ok: false; motivo: string }
 export type ConfigDaLoja = { codigoDaLoja: string | null; moeda: string; sufixo: string }
 /**
@@ -42,6 +43,14 @@ export type Loja = {
   downloads?(manualId: string): Promise<
     ResultadoDaLoja<{ nome: string; pagina: string; foto: string | null; arquivos: ArquivoDeDownload[] } | null>
   >
+  /**
+   * As peças do Monte seu PC (`loja/monte-seu-pc.ts`), com estoque. Opcional:
+   * só a Magento da PCYES tem o montador. `link` é a página onde se compra.
+   */
+  monteSeuPc?(
+    categoria: CategoriaDoMonteSeuPc,
+    termo: string,
+  ): Promise<ResultadoDaLoja<{ pecas: PecaDoMonteSeuPc[]; link: string }>>
   /** A página de busca da loja para este termo. Sem rede. */
   linkDaBusca(termo: string): string
   lerConfig(): Promise<ResultadoDaLoja<ConfigDaLoja>>

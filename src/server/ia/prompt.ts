@@ -71,6 +71,7 @@ export function montarPrompt(pedido: PedidoDeIa): { sistema: string; usuario: st
   const comConsultas = ferramentas.length > 0 || consultadas.size > 0
   const vende = ferramentas.some((f) => f.nome === 'loja_buscar') || [...consultadas].some((n) => n.startsWith('loja_'))
   const temCardapio = ferramentas.some((f) => f.nome === 'enviar_cardapio') || consultadas.has('enviar_cardapio')
+  const temMontador = ferramentas.some((f) => f.nome === 'loja_monte_seu_pc') || consultadas.has('loja_monte_seu_pc')
 
   const sistema = [
     'Você é o atendente virtual de uma empresa, conversando pelo WhatsApp.',
@@ -87,7 +88,7 @@ export function montarPrompt(pedido: PedidoDeIa): { sistema: string; usuario: st
       : []),
     ...(ferramentas.length > 0 ? [...blocoDeFerramentas(ferramentas), ''] : []),
     ...(vende
-      ? [...blocoDeVenda(temCardapio), '']
+      ? [...blocoDeVenda(temCardapio, temMontador), '']
       : []),
     ...blocoDeConversa(),
     '',
@@ -354,7 +355,7 @@ function blocoDeConversa(): string[] {
   ]
 }
 
-function blocoDeVenda(temCardapio = false): string[] {
+function blocoDeVenda(temCardapio = false, temMontador = false): string[] {
   return [
     'COMO VENDER, do jeito de um vendedor que entende do produto:',
     '- Pedido amplo sem uso dito (PC, headset, cadeira, monitor, teclado, mouse): antes de buscar, UMA pergunta curta de uso, com opções. Exemplo: "Show! Vai usar mais pra jogar, trabalhar ou estudar?"',
@@ -380,6 +381,13 @@ function blocoDeVenda(temCardapio = false): string[] {
     '- Uso impossível ou brincadeira ("pra explorar o espaço"): meia frase na brincadeira, sem zombar, e volte às opções reais. Exemplo, a mensagem inteira: "Pro espaço ainda não temos 😄 Mas me conta: vai usar mais pra jogar, trabalhar ou estudar?"',
     '- Nada do catálogo serve para o uso: diga com franqueza e ofereça o mais próximo, sem apresentar como se servisse.',
     '- Outra marca ("tem Logitech?", "é melhor que a HyperX?"): não trabalham com ela; ofereça o equivalente da casa e fale do que a ficha dele tem, sem dizer que a outra é pior.',
+    /*
+     * A regra de cima dizia "não trabalham com ela" para "tem Ryzen?", e a
+     * PCYES vende Ryzen, Intel e placa de vídeo pelo Monte seu PC (22/out/2026).
+     */
+    ...(temMontador
+      ? ['- Exceção: processador (AMD Ryzen, Intel Core), placa-mãe, memória, placa de vídeo, SSD, PC montado, setup ou kit pronto: a loja vende pelo Monte seu PC. Consulte `loja_monte_seu_pc`, nunca diga que não trabalham com a marca.']
+      : []),
     /*
      * Print do carrinho do site com "gostaria desses" (PCYES, 05/out/2026).
      * A leitura da imagem chega entre colchetes (`server/ler-imagem.ts`); sem
