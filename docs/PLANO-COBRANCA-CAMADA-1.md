@@ -2,6 +2,13 @@
 
 Aprovado em 21/out/2026 com as 4 recomendações abaixo.
 
+**Andamento (22/out, tarde):** etapa D no ar no código (`72ed55ce`): bloco
+Cobrar com saídas pagou e venceu, acordado por `aplicarPagamento` e pelo
+vencimento (`acordarFluxoDaCobranca`). Etapa E escrita: `order_details`
+simplificado (sem catálogo, decisão 4 não disparou), mandado quando o Pix traz
+chave legível (`core/pix.ts`); recusa da Meta cai no texto. Teste real junto
+com a chave do Asaas.
+
 **Andamento (22/out):** etapas A, B e C escritas, independentes de gateway
 (`src/channels/pagamento.ts`). Asaas por chave de API, com webhook criado
 sozinho na conta do dono; Mercado Pago etapa B escrita contra a documentação

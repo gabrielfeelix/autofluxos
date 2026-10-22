@@ -1,3 +1,4 @@
+import type { TipoDeChavePix } from '@/core/pix'
 import type { Opcao, TipoDeMidia } from '@/core/flow/schema'
 import type { CanalId } from '@/core/canais'
 import type { ProdutoDaLoja } from '@/core/loja'
@@ -112,6 +113,16 @@ export type EnvioDeTemplate = {
  * canal. Trocar o WhatsApp por outra coisa é escrever outra implementação ,
  * nada em `core/` muda.
  */
+/** O que vai num `order_details` simplificado. Ver `enviarPedidoPix`. */
+export type PedidoNativo = {
+  /** Único por mensagem, até 60 caracteres: o id da cobrança. */
+  referencia: string
+  texto: string
+  valorCentavos: number
+  pix: { codigo: string; nome: string; chave: string; tipoDaChave: TipoDeChavePix } | null
+  link: string | null
+}
+
 export type Canal = {
   /**
    * Por onde este canal fala, para o `utm_source` dos links de produto.
@@ -175,6 +186,16 @@ export type Canal = {
    * chama manda o texto com o link escrito.
    */
   enviarBotaoDeLink?(para: string, texto: string, rotulo: string, url: string, imagem?: string): Promise<string | null>
+  /**
+   * A cobrança como **pedido nativo do WhatsApp** (`order_details`, versão
+   * simplificada, sem catálogo): o valor, o botão "Copiar código Pix" com nome
+   * e chave de quem recebe, e o link de cartão ou boleto. Opcional, e quem
+   * chama cai no texto com o Pix copia e cola quando ele falta ou a Meta
+   * recusa (número sem pagamentos liberados responde erro 2040).
+   */
+  enviarPedidoPix?(para: string, pedido: PedidoNativo): Promise<string | null>
+  /** Marca o pedido nativo como pago (`order_status`): a bolha ganha o selo verde. */
+  confirmarPedidoPix?(para: string, referencia: string, texto: string): Promise<string | null>
   /**
    * O cartão de contato (`contacts` do WhatsApp): nome e telefone, com os
    * botões "Conversar" e "Adicionar" que o próprio app desenha. `telefone` só

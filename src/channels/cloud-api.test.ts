@@ -670,3 +670,61 @@ describe('retentativa quando a conexão cai', () => {
     expect(chamar).toHaveBeenCalledTimes(3)
   })
 })
+
+describe('pedido nativo de Pix (order_details)', () => {
+  it('manda a versão simplificada, sem catálogo, com Pix e link', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(new Response(JSON.stringify({ messages: [{ id: 'wamid-1' }] }), { status: 200 }))
+    vi.stubGlobal('fetch', fetchMock)
+    const canal = canalCloudApi({ phoneNumberId: 'numero-1', token: 't', versaoGraph: 'v25.0' })
+
+    const id = await canal.enviarPedidoPix!('5544999', {
+      referencia: 'cobranca-1',
+      texto: '*Aula*',
+      valorCentavos: 4990,
+      pix: { codigo: '000201...', nome: 'STUDIO', chave: '12345678000199', tipoDaChave: 'CNPJ' },
+      link: 'https://pagar.exemplo/1',
+    })
+
+    expect(id).toBe('wamid-1')
+    const corpo = JSON.parse(fetchMock.mock.calls[0]![1].body)
+    expect(corpo.interactive.type).toBe('order_details')
+    expect(corpo.interactive.action).toEqual({
+      name: 'review_and_pay',
+      parameters: {
+        reference_id: 'cobranca-1',
+        type: 'digital-goods',
+        payment_type: 'br',
+        payment_settings: [
+          {
+            type: 'pix_dynamic_code',
+            pix_dynamic_code: { code: '000201...', merchant_name: 'STUDIO', key: '12345678000199', key_type: 'CNPJ' },
+          },
+          { type: 'payment_link', payment_link: { uri: 'https://pagar.exemplo/1' } },
+        ],
+        currency: 'BRL',
+        total_amount: { value: 4990, offset: 100 },
+      },
+    })
+    expect(corpo.interactive.action.parameters.order).toBeUndefined()
+  })
+
+  it('recusa da Meta vira erro, sem repetir, para quem chama cair no texto', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(new Response('{"error":{"code":2040}}', { status: 400 }))
+    vi.stubGlobal('fetch', fetchMock)
+    const canal = canalCloudApi({ phoneNumberId: 'numero-1', token: 't', versaoGraph: 'v25.0' })
+    await expect(
+      canal.enviarPedidoPix!('5544999', { referencia: 'c', texto: 'x', valorCentavos: 100, pix: null, link: 'https://l' }),
+    ).rejects.toThrow('400')
+    expect(fetchMock).toHaveBeenCalledTimes(1)
+  })
+
+  it('pago marca o pedido com o selo verde', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(new Response('{}', { status: 200 }))
+    vi.stubGlobal('fetch', fetchMock)
+    const canal = canalCloudApi({ phoneNumberId: 'numero-1', token: 't', versaoGraph: 'v25.0' })
+    await canal.confirmarPedidoPix!('5544999', 'cobranca-1', 'Pago')
+    const corpo = JSON.parse(fetchMock.mock.calls[0]![1].body)
+    expect(corpo.interactive.type).toBe('order_status')
+    expect(corpo.interactive.action.parameters).toMatchObject({ reference_id: 'cobranca-1', payment: { status: 'captured' } })
+  })
+})

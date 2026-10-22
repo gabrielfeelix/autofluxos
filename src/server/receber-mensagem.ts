@@ -11,7 +11,7 @@ import { sessaoNova, type Acao, type Entrada } from '@/core/engine/types'
 import { varsIniciais } from '@/core/contatos/vars-iniciais'
 import { comoMandarProduto, pedidoDoBotao, textoDoCard } from '@/core/loja'
 import { alertar, type ContextoDoAlerta } from './alertar'
-import { criarCobranca, textoDaCobranca } from './cobrancas'
+import { criarCobranca, tentarPedidoNativo, textoDaCobranca } from './cobrancas'
 import { ultimaCobrancaDoFluxo, type CobrancaRegistrada } from './repos/cobrancas'
 import { avisarHandoff } from './avisar-handoff'
 import { executarComEfeitos, type OpcoesDeEfeitos } from './efeitos/resolver'
@@ -2758,6 +2758,20 @@ async function aplicar(
         })
         if (!criada.ok) return pararNoHumano(`a cobrança do fluxo não saiu: ${criada.erro}`)
         const { cobranca } = criada
+
+        // O pedido nativo do WhatsApp quando dá (etapa E); senão, texto e Pix.
+        const nativo = await tentarPedidoNativo(canal, contato.waId, cobranca)
+        if (nativo) {
+          const pedido = await registrarSaida({
+            contatoId: contato.id,
+            sessaoId,
+            autor: AUTOR_AUTOMACAO,
+            texto: nativo.texto,
+            payload: { cobranca: cobranca.id, pedido: true },
+          })
+          await confirmarEntrega(pedido, nativo.id)
+          break
+        }
 
         const texto = textoDaCobranca(cobranca)
         const enviarBotao = cobranca.link ? canal.enviarBotaoDeLink?.bind(canal) : undefined

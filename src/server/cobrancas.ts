@@ -2,7 +2,10 @@ import 'server-only'
 import { asaas } from '@/channels/asaas'
 import { mercadoPago } from '@/channels/mercado-pago'
 import { NOME_DO_GATEWAY, type Gateway, type GatewayDePagamento } from '@/channels/pagamento'
+import type { Canal, PedidoNativo } from '@/channels/types'
 import { cnpjValido, cpfValido } from '@/core/documentos'
+import { lerPix } from '@/core/pix'
+import { adaptadorDoCanal } from './adaptador-do-canal'
 import { alertar } from './alertar'
 import { gravarCampos } from './repos/campos'
 import {
@@ -11,11 +14,13 @@ import {
   completarCobranca,
   inserirCobranca,
   mudarStatus,
+  saiuComoPedidoNativo,
   type CobrancaRegistrada,
   type ItemCobrado,
   type OrigemDaCobranca,
   type StatusDeCobranca,
 } from './repos/cobrancas'
+import { contextoDeResposta } from './repos/conversas'
 import { anotar } from './repos/eventos'
 import { acharLead } from './repos/leads'
 import { acessoDaConexao, conexaoAtiva } from './repos/pagamentos'
@@ -93,6 +98,74 @@ async function acordarOFluxo(cobranca: CobrancaRegistrada, desfecho: 'pagou' | '
       contato: cobranca.contatoId ?? undefined,
       sessao: cobranca.sessaoId,
     })
+  }
+}
+
+function quandoVence(venceEm: string): string {
+  return new Date(venceEm).toLocaleString('pt-BR', {
+    timeZone: 'America/Sao_Paulo',
+    day: '2-digit',
+    month: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+  })
+}
+
+/**
+ * A cobrança como pedido nativo do WhatsApp (etapa E), ou `null` quando o Pix
+ * não traz chave legível (o dinâmico do Asaas traz uma URL): a Meta exige
+ * nome e chave ao lado do código, e sem eles vai o texto de sempre.
+ */
+export function pedidoNativoDaCobranca(
+  cobranca: Pick<CobrancaRegistrada, 'id' | 'descricao' | 'valorCentavos' | 'venceEm' | 'pixCopiaCola' | 'link'>,
+): PedidoNativo | null {
+  const pix = lerPix(cobranca.pixCopiaCola)
+  if (!pix || !cobranca.pixCopiaCola) return null
+  return {
+    referencia: cobranca.id,
+    texto: [
+      `*${cobranca.descricao}*`,
+      `Vence em ${quandoVence(cobranca.venceEm)}`,
+      '',
+      cobranca.link ? 'Toque em revisar e pagar: Pix copia e cola, ou cartão e boleto pelo link.' : 'Toque em revisar e pagar para copiar o código Pix.',
+    ].join('\n'),
+    valorCentavos: cobranca.valorCentavos,
+    pix: { codigo: cobranca.pixCopiaCola, ...pix },
+    link: cobranca.link,
+  }
+}
+
+/**
+ * Tenta mandar a cobrança como pedido nativo. Devolve o texto e o id da Meta
+ * quando saiu, ou `null` (canal sem pedido nativo, Pix sem chave, número sem
+ * pagamentos liberados na Meta): quem chama manda o texto com o Pix.
+ */
+export async function tentarPedidoNativo(
+  canal: Canal,
+  para: string,
+  cobranca: CobrancaRegistrada,
+): Promise<{ texto: string; id: string | null } | null> {
+  const pedido = pedidoNativoDaCobranca(cobranca)
+  if (!pedido || !canal.enviarPedidoPix) return null
+  try {
+    return { texto: pedido.texto, id: await canal.enviarPedidoPix(para, pedido) }
+  } catch (erro) {
+    console.warn('[cobranca] o pedido nativo não saiu, vai em texto', erro instanceof Error ? erro.message : erro)
+    return null
+  }
+}
+
+/** Pago: a bolha do pedido nativo ganha o selo verde. Melhor esforço, nunca lança. */
+async function confirmarPedidoNativo(cobranca: CobrancaRegistrada): Promise<void> {
+  if (!cobranca.contatoId) return
+  try {
+    if (!(await saiuComoPedidoNativo(cobranca.contatoId, cobranca.id))) return
+    const contexto = await contextoDeResposta(cobranca.clienteId, cobranca.contatoId)
+    if (!contexto) return
+    const canal = await adaptadorDoCanal(contexto.canal)
+    await canal.confirmarPedidoPix?.(contexto.waId, cobranca.id, `Pagamento de ${reais(cobranca.valorCentavos)} confirmado.`)
+  } catch (erro) {
+    console.warn('[cobranca] não foi possível marcar o pedido nativo como pago', erro instanceof Error ? erro.message : erro)
   }
 }
 
@@ -263,6 +336,7 @@ export async function aplicarPagamento(
           descricao: cobranca.descricao,
         })
       }
+      await confirmarPedidoNativo(cobranca)
       await acordarOFluxo(cobranca, 'pagou')
     }
     return 'paga'

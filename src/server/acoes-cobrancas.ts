@@ -4,7 +4,7 @@ import { dentroDaJanela } from '@/channels/janela'
 import { autorDaPessoa } from '@/core/autor-da-mensagem'
 import { lerValor } from '@/core/crm'
 import { adaptadorDoCanal } from './adaptador-do-canal'
-import { cancelarCobranca, criarCobranca, HORAS_PARA_VENCER_NO_INBOX, textoDaCobranca } from './cobrancas'
+import { cancelarCobranca, criarCobranca, HORAS_PARA_VENCER_NO_INBOX, tentarPedidoNativo, textoDaCobranca } from './cobrancas'
 import { podeResponderAgora } from './distribuir-atendimento'
 import { exigirCapacidade, meuAlcance, recusou } from './permissoes'
 import { recusaDoPlano } from './recursos-do-plano'
@@ -88,6 +88,22 @@ export async function acaoCobrarNaConversa(
     canal = await adaptadorDoCanal(contexto.canal)
   } catch {
     return { ok: false, erro: 'A cobrança foi criada, mas o canal não respondeu. Copie o Pix pela tela Cobranças.' }
+  }
+
+  // 0. O pedido nativo do WhatsApp: valor, Pix e link numa bolha só (etapa E).
+  const nativo = await tentarPedidoNativo(canal, contexto.waId, cobranca)
+  if (nativo) {
+    const pedido = await registrarSaida({
+      contatoId,
+      sessaoId: contexto.sessaoId,
+      texto: nativo.texto,
+      payload: { cobranca: cobranca.id, pedido: true },
+      autor,
+    })
+    await confirmarEntrega(pedido, nativo.id)
+    if (contexto.sessaoId) await definirStatusDaSessao(contexto.sessaoId, 'humano')
+    if (quem) await atribuirSeSemDono(clienteId, contatoId, quem.usuario.id).catch(() => undefined)
+    return { ok: true, cobranca }
   }
 
   // 1. O resumo, com o botão do link quando o canal tem botão.

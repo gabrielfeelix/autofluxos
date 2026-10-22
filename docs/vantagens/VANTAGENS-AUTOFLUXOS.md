@@ -89,6 +89,10 @@ aqui fica o que o cliente ganha.
   (agendar, liberar o pedido). Se não pagar no prazo, segue por outro caminho
   ou vai para a equipe resgatar. O valor é o do catálogo, nunca um número
   inventado pela IA. *(22/out/2026)*
+- **Pix dentro do WhatsApp**: a cobrança chega como pedido do próprio
+  WhatsApp, com o valor e o botão "Copiar código Pix", e ganha o selo de pago
+  quando o dinheiro cai. Nenhuma plataforma pequena no Brasil faz isso.
+  *(22/out/2026)*
 
 ## Medir
 

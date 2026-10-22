@@ -179,6 +179,20 @@ export async function ultimaCobrancaDoFluxo(clienteId: string, sessaoId: string)
   return data ? paraCobranca(data as Linha) : null
 }
 
+/** A cobrança saiu como pedido nativo do WhatsApp (etapa E) e chegou? */
+export async function saiuComoPedidoNativo(contatoId: string, cobrancaId: string): Promise<boolean> {
+  const { data, error } = await db()
+    .from('messages')
+    .select('id')
+    .eq('contact_id', contatoId)
+    .eq('direcao', 'saida')
+    .eq('entregue', true)
+    .contains('payload', { cobranca: cobrancaId, pedido: true })
+    .limit(1)
+  if (error) return false
+  return (data ?? []).length > 0
+}
+
 /**
  * Muda o status só se ele ainda for um dos `de`. Devolve se mudou: é o que diz
  * a quem chamou se ele é o primeiro a ver o pagamento, e portanto quem avisa a

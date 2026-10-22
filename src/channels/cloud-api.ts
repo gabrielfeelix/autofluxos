@@ -743,6 +743,67 @@ export function canalCloudApi(config: ConfigCloudApi): Canal {
       return idDoEnvio(resposta)
     },
 
+    async enviarPedidoPix(para, pedido) {
+      const pagamentos = [
+        ...(pedido.pix
+          ? [
+              {
+                type: 'pix_dynamic_code',
+                pix_dynamic_code: {
+                  code: pedido.pix.codigo,
+                  merchant_name: pedido.pix.nome,
+                  key: pedido.pix.chave,
+                  key_type: pedido.pix.tipoDaChave,
+                },
+              },
+            ]
+          : []),
+        ...(pedido.link ? [{ type: 'payment_link', payment_link: { uri: pedido.link } }] : []),
+      ]
+      // Sem `order`: a versão simplificada não pede catálogo nem itens.
+      const resposta = await mandar(
+        {
+          to: para,
+          type: 'interactive',
+          interactive: {
+            type: 'order_details',
+            body: { text: cortarCaracteres(pedido.texto, LIMITE_CORPO_CTA) },
+            action: {
+              name: 'review_and_pay',
+              parameters: {
+                reference_id: pedido.referencia,
+                type: 'digital-goods',
+                payment_type: 'br',
+                payment_settings: pagamentos,
+                currency: 'BRL',
+                total_amount: { value: pedido.valorCentavos, offset: 100 },
+              },
+            },
+          },
+        },
+        TIMEOUT_MS,
+        // Recusa da Meta não se repete: quem chama cai no texto.
+        [],
+      )
+      return idDoEnvio(resposta)
+    },
+
+    async confirmarPedidoPix(para, referencia, texto) {
+      const resposta = await mandar({
+        to: para,
+        type: 'interactive',
+        interactive: {
+          type: 'order_status',
+          body: { text: cortarCaracteres(texto, LIMITE_CORPO_CTA) },
+          action: {
+            name: 'review_order',
+            parameters: { reference_id: referencia, payment: { status: 'captured', timestamp: Math.floor(Date.now() / 1000) } },
+          },
+        },
+      })
+      return idDoEnvio(resposta)
+    },
+
     async enviarContato(para, contato) {
       // `wa_id` é o que faz o cartão ganhar o botão "Conversar": sem ele o
       // WhatsApp mostra só "Adicionar", e a pessoa teria de salvar o contato
