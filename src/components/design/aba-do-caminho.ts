@@ -61,6 +61,7 @@ const DO_CAMINHO: [string, ChaveDaSecao, string][] = [
   ['/conversas/respostas-rapidas', 'conversas', 'respostas-rapidas'],
   ['/conversas/canais', 'conversas', 'canais'],
   ['/leads/segmentos', 'crm', 'segmentos'],
+  ['/leads/cobrancas', 'crm', 'cobrancas'],
   ['/leads', 'crm', 'contatos'],
   ['/quadros', 'crm', 'negocios'],
   ['/negocios', 'crm', 'negocios'],

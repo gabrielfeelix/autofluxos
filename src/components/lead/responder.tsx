@@ -10,6 +10,7 @@ import { avisarEnvio, pedirNovas } from '@/components/inbox/sinal-de-conversa'
 import { SeletorDeEmoji } from '@/components/lead/seletor-de-emoji'
 import { SeletorDeProduto } from '@/components/lead/seletor-de-produto'
 import { SeletorDePedido } from '@/components/lead/seletor-de-pedido'
+import { BotaoDeCobrar, type CobrarNaConversa } from '@/components/lead/botao-de-cobrar'
 import { SeletorDeCupom } from '@/components/lead/seletor-de-cupom'
 import { SeletorDeRespostaRapida } from '@/components/lead/seletor-de-resposta-rapida'
 import { alternarMarca, type Marca } from '@/components/editor/formatar'
@@ -66,6 +67,7 @@ export function CaixaDeResposta({
   temAutomacao = true,
   anexo,
   temPedidos = false,
+  cobrar = null,
   conversa,
   canal = 'whatsapp',
 }: {
@@ -89,6 +91,8 @@ export function CaixaDeResposta({
   anexo?: { clienteId: string; contatoId: string }
   /** A conta tem loja on-line com pedidos: mostra o botão de status do pedido. */
   temPedidos?: boolean
+  /** A conta tem onde receber e quem está aqui pode cobrar. `null` esconde o botão. */
+  cobrar?: CobrarNaConversa | null
   /**
    * A conversa, para a Ficha, que não tem anexo: com ela o modo "modelo" e o
    * rascunho guardado também valem lá (tarefa 8.2).
@@ -634,6 +638,9 @@ export function CaixaDeResposta({
         )}
         {livre && anexo && temPedidos && !gravando && (
           <SeletorDePedido clienteId={anexo.clienteId} contatoId={anexo.contatoId} desabilitado={enviando} />
+        )}
+        {livre && anexo && cobrar && !gravando && (
+          <BotaoDeCobrar clienteId={anexo.clienteId} contatoId={anexo.contatoId} cobrar={cobrar} desabilitado={enviando} />
         )}
         {livre && anexo && temPedidos && !gravando && (
           <SeletorDeCupom clienteId={anexo.clienteId} contatoId={anexo.contatoId} desabilitado={enviando} />

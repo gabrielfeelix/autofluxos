@@ -339,6 +339,7 @@ function ColunaDaConversa({
                     temAutomacao={temAutomacao}
                     anexo={{ clienteId, contatoId: lead.contatoId }}
                     temPedidos={dados.temPedidos}
+                    cobrar={dados.cobrar}
                   />
                 </TravaDaResposta>
               )}

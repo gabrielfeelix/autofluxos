@@ -1,5 +1,7 @@
 import { Miolo } from '@/components/design/miolo'
-import { meuAlcance } from '@/server/permissoes'
+import { exigirLeitura, meuAlcance, recusou } from '@/server/permissoes'
+import { listarCobrancas } from '@/server/repos/cobrancas'
+import { CobrancasDoContato } from '@/components/lead-crm/cobrancas-do-contato'
 import { Fragment } from 'react'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
@@ -139,6 +141,7 @@ export default async function Pagina({
     comPessoa,
     funis,
     promocoes,
+    cobrancas,
   ] = await Promise.all([
     acharCliente(clienteId),
     // Contato de outra pessoa, fora do alcance, cai no `notFound` abaixo.
@@ -172,6 +175,10 @@ export default async function Pagina({
     listarQuadros(clienteId),
     // Recebe promoções? O aceite e o "SAIR" (0059).
     marketingDoContato(clienteId, contatoId),
+    // As cobranças dela (0141). Valor em dinheiro: só para quem lê valores.
+    exigirLeitura(clienteId, 'ler_valores', 'proprios').then((acesso) =>
+      recusou(acesso) ? [] : listarCobrancas(clienteId, { contatoId, limite: 5 }),
+    ),
   ])
   if (!cliente || !lead) notFound()
   const arquivosPorNegocio = await contagemDeArquivos(
@@ -592,6 +599,7 @@ export default async function Pagina({
                         <PromocoesDoContato clienteId={clienteId} contatoId={contatoId} estado={promocoes} />
                       </div>
                     </section>
+                    <CobrancasDoContato clienteId={clienteId} cobrancas={cobrancas} />
                   </div>
                 </div>
               ),

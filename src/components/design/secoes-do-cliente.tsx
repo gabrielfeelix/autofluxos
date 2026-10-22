@@ -125,6 +125,7 @@ export const SECOES: Secao[] = [
       { id: 'segmentos', rotulo: 'Segmentos', href: '/leads/segmentos', aba: 'leads' },
       { id: 'negocios', rotulo: 'Negócios', href: '/quadros', aba: 'quadros' },
       { id: 'atividades', rotulo: 'Atividades', href: '/atividades', aba: 'atividades', contagem: 'atrasadas' },
+      { id: 'cobrancas', rotulo: 'Cobranças', href: '/leads/cobrancas', aba: 'leads' },
     ],
   },
   {

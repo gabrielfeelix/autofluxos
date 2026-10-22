@@ -5,6 +5,10 @@ import type { Anotacao } from '@/core/anotacoes'
 import { canalPeloContato, type CanalId } from '@/core/canais'
 import { estadoDoAtendimento, type Atendimento } from '@/core/estado-do-atendimento'
 import type { FunilDoContato } from '@/components/inbox/funil-da-conversa'
+import type { CobrarNaConversa } from '@/components/lead/botao-de-cobrar'
+import { documentoDaFicha } from './cobrancas'
+import { exigirCapacidade, recusou } from './permissoes'
+import { conexaoAtiva } from './repos/pagamentos'
 import { anotacoesDoContato } from './repos/eventos'
 import { canaisDosContatos } from './repos/canais-site'
 import { contextoDeResposta, sessaoComPessoa } from './repos/conversas'
@@ -55,6 +59,8 @@ export type ConversaAberta = {
   favoritas: string[]
   exigeAssumir: boolean
   temPedidos: boolean
+  /** O botão Cobrar: a conta tem onde receber e quem abriu pode cobrar. */
+  cobrar: CobrarNaConversa | null
   passagens: Passagem[]
   nomesDosAnuncios: [string, AnuncioEmCache][]
   /** Quando o servidor leu, para o navegador saber qual cópia é a mais nova. */
@@ -99,6 +105,7 @@ export async function lerConversaAberta({
     loja,
     historico,
     canalLido,
+    cobrar,
   ] = await Promise.all([
     lerConversa(lead.contatoId),
     contextoDeResposta(clienteId, lead.contatoId),
@@ -127,6 +134,7 @@ export async function lerConversaAberta({
     canal
       ? Promise.resolve(canal)
       : canaisDosContatos(clienteId).then((mapa) => canalPeloContato(lead.waId, mapa.get(lead.contatoId))),
+    cobrarNaConversa(clienteId, lead),
   ])
 
   /*
@@ -198,9 +206,30 @@ export async function lerConversaAberta({
     favoritas: [...favoritas],
     exigeAssumir: ajustes.exigeAssumir,
     temPedidos: Boolean(loja?.ativa && loja.conexaoId),
+    cobrar,
     passagens: historico.passagens,
     nomesDosAnuncios: [...historico.nomesDosAnuncios],
     lidaEm: agora,
+  }
+}
+
+/**
+ * O botão Cobrar aparece só com uma conta de recebimento ligada e para quem
+ * pode registrar venda (decisão 2 do plano). Nunca derruba a conversa: falhou,
+ * o botão some.
+ */
+async function cobrarNaConversa(clienteId: string, lead: Lead): Promise<CobrarNaConversa | null> {
+  try {
+    const conexao = await conexaoAtiva(clienteId)
+    if (!conexao) return null
+    if (recusou(await exigirCapacidade(clienteId, 'registrar_venda', 'proprios'))) return null
+    return {
+      gateway: conexao.gateway,
+      ambiente: conexao.ambiente,
+      pedeDocumento: conexao.gateway === 'asaas' && documentoDaFicha(lead.campos) === null,
+    }
+  } catch {
+    return null
   }
 }
 
