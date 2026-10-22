@@ -43,6 +43,9 @@ aqui fica o que o cliente ganha.
 - **Dois atendentes não respondem o mesmo cliente**: assumir é um clique e
   ninguém atropela o colega.
 - **Transcrição de áudio** e leitura de imagem recebida.
+- **Manda qualquer arquivo pelo chat**: foto, vídeo, áudio, PDF, Word, Excel e
+  PowerPoint vão anexados; ZIP e EXE (driver, instalador), que o WhatsApp não
+  anexa, chegam com botão "Baixar arquivo". *(22/out/2026)*
 - **Respostas rápidas**, mensagens agendadas e retomada com modelo aprovado
   quando a janela de 24h fechou.
 - **Aviso no celular** (push) quando o cliente pede uma pessoa, sem acordar

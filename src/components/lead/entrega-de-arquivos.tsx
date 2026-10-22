@@ -66,9 +66,15 @@ import { pedirNovas } from '@/components/inbox/sinal-de-conversa'
  * "Cancelar", por isso soltar o arquivo **nunca** envia sozinho.
  */
 
-/** O que o WhatsApp aceita. O servidor confere de novo; isto é só o filtro do seletor. */
-export const TIPOS_ACEITOS =
-  'image/jpeg,image/png,video/mp4,audio/mpeg,audio/ogg,audio/mp4,audio/aac,application/pdf'
+/**
+ * O que o WhatsApp aceita, mais o que sai como link (`.zip`, `.exe`, ver
+ * `EXTENSOES_POR_LINK`). O servidor confere de novo; isto é só o filtro do seletor.
+ */
+export const TIPOS_ACEITOS = [
+  'image/jpeg,image/png,video/mp4,audio/mpeg,audio/ogg,audio/mp4,audio/aac,application/pdf',
+  '.txt,.doc,.docx,.xls,.xlsx,.ppt,.pptx',
+  '.zip,.rar,.7z,.exe,.msi',
+].join(',')
 
 /**
  * Quantos anexos cabem numa leva.
@@ -297,11 +303,11 @@ export function ProvedorDeEntrega({
            * assinada. Conferir no navegador antes seria adivinhar a regra em
            * dois lugares, e a regra é do Acervo, não desta tela.
            */
-          const preparo = await acaoPrepararEnvioDeArquivo(clienteId, {
-            nome: arquivo.name,
-            tipo: arquivo.type,
-            bytes: arquivo.size,
-          })
+          const preparo = await acaoPrepararEnvioDeArquivo(
+            clienteId,
+            { nome: arquivo.name, tipo: arquivo.type, bytes: arquivo.size },
+            { aceitaLink: true },
+          )
           if (!preparo.ok || !preparo.envio) {
             falhou(anexo, preparo.erro ?? 'não foi possível preparar o envio')
             return
@@ -315,7 +321,7 @@ export function ProvedorDeEntrega({
           const subida = await fetch(preparo.envio.url, {
             method: 'PUT',
             body: arquivo,
-            headers: { 'content-type': arquivo.type, 'cache-control': preparo.envio.cacheControl },
+            headers: { 'content-type': preparo.envio.tipo, 'cache-control': preparo.envio.cacheControl },
           })
           if (!subida.ok) {
             falhou(anexo, 'o arquivo não subiu')
@@ -328,6 +334,7 @@ export function ProvedorDeEntrega({
             url: preparo.envio.urlPublica,
             midia: preparo.envio.midia,
             nomeArquivo: preparo.envio.nome,
+            ...(preparo.envio.porLink ? { porLink: true } : {}),
             // Áudio não leva legenda na Cloud API, e a ação recusa se vier uma.
             ...(texto !== '' && preparo.envio.midia !== 'audio' ? { legenda: texto } : {}),
           })
@@ -400,7 +407,7 @@ export function ProvedorDeEntrega({
               <span className="text-3xl leading-none">📎</span>
               <p className="text-[13.5px] font-semibold text-ink">Solte para anexar</p>
               <p className="text-[12px] text-dim">
-                Foto, vídeo, áudio ou PDF, você revisa antes de enviar
+                Foto, vídeo, áudio, documento ou ZIP, você revisa antes de enviar
               </p>
             </div>
           </div>

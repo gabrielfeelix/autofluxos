@@ -2673,6 +2673,8 @@ export async function acaoRemoverLogo(clienteId: string) {
 export async function acaoPrepararEnvioDeArquivo(
   clienteId: string,
   arquivo: { nome: string; tipo: string; bytes: number },
+  /** O Inbox aceita `.zip` e `.exe`, que saem como link. Ver `EXTENSOES_POR_LINK`. */
+  opcoes?: { aceitaLink?: boolean },
 ): Promise<{ ok: boolean; erro?: string; envio?: EnvioAssinado }> {
   const acesso = await exigirCapacidade(clienteId, 'atender', 'proprios')
   if (recusou(acesso)) return acesso
@@ -2685,7 +2687,7 @@ export async function acaoPrepararEnvioDeArquivo(
     return { ok: false, erro: 'arquivo inválido' }
   }
 
-  const r = await pedirEnvioAssinado(clienteId, arquivo)
+  const r = await pedirEnvioAssinado(clienteId, arquivo, { aceitaLink: opcoes?.aceitaLink === true })
   if (!r.ok) return { ok: false, erro: r.motivo }
 
   return { ok: true, envio: r.envio }

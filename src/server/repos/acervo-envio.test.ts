@@ -85,8 +85,19 @@ describe.skipIf(!temCredencial)('envio assinado', () => {
       await pedirEnvioAssinado(clienteId, { nome: 'planilha.xlsx', tipo: 'application/zip', bytes: 100 }),
     ).toEqual({
       ok: false,
-      motivo: 'O WhatsApp não envia este tipo. Use imagem, MP4, MP3, M4A, OGG ou PDF.',
+      motivo: 'O WhatsApp não envia este tipo. Use imagem, MP4, MP3, M4A, OGG, PDF, Office ou TXT.',
     })
+  })
+
+  it('aceita .zip e .exe só por link, e só quando quem pede é o atendimento', async () => {
+    const driver = { nome: 'driver.exe', tipo: 'application/x-msdownload', bytes: 100 }
+    expect((await pedirEnvioAssinado(clienteId, driver)).ok).toBe(false)
+
+    const r = await pedirEnvioAssinado(clienteId, driver, { aceitaLink: true })
+    expect(r.ok).toBe(true)
+    if (!r.ok) return
+    expect(r.envio).toMatchObject({ porLink: true, tipo: 'application/octet-stream', midia: 'documento' })
+    expect(r.envio.nome).toMatch(/\.exe$/)
   })
 
   it('recusa acima de 16 MB antes de assinar, não adianta subir o que a Meta recusa', async () => {

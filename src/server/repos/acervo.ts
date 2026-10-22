@@ -56,14 +56,44 @@ export const TIPOS_ACEITOS: Record<string, { extensao: string; midia: TipoDeMidi
   'audio/mp4': { extensao: 'm4a', midia: 'audio' },
   'audio/aac': { extensao: 'aac', midia: 'audio' },
   'application/pdf': { extensao: 'pdf', midia: 'documento' },
+  // O resto da tabela de documentos da Meta (0144).
+  'text/plain': { extensao: 'txt', midia: 'documento' },
+  'application/msword': { extensao: 'doc', midia: 'documento' },
+  'application/vnd.openxmlformats-officedocument.wordprocessingml.document': { extensao: 'docx', midia: 'documento' },
+  'application/vnd.ms-excel': { extensao: 'xls', midia: 'documento' },
+  'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': { extensao: 'xlsx', midia: 'documento' },
+  'application/vnd.ms-powerpoint': { extensao: 'ppt', midia: 'documento' },
+  'application/vnd.openxmlformats-officedocument.presentationml.presentation': { extensao: 'pptx', midia: 'documento' },
 }
+
+/**
+ * O que a Cloud API **não** anexa e o atendimento precisa mandar mesmo assim:
+ * driver em `.exe`, pacote em `.zip`. A Meta só aceita como documento a tabela
+ * acima (PDF, TXT, Office), então estes sobem para o acervo e saem como
+ * mensagem com botão de download (22/out/2026, driver da PCYES recusado).
+ *
+ * Pela extensão e não pelo tipo: o mesmo `.zip` chega como `application/zip`
+ * no Linux e `application/x-zip-compressed` no Windows, e `.exe` às vezes
+ * chega sem tipo nenhum. Sobem todos como `application/octet-stream`, o que
+ * faz o navegador baixar em vez de abrir.
+ */
+export const EXTENSOES_POR_LINK = ['zip', 'rar', '7z', 'exe', 'msi'] as const
+const TIPO_DO_ARQUIVO_POR_LINK = 'application/octet-stream'
 
 /** Teto da própria Cloud API. Guardar mais seria guardar o que ela recusaria. */
 export const LIMITE_DO_ARQUIVO = 16 * 1024 * 1024
 
+function extensaoDe(nome: string): string {
+  return nome.lastIndexOf('.') === -1 ? '' : nome.slice(nome.lastIndexOf('.') + 1).toLowerCase()
+}
+
+function vaiPorLink(nome: string): boolean {
+  return (EXTENSOES_POR_LINK as readonly string[]).includes(extensaoDe(nome))
+}
+
 /** Pela extensão, porque é o que sobrevive à ida e volta do Storage. */
 function midiaDaExtensao(nome: string): TipoDeMidia {
-  const extensao = nome.slice(nome.lastIndexOf('.') + 1).toLowerCase()
+  const extensao = extensaoDe(nome)
   const achado = Object.values(TIPOS_ACEITOS).find((t) => t.extensao === extensao)
   return achado?.midia ?? 'documento'
 }
@@ -82,6 +112,9 @@ export async function listarAcervo(clienteId: string): Promise<ArquivoDoAcervo[]
     // O Storage devolve um `.emptyFolderPlaceholder` em pasta esvaziada. Ele
     // não é arquivo de ninguém e não pode aparecer na grade.
     .filter((item) => item.name !== '.emptyFolderPlaceholder')
+    // O que foi por link no atendimento mora aqui também, para sair junto na
+    // limpeza do cliente, mas não é mídia que um bloco de fluxo consiga mandar.
+    .filter((item) => !vaiPorLink(item.name))
     .map((item) => {
       const caminho = `${clienteId}/${item.name}`
       const { data: publico } = db().storage.from(BUCKET_DO_ACERVO).getPublicUrl(caminho)
@@ -123,9 +156,13 @@ export type EnvioAssinado = {
   urlPublica: string
   /** Vai no cabeçalho `cache-control` do envio: o Storage grava e serve assim. */
   cacheControl: string
+  /** Vai no cabeçalho `content-type` do envio. Nem sempre é o do arquivo, ver `EXTENSOES_POR_LINK`. */
+  tipo: string
   caminho: string
   nome: string
   midia: TipoDeMidia
+  /** A Meta não anexa este arquivo: ele sai como mensagem com botão de download. */
+  porLink: boolean
 }
 
 /**
@@ -152,10 +189,20 @@ export type EnvioAssinado = {
 export async function pedirEnvioAssinado(
   clienteId: string,
   arquivo: { nome: string; tipo: string; bytes: number },
+  /** Só o atendimento manda link: um bloco de fluxo precisa de mídia que a Meta anexe. */
+  opcoes: { aceitaLink?: boolean } = {},
 ): Promise<{ ok: true; envio: EnvioAssinado } | { ok: false; motivo: string }> {
-  const aceito = TIPOS_ACEITOS[arquivo.tipo]
+  const porLink = !TIPOS_ACEITOS[arquivo.tipo] && opcoes.aceitaLink === true && vaiPorLink(arquivo.nome)
+  const aceito = porLink
+    ? { extensao: extensaoDe(arquivo.nome), midia: 'documento' as const }
+    : TIPOS_ACEITOS[arquivo.tipo]
   if (!aceito) {
-    return { ok: false, motivo: 'O WhatsApp não envia este tipo. Use imagem, MP4, MP3, M4A, OGG ou PDF.' }
+    return {
+      ok: false,
+      motivo: opcoes.aceitaLink
+        ? 'O WhatsApp não envia este tipo. Use imagem, vídeo, áudio, PDF, Office, TXT, ZIP, RAR, 7Z, EXE ou MSI.'
+        : 'O WhatsApp não envia este tipo. Use imagem, MP4, MP3, M4A, OGG, PDF, Office ou TXT.',
+    }
   }
   if (arquivo.bytes <= 0) return { ok: false, motivo: 'Escolha um arquivo.' }
   if (arquivo.bytes > LIMITE_DO_ARQUIVO) {
@@ -184,9 +231,11 @@ export async function pedirEnvioAssinado(
       url: data.signedUrl,
       urlPublica: publico.publicUrl,
       cacheControl: CACHE_DO_ACERVO,
+      tipo: porLink ? TIPO_DO_ARQUIVO_POR_LINK : arquivo.tipo,
       caminho,
       nome,
       midia: aceito.midia,
+      porLink,
     },
   }
 }

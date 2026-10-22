@@ -46,7 +46,7 @@ import { sessaoAtual } from './sessao'
 export async function acaoEnviarMidiaDoInbox(
   clienteId: string,
   contatoId: string,
-  entrada: { url: string; midia: string; legenda?: string; nomeArquivo?: string },
+  entrada: { url: string; midia: string; legenda?: string; nomeArquivo?: string; porLink?: boolean },
 ): Promise<{ ok: boolean; erro?: string }> {
   const acesso = await exigirCapacidade(clienteId, 'atender', 'proprios')
   if (recusou(acesso)) return acesso
@@ -126,6 +126,7 @@ export async function acaoEnviarMidiaDoInbox(
       midia,
       url,
       ...(entrada.nomeArquivo ? { nomeArquivo: entrada.nomeArquivo } : {}),
+      ...(entrada.porLink ? { porLink: true } : {}),
     },
     // O autor é somado ao `payload` acima, não o substitui, senão a foto
     // sumiria da conversa para o nome caber.
@@ -134,12 +135,24 @@ export async function acaoEnviarMidiaDoInbox(
 
   let waMessageId: string | null
   try {
-    waMessageId = await canal.enviarMidia(contexto.waId, {
-      midia,
-      url,
-      ...(legenda !== '' ? { legenda } : {}),
-      ...(entrada.nomeArquivo ? { nomeArquivo: entrada.nomeArquivo } : {}),
-    })
+    if (entrada.porLink) {
+      /*
+       * `.zip` e `.exe` a Meta não anexa (a tabela de documentos dela é PDF,
+       * TXT e Office). O arquivo já está no acervo, então vai o botão que
+       * baixa, com o nome em cima e a legenda embaixo, numa mensagem só.
+       */
+      const corpo = [`📎 *${entrada.nomeArquivo ?? 'Arquivo'}*`, ...(legenda !== '' ? ['', legenda] : [])].join('\n')
+      waMessageId = canal.enviarBotaoDeLink
+        ? await canal.enviarBotaoDeLink(contexto.waId, corpo, 'Baixar arquivo', url)
+        : await canal.enviarTexto(contexto.waId, `${corpo}\n\n${url}`)
+    } else {
+      waMessageId = await canal.enviarMidia(contexto.waId, {
+        midia,
+        url,
+        ...(legenda !== '' ? { legenda } : {}),
+        ...(entrada.nomeArquivo ? { nomeArquivo: entrada.nomeArquivo } : {}),
+      })
+    }
   } catch (erro) {
     return { ok: false, erro: erro instanceof Error ? erro.message : 'não foi possível enviar' }
   }
