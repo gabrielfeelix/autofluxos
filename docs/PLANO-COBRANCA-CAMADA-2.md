@@ -74,4 +74,5 @@ de 24 h é modelo de utilidade, pago.
   relógio cria cada mês com `pixAutomaticAuthorizationId`. Adesão conferida no
   gateway ao abrir a ficha e na passada diária (`sincronizarAdesao`). Cartão
   pelo Mercado Pago (`preapproval`) espera a aplicação do Mercado Pago.
-- c4 (ponte Verandi): próxima.
+- c4 (ponte Verandi): não será feita. O MGM não vai usar cobrança (Gabriel, 22/out); só se pedir.
+- a (Pedidos): em andamento, ver `docs/HANDOFF-22-OUT-COBRANCA-CAMADA-2.md`.
