@@ -94,7 +94,7 @@ de 24 h é modelo de utilidade, pago.
   `core/analise-de-pedidos.ts`. Mais pedido = o bloco que já existia, "Mais
   vendidos pelo chat". Sem cookie de arranjo, a ordem inicial é a do ramo
   (`PacoteDoNicho.primeirosEmVendas`; aulas vazio, nada muda).
-- b, **adiado por causa do MGM** (Gabriel, 22/out: para o MGM nada muda):
+- b, **liberado em 22/out** (só o Daniel, dono, entra no painel; nada some para ele). Era adiado por causa do MGM; ver `docs/HANDOFF-22-OUT-RELATORIOS-B.md`:
   `ler_valores: proprios` no operador (as funções personalizadas do MGM
   herdariam), relatórios de aulas (matrículas, experimental, mensalidade em
   dia, faltas) e o seletor Eu / Equipe / Conta (mudaria a Análise do MGM).
