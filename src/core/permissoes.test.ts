@@ -99,7 +99,7 @@ describe('o papel de compatibilidade', () => {
 })
 
 describe('os modelos da RB-40', () => {
-  it('o operador não toca dinheiro nem exportação', () => {
+  it('o operador vê só o próprio dinheiro e não exporta', () => {
     const operador: Acesso = {
       papel: 'member',
       usuarioId: 'u-op',
@@ -109,8 +109,9 @@ describe('os modelos da RB-40', () => {
     expect(pode(operador, 'atender')).toBe(true)
     expect(pode(operador, 'criar_oportunidade')).toBe(true)
 
-    // É o A27: atende sem inferir valores.
-    expect(pode(operador, 'ler_valores')).toBe(false)
+    // Vê em R$ só o que é dele (cobrança camada 2, b): nunca o da conta.
+    expect(pode(operador, 'ler_valores')).toBe(true)
+    expect(pode(operador, 'ler_valores', 'equipe')).toBe(false)
     expect(pode(operador, 'registrar_venda')).toBe(false)
     expect(pode(operador, 'exportar')).toBe(false)
   })
@@ -291,14 +292,14 @@ describe('o resumo do acesso em frases', () => {
     expect(r.frases).not.toContain('Mexe na equipe e no acesso')
   })
 
-  it('acesso de atendimento vê só os contatos dela, sem valores nem exportação', () => {
+  it('acesso de atendimento vê só os contatos dela e os valores dela, sem exportação', () => {
     const r = resumoDoAcesso({
       papel: 'member',
       usuarioId: 'u1',
       sobrescritas: { ...MODELOS_EXTRA.operador },
     })
     expect(r.perfil).toBe('Acesso de atendimento')
-    expect(r.frases).toEqual(['Vê só os contatos dela', 'Não exporta', 'Não vê valores'])
+    expect(r.frases).toEqual(['Vê só os contatos dela', 'Não exporta', 'Vê valores só do que é dela'])
     expect(r.alertas).toEqual([])
   })
 

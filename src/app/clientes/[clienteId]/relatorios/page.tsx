@@ -14,6 +14,8 @@ import { FRANQUIA_DE_SERVICO, TARIFA_DO_MODELO_BR, emReais, gastoDoPeriodo } fro
 import { consumoDaMetaParaOPeriodo } from '@/server/consumo-da-meta'
 import { taxaDeAutomacao, terminadas } from '@/core/desfecho-da-conversa'
 import { pode } from '@/core/permissoes'
+import { filtroDoRecorte, lerRecorte, recortesPossiveis } from '@/core/recorte-da-analise'
+import { SeletorDeRecorte } from '@/components/relatorios/seletor-de-recorte'
 import { comoDuracao, completarDias, hojeEmSaoPaulo, lerPeriodo, periodoAnterior } from '@/core/relatorios'
 import { capacidadeNaPagina, filtroDoAcesso } from '@/server/permissoes'
 import { SemAcesso } from '@/components/design/sem-acesso'
@@ -101,11 +103,15 @@ export default async function Pagina({
       </ClienteShell>
     )
   }
-  const escopo = filtroDoAcesso(acesso, 'atender')
+  const parametros = await searchParams
+  // Eu / Equipe / Conta: o recorte só estreita o escopo da função.
+  const doAcesso = filtroDoAcesso(acesso, 'atender')
+  const recortes = recortesPossiveis(doAcesso, acesso.regras.usuarioId, acesso.regras.equipes)
+  const recorte = lerRecorte(typeof parametros.ver === 'string' ? parametros.ver : null, recortes)
+  const escopo = filtroDoRecorte(doAcesso, recorte, acesso.regras.usuarioId, acesso.regras.equipes)
   const podeVerValor = pode(acesso.regras, 'ler_valores', 'proprios')
 
   const hoje = hojeEmSaoPaulo()
-  const parametros = await searchParams
   const periodo = lerPeriodo(parametros, hoje)
   // A planilha recebe os mesmos parâmetros da tela, e a rota relê o período
   // com a mesma `lerPeriodo`: o arquivo é o que está na tela.
@@ -130,6 +136,10 @@ export default async function Pagina({
   const equipe = pessoas.length >= 2 ? await membrosDaConta(clienteId) : []
 
   const base = `/clientes/${cliente.id}/relatorios`
+  const doRecorte: Record<string, string> = recorte && recorte !== recortes[recortes.length - 1] ? { ver: recorte } : {}
+  const doPeriodo: Record<string, string> = Object.fromEntries(
+    (['dias', 'de', 'ate'] as const).flatMap((chave) => (typeof parametros[chave] === 'string' ? [[chave, parametros[chave] as string]] : [])),
+  )
   const cruzaAno = periodo.de.slice(0, 4) !== periodo.ate.slice(0, 4)
   const automacao = taxaDeAutomacao(atual.desfechos)
   const automacaoAntes = taxaDeAutomacao(antes.desfechos)
@@ -713,7 +723,9 @@ export default async function Pagina({
             contaInteira
               ? 'Como o atendimento andou no período.'
               : escopo.tipo === 'proprios'
-                ? 'Só os contatos que estão com você. Os números da organização inteira ficam com quem gerencia.'
+                ? recortes.length > 1
+                  ? 'Só os contatos que estão com você.'
+                  : 'Só os contatos que estão com você. Os números da organização inteira ficam com quem gerencia.'
                 : 'Só os contatos das suas equipes.'
           }
         />
@@ -722,7 +734,12 @@ export default async function Pagina({
           <PainelDeBlocos
             pagina="atendimento"
             arranjoInicial={arranjo}
-            barra={<BarraDoPeriodo base={base} periodo={periodo} anterior={anterior} hoje={hoje} />}
+            barra={
+              <div className="flex flex-col gap-3 xl:flex-row xl:items-start xl:gap-4">
+                <BarraDoPeriodo base={base} periodo={periodo} anterior={anterior} hoje={hoje} manter={doRecorte} />
+                <SeletorDeRecorte possiveis={recortes} escolhido={recorte} base={base} manter={doPeriodo} />
+              </div>
+            }
             blocos={blocos}
           />
         </div>

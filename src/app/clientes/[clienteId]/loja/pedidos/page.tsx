@@ -35,7 +35,7 @@ export default async function Pagina({ params }: { params: Promise<{ clienteId: 
     )
   }
 
-  const verValores = (await capacidadeNaPagina(clienteId, 'ler_valores', 'proprios')) !== null
+  const verValores = (await capacidadeNaPagina(clienteId, 'ler_valores', 'todos')) !== null
   const cartoes = await cartoesDosPedidos(clienteId, verValores)
   const rotulos = Object.fromEntries(STATUS_DE_PEDIDO.map((s) => [s, rotuloDoStatus(s, nicho)])) as Record<
     StatusDePedido,

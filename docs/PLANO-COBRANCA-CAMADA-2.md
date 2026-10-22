@@ -94,7 +94,16 @@ de 24 h é modelo de utilidade, pago.
   `core/analise-de-pedidos.ts`. Mais pedido = o bloco que já existia, "Mais
   vendidos pelo chat". Sem cookie de arranjo, a ordem inicial é a do ramo
   (`PacoteDoNicho.primeirosEmVendas`; aulas vazio, nada muda).
-- b, **liberado em 22/out** (só o Daniel, dono, entra no painel; nada some para ele). Era adiado por causa do MGM; ver `docs/HANDOFF-22-OUT-RELATORIOS-B.md`:
+- b, resto feito em 22/out (liberado pelo Gabriel: só o Daniel, dono, entra
+  no painel do MGM, e nada some para ele). Atendente (`operador`) com
+  `ler_valores: proprios`; pedidos mostram total só com `ler_valores: todos`,
+  porque pedido não tem dono. Seletor Eu / Equipe / Conta em Atendimento,
+  Vendas e na planilha (`core/recorte-da-analise.ts`, `?ver=`, padrão o maior
+  recorte, só estreita). Bloco `mensalidades` em Vendas (novas, ativas, em
+  dia, canceladas, recebido; `core/analise-de-mensalidades.ts`), primeiro no
+  ramo aulas. **Fora**: aula experimental, faltas e evasão, que moram na
+  Verandi (ler de lá cruza produtos no banco); só com ponte própria.
+- Registro anterior: b, **liberado em 22/out** (só o Daniel, dono, entra no painel; nada some para ele). Era adiado por causa do MGM; ver `docs/HANDOFF-22-OUT-RELATORIOS-B.md`:
   `ler_valores: proprios` no operador (as funções personalizadas do MGM
   herdariam), relatórios de aulas (matrículas, experimental, mensalidade em
   dia, faltas) e o seletor Eu / Equipe / Conta (mudaria a Análise do MGM).

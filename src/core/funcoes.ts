@@ -75,7 +75,7 @@ export const DESCRICAO_DA_FUNCAO: Record<IdDaFuncao, string> = {
   proprietario: 'Dono da organização. Faz tudo, inclusive passar a posse adiante.',
   administrador: 'Faz tudo na organização, menos mexer no proprietário.',
   gestor: 'Cuida da equipe dele: vê e atende as conversas da equipe e promove atendentes.',
-  atendente: 'Atende as conversas dele e as que estão sem dono.',
+  atendente: 'Atende as conversas dele e as que estão sem dono, e vê os valores só das vendas dele.',
   leitor: 'Acompanha contatos, funis e relatórios, com valores, sem alterar nada. Não conta como atendente.',
 }
 

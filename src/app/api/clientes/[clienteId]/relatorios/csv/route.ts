@@ -1,6 +1,7 @@
 import { z } from 'zod'
 import { taxaDeAutomacao } from '@/core/desfecho-da-conversa'
 import { pode } from '@/core/permissoes'
+import { filtroDoRecorte, lerRecorte, recortesPossiveis } from '@/core/recorte-da-analise'
 import { completarDias, hojeEmSaoPaulo, lerPeriodo } from '@/core/relatorios'
 import { celulaCsv, nomeDoArquivo } from '@/server/csv'
 import { exigirCapacidade, filtroDoAcesso, recusou } from '@/server/permissoes'
@@ -38,8 +39,15 @@ export async function GET(req: Request, contexto: RouteContext<'/api/clientes/[c
   if (!cliente) return Response.json({ erro: 'cliente não encontrado' }, { status: 404 })
 
   const hoje = hojeEmSaoPaulo()
-  const periodo = lerPeriodo(Object.fromEntries(new URL(req.url).searchParams), hoje)
-  const responsaveis = await responsaveisDoEscopo(cliente.id, filtroDoAcesso(acesso, 'atender'))
+  const busca = new URL(req.url).searchParams
+  const periodo = lerPeriodo(Object.fromEntries(busca), hoje)
+  // O mesmo recorte da tela (Eu / Equipe / Conta): a planilha é o que está nela.
+  const doAcesso = filtroDoAcesso(acesso, 'atender')
+  const recorte = lerRecorte(busca.get('ver'), recortesPossiveis(doAcesso, acesso.regras.usuarioId, acesso.regras.equipes))
+  const responsaveis = await responsaveisDoEscopo(
+    cliente.id,
+    filtroDoRecorte(doAcesso, recorte, acesso.regras.usuarioId, acesso.regras.equipes),
+  )
   const podeVerValor = pode(acesso.regras, 'ler_valores', 'proprios')
 
   // O pool fala uma conexão por vez: em sequência, como na tela.

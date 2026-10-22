@@ -1,5 +1,6 @@
 import 'server-only'
 import type { Gateway } from '@/channels/pagamento'
+import type { AssinaturaParaAnalise, CobrancaDeMensalidade } from '@/core/analise-de-mensalidades'
 import type { ModoDeMensalidade, StatusDeMensalidade } from '@/core/mensalidade'
 import { db, ehIdInvalido } from '../db'
 
@@ -193,4 +194,61 @@ export async function cobrancaDaCompetencia(assinaturaId: string, competencia: s
     .maybeSingle()
   if (error) throw new Error(`não foi possível ler a cobrança do mês: ${error.message}`)
   return (data as { id: string } | null)?.id ?? null
+}
+
+/**
+ * Para Análise > Vendas: as mensalidades da conta e as cobranças delas desde
+ * 60 dias antes do período (é o que decide "em dia"). Só as colunas da conta.
+ */
+export async function mensalidadesParaAnalise(
+  clienteId: string,
+  desde: Date,
+): Promise<{ assinaturas: AssinaturaParaAnalise[]; cobrancas: CobrancaDeMensalidade[] }> {
+  const { data: assinaturas, error } = await db()
+    .from('assinaturas')
+    .select('id, status, criado_em, cancelada_em')
+    .eq('cliente_id', clienteId)
+    .limit(5000)
+  if (ehIdInvalido(error) || tabelaAusente(error)) return { assinaturas: [], cobrancas: [] }
+  if (error) throw new Error(`não foi possível ler as mensalidades: ${error.message}`)
+  const { data: cobrancas, error: erroDasCobrancas } = await db()
+    .from('cobrancas')
+    .select('assinatura_id, competencia, status, valor_centavos, vence_em, paga_em')
+    .eq('cliente_id', clienteId)
+    .not('assinatura_id', 'is', null)
+    .gte('vence_em', new Date(desde.getTime() - 60 * 86_400_000).toISOString())
+    .limit(10000)
+  if (erroDasCobrancas) throw new Error(`não foi possível ler as cobranças das mensalidades: ${erroDasCobrancas.message}`)
+  return {
+    assinaturas: (assinaturas as { id: string; status: StatusDeMensalidade; criado_em: string; cancelada_em: string | null }[]).map((a) => ({
+      id: a.id,
+      status: a.status,
+      criadoEm: a.criado_em,
+      canceladaEm: a.cancelada_em,
+    })),
+    cobrancas: (
+      cobrancas as {
+        assinatura_id: string
+        competencia: string | null
+        status: CobrancaDeMensalidade['status']
+        valor_centavos: number
+        vence_em: string
+        paga_em: string | null
+      }[]
+    ).map((c) => ({
+      assinaturaId: c.assinatura_id,
+      competencia: c.competencia,
+      status: c.status,
+      valorCentavos: c.valor_centavos,
+      venceEm: c.vence_em,
+      pagaEm: c.paga_em,
+    })),
+  }
+}
+
+/** A conta já tem mensalidade? É o que liga o bloco em Vendas. */
+export async function existeMensalidade(clienteId: string): Promise<boolean> {
+  const { count, error } = await db().from('assinaturas').select('id', { count: 'exact', head: true }).eq('cliente_id', clienteId)
+  if (error) return false
+  return (count ?? 0) > 0
 }

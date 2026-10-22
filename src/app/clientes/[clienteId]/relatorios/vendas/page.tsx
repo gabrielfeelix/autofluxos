@@ -10,6 +10,7 @@ import { CaixaDoBloco, FunilInvertido, ListaEmBarras, MapaDeHorarios, Rosca, Vaz
 import { PainelDeBlocos, type Bloco } from '@/components/relatorios/painel-de-blocos'
 import { BarraDoPeriodo, Cartao, Mudanca, MudancaDeTempo, MudancaEmPontos } from '@/components/relatorios/pecas'
 import { SeletorDeFunil } from '@/components/relatorios/seletor-de-funil'
+import { SeletorDeRecorte } from '@/components/relatorios/seletor-de-recorte'
 import { TabelaDaEquipe, VendasVazio, type LinhaDaEquipe } from '@/components/relatorios/vendas'
 import {
   completarMeses,
@@ -21,9 +22,11 @@ import {
   taxaDeVitoria,
   ticketMedio,
 } from '@/core/analise-de-vendas'
+import { analisarMensalidades } from '@/core/analise-de-mensalidades'
 import { analisarPedidos, type AnaliseDePedidos } from '@/core/analise-de-pedidos'
 import { comoDinheiro } from '@/core/crm'
 import { pacoteDo } from '@/core/nichos'
+import { filtroDoRecorte, lerRecorte, recortesPossiveis } from '@/core/recorte-da-analise'
 import { etapasDoRamo, temPedidos, type EtapaDoPedido } from '@/core/pedidos'
 import { pode } from '@/core/permissoes'
 import { ATALHOS_DE_VENDAS, hojeEmSaoPaulo, lerPeriodo, periodoAnterior, type Periodo } from '@/core/relatorios'
@@ -46,6 +49,7 @@ import { responsaveisDoEscopo, type Responsaveis } from '@/server/repos/relatori
 import { existeCobranca, recebidoPeloChat, vendidosPeloChat, type GanhosAgrupados, type RecebidoPeloChat } from '@/server/repos/analise-de-vendas'
 import { membrosDaConta } from '@/server/repos/usuarios'
 import { existePedido, pedidosDoPeriodo } from '@/server/repos/pedidos'
+import { existeMensalidade, mensalidadesParaAnalise } from '@/server/repos/assinaturas'
 import { nichoDaConta } from '@/server/repos/recursos'
 
 export const dynamic = 'force-dynamic'
@@ -106,10 +110,14 @@ export default async function Pagina({
       </ClienteShell>
     )
   }
-  const escopo = filtroDoAcesso(acesso, 'criar_oportunidade')
+  const busca = await searchParams
+  // Eu / Equipe / Conta: o recorte só estreita o escopo da função.
+  const doAcesso = filtroDoAcesso(acesso, 'criar_oportunidade')
+  const recortes = recortesPossiveis(doAcesso, acesso.regras.usuarioId, acesso.regras.equipes)
+  const recorte = lerRecorte(um(busca.ver), recortes)
+  const escopo = filtroDoRecorte(doAcesso, recorte, acesso.regras.usuarioId, acesso.regras.equipes)
   const podeVerValor = pode(acesso.regras, 'ler_valores', 'proprios')
 
-  const busca = await searchParams
   const hoje = hojeEmSaoPaulo()
   const periodo = lerPeriodo(busca, hoje, ATALHOS_DE_VENDAS, PADRAO)
   const anterior = periodoAnterior(periodo)
@@ -133,6 +141,7 @@ export default async function Pagina({
         ? {}
         : { dias: String(periodo.atalho) }
   const doFunil: Record<string, string> = quadroId ? { funil: quadroId } : {}
+  const doRecorte: Record<string, string> = recorte && recorte !== recortes[recortes.length - 1] ? { ver: recorte } : {}
 
   // Recebido pelo chat: é dinheiro, então só para quem lê valores, e só
   // depois da primeira cobrança. Conta que vende só pelo chat, sem negócio
@@ -176,9 +185,15 @@ export default async function Pagina({
       )
     : []
 
+  // As mensalidades (0145): para quem vê a conta inteira, depois da primeira.
+  const temMensalidade = contaInteira && (await existeMensalidade(cliente.id))
+  const deMensalidades = temMensalidade
+    ? [await blocoDasMensalidades(cliente.id, periodo, anterior, podeVerValor)]
+    : []
+
   const arranjo = await arranjoDaAnalise('vendas')
   const blocos = primeirosDoRamo(
-    [...deNegocios.slice(0, 1), ...doChatTudo, ...dePedidos, ...deNegocios.slice(1)],
+    [...deNegocios.slice(0, 1), ...doChatTudo, ...deMensalidades, ...dePedidos, ...deNegocios.slice(1)],
     // Quem já arrumou a tela fica com a arrumação dele.
     arranjo.ordem.length === 0 && arranjo.ocultos.length === 0 ? (pacoteDo(nicho)?.primeirosEmVendas ?? []) : [],
   )
@@ -210,12 +225,14 @@ export default async function Pagina({
             contaInteira
               ? 'Quanto entrou, onde os negócios param e quem vende.'
               : escopo.tipo === 'proprios'
-                ? 'Só os negócios que estão com você. Os números da organização inteira ficam com quem gerencia.'
+                ? recortes.length > 1
+                  ? 'Só os negócios que estão com você.'
+                  : 'Só os negócios que estão com você. Os números da organização inteira ficam com quem gerencia.'
                 : 'Só os negócios das suas equipes.'
           }
         />
 
-        {!temNegocio && !temCobranca && !temPedido ? (
+        {!temNegocio && !temCobranca && !temPedido && !temMensalidade ? (
           <div className="mt-5">
             <VendasVazio clienteId={cliente.id} />
           </div>
@@ -235,7 +252,7 @@ export default async function Pagina({
                       hoje={hoje}
                       atalhos={ATALHOS_DE_VENDAS}
                       padrao={PADRAO}
-                      manter={doFunil}
+                      manter={{ ...doFunil, ...doRecorte }}
                       rotuloDoAtalho={(dias) => (dias === 365 ? '12 meses' : `${dias} dias`)}
                     />
                     {quadros.length > 1 && (
@@ -243,9 +260,10 @@ export default async function Pagina({
                         funis={quadros.map((q) => ({ id: q.id, nome: q.nome }))}
                         escolhido={quadroId}
                         base={base}
-                        manter={doPeriodo}
+                        manter={{ ...doPeriodo, ...doRecorte }}
                       />
                     )}
+                    <SeletorDeRecorte possiveis={recortes} escolhido={recorte} base={base} manter={{ ...doPeriodo, ...doFunil }} />
                   </div>
                 }
               />
@@ -382,6 +400,81 @@ function blocoDoRecebido(atual: RecebidoPeloChat | null, antes: RecebidoPeloChat
             detalhe={`${atual.aguardando} ${atual.aguardando === 1 ? 'cobrança no prazo' : 'cobranças no prazo'}`}
             definicao="Cobranças enviadas que ainda estão dentro do prazo, hoje, independente do período escolhido."
           />
+        </div>
+      </CaixaDoBloco>
+    ),
+  }
+}
+
+/** O período como instantes de Brasília: meia-noite do primeiro dia até a do dia seguinte ao último. */
+function instantesDo(p: Periodo): [Date, Date] {
+  const fim = new Date(`${p.ate}T00:00:00-03:00`)
+  fim.setUTCDate(fim.getUTCDate() + 1)
+  return [new Date(`${p.de}T00:00:00-03:00`), fim]
+}
+
+/**
+ * As mensalidades: novas, ativas, em dia, canceladas e recebido. No ramo de
+ * aulas é a matrícula; faltas e experimental moram na Verandi e ficam fora.
+ */
+async function blocoDasMensalidades(clienteId: string, periodo: Periodo, anterior: Periodo, podeVerValor: boolean): Promise<Bloco> {
+  const [ini, fim] = instantesDo(periodo)
+  const [iniAntes, fimAntes] = instantesDo(anterior)
+  const { assinaturas, cobrancas } = await mensalidadesParaAnalise(clienteId, iniAntes)
+  const atual = analisarMensalidades(assinaturas, cobrancas, ini, fim)
+  const antes = analisarMensalidades(assinaturas, cobrancas, iniAntes, fimAntes)
+  const emDia = atual.taxaEmDia === null ? null : Math.round(atual.taxaEmDia * 100)
+  return {
+    id: 'mensalidades',
+    titulo: 'Mensalidades',
+    largura: 'inteira',
+    conteudo: (
+      <CaixaDoBloco
+        titulo="Mensalidades"
+        subtitulo="As mensalidades cobradas pelo AutoFluxos: quem entrou, quem está em dia e quem saiu no período."
+      >
+        <div className="grid grid-cols-2 gap-3 pb-4 md:grid-cols-3 lg:gap-4 xl:grid-cols-5">
+          <Cartao
+            titulo="Novas"
+            vazio={atual.novas === 0 && 'Nenhuma nova no período'}
+            valor={String(atual.novas)}
+            detalhe={atual.aguardandoAdesao > 0 ? `${atual.aguardandoAdesao} aguardando a adesão agora` : 'criadas no período'}
+            comparacao={<Mudanca atual={atual.novas} antes={antes.novas} />}
+            definicao="Mensalidades criadas no período, incluindo as que ainda esperam a pessoa cadastrar o cartão ou autorizar o Pix Automático."
+          />
+          <Cartao
+            titulo="Ativas agora"
+            vazio={atual.ativas === 0 && 'Nenhuma ativa'}
+            valor={String(atual.ativas)}
+            detalhe={atual.pausadas > 0 ? `mais ${atual.pausadas} ${atual.pausadas === 1 ? 'pausada' : 'pausadas'}` : 'cobrando todo mês'}
+            definicao="Mensalidades ativas hoje, independente do período escolhido. Pausadas (férias, licença) ficam à parte."
+          />
+          <Cartao
+            titulo="Em dia"
+            vazio={emDia === null && 'Nenhuma ativa'}
+            valor={emDia === null ? 'sem dado' : `${emDia}%`}
+            medidor={emDia}
+            detalhe={`${atual.emAtraso} em atraso para a equipe ir atrás`}
+            definicao="Das mensalidades ativas hoje, quantas não têm cobrança vencida e não paga nos últimos 60 dias."
+          />
+          <Cartao
+            titulo="Canceladas"
+            vazio={atual.canceladas === 0 && 'Nenhuma cancelada no período'}
+            valor={String(atual.canceladas)}
+            detalhe="encerradas no período"
+            comparacao={<Mudanca atual={atual.canceladas} antes={antes.canceladas} />}
+            definicao="Mensalidades canceladas no período. É a saída que o AutoFluxos enxerga; faltas e evasão ficam na Verandi."
+          />
+          {podeVerValor && (
+            <Cartao
+              titulo="Recebido"
+              vazio={atual.recebidoCentavos === 0 && 'Nada pago no período'}
+              valor={dinheiroCurto(atual.recebidoCentavos / 100)}
+              detalhe="mensalidades pagas no período"
+              comparacao={<Mudanca atual={atual.recebidoCentavos / 100} antes={antes.recebidoCentavos / 100} formatar={comoDinheiro} />}
+              definicao="Soma das cobranças de mensalidade pagas no período, pelo dia em que o pagamento caiu."
+            />
+          )}
         </div>
       </CaixaDoBloco>
     ),

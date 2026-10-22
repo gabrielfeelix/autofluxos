@@ -1,5 +1,7 @@
 # Handoff: 22/out/2026, relatórios (parte b do que restou)
 
+**Feito em 22/out na mesma sessão** (ver o fim de `docs/PLANO-COBRANCA-CAMADA-2.md`). Fica como registro.
+
 Para o agente que continua. Contexto: `docs/PLANO-COBRANCA-CAMADA-2.md`
 (seção b e o fim de Andamento). Pedidos e os blocos de pedido em Vendas já
 estão no ar (`3ecb7055`, `5cade8f2`).

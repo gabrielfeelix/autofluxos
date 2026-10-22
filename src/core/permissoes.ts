@@ -219,9 +219,10 @@ export const POLITICAS: Record<PapelDaConta, Politica> = {
  * Os modelos que a tela de acesso oferece (UI-18), além dos três acima.
  *
  * `gestor` e `operador` são a RB-40 como ela quer ser: o gestor trabalha no
- * escopo da equipe, o operador só no que é dele e sem tocar dinheiro nem
- * exportação. Eles ainda não são atribuíveis, a tela é da T2.2, mas nascem
- * aqui porque a política é regra pura e a regra não espera a tela.
+ * escopo da equipe, o operador só no que é dele, vendo em R$ só as próprias
+ * vendas, sem registrar venda nem exportar. Eles ainda não são atribuíveis, a
+ * tela é da T2.2, mas nascem aqui porque a política é regra pura e a regra não
+ * espera a tela.
  */
 export const MODELOS_EXTRA = {
   gestor: politica({
@@ -232,9 +233,12 @@ export const MODELOS_EXTRA = {
     ler_valores: 'equipe',
   }),
 
+  // Vê em R$ só o que é dele: as próprias vendas e cobranças, nunca o total
+  // da conta (plano da cobrança camada 2, b; liberado em 22/out/2026).
   operador: politica({
     atender: 'proprios',
     criar_oportunidade: 'proprios',
+    ler_valores: 'proprios',
   }),
 
   // O Leitor não age em nada: só vê valor. O que ele lê vem de `Acesso.leitura`.
@@ -576,6 +580,7 @@ export function resumoDoAcesso(
   if (efetiva.registrar_venda !== 'nenhum') frases.push('Registra venda')
   frases.push(efetiva.exportar !== 'nenhum' ? 'Pode exportar' : 'Não exporta')
   if (efetiva.ler_valores === 'nenhum') frases.push('Não vê valores')
+  else if (efetiva.ler_valores === 'proprios') frases.push('Vê valores só do que é dela')
 
   const alertas: string[] = []
   if (efetiva.atender === 'todos') alertas.push('toda a conta')

@@ -19,7 +19,8 @@ import { acharCobranca } from './repos/cobrancas'
 export async function acaoListarPedidos(clienteId: string): Promise<CartaoDePedido[] | null> {
   const acesso = await exigirCapacidade(clienteId, 'atender', 'proprios')
   if (recusou(acesso)) return null
-  const valores = await exigirCapacidade(clienteId, 'ler_valores', 'proprios')
+  // Pedido não tem dono: o total é de quem vê os valores da conta.
+  const valores = await exigirCapacidade(clienteId, 'ler_valores', 'todos')
   return cartoesDosPedidos(clienteId, !recusou(valores))
 }
 

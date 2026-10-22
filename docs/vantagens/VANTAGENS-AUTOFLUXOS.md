@@ -278,6 +278,12 @@ aqui fica o que o cliente ganha.
   médio, tempo de preparo e de entrega, cancelamentos, entrega ou retirada e
   o mapa de dia e hora dos pedidos, para saber quando reforçar a cozinha. Cada
   ramo abre a tela com o que importa para ele primeiro. *(22/out/2026)*
+- **Cada um vê o próprio número**: em Análise, quem gerencia alterna entre
+  Eu, Equipe e Conta, e a planilha sai no mesmo recorte. O atendente vê em R$
+  só as vendas dele, nunca o total da empresa. *(22/out/2026)*
+- **Mensalidades sob controle**: quantas entraram, quantas estão ativas, a
+  porcentagem em dia, quem cancelou e quanto entrou no período, sem planilha.
+  *(22/out/2026)*
 
 ## Integrar e segurança
 
