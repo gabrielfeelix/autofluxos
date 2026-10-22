@@ -403,3 +403,20 @@ um dia por consulta) e no `pg_stat_statements` (zerado em 11/ago).
 - **Alerta `braces` (GHSA-vfj7-8cjw-p6xm) aceito**: sem versão corrigida, só
   no `eslint-config-next` (desenvolvimento). `brace-expansion` corrigido em
   `c6b607ad`.
+
+## 22/out/2026: a mensalidade do AutoFluxos é cobrada pelo Asaas
+
+- **Escolhido o Asaas**, na conta da 4YU (CNPJ), para cobrar a mensalidade.
+  Motivos medidos na pesquisa do dia: sem mensalidade; cartão 2,99% + R$ 0,49 e
+  Pix ou boleto a R$ 1,99 (tabela de terceiros de 16/out, conferir na página
+  oficial); assinatura aceita cartão, Pix e boleto; Pix Automático gerado pela
+  API desde mai/2026; **NFS-e automática** (R$ 0,49), que nenhum dos outros
+  emite; RA1000 no Reclame Aqui (mar a ago/2026). É o mais citado por quem
+  vende SaaS no Brasil (TabNews).
+- **Descartados:** Stripe (Pix só avulso, sem NFS-e, boleto vencido não cancela
+  a assinatura), Mercado Pago (cartão 3,99% a 4,99% na assinatura, sem NFS-e),
+  Pagar.me e Efí (sem nota), Iugu (R$ 49/mês, queixa de gestão de faturas),
+  Vindi (R$ 1.399/mês).
+- **Reaproveita** `src/channels/asaas.ts` (cobrança no chat) e as colunas de
+  assinatura da `0066`. A conta da 4YU vira também a conta-pai da cobrança no
+  chat. Plano de execução: `docs/PLANO-MENSALIDADE-ASAAS.md`.
