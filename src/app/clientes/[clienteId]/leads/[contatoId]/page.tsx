@@ -1,7 +1,9 @@
 import { Miolo } from '@/components/design/miolo'
 import { exigirLeitura, meuAlcance, recusou } from '@/server/permissoes'
 import { listarCobrancas } from '@/server/repos/cobrancas'
-import { CobrancasDoContato } from '@/components/lead-crm/cobrancas-do-contato'
+import { AbaDeCobrancas, ResumoDeCobrancas } from '@/components/lead-crm/cobrancas-do-contato'
+import { recursoLiberado } from '@/server/recursos-do-plano'
+import { conexaoAtiva } from '@/server/repos/pagamentos'
 import { Fragment } from 'react'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
@@ -142,6 +144,7 @@ export default async function Pagina({
     funis,
     promocoes,
     cobrancas,
+    cobranca,
   ] = await Promise.all([
     acharCliente(clienteId),
     // Contato de outra pessoa, fora do alcance, cai no `notFound` abaixo.
@@ -177,8 +180,15 @@ export default async function Pagina({
     marketingDoContato(clienteId, contatoId),
     // As cobranças dela (0141). Valor em dinheiro: só para quem lê valores.
     exigirLeitura(clienteId, 'ler_valores', 'proprios').then((acesso) =>
-      recusou(acesso) ? [] : listarCobrancas(clienteId, { contatoId, limite: 5 }),
+      recusou(acesso) ? [] : listarCobrancas(clienteId, { contatoId, limite: 100 }),
     ),
+    // O cartão e a aba de cobranças: plano com cobrança e quem lê valores.
+    // `conectado` decide se o vazio ensina a cobrar ou a conectar a conta.
+    Promise.all([
+      recursoLiberado(clienteId, 'integracoes'),
+      exigirLeitura(clienteId, 'ler_valores', 'proprios'),
+      conexaoAtiva(clienteId).catch(() => null),
+    ]).then(([noPlano, acesso, conexao]) => ({ visivel: noPlano && !recusou(acesso), conectado: conexao !== null })),
   ])
   if (!cliente || !lead) notFound()
   const arquivosPorNegocio = await contagemDeArquivos(
@@ -498,6 +508,9 @@ export default async function Pagina({
                       }))}
                       motivos={motivos.map(({ id, nome: comoSeChama }) => ({ id, nome: comoSeChama }))}
                     />
+                    {cobranca.visivel && (
+                      <ResumoDeCobrancas clienteId={clienteId} cobrancas={cobrancas} conectado={cobranca.conectado} />
+                    )}
                     <Informacoes
                       clienteId={clienteId}
                       contatoId={contatoId}
@@ -599,7 +612,6 @@ export default async function Pagina({
                         <PromocoesDoContato clienteId={clienteId} contatoId={contatoId} estado={promocoes} />
                       </div>
                     </section>
-                    <CobrancasDoContato clienteId={clienteId} cobrancas={cobrancas} />
                   </div>
                 </div>
               ),
@@ -618,6 +630,19 @@ export default async function Pagina({
                 />
               ),
             },
+            ...(cobranca.visivel
+              ? [
+                  {
+                    chave: 'cobrancas',
+                    rotulo: 'Cobranças',
+                    contagem: cobrancas.filter((c) => c.status === 'pendente').length,
+                    contagemRotulo: 'cobranças aguardando pagamento',
+                    conteudo: (
+                      <AbaDeCobrancas clienteId={clienteId} cobrancas={cobrancas} conectado={cobranca.conectado} />
+                    ),
+                  },
+                ]
+              : []),
             {
               /*
                 **O que acontece sem ninguém da equipe.** Mensagem agendada e

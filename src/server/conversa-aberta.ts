@@ -9,6 +9,7 @@ import type { CobrarNaConversa } from '@/components/lead/botao-de-cobrar'
 import { documentoDaFicha } from './cobrancas'
 import { exigirCapacidade, recusou } from './permissoes'
 import { conexaoAtiva } from './repos/pagamentos'
+import { recursoLiberado } from './recursos-do-plano'
 import { anotacoesDoContato } from './repos/eventos'
 import { canaisDosContatos } from './repos/canais-site'
 import { contextoDeResposta, sessaoComPessoa } from './repos/conversas'
@@ -214,16 +215,20 @@ export async function lerConversaAberta({
 }
 
 /**
- * O botão Cobrar aparece só com uma conta de recebimento ligada e para quem
- * pode registrar venda (decisão 2 do plano). Nunca derruba a conversa: falhou,
- * o botão some.
+ * O botão Cobrar aparece para quem tem cobrança no plano e pode registrar
+ * venda (decisões 1 e 2 do plano). Sem conta de recebimento ligada ele aparece
+ * do mesmo jeito e leva a Configurações > Pagamentos: escondido, ninguém
+ * descobria que dava para cobrar pela conversa. Nunca derruba a conversa:
+ * falhou, o botão some.
  */
 async function cobrarNaConversa(clienteId: string, lead: Lead): Promise<CobrarNaConversa | null> {
   try {
-    const conexao = await conexaoAtiva(clienteId)
-    if (!conexao) return null
+    if (!(await recursoLiberado(clienteId, 'integracoes'))) return null
     if (recusou(await exigirCapacidade(clienteId, 'registrar_venda', 'proprios'))) return null
+    const conexao = await conexaoAtiva(clienteId)
+    if (!conexao) return { conectado: false }
     return {
+      conectado: true,
       gateway: conexao.gateway,
       ambiente: conexao.ambiente,
       pedeDocumento: conexao.gateway === 'asaas' && documentoDaFicha(lead.campos) === null,
