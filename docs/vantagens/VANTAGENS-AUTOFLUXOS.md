@@ -22,9 +22,13 @@ aqui fica o que o cliente ganha.
 - **Marcar horário em dois toques, dentro do WhatsApp.** Um formulário do
   próprio WhatsApp abre com os dias e os horários livres da agenda; a pessoa
   escolhe, confirma e a vaga já está garantida na Verandi, sem digitar data
-  nem trocar dez mensagens. *(22/out/2026)*
+  nem trocar dez mensagens. A vaga é conferida na hora de marcar: se acabou
+  de lotar, o formulário pede outro horário. Quem não marca segue por outro
+  caminho da automação, em vez de ficar esquecido. *(22/out/2026)*
 - **Loja de verdade dentro do chat.** Com Magento: estoque, frete por CEP,
-  cupom, consulta de pedido e rastreio sem sair do WhatsApp.
+  cupom, consulta de pedido e rastreio sem sair do WhatsApp. Para mostrar um
+  pedido, o bot confirma o CPF de quem pergunta: o pedido de um cliente não
+  aparece para outra pessoa. *(22/out/2026)*
 - **Preço na página e começa no mesmo dia.** Sem projeto de implantação, sem
   "agende uma demonstração".
 
@@ -39,7 +43,8 @@ aqui fica o que o cliente ganha.
 - **Fila com distribuição automática**, respeitando quem está disponível e o
   teto de cada pessoa.
 - **Ninguém segura conversa ausente**: quem marca "ausente" passa as conversas
-  que esperam resposta para quem está disponível. *(21/out/2026)*
+  que esperam resposta para quem está disponível, e a passagem fica
+  registrada na ficha. *(21/out/2026)*
 - **Dois atendentes não respondem o mesmo cliente**: assumir é um clique e
   ninguém atropela o colega.
 - **Transcrição de áudio** e leitura de imagem recebida.
@@ -57,7 +62,8 @@ aqui fica o que o cliente ganha.
   etiqueta, funil, anotação, e-mail, cobrança, agendamento por formulário,
   chamada de sistema externo e mais.
 - **Enviar e-mail pelo fluxo**: a confirmação para o cliente ou o aviso para a
-  equipe, com o nome da empresa como remetente. *(21/out/2026)*
+  equipe, com o nome da empresa como remetente. A resposta do cliente cai no
+  e-mail da empresa, e cada envio fica registrado na ficha. *(21/out/2026)*
 - **IA que atende com o contexto da empresa** e usa ferramentas: marca horário,
   busca produto, monta pedido com a soma conferida, consulta frete e pedido.
 - **Sequências** de acompanhamento e **retomada** de conversa parada.
@@ -74,6 +80,7 @@ aqui fica o que o cliente ganha.
 - **Transmissões** com modelo aprovado pela Meta e variáveis por contato.
 - **Transmissão até 9 vezes mais barata para quem conversou nas últimas 24h**:
   vai como mensagem comum, cobrada como atendimento e não como marketing.
+  Vem ligado, e a tela mostra quantos estão na janela antes de enviar.
   *(21/out/2026)*
 - **Envio aos poucos**: X mensagens por hora, só no horário de atendimento, e
   as respostas chegam num ritmo que a equipe acompanha. *(21/out/2026)*
@@ -82,7 +89,9 @@ aqui fica o que o cliente ganha.
   promoções na hora, recebe a confirmação e continua sendo atendido. As
   transmissões de marketing pulam essa pessoa sozinhas, e o número da empresa
   não perde qualidade com denúncia. Quem bloqueia promoções pelo próprio
-  WhatsApp também sai, sem o sistema insistir. *(21/out/2026)*
+  WhatsApp também sai, sem o sistema insistir. Sair das promoções não corta
+  aviso de serviço (confirmação, lembrete, cobrança), e a ficha tem o
+  interruptor para a equipe ligar ou desligar à mão. *(21/out/2026)*
 - **Aceite com prova**: a caixa de aceite do chat do site e do formulário do
   anúncio fica registrada com o texto exato e a data, visível na ficha do
   contato. *(21/out/2026)*
@@ -99,10 +108,24 @@ aqui fica o que o cliente ganha.
 - **Comprovante falso não passa**: a cobrança só vira paga depois que o
   sistema confere o pagamento direto no banco. Foto de comprovante, aviso
   repetido ou Pix pago a menos não contam. *(22/out/2026)*
+- **Pix vencido deixa de valer**: no vencimento, o sistema confere se não
+  foi pago e cancela o Pix no banco, para ninguém pagar uma cobrança que a
+  tela já mostra como vencida. Estorno também fica registrado. *(22/out/2026)*
+- **CPF pedido uma vez só**: quando o Asaas exige o CPF, quem cobra digita uma
+  vez e ele fica na ficha; a próxima cobrança não pergunta. *(22/out/2026)*
+- **Testar sem dinheiro de verdade**: com a chave de teste do Asaas, a conta
+  cobra e paga em modo de teste, e a tela avisa que é teste. *(22/out/2026)*
+- **Token do pagamento isolado**: a chave da conta de recebimento fica num
+  cofre separado, que nenhuma automação nem integração alcança.
+  *(21/out/2026)*
 - **Só cobra quem pode**: o botão Cobrar aparece para dono, gerente e quem
   recebeu a permissão de registrar venda. *(22/out/2026)*
-- **As cobranças de cada cliente na ficha**: as últimas cobranças do contato,
-  pagas, pendentes e vencidas, sem abrir outra tela. *(22/out/2026)*
+- **As cobranças de cada cliente na ficha**: quanto ele pagou, quanto está
+  aguardando e quanto venceu, logo abaixo dos negócios, e uma aba com todas
+  as cobranças dele, com copiar Pix e link. *(22/out/2026)*
+- **Cartão da cobrança que se atualiza sozinho** na conversa: mostra itens,
+  total e situação, e vira "Paga" sem ninguém recarregar a tela.
+  *(22/out/2026)*
 - **Nota fiscal da cobrança paga** pelo Asaas, sem certificado digital nem
   sistema de nota à parte. *(22/out/2026)*
 - **Venda que se fecha sozinha**: a automação manda o Pix, espera, e segue
@@ -126,7 +149,8 @@ aqui fica o que o cliente ganha.
   o plano e o dia do vencimento. Todo mês, alguns dias antes, o Pix sai na
   conversa; quem está quieto há mais de 24 horas recebe um lembrete com o
   botão Pagar, que abre o QR e o copia e cola. Sem planilha, sem lembrar de
-  cobrar. *(22/out/2026)*
+  cobrar. Aluno de férias: pausa e retoma a mensalidade na ficha.
+  *(22/out/2026)*
 - **Transmissão para um segmento salvo**: a mesma regra usada em Contatos
   (quem comprou há mais de 60 dias, quem gastou acima de um valor) vira o
   público da campanha, sem precisar etiquetar ninguém. *(22/out/2026)*
@@ -146,7 +170,8 @@ aqui fica o que o cliente ganha.
 - **Baixar o relatório em planilha** do período escolhido. *(21/out/2026)*
 - **Power BI, Looker e planilhas**: contatos, mensagens, vendas e cobranças
   viram tabela no painel de BI da empresa e se atualizam sozinhos, sem
-  exportar nada à mão. *(22/out/2026)*
+  exportar nada à mão. As mensagens vão sem o texto das conversas: o painel
+  mede volume e tempo sem expor o que o cliente escreveu. *(22/out/2026)*
 - **Gasto com WhatsApp** do mês, com a franquia grátis de 1.000 mensagens de
   atendimento por número.
 
