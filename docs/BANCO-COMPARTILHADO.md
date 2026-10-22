@@ -1389,6 +1389,20 @@ extração explícito para os objetos de `public`.
   Ele só diz algo quando a tabela é grande. Não apague índice só por esse
   aviso; apague o coberto por outro, como a `0138` fez.
 
+- **a `0142` e a `0143` foram aplicadas em 22/out/2026**, com autorização
+  explícita do dono, pela Management API, numa transação. A `0142` alarga o
+  check de `cobrancas.origem` para `api`; na produção ele **já aceitava**,
+  porque a `0141` foi aplicada depois de ter sido editada no lugar
+  (`511bc303`, desfeito em `ff3839cb`), então ela não mudou nada lá. A `0143`
+  cria `public.formularios_do_whatsapp` (formulário de agendamento, chave
+  privada no Vault). Ensaio em transação antes, sem o `notify`, com
+  `rollback`: tabela com RLS, 0 permissões para `anon`/`authenticated`, 2
+  gatilhos; depois do rollback, ausente. Verandi antes e depois: **55**
+  migrations (última `0084`), **44** tabelas em `app_verandi`, **16** policies
+  de `storage.objects`, iguais. Data API depois do `notify`:
+  `formularios_do_whatsapp` e `cobrancas` **200** com a chave secreta, **401**
+  com a publicável; `app_verandi.conta` **200**.
+
 - **SSL obrigatório desde 19/out/2026** (`PUT .../ssl-enforcement`), com
   autorização do dono. Conexão sem TLS leva `ESSLREQUIRED`, inclusive pelo
   pooler. Antes, o SQL direto do AutoFluxos passou a exigir TLS com o

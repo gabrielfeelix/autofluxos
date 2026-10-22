@@ -19,10 +19,9 @@ oficial do WhatsApp** e a prova ao vivo do formulário.
 | `ff3839cb` | **Correção**: a 0141 já estava em produção e eu tinha editado no lugar. Voltou ao original; origem `api` foi para a `0142_cobranca_pela_api` |
 | `138aa3ad` | Formulário nativo de agendamento (WhatsApp Flows) ligado à Verandi, bloco **Agendar**, cartão de ativação, `0143_formularios_do_whatsapp` |
 
-**Produção:** 0142 e 0143 só no Docker local. Sem a 0142, `POST
-/api/v1/cobrancas` responde 500 (o check de `origem` recusa `api`). Sem a
-0143, o código lê "nenhum formulário" e nada aparece. Aplicar só com
-autorização do Gabriel.
+**Produção:** 0142 e 0143 aplicadas em 22/out/2026, com autorização (registro
+em `docs/BANCO-COMPARTILHADO.md`). Falta só o Gabriel ativar o formulário no
+número da MGM.
 
 ## Formulário de agendamento: como está
 
@@ -38,7 +37,7 @@ autorização do Gabriel.
 - Ativação: `server/formularios-do-whatsapp/ativar.ts` (chave pública no
   número, cria Flow com `endpoint_uri`, liga `application_id`, publica).
 
-**Não validado ao vivo** (precisa da 0143 em produção e do número da MGM):
+**Não validado ao vivo** (precisa ativar no número da MGM):
 - se a Meta aceita o Flow JSON 7.1 como está (os `validation_errors` vão para
   o cartão);
 - se `POST /{flow_id}` com `application_id` é aceito com o token do número;
