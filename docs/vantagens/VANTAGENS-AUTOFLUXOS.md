@@ -92,6 +92,9 @@ aqui fica o que o cliente ganha.
 - **Pesquisa de satisfação (NPS)** com o comentário de cada cliente e o link
   para a conversa. *(21/out/2026)*
 - **Baixar o relatório em planilha** do período escolhido. *(21/out/2026)*
+- **Power BI, Looker e planilhas**: contatos, mensagens, vendas e cobranças
+  viram tabela no painel de BI da empresa e se atualizam sozinhos, sem
+  exportar nada à mão. *(22/out/2026)*
 - **Gasto com WhatsApp** do mês, com a franquia grátis de 1.000 mensagens de
   atendimento por número.
 

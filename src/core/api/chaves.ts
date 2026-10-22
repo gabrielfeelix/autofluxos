@@ -70,6 +70,14 @@ export const ESCOPOS_DA_API = [
     explicacao: 'Abrir oportunidade, mudar de etapa e marcar como ganha ou perdida.',
     fase: 4,
   },
+  {
+    chave: 'relatorios:ler',
+    grupo: 'Relatórios',
+    rotulo: 'Ler relatórios (Power BI, Looker)',
+    explicacao: 'Baixar contatos, mensagens, vendas e cobranças em CSV ou JSON para o Power BI, o Looker Studio ou uma planilha.',
+    aviso: 'Crie uma chave só com esta permissão: o Looker e o Google Sheets levam a chave no endereço.',
+    fase: 5,
+  },
 ] as const satisfies readonly {
   chave: string
   grupo: string

@@ -29,6 +29,8 @@ const JANELA_EM_SEGUNDOS = 60
 
 export type CodigoDeErro =
   | 'nao_autenticado'
+  | 'consulta_invalida'
+  | 'conjunto_nao_encontrado'
   | 'escopo_insuficiente'
   | 'plano_sem_api'
   | 'limite_excedido'

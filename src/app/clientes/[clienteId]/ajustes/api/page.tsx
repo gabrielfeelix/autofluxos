@@ -111,6 +111,39 @@ function ComoChamar({ clienteId }: { clienteId: string }) {
         </Link>
       </div>
 
+      {/*
+        O conector de BI (frente 3 de 22/out). Passo a passo curto aqui, o
+        resto na documentação: quem chega nesta tela querendo um painel no
+        Power BI não precisa saber o que é endpoint.
+      */}
+      <div className="rounded-[14px] border border-line bg-panel p-5">
+        <h2 className="text-[13.5px] font-bold">Power BI, Looker e planilhas</h2>
+        <p className="mt-1 text-[12px] leading-5 text-muted">
+          Contatos, mensagens, vendas e cobranças viram tabela no seu painel, e se atualizam sozinhos.
+        </p>
+        <ol className="mt-3 list-decimal space-y-1.5 pl-4 text-[12px] leading-5 text-soft">
+          <li>
+            Crie uma chave só com <strong>Ler relatórios</strong>.
+          </li>
+          <li>
+            No Power BI: Obter dados, Web, Avançado. Cole o endereço e ponha a chave no cabeçalho Authorization.
+          </li>
+          <li>
+            No Google Sheets ou no Looker Studio: <span className="font-mono text-[11px]">IMPORTDATA</span> com a chave no
+            endereço.
+          </li>
+        </ol>
+        <pre className="mt-3 overflow-x-auto rounded-[10px] bg-surface px-3 py-2.5 font-mono text-[11px] leading-5 text-soft">
+{`${BASE}/relatorios/vendas?formato=csv`}
+        </pre>
+        <Link
+          href={`${DOCS}/api-relatorios`}
+          className="mt-3 inline-block text-[12.5px] font-semibold text-primary hover:underline"
+        >
+          Passo a passo completo →
+        </Link>
+      </div>
+
       <div className="rounded-[14px] border border-line bg-panel p-5">
         <h2 className="text-[13.5px] font-bold">Receber avisos de outro sistema</h2>
         <p className="mt-1 text-[12px] leading-5 text-muted">

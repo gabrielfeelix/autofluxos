@@ -1,8 +1,8 @@
 # Handoff: 22/out/2026 (tarde), cobrança etapas D e E, e frente 2
 
 Para o agente que continua. Faça a **frente 1 (etapas D e E)** e a **frente 2**.
-Continua `docs/HANDOFF-22-OUT-COBRANCA-E-FRENTES.md`; as frentes 3, 4 e 5 de
-lá seguem valendo depois destas.
+Continua `docs/HANDOFF-22-OUT-COBRANCA-E-FRENTES.md`. A frente 3 (conector de
+BI) já foi feita nesta sessão; as frentes 4 e 5 de lá ficam para depois destas.
 
 ## Leia antes
 
@@ -70,6 +70,15 @@ Ela ainda pode ser editada no lugar; confira `ls supabase/migrations | tail -1`.
   Operação, Asaas falso em teste, 9 cobranças. Prints em
   `.ux-local/cobrar.mjs` (Inbox com o Cobrar aberto) e
   `.ux-local/ficha-cobrancas.mjs`.
+
+## Documentação de devs: atualizar junto, sempre
+
+`https://autofluxos.4yu.com.br/ajuda/desenvolvedores` é a página pública
+para quem integra. Toda mudança de API, webhook, escopo de chave ou
+integração atualiza a página **no mesmo commit**: `src/components/docs/paginas-api.tsx`
+(API v1, escopos, erros, webhooks de saída) e `src/components/docs/paginas-dev.tsx`
+(webhook de entrada, chat do site, Verandi). Regra do arquivo: só o que existe
+no código. Na frente 1, a etapa D e a `cobranca.paga` (frente 4) entram lá.
 
 ## Regras do Gabriel (não negociáveis)
 - pt-BR, curto, decisão tomada com recomendação. Ele é designer, não dev.

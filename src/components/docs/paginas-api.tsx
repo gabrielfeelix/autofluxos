@@ -24,6 +24,10 @@ const Link = ({ href, children }: { href: string; children: ReactNode }) => (
 
 /* ------------------------------------------------------------------ código */
 
+const CHAVE_EXEMPLO = 'af_live_ABCDEFGHIJKL_...'
+const CSV_EXEMPLO = `id,contato_id,data_da_venda,valor,moeda,situacao,responsavel,criado_em
+8b1e0c2a-...,6f1c2a9e-...,2026-10-21,450,BRL,ganha,Carla Mendes,2026-10-21T18:02:11Z`
+
 type MetodoDoExemplo = 'GET' | 'POST' | 'PATCH' | 'DELETE'
 
 function trechos(
@@ -177,6 +181,17 @@ function Autenticacao() {
               </>
             ),
           },
+          {
+            nome: 'relatorios:ler',
+            tipo: 'escopo',
+            descricao: (
+              <>
+                Baixar contatos, mensagens, vendas e cobranças em CSV ou JSON:{' '}
+                <Link href="/ajuda/desenvolvedores/api-relatorios">GET /relatorios/{'{conjunto}'}</Link>. Use uma chave só
+                com esta permissão.
+              </>
+            ),
+          },
         ]}
       />
       <Sub>Revogar</Sub>
@@ -212,6 +227,8 @@ function ErrosELimites() {
     [409, 'automacao_pausada', 'A automação está desligada para este contato.'],
     [409, 'atendimento_humano', 'Alguém da equipe está atendendo o contato agora.'],
     [409, 'ocupado', 'Chegou uma mensagem do contato no mesmo instante. Repita em alguns segundos.'],
+    [400, 'consulta_invalida', 'Parâmetro de relatório fora do formato (data, página, limite ou formato). A mensagem diz qual.'],
+    [404, 'conjunto_nao_encontrado', 'Relatório que não existe. A mensagem traz os válidos.'],
     [404, 'template_nao_encontrado', 'Nenhum modelo com este nome (e idioma) na organização.'],
     [409, 'template_nao_aprovado', 'O modelo existe, mas não está aprovado na Meta agora (pendente, pausado, recusado).'],
     [409, 'sem_numero', 'A organização não tem número de WhatsApp conectado.'],
@@ -975,6 +992,81 @@ function MudarOportunidade() {
   )
 }
 
+function Relatorios() {
+  return (
+    <>
+      <Endpoint metodo="GET" caminho="/api/v1/relatorios/{conjunto}" />
+      <P>
+        Os dados da organização como tabela, prontos para o Power BI, o Looker Studio, o Google Sheets ou o Excel. Cada
+        chamada devolve uma página de até 10.000 linhas, na ordem da data, sempre igual para a mesma consulta.
+      </P>
+      <ListaDeCampos
+        titulo="Conjuntos"
+        campos={[
+          { nome: 'contatos', tipo: 'conjunto', descricao: <>Nome, telefone, estado, estágio, temperatura, responsável, etiquetas. A data é <Cod>criado_em</Cod>.</> },
+          { nome: 'mensagens', tipo: 'conjunto', descricao: <>Uma linha por mensagem: contato, direção (<Cod>entrada</Cod> ou <Cod>saida</Cod>), hora e entrega. Sem o texto, de propósito.</> },
+          { nome: 'vendas', tipo: 'conjunto', descricao: <>Data, valor, moeda, situação e quem vendeu. A data é <Cod>data_da_venda</Cod>.</> },
+          { nome: 'cobrancas', tipo: 'conjunto', descricao: <>Valor, status (<Cod>pendente</Cod>, <Cod>paga</Cod>, <Cod>vencida</Cod>, <Cod>cancelada</Cod>, <Cod>estornada</Cod>), gateway, vencimento e pagamento.</> },
+        ]}
+      />
+      <ListaDeCampos
+        titulo="Parâmetros"
+        campos={[
+          { nome: 'formato', tipo: 'string', descricao: <><Cod>json</Cod> (padrão) ou <Cod>csv</Cod>. O CSV vem em UTF-8 com BOM, separado por vírgula, valor com ponto.</> },
+          { nome: 'desde', tipo: 'data', descricao: <>Primeiro dia, <Cod>AAAA-MM-DD</Cod>, no horário de Brasília. Sem ele, desde o começo.</> },
+          { nome: 'ate', tipo: 'data', descricao: <>Último dia, inclusive. Sem ele, até agora.</> },
+          { nome: 'pagina', tipo: 'inteiro', descricao: <>A partir de 1. A próxima vem em <Cod>proxima_pagina</Cod> (JSON) ou no cabeçalho <Cod>X-Proxima-Pagina</Cod> (CSV).</> },
+          { nome: 'limite', tipo: 'inteiro', descricao: 'Linhas por página, de 1 a 10.000. Padrão 5.000.' },
+          { nome: 'chave', tipo: 'string', descricao: <>A chave, para quem não consegue mandar cabeçalho (Looker Studio, Google Sheets). Só vale nesta rota.</> },
+        ]}
+      />
+      <Nota tom="atencao" titulo="Uma chave só para relatórios">
+        No Looker Studio e no Google Sheets a chave vai no endereço, e endereço aparece em histórico e em log. Crie uma
+        chave só com <Cod>relatorios:ler</Cod>: ela lê relatórios e nada mais. Se vazar, revogue em Configurações › API.
+      </Nota>
+      <Sub>Power BI</Sub>
+      <Passos>
+        <Passo n={1} titulo="Obter dados › Web › Avançado">
+          <p>
+            Em <strong className="text-ink">Partes da URL</strong>, cole{' '}
+            <Cod>{`${BASE}/relatorios/vendas?formato=csv`}</Cod>.
+          </p>
+        </Passo>
+        <Passo n={2} titulo="Cabeçalho">
+          <p>
+            Em <strong className="text-ink">Parâmetros de cabeçalho HTTP</strong>, escolha <Cod>Authorization</Cod> e
+            escreva <Cod>{`Bearer ${CHAVE_EXEMPLO}`}</Cod>. Em <strong className="text-ink">Acesso</strong>, Anônimo.
+          </p>
+        </Passo>
+        <Passo n={3} titulo="Atualizar sozinho">
+          <p>Repita para cada conjunto. Agendar a atualização no Power BI Service relê os dados no horário escolhido.</p>
+        </Passo>
+      </Passos>
+      <Sub>Looker Studio e Google Sheets</Sub>
+      <P>
+        Numa planilha do Google, numa célula vazia:{' '}
+        <Cod>{`=IMPORTDATA("${BASE}/relatorios/vendas?formato=csv&chave=${CHAVE_EXEMPLO}")`}</Cod>. No Looker Studio,
+        adicione essa planilha como fonte de dados. A planilha se atualiza sozinha a cada hora.
+      </P>
+      <Respostas>
+        <Resposta status={200} descricao="Uma página do conjunto" aberta corpo={JSON.stringify({ conjunto: 'vendas', pagina: 1, proxima_pagina: null, linhas: 1, dados: [{ id: '8b1e0c2a-...', contato_id: '6f1c2a9e-...', data_da_venda: '2026-10-21', valor: 450, moeda: 'BRL', situacao: 'ganha', responsavel: 'Carla Mendes', criado_em: '2026-10-21T18:02:11Z' }] }, null, 2)} />
+        <Resposta status={400} descricao="consulta_invalida" corpo={`{
+  "erro": {
+    "codigo": "consulta_invalida",
+    "mensagem": "desde: use AAAA-MM-DD."
+  }
+}`} />
+        <Resposta status={404} descricao="conjunto_nao_encontrado" corpo={`{
+  "erro": {
+    "codigo": "conjunto_nao_encontrado",
+    "mensagem": "Use um destes: contatos, mensagens, vendas, cobrancas."
+  }
+}`} />
+      </Respostas>
+    </>
+  )
+}
+
 export const PAGINAS_API: PaginaDev[] = [
   { slug: 'api-autenticacao', grupo: 'API', titulo: 'Autenticação', resumo: 'Crie a chave no painel e envie como Bearer.', Corpo: Autenticacao },
   { slug: 'api-erros', grupo: 'API', titulo: 'Erros e limites', resumo: 'O formato de erro, cada código e quando repetir.', Corpo: ErrosELimites },
@@ -1120,6 +1212,18 @@ export const PAGINAS_API: PaginaDev[] = [
     painel: [
       { trechos: trechos('PATCH', `/funil/oportunidades/${OPORTUNIDADE_EXEMPLO.id}`, { situacao: 'ganha', valor: 450 }), titulo: 'Requisição' },
       { trechos: [json('200', { oportunidade: { ...OPORTUNIDADE_EXEMPLO, situacao: 'ganha', valor: 450 } })], titulo: 'Resposta' },
+    ],
+  },
+  {
+    slug: 'api-relatorios',
+    grupo: 'API',
+    titulo: 'Power BI, Looker e planilhas',
+    resumo: 'Contatos, mensagens, vendas e cobranças em CSV ou JSON, para o seu painel de BI.',
+    metodo: 'GET',
+    Corpo: Relatorios,
+    painel: [
+      { trechos: trechos('GET', '/relatorios/vendas?formato=csv&desde=2026-10-01&ate=2026-10-31'), titulo: 'Requisição' },
+      { trechos: [{ rotulo: '200', linguagem: 'texto', codigo: CSV_EXEMPLO }], titulo: 'Resposta' },
     ],
   },
   {
