@@ -1,5 +1,5 @@
 import 'server-only'
-import { ENDERECO_DA_AGENDA, NOME_DA_CREDENCIAL_DA_AGENDA } from '@/core/agenda'
+import { credencialDaAgenda, ENDERECO_DA_AGENDA } from '@/core/agenda'
 import type { HorarioLivre } from '@/core/formulario-de-agendamento'
 import { lerCredencial, listarConexoes } from '../repos/conexoes'
 
@@ -16,7 +16,7 @@ const TIMEOUT_MS = 3_000
 
 /** A chave da agenda da conta, ou `null` se ela não ligou a Verandi. */
 export async function chaveDaAgenda(clienteId: string): Promise<string | null> {
-  const conexao = (await listarConexoes(clienteId)).find((c) => c.nome === NOME_DA_CREDENCIAL_DA_AGENDA)
+  const conexao = credencialDaAgenda(await listarConexoes(clienteId))
   if (!conexao) return null
   return (await lerCredencial(conexao.id, clienteId))?.valor ?? null
 }

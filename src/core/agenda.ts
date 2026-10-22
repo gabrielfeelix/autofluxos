@@ -24,5 +24,15 @@ export const NOME_DA_AGENDA = 'Verandi'
  */
 export const NOME_DA_CREDENCIAL_DA_AGENDA = 'Verandi (agenda)'
 
+/**
+ * A credencial da agenda entre as da conta: o nome fixo, ou qualquer uma com
+ * "verandi" no nome. A do MGM foi criada à mão como `VERANDI-OFICIAL`, antes
+ * do botão existir, e o nome exato a deixava sem cartão, sem avisos e sem
+ * marcar aula pelo Inbox (22/out/2026).
+ */
+export function credencialDaAgenda<T extends { nome: string }>(conexoes: T[]): T | null {
+  return conexoes.find((c) => c.nome === NOME_DA_CREDENCIAL_DA_AGENDA) ?? conexoes.find((c) => /verandi/i.test(c.nome)) ?? null
+}
+
 /** O prefixo que toda chave da agenda tem. Serve para pegar cola errada cedo. */
 export const PREFIXO_DA_CHAVE = 'vr_'

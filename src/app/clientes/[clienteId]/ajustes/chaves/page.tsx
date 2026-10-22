@@ -25,7 +25,7 @@ import { numerosParaFormulario } from '@/server/formularios-do-whatsapp/ativar'
 import { formulariosDaConta } from '@/server/repos/formularios-do-whatsapp'
 import {
   NOME_DA_AGENDA,
-  NOME_DA_CREDENCIAL_DA_AGENDA,
+  credencialDaAgenda,
   PREFIXO_DA_CHAVE,
 } from '@/core/agenda'
 import { testeDaChave } from '@/core/conexoes'
@@ -91,7 +91,7 @@ export default async function Pagina({ params }: { params: Promise<{ clienteId: 
     }
   }
 
-  const daAgenda = conexoes.find((c) => c.nome === NOME_DA_CREDENCIAL_DA_AGENDA) ?? null
+  const daAgenda = credencialDaAgenda(conexoes)
   const avisosDaVerandi = daAgenda ? await webhookDaVerandi(clienteId) : null
   // O status de cada modelo de fora das 24h, pelo nome fixo do evento.
   const modelosDaVerandi = avisosDaVerandi
