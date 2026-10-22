@@ -169,7 +169,7 @@ export default async function Pagina({
         iaHabilitada={fluxo.iaHabilitada}
         iaComFerramentas={iaComFerramentas}
         cobrancaHabilitada={cobrancaHabilitada}
-        formularioDeAgendamento={formularios.some((f) => f.status === 'publicado')}
+        formularioDeAgendamento={formularios.some((f) => f.flowId !== null)}
         entradaLigada={fluxo.ativo}
         /* Contratar a Etapa 2 é decisão comercial da 4YU. Para a conta, o
            contrato é estado, ver o cabeçalho do editor. */

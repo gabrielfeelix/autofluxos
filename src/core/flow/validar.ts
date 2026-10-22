@@ -178,9 +178,9 @@ export type Capacidades = {
    */
   cobrancaHabilitada?: boolean
   /**
-   * Algum número da conta tem o formulário de agendamento publicado na Meta
-   * (Ajustes > Formulário de agendamento)? `false` recusa publicar o bloco
-   * Agendar; `undefined` = não sei, e não trava.
+   * Algum número da conta tem o formulário de agendamento criado na Meta
+   * (publicado, ou em rascunho, que sai em modo de teste)? `false` recusa
+   * publicar o bloco Agendar; `undefined` = não sei, e não trava.
    */
   formularioDeAgendamento?: boolean
 }

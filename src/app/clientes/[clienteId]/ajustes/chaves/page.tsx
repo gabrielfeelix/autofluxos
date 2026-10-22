@@ -96,7 +96,7 @@ export default async function Pagina({ params }: { params: Promise<{ clienteId: 
     ? await Promise.all([numerosParaFormulario(clienteId), formulariosDaConta(clienteId)]).then(([numeros, formularios]) =>
         numeros.map((n) => {
           const f = formularios.find((x) => x.canalId === n.id)
-          return { canalId: n.id, telefone: n.telefone, status: f?.status ?? 'inativo', erro: f?.erro ?? null }
+          return { canalId: n.id, telefone: n.telefone, status: f?.status ?? 'inativo', erro: f?.erro ?? null, criado: Boolean(f?.flowId) }
         }),
       )
     : []

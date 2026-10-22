@@ -11,6 +11,8 @@ export type NumeroDoFormulario = {
   telefone: string | null
   status: 'inativo' | 'rascunho' | 'publicado' | 'erro'
   erro: string | null
+  /** Já existe na Meta: sem publicar, o bot manda em modo rascunho (teste). */
+  criado: boolean
 }
 
 /**
@@ -34,7 +36,7 @@ export function CartaoDoFormularioDeAgendamento({ clienteId, numeros }: { client
       const resposta = await acaoAtivarFormulario(clienteId, canalId)
       setEstado((atual) =>
         atual.map((n) =>
-          n.canalId === canalId ? (resposta.ok ? { ...n, status: 'publicado', erro: null } : { ...n, status: 'erro', erro: resposta.erro }) : n,
+          n.canalId === canalId ? (resposta.ok ? { ...n, status: 'publicado', erro: null } : { ...n, status: 'erro', erro: resposta.erro, criado: n.criado }) : n,
         ),
       )
       setAtivando(null)
@@ -44,7 +46,15 @@ export function CartaoDoFormularioDeAgendamento({ clienteId, numeros }: { client
   return (
     <CartaoDeConexao
       logo={<LogoWhatsApp />}
-      selo={algumAtivo ? <Pilula tom="ok">ativo</Pilula> : <Pilula>não ativado</Pilula>}
+      selo={
+        algumAtivo ? (
+          <Pilula tom="ok">ativo</Pilula>
+        ) : estado.some((n) => n.criado) ? (
+          <Pilula tom="aviso">em teste</Pilula>
+        ) : (
+          <Pilula>não ativado</Pilula>
+        )
+      }
       titulo="Formulário de agendamento"
       categoria="WhatsApp"
       rodape={
@@ -69,6 +79,9 @@ export function CartaoDoFormularioDeAgendamento({ clienteId, numeros }: { client
                     </button>
                   )}
                 </div>
+                {n.criado && n.status !== 'publicado' && (
+                  <p className="text-[11px] leading-4 text-dim">Em teste: o bot já manda o formulário em modo rascunho até a Meta publicar.</p>
+                )}
                 {n.erro && <p className="text-[11px] leading-4 text-perigo">{n.erro}</p>}
               </li>
             ))}

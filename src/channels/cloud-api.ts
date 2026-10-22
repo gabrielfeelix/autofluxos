@@ -743,7 +743,7 @@ export function canalCloudApi(config: ConfigCloudApi): Canal {
       return idDoEnvio(resposta)
     },
 
-    async enviarFormulario(para, { texto, botao, flowId, token }) {
+    async enviarFormulario(para, { texto, botao, flowId, token, rascunho }) {
       const resposta = await mandar({
         to: para,
         type: 'interactive',
@@ -754,6 +754,9 @@ export function canalCloudApi(config: ConfigCloudApi): Canal {
             name: 'flow',
             parameters: {
               flow_message_version: '3',
+              // Rascunho é o formulário que a Meta ainda não publicou: ela
+              // aceita mandar assim para teste.
+              ...(rascunho ? { mode: 'draft' } : {}),
               flow_token: token,
               flow_id: flowId,
               flow_cta: cortarCaracteres(botao, LIMITE_ROTULO),

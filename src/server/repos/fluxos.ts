@@ -333,7 +333,7 @@ export async function publicar(
     : undefined
   // E pelo formulário de agendamento só quando o desenho agenda.
   const formularioDeAgendamento = analise.data.nodes.some((no) => no.type === 'agendar')
-    ? (await formulariosDaConta(fluxo.clienteId)).some((f) => f.status === 'publicado')
+    ? (await formulariosDaConta(fluxo.clienteId)).some((f) => f.flowId !== null)
     : undefined
   const conferido = validar(analise.data, {
     iaHabilitada: fluxo.iaHabilitada,

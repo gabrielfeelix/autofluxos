@@ -13,7 +13,7 @@ import { comoMandarProduto, pedidoDoBotao, textoDoCard } from '@/core/loja'
 import { alertar, type ContextoDoAlerta } from './alertar'
 import { criarCobranca, tentarPedidoNativo, textoDaCobranca } from './cobrancas'
 import { ultimaCobrancaDoFluxo, type CobrancaRegistrada } from './repos/cobrancas'
-import { formularioPublicadoDoCanal } from './repos/formularios-do-whatsapp'
+import { formularioDoCanal } from './repos/formularios-do-whatsapp'
 import { criarTokenDoFormulario, lerTokenDoFormulario, type DadosDoToken } from './formularios-do-whatsapp/token'
 import { lerMarcacao, type MarcacaoDoFormulario } from '@/core/formulario-de-agendamento'
 import { avisarHandoff } from './avisar-handoff'
@@ -2871,10 +2871,10 @@ async function aplicar(
          */
         await salvarCampos()
         const contexto = await contextoDeResposta(contato.clienteId, contato.id)
-        const formulario = contexto ? await formularioPublicadoDoCanal(contato.clienteId, contexto.canal.id) : null
+        const formulario = contexto ? await formularioDoCanal(contato.clienteId, contexto.canal.id) : null
         const enviarFormulario = canal.enviarFormulario?.bind(canal)
         if (!formulario?.flowId || !enviarFormulario || !sessaoId) {
-          return pararNoHumano('o número não tem o formulário de agendamento publicado')
+          return pararNoHumano('o número não tem o formulário de agendamento ativado')
         }
         const flowId = formulario.flowId
         const token = criarTokenDoFormulario(
@@ -2889,7 +2889,7 @@ async function aplicar(
           texto: acao.texto,
           payload: { formulario: formulario.id, rotulo: acao.botao },
         })
-        const entrega = await entregar(() => enviarFormulario(contato.waId, { texto: acao.texto, botao: acao.botao, flowId, token }), alvo)
+        const entrega = await entregar(() => enviarFormulario(contato.waId, { texto: acao.texto, botao: acao.botao, flowId, token, rascunho: formulario.status !== 'publicado' }), alvo)
         if (!entrega.ok) return pararNoHumano(entrega.motivo)
         await confirmarSeEntregue(registro, entrega)
         await agendar({

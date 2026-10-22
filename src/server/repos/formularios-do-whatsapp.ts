@@ -69,8 +69,12 @@ export async function formulariosDaConta(clienteId: string): Promise<FormularioD
   return (data as Linha[]).map(paraFormulario)
 }
 
-/** O formulário publicado de um número, se há: é o que o bloco manda. */
-export async function formularioPublicadoDoCanal(
+/**
+ * O formulário que o bloco manda num número: o que já existe na Meta
+ * (`flow_id`), publicado ou não. Sem publicar, vai em modo rascunho, que a
+ * Meta aceita para teste; quem envia olha o `status`.
+ */
+export async function formularioDoCanal(
   clienteId: string,
   canalId: string,
   modelo: ModeloDeFormulario = 'agendamento',
@@ -81,7 +85,7 @@ export async function formularioPublicadoDoCanal(
     .eq('cliente_id', clienteId)
     .eq('canal_id', canalId)
     .eq('modelo', modelo)
-    .eq('status', 'publicado')
+    .not('flow_id', 'is', null)
     .maybeSingle()
   if (ehIdInvalido(error) || tabelaAusente(error)) return null
   if (error) throw new Error(`não foi possível ler o formulário do número: ${error.message}`)
