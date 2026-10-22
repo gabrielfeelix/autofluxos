@@ -18,6 +18,7 @@ import {
 import { RodapeDaMensagem } from '@/components/lead/rodape-da-mensagem'
 import { Transcricao } from '@/components/lead/transcricao'
 import { CardsDeProduto } from '@/components/lead/cards-de-produto'
+import { CartaoDaCobranca } from './cartao-da-cobranca'
 import { TextoDoWhatsApp } from '@/components/texto-do-whatsapp'
 import { etiquetasDeDia, horaDoRelogio, horaExata } from '@/lib/quando'
 import type { MensagemDoLead } from '@/server/repos/leads'
@@ -580,7 +581,20 @@ function ListaDeMensagens({
                 mensagemId={mensagem.id}
                 favorita={favoritas.has(mensagem.id)}
             >
-            {mensagem.produtos?.length ? (
+            {/* A cobrança vira cartão com status; o Pix da mensagem seguinte fica texto. */}
+            {mensagem.cobranca ? (
+              <CartaoDaCobranca
+                clienteId={clienteId}
+                contatoId={contatoId}
+                cobranca={mensagem.cobranca}
+                rodape={
+                  <span title={horaExata(mensagem.ts)}>
+                    {mensagem.autor ? `${mensagem.autor} · ` : ''}
+                    {horaDoRelogio(mensagem.ts)}
+                  </span>
+                }
+              />
+            ) : mensagem.produtos?.length ? (
               <>
               {mensagem.fraseDosCards && (
                 <p className={`mb-1.5 max-w-full font-texto text-[14.5px] leading-[1.45] whitespace-pre-wrap [overflow-wrap:anywhere] ${

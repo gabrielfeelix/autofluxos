@@ -15,7 +15,8 @@ import { canaisDosContatos } from './repos/canais-site'
 import { contextoDeResposta, sessaoComPessoa } from './repos/conversas'
 import { ajustesDaConta } from './repos/distribuicao'
 import { lerConversa, type Lead, type MensagemDoLead } from './repos/leads'
-import { lojaDaConta } from './repos/lojas'
+import { lojaDaConta, lojaNuvemshopDaConta } from './repos/lojas'
+import { temProdutoAtivo } from './repos/produtos'
 import { favoritasEntre } from './repos/marcadores'
 import { agendadasDoContato, type MensagemAgendada } from './repos/mensagens-agendadas'
 import { passagensDoContato } from './repos/passagens'
@@ -232,10 +233,21 @@ async function cobrarNaConversa(clienteId: string, lead: Lead): Promise<CobrarNa
       gateway: conexao.gateway,
       ambiente: conexao.ambiente,
       pedeDocumento: conexao.gateway === 'asaas' && documentoDaFicha(lead.campos) === null,
+      temCatalogo: await temOndeEscolher(clienteId),
     }
   } catch {
     return null
   }
+}
+
+/** Catálogo com item ativo, ou loja on-line ligada: o Cobrar abre no catálogo. */
+async function temOndeEscolher(clienteId: string): Promise<boolean> {
+  const [catalogo, magento, nuvemshop] = await Promise.all([
+    temProdutoAtivo(clienteId).catch(() => false),
+    lojaDaConta(clienteId).catch(() => null),
+    lojaNuvemshopDaConta(clienteId).catch(() => null),
+  ])
+  return catalogo || Boolean(magento?.ativa) || Boolean(nuvemshop?.ativa)
 }
 
 /**

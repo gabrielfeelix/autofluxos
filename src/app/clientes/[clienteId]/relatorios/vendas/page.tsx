@@ -40,7 +40,7 @@ import {
 import { acharCliente } from '@/server/repos/clientes'
 import { listarQuadros } from '@/server/repos/quadros'
 import { responsaveisDoEscopo, type Responsaveis } from '@/server/repos/relatorios'
-import { existeCobranca, recebidoPeloChat, type RecebidoPeloChat } from '@/server/repos/analise-de-vendas'
+import { existeCobranca, recebidoPeloChat, vendidosPeloChat, type GanhosAgrupados, type RecebidoPeloChat } from '@/server/repos/analise-de-vendas'
 import { membrosDaConta } from '@/server/repos/usuarios'
 
 export const dynamic = 'force-dynamic'
@@ -140,6 +140,7 @@ export default async function Pagina({
         cliente.id,
       )
     : null
+  const itensDoChat = temCobranca ? blocoDosVendidosPeloChat(await vendidosPeloChat(cliente.id, periodo, responsaveis)) : null
 
   const deNegocios = temNegocio
     ? await blocosDeVendas({
@@ -154,7 +155,8 @@ export default async function Pagina({
       })
     : []
   // Logo depois dos números do período: é a outra metade do que entrou.
-  const blocos = doChat ? [...deNegocios.slice(0, 1), doChat, ...deNegocios.slice(1)] : deNegocios
+  const doChatTudo = [doChat, itensDoChat].filter((b): b is Bloco => b !== null)
+  const blocos = [...deNegocios.slice(0, 1), ...doChatTudo, ...deNegocios.slice(1)]
   const arranjo = await arranjoDaAnalise('vendas')
 
   return (
@@ -258,6 +260,32 @@ function comoTempoAtePagar(segundos: number | null): string {
 }
 
 const centavosEmReais = (centavos: number) => comoDinheiro(centavos / 100)
+
+/**
+ * Os itens das cobranças pagas pelo chat (Cobrar pelo catálogo). Separado de
+ * "O que mais vende", que conta negócios ganhos: a mesma venda não soma duas
+ * vezes. Só aparece depois do primeiro item cobrado.
+ */
+function blocoDosVendidosPeloChat(linhas: GanhosAgrupados[]): Bloco | null {
+  if (linhas.length === 0) return null
+  return {
+    id: 'vendidos-pelo-chat',
+    titulo: 'Mais vendidos pelo chat',
+    largura: 'terco',
+    conteudo: (
+      <ListaEmBarras
+        titulo="Mais vendidos pelo chat"
+        desenho="maisVendidos"
+        subtitulo="Itens das cobranças pagas no período, cobradas pelo catálogo."
+        valorPermitido
+        maximo={6}
+        unidade={['unidade', 'unidades']}
+        vazio="Nenhum item pago no período."
+        linhas={linhas.map((l) => ({ chave: l.rotulo ?? '', rotulo: l.rotulo ?? '', n: l.n, valor: l.valor === null ? null : l.valor / 100 }))}
+      />
+    ),
+  }
+}
 
 /**
  * Recebido pelo chat: Pix e link mandados na conversa (cobrança no chat).

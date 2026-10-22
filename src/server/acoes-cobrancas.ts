@@ -3,12 +3,14 @@
 import { dentroDaJanela } from '@/channels/janela'
 import { autorDaPessoa } from '@/core/autor-da-mensagem'
 import { lerValor } from '@/core/crm'
+import { conferirItens, type ItemCobrado, type PedidoDeItem } from '@/core/cobrar-do-catalogo'
+import { lojaAtivaDaConta } from './adaptador-da-loja'
 import { adaptadorDoCanal } from './adaptador-do-canal'
 import { cancelarCobranca, criarCobranca, HORAS_PARA_VENCER_NO_INBOX, tentarPedidoNativo, textoDaCobranca } from './cobrancas'
 import { podeResponderAgora } from './distribuir-atendimento'
 import { exigirCapacidade, meuAlcance, recusou } from './permissoes'
 import { recusaDoPlano } from './recursos-do-plano'
-import type { CobrancaRegistrada } from './repos/cobrancas'
+import { cobrancasDaConversa, type CobrancaRegistrada } from './repos/cobrancas'
 import { atribuirSeSemDono, confirmarEntrega, contextoDeResposta, definirStatusDaSessao, registrarSaida } from './repos/conversas'
 import { acharLead } from './repos/leads'
 import { sessaoAtual } from './sessao'
@@ -34,7 +36,7 @@ const DESCRICAO_MAXIMA = 200
 export async function acaoCobrarNaConversa(
   clienteId: string,
   contatoId: string,
-  entrada: { valor: string; descricao: string; documento?: string },
+  entrada: { valor?: string; descricao: string; documento?: string; itens?: PedidoDeItem[] },
 ): Promise<ResultadoDoCobrar> {
   const acesso = await exigirCapacidade(clienteId, 'registrar_venda', 'proprios')
   if (recusou(acesso)) return { ok: false, erro: 'Sua função não permite cobrar. Peça ao dono da conta.' }
@@ -44,13 +46,9 @@ export async function acaoCobrarNaConversa(
   const lead = await acharLead(clienteId, contatoId, await meuAlcance(clienteId))
   if (!lead) return { ok: false, erro: 'Contato não encontrado.' }
 
-  const valor = lerValor(entrada.valor)
-  if (!valor.ok || valor.valor === null || valor.valor <= 0) return { ok: false, erro: 'Digite o valor, por exemplo 109,80.' }
-  const valorCentavos = Math.round(valor.valor * 100)
-  if (valorCentavos > 100_000_000) return { ok: false, erro: 'Valor acima do permitido para uma cobrança.' }
-  const descricao = entrada.descricao.trim()
-  if (descricao === '') return { ok: false, erro: 'Diga o que está sendo cobrado.' }
-  if (descricao.length > DESCRICAO_MAXIMA) return { ok: false, erro: `A descrição passa de ${DESCRICAO_MAXIMA} caracteres.` }
+  const conferido = entrada.itens?.length ? await valorDosItens(clienteId, entrada.itens, entrada.descricao) : valorLivre(entrada)
+  if (!conferido.ok) return conferido
+  const { valorCentavos, descricao, itens } = conferido
 
   const trava = await podeResponderAgora(clienteId, contatoId, acesso.sessao.usuario.id)
   if (!trava.ok) return { ok: false, erro: trava.erro ?? 'Outra pessoa está atendendo esta conversa.' }
@@ -67,6 +65,7 @@ export async function acaoCobrarNaConversa(
     contatoId,
     valorCentavos,
     descricao,
+    itens,
     venceEm: new Date(Date.now() + HORAS_PARA_VENCER_NO_INBOX * 3_600_000),
     origem: 'inbox',
     criadaPor: quem?.usuario.nome?.trim() || null,
@@ -150,6 +149,34 @@ export async function acaoCobrarNaConversa(
   return { ok: true, cobranca }
 }
 
+type ValorConferido = { ok: true; valorCentavos: number; descricao: string; itens: ItemCobrado[] | null } | { ok: false; erro: string }
+
+/** Valor livre: sinal, ajuste, serviço avulso. Sem itens, de propósito. */
+function valorLivre(entrada: { valor?: string; descricao: string }): ValorConferido {
+  const valor = lerValor(entrada.valor ?? '')
+  if (!valor.ok || valor.valor === null || valor.valor <= 0) return { ok: false, erro: 'Digite o valor, por exemplo 109,80.' }
+  const valorCentavos = Math.round(valor.valor * 100)
+  if (valorCentavos > 100_000_000) return { ok: false, erro: 'Valor acima do permitido para uma cobrança.' }
+  const descricao = entrada.descricao.trim()
+  if (descricao === '') return { ok: false, erro: 'Diga o que está sendo cobrado.' }
+  if (descricao.length > DESCRICAO_MAXIMA) return { ok: false, erro: `A descrição passa de ${DESCRICAO_MAXIMA} caracteres.` }
+  return { ok: true, valorCentavos, descricao, itens: null }
+}
+
+/**
+ * Do catálogo: o preço é relido agora, na mesma loja da busca (catálogo
+ * próprio, Magento ou Nuvemshop), e a soma é de `core/cobrar-do-catalogo.ts`.
+ */
+async function valorDosItens(clienteId: string, pedidos: PedidoDeItem[], descricao: string): Promise<ValorConferido> {
+  const loja = await lojaAtivaDaConta(clienteId)
+  if (!loja) return { ok: false, erro: 'Esta conta ainda não tem catálogo nem loja ligada.' }
+  const ids = [...new Set(pedidos.map((p) => p.produtoId.trim()).filter(Boolean))].slice(0, 25)
+  const lidos = await loja.lerPorSku(ids)
+  if (!lidos.ok) return { ok: false, erro: 'O catálogo não respondeu agora. Tente de novo.' }
+  const r = conferirItens(pedidos, lidos.valor, descricao)
+  return r.ok ? { ok: true, valorCentavos: r.totalCentavos, descricao: r.descricao, itens: r.itens } : r
+}
+
 export async function acaoCancelarCobranca(
   clienteId: string,
   cobrancaId: string,
@@ -157,4 +184,22 @@ export async function acaoCancelarCobranca(
   const acesso = await exigirCapacidade(clienteId, 'registrar_venda', 'proprios')
   if (recusou(acesso)) return { ok: false, erro: 'Sua função não permite cancelar cobrança.' }
   return cancelarCobranca(clienteId, cobrancaId, acesso.sessao.usuario.nome?.trim() || null)
+}
+
+/**
+ * O status de agora das cobranças desta conversa, para o cartão da bolha
+ * mudar sozinho enquanto espera: pagar avisa pelo gateway, e o Inbox não tem
+ * outro sinal disso. Só id e status, nada de valor.
+ */
+export async function acaoStatusDasCobrancas(
+  clienteId: string,
+  contatoId: string,
+  ids: string[],
+): Promise<Record<string, CobrancaRegistrada['status']>> {
+  const acesso = await exigirCapacidade(clienteId, 'atender', 'proprios')
+  if (recusou(acesso)) return {}
+  const lead = await acharLead(clienteId, contatoId, await meuAlcance(clienteId))
+  if (!lead) return {}
+  const lidas = await cobrancasDaConversa(contatoId, ids.slice(0, 20))
+  return Object.fromEntries(lidas.filter((c) => c.clienteId === clienteId).map((c) => [c.id, c.status]))
 }

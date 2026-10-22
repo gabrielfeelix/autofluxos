@@ -1,5 +1,6 @@
 import 'server-only'
 import type { Gateway } from '@/channels/pagamento'
+import type { ItemCobrado } from '@/core/cobrar-do-catalogo'
 import { db, ehIdInvalido } from '../db'
 
 /**
@@ -16,7 +17,7 @@ export const STATUS_DE_COBRANCA = ['pendente', 'paga', 'vencida', 'cancelada', '
 export type StatusDeCobranca = (typeof STATUS_DE_COBRANCA)[number]
 export type OrigemDaCobranca = 'inbox' | 'fluxo' | 'ia' | 'api'
 
-export type ItemCobrado = { nome: string; quantidade: number; valorCentavos: number }
+export type { ItemCobrado }
 
 export type CobrancaRegistrada = {
   id: string
@@ -150,6 +151,19 @@ export async function completarCobranca(
 /** Só a que nunca chegou ao gateway: sem pagamento, nada foi cobrado de ninguém. */
 export async function apagarCobrancaQueNaoSaiu(id: string): Promise<void> {
   await db().from('cobrancas').delete().eq('id', id).is('pagamento_no_gateway', null)
+}
+
+/**
+ * As cobranças que saíram nesta conversa, para o cartão da bolha. Pelo
+ * contato, além do id: o id vem do `payload` da mensagem, e o contato prende
+ * a leitura à conversa aberta. Tabela ausente é "nenhuma".
+ */
+export async function cobrancasDaConversa(contatoId: string, ids: readonly string[]): Promise<CobrancaRegistrada[]> {
+  if (ids.length === 0) return []
+  const { data, error } = await db().from('cobrancas').select(COLUNAS).eq('contato_id', contatoId).in('id', [...ids])
+  if (tabelaAusente(error) || ehIdInvalido(error)) return []
+  if (error) throw new Error(`não foi possível ler as cobranças da conversa: ${error.message}`)
+  return (data as Linha[]).map(paraCobranca)
 }
 
 export async function acharCobranca(clienteId: string, id: string): Promise<CobrancaRegistrada | null> {

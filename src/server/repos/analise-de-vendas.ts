@@ -399,6 +399,23 @@ select count(*) filter (where c.status = 'paga' and c.paga_em >= lim.ini and c.p
   from public.cobrancas c, lim
  where ${DO_ESCOPO_DA_COBRANCA}`
 
+// Os itens de `cobrancas.itens` (Cobrar pelo catálogo); `valorCentavos` é o de cada um.
+const SQL_VENDIDOS_PELO_CHAT = `
+with ${LIMITES}
+select i->>'nome' as produto,
+       sum((i->>'quantidade')::int)::int as n,
+       sum((i->>'quantidade')::int * (i->>'valorCentavos')::bigint)::bigint as valor
+  from public.cobrancas c
+  cross join lim
+  cross join lateral jsonb_array_elements(case when jsonb_typeof(c.itens) = 'array' then c.itens else '[]'::jsonb end) i
+ where ${DO_ESCOPO_DA_COBRANCA}
+   and c.status = 'paga'
+   and c.paga_em >= lim.ini and c.paga_em < lim.fim
+   and i ? 'nome' and i ? 'quantidade' and i ? 'valorCentavos'
+ group by 1
+ order by 3 desc
+ limit 20`
+
 const SQL_EXISTE_COBRANCA = `
 select exists (select 1 from public.cobrancas c where c.cliente_id = $1) as existe`
 
@@ -443,6 +460,17 @@ export async function recebidoPeloChat(
     }
   } catch (erro) {
     if (erro instanceof Error && /relation "public\.cobrancas" does not exist/.test(erro.message)) return null
+    throw erro
+  }
+}
+
+/** O que mais saiu nas cobranças pagas pelo chat, por item. Valor em centavos. */
+export async function vendidosPeloChat(clienteId: string, periodo: Periodo, responsaveis: Responsaveis): Promise<GanhosAgrupados[]> {
+  try {
+    const { rows } = await bancoDeDados().query(SQL_VENDIDOS_PELO_CHAT, parametros(clienteId, periodo, responsaveis, null).slice(0, 4))
+    return (rows as Record<string, unknown>[]).map((r) => ({ rotulo: String(r.produto), n: Number(r.n), valor: numeroOuNulo(r.valor) }))
+  } catch (erro) {
+    if (erro instanceof Error && /relation "public\.cobrancas" does not exist/.test(erro.message)) return []
     throw erro
   }
 }

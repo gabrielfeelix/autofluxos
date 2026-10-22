@@ -105,6 +105,11 @@ aqui fica o que o cliente ganha.
   WhatsApp, com o valor e o botão "Copiar código Pix", e ganha o selo de pago
   quando o dinheiro cai. Nenhuma plataforma pequena no Brasil faz isso.
   *(22/out/2026)*
+- **Cobrar escolhendo do catálogo**: na conversa, quem atende busca o
+  produto, ajusta a quantidade e manda o Pix com o preço certo, sem digitar
+  valor. Sinal e serviço avulso continuam em valor livre. A cobrança aparece
+  na conversa como cartão que vira "Paga" sozinho, e Análise > Vendas mostra o
+  que mais vende pelo chat. *(22/out/2026)*
 - **Transmissão para um segmento salvo**: a mesma regra usada em Contatos
   (quem comprou há mais de 60 dias, quem gastou acima de um valor) vira o
   público da campanha, sem precisar etiquetar ninguém. *(22/out/2026)*

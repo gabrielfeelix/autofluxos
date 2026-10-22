@@ -23,6 +23,8 @@ import { TIPOS_DE_MIDIA, type TipoDeMidia } from '@/core/flow/schema'
 import { casarReacoes } from '@/core/reacoes'
 import { linhasDoCard, textoDoCard, type ProdutoDaLoja } from '@/core/loja'
 import { db, ehIdInvalido } from '../db'
+import { cobrancasDaConversa } from './cobrancas'
+import { itensDoJson, type ItemCobrado } from '@/core/cobrar-do-catalogo'
 import type { AlcanceDeConversas } from '@/core/permissoes'
 
 /**
@@ -152,6 +154,23 @@ export type ProdutoNaMensagem = { nome: string; foto: string | null; titulo: str
 /** O botão de link (`cta_url`) que saiu embaixo do texto, como a pessoa viu. */
 export type BotaoNaMensagem = { rotulo: string; url: string }
 
+/**
+ * A cobrança que saiu nesta mensagem, para a bolha virar cartão com status.
+ * Só na mensagem do resumo (ou do pedido nativo); a do Pix copia e cola fica
+ * como texto, que é o que a pessoa copia.
+ */
+export type CobrancaNaMensagem = {
+  id: string
+  status: 'pendente' | 'paga' | 'vencida' | 'cancelada' | 'estornada'
+  valorCentavos: number
+  descricao: string
+  itens: ItemCobrado[]
+  venceEm: string
+  pagaEm: string | null
+  pixCopiaCola: string | null
+  link: string | null
+}
+
 /** O arquivo de uma mensagem, quando ela tem um. `texto` é a legenda. */
 export type AnexoDaMensagem = {
   midia: TipoDeMidia
@@ -222,6 +241,7 @@ export type MensagemDoLead = {
    * tinha para tocar (02/out/2026).
    */
   botao?: BotaoNaMensagem
+  cobranca?: CobrancaNaMensagem
   /**
    * O lugar que ela mandou. Ausente em quase toda linha.
    *
@@ -1202,6 +1222,8 @@ export async function lerConversa(
     return alvo !== undefined && porWaId.has(alvo)
   }
 
+  const cobrancas = await cobrancasDasMensagens(contatoId, visiveis)
+
   const montadas = visiveis
       /*
        * **A reação some da lista como linha própria.** Ela já foi grudada na
@@ -1292,6 +1314,7 @@ export async function lerConversa(
           ...(produtos.length ? { produtos } : {}),
           ...(produtos.length && fraseDosCards(m.texto, m.payload) ? { fraseDosCards: fraseDosCards(m.texto, m.payload)! } : {}),
           ...(botao ? { botao } : {}),
+          ...(cobrancas.has(cobrancaDoPayload(m.payload) ?? '') ? { cobranca: cobrancas.get(cobrancaDoPayload(m.payload)!)! } : {}),
           ...(recebido ? { recebido } : {}),
           ...(semCopia ? { semCopia: true as const } : {}),
           ...(naoSuportada ? { naoSuportada: true as const } : {}),
@@ -1386,6 +1409,39 @@ function anexoDoPayload(payload: unknown): AnexoDaMensagem | null {
 
 /** Os cards de produto em `payload.produtos`; foto e link só `https`, e sem os dois não é card. */
 /** O botão de link em `payload.botao`; só `https`, o resto não vira link na tela. */
+/** O id da cobrança do resumo ou do pedido nativo; a mensagem do Pix (`pix: true`) não conta. */
+function cobrancaDoPayload(payload: unknown): string | null {
+  const p = payload as { cobranca?: unknown; pix?: unknown } | null
+  return p && typeof p.cobranca === 'string' && p.pix !== true ? p.cobranca : null
+}
+
+/** Uma leitura só para as cobranças da tela. Falhou, a bolha fica texto. */
+async function cobrancasDasMensagens(contatoId: string, mensagens: { payload: unknown }[]): Promise<Map<string, CobrancaNaMensagem>> {
+  const ids = [...new Set(mensagens.map((m) => cobrancaDoPayload(m.payload)).filter((id): id is string => id !== null))]
+  if (ids.length === 0) return new Map()
+  try {
+    const lidas = await cobrancasDaConversa(contatoId, ids)
+    return new Map(
+      lidas.map((c) => [
+        c.id,
+        {
+          id: c.id,
+          status: c.status,
+          valorCentavos: c.valorCentavos,
+          descricao: c.descricao,
+          itens: itensDoJson(c.itens),
+          venceEm: c.venceEm,
+          pagaEm: c.pagaEm,
+          pixCopiaCola: c.pixCopiaCola,
+          link: c.link,
+        },
+      ]),
+    )
+  } catch {
+    return new Map()
+  }
+}
+
 function botaoDoPayload(payload: unknown): BotaoNaMensagem | null {
   const b = (payload as { botao?: { rotulo?: unknown; url?: unknown } } | null)?.botao
   if (typeof b?.rotulo !== 'string' || typeof b.url !== 'string' || !b.url.startsWith('https://')) return null
