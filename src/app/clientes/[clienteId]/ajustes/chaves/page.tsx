@@ -88,6 +88,8 @@ export default async function Pagina({ params }: { params: Promise<{ clienteId: 
   }
 
   const daAgenda = conexoes.find((c) => c.nome === NOME_DA_CREDENCIAL_DA_AGENDA) ?? null
+  // A agenda tem cartão próprio, com testar, trocar e desligar: fora da lista genérica.
+  const outras = conexoes.filter((c) => c.id !== daAgenda?.id)
 
   // O formulário de agendamento só existe com a agenda ligada: a lista vem dela.
   const numerosDoFormulario: NumeroDoFormulario[] = daAgenda
@@ -179,6 +181,40 @@ export default async function Pagina({ params }: { params: Promise<{ clienteId: 
             conexaoId={daAgenda.id}
             blocosQueUsam={usoPorConexao.get(daAgenda.id)?.blocos ?? 0}
             fluxosQueUsam={usoPorConexao.get(daAgenda.id)?.fluxos ?? 0}
+            acoes={
+              <>
+                <ModalFormulario
+                  botao="Trocar chave"
+                  variante="secundario"
+                  tamanho="sm"
+                  titulo={`Trocar a chave da ${NOME_DA_AGENDA}`}
+                  descricao="Os blocos apontam para esta credencial, não para a chave: a troca vale na próxima conversa e nada precisa ser republicado. Depois, use Testar agora."
+                  rotuloEnviar="Guardar"
+                  action={acaoTrocarValorDaConexao.bind(null, clienteId, daAgenda.id)}
+                >
+                  <label className="block">
+                    <RotuloCampo>Nova chave da API</RotuloCampo>
+                    <input
+                      name="valor"
+                      type="password"
+                      required
+                      autoComplete="off"
+                      placeholder={`${PREFIXO_DA_CHAVE}…`}
+                      className="app-field px-3 py-2.5 font-mono text-[13px]"
+                    />
+                  </label>
+                </ModalFormulario>
+                <BotaoPerigo
+                  rotulo="Desligar"
+                  pergunta={`Desligar a ${NOME_DA_AGENDA}? ${
+                    usoPorConexao.get(daAgenda.id)
+                      ? `Os blocos da agenda param de funcionar, em: ${usoPorConexao.get(daAgenda.id)!.nomes.join(', ')}.`
+                      : 'Nenhum bloco usa a agenda hoje, nada para de funcionar.'
+                  } A chave sai do cofre e não dá para desfazer.`}
+                  acao={acaoApagarConexao.bind(null, clienteId, daAgenda.id)}
+                />
+              </>
+            }
           />
         ) : (
           <CartaoDeConexao
@@ -219,7 +255,7 @@ export default async function Pagina({ params }: { params: Promise<{ clienteId: 
 
         {daAgenda && <CartaoDoFormularioDeAgendamento clienteId={clienteId} numeros={numerosDoFormulario} />}
 
-        {conexoes.length === 0 ? (
+        {outras.length === 0 ? (
           <CartaoDeConexao
             tracejado
             logo={<LogoChave />}
@@ -231,7 +267,7 @@ export default async function Pagina({ params }: { params: Promise<{ clienteId: 
           </CartaoDeConexao>
         ) : (
           <>
-            {conexoes.map((conexao) => {
+            {outras.map((conexao) => {
               const uso = usoPorConexao.get(conexao.id)
               const teste = testeDaChave(conexao, conexao.id === daAgenda?.id)
               // Excluir diz o efeito com nome: "para de funcionar" sem dizer

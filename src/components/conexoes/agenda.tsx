@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useTransition } from 'react'
+import { useState, useTransition, type ReactNode } from 'react'
 import { acaoConferirAgenda, type RespostaDaAgenda } from '@/server/acoes'
 import { NOME_DA_AGENDA } from '@/core/agenda'
 import { CartaoDeConexao } from './cartao'
@@ -29,11 +29,17 @@ export function CartaoDaAgenda({
   conexaoId,
   blocosQueUsam,
   fluxosQueUsam,
+  acoes,
 }: {
   clienteId: string
   conexaoId: string
   blocosQueUsam: number
   fluxosQueUsam: number
+  /**
+   * Trocar a chave e desligar, ao lado do Testar. A credencial da agenda não
+   * aparece na lista genérica de chaves: um cartão só por sistema.
+   */
+  acoes?: ReactNode
 }) {
   const [resultado, setResultado] = useState<RespostaDaAgenda | null>(null)
   const [conferindo, comecar] = useTransition()
@@ -47,6 +53,7 @@ export function CartaoDaAgenda({
       titulo={NOME_DA_AGENDA}
       categoria="Agenda"
       rodape={
+        <>
         <button
           type="button"
           disabled={conferindo}
@@ -61,6 +68,8 @@ export function CartaoDaAgenda({
         >
           {conferindo ? 'conferindo…' : 'Testar agora'}
         </button>
+        {acoes}
+        </>
       }
     >
 
