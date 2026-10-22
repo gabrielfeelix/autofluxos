@@ -25,6 +25,8 @@ import {
   validarTemplate,
   variaveisDe,
   type Componentes,
+  comCliqueContado,
+  ENDERECO_DO_CLIQUE,
 } from './templates'
 
 const CORPO_OK: Componentes = { corpo: 'Oi {{1}}, sua consulta é amanhã às {{2}}.' }
@@ -568,5 +570,21 @@ describe('valores das lacunas', () => {
 
   it('preenche cada lacuna com o seu valor', () => {
     expect(preencherLacunas(componentes.corpo, ['Ana', '123'])).toBe('Olá Ana, seu pedido 123 saiu.')
+  })
+})
+
+describe('botão de link com clique contado (modelo escrito do zero)', () => {
+  it('a Meta recebe o nosso endereço com a lacuna e um exemplo; o destino fica no botão', () => {
+    const botao = comCliqueContado({ tipo: 'URL', texto: 'Ver horários', valor: 'https://estudio.com.br/agenda' })
+    expect(botao).toEqual({
+      tipo: 'URL',
+      texto: 'Ver horários',
+      valor: `${ENDERECO_DO_CLIQUE}{{1}}`,
+      destino: 'https://estudio.com.br/agenda',
+    })
+    const meta = componentesParaMeta({ corpo: 'Oi', botoes: [botao] }) as { type: string; buttons?: unknown[] }[]
+    expect(meta.find((c) => c.type === 'BUTTONS')?.buttons).toEqual([
+      { type: 'URL', text: 'Ver horários', url: `${ENDERECO_DO_CLIQUE}{{1}}`, example: [`${ENDERECO_DO_CLIQUE}exemplo`] },
+    ])
   })
 })

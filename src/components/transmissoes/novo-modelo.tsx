@@ -25,6 +25,7 @@ import {
   problemaDoBotao,
   pedidosDeBotao,
   telefoneParaAMeta,
+  TEXTO_MAXIMO_DO_BOTAO,
   type Categoria,
 } from '@/core/templates'
 
@@ -562,6 +563,8 @@ function Ajuste({
 }) {
   const router = useRouter()
   const [corpo, setCorpo] = useState(modelo.corpo)
+  const [textoDoLink, setTextoDoLink] = useState('')
+  const [url, setUrl] = useState('')
   const [erro, setErro] = useState<string | null>(null)
   const [salvando, comecar] = useTransition()
 
@@ -578,6 +581,7 @@ function Ajuste({
         titulo: modelo.titulo,
         corpo,
         categoria: modelo.categoria,
+        link: { texto: textoDoLink, url },
       })
       if (!r.ok) {
         setErro(r.erro ?? 'Não foi possível criar.')
@@ -627,6 +631,37 @@ function Ajuste({
       </div>
 
       {/*
+        O botão de link é opcional e conta o clique: a Meta aprova o nosso
+        endereço, que redireciona para este link. Sem ele, o modelo é só texto.
+      */}
+      <div>
+        <span className="mb-1.5 block text-[11px] font-bold tracking-[0.05em] text-muted uppercase">
+          Botão com link (opcional)
+        </span>
+        <div className="grid gap-2 sm:grid-cols-[minmax(0,2fr)_minmax(0,3fr)]">
+          <input
+            value={textoDoLink}
+            onChange={(e) => setTextoDoLink(e.target.value)}
+            maxLength={TEXTO_MAXIMO_DO_BOTAO}
+            placeholder="Exemplo: Ver horários"
+            aria-label="Texto do botão"
+            className="app-field px-[13px] py-[11px] text-[13.5px]"
+          />
+          <input
+            value={url}
+            onChange={(e) => setUrl(e.target.value)}
+            inputMode="url"
+            placeholder="Exemplo: https://seusite.com.br/agenda"
+            aria-label="Link do botão"
+            className="app-field px-[13px] py-[11px] text-[13.5px]"
+          />
+        </div>
+        <p className="mt-1.5 text-[11.5px] leading-[1.45] text-dim">
+          Quem toca no botão é contado no resultado da transmissão.
+        </p>
+      </div>
+
+      {/*
         A prévia com um nome de gente.
 
         "Oi {nome}" não responde "o que a pessoa recebe?". Ver "Oi Maria" é o
@@ -636,9 +671,14 @@ function Ajuste({
         <span className="mb-1.5 block text-[11px] font-bold tracking-[0.05em] text-muted uppercase">
           Como o cliente recebe
         </span>
-        <p className="rounded-[12px] bg-[#dcf8c6] px-3 py-2.5 text-[13px] leading-[1.5] whitespace-pre-wrap text-[#111b21]">
-          {previa(corpo) || ' '}
-        </p>
+        <div className="overflow-hidden rounded-[12px] bg-[#dcf8c6] text-[#111b21]">
+          <p className="px-3 py-2.5 text-[13px] leading-[1.5] whitespace-pre-wrap">{previa(corpo) || ' '}</p>
+          {textoDoLink.trim() && (
+            <p className="border-t border-black/10 px-3 py-2 text-center text-[13px] font-semibold text-[#027eb5]">
+              ↗ {textoDoLink.trim()}
+            </p>
+          )}
+        </div>
       </div>
 
       {erro && <p className="text-[12.5px] leading-5 text-perigo">{erro}</p>}

@@ -21,12 +21,15 @@ import {
   paraFormatoDaMeta,
 } from '@/core/modelos-prontos'
 import {
+  comCliqueContado,
   ENDERECO_DO_CLIQUE,
   manterDestinos,
+  TEXTO_MAXIMO_DO_BOTAO,
   normalizarNome,
   temErro,
   validarTemplate,
   variaveisDe,
+  type Botao,
   type Categoria,
   type Componentes,
 } from '@/core/templates'
@@ -241,13 +244,31 @@ export async function acaoCriarTemplate(
  */
 export async function acaoCriarModelo(
   clienteId: string,
-  dados: { titulo: string; corpo: string; categoria: Categoria },
+  dados: {
+    titulo: string
+    corpo: string
+    categoria: Categoria
+    /** Botão que abre um link, com o clique contado pelo nosso endereço. */
+    link?: { texto: string; url: string } | null
+  },
 ): Promise<ResultadoDoTemplate> {
   const acesso = await exigirCapacidade(clienteId, 'configurar_operacao', 'todos')
   if (recusou(acesso)) return acesso
 
   const escrito = dados.corpo.trim()
   if (!escrito) return { ok: false, erro: 'Escreva a mensagem.' }
+
+  let botoes: Botao[] | undefined
+  if (dados.link && (dados.link.texto.trim() || dados.link.url.trim())) {
+    const texto = dados.link.texto.trim()
+    const url = dados.link.url.trim()
+    if (!texto) return { ok: false, erro: 'Escreva o texto do botão.' }
+    if (texto.length > TEXTO_MAXIMO_DO_BOTAO) return { ok: false, erro: `O texto do botão passa de ${TEXTO_MAXIMO_DO_BOTAO} caracteres.` }
+    if (!/^https:\/\/[^\s{}]+\.[^\s{}]+$/i.test(url)) return { ok: false, erro: 'O link precisa começar com https:// e não pode ter espaço.' }
+    // O botão aponta para o nosso endereço de clique; o destino fica guardado
+    // nele, e a tela de transmissões passa a contar quem tocou.
+    botoes = [comCliqueContado({ tipo: 'URL', texto, valor: url })]
+  }
 
   /*
    * Campo que não existe no catálogo viraria `{{n}}` sem exemplo, e a Meta
@@ -268,7 +289,7 @@ export async function acaoCriarModelo(
   return acaoCriarTemplate(clienteId, {
     nome: nomeAutomatico(dados.titulo),
     categoria: dados.categoria,
-    componentes: { corpo },
+    componentes: { corpo, ...(botoes ? { botoes } : {}) },
     exemplos: exemplosPara(campos),
   })
 }

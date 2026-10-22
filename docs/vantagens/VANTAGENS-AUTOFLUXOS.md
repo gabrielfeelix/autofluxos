@@ -29,6 +29,8 @@ aqui fica o que o cliente ganha.
 - **Inbox único** para WhatsApp, Instagram, chat do site e Telegram.
 - **Telegram completo**: cola o token do bot e ele responde com os mesmos
   fluxos e a mesma IA, sem custo por mensagem. *(21/out/2026)*
+  Foto, áudio e arquivo mandados pelo cliente chegam ao Inbox e à IA como
+  no WhatsApp. *(22/out/2026)*
 - **Ligação de voz** do visitante do site direto para o atendente.
 - **Fila com distribuição automática**, respeitando quem está disponível e o
   teto de cada pessoa.
@@ -92,6 +94,12 @@ aqui fica o que o cliente ganha.
 - **Pix dentro do WhatsApp**: a cobrança chega como pedido do próprio
   WhatsApp, com o valor e o botão "Copiar código Pix", e ganha o selo de pago
   quando o dinheiro cai. Nenhuma plataforma pequena no Brasil faz isso.
+  *(22/out/2026)*
+- **Transmissão para um segmento salvo**: a mesma regra usada em Contatos
+  (quem comprou há mais de 60 dias, quem gastou acima de um valor) vira o
+  público da campanha, sem precisar etiquetar ninguém. *(22/out/2026)*
+- **Modelo próprio com botão de link e clique contado**: a mensagem escrita
+  pela empresa ganha um botão para o site, e a transmissão mostra quem tocou.
   *(22/out/2026)*
 - **Orçamento de PC montado**: a IA consulta as peças com estoque do
   montador da loja (processador, placa-mãe, memória, placa de vídeo), soma

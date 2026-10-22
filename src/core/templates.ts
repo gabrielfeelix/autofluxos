@@ -119,6 +119,8 @@ export const LIMITE_FOOTER = 60
 export const LIMITE_VARIAVEIS_NO_HEADER = 1
 /** Dez botões no total, somando todos os tipos. */
 export const LIMITE_BOTOES = 10
+/** O texto de um botão da Meta para em 25 caracteres. */
+export const TEXTO_MAXIMO_DO_BOTAO = 25
 /** Teto por tipo de botão. Estourar é recusa certa. */
 export const LIMITE_POR_TIPO_DE_BOTAO = {
   QUICK_REPLY: 10,
