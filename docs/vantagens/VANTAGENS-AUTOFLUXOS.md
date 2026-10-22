@@ -151,6 +151,9 @@ aqui fica o que o cliente ganha.
   botão Pagar, que abre o QR e o copia e cola. Sem planilha, sem lembrar de
   cobrar. Aluno de férias: pausa e retoma a mensalidade na ficha.
   *(22/out/2026)*
+- **Mensalidade no Pix Automático ou no cartão**: a pessoa autoriza uma vez
+  no app do banco, ou cadastra o cartão no primeiro pagamento, e os meses
+  seguintes são cobrados sozinhos. O convite sai na conversa. *(22/out/2026)*
 - **Transmissão para um segmento salvo**: a mesma regra usada em Contatos
   (quem comprou há mais de 60 dias, quem gastou acima de um valor) vira o
   público da campanha, sem precisar etiquetar ninguém. *(22/out/2026)*
