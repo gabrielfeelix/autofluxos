@@ -63,17 +63,20 @@ export type CorpoDoWebhook = {
 /**
  * Enfileira o evento para cada webhook ativo que o assina, e agenda a primeira
  * tentativa. Sem assinante, custa uma consulta e para.
+ *
+ * `contatoId` nulo é a cobrança cujo contato foi apagado: a cobrança fica, e o
+ * evento sai com `dados.contato: null`.
  */
 export async function emitirEvento(
   clienteId: string,
   evento: EventoDeWebhook,
-  contatoId: string,
+  contatoId: string | null,
   dados: Record<string, unknown> = {},
 ): Promise<void> {
   // A Conversions API anda junto dos webhooks de saída, mas não depende de
   // ninguém assinar: é a Meta que recebe. Ver `conversoes-da-meta.ts`.
-  if (evento === 'oportunidade.ganha') avisarConversao(clienteId, contatoId, 'Purchase', typeof dados.valor === 'number' ? dados.valor : null)
-  if (evento === 'contato.etapa_mudou') avisarConversao(clienteId, contatoId, 'LeadSubmitted')
+  if (contatoId && evento === 'oportunidade.ganha') avisarConversao(clienteId, contatoId, 'Purchase', typeof dados.valor === 'number' ? dados.valor : null)
+  if (contatoId && evento === 'contato.etapa_mudou') avisarConversao(clienteId, contatoId, 'LeadSubmitted')
 
   try {
     const assinantes = await assinantesDoEvento(clienteId, evento)
@@ -84,7 +87,7 @@ export async function emitirEvento(
       evento,
       criado_em: new Date().toISOString(),
       organizacao_id: clienteId,
-      dados: { contato: await lerContatoDaApi(clienteId, contatoId), ...dados },
+      dados: { contato: contatoId ? await lerContatoDaApi(clienteId, contatoId) : null, ...dados },
     }
     const ids = await enfileirarEntregas(
       clienteId,

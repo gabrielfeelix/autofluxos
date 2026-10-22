@@ -14,7 +14,7 @@ import { db, ehIdInvalido } from '../db'
 
 export const STATUS_DE_COBRANCA = ['pendente', 'paga', 'vencida', 'cancelada', 'estornada'] as const
 export type StatusDeCobranca = (typeof STATUS_DE_COBRANCA)[number]
-export type OrigemDaCobranca = 'inbox' | 'fluxo' | 'ia'
+export type OrigemDaCobranca = 'inbox' | 'fluxo' | 'ia' | 'api'
 
 export type ItemCobrado = { nome: string; quantidade: number; valorCentavos: number }
 

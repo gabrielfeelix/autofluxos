@@ -34,6 +34,16 @@ export const EVENTOS_DE_WEBHOOK = [
     rotulo: 'Oportunidade perdida',
     explicacao: 'Um negócio foi marcado como perdido, com o motivo.',
   },
+  {
+    chave: 'cobranca.paga',
+    rotulo: 'Cobrança paga',
+    explicacao: 'O gateway confirmou o pagamento de uma cobrança: valor, descrição e quando foi pago.',
+  },
+  {
+    chave: 'cobranca.vencida',
+    rotulo: 'Cobrança vencida',
+    explicacao: 'Uma cobrança passou do vencimento sem pagamento e foi cancelada no gateway.',
+  },
 ] as const
 
 export type EventoDeWebhook = (typeof EVENTOS_DE_WEBHOOK)[number]['chave']

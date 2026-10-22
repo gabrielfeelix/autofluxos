@@ -192,6 +192,25 @@ function Autenticacao() {
               </>
             ),
           },
+          {
+            nome: 'cobrancas:ler',
+            tipo: 'escopo',
+            descricao: (
+              <>
+                Consultar cobranças por contato e status: <Link href="/ajuda/desenvolvedores/api-listar-cobrancas">GET /cobrancas</Link>.
+              </>
+            ),
+          },
+          {
+            nome: 'cobrancas:criar',
+            tipo: 'escopo',
+            descricao: (
+              <>
+                Gerar Pix e link de pagamento: <Link href="/ajuda/desenvolvedores/api-criar-cobranca">POST /cobrancas</Link>. O
+                dinheiro cai na conta de recebimento conectada em Ajustes › Pagamentos.
+              </>
+            ),
+          },
         ]}
       />
       <Sub>Revogar</Sub>
@@ -211,10 +230,11 @@ function Autenticacao() {
 function ErrosELimites() {
   const codigos: [number, string, string][] = [
     [400, 'json_invalido', 'O corpo não é JSON válido.'],
-    [400, 'idempotencia_obrigatoria', 'Envio de modelo sem o cabeçalho Idempotency-Key.'],
+    [400, 'idempotencia_obrigatoria', 'Envio de modelo ou criação de cobrança sem o cabeçalho Idempotency-Key.'],
     [401, 'nao_autenticado', 'Chave ausente, com formato errado, inexistente ou revogada.'],
     [403, 'escopo_insuficiente', 'A chave não tem a permissão que o endpoint pede.'],
     [403, 'plano_sem_api', 'O plano da organização não inclui a API.'],
+    [403, 'plano_sem_cobranca', 'O plano da organização não inclui Cobrança (do Operação para cima).'],
     [404, 'contato_nao_encontrado', 'Nenhum contato com este telefone na organização.'],
     [404, 'etiqueta_nao_encontrada', 'Filtro por etiqueta com um nome que não existe na organização.'],
     [404, 'funil_nao_encontrado', 'O funil_id não é de um funil desta organização.'],
@@ -232,6 +252,7 @@ function ErrosELimites() {
     [404, 'template_nao_encontrado', 'Nenhum modelo com este nome (e idioma) na organização.'],
     [409, 'template_nao_aprovado', 'O modelo existe, mas não está aprovado na Meta agora (pendente, pausado, recusado).'],
     [409, 'sem_numero', 'A organização não tem número de WhatsApp conectado.'],
+    [409, 'sem_conta_de_recebimento', 'A organização não conectou Mercado Pago nem Asaas em Ajustes › Pagamentos.'],
     [409, 'requisicao_em_andamento', 'Outra chamada com a mesma Idempotency-Key ainda está em andamento.'],
     [413, 'corpo_grande', 'Corpo acima de 64 KB.'],
     [422, 'corpo_invalido', 'Campo obrigatório faltando ou com tipo errado. A mensagem diz qual.'],
@@ -241,11 +262,14 @@ function ErrosELimites() {
     [422, 'idioma_obrigatorio', 'O modelo existe em mais de um idioma e o campo idioma não veio.'],
     [422, 'valores_incompletos', 'A quantidade de valores não bate com as variáveis do modelo.'],
     [422, 'template_com_midia', 'Modelo com imagem, vídeo ou documento no cabeçalho, que a API ainda não envia.'],
+    [422, 'documento_obrigatorio', 'O Asaas exige CPF ou CNPJ de quem paga, e o contato ainda não tem.'],
+    [422, 'documento_invalido', 'CPF ou CNPJ com dígito errado.'],
     [422, 'idempotencia_conflito', 'A mesma Idempotency-Key foi usada com outro corpo nas últimas 24 horas.'],
     [429, 'limite_excedido', 'Mais de 120 chamadas por minuto com a mesma chave.'],
     [429, 'teto_diario', 'A organização chegou ao teto diário de modelos pela API.'],
     [500, 'erro_interno', 'Falha do nosso lado. Pode repetir.'],
     [502, 'meta_recusou', 'A Meta recusou o envio do modelo. A mensagem traz o motivo.'],
+    [502, 'gateway_recusou', 'O Mercado Pago ou o Asaas recusou a cobrança. Pode repetir com a mesma Idempotency-Key.'],
   ]
   return (
     <>
@@ -278,7 +302,7 @@ function ErrosELimites() {
       />
       <Sub>Quando repetir</Sub>
       <ul className="ml-5 list-disc space-y-2">
-        <li>Repita em 429 <Cod>limite_excedido</Cod> (depois do <Cod>Retry-After</Cod>), 500, 502 e erro de rede, com espera crescente. No envio de modelo, repita sempre com a mesma <Cod>Idempotency-Key</Cod>.</li>
+        <li>Repita em 429 <Cod>limite_excedido</Cod> (depois do <Cod>Retry-After</Cod>), 500, 502 e erro de rede, com espera crescente. No envio de modelo e na criação de cobrança, repita sempre com a mesma <Cod>Idempotency-Key</Cod>.</li>
         <li>429 <Cod>teto_diario</Cod> só se resolve no dia seguinte.</li>
         <li>Em 409 <Cod>ocupado</Cod>, repita em alguns segundos. Os outros 409 não mudam repetindo.</li>
         <li>400, 401, 403, 404 e 422 não se resolvem repetindo: corrija a chamada.</li>
@@ -639,6 +663,16 @@ const DADOS_POR_EVENTO: { evento: string; quando: string; dados: Record<string, 
     evento: 'oportunidade.perdida',
     quando: 'Um negócio foi marcado como perdido.',
     dados: { contato: '{ … }', oportunidade_id: '9b2e…', funil: 'Vendas', etapa: 'Proposta', motivo: 'Preço' },
+  },
+  {
+    evento: 'cobranca.paga',
+    quando: 'O gateway confirmou o pagamento. Sai uma vez por cobrança, mesmo que o gateway avise de novo. A cobrança vem inteira, como em Listar cobranças.',
+    dados: { contato: '{ … }', cobranca: { id: '5d0c…', valor: 49.9, status: 'paga', gateway: 'asaas', paga_em: '2026-10-23T15:00:00.000Z' } },
+  },
+  {
+    evento: 'cobranca.vencida',
+    quando: 'A cobrança passou do vencimento sem pagamento e foi cancelada no gateway.',
+    dados: { contato: '{ … }', cobranca: { id: '5d0c…', valor: 49.9, status: 'vencida', vence_em: '2026-10-23T12:00:00.000Z' } },
   },
 ]
 
@@ -1067,6 +1101,150 @@ function Relatorios() {
   )
 }
 
+/* ------------------------------------------------------------- cobranças */
+
+const COBRANCA_EXEMPLO = {
+  id: '5d0c8e2a-41b7-4c3e-9a1f-2b6d7e8f9a0b',
+  contato_id: CONTATO_EXEMPLO.id,
+  descricao: 'Mensalidade de novembro',
+  valor: 49.9,
+  status: 'pendente',
+  gateway: 'asaas',
+  pix_copia_cola: '00020101021226…6304ABCD',
+  link: 'https://www.asaas.com/i/abc123',
+  vence_em: '2026-10-23T12:00:00.000Z',
+  paga_em: null,
+  cancelada_em: null,
+  origem: 'api',
+  criado_em: '2026-10-22T12:00:00.000Z',
+}
+
+const CORPO_COBRANCA = { telefone: TELEFONE, valor: 49.9, descricao: 'Mensalidade de novembro', documento: '12345678909' }
+const IDEMPOTENCIA_COBRANCA = { 'Idempotency-Key': 'pedido-8841' }
+
+const CAMPOS_DA_COBRANCA = [
+  { nome: 'id', tipo: 'string', descricao: 'O id da cobrança no AutoFluxos.' },
+  { nome: 'valor', tipo: 'número', descricao: 'Em reais, com até duas casas.' },
+  {
+    nome: 'status',
+    tipo: 'string',
+    descricao: (
+      <>
+        <Cod>pendente</Cod>, <Cod>paga</Cod>, <Cod>vencida</Cod>, <Cod>cancelada</Cod> ou <Cod>estornada</Cod>.
+      </>
+    ),
+  },
+  { nome: 'gateway', tipo: 'string', descricao: <><Cod>mercado_pago</Cod> ou <Cod>asaas</Cod>: onde o dinheiro cai.</> },
+  { nome: 'pix_copia_cola', tipo: 'string | null', descricao: 'O código Pix para colar no app do banco.' },
+  { nome: 'link', tipo: 'string | null', descricao: 'Página de pagamento do gateway: Pix, cartão e boleto.' },
+  { nome: 'origem', tipo: 'string', descricao: <>Quem criou: <Cod>inbox</Cod>, <Cod>fluxo</Cod>, <Cod>ia</Cod> ou <Cod>api</Cod>.</> },
+]
+
+function ListarCobrancas() {
+  return (
+    <>
+      <Endpoint metodo="GET" caminho="/api/v1/cobrancas" />
+      <P>
+        As cobranças da organização, das mais novas para as mais antigas, criadas pela conversa, por automação ou pela
+        API. Para o histórico inteiro, use <Link href="/ajuda/desenvolvedores/api-relatorios">o relatório de cobranças</Link>.
+      </P>
+      <ListaDeCampos
+        titulo="Parâmetros"
+        campos={[
+          { nome: 'telefone', tipo: 'string', descricao: 'Só as deste contato, em qualquer grafia do mesmo número.' },
+          { nome: 'status', tipo: 'string', descricao: <>Só neste status: <Cod>pendente</Cod>, <Cod>paga</Cod>, <Cod>vencida</Cod>, <Cod>cancelada</Cod> ou <Cod>estornada</Cod>.</> },
+          { nome: 'limite', tipo: 'inteiro', descricao: 'De 1 a 100. Padrão 50.' },
+        ]}
+      />
+      <ListaDeCampos titulo="Cada cobrança" campos={CAMPOS_DA_COBRANCA} />
+      <Respostas>
+        <Resposta status={200} descricao="Cobranças" aberta corpo={JSON.stringify({ cobrancas: [COBRANCA_EXEMPLO] }, null, 2)} />
+        <Resposta status={404} descricao="contato_nao_encontrado" corpo={`{
+  "erro": {
+    "codigo": "contato_nao_encontrado",
+    "mensagem": "Nenhum contato com este telefone nesta conta."
+  }
+}`} />
+      </Respostas>
+    </>
+  )
+}
+
+function CriarCobranca() {
+  return (
+    <>
+      <Endpoint metodo="POST" caminho="/api/v1/cobrancas" />
+      <P>
+        Gera a cobrança na conta de recebimento da organização (Mercado Pago ou Asaas) e devolve o Pix copia e cola e o
+        link de pagamento. <strong className="text-ink">Nada é mandado na conversa</strong>: use os dois onde quiser, no
+        seu e-mail, na sua tela ou num <Link href="/ajuda/desenvolvedores/api-enviar-template">modelo aprovado</Link>.
+        Telefone que ainda não é contato vira contato, como em{' '}
+        <Link href="/ajuda/desenvolvedores/api-gravar-contato">Criar ou atualizar contato</Link>.
+      </P>
+      <P>
+        O dinheiro vai direto para a conta do dono no gateway. Quando a pessoa paga, a cobrança vira <Cod>paga</Cod> e o
+        evento <Link href="/ajuda/desenvolvedores/webhooks-de-saida">cobranca.paga</Link> avisa o seu sistema. No
+        vencimento sem pagamento, o Pix é cancelado no gateway e sai <Cod>cobranca.vencida</Cod>.
+      </P>
+      <ListaDeCampos
+        titulo="Cabeçalhos"
+        campos={[
+          {
+            nome: 'Idempotency-Key',
+            tipo: 'string',
+            obrigatorio: true,
+            descricao: (
+              <>
+                Até 120 caracteres, única por cobrança: o id do pedido no seu sistema serve. Repetir com a mesma chave em
+                até 24 horas devolve a cobrança da primeira chamada, com <Cod>Idempotent-Replayed: true</Cod>, e nenhuma
+                cobrança nova é criada.
+              </>
+            ),
+          },
+        ]}
+      />
+      <ListaDeCampos
+        titulo="Corpo"
+        campos={[
+          { nome: 'telefone', tipo: 'string', obrigatorio: true, descricao: <>Com DDD, de preferência com DDI: <Cod>{TELEFONE}</Cod>.</> },
+          { nome: 'valor', tipo: 'número', obrigatorio: true, descricao: <>Em reais, com até duas casas: <Cod>49.9</Cod>. Até 1.000.000.</> },
+          { nome: 'descricao', tipo: 'string', obrigatorio: true, descricao: 'O que está sendo cobrado, até 200 caracteres. A pessoa vê no Pix e no link.' },
+          { nome: 'vence_em', tipo: 'data e hora', descricao: <>ISO 8601 com fuso, entre 15 minutos e 30 dias a partir de agora. Sem ele, 24 horas.</> },
+          { nome: 'documento', tipo: 'string', descricao: 'CPF ou CNPJ de quem paga. O Asaas exige; depois da primeira vez, fica na ficha do contato.' },
+          { nome: 'nome', tipo: 'string', descricao: 'Nome do contato, se ele ainda não existir.' },
+        ]}
+      />
+      <Respostas>
+        <Resposta status={201} descricao="Cobrança criada" aberta corpo={JSON.stringify({ cobranca: COBRANCA_EXEMPLO }, null, 2)} />
+        <Resposta status={403} descricao="plano_sem_cobranca" corpo={`{
+  "erro": {
+    "codigo": "plano_sem_cobranca",
+    "mensagem": "O plano Essencial não inclui Integrações. Para usar, suba de plano em Configurações > Plano e consumo."
+  }
+}`} />
+        <Resposta status={409} descricao="sem_conta_de_recebimento ou requisicao_em_andamento" corpo={`{
+  "erro": {
+    "codigo": "sem_conta_de_recebimento",
+    "mensagem": "Conecte uma conta de recebimento em Ajustes > Pagamentos."
+  }
+}`} />
+        <Resposta status={422} descricao="documento_obrigatorio, documento_invalido, telefone_invalido ou corpo_invalido" corpo={`{
+  "erro": {
+    "codigo": "documento_obrigatorio",
+    "mensagem": "O Asaas exige o CPF ou CNPJ de quem paga. Envie o campo documento."
+  }
+}`} />
+        <Resposta status={502} descricao="O gateway recusou" corpo={`{
+  "erro": {
+    "codigo": "gateway_recusou",
+    "mensagem": "O Asaas recusou a cobrança. Tente de novo em instantes."
+  }
+}`} />
+      </Respostas>
+    </>
+  )
+}
+
 export const PAGINAS_API: PaginaDev[] = [
   { slug: 'api-autenticacao', grupo: 'API', titulo: 'Autenticação', resumo: 'Crie a chave no painel e envie como Bearer.', Corpo: Autenticacao },
   { slug: 'api-erros', grupo: 'API', titulo: 'Erros e limites', resumo: 'O formato de erro, cada código e quando repetir.', Corpo: ErrosELimites },
@@ -1227,10 +1405,34 @@ export const PAGINAS_API: PaginaDev[] = [
     ],
   },
   {
+    slug: 'api-listar-cobrancas',
+    grupo: 'API',
+    titulo: 'Listar cobranças',
+    resumo: 'Pendentes, pagas e vencidas, por contato.',
+    metodo: 'GET',
+    Corpo: ListarCobrancas,
+    painel: [
+      { trechos: trechos('GET', `/cobrancas?telefone=${TELEFONE}&status=pendente`), titulo: 'Requisição' },
+      { trechos: [json('200', { cobrancas: [COBRANCA_EXEMPLO] })], titulo: 'Resposta' },
+    ],
+  },
+  {
+    slug: 'api-criar-cobranca',
+    grupo: 'API',
+    titulo: 'Criar cobrança',
+    resumo: 'Pix e link de pagamento na conta do dono, para usar onde quiser.',
+    metodo: 'POST',
+    Corpo: CriarCobranca,
+    painel: [
+      { trechos: trechos('POST', '/cobrancas', CORPO_COBRANCA, IDEMPOTENCIA_COBRANCA), titulo: 'Requisição' },
+      { trechos: [json('201', { cobranca: COBRANCA_EXEMPLO })], titulo: 'Resposta' },
+    ],
+  },
+  {
     slug: 'webhooks-de-saida',
     grupo: 'Webhooks de saída',
     titulo: 'Receber eventos',
-    resumo: 'O AutoFluxos avisa o seu sistema: contato novo, etapa do funil, oportunidade ganha ou perdida.',
+    resumo: 'O AutoFluxos avisa o seu sistema: contato novo, etapa do funil, oportunidade ganha ou perdida, cobrança paga ou vencida.',
     Corpo: WebhooksDeSaida,
     painel: [
       { trechos: [json('POST', CORPO_WEBHOOK)], titulo: 'Corpo enviado' },

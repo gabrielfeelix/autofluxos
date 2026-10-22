@@ -64,6 +64,11 @@ export type CodigoDeErro =
   | 'oportunidade_nao_encontrada'
   | 'oportunidade_fechada'
   | 'motivo_invalido'
+  | 'plano_sem_cobranca'
+  | 'sem_conta_de_recebimento'
+  | 'documento_obrigatorio'
+  | 'documento_invalido'
+  | 'gateway_recusou'
   | 'erro_interno'
 
 /** O formato de erro de toda a API: `codigo` estável, `mensagem` para gente. */

@@ -78,6 +78,21 @@ export const ESCOPOS_DA_API = [
     aviso: 'Crie uma chave só com esta permissão: o Looker e o Google Sheets levam a chave no endereço.',
     fase: 5,
   },
+  {
+    chave: 'cobrancas:ler',
+    grupo: 'Cobranças',
+    rotulo: 'Ler cobranças',
+    explicacao: 'Consultar as cobranças da conta, por contato e por status: pendente, paga, vencida.',
+    fase: 6,
+  },
+  {
+    chave: 'cobrancas:criar',
+    grupo: 'Cobranças',
+    rotulo: 'Criar cobranças',
+    explicacao: 'Gerar Pix e link de pagamento na conta de recebimento conectada, para o seu sistema usar onde quiser.',
+    aviso: 'O dinheiro cai direto na conta do Mercado Pago ou do Asaas conectada em Ajustes > Pagamentos.',
+    fase: 6,
+  },
 ] as const satisfies readonly {
   chave: string
   grupo: string

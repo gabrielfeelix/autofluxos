@@ -122,6 +122,10 @@ aqui fica o que o cliente ganha.
 
 - **API pública**, webhooks de entrada e saída, e integrações prontas com RD
   Station, Google Sheets e outras.
+- **O sistema da empresa sabe quem pagou, na hora**: cobrança paga ou vencida
+  vira aviso automático para o ERP, a planilha ou o sistema de matrícula. E o
+  próprio sistema pode gerar o Pix e o link pela API, na conta da empresa, sem
+  cobrança em dobro quando a chamada se repete. *(22/out/2026)*
 - **Cofre de credenciais**: chave entra e nunca mais aparece na tela.
 - **Verificação em duas etapas**, permissões por função e exceções por pessoa.
 - **LGPD**: termos, privacidade, exclusão de dados e limpeza de contato inativo.

@@ -3,6 +3,7 @@ import { asaas } from '@/channels/asaas'
 import { mercadoPago } from '@/channels/mercado-pago'
 import { NOME_DO_GATEWAY, type Gateway, type GatewayDePagamento } from '@/channels/pagamento'
 import type { Canal, PedidoNativo } from '@/channels/types'
+import { paraCobrancaDaApi } from '@/core/api/cobrancas'
 import { cnpjValido, cpfValido } from '@/core/documentos'
 import { lerPix } from '@/core/pix'
 import { adaptadorDoCanal } from './adaptador-do-canal'
@@ -26,6 +27,7 @@ import { acharLead } from './repos/leads'
 import { acessoDaConexao, conexaoAtiva } from './repos/pagamentos'
 import { agendar, cancelarPorChave } from './repos/tarefas'
 import { recursoLiberado } from './recursos-do-plano'
+import { emitirEvento } from './webhooks-de-saida'
 
 /**
  * Cobrar pela conversa, independente do gateway (docs/PLANO-COBRANCA-CAMADA-1.md,
@@ -77,6 +79,24 @@ export function textoDaCobranca(cobranca: Pick<CobrancaRegistrada, 'descricao' |
   if (cobranca.pixCopiaCola) linhas.push('', 'Para pagar com Pix, copie o código da próxima mensagem e cole no app do seu banco.')
   if (cobranca.link) linhas.push(cobranca.pixCopiaCola ? 'Se preferir cartão ou boleto, use o link.' : 'Para pagar, use o link.')
   return linhas.join('\n')
+}
+
+/**
+ * O webhook de saída `cobranca.paga` ou `cobranca.vencida`, para o sistema do
+ * dono saber sem perguntar. Só quem mudou o status emite: o aviso repetido do
+ * gateway recebe `false` de `mudarStatus` e não chega aqui. `emitirEvento` não
+ * lança.
+ */
+async function avisarPorWebhook(
+  cobranca: CobrancaRegistrada,
+  evento: 'cobranca.paga' | 'cobranca.vencida',
+  pagaEm?: Date,
+): Promise<void> {
+  const agora =
+    evento === 'cobranca.paga'
+      ? { ...cobranca, status: 'paga' as const, pagaEm: (pagaEm ?? new Date()).toISOString() }
+      : { ...cobranca, status: 'vencida' as const }
+  await emitirEvento(cobranca.clienteId, evento, cobranca.contatoId, { cobranca: paraCobrancaDaApi(agora) })
 }
 
 /**
@@ -321,7 +341,8 @@ export async function aplicarPagamento(
       return cobranca.status
     }
     // De `vencida` também: o dinheiro chegou, e é isso que vale.
-    const primeira = await mudarStatus(clienteId, cobranca.id, ['pendente', 'vencida'], 'paga', lido.pagaEm ?? new Date())
+    const pagaEm = lido.pagaEm ?? new Date()
+    const primeira = await mudarStatus(clienteId, cobranca.id, ['pendente', 'vencida'], 'paga', pagaEm)
     if (primeira) {
       await cancelarPorChave(chaveDoVencimento(cobranca.id))
       // Pago pelo link do Mercado Pago, o Pix da conversa continua aberto e
@@ -336,6 +357,7 @@ export async function aplicarPagamento(
           descricao: cobranca.descricao,
         })
       }
+      await avisarPorWebhook(cobranca, 'cobranca.paga', pagaEm)
       await confirmarPedidoNativo(cobranca)
       await acordarOFluxo(cobranca, 'pagou')
     }
@@ -382,7 +404,10 @@ export async function rodarVencimentoDeCobranca(
       descricao: cobranca.descricao,
     })
   }
-  if (mudou) await acordarOFluxo(cobranca, 'venceu')
+  if (mudou) {
+    await avisarPorWebhook(cobranca, 'cobranca.vencida')
+    await acordarOFluxo(cobranca, 'venceu')
+  }
   return mudou ? 'feita' : 'ignorada'
 }
 

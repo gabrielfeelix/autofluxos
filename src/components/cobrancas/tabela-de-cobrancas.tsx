@@ -27,7 +27,7 @@ export type LinhaDeCobranca = {
   pagaEm: string | null
   criadoEm: string
   criadaPor: string | null
-  origem: 'inbox' | 'fluxo' | 'ia'
+  origem: 'inbox' | 'fluxo' | 'ia' | 'api'
 }
 
 const STATUS: Record<StatusDeCobranca, { rotulo: string; tom: TomDaPilula }> = {
@@ -240,7 +240,7 @@ export function TabelaDeCobrancas({
                   <td className="hidden px-4 py-3 md:table-cell">
                     <span className="block truncate text-soft">{c.descricao}</span>
                     <span className="block truncate text-[11.5px] text-dim">
-                      {c.origem === 'inbox' ? (c.criadaPor ? `por ${c.criadaPor}` : 'pelo Inbox') : c.origem === 'fluxo' ? 'pelo fluxo' : 'pela IA'}
+                      {c.origem === 'inbox' ? (c.criadaPor ? `por ${c.criadaPor}` : 'pelo Inbox') : c.origem === 'fluxo' ? 'pelo fluxo' : c.origem === 'api' ? 'pela API' : 'pela IA'}
                     </span>
                   </td>
                   <td className="px-4 py-3 text-right text-[13.5px] font-semibold tabular-nums">{reais(c.valorCentavos)}</td>
