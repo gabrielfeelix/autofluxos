@@ -87,3 +87,16 @@ de 24 h é modelo de utilidade, pago.
   pago; vencida ou cancelada cancela e devolve o estoque. Tela
   `loja/pedidos` (quadro ou lista, atualiza a cada 20 s), botão Estoque no
   catálogo. Pago depois de vencido não reabre o pedido cancelado.
+- b (Relatórios), parte feita em 22/out: em Análise > Vendas, nos ramos com
+  Pedidos e para quem vê a conta inteira, os blocos `pedidos` (vendidos,
+  ticket médio, tempo de preparo e de entrega, cancelados), `pedidos-horarios`
+  (dia e hora) e `pedidos-entrega` (entrega ou retirada). Conta em
+  `core/analise-de-pedidos.ts`. Mais pedido = o bloco que já existia, "Mais
+  vendidos pelo chat". Sem cookie de arranjo, a ordem inicial é a do ramo
+  (`PacoteDoNicho.primeirosEmVendas`; aulas vazio, nada muda).
+- b, **adiado por causa do MGM** (Gabriel, 22/out: para o MGM nada muda):
+  `ler_valores: proprios` no operador (as funções personalizadas do MGM
+  herdariam), relatórios de aulas (matrículas, experimental, mensalidade em
+  dia, faltas) e o seletor Eu / Equipe / Conta (mudaria a Análise do MGM).
+  Bloco de pedido para o atendente que vê só os seus também fica para o
+  seletor: pedido não tem dono hoje.

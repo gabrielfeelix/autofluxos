@@ -6,7 +6,7 @@ import { ClienteShell } from '@/components/design/cliente-shell'
 import { SemAcesso } from '@/components/design/sem-acesso'
 import { GraficoMensal } from '@/components/relatorios/grafico-mensal'
 import { dinheiroCurto, emFatias } from '@/components/relatorios/formatos'
-import { CaixaDoBloco, FunilInvertido, ListaEmBarras, Rosca, Vazio } from '@/components/relatorios/graficos'
+import { CaixaDoBloco, FunilInvertido, ListaEmBarras, MapaDeHorarios, Rosca, Vazio } from '@/components/relatorios/graficos'
 import { PainelDeBlocos, type Bloco } from '@/components/relatorios/painel-de-blocos'
 import { BarraDoPeriodo, Cartao, Mudanca, MudancaDeTempo, MudancaEmPontos } from '@/components/relatorios/pecas'
 import { SeletorDeFunil } from '@/components/relatorios/seletor-de-funil'
@@ -21,7 +21,10 @@ import {
   taxaDeVitoria,
   ticketMedio,
 } from '@/core/analise-de-vendas'
+import { analisarPedidos, type AnaliseDePedidos } from '@/core/analise-de-pedidos'
 import { comoDinheiro } from '@/core/crm'
+import { pacoteDo } from '@/core/nichos'
+import { etapasDoRamo, temPedidos, type EtapaDoPedido } from '@/core/pedidos'
 import { pode } from '@/core/permissoes'
 import { ATALHOS_DE_VENDAS, hojeEmSaoPaulo, lerPeriodo, periodoAnterior, type Periodo } from '@/core/relatorios'
 import { capacidadeNaPagina, filtroDoAcesso } from '@/server/permissoes'
@@ -42,6 +45,8 @@ import { listarQuadros } from '@/server/repos/quadros'
 import { responsaveisDoEscopo, type Responsaveis } from '@/server/repos/relatorios'
 import { existeCobranca, recebidoPeloChat, vendidosPeloChat, type GanhosAgrupados, type RecebidoPeloChat } from '@/server/repos/analise-de-vendas'
 import { membrosDaConta } from '@/server/repos/usuarios'
+import { existePedido, pedidosDoPeriodo } from '@/server/repos/pedidos'
+import { nichoDaConta } from '@/server/repos/recursos'
 
 export const dynamic = 'force-dynamic'
 
@@ -156,8 +161,27 @@ export default async function Pagina({
     : []
   // Logo depois dos números do período: é a outra metade do que entrou.
   const doChatTudo = [doChat, itensDoChat].filter((b): b is Bloco => b !== null)
-  const blocos = [...deNegocios.slice(0, 1), ...doChatTudo, ...deNegocios.slice(1)]
+
+  // Os pedidos (0146): nos ramos que têm, para quem vê a conta inteira (o
+  // pedido não tem dono), e só depois do primeiro.
+  const nicho = await nichoDaConta(cliente.id)
+  const temPedido = contaInteira && temPedidos(nicho) && (await existePedido(cliente.id))
+  const dePedidos = temPedido
+    ? blocosDosPedidos(
+        analisarPedidos(await pedidosDoPeriodo(cliente.id, periodo.de, periodo.ate)),
+        analisarPedidos(await pedidosDoPeriodo(cliente.id, anterior.de, anterior.ate)),
+        etapasDoRamo(nicho),
+        podeVerValor,
+        cliente.id,
+      )
+    : []
+
   const arranjo = await arranjoDaAnalise('vendas')
+  const blocos = primeirosDoRamo(
+    [...deNegocios.slice(0, 1), ...doChatTudo, ...dePedidos, ...deNegocios.slice(1)],
+    // Quem já arrumou a tela fica com a arrumação dele.
+    arranjo.ordem.length === 0 && arranjo.ocultos.length === 0 ? (pacoteDo(nicho)?.primeirosEmVendas ?? []) : [],
+  )
 
   return (
     <ClienteShell cliente={cliente} ativa="vendas">
@@ -191,7 +215,7 @@ export default async function Pagina({
           }
         />
 
-        {!temNegocio && !temCobranca ? (
+        {!temNegocio && !temCobranca && !temPedido ? (
           <div className="mt-5">
             <VendasVazio clienteId={cliente.id} />
           </div>
@@ -362,6 +386,160 @@ function blocoDoRecebido(atual: RecebidoPeloChat | null, antes: RecebidoPeloChat
       </CaixaDoBloco>
     ),
   }
+}
+
+/** Os blocos que o ramo põe na frente, na ordem dele; o resto segue como estava. */
+function primeirosDoRamo(blocos: Bloco[], primeiros: readonly string[]): Bloco[] {
+  const frente = primeiros.flatMap((id) => blocos.filter((b) => b.id === id))
+  return [...frente, ...blocos.filter((b) => !frente.includes(b))]
+}
+
+function comoMinutos(segundos: number | null): string {
+  if (segundos === null) return 'sem dado'
+  if (segundos < 3_600) return `${Math.max(1, Math.round(segundos / 60))} min`
+  const h = Math.floor(segundos / 3_600)
+  const min = Math.round((segundos % 3_600) / 60)
+  return min === 0 ? `${h} h` : `${h} h ${min} min`
+}
+
+/**
+ * Os pedidos do período (0146): quantos, ticket, tempos de preparo e entrega e
+ * cancelamentos; quando chegam; entrega ou retirada. Os cartões de tempo só
+ * aparecem no ramo que tem a etapa (comércio de rua não prepara nem entrega).
+ */
+function blocosDosPedidos(
+  atual: AnaliseDePedidos,
+  antes: AnaliseDePedidos,
+  etapas: EtapaDoPedido[],
+  podeVerValor: boolean,
+  clienteId: string,
+): Bloco[] {
+  const temPreparo = etapas.some((e) => e.status === 'em_preparo')
+  const temSaida = etapas.some((e) => e.status === 'saiu')
+  const preparo = etapas.find((e) => e.status === 'em_preparo')?.rotulo.toLowerCase() ?? 'em preparo'
+  const taxa = atual.taxaDeCancelamento === null ? null : Math.round(atual.taxaDeCancelamento * 100)
+  const taxaAntes = antes.taxaDeCancelamento === null ? null : Math.round(antes.taxaDeCancelamento * 100)
+  const blocos: Bloco[] = [
+    {
+      id: 'pedidos',
+      titulo: 'Pedidos',
+      largura: 'inteira',
+      conteudo: (
+        <CaixaDoBloco
+          titulo="Pedidos"
+          subtitulo="Os pedidos feitos pela conversa no período. Vendido é o que foi pago ou já andou de etapa; o que espera o Pix fica à parte."
+          acao={
+            <a href={`/clientes/${clienteId}/loja/pedidos`} className="text-[12px] font-semibold text-primary hover:underline">
+              Ver pedidos
+            </a>
+          }
+        >
+          <div className="grid grid-cols-2 gap-3 pb-4 md:grid-cols-3 lg:gap-4 xl:grid-cols-5">
+            <Cartao
+              titulo="Vendidos"
+              vazio={atual.vendidos === 0 && 'Nenhum pedido vendido no período'}
+              valor={String(atual.vendidos)}
+              detalhe={atual.aguardando > 0 ? `mais ${atual.aguardando} aguardando pagamento` : 'pagos ou já em andamento'}
+              comparacao={<Mudanca atual={atual.vendidos} antes={antes.vendidos} />}
+              definicao="Pedidos criados no período que foram pagos ou já passaram para uma etapa seguinte. Cancelados e os que ainda esperam o Pix ficam fora."
+            />
+            {podeVerValor && (
+              <Cartao
+                titulo="Ticket médio"
+                vazio={atual.ticketMedioCentavos === null && 'Nenhum pedido vendido'}
+                valor={atual.ticketMedioCentavos === null ? 'sem dado' : comoDinheiro(atual.ticketMedioCentavos / 100)}
+                detalhe={`${dinheiroCurto(atual.faturadoCentavos / 100)} no total`}
+                comparacao={
+                  atual.ticketMedioCentavos !== null && antes.ticketMedioCentavos !== null ? (
+                    <Mudanca atual={atual.ticketMedioCentavos / 100} antes={antes.ticketMedioCentavos / 100} formatar={comoDinheiro} />
+                  ) : undefined
+                }
+                definicao="Valor médio de cada pedido vendido no período: a soma dos vendidos dividida pela quantidade."
+              />
+            )}
+            {temPreparo && (
+              <Cartao
+                titulo={temSaida && preparo === 'separando' ? 'Tempo de separação' : 'Tempo de preparo'}
+                vazio={atual.segundosDePreparo === null && 'Sem pedido que passou pela etapa'}
+                valor={comoMinutos(atual.segundosDePreparo)}
+                detalhe={`média, de ${preparo} até sair`}
+                comparacao={
+                  atual.segundosDePreparo !== null && antes.segundosDePreparo !== null ? (
+                    <MudancaDeTempo atual={atual.segundosDePreparo} antes={antes.segundosDePreparo} />
+                  ) : undefined
+                }
+                definicao="Tempo médio entre o pedido entrar na etapa de preparo e sair, entre os que passaram pelas duas."
+              />
+            )}
+            {temSaida && (
+              <Cartao
+                titulo="Tempo de entrega"
+                vazio={atual.segundosDeEntrega === null && 'Sem entrega concluída'}
+                valor={comoMinutos(atual.segundosDeEntrega)}
+                detalhe="média, de sair até entregue"
+                comparacao={
+                  atual.segundosDeEntrega !== null && antes.segundosDeEntrega !== null ? (
+                    <MudancaDeTempo atual={atual.segundosDeEntrega} antes={antes.segundosDeEntrega} />
+                  ) : undefined
+                }
+                definicao="Tempo médio entre sair e ser marcado como entregue, só nos pedidos de entrega."
+              />
+            )}
+            <Cartao
+              titulo="Cancelados"
+              vazio={atual.cancelados === 0 && 'Nenhum cancelado'}
+              valor={taxa === null ? 'sem dado' : `${taxa}%`}
+              medidor={taxa}
+              detalhe={`${atual.cancelados} ${atual.cancelados === 1 ? 'pedido' : 'pedidos'}, pela equipe ou Pix vencido`}
+              comparacao={<MudancaEmPontos atual={taxa} antes={taxaAntes} melhorQuando="desce" />}
+              definicao="Dos pedidos do período que foram vendidos ou cancelados, quantos cancelaram. Inclui o Pix que venceu sem pagamento."
+            />
+          </div>
+        </CaixaDoBloco>
+      ),
+    },
+    {
+      id: 'pedidos-horarios',
+      titulo: 'Quando chegam os pedidos',
+      largura: 'dois-tercos',
+      conteudo: (
+        <CaixaDoBloco
+          titulo="Quando chegam os pedidos"
+          subtitulo="Dia da semana e hora de cada pedido, no horário de Brasília. Mostra quando reforçar a equipe e a cozinha."
+        >
+          {atual.horarios.flat().some((n) => n > 0) ? (
+            <MapaDeHorarios celulas={atual.horarios} unidade={['pedido', 'pedidos']} />
+          ) : (
+            <Vazio desenho="horarios">Nenhum pedido no período.</Vazio>
+          )}
+        </CaixaDoBloco>
+      ),
+    },
+  ]
+  if (temSaida) {
+    blocos.push({
+      id: 'pedidos-entrega',
+      titulo: 'Entrega ou retirada',
+      largura: 'terco',
+      conteudo: (
+        <CaixaDoBloco titulo="Entrega ou retirada" subtitulo="Como os pedidos vendidos no período foram recebidos.">
+          {atual.vendidos === 0 ? (
+            <Vazio desenho="desfecho">Nenhum pedido vendido no período.</Vazio>
+          ) : (
+            <Rosca
+              totalRotulo="pedidos"
+              fatias={[
+                { chave: 'entrega', rotulo: 'Entrega', n: atual.porEntrega.entrega, cor: 'var(--serie-1)' },
+                { chave: 'retirada', rotulo: 'Retirada', n: atual.porEntrega.retirada, cor: 'var(--serie-2)' },
+                { chave: 'local', rotulo: 'No local', n: atual.porEntrega.local, cor: 'var(--serie-3)' },
+              ]}
+            />
+          )}
+        </CaixaDoBloco>
+      ),
+    })
+  }
+  return blocos
 }
 
 /**

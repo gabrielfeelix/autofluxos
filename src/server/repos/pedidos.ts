@@ -1,4 +1,5 @@
 import 'server-only'
+import type { PedidoParaAnalise } from '@/core/analise-de-pedidos'
 import { COLUNA_DO_STATUS, type StatusDePedido } from '@/core/pedidos'
 import { db, ehIdInvalido } from '../db'
 
@@ -361,4 +362,45 @@ export async function definirEstoque(
   if (error) return { ok: false, motivo: `Não foi possível salvar o estoque: ${error.message}` }
   if ((data ?? []).length === 0) return { ok: false, motivo: 'Esse item do catálogo não existe.' }
   return { ok: true }
+}
+
+// ---------------------------------------------------------------------------
+// Análise
+// ---------------------------------------------------------------------------
+
+/**
+ * Os pedidos criados entre dois dias de Brasília, incluídos, para Análise >
+ * Vendas. Só as colunas da conta, sem itens: os mais vendidos já saem das
+ * cobranças pagas (`vendidosPeloChat`), e contar de novo daria duas listas.
+ */
+export async function pedidosDoPeriodo(clienteId: string, de: string, ate: string): Promise<PedidoParaAnalise[]> {
+  const fim = new Date(`${ate}T00:00:00-03:00`)
+  fim.setUTCDate(fim.getUTCDate() + 1)
+  const { data, error } = await db()
+    .from('pedidos')
+    .select('status, entrega, total_centavos, criado_em, em_preparo_em, saiu_em, entregue_em')
+    .eq('cliente_id', clienteId)
+    .gte('criado_em', `${de}T00:00:00-03:00`)
+    .lt('criado_em', fim.toISOString())
+    .limit(5000)
+  if (ehIdInvalido(error) || tabelaAusente(error)) return []
+  if (error) throw new Error(`não foi possível ler os pedidos do período: ${error.message}`)
+  return (data as Pick<Linha, 'status' | 'entrega' | 'total_centavos' | 'criado_em' | 'em_preparo_em' | 'saiu_em' | 'entregue_em'>[]).map(
+    (l) => ({
+      status: l.status,
+      entrega: l.entrega,
+      totalCentavos: l.total_centavos,
+      criadoEm: l.criado_em,
+      emPreparoEm: l.em_preparo_em,
+      saiuEm: l.saiu_em,
+      entregueEm: l.entregue_em,
+    }),
+  )
+}
+
+/** A conta já teve pedido? É o que liga os blocos de pedido em Vendas. */
+export async function existePedido(clienteId: string): Promise<boolean> {
+  const { count, error } = await db().from('pedidos').select('id', { count: 'exact', head: true }).eq('cliente_id', clienteId)
+  if (error) return false
+  return (count ?? 0) > 0
 }

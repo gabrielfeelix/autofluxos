@@ -274,6 +274,10 @@ aqui fica o que o cliente ganha.
   atendimento por número.
 - **Início que diz o que precisa de atenção**: quem espera resposta, números
   do dia, quem da equipe está disponível e clientes sumindo.
+- **Os números do delivery**: em Análise > Vendas, pedidos vendidos, ticket
+  médio, tempo de preparo e de entrega, cancelamentos, entrega ou retirada e
+  o mapa de dia e hora dos pedidos, para saber quando reforçar a cozinha. Cada
+  ramo abre a tela com o que importa para ele primeiro. *(22/out/2026)*
 
 ## Integrar e segurança
 

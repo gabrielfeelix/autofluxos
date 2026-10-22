@@ -130,6 +130,12 @@ export type PacoteDoNicho = {
    */
   pedidos: PedidosDoRamo | null
   /**
+   * Os blocos de Análise > Vendas que vêm primeiro, na ordem, enquanto a
+   * pessoa não arrumou a tela (sem o cookie do arranjo). Vazio = a ordem de
+   * sempre. Bloco que a conta não tem é pulado.
+   */
+  primeirosEmVendas: readonly string[]
+  /**
    * A ficha do assistente de IA (PLANO-NICHOS 1.7, `core/ficha-do-assistente.ts`):
    * as perguntas que o cliente final sempre faz neste ramo, e o que o
    * assistente pode fazer, marcado por padrão.
@@ -230,6 +236,7 @@ export const PACOTES: Record<Nicho, PacoteDoNicho> = {
     modelosDeFluxo: ['agendamento', 'reagendamento', 'nao-comparecimento', 'lembrete', 'aluno-inativo', 'voltei-de-licenca'],
     modeloDeFunil: 'agendamento',
     pedidos: null,
+    primeirosEmVendas: [],
     passosDoInicio: ['ficha'],
     ficha: {
       pode: ['Responder dúvidas com o que está nesta ficha', 'Explicar modalidades, planos e aula experimental', 'Mostrar planos e valores do catálogo', 'Informar horário e endereço'],
@@ -264,6 +271,7 @@ export const PACOTES: Record<Nicho, PacoteDoNicho> = {
       visao: 'lista',
       despacho: 'envio',
     },
+    primeirosEmVendas: ['recebido-pelo-chat', 'pedidos', 'vendidos-pelo-chat'],
     passosDoInicio: ['ficha'],
     ficha: {
       pode: ['Responder dúvidas com o que está nesta ficha', 'Mostrar produtos, fotos e preços do catálogo', 'Consultar o status de um pedido', 'Informar prazo de envio e frete'],
@@ -305,6 +313,7 @@ export const PACOTES: Record<Nicho, PacoteDoNicho> = {
     modelosDeFluxo: ['cardapio-botoes', 'atendente-ia-restaurante', 'horario-e-local'],
     modeloDeFunil: 'pedidos',
     pedidos: { etapas: ['novo', 'pago', 'em_preparo', 'saiu', 'entregue'], rotulos: {}, visao: 'quadro', despacho: 'preparo' },
+    primeirosEmVendas: ['pedidos', 'pedidos-horarios', 'vendidos-pelo-chat', 'pedidos-entrega'],
     passosDoInicio: ['pratos', 'cardapio', 'ficha'],
     ficha: {
       pode: ['Responder dúvidas com o que está nesta ficha', 'Mandar o cardápio e fotos dos pratos', 'Ajudar a montar um pedido', 'Informar horário, entrega e endereço'],
@@ -338,6 +347,7 @@ export const PACOTES: Record<Nicho, PacoteDoNicho> = {
     modeloDeFunil: 'atendimento',
     // Balcão: paga e leva na hora, sem preparo nem entrega.
     pedidos: { etapas: ['novo', 'pago', 'entregue'], rotulos: { entregue: 'Retirado' }, visao: 'lista', despacho: 'preparo' },
+    primeirosEmVendas: ['pedidos', 'vendidos-pelo-chat', 'pedidos-horarios'],
     passosDoInicio: ['ficha'],
     ficha: {
       pode: ['Responder dúvidas com o que está nesta ficha', 'Dizer se tem o produto e quanto custa', 'Informar horário e endereço'],
