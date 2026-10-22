@@ -53,8 +53,9 @@ aqui fica o que o cliente ganha.
 
 ## Automatizar
 
-- **Fluxos visuais** com 16 blocos: mensagem, pergunta, condição, IA, agenda,
-  etiqueta, funil, anotação, e-mail, chamada de sistema externo e mais.
+- **Fluxos visuais** com 18 blocos: mensagem, pergunta, condição, IA, agenda,
+  etiqueta, funil, anotação, e-mail, cobrança, agendamento por formulário,
+  chamada de sistema externo e mais.
 - **Enviar e-mail pelo fluxo**: a confirmação para o cliente ou o aviso para a
   equipe, com o nome da empresa como remetente. *(21/out/2026)*
 - **IA que atende com o contexto da empresa** e usa ferramentas: marca horário,
@@ -80,7 +81,8 @@ aqui fica o que o cliente ganha.
 - **Sair com uma palavra**: quem responde SAIR ou PARAR deixa de receber
   promoções na hora, recebe a confirmação e continua sendo atendido. As
   transmissões de marketing pulam essa pessoa sozinhas, e o número da empresa
-  não perde qualidade com denúncia. *(21/out/2026)*
+  não perde qualidade com denúncia. Quem bloqueia promoções pelo próprio
+  WhatsApp também sai, sem o sistema insistir. *(21/out/2026)*
 - **Aceite com prova**: a caixa de aceite do chat do site e do formulário do
   anúncio fica registrada com o texto exato e a data, visível na ficha do
   contato. *(21/out/2026)*
@@ -91,6 +93,16 @@ aqui fica o que o cliente ganha.
   confirma, e a tela Cobranças mostra quanto entrou e quanto falta. O dinheiro
   cai direto na conta da empresa, no Mercado Pago ou no Asaas, sem
   porcentagem para o AutoFluxos. *(22/out/2026)*
+- **Conectar a conta de recebimento sem mexer em chave**: o Mercado Pago liga
+  com o login da própria conta, em um clique; o Asaas, com a chave da conta,
+  conferida antes de salvar. *(21 e 22/out/2026)*
+- **Comprovante falso não passa**: a cobrança só vira paga depois que o
+  sistema confere o pagamento direto no banco. Foto de comprovante, aviso
+  repetido ou Pix pago a menos não contam. *(22/out/2026)*
+- **Só cobra quem pode**: o botão Cobrar aparece para dono, gerente e quem
+  recebeu a permissão de registrar venda. *(22/out/2026)*
+- **As cobranças de cada cliente na ficha**: as últimas cobranças do contato,
+  pagas, pendentes e vencidas, sem abrir outra tela. *(22/out/2026)*
 - **Nota fiscal da cobrança paga** pelo Asaas, sem certificado digital nem
   sistema de nota à parte. *(22/out/2026)*
 - **Venda que se fecha sozinha**: a automação manda o Pix, espera, e segue
