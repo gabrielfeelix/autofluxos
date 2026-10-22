@@ -13,6 +13,9 @@ import { comoMandarProduto, pedidoDoBotao, textoDoCard } from '@/core/loja'
 import { alertar, type ContextoDoAlerta } from './alertar'
 import { criarCobranca, tentarPedidoNativo, textoDaCobranca } from './cobrancas'
 import { ultimaCobrancaDoFluxo, type CobrancaRegistrada } from './repos/cobrancas'
+import { formularioPublicadoDoCanal } from './repos/formularios-do-whatsapp'
+import { criarTokenDoFormulario, lerTokenDoFormulario, type DadosDoToken } from './formularios-do-whatsapp/token'
+import { lerMarcacao, type MarcacaoDoFormulario } from '@/core/formulario-de-agendamento'
 import { avisarHandoff } from './avisar-handoff'
 import { executarComEfeitos, type OpcoesDeEfeitos } from './efeitos/resolver'
 import { guardarMidiaRecebida } from './guardar-midia-recebida'
@@ -169,6 +172,8 @@ const mensagemSchema = z.object({
     .object({
       button_reply: z.object({ id: z.string(), title: z.string().optional() }).optional(),
       list_reply: z.object({ id: z.string(), title: z.string().optional() }).optional(),
+      /** O "Concluir" do formulário nativo (WhatsApp Flows): o JSON vem como texto. */
+      nfm_reply: z.object({ response_json: z.string().optional(), name: z.string().optional() }).optional(),
     })
     .optional(),
   /*
@@ -625,6 +630,17 @@ export async function tratarUma(
    * "Editada".
    */
   if (mensagem.type === 'edit') return
+
+  /*
+   * O "Concluir" do formulário de agendamento. Normalmente a conversa já
+   * seguiu: o endpoint do formulário acorda o bloco Agendar no instante em que
+   * a agenda grava. Aqui é a rede de segurança, e não é fala da pessoa: como
+   * mensagem, cairia no bloco seguinte como resposta inválida.
+   */
+  if (mensagem.interactive?.nfm_reply) {
+    await concluirFormulario(canalSalvo.clienteId, mensagem.interactive.nfm_reply.response_json)
+    return
+  }
 
   /*
    * A mensagem que a Meta avisa e não entrega (erro 131051: enquete, evento,
@@ -1631,6 +1647,114 @@ export async function acordarFluxoDaCobranca(
   } finally {
     await destravar()
   }
+}
+
+function jsonOuNulo(texto: string | undefined): unknown {
+  if (!texto) return null
+  try {
+    return JSON.parse(texto) as unknown
+  } catch {
+    return null
+  }
+}
+
+/** A chave da tarefa que desiste do formulário: uma por bloco esperando. */
+function chaveDaDesistencia(sessaoId: string, noId: string): string {
+  return `formulario:${sessaoId}:${noId}`
+}
+
+async function concluirFormulario(clienteId: string, respostaJson: string | undefined): Promise<void> {
+  const resposta = jsonOuNulo(respostaJson) as Record<string, unknown> | null
+  const token = lerTokenDoFormulario(resposta?.flow_token)
+  const marcacao = lerMarcacao(resposta)
+  if (!token.ok || !marcacao) return
+  await acordarFluxoDoFormulario(clienteId, token.dados, marcacao)
+}
+
+/**
+ * O bloco Agendar teve desfecho (formulário de agendamento, frente 5).
+ *
+ * `marcou` vem do endpoint do formulário (no `after()`, assim que a agenda
+ * grava) ou do `nfm_reply`, o que chegar primeiro; o segundo encontra a
+ * conversa já em outro bloco e não faz nada. `nao_marcou` vem do relógio.
+ * Mesmas travas do Cobrar: só age com a conversa ativa e parada **naquele**
+ * bloco Agendar.
+ */
+export async function acordarFluxoDoFormulario(
+  clienteId: string,
+  token: Pick<DadosDoToken, 'contatoId' | 'sessaoId' | 'noId'>,
+  marcacao: MarcacaoDoFormulario | null,
+  fabricaDeCanal: FabricaDeCanal = canalPadrao,
+): Promise<'feita' | 'ignorada'> {
+  const { sessaoId, contatoId, noId } = token
+  if (!sessaoId || !noId) return 'ignorada'
+
+  const parada = async () => {
+    const salva = await acharSessao(sessaoId)
+    if (!salva || salva.sessao.status !== 'ativa' || salva.sessao.noAtual !== noId) return null
+    const versao = await acharVersao(salva.flowVersionId)
+    const no = versao?.grafo.nodes.find((n) => n.id === noId)
+    return versao && no?.type === 'agendar' ? { salva, versao } : null
+  }
+
+  const antes = await parada()
+  if (!antes) return 'ignorada'
+  const [contato, canal] = await Promise.all([acharContato(contatoId), acharCanal(antes.salva.canalId)])
+  if (!contato || !canal || canal.clienteId !== clienteId) return 'ignorada'
+  if (!contato.automacaoAtiva) return 'ignorada'
+
+  const destravar = await travarContato(contatoId)
+  if (!destravar) return 'ignorada'
+
+  try {
+    const agora = await parada()
+    if (!agora) return 'ignorada'
+    const { salva, versao } = agora
+    if (marcacao) await cancelarPorChave(chaveDaDesistencia(sessaoId, noId))
+
+    const [opcoesDeIa, horario] = await Promise.all([
+      prepararIa(canal, contatoId, versao, null),
+      horarioDoCliente(canal.clienteId),
+    ])
+    const revisaoAutorizada = await revisaoDoControle(canal.clienteId, contatoId)
+
+    const entrada: Entrada = marcacao
+      ? { tipo: 'formulario', desfecho: 'marcou', marcacao }
+      : { tipo: 'formulario', desfecho: 'nao_marcou' }
+    const resultado = await executarComEfeitos(versao.grafo, salva.sessao, entrada, {
+      ...opcoesDeIa,
+      atendimento: contextoDeAtendimento(horario),
+      hoje: hojeNaConta(horario?.fuso ?? SEMPRE_ABERTO.fuso),
+      datas: varsDeData(horario?.fuso ?? SEMPRE_ABERTO.fuso),
+      carregarFluxo: carregadorDeFluxo(canal.clienteId),
+    })
+
+    await guardarSessao(sessaoId, resultado.sessao)
+    if (resultado.destino) await trocarVersaoDaSessao(sessaoId, resultado.destino.versaoId)
+    await sincronizarTimeout(
+      canal.clienteId,
+      contatoId,
+      sessaoId,
+      resultado.destino?.grafo ?? versao.grafo,
+      resultado.sessao,
+    )
+    await aplicar(fabricaDeCanal(canal), contato, sessaoId, null, resultado.acoes, revisaoAutorizada)
+    return 'feita'
+  } finally {
+    await destravar()
+  }
+}
+
+/** O prazo do bloco Agendar passou sem marcar (tarefa `desistencia_do_formulario`). */
+export async function rodarDesistenciaDoFormulario(
+  clienteId: string,
+  dados: Record<string, unknown>,
+  fabricaDeCanal: FabricaDeCanal = canalPadrao,
+): Promise<'feita' | 'ignorada'> {
+  const texto = (v: unknown) => (typeof v === 'string' ? v : null)
+  const contatoId = texto(dados.contatoId)
+  if (!contatoId) return 'ignorada'
+  return acordarFluxoDoFormulario(clienteId, { contatoId, sessaoId: texto(dados.sessaoId), noId: texto(dados.noId) }, null, fabricaDeCanal)
 }
 
 /**
@@ -2737,6 +2861,47 @@ async function aplicar(
         )
       }
 
+      case 'enviar_formulario': {
+        /*
+         * O bloco Agendar. A conversa já está gravada parada nele; aqui o
+         * formulário sai, com o token assinado que diz de quem é e qual bloco
+         * espera, e o relógio da desistência é marcado. Sem formulário
+         * publicado no número, vai para uma pessoa: esperar um formulário que
+         * não saiu seria esperar para sempre.
+         */
+        await salvarCampos()
+        const contexto = await contextoDeResposta(contato.clienteId, contato.id)
+        const formulario = contexto ? await formularioPublicadoDoCanal(contato.clienteId, contexto.canal.id) : null
+        const enviarFormulario = canal.enviarFormulario?.bind(canal)
+        if (!formulario?.flowId || !enviarFormulario || !sessaoId) {
+          return pararNoHumano('o número não tem o formulário de agendamento publicado')
+        }
+        const flowId = formulario.flowId
+        const token = criarTokenDoFormulario(
+          { formularioId: formulario.id, contatoId: contato.id, sessaoId, noId: acao.noId },
+          new Date(),
+          acao.horasParaDesistir,
+        )
+        const registro = await registrarSaida({
+          contatoId: contato.id,
+          sessaoId,
+          autor: AUTOR_AUTOMACAO,
+          texto: acao.texto,
+          payload: { formulario: formulario.id, rotulo: acao.botao },
+        })
+        const entrega = await entregar(() => enviarFormulario(contato.waId, { texto: acao.texto, botao: acao.botao, flowId, token }), alvo)
+        if (!entrega.ok) return pararNoHumano(entrega.motivo)
+        await confirmarSeEntregue(registro, entrega)
+        await agendar({
+          clienteId: contato.clienteId,
+          tipo: 'desistencia_do_formulario',
+          quando: new Date(Date.now() + acao.horasParaDesistir * 3_600_000),
+          dados: { contatoId: contato.id, sessaoId, noId: acao.noId },
+          chave: chaveDaDesistencia(sessaoId, acao.noId),
+        })
+        break
+      }
+
       case 'criar_cobranca': {
         /*
          * O bloco Cobrar. A conversa já está gravada parada nele, esperando o
@@ -2827,6 +2992,16 @@ function paraEntrada(mensagem: Mensagem): { entrada: Entrada; texto: string | nu
   // O botão "Pedir" embaixo da foto de um produto: vira o que a pessoa diria.
   const pedido = resposta ? pedidoDoBotao(resposta.id) : null
   if (pedido) return { entrada: { tipo: 'texto', texto: pedido }, texto: pedido }
+  // O "Concluir" do formulário: para antes do motor (ver `tratarUma`); aqui
+  // só o texto que a conversa mostra.
+  if (mensagem.interactive?.nfm_reply) {
+    const marcacao = lerMarcacao(jsonOuNulo(mensagem.interactive.nfm_reply.response_json))
+    return {
+      entrada: { tipo: 'midia', formato: 'formulario' },
+      texto: marcacao?.resumo ? `Marcou pelo formulário: ${marcacao.resumo}` : 'Enviou o formulário',
+    }
+  }
+
   if (resposta) {
     return {
       entrada: { tipo: 'opcao', opcaoId: resposta.id },

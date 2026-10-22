@@ -6,6 +6,7 @@ import { LIMITE_NOME_DO_FLUXO } from '@/core/flow/limites'
 import { validar, type Problema } from '@/core/flow/validar'
 import { validarPublicacao } from '@/core/validar-publicacao'
 import { db, ehIdInvalido, pareceUuid } from '../db'
+import { formulariosDaConta } from './formularios-do-whatsapp'
 import { listarConexoesParaFluxos } from './conexoes'
 import { sequenciasQueUsamOFluxo } from './sequencias'
 import { listarEtiquetas } from './etiquetas'
@@ -330,9 +331,14 @@ export async function publicar(
   const cobrancaHabilitada = analise.data.nodes.some((no) => no.type === 'cobrar')
     ? await cobrancaLiberada(fluxo.clienteId)
     : undefined
+  // E pelo formulário de agendamento só quando o desenho agenda.
+  const formularioDeAgendamento = analise.data.nodes.some((no) => no.type === 'agendar')
+    ? (await formulariosDaConta(fluxo.clienteId)).some((f) => f.status === 'publicado')
+    : undefined
   const conferido = validar(analise.data, {
     iaHabilitada: fluxo.iaHabilitada,
     cobrancaHabilitada,
+    formularioDeAgendamento,
     conexoes,
     etapas,
     etiquetas,

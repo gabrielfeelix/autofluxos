@@ -19,12 +19,15 @@ import {
   SAIDA_MIDIA,
   SAIDA_TEXTO_LIVRE,
   SAIDA_NEUTRO,
+  SAIDA_MARCOU,
+  SAIDA_NAO_MARCOU,
   SAIDA_PAGOU,
   SAIDA_PROMOTOR,
   SAIDA_TIMEOUT,
   SAIDA_VENCEU,
   SAIDA_VAZIO,
   SAIDA_VERDADEIRO,
+  VARIAVEIS_DO_AGENDAR,
   faixaDaNota,
   itensDaLista,
   perguntaEhDinamica,
@@ -148,6 +151,10 @@ const MENSAGEM_NAO_ENTENDI = 'Para seguir com o seu atendimento, escolha uma das
 /** Quem escreve enquanto o bloco Cobrar espera o pagamento. */
 export const MENSAGEM_ESPERANDO_PAGAMENTO =
   'Assim que o pagamento for confirmado, sigo com você por aqui. Se precisar falar com a equipe, escreva *atendente*.'
+
+/** Quem escreve enquanto o bloco Agendar espera o formulário. */
+export const MENSAGEM_ESPERANDO_FORMULARIO =
+  'Quando você escolher o dia e o horário no formulário, sigo com você por aqui. Se preferir falar com a equipe, escreva *atendente*.'
 
 /** Pagou e o desenho não disse o que fazer depois. */
 export const MENSAGEM_PAGAMENTO_CONFIRMADO = 'Pagamento confirmado. Obrigado!'
@@ -324,6 +331,7 @@ export function executar(
     // O comprovante do Pix chega como foto. Quem confirma é o gateway, e a
     // conversa espera por ele em vez de ir para a fila.
     if (parada?.type === 'cobrar') return esperarPagamento(s, acoes, contexto)
+    if (parada?.type === 'agendar') return esperarFormulario(s, acoes, contexto)
     const tratada =
       parada?.type === 'pergunta' ? proximo(fluxo, parada.id, SAIDA_MIDIA) : null
 
@@ -681,6 +689,33 @@ export function executar(
       return { acoes, sessao: s }
     }
     return esperarPagamento(s, acoes, contexto)
+  }
+
+  if (atual.type === 'agendar') {
+    if (entrada.tipo === 'formulario') {
+      s.tentativas = 0
+      if (entrada.desfecho === 'marcou' && entrada.marcacao) {
+        s.vars[VARIAVEIS_DO_AGENDAR.participacao] = entrada.marcacao.participacao_id
+        s.vars[VARIAVEIS_DO_AGENDAR.sessao] = entrada.marcacao.sessao_id
+        s.vars[VARIAVEIS_DO_AGENDAR.resumo] = entrada.marcacao.resumo
+      }
+      const saida = entrada.desfecho === 'marcou' ? SAIDA_MARCOU : SAIDA_NAO_MARCOU
+      const desenhada = proximo(fluxo, atual.id, saida)
+      if (desenhada !== null) return avancar(contexto, fluxo, porId, s, acoes, desenhada, { no: atual, saida })
+      if (entrada.desfecho === 'marcou') {
+        acoes.push({ tipo: 'enviar_texto', texto: `Pronto, está marcado: ${entrada.marcacao?.resumo || 'horário confirmado.'}` })
+        acoes.push({ tipo: 'encerrar' })
+        s.noAtual = null
+        s.status = 'encerrada'
+        return { acoes, sessao: s }
+      }
+      // Não marcou sem caminho desenhado: para a fila, calado. Quem abriu a
+      // agenda e não marcou é a pessoa que a recepção mais quer ouvir.
+      acoes.push({ tipo: 'transferir_humano', motivo: 'a pessoa não marcou pelo formulário de agendamento' })
+      s.status = 'humano'
+      return { acoes, sessao: s }
+    }
+    return esperarFormulario(s, acoes, contexto)
   }
 
   if (atual.type === 'pergunta') {
@@ -1346,6 +1381,25 @@ function avancar(
         return { acoes, sessao: s }
       }
 
+      /*
+       * Agendar: manda o formulário e para, esperando o endpoint dele (marcou)
+       * ou o relógio (não marcou). Quem confere se o número tem formulário
+       * publicado é o servidor, e sem ele a conversa vai para uma pessoa.
+       */
+      case 'agendar': {
+        acoes.push({
+          tipo: 'enviar_formulario',
+          noId: no.id,
+          texto: interpolar(no.data.texto, s.vars).trim() || 'Escolha o dia e o horário pelo formulário abaixo.',
+          botao: no.data.botao.trim() || 'Ver horários',
+          horasParaDesistir: no.data.horasParaDesistir,
+        })
+        s.noAtual = no.id
+        s.status = 'ativa'
+        s.tentativas = 0
+        return { acoes, sessao: s }
+      }
+
       case 'handoff': {
         // Todas as mensagens do bloco, em ordem, antes de a conversa mudar de
         // mão: é onde cabe a despedida do bot (o obrigado, o pedido de nota)
@@ -1410,6 +1464,16 @@ function esperarPagamento(s: Sessao, acoes: Acao[], contexto: ContextoDoAtendime
     return transferir(s, acoes, 'a pessoa escreveu várias vezes enquanto a cobrança esperava o pagamento', contexto)
   }
   if (s.tentativas === 1) acoes.push({ tipo: 'enviar_texto', texto: MENSAGEM_ESPERANDO_PAGAMENTO })
+  return { acoes, sessao: s }
+}
+
+/** O mesmo do Cobrar, enquanto o formulário espera: uma frase, e na terceira uma pessoa. */
+function esperarFormulario(s: Sessao, acoes: Acao[], contexto: ContextoDoAtendimento): Resultado {
+  s.tentativas += 1
+  if (s.tentativas >= 3) {
+    return transferir(s, acoes, 'a pessoa escreveu várias vezes enquanto o formulário de agendamento esperava', contexto)
+  }
+  if (s.tentativas === 1) acoes.push({ tipo: 'enviar_texto', texto: MENSAGEM_ESPERANDO_FORMULARIO })
   return { acoes, sessao: s }
 }
 

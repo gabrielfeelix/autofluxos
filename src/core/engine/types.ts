@@ -184,6 +184,15 @@ export const entradaSchema = z.discriminatedUnion('tipo', [
    * depois de reler o pagamento na API do gateway.
    */
   z.object({ tipo: z.literal('cobranca'), desfecho: z.enum(['pagou', 'venceu']) }),
+  /**
+   * O formulário do bloco Agendar teve desfecho: a agenda gravou a marcação
+   * (o endpoint do formulário avisa na hora), ou o prazo passou sem marcar.
+   */
+  z.object({
+    tipo: z.literal('formulario'),
+    desfecho: z.enum(['marcou', 'nao_marcou']),
+    marcacao: z.object({ participacao_id: z.string(), sessao_id: z.string(), resumo: z.string() }).optional(),
+  }),
 ])
 
 export type StatusSessao = z.infer<typeof statusSessaoSchema>
@@ -462,6 +471,12 @@ export type Acao =
    * `core/cobranca.ts` somou pelo catálogo. Quem cria no gateway, e quem passa
    * a conversa para uma pessoa quando não sai, é o servidor.
    */
+  /**
+   * Mandar o formulário de agendamento do bloco Agendar. O servidor acha o
+   * formulário publicado do número, assina o token com a sessão e o bloco, e
+   * agenda a desistência.
+   */
+  | { tipo: 'enviar_formulario'; noId: string; texto: string; botao: string; horasParaDesistir: number }
   | {
       tipo: 'criar_cobranca'
       noId: string

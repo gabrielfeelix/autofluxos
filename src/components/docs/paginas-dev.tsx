@@ -392,6 +392,14 @@ function Verandi() {
         ))}
       </ul>
       <P>
+        O bloco <strong className="text-ink">Agendar</strong> usa as mesmas chamadas por outro caminho: manda o
+        formulário nativo do WhatsApp, e cada tela dele (dias, horários, marcar) passa pelo endpoint{' '}
+        <Cod>/api/webhook/formulario-whatsapp/{'{id}'}</Cod>, que lê <Cod>/disponibilidade</Cod> dos próximos 14 dias,
+        acha ou cadastra a pessoa em <Cod>/pessoas</Cod> e marca em <Cod>/participacoes</Cod>. A vaga é conferida no
+        momento de marcar; o 409 da agenda (horário cheio, plano que não vale no dia) volta como frase na tela do
+        formulário. Ative em Configurações › Credenciais de sistemas, no cartão Formulário de agendamento.
+      </P>
+      <P>
         Para montar a conversa bloco a bloco, veja{' '}
         <a className="font-medium text-primary hover:underline" href="/ajuda/receitas">Seis modelos de conversa com a agenda</a>.
       </P>

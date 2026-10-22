@@ -743,6 +743,28 @@ export function canalCloudApi(config: ConfigCloudApi): Canal {
       return idDoEnvio(resposta)
     },
 
+    async enviarFormulario(para, { texto, botao, flowId, token }) {
+      const resposta = await mandar({
+        to: para,
+        type: 'interactive',
+        interactive: {
+          type: 'flow',
+          body: { text: cortarCaracteres(texto, LIMITE_CORPO_CTA) },
+          action: {
+            name: 'flow',
+            parameters: {
+              flow_message_version: '3',
+              flow_token: token,
+              flow_id: flowId,
+              flow_cta: cortarCaracteres(botao, LIMITE_ROTULO),
+              flow_action: 'data_exchange',
+            },
+          },
+        },
+      })
+      return idDoEnvio(resposta)
+    },
+
     async enviarPedidoPix(para, pedido) {
       const pagamentos = [
         ...(pedido.pix

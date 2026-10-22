@@ -273,6 +273,13 @@ export function detalhesDoBloco(no: No): Detalhe[] {
         { rotulo: 'Vence em', valor: `${no.data.horasParaVencer} horas` },
       ]
 
+    case 'agendar':
+      return [
+        { rotulo: 'Mensagem', valor: texto(no.data.texto, '(sem mensagem)') },
+        { rotulo: 'Botão', valor: texto(no.data.botao, 'Ver horários') },
+        { rotulo: 'Espera', valor: `${no.data.horasParaDesistir} horas` },
+      ]
+
     case 'ir-fluxo':
       return [
         {

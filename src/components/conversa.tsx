@@ -440,6 +440,13 @@ export function Conversa({
         case 'transferir_humano':
           adicionar({ chave, de: 'sistema', texto: `transferida para atendente: ${acao.motivo}`, alerta: true })
           break
+        case 'enviar_formulario':
+          adicionar({
+            chave,
+            de: 'sistema',
+            texto: `mandaria o formulário de agendamento ("${acao.botao}"), esperando até ${acao.horasParaDesistir} h. Use ✓ ou ⌛ para seguir.`,
+          })
+          break
         case 'criar_cobranca': {
           const valor = (acao.valorCentavos / 100).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
           adicionar({
@@ -542,6 +549,9 @@ export function Conversa({
   /** Parada num bloco Cobrar: o simulador faz o papel do gateway. */
   const esperaPagamento =
     status === 'ativa' && fluxo.nodes.some((no) => no.id === sessaoExibida.noAtual && no.type === 'cobrar')
+  /** Parada num bloco Agendar: o simulador faz o papel do formulário. */
+  const esperaFormulario =
+    status === 'ativa' && fluxo.nodes.some((no) => no.id === sessaoExibida.noAtual && no.type === 'agendar')
   const eventos = contarEventos(itens)
   const iniciais = iniciaisDoNome(nomeContato)
 
@@ -799,6 +809,46 @@ export function Conversa({
               gateway nenhum, e sem isto as duas saídas do bloco Cobrar só
               seriam testadas com dinheiro.
             */}
+            {/* Marcou e não marcou sem agenda de verdade, como o pagou e o venceu. */}
+            {esperaFormulario && (
+              <button
+                type="button"
+                onClick={() =>
+                  void enviar(
+                    {
+                      tipo: 'formulario',
+                      desfecho: 'marcou',
+                      marcacao: { participacao_id: 'teste', sessao_id: 'teste', resumo: 'Sexta, 23/10 às 07:00, Pilates solo com Carol.' },
+                    },
+                    '✓ (marcou)',
+                  )
+                }
+                disabled={ocupado}
+                title="Simular a marcação pelo formulário"
+                className={
+                  modo === 'conversa'
+                    ? 'flex size-9 shrink-0 items-center justify-center rounded-full text-sm text-[#54656f] transition hover:bg-black/[0.05] disabled:opacity-40'
+                    : 'botao-secundario botao-md botao-icone shrink-0 text-sm'
+                }
+              >
+                ✓
+              </button>
+            )}
+            {esperaFormulario && (
+              <button
+                type="button"
+                onClick={() => void enviar({ tipo: 'formulario', desfecho: 'nao_marcou' }, '⌛ (não marcou)')}
+                disabled={ocupado}
+                title="Simular o prazo passando sem marcar"
+                className={
+                  modo === 'conversa'
+                    ? 'flex size-9 shrink-0 items-center justify-center rounded-full text-sm text-[#54656f] transition hover:bg-black/[0.05] disabled:opacity-40'
+                    : 'botao-secundario botao-md botao-icone shrink-0 text-sm'
+                }
+              >
+                ⌛
+              </button>
+            )}
             {esperaPagamento && (
               <button
                 type="button"

@@ -1,3 +1,4 @@
+import { formulariosDaConta } from '@/server/repos/formularios-do-whatsapp'
 import { notFound } from 'next/navigation'
 import { voltaInterna } from '@/core/volta-da-ficha'
 import { FaixaDeImpersonacao } from '@/components/conta/faixa-impersonacao'
@@ -70,7 +71,7 @@ export default async function Pagina({
     )
   }
 
-  const [cliente, fluxo, conexoes, quadros, etiquetas, fluxosDaConta, loja, nuvemshop, temCatalogo, iaComFerramentas, cobrancaHabilitada] = await Promise.all([
+  const [cliente, fluxo, conexoes, quadros, etiquetas, fluxosDaConta, loja, nuvemshop, temCatalogo, iaComFerramentas, cobrancaHabilitada, formularios] = await Promise.all([
     acharCliente(clienteId),
     acharFluxo(fluxoId),
     listarConexoesParaFluxos(clienteId),
@@ -82,6 +83,7 @@ export default async function Pagina({
     temProdutoAtivo(clienteId),
     recursoLiberado(clienteId, 'ia_ferramentas'),
     cobrancaLiberada(clienteId),
+    formulariosDaConta(clienteId),
   ])
   if (!cliente || !fluxo || fluxo.clienteId !== cliente.id) notFound()
 
@@ -167,6 +169,7 @@ export default async function Pagina({
         iaHabilitada={fluxo.iaHabilitada}
         iaComFerramentas={iaComFerramentas}
         cobrancaHabilitada={cobrancaHabilitada}
+        formularioDeAgendamento={formularios.some((f) => f.status === 'publicado')}
         entradaLigada={fluxo.ativo}
         /* Contratar a Etapa 2 é decisão comercial da 4YU. Para a conta, o
            contrato é estado, ver o cabeçalho do editor. */

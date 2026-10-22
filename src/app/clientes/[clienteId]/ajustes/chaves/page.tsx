@@ -16,6 +16,9 @@ import { listarConexoes, type Conexao } from '@/server/repos/conexoes'
 import { NOME_DA_CONEXAO_DE_ADS } from '@/server/token-de-anuncios'
 import { listarFluxos } from '@/server/repos/fluxos'
 import { CartaoDaAgenda } from '@/components/conexoes/agenda'
+import { CartaoDoFormularioDeAgendamento, type NumeroDoFormulario } from '@/components/conexoes/formulario-de-agendamento'
+import { numerosParaFormulario } from '@/server/formularios-do-whatsapp/ativar'
+import { formulariosDaConta } from '@/server/repos/formularios-do-whatsapp'
 import {
   NOME_DA_AGENDA,
   NOME_DA_CREDENCIAL_DA_AGENDA,
@@ -85,6 +88,16 @@ export default async function Pagina({ params }: { params: Promise<{ clienteId: 
   }
 
   const daAgenda = conexoes.find((c) => c.nome === NOME_DA_CREDENCIAL_DA_AGENDA) ?? null
+
+  // O formulário de agendamento só existe com a agenda ligada: a lista vem dela.
+  const numerosDoFormulario: NumeroDoFormulario[] = daAgenda
+    ? await Promise.all([numerosParaFormulario(clienteId), formulariosDaConta(clienteId)]).then(([numeros, formularios]) =>
+        numeros.map((n) => {
+          const f = formularios.find((x) => x.canalId === n.id)
+          return { canalId: n.id, telefone: n.telefone, status: f?.status ?? 'inativo', erro: f?.erro ?? null }
+        }),
+      )
+    : []
 
   return (
     <AjustesShell cliente={cliente} ativa="chaves">
@@ -203,6 +216,8 @@ export default async function Pagina({ params }: { params: Promise<{ clienteId: 
             Sem ela, o bot não sabe horário livre, professor nem quem já é cliente.
           </CartaoDeConexao>
         )}
+
+        {daAgenda && <CartaoDoFormularioDeAgendamento clienteId={clienteId} numeros={numerosDoFormulario} />}
 
         {conexoes.length === 0 ? (
           <CartaoDeConexao

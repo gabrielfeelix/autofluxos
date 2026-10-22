@@ -17,6 +17,8 @@ export const TIPOS_DE_TAREFA = [
   'continuidade_de_processo',
   /** Uma cobrança chegou ao vencimento sem pagar (0141). Ver `server/cobrancas.ts`. */
   'vencimento_de_cobranca',
+  /** O bloco Agendar esperou o formulário e a pessoa não marcou (0143). */
+  'desistencia_do_formulario',
 ] as const
 
 export type TipoDeTarefa = (typeof TIPOS_DE_TAREFA)[number]

@@ -291,6 +291,8 @@ function textoDoBloco(no: No): string {
       return no.data.texto
     case 'cobrar':
       return `cobra ${no.data.descricao}`.trim()
+    case 'agendar':
+      return no.data.texto
     case 'ia':
       return no.data.instrucao
     case 'handoff': {

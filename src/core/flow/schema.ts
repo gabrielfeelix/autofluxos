@@ -1150,6 +1150,35 @@ export const noCobrarSchema = z.object({
   }),
 })
 
+/**
+ * **Agendar**: manda o formulário nativo do WhatsApp para a pessoa escolher
+ * dia e horário na agenda da Verandi, e espera (frente 5 do handoff de 22/out).
+ *
+ * Para aqui como o Cobrar para. Quem tira a conversa daqui é o servidor: o
+ * endpoint do formulário acorda a saída **marcou** assim que a agenda grava,
+ * e o relógio acorda **não marcou** depois de `horasParaDesistir`. Ao marcar,
+ * a conversa ganha `{{participacao_id}}`, `{{sessao_id}}` e
+ * `{{horario_marcado}}` (a frase "Sexta, 23/10 às 07:00, Pilates com Carol.").
+ *
+ * Só WhatsApp: o formulário é da Meta. Precisa do formulário ativado no
+ * número (Ajustes > Formulário de agendamento) e da Verandi ligada.
+ */
+/** O token do formulário vale 72 horas; esperar mais não teria o que acordar. */
+export const MAX_HORAS_PARA_DESISTIR = 72
+/** O botão da mensagem de formulário aceita 20 caracteres. */
+export const MAX_ROTULO_DO_FORMULARIO = 20
+
+export const noAgendarSchema = z.object({
+  ...base,
+  type: z.literal('agendar'),
+  data: z.object({
+    /** O texto da mensagem acima do botão. Aceita variável. */
+    texto: z.string().default('Escolha o dia e o horário pelo formulário abaixo.'),
+    botao: z.string().max(MAX_ROTULO_DO_FORMULARIO).default('Ver horários'),
+    horasParaDesistir: z.number().int().min(1).max(MAX_HORAS_PARA_DESISTIR).default(24),
+  }),
+})
+
 export const noSchema = z.discriminatedUnion('type', [
   noMensagemSchema,
   noMidiaSchema,
@@ -1168,6 +1197,7 @@ export const noSchema = z.discriminatedUnion('type', [
   noVoltarSchema,
   noNpsSchema,
   noCobrarSchema,
+  noAgendarSchema,
 ])
 
 export const arestaSchema = z.object({
@@ -1214,6 +1244,7 @@ export type Mapeamento = z.infer<typeof mapeamentoSchema>
 export type NoHttp = z.infer<typeof noHttpSchema>
 export type NoEtapa = z.infer<typeof noEtapaSchema>
 export type NoCobrar = z.infer<typeof noCobrarSchema>
+export type NoAgendar = z.infer<typeof noAgendarSchema>
 export type Aresta = z.infer<typeof arestaSchema>
 export type Fluxo = z.infer<typeof fluxoSchema>
 export type TipoNo = No['type']
@@ -1299,6 +1330,15 @@ export const SAIDA_DETRATOR = 'detrator'
  * mensagem: o aviso do gateway (pagou) e o relógio do vencimento (venceu).
  */
 export const SAIDA_PAGOU = 'pagou'
+/** As duas saídas do bloco Agendar: o endpoint do formulário e o relógio. */
+export const SAIDA_MARCOU = 'marcou'
+export const SAIDA_NAO_MARCOU = 'nao_marcou'
+/** O que a saída "marcou" grava na conversa. */
+export const VARIAVEIS_DO_AGENDAR = {
+  participacao: 'participacao_id',
+  sessao: 'sessao_id',
+  resumo: 'horario_marcado',
+} as const
 export const SAIDA_VENCEU = 'venceu'
 
 /** Em que faixa do NPS cai uma nota. Um lugar só, para o motor e para a tela. */

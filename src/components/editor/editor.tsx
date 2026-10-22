@@ -251,6 +251,8 @@ export function dadosPadrao(tipo: TipoNo): Record<string, unknown> {
         texto: 'De 0 a 10, o quanto você nos recomendaria para um amigo?',
         perguntaAberta: '',
       }
+    case 'agendar':
+      return { texto: 'Escolha o dia e o horário pelo formulário abaixo.', botao: 'Ver horários', horasParaDesistir: 24 }
     case 'cobrar':
       // Valor e descrição vazios: o validador recusa publicar assim. Um preço
       // chutado viraria Pix de verdade no WhatsApp de alguém.
@@ -368,6 +370,7 @@ export function Editor({
   iaHabilitada,
   iaComFerramentas,
   cobrancaHabilitada,
+  formularioDeAgendamento,
   entradaLigada = true,
   podeContratarIa,
   contextoNegocio,
@@ -440,6 +443,8 @@ export function Editor({
    * Cobrar some do catálogo: quem não conectou não vê nada.
    */
   cobrancaHabilitada?: boolean
+  /** Algum número tem o formulário de agendamento publicado. Sem ele, o bloco Agendar some da barra. */
+  formularioDeAgendamento?: boolean
   /**
    * A automação abre conversa nova (`flows.ativo`). Mora ao lado da publicação
    * no cabeçalho (A03): publicada e desligada é um estado real, e sem isto o
@@ -496,9 +501,14 @@ export function Editor({
   const catalogo = useMemo(
     () =>
       filtrarCatalogo(buscaDeBloco)
-        .map((grupo) => ({ ...grupo, tipos: grupo.tipos.filter((tipo) => tipo !== 'cobrar' || cobrancaHabilitada) }))
+        .map((grupo) => ({
+          ...grupo,
+          tipos: grupo.tipos.filter(
+            (tipo) => (tipo !== 'cobrar' || cobrancaHabilitada) && (tipo !== 'agendar' || (formularioDeAgendamento && canal === 'whatsapp')),
+          ),
+        }))
         .filter((grupo) => grupo.tipos.length > 0),
-    [buscaDeBloco, cobrancaHabilitada],
+    [buscaDeBloco, cobrancaHabilitada, formularioDeAgendamento, canal],
   )
 
   // A largura da barra de blocos, lembrada no navegador de quem usa.
@@ -646,6 +656,7 @@ export function Editor({
         iaHabilitada: comIa,
         iaComFerramentas,
         cobrancaHabilitada,
+        formularioDeAgendamento,
         conexoes: idsDeConexao,
         temContextoDeNegocio,
         fluxos,
@@ -681,7 +692,7 @@ export function Editor({
         avisos: [...doDesenho.avisos, ...daPublicacao.avisos],
       }
     },
-    [fluxo, comIa, iaComFerramentas, cobrancaHabilitada, idsDeConexao, idsDeEtapa, idsDeEtiqueta, temContextoDeNegocio, fluxos, fluxoId, variaveisDaConta, canal],
+    [fluxo, comIa, iaComFerramentas, cobrancaHabilitada, formularioDeAgendamento, idsDeConexao, idsDeEtapa, idsDeEtiqueta, temContextoDeNegocio, fluxos, fluxoId, variaveisDaConta, canal],
   )
 
   const itensAntes = useMemo(

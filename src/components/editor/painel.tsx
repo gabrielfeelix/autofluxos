@@ -22,6 +22,7 @@ import {
   LIMITE_TEXTO,
   LIMITE_TEXTO_INTERATIVO,
   MARCA_DE_LISTA,
+  MAX_ROTULO_DO_FORMULARIO,
   MAX_TURNOS_DA_IA,
   METODOS,
   OPERADORES,
@@ -1482,6 +1483,58 @@ export function Painel({
               aoMudar={(horas) => aoMudarDados({ horasParaVencer: Number(horas) })}
               rotuloAcessivel="Vence em"
               opcoes={HORAS_DE_VENCIMENTO.map((h) => ({ valor: String(h), rotulo: comoHoras(h) }))}
+            />
+          </div>
+        </>
+      )}
+
+      {no.type === 'agendar' && (
+        <>
+          <Area
+            rotulo="Mensagem"
+            valor={no.data.texto}
+            limite={1024}
+            aoMudar={(texto) => aoMudarDados({ texto })}
+            conhecidas={variaveis}
+            secao="blocos"
+            exemplo="Escolha o dia e o horário da sua aula pelo formulário abaixo."
+            dica="O texto acima do botão. O formulário abre com os dias e horários livres da agenda."
+            detalhes={
+              <>
+                <p>
+                  O botão abre um formulário do próprio WhatsApp com os <strong>dias</strong> e os{' '}
+                  <strong>horários livres</strong> dos próximos 14 dias, lidos da agenda na hora. A
+                  vaga é conferida no momento de marcar.
+                </p>
+                <p>
+                  Marcou, a conversa segue pela saída <strong>marcou</strong> com{' '}
+                  <code>{'{{horario_marcado}}'}</code>, <code>{'{{sessao_id}}'}</code> e{' '}
+                  <code>{'{{participacao_id}}'}</code>.
+                </p>
+              </>
+            }
+          />
+          <Linha
+            rotulo="Texto do botão"
+            valor={no.data.botao}
+            aoMudar={(botao) => aoMudarDados({ botao: botao.slice(0, MAX_ROTULO_DO_FORMULARIO) })}
+            secao="blocos"
+            dica={`Até ${MAX_ROTULO_DO_FORMULARIO} caracteres.`}
+          />
+          <div className="block">
+            <span className="mb-1.5 block text-[11px] font-bold tracking-[0.05em] text-muted uppercase">
+              Esperar até
+              <AjudaDoCampo
+                titulo="Esperar até"
+                secao="blocos"
+                texto="Sem marcar nesse prazo, a conversa sai pela saída “não marcou”."
+              />
+            </span>
+            <Dropdown
+              valor={String(no.data.horasParaDesistir)}
+              aoMudar={(horas) => aoMudarDados({ horasParaDesistir: Number(horas) })}
+              rotuloAcessivel="Esperar até"
+              opcoes={HORAS_PARA_DESISTIR.map((h) => ({ valor: String(h), rotulo: comoHoras(h) }))}
             />
           </div>
         </>
@@ -3179,8 +3232,13 @@ function resumoDoBloco(no: No): string {
       return no.data.destino === '' ? 'Volta ao início' : 'Volta a um passo'
     case 'cobrar':
       return curto(no.data.descricao) || 'Cobrar'
+    case 'agendar':
+      return curto(no.data.texto) || 'Agendar'
   }
 }
+
+/** Os prazos do bloco Agendar. O token do formulário vale 72 horas. */
+const HORAS_PARA_DESISTIR = [1, 2, 6, 12, 24, 48, 72]
 
 /** Os prazos do bloco Cobrar. Curtos para cobrança quente, longos para sinal de reserva. */
 const HORAS_DE_VENCIMENTO = [1, 2, 6, 12, 24, 48, 72, 168]

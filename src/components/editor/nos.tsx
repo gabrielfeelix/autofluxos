@@ -17,6 +17,8 @@ import {
   SAIDA_TEXTO_LIVRE,
   SAIDA_DETRATOR,
   SAIDA_NEUTRO,
+  SAIDA_MARCOU,
+  SAIDA_NAO_MARCOU,
   SAIDA_PAGOU,
   SAIDA_VENCEU,
   SAIDA_PROMOTOR,
@@ -518,6 +520,27 @@ function NoCobrar({ data, selected }: NodeProps) {
   )
 }
 
+function NoAgendar({ data, selected }: NodeProps) {
+  const d = data as { texto?: string; botao?: string; horasParaDesistir?: number }
+  const horas = d.horasParaDesistir ?? 24
+  return (
+    <Caixa tipo="agendar" selecionado={!!selected} saidaUnica={false}>
+      <p className="text-[12.5px] leading-5 text-soft">
+        <RealceDeVariaveis texto={vazio(d.texto ?? '', '(sem mensagem)')} />
+      </p>
+      <p className="mt-1 text-[11px] text-muted">
+        botão “{d.botao || 'Ver horários'}” · espera {horas % 24 === 0 ? `${horas / 24} ${horas === 24 ? 'dia' : 'dias'}` : `${horas} h`}
+      </p>
+      <Saida id={SAIDA_MARCOU}>
+        <span className="text-[11px] text-ok">marcou</span>
+      </Saida>
+      <Saida id={SAIDA_NAO_MARCOU}>
+        <span className="text-[11px] text-aviso">não marcou</span>
+      </Saida>
+    </Caixa>
+  )
+}
+
 function NoSalvarCampo({ data, selected }: NodeProps) {
   const d = data as { campo: string; valor: string }
   return (
@@ -847,4 +870,5 @@ export const tiposDeNo = {
   voltar: NoVoltar,
   nps: NoNps,
   cobrar: NoCobrar,
+  agendar: NoAgendar,
 } satisfies Record<TipoNo, NodeTypes[string]>

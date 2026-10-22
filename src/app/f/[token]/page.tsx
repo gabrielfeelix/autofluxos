@@ -51,6 +51,7 @@ const ROTULO_DO_BLOCO: Record<LinhaDoRoteiro['tipo'], string> = {
   voltar: 'Volta ao menu',
   nps: 'Pesquisa de satisfação',
   cobrar: 'Cobra por Pix',
+  agendar: 'Agenda pelo formulário',
 }
 
 export default async function Pagina({ params }: { params: Promise<{ token: string }> }) {

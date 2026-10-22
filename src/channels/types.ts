@@ -187,6 +187,12 @@ export type Canal = {
    */
   enviarBotaoDeLink?(para: string, texto: string, rotulo: string, url: string, imagem?: string): Promise<string | null>
   /**
+   * O formulário nativo do WhatsApp (WhatsApp Flows), publicado na WABA do
+   * número. Só a Cloud API tem. Abre direto pelo nosso endpoint
+   * (`flow_action: data_exchange`): a primeira tela já vem da agenda.
+   */
+  enviarFormulario?(para: string, formulario: { texto: string; botao: string; flowId: string; token: string }): Promise<string | null>
+  /**
    * A cobrança como **pedido nativo do WhatsApp** (`order_details`, versão
    * simplificada, sem catálogo): o valor, o botão "Copiar código Pix" com nome
    * e chave de quem recebe, e o link de cartão ou boleto. Opcional, e quem

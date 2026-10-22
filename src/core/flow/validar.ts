@@ -19,6 +19,8 @@ import {
   SAIDA_ESCOLHEU,
   SAIDA_FALSO,
   SAIDA_MIDIA,
+  SAIDA_NAO_MARCOU,
+  VARIAVEIS_DO_AGENDAR,
   SAIDA_TEXTO_LIVRE,
   SAIDA_NEUTRO,
   SAIDA_PROMOTOR,
@@ -175,6 +177,12 @@ export type Capacidades = {
    * conversa cairia na fila em toda venda.
    */
   cobrancaHabilitada?: boolean
+  /**
+   * Algum número da conta tem o formulário de agendamento publicado na Meta
+   * (Ajustes > Formulário de agendamento)? `false` recusa publicar o bloco
+   * Agendar; `undefined` = não sei, e não trava.
+   */
+  formularioDeAgendamento?: boolean
 }
 
 /**
@@ -198,6 +206,7 @@ export function validar(fluxo: Fluxo, capacidades: Capacidades = {}): ResultadoV
     variaveisDaConta,
     canal = CANAL_PADRAO,
     cobrancaHabilitada,
+    formularioDeAgendamento,
   } = capacidades
 
   // O nome entra nas mensagens junto com o número: "13 opções, o WhatsApp
@@ -258,6 +267,7 @@ export function validar(fluxo: Fluxo, capacidades: Capacidades = {}): ResultadoV
     if (no.type === 'salvar-campo') deConversa.add(no.data.campo)
     if (no.type === 'ia' && no.data.salvarEm) deConversa.add(no.data.salvarEm)
     if (no.type === 'ia' && no.data.conversar?.concluir) deConversa.add(no.data.conversar.concluir.salvarEm)
+    if (no.type === 'agendar') for (const v of Object.values(VARIAVEIS_DO_AGENDAR)) deConversa.add(v)
     if (no.type === 'ia' && no.data.conversar?.cobranca) {
       for (const v of Object.values(VARIAVEIS_DA_COBRANCA)) deConversa.add(v)
     }
@@ -416,6 +426,29 @@ export function validar(fluxo: Fluxo, capacidades: Capacidades = {}): ResultadoV
             noId: no.id,
           })
         }
+      }
+    }
+
+    if (no.type === 'agendar') {
+      if (canal !== 'whatsapp') {
+        erros.push({
+          codigo: 'AGENDAR_FORA_DO_WHATSAPP',
+          mensagem: `${descrever(no)} usa o formulário nativo do WhatsApp, e esta automação é de outro canal.`,
+          noId: no.id,
+        })
+      } else if (formularioDeAgendamento === false) {
+        erros.push({
+          codigo: 'AGENDAR_SEM_FORMULARIO',
+          mensagem: `${descrever(no)} precisa do formulário de agendamento ativado em Ajustes > Formulário de agendamento.`,
+          noId: no.id,
+        })
+      }
+      if (!minhasSaidas.some((a) => a.sourceHandle === SAIDA_NAO_MARCOU)) {
+        avisos.push({
+          codigo: 'AGENDAR_SEM_NAO_MARCOU',
+          mensagem: `${descrever(no)} não diz o que fazer quando a pessoa não marca. Sem essa saída, a conversa vai para a equipe.`,
+          noId: no.id,
+        })
       }
     }
 
@@ -1177,6 +1210,12 @@ function conferirConteudo(
       }
       break
 
+    case 'agendar':
+      if (vazio(no.data.botao)) {
+        erros.push({ codigo: 'AGENDAR_SEM_BOTAO', mensagem: `${descrever(no)} está sem o texto do botão.`, noId: no.id })
+      }
+      break
+
     case 'cobrar':
       if (vazio(no.data.descricao)) {
         erros.push({
@@ -1518,6 +1557,7 @@ function conferirVariaveis(fluxo: Fluxo, daConta: string[] = []): Problema[] {
     }
     if (no.type === 'ia' && no.data.salvarEm) definidas.add(no.data.salvarEm)
     if (no.type === 'ia' && no.data.conversar?.concluir) definidas.add(no.data.conversar.concluir.salvarEm)
+    if (no.type === 'agendar') for (const v of Object.values(VARIAVEIS_DO_AGENDAR)) definidas.add(v)
     if (no.type === 'ia' && no.data.conversar?.cobranca) {
       for (const v of Object.values(VARIAVEIS_DA_COBRANCA)) definidas.add(v)
     }
@@ -1601,6 +1641,8 @@ function variaveisDoNo(no: No): string[] {
     case 'cobrar':
       // A descrição interpola. O valor do pedido é lido pelo motor, não citado.
       return variaveisCitadas(no.data.descricao)
+    case 'agendar':
+      return variaveisCitadas(no.data.texto)
     case 'nps':
       // As duas perguntas interpolam, como qualquer texto que a pessoa lê.
       return [
@@ -1702,6 +1744,8 @@ function textosDoNo(no: No): string[] {
       return [no.data.texto, no.data.perguntaAberta]
     case 'cobrar':
       return [no.data.descricao]
+    case 'agendar':
+      return [no.data.texto, no.data.botao]
     case 'condicao':
     case 'etapa':
     case 'etiqueta':
