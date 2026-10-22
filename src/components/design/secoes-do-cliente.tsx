@@ -158,6 +158,7 @@ export const SECOES: Secao[] = [
     icone: <IconeLoja />,
     itens: [
       { id: 'catalogo', rotulo: 'Produtos', href: '/loja/catalogo', aba: 'loja' },
+      { id: 'pedidos', rotulo: 'Pedidos', href: '/loja/pedidos', aba: 'loja' },
       { id: 'conectar-loja', rotulo: 'Integrações', href: '/loja', aba: 'loja' },
     ],
   },

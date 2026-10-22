@@ -98,6 +98,11 @@ export type Produto = {
    * ordenou ainda: fica depois dos ordenados, pelo nome.
    */
   ordem: number | null
+  /**
+   * Quantos há para vender (0146). `null` ou ausente = não controla, que é o
+   * caso de todo item até o dono contar. Só os ramos com Pedidos mostram.
+   */
+  estoque?: number | null
   /** `null` = ativo. Data = arquivado naquele instante, e ainda legível. */
   arquivadoEm: string | null
 }

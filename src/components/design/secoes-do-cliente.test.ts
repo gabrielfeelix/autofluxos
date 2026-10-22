@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { MODELOS_EXTRA, type Acesso } from '@/core/permissoes'
-import { LUGARES_DA_BARRA, NICHOS, PACOTES } from '@/core/nichos'
+import { LUGARES_DA_BARRA, NICHOS, PACOTES, ocultoNaBarra } from '@/core/nichos'
 import { ITENS, SECOES, destinoNaConta, liberaSecao, rotuloDaSecao, secoesVisiveis, telaInicial } from './secoes-do-cliente'
 
 /**
@@ -125,12 +125,16 @@ describe('as palavras do ramo (core/nichos.ts)', () => {
   it('restaurante chama de Cardápio e Pratos', () => {
     const loja = secaoLoja({ nicho: 'restaurante' })
     expect(loja?.rotulo).toBe('Cardápio')
-    expect(loja?.itens.map((item) => item.rotulo)).toEqual(['Pratos', 'Integrações'])
+    expect(loja?.itens.map((item) => item.rotulo)).toEqual(['Pratos', 'Pedidos', 'Integrações'])
     expect(rotuloDaSecao('loja', 'restaurante')).toBe('Cardápio')
   })
 
   it('comércio de rua não vê Integrações, que é de loja on-line', () => {
-    expect(secaoLoja({ nicho: 'comercio' })?.itens.map((item) => item.id)).toEqual(['catalogo'])
+    expect(secaoLoja({ nicho: 'comercio' })?.itens.map((item) => item.id)).toEqual(['catalogo', 'pedidos'])
+  })
+
+  it('aulas não vê Pedidos: a venda lá é matrícula e mensalidade', () => {
+    expect(secaoLoja({ nicho: 'aulas' })?.itens.map((item) => item.id)).toEqual(['catalogo'])
   })
 
   it('o ramo não muda a ordem: só esconde, e só o que o pacote diz', () => {
@@ -138,7 +142,7 @@ describe('as palavras do ramo (core/nichos.ts)', () => {
       const ordem = SECOES.map((secao) => secao.chave)
       const vistas = chaves(secoesVisiveis({ nicho }))
       expect(vistas, nicho).toEqual(ordem.filter((chave) => vistas.includes(chave)))
-      const semOcultos = ids(secoesVisiveis()).filter((id) => !(PACOTES[nicho].ocultos as string[]).includes(id))
+      const semOcultos = ids(secoesVisiveis()).filter((id) => !ocultoNaBarra(PACOTES[nicho], id))
       expect(ids(secoesVisiveis({ nicho })), nicho).toEqual(semOcultos)
     }
   })

@@ -12,6 +12,7 @@ import {
   moverProduto,
   renomearProduto,
 } from './repos/produtos'
+import { definirEstoque } from './repos/pedidos'
 import { avaliarCartao, definirInteresse } from './repos/quadros'
 import { ehTemperaturaDoCartao } from '@/core/quadros'
 import { exigirCapacidade, recusou } from './permissoes'
@@ -109,6 +110,28 @@ export async function acaoDefinirPreco(
   if (recusou(acesso)) return acesso
 
   const r = await definirPreco(clienteId, produtoId, String(formData.get('preco') ?? ''))
+  if (!r.ok) return { erro: r.motivo }
+
+  recarregar(clienteId)
+  return { ok: true }
+}
+
+/**
+ * Quantos há do item (0146). Campo vazio deixa de controlar. É o número que
+ * o Cobrar baixa ao virar pedido e que o bot usa para dizer "esgotado".
+ */
+export async function acaoDefinirEstoque(
+  clienteId: string,
+  produtoId: string,
+  _estado: EstadoSalvar,
+  formData: FormData,
+): Promise<EstadoSalvar> {
+  const acesso = await exigirCapacidade(clienteId, 'configurar_operacao', 'todos')
+  if (recusou(acesso)) return acesso
+
+  const bruto = String(formData.get('estoque') ?? '').trim()
+  if (bruto !== '' && !/^\d{1,7}$/.test(bruto)) return { erro: 'Escreva só o número, sem ponto nem vírgula.' }
+  const r = await definirEstoque(clienteId, produtoId, bruto === '' ? null : Number(bruto))
   if (!r.ok) return { erro: r.motivo }
 
   recarregar(clienteId)

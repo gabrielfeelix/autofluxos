@@ -7,6 +7,7 @@ import { estadoDoAtendimento, type Atendimento } from '@/core/estado-do-atendime
 import type { FunilDoContato } from '@/components/inbox/funil-da-conversa'
 import type { CobrarNaConversa } from '@/components/lead/botao-de-cobrar'
 import { documentoDaFicha } from './cobrancas'
+import { contaTemPedidos } from './pedidos'
 import { exigirCapacidade, recusou } from './permissoes'
 import { conexaoAtiva } from './repos/pagamentos'
 import { recursoLiberado } from './recursos-do-plano'
@@ -234,6 +235,7 @@ async function cobrarNaConversa(clienteId: string, lead: Lead): Promise<CobrarNa
       ambiente: conexao.ambiente,
       pedeDocumento: conexao.gateway === 'asaas' && documentoDaFicha(lead.campos) === null,
       temCatalogo: await temOndeEscolher(clienteId),
+      comPedidos: await contaTemPedidos(clienteId),
     }
   } catch {
     return null

@@ -215,6 +215,16 @@ aqui fica o que o cliente ganha.
 - **Mensalidade no Pix Automático ou no cartão**: a pessoa autoriza uma vez
   no app do banco, ou cadastra o cartão no primeiro pagamento, e os meses
   seguintes são cobrados sozinhos. O convite sai na conversa. *(22/out/2026)*
+- **Pedidos da conversa num quadro**: cobrar itens do catálogo vira um pedido
+  numerado, com retirada ou entrega e endereço. O pagamento confirmado leva o
+  pedido para Pago sozinho; a equipe move para em preparo, saiu e entregue
+  com um toque, e o cliente recebe o aviso de cada etapa no WhatsApp. Quadro
+  para a cozinha, lista para a loja, com os nomes de cada ramo (separando e
+  enviado no e-commerce). *(22/out/2026)*
+- **Estoque que baixa sozinho**: o item do catálogo ganha a quantidade, cada
+  pedido baixa, o cancelamento ou o Pix vencido devolve, e quem atende não
+  consegue vender o que acabou. O bot passa a dizer "esgotado" e "últimas
+  unidades". *(22/out/2026)*
 - **Transmissão para um segmento salvo**: a mesma regra usada em Contatos
   (quem comprou há mais de 60 dias, quem gastou acima de um valor) vira o
   público da campanha, sem precisar etiquetar ninguém. *(22/out/2026)*

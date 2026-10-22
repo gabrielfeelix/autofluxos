@@ -1,12 +1,12 @@
-import type { Nicho } from './nichos'
+import { pacoteDo, type Nicho, type PedidosDoRamo } from './nichos'
 
 /**
  * O pedido feito pela conversa (0146), sem banco.
  *
  * O status é um código só para todo ramo; o que muda é o nome na tela e quais
- * etapas o ramo usa. Restaurante prepara e entrega, e-commerce separa e
- * envia, comércio de rua entrega na hora. **Aulas não tem pedido**: lá a
- * venda é matrícula e mensalidade, e a tela Pedidos nem aparece.
+ * etapas o ramo usa, e isso mora no pacote do ramo (`PacoteDoNicho.pedidos`,
+ * `core/nichos.ts`), como toda diferença entre ramos. Ramo com `pedidos: null`
+ * não tem pedido, e a tela Pedidos nem aparece.
  */
 
 export const STATUS_DE_PEDIDO = ['novo', 'pago', 'em_preparo', 'saiu', 'entregue', 'cancelado'] as const
@@ -16,9 +16,25 @@ export function ehStatusDePedido(valor: unknown): valor is StatusDePedido {
   return typeof valor === 'string' && (STATUS_DE_PEDIDO as readonly string[]).includes(valor)
 }
 
-/** Quem usa Pedidos: todo ramo menos aulas. Conta sem ramo também usa. */
+/**
+ * Os pedidos do ramo, do pacote (`core/nichos.ts`). Sem ramo: todas as
+ * etapas, em lista. `null` só no ramo sem pedido.
+ */
+export function pedidosDoRamo(nicho: Nicho | null | undefined): PedidosDoRamo | null {
+  const pacote = pacoteDo(nicho ?? null)
+  return pacote ? pacote.pedidos : PEDIDOS_SEM_RAMO
+}
+
+const PEDIDOS_SEM_RAMO: PedidosDoRamo = {
+  etapas: ['novo', 'pago', 'em_preparo', 'saiu', 'entregue'],
+  rotulos: {},
+  visao: 'lista',
+  despacho: 'preparo',
+}
+
+/** Quem usa Pedidos: todo ramo menos o que não vende pedido. Conta sem ramo também usa. */
 export function temPedidos(nicho: Nicho | null | undefined): boolean {
-  return nicho !== 'aulas'
+  return pedidosDoRamo(nicho) !== null
 }
 
 export type EtapaDoPedido = { status: StatusDePedido; rotulo: string }
@@ -32,20 +48,14 @@ const NOMES: Record<StatusDePedido, string> = {
   cancelado: 'Cancelado',
 }
 
-const POR_RAMO: Partial<Record<Nicho, Partial<Record<StatusDePedido, string>>>> = {
-  ecommerce: { em_preparo: 'Separando', saiu: 'Enviado' },
-  comercio: { entregue: 'Retirado' },
-}
-
 /** As etapas do quadro, na ordem, sem `cancelado` (que é saída, não etapa). */
 export function etapasDoRamo(nicho: Nicho | null | undefined): EtapaDoPedido[] {
-  const usadas: StatusDePedido[] =
-    nicho === 'comercio' ? ['novo', 'pago', 'entregue'] : ['novo', 'pago', 'em_preparo', 'saiu', 'entregue']
+  const usadas = (pedidosDoRamo(nicho) ?? PEDIDOS_SEM_RAMO).etapas
   return usadas.map((status) => ({ status, rotulo: rotuloDoStatus(status, nicho) }))
 }
 
 export function rotuloDoStatus(status: StatusDePedido, nicho: Nicho | null | undefined): string {
-  return (nicho ? POR_RAMO[nicho]?.[status] : undefined) ?? NOMES[status]
+  return pedidosDoRamo(nicho)?.rotulos[status] ?? NOMES[status]
 }
 
 /** A etapa seguinte no ramo, ou `null` no fim (e no cancelado). */
@@ -83,9 +93,10 @@ export function avisoDoStatus(
   entrega: 'entrega' | 'retirada' | 'local',
 ): string | null {
   const pedido = `Seu pedido ${numero}`
-  if (status === 'em_preparo') return nicho === 'ecommerce' ? `${pedido} está sendo separado.` : `${pedido} está em preparo.`
+  const envio = pedidosDoRamo(nicho)?.despacho === 'envio'
+  if (status === 'em_preparo') return envio ? `${pedido} está sendo separado.` : `${pedido} está em preparo.`
   if (status === 'saiu') {
-    if (nicho === 'ecommerce') return `${pedido} foi enviado.`
+    if (envio) return `${pedido} foi enviado.`
     return entrega === 'entrega' ? `${pedido} saiu para entrega.` : `${pedido} está pronto para retirar.`
   }
   if (status === 'cancelado') return `${pedido} foi cancelado. Se tiver dúvida, é só responder aqui.`

@@ -19,6 +19,8 @@ export type CobrarNaConversa =
       pedeDocumento: boolean
       /** Catálogo com item ativo ou loja ligada: o painel abre no catálogo. */
       temCatalogo: boolean
+      /** Ramo com Pedidos (0146): o catálogo pergunta retirada ou entrega, e a cobrança vira pedido. */
+      comPedidos?: boolean
     }
   /** Plano e permissão ok, sem conta de recebimento: o painel leva a conectar. */
   | { conectado: false }
@@ -60,6 +62,7 @@ export function BotaoDeCobrar({
   desabilitado?: boolean
 }) {
   const temCatalogo = cobrar.conectado && cobrar.temCatalogo
+  const comPedidos = cobrar.conectado && cobrar.comPedidos === true
   const [aberto, setAberto] = useState(false)
   const [aba, setAba] = useState<'catalogo' | 'livre'>(temCatalogo ? 'catalogo' : 'livre')
   const [valor, setValor] = useState('')
@@ -67,6 +70,8 @@ export function BotaoDeCobrar({
   const [documento, setDocumento] = useState('')
   const [pedeDocumento, setPedeDocumento] = useState(cobrar.conectado && cobrar.pedeDocumento)
   const [escolhidos, setEscolhidos] = useState<Escolhido[]>([])
+  const [entrega, setEntrega] = useState<'retirada' | 'entrega'>('retirada')
+  const [endereco, setEndereco] = useState('')
   const [enviando, setEnviando] = useState(false)
   const [erro, setErro] = useState<string | null>(null)
   const caixa = useRef<HTMLDivElement>(null)
@@ -113,7 +118,10 @@ export function BotaoDeCobrar({
     try {
       const r = await acaoCobrarNaConversa(clienteId, contatoId, {
         ...(aba === 'catalogo'
-          ? { itens: escolhidos.map((e) => ({ produtoId: e.produto.produtoId, quantidade: e.quantidade })) }
+          ? {
+              itens: escolhidos.map((e) => ({ produtoId: e.produto.produtoId, quantidade: e.quantidade })),
+              ...(comPedidos ? { entrega, endereco } : {}),
+            }
           : { valor }),
         descricao,
         documento: pedeDocumento ? documento : undefined,
@@ -124,6 +132,8 @@ export function BotaoDeCobrar({
         setDescricao('')
         setDocumento('')
         setEscolhidos([])
+        setEntrega('retirada')
+        setEndereco('')
         setPedeDocumento(false)
       } else {
         setErro(r.erro)
@@ -140,7 +150,9 @@ export function BotaoDeCobrar({
   const documentoOk = !pedeDocumento || documento.trim() !== ''
   const pronto =
     documentoOk &&
-    (aba === 'catalogo' ? escolhidos.length > 0 : valor.trim() !== '' && descricao.trim() !== '')
+    (aba === 'catalogo'
+      ? escolhidos.length > 0 && (!comPedidos || entrega === 'retirada' || endereco.trim() !== '')
+      : valor.trim() !== '' && descricao.trim() !== '')
 
   return (
     <div className="relative shrink-0" ref={caixa}>
@@ -272,6 +284,43 @@ export function BotaoDeCobrar({
                         <span className="text-[12px] text-soft">Total</span>
                         <span className="text-[14px] font-bold tabular-nums">{reais(total)}</span>
                       </div>
+                    </div>
+                  ) : null}
+                  {comPedidos ? (
+                    <div className="flex flex-col gap-1.5">
+                      <div role="radiogroup" aria-label="Como a pessoa recebe" className="grid grid-cols-2 gap-1 rounded-[9px] bg-surface-strong p-1">
+                        {(
+                          [
+                            ['retirada', 'Retirada'],
+                            ['entrega', 'Entrega'],
+                          ] as const
+                        ).map(([id, rotulo]) => (
+                          <button
+                            key={id}
+                            type="button"
+                            role="radio"
+                            aria-checked={entrega === id}
+                            onClick={() => setEntrega(id)}
+                            className={`h-7 rounded-[7px] text-[12px] font-semibold transition-colors ${
+                              entrega === id ? 'bg-panel text-ink shadow-[0_1px_2px_rgba(16,24,40,0.08)]' : 'text-soft hover:text-ink'
+                            }`}
+                          >
+                            {rotulo}
+                          </button>
+                        ))}
+                      </div>
+                      {entrega === 'entrega' ? (
+                        <label className="flex flex-col gap-1">
+                          <span className="text-[11.5px] font-semibold text-soft">Endereço da entrega</span>
+                          <input
+                            value={endereco}
+                            maxLength={300}
+                            onChange={(e) => setEndereco(e.target.value)}
+                            placeholder="Exemplo: Rua das Flores, 120, apto 32"
+                            className="app-field h-9 w-full px-2.5 text-[13px]"
+                          />
+                        </label>
+                      ) : null}
                     </div>
                   ) : null}
                   <label className="flex flex-col gap-1">

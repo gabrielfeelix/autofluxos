@@ -12,6 +12,7 @@ import { varsIniciais } from '@/core/contatos/vars-iniciais'
 import { comoMandarProduto, pedidoDoBotao, textoDoCard } from '@/core/loja'
 import { alertar, type ContextoDoAlerta } from './alertar'
 import { criarCobranca, tentarPedidoNativo, textoDaCobranca } from './cobrancas'
+import { pedidoDoFluxo } from './pedidos'
 import { ultimaCobrancaDoFluxo, type CobrancaRegistrada } from './repos/cobrancas'
 import { formularioDoCanal } from './repos/formularios-do-whatsapp'
 import { criarTokenDoFormulario, lerTokenDoFormulario, type DadosDoToken } from './formularios-do-whatsapp/token'
@@ -2923,6 +2924,8 @@ async function aplicar(
         })
         if (!criada.ok) return pararNoHumano(`a cobrança do fluxo não saiu: ${criada.erro}`)
         const { cobranca } = criada
+        // Nos ramos com Pedidos, a cobrança do bloco também entra na tela Pedidos.
+        await pedidoDoFluxo(cobranca)
 
         // O pedido nativo do WhatsApp quando dá (etapa E); senão, texto e Pix.
         const nativo = await tentarPedidoNativo(canal, contato.waId, cobranca)

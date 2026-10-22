@@ -17,8 +17,9 @@ import type { Loja } from './types'
  *
  * O que ele não tem, e diz que não tem:
  *
- *  - estoque: `emEstoque` é sempre `true` e `semControleDeEstoque` avisa o
- *    card para não escrever "em estoque";
+ *  - estoque, enquanto o dono não conta: `emEstoque` é `true` e
+ *    `semControleDeEstoque` avisa o card para não escrever "em estoque". Com
+ *    `produtos.estoque` preenchido (0146), vale o número;
  *  - "combina com": vazio;
  *  - página de busca: vazio, e o resolvedor não oferece link nenhum.
  *
@@ -112,8 +113,10 @@ function paraProdutoDaLoja(p: Produto): ProdutoDaLoja {
     ...(p.descricao ? { descricao: p.descricao } : {}),
     ...(p.categoria ? { categoria: p.categoria } : {}),
     especie: p.especie,
-    emEstoque: true,
-    semControleDeEstoque: true,
+    // Estoque contado (0146) responde como a loja on-line; sem contar, o card não afirma nada.
+    ...(typeof p.estoque === 'number'
+      ? { emEstoque: p.estoque > 0, quantidade: p.estoque }
+      : { emEstoque: true, semControleDeEstoque: true as const }),
     ...(p.foto ? { foto: p.foto } : {}),
     link: p.link ?? '',
   }

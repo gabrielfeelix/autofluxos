@@ -7,6 +7,7 @@ import { conferirItens, type ItemCobrado, type PedidoDeItem } from '@/core/cobra
 import { lojaAtivaDaConta } from './adaptador-da-loja'
 import { cancelarCobranca, criarCobranca, HORAS_PARA_VENCER_NO_INBOX } from './cobrancas'
 import { mandarCobrancaNaConversa } from './mandar-cobranca'
+import { contaTemPedidos, desfazerPedido, ligarPedidoACobranca, reservarPedido, type PedidoReservado } from './pedidos'
 import { podeResponderAgora } from './distribuir-atendimento'
 import { exigirCapacidade, meuAlcance, recusou } from './permissoes'
 import { recusaDoPlano } from './recursos-do-plano'
@@ -28,7 +29,7 @@ import { sessaoAtual } from './sessao'
  */
 
 export type ResultadoDoCobrar =
-  | { ok: true; cobranca: CobrancaRegistrada }
+  | { ok: true; cobranca: CobrancaRegistrada; pedido?: number }
   | { ok: false; erro: string; pedeDocumento?: boolean }
 
 const DESCRICAO_MAXIMA = 200
@@ -36,7 +37,15 @@ const DESCRICAO_MAXIMA = 200
 export async function acaoCobrarNaConversa(
   clienteId: string,
   contatoId: string,
-  entrada: { valor?: string; descricao: string; documento?: string; itens?: PedidoDeItem[] },
+  entrada: {
+    valor?: string
+    descricao: string
+    documento?: string
+    itens?: PedidoDeItem[]
+    /** Só com itens e nos ramos com Pedidos (0146). */
+    entrega?: 'entrega' | 'retirada'
+    endereco?: string
+  },
 ): Promise<ResultadoDoCobrar> {
   const acesso = await exigirCapacidade(clienteId, 'registrar_venda', 'proprios')
   if (recusou(acesso)) return { ok: false, erro: 'Sua função não permite cobrar. Peça ao dono da conta.' }
@@ -60,6 +69,26 @@ export async function acaoCobrarNaConversa(
 
   const quem = await sessaoAtual()
   const autor = autorDaPessoa(quem?.usuario)
+
+  // Com itens, nos ramos com Pedidos: o estoque baixa e o pedido nasce antes
+  // da cobrança, para o "tem só 2" recusar antes de o Pix existir.
+  let reservado: PedidoReservado | null = null
+  if (itens && (await contaTemPedidos(clienteId))) {
+    const entrega = entrada.entrega === 'entrega' ? 'entrega' : 'retirada'
+    const endereco = entrada.endereco?.trim().slice(0, 300) || null
+    if (entrega === 'entrega' && !endereco) return { ok: false, erro: 'Escreva o endereço da entrega.' }
+    reservado = await reservarPedido({
+      clienteId,
+      contatoId,
+      itens,
+      totalCentavos: valorCentavos,
+      entrega,
+      endereco,
+      criadoPor: quem?.usuario.nome?.trim() || null,
+    })
+    if (!reservado.ok) return reservado
+  }
+
   const criada = await criarCobranca({
     clienteId,
     contatoId,
@@ -74,6 +103,7 @@ export async function acaoCobrarNaConversa(
     documento: entrada.documento ?? null,
   })
   if (!criada.ok) {
+    if (reservado?.ok) await desfazerPedido(reservado.pedido)
     return {
       ok: false,
       erro: criada.erro,
@@ -81,13 +111,14 @@ export async function acaoCobrarNaConversa(
     }
   }
   const cobranca = criada.cobranca
+  if (reservado?.ok) await ligarPedidoACobranca(reservado.pedido, cobranca.id).catch(() => undefined)
 
   const enviada = await mandarCobrancaNaConversa(contatoId, contexto, cobranca, autor)
   if (!enviada.ok) return enviada
 
   if (contexto.sessaoId) await definirStatusDaSessao(contexto.sessaoId, 'humano')
   if (quem) await atribuirSeSemDono(clienteId, contatoId, quem.usuario.id).catch(() => undefined)
-  return { ok: true, cobranca }
+  return { ok: true, cobranca, ...(reservado?.ok ? { pedido: reservado.pedido.numero } : {}) }
 }
 
 type ValorConferido = { ok: true; valorCentavos: number; descricao: string; itens: ItemCobrado[] | null } | { ok: false; erro: string }

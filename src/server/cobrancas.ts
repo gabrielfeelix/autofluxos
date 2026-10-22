@@ -8,6 +8,7 @@ import { cnpjValido, cpfValido } from '@/core/documentos'
 import { lerPix } from '@/core/pix'
 import { adaptadorDoCanal } from './adaptador-do-canal'
 import { alertar } from './alertar'
+import { pedidoCaiu, pedidoPago } from './pedidos'
 import { gravarCampos } from './repos/campos'
 import {
   acharCobranca,
@@ -385,6 +386,7 @@ export async function aplicarPagamento(
         })
       }
       await avisarPorWebhook(cobranca, 'cobranca.paga', pagaEm)
+      await pedidoPago(cobranca, pagaEm)
       await confirmarPedidoNativo(cobranca)
       await acordarOFluxo(cobranca, 'pagou')
     }
@@ -432,6 +434,7 @@ export async function rodarVencimentoDeCobranca(
     })
   }
   if (mudou) {
+    await pedidoCaiu(cobranca)
     await avisarPorWebhook(cobranca, 'cobranca.vencida')
     await acordarOFluxo(cobranca, 'venceu')
   }
@@ -460,6 +463,7 @@ export async function cancelarCobranca(
   const mudou = await mudarStatus(clienteId, cobranca.id, ['pendente'], 'cancelada')
   if (mudou) {
     await cancelarPorChave(chaveDoVencimento(cobranca.id))
+    await pedidoCaiu(cobranca)
     if (cobranca.contatoId) {
       await anotar(
         clienteId,

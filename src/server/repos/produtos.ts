@@ -39,9 +39,10 @@ type LinhaDoProduto = {
   categoria: string | null
   ordem: number | null
   arquivado_em: string | null
+  estoque: number | null
 }
 
-const COLUNAS = 'id, nome, especie, preco, sku, descricao, link, foto, categoria, ordem, arquivado_em'
+const COLUNAS = 'id, nome, especie, preco, sku, descricao, link, foto, categoria, ordem, arquivado_em, estoque'
 
 /**
  * `numeric` do Postgres chega como **string** no supabase-js, não número.
@@ -71,6 +72,7 @@ function paraProduto(linha: LinhaDoProduto): Produto {
     categoria: linha.categoria,
     ordem: linha.ordem,
     arquivadoEm: linha.arquivado_em,
+    estoque: linha.estoque ?? null,
   }
 }
 

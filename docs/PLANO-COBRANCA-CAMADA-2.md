@@ -75,4 +75,15 @@ de 24 h é modelo de utilidade, pago.
   gateway ao abrir a ficha e na passada diária (`sincronizarAdesao`). Cartão
   pelo Mercado Pago (`preapproval`) espera a aplicação do Mercado Pago.
 - c4 (ponte Verandi): não será feita. O MGM não vai usar cobrança (Gabriel, 22/out); só se pedir.
-- a (Pedidos): em andamento, ver `docs/HANDOFF-22-OUT-COBRANCA-CAMADA-2.md`.
+- a (Pedidos): no ar em 22/out. Migration `0146_pedidos` (`pedidos`,
+  `pedido_itens`, `produtos.estoque`) aplicada em produção com autorização.
+  Etapas, nomes e visão por ramo em `PacoteDoNicho.pedidos` (`core/nichos.ts`;
+  aulas = `null`, sem menu nem pedido); regras em `core/pedidos.ts`; banco em
+  `server/repos/pedidos.ts` (número `max+1` com nova tentativa no `unique`,
+  estoque por troca condicional, sem o pool do SQL direto, que não enxerga
+  `produtos`); fluxo em `server/pedidos.ts`. Cobrar do catálogo com Retirada e
+  Entrega reserva o estoque e cria o pedido antes da cobrança e desfaz se ela
+  não sair; o bloco Cobrar do fluxo cria pedido sem itens. Paga move para
+  pago; vencida ou cancelada cancela e devolve o estoque. Tela
+  `loja/pedidos` (quadro ou lista, atualiza a cada 20 s), botão Estoque no
+  catálogo. Pago depois de vencido não reabre o pedido cancelado.

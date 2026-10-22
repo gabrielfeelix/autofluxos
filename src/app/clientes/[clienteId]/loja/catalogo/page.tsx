@@ -21,12 +21,14 @@ import {
 import {
   acaoCriarProduto,
   acaoDefinirCategoria,
+  acaoDefinirEstoque,
   acaoDefinirPreco,
   acaoRenomearProduto,
 } from '@/server/acoes-produtos'
 import { acharCliente } from '@/server/repos/clientes'
 import { nichoDaConta } from '@/server/repos/recursos'
 import { pacoteDo, rotuloNaBarra, visaoDoCatalogo } from '@/core/nichos'
+import { temPedidos } from '@/core/pedidos'
 import { lojaDaConta } from '@/server/repos/lojas'
 import { listarMateriais } from '@/server/repos/materiais'
 import { listarProdutos } from '@/server/repos/produtos'
@@ -110,6 +112,8 @@ export default async function Pagina({
   // As palavras do ramo, as mesmas da barra lateral (`core/nichos.ts`).
   const pacote = pacoteDo(nicho)
   const titulo = rotuloNaBarra(pacote, 'catalogo', 'Produtos')
+  // Estoque só onde há pedido (0146): em aulas, plano não tem estoque.
+  const comEstoque = temPedidos(nicho)
 
   const ativos = produtos.filter(estaAtivo)
   const arquivados = produtos.filter((p) => !estaAtivo(p))
@@ -293,9 +297,12 @@ export default async function Pagina({
                               ultimo={i === grupo.itens.length - 1}
                             />
                           </div>
-                          <Preco produto={produto} />
+                          <span className="flex items-baseline gap-2">
+                            <Preco produto={produto} />
+                            {comEstoque && <Estoque produto={produto} />}
+                          </span>
                           <div className="mt-auto flex flex-wrap items-center gap-1.5">
-                            <AcoesDoItem clienteId={cliente.id} produto={produto} />
+                            <AcoesDoItem clienteId={cliente.id} produto={produto} comEstoque={comEstoque} />
                           </div>
                         </div>
                       </li>
@@ -320,7 +327,8 @@ export default async function Pagina({
                   {produto.categoria && <span className="text-[11px] text-dim">{produto.categoria}</span>}
                   <span className="text-[11px] text-dim">{NOME_DA_ESPECIE[produto.especie]}</span>
                   <Preco produto={produto} />
-                  <AcoesDoItem clienteId={cliente.id} produto={produto} />
+                  {comEstoque && <Estoque produto={produto} />}
+                  <AcoesDoItem clienteId={cliente.id} produto={produto} comEstoque={comEstoque} />
                 </li>
               ))}
             </ul>
@@ -384,8 +392,18 @@ function Preco({ produto }: { produto: Produto }) {
   )
 }
 
-/** Preço, categoria, nome e arquivar: os mesmos na grade e na lista. */
-function AcoesDoItem({ clienteId, produto }: { clienteId: string; produto: Produto }) {
+/** "N em estoque" e "esgotado"; sem número, nada: o item não controla estoque. */
+function Estoque({ produto }: { produto: Produto }) {
+  if (typeof produto.estoque !== 'number') return null
+  return produto.estoque === 0 ? (
+    <span className="text-[11px] font-semibold text-perigo">esgotado</span>
+  ) : (
+    <span className="text-[11px] text-dim tabular-nums">{produto.estoque} em estoque</span>
+  )
+}
+
+/** Preço, estoque, categoria, nome e arquivar: os mesmos na grade e na lista. */
+function AcoesDoItem({ clienteId, produto, comEstoque }: { clienteId: string; produto: Produto; comEstoque: boolean }) {
   return (
     <>
       <ModalFormulario
@@ -411,6 +429,32 @@ function AcoesDoItem({ clienteId, produto }: { clienteId: string; produto: Produ
           </span>
         </label>
       </ModalFormulario>
+      {comEstoque && produto.especie === 'produto' && (
+        <ModalFormulario
+          botao="Estoque"
+          titulo={`Estoque de “${produto.nome}”`}
+          descricao="Cada pedido feito pelo Cobrar baixa daqui, e o cancelamento devolve. Com zero, o item aparece como esgotado para a equipe e para o bot."
+          rotuloEnviar="Salvar"
+          variante="secundario"
+          action={acaoDefinirEstoque.bind(null, clienteId, produto.id, {})}
+        >
+          <label>
+            <RotuloCampo>Quantidade</RotuloCampo>
+            <input
+              name="estoque"
+              autoFocus
+              inputMode="numeric"
+              maxLength={7}
+              defaultValue={typeof produto.estoque === 'number' ? String(produto.estoque) : ''}
+              placeholder="Exemplo: 30"
+              className="app-field px-[13px] py-[11px] text-[13.5px] tabular-nums"
+            />
+            <span className="mt-1.5 block text-[11px] leading-5 text-dim">
+              Em branco deixa de controlar: o item não esgota e ninguém fala de estoque.
+            </span>
+          </label>
+        </ModalFormulario>
+      )}
       <ModalFormulario
         botao="Categoria"
         titulo={`Categoria de “${produto.nome}”`}

@@ -1,5 +1,6 @@
 import type { PerguntaDaFicha } from './ficha-do-assistente'
 import type { Objetivo } from './objetivo-da-conta'
+import type { StatusDePedido } from './pedidos'
 
 /**
  * O ramo da conta, e o que ele muda na tela (docs/NICHOS.md, docs/PLANO-NICHOS.md).
@@ -58,12 +59,23 @@ export const LUGARES_DA_BARRA = [
   'atividades',
   'loja',
   'catalogo',
+  'pedidos',
   'conectar-loja',
   'analise',
   'vendas',
 ] as const
 
 export type LugarDaBarra = (typeof LUGARES_DA_BARRA)[number]
+
+export type PedidosDoRamo = {
+  /** As etapas do quadro, na ordem, sem `cancelado` (que é saída, não etapa). */
+  etapas: readonly StatusDePedido[]
+  rotulos: Partial<Record<StatusDePedido, string>>
+  /** Quadro onde a equipe acompanha de longe (cozinha); lista nos outros. */
+  visao: 'quadro' | 'lista'
+  /** Como o aviso fala do despacho: preparo e entrega, ou separação e envio. */
+  despacho: 'preparo' | 'envio'
+}
 
 export type PacoteDoNicho = {
   /** Como o cartão do onboarding e a tela de recursos chamam o ramo. */
@@ -111,6 +123,12 @@ export type PacoteDoNicho = {
   modelosDeFluxo: string[]
   /** O modelo de funil do ramo, pelo id de `core/quadros-modelos.ts`. */
   modeloDeFunil: string
+  /**
+   * A tela Pedidos (0146): as etapas do ramo, os nomes delas e como a tela
+   * abre. `null` = o ramo não tem pedido (aulas vende matrícula e
+   * mensalidade): o item some do menu e o Cobrar cobra como sempre.
+   */
+  pedidos: PedidosDoRamo | null
   /**
    * A ficha do assistente de IA (PLANO-NICHOS 1.7, `core/ficha-do-assistente.ts`):
    * as perguntas que o cliente final sempre faz neste ramo, e o que o
@@ -211,6 +229,7 @@ export const PACOTES: Record<Nicho, PacoteDoNicho> = {
     tituloDosModelos: 'Para aulas e horários',
     modelosDeFluxo: ['agendamento', 'reagendamento', 'nao-comparecimento', 'lembrete', 'aluno-inativo', 'voltei-de-licenca'],
     modeloDeFunil: 'agendamento',
+    pedidos: null,
     passosDoInicio: ['ficha'],
     ficha: {
       pode: ['Responder dúvidas com o que está nesta ficha', 'Explicar modalidades, planos e aula experimental', 'Mostrar planos e valores do catálogo', 'Informar horário e endereço'],
@@ -239,6 +258,12 @@ export const PACOTES: Record<Nicho, PacoteDoNicho> = {
     tituloDosModelos: 'Para lojas virtuais',
     modelosDeFluxo: ['atendimento-loja', 'carrinho-abandonado', 'status-do-pedido', 'cobranca-amigavel'],
     modeloDeFunil: 'comercial',
+    pedidos: {
+      etapas: ['novo', 'pago', 'em_preparo', 'saiu', 'entregue'],
+      rotulos: { em_preparo: 'Separando', saiu: 'Enviado' },
+      visao: 'lista',
+      despacho: 'envio',
+    },
     passosDoInicio: ['ficha'],
     ficha: {
       pode: ['Responder dúvidas com o que está nesta ficha', 'Mostrar produtos, fotos e preços do catálogo', 'Consultar o status de um pedido', 'Informar prazo de envio e frete'],
@@ -270,7 +295,8 @@ export const PACOTES: Record<Nicho, PacoteDoNicho> = {
     nome: 'Restaurante, lanchonete, delivery',
     exemplos: 'pizzaria, hamburgueria, marmitaria',
     objetivoSugerido: 'vender',
-    rotulos: { contatos: 'Clientes', negocios: 'Pedidos', loja: 'Cardápio', catalogo: 'Pratos' },
+    // Negócios fica com o nome de sempre: "Pedidos" agora é a tela de pedidos (0146).
+    rotulos: { contatos: 'Clientes', loja: 'Cardápio', catalogo: 'Pratos' },
     ocultos: [],
     iconeComercio: 'talheres',
     visaoDoCatalogo: 'grade',
@@ -278,6 +304,7 @@ export const PACOTES: Record<Nicho, PacoteDoNicho> = {
     tituloDosModelos: 'Para restaurantes',
     modelosDeFluxo: ['cardapio-botoes', 'atendente-ia-restaurante', 'horario-e-local'],
     modeloDeFunil: 'pedidos',
+    pedidos: { etapas: ['novo', 'pago', 'em_preparo', 'saiu', 'entregue'], rotulos: {}, visao: 'quadro', despacho: 'preparo' },
     passosDoInicio: ['pratos', 'cardapio', 'ficha'],
     ficha: {
       pode: ['Responder dúvidas com o que está nesta ficha', 'Mandar o cardápio e fotos dos pratos', 'Ajudar a montar um pedido', 'Informar horário, entrega e endereço'],
@@ -309,6 +336,8 @@ export const PACOTES: Record<Nicho, PacoteDoNicho> = {
     // Quem vende no balcão atende mais do que negocia: a venda acontece na
     // loja, e o que o WhatsApp organiza é a pergunta de quem vai passar lá.
     modeloDeFunil: 'atendimento',
+    // Balcão: paga e leva na hora, sem preparo nem entrega.
+    pedidos: { etapas: ['novo', 'pago', 'entregue'], rotulos: { entregue: 'Retirado' }, visao: 'lista', despacho: 'preparo' },
     passosDoInicio: ['ficha'],
     ficha: {
       pode: ['Responder dúvidas com o que está nesta ficha', 'Dizer se tem o produto e quanto custa', 'Informar horário e endereço'],
@@ -349,9 +378,11 @@ export function rotuloNaBarra(pacote: PacoteDoNicho | null, lugar: LugarDaBarra,
   return pacote?.rotulos[lugar] ?? padrao
 }
 
-/** Este lugar da barra some no ramo? Sem ramo, nada some. */
+/** Este lugar da barra some no ramo? Sem ramo, nada some. Pedidos some no ramo sem pedido. */
 export function ocultoNaBarra(pacote: PacoteDoNicho | null, lugar: string): boolean {
-  return !!pacote && (pacote.ocultos as readonly string[]).includes(lugar)
+  if (!pacote) return false
+  if (lugar === 'pedidos') return pacote.pedidos === null
+  return (pacote.ocultos as readonly string[]).includes(lugar)
 }
 
 /**
