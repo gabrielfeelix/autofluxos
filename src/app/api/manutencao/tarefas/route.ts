@@ -3,6 +3,7 @@ import { avisarFranquiaDaMeta } from '@/server/aviso-da-franquia'
 import { copiarConsumoDaMeta } from '@/server/consumo-da-meta'
 import { iguais } from '@/lib/segredo'
 import { enviarAgendadas } from '@/server/enviar-agendadas'
+import { passadaDeMensalidades } from '@/server/mensalidades'
 import { passadaDeRetomada } from '@/server/passada-de-retomada'
 import { passadaDeTransmissoes } from '@/server/passada-de-transmissoes'
 import { passadaDeRetomadaDoBot } from '@/server/passada-de-retomada-do-bot'
@@ -117,6 +118,16 @@ export async function GET(req: Request) {
      * mensagens de serviço por número. Uma vez por dia basta: a Meta fecha o
      * dia dela com atraso, e a tela mostra "até ontem".
      */
+    /*
+     * A mensalidade do mês (0145). A unidade dela é o dia, como a retomada:
+     * a cobrança sai alguns dias antes do vencimento, e uma passada diária
+     * basta. Só aqui, e não nas caronas do webhook.
+     */
+    const mensalidades = await passadaDeMensalidades().catch((erro) => {
+      console.error('[tarefas] a passada das mensalidades falhou', erro)
+      return null
+    })
+
     const consumoDaMeta = await copiarConsumoDaMeta().catch((erro) => {
       console.error('[tarefas] a cópia do consumo da Meta falhou', erro)
       return null
@@ -136,6 +147,7 @@ export async function GET(req: Request) {
       transmissoes,
       retomada,
       retomadaDoBot,
+      mensalidades,
     })
   } catch (erro) {
     // Ninguém está olhando quando isto roda. Um agendador que para de acontecer

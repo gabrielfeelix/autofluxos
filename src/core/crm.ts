@@ -423,6 +423,12 @@ const VERBO_DA_COBRANCA: Record<string, string> = {
   vencida: 'deixou vencer a cobrança de',
   cancelada: 'teve cancelada a cobrança de',
   estornada: 'teve estornado o pagamento de',
+  // Mensalidade (0145).
+  mensalidade_criada: 'passou a ter mensalidade de',
+  mensalidade_pausada: 'teve a mensalidade pausada,',
+  mensalidade_retomada: 'teve a mensalidade retomada,',
+  mensalidade_cancelada: 'teve a mensalidade cancelada,',
+  nao_enviada: 'tem cobrança do mês esperando a conversa voltar:',
 }
 
 function fraseDaCobranca(status: string, valor: string): string {

@@ -227,6 +227,9 @@ export type PedidoDeCobrancaDaConta = {
   sessaoId?: string | null
   /** CPF ou CNPJ digitado agora. Vale mais que o da ficha, e passa a morar nela. */
   documento?: string | null
+  /** A mensalidade e o mês (0145): o índice único barra a segunda do mesmo mês. */
+  assinaturaId?: string | null
+  competencia?: string | null
 }
 
 export type ResultadoDaCriacao =
@@ -260,6 +263,8 @@ export async function criarCobranca(pedido: PedidoDeCobrancaDaConta): Promise<Re
     origem: pedido.origem,
     criadaPor: pedido.criadaPor,
     sessaoId: pedido.sessaoId ?? null,
+    assinaturaId: pedido.assinaturaId ?? null,
+    competencia: pedido.competencia ?? null,
   })
 
   try {

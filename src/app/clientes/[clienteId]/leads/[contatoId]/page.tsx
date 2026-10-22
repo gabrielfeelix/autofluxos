@@ -1,6 +1,8 @@
 import { Miolo } from '@/components/design/miolo'
 import { exigirLeitura, meuAlcance, recusou } from '@/server/permissoes'
 import { listarCobrancas } from '@/server/repos/cobrancas'
+import { assinaturasDoContato } from '@/server/repos/assinaturas'
+import { listarProdutos } from '@/server/repos/produtos'
 import { AbaDeCobrancas, ResumoDeCobrancas } from '@/components/lead-crm/cobrancas-do-contato'
 import { recursoLiberado } from '@/server/recursos-do-plano'
 import { conexaoAtiva } from '@/server/repos/pagamentos'
@@ -191,6 +193,21 @@ export default async function Pagina({
     ]).then(([noPlano, acesso, conexao]) => ({ visivel: noPlano && !recusou(acesso), conectado: conexao !== null })),
   ])
   if (!cliente || !lead) notFound()
+  // As mensalidades e os planos do catálogo (0145): só quem vê a aba Cobranças.
+  const [mensalidades, planos] = cobranca.visivel
+    ? await Promise.all([
+        assinaturasDoContato(clienteId, contatoId).catch(() => []),
+        listarProdutos(clienteId)
+          .then((ps) =>
+            ps
+              .filter((p) => !p.arquivadoEm && p.preco !== null && p.preco > 0)
+              // Plano e serviço primeiro: é o que se cobra por mês; o refrigerante fica no fim.
+              .sort((a, b) => Number(ehPlano(b)) - Number(ehPlano(a)))
+              .map((p) => ({ id: p.id, nome: p.nome, preco: p.preco! })),
+          )
+          .catch(() => []),
+      ])
+    : [[], []]
   const arquivosPorNegocio = await contagemDeArquivos(
     clienteId,
     noQuadro.map((posicao) => posicao.cartaoId),
@@ -638,7 +655,14 @@ export default async function Pagina({
                     contagem: cobrancas.filter((c) => c.status === 'pendente').length,
                     contagemRotulo: 'cobranças aguardando pagamento',
                     conteudo: (
-                      <AbaDeCobrancas clienteId={clienteId} cobrancas={cobrancas} conectado={cobranca.conectado} />
+                      <AbaDeCobrancas
+                        clienteId={clienteId}
+                        contatoId={contatoId}
+                        cobrancas={cobrancas}
+                        conectado={cobranca.conectado}
+                        mensalidades={mensalidades}
+                        planos={planos}
+                      />
                     ),
                   },
                 ]
@@ -969,4 +993,8 @@ async function jornadaDoContato(
   })
 
   return { passagens, nomesDosAnuncios }
+}
+
+function ehPlano(p: { especie: string; categoria: string | null }): boolean {
+  return p.especie === 'servico' || /plano|mensal|modalidade/i.test(p.categoria ?? '')
 }

@@ -5,13 +5,13 @@ import { autorDaPessoa } from '@/core/autor-da-mensagem'
 import { lerValor } from '@/core/crm'
 import { conferirItens, type ItemCobrado, type PedidoDeItem } from '@/core/cobrar-do-catalogo'
 import { lojaAtivaDaConta } from './adaptador-da-loja'
-import { adaptadorDoCanal } from './adaptador-do-canal'
-import { cancelarCobranca, criarCobranca, HORAS_PARA_VENCER_NO_INBOX, tentarPedidoNativo, textoDaCobranca } from './cobrancas'
+import { cancelarCobranca, criarCobranca, HORAS_PARA_VENCER_NO_INBOX } from './cobrancas'
+import { mandarCobrancaNaConversa } from './mandar-cobranca'
 import { podeResponderAgora } from './distribuir-atendimento'
 import { exigirCapacidade, meuAlcance, recusou } from './permissoes'
 import { recusaDoPlano } from './recursos-do-plano'
 import { cobrancasDaConversa, type CobrancaRegistrada } from './repos/cobrancas'
-import { atribuirSeSemDono, confirmarEntrega, contextoDeResposta, definirStatusDaSessao, registrarSaida } from './repos/conversas'
+import { atribuirSeSemDono, contextoDeResposta, definirStatusDaSessao } from './repos/conversas'
 import { acharLead } from './repos/leads'
 import { sessaoAtual } from './sessao'
 
@@ -82,67 +82,8 @@ export async function acaoCobrarNaConversa(
   }
   const cobranca = criada.cobranca
 
-  let canal
-  try {
-    canal = await adaptadorDoCanal(contexto.canal)
-  } catch {
-    return { ok: false, erro: 'A cobrança foi criada, mas o canal não respondeu. Copie o Pix pela tela Cobranças.' }
-  }
-
-  // 0. O pedido nativo do WhatsApp: valor, Pix e link numa bolha só (etapa E).
-  const nativo = await tentarPedidoNativo(canal, contexto.waId, cobranca)
-  if (nativo) {
-    const pedido = await registrarSaida({
-      contatoId,
-      sessaoId: contexto.sessaoId,
-      texto: nativo.texto,
-      payload: { cobranca: cobranca.id, pedido: true },
-      autor,
-    })
-    await confirmarEntrega(pedido, nativo.id)
-    if (contexto.sessaoId) await definirStatusDaSessao(contexto.sessaoId, 'humano')
-    if (quem) await atribuirSeSemDono(clienteId, contatoId, quem.usuario.id).catch(() => undefined)
-    return { ok: true, cobranca }
-  }
-
-  // 1. O resumo, com o botão do link quando o canal tem botão.
-  const texto = textoDaCobranca(cobranca)
-  const comBotao = cobranca.link ? canal.enviarBotaoDeLink?.bind(canal) : undefined
-  const textoSemBotao = cobranca.link && !comBotao ? `${texto}\n${cobranca.link}` : texto
-  const resumo = await registrarSaida({
-    contatoId,
-    sessaoId: contexto.sessaoId,
-    texto: textoSemBotao,
-    payload: {
-      cobranca: cobranca.id,
-      ...(comBotao ? { botao: { rotulo: 'Pagar', url: cobranca.link! } } : {}),
-    },
-    autor,
-  })
-  try {
-    const id = comBotao
-      ? await comBotao(contexto.waId, texto, 'Pagar', cobranca.link!)
-      : await canal.enviarTexto(contexto.waId, textoSemBotao)
-    await confirmarEntrega(resumo, id)
-  } catch {
-    return { ok: false, erro: 'A cobrança foi criada, mas a mensagem não saiu. Copie o Pix pela tela Cobranças.' }
-  }
-
-  // 2. O Pix copia e cola sozinho: no celular, tocar e segurar copia a mensagem inteira.
-  if (cobranca.pixCopiaCola) {
-    const pix = await registrarSaida({
-      contatoId,
-      sessaoId: contexto.sessaoId,
-      texto: cobranca.pixCopiaCola,
-      payload: { cobranca: cobranca.id, pix: true },
-      autor,
-    })
-    try {
-      await confirmarEntrega(pix, await canal.enviarTexto(contexto.waId, cobranca.pixCopiaCola))
-    } catch {
-      return { ok: false, erro: 'O resumo saiu, mas o código Pix não. Copie o Pix pela tela Cobranças.' }
-    }
-  }
+  const enviada = await mandarCobrancaNaConversa(contatoId, contexto, cobranca, autor)
+  if (!enviada.ok) return enviada
 
   if (contexto.sessaoId) await definirStatusDaSessao(contexto.sessaoId, 'humano')
   if (quem) await atribuirSeSemDono(clienteId, contatoId, quem.usuario.id).catch(() => undefined)

@@ -7,6 +7,9 @@ import { LogoAsaas, LogoMercadoPago } from '@/components/design/logos-de-marca'
 import { Miolo } from '@/components/design/miolo'
 import { Pilula } from '@/components/design/pilula'
 import { ConectarAsaas } from '@/components/pagamentos/conectar-asaas'
+import { CriarModeloDeLembrete } from '@/components/pagamentos/modelo-de-lembrete'
+import { NOME_DO_MODELO_DE_COBRANCA } from '@/core/mensalidade'
+import { listarTemplates } from '@/server/repos/templates'
 import { DesconectarPagamento } from '@/components/pagamentos/desconectar'
 import { dataCurta } from '@/lib/quando'
 import { acaoConectarMercadoPago } from '@/server/acoes-pagamentos'
@@ -52,6 +55,9 @@ export default async function Pagina({
   const asaas = ativa?.gateway === 'asaas' ? ativa : null
   const liberado = mercadoPagoConfigurado()
   const resultado = busca.resultado ? RESULTADOS[busca.resultado] : undefined
+  const modelo = ativa
+    ? ((await listarTemplates(clienteId).catch(() => [])).find((t) => t.nome === NOME_DO_MODELO_DE_COBRANCA) ?? null)
+    : null
 
   return (
     <AjustesShell cliente={cliente} ativa="pagamentos">
@@ -166,6 +172,38 @@ export default async function Pagina({
             )}
           </CartaoDeConexao>
         </div>
+
+        {ativa && !recusa && (
+          <section className="app-card mt-[30px] px-5 py-4">
+            <div className="flex flex-wrap items-center gap-2">
+              <h2 className="text-[13.5px] font-bold">Lembrete de cobrança fora das 24 horas</h2>
+              {modelo?.status === 'aprovado' ? (
+                <Pilula tom="ok">aprovado</Pilula>
+              ) : modelo?.status === 'pendente' ? (
+                <Pilula tom="aviso">em análise na Meta</Pilula>
+              ) : modelo?.status === 'recusado' ? (
+                <Pilula tom="perigo">recusado</Pilula>
+              ) : modelo && modelo.status !== 'rascunho' ? (
+                <Pilula>{modelo.status}</Pilula>
+              ) : (
+                <Pilula>não criado</Pilula>
+              )}
+            </div>
+            <p className="mt-1.5 max-w-[640px] text-[12.5px] leading-5 text-soft">
+              O WhatsApp só deixa mandar mensagem comum até 24 horas depois da última mensagem da pessoa. Para a
+              mensalidade chegar a quem está quieto, ela vai por um modelo aprovado pela Meta, com o botão Pagar que
+              abre o Pix. É um modelo de utilidade, cobrado pela Meta a cada envio.
+            </p>
+            {modelo?.status === 'recusado' && modelo.motivoRecusa && (
+              <p className="mt-1.5 text-[12px] text-perigo">Motivo da Meta: {modelo.motivoRecusa}</p>
+            )}
+            {(!modelo || modelo.status === 'recusado' || modelo.status === 'rascunho') && (
+              <div className="mt-3">
+                <CriarModeloDeLembrete clienteId={clienteId} deNovo={Boolean(modelo)} />
+              </div>
+            )}
+          </section>
+        )}
       </Miolo>
     </AjustesShell>
   )

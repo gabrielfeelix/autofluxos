@@ -15,7 +15,7 @@ import { db, ehIdInvalido } from '../db'
 
 export const STATUS_DE_COBRANCA = ['pendente', 'paga', 'vencida', 'cancelada', 'estornada'] as const
 export type StatusDeCobranca = (typeof STATUS_DE_COBRANCA)[number]
-export type OrigemDaCobranca = 'inbox' | 'fluxo' | 'ia' | 'api'
+export type OrigemDaCobranca = 'inbox' | 'fluxo' | 'ia' | 'api' | 'mensalidade'
 
 export type { ItemCobrado }
 
@@ -111,6 +111,9 @@ export async function inserirCobranca(entrada: {
   origem: OrigemDaCobranca
   criadaPor: string | null
   sessaoId: string | null
+  /** A mensalidade e o mês (0145); ausentes fora de mensalidade. */
+  assinaturaId?: string | null
+  competencia?: string | null
 }): Promise<string> {
   const { data, error } = await db()
     .from('cobrancas')
@@ -125,6 +128,7 @@ export async function inserirCobranca(entrada: {
       origem: entrada.origem,
       criada_por: entrada.criadaPor,
       sessao_id: entrada.sessaoId,
+      ...(entrada.assinaturaId ? { assinatura_id: entrada.assinaturaId, competencia: entrada.competencia } : {}),
     })
     .select('id')
     .single()
@@ -164,6 +168,19 @@ export async function cobrancasDaConversa(contatoId: string, ids: readonly strin
   if (tabelaAusente(error) || ehIdInvalido(error)) return []
   if (error) throw new Error(`não foi possível ler as cobranças da conversa: ${error.message}`)
   return (data as Linha[]).map(paraCobranca)
+}
+
+/**
+ * A cobrança para a página pública de pagar, com o nome da empresa. Só pelo
+ * id que veio de um código assinado (`lerCodigoDePagar`).
+ */
+export async function cobrancaParaPagar(id: string): Promise<{ cobranca: CobrancaRegistrada; empresa: string } | null> {
+  const { data, error } = await db().from('cobrancas').select(`${COLUNAS}, clients(nome)`).eq('id', id).maybeSingle()
+  if (tabelaAusente(error) || ehIdInvalido(error)) return null
+  if (error) throw new Error(`não foi possível ler a cobrança: ${error.message}`)
+  if (!data) return null
+  const empresa = (data as { clients?: { nome?: string } | null }).clients?.nome?.trim() || ''
+  return { cobranca: paraCobranca(data as unknown as Linha), empresa }
 }
 
 export async function acharCobranca(clienteId: string, id: string): Promise<CobrancaRegistrada | null> {

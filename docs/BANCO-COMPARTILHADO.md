@@ -1403,6 +1403,16 @@ extração explícito para os objetos de `public`.
   `formularios_do_whatsapp` e `cobrancas` **200** com a chave secreta, **401**
   com a publicável; `app_verandi.conta` **200**.
 
+- **a `0145` foi aplicada em 22/out/2026**, com autorização explícita do dono,
+  pela Management API. Cria `public.assinaturas` (mensalidade) e acrescenta
+  `cobrancas.assinatura_id`, `cobrancas.competencia`, o índice único
+  `cobrancas_da_competencia` e a origem `mensalidade`. Nenhuma função nova.
+  Ensaio em transação com `rollback` antes (tabela ausente depois). Releitura:
+  RLS ligada, `anon`/`authenticated` sem `select`, `service_role` com
+  `insert`, 2 colunas, check com `mensalidade`; Verandi com as mesmas 3
+  contas. Data API: `assinaturas` e `cobrancas?select=competencia` **200** com
+  a chave secreta; `app_verandi.conta` **200**.
+
 - **SSL obrigatório desde 19/out/2026** (`PUT .../ssl-enforcement`), com
   autorização do dono. Conexão sem TLS leva `ESSLREQUIRED`, inclusive pelo
   pooler. Antes, o SQL direto do AutoFluxos passou a exigir TLS com o

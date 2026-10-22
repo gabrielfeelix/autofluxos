@@ -59,4 +59,11 @@ de 24 h é modelo de utilidade, pago.
   (`components/lead/botao-de-cobrar.tsx`, soma em `core/cobrar-do-catalogo.ts`),
   cartão na conversa (`components/inbox/cartao-da-cobranca.tsx`, confere o status a
   cada 15 s enquanto aguarda), bloco "Mais vendidos pelo chat" em Vendas. Sem migration.
-- c: próxima.
+- c1 (base da mensalidade): no ar em 22/out. Migration `0145_mensalidades`
+  (`assinaturas`, `cobrancas.assinatura_id` e `competencia`, origem `mensalidade`)
+  aplicada em produção com autorização. Datas em `core/mensalidade.ts`; relógio `server/mensalidades.ts` no
+  cron de tarefas; envio comum `server/mandar-cobranca.ts`; página pública
+  `app/pagar/[codigo]` (código assinado em `server/link-de-pagar.ts`); modelo
+  `lembrete_de_cobranca` criado por Ajustes > Pagamentos; ficha > Cobranças >
+  Mensalidades.
+- c2 (cartão recorrente), c3 (Pix Automático), c4 (ponte Verandi): próximas.

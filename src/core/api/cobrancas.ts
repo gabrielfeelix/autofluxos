@@ -19,7 +19,7 @@ export type CobrancaDaApi = {
   vence_em: string
   paga_em: string | null
   cancelada_em: string | null
-  origem: 'inbox' | 'fluxo' | 'ia' | 'api'
+  origem: 'inbox' | 'fluxo' | 'ia' | 'api' | 'mensalidade'
   criado_em: string
 }
 

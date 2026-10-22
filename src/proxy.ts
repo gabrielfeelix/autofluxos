@@ -122,6 +122,12 @@ const PORTAS_ABERTAS = [
 const PREFIXOS_ABERTOS = [
   '/f/',
   /**
+   * A página de pagar uma cobrança (0145), aberta pelo botão do lembrete no
+   * WhatsApp, por quem não tem conta nenhuma aqui. A autorização é o código
+   * assinado no endereço (`server/link-de-pagar.ts`).
+   */
+  '/pagar/',
+  /**
    * **As rotas de retorno do OAuth. Sem isto elas nunca rodam.**
    *
    * Quem chega aqui é o navegador do cliente **voltando do facebook.com**, uma

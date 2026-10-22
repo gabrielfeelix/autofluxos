@@ -110,6 +110,11 @@ aqui fica o que o cliente ganha.
   valor. Sinal e serviço avulso continuam em valor livre. A cobrança aparece
   na conversa como cartão que vira "Paga" sozinho, e Análise > Vendas mostra o
   que mais vende pelo chat. *(22/out/2026)*
+- **Mensalidade que se cobra sozinha**: na ficha do aluno ou cliente, escolha
+  o plano e o dia do vencimento. Todo mês, alguns dias antes, o Pix sai na
+  conversa; quem está quieto há mais de 24 horas recebe um lembrete com o
+  botão Pagar, que abre o QR e o copia e cola. Sem planilha, sem lembrar de
+  cobrar. *(22/out/2026)*
 - **Transmissão para um segmento salvo**: a mesma regra usada em Contatos
   (quem comprou há mais de 60 dias, quem gastou acima de um valor) vira o
   público da campanha, sem precisar etiquetar ninguém. *(22/out/2026)*

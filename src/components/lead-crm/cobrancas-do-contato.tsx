@@ -6,6 +6,8 @@ import { Pilula, type TomDaPilula } from '@/components/design/pilula'
 import type { CobrancaRegistrada, StatusDeCobranca } from '@/server/repos/cobrancas'
 import { IrParaAba } from './abas'
 import { IconeDaSecao, iconeDinheiro } from './icones'
+import { MensalidadesDoContato, type PlanoParaMensalidade } from './mensalidades-do-contato'
+import type { Assinatura } from '@/server/repos/assinaturas'
 
 const STATUS: Record<StatusDeCobranca, { rotulo: string; tom: TomDaPilula }> = {
   pendente: { rotulo: 'Aguardando', tom: 'aviso' },
@@ -15,7 +17,7 @@ const STATUS: Record<StatusDeCobranca, { rotulo: string; tom: TomDaPilula }> = {
   estornada: { rotulo: 'Estornada', tom: 'perigo' },
 }
 
-const ORIGEM: Record<string, string> = { inbox: 'pela conversa', fluxo: 'pela automação', ia: 'pela IA', api: 'pela API' }
+const ORIGEM: Record<string, string> = { inbox: 'pela conversa', fluxo: 'pela automação', ia: 'pela IA', api: 'pela API', mensalidade: 'pela mensalidade' }
 
 const DATA = new Intl.DateTimeFormat('pt-BR', { timeZone: 'America/Sao_Paulo', day: '2-digit', month: '2-digit' })
 const DATA_E_HORA = new Intl.DateTimeFormat('pt-BR', {
@@ -143,13 +145,22 @@ export function ResumoDeCobrancas({
 /** A aba Cobranças da ficha: os totais e todas as cobranças da pessoa. */
 export function AbaDeCobrancas({
   clienteId,
+  contatoId,
   cobrancas,
   conectado,
+  mensalidades,
+  planos,
 }: {
   clienteId: string
+  contatoId: string
   cobrancas: CobrancaRegistrada[]
   conectado: boolean
+  mensalidades: Assinatura[]
+  planos: PlanoParaMensalidade[]
 }) {
+  const blocoDeMensalidades = (
+    <MensalidadesDoContato clienteId={clienteId} contatoId={contatoId} iniciais={mensalidades} planos={planos} conectado={conectado} />
+  )
   const [copiado, setCopiado] = useState<string | null>(null)
 
   async function copiar(c: CobrancaRegistrada) {
@@ -165,16 +176,20 @@ export function AbaDeCobrancas({
 
   if (cobrancas.length === 0) {
     return (
-      <section className="app-card px-[18px] py-6">
-        <p className="mb-1 text-[13px] font-semibold text-ink">Nenhuma cobrança com esta pessoa.</p>
-        <ComoCobrar clienteId={clienteId} conectado={conectado} />
-      </section>
+      <div className="flex flex-col gap-[18px]">
+        <section className="app-card px-[18px] py-6">
+          <p className="mb-1 text-[13px] font-semibold text-ink">Nenhuma cobrança com esta pessoa.</p>
+          <ComoCobrar clienteId={clienteId} conectado={conectado} />
+        </section>
+        {blocoDeMensalidades}
+      </div>
     )
   }
 
   return (
     <div className="flex flex-col gap-[18px]">
       <Totais cobrancas={cobrancas} grande />
+      {blocoDeMensalidades}
       <section className="app-card overflow-hidden">
         <h2 className="flex items-center gap-2 border-b border-line px-[18px] py-3.5 text-[13px] font-bold">
           <IconeDaSecao tom="ok">{iconeDinheiro}</IconeDaSecao>
