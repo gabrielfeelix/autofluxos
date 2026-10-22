@@ -67,13 +67,24 @@ proponha: mensalidade com Pix todo mês na conversa (cobrança gerada pelo
 relógio) e assinatura no cartão pelo gateway. Responda também se o Pix
 recorrente do Banco Central (Pix Automático) já serve.
 
-### d) "Se ele fica no chat, até porque não estou vendo"
-Pergunte ao Gabriel o que ele quis dizer. Leituras possíveis:
-- se o cliente paga **sem sair do WhatsApp**: sim, pelo `order_details` (bolha com
-  "Copiar código Pix"), mas ainda não testado num número real;
-- se a venda **aparece no chat** para a equipe: hoje a mensagem da cobrança
-  aparece no Inbox como texto, sem um cartão próprio com status (pago ou
-  aguardando). Pode valer um cartão de cobrança dentro da conversa.
+### d) O Cobrar do Inbox: valor solto ou produto do catálogo?
+O Gabriel esclareceu (22/out): o ponto é o **Cobrar dentro do Inbox**, e ele
+precisa ser amarrado melhor. Hoje o botão (ícone de cobrar na barra da caixa de
+resposta, `components/lead/botao-de-cobrar.tsx`) pede só valor e descrição, e
+nada liga a cobrança a um produto. As perguntas dele, para você decidir e propor:
+- digitar o valor e enviar basta, ou a cobrança deve sair de um **produto ou SKU**
+  do catálogo (`loja/catalogo`), com o preço já preenchido?
+- com a **integração da Verandi** (e Nuvemshop, Magento), os produtos e planos
+  vêm pela API: escolher um e cobrar com o preço dele, para depois saber
+  **quais produtos foram vendidos** (alimenta "O que mais vende" em Vendas e a
+  tela de Pedidos);
+- ou os dois: escolher do catálogo por padrão, com "valor livre" para o que não
+  está cadastrado (sinal, ajuste, serviço avulso).
+Recomendação inicial a confirmar: os dois, porque cobrança sem produto não
+responde "o que eu vendi", e obrigar catálogo trava quem cobra sinal ou serviço
+avulso. A tabela `cobrancas` já tem `itens` (jsonb), hoje vazia no Inbox. Também
+falta um **cartão da cobrança dentro da conversa** no Inbox, com status (aguardando,
+paga, vencida) que muda sozinho; hoje ela aparece só como texto.
 
 ## 3. Regras do Gabriel (não negociáveis)
 - pt-BR, curto, decisão tomada com recomendação. Ele é designer, não dev.
