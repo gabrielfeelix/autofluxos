@@ -11,6 +11,8 @@ import { sessaoNova, type Acao, type Entrada } from '@/core/engine/types'
 import { varsIniciais } from '@/core/contatos/vars-iniciais'
 import { comoMandarProduto, pedidoDoBotao, textoDoCard } from '@/core/loja'
 import { alertar, type ContextoDoAlerta } from './alertar'
+import { criarCobranca, textoDaCobranca } from './cobrancas'
+import { ultimaCobrancaDoFluxo, type CobrancaRegistrada } from './repos/cobrancas'
 import { avisarHandoff } from './avisar-handoff'
 import { executarComEfeitos, type OpcoesDeEfeitos } from './efeitos/resolver'
 import { guardarMidiaRecebida } from './guardar-midia-recebida'
@@ -1559,6 +1561,79 @@ export async function rodarTimeoutDePergunta(
 }
 
 /**
+ * A cobrança do bloco Cobrar teve desfecho (cobrança no chat, etapa D).
+ *
+ * Chamada pelo aviso do gateway (pagou) e pelo relógio do vencimento
+ * (venceu), nunca por mensagem, e com as mesmas travas do prazo da pergunta:
+ * só age se a conversa ainda está ativa, parada num bloco Cobrar, e se esta é
+ * a cobrança mais nova que o fluxo criou nela. Uma cobrança da semana passada
+ * paga hoje não empurra a conversa que já está em outro lugar.
+ */
+export async function acordarFluxoDaCobranca(
+  cobranca: Pick<CobrancaRegistrada, 'id' | 'clienteId' | 'contatoId' | 'sessaoId' | 'origem'>,
+  desfecho: 'pagou' | 'venceu',
+  fabricaDeCanal: FabricaDeCanal = canalPadrao,
+): Promise<'feita' | 'ignorada'> {
+  const { sessaoId, contatoId } = cobranca
+  if (cobranca.origem !== 'fluxo' || !sessaoId || !contatoId) return 'ignorada'
+
+  const parada = async () => {
+    const salva = await acharSessao(sessaoId)
+    if (!salva || salva.sessao.status !== 'ativa' || !salva.sessao.noAtual) return null
+    const versao = await acharVersao(salva.flowVersionId)
+    const no = versao?.grafo.nodes.find((n) => n.id === salva.sessao.noAtual)
+    return versao && no?.type === 'cobrar' ? { salva, versao } : null
+  }
+
+  const antes = await parada()
+  if (!antes) return 'ignorada'
+  const ultima = await ultimaCobrancaDoFluxo(cobranca.clienteId, sessaoId)
+  if (ultima?.id !== cobranca.id) return 'ignorada'
+
+  const [contato, canal] = await Promise.all([acharContato(contatoId), acharCanal(antes.salva.canalId)])
+  if (!contato || !canal || canal.clienteId !== cobranca.clienteId) return 'ignorada'
+  if (!contato.automacaoAtiva) return 'ignorada'
+
+  // A mensagem que está chegando agora ganha, como no prazo da pergunta.
+  const destravar = await travarContato(contatoId)
+  if (!destravar) return 'ignorada'
+
+  try {
+    const agora = await parada()
+    if (!agora || agora.salva.sessao.noAtual !== antes.salva.sessao.noAtual) return 'ignorada'
+    const { salva, versao } = agora
+
+    const [opcoesDeIa, horario] = await Promise.all([
+      prepararIa(canal, contatoId, versao, null),
+      horarioDoCliente(canal.clienteId),
+    ])
+    const revisaoAutorizada = await revisaoDoControle(canal.clienteId, contatoId)
+
+    const resultado = await executarComEfeitos(versao.grafo, salva.sessao, { tipo: 'cobranca', desfecho }, {
+      ...opcoesDeIa,
+      atendimento: contextoDeAtendimento(horario),
+      hoje: hojeNaConta(horario?.fuso ?? SEMPRE_ABERTO.fuso),
+      datas: varsDeData(horario?.fuso ?? SEMPRE_ABERTO.fuso),
+      carregarFluxo: carregadorDeFluxo(canal.clienteId),
+    })
+
+    await guardarSessao(sessaoId, resultado.sessao)
+    if (resultado.destino) await trocarVersaoDaSessao(sessaoId, resultado.destino.versaoId)
+    await sincronizarTimeout(
+      canal.clienteId,
+      contatoId,
+      sessaoId,
+      resultado.destino?.grafo ?? versao.grafo,
+      resultado.sessao,
+    )
+    await aplicar(fabricaDeCanal(canal), contato, sessaoId, null, resultado.acoes, revisaoAutorizada)
+    return 'feita'
+  } finally {
+    await destravar()
+  }
+}
+
+/**
  * O fluxo de pós-atendimento, disparado por "Já atendi" (A6).
  *
  * É o único dos quatro papéis que **ninguém pediu por mensagem**: o gatilho é
@@ -2660,6 +2735,61 @@ async function aplicar(
             ? 'a integração não chegou a ser executada'
             : `a integração não chegou a ser executada, e ${entrega.motivo}`,
         )
+      }
+
+      case 'criar_cobranca': {
+        /*
+         * O bloco Cobrar. A conversa já está gravada parada nele, esperando o
+         * gateway; aqui a cobrança nasce e o Pix sai. Não saiu (sem conexão,
+         * gateway recusou, Asaas sem CPF): vai para uma pessoa, que cobra pelo
+         * Inbox. Um fluxo esperando um pagamento que não existe esperaria
+         * para sempre.
+         */
+        await salvarCampos()
+        const criada = await criarCobranca({
+          clienteId: contato.clienteId,
+          contatoId: contato.id,
+          valorCentavos: acao.valorCentavos,
+          descricao: acao.descricao,
+          venceEm: new Date(Date.now() + acao.horasParaVencer * 3_600_000),
+          origem: 'fluxo',
+          criadaPor: null,
+          sessaoId,
+        })
+        if (!criada.ok) return pararNoHumano(`a cobrança do fluxo não saiu: ${criada.erro}`)
+        const { cobranca } = criada
+
+        const texto = textoDaCobranca(cobranca)
+        const enviarBotao = cobranca.link ? canal.enviarBotaoDeLink?.bind(canal) : undefined
+        const resumo = enviarBotao || !cobranca.link ? texto : `${texto}\n${cobranca.link}`
+        const registro = await registrarSaida({
+          contatoId: contato.id,
+          sessaoId,
+          autor: AUTOR_AUTOMACAO,
+          texto: resumo,
+          payload: { cobranca: cobranca.id, ...(enviarBotao ? { botao: { rotulo: 'Pagar', url: cobranca.link! } } : {}) },
+        })
+        const entrega = await entregar(
+          () => (enviarBotao ? enviarBotao(contato.waId, texto, 'Pagar', cobranca.link!) : canal.enviarTexto(contato.waId, resumo)),
+          alvo,
+        )
+        if (!entrega.ok) return pararNoHumano(entrega.motivo)
+        await confirmarSeEntregue(registro, entrega)
+
+        // O Pix sozinho: no celular, tocar e segurar copia a mensagem inteira.
+        if (cobranca.pixCopiaCola) {
+          const pix = await registrarSaida({
+            contatoId: contato.id,
+            sessaoId,
+            autor: AUTOR_AUTOMACAO,
+            texto: cobranca.pixCopiaCola,
+            payload: { cobranca: cobranca.id, pix: true },
+          })
+          const envio = await entregar(() => canal.enviarTexto(contato.waId, cobranca.pixCopiaCola!), alvo)
+          if (!envio.ok) return pararNoHumano(envio.motivo)
+          await confirmarSeEntregue(pix, envio)
+        }
+        break
       }
 
       case 'encerrar':

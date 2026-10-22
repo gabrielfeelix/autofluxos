@@ -17,6 +17,8 @@ import {
   SAIDA_TEXTO_LIVRE,
   SAIDA_DETRATOR,
   SAIDA_NEUTRO,
+  SAIDA_PAGOU,
+  SAIDA_VENCEU,
   SAIDA_PROMOTOR,
   SAIDA_TIMEOUT,
   SAIDA_FALSO,
@@ -484,6 +486,38 @@ function NoNps({ data, selected }: NodeProps) {
   )
 }
 
+/**
+ * Cobrar: o valor e o vencimento escritos no bloco, e as duas saídas que o
+ * gateway acorda. O total do pedido aparece como tal, sem número: quem soma é
+ * o catálogo, na hora da conversa.
+ */
+function NoCobrar({ data, selected }: NodeProps) {
+  const d = data as { valorDe?: 'fixo' | 'pedido'; valorCentavos?: number; descricao?: string; horasParaVencer?: number }
+  const valor =
+    d.valorDe === 'pedido'
+      ? 'total do pedido da IA'
+      : (d.valorCentavos ?? 0) > 0
+        ? `R$ ${((d.valorCentavos ?? 0) / 100).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+        : '(sem valor)'
+  const horas = d.horasParaVencer ?? 24
+  return (
+    <Caixa tipo="cobrar" selecionado={!!selected} saidaUnica={false}>
+      <p className="text-[12.5px] leading-5 text-soft">
+        <RealceDeVariaveis texto={vazio(d.descricao ?? '', '(sem descrição)')} />
+      </p>
+      <p className="mt-1 text-[11px] text-muted">
+        {valor} · vence em {horas % 24 === 0 ? `${horas / 24} ${horas === 24 ? 'dia' : 'dias'}` : `${horas} h`}
+      </p>
+      <Saida id={SAIDA_PAGOU}>
+        <span className="text-[11px] text-ok">pagou</span>
+      </Saida>
+      <Saida id={SAIDA_VENCEU}>
+        <span className="text-[11px] text-aviso">venceu</span>
+      </Saida>
+    </Caixa>
+  )
+}
+
 function NoSalvarCampo({ data, selected }: NodeProps) {
   const d = data as { campo: string; valor: string }
   return (
@@ -812,4 +846,5 @@ export const tiposDeNo = {
   'ir-fluxo': NoIrFluxo,
   voltar: NoVoltar,
   nps: NoNps,
+  cobrar: NoCobrar,
 } satisfies Record<TipoNo, NodeTypes[string]>

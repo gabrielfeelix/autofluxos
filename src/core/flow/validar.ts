@@ -22,6 +22,7 @@ import {
   SAIDA_TEXTO_LIVRE,
   SAIDA_NEUTRO,
   SAIDA_PROMOTOR,
+  SAIDA_VENCEU,
   SAIDA_TIMEOUT,
   SAIDA_VAZIO,
   SAIDA_VERDADEIRO,
@@ -167,6 +168,13 @@ export type Capacidades = {
    * à 0037 é dele, e as medidas dele são as mais apertadas dos três.
    */
   canal?: CanalId
+  /**
+   * A conta tem cobrança no plano e uma conta de recebimento conectada
+   * (Ajustes > Pagamentos)? `undefined` = não sei, e não se cobra. `false`
+   * recusa publicar o bloco Cobrar: sem conexão a cobrança não sai, e a
+   * conversa cairia na fila em toda venda.
+   */
+  cobrancaHabilitada?: boolean
 }
 
 /**
@@ -189,6 +197,7 @@ export function validar(fluxo: Fluxo, capacidades: Capacidades = {}): ResultadoV
     fluxoAtualId,
     variaveisDaConta,
     canal = CANAL_PADRAO,
+    cobrancaHabilitada,
   } = capacidades
 
   // O nome entra nas mensagens junto com o número: "13 opções, o WhatsApp
@@ -254,6 +263,32 @@ export function validar(fluxo: Fluxo, capacidades: Capacidades = {}): ResultadoV
     }
   }
   for (const nome of deConversa) deSistema.delete(nome)
+
+  /*
+   * O total do pedido é do servidor. Qualquer outro bloco que escreva nessas
+   * variáveis deixaria quem conversa, ou um sistema de fora, dizer quanto o
+   * bloco Cobrar cobra.
+   */
+  const temPedidoDaIa = fluxo.nodes.some((no) => no.type === 'ia' && Boolean(no.data.conversar?.cobranca))
+  const reservadas = new Set<string>(Object.values(VARIAVEIS_DA_COBRANCA))
+  for (const no of fluxo.nodes) {
+    const escritas: string[] = []
+    if (no.type === 'pergunta') escritas.push(...[no.data.salvarEm, no.data.salvarValorEm, no.data.salvarPadraoEm, no.data.salvarMidiaEm].filter((n): n is string => Boolean(n)))
+    if (no.type === 'salvar-campo') escritas.push(no.data.campo)
+    if (no.type === 'http') escritas.push(...no.data.mapear.map((m) => m.variavel))
+    if (no.type === 'ia' && no.data.salvarEm) escritas.push(no.data.salvarEm)
+    if (no.type === 'ia' && no.data.conversar?.concluir) escritas.push(no.data.conversar.concluir.salvarEm)
+    if (no.type === 'nps') escritas.push(...[no.data.salvarEm, no.data.comentarioEm].filter((n): n is string => Boolean(n)))
+    if (no.type === 'mensagem') for (const parte of partesDaMensagem(no)) if (parte.tipo === 'salvar') escritas.push(parte.campo)
+    const proibida = escritas.find((nome) => reservadas.has(nome))
+    if (proibida) {
+      erros.push({
+        codigo: 'VARIAVEL_DA_COBRANCA',
+        mensagem: `${descrever(no)} escreve em {{${proibida}}}, que só a IA de vendas preenche com o total conferido pelo catálogo. Use outro nome.`,
+        noId: no.id,
+      })
+    }
+  }
 
   const esperaDaIa = perguntasQueEsperamIa(fluxo)
   for (const no of fluxo.nodes) {
@@ -381,6 +416,32 @@ export function validar(fluxo: Fluxo, capacidades: Capacidades = {}): ResultadoV
             noId: no.id,
           })
         }
+      }
+    }
+
+    if (no.type === 'cobrar') {
+      if (cobrancaHabilitada === false) {
+        erros.push({
+          codigo: 'COBRAR_SEM_CONEXAO',
+          mensagem: `${descrever(no)} precisa de uma conta de recebimento conectada em Ajustes > Pagamentos.`,
+          noId: no.id,
+        })
+      }
+      if (no.data.valorDe === 'pedido' && !temPedidoDaIa) {
+        erros.push({
+          codigo: 'COBRAR_SEM_PEDIDO',
+          mensagem: `${descrever(no)} cobra o total do pedido, e nenhum bloco de IA deste fluxo monta pedido. Ligue "Montar pedido" numa IA de vendas, ou digite o valor.`,
+          noId: no.id,
+        })
+      }
+      // Sem caminho para "venceu", a conversa vai para a fila calada: é o
+      // desfecho seguro, mas quem desenhou costuma querer lembrar a pessoa.
+      if (!minhasSaidas.some((a) => a.sourceHandle === SAIDA_VENCEU)) {
+        avisos.push({
+          codigo: 'COBRAR_SEM_VENCEU',
+          mensagem: `${descrever(no)} não diz o que fazer quando a cobrança vence. Sem essa saída, a conversa vai para a equipe.`,
+          noId: no.id,
+        })
       }
     }
 
@@ -1116,6 +1177,19 @@ function conferirConteudo(
       }
       break
 
+    case 'cobrar':
+      if (vazio(no.data.descricao)) {
+        erros.push({
+          codigo: 'COBRAR_SEM_DESCRICAO',
+          mensagem: `${descrever(no)} não diz o que está sendo cobrado. É o que a pessoa lê na cobrança e no extrato.`,
+          noId: no.id,
+        })
+      }
+      if (no.data.valorDe === 'fixo' && no.data.valorCentavos <= 0) {
+        erros.push({ codigo: 'COBRAR_SEM_VALOR', mensagem: `${descrever(no)} está sem valor.`, noId: no.id })
+      }
+      break
+
     case 'nps':
       if (vazio(no.data.texto)) {
         erros.push({
@@ -1524,6 +1598,9 @@ function variaveisDoNo(no: No): string[] {
       ]
     case 'salvar-campo':
       return variaveisCitadas(no.data.valor)
+    case 'cobrar':
+      // A descrição interpola. O valor do pedido é lido pelo motor, não citado.
+      return variaveisCitadas(no.data.descricao)
     case 'nps':
       // As duas perguntas interpolam, como qualquer texto que a pessoa lê.
       return [
@@ -1623,6 +1700,8 @@ function textosDoNo(no: No): string[] {
       return [no.data.texto, no.data.mensagemPronta, no.data.nome, no.data.rotulo ?? '']
     case 'nps':
       return [no.data.texto, no.data.perguntaAberta]
+    case 'cobrar':
+      return [no.data.descricao]
     case 'condicao':
     case 'etapa':
     case 'etiqueta':

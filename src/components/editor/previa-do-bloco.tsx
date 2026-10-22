@@ -258,6 +258,21 @@ export function detalhesDoBloco(no: No): Detalhe[] {
         ...(no.data.salvarEm ? [{ rotulo: 'Guarda a nota em', valor: `{{${no.data.salvarEm}}}` }] : []),
       ]
 
+    case 'cobrar':
+      return [
+        { rotulo: 'Cobra', valor: texto(no.data.descricao, '(sem descrição)') },
+        {
+          rotulo: 'Valor',
+          valor:
+            no.data.valorDe === 'pedido'
+              ? 'o total do pedido montado pela IA'
+              : no.data.valorCentavos > 0
+                ? `R$ ${(no.data.valorCentavos / 100).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+                : '(sem valor)',
+        },
+        { rotulo: 'Vence em', valor: `${no.data.horasParaVencer} horas` },
+      ]
+
     case 'ir-fluxo':
       return [
         {

@@ -84,6 +84,11 @@ aqui fica o que o cliente ganha.
   porcentagem para o AutoFluxos. *(22/out/2026)*
 - **Nota fiscal da cobrança paga** pelo Asaas, sem certificado digital nem
   sistema de nota à parte. *(22/out/2026)*
+- **Venda que se fecha sozinha**: a automação manda o Pix, espera, e segue
+  quando o pagamento cai, com confirmação para o cliente e o próximo passo
+  (agendar, liberar o pedido). Se não pagar no prazo, segue por outro caminho
+  ou vai para a equipe resgatar. O valor é o do catálogo, nunca um número
+  inventado pela IA. *(22/out/2026)*
 
 ## Medir
 

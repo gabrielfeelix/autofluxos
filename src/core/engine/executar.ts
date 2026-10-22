@@ -1,5 +1,5 @@
 import { linkDoEncaminhamento, ROTULO_PADRAO_DO_ENCAMINHAMENTO, telefoneDoEncaminhamento } from '../encaminhar'
-import { VARIAVEIS_DA_COBRANCA } from '../cobranca'
+import { VARIAVEIS_DA_COBRANCA, centavosDoTotal } from '../cobranca'
 import { descrever, nomeDaSaida } from '../flow/descrever'
 import { mensagensDoHandoff, partesDaMensagem } from '../flow/mensagem'
 import {
@@ -19,8 +19,10 @@ import {
   SAIDA_MIDIA,
   SAIDA_TEXTO_LIVRE,
   SAIDA_NEUTRO,
+  SAIDA_PAGOU,
   SAIDA_PROMOTOR,
   SAIDA_TIMEOUT,
+  SAIDA_VENCEU,
   SAIDA_VAZIO,
   SAIDA_VERDADEIRO,
   faixaDaNota,
@@ -29,6 +31,7 @@ import {
   timeoutDaPergunta,
   type Fluxo,
   type No,
+  type NoCobrar,
   type NoIa,
   type NoNps,
   type NoPergunta,
@@ -141,6 +144,13 @@ export const PALAVRAS_DE_SAIDA_DA_IA = [
 
 const MENSAGEM_TRANSFERENCIA = 'Vou te passar para um atendente. Só um instante!'
 const MENSAGEM_NAO_ENTENDI = 'Para seguir com o seu atendimento, escolha uma das opções abaixo 👇'
+
+/** Quem escreve enquanto o bloco Cobrar espera o pagamento. */
+export const MENSAGEM_ESPERANDO_PAGAMENTO =
+  'Assim que o pagamento for confirmado, sigo com você por aqui. Se precisar falar com a equipe, escreva *atendente*.'
+
+/** Pagou e o desenho não disse o que fazer depois. */
+export const MENSAGEM_PAGAMENTO_CONFIRMADO = 'Pagamento confirmado. Obrigado!'
 
 /** Quando chega figurinha no meio de uma pergunta. Ver a Regra B, em `executar`. */
 const MENSAGEM_SO_TEXTO =
@@ -311,6 +321,9 @@ export function executar(
    */
   if (entrada.tipo === 'midia') {
     const parada = s.noAtual === null ? undefined : porId.get(s.noAtual)
+    // O comprovante do Pix chega como foto. Quem confirma é o gateway, e a
+    // conversa espera por ele em vez de ir para a fila.
+    if (parada?.type === 'cobrar') return esperarPagamento(s, acoes, contexto)
     const tratada =
       parada?.type === 'pergunta' ? proximo(fluxo, parada.id, SAIDA_MIDIA) : null
 
@@ -646,6 +659,28 @@ export function executar(
 
     s.tentativas = 0
     return avancar(contexto, fluxo, porId, s, acoes, proximo(fluxo, atual.id), { no: atual })
+  }
+
+  if (atual.type === 'cobrar') {
+    if (entrada.tipo === 'cobranca') {
+      s.tentativas = 0
+      const saida = entrada.desfecho === 'pagou' ? SAIDA_PAGOU : SAIDA_VENCEU
+      const desenhada = proximo(fluxo, atual.id, saida)
+      if (desenhada !== null) return avancar(contexto, fluxo, porId, s, acoes, desenhada, { no: atual, saida })
+      if (entrada.desfecho === 'pagou') {
+        acoes.push({ tipo: 'enviar_texto', texto: MENSAGEM_PAGAMENTO_CONFIRMADO })
+        acoes.push({ tipo: 'encerrar' })
+        s.noAtual = null
+        s.status = 'encerrada'
+        return { acoes, sessao: s }
+      }
+      // Venceu sem caminho desenhado: para a fila, calado, como o prazo da
+      // pergunta. Quem quis comprar e não pagou é lead para a equipe resgatar.
+      acoes.push({ tipo: 'transferir_humano', motivo: 'a cobrança venceu sem pagamento' })
+      s.status = 'humano'
+      return { acoes, sessao: s }
+    }
+    return esperarPagamento(s, acoes, contexto)
   }
 
   if (atual.type === 'pergunta') {
@@ -1288,6 +1323,29 @@ function avancar(
         return { acoes, sessao: s }
       }
 
+      /*
+       * Cobrar: cria a cobrança e para, esperando o gateway. Sem valor que
+       * se possa cobrar (o pedido da IA ainda sem total), vai para uma pessoa:
+       * mandar um Pix chutado é pior do que não mandar.
+       */
+      case 'cobrar': {
+        const valorCentavos = valorDaCobranca(no, s.vars)
+        if (valorCentavos === null) {
+          return transferir(s, acoes, 'o bloco Cobrar não tem valor para cobrar', contexto)
+        }
+        acoes.push({
+          tipo: 'criar_cobranca',
+          noId: no.id,
+          valorCentavos,
+          descricao: interpolar(no.data.descricao, s.vars).trim() || 'Pedido',
+          horasParaVencer: no.data.horasParaVencer,
+        })
+        s.noAtual = no.id
+        s.status = 'ativa'
+        s.tentativas = 0
+        return { acoes, sessao: s }
+      }
+
       case 'handoff': {
         // Todas as mensagens do bloco, em ordem, antes de a conversa mudar de
         // mão: é onde cabe a despedida do bot (o obrigado, o pedido de nota)
@@ -1328,6 +1386,30 @@ function avancar(
       ? ondeAcabou(ultimo, alvoSumido)
       : undefined
   acoes.push({ tipo: 'encerrar', ...(motivo ? { motivo } : {}) })
+  return { acoes, sessao: s }
+}
+
+/**
+ * Quanto o bloco Cobrar cobra, em centavos, ou `null` quando não há o que
+ * cobrar. `pedido` lê só o total que o servidor somou pelo catálogo.
+ */
+export function valorDaCobranca(no: NoCobrar, vars: Record<string, string>): number | null {
+  if (no.data.valorDe === 'pedido') return centavosDoTotal(vars[VARIAVEIS_DA_COBRANCA.total])
+  return no.data.valorCentavos > 0 ? no.data.valorCentavos : null
+}
+
+/**
+ * Alguém escreveu enquanto a cobrança espera. Uma frase dizendo que o fluxo
+ * segue sozinho quando o pagamento cair; "ok" e "obrigado" depois dela não
+ * mudam nada, e a terceira mensagem já é dúvida que o bot não responde: vai
+ * para uma pessoa.
+ */
+function esperarPagamento(s: Sessao, acoes: Acao[], contexto: ContextoDoAtendimento): Resultado {
+  s.tentativas += 1
+  if (s.tentativas >= 3) {
+    return transferir(s, acoes, 'a pessoa escreveu várias vezes enquanto a cobrança esperava o pagamento', contexto)
+  }
+  if (s.tentativas === 1) acoes.push({ tipo: 'enviar_texto', texto: MENSAGEM_ESPERANDO_PAGAMENTO })
   return { acoes, sessao: s }
 }
 

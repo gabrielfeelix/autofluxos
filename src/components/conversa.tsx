@@ -440,6 +440,15 @@ export function Conversa({
         case 'transferir_humano':
           adicionar({ chave, de: 'sistema', texto: `transferida para atendente: ${acao.motivo}`, alerta: true })
           break
+        case 'criar_cobranca': {
+          const valor = (acao.valorCentavos / 100).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+          adicionar({
+            chave,
+            de: 'sistema',
+            texto: `cobraria R$ ${valor} (${acao.descricao}) com Pix e link, vencendo em ${acao.horasParaVencer} h. Use ✓ ou ⌛ para seguir.`,
+          })
+          break
+        }
         case 'encerrar':
           /*
             O encerramento **diz onde o desenho acabou**, quando sabe.
@@ -530,6 +539,9 @@ export function Conversa({
         no.type === 'pergunta' &&
         timeoutDaPergunta(no) !== null,
     )
+  /** Parada num bloco Cobrar: o simulador faz o papel do gateway. */
+  const esperaPagamento =
+    status === 'ativa' && fluxo.nodes.some((no) => no.id === sessaoExibida.noAtual && no.type === 'cobrar')
   const eventos = contarEventos(itens)
   const iniciais = iniciaisDoNome(nomeContato)
 
@@ -780,6 +792,41 @@ export function Conversa({
                 }
               >
                 ⏱
+              </button>
+            )}
+            {/*
+              Pagou e venceu sem Pix de verdade: o simulador não fala com
+              gateway nenhum, e sem isto as duas saídas do bloco Cobrar só
+              seriam testadas com dinheiro.
+            */}
+            {esperaPagamento && (
+              <button
+                type="button"
+                onClick={() => void enviar({ tipo: 'cobranca', desfecho: 'pagou' }, '✓ (pagou)')}
+                disabled={ocupado}
+                title="Simular o pagamento confirmado"
+                className={
+                  modo === 'conversa'
+                    ? 'flex size-9 shrink-0 items-center justify-center rounded-full text-sm text-[#54656f] transition hover:bg-black/[0.05] disabled:opacity-40'
+                    : 'botao-secundario botao-md botao-icone shrink-0 text-sm'
+                }
+              >
+                ✓
+              </button>
+            )}
+            {esperaPagamento && (
+              <button
+                type="button"
+                onClick={() => void enviar({ tipo: 'cobranca', desfecho: 'venceu' }, '⌛ (venceu)')}
+                disabled={ocupado}
+                title="Simular a cobrança vencendo sem pagamento"
+                className={
+                  modo === 'conversa'
+                    ? 'flex size-9 shrink-0 items-center justify-center rounded-full text-sm text-[#54656f] transition hover:bg-black/[0.05] disabled:opacity-40'
+                    : 'botao-secundario botao-md botao-icone shrink-0 text-sm'
+                }
+              >
+                ⌛
               </button>
             )}
             <button

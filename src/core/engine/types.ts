@@ -176,6 +176,14 @@ export const entradaSchema = z.discriminatedUnion('tipo', [
    * significa **ausência**.
    */
   z.object({ tipo: z.literal('timeout') }),
+  /**
+   * A cobrança do bloco Cobrar teve desfecho: o gateway confirmou o
+   * pagamento, ou o relógio do vencimento chegou antes.
+   *
+   * Como o timeout, não vem de pessoa nenhuma: quem manda é o servidor, e só
+   * depois de reler o pagamento na API do gateway.
+   */
+  z.object({ tipo: z.literal('cobranca'), desfecho: z.enum(['pagou', 'venceu']) }),
 ])
 
 export type StatusSessao = z.infer<typeof statusSessaoSchema>
@@ -447,6 +455,20 @@ export type Acao =
    */
   | { tipo: 'guardar_comentario'; comentario: string }
   | { tipo: 'encerrar'; motivo?: string }
+  /**
+   * Criar a cobrança do bloco Cobrar e mandar o Pix e o link.
+   *
+   * O valor já vem conferido em centavos: digitado no bloco, ou o total que
+   * `core/cobranca.ts` somou pelo catálogo. Quem cria no gateway, e quem passa
+   * a conversa para uma pessoa quando não sai, é o servidor.
+   */
+  | {
+      tipo: 'criar_cobranca'
+      noId: string
+      valorCentavos: number
+      descricao: string
+      horasParaVencer: number
+    }
 
 export type Resultado = {
   acoes: Acao[]

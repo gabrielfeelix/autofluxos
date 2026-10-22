@@ -1,5 +1,6 @@
 import 'server-only'
 import { CANAL_PADRAO, type CanalId } from '@/core/canais'
+import { cobrancaLiberada } from '../cobrancas'
 import { fluxoSchema, type Fluxo } from '@/core/flow/schema'
 import { LIMITE_NOME_DO_FLUXO } from '@/core/flow/limites'
 import { validar, type Problema } from '@/core/flow/validar'
@@ -325,8 +326,13 @@ export async function publicar(
   // E as etiquetas pelo mesmo motivo das etapas (0044): publicar apontando para
   // etiqueta apagada entrega um bloco que não marca ninguém, calado.
   const etiquetas = (await listarEtiquetas(fluxo.clienteId)).map((e) => e.id)
+  // Só pergunta pela conta de recebimento quando o desenho cobra.
+  const cobrancaHabilitada = analise.data.nodes.some((no) => no.type === 'cobrar')
+    ? await cobrancaLiberada(fluxo.clienteId)
+    : undefined
   const conferido = validar(analise.data, {
     iaHabilitada: fluxo.iaHabilitada,
+    cobrancaHabilitada,
     conexoes,
     etapas,
     etiquetas,

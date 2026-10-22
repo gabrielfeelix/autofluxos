@@ -160,6 +160,26 @@ export async function acharCobranca(clienteId: string, id: string): Promise<Cobr
 }
 
 /**
+ * A cobrança mais nova que o fluxo criou nesta conversa. Só ela acorda o
+ * bloco Cobrar: a de uma volta anterior do mesmo fluxo, paga atrasada, não
+ * pode empurrar a conversa que já está esperando outra.
+ */
+export async function ultimaCobrancaDoFluxo(clienteId: string, sessaoId: string): Promise<CobrancaRegistrada | null> {
+  const { data, error } = await db()
+    .from('cobrancas')
+    .select(COLUNAS)
+    .eq('cliente_id', clienteId)
+    .eq('sessao_id', sessaoId)
+    .eq('origem', 'fluxo')
+    .order('criado_em', { ascending: false })
+    .limit(1)
+    .maybeSingle()
+  if (ehIdInvalido(error) || tabelaAusente(error)) return null
+  if (error) throw new Error(`não foi possível ler a cobrança da conversa: ${error.message}`)
+  return data ? paraCobranca(data as Linha) : null
+}
+
+/**
  * Muda o status só se ele ainda for um dos `de`. Devolve se mudou: é o que diz
  * a quem chamou se ele é o primeiro a ver o pagamento, e portanto quem avisa a
  * conversa. O segundo aviso repetido recebe `false` e não faz nada.

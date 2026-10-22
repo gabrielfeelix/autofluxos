@@ -51,6 +51,7 @@ const ORDEM_DOS_BLOCOS: TipoNo[] = [
   'email',
   'encaminhar',
   'nps',
+  'cobrar',
 ]
 
 /** Quando usar cada bloco, em uma frase, o que a barra do editor não cabe. */
@@ -77,6 +78,8 @@ const QUANDO_USAR: Record<TipoNo, string> = {
   encaminhar:
     'Quando o assunto é de outro time, com WhatsApp próprio: suporte, comercial, marketing. Manda o texto e um botão que abre a conversa com eles já com a mensagem escrita. O cartão de contato é opcional.',
   nps: 'Perguntar de 0 a 10 no fim do atendimento. Ele já separa os três caminhos, quem gostou, quem tanto faz e quem não gostou, e guarda a nota com data, para o relatório poder comparar um mês com o outro.',
+  cobrar:
+    'Fechar a venda na conversa: manda o Pix e o link de pagamento pela sua conta de recebimento e espera. Pagou, segue por um caminho; venceu, por outro. O valor é o que você digitou ou o total do pedido montado pela IA, nunca um número escrito pelo modelo.'
 }
 
 export function SecaoComoFunciona() {

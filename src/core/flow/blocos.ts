@@ -88,6 +88,7 @@ export const NOMES: Record<TipoNo, string> = {
    * bloco é o gesto, e o número aparece na tela que mede.
    */
   nps: 'Pesquisa de satisfação',
+  cobrar: 'Cobrar',
 }
 
 export const ICONES: Record<TipoNo, string> = {
@@ -107,6 +108,7 @@ export const ICONES: Record<TipoNo, string> = {
   'ir-fluxo': '⇥',
   voltar: '↺',
   nps: '★',
+  cobrar: '$',
 }
 
 /** A linha de baixo na barra de blocos: o que ele faz, em três palavras. */
@@ -127,6 +129,7 @@ export const DESCRICOES: Record<TipoNo, string> = {
   http: 'Chama um sistema',
   voltar: 'Volta ao menu',
   nps: 'Pergunta a nota',
+  cobrar: 'Manda Pix e espera pagar',
 }
 
 /**
@@ -153,6 +156,7 @@ export const CORES: Record<TipoNo, string> = {
   'ir-fluxo': 'border-indigo-400/30',
   voltar: 'border-slate-300/30',
   nps: 'border-yellow-400/30',
+  cobrar: 'border-lime-400/30',
 }
 
 /**
@@ -168,7 +172,7 @@ export const GRUPOS_DE_BLOCOS: { nome: string; tipos: TipoNo[] }[] = [
   { nome: 'Conversar', tipos: ['mensagem', 'midia', 'pergunta', 'nps'] },
   { nome: 'Decidir', tipos: ['condicao', 'voltar', 'ir-fluxo'] },
   { nome: 'Organizar', tipos: ['salvar-campo', 'etapa', 'etiqueta', 'nota'] },
-  { nome: 'Integrar', tipos: ['ia', 'http', 'email', 'handoff', 'encaminhar'] },
+  { nome: 'Integrar', tipos: ['ia', 'http', 'email', 'handoff', 'encaminhar', 'cobrar'] },
 ]
 
 function semAcento(texto: string): string {

@@ -20,6 +20,7 @@ import { anotar } from './repos/eventos'
 import { acharLead } from './repos/leads'
 import { acessoDaConexao, conexaoAtiva } from './repos/pagamentos'
 import { agendar, cancelarPorChave } from './repos/tarefas'
+import { recursoLiberado } from './recursos-do-plano'
 
 /**
  * Cobrar pela conversa, independente do gateway (docs/PLANO-COBRANCA-CAMADA-1.md,
@@ -43,6 +44,15 @@ export function gatewayDe(gateway: Gateway): GatewayDePagamento {
   return GATEWAYS[gateway]
 }
 
+/**
+ * A conta pode usar o bloco Cobrar: o plano tem integrações (decisão 1, do
+ * Operação para cima) e há uma conta de recebimento conectada.
+ */
+export async function cobrancaLiberada(clienteId: string): Promise<boolean> {
+  const [noPlano, conexao] = await Promise.all([recursoLiberado(clienteId, 'integracoes'), conexaoAtiva(clienteId)])
+  return noPlano && conexao !== null
+}
+
 /** Inbox: 24 horas (decisão 3 do plano). O bloco do fluxo escolhe o dele. */
 export const HORAS_PARA_VENCER_NO_INBOX = 24
 
@@ -62,6 +72,28 @@ export function textoDaCobranca(cobranca: Pick<CobrancaRegistrada, 'descricao' |
   if (cobranca.pixCopiaCola) linhas.push('', 'Para pagar com Pix, copie o código da próxima mensagem e cole no app do seu banco.')
   if (cobranca.link) linhas.push(cobranca.pixCopiaCola ? 'Se preferir cartão ou boleto, use o link.' : 'Para pagar, use o link.')
   return linhas.join('\n')
+}
+
+/**
+ * Acorda o bloco Cobrar que criou esta cobrança, se ainda houver um esperando.
+ * Import tardio: `receber-mensagem` importa este arquivo para criar a
+ * cobrança, e o ciclo fechado no carregamento quebraria os dois.
+ *
+ * Nunca lança: o aviso do gateway e o relógio já fizeram o que importa (a
+ * cobrança está paga ou vencida), e uma conversa que não seguiu é alerta.
+ */
+async function acordarOFluxo(cobranca: CobrancaRegistrada, desfecho: 'pagou' | 'venceu'): Promise<void> {
+  if (cobranca.origem !== 'fluxo' || !cobranca.sessaoId) return
+  try {
+    const { acordarFluxoDaCobranca } = await import('./receber-mensagem')
+    await acordarFluxoDaCobranca(cobranca, desfecho)
+  } catch (erro) {
+    await alertar(`a cobrança ${desfecho === 'pagou' ? 'foi paga' : 'venceu'}, mas o fluxo não seguiu`, erro, {
+      cliente: cobranca.clienteId,
+      contato: cobranca.contatoId ?? undefined,
+      sessao: cobranca.sessaoId,
+    })
+  }
 }
 
 function chaveDoVencimento(cobrancaId: string): string {
@@ -231,6 +263,7 @@ export async function aplicarPagamento(
           descricao: cobranca.descricao,
         })
       }
+      await acordarOFluxo(cobranca, 'pagou')
     }
     return 'paga'
   }
@@ -275,6 +308,7 @@ export async function rodarVencimentoDeCobranca(
       descricao: cobranca.descricao,
     })
   }
+  if (mudou) await acordarOFluxo(cobranca, 'venceu')
   return mudou ? 'feita' : 'ignorada'
 }
 

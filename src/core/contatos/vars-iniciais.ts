@@ -1,3 +1,4 @@
+import { VARIAVEIS_DA_COBRANCA } from '../cobranca'
 import { VARIAVEIS_DE_DATA } from '../datas'
 import { VARIAVEIS_DO_ATENDIMENTO } from '../vars-do-atendimento'
 import { ehBsuid } from './bsuid'
@@ -79,6 +80,9 @@ export function varsIniciais(contato: RetratoDoContato): Record<string, string> 
    * apagaria a resposta de alguém em favor de um valor que o desenho não pediu.
    */
   Object.assign(vars, contato.campos ?? {})
+  // O total do pedido só vale o que a IA somou **nesta** conversa: um campo
+  // com o mesmo nome na ficha seria o bloco Cobrar cobrando um valor digitado.
+  for (const nome of Object.values(VARIAVEIS_DA_COBRANCA)) delete vars[nome]
 
   /*
    * E o nome corrigido vence os dois.

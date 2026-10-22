@@ -7,6 +7,7 @@ import {
   ROTULO_PADRAO_DO_ENCAMINHAMENTO,
 } from '@/core/encaminhar'
 import { problemaDoEndereco } from '@/core/flow/validar'
+import { lerValor } from '@/core/crm'
 import { efeitoDaPolitica, politicaDaFerramenta, type PoliticaDaIa } from '@/core/autonomia-da-ia'
 import { MINUTOS_DE_RETOMADA_PADRAO, type ConfigDaConta } from '@/core/retomada'
 import { useId, useRef, useState, type ReactNode } from 'react'
@@ -1413,6 +1414,75 @@ export function Painel({
                 className={`absolute top-0.5 size-5 rounded-full bg-white shadow transition-all ${no.data.cartao === true ? 'left-[22px]' : 'left-0.5'}`}
               />
             </button>
+          </div>
+        </>
+      )}
+
+      {no.type === 'cobrar' && (
+        <>
+          <Area
+            rotulo="O que está sendo cobrado"
+            valor={no.data.descricao}
+            limite={200}
+            aoMudar={(descricao) => aoMudarDados({ descricao })}
+            conhecidas={variaveis}
+            secao="blocos"
+            exemplo="Aula experimental de pilates"
+            dica="O que a pessoa lê na cobrança e no extrato do banco."
+          />
+          <div className="block">
+            <span className="mb-1.5 block text-[11px] font-bold tracking-[0.05em] text-muted uppercase">
+              Valor
+              <AjudaDoCampo
+                titulo="Valor"
+                secao="blocos"
+                texto="Um valor fixo, ou o total do pedido que a IA de vendas montou pelo catálogo."
+                detalhes={
+                  <>
+                    <p>
+                      <strong>Valor fixo</strong> serve para o que tem preço único: a aula
+                      experimental, a taxa de inscrição, o sinal da reserva.
+                    </p>
+                    <p>
+                      <strong>Total do pedido</strong> usa a soma que o catálogo fez na conversa com a
+                      IA de vendas, com entrega e variações. O número nunca vem do modelo: se a IA
+                      ainda não montou o pedido, a conversa vai para a equipe em vez de cobrar.
+                    </p>
+                  </>
+                }
+              />
+            </span>
+            <Dropdown
+              valor={no.data.valorDe}
+              aoMudar={(valorDe) => aoMudarDados({ valorDe })}
+              rotuloAcessivel="De onde vem o valor"
+              opcoes={[
+                { valor: 'fixo', rotulo: 'valor fixo' },
+                { valor: 'pedido', rotulo: 'total do pedido da IA' },
+              ]}
+            />
+          </div>
+          {no.data.valorDe === 'fixo' && (
+            <CampoDeReais
+              centavos={no.data.valorCentavos}
+              aoMudar={(valorCentavos) => aoMudarDados({ valorCentavos })}
+            />
+          )}
+          <div className="block">
+            <span className="mb-1.5 block text-[11px] font-bold tracking-[0.05em] text-muted uppercase">
+              Vence em
+              <AjudaDoCampo
+                titulo="Vence em"
+                secao="blocos"
+                texto="Depois desse prazo o Pix deixa de valer e a conversa sai pela saída “venceu”."
+              />
+            </span>
+            <Dropdown
+              valor={String(no.data.horasParaVencer)}
+              aoMudar={(horas) => aoMudarDados({ horasParaVencer: Number(horas) })}
+              rotuloAcessivel="Vence em"
+              opcoes={HORAS_DE_VENCIMENTO.map((h) => ({ valor: String(h), rotulo: comoHoras(h) }))}
+            />
           </div>
         </>
       )}
@@ -3107,7 +3177,51 @@ function resumoDoBloco(no: No): string {
       return curto(no.data.rotulo) || 'Ir para outra automação'
     case 'voltar':
       return no.data.destino === '' ? 'Volta ao início' : 'Volta a um passo'
+    case 'cobrar':
+      return curto(no.data.descricao) || 'Cobrar'
   }
+}
+
+/** Os prazos do bloco Cobrar. Curtos para cobrança quente, longos para sinal de reserva. */
+const HORAS_DE_VENCIMENTO = [1, 2, 6, 12, 24, 48, 72, 168]
+
+function comoHoras(horas: number): string {
+  if (horas < 24) return horas === 1 ? '1 hora' : `${horas} horas`
+  const dias = horas / 24
+  return dias === 1 ? '1 dia' : `${dias} dias`
+}
+
+/**
+ * O valor em reais do bloco Cobrar. Guarda o texto enquanto a pessoa digita
+ * e só manda centavos quando ele vira número: "109," no meio da digitação não
+ * pode virar 109,00 e apagar a vírgula.
+ */
+function CampoDeReais({ centavos, aoMudar }: { centavos: number; aoMudar: (centavos: number) => void }) {
+  const formatado = (c: number) =>
+    c > 0 ? (c / 100).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : ''
+  const [texto, setTexto] = useState(() => formatado(centavos))
+  const lido = lerValor(texto)
+  const invalido = texto.trim() !== '' && (!lido.ok || lido.valor === null || lido.valor <= 0)
+  return (
+    <label className="block">
+      <span className="mb-1.5 block text-[11px] font-bold tracking-[0.05em] text-muted uppercase">
+        Valor em reais
+      </span>
+      <input
+        value={texto}
+        inputMode="decimal"
+        placeholder="Exemplo: 109,80"
+        onChange={(e) => {
+          setTexto(e.target.value)
+          const r = lerValor(e.target.value)
+          if (r.ok) aoMudar(r.valor !== null && r.valor > 0 ? Math.min(Math.round(r.valor * 100), 100_000_000) : 0)
+        }}
+        onBlur={() => setTexto(formatado(centavos))}
+        className="app-field px-3 py-2.5 text-[13px]"
+      />
+      {invalido && <p className="mt-1 text-[12px] text-aviso">Digite só o valor, por exemplo 109,80.</p>}
+    </label>
+  )
 }
 
 function Mapeamentos({

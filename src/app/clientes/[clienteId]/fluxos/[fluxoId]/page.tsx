@@ -24,6 +24,7 @@ import { acharFluxo, acharVersao, listarFluxos, listarVersoes } from '@/server/r
 import { contarRespostasPorVariavel } from '@/server/repos/respostas'
 import { ehAdminDaPlataforma, exigirAcessoAoCliente } from '@/server/sessao'
 import { recursoLiberado } from '@/server/recursos-do-plano'
+import { cobrancaLiberada } from '@/server/cobrancas'
 
 export const dynamic = 'force-dynamic'
 
@@ -69,7 +70,7 @@ export default async function Pagina({
     )
   }
 
-  const [cliente, fluxo, conexoes, quadros, etiquetas, fluxosDaConta, loja, nuvemshop, temCatalogo, iaComFerramentas] = await Promise.all([
+  const [cliente, fluxo, conexoes, quadros, etiquetas, fluxosDaConta, loja, nuvemshop, temCatalogo, iaComFerramentas, cobrancaHabilitada] = await Promise.all([
     acharCliente(clienteId),
     acharFluxo(fluxoId),
     listarConexoesParaFluxos(clienteId),
@@ -80,6 +81,7 @@ export default async function Pagina({
     lojaNuvemshopDaConta(clienteId),
     temProdutoAtivo(clienteId),
     recursoLiberado(clienteId, 'ia_ferramentas'),
+    cobrancaLiberada(clienteId),
   ])
   if (!cliente || !fluxo || fluxo.clienteId !== cliente.id) notFound()
 
@@ -164,6 +166,7 @@ export default async function Pagina({
         canal={fluxo.canal}
         iaHabilitada={fluxo.iaHabilitada}
         iaComFerramentas={iaComFerramentas}
+        cobrancaHabilitada={cobrancaHabilitada}
         entradaLigada={fluxo.ativo}
         /* Contratar a Etapa 2 é decisão comercial da 4YU. Para a conta, o
            contrato é estado, ver o cabeçalho do editor. */

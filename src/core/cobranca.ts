@@ -182,3 +182,15 @@ export const VARIAVEIS_DA_COBRANCA = {
   pagamento: 'cobranca_pagamento',
   entrega: 'cobranca_entrega',
 } as const
+
+/**
+ * O total guardado ("109,80") de volta em centavos, para o bloco Cobrar.
+ * Qualquer coisa fora do formato que `montarCobranca` escreve é `null`: o
+ * bloco não cobra um número que não saiu daqui.
+ */
+export function centavosDoTotal(total: string | undefined): number | null {
+  const m = /^(\d{1,9}),(\d{2})$/.exec((total ?? '').trim())
+  if (!m) return null
+  const centavos = Number(m[1]) * 100 + Number(m[2])
+  return centavos > 0 ? centavos : null
+}

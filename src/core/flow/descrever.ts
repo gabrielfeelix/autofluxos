@@ -7,9 +7,11 @@ import {
   SAIDA_MIDIA,
   SAIDA_TEXTO_LIVRE,
   SAIDA_NEUTRO,
+  SAIDA_PAGOU,
   SAIDA_PROMOTOR,
   SAIDA_TIMEOUT,
   SAIDA_VAZIO,
+  SAIDA_VENCEU,
   SAIDA_VERDADEIRO,
   type No,
 } from './schema'
@@ -74,6 +76,8 @@ export function descrever(no: No): string {
       return rotular('Voltar', curto(no.data.rotulo || 'ao início'))
     case 'nps':
       return rotular('Pesquisa', curto(no.data.texto))
+    case 'cobrar':
+      return rotular('Cobrar', curto(no.data.descricao))
   }
 }
 
@@ -116,6 +120,11 @@ export function nomeDaSaida(no: No, saida: string | undefined): string | null {
     if (saida === SAIDA_PROMOTOR) return 'a saída de "promotor" (nota 9 ou 10)'
     if (saida === SAIDA_NEUTRO) return 'a saída de "neutro" (nota 7 ou 8)'
     if (saida === SAIDA_DETRATOR) return 'a saída de "detrator" (nota 0 a 6)'
+  }
+
+  if (no.type === 'cobrar') {
+    if (saida === SAIDA_PAGOU) return 'a saída de "pagou"'
+    if (saida === SAIDA_VENCEU) return 'a saída de "venceu"'
   }
 
   return null

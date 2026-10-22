@@ -1113,6 +1113,43 @@ export const noNpsSchema = z.object({
   }),
 })
 
+/**
+ * **Cobrar**: manda Pix e link pela conta de recebimento do dono e espera o
+ * pagamento (cobrança no chat, etapa D, docs/PLANO-COBRANCA-CAMADA-1.md).
+ *
+ * Para aqui como a pergunta para, e quem tira a conversa daqui é o gateway:
+ * o aviso de pagamento acorda a saída **pagou**, o relógio do vencimento
+ * acorda a saída **venceu**. Sem as duas desenhadas, pagou agradece e encerra,
+ * e venceu vai para a fila da equipe, calado: quem quis comprar e não pagou é
+ * o lead que mais vale resgatar.
+ *
+ * **O valor nunca vem do modelo nem de quem conversa.** `fixo` é o que o dono
+ * digitou no bloco; `pedido` é o total que `core/cobranca.ts` somou pelo
+ * catálogo na conversa com a IA, e o `validar()` recusa qualquer outro bloco
+ * que escreva nessas variáveis.
+ *
+ * O vencimento é do bloco (decisão 3 do plano): o Inbox cobra em 24 horas
+ * fixas, o fluxo escolhe.
+ */
+export const VALOR_DA_COBRANCA = ['fixo', 'pedido'] as const
+/** R$ 1.000.000,00, o mesmo teto do botão Cobrar do Inbox. */
+export const MAX_CENTAVOS_DA_COBRANCA = 100_000_000
+/** 30 dias: o Pix do Mercado Pago não vive mais que isso. */
+export const MAX_HORAS_PARA_VENCER = 720
+
+export const noCobrarSchema = z.object({
+  ...base,
+  type: z.literal('cobrar'),
+  data: z.object({
+    valorDe: z.enum(VALOR_DA_COBRANCA).default('fixo'),
+    /** Só com `valorDe: 'fixo'`. Centavos, como em `cobrancas.valor_centavos`. */
+    valorCentavos: z.number().int().min(0).max(MAX_CENTAVOS_DA_COBRANCA).default(0),
+    /** O que a pessoa lê na cobrança e no extrato. Aceita variável. */
+    descricao: z.string().default(''),
+    horasParaVencer: z.number().int().min(1).max(MAX_HORAS_PARA_VENCER).default(24),
+  }),
+})
+
 export const noSchema = z.discriminatedUnion('type', [
   noMensagemSchema,
   noMidiaSchema,
@@ -1130,6 +1167,7 @@ export const noSchema = z.discriminatedUnion('type', [
   noIrFluxoSchema,
   noVoltarSchema,
   noNpsSchema,
+  noCobrarSchema,
 ])
 
 export const arestaSchema = z.object({
@@ -1175,6 +1213,7 @@ export type Cabecalho = z.infer<typeof cabecalhoSchema>
 export type Mapeamento = z.infer<typeof mapeamentoSchema>
 export type NoHttp = z.infer<typeof noHttpSchema>
 export type NoEtapa = z.infer<typeof noEtapaSchema>
+export type NoCobrar = z.infer<typeof noCobrarSchema>
 export type Aresta = z.infer<typeof arestaSchema>
 export type Fluxo = z.infer<typeof fluxoSchema>
 export type TipoNo = No['type']
@@ -1254,6 +1293,13 @@ export const SAIDA_CONCLUIDO = 'concluido'
 export const SAIDA_PROMOTOR = 'promotor'
 export const SAIDA_NEUTRO = 'neutro'
 export const SAIDA_DETRATOR = 'detrator'
+
+/**
+ * As duas saídas do bloco Cobrar. Quem as acorda é o servidor, nunca uma
+ * mensagem: o aviso do gateway (pagou) e o relógio do vencimento (venceu).
+ */
+export const SAIDA_PAGOU = 'pagou'
+export const SAIDA_VENCEU = 'venceu'
 
 /** Em que faixa do NPS cai uma nota. Um lugar só, para o motor e para a tela. */
 export function faixaDaNota(nota: number): typeof SAIDA_PROMOTOR | typeof SAIDA_NEUTRO | typeof SAIDA_DETRATOR {

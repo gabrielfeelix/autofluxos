@@ -251,6 +251,10 @@ export function dadosPadrao(tipo: TipoNo): Record<string, unknown> {
         texto: 'De 0 a 10, o quanto você nos recomendaria para um amigo?',
         perguntaAberta: '',
       }
+    case 'cobrar':
+      // Valor e descrição vazios: o validador recusa publicar assim. Um preço
+      // chutado viraria Pix de verdade no WhatsApp de alguém.
+      return { valorDe: 'fixo', valorCentavos: 0, descricao: '', horasParaVencer: 24 }
     case 'ia':
       // `ferramentas` explícito, e não confiando no `.default([])` do Zod: o
       // bloco nasce **aqui**, no navegador, e só passa pelo schema quando o
@@ -363,6 +367,7 @@ export function Editor({
   versoesIniciais,
   iaHabilitada,
   iaComFerramentas,
+  cobrancaHabilitada,
   entradaLigada = true,
   podeContratarIa,
   contextoNegocio,
@@ -431,6 +436,11 @@ export function Editor({
   /** O plano inclui IA que consulta e age? Sem, o bloco de IA só conversa (aviso). */
   iaComFerramentas?: boolean
   /**
+   * Plano com cobrança e conta de recebimento conectada. Sem isso o bloco
+   * Cobrar some do catálogo: quem não conectou não vê nada.
+   */
+  cobrancaHabilitada?: boolean
+  /**
    * A automação abre conversa nova (`flows.ativo`). Mora ao lado da publicação
    * no cabeçalho (A03): publicada e desligada é um estado real, e sem isto o
    * editor dizia "no ar" para quem tinha acabado de desligar.
@@ -483,7 +493,13 @@ export function Editor({
     if (window.matchMedia('(max-width: 767px)').matches) setPainelAberto(false)
   }, [])
   const [buscaDeBloco, setBuscaDeBloco] = useState('')
-  const catalogo = useMemo(() => filtrarCatalogo(buscaDeBloco), [buscaDeBloco])
+  const catalogo = useMemo(
+    () =>
+      filtrarCatalogo(buscaDeBloco)
+        .map((grupo) => ({ ...grupo, tipos: grupo.tipos.filter((tipo) => tipo !== 'cobrar' || cobrancaHabilitada) }))
+        .filter((grupo) => grupo.tipos.length > 0),
+    [buscaDeBloco, cobrancaHabilitada],
+  )
 
   // A largura da barra de blocos, lembrada no navegador de quem usa.
   const [larguraDosBlocos, mudarLarguraDosBlocos] = useLarguraDosBlocos()
@@ -629,6 +645,7 @@ export function Editor({
       const doDesenho = validar(fluxo, {
         iaHabilitada: comIa,
         iaComFerramentas,
+        cobrancaHabilitada,
         conexoes: idsDeConexao,
         temContextoDeNegocio,
         fluxos,
@@ -664,7 +681,7 @@ export function Editor({
         avisos: [...doDesenho.avisos, ...daPublicacao.avisos],
       }
     },
-    [fluxo, comIa, iaComFerramentas, idsDeConexao, idsDeEtapa, idsDeEtiqueta, temContextoDeNegocio, fluxos, fluxoId, variaveisDaConta, canal],
+    [fluxo, comIa, iaComFerramentas, cobrancaHabilitada, idsDeConexao, idsDeEtapa, idsDeEtiqueta, temContextoDeNegocio, fluxos, fluxoId, variaveisDaConta, canal],
   )
 
   const itensAntes = useMemo(
