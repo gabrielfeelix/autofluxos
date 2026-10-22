@@ -1,5 +1,8 @@
 # Handoff: 19/ago/2026, atualizado em 04/set
 
+> **Mais recente (22/out/2026): cobrança no chat e frentes paralelas** em
+> [HANDOFF-22-OUT-COBRANCA-E-FRENTES.md](HANDOFF-22-OUT-COBRANCA-E-FRENTES.md).
+
 > **Próximo passo (07/out/2026, noite): formatação no campo de resposta da
 > Inbox** (listas, numeração e negrito ao vivo), com as decisões já tomadas, e o
 > que entrou no dia (IA da PCYES, avaliação, prévia da fila) em
