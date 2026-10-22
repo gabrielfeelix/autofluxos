@@ -87,9 +87,9 @@ create table if not exists public.cobrancas (
   paga_em                timestamptz,
   cancelada_em           timestamptz,
 
-  origem                 text not null check (origem in ('inbox', 'fluxo', 'ia', 'api')),
+  origem                 text not null check (origem in ('inbox', 'fluxo', 'ia')),
   -- Quem criou, pelo nome, como `autor` da linha do tempo. Nulo quando foi o
-  -- fluxo, a IA ou a API pública (`POST /api/v1/cobrancas`).
+  -- fluxo ou a IA.
   criada_por             text,
   -- A conversa que espera o pagamento para seguir (bloco Cobrar, etapa D).
   sessao_id              uuid references public.sessions (id) on delete set null,
