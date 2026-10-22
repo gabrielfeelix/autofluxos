@@ -55,6 +55,28 @@ aqui fica o que o cliente ganha.
   quando a janela de 24h fechou.
 - **Aviso no celular** (push) quando o cliente pede uma pessoa, sem acordar
   ninguém de madrugada.
+- **Vários números na mesma conta**, cada um com o seu fluxo de boas-vindas,
+  de mídia recebida e de pós-atendimento.
+- **Chat do site com a cara da empresa**: cor, tema, saudação, mascote em
+  imagem ou vídeo, formulário de contato com os campos que a empresa quer, e
+  prévia ao vivo antes de publicar.
+- **Instagram Direct no mesmo Inbox**, com a conexão que se renova sozinha.
+- **Aviso quando um canal cai**: o Inbox mostra na hora se o número
+  desconectou ou o acesso venceu, antes de o cliente ficar sem resposta.
+- **Tudo em tempo real**, sem recarregar: mensagem nova, quem assumiu,
+  entregue e lida.
+- **Organizar a fila**: fixar conversas no topo, marcar como não lida,
+  adiar para mais tarde (volta sozinha), filtrar por dono, origem e não
+  lidas, e buscar pelo texto das mensagens.
+- **Conversa completa no navegador**: responder citando, reagir, gravar
+  áudio, arrastar arquivos e favoritar mensagens importantes.
+- **O bot espera o cliente terminar de falar**: mensagens seguidas viram uma
+  só resposta, em vez de três respostas atropeladas.
+- **Pausar o bot só numa conversa**, sem desligar a automação de ninguém.
+- **Assinatura de quem atende** no WhatsApp, e selo na conversa mostrando se
+  respondeu o bot, a IA ou uma pessoa.
+- **Gestor acompanha a caixa de cada atendente** como ele vê, sem marcar
+  nada como lido, com registro de quem olhou.
 
 ## Automatizar
 
@@ -72,6 +94,45 @@ aqui fica o que o cliente ganha.
 - **Modelos prontos por nicho**: aulas e serviços, loja, restaurante e mais.
 - **Simulador** para testar o fluxo antes de publicar, e versões com "voltar
   para esta".
+- **Publica sem medo**: antes de ir ao ar, o sistema confere cerca de 70
+  pontos (bloco solto, caminho sem saída para pessoa, variável que não
+  existe, link inseguro) e diz onde corrigir.
+- **Editor que perdoa**: desfazer e refazer, organizar o desenho com um
+  clique, salvamento automático e versões com "voltar para esta".
+- **O cliente nunca fica preso**: "atendente" leva a uma pessoa e "menu"
+  recomeça em qualquer ponto; três respostas inválidas seguidas vão para o
+  caminho de reserva.
+- **Mostrar a automação para o cliente aprovar**: link público com o roteiro
+  e uma conversa de teste, com prazo, contador de aberturas e botão para
+  importar na conta dele.
+- **O que cada passagem pela automação coletou**, numa tabela com busca,
+  filtro por desfecho e exportação em planilha.
+- **Pronta para o ramo**: aulas e serviços, loja virtual, restaurante e loja
+  física mudam o menu, o funil e as sugestões de automação.
+- **Datas e expediente prontos para usar**: "amanhã", "semana que vem",
+  "estamos abertos?" e "voltamos às 8h" sem configurar nada.
+- **Sequências que sabem parar**: entram quando o cliente some, ganha uma
+  etiqueta ou muda de etapa, e saem sozinhas quando ele responde, compra ou
+  vai para uma pessoa.
+- **O bot volta sozinho** depois que a equipe atende e a conversa para, no
+  tempo que a empresa escolher.
+
+## IA que atende sem inventar
+
+- **Nunca fica sem resposta**: se um provedor de IA cai, outro assume na
+  hora.
+- **Ficha do assistente** com as perguntas certas para o ramo e um placar de
+  quanto a IA já sabe da empresa.
+- **Manda o cardápio ou a tabela em PDF** quando o cliente pede.
+- **Não inventa produto, preço nem horário**: só fala do que veio do
+  catálogo, da loja ou da agenda, e o que não sabe vira atendimento humano.
+- **Pede confirmação antes de agir**: "posso marcar para as 7h?", com a
+  empresa escolhendo o que a IA faz sozinha e o que passa para uma pessoa.
+- **Protegida contra golpe de prompt**: texto de cliente ou de site nunca
+  vira ordem para a IA.
+- **Aprende com o atendimento**: relatório das principais dúvidas e das
+  perguntas sem resposta, e a equipe ensina a resposta com um clique.
+- **Chave de IA própria** no plano Escala, sem teto de respostas.
 
 ## Vender e campanhas
 
@@ -163,6 +224,30 @@ aqui fica o que o cliente ganha.
 - **Orçamento de PC montado**: a IA consulta as peças com estoque do
   montador da loja (processador, placa-mãe, memória, placa de vídeo), soma
   o total e leva o cliente ao montador para fechar. *(22/out/2026)*
+- **Vários funis** com modelos prontos (atendimento, comercial, captação,
+  agenda, pós-venda, pedidos), em quadro ou lista, com alerta de negócio
+  parado e passagem automática de um funil para o próximo.
+- **Página de cada negócio** com etapa, valor, produto, previsão, histórico
+  e outros negócios da mesma pessoa; venda registrada com itens.
+- **Atividades e agenda da equipe**: ligação, reunião, visita, proposta, em
+  lista ou calendário, com o contador de atrasadas sempre à vista.
+- **Contatos sem trabalho braçal**: ações em lote, exportação em planilha,
+  colunas com o que a automação coletou, e importação que reconhece o mesmo
+  telefone com ou sem o nono dígito.
+- **O que a equipe corrige não é sobrescrito** por importação nem por
+  automação.
+- **Recupera leads antigos** do Lead Ads (até 90 dias) e, todo dia, os que
+  se perderam no caminho.
+- **Templates prontos e da biblioteca da Meta**, com a situação de
+  aprovação atualizada sozinha.
+- **Transmissão que se protege**: respeita o limite do número, tenta de novo
+  só quando vale a pena e para tudo se a Meta derrubar o modelo. Cada
+  destinatário mostra se chegou, leu ou não recebeu.
+- **Catálogo por planilha**: importa e atualiza até 2.000 produtos sem
+  duplicar, com prévia dos erros.
+- **Nuvemshop conectada** com preço e estoque por variação.
+- **Cupons com retorno**: quais foram enviados e quais foram usados.
+- **Links de produto rastreados**: quem clicou e de qual conversa veio.
 
 ## Medir
 
@@ -177,6 +262,8 @@ aqui fica o que o cliente ganha.
   mede volume e tempo sem expor o que o cliente escreveu. *(22/out/2026)*
 - **Gasto com WhatsApp** do mês, com a franquia grátis de 1.000 mensagens de
   atendimento por número.
+- **Início que diz o que precisa de atenção**: quem espera resposta, números
+  do dia, quem da equipe está disponível e clientes sumindo.
 
 ## Integrar e segurança
 
@@ -189,3 +276,24 @@ aqui fica o que o cliente ganha.
 - **Cofre de credenciais**: chave entra e nunca mais aparece na tela.
 - **Verificação em duas etapas**, permissões por função e exceções por pessoa.
 - **LGPD**: termos, privacidade, exclusão de dados e limpeza de contato inativo.
+- **Vaga aberta vira mensagem**: a Verandi avisa o AutoFluxos e a lista de
+  espera é chamada no WhatsApp.
+- **Funções e equipes**: proprietário, administrador, gestor e atendente,
+  com exceções por pessoa explicadas em português, e ninguém concede o que
+  não tem.
+- **Distribuição justa**: rodízio para quem tem menos conversas, teto por
+  pessoa, cliente com dono volta para o mesmo atendente, e quem sai da
+  equipe passa as conversas para quem a empresa escolher.
+- **Horário de atendimento** que o bot respeita: fora do expediente ele
+  continua atendendo e promete o retorno certo.
+- **Um login para várias empresas**, com função diferente em cada uma.
+- **Conta protegida**: senha vazada bloqueada, limite de tentativas, até 3
+  aparelhos por pessoa e registro de cada ação importante.
+
+## Começar e crescer
+
+- **Configura em minutos**: um assistente de 4 passos pergunta o ramo e o
+  objetivo e já deixa a automação e o funil em rascunho.
+- **Teste grátis de 14 dias** no plano Profissional.
+- **Nada some ao mudar de plano**: o recurso pausado fica só para leitura, e
+  disparo sem resposta não conta como conversa.
