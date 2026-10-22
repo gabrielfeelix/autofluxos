@@ -363,3 +363,96 @@ export async function ganhosPorOrigem(
     valor: numeroOuNulo(r.valor),
   }))
 }
+
+/*
+ * Recebido pelo chat (cobrança no chat, 0141): o dinheiro que entrou por Pix
+ * ou link mandado na conversa, separado dos negócios ganhos para a mesma
+ * venda nunca ser somada duas vezes.
+ *
+ * - recebido: cobranças pagas, no dia de `paga_em`;
+ * - taxa de pagamento: das criadas no período que já tiveram desfecho, quantas
+ *   foram pagas (paga ÷ paga + vencida). Cancelada e ainda aguardando não
+ *   entram: nenhuma das duas diz se a pessoa pagaria;
+ * - vencido: o que venceu no período sem pagar, dinheiro para ir atrás;
+ * - escopo: o responsável do contato; cobrança de contato sem responsável só
+ *   entra para quem vê a conta inteira.
+ */
+const DO_ESCOPO_DA_COBRANCA = `c.cliente_id = $1
+     and ($4::uuid[] is null or exists (
+       select 1 from public.contacts ct where ct.id = c.contato_id and ct.atribuido_a = any($4::uuid[])
+     ))`
+
+const SQL_DO_RECEBIDO = `
+with ${LIMITES}
+select count(*) filter (where c.status = 'paga' and c.paga_em >= lim.ini and c.paga_em < lim.fim)::int as pagas,
+       coalesce(sum(c.valor_centavos) filter (where c.status = 'paga' and c.paga_em >= lim.ini and c.paga_em < lim.fim), 0)::bigint as recebido,
+       avg(extract(epoch from (c.paga_em - c.criado_em))) filter (where c.status = 'paga' and c.paga_em >= lim.ini and c.paga_em < lim.fim)::bigint as segundos_ate_pagar,
+       count(*) filter (where c.criado_em >= lim.ini and c.criado_em < lim.fim and c.status = 'paga')::int as criadas_pagas,
+       count(*) filter (where c.criado_em >= lim.ini and c.criado_em < lim.fim and c.status = 'vencida')::int as criadas_vencidas,
+       count(*) filter (where c.status = 'vencida' and c.vence_em >= lim.ini and c.vence_em < lim.fim)::int as vencidas,
+       coalesce(sum(c.valor_centavos) filter (where c.status = 'vencida' and c.vence_em >= lim.ini and c.vence_em < lim.fim), 0)::bigint as vencido,
+       count(*) filter (where c.status = 'pendente')::int as aguardando,
+       coalesce(sum(c.valor_centavos) filter (where c.status = 'pendente'), 0)::bigint as aguardando_valor,
+       coalesce(sum(c.valor_centavos) filter (where c.status = 'paga' and c.origem = 'inbox' and c.paga_em >= lim.ini and c.paga_em < lim.fim), 0)::bigint as pela_equipe,
+       coalesce(sum(c.valor_centavos) filter (where c.status = 'paga' and c.origem in ('fluxo', 'ia') and c.paga_em >= lim.ini and c.paga_em < lim.fim), 0)::bigint as pela_automacao,
+       coalesce(sum(c.valor_centavos) filter (where c.status = 'paga' and c.origem not in ('inbox', 'fluxo', 'ia') and c.paga_em >= lim.ini and c.paga_em < lim.fim), 0)::bigint as por_outros
+  from public.cobrancas c, lim
+ where ${DO_ESCOPO_DA_COBRANCA}`
+
+const SQL_EXISTE_COBRANCA = `
+select exists (select 1 from public.cobrancas c where c.cliente_id = $1) as existe`
+
+export type RecebidoPeloChat = {
+  pagas: number
+  /** Centavos. */
+  recebido: number
+  segundosAtePagar: number | null
+  /** Das criadas no período com desfecho, quantas pagaram. Nulo sem nenhuma. */
+  taxaDePagamento: number | null
+  vencidas: number
+  vencido: number
+  aguardando: number
+  aguardandoValor: number
+  pelaEquipe: number
+  pelaAutomacao: number
+  porOutros: number
+}
+
+/** O recebido pelo chat no período. Tabela ausente (antes da 0141) é zero. */
+export async function recebidoPeloChat(
+  clienteId: string,
+  periodo: Periodo,
+  responsaveis: Responsaveis,
+): Promise<RecebidoPeloChat | null> {
+  try {
+    const { rows } = await bancoDeDados().query(SQL_DO_RECEBIDO, parametros(clienteId, periodo, responsaveis, null).slice(0, 4))
+    const r = rows[0] as Record<string, unknown>
+    const comDesfecho = Number(r.criadas_pagas) + Number(r.criadas_vencidas)
+    return {
+      pagas: Number(r.pagas),
+      recebido: Number(r.recebido),
+      segundosAtePagar: numeroOuNulo(r.segundos_ate_pagar),
+      taxaDePagamento: comDesfecho > 0 ? Number(r.criadas_pagas) / comDesfecho : null,
+      vencidas: Number(r.vencidas),
+      vencido: Number(r.vencido),
+      aguardando: Number(r.aguardando),
+      aguardandoValor: Number(r.aguardando_valor),
+      pelaEquipe: Number(r.pela_equipe),
+      pelaAutomacao: Number(r.pela_automacao),
+      porOutros: Number(r.por_outros),
+    }
+  } catch (erro) {
+    if (erro instanceof Error && /relation "public\.cobrancas" does not exist/.test(erro.message)) return null
+    throw erro
+  }
+}
+
+/** A conta já cobrou alguma vez pelo chat? Decide se o bloco aparece. */
+export async function existeCobranca(clienteId: string): Promise<boolean> {
+  try {
+    const { rows } = await bancoDeDados().query(SQL_EXISTE_COBRANCA, [clienteId])
+    return Boolean((rows[0] as { existe?: boolean } | undefined)?.existe)
+  } catch {
+    return false
+  }
+}

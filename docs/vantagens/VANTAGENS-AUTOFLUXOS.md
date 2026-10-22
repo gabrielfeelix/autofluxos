@@ -19,6 +19,10 @@ aqui fica o que o cliente ganha.
   compra, não só quem clica. *(21/out/2026)*
 - **Agenda pronta para estúdio e clínica.** Com a Verandi, o cliente marca,
   desmarca e entra na lista de espera pela conversa.
+- **Marcar horário em dois toques, dentro do WhatsApp.** Um formulário do
+  próprio WhatsApp abre com os dias e os horários livres da agenda; a pessoa
+  escolhe, confirma e a vaga já está garantida na Verandi, sem digitar data
+  nem trocar dez mensagens. *(22/out/2026)*
 - **Loja de verdade dentro do chat.** Com Magento: estoque, frete por CEP,
   cupom, consulta de pedido e rastreio sem sair do WhatsApp.
 - **Preço na página e começa no mesmo dia.** Sem projeto de implantação, sem
@@ -91,6 +95,9 @@ aqui fica o que o cliente ganha.
   (agendar, liberar o pedido). Se não pagar no prazo, segue por outro caminho
   ou vai para a equipe resgatar. O valor é o do catálogo, nunca um número
   inventado pela IA. *(22/out/2026)*
+- **Quanto entrou pelo chat**: em Análise > Vendas, o recebido por Pix e
+  link, quantas cobranças são pagas, em quanto tempo, quanto venceu sem pagar e
+  quanto a automação vendeu sozinha. *(22/out/2026)*
 - **Pix dentro do WhatsApp**: a cobrança chega como pedido do próprio
   WhatsApp, com o valor e o botão "Copiar código Pix", e ganha o selo de pago
   quando o dinheiro cai. Nenhuma plataforma pequena no Brasil faz isso.

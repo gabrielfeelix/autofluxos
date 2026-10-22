@@ -40,6 +40,7 @@ import {
 import { acharCliente } from '@/server/repos/clientes'
 import { listarQuadros } from '@/server/repos/quadros'
 import { responsaveisDoEscopo, type Responsaveis } from '@/server/repos/relatorios'
+import { existeCobranca, recebidoPeloChat, type RecebidoPeloChat } from '@/server/repos/analise-de-vendas'
 import { membrosDaConta } from '@/server/repos/usuarios'
 
 export const dynamic = 'force-dynamic'
@@ -128,7 +129,19 @@ export default async function Pagina({
         : { dias: String(periodo.atalho) }
   const doFunil: Record<string, string> = quadroId ? { funil: quadroId } : {}
 
-  const blocos = temNegocio
+  // Recebido pelo chat: é dinheiro, então só para quem lê valores, e só
+  // depois da primeira cobrança. Conta que vende só pelo chat, sem negócio
+  // nenhum no funil, também tem tela.
+  const temCobranca = podeVerValor && (await existeCobranca(clienteId))
+  const doChat = temCobranca
+    ? blocoDoRecebido(
+        await recebidoPeloChat(cliente.id, periodo, responsaveis),
+        await recebidoPeloChat(cliente.id, anterior, responsaveis),
+        cliente.id,
+      )
+    : null
+
+  const deNegocios = temNegocio
     ? await blocosDeVendas({
         clienteId: cliente.id,
         periodo,
@@ -140,6 +153,8 @@ export default async function Pagina({
         contaInteira,
       })
     : []
+  // Logo depois dos números do período: é a outra metade do que entrou.
+  const blocos = doChat ? [...deNegocios.slice(0, 1), doChat, ...deNegocios.slice(1)] : deNegocios
   const arranjo = await arranjoDaAnalise('vendas')
 
   return (
@@ -174,7 +189,7 @@ export default async function Pagina({
           }
         />
 
-        {!temNegocio ? (
+        {!temNegocio && !temCobranca ? (
           <div className="mt-5">
             <VendasVazio clienteId={cliente.id} />
           </div>
@@ -232,6 +247,93 @@ function comoDiasAteGanhar(segundos: number | null): string {
   if (dias === null) return 'sem dado'
   if (dias === 0) return 'mesmo dia'
   return dias === 1 ? '1 dia' : `${dias} dias`
+}
+
+function comoTempoAtePagar(segundos: number | null): string {
+  if (segundos === null) return 'sem dado'
+  if (segundos < 3_600) return `${Math.max(1, Math.round(segundos / 60))} min`
+  if (segundos < 86_400) return `${Math.round(segundos / 3_600)} h`
+  const dias = Math.round(segundos / 86_400)
+  return dias === 1 ? '1 dia' : `${dias} dias`
+}
+
+const centavosEmReais = (centavos: number) => comoDinheiro(centavos / 100)
+
+/**
+ * Recebido pelo chat: Pix e link mandados na conversa (cobrança no chat).
+ * Separado dos negócios ganhos, para a mesma venda nunca contar duas vezes.
+ */
+function blocoDoRecebido(atual: RecebidoPeloChat | null, antes: RecebidoPeloChat | null, clienteId: string): Bloco | null {
+  if (!atual) return null
+  const taxa = atual.taxaDePagamento === null ? null : Math.round(atual.taxaDePagamento * 100)
+  const taxaAntes = antes?.taxaDePagamento == null ? null : Math.round(antes.taxaDePagamento * 100)
+  const origem = [
+    atual.pelaAutomacao > 0 ? `${centavosEmReais(atual.pelaAutomacao)} pela automação` : null,
+    atual.pelaEquipe > 0 ? `${centavosEmReais(atual.pelaEquipe)} pela equipe` : null,
+    atual.porOutros > 0 ? `${centavosEmReais(atual.porOutros)} pela API` : null,
+  ].filter(Boolean)
+  return {
+    id: 'recebido-pelo-chat',
+    titulo: 'Recebido pelo chat',
+    largura: 'inteira',
+    conteudo: (
+      <CaixaDoBloco
+        titulo="Recebido pelo chat"
+        subtitulo="Pix e link de pagamento mandados na conversa, pela equipe ou pela automação. Fica fora do ganho dos negócios."
+        acao={
+          <a href={`/clientes/${clienteId}/leads/cobrancas`} className="text-[12px] font-semibold text-primary hover:underline">
+            Ver cobranças
+          </a>
+        }
+      >
+        <div className="grid grid-cols-2 gap-3 pb-4 md:grid-cols-3 lg:gap-4 xl:grid-cols-5">
+          <Cartao
+            titulo="Recebido"
+            vazio={atual.pagas === 0 && 'Nada pago no período'}
+            valor={dinheiroCurto(atual.recebido / 100)}
+            detalhe={[`${atual.pagas} ${atual.pagas === 1 ? 'cobrança paga' : 'cobranças pagas'}`, ...origem].join(' · ')}
+            comparacao={<Mudanca atual={atual.recebido / 100} antes={(antes?.recebido ?? 0) / 100} formatar={comoDinheiro} />}
+            definicao="Soma das cobranças pagas no período, pelo dia em que o pagamento caiu. O dinheiro vai direto para a conta de recebimento da empresa."
+          />
+          <Cartao
+            titulo="Taxa de pagamento"
+            vazio={taxa === null && 'Nenhuma cobrança com desfecho'}
+            valor={taxa === null ? 'sem dado' : `${taxa}%`}
+            medidor={taxa}
+            detalhe="das cobranças criadas no período que já pagaram ou venceram"
+            comparacao={<MudancaEmPontos atual={taxa} antes={taxaAntes} melhorQuando="sobe" />}
+            definicao="Das cobranças criadas no período que já tiveram desfecho, quantas foram pagas. Canceladas e as que ainda aguardam ficam fora da conta."
+          />
+          <Cartao
+            titulo="Tempo até pagar"
+            vazio={atual.segundosAtePagar === null && 'Nada pago no período'}
+            valor={comoTempoAtePagar(atual.segundosAtePagar)}
+            detalhe="média, do envio da cobrança ao pagamento"
+            comparacao={
+              atual.segundosAtePagar !== null && antes?.segundosAtePagar != null ? (
+                <MudancaDeTempo atual={atual.segundosAtePagar} antes={antes.segundosAtePagar} />
+              ) : undefined
+            }
+            definicao="Tempo médio entre criar a cobrança e o pagamento cair, entre as pagas no período."
+          />
+          <Cartao
+            titulo="Vencido sem pagar"
+            vazio={atual.vencidas === 0 && 'Nada venceu no período'}
+            valor={dinheiroCurto(atual.vencido / 100)}
+            detalhe={`${atual.vencidas} ${atual.vencidas === 1 ? 'cobrança' : 'cobranças'} para a equipe ir atrás`}
+            definicao="Cobranças que venceram no período sem pagamento. Quem pediu e não pagou é o contato que mais vale retomar."
+          />
+          <Cartao
+            titulo="Aguardando agora"
+            vazio={atual.aguardando === 0 && 'Nenhuma aguardando'}
+            valor={dinheiroCurto(atual.aguardandoValor / 100)}
+            detalhe={`${atual.aguardando} ${atual.aguardando === 1 ? 'cobrança no prazo' : 'cobranças no prazo'}`}
+            definicao="Cobranças enviadas que ainda estão dentro do prazo, hoje, independente do período escolhido."
+          />
+        </div>
+      </CaixaDoBloco>
+    ),
+  }
 }
 
 /**
