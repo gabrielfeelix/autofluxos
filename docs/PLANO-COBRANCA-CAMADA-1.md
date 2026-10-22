@@ -2,6 +2,8 @@
 
 Aprovado em 21/out/2026 com as 4 recomendações abaixo.
 
+**`0141` em produção desde 22/out/2026** (autorizada; ensaio em transação, depois aplicada pela Management API; `anon` e `authenticated` sem acesso, nenhuma função executável por `anon`). Ficha e Inbox mostram Cobrar e Cobranças para quem tem o recurso no plano (`8a64e7d5`).
+
 **Andamento (22/out, tarde):** etapa D no ar no código (`72ed55ce`): bloco
 Cobrar com saídas pagou e venceu, acordado por `aplicarPagamento` e pelo
 vencimento (`acordarFluxoDaCobranca`). Etapa E escrita: `order_details`
