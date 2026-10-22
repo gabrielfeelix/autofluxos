@@ -93,6 +93,9 @@ aqui fica o que o cliente ganha.
   WhatsApp, com o valor e o botão "Copiar código Pix", e ganha o selo de pago
   quando o dinheiro cai. Nenhuma plataforma pequena no Brasil faz isso.
   *(22/out/2026)*
+- **Orçamento de PC montado**: a IA consulta as peças com estoque do
+  montador da loja (processador, placa-mãe, memória, placa de vídeo), soma
+  o total e leva o cliente ao montador para fechar. *(22/out/2026)*
 
 ## Medir
 
