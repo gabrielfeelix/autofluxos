@@ -40,6 +40,11 @@ export type PedidoDeCobranca = {
     telefone: string | null
     email: string | null
   }
+  /**
+   * Pix Automático já autorizado (0145): o gateway debita sozinho no
+   * vencimento, sem o pagador abrir nada. Só o Asaas.
+   */
+  autorizacaoPix?: string | null
 }
 
 export type CobrancaCriada = {
@@ -65,13 +70,46 @@ export type PagamentoLido = {
   situacao: SituacaoDoPagamento
   valorCentavos: number
   pagaEm: Date | null
+  /** A assinatura do gateway que gerou este pagamento (cartão recorrente), se gerou. */
+  recorrencia?: string | null
+  /** O dia do vencimento, `AAAA-MM-DD`: diz de qual mês é o pagamento da assinatura. */
+  vencimento?: string | null
 }
+
+/** A mensalidade como o gateway precisa para cobrar sozinho (0145). */
+export type PedidoDeRecorrencia = {
+  /** O id da linha em `assinaturas`. */
+  referencia: string
+  valorCentavos: number
+  descricao: string
+  /** O primeiro vencimento, `AAAA-MM-DD`. */
+  primeiroVencimento: string
+  pagador: PedidoDeCobranca['pagador']
+}
+
+export type AdesaoCriada = {
+  /** A assinatura (cartão) ou a autorização (Pix Automático) no gateway. */
+  idNoGateway: string
+  /** Cartão: a fatura onde o pagador põe o cartão. */
+  link: string | null
+  /** Pix Automático: o QR que paga o primeiro mês e autoriza os seguintes. */
+  pixCopiaCola: string | null
+}
+
+export type SituacaoDaAdesao = 'aguardando' | 'ativa' | 'encerrada'
 
 export interface GatewayDePagamento {
   criarCobranca(acesso: AcessoAoGateway, pedido: PedidoDeCobranca): Promise<CobrancaCriada>
   lerPagamento(acesso: AcessoAoGateway, pagamentoId: string): Promise<PagamentoLido>
   /** Quem chama trata a falha: cancelar o que já foi pago dá erro, e está certo. */
   cancelarPagamento(acesso: AcessoAoGateway, pagamentoId: string): Promise<void>
+
+  /** Cartão recorrente: o gateway cobra todo mês no cartão salvo. Opcional por gateway. */
+  criarAssinaturaNoCartao?(acesso: AcessoAoGateway, pedido: PedidoDeRecorrencia): Promise<AdesaoCriada>
+  /** Pix Automático: o QR paga o primeiro mês e autoriza o débito dos próximos. */
+  criarAutorizacaoPix?(acesso: AcessoAoGateway, pedido: PedidoDeRecorrencia): Promise<AdesaoCriada>
+  lerAdesao?(acesso: AcessoAoGateway, modo: 'cartao' | 'pix_automatico', idNoGateway: string): Promise<SituacaoDaAdesao>
+  encerrarAdesao?(acesso: AcessoAoGateway, modo: 'cartao' | 'pix_automatico', idNoGateway: string): Promise<void>
 }
 
 /** "109,80" vira 10980 sem passar por ponto flutuante, que perde centavo em 0,1 + 0,2. */

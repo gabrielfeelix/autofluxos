@@ -1,7 +1,7 @@
 import 'server-only'
 import { asaas } from '@/channels/asaas'
 import { mercadoPago } from '@/channels/mercado-pago'
-import { NOME_DO_GATEWAY, type Gateway, type GatewayDePagamento } from '@/channels/pagamento'
+import { NOME_DO_GATEWAY, type Gateway, type GatewayDePagamento, type PedidoDeCobranca } from '@/channels/pagamento'
 import type { Canal, PedidoNativo } from '@/channels/types'
 import { paraCobrancaDaApi } from '@/core/api/cobrancas'
 import { cnpjValido, cpfValido } from '@/core/documentos'
@@ -207,6 +207,20 @@ function campoDaFicha(campos: Record<string, string>, padrao: RegExp): string | 
   return chave ? campos[chave]?.trim() || null : null
 }
 
+/** Quem paga, como o gateway pede, a partir da ficha. */
+export function pagadorDoLead(
+  lead: { nome: string | null; waId: string; campos: Record<string, string> },
+  documento: string | null,
+): PedidoDeCobranca['pagador'] {
+  return {
+    nome: lead.nome?.trim() || 'Cliente',
+    documento,
+    // Instagram e Telegram não têm telefone no `waId`.
+    telefone: /^\d{10,15}$/.test(lead.waId) ? lead.waId : null,
+    email: campoDaFicha(lead.campos, CAMPO_DE_EMAIL),
+  }
+}
+
 /** O CPF ou CNPJ válido que a ficha já tem, se tem. */
 export function documentoDaFicha(campos: Record<string, string>): string | null {
   return documentoValido(campoDaFicha(campos, CAMPO_DE_DOCUMENTO))
@@ -230,6 +244,8 @@ export type PedidoDeCobrancaDaConta = {
   /** A mensalidade e o mês (0145): o índice único barra a segunda do mesmo mês. */
   assinaturaId?: string | null
   competencia?: string | null
+  /** Pix Automático autorizado: o gateway debita no vencimento, sem Pix para mandar. */
+  autorizacaoPix?: string | null
 }
 
 export type ResultadoDaCriacao =
@@ -280,8 +296,9 @@ export async function criarCobranca(pedido: PedidoDeCobrancaDaConta): Promise<Re
         telefone: /^\d{10,15}$/.test(lead.waId) ? lead.waId : null,
         email: campoDaFicha(lead.campos, CAMPO_DE_EMAIL),
       },
+      autorizacaoPix: pedido.autorizacaoPix ?? null,
     })
-    if (!criada.pixCopiaCola && !criada.link) throw new Error(`o ${NOME_DO_GATEWAY[conexao.gateway]} não devolveu nem Pix nem link`)
+    if (!criada.pixCopiaCola && !criada.link && !pedido.autorizacaoPix) throw new Error(`o ${NOME_DO_GATEWAY[conexao.gateway]} não devolveu nem Pix nem link`)
     await completarCobranca(id, criada)
   } catch (erro) {
     await apagarCobrancaQueNaoSaiu(id)
@@ -332,8 +349,13 @@ export async function aplicarPagamento(
   const acesso = await acessoDaConexao(clienteId, gateway)
   if (!acesso) return null
   const lido = await gatewayDe(gateway).lerPagamento(acesso, pagamentoId)
-  if (!lido.referencia) return null
-  const cobranca = await acharCobranca(clienteId, lido.referencia)
+  let cobranca = lido.referencia ? await acharCobranca(clienteId, lido.referencia) : null
+  // Pagamento de assinatura no cartão: a referência é da mensalidade, e a
+  // cobrança do mês nasce aqui. Import tardio: `mensalidades` importa este arquivo.
+  if (!cobranca && lido.recorrencia) {
+    const { cobrancaDaRecorrencia } = await import('./mensalidades')
+    cobranca = await cobrancaDaRecorrencia(clienteId, gateway, lido)
+  }
   if (!cobranca || cobranca.gateway !== gateway) return null
 
   if (lido.situacao === 'paga') {

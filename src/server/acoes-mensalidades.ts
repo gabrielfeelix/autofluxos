@@ -15,7 +15,13 @@ import {
 import { acaoApagarTemplate, acaoCriarTemplate } from './acoes-transmissoes'
 import { reais } from './cobrancas'
 import { ENDERECO_DE_PAGAR } from './link-de-pagar'
-import { cobrarOMes } from './mensalidades'
+import { dentroDaJanela } from '@/channels/janela'
+import { autorDaPessoa } from '@/core/autor-da-mensagem'
+import type { ModoDeMensalidade } from '@/core/mensalidade'
+import { mandarAdesaoNaConversa } from './mandar-cobranca'
+import { aderirNoGateway, cobrarOMes, encerrarNoGateway } from './mensalidades'
+import { contextoDeResposta } from './repos/conversas'
+import { sessaoAtual } from './sessao'
 import { exigirCapacidade, meuAlcance, recusou } from './permissoes'
 import { recusaDoPlano } from './recursos-do-plano'
 import { acharAssinatura, inserirAssinatura, mudarStatusDaAssinatura, type Assinatura } from './repos/assinaturas'
@@ -33,12 +39,14 @@ import { listarTemplates } from './repos/templates'
  * navegador nunca define o valor de um plano.
  */
 
-export type ResultadoDaMensalidade = { ok: true; assinatura: Assinatura; cobrouAgora: boolean } | { ok: false; erro: string }
+export type ResultadoDaMensalidade =
+  | { ok: true; assinatura: Assinatura; cobrouAgora: boolean; adesaoEnviada?: boolean }
+  | { ok: false; erro: string }
 
 export async function acaoCriarMensalidade(
   clienteId: string,
   contatoId: string,
-  entrada: { produtoId?: string; valor?: string; descricao?: string; dia: number; antecedencia?: number },
+  entrada: { produtoId?: string; valor?: string; descricao?: string; dia: number; antecedencia?: number; modo?: ModoDeMensalidade },
 ): Promise<ResultadoDaMensalidade> {
   const acesso = await exigirCapacidade(clienteId, 'registrar_venda', 'proprios')
   if (recusou(acesso)) return { ok: false, erro: 'Sua função não permite criar mensalidade. Peça ao dono da conta.' }
@@ -51,7 +59,12 @@ export async function acaoCriarMensalidade(
 
   const dia = Math.trunc(entrada.dia)
   if (!(dia >= 1 && dia <= DIA_MAXIMO)) return { ok: false, erro: `O vencimento vai do dia 1 ao dia ${DIA_MAXIMO}.` }
-  const antecedencia = Math.trunc(entrada.antecedencia ?? ANTECEDENCIA_PADRAO)
+  const modo: ModoDeMensalidade = entrada.modo ?? 'pix_do_mes'
+  if (modo !== 'pix_do_mes' && conexao.gateway !== 'asaas') {
+    return { ok: false, erro: modo === 'cartao' ? 'Cartão recorrente por enquanto só pelo Asaas.' : 'Pix Automático só pelo Asaas.' }
+  }
+  // O Pix Automático exige a cobrança registrada uns dias antes do débito.
+  const antecedencia = Math.max(modo === 'pix_automatico' ? 3 : 0, Math.trunc(entrada.antecedencia ?? ANTECEDENCIA_PADRAO))
   if (!(antecedencia >= 0 && antecedencia <= ANTECEDENCIA_MAXIMA)) {
     return { ok: false, erro: `A cobrança sai de 0 a ${ANTECEDENCIA_MAXIMA} dias antes do vencimento.` }
   }
@@ -85,13 +98,36 @@ export async function acaoCriarMensalidade(
     valorCentavos,
     diaDoVencimento: dia,
     antecedenciaDias: antecedencia,
-    modo: 'pix_do_mes',
-    status: 'ativa',
+    modo,
+    status: modo === 'pix_do_mes' ? 'ativa' : 'aguardando',
     gateway: conexao.gateway,
     inicio: primeiraCompetencia(hoje, dia),
     criadaPor: autor,
   })
   await anotar(clienteId, contatoId, 'cobranca', { status: 'mensalidade_criada', valor: reais(valorCentavos), descricao }, autor)
+
+  // Cartão e Pix Automático: cria a adesão no gateway e manda o convite.
+  if (modo !== 'pix_do_mes') {
+    const adesao = await aderirNoGateway(assinatura)
+    if (!adesao.ok) {
+      await mudarStatusDaAssinatura(clienteId, assinatura.id, ['aguardando'], 'cancelada')
+      return adesao
+    }
+    const linkDeAdesao = adesao.link ?? adesao.pixCopiaCola
+    const contexto = await contextoDeResposta(clienteId, contatoId)
+    let adesaoEnviada = false
+    if (contexto && dentroDaJanela(contexto)) {
+      const quem = await sessaoAtual()
+      const enviada = await mandarAdesaoNaConversa(
+        contatoId,
+        contexto,
+        { modo, descricao, valorCentavos, link: adesao.link, pixCopiaCola: adesao.pixCopiaCola },
+        autorDaPessoa(quem?.usuario),
+      )
+      adesaoEnviada = enviada.ok
+    }
+    return { ok: true, assinatura: { ...assinatura, linkDeAdesao }, cobrouAgora: false, adesaoEnviada }
+  }
 
   // Já está no prazo deste mês: a primeira sai agora, sem esperar o relógio de amanhã.
   let cobrouAgora = false
@@ -119,6 +155,18 @@ export async function acaoMudarMensalidade(
   if (!(await acharLead(clienteId, assinatura.contatoId, await meuAlcance(clienteId)))) return { ok: false, erro: 'Mensalidade não encontrada.' }
 
   const passo = DE_PARA[acao]
+  // Cancelar para a cobrança no gateway antes: o cartão não pode seguir sendo cobrado.
+  if (acao === 'cancelar') {
+    try {
+      await encerrarNoGateway(assinatura)
+    } catch {
+      return { ok: false, erro: 'O gateway não encerrou a assinatura agora. Tente de novo.' }
+    }
+  }
+  // Pausar no cartão e no Pix Automático não para o gateway: só cancelar encerra.
+  if (acao === 'pausar' && assinatura.modo !== 'pix_do_mes') {
+    return { ok: false, erro: 'Cartão e Pix Automático não pausam: cancele e crie de novo quando voltar.' }
+  }
   const mudou = await mudarStatusDaAssinatura(clienteId, assinaturaId, [...passo.de], passo.para)
   if (!mudou) return { ok: true, status: (await acharAssinatura(clienteId, assinaturaId))?.status ?? assinatura.status }
   await anotar(

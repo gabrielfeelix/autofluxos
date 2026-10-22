@@ -135,3 +135,44 @@ export async function mandarLembretePorModelo(
     return 'erro'
   }
 }
+
+/**
+ * O convite para aderir à mensalidade (0145): o link do cartão, ou o Pix que
+ * paga o primeiro mês e autoriza o Pix Automático. Só dentro da janela; fora
+ * dela, quem atende copia da ficha e manda quando a pessoa voltar.
+ */
+export async function mandarAdesaoNaConversa(
+  contatoId: string,
+  contexto: ContextoDeResposta,
+  adesao: { modo: 'cartao' | 'pix_automatico'; descricao: string; valorCentavos: number; link: string | null; pixCopiaCola: string | null },
+  autor: AutorDaSaida | null,
+): Promise<ResultadoDoEnvio> {
+  const canal = await adaptadorDoCanal(contexto.canal)
+  const valor = `${reais(adesao.valorCentavos)} por mês`
+  const enviar = async (texto: string, payload: Record<string, unknown>, botao?: { rotulo: string; url: string }) => {
+    const comBotao = botao ? canal.enviarBotaoDeLink?.bind(canal) : undefined
+    const final = botao && !comBotao ? `${texto}\n${botao.url}` : texto
+    const id = await registrarSaida({ contatoId, sessaoId: contexto.sessaoId, texto: final, payload: { ...payload, ...(comBotao && botao ? { botao } : {}) }, autor })
+    await confirmarEntrega(id, comBotao && botao ? await comBotao(contexto.waId, texto, botao.rotulo, botao.url) : await canal.enviarTexto(contexto.waId, final))
+  }
+  try {
+    if (adesao.modo === 'cartao') {
+      if (!adesao.link) return { ok: false, erro: 'O gateway não devolveu o link do cartão.' }
+      await enviar(
+        `*${adesao.descricao}*\n${valor}, no cartão de crédito.\n\nToque em Cadastrar cartão e pague o primeiro mês. Nos próximos, a cobrança é automática no mesmo cartão.`,
+        { adesao: 'cartao' },
+        { rotulo: 'Cadastrar cartão', url: adesao.link },
+      )
+      return { ok: true }
+    }
+    if (!adesao.pixCopiaCola) return { ok: false, erro: 'O gateway não devolveu o QR do Pix Automático.' }
+    await enviar(
+      `*${adesao.descricao}*\n${valor}, no Pix Automático.\n\nCopie o código da próxima mensagem, pague no app do seu banco e confirme a autorização. Nos próximos meses o débito é automático, sem precisar pagar à mão.`,
+      { adesao: 'pix_automatico' },
+    )
+    await enviar(adesao.pixCopiaCola, { adesao: 'pix_automatico', pix: true })
+    return { ok: true }
+  } catch {
+    return { ok: false, erro: 'A mensalidade foi criada, mas a mensagem não saiu. Copie o link pela ficha.' }
+  }
+}

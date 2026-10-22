@@ -66,4 +66,12 @@ de 24 h é modelo de utilidade, pago.
   `app/pagar/[codigo]` (código assinado em `server/link-de-pagar.ts`); modelo
   `lembrete_de_cobranca` criado por Ajustes > Pagamentos; ficha > Cobranças >
   Mensalidades.
-- c2 (cartão recorrente), c3 (Pix Automático), c4 (ponte Verandi): próximas.
+- c2 e c3 (cartão recorrente e Pix Automático, Asaas): código no ar em 22/out,
+  escrito contra a documentação e sem teste real (falta a chave do sandbox).
+  Cartão: `POST /subscriptions` sem o cartão, o pagador põe na fatura do
+  primeiro mês; os pagamentos chegam com `subscription` e viram a cobrança do
+  mês em `cobrancaDaRecorrencia`. Pix Automático: jornada 3, modo `MANUAL`; o
+  relógio cria cada mês com `pixAutomaticAuthorizationId`. Adesão conferida no
+  gateway ao abrir a ficha e na passada diária (`sincronizarAdesao`). Cartão
+  pelo Mercado Pago (`preapproval`) espera a aplicação do Mercado Pago.
+- c4 (ponte Verandi): próxima.

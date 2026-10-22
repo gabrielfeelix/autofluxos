@@ -3,7 +3,8 @@
 import Link from 'next/link'
 import { useState } from 'react'
 import { Pilula, type TomDaPilula } from '@/components/design/pilula'
-import { ANTECEDENCIA_PADRAO, DIA_MAXIMO, type StatusDeMensalidade } from '@/core/mensalidade'
+import type { Gateway } from '@/channels/pagamento'
+import { ANTECEDENCIA_PADRAO, DIA_MAXIMO, type ModoDeMensalidade, type StatusDeMensalidade } from '@/core/mensalidade'
 import { acaoCriarMensalidade, acaoMudarMensalidade } from '@/server/acoes-mensalidades'
 import type { Assinatura } from '@/server/repos/assinaturas'
 import { IconeDaSecao, iconeDinheiro } from './icones'
@@ -22,6 +23,14 @@ const reais = (centavos: number) =>
 
 const LIVRE = '__livre'
 
+const MODOS: { id: ModoDeMensalidade; rotulo: string; detalhe: string; soAsaas: boolean }[] = [
+  { id: 'pix_do_mes', rotulo: 'Pix todo mês na conversa', detalhe: 'O Pix sai sozinho antes do vencimento, e a pessoa paga no app do banco.', soAsaas: false },
+  { id: 'pix_automatico', rotulo: 'Pix Automático', detalhe: 'A pessoa autoriza uma vez no banco, pagando o primeiro mês. Depois o débito é sozinho.', soAsaas: true },
+  { id: 'cartao', rotulo: 'Cartão de crédito', detalhe: 'A pessoa cadastra o cartão no primeiro pagamento. Depois a cobrança é sozinha.', soAsaas: true },
+]
+
+const NOME_DO_MODO: Record<ModoDeMensalidade, string> = { pix_do_mes: 'Pix todo mês', pix_automatico: 'Pix Automático', cartao: 'cartão' }
+
 /**
  * As mensalidades da pessoa, na aba Cobranças da ficha (0145).
  *
@@ -37,13 +46,18 @@ export function MensalidadesDoContato({
   iniciais,
   planos,
   conectado,
+  gateway,
 }: {
   clienteId: string
   contatoId: string
   iniciais: Assinatura[]
   planos: PlanoParaMensalidade[]
   conectado: boolean
+  gateway: Gateway | null
 }) {
+  const modos = MODOS.filter((m) => !m.soAsaas || gateway === 'asaas')
+  const [modo, setModo] = useState<ModoDeMensalidade>('pix_do_mes')
+  const [copiado, setCopiado] = useState<string | null>(null)
   const [lista, setLista] = useState(iniciais)
   const [criando, setCriando] = useState(false)
   const [plano, setPlano] = useState(planos[0]?.id ?? LIVRE)
@@ -67,13 +81,22 @@ export function MensalidadesDoContato({
         ...(livre ? { valor, descricao } : { produtoId: plano }),
         dia,
         antecedencia,
+        modo,
       })
       if (!r.ok) return setErro(r.erro)
       setLista((atual) => [r.assinatura, ...atual])
       setCriando(false)
       setValor('')
       setDescricao('')
-      setAviso(r.cobrouAgora ? 'A cobrança deste mês já saiu na conversa.' : null)
+      setAviso(
+        r.adesaoEnviada
+          ? 'O convite para aderir saiu na conversa. A mensalidade fica ativa quando a pessoa pagar o primeiro mês.'
+          : r.assinatura.status === 'aguardando'
+            ? 'Criada. Fora das 24 horas o convite não sai sozinho: copie o link de adesão abaixo e mande quando a pessoa responder.'
+            : r.cobrouAgora
+              ? 'A cobrança deste mês já saiu na conversa.'
+              : null,
+      )
     } catch {
       setErro('Não foi possível criar agora. Tente de novo.')
     } finally {
@@ -159,6 +182,27 @@ export function MensalidadesDoContato({
                   </label>
                 </div>
               )}
+              {modos.length > 1 && (
+                <fieldset className="flex flex-col gap-1">
+                  <legend className="mb-1 text-[11.5px] font-semibold text-soft">Como paga</legend>
+                  <div className="grid gap-1.5 sm:grid-cols-3">
+                    {modos.map((m) => (
+                      <label
+                        key={m.id}
+                        className={`flex cursor-pointer flex-col gap-0.5 rounded-[9px] border px-2.5 py-2 transition ${
+                          modo === m.id ? 'border-primary bg-primary-weak' : 'border-line hover:bg-surface-strong'
+                        }`}
+                      >
+                        <span className="flex items-center gap-1.5 text-[12.5px] font-semibold">
+                          <input type="radio" name="modo" value={m.id} checked={modo === m.id} onChange={() => setModo(m.id)} className="accent-[var(--primary)]" />
+                          {m.rotulo}
+                        </span>
+                        <span className="text-[11px] leading-4 text-dim">{m.detalhe}</span>
+                      </label>
+                    ))}
+                  </div>
+                </fieldset>
+              )}
               <div className="grid grid-cols-2 gap-2.5">
                 <label className="flex flex-col gap-1">
                   <span className="text-[11.5px] font-semibold text-soft">Vence todo dia</span>
@@ -185,10 +229,12 @@ export function MensalidadesDoContato({
                   </select>
                 </label>
               </div>
+              {modo === 'pix_do_mes' && (
               <p className="text-[11.5px] leading-4 text-dim">
                 Pix e link na conversa, todo mês. Se a pessoa não conversa há mais de 24 horas, vai pelo modelo de
                 lembrete, criado em Ajustes &gt; Pagamentos.
               </p>
+              )}
               {erro && (
                 <p role="alert" className="text-[12px] text-perigo">
                   {erro}
@@ -223,12 +269,29 @@ export function MensalidadesDoContato({
                   <div className="min-w-0 flex-1 basis-[200px]">
                     <p className="truncate text-[13px] font-semibold text-ink">{a.descricao}</p>
                     <p className="text-[11.5px] text-dim tabular-nums">
-                      {reais(a.valorCentavos)} por mês · vence todo dia {a.diaDoVencimento}
+                      {reais(a.valorCentavos)} por mês · vence todo dia {a.diaDoVencimento} · {NOME_DO_MODO[a.modo]}
                     </p>
                   </div>
                   <Pilula tom={STATUS[a.status].tom}>{STATUS[a.status].rotulo}</Pilula>
                   <span className="flex gap-3 text-[12px] font-semibold">
-                    {a.status === 'ativa' && (
+                    {a.status === 'aguardando' && a.linkDeAdesao && (
+                      <button
+                        type="button"
+                        onClick={async () => {
+                          try {
+                            await navigator.clipboard.writeText(a.linkDeAdesao!)
+                            setCopiado(a.id)
+                            setTimeout(() => setCopiado(null), 2000)
+                          } catch {
+                            setCopiado(null)
+                          }
+                        }}
+                        className="text-primary hover:underline"
+                      >
+                        {copiado === a.id ? 'Copiado' : a.modo === 'cartao' ? 'Copiar link do cartão' : 'Copiar Pix de adesão'}
+                      </button>
+                    )}
+                    {a.status === 'ativa' && a.modo === 'pix_do_mes' && (
                       <button type="button" onClick={() => void mudar(a, 'pausar')} className="text-soft hover:text-ink">
                         Pausar
                       </button>

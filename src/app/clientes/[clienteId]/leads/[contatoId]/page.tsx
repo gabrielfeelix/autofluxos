@@ -2,6 +2,7 @@ import { Miolo } from '@/components/design/miolo'
 import { exigirLeitura, meuAlcance, recusou } from '@/server/permissoes'
 import { listarCobrancas } from '@/server/repos/cobrancas'
 import { assinaturasDoContato } from '@/server/repos/assinaturas'
+import { sincronizarAdesao } from '@/server/mensalidades'
 import { listarProdutos } from '@/server/repos/produtos'
 import { AbaDeCobrancas, ResumoDeCobrancas } from '@/components/lead-crm/cobrancas-do-contato'
 import { recursoLiberado } from '@/server/recursos-do-plano'
@@ -190,13 +191,24 @@ export default async function Pagina({
       recursoLiberado(clienteId, 'integracoes'),
       exigirLeitura(clienteId, 'ler_valores', 'proprios'),
       conexaoAtiva(clienteId).catch(() => null),
-    ]).then(([noPlano, acesso, conexao]) => ({ visivel: noPlano && !recusou(acesso), conectado: conexao !== null })),
+    ]).then(([noPlano, acesso, conexao]) => ({
+      visivel: noPlano && !recusou(acesso),
+      conectado: conexao !== null,
+      gateway: conexao?.gateway ?? null,
+    })),
   ])
   if (!cliente || !lead) notFound()
   // As mensalidades e os planos do catálogo (0145): só quem vê a aba Cobranças.
   const [mensalidades, planos] = cobranca.visivel
     ? await Promise.all([
-        assinaturasDoContato(clienteId, contatoId).catch(() => []),
+        // Aguardando adesão (cartão, Pix Automático): confere no gateway ao abrir.
+        assinaturasDoContato(clienteId, contatoId)
+          .then((as) =>
+            Promise.all(
+              as.map(async (a) => (a.status === 'aguardando' ? { ...a, status: await sincronizarAdesao(a).catch(() => a.status) } : a)),
+            ),
+          )
+          .catch(() => []),
         listarProdutos(clienteId)
           .then((ps) =>
             ps
@@ -662,6 +674,7 @@ export default async function Pagina({
                         conectado={cobranca.conectado}
                         mensalidades={mensalidades}
                         planos={planos}
+                        gateway={cobranca.gateway}
                       />
                     ),
                   },

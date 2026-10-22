@@ -8,6 +8,7 @@ import { IrParaAba } from './abas'
 import { IconeDaSecao, iconeDinheiro } from './icones'
 import { MensalidadesDoContato, type PlanoParaMensalidade } from './mensalidades-do-contato'
 import type { Assinatura } from '@/server/repos/assinaturas'
+import type { Gateway } from '@/channels/pagamento'
 
 const STATUS: Record<StatusDeCobranca, { rotulo: string; tom: TomDaPilula }> = {
   pendente: { rotulo: 'Aguardando', tom: 'aviso' },
@@ -150,6 +151,7 @@ export function AbaDeCobrancas({
   conectado,
   mensalidades,
   planos,
+  gateway,
 }: {
   clienteId: string
   contatoId: string
@@ -157,9 +159,10 @@ export function AbaDeCobrancas({
   conectado: boolean
   mensalidades: Assinatura[]
   planos: PlanoParaMensalidade[]
+  gateway: Gateway | null
 }) {
   const blocoDeMensalidades = (
-    <MensalidadesDoContato clienteId={clienteId} contatoId={contatoId} iniciais={mensalidades} planos={planos} conectado={conectado} />
+    <MensalidadesDoContato clienteId={clienteId} contatoId={contatoId} iniciais={mensalidades} planos={planos} conectado={conectado} gateway={gateway} />
   )
   const [copiado, setCopiado] = useState<string | null>(null)
 

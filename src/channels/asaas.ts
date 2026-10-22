@@ -253,6 +253,8 @@ const pagamentoSchema = z.object({
   paymentDate: z.string().nullish(),
   clientPaymentDate: z.string().nullish(),
   confirmedDate: z.string().nullish(),
+  subscription: z.string().nullish(),
+  dueDate: z.string().nullish(),
 })
 
 const pixSchema = z.object({ payload: z.string().min(1) })
@@ -290,7 +292,18 @@ function paraPagamentoLido(bruto: unknown): PagamentoLido {
     situacao,
     valorCentavos: centavosDeReais(p.value),
     pagaEm: situacao === 'paga' ? diaParaData(p.clientPaymentDate ?? p.paymentDate ?? p.confirmedDate) ?? new Date() : null,
+    recorrencia: p.subscription ?? null,
+    vencimento: p.dueDate ?? null,
   }
+}
+
+const assinaturaSchema = z.object({ id: z.string().min(1), status: z.string().nullish(), deleted: z.boolean().nullish() })
+const pagamentosDaAssinaturaSchema = z.object({ data: z.array(pagamentoSchema) })
+const autorizacaoSchema = z.object({ id: z.string().min(1), status: z.string(), payload: z.string().nullish() })
+
+/** O `contractId` do Pix Automático: até 35 caracteres. O uuid sem hífens cabe. */
+function contratoDe(referencia: string): string {
+  return referencia.replace(/-/g, '').slice(0, 35)
 }
 
 export const asaas: GatewayDePagamento = {
@@ -309,8 +322,11 @@ export const asaas: GatewayDePagamento = {
         dueDate: diaEmSaoPaulo(pedido.venceEm),
         description: pedido.descricao.slice(0, 500),
         externalReference: pedido.referencia,
+        // Pix Automático autorizado: o banco do pagador debita no vencimento.
+        ...(pedido.autorizacaoPix ? { billingType: 'PIX', pixAutomaticAuthorizationId: pedido.autorizacaoPix } : {}),
       }),
     )
+    if (pedido.autorizacaoPix) return { pagamentoId: criado.id, preferenciaId: null, pixCopiaCola: null, link: criado.invoiceUrl ?? null }
     // Conta sem chave Pix cadastrada não gera QR. A cobrança vale pelo link.
     const pix = pixSchema.safeParse(
       await chamar(acesso, 'GET', `/payments/${encodeURIComponent(criado.id)}/pixQrCode`).catch(() => null),
@@ -329,6 +345,79 @@ export const asaas: GatewayDePagamento = {
 
   async cancelarPagamento(acesso, pagamentoId) {
     await chamar(acesso, 'DELETE', `/payments/${encodeURIComponent(pagamentoId)}`)
+  },
+
+  /**
+   * Cartão recorrente (0145): a assinatura nasce sem o cartão, e o pagador o
+   * informa na fatura do primeiro mês; dali em diante o Asaas cobra no
+   * vencimento. Os pagamentos chegam pelo mesmo aviso, com `subscription`, e
+   * `aplicarPagamento` acha a mensalidade por ele.
+   */
+  async criarAssinaturaNoCartao(acesso, pedido) {
+    const cliente = await clienteNoAsaas(acesso, pedido.pagador)
+    const criada = assinaturaSchema.parse(
+      await chamar(acesso, 'POST', '/subscriptions', {
+        customer: cliente,
+        billingType: 'CREDIT_CARD',
+        cycle: 'MONTHLY',
+        value: pedido.valorCentavos / 100,
+        nextDueDate: pedido.primeiroVencimento,
+        description: pedido.descricao.slice(0, 500),
+        externalReference: pedido.referencia,
+      }),
+    )
+    const pagamentos = pagamentosDaAssinaturaSchema.safeParse(
+      await chamar(acesso, 'GET', `/subscriptions/${encodeURIComponent(criada.id)}/payments`).catch(() => null),
+    )
+    return { idNoGateway: criada.id, link: pagamentos.success ? (pagamentos.data.data[0]?.invoiceUrl ?? null) : null, pixCopiaCola: null }
+  },
+
+  /**
+   * Pix Automático, jornada 3 (0145): um QR só paga o primeiro mês e autoriza
+   * os próximos. Modo `MANUAL`: a cobrança de cada mês é nossa, criada pelo
+   * relógio com `pixAutomaticAuthorizationId`, e por isso volta com a nossa
+   * referência como qualquer outra.
+   */
+  async criarAutorizacaoPix(acesso, pedido) {
+    const cliente = await clienteNoAsaas(acesso, pedido.pagador)
+    const criada = autorizacaoSchema.parse(
+      await chamar(acesso, 'POST', '/pix/automatic/authorizations', {
+        customerId: cliente,
+        frequency: 'MONTHLY',
+        contractId: contratoDe(pedido.referencia),
+        startDate: pedido.primeiroVencimento,
+        value: pedido.valorCentavos / 100,
+        description: pedido.descricao.slice(0, 35),
+        paymentCreationMode: 'MANUAL',
+        immediateQrCode: {
+          expirationSeconds: 3 * 24 * 3600,
+          originalValue: pedido.valorCentavos / 100,
+          description: pedido.descricao.slice(0, 35),
+        },
+      }),
+    )
+    return { idNoGateway: criada.id, link: null, pixCopiaCola: criada.payload ?? null }
+  },
+
+  async lerAdesao(acesso, modo, idNoGateway) {
+    if (modo === 'cartao') {
+      const a = assinaturaSchema.parse(await chamar(acesso, 'GET', `/subscriptions/${encodeURIComponent(idNoGateway)}`))
+      if (a.deleted || a.status === 'INACTIVE' || a.status === 'EXPIRED') return 'encerrada'
+      // Ativa no Asaas desde a criação; para nós, só depois do primeiro pagamento no cartão.
+      const pagos = pagamentosDaAssinaturaSchema.safeParse(
+        await chamar(acesso, 'GET', `/subscriptions/${encodeURIComponent(idNoGateway)}/payments`).catch(() => null),
+      )
+      return pagos.success && pagos.data.data.some((p) => situacaoDoAsaas(p.status) === 'paga') ? 'ativa' : 'aguardando'
+    }
+    const a = autorizacaoSchema.parse(await chamar(acesso, 'GET', `/pix/automatic/authorizations/${encodeURIComponent(idNoGateway)}`))
+    if (a.status === 'ACTIVE') return 'ativa'
+    if (a.status === 'CREATED') return 'aguardando'
+    return 'encerrada'
+  },
+
+  async encerrarAdesao(acesso, modo, idNoGateway) {
+    const caminho = modo === 'cartao' ? '/subscriptions/' : '/pix/automatic/authorizations/'
+    await chamar(acesso, 'DELETE', `${caminho}${encodeURIComponent(idNoGateway)}`)
   },
 }
 

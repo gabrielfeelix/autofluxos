@@ -141,13 +141,14 @@ export async function assinaturasDoContato(clienteId: string, contatoId: string)
   return (data as Linha[]).map(paraAssinatura)
 }
 
-/** As que o relógio cobra todo mês, de todas as contas, em páginas. */
+/** As que o relógio olha todo dia, de todas as contas, em páginas. */
 export async function assinaturasDoRelogio(depoisDe: string | null, limite: number): Promise<Assinatura[]> {
   let consulta = db()
     .from('assinaturas')
     .select(COLUNAS)
-    .eq('status', 'ativa')
-    .eq('modo', 'pix_do_mes')
+    // Ativas no Pix do mês e no Pix Automático, que o relógio cobra; e as que
+    // aguardam adesão, que ele confere no gateway.
+    .or('and(status.eq.ativa,modo.in.(pix_do_mes,pix_automatico)),status.eq.aguardando')
     .order('id', { ascending: true })
     .limit(limite)
   if (depoisDe) consulta = consulta.gt('id', depoisDe)
