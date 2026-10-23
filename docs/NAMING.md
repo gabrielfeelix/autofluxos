@@ -93,14 +93,52 @@ Delega (secretária virtual), Pilota.
 
 ## Finalistas até agora
 
-| Nome | Domínio | Observação |
-|---|---|---|
-| AutoFluxos | `autofluxos.com.br` livre | O nome a ser batido |
-| LeadVisto | `leadvisto.com.br` livre; `.com` com página padrão | Curto, ritmo do LeadOk. Fala do lead (lado CRM), não da autonomia |
-| Funilor | `.com.br` e `.com` livres | "Dos males o menor". Molde Agendor. Também puxa para o CRM |
+| # | Nome | Domínio | Observação |
+|---|---|---|---|
+| 1 | **IgniaChat** | `igniachat.com.br`, `igniachat.com` e `@igniachat` livres (23/out/2026) | Escolhido pelo Gabriel. "Ignia" é fogo, ignição, tração; o "Chat" diz onde tudo acontece, como o "desk" de Zendesk e Movidesk |
+| 2 | AutoFluxos | `autofluxos.com.br` livre | O nome a ser batido |
+| 3 | LeadVisto | `leadvisto.com.br` livre; `.com` com página padrão | Fala do lead (lado CRM), não da autonomia |
+| 4 | Funilor | `.com.br` e `.com` livres | "Dos males o menor". Também puxa para o CRM |
 
-Os dois finalistas novos nasceram antes do brief e falam do CRM, que nenhum
-cliente usa ainda. Reavaliar contra a essência (autonomia).
+### IgniaChat, o que foi conferido (23/out/2026)
+
+- **INPI:** nenhuma marca "IGNIA" nem "IGNIACHAT" no Brasil (busca exata no pePI).
+- **O que já tem dono:** `ignia.com.br` (pessoa física, desde 2024),
+  `ignia.com/.ai/.io/.app` e `@ignia`. Existe o fundo **IGNIA** (venture
+  capital, México, ~US$ 400 mi), sem marca no Brasil e fora do ramo de
+  software de atendimento: risco baixo.
+- **Cuidado de uso:** falar e mostrar sempre o nome inteiro. Quem disser só
+  "Ignia" vai digitar `ignia.com.br`, que é de outra pessoa.
+- **Pronúncia:** sem acento, a leitura natural é "ig-NÍ-a" (como Sofia), que
+  casa com o "IA" (IGN.IA). Escolher uma pronúncia e usar sempre a mesma em
+  anúncio e vídeo.
+- **Por que "Chat" no nome:** o diferencial é o chat no centro, com cobrança,
+  automação, IA, transcrição e CRM saindo da conversa. Os clientes descrevem o
+  produto como "atendente online" e ninguém usa o CRM ainda. "Chat" é palavra
+  de categoria (Omnichat, Chatwoot), então quem protege a marca é a raiz:
+  registrar **IGNIA** e **IGNIACHAT**.
+
+### Identidade visual proposta pelo Gabriel
+
+- **Fogo azul**: o símbolo é a chama, em azul (a cor que ele ama).
+- **Fundo azul** como base.
+- **Botão primário** em degradê de vermelho para laranja: o fogo de verdade
+  aparece na ação.
+
+### Alternativas na mesma linha (fogo, ignição, tração)
+
+Todas com `.com.br`, `.com` e `@` livres e a raiz sem marca no INPI
+(23/out/2026): **FlamiaChat** (flama + IA), **IgnitaChat** (ignite),
+**IgnioChat**, **TochiaChat** (tocha + IA), **VulciaChat**, **CaloraChat**.
+Caíram: FogiaChat ("fugia"), e raízes com marca no INPI: Brasia (6), Acenda
+(5), Tracia (3), Embria (7), Ardena (7), Ignea (7), Lampo (12), Fulgor (43).
+
+### Para registrar (só o Gabriel)
+
+1. `igniachat.com.br` e `igniachat.com` no Registro.br e num registrador .com.
+2. `@igniachat` no Instagram.
+3. INPI: **IGNIA** e **IGNIACHAT** nas classes 9 e 42 (35 se anunciar
+   serviços de marketing).
 
 ## Próximos passos
 
@@ -121,3 +159,8 @@ cliente usa ainda. Reavaliar contra a essência (autonomia).
 - Se o `.com` estiver ocupado, abrir o site para ver quem é.
 - Busca na web pelo nome com "software" e "CRM". A busca do agente é fraca:
   "não achou" não quer dizer que não existe.
+- INPI sem API oficial: o portal pePI responde a POST em
+  `busca.inpi.gov.br/pePI/servlet/MarcasServletController` (campos `marca`,
+  `buscaExata=sim`, `Action=searchMarca`, `tipoPesquisa=BY_MARCA_CLASSIF_BASICA`),
+  depois de abrir a sessão em `.../LoginController?action=login`. Marca com
+  acréscimo ("NubankChat") infringe igual (LPI art. 124, XIX): conferir a raiz.
