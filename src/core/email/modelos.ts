@@ -47,6 +47,92 @@ function so<T>(condicao: unknown, bloco: T): T[] {
 const MOTIVO_DE_SEGURANCA = 'Aviso de segurança da sua conta no AutoFluxos. Ele sai sempre, mesmo que tenha sido você.'
 const MOTIVO_DE_GESTAO = 'Você recebe este e-mail porque administra esta organização no AutoFluxos.'
 
+/**
+ * A régua da mensalidade em atraso (`server/passada-da-mensalidade.ts`), no
+ * desenho do mercado: lembrete gentil, avisos cada vez mais firmes com pelo
+ * menos três dias entre eles, e o corte em etapas. Um texto por etapa.
+ */
+export type MomentoDoAtraso = 'lembrete' | 'segundo' | 'final' | 'suspensa' | 'pausaAviso' | 'pausada' | 'cancelada'
+
+const SE_JA_PAGOU = 'Se já pagou, desconsidere: a confirmação pode levar algumas horas para chegar.'
+
+const ETAPAS_DO_ATRASO: Record<
+  MomentoDoAtraso,
+  {
+    tom: 'aviso' | 'perigo'
+    assunto: (organizacao: string) => string
+    previa: (proxima: string) => string
+    titulo: string
+    depoisDoVencimento: string
+    nota: (proxima: string) => string
+    fim: string
+  }
+> = {
+  lembrete: {
+    tom: 'aviso',
+    assunto: (o) => `Não identificamos o pagamento da mensalidade de ${o}`,
+    previa: () => 'Pode ter sido só um esquecimento: o link para pagar está aqui.',
+    titulo: 'Não identificamos o pagamento',
+    depoisDoVencimento: ' e ainda não aparece como paga. Pode ter sido só um esquecimento, ou um cartão recusado.',
+    nota: () => '',
+    fim: SE_JA_PAGOU,
+  },
+  segundo: {
+    tom: 'aviso',
+    assunto: (o) => `A mensalidade de ${o} continua em aberto`,
+    previa: () => 'Pague por cartão, Pix ou boleto, em poucos minutos.',
+    titulo: 'A mensalidade continua em aberto',
+    depoisDoVencimento: ' e continua em aberto.',
+    nota: () => 'Tudo segue funcionando normalmente por enquanto.',
+    fim: SE_JA_PAGOU,
+  },
+  final: {
+    tom: 'aviso',
+    assunto: (o) => `Último aviso: o acesso de ${o} ao painel será suspenso`,
+    previa: (d) => `Sem o pagamento, o painel é suspenso em ${d}.`,
+    titulo: 'Último aviso antes da suspensão',
+    depoisDoVencimento: ' e ainda não foi paga.',
+    nota: (d) => `Sem o pagamento, o acesso ao painel é suspenso em **${d}**. Os fluxos e os canais continuam atendendo.`,
+    fim: SE_JA_PAGOU,
+  },
+  suspensa: {
+    tom: 'perigo',
+    assunto: (o) => `O acesso de ${o} ao AutoFluxos foi suspenso por falta de pagamento`,
+    previa: () => 'O painel volta sozinho assim que o pagamento for confirmado.',
+    titulo: 'O acesso ao painel foi suspenso',
+    depoisDoVencimento: ', e o acesso da equipe ao painel foi suspenso.',
+    nota: (d) => `Os fluxos e os canais **não foram desligados**. Sem o pagamento, IA, transmissões e integrações pausam em **${d}**.`,
+    fim: 'O acesso volta sozinho assim que o pagamento for confirmado. Dúvidas: contato@4yu.com.br.',
+  },
+  pausaAviso: {
+    tom: 'perigo',
+    assunto: (o) => `IA e transmissões de ${o} vão pausar por falta de pagamento`,
+    previa: (d) => `Sem o pagamento, IA, transmissões e integrações pausam em ${d}.`,
+    titulo: 'IA e transmissões vão pausar',
+    depoisDoVencimento: ', e o painel continua suspenso.',
+    nota: (d) => `Em **${d}**, IA, transcrição, transmissões e integrações pausam. Os robôs sem IA seguem respondendo.`,
+    fim: 'Tudo volta sozinho assim que o pagamento for confirmado.',
+  },
+  pausada: {
+    tom: 'perigo',
+    assunto: (o) => `IA e transmissões de ${o} foram pausadas por falta de pagamento`,
+    previa: () => 'Nada foi apagado: tudo volta assim que o pagamento for confirmado.',
+    titulo: 'IA e transmissões pausadas',
+    depoisDoVencimento: '. IA, transcrição, transmissões e integrações foram pausadas.',
+    nota: (d) => `Nada foi apagado. Sem o pagamento, a assinatura é cancelada em **${d}**.`,
+    fim: 'Tudo volta sozinho assim que o pagamento for confirmado. Dúvidas: contato@4yu.com.br.',
+  },
+  cancelada: {
+    tom: 'perigo',
+    assunto: (o) => `A assinatura de ${o} no AutoFluxos foi cancelada`,
+    previa: () => 'Fale com a 4YU para retomar: nada foi apagado.',
+    titulo: 'A assinatura foi cancelada',
+    depoisDoVencimento: ', e depois de 60 dias sem pagamento a assinatura foi cancelada.',
+    nota: () => 'Nada foi apagado: fluxos, contatos e conversas continuam guardados.',
+    fim: 'Para retomar, escreva para contato@4yu.com.br.',
+  },
+}
+
 export const MODELOS = {
   // -------------------------------------------------------------------------
   // Conta
@@ -480,43 +566,39 @@ export const MODELOS = {
     },
   }),
 
-  mensalidadeAtrasada: definir<{ organizacao: string; valor: string; vencimento: string; momento: 'aviso' | 'suspensa'; suspendeEm: string; link: string }>({
+  mensalidadeAtrasada: definir<{
+    organizacao: string
+    valor: string
+    vencimento: string
+    momento: MomentoDoAtraso
+    /** A data da próxima etapa, por extenso: a suspensão, a pausa ou o cancelamento. */
+    proxima: string
+    link: string
+  }>({
     nome: 'Mensalidade em atraso',
     grupo: 'Plano',
-    montar: (p) =>
-      p.momento === 'aviso'
-        ? {
-            assunto: `A mensalidade de ${p.organizacao} está em atraso`,
-            previa: `Sem o pagamento, o acesso ao painel é suspenso em ${p.suspendeEm}.`,
-            selo: { texto: 'Plano', tom: 'aviso' },
-            titulo: 'A mensalidade está em atraso',
-            blocos: [
-              { tipo: 'texto', texto: `A mensalidade de **${p.organizacao}**, de **${p.valor}**, venceu em ${p.vencimento} e ainda não foi paga.` },
-              { tipo: 'nota', tom: 'aviso', texto: `Sem o pagamento, o acesso ao painel é suspenso em **${p.suspendeEm}**. Os fluxos e os canais continuam atendendo.` },
-              { tipo: 'botao', rotulo: 'Pagar a mensalidade', link: p.link },
-              { tipo: 'texto', texto: 'Se já pagou, desconsidere: a confirmação pode levar algumas horas para chegar.' },
-            ],
-            motivo: MOTIVO_DE_GESTAO,
-          }
-        : {
-            assunto: `O acesso de ${p.organizacao} ao AutoFluxos foi suspenso por falta de pagamento`,
-            previa: 'O painel volta sozinho assim que o pagamento for confirmado.',
-            selo: { texto: 'Plano', tom: 'perigo' },
-            titulo: 'O acesso ao painel foi suspenso',
-            blocos: [
-              { tipo: 'texto', texto: `A mensalidade de **${p.organizacao}**, de **${p.valor}**, venceu em ${p.vencimento}, e o acesso da equipe ao painel foi suspenso.` },
-              { tipo: 'nota', tom: 'aviso', texto: 'Os fluxos e os canais **não foram desligados**: as conversas em andamento seguem sendo atendidas.' },
-              { tipo: 'botao', rotulo: 'Pagar a mensalidade', link: p.link },
-              { tipo: 'texto', texto: 'O acesso volta sozinho assim que o pagamento for confirmado. Dúvidas: contato@4yu.com.br.' },
-            ],
-            motivo: MOTIVO_DE_GESTAO,
-          },
+    montar: (p) => {
+      const etapa = ETAPAS_DO_ATRASO[p.momento]
+      return {
+        assunto: etapa.assunto(p.organizacao),
+        previa: etapa.previa(p.proxima),
+        selo: { texto: 'Plano', tom: etapa.tom },
+        titulo: etapa.titulo,
+        blocos: [
+          { tipo: 'texto', texto: `A mensalidade de **${p.organizacao}**, de **${p.valor}**, venceu em ${p.vencimento}${etapa.depoisDoVencimento}` },
+          ...so(etapa.nota(p.proxima), { tipo: 'nota', tom: 'aviso', texto: etapa.nota(p.proxima) } as Bloco),
+          ...so(p.momento !== 'cancelada', { tipo: 'botao', rotulo: 'Pagar a mensalidade', link: p.link } as Bloco),
+          { tipo: 'texto', texto: etapa.fim },
+        ],
+        motivo: MOTIVO_DE_GESTAO,
+      }
+    },
     exemplo: {
       organizacao: 'MGM Pilates',
       valor: 'R$ 597,00',
       vencimento: '23 de outubro',
-      momento: 'aviso',
-      suspendeEm: '30 de outubro',
+      momento: 'final',
+      proxima: '2 de novembro',
       link: 'https://sandbox.asaas.com/i/exemplo',
     },
   }),

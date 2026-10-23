@@ -4,6 +4,7 @@ const asaas = vi.hoisted(() => ({
   mensalidadeConfigurada: vi.fn(() => true),
   cobrancaPorReferencia: vi.fn(async (): Promise<string | null> => null),
   criarCobrancaAvulsa: vi.fn(async () => 'pay_novo'),
+  cancelarAssinatura: vi.fn(async () => undefined),
 }))
 const repos = vi.hoisted(() => ({
   contasQueAssinam: vi.fn(),
@@ -67,26 +68,33 @@ beforeEach(() => {
   repos.faturasVencidasDeTodas.mockResolvedValue([])
 })
 
-describe('o atraso', () => {
-  it('antes do 5º dia, não faz nada', async () => {
+describe('a régua do atraso', () => {
+  const momento = () => (repos.enviarModelo.mock.calls.at(-1) as unknown[] | undefined)?.[2] as { momento: string; proxima: string } | undefined
+
+  it('no dia do vencimento, nada', async () => {
     repos.faturasVencidasDeTodas.mockResolvedValue([vencida('2026-10-20')])
-    const r = await passadaDaMensalidade(dia('2026-10-24'))
-    expect(r).toMatchObject({ avisos: 0, suspensas: 0 })
+    await passadaDaMensalidade(dia('2026-10-20'))
     expect(repos.enviarModelo).not.toHaveBeenCalled()
   })
 
-  it('no 5º dia, avisa por e-mail e não suspende', async () => {
+  it('no dia 1, lembrete gentil, sem travar nada', async () => {
     repos.faturasVencidasDeTodas.mockResolvedValue([vencida('2026-10-20')])
-    const r = await passadaDaMensalidade(dia('2026-10-25'))
-    expect(r).toMatchObject({ avisos: 1, suspensas: 0 })
-    expect(repos.enviarModelo).toHaveBeenCalledWith(expect.anything(), 'mensalidadeAtrasada', expect.objectContaining({ momento: 'aviso' }))
+    await passadaDaMensalidade(dia('2026-10-21'))
+    expect(momento()?.momento).toBe('lembrete')
     expect(repos.definirSuspensao).not.toHaveBeenCalled()
   })
 
-  it('no 7º dia, suspende e manda o link de pagar', async () => {
+  it('no dia 7, último aviso com a data da suspensão (dia 10)', async () => {
     repos.faturasVencidasDeTodas.mockResolvedValue([vencida('2026-10-20')])
-    const r = await passadaDaMensalidade(dia('2026-10-27'))
-    expect(r).toMatchObject({ suspensas: 1 })
+    await passadaDaMensalidade(dia('2026-10-27'))
+    expect(momento()).toMatchObject({ momento: 'final', proxima: '30 de outubro' })
+    expect(repos.definirSuspensao).not.toHaveBeenCalled()
+  })
+
+  it('no dia 10, suspende o painel e manda o link de pagar', async () => {
+    repos.faturasVencidasDeTodas.mockResolvedValue([vencida('2026-10-20')])
+    const r = await passadaDaMensalidade(dia('2026-10-30'))
+    expect(r).toMatchObject({ suspensas: 1, pausadas: 0 })
     expect(repos.definirSuspensao).toHaveBeenCalledWith('c1', true)
     expect(repos.gravarAssinatura).toHaveBeenCalledWith('c1', { estado: 'suspensa' })
     expect(repos.enviarModelo).toHaveBeenCalledWith(
@@ -96,12 +104,36 @@ describe('o atraso', () => {
     )
   })
 
-  it('conta já suspensa, pela 4YU ou antes, não é mexida', async () => {
-    repos.contasQueAssinam.mockResolvedValue([{ ...conta, suspensaEm: '2026-10-01T00:00:00Z' }])
+  it('passada perdida não pula etapa, e manda um e-mail só', async () => {
+    repos.faturasVencidasDeTodas.mockResolvedValue([vencida('2026-10-20')])
+    await passadaDaMensalidade(dia('2026-11-02'))
+    expect(repos.definirSuspensao).toHaveBeenCalledWith('c1', true)
+    expect(repos.enviarModelo).toHaveBeenCalledTimes(1)
+  })
+
+  it('no dia 30, pausa os recursos pagos', async () => {
+    repos.contasQueAssinam.mockResolvedValue([{ ...conta, estado: 'suspensa', suspensaEm: '2026-10-30T07:00:00Z' }])
     repos.faturasVencidasDeTodas.mockResolvedValue([vencida('2026-10-01')])
+    const r = await passadaDaMensalidade(dia('2026-10-31'))
+    expect(r).toMatchObject({ suspensas: 0, pausadas: 1 })
+    expect(repos.gravarAssinatura).toHaveBeenCalledWith('c1', { estado: 'pausada' })
+    expect(momento()?.momento).toBe('pausada')
+  })
+
+  it('no dia 60, cancela a assinatura no Asaas', async () => {
+    repos.contasQueAssinam.mockResolvedValue([{ ...conta, estado: 'pausada', suspensaEm: '2026-09-10T07:00:00Z' }])
+    repos.faturasVencidasDeTodas.mockResolvedValue([vencida('2026-09-01')])
+    const r = await passadaDaMensalidade(dia('2026-10-31'))
+    expect(r).toMatchObject({ canceladas: 1 })
+    expect(asaas.cancelarAssinatura).toHaveBeenCalledWith('sub_1')
+    expect(repos.gravarAssinatura).toHaveBeenCalledWith('c1', { assinaturaRef: null, estado: 'cancelada_por_atraso' })
+  })
+
+  it('conta já suspensa não é suspensa de novo', async () => {
+    repos.contasQueAssinam.mockResolvedValue([{ ...conta, suspensaEm: '2026-10-01T00:00:00Z' }])
+    repos.faturasVencidasDeTodas.mockResolvedValue([vencida('2026-10-15')])
     await passadaDaMensalidade(dia('2026-10-27'))
     expect(repos.definirSuspensao).not.toHaveBeenCalled()
-    expect(repos.gravarAssinatura).not.toHaveBeenCalled()
   })
 })
 

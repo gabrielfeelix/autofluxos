@@ -62,7 +62,7 @@ export default async function Pagina({ params }: { params: Promise<{ clienteId: 
     planoDaConta(clienteId),
     tamanhoDaEquipe(clienteId),
   ])
-  const temAssinatura = Boolean(assinatura?.assinaturaRef || assinatura?.estado === 'cancelada')
+  const temAssinatura = Boolean(assinatura?.assinaturaRef || assinatura?.estado?.startsWith('cancelada'))
   // Enquanto aguarda, o plano é o que está sendo comprado; depois, o em vigor.
   const plano = await planoVigente(assinatura?.estado === 'aguardando' && assinatura.plano ? assinatura.plano : planoAtual)
   const ciclo = assinatura?.ciclo ?? 'mensal'

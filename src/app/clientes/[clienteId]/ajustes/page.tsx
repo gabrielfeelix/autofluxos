@@ -418,7 +418,8 @@ function Cartao({
 function SeloDaAssinatura({ estado }: { estado: string | null }) {
   if (estado === 'ativa') return <Selo tom="ok">em dia</Selo>
   if (estado === 'aguardando') return <Selo tom="alerta">aguardando pagamento</Selo>
-  if (estado === 'atrasada' || estado === 'suspensa') return <Selo tom="perigo">em atraso</Selo>
+  if (estado === 'atrasada' || estado === 'suspensa' || estado === 'pausada') return <Selo tom="perigo">em atraso</Selo>
+  if (estado === 'cancelada_por_atraso') return <Selo tom="perigo">cancelada por atraso</Selo>
   if (estado === 'cancelada') return <Selo tom="neutro">cancelada</Selo>
   return <Selo tom="neutro">sem assinatura</Selo>
 }

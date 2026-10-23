@@ -176,9 +176,9 @@ export async function aplicarAvisoDaMensalidade(asaasId: string): Promise<void> 
         detalhes: { fatura: asaasId, ciclo: assinatura.ciclo },
       })
     }
-    // Suspensa só sai daqui por `reativarSeQuitou`, que confere as outras faturas.
-    if (assinatura.estado !== 'suspensa') await gravarAssinatura(clienteId, { estado: 'ativa' })
-  } else if (fatura.estado === 'vencida' && assinatura.estado !== 'suspensa') {
+    // Suspensa ou pausada só sai por `reativarSeQuitou`, que confere as outras faturas.
+    if (!ATRASO_QUE_TRAVA.has(assinatura.estado ?? '')) await gravarAssinatura(clienteId, { estado: 'ativa' })
+  } else if (fatura.estado === 'vencida' && !ATRASO_QUE_TRAVA.has(assinatura.estado ?? '')) {
     await gravarAssinatura(clienteId, { estado: 'atrasada' })
   }
 }
@@ -192,7 +192,7 @@ async function reativarSeQuitou(clienteId: string): Promise<void> {
   if (await temFaturaVencida(clienteId)) return
   const assinatura = await assinaturaDaConta(clienteId)
   if (assinatura?.estado === 'atrasada') await gravarAssinatura(clienteId, { estado: 'ativa' })
-  if (assinatura?.estado !== 'suspensa') return
+  if (!ATRASO_QUE_TRAVA.has(assinatura?.estado ?? '')) return
   const r = await definirSuspensao(clienteId, false)
   if (!r.ok) throw new Error(r.motivo ?? 'não foi possível reativar')
   await gravarAssinatura(clienteId, { estado: 'ativa' })
@@ -201,6 +201,9 @@ async function reativarSeQuitou(clienteId: string): Promise<void> {
 }
 
 const SISTEMA = { autorEmail: 'sistema@autofluxos', autorId: null }
+
+/** Os estados em que a régua travou algo (painel no dia 10, recursos no 30). */
+const ATRASO_QUE_TRAVA = new Set(['suspensa', 'pausada'])
 
 /**
  * Põe na assinatura o valor de hoje: o plano e a equipe. Chamada quando a
@@ -213,7 +216,7 @@ const SISTEMA = { autorEmail: 'sistema@autofluxos', autorId: null }
 export async function sincronizarAssinatura(clienteId: string): Promise<void> {
   if (!mensalidadeConfigurada()) return
   const assinatura = await assinaturaDaConta(clienteId)
-  if (!assinatura?.assinaturaRef || assinatura.estado === 'cancelada') return
+  if (!assinatura?.assinaturaRef || assinatura.estado?.startsWith('cancelada')) return
   const planoId = assinatura.estado === 'aguardando' && assinatura.plano ? assinatura.plano : await planoDaConta(clienteId)
   const plano = await planoVigente(planoId)
   const ciclo = assinatura.ciclo ?? 'mensal'

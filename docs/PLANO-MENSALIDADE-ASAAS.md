@@ -36,8 +36,12 @@ dele) é outra coisa e continua usando a conta Asaas de cada cliente.
 - **Atendente extra**: entra no valor da assinatura (R$ 69 cada).
 - **Subir de plano**: vale na hora, e o valor da assinatura é atualizado.
   **Descer de plano**: continua agendado para a virada do mês, como hoje.
-- **Atraso**: lembretes do Asaas. **Suspende no 7º dia de atraso**, com aviso
-  antes; reativa sozinho quando o pagamento entra.
+- **Atraso** (régua de 23/out/2026, pelo desenho do mercado: guias de cobrança
+  de SaaS, Stripe, Bling, Asaas): e-mail no dia 1, no 3 e último aviso no 7;
+  **painel suspenso no 10**; aviso no 25 e **IA, transmissões e integrações
+  pausadas no 30** (robô sem IA segue); **assinatura cancelada no 60**. Pagou,
+  volta sozinho (menos a cancelada, que a 4YU retoma). Quem está suspenso vê
+  o botão de pagar em `/contas`.
 - **Anual**: assinatura com ciclo anual, no preço de `precoAnual`.
 
 ## Fases

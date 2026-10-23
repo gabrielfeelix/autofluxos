@@ -1,6 +1,7 @@
 import 'server-only'
 import { cache } from 'react'
 import { RECURSOS_DO_PLANO, type RecursoDoPlano } from '@/core/planos'
+import { assinaturaDaConta } from './repos/faturas-da-conta'
 import { planoDaConta, testeDaConta } from './repos/plano'
 import { planoVigente } from './repos/planos'
 
@@ -22,8 +23,24 @@ import { planoVigente } from './repos/planos'
  * de `clients` e a tabela de planos, que já é cacheada.
  */
 export const recursosDaOrganizacao = cache(
-  async (clienteId: string): Promise<{ planoNome: string; recursos: RecursoDoPlano[]; testeEncerrado: boolean }> => {
-    const [plano, testeAte] = await Promise.all([planoDaConta(clienteId).then(planoVigente), testeDaConta(clienteId)])
+  async (
+    clienteId: string,
+  ): Promise<{ planoNome: string; recursos: RecursoDoPlano[]; testeEncerrado: boolean; pausadaPorAtraso: boolean }> => {
+    const [plano, testeAte, assinatura] = await Promise.all([
+      planoDaConta(clienteId).then(planoVigente),
+      testeDaConta(clienteId),
+      // Erro de leitura é "sem atraso": o lado de não travar o que funcionava.
+      assinaturaDaConta(clienteId).catch(() => null),
+    ])
+    /*
+     * Mensalidade com 30 dias de atraso (`passada-da-mensalidade.ts`): a mesma
+     * pausa do teste vencido. Robôs, Inbox e CRM seguem; IA, transcrição,
+     * transmissão, integração e API param, e voltam quando o pagamento entra.
+     * Cancelada por atraso continua pausada até a 4YU retomar.
+     */
+    if (assinatura?.estado === 'pausada' || assinatura?.estado === 'cancelada_por_atraso') {
+      return { planoNome: plano.nome, recursos: plano.recursos.filter((recurso) => recurso === 'crm'), testeEncerrado: false, pausadaPorAtraso: true }
+    }
     /*
      * Teste vencido sem plano escolhido (0128): os recursos pagos param, pela
      * mesma regra de quem perde recurso. Inbox, robôs e CRM seguem, porque
@@ -31,9 +48,9 @@ export const recursosDaOrganizacao = cache(
      * transmissão, integração, API). Escolher plano limpa `teste_ate`.
      */
     if (testeAte !== null && testeAte < hojeEmBrasilia()) {
-      return { planoNome: plano.nome, recursos: plano.recursos.filter((recurso) => recurso === 'crm'), testeEncerrado: true }
+      return { planoNome: plano.nome, recursos: plano.recursos.filter((recurso) => recurso === 'crm'), testeEncerrado: true, pausadaPorAtraso: false }
     }
-    return { planoNome: plano.nome, recursos: plano.recursos, testeEncerrado: false }
+    return { planoNome: plano.nome, recursos: plano.recursos, testeEncerrado: false, pausadaPorAtraso: false }
   },
 )
 
@@ -48,9 +65,12 @@ export async function recursoLiberado(clienteId: string, recurso: RecursoDoPlano
 
 /** A frase de recusa, a mesma em todo lugar que trava. Nulo = liberado. */
 export async function recusaDoPlano(clienteId: string, recurso: RecursoDoPlano): Promise<string | null> {
-  const { planoNome, recursos, testeEncerrado } = await recursosDaOrganizacao(clienteId)
+  const { planoNome, recursos, testeEncerrado, pausadaPorAtraso } = await recursosDaOrganizacao(clienteId)
   if (recursos.includes(recurso)) return null
   const rotulo = RECURSOS_DO_PLANO.find((item) => item.chave === recurso)?.rotulo ?? recurso
+  if (pausadaPorAtraso) {
+    return `A mensalidade está em atraso, e ${rotulo} ficou pausado. Pague em Configurações > Faturas para religar na hora.`
+  }
   if (testeEncerrado) {
     return `O teste grátis terminou, e ${rotulo} ficou pausado. Escolha um plano em Configurações > Plano e consumo para religar.`
   }

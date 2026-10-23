@@ -4,6 +4,7 @@ import { LogoDoCliente } from '@/components/design/logo-cliente'
 import { Marca } from '@/components/design/marca'
 import { ModalFormulario, RotuloCampo } from '@/components/design/modal-formulario'
 import { acaoCriarCompanhia, acaoSair, acaoTrocarDeCompanhia } from '@/server/acoes-conta'
+import { AvisosDeMensalidade } from '@/components/conta/avisos-de-mensalidade'
 import { contasDoUsuario, ehAdminDaPlataforma, exigirUsuario } from '@/server/sessao'
 import { ROTULO_DO_PAPEL } from '@/core/permissoes'
 import { quando } from '@/lib/quando'
@@ -100,6 +101,8 @@ export default async function Contas() {
             )}
           </p>
         </header>
+
+        <AvisosDeMensalidade contas={contas} />
 
         {contas.length === 0 ? (
           <section className="app-card overflow-hidden">
