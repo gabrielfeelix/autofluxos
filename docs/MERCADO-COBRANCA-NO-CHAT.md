@@ -165,3 +165,19 @@ conector de loja virtual quando um cliente pedir.
 - Se o limite de 10 subcontas do Asaas em "avaliação regulatória" ainda vale.
 - Preço atual de vários sistemas de nicho (páginas de preço fora do ar).
 - Como a Nuvemshop e a VTEX implementam o Pix no chat por baixo.
+
+## Maquininhas: PagBank, InfinitePay e Stone (23/out/2026)
+
+A pergunta para cada uma: o dono consegue ligar a conta dele aqui, e o sistema
+fica sabendo sozinho quando o pagamento entra?
+
+| Gateway | Como liga a conta do dono | Aviso de pago | Serve? |
+|---|---|---|---|
+| [InfinitePay](https://www.infinitepay.io/checkout-documentacao) | só a InfiniteTag (o @ da conta), sem chave | `webhook_url` por cobrança, sem assinatura; conferir por `payment_check` | sim: Pix grátis para o dono, cartão em até 12x; sem recorrência |
+| PagBank | token de integração gerado pelo dono no portal ([Alterdata](https://ajuda.alterdata.com.br/esbdc/tema-eextratos/eextratos-como-obter-o-token-no-pagbank)); o PagBank Connect para parceiros não foi confirmado na documentação oficial | notificação de pagamento existe, formato não confirmado | provável, como o Asaas (colar chave) |
+| Stone / Ton | link de pagamento só pelo app ([Stone](https://conteudo.stone.com.br/link-de-pagamento-como-gerar-conta-stone/)); a API achada é a de maquininha (AutoTEF) | não para link | não, até haver API de link para parceiro |
+
+Ordem, se um cliente pedir: **InfinitePay** (ligar é digitar o @, Pix sem
+taxa, muito usada por quem tem maquininha) e depois **PagBank**. Na
+InfinitePay o aviso não prova de onde veio: como no Asaas, o pagamento é
+relido (`payment_check`) antes de a cobrança mudar.
