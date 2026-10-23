@@ -24,7 +24,12 @@ export async function FaixaDoPlano({ clienteId }: { clienteId: string }) {
   const vencida = await faturaVencida(clienteId)
   if (vencida) {
     return (
-      <FaixaFechavel chave={`fatura:${vencida.id}`} href={vencida.link ?? href} tom="aviso" rotulo={vencida.link ? 'Pagar agora' : undefined}>
+      <FaixaFechavel
+        chave={`fatura:${vencida.id}`}
+        href={vencida.link ?? `/clientes/${clienteId}/ajustes/faturas`}
+        tom="aviso"
+        rotulo={vencida.link ? 'Pagar agora' : 'Ver faturas'}
+      >
         A mensalidade de {reaisDeCentavos(vencida.valorCentavos)} venceu em {diaPorExtenso(vencida.vencimento)}. Pague para a
         organização não ser suspensa.
       </FaixaFechavel>

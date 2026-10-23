@@ -1,6 +1,8 @@
 'use client'
 
+import Link from 'next/link'
 import { useState, useTransition } from 'react'
+import { Modal } from '@/components/design/modal'
 import {
   acharPlano as acharPlanoDoCodigo,
   type Plano,
@@ -47,13 +49,20 @@ export function EscolhaDePlano({
   assinar,
   assinatura = null,
   trocaDireta = false,
+  faturasHref = null,
 }: {
   /**
    * Assinar pelo Asaas da 4YU (docs/PLANO-MENSALIDADE-ASAAS.md). Ausente
    * quando a mensalidade não está liberada para esta pessoa: aí vale o pedido
    * de troca, como antes.
    */
-  assinar?: (plano: IdDoPlano, ciclo: CicloDeCobranca) => Promise<{ ok: true; link: string } | { ok: false; erro: string }>
+  assinar?: (
+    plano: IdDoPlano,
+    ciclo: CicloDeCobranca,
+    dados?: { documento?: string; email?: string },
+  ) => Promise<{ ok: true; link: string } | { ok: false; erro: string; falta?: ('documento' | 'email')[] }>
+  /** A página de Faturas, quando a conta já tem assinatura. */
+  faturasHref?: string | null
   /** A assinatura no Asaas, quando existe (0147). */
   assinatura?: { estado: string | null; plano: IdDoPlano | null; ciclo: CicloDeCobranca | null } | null
   /** Quantos atendentes a organização tem: o plano compara com `atendentes` (0128). */
@@ -135,22 +144,29 @@ export function EscolhaDePlano({
   const modoAssinar = Boolean(assinar) && !assinaturaAtiva
   const aguardando = assinatura?.estado === 'aguardando' && assinatura.plano ? assinatura : null
   const [abrindo, setAbrindo] = useState<IdDoPlano | null>(null)
+  // O Asaas pede CNPJ ou CPF e e-mail; quando faltam no cadastro, o modal pede aqui.
+  const [faltando, setFaltando] = useState<{ plano: IdDoPlano; campos: ('documento' | 'email')[]; erro: string | null } | null>(null)
 
   // Otimista: o botão já diz "Abrindo o pagamento" e a página do Asaas abre
   // na mesma aba. Recusa volta o botão, com o motivo.
-  function abrirPagamento(desejado: IdDoPlano) {
+  function abrirPagamento(desejado: IdDoPlano, dados?: { documento?: string; email?: string }) {
     if (!assinar) return
     setErro(null)
     setAbrindo(desejado)
     const cicloDoPlano = anualDoPlano(acharPlano(desejado)) ? ciclo : 'mensal'
     comecar(async () => {
       try {
-        const r = await assinar(desejado, cicloDoPlano)
+        const r = await assinar(desejado, cicloDoPlano, dados)
         if (r.ok) {
           window.location.assign(r.link)
           return
         }
-        setErro(r.erro)
+        if (r.falta?.length) {
+          setFaltando({ plano: desejado, campos: r.falta, erro: dados ? r.erro : null })
+        } else {
+          setFaltando(null)
+          setErro(r.erro)
+        }
       } catch {
         setErro('não foi possível abrir o pagamento agora')
       }
@@ -214,6 +230,11 @@ export function EscolhaDePlano({
           </div>
           <p className="text-right text-[13px] text-muted">
             {reais(contrato.precoContratado ?? plano.preco)} por mês
+            {faturasHref && (
+              <Link href={faturasHref} className="block text-[12px] font-semibold text-primary hover:underline">
+                Ver faturas
+              </Link>
+            )}
             {contrato.precoAgendado !== null && contrato.precoAgendadoPara && (
               <span className="block text-[11.5px] text-aviso">
                 passa a {reais(contrato.precoAgendado)} em {diaPorExtenso(contrato.precoAgendadoPara)}
@@ -432,6 +453,16 @@ export function EscolhaDePlano({
           <p role="alert" className="mt-3 text-[12.5px] text-perigo">
             {erro}
           </p>
+        )}
+
+        {faltando && (
+          <DadosDeCobranca
+            campos={faltando.campos}
+            erro={faltando.erro}
+            enviando={rodando}
+            aoFechar={() => setFaltando(null)}
+            aoEnviar={(dados) => abrirPagamento(faltando.plano, dados)}
+          />
         )}
 
         <p className="mt-4 max-w-[650px] text-[12px] leading-6 text-dim">{TARIFA_DA_META}</p>
@@ -658,5 +689,88 @@ function Cartao({
         </button>
       )}
     </article>
+  )
+}
+
+/**
+ * O que o Asaas exige para emitir a cobrança e a nota fiscal, pedido no
+ * próprio Assinar. Grava no cadastro da organização: na próxima vez não pede.
+ */
+function DadosDeCobranca({
+  campos,
+  erro,
+  enviando,
+  aoFechar,
+  aoEnviar,
+}: {
+  campos: ('documento' | 'email')[]
+  erro: string | null
+  enviando: boolean
+  aoFechar: () => void
+  aoEnviar: (dados: { documento?: string; email?: string }) => void
+}) {
+  const [documento, setDocumento] = useState('')
+  const [email, setEmail] = useState('')
+  return (
+    <Modal
+      aberto
+      aoFechar={aoFechar}
+      titulo="Dados para a cobrança"
+      descricao="Vão para a cobrança e para a nota fiscal, e ficam salvos em Dados da organização."
+      largura={440}
+    >
+      <form
+        className="flex flex-col gap-4"
+        onSubmit={(e) => {
+          e.preventDefault()
+          aoEnviar({
+            ...(campos.includes('documento') ? { documento } : {}),
+            ...(campos.includes('email') ? { email } : {}),
+          })
+        }}
+      >
+        {campos.includes('documento') && (
+          <label className="flex flex-col gap-1.5">
+            <span className="text-[12.5px] font-semibold text-soft">CNPJ ou CPF</span>
+            <input
+              required
+              inputMode="numeric"
+              autoComplete="off"
+              value={documento}
+              onChange={(e) => setDocumento(e.target.value)}
+              placeholder="Exemplo: 12.345.678/0001-90"
+              className="app-field px-[13px] py-[11px] text-[13.5px]"
+            />
+          </label>
+        )}
+        {campos.includes('email') && (
+          <label className="flex flex-col gap-1.5">
+            <span className="text-[12.5px] font-semibold text-soft">E-mail para a nota fiscal</span>
+            <input
+              required
+              type="email"
+              autoComplete="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="Exemplo: financeiro@suaempresa.com.br"
+              className="app-field px-[13px] py-[11px] text-[13.5px]"
+            />
+          </label>
+        )}
+        {erro && (
+          <p role="alert" className="text-[12.5px] text-perigo">
+            {erro}
+          </p>
+        )}
+        <div className="flex justify-end gap-2">
+          <button type="button" onClick={aoFechar} className="botao-secundario botao-md">
+            Voltar
+          </button>
+          <button type="submit" disabled={enviando} className="botao-primario botao-md">
+            {enviando ? 'Abrindo o pagamento...' : 'Continuar para o pagamento'}
+          </button>
+        </div>
+      </form>
+    </Modal>
   )
 }

@@ -7,18 +7,29 @@ import {
   criarAssinatura,
   garantirAviso,
   garantirClienteNoAsaas,
+  detalheDaFatura,
   lerFatura,
+  lerNotaFiscal,
   linkDaProximaFatura,
+  type DetalheDaFatura,
 } from '@/channels/asaas-da-4yu'
 import { diaEmSaoPaulo } from '@/channels/pagamento'
 import { diaPorExtenso, proximaVirada } from '@/core/contrato-do-plano'
-import { documentoParaAsaas, reaisDeCentavos, valorDaAssinatura } from '@/core/mensalidade-da-4yu'
+import { descricaoDaAssinatura, documentoParaAsaas, reaisDeCentavos, valorDaAssinatura } from '@/core/mensalidade-da-4yu'
 import type { CicloDeCobranca, IdDoPlano } from '@/core/planos'
 import { alertar } from './alertar'
 import { avisarSuspensao } from './avisos-por-email'
 import { registrar } from './repos/auditoria'
-import { acharCliente } from './repos/clientes'
-import { assinaturaDaConta, contaDaFatura, gravarAssinatura, gravarFatura, temFaturaVencida } from './repos/faturas-da-conta'
+import { acharCliente, completarDadosDeCobranca } from './repos/clientes'
+import {
+  asaasIdDaFatura,
+  assinaturaDaConta,
+  contaDaFatura,
+  gravarAssinatura,
+  gravarFatura,
+  gravarNotaFiscal,
+  temFaturaVencida,
+} from './repos/faturas-da-conta'
 import { definirSuspensao } from './repos/organizacoes'
 import { agendarDescida, definirPlano, planoDaConta, tamanhoDaEquipe } from './repos/plano'
 import { planoVigente } from './repos/planos'
@@ -56,7 +67,10 @@ export function origemDoAviso(): string {
 /** Para onde o Asaas manda o e-mail quando o aviso falha. */
 const EMAIL_DO_AVISO = 'contato@4yu.com.br'
 
-export type ResultadoDeAssinar = { ok: true; link: string | null } | { ok: false; erro: string }
+export type ResultadoDeAssinar =
+  | { ok: true; link: string | null }
+  /** `falta`: a tela pede o dado ali mesmo, em vez de mandar a pessoa a outra página. */
+  | { ok: false; erro: string; falta?: ('documento' | 'email')[] }
 
 export async function assinar(
   clienteId: string,
@@ -64,24 +78,34 @@ export async function assinar(
   ciclo: CicloDeCobranca,
   /** `https://autofluxos.4yu.com.br`: de onde o Asaas chama o aviso. */
   origem: string,
+  /** O que a pessoa preencheu no modal, quando faltava no cadastro. */
+  dados: { documento?: string; email?: string } = {},
 ): Promise<ResultadoDeAssinar> {
   const conta = await acharCliente(clienteId)
   if (!conta) return { ok: false, erro: 'organização não encontrada' }
-  const documento = documentoParaAsaas(conta.cnpj)
-  if (!documento) return { ok: false, erro: 'preencha o CNPJ ou CPF em Configurações, Negócio, antes de assinar' }
-  if (!conta.email.trim()) return { ok: false, erro: 'preencha o e-mail em Configurações, Negócio, antes de assinar' }
+  if (dados.documento !== undefined && !documentoParaAsaas(dados.documento)) {
+    return { ok: false, erro: 'o CNPJ precisa ter 14 números, ou o CPF 11', falta: ['documento'] }
+  }
+  if (dados.email !== undefined && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(dados.email.trim())) {
+    return { ok: false, erro: 'confira o e-mail', falta: ['email'] }
+  }
+  await completarDadosDeCobranca(clienteId, { cnpj: dados.documento, email: dados.email })
+  const documento = documentoParaAsaas(dados.documento ?? conta.cnpj)
+  const email = (dados.email ?? conta.email).trim()
+  const falta = [...(documento ? [] : (['documento'] as const)), ...(email ? [] : (['email'] as const))]
+  if (falta.length > 0) return { ok: false, erro: 'faltam dados para emitir a cobrança e a nota fiscal', falta }
 
   const plano = await planoVigente(planoId)
   if (plano.id !== planoId || !plano.ativo) return { ok: false, erro: 'esse plano não existe' }
   const valor = valorDaAssinatura(plano, ciclo, await tamanhoDaEquipe(clienteId))
   if (valor === null) return { ok: false, erro: `o plano ${plano.nome} não tem pagamento anual` }
-  const descricao = `AutoFluxos ${plano.nome}, ${ciclo === 'anual' ? 'anual' : 'mensal'}`
+  const descricao = descricaoDaAssinatura(plano, ciclo, await tamanhoDaEquipe(clienteId))
 
   await garantirAviso(origem, EMAIL_DO_AVISO)
   const atual = await assinaturaDaConta(clienteId)
   const clienteAsaas =
     atual?.clienteAsaas ??
-    (await garantirClienteNoAsaas({ clienteId, nome: conta.nome, documento, email: conta.email.trim() }))
+    (await garantirClienteNoAsaas({ clienteId, nome: conta.nome, documento: documento!, email }))
 
   let assinaturaRef = atual?.assinaturaRef ?? null
   let link: string | null
@@ -196,7 +220,7 @@ export async function sincronizarAssinatura(clienteId: string): Promise<void> {
   const valor = valorDaAssinatura(plano, ciclo, await tamanhoDaEquipe(clienteId))
   // Anual de um plano que deixou de ter anual: a 4YU resolve à mão, não o relógio.
   if (valor === null) throw new Error(`o plano ${plano.nome} não tem anual, e a assinatura de ${clienteId} é anual`)
-  await atualizarValor(assinatura.assinaturaRef, valor, { descricao: `AutoFluxos ${plano.nome}, ${ciclo}` })
+  await atualizarValor(assinatura.assinaturaRef, valor, { descricao: descricaoDaAssinatura(plano, ciclo, await tamanhoDaEquipe(clienteId)) })
   if (assinatura.plano !== plano.id) await gravarAssinatura(clienteId, { plano: plano.id })
 }
 
@@ -232,7 +256,7 @@ export async function mudarAssinatura(
 
   const valor = valorDaAssinatura(destino, ciclo, await tamanhoDaEquipe(clienteId))
   if (valor === null) return { ok: false, erro: `o plano ${destino.nome} não tem pagamento anual` }
-  await atualizarValor(assinatura.assinaturaRef, valor, { ciclo, descricao: `AutoFluxos ${destino.nome}, ${ciclo}` })
+  await atualizarValor(assinatura.assinaturaRef, valor, { ciclo, descricao: descricaoDaAssinatura(destino, ciclo, await tamanhoDaEquipe(clienteId)) })
   const trocou = await definirPlano(clienteId, destino.id, destino.preco)
   if (!trocou.ok) return { ok: false, erro: trocou.erro ?? 'não foi possível trocar o plano' }
   await gravarAssinatura(clienteId, { plano: destino.id, ciclo })
@@ -265,4 +289,23 @@ export async function acompanharEquipe(clienteId: string): Promise<void> {
   await sincronizarAssinatura(clienteId).catch((erro) =>
     alertar('a assinatura não acompanhou a equipe', erro, { cliente: clienteId }),
   )
+}
+
+/** O aviso de nota emitida: relê a nota e guarda o PDF na fatura. */
+export async function aplicarNotaDaMensalidade(notaId: string): Promise<void> {
+  const nota = await lerNotaFiscal(notaId)
+  if (nota.emitida && nota.pagamento && nota.pdf) await gravarNotaFiscal(nota.pagamento, nota.pdf)
+}
+
+/**
+ * O detalhe que o painel lateral mostra. A fatura precisa ser **desta** conta
+ * (`asaasIdDaFatura`); o id no endereço não basta. De carona, guarda o PDF da
+ * nota se o aviso dela se perdeu.
+ */
+export async function detalheDaFaturaDaConta(clienteId: string, faturaId: string): Promise<DetalheDaFatura | null> {
+  const asaasId = await asaasIdDaFatura(clienteId, faturaId)
+  if (!asaasId) return null
+  const detalhe = await detalheDaFatura(asaasId)
+  if (detalhe.nota?.emitida && detalhe.nota.pdf) await gravarNotaFiscal(asaasId, detalhe.nota.pdf).catch(() => undefined)
+  return detalhe
 }

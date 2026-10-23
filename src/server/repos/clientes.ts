@@ -260,6 +260,20 @@ export async function atualizarCadastro(
 }
 
 /** A nota interna da 4YU sobre o cliente. Só a administração chama. */
+/**
+ * Completa o que o Asaas exige para assinar (CNPJ ou CPF e e-mail), pedido no
+ * próprio botão Assinar quando falta. Só grava o que veio: o resto do
+ * cadastro não é tocado.
+ */
+export async function completarDadosDeCobranca(id: string, dados: { cnpj?: string; email?: string }): Promise<void> {
+  const linha: Record<string, string> = {}
+  if (dados.cnpj) linha.cnpj = dados.cnpj.trim()
+  if (dados.email) linha.email = dados.email.trim()
+  if (Object.keys(linha).length === 0) return
+  const { error } = await db().from('clients').update(linha).eq('id', id)
+  if (error) throw new Error(`não foi possível salvar os dados de cobrança: ${error.message}`)
+}
+
 export async function atualizarObservacoes(id: string, observacoes: string): Promise<void> {
   const { error } = await db().from('clients').update({ observacoes: observacoes.trim() }).eq('id', id)
   if (error) throw new Error(`não foi possível salvar as observações: ${error.message}`)

@@ -81,6 +81,13 @@ Troca com assinatura ativa: `mudarAssinatura` (sobe na hora, desce agendado) e
 `sincronizarAssinatura` na descida aplicada e em toda mudança de equipe
 (`acompanharEquipe`, nunca lança).
 
+Tela de Faturas (23/out/2026): `ajustes/faturas`, separada de Plano e
+consumo. Resumo da assinatura com cancelar, números do topo, filtros, CSV
+(`api/clientes/[id]/faturas/csv`) e painel de detalhe lido do Asaas na hora
+(composição pela descrição da assinatura, forma de pagamento, nota fiscal).
+A nota chega pelo aviso `INVOICE_AUTHORIZED`. O Assinar pede CNPJ ou CPF e
+e-mail no próprio modal quando faltam.
+
 **Fase 4, produção.** Conta da 4YU aprovada, NFS-e configurada no painel do
 Asaas, chave de produção no cofre e na Vercel, aviso cadastrado, e uma
 assinatura real de R$ 5 paga e estornada para provar o ciclo.

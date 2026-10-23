@@ -46,6 +46,8 @@ export const EVENTOS_DA_MENSALIDADE = [
   'PAYMENT_REFUNDED',
   'PAYMENT_DELETED',
   'PAYMENT_RESTORED',
+  // A nota fiscal emitida: o link do PDF vai para a fatura.
+  'INVOICE_AUTHORIZED',
 ] as const
 
 /** O caminho do aviso, para `garantirAviso` e para a rota. */
@@ -97,7 +99,11 @@ export async function garantirAviso(origem: string, email: string): Promise<void
   })
 }
 
-const avisoSchema = z.object({ event: z.string(), payment: z.object({ id: z.string().min(1) }).optional() })
+const avisoSchema = z.object({
+  event: z.string(),
+  payment: z.object({ id: z.string().min(1) }).optional(),
+  invoice: z.object({ id: z.string().min(1) }).optional(),
+})
 
 /**
  * Só o id do pagamento sai do corpo. O pagamento é relido na API com a chave
@@ -108,6 +114,13 @@ export function pagamentoDoAvisoDa4yu(corpo: unknown): string | null {
   if (!lido.success || !lido.data.payment) return null
   if (!(EVENTOS_DA_MENSALIDADE as readonly string[]).includes(lido.data.event)) return null
   return lido.data.payment.id
+}
+
+/** O id da nota fiscal, quando o aviso é de nota emitida. Também relida antes de valer. */
+export function notaDoAvisoDa4yu(corpo: unknown): string | null {
+  const lido = avisoSchema.safeParse(corpo)
+  if (!lido.success || lido.data.event !== 'INVOICE_AUTHORIZED' || !lido.data.invoice) return null
+  return lido.data.invoice.id
 }
 
 // ---------------------------------------------------------------------------
@@ -337,4 +350,87 @@ export function paraFaturaLida(bruto: unknown): FaturaLida {
 
 export async function lerFatura(asaasId: string): Promise<FaturaLida> {
   return paraFaturaLida(await chamar(acessoDa4yu(), 'GET', `/payments/${encodeURIComponent(asaasId)}`))
+}
+
+// ---------------------------------------------------------------------------
+// Nota fiscal e detalhe
+// ---------------------------------------------------------------------------
+
+const notaSchema = z.object({
+  id: z.string(),
+  payment: z.string().nullish(),
+  status: z.string().nullish(),
+  number: z.union([z.string(), z.number()]).nullish(),
+  pdfUrl: z.string().nullish(),
+})
+const notasSchema = z.object({ data: z.array(notaSchema) })
+
+export type NotaFiscal = { pagamento: string | null; numero: string | null; pdf: string | null; emitida: boolean }
+
+function paraNota(bruto: z.infer<typeof notaSchema>): NotaFiscal {
+  return {
+    pagamento: bruto.payment ?? null,
+    numero: bruto.number === null || bruto.number === undefined ? null : String(bruto.number),
+    pdf: bruto.pdfUrl ?? null,
+    emitida: bruto.status === 'AUTHORIZED',
+  }
+}
+
+export async function lerNotaFiscal(notaId: string): Promise<NotaFiscal> {
+  return paraNota(notaSchema.parse(await chamar(acessoDa4yu(), 'GET', `/invoices/${encodeURIComponent(notaId)}`)))
+}
+
+/** A nota da fatura, se o Asaas já emitiu. Sem NFS-e configurada, `null`. */
+export async function notaDaFatura(asaasId: string): Promise<NotaFiscal | null> {
+  const lidas = notasSchema.safeParse(
+    await chamar(acessoDa4yu(), 'GET', `/invoices?payment=${encodeURIComponent(asaasId)}&limit=5`).catch(() => null),
+  )
+  if (!lidas.success) return null
+  const notas = lidas.data.data.map(paraNota)
+  return notas.find((nota) => nota.emitida) ?? notas[0] ?? null
+}
+
+const FORMA: Record<string, string> = {
+  PIX: 'Pix',
+  BOLETO: 'Boleto',
+  CREDIT_CARD: 'Cartão de crédito',
+  DEBIT_CARD: 'Cartão de débito',
+  TRANSFER: 'Transferência',
+  DEPOSIT: 'Depósito',
+}
+
+const detalheSchema = z.object({
+  description: z.string().nullish(),
+  billingType: z.string().nullish(),
+  bankSlipUrl: z.string().nullish(),
+  invoiceNumber: z.string().nullish(),
+  creditCard: z.object({ creditCardBrand: z.string().nullish(), creditCardNumber: z.string().nullish() }).nullish(),
+})
+
+export type DetalheDaFatura = FaturaLida & {
+  descricao: string | null
+  /** Como foi (ou vai ser) paga. `null` enquanto o cliente não escolheu. */
+  forma: string | null
+  boleto: string | null
+  numero: string | null
+  nota: NotaFiscal | null
+}
+
+/** Tudo o que o painel lateral mostra, lido do Asaas na hora de abrir. */
+export async function detalheDaFatura(asaasId: string): Promise<DetalheDaFatura> {
+  const [bruto, nota] = await Promise.all([
+    chamar<unknown>(acessoDa4yu(), 'GET', `/payments/${encodeURIComponent(asaasId)}`),
+    notaDaFatura(asaasId),
+  ])
+  const extra = detalheSchema.parse(bruto)
+  const cartao = extra.creditCard?.creditCardNumber ? ` final ${extra.creditCard.creditCardNumber}` : ''
+  const forma = extra.billingType && FORMA[extra.billingType] ? `${FORMA[extra.billingType]}${cartao}` : null
+  return {
+    ...paraFaturaLida(bruto),
+    descricao: extra.description ?? null,
+    forma,
+    boleto: extra.bankSlipUrl ?? null,
+    numero: extra.invoiceNumber ?? null,
+    nota,
+  }
 }

@@ -182,3 +182,20 @@ export async function faturasVencidasDeTodas(): Promise<(FaturaDaConta & { clien
 export async function temFaturaVencida(clienteId: string): Promise<boolean> {
   return (await faturaVencida(clienteId)) !== null
 }
+
+/** O id no Asaas de uma fatura **desta** conta. Fatura de outra conta é `null`, como se não existisse. */
+export async function asaasIdDaFatura(clienteId: string, faturaId: string): Promise<string | null> {
+  const { data, error } = await db()
+    .from('faturas_da_conta')
+    .select('asaas_id')
+    .eq('cliente_id', clienteId)
+    .eq('id', faturaId)
+    .maybeSingle()
+  if (error || !data) return null
+  return data.asaas_id as string
+}
+
+export async function gravarNotaFiscal(asaasId: string, url: string): Promise<void> {
+  const { error } = await db().from('faturas_da_conta').update({ nota_fiscal_url: url }).eq('asaas_id', asaasId)
+  if (error) throw new Error(`não foi possível gravar a nota fiscal: ${error.message}`)
+}

@@ -174,6 +174,14 @@ export const ICONE_DA_TELA: Record<TelaDeAjustes | 'whatsapp' | 'instagram' | 'r
       <circle cx="16.5" cy="12" r="2.6" />
     </Svg>
   ),
+  // Um recibo com a borda de baixo picotada: é cobrança, não consumo.
+  faturas: (
+    <Svg>
+      <path d="M6 3.5h12v17l-3-2-3 2-3-2-3 2z" />
+      <path d="M9 8.5h6" />
+      <path d="M9 12h6" />
+    </Svg>
+  ),
   // Três barras subindo: é consumo contra faixa, que é o que a tela mostra.
   plano: (
     <Svg>

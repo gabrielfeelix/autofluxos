@@ -11,6 +11,7 @@ export type TelaDeAjustes =
   | 'negocio'
   | 'equipe'
   | 'plano'
+  | 'faturas'
   | 'recursos'
   | 'funis'
   | 'pagamentos'
@@ -33,6 +34,7 @@ export const GRUPOS: { titulo: string | null; itens: { chave: TelaDeAjustes; rot
       { chave: 'equipe', rotulo: 'Pessoas' },
       { chave: 'recursos', rotulo: 'Objetivo e recursos' },
       { chave: 'plano', rotulo: 'Plano e consumo' },
+      { chave: 'faturas', rotulo: 'Faturas' },
     ],
   },
   {

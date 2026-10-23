@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { AjustesShell } from '@/components/design/ajustes-shell'
 import { ICONE_DA_TELA } from '@/components/design/icones-de-ajustes'
+import { assinaturaDaConta } from '@/server/repos/faturas-da-conta'
 import { planoVigente } from '@/server/repos/planos'
 import { resumoDoCatalogo } from '@/core/conexoes'
 import { catalogoDeIntegracoes } from '@/server/catalogo-de-integracoes'
@@ -164,6 +165,13 @@ export default async function Pagina({
             titulo="Plano e consumo"
             descricao="Em que plano esta organização está, quanto já foi usado neste mês, e como pedir para mudar de faixa."
             estado={<Selo tom="neutro">{(await planoVigente(plano)).nome}</Selo>}
+          />
+          <Cartao
+            href={`/clientes/${cliente.id}/ajustes/faturas`}
+            icone={ICONE_DA_TELA['faturas']}
+            titulo="Faturas"
+            descricao="O que foi pago e o que está em aberto, com recibo, nota fiscal e exportação para o contador."
+            estado={<SeloDaAssinatura estado={(await assinaturaDaConta(cliente.id).catch(() => null))?.estado ?? null} />}
           />
         </Grupo>
 
@@ -404,6 +412,15 @@ function Cartao({
       <p className="mt-1 text-[12px] leading-5 text-muted">{descricao}</p>
     </Link>
   )
+}
+
+/** A situação da assinatura em duas palavras, no cartão de Faturas. */
+function SeloDaAssinatura({ estado }: { estado: string | null }) {
+  if (estado === 'ativa') return <Selo tom="ok">em dia</Selo>
+  if (estado === 'aguardando') return <Selo tom="alerta">aguardando pagamento</Selo>
+  if (estado === 'atrasada' || estado === 'suspensa') return <Selo tom="perigo">em atraso</Selo>
+  if (estado === 'cancelada') return <Selo tom="neutro">cancelada</Selo>
+  return <Selo tom="neutro">sem assinatura</Selo>
 }
 
 function Selo({

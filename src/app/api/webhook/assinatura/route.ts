@@ -1,8 +1,8 @@
 import { after } from 'next/server'
-import { avisoDa4yuAutentico, pagamentoDoAvisoDa4yu } from '@/channels/asaas-da-4yu'
+import { avisoDa4yuAutentico, notaDoAvisoDa4yu, pagamentoDoAvisoDa4yu } from '@/channels/asaas-da-4yu'
 import { lerCorpoComTeto } from '@/server/corpo-com-teto'
 import { alertar } from '@/server/alertar'
-import { aplicarAvisoDaMensalidade } from '@/server/mensalidade-da-4yu'
+import { aplicarAvisoDaMensalidade, aplicarNotaDaMensalidade } from '@/server/mensalidade-da-4yu'
 
 export const dynamic = 'force-dynamic'
 
@@ -28,6 +28,18 @@ export async function POST(req: Request) {
   try {
     corpo = JSON.parse(lido.corpo)
   } catch {
+    return new Response('ok', { status: 200 })
+  }
+
+  const notaId = notaDoAvisoDa4yu(corpo)
+  if (notaId) {
+    after(async () => {
+      try {
+        await aplicarNotaDaMensalidade(notaId)
+      } catch (erro) {
+        await alertar('o aviso de nota fiscal da mensalidade falhou', erro, { nota: notaId })
+      }
+    })
     return new Response('ok', { status: 200 })
   }
 

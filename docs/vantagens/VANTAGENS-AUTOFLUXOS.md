@@ -333,3 +333,8 @@ aqui fica o que o cliente ganha.
 - **Teste grátis de 14 dias** no plano Profissional.
 - **Nada some ao mudar de plano**: o recurso pausado fica só para leitura, e
   disparo sem resposta não conta como conversa.
+- **Assina sozinho, com nota fiscal**: cartão, Pix ou boleto pela página
+  segura do Asaas, nota fiscal automática, e subir de plano vale na hora.
+- **Faturas claras para o financeiro**: cada cobrança mostra de onde vem o
+  valor (plano, atendentes extras, conversas a mais), com recibo, nota fiscal
+  e exportação em planilha para o contador.
