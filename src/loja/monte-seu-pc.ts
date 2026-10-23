@@ -28,6 +28,40 @@ export const CATEGORIAS_DO_MONTE_SEU_PC = {
 
 export type CategoriaDoMonteSeuPc = keyof typeof CATEGORIAS_DO_MONTE_SEU_PC
 
+/**
+ * As peças de um PC inteiro, na ordem em que se monta, para `pc_completo`.
+ *
+ * A IA faz uma consulta por volta, e são três voltas
+ * (`MAX_VOLTAS_DE_FERRAMENTA`): peça por peça nunca fechava um PC, e ela
+ * desistia mandando só o link do montador para quem pediu "PC gamer até
+ * 4.000" (PCYES, 23/out/2026). Uma consulta traz todas.
+ */
+export const PECAS_DE_UM_PC: readonly CategoriaDoMonteSeuPc[] = [
+  'processador',
+  'placa_mae',
+  'memoria',
+  'placa_de_video',
+  'ssd',
+  'fonte',
+  'gabinete',
+  'cooler',
+]
+
+/** "pc_completo", "setup", "PC inteiro": a pessoa quer montar o PC todo? */
+export function ehPcCompleto(texto: string): boolean {
+  return ['pccompleto', 'pc', 'pcinteiro', 'setup', 'kit', 'computador', 'completo', 'montarpc'].includes(compacto(texto))
+}
+
+/**
+ * Até `n` peças espalhadas da mais barata à mais cara. Só as mais baratas
+ * deixariam de fora a placa de vídeo que cabe num orçamento maior.
+ */
+export function amostra<T>(lista: readonly T[], n: number): T[] {
+  if (lista.length <= n) return [...lista]
+  if (n <= 1) return lista.slice(0, n)
+  return Array.from({ length: n }, (_, i) => lista[Math.round((i * (lista.length - 1)) / (n - 1))]!)
+}
+
 export type PecaDoMonteSeuPc = { nome: string; preco: number; precoDe?: number }
 
 /** O atributo que marca a peça como do montador. É o filtro da página. */

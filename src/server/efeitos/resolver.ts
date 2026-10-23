@@ -50,7 +50,7 @@ import { consumirLimite } from '../limite'
 import { chamarHttp } from './http'
 import { lerCredencial } from '../repos/conexoes'
 import { consultarPedidoDaConta, lojaAtivaDaConta, temMonteSeuPc } from '../adaptador-da-loja'
-import { CATEGORIAS_DO_MONTE_SEU_PC, categoriaDoMonteSeuPc } from '@/loja/monte-seu-pc'
+import { amostra, CATEGORIAS_DO_MONTE_SEU_PC, categoriaDoMonteSeuPc, ehPcCompleto, PECAS_DE_UM_PC } from '@/loja/monte-seu-pc'
 import { cardDoPedido } from '../card-do-pedido'
 import { comCortesia } from '../ia/cortesia'
 import { listarMateriais } from '../repos/materiais'
@@ -1049,7 +1049,10 @@ async function responderComFerramentas({
     }
 
     if (resposta.tipo === 'texto') {
-      const limpo = semElogioDeAbertura(semMarcacaoDeCard(cards.length > 0 ? semRepetirOsCards(resposta.texto, cards) : resposta.texto))
+      const limpo = semLinkDosBotoes(
+        semElogioDeAbertura(semMarcacaoDeCard(cards.length > 0 ? semRepetirOsCards(resposta.texto, cards) : resposta.texto)),
+        anexos,
+      )
       resposta = { ...resposta, texto: limpo || (cards.length > 0 ? 'Separei estas opções para você 👇' : resposta.texto) }
     }
 
@@ -1308,7 +1311,8 @@ async function responderComFerramentas({
       ferramenta.chamada.tipo === 'loja' &&
       (ferramenta.chamada.operacao === 'manual' ||
         ferramenta.chamada.operacao === 'cardapio' ||
-        ferramenta.chamada.operacao === 'pedido')
+        ferramenta.chamada.operacao === 'pedido' ||
+        ferramenta.chamada.operacao === 'monte_seu_pc')
     ) {
       // Um arquivo por rodada: pedir o mesmo duas vezes não manda dois PDFs.
       for (const anexo of anexosDe(disparo.json)) {
@@ -1680,16 +1684,38 @@ async function executarNaLoja(
   }
 
   if (operacao === 'monte_seu_pc') {
-    if (!loja.monteSeuPc) return { ok: false, motivo: 'esta loja não tem Monte seu PC' }
+    const monteSeuPc = loja.monteSeuPc
+    if (!monteSeuPc) return { ok: false, motivo: 'esta loja não tem Monte seu PC' }
+
+    // O PC inteiro numa consulta só: ver `PECAS_DE_UM_PC`.
+    if (ehPcCompleto(valores.categoria ?? '')) {
+      const lidas = await Promise.all(PECAS_DE_UM_PC.map((c) => monteSeuPc(c, '')))
+      const pecas = lidas.flatMap((r, i) =>
+        r.ok ? amostra(r.valor.pecas, PECAS_POR_CATEGORIA).map((p) => ({ categoria: PECAS_DE_UM_PC[i]!, ...p })) : [],
+      )
+      const link = lidas.find((r) => r.ok)
+      if (!link?.ok) return { ok: false, motivo: 'o Monte seu PC não respondeu' }
+      return { ok: true, json: { pecas, anexo: botaoDoMonteSeuPc(link.valor.link) } }
+    }
+
     const categoria = categoriaDoMonteSeuPc(valores.categoria ?? '')
     // Categoria que não existe não é falha da loja: devolve as que existem.
-    if (!categoria) return { ok: true, json: { pecas: [], categorias: Object.keys(CATEGORIAS_DO_MONTE_SEU_PC) } }
+    if (!categoria) {
+      return { ok: true, json: { pecas: [], categorias: ['pc_completo', ...Object.keys(CATEGORIAS_DO_MONTE_SEU_PC)] } }
+    }
     const termo = (valores.termo ?? '').trim()
-    const r = await loja.monteSeuPc(categoria, termo)
-    if (!r.ok || r.valor.pecas.length > 0 || termo === '') return r.ok ? { ok: true, json: r.valor } : r
+    const r = await monteSeuPc(categoria, termo)
+    if (!r.ok) return r
+    if (r.valor.pecas.length > 0 || termo === '') {
+      return { ok: true, json: { pecas: amostra(r.valor.pecas, 20), anexo: botaoDoMonteSeuPc(r.valor.link) } }
+    }
     // O modelo pedido não tem agora: a categoria inteira, para oferecer o que há.
-    const todas = await loja.monteSeuPc(categoria, '')
-    return todas.ok ? { ok: true, json: { ...todas.valor, semEsseModelo: termo } } : todas
+    const todas = await monteSeuPc(categoria, '')
+    if (!todas.ok) return todas
+    return {
+      ok: true,
+      json: { pecas: amostra(todas.valor.pecas, 20), semEsseModelo: termo, anexo: botaoDoMonteSeuPc(todas.valor.link) },
+    }
   }
 
   if (operacao === 'manual') {
@@ -1921,6 +1947,39 @@ function comCards(acoes: Acao[], texto: string, produtos: ProdutoDaLoja[], anexo
     ]
   }
   return [...acoes.slice(0, posicao + 1), ...extras, ...acoes.slice(posicao + 1)]
+}
+
+/**
+ * Por categoria, em `pc_completo`: oito categorias dão até 64 linhas, o
+ * bastante para casar soquete e memória sem afogar o modelo.
+ */
+const PECAS_POR_CATEGORIA = 8
+
+/**
+ * O botão que abre o Monte seu PC, logo depois da frase da IA.
+ *
+ * Antes o link ia escrito no meio do texto, e o Gabriel chamou de "trabalho
+ * porco" (23/out/2026). O `link` não vai ao modelo (a projeção não o inclui),
+ * e o que ele ainda copiar do histórico sai em `semLinkDosBotoes`.
+ */
+function botaoDoMonteSeuPc(link: string): AnexoDaIa {
+  return {
+    tipo: 'enviar_link',
+    texto: 'É só adicionar essas peças no Monte seu PC. O montador mostra apenas o que é compatível com o que você já escolheu.',
+    rotulo: 'Abrir o Monte seu PC',
+    url: link,
+  }
+}
+
+/** O link que vai no botão não se repete escrito na frase. */
+function semLinkDosBotoes(texto: string, anexos: readonly AnexoDaIa[]): string {
+  let saida = texto
+  for (const a of anexos) {
+    if (a.tipo !== 'enviar_link') continue
+    const url = a.url.replace(/\/+$/, '').replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+    saida = saida.replace(new RegExp(`${url}/?`, 'g'), '')
+  }
+  return saida === texto ? texto : saida.replace(/[ \t]+\n/g, '\n').replace(/\n{3,}/g, '\n\n').trim()
 }
 
 /** O manual em PDF, ou o card da página de downloads quando não há PDF. */

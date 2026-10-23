@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { categoriaDoMonteSeuPc, lerPecas, linkDoMonteSeuPc, urlDasPecas } from './monte-seu-pc'
+import { amostra, categoriaDoMonteSeuPc, ehPcCompleto, lerPecas, linkDoMonteSeuPc, urlDasPecas } from './monte-seu-pc'
 
 const json = {
   items: [
@@ -49,5 +49,17 @@ describe('Monte seu PC', () => {
     expect(url).toContain('[1][filters][0][field]=is_in_stock')
     expect(url).toContain('[2][filters][0][field]=monte_seu_kit')
     expect(linkDoMonteSeuPc('https://www.pcyes.com.br/')).toBe('https://www.pcyes.com.br/monte-seu-pc/')
+  })
+
+  it('o PC inteiro aceita o jeito que o modelo escreve', () => {
+    expect(ehPcCompleto('pc_completo')).toBe(true)
+    expect(ehPcCompleto('Setup')).toBe(true)
+    expect(ehPcCompleto('placa de vídeo')).toBe(false)
+  })
+
+  it('a amostra vai da mais barata à mais cara, sem repetir', () => {
+    const precos = Array.from({ length: 30 }, (_, i) => i)
+    expect(amostra(precos, 4)).toEqual([0, 10, 19, 29])
+    expect(amostra([1, 2], 8)).toEqual([1, 2])
   })
 })

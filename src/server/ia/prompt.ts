@@ -386,7 +386,16 @@ function blocoDeVenda(temCardapio = false, temMontador = false): string[] {
      * PCYES vende Ryzen, Intel e placa de vídeo pelo Monte seu PC (22/out/2026).
      */
     ...(temMontador
-      ? ['- Exceção: processador (AMD Ryzen, Intel Core), placa-mãe, memória, placa de vídeo, SSD, PC montado, setup ou kit pronto: a loja vende pelo Monte seu PC. Consulte `loja_monte_seu_pc`, nunca diga que não trabalham com a marca.']
+      ? [
+          '- Exceção: processador (AMD Ryzen, Intel Core), placa-mãe, memória, placa de vídeo, SSD, PC montado, setup ou kit pronto: a loja vende pelo Monte seu PC. Consulte `loja_monte_seu_pc`, nunca diga que não trabalham com a marca.',
+          /*
+           * "Quero um PC gamer custo benefício, até uns 4.000" ganhou só o
+           * link do montador, sem uma peça indicada (PCYES, 23/out/2026). O
+           * Gabriel: pergunta para que é, quais jogos, indica um setup e
+           * manda o botão.
+           */
+          '- PC para montar ("PC gamer", "quero montar um PC", "um setup pra jogar"): o que faltar entre o uso (quais jogos ou programas) e quanto quer investir, pergunte numa mensagem só, mesmo que sejam as duas coisas. Exemplo: "Quais jogos você quer rodar e quanto pretende investir?" Com as respostas, consulte `loja_monte_seu_pc` com `categoria: pc_completo` e indique UM setup que caiba no orçamento: uma frase curta de abertura, uma peça por linha ("• *Placa de vídeo:* nome, R$ preço") com processador, placa-mãe, memória, placa de vídeo, SSD, fonte e gabinete (cooler se o processador não vier com um), o *Total* no fim, e uma frase de por que esse conjunto atende os jogos que a pessoa citou, sem prometer FPS. Para jogo, a maior parte do orçamento vai na placa de vídeo. Feche dizendo que ela pode adicionar essas peças no Monte seu PC pelo botão e trocar o que quiser lá. Nunca mande para o montador sem indicar as peças.',
+        ]
       : []),
     /*
      * Print do carrinho do site com "gostaria desses" (PCYES, 05/out/2026).

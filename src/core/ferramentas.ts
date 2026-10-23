@@ -665,17 +665,20 @@ export const FERRAMENTAS: Ferramenta[] = [
      * memória e placa de vídeo de outras marcas não estão na busca: a PCYES só
      * vende dentro de um PC montado. Regra do dono (22/out/2026): o bot orça,
      * mas quem põe as peças no carrinho é a pessoa, no Monte seu PC. Por isso
-     * não há card nem link de produto, só o link do montador.
+     * não há card nem link de produto, só o botão do montador, que o servidor
+     * manda (`botaoDoMonteSeuPc`): o link não vai ao modelo.
      */
     nome: 'loja_monte_seu_pc',
     rotulo: 'Consultar peças do Monte seu PC',
     escreve: false,
     descricao:
-      'Lista as peças com estoque do Monte seu PC, o montador de computador do site, com nome e preço. ' +
-      'Use quando a pessoa pedir processador (Ryzen, Intel Core i3, i5, i7), placa-mãe, memória RAM, placa de vídeo ou SSD, ou quiser montar um PC, um setup ou um kit pronto. Uma consulta por categoria; para montar um PC, consulte as que precisar. ' +
+      'Lista as peças com estoque do Monte seu PC, o montador de computador do site, com categoria, nome e preço. ' +
+      'Use quando a pessoa pedir processador (Ryzen, Intel Core i3, i5, i7), placa-mãe, memória RAM, placa de vídeo ou SSD, ou quiser montar um PC, um setup ou um kit pronto. ' +
+      'Para montar um PC inteiro, use `categoria: pc_completo`: uma consulta traz processador, placa-mãe, memória, placa de vídeo, SSD, fonte, gabinete e cooler. Para uma peça só, a categoria dela. ' +
       'Processador, placa-mãe, memória e placa de vídeo de outras marcas a loja só vende dentro do Monte seu PC: nunca diga que a loja não vende, nem que dá para comprar essas peças avulsas. ' +
-      'Você pode orçar: sugira as peças, some os preços e diga o total. Mas quem escolhe as peças e finaliza a compra é a pessoa, no Monte seu PC: sempre mande o `link` e explique isso. Você não adiciona nada ao carrinho. ' +
-      'Sugira só peças que combinam pelo nome (soquete AM4, AM5, LGA 1700 ou LGA 1200; memória DDR4 ou DDR5). Na dúvida, diga que o Monte seu PC só mostra as peças compatíveis com o que ela já escolheu. ' +
+      'Indique peças de verdade, com nome e preço, e no PC inteiro some o total. Quem adiciona as peças e finaliza a compra é a pessoa, no Monte seu PC; você não adiciona nada ao carrinho. ' +
+      'O botão que abre o Monte seu PC sai sozinho logo depois da sua resposta: não escreva link nenhum, diga só que ela pode adicionar as peças pelo botão. Nunca responda só mandando para o montador sem indicar peças. ' +
+      'Sugira só peças que combinam pelo nome (soquete AM4, AM5, LGA 1700 ou LGA 1200; memória DDR4 ou DDR5) e fonte com folga para a placa de vídeo. Na dúvida, diga que o Monte seu PC só mostra as peças compatíveis com o que ela já escolheu. ' +
       'Use `termo` para estreitar pelo modelo ("ryzen 5", "i5", "rtx 4060"). Se vier `semEsseModelo`, esse modelo não tem agora: diga isso e ofereça os que vieram. ' +
       'Não mostre card nem mande link de produto destas peças: elas são compradas pelo montador. ' +
       'Para gabinete, fonte, cooler e periféricos da própria marca comprados avulsos, use `loja_buscar`.',
@@ -683,21 +686,20 @@ export const FERRAMENTAS: Ferramenta[] = [
       {
         nome: 'categoria',
         tipo: 'texto',
-        descricao: 'Uma de: processador, placa_mae, memoria, placa_de_video, cooler, ssd, gabinete, fonte, perifericos.',
+        descricao: 'Uma de: pc_completo, processador, placa_mae, memoria, placa_de_video, cooler, ssd, gabinete, fonte, perifericos.',
         obrigatorio: true,
       },
       {
         nome: 'termo',
         tipo: 'texto',
-        descricao: 'O modelo ou a linha que a pessoa pediu, em até 3 palavras ("ryzen 5", "i5"). Vazio para ver a categoria toda.',
+        descricao: 'O modelo ou a linha que a pessoa pediu, em até 3 palavras ("ryzen 5", "i5"). Vazio para ver a categoria toda. Não vale para pc_completo.',
         obrigatorio: false,
       },
     ],
     injetados: [],
     chamada: { tipo: 'loja', operacao: 'monte_seu_pc' },
     projecao: [
-      { caminho: 'pecas', campos: ['nome', 'preco', 'precoDe'], limite: 20 },
-      { caminho: 'link' },
+      { caminho: 'pecas', campos: ['categoria', 'nome', 'preco', 'precoDe'], limite: 64 },
       { caminho: 'semEsseModelo' },
       { caminho: 'categorias' },
     ],
