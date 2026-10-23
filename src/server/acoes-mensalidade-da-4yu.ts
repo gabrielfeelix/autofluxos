@@ -13,6 +13,7 @@ import {
   origemDoAviso,
 } from './mensalidade-da-4yu'
 import { exigirCapacidade, recusou } from './permissoes'
+import { cobrancaDaConta } from './repos/faturas-da-conta'
 import { ehAdminDaPlataforma } from './sessao'
 
 /**
@@ -34,6 +35,9 @@ export async function acaoAssinar(
   if (recusou(acesso)) return { ok: false, erro: 'só quem administra a organização pode assinar' }
   if (!mensalidadeLiberada(ehAdminDaPlataforma(acesso.sessao))) return { ok: false, erro: 'a assinatura ainda não está disponível' }
   if (!ehIdDePlano(planoId)) return { ok: false, erro: 'esse plano não existe' }
+  if ((await cobrancaDaConta(clienteId)).forma !== 'asaas') {
+    return { ok: false, erro: 'a cobrança desta organização é combinada direto com a 4YU' }
+  }
   const ciclo: CicloDeCobranca = ehCicloDeCobranca(cicloPedido) ? cicloPedido : 'mensal'
 
   try {

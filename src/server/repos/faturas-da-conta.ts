@@ -199,3 +199,65 @@ export async function gravarNotaFiscal(asaasId: string, url: string): Promise<vo
   const { error } = await db().from('faturas_da_conta').update({ nota_fiscal_url: url }).eq('asaas_id', asaasId)
   if (error) throw new Error(`não foi possível gravar a nota fiscal: ${error.message}`)
 }
+
+export type FormaDeCobranca = 'asaas' | 'por_fora' | 'cortesia'
+
+export type CobrancaDaConta = {
+  forma: FormaDeCobranca
+  /** Reais por mês, quando é por fora. */
+  valor: number | null
+  dia: number | null
+  nota: string | null
+}
+
+export const COBRANCA_PADRAO: CobrancaDaConta = { forma: 'asaas', valor: null, dia: null, nota: null }
+
+/**
+ * Como a 4YU cobra esta organização (0148). Antes da migration, ou com erro
+ * de leitura, é `asaas`: o que o código fazia antes dela existir.
+ */
+export async function cobrancaDaConta(clienteId: string): Promise<CobrancaDaConta> {
+  const { data, error } = await db()
+    .from('clients')
+    .select('cobranca_forma, cobranca_valor, cobranca_dia, cobranca_nota')
+    .eq('id', clienteId)
+    .maybeSingle()
+  if (error || !data) return COBRANCA_PADRAO
+  const linha = data as Record<string, unknown>
+  const forma = linha.cobranca_forma
+  return {
+    forma: forma === 'por_fora' || forma === 'cortesia' ? forma : 'asaas',
+    valor: linha.cobranca_valor === null || linha.cobranca_valor === undefined ? null : Number(linha.cobranca_valor),
+    dia: (linha.cobranca_dia as number | null) ?? null,
+    nota: (linha.cobranca_nota as string | null) ?? null,
+  }
+}
+
+export async function gravarCobranca(clienteId: string, cobranca: CobrancaDaConta): Promise<{ ok: boolean; erro?: string }> {
+  const { error } = await db()
+    .from('clients')
+    .update({
+      cobranca_forma: cobranca.forma,
+      cobranca_valor: cobranca.valor,
+      cobranca_dia: cobranca.dia,
+      cobranca_nota: cobranca.nota,
+    })
+    .eq('id', clienteId)
+  if (error) return { ok: false, erro: error.code === '42703' ? 'O banco ainda não tem este campo (migration 0148).' : 'Não foi possível salvar agora.' }
+  return { ok: true }
+}
+
+/**
+ * A forma de cobrança de todas as organizações, para a lista da
+ * administração. Só as que não são `asaas` entram no mapa. Erro (inclusive
+ * antes da 0148) é mapa vazio: a lista abre igual, sem o selo.
+ */
+export async function formasDeCobranca(): Promise<Map<string, Exclude<FormaDeCobranca, 'asaas'>>> {
+  const { data, error } = await db().from('clients').select('id, cobranca_forma').neq('cobranca_forma', 'asaas')
+  if (error || !data) return new Map()
+  return new Map(
+    data
+      .filter((linha) => linha.cobranca_forma === 'por_fora' || linha.cobranca_forma === 'cortesia')
+      .map((linha) => [linha.id as string, linha.cobranca_forma as Exclude<FormaDeCobranca, 'asaas'>]),
+  )
+}

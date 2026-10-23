@@ -1,4 +1,5 @@
 import { notFound } from 'next/navigation'
+import { FormaDeCobrancaDaOrganizacao } from '@/components/admin/forma-de-cobranca'
 import { PlanoDaOrganizacao } from '@/components/admin/plano-da-organizacao'
 import { TesteGratis } from '@/components/admin/teste-gratis'
 import { TetoDaApi } from '@/components/admin/teto-da-api'
@@ -8,6 +9,7 @@ import { acharOrganizacao } from '@/server/repos/organizacoes'
 import { pedidosDePlano } from '@/server/repos/pedidos-de-plano'
 import { planosVigentes } from '@/server/repos/planos'
 import { contratoDaConta, testeDaConta, usoDaOrganizacao } from '@/server/repos/plano'
+import { assinaturaDaConta, cobrancaDaConta } from '@/server/repos/faturas-da-conta'
 
 export const dynamic = 'force-dynamic'
 
@@ -17,7 +19,16 @@ export default async function Plano({ params }: { params: Promise<{ id: string }
   const organizacao = await acharOrganizacao(id)
   if (!organizacao) notFound()
   // O uso vem junto da página para o modal de troca abrir na hora.
-  const [planos, pedidos, uso, contrato, tetoDaApi, testeAte] = await Promise.all([planosVigentes(), pedidosDePlano({ organizacaoId: id }).catch(() => []), usoDaOrganizacao(id), contratoDaConta(id), tetoConfiguradoDaApi(id), testeDaConta(id)])
+  const [planos, pedidos, uso, contrato, tetoDaApi, testeAte, cobranca, assinatura] = await Promise.all([
+    planosVigentes(),
+    pedidosDePlano({ organizacaoId: id }).catch(() => []),
+    usoDaOrganizacao(id),
+    contratoDaConta(id),
+    tetoConfiguradoDaApi(id),
+    testeDaConta(id),
+    cobrancaDaConta(id),
+    assinaturaDaConta(id).catch(() => null),
+  ])
 
   return (
     <div className="flex flex-col gap-6">
@@ -31,6 +42,7 @@ export default async function Plano({ params }: { params: Promise<{ id: string }
         uso={uso}
         pedidos={pedidos.map(({ id: pedidoId, quando, quemPediu, de, para, situacao }) => ({ id: pedidoId, quando, quemPediu, de, para, situacao }))}
       />
+      <FormaDeCobrancaDaOrganizacao organizacaoId={id} inicial={cobranca} assinaturaAtiva={Boolean(assinatura?.assinaturaRef)} />
       <TesteGratis
         organizacaoId={id}
         inicial={testeAte}

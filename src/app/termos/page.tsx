@@ -15,10 +15,14 @@ import { Item, Lista, PaginaLegal, type SecaoLegal } from '../(site)/pagina-lega
  * cobre: quem pode usar, o que não se pode fazer com o serviço, o que acontece
  * quando alguém faz, e o que a 4YU **não** promete.
  *
- * **O que ele não diz, de propósito:** preço, prazo de contrato e nível de
- * serviço. Isso é combinado por proposta, caso a caso, e não existe cobrança
- * dentro do produto. Escrever um número aqui criaria obrigação que o sistema
- * não tem como cumprir nem medir.
+ * **O que ele não diz, de propósito:** preço e nível de serviço. O preço mora
+ * na tela de planos, que muda sem precisar mudar este documento; escrever um
+ * número aqui criaria duas fontes para a mesma coisa.
+ *
+ * **A seção de pagamento descreve o que o código faz** (23/out/2026,
+ * docs/PLANO-MENSALIDADE-ASAAS.md): cobrança pelo Asaas, excedente e
+ * atendente extra, e a régua de `server/passada-da-mensalidade.ts`. Mudou um
+ * dia da régua, muda aqui no mesmo commit.
  */
 export const metadata: Metadata = {
   title: 'Termos de Serviço · AutoFluxos',
@@ -26,7 +30,7 @@ export const metadata: Metadata = {
     'As regras de uso do AutoFluxos: quem opera, o que o serviço faz, o que não se pode fazer com ele e o que acontece em caso de uso indevido.',
 }
 
-const ATUALIZADA_EM = '3 de setembro de 2026'
+const ATUALIZADA_EM = '23 de outubro de 2026'
 
 const SECOES: readonly SecaoLegal[] = [
   {
@@ -163,14 +167,63 @@ const SECOES: readonly SecaoLegal[] = [
     ),
   },
   {
+    id: 'pagamento',
+    titulo: 'Planos e pagamento',
+    conteudo: (
+      <>
+        <p>
+          Os planos, o que cada um inclui e os preços em vigor estão em Configurações, Plano e consumo,
+          dentro do painel. Toda organização nova começa com um teste grátis; ao fim dele, os recursos
+          pagos pausam, com a configuração guardada, até um plano ser escolhido.
+        </p>
+        <Lista>
+          <Item>
+            <strong>Como é cobrado.</strong> A assinatura é mensal ou anual, cobrada de forma recorrente
+            pelo Asaas, por cartão de crédito, Pix ou boleto, e o dia da cobrança é o dia em que você
+            assinou. A nota fiscal é emitida automaticamente para o CNPJ ou CPF informado.
+          </Item>
+          <Item>
+            <strong>O que entra além do plano.</strong> Cada atendente acima do que o plano inclui soma o
+            valor de atendente extra à assinatura. Conversas acima da faixa do plano não são bloqueadas:
+            viram uma cobrança à parte, no começo do mês seguinte, com a quantidade e o valor por conversa
+            descritos na fatura. A tarifa da Meta pelas mensagens do WhatsApp é cobrada pela Meta, à parte.
+          </Item>
+          <Item>
+            <strong>Trocar de plano.</strong> Subir vale na hora, e a assinatura passa ao valor novo. Descer
+            vale a partir da virada do mês seguinte; até lá, tudo continua funcionando.
+          </Item>
+          <Item>
+            <strong>Atraso.</strong> Avisamos por e-mail no 1º, no 3º e no 7º dia depois do vencimento. No
+            10º dia, o acesso ao painel é suspenso, e os robôs e os canais continuam atendendo. No 30º dia,
+            IA, transcrição, transmissões e integrações pausam. No 60º dia, a assinatura é cancelada. Pago
+            o que está em aberto, tudo volta sozinho, exceto depois do cancelamento, quando a retomada é
+            combinada com a 4YU. Nada é apagado por atraso.
+          </Item>
+          <Item>
+            <strong>Cancelamento.</strong> Você cancela quando quiser, em Configurações, Faturas, sem multa.
+            As cobranças param na hora e o acesso segue até o fim do período já pago.
+          </Item>
+          <Item>
+            <strong>Reembolso.</strong> Na primeira assinatura, quem cancelar em até 7 dias recebe de volta
+            o valor integral. Depois disso, não há reembolso do período já começado, mensal ou anual.
+          </Item>
+        </Lista>
+        <p>
+          Valores combinados por proposta, como contrato anual negociado ou plano sob medida, seguem o que
+          foi combinado por escrito, e prevalecem sobre esta seção no que forem diferentes.
+        </p>
+      </>
+    ),
+  },
+  {
     id: 'suspensao',
     titulo: 'Suspensão e encerramento',
     conteudo: (
       <>
         <p>
           Podemos suspender o acesso, o envio de mensagens ou a conta inteira quando houver uso
-          indevido pela lista acima, ordem legal, risco à segurança do serviço, ou quando a Meta
-          bloquear o canal. Sempre que der, avisamos antes e explicamos o motivo; quando o risco
+          indevido pela lista acima, falta de pagamento (como descrito em Planos e pagamento),
+          ordem legal, risco à segurança do serviço, ou quando a Meta bloquear o canal. Sempre que der, avisamos antes e explicamos o motivo; quando o risco
           for imediato, agimos primeiro e explicamos em seguida.
         </p>
         <p>

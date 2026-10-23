@@ -50,7 +50,10 @@ export function EscolhaDePlano({
   assinatura = null,
   trocaDireta = false,
   faturasHref = null,
+  combinada = null,
 }: {
+  /** A cobrança é combinada direto com a 4YU (0148): por fora ou cortesia. */
+  combinada?: 'por_fora' | 'cortesia' | null
   /**
    * Assinar pelo Asaas da 4YU (docs/PLANO-MENSALIDADE-ASAAS.md). Ausente
    * quando a mensalidade não está liberada para esta pessoa: aí vale o pedido
@@ -230,6 +233,11 @@ export function EscolhaDePlano({
           </div>
           <p className="text-right text-[13px] text-muted">
             {reais(contrato.precoContratado ?? plano.preco)} por mês
+            {combinada && (
+              <span className="block text-[11.5px] text-dim">
+                {combinada === 'cortesia' ? 'Cortesia da 4YU, sem cobrança' : 'Pagamento combinado direto com a 4YU'}
+              </span>
+            )}
             {faturasHref && (
               <Link href={faturasHref} className="block text-[12px] font-semibold text-primary hover:underline">
                 Ver faturas

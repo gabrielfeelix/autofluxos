@@ -83,6 +83,7 @@ export function TelaDeFaturas({
   faturas,
   assinatura,
   podeMexer,
+  combinada = null,
   planoHref,
   csvHref,
   hoje,
@@ -92,6 +93,8 @@ export function TelaDeFaturas({
   faturas: FaturaDaConta[]
   assinatura: ResumoDaAssinatura | null
   podeMexer: boolean
+  /** Cobrança combinada com a 4YU (0148): o cartão diz isso no lugar de "Escolher um plano". */
+  combinada?: 'por_fora' | 'cortesia' | null
   planoHref: string
   /** O endereço do CSV, sem o filtro: a tela acrescenta. */
   csvHref: string
@@ -121,6 +124,7 @@ export function TelaDeFaturas({
         <div className="sm:col-span-3 lg:col-span-1 flex">
           <CartaoDaAssinatura
             assinatura={assinatura}
+            combinada={combinada}
             estado={estadoDaAssinatura}
             podeMexer={podeMexer}
             planoHref={planoHref}
@@ -401,6 +405,7 @@ function Vazio({ titulo, texto }: { titulo: string; texto: string }) {
 
 function CartaoDaAssinatura({
   assinatura,
+  combinada,
   estado,
   podeMexer,
   planoHref,
@@ -408,6 +413,7 @@ function CartaoDaAssinatura({
   cancelar,
 }: {
   assinatura: ResumoDaAssinatura | null
+  combinada: 'por_fora' | 'cortesia' | null
   estado: string | null
   podeMexer: boolean
   planoHref: string
@@ -417,6 +423,24 @@ function CartaoDaAssinatura({
   const [confirmando, setConfirmando] = useState(false)
   const [erro, setErro] = useState<string | null>(null)
   const [rodando, comecar] = useTransition()
+
+  if (!assinatura && combinada) {
+    return (
+      <div className="app-card flex w-full flex-col justify-between gap-4 p-5">
+        <div>
+          <p className="text-[11.5px] font-semibold text-dim">Assinatura</p>
+          <p className="mt-1 text-[17px] font-bold tracking-[-0.02em]">
+            {combinada === 'cortesia' ? 'Cortesia da 4YU' : 'Combinada com a 4YU'}
+          </p>
+          <p className="mt-1 text-[12.5px] leading-5 text-dim">
+            {combinada === 'cortesia'
+              ? 'Esta organização não tem cobrança. Para mudar de plano, peça em Plano e consumo.'
+              : 'O pagamento desta organização é combinado direto com a 4YU. Dúvidas: contato@4yu.com.br.'}
+          </p>
+        </div>
+      </div>
+    )
+  }
 
   if (!assinatura) {
     return (
@@ -451,7 +475,7 @@ function CartaoDaAssinatura({
           </p>
         )}
         {cancelada && (
-          <p className="mt-0.5 text-[12.5px] text-muted">Sem cobranças novas. A 4YU entra em contato para combinar o encerramento.</p>
+          <p className="mt-0.5 text-[12.5px] text-muted">Sem cobranças novas. O acesso segue até o fim do período já pago.</p>
         )}
       </div>
       <div className="flex flex-wrap items-center gap-2">
@@ -482,8 +506,8 @@ function CartaoDaAssinatura({
         largura={460}
       >
         <p className="text-[12.5px] leading-6 text-muted">
-          O plano continua como está enquanto a 4YU combina o encerramento com você. Nada é apagado: fluxos, contatos e conversas ficam
-          guardados.
+          O acesso segue até o fim do período já pago. Na primeira assinatura, quem cancela em até 7 dias recebe o valor integral de
+          volta. Nada é apagado: fluxos, contatos e conversas ficam guardados.
         </p>
         {erro && (
           <p role="alert" className="mt-3 text-[12.5px] text-perigo">

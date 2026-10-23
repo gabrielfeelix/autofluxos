@@ -6,7 +6,7 @@ import { AjustesShell } from '@/components/design/ajustes-shell'
 import { acaoPedirTrocaDePlano } from '@/server/acoes-plano'
 import { acaoAssinar, acaoMudarAssinatura } from '@/server/acoes-mensalidade-da-4yu'
 import { mensalidadeLiberada } from '@/server/mensalidade-da-4yu'
-import { assinaturaDaConta } from '@/server/repos/faturas-da-conta'
+import { assinaturaDaConta, cobrancaDaConta } from '@/server/repos/faturas-da-conta'
 import { acharCliente } from '@/server/repos/clientes'
 import { consumoDaMetaDoMes } from '@/server/consumo-da-meta'
 import { franquiaDoMes } from '@/core/franquia-da-meta'
@@ -44,8 +44,7 @@ export default async function Pagina({ params }: { params: Promise<{ clienteId: 
   const podeMexer = acesso !== null && podeAdministrarConta(acesso)
 
   const lendoConsumo = consumoDaConta(clienteId)
-  const liberada = acesso !== null && mensalidadeLiberada(ehAdminDaPlataforma(acesso.sessao))
-  const [contrato, consumo, pedidos, planos, uso, canais, pontosDaMeta, equipe, testeAte, assinatura] = await Promise.all([
+  const [contrato, consumo, pedidos, planos, uso, canais, pontosDaMeta, equipe, testeAte, assinatura, cobranca] = await Promise.all([
     contratoDaConta(clienteId),
     lendoConsumo,
     pedidosDePlano({ organizacaoId: clienteId }).catch(() => []),
@@ -58,7 +57,10 @@ export default async function Pagina({ params }: { params: Promise<{ clienteId: 
     testeDaConta(clienteId),
     // Antes da 0147, ou com o banco fora: sem assinatura, e a tela abre igual.
     assinaturaDaConta(clienteId).catch(() => null),
+    cobrancaDaConta(clienteId),
   ])
+  // Por fora ou cortesia (0148): sem botão Assinar; a troca continua sendo pedido à 4YU.
+  const liberada = acesso !== null && cobranca.forma === 'asaas' && mensalidadeLiberada(ehAdminDaPlataforma(acesso.sessao))
   // Conta que já paga pelo Asaas troca de plano direto, sem pedido à 4YU.
   const trocaDireta = liberada && (assinatura?.estado === 'ativa' || assinatura?.estado === 'atrasada')
   // Só aparece para quem tem número na API oficial: é a conta que a Meta cobra.
@@ -90,6 +92,7 @@ export default async function Pagina({ params }: { params: Promise<{ clienteId: 
           pedidoAberto={pedidoAberto}
           pedirTroca={(trocaDireta ? acaoMudarAssinatura : acaoPedirTrocaDePlano).bind(null, cliente.id)}
           trocaDireta={trocaDireta}
+          combinada={cobranca.forma === 'asaas' ? null : cobranca.forma}
           faturasHref={assinatura?.assinaturaRef ? `/clientes/${cliente.id}/ajustes/faturas` : null}
           uso={uso}
           contrato={contrato}

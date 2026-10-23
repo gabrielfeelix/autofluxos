@@ -3,6 +3,7 @@
 import { cadastrarSemTrocarDeSessao } from './cadastro-por-outra-pessoa'
 import { revalidatePath } from 'next/cache'
 import { after } from 'next/server'
+import { gravarCobranca } from './repos/faturas-da-conta'
 import { acompanharEquipe } from './mensalidade-da-4yu'
 import { headers } from 'next/headers'
 import { redirect } from 'next/navigation'
@@ -957,6 +958,42 @@ export async function acaoAdminSalvarTetoDaApi(organizacaoId: string, teto: numb
     alvoTipo: 'client',
     alvoId: organizacaoId,
     detalhes: { teto },
+  })
+  return { ok: true }
+}
+
+/**
+ * Como a 4YU cobra esta organização (0148): pelo app, por fora (Pix
+ * combinado) ou cortesia. Só a administração muda; a tela do cliente só lê.
+ */
+export async function acaoAdminSalvarCobranca(
+  organizacaoId: string,
+  entrada: { forma: string; valor: number | null; dia: number | null; nota: string },
+): Promise<{ ok: boolean; erro?: string }> {
+  const sessao = await exigirAdminDaPlataforma()
+  const forma = entrada.forma === 'por_fora' || entrada.forma === 'cortesia' ? entrada.forma : 'asaas'
+  if (entrada.valor !== null && (!Number.isFinite(entrada.valor) || entrada.valor < 0 || entrada.valor > 1_000_000)) {
+    return { ok: false, erro: 'Confira o valor.' }
+  }
+  if (entrada.dia !== null && (!Number.isInteger(entrada.dia) || entrada.dia < 1 || entrada.dia > 31)) {
+    return { ok: false, erro: 'O dia vai de 1 a 31.' }
+  }
+  const porFora = forma === 'por_fora'
+  const r = await gravarCobranca(organizacaoId, {
+    forma,
+    valor: porFora ? entrada.valor : null,
+    dia: porFora ? entrada.dia : null,
+    nota: entrada.nota.trim().slice(0, 500) || null,
+  })
+  if (!r.ok) return r
+  await registrar({
+    acao: 'mudou_forma_de_cobranca',
+    autorId: sessao.usuario.id,
+    autorEmail: sessao.usuario.email,
+    contaId: organizacaoId,
+    alvoTipo: 'client',
+    alvoId: organizacaoId,
+    detalhes: { forma, valor: porFora ? entrada.valor : null, dia: porFora ? entrada.dia : null },
   })
   return { ok: true }
 }

@@ -18,6 +18,7 @@ import {
 import { dataCurta, horaExata, quando } from '@/lib/quando'
 import { NovaOrganizacao } from '@/components/admin/nova-organizacao'
 import { listarOrganizacoes, type OrganizacaoListada } from '@/server/repos/organizacoes'
+import { formasDeCobranca } from '@/server/repos/faturas-da-conta'
 import { planosVigentes } from '@/server/repos/planos'
 
 export const dynamic = 'force-dynamic'
@@ -55,13 +56,14 @@ export default async function Organizacoes({
   searchParams: Promise<Record<string, string | string[] | undefined>>
 }) {
   const parametros = lerParametros(await searchParams)
-  const [todas, planos] = await Promise.all([listarOrganizacoes(), planosVigentes()])
+  const [todas, planos, formas] = await Promise.all([listarOrganizacoes(), planosVigentes(), formasDeCobranca()])
   const nomeDoPlano = new Map<string, string>(planos.map((plano) => [plano.id, plano.nome]))
 
   const busca = (parametros.busca ?? '').trim().toLocaleLowerCase('pt-BR')
   const filtradas = todas.filter((organizacao) => {
     if (busca && ![organizacao.nome, organizacao.responsavel, organizacao.email].some((texto) => texto.toLocaleLowerCase('pt-BR').includes(busca))) return false
     if (parametros.plano && (organizacao.plano || 'essencial') !== parametros.plano) return false
+    if (parametros.cobranca && (formas.get(organizacao.id) ?? 'asaas') !== parametros.cobranca) return false
     if (parametros.situacao && !situacaoDe(organizacao).includes(parametros.situacao)) return false
     return true
   })
@@ -80,7 +82,7 @@ export default async function Organizacoes({
     },
     { ordem: 'esperando', direcao: 'desc' },
   )
-  const temFiltro = !!(parametros.busca || parametros.plano || parametros.situacao)
+  const temFiltro = !!(parametros.busca || parametros.plano || parametros.situacao || parametros.cobranca)
 
   return (
     <TelaDaAdministracao
@@ -98,6 +100,15 @@ export default async function Organizacoes({
           grupos={[
             { chave: 'situacao', titulo: 'Situação', opcoes: SITUACOES },
             { chave: 'plano', titulo: 'Plano', opcoes: planos.map((plano) => ({ valor: plano.id, rotulo: plano.nome })) },
+            {
+              chave: 'cobranca',
+              titulo: 'Cobrança',
+              opcoes: [
+                { valor: 'asaas', rotulo: 'Pelo app' },
+                { valor: 'por_fora', rotulo: 'Por fora' },
+                { valor: 'cortesia', rotulo: 'Cortesia' },
+              ],
+            },
           ]}
           resumo={temFiltro ? `${lista.length} de ${todas.length}` : `${todas.length} ${todas.length === 1 ? 'organização' : 'organizações'}`}
         />
@@ -155,6 +166,11 @@ export default async function Organizacoes({
                 </td>
                 <td className="px-4 py-3">
                   <Selo tom="destaque">{nomeDoPlano.get(organizacao.plano) ?? nomeDoPlano.get('essencial') ?? 'Essencial'}</Selo>
+                  {formas.has(organizacao.id) && (
+                    <span className="mt-1 block text-[11px] font-semibold text-dim">
+                      {formas.get(organizacao.id) === 'cortesia' ? 'Cortesia' : 'Paga por fora'}
+                    </span>
+                  )}
                 </td>
                 <td className="px-4 py-3">
                   <Situacao organizacao={organizacao} />

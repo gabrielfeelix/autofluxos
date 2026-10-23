@@ -7,7 +7,7 @@ import { diaDeHoje } from '@/core/contrato-do-plano'
 import { valorDaAssinatura } from '@/core/mensalidade-da-4yu'
 import { acaoCancelarAssinatura, acaoDetalheDaFatura } from '@/server/acoes-mensalidade-da-4yu'
 import { acharCliente } from '@/server/repos/clientes'
-import { assinaturaDaConta, faturasDaConta } from '@/server/repos/faturas-da-conta'
+import { assinaturaDaConta, cobrancaDaConta, faturasDaConta } from '@/server/repos/faturas-da-conta'
 import { planoDaConta, tamanhoDaEquipe } from '@/server/repos/plano'
 import { planoVigente } from '@/server/repos/planos'
 import { conferirAcessoAoCliente, podeAdministrarConta } from '@/server/sessao'
@@ -55,12 +55,13 @@ export default async function Pagina({ params }: { params: Promise<{ clienteId: 
     )
   }
 
-  const [assinatura, faturas, planoAtual, equipe] = await Promise.all([
+  const [assinatura, faturas, planoAtual, equipe, cobranca] = await Promise.all([
     // Antes da 0147, ou com o banco fora: sem assinatura, e a tela abre igual.
     assinaturaDaConta(clienteId).catch(() => null),
     faturasDaConta(clienteId, 500),
     planoDaConta(clienteId),
     tamanhoDaEquipe(clienteId),
+    cobrancaDaConta(clienteId),
   ])
   const temAssinatura = Boolean(assinatura?.assinaturaRef || assinatura?.estado?.startsWith('cancelada'))
   // Enquanto aguarda, o plano é o que está sendo comprado; depois, o em vigor.
@@ -79,6 +80,7 @@ export default async function Pagina({ params }: { params: Promise<{ clienteId: 
               : null
           }
           podeMexer={podeMexer}
+          combinada={cobranca.forma === 'asaas' ? null : cobranca.forma}
           planoHref={planoHref}
           csvHref={`/api/clientes/${cliente.id}/faturas/csv`}
           hoje={diaDeHoje(new Date())}
