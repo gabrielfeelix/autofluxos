@@ -133,6 +133,28 @@ Todas com `.com.br`, `.com` e `@` livres e a raiz sem marca no INPI
 Caíram: FogiaChat ("fugia"), e raízes com marca no INPI: Brasia (6), Acenda
 (5), Tracia (3), Embria (7), Ardena (7), Ignea (7), Lampo (12), Fulgor (43).
 
+### Linha "conceito": um corpo, muitas conversas (23/out/2026)
+
+A ideia do Gabriel: um chat atendendo muita gente como uma hidra, várias
+cabeças e um corpo só. Todos abaixo passaram no filtro
+(`scripts/naming/filtro-de-nome.sh`): `NOMEchat.com.br`, `.com` e `@` livres,
+raiz sem marca viva no INPI nas classes 9, 35, 38 e 42.
+
+- **Sem mitologia (preferida no fim do dia):** **OrquiaChat** (orquestra +
+  IA, a ideia do maestro), **MilviaChat** (mil vias + IA), **TramiaChat**
+  (trama + IA), MilvozChat, UnivozChat, PolivozChat, TeionChat. Cuidado com
+  "voz": pode parecer central de telefone.
+- **Mitologia (ele pediu para sair dela depois):** OrochiChat (hidra
+  japonesa de oito cabeças), LernaChat (lago da Hidra), LadonChat (dragão de
+  cem cabeças), TriglavChat, HecatonChat, LegioChat, PolviaChat, OctopiaChat.
+- **Caíram no INPI:** Hydra (Dexco, dona dos chuveiros Hydra, 6 marcas vivas
+  em 9/35), Argos (12 vivas), Argus (23), Quimera, Oráculo, e quase toda
+  palavra comum do português (Teia, Nexo, Órbita, Eixo, Polvo, Sintonia,
+  Batuta, Regente). Palavra nova que junta duas ideias passa; palavra de
+  dicionário quase nunca.
+- **Recusados pelo som:** Dédalo ("dedar"), Zedar ("azedar"), Vetan
+  ("vetar"), Tifeu ("tifo"), Dezra (o "zr" não tem pronúncia única).
+
 ### Para registrar (só o Gabriel)
 
 1. `igniachat.com.br` e `igniachat.com` no Registro.br e num registrador .com.
@@ -164,3 +186,6 @@ Caíram: FogiaChat ("fugia"), e raízes com marca no INPI: Brasia (6), Acenda
   `buscaExata=sim`, `Action=searchMarca`, `tipoPesquisa=BY_MARCA_CLASSIF_BASICA`),
   depois de abrir a sessão em `.../LoginController?action=login`. Marca com
   acréscimo ("NubankChat") infringe igual (LPI art. 124, XIX): conferir a raiz.
+- Nome comum tem muitas marcas e o pePI passa de 30 s: resposta vazia é
+  demora, não ausência. O script espera até 150 s e marca "?" quando não vem.
+- Tudo de uma vez: `scripts/naming/filtro-de-nome.sh raiz1 raiz2 ...`.
