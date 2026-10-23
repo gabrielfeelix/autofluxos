@@ -14,7 +14,7 @@ nossa. Leia antes: `docs/MERCADO-COBRANCA-NO-CHAT.md` (pesquisa, seções
 | Asaas | pronto; testado só com respostas simuladas, espera chave do sandbox | 0141 a 0145 |
 | InfinitePay | pronto e no ar; `0149` aplicada em 23/out | `5be24fd8` |
 | PagBank | pronto; `0150` aplicada em 23/out; faltam `PAGBANK_TOKEN`, `PAGBANK_CLIENT_ID`, `PAGBANK_CLIENT_SECRET` | ver `git log -- src/channels/pagbank.ts` |
-| Woovi, Pagar.me | depois, se pedirem | |
+| Os próximos | ver `docs/gateways/PLANO-GATEWAYS.md` | |
 
 ## Como um gateway entra (molde: InfinitePay, `5be24fd8`)
 
@@ -61,10 +61,8 @@ diferenças), retorno em `api/pagamentos/pagbank/retorno`, aviso em
 - Não testado contra a API de verdade: falta o token. Primeiro teste: sandbox,
   conectar, cobrar, pagar o QR pelo simulador, conferir o aviso.
 
-Depois: **Woovi** (OAuth WooviApps, só Pix; confirmar se o escopo cria
-cobrança) ou **Pagar.me** (secret key colada, cartão, Pix, boleto e
-assinatura). Bancos com certificado (Inter, Sicoob, Efí) só se um cliente
-pedir: o dono teria de subir certificado.
+Depois: **`docs/gateways/PLANO-GATEWAYS.md`** (pesquisa de 25 gateways, ordem
+em ondas, bases a construir antes e o que depende do Gabriel).
 
 ## Regras deste projeto que custaram caro
 
