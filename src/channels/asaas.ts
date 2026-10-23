@@ -70,9 +70,10 @@ export class ErroDoAsaas extends Error {
 
 const erroSchema = z.object({ errors: z.array(z.object({ code: z.string().optional() })).optional() })
 
-async function chamar<T>(
+/** Exportada para `asaas-da-4yu.ts`, que fala com a conta da própria 4YU. */
+export async function chamar<T>(
   acesso: AcessoAoGateway,
-  metodo: 'GET' | 'POST' | 'DELETE',
+  metodo: 'GET' | 'POST' | 'PUT' | 'DELETE',
   caminho: string,
   corpo?: unknown,
 ): Promise<T> {

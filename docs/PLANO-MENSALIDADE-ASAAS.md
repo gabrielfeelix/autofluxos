@@ -50,6 +50,13 @@ na Vercel). Rota de aviso nova, em `PREFIXOS_ABERTOS` de `src/proxy.ts`, com o
 token conferido. Funções: criar cliente, criar assinatura, atualizar valor,
 cancelar, gerar o link de pagamento.
 
+Feita em 23/out/2026: `0147_mensalidade_da_4yu.sql` (no repo, **não aplicada**
+em produção), `channels/asaas-da-4yu.ts`, `server/mensalidade-da-4yu.ts`,
+`repos/faturas-da-conta.ts`, rota `api/webhook/assinatura`. O aviso se cadastra
+sozinho na conta da 4YU na primeira assinatura (`garantirAviso`). O plano muda
+quando a fatura chega paga, por `aplicarAvisoDaMensalidade`. Falta aplicar a
+0147 e provar no sandbox com `ASAAS_4YU_CHAVE`.
+
 **Fase 2, tela.** Botão **Assinar** em Plano e consumo e no fim do teste.
 Lista das faturas com estado e link para pagar. Faixa de aviso no painel quando
 a fatura atrasar.

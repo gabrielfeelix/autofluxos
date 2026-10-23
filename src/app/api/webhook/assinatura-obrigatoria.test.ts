@@ -101,6 +101,24 @@ describe('webhooks de pagamento', () => {
     expect((await pedirAsaas('')).status).toBe(401)
   })
 
+  it('mensalidade da 4YU recusa sem o token, com token de uma organização e sem segredo', async () => {
+    vi.stubEnv('BETTER_AUTH_SECRET', 'segredo-certo')
+    const { POST } = await import('./assinatura/route')
+    const { segredoDoAviso } = await import('@/channels/asaas')
+    const pedirMensalidade = (token?: string) =>
+      POST(
+        new Request('https://x.test/api/webhook/assinatura', {
+          method: 'POST',
+          headers: token ? { 'asaas-access-token': token } : {},
+          body: corpo,
+        }),
+      )
+    expect((await pedirMensalidade()).status).toBe(401)
+    expect((await pedirMensalidade(segredoDoAviso('11111111-1111-1111-1111-111111111111'))).status).toBe(401)
+    vi.stubEnv('BETTER_AUTH_SECRET', '')
+    expect((await pedirMensalidade('')).status).toBe(401)
+  })
+
   it('Mercado Pago recusa sem assinatura e sem segredo no servidor', async () => {
     const { POST } = await import('./mercado-pago/route')
     const pedirMp = (assinatura?: string) =>
