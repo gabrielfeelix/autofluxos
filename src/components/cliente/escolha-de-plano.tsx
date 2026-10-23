@@ -44,7 +44,17 @@ export function EscolhaDePlano({
   equipe = 0,
   leitores = 0,
   testeAte = null,
+  assinar,
+  assinatura = null,
 }: {
+  /**
+   * Assinar pelo Asaas da 4YU (docs/PLANO-MENSALIDADE-ASAAS.md). Ausente
+   * quando a mensalidade não está liberada para esta pessoa: aí vale o pedido
+   * de troca, como antes.
+   */
+  assinar?: (plano: IdDoPlano, ciclo: CicloDeCobranca) => Promise<{ ok: true; link: string } | { ok: false; erro: string }>
+  /** A assinatura no Asaas, quando existe (0147). */
+  assinatura?: { estado: string | null; plano: IdDoPlano | null; ciclo: CicloDeCobranca | null } | null
   /** Quantos atendentes a organização tem: o plano compara com `atendentes` (0128). */
   equipe?: number
   /** Quantos leitores: não contam no plano, aparecem para ninguém achar que contam. */
@@ -102,6 +112,37 @@ export function EscolhaDePlano({
   // Um estado só para todos os cartões: abertos juntos, eles continuam alinhados.
   const [verTudo, setVerTudo] = useState(false)
   const aberto = pedido ?? pedidoAberto
+  /*
+   * Assinar no lugar de pedir: quando a mensalidade está liberada e a conta
+   * ainda não paga pelo Asaas. Com assinatura ativa, mudar de plano continua
+   * sendo pedido até a troca ligada ao Asaas (fase 3).
+   */
+  const assinaturaAtiva = assinatura?.estado === 'ativa' || assinatura?.estado === 'atrasada'
+  const modoAssinar = Boolean(assinar) && !assinaturaAtiva
+  const aguardando = assinatura?.estado === 'aguardando' && assinatura.plano ? assinatura : null
+  const [abrindo, setAbrindo] = useState<IdDoPlano | null>(null)
+
+  // Otimista: o botão já diz "Abrindo o pagamento" e a página do Asaas abre
+  // na mesma aba. Recusa volta o botão, com o motivo.
+  function abrirPagamento(desejado: IdDoPlano) {
+    if (!assinar) return
+    setErro(null)
+    setAbrindo(desejado)
+    const cicloDoPlano = anualDoPlano(acharPlano(desejado)) ? ciclo : 'mensal'
+    comecar(async () => {
+      try {
+        const r = await assinar(desejado, cicloDoPlano)
+        if (r.ok) {
+          window.location.assign(r.link)
+          return
+        }
+        setErro(r.erro)
+      } catch {
+        setErro('não foi possível abrir o pagamento agora')
+      }
+      setAbrindo(null)
+    })
+  }
 
   // Otimista: o cartão já diz "pedido enviado" e volta atrás, com o motivo, se
   // o servidor recusar (bloqueio que apareceu depois de o modal abrir).
@@ -160,6 +201,15 @@ export function EscolhaDePlano({
                 plano antes disso para nada pausar.
               </>
             )}
+          </p>
+        )}
+
+        {aguardando && (
+          <p role="status" className="mt-4 rounded-[11px] border border-primary/20 bg-primary-weak px-4 py-3 text-[12.5px] leading-5 text-soft">
+            <strong className="font-semibold">
+              Assinatura do {acharPlano(aguardando.plano!).nome} {aguardando.ciclo ?? 'mensal'} aguardando o pagamento.
+            </strong>{' '}
+            O plano muda assim que o Asaas confirmar. Para pagar, use o botão do plano abaixo.
           </p>
         )}
 
@@ -243,7 +293,7 @@ export function EscolhaDePlano({
       <section aria-labelledby="titulo-solicitar">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <h2 id="titulo-solicitar" className="text-[15px] font-bold tracking-[-0.01em]">
-            Solicitar alteração
+            {modoAssinar ? 'Assinar um plano' : 'Solicitar alteração'}
           </h2>
           {temAnual && (
             <span role="radiogroup" aria-label="Como pagar" className="flex rounded-[11px] border border-line bg-surface p-0.5">
@@ -271,9 +321,11 @@ export function EscolhaDePlano({
           )}
         </div>
         <p className="mt-1 mb-3 max-w-[650px] text-[12.5px] leading-6 text-dim">
-          {podeMexer
-            ? 'O pedido vai para a 4YU, que confirma com você antes de mudar a cobrança.'
-            : 'Apenas o proprietário ou um administrador da organização pode mudar o plano. Os planos ficam aqui para consulta.'}
+          {!podeMexer
+            ? 'Apenas o proprietário ou um administrador da organização pode mudar o plano. Os planos ficam aqui para consulta.'
+            : modoAssinar
+              ? 'O pagamento é feito na página segura do Asaas, por cartão, Pix ou boleto, com nota fiscal. O plano muda assim que o pagamento é confirmado.'
+              : 'O pedido vai para a 4YU, que confirma com você antes de mudar a cobrança.'}
         </p>
 
         {aberto && (
@@ -305,6 +357,16 @@ export function EscolhaDePlano({
               podeMexer={podeMexer}
               rodando={rodando}
               aoPedir={() => setEscolhido(p.id)}
+              assinatura={
+                modoAssinar
+                  ? {
+                      abrindo: abrindo === p.id,
+                      continuar:
+                        aguardando?.plano === p.id && (aguardando.ciclo ?? 'mensal') === (anualDoPlano(p) ? ciclo : 'mensal'),
+                    }
+                  : null
+              }
+              aoAssinar={() => abrirPagamento(p.id)}
             />
           ))}
         </div>
@@ -386,6 +448,8 @@ function Cartao({
   podeMexer,
   rodando,
   aoPedir,
+  assinatura,
+  aoAssinar,
 }: {
   plano: Plano
   planos: readonly Plano[]
@@ -397,6 +461,9 @@ function Cartao({
   podeMexer: boolean
   rodando: boolean
   aoPedir: () => void
+  /** Presente no modo Assinar: o botão leva ao pagamento em vez de pedir. */
+  assinatura: { abrindo: boolean; continuar: boolean } | null
+  aoAssinar: () => void
 }) {
   const anual = anualDoPlano(plano)
   return (
@@ -495,7 +562,25 @@ function Cartao({
       {/* O botão de pedir fica no pé do cartão, com a lista curta ou aberta. */}
       <div aria-hidden className="flex-1" />
 
-      {ehOAtual && !(anual && ciclo === 'anual') ? (
+      {assinatura ? (
+        /*
+          Inclusive no plano em uso: no teste, ou numa conta que ainda não paga
+          pelo Asaas, "é o plano desta organização" não diz que falta pagar.
+        */
+        <button
+          type="button"
+          disabled={!podeMexer || rodando}
+          onClick={aoAssinar}
+          title={podeMexer ? undefined : 'Apenas o proprietário ou um administrador da organização pode assinar'}
+          className={`${ehOAtual || assinatura.continuar ? 'botao-primario' : 'botao-secundario'} botao-md w-full`}
+        >
+          {assinatura.abrindo
+            ? 'Abrindo o pagamento...'
+            : assinatura.continuar
+              ? 'Continuar o pagamento'
+              : `Assinar ${plano.nome} ${anual ? ciclo : 'mensal'}`}
+        </button>
+      ) : ehOAtual && !(anual && ciclo === 'anual') ? (
         <p className="rounded-[10px] bg-ok/10 py-2.5 text-center text-[12.5px] font-semibold text-ok">
           É o plano desta organização
         </p>

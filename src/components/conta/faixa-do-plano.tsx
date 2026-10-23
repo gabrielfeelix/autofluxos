@@ -1,5 +1,7 @@
 import { diaPorExtenso, diasAte, diaDeHoje } from '@/core/contrato-do-plano'
+import { reaisDeCentavos } from '@/core/mensalidade-da-4yu'
 import { avisosDesde } from '@/server/repos/avisos-de-plano'
+import { faturaVencida } from '@/server/repos/faturas-da-conta'
 import { chaveDoMes, contratoDaConta } from '@/server/repos/plano'
 import { planoVigente } from '@/server/repos/planos'
 import { conferirAcessoAoCliente, podeAdministrarConta } from '@/server/sessao'
@@ -16,8 +18,20 @@ export async function FaixaDoPlano({ clienteId }: { clienteId: string }) {
   if (!acesso || !podeAdministrarConta(acesso)) return null
 
   const agora = new Date()
-  const contrato = await contratoDaConta(clienteId)
   const href = `/clientes/${clienteId}/ajustes/plano`
+
+  // Fatura vencida vem antes de tudo: é a única que leva à suspensão.
+  const vencida = await faturaVencida(clienteId)
+  if (vencida) {
+    return (
+      <FaixaFechavel chave={`fatura:${vencida.id}`} href={vencida.link ?? href} tom="aviso" rotulo={vencida.link ? 'Pagar agora' : undefined}>
+        A mensalidade de {reaisDeCentavos(vencida.valorCentavos)} venceu em {diaPorExtenso(vencida.vencimento)}. Pague para a
+        organização não ser suspensa.
+      </FaixaFechavel>
+    )
+  }
+
+  const contrato = await contratoDaConta(clienteId)
 
   if (contrato.planoAgendado && contrato.planoAgendadoPara) {
     const faltam = diasAte(contrato.planoAgendadoPara, agora)

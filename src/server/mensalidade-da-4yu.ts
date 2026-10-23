@@ -1,5 +1,7 @@
 import 'server-only'
 import {
+  acessoDa4yu,
+  mensalidadeConfigurada,
   atualizarValor,
   cancelarAssinatura,
   criarAssinatura,
@@ -26,6 +28,27 @@ import { planoVigente } from './repos/planos'
  * pagamento entra e o Asaas avisa. Quem fecha a aba sem pagar continua no
  * plano em que estava.
  */
+
+/**
+ * O botão Assinar aparece para esta pessoa?
+ *
+ * Sem chave, para ninguém. Com a chave do **sandbox**, só para o
+ * administrador da 4YU: é assim que o ciclo é provado em produção sem um
+ * cliente de verdade assinar contra o ambiente de teste e achar que pagou.
+ */
+export function mensalidadeLiberada(adminDa4yu: boolean): boolean {
+  if (!mensalidadeConfigurada()) return false
+  try {
+    return acessoDa4yu().ambiente === 'producao' || adminDa4yu
+  } catch {
+    return false
+  }
+}
+
+/** De onde o Asaas chama o aviso: a produção, ou o endereço local configurado. */
+export function origemDoAviso(): string {
+  return process.env.VERCEL_ENV === 'production' ? 'https://autofluxos.4yu.com.br' : (process.env.BETTER_AUTH_URL ?? '')
+}
 
 /** Para onde o Asaas manda o e-mail quando o aviso falha. */
 const EMAIL_DO_AVISO = 'contato@4yu.com.br'

@@ -97,6 +97,33 @@ export type FaturaDaConta = {
   pagaEm: string | null
 }
 
+/** A fatura vencida mais antiga, ou `null`. Erro de leitura é "nenhuma": a faixa não pode derrubar o painel. */
+export async function faturaVencida(clienteId: string): Promise<FaturaDaConta | null> {
+  const { data, error } = await db()
+    .from('faturas_da_conta')
+    .select('id, tipo, valor_centavos, vencimento, estado, link, nota_fiscal_url, paga_em')
+    .eq('cliente_id', clienteId)
+    .eq('estado', 'vencida')
+    .order('vencimento', { ascending: true })
+    .limit(1)
+    .maybeSingle()
+  if (error || !data) return null
+  return paraFatura(data)
+}
+
+function paraFatura(linha: Record<string, unknown>): FaturaDaConta {
+  return {
+    id: linha.id as string,
+    tipo: linha.tipo as FaturaDaConta['tipo'],
+    valorCentavos: linha.valor_centavos as number,
+    vencimento: linha.vencimento as string,
+    estado: linha.estado as EstadoDaFatura,
+    link: (linha.link as string | null) ?? null,
+    notaFiscalUrl: (linha.nota_fiscal_url as string | null) ?? null,
+    pagaEm: (linha.paga_em as string | null) ?? null,
+  }
+}
+
 export async function faturasDaConta(clienteId: string, limite = 24): Promise<FaturaDaConta[]> {
   const { data, error } = await db()
     .from('faturas_da_conta')
@@ -109,14 +136,5 @@ export async function faturasDaConta(clienteId: string, limite = 24): Promise<Fa
     if (error.code !== '42P01') console.error('[faturas] não foi possível listar', error.message)
     return []
   }
-  return (data ?? []).map((linha) => ({
-    id: linha.id as string,
-    tipo: linha.tipo as FaturaDaConta['tipo'],
-    valorCentavos: linha.valor_centavos as number,
-    vencimento: linha.vencimento as string,
-    estado: linha.estado as EstadoDaFatura,
-    link: (linha.link as string | null) ?? null,
-    notaFiscalUrl: (linha.nota_fiscal_url as string | null) ?? null,
-    pagaEm: (linha.paga_em as string | null) ?? null,
-  }))
+  return (data ?? []).map(paraFatura)
 }

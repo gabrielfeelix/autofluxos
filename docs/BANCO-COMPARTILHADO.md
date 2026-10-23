@@ -1422,6 +1422,13 @@ extração explícito para os objetos de `public`.
   Verandi antes e depois com **55** migrations e **44** tabelas. Data API:
   `pedidos`, `pedido_itens` e `produtos?select=estoque` **200** com a chave
   secreta, **401** com a publicável; `app_verandi.conta` **200**.
+- **a `0147` foi aplicada em 23/out/2026**, com autorização explícita do dono,
+  pela Management API. Cria `public.faturas_da_conta` e acrescenta
+  `clients.assinatura_plano` e `assinatura_ciclo` (nulas; a mensalidade da 4YU
+  pelo Asaas). Nenhuma função nova. Ensaio em transação com `rollback` antes
+  (tabela e colunas ausentes depois). Releitura: RLS ligada,
+  `anon`/`authenticated` sem `select`, `service_role` com `insert`; Verandi com
+  **44** tabelas depois.
 
 - **SSL obrigatório desde 19/out/2026** (`PUT .../ssl-enforcement`), com
   autorização do dono. Conexão sem TLS leva `ESSLREQUIRED`, inclusive pelo

@@ -3,7 +3,11 @@ import { Miolo } from '@/components/design/miolo'
 import { notFound } from 'next/navigation'
 import { EscolhaDePlano } from '@/components/cliente/escolha-de-plano'
 import { AjustesShell } from '@/components/design/ajustes-shell'
+import { FaturasDaConta } from '@/components/plano/faturas-da-conta'
 import { acaoPedirTrocaDePlano } from '@/server/acoes-plano'
+import { acaoAssinar } from '@/server/acoes-mensalidade-da-4yu'
+import { mensalidadeLiberada } from '@/server/mensalidade-da-4yu'
+import { assinaturaDaConta, faturasDaConta } from '@/server/repos/faturas-da-conta'
 import { acharCliente } from '@/server/repos/clientes'
 import { consumoDaMetaDoMes } from '@/server/consumo-da-meta'
 import { franquiaDoMes } from '@/core/franquia-da-meta'
@@ -12,7 +16,7 @@ import { chaveDoMes, consumoDaConta, contratoDaConta, composicaoDaEquipe, testeD
 import { pedidosDePlano } from '@/server/repos/pedidos-de-plano'
 import { planosVigentes } from '@/server/repos/planos'
 import type { IdDoPlano } from '@/core/planos'
-import { conferirAcessoAoCliente, podeAdministrarConta } from '@/server/sessao'
+import { conferirAcessoAoCliente, ehAdminDaPlataforma, podeAdministrarConta } from '@/server/sessao'
 
 export const dynamic = 'force-dynamic'
 
@@ -41,7 +45,8 @@ export default async function Pagina({ params }: { params: Promise<{ clienteId: 
   const podeMexer = acesso !== null && podeAdministrarConta(acesso)
 
   const lendoConsumo = consumoDaConta(clienteId)
-  const [contrato, consumo, pedidos, planos, uso, canais, pontosDaMeta, equipe, testeAte] = await Promise.all([
+  const liberada = acesso !== null && mensalidadeLiberada(ehAdminDaPlataforma(acesso.sessao))
+  const [contrato, consumo, pedidos, planos, uso, canais, pontosDaMeta, equipe, testeAte, assinatura, faturas] = await Promise.all([
     contratoDaConta(clienteId),
     lendoConsumo,
     pedidosDePlano({ organizacaoId: clienteId }).catch(() => []),
@@ -52,6 +57,9 @@ export default async function Pagina({ params }: { params: Promise<{ clienteId: 
     consumoDaMetaDoMes(clienteId),
     composicaoDaEquipe(clienteId),
     testeDaConta(clienteId),
+    // Antes da 0147, ou com o banco fora: sem assinatura, e a tela abre igual.
+    assinaturaDaConta(clienteId).catch(() => null),
+    faturasDaConta(clienteId),
   ])
   // Só aparece para quem tem número na API oficial: é a conta que a Meta cobra.
   const temWhatsAppOficial = canais.some((canal) => canal.provider === 'cloud-api')
@@ -89,7 +97,16 @@ export default async function Pagina({ params }: { params: Promise<{ clienteId: 
           testeAte={testeAte}
           conexoesHref={`/clientes/${cliente.id}/ajustes/integracoes`}
           planos={planos.filter((p) => p.ativo || p.id === plano)}
+          assinar={liberada ? acaoAssinar.bind(null, cliente.id) : undefined}
+          assinatura={assinatura}
         />
+
+        {/* Só quando há o que mostrar: conta que nunca assinou não ganha uma seção vazia. */}
+        {(faturas.length > 0 || assinatura?.assinaturaRef) && (
+          <div className="mt-6">
+            <FaturasDaConta faturas={faturas} />
+          </div>
+        )}
       </Miolo>
     </AjustesShell>
   )

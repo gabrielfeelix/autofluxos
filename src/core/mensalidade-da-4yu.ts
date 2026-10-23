@@ -17,6 +17,11 @@ export function valorDaAssinatura(
   return reais === null ? null : Math.round(reais * 100)
 }
 
+/** `19700` vira `R$ 197,00`. */
+export function reaisDeCentavos(centavos: number): string {
+  return (centavos / 100).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
+}
+
 /** CPF (11) ou CNPJ (14), só dígitos. Outro tamanho, o Asaas recusa. */
 export function documentoParaAsaas(bruto: string | null | undefined): string | null {
   const digitos = (bruto ?? '').replace(/\D/g, '')

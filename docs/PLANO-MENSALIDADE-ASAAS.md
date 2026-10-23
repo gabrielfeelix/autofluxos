@@ -50,16 +50,23 @@ na Vercel). Rota de aviso nova, em `PREFIXOS_ABERTOS` de `src/proxy.ts`, com o
 token conferido. Funções: criar cliente, criar assinatura, atualizar valor,
 cancelar, gerar o link de pagamento.
 
-Feita em 23/out/2026: `0147_mensalidade_da_4yu.sql` (no repo, **não aplicada**
-em produção), `channels/asaas-da-4yu.ts`, `server/mensalidade-da-4yu.ts`,
+Feita em 23/out/2026: `0147_mensalidade_da_4yu.sql` (aplicada em produção no
+mesmo dia), `channels/asaas-da-4yu.ts`, `server/mensalidade-da-4yu.ts`,
 `repos/faturas-da-conta.ts`, rota `api/webhook/assinatura`. O aviso se cadastra
 sozinho na conta da 4YU na primeira assinatura (`garantirAviso`). O plano muda
-quando a fatura chega paga, por `aplicarAvisoDaMensalidade`. Falta aplicar a
-0147 e provar no sandbox com `ASAAS_4YU_CHAVE`.
+quando a fatura chega paga, por `aplicarAvisoDaMensalidade`. Falta provar no
+sandbox com `ASAAS_4YU_CHAVE`.
 
 **Fase 2, tela.** Botão **Assinar** em Plano e consumo e no fim do teste.
 Lista das faturas com estado e link para pagar. Faixa de aviso no painel quando
 a fatura atrasar.
+
+Feita em 23/out/2026: botão **Assinar** nos cartões de Plano e consumo
+(`acoes-mensalidade-da-4yu.ts`), aviso "aguardando o pagamento", seção
+Faturas (`components/plano/faturas-da-conta.tsx`) e a faixa de fatura vencida
+em `faixa-do-plano.tsx`. Com chave de sandbox, só o administrador da 4YU vê o
+botão (`mensalidadeLiberada`). Com assinatura ativa, mudar de plano continua
+sendo pedido até a fase 3.
 
 **Fase 3, regras.** Excedente no fechamento do mês, atendente extra no valor,
 troca de plano ligada ao Asaas, suspensão no 7º dia e reativação no pagamento.
