@@ -12,8 +12,8 @@ nossa. Leia antes: `docs/MERCADO-COBRANCA-NO-CHAT.md` (pesquisa, seções
 |---|---|---|
 | Mercado Pago | pronto; espera o Gabriel criar a aplicação (`MERCADO_PAGO_CLIENT_ID/SECRET`) | `b00410cc` |
 | Asaas | pronto; testado só com respostas simuladas, espera chave do sandbox | 0141 a 0145 |
-| InfinitePay | pronto no código e no ar; **a `0149` não está aplicada em produção** (conectar diz "em liberação") | `5be24fd8` |
-| PagBank | pronto no código; **a `0150` não está aplicada** e faltam `PAGBANK_TOKEN`, `PAGBANK_CLIENT_ID`, `PAGBANK_CLIENT_SECRET` | ver `git log -- src/channels/pagbank.ts` |
+| InfinitePay | pronto e no ar; `0149` aplicada em 23/out | `5be24fd8` |
+| PagBank | pronto; `0150` aplicada em 23/out; faltam `PAGBANK_TOKEN`, `PAGBANK_CLIENT_ID`, `PAGBANK_CLIENT_SECRET` | ver `git log -- src/channels/pagbank.ts` |
 | Woovi, Pagar.me | depois, se pedirem | |
 
 ## Como um gateway entra (molde: InfinitePay, `5be24fd8`)
@@ -88,8 +88,7 @@ pedir: o dono teria de subir certificado.
 
 ## Depende do Gabriel
 
-- Autorizar a `0149` e a `0150` em produção; testar a InfinitePay com R$ 1 de
-  verdade (ela não tem sandbox).
+- Testar a InfinitePay com R$ 1 de verdade (ela não tem sandbox).
 - Gerar o token da conta PagBank da empresa (e o de sandbox) e passar ao
   agente, que cria a aplicação. Ver `PENDENCIAS-DO-GABRIEL.md`.
 - Mercado Pago e Asaas: ver `PENDENCIAS-DO-GABRIEL.md`.

@@ -1435,12 +1435,16 @@ extração explícito para os objetos de `public`.
   Replay do zero em Docker e ensaio em transação com `rollback` antes (zero
   colunas depois). Releitura: as 4 colunas presentes, as 8 organizações em
   `asaas`; Verandi com **44** tabelas depois.
-- **a `0149` e a `0150` estão escritas e NÃO aplicadas** (23/out/2026). Só
+- **a `0149` e a `0150` foram aplicadas em 23/out/2026**, com autorização
+  explícita do dono, pela Management API, numa transação, nessa ordem. Só
   recriam `<tabela>_gateway_check` em `conexoes_de_pagamento`, `cobrancas` e
-  `assinaturas`: a 0149 aceita `infinitepay`, a 0150 aceita `pagbank`. Aplicar
-  em ordem. Replay do zero em Docker com as **150**; na 0150, `pagbank`
-  aceito, gateway desconhecido recusado, reexecução sem erro. Falta o ensaio
-  com `rollback` pela Management API, na hora de aplicar.
+  `assinaturas`: a 0149 aceita `infinitepay`, a 0150 aceita `pagbank`. Antes:
+  replay do zero em Docker com as **150** (`pagbank` aceito, gateway
+  desconhecido recusado, reexecução sem erro), zero linhas nas três tabelas em
+  produção, e ensaio em transação sem o `notify`, com `rollback` (checks
+  intactos depois). Releitura: os três checks com os quatro gateways; Verandi
+  antes e depois com **57** migrations (última `0086`) e **44** tabelas;
+  `/rest/v1/` responde 401 sem chave.
 
 - **SSL obrigatório desde 19/out/2026** (`PUT .../ssl-enforcement`), com
   autorização do dono. Conexão sem TLS leva `ESSLREQUIRED`, inclusive pelo
