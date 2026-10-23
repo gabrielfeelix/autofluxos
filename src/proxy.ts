@@ -156,6 +156,8 @@ const PREFIXOS_ABERTOS = [
   '/api/loja/nuvemshop/retorno',
   // E do Mercado Pago (cobrança no chat): `state` assinado mais sessão.
   '/api/pagamentos/mercado-pago/retorno',
+  // E do PagBank, no mesmo desenho.
+  '/api/pagamentos/pagbank/retorno',
   /**
    * **Os webhooks da Meta. Mesmo bug das rotas de retorno, e custou o Inbox.**
    *

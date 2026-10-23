@@ -14,6 +14,7 @@ import {
   LogoSite,
   LogoAsaas,
   LogoInfinitePay,
+  LogoPagBank,
   LogoMercadoPago,
   LogoTelegram,
   LogoWhatsApp,
@@ -73,6 +74,7 @@ const LOGO: Record<ChaveDaIntegracao, ReactNode> = {
   mercado_pago: <LogoMercadoPago />,
   asaas: <LogoAsaas />,
   infinitepay: <LogoInfinitePay />,
+  pagbank: <LogoPagBank />,
 }
 
 export default async function Pagina({

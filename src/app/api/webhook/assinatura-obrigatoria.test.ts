@@ -116,6 +116,21 @@ describe('webhooks de pagamento', () => {
     expect((await pedirInfinite('')).status).toBe(401)
   })
 
+  it('PagBank recusa sem o segredo do endereço, com o de outra organização e sem segredo no servidor', async () => {
+    vi.stubEnv('BETTER_AUTH_SECRET', 'segredo-certo')
+    const { POST } = await import('./pagbank/[endereco]/route')
+    const { enderecoDoCliente, segredoDoAviso } = await import('@/channels/pagbank')
+    const endereco = enderecoDoCliente('11111111-1111-1111-1111-111111111111')
+    const pedirPagBank = (t?: string) =>
+      POST(new Request(`https://x.test/api/webhook/pagbank/${endereco}${t === undefined ? '' : `?t=${t}`}`, { method: 'POST', body: corpo }), {
+        params: Promise.resolve({ endereco }),
+      })
+    expect((await pedirPagBank()).status).toBe(401)
+    expect((await pedirPagBank(segredoDoAviso('22222222-2222-2222-2222-222222222222'))).status).toBe(401)
+    vi.stubEnv('BETTER_AUTH_SECRET', '')
+    expect((await pedirPagBank('')).status).toBe(401)
+  })
+
   it('mensalidade da 4YU recusa sem o token, com token de uma organização e sem segredo', async () => {
     vi.stubEnv('BETTER_AUTH_SECRET', 'segredo-certo')
     const { POST } = await import('./assinatura/route')

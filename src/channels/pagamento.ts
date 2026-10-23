@@ -12,16 +12,20 @@
  * na conta dele (MERCADO-COBRANCA-NO-CHAT.md, regra 3).
  */
 
-export const GATEWAYS = ['mercado_pago', 'asaas', 'infinitepay'] as const
+export const GATEWAYS = ['mercado_pago', 'asaas', 'infinitepay', 'pagbank'] as const
 export type Gateway = (typeof GATEWAYS)[number]
 
 export const NOME_DO_GATEWAY: Record<Gateway, string> = {
   mercado_pago: 'Mercado Pago',
   asaas: 'Asaas',
   infinitepay: 'InfinitePay',
+  pagbank: 'PagBank',
 }
 
-/** `teste` só existe no Asaas (chave `$aact_hmlg_`): o sandbox, sem dinheiro de verdade. */
+/**
+ * `teste` é o sandbox, sem dinheiro de verdade: no Asaas pela chave
+ * (`$aact_hmlg_`), no PagBank pelo `PAGBANK_SANDBOX` de quando conectou.
+ */
 export type Ambiente = 'producao' | 'teste'
 
 /** Com o que se fala com a conta do dono. O token vem do cofre, na hora. */

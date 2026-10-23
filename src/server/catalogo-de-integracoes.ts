@@ -11,7 +11,7 @@ import { paginasDaConta } from './repos/paginas-de-lead'
 import { ultimaChegadaDeAnuncio, ultimaMensagemRecebida } from './repos/ultimos-eventos'
 import { NOME_DA_CONEXAO_DE_ADS } from './token-de-anuncios'
 
-export type ChaveDaIntegracao = 'whatsapp' | 'instagram' | 'anuncios' | 'chaves' | 'magento' | 'telegram' | 'site' | 'mercado_pago' | 'asaas' | 'infinitepay'
+export type ChaveDaIntegracao = 'whatsapp' | 'instagram' | 'anuncios' | 'chaves' | 'magento' | 'telegram' | 'site' | 'mercado_pago' | 'asaas' | 'infinitepay' | 'pagbank'
 
 export type ItemDoCatalogo = {
   chave: ChaveDaIntegracao
@@ -186,6 +186,15 @@ export async function catalogoDeIntegracoes(clienteId: string): Promise<ItemDoCa
       href: '/ajustes/pagamentos',
       disponivel: true,
       estado: estadoDaConexao({ tipo: 'cadastro', configurado: pagamento?.gateway === 'infinitepay', href: '/ajustes/pagamentos' }),
+    },
+    {
+      chave: 'pagbank',
+      nome: 'PagBank',
+      categoria: 'Pagamento',
+      descricao: 'Cobrança pela conversa com Pix copia e cola. A conta conecta por login no PagBank, e o dinheiro cai direto na conta da empresa.',
+      href: '/ajustes/pagamentos',
+      disponivel: true,
+      estado: estadoDaConexao({ tipo: 'cadastro', configurado: pagamento?.gateway === 'pagbank', href: '/ajustes/pagamentos' }),
     },
   ]
 }

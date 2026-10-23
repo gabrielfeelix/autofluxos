@@ -6,6 +6,7 @@ import { apagarAviso, criarAviso, ErroDoAsaas, validarChave } from '@/channels/a
 import { tagDaInfinitePay } from '@/channels/infinitepay'
 import { mercadoPagoConfigurado, urlDeAutorizacao } from '@/channels/mercado-pago'
 import { NOME_DO_GATEWAY, type Gateway } from '@/channels/pagamento'
+import { pagbankConfigurado, urlDeAutorizacao as autorizacaoDoPagBank } from '@/channels/pagbank'
 import { alertar } from './alertar'
 import { iniciarConexao } from './instagram/estado'
 import { exigirCapacidade, recusou } from './permissoes'
@@ -38,6 +39,25 @@ export async function acaoConectarMercadoPago(clienteId: string): Promise<void> 
   const host = cabecalhos.get('x-forwarded-host') ?? cabecalhos.get('host')
   const protocolo = cabecalhos.get('x-forwarded-proto') ?? 'https'
   redirect(urlDeAutorizacao({ origem: `${protocolo}://${host}`, state: await iniciarConexao(clienteId) }))
+}
+
+/**
+ * Liga o PagBank por login (Connect), no mesmo desenho do Mercado Pago: o
+ * bilhete assinado vai no `state` (reescrito sem ponto nem hífen, que o
+ * PagBank recusa) e volta em `api/pagamentos/pagbank/retorno`.
+ */
+export async function acaoConectarPagBank(clienteId: string): Promise<void> {
+  const acesso = await exigirCapacidade(clienteId, 'configurar_operacao', 'todos')
+  if (recusou(acesso)) return
+  if (await recusaDoPlano(clienteId, 'integracoes')) return
+  if (!pagbankConfigurado()) return
+  const ativa = await conexaoAtiva(clienteId)
+  if (ativa && ativa.gateway !== 'pagbank') return
+
+  const cabecalhos = await headers()
+  const host = cabecalhos.get('x-forwarded-host') ?? cabecalhos.get('host')
+  const protocolo = cabecalhos.get('x-forwarded-proto') ?? 'https'
+  redirect(autorizacaoDoPagBank({ origem: `${protocolo}://${host}`, estado: await iniciarConexao(clienteId) }))
 }
 
 /** Para onde o Asaas manda o aviso de pagamento desta organização. */
@@ -176,7 +196,8 @@ export async function acaoConectarInfinitePay(clienteId: string, tagDigitada: st
 /**
  * Desliga. As cobranças já feitas continuam na tela; só as novas deixam de
  * sair. No Mercado Pago o acesso continua autorizado lá até o dono revogar em
- * "Aplicações conectadas", e a tela diz isso. No Asaas o webhook que criamos
+ * "Aplicações conectadas", e a tela diz isso; no PagBank, igual, até o dono
+ * revogar no app dele. No Asaas o webhook que criamos
  * sai junto; a chave continua válida lá até o dono apagá-la.
  */
 export async function acaoDesconectarPagamento(clienteId: string, gateway: Gateway): Promise<{ ok: boolean; erro?: string }> {

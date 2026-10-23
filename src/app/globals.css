@@ -104,6 +104,7 @@
   --color-marca-mercadopago: var(--marca-mercadopago);
   --color-marca-asaas: var(--marca-asaas);
   --color-marca-infinitepay: var(--marca-infinitepay);
+  --color-marca-pagbank: var(--marca-pagbank);
 
   /* A casca azul (ver o bloco "A casca" mais abaixo). */
   --color-sobre-casca: var(--sobre-casca);
@@ -240,6 +241,7 @@
   --marca-mercadopago: #009ee3;
   --marca-asaas: #0030b9;
   --marca-infinitepay: #00a85a;
+  --marca-pagbank: #f5c800;
 
   /* O polegar da barra de rolagem: a borda dele é sempre a cor do fundo. */
   --p-barra: #c8cfd8;

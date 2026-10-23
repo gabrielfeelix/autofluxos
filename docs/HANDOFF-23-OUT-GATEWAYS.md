@@ -13,7 +13,7 @@ nossa. Leia antes: `docs/MERCADO-COBRANCA-NO-CHAT.md` (pesquisa, seções
 | Mercado Pago | pronto; espera o Gabriel criar a aplicação (`MERCADO_PAGO_CLIENT_ID/SECRET`) | `b00410cc` |
 | Asaas | pronto; testado só com respostas simuladas, espera chave do sandbox | 0141 a 0145 |
 | InfinitePay | pronto no código e no ar; **a `0149` não está aplicada em produção** (conectar diz "em liberação") | `5be24fd8` |
-| **PagBank** | **próximo**, não começado | |
+| PagBank | pronto no código; **a `0150` não está aplicada** e faltam `PAGBANK_TOKEN`, `PAGBANK_CLIENT_ID`, `PAGBANK_CLIENT_SECRET` | ver `git log -- src/channels/pagbank.ts` |
 | Woovi, Pagar.me | depois, se pedirem | |
 
 ## Como um gateway entra (molde: InfinitePay, `5be24fd8`)
@@ -39,30 +39,27 @@ nossa. Leia antes: `docs/MERCADO-COBRANCA-NO-CHAT.md` (pesquisa, seções
   `conexoes_de_pagamento`, `cobrancas` e `assinaturas`. Gateway novo = migration
   que recria os três (molde: `0149`). Número pelo diretório.
 
-## PagBank: o plano
+## PagBank: como ficou
 
-OAuth de verdade (Connect), Pix copia e cola na conversa, sandbox.
-Documentação: https://developer.pagbank.com.br/docs/connect ,
-/docs/connect-authorization , /reference/obter-access-token ,
-/reference/criar-aplicacao , /reference/criar-pedido ,
-/reference/confirmar-autenticidade-da-notificacao .
+Código em `src/channels/pagbank.ts` (o comentário do topo tem as quatro
+diferenças), retorno em `api/pagamentos/pagbank/retorno`, aviso em
+`api/webhook/pagbank/[endereco]`. O que a documentação não deixava óbvio:
 
-1. Migration aceitando `pagbank` nos três checks.
-2. `channels/pagbank.ts`: `criarCobranca` com `POST /orders` (`reference_id` =
-   referência, `qr_codes[].amount.value` em centavos, `notification_urls` com o
-   endereço da organização e o segredo); `lerPagamento` relendo
-   `GET /orders/{id}` com o token do dono; cancelar se a API permitir.
-3. Conectar por OAuth no molde do Mercado Pago (`acaoConectarMercadoPago`,
-   `state` de `iniciarConexao`, rota de retorno em `PREFIXOS_ABERTOS` do
-   `src/proxy.ts`, leia o comentário de lá). `code` vale 10 minutos, uso único.
-   Escopos: `payments.create payments.read checkout.create accounts.read`.
-4. Renovação em `renovarTokensDePagamento` (manutenção diária). O refresh
-   invalida o anterior. Duração do token: ler da resposta, não chutar.
-5. O `x-authenticity-token` do aviso tem relatos de falha: a defesa é o segredo
-   no endereço mais reler o pedido.
-6. `PAGBANK_CLIENT_ID` e `PAGBANK_CLIENT_SECRET` no cofre e na Vercel; sem
-   eles, o cartão diz "em liberação". Sandbox: `sandbox.api.pagseguro.com`,
-   `connect.sandbox.pagbank.com.br`.
+- A troca do `code` e o refresh levam `X_CLIENT_ID`, `X_CLIENT_SECRET` **e**
+  `Authorization: Bearer <token da conta da 4YU>`. Por isso há
+  `PAGBANK_TOKEN`, além das duas do plano.
+- A aplicação se cria pela API (`POST /oauth2/application`, com o mesmo token),
+  com `redirect_uri` = `https://autofluxos.4yu.com.br/api/pagamentos/pagbank/retorno`.
+  Preview não conecta: o endereço não bate.
+- `state` só alfanumérico: o bilhete é reescrito (`stateDoPagBank`).
+- `notification_urls` até 100 caracteres: id da organização e segredo em
+  base64url (97 no total). Passou de 100, o pedido sai sem aviso.
+- `customer.tax_id` obrigatório: sem CPF, `falta_documento`, como o Asaas.
+- Não há cancelar QR não pago; ele vence no `expiration_date`, que é o
+  vencimento da cobrança.
+- `PAGBANK_SANDBOX=1` conecta em sandbox (`ambiente = 'teste'`).
+- Não testado contra a API de verdade: falta o token. Primeiro teste: sandbox,
+  conectar, cobrar, pagar o QR pelo simulador, conferir o aviso.
 
 Depois: **Woovi** (OAuth WooviApps, só Pix; confirmar se o escopo cria
 cobrança) ou **Pagar.me** (secret key colada, cartão, Pix, boleto e
@@ -91,7 +88,8 @@ pedir: o dono teria de subir certificado.
 
 ## Depende do Gabriel
 
-- Autorizar a `0149` em produção; testar a InfinitePay com R$ 1 de verdade
-  (ela não tem sandbox).
-- Criar a aplicação no PagBank e passar `client_id` e `client_secret`.
+- Autorizar a `0149` e a `0150` em produção; testar a InfinitePay com R$ 1 de
+  verdade (ela não tem sandbox).
+- Gerar o token da conta PagBank da empresa (e o de sandbox) e passar ao
+  agente, que cria a aplicação. Ver `PENDENCIAS-DO-GABRIEL.md`.
 - Mercado Pago e Asaas: ver `PENDENCIAS-DO-GABRIEL.md`.

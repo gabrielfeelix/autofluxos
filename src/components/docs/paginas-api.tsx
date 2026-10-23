@@ -1134,7 +1134,7 @@ const CAMPOS_DA_COBRANCA = [
       </>
     ),
   },
-  { nome: 'gateway', tipo: 'string', descricao: <><Cod>mercado_pago</Cod>, <Cod>asaas</Cod> ou <Cod>infinitepay</Cod>: onde o dinheiro cai.</> },
+  { nome: 'gateway', tipo: 'string', descricao: <><Cod>mercado_pago</Cod>, <Cod>asaas</Cod>, <Cod>infinitepay</Cod> ou <Cod>pagbank</Cod>: onde o dinheiro cai.</> },
   { nome: 'pix_copia_cola', tipo: 'string | null', descricao: 'O código Pix para colar no app do banco.' },
   { nome: 'link', tipo: 'string | null', descricao: 'Página de pagamento do gateway: Pix, cartão e boleto.' },
   { nome: 'origem', tipo: 'string', descricao: <>Quem criou: <Cod>inbox</Cod>, <Cod>fluxo</Cod>, <Cod>ia</Cod> ou <Cod>api</Cod>.</> },

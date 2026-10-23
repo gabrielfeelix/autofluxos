@@ -134,6 +134,24 @@ export function LogoInfinitePay() {
   )
 }
 
+/** O PagBank: o "P" em grafite sobre o amarelo da marca (branco some no amarelo). */
+export function LogoPagBank() {
+  return (
+    <Moldura classe="text-marca-pagbank">
+      <svg width="28" height="28" viewBox="0 0 24 24" fill="none" aria-hidden>
+        <rect x="2" y="2" width="20" height="20" rx="6" fill="currentColor" />
+        <path
+          stroke="#1d1d1b"
+          strokeWidth="2.1"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          d="M9.4 17V7.2h3.3a3 3 0 0 1 0 6H9.4"
+        />
+      </svg>
+    </Moldura>
+  )
+}
+
 export function LogoMercadoPago() {
   return (
     <Moldura classe="text-marca-mercadopago">

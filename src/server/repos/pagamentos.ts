@@ -182,11 +182,13 @@ export async function acessoDaConexao(
   return token ? { token, ambiente: linha.ambiente, avisoNoGateway: linha.aviso_no_gateway } : null
 }
 
+type ParaRenovar = { clienteId: string; gateway: Gateway; renovacao: string; ambiente: Ambiente }
+
 /**
  * As conexões que vencem antes de `limite`, com o token de renovação, para a
  * manutenção diária renovar com folga.
  */
-export async function conexoesParaRenovar(limite: Date): Promise<{ clienteId: string; gateway: Gateway; renovacao: string }[]> {
+export async function conexoesParaRenovar(limite: Date): Promise<ParaRenovar[]> {
   const { data, error } = await db()
     .from('conexoes_de_pagamento')
     .select(COLUNAS)
@@ -195,10 +197,10 @@ export async function conexoesParaRenovar(limite: Date): Promise<{ clienteId: st
   if (tabelaAusente(error)) return []
   if (error) throw new Error(`não foi possível listar as conexões a renovar: ${error.message}`)
 
-  const saida: { clienteId: string; gateway: Gateway; renovacao: string }[] = []
+  const saida: ParaRenovar[] = []
   for (const linha of data as Linha[]) {
     const renovacao = await lerDoCofre(linha.renovacao_ref!)
-    if (renovacao) saida.push({ clienteId: linha.cliente_id, gateway: linha.gateway, renovacao })
+    if (renovacao) saida.push({ clienteId: linha.cliente_id, gateway: linha.gateway, renovacao, ambiente: linha.ambiente })
   }
   return saida
 }
