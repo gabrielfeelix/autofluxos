@@ -1445,6 +1445,15 @@ extração explícito para os objetos de `public`.
   intactos depois). Releitura: os três checks com os quatro gateways; Verandi
   antes e depois com **57** migrations (última `0086`) e **44** tabelas;
   `/rest/v1/` responde 401 sem chave.
+- **a `0151` foi aplicada em 23/out/2026**, com autorização explícita do dono,
+  pela Management API, numa transação. Recria os mesmos três
+  `<tabela>_gateway_check` aceitando os gateways de
+  `docs/gateways/PLANO-GATEWAYS.md` (woovi, paghiper, stripe, efi, iugu,
+  pagarme, inter, sicoob, cielo, cora). Antes: replay do zero em Docker com as
+  **151** (gateway novo aceito, nome fora da lista recusado, reexecução sem
+  erro), zero linhas nas três tabelas, ensaio com `rollback`. Releitura: os
+  três checks com os 14 nomes; Verandi antes e depois com **57** migrations e
+  **44** tabelas; `/rest/v1/` 401 sem chave.
 
 - **SSL obrigatório desde 19/out/2026** (`PUT .../ssl-enforcement`), com
   autorização do dono. Conexão sem TLS leva `ESSLREQUIRED`, inclusive pelo

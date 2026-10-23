@@ -14,7 +14,7 @@ nossa. Leia antes: `docs/MERCADO-COBRANCA-NO-CHAT.md` (pesquisa, seções
 | Asaas | pronto; testado só com respostas simuladas, espera chave do sandbox | 0141 a 0145 |
 | InfinitePay | pronto e no ar; `0149` aplicada em 23/out | `5be24fd8` |
 | PagBank | pronto; `0150` aplicada em 23/out; faltam `PAGBANK_TOKEN`, `PAGBANK_CLIENT_ID`, `PAGBANK_CLIENT_SECRET` | ver `git log -- src/channels/pagbank.ts` |
-| Woovi, PagHiper, Stripe, Efí, Iugu, Pagar.me | prontos no código, testados só com respostas simuladas; **`0151` não aplicada** | ver `git log -- src/channels/woovi.ts` |
+| Woovi, PagHiper, Stripe, Efí, Iugu, Pagar.me | prontos no código, testados só com respostas simuladas; `0151` aplicada em 23/out | ver `git log -- src/channels/woovi.ts` |
 | Inter, Sicoob, Cielo, Cora | esperam a Base 3 (`docs/gateways/PLANO-GATEWAYS.md`) | |
 
 ## Como um gateway entra (molde: InfinitePay, `5be24fd8`)

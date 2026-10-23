@@ -1,8 +1,8 @@
 # Plano: mais gateways na cobrança pelo chat (23/out/2026)
 
 > **Estado (23/out/2026):** ondas 1 e 2 e as bases 1, 2 e 4 feitas no código
-> (Woovi, PagHiper, Stripe, Efí, Iugu, Pagar.me; migration `0151`; tela em
-> catálogo). Testadas só contra respostas simuladas: faltam as contas de teste
+> (Woovi, PagHiper, Stripe, Efí, Iugu, Pagar.me; migration `0151`, aplicada;
+> tela em catálogo). Testadas só contra respostas simuladas: faltam as contas de teste
 > (ver "O que depende do Gabriel"). Onda 3 e Base 3 esperam a decisão sobre
 > Vercel Pro ou `pg_cron`.
 
