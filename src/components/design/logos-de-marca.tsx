@@ -1,3 +1,5 @@
+import { GLIFO_INSTAGRAM, GLIFO_META, GLIFO_STRIPE, GLIFO_TELEGRAM, GLIFO_WHATSAPP } from './glifos-oficiais'
+
 /**
  * As logos das marcas com que o produto conversa.
  *
@@ -7,63 +9,86 @@
  *
  * Numa tela de integrações, a logo **é** o rótulo: reconhecer o WhatsApp pelo
  * verde é mais rápido do que ler a palavra, e é o que faz a tela parecer um
- * catálogo em vez de uma lista de configurações. É a coisa mais valiosa da
- * referência que o dono trouxe, e a mais barata de acertar.
+ * catálogo em vez de uma lista de configurações.
  *
  * ---------------------------------------------------------------------------
- * Desenhadas aqui, e de propósito
+ * As logos de verdade, nunca redesenhadas
  * ---------------------------------------------------------------------------
  *
- * Nada é baixado de CDN de terceiro: uma tela de configurações que depende do
- * servidor de outra empresa para desenhar quatro ícones é uma tela que quebra
- * quando aquele servidor cai, e que conta para fora quem abriu a página. São
- * formas simplificadas, reconhecíveis pela silhueta, e o uso é nominativo ,
- * identificar a integração, que é exatamente para o que a marca serve aqui.
+ * Toda marca aqui é a oficial: as que têm desenho no Simple Icons saem de
+ * `glifos-oficiais.ts` (copiado do material oficial de cada uma), e as outras
+ * de `public/logos/marcas/`, baixadas do site ou do GitHub oficial da
+ * empresa. Uma versão desenhada à mão parecida com a marca é a marca errada.
  *
- * A cor vem de `globals.css` (`--marca-*`), nunca escrita neste arquivo.
+ * Tudo mora no nosso servidor, nada de CDN de terceiro: a tela de
+ * configurações não pode quebrar quando o servidor de outra empresa cai, nem
+ * contar para fora quem abriu a página. O uso é nominativo: identificar a
+ * integração, que é exatamente para o que a marca serve aqui.
  */
 
+/**
+ * O quadrado de 40px. Marca de terceiro vai em fundo branco nos dois temas: a
+ * logo oficial foi feita para fundo claro, e no escuro ela perde a cor. Os
+ * ícones nossos (site, chave, loja) seguem o tema.
+ */
 function Moldura({
   children,
-  classe,
+  classe = '',
+  marca = false,
 }: {
   children: React.ReactNode
-  classe: string
+  classe?: string
+  marca?: boolean
 }) {
   return (
     <span
-      className={`flex size-10 shrink-0 items-center justify-center rounded-[12px] border border-line bg-surface ${classe}`}
+      className={`flex size-10 shrink-0 items-center justify-center rounded-[12px] border border-line ${marca ? 'bg-white' : 'bg-surface'} ${classe}`}
     >
       {children}
     </span>
   )
 }
 
+/** Um desenho oficial de 24x24, na cor oficial da marca. */
+function Glifo({ d, cor, tamanho = 24 }: { d: string; cor: string; tamanho?: number }) {
+  return (
+    <svg width={tamanho} height={tamanho} viewBox="0 0 24 24" fill={cor} aria-hidden>
+      <path d={d} />
+    </svg>
+  )
+}
+
+/** A logo oficial em arquivo, de `public/logos/marcas/`. */
+function Arquivo({ nome, largura = 28, altura = 28 }: { nome: string; largura?: number; altura?: number }) {
+  return (
+    // eslint-disable-next-line @next/next/no-img-element
+    <img src={`/logos/marcas/${nome}`} alt="" width={largura} height={altura} className="object-contain" draggable={false} />
+  )
+}
+
 export function LogoWhatsApp() {
   return (
-    <Moldura classe="text-marca-whatsapp">
-      <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
-        <path d="M12 2a10 10 0 0 0-8.6 15.1L2 22l5.1-1.3A10 10 0 1 0 12 2Zm5.5 14.1c-.2.6-1.2 1.2-1.7 1.2-.5.1-1 .1-1.6-.1-.4-.1-.9-.3-1.5-.6-2.6-1.2-4.3-3.9-4.4-4.1-.1-.2-1-1.4-1-2.6s.6-1.8.8-2.1c.2-.2.5-.3.6-.3h.5c.2 0 .4 0 .6.4l.8 2c.1.2 0 .4-.1.5l-.3.4c-.1.1-.3.3-.1.6.1.2.6 1 1.3 1.7.9.8 1.6 1 1.9 1.2.2.1.4.1.5-.1l.7-.8c.2-.2.3-.2.5-.1l2 .9c.2.1.4.2.4.3.1.1.1.6-.1 1.2Z" />
-      </svg>
+    <Moldura marca>
+      <Glifo d={GLIFO_WHATSAPP} cor="#25D366" />
     </Moldura>
   )
 }
 
+/** O glifo do Instagram com o degradê oficial (Meta Brand Resources). */
 export function LogoInstagram() {
   return (
-    <Moldura classe="text-marca-instagram">
-      <svg
-        width="21"
-        height="21"
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="2"
-        aria-hidden
-      >
-        <rect x="2.5" y="2.5" width="19" height="19" rx="5.5" />
-        <circle cx="12" cy="12" r="4.2" />
-        <circle cx="17.4" cy="6.6" r="1.2" fill="currentColor" stroke="none" />
+    <Moldura marca>
+      <svg width={24} height={24} viewBox="0 0 24 24" aria-hidden>
+        <defs>
+          <radialGradient id="degrade-instagram" cx="30%" cy="107%" r="150%">
+            <stop offset="0" stopColor="#FFD600" />
+            <stop offset="0.25" stopColor="#FF7A00" />
+            <stop offset="0.5" stopColor="#FF0069" />
+            <stop offset="0.75" stopColor="#D300C5" />
+            <stop offset="1" stopColor="#7638FA" />
+          </radialGradient>
+        </defs>
+        <path d={GLIFO_INSTAGRAM} fill="url(#degrade-instagram)" />
       </svg>
     </Moldura>
   )
@@ -72,136 +97,82 @@ export function LogoInstagram() {
 /** A Meta, usada para Anúncios (Lead Ads), que é conta de anúncios e páginas. */
 export function LogoMeta() {
   return (
-    <Moldura classe="text-marca-meta">
-      <svg
-        width="23"
-        height="23"
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="2"
-        strokeLinecap="round"
-        aria-hidden
-      >
-        <path d="M2.8 14.8c0-3.9 2-7.6 4.3-7.6 1.3 0 2.3 1 3.6 2.9l1.3 2" />
-        <path d="M21.2 14.8c0-3.9-2-7.6-4.3-7.6-1.3 0-2.3 1-3.6 2.9l-1.3 2" />
-        <path d="M2.8 14.8c0 1.5.8 2.4 2 2.4 1.6 0 2.8-1.2 5-4.8" />
-        <path d="M21.2 14.8c0 1.5-.8 2.4-2 2.4-1.6 0-2.8-1.2-5-4.8" />
-      </svg>
+    <Moldura marca>
+      <Glifo d={GLIFO_META} cor="#0467DF" tamanho={26} />
     </Moldura>
   )
 }
 
 export function LogoTelegram() {
   return (
-    <Moldura classe="text-marca-telegram">
-      <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
-        <path d="M21.7 4.3 2.9 11.5c-.9.3-.9 1.5.1 1.7l4.7 1.2 1.8 5.3c.2.6 1 .8 1.4.3l2.4-2.5 4.7 3.4c.6.4 1.4.1 1.5-.6l2.8-14.9c.2-.8-.6-1.4-1.6-1.1ZM9.4 14.2l9.1-6.4-7.8 7.5-.3 3.1-1-4.2Z" />
-      </svg>
+    <Moldura marca>
+      <Glifo d={GLIFO_TELEGRAM} cor="#26A5E4" />
     </Moldura>
   )
 }
 
-/** O Mercado Pago: o aperto de mãos dentro da forma oval, em branco sobre o azul da marca. */
-/** O Asaas: o "a" minúsculo da marca, branco no quadrado azul. */
-export function LogoAsaas() {
-  return (
-    <Moldura classe="text-marca-asaas">
-      <svg width="28" height="28" viewBox="0 0 24 24" fill="none" aria-hidden>
-        <rect x="2" y="2" width="20" height="20" rx="6" fill="currentColor" />
-        <g className="stroke-white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-          <circle cx="11.2" cy="13" r="3.6" />
-          <path d="M14.8 9.4V16.6" />
-        </g>
-      </svg>
-    </Moldura>
-  )
-}
-
-export function LogoInfinitePay() {
-  return (
-    <Moldura classe="text-marca-infinitepay">
-      <svg width="28" height="28" viewBox="0 0 24 24" fill="none" aria-hidden>
-        <rect x="2" y="2" width="20" height="20" rx="6" fill="currentColor" />
-        <path
-          className="stroke-white"
-          strokeWidth="1.9"
-          strokeLinecap="round"
-          d="M12 12c-1.3-1.7-2.4-2.6-3.6-2.6a2.6 2.6 0 0 0 0 5.2c1.2 0 2.3-.9 3.6-2.6Zm0 0c1.3 1.7 2.4 2.6 3.6 2.6a2.6 2.6 0 0 0 0-5.2c-1.2 0-2.3.9-3.6 2.6Z"
-        />
-      </svg>
-    </Moldura>
-  )
-}
-
-/**
- * As marcas sem desenho próprio aqui: a inicial em branco no quadrado da cor
- * da marca, o mesmo gesto do Asaas e da InfinitePay. Reconhecer pela cor e
- * pela letra basta numa grade de conexões; o logotipo de verdade é deles.
- */
-function Monograma({ classe, letras }: { classe: string; letras: string }) {
-  return (
-    <Moldura classe={classe}>
-      <svg width="28" height="28" viewBox="0 0 24 24" aria-hidden>
-        <rect x="2" y="2" width="20" height="20" rx="6" fill="currentColor" />
-        <text
-          x="12"
-          y="12.5"
-          textAnchor="middle"
-          dominantBaseline="central"
-          fill="#fff"
-          fontSize={letras.length > 1 ? 9.5 : 12}
-          fontWeight={800}
-          letterSpacing={letras.length > 1 ? -0.4 : 0}
-          fontFamily="inherit"
-        >
-          {letras}
-        </text>
-      </svg>
-    </Moldura>
-  )
-}
-
-export const LogoWoovi = () => <Monograma classe="text-marca-woovi" letras="w" />
-export const LogoPagHiper = () => <Monograma classe="text-marca-paghiper" letras="ph" />
-export const LogoStripe = () => <Monograma classe="text-marca-stripe" letras="S" />
-export const LogoEfi = () => <Monograma classe="text-marca-efi" letras="efí" />
-export const LogoIugu = () => <Monograma classe="text-marca-iugu" letras="iu" />
-export const LogoPagarme = () => <Monograma classe="text-marca-pagarme" letras="p." />
-
-/** O PagBank: o "P" em grafite sobre o amarelo da marca (branco some no amarelo). */
-export function LogoPagBank() {
-  return (
-    <Moldura classe="text-marca-pagbank">
-      <svg width="28" height="28" viewBox="0 0 24 24" fill="none" aria-hidden>
-        <rect x="2" y="2" width="20" height="20" rx="6" fill="currentColor" />
-        <path
-          stroke="#1d1d1b"
-          strokeWidth="2.1"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          d="M9.4 17V7.2h3.3a3 3 0 0 1 0 6H9.4"
-        />
-      </svg>
-    </Moldura>
-  )
-}
-
+/** O símbolo atual do Mercado Pago, o do cabeçalho de mercadopago.com.br. */
 export function LogoMercadoPago() {
   return (
-    <Moldura classe="text-marca-mercadopago">
-      <svg width="28" height="28" viewBox="0 0 24 24" fill="none" aria-hidden>
-        <ellipse cx="12" cy="12" rx="11" ry="7.6" fill="currentColor" />
-        <g className="stroke-white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-          <path d="M3.6 11.6 7 9.6l2.4.9 2.4-1.5h2.3l4.9 2.6" />
-          <path d="m20.4 11.6-1.8 1.3-4.6-3" />
-          <path d="M11.8 9 10 10.3a1 1 0 0 0 1.2 1.6l1.6-1.1" />
-          <path d="m7.4 12.6 1.5 1.3m.9-1.9 1.7 1.5m.7-1.4 1.7 1.4m.4-1.1 1.2 1" />
-        </g>
+    <Moldura marca>
+      <Arquivo nome="mercadopago.svg" />
+    </Moldura>
+  )
+}
+
+/** O ícone oficial do Stripe: o "S" branco no quadrado roxo. */
+export function LogoStripe() {
+  return (
+    <Moldura marca>
+      <svg width={28} height={28} viewBox="0 0 24 24" aria-hidden>
+        <rect width="24" height="24" rx="5.5" fill="#635BFF" />
+        <path d={GLIFO_STRIPE} fill="#fff" transform="translate(4.2 4.2) scale(0.65)" />
       </svg>
     </Moldura>
   )
 }
+
+export const LogoAsaas = () => (
+  <Moldura marca>
+    <Arquivo nome="asaas.png" />
+  </Moldura>
+)
+export const LogoInfinitePay = () => (
+  <Moldura marca>
+    <Arquivo nome="infinitepay.svg" />
+  </Moldura>
+)
+export const LogoPagBank = () => (
+  <Moldura marca>
+    <Arquivo nome="pagbank.png" />
+  </Moldura>
+)
+export const LogoWoovi = () => (
+  <Moldura marca>
+    <Arquivo nome="woovi.png" />
+  </Moldura>
+)
+export const LogoPagHiper = () => (
+  <Moldura marca>
+    <Arquivo nome="paghiper.png" largura={26} altura={26} />
+  </Moldura>
+)
+/** A Efí não tem símbolo sem a palavra: é o "efí" laranja da marca, sem o "BANK". */
+export const LogoEfi = () => (
+  <Moldura marca>
+    <Arquivo nome="efi.svg" largura={30} altura={19} />
+  </Moldura>
+)
+export const LogoIugu = () => (
+  <Moldura marca>
+    <Arquivo nome="iugu.svg" largura={24} altura={24} />
+  </Moldura>
+)
+export const LogoPagarme = () => (
+  <Moldura marca>
+    <Arquivo nome="pagarme.png" largura={26} altura={26} />
+  </Moldura>
+)
 
 /**
  * O chat do site. Não é marca de ninguém: uma janela de navegador com o balão

@@ -93,7 +93,7 @@ export const DEFINICAO_DO_CANAL: Record<CanalId, DefinicaoDeCanal> = {
     id: 'instagram',
     nome: 'Instagram',
     resumo: 'Responde no direct, comentário que vira conversa, resposta a story.',
-    cor: '#E1306C',
+    cor: '#FF0069',
     /*
      * O adaptador existe (`channels/instagram.ts`), o webhook existe, e a tela
      * de conectar existe. O que falta não é código: as permissões
@@ -117,7 +117,7 @@ export const DEFINICAO_DO_CANAL: Record<CanalId, DefinicaoDeCanal> = {
     id: 'telegram',
     nome: 'Telegram',
     resumo: 'Atende num bot @seu_negocio, sem número e sem custo por conversa.',
-    cor: '#2AABEE',
+    cor: '#26A5E4',
     /*
      * Disponível desde a 0140: o bot é guardado em `channels` com
      * `provider = telegram`, o token no Vault, e as mensagens chegam por

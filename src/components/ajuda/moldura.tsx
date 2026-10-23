@@ -1,3 +1,4 @@
+import { GLIFO_WHATSAPP } from '@/components/design/glifos-oficiais'
 import type { ReactNode } from 'react'
 import type { Categoria } from './artigos'
 
@@ -122,10 +123,10 @@ function IconeBalao() {
 }
 
 function IconeWhatsapp() {
+  // A marca do WhatsApp é preenchida: em traço, como os outros ícones daqui, ela deixa de ser a marca.
   return (
-    <Traco tamanho={18}>
-      <path d="M3.5 20.5 5 16a8.5 8.5 0 1 1 3.2 3.1Z" />
-      <path d="M9 9.5c0 3 2.5 5.5 5.5 5.5l1.2-1.4-2-1-.9.8a4 4 0 0 1-2.2-2.2l.8-.9-1-2Z" />
-    </Traco>
+    <svg width={18} height={18} viewBox="0 0 24 24" fill="currentColor" aria-hidden>
+      <path d={GLIFO_WHATSAPP} />
+    </svg>
   )
 }
