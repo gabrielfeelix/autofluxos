@@ -3,6 +3,7 @@
 import { headers } from 'next/headers'
 import { redirect } from 'next/navigation'
 import { apagarAviso, criarAviso, ErroDoAsaas, validarChave } from '@/channels/asaas'
+import { tagDaInfinitePay } from '@/channels/infinitepay'
 import { mercadoPagoConfigurado, urlDeAutorizacao } from '@/channels/mercado-pago'
 import { NOME_DO_GATEWAY, type Gateway } from '@/channels/pagamento'
 import { alertar } from './alertar'
@@ -126,6 +127,49 @@ export async function acaoConectarAsaas(clienteId: string, chave: string): Promi
 
   // Trocou de chave: o webhook da conexão anterior sai, senão o Asaas avisaria duas vezes.
   if (anterior?.avisoNoGateway && anterior.avisoNoGateway !== avisoId) await apagarAviso(anterior, anterior.avisoNoGateway)
+  return { ok: true }
+}
+
+/**
+ * Liga a InfinitePay pela InfiniteTag (o `$` da conta). Não há chave nem
+ * login para conferir: a tag só passa pelo formato, e a mesma tag não liga em
+ * duas organizações (`unique (gateway, conta_no_gateway)`). O aviso de pago
+ * não se cadastra aqui; ele vai em cada link (`channels/infinitepay.ts`).
+ */
+export async function acaoConectarInfinitePay(clienteId: string, tagDigitada: string): Promise<{ ok: boolean; erro?: string }> {
+  const acesso = await exigirCapacidade(clienteId, 'configurar_operacao', 'todos')
+  if (recusou(acesso)) return { ok: false, erro: acesso.erro }
+  const recusa = await recusaDoPlano(clienteId, 'integracoes')
+  if (recusa) return { ok: false, erro: recusa }
+  const ativa = await conexaoAtiva(clienteId)
+  if (ativa && ativa.gateway !== 'infinitepay') {
+    return { ok: false, erro: `Desconecte o ${NOME_DO_GATEWAY[ativa.gateway]} antes. O dinheiro cai numa conta por vez.` }
+  }
+  const tag = tagDaInfinitePay(tagDigitada)
+  if (!tag) return { ok: false, erro: 'Isto não parece uma InfiniteTag. Ela aparece no app da InfinitePay, com $ na frente.' }
+
+  try {
+    await salvarConexaoDePagamento({
+      clienteId,
+      gateway: 'infinitepay',
+      contaNoGateway: tag,
+      apelido: `$${tag}`,
+      token: tag,
+      renovacao: null,
+      expiraEm: null,
+      ambiente: 'producao',
+      avisoNoGateway: null,
+    })
+  } catch (erro) {
+    if (erro instanceof Error && erro.message.includes('outra conta')) {
+      return { ok: false, erro: 'Esta InfiniteTag já está ligada a outra organização.' }
+    }
+    if (erro instanceof Error && /check constraint|gateway_check/.test(erro.message)) {
+      return { ok: false, erro: 'A InfinitePay está sendo liberada pela equipe da 4YU.' }
+    }
+    await alertar('não foi possível salvar a conexão da InfinitePay', erro, { cliente: clienteId })
+    return { ok: false, erro: 'Não foi possível salvar a conexão. Tente de novo.' }
+  }
   return { ok: true }
 }
 

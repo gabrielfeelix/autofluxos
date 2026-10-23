@@ -118,6 +118,22 @@ export function LogoAsaas() {
   )
 }
 
+export function LogoInfinitePay() {
+  return (
+    <Moldura classe="text-marca-infinitepay">
+      <svg width="28" height="28" viewBox="0 0 24 24" fill="none" aria-hidden>
+        <rect x="2" y="2" width="20" height="20" rx="6" fill="currentColor" />
+        <path
+          className="stroke-white"
+          strokeWidth="1.9"
+          strokeLinecap="round"
+          d="M12 12c-1.3-1.7-2.4-2.6-3.6-2.6a2.6 2.6 0 0 0 0 5.2c1.2 0 2.3-.9 3.6-2.6Zm0 0c1.3 1.7 2.4 2.6 3.6 2.6a2.6 2.6 0 0 0 0-5.2c-1.2 0-2.3.9-3.6 2.6Z"
+        />
+      </svg>
+    </Moldura>
+  )
+}
+
 export function LogoMercadoPago() {
   return (
     <Moldura classe="text-marca-mercadopago">

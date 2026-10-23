@@ -3,10 +3,12 @@ import { mercadoPagoConfigurado } from '@/channels/mercado-pago'
 import { AjustesShell } from '@/components/design/ajustes-shell'
 import { CabecalhoDaTela } from '@/components/design/cabecalho-da-tela'
 import { CartaoDeConexao, GRADE_DE_CONEXOES } from '@/components/conexoes/cartao'
-import { LogoAsaas, LogoMercadoPago } from '@/components/design/logos-de-marca'
+import { LogoAsaas, LogoInfinitePay, LogoMercadoPago } from '@/components/design/logos-de-marca'
 import { Miolo } from '@/components/design/miolo'
 import { Pilula } from '@/components/design/pilula'
 import { ConectarAsaas } from '@/components/pagamentos/conectar-asaas'
+import { ConectarInfinitePay } from '@/components/pagamentos/conectar-infinitepay'
+import { NOME_DO_GATEWAY, type Gateway } from '@/channels/pagamento'
 import { CriarModeloDeLembrete } from '@/components/pagamentos/modelo-de-lembrete'
 import { NOME_DO_MODELO_DE_COBRANCA } from '@/core/mensalidade'
 import { listarTemplates } from '@/server/repos/templates'
@@ -53,6 +55,12 @@ export default async function Pagina({
   const [ativa, recusa] = await Promise.all([conexaoAtiva(clienteId), recusaDoPlano(clienteId, 'integracoes')])
   const conexao = ativa?.gateway === 'mercado_pago' ? ativa : null
   const asaas = ativa?.gateway === 'asaas' ? ativa : null
+  const infinitepay = ativa?.gateway === 'infinitepay' ? ativa : null
+  // O dinheiro cai numa conta por vez: com outro gateway ligado, cada cartão diz qual e esconde o botão.
+  const outro = (gateway: Gateway) => (ativa && ativa.gateway !== gateway ? ativa : null)
+  const avisoDeOutro = ativa
+    ? `As cobranças saem pelo ${NOME_DO_GATEWAY[ativa.gateway]}. Para receber por aqui, desconecte o ${NOME_DO_GATEWAY[ativa.gateway]} antes.`
+    : ''
   const liberado = mercadoPagoConfigurado()
   const resultado = busca.resultado ? RESULTADOS[busca.resultado] : undefined
   const modelo = ativa
@@ -78,8 +86,8 @@ export default async function Pagina({
             titulo={<>Pagamentos</>}
             descricao={
               <>
-                Conecte a conta da empresa no Mercado Pago ou no Asaas para cobrar pela conversa, com Pix e
-                link de pagamento. O dinheiro cai direto na sua conta, e o AutoFluxos não cobra porcentagem.
+                Conecte a conta da empresa no Mercado Pago, no Asaas ou na InfinitePay para cobrar pela conversa,
+                com Pix e link de pagamento. O dinheiro cai direto na sua conta, e o AutoFluxos não cobra porcentagem.
               </>
             }
           />
@@ -93,7 +101,7 @@ export default async function Pagina({
                 <Pilula>fora do plano</Pilula>
               ) : conexao ? (
                 <Pilula tom="ok">conectado</Pilula>
-              ) : asaas ? null : liberado ? (
+              ) : outro('mercado_pago') ? null : liberado ? (
                 <Pilula>não conectado</Pilula>
               ) : (
                 <Pilula tom="aviso">em liberação</Pilula>
@@ -102,7 +110,7 @@ export default async function Pagina({
             titulo="Mercado Pago"
             categoria="Pix, cartão e boleto"
             rodape={
-              recusa || asaas ? null : (
+              recusa || outro('mercado_pago') ? null : (
                 <>
                   {liberado && (
                     <form action={acaoConectarMercadoPago.bind(null, clienteId)}>
@@ -123,8 +131,8 @@ export default async function Pagina({
                 Conectado como <strong className="text-soft">{conexao.apelido ?? `conta ${conexao.contaNoGateway}`}</strong>
                 {conexao.expiraEm && <>. O acesso se renova sozinho; o atual vale até {dataCurta(conexao.expiraEm)}.</>}
               </>
-            ) : asaas ? (
-              'As cobranças saem pelo Asaas. Para receber pelo Mercado Pago, desconecte o Asaas antes.'
+            ) : outro('mercado_pago') ? (
+              avisoDeOutro
             ) : liberado ? (
               'Você entra na sua conta do Mercado Pago e autoriza. Nenhuma chave para copiar.'
             ) : (
@@ -141,14 +149,14 @@ export default async function Pagina({
                 <Pilula tom={asaas.ambiente === 'teste' ? 'aviso' : 'ok'}>
                   {asaas.ambiente === 'teste' ? 'conectado em teste' : 'conectado'}
                 </Pilula>
-              ) : conexao ? null : (
+              ) : outro('asaas') ? null : (
                 <Pilula>não conectado</Pilula>
               )
             }
             titulo="Asaas"
             categoria="Pix, cartão, boleto e nota fiscal"
             rodape={
-              recusa || conexao ? null : (
+              recusa || outro('asaas') ? null : (
                 <>
                   <ConectarAsaas clienteId={clienteId} trocar={Boolean(asaas)} />
                   {asaas && <DesconectarPagamento clienteId={clienteId} gateway="asaas" />}
@@ -165,10 +173,46 @@ export default async function Pagina({
                   ? ' Chave de sandbox: as cobranças são de teste e nenhum dinheiro de verdade se move.'
                   : ' A nota fiscal de serviço sai pelo próprio Asaas, se estiver ligada lá.'}
               </>
-            ) : conexao ? (
-              'As cobranças saem pelo Mercado Pago. Para receber pelo Asaas, desconecte o Mercado Pago antes.'
+            ) : outro('asaas') ? (
+              avisoDeOutro
             ) : (
               'Cole a chave de API da sua conta. O Asaas também emite a nota fiscal de serviço da cobrança paga.'
+            )}
+          </CartaoDeConexao>
+
+          <CartaoDeConexao
+            logo={<LogoInfinitePay />}
+            selo={
+              recusa ? (
+                <Pilula>fora do plano</Pilula>
+              ) : infinitepay ? (
+                <Pilula tom="ok">conectado</Pilula>
+              ) : outro('infinitepay') ? null : (
+                <Pilula>não conectado</Pilula>
+              )
+            }
+            titulo="InfinitePay"
+            categoria="Pix sem taxa e cartão em até 12x"
+            rodape={
+              recusa || outro('infinitepay') ? null : (
+                <>
+                  <ConectarInfinitePay clienteId={clienteId} trocar={Boolean(infinitepay)} />
+                  {infinitepay && <DesconectarPagamento clienteId={clienteId} gateway="infinitepay" />}
+                </>
+              )
+            }
+          >
+            {recusa ? (
+              recusa
+            ) : infinitepay ? (
+              <>
+                Conectado como <strong className="text-soft">{infinitepay.apelido ?? 'conta da InfinitePay'}</strong>. A cobrança vai
+                como link de pagamento: a pessoa escolhe Pix ou cartão na página da InfinitePay.
+              </>
+            ) : outro('infinitepay') ? (
+              avisoDeOutro
+            ) : (
+              'Digite a InfiniteTag da empresa. Pix sem taxa para quem recebe; a cobrança vai como link, sem Pix copia e cola na conversa.'
             )}
           </CartaoDeConexao>
         </div>

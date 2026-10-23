@@ -1,5 +1,6 @@
 import 'server-only'
 import { asaas } from '@/channels/asaas'
+import { infinitepay } from '@/channels/infinitepay'
 import { mercadoPago } from '@/channels/mercado-pago'
 import { NOME_DO_GATEWAY, type Gateway, type GatewayDePagamento, type PedidoDeCobranca } from '@/channels/pagamento'
 import type { Canal, PedidoNativo } from '@/channels/types'
@@ -46,7 +47,7 @@ import { emitirEvento } from './webhooks-de-saida'
  * (atendente digitou, ou `core/cobranca.ts` somou pelo catálogo).
  */
 
-const GATEWAYS: Record<Gateway, GatewayDePagamento> = { mercado_pago: mercadoPago, asaas }
+const GATEWAYS: Record<Gateway, GatewayDePagamento> = { mercado_pago: mercadoPago, asaas, infinitepay }
 
 export function gatewayDe(gateway: Gateway): GatewayDePagamento {
   return GATEWAYS[gateway]
@@ -287,6 +288,7 @@ export async function criarCobranca(pedido: PedidoDeCobrancaDaConta): Promise<Re
   try {
     const criada = await gatewayDe(conexao.gateway).criarCobranca(acesso, {
       referencia: id,
+      clienteId: pedido.clienteId,
       valorCentavos: pedido.valorCentavos,
       descricao: pedido.descricao.trim(),
       venceEm: pedido.venceEm,

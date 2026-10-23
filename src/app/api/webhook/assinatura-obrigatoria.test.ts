@@ -101,6 +101,21 @@ describe('webhooks de pagamento', () => {
     expect((await pedirAsaas('')).status).toBe(401)
   })
 
+  it('InfinitePay recusa sem o segredo do endereço, com o de outra organização e sem segredo no servidor', async () => {
+    vi.stubEnv('BETTER_AUTH_SECRET', 'segredo-certo')
+    const { POST } = await import('./infinitepay/[clienteId]/route')
+    const { segredoDoAviso } = await import('@/channels/infinitepay')
+    const conta = '11111111-1111-1111-1111-111111111111'
+    const pedirInfinite = (t?: string) =>
+      POST(new Request(`https://x.test/api/webhook/infinitepay/${conta}${t === undefined ? '' : `?t=${t}`}`, { method: 'POST', body: corpo }), {
+        params: Promise.resolve({ clienteId: conta }),
+      })
+    expect((await pedirInfinite()).status).toBe(401)
+    expect((await pedirInfinite(segredoDoAviso('22222222-2222-2222-2222-222222222222'))).status).toBe(401)
+    vi.stubEnv('BETTER_AUTH_SECRET', '')
+    expect((await pedirInfinite('')).status).toBe(401)
+  })
+
   it('mensalidade da 4YU recusa sem o token, com token de uma organização e sem segredo', async () => {
     vi.stubEnv('BETTER_AUTH_SECRET', 'segredo-certo')
     const { POST } = await import('./assinatura/route')

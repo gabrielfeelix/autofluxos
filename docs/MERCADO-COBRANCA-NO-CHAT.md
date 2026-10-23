@@ -181,3 +181,31 @@ Ordem, se um cliente pedir: **InfinitePay** (ligar é digitar o @, Pix sem
 taxa, muito usada por quem tem maquininha) e depois **PagBank**. Na
 InfinitePay o aviso não prova de onde veio: como no Asaas, o pagamento é
 relido (`payment_check`) antes de a cobrança mudar.
+
+## Pesquisa a fundo (23/out/2026, documentação oficial de cada um)
+
+`[?]` = não confirmado na documentação oficial.
+
+| Gateway | Conexão do dono | Pix copia e cola | Aviso de pago | Sandbox | Veredito |
+|---|---|---|---|---|---|
+| **PagBank** | **OAuth de verdade (Connect)**: `connect.pagbank.com.br/oauth2/authorize`, escopos `payments.create`, `checkout.create`; refresh e revogação | sim (`POST /orders`, `qr_codes`) | `notification_urls` por pedido; `x-authenticity-token` SHA-256 (relatos de falha: reler o pedido) | sim | **serve, é o próximo** |
+| InfinitePay | só a InfiniteTag | não, só link | `webhook_url` por link, sem assinatura; `payment_check` | [?] | **feita em 23/out (`channels/infinitepay.ts`)** |
+| Woovi | OAuth (WooviApps), corrige a avaliação anterior | sim | assinado por chave pública | [?] | serve com ressalva: só Pix; escopo de criar cobrança [?] |
+| Pagar.me (Stone) | secret key colada | sim | sim; assinatura v5 [?] | sim | serve com ressalva |
+| Cielo, Rede | chaves coladas / client_credentials | sim | sim | sim / [?] | serve com ressalva: cadastro pesado |
+| PicPay, Iugu, PagHiper | chaves coladas | sim | sim | sim / [?] | serve com ressalva: nicho |
+| Inter, Sicoob, Efí, BB, Sicredi | certificado (mTLS) + client_id/secret | sim | por chave Pix | sim (Inter) | serve com ressalva: atrito alto para o dono |
+| Stone/Ton, Nubank PJ | sem API de cobrança para terceiro | não | não | não | não serve |
+| Getnet, Vindi, Appmax, Zoop, EBANX | documentação não carregou | [?] | [?] | [?] | não confirmado |
+
+Ordem: **PagBank** (OAuth como o Mercado Pago, Pix na conversa, base enorme de
+pequeno negócio), depois **Pagar.me** ou **Woovi**.
+
+Fontes do PagBank: https://developer.pagbank.com.br/docs/connect ,
+https://developer.pagbank.com.br/docs/connect-authorization ,
+https://developer.pagbank.com.br/reference/obter-access-token ,
+https://developer.pagbank.com.br/reference/criar-aplicacao ,
+https://developer.pagbank.com.br/reference/criar-pedido ,
+https://developer.pagbank.com.br/reference/confirmar-autenticidade-da-notificacao .
+Woovi: https://developers.woovi.com/en/docs/woovi-apps/woovi-apps-how-to-authorize .
+Pagar.me: https://docs.pagar.me/docs/chaves-de-acesso .

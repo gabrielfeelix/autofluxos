@@ -11,7 +11,7 @@ import { paginasDaConta } from './repos/paginas-de-lead'
 import { ultimaChegadaDeAnuncio, ultimaMensagemRecebida } from './repos/ultimos-eventos'
 import { NOME_DA_CONEXAO_DE_ADS } from './token-de-anuncios'
 
-export type ChaveDaIntegracao = 'whatsapp' | 'instagram' | 'anuncios' | 'chaves' | 'magento' | 'telegram' | 'site' | 'mercado_pago' | 'asaas'
+export type ChaveDaIntegracao = 'whatsapp' | 'instagram' | 'anuncios' | 'chaves' | 'magento' | 'telegram' | 'site' | 'mercado_pago' | 'asaas' | 'infinitepay'
 
 export type ItemDoCatalogo = {
   chave: ChaveDaIntegracao
@@ -177,6 +177,15 @@ export async function catalogoDeIntegracoes(clienteId: string): Promise<ItemDoCa
       href: '/ajustes/pagamentos',
       disponivel: true,
       estado: estadoDaConexao({ tipo: 'cadastro', configurado: pagamento?.gateway === 'asaas', href: '/ajustes/pagamentos' }),
+    },
+    {
+      chave: 'infinitepay',
+      nome: 'InfinitePay',
+      categoria: 'Pagamento',
+      descricao: 'Cobrança pela conversa por link, com Pix sem taxa e cartão em até 12x. O dinheiro cai direto na conta da empresa.',
+      href: '/ajustes/pagamentos',
+      disponivel: true,
+      estado: estadoDaConexao({ tipo: 'cadastro', configurado: pagamento?.gateway === 'infinitepay', href: '/ajustes/pagamentos' }),
     },
   ]
 }

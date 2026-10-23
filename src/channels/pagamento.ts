@@ -12,12 +12,13 @@
  * na conta dele (MERCADO-COBRANCA-NO-CHAT.md, regra 3).
  */
 
-export const GATEWAYS = ['mercado_pago', 'asaas'] as const
+export const GATEWAYS = ['mercado_pago', 'asaas', 'infinitepay'] as const
 export type Gateway = (typeof GATEWAYS)[number]
 
 export const NOME_DO_GATEWAY: Record<Gateway, string> = {
   mercado_pago: 'Mercado Pago',
   asaas: 'Asaas',
+  infinitepay: 'InfinitePay',
 }
 
 /** `teste` só existe no Asaas (chave `$aact_hmlg_`): o sandbox, sem dinheiro de verdade. */
@@ -29,6 +30,12 @@ export type AcessoAoGateway = { token: string; ambiente: Ambiente }
 export type PedidoDeCobranca = {
   /** O id da linha em `cobrancas`. Volta no aviso de pagamento, e é por ele que achamos a cobrança. */
   referencia: string
+  /**
+   * A organização que cobra. Só a InfinitePay usa: o endereço do aviso vai em
+   * cada link, e é por organização (Mercado Pago e Asaas cadastram o aviso uma
+   * vez, ao conectar).
+   */
+  clienteId?: string
   valorCentavos: number
   descricao: string
   venceEm: Date
