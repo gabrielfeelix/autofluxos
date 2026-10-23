@@ -225,6 +225,38 @@ export async function cancelarAssinatura(assinaturaId: string): Promise<void> {
   }
 }
 
+/**
+ * Cobrança avulsa, fora da assinatura: o excedente de conversas do mês que
+ * fechou. Separada da mensalidade para a fatura dizer o que é cada valor.
+ * A referência é o que impede cobrar duas vezes (`cobrancaPorReferencia`).
+ */
+export async function criarCobrancaAvulsa(pedido: {
+  clienteAsaas: string
+  valorCentavos: number
+  vencimento: string
+  descricao: string
+  referencia: string
+}): Promise<string> {
+  return idSchema.parse(
+    await chamar(acessoDa4yu(), 'POST', '/payments', {
+      customer: pedido.clienteAsaas,
+      billingType: 'UNDEFINED',
+      value: pedido.valorCentavos / 100,
+      dueDate: pedido.vencimento,
+      description: pedido.descricao.slice(0, 500),
+      externalReference: pedido.referencia,
+    }),
+  ).id
+}
+
+/** Já existe cobrança com esta referência? Apagada no Asaas não conta. */
+export async function cobrancaPorReferencia(referencia: string): Promise<string | null> {
+  const achadas = listaSchema.parse(
+    await chamar(acessoDa4yu(), 'GET', `/payments?externalReference=${encodeURIComponent(referencia)}&limit=1`),
+  )
+  return achadas.data[0]?.id ?? null
+}
+
 // ---------------------------------------------------------------------------
 // Ler a fatura
 // ---------------------------------------------------------------------------

@@ -2,6 +2,7 @@
 
 import { avisarAcessoLiberado, avisarFuncaoAlterada } from './avisos-por-email'
 import { after } from 'next/server'
+import { acompanharEquipe } from './mensalidade-da-4yu'
 import { cadastrarSemTrocarDeSessao } from './cadastro-por-outra-pessoa'
 import { conferirTrocaDeFuncao, ehFuncao, PAPEL_DA_FUNCAO, podeAtribuirFuncao, podeGerenciarPessoas } from '@/core/funcoes'
 import { autenticacao } from './auth'
@@ -55,6 +56,8 @@ export async function acaoTrocarFuncao(clienteId: string, usuarioId: string, fun
   })
   const pessoa = await acharUsuario(usuarioId)
   if (pessoa) after(() => avisarFuncaoAlterada({ pessoa: { email: pessoa.email, nome: pessoa.nome }, clienteId, de: r.alvo.funcao, para: funcao }))
+  // Leitor não conta como atendente: trocar a função pode mudar o valor.
+  after(() => acompanharEquipe(clienteId))
   return { ok: true }
 }
 
@@ -129,6 +132,7 @@ export async function acaoDarAcessoNaOrganizacao(
     detalhes: { funcao, cadastrou: existente ? 'nao' : 'sim' },
     impersonadoPor: sessao.impersonadoPor,
   })
+  after(() => acompanharEquipe(clienteId))
   after(() =>
     avisarAcessoLiberado({
       pessoa: { email, nome: existente?.nome ?? nome },

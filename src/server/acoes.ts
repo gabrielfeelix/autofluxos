@@ -1,6 +1,7 @@
 'use server'
 
 import { after } from 'next/server'
+import { acompanharEquipe } from './mensalidade-da-4yu'
 import { avisarAcessoEncerrado } from './avisos-por-email'
 import { apagarTodosDoNegocio } from './repos/arquivos-do-negocio'
 import { dentroDoTetoDaConta, RECADO_DO_TETO_DA_CONTA } from '@/server/limite'
@@ -1876,6 +1877,7 @@ export async function acaoRemoverDaConta(
   const r = await removerComDestino(clienteId, usuarioId, destino)
   if (!r.ok) return { ok: false, erro: r.motivo }
   if (removida) after(() => avisarAcessoEncerrado({ email: removida.email, nome: removida.nome }, clienteId))
+  after(() => acompanharEquipe(clienteId))
 
   await registrar({
     acao: 'removeu_membro',

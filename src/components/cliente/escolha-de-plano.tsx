@@ -46,6 +46,7 @@ export function EscolhaDePlano({
   testeAte = null,
   assinar,
   assinatura = null,
+  trocaDireta = false,
 }: {
   /**
    * Assinar pelo Asaas da 4YU (docs/PLANO-MENSALIDADE-ASAAS.md). Ausente
@@ -76,7 +77,16 @@ export function EscolhaDePlano({
   podeMexer: boolean
   /** O último pedido de troca ainda não atendido, lido da auditoria. */
   pedidoAberto: { para: IdDoPlano; ciclo: CicloDeCobranca; quando: string; por: string } | null
-  pedirTroca: (desejado: IdDoPlano, ciente: boolean, ciclo: CicloDeCobranca) => Promise<{ ok: boolean; erro?: string }>
+  pedirTroca: (
+    desejado: IdDoPlano,
+    ciente: boolean,
+    ciclo: CicloDeCobranca,
+  ) => Promise<{ ok: boolean; erro?: string; mensagem?: string; aplicado?: boolean }>
+  /**
+   * A troca é feita, e não pedida: a conta paga pelo Asaas e `pedirTroca` é
+   * `acaoMudarAssinatura`. Subir vale na hora; descer, na virada.
+   */
+  trocaDireta?: boolean
   /** O uso medido junto da página: o modal calcula o impacto na hora, sem ir ao servidor. */
   uso: UsoDaOrganizacao
   conexoesHref: string
@@ -84,7 +94,11 @@ export function EscolhaDePlano({
   franquiaDaMeta?: FranquiaDoNumero[] | null
 }) {
   const acharPlano = (id: IdDoPlano) => planos.find((p) => p.id === id) ?? acharPlanoDoCodigo(id)
-  const plano = acharPlano(atual)
+  // Otimista: subir pela assinatura vale na hora, e a tela já mostra o plano novo.
+  const [atualLocal, setAtualLocal] = useState<IdDoPlano | null>(null)
+  const [mensagem, setMensagem] = useState<string | null>(null)
+  const emVigor = atualLocal ?? atual
+  const plano = acharPlano(emVigor)
   const fracao = fracaoUsada(consumo.conversas, plano)
   const estourou = fracao > 1
   const perto = !estourou && fracao >= 0.8
@@ -149,6 +163,26 @@ export function EscolhaDePlano({
   function pedir(desejado: IdDoPlano, ciente: boolean) {
     setErro(null)
     setEscolhido(null)
+    setMensagem(null)
+    if (trocaDireta) {
+      const anteriorLocal = atualLocal
+      comecar(async () => {
+        try {
+          const r = await pedirTroca(desejado, ciente, ciclo)
+          if (!r.ok) {
+            setAtualLocal(anteriorLocal)
+            setErro(r.erro ?? 'não foi possível mudar o plano')
+            return
+          }
+          if (r.aplicado) setAtualLocal(desejado)
+          setMensagem(r.mensagem ?? null)
+        } catch {
+          setAtualLocal(anteriorLocal)
+          setErro('não foi possível mudar o plano agora')
+        }
+      })
+      return
+    }
     const anterior = pedido
     setPedido({ para: desejado, ciclo })
     comecar(async () => {
@@ -325,10 +359,22 @@ export function EscolhaDePlano({
             ? 'Apenas o proprietário ou um administrador da organização pode mudar o plano. Os planos ficam aqui para consulta.'
             : modoAssinar
               ? 'O pagamento é feito na página segura do Asaas, por cartão, Pix ou boleto, com nota fiscal. O plano muda assim que o pagamento é confirmado.'
-              : 'O pedido vai para a 4YU, que confirma com você antes de mudar a cobrança.'}
+              : trocaDireta
+                ? 'Subir de plano vale na hora, e a assinatura passa ao valor novo. Descer vale a partir da virada do mês.'
+                : 'O pedido vai para a 4YU, que confirma com você antes de mudar a cobrança.'}
         </p>
 
-        {aberto && (
+        {mensagem && (
+          <p
+            role="status"
+            className="mb-3 flex max-w-[650px] items-start gap-2 rounded-[11px] border border-ok/25 bg-ok/10 px-4 py-3 text-[12.5px] leading-5 text-soft"
+          >
+            <span aria-hidden className="mt-1.5 size-1.5 shrink-0 rounded-full bg-ok" />
+            <span>{mensagem}</span>
+          </p>
+        )}
+
+        {aberto && !trocaDireta && (
           <p
             role="status"
             className="mb-3 flex max-w-[650px] items-start gap-2 rounded-[11px] border border-primary/20 bg-primary-weak px-4 py-3 text-[12.5px] leading-5 text-soft"
@@ -352,8 +398,8 @@ export function EscolhaDePlano({
               ciclo={ciclo}
               verTudo={verTudo}
               aoVerTudo={() => setVerTudo((v) => !v)}
-              ehOAtual={p.id === atual}
-              pedido={aberto?.para === p.id}
+              ehOAtual={p.id === emVigor}
+              pedido={!trocaDireta && aberto?.para === p.id}
               podeMexer={podeMexer}
               rodando={rodando}
               aoPedir={() => setEscolhido(p.id)}

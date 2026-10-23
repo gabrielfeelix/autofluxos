@@ -480,6 +480,47 @@ export const MODELOS = {
     },
   }),
 
+  mensalidadeAtrasada: definir<{ organizacao: string; valor: string; vencimento: string; momento: 'aviso' | 'suspensa'; suspendeEm: string; link: string }>({
+    nome: 'Mensalidade em atraso',
+    grupo: 'Plano',
+    montar: (p) =>
+      p.momento === 'aviso'
+        ? {
+            assunto: `A mensalidade de ${p.organizacao} está em atraso`,
+            previa: `Sem o pagamento, o acesso ao painel é suspenso em ${p.suspendeEm}.`,
+            selo: { texto: 'Plano', tom: 'aviso' },
+            titulo: 'A mensalidade está em atraso',
+            blocos: [
+              { tipo: 'texto', texto: `A mensalidade de **${p.organizacao}**, de **${p.valor}**, venceu em ${p.vencimento} e ainda não foi paga.` },
+              { tipo: 'nota', tom: 'aviso', texto: `Sem o pagamento, o acesso ao painel é suspenso em **${p.suspendeEm}**. Os fluxos e os canais continuam atendendo.` },
+              { tipo: 'botao', rotulo: 'Pagar a mensalidade', link: p.link },
+              { tipo: 'texto', texto: 'Se já pagou, desconsidere: a confirmação pode levar algumas horas para chegar.' },
+            ],
+            motivo: MOTIVO_DE_GESTAO,
+          }
+        : {
+            assunto: `O acesso de ${p.organizacao} ao AutoFluxos foi suspenso por falta de pagamento`,
+            previa: 'O painel volta sozinho assim que o pagamento for confirmado.',
+            selo: { texto: 'Plano', tom: 'perigo' },
+            titulo: 'O acesso ao painel foi suspenso',
+            blocos: [
+              { tipo: 'texto', texto: `A mensalidade de **${p.organizacao}**, de **${p.valor}**, venceu em ${p.vencimento}, e o acesso da equipe ao painel foi suspenso.` },
+              { tipo: 'nota', tom: 'aviso', texto: 'Os fluxos e os canais **não foram desligados**: as conversas em andamento seguem sendo atendidas.' },
+              { tipo: 'botao', rotulo: 'Pagar a mensalidade', link: p.link },
+              { tipo: 'texto', texto: 'O acesso volta sozinho assim que o pagamento for confirmado. Dúvidas: contato@4yu.com.br.' },
+            ],
+            motivo: MOTIVO_DE_GESTAO,
+          },
+    exemplo: {
+      organizacao: 'MGM Pilates',
+      valor: 'R$ 597,00',
+      vencimento: '23 de outubro',
+      momento: 'aviso',
+      suspendeEm: '30 de outubro',
+      link: 'https://sandbox.asaas.com/i/exemplo',
+    },
+  }),
+
   precoVaiMudar: definir<{ organizacao: string; plano: string; data: string; atual: string | null; novo: string; link: string }>({
     nome: 'Valor do plano vai mudar',
     grupo: 'Plano',

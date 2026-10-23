@@ -6,6 +6,7 @@ import { apagarContatosVencidos, MESES_DE_RETENCAO_PADRAO } from '@/server/repos
 import { marcarQuemSumiu } from '@/server/repos/crm'
 import { DIAS_PARA_INATIVAR } from '@/core/crm'
 import { reconciliarTemplates } from '@/server/reconciliar-templates'
+import { passadaDaMensalidade } from '@/server/passada-da-mensalidade'
 import { passadaDoPlano } from '@/server/passada-do-plano'
 import { renovarTokensDePagamento } from '@/server/pagamentos'
 
@@ -112,6 +113,15 @@ export async function GET(req: Request) {
      */
     const pagamentos = await renovarTokensDePagamento({ agora })
 
+    /*
+     * A mensalidade da 4YU (0147) antes do plano: o excedente do mês que
+     * fechou é medido contra a faixa de antes da descida da virada.
+     */
+    const mensalidade = await passadaDaMensalidade(agora).catch(async (erro) => {
+      await alertar('a passada da mensalidade falhou', erro)
+      return null
+    })
+
     const plano = await passadaDoPlano(agora).catch(async (erro) => {
       await alertar('a passada do plano falhou', erro)
       return null
@@ -127,6 +137,7 @@ export async function GET(req: Request) {
       diasParaInativar: DIAS_PARA_INATIVAR,
       templates,
       plano,
+      mensalidade,
       pagamentos,
     })
   } catch (erro) {

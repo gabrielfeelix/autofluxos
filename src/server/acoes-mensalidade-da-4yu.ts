@@ -3,7 +3,7 @@
 import { ErroDoAsaas } from '@/channels/asaas'
 import { ehCicloDeCobranca, ehIdDePlano, type CicloDeCobranca, type IdDoPlano } from '@/core/planos'
 import { alertar } from './alertar'
-import { assinar, mensalidadeLiberada, origemDoAviso } from './mensalidade-da-4yu'
+import { assinar, mensalidadeLiberada, mudarAssinatura, origemDoAviso } from './mensalidade-da-4yu'
 import { exigirCapacidade, recusou } from './permissoes'
 import { ehAdminDaPlataforma } from './sessao'
 
@@ -38,5 +38,29 @@ export async function acaoAssinar(
       return { ok: false, erro: 'o Asaas recusou o CNPJ ou CPF cadastrado em Configurações, Negócio. Confira o número.' }
     }
     return { ok: false, erro: 'não foi possível abrir o pagamento agora. Tente de novo em instantes.' }
+  }
+}
+
+/**
+ * Mudar de plano com a assinatura já paga (fase 3). Mesma forma do pedido de
+ * troca (`acaoPedirTrocaDePlano`), para a tela trocar uma pela outra: subir
+ * vale na hora, descer fica agendado para a virada.
+ */
+export async function acaoMudarAssinatura(
+  clienteId: string,
+  desejado: IdDoPlano,
+  _ciente: boolean,
+  cicloPedido: CicloDeCobranca = 'mensal',
+): Promise<{ ok: boolean; erro?: string; mensagem?: string; aplicado?: boolean }> {
+  const acesso = await exigirCapacidade(clienteId, 'configurar_empresa', 'todos')
+  if (recusou(acesso)) return { ok: false, erro: 'só quem administra a organização pode mudar o plano' }
+  if (!mensalidadeLiberada(ehAdminDaPlataforma(acesso.sessao))) return { ok: false, erro: 'a assinatura ainda não está disponível' }
+  if (!ehIdDePlano(desejado)) return { ok: false, erro: 'esse plano não existe' }
+  const ciclo: CicloDeCobranca = ehCicloDeCobranca(cicloPedido) ? cicloPedido : 'mensal'
+  try {
+    return await mudarAssinatura(clienteId, desejado, ciclo)
+  } catch (erro) {
+    await alertar('não foi possível mudar a assinatura no Asaas', erro, { cliente: clienteId, plano: desejado })
+    return { ok: false, erro: 'não foi possível mudar o plano agora. Tente de novo em instantes.' }
   }
 }

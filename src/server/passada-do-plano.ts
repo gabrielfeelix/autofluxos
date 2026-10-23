@@ -19,6 +19,8 @@ import { aplicarPreco, chaveDoMes, consumoDeTodasAsContas, contratosDeTodas, def
 import { planosVigentes, type PlanoVigente } from './repos/planos'
 import { PLANO_DO_TESTE } from '@/core/planos'
 import { mudarEstadoDaTransmissao } from './repos/transmissoes'
+import { alertar } from './alertar'
+import { sincronizarAssinatura } from './mensalidade-da-4yu'
 
 /**
  * A passada diária do plano, na carona da manutenção (`api/manutencao/retencao`).
@@ -73,6 +75,10 @@ export async function passadaDoPlano(agora = new Date()): Promise<ResumoDaPassad
           const r = await definirPlano(contrato.clienteId, destino.id, destino.preco)
           if (!r.ok) throw new Error(r.erro)
           resumo.descidas += 1
+          // Quem paga pelo Asaas passa a pagar o valor do plano novo.
+          await sincronizarAssinatura(contrato.clienteId).catch((erro) =>
+            alertar('a assinatura não acompanhou a descida', erro, { cliente: contrato.clienteId }),
+          )
           const canceladas = destino.recursos.includes('transmissoes') ? 0 : await cancelarAgendadas(contrato.clienteId)
           resumo.transmissoesCanceladas += canceladas
           await registrar({

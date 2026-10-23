@@ -71,6 +71,16 @@ sendo pedido até a fase 3.
 **Fase 3, regras.** Excedente no fechamento do mês, atendente extra no valor,
 troca de plano ligada ao Asaas, suspensão no 7º dia e reativação no pagamento.
 
+Feita em 23/out/2026: `server/passada-da-mensalidade.ts`, na manutenção
+diária **antes** de `passadaDoPlano` (o excedente mede contra a faixa de antes
+da descida da virada). Excedente: dias 1 a 5, cobrança avulsa com referência
+`excedente:<conta>:<aaaa-mm>`, consultada antes de criar. Atraso: e-mail
+`mensalidadeAtrasada` no 5º dia, suspensão no 7º (`assinatura_estado =
+'suspensa'`); o aviso de pago reativa só a suspensão feita pela mensalidade.
+Troca com assinatura ativa: `mudarAssinatura` (sobe na hora, desce agendado) e
+`sincronizarAssinatura` na descida aplicada e em toda mudança de equipe
+(`acompanharEquipe`, nunca lança).
+
 **Fase 4, produção.** Conta da 4YU aprovada, NFS-e configurada no painel do
 Asaas, chave de produção no cofre e na Vercel, aviso cadastrado, e uma
 assinatura real de R$ 5 paga e estornada para provar o ciclo.

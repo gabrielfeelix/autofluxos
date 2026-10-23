@@ -5,7 +5,7 @@ import { EscolhaDePlano } from '@/components/cliente/escolha-de-plano'
 import { AjustesShell } from '@/components/design/ajustes-shell'
 import { FaturasDaConta } from '@/components/plano/faturas-da-conta'
 import { acaoPedirTrocaDePlano } from '@/server/acoes-plano'
-import { acaoAssinar } from '@/server/acoes-mensalidade-da-4yu'
+import { acaoAssinar, acaoMudarAssinatura } from '@/server/acoes-mensalidade-da-4yu'
 import { mensalidadeLiberada } from '@/server/mensalidade-da-4yu'
 import { assinaturaDaConta, faturasDaConta } from '@/server/repos/faturas-da-conta'
 import { acharCliente } from '@/server/repos/clientes'
@@ -61,6 +61,8 @@ export default async function Pagina({ params }: { params: Promise<{ clienteId: 
     assinaturaDaConta(clienteId).catch(() => null),
     faturasDaConta(clienteId),
   ])
+  // Conta que já paga pelo Asaas troca de plano direto, sem pedido à 4YU.
+  const trocaDireta = liberada && (assinatura?.estado === 'ativa' || assinatura?.estado === 'atrasada')
   // Só aparece para quem tem número na API oficial: é a conta que a Meta cobra.
   const temWhatsAppOficial = canais.some((canal) => canal.provider === 'cloud-api')
   const franquiaDaMeta = temWhatsAppOficial ? franquiaDoMes(pontosDaMeta, chaveDoMes(new Date())) : null
@@ -88,7 +90,8 @@ export default async function Pagina({ params }: { params: Promise<{ clienteId: 
           consumo={consumo}
           podeMexer={podeMexer}
           pedidoAberto={pedidoAberto}
-          pedirTroca={acaoPedirTrocaDePlano.bind(null, cliente.id)}
+          pedirTroca={(trocaDireta ? acaoMudarAssinatura : acaoPedirTrocaDePlano).bind(null, cliente.id)}
+          trocaDireta={trocaDireta}
           uso={uso}
           contrato={contrato}
           franquiaDaMeta={franquiaDaMeta}

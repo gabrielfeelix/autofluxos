@@ -138,3 +138,47 @@ export async function faturasDaConta(clienteId: string, limite = 24): Promise<Fa
   }
   return (data ?? []).map(paraFatura)
 }
+
+export type ContaQueAssina = AssinaturaDaConta & {
+  clienteId: string
+  nome: string
+  /** O plano em vigor, que pode diferir de `plano` (o que a assinatura paga) enquanto aguarda. */
+  planoDaConta: string
+  suspensaEm: string | null
+}
+
+/** Toda conta com assinatura no Asaas da 4YU, para a passada diária. */
+export async function contasQueAssinam(): Promise<ContaQueAssina[]> {
+  const { data, error } = await db()
+    .from('clients')
+    .select('id, nome, plano, suspensa_em, assinatura_cliente_ref, assinatura_ref, assinatura_estado, assinatura_plano, assinatura_ciclo')
+    .not('assinatura_ref', 'is', null)
+  if (error) throw new Error(`não foi possível listar as assinaturas: ${error.message}`)
+  return (data ?? []).map((linha) => ({
+    clienteId: linha.id as string,
+    nome: linha.nome as string,
+    planoDaConta: linha.plano as string,
+    suspensaEm: (linha.suspensa_em as string | null) ?? null,
+    clienteAsaas: (linha.assinatura_cliente_ref as string | null) ?? null,
+    assinaturaRef: (linha.assinatura_ref as string | null) ?? null,
+    estado: (linha.assinatura_estado as string | null) ?? null,
+    plano: (linha.assinatura_plano as string | null) ?? null,
+    ciclo: (linha.assinatura_ciclo as CicloDeCobranca | null) ?? null,
+  }))
+}
+
+/** As faturas vencidas de todas as contas, a mais antiga de cada uma primeiro. */
+export async function faturasVencidasDeTodas(): Promise<(FaturaDaConta & { clienteId: string })[]> {
+  const { data, error } = await db()
+    .from('faturas_da_conta')
+    .select('id, cliente_id, tipo, valor_centavos, vencimento, estado, link, nota_fiscal_url, paga_em')
+    .eq('estado', 'vencida')
+    .order('vencimento', { ascending: true })
+  if (error) throw new Error(`não foi possível listar as faturas vencidas: ${error.message}`)
+  return (data ?? []).map((linha) => ({ ...paraFatura(linha), clienteId: linha.cliente_id as string }))
+}
+
+/** Ainda há fatura vencida nesta conta? */
+export async function temFaturaVencida(clienteId: string): Promise<boolean> {
+  return (await faturaVencida(clienteId)) !== null
+}

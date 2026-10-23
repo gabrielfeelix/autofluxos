@@ -3,6 +3,7 @@
 import { cadastrarSemTrocarDeSessao } from './cadastro-por-outra-pessoa'
 import { revalidatePath } from 'next/cache'
 import { after } from 'next/server'
+import { acompanharEquipe } from './mensalidade-da-4yu'
 import { headers } from 'next/headers'
 import { redirect } from 'next/navigation'
 import type { EstadoSalvar } from '@/components/design/formulario-salvar'
@@ -192,6 +193,7 @@ export async function acaoAdminRemoverPessoa(
     impersonadoPor: sessao.impersonadoPor,
   })
   if (removida) after(() => avisarAcessoEncerrado({ email: removida.email, nome: removida.nome }, organizacaoId))
+  after(() => acompanharEquipe(organizacaoId))
   revalidatePath('/admin/organizacoes')
   return { ok: true }
 }
