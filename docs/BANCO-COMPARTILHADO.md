@@ -1429,6 +1429,12 @@ extração explícito para os objetos de `public`.
   (tabela e colunas ausentes depois). Releitura: RLS ligada,
   `anon`/`authenticated` sem `select`, `service_role` com `insert`; Verandi com
   **44** tabelas depois.
+- **a `0148` foi aplicada em 23/out/2026**, com autorização explícita do dono,
+  pela Management API. Acrescenta `clients.cobranca_forma` (default `asaas`),
+  `cobranca_valor`, `cobranca_dia` e `cobranca_nota`. Nenhuma função nova.
+  Replay do zero em Docker e ensaio em transação com `rollback` antes (zero
+  colunas depois). Releitura: as 4 colunas presentes, as 8 organizações em
+  `asaas`; Verandi com **44** tabelas depois.
 
 - **SSL obrigatório desde 19/out/2026** (`PUT .../ssl-enforcement`), com
   autorização do dono. Conexão sem TLS leva `ESSLREQUIRED`, inclusive pelo
