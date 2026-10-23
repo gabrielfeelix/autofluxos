@@ -14,9 +14,17 @@ nossa. Leia antes: `docs/MERCADO-COBRANCA-NO-CHAT.md` (pesquisa, seções
 | Asaas | pronto; testado só com respostas simuladas, espera chave do sandbox | 0141 a 0145 |
 | InfinitePay | pronto e no ar; `0149` aplicada em 23/out | `5be24fd8` |
 | PagBank | pronto; `0150` aplicada em 23/out; faltam `PAGBANK_TOKEN`, `PAGBANK_CLIENT_ID`, `PAGBANK_CLIENT_SECRET` | ver `git log -- src/channels/pagbank.ts` |
-| Os próximos | ver `docs/gateways/PLANO-GATEWAYS.md` | |
+| Woovi, PagHiper, Stripe, Efí, Iugu, Pagar.me | prontos no código, testados só com respostas simuladas; **`0151` não aplicada** | ver `git log -- src/channels/woovi.ts` |
+| Inter, Sicoob, Cielo, Cora | esperam a Base 3 (`docs/gateways/PLANO-GATEWAYS.md`) | |
 
 ## Como um gateway entra (molde: InfinitePay, `5be24fd8`)
+
+**Credencial colada (molde novo, 23/out):** canal em `src/channels/<gateway>.ts`
+com `conectar<G>`, `pagamentoDoAviso<G>` e, se cadastrar aviso, `apagarAviso<G>`;
+registro em `src/server/gateways-por-campos.ts` (campos da tela, onde achar);
+o aviso cai em `api/webhook/pagamento/[gateway]/[clienteId]` sem rota nova, e o
+cartão sai da lista `fichas` em `ajustes/pagamentos/page.tsx`. O que segue
+abaixo é o caminho de quem tem login próprio (OAuth) ou formato fora do comum.
 
 - `src/channels/pagamento.ts`: `GATEWAYS`, `NOME_DO_GATEWAY` e a interface
   `GatewayDePagamento` (`criarCobranca`, `lerPagamento`, `cancelarPagamento`;

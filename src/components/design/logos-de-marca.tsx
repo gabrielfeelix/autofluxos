@@ -134,6 +134,41 @@ export function LogoInfinitePay() {
   )
 }
 
+/**
+ * As marcas sem desenho próprio aqui: a inicial em branco no quadrado da cor
+ * da marca, o mesmo gesto do Asaas e da InfinitePay. Reconhecer pela cor e
+ * pela letra basta numa grade de conexões; o logotipo de verdade é deles.
+ */
+function Monograma({ classe, letras }: { classe: string; letras: string }) {
+  return (
+    <Moldura classe={classe}>
+      <svg width="28" height="28" viewBox="0 0 24 24" aria-hidden>
+        <rect x="2" y="2" width="20" height="20" rx="6" fill="currentColor" />
+        <text
+          x="12"
+          y="12.5"
+          textAnchor="middle"
+          dominantBaseline="central"
+          fill="#fff"
+          fontSize={letras.length > 1 ? 9.5 : 12}
+          fontWeight={800}
+          letterSpacing={letras.length > 1 ? -0.4 : 0}
+          fontFamily="inherit"
+        >
+          {letras}
+        </text>
+      </svg>
+    </Moldura>
+  )
+}
+
+export const LogoWoovi = () => <Monograma classe="text-marca-woovi" letras="w" />
+export const LogoPagHiper = () => <Monograma classe="text-marca-paghiper" letras="ph" />
+export const LogoStripe = () => <Monograma classe="text-marca-stripe" letras="S" />
+export const LogoEfi = () => <Monograma classe="text-marca-efi" letras="efí" />
+export const LogoIugu = () => <Monograma classe="text-marca-iugu" letras="iu" />
+export const LogoPagarme = () => <Monograma classe="text-marca-pagarme" letras="p." />
+
 /** O PagBank: o "P" em grafite sobre o amarelo da marca (branco some no amarelo). */
 export function LogoPagBank() {
   return (

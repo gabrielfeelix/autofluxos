@@ -158,6 +158,8 @@ const PREFIXOS_ABERTOS = [
   '/api/pagamentos/mercado-pago/retorno',
   // E do PagBank, no mesmo desenho.
   '/api/pagamentos/pagbank/retorno',
+  // E do Stripe (Connect Standard).
+  '/api/pagamentos/stripe/retorno',
   /**
    * **Os webhooks da Meta. Mesmo bug das rotas de retorno, e custou o Inbox.**
    *

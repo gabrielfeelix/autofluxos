@@ -11,7 +11,7 @@ import { paginasDaConta } from './repos/paginas-de-lead'
 import { ultimaChegadaDeAnuncio, ultimaMensagemRecebida } from './repos/ultimos-eventos'
 import { NOME_DA_CONEXAO_DE_ADS } from './token-de-anuncios'
 
-export type ChaveDaIntegracao = 'whatsapp' | 'instagram' | 'anuncios' | 'chaves' | 'magento' | 'telegram' | 'site' | 'mercado_pago' | 'asaas' | 'infinitepay' | 'pagbank'
+export type ChaveDaIntegracao = 'whatsapp' | 'instagram' | 'anuncios' | 'chaves' | 'magento' | 'telegram' | 'site' | 'mercado_pago' | 'asaas' | 'infinitepay' | 'pagbank' | 'woovi' | 'paghiper' | 'stripe' | 'efi' | 'iugu' | 'pagarme'
 
 export type ItemDoCatalogo = {
   chave: ChaveDaIntegracao
@@ -195,6 +195,60 @@ export async function catalogoDeIntegracoes(clienteId: string): Promise<ItemDoCa
       href: '/ajustes/pagamentos',
       disponivel: true,
       estado: estadoDaConexao({ tipo: 'cadastro', configurado: pagamento?.gateway === 'pagbank', href: '/ajustes/pagamentos' }),
+    },
+    {
+      chave: 'woovi',
+      nome: 'Woovi',
+      categoria: 'Pagamento',
+      descricao: 'Cobrança pela conversa com Pix, ligada pelo AppID da conta. O dinheiro cai direto na conta da empresa.',
+      href: '/ajustes/pagamentos',
+      disponivel: true,
+      estado: estadoDaConexao({ tipo: 'cadastro', configurado: pagamento?.gateway === 'woovi', href: '/ajustes/pagamentos' }),
+    },
+    {
+      chave: 'paghiper',
+      nome: 'PagHiper',
+      categoria: 'Pagamento',
+      descricao: 'Cobrança pela conversa com Pix, ligada pela apiKey e pelo token da conta. O dinheiro cai direto na conta da empresa.',
+      href: '/ajustes/pagamentos',
+      disponivel: true,
+      estado: estadoDaConexao({ tipo: 'cadastro', configurado: pagamento?.gateway === 'paghiper', href: '/ajustes/pagamentos' }),
+    },
+    {
+      chave: 'stripe',
+      nome: 'Stripe',
+      categoria: 'Pagamento',
+      descricao: 'Cobrança pela conversa com link de cartão e boleto, e Pix quando o Stripe libera. A conta conecta por login no Stripe.',
+      href: '/ajustes/pagamentos',
+      disponivel: true,
+      estado: estadoDaConexao({ tipo: 'cadastro', configurado: pagamento?.gateway === 'stripe', href: '/ajustes/pagamentos' }),
+    },
+    {
+      chave: 'efi',
+      nome: 'Efí',
+      categoria: 'Pagamento',
+      descricao: 'Cobrança pela conversa com Pix direto no banco, pela API Pix da conta Efí Empresas.',
+      href: '/ajustes/pagamentos',
+      disponivel: true,
+      estado: estadoDaConexao({ tipo: 'cadastro', configurado: pagamento?.gateway === 'efi', href: '/ajustes/pagamentos' }),
+    },
+    {
+      chave: 'iugu',
+      nome: 'Iugu',
+      categoria: 'Pagamento',
+      descricao: 'Cobrança pela conversa com Pix em fatura da Iugu, ligada por um token de API da conta.',
+      href: '/ajustes/pagamentos',
+      disponivel: true,
+      estado: estadoDaConexao({ tipo: 'cadastro', configurado: pagamento?.gateway === 'iugu', href: '/ajustes/pagamentos' }),
+    },
+    {
+      chave: 'pagarme',
+      nome: 'Pagar.me',
+      categoria: 'Pagamento',
+      descricao: 'Cobrança pela conversa com Pix pela conta Stone no Pagar.me, ligada pela chave secreta.',
+      href: '/ajustes/pagamentos',
+      disponivel: true,
+      estado: estadoDaConexao({ tipo: 'cadastro', configurado: pagamento?.gateway === 'pagarme', href: '/ajustes/pagamentos' }),
     },
   ]
 }

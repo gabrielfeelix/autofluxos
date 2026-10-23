@@ -13,7 +13,7 @@ export type CobrancaDaApi = {
   descricao: string
   valor: number
   status: 'pendente' | 'paga' | 'vencida' | 'cancelada' | 'estornada'
-  gateway: 'mercado_pago' | 'asaas' | 'infinitepay' | 'pagbank'
+  gateway: 'mercado_pago' | 'asaas' | 'infinitepay' | 'pagbank' | 'woovi' | 'paghiper' | 'stripe' | 'efi' | 'iugu' | 'pagarme'
   pix_copia_cola: string | null
   link: string | null
   vence_em: string

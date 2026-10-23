@@ -170,6 +170,11 @@ aqui fica o que o cliente ganha.
   login de lá, sem copiar chave, e o Pix copia e cola sai na própria conversa.
   O dinheiro cai na conta da empresa, sem porcentagem para o AutoFluxos.
   *(23/out/2026)*
+- **Cobrar pela conta que a empresa já usa**: dez opções de recebimento,
+  entre carteiras (Mercado Pago, Asaas, Woovi, PagHiper, Stripe, Iugu),
+  maquininhas (InfinitePay, PagBank, Stone pelo Pagar.me) e banco (Efí, com
+  o Pix direto no banco). A tela agrupa por tipo e tem busca, e a conta
+  ligada fica no topo. *(23/out/2026)*
 - **Comprovante falso não passa**: a cobrança só vira paga depois que o
   sistema confere o pagamento direto no banco. Foto de comprovante, aviso
   repetido ou Pix pago a menos não contam. *(22/out/2026)*

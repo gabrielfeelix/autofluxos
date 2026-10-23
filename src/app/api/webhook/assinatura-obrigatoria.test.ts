@@ -131,6 +131,43 @@ describe('webhooks de pagamento', () => {
     expect((await pedirPagBank('')).status).toBe(401)
   })
 
+  it.each(['woovi', 'paghiper', 'efi', 'iugu', 'pagarme'])(
+    'aviso de pagamento (%s) recusa sem o segredo, com o de outro gateway e sem segredo no servidor',
+    async (gateway) => {
+      vi.stubEnv('BETTER_AUTH_SECRET', 'segredo-certo')
+      const { POST } = await import('./pagamento/[gateway]/[clienteId]/route')
+      const { segredoDoAviso } = await import('@/channels/aviso-por-endereco')
+      const conta = '11111111-1111-1111-1111-111111111111'
+      const pedirAviso = (t?: string) =>
+        POST(new Request(`https://x.test/api/webhook/pagamento/${gateway}/${conta}${t === undefined ? '' : `?t=${t}`}`, { method: 'POST', body: corpo }), {
+          params: Promise.resolve({ gateway, clienteId: conta }),
+        })
+      expect((await pedirAviso()).status).toBe(401)
+      expect((await pedirAviso(segredoDoAviso(gateway === 'woovi' ? 'iugu' : 'woovi', conta))).status).toBe(401)
+      vi.stubEnv('BETTER_AUTH_SECRET', '')
+      expect((await pedirAviso('')).status).toBe(401)
+    },
+  )
+
+  it('aviso de pagamento recusa gateway que não é desta rota', async () => {
+    const { POST } = await import('./pagamento/[gateway]/[clienteId]/route')
+    const conta = '11111111-1111-1111-1111-111111111111'
+    const r = await POST(new Request('https://x.test/', { method: 'POST', body: corpo }), { params: Promise.resolve({ gateway: 'asaas', clienteId: conta }) })
+    expect(r.status).toBe(404)
+  })
+
+  it('Stripe recusa sem assinatura, com assinatura errada e sem segredo', async () => {
+    vi.stubEnv('STRIPE_WEBHOOK_SECRET', 'whsec_certo')
+    const { POST } = await import('./stripe/route')
+    const t = Math.floor(Date.now() / 1_000)
+    const pedirStripe = (assinatura?: string) =>
+      POST(new Request('https://x.test/api/webhook/stripe', { method: 'POST', headers: assinatura ? { 'stripe-signature': assinatura } : {}, body: corpo }))
+    expect((await pedirStripe()).status).toBe(401)
+    expect((await pedirStripe(`t=${t},v1=${createHmac('sha256', 'errado').update(`${t}.${corpo}`).digest('hex')}`)).status).toBe(401)
+    vi.stubEnv('STRIPE_WEBHOOK_SECRET', '')
+    expect((await pedirStripe(`t=${t},v1=${createHmac('sha256', '').update(`${t}.${corpo}`).digest('hex')}`)).status).toBe(401)
+  })
+
   it('mensalidade da 4YU recusa sem o token, com token de uma organização e sem segredo', async () => {
     vi.stubEnv('BETTER_AUTH_SECRET', 'segredo-certo')
     const { POST } = await import('./assinatura/route')

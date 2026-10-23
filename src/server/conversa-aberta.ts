@@ -1,4 +1,5 @@
 import 'server-only'
+import { EXIGE_DOCUMENTO } from '@/channels/pagamento'
 import { comoFalta, restaDaJanela } from '@/channels/janela'
 import type { AnuncioEmCache, Passagem } from '@/core/anuncios'
 import type { Anotacao } from '@/core/anotacoes'
@@ -233,7 +234,7 @@ async function cobrarNaConversa(clienteId: string, lead: Lead): Promise<CobrarNa
       conectado: true,
       gateway: conexao.gateway,
       ambiente: conexao.ambiente,
-      pedeDocumento: conexao.gateway === 'asaas' && documentoDaFicha(lead.campos) === null,
+      pedeDocumento: EXIGE_DOCUMENTO.has(conexao.gateway) && documentoDaFicha(lead.campos) === null,
       temCatalogo: await temOndeEscolher(clienteId),
       comPedidos: await contaTemPedidos(clienteId),
     }

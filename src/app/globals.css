@@ -105,6 +105,12 @@
   --color-marca-asaas: var(--marca-asaas);
   --color-marca-infinitepay: var(--marca-infinitepay);
   --color-marca-pagbank: var(--marca-pagbank);
+  --color-marca-woovi: var(--marca-woovi);
+  --color-marca-paghiper: var(--marca-paghiper);
+  --color-marca-stripe: var(--marca-stripe);
+  --color-marca-efi: var(--marca-efi);
+  --color-marca-iugu: var(--marca-iugu);
+  --color-marca-pagarme: var(--marca-pagarme);
 
   /* A casca azul (ver o bloco "A casca" mais abaixo). */
   --color-sobre-casca: var(--sobre-casca);
@@ -242,6 +248,12 @@
   --marca-asaas: #0030b9;
   --marca-infinitepay: #00a85a;
   --marca-pagbank: #f5c800;
+  --marca-woovi: #03b388;
+  --marca-paghiper: #0a6ad6;
+  --marca-stripe: #635bff;
+  --marca-efi: #f37021;
+  --marca-iugu: #6d3ef2;
+  --marca-pagarme: #5e9c0a;
 
   /* O polegar da barra de rolagem: a borda dele é sempre a cor do fundo. */
   --p-barra: #c8cfd8;

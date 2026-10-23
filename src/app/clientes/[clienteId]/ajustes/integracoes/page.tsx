@@ -15,6 +15,12 @@ import {
   LogoAsaas,
   LogoInfinitePay,
   LogoPagBank,
+  LogoWoovi,
+  LogoPagHiper,
+  LogoStripe,
+  LogoEfi,
+  LogoIugu,
+  LogoPagarme,
   LogoMercadoPago,
   LogoTelegram,
   LogoWhatsApp,
@@ -75,6 +81,12 @@ const LOGO: Record<ChaveDaIntegracao, ReactNode> = {
   asaas: <LogoAsaas />,
   infinitepay: <LogoInfinitePay />,
   pagbank: <LogoPagBank />,
+  woovi: <LogoWoovi />,
+  paghiper: <LogoPagHiper />,
+  stripe: <LogoStripe />,
+  efi: <LogoEfi />,
+  iugu: <LogoIugu />,
+  pagarme: <LogoPagarme />,
 }
 
 export default async function Pagina({

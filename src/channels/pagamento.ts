@@ -12,7 +12,7 @@
  * na conta dele (MERCADO-COBRANCA-NO-CHAT.md, regra 3).
  */
 
-export const GATEWAYS = ['mercado_pago', 'asaas', 'infinitepay', 'pagbank'] as const
+export const GATEWAYS = ['mercado_pago', 'asaas', 'infinitepay', 'pagbank', 'woovi', 'paghiper', 'stripe', 'efi', 'iugu', 'pagarme'] as const
 export type Gateway = (typeof GATEWAYS)[number]
 
 export const NOME_DO_GATEWAY: Record<Gateway, string> = {
@@ -20,11 +20,22 @@ export const NOME_DO_GATEWAY: Record<Gateway, string> = {
   asaas: 'Asaas',
   infinitepay: 'InfinitePay',
   pagbank: 'PagBank',
+  woovi: 'Woovi',
+  paghiper: 'PagHiper',
+  stripe: 'Stripe',
+  efi: 'Efí',
+  iugu: 'Iugu',
+  pagarme: 'Pagar.me',
 }
 
+/** Quem não cria cobrança sem o CPF ou CNPJ de quem paga: a tela pergunta antes. */
+export const EXIGE_DOCUMENTO: ReadonlySet<Gateway> = new Set<Gateway>(['asaas', 'pagbank', 'paghiper', 'stripe', 'iugu', 'pagarme'])
+
 /**
- * `teste` é o sandbox, sem dinheiro de verdade: no Asaas pela chave
- * (`$aact_hmlg_`), no PagBank pelo `PAGBANK_SANDBOX` de quando conectou.
+ * `teste` é o sandbox, sem dinheiro de verdade: pelo prefixo da chave (Asaas
+ * `$aact_hmlg_`, Pagar.me `sk_test_`, Stripe `sk_test_`), pelo ambiente que
+ * aceitou a credencial (Woovi, Efí) ou pela variável de quando conectou
+ * (`PAGBANK_SANDBOX`).
  */
 export type Ambiente = 'producao' | 'teste'
 
@@ -131,4 +142,34 @@ export function centavosDeReais(reais: number): number {
 /** A data no relógio do Brasil, `AAAA-MM-DD`: o vencimento do Asaas é só dia. */
 export function diaEmSaoPaulo(quando: Date): string {
   return new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Sao_Paulo' }).format(quando)
+}
+
+/**
+ * O que um gateway de credencial colada devolve depois de provar a credencial
+ * numa chamada. `token` é o que vai para o cofre: a chave, ou um JSON quando o
+ * gateway pede mais de um campo (PagHiper, Efí), que só o canal sabe ler.
+ */
+export type ConexaoProvada = {
+  contaNoGateway: string
+  apelido: string | null
+  token: string
+  ambiente: Ambiente
+  avisoNoGateway?: string | null
+}
+
+/** Recusa que a tela mostra como está: a credencial errada, o escopo faltando. */
+export class ErroDeConexao extends Error {}
+
+/** `5544999998888` vira DDD e número. Só número do Brasil. */
+export function telefoneBrasileiro(telefone: string | null): { ddd: string; numero: string } | null {
+  const partes = telefone?.match(/^55(\d{2})(\d{8,9})$/)
+  return partes ? { ddd: partes[1]!, numero: partes[2]! } : null
+}
+
+/** O e-mail que preenche o campo quando o contato não tem: não recebe nada. */
+export const EMAIL_SEM_EMAIL = 'pagador@autofluxos.4yu.com.br'
+
+/** Os últimos quatro caracteres, para a tela dizer qual credencial está ligada sem mostrá-la. */
+export function finalDe(segredo: string): string {
+  return segredo.trim().slice(-4)
 }

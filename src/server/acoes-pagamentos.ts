@@ -5,9 +5,12 @@ import { redirect } from 'next/navigation'
 import { apagarAviso, criarAviso, ErroDoAsaas, validarChave } from '@/channels/asaas'
 import { tagDaInfinitePay } from '@/channels/infinitepay'
 import { mercadoPagoConfigurado, urlDeAutorizacao } from '@/channels/mercado-pago'
-import { NOME_DO_GATEWAY, type Gateway } from '@/channels/pagamento'
+import { parDeChavesParaIugu } from '@/channels/iugu'
+import { ErroDeConexao, NOME_DO_GATEWAY, type Gateway } from '@/channels/pagamento'
+import { stripeConfigurado, urlDeAutorizacao as autorizacaoDoStripe } from '@/channels/stripe'
 import { pagbankConfigurado, urlDeAutorizacao as autorizacaoDoPagBank } from '@/channels/pagbank'
 import { alertar } from './alertar'
+import { gatewayPorCampos } from './gateways-por-campos'
 import { iniciarConexao } from './instagram/estado'
 import { exigirCapacidade, recusou } from './permissoes'
 import { recusaDoPlano } from './recursos-do-plano'
@@ -58,6 +61,103 @@ export async function acaoConectarPagBank(clienteId: string): Promise<void> {
   const host = cabecalhos.get('x-forwarded-host') ?? cabecalhos.get('host')
   const protocolo = cabecalhos.get('x-forwarded-proto') ?? 'https'
   redirect(autorizacaoDoPagBank({ origem: `${protocolo}://${host}`, estado: await iniciarConexao(clienteId) }))
+}
+
+/** O Stripe, pelo Connect Standard, no mesmo desenho do Mercado Pago. */
+export async function acaoConectarStripe(clienteId: string): Promise<void> {
+  const acesso = await exigirCapacidade(clienteId, 'configurar_operacao', 'todos')
+  if (recusou(acesso)) return
+  if (await recusaDoPlano(clienteId, 'integracoes')) return
+  if (!stripeConfigurado()) return
+  const ativa = await conexaoAtiva(clienteId)
+  if (ativa && ativa.gateway !== 'stripe') return
+
+  const cabecalhos = await headers()
+  const host = cabecalhos.get('x-forwarded-host') ?? cabecalhos.get('host')
+  const protocolo = cabecalhos.get('x-forwarded-proto') ?? 'https'
+  redirect(autorizacaoDoStripe({ origem: `${protocolo}://${host}`, estado: await iniciarConexao(clienteId) }))
+}
+
+/**
+ * Liga um gateway de credencial colada (Woovi, PagHiper, Efí, Iugu,
+ * Pagar.me; ver `server/gateways-por-campos.ts`). O canal prova a credencial
+ * numa chamada e cadastra o aviso; só depois disso ela vai para o cofre.
+ * Falhou ao salvar, o aviso criado é desfeito.
+ */
+export async function acaoConectarPorCampos(
+  clienteId: string,
+  gateway: string,
+  valores: Record<string, string>,
+): Promise<{ ok: boolean; erro?: string }> {
+  const acesso = await exigirCapacidade(clienteId, 'configurar_operacao', 'todos')
+  if (recusou(acesso)) return { ok: false, erro: acesso.erro }
+  const recusa = await recusaDoPlano(clienteId, 'integracoes')
+  if (recusa) return { ok: false, erro: recusa }
+  const achado = gatewayPorCampos(gateway)
+  if (!achado) return { ok: false, erro: 'Gateway desconhecido.' }
+  const nome = NOME_DO_GATEWAY[achado.gateway]
+  const ativa = await conexaoAtiva(clienteId)
+  if (ativa && ativa.gateway !== achado.gateway) {
+    return { ok: false, erro: `Desconecte o ${NOME_DO_GATEWAY[ativa.gateway]} antes. O dinheiro cai numa conta por vez.` }
+  }
+  // Só os campos que a tela declara, e com teto: o certificado em base64 é o maior.
+  const limpos: Record<string, string> = {}
+  for (const campo of achado.config.tela.campos) {
+    const valor = valores[campo.nome]
+    if (typeof valor === 'string' && valor.length <= 40_000) limpos[campo.nome] = valor
+  }
+
+  let provada: Awaited<ReturnType<typeof achado.config.conectar>>
+  try {
+    provada = await achado.config.conectar(limpos, clienteId)
+  } catch (erro) {
+    if (erro instanceof ErroDeConexao) return { ok: false, erro: erro.message }
+    await alertar(`não foi possível conferir a credencial do ${nome}`, erro, { cliente: clienteId })
+    return { ok: false, erro: `Não foi possível falar com o ${nome} agora. Tente de novo em instantes.` }
+  }
+
+  const anterior = ativa ? await acessoDaConexao(clienteId, achado.gateway) : null
+  try {
+    await salvarConexaoDePagamento({
+      clienteId,
+      gateway: achado.gateway,
+      contaNoGateway: provada.contaNoGateway,
+      apelido: provada.apelido,
+      token: provada.token,
+      renovacao: null,
+      expiraEm: null,
+      ambiente: provada.ambiente,
+      avisoNoGateway: provada.avisoNoGateway ?? null,
+    })
+  } catch (erro) {
+    if (provada.avisoNoGateway && achado.config.apagarAviso) {
+      await achado.config.apagarAviso({ token: provada.token, ambiente: provada.ambiente }, provada.avisoNoGateway)
+    }
+    if (erro instanceof Error && erro.message.includes('outra conta')) {
+      return { ok: false, erro: `Esta conta do ${nome} já está ligada a outra organização.` }
+    }
+    if (erro instanceof Error && /check constraint|gateway_check/.test(erro.message)) {
+      return { ok: false, erro: `O ${nome} está sendo liberado pela equipe da 4YU.` }
+    }
+    await alertar(`não foi possível salvar a conexão do ${nome}`, erro, { cliente: clienteId })
+    return { ok: false, erro: 'Não foi possível salvar a conexão. Tente de novo.' }
+  }
+
+  // Trocou de credencial: o aviso da anterior sai, senão o gateway avisaria duas vezes.
+  if (anterior?.avisoNoGateway && anterior.avisoNoGateway !== provada.avisoNoGateway && achado.config.apagarAviso) {
+    await achado.config.apagarAviso(anterior, anterior.avisoNoGateway)
+  }
+  return { ok: true }
+}
+
+/**
+ * A chave pública RSA que o dono cola na Iugu ao criar o token. A privada não
+ * sai de `parDeChavesParaIugu`: criar e ler fatura não pedem assinatura.
+ */
+export async function acaoChavePublicaDaIugu(clienteId: string): Promise<{ ok: boolean; chave?: string; erro?: string }> {
+  const acesso = await exigirCapacidade(clienteId, 'configurar_operacao', 'todos')
+  if (recusou(acesso)) return { ok: false, erro: acesso.erro }
+  return { ok: true, chave: parDeChavesParaIugu() }
 }
 
 /** Para onde o Asaas manda o aviso de pagamento desta organização. */
@@ -206,6 +306,11 @@ export async function acaoDesconectarPagamento(clienteId: string, gateway: Gatew
   if (gateway === 'asaas') {
     const conexao = await acessoDaConexao(clienteId, 'asaas')
     if (conexao?.avisoNoGateway) await apagarAviso(conexao, conexao.avisoNoGateway)
+  }
+  const porCampos = gatewayPorCampos(gateway)
+  if (porCampos?.config.apagarAviso) {
+    const conexao = await acessoDaConexao(clienteId, gateway)
+    if (conexao?.avisoNoGateway) await porCampos.config.apagarAviso(conexao, conexao.avisoNoGateway)
   }
   await apagarConexaoDePagamento(clienteId, gateway)
   return { ok: true }

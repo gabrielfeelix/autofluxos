@@ -1,5 +1,11 @@
 # Plano: mais gateways na cobrança pelo chat (23/out/2026)
 
+> **Estado (23/out/2026):** ondas 1 e 2 e as bases 1, 2 e 4 feitas no código
+> (Woovi, PagHiper, Stripe, Efí, Iugu, Pagar.me; migration `0151`; tela em
+> catálogo). Testadas só contra respostas simuladas: faltam as contas de teste
+> (ver "O que depende do Gabriel"). Onda 3 e Base 3 esperam a decisão sobre
+> Vercel Pro ou `pg_cron`.
+
 Para quem vai implementar. Cada cliente recebe num lugar diferente, e a
 cobrança pelo chat só serve se ligar na conta que ele já usa. Este plano diz
 **quais** gateways entram, **em que ordem**, **o que precisa existir antes** e

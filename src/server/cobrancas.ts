@@ -2,8 +2,14 @@ import 'server-only'
 import { asaas } from '@/channels/asaas'
 import { infinitepay } from '@/channels/infinitepay'
 import { pagbank } from '@/channels/pagbank'
+import { efi } from '@/channels/efi'
+import { iugu } from '@/channels/iugu'
+import { pagarme } from '@/channels/pagarme'
+import { paghiper } from '@/channels/paghiper'
+import { stripe } from '@/channels/stripe'
+import { woovi } from '@/channels/woovi'
 import { mercadoPago } from '@/channels/mercado-pago'
-import { NOME_DO_GATEWAY, type Gateway, type GatewayDePagamento, type PedidoDeCobranca } from '@/channels/pagamento'
+import { EXIGE_DOCUMENTO, NOME_DO_GATEWAY, type Gateway, type GatewayDePagamento, type PedidoDeCobranca } from '@/channels/pagamento'
 import type { Canal, PedidoNativo } from '@/channels/types'
 import { paraCobrancaDaApi } from '@/core/api/cobrancas'
 import { cnpjValido, cpfValido } from '@/core/documentos'
@@ -48,7 +54,18 @@ import { emitirEvento } from './webhooks-de-saida'
  * (atendente digitou, ou `core/cobranca.ts` somou pelo catálogo).
  */
 
-const GATEWAYS: Record<Gateway, GatewayDePagamento> = { mercado_pago: mercadoPago, asaas, infinitepay, pagbank }
+const GATEWAYS: Record<Gateway, GatewayDePagamento> = {
+  mercado_pago: mercadoPago,
+  asaas,
+  infinitepay,
+  pagbank,
+  woovi,
+  paghiper,
+  stripe,
+  efi,
+  iugu,
+  pagarme,
+}
 
 export function gatewayDe(gateway: Gateway): GatewayDePagamento {
   return GATEWAYS[gateway]
@@ -267,7 +284,7 @@ export async function criarCobranca(pedido: PedidoDeCobrancaDaConta): Promise<Re
   const digitado = pedido.documento?.trim() ? documentoValido(pedido.documento) : null
   if (pedido.documento?.trim() && !digitado) return { ok: false, motivo: 'documento_invalido', erro: 'CPF ou CNPJ inválido.' }
   const documento = digitado ?? documentoDaFicha(lead.campos)
-  if (!documento && (conexao.gateway === 'asaas' || conexao.gateway === 'pagbank')) {
+  if (!documento && EXIGE_DOCUMENTO.has(conexao.gateway)) {
     return { ok: false, motivo: 'falta_documento', erro: `O ${NOME_DO_GATEWAY[conexao.gateway]} exige o CPF ou CNPJ de quem paga.` }
   }
 
