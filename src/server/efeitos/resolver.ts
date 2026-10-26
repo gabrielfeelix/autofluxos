@@ -49,6 +49,7 @@ import { alertar } from '../alertar'
 import { consumirLimite } from '../limite'
 import { chamarHttp } from './http'
 import { lerCredencial } from '../repos/conexoes'
+import { creditarPontosDaPesquisa } from '../pontos-da-loja'
 import { consultarPedidoDaConta, lojaAtivaDaConta, temMonteSeuPc } from '../adaptador-da-loja'
 import { amostra, CATEGORIAS_DO_MONTE_SEU_PC, categoriaDoMonteSeuPc, ehPcCompleto, PECAS_DE_UM_PC } from '@/loja/monte-seu-pc'
 import { cardDoPedido } from '../card-do-pedido'
@@ -336,6 +337,30 @@ async function rodar(
     (entrada.tipo === 'texto' ? entrada.texto : (ultimaDaPessoa(opcoes.historico) ?? ''))
 
   for (let volta = 0; volta < MAX_EFEITOS; volta++) {
+    /*
+     * Dar pontos: como a chamada de API, o motor parou e espera. Simulador e
+     * vitrine não falam com a loja: seguem por "lançou", com a ação marcada
+     * para a tela dizer "daria".
+     */
+    const pedidoDePontos = resultado.acoes.find((a) => a.tipo === 'dar_pontos' && !a.simulada)
+    if (pedidoDePontos?.tipo === 'dar_pontos') {
+      const simular = opcoes.semRede || opcoes.origem === 'simulador' || !opcoes.clienteId
+      const no = fluxoAtual.nodes.find((n) => n.id === resultado.sessao.noAtual)
+      const creditou = simular
+        ? true
+        : await lancarPontos(opcoes.clienteId!, pedidoDePontos, no?.type === 'pontos' ? no.data : undefined)
+      const seguinte = comEscolhaAdiada(executar(fluxoAtual, resultado.sessao, { tipo: 'pontos', creditou }, atendimento))
+      resultado = {
+        acoes: [
+          ...semEfeito(resultado.acoes, 'dar_pontos'),
+          ...(simular ? [{ ...pedidoDePontos, simulada: true }] : []),
+          ...seguinte.acoes,
+        ],
+        sessao: seguinte.sessao,
+      }
+      continue
+    }
+
     const chamadaHttp = resultado.acoes.find((a) => a.tipo === 'chamar_http' && !a.simulada)
 
     if (chamadaHttp?.tipo === 'chamar_http') {
@@ -759,8 +784,39 @@ async function carregar(opcoes: OpcoesDeEfeitos, fluxoId: string) {
  * chamadas apagaria o registro da primeira ao atender a segunda, e a vitrine
  * mostraria metade do que aconteceu.
  */
-function semEfeito(acoes: Acao[], tipo: 'chamar_ia' | 'chamar_http' | 'ir_para_fluxo'): Acao[] {
-  return acoes.filter((a) => a.tipo !== tipo || (a.tipo === 'chamar_http' && a.simulada))
+function semEfeito(acoes: Acao[], tipo: 'chamar_ia' | 'chamar_http' | 'ir_para_fluxo' | 'dar_pontos'): Acao[] {
+  return acoes.filter((a) => a.tipo !== tipo || ((a.tipo === 'chamar_http' || a.tipo === 'dar_pontos') && a.simulada))
+}
+
+/**
+ * O bloco Dar pontos, falando com a loja. **Nunca estoura**: a exceção subiria
+ * até o `after()` do webhook e a conversa ficaria parada. Qualquer coisa que
+ * não seja lançamento confirmado sai por "não lançou", com alerta, que é onde
+ * o fluxo explica o atraso e o time lança na mão.
+ */
+async function lancarPontos(
+  clienteId: string,
+  pedido: { pontos: number; pedido: string; clienteDaLoja: string },
+  no: { pedido: string; clienteDaLoja: string } | undefined,
+): Promise<boolean> {
+  try {
+    const r = await creditarPontosDaPesquisa(
+      clienteId,
+      pedido.pedido,
+      pedido.clienteDaLoja,
+      pedido.pontos,
+      no ? { pedido: no.pedido, cliente: no.clienteDaLoja } : undefined,
+    )
+    if (r === 'sem_pesquisa') {
+      await alertar('os pontos não entraram: a conversa não tem o pedido do evento', pedido.pedido || '(sem pedido)', {
+        cliente: clienteId,
+      })
+    }
+    return r === 'creditado' || r === 'ja_creditado'
+  } catch (erro) {
+    await alertar('os pontos não entraram', erro, { cliente: clienteId, pedido: pedido.pedido })
+    return false
+  }
 }
 
 /**

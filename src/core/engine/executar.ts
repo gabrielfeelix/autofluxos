@@ -22,6 +22,8 @@ import {
   SAIDA_MARCOU,
   SAIDA_NAO_MARCOU,
   SAIDA_PAGOU,
+  SAIDA_CREDITOU,
+  SAIDA_NAO_CREDITOU,
   SAIDA_PROMOTOR,
   SAIDA_TIMEOUT,
   SAIDA_VENCEU,
@@ -667,6 +669,15 @@ export function executar(
 
     s.tentativas = 0
     return avancar(contexto, fluxo, porId, s, acoes, proximo(fluxo, atual.id), { no: atual })
+  }
+
+  if (atual.type === 'pontos') {
+    // A pessoa escreveu enquanto a loja respondia: ignora, a resposta vem.
+    if (entrada.tipo !== 'pontos') return { acoes, sessao: s }
+    s.tentativas = 0
+    const saida = entrada.creditou ? SAIDA_CREDITOU : SAIDA_NAO_CREDITOU
+    const desenhada = proximo(fluxo, atual.id, saida)
+    return avancar(contexto, fluxo, porId, s, acoes, desenhada, { no: atual, saida })
   }
 
   if (atual.type === 'cobrar') {
@@ -1352,6 +1363,23 @@ function avancar(
           aoFalhar: no.data.aoFalhar,
           ...(no.data.aceitarStatus?.length ? { aceitarStatus: no.data.aceitarStatus } : {}),
           conexaoId: no.data.conexaoId,
+        })
+        s.noAtual = no.id
+        s.status = 'aguardando_http'
+        return { acoes, sessao: s }
+      }
+
+      /*
+       * Dar pontos: para, como a chamada de API, e o resolvedor fala com a
+       * loja. Sem pedido ou cliente na conversa, nem tenta: segue pela saída
+       * "não lançou", que é onde o fluxo explica o atraso.
+       */
+      case 'pontos': {
+        acoes.push({
+          tipo: 'dar_pontos',
+          pontos: no.data.pontos,
+          pedido: (s.vars[no.data.pedido] ?? '').trim(),
+          clienteDaLoja: (s.vars[no.data.clienteDaLoja] ?? '').trim(),
         })
         s.noAtual = no.id
         s.status = 'aguardando_http'

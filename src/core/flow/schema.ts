@@ -1179,6 +1179,30 @@ export const noAgendarSchema = z.object({
   }),
 })
 
+/** O teto de pontos por bloco: um zero a mais digitado não vira prêmio de verdade. */
+export const MAX_PONTOS = 1000
+
+/**
+ * Dar pontos no programa de fidelidade da loja (Mirasvit, na Magento) pela
+ * conversa: a pesquisa pós-compra da PCYES dá PC Points a quem responde.
+ *
+ * Os dois campos de variável dizem **de onde** vem o par pedido + cliente da
+ * loja, que o evento do pedido gravou na conversa. O token da loja nunca entra
+ * no fluxo: quem fala com a loja é o servidor (`pontos-da-loja.ts`), e só para
+ * um par que tem conversa aberta pelo evento, uma vez por pedido.
+ */
+export const noPontosSchema = z.object({
+  ...base,
+  type: z.literal('pontos'),
+  data: z.object({
+    pontos: z.number().int().min(0).max(MAX_PONTOS).default(0),
+    /** A variável com o número do pedido. */
+    pedido: z.string().default('pedido'),
+    /** A variável com o id do cliente na loja (`customer_id` na Magento). */
+    clienteDaLoja: z.string().default('customer_id'),
+  }),
+})
+
 export const noSchema = z.discriminatedUnion('type', [
   noMensagemSchema,
   noMidiaSchema,
@@ -1198,6 +1222,7 @@ export const noSchema = z.discriminatedUnion('type', [
   noNpsSchema,
   noCobrarSchema,
   noAgendarSchema,
+  noPontosSchema,
 ])
 
 export const arestaSchema = z.object({
@@ -1245,6 +1270,7 @@ export type NoHttp = z.infer<typeof noHttpSchema>
 export type NoEtapa = z.infer<typeof noEtapaSchema>
 export type NoCobrar = z.infer<typeof noCobrarSchema>
 export type NoAgendar = z.infer<typeof noAgendarSchema>
+export type NoPontos = z.infer<typeof noPontosSchema>
 export type Aresta = z.infer<typeof arestaSchema>
 export type Fluxo = z.infer<typeof fluxoSchema>
 export type TipoNo = No['type']
@@ -1340,6 +1366,9 @@ export const VARIAVEIS_DO_AGENDAR = {
   resumo: 'horario_marcado',
 } as const
 export const SAIDA_VENCEU = 'venceu'
+/** As duas saídas do bloco Dar pontos: a loja lançou, ou não lançou. */
+export const SAIDA_CREDITOU = 'creditou'
+export const SAIDA_NAO_CREDITOU = 'nao_creditou'
 
 /** Em que faixa do NPS cai uma nota. Um lugar só, para o motor e para a tela. */
 export function faixaDaNota(nota: number): typeof SAIDA_PROMOTOR | typeof SAIDA_NEUTRO | typeof SAIDA_DETRATOR {

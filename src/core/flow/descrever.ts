@@ -10,6 +10,8 @@ import {
   SAIDA_MARCOU,
   SAIDA_NAO_MARCOU,
   SAIDA_PAGOU,
+  SAIDA_CREDITOU,
+  SAIDA_NAO_CREDITOU,
   SAIDA_PROMOTOR,
   SAIDA_TIMEOUT,
   SAIDA_VAZIO,
@@ -82,6 +84,8 @@ export function descrever(no: No): string {
       return rotular('Cobrar', curto(no.data.descricao))
     case 'agendar':
       return rotular('Agendar', curto(no.data.texto))
+    case 'pontos':
+      return rotular('Dar pontos', `${no.data.pontos} pontos`)
   }
 }
 
@@ -129,6 +133,11 @@ export function nomeDaSaida(no: No, saida: string | undefined): string | null {
   if (no.type === 'cobrar') {
     if (saida === SAIDA_PAGOU) return 'a saída de "pagou"'
     if (saida === SAIDA_VENCEU) return 'a saída de "venceu"'
+  }
+
+  if (no.type === 'pontos') {
+    if (saida === SAIDA_CREDITOU) return 'a saída de "lançou"'
+    if (saida === SAIDA_NAO_CREDITOU) return 'a saída de "não lançou"'
   }
 
   if (no.type === 'agendar') {

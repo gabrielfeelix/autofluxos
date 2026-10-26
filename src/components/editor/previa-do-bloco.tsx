@@ -273,6 +273,13 @@ export function detalhesDoBloco(no: No): Detalhe[] {
         { rotulo: 'Vence em', valor: `${no.data.horasParaVencer} horas` },
       ]
 
+    case 'pontos':
+      return [
+        { rotulo: 'Dá', valor: no.data.pontos > 0 ? `${no.data.pontos} pontos` : '(sem pontos)' },
+        { rotulo: 'Pedido', valor: `{{${no.data.pedido}}}` },
+        { rotulo: 'Cliente da loja', valor: `{{${no.data.clienteDaLoja}}}` },
+      ]
+
     case 'agendar':
       return [
         { rotulo: 'Mensagem', valor: texto(no.data.texto, '(sem mensagem)') },

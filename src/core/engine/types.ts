@@ -188,6 +188,8 @@ export const entradaSchema = z.discriminatedUnion('tipo', [
    * O formulário do bloco Agendar teve desfecho: a agenda gravou a marcação
    * (o endpoint do formulário avisa na hora), ou o prazo passou sem marcar.
    */
+  /** O servidor falou com a loja pelo bloco Dar pontos: lançou ou não lançou. */
+  z.object({ tipo: z.literal('pontos'), creditou: z.boolean() }),
   z.object({
     tipo: z.literal('formulario'),
     desfecho: z.enum(['marcou', 'nao_marcou']),
@@ -477,6 +479,11 @@ export type Acao =
    * agenda a desistência.
    */
   | { tipo: 'enviar_formulario'; noId: string; texto: string; botao: string; horasParaDesistir: number }
+  /**
+   * Lançar pontos no programa de fidelidade da loja. Como a chamada de API, o
+   * motor para e espera: o resolvedor fala com a loja e volta com `pontos`.
+   */
+  | { tipo: 'dar_pontos'; pontos: number; pedido: string; clienteDaLoja: string; simulada?: boolean }
   | {
       tipo: 'criar_cobranca'
       noId: string

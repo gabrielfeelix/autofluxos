@@ -34,14 +34,22 @@ export async function creditarPontosDaPesquisa(
   pedido: string,
   customerId: string,
   pontos: number,
+  /**
+   * Em que variável da conversa estão o pedido e o cliente. O bloco Dar pontos
+   * deixa escolher; a rota antiga usa os nomes do evento da PCYES.
+   */
+  chaves: { pedido: string; cliente: string } = { pedido: 'pedido', cliente: 'customer_id' },
 ): Promise<ResultadoDosPontos> {
+  // O nome vira caminho de filtro no PostgREST: só letra, número e sublinhado.
+  if (!/^\w{1,40}$/.test(chaves.pedido) || !/^\w{1,40}$/.test(chaves.cliente)) return 'sem_pesquisa'
+  if (!pedido || !/^\d{1,12}$/.test(customerId)) return 'sem_pesquisa'
   const desde = new Date(Date.now() - VALIDADE_DA_PESQUISA_MS).toISOString()
   const { data, error } = await db()
     .from('sessions')
     .select('id, contact_id, contacts!inner(client_id)')
     .eq('contacts.client_id', clienteId)
-    .eq('vars->>pedido', pedido)
-    .eq('vars->>customer_id', customerId)
+    .eq(`vars->>${chaves.pedido}`, pedido)
+    .eq(`vars->>${chaves.cliente}`, customerId)
     .gte('criado_em', desde)
     .limit(1)
     .maybeSingle()

@@ -53,6 +53,7 @@ const ORDEM_DOS_BLOCOS: TipoNo[] = [
   'nps',
   'cobrar',
   'agendar',
+  'pontos',
 ]
 
 /** Quando usar cada bloco, em uma frase, o que a barra do editor não cabe. */
@@ -83,6 +84,8 @@ const QUANDO_USAR: Record<TipoNo, string> = {
     'Fechar a venda na conversa: manda o Pix e o link de pagamento pela sua conta de recebimento e espera. Pagou, segue por um caminho; venceu, por outro. O valor é o que você digitou ou o total do pedido montado pela IA, nunca um número escrito pelo modelo.',
   agendar:
     'Marcar horário sem trocar mensagem: o WhatsApp abre um formulário com os dias e os horários livres da agenda, e a pessoa escolhe com dois toques. Marcou, segue por um caminho com o horário guardado; não marcou no prazo, por outro.',
+  pontos:
+    'Premiar quem respondeu: credita pontos no programa de fidelidade da loja conectada para o pedido da conversa, uma vez por pedido. Lançou, segue por um caminho; não lançou, por outro, e o time recebe um alerta para lançar na mão.',
 }
 
 export function SecaoComoFunciona() {

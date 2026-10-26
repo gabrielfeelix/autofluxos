@@ -89,6 +89,7 @@ export const NOMES: Record<TipoNo, string> = {
    */
   nps: 'Pesquisa de satisfação',
   cobrar: 'Cobrar',
+  pontos: 'Dar pontos',
   agendar: 'Agendar',
 }
 
@@ -110,6 +111,7 @@ export const ICONES: Record<TipoNo, string> = {
   voltar: '↺',
   nps: '★',
   cobrar: '$',
+  pontos: '★',
   agendar: '◷',
 }
 
@@ -132,6 +134,7 @@ export const DESCRICOES: Record<TipoNo, string> = {
   voltar: 'Volta ao menu',
   nps: 'Pergunta a nota',
   cobrar: 'Manda Pix e espera pagar',
+  pontos: 'Credita na fidelidade da loja',
   agendar: 'Formulário de dia e horário',
 }
 
@@ -160,6 +163,7 @@ export const CORES: Record<TipoNo, string> = {
   voltar: 'border-slate-300/30',
   nps: 'border-yellow-400/30',
   cobrar: 'border-lime-400/30',
+  pontos: 'border-yellow-400/30',
   agendar: 'border-teal-400/30',
 }
 
@@ -176,7 +180,7 @@ export const GRUPOS_DE_BLOCOS: { nome: string; tipos: TipoNo[] }[] = [
   { nome: 'Conversar', tipos: ['mensagem', 'midia', 'pergunta', 'nps'] },
   { nome: 'Decidir', tipos: ['condicao', 'voltar', 'ir-fluxo'] },
   { nome: 'Organizar', tipos: ['salvar-campo', 'etapa', 'etiqueta', 'nota'] },
-  { nome: 'Integrar', tipos: ['ia', 'http', 'email', 'handoff', 'encaminhar', 'cobrar', 'agendar'] },
+  { nome: 'Integrar', tipos: ['ia', 'http', 'email', 'handoff', 'encaminhar', 'cobrar', 'agendar', 'pontos'] },
 ]
 
 function semAcento(texto: string): string {

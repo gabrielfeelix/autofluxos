@@ -20,6 +20,8 @@ import {
   SAIDA_MARCOU,
   SAIDA_NAO_MARCOU,
   SAIDA_PAGOU,
+  SAIDA_CREDITOU,
+  SAIDA_NAO_CREDITOU,
   SAIDA_VENCEU,
   SAIDA_PROMOTOR,
   SAIDA_TIMEOUT,
@@ -520,6 +522,27 @@ function NoCobrar({ data, selected }: NodeProps) {
   )
 }
 
+/** Dar pontos: duas saídas, como o Cobrar, porque a loja pode não lançar. */
+function NoPontos({ data, selected }: NodeProps) {
+  const d = data as { pontos?: number; pedido?: string; clienteDaLoja?: string }
+  return (
+    <Caixa tipo="pontos" selecionado={!!selected} saidaUnica={false}>
+      <p className="text-[12.5px] leading-5 text-soft">
+        {(d.pontos ?? 0) > 0 ? `${d.pontos} pontos na fidelidade da loja` : '(sem pontos)'}
+      </p>
+      <p className="mt-1 text-[11px] text-muted">
+        pedido {`{{${d.pedido || 'pedido'}}}`} · cliente {`{{${d.clienteDaLoja || 'customer_id'}}}`}
+      </p>
+      <Saida id={SAIDA_CREDITOU}>
+        <span className="text-[11px] text-ok">lançou</span>
+      </Saida>
+      <Saida id={SAIDA_NAO_CREDITOU}>
+        <span className="text-[11px] text-aviso">não lançou</span>
+      </Saida>
+    </Caixa>
+  )
+}
+
 function NoAgendar({ data, selected }: NodeProps) {
   const d = data as { texto?: string; botao?: string; horasParaDesistir?: number }
   const horas = d.horasParaDesistir ?? 24
@@ -871,4 +894,5 @@ export const tiposDeNo = {
   nps: NoNps,
   cobrar: NoCobrar,
   agendar: NoAgendar,
+  pontos: NoPontos,
 } satisfies Record<TipoNo, NodeTypes[string]>

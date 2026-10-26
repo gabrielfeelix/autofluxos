@@ -2868,6 +2868,7 @@ async function aplicar(
         )
       }
 
+      case 'dar_pontos':
       case 'chamar_http': {
         // O resolvedor sempre atende esta ação, inclusive quando a chamada
         // falha, porque `aoFalhar` decide lá. Chegar aqui é defeito nosso, e

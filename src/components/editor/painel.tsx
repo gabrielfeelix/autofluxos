@@ -22,6 +22,7 @@ import {
   LIMITE_TEXTO,
   LIMITE_TEXTO_INTERATIVO,
   MARCA_DE_LISTA,
+  MAX_PONTOS,
   MAX_ROTULO_DO_FORMULARIO,
   MAX_TURNOS_DA_IA,
   METODOS,
@@ -1485,6 +1486,40 @@ export function Painel({
               opcoes={HORAS_DE_VENCIMENTO.map((h) => ({ valor: String(h), rotulo: comoHoras(h) }))}
             />
           </div>
+        </>
+      )}
+
+      {no.type === 'pontos' && (
+        <>
+          <Linha
+            rotulo="Quantos pontos"
+            valor={no.data.pontos > 0 ? String(no.data.pontos) : ''}
+            dica={`Lançados no programa de fidelidade da loja conectada, uma vez por pedido. Até ${MAX_PONTOS}.`}
+            secao="blocos"
+            aoMudar={(v) => {
+              const pontos = Number(v.replace(/\D/g, '').slice(0, 4))
+              aoMudarDados({ pontos: Math.min(pontos, MAX_PONTOS) })
+            }}
+          />
+          <CampoDeVariavel
+            rotulo="Número do pedido vem de"
+            secao="variaveis"
+            valor={no.data.pedido}
+            variaveis={variaveis}
+            modo="usa"
+            dica="A variável que o evento do pedido grava na conversa, normalmente pedido."
+            aoMudar={(v) => aoMudarDados({ pedido: v.trim() })}
+          />
+          <CampoDeVariavel
+            rotulo="Cliente da loja vem de"
+            secao="variaveis"
+            valor={no.data.clienteDaLoja}
+            variaveis={variaveis}
+            modo="usa"
+            dica="O id do cliente na loja, normalmente customer_id na Magento."
+            aoMudar={(v) => aoMudarDados({ clienteDaLoja: v.trim() })}
+            nota="Só ganha pontos o par pedido e cliente que recebeu o modelo do evento nos últimos 7 dias. Se a loja não lançar, a conversa sai por “não lançou” e o time recebe um alerta."
+          />
         </>
       )}
 
@@ -3234,6 +3269,8 @@ function resumoDoBloco(no: No): string {
       return curto(no.data.descricao) || 'Cobrar'
     case 'agendar':
       return curto(no.data.texto) || 'Agendar'
+    case 'pontos':
+      return `Dá ${no.data.pontos} pontos`
   }
 }
 

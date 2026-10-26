@@ -253,6 +253,9 @@ export function dadosPadrao(tipo: TipoNo): Record<string, unknown> {
       }
     case 'agendar':
       return { texto: 'Escolha o dia e o horário pelo formulário abaixo.', botao: 'Ver horários', horasParaDesistir: 24 }
+    case 'pontos':
+      // Zero pontos: o validador recusa publicar assim, e quem desenha decide o valor.
+      return { pontos: 0, pedido: 'pedido', clienteDaLoja: 'customer_id' }
     case 'cobrar':
       // Valor e descrição vazios: o validador recusa publicar assim. Um preço
       // chutado viraria Pix de verdade no WhatsApp de alguém.

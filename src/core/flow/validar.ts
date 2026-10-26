@@ -1218,6 +1218,19 @@ function conferirConteudo(
       }
       break
 
+    case 'pontos':
+      if (no.data.pontos <= 0) {
+        erros.push({ codigo: 'PONTOS_SEM_VALOR', mensagem: `${descrever(no)} não diz quantos pontos dar.`, noId: no.id })
+      }
+      if (vazio(no.data.pedido) || vazio(no.data.clienteDaLoja)) {
+        erros.push({
+          codigo: 'PONTOS_SEM_VARIAVEL',
+          mensagem: `${descrever(no)} precisa das variáveis do pedido e do cliente da loja, que o evento do pedido grava na conversa.`,
+          noId: no.id,
+        })
+      }
+      break
+
     case 'cobrar':
       if (vazio(no.data.descricao)) {
         erros.push({
@@ -1643,6 +1656,9 @@ function variaveisDoNo(no: No): string[] {
     case 'cobrar':
       // A descrição interpola. O valor do pedido é lido pelo motor, não citado.
       return variaveisCitadas(no.data.descricao)
+    case 'pontos':
+      // Vêm do evento do pedido, que grava na conversa os campos do aviso.
+      return [no.data.pedido, no.data.clienteDaLoja].filter((v) => v.trim() !== '')
     case 'agendar':
       return variaveisCitadas(no.data.texto)
     case 'nps':
@@ -1748,6 +1764,7 @@ function textosDoNo(no: No): string[] {
       return [no.data.descricao]
     case 'agendar':
       return [no.data.texto, no.data.botao]
+    case 'pontos':
     case 'condicao':
     case 'etapa':
     case 'etiqueta':
