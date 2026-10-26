@@ -68,7 +68,7 @@ Construa genérico. Para testar, use um fluxo qualquer com pergunta de opções
 - Antes de entregar UI: print local em 1440 e 390 de largura, com dado de
   verdade na tela. Layout na largura cheia, com a sidebar.
 - Texto de tela em tom profissional de SaaS B2B, pt-BR, sem gíria. Nenhum
-  travessão (o caractere "—") em arquivo nenhum que você abrir.
+  travessão longo (U+2014) em arquivo nenhum que você abrir.
 - Validação: `npx tsc --noEmit -p .` limpo e os testes só dos arquivos que
   mexeu (`npx vitest run <arquivo>`). Não rode a suíte inteira.
 - Teste puro para a contagem e para a validação da variável vinda da URL.
