@@ -260,6 +260,9 @@ const PREFIXOS_ABERTOS = [
   // O script do balão, em `public/chat/`: a loja o carrega sem sessão nenhuma.
   '/chat/',
   '/logos/',
+  // O cabeçalho dos modelos de pesquisa, em `public/pesquisas/`: quem busca é
+  // o servidor da Meta, sem sessão. Sem isto a imagem virava a tela de login.
+  '/pesquisas/',
   /**
    * O ícone da aba do navegador.
    *
