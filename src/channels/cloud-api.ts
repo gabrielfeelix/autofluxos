@@ -599,6 +599,10 @@ export function canalCloudApi(config: ConfigCloudApi): Canal {
         })
       }
 
+      if (valores?.cabecalhoImagem) {
+        componentes.push({ type: 'header', parameters: [{ type: 'image', image: { link: valores.cabecalhoImagem } }] })
+      }
+
       const doCorpo = valores?.corpo ?? []
       if (doCorpo.length > 0) {
         componentes.push({

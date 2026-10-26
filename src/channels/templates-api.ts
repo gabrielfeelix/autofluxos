@@ -599,3 +599,46 @@ export async function criarDaBibliotecaNaMeta(entrada: {
     return { ok: false, erro: { codigo: null, mensagem: detalhe } }
   }
 }
+
+/**
+ * Sobe o arquivo de exemplo de um cabeçalho de mídia e devolve o handle que o
+ * template leva em `example.header_handle`.
+ *
+ * É o upload retomável da Meta, em dois passos: abrir a sessão no app dono do
+ * token e mandar os bytes. O id do app sai do próprio token (`/app`), então
+ * quem chama não precisa conhecê-lo. Usado pela primeira vez no template com
+ * o mascote da PCYES (26/out/2026).
+ */
+export async function subirExemploDeMidia(entrada: {
+  token: string
+  bytes: Uint8Array
+  mime: string
+  versaoGraph?: string
+}): Promise<{ ok: true; handle: string } | { ok: false; erro: string }> {
+  const raiz = `https://graph.facebook.com/${versaoGraph(entrada.versaoGraph)}`
+  const auth = { Authorization: `Bearer ${entrada.token}` }
+  try {
+    const app = (await (await fetch(`${raiz}/app`, { headers: auth, signal: AbortSignal.timeout(TIMEOUT_MS) })).json()) as {
+      id?: string
+    }
+    if (!app.id) return { ok: false, erro: 'não foi possível descobrir o app do token' }
+
+    const parametros = new URLSearchParams({ file_length: String(entrada.bytes.length), file_type: entrada.mime })
+    const sessao = (await (
+      await fetch(`${raiz}/${app.id}/uploads?${parametros}`, { method: 'POST', headers: auth, signal: AbortSignal.timeout(TIMEOUT_MS) })
+    ).json()) as { id?: string }
+    if (!sessao.id) return { ok: false, erro: 'a Meta não abriu a sessão de upload' }
+
+    const envio = (await (
+      await fetch(`${raiz}/${sessao.id}`, {
+        method: 'POST',
+        headers: { Authorization: `OAuth ${entrada.token}`, file_offset: '0' },
+        body: Buffer.from(entrada.bytes),
+        signal: AbortSignal.timeout(TIMEOUT_MS),
+      })
+    ).json()) as { h?: string }
+    return envio.h ? { ok: true, handle: envio.h } : { ok: false, erro: 'a Meta não devolveu o handle do arquivo' }
+  } catch (erro) {
+    return { ok: false, erro: erro instanceof Error ? erro.message : String(erro) }
+  }
+}

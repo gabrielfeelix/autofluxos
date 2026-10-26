@@ -641,6 +641,12 @@ export type ComponenteDaMeta = Record<string, unknown>
 export type Exemplos = {
   cabecalho?: string[]
   corpo?: string[]
+  /**
+   * O handle do arquivo de exemplo de um cabeçalho de mídia, devolvido pelo
+   * upload retomável da Meta (`subirExemploDeMidia`). Sem ele a Meta recusa o
+   * template com imagem.
+   */
+  cabecalhoMidia?: string
 }
 
 const TIPO_DE_CABECALHO_NA_META = {
@@ -677,9 +683,13 @@ export function componentesParaMeta(
           : {}),
       })
     } else {
-      // Header de mídia não tem texto nem exemplo de texto: o exemplo dele
-      // seria um handle de arquivo subido antes, que é outro fluxo.
-      saida.push({ type: 'HEADER', format: TIPO_DE_CABECALHO_NA_META[cabecalho.tipo] })
+      // Header de mídia não tem texto: o exemplo é o handle do arquivo subido
+      // antes (`subirExemploDeMidia`).
+      saida.push({
+        type: 'HEADER',
+        format: TIPO_DE_CABECALHO_NA_META[cabecalho.tipo],
+        ...(exemplos.cabecalhoMidia ? { example: { header_handle: [exemplos.cabecalhoMidia] } } : {}),
+      })
     }
   }
 

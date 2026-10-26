@@ -3,6 +3,7 @@ import { sessaoNova } from '@/core/engine/types'
 import { telefoneCanonico } from '@/core/contatos/telefone'
 import { adaptadorDoCanal } from './adaptador-do-canal'
 import { alertar } from './alertar'
+import { enderecoDoPainel } from './endereco'
 import type { FabricaDeCanal } from './receber-mensagem'
 import { camposDoContato, gravarCampos } from './repos/campos'
 import { acharContatoPeloTelefone } from './repos/contato-por-telefone'
@@ -42,13 +43,16 @@ import { acharGatilhoDeEvento, contarDisparoDeEvento } from './repos/webhooks-de
 
 export const EVENTO_DE_PEDIDO = 'pedido.processando'
 /** O mais novo aprovado ganha; o anterior segura enquanto a Meta revisa o novo. */
-const MODELOS = ['pesquisa_pos_compra_v2', 'pesquisa_pos_compra']
+const MODELOS = ['pesquisa_pos_compra_v3', 'pesquisa_pos_compra_v2', 'pesquisa_pos_compra']
 
 /**
  * Enquanto o aceite de WhatsApp não existe no site da PCYES (card do Yuri), só
  * o número de teste do Gabriel recebe. DDD 44 é dele.
  */
 const TELEFONES_DE_TESTE = ['5544998775978']
+
+/** O cabeçalho do modelo com imagem (o mascote da PCYES), servido de `public/`. */
+const IMAGEM_DO_MODELO = '/pesquisas/pcyes-pedido-confirmado.jpg'
 
 /** Os pedidos que já receberam a pesquisa, no campo do contato. Uma vez por pedido. */
 const CAMPO_DOS_PEDIDOS = 'pedidos_pesquisados'
@@ -136,7 +140,12 @@ export async function iniciarPesquisaPosCompra(
     })
     const adaptador = fabricaDeCanal ? fabricaDeCanal(canal) : await adaptadorDoCanal(canal)
     if (!adaptador.enviarTemplate) return falhou('o canal não manda modelo')
-    const envio = await adaptador.enviarTemplate(waId, { nome: modelo.nome, idioma: modelo.idioma, valores: { corpo: valores } })
+    const comImagem = modelo.componentes.cabecalho?.tipo === 'imagem'
+    const envio = await adaptador.enviarTemplate(waId, {
+      nome: modelo.nome,
+      idioma: modelo.idioma,
+      valores: { corpo: valores, ...(comImagem ? { cabecalhoImagem: `${enderecoDoPainel()}${IMAGEM_DO_MODELO}` } : {}) },
+    })
     if (envio.situacao === 'falhou') return falhou('a Meta recusou o envio do modelo')
     await confirmarEntrega(saida, envio.wamid)
 

@@ -62,6 +62,8 @@ export type AlvoDoIndicador = {
 export type ValoresDoTemplate = {
   /** O header aceita **uma** variável no máximo, ver `LIMITE_VARIAVEIS_NO_HEADER`. */
   cabecalho?: string[]
+  /** A imagem de um modelo com cabeçalho de imagem, por `https://`. */
+  cabecalhoImagem?: string
   corpo?: string[]
   /**
    * O fim variável de um botão de link, por posição do botão. É o código do
