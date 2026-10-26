@@ -2,8 +2,10 @@ import { z } from 'zod'
 import { montarCsv, nomeDoArquivo } from '@/server/csv'
 import { acharCliente } from '@/server/repos/clientes'
 import { exigirCapacidade, recusou } from '@/server/permissoes'
+import { variavelDoFiltro } from '@/core/respostas-por-escolha'
 import {
   colunasDe,
+  grafoDasRespostas,
   lerRespostasParaArquivo,
   type DesfechoDaResposta,
 } from '@/server/repos/respostas'
@@ -52,7 +54,25 @@ export async function GET(
   const bruto = parametros.get('desfecho')
   const desfecho = (['bot', 'pessoa', 'aberta'] as const).find((valor) => valor === bruto) ?? null
 
-  const respostas = await lerRespostasParaArquivo(cliente.id, { fluxoId, busca, desfecho })
+  /*
+   * O filtro por resposta também vem junto: quem filtrou "Achei caro" e
+   * exportou espera só essas linhas. A variável é conferida contra o desenho
+   * antes de virar consulta, como na tela.
+   */
+  const variavel = parametros.get('resposta') ?? ''
+  const valor = parametros.get('valor') ?? ''
+  const conferida =
+    fluxoId && variavel && valor
+      ? variavelDoFiltro(variavel, await grafoDasRespostas(cliente.id, fluxoId))
+      : null
+  const resposta = conferida ? { variavel: conferida, valor } : null
+
+  const respostas = await lerRespostasParaArquivo(cliente.id, {
+    fluxoId,
+    busca,
+    desfecho,
+    resposta,
+  })
   const colunas = colunasDe(respostas)
 
   const arquivo = montarCsv(

@@ -275,6 +275,11 @@ aqui fica o que o cliente ganha.
 - **Pesquisa de satisfação (NPS)** com o comentário de cada cliente e o link
   para a conversa. *(21/out/2026)*
 - **Baixar o relatório em planilha** do período escolhido. *(21/out/2026)*
+- **O resultado de cada pesquisa na hora**: em Respostas coletadas, cada
+  pergunta de opções mostra quanto cada resposta recebeu, em número e
+  porcentagem. Um clique em "Achei caro o frete" lista só quem respondeu isso,
+  com o comentário ao lado, e a planilha sai com o mesmo recorte.
+  *(26/out/2026)*
 - **Power BI, Looker e planilhas**: contatos, mensagens, vendas e cobranças
   viram tabela no painel de BI da empresa e se atualizam sozinhos, sem
   exportar nada à mão. As mensagens vão sem o texto das conversas: o painel

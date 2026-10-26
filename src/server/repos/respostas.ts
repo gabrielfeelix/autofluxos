@@ -2,6 +2,14 @@ import 'server-only'
 import { db, ehIdInvalido, pareceUuid } from '../db'
 import { VARIAVEIS_DE_DATA } from '@/core/datas'
 import { VARIAVEIS_DO_ATENDIMENTO } from '@/core/vars-do-atendimento'
+import type { Fluxo } from '@/core/flow/schema'
+import { FORMATO_VARIAVEL } from '@/core/flow/schema'
+import {
+  resumirEscolhas,
+  type PerguntaDeEscolha,
+  type ResumoDaPergunta,
+} from '@/core/respostas-por-escolha'
+import { acharFluxo, acharVersao } from './fluxos'
 import { limparBusca } from './leads'
 
 /**
@@ -81,6 +89,15 @@ export type FiltroDeRespostas = {
   porPagina?: number
   /** Só as que terminaram de um jeito específico. */
   desfecho?: DesfechoDaResposta | null
+  /**
+   * Só quem respondeu exatamente `valor` na variável (Frete = "Achei caro").
+   *
+   * A variável já tem de chegar conferida contra o desenho
+   * (`variavelDoFiltro`); o formato é conferido de novo aqui porque ela vira
+   * caminho JSON na consulta. Só vale com `fluxoId`: sem automação escolhida,
+   * perguntas de fluxos diferentes não se comparam.
+   */
+  resposta?: { variavel: string; valor: string } | null
 }
 
 /**
@@ -173,32 +190,8 @@ export async function paginarRespostas(
   )
   if (fluxoDaVersao.size === 0) return { ...vazia, automacoes }
 
-  /*
-   * A busca acontece nos contatos, e não nas respostas.
-   *
-   * Quem digita aqui está procurando uma pessoa ("Maria", "99988"), e o
-   * PostgREST não filtra dentro de `vars` sem uma expressão que dependeria do
-   * nome da chave, que é diferente em cada fluxo. Resolver o contato primeiro
-   * mantém a contagem honesta: o `count` volta do banco já filtrado, em vez de
-   * contar tudo e esconder linhas na tela.
-   */
-  let contatosDaBusca: string[] | null = null
-  const termo = (filtro.busca ?? '').trim()
-  if (termo !== '') {
-    const alvo = `%${limparBusca(termo)}%`
-    const { data: achados, error } = await db()
-      .from('contacts')
-      .select('id')
-      .eq('client_id', clienteId)
-      .or(`nome.ilike.${alvo},wa_id.ilike.${alvo}`)
-      .limit(500)
-
-    if (error && !ehIdInvalido(error)) {
-      throw new Error(`não foi possível buscar por "${termo}": ${error.message}`)
-    }
-    contatosDaBusca = ((achados ?? []) as { id: string }[]).map((c) => c.id)
-    if (contatosDaBusca.length === 0) return { ...vazia, automacoes }
-  }
+  const contatosDaBusca = await contatosQueBatem(clienteId, filtro.busca)
+  if (contatosDaBusca?.length === 0) return { ...vazia, automacoes }
 
   const de = (pedida - 1) * porPagina
   let consulta = db()
@@ -209,6 +202,8 @@ export async function paginarRespostas(
     .in('flow_version_id', [...fluxoDaVersao.keys()])
 
   if (contatosDaBusca) consulta = consulta.in('contact_id', contatosDaBusca)
+  const resposta = pedido ? respostaSegura(filtro.resposta) : null
+  if (resposta) consulta = consulta.eq(`vars->>${resposta.variavel}`, resposta.valor)
   /*
    * `aberta` é o único desfecho que o `status` decide sozinho; `bot` e `pessoa`
    * dependem de handoff, que mora noutra tabela. Filtrar aqui o que dá e
@@ -274,6 +269,143 @@ export async function paginarRespostas(
     pagina: Math.min(pedida, paginas),
     paginas,
     automacoes,
+  }
+}
+
+/**
+ * Os contatos da conta que batem com a busca, ou `null` quando não há busca.
+ *
+ * A busca acontece nos contatos, e não nas respostas: quem digita aqui está
+ * procurando uma pessoa ("Maria", "99988"), e o PostgREST não filtra dentro
+ * de `vars` sem uma expressão que dependeria do nome da chave, que é diferente
+ * em cada fluxo. Resolver o contato primeiro mantém a contagem honesta: o
+ * `count` volta do banco já filtrado, em vez de contar tudo e esconder linhas
+ * na tela. Lista vazia quer dizer "ninguém bate", e quem chama devolve vazio.
+ */
+async function contatosQueBatem(clienteId: string, busca?: string): Promise<string[] | null> {
+  const termo = (busca ?? '').trim()
+  if (termo === '') return null
+
+  const alvo = `%${limparBusca(termo)}%`
+  const { data: achados, error } = await db()
+    .from('contacts')
+    .select('id')
+    .eq('client_id', clienteId)
+    .or(`nome.ilike.${alvo},wa_id.ilike.${alvo}`)
+    .limit(500)
+
+  if (error && !ehIdInvalido(error)) {
+    throw new Error(`não foi possível buscar por "${termo}": ${error.message}`)
+  }
+  return ((achados ?? []) as { id: string }[]).map((c) => c.id)
+}
+
+/** O filtro por resposta só passa com nome de variável de verdade. */
+function respostaSegura(
+  resposta: FiltroDeRespostas['resposta'],
+): { variavel: string; valor: string } | null {
+  if (!resposta || resposta.valor === '') return null
+  return FORMATO_VARIAVEL.test(resposta.variavel) ? resposta : null
+}
+
+/**
+ * O desenho que o resumo e o filtro por resposta leem: o publicado, ou o
+ * rascunho enquanto não há publicação.
+ *
+ * O publicado é o que está conversando com as pessoas, e é por ele que as
+ * respostas chegam. O `clienteId` entra na conferência porque o id do fluxo
+ * vem do endereço: o resumo não pode virar janela para o desenho de outra
+ * conta.
+ */
+export async function grafoDasRespostas(clienteId: string, fluxoId: string): Promise<Fluxo | null> {
+  if (!pareceUuid(clienteId) || !pareceUuid(fluxoId)) return null
+  const fluxo = await acharFluxo(fluxoId)
+  if (!fluxo || fluxo.clienteId !== clienteId) return null
+  if (!fluxo.versaoPublicadaId) return fluxo.rascunho
+  const versao = await acharVersao(fluxo.versaoPublicadaId)
+  return versao?.grafo ?? fluxo.rascunho
+}
+
+/** Quantas passagens o resumo lê no máximo, das mais recentes para trás. */
+export const TETO_DO_RESUMO = 5_000
+
+/**
+ * O resumo das perguntas de escolha de uma automação.
+ *
+ * Respeita a busca e o desfecho da tela, **menos o filtro por resposta**: com
+ * ele, a pergunta filtrada mostraria 100% de uma opção, e o resumo existe
+ * justamente para escolher qual opção olhar.
+ *
+ * Conta em memória, com teto, como `contarRespostasPorVariavel`: um agregado
+ * no banco seria função SQL nova num projeto dividido com a Verandi, para um
+ * volume que cabe numa leitura de `vars`. A leitura vai em lotes de mil porque
+ * é o máximo que o PostgREST devolve por pedido.
+ */
+export async function resumirRespostas(
+  clienteId: string,
+  fluxoId: string,
+  perguntas: PerguntaDeEscolha[],
+  filtro: Pick<FiltroDeRespostas, 'busca' | 'desfecho'> = {},
+  teto = TETO_DO_RESUMO,
+): Promise<{ perguntas: ResumoDaPergunta[]; lidas: number; noTeto: boolean }> {
+  const nada = { perguntas: resumirEscolhas(perguntas, []), lidas: 0, noTeto: false }
+  if (perguntas.length === 0 || !pareceUuid(clienteId) || !pareceUuid(fluxoId)) return nada
+
+  const { data: fluxo } = await db()
+    .from('flows')
+    .select('id')
+    .eq('id', fluxoId)
+    .eq('client_id', clienteId)
+    .maybeSingle()
+  if (!fluxo) return nada
+
+  const { data: versoes, error: erroDasVersoes } = await db()
+    .from('flow_versions')
+    .select('id')
+    .eq('flow_id', fluxoId)
+  if (erroDasVersoes) return nada
+  const ids = ((versoes ?? []) as { id: string }[]).map((v) => v.id)
+  if (ids.length === 0) return nada
+
+  const contatos = await contatosQueBatem(clienteId, filtro.busca)
+  if (contatos?.length === 0) return nada
+
+  const linhas: { id: string; vars: Record<string, unknown> | null }[] = []
+  const LOTE = 1_000
+  for (let de = 0; de < teto; de += LOTE) {
+    let consulta = db()
+      .from('sessions')
+      .select('id, vars')
+      .in('flow_version_id', ids)
+    if (contatos) consulta = consulta.in('contact_id', contatos)
+    if (filtro.desfecho === 'aberta') consulta = consulta.in('status', STATUS_ABERTOS)
+    if (filtro.desfecho === 'bot') consulta = consulta.eq('status', 'encerrada')
+    if (filtro.desfecho === 'pessoa') consulta = consulta.eq('status', 'humano')
+
+    const { data, error } = await consulta
+      .order('criado_em', { ascending: false })
+      .range(de, Math.min(de + LOTE, teto) - 1)
+    if (error) break
+    const lote = (data ?? []) as { id: string; vars: Record<string, unknown> | null }[]
+    linhas.push(...lote)
+    if (lote.length < Math.min(LOTE, teto - de)) break
+  }
+
+  // O mesmo segundo passe da tabela: `encerrada` que passou por gente é
+  // `pessoa`, não `bot`.
+  let consideradas = linhas
+  if (filtro.desfecho === 'bot') {
+    const comHandoff = await sessoesComHandoff(linhas.map((l) => l.id))
+    consideradas = linhas.filter((l) => !comHandoff.has(l.id))
+  }
+
+  return {
+    perguntas: resumirEscolhas(
+      perguntas,
+      consideradas.map((l) => l.vars),
+    ),
+    lidas: consideradas.length,
+    noTeto: linhas.length >= teto,
   }
 }
 
@@ -354,15 +486,22 @@ async function sessoesComHandoff(ids: string[]): Promise<Set<string>> {
   const comHandoff = new Set<string>()
   if (ids.length === 0) return comHandoff
 
-  const { data, error } = await db().from('handoffs').select('session_id').in('session_id', ids)
+  // Em lotes: o resumo pergunta por milhares de sessões, e a lista de ids
+  // vai no endereço do pedido, que tem tamanho máximo.
+  for (let i = 0; i < ids.length; i += 200) {
+    const { data, error } = await db()
+      .from('handoffs')
+      .select('session_id')
+      .in('session_id', ids.slice(i, i + 200))
 
-  // Erro aqui vira "ninguém passou por gente", e o lado certo de errar é esse:
-  // a linha aparece como o status dela diz, em vez de a tela inteira falhar
-  // por causa de uma coluna.
-  if (error) return comHandoff
+    // Erro aqui vira "ninguém passou por gente", e o lado certo de errar é
+    // esse: a linha aparece como o status dela diz, em vez de a tela inteira
+    // falhar por causa de uma coluna.
+    if (error) return comHandoff
 
-  for (const linha of (data ?? []) as { session_id: string | null }[]) {
-    if (linha.session_id) comHandoff.add(linha.session_id)
+    for (const linha of (data ?? []) as { session_id: string | null }[]) {
+      if (linha.session_id) comHandoff.add(linha.session_id)
+    }
   }
   return comHandoff
 }

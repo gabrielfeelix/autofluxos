@@ -13,8 +13,15 @@ import { horaExata, quando } from '@/lib/quando'
 import { acharCliente } from '@/server/repos/clientes'
 import { acharFluxo } from '@/server/repos/fluxos'
 import {
+  perguntasDeEscolha,
+  variavelDoFiltro,
+  type ResumoDaPergunta,
+} from '@/core/respostas-por-escolha'
+import {
   RESPOSTAS_POR_PAGINA,
+  grafoDasRespostas,
   paginarRespostas,
+  resumirRespostas,
   type DesfechoDaResposta,
 } from '@/server/repos/respostas'
 import { IlustracaoRespostas } from '@/components/design/ilustracoes'
@@ -48,7 +55,12 @@ type Busca = {
   busca?: string | string[]
   pagina?: string | string[]
   desfecho?: string | string[]
+  resposta?: string | string[]
+  valor?: string | string[]
 }
+
+/** O filtro por resposta de uma pergunta: Frete = "Achei caro". */
+type FiltroDeResposta = { variavel: string; valor: string } | null
 
 const DESFECHOS: { chave: DesfechoDaResposta | null; rotulo: string; dica: string }[] = [
   { chave: null, rotulo: 'Todas', dica: 'Todas as passagens pela automação' },
@@ -73,6 +85,7 @@ function endereco(
     fluxo?: string | null
     busca?: string
     desfecho?: DesfechoDaResposta | null
+    resposta?: FiltroDeResposta
     pagina?: number
   },
 ): string {
@@ -80,6 +93,10 @@ function endereco(
   if (filtro.fluxo) parametros.set('fluxo', filtro.fluxo)
   if (filtro.busca) parametros.set('busca', filtro.busca)
   if (filtro.desfecho) parametros.set('desfecho', filtro.desfecho)
+  if (filtro.fluxo && filtro.resposta) {
+    parametros.set('resposta', filtro.resposta.variavel)
+    parametros.set('valor', filtro.resposta.valor)
+  }
   if (filtro.pagina && filtro.pagina > 1) parametros.set('pagina', String(filtro.pagina))
 
   const consulta = parametros.toString()
@@ -89,12 +106,21 @@ function endereco(
 /** O CSV sai com o mesmo filtro da tela, pelo motivo escrito na rota. */
 function enderecoDoCsv(
   clienteId: string,
-  filtro: { fluxo?: string | null; busca?: string; desfecho?: DesfechoDaResposta | null },
+  filtro: {
+    fluxo?: string | null
+    busca?: string
+    desfecho?: DesfechoDaResposta | null
+    resposta?: FiltroDeResposta
+  },
 ): string {
   const parametros = new URLSearchParams()
   if (filtro.fluxo) parametros.set('fluxo', filtro.fluxo)
   if (filtro.busca) parametros.set('busca', filtro.busca)
   if (filtro.desfecho) parametros.set('desfecho', filtro.desfecho)
+  if (filtro.fluxo && filtro.resposta) {
+    parametros.set('resposta', filtro.resposta.variavel)
+    parametros.set('valor', filtro.resposta.valor)
+  }
 
   const consulta = parametros.toString()
   return `/api/clientes/${clienteId}/respostas/csv${consulta ? `?${consulta}` : ''}`
@@ -115,6 +141,10 @@ export default async function Pagina({
   const termo = primeiro(busca.busca).trim()
   const desfecho = desfechoValido(busca.desfecho)
   const pagina = Math.max(1, Number(primeiro(busca.pagina)) || 1)
+  // Cru: a variável só é conferida contra o desenho dentro da `<Tabela>`, que
+  // já carrega o grafo para o resumo. Sem automação, o filtro não existe.
+  const respostaPedida = fluxo ? primeiro(busca.resposta) : ''
+  const valorPedido = fluxo ? primeiro(busca.valor) : ''
 
   /*
    * O nome da automação filtrada, só para a trilha.
@@ -162,7 +192,7 @@ export default async function Pagina({
         />
 
         <Suspense
-          key={`${fluxo}-${termo}-${desfecho}-${pagina}`}
+          key={`${fluxo}-${termo}-${desfecho}-${pagina}-${respostaPedida}-${valorPedido}`}
           fallback={<Esqueleto />}
         >
           <Tabela
@@ -171,6 +201,8 @@ export default async function Pagina({
             termo={termo}
             desfecho={desfecho}
             pagina={pagina}
+            respostaPedida={respostaPedida}
+            valorPedido={valorPedido}
           />
         </Suspense>
       </main>
@@ -202,19 +234,35 @@ async function Tabela({
   termo,
   desfecho,
   pagina: pedida,
+  respostaPedida,
+  valorPedido,
 }: {
   clienteId: string
   fluxo: string | null
   termo: string
   desfecho: DesfechoDaResposta | null
   pagina: number
+  respostaPedida: string
+  valorPedido: string
 }) {
-  const { respostas, colunas, total, pagina, paginas, automacoes } = await paginarRespostas(
-    clienteId,
-    { fluxoId: fluxo, busca: termo, desfecho, pagina: pedida },
-  )
+  /*
+   * O desenho da automação escolhida decide duas coisas: quais perguntas têm
+   * resumo (as de escolha) e se a variável do endereço é dela. Variável que não
+   * é do fluxo cai como filtro nenhum, em vez de virar caminho JSON na consulta.
+   */
+  const grafo = fluxo ? await grafoDasRespostas(clienteId, fluxo) : null
+  const variavel = valorPedido ? variavelDoFiltro(respostaPedida, grafo) : null
+  const resposta: FiltroDeResposta = variavel ? { variavel, valor: valorPedido } : null
+  const perguntas = grafo ? perguntasDeEscolha(grafo) : []
 
-  const filtrando = Boolean(fluxo) || termo !== '' || desfecho !== null
+  const [{ respostas, colunas, total, pagina, paginas, automacoes }, resumo] = await Promise.all([
+    paginarRespostas(clienteId, { fluxoId: fluxo, busca: termo, desfecho, resposta, pagina: pedida }),
+    fluxo && perguntas.length > 0
+      ? resumirRespostas(clienteId, fluxo, perguntas, { busca: termo, desfecho })
+      : null,
+  ])
+
+  const filtrando = Boolean(fluxo) || termo !== '' || desfecho !== null || resposta !== null
   const primeiroDaPagina = (pagina - 1) * RESPOSTAS_POR_PAGINA + 1
   const ultimoDaPagina = primeiroDaPagina + respostas.length - 1
   const nomeDoFluxo = automacoes.find((a) => a.id === fluxo)?.nome ?? null
@@ -258,6 +306,12 @@ async function Tabela({
         className="mb-3 flex flex-wrap items-center gap-2"
       >
         {desfecho && <input type="hidden" name="desfecho" value={desfecho} />}
+        {resposta && (
+          <>
+            <input type="hidden" name="resposta" value={resposta.variavel} />
+            <input type="hidden" name="valor" value={resposta.valor} />
+          </>
+        )}
         <span className="w-[260px] shrink-0">
           <Dropdown
             nome="fluxo"
@@ -305,7 +359,7 @@ async function Tabela({
             {filtrando && ' no filtro'}
           </Pilula>
           <a
-            href={enderecoDoCsv(clienteId, { fluxo, busca: termo, desfecho })}
+            href={enderecoDoCsv(clienteId, { fluxo, busca: termo, desfecho, resposta })}
             className="botao-secundario botao-md"
             title="Baixar como planilha exatamente o que este filtro mostra"
           >
@@ -318,7 +372,7 @@ async function Tabela({
         {DESFECHOS.map((opcao) => (
           <Link
             key={opcao.rotulo}
-            href={endereco(clienteId, { fluxo, busca: termo, desfecho: opcao.chave })}
+            href={endereco(clienteId, { fluxo, busca: termo, desfecho: opcao.chave, resposta })}
             title={opcao.dica}
             scroll={false}
             className={`rounded-full border px-3 py-1 text-[11.5px] font-semibold transition ${
@@ -330,7 +384,35 @@ async function Tabela({
             {opcao.rotulo}
           </Link>
         ))}
+        {/* O filtro por resposta vira pílula ao lado dos desfechos, com o × que
+            o tira sem mexer nos outros. Sem ela, a única pista de que a lista
+            está recortada seria a opção acesa no resumo, que pode estar fora
+            da tela no celular. */}
+        {resposta && (
+          <Link
+            href={endereco(clienteId, { fluxo, busca: termo, desfecho })}
+            scroll={false}
+            title="Remover este filtro"
+            className="inline-flex max-w-full items-center gap-1.5 rounded-full border border-primary/50 bg-primary/[0.1] py-1 pr-2 pl-3 text-[11.5px] font-semibold text-primary transition hover:bg-primary/[0.16]"
+          >
+            <span className="truncate">
+              {rotuloDoCampo(resposta.variavel) || resposta.variavel}: {resposta.valor}
+            </span>
+            <span aria-hidden className="text-[13px] leading-none">×</span>
+            <span className="sr-only">remover filtro</span>
+          </Link>
+        )}
       </nav>
+
+      {resumo && resumo.lidas > 0 && (
+        <ResumoDasEscolhas
+          perguntas={resumo.perguntas}
+          lidas={resumo.lidas}
+          noTeto={resumo.noTeto}
+          ativa={resposta}
+          hrefDe={(alvo) => endereco(clienteId, { fluxo, busca: termo, desfecho, resposta: alvo })}
+        />
+      )}
 
       {respostas.length === 0 ? (
         <div className="app-card py-14 text-center">
@@ -342,7 +424,9 @@ async function Tabela({
           <p className="text-[13px] font-bold">
             {termo !== ''
               ? `Ninguém com "${termo}" respondeu`
-              : nomeDoFluxo
+              : resposta
+                ? `Ninguém respondeu “${resposta.valor}” em ${rotuloDoCampo(resposta.variavel) || resposta.variavel}`
+                : nomeDoFluxo
                 ? `“${nomeDoFluxo}” ainda não tem resposta aqui`
                 : 'Nenhuma resposta ainda'}
           </p>
@@ -445,6 +529,7 @@ async function Tabela({
                     fluxo,
                     busca: termo,
                     desfecho,
+                    resposta,
                     pagina: pagina - 1,
                   })}
                   ativo={pagina > 1}
@@ -459,6 +544,7 @@ async function Tabela({
                     fluxo,
                     busca: termo,
                     desfecho,
+                    resposta,
                     pagina: pagina + 1,
                   })}
                   ativo={pagina < paginas}
@@ -470,6 +556,129 @@ async function Tabela({
           )}
         </>
       )}
+    </>
+  )
+}
+
+/**
+ * O resumo das perguntas de escolha: um cartão por pergunta, uma linha por
+ * opção, com percentual e contagem.
+ *
+ * **Cada opção é o filtro.** Ler "22% Achei caro" e querer ver quem são é o
+ * mesmo gesto, então a linha é um link que filtra a tabela abaixo; clicar na
+ * opção acesa desfaz. "Outras" não filtra: é a soma do que não é opção, e não
+ * existe um valor só para comparar.
+ *
+ * A barra é a fração do total da pergunta, e não da maior opção: comparar
+ * perguntas lado a lado só funciona se 50% tiver o mesmo comprimento nas duas.
+ */
+function ResumoDasEscolhas({
+  perguntas,
+  lidas,
+  noTeto,
+  ativa,
+  hrefDe,
+}: {
+  perguntas: ResumoDaPergunta[]
+  lidas: number
+  noTeto: boolean
+  ativa: FiltroDeResposta
+  hrefDe: (alvo: FiltroDeResposta) => string
+}) {
+  return (
+    <section aria-label="Resumo das respostas" className="mb-[18px]">
+      {/* No celular, os cartões deslizam de lado em vez de empilhar: três
+          perguntas empilhadas empurravam a tabela para a terceira tela. */}
+      <div className="-mx-4 flex snap-x snap-mandatory gap-3 overflow-x-auto px-4 pb-1 md:mx-0 md:grid md:grid-cols-2 md:overflow-visible md:px-0 md:pb-0 xl:grid-cols-3">
+        {perguntas.map((pergunta) => (
+          <div
+            key={pergunta.variavel}
+            className="app-card w-[85%] shrink-0 snap-start scroll-ml-4 p-4 md:w-auto"
+          >
+            <div className="mb-3 flex items-baseline justify-between gap-3">
+              <h2 className="truncate text-[13px] font-bold" title={pergunta.texto}>
+                {rotuloDoCampo(pergunta.variavel) || pergunta.variavel}
+              </h2>
+              <span className="shrink-0 text-[11px] text-dim tabular-nums">
+                {pergunta.respondidas} {pergunta.respondidas === 1 ? 'resposta' : 'respostas'}
+              </span>
+            </div>
+            <ul className="flex flex-col gap-1">
+              {pergunta.contagens.map((opcao) => {
+                const acesa =
+                  ativa?.variavel === pergunta.variavel && ativa.valor === opcao.rotulo
+                return (
+                  <li key={opcao.rotulo}>
+                    <Link
+                      href={hrefDe(acesa ? null : { variavel: pergunta.variavel, valor: opcao.rotulo })}
+                      scroll={false}
+                      aria-current={acesa ? 'true' : undefined}
+                      title={acesa ? 'Remover este filtro' : `Ver só quem respondeu “${opcao.rotulo}”`}
+                      className={`-mx-2 block rounded-lg px-2 py-1.5 transition ${
+                        acesa ? 'bg-primary/[0.1]' : 'hover:bg-surface'
+                      }`}
+                    >
+                      <OpcaoDoResumo opcao={opcao} acesa={acesa} />
+                    </Link>
+                  </li>
+                )
+              })}
+              {pergunta.outras.total > 0 && (
+                <li
+                  className="-mx-2 px-2 py-1.5"
+                  title="Respostas que não são uma das opções: texto digitado no lugar do botão ou opção que saiu da automação"
+                >
+                  <OpcaoDoResumo opcao={pergunta.outras} acesa={false} apagada />
+                </li>
+              )}
+            </ul>
+          </div>
+        ))}
+      </div>
+      <p className="mt-2 text-[11px] text-dim">
+        {noTeto
+          ? `Calculado sobre as ${lidas.toLocaleString('pt-BR')} conversas mais recentes do filtro.`
+          : `Calculado sobre ${lidas.toLocaleString('pt-BR')} ${lidas === 1 ? 'conversa' : 'conversas'} do filtro.`}{' '}
+        Clique numa opção para ver quem respondeu.
+      </p>
+    </section>
+  )
+}
+
+function OpcaoDoResumo({
+  opcao,
+  acesa,
+  apagada = false,
+}: {
+  opcao: { rotulo: string; total: number; percentual: number }
+  acesa: boolean
+  apagada?: boolean
+}) {
+  return (
+    <>
+      <span className="flex items-baseline justify-between gap-3">
+        <span
+          className={`truncate text-[12.5px] ${
+            acesa ? 'font-semibold text-primary' : apagada ? 'text-dim' : 'font-medium text-soft'
+          }`}
+        >
+          {opcao.rotulo}
+        </span>
+        <span className="shrink-0 tabular-nums">
+          <span className={`text-[13px] font-bold ${acesa ? 'text-primary' : ''}`}>
+            {opcao.percentual}%
+          </span>
+          <span className="ml-1.5 text-[11px] text-dim">{opcao.total}</span>
+        </span>
+      </span>
+      <span className="mt-1 block h-1 overflow-hidden rounded-full bg-surface">
+        <span
+          className={`block h-full rounded-full ${
+            acesa ? 'bg-primary' : apagada ? 'bg-surface-strong' : 'bg-primary/60'
+          }`}
+          style={{ width: `${opcao.percentual}%` }}
+        />
+      </span>
     </>
   )
 }
