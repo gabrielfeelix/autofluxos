@@ -1,16 +1,17 @@
 /**
- * Drivers e manuais da loja, lidos da página pública de downloads.
+ * Drivers e manuais da loja, pela consulta `drivers` do GraphQL da Magento.
  *
- * **Por que HTML e não API.** A PCYES publica os arquivos em `/drivers`, um
- * módulo próprio do Magento sem GraphQL nem REST (medido em 25/set/2026: a
- * busca `?q=basaran` devolve os produtos em cards, e a página de cada um
- * separa "Drivers" de "Manuais" com o link direto do arquivo). Ler a página é
- * a única porta, e ela é a mesma que qualquer visitante vê.
+ * **Por que GraphQL, e por que antes era HTML.** Até out/2026 a PCYES publicava
+ * os arquivos em `/drivers`, um módulo sem API, e ler a página era a única
+ * porta. O site novo (front em Next.js, medido em 26/out/2026) trocou a
+ * página por `/drivers-e-manuais`, que lê a consulta `drivers` do mesmo
+ * `/graphql` da loja. O endereço antigo passou a dar 404 para tudo, e cada
+ * pedido de driver virou "a consulta falhou" e foi para um atendente fora do
+ * horário. A consulta é a mesma que a página pública faz no navegador.
  *
- * **Puro de propósito**: recebe o HTML, devolve dado. Quem baixa é o adaptador
- * (`loja/magento.ts`), pela chamada que confere rede interna. Se a loja mudar
- * o layout, o que quebra é só isto, e quebra vazio: lista sem item vira "não
- * achei", nunca um arquivo errado.
+ * **Puro de propósito**: recebe o JSON, devolve dado. Quem chama é o adaptador
+ * (`loja/magento.ts`). Se a loja mudar a consulta, o que quebra é só isto, e
+ * quebra vazio: lista sem item vira "não achei", nunca um arquivo errado.
  */
 
 /** Um produto da página de downloads, como a busca devolve. */
@@ -22,97 +23,75 @@ export type ArquivoDeDownload = { secao: 'driver' | 'manual' | 'outro'; nome: st
 /** Quantos produtos a busca devolve ao modelo. Mais que isso é lista, não resposta. */
 export const LIMITE_DE_MANUAIS = 5
 
+/** A busca da página, a mesma de `/drivers-e-manuais?q=`. */
+export const QUERY_BUSCA_DE_DOWNLOADS =
+  'query($q:String){drivers(q:$q,category:"all",page:1,limit:12){items{id name category_name}}}'
+
+/** Um produto: a foto e os dois arquivos que a página oferece. */
+export const QUERY_DOWNLOADS = 'query($id:Int!){driver(id:$id){id name image link_driver link_manual}}'
+
 export function linkDaBuscaDeDownloads(endereco: string, termo: string): string {
-  const url = new URL(`${endereco}/drivers/index/index/`)
-  url.searchParams.set('category', 'all')
-  url.searchParams.set('limit', '12')
-  url.searchParams.set('q', termo.trim())
+  const url = new URL(`${endereco.replace(/\/+$/, '')}/drivers-e-manuais`)
+  if (termo.trim()) url.searchParams.set('q', termo.trim())
   return url.toString()
 }
 
 /** A página de um produto. `null` para id que não é número: ele vira caminho de URL. */
 export function linkDaPaginaDeDownloads(endereco: string, manualId: string): string | null {
-  return /^\d{1,9}$/.test(manualId) ? `${endereco}/drivers/index/view/id/${manualId}/` : null
+  return /^\d{1,9}$/.test(manualId) ? `${endereco.replace(/\/+$/, '')}/drivers-e-manuais/${manualId}` : null
 }
 
-const ENTIDADES: Record<string, string> = {
-  '&amp;': '&',
-  '&lt;': '<',
-  '&gt;': '>',
-  '&quot;': '"',
-  '&#39;': "'",
-  '&apos;': "'",
-  '&nbsp;': ' ',
+type ItemDaConsulta = {
+  id?: unknown
+  name?: unknown
+  category_name?: unknown
+  image?: unknown
+  link_driver?: unknown
+  link_manual?: unknown
 }
 
-function texto(html: string): string {
-  return html
-    .replace(/<[^>]*>/g, ' ')
-    .replace(/&#x([0-9a-f]+);/gi, (_, h: string) => String.fromCodePoint(parseInt(h, 16)))
-    .replace(/&#(\d+);/g, (_, d: string) => String.fromCodePoint(Number(d)))
-    .replace(/&[a-z]+;|&#39;/gi, (e) => ENTIDADES[e.toLowerCase()] ?? ' ')
-    .replace(/\s+/g, ' ')
-    .trim()
+function textoDe(valor: unknown): string {
+  return typeof valor === 'string' ? valor.replace(/\s+/g, ' ').trim() : ''
 }
 
-/**
- * Os produtos da busca. Cada card é um `<a>` para `/drivers/index/view/id/N/`
- * com a foto (o `alt` é o nome) e o selo da categoria.
- */
-export function lerBuscaDeDownloads(html: string): ItemDeDownload[] {
+/** Só `https`: o link sai daqui direto para o celular de alguém. */
+function httpsDe(valor: unknown): string | null {
+  const url = textoDe(valor)
+  return url.startsWith('https://') ? url : null
+}
+
+/** Os produtos da busca, sem repetir e até `LIMITE_DE_MANUAIS`. */
+export function lerBuscaDeDownloads(json: unknown): ItemDeDownload[] {
+  const lista = (json as { data?: { drivers?: { items?: ItemDaConsulta[] | null } | null } } | null)?.data?.drivers?.items
   const itens: ItemDeDownload[] = []
   const vistos = new Set<string>()
-  const cards = html.split(/<a\s+href="[^"]*\/drivers\/index\/view\/id\//).slice(1)
-  for (const card of cards) {
-    const id = /^(\d{1,9})\//.exec(card)?.[1]
-    if (!id || vistos.has(id)) continue
-    // O card acaba no próximo `</a>`; o resto é do vizinho.
-    const corpo = card.slice(0, card.indexOf('</a>') === -1 ? undefined : card.indexOf('</a>'))
-    const nome = texto(/alt="([^"]*)"/.exec(corpo)?.[1] ?? '')
-    if (nome === '') continue
-    const categoria = texto(/class="product-category-badge"[^>]*>([\s\S]*?)<\/span>/.exec(corpo)?.[1] ?? '')
+  for (const item of Array.isArray(lista) ? lista : []) {
+    const id = String(item?.id ?? '')
+    const nome = textoDe(item?.name)
+    if (!/^\d{1,9}$/.test(id) || nome === '' || vistos.has(id)) continue
     vistos.add(id)
-    itens.push({ manualId: id, nome, categoria })
+    itens.push({ manualId: id, nome, categoria: textoDe(item.category_name) })
     if (itens.length >= LIMITE_DE_MANUAIS) break
   }
   return itens
 }
 
 /**
- * Os arquivos da página de um produto, com a seção de onde vieram.
- *
- * A seção decide o que o bot faz: manual em PDF vai anexado na conversa;
- * driver é executável, que o WhatsApp não entrega, e vai pela página. Só
- * `https`: o link sai daqui direto para o celular de alguém.
+ * Os arquivos de um produto. A seção decide o que o bot faz: manual em PDF vai
+ * anexado na conversa; driver é executável, que o WhatsApp não entrega, e vai
+ * pela página. `null` quando o produto não existe.
  */
-export function lerPaginaDeDownloads(html: string): { nome: string; foto: string | null; arquivos: ArquivoDeDownload[] } {
-  const titulo = texto(/<title>([\s\S]*?)<\/title>/i.exec(html)?.[1] ?? '')
-  const nome = titulo.split(/\s+[|–-]\s+/)[0] ?? titulo
-  // A foto do topo da página, a mesma da loja. Só `https`: vai de cabeçalho
-  // do card no WhatsApp, e a Meta busca o endereço como veio.
-  const foto = /<img\s+src="(https:\/\/[^"\s]+)"[^>]*class="product-image"/.exec(html)?.[1] ?? null
-
+export function lerDownloads(json: unknown): { nome: string; foto: string | null; arquivos: ArquivoDeDownload[] } | null {
+  const item = (json as { data?: { driver?: ItemDaConsulta | null } } | null)?.data?.driver
+  if (!item) return null
+  const nome = textoDe(item.name)
   const arquivos: ArquivoDeDownload[] = []
-  const secoes = html.split(/<h2 class="download-section-title">/).slice(1)
-  for (const secaoHtml of secoes) {
-    const tituloDaSecao = texto(secaoHtml.slice(0, secaoHtml.indexOf('</h2>'))).toLowerCase()
-    const secao: ArquivoDeDownload['secao'] = tituloDaSecao.startsWith('driver')
-      ? 'driver'
-      : tituloDaSecao.startsWith('manua')
-        ? 'manual'
-        : 'outro'
-    for (const card of secaoHtml.split(/<div class="download-card">/).slice(1)) {
-      const url = /<a href="(https:\/\/[^"\s]+)"/.exec(card)?.[1]
-      if (!url) continue
-      arquivos.push({
-        secao,
-        nome: texto(/class="download-name"[^>]*>([\s\S]*?)<\/div>/.exec(card)?.[1] ?? ''),
-        url,
-        formato: formatoDaUrl(url),
-      })
-    }
-  }
-  return { nome, foto, arquivos }
+  const driver = httpsDe(item.link_driver)
+  if (driver) arquivos.push({ secao: 'driver', nome: `Driver ${nome}`.trim(), url: driver, formato: formatoDaUrl(driver) })
+  const manual = httpsDe(item.link_manual)
+  if (manual) arquivos.push({ secao: 'manual', nome: `Manual ${nome}`.trim(), url: manual, formato: formatoDaUrl(manual) })
+  if (nome === '' && arquivos.length === 0) return null
+  return { nome, foto: httpsDe(item.image), arquivos }
 }
 
 /**

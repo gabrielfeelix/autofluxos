@@ -18,9 +18,11 @@ import {
 } from '@/core/loja'
 import {
   lerBuscaDeDownloads,
-  lerPaginaDeDownloads,
+  lerDownloads,
   linkDaBuscaDeDownloads,
   linkDaPaginaDeDownloads,
+  QUERY_BUSCA_DE_DOWNLOADS,
+  QUERY_DOWNLOADS,
 } from '@/core/manuais'
 import { chamarHttp } from '@/server/efeitos/http'
 import { lerPecas, linkDoMonteSeuPc, urlDasPecas } from './monte-seu-pc'
@@ -40,16 +42,6 @@ type Chamar = typeof chamarHttp
  * hora de salvar, deixaria a porta aberta para quem trocar o DNS depois.
  */
 export function lojaMagento(dados: DadosDaLoja, chamar: Chamar = chamarHttp): Loja {
-  /** Página HTML da loja, pela mesma chamada que confere rede interna. */
-  async function pagina(url: string): Promise<ResultadoDaLoja<string>> {
-    const resposta = await chamar(
-      { tipo: 'chamar_http', metodo: 'GET', url, cabecalhos: [], corpo: '', mapear: [], aoFalhar: 'humano' },
-      { deTeste: false, comTexto: true },
-    )
-    if (!resposta.ok) return { ok: false, motivo: `a página de downloads não respondeu: ${resposta.motivo}` }
-    return { ok: true, valor: resposta.texto ?? '' }
-  }
-
   async function graphql(query: string, variaveis: Record<string, unknown>): Promise<ResultadoDaLoja<unknown>> {
     const url = new URL(`${dados.endereco}/graphql`)
     url.searchParams.set('query', query)
@@ -67,8 +59,13 @@ export function lojaMagento(dados: DadosDaLoja, chamar: Chamar = chamarHttp): Lo
       { deTeste: false, comJson: true },
     )
     if (!resposta.ok) return { ok: false, motivo: `a loja não respondeu: ${resposta.motivo}` }
-    const erros = (resposta.json as { errors?: unknown[] } | null)?.errors
-    if (Array.isArray(erros) && erros.length > 0) return { ok: false, motivo: 'a loja recusou a consulta' }
+    const erros = (resposta.json as { errors?: { extensions?: { category?: unknown } }[] } | null)?.errors
+    /*
+     * "Não existe" não é recusa: `driver(id:)` de um id que sumiu responde
+     * `graphql-no-such-entity` com `data.driver: null`, e quem lê decide.
+     */
+    const soNaoExiste = Array.isArray(erros) && erros.every((e) => e?.extensions?.category === 'graphql-no-such-entity')
+    if (Array.isArray(erros) && erros.length > 0 && !soNaoExiste) return { ok: false, motivo: 'a loja recusou a consulta' }
     return { ok: true, valor: resposta.json }
   }
 
@@ -145,16 +142,17 @@ export function lojaMagento(dados: DadosDaLoja, chamar: Chamar = chamarHttp): Lo
     async manuais(termo) {
       const busca = linkDaBuscaDeDownloads(dados.endereco, termo)
       if (!termo.trim()) return { ok: true, valor: { itens: [], busca } }
-      const r = await pagina(busca)
-      return r.ok ? { ok: true, valor: { itens: lerBuscaDeDownloads(r.valor), busca } } : r
+      const r = await graphql(QUERY_BUSCA_DE_DOWNLOADS, { q: termo.trim() })
+      if (!r.ok) return { ok: false, motivo: `a página de downloads não respondeu: ${r.motivo}` }
+      return { ok: true, valor: { itens: lerBuscaDeDownloads(r.valor), busca } }
     },
     async downloads(manualId) {
       const endereco = linkDaPaginaDeDownloads(dados.endereco, manualId.trim())
       if (!endereco) return { ok: true, valor: null }
-      const r = await pagina(endereco)
-      if (!r.ok) return r
-      const lida = lerPaginaDeDownloads(r.valor)
-      return { ok: true, valor: lida.nome === '' && lida.arquivos.length === 0 ? null : { ...lida, pagina: endereco } }
+      const r = await graphql(QUERY_DOWNLOADS, { id: Number(manualId.trim()) })
+      if (!r.ok) return { ok: false, motivo: `a página de downloads não respondeu: ${r.motivo}` }
+      const lida = lerDownloads(r.valor)
+      return { ok: true, valor: lida ? { ...lida, pagina: endereco } : null }
     },
     async monteSeuPc(categoria, termo) {
       const r = await chamar(
