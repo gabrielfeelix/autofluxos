@@ -4,8 +4,7 @@ import { Suspense } from 'react'
 import { ClienteShell } from '@/components/design/cliente-shell'
 import { CabecalhoDaTela } from '@/components/design/cabecalho-da-tela'
 import { Pilula } from '@/components/design/pilula'
-import { IconeDoQuadro } from '@/components/quadros/popover-do-quadro'
-import { Dropdown } from '@/components/design/dropdown'
+import { BarraDeRespostas } from '@/components/respostas/barra-de-respostas'
 import { LinhaClicavel } from '@/components/lead/linha-clicavel'
 import { rotuloDoCampo } from '@/core/contatos/rotulo-do-campo'
 import { telefoneLegivel } from '@/core/contatos/telefone'
@@ -19,6 +18,7 @@ import {
 } from '@/core/respostas-por-escolha'
 import {
   RESPOSTAS_POR_PAGINA,
+  automacoesDaConta,
   grafoDasRespostas,
   paginarRespostas,
   resumirRespostas,
@@ -155,7 +155,10 @@ export default async function Pagina({
    * tabela não serve para voltar enquanto a tabela carrega. O custo é uma
    * consulta por id, e só quando há filtro.
    */
-  const automacao = fluxo ? await acharFluxo(fluxo) : null
+  const [automacao, automacoes] = await Promise.all([
+    fluxo ? acharFluxo(fluxo) : null,
+    automacoesDaConta(cliente.id),
+  ])
   const daConta = automacao?.clienteId === cliente.id ? automacao : null
 
   return (
@@ -190,6 +193,14 @@ export default async function Pagina({
           titulo="Respostas coletadas"
           descricao="Uma linha por conversa, com o que a pessoa respondeu naquela passagem. A tela de Contatos guarda o valor mais recente de cada pessoa; aqui fica o histórico, resposta por resposta."
         />
+
+        {automacoes.length > 0 && (
+          <BarraDeRespostas
+            base={`/clientes/${cliente.id}/respostas`}
+            automacoes={automacoes}
+            filtro={{ fluxo, busca: termo, desfecho, resposta: respostaPedida, valor: valorPedido }}
+          />
+        )}
 
         <Suspense
           key={`${fluxo}-${termo}-${desfecho}-${pagina}-${respostaPedida}-${valorPedido}`}
@@ -288,71 +299,48 @@ async function Tabela({
   return (
     <>
       {/*
-        Uma linha só: filtro à esquerda, contagem e CSV à direita.
+        Desfechos à esquerda, contagem e CSV à direita.
 
         A contagem sai da mesma consulta que desenha a tabela, e é por isso que
-        ela mora aqui dentro e não no cabeçalho da página: subi-la obrigaria a
-        repetir `paginarRespostas` só para escrever um número.
-
-        **O seletor é o `Dropdown` do produto, não o `<select>` do sistema.** O
-        nativo abre com o desenho do sistema operacional, ignora o tema escuro
-        e não combina com o resto do painel, que é a razão registrada no próprio
-        componente e a mesma que a tela de Funil já seguia. Ele mantém a
-        semântica de formulário por um `input` oculto, então o `form` continua
-        sendo um GET comum.
+        ela mora aqui dentro, e não na barra de automação e busca: aquela fica
+        fora do `Suspense` para o campo não perder o foco a cada letra.
       */}
-      <form
-        action={`/clientes/${clienteId}/respostas`}
-        className="mb-3 flex flex-wrap items-center gap-2"
-      >
-        {desfecho && <input type="hidden" name="desfecho" value={desfecho} />}
-        {resposta && (
-          <>
-            <input type="hidden" name="resposta" value={resposta.variavel} />
-            <input type="hidden" name="valor" value={resposta.valor} />
-          </>
-        )}
-        <span className="w-[260px] shrink-0">
-          <Dropdown
-            nome="fluxo"
-            valorInicial={fluxo ?? ''}
-            rotuloAcessivel="Automação"
-            className="w-full text-[12.5px]"
-            opcoes={[
-              { valor: '', rotulo: 'Todas as automações' },
-              ...automacoes.map((automacao) => ({
-                valor: automacao.id,
-                rotulo: automacao.nome,
-              })),
-            ]}
-          />
-        </span>
-        <label className="campo-de-busca relative min-w-[200px] flex-1 sm:max-w-[380px]">
-          <span className="sr-only">Buscar por nome ou telefone</span>
-          <span className="pointer-events-none absolute top-1/2 left-3 -translate-y-1/2 text-dim">
-            <IconeDoQuadro tipo="busca" />
-          </span>
-          <input
-            type="search"
-            name="busca"
-            defaultValue={termo}
-            placeholder="Buscar por nome ou telefone"
-            className="app-field h-9 py-2 pr-3 pl-9 text-[13px]"
-          />
-        </label>
-        <button type="submit" className="botao-secundario botao-md">
-          Filtrar
-        </button>
-        {filtrando && (
-          <Link
-            href={`/clientes/${clienteId}/respostas`}
-            className="text-[11.5px] font-semibold text-primary hover:underline"
-            scroll={false}
-          >
-            Limpar
-          </Link>
-        )}
-
+      <div className="mb-[18px] flex flex-wrap items-center gap-x-2 gap-y-2.5">
+        <nav aria-label="Desfecho" className="flex flex-wrap gap-1.5">
+          {DESFECHOS.map((opcao) => (
+            <Link
+              key={opcao.rotulo}
+              href={endereco(clienteId, { fluxo, busca: termo, desfecho: opcao.chave, resposta })}
+              title={opcao.dica}
+              scroll={false}
+              className={`rounded-full border px-3 py-1 text-[11.5px] font-semibold transition ${
+                desfecho === opcao.chave
+                  ? 'border-primary/50 bg-primary/[0.1] text-primary'
+                  : 'border-line bg-surface text-muted hover:text-ink'
+              }`}
+            >
+              {opcao.rotulo}
+            </Link>
+          ))}
+          {/* O filtro por resposta vira pílula ao lado dos desfechos, com o × que
+              o tira sem mexer nos outros. Sem ela, a única pista de que a lista
+              está recortada seria a opção acesa no resumo, que pode estar fora
+              da tela no celular. */}
+          {resposta && (
+            <Link
+              href={endereco(clienteId, { fluxo, busca: termo, desfecho })}
+              scroll={false}
+              title="Remover este filtro"
+              className="inline-flex max-w-full items-center gap-1.5 rounded-full border border-primary/50 bg-primary/[0.1] py-1 pr-2 pl-3 text-[11.5px] font-semibold text-primary transition hover:bg-primary/[0.16]"
+            >
+              <span className="truncate">
+                {rotuloDoCampo(resposta.variavel) || resposta.variavel}: {resposta.valor}
+              </span>
+              <span aria-hidden className="text-[13px] leading-none">×</span>
+              <span className="sr-only">remover filtro</span>
+            </Link>
+          )}
+        </nav>
         <span className="ml-auto flex items-center gap-2">
           <Pilula>
             {total} {total === 1 ? 'resposta' : 'respostas'}
@@ -366,43 +354,7 @@ async function Tabela({
             Baixar CSV
           </a>
         </span>
-      </form>
-
-      <nav aria-label="Desfecho" className="mb-[18px] flex flex-wrap gap-1.5">
-        {DESFECHOS.map((opcao) => (
-          <Link
-            key={opcao.rotulo}
-            href={endereco(clienteId, { fluxo, busca: termo, desfecho: opcao.chave, resposta })}
-            title={opcao.dica}
-            scroll={false}
-            className={`rounded-full border px-3 py-1 text-[11.5px] font-semibold transition ${
-              desfecho === opcao.chave
-                ? 'border-primary/50 bg-primary/[0.1] text-primary'
-                : 'border-line bg-surface text-muted hover:text-ink'
-            }`}
-          >
-            {opcao.rotulo}
-          </Link>
-        ))}
-        {/* O filtro por resposta vira pílula ao lado dos desfechos, com o × que
-            o tira sem mexer nos outros. Sem ela, a única pista de que a lista
-            está recortada seria a opção acesa no resumo, que pode estar fora
-            da tela no celular. */}
-        {resposta && (
-          <Link
-            href={endereco(clienteId, { fluxo, busca: termo, desfecho })}
-            scroll={false}
-            title="Remover este filtro"
-            className="inline-flex max-w-full items-center gap-1.5 rounded-full border border-primary/50 bg-primary/[0.1] py-1 pr-2 pl-3 text-[11.5px] font-semibold text-primary transition hover:bg-primary/[0.16]"
-          >
-            <span className="truncate">
-              {rotuloDoCampo(resposta.variavel) || resposta.variavel}: {resposta.valor}
-            </span>
-            <span aria-hidden className="text-[13px] leading-none">×</span>
-            <span className="sr-only">remover filtro</span>
-          </Link>
-        )}
-      </nav>
+      </div>
 
       {resumo && resumo.lidas > 0 && (
         <ResumoDasEscolhas

@@ -153,18 +153,7 @@ export async function paginarRespostas(
 
   if (!pareceUuid(clienteId)) return vazia
 
-  const { data: fluxos, error: erroDosFluxos } = await db()
-    .from('flows')
-    .select('id, nome')
-    .eq('client_id', clienteId)
-    .order('criado_em', { ascending: true })
-
-  if (ehIdInvalido(erroDosFluxos)) return vazia
-  if (erroDosFluxos) {
-    throw new Error(`não foi possível listar as automações: ${erroDosFluxos.message}`)
-  }
-
-  const automacoes = (fluxos ?? []) as { id: string; nome: string }[]
+  const automacoes = await automacoesDaConta(clienteId)
   const nomeDoFluxo = new Map(automacoes.map((fluxo) => [fluxo.id, fluxo.nome]))
 
   // Um fluxo pedido que não é desta conta responde igual a um fluxo que não
@@ -270,6 +259,26 @@ export async function paginarRespostas(
     paginas,
     automacoes,
   }
+}
+
+/**
+ * As automações da conta, só id e nome, para o seletor da tela.
+ *
+ * A tela pede isto fora da tabela: a barra de filtros mora fora do `Suspense`
+ * (senão o campo de busca perde o foco a cada letra), e o seletor precisa da
+ * lista antes de a tabela carregar.
+ */
+export async function automacoesDaConta(clienteId: string): Promise<{ id: string; nome: string }[]> {
+  if (!pareceUuid(clienteId)) return []
+  const { data, error } = await db()
+    .from('flows')
+    .select('id, nome')
+    .eq('client_id', clienteId)
+    .order('criado_em', { ascending: true })
+
+  if (ehIdInvalido(error)) return []
+  if (error) throw new Error(`não foi possível listar as automações: ${error.message}`)
+  return (data ?? []) as { id: string; nome: string }[]
 }
 
 /**
