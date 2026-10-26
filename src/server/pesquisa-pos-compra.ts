@@ -43,7 +43,7 @@ import { acharGatilhoDeEvento, contarDisparoDeEvento } from './repos/webhooks-de
 
 export const EVENTO_DE_PEDIDO = 'pedido.processando'
 /** O mais novo aprovado ganha; o anterior segura enquanto a Meta revisa o novo. */
-const MODELOS = ['pesquisa_pos_compra_v3', 'pesquisa_pos_compra_v2', 'pesquisa_pos_compra']
+const MODELOS = ['pesquisa_pos_compra_v4', 'pesquisa_pos_compra_v2', 'pesquisa_pos_compra']
 
 /**
  * Enquanto o aceite de WhatsApp não existe no site da PCYES (card do Yuri), só
