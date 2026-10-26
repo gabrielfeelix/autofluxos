@@ -2051,6 +2051,31 @@ export async function devolverAoBot(
  * A checagem no grafo evita duas consultas por mensagem em todo cliente que não
  * contratou Etapa 2, que hoje é a maioria. Custo zero para quem não usa.
  */
+/**
+ * Lê a foto da rajada que ficou sem leitura.
+ *
+ * Foto e texto juntos ("Queiro esseeee" logo depois do print): o texto pega a
+ * vez, a foto desiste na trava e nunca é lida, e a IA recebia "(áudio ou
+ * imagem)" no lugar do produto. Miguel, PCYES, 25/out/2026: mandou o print do
+ * teclado de novo e ganhou de novo o card do teclado que tinha recusado. Só as
+ * fotos depois da última fala do bot: as de antes já foram respondidas.
+ */
+async function comImagensLidas<M extends { id: string; direcao: string; arquivo?: unknown; transcricao?: string | null }>(
+  clienteId: string,
+  contatoId: string,
+  mensagens: M[],
+): Promise<M[]> {
+  const ultimaDoBot = mensagens.map((m) => m.direcao !== 'entrada').lastIndexOf(true)
+  const pendentes = mensagens
+    .slice(ultimaDoBot + 1)
+    .filter((m) => !m.transcricao && (m.arquivo as { midia?: unknown } | null | undefined)?.midia === 'imagem')
+  if (pendentes.length === 0) return mensagens
+  const lidas = new Map(
+    await Promise.all(pendentes.map(async (m) => [m.id, await lerImagemRecebida(clienteId, contatoId, m.id)] as const)),
+  )
+  return mensagens.map((m) => (lidas.get(m.id) ? { ...m, transcricao: lidas.get(m.id) } : m))
+}
+
 async function prepararIa(
   canalSalvo: CanalSalvo,
   contatoId: string,
@@ -2079,7 +2104,7 @@ async function prepararIa(
     lerConversa(contatoId, TETO_DA_CONVERSA_ATUAL),
     aberturaDaConversaAtual(contatoId),
   ])
-  const conversa = { ...lida, mensagens: recortarConversaAtual(lida.mensagens, abertaEm) }
+  const conversa = { ...lida, mensagens: await comImagensLidas(canalSalvo.clienteId, contatoId, recortarConversaAtual(lida.mensagens, abertaEm)) }
 
   // O plano é lido do fluxo **agora**, e não da versão publicada: contrato não
   // congela junto com o desenho. Desligar a IA tem que valer na próxima

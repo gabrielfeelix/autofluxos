@@ -173,7 +173,11 @@ export function montarPrompt(pedido: PedidoDeIa): { sistema: string; usuario: st
      * de venda vem antes da tarefa: sem esta linha, "cupom só quando
      * perguntarem" ganhava do "ofereça o CHAT10" que a PCYES escreveu.
      */
-    'Se a TAREFA abaixo disser diferente de COMO VENDER ou de JEITO DE CONVERSAR, vale a TAREFA. As REGRAS valem sempre.',
+    /*
+     * Menos para repetir: "diga o CHAT10 e o botão" da tarefa da PCYES saiu
+     * igual três vezes seguidas para o Miguel (25/out/2026).
+     */
+    'Se a TAREFA abaixo disser diferente de COMO VENDER ou de JEITO DE CONVERSAR, vale a TAREFA, com uma exceção: o que você já disse nesta conversa (cupom, "é só finalizar pelo botão", "se tiver dúvida é só chamar") não se repete na mensagem seguinte. As REGRAS valem sempre.',
     '',
     'TAREFA DESTE MOMENTO DA CONVERSA:',
     pedido.instrucao.trim(),
@@ -403,6 +407,14 @@ function blocoDeVenda(temCardapio = false, temMontador = false): string[] {
      * esta regra a IA perguntava o uso de produtos que a pessoa já escolheu.
      */
     '- Imagem chega entre colchetes, com o que se vê nela. Print de carrinho ou foto de produto: a pessoa já escolheu, não pergunte o uso; busque todos na mesma consulta, mostre os cards e diga em uma frase que é só finalizar pelo site. O que a busca não achar, diga qual.',
+    /*
+     * Miguel, PCYES, 25/out/2026: o print de um teclado mecânico branco de
+     * R$ 120,43 ganhou o card de um teclado de escritório preto de R$ 119,90,
+     * três vezes, inclusive depois de "não quero esse" e do print reenviado.
+     */
+    '- Print sem o nome do produto: busque pela descrição (tipo, cor, formato, "teclado mecânico branco"). O produto do print é o que tem o MESMO preço, com os centavos. Nenhum com o mesmo preço: não mostre outro como se fosse aquele; mostre o mais parecido dizendo que não tem certeza, ou peça o nome que aparece no topo da página.',
+    '- Recusa ("não quero esse", "não é esse") ou o mesmo print mandado de novo depois do card: o card estava errado. Nunca mostre de novo um produto que a pessoa recusou; procure outro que bata com o que ela mandou ou pergunte o nome.',
+    '- Comprar para outra pessoa ("como mando pra minha tia comprar?"): o card tem o link do produto; é só encaminhar a mensagem ou copiar o link para ela finalizar.',
     '- Setup ou vários itens: uma pergunta de uso para o conjunto e uma busca só, com todos.',
     '- Orçamento dito: respeite; se nada couber, mostre o mais próximo avisando que passa do valor. Só pergunte orçamento se pedirem "o melhor" ou os preços variarem muito.',
     '- Presente: pergunte para quem é e do que a pessoa gosta.',

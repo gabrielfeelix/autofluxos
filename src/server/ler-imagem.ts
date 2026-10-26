@@ -47,6 +47,15 @@ const INSTRUCAO =
   'Se houver produtos (print de carrinho, de página da loja, foto de embalagem, etiqueta), ' +
   'liste cada um numa linha com o nome completo e o modelo como aparecem, a quantidade e o preço ' +
   'quando estiverem visíveis. Se for print de carrinho ou de site, diga isso na primeira linha. ' +
+  /*
+   * "Teclado (nome não visível)" foi tudo o que saiu do print de um teclado
+   * mecânico branco, 75%, com RGB, de R$ 120,43, e a IA mostrou um teclado de
+   * escritório preto de R$ 119,90 (Miguel, PCYES, 25/out/2026). A aparência e
+   * o preço exato achavam o produto certo, o Kirin White Ghost.
+   */
+  'Se o nome ou o modelo não aparecer, descreva o produto pelo que se vê, numa linha, com as palavras que se usariam para buscá-lo numa loja: ' +
+  'o tipo (teclado mecânico, mouse sem fio, headset), a cor, o formato ou tamanho (75%, TKL, full size), a iluminação (RGB) e o que mais o distinguir. ' +
+  'Copie todos os preços exatamente, com os centavos, dizendo qual é à vista ou no PIX e qual é o parcelado. ' +
   'Copie textos importantes exatamente como estão escritos. Não invente o que não dá para ler. ' +
   `Se a imagem não tiver nada legível ou útil, responda exatamente: ${ILEGIVEL}`
 
