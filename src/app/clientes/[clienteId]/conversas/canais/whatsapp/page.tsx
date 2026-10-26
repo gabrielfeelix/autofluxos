@@ -618,17 +618,20 @@ export default async function Pagina({
                         )}
 
                         {/*
-                         * Reconectar só aparece quando caiu ou travou: refazer o
-                         * cadastro num número que está bem desvincula os
-                         * aparelhos do cliente sem necessidade.
+                         * Reconectar fica sempre à mão. Antes só aparecia quando
+                         * a Meta dizia que caiu, e em 26/out/2026 a PCYES parou
+                         * de receber mensagens com a Meta dizendo "conectado":
+                         * a ponte do app com a API caiu sem aviso, e não havia
+                         * botão para refazê-la. Quando está tudo bem, o botão
+                         * fica discreto, porque refazer desvincula os aparelhos.
                          */}
-                        {caiu && podeConectar && (
+                        {podeConectar && (
                           <div className="mt-3">
                             <ConectarWhatsapp
                               clienteId={cliente.id}
                               appId={appId}
                               configId={configId}
-                              rotulo="Reconectar"
+                              rotulo={caiu ? 'Reconectar' : 'Refazer conexão com o celular'}
                             />
                           </div>
                         )}
