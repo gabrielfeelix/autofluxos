@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { dadosDoPedido, eventoDoStatus, formatoDaLoja, instanteDaLoja, telefoneDoPedido } from './eventos-da-loja'
+import { comAtributosDoCliente, dadosDoPedido, eventoDoStatus, formatoDaLoja, instanteDaLoja, telefoneDoPedido } from './eventos-da-loja'
 
 describe('status da loja como evento', () => {
   it('status padrão ganha nome em português', () => {
@@ -38,6 +38,13 @@ describe('o pedido vira os dados do aviso', () => {
       aceita_whatsapp: true,
     })
     expect(dadosDoPedido(pedido)).not.toHaveProperty('shipping_assignments')
+  })
+
+  it('o aceite do cadastro do cliente completa o pedido', () => {
+    const dados = comAtributosDoCliente(dadosDoPedido({ increment_id: '1' }), {
+      custom_attributes: [{ attribute_code: 'aceita_whatsapp', value: '1' }, { attribute_code: 'pedido', value: 'x' }],
+    })
+    expect(dados).toMatchObject({ pedido: '1', aceita_whatsapp: true })
   })
 
   it('telefone só com dígitos', () => {

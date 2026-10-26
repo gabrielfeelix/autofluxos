@@ -55,10 +55,6 @@ export function dadosDoPedido(pedido: PedidoLido): Record<string, string | numbe
     if (!/^\w{1,40}$/.test(chave)) continue
     if (typeof valor === 'string' || typeof valor === 'number' || typeof valor === 'boolean') dados[chave] = valor
   }
-  // "1" e "true" de um atributo de cliente valem como aceite.
-  if (dados.aceita_whatsapp === '1' || dados.aceita_whatsapp === 'true' || dados.aceita_whatsapp === 1) {
-    dados.aceita_whatsapp = true
-  }
   const proprios = {
     pedido: texto(pedido.increment_id),
     status: texto(pedido.status),
@@ -69,6 +65,31 @@ export function dadosDoPedido(pedido: PedidoLido): Record<string, string | numbe
     total: texto(pedido.grand_total),
   }
   for (const [chave, valor] of Object.entries(proprios)) if (valor) dados[chave] = valor
+  return comAceite(dados)
+}
+
+/**
+ * Os atributos próprios do cadastro do cliente na Magento
+ * (`custom_attributes`), juntos aos dados do aviso. É onde a loja guarda o
+ * aceite de WhatsApp (`aceita_whatsapp`, na PCYES). O que o pedido já trouxe
+ * ganha: o cadastro só completa.
+ */
+export function comAtributosDoCliente(
+  dados: Record<string, string | number | boolean>,
+  cliente: { custom_attributes?: { attribute_code?: unknown; value?: unknown }[] } | null,
+): Record<string, string | number | boolean> {
+  const juntos = { ...dados }
+  for (const { attribute_code: codigo, value: valor } of cliente?.custom_attributes ?? []) {
+    if (typeof codigo !== 'string' || !/^\w{1,40}$/.test(codigo) || codigo in juntos) continue
+    if (typeof valor === 'string' || typeof valor === 'number' || typeof valor === 'boolean') juntos[codigo] = valor
+  }
+  return comAceite(juntos)
+}
+
+/** "1" e "true" de um atributo da Magento valem como aceite. */
+function comAceite(dados: Record<string, string | number | boolean>): Record<string, string | number | boolean> {
+  const aceite = dados.aceita_whatsapp
+  if (aceite === '1' || aceite === 'true' || aceite === 1) return { ...dados, aceita_whatsapp: true }
   return dados
 }
 

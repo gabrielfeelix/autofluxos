@@ -1,5 +1,6 @@
 import 'server-only'
 import {
+  comAtributosDoCliente,
   dadosDoPedido,
   eventoDoStatus,
   formatoDaLoja,
@@ -68,18 +69,13 @@ async function passadaDaLoja(loja: LojaIntegrada & { pedidosLidosAte: string }):
     `${f}[field]=updated_at&${f}[value]=${encodeURIComponent(desde)}&${f}[conditionType]=gteq` +
     `&searchCriteria[sortOrders][0][field]=updated_at&searchCriteria[sortOrders][0][direction]=ASC` +
     `&searchCriteria[pageSize]=${POR_PASSADA}&fields=${encodeURIComponent(CAMPOS)}`
-  const r = await chamarHttp(
-    {
-      tipo: 'chamar_http',
-      metodo: 'GET',
-      url: `${loja.endereco.replace(/\/+$/, '')}/rest/V1/orders?${consulta}`,
-      cabecalhos: [],
-      corpo: '',
-      mapear: [],
-      aoFalhar: 'humano',
-    },
-    { deTeste: false, credencial, comJson: true },
-  )
+  const raiz = `${loja.endereco.replace(/\/+$/, '')}/rest/V1`
+  const ler = (caminho: string) =>
+    chamarHttp(
+      { tipo: 'chamar_http', metodo: 'GET', url: `${raiz}${caminho}`, cabecalhos: [], corpo: '', mapear: [], aoFalhar: 'humano' },
+      { deTeste: false, credencial, comJson: true },
+    )
+  const r = await ler(`/orders?${consulta}`)
   if (!r.ok) throw new Error(r.motivo)
   const pedidos = (r.json as { items?: PedidoLido[] } | null)?.items ?? []
 
@@ -100,7 +96,15 @@ async function passadaDaLoja(loja: LojaIntegrada & { pedidosLidosAte: string }):
       await alertar('pedido sem telefone não virou evento', `${evento} do pedido ${numero}`, { cliente: loja.clienteId })
       continue
     }
-    await tratarEvento({ clienteId: loja.clienteId, evento, telefone, dados: dadosDoPedido(pedido) })
+    // O aceite de WhatsApp mora no cadastro do cliente. Convidado não tem
+    // cadastro, e cadastro que não abre só deixa o aviso sem o aceite.
+    const clienteId = typeof pedido.customer_id === 'number' || typeof pedido.customer_id === 'string' ? String(pedido.customer_id) : ''
+    const cadastro = /^\d{1,12}$/.test(clienteId) ? await ler(`/customers/${clienteId}`) : null
+    const dados = comAtributosDoCliente(
+      dadosDoPedido(pedido),
+      cadastro?.ok ? (cadastro.json as Parameters<typeof comAtributosDoCliente>[1]) : null,
+    )
+    await tratarEvento({ clienteId: loja.clienteId, evento, telefone, dados })
     eventos++
   }
 
