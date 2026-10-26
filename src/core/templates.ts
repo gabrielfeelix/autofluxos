@@ -472,6 +472,18 @@ export function validarTemplate(
     }
   }
 
+  // A Meta recusa na hora com o código 100: "Botões não podem ter variáveis,
+  // novas linhas, emojis ou caracteres de formatação" (PCYES, 26/out/2026, ⭐
+  // no botão). A estrela tipográfica ★ passa.
+  const comEmoji = botoes.find((b) => /\p{Extended_Pictographic}|\n/u.test(b.texto))
+  if (comEmoji) {
+    reparos.push({
+      gravidade: 'erro',
+      campo: 'botoes',
+      recado: `O botão "${comEmoji.texto}" tem emoji ou quebra de linha, e a Meta recusa. Para estrela, use ★.`,
+    })
+  }
+
   // O aviso do Desktop: some sem erro, e ninguém descobre até um cliente
   // reclamar que "não apareceu botão nenhum".
   const misturados = new Set(botoes.map((b) => b.tipo)).size > 1
