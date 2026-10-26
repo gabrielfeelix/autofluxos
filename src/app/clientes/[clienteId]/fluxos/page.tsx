@@ -1,4 +1,5 @@
 import { EVENTOS_DA_VERANDI, rotuloDoEventoDaVerandi } from '@/core/eventos-da-verandi'
+import { EVENTOS_DA_LOJA } from '@/core/eventos-da-loja'
 import { Miolo } from '@/components/design/miolo'
 import Link from 'next/link'
 import { CabecalhoDaTela } from '@/components/design/cabecalho-da-tela'
@@ -582,9 +583,16 @@ async function ConteudoDaAba({
                     {EVENTOS_DA_VERANDI.map((e) => (
                       <option key={e.evento} value={e.evento} label={`Verandi: ${e.rotulo}`} />
                     ))}
+                    {EVENTOS_DA_LOJA.map((e) => (
+                      <option key={e.evento} value={e.evento} label={`Loja: ${e.rotulo}`} />
+                    ))}
                   </datalist>
                   <span className="mt-1.5 block text-[11px] leading-5 text-dim">
                     Da Verandi: {EVENTOS_DA_VERANDI.map((e) => `${e.evento} (${e.rotulo.toLowerCase()})`).join(', ')}.
+                  </span>
+                  <span className="mt-1 block text-[11px] leading-5 text-dim">
+                    Da loja Magento, com o acompanhamento de pedidos ligado:{' '}
+                    {EVENTOS_DA_LOJA.map((e) => `${e.evento} (${e.rotulo})`).join(', ')}.
                   </span>
                 </label>
                 <div>

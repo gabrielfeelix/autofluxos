@@ -6,13 +6,15 @@ import { LojaMagento } from '@/components/cliente/loja-magento'
 import {
   acaoConectarToken,
   acaoDesconectarToken,
+  acaoAcompanharPedidos,
   acaoDesligarLoja,
   acaoLigarLoja,
   acaoTestarLoja,
 } from '@/server/acoes-loja'
 import { acharCliente } from '@/server/repos/clientes'
 import { estadoDoToken } from '@/server/adaptador-da-loja'
-import { lojaDaConta } from '@/server/repos/lojas'
+import { acompanhaPedidos, lojaDaConta } from '@/server/repos/lojas'
+import { AcompanharPedidos } from '@/components/cliente/acompanhar-pedidos'
 
 export const dynamic = 'force-dynamic'
 
@@ -32,7 +34,11 @@ export default async function Pagina({
   const cliente = await acharCliente(clienteId)
   if (!cliente) notFound()
 
-  const [loja, token] = await Promise.all([lojaDaConta(cliente.id), estadoDoToken(cliente.id)])
+  const [loja, token, acompanha] = await Promise.all([
+    lojaDaConta(cliente.id),
+    estadoDoToken(cliente.id),
+    acompanhaPedidos(cliente.id),
+  ])
 
   return (
     <ClienteShell cliente={cliente} ativa="loja">
@@ -70,6 +76,15 @@ export default async function Pagina({
           // da loja: ele não tem acesso ao painel.
           guiaHref="https://github.com/gabrielfeelix/autofluxos/blob/main/docs/GUIA-MAGENTO-LOJISTA.md"
         />
+
+        {/* Só com a loja ligada e o token conectado: é com ele que os pedidos são lidos. */}
+        {loja?.ativa && loja.conexaoId && acompanha !== null && (
+          <AcompanharPedidos
+            ligado={acompanha}
+            eventosHref={`/clientes/${cliente.id}/fluxos?aba=eventos`}
+            alternar={acaoAcompanharPedidos.bind(null, cliente.id)}
+          />
+        )}
       </Miolo>
     </ClienteShell>
   )

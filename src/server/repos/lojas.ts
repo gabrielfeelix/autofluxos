@@ -311,3 +311,76 @@ export async function freteRapidoDaConta(clienteId: string): Promise<string | nu
   const ref = (data as { frete_rapido_ref?: unknown }).frete_rapido_ref
   return typeof ref === 'string' && ref !== '' ? ref : null
 }
+
+// ---------------------------------------------------------------------------
+// Status dos pedidos como evento (0153)
+// ---------------------------------------------------------------------------
+
+/** As lojas Magento ligadas com o acompanhamento de pedidos ligado, e até onde foram lidas. */
+export async function lojasComPedidosAcompanhados(): Promise<(LojaIntegrada & { pedidosLidosAte: string })[]> {
+  const { data, error } = await db()
+    .from('lojas_integradas')
+    .select(`${COLUNAS}, pedidos_lidos_ate`)
+    .eq('plataforma', 'magento')
+    .eq('ativa', true)
+    .not('pedidos_lidos_ate', 'is', null)
+
+  // Banco sem a 0153: nada a acompanhar ainda.
+  if (error?.code === '42703') return []
+  if (error) throw new Error(`não foi possível listar as lojas acompanhadas: ${error.message}`)
+  return (data as unknown as (Linha & { pedidos_lidos_ate: string })[]).map((l) => ({
+    ...paraLoja(l),
+    pedidosLidosAte: l.pedidos_lidos_ate,
+  }))
+}
+
+/** Se a conta acompanha os pedidos, para a tela. `null` sem a 0153. */
+export async function acompanhaPedidos(clienteId: string): Promise<boolean | null> {
+  const { data, error } = await db()
+    .from('lojas_integradas')
+    .select('pedidos_lidos_ate')
+    .eq('client_id', clienteId)
+    .eq('plataforma', 'magento')
+    .maybeSingle()
+  if (error?.code === '42703' || ehIdInvalido(error)) return null
+  if (error) throw new Error(`não foi possível ler o acompanhamento: ${error.message}`)
+  return !!(data as { pedidos_lidos_ate: string | null } | null)?.pedidos_lidos_ate
+}
+
+/**
+ * Liga (lendo a partir de agora, para o histórico não virar aviso) ou desliga
+ * o acompanhamento dos pedidos da loja Magento da conta.
+ */
+export async function alternarAcompanhamentoDePedidos(clienteId: string, ligado: boolean): Promise<boolean> {
+  const { data, error } = await db()
+    .from('lojas_integradas')
+    .update({ pedidos_lidos_ate: ligado ? new Date().toISOString() : null })
+    .eq('client_id', clienteId)
+    .eq('plataforma', 'magento')
+    .select('id')
+    .maybeSingle()
+  if (ehIdInvalido(error)) return false
+  if (error) throw new Error(`não foi possível alterar o acompanhamento: ${error.message}`)
+  return data !== null
+}
+
+/** Avança até onde os pedidos foram lidos. Só para a frente. */
+export async function marcarPedidosLidos(lojaId: string, ate: string): Promise<void> {
+  const { error } = await db()
+    .from('lojas_integradas')
+    .update({ pedidos_lidos_ate: ate })
+    .eq('id', lojaId)
+    .lt('pedidos_lidos_ate', ate)
+  if (error) throw new Error(`não foi possível marcar os pedidos lidos: ${error.message}`)
+}
+
+/**
+ * Marca o par pedido + status como avisado. `false` quando já estava: a chave
+ * primária é a trava, inclusive entre duas passadas ao mesmo tempo.
+ */
+export async function marcarStatusAvisado(clienteId: string, pedido: string, status: string): Promise<boolean> {
+  const { error } = await db().from('status_de_pedido_avisados').insert({ client_id: clienteId, pedido, status })
+  if (error?.code === '23505') return false
+  if (error) throw new Error(`não foi possível marcar o status avisado: ${error.message}`)
+  return true
+}

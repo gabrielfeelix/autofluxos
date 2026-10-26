@@ -420,3 +420,28 @@ um dia por consulta) e no `pg_stat_statements` (zerado em 11/ago).
 - **Reaproveita** `src/channels/asaas.ts` (cobrança no chat) e as colunas de
   assinatura da `0066`. A conta da 4YU vira também a conta-pai da cobrança no
   chat. Plano de execução: `docs/PLANO-MENSALIDADE-ASAAS.md`.
+
+## 26/out/2026: pesquisa pós-compra vira produto (recursos 1 a 4)
+
+Pesquisa de mercado (WATI, Zoko, Interakt, Gallabox, Klaviyo, SocialHub,
+E-Vendas): o padrão é evento da loja → modelo aprovado com lacunas ligadas a
+campos do pedido → resposta seguindo um fluxo. Ninguém dos grandes atende
+Magento nativo (só Shopify/WooCommerce): é o diferencial. Plano do handoff
+mantido. Commits `56f59ac5`, `cfed6b2e`, `821c0730` e o do recurso 2.
+
+- **Imagem do cabeçalho mora no modelo** (`cabecalho.url`), não no gatilho:
+  todo envio por `modeloComClique` a leva sozinho, inclusive transmissão.
+- **Evento com modelo é configuração do gatilho** (`gatilhos_de_evento.modelo`,
+  0152). Criar contato só com campo de aceite (política da Meta).
+- **Dar pontos é bloco próprio**, não o bloco de API: o token da loja nunca
+  entra no fluxo. Só credita para par pedido + cliente com conversa aberta
+  pelo evento nos últimos 7 dias, uma vez por pedido.
+- **Status do pedido por consulta, não webhook**: a Magento aberta não avisa
+  sem módulo instalado. Lê `/V1/orders` por `updated_at` a cada 10 minutos
+  (0153). Nuvemshop tem webhook nativo de pedido; quando entrar, vai por lá.
+- **Agendador: GitHub Actions** (`.github/workflows/pedidos-da-loja.yml`),
+  não cron-job.org nem `pg_cron`. Repositório público = minutos grátis; fica
+  versionado no repo; não mexe em extensão global do banco dividido com a
+  Verandi; não exige conta nova. Segredo próprio `AGENDADOR_SEGREDO` (Vercel
+  produção + GitHub), separado do `CRON_SECRET`. Atraso de alguns minutos do
+  GitHub não perde nada: a passada lê desde a última leitura.

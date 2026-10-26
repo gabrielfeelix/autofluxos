@@ -121,6 +121,11 @@ aqui fica o que o cliente ganha.
   pergunta, com imagem e botões de resposta. O toque segue o fluxo, o
   contato nasce do pedido quando ele aceitou receber WhatsApp, e cada pedido
   recebe uma vez só. *(26/out/2026)*
+- **Status do pedido da Magento vira automação, sem instalar nada na loja**:
+  com um interruptor, pagamento aprovado, pedido faturado, cancelado ou
+  reembolsado começam a automação escolhida, a partir do token que a loja já
+  conectou. Consulta a cada 10 minutos, cada mudança dispara uma vez só.
+  *(26/out/2026)*
 - **Bloco Dar pontos**: o fluxo credita pontos no programa de fidelidade da
   loja (Mirasvit, na Magento) para quem respondeu, uma vez por pedido, sem
   URL nem token no desenho. Se a loja não lançar, a conversa segue por outro

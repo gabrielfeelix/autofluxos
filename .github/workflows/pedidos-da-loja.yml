@@ -1,0 +1,29 @@
+name: Pedidos da loja
+
+# A cada 10 minutos, o AutoFluxos lê os pedidos das lojas Magento que ligaram
+# o acompanhamento, e cada mudança de status vira evento (0153). O cron da
+# Vercel Hobby só roda uma vez por dia; ver docs/DECISIONS.md, 26/out/2026.
+# O GitHub pode atrasar o agendamento em alguns minutos: tudo bem, a passada
+# lê desde a última leitura, nada se perde.
+
+on:
+  schedule:
+    - cron: '*/10 * * * *'
+  workflow_dispatch:
+
+concurrency:
+  group: pedidos-da-loja
+  cancel-in-progress: false
+
+jobs:
+  passada:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - name: Chamar a passada
+        env:
+          SEGREDO: ${{ secrets.AGENDADOR_SEGREDO }}
+        run: |
+          curl -fsS --max-time 90 \
+            -H "Authorization: Bearer $SEGREDO" \
+            https://autofluxos.4yu.com.br/api/manutencao/pedidos

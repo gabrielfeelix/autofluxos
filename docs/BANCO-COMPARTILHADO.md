@@ -1461,6 +1461,12 @@ extração explícito para os objetos de `public`.
   `pesquisa_pos_compra_v3`/`_v4`. Sem Docker na WSL nesse dia: só o ensaio em
   transação com `rollback` (limpo, e a coluna não existia depois). Releitura:
   configuração com os modelos v4 > v2 > v1, URL no v4. Nada da Verandi tocado.
+- **a `0153` foi aplicada em 26/out/2026**, com autorização explícita do dono,
+  pela Management API. Aditiva: `lojas_integradas.pedidos_lidos_ate`
+  (anulável, sem default) e a tabela `status_de_pedido_avisados` (RLS ligada,
+  `revoke` de `public, anon, authenticated`, `service_role` só com select,
+  insert e delete). Ensaio em transação com `rollback` limpo antes. Releitura:
+  tabela existe, `anon` sem `select`, coluna criada, nenhuma loja ligada.
 
 - **SSL obrigatório desde 19/out/2026** (`PUT .../ssl-enforcement`), com
   autorização do dono. Conexão sem TLS leva `ESSLREQUIRED`, inclusive pelo

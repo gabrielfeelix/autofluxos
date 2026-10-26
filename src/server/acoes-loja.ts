@@ -13,6 +13,7 @@ import { exigirCapacidade, recusou } from './permissoes'
 import { apagarConexao, criarConexao, lerCredencial } from './repos/conexoes'
 import { ehPlataformaDeLoja } from '@/core/plataformas-de-loja'
 import {
+  alternarAcompanhamentoDePedidos,
   desligarEstoqueExato,
   ligarEstoqueExato,
   ligarLoja,
@@ -291,5 +292,29 @@ export async function acaoDesconectarNuvemshop(clienteId: string): Promise<{ ok:
     return { ok: true }
   } catch (erro) {
     return { ok: false, motivo: erro instanceof Error ? erro.message : 'não foi possível desconectar' }
+  }
+}
+
+/**
+ * Liga ou desliga o status dos pedidos como evento (0153). Ligar exige a loja
+ * ligada e o token conectado: é com ele que a passada lê `/V1/orders`.
+ */
+export async function acaoAcompanharPedidos(
+  clienteId: string,
+  ligado: boolean,
+): Promise<{ ok: true } | { ok: false; motivo: string }> {
+  const acesso = await exigirCapacidade(clienteId, 'configurar_operacao', 'todos')
+  if (recusou(acesso)) return { ok: false, motivo: acesso.erro ?? 'sem permissão' }
+
+  if (ligado) {
+    const loja = await lojaDaConta(clienteId)
+    if (!loja?.ativa) return { ok: false, motivo: 'Ligue a loja antes.' }
+    if (!loja.conexaoId) return { ok: false, motivo: 'Conecte o token da loja antes: é com ele que os pedidos são lidos.' }
+  }
+  try {
+    const mudou = await alternarAcompanhamentoDePedidos(clienteId, ligado)
+    return mudou ? { ok: true } : { ok: false, motivo: 'A loja desta conta não está configurada.' }
+  } catch {
+    return { ok: false, motivo: 'Não foi possível salvar agora. Tente de novo em instantes.' }
   }
 }
