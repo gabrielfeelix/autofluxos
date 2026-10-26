@@ -181,6 +181,13 @@ const PREFIXOS_ABERTOS = [
    */
   '/api/webhook/',
   /**
+   * Os pontos de fidelidade da pesquisa pós-compra, pedidos pelo nó de API do
+   * próprio fluxo, sem sessão. A rota se defende sozinha: só credita um par
+   * pedido + cliente com pesquisa aberta na conta, uma vez por pedido
+   * (`server/pontos-da-loja.ts`).
+   */
+  '/api/loja/pontos/',
+  /**
    * O pagamento de mentira da demonstração (`core/pagamento-demo.ts`): a
    * imagem do Pix que o WhatsApp busca, o copia e cola que o fluxo da demo
    * pede, e a página de pagamento com cartão que o visitante abre. Ninguém ali

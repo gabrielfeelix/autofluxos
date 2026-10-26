@@ -3018,6 +3018,17 @@ function paraEntrada(mensagem: Mensagem): { entrada: Entrada; texto: string | nu
     return { entrada: { tipo: 'texto', texto: mensagem.text.body }, texto: mensagem.text.body }
   }
 
+  /*
+   * O botão de resposta rápida de um modelo ("Foi ótima" no template da
+   * pesquisa da PCYES) chega como `type: 'button'`, e não como `interactive`.
+   * Caía no fim desta função como mídia, e mídia numa pergunta vai para uma
+   * pessoa: quem tocava no botão de um modelo nunca seguia o fluxo. É o que a
+   * pessoa diria, então entra como texto, e a pergunta casa pelo rótulo.
+   */
+  if (mensagem.type === 'button' && mensagem.button?.text) {
+    return { entrada: { tipo: 'texto', texto: mensagem.button.text }, texto: mensagem.button.text }
+  }
+
   const resposta = mensagem.interactive?.button_reply ?? mensagem.interactive?.list_reply
   // O botão "Pedir" embaixo da foto de um produto: vira o que a pessoa diria.
   const pedido = resposta ? pedidoDoBotao(resposta.id) : null
