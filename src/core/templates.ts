@@ -119,6 +119,13 @@ export const LIMITE_FOOTER = 60
 export const LIMITE_VARIAVEIS_NO_HEADER = 1
 /** Dez botões no total, somando todos os tipos. */
 export const LIMITE_BOTOES = 10
+
+/**
+ * Botões de resposta que a tela de modelos oferece. A Meta aceita dez, mas
+ * três é o que o WhatsApp mostra como botão no celular, e é o mesmo teto da
+ * pergunta do fluxo: o modelo que abre uma pesquisa precisa caber nela.
+ */
+export const RESPOSTAS_NO_MODELO = 3
 /** O texto de um botão da Meta para em 25 caracteres. */
 export const TEXTO_MAXIMO_DO_BOTAO = 25
 /** Teto por tipo de botão. Estourar é recusa certa. */
@@ -198,10 +205,23 @@ export function indiceDoBotaoContado(componentes: { botoes?: Botao[] } | null | 
 }
 
 export type Componentes = {
-  cabecalho?: { tipo: 'texto'; texto: string } | { tipo: 'imagem' | 'video' | 'documento' }
+  cabecalho?:
+    | { tipo: 'texto'; texto: string }
+    /**
+     * `url` é o arquivo que vai no envio. A Meta guarda só o exemplo da
+     * revisão; sem a URL aqui, cada envio teria que saber de onde tirar a
+     * imagem, e o modelo com imagem quebraria em quem não soubesse.
+     */
+    | { tipo: 'imagem' | 'video' | 'documento'; url?: string }
   corpo: string
   rodape?: string
   botoes?: Botao[]
+}
+
+/** A imagem que o cabeçalho do modelo leva no envio, quando ele tem uma. */
+export function imagemDoCabecalho(componentes: Pick<Componentes, 'cabecalho'> | null | undefined): string | undefined {
+  const cabecalho = componentes?.cabecalho
+  return cabecalho?.tipo === 'imagem' && cabecalho.url?.startsWith('https://') ? cabecalho.url : undefined
 }
 
 // ---------------------------------------------------------------------------

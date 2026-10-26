@@ -6,6 +6,7 @@ import { tituloDaBiblioteca } from '@/core/titulo-da-biblioteca'
 import { useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
 import { Modal } from '@/components/design/modal'
+import { SeletorDeArquivo } from '@/components/editor/seletor-de-arquivo'
 import {
   CAMPOS,
   modelosDoRamo,
@@ -25,6 +26,7 @@ import {
   problemaDoBotao,
   pedidosDeBotao,
   telefoneParaAMeta,
+  RESPOSTAS_NO_MODELO,
   TEXTO_MAXIMO_DO_BOTAO,
   type Categoria,
 } from '@/core/templates'
@@ -565,6 +567,10 @@ function Ajuste({
   const [corpo, setCorpo] = useState(modelo.corpo)
   const [textoDoLink, setTextoDoLink] = useState('')
   const [url, setUrl] = useState('')
+  const [imagem, setImagem] = useState('')
+  const [respostas, setRespostas] = useState<string[]>(() =>
+    Array.from({ length: RESPOSTAS_NO_MODELO }, (_, i) => modelo.respostas?.[i] ?? ''),
+  )
   const [erro, setErro] = useState<string | null>(null)
   const [salvando, comecar] = useTransition()
 
@@ -582,6 +588,8 @@ function Ajuste({
         corpo,
         categoria: modelo.categoria,
         link: { texto: textoDoLink, url },
+        respostas,
+        imagem: imagem || null,
       })
       if (!r.ok) {
         setErro(r.erro ?? 'Não foi possível criar.')
@@ -630,6 +638,53 @@ function Ajuste({
         </div>
       </div>
 
+      <div>
+        <span className="mb-1.5 block text-[11px] font-bold tracking-[0.05em] text-muted uppercase">
+          Imagem no topo (opcional)
+        </span>
+        <SeletorDeArquivo
+          clienteId={clienteId}
+          url={imagem}
+          midia="imagem"
+          soImagem
+          aoEscolher={(escolha) => {
+            if (escolha.url && escolha.midia !== 'imagem') {
+              setErro('O topo da mensagem aceita só imagem.')
+              return
+            }
+            setErro(null)
+            setImagem(escolha.url)
+          }}
+        />
+      </div>
+
+      {/*
+        Botões de resposta: o toque chega como resposta escrita. É o que deixa
+        o modelo ser a primeira pergunta de um fluxo, como na pesquisa
+        pós-compra (Automações > Eventos).
+      */}
+      <div>
+        <span className="mb-1.5 block text-[11px] font-bold tracking-[0.05em] text-muted uppercase">
+          Botões de resposta (opcional)
+        </span>
+        <div className="grid gap-2 sm:grid-cols-3">
+          {respostas.map((resposta, i) => (
+            <input
+              key={i}
+              value={resposta}
+              onChange={(e) => setRespostas((atuais) => atuais.map((r, j) => (j === i ? e.target.value : r)))}
+              maxLength={TEXTO_MAXIMO_DO_BOTAO}
+              placeholder={['Exemplo: Foi ótima', 'Exemplo: Foi ok', 'Exemplo: Tive um problema'][i]}
+              aria-label={`Botão de resposta ${i + 1}`}
+              className="app-field px-[13px] py-[11px] text-[13.5px]"
+            />
+          ))}
+        </div>
+        <p className="mt-1.5 text-[11.5px] leading-[1.45] text-dim">
+          A resposta chega na conversa e pode seguir um fluxo. Sem emoji: a Meta recusa.
+        </p>
+      </div>
+
       {/*
         O botão de link é opcional e conta o clique: a Meta aprova o nosso
         endereço, que redireciona para este link. Sem ele, o modelo é só texto.
@@ -672,7 +727,20 @@ function Ajuste({
           Como o cliente recebe
         </span>
         <div className="overflow-hidden rounded-[12px] bg-[#dcf8c6] text-[#111b21]">
+          {imagem && (
+            // Miniatura de prévia do acervo do cliente, fora do otimizador do Next.
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={imagem} alt="" className="max-h-[180px] w-full object-cover" />
+          )}
           <p className="px-3 py-2.5 text-[13px] leading-[1.5] whitespace-pre-wrap">{previa(corpo) || ' '}</p>
+          {respostas
+            .map((r) => r.trim())
+            .filter(Boolean)
+            .map((r, i) => (
+              <p key={`${r}-${i}`} className="border-t border-black/10 px-3 py-2 text-center text-[13px] font-semibold text-[#027eb5]">
+                {r}
+              </p>
+            ))}
           {textoDoLink.trim() && (
             <p className="border-t border-black/10 px-3 py-2 text-center text-[13px] font-semibold text-[#027eb5]">
               ↗ {textoDoLink.trim()}

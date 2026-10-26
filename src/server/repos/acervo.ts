@@ -310,3 +310,25 @@ export async function apagarAcervoDoCliente(clienteId: string): Promise<void> {
   // limpo, e arquivo órfão dá para varrer depois. Mesma escolha da logo.
   if (error) console.error('[acervo] não foi possível limpar o acervo do cliente', error.message)
 }
+
+/**
+ * Os bytes de um arquivo do acervo **deste cliente**, a partir do endereço
+ * público dele. É como a imagem do cabeçalho de um modelo vira o exemplo que a
+ * Meta exige na revisão (`subirExemploDeMidia`).
+ *
+ * O endereço vem do formulário, então é conferido contra a pasta do cliente
+ * antes de qualquer leitura: sem isso, o servidor baixaria o que alguém
+ * mandasse, inclusive arquivo de outra conta.
+ */
+export async function lerDoAcervo(
+  clienteId: string,
+  url: string,
+): Promise<{ bytes: Uint8Array; tipo: string } | null> {
+  const { data } = db().storage.from(BUCKET_DO_ACERVO).getPublicUrl(`${clienteId}/`)
+  if (!url.startsWith(data.publicUrl) || url.includes('..')) return null
+  const caminho = decodeURIComponent(url.slice(data.publicUrl.length - `${clienteId}/`.length))
+
+  const { data: arquivo, error } = await db().storage.from(BUCKET_DO_ACERVO).download(caminho)
+  if (error || !arquivo) return null
+  return { bytes: new Uint8Array(await arquivo.arrayBuffer()), tipo: arquivo.type }
+}

@@ -1,7 +1,7 @@
 import 'server-only'
 import { createHmac, timingSafeEqual } from 'node:crypto'
 import type { ValoresDoTemplate } from '@/channels/types'
-import { ENDERECO_DO_CLIQUE, indiceDoBotaoContado, type Botao } from '@/core/templates'
+import { ENDERECO_DO_CLIQUE, imagemDoCabecalho, indiceDoBotaoContado, type Botao, type Componentes } from '@/core/templates'
 
 /**
  * O clique no link de uma transmissão, contado (0139).
@@ -88,12 +88,19 @@ export function comCodigoDoClique(
   return { ...(valores ?? {}), botoes: [{ indice, texto: codigoDoClique(template.id, destinatarioId) }] }
 }
 
-/** O pedido de envio inteiro com o código do clique, para quem monta `{ nome, idioma, valores }`. */
+/**
+ * O pedido de envio inteiro com o que o modelo exige além do texto, para quem
+ * monta `{ nome, idioma, valores }`: o código do clique e a imagem do
+ * cabeçalho, que mora no modelo (`imagemDoCabecalho`). Sem a imagem, a Meta
+ * recusa o envio de modelo com cabeçalho de imagem.
+ */
 export function modeloComClique<T extends { valores?: ValoresDoTemplate }>(
   envio: T,
-  template: { id: string; componentes: { botoes?: Botao[] } | null },
+  template: { id: string; componentes: Pick<Componentes, 'botoes' | 'cabecalho'> | null },
   destinatarioId?: string | null,
 ): T {
-  const valores = comCodigoDoClique(envio.valores, template, destinatarioId)
+  let valores = comCodigoDoClique(envio.valores, template, destinatarioId)
+  const imagem = imagemDoCabecalho(template.componentes)
+  if (imagem && !valores?.cabecalhoImagem) valores = { ...(valores ?? {}), cabecalhoImagem: imagem }
   return valores === envio.valores ? envio : { ...envio, valores }
 }

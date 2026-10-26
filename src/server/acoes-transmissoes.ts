@@ -9,6 +9,7 @@ import {
   criarTemplateNaMeta,
   lerComponentesDaMeta,
   listarBibliotecaDaMeta,
+  subirExemploDeMidia,
   type EntradaDeBotao,
   type ModeloDaBiblioteca,
 } from '@/channels/templates-api'
@@ -26,6 +27,7 @@ import {
   manterDestinos,
   TEXTO_MAXIMO_DO_BOTAO,
   normalizarNome,
+  RESPOSTAS_NO_MODELO,
   temErro,
   validarTemplate,
   variaveisDe,
@@ -58,6 +60,7 @@ import {
   progressoDa,
 } from './repos/transmissoes'
 import { planoDaConta } from './repos/plano'
+import { lerDoAcervo } from './repos/acervo'
 import { planoVigente } from './repos/planos'
 import { autorDaPessoa } from '@/core/autor-da-mensagem'
 import { bibliotecaServeAoRamo } from '@/core/titulo-da-biblioteca'
@@ -179,6 +182,9 @@ export async function acaoCriarTemplate(
   const conta = await contaNaMeta(clienteId)
   if ('erro' in conta) return { ok: false, erro: conta.erro }
 
+  const imagem = await exemploDaImagem(clienteId, dados.componentes, conta.token)
+  if ('erro' in imagem) return { ok: false, erro: imagem.erro }
+
   let rascunho
   try {
     rascunho = await criarRascunho({
@@ -206,7 +212,7 @@ export async function acaoCriarTemplate(
     idioma,
     categoria: dados.categoria,
     componentes: dados.componentes,
-    exemplos: { corpo: exemplos },
+    exemplos: { corpo: exemplos, ...(imagem.handle ? { cabecalhoMidia: imagem.handle } : {}) },
   })
 
   if (!resposta.ok) {
@@ -232,6 +238,39 @@ export async function acaoCriarTemplate(
   return { ok: true, templateId: rascunho.id, ...(avisos.length > 0 ? { avisos } : {}) }
 }
 
+/** Os tipos de imagem que a Meta aceita no cabeçalho, e o teto dela. */
+const IMAGEM_DO_CABECALHO = { tipos: ['image/jpeg', 'image/png'], bytes: 5 * 1024 * 1024 }
+
+/**
+ * O exemplo da imagem do cabeçalho, subido para a Meta antes da revisão.
+ *
+ * A imagem vem do acervo do cliente (a tela sobe para lá), e o endereço dela
+ * fica no modelo para os envios. A Meta só guarda o exemplo; sem ele ela
+ * recusa o modelo com imagem.
+ */
+async function exemploDaImagem(
+  clienteId: string,
+  componentes: Componentes,
+  token: string,
+): Promise<{ handle?: string } | { erro: string }> {
+  const cabecalho = componentes.cabecalho
+  if (cabecalho?.tipo !== 'imagem') return {}
+  if (!cabecalho.url) return { erro: 'Escolha a imagem do topo da mensagem.' }
+
+  const arquivo = await lerDoAcervo(clienteId, cabecalho.url)
+  if (!arquivo) return { erro: 'Não encontramos a imagem no acervo desta conta. Envie de novo.' }
+  if (!IMAGEM_DO_CABECALHO.tipos.includes(arquivo.tipo)) {
+    return { erro: 'A Meta aceita só JPG ou PNG no topo da mensagem.' }
+  }
+  if (arquivo.bytes.length > IMAGEM_DO_CABECALHO.bytes) {
+    return { erro: 'A imagem passa de 5 MB, o limite da Meta para o topo da mensagem.' }
+  }
+
+  const subida = await subirExemploDeMidia({ token, bytes: arquivo.bytes, mime: arquivo.tipo })
+  if (!subida.ok) return { erro: `A Meta não recebeu a imagem: ${subida.erro}` }
+  return { handle: subida.handle }
+}
+
 /**
  * Cria um modelo a partir do que a pessoa escreveu **em português**.
  *
@@ -250,6 +289,13 @@ export async function acaoCriarModelo(
     categoria: Categoria
     /** Botão que abre um link, com o clique contado pelo nosso endereço. */
     link?: { texto: string; url: string } | null
+    /**
+     * Botões de resposta, até três. O toque chega como resposta escrita, então
+     * o modelo pode ser a primeira pergunta de um fluxo (a pesquisa pós-compra).
+     */
+    respostas?: string[]
+    /** A imagem do topo, por endereço do acervo desta conta. */
+    imagem?: string | null
   },
 ): Promise<ResultadoDoTemplate> {
   const acesso = await exigirCapacidade(clienteId, 'configurar_operacao', 'todos')
@@ -268,6 +314,17 @@ export async function acaoCriarModelo(
     // O botão aponta para o nosso endereço de clique; o destino fica guardado
     // nele, e a tela de transmissões passa a contar quem tocou.
     botoes = [comCliqueContado({ tipo: 'URL', texto, valor: url })]
+  }
+
+  const respostas = (dados.respostas ?? []).map((r) => r.trim()).filter(Boolean)
+  if (respostas.length > RESPOSTAS_NO_MODELO) {
+    return { ok: false, erro: `Use até ${RESPOSTAS_NO_MODELO} botões de resposta.` }
+  }
+  if (new Set(respostas.map((r) => r.toLowerCase())).size !== respostas.length) {
+    return { ok: false, erro: 'Dois botões de resposta têm o mesmo texto.' }
+  }
+  if (respostas.length > 0) {
+    botoes = [...respostas.map((texto) => ({ tipo: 'QUICK_REPLY' as const, texto })), ...(botoes ?? [])]
   }
 
   /*
@@ -289,7 +346,11 @@ export async function acaoCriarModelo(
   return acaoCriarTemplate(clienteId, {
     nome: nomeAutomatico(dados.titulo),
     categoria: dados.categoria,
-    componentes: { corpo, ...(botoes ? { botoes } : {}) },
+    componentes: {
+      ...(dados.imagem ? { cabecalho: { tipo: 'imagem' as const, url: dados.imagem } } : {}),
+      corpo,
+      ...(botoes ? { botoes } : {}),
+    },
     exemplos: exemplosPara(campos),
   })
 }

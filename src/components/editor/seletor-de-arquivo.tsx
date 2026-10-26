@@ -51,6 +51,7 @@ export function SeletorDeArquivo({
   midia,
   variaveis,
   aoEscolher,
+  soImagem = false,
 }: {
   clienteId: string
   url: string
@@ -59,6 +60,11 @@ export function SeletorDeArquivo({
   variaveis?: string[]
   /** O tipo vem junto porque ele sai do arquivo, e não de um seletor à parte. */
   aoEscolher: (escolha: { url: string; midia: TipoDeMidia; nomeArquivo?: string }) => void
+  /**
+   * Só JPG e PNG, e sem colar endereço: é o topo de um modelo da Meta, que
+   * aceita só esses dois e precisa do arquivo no acervo para subir o exemplo.
+   */
+  soImagem?: boolean
 }) {
   const entrada = useRef<HTMLInputElement>(null)
   const [arrastando, setArrastando] = useState(false)
@@ -251,8 +257,14 @@ export function SeletorDeArquivo({
             Escolher do computador
           </button>
           <p className="mt-2 text-[10.5px] leading-4 text-dim">
-            PNG, JPG, WebP, MP4, MP3, OGG ou PDF · até {LIMITE_MB} MB
-            <br />o teto é do próprio WhatsApp, não nosso
+            {soImagem ? (
+              <>JPG ou PNG · até 5 MB, o limite da Meta</>
+            ) : (
+              <>
+                PNG, JPG, WebP, MP4, MP3, OGG ou PDF · até {LIMITE_MB} MB
+                <br />o teto é do próprio WhatsApp, não nosso
+              </>
+            )}
           </p>
         </div>
       )}
@@ -260,7 +272,7 @@ export function SeletorDeArquivo({
       <input
         ref={entrada}
         type="file"
-        accept={ACEITOS}
+        accept={soImagem ? 'image/png,image/jpeg' : ACEITOS}
         className="hidden"
         onChange={(e) => {
           enviar(e.target.files?.[0])
@@ -281,8 +293,8 @@ export function SeletorDeArquivo({
         >
           {mostrandoAcervo ? 'fechar o acervo' : 'usar do acervo'}
         </button>
-        <span className="text-dim">·</span>
-        <button
+        {!soImagem && <span className="text-dim">·</span>}
+        {!soImagem && <button
           type="button"
           onClick={() => {
             setColando((aberto) => !aberto)
@@ -291,7 +303,7 @@ export function SeletorDeArquivo({
           className="font-semibold text-muted transition hover:text-primary hover:underline"
         >
           {colando ? 'fechar' : 'colar um endereço'}
-        </button>
+        </button>}
       </div>
 
       {mostrandoAcervo && (
@@ -305,7 +317,7 @@ export function SeletorDeArquivo({
             </p>
           ) : (
             <ul className="space-y-0.5">
-              {acervo.map((arquivo) => (
+              {(soImagem ? acervo.filter((a) => a.midia === 'imagem') : acervo).map((arquivo) => (
                 <li key={arquivo.url}>
                   <button
                     type="button"

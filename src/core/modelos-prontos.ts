@@ -71,6 +71,8 @@ export type ModeloPronto = {
   ramo?: Nicho
   /** Para a busca achar pelo que a pessoa chama, e não pelo que nomeamos. */
   sinonimos?: readonly string[]
+  /** Botões de resposta que já vêm preenchidos, quando o modelo é uma pergunta. */
+  respostas?: readonly string[]
 }
 
 /**
@@ -269,13 +271,19 @@ export const MODELOS_PRONTOS: readonly ModeloPronto[] = [
     sinonimos: ['estorno', 'reembolso', 'devolução do dinheiro'],
   },
   {
+    /*
+     * A pesquisa que abre um fluxo: os botões são a primeira pergunta dele, e
+     * o toque chega como resposta (Automações > Eventos, "Começar pelo
+     * modelo"). Nasceu da PCYES, em 26/out/2026.
+     */
     id: 'ecommerce-avaliacao',
     ramo: 'ecommerce',
-    titulo: 'O que achou da compra',
-    resumo: 'Alguns dias depois da entrega.',
-    corpo: 'Oi {nome}! O pedido {codigo} chegou bem? Conta pra gente o que achou da compra.',
+    titulo: 'Pesquisa pós-compra',
+    resumo: 'Pergunta como foi a compra, com botões de resposta.',
+    corpo: 'Oi {nome}! Como foi sua experiência de compra no pedido {codigo}?',
     categoria: 'UTILITY',
-    sinonimos: ['avaliação', 'pesquisa', 'satisfação', 'feedback'],
+    sinonimos: ['avaliação', 'pesquisa', 'satisfação', 'feedback', 'nps', 'experiência'],
+    respostas: ['Foi ótima', 'Foi ok', 'Tive um problema'],
   },
   {
     id: 'ecommerce-carrinho',
