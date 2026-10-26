@@ -1,4 +1,5 @@
 import 'server-only'
+import { alertar } from './alertar'
 import { db } from './db'
 import { chamarHttp } from './efeitos/http'
 import { camposDoContato, gravarCampos } from './repos/campos'
@@ -76,7 +77,8 @@ export async function creditarPontosDaPesquisa(
     { deTeste: false, credencial, comJson: true },
   )
   if (!r.ok) {
-    console.error('[pontos] o Mirasvit recusou', pedido, r.motivo)
+    // O fluxo avisa a pessoa que os pontos atrasaram; quem lança na mão é o time.
+    await alertar('os PC Points da pesquisa não entraram', r.motivo, { cliente: clienteId, pedido, customerId })
     return 'falhou'
   }
 
