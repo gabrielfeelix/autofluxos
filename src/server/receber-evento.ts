@@ -1,7 +1,7 @@
 import 'server-only'
 import { alertar } from './alertar'
 import { mandarAvisoPorModelo } from './aviso-por-modelo'
-import { EVENTO_DE_PEDIDO, iniciarPesquisaPosCompra } from './pesquisa-pos-compra'
+import { iniciarPorModelo } from './evento-com-modelo'
 import { abrirFluxoParaContato, type FabricaDeCanal } from './receber-mensagem'
 import { acharContatoPeloTelefone } from './repos/contato-por-telefone'
 import { acrescentarNota } from './repos/leads'
@@ -55,17 +55,18 @@ export async function tratarEvento(
   /** Injetável só para o teste, como em `receberMensagem`. Em produção é o real. */
   fabricaDeCanal?: FabricaDeCanal,
 ): Promise<ResultadoDoEvento> {
-  // O pedido da loja cria o contato e abre a pesquisa pelo modelo: caminho próprio.
-  if (entrada.evento === EVENTO_DE_PEDIDO) {
-    const pesquisa = await iniciarPesquisaPosCompra(entrada, fabricaDeCanal)
-    return pesquisa === 'enviada' ? 'por_modelo' : pesquisa === 'sem_gatilho' ? 'sem_gatilho' : 'nao_abriu'
-  }
-
   const gatilho = await acharGatilhoDeEvento(entrada.clienteId, entrada.evento)
   // Conta sem gatilho para este evento não é erro, é conta que não pediu esta
   // automação. Alertar aqui encheria a tela de aviso a cada evento que o outro
   // lado manda e que ninguém assinou.
   if (!gatilho) return 'sem_gatilho'
+
+  // "Começar pelo modelo" (0152): pode criar o contato e abre o fluxo parado
+  // na primeira pergunta, que é o próprio modelo. Caminho próprio.
+  if (gatilho.modelo) {
+    const r = await iniciarPorModelo({ ...gatilho, modelo: gatilho.modelo }, entrada, fabricaDeCanal)
+    return r === 'enviada' ? 'por_modelo' : 'nao_abriu'
+  }
 
   const contatoId = await acharContatoPeloTelefone(entrada.clienteId, entrada.telefone)
   /**

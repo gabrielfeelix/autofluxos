@@ -61,6 +61,7 @@ import {
   acaoCriarPassoDaSequencia,
   acaoCriarSequencia,
 } from '@/server/acoes'
+import { acaoSalvarModeloDoEvento } from '@/server/acoes-evento-com-modelo'
 import { acharCliente, type Cliente } from '@/server/repos/clientes'
 import { fluxoDoPapel, listarCanais } from '@/server/repos/conversas'
 import { enderecoDoPainel } from '@/server/endereco'
@@ -74,7 +75,7 @@ import {
   listarSequencias,
   type ContagemDaSequencia,
 } from '@/server/repos/sequencias'
-import { listarTemplatesAprovados } from '@/server/repos/templates'
+import { listarTemplates, listarTemplatesAprovados } from '@/server/repos/templates'
 import { listarQuadros } from '@/server/repos/quadros'
 import { SeloDoCanal } from '@/components/design/selo-do-canal'
 import { NomeDoFluxo } from '@/components/editor/nome-do-fluxo'
@@ -269,6 +270,7 @@ async function ConteudoDaAba({
     pastas,
     esperando,
     nicho,
+    templatesDoEvento,
   ] = await Promise.all([
     contagensDeAutomacao(cliente.id),
     precisa('fluxos', 'palavras', 'eventos', 'campanhas', 'sequencias')
@@ -307,6 +309,8 @@ async function ConteudoDaAba({
     precisa('sequencias') ? esperandoPorPasso(cliente.id) : vazio(new Map<string, number>()),
     // O ramo só serve à galeria de modelos, que mora na aba de fluxos.
     precisa('fluxos') ? nichoDaConta(cliente.id) : vazio(null),
+    // "Começar pelo modelo": todos, porque a reserva segura enquanto a Meta revisa o principal.
+    precisa('eventos') ? listarTemplates(cliente.id) : vazio([] as Awaited<ReturnType<typeof listarTemplates>>),
   ])
   const criarPastaComCliente = acaoCriarPasta.bind(null, cliente.id, {})
   // Os campos de passo (criar e editar) usam as mesmas listas.
@@ -1054,12 +1058,24 @@ async function ConteudoDaAba({
                         abre{' '}
                         <NomeDoDestino destino={destino} clienteId={cliente.id} volta={voltaDaAba} />
                       </span>
+                      {gatilho.modelo && (
+                        <span className="mt-0.5 block truncate text-[11px] text-dim">
+                          começa pelo modelo{' '}
+                          <strong className="font-mono font-semibold text-soft">{gatilho.modelo.modelos[0]}</strong>
+                          {gatilho.modelo.criarContato ? ', cria o contato com aceite' : ''}
+                        </span>
+                      )}
                       <AvisoDoDestino destino={destino} ligada={gatilho.ativo} />
                     </span>
                     <span className="whitespace-nowrap text-[11px] text-dim">
                       <strong className="font-semibold text-soft">{gatilho.execucoes}</strong>{' '}
                       {gatilho.execucoes === 1 ? 'disparo' : 'disparos'}
                     </span>
+                    <ConfigurarModeloDoEvento
+                      clienteId={cliente.id}
+                      gatilho={gatilho}
+                      templates={templatesDoEvento}
+                    />
                     <BotaoPerigo
                       titulo="Apaga o evento e a contagem dele. Para só desligar, use o interruptor."
                       pergunta={`Apagar o evento “${gatilho.evento}”? A contagem de ${gatilho.execucoes} disparo(s) some junto.`}
@@ -1392,6 +1408,107 @@ async function ConteudoDaAba({
  * Por que a entrada não liga, ou `null` quando liga (A05). Mesma regra de
  * `podeLigar`, que o servidor aplica de novo no clique.
  */
+/**
+ * "Começar pelo modelo" de um evento (0152): o aviso manda um modelo aprovado
+ * que é a primeira pergunta do fluxo, e pode criar o contato quando vem com o
+ * aceite de WhatsApp. É o que a pesquisa pós-compra da PCYES usa.
+ */
+function ConfigurarModeloDoEvento({
+  clienteId,
+  gatilho,
+  templates,
+}: {
+  clienteId: string
+  gatilho: Awaited<ReturnType<typeof listarGatilhosDeEvento>>[number]
+  templates: Awaited<ReturnType<typeof listarTemplates>>
+}) {
+  const atual = gatilho.modelo
+  const STATUS: Record<string, string> = { aprovado: 'aprovado', pendente: 'em revisão', rascunho: 'rascunho' }
+  const opcoes = [
+    { valor: '', rotulo: 'Nenhum, caminho comum do evento' },
+    ...templates.map((t) => ({ valor: t.nome, rotulo: t.nome, detalhe: STATUS[t.status] ?? t.status })),
+  ]
+
+  return (
+    <ModalFormulario
+      botao={atual ? 'Modelo' : 'Começar pelo modelo'}
+      variante="linha"
+      titulo="Começar pelo modelo"
+      descricao="O aviso manda um modelo aprovado, e o modelo é a primeira pergunta do fluxo: o toque no botão segue o fluxo. Serve para quem nunca escreveu para a conta, como quem acabou de comprar no site."
+      rotuloEnviar="Salvar"
+      action={acaoSalvarModeloDoEvento.bind(null, clienteId, gatilho.id, {})}
+    >
+      <div className="grid gap-3 sm:grid-cols-2">
+        <div>
+          <RotuloCampo>Modelo</RotuloCampo>
+          <Dropdown nome="modelo" rotuloAcessivel="Modelo que o evento manda" valorInicial={atual?.modelos[0] ?? ''} opcoes={opcoes} />
+        </div>
+        <div>
+          <RotuloCampo>Reserva (opcional)</RotuloCampo>
+          <Dropdown
+            nome="reserva"
+            rotuloAcessivel="Modelo reserva"
+            valorInicial={atual?.modelos[1] ?? ''}
+            opcoes={[{ valor: '', rotulo: 'Sem reserva' }, ...opcoes.slice(1)]}
+          />
+          <span className="mt-1.5 block text-[11px] leading-5 text-dim">Sai quando o principal ainda não foi aprovado.</span>
+        </div>
+      </div>
+      <label>
+        <RotuloCampo>Campos do aviso nas lacunas, em ordem</RotuloCampo>
+        <input
+          name="variaveis"
+          defaultValue={atual?.variaveis.join(', ') ?? ''}
+          placeholder="Exemplo: nome, pedido"
+          className="app-field px-[13px] py-[11px] font-mono text-[13px]"
+        />
+        <span className="mt-1.5 block text-[11px] leading-5 text-dim">
+          O primeiro vai no {'{{1}}'} do modelo, o segundo no {'{{2}}'}. Todos os campos do aviso também viram variáveis do fluxo.
+        </span>
+      </label>
+      <div className="grid gap-3 sm:grid-cols-2">
+        <label>
+          <RotuloCampo>Campo de aceite de WhatsApp</RotuloCampo>
+          <input
+            name="campoDeAceite"
+            defaultValue={atual?.campoDeAceite ?? ''}
+            placeholder="Exemplo: aceita_whatsapp"
+            className="app-field px-[13px] py-[11px] font-mono text-[13px]"
+          />
+          <span className="mt-1.5 block text-[11px] leading-5 text-dim">Só recebe quem vier com este campo igual a true.</span>
+        </label>
+        <label>
+          <RotuloCampo>Uma vez por</RotuloCampo>
+          <input
+            name="umaVezPor"
+            defaultValue={atual?.umaVezPor ?? ''}
+            placeholder="Exemplo: pedido"
+            className="app-field px-[13px] py-[11px] font-mono text-[13px]"
+          />
+          <span className="mt-1.5 block text-[11px] leading-5 text-dim">O mesmo aviso repetido não manda de novo.</span>
+        </label>
+      </div>
+      <label className="flex items-start gap-2.5 text-[12.5px] leading-5 text-soft">
+        <input type="checkbox" name="criarContato" defaultChecked={atual?.criarContato ?? false} className="mt-1" />
+        <span>
+          Criar o contato quando o telefone ainda não existe nesta conta
+          <span className="block text-[11px] text-dim">Exige o campo de aceite.</span>
+        </span>
+      </label>
+      <label>
+        <RotuloCampo>Telefones de teste (opcional)</RotuloCampo>
+        <input
+          name="telefonesDeTeste"
+          defaultValue={atual?.telefonesDeTeste.join(', ') ?? ''}
+          placeholder="Exemplo: 5511999998888"
+          className="app-field px-[13px] py-[11px] font-mono text-[13px]"
+        />
+        <span className="mt-1.5 block text-[11px] leading-5 text-dim">Recebem mesmo sem o aceite, para testar antes de ligar para todos.</span>
+      </label>
+    </ModalFormulario>
+  )
+}
+
 function bloqueioDoDestino(destino: { versaoPublicadaId: string | null } | undefined) {
   if (!destino) return TEXTO_DA_RECUSA.destino_apagado
   return destino.versaoPublicadaId ? null : TEXTO_DA_RECUSA.destino_nao_publicado

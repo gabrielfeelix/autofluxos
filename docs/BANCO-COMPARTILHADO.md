@@ -1454,6 +1454,13 @@ extração explícito para os objetos de `public`.
   erro), zero linhas nas três tabelas, ensaio com `rollback`. Releitura: os
   três checks com os 14 nomes; Verandi antes e depois com **57** migrations e
   **44** tabelas; `/rest/v1/` 401 sem chave.
+- **a `0152` foi aplicada em 26/out/2026**, com autorização explícita do dono,
+  pela Management API. Uma coluna anulável (`gatilhos_de_evento.modelo`,
+  jsonb, sem default) e duas linhas de dado da PCYES: a configuração do
+  gatilho `pedido.processando` e a URL da imagem no cabeçalho dos modelos
+  `pesquisa_pos_compra_v3`/`_v4`. Sem Docker na WSL nesse dia: só o ensaio em
+  transação com `rollback` (limpo, e a coluna não existia depois). Releitura:
+  configuração com os modelos v4 > v2 > v1, URL no v4. Nada da Verandi tocado.
 
 - **SSL obrigatório desde 19/out/2026** (`PUT .../ssl-enforcement`), com
   autorização do dono. Conexão sem TLS leva `ESSLREQUIRED`, inclusive pelo

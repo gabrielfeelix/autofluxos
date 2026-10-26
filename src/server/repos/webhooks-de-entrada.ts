@@ -1,4 +1,5 @@
 import 'server-only'
+import { lerModeloDoEvento, type ModeloDoEvento } from '@/core/evento-com-modelo'
 import { db, ehIdInvalido } from '../db'
 
 /**
@@ -235,6 +236,8 @@ export type GatilhoDeEvento = {
   fluxoId: string
   ativo: boolean
   execucoes: number
+  /** "Começar pelo modelo" (0152). `null`: o caminho comum do evento. */
+  modelo: ModeloDoEvento | null
 }
 
 type LinhaDoGatilho = {
@@ -243,9 +246,10 @@ type LinhaDoGatilho = {
   flow_id: string
   ativo: boolean
   execucoes: number
+  modelo?: unknown
 }
 
-const COLUNAS_DO_GATILHO = 'id, evento, flow_id, ativo, execucoes'
+const COLUNAS_DO_GATILHO = 'id, evento, flow_id, ativo, execucoes, modelo'
 
 function paraGatilho(linha: LinhaDoGatilho): GatilhoDeEvento {
   return {
@@ -254,19 +258,34 @@ function paraGatilho(linha: LinhaDoGatilho): GatilhoDeEvento {
     fluxoId: linha.flow_id,
     ativo: linha.ativo,
     execucoes: linha.execucoes,
+    modelo: lerModeloDoEvento(linha.modelo),
   }
 }
 
+/**
+ * Lê com a coluna `modelo`, e sem ela se o banco ainda não tem a 0152: o
+ * deploy sai antes de a migration ser autorizada, e a aba de Eventos e o
+ * webhook de entrada não podem cair por isso.
+ */
+async function lerGatilhos<T>(
+  consulta: (colunas: string) => PromiseLike<{ data: T; error: { code?: string; message: string } | null }>,
+) {
+  const lido = await consulta(COLUNAS_DO_GATILHO)
+  return lido.error?.code === '42703' ? consulta(COLUNAS_DO_GATILHO.replace(', modelo', '')) : lido
+}
+
 export async function listarGatilhosDeEvento(clienteId: string): Promise<GatilhoDeEvento[]> {
-  const { data, error } = await db()
-    .from('gatilhos_de_evento')
-    .select(COLUNAS_DO_GATILHO)
-    .eq('client_id', clienteId)
-    .order('criado_em', { ascending: true })
+  const { data, error } = await lerGatilhos((colunas) =>
+    db()
+      .from('gatilhos_de_evento')
+      .select(colunas)
+      .eq('client_id', clienteId)
+      .order('criado_em', { ascending: true }),
+  )
 
   if (ehIdInvalido(error)) return []
   if (error) throw new Error(`não foi possível listar os gatilhos de evento: ${error.message}`)
-  return (data as LinhaDoGatilho[]).map(paraGatilho)
+  return (data as unknown as LinhaDoGatilho[]).map(paraGatilho)
 }
 
 /**
@@ -281,17 +300,39 @@ export async function acharGatilhoDeEvento(
   clienteId: string,
   evento: string,
 ): Promise<GatilhoDeEvento | null> {
-  const { data, error } = await db()
-    .from('gatilhos_de_evento')
-    .select(COLUNAS_DO_GATILHO)
-    .eq('client_id', clienteId)
-    .eq('evento', evento)
-    .eq('ativo', true)
-    .maybeSingle()
+  const { data, error } = await lerGatilhos((colunas) =>
+    db()
+      .from('gatilhos_de_evento')
+      .select(colunas)
+      .eq('client_id', clienteId)
+      .eq('evento', evento)
+      .eq('ativo', true)
+      .maybeSingle(),
+  )
 
   if (ehIdInvalido(error)) return null
   if (error) throw new Error(`não foi possível achar o gatilho de evento: ${error.message}`)
-  return data ? paraGatilho(data as LinhaDoGatilho) : null
+  return data ? paraGatilho(data as unknown as LinhaDoGatilho) : null
+}
+
+/** Grava (ou tira, com `null`) o "começar pelo modelo" de um gatilho desta conta. */
+export async function salvarModeloDoGatilho(
+  clienteId: string,
+  gatilhoId: string,
+  modelo: ModeloDoEvento | null,
+): Promise<boolean> {
+  const { data, error } = await db()
+    .from('gatilhos_de_evento')
+    .update({ modelo })
+    .eq('id', gatilhoId)
+    .eq('client_id', clienteId)
+    .select('id')
+    .maybeSingle()
+
+  if (ehIdInvalido(error)) return false
+  if (error?.code === '42703') throw new Error('o banco ainda não tem a migration 0152')
+  if (error) throw new Error(`não foi possível salvar o modelo do evento: ${error.message}`)
+  return data !== null
 }
 
 export async function criarGatilhoDeEvento(

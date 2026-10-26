@@ -17,7 +17,7 @@ import { lojaDaConta } from './repos/lojas'
  *
  * **Quem pode pedir:** só existe crédito para um par pedido + cliente que tem
  * conversa de pesquisa aberta nesta conta nos últimos 7 dias (as variáveis
- * que `pesquisa-pos-compra.ts` gravou na sessão), e uma vez por pedido. Quem
+ * que `evento-com-modelo.ts` gravou na sessão), e uma vez por pedido. Quem
  * não sabe um par desses não ganha nada chamando a rota.
  *
  * `POST /rest/V1/rewards/transaction` provado em 26/out/2026 (lançamento 288,

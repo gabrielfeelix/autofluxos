@@ -116,6 +116,13 @@ aqui fica o que o cliente ganha.
   vai para uma pessoa.
 - **O bot volta sozinho** depois que a equipe atende e a conversa para, no
   tempo que a empresa escolher.
+- **Pesquisa pós-compra sem desenvolvedor**: o pedido muda de status na loja
+  e o cliente recebe no WhatsApp um modelo aprovado que já é a primeira
+  pergunta, com imagem e botões de resposta. O toque segue o fluxo, o
+  contato nasce do pedido quando ele aceitou receber WhatsApp, e cada pedido
+  recebe uma vez só. *(26/out/2026)*
+- **Modelo com imagem e botões de resposta**: a imagem do topo sobe direto
+  na tela de modelos e vai junto em todo envio. *(26/out/2026)*
 
 ## IA que atende sem inventar
 
