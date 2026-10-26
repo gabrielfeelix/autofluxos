@@ -41,7 +41,8 @@ import { acharGatilhoDeEvento, contarDisparoDeEvento } from './repos/webhooks-de
  */
 
 export const EVENTO_DE_PEDIDO = 'pedido.processando'
-const MODELO = 'pesquisa_pos_compra'
+/** O mais novo aprovado ganha; o anterior segura enquanto a Meta revisa o novo. */
+const MODELOS = ['pesquisa_pos_compra_v2', 'pesquisa_pos_compra']
 
 /**
  * Enquanto o aceite de WhatsApp não existe no site da PCYES (card do Yuri), só
@@ -78,8 +79,9 @@ export async function iniciarPesquisaPosCompra(
   const canal = (await listarCanais(clienteId)).find((c) => c.provider === 'cloud-api' && c.status === 'ativo')
   if (!canal) return falhou('a conta não tem número de WhatsApp ativo')
 
-  const modelo = (await listarTemplatesAprovados(clienteId)).find((t) => t.nome === MODELO)
-  if (!modelo) return falhou(`o modelo ${MODELO} não está aprovado`)
+  const aprovados = await listarTemplatesAprovados(clienteId)
+  const modelo = MODELOS.map((nome) => aprovados.find((t) => t.nome === nome)).find(Boolean)
+  if (!modelo) return falhou(`nenhum dos modelos ${MODELOS.join(', ')} está aprovado`)
 
   const fluxo = await acharFluxo(gatilho.fluxoId)
   if (!fluxo || fluxo.clienteId !== clienteId || !fluxo.ativo || !fluxo.versaoPublicadaId) {
