@@ -1,3 +1,4 @@
+import { telefoneCanonico } from './contatos/telefone'
 import { STATUS_DE_PEDIDO, type EntregaDoPedido, type StatusDePedido } from './pedidos'
 
 /**
@@ -68,4 +69,16 @@ export function podeAvancar(atual: StatusDePedido, novo: StatusDePedido): boolea
 /** O evento que a etapa abre, o mesmo `pedido.<status>` dos gatilhos de evento. */
 export function eventoDaEtapa(status: StatusDePedido): string {
   return `pedido.${status}`
+}
+
+/**
+ * O telefone do pedido como `wa_id`, ou `null` quando não dá para avisar:
+ * vazio, sem DDD, ou número de central (0800, 0300, 400x). Marketplace
+ * repassado pelo cardápio manda a central dele no lugar do cliente, e casar
+ * esse número criaria um contato que junta os pedidos de todo mundo.
+ */
+export function telefoneDoPedido(bruto: string | null): string | null {
+  const digitos = (bruto ?? '').replace(/\D/g, '')
+  if (/^(0800|0300|0500|0900|400\d)/.test(digitos)) return null
+  return digitos ? telefoneCanonico(digitos) : null
 }
