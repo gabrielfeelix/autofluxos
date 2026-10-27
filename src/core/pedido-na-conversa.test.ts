@@ -22,7 +22,7 @@ describe('status do pedido na conversa', () => {
         '',
         '✅ Pagamento aprovado',
         '✅ Pedido separado',
-        '🔵 *Em Transferência*',
+        '🔵 *Em Transferência* · 28/09',
         '⚪ Entrega no seu endereço',
         '',
         'Transportadora: Braspress',
@@ -31,6 +31,30 @@ describe('status do pedido na conversa', () => {
         '2x Placa de Vídeo RX 550',
       ].join('\n'),
     )
+  })
+
+  it('a Frete Rápido passa à frente do histórico do Magento, que atrasa', () => {
+    // PCYES, pedido 000002367: o Magento parou em "Em Rota Para Entrega" e a
+    // Braspress já tinha registrado o endereço não localizado.
+    const texto = mensagemDoPedido({
+      numero: '000002367',
+      situacao: 'Entregue à transportadora',
+      situacaoCodigo: 'delivered_carrier',
+      feitoEm: '2026-10-19',
+      total: 'R$ 213,66',
+      itens: [],
+      rastreios: [],
+      entrega: {
+        transportadora: 'BRASPRESS TRANSPORTES URGENTES LTDA',
+        codigo: '',
+        previsao: '26/10/2026',
+        ultima: { situacao: 'Endereço não localizado', quando: '23/10 15:41', detalhe: 'ENDERECO NAO LOCALIZADO' },
+        ocorrencias: [],
+      },
+      andamento: [{ texto: 'Em Rota Para Entrega', quando: '23/10 às 09:23' }],
+    })
+    expect(texto).toContain('🔵 *Endereço não localizado* · 23/10')
+    expect(texto).not.toContain('Em Rota')
   })
 
   it('previsão que já passou vira entrega atrasada', () => {

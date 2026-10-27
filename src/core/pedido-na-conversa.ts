@@ -21,7 +21,7 @@ import type { PedidoDaLoja } from '@/loja/magento-pedido'
  */
 export function mensagemDoPedido(pedido: PedidoDaLoja, hoje?: string): string {
   const etapa = etapaDoPedido(pedido)
-  const evento = ultimoAndamento(pedido)
+  const { texto: evento, dia } = ultimoAndamento(pedido)
   const linhas = [tituloDoPedido(pedido, etapa, evento)]
 
   /*
@@ -34,7 +34,7 @@ export function mensagemDoPedido(pedido: PedidoDaLoja, hoje?: string): string {
   if (hoje !== undefined && entregaAtrasada(pedido, hoje)) linhas.push(`⚠️ Entrega atrasada: a previsão era *${previsao}*`)
   else if (previsao) linhas.push(`Previsão de entrega: *${previsao}*`)
 
-  if (etapa !== null) linhas.push('', ...linhaDoTempo(etapa, evento))
+  if (etapa !== null) linhas.push('', ...linhaDoTempo(etapa, evento, dia))
 
   const transportadora = nomeCurto(pedido.entrega?.transportadora || pedido.rastreios[0]?.transportadora || '')
   // Link no lugar do código não vai no texto: o botão já leva a ele.
@@ -91,9 +91,20 @@ function tituloDoPedido(pedido: PedidoDaLoja, etapa: number | null, evento: stri
   }
 }
 
-/** O andamento mais recente, da loja ou da Frete Rápido. Vazio sem nenhum. */
-function ultimoAndamento(pedido: PedidoDaLoja): string {
-  return (pedido.andamento?.[0]?.texto ?? pedido.entrega?.ultima?.situacao ?? '').trim()
+/**
+ * O andamento mais recente, e o dia dele (DD/MM). Vazio sem nenhum.
+ *
+ * A Frete Rápido primeiro: é a fonte ao vivo, e o histórico do Magento é uma
+ * cópia que a integração escreve quando escreve. Em 27/out/2026 o Magento
+ * parou em "Em Rota Para Entrega" e o card mostrou isso, enquanto a Braspress
+ * já tinha registrado "Endereço não localizado" quatro dias antes.
+ */
+function ultimoAndamento(pedido: PedidoDaLoja): { texto: string; dia: string } {
+  const frete = pedido.entrega?.ultima
+  const evento = frete?.situacao
+    ? { texto: frete.situacao, quando: frete.quando }
+    : (pedido.andamento?.[0] ?? { texto: '', quando: '' })
+  return { texto: evento.texto.trim(), dia: /^\d{2}\/\d{2}/.exec(evento.quando.trim())?.[0] ?? '' }
 }
 
 /**
@@ -108,13 +119,14 @@ const ETAPAS = [
   { feita: 'Entregue', atual: 'Entregue', depois: 'Entrega no seu endereço' },
 ] as const
 
-function linhaDoTempo(etapa: number, evento: string): string[] {
+function linhaDoTempo(etapa: number, evento: string, dia: string): string[] {
   return ETAPAS.map((e, i) => {
     if (i < etapa || etapa === 3) return `✅ ${e.feita}`
     if (i > etapa) return `⚪ ${e.depois}`
-    // Na transportadora, o andamento real diz mais que o rótulo fixo.
-    const atual = i === 2 && evento ? rotuloDoAndamento(evento) : e.atual
-    return `🔵 *${atual}*`
+    // Na transportadora, o andamento real diz mais que o rótulo fixo, e o dia
+    // dele diz se a entrega parou ou anda.
+    if (i === 2 && evento) return `🔵 *${rotuloDoAndamento(evento)}*${dia ? ` · ${dia}` : ''}`
+    return `🔵 *${e.atual}*`
   })
 }
 
