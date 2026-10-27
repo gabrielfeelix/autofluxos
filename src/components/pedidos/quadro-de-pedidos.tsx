@@ -12,6 +12,7 @@ import { PopoverDoQuadro } from '@/components/quadros/popover-do-quadro'
 import type { EtapaDoPedido, StatusDePedido } from '@/core/pedidos'
 import { ETAPAS_QUE_AVISAM, NOME_DA_PLATAFORMA } from '@/core/pedidos-de-fora'
 import { hrefDaFicha } from '@/core/volta-da-ficha'
+import { acaoLinkDoEntregador } from '@/server/acoes-entregador'
 import { acaoCriarModelosDoPedido, acaoListarPedidos, acaoMoverPedido } from '@/server/acoes-pedidos'
 import type { CartaoDePedido } from '@/server/pedidos'
 
@@ -153,6 +154,32 @@ export function QuadroDePedidos({
     }
   }
 
+  /**
+   * O link do entregador: copia, ou abre o WhatsApp com o link pronto para
+   * escolher o motoboy (`wa.me` sem número). A janela abre antes da ida ao
+   * servidor: aberta depois do `await`, o celular a bloquearia.
+   */
+  async function linkDoEntregador(p: CartaoDePedido, como: 'copiar' | 'whatsapp') {
+    const janela = como === 'whatsapp' ? window.open('', '_blank') : null
+    const r = await acaoLinkDoEntregador(clienteId, p.id).catch(() => ({ ok: false as const, erro: 'Não foi possível gerar o link agora.' }))
+    if (!r.ok) {
+      janela?.close()
+      setRecado({ texto: r.erro, erro: true })
+      return
+    }
+    if (janela) {
+      const texto = `Pedido #${p.numeroExibido ?? p.numero}${p.endereco ? `, ${p.endereco}` : ''}. Ao sair e ao entregar, toque no link: ${r.link}`
+      janela.location.href = `https://wa.me/?text=${encodeURIComponent(texto)}`
+      return
+    }
+    try {
+      await navigator.clipboard.writeText(r.link)
+      setRecado({ texto: 'Link do entregador copiado. Vale por 24 horas.' })
+    } catch {
+      setRecado({ texto: r.link })
+    }
+  }
+
   const cancelar = (p: CartaoDePedido) =>
     confirmar({
       titulo: `Cancelar o pedido ${p.numeroExibido ?? p.numero}?`,
@@ -249,7 +276,7 @@ export function QuadroDePedidos({
             {!fechado && (
               <PopoverDoQuadro
                 rotulo={`Mais ações do pedido ${p.numero}`}
-                largura={210}
+                largura={230}
                 gatilho={<span aria-hidden className="px-0.5 text-[14px] leading-none">⋯</span>}
               >
                 {outras.map((e) => (
@@ -263,6 +290,26 @@ export function QuadroDePedidos({
                     Mover para {e.rotulo}
                   </button>
                 ))}
+                {p.entrega === 'entrega' && (
+                  <>
+                    <button
+                      type="button"
+                      data-fechar-popover
+                      className="quadro-menu-item mt-1 border-t border-line"
+                      onClick={() => void linkDoEntregador(p, 'whatsapp')}
+                    >
+                      Enviar link ao entregador
+                    </button>
+                    <button
+                      type="button"
+                      data-fechar-popover
+                      className="quadro-menu-item"
+                      onClick={() => void linkDoEntregador(p, 'copiar')}
+                    >
+                      Copiar link do entregador
+                    </button>
+                  </>
+                )}
                 <button
                   type="button"
                   data-fechar-popover

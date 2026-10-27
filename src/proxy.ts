@@ -128,6 +128,12 @@ const PREFIXOS_ABERTOS = [
    */
   '/pagar/',
   /**
+   * O link do entregador (plano de cardápios, Fase 1), aberto pelo motoboy no
+   * celular, sem conta. A autorização é o token assinado no endereço
+   * (`server/entregador/token.ts`), que só move aquele pedido.
+   */
+  '/e/',
+  /**
    * **As rotas de retorno do OAuth. Sem isto elas nunca rodam.**
    *
    * Quem chega aqui é o navegador do cliente **voltando do facebook.com**, uma

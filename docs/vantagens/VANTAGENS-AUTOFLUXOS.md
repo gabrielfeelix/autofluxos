@@ -284,6 +284,20 @@ aqui fica o que o cliente ganha.
 - **Cupons com retorno**: quais foram enviados e quais foram usados.
 - **Links de produto rastreados**: quem clicou e de qual conversa veio.
 
+- **O cliente sabe onde está o pedido, mesmo sem conversa aberta**: em
+  preparo, saiu para entrega, pronto para retirada e cancelado chegam no
+  WhatsApp por modelo aprovado da Meta, criado com um clique na tela de
+  Pedidos. Quando o aviso não sai, o cartão mostra "Cliente não avisado" em
+  vez de fingir. *(27/out/2026)*
+- **Link do entregador, sem aplicativo nem login**: o motoboy próprio recebe
+  um link pelo WhatsApp, toca em "Saí para entregar" e "Entreguei", e o
+  cliente é avisado na hora. Abre o endereço no mapa com um toque.
+  *(27/out/2026)*
+- **Pedido do cardápio digital no mesmo quadro**: o pedido que vem de fora
+  entra uma vez só, com o número da plataforma, e a etapa nunca volta atrás
+  por aviso atrasado. Cardápio Web, OlaClick, Goomer e outros na fila da tela
+  Cardápio e delivery. *(27/out/2026)*
+
 ## Medir
 
 - **Relatórios de atendimento e vendas**: conversas, quanto a automação
