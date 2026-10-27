@@ -1,5 +1,11 @@
 # Pendências do dono
 
+> **Substituída em 27/out/2026.** A lista viva é
+> `4yu-apps/PENDENCIAS-DO-GABRIEL.md` (fora do repo). Os itens ainda abertos
+> daqui (Instagram, Google Calendar, Nuvemshop) foram para lá. Este arquivo
+> fica só como roteiro detalhado do app review e da Nuvemshop; não anote nada
+> novo aqui.
+
 O que **só você** consegue fazer. Nada aqui está esperando código: ou depende
 de uma credencial que só você cria, ou de uma decisão que envolve o outro
 produto, ou de uma conta que é de uma pessoa de verdade.
