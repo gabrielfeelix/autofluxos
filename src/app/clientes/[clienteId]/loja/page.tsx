@@ -21,7 +21,7 @@ export const dynamic = 'force-dynamic'
  * Substitui o 307 de `/loja` para `/loja/magento` que a F1 deixou até esta
  * tela existir. A ordem e o estado de cada cartão são regra pura
  * (`core/plataformas-de-loja.ts`); aqui só se lê o que a conta tem: as lojas
- * Magento e Nuvemshop (as que conectam hoje) e os "Quero esta" já dados.
+ * Magento e Nuvemshop (as que conectam hoje) e as integrações já solicitadas.
  */
 export default async function Pagina({ params }: { params: Promise<{ clienteId: string }> }) {
   const { clienteId } = await params

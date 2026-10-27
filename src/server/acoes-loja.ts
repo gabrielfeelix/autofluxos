@@ -2,6 +2,7 @@
 
 import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
+import { ehPlataformaDeCardapio } from '@/core/plataformas-de-cardapio'
 import { normalizarEndereco, type ProdutoDaLoja } from '@/core/loja'
 import { lojaMagento } from '@/loja/magento'
 import { lojaAdmin } from '@/loja/magento-admin'
@@ -208,7 +209,7 @@ export async function acaoDesconectarToken(clienteId: string): Promise<{ ok: tru
 }
 
 /**
- * "Quero esta" num cartão "Em breve" de Comércio > Integrações.
+ * "Solicitar integração" num cartão "Em breve" de Comércio > Integrações.
  *
  * Mesma porta das outras ações da loja: quem pede integração para a conta é
  * quem configura a operação. **Não revalida nada**: a tela marca o cartão na
@@ -223,7 +224,9 @@ export async function acaoQueroEstaPlataforma(
 
   // A lista fechada é conferida aqui e no check da 0103: sem esta linha o banco
   // recusaria com 23514 e a tela mostraria um erro de Postgres.
-  if (!ehPlataformaDeLoja(plataforma)) return { ok: false, motivo: 'essa plataforma não está na lista' }
+  if (!ehPlataformaDeLoja(plataforma) && !ehPlataformaDeCardapio(plataforma)) {
+    return { ok: false, motivo: 'essa plataforma não está na lista' }
+  }
   return registrarPedidoDeLoja(clienteId, plataforma)
 }
 

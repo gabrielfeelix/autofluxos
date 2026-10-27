@@ -1,4 +1,5 @@
 import 'server-only'
+import { ehPlataformaDeCardapio, type PlataformaDeCardapio } from '@/core/plataformas-de-cardapio'
 import { ehPlataformaDeLoja, type PlataformaDeLoja } from '@/core/plataformas-de-loja'
 import type { ViaDeEstoque } from '@/loja/types'
 import { db, ehIdInvalido } from '../db'
@@ -176,11 +177,18 @@ export async function desligarEstoqueExato(clienteId: string): Promise<{ conexao
 }
 
 /**
- * Os "Quero esta" da conta (0103): as plataformas "Em breve" que ela pediu.
+ * As integrações solicitadas pela conta (0103): as plataformas "Em breve" que ela pediu.
  *
  * Erro de leitura devolve lista vazia: o pior caso é o botão aparecer de novo,
  * e clicar outra vez não duplica (o `primary key` é conta e plataforma).
  */
+/** As integrações de cardápio solicitadas pela conta (mesma tabela, 0155). */
+export async function pedidosDeCardapio(clienteId: string): Promise<PlataformaDeCardapio[]> {
+  const { data, error } = await db().from('pedidos_de_loja').select('plataforma').eq('client_id', clienteId)
+  if (error || !data) return []
+  return (data as { plataforma: string }[]).map((l) => l.plataforma).filter(ehPlataformaDeCardapio)
+}
+
 export async function pedidosDeLoja(clienteId: string): Promise<PlataformaDeLoja[]> {
   const { data, error } = await db().from('pedidos_de_loja').select('plataforma').eq('client_id', clienteId)
   if (error || !data) return []
@@ -188,12 +196,12 @@ export async function pedidosDeLoja(clienteId: string): Promise<PlataformaDeLoja
 }
 
 /**
- * Grava o "Quero esta". Uma vez por conta: o segundo clique é aceito e não
+ * Grava a solicitação de integração. Uma vez por conta: o segundo clique é aceito e não
  * vira segundo voto (`ignoreDuplicates` sobre a chave conta e plataforma).
  */
 export async function registrarPedidoDeLoja(
   clienteId: string,
-  plataforma: PlataformaDeLoja,
+  plataforma: PlataformaDeLoja | PlataformaDeCardapio,
 ): Promise<{ ok: true } | { ok: false; motivo: string }> {
   const { error } = await db()
     .from('pedidos_de_loja')

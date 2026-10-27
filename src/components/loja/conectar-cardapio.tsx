@@ -1,0 +1,158 @@
+'use client'
+
+import Link from 'next/link'
+import { CabecalhoDaTela } from '@/components/design/cabecalho-da-tela'
+import { Miolo } from '@/components/design/miolo'
+import { Pilula } from '@/components/design/pilula'
+import { FICHAS_DE_CARDAPIO, PLATAFORMAS_DE_CARDAPIO, type PlataformaDeCardapio } from '@/core/plataformas-de-cardapio'
+import { Grupo, Rende, SolicitarIntegracao } from './conectar-loja'
+
+type Resposta = { ok: true } | { ok: false; motivo: string }
+
+/**
+ * Comércio > Integrações > Cardápio e delivery (docs/PLANO-INTEGRACOES-CARDAPIO.md).
+ *
+ * Em cima, o que funciona hoje sem plataforma nenhuma: o link do entregador.
+ * Embaixo, cada cardápio digital ainda sem conector, com o logo oficial
+ * (`public/marcas-de-cardapio/`) e "Solicitar integração". Quando um conector
+ * fica pronto, a ficha ganha `href` e o cartão sobe para "Disponível agora".
+ */
+export function ConectarCardapio({
+  clienteId,
+  solicitadas,
+  solicitar,
+}: {
+  clienteId: string
+  solicitadas: PlataformaDeCardapio[]
+  solicitar: (plataforma: PlataformaDeCardapio) => Promise<Resposta>
+}) {
+  return (
+    <Miolo largura="cheia">
+      <CabecalhoDaTela
+        trilha={[{ rotulo: 'Integrações', href: `/clientes/${clienteId}/loja` }, { rotulo: 'Cardápio e delivery' }]}
+        titulo="Cardápio e delivery"
+        descricao="Conecte o cardápio digital ou o sistema de delivery e cada pedido entra no quadro de Pedidos. O cliente recebe no WhatsApp cada etapa: em preparo, saiu para entrega, pronto para retirada."
+      />
+
+      <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_340px]">
+        <div className="flex min-w-0 flex-col gap-5">
+          <Grupo titulo="Disponível agora">
+            <article className="app-card flex flex-col gap-4 p-5 sm:flex-row sm:items-center">
+              <span
+                aria-hidden
+                className="flex size-12 shrink-0 items-center justify-center rounded-[12px] bg-primary-weak text-primary"
+              >
+                <IconeEntregador />
+              </span>
+              <div className="min-w-0 flex-1">
+                <div className="flex flex-wrap items-center gap-2">
+                  <h3 className="text-[15px] font-bold tracking-[-0.01em]">Link do entregador</h3>
+                  <Pilula tom="ok">Incluído</Pilula>
+                </div>
+                <p className="mt-1 text-[12.5px] leading-5 text-muted">
+                  Para quem entrega com motoboy próprio. Cada pedido gera um link: o entregador toca em Saí para
+                  entregar e em Entreguei, sem login, e o cliente é avisado na hora.
+                </p>
+              </div>
+              <Link href={`/clientes/${clienteId}/loja/pedidos`} className="botao-md botao-primario shrink-0">
+                Abrir Pedidos
+                <span aria-hidden>›</span>
+              </Link>
+            </article>
+          </Grupo>
+
+          <Grupo titulo="Em breve" nota="Solicite a integração da sua plataforma e ela ganha prioridade.">
+            <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+              {PLATAFORMAS_DE_CARDAPIO.map((id) => {
+                const ficha = FICHAS_DE_CARDAPIO[id]
+                return (
+                  <article key={id} className="app-card flex flex-col p-5">
+                    <span
+                      aria-hidden
+                      className="mb-4 flex size-10 shrink-0 items-center justify-center rounded-[12px] border border-line bg-white p-1.5"
+                    >
+                      {/* Arquivo estático nosso, de tamanho fixo: `next/image` não acrescenta nada. */}
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img src={`/marcas-de-cardapio/${ficha.arquivoDaMarca}`} alt="" className="size-full object-contain" />
+                    </span>
+                    <h3 className="text-[15px] font-bold tracking-[-0.01em]">{ficha.nome}</h3>
+                    <p className="mt-1 text-[12.5px] leading-5 text-muted">{ficha.resumo}</p>
+                    <span className="min-h-5 flex-1" />
+                    <SolicitarIntegracao plataforma={id} jaPedida={solicitadas.includes(id)} solicitar={solicitar} />
+                  </article>
+                )
+              })}
+            </div>
+          </Grupo>
+
+          <p className="text-[12px] leading-5 text-dim">
+            O seu sistema não está na lista? Fale com o suporte. iFood, 99Food e outros marketplaces ficam de fora: lá o
+            cliente acompanha o pedido pelo próprio aplicativo.
+          </p>
+        </div>
+
+        <aside className="app-card p-5 lg:sticky lg:top-6">
+          <h2 className="text-[14.5px] font-bold">O que a conexão traz</h2>
+          <ul className="mt-4 flex flex-col gap-4">
+            <Rende
+              icone={<IconeEntregador />}
+              titulo="Cliente avisado de cada etapa"
+              texto="Em preparo, saiu para entrega e cancelado chegam no WhatsApp, mesmo para quem nunca abriu conversa."
+            />
+            <Rende
+              icone={<IconeQuadro />}
+              titulo="Todos os pedidos num quadro só"
+              texto="Os pedidos do cardápio entram ao lado dos pedidos da conversa, com o número da plataforma."
+              breve
+            />
+            <Rende
+              icone={<IconeCatalogo />}
+              titulo="Catálogo importado sozinho"
+              texto="Fotos, descrições e preços vêm da plataforma, e o bot de vendas responde com eles."
+              breve
+            />
+          </ul>
+        </aside>
+      </div>
+    </Miolo>
+  )
+}
+
+const TRACO = {
+  width: 17,
+  height: 17,
+  viewBox: '0 0 24 24',
+  fill: 'none',
+  stroke: 'currentColor',
+  strokeWidth: 1.9,
+  strokeLinecap: 'round' as const,
+  strokeLinejoin: 'round' as const,
+  'aria-hidden': true,
+}
+
+function IconeEntregador() {
+  return (
+    <svg {...TRACO}>
+      <circle cx="6" cy="17" r="2.5" />
+      <circle cx="18" cy="17" r="2.5" />
+      <path d="M8.5 17h7M14 6h2.5l2 5.5M4 11h7l2.5 6M16 11.5l-2.5 5.5" />
+    </svg>
+  )
+}
+
+function IconeQuadro() {
+  return (
+    <svg {...TRACO}>
+      <rect x="3.5" y="4" width="17" height="16" rx="2.5" />
+      <path d="M9.5 4v16M15 4v16" />
+    </svg>
+  )
+}
+
+function IconeCatalogo() {
+  return (
+    <svg {...TRACO}>
+      <path d="M4 5.5A1.5 1.5 0 0 1 5.5 4H11v16H5.5A1.5 1.5 0 0 1 4 18.5zM13 4h5.5A1.5 1.5 0 0 1 20 5.5v13a1.5 1.5 0 0 1-1.5 1.5H13z" />
+    </svg>
+  )
+}

@@ -30,7 +30,7 @@ export type FichaDaPlataforma = {
   brasileira: boolean
   /**
    * Onde a conexão se faz, quando já existe. Sem `href` o cartão é "Em breve"
-   * e oferece o "Quero esta".
+   * e oferece "Solicitar integração".
    */
   href: string | null
 }
@@ -101,7 +101,7 @@ export type EstadoDaPlataforma = 'conectada' | 'configurada' | 'disponivel' | 'e
  *
  * `liberada: false` é a plataforma com tela pronta e credencial do app ainda
  * não posta (a Nuvemshop sem `NUVEMSHOP_APP_ID`): continua "Em breve", com o
- * "Quero esta", em vez de um botão que leva a uma tela que não conecta.
+ * "Solicitar integração", em vez de um botão que leva a uma tela que não conecta.
  */
 export function estadoDaPlataforma(
   ficha: FichaDaPlataforma,

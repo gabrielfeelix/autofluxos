@@ -1487,6 +1487,14 @@ extração explícito para os objetos de `public`.
   Releitura: colunas e check novos, `anon` sem select; Verandi antes e depois
   com **57** migrations e **44** tabelas; `/rest/v1/` 401 sem chave.
 
+- **a `0155` foi aplicada em 27/out/2026**, pela Management API, numa
+  transação, sem pedir (aditiva). Recria `pedidos_de_loja_plataforma_check`
+  aceitando as plataformas de cardápio (`cardapio_web`, `olaclick`,
+  `opendelivery`, `goomer`, `delivery_direto`, `foody`, `neemo`), para o
+  "Solicitar integração" da tela Cardápio e delivery. Ensaio com `rollback`
+  limpo antes; releitura com os 14 nomes; 1 linha existente intacta; Verandi
+  com **57** migrations.
+
 - **SSL obrigatório desde 19/out/2026** (`PUT .../ssl-enforcement`), com
   autorização do dono. Conexão sem TLS leva `ESSLREQUIRED`, inclusive pelo
   pooler. Antes, o SQL direto do AutoFluxos passou a exigir TLS com o

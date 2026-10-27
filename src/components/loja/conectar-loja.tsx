@@ -10,7 +10,7 @@ import type { EstadoDaPlataforma, FichaDaPlataforma, PlataformaDeLoja } from '@/
 export type CartaoDePlataforma = {
   ficha: FichaDaPlataforma
   estado: EstadoDaPlataforma
-  /** A conta já deu "Quero esta" nesta plataforma. */
+  /** A conta já solicitou a integração desta plataforma. */
   pedida: boolean
 }
 
@@ -65,8 +65,35 @@ export function ConectarLoja({
             </Grupo>
           )}
 
+          <Grupo titulo="Cardápio e delivery">
+            <article className="app-card flex flex-col gap-4 p-5 sm:flex-row sm:items-center">
+              <span aria-hidden className="flex shrink-0 -space-x-2">
+                {['cardapio_web.png', 'goomer.png', 'olaclick.svg'].map((arquivo) => (
+                  <span
+                    key={arquivo}
+                    className="flex size-10 items-center justify-center rounded-full border-2 border-panel bg-white p-1.5 shadow-[0_1px_2px_rgba(16,24,40,0.06)]"
+                  >
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={`/marcas-de-cardapio/${arquivo}`} alt="" className="size-full object-contain" />
+                  </span>
+                ))}
+              </span>
+              <div className="min-w-0 flex-1">
+                <h3 className="text-[15px] font-bold tracking-[-0.01em]">Cardápio digital e delivery próprio</h3>
+                <p className="mt-1 text-[12.5px] leading-5 text-muted">
+                  Cardápio Web, Goomer, OlaClick e outros: o pedido entra no quadro de Pedidos e o cliente é avisado
+                  de cada etapa no WhatsApp.
+                </p>
+              </div>
+              <Link href={`/clientes/${clienteId}/loja/cardapios`} className="botao-md botao-secundario shrink-0">
+                Ver plataformas
+                <span aria-hidden>›</span>
+              </Link>
+            </article>
+          </Grupo>
+
           {emBreve.length > 0 && (
-            <Grupo titulo="Em breve" nota="Brasil primeiro. Clique em Quero esta na sua e ela sobe na fila.">
+            <Grupo titulo="Em breve" nota="Brasil primeiro. Solicite a integração da sua plataforma e ela ganha prioridade.">
               <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
                 {emBreve.map((cartao) => (
                   <Cartao key={cartao.ficha.id} cartao={cartao} queroEsta={queroEsta} />
@@ -76,8 +103,8 @@ export function ConectarLoja({
           )}
 
           <p className="text-[12px] leading-5 text-dim">
-            A sua não está na lista? Fale com o suporte. Cada &quot;Quero esta&quot; conta um pedido da sua
-            conta, e a plataforma mais pedida é a próxima a chegar.
+            A sua não está na lista? Fale com o suporte. Cada solicitação conta a favor da plataforma, e a
+            mais solicitada é a próxima a chegar.
           </p>
         </div>
 
@@ -109,7 +136,7 @@ function SemLojaAinda({ clienteId }: { clienteId: string }) {
   )
 }
 
-function Grupo({ titulo, nota, children }: { titulo: string; nota?: string; children: ReactNode }) {
+export function Grupo({ titulo, nota, children }: { titulo: string; nota?: string; children: ReactNode }) {
   return (
     <section className="flex flex-col gap-3">
       <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
@@ -161,7 +188,7 @@ function CartaoLargo({
   )
 }
 
-/** A plataforma "Em breve": o próximo passo é o "Quero esta". */
+/** A plataforma "Em breve": o próximo passo é solicitar a integração. */
 function Cartao({
   cartao,
   queroEsta,
@@ -184,23 +211,24 @@ function Cartao({
 
       <span className="min-h-5 flex-1" />
 
-      <QueroEsta plataforma={ficha.id} jaPedida={cartao.pedida} queroEsta={queroEsta} />
+      <SolicitarIntegracao plataforma={ficha.id} jaPedida={cartao.pedida} solicitar={queroEsta} />
     </article>
   )
 }
 
 /**
- * O "Quero esta": marca na hora e desfaz se o servidor recusar. Uma vez por
- * conta; depois de gravado o botão vira a confirmação e não volta a aparecer.
+ * "Solicitar integração": marca na hora e desfaz se o servidor recusar. Uma
+ * vez por conta; depois de gravado o botão vira a confirmação e não volta a
+ * aparecer. Serve à loja on-line e ao cardápio digital.
  */
-function QueroEsta({
+export function SolicitarIntegracao<P extends string>({
   plataforma,
   jaPedida,
-  queroEsta,
+  solicitar,
 }: {
-  plataforma: PlataformaDeLoja
+  plataforma: P
   jaPedida: boolean
-  queroEsta: (plataforma: PlataformaDeLoja) => Promise<Resposta>
+  solicitar: (plataforma: P) => Promise<Resposta>
 }) {
   const [pedida, setPedida] = useState(jaPedida)
   const [erro, setErro] = useState<string | null>(null)
@@ -210,7 +238,7 @@ function QueroEsta({
     setPedida(true)
     setErro(null)
     comecar(async () => {
-      const r = await queroEsta(plataforma)
+      const r = await solicitar(plataforma)
       if (!r.ok) {
         setPedida(false)
         setErro(r.motivo)
@@ -221,8 +249,8 @@ function QueroEsta({
   if (pedida) {
     return (
       <p role="status" className="flex flex-col rounded-[10px] bg-emerald-400/[0.09] px-3 py-2 text-[12px] leading-5">
-        <span className="font-bold text-ok">✓ Pedido anotado</span>
-        <span className="text-muted">Conta a favor dela na fila das próximas.</span>
+        <span className="font-bold text-ok">✓ Solicitação registrada</span>
+        <span className="text-muted">Ela conta a favor desta plataforma na fila das próximas integrações.</span>
       </p>
     )
   }
@@ -234,7 +262,7 @@ function QueroEsta({
         onClick={pedir}
         className="botao-secundario botao-md self-start"
       >
-        Quero esta
+        Solicitar integração
       </button>
       {erro && (
         <p role="alert" className="text-[11.5px] leading-4 text-perigo">
@@ -316,7 +344,7 @@ function OQueRende() {
   )
 }
 
-function Rende({ icone, titulo, texto, breve }: { icone: ReactNode; titulo: string; texto: string; breve?: boolean }) {
+export function Rende({ icone, titulo, texto, breve }: { icone: ReactNode; titulo: string; texto: string; breve?: boolean }) {
   return (
     <li className="flex gap-3">
       <span className="flex size-8 shrink-0 items-center justify-center rounded-[10px] bg-primary-weak text-primary">{icone}</span>
