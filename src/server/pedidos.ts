@@ -1,11 +1,10 @@
 import 'server-only'
-import { dentroDaJanela } from '@/channels/janela'
 import type { AutorDaSaida } from '@/core/autor-da-mensagem'
 import type { ItemCobrado } from '@/core/cobrar-do-catalogo'
-import { avisoDoStatus, podeMover, temPedidos, type StatusDePedido } from '@/core/pedidos'
-import { adaptadorDoCanal } from './adaptador-do-canal'
+import { MODELOS_DO_PEDIDO } from '@/core/modelos-do-pedido'
+import { podeMover, temPedidos, type StatusDePedido } from '@/core/pedidos'
+import { avisarEtapaDoPedido } from './avisar-etapa'
 import { nomesDosCobrados, type CobrancaRegistrada } from './repos/cobrancas'
-import { confirmarEntrega, contextoDeResposta, registrarSaida } from './repos/conversas'
 import {
   acharPedido,
   apagarPedidoQueNaoSaiu,
@@ -23,6 +22,7 @@ import {
 } from './repos/pedidos'
 import { listarProdutos } from './repos/produtos'
 import { nichoDaConta } from './repos/recursos'
+import { listarTemplates } from './repos/templates'
 
 /**
  * O pedido feito pela conversa (cobrança camada 2, parte a).
@@ -168,8 +168,9 @@ export type PedidoMovido =
   | { ok: false; erro: string }
 
 /**
- * A equipe move o pedido pela tela. Cancelar devolve o estoque. Quando a etapa
- * tem aviso e a conversa está dentro da janela, a pessoa fica sabendo.
+ * A equipe (ou o entregador, pelo link) move o pedido. Cancelar devolve o
+ * estoque. Quando a etapa tem aviso, a pessoa fica sabendo: na conversa
+ * dentro das 24 horas, pelo modelo aprovado fora delas (`avisar-etapa.ts`).
  */
 export async function moverPedido(
   clienteId: string,
@@ -186,24 +187,8 @@ export async function moverPedido(
   if (!movido) return { ok: false, erro: 'O pedido mudou enquanto isso. Atualize a página.' }
   if (para === 'cancelado') await devolverEstoque(clienteId, baixasDe(movido.itens))
 
-  const aviso = avisoDoStatus(para, movido.numero, nicho, movido.entrega)
-  const avisado = aviso && movido.contatoId ? await avisarNaConversa(clienteId, movido.contatoId, aviso, autor) : false
-  return { ok: true, pedido: movido, avisado }
-}
-
-/** Só dentro da janela: fora dela, só modelo aprovado chega, e etapa de pedido não tem modelo. */
-async function avisarNaConversa(clienteId: string, contatoId: string, texto: string, autor: AutorDaSaida | null): Promise<boolean> {
-  try {
-    const contexto = await contextoDeResposta(clienteId, contatoId)
-    if (!contexto || !dentroDaJanela(contexto)) return false
-    const canal = await adaptadorDoCanal(contexto.canal)
-    const saida = await registrarSaida({ contatoId, sessaoId: contexto.sessaoId, texto, payload: { pedido_aviso: true }, autor })
-    await confirmarEntrega(saida, await canal.enviarTexto(contexto.waId, texto))
-    return true
-  } catch (erro) {
-    console.error('[pedidos] o aviso da etapa não saiu', erro)
-    return false
-  }
+  const aviso = await avisarEtapaDoPedido(clienteId, movido, autor)
+  return { ok: true, pedido: movido, avisado: aviso === 'na_janela' || aviso === 'por_modelo' }
 }
 
 /** O pedido como a tela Pedidos desenha: o nome do contato junto, e o total só para quem vê valores. */
@@ -220,8 +205,26 @@ export type CartaoDePedido = {
   totalCentavos: number | null
   itens: { nome: string; quantidade: number }[]
   origem: Pedido['origem']
+  plataforma: Pedido['plataforma']
+  /** O número da plataforma de fora; nulo no pedido feito aqui. */
+  numeroExibido: string | null
+  rastreioUrl: string | null
+  /** O cliente recebeu o aviso da etapa atual. */
+  clienteAvisado: boolean
   aguardaPagamento: boolean
   criadoEm: string
+}
+
+/**
+ * Os modelos de aviso da conta (`MODELOS_DO_PEDIDO`): `faltam` quando algum
+ * não foi criado ou foi recusado, `em_analise` quando todos existem e algum
+ * espera a Meta, `aprovados` quando os quatro já saem.
+ */
+export async function estadoDosModelosDoPedido(clienteId: string): Promise<'faltam' | 'em_analise' | 'aprovados'> {
+  const existentes = await listarTemplates(clienteId)
+  const status = MODELOS_DO_PEDIDO.map((m) => existentes.find((t) => t.nome === m.nome)?.status)
+  if (status.some((s) => !s || s === 'recusado' || s === 'rascunho')) return 'faltam'
+  return status.every((s) => s === 'aprovado') ? 'aprovados' : 'em_analise'
 }
 
 export async function cartoesDosPedidos(clienteId: string, verValores: boolean): Promise<CartaoDePedido[]> {
@@ -234,7 +237,9 @@ export async function cartoesDosPedidos(clienteId: string, verValores: boolean):
     id: p.id,
     numero: p.numero,
     contatoId: p.contatoId,
-    contato: p.contatoId ? nomes.get(p.contatoId) || 'Sem nome' : 'Contato apagado',
+    contato: p.contatoId
+      ? nomes.get(p.contatoId) || p.nomeCliente || 'Sem nome'
+      : p.nomeCliente || (p.plataforma ? 'Cliente sem telefone' : 'Contato apagado'),
     status: p.status,
     entrega: p.entrega,
     endereco: p.endereco,
@@ -242,6 +247,10 @@ export async function cartoesDosPedidos(clienteId: string, verValores: boolean):
     totalCentavos: verValores ? p.totalCentavos : null,
     itens: p.itens.map((i) => ({ nome: i.nome, quantidade: i.quantidade })),
     origem: p.origem,
+    plataforma: p.plataforma,
+    numeroExibido: p.numeroExibido,
+    rastreioUrl: p.rastreioUrl,
+    clienteAvisado: p.clienteAvisadoEm !== null,
     aguardaPagamento: p.status === 'novo' && p.cobrancaId !== null,
     criadoEm: p.criadoEm,
   }))

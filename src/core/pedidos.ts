@@ -90,7 +90,7 @@ export const COLUNA_DO_STATUS: Partial<Record<StatusDePedido, string>> = {
  */
 export function avisoDoStatus(
   status: StatusDePedido,
-  numero: number,
+  numero: number | string,
   nicho: Nicho | null | undefined,
   entrega: EntregaDoPedido,
 ): string | null {

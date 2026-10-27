@@ -5,7 +5,7 @@ import { SemAcesso } from '@/components/design/sem-acesso'
 import { QuadroDePedidos } from '@/components/pedidos/quadro-de-pedidos'
 import { pacoteDo, rotuloNaBarra } from '@/core/nichos'
 import { STATUS_DE_PEDIDO, etapasDoRamo, pedidosDoRamo, rotuloDoStatus, type StatusDePedido } from '@/core/pedidos'
-import { cartoesDosPedidos } from '@/server/pedidos'
+import { cartoesDosPedidos, estadoDosModelosDoPedido } from '@/server/pedidos'
 import { capacidadeNaPagina } from '@/server/permissoes'
 import { acharCliente } from '@/server/repos/clientes'
 import { nichoDaConta } from '@/server/repos/recursos'
@@ -36,7 +36,11 @@ export default async function Pagina({ params }: { params: Promise<{ clienteId: 
   }
 
   const verValores = (await capacidadeNaPagina(clienteId, 'ler_valores', 'todos')) !== null
-  const cartoes = await cartoesDosPedidos(clienteId, verValores)
+  const [cartoes, estadoDosModelos, podeCriarModelos] = await Promise.all([
+    cartoesDosPedidos(clienteId, verValores),
+    estadoDosModelosDoPedido(clienteId).catch(() => 'aprovados' as const),
+    capacidadeNaPagina(clienteId, 'configurar_operacao', 'todos'),
+  ])
   const rotulos = Object.fromEntries(STATUS_DE_PEDIDO.map((s) => [s, rotuloDoStatus(s, nicho)])) as Record<
     StatusDePedido,
     string
@@ -52,11 +56,12 @@ export default async function Pagina({ params }: { params: Promise<{ clienteId: 
           etapas={etapasDoRamo(nicho)}
           rotulos={rotulos}
           visaoInicial={pedidosDoRamo(nicho)?.visao ?? 'lista'}
+          modelos={{ estado: estadoDosModelos, podeCriar: podeCriarModelos !== null }}
           topo={{
             trilha: [{ rotulo: comercio }, { rotulo: 'Pedidos' }],
             titulo: 'Pedidos',
             descricao:
-              'Os pedidos feitos pela conversa. O pagamento confirmado leva o pedido para Pago sozinho; as outras etapas a equipe muda aqui, e a pessoa é avisada na conversa.',
+              'Os pedidos da conversa, do cardápio digital e do link do entregador. O pagamento confirmado leva o pedido para Pago sozinho; as outras etapas a equipe muda aqui, e o cliente é avisado no WhatsApp.',
           }}
         />
       </Miolo>

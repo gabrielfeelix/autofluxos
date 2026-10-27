@@ -1,5 +1,6 @@
 import 'server-only'
 import type { PedidoParaAnalise } from '@/core/analise-de-pedidos'
+import type { PedidoDeFora, PlataformaDePedido } from '@/core/pedidos-de-fora'
 import { COLUNA_DO_STATUS, type EntregaDoPedido, type StatusDePedido } from '@/core/pedidos'
 import { db, ehIdInvalido } from '../db'
 
@@ -18,7 +19,7 @@ import { db, ehIdInvalido } from '../db'
  */
 
 export type { EntregaDoPedido }
-export type OrigemDoPedido = 'inbox' | 'fluxo' | 'ia'
+export type OrigemDoPedido = 'inbox' | 'fluxo' | 'ia' | 'externo'
 
 export type ItemDoPedido = {
   /** O produto do catálogo próprio; nulo para item da loja on-line. */
@@ -50,6 +51,17 @@ export type Pedido = {
   canceladoEm: string | null
   criadoEm: string
   itens: ItemDoPedido[]
+  /** Pedido de fora (0154): de onde veio. Nulo no pedido feito aqui. */
+  plataforma: PlataformaDePedido | null
+  idExterno: string | null
+  /** O número que o cliente vê na plataforma; nulo no pedido feito aqui. */
+  numeroExibido: string | null
+  /** Como veio da plataforma, para o pedido sem contato. */
+  telefone: string | null
+  nomeCliente: string | null
+  rastreioUrl: string | null
+  /** Quando o cliente recebeu o aviso da etapa atual. */
+  clienteAvisadoEm: string | null
 }
 
 type LinhaDoItem = {
@@ -79,11 +91,18 @@ type Linha = {
   entregue_em: string | null
   cancelado_em: string | null
   criado_em: string
+  plataforma: PlataformaDePedido | null
+  id_externo: string | null
+  numero_exibido: string | null
+  telefone: string | null
+  nome_cliente: string | null
+  rastreio_url: string | null
+  cliente_avisado_em: string | null
   pedido_itens?: LinhaDoItem[]
 }
 
 const COLUNAS =
-  'id, cliente_id, numero, contato_id, cobranca_id, entrega, endereco, observacao, total_centavos, status, origem, criado_por, pago_em, em_preparo_em, saiu_em, entregue_em, cancelado_em, criado_em, pedido_itens (produto_id, produto_externo, nome, quantidade, valor_centavos)'
+  'id, cliente_id, numero, contato_id, cobranca_id, entrega, endereco, observacao, total_centavos, status, origem, criado_por, pago_em, em_preparo_em, saiu_em, entregue_em, cancelado_em, criado_em, plataforma, id_externo, numero_exibido, telefone, nome_cliente, rastreio_url, cliente_avisado_em, pedido_itens (produto_id, produto_externo, nome, quantidade, valor_centavos)'
 
 function paraPedido(l: Linha): Pedido {
   return {
@@ -105,6 +124,13 @@ function paraPedido(l: Linha): Pedido {
     entregueEm: l.entregue_em,
     canceladoEm: l.cancelado_em,
     criadoEm: l.criado_em,
+    plataforma: l.plataforma,
+    idExterno: l.id_externo,
+    numeroExibido: l.numero_exibido,
+    telefone: l.telefone,
+    nomeCliente: l.nome_cliente,
+    rastreioUrl: l.rastreio_url,
+    clienteAvisadoEm: l.cliente_avisado_em,
     itens: (l.pedido_itens ?? []).map((i) => ({
       produtoId: i.produto_id,
       produtoExterno: i.produto_externo,
@@ -135,6 +161,11 @@ export async function inserirPedido(entrada: {
   origem: OrigemDoPedido
   criadoPor: string | null
   itens: ItemDoPedido[]
+  /** Só o pedido de fora: as colunas da 0154. */
+  deFora?: { status: StatusDePedido; quando: Date } & Pick<
+    PedidoDeFora,
+    'plataforma' | 'idExterno' | 'numeroExibido' | 'telefone' | 'nome' | 'rastreioUrl'
+  >
 }): Promise<Pedido> {
   for (let tentativa = 0; tentativa < 5; tentativa++) {
     const { data: ultimo, error: erroDoNumero } = await db()
@@ -159,9 +190,13 @@ export async function inserirPedido(entrada: {
         total_centavos: entrada.totalCentavos,
         origem: entrada.origem,
         criado_por: entrada.criadoPor,
+        ...(entrada.deFora ? colunasDeFora(entrada.deFora) : {}),
       })
       .select('id')
       .single()
+    // A trava do pedido de fora (`pedidos_de_fora`) também é 23505: quem
+    // chamou relê pelo id externo, e o número não muda de tentativa.
+    if (error?.code === '23505' && entrada.deFora && error.message.includes('pedidos_de_fora')) throw new PedidoDeForaRepetido()
     if (error?.code === '23505') continue
     if (error) throw new Error(`não foi possível registrar o pedido: ${error.message}`)
     const id = (data as { id: string }).id
@@ -189,6 +224,111 @@ export async function inserirPedido(entrada: {
     return pedido
   }
   throw new Error('não foi possível numerar o pedido: muitas vendas ao mesmo tempo')
+}
+
+/**
+ * O pedido de fora gravado uma vez só: acha pelo id externo ou cria na etapa
+ * em que veio. `antes` é a etapa que já estava gravada (nulo quando nasceu
+ * agora); andar a etapa é de quem chamou, por `mudarStatusDoPedido`.
+ */
+export async function gravarPedidoDeFora(
+  clienteId: string,
+  p: PedidoDeFora,
+  contatoId: string | null,
+  quando: Date = new Date(),
+): Promise<{ pedido: Pedido; antes: StatusDePedido | null }> {
+  const existente = await pedidoDeFora(clienteId, p.plataforma, p.idExterno)
+  if (existente) return { pedido: existente, antes: existente.status }
+  try {
+    const pedido = await inserirPedido({
+      clienteId,
+      contatoId,
+      entrega: p.entrega,
+      endereco: p.entrega === 'entrega' ? (p.endereco?.slice(0, 300) ?? null) : null,
+      observacao: null,
+      totalCentavos: Math.max(0, Math.min(100_000_000, Math.round(p.totalCentavos))),
+      origem: 'externo',
+      criadoPor: null,
+      itens: p.itens
+        .filter((i) => i.nome.trim() && i.quantidade > 0)
+        .map((i) => ({
+          produtoId: null,
+          produtoExterno: null,
+          nome: i.nome.trim(),
+          quantidade: Math.min(50, Math.round(i.quantidade)),
+          valorCentavos: Math.max(0, Math.round(i.precoCentavos)),
+        })),
+      deFora: { ...p, status: p.status, quando },
+    })
+    return { pedido, antes: null }
+  } catch (erro) {
+    if (!(erro instanceof PedidoDeForaRepetido)) throw erro
+    const gravado = await pedidoDeFora(clienteId, p.plataforma, p.idExterno)
+    if (!gravado) throw erro
+    return { pedido: gravado, antes: gravado.status }
+  }
+}
+
+/** Outra chamada gravou o mesmo pedido de fora no meio: relê em vez de duplicar. */
+export class PedidoDeForaRepetido extends Error {
+  constructor() {
+    super('o pedido de fora já foi gravado')
+  }
+}
+
+function colunasDeFora(f: NonNullable<Parameters<typeof inserirPedido>[0]['deFora']>): Record<string, unknown> {
+  const coluna = COLUNA_DO_STATUS[f.status]
+  return {
+    status: f.status,
+    ...(coluna ? { [coluna]: f.quando.toISOString() } : {}),
+    plataforma: f.plataforma,
+    id_externo: f.idExterno.slice(0, 128),
+    numero_exibido: f.numeroExibido.slice(0, 40) || null,
+    telefone: f.telefone,
+    nome_cliente: f.nome?.slice(0, 120) || null,
+    rastreio_url: f.rastreioUrl,
+  }
+}
+
+/** O pedido de fora pelo id na plataforma, ou `null`. */
+export async function pedidoDeFora(
+  clienteId: string,
+  plataforma: PlataformaDePedido,
+  idExterno: string,
+): Promise<Pedido | null> {
+  const { data, error } = await db()
+    .from('pedidos')
+    .select(COLUNAS)
+    .eq('cliente_id', clienteId)
+    .eq('plataforma', plataforma)
+    .eq('id_externo', idExterno.slice(0, 128))
+    .maybeSingle()
+  if (ehIdInvalido(error) || tabelaAusente(error)) return null
+  if (error) throw new Error(`não foi possível ler o pedido de fora: ${error.message}`)
+  return data ? paraPedido(data as unknown as Linha) : null
+}
+
+/** O que muda num pedido de fora sem mudar a etapa: o link de rastreio e o contato que nasceu depois. */
+export async function completarPedidoDeFora(
+  clienteId: string,
+  id: string,
+  campos: { rastreioUrl?: string | null; contatoId?: string | null },
+): Promise<void> {
+  const mudar: Record<string, unknown> = {}
+  if (campos.rastreioUrl !== undefined) mudar.rastreio_url = campos.rastreioUrl
+  if (campos.contatoId !== undefined) mudar.contato_id = campos.contatoId
+  if (Object.keys(mudar).length === 0) return
+  const { error } = await db().from('pedidos').update(mudar).eq('cliente_id', clienteId).eq('id', id)
+  if (error) throw new Error(`não foi possível completar o pedido de fora: ${error.message}`)
+}
+
+/** O cliente recebeu o aviso da etapa atual (`null` apaga, quando a etapa muda e o aviso não sai). */
+export async function marcarClienteAvisado(clienteId: string, id: string, quando: Date | null): Promise<void> {
+  await db()
+    .from('pedidos')
+    .update({ cliente_avisado_em: quando?.toISOString() ?? null })
+    .eq('cliente_id', clienteId)
+    .eq('id', id)
 }
 
 /** Só o pedido que nunca virou cobrança: nada foi cobrado de ninguém. */
@@ -257,7 +397,7 @@ export async function mudarStatusDoPedido(
   const coluna = COLUNA_DO_STATUS[para]
   const { data, error } = await db()
     .from('pedidos')
-    .update({ status: para, ...(coluna ? { [coluna]: quando.toISOString() } : {}) })
+    .update({ status: para, cliente_avisado_em: null, ...(coluna ? { [coluna]: quando.toISOString() } : {}) })
     .eq('cliente_id', clienteId)
     .eq('id', id)
     .in('status', [...de])

@@ -21,6 +21,19 @@ export const PLATAFORMAS_DE_PEDIDO = [
 ] as const
 export type PlataformaDePedido = (typeof PLATAFORMAS_DE_PEDIDO)[number]
 
+export const NOME_DA_PLATAFORMA: Record<PlataformaDePedido, string> = {
+  cardapio_web: 'Cardápio Web',
+  olaclick: 'OlaClick',
+  opendelivery: 'Open Delivery',
+  goomer: 'Goomer',
+  delivery_direto: 'Delivery Direto',
+  neemo: 'Neemo',
+  entregador: 'Link do entregador',
+}
+
+/** As etapas que avisam o cliente: é nelas que "cliente não avisado" faz sentido. */
+export const ETAPAS_QUE_AVISAM: readonly StatusDePedido[] = ['em_preparo', 'saiu', 'cancelado']
+
 export type ItemDePedidoDeFora = { nome: string; quantidade: number; precoCentavos: number }
 
 export type PedidoDeFora = {

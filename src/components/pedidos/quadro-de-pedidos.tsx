@@ -10,8 +10,9 @@ import { useConfirmar } from '@/components/design/confirmar'
 import { Pilula, type TomDaPilula } from '@/components/design/pilula'
 import { PopoverDoQuadro } from '@/components/quadros/popover-do-quadro'
 import type { EtapaDoPedido, StatusDePedido } from '@/core/pedidos'
+import { ETAPAS_QUE_AVISAM, NOME_DA_PLATAFORMA } from '@/core/pedidos-de-fora'
 import { hrefDaFicha } from '@/core/volta-da-ficha'
-import { acaoListarPedidos, acaoMoverPedido } from '@/server/acoes-pedidos'
+import { acaoCriarModelosDoPedido, acaoListarPedidos, acaoMoverPedido } from '@/server/acoes-pedidos'
 import type { CartaoDePedido } from '@/server/pedidos'
 
 const reais = (centavos: number) =>
@@ -76,6 +77,7 @@ export function QuadroDePedidos({
   rotulos,
   visaoInicial,
   topo,
+  modelos,
 }: {
   clienteId: string
   inicial: CartaoDePedido[]
@@ -83,12 +85,16 @@ export function QuadroDePedidos({
   rotulos: Record<StatusDePedido, string>
   visaoInicial: 'quadro' | 'lista'
   topo: TopoDaTela
+  /** Os modelos de aviso fora das 24 horas; `podeCriar` só para quem configura a operação. */
+  modelos: { estado: 'faltam' | 'em_analise' | 'aprovados'; podeCriar: boolean }
 }) {
   const [lista, setLista] = useState(inicial)
   const [visao, setVisao] = useState(visaoInicial)
   const [filtro, setFiltro] = useState<Filtro>('abertos')
   const [agora, setAgora] = useState(() => Date.now())
   const [recado, setRecado] = useState<{ texto: string; erro?: boolean } | null>(null)
+  const [estadoDosModelos, setEstadoDosModelos] = useState(modelos.estado)
+  const [criandoModelos, setCriandoModelos] = useState(false)
   const emAndamento = useRef(0)
   const { confirmar, dialogo } = useConfirmar()
 
@@ -108,9 +114,24 @@ export function QuadroDePedidos({
     return etapas[ordemDaEtapa(s) + 1] ?? null
   }
 
+  async function criarModelos() {
+    setCriandoModelos(true)
+    setEstadoDosModelos('em_analise')
+    const r = await acaoCriarModelosDoPedido(clienteId).catch(() => ({ ok: false as const, erro: 'A Meta não respondeu agora.' }))
+    setCriandoModelos(false)
+    if (!r.ok) {
+      setEstadoDosModelos('faltam')
+      setRecado({ texto: r.erro, erro: true })
+      return
+    }
+    setRecado({ texto: 'Modelos de aviso enviados à Meta. A aprovação costuma levar alguns minutos.' })
+  }
+
   async function mover(p: CartaoDePedido, para: StatusDePedido) {
     emAndamento.current++
-    setLista((atual) => atual.map((x) => (x.id === p.id ? { ...x, status: para, aguardaPagamento: false } : x)))
+    setLista((atual) =>
+      atual.map((x) => (x.id === p.id ? { ...x, status: para, aguardaPagamento: false, clienteAvisado: false } : x)),
+    )
     try {
       const r = await acaoMoverPedido(clienteId, p.id, para)
       if (!r.ok) {
@@ -118,8 +139,9 @@ export function QuadroDePedidos({
         setRecado({ texto: r.erro, erro: true })
         return { ok: false as const, erro: r.erro }
       }
+      if (r.avisado) setLista((atual) => atual.map((x) => (x.id === p.id ? { ...x, clienteAvisado: true } : x)))
       setRecado({
-        texto: `Pedido ${p.numero}: ${rotulos[para].toLowerCase()}.${r.avisado ? ' A pessoa foi avisada na conversa.' : ''}`,
+        texto: `Pedido ${p.numeroExibido ?? p.numero}: ${rotulos[para].toLowerCase()}.${r.avisado ? ' O cliente foi avisado no WhatsApp.' : ''}`,
       })
       return { ok: true as const }
     } catch {
@@ -133,14 +155,16 @@ export function QuadroDePedidos({
 
   const cancelar = (p: CartaoDePedido) =>
     confirmar({
-      titulo: `Cancelar o pedido ${p.numero}?`,
+      titulo: `Cancelar o pedido ${p.numeroExibido ?? p.numero}?`,
       descricao: p.aguardaPagamento
-        ? 'O Pix deixa de valer, o estoque volta e a pessoa recebe o aviso na conversa, se ela estiver dentro das 24 horas.'
-        : 'O estoque volta e a pessoa recebe o aviso na conversa, se ela estiver dentro das 24 horas. Se já pagou, o estorno é feito no gateway.',
+        ? 'O Pix deixa de valer, o estoque volta e o cliente recebe o aviso no WhatsApp.'
+        : 'O estoque volta e o cliente recebe o aviso no WhatsApp. Se já pagou, o estorno é feito no gateway.',
       rotulo: 'Cancelar pedido',
       tom: 'perigo',
       aoConfirmar: () => mover(p, 'cancelado'),
     })
+
+  const naoAvisado = (p: CartaoDePedido) => !p.clienteAvisado && ETAPAS_QUE_AVISAM.includes(p.status)
 
   const abertos = lista.filter((p) => ABERTOS.includes(p.status))
   const naLista =
@@ -167,7 +191,7 @@ export function QuadroDePedidos({
         }`}
       >
         <header className="flex items-center gap-2">
-          <span className="text-[14px] font-bold tracking-[-0.01em] tabular-nums">#{p.numero}</span>
+          <span className="text-[14px] font-bold tracking-[-0.01em] tabular-nums">#{p.numeroExibido ?? p.numero}</span>
           <span className="text-[11.5px] whitespace-nowrap text-dim tabular-nums">{haQuanto(p.criadoEm, agora)}</span>
           <span className="flex-1" />
           {!compacto && <Pilula tom={TOM[p.status]}>{rotulos[p.status]}</Pilula>}
@@ -207,10 +231,12 @@ export function QuadroDePedidos({
           <p className="rounded-[8px] bg-surface-strong/70 px-2.5 py-1.5 text-[12px] leading-[1.45] text-soft">{p.endereco}</p>
         )}
 
-        {p.aguardaPagamento && (
-          <span className="self-start">
-            <Pilula tom="aviso">Aguardando pagamento</Pilula>
-          </span>
+        {(p.aguardaPagamento || p.plataforma || naoAvisado(p)) && (
+          <div className="flex flex-wrap gap-1.5">
+            {p.aguardaPagamento && <Pilula tom="aviso">Aguardando pagamento</Pilula>}
+            {p.plataforma && <Pilula tom="neutro">{NOME_DA_PLATAFORMA[p.plataforma]}</Pilula>}
+            {naoAvisado(p) && <Pilula tom="aviso">Cliente não avisado</Pilula>}
+          </div>
         )}
 
         <footer className={`flex border-t border-line-soft pt-2.5 ${compacto ? 'flex-col gap-2' : 'items-center gap-2'}`}>
@@ -260,7 +286,20 @@ export function QuadroDePedidos({
         {...topo}
         contagem={<Contagem>{abertos.length} {abertos.length === 1 ? 'aberto' : 'abertos'}</Contagem>}
         acoes={
-          <Alternador
+          <div className="flex flex-wrap items-center gap-2">
+            {estadoDosModelos === 'faltam' && modelos.podeCriar && (
+              <button
+                type="button"
+                disabled={criandoModelos}
+                onClick={() => void criarModelos()}
+                title="Cria na Meta os modelos que avisam o cliente de cada etapa, mesmo fora das 24 horas."
+                className="h-9 rounded-[10px] border border-line bg-panel px-3 text-[12.5px] font-semibold text-ink transition hover:border-primary/40 hover:text-primary disabled:opacity-60"
+              >
+                {criandoModelos ? 'Criando modelos…' : 'Criar modelos de aviso'}
+              </button>
+            )}
+            {estadoDosModelos === 'em_analise' && <Pilula tom="neutro">Modelos de aviso em análise</Pilula>}
+            <Alternador
             rotulo="Ver pedidos como"
             ativa={visao}
             aoEscolher={setVisao}
@@ -268,7 +307,8 @@ export function QuadroDePedidos({
               { chave: 'quadro', rotulo: 'Quadro' },
               { chave: 'lista', rotulo: 'Lista' },
             ]}
-          />
+            />
+          </div>
         }
       />
 

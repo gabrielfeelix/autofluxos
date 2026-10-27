@@ -1,0 +1,86 @@
+import 'server-only'
+import { dentroDaJanela } from '@/channels/janela'
+import type { AutorDaSaida } from '@/core/autor-da-mensagem'
+import { modeloDaEtapa, valoresDoAviso } from '@/core/modelos-do-pedido'
+import { avisoDoStatus } from '@/core/pedidos'
+import { adaptadorDoCanal } from './adaptador-do-canal'
+import { modeloComClique } from './link-do-clique'
+import { acharCliente } from './repos/clientes'
+import { acharContato, confirmarEntrega, contextoDeResposta, registrarSaida } from './repos/conversas'
+import { marcarClienteAvisado, type Pedido } from './repos/pedidos'
+import { nichoDaConta } from './repos/recursos'
+import { listarTemplatesAprovados } from './repos/templates'
+
+export type AvisoDaEtapa = 'na_janela' | 'por_modelo' | 'sem_modelo' | 'sem_contato' | 'sem_aviso'
+
+/**
+ * Avisa o cliente da etapa em que o pedido acabou de entrar.
+ *
+ * Dentro das 24 horas, o texto de `avisoDoStatus` na conversa. Fora delas, o
+ * modelo aprovado da etapa (`MODELOS_DO_PEDIDO`): é o que faz o "saiu para
+ * entrega" chegar a quem pediu pelo cardápio e nunca abriu conversa. Sem
+ * modelo aprovado, nada sai, e `cliente_avisado_em` fica nulo: a tela mostra
+ * "cliente não avisado" em vez de fingir.
+ *
+ * Bot pausado vale para o modelo também: quem pausou pediu silêncio.
+ */
+export async function avisarEtapaDoPedido(
+  clienteId: string,
+  pedido: Pedido,
+  autor: AutorDaSaida | null,
+): Promise<AvisoDaEtapa> {
+  const nicho = await nichoDaConta(clienteId)
+  const numero = pedido.numeroExibido ?? String(pedido.numero)
+  const texto = avisoDoStatus(pedido.status, numero, nicho, pedido.entrega)
+  if (!texto) return 'sem_aviso'
+  if (!pedido.contatoId) return 'sem_contato'
+
+  try {
+    const contexto = await contextoDeResposta(clienteId, pedido.contatoId)
+    if (!contexto) return 'sem_contato'
+    const canal = await adaptadorDoCanal(contexto.canal)
+
+    if (dentroDaJanela(contexto)) {
+      const saida = await registrarSaida({
+        contatoId: pedido.contatoId,
+        sessaoId: contexto.sessaoId,
+        texto,
+        payload: { pedido_aviso: true },
+        autor,
+      })
+      await confirmarEntrega(saida, await canal.enviarTexto(contexto.waId, texto))
+      await marcarClienteAvisado(clienteId, pedido.id, new Date())
+      return 'na_janela'
+    }
+
+    const modelo = modeloDaEtapa(pedido.status, pedido.entrega)
+    const [aprovados, contato, conta] = await Promise.all([
+      listarTemplatesAprovados(clienteId),
+      acharContato(pedido.contatoId),
+      acharCliente(clienteId),
+    ])
+    const aprovado = modelo ? aprovados.find((t) => t.nome === modelo.nome) : undefined
+    const valores = valoresDoAviso(numero, conta?.nome ?? '')
+    if (!modelo || !aprovado || !valores || !contato?.automacaoAtiva || !canal.enviarTemplate) return 'sem_modelo'
+
+    const corpo = valores.reduce((t, v, i) => t.replace(`{{${i + 1}}}`, v), modelo.corpo)
+    const saida = await registrarSaida({
+      contatoId: pedido.contatoId,
+      sessaoId: contexto.sessaoId,
+      texto: corpo,
+      payload: { pedido_aviso: true, modelo: aprovado.nome },
+      autor,
+    })
+    const envio = await canal.enviarTemplate(
+      contexto.waId,
+      modeloComClique({ nome: aprovado.nome, idioma: aprovado.idioma, valores: { corpo: valores } }, aprovado),
+    )
+    if (envio.situacao === 'falhou') return 'sem_modelo'
+    await confirmarEntrega(saida, envio.wamid)
+    await marcarClienteAvisado(clienteId, pedido.id, new Date())
+    return 'por_modelo'
+  } catch (erro) {
+    console.error('[pedidos] o aviso da etapa não saiu', erro)
+    return 'sem_modelo'
+  }
+}
