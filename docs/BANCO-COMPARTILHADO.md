@@ -1474,6 +1474,19 @@ extração explícito para os objetos de `public`.
   insert e delete). Ensaio em transação com `rollback` limpo antes. Releitura:
   tabela existe, `anon` sem `select`, coluna criada, nenhuma loja ligada.
 
+- **a `0154` foi aplicada em 27/out/2026**, pela Management API, numa
+  transação, sem pedir (regra de 27/out/2026: migration aditiva). Pedido de
+  cardápio digital no quadro: sete colunas anuláveis em `pedidos`
+  (`plataforma`, `id_externo`, `numero_exibido`, `telefone`, `nome_cliente`,
+  `rastreio_url`, `cliente_avisado_em`), `pedidos_origem_check` aceitando
+  `externo`, índice único parcial `pedidos_de_fora`; `produtos.origem` e
+  `id_externo` com `produtos_de_fora`; tabela `cardapios_conectados` (RLS
+  ligada, `revoke` de `public, anon, authenticated`, `service_role` com
+  select/insert/update/delete). Sem Docker: ensaio com `rollback` limpo
+  (`anon` sem select, coluna ausente depois). Zero linhas em `pedidos`.
+  Releitura: colunas e check novos, `anon` sem select; Verandi antes e depois
+  com **57** migrations e **44** tabelas; `/rest/v1/` 401 sem chave.
+
 - **SSL obrigatório desde 19/out/2026** (`PUT .../ssl-enforcement`), com
   autorização do dono. Conexão sem TLS leva `ESSLREQUIRED`, inclusive pelo
   pooler. Antes, o SQL direto do AutoFluxos passou a exigir TLS com o
