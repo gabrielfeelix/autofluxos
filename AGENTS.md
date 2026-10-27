@@ -26,4 +26,5 @@ Storage, extensão, função/view SQL ou Data API, leia por inteiro
   projeto. Uma alteração neles exige avaliar os dois produtos.
 - A `service_role` ignora RLS e não isola um produto do outro. Mantenha schema e
   permissões explícitos e nunca aceite identificadores SQL vindos de usuário.
-- Não aplique nada em produção sem autorização explícita do usuário.
+- Alterar o banco de produção é permitido sem pedir, quando fizer sentido para a
+  tarefa. Avise o que fez e confira o resultado (decisão do Gabriel, 27/out/2026).

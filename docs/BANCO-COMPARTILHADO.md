@@ -1461,6 +1461,12 @@ extração explícito para os objetos de `public`.
   `pesquisa_pos_compra_v3`/`_v4`. Sem Docker na WSL nesse dia: só o ensaio em
   transação com `rollback` (limpo, e a coluna não existia depois). Releitura:
   configuração com os modelos v4 > v2 > v1, URL no v4. Nada da Verandi tocado.
+- **`pg_cron` e `pg_net` ligados em 27/out/2026** (AutoFluxos, pela Management
+  API). Globais ao projeto: criam os schemas `cron` e `net`. Um job só,
+  `autofluxos-pedidos-da-loja`, que chama a rota do AutoFluxos a cada 5 min
+  com segredo no Vault (`autofluxos_agendador_segredo`). A Verandi pode usar as
+  mesmas extensões; nome de job sempre com o prefixo do produto. Ver
+  docs/DECISIONS.md, 27/out/2026 (tarde).
 - **a `0153` foi aplicada em 26/out/2026**, com autorização explícita do dono,
   pela Management API. Aditiva: `lojas_integradas.pedidos_lidos_ate`
   (anulável, sem default) e a tabela `status_de_pedido_avisados` (RLS ligada,

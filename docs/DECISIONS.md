@@ -463,3 +463,19 @@ pós-compra que chega 5 h depois perde o momento.
 - Correção da entrada de 26/out: a imagem do cabeçalho mora no **gatilho**
   (`gatilhos_de_evento.modelo.imagem`, commit `9e8b4961`), e agora tem campo na
   tela de Eventos; salvar recusa modelo com cabeçalho de imagem sem ela.
+
+## 27/out/2026 (tarde): agendador vira `pg_cron`, não cron-job.org
+
+O cron-job.org exigia conta criada à mão. O Gabriel liberou alterar o banco
+quando fizer sentido, e o agendador foi para o próprio Supabase:
+
+- `pg_cron` (schema `pg_catalog`) e `pg_net` (schema `extensions`) ligados;
+  criam só os schemas `cron` e `net`, nada em `public` nem em `app_verandi`.
+- Job `autofluxos-pedidos-da-loja`, `*/5 * * * *`, faz `net.http_get` em
+  `/api/manutencao/pedidos` com o segredo lido do Vault
+  (`autofluxos_agendador_segredo`, cópia do `AGENDADOR_SEGREDO` da Vercel).
+  Chamada de prova: `200 {"contas":1,"eventos":0}`.
+- Trocar o `AGENDADOR_SEGREDO` na Vercel exige trocar o do Vault junto
+  (`vault.update_secret`), ou a passada passa a levar 401.
+- O GitHub Actions segue como reserva. A entrada anterior ("pg_cron fora")
+  fica superada por esta.
