@@ -297,6 +297,11 @@ aqui fica o que o cliente ganha.
   entra uma vez só, com o número da plataforma, e a etapa nunca volta atrás
   por aviso atrasado. Cardápio Web, OlaClick, Goomer e outros na fila da tela
   Cardápio e delivery. *(27/out/2026)*
+- **Conecta ao Cardápio Web com a chave de API**: cada pedido de lá entra no
+  quadro na hora (webhook) ou em até 10 minutos, e o cliente recebe no
+  WhatsApp da loja cada etapa que a equipe marca no Cardápio Web. Pedido de
+  marketplace repassado entra sem aviso, porque o telefone não vem.
+  *(27/out/2026)*
 
 ## Medir
 

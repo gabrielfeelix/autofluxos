@@ -34,9 +34,9 @@ export const FICHAS_DE_CARDAPIO: Record<PlataformaDeCardapio, FichaDoCardapio> =
   cardapio_web: {
     id: 'cardapio_web',
     nome: 'Cardápio Web',
-    resumo: 'Catálogo com fotos e complementos, e o status de cada pedido.',
+    resumo: 'Cada pedido entra no quadro, e o cliente é avisado de cada etapa.',
     arquivoDaMarca: 'cardapio_web.png',
-    href: null,
+    href: '/loja/cardapios/cardapio-web',
   },
   olaclick: {
     id: 'olaclick',

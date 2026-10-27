@@ -20,12 +20,17 @@ type Resposta = { ok: true } | { ok: false; motivo: string }
 export function ConectarCardapio({
   clienteId,
   solicitadas,
+  conectadas,
   solicitar,
 }: {
   clienteId: string
   solicitadas: PlataformaDeCardapio[]
+  conectadas: PlataformaDeCardapio[]
   solicitar: (plataforma: PlataformaDeCardapio) => Promise<Resposta>
 }) {
+  const disponiveis = PLATAFORMAS_DE_CARDAPIO.filter((id) => FICHAS_DE_CARDAPIO[id].href)
+  const emBreve = PLATAFORMAS_DE_CARDAPIO.filter((id) => !FICHAS_DE_CARDAPIO[id].href)
+
   return (
     <Miolo largura="cheia">
       <CabecalhoDaTela
@@ -37,6 +42,35 @@ export function ConectarCardapio({
       <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_340px]">
         <div className="flex min-w-0 flex-col gap-5">
           <Grupo titulo="Disponível agora">
+            {disponiveis.map((id) => {
+              const ficha = FICHAS_DE_CARDAPIO[id]
+              const conectada = conectadas.includes(id)
+              return (
+                <article key={id} className="app-card flex flex-col gap-4 p-5 sm:flex-row sm:items-center">
+                  <span
+                    aria-hidden
+                    className="flex size-12 shrink-0 items-center justify-center rounded-[12px] border border-line bg-white p-2"
+                  >
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={`/marcas-de-cardapio/${ficha.arquivoDaMarca}`} alt="" className="size-full object-contain" />
+                  </span>
+                  <div className="min-w-0 flex-1">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <h3 className="text-[15px] font-bold tracking-[-0.01em]">{ficha.nome}</h3>
+                      <Pilula tom={conectada ? 'ok' : 'destaque'}>{conectada ? 'Conectado' : 'Disponível'}</Pilula>
+                    </div>
+                    <p className="mt-1 text-[12.5px] leading-5 text-muted">{ficha.resumo}</p>
+                  </div>
+                  <Link
+                    href={`/clientes/${clienteId}${ficha.href}`}
+                    className={`botao-md shrink-0 ${conectada ? 'botao-secundario' : 'botao-primario'}`}
+                  >
+                    {conectada ? 'Abrir a conexão' : 'Conectar'}
+                    <span aria-hidden>›</span>
+                  </Link>
+                </article>
+              )
+            })}
             <article className="app-card flex flex-col gap-4 p-5 sm:flex-row sm:items-center">
               <span
                 aria-hidden
@@ -54,7 +88,7 @@ export function ConectarCardapio({
                   entregar e em Entreguei, sem login, e o cliente é avisado na hora.
                 </p>
               </div>
-              <Link href={`/clientes/${clienteId}/loja/pedidos`} className="botao-md botao-primario shrink-0">
+              <Link href={`/clientes/${clienteId}/loja/pedidos`} className="botao-md botao-secundario shrink-0">
                 Abrir Pedidos
                 <span aria-hidden>›</span>
               </Link>
@@ -63,7 +97,7 @@ export function ConectarCardapio({
 
           <Grupo titulo="Em breve" nota="Solicite a integração da sua plataforma e ela ganha prioridade.">
             <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-              {PLATAFORMAS_DE_CARDAPIO.map((id) => {
+              {emBreve.map((id) => {
                 const ficha = FICHAS_DE_CARDAPIO[id]
                 return (
                   <article key={id} className="app-card flex flex-col p-5">

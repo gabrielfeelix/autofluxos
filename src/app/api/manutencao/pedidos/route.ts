@@ -1,6 +1,7 @@
 import { iguais } from '@/lib/segredo'
 import { acompanharPedidos } from '@/server/acompanhar-pedidos'
 import { alertar } from '@/server/alertar'
+import { acompanharCardapios } from '@/server/cardapios/passada'
 
 export const dynamic = 'force-dynamic'
 
@@ -8,7 +9,9 @@ export const dynamic = 'force-dynamic'
 export const maxDuration = 60
 
 /**
- * O status dos pedidos da loja virando evento (0153), a cada 10 minutos.
+ * O status dos pedidos da loja virando evento (0153), a cada 10 minutos, e
+ * os pedidos dos cardápios digitais ligados (0154), rede de segurança do
+ * webhook deles.
  *
  * Quem chama é o GitHub Actions (`.github/workflows/pedidos-da-loja.yml`), e
  * não o cron da Vercel: no plano Hobby ele só roda uma vez por dia, e "o
@@ -31,7 +34,12 @@ export async function GET(req: Request) {
   }
 
   try {
-    return Response.json(await acompanharPedidos())
+    const loja = await acompanharPedidos()
+    const cardapios = await acompanharCardapios().catch(async (erro) => {
+      await alertar('a passada dos cardápios falhou', erro)
+      return null
+    })
+    return Response.json({ ...loja, cardapios })
   } catch (erro) {
     await alertar('a passada dos pedidos da loja falhou', erro)
     return Response.json({ erro: 'a passada falhou' }, { status: 500 })
