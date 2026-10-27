@@ -1,0 +1,58 @@
+import { STATUS_DE_PEDIDO, type EntregaDoPedido, type StatusDePedido } from './pedidos'
+
+/**
+ * O pedido que nasce fora do AutoFluxos (cardápio digital, delivery próprio,
+ * link do entregador), sem banco.
+ *
+ * Toda plataforma traduz o pedido dela para este formato, e daí em diante ele
+ * é um pedido do quadro como outro qualquer (`server/receber-pedido-de-fora.ts`).
+ * O status já chega nos nossos seis: o mapa de cada plataforma mora no
+ * conector dela (`src/cardapios/<plataforma>.ts`).
+ */
+
+export const PLATAFORMAS_DE_PEDIDO = [
+  'cardapio_web',
+  'olaclick',
+  'opendelivery',
+  'goomer',
+  'delivery_direto',
+  'neemo',
+  'entregador',
+] as const
+export type PlataformaDePedido = (typeof PLATAFORMAS_DE_PEDIDO)[number]
+
+export type ItemDePedidoDeFora = { nome: string; quantidade: number; precoCentavos: number }
+
+export type PedidoDeFora = {
+  plataforma: PlataformaDePedido
+  /** O id do pedido na plataforma: é ele que impede o mesmo pedido de entrar duas vezes. */
+  idExterno: string
+  /** O número que o cliente vê na plataforma (o "#123" do cardápio). */
+  numeroExibido: string
+  status: StatusDePedido
+  /** Como veio; quem recebe normaliza. `null` quando a plataforma não manda ou mascara. */
+  telefone: string | null
+  nome: string | null
+  entrega: EntregaDoPedido
+  endereco: string | null
+  totalCentavos: number
+  itens: ItemDePedidoDeFora[]
+  rastreioUrl: string | null
+}
+
+/**
+ * O aviso de fora pode mover o pedido? Só para a frente, na ordem de
+ * `STATUS_DE_PEDIDO`, e cancelar vale de qualquer etapa antes do fim. Aviso
+ * atrasado (`em_preparo` chegando depois de `saiu`) não volta a etapa, e o
+ * mesmo aviso duas vezes não move nada.
+ */
+export function podeAvancar(atual: StatusDePedido, novo: StatusDePedido): boolean {
+  if (atual === novo || atual === 'entregue' || atual === 'cancelado') return false
+  if (novo === 'cancelado') return true
+  return STATUS_DE_PEDIDO.indexOf(novo) > STATUS_DE_PEDIDO.indexOf(atual)
+}
+
+/** O evento que a etapa abre, o mesmo `pedido.<status>` dos gatilhos de evento. */
+export function eventoDaEtapa(status: StatusDePedido): string {
+  return `pedido.${status}`
+}

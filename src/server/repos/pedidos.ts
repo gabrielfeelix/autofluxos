@@ -1,6 +1,6 @@
 import 'server-only'
 import type { PedidoParaAnalise } from '@/core/analise-de-pedidos'
-import { COLUNA_DO_STATUS, type StatusDePedido } from '@/core/pedidos'
+import { COLUNA_DO_STATUS, type EntregaDoPedido, type StatusDePedido } from '@/core/pedidos'
 import { db, ehIdInvalido } from '../db'
 
 /**
@@ -17,7 +17,7 @@ import { db, ehIdInvalido } from '../db'
  * SQL direto, que não enxerga `produtos`.
  */
 
-export type EntregaDoPedido = 'entrega' | 'retirada' | 'local'
+export type { EntregaDoPedido }
 export type OrigemDoPedido = 'inbox' | 'fluxo' | 'ia'
 
 export type ItemDoPedido = {

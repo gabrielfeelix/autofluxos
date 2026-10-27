@@ -12,6 +12,8 @@ import { pacoteDo, type Nicho, type PedidosDoRamo } from './nichos'
 export const STATUS_DE_PEDIDO = ['novo', 'pago', 'em_preparo', 'saiu', 'entregue', 'cancelado'] as const
 export type StatusDePedido = (typeof STATUS_DE_PEDIDO)[number]
 
+export type EntregaDoPedido = 'entrega' | 'retirada' | 'local'
+
 export function ehStatusDePedido(valor: unknown): valor is StatusDePedido {
   return typeof valor === 'string' && (STATUS_DE_PEDIDO as readonly string[]).includes(valor)
 }
@@ -90,7 +92,7 @@ export function avisoDoStatus(
   status: StatusDePedido,
   numero: number,
   nicho: Nicho | null | undefined,
-  entrega: 'entrega' | 'retirada' | 'local',
+  entrega: EntregaDoPedido,
 ): string | null {
   const pedido = `Seu pedido ${numero}`
   const envio = pedidosDoRamo(nicho)?.despacho === 'envio'
