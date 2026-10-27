@@ -50,7 +50,7 @@ export const FICHAS_DE_CARDAPIO: Record<PlataformaDeCardapio, FichaDoCardapio> =
     nome: 'Goomer',
     resumo: 'Avisa o cliente de cada etapa, o que a Goomer não faz sozinha.',
     arquivoDaMarca: 'goomer.png',
-    href: null,
+    href: '/loja/cardapios/goomer',
   },
   delivery_direto: {
     id: 'delivery_direto',

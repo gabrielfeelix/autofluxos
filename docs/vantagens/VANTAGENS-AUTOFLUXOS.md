@@ -306,6 +306,10 @@ aqui fica o que o cliente ganha.
   AutoFluxos cadastra o webhook sozinho, sem passo no painel de lá. Cada
   pedido entra no quadro na hora, assinado e conferido, e o cliente recebe no
   WhatsApp da loja cada etapa marcada na OlaClick. *(27/out/2026)*
+- **Avisa o cliente da Goomer, o que a Goomer não faz sozinha**: o lojista
+  gera a chave Open Delivery no Painel Goomer e cola aqui. Os pedidos entram no
+  quadro, o cliente recebe cada etapa no WhatsApp, e o PDV da loja continua
+  funcionando ao lado. *(27/out/2026)*
 
 ## Medir
 

@@ -2,6 +2,7 @@
 
 import { revalidatePath } from 'next/cache'
 import { conectarCardapioWeb, desligarCardapioWeb } from './cardapios/cardapio-web'
+import { conectarGoomer, desligarGoomer } from './cardapios/goomer'
 import { conectarOlaClick, desligarOlaClick } from './cardapios/olaclick'
 import { exigirCapacidade, recusou } from './permissoes'
 import { registrar } from './repos/auditoria'
@@ -69,6 +70,39 @@ export async function acaoDesligarOlaClick(clienteId: string): Promise<Resposta>
 
 export async function acaoAvisarClienteDaOlaClick(clienteId: string, avisar: boolean): Promise<Resposta> {
   return mudarAviso(clienteId, 'olaclick', avisar)
+}
+
+export async function acaoConectarGoomer(
+  clienteId: string,
+  clientId: string,
+  clientSecret: string,
+  avisarCliente: boolean,
+): Promise<Resposta> {
+  const acesso = await exigirCapacidade(clienteId, 'configurar_operacao', 'todos')
+  if (recusou(acesso)) return { ok: false, erro: 'Sua função não permite mexer em integração.' }
+  try {
+    const r = await conectarGoomer(clienteId, clientId, clientSecret, avisarCliente)
+    if (!r.ok) return r
+    await auditar(clienteId, acesso, 'conectou_goomer', 'Goomer')
+    revalidatePath(`/clientes/${clienteId}/loja/cardapios`)
+    return { ok: true, loja: r.loja }
+  } catch (erro) {
+    console.error('[goomer] a conexão não foi gravada', erro)
+    return { ok: false, erro: 'Não foi possível conectar agora. Tente de novo.' }
+  }
+}
+
+export async function acaoDesligarGoomer(clienteId: string): Promise<Resposta> {
+  const acesso = await exigirCapacidade(clienteId, 'configurar_operacao', 'todos')
+  if (recusou(acesso)) return { ok: false, erro: 'Sua função não permite mexer em integração.' }
+  await desligarGoomer(clienteId)
+  await auditar(clienteId, acesso, 'desligou_goomer', 'Goomer')
+  revalidatePath(`/clientes/${clienteId}/loja/cardapios`)
+  return { ok: true }
+}
+
+export async function acaoAvisarClienteDaGoomer(clienteId: string, avisar: boolean): Promise<Resposta> {
+  return mudarAviso(clienteId, 'goomer', avisar)
 }
 
 async function mudarAviso(clienteId: string, plataforma: PlataformaConectavel, avisar: boolean): Promise<Resposta> {

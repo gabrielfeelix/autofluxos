@@ -2,12 +2,14 @@ import 'server-only'
 import { alertar } from '../alertar'
 import { cardapiosAtivos, type CardapioConectado } from '../repos/cardapios'
 import { passadaDoCardapioWeb } from './cardapio-web'
+import { passadaDaGoomer } from './goomer'
 import { passadaDaOlaClick } from './olaclick'
 
 /** A passada de cada plataforma. Plataforma sem conector ainda não entra. */
 const PASSADAS: Partial<Record<CardapioConectado['plataforma'], (c: CardapioConectado) => Promise<number>>> = {
   cardapio_web: passadaDoCardapioWeb,
   olaclick: passadaDaOlaClick,
+  goomer: passadaDaGoomer,
 }
 
 /**

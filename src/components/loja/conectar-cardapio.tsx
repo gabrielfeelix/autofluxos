@@ -12,10 +12,11 @@ type Resposta = { ok: true } | { ok: false; motivo: string }
 /**
  * Comércio > Integrações > Cardápio e delivery (docs/PLANO-INTEGRACOES-CARDAPIO.md).
  *
- * Em cima, o que funciona hoje sem plataforma nenhuma: o link do entregador.
- * Embaixo, cada cardápio digital ainda sem conector, com o logo oficial
- * (`public/marcas-de-cardapio/`) e "Solicitar integração". Quando um conector
- * fica pronto, a ficha ganha `href` e o cartão sobe para "Disponível agora".
+ * Em cima, o que conecta hoje (e o link do entregador, que não depende de
+ * plataforma); embaixo, cada cardápio ainda sem conector, com "Solicitar
+ * integração". Os dois em cartões iguais, com o logo oficial
+ * (`public/marcas-de-cardapio/`). Quando um conector fica pronto, a ficha
+ * ganha `href` e o cartão sobe para "Disponível agora".
  */
 export function ConectarCardapio({
   clienteId,
@@ -42,57 +43,44 @@ export function ConectarCardapio({
       <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_340px]">
         <div className="flex min-w-0 flex-col gap-5">
           <Grupo titulo="Disponível agora">
-            {disponiveis.map((id) => {
-              const ficha = FICHAS_DE_CARDAPIO[id]
-              const conectada = conectadas.includes(id)
-              return (
-                <article key={id} className="app-card flex flex-col gap-4 p-5 sm:flex-row sm:items-center">
-                  <span
-                    aria-hidden
-                    className="flex size-12 shrink-0 items-center justify-center rounded-[12px] border border-line bg-white p-2"
+            <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+              {disponiveis.map((id) => {
+                const ficha = FICHAS_DE_CARDAPIO[id]
+                const conectada = conectadas.includes(id)
+                return (
+                  <Cartao
+                    key={id}
+                    marca={<Marca arquivo={ficha.arquivoDaMarca} />}
+                    selo={<Pilula tom={conectada ? 'ok' : 'destaque'}>{conectada ? 'Conectado' : 'Disponível'}</Pilula>}
+                    nome={ficha.nome}
+                    resumo={ficha.resumo}
                   >
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src={`/marcas-de-cardapio/${ficha.arquivoDaMarca}`} alt="" className="size-full object-contain" />
+                    <Link
+                      href={`/clientes/${clienteId}${ficha.href}`}
+                      className={`botao-md self-start ${conectada ? 'botao-secundario' : 'botao-primario'}`}
+                    >
+                      {conectada ? 'Abrir a conexão' : 'Conectar'}
+                      <span aria-hidden>›</span>
+                    </Link>
+                  </Cartao>
+                )
+              })}
+              <Cartao
+                marca={
+                  <span aria-hidden className="flex size-10 items-center justify-center rounded-[12px] bg-primary-weak text-primary">
+                    <IconeEntregador />
                   </span>
-                  <div className="min-w-0 flex-1">
-                    <div className="flex flex-wrap items-center gap-2">
-                      <h3 className="text-[15px] font-bold tracking-[-0.01em]">{ficha.nome}</h3>
-                      <Pilula tom={conectada ? 'ok' : 'destaque'}>{conectada ? 'Conectado' : 'Disponível'}</Pilula>
-                    </div>
-                    <p className="mt-1 text-[12.5px] leading-5 text-muted">{ficha.resumo}</p>
-                  </div>
-                  <Link
-                    href={`/clientes/${clienteId}${ficha.href}`}
-                    className={`botao-md shrink-0 ${conectada ? 'botao-secundario' : 'botao-primario'}`}
-                  >
-                    {conectada ? 'Abrir a conexão' : 'Conectar'}
-                    <span aria-hidden>›</span>
-                  </Link>
-                </article>
-              )
-            })}
-            <article className="app-card flex flex-col gap-4 p-5 sm:flex-row sm:items-center">
-              <span
-                aria-hidden
-                className="flex size-12 shrink-0 items-center justify-center rounded-[12px] bg-primary-weak text-primary"
+                }
+                selo={<Pilula tom="ok">Incluído</Pilula>}
+                nome="Link do entregador"
+                resumo="Para motoboy próprio: o entregador toca em Saí para entregar e em Entreguei, sem login, e o cliente é avisado na hora."
               >
-                <IconeEntregador />
-              </span>
-              <div className="min-w-0 flex-1">
-                <div className="flex flex-wrap items-center gap-2">
-                  <h3 className="text-[15px] font-bold tracking-[-0.01em]">Link do entregador</h3>
-                  <Pilula tom="ok">Incluído</Pilula>
-                </div>
-                <p className="mt-1 text-[12.5px] leading-5 text-muted">
-                  Para quem entrega com motoboy próprio. Cada pedido gera um link: o entregador toca em Saí para
-                  entregar e em Entreguei, sem login, e o cliente é avisado na hora.
-                </p>
-              </div>
-              <Link href={`/clientes/${clienteId}/loja/pedidos`} className="botao-md botao-secundario shrink-0">
-                Abrir Pedidos
-                <span aria-hidden>›</span>
-              </Link>
-            </article>
+                <Link href={`/clientes/${clienteId}/loja/pedidos`} className="botao-md botao-secundario self-start">
+                  Abrir Pedidos
+                  <span aria-hidden>›</span>
+                </Link>
+              </Cartao>
+            </div>
           </Grupo>
 
           <Grupo titulo="Em breve" nota="Solicite a integração da sua plataforma e ela ganha prioridade.">
@@ -100,20 +88,9 @@ export function ConectarCardapio({
               {emBreve.map((id) => {
                 const ficha = FICHAS_DE_CARDAPIO[id]
                 return (
-                  <article key={id} className="app-card flex flex-col p-5">
-                    <span
-                      aria-hidden
-                      className="mb-4 flex size-10 shrink-0 items-center justify-center rounded-[12px] border border-line bg-white p-1.5"
-                    >
-                      {/* Arquivo estático nosso, de tamanho fixo: `next/image` não acrescenta nada. */}
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img src={`/marcas-de-cardapio/${ficha.arquivoDaMarca}`} alt="" className="size-full object-contain" />
-                    </span>
-                    <h3 className="text-[15px] font-bold tracking-[-0.01em]">{ficha.nome}</h3>
-                    <p className="mt-1 text-[12.5px] leading-5 text-muted">{ficha.resumo}</p>
-                    <span className="min-h-5 flex-1" />
+                  <Cartao key={id} marca={<Marca arquivo={ficha.arquivoDaMarca} />} nome={ficha.nome} resumo={ficha.resumo}>
                     <SolicitarIntegracao plataforma={id} jaPedida={solicitadas.includes(id)} solicitar={solicitar} />
-                  </article>
+                  </Cartao>
                 )
               })}
             </div>
@@ -149,6 +126,44 @@ export function ConectarCardapio({
         </aside>
       </div>
     </Miolo>
+  )
+}
+
+/** O cartão de cada plataforma, igual em "Disponível agora" e "Em breve": muda só o selo e a ação. */
+function Cartao({
+  marca,
+  selo,
+  nome,
+  resumo,
+  children,
+}: {
+  marca: React.ReactNode
+  selo?: React.ReactNode
+  nome: string
+  resumo: string
+  children: React.ReactNode
+}) {
+  return (
+    <article className="app-card flex flex-col p-5">
+      <div className="mb-4 flex items-start justify-between gap-3">
+        {marca}
+        {selo}
+      </div>
+      <h3 className="text-[15px] font-bold tracking-[-0.01em]">{nome}</h3>
+      <p className="mt-1 text-[12.5px] leading-5 text-muted">{resumo}</p>
+      <span className="min-h-5 flex-1" />
+      {children}
+    </article>
+  )
+}
+
+function Marca({ arquivo }: { arquivo: string }) {
+  return (
+    <span aria-hidden className="flex size-10 shrink-0 items-center justify-center rounded-[12px] border border-line bg-white p-1.5">
+      {/* Arquivo estático nosso, de tamanho fixo: `next/image` não acrescenta nada. */}
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img src={`/marcas-de-cardapio/${arquivo}`} alt="" className="size-full object-contain" />
+    </span>
   )
 }
 
