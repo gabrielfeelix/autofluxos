@@ -1,4 +1,4 @@
-import { linkDoRastreio, mensagemDoPedido } from '@/core/pedido-na-conversa'
+import { entregaAtrasada, linkDoRastreio, mensagemDoPedido } from '@/core/pedido-na-conversa'
 import { hojeNaConta } from '@/core/horario'
 
 /** O relógio do card: a loja e o cliente estão no Brasil. */
@@ -20,14 +20,16 @@ import { lojaDaConta } from './repos/lojas'
 export async function cardDoPedido(
   clienteId: string,
   pedido: PedidoDaLoja,
-): Promise<{ texto: string; rotulo: string; link: string | null; foto: string | null }> {
-  const texto = mensagemDoPedido(pedido, hojeNaConta(FUSO_DA_LOJA))
+): Promise<{ texto: string; rotulo: string; link: string | null; foto: string | null; atrasada: boolean }> {
+  const hoje = hojeNaConta(FUSO_DA_LOJA)
+  const texto = mensagemDoPedido(pedido, hoje)
+  const atrasada = entregaAtrasada(pedido, hoje)
   const rastreio = linkDoRastreio(pedido)
-  if (rastreio) return { texto, rotulo: 'Rastrear entrega', link: rastreio, foto: await fotoDoPedido(clienteId, pedido) }
+  if (rastreio) return { texto, rotulo: 'Rastrear entrega', link: rastreio, foto: await fotoDoPedido(clienteId, pedido), atrasada }
 
   const loja = await lojaDaConta(clienteId)
   const pagina = loja?.endereco ? `${loja.endereco.replace(/\/+$/, '')}/sales/order/history/` : null
-  return { texto, rotulo: 'Ver meus pedidos', link: pagina, foto: pagina ? await fotoDoPedido(clienteId, pedido) : null }
+  return { texto, rotulo: 'Ver meus pedidos', link: pagina, foto: pagina ? await fotoDoPedido(clienteId, pedido) : null, atrasada }
 }
 
 /**

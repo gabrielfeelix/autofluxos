@@ -31,8 +31,7 @@ export function mensagemDoPedido(pedido: PedidoDaLoja, hoje?: string): string {
    * quem chama, em AAAA-MM-DD: `core/` não tem relógio.
    */
   const previsao = etapa === 3 ? '' : dataComDia(pedido.entrega?.previsao ?? '', 'longo')
-  const vencida = previsao !== '' && hoje !== undefined && (dataIso(pedido.entrega?.previsao ?? '') ?? hoje) < hoje
-  if (vencida) linhas.push(`⚠️ Entrega atrasada: a previsão era *${previsao}*`)
+  if (hoje !== undefined && entregaAtrasada(pedido, hoje)) linhas.push(`⚠️ Entrega atrasada: a previsão era *${previsao}*`)
   else if (previsao) linhas.push(`Previsão de entrega: *${previsao}*`)
 
   if (etapa !== null) linhas.push('', ...linhaDoTempo(etapa, evento))
@@ -51,6 +50,17 @@ export function mensagemDoPedido(pedido: PedidoDaLoja, hoje?: string): string {
   linhas.push(...pedido.itens.slice(0, 3).map((i) => `${i.quantidade}x ${cortar(i.nome, LIMITE_DO_ITEM)}`))
   if (pedido.itens.length > 3) linhas.push(`e mais ${pedido.itens.length - 3} item(ns)`)
   return linhas.join('\n')
+}
+
+/**
+ * A previsão já passou e o pedido não foi entregue. É a mesma conta da linha
+ * "Entrega atrasada" do card, e vai também ao modelo, para o fluxo passar a
+ * conversa a um atendente sem esperar o cliente reclamar.
+ */
+export function entregaAtrasada(pedido: PedidoDaLoja, hoje: string): boolean {
+  if (etapaDoPedido(pedido) === 3) return false
+  if (dataComDia(pedido.entrega?.previsao ?? '', 'longo') === '') return false
+  return (dataIso(pedido.entrega?.previsao ?? '') ?? hoje) < hoje
 }
 
 /** Cabe numa linha do WhatsApp no celular, com o "1x " na frente. */

@@ -1671,6 +1671,7 @@ async function executarNaLoja(
       json: {
         ...r.valor,
         enviado: card.link !== null,
+        ...(card.atrasada ? { entregaAtrasada: true } : {}),
         ...(card.link
           ? {
               anexo: {
@@ -1972,7 +1973,13 @@ function comCards(acoes: Acao[], texto: string, produtos: ProdutoDaLoja[], anexo
   ]
   if (extras.length === 0) return acoes
   const posicao = acoes.findIndex((a) => a.tipo === 'enviar_texto' && a.texto === texto)
-  if (posicao === -1) return [...acoes, ...extras]
+  /*
+   * Sem a frase: a IA concluiu e passou a conversa adiante, e o motor calou a
+   * frase final (quem recebe é quem fala). O card ainda é a resposta da IA e
+   * vai antes de quem recebe. No fim, a PCYES mandava "Vou transferir para um
+   * atendente" e só depois o status do pedido (27/out/2026).
+   */
+  if (posicao === -1) return [...extras, ...acoes]
 
   // Anexo que responde sozinho (o status do pedido, o manual): ele toma o lugar da frase.
   if (anexos.some((a) => a.substituiFrase)) {
