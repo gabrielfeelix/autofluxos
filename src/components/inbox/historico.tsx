@@ -544,7 +544,14 @@ function ListaDeMensagens({
              */}
           <div
             data-mensagem={mensagem.id}
-            className={`flex min-w-0 max-w-full flex-col gap-0 ${nossa ? 'items-end' : 'items-start'}`}
+            className={`flex min-w-0 max-w-full flex-col gap-0 ${
+              // Com botões, como no WhatsApp: bolha estreita e os botões da largura dela.
+              mensagem.menu?.formato === 'botoes'
+                ? `w-[min(85%,340px)] items-stretch ${nossa ? 'self-end' : 'self-start'}`
+                : nossa
+                  ? 'items-end'
+                  : 'items-start'
+            }`}
           >
             {/*
               `[overflow-wrap:anywhere]` e não `break-words`: `break-word` só
@@ -777,7 +784,7 @@ export function MenuNaConversa({
 }) {
   const tocou = menu.escolhida !== undefined
   return (
-    <div className="mt-1 flex w-full max-w-[min(78%,300px)] flex-col gap-1">
+    <div className={`mt-1 flex w-full flex-col gap-1 ${menu.formato === 'botoes' ? '' : 'max-w-[min(78%,300px)]'}`}>
       {menu.formato === 'lista' && (
         <span className="px-1 text-[11px] font-medium text-muted">opções da lista</span>
       )}
