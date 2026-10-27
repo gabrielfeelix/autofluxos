@@ -94,13 +94,19 @@ export function avisoDoStatus(
   nicho: Nicho | null | undefined,
   entrega: EntregaDoPedido,
 ): string | null {
-  const pedido = `Seu pedido ${numero}`
+  const n = `#${String(numero).replace(/^#/, '')}`
   const envio = pedidosDoRamo(nicho)?.despacho === 'envio'
-  if (status === 'em_preparo') return envio ? `${pedido} está sendo separado.` : `${pedido} está em preparo.`
-  if (status === 'saiu') {
-    if (envio) return `${pedido} foi enviado.`
-    return entrega === 'entrega' ? `${pedido} saiu para entrega.` : `${pedido} está pronto para retirar.`
+  if (status === 'em_preparo') {
+    return envio
+      ? `Boa notícia! Seu pedido ${n} já está sendo separado. Assim que ele for enviado, avisamos por aqui.`
+      : `Boa notícia! Seu pedido ${n} já está em preparo. Assim que ele sair, avisamos por aqui.`
   }
-  if (status === 'cancelado') return `${pedido} foi cancelado. Se tiver dúvida, é só responder aqui.`
+  if (status === 'saiu') {
+    if (envio) return `Seu pedido está a caminho! O pedido ${n} foi enviado.`
+    return entrega === 'entrega'
+      ? `Seu pedido está a caminho! O pedido ${n} saiu para entrega e chega em breve.`
+      : `Tudo pronto! Seu pedido ${n} já pode ser retirado. Estamos esperando por você.`
+  }
+  if (status === 'cancelado') return `Seu pedido ${n} foi cancelado. Se tiver alguma dúvida, é só responder esta mensagem.`
   return null
 }

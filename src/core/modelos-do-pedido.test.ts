@@ -27,8 +27,16 @@ describe('modelos de aviso do pedido', () => {
     }
   })
 
-  it('os valores seguem a ordem do corpo: número e loja', () => {
-    expect(valoresDoAviso('123', 'Pizzaria Bella')).toEqual(['123', 'Pizzaria Bella'])
-    expect(valoresDoAviso('123', '  ')).toBeNull()
+  it('o único valor é o número, sem o #, que já está no corpo', () => {
+    expect(valoresDoAviso('1042')).toEqual(['1042'])
+    expect(valoresDoAviso('#1042')).toEqual(['1042'])
+    expect(valoresDoAviso('  ')).toBeNull()
+  })
+
+  it('o corpo não cita a loja: a mensagem já sai do número dela', () => {
+    for (const m of MODELOS_DO_PEDIDO) {
+      expect(m.corpo).toContain('#{{1}}')
+      expect(m.corpo).not.toContain('{{2}}')
+    }
   })
 })

@@ -76,6 +76,13 @@ Saipos API de Dados (pago por loja e com atraso até D+1).
 - **Polling como rede de segurança** na mesma passada de 10 minutos, para o
   aviso que o webhook perdeu.
 
+## Ideias para depois
+
+- **Foto do pedido no aviso** (pedido do Gabriel, 27/out/2026): pesquisar como
+  os restaurantes fazem (foto do prato pronto, da embalagem, nenhuma) e decidir
+  se vira opção por loja. Exige modelo com cabeçalho de imagem, separado dos
+  quatro de texto.
+
 ## O que depende do Gabriel
 
 - **Goomer:** pedir credencial de parceiro Open Delivery (Fase 5).

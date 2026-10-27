@@ -5,7 +5,6 @@ import { modeloDaEtapa, valoresDoAviso } from '@/core/modelos-do-pedido'
 import { avisoDoStatus } from '@/core/pedidos'
 import { adaptadorDoCanal } from './adaptador-do-canal'
 import { modeloComClique } from './link-do-clique'
-import { acharCliente } from './repos/clientes'
 import { acharContato, confirmarEntrega, contextoDeResposta, registrarSaida } from './repos/conversas'
 import { marcarClienteAvisado, type Pedido } from './repos/pedidos'
 import { nichoDaConta } from './repos/recursos'
@@ -54,13 +53,9 @@ export async function avisarEtapaDoPedido(
     }
 
     const modelo = modeloDaEtapa(pedido.status, pedido.entrega)
-    const [aprovados, contato, conta] = await Promise.all([
-      listarTemplatesAprovados(clienteId),
-      acharContato(pedido.contatoId),
-      acharCliente(clienteId),
-    ])
+    const [aprovados, contato] = await Promise.all([listarTemplatesAprovados(clienteId), acharContato(pedido.contatoId)])
     const aprovado = modelo ? aprovados.find((t) => t.nome === modelo.nome) : undefined
-    const valores = valoresDoAviso(numero, conta?.nome ?? '')
+    const valores = valoresDoAviso(numero)
     if (!modelo || !aprovado || !valores || !contato?.automacaoAtiva || !canal.enviarTemplate) return 'sem_modelo'
 
     const corpo = valores.reduce((t, v, i) => t.replace(`{{${i + 1}}}`, v), modelo.corpo)

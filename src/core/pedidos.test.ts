@@ -28,8 +28,8 @@ describe('pedidos por ramo', () => {
   })
 
   it('o aviso fala de entrega ou retirada', () => {
-    expect(avisoDoStatus('saiu', 7, 'restaurante', 'entrega')).toBe('Seu pedido 7 saiu para entrega.')
-    expect(avisoDoStatus('saiu', 7, 'restaurante', 'retirada')).toBe('Seu pedido 7 está pronto para retirar.')
+    expect(avisoDoStatus('saiu', 7, 'restaurante', 'entrega')).toBe('Seu pedido está a caminho! O pedido #7 saiu para entrega e chega em breve.')
+    expect(avisoDoStatus('saiu', 7, 'restaurante', 'retirada')).toBe('Tudo pronto! Seu pedido #7 já pode ser retirado. Estamos esperando por você.')
     expect(avisoDoStatus('pago', 7, 'restaurante', 'entrega')).toBeNull()
   })
 })
