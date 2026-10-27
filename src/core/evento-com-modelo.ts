@@ -74,6 +74,7 @@ export function conferirModeloDoEvento(
     const primeiro = lido.error.issues[0]
     const onde = primeiro?.path[0]
     if (onde === 'modelos') return { ok: false, erro: 'Escolha o modelo que sai.' }
+    if (onde === 'imagem') return { ok: false, erro: 'A imagem precisa ser um endereço completo, começando por https://.' }
     return { ok: false, erro: primeiro?.message ?? 'Configuração inválida.' }
   }
   const modelo = lido.data

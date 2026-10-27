@@ -51,6 +51,7 @@ export async function acaoSalvarModeloDoEvento(
     campoDeAceite: texto('campoDeAceite'),
     umaVezPor: texto('umaVezPor'),
     telefonesDeTeste: lista('telefonesDeTeste'),
+    imagem: texto('imagem') || undefined,
   })
   if (!conferido.ok) return { erro: conferido.erro }
   const config = conferido.modelo
@@ -65,6 +66,10 @@ export async function acaoSalvarModeloDoEvento(
       return {
         erro: `O modelo ${template!.nome} tem ${lacunas} ${lacunas === 1 ? 'lacuna' : 'lacunas'}, e foram informados ${config.variaveis.length} campos.`,
       }
+    }
+    // Sem a imagem, o envio é recusado (`evento-com-modelo.ts`): melhor saber agora.
+    if (template!.componentes.cabecalho?.tipo === 'imagem' && !config.imagem) {
+      return { erro: `O modelo ${template!.nome} tem imagem no cabeçalho: informe o endereço da imagem.` }
     }
   }
 

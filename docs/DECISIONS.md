@@ -445,3 +445,21 @@ mantido. Commits `56f59ac5`, `cfed6b2e`, `821c0730` e o do recurso 2.
   Verandi; não exige conta nova. Segredo próprio `AGENDADOR_SEGREDO` (Vercel
   produção + GitHub), separado do `CRON_SECRET`. Atraso de alguns minutos do
   GitHub não perde nada: a passada lê desde a última leitura.
+
+## 27/out/2026: agendador dos pedidos passa para o cron-job.org
+
+O GitHub Actions não cumpre o `*/10`: entre 26/out 20:41 e 27/out 10:21 UTC
+rodaram 4 passadas (00:05, 04:57, 10:21), buracos de ~5 h. Pesquisa
+pós-compra que chega 5 h depois perde o momento.
+
+- **cron-job.org a cada 5 min** chama `/api/manutencao/pedidos` com
+  `Authorization: Bearer <AGENDADOR_SEGREDO>`. Conta criada pelo Gabriel; o
+  segredo é copiado da Vercel (Settings > Environment Variables), nunca escrito
+  em doc.
+- **O workflow do GitHub fica como reserva**, não sai. Duas passadas juntas não
+  duplicam nada: `status_de_pedido_avisados` trava par pedido + status e o
+  gatilho trava `umaVezPor`.
+- `pg_cron` continua fora: extensão global do banco dividido com a Verandi.
+- Correção da entrada de 26/out: a imagem do cabeçalho mora no **gatilho**
+  (`gatilhos_de_evento.modelo.imagem`, commit `9e8b4961`), e agora tem campo na
+  tela de Eventos; salvar recusa modelo com cabeçalho de imagem sem ela.

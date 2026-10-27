@@ -1463,6 +1463,19 @@ function ConfigurarModeloDoEvento({
         </div>
       </div>
       <label>
+        <RotuloCampo>Imagem do cabeçalho</RotuloCampo>
+        <input
+          name="imagem"
+          type="url"
+          defaultValue={atual?.imagem ?? ''}
+          placeholder="Exemplo: https://suaempresa.com.br/imagem.jpg"
+          className="app-field px-[13px] py-[11px] font-mono text-[13px]"
+        />
+        <span className="mt-1.5 block text-[11px] leading-5 text-dim">
+          Obrigatória quando o modelo tem imagem no cabeçalho. Endereço https da imagem, enviada em cada mensagem.
+        </span>
+      </label>
+      <label>
         <RotuloCampo>Campos do aviso nas lacunas, em ordem</RotuloCampo>
         <input
           name="variaveis"

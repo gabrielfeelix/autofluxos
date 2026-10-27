@@ -40,6 +40,16 @@ describe('configuração do evento com modelo', () => {
   it('recusa nome de campo com caractere estranho', () => {
     expect(conferirModeloDoEvento({ ...pcyes, variaveis: ['nome; drop'] }).ok).toBe(false)
   })
+
+  it('guarda a imagem do cabeçalho e recusa endereço sem https', () => {
+    const imagem = 'https://autofluxos.4yu.com.br/pesquisas/pcyes-pedido-confirmado.jpg'
+    const r = conferirModeloDoEvento({ ...pcyes, imagem })
+    expect(r.ok && r.modelo.imagem).toBe(imagem)
+    expect(conferirModeloDoEvento({ ...pcyes, imagem: 'http://exemplo.com/a.jpg' })).toEqual({
+      ok: false,
+      erro: expect.stringContaining('https://'),
+    })
+  })
 })
 
 describe('o aviso vira valores', () => {
