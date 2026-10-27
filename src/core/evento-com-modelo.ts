@@ -33,6 +33,11 @@ export type ModeloDoEvento = {
   umaVezPor: string
   /** Recebem mesmo sem aceite: é como se testa antes de o site mandar o aceite. */
   telefonesDeTeste: string[]
+  /**
+   * A imagem do cabeçalho, para modelo com cabeçalho de imagem (o mascote da
+   * PCYES). Sem ela a Meta entrega o modelo sem a imagem aprovada (27/out/2026).
+   */
+  imagem?: string
 }
 
 const campo = z
@@ -48,6 +53,7 @@ const esquema = z.object({
   campoDeAceite: campo,
   umaVezPor: campo,
   telefonesDeTeste: z.array(z.string().trim().min(1)).max(5),
+  imagem: z.string().trim().url().startsWith('https://').max(500).optional(),
 })
 
 /** O que veio do banco, ou `null` quando o gatilho não começa pelo modelo. */

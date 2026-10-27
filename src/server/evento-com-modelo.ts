@@ -83,6 +83,10 @@ export async function iniciarPorModelo(
   const aprovados = await listarTemplatesAprovados(clienteId)
   const modelo = config.modelos.map((nome) => aprovados.find((t) => t.nome === nome)).find(Boolean)
   if (!modelo) return falhou(`nenhum dos modelos ${config.modelos.join(', ')} está aprovado`)
+  // Sem a imagem, a Meta entrega o modelo sem o cabeçalho aprovado: melhor não sair.
+  if (modelo.componentes.cabecalho?.tipo === 'imagem' && !config.imagem) {
+    return falhou(`o modelo ${modelo.nome} tem imagem no cabeçalho e o gatilho não tem a imagem configurada`)
+  }
 
   const fluxo = await acharFluxo(gatilho.fluxoId)
   if (!fluxo || fluxo.clienteId !== clienteId || !fluxo.ativo || !fluxo.versaoPublicadaId) {
@@ -136,7 +140,17 @@ export async function iniciarPorModelo(
     if (!adaptador.enviarTemplate) return falhou('o canal não manda modelo')
     const envio = await adaptador.enviarTemplate(
       waId,
-      modeloComClique({ nome: modelo.nome, idioma: modelo.idioma, valores: { corpo: valores.valores } }, modelo),
+      modeloComClique(
+        {
+          nome: modelo.nome,
+          idioma: modelo.idioma,
+          valores: {
+            corpo: valores.valores,
+            ...(modelo.componentes.cabecalho?.tipo === 'imagem' && config.imagem ? { cabecalhoImagem: config.imagem } : {}),
+          },
+        },
+        modelo,
+      ),
     )
     if (envio.situacao === 'falhou') return falhou('a Meta recusou o envio do modelo')
     await confirmarEntrega(saida, envio.wamid)
