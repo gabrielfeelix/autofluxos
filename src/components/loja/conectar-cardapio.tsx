@@ -118,7 +118,6 @@ export function ConectarCardapio({
               icone={<IconeQuadro />}
               titulo="Todos os pedidos num quadro só"
               texto="Os pedidos do cardápio entram ao lado dos pedidos da conversa, com o número da plataforma."
-              breve
             />
             <Rende
               icone={<IconeCatalogo />}
