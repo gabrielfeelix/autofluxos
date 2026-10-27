@@ -374,11 +374,17 @@ export async function salvarNumeroDoOnboarding(entrada: {
 }): Promise<{ canalId: string }> {
   const { data: existente } = await db()
     .from('channels')
-    .select('id, client_id, token_ref')
+    .select('id, client_id, token_ref, historico_sync_em, contatos_sync_em')
     .eq('phone_number_id', entrada.phoneNumberId)
     .maybeSingle()
 
-  const linha = existente as { id: string; client_id: string; token_ref: string | null } | null
+  const linha = existente as {
+    id: string
+    client_id: string
+    token_ref: string | null
+    historico_sync_em: string | null
+    contatos_sync_em: string | null
+  } | null
 
   if (linha && linha.client_id !== entrada.clienteId) {
     throw new Error('este número de WhatsApp já está ligado a outro cliente')
@@ -418,6 +424,14 @@ export async function salvarNumeroDoOnboarding(entrada: {
         status: 'ativo',
         // Reconectou: o desembarque anterior, se havia, acabou.
         desembarcado_em: null,
+        /*
+         * Reconexão abre uma janela nova de 24h para os dois syncs. A reserva de
+         * uma conexão anterior (mais de 24h) segurava a coluna e o histórico do
+         * período fora do ar nunca era pedido (PCYES, 27/out/2026). Reserva de
+         * agora há pouco fica: é o segundo webhook do mesmo onboarding.
+         */
+        ...(syncVencido(linha.historico_sync_em) ? { historico_sync_em: null, historico_sync_request_id: null } : {}),
+        ...(syncVencido(linha.contatos_sync_em) ? { contatos_sync_em: null, contatos_sync_request_id: null } : {}),
       })
       .eq('id', linha.id)
 
@@ -611,4 +625,9 @@ export async function ecoColadoNoBot(contatoId: string, agora: Date = new Date()
     .limit(1)
   if (error) throw new Error(`não foi possível ler a última mensagem do bot: ${error.message}`)
   return Boolean(data?.length)
+}
+
+/** A reserva de sync é de uma conexão anterior: a janela de 24h dela já fechou. */
+function syncVencido(em: string | null): boolean {
+  return em !== null && Date.now() - new Date(em).getTime() > 24 * 60 * 60 * 1000
 }
