@@ -75,6 +75,7 @@ import {
   criarSessao,
   definirStatusDaSessao,
   guardarCampo,
+  mesclarCampos,
   guardarSessao,
   handoffSemResposta,
   confirmarEntrega,
@@ -2304,14 +2305,17 @@ async function aplicar(
   }
 
   const campos = { ...contato.campos }
-  let mexeuNosCampos = false
+  // Só as chaves que esta rodada mexeu vão ao banco (`mesclarCampos`).
+  const mexidos: Record<string, string> = {}
 
   /** O que o alerta de entrega precisa para achar a conversa no painel. */
   const alvo: ContextoDoAlerta = { contato: contato.id, sessao: sessaoId }
 
   const salvarCampos = async () => {
-    if (mexeuNosCampos) await guardarCampo(contato.id, campos)
-    mexeuNosCampos = false
+    if (Object.keys(mexidos).length === 0) return
+    const valores = { ...mexidos }
+    for (const chave of Object.keys(valores)) delete mexidos[chave]
+    await mesclarCampos(contato.clienteId, contato.id, valores)
   }
 
   /**
@@ -2699,7 +2703,7 @@ async function aplicar(
 
       case 'salvar_campo':
         campos[acao.campo] = acao.valor
-        mexeuNosCampos = true
+        mexidos[acao.campo] = acao.valor
         break
 
       case 'pausar_automacao':

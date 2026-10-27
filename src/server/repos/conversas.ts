@@ -1162,6 +1162,32 @@ export async function guardarCampo(
 }
 
 /**
+ * O que a rodada do fluxo coletou, **só as chaves que ela mexeu**, mescladas no
+ * banco com a linha travada (`gravar_campos`, 0077).
+ *
+ * A rodada lê os campos no começo e pode levar segundos. O que outra escrita
+ * gravou nesse meio não pode voltar ao valor lido: foi assim que o Dar pontos
+ * gravou `pedidos_com_pontos` e a rodada devolveu o valor antigo ao terminar
+ * (27/out/2026), e a trava de uma vez por pedido sumiu sem erro. Sem
+ * proveniência nem regra de quem vence, como `guardarCampo`: o que o fluxo
+ * coletou sempre valeu.
+ */
+export async function mesclarCampos(
+  clienteId: string,
+  contatoId: string,
+  valores: Record<string, string>,
+): Promise<void> {
+  if (Object.keys(valores).length === 0) return
+  const { error } = await db().rpc('gravar_campos', {
+    p_client_id: clienteId,
+    p_contact_id: contatoId,
+    p_valores: valores,
+    p_meta: {},
+  })
+  if (error) throw new Error(`não foi possível guardar o campo: ${error.message}`)
+}
+
+/**
  * O bot parou e chamou gente. Fica registrado **por quê e de quem foi a
  * decisão**.
  *
