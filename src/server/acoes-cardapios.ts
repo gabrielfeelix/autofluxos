@@ -5,6 +5,7 @@ import { conectarCardapioWeb, desligarCardapioWeb } from './cardapios/cardapio-w
 import { conectarFoody, desligarFoody } from './cardapios/foody'
 import { conectarGoomer, desligarGoomer } from './cardapios/goomer'
 import { conectarOlaClick, desligarOlaClick } from './cardapios/olaclick'
+import { conectarOpenDelivery, desligarOpenDelivery } from './cardapios/opendelivery'
 import { exigirCapacidade, recusou } from './permissoes'
 import { registrar } from './repos/auditoria'
 import { cardapioDaConta, salvarCardapio, type PlataformaConectavel } from './repos/cardapios'
@@ -132,6 +133,38 @@ export async function acaoDesligarFoody(clienteId: string): Promise<Resposta> {
 
 export async function acaoAvisarClienteDaFoody(clienteId: string, avisar: boolean): Promise<Resposta> {
   return mudarAviso(clienteId, 'foody', avisar)
+}
+
+export async function acaoConectarOpenDelivery(
+  clienteId: string,
+  dados: { base: string; clientId: string; clientSecret: string },
+  avisarCliente: boolean,
+): Promise<Resposta> {
+  const acesso = await exigirCapacidade(clienteId, 'configurar_operacao', 'todos')
+  if (recusou(acesso)) return { ok: false, erro: 'Sua função não permite mexer em integração.' }
+  try {
+    const r = await conectarOpenDelivery(clienteId, dados, avisarCliente)
+    if (!r.ok) return r
+    await auditar(clienteId, acesso, 'conectou_opendelivery', 'Open Delivery')
+    revalidatePath(`/clientes/${clienteId}/loja/cardapios`)
+    return { ok: true, loja: r.loja }
+  } catch (erro) {
+    console.error('[open delivery] a conexão não foi gravada', erro)
+    return { ok: false, erro: 'Não foi possível conectar agora. Tente de novo.' }
+  }
+}
+
+export async function acaoDesligarOpenDelivery(clienteId: string): Promise<Resposta> {
+  const acesso = await exigirCapacidade(clienteId, 'configurar_operacao', 'todos')
+  if (recusou(acesso)) return { ok: false, erro: 'Sua função não permite mexer em integração.' }
+  await desligarOpenDelivery(clienteId)
+  await auditar(clienteId, acesso, 'desligou_opendelivery', 'Open Delivery')
+  revalidatePath(`/clientes/${clienteId}/loja/cardapios`)
+  return { ok: true }
+}
+
+export async function acaoAvisarClienteDoOpenDelivery(clienteId: string, avisar: boolean): Promise<Resposta> {
+  return mudarAviso(clienteId, 'opendelivery', avisar)
 }
 
 async function mudarAviso(clienteId: string, plataforma: PlataformaConectavel, avisar: boolean): Promise<Resposta> {

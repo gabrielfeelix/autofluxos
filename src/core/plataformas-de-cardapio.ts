@@ -79,7 +79,7 @@ export const FICHAS_DE_CARDAPIO: Record<PlataformaDeCardapio, FichaDoCardapio> =
     nome: 'Open Delivery',
     resumo: 'O padrão da Abrasel, aceito por vários sistemas de pedido.',
     arquivoDaMarca: 'opendelivery.webp',
-    href: null,
+    href: '/loja/cardapios/open-delivery',
   },
 }
 

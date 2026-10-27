@@ -5,6 +5,7 @@ import { passadaDoCardapioWeb } from './cardapio-web'
 import { passadaDaFoody } from './foody'
 import { passadaDaGoomer } from './goomer'
 import { passadaDaOlaClick } from './olaclick'
+import { passadaDoOpenDelivery } from './opendelivery'
 
 /** A passada de cada plataforma. Plataforma sem conector ainda não entra. */
 const PASSADAS: Partial<Record<CardapioConectado['plataforma'], (c: CardapioConectado) => Promise<number>>> = {
@@ -12,6 +13,7 @@ const PASSADAS: Partial<Record<CardapioConectado['plataforma'], (c: CardapioCone
   olaclick: passadaDaOlaClick,
   goomer: passadaDaGoomer,
   foody: passadaDaFoody,
+  opendelivery: passadaDoOpenDelivery,
 }
 
 /**
