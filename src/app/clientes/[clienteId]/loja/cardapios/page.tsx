@@ -2,6 +2,7 @@ import { notFound } from 'next/navigation'
 import { ClienteShell } from '@/components/design/cliente-shell'
 import { ConectarCardapio } from '@/components/loja/conectar-cardapio'
 import { acaoQueroEstaPlataforma } from '@/server/acoes-loja'
+import { deliveryDiretoLiberado } from '@/server/cardapios/delivery-direto'
 import { cardapiosDaConta } from '@/server/repos/cardapios'
 import { acharCliente } from '@/server/repos/clientes'
 import { pedidosDeCardapio } from '@/server/repos/lojas'
@@ -25,6 +26,7 @@ export default async function Pagina({ params }: { params: Promise<{ clienteId: 
         clienteId={cliente.id}
         solicitadas={solicitadas}
         conectadas={conectadas}
+        travadas={deliveryDiretoLiberado() ? [] : ['delivery_direto']}
         solicitar={acaoQueroEstaPlataforma.bind(null, cliente.id)}
       />
     </ClienteShell>

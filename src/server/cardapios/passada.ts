@@ -2,6 +2,7 @@ import 'server-only'
 import { alertar } from '../alertar'
 import { cardapiosAtivos, type CardapioConectado } from '../repos/cardapios'
 import { passadaDoCardapioWeb } from './cardapio-web'
+import { passadaDoDeliveryDireto } from './delivery-direto'
 import { passadaDaFoody } from './foody'
 import { passadaDaGoomer } from './goomer'
 import { passadaDaOlaClick } from './olaclick'
@@ -14,6 +15,7 @@ const PASSADAS: Partial<Record<CardapioConectado['plataforma'], (c: CardapioCone
   goomer: passadaDaGoomer,
   foody: passadaDaFoody,
   opendelivery: passadaDoOpenDelivery,
+  delivery_direto: passadaDoDeliveryDireto,
 }
 
 /**

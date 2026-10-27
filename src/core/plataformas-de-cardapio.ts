@@ -56,9 +56,9 @@ export const FICHAS_DE_CARDAPIO: Record<PlataformaDeCardapio, FichaDoCardapio> =
   delivery_direto: {
     id: 'delivery_direto',
     nome: 'Delivery Direto',
-    resumo: 'Catálogo completo e mudança de status dos pedidos.',
+    resumo: 'Cada pedido entra no quadro, e o cliente é avisado de cada etapa.',
     arquivoDaMarca: 'delivery_direto.png',
-    href: null,
+    href: '/loja/cardapios/delivery-direto',
   },
   foody: {
     id: 'foody',

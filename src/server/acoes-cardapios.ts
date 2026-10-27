@@ -2,6 +2,7 @@
 
 import { revalidatePath } from 'next/cache'
 import { conectarCardapioWeb, desligarCardapioWeb } from './cardapios/cardapio-web'
+import { conectarDeliveryDireto, desligarDeliveryDireto } from './cardapios/delivery-direto'
 import { conectarFoody, desligarFoody } from './cardapios/foody'
 import { conectarGoomer, desligarGoomer } from './cardapios/goomer'
 import { conectarOlaClick, desligarOlaClick } from './cardapios/olaclick'
@@ -165,6 +166,38 @@ export async function acaoDesligarOpenDelivery(clienteId: string): Promise<Respo
 
 export async function acaoAvisarClienteDoOpenDelivery(clienteId: string, avisar: boolean): Promise<Resposta> {
   return mudarAviso(clienteId, 'opendelivery', avisar)
+}
+
+export async function acaoConectarDeliveryDireto(
+  clienteId: string,
+  dados: { loja: string; usuario: string; senha: string },
+  avisarCliente: boolean,
+): Promise<Resposta> {
+  const acesso = await exigirCapacidade(clienteId, 'configurar_operacao', 'todos')
+  if (recusou(acesso)) return { ok: false, erro: 'Sua função não permite mexer em integração.' }
+  try {
+    const r = await conectarDeliveryDireto(clienteId, dados, avisarCliente)
+    if (!r.ok) return r
+    await auditar(clienteId, acesso, 'conectou_delivery_direto', 'Delivery Direto')
+    revalidatePath(`/clientes/${clienteId}/loja/cardapios`)
+    return { ok: true }
+  } catch (erro) {
+    console.error('[delivery direto] a conexão não foi gravada', erro)
+    return { ok: false, erro: 'Não foi possível conectar agora. Tente de novo.' }
+  }
+}
+
+export async function acaoDesligarDeliveryDireto(clienteId: string): Promise<Resposta> {
+  const acesso = await exigirCapacidade(clienteId, 'configurar_operacao', 'todos')
+  if (recusou(acesso)) return { ok: false, erro: 'Sua função não permite mexer em integração.' }
+  await desligarDeliveryDireto(clienteId)
+  await auditar(clienteId, acesso, 'desligou_delivery_direto', 'Delivery Direto')
+  revalidatePath(`/clientes/${clienteId}/loja/cardapios`)
+  return { ok: true }
+}
+
+export async function acaoAvisarClienteDoDeliveryDireto(clienteId: string, avisar: boolean): Promise<Resposta> {
+  return mudarAviso(clienteId, 'delivery_direto', avisar)
 }
 
 async function mudarAviso(clienteId: string, plataforma: PlataformaConectavel, avisar: boolean): Promise<Resposta> {

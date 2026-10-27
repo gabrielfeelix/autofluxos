@@ -22,15 +22,19 @@ export function ConectarCardapio({
   clienteId,
   solicitadas,
   conectadas,
+  travadas,
   solicitar,
 }: {
   clienteId: string
   solicitadas: PlataformaDeCardapio[]
   conectadas: PlataformaDeCardapio[]
+  /** Têm tela, mas ainda dependem de algo nosso (credencial de integrador): seguem "Em breve". */
+  travadas: PlataformaDeCardapio[]
   solicitar: (plataforma: PlataformaDeCardapio) => Promise<Resposta>
 }) {
-  const disponiveis = PLATAFORMAS_DE_CARDAPIO.filter((id) => FICHAS_DE_CARDAPIO[id].href)
-  const emBreve = PLATAFORMAS_DE_CARDAPIO.filter((id) => !FICHAS_DE_CARDAPIO[id].href)
+  const abre = (id: PlataformaDeCardapio) => Boolean(FICHAS_DE_CARDAPIO[id].href) && !travadas.includes(id)
+  const disponiveis = PLATAFORMAS_DE_CARDAPIO.filter(abre)
+  const emBreve = PLATAFORMAS_DE_CARDAPIO.filter((id) => !abre(id))
 
   return (
     <Miolo largura="cheia">
