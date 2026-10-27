@@ -41,9 +41,9 @@ export const FICHAS_DE_CARDAPIO: Record<PlataformaDeCardapio, FichaDoCardapio> =
   olaclick: {
     id: 'olaclick',
     nome: 'OlaClick',
-    resumo: 'Cardápio e status dos pedidos feitos no link da loja.',
+    resumo: 'Cada pedido entra no quadro, e o cliente é avisado de cada etapa.',
     arquivoDaMarca: 'olaclick.svg',
-    href: null,
+    href: '/loja/cardapios/olaclick',
   },
   goomer: {
     id: 'goomer',

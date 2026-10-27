@@ -302,6 +302,10 @@ aqui fica o que o cliente ganha.
   WhatsApp da loja cada etapa que a equipe marca no Cardápio Web. Pedido de
   marketplace repassado entra sem aviso, porque o telefone não vem.
   *(27/out/2026)*
+- **Conecta à OlaClick só com a chave de API**: o lojista cola a chave e o
+  AutoFluxos cadastra o webhook sozinho, sem passo no painel de lá. Cada
+  pedido entra no quadro na hora, assinado e conferido, e o cliente recebe no
+  WhatsApp da loja cada etapa marcada na OlaClick. *(27/out/2026)*
 
 ## Medir
 

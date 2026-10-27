@@ -2,9 +2,10 @@
 
 import { revalidatePath } from 'next/cache'
 import { conectarCardapioWeb, desligarCardapioWeb } from './cardapios/cardapio-web'
+import { conectarOlaClick, desligarOlaClick } from './cardapios/olaclick'
 import { exigirCapacidade, recusou } from './permissoes'
 import { registrar } from './repos/auditoria'
-import { cardapioDaConta, salvarCardapio } from './repos/cardapios'
+import { cardapioDaConta, salvarCardapio, type PlataformaConectavel } from './repos/cardapios'
 
 /**
  * Integrações > Cardápio e delivery. Mexe em integração e guarda credencial,
@@ -39,13 +40,45 @@ export async function acaoDesligarCardapioWeb(clienteId: string): Promise<Respos
 
 /** Liga ou desliga o aviso ao cliente sem mexer na chave. */
 export async function acaoAvisarClienteDoCardapioWeb(clienteId: string, avisar: boolean): Promise<Resposta> {
+  return mudarAviso(clienteId, 'cardapio_web', avisar)
+}
+
+export async function acaoConectarOlaClick(clienteId: string, chave: string, avisarCliente: boolean): Promise<Resposta> {
   const acesso = await exigirCapacidade(clienteId, 'configurar_operacao', 'todos')
   if (recusou(acesso)) return { ok: false, erro: 'Sua função não permite mexer em integração.' }
-  const atual = await cardapioDaConta(clienteId, 'cardapio_web')
-  if (!atual) return { ok: false, erro: 'Conecte o Cardápio Web primeiro.' }
+  try {
+    const r = await conectarOlaClick(clienteId, chave, avisarCliente)
+    if (!r.ok) return r
+    await auditar(clienteId, acesso, 'conectou_olaclick', 'OlaClick')
+    revalidatePath(`/clientes/${clienteId}/loja/cardapios`)
+    return { ok: true, loja: r.loja }
+  } catch (erro) {
+    console.error('[olaclick] a conexão não foi gravada', erro)
+    return { ok: false, erro: 'Não foi possível conectar agora. Tente de novo.' }
+  }
+}
+
+export async function acaoDesligarOlaClick(clienteId: string): Promise<Resposta> {
+  const acesso = await exigirCapacidade(clienteId, 'configurar_operacao', 'todos')
+  if (recusou(acesso)) return { ok: false, erro: 'Sua função não permite mexer em integração.' }
+  await desligarOlaClick(clienteId)
+  await auditar(clienteId, acesso, 'desligou_olaclick', 'OlaClick')
+  revalidatePath(`/clientes/${clienteId}/loja/cardapios`)
+  return { ok: true }
+}
+
+export async function acaoAvisarClienteDaOlaClick(clienteId: string, avisar: boolean): Promise<Resposta> {
+  return mudarAviso(clienteId, 'olaclick', avisar)
+}
+
+async function mudarAviso(clienteId: string, plataforma: PlataformaConectavel, avisar: boolean): Promise<Resposta> {
+  const acesso = await exigirCapacidade(clienteId, 'configurar_operacao', 'todos')
+  if (recusou(acesso)) return { ok: false, erro: 'Sua função não permite mexer em integração.' }
+  const atual = await cardapioDaConta(clienteId, plataforma)
+  if (!atual) return { ok: false, erro: 'Conecte a plataforma primeiro.' }
   await salvarCardapio({
     clienteId,
-    plataforma: 'cardapio_web',
+    plataforma,
     conexaoId: atual.conexaoId,
     idNaPlataforma: atual.idNaPlataforma,
     avisarCliente: avisar,
@@ -57,14 +90,14 @@ export async function acaoAvisarClienteDoCardapioWeb(clienteId: string, avisar: 
 
 type Acesso = Exclude<Awaited<ReturnType<typeof exigirCapacidade>>, { erro: string }>
 
-async function auditar(clienteId: string, acesso: Acesso, acao: string): Promise<void> {
+async function auditar(clienteId: string, acesso: Acesso, acao: string, alvo = 'Cardápio Web'): Promise<void> {
   await registrar({
     acao,
     autorId: acesso.sessao.usuario.id,
     autorEmail: acesso.sessao.usuario.email,
     contaId: clienteId,
     alvoTipo: 'integracao',
-    alvoNome: 'Cardápio Web',
+    alvoNome: alvo,
     impersonadoPor: acesso.sessao.impersonadoPor,
   }).catch(() => undefined)
 }
