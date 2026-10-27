@@ -218,11 +218,15 @@ export type CartaoDePedido = {
 /**
  * Os modelos de aviso da conta (`MODELOS_DO_PEDIDO`): `faltam` quando algum
  * não foi criado ou foi recusado, `em_analise` quando todos existem e algum
- * espera a Meta, `aprovados` quando os quatro já saem.
+ * espera a Meta, `aprovados` quando os quatro já saem. A tela da Foody pergunta
+ * também pelo de rastreio (`MODELO_DE_RASTREIO`).
  */
-export async function estadoDosModelosDoPedido(clienteId: string): Promise<'faltam' | 'em_analise' | 'aprovados'> {
+export async function estadoDosModelosDoPedido(
+  clienteId: string,
+  modelos: readonly { nome: string }[] = MODELOS_DO_PEDIDO,
+): Promise<'faltam' | 'em_analise' | 'aprovados'> {
   const existentes = await listarTemplates(clienteId)
-  const status = MODELOS_DO_PEDIDO.map((m) => existentes.find((t) => t.nome === m.nome)?.status)
+  const status = modelos.map((m) => existentes.find((t) => t.nome === m.nome)?.status)
   if (status.some((s) => !s || s === 'recusado' || s === 'rascunho')) return 'faltam'
   return status.every((s) => s === 'aprovado') ? 'aprovados' : 'em_analise'
 }

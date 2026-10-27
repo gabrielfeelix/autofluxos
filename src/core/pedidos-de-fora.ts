@@ -18,6 +18,7 @@ export const PLATAFORMAS_DE_PEDIDO = [
   'goomer',
   'delivery_direto',
   'neemo',
+  'foody',
   'entregador',
 ] as const
 export type PlataformaDePedido = (typeof PLATAFORMAS_DE_PEDIDO)[number]
@@ -29,6 +30,7 @@ export const NOME_DA_PLATAFORMA: Record<PlataformaDePedido, string> = {
   goomer: 'Goomer',
   delivery_direto: 'Delivery Direto',
   neemo: 'Neemo',
+  foody: 'Foody Delivery',
   entregador: 'Link do entregador',
 }
 

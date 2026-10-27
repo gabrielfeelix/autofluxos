@@ -1,7 +1,7 @@
 import 'server-only'
 import { dentroDaJanela } from '@/channels/janela'
 import type { AutorDaSaida } from '@/core/autor-da-mensagem'
-import { modeloDaEtapa, valoresDoAviso } from '@/core/modelos-do-pedido'
+import { fimDoRastreio, MODELO_DE_RASTREIO, modeloDaEtapa, valoresDoAviso } from '@/core/modelos-do-pedido'
 import { avisoDoStatus } from '@/core/pedidos'
 import { adaptadorDoCanal } from './adaptador-do-canal'
 import { modeloComClique } from './link-do-clique'
@@ -30,8 +30,11 @@ export async function avisarEtapaDoPedido(
 ): Promise<AvisoDaEtapa> {
   const nicho = await nichoDaConta(clienteId)
   const numero = pedido.numeroExibido ?? String(pedido.numero)
-  const texto = avisoDoStatus(pedido.status, numero, nicho, pedido.entrega)
-  if (!texto) return 'sem_aviso'
+  const doStatus = avisoDoStatus(pedido.status, numero, nicho, pedido.entrega)
+  if (!doStatus) return 'sem_aviso'
+  // O link do entregador só vale enquanto ele está a caminho.
+  const rastreio = pedido.status === 'saiu' && pedido.entrega === 'entrega' ? fimDoRastreio(pedido.rastreioUrl) : null
+  const texto = rastreio ? `${doStatus}\n\nAcompanhe o entregador: ${pedido.rastreioUrl}` : doStatus
   if (!pedido.contatoId) return 'sem_contato'
 
   try {
@@ -52,9 +55,10 @@ export async function avisarEtapaDoPedido(
       return 'na_janela'
     }
 
-    const modelo = modeloDaEtapa(pedido.status, pedido.entrega)
     const [aprovados, contato] = await Promise.all([listarTemplatesAprovados(clienteId), acharContato(pedido.contatoId)])
-    const aprovado = modelo ? aprovados.find((t) => t.nome === modelo.nome) : undefined
+    const comRastreio = rastreio ? aprovados.find((t) => t.nome === MODELO_DE_RASTREIO.nome) : undefined
+    const modelo = comRastreio ? MODELO_DE_RASTREIO : modeloDaEtapa(pedido.status, pedido.entrega)
+    const aprovado = comRastreio ?? (modelo ? aprovados.find((t) => t.nome === modelo.nome) : undefined)
     const valores = valoresDoAviso(numero)
     if (!modelo || !aprovado || !valores || !contato?.automacaoAtiva || !canal.enviarTemplate) return 'sem_modelo'
 
@@ -68,7 +72,14 @@ export async function avisarEtapaDoPedido(
     })
     const envio = await canal.enviarTemplate(
       contexto.waId,
-      modeloComClique({ nome: aprovado.nome, idioma: aprovado.idioma, valores: { corpo: valores } }, aprovado),
+      modeloComClique(
+        {
+          nome: aprovado.nome,
+          idioma: aprovado.idioma,
+          valores: { corpo: valores, ...(comRastreio && rastreio ? { botoes: [{ indice: 0, texto: rastreio }] } : {}) },
+        },
+        aprovado,
+      ),
     )
     if (envio.situacao === 'falhou') return 'sem_modelo'
     await confirmarEntrega(saida, envio.wamid)

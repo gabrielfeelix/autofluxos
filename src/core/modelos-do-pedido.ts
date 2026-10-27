@@ -18,6 +18,8 @@ export type ModeloDoPedido = {
   entrega: EntregaDoPedido | 'qualquer'
   nome: string
   corpo: string
+  /** Botão de link com o fim variável (`{{1}}` no fim da URL), preenchido em cada envio. */
+  botao?: { texto: string; url: string }
 }
 
 export const MODELOS_DO_PEDIDO: readonly ModeloDoPedido[] = [
@@ -46,6 +48,30 @@ export const MODELOS_DO_PEDIDO: readonly ModeloDoPedido[] = [
     corpo: 'Seu pedido #{{1}} foi cancelado. Se tiver alguma dúvida, é só responder esta mensagem.',
   },
 ]
+
+export const PREFIXO_DO_RASTREIO_DA_FOODY = 'https://app.foodydelivery.com/trk/'
+
+/**
+ * O "saiu para entrega" com o botão que abre o mapa do entregador, quando o
+ * pedido traz o link de rastreio da Foody. Fica fora de `MODELOS_DO_PEDIDO`
+ * de propósito: conta sem Foody não precisa dele, e a tela de Pedidos não
+ * deve cobrar um modelo que ela nunca vai usar. Sem ele aprovado, o aviso sai
+ * pelo `aviso_pedido_saiu_entrega`. Texto aprovado pelo Gabriel em 27/out/2026.
+ */
+export const MODELO_DE_RASTREIO: ModeloDoPedido = {
+  status: 'saiu',
+  entrega: 'entrega',
+  nome: 'aviso_pedido_saiu_rastreio',
+  corpo: 'Seu pedido está a caminho! O pedido #{{1}} saiu para entrega. Acompanhe o entregador em tempo real pelo botão abaixo.',
+  botao: { texto: 'Acompanhar entrega', url: `${PREFIXO_DO_RASTREIO_DA_FOODY}{{1}}` },
+}
+
+/** O fim do link de rastreio da Foody, que vai no botão, ou `null` quando o link não é dela. */
+export function fimDoRastreio(url: string | null): string | null {
+  if (!url?.startsWith(PREFIXO_DO_RASTREIO_DA_FOODY)) return null
+  const fim = url.slice(PREFIXO_DO_RASTREIO_DA_FOODY.length)
+  return /^[\w-]{1,100}$/.test(fim) ? fim : null
+}
 
 export const EXEMPLOS_DO_MODELO_DO_PEDIDO = ['1042']
 

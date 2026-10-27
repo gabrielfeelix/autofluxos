@@ -310,6 +310,9 @@ aqui fica o que o cliente ganha.
   gera a chave Open Delivery no Painel Goomer e cola aqui. Os pedidos entram no
   quadro, o cliente recebe cada etapa no WhatsApp, e o PDV da loja continua
   funcionando ao lado. *(27/out/2026)*
+- **Link do entregador da Foody no WhatsApp**: quando o motoboy sai, o
+  cliente recebe o aviso com o botão Acompanhar entrega e vê o entregador no
+  mapa, mesmo sem nunca ter falado com a loja. *(27/out/2026)*
 
 ## Medir
 

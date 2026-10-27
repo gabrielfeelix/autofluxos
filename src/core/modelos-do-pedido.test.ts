@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { MODELOS_DO_PEDIDO, modeloDaEtapa, valoresDoAviso } from './modelos-do-pedido'
+import { fimDoRastreio, MODELO_DE_RASTREIO, MODELOS_DO_PEDIDO, modeloDaEtapa, valoresDoAviso } from './modelos-do-pedido'
 import { validarTemplate } from './templates'
 
 describe('modelos de aviso do pedido', () => {
@@ -38,5 +38,20 @@ describe('modelos de aviso do pedido', () => {
       expect(m.corpo).toContain('#{{1}}')
       expect(m.corpo).not.toContain('{{2}}')
     }
+  })
+
+  it('o rastreio da Foody vira o fim do botão; link de outro lugar não', () => {
+    expect(fimDoRastreio('https://app.foodydelivery.com/trk/58f37fe7-ddaf-46db-8918-e34d0b920062')).toBe(
+      '58f37fe7-ddaf-46db-8918-e34d0b920062',
+    )
+    expect(fimDoRastreio('https://outro.com/trk/abc')).toBeNull()
+    expect(fimDoRastreio('https://app.foodydelivery.com/trk/a/b')).toBeNull()
+    expect(fimDoRastreio(null)).toBeNull()
+  })
+
+  it('o modelo de rastreio passa na validação, com o botão de link', () => {
+    const m = MODELO_DE_RASTREIO
+    const reparos = validarTemplate(m.nome, { corpo: m.corpo, botoes: [{ tipo: 'URL', texto: m.botao!.texto, valor: m.botao!.url }] }, 'UTILITY')
+    expect(reparos.filter((r) => r.gravidade === 'erro')).toEqual([])
   })
 })

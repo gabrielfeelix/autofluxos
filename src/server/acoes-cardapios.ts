@@ -2,6 +2,7 @@
 
 import { revalidatePath } from 'next/cache'
 import { conectarCardapioWeb, desligarCardapioWeb } from './cardapios/cardapio-web'
+import { conectarFoody, desligarFoody } from './cardapios/foody'
 import { conectarGoomer, desligarGoomer } from './cardapios/goomer'
 import { conectarOlaClick, desligarOlaClick } from './cardapios/olaclick'
 import { exigirCapacidade, recusou } from './permissoes'
@@ -103,6 +104,34 @@ export async function acaoDesligarGoomer(clienteId: string): Promise<Resposta> {
 
 export async function acaoAvisarClienteDaGoomer(clienteId: string, avisar: boolean): Promise<Resposta> {
   return mudarAviso(clienteId, 'goomer', avisar)
+}
+
+export async function acaoConectarFoody(clienteId: string, token: string, avisarCliente: boolean): Promise<Resposta> {
+  const acesso = await exigirCapacidade(clienteId, 'configurar_operacao', 'todos')
+  if (recusou(acesso)) return { ok: false, erro: 'Sua função não permite mexer em integração.' }
+  try {
+    const r = await conectarFoody(clienteId, token, avisarCliente)
+    if (!r.ok) return r
+    await auditar(clienteId, acesso, 'conectou_foody', 'Foody Delivery')
+    revalidatePath(`/clientes/${clienteId}/loja/cardapios`)
+    return { ok: true }
+  } catch (erro) {
+    console.error('[foody] a conexão não foi gravada', erro)
+    return { ok: false, erro: 'Não foi possível conectar agora. Tente de novo.' }
+  }
+}
+
+export async function acaoDesligarFoody(clienteId: string): Promise<Resposta> {
+  const acesso = await exigirCapacidade(clienteId, 'configurar_operacao', 'todos')
+  if (recusou(acesso)) return { ok: false, erro: 'Sua função não permite mexer em integração.' }
+  await desligarFoody(clienteId)
+  await auditar(clienteId, acesso, 'desligou_foody', 'Foody Delivery')
+  revalidatePath(`/clientes/${clienteId}/loja/cardapios`)
+  return { ok: true }
+}
+
+export async function acaoAvisarClienteDaFoody(clienteId: string, avisar: boolean): Promise<Resposta> {
+  return mudarAviso(clienteId, 'foody', avisar)
 }
 
 async function mudarAviso(clienteId: string, plataforma: PlataformaConectavel, avisar: boolean): Promise<Resposta> {

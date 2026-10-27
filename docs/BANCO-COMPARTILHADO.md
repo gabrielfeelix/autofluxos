@@ -1494,6 +1494,12 @@ extração explícito para os objetos de `public`.
   "Solicitar integração" da tela Cardápio e delivery. Ensaio com `rollback`
   limpo antes; releitura com os 14 nomes; 1 linha existente intacta; Verandi
   com **57** migrations.
+- **a `0156` foi aplicada em 27/out/2026**, pela Management API, numa
+  transação, sem pedir (aditiva). `pedidos_plataforma_check` e
+  `cardapios_conectados_plataforma_check` ganham `foody` (Foody Delivery como
+  fonte de pedidos). Ensaio com `rollback` limpo; releitura dos dois checks com
+  `foody`; 0 pedidos de fora e 0 cardápios conectados existentes; Verandi com
+  **57** migrations.
 
 - **SSL obrigatório desde 19/out/2026** (`PUT .../ssl-enforcement`), com
   autorização do dono. Conexão sem TLS leva `ESSLREQUIRED`, inclusive pelo

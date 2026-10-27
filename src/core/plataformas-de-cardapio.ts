@@ -4,8 +4,9 @@
  *
  * Sem I/O. **A lista é fechada e espelha o check de `pedidos_de_loja` (0155)**,
  * onde mora o "Solicitar integração"; quem conecta de fato fica em
- * `cardapios_conectados` (0154). Foody é rastreio do motoboy, não cardápio:
- * entra aqui para ser solicitada, e não vira plataforma de pedido.
+ * `cardapios_conectados` (0154). A Foody é sistema de entregas, não
+ * cardápio, e entra como mais uma fonte de pedidos (0156), com o link de
+ * rastreio do entregador.
  */
 
 export const PLATAFORMAS_DE_CARDAPIO = [
@@ -62,9 +63,9 @@ export const FICHAS_DE_CARDAPIO: Record<PlataformaDeCardapio, FichaDoCardapio> =
   foody: {
     id: 'foody',
     nome: 'Foody Delivery',
-    resumo: 'Rastreio do entregador: link do mapa e aviso de chegada.',
+    resumo: 'Pedidos e rastreio do entregador: o cliente recebe o link do mapa.',
     arquivoDaMarca: 'foody.png',
-    href: null,
+    href: '/loja/cardapios/foody',
   },
   neemo: {
     id: 'neemo',

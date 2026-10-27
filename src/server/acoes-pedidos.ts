@@ -1,7 +1,7 @@
 'use server'
 
 import { autorDaPessoa } from '@/core/autor-da-mensagem'
-import { EXEMPLOS_DO_MODELO_DO_PEDIDO, MODELOS_DO_PEDIDO } from '@/core/modelos-do-pedido'
+import { EXEMPLOS_DO_MODELO_DO_PEDIDO, MODELO_DE_RASTREIO, MODELOS_DO_PEDIDO } from '@/core/modelos-do-pedido'
 import { ehStatusDePedido, type StatusDePedido } from '@/core/pedidos'
 import { acaoApagarTemplate, acaoCriarTemplate } from './acoes-transmissoes'
 import { cancelarCobranca } from './cobrancas'
@@ -53,7 +53,8 @@ export async function acaoMoverPedido(
 }
 
 /**
- * Cria na Meta os quatro modelos de aviso de etapa (`MODELOS_DO_PEDIDO`), como
+ * Cria na Meta os quatro modelos de aviso de etapa (`MODELOS_DO_PEDIDO`) e o
+ * de rastreio da Foody (`MODELO_DE_RASTREIO`), como
  * `acaoCriarModelosDaVerandi`: o aprovado e o em análise ficam, o recusado e o
  * rascunho são apagados e mandados de novo (o nome é único por conta).
  * Utilidade; a aprovação costuma levar minutos.
@@ -62,7 +63,7 @@ export async function acaoCriarModelosDoPedido(clienteId: string): Promise<{ ok:
   const acesso = await exigirCapacidade(clienteId, 'configurar_operacao', 'todos')
   if (recusou(acesso)) return { ok: false, erro: 'Sua função não permite criar modelo.' }
   const existentes = await listarTemplates(clienteId)
-  for (const m of MODELOS_DO_PEDIDO) {
+  for (const m of [...MODELOS_DO_PEDIDO, MODELO_DE_RASTREIO]) {
     const anterior = existentes.find((t) => t.nome === m.nome)
     if (anterior && anterior.status !== 'recusado' && anterior.status !== 'rascunho') continue
     if (anterior) {
@@ -72,7 +73,7 @@ export async function acaoCriarModelosDoPedido(clienteId: string): Promise<{ ok:
     const r = await acaoCriarTemplate(clienteId, {
       nome: m.nome,
       categoria: 'UTILITY',
-      componentes: { corpo: m.corpo },
+      componentes: { corpo: m.corpo, ...(m.botao ? { botoes: [{ tipo: 'URL' as const, texto: m.botao.texto, valor: m.botao.url }] } : {}) },
       exemplos: EXEMPLOS_DO_MODELO_DO_PEDIDO,
     })
     if (!r.ok) return { ok: false, erro: r.erro ?? 'A Meta não aceitou agora.' }
