@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { eventoDaEtapa, podeAvancar, telefoneDoPedido } from './pedidos-de-fora'
+import { eventoDaEtapa, podeAvancar, rastreioSeguro, telefoneDoPedido } from './pedidos-de-fora'
 
 describe('pedido de fora', () => {
   it('a etapa só anda para a frente', () => {
@@ -30,5 +30,12 @@ describe('pedido de fora', () => {
   it('celular com DDD vira a forma canônica', () => {
     expect(telefoneDoPedido('(44) 99876-5432')).toBe('5544998765432')
     expect(telefoneDoPedido('+55 44 99876-5432')).toBe('5544998765432')
+  })
+
+  it('link de rastreio só https, e curto o bastante para o banco', () => {
+    expect(rastreioSeguro('https://foody.app/t/abc')).toBe('https://foody.app/t/abc')
+    expect(rastreioSeguro('http://foody.app/t/abc')).toBeNull()
+    expect(rastreioSeguro(`https://x.com/${'a'.repeat(1000)}`)).toBeNull()
+    expect(rastreioSeguro(null)).toBeNull()
   })
 })

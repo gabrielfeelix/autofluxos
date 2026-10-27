@@ -1,5 +1,5 @@
 import 'server-only'
-import { eventoDaEtapa, podeAvancar, telefoneDoPedido, type PedidoDeFora } from '@/core/pedidos-de-fora'
+import { eventoDaEtapa, podeAvancar, rastreioSeguro, telefoneDoPedido, type PedidoDeFora } from '@/core/pedidos-de-fora'
 import { alertar } from './alertar'
 import { avisarEtapaDoPedido } from './avisar-etapa'
 import { tratarEvento } from './receber-evento'
@@ -29,6 +29,7 @@ export async function receberPedidoDeFora(
   opcoes: { avisarCliente: boolean },
   agora: Date = new Date(),
 ): Promise<PedidoRecebido> {
+  p = { ...p, rastreioUrl: rastreioSeguro(p.rastreioUrl) }
   try {
     const telefone = telefoneDoPedido(p.telefone)
     const contatoId = telefone ? await contatoDoPedido(clienteId, telefone, p.nome, opcoes.avisarCliente) : null

@@ -82,3 +82,13 @@ export function telefoneDoPedido(bruto: string | null): string | null {
   if (/^(0800|0300|0500|0900|400\d)/.test(digitos)) return null
   return digitos ? telefoneCanonico(digitos) : null
 }
+
+/**
+ * O link de rastreio que o banco aceita (`https://`, até 1000 caracteres), ou
+ * `null`. Sem isto, um `http://` da plataforma estouraria o check da 0154 e o
+ * pedido inteiro ficaria fora do quadro por causa de um link.
+ */
+export function rastreioSeguro(url: string | null): string | null {
+  const limpo = url?.trim() ?? ''
+  return /^https:\/\//.test(limpo) && limpo.length <= 1000 ? limpo : null
+}
