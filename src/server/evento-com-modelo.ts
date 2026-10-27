@@ -133,7 +133,21 @@ export async function iniciarPorModelo(
       contatoId,
       sessaoId: salva.id,
       texto: corpo,
-      payload: { evento: gatilho.evento, modelo: modelo.nome, ...(chave ? { chave } : {}) },
+      payload: {
+        evento: gatilho.evento,
+        modelo: modelo.nome,
+        ...(chave ? { chave } : {}),
+        // O Inbox desenha o que o cliente viu: a imagem do cabeçalho e os botões.
+        ...(modelo.componentes.cabecalho?.tipo === 'imagem' && config.imagem ? { midia: 'imagem', url: config.imagem } : {}),
+        ...((modelo.componentes.botoes ?? []).some((b) => b.tipo === 'QUICK_REPLY')
+          ? {
+              opcoes: (modelo.componentes.botoes ?? [])
+                .filter((b) => b.tipo === 'QUICK_REPLY')
+                .map((b, i) => ({ id: `botao-${i}`, rotulo: b.texto })),
+              formato: 'botoes',
+            }
+          : {}),
+      },
       autor: null,
     })
     const adaptador = fabricaDeCanal ? fabricaDeCanal(canal) : await adaptadorDoCanal(canal)
