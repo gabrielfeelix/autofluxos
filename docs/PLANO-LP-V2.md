@@ -4,14 +4,40 @@
 entender as informações, visual muito legal e personalidade". Este documento é
 para o agente que vai executar. Leia inteiro antes de tocar em código.
 
+## Versões: a v1 não muda
+
+A LP que está no ar é a **v1** e fica exatamente como está até o Gabriel
+aprovar outra. Cada versão nova vive separada, com endereço e link próprios.
+
+| Versão | Branch | Pasta (git worktree) | Local | Link |
+|---|---|---|---|---|
+| v1 (no ar) | `main` | `autofluxos/` | `localhost:3100` | https://autofluxos.4yu.com.br |
+| v2 | `lp-v2` | `../autofluxos-v2/` | `localhost:3101` | prévia da Vercel da branch `lp-v2` |
+| v3, v4... | `lp-v3`, `lp-v4` | `../autofluxos-v3/`... | `3102`, `3103`... | prévia da branch |
+
+- **Na v2 não se mexe no `main`.** Todo trabalho da LP nova é commit na
+  `lp-v2`, dentro de `../autofluxos-v2/`. O `main` continua recebendo os
+  consertos do produto normalmente, e a `lp-v2` traz o `main` para si com
+  `git merge main` quando precisar.
+- Subir o local da v2: de dentro de `../autofluxos-v2/`,
+  `PORTA=3101 bash scripts/ux-local/dev.sh`.
+- O link é a prévia que a Vercel gera a cada push da `lp-v2` (prévias já saem
+  com `noindex`, fora do Google). Junte commits antes do push: a cota de deploy
+  é dividida com a Verandi.
+- **Trocar de versão só com aprovação explícita do Gabriel:** merge da branch
+  aprovada no `main` e push. v3 e v4 seguem a mesma regra e podem partir do
+  `main` ou de outra versão.
+- A base da v2 já tem a seção **Por segmento** e o **Pergunte a uma IA** no
+  rodapé, com `public/llms.txt` (antigo commit `94df224d`, tirado do `main` em
+  28/out por não estar aprovado).
+
 ## O que fica e o que não se discute
 
 - **O azul do hero e do rodapé fica** (`--lp-casca`, #1a3fb8 → #3a6cf0, com os
   fios de fluxo no fundo). O Gabriel ama. O efeito do hero também fica.
-- Rodapé fica, já com "Pergunte a uma IA" (commit `94df224d`).
-- A seção **Por segmento** (`src/app/(site)/conversa-por-segmento.tsx`, commit
-  `94df224d`, **ainda não publicado**) é a base da demo de conversa: evolua, não
-  refaça do zero.
+- Rodapé fica, com o "Pergunte a uma IA" que já está na `lp-v2`.
+- A seção **Por segmento** (`src/app/(site)/conversa-por-segmento.tsx`, na
+  `lp-v2`) é a base da demo de conversa: evolua, não refaça do zero.
 
 ## Diagnóstico (print inteiro em 1440, 28/out)
 
@@ -169,4 +195,5 @@ PCYES são clientes, mas **logo e nome só com autorização escrita deles**).
 5. Seção 5 (bento vivo).
 6. Seção 4 (ajustes no Por segmento) e 7 (preços).
 7. Seção 7b (calculadora da Meta) e 8 (dúvidas com os medos reais).
-8. Mostrar tudo ao Gabriel, ajustar texto, publicar junto com o `94df224d`.
+8. Mandar ao Gabriel o link da prévia e o `localhost:3101`, ajustar texto.
+   Publicar só quando ele aprovar a versão (merge no `main`).
