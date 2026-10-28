@@ -84,6 +84,13 @@
   margin-inline: auto;
 }
 
+/* Na home, cada frase do título numa linha no computador. */
+.capaSimplesInterno .capaTituloHome {
+  max-width: 24ch;
+  margin-top: 22px;
+  font-size: clamp(34px, 5.4vw, 62px);
+}
+
 .capaSimplesInterno .capaSub {
   margin-inline: auto;
 }

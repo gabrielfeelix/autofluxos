@@ -42,33 +42,28 @@ function Cabeca({ olho, titulo, texto, id }: { olho: string; titulo: ReactNode; 
 
 export function CapaDaHome() {
   return (
-    <section className={`${s.capa} ${x.capaDividida}`}>
+    <section className={`${s.capa} ${x.capaSimples}`}>
       <DerivaDeParticulas className={s.campo} />
       <div className={s.veu} aria-hidden />
-      <div className={`${s.faixa} ${x.capaGrade}`}>
-        <div className={x.capaTexto}>
-          <p className={s.selo} data-revela>
-            <span className={s.seloTag}>Novo</span>
-            API oficial do WhatsApp Business
-          </p>
-          <h1 className={x.capaTitulo} data-revela data-como="desfoque" data-atraso="80">
-            Seu WhatsApp responde na hora. <em>Sua equipe entra quando precisa.</em>
-          </h1>
-          <p className={x.capaSub} data-revela data-atraso="200">
-            Chatbot, IA e a caixa de entrada da equipe no número que você já usa. Horário, preço, agenda e pedido se
-            resolvem na conversa; o que precisa de gente chega à equipe com o histórico ao lado.
-          </p>
-          <div className={s.acoes} data-revela data-atraso="300">
-            <Link className={`${s.botao} ${s.botaoPrincipal} ${s.botaoGrande}`} href="/precos">
-              Ver planos
-            </Link>
-            <a className={`${s.botao} ${s.botaoVazado} ${s.botaoGrande}`} href="#conversar">
-              Fale conosco
-            </a>
-          </div>
-        </div>
-        <div className={x.capaVisual} data-revela data-como="escala" data-atraso="200">
-          <PreviaQueTroca chaves={['loja', 'clinica', 'restaurante', 'petshop']} />
+      <div className={`${s.faixa} ${x.capaSimplesInterno}`}>
+        <p className={s.selo} data-revela>
+          <span className={s.seloTag}>Novo</span>
+          API oficial do WhatsApp Business
+        </p>
+        <h1 className={`${x.capaTitulo} ${x.capaTituloHome}`} data-revela data-como="desfoque" data-atraso="80">
+          Seu WhatsApp responde na hora. <em>Sua equipe entra quando precisa.</em>
+        </h1>
+        <p className={x.capaSub} data-revela data-atraso="200">
+          Chatbot, IA e a caixa de entrada da equipe no número que você já usa. Horário, preço, agenda e pedido se
+          resolvem na conversa; o que precisa de gente chega à equipe com o histórico ao lado.
+        </p>
+        <div className={s.acoes} data-revela data-atraso="300">
+          <Link className={`${s.botao} ${s.botaoPrincipal} ${s.botaoGrande}`} href="/precos">
+            Ver planos
+          </Link>
+          <a className={`${s.botao} ${s.botaoVazado} ${s.botaoGrande}`} href="#conversar">
+            Fale conosco
+          </a>
         </div>
       </div>
     </section>
