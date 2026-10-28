@@ -1,0 +1,336 @@
+/*
+ * O fluxo se montando. O palco imita a tela do editor (grade de pontos, blocos
+ * brancos com a borda na cor do tipo, alça branca na entrada e azul na saída)
+ * porque é ela que o cliente vai usar: o que aparece aqui tem que ser
+ * reconhecível no primeiro dia de conta.
+ *
+ * `--s` vai de 0 a 5 e chega do JS; `--c` é a coluna de cada peça. A peça
+ * acende quando o fio que chega nela está quase no fim. Só opacidade, nada de
+ * deslocamento: os fios são medidos da posição real dos blocos, e um bloco
+ * deslocado no meio da animação daria uma medida errada.
+ */
+
+.secao {
+  position: relative;
+}
+
+.trava {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: clamp(72px, 9vw, 120px) 0 clamp(48px, 6vw, 80px);
+}
+
+/* A trava só existe onde cabe: tela larga e alta o bastante para o palco inteiro. */
+@media (min-width: 900px) and (min-height: 680px) {
+  .secao {
+    --travada: 1;
+  }
+
+  .secao[data-movimento='rola'] {
+    height: 260vh;
+  }
+
+  .secao[data-movimento='rola'] .trava {
+    position: sticky;
+    top: 0;
+    height: 100svh;
+    padding-top: 84px;
+    padding-bottom: 24px;
+  }
+}
+
+.palco {
+  position: relative;
+  display: grid;
+  grid-template-columns: 150px repeat(3, minmax(0, 1fr)) 170px;
+  grid-template-rows: auto 1fr;
+  column-gap: clamp(36px, 4.6vw, 64px);
+  row-gap: 22px;
+  width: min(100% - 40px, var(--largura));
+  margin: clamp(32px, 4vw, 48px) auto 0;
+  padding: 22px 32px 34px;
+  border: 1px solid var(--line);
+  border-radius: 24px;
+  background:
+    radial-gradient(circle, rgb(16 32 84 / 0.1) 1px, transparent 1.3px) 0 0 / 18px 18px,
+    #f7f9fd;
+}
+
+.fios {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  overflow: visible;
+  pointer-events: none;
+}
+
+.fio {
+  fill: none;
+  stroke: #b9c3da;
+  stroke-width: 1.5;
+  stroke-dasharray: 1;
+  stroke-dashoffset: calc(1 - clamp(0, calc((var(--s) - var(--c) - 0.1) / 0.75), 1));
+}
+
+[data-caminho] > .fio {
+  stroke: rgb(29 78 216 / 0.5);
+}
+
+/*
+ * A mensagem passando. Um traço curto que corre o caminho escolhido, um trecho
+ * depois do outro (`--ordem`), e some no fim. Fora do ciclo ele fica parado
+ * antes do começo ou depois do fim do fio, onde não aparece.
+ */
+.pulso {
+  fill: none;
+  stroke: #1d4ed8;
+  stroke-width: 3;
+  stroke-linecap: round;
+  stroke-dasharray: 0.14 1.3;
+  stroke-dashoffset: 0.14;
+}
+
+.palco[data-pronto] .pulso {
+  animation: corre 4.4s linear infinite;
+  animation-delay: calc(var(--ordem) * 0.7s);
+}
+
+@keyframes corre {
+  0% {
+    stroke-dashoffset: 0.14;
+  }
+  16% {
+    stroke-dashoffset: -1;
+  }
+  100% {
+    stroke-dashoffset: -1;
+  }
+}
+
+.rotulo {
+  grid-row: 1;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--dim);
+}
+
+.coluna {
+  position: relative;
+  z-index: 1;
+  grid-row: 2;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 12px;
+  opacity: clamp(0, calc((var(--s) - var(--c) + 0.25) * 4), 1);
+}
+
+.ramos {
+  gap: 18px;
+}
+
+/* ─────────────────────────── canais e integrações ─────────────────────────── */
+
+.canal,
+.integracao {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 7px 10px 7px 7px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: #ffffff;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--ink);
+}
+
+.marca {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 8px;
+  background: var(--surface);
+}
+
+.marca img {
+  object-fit: contain;
+}
+
+.integracao strong {
+  display: block;
+  font-weight: 600;
+}
+
+.integracao small {
+  display: block;
+  font-size: 11.5px;
+  color: var(--muted);
+}
+
+/* ─────────────────────────── blocos ─────────────────────────── */
+
+.bloco {
+  --borda: rgb(56 189 248 / 0.5);
+  position: relative;
+  border: 1px solid var(--borda);
+  border-radius: 12px;
+  background: #ffffff;
+  box-shadow: 0 14px 34px rgb(19 25 34 / 0.077);
+  font-size: 12.5px;
+}
+
+.bloco[data-tipo='pergunta'] {
+  --borda: rgb(52 211 153 / 0.55);
+}
+
+.bloco[data-tipo='ia'] {
+  --borda: rgb(232 121 249 / 0.5);
+}
+
+.bloco[data-tipo='agendar'] {
+  --borda: rgb(45 212 191 / 0.55);
+}
+
+/* As alças do editor: entrada branca à esquerda, saída azul à direita. */
+.bloco::before,
+.bloco::after,
+.saida::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  width: 11px;
+  height: 11px;
+  border-radius: 50%;
+  translate: 0 -50%;
+}
+
+.bloco::before {
+  left: -6px;
+  border: 2px solid #9aa6c2;
+  background: #ffffff;
+}
+
+.bloco::after,
+.saida::after {
+  right: -6px;
+  border: 2px solid #ffffff;
+  background: #1d4ed8;
+}
+
+/* A pergunta sai pelas opções, e a mensagem de horário encerra o ramo. */
+.bloco[data-tipo='pergunta']::after,
+.bloco[data-no='horario']::after {
+  display: none;
+}
+
+.blocoTopo {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 34px;
+  margin: 0;
+  padding: 0 10px;
+  border-bottom: 1px solid var(--line-soft);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.blocoTopo span {
+  display: grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 6px;
+  background: var(--surface);
+  font-size: 12px;
+  letter-spacing: 0;
+  color: var(--soft);
+}
+
+.blocoCorpo {
+  padding: 10px 11px 11px;
+  line-height: 1.45;
+  color: var(--soft);
+}
+
+.blocoCorpo p {
+  margin: 0;
+}
+
+.blocoCorpo code {
+  padding: 0 4px;
+  border-radius: 4px;
+  font-family: var(--font-jetbrains-mono), ui-monospace, monospace;
+  font-size: 11.5px;
+  color: #1d4ed8;
+  background: rgb(29 78 216 / 0.08);
+}
+
+.saida {
+  position: relative;
+  display: block;
+  margin-top: 6px;
+  padding: 5px 9px;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  background: var(--surface);
+  font-size: 12px;
+}
+
+.saida[data-escolhida] {
+  border-color: rgb(29 78 216 / 0.4);
+  color: #1d4ed8;
+}
+
+/* ─────────────────────────── celular ─────────────────────────── */
+
+@media (max-width: 760px) {
+  .palco {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 34px;
+    padding: 24px 16px 28px;
+  }
+
+  .rotulo,
+  .palco [data-so-computador],
+  .bloco::before,
+  .bloco::after,
+  .saida::after {
+    display: none;
+  }
+
+  .coluna {
+    width: min(100%, 300px);
+  }
+
+  .canais,
+  .integracoes {
+    flex-direction: row;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 8px;
+  }
+
+  .canal {
+    padding: 6px;
+  }
+
+  .canalNome {
+    display: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .palco[data-pronto] .pulso {
+    animation: none;
+  }
+}

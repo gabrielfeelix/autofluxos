@@ -14,6 +14,7 @@ import { Cursor } from './(site)/cursor'
 import { DerivaDeParticulas } from './(site)/deriva-de-particulas'
 import { NumeroQueSobe } from './(site)/numero-que-sobe'
 import { PerguntaRepetida } from './(site)/pergunta-repetida'
+import { FluxoSeMontando } from './(site)/fluxo-se-montando'
 import fp from './(site)/faixa-do-problema.module.css'
 import { ProgressoDosPassos } from './(site)/progresso-dos-passos'
 import { Revelar } from './(site)/revelar'
@@ -179,6 +180,24 @@ API oficial do WhatsApp Business
               <Desktop />
             </div>
           </section>
+
+          <FluxoSeMontando
+            cabeca={
+              <div className={`${s.faixa} ${s.cabecaSecao}`}>
+                <span className={s.olho} data-revela>
+                  O fluxo
+                </span>
+                <h2 className={`${s.tituloSecao} ${s.tituloSecaoCentro}`} data-revela data-como="desfoque" data-atraso="60">
+                  Você desenha o caminho de cada conversa
+                </h2>
+                <p className={`${s.chamada} ${s.chamadaCentro}`} data-revela data-atraso="100">
+                  O que perguntar, quando chamar a IA, quando passar para a equipe. Cada
+                  bloco é uma decisão sua, do canal até o sistema da loja, sem escrever
+                  código.
+                </p>
+              </div>
+            }
+          />
 
           <section className={fp.faixa} id="produto">
             <div className={`${s.faixa} ${fp.grade}`}>
