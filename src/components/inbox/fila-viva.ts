@@ -121,6 +121,18 @@ export async function buscarMudancas(clienteId: string, desdePulso: string | nul
  * O servidor redesenhou a tela e trouxe contadores tão novos quanto os daqui,
  * ou mais: os vivos saem de cena até o próximo pulso.
  */
+/**
+ * A resposta que acabou de sair do campo, já na fila, antes de o servidor
+ * confirmar: a prévia muda e a conversa sobe no mesmo quadro do Enter, como no
+ * WhatsApp. A leitura seguinte (`buscarMudancas`) troca esta linha pela de
+ * verdade, com `set` e sem comparar hora, então relógio adiantado no
+ * computador de quem atende não prende a linha local.
+ */
+export function registrarEnvioLocal(lead: Lead) {
+  estado = { ...estado, linhas: new Map(estado.linhas).set(lead.contatoId, lead) }
+  assinantes.forEach((assinante) => assinante())
+}
+
 export function esquecerContadoresVivos() {
   if (!estado.contagem && !estado.porEstado) return
   estado = { ...estado, contagem: null, porEstado: null }

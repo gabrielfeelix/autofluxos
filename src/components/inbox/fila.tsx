@@ -30,7 +30,8 @@ import type { FiltroDeEstado, Lead } from "@/server/repos/leads";
 import type { MembroDaConta } from "@/server/repos/usuarios";
 import { ContadorDeAgendadas } from "@/components/inbox/contador-de-agendadas";
 import { linhaViva, useRemendos } from "@/components/inbox/conversa-local";
-import { esquecerContadoresVivos, juntarComVivas, juntarNaPagina, naoLidasVivas, useFilaViva, zerarNaoLidaViva } from "@/components/inbox/fila-viva";
+import { esquecerContadoresVivos, juntarComVivas, juntarNaPagina, naoLidasVivas, registrarEnvioLocal, useFilaViva, zerarNaoLidaViva } from "@/components/inbox/fila-viva";
+import { ENVIO, type Envio } from "@/components/inbox/sinal-de-conversa";
 import { ajustarContagem } from "@/components/design/contagens-local";
 import { cabeNoRecorte } from "@/components/inbox/recorte";
 import { abrirConversa, preCarregarConversa, useAberta } from "@/components/inbox/aberta-local";
@@ -196,6 +197,35 @@ export function Fila({
       novasForaDaPagina: naPagina.novas,
     };
   }, [leadsDoServidor, viva.linhas, remendos, estado, atribuicao, pagina, termo]);
+
+  // A resposta que saiu do campo aparece na prévia na hora (`registrarEnvioLocal`).
+  const leadsRef = useRef(leads);
+  useEffect(() => {
+    leadsRef.current = leads;
+  }, [leads]);
+  const meuNome = equipe.find((membro) => membro.id === usuarioId)?.nome ?? null;
+  useEffect(() => {
+    const aoEnviar = (evento: Event) => {
+      const envio = (evento as CustomEvent<Envio>).detail;
+      if (envio.estado !== "saindo") return;
+      const lead = leadsRef.current.find((l) => l.contatoId === envio.contatoId);
+      if (!lead) return;
+      registrarEnvioLocal({
+        ...lead,
+        ultimaEm: new Date().toISOString(),
+        ultimaDirecao: "saida",
+        ultimoTexto: envio.texto ?? "",
+        ultimoTipo: null,
+        ultimoAutorTipo: "usuario",
+        ultimoAutorNome: meuNome,
+        ultimaSituacao: null,
+        ultimaEReacao: false,
+        ultimaEntregue: null,
+      });
+    };
+    window.addEventListener(ENVIO, aoEnviar);
+    return () => window.removeEventListener(ENVIO, aoEnviar);
+  }, [meuNome]);
   const local = useMemo(
     () =>
       localDoServidor
