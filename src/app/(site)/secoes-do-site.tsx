@@ -2,6 +2,7 @@ import Link from 'next/link'
 import type { CSSProperties, ReactNode } from 'react'
 import { DIAS_DE_TESTE, PLANOS } from '@/core/planos'
 import { DerivaDeParticulas } from './deriva-de-particulas'
+import { Desktop, Pergunta } from './pagina-do-site'
 import { CANAIS } from './canais-do-site'
 import { MODELOS_DE_TODOS, NICHOS_DO_SITE, type NichoDoSite } from './nichos-do-site'
 import { CalculadoraMeta, DoisLados, PreviaQueTroca } from './pecas-interativas'
@@ -66,6 +67,10 @@ export function CapaDaHome() {
           </a>
         </div>
       </div>
+      {/* A tela do Inbox saindo pela borda de baixo: o produto aparece antes de rolar. */}
+      <div className={x.capaTela} data-revela data-como="escala" data-atraso="420" aria-hidden>
+        <Desktop />
+      </div>
     </section>
   )
 }
@@ -123,6 +128,72 @@ export function CapaDoNicho({ nicho }: { nicho: NichoDoSite }) {
 }
 
 /* ─────────────────────────── home ─────────────────────────── */
+
+/*
+ * Números medidos, não de mercado, 90 dias até 28/out/2026, todas as contas.
+ * 74%: sessões sem transferência (`sessions` x `handoffs`), 554 conversas, 141
+ * com equipe. 1 em 6: 12.286 mensagens recebidas, 16,5% fora de seg-sex
+ * 8h-18h. 4 s: mediana entre a mensagem recebida e a próxima enviada na mesma
+ * sessão (`messages`, lead() por session_id), 1.730 respostas antes de haver
+ * transferência; com a equipe a mediana é 106 s. Refazer a conta antes de
+ * mudar qualquer número.
+ */
+const NUMEROS = [
+  { valor: '74%', rotulo: 'das conversas terminam sem precisar da equipe' },
+  { valor: '4 s', rotulo: 'para o chatbot responder, na mediana. Com a equipe, 1 min 46 s' },
+  { valor: '1 em 6', rotulo: 'mensagens chega fora do horário comercial' },
+]
+
+export function SecaoNumeros() {
+  return (
+    <section className={x.numeros}>
+      <div className={`${s.faixa} ${x.numerosGrade}`}>
+        {NUMEROS.map((n, i) => (
+          <div key={n.valor} className={x.numero} data-revela data-atraso={i * 90}>
+            <strong>{n.valor}</strong>
+            <span>{n.rotulo}</span>
+          </div>
+        ))}
+        <p className={x.numerosFonte}>Medido nas contas do AutoFluxos, últimos 90 dias.</p>
+      </div>
+    </section>
+  )
+}
+
+export function SecaoDuvidasCurtas() {
+  return (
+    <section className={s.secao}>
+      <div className={`${s.faixa} ${x.duvidasCurtas}`}>
+        <div>
+          <span className={s.olho} data-revela>
+            Antes de assinar
+          </span>
+          <h2 className={s.tituloSecao} data-revela data-como="desfoque" data-atraso="60">
+            As três perguntas que todo mundo faz
+          </h2>
+          <Link href="/precos#duvidas" className={x.linkForte} data-revela data-atraso="120">
+            Ver todas as dúvidas <Seta />
+          </Link>
+        </div>
+        <div className={s.perguntas}>
+          <Pergunta
+            pergunta="Perco o WhatsApp do celular?"
+            resposta="Não. O número continua no app WhatsApp Business do celular. O que o chatbot responde aparece lá, e o que você responde pelo celular aparece no Inbox."
+          />
+          <Pergunta
+            pergunta="Meu número pode ser bloqueado?"
+            resposta="O AutoFluxos usa a API oficial da Meta e respeita as regras dela: fora da janela de 24 horas, só sai mensagem com modelo aprovado. Bloqueio vem de disparo em massa para quem não pediu, e o produto não deixa isso acontecer por acidente."
+          />
+          <Pergunta
+            pergunta="A IA pode inventar preço?"
+            resposta="Ela responde só com o que está na ficha e no catálogo do seu negócio. Sem a informação, passa a conversa para a equipe em vez de arriscar."
+          />
+        </div>
+      </div>
+    </section>
+  )
+}
+
 
 export function SecaoNichos() {
   return (

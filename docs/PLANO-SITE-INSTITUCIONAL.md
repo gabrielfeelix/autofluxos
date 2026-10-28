@@ -89,13 +89,20 @@ rotas; rede de segurança da revelação (`revelar.tsx`). O hero da home
 ficou sem visual a pedido do Gabriel; a prévia que troca segue nas
 páginas de nicho.
 
+Feito depois (commit desta rodada): home com números medidos em linha clara,
+tela do Inbox saindo do hero, coexistência e três dúvidas curtas; sitemap
+com as páginas novas; busca e "Pedir esta" na vitrine de integrações.
+
 Falta:
 
 1. **Conferir as tarifas da Meta** na tabela oficial antes do merge no
    `main` (`pecas-interativas.tsx`, constantes `SERVICO` e `MARKETING`).
 2. **Lighthouse mobile** da `/` (não pode cair de 90).
-3. Bento "O que ele faz" com micro-UI viva de verdade (seção 5 do plano
-   v2); hoje são as ilustrações antigas.
-4. Uma página por integração (`/integracoes/[slug]`).
-5. **Depende do Gabriel:** nome comercial dos nichos; logo oficial da
-   Verandi; autorização de MGM Pilates e PCYES para logo ou depoimento.
+3. Bento "O que ele faz" com conteúdo real nas janelas (nomes na fila, texto
+   nos blocos, IA consultando o catálogo).
+4. Comparação de planos em `/precos`; índice fixo em `/produto`; seção
+   própria de IA e de relatórios em `/produto`.
+5. Imagem de compartilhamento (OG) por página; página por integração.
+6. **Depende do Gabriel:** nome comercial dos nichos; logo oficial da
+   Verandi; autorização de MGM Pilates e PCYES para logo ou depoimento
+   (casos nas páginas de nicho).

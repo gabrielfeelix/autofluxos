@@ -27,10 +27,19 @@ const PRONTAS = ITENS_DE_INTEGRACAO.filter((i) => !i.emBreve).length
 
 /** Com `grupos`, mostra só aqueles e sem abas: é a vitrine recortada da página de cada nicho. */
 
+/** "Mercado Pago" casa "mercado pago", "Efí" casa "efi": quem busca não digita acento. */
+function normal(texto: string): string {
+  return texto.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase()
+}
+
 export function VitrineDeIntegracoes({ grupos }: { grupos?: Grupo[] }) {
   const [grupo, setGrupo] = useState<Grupo | 'todas'>('todas')
   // O que já liga vem antes; "Em breve" fecha a lista.
-  const visiveis = ITENS_DE_INTEGRACAO.filter((i) => (grupos ? grupos.includes(i.grupo) : grupo === 'todas' || i.grupo === grupo)).sort((a, b) => Number(!!a.emBreve) - Number(!!b.emBreve))
+  const [busca, setBusca] = useState('')
+  const termo = normal(busca.trim())
+  const visiveis = ITENS_DE_INTEGRACAO.filter((i) => (grupos ? grupos.includes(i.grupo) : grupo === 'todas' || i.grupo === grupo)).filter(
+    (i) => !termo || normal(`${i.nome} ${i.detalhe}`).includes(termo),
+  ).sort((a, b) => Number(!!a.emBreve) - Number(!!b.emBreve))
 
   return (
     <div className={v.vitrine}>
@@ -51,6 +60,14 @@ export function VitrineDeIntegracoes({ grupos }: { grupos?: Grupo[] }) {
             </button>
           ))}
         </div>
+        <input
+          type="search"
+          className={v.busca}
+          placeholder="Buscar integração"
+          aria-label="Buscar integração"
+          value={busca}
+          onChange={(e) => setBusca(e.target.value)}
+        />
         <p className={v.conta}>
           <b>{PRONTAS}</b> prontas para ligar hoje
         </p>
@@ -63,11 +80,23 @@ export function VitrineDeIntegracoes({ grupos }: { grupos?: Grupo[] }) {
             <span className={v.marca}>{item.marca}</span>
             <span className={v.texto}>
               <strong>{item.nome}</strong>
-              {item.emBreve ? <small className={v.selo}>Em breve</small> : <small>{item.detalhe}</small>}
+              {item.emBreve ? (
+                <span className={v.pedir}>
+                  <small className={v.selo}>Em breve</small>
+                  <a href="#conversar">Pedir esta</a>
+                </span>
+              ) : (
+                <small>{item.detalhe}</small>
+              )}
             </span>
           </li>
         ))}
       </ul>
+      {visiveis.length === 0 && (
+        <p className={v.vazio}>
+          Nenhuma integração com esse nome ainda. <a href="#conversar">Conte qual você usa</a> e ela entra na fila.
+        </p>
+      )}
     </div>
   )
 }

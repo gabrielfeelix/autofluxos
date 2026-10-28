@@ -551,7 +551,7 @@ export function SecaoDuvidas() {
  * Desenhada em HTML pelo mesmo motivo das outras ilustrações: print de um
  * produto que muda toda semana envelhece antes da página ir ao ar.
  */
-function Desktop() {
+export function Desktop() {
   const conversas = [
     { sigla: 'MC', nome: 'Marina Costa', previa: 'Quero. Mas antes: dá pra parcelar?', hora: '09:42', espera: true, ativa: true },
     { sigla: 'RS', nome: 'Rafael Souza', previa: 'Perfeito, obrigado!', hora: '09:31', espera: false, ativa: false },
@@ -880,7 +880,7 @@ function Plano({
   )
 }
 
-function Pergunta({ pergunta, resposta }: { pergunta: string; resposta: string }) {
+export function Pergunta({ pergunta, resposta }: { pergunta: string; resposta: string }) {
   return (
     <details className={s.pergunta} data-revela>
       <summary className={s.perguntaTitulo}>

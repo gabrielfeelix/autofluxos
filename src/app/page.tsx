@@ -1,5 +1,13 @@
 import { PaginaDoSite, SecaoFluxo, SecaoOQueFaz } from './(site)/pagina-do-site'
-import { CapaDaHome, SecaoIntegracoesResumo, SecaoNichos, SecaoPrecoResumo } from './(site)/secoes-do-site'
+import {
+  CapaDaHome,
+  SecaoDoisLados,
+  SecaoDuvidasCurtas,
+  SecaoIntegracoesResumo,
+  SecaoNichos,
+  SecaoNumeros,
+  SecaoPrecoResumo,
+} from './(site)/secoes-do-site'
 import { metadadosDoSite } from './(site)/metadados'
 
 /**
@@ -10,8 +18,8 @@ import { metadadosDoSite } from './(site)/metadados'
  * mostre o serviço e os detalhes da empresa".
  *
  * Uma ideia por seção, e o detalhe na página própria
- * (`docs/PLANO-SITE-INSTITUCIONAL.md`): como resolve, para quem é, o que ele
- * faz, quanto custa e com o que liga.
+ * (`docs/PLANO-SITE-INSTITUCIONAL.md`): prova, como resolve, o medo do celular,
+ * para quem é, o que faz, com o que liga, quanto custa e as dúvidas de sempre.
  */
 export const metadata = metadadosDoSite(
   '/',
@@ -22,11 +30,14 @@ export const metadata = metadadosDoSite(
 export default function PaginaInicial() {
   return (
     <PaginaDoSite capa={<CapaDaHome />}>
+      <SecaoNumeros />
       <SecaoFluxo />
+      <SecaoDoisLados />
       <SecaoNichos />
       <SecaoOQueFaz />
-      <SecaoPrecoResumo />
       <SecaoIntegracoesResumo />
+      <SecaoPrecoResumo />
+      <SecaoDuvidasCurtas />
     </PaginaDoSite>
   )
 }
