@@ -26,6 +26,54 @@ para o agente que vai executar. Leia inteiro antes de tocar em código.
    tem medição conhecida. Meça no banco ou tire. Só entra número medido,
    citado em comentário no código (como o 74% e o "1 em 6").
 
+## O que a concorrência faz (24 páginas lidas em 28/out)
+
+Blip, Zenvia, Botmaker, Weni/VTEX, Huggy, Octadesk, JivoChat, Kommo, ChatGuru,
+Poli, Digisac, Umbler Talk, BotConversa, Leadster, ManyChat, Respond.io, WATI,
+Gallabox, Tidio, Zipchat, Chatbase, Landbot, Trengo, Intercom. Material bruto
+(hero literal, títulos, prints) estava em
+`/tmp/claude-1000/.../scratchpad/lp/` e `.../shots/` (some ao reiniciar).
+
+**A fórmula de quase todos (não repetir):**
+- Hero centralizado com pílula "Parceiro oficial da Meta", H1 com palavra em
+  gradiente e dois CTAs (cerca de 20 de 24).
+- **Print da inbox de 3 colunas com cards flutuando** como visual principal
+  (Huggy, Octadesk, ChatGuru, Digisac, Respond, Botmaker, Kommo).
+- Parede de logos em marquee + número redondo de vaidade ("+60 mil empresas",
+  "2B+"): cerca de 18 de 24.
+- Sequência logos, canais em grade, features alternadas, abas de segmento,
+  parede de integrações, depoimentos, FAQ.
+- Gradiente pastel ou roxo, foto de banco de imagem, ícone 3D. Nenhum mascote.
+
+**Clichês de texto (proibidos na nossa página):** "24/7", "24 horas", "nunca
+para" (17 de 24); "tudo em um só lugar" (15); "omnichannel" (15); "transforme
+conversas em receita"; "do primeiro oi à venda"; "sem perder o toque humano";
+"escale"; "venda mais e atenda melhor". **Atenção:** a LP atual tem "24/7" no
+hero e no bloco de números. Trocar por cena concreta ("responde domingo de
+manhã") e propor ao Gabriel.
+
+**Quem quebra o padrão:** WATI (o hero é uma conversa com começo, meio e fim,
+cruzando canal, áudio e idioma), Tidio (pergunta quanto as últimas 100
+conversas renderam, preço no hero) e ManyChat (voz própria, inbox antes e
+depois, FAQ com o medo real: "minha conta vai ser bloqueada?").
+
+**O que ninguém faz, e vira nosso:**
+1. **Coexistência mostrada:** a mesma conversa, ao mesmo tempo, no WhatsApp do
+   celular do dono e no Inbox. Hoje é só card ou meia linha (ChatGuru,
+   BotConversa).
+2. **O editor de fluxo:** nenhum dos 24 heros mostra um fluxo visual, e é o
+   que o dono de PME quer ver para confiar que controla o robô. **É a nossa
+   assinatura dos fios, com função.**
+3. **Resultado medido com método:** os outros usam agregado de vaidade ou case
+   de gigante. Nós: 74% sem a equipe, 1 em 6 fora do horário, com a conta dita.
+4. **Conversar com a IA de um negócio demo na própria página** (fase 2).
+5. **Custo da Meta explicado:** uma calculadora honesta seria inédita no
+   Brasil (só a Zenvia cita, numa barra de topo).
+6. **Brasil concreto:** Pix, áudio de 2 minutos transcrito, "tá disponível?",
+   Magento, Asaas, Verandi. Hoje só a ChatGuru cita integração brasileira.
+7. **Identidade:** o setor inteiro é gradiente genérico. O nosso azul, os fios
+   e uma voz de cena concreta já nos separam.
+
 ## Os quatro princípios
 
 1. **Assinatura: os fios de fluxo.** O desenho do fundo azul (linhas que ligam
@@ -45,14 +93,16 @@ para o agente que vai executar. Leia inteiro antes de tocar em código.
 | # | Seção | Chão | O que acontece na tela | Referência | Técnica |
 |---|---|---|---|---|---|
 | 0 | Hero | azul | Como está. | - | - |
-| 1 | **Inbox ao vivo** (substitui "Na prática") | branco, tela cheia | O Inbox de verdade, grande, montado em DOM (não imagem). Entra em perspectiva e assenta reto ao rolar. Roteiro: conversa nova entra na fila; o bot responde com chips de ação ("agenda.marcar", "crm.etiquetar", "2 ações · 3 s"); cliente pede uma pessoa; atendente assume; selo "Resolvido". | Linear (UI real que se mexe), Lindy (passos com check), Chatbase ("Pensando" vira "3 ações concluídas") | CSS `animation-timeline: view()` para a perspectiva; roteiro igual ao da `conversa-por-segmento` |
-| 2 | **Faixa de canais** | branco, fina | Fios animados ligando WhatsApp, Instagram, Site e Telegram a um nó AutoFluxos, e dele a Magento, Nuvemshop, Verandi, Asaas. Pulsos de luz correm pelos fios. **É a assinatura em estado puro.** | Magic UI Animated Beam | SVG + `motion` (ou CSS `offset-path`) |
+| 1 | **Os dois lados da mesma conversa** (substitui "Na prática") | branco, tela cheia | **Não é o print de inbox que 7 concorrentes usam.** À esquerda, um celular com o WhatsApp do dono; à direita, o Inbox. Uma conversa acontece e aparece nos dois ao mesmo tempo: o cliente manda áudio ("tá disponível?"), a transcrição aparece no Inbox, o bot responde com chips de ação ("agenda.marcar", "2 ações · 3 s"), o cliente pede uma pessoa, a atendente responde **pelo celular** e a resposta surge no Inbox. Mostra coexistência, IA e equipe numa cena só. | WATI (conversa com começo, meio e fim), Lindy (passos com check), Linear (UI real que se mexe) | Roteiro como na `conversa-por-segmento`; moldura Magic UI iPhone; perspectiva com CSS `animation-timeline: view()` |
+| 2 | **O fluxo se montando** (a assinatura) | branco, tela travada | Ao rolar, o editor de fluxo se desenha: os fios saem dos canais (WhatsApp, Instagram, Site, Telegram), ligam blocos de verdade (Mensagem, Pergunta com botões, Condição, IA, Agenda) e terminam nas integrações (Magento, Verandi, Asaas). Um pulso de luz percorre o caminho que uma mensagem faria. **Nenhum dos 24 concorrentes mostra fluxo; é o nome do produto.** | Magic UI Animated Beam, Attio (builder de workflow) | SVG `stroke-dashoffset` com rolagem; blocos no visual do editor real (`@xyflow/react` já instalado, mas aqui SVG leve) |
 | 3 | **O problema** | **faixa escura** (#0b1430), tela cheia | A mesma pergunta "Que horas vocês abrem?" chega de novo e de novo, empilhando com horários diferentes (8h12, 9h40, 11h03...), até virar uma pilha. Corta para três números brancos que sobem ao entrar na tela: 74% sem a equipe, 1 em 6 fora do horário, e um terceiro medido. | Fin (números como cadência), Decagon (faixa de ROI) | Magic UI Animated List + Number Ticker |
-| 4 | **Por segmento** | branco | A que já existe, com: chips de ação nas respostas (estilo Lindy), absorvendo os segmentos do "Para quem é" (salão, imobiliária). O número da esquerda migra para a faixa escura; a coluna da esquerda vira o que o bot resolve naquele segmento (3 linhas), trocando com a aba. | Zipchat (abas), Lindy | Já feito, evoluir |
+| 4 | **Por segmento** | branco | A que já existe, com: Brasil concreto em cada aba (áudio transcrito, Pix, "tá disponível?"), chips de ação nas respostas (estilo Lindy), absorvendo os segmentos do "Para quem é" (salão, imobiliária). O número da esquerda migra para a faixa escura; a coluna da esquerda vira o que o bot resolve naquele segmento (3 linhas), trocando com a aba. | Zipchat (abas), Lindy | Já feito, evoluir |
 | 5 | **O que ele faz** (bento numerado) | branco | Cinco cards com legenda técnica "Fig. 01" a "Fig. 05", cada um com micro-UI viva: o fluxo se desenhando bloco a bloco (os fios de novo); a fila do Inbox entrando; a IA "pensando" com brilho no texto e o selo "não inventa preço"; a ficha do contato se preenchendo; integrações com fios. Borda acende seguindo o mouse. | Linear (Fig. 0.1), Aceternity Glowing Effect | SVG `stroke-dashoffset`, Motion Primitives Text Shimmer |
 | 6 | **Como funciona** | **faixa azul full-bleed** que corta a ilha branca em duas | Quatro passos com a tela travada: o texto rola à esquerda e o painel à direita troca (conectar número, montamos o fluxo, equipe entra, você ajusta). No passo 1, celular com o WhatsApp e o Inbox lado a lado, a mesma mensagem aparecendo nos dois (coexistência). | Raycast (faixa azul no meio quebra a página), Attio (abas numeradas trocando tela), Aceternity Sticky Scroll Reveal | `position: sticky` + IntersectionObserver; moldura Magic UI iPhone |
 | 7 | Preços | branco (segunda ilha) | Como está, mais luz correndo na borda do plano "Mais escolhido" e o valor animando ao trocar mensal/anual. | Magic UI Border Beam, Motion Primitives Animated Number | `motion` |
-| 8 | Dúvidas | branco | Como está. | - | - |
+| 7b | **Quanto a Meta cobra** (novo, logo depois dos preços) | branco | Calculadora honesta: quantas conversas de atendimento e quantas de campanha por mês, e o custo da Meta à parte. Inédito no Brasil. Valores em `memory/meta-cobra-mensagem-de-servico` (serviço: 1.000 grátis por número por mês, depois R$ 0,035; marketing R$ 0,3217); **confira na tabela oficial da Meta antes de publicar.** | Tidio (preço sem rodeio) | Controle deslizante + número animado |
+| 8 | Dúvidas | branco | Entram os medos reais, como faz a ManyChat: "Meu número pode ser bloqueado?", "Perco o WhatsApp do celular?", "A IA inventa preço?". | ManyChat | Como está |
+| 8b | **Converse com um negócio demo** (fase 2) | branco | O visitante escreve para um estúdio ou loja de demonstração e a IA de verdade responde com as regras daquele negócio. Precisa de limite de uso e de custo de IA aprovado. | Lacuna 4 da pesquisa | Rota `/demo` já existe; avaliar |
 | 9 | CTA + rodapé | azul | Como está. | - | - |
 
 **Sai:** "Para quem atende no WhatsApp" (vira abas da seção 4) e o bloco de 4
@@ -112,9 +162,11 @@ PCYES são clientes, mas **logo e nome só com autorização escrita deles**).
 
 1. Seção 3 (faixa escura do problema): é a maior quebra de ritmo e reaproveita
    números prontos.
-2. Seção 2 (faixa de canais): estabelece a assinatura dos fios.
-3. Seção 1 (Inbox ao vivo): o momento mais caro e mais importante.
+2. Seção 2 (o fluxo se montando): estabelece a assinatura dos fios.
+3. Seção 1 (os dois lados da mesma conversa): o momento mais caro e o mais
+   diferente da concorrência.
 4. Seção 6 (como funciona na faixa azul).
 5. Seção 5 (bento vivo).
 6. Seção 4 (ajustes no Por segmento) e 7 (preços).
-7. Mostrar tudo ao Gabriel, ajustar texto, publicar junto com o `94df224d`.
+7. Seção 7b (calculadora da Meta) e 8 (dúvidas com os medos reais).
+8. Mostrar tudo ao Gabriel, ajustar texto, publicar junto com o `94df224d`.
