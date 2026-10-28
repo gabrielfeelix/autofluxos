@@ -34,6 +34,14 @@ import {
 const JANELA_DE_CONFIRMACAO_MS = 2 * 60_000
 /** De quanto em quanto a conversa aberta relê a resposta ainda não confirmada. */
 const RELEITURA_DA_CONFIRMACAO_MS = 3_000
+/**
+ * Por quanto tempo a resposta gravada e ainda sem confirmação da Meta aparece
+ * como "enviando", e não como "envio não confirmado". A linha é gravada antes
+ * de ir à Meta, e os envios saem um de cada vez: com várias respostas
+ * seguidas, a releitura pegava a próxima ainda a caminho e a pintava como
+ * falha (28/out/2026). Falha de verdade nesta aba já aparece na bolha vermelha.
+ */
+const AINDA_SAINDO_MS = 30_000
 
 /**
  * A conversa, e ela anda sozinha.
@@ -315,14 +323,14 @@ export function Historico({
    * `ENVIO`). "saiu" só tira a bolha depois de a leitura trazer a de verdade,
    * para não haver um instante sem nenhuma das duas.
    */
-  const [pendentes, setPendentes] = useState<{ local: string; texto: string; erro?: string }[]>([])
+  const [pendentes, setPendentes] = useState<{ local: string; texto: string; desde: number; erro?: string }[]>([])
   useEffect(() => {
     const aoEnviar = (evento: Event) => {
       const envio = (evento as CustomEvent<Envio>).detail
       if (envio.contatoId !== contatoId) return
       if (envio.estado === 'saindo') {
-        // Mandar de novo tira as que falharam antes: o texto voltou ao campo.
-        setPendentes((atuais) => [...atuais.filter((p) => !p.erro), { local: envio.local, texto: envio.texto ?? '' }])
+        // A que falhou fica guardada: é ela que diz qual linha gravada falhou.
+        setPendentes((atuais) => [...atuais, { local: envio.local, texto: envio.texto ?? '', desde: Date.now() }])
       } else if (envio.estado === 'falhou') {
         setPendentes((atuais) => atuais.map((p) => (p.local === envio.local ? { ...p, erro: envio.erro ?? 'não foi possível enviar' } : p)))
       } else {
@@ -358,6 +366,47 @@ export function Historico({
     return () => window.clearTimeout(espera)
   }, [lista, conferir])
 
+  // A resposta ainda "saindo" passa a "não confirmado" sozinha, no fim do
+  // prazo, sem depender de outra leitura mudar a lista (`AINDA_SAINDO_MS`).
+  const [agora, setAgora] = useState(() => Date.now())
+  useEffect(() => {
+    const prazos = lista
+      .filter((m) => m.direcao === 'saida' && !m.entregue)
+      .map((m) => Date.parse(m.ts) + AINDA_SAINDO_MS)
+      .filter((fim) => fim > agora)
+    if (prazos.length === 0) return
+    const espera = window.setTimeout(() => setAgora(Date.now()), Math.min(...prazos) - agora + 50)
+    return () => window.clearTimeout(espera)
+  }, [lista, agora])
+
+  /*
+   * A bolha local some assim que a leitura traz a mesma resposta ainda a
+   * caminho, e não só quando o envio dela volta: com várias seguidas, a
+   * releitura disparada por uma traz a próxima, e as duas apareciam juntas.
+   * Só casa com linha não confirmada, para um "oi" repetido não esconder o novo.
+   * A que falhou e casou vira "não confirmado" na própria linha, na hora (o
+   * motivo fica embaixo do campo), em vez de a linha mostrar relógio ao lado
+   * de uma bolha vermelha.
+   */
+  const { visiveis, falhadas } = useMemo(() => {
+    const usadas = new Set<string>()
+    const falhadas = new Set<string>()
+    const ultima = pendentes.at(-1)?.local
+    const visiveis = pendentes.filter((p) => {
+      // A mais recente, e só gravada perto do envio: um "oi" antigo sem
+      // confirmação não pode esconder o novo antes de ele ser gravado.
+      const real = [...lista].reverse().find(
+        (m) => m.direcao === 'saida' && !m.entregue && !usadas.has(m.id) && m.texto === p.texto && Date.parse(m.ts) >= p.desde - 30_000,
+      )
+      // Mandar de novo tira a bolha vermelha das anteriores: o texto voltou ao campo.
+      if (!real) return !p.erro || p.local === ultima
+      usadas.add(real.id)
+      if (p.erro) falhadas.add(real.id)
+      return false
+    })
+    return { visiveis, falhadas }
+  }, [pendentes, lista])
+
   /*
    * Um bloco só, de propósito. O pai que rola é `flex-col-reverse` e inverte
    * os filhos diretos: com a lista e as bolhas "enviando" soltas lado a lado,
@@ -373,11 +422,23 @@ export function Historico({
         clienteId={clienteId}
         contatoId={contatoId}
         favoritas={favoritas}
+        agora={agora}
+        falhadas={falhadas}
       />
-      {pendentes.map((p) => (
+      {visiveis.map((p) => (
         <BolhaSaindo key={p.local} texto={p.texto} erro={p.erro} />
       ))}
     </div>
+  )
+}
+
+/** O relógio de "enviando", na bolha local e na gravada que a Meta ainda não confirmou. */
+function RelogioDeEnvio() {
+  return (
+    <svg viewBox="0 0 16 16" className="ml-1 inline size-3.5 align-[-2px]" fill="none" stroke="currentColor" strokeWidth="1.6" aria-label="Enviando">
+      <circle cx="8" cy="8" r="6.2" />
+      <path d="M8 4.6V8l2.2 1.4" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
   )
 }
 
@@ -398,10 +459,7 @@ function BolhaSaindo({ texto, erro }: { texto: string; erro?: string }) {
               <path d="M8 4.8v3.6M8 10.9v.1" strokeLinecap="round" />
             </svg>
           ) : (
-            <svg viewBox="0 0 16 16" className="size-3.5" fill="none" stroke="currentColor" strokeWidth="1.6" aria-hidden>
-              <circle cx="8" cy="8" r="6.2" />
-              <path d="M8 4.6V8l2.2 1.4" strokeLinecap="round" strokeLinejoin="round" />
-            </svg>
+            <RelogioDeEnvio />
           )}
         </span>
       </p>
@@ -448,6 +506,8 @@ function ListaDeMensagens({
   clienteId,
   contatoId,
   favoritas,
+  agora,
+  falhadas,
 }: {
   mensagens: MensagemDoLead[]
   cortada: boolean
@@ -456,6 +516,10 @@ function ListaDeMensagens({
   contatoId: string
   /** Os ids que **eu** guardei, para a estrela nascer cheia. Ver a 0063. */
   favoritas: Set<string>
+  /** Para decidir quem ainda está "saindo" (`AINDA_SAINDO_MS`). */
+  agora: number
+  /** Linhas cujo envio falhou nesta aba: "não confirmado" sem esperar o prazo. */
+  falhadas: ReadonlySet<string>
 }) {
   if (mensagens.length === 0) {
     return <p className="py-16 text-center text-[12.5px] text-dim">Nenhuma mensagem registrada.</p>
@@ -715,7 +779,13 @@ function ListaDeMensagens({
                 Toque em botão: verde e com o nome dito no rodapé, para quem
                 atende ler "resposta pronta" sem comparar com o menu acima.
               */}
-              {nossa && !mensagem.entregue ? (
+              {nossa && !mensagem.entregue && !falhadas.has(mensagem.id) && agora - Date.parse(mensagem.ts) < AINDA_SAINDO_MS ? (
+                <RodapeDaBolha titulo={horaExata(mensagem.ts)} sobreMidia={midiaSolta}>
+                  {mensagem.autor ? `${mensagem.autor} · ` : ''}
+                  {horaDoRelogio(mensagem.ts)}
+                  <RelogioDeEnvio />
+                </RodapeDaBolha>
+              ) : nossa && !mensagem.entregue ? (
                 <>
                   <span className="ml-2 text-[11px] text-muted" title={horaExata(mensagem.ts)}>
                     {mensagem.autor ? `${mensagem.autor} · ` : ''}
