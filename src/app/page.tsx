@@ -1,4 +1,4 @@
-import { PaginaDoSite, SecaoFluxo, SecaoOQueFaz, SecaoProblema } from './(site)/pagina-do-site'
+import { PaginaDoSite, SecaoFluxo, SecaoOQueFaz } from './(site)/pagina-do-site'
 import { CapaDaHome, SecaoIntegracoesResumo, SecaoNichos, SecaoPrecoResumo } from './(site)/secoes-do-site'
 import { metadadosDoSite } from './(site)/metadados'
 
@@ -10,8 +10,8 @@ import { metadadosDoSite } from './(site)/metadados'
  * mostre o serviço e os detalhes da empresa".
  *
  * Uma ideia por seção, e o detalhe na página própria
- * (`docs/PLANO-SITE-INSTITUCIONAL.md`): o problema, como resolve, para quem é,
- * o que ele faz, com o que liga e quanto custa.
+ * (`docs/PLANO-SITE-INSTITUCIONAL.md`): como resolve, para quem é, o que ele
+ * faz, quanto custa e com o que liga.
  */
 export const metadata = metadadosDoSite(
   '/',
@@ -22,7 +22,6 @@ export const metadata = metadadosDoSite(
 export default function PaginaInicial() {
   return (
     <PaginaDoSite capa={<CapaDaHome />}>
-      <SecaoProblema />
       <SecaoFluxo />
       <SecaoNichos />
       <SecaoOQueFaz />

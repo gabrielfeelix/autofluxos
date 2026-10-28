@@ -147,65 +147,107 @@
 
 @media (max-width: 520px) {
   .nichos {
-    grid-template-columns: 1fr;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+
+  .nichoTexto {
+    padding: 14px;
   }
 }
 
+/*
+ * A foto é o cartão inteiro e o texto mora nela, como capa de revista. O
+ * degradê escuro só embaixo, onde está o texto: é a sombra que dá leitura, não
+ * um enfeite. No mouse a foto aproxima e o convite sobe.
+ */
 .nicho {
-  display: flex;
-  flex-direction: column;
+  position: relative;
+  display: block;
   overflow: hidden;
-  border: 1px solid var(--line);
-  border-radius: 18px;
-  background: #ffffff;
-  color: inherit;
+  aspect-ratio: 3 / 4;
+  border-radius: 22px;
+  color: #ffffff;
   text-decoration: none;
-  transition:
-    border-color 0.25s var(--curva),
-    translate 0.25s var(--curva);
-}
-
-.nicho:hover {
-  border-color: color-mix(in srgb, var(--cor) 45%, transparent);
-  translate: 0 -3px;
+  isolation: isolate;
 }
 
 .nicho img {
-  display: block;
+  position: absolute;
+  inset: 0;
+  z-index: -2;
   width: 100%;
-  height: auto;
-  aspect-ratio: 4 / 3;
+  height: 100%;
   object-fit: cover;
+  transition: scale 0.7s var(--curva);
+}
+
+.nicho::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background: linear-gradient(180deg, transparent 38%, rgb(6 12 32 / 0.82) 100%);
+}
+
+.nicho:hover img {
+  scale: 1.05;
 }
 
 .nichoTexto {
-  padding: 18px 18px 6px;
-}
-
-.nichoTexto strong {
-  display: block;
-  font-size: 18px;
-  font-weight: 600;
-  letter-spacing: -0.02em;
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  flex-direction: column;
+  padding: 22px;
 }
 
 .nichoTexto small {
-  display: block;
+  font-size: 12.5px;
+  line-height: 1.4;
+  color: rgb(255 255 255 / 0.78);
+}
+
+.nichoTexto strong {
   margin-top: 4px;
-  font-size: 13.5px;
-  line-height: 1.45;
-  color: var(--muted);
+  font-size: clamp(20px, 2vw, 24px);
+  line-height: 1.1;
+  font-weight: 600;
+  letter-spacing: -0.025em;
 }
 
 .nichoMais {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  margin-top: auto;
-  padding: 12px 18px 18px;
+  max-height: 0;
+  margin-top: 0;
+  overflow: hidden;
+  opacity: 0;
   font-size: 13.5px;
   font-weight: 600;
-  color: var(--cor);
+  transition:
+    max-height 0.35s var(--curva),
+    margin-top 0.35s var(--curva),
+    opacity 0.35s var(--curva);
+}
+
+.nicho:hover .nichoMais,
+.nicho:focus-visible .nichoMais {
+  max-height: 24px;
+  margin-top: 12px;
+  opacity: 1;
+}
+
+/* No toque não existe mouse: o convite fica sempre à vista. */
+@media (hover: none) {
+  .nichoMais {
+    max-height: 24px;
+    margin-top: 12px;
+    opacity: 1;
+  }
 }
 
 /* ─────────────────────────── integrações e preço ─────────────────────────── */

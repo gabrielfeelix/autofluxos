@@ -145,13 +145,13 @@ export function SecaoNichos() {
               data-atraso={i * 80}
             >
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={n.foto} alt="" width={400} height={260} />
+              <img src={n.foto} alt="" width={720} height={960} loading="lazy" />
               <span className={x.nichoTexto}>
-                <strong>{n.nome}</strong>
                 <small>{n.quem}</small>
-              </span>
-              <span className={x.nichoMais}>
-                Ver como funciona <Seta />
+                <strong>{n.nome}</strong>
+                <span className={x.nichoMais}>
+                  Ver como funciona <Seta />
+                </span>
               </span>
             </Link>
           ))}

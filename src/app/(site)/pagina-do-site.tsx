@@ -10,11 +10,8 @@ import {
   TARIFA_DA_META,
 } from '@/core/planos'
 import { Cursor } from './cursor'
-import { NumeroQueSobe } from './numero-que-sobe'
-import { PerguntaRepetida } from './pergunta-repetida'
 import { FluxoSeMontando } from './fluxo-se-montando'
 import { MenuDoTopo } from './menu-do-topo'
-import fp from './faixa-do-problema.module.css'
 import { ProgressoDosPassos } from './progresso-dos-passos'
 import { Revelar } from './revelar'
 import { GLIFO_CLAUDE, GLIFO_GOOGLE, GLIFO_OPENAI, GLIFO_PERPLEXITY } from '@/components/design/glifos-oficiais'
@@ -275,47 +272,6 @@ export function SecaoFluxo() {
   )
 }
 
-export function SecaoProblema() {
-  return (
-          <section className={fp.faixa} id="produto">
-            <div className={`${s.faixa} ${fp.grade}`}>
-              <div className={fp.texto}>
-                <span className={s.olho} data-revela>
-                  O problema
-                </span>
-                <h2 className={fp.titulo} data-revela data-como="desfoque" data-atraso="60">
-                  Você já sabe a resposta antes de ler a pergunta
-                </h2>
-                <p className={fp.chamada} data-revela data-atraso="100">
-                  “Que horas vocês abrem?” pela oitava vez antes do almoço. Você responde,
-                  volta para o que estava fazendo, e às sete da noite descobre que alguém
-                  pedindo orçamento ficou sem resposta desde as onze.
-                </p>
-              </div>
-              <PerguntaRepetida />
-            </div>
-
-            {/*
-              Números medidos, não de mercado, 90 dias até 28/out/2026, todas as
-              contas. 74%: sessões sem transferência (`sessions` x `handoffs`),
-              554 conversas, 141 com equipe. 1 em 6: 12.286 mensagens recebidas,
-              16,5% fora de seg-sex 8h-18h. 4 s: mediana entre a mensagem
-              recebida e a próxima enviada na mesma sessão (`messages`, lead()
-              por session_id, sem histórico), 1.730 respostas antes de haver
-              transferência; depois da transferência a mediana é 106 s (136).
-              Refazer a conta antes de mudar qualquer número.
-            */}
-            <div className={`${s.faixa} ${fp.numeros}`}>
-              <NumeroEscuro valor="74%" rotulo="das conversas com o chatbot terminam sem precisar da equipe" atraso={0} />
-              <NumeroEscuro valor="1 em 6" rotulo="mensagens chega fora do horário comercial, quando a equipe já encerrou o dia" atraso={110} />
-              <NumeroEscuro valor="4 s" rotulo="é o tempo de resposta do chatbot, na mediana. Com a equipe, 1 min 46 s." atraso={220} />
-            </div>
-            <p className={`${s.faixa} ${fp.fonte}`} data-revela data-atraso="300">
-              Medido nas contas do AutoFluxos, últimos 90 dias.
-            </p>
-          </section>
-  )
-}
 
 
 export function SecaoOQueFaz() {
@@ -766,14 +722,6 @@ function Falas() {
   )
 }
 
-function NumeroEscuro({ valor, rotulo, atraso }: { valor: string; rotulo: string; atraso: number }) {
-  return (
-    <div className={fp.numero} data-revela data-como="escala" data-atraso={atraso}>
-      <NumeroQueSobe texto={valor} className={fp.numeroValor} />
-      <p className={fp.numeroRotulo}>{rotulo}</p>
-    </div>
-  )
-}
 
 function Caixa({
   arte,

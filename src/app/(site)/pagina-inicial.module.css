@@ -540,79 +540,77 @@
 }
 
 /*
- * O card do knotch, e a graça dele são **duas camadas de luz**, não uma cor.
- *
- * O fundo é a superfície; por cima vem um degradê diagonal que sobe para o
- * branco translúcido num canto só. Isso lê como textura, luz batendo de
- * viés, em vez de "caixa cinza". O `::after` acrescenta um foco no topo, que
- * é o que dá a impressão de volume.
- *
- * Os valores vieram do bundle do knotch: `linear-gradient(114deg, rgba(255,
- * 255,255,.2), transparent)` e borda `rgb(var(--veu) / .06)`.
+ * Cada peça tem um palco de cor chapada no alto, com os fios da marca, e a
+ * mini-UI branca em cima dele; o texto fica embaixo, no branco. Uma cor por
+ * peça, para o olho separar as cinco antes de ler (pedido do Gabriel,
+ * 28/out: o cinza sobre cinza não separava nada).
  */
 .caixa {
+  --palco: #1d4ed8;
   position: relative;
   overflow: hidden;
   grid-column: span 2;
-  padding: 26px;
+  padding: 0 0 24px;
   border-radius: var(--raio);
-  border: 1px solid rgb(var(--veu) / 0.06);
-  background: var(--canvas-deep);
+  border: 1px solid var(--line);
+  background: #ffffff;
   display: flex;
   flex-direction: column;
-  gap: 22px;
+  gap: 20px;
   transition:
     border-color 0.4s var(--curva),
     transform 0.4s var(--curva);
 }
 
-/*
- * A ilustração vem **antes** do texto e cresce para preencher o card. É o
- * arranjo do knotch: a mini-UI é quem vende, a frase só confirma. Ela é
- * cortada pelo `overflow: hidden` do card de propósito, o corte sugere que
- * há mais interface além da borda.
- */
+.bento > :nth-child(2) {
+  --palco: #0f8f6b;
+}
+
+.bento > :nth-child(3) {
+  --palco: #e8743b;
+}
+
+.bento > :nth-child(4) {
+  --palco: #2f4a8a;
+}
+
+.bento > :nth-child(5) {
+  --palco: #0e7490;
+}
+
 .caixaArte {
+  /* Dentro do palco a mini-UI é branca sobre a cor: os tokens viram os do chão azul. */
+  --veu: 255 255 255;
+  --ink: #ffffff;
+  --soft: rgb(255 255 255 / 0.9);
+  --muted: rgb(255 255 255 / 0.8);
+  --dim: rgb(255 255 255 / 0.7);
+  --line: rgb(255 255 255 / 0.3);
+  --line-soft: rgb(255 255 255 / 0.18);
+  --surface: rgb(255 255 255 / 0.14);
+  --canvas-deep: rgb(255 255 255 / 0.1);
+  --panel: rgb(255 255 255 / 0.16);
+  --accent: #ffffff;
   position: relative;
   z-index: 1;
   flex: 1;
-  min-height: 168px;
+  min-height: 200px;
   display: grid;
   place-items: center;
+  padding: 28px 24px;
+  background: var(--palco);
 }
 
 .caixaPe {
   position: relative;
   z-index: 1;
   margin-top: auto;
-}
-
-/* A luz diagonal. Fica no ::before para não brigar com o conteúdo. */
-.caixa::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(114deg, rgb(var(--luz) / 0.11) 0%, rgb(var(--luz) / 0) 46%);
-  pointer-events: none;
-  transition: opacity 0.4s var(--curva);
-}
-
-/* O foco de cima, que arredonda o volume. */
-.caixa::after {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background: radial-gradient(58% 46% at 50% 0%, rgb(var(--luz) / 0.09), transparent 72%);
-  pointer-events: none;
+  padding: 0 24px;
 }
 
 .caixa:hover {
-  border-color: rgb(var(--veu) / 0.14);
+  border-color: color-mix(in srgb, var(--palco) 40%, transparent);
   transform: translateY(-3px);
-}
-
-.caixa:hover::before {
-  opacity: 1.5;
 }
 
 .caixaLarga {
