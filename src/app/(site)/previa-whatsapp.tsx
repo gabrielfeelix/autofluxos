@@ -96,7 +96,7 @@ export const CONVERSAS: Conversa[] = [
   },
   {
     negocio: 'Casa Bela Decor',
-    cor: '#7c3aed',
+    cor: '#a16207',
     mensagens: [
       { de: 'cliente', texto: 'Meu pedido já saiu?' },
       {
