@@ -77,6 +77,8 @@ const ROTEIRO: Fala[] = [
   { de: 'equipe', texto: 'Oi, Marina! Aqui é a Júlia. Te ajudo agora.', marca: 'Respondido pelo celular' },
 ]
 
+const HORAS_DA_CONVERSA = ['10:41', '10:41', '10:42', '10:43']
+
 export function DoisLados() {
   const [n, setN] = useState(0)
   const [visivel, setVisivel] = useState(false)
@@ -116,16 +118,18 @@ export function DoisLados() {
             <strong>Marina Costa</strong>
             <small>WhatsApp · +55 44 9••••-4412</small>
           </span>
-          <em data-estado={transferiu ? 'equipe' : 'bot'}>{transferiu ? 'Júlia assumiu' : 'Chatbot atendendo'}</em>
+          <em>{transferiu ? 'Atendida por Júlia' : 'Chatbot atendendo'}</em>
         </div>
         <div className={x.janelaCorpo}>
+          <p className={x.janelaAviso}>Hoje</p>
           {falas.map((f, i) => (
             <div key={i} className={x.janelaLinha} data-de={f.de}>
-              {i === 2 && <p className={x.janelaAviso}>Transferida para a equipe, com o histórico</p>}
-              <p className={x.janelaBalao}>
-                {f.de !== 'cliente' && <b>{f.de === 'bot' ? 'Chatbot' : 'Júlia · pelo celular'}</b>}
-                {f.texto}
-              </p>
+              {i === 3 && <p className={x.janelaAviso}>Júlia entrou na conversa</p>}
+              <p className={x.janelaBalao}>{f.texto}</p>
+              <small>
+                {f.de === 'bot' ? 'Chatbot · ' : f.de === 'equipe' ? 'Júlia, pelo celular · ' : ''}
+                {HORAS_DA_CONVERSA[i]}
+              </small>
             </div>
           ))}
         </div>
@@ -149,19 +153,26 @@ export function DoisLados() {
             </span>
           </div>
           <div className={x.aparelhoCorpo}>
+            <p className={x.aparelhoData}>Hoje</p>
             {falas.map((f, i) => (
               <p key={i} className={x.aparelhoBalao} data-de={f.de === 'cliente' ? 'ela' : 'nos'}>
                 {f.texto}
+                <time>{HORAS_DA_CONVERSA[i]}</time>
               </p>
             ))}
+          </div>
+          <div className={x.aparelhoCampo} aria-hidden>
+            <span>Mensagem</span>
+            <i>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="#ffffff" aria-hidden>
+                <path d="M12 15a3 3 0 0 0 3-3V6a3 3 0 0 0-6 0v6a3 3 0 0 0 3 3Zm5-3a5 5 0 0 1-10 0H5a7 7 0 0 0 6 6.9V21h2v-2.1A7 7 0 0 0 19 12Z" />
+              </svg>
+            </i>
           </div>
         </div>
       </div>
 
-      <span key={falas.length} className={x.sincronia} aria-hidden>
-        <i />
-        Mesmo número, sincronizado
-      </span>
+      <p className={x.sincronia}>O mesmo número nos dois lados. Cada mensagem aparece no celular e no Inbox ao mesmo tempo.</p>
     </div>
   )
 }
