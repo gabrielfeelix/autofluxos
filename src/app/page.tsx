@@ -109,16 +109,16 @@ API oficial do WhatsApp Business
             <h1 className={s.titulo}>
               <TituloAnimado
                 linhas={[
-                  { texto: 'Seu WhatsApp responde sozinho.' },
-                  { texto: 'Até a hora de não responder.', destaque: true },
+                  { texto: 'Seu WhatsApp responde na hora.' },
+                  { texto: 'Sua equipe entra quando precisa.', destaque: true },
                 ]}
               />
             </h1>
 
             <p className={s.subtitulo} data-revela data-atraso="820">
-              Horário, preço, endereço, confirmação: o AutoFluxos responde sozinho as cinco
-              perguntas que chegam quarenta vezes por dia. O resto vai para a sua equipe,
-              com a conversa inteira do lado. Tudo no número que já está no seu cartão.
+              Chatbot, IA e a caixa de entrada da equipe no número que você já usa. Horário,
+              preço, agenda e pedido se resolvem na conversa; o que precisa de gente chega à
+              equipe com o histórico ao lado.
             </p>
 
             <div className={s.acoes} data-revela data-atraso="920">
@@ -130,17 +130,6 @@ API oficial do WhatsApp Business
               </a>
             </div>
 
-            <div className={s.tiras} data-revela data-atraso="1010">
-              <span className={s.tira}>
-                <span className={s.tiraValor}>24/7</span> sem ninguém de plantão
-              </span>
-              <span className={s.tira}>
-                <span className={s.tiraValor}>API oficial</span> do WhatsApp Business
-              </span>
-              <span className={s.tira}>
-                <span className={s.tiraValor}>Seu número</span> continua sendo o seu
-              </span>
-            </div>
           </div>
 
           <span className={s.rolar} aria-hidden>

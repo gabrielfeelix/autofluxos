@@ -257,8 +257,8 @@
   position: relative;
   display: grid;
   place-items: center;
-  min-height: min(86svh, 760px);
-  padding: clamp(84px, 11vw, 132px) 0 clamp(64px, 8vw, 92px);
+  /* Sem altura mínima: o título começa logo abaixo do cabeçalho, sem o vão. */
+  padding: clamp(40px, 6vw, 76px) 0 clamp(64px, 8vw, 92px);
   isolation: isolate;
   overflow: hidden;
 }
@@ -319,7 +319,8 @@
 
 .titulo {
   margin: 22px auto 0;
-  max-width: 19ch;
+  /* Cada frase numa linha no computador; 19ch deixava "hora." e "precisa." sozinhas. */
+  max-width: 24ch;
   font-size: clamp(32px, 5.4vw, 60px);
   line-height: 1.03;
   letter-spacing: -0.035em;
@@ -1821,30 +1822,8 @@
 }
 
 /* A linha de números logo abaixo do CTA: a prova em três dados. */
-.tiras {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  gap: 10px 30px;
-  margin-top: 32px;
-  padding-top: 22px;
-  border-top: 1px solid rgb(var(--veu) / 0.06);
-}
 
-.tira {
-  display: flex;
-  align-items: baseline;
-  gap: 8px;
-  font-size: 13px;
-  color: var(--dim);
-}
 
-.tiraValor {
-  font-size: 17px;
-  font-weight: 600;
-  color: var(--ink);
-  font-variant-numeric: tabular-nums;
-}
 
 /* A seta que convida a rolar. */
 .rolar {
