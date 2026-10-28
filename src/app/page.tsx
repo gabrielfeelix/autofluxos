@@ -16,6 +16,7 @@ import { NumeroQueSobe } from './(site)/numero-que-sobe'
 import { PerguntaRepetida } from './(site)/pergunta-repetida'
 import { FluxoSeMontando } from './(site)/fluxo-se-montando'
 import { MenuDoTopo } from './(site)/menu-do-topo'
+import { VitrineDeIntegracoes } from './(site)/vitrine-de-integracoes'
 import fp from './(site)/faixa-do-problema.module.css'
 import { ProgressoDosPassos } from './(site)/progresso-dos-passos'
 import { Revelar } from './(site)/revelar'
@@ -463,6 +464,24 @@ API oficial do WhatsApp Business
                 Ele não emite nota fiscal, não controla estoque e não substitui o seu sistema de
                 gestão. Cuida do atendimento, e cuida inteiro.
               </p>
+            </div>
+          </section>
+
+          <section className={s.secao} id="integracoes">
+            <div className={s.faixa}>
+              <div className={s.cabecaSecao}>
+                <span className={s.olho} data-revela>
+                  Integrações
+                </span>
+                <h2 className={`${s.tituloSecao} ${s.tituloSecaoCentro}`} data-revela data-como="desfoque" data-atraso="60">
+                  Liga no que você já usa
+                </h2>
+                <p className={`${s.chamada} ${s.chamadaCentro}`} data-revela data-atraso="100">
+                  Loja, pagamento, cardápio e anúncio conversam com o fluxo. O cliente
+                  pergunta, o AutoFluxos consulta o sistema e responde com o dado de verdade.
+                </p>
+              </div>
+              <VitrineDeIntegracoes />
             </div>
           </section>
 
