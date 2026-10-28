@@ -15,6 +15,9 @@ import { DerivaDeParticulas } from './(site)/deriva-de-particulas'
 import { NumeroQueSobe } from './(site)/numero-que-sobe'
 import { ProgressoDosPassos } from './(site)/progresso-dos-passos'
 import { Revelar } from './(site)/revelar'
+import { GLIFO_CLAUDE, GLIFO_GOOGLE, GLIFO_OPENAI, GLIFO_PERPLEXITY } from '@/components/design/glifos-oficiais'
+import { ConversaPorSegmento } from './(site)/conversa-por-segmento'
+import seg from './(site)/conversa-por-segmento.module.css'
 import s from './(site)/pagina-inicial.module.css'
 
 /**
@@ -48,6 +51,21 @@ export const metadata: Metadata = {
 }
 
 const ENTRAR = '/entrar'
+
+/*
+ * "Pergunte a uma IA" do rodapé (como no zipchat.ai, 28/out/2026): abre a IA
+ * com a pergunta pronta, apontando para o `public/llms.txt`. O Gemini não
+ * aceita pergunta pelo endereço; o Modo IA do Google (`udm=50`) aceita.
+ */
+const PERGUNTA_PARA_IA =
+  'Estou pesquisando o AutoFluxos (https://autofluxos.4yu.com.br), plataforma brasileira de atendimento e vendas no WhatsApp, Instagram e chat do site, com chatbot e IA. Usando o site oficial e https://autofluxos.4yu.com.br/llms.txt, resuma: 1) o que o AutoFluxos faz e como funciona; 2) para quem ele é e os melhores usos; 3) o que o diferencia de outras ferramentas de atendimento.'
+
+const IAS = [
+  { nome: 'ChatGPT', glifo: GLIFO_OPENAI, endereco: (q: string) => `https://chatgpt.com/?q=${q}` },
+  { nome: 'Claude', glifo: GLIFO_CLAUDE, endereco: (q: string) => `https://claude.ai/new?q=${q}` },
+  { nome: 'Perplexity', glifo: GLIFO_PERPLEXITY, endereco: (q: string) => `https://www.perplexity.ai/search?q=${q}` },
+  { nome: 'Google', glifo: GLIFO_GOOGLE, endereco: (q: string) => `https://www.google.com/search?udm=50&q=${q}` },
+]
 
 export default function PaginaInicial() {
   return (
@@ -198,6 +216,53 @@ API oficial do WhatsApp Business
                   rotulo="de código. Você arrasta blocos e testa ali mesmo"
                   atraso={330}
                 />
+              </div>
+            </div>
+          </section>
+
+          <section className={s.secao} id="segmentos">
+            <div className={s.faixa}>
+              <span className={s.olho} data-revela>
+                Por segmento
+              </span>
+              <h2 className={`${s.tituloSecao} ${seg.titulo}`} data-revela data-como="desfoque" data-atraso="60">
+                Seu cliente pergunta antes de comprar. Em qualquer segmento.
+              </h2>
+
+              <div className={seg.grade}>
+                {/*
+                  Números medidos, não de mercado: sessões e transferências
+                  (`sessions`, `handoffs`) e mensagens recebidas de todas as
+                  contas, 90 dias até 28/out/2026. 554 conversas, 141 com
+                  transferência para a equipe; 12.286 mensagens, 16,5% fora de
+                  seg-sex 8h-18h. Refazer a conta antes de mudar o número.
+                */}
+                <div data-revela data-atraso="80">
+                  <p className={seg.statValor}>
+                    74<sup>%</sup>
+                  </p>
+                  <p className={seg.statRotulo}>das conversas com o chatbot terminam sem precisar da equipe</p>
+                  <div className={seg.barra} role="img" aria-label="74% resolvidas pelo chatbot, 26% com a equipe">
+                    <span style={{ width: '74%' }} />
+                  </div>
+                  <div className={seg.legendaDaBarra}>
+                    <span>
+                      <i />
+                      Resolvidas pelo chatbot
+                    </span>
+                    <span>
+                      <i data-depois="" />
+                      Com a equipe
+                    </span>
+                  </div>
+                  <p className={seg.fonte}>Média das contas do AutoFluxos nos últimos 90 dias.</p>
+                  <div className={seg.statMenor}>
+                    <strong>1 em 6</strong>
+                    <span>mensagens chega fora do horário comercial, quando a equipe já encerrou o dia</span>
+                  </div>
+                </div>
+
+                <ConversaPorSegmento />
               </div>
             </div>
           </section>
@@ -555,6 +620,26 @@ API oficial do WhatsApp Business
                 <span className={s.rodapeStatusPonto} aria-hidden />
                 Atendendo em +55 44 7400-7438
               </span>
+              <div className={s.rodapeIa}>
+                <span className={s.rodapeIaTitulo}>Pergunte a uma IA sobre o AutoFluxos</span>
+                <div className={s.rodapeIaBotoes}>
+                  {IAS.map((ia) => (
+                    <a
+                      key={ia.nome}
+                      className={s.rodapeIaBotao}
+                      href={ia.endereco(encodeURIComponent(PERGUNTA_PARA_IA))}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      aria-label={`Perguntar ao ${ia.nome} sobre o AutoFluxos`}
+                      title={ia.nome}
+                    >
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
+                        <path d={ia.glifo} />
+                      </svg>
+                    </a>
+                  ))}
+                </div>
+              </div>
             </div>
 
             <nav className={s.rodapeColuna}>

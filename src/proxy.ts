@@ -321,7 +321,9 @@ export const config = {
   // `sitemap.xml` entra pelo mesmo motivo que o `robots.txt`: quem o lê é um
   // rastreador sem cookie, e dentro do matcher ele receberia o redirecionamento
   // para `/entrar` em vez da lista de páginas.
+  // `llms.txt` também: é o resumo que as IAs leem pelo "Pergunte a uma IA" do
+  // rodapé, e quem busca não tem sessão.
   matcher: [
-    '/((?!api/auth|api/webhook|api/manutencao|_next/static|_next/image|favicon.ico|robots.txt|sitemap.xml).*)',
+    '/((?!api/auth|api/webhook|api/manutencao|_next/static|_next/image|favicon.ico|robots.txt|sitemap.xml|llms.txt).*)',
   ],
 }

@@ -1,0 +1,37 @@
+# AutoFluxos
+
+> AutoFluxos é uma plataforma brasileira de atendimento e vendas por mensagem.
+> Reúne WhatsApp, Instagram Direct, chat do site e Telegram numa caixa de
+> entrada só, com chatbot de fluxos visuais e IA que atende com o contexto da
+> empresa. Usa a API oficial do WhatsApp Business, no mesmo número da empresa.
+> É um produto da 4YU (Maringá, PR).
+
+## O que faz
+
+- Caixa de entrada única para WhatsApp, Instagram, chat do site e Telegram, com distribuição automática entre atendentes, transcrição de áudio e tudo em tempo real.
+- O número continua no app WhatsApp do celular (coexistência): a equipe pode responder pelo celular ou pelo painel.
+- Fluxos visuais com blocos de mensagem, pergunta, condição, IA, agenda, e-mail e integrações, sem código, com simulador e versões.
+- IA que responde só com o que veio da empresa: não inventa produto, preço nem horário, pede confirmação antes de agir e passa para uma pessoa quando precisa.
+- CRM com funis, etiquetas e segmentos; transmissões com modelo aprovado pela Meta; carrinho abandonado, cupons e cards de produto no WhatsApp.
+- Rastreia de qual anúncio veio cada conversa e devolve a venda para o anúncio.
+
+## Para quem é
+
+- Lojas virtuais (inclusive Magento): dúvida de produto e compatibilidade, estoque, frete por CEP, carrinho e pesquisa pós-compra com pontos de fidelidade.
+- Estúdios, academias e clínicas: agendamento, remarcação e lembretes dentro do WhatsApp, integrados à Verandi.
+- Restaurantes e delivery: cardápio, pedido montado na conversa e link de pagamento.
+- Empresas de serviço que recebem as mesmas perguntas todo dia e perdem cliente fora do horário comercial.
+
+## Números medidos
+
+- 74% das conversas com o chatbot terminam sem precisar da equipe (média das contas do AutoFluxos, 90 dias até outubro de 2026).
+- 1 em cada 6 mensagens chega fora do horário comercial.
+
+## Links
+
+- [Página inicial](https://autofluxos.4yu.com.br/): o produto, como funciona, preços e dúvidas.
+- [Preços](https://autofluxos.4yu.com.br/#precos): planos com preço na página, sem projeto de implantação.
+- [Dúvidas frequentes](https://autofluxos.4yu.com.br/#duvidas)
+- [Privacidade](https://autofluxos.4yu.com.br/privacidade)
+- [Termos de serviço](https://autofluxos.4yu.com.br/termos)
+- [Contato](mailto:contato@4yu.com.br)
