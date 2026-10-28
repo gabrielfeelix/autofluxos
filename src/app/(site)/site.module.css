@@ -584,52 +584,239 @@
 
 /* ─────────────────────────── os dois lados ─────────────────────────── */
 
+/*
+ * O celular do dono na frente, sobre a janela do Inbox: as duas telas da mesma
+ * conversa numa composição só, em vez de duas caixas lado a lado. O selo de
+ * sincronia pisca a cada mensagem nova, nos dois ao mesmo tempo.
+ */
 .doisLados {
-  display: grid;
-  grid-template-columns: minmax(0, 340px) 90px minmax(0, 1fr);
-  align-items: center;
-  margin-top: 44px;
+  position: relative;
+  max-width: 1040px;
+  height: 560px;
+  margin: 48px auto 0;
 }
 
-@media (max-width: 860px) {
-  .doisLados {
-    grid-template-columns: 1fr;
-    gap: 14px;
-  }
-
-  .fioEntre {
-    display: none;
-  }
-}
-
-.celular {
+.janela {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 76%;
   overflow: hidden;
-  border: 8px solid #0c1838;
-  border-radius: 34px;
-  background: #efeae2;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: #ffffff;
+  box-shadow: 0 40px 80px -40px rgb(16 32 84 / 0.35), 0 2px 8px rgb(16 32 84 / 0.06);
 }
 
-.celularTopo {
+.janelaBarra {
   display: flex;
   align-items: center;
+  gap: 6px;
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--line-soft);
+  background: #f6f8fd;
+}
+
+.janelaBarra i {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: #d5dbe8;
+}
+
+.janelaBarra span {
+  margin-left: 12px;
+  padding: 3px 12px;
+  border-radius: 6px;
+  background: #ffffff;
+  font-size: 11.5px;
+  color: var(--dim);
+}
+
+.janelaTopo {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 20px 14px 32%;
+  border-bottom: 1px solid var(--line-soft);
+}
+
+.janelaTopo strong {
+  display: block;
+  font-size: 15px;
+}
+
+.janelaTopo small {
+  display: block;
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.janelaAvatar {
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: #e8eefc;
+  color: #1d4ed8;
+  font-size: 12.5px;
+  font-weight: 700;
+}
+
+.janelaTopo em {
+  margin-left: auto;
+  padding: 4px 11px;
+  border-radius: 99px;
+  font-size: 12px;
+  font-style: normal;
+  font-weight: 600;
+  color: #1d4ed8;
+  background: rgb(29 78 216 / 0.08);
+  transition:
+    color 0.3s var(--curva),
+    background 0.3s var(--curva);
+}
+
+.janelaTopo em[data-estado='equipe'] {
+  color: #b45309;
+  background: rgb(245 158 11 / 0.13);
+}
+
+/* O corpo começa depois do celular, que cobre a borda esquerda da janela. */
+.janelaCorpo {
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
   gap: 10px;
-  padding: 12px 14px;
-  background: #075e54;
+  height: 400px;
+  padding: 20px 24px 24px 32%;
+  background: #fafbfe;
+}
+
+.janelaLinha {
+  display: flex;
+  flex-direction: column;
+  animation: entra 0.35s var(--curva) both;
+}
+
+.janelaLinha[data-de='cliente'] {
+  align-items: flex-start;
+}
+
+.janelaLinha[data-de='bot'],
+.janelaLinha[data-de='equipe'] {
+  align-items: flex-end;
+}
+
+.janelaBalao {
+  max-width: 82%;
+  margin: 0;
+  padding: 10px 13px;
+  border-radius: 12px;
+  border: 1px solid var(--line);
+  background: #ffffff;
+  font-size: 14px;
+  line-height: 1.45;
+}
+
+.janelaBalao b {
+  display: block;
+  margin-bottom: 3px;
+  font-size: 11.5px;
+  font-weight: 600;
+  color: #1d4ed8;
+}
+
+.janelaLinha[data-de='bot'] .janelaBalao {
+  border-color: transparent;
+  background: #eef2fb;
+}
+
+.janelaLinha[data-de='equipe'] .janelaBalao {
+  border-color: transparent;
+  background: #1d4ed8;
   color: #ffffff;
 }
 
-.celularTopo strong {
+.janelaLinha[data-de='equipe'] .janelaBalao b {
+  color: rgb(255 255 255 / 0.8);
+}
+
+.janelaAviso {
+  align-self: center;
+  margin: 2px 0 8px;
+  padding: 4px 12px;
+  border-radius: 99px;
+  background: rgb(245 158 11 / 0.12);
+  font-size: 12px;
+  font-weight: 500;
+  color: #92400e;
+}
+
+/* O celular: moldura fina, ilha, barra de status e o WhatsApp claro de hoje. */
+.aparelho {
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  z-index: 2;
+  width: 290px;
+  height: 560px;
+  padding: 9px;
+  border-radius: 46px;
+  background: #0c1838;
+  box-shadow: 0 50px 90px -40px rgb(8 20 70 / 0.6);
+}
+
+.aparelhoTela {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow: hidden;
+  border-radius: 38px;
+  background: #efeae2;
+}
+
+.aparelhoStatus {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 24px 4px;
+  background: #ffffff;
+  font-size: 12px;
+  font-weight: 600;
+  color: #111b21;
+}
+
+.ilha {
+  width: 84px;
+  height: 24px;
+  border-radius: 99px;
+  background: #0c1838;
+}
+
+.aparelhoTopo {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 14px 10px;
+  border-bottom: 1px solid rgb(11 20 26 / 0.08);
+  background: #ffffff;
+  color: #111b21;
+}
+
+.aparelhoTopo strong {
   display: block;
   font-size: 14px;
 }
 
-.celularTopo small {
+.aparelhoTopo small {
   display: block;
   font-size: 11px;
-  color: rgb(255 255 255 / 0.75);
+  color: #667781;
 }
 
-.celularAvatar {
+.aparelhoAvatar {
   display: grid;
   place-items: center;
   width: 30px;
@@ -641,36 +828,36 @@
   font-weight: 600;
 }
 
-.celularCorpo,
-.inboxCorpo {
+.aparelhoCorpo {
+  flex: 1;
   display: flex;
   flex-direction: column;
   justify-content: flex-end;
-  gap: 8px;
-  height: 300px;
-  padding: 12px;
-  overflow: hidden;
+  gap: 6px;
+  padding: 12px 10px 18px;
 }
 
-.celularBalao {
-  max-width: 82%;
+.aparelhoBalao {
+  max-width: 84%;
   margin: 0;
-  padding: 7px 10px;
+  padding: 6px 9px;
   border-radius: 8px;
-  font-size: 13.5px;
+  font-size: 13px;
   line-height: 1.4;
   color: #111b21;
   box-shadow: 0 1px 0.5px rgb(11 20 26 / 0.13);
   animation: entra 0.35s var(--curva) both;
 }
 
-.celularBalao[data-de='ela'] {
+.aparelhoBalao[data-de='ela'] {
   align-self: flex-start;
+  border-top-left-radius: 2px;
   background: #ffffff;
 }
 
-.celularBalao[data-de='nos'] {
+.aparelhoBalao[data-de='nos'] {
   align-self: flex-end;
+  border-top-right-radius: 2px;
   background: #d9fdd3;
 }
 
@@ -681,136 +868,61 @@
   }
 }
 
-.fioEntre {
-  position: relative;
-  display: grid;
-  place-items: center;
-  height: 100%;
-}
-
-.fioEntre span {
+/* O selo de sincronia, entre as duas telas; remonta a cada mensagem e pisca. */
+.sincronia {
   position: absolute;
-  left: 0;
-  right: 0;
-  top: 50%;
-  height: 2px;
-  background: linear-gradient(90deg, #1d4ed8 40%, transparent 40%) 0 0 / 10px 2px repeat-x;
-  animation: corre 0.8s linear infinite;
+  left: 250px;
+  bottom: 70px;
+  z-index: 3;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 14px;
+  border-radius: 99px;
+  background: #ffffff;
+  box-shadow: 0 10px 30px -10px rgb(16 32 84 / 0.35);
+  font-size: 12.5px;
+  font-weight: 600;
+  color: #0c1838;
+  animation: pisca 0.6s var(--curva);
 }
 
-@keyframes corre {
-  to {
-    background-position: 10px 0;
+.sincronia i {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #25d366;
+}
+
+@keyframes pisca {
+  40% {
+    scale: 1.06;
   }
 }
 
-.fioEntre small {
-  position: relative;
-  padding: 3px 8px;
-  border-radius: 99px;
-  background: #ffffff;
-  border: 1px solid var(--line);
-  font-size: 11px;
-  font-weight: 600;
-  color: #1d4ed8;
-  white-space: nowrap;
-}
+@media (max-width: 860px) {
+  .doisLados {
+    height: auto;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 16px;
+  }
 
-.inbox {
-  overflow: hidden;
-  border: 1px solid var(--line);
-  border-radius: 18px;
-  background: #ffffff;
-  box-shadow: var(--sombra-janela);
-}
+  .janela,
+  .aparelho,
+  .sincronia {
+    position: relative;
+    inset: auto;
+  }
 
-.inboxTopo {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 14px 18px;
-  border-bottom: 1px solid var(--line);
-}
+  .janela {
+    display: none;
+  }
 
-.inboxTopo strong {
-  font-size: 15px;
-}
-
-.inboxTopo span {
-  padding: 3px 10px;
-  border-radius: 99px;
-  font-size: 12px;
-  font-weight: 600;
-  color: #1d4ed8;
-  background: rgb(29 78 216 / 0.08);
-  transition:
-    color 0.3s var(--curva),
-    background 0.3s var(--curva);
-}
-
-.inboxTopo span[data-estado='equipe'] {
-  color: #b45309;
-  background: rgb(245 158 11 / 0.12);
-}
-
-.inboxCorpo {
-  height: 330px;
-  padding: 16px 18px;
-  background: #fafbfe;
-}
-
-.inboxLinha {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  animation: entra 0.35s var(--curva) both;
-}
-
-.inboxLinha[data-de='cliente'] {
-  align-items: flex-start;
-}
-
-.inboxLinha[data-de='bot'],
-.inboxLinha[data-de='equipe'] {
-  align-items: flex-end;
-}
-
-.inboxBalao {
-  max-width: 78%;
-  margin: 0;
-  padding: 9px 12px;
-  border-radius: 12px;
-  font-size: 14px;
-  line-height: 1.45;
-  background: #ffffff;
-  border: 1px solid var(--line);
-}
-
-.inboxLinha[data-de='bot'] .inboxBalao {
-  background: #eef2fb;
-  border-color: transparent;
-}
-
-.inboxLinha[data-de='equipe'] .inboxBalao {
-  background: #1d4ed8;
-  border-color: transparent;
-  color: #ffffff;
-}
-
-.inboxLinha small {
-  font-size: 11.5px;
-  color: var(--muted);
-}
-
-.inboxAviso {
-  align-self: center;
-  margin: 4px 0;
-  padding: 4px 10px;
-  border-radius: 99px;
-  background: rgb(245 158 11 / 0.12);
-  font-size: 12px;
-  font-weight: 500;
-  color: #92400e;
+  .aparelho {
+    width: min(100%, 300px);
+  }
 }
 
 /* ─────────────────────────── calculadora ─────────────────────────── */
@@ -917,9 +1029,9 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .celularBalao,
-  .inboxLinha,
-  .fioEntre span {
+  .aparelhoBalao,
+  .janelaLinha,
+  .sincronia {
     animation: none;
   }
 }

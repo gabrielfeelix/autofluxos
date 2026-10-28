@@ -102,44 +102,66 @@ export function DoisLados() {
   const transferiu = falas.length >= 3
 
   return (
-    <div ref={raiz} className={x.doisLados} aria-label="A mesma conversa no celular e no Inbox">
-      <div className={x.celular}>
-        <div className={x.celularTopo}>
-          <span className={x.celularAvatar}>M</span>
+    <div ref={raiz} className={x.doisLados} aria-label="A mesma conversa no celular do dono e no Inbox">
+      <div className={x.janela}>
+        <div className={x.janelaBarra}>
+          <i />
+          <i />
+          <i />
+          <span>autofluxos.4yu.com.br/inbox</span>
+        </div>
+        <div className={x.janelaTopo}>
+          <span className={x.janelaAvatar}>MC</span>
           <span>
-            <strong>Marina</strong>
-            <small>WhatsApp Business, no celular</small>
+            <strong>Marina Costa</strong>
+            <small>WhatsApp · +55 44 9••••-4412</small>
           </span>
+          <em data-estado={transferiu ? 'equipe' : 'bot'}>{transferiu ? 'Júlia assumiu' : 'Chatbot atendendo'}</em>
         </div>
-        <div className={x.celularCorpo}>
+        <div className={x.janelaCorpo}>
           {falas.map((f, i) => (
-            <p key={i} className={x.celularBalao} data-de={f.de === 'cliente' ? 'ela' : 'nos'}>
-              {f.texto}
-            </p>
-          ))}
-        </div>
-      </div>
-
-      <div className={x.fioEntre} aria-hidden>
-        <span />
-        <small>mesmo número</small>
-      </div>
-
-      <div className={x.inbox}>
-        <div className={x.inboxTopo}>
-          <strong>Inbox</strong>
-          <span data-estado={transferiu ? 'equipe' : 'bot'}>{transferiu ? 'Com a equipe' : 'Com o chatbot'}</span>
-        </div>
-        <div className={x.inboxCorpo}>
-          {falas.map((f, i) => (
-            <div key={i} className={x.inboxLinha} data-de={f.de}>
-              {i === 2 && <p className={x.inboxAviso}>Transferida para a equipe com o histórico</p>}
-              <p className={x.inboxBalao}>{f.texto}</p>
-              {f.marca && <small>{f.marca}</small>}
+            <div key={i} className={x.janelaLinha} data-de={f.de}>
+              {i === 2 && <p className={x.janelaAviso}>Transferida para a equipe, com o histórico</p>}
+              <p className={x.janelaBalao}>
+                {f.de !== 'cliente' && <b>{f.de === 'bot' ? 'Chatbot' : 'Júlia · pelo celular'}</b>}
+                {f.texto}
+              </p>
             </div>
           ))}
         </div>
       </div>
+
+      <div className={x.aparelho}>
+        <div className={x.aparelhoTela}>
+          <div className={x.aparelhoStatus}>
+            <span>9:41</span>
+            <i className={x.ilha} />
+            <span>5G</span>
+          </div>
+          <div className={x.aparelhoTopo}>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden>
+              <path d="m15 18-6-6 6-6" />
+            </svg>
+            <span className={x.aparelhoAvatar}>M</span>
+            <span>
+              <strong>Marina Costa</strong>
+              <small>WhatsApp Business</small>
+            </span>
+          </div>
+          <div className={x.aparelhoCorpo}>
+            {falas.map((f, i) => (
+              <p key={i} className={x.aparelhoBalao} data-de={f.de === 'cliente' ? 'ela' : 'nos'}>
+                {f.texto}
+              </p>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      <span key={falas.length} className={x.sincronia} aria-hidden>
+        <i />
+        Mesmo número, sincronizado
+      </span>
     </div>
   )
 }
