@@ -656,78 +656,6 @@
   color: var(--muted);
 }
 
-/* ─────────────────────────── números ─────────────────────────── */
-
-/*
- * Os números vivem **soltos**, sem moldura.
- *
- * Eram quatro células dentro de uma caixa com borda, e a página já tinha card
- * demais: bento, passos, setores, planos, perguntas. Mais uma moldura só
- * acrescentava peso. Sem caixa, o que separa uma coluna da outra é um risco
- * fino de 1px, e o número fica sendo o objeto em vez do cartão.
- */
-.numeros {
-  display: grid;
-  gap: 30px 0;
-  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
-  margin-top: 52px;
-}
-
-.numeroItem {
-  position: relative;
-  padding: 4px 26px;
-}
-
-/* O risco entre colunas. Some no primeiro item de cada linha da grade, e
-   `:first-child` daria conta só do primeiro de todos. */
-.numeroItem::before {
-  content: '';
-  position: absolute;
-  left: 0;
-  top: 2px;
-  bottom: 2px;
-  width: 1px;
-  background: linear-gradient(
-    180deg,
-    transparent,
-    rgb(var(--veu) / 0.11) 22%,
-    rgb(var(--veu) / 0.11) 78%,
-    transparent
-  );
-}
-
-.numeroItem:first-child::before {
-  display: none;
-}
-
-@media (max-width: 900px) {
-  .numeroItem::before {
-    display: none;
-  }
-}
-
-.numeroValor {
-  position: relative;
-  z-index: 1;
-  font-size: clamp(34px, 4.6vw, 50px);
-  font-weight: 600;
-  letter-spacing: -0.04em;
-  line-height: 1;
-  color: var(--accent);
-  font-variant-numeric: tabular-nums;
-  text-shadow: 0 0 34px color-mix(in srgb, var(--accent) 38%, transparent);
-}
-
-.numeroRotulo {
-  position: relative;
-  z-index: 1;
-  margin-top: 12px;
-  max-width: 24ch;
-  font-size: 13.5px;
-  color: var(--muted);
-  line-height: 1.55;
-}
-
 /* ─────────────────────────── passos (sticky) ─────────────────────────── */
 
 .passos {
@@ -1308,8 +1236,11 @@
     animation: none !important;
   }
 
+  /* Com `[data-como]` também: as variantes têm especificidade maior e, sem
+     isso, o título com desfoque ficava borrado para sempre. */
   .pagina [data-revela],
-  .pagina [data-revelado] {
+  .pagina [data-revelado],
+  .pagina [data-revela][data-como] {
     opacity: 1;
     transform: none;
     filter: none;

@@ -13,6 +13,8 @@ import {
 import { Cursor } from './(site)/cursor'
 import { DerivaDeParticulas } from './(site)/deriva-de-particulas'
 import { NumeroQueSobe } from './(site)/numero-que-sobe'
+import { PerguntaRepetida } from './(site)/pergunta-repetida'
+import fp from './(site)/faixa-do-problema.module.css'
 import { ProgressoDosPassos } from './(site)/progresso-dos-passos'
 import { Revelar } from './(site)/revelar'
 import { GLIFO_CLAUDE, GLIFO_GOOGLE, GLIFO_OPENAI, GLIFO_PERPLEXITY } from '@/components/design/glifos-oficiais'
@@ -178,46 +180,42 @@ API oficial do WhatsApp Business
             </div>
           </section>
 
-          <section className={s.secao} id="produto">
-            <div className={s.faixa}>
-              <div className={s.cabecaSecao}>
+          <section className={fp.faixa} id="produto">
+            <div className={`${s.faixa} ${fp.grade}`}>
+              <div className={fp.texto}>
                 <span className={s.olho} data-revela>
                   O problema
                 </span>
-                <h2 className={`${s.tituloSecao} ${s.tituloSecaoCentro}`} data-revela data-como="desfoque" data-atraso="60">
+                <h2 className={fp.titulo} data-revela data-como="desfoque" data-atraso="60">
                   Você já sabe a resposta antes de ler a pergunta
                 </h2>
-                <span className={`${s.risco} ${s.riscoCentro}`} data-revela data-atraso="90" aria-hidden />
-                <p className={`${s.chamada} ${s.chamadaCentro}`} data-revela data-atraso="100">
+                <p className={fp.chamada} data-revela data-atraso="100">
                   “Que horas vocês abrem?” pela oitava vez antes do almoço. Você responde,
                   volta para o que estava fazendo, e às sete da noite descobre que alguém
-                  perguntando de orçamento ficou sem resposta desde as onze.
+                  pedindo orçamento ficou sem resposta desde as onze.
                 </p>
               </div>
-
-              <div className={s.numeros}>
-                <Numero
-                  valor="70%"
-                  rotulo="das mensagens que chegam são as mesmas cinco perguntas"
-                  atraso={0}
-                />
-                <Numero
-                  valor="24/7"
-                  rotulo="responde domingo de manhã e na véspera de feriado"
-                  atraso={110}
-                />
-                <Numero
-                  valor="1 número"
-                  rotulo="o seu. Ninguém precisa decorar um número novo"
-                  atraso={220}
-                />
-                <Numero
-                  valor="0 linhas"
-                  rotulo="de código. Você arrasta blocos e testa ali mesmo"
-                  atraso={330}
-                />
-              </div>
+              <PerguntaRepetida />
             </div>
+
+            {/*
+              Números medidos, não de mercado, 90 dias até 28/out/2026, todas as
+              contas. 74%: sessões sem transferência (`sessions` x `handoffs`),
+              554 conversas, 141 com equipe. 1 em 6: 12.286 mensagens recebidas,
+              16,5% fora de seg-sex 8h-18h. 4 s: mediana entre a mensagem
+              recebida e a próxima enviada na mesma sessão (`messages`, lead()
+              por session_id, sem histórico), 1.730 respostas antes de haver
+              transferência; depois da transferência a mediana é 106 s (136).
+              Refazer a conta antes de mudar qualquer número.
+            */}
+            <div className={`${s.faixa} ${fp.numeros}`}>
+              <NumeroEscuro valor="74%" rotulo="das conversas com o chatbot terminam sem precisar da equipe" atraso={0} />
+              <NumeroEscuro valor="1 em 6" rotulo="mensagens chega fora do horário comercial, quando a equipe já encerrou o dia" atraso={110} />
+              <NumeroEscuro valor="4 s" rotulo="é o tempo de resposta do chatbot, na mediana. Com a equipe, 1 min 46 s." atraso={220} />
+            </div>
+            <p className={`${s.faixa} ${fp.fonte}`} data-revela data-atraso="300">
+              Medido nas contas do AutoFluxos, últimos 90 dias.
+            </p>
           </section>
 
           <section className={s.secao} id="segmentos">
@@ -904,13 +902,11 @@ function Falas() {
   )
 }
 
-function Numero({ valor, rotulo, atraso }: { valor: string; rotulo: string; atraso: number }) {
+function NumeroEscuro({ valor, rotulo, atraso }: { valor: string; rotulo: string; atraso: number }) {
   return (
-    <div className={s.numeroItem} data-revela data-como="escala" data-atraso={atraso}>
-      <div className={s.numeroValor}>
-        <NumeroQueSobe texto={valor} />
-      </div>
-      <div className={s.numeroRotulo}>{rotulo}</div>
+    <div className={fp.numero} data-revela data-como="escala" data-atraso={atraso}>
+      <NumeroQueSobe texto={valor} className={fp.numeroValor} />
+      <p className={fp.numeroRotulo}>{rotulo}</p>
     </div>
   )
 }
