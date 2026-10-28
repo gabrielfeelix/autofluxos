@@ -94,37 +94,31 @@ const CANAIS = [
 const SEGMENTOS = [
   {
     titulo: 'Lojas virtuais',
-    icone: <IconeSacola />,
     tags: ['Estoque', 'Frete', 'Pedido'],
     texto: 'Estoque, frete e pedido respondidos na conversa.',
   },
   {
     titulo: 'Saúde e clínicas',
-    icone: <IconeSaude />,
     tags: ['Agenda', 'Confirmação', 'Lembrete'],
     texto: 'Agenda, confirmação e lembrete de consulta.',
   },
   {
     titulo: 'Estúdios e academias',
-    icone: <IconeHaltere />,
     tags: ['Aula experimental', 'Reserva'],
     texto: 'Aula experimental, horários e aluno que sumiu.',
   },
   {
     titulo: 'Restaurantes e delivery',
-    icone: <IconeTalher />,
     tags: ['Cardápio', 'Pix', 'Entrega'],
     texto: 'Cardápio com botões e pedido com Pix.',
   },
   {
     titulo: 'Serviços com hora marcada',
-    icone: <IconeFerramenta />,
     tags: ['Áudio', 'Orçamento', 'Visita'],
     texto: 'Orçamento, visita e reagendamento.',
   },
   {
     titulo: 'Pós-venda',
-    icone: <IconeCaixa />,
     tags: ['Rastreio', 'Aviso', 'Pesquisa'],
     texto: 'Status do pedido, rastreio e pesquisa de satisfação.',
   },
@@ -419,9 +413,9 @@ function PainelSegmentos() {
             onPointerEnter={() => setI(n)}
             onFocus={() => setI(n)}
           >
-            <span className={m.iconeSegmento}>{s.icone}</span>
             <strong>{s.titulo}</strong>
             <small>{s.texto}</small>
+            {/* O que o chatbot resolve, desenhado como um trecho de fluxo: nós ligados por fio. */}
             <span className={m.tags}>
               {s.tags.map((tag) => (
                 <i key={tag}>{tag}</i>
@@ -539,57 +533,5 @@ function IconeDireita() {
     <svg width="12" height="12" viewBox="0 0 12 12" aria-hidden {...traco} strokeWidth={1.6}>
       <path d="M2.5 6h7M6.5 3l3 3-3 3" />
     </svg>
-  )
-}
-
-function IconeSacola() {
-  return (
-    <Icone>
-      <path d="M5 8h14l-1.2 11.5a1.5 1.5 0 0 1-1.5 1.5H7.7a1.5 1.5 0 0 1-1.5-1.5Z" />
-      <path d="M9 10V6.5a3 3 0 0 1 6 0V10" />
-    </Icone>
-  )
-}
-
-function IconeSaude() {
-  return (
-    <Icone>
-      <path d="M12 20s-7-4.3-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.7-7 10-7 10Z" />
-      <path d="M8.5 12h2l1-2 1.5 4 1-2h1.5" />
-    </Icone>
-  )
-}
-
-function IconeHaltere() {
-  return (
-    <Icone>
-      <path d="M6.5 7v10M17.5 7v10M3.5 9.5v5M20.5 9.5v5M6.5 12h11" />
-    </Icone>
-  )
-}
-
-function IconeTalher() {
-  return (
-    <Icone>
-      <path d="M7 3v8M4.5 3v5a2.5 2.5 0 0 0 5 0V3M7 11v10M17 21V3c-2 1-3.5 3.5-3.5 7v3H17" />
-    </Icone>
-  )
-}
-
-function IconeFerramenta() {
-  return (
-    <Icone>
-      <path d="M14.5 6.5a4 4 0 0 0 5 5l-8.8 8.8a2 2 0 0 1-2.8-2.8L16.7 8.7" />
-      <path d="M14.5 6.5 17 4l3 3-2.5 2.5" />
-    </Icone>
-  )
-}
-
-function IconeCaixa() {
-  return (
-    <Icone>
-      <path d="M4 7.5 12 4l8 3.5v9L12 20l-8-3.5Z" />
-      <path d="M4 7.5 12 11l8-3.5M12 11v9M8 5.8l8 3.5" />
-    </Icone>
   )
 }
