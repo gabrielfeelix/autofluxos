@@ -266,6 +266,12 @@ const PREFIXOS_ABERTOS = [
   // O script do balão, em `public/chat/`: a loja o carrega sem sessão nenhuma.
   '/chat/',
   '/logos/',
+  // Os símbolos oficiais das lojas e cardápios: a página inicial os mostra a
+  // quem não entrou, e sem isto a imagem virava a tela de login.
+  '/marcas-de-loja/',
+  '/marcas-de-cardapio/',
+  // As fotos das prévias da página inicial (Unsplash, uso comercial livre).
+  '/fotos-do-site/',
   // O cabeçalho dos modelos de pesquisa, em `public/pesquisas/`: quem busca é
   // o servidor da Meta, sem sessão. Sem isto a imagem virava a tela de login.
   '/pesquisas/',

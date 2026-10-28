@@ -15,6 +15,7 @@ import { DerivaDeParticulas } from './(site)/deriva-de-particulas'
 import { NumeroQueSobe } from './(site)/numero-que-sobe'
 import { PerguntaRepetida } from './(site)/pergunta-repetida'
 import { FluxoSeMontando } from './(site)/fluxo-se-montando'
+import { MenuDoTopo } from './(site)/menu-do-topo'
 import fp from './(site)/faixa-do-problema.module.css'
 import { ProgressoDosPassos } from './(site)/progresso-dos-passos'
 import { Revelar } from './(site)/revelar'
@@ -85,20 +86,7 @@ export default function PaginaInicial() {
             AutoFluxos
           </Link>
 
-          <nav className={s.menu}>
-            <a className={s.menuItem} href="#produto">
-              O produto
-            </a>
-            <a className={s.menuItem} href="#como">
-              Como funciona
-            </a>
-            <a className={s.menuItem} href="#precos">
-              Preços
-            </a>
-            <a className={s.menuItem} href="#duvidas">
-              Dúvidas
-            </a>
-          </nav>
+          <MenuDoTopo classeItem={s.menuItem} hrefEntrar={ENTRAR} />
 
           <Link className={`${s.botao} ${s.botaoVazado}`} href={ENTRAR}>
             Entrar

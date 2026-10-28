@@ -1,0 +1,331 @@
+/*
+ * O WhatsApp claro do celular, nas cores dele: fundo bege, balão branco de
+ * quem recebe, verde de quem envia, botões de resposta em branco com texto
+ * azul. Quem olha tem que reconhecer a tela sem ler nada.
+ */
+
+.tela {
+  display: flex;
+  flex-direction: column;
+  height: 500px;
+  overflow: hidden;
+  border-radius: 14px;
+  border: 1px solid rgb(16 32 84 / 0.08);
+  background: #efeae2;
+  font-size: 13.5px;
+  line-height: 1.4;
+  color: #111b21;
+}
+
+.topo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 12px;
+  background: #ffffff;
+  border-bottom: 1px solid rgb(11 20 26 / 0.08);
+}
+
+.topo strong {
+  display: block;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.topo small {
+  display: block;
+  font-size: 11.5px;
+  color: #667781;
+}
+
+.avatar {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  font-size: 14px;
+  font-weight: 600;
+  color: #ffffff;
+}
+
+.corpo {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  gap: 6px;
+  min-height: 0;
+  padding: 10px;
+  overflow: hidden;
+}
+
+/* Uma mensagem depois da outra, como numa conversa de verdade. */
+.linha {
+  display: flex;
+  animation: chega 0.32s cubic-bezier(0.44, 0, 0.56, 1) both;
+  animation-delay: calc(var(--i) * 0.55s + 0.1s);
+}
+
+.linha[data-lado='cliente'] {
+  justify-content: flex-end;
+}
+
+@keyframes chega {
+  from {
+    opacity: 0;
+    translate: 0 8px;
+  }
+}
+
+.balao {
+  position: relative;
+  max-width: 84%;
+  padding: 6px 8px 7px 9px;
+  border-radius: 8px;
+  background: #ffffff;
+  box-shadow: 0 1px 0.5px rgb(11 20 26 / 0.13);
+}
+
+.linha[data-lado='negocio'] > .balao,
+.linha[data-lado='negocio'] > .pilha > .balao:first-child {
+  border-top-left-radius: 2px;
+}
+
+.linha[data-lado='cliente'] .balao {
+  border-top-right-radius: 2px;
+  background: #d9fdd3;
+}
+
+.hora {
+  float: right;
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  margin: 6px 0 -4px 10px;
+  font-size: 10.5px;
+  color: #667781;
+}
+
+.lido {
+  color: #53bdeb;
+}
+
+.pilha {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  max-width: 84%;
+}
+
+.pilha .balao {
+  max-width: none;
+}
+
+.botao {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 8px;
+  border-radius: 8px;
+  background: #ffffff;
+  box-shadow: 0 1px 0.5px rgb(11 20 26 / 0.13);
+  font-size: 13.5px;
+  font-weight: 500;
+  color: #027eb5;
+}
+
+/* ─────────────────────────── foto e produto ─────────────────────────── */
+
+.comFoto {
+  padding: 3px 3px 7px;
+}
+
+.foto {
+  display: block;
+  width: 100%;
+  height: auto;
+  aspect-ratio: 16 / 9;
+  object-fit: cover;
+  border-radius: 6px;
+}
+
+.produto,
+.comFoto .texto {
+  display: block;
+  padding: 6px 6px 0;
+}
+
+.produto strong {
+  display: block;
+  font-weight: 600;
+}
+
+.produto b {
+  display: block;
+  margin-top: 1px;
+  font-size: 14.5px;
+}
+
+.produto small {
+  display: block;
+  font-size: 12px;
+  color: #667781;
+}
+
+.cardapio {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+  margin-top: 7px;
+}
+
+.cardapio > span {
+  overflow: hidden;
+  border-radius: 6px;
+  background: #f0f2f5;
+}
+
+.cardapio img {
+  display: block;
+  width: 100%;
+  height: 56px;
+  object-fit: cover;
+}
+
+.cardapio strong {
+  display: block;
+  padding: 5px 7px 0;
+  font-size: 12.5px;
+  font-weight: 600;
+}
+
+.cardapio small {
+  display: block;
+  padding: 0 7px 6px;
+  font-size: 12px;
+  color: #667781;
+}
+
+/* ─────────────────────────── áudio ─────────────────────────── */
+
+.audio {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 210px;
+  color: #54656f;
+}
+
+.onda {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  height: 24px;
+}
+
+.onda i {
+  flex: 1;
+  border-radius: 2px;
+  background: #8fb59a;
+}
+
+.onda i:nth-child(-n + 7) {
+  background: #1fa855;
+}
+
+.audio small {
+  font-size: 11px;
+}
+
+.transcricao {
+  display: block;
+  margin-top: 6px;
+  padding-top: 6px;
+  border-top: 1px solid rgb(11 20 26 / 0.08);
+  font-size: 12.5px;
+  color: #3b4a54;
+}
+
+.transcricao::before {
+  content: 'Transcrição: ';
+  font-weight: 600;
+}
+
+/* ─────────────────────────── pix e rastreio ─────────────────────────── */
+
+.tituloPix {
+  display: block;
+  margin-bottom: 5px;
+  font-weight: 600;
+}
+
+.contas {
+  display: grid;
+  gap: 3px;
+  min-width: 200px;
+  font-size: 13px;
+}
+
+.contas > span {
+  display: flex;
+  justify-content: space-between;
+  gap: 18px;
+}
+
+.contas b {
+  font-weight: 500;
+}
+
+.total {
+  margin-top: 3px;
+  padding-top: 5px;
+  border-top: 1px dashed rgb(11 20 26 / 0.18);
+  font-weight: 600;
+}
+
+.total b {
+  font-weight: 700;
+}
+
+.etapas {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  margin: 4px 0 8px;
+  min-width: 220px;
+  background: linear-gradient(90deg, #25d366 62%, #d1d7db 62%) no-repeat 12.5% 4px / 75% 2px;
+}
+
+.etapas > span {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  color: #8696a0;
+}
+
+.etapas i {
+  position: relative;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #d1d7db;
+  box-shadow: 0 0 0 2px #ffffff;
+}
+
+.etapas [data-feita] {
+  color: #111b21;
+}
+
+.etapas [data-feita] i {
+  background: #25d366;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .linha {
+    animation: none;
+  }
+}

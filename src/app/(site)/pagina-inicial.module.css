@@ -135,6 +135,7 @@
 }
 
 .cabecalhoInterno {
+  position: relative;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -183,17 +184,6 @@
   background: var(--panel);
   border: 1px solid var(--line);
   color: var(--accent);
-}
-
-.menu {
-  display: flex;
-  gap: 28px;
-}
-
-@media (max-width: 860px) {
-  .menu {
-    display: none;
-  }
 }
 
 .menuItem {
