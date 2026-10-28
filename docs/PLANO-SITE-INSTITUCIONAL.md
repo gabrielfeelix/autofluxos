@@ -78,39 +78,24 @@ conferindo antes que nenhuma colide com rota da conta.
   print do Gabriel (revelação por rolagem que não disparou ao chegar pela
   âncora do menu). Ver `revelar.tsx`.
 
-## Pendências que o Gabriel já pediu (revisão da sessão de 28/out)
+## Estado em 28/out, fim do dia (commits `2fe69c9d` e seguintes)
 
-Feito nesta sessão: faixa escura do problema, fluxo se montando, menu com
-painéis (Produto, Canais, Segmentos com prévia de WhatsApp e fotos), folha de
-tela cheia no celular, vitrine de integrações, hero mais curto sem as tiras.
+Feito: home com uma ideia por seção; `/segmentos/[slug]` para os quatro
+nichos de `src/core/nichos.ts` (aulas-e-horarios, loja-virtual,
+restaurantes-e-delivery, comercio); `/produto` com canais, fluxo,
+coexistência (`DoisLados`), Inbox, bento e passos; `/precos` com
+calculadora da Meta e dúvidas com os medos reais; `/integracoes`; menu em
+rotas; rede de segurança da revelação (`revelar.tsx`). O hero da home
+ficou sem visual a pedido do Gabriel; a prévia que troca segue nas
+páginas de nicho.
 
-Ainda não feito, em ordem de prioridade:
+Falta:
 
-1. **Reestruturar a home** conforme a tabela acima: tirar "Na prática",
-   "Por segmento" com a conversa, "Para quem é", "Como funciona" e
-   "Dúvidas". Hoje o 74% e o "1 em 6" aparecem duas vezes (faixa escura e
-   "Por segmento").
-2. **Páginas novas:** `/segmentos/[slug]` (seis), `/produto`,
-   `/integracoes`, `/precos`, com cabeçalho e rodapé extraídos de
-   `page.tsx` e os links do menu trocados de âncora para rota.
-3. **Hero com visual:** uma prévia de WhatsApp grande tocando a conversa,
-   no lugar do vazio atual. Conferir com o Gabriel se "esses dados" que
-   pareciam mockados eram só as tiras (já saíram) ou também a constelação
-   de partículas do fundo (`deriva-de-particulas.tsx`).
-4. **Seção 1 do plano v2:** a mesma conversa no celular do dono e no Inbox
-   ao mesmo tempo (coexistência). Vai para `/produto` ou para a home no
-   lugar de "Na prática".
-5. **Seção 6** (Como funciona na faixa azul, tela travada) e **seção 5**
-   (bento com micro-UI viva), em `/produto`.
-6. **`/precos`:** calculadora honesta do custo da Meta (valores na memória
-   `meta-cobra-mensagem-de-servico`, conferir na tabela oficial) e dúvidas
-   com os medos reais ("meu número pode ser bloqueado?", "perco o WhatsApp
-   do celular?", "a IA inventa preço?").
-7. **Bug:** o título de "Integrações" ficou em branco num print do Gabriel
-   (revelação por rolagem não disparou ao chegar pela âncora). Ver
-   `revelar.tsx`.
-8. **Lighthouse mobile** da `/` antes e depois (não pode cair de 90; JS novo
-   até ~25 KB gz). Ainda não medido.
-9. **Depende do Gabriel:** lista do que cada nicho libera; nome comercial
-   dos nichos; logo oficial da Verandi; autorização escrita de MGM Pilates
-   e PCYES para logo ou depoimento.
+1. **Conferir as tarifas da Meta** na tabela oficial antes do merge no
+   `main` (`pecas-interativas.tsx`, constantes `SERVICO` e `MARKETING`).
+2. **Lighthouse mobile** da `/` (não pode cair de 90).
+3. Bento "O que ele faz" com micro-UI viva de verdade (seção 5 do plano
+   v2); hoje são as ilustrações antigas.
+4. Uma página por integração (`/integracoes/[slug]`).
+5. **Depende do Gabriel:** nome comercial dos nichos; logo oficial da
+   Verandi; autorização de MGM Pilates e PCYES para logo ou depoimento.
