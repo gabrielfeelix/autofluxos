@@ -22,8 +22,11 @@ type Mensagem =
 
 export type Conversa = { negocio: string; cor: string; mensagens: Mensagem[] }
 
-export const CONVERSAS: Conversa[] = [
+export type ChaveDaConversa = 'loja' | 'clinica' | 'estudio' | 'restaurante' | 'servicos' | 'posVenda' | 'petshop'
+
+const LISTA: (Conversa & { chave: ChaveDaConversa })[] = [
   {
+    chave: 'loja',
     negocio: 'Ponto Som',
     cor: '#1f6feb',
     mensagens: [
@@ -41,6 +44,7 @@ export const CONVERSAS: Conversa[] = [
     ],
   },
   {
+    chave: 'clinica',
     negocio: 'Clínica Bem Viver',
     cor: '#0f9d76',
     mensagens: [
@@ -51,6 +55,7 @@ export const CONVERSAS: Conversa[] = [
     ],
   },
   {
+    chave: 'estudio',
     negocio: 'Studio Movimento',
     cor: '#c2410c',
     mensagens: [
@@ -66,6 +71,7 @@ export const CONVERSAS: Conversa[] = [
     ],
   },
   {
+    chave: 'restaurante',
     negocio: 'Forno da Vila',
     cor: '#b91c1c',
     mensagens: [
@@ -83,6 +89,7 @@ export const CONVERSAS: Conversa[] = [
     ],
   },
   {
+    chave: 'servicos',
     negocio: 'Clima Instalações',
     cor: '#0e7490',
     mensagens: [
@@ -95,6 +102,7 @@ export const CONVERSAS: Conversa[] = [
     ],
   },
   {
+    chave: 'posVenda',
     negocio: 'Casa Bela Decor',
     cor: '#a16207',
     mensagens: [
@@ -109,7 +117,24 @@ export const CONVERSAS: Conversa[] = [
       { de: 'bot', texto: 'Quer receber um aviso quando sair para entrega?', botoes: ['Sim, me avise'] },
     ],
   },
+  {
+    chave: 'petshop',
+    negocio: 'Pet Amigo',
+    cor: '#15803d',
+    mensagens: [
+      { de: 'cliente', texto: 'Vocês têm ração para filhote de porte médio?' },
+      {
+        de: 'bot',
+        foto: '/fotos-do-site/racao.webp',
+        produto: { nome: 'Ração Filhote Porte Médio 10 kg', preco: 'R$ 189,90', detalhe: '4 na prateleira' },
+      },
+      { de: 'bot', texto: 'Separo uma para você retirar hoje? Ficamos abertos até as 19h.', botoes: ['Separar para hoje', 'Ver outras marcas'] },
+      { de: 'cliente', texto: 'Separar para hoje' },
+    ],
+  },
 ]
+
+export const CONVERSAS = Object.fromEntries(LISTA.map((c) => [c.chave, c])) as unknown as Record<ChaveDaConversa, Conversa>
 
 const HORAS = ['10:41', '10:41', '10:42', '10:42']
 

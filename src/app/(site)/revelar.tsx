@@ -49,7 +49,23 @@ export function Revelar({
         { rootMargin: '0px 0px -12% 0px', threshold: 0.1 },
       )
       for (const alvo of document.querySelectorAll('[data-revela]')) observer.observe(alvo)
-      desligarObserver = () => observer.disconnect()
+
+      // Rede de segurança: quem chega por âncora (`/produto#como`) ou volta de
+      // outra página pode cair no meio de uma seção sem o observer disparar, e
+      // o título ficava em branco. O que já está na tela revela de uma vez.
+      const revelarVisiveis = () => {
+        for (const el of document.querySelectorAll<HTMLElement>('[data-revela]:not([data-revelado])')) {
+          const r = el.getBoundingClientRect()
+          if (r.top < window.innerHeight && r.bottom > 0) el.setAttribute('data-revelado', '')
+        }
+      }
+      const seguranca = window.setTimeout(revelarVisiveis, 1200)
+      window.addEventListener('hashchange', revelarVisiveis)
+      desligarObserver = () => {
+        observer.disconnect()
+        window.clearTimeout(seguranca)
+        window.removeEventListener('hashchange', revelarVisiveis)
+      }
     }
 
     const topo = seletorCabecalho ? document.querySelector<HTMLElement>(`.${seletorCabecalho}`) : null

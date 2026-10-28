@@ -1,8 +1,10 @@
 'use client'
 
+import Link from 'next/link'
 import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from 'react'
 import { createPortal } from 'react-dom'
-import { GLIFO_INSTAGRAM, GLIFO_TELEGRAM, GLIFO_WHATSAPP } from '@/components/design/glifos-oficiais'
+import { CANAIS } from './canais-do-site'
+import { NICHOS_DO_SITE } from './nichos-do-site'
 import { CONVERSAS, PreviaWhatsApp } from './previa-whatsapp'
 import m from './menu-do-topo.module.css'
 
@@ -35,11 +37,11 @@ const ITENS: { chave: Chave; rotulo: string }[] = [
 ]
 
 const PRODUTO = [
-  { titulo: 'Fluxos e chatbot', texto: 'Blocos que você arrasta, liga e testa na hora.', href: '#fluxo', icone: <IconeFluxo /> },
-  { titulo: 'IA que lê o seu negócio', texto: 'Responde pelo catálogo e pelas regras. Sem resposta, chama a equipe.', href: '#segmentos', icone: <IconeIA /> },
-  { titulo: 'Inbox da equipe', texto: 'Todas as conversas numa fila, com a ficha do cliente ao lado.', href: '#como', icone: <IconeInbox /> },
-  { titulo: 'Contatos e funil', texto: 'Etiquetas, etapas e negócios de cada cliente.', href: '#como', icone: <IconeContatos /> },
-  { titulo: 'Transmissões', texto: 'Campanhas com modelo aprovado pela Meta e retorno por contato.', href: '#precos', icone: <IconeTransmissao /> },
+  { titulo: 'Fluxos e chatbot', texto: 'Blocos que você arrasta, liga e testa na hora.', href: '/produto#fluxo', icone: <IconeFluxo /> },
+  { titulo: 'IA que lê o seu negócio', texto: 'Responde pelo catálogo e pelas regras. Sem resposta, chama a equipe.', href: '/#nichos', icone: <IconeIA /> },
+  { titulo: 'Inbox da equipe', texto: 'Todas as conversas numa fila, com a ficha do cliente ao lado.', href: '/produto#como', icone: <IconeInbox /> },
+  { titulo: 'Contatos e funil', texto: 'Etiquetas, etapas e negócios de cada cliente.', href: '/produto#como', icone: <IconeContatos /> },
+  { titulo: 'Transmissões', texto: 'Campanhas com modelo aprovado pela Meta e retorno por contato.', href: '/precos', icone: <IconeTransmissao /> },
 ]
 
 const RECURSOS = [
@@ -59,70 +61,17 @@ const FUNCIONA_COM = [
   { nome: 'Goomer', src: '/marcas-de-cardapio/goomer.png' },
 ]
 
-const CANAIS = [
-  {
-    nome: 'WhatsApp',
-    cor: '#25d366',
-    glifo: GLIFO_WHATSAPP,
-    linha: 'No número que já está no seu cartão.',
-    fatos: ['Continua no app do celular', 'Áudio vira texto no Inbox', 'Transmissões com modelo aprovado'],
-  },
-  {
-    nome: 'Instagram',
-    cor: '#e4405f',
-    glifo: GLIFO_INSTAGRAM,
-    linha: 'Direct e menções em story.',
-    fatos: ['Foto, áudio e vídeo', 'Respostas com botões', 'Na mesma fila do WhatsApp'],
-  },
-  {
-    nome: 'Chat do site',
-    cor: '#6366f1',
-    linha: 'Uma linha de código e o chat está na página.',
-    fatos: ['Cor, saudação e mascote seus', 'Formulário de contato', 'Ligação de voz do visitante'],
-  },
-  {
-    nome: 'Telegram',
-    cor: '#26a5e4',
-    glifo: GLIFO_TELEGRAM,
-    linha: 'Conecta com o token do BotFather.',
-    fatos: ['O mesmo fluxo dos outros canais', 'Conversa particular com o bot', 'Na mesma fila da equipe'],
-  },
-]
 
-// Na mesma ordem de `CONVERSAS` (`previa-whatsapp.tsx`): a linha com o mouse
-// mostra a conversa daquele segmento no cartão ao lado.
-const SEGMENTOS = [
-  {
-    titulo: 'Lojas virtuais',
-    foto: '/fotos-do-site/seg-loja.webp',
-    texto: 'Estoque, frete e pedido na conversa.',
-  },
-  {
-    titulo: 'Saúde e clínicas',
-    foto: '/fotos-do-site/seg-saude.webp',
-    texto: 'Agenda, confirmação e lembrete.',
-  },
-  {
-    titulo: 'Estúdios e academias',
-    foto: '/fotos-do-site/seg-estudio.webp',
-    texto: 'Aula experimental e horários.',
-  },
-  {
-    titulo: 'Restaurantes e delivery',
-    foto: '/fotos-do-site/seg-restaurante.webp',
-    texto: 'Cardápio e pedido com Pix.',
-  },
-  {
-    titulo: 'Serviços com hora marcada',
-    foto: '/fotos-do-site/seg-servicos.webp',
-    texto: 'Orçamento e visita marcada.',
-  },
-  {
-    titulo: 'Pós-venda',
-    foto: '/fotos-do-site/seg-pos-venda.webp',
-    texto: 'Status e rastreio do pedido.',
-  },
-]
+// Os nichos do site (`nichos-do-site.ts`): a linha com o mouse mostra a
+// primeira conversa daquele nicho no cartão ao lado.
+const SEGMENTOS = NICHOS_DO_SITE.map((n) => ({
+  titulo: n.nome,
+  foto: n.foto,
+  texto: n.quem,
+  href: `/segmentos/${n.slug}`,
+  cor: n.cor,
+  conversa: CONVERSAS[n.conversas[0]!],
+}))
 
 export function MenuDoTopo({ classeItem, hrefEntrar }: { classeItem?: string; hrefEntrar: string }) {
   const [aberto, setAberto] = useState<Chave | null>(null)
@@ -210,10 +159,10 @@ export function MenuDoTopo({ classeItem, hrefEntrar }: { classeItem?: string; hr
             <IconeSeta />
           </button>
         ))}
-        <a className={classeItem} href="#integracoes" onPointerEnter={sair}>
+        <a className={classeItem} href="/integracoes" onPointerEnter={sair}>
           Integrações
         </a>
-        <a className={classeItem} href="#precos" onPointerEnter={sair}>
+        <a className={classeItem} href="/precos" onPointerEnter={sair}>
           Preços
         </a>
       </nav>
@@ -255,12 +204,12 @@ export function MenuDoTopo({ classeItem, hrefEntrar }: { classeItem?: string; hr
             onClick={(e) => (e.target as HTMLElement).closest('a') && escolheu()}
           >
             <div className={m.folhaTopo}>
-              <a href="#" className={m.folhaMarca}>
+              <Link href="/" className={m.folhaMarca}>
                 <span>
                   <IconeFluxo />
                 </span>
                 AutoFluxos
-              </a>
+              </Link>
               <button type="button" className={m.fecharFolha} aria-label="Fechar menu" onClick={() => setFolha(false)} autoFocus>
                 <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden {...traco} strokeWidth={2}>
                   <path d="M6 6l12 12M18 6 6 18" />
@@ -284,7 +233,7 @@ export function MenuDoTopo({ classeItem, hrefEntrar }: { classeItem?: string; hr
               <Grupo titulo="Canais">
                 <div className={m.canaisFolha}>
                   {CANAIS.map((c) => (
-                    <a key={c.nome} href="#fluxo" style={{ '--cor': c.cor } as CSSProperties}>
+                    <a key={c.nome} href="/produto#canais" style={{ '--cor': c.cor } as CSSProperties}>
                       <MarcaDoCanal glifo={c.glifo} />
                       {c.nome}
                     </a>
@@ -294,7 +243,7 @@ export function MenuDoTopo({ classeItem, hrefEntrar }: { classeItem?: string; hr
 
               <Grupo titulo="Segmentos">
                 {SEGMENTOS.map((s) => (
-                  <a key={s.titulo} href="#segmentos" className={m.linhaFolha}>
+                  <a key={s.titulo} href={s.href} className={m.linhaFolha}>
                     <span>
                       <strong>{s.titulo}</strong>
                       <small>{s.texto}</small>
@@ -304,9 +253,9 @@ export function MenuDoTopo({ classeItem, hrefEntrar }: { classeItem?: string; hr
               </Grupo>
 
               <div className={m.folhaLinks}>
-                <a href="#integracoes">Integrações</a>
-                <a href="#precos">Preços</a>
-                <a href="#duvidas">Dúvidas</a>
+                <a href="/integracoes">Integrações</a>
+                <a href="/precos">Preços</a>
+                <a href="/precos#duvidas">Dúvidas</a>
               </div>
             </div>
 
@@ -314,7 +263,7 @@ export function MenuDoTopo({ classeItem, hrefEntrar }: { classeItem?: string; hr
               <a href={hrefEntrar} className={m.folhaEntrar}>
                 Entrar
               </a>
-              <a href="#precos" className={m.folhaPlanos}>
+              <a href="/precos" className={m.folhaPlanos}>
                 Ver planos
               </a>
             </div>
@@ -347,12 +296,12 @@ function PainelProduto() {
             <li key={r}>{r}</li>
           ))}
         </ul>
-        <a href="#como" className={m.mais}>
+        <a href="/produto#como" className={m.mais}>
           Como funciona <IconeDireita />
         </a>
       </div>
 
-      <a href="#precos" className={m.chamada}>
+      <a href="/precos" className={m.chamada}>
         <strong>Comece pelo seu WhatsApp</strong>
         <span>Montamos o primeiro fluxo com você, no número que você já usa.</span>
         <em>Ver planos</em>
@@ -369,7 +318,7 @@ function PainelProduto() {
             </span>
           ))}
         </span>
-        <a href="#integracoes" className={m.mais}>
+        <a href="/integracoes" className={m.mais}>
           Todas as integrações <IconeDireita />
         </a>
       </div>
@@ -381,7 +330,7 @@ function PainelCanais() {
   return (
     <div className={m.canais}>
       {CANAIS.map((c) => (
-        <a key={c.nome} href="#fluxo" className={m.cartaoCanal} style={{ '--cor': c.cor } as CSSProperties}>
+        <a key={c.nome} href="/produto#canais" className={m.cartaoCanal} style={{ '--cor': c.cor } as CSSProperties}>
           <span className={m.marcaCanal}>
             <MarcaDoCanal glifo={c.glifo} />
           </span>
@@ -406,15 +355,15 @@ function PainelSegmentos() {
         {SEGMENTOS.map((s, n) => (
           <a
             key={s.titulo}
-            href="#segmentos"
+            href={s.href}
             className={m.cartaoSegmento}
-            style={{ '--cor': CONVERSAS[n]!.cor } as CSSProperties}
+            style={{ '--cor': s.cor } as CSSProperties}
             data-atual={n === i ? '' : undefined}
             onPointerEnter={() => setI(n)}
             onFocus={() => setI(n)}
           >
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img className={m.fotoSegmento} src={s.foto} alt="" width={112} height={112} />
+            <img className={m.fotoSegmento} src={s.foto} alt="" width={320} height={150} />
             <span>
               <strong>{s.titulo}</strong>
               <small>{s.texto}</small>
@@ -427,12 +376,12 @@ function PainelSegmentos() {
       </div>
       <div className={m.previa} aria-hidden>
         <p className={m.legenda}>Como fica no WhatsApp do cliente</p>
-        <PreviaWhatsApp key={i} conversa={CONVERSAS[i]!} />
+        <PreviaWhatsApp key={i} conversa={SEGMENTOS[i]!.conversa} />
       </div>
       <div className={m.rodape}>
-        <a href="#segmentos" className={m.mais}>
-          Ver os segmentos em ação <IconeDireita />
-        </a>
+        <Link href="/#nichos" className={m.mais}>
+          Ver todos os segmentos <IconeDireita />
+        </Link>
       </div>
     </div>
   )

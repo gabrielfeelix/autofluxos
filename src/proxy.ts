@@ -90,6 +90,11 @@ const PORTAS_ABERTAS = [
    */
   '/termos',
   '/exclusao-de-dados',
+  // O site institucional (`docs/PLANO-SITE-INSTITUCIONAL.md`): texto e
+  // vitrine, nada lê banco nem conta de cliente.
+  '/produto',
+  '/precos',
+  '/integracoes',
   /**
    * O service worker do aviso de handoff (0045).
    *
@@ -272,6 +277,8 @@ const PREFIXOS_ABERTOS = [
   '/marcas-de-cardapio/',
   // As fotos das prévias da página inicial (Unsplash, uso comercial livre).
   '/fotos-do-site/',
+  // As páginas de cada nicho do site, `/segmentos/[slug]`.
+  '/segmentos/',
   // O cabeçalho dos modelos de pesquisa, em `public/pesquisas/`: quem busca é
   // o servidor da Meta, sem sessão. Sem isto a imagem virava a tela de login.
   '/pesquisas/',
