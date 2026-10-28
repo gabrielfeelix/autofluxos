@@ -282,52 +282,64 @@ export function CaixaDeResposta({
     guardarRascunho(textarea.value)
   }
 
+  /*
+   * A citação entra no `FormData` aqui, e não como campo escondido no
+   * formulário: ela vive em contexto, não no DOM. Um `<input type="hidden">`
+   * daria o mesmo resultado e mais um lugar para os dois saírem de sincronia.
+   */
+  function comCitacao(dados: FormData): FormData {
+    if (citacao?.citando) dados.set('cita', citacao.citando.waMessageId)
+    return dados
+  }
+
+  /*
+   * **Como no WhatsApp** (dono, 02/out/2026): o campo limpa na hora e a
+   * bolha aparece na conversa com o relógio de "enviando" (`ENVIO`, ver
+   * `Historico`). Deu erro, a bolha fica vermelha com o motivo e o texto volta
+   * para o campo, se ele ainda estiver vazio.
+   *
+   * **Pelo `onSubmit`, fora do `<form action>`.** O `action` roda numa
+   * transição, e a bolha desenhada de dentro dela ficava presa à ação do
+   * servidor: medido em 28/out/2026, a bolha aparecia 30 ms *depois* de a ação
+   * voltar, de 350 ms a 1,5 s após o Enter. `preventDefault` aqui faz o React
+   * não chamar o `action`; o que não é texto livre numa conversa segue por ele.
+   */
+  function enviarNaHora(evento: React.FormEvent<HTMLFormElement>) {
+    const dados = new FormData(evento.currentTarget)
+    const texto = String(dados.get('texto') ?? '')
+    if (!ids || !livre || texto.trim() === '') return
+    evento.preventDefault()
+    setErro(null)
+    comCitacao(dados)
+    const local = `local-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`
+    avisarEnvio({ local, contatoId: ids.contatoId, estado: 'saindo', texto })
+    if (campo.current) campo.current.value = ''
+    conferirTexto()
+    citacao?.limpar()
+    void acao(dados)
+      .then((r) => {
+        if (r.ok) {
+          pedirNovas()
+          avisarEnvio({ local, contatoId: ids.contatoId, estado: 'saiu' })
+          return
+        }
+        throw new Error(r.erro ?? 'não foi possível enviar')
+      })
+      .catch((falha: unknown) => {
+        const motivo = falha instanceof Error && falha.message ? falha.message : 'não foi possível enviar'
+        avisarEnvio({ local, contatoId: ids.contatoId, estado: 'falhou', erro: motivo })
+        setErro(motivo)
+        if (campo.current && campo.current.value.trim() === '') {
+          campo.current.value = texto
+          conferirTexto()
+        }
+      })
+  }
+
+  /** O que não sai por `enviarNaHora`: sem conversa aberta, ou fora do texto livre. */
   function enviar(dados: FormData) {
     setErro(null)
-
-    /*
-     * A citação entra no `FormData` aqui, e não como campo escondido no
-     * formulário: ela vive em contexto, não no DOM. Um `<input type="hidden">`
-     * daria o mesmo resultado e mais um lugar para os dois saírem de sincronia.
-     */
-    if (citacao?.citando) dados.set('cita', citacao.citando.waMessageId)
-
-    /*
-     * **Como no WhatsApp** (dono, 02/out/2026): o campo limpa na hora e a
-     * bolha aparece na conversa com o relógio de "enviando" (`ENVIO`, ver
-     * `Historico`). Antes o campo travava com "…" até o servidor responder.
-     * Deu erro, a bolha fica vermelha com o motivo e o texto volta para o
-     * campo, se ele ainda estiver vazio.
-     *
-     * Sem conversa (`ids`), não há onde desenhar a bolha: espera como antes.
-     */
-    const texto = String(dados.get('texto') ?? '')
-    if (ids && livre && texto.trim() !== '') {
-      const local = `local-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`
-      avisarEnvio({ local, contatoId: ids.contatoId, estado: 'saindo', texto })
-      if (campo.current) campo.current.value = ''
-      conferirTexto()
-      citacao?.limpar()
-      void acao(dados)
-        .then((r) => {
-          if (r.ok) {
-            pedirNovas()
-            avisarEnvio({ local, contatoId: ids.contatoId, estado: 'saiu' })
-            return
-          }
-          throw new Error(r.erro ?? 'não foi possível enviar')
-        })
-        .catch((falha: unknown) => {
-          const motivo = falha instanceof Error && falha.message ? falha.message : 'não foi possível enviar'
-          avisarEnvio({ local, contatoId: ids.contatoId, estado: 'falhou', erro: motivo })
-          setErro(motivo)
-          if (campo.current && campo.current.value.trim() === '') {
-            campo.current.value = texto
-            conferirTexto()
-          }
-        })
-      return
-    }
+    comCitacao(dados)
 
     comecar(async () => {
       const r = await acao(dados)
@@ -388,7 +400,7 @@ export function CaixaDeResposta({
   const mostrarEnviar = !gravando && (temTexto || !anexo || !livre)
 
   return (
-    <form action={enviar} className="border-t border-line px-[18px] py-3">
+    <form action={enviar} onSubmit={enviarNaHora} className="border-t border-line px-[18px] py-3">
       {/*
         Fora da janela, a saída vem **dentro** do compositor, acima do campo:
         o modelo aprovado com prévia e destinatário. O campo continua embaixo,
