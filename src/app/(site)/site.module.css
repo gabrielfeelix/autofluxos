@@ -598,9 +598,11 @@
 
 .janela {
   position: absolute;
+  /* Começa logo atrás do celular, que cobre só a borda (40px); o resto alinha numa margem só. */
+  --margem: 72px;
   top: 0;
+  left: 240px;
   right: 0;
-  width: 76%;
   overflow: hidden;
   border: 1px solid var(--line);
   border-radius: 16px;
@@ -612,7 +614,7 @@
   display: flex;
   align-items: center;
   gap: 6px;
-  padding: 10px 14px;
+  padding: 10px 14px 10px var(--margem);
   border-bottom: 1px solid var(--line-soft);
   background: #f6f8fd;
 }
@@ -637,7 +639,7 @@
   display: flex;
   align-items: center;
   gap: 12px;
-  padding: 14px 20px 14px 32%;
+  padding: 14px 24px 14px var(--margem);
   border-bottom: 1px solid var(--line-soft);
 }
 
@@ -677,7 +679,7 @@
   flex-direction: column;
   gap: 6px;
   height: 380px;
-  padding: 16px 24px 24px 32%;
+  padding: 16px 24px 24px var(--margem);
   background: #fafbfe;
 }
 
@@ -892,11 +894,10 @@
 /* A legenda da sincronia, embaixo, como nota de rodapé de print. */
 .sincronia {
   position: absolute;
+  left: calc(240px + 72px);
   right: 0;
   bottom: 0;
-  width: 76%;
   margin: 0;
-  padding-left: 32%;
   font-size: 13.5px;
   line-height: 1.5;
   color: var(--muted);
