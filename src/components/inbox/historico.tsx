@@ -358,8 +358,14 @@ export function Historico({
     return () => window.clearTimeout(espera)
   }, [lista, conferir])
 
+  /*
+   * Um bloco só, de propósito. O pai que rola é `flex-col-reverse` e inverte
+   * os filhos diretos: com a lista e as bolhas "enviando" soltas lado a lado,
+   * a bolha de quem acabou de mandar ia para o topo da conversa, fora da tela,
+   * e só aparecia quando a confirmada chegava (28/out/2026).
+   */
   return (
-    <>
+    <div className="w-full">
       <ListaDeMensagens
         mensagens={lista}
         cortada={cortada}
@@ -371,7 +377,7 @@ export function Historico({
       {pendentes.map((p) => (
         <BolhaSaindo key={p.local} texto={p.texto} erro={p.erro} />
       ))}
-    </>
+    </div>
   )
 }
 
