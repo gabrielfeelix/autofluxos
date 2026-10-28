@@ -579,18 +579,6 @@
 }
 
 .caixaArte {
-  /* Dentro do palco a mini-UI é branca sobre a cor: os tokens viram os do chão azul. */
-  --veu: 255 255 255;
-  --ink: #ffffff;
-  --soft: rgb(255 255 255 / 0.9);
-  --muted: rgb(255 255 255 / 0.8);
-  --dim: rgb(255 255 255 / 0.7);
-  --line: rgb(255 255 255 / 0.3);
-  --line-soft: rgb(255 255 255 / 0.18);
-  --surface: rgb(255 255 255 / 0.14);
-  --canvas-deep: rgb(255 255 255 / 0.1);
-  --panel: rgb(255 255 255 / 0.16);
-  --accent: #ffffff;
   position: relative;
   z-index: 1;
   flex: 1;
@@ -599,6 +587,19 @@
   place-items: center;
   padding: 28px 24px;
   background: var(--palco);
+}
+
+/*
+ * A mini-UI fica numa janela branca sobre o palco, como tela de produto em
+ * fundo de cor: sobre a cor chapada os véus translúcidos dela sumiam. Dentro
+ * da janela, o acento é a cor do palco.
+ */
+.caixa .caixaArte > * {
+  --accent: var(--palco);
+  padding: 18px;
+  border-radius: 16px;
+  background: #ffffff;
+  box-shadow: 0 18px 40px -18px rgb(8 20 70 / 0.45);
 }
 
 .caixaPe {
