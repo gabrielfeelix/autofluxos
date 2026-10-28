@@ -94,33 +94,33 @@ const CANAIS = [
 const SEGMENTOS = [
   {
     titulo: 'Lojas virtuais',
-    tags: ['Estoque', 'Frete', 'Pedido'],
-    texto: 'Estoque, frete e pedido respondidos na conversa.',
+    foto: '/fotos-do-site/seg-loja.webp',
+    texto: 'Estoque, frete e pedido na conversa.',
   },
   {
     titulo: 'Saúde e clínicas',
-    tags: ['Agenda', 'Confirmação', 'Lembrete'],
-    texto: 'Agenda, confirmação e lembrete de consulta.',
+    foto: '/fotos-do-site/seg-saude.webp',
+    texto: 'Agenda, confirmação e lembrete.',
   },
   {
     titulo: 'Estúdios e academias',
-    tags: ['Aula experimental', 'Reserva'],
-    texto: 'Aula experimental, horários e aluno que sumiu.',
+    foto: '/fotos-do-site/seg-estudio.webp',
+    texto: 'Aula experimental e horários.',
   },
   {
     titulo: 'Restaurantes e delivery',
-    tags: ['Cardápio', 'Pix', 'Entrega'],
-    texto: 'Cardápio com botões e pedido com Pix.',
+    foto: '/fotos-do-site/seg-restaurante.webp',
+    texto: 'Cardápio e pedido com Pix.',
   },
   {
     titulo: 'Serviços com hora marcada',
-    tags: ['Áudio', 'Orçamento', 'Visita'],
-    texto: 'Orçamento, visita e reagendamento.',
+    foto: '/fotos-do-site/seg-servicos.webp',
+    texto: 'Orçamento e visita marcada.',
   },
   {
     titulo: 'Pós-venda',
-    tags: ['Rastreio', 'Aviso', 'Pesquisa'],
-    texto: 'Status do pedido, rastreio e pesquisa de satisfação.',
+    foto: '/fotos-do-site/seg-pos-venda.webp',
+    texto: 'Status e rastreio do pedido.',
   },
 ]
 
@@ -413,13 +413,11 @@ function PainelSegmentos() {
             onPointerEnter={() => setI(n)}
             onFocus={() => setI(n)}
           >
-            <strong>{s.titulo}</strong>
-            <small>{s.texto}</small>
-            {/* O que o chatbot resolve, desenhado como um trecho de fluxo: nós ligados por fio. */}
-            <span className={m.tags}>
-              {s.tags.map((tag) => (
-                <i key={tag}>{tag}</i>
-              ))}
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img className={m.fotoSegmento} src={s.foto} alt="" width={112} height={112} />
+            <span>
+              <strong>{s.titulo}</strong>
+              <small>{s.texto}</small>
             </span>
             <span className={m.setaSegmento} aria-hidden>
               <IconeDireita />
