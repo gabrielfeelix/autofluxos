@@ -5,8 +5,8 @@ import { DerivaDeParticulas } from './deriva-de-particulas'
 import { Desktop, Pergunta } from './pagina-do-site'
 import { CANAIS, type CanalDoSite } from './canais-do-site'
 import { RECURSOS, type RecursoDoSite } from './recursos-do-site'
-import { MODELOS_DE_TODOS, NICHOS_DO_SITE, type NichoDoSite } from './nichos-do-site'
-import { CalculadoraMeta, DoisLados, NumerosMedidos, PreviaQueTroca } from './pecas-interativas'
+import { MODELOS_DE_TODOS, type NichoDoSite } from './nichos-do-site'
+import { CalculadoraMeta, DoisLados, NumerosMedidos, PreviaQueTroca, VitrineDeNichos } from './pecas-interativas'
 import { CONVERSAS, PreviaWhatsApp } from './previa-whatsapp'
 import { ITENS_DE_INTEGRACAO } from './integracoes-do-site'
 import { VitrineDeIntegracoes } from './vitrine-de-integracoes'
@@ -219,29 +219,7 @@ export function SecaoNichos() {
           titulo="Pronto para o seu tipo de negócio"
           texto="Cada ramo entra com os modelos, os nomes e a IA do seu dia a dia. O plano é o mesmo; muda o que vem pronto."
         />
-        <div className={x.nichos}>
-          {NICHOS_DO_SITE.map((n, i) => (
-            <Link
-              key={n.slug}
-              href={`/segmentos/${n.slug}`}
-              className={x.nicho}
-              style={{ '--cor': n.cor } as CSSProperties}
-              data-revela
-              data-como="escala"
-              data-atraso={i * 80}
-            >
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={n.foto} alt="" width={720} height={960} loading="lazy" />
-              <span className={x.nichoTexto}>
-                <small>{n.quem}</small>
-                <strong>{n.nome}</strong>
-                <span className={x.nichoMais}>
-                  Ver como funciona <Seta />
-                </span>
-              </span>
-            </Link>
-          ))}
-        </div>
+        <VitrineDeNichos />
       </div>
     </section>
   )

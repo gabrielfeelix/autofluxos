@@ -1,6 +1,8 @@
 'use client'
 
 import { useEffect, useRef, useState, useSyncExternalStore, type CSSProperties } from 'react'
+import Link from 'next/link'
+import { NICHOS_DO_SITE } from './nichos-do-site'
 import { CONVERSAS, PreviaWhatsApp, type ChaveDaConversa } from './previa-whatsapp'
 import x from './site.module.css'
 
@@ -380,6 +382,105 @@ export function DoisLados() {
       </div>
 
       <p className={x.sincronia}>O mesmo número nos dois lados. Cada mensagem aparece no celular e no Inbox ao mesmo tempo.</p>
+    </div>
+  )
+}
+
+/*
+ * A vitrine dos ramos na home: abas à esquerda, palco à direita com a foto do
+ * ramo, o que vem pronto e a conversa do WhatsApp daquele ramo. Troca sozinha
+ * a cada `TEMPO_POR_RAMO` enquanto está na tela; para no hover, no foco e com
+ * movimento reduzido. A barra da aba ativa é o relógio dessa troca.
+ */
+const TEMPO_POR_RAMO = 8000
+
+export function VitrineDeNichos() {
+  const [ativo, setAtivo] = useState(0)
+  const [parado, setParado] = useState(false)
+  const [visivel, setVisivel] = useState(false)
+  const raiz = useRef<HTMLDivElement>(null)
+  const calmo = useMovimentoReduzido()
+  const correndo = visivel && !parado && !calmo
+
+  useEffect(() => {
+    const el = raiz.current
+    if (!el) return
+    const o = new IntersectionObserver(([e]) => setVisivel(e!.isIntersecting), { threshold: 0.3 })
+    o.observe(el)
+    return () => o.disconnect()
+  }, [])
+
+  useEffect(() => {
+    if (!correndo) return
+    const r = window.setTimeout(() => setAtivo((a) => (a + 1) % NICHOS_DO_SITE.length), TEMPO_POR_RAMO)
+    return () => window.clearTimeout(r)
+  }, [ativo, correndo])
+
+  const nicho = NICHOS_DO_SITE[ativo]!
+  return (
+    <div
+      ref={raiz}
+      className={x.vitrine}
+      style={{ '--cor': nicho.cor, '--tempo': `${TEMPO_POR_RAMO}ms` } as CSSProperties}
+      data-correndo={correndo || undefined}
+      onPointerEnter={() => setParado(true)}
+      onPointerLeave={() => setParado(false)}
+      onFocus={() => setParado(true)}
+      onBlur={() => setParado(false)}
+    >
+      <div className={x.vitrineAbas} role="tablist" aria-label="Ramos">
+        {NICHOS_DO_SITE.map((n, i) => (
+          <button
+            key={n.slug}
+            type="button"
+            role="tab"
+            id={`aba-${n.slug}`}
+            aria-selected={i === ativo}
+            aria-controls="palco-dos-ramos"
+            className={x.vitrineAba}
+            style={{ '--cor': n.cor } as CSSProperties}
+            onClick={() => setAtivo(i)}
+          >
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={n.foto} alt="" width={96} height={128} loading="lazy" />
+            <span>
+              <small>{String(i + 1).padStart(2, '0')}</small>
+              <strong>{n.nome}</strong>
+              <em>{n.quem}</em>
+            </span>
+            {i === ativo && <i className={x.vitrineRelogio} key={`${ativo}-${correndo}`} aria-hidden />}
+          </button>
+        ))}
+      </div>
+
+      <div className={x.vitrinePalco} id="palco-dos-ramos" role="tabpanel" aria-labelledby={`aba-${nicho.slug}`}>
+        {NICHOS_DO_SITE.map((n, i) => (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img key={n.slug} className={x.vitrineFoto} src={n.foto} alt="" width={720} height={960} loading="lazy" data-ativa={i === ativo || undefined} />
+        ))}
+        <div className={x.vitrineTexto} key={nicho.slug}>
+          <p className={x.vitrineQuem}>{nicho.quem}</p>
+          <h3>{nicho.titulo}</h3>
+          <p className={x.vitrineSub}>{nicho.subtitulo}</p>
+          <p className={x.vitrineLegenda}>Vem pronto</p>
+          <ul className={x.vitrineModelos}>
+            {nicho.modelos.slice(0, 4).map((m, i) => (
+              <li key={m} style={{ '--i': i } as CSSProperties}>
+                {m}
+              </li>
+            ))}
+          </ul>
+          <Link href={`/segmentos/${nicho.slug}`} className={x.vitrineLink}>
+            Ver tudo para {nicho.nome.toLowerCase()}
+            <svg width="14" height="14" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+              <path d="M2.5 6h7M6.5 3l3 3-3 3" />
+            </svg>
+          </Link>
+        </div>
+        <div className={x.vitrineConversa} key={`conversa-${nicho.slug}`}>
+          <PreviaWhatsApp conversa={CONVERSAS[nicho.conversas[0]!]} />
+        </div>
+      </div>
     </div>
   )
 }
