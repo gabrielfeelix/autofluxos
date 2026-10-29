@@ -41,6 +41,9 @@ const LISTA: (Conversa & { chave: ChaveDaConversa })[] = [
       },
       { de: 'cliente', texto: 'Comprar agora' },
       { de: 'bot', texto: 'Pedido separado! Paga por Pix ou cartão neste link, e eu confirmo aqui quando cair.', botoes: ['Pagar R$ 268,80'] },
+      // O fluxo inteiro: o link é pago fora da conversa, e a confirmação do banco volta sozinha.
+      { de: 'bot', texto: '✅ Pagamento aprovado! Pedido #1042 confirmado, obrigado.' },
+      { de: 'rastreio', pedido: '#1042', etapas: ['Pago', 'Separado', 'Enviado', 'Entregue'], feitas: 1, previsao: 'Chega na quinta, até as 18h.' },
     ],
   },
   {
