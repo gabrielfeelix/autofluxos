@@ -58,7 +58,8 @@ export function PaginaDoSite({ capa, children }: { capa: ReactNode; children: Re
         <div className={`${s.faixa} ${s.cabecalhoInterno}`}>
           <Link className={s.marca} href="/">
             <span className={s.marcaSigla} aria-hidden>
-              <IconeFluxo />
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src="/logos/logo-autofluxos-marca.png" alt="" width={24} height={24} />
             </span>
             AutoFluxos
           </Link>
@@ -113,8 +114,9 @@ export function PaginaDoSite({ capa, children }: { capa: ReactNode; children: Re
             <div className={s.rodapeSobre}>
               <Link className={s.marca} href="/">
                 <span className={s.marcaSigla} aria-hidden>
-                  <IconeFluxo />
-                </span>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src="/logos/logo-autofluxos-marca.png" alt="" width={24} height={24} />
+            </span>
                 AutoFluxos
               </Link>
               <p className={s.rodapeTexto}>

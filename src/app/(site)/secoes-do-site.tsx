@@ -3,6 +3,7 @@ import type { CSSProperties, ReactNode } from 'react'
 import { DIAS_DE_TESTE, PLANOS } from '@/core/planos'
 import { DerivaDeParticulas } from './deriva-de-particulas'
 import { Desktop, Pergunta } from './pagina-do-site'
+import { GLIFO_META } from '@/components/design/glifos-oficiais'
 import { CANAIS, type CanalDoSite } from './canais-do-site'
 import { RECURSOS, type RecursoDoSite } from './recursos-do-site'
 import { MODELOS_DE_TODOS, type NichoDoSite } from './nichos-do-site'
@@ -74,6 +75,12 @@ export function CapaDaHome() {
       <div className={`${s.faixa} ${x.capaSimplesInterno}`}>
         <p className={s.selo} {...entra(0)}>
           <span className={s.seloTag}>Novo</span>
+          <span className={s.seloMeta}>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-label="Meta" role="img">
+              <path d={GLIFO_META} />
+            </svg>
+            Meta
+          </span>
           API oficial do WhatsApp Business
         </p>
         <h1 className={`${x.capaTitulo} ${x.capaTituloHome}`} {...entra(80, 'desfoque')}>
