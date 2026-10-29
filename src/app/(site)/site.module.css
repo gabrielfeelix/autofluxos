@@ -1210,6 +1210,139 @@ a.canal h3 svg {
   font-weight: 700;
 }
 
+/* Link de pagamento no Inbox: cartão branco dentro do balão azul da atendente. */
+.janelaLink,
+.janelaConfirmado {
+  display: grid;
+  gap: 6px;
+  min-width: 260px;
+  padding: 12px 14px;
+  border-radius: 10px;
+  background: #ffffff;
+  color: #0c1838;
+}
+
+.janelaConfirmado .janelaPix [data-total] {
+  border-top-color: #e3e8f3;
+}
+
+.janelaLinkTopo {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: 11.5px;
+  color: #64708a;
+}
+
+.janelaLinkTopo em {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-style: normal;
+  font-weight: 500;
+  color: #b45309;
+}
+
+.janelaLinkTopo em[data-pago] {
+  color: #15803d;
+}
+
+.janelaLinkPedido {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 16px;
+  font-size: 15px;
+}
+
+.janelaLinkPedido b {
+  font-variant-numeric: tabular-nums;
+}
+
+.janelaLinkUrl {
+  padding-top: 6px;
+  border-top: 1px solid #e3e8f3;
+  font-size: 11.5px;
+  color: #1d4ed8;
+}
+
+.janelaConfirmado {
+  padding: 4px 2px;
+  background: transparent;
+}
+
+.confirmadoTopo {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+
+.confirmadoTopo i {
+  display: grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: #16a34a;
+  color: #ffffff;
+}
+
+.confirmadoTopo strong {
+  font-size: 14px;
+}
+
+.aparelhoPix .confirmadoTopo {
+  justify-content: flex-start;
+}
+
+.aparelhoPix .confirmadoTopo i {
+  width: 18px;
+  height: 18px;
+}
+
+.aparelhoPix .confirmadoTopo strong {
+  margin: 0;
+  font-size: 12.5px;
+}
+
+/* Link no celular: a prévia que o WhatsApp monta sobre o endereço. */
+.aparelhoPrevia {
+  display: grid !important;
+  gap: 1px;
+  margin-bottom: 5px;
+  padding: 7px 8px !important;
+  border-left: 3px solid #25d366;
+  border-radius: 6px;
+  background: rgb(17 27 33 / 0.06);
+  font-size: 12px;
+}
+
+.aparelhoPrevia small {
+  font-size: 10.5px;
+  color: #667781;
+}
+
+.aparelhoPrevia strong {
+  font-size: 12.5px;
+}
+
+.aparelhoPrevia span {
+  color: #54656f;
+}
+
+.aparelhoAcao {
+  display: block;
+  margin-top: 6px;
+  padding: 6px 0 0;
+  border-top: 1px solid rgb(17 27 33 / 0.12);
+  font-size: 12.5px;
+  font-style: normal;
+  font-weight: 500;
+  text-align: center;
+  color: #027eb5;
+}
+
 .aparelhoBalao[data-rico] {
   padding: 4px 4px 6px;
 }
