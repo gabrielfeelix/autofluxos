@@ -875,3 +875,41 @@
     display: none;
   }
 }
+
+/*
+ * A fila controlada (`fila-por-setor.tsx`): o setor ativo vem do clique ou do
+ * relógio do componente, e a aba e a fila andam pela transição, sem a
+ * animação em laço. As abas são botões de verdade, por cima do marcador.
+ */
+.inbox[data-controlado] .setorAtivo {
+  animation: none;
+  translate: calc(var(--ativo) * 100%) 0;
+  transition: translate 0.6s cubic-bezier(0.65, 0, 0.35, 1);
+}
+
+.inbox[data-controlado] .fila {
+  animation: none;
+  translate: calc(var(--ativo) * -100%) 0;
+  transition: translate 0.6s cubic-bezier(0.65, 0, 0.35, 1);
+}
+
+.setores button {
+  position: relative;
+  z-index: 1;
+  padding: 7px 0;
+  border: 0;
+  background: none;
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+}
+
+.setores button[aria-selected='true'] {
+  color: #0c1838;
+}
+
+.setores button:focus-visible {
+  outline: 2px solid #0e7490;
+  outline-offset: 2px;
+  border-radius: 6px;
+}

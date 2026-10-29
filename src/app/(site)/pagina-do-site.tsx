@@ -1,6 +1,6 @@
 import Link from 'next/link'
 import { BentoDoProduto } from './bento-do-produto'
-import { TituloComCanal } from './titulo-com-canal'
+import { InboxClicavel } from './inbox-clicavel'
 import { CartaoEnterprise } from './precos-pagina'
 import { CANAIS } from './canais-do-site'
 import { RECURSOS } from './recursos-do-site'
@@ -517,14 +517,6 @@ export function SecaoDuvidas() {
  * produto que muda toda semana envelhece antes da página ir ao ar.
  */
 export function Desktop() {
-  const conversas = [
-    { sigla: 'MC', nome: 'Marina Costa', previa: 'Quero. Mas antes: dá pra parcelar?', hora: '09:42', espera: true, ativa: true },
-    { sigla: 'RS', nome: 'Rafael Souza', previa: 'Perfeito, obrigado!', hora: '09:31', espera: false, ativa: false },
-    { sigla: 'JP', nome: 'Julia Pereira', previa: 'Bot: confirmado para quinta às 15h', hora: '09:28', espera: false, ativa: false, bot: true },
-    { sigla: 'AL', nome: 'André Lima', previa: 'Vocês fazem orçamento?', hora: '09:15', espera: true, ativa: false },
-    { sigla: 'CF', nome: 'Carla Ferreira', previa: 'Bot: endereço enviado', hora: '08:57', espera: false, ativa: false, bot: true },
-  ]
-
   return (
     <div className={s.desktop} data-revela data-como="escala" data-atraso="140">
       <div className={s.desktopBarra} aria-hidden>
@@ -533,160 +525,11 @@ export function Desktop() {
         <span className={s.janelaPonto} />
         <span className={s.desktopEndereco}>autofluxos.4yu.com.br/inbox</span>
       </div>
-
-      <div className={s.desktopCorpo}>
-        <div className={s.colunaLista}>
-          <div className={s.tituloColuna}>
-            Conversas
-            <span className={s.contadorEspera}>2 esperando</span>
-          </div>
-
-          {conversas.map((c) => (
-            <div key={c.nome} className={`${s.itemLista} ${c.ativa ? s.itemListaAtivo : ''}`}>
-              <span className={`${s.avatarLista} ${c.bot ? s.avatarListaBot : ''}`} aria-hidden>
-                <FotoDaPessoa nome={c.nome} />
-              </span>
-              <span className={s.corpoLista}>
-                <span className={s.nomeLista}>{c.nome}</span>
-                <span className={s.previaLista}>{c.previa}</span>
-              </span>
-              {c.espera ? <span className={s.marcaLista} aria-hidden /> : <span className={s.horaLista}>{c.hora}</span>}
-            </div>
-          ))}
-        </div>
-
-        <div className={s.colunaThread}>
-          <div className={s.threadTopo}>
-            <span className={s.avatarLista} aria-hidden>
-              <FotoDaPessoa nome="Marina Costa" />
-            </span>
-            <span>
-              <span className={s.threadNome}>Marina Costa</span>
-              <span className={s.threadSub}>
-                <TituloComCanal texto="WhatsApp · +55 44 9•••-4412" tamanho={12} />
-              </span>
-            </span>
-            <span className={s.threadAcao}>Ana assumiu</span>
-          </div>
-
-          <div className={s.threadCorpo}>
-            <Falas />
-          </div>
-
-          <div className={s.threadRodape} aria-hidden>
-            <span className={s.campoFalso}>Escreva para Marina…</span>
-            <span className={s.botaoEnviar}>
-              <IconeEnviar />
-            </span>
-          </div>
-        </div>
-
-        <div className={s.colunaFicha}>
-          <div className={s.fichaCabeca}>
-            <span className={s.fichaAvatarGrande} aria-hidden>
-              <FotoDaPessoa nome="Marina Costa" />
-            </span>
-            <span>
-              <span className={s.threadNome}>Marina Costa</span>
-              <span className={s.threadSub}>cliente desde mar/2026</span>
-            </span>
-          </div>
-
-          <div className={s.blocoFicha}>
-            <span className={s.rotuloFicha}>Etiquetas</span>
-            <div className={s.fichaEtiquetas}>
-              <span className={s.etiqueta}>quer sábado</span>
-              <span className={s.etiqueta}>parcelamento</span>
-              <span className={s.etiqueta}>volta sempre</span>
-            </div>
-          </div>
-
-          <div className={s.blocoFicha}>
-            <span className={s.rotuloFicha}>Histórico</span>
-            <span className={s.linhaFicha}>
-              <span>Conversas</span>
-              <span>7</span>
-            </span>
-            <span className={s.linhaFicha}>
-              <span>Último atendimento</span>
-              <span>12/ago</span>
-            </span>
-            <span className={s.linhaFicha}>
-              <span>Atendida por</span>
-              <span>Ana</span>
-            </span>
-          </div>
-        </div>
-      </div>
+      <InboxClicavel />
     </div>
   )
 }
 
-/**
- * A conversa que mostra o produto funcionando.
- *
- * **Ela saiu da capa quando o campo de partículas entrou**, as duas coisas
- * competiam pela mesma atenção, e a capa ficou com o texto. Aqui embaixo ela
- * tem a seção inteira, e é a primeira coisa que aparece depois da dobra.
- *
- * Substitui o print: mostra o produto sem prometer uma interface que continua
- * mudando. Os balões entram em cascata pelo `animation-delay` inline, CSS
- * puro, sem timer no cliente.
- */
-function Falas() {
-  const falas = [
-    { quem: 'cliente' as const, texto: 'Oi! Vocês atendem sábado de manhã?' },
-    {
-      quem: 'bot' as const,
-      autor: 'AutoFluxos',
-      texto: 'Oi, Marina! Sábado das 8h às 12h. Quer que eu veja um horário para você?',
-    },
-    { quem: 'cliente' as const, texto: 'Quero. Mas antes: dá pra parcelar? Meu caso é meio específico…' },
-    { quem: 'marco' as const, texto: 'Passou para uma pessoa' },
-    {
-      quem: 'pessoa' as const,
-      autor: 'Ana · equipe',
-      texto: 'Oi Marina, aqui é a Ana. Vi que você quer sábado. Me conta o seu caso.',
-    },
-  ]
-
-  return (
-    <>
-      {falas.map((fala, i) => {
-        // 420ms entre balões: rápido o bastante para não entediar, lento o
-        // bastante para o olho acompanhar quem fala.
-        const estilo = { animationDelay: `${600 + i * 420}ms` }
-
-        if (fala.quem === 'marco') {
-          return (
-            <span key={i} className={s.marcoHandoff} style={estilo}>
-              <span className={s.pontoVivo} aria-hidden />
-              {fala.texto}
-            </span>
-          )
-        }
-
-        const classe =
-          fala.quem === 'cliente'
-            ? s.balaoCliente
-            : fala.quem === 'bot'
-              ? s.balaoBot
-              : s.balaoPessoa
-
-        return (
-          <div key={i} className={`${s.balao} ${classe}`} style={estilo}>
-            {fala.quem !== 'cliente' && (
-              <span className={`${s.autor} ${fala.quem === 'bot' ? s.autorBot : s.autorPessoa}`}>
-                {fala.autor}
-              </span>
-            )}
-            {fala.texto}
-          </div>
-        )
-      })}
-    </>
-  )
-}
 
 
 function Passo({
@@ -1031,15 +874,6 @@ function IconeCheque() {
 
 
 
-
-
-function IconeEnviar() {
-  return (
-    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-      <path d="M4 12h14M12 5l7 7-7 7" strokeLinecap="round" strokeLinejoin="round" />
-    </svg>
-  )
-}
 
 
 function IconeMais() {

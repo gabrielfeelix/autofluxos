@@ -1,4 +1,5 @@
 import type { CSSProperties, ReactNode } from 'react'
+import { FilaPorSetor } from './fila-por-setor'
 import b from './bento.module.css'
 import { FotoDaPessoa, MiniFoto } from './pessoas-do-site'
 
@@ -161,34 +162,7 @@ export function CenaInbox() {
       ['LS', 'Luna Serra', 'Mudou o CNPJ', 'chatbot'],
     ],
   ]
-  return (
-    <div className={b.inbox} aria-hidden>
-      <div className={b.setores}>
-        <span className={b.setorAtivo} />
-        <span>Vendas</span>
-        <span>Suporte</span>
-        <span>Financeiro</span>
-      </div>
-      <div className={b.filas}>
-        {filas.map((fila, f) => (
-          <div key={f} className={b.fila} style={{ '--f': f } as CSSProperties}>
-            {fila.map(([, nome, texto, quem]) => (
-              <span key={nome} className={b.linha}>
-                <i>
-                  <FotoDaPessoa nome={nome!} />
-                </i>
-                <span>
-                  <b>{nome}</b>
-                  {texto}
-                </span>
-                <em data-espera={quem!.startsWith('espera') || undefined}>{quem}</em>
-              </span>
-            ))}
-          </div>
-        ))}
-      </div>
-    </div>
-  )
+  return <FilaPorSetor filas={filas} />
 }
 
 /* 04 · Pagamento: a cor da marca inteira, o valor em tipografia gigante e o selo que vira pago. */

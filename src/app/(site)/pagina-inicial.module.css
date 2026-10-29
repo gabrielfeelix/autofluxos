@@ -529,6 +529,11 @@
   padding-top: clamp(40px, 5vw, 64px);
 }
 
+/* Em /precos os planos abrem a seção direto (o parágrafo de cima saiu em 29/out): sem o recuo do cabeçalho. */
+.secaoAbaixoDaCapa .planos {
+  margin-top: 0;
+}
+
 .olho {
   display: inline-flex;
   align-items: center;

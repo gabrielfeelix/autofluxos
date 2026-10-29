@@ -108,14 +108,15 @@ const ROTEIRO: Fala[] = [
   },
   { de: 'cliente', audio: { duracao: '0:07', transcricao: 'Quero esse em preto, mas queria tirar uma dúvida do tamanho com alguém.' } },
   { de: 'equipe', texto: 'Oi, Marina! Aqui é a Júlia 👋 Ele ajusta na cabeça e serve em todo mundo. Separo o preto?' },
-  { de: 'cliente', texto: 'Pode separar! Como eu pago?' },
+  // A Marina é a mesma do Inbox de cima, que pergunta se dá pra parcelar: aqui ela parcela (observação do Edu, 29/out).
+  { de: 'cliente', texto: 'Pode separar! Dá pra parcelar?' },
   {
     de: 'equipe',
     link: true,
-    texto: '🧾 *Pedido #1042* · R$ 268,80\n1x Fone Over-ear preto\nEntrega sábado, das 9h às 14h',
+    texto: 'Dá sim! 🧾 *Pedido #1042* · R$ 268,80\nEm até 3x sem juros no cartão\n1x Fone Over-ear preto\nEntrega sábado, das 9h às 14h',
     botao: 'Pagar com Pix ou cartão',
   },
-  { de: 'cliente', texto: 'Pronto, paguei no Pix' },
+  { de: 'cliente', texto: 'Pronto, paguei no cartão em 3x' },
   {
     de: 'bot',
     automatico: 'Automático, pagamento aprovado',
