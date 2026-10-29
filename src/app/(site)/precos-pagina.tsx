@@ -125,6 +125,21 @@ export function SecaoComparacao() {
           </p>
         </div>
 
+        {/*
+          No celular a tabela mostra um plano por vez, escolhido aqui. São rádios
+          e não estado do React: o `:has()` do CSS esconde as outras colunas e a
+          página continua toda no servidor. No computador o seletor some.
+        */}
+        <div className={c.comparar}>
+          <div className={c.seletor} role="radiogroup" aria-label="Plano para comparar">
+            {[...PLANOS.map((p) => p.nome), ENTERPRISE.nome].map((nome, i) => (
+              <label key={nome}>
+                <input type="radio" name="plano-comparado" data-coluna={i + 2} defaultChecked={i === 1} />
+                {nome}
+              </label>
+            ))}
+          </div>
+
         <div className={c.rolagem} data-revela>
           <table className={c.tabela}>
             <thead>
@@ -185,6 +200,7 @@ export function SecaoComparacao() {
               ))}
             </tbody>
           </table>
+        </div>
         </div>
       </div>
     </section>
