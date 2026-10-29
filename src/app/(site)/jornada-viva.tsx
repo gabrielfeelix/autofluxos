@@ -13,13 +13,16 @@ import x from './site.module.css'
  */
 export type Etapa = { titulo: string; texto: string; href: string }
 
-const TEMPO_POR_ETAPA = 3400
+const TEMPO_POR_ETAPA = 2400
+// A primeira troca vem 1 s depois de a seção aparecer: quem chega já vê a jornada andar.
+const PRIMEIRA_TROCA = 1000
 
 export function JornadaViva({ etapas }: { etapas: Etapa[] }) {
   const [ativa, setAtiva] = useState(0)
   const [parado, setParado] = useState(false)
   const [visivel, setVisivel] = useState(false)
   const raiz = useRef<HTMLDivElement>(null)
+  const primeira = useRef(true)
 
   useEffect(() => {
     const el = raiz.current
@@ -32,7 +35,13 @@ export function JornadaViva({ etapas }: { etapas: Etapa[] }) {
 
   useEffect(() => {
     if (!visivel || parado) return
-    const r = window.setTimeout(() => setAtiva((a) => (a + 1) % etapas.length), TEMPO_POR_ETAPA)
+    const r = window.setTimeout(
+      () => {
+        primeira.current = false
+        setAtiva((a) => (a + 1) % etapas.length)
+      },
+      primeira.current ? PRIMEIRA_TROCA : TEMPO_POR_ETAPA,
+    )
     return () => window.clearTimeout(r)
   }, [ativa, visivel, parado, etapas.length])
 

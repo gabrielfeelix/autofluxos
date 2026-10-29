@@ -107,7 +107,7 @@ function TelaFluxo() {
         </svg>
         <span className={b.bloco} style={{ '--n': 0, left: '0%', top: '34%' } as CSSProperties}>
           <small>Gatilho</small>
-          Mensagem &quot;oi&quot;
+          Palavra &quot;oi&quot;
         </span>
         <span className={b.bloco} style={{ '--n': 1, left: '28.5%', top: '34%' } as CSSProperties}>
           <small>Mensagem</small>
@@ -204,19 +204,19 @@ function TelaFunil() {
   return (
     <Janela titulo="Negociações · Funil comercial" className={b.janelaLarga}>
       <div className={b.funil}>
-        {['Novo lead', 'Qualificado', 'Proposta', 'Ganho'].map((c, i) => (
+        {['Novo lead', 'Proposta', 'Ganho'].map((c, i) => (
           <div key={c} className={b.coluna}>
             <small>{c}</small>
-            {i === 0 && <span className={b.cartaoParado}>André Lima · R$ 480</span>}
-            {i === 2 && <span className={b.cartaoParado}>Tiago Souza · R$ 1.290</span>}
-            {i === 3 && <span className={b.cartaoParado}>Rafael Souza · R$ 890</span>}
+            {i === 0 && <span className={b.cartaoParado}>André · R$ 480</span>}
+            {i === 1 && <span className={b.cartaoParado}>Tiago · R$ 1.290</span>}
+            {i === 2 && <span className={b.cartaoParado}>Rafael · R$ 890</span>}
           </div>
         ))}
         <span className={b.cartaoAnda}>
           <i>MC</i>
           <span>
-            <b>Marina Costa</b>
-            R$ 268,80 · Ana
+            <b>Marina</b>
+            R$ 268,80
           </span>
         </span>
       </div>
