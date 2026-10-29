@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from 'react'
 import { createPortal } from 'react-dom'
 import { CANAIS } from './canais-do-site'
+import { IlustracaoDoRamo } from './ilustracoes-dos-ramos'
 import { NICHOS_DO_SITE } from './nichos-do-site'
 import { CONVERSAS, PreviaWhatsApp } from './previa-whatsapp'
 import m from './menu-do-topo.module.css'
@@ -66,7 +67,7 @@ const FUNCIONA_COM = [
 // primeira conversa daquele nicho no cartão ao lado.
 const SEGMENTOS = NICHOS_DO_SITE.map((n) => ({
   titulo: n.nome,
-  foto: n.foto,
+  slug: n.slug,
   texto: n.quem,
   href: `/segmentos/${n.slug}`,
   cor: n.cor,
@@ -362,8 +363,9 @@ function PainelSegmentos() {
             onPointerEnter={() => setI(n)}
             onFocus={() => setI(n)}
           >
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img className={m.fotoSegmento} src={s.foto} alt="" width={320} height={150} loading="lazy" />
+            <span className={m.circuloSegmento}>
+              <IlustracaoDoRamo slug={s.slug} />
+            </span>
             <span>
               <strong>{s.titulo}</strong>
               <small>{s.texto}</small>
