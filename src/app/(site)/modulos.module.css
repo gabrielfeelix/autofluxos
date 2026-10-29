@@ -794,6 +794,23 @@
   background: color-mix(in srgb, var(--cor) calc(var(--v) * 100%), #fde2e2);
 }
 
+/* Passou o mouse, a barra ganha a cor cheia e o horário dela se destaca. */
+.picoBarras i {
+  transition:
+    background 0.2s var(--curva),
+    translate 0.2s var(--curva);
+}
+
+.picoBarras i:hover {
+  translate: 0 -3px;
+  background: var(--cor);
+}
+
+.picoBarras i:hover span {
+  font-weight: 700;
+  color: var(--cor);
+}
+
 .picoBarras span {
   position: absolute;
   bottom: -18px;

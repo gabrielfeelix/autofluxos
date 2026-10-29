@@ -1223,6 +1223,25 @@
   animation: telaChega 0.4s calc(var(--n) * 0.025s) var(--curva) both;
 }
 
+.calor > i {
+  transition:
+    background 0.2s var(--curva),
+    scale 0.2s var(--curva);
+}
+
+.calor > i:hover {
+  scale: 1.08;
+  background: var(--cor);
+}
+
+.maisVendidos i {
+  transition: filter 0.2s var(--curva);
+}
+
+.maisVendidos > span:hover i {
+  filter: saturate(1.4) brightness(0.88);
+}
+
 @media (max-width: 720px) {
   .telaAtendimento {
     grid-template-columns: 1fr;

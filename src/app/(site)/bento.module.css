@@ -696,6 +696,15 @@
   animation-delay: calc(var(--n) * 60ms);
 }
 
+/* No mouse, a barra fica na cor cheia: o número aparece mais forte onde se olha. */
+.grafico i {
+  transition: background 0.2s var(--curva);
+}
+
+.grafico i:hover {
+  background: #1d4ed8;
+}
+
 @keyframes barra {
   0% {
     scale: 1 0.08;
