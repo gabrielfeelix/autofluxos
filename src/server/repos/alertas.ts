@@ -170,6 +170,21 @@ export async function marcarAlertaVisto(id?: string): Promise<void> {
 }
 
 /**
+ * Marca como vistos os abertos criados até `ate`: é abrir a tela de Alertas.
+ *
+ * O corte existe para não marcar o que chegou entre a leitura da lista e esta
+ * escrita: esse alerta ninguém viu, e tem que continuar contando no menu.
+ */
+export async function marcarAlertasVistosAte(ate: Date): Promise<void> {
+  const { error } = await db()
+    .from('alertas')
+    .update({ visto_em: new Date().toISOString() })
+    .is('visto_em', null)
+    .lte('criado_em', ate.toISOString())
+  if (error) throw new Error(`não foi possível marcar os alertas: ${error.message}`)
+}
+
+/**
  * A data-limite: alerta criado antes dela está vencido.
  *
  * Função separada e pura pelo mesmo motivo de `limiteDaRetencao`: a fronteira

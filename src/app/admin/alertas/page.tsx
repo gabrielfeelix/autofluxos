@@ -1,7 +1,8 @@
 import { BarraDeLista } from '@/components/design/barra-de-lista'
 import { lerParametros, SemResultado, TelaDaAdministracao } from '@/components/admin/partes'
 import { TabelaDeAlertas } from '@/components/admin/tabela-de-alertas'
-import { listarAlertas } from '@/server/repos/alertas'
+import { after } from 'next/server'
+import { listarAlertas, marcarAlertasVistosAte } from '@/server/repos/alertas'
 import { IlustracaoTudoCerto } from '@/components/design/ilustracoes'
 
 export const dynamic = 'force-dynamic'
@@ -12,10 +13,18 @@ const BASE = '/admin/alertas'
  * Falhas que o produto registrou sozinho: webhook que não processou, entrega
  * recusada pela Meta, credencial que o cofre não devolveu. Somem depois de
  * 90 dias. Mesma tabela e barra de filtros das outras listas.
+ *
+ * **Abrir a tela é ver os alertas**, como abrir a caixa de entrada: o número do
+ * menu zera aqui. A lista desta visita ainda sai com os não vistos destacados,
+ * porque foi lida antes; a marcação roda depois da resposta (`after`).
  */
 export default async function Alertas({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {
   const parametros = lerParametros(await searchParams)
+  const lidaEm = new Date()
   const todos = await listarAlertas({ limite: 300 })
+  if (todos.some((alerta) => alerta.vistoEm === null)) {
+    after(() => marcarAlertasVistosAte(lidaEm).catch((erro) => console.error('[alertas] não foi possível marcar como vistos', erro)))
+  }
   const ambientes = [...new Set(todos.map((alerta) => alerta.ambiente))]
 
   const busca = (parametros.busca ?? '').trim().toLocaleLowerCase('pt-BR')

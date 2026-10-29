@@ -7,7 +7,7 @@ import { ContextoDaAdministracao, MarcaDaAdministracao } from '@/components/admi
 import { ITENS_DA_ADMINISTRACAO } from '@/components/design/secoes-da-administracao'
 import { contarAlertasAbertos } from '@/server/repos/alertas'
 import { exigirAdminDaPlataforma } from '@/server/sessao'
-import { Badge, teto } from '@/components/design/pilula'
+import { ContadorDeAlertas } from '@/components/admin/contador-de-alertas'
 
 /**
  * A administração da plataforma: uma casca só, a mesma `BarraLateral` do app
@@ -36,11 +36,7 @@ export default async function LayoutDoAdmin({ children }: { children: ReactNode 
           itens={ITENS_DA_ADMINISTRACAO.map((item) => ({
             ...item,
             contador:
-              item.chave === 'alertas' && alertas > 0 ? (
-                <Badge tom="alerta" rotulo={`${alertas} alertas não vistos`}>
-                  {teto(alertas)}
-                </Badge>
-              ) : undefined,
+              item.chave === 'alertas' && alertas > 0 ? <ContadorDeAlertas key={alertas} total={alertas} /> : undefined,
           }))}
           rodape={
             <PainelVoce email={sessao.usuario.email} papel="Administrador da plataforma" suporte={false} configuracoesHref={null} outrasContas={0} duasEtapas={sessao.usuario.duasEtapas === true}>
