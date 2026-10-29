@@ -531,7 +531,12 @@
 
 /* Em /precos o título curto anuncia os planos; o recuo entre os dois fica menor que o padrão. */
 .secaoAbaixoDaCapa .planos {
-  margin-top: 32px;
+  margin-top: 24px;
+}
+
+/* Só em /precos: o título dos planos sobe mais perto da capa (pedido do Gabriel, 29/out). */
+#precos.secaoAbaixoDaCapa {
+  padding-top: clamp(16px, 2vw, 24px);
 }
 
 .olho {
