@@ -299,8 +299,8 @@ export function SecaoJornada() {
     <section className={s.secao} id="jornada">
       <div className={s.faixa}>
         <Cabeca
-          olho="A jornada"
-          titulo="Uma conversa, do primeiro oi à recompra"
+          olho="Como funciona"
+          titulo="Do primeiro contato ao pós-venda, tudo no mesmo WhatsApp"
           texto="Hoje cada etapa mora num lugar: o celular, a planilha, o link de pagamento, o grupo da equipe. No AutoFluxos é a mesma conversa do começo ao fim."
         />
         <ol className={x.jornada} data-revela>
