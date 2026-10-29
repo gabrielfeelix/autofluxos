@@ -1,0 +1,210 @@
+import { Fragment } from 'react'
+import { ENTERPRISE, PLANOS, RECURSOS_DO_PLANO, anualDoPlano, type Plano } from '@/core/planos'
+import s from './pagina-inicial.module.css'
+import x from './site.module.css'
+import c from './precos.module.css'
+
+/*
+ * As duas peças de `/precos` além dos cartões dos planos: o Enterprise em
+ * destaque e a comparação lado a lado. Tudo sai de `src/core/planos.ts`, o
+ * mesmo arquivo que a cobrança lê: um número mudado lá muda aqui.
+ */
+
+const reais = (v: number, centavos = false) =>
+  v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL', minimumFractionDigits: centavos ? 2 : 0, maximumFractionDigits: centavos ? 2 : 0 })
+
+const FALAR_COM_VENDAS = `mailto:contato@4yu.com.br?subject=${encodeURIComponent('AutoFluxos: plano Enterprise')}`
+
+/* ───────────── Enterprise ───────────── */
+
+/**
+ * Não é um quarto plano: é o contrato de quem passou da tabela. Por isso fica
+ * fora da fileira, na largura toda, no azul da capa com os fios, e com o preço
+ * de partida grande em vez de escondido numa frase.
+ */
+export function CartaoEnterprise() {
+  return (
+    <aside className={c.enterprise} data-revela data-como="escala" aria-labelledby="plano-enterprise">
+      <div className={c.enterpriseTexto}>
+        <h3 id="plano-enterprise">{ENTERPRISE.nome}</h3>
+        <p>{ENTERPRISE.resumo}</p>
+        <p className={c.enterprisePreco}>
+          <small>a partir de</small>
+          <strong>{reais(ENTERPRISE.aPartirDe)}</strong>
+          <small>por mês</small>
+        </p>
+        <a className={`${s.botao} ${x.botaoBranco} ${s.botaoGrande}`} href={FALAR_COM_VENDAS}>
+          Falar com vendas
+        </a>
+      </div>
+      <ul className={c.enterpriseItens}>
+        {ENTERPRISE.itens.map((item) => (
+          <li key={item}>
+            <span className={c.enterpriseVisto} aria-hidden>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                <path d="m5 12.5 4.5 4.5L19 7.5" />
+              </svg>
+            </span>
+            {item}
+          </li>
+        ))}
+        <li>
+          <span className={c.enterpriseVisto} aria-hidden>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+              <path d="m5 12.5 4.5 4.5L19 7.5" />
+            </svg>
+          </span>
+          Tudo do Escala
+        </li>
+      </ul>
+    </aside>
+  )
+}
+
+/* ───────────── comparação ───────────── */
+
+type Linha = { rotulo: string; valor: (plano: Plano) => string; enterprise: string }
+
+const NUMEROS: Linha[] = [
+  { rotulo: 'Mensalidade', valor: (p) => reais(p.preco), enterprise: `a partir de ${reais(ENTERPRISE.aPartirDe)}` },
+  {
+    rotulo: 'No anual, por mês',
+    valor: (p) => {
+      const anual = anualDoPlano(p)
+      return anual ? reais(anual.porMes) : 'Sem anual'
+    },
+    enterprise: 'Sob medida',
+  },
+  { rotulo: 'Conversas por mês', valor: (p) => p.conversas.toLocaleString('pt-BR'), enterprise: 'Sob medida' },
+  { rotulo: 'Conversa acima da franquia', valor: (p) => reais(p.precoExcedente, true), enterprise: 'Sob medida' },
+  { rotulo: 'Atendentes inclusos', valor: (p) => String(p.atendentes), enterprise: 'Acima de 50' },
+  { rotulo: 'Atendente a mais, por mês', valor: (p) => reais(p.precoAtendenteExtra), enterprise: 'Sob medida' },
+  { rotulo: 'Números de WhatsApp', valor: (p) => (p.numeros === 1 ? '1' : `Até ${p.numeros}`), enterprise: 'Sob medida' },
+  {
+    rotulo: 'Respostas de IA por mês',
+    valor: (p) => p.tetoIa.toLocaleString('pt-BR') + (p.recursos.includes('chave_propria') ? ', ou sem teto com chave própria' : ''),
+    enterprise: 'Sob medida',
+  },
+  {
+    rotulo: 'Envios de transmissão por mês',
+    valor: (p) => (p.tetoTransmissoes === null ? 'Sem limite' : p.tetoTransmissoes.toLocaleString('pt-BR')),
+    enterprise: 'Sem limite',
+  },
+]
+
+/*
+ * Só o que nenhum plano da tabela tem. "Robôs montados pela 4YU" fica de fora
+ * de propósito: toda conta nasce com o primeiro fluxo montado por nós (o
+ * fechamento da página diz isso), e marcar "não incluso" nos outros mentiria.
+ */
+const SO_NO_ENTERPRISE = ['Integração com o seu sistema', 'Gerente de conta']
+
+function Visto({ tem }: { tem: boolean }) {
+  return tem ? (
+    <span className={c.tem}>
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+        <path d="m5 12.5 4.5 4.5L19 7.5" />
+      </svg>
+      <span className={c.leitor}>Incluso</span>
+    </span>
+  ) : (
+    <span className={c.naoTem}>
+      <span aria-hidden>–</span>
+      <span className={c.leitor}>Não incluso</span>
+    </span>
+  )
+}
+
+export function SecaoComparacao() {
+  return (
+    <section className={`${s.secao} ${s.secaoTonal}`} id="comparar">
+      <div className={s.faixa}>
+        <div className={s.cabecaSecao}>
+          <span className={s.olho} data-revela>
+            Comparar
+          </span>
+          <h2 className={`${s.tituloSecao} ${s.tituloSecaoCentro}`} data-revela data-como="desfoque" data-atraso="60">
+            Os planos lado a lado
+          </h2>
+          <p className={`${s.chamada} ${s.chamadaCentro}`} data-revela data-atraso="100">
+            Os mesmos números que a fatura usa. Passou da franquia, nada trava: a conversa a mais entra na fatura seguinte.
+          </p>
+        </div>
+
+        <div className={c.rolagem} data-revela>
+          <table className={c.tabela}>
+            <thead>
+              <tr>
+                <th scope="col">
+                  <span className={c.leitor}>O que compara</span>
+                </th>
+                {PLANOS.map((plano) => (
+                  <th key={plano.id} scope="col">
+                    {plano.nome}
+                    <small>{reais(plano.preco)}/mês</small>
+                  </th>
+                ))}
+                <th scope="col" className={c.colunaEnterprise}>
+                  {ENTERPRISE.nome}
+                  <small>sob contrato</small>
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              <Grupo titulo="Tamanho da operação" />
+              {NUMEROS.map((linha) => (
+                <tr key={linha.rotulo}>
+                  <th scope="row">{linha.rotulo}</th>
+                  {PLANOS.map((plano) => (
+                    <td key={plano.id}>{linha.valor(plano)}</td>
+                  ))}
+                  <td className={c.colunaEnterprise}>{linha.enterprise}</td>
+                </tr>
+              ))}
+              <Grupo titulo="O que vem no plano" />
+              {RECURSOS_DO_PLANO.map((recurso) => (
+                <tr key={recurso.chave}>
+                  <th scope="row">{recurso.rotulo}</th>
+                  {PLANOS.map((plano) => (
+                    <td key={plano.id}>
+                      <Visto tem={plano.recursos.includes(recurso.chave)} />
+                    </td>
+                  ))}
+                  <td className={c.colunaEnterprise}>
+                    <Visto tem />
+                  </td>
+                </tr>
+              ))}
+              <Grupo titulo="Só no Enterprise" />
+              {SO_NO_ENTERPRISE.map((item) => (
+                <tr key={item}>
+                  <th scope="row">{item}</th>
+                  {PLANOS.map((plano) => (
+                    <td key={plano.id}>
+                      <Visto tem={false} />
+                    </td>
+                  ))}
+                  <td className={c.colunaEnterprise}>
+                    <Visto tem />
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+  )
+}
+
+function Grupo({ titulo }: { titulo: string }) {
+  return (
+    <Fragment>
+      <tr className={c.grupo}>
+        <th scope="colgroup" colSpan={PLANOS.length + 2}>
+          {titulo}
+        </th>
+      </tr>
+    </Fragment>
+  )
+}

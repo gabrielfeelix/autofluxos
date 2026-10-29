@@ -1,5 +1,6 @@
 import Link from 'next/link'
 import { BentoDoProduto } from './bento-do-produto'
+import { CartaoEnterprise } from './precos-pagina'
 import { CANAIS } from './canais-do-site'
 import { RECURSOS } from './recursos-do-site'
 import type { CSSProperties, ReactNode } from 'react'
@@ -7,7 +8,6 @@ import {
   anualDoPlano,
   O_QUE_E_CONVERSA,
   DIAS_DE_TESTE,
-  ENTERPRISE,
   PLANOS,
   PLANO_EM_DESTAQUE,
   TARIFA_DA_META,
@@ -435,25 +435,7 @@ export function SecaoPrecos() {
                 ))}
               </div>
 
-              <aside className={s.enterprise} data-revela>
-                <div>
-                  <h3 className={s.enterpriseNome}>{ENTERPRISE.nome}</h3>
-                  <p className={s.enterpriseResumo}>
-                    {ENTERPRISE.resumo} A partir de R$ {ENTERPRISE.aPartirDe.toLocaleString('pt-BR')} por mês.
-                  </p>
-                  <ul className={s.enterpriseItens}>
-                    {ENTERPRISE.itens.map((item) => (
-                      <li key={item}>{item}</li>
-                    ))}
-                  </ul>
-                </div>
-                <a
-                  className={`${s.botao} ${s.botaoVazado}`}
-                  href={`mailto:contato@4yu.com.br?subject=${encodeURIComponent('AutoFluxos: plano Enterprise')}`}
-                >
-                  Fale conosco
-                </a>
-              </aside>
+              <CartaoEnterprise />
 
               <ul className={s.semLetraMiuda} aria-label="O que não cobramos">
                 <li>Sem taxa de implantação</li>

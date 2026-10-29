@@ -1,5 +1,6 @@
 import { PaginaDoSite, SecaoDuvidas, SecaoPrecos } from '../(site)/pagina-do-site'
 import { CapaSimples, SecaoCalculadora } from '../(site)/secoes-do-site'
+import { SecaoComparacao } from '../(site)/precos-pagina'
 import { metadadosDoSite } from '../(site)/metadados'
 
 export const metadata = metadadosDoSite(
@@ -20,6 +21,7 @@ export default function PaginaDePrecos() {
       }
     >
       <SecaoPrecos />
+      <SecaoComparacao />
       <SecaoCalculadora />
       <SecaoDuvidas />
     </PaginaDoSite>

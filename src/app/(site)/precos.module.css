@@ -1,0 +1,248 @@
+/*
+ * As peças de `/precos` (`precos-pagina.tsx`): o Enterprise em destaque e a
+ * comparação lado a lado. O Enterprise usa o azul da capa com os fios, como
+ * os palcos aprovados; nada de fundo #0c1838 chapado.
+ */
+
+/* ───── Enterprise ───── */
+
+.enterprise {
+  display: grid;
+  grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr);
+  gap: clamp(28px, 5vw, 72px);
+  align-items: center;
+  margin-top: 20px;
+  padding: clamp(28px, 4.5vw, 56px);
+  border-radius: 28px;
+  background:
+    var(--casca-fios-2),
+    linear-gradient(140deg, #1a3fb8 0%, #1d4ed8 50%, color-mix(in srgb, #1d4ed8 62%, #0c1838) 100%);
+  color: #ffffff;
+  box-shadow: 0 50px 90px -60px rgb(16 32 84 / 0.8);
+}
+
+.enterpriseTexto h3 {
+  margin: 0;
+  font-size: clamp(30px, 3.6vw, 44px);
+  font-weight: 600;
+  line-height: 1.05;
+  letter-spacing: -0.035em;
+}
+
+.enterpriseTexto > p {
+  max-width: 40ch;
+  margin: 12px 0 0;
+  font-size: 16.5px;
+  line-height: 1.55;
+  color: rgb(255 255 255 / 0.84);
+}
+
+.enterprisePreco {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 10px;
+  margin: 28px 0 28px;
+}
+
+.enterprisePreco small {
+  font-size: 15px;
+  color: rgb(255 255 255 / 0.78);
+}
+
+.enterprisePreco strong {
+  font-size: clamp(44px, 5.4vw, 68px);
+  font-weight: 600;
+  line-height: 1;
+  letter-spacing: -0.045em;
+}
+
+.enterpriseItens {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.enterpriseItens li {
+  display: grid;
+  align-content: space-between;
+  gap: 18px;
+  min-height: 120px;
+  padding: 18px;
+  border: 1px solid rgb(255 255 255 / 0.18);
+  border-radius: 18px;
+  background: rgb(255 255 255 / 0.1);
+  font-size: 16px;
+  font-weight: 500;
+  line-height: 1.3;
+}
+
+/* O quinto item fecha a grade na largura toda. */
+.enterpriseItens li:last-child:nth-child(odd) {
+  grid-column: 1 / -1;
+  min-height: 0;
+}
+
+.enterpriseVisto {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: #ffffff;
+  color: #1d4ed8;
+}
+
+@media (max-width: 860px) {
+  .enterprise {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 480px) {
+  .enterpriseItens {
+    grid-template-columns: 1fr;
+  }
+
+  .enterpriseItens li {
+    min-height: 0;
+    grid-template-columns: auto 1fr;
+    align-items: center;
+    gap: 12px;
+  }
+}
+
+/* ───── comparação ───── */
+
+.rolagem {
+  margin-top: 44px;
+  overflow-x: auto;
+  border: 1px solid var(--line);
+  border-radius: 24px;
+  background: #ffffff;
+}
+
+.tabela {
+  width: 100%;
+  min-width: 820px;
+  table-layout: fixed;
+  border-collapse: collapse;
+  font-size: 14.5px;
+}
+
+.tabela th,
+.tabela td {
+  padding: 14px 18px;
+  border-top: 1px solid var(--line-soft);
+  text-align: center;
+  vertical-align: middle;
+}
+
+.tabela tbody th {
+  font-weight: 500;
+  text-align: left;
+  color: var(--soft);
+}
+
+/* A primeira coluna fica parada quando a tabela rola de lado no celular. */
+.tabela tr > :first-child {
+  position: sticky;
+  left: 0;
+  z-index: 1;
+  width: 28%;
+  background: #ffffff;
+}
+
+.tabela thead th {
+  padding-block: 22px 18px;
+  border-top: 0;
+  font-size: 17px;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  color: var(--ink);
+}
+
+.tabela thead small {
+  display: block;
+  margin-top: 4px;
+  font-size: 13px;
+  font-weight: 400;
+  letter-spacing: 0;
+  color: var(--dim);
+}
+
+.tabela td {
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+}
+
+.grupo th {
+  padding-top: 26px;
+  font-size: 13px;
+  font-weight: 600;
+  text-align: left;
+  color: var(--accent);
+}
+
+.grupo th:first-child {
+  position: static;
+}
+
+/* A coluna do Enterprise, no mesmo azul do cartão, de cima a baixo. */
+.tabela .colunaEnterprise {
+  background: color-mix(in srgb, #1d4ed8 6%, #ffffff);
+  color: #1a3fb8;
+  font-weight: 500;
+}
+
+.tabela thead .colunaEnterprise {
+  background: #1d4ed8;
+  color: #ffffff;
+}
+
+.tabela thead .colunaEnterprise small {
+  color: rgb(255 255 255 / 0.78);
+}
+
+.tem {
+  display: inline-grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: color-mix(in srgb, #1d4ed8 12%, #ffffff);
+  color: #1d4ed8;
+}
+
+.naoTem {
+  color: var(--dim);
+}
+
+.leitor {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+/* No celular a tabela rola de lado: a coluna parada encolhe para sobrar espaço aos planos. */
+@media (max-width: 640px) {
+  .tabela {
+    min-width: 640px;
+    font-size: 13.5px;
+  }
+
+  .tabela tr > :first-child {
+    width: 140px;
+  }
+
+  .tabela th,
+  .tabela td {
+    padding: 12px 10px;
+  }
+}
