@@ -73,8 +73,8 @@
 }
 
 .palco[data-pronto] .pulso {
-  animation: corre 4.4s linear infinite;
-  animation-delay: calc(var(--ordem) * 0.7s);
+  animation: corre 2.6s linear infinite;
+  animation-delay: calc(var(--ordem) * 0.4s);
 }
 
 @keyframes corre {

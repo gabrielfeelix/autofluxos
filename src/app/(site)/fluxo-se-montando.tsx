@@ -41,9 +41,9 @@ const FIOS: Fio[] = [
 ]
 
 const COLUNAS = 5
-const TEMPO_POR_COLUNA = 900
-// Como a jornada da home: quem chega já vê o fluxo começar, sem esperar demais.
-const PRIMEIRO_FIO = 1000
+const TEMPO_POR_COLUNA = 420
+// Quem chega na seção já vê o fluxo começar: o Gabriel achou lento com 1 s de espera e 0,9 s por coluna.
+const PRIMEIRO_FIO = 150
 type Desenho = { largura: number; altura: number; fios: { d: string; coluna: number; caminho: boolean; ordem: number }[] }
 
 export function FluxoSeMontando({ cabeca }: { cabeca: ReactNode }) {
@@ -93,7 +93,7 @@ export function FluxoSeMontando({ cabeca }: { cabeca: ReactNode }) {
     return () => observador.disconnect()
   }, [])
 
-  // `--s` anda com o tempo: 1 s depois de o palco aparecer, uma coluna a cada
+  // `--s` anda com o tempo: logo que o topo do palco entra na tela, uma coluna a cada
   // `TEMPO_POR_COLUNA`. Saiu da tela, volta ao zero para montar de novo na
   // próxima visita. Sem movimento, fica tudo pronto desde o começo.
   useEffect(() => {
@@ -125,7 +125,7 @@ export function FluxoSeMontando({ cabeca }: { cabeca: ReactNode }) {
     let rodando = false
     const observador = new IntersectionObserver(
       ([e]) => {
-        if (e!.intersectionRatio >= 0.35 && !rodando) {
+        if (e!.isIntersecting && !rodando) {
           rodando = true
           espera = window.setTimeout(montar, PRIMEIRO_FIO)
         } else if (!e!.isIntersecting && rodando) {
@@ -133,7 +133,8 @@ export function FluxoSeMontando({ cabeca }: { cabeca: ReactNode }) {
           zerar()
         }
       },
-      { threshold: [0, 0.35] },
+      // Dispara quando o topo do palco passa de 85% da altura da tela: é a hora em que a pessoa chega na seção.
+      { rootMargin: '0px 0px -15% 0px' },
     )
     observador.observe(p)
     return () => {
