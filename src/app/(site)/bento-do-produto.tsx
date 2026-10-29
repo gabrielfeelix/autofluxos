@@ -174,13 +174,27 @@ function PecaInbox() {
 function PecaPagamento() {
   return (
     <Peca forma="normal" tom="marca" atraso={210}>
-      <div className={b.valor} aria-hidden>
-        <small>Pedido #1042 · link de pagamento</small>
-        <strong>R$ 268,80</strong>
-        <span className={b.situacao}>
-          <span className={b.aguardando}>Aguardando pagamento</span>
-          <span className={b.pago}>✓ Pago no Pix às 10:45</span>
-        </span>
+      <div className={b.pagamento} aria-hidden>
+        <div className={b.cobranca}>
+          <small>Link de pagamento · enviado na conversa</small>
+          <span className={b.cobrancaTopo}>
+            <b>Pedido #1042</b>
+            <span className={b.status}>
+              <span className={b.aguardando}>Aguardando</span>
+              <span className={b.pago}>✓ Pago</span>
+            </span>
+          </span>
+          <span className={b.itens}>Fone Over-ear preto · entrega no sábado</span>
+          <strong>R$ 268,80</strong>
+          <em>Pagar com Pix ou cartão</em>
+        </div>
+        <div className={b.aviso}>
+          <i>✓</i>
+          <span>
+            <b>Pagamento aprovado</b>
+            Pix confirmado pelo banco · 10:45
+          </span>
+        </div>
       </div>
       <Texto n={4} titulo="Pagamento no chat" texto="Link ou Pix na conversa, e a confirmação do banco chega sozinha." />
     </Peca>
