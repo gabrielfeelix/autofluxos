@@ -2967,3 +2967,97 @@ a.canal h3 svg {
     stroke-dashoffset: 0;
   }
 }
+
+/* ─────────────────────────── antes e depois ─────────────────────────── */
+
+/*
+ * Seis cartões: o improviso de hoje em cima, apagado, e o que fica no
+ * AutoFluxos embaixo, em destaque. A seta liga os dois, como os fios.
+ */
+.improvisos {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+  margin-top: 44px;
+}
+
+@media (max-width: 900px) {
+  .improvisos {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 560px) {
+  .improvisos {
+    grid-template-columns: 1fr;
+  }
+}
+
+.improviso {
+  display: grid;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  background: #ffffff;
+  transition:
+    border-color 0.25s var(--curva),
+    box-shadow 0.25s var(--curva),
+    translate 0.25s var(--curva);
+}
+
+.improviso:hover {
+  border-color: rgb(29 78 216 / 0.3);
+  box-shadow: 0 18px 36px -26px rgb(16 32 84 / 0.45);
+  translate: 0 -2px;
+}
+
+.improviso small {
+  display: block;
+  margin-bottom: 6px;
+  font-size: 11.5px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+
+.improvisoAntes {
+  margin: 0;
+  padding: 20px 22px 24px;
+  background: var(--canvas-deep);
+  font-size: 15px;
+  line-height: 1.45;
+  color: var(--dim);
+  text-decoration: line-through;
+  text-decoration-color: rgb(16 32 84 / 0.25);
+}
+
+.improvisoAntes small {
+  color: var(--dim);
+  text-decoration: none;
+}
+
+.improvisoSeta {
+  display: grid;
+  place-items: center;
+  justify-self: center;
+  width: 32px;
+  height: 32px;
+  margin: -16px 0;
+  border: 1px solid var(--line);
+  border-radius: 50%;
+  background: #ffffff;
+  color: #1d4ed8;
+  z-index: 1;
+}
+
+.improvisoAgora {
+  margin: 0;
+  padding: 24px 22px 22px;
+  font-size: 16px;
+  font-weight: 600;
+  line-height: 1.4;
+  letter-spacing: -0.01em;
+}
+
+.improvisoAgora small {
+  color: #1d4ed8;
+}

@@ -313,7 +313,7 @@ export function SecaoOQueFaz() {
                   larga
                   arte={<ArteFila />}
                   titulo="Caixa de entrada da equipe"
-                  texto="Todas as conversas numa tela. Quem espera sobe para o topo, cada atendente vê o que é dele, e quem assume no meio lê o que já foi dito antes de responder."
+                  texto="Todas as conversas numa tela, cada setor com a sua fila. Quem assume no meio recebe o resumo do que já foi dito, e a IA sugere a resposta antes de enviar."
                   atraso={80}
                 />
                 <Caixa

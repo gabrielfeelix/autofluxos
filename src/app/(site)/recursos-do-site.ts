@@ -91,10 +91,10 @@ export const RECURSOS: RecursoDoSite[] = [
   {
     slug: 'inbox',
     nome: 'Inbox da equipe',
-    linha: 'Todas as conversas numa fila, com a ficha do cliente ao lado.',
-    titulo: 'Todas as conversas numa fila, com a ficha do cliente ao lado',
+    linha: 'A equipe no mesmo número, cada setor com a sua fila.',
+    titulo: 'A equipe inteira no mesmo número, cada setor com a sua fila',
     subtitulo:
-      'WhatsApp, Instagram, site e Telegram na mesma caixa. A equipe assume, responde, anota e devolve ao chatbot sem trocar de tela.',
+      'WhatsApp, Instagram, site e Telegram na mesma caixa, com uma fila para cada setor. A IA ajuda a responder, e a equipe devolve ao chatbot sem trocar de tela.',
     destaques: [
       { titulo: 'Tempo real', texto: 'A mensagem nova aparece na hora, sem recarregar a página.' },
       { titulo: 'Um atendente por conversa', texto: 'Dois atendentes não assumem a mesma conversa. Encerrou, ela volta para o chatbot.' },
@@ -102,12 +102,12 @@ export const RECURSOS: RecursoDoSite[] = [
     ],
     itens: [
       { titulo: 'Áudio gravado no navegador', texto: 'Até 5 minutos, no formato que o WhatsApp aceita.' },
-      { titulo: 'Anexos', texto: 'Foto, vídeo, áudio e documento, arrastando para a conversa, com legenda.' },
+      { titulo: 'Fila por setor', texto: 'Vendas, suporte e financeiro com fila própria. O chatbot já entrega a conversa no setor certo.' },
       { titulo: 'Respostas rápidas', texto: 'Digite / e escolha. Dá para importar a lista por planilha.' },
       { titulo: 'Mensagem agendada', texto: 'Para até um ano depois, com aviso quando a janela de 24 horas fechou.' },
       { titulo: 'Supervisão', texto: 'O gestor vê a caixa de cada atendente como ele vê, sem marcar nada como lido.' },
       { titulo: 'Aviso com o painel fechado', texto: 'Notificação no navegador quando um cliente pede atendimento. De madrugada, não toca.' },
-      { titulo: 'Busca', texto: 'Por nome, telefone ou o texto de qualquer mensagem.' },
+      { titulo: 'IA do atendente', texto: 'Sugere a resposta, corrige, deixa mais formal ou mais curta e resume a conversa. Só sai quando a pessoa envia.' },
       { titulo: 'Origem visível', texto: 'Cada conversa mostra o canal e se o cliente veio de um anúncio.' },
       { titulo: 'Quem respondeu', texto: 'O nome do atendente vai na mensagem, e a bolha mostra se foi o chatbot, a IA ou uma pessoa.' },
     ],
@@ -118,7 +118,7 @@ export const RECURSOS: RecursoDoSite[] = [
         { rotulo: 'Atualização', valor: 'Em tempo real' },
         { rotulo: 'Canais', valor: 'Quatro, numa fila só' },
         { rotulo: 'Fixadas no topo', valor: 'Até 5' },
-        { rotulo: 'Áudio gravado', valor: 'Até 5 minutos' },
+        { rotulo: 'Filas', valor: 'Uma por setor' },
         { rotulo: 'Mídia recebida', valor: 'Guardada, até 16 MB' },
         { rotulo: 'Resposta agendada', valor: 'Até 365 dias' },
       ],

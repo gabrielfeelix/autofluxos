@@ -3,6 +3,7 @@ import {
   CapaDaHome,
   SecaoDoisLados,
   SecaoDuvidasCurtas,
+  SecaoImprovisos,
   SecaoIntegracoesResumo,
   SecaoJornada,
   SecaoNichos,
@@ -36,6 +37,7 @@ export default function PaginaInicial() {
       <SecaoFluxo />
       <SecaoDoisLados />
       <SecaoNichos />
+      <SecaoImprovisos />
       <SecaoOQueFaz />
       <SecaoIntegracoesResumo />
       <SecaoPrecoResumo />
