@@ -591,7 +591,10 @@
   display: grid;
   place-items: center;
   padding: 28px 24px;
-  background: var(--palco);
+  /* A trama de fios da capa sobre um degradê da cor do palco, como na vitrine dos ramos. */
+  background:
+    var(--casca-fios),
+    linear-gradient(145deg, var(--palco) 0%, color-mix(in srgb, var(--palco) 62%, #0c1838) 100%);
 }
 
 /*
