@@ -68,45 +68,101 @@ export function PreviaQueTroca({ chaves, intervalo = 7000 }: { chaves: ChaveDaCo
  * Business do celular do dono e no Inbox, ao mesmo tempo; no fim a atendente
  * responde **pelo celular** e a resposta surge no Inbox.
  */
-type Pedido = { numero: string; itens: [string, string][]; total: string }
-
+/*
+ * As mensagens seguem o molde das que a PCYES manda de verdade (consultadas em
+ * `messages` em 29/out/2026): foto do produto em cima, título em negrito com
+ * emoji, etapas com ✅ 🔵 ⚪, o pedido com o total e um botão de ação. A loja e
+ * os dados aqui são fictícios.
+ */
 type Fala = {
   de: 'cliente' | 'bot' | 'equipe'
+  /** Com a marcação do WhatsApp: *negrito* e quebra de linha. */
   texto?: string
-  produto?: { foto: string; nome: string; preco: string }
+  foto?: string
+  botao?: string
   audio?: { duracao: string; transcricao: string }
-  /** Link de pagamento (a página `/pagar/`), mandado pela atendente. */
-  link?: Pedido
-  /** O aviso automático quando o pagamento cai: ninguém da equipe digita. */
-  confirmado?: Pedido & { entrega: string }
+  /** Link de pagamento: no Inbox mostra se já foi pago. */
+  link?: boolean
+  /** Pesquisa de satisfação de 0 a 10, enviada como lista. */
+  nps?: boolean
+  /** Rótulo do Inbox para o que saiu sem ninguém digitar. */
+  automatico?: string
 }
 
-// Fone R$ 249,90 + frete R$ 18,90, os mesmos valores da prévia da loja (`previa-whatsapp.tsx`).
-const PEDIDO: Pedido = { numero: 'Pedido 1042', itens: [['Fone Over-ear preto', 'R$ 249,90'], ['Entrega no sábado', 'R$ 18,90']], total: 'R$ 268,80' }
+const FOTO = '/fotos-do-site/fone.webp'
 
+// Fone R$ 249,90 + frete R$ 18,90, os mesmos valores da prévia da loja (`previa-whatsapp.tsx`).
 const ROTEIRO: Fala[] = [
   { de: 'cliente', texto: 'Oi! Vocês entregam no sábado?' },
   {
     de: 'bot',
-    texto: 'Entregamos sim, das 9h às 14h. Este é o mais pedido da semana:',
-    produto: { foto: '/fotos-do-site/fone.webp', nome: 'Fone Over-ear Bluetooth', preco: 'R$ 249,90' },
+    foto: FOTO,
+    texto: 'Entregamos sim, das 9h às 14h 🚚\nEste é o mais pedido da semana:\n\n*Fone Over-ear Bluetooth*\nR$ 249,90, em estoque',
+    botao: 'Ver produto',
   },
   { de: 'cliente', audio: { duracao: '0:07', transcricao: 'Quero esse em preto, mas queria tirar uma dúvida do tamanho com alguém.' } },
-  { de: 'equipe', texto: 'Oi, Marina! Aqui é a Júlia. Ele ajusta na cabeça, serve em todo mundo. Separo o preto?' },
+  { de: 'equipe', texto: 'Oi, Marina! Aqui é a Júlia 👋 Ele ajusta na cabeça e serve em todo mundo. Separo o preto?' },
   { de: 'cliente', texto: 'Pode separar! Como eu pago?' },
-  { de: 'equipe', texto: 'Separado! Este é o link, aceita Pix ou cartão:', link: PEDIDO },
+  {
+    de: 'equipe',
+    link: true,
+    texto: '🧾 *Pedido #1042* · R$ 268,80\n1x Fone Over-ear preto\nEntrega sábado, das 9h às 14h',
+    botao: 'Pagar com Pix ou cartão',
+  },
   { de: 'cliente', texto: 'Pronto, paguei no Pix' },
-  { de: 'bot', confirmado: { ...PEDIDO, entrega: 'Sábado, das 9h às 14h' } },
+  {
+    de: 'bot',
+    automatico: 'Automático, pagamento aprovado',
+    foto: FOTO,
+    texto:
+      '🎉 *Pedido confirmado!*\nPrevisão de entrega: *sábado, 9h às 14h*\n\n✅ Pagamento aprovado\n🔵 *Separando o pedido*\n⚪ Saiu para entrega\n⚪ Entregue\n\n*Pedido #1042* · R$ 268,80',
+    botao: 'Acompanhar pedido',
+  },
+  { de: 'bot', automatico: 'Automático, pesquisa pós-venda', nps: true, texto: 'Marina, de 0 a 10, quanto você indicaria a Ponto Som para um amigo? 🎧' },
+  { de: 'cliente', texto: '10' },
 ]
 
-const HORAS_DA_CONVERSA = ['10:41', '10:41', '10:42', '10:43', '10:43', '10:44', '10:45', '10:45']
+const HORAS_DA_CONVERSA = ['10:41', '10:41', '10:42', '10:43', '10:43', '10:44', '10:45', '10:45', '10:46', '10:47']
 // Quando a Júlia entra: a fala da equipe que vem logo depois do áudio.
 const ENTRADA_DA_EQUIPE = 3
+
+/** A marcação do WhatsApp: `*negrito*` e quebras de linha. */
+function Formatado({ texto }: { texto: string }) {
+  return (
+    <>
+      {texto.split('\n').map((linha, i) => (
+        <span key={i} className={x.linhaFormatada}>
+          {linha === ''
+            ? '\u00a0'
+            : linha.split(/(\*[^*]+\*)/).map((pedaco, j) =>
+                pedaco.startsWith('*') && pedaco.endsWith('*') && pedaco.length > 2 ? <b key={j}>{pedaco.slice(1, -1)}</b> : pedaco,
+              )}
+        </span>
+      ))}
+    </>
+  )
+}
 
 function Visto() {
   return (
     <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
       <path d="m5 12.5 4.5 4.5L19 7.5" />
+    </svg>
+  )
+}
+
+function IconeLink() {
+  return (
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+      <path d="M14 4h6v6M20 4l-9 9M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5" />
+    </svg>
+  )
+}
+
+function IconeLista() {
+  return (
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden>
+      <path d="M8 6h12M8 12h12M8 18h12M4 6h.01M4 12h.01M4 18h.01" />
     </svg>
   )
 }
@@ -131,20 +187,25 @@ function Tocar() {
   )
 }
 
-/** O que a conversa mostra no Inbox: o áudio chega com a transcrição embaixo. */
-function NoInbox({ f, pago }: { f: Fala; pago: boolean }) {
+/**
+ * O que a conversa mostra no Inbox: o áudio chega com a transcrição, o link
+ * diz se já foi pago e a pesquisa mostra a nota que voltou.
+ */
+function NoInbox({ f, pago, nota }: { f: Fala; pago: boolean; nota: number | null }) {
   return (
-    <div className={x.janelaBalao} data-rico={f.produto || f.audio || f.link || f.confirmado ? '' : undefined}>
-      {f.texto && <p>{f.texto}</p>}
-      {f.produto && (
-        <span className={x.janelaProduto}>
+    <div className={x.janelaBalao} data-rico={f.foto || f.audio || f.link || f.nps ? '' : undefined}>
+      {f.foto ? (
+        <span className={x.janelaCard}>
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={f.produto.foto} alt="" width={56} height={56} />
-          <span>
-            <strong>{f.produto.nome}</strong>
-            <small>{f.produto.preco} · cartão enviado pelo chatbot</small>
-          </span>
+          <img src={f.foto} alt="" width={84} height={84} />
+          <span>{f.texto && <Formatado texto={f.texto} />}</span>
         </span>
+      ) : (
+        f.texto && (
+          <span className={x.janelaTexto}>
+            <Formatado texto={f.texto} />
+          </span>
+        )
       )}
       {f.audio && (
         <>
@@ -161,10 +222,19 @@ function NoInbox({ f, pago }: { f: Fala; pago: boolean }) {
           </span>
         </>
       )}
-      {f.link && (
-        <span className={x.janelaLink}>
-          <span className={x.janelaLinkTopo}>
-            <small>Link de pagamento</small>
+      {f.nps && (
+        <span className={x.janelaNps} aria-hidden>
+          {Array.from({ length: 11 }, (_, i) => (
+            <i key={i} data-nota={nota === i || undefined}>
+              {i}
+            </i>
+          ))}
+        </span>
+      )}
+      {f.botao && (
+        <span className={x.janelaBotao}>
+          <IconeLink /> {f.botao}
+          {f.link && (
             <em data-pago={pago || undefined}>
               {pago ? (
                 <>
@@ -174,36 +244,7 @@ function NoInbox({ f, pago }: { f: Fala; pago: boolean }) {
                 'Aguardando pagamento'
               )}
             </em>
-          </span>
-          <span className={x.janelaLinkPedido}>
-            <strong>{f.link.numero}</strong>
-            <b>{f.link.total}</b>
-          </span>
-          <small className={x.janelaLinkUrl}>autofluxos.4yu.com.br/pagar/…</small>
-        </span>
-      )}
-      {f.confirmado && (
-        <span className={x.janelaConfirmado}>
-          <span className={x.confirmadoTopo}>
-            <i>
-              <Visto />
-            </i>
-            <strong>Pedido confirmado</strong>
-          </span>
-          <span className={x.janelaPix}>
-            <span>
-              {f.confirmado.numero}
-              <b>Pago no Pix</b>
-            </span>
-            <span>
-              Entrega
-              <b>{f.confirmado.entrega}</b>
-            </span>
-            <span data-total>
-              Total
-              <b>{f.confirmado.total}</b>
-            </span>
-          </span>
+          )}
         </span>
       )}
     </div>
@@ -214,28 +255,14 @@ function NoInbox({ f, pago }: { f: Fala; pago: boolean }) {
 function NoCelular({ f, hora }: { f: Fala; hora: string }) {
   const lado = f.de === 'cliente' ? 'ela' : 'nos'
   return (
-    <div className={x.aparelhoBalao} data-de={lado} data-rico={f.produto || f.link || f.confirmado ? '' : undefined}>
-      {f.produto && (
-        <>
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img className={x.aparelhoFoto} src={f.produto.foto} alt="" width={240} height={120} />
-          <strong className={x.aparelhoProduto}>
-            {f.produto.nome}
-            <b>{f.produto.preco}</b>
-          </strong>
-        </>
-      )}
-      {f.link && (
-        <span className={x.aparelhoPrevia}>
-          <small>autofluxos.4yu.com.br</small>
-          <strong>
-            {f.link.numero} · {f.link.total}
-          </strong>
-          <span>Pague com Pix ou cartão</span>
+    <div className={x.aparelhoBalao} data-de={lado} data-rico={f.foto || f.botao || f.nps ? '' : undefined}>
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      {f.foto && <img className={x.aparelhoFoto} src={f.foto} alt="" width={240} height={120} />}
+      {f.texto && (
+        <span className={x.aparelhoTexto}>
+          <Formatado texto={f.texto} />
         </span>
       )}
-      {f.texto && <span>{f.texto}</span>}
-      {f.link && <em className={x.aparelhoAcao}>Pagar agora</em>}
       {f.audio && (
         <span className={x.aparelhoAudio}>
           <Tocar />
@@ -243,30 +270,17 @@ function NoCelular({ f, hora }: { f: Fala; hora: string }) {
           <small>{f.audio.duracao}</small>
         </span>
       )}
-      {f.confirmado && (
-        <span className={x.aparelhoPix}>
-          <span className={x.confirmadoTopo}>
-            <i>
-              <Visto />
-            </i>
-            <strong>Pedido confirmado!</strong>
-          </span>
-          <span>
-            {f.confirmado.numero}
-            <b>Pago no Pix</b>
-          </span>
-          <span>
-            Entrega
-            <b>Sábado, 9h às 14h</b>
-          </span>
-          <span data-total>
-            Total
-            <b>{f.confirmado.total}</b>
-          </span>
-          <em>Acompanhar pedido</em>
-        </span>
-      )}
       <time>{hora}</time>
+      {f.botao && (
+        <em className={x.aparelhoAcao}>
+          <IconeLink /> {f.botao}
+        </em>
+      )}
+      {f.nps && (
+        <em className={x.aparelhoAcao}>
+          <IconeLista /> Escolher nota
+        </em>
+      )}
     </div>
   )
 }
@@ -295,7 +309,9 @@ export function DoisLados() {
 
   const falas = ROTEIRO.slice(0, calmo ? ROTEIRO.length : n)
   const transferiu = falas.length > ENTRADA_DA_EQUIPE
-  const pago = falas.some((f) => f.confirmado)
+  const pago = falas.some((f) => f.automatico?.includes('pagamento'))
+  const respostaDoNps = falas.findIndex((f) => f.nps)
+  const nota = respostaDoNps >= 0 && falas[respostaDoNps + 1] ? Number(falas[respostaDoNps + 1]!.texto) : null
 
   return (
     <div ref={raiz} className={x.doisLados} aria-label="A mesma conversa no celular do dono e no Inbox">
@@ -319,9 +335,9 @@ export function DoisLados() {
           {falas.map((f, i) => (
             <div key={i} className={x.janelaLinha} data-de={f.de}>
               {i === ENTRADA_DA_EQUIPE && <p className={x.janelaAviso}>Júlia entrou na conversa</p>}
-              <NoInbox f={f} pago={pago} />
+              <NoInbox f={f} pago={pago} nota={nota} />
               <small>
-                {f.confirmado ? 'Automático, pagamento aprovado · ' : f.de === 'bot' ? 'Chatbot · ' : f.de === 'equipe' ? 'Júlia, pelo celular · ' : ''}
+                {f.automatico ? `${f.automatico} · ` : f.de === 'bot' ? 'Chatbot · ' : f.de === 'equipe' ? 'Júlia, pelo celular · ' : ''}
                 {HORAS_DA_CONVERSA[i]}
               </small>
             </div>

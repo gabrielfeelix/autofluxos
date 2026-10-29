@@ -1075,10 +1075,14 @@ a.canal h3 svg {
   background: #d9fdd3;
 }
 
-/* ── mensagens ricas da coexistência: foto do produto, áudio, Pix ── */
+/* ── mensagens ricas da coexistência, no molde dos cards da PCYES ── */
 
-.janelaBalao p {
-  margin: 0;
+.linhaFormatada {
+  display: block;
+}
+
+.linhaFormatada b {
+  font-weight: 600;
 }
 
 .janelaBalao[data-rico] {
@@ -1086,31 +1090,56 @@ a.canal h3 svg {
   gap: 10px;
 }
 
-.janelaProduto {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 8px;
-  border-radius: 10px;
-  background: #ffffff;
+.janelaTexto {
+  display: block;
 }
 
-.janelaProduto img {
+/* No Inbox a foto vai ao lado do texto: o card cabe na fila sem ocupar a tela. */
+.janelaCard {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  max-width: 400px;
+}
+
+.janelaCard img {
   flex: none;
-  width: 56px;
-  height: 56px;
+  width: 84px;
+  height: 84px;
   border-radius: 8px;
   object-fit: cover;
 }
 
-.janelaProduto strong {
-  display: block;
-  font-size: 13.5px;
+.janelaBotao {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding-top: 8px;
+  border-top: 1px solid rgb(29 78 216 / 0.14);
+  font-size: 13px;
+  font-weight: 500;
+  color: #1d4ed8;
 }
 
-.janelaProduto small {
+.janelaLinha[data-de='equipe'] .janelaBotao {
+  border-top-color: rgb(255 255 255 / 0.25);
+  color: #ffffff;
+}
+
+.janelaBotao em {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-left: auto;
+  padding-left: 16px;
   font-size: 12px;
-  color: var(--muted);
+  font-style: normal;
+  font-weight: 500;
+  opacity: 0.85;
+}
+
+.janelaBotao em[data-pago] {
+  opacity: 1;
 }
 
 .janelaAudio {
@@ -1170,207 +1199,53 @@ a.canal h3 svg {
   color: #1d4ed8;
 }
 
-.janelaPix,
-.aparelhoPix {
+/* A escala do NPS: a nota que voltou acende quando a cliente responde. */
+.janelaNps {
   display: grid;
+  grid-template-columns: repeat(11, 24px);
   gap: 4px;
-  min-width: 220px;
 }
 
-.janelaPix strong,
-.aparelhoPix strong {
-  margin-bottom: 2px;
-}
-
-.janelaPix span,
-.aparelhoPix span {
-  display: flex;
-  justify-content: space-between;
-  gap: 16px;
-  font-size: 13px;
-}
-
-.janelaPix b,
-.aparelhoPix b {
-  white-space: nowrap;
-  font-weight: 500;
+.janelaNps i {
+  display: grid;
+  place-items: center;
+  height: 24px;
+  border-radius: 5px;
+  background: #ffffff;
+  font-size: 11.5px;
+  font-style: normal;
+  color: var(--muted);
   font-variant-numeric: tabular-nums;
+  transition:
+    background 0.3s var(--curva),
+    color 0.3s var(--curva);
 }
 
-.janelaPix [data-total],
-.aparelhoPix [data-total] {
-  margin-top: 4px;
-  padding-top: 6px;
-  border-top: 1px solid rgb(255 255 255 / 0.3);
+.janelaNps i[data-nota] {
+  background: #16a34a;
+  color: #ffffff;
   font-weight: 600;
 }
 
-.janelaPix [data-total] b,
-.aparelhoPix [data-total] b {
-  font-weight: 700;
-}
-
-/* Link de pagamento no Inbox: cartão branco dentro do balão azul da atendente. */
-.janelaLink,
-.janelaConfirmado {
-  display: grid;
-  gap: 6px;
-  min-width: 260px;
-  padding: 12px 14px;
-  border-radius: 10px;
-  background: #ffffff;
-  color: #0c1838;
-}
-
-.janelaConfirmado .janelaPix [data-total] {
-  border-top-color: #e3e8f3;
-}
-
-.janelaLinkTopo {
-  display: flex;
-  justify-content: space-between;
-  gap: 12px;
-  font-size: 11.5px;
-  color: #64708a;
-}
-
-.janelaLinkTopo em {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  font-style: normal;
-  font-weight: 500;
-  color: #b45309;
-}
-
-.janelaLinkTopo em[data-pago] {
-  color: #15803d;
-}
-
-.janelaLinkPedido {
-  display: flex;
-  justify-content: space-between;
-  align-items: baseline;
-  gap: 16px;
-  font-size: 15px;
-}
-
-.janelaLinkPedido b {
-  font-variant-numeric: tabular-nums;
-}
-
-.janelaLinkUrl {
-  padding-top: 6px;
-  border-top: 1px solid #e3e8f3;
-  font-size: 11.5px;
-  color: #1d4ed8;
-}
-
-.janelaConfirmado {
-  padding: 4px 2px;
-  background: transparent;
-}
-
-.confirmadoTopo {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin-bottom: 4px;
-}
-
-.confirmadoTopo i {
-  display: grid;
-  place-items: center;
-  width: 22px;
-  height: 22px;
-  border-radius: 50%;
-  background: #16a34a;
-  color: #ffffff;
-}
-
-.confirmadoTopo strong {
-  font-size: 14px;
-}
-
-.aparelhoPix .confirmadoTopo {
-  justify-content: flex-start;
-}
-
-.aparelhoPix .confirmadoTopo i {
-  width: 18px;
-  height: 18px;
-}
-
-.aparelhoPix .confirmadoTopo strong {
-  margin: 0;
-  font-size: 12.5px;
-}
-
-/* Link no celular: a prévia que o WhatsApp monta sobre o endereço. */
-.aparelhoPrevia {
-  display: grid !important;
-  gap: 1px;
-  margin-bottom: 5px;
-  padding: 7px 8px !important;
-  border-left: 3px solid #25d366;
-  border-radius: 6px;
-  background: rgb(17 27 33 / 0.06);
-  font-size: 12px;
-}
-
-.aparelhoPrevia small {
-  font-size: 10.5px;
-  color: #667781;
-}
-
-.aparelhoPrevia strong {
-  font-size: 12.5px;
-}
-
-.aparelhoPrevia span {
-  color: #54656f;
-}
-
-.aparelhoAcao {
-  display: block;
-  margin-top: 6px;
-  padding: 6px 0 0;
-  border-top: 1px solid rgb(17 27 33 / 0.12);
-  font-size: 12.5px;
-  font-style: normal;
-  font-weight: 500;
-  text-align: center;
-  color: #027eb5;
-}
-
 .aparelhoBalao[data-rico] {
-  padding: 4px 4px 6px;
+  padding: 4px 4px 0;
 }
 
-.aparelhoBalao[data-rico] > span,
-.aparelhoBalao[data-rico] > strong {
+.aparelhoBalao[data-rico] > time {
+  margin-right: 5px;
+}
+
+.aparelhoTexto {
   display: block;
-  padding-inline: 5px;
+  padding: 4px 5px 0;
 }
 
 .aparelhoFoto {
   display: block;
   width: 100%;
-  height: 92px;
+  height: 104px;
   border-radius: 6px;
   object-fit: cover;
-}
-
-.aparelhoProduto {
-  margin: 6px 0 4px;
-  font-size: 12.5px;
-  line-height: 1.3;
-}
-
-.aparelhoProduto b {
-  display: block;
-  font-weight: 500;
-  color: #54656f;
 }
 
 .aparelhoAudio {
@@ -1381,30 +1256,19 @@ a.canal h3 svg {
   color: #54656f;
 }
 
-.aparelhoPix {
-  width: 188px;
-  min-width: 0;
-  padding-inline: 5px;
-  font-size: 12.5px;
-}
-
-.aparelhoPix span {
-  font-size: 12.5px;
-}
-
-.aparelhoPix [data-total] {
-  border-top-color: rgb(17 27 33 / 0.12);
-}
-
-.aparelhoPix em {
-  display: block;
-  margin-top: 6px;
-  padding-top: 6px;
-  border-top: 1px solid rgb(17 27 33 / 0.12);
+/* O botão de ação do WhatsApp: separado do texto por uma linha, em azul. */
+.aparelhoAcao {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  clear: both;
+  margin: 4px -4px 0;
+  padding: 7px 0;
+  border-top: 1px solid rgb(17 27 33 / 0.1);
   font-size: 12.5px;
   font-style: normal;
   font-weight: 500;
-  text-align: center;
   color: #027eb5;
 }
 
