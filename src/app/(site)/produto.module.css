@@ -247,6 +247,26 @@
   margin-top: auto;
 }
 
+/* A ilustração do app, na cor da parte (branca nas peças de cor), no lugar do vazio de cima. */
+.itemDesenho {
+  display: block;
+  color: var(--cor);
+}
+
+.itemDesenho svg {
+  display: block;
+  width: auto;
+  height: 104px;
+  margin: 0;
+  color: inherit;
+  animation: none;
+}
+
+.item[data-tom='cor'] .itemDesenho,
+.item[data-tom='fundo'] .itemDesenho {
+  color: rgb(255 255 255 / 0.9);
+}
+
 .itemNumero {
   font-size: clamp(52px, 5.4vw, 84px);
   font-weight: 600;

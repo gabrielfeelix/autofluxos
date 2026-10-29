@@ -411,15 +411,6 @@ export function SecaoPrecos() {
           <section className={`${s.secao} ${s.secaoAbaixoDaCapa}`} id="precos">
             <div className={`${s.focoLuz} ${s.focoEsquerda}`} aria-hidden />
             <div className={s.faixa}>
-              {/* O título é o da capa de /precos, logo acima: repetir aqui era eco. Sem revelação: é o primeiro texto abaixo da capa e virava o LCP. */}
-              <div className={s.cabecaSecao}>
-                <p className={`${s.chamada} ${s.chamadaCentro}`}>
-                  Organize, automatize, decida. A IA é a mesma em todos os planos: o que sobe é o que ela
-                  faz sozinha, o tamanho da equipe e quantas conversas cabem no mês. {DIAS_DE_TESTE} dias
-                  grátis, sem cartão, e quem só acompanha (sócio, financeiro) entra de graça.
-                </p>
-              </div>
-
               <div className={s.planos}>
                 {PLANOS.map((plano, indice) => (
                   <Plano
@@ -534,7 +525,6 @@ export function Desktop() {
 
   return (
     <div className={s.desktop} data-revela data-como="escala" data-atraso="140">
-      <span className={s.lustro} aria-hidden />
       <div className={s.desktopBarra} aria-hidden>
         <span className={s.janelaPonto} />
         <span className={s.janelaPonto} />
@@ -710,7 +700,6 @@ function Passo({
 }) {
   return (
     <li className={s.passo} data-revela data-como="escala" data-atraso={atraso}>
-      <span className={s.lustro} aria-hidden />
       <span className={s.passoNumero}>{rotulo}</span>
       <div className={s.passoArte} aria-hidden>
         {arte}
@@ -763,7 +752,6 @@ function Plano({
       data-como="escala"
       data-atraso={atraso}
     >
-      <span className={s.lustro} aria-hidden />
       <h3 className={s.planoNome}>
         {nome}
         {destaque && <span className={s.planoSelo}>Mais escolhido</span>}

@@ -1,7 +1,30 @@
 import Link from 'next/link'
 import type { CSSProperties, ReactNode } from 'react'
 import { CenaFluxo, CenaFunil, CenaIA, CenaInbox, CenaRelatorio } from './bento-do-produto'
-import { RECURSOS, type RecursoDoSite } from './recursos-do-site'
+import {
+  IlustracaoAcervo,
+  IlustracaoAnotacoes,
+  IlustracaoAtividades,
+  IlustracaoAutomacoes,
+  IlustracaoChaves,
+  IlustracaoContatos,
+  IlustracaoDeRelatorio,
+  IlustracaoEquipe,
+  IlustracaoEtiquetas,
+  IlustracaoEventos,
+  IlustracaoInbox,
+  IlustracaoModelos,
+  IlustracaoOutroAparelho,
+  IlustracaoPalavrasChave,
+  IlustracaoProdutos,
+  IlustracaoQuadros,
+  IlustracaoRespostas,
+  IlustracaoRespostasRapidas,
+  IlustracaoSegmentos,
+  IlustracaoSequencias,
+  IlustracaoTudoCerto,
+} from '@/components/design/ilustracoes'
+import { RECURSOS, type DesenhoDoItem, type RecursoDoSite } from './recursos-do-site'
 import { JanelaDeFicha } from './secoes-do-site'
 import { ConversaQuePreencheAFicha, RelatoriosEmAbas } from './pecas-do-produto'
 import p from './produto.module.css'
@@ -130,6 +153,39 @@ export function CorpoDoProduto({ recurso, children }: { recurso: RecursoDoSite; 
 const LARGAS = new Set([0, 5, 8])
 const TONS = ['cor', 'claro', 'tingido', 'tingido', 'claro', 'claro', 'claro', 'tingido', 'fundo']
 
+/** Os desenhos do próprio app: quem assina já conhece o traço, e o card mostra a tela de verdade. */
+const DESENHOS: Record<Exclude<DesenhoDoItem, Parameters<typeof IlustracaoDeRelatorio>[0]['desenho']>, () => ReactNode> = {
+  acervo: () => <IlustracaoAcervo />,
+  anotacoes: () => <IlustracaoAnotacoes />,
+  atividades: () => <IlustracaoAtividades />,
+  automacoes: () => <IlustracaoAutomacoes />,
+  chaves: () => <IlustracaoChaves />,
+  contatos: () => <IlustracaoContatos />,
+  equipe: () => <IlustracaoEquipe />,
+  etiquetas: () => <IlustracaoEtiquetas />,
+  eventos: () => <IlustracaoEventos />,
+  inbox: () => <IlustracaoInbox />,
+  modelos: () => <IlustracaoModelos />,
+  outroAparelho: () => <IlustracaoOutroAparelho />,
+  palavrasChave: () => <IlustracaoPalavrasChave />,
+  produtos: () => <IlustracaoProdutos />,
+  quadros: () => <IlustracaoQuadros />,
+  respostas: () => <IlustracaoRespostas />,
+  respostasRapidas: () => <IlustracaoRespostasRapidas />,
+  segmentos: () => <IlustracaoSegmentos />,
+  sequencias: () => <IlustracaoSequencias />,
+  tudoCerto: () => <IlustracaoTudoCerto />,
+}
+
+function Desenho({ desenho }: { desenho: DesenhoDoItem }) {
+  const proprio = DESENHOS[desenho as keyof typeof DESENHOS]
+  return (
+    <span className={p.itemDesenho} aria-hidden>
+      {proprio ? proprio() : <IlustracaoDeRelatorio desenho={desenho as Parameters<typeof IlustracaoDeRelatorio>[0]['desenho']} />}
+    </span>
+  )
+}
+
 function BentoDosItens({ recurso }: { recurso: RecursoDoSite }) {
   const ultimaLarga = recurso.itens.length - 1
   return (
@@ -146,7 +202,7 @@ function BentoDosItens({ recurso }: { recurso: RecursoDoSite }) {
             data-como="escala"
             data-atraso={(i % 3) * 70}
           >
-            {item.numero && <strong className={p.itemNumero}>{item.numero}</strong>}
+            {item.numero ? <strong className={p.itemNumero}>{item.numero}</strong> : item.desenho && <Desenho desenho={item.desenho} />}
             <div>
               <h3>{item.titulo}</h3>
               <p>{item.texto}</p>

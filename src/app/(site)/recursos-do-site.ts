@@ -5,6 +5,32 @@
  * código ou medido; o que muda com frequência (quantidade de blocos, de
  * ferramentas da IA, de verificações) fica sem número de propósito.
  */
+import type { DesenhoDeRelatorio } from '@/components/design/ilustracoes'
+
+/** As ilustrações do app que servem aos itens: as dos relatórios e as dos estados vazios. */
+export type DesenhoDoItem =
+  | DesenhoDeRelatorio
+  | 'acervo'
+  | 'anotacoes'
+  | 'atividades'
+  | 'automacoes'
+  | 'chaves'
+  | 'contatos'
+  | 'equipe'
+  | 'etiquetas'
+  | 'eventos'
+  | 'inbox'
+  | 'modelos'
+  | 'outroAparelho'
+  | 'palavrasChave'
+  | 'produtos'
+  | 'quadros'
+  | 'respostas'
+  | 'respostasRapidas'
+  | 'segmentos'
+  | 'sequencias'
+  | 'tudoCerto'
+
 export type RecursoDoSite = {
   slug: string
   nome: string
@@ -14,8 +40,11 @@ export type RecursoDoSite = {
   titulo: string
   subtitulo: string
   destaques: { titulo: string; texto: string }[]
-  /** `numero`: o número que já está no texto, em tipografia grande na peça do bento. */
-  itens: { titulo: string; texto: string; numero?: string }[]
+  /**
+   * `numero`: o número que já está no texto, em tipografia grande na peça do bento.
+   * `desenho`: a ilustração do app (`components/design/ilustracoes.tsx`) que a peça mostra quando não tem número.
+   */
+  itens: { titulo: string; texto: string; numero?: string; desenho?: DesenhoDoItem }[]
   ficha: { barra: string; titulo: string; linhas: { rotulo: string; valor: string }[] }
 }
 
@@ -37,15 +66,15 @@ export const RECURSOS: RecursoDoSite[] = [
       { titulo: 'Cada versão guardada', texto: 'Toda publicação fica registrada. Dá para abrir uma versão antiga e voltar para ela.' },
     ],
     itens: [
-      { titulo: 'Perguntas que validam', texto: 'Botões, listas e texto livre, com conferência de data, e-mail, telefone e CPF.' },
-      { titulo: 'Gatilhos', texto: 'Palavra-chave, frase do anúncio, evento de outro sistema, formulário do Lead Ads ou chamada pela API.' },
-      { titulo: 'Saída para a equipe', texto: 'Quem escreve "atendente" ou "falar com uma pessoa" chega a alguém em qualquer ponto do fluxo.' },
+      { titulo: 'Perguntas que validam', texto: 'Botões, listas e texto livre, com conferência de data, e-mail, telefone e CPF.', desenho: 'tudoCerto' },
+      { titulo: 'Gatilhos', texto: 'Palavra-chave, frase do anúncio, evento de outro sistema, formulário do Lead Ads ou chamada pela API.', desenho: 'palavrasChave' },
+      { titulo: 'Saída para a equipe', texto: 'Quem escreve "atendente" ou "falar com uma pessoa" chega a alguém em qualquer ponto do fluxo.', desenho: 'equipe' },
       { titulo: 'Pesquisa de satisfação', texto: 'NPS de 0 a 10, com caminho próprio para quem elogia, quem fica neutro e quem reclama.', numero: '0 a 10' },
-      { titulo: 'Serviços externos', texto: 'Chamada a outro sistema com a credencial guardada no cofre e a resposta virando variável.' },
+      { titulo: 'Serviços externos', texto: 'Chamada a outro sistema com a credencial guardada no cofre e a resposta virando variável.', desenho: 'chaves' },
       { titulo: 'Sequências', texto: 'Até 5 passos para quem sumiu ou encerrou o atendimento, e saem sozinhas quando o cliente responde.', numero: '5 passos' },
-      { titulo: 'Link de teste', texto: 'Mande o fluxo para alguém testar, com prazo, contador de aberturas e botão de importar.' },
-      { titulo: 'Respostas em planilha', texto: 'Cada passagem pelo fluxo vira uma linha, com as variáveis em coluna e exportação em CSV.' },
-      { titulo: 'Modelos prontos', texto: 'Agendamento, carrinho abandonado, qualificação, lembrete, pós-atendimento e outros.' },
+      { titulo: 'Link de teste', texto: 'Mande o fluxo para alguém testar, com prazo, contador de aberturas e botão de importar.', desenho: 'outroAparelho' },
+      { titulo: 'Respostas em planilha', texto: 'Cada passagem pelo fluxo vira uma linha, com as variáveis em coluna e exportação em CSV.', desenho: 'respostas' },
+      { titulo: 'Modelos prontos', texto: 'Agendamento, carrinho abandonado, qualificação, lembrete, pós-atendimento e outros.', desenho: 'modelos' },
     ],
     ficha: {
       barra: 'Editor de fluxos',
@@ -73,12 +102,12 @@ export const RECURSOS: RecursoDoSite[] = [
       { titulo: 'Não inventa', texto: 'Fora do assunto da empresa, não responde. Sem a resposta na ficha, chama a equipe.' },
     ],
     itens: [
-      { titulo: 'Autonomia por ação', texto: 'Para cada ação, você escolhe: faz sozinha, pergunta ao cliente antes ou passa para a equipe.' },
-      { titulo: 'Conta conferida', texto: 'Na cobrança, o total é somado pelo servidor, não pela IA.' },
-      { titulo: 'Só o que existe', texto: 'A IA só usa produto e código que vieram de uma consulta real, nunca um que ela imaginou.' },
-      { titulo: 'Lê foto e áudio', texto: 'Entende a foto que o cliente manda e o áudio depois de transcrito.' },
-      { titulo: 'Aprende com a equipe', texto: 'Toda noite as conversas são agrupadas por tema. O que ficou sem resposta, a equipe ensina uma vez.' },
-      { titulo: 'Registro de cada ação', texto: 'Cada consulta e cada ação da IA fica registrada, como pede a LGPD.' },
+      { titulo: 'Autonomia por ação', texto: 'Para cada ação, você escolhe: faz sozinha, pergunta ao cliente antes ou passa para a equipe.', desenho: 'automacoes' },
+      { titulo: 'Conta conferida', texto: 'Na cobrança, o total é somado pelo servidor, não pela IA.', desenho: 'tudoCerto' },
+      { titulo: 'Só o que existe', texto: 'A IA só usa produto e código que vieram de uma consulta real, nunca um que ela imaginou.', desenho: 'produtos' },
+      { titulo: 'Lê foto e áudio', texto: 'Entende a foto que o cliente manda e o áudio depois de transcrito.', desenho: 'acervo' },
+      { titulo: 'Aprende com a equipe', texto: 'Toda noite as conversas são agrupadas por tema. O que ficou sem resposta, a equipe ensina uma vez.', desenho: 'equipe' },
+      { titulo: 'Registro de cada ação', texto: 'Cada consulta e cada ação da IA fica registrada, como pede a LGPD.', desenho: 'atividades' },
     ],
     ficha: {
       barra: 'Configurações · IA',
@@ -108,14 +137,14 @@ export const RECURSOS: RecursoDoSite[] = [
     ],
     itens: [
       { titulo: 'Áudio gravado no navegador', texto: 'Até 5 minutos, no formato que o WhatsApp aceita.', numero: '5 min' },
-      { titulo: 'Fila por setor', texto: 'Vendas, suporte e financeiro com fila própria. O chatbot já entrega a conversa no setor certo.' },
-      { titulo: 'Respostas rápidas', texto: 'Digite / e escolha. Dá para importar a lista por planilha.' },
+      { titulo: 'Fila por setor', texto: 'Vendas, suporte e financeiro com fila própria. O chatbot já entrega a conversa no setor certo.', desenho: 'equipe' },
+      { titulo: 'Respostas rápidas', texto: 'Digite / e escolha. Dá para importar a lista por planilha.', desenho: 'respostasRapidas' },
       { titulo: 'Mensagem agendada', texto: 'Para até um ano depois, com aviso quando a janela de 24 horas fechou.', numero: '1 ano' },
-      { titulo: 'Supervisão', texto: 'O gestor vê a caixa de cada atendente como ele vê, sem marcar nada como lido.' },
-      { titulo: 'Aviso com o painel fechado', texto: 'Notificação no navegador quando um cliente pede atendimento. De madrugada, não toca.' },
-      { titulo: 'IA do atendente', texto: 'Sugere a resposta, corrige, deixa mais formal ou mais curta e resume a conversa. Só sai quando a pessoa envia.' },
-      { titulo: 'Origem visível', texto: 'Cada conversa mostra o canal e se o cliente veio de um anúncio.' },
-      { titulo: 'Quem respondeu', texto: 'O nome do atendente vai na mensagem, e a bolha mostra se foi o chatbot, a IA ou uma pessoa.' },
+      { titulo: 'Supervisão', texto: 'O gestor vê a caixa de cada atendente como ele vê, sem marcar nada como lido.', desenho: 'atendentes' },
+      { titulo: 'Aviso com o painel fechado', texto: 'Notificação no navegador quando um cliente pede atendimento. De madrugada, não toca.', desenho: 'eventos' },
+      { titulo: 'IA do atendente', texto: 'Sugere a resposta, corrige, deixa mais formal ou mais curta e resume a conversa. Só sai quando a pessoa envia.', desenho: 'anotacoes' },
+      { titulo: 'Origem visível', texto: 'Cada conversa mostra o canal e se o cliente veio de um anúncio.', desenho: 'origens' },
+      { titulo: 'Quem respondeu', texto: 'O nome do atendente vai na mensagem, e a bolha mostra se foi o chatbot, a IA ou uma pessoa.', desenho: 'inbox' },
     ],
     ficha: {
       barra: 'Conversas · Inbox',
@@ -144,14 +173,14 @@ export const RECURSOS: RecursoDoSite[] = [
     ],
     itens: [
       { titulo: 'Vários funis', texto: 'Seis modelos prontos: atendimento, comercial, captação, agenda, pós-venda e pedidos.', numero: '6 modelos' },
-      { titulo: 'Kanban e lista', texto: 'Arraste o cartão entre etapas, com alerta do que está parado há dias demais.' },
-      { titulo: 'Ganho e perda', texto: 'Ganhar com valor, perder com motivo e reabrir. A venda é registrada com os itens.' },
-      { titulo: 'Segmentos', texto: 'Regras por estágio, valor comprado, produto, data e temperatura, com contagem ao vivo.' },
-      { titulo: 'Nível de cliente', texto: 'Ouro, prata e bronze pelo valor comprado, com faixas que você define.' },
-      { titulo: 'Importar planilha', texto: 'Reconhece nome e telefone sozinho, com ou sem o nono dígito.' },
+      { titulo: 'Kanban e lista', texto: 'Arraste o cartão entre etapas, com alerta do que está parado há dias demais.', desenho: 'quadros' },
+      { titulo: 'Ganho e perda', texto: 'Ganhar com valor, perder com motivo e reabrir. A venda é registrada com os itens.', desenho: 'fechamentos' },
+      { titulo: 'Segmentos', texto: 'Regras por estágio, valor comprado, produto, data e temperatura, com contagem ao vivo.', desenho: 'segmentos' },
+      { titulo: 'Nível de cliente', texto: 'Ouro, prata e bronze pelo valor comprado, com faixas que você define.', desenho: 'podio' },
+      { titulo: 'Importar planilha', texto: 'Reconhece nome e telefone sozinho, com ou sem o nono dígito.', desenho: 'contatos' },
       { titulo: 'Exportar', texto: 'CSV com os filtros aplicados, até 20 mil linhas.', numero: '20 mil' },
-      { titulo: 'Etiquetas', texto: 'Seis cores, juntar duas em uma e três etiquetas que se aplicam sozinhas.' },
-      { titulo: 'Origem do contato', texto: 'O anúncio de onde o cliente veio, na ficha e nos relatórios.' },
+      { titulo: 'Etiquetas', texto: 'Seis cores, juntar duas em uma e três etiquetas que se aplicam sozinhas.', desenho: 'etiquetas' },
+      { titulo: 'Origem do contato', texto: 'O anúncio de onde o cliente veio, na ficha e nos relatórios.', desenho: 'origens' },
     ],
     ficha: {
       barra: 'CRM · Negociações',
@@ -180,12 +209,12 @@ export const RECURSOS: RecursoDoSite[] = [
       { titulo: 'Retorno por contato', texto: 'Na fila, enviado, entregue, lido ou não recebido, um por um.' },
     ],
     itens: [
-      { titulo: 'Público por etiqueta', texto: 'Com a contagem de contatos antes de enviar.' },
-      { titulo: 'Texto de cada pessoa', texto: 'Nome e outros campos de cada contato entram na mensagem.' },
-      { titulo: 'Agora ou agendado', texto: 'Envie na hora ou marque o dia e o horário.' },
-      { titulo: 'Mais barato na janela', texto: 'Quem conversou nas últimas 24 horas recebe como mensagem comum, cobrada como serviço.' },
-      { titulo: 'Para sozinho', texto: 'Se a Meta derrubar o modelo no meio do envio, o resto não sai.' },
-      { titulo: 'Novas tentativas', texto: 'Falha temporária é tentada de novo, conforme o tipo de erro.' },
+      { titulo: 'Público por etiqueta', texto: 'Com a contagem de contatos antes de enviar.', desenho: 'etiquetas' },
+      { titulo: 'Texto de cada pessoa', texto: 'Nome e outros campos de cada contato entram na mensagem.', desenho: 'modelos' },
+      { titulo: 'Agora ou agendado', texto: 'Envie na hora ou marque o dia e o horário.', desenho: 'eventos' },
+      { titulo: 'Mais barato na janela', texto: 'Quem conversou nas últimas 24 horas recebe como mensagem comum, cobrada como serviço.', desenho: 'espera' },
+      { titulo: 'Para sozinho', texto: 'Se a Meta derrubar o modelo no meio do envio, o resto não sai.', desenho: 'tudoCerto' },
+      { titulo: 'Novas tentativas', texto: 'Falha temporária é tentada de novo, conforme o tipo de erro.', desenho: 'sequencias' },
     ],
     ficha: {
       barra: 'Automações · Transmissões',
@@ -213,15 +242,15 @@ export const RECURSOS: RecursoDoSite[] = [
       { titulo: 'O que vendeu', texto: 'Ganho nos negócios, recebido pelo chat, mais vendidos e ticket médio.' },
     ],
     itens: [
-      { titulo: 'Quando as conversas chegam', texto: 'Dia e hora de cada conversa, para saber quando ter alguém no Inbox.' },
-      { titulo: 'Por onde chegam', texto: 'Conversas do período por canal.' },
-      { titulo: 'De onde vêm os contatos', texto: 'Contatos novos pela campanha do anúncio em que clicaram.' },
-      { titulo: 'Quem atendeu', texto: 'Conversas da equipe por responsável.' },
-      { titulo: 'Satisfação', texto: 'NPS das pesquisas feitas no próprio fluxo.' },
-      { titulo: 'Gasto com WhatsApp', texto: 'O que as mensagens custaram na Meta no período.' },
-      { titulo: 'Produtos mais clicados', texto: 'Toques em "Ver produto" nos cards enviados pelo chatbot e pela equipe.' },
-      { titulo: 'Principais dúvidas', texto: 'Os temas que mais aparecem e as perguntas que ficaram sem resposta.' },
-      { titulo: 'Os números do seu ramo', texto: 'Pedidos e tempo de preparo, aulas e presença, mensalidades em dia.' },
+      { titulo: 'Quando as conversas chegam', texto: 'Dia e hora de cada conversa, para saber quando ter alguém no Inbox.', desenho: 'horarios' },
+      { titulo: 'Por onde chegam', texto: 'Conversas do período por canal.', desenho: 'canais' },
+      { titulo: 'De onde vêm os contatos', texto: 'Contatos novos pela campanha do anúncio em que clicaram.', desenho: 'origens' },
+      { titulo: 'Quem atendeu', texto: 'Conversas da equipe por responsável.', desenho: 'atendentes' },
+      { titulo: 'Satisfação', texto: 'NPS das pesquisas feitas no próprio fluxo.', desenho: 'nps' },
+      { titulo: 'Gasto com WhatsApp', texto: 'O que as mensagens custaram na Meta no período.', desenho: 'origemDasVendas' },
+      { titulo: 'Produtos mais clicados', texto: 'Toques em "Ver produto" nos cards enviados pelo chatbot e pela equipe.', desenho: 'maisVendidos' },
+      { titulo: 'Principais dúvidas', texto: 'Os temas que mais aparecem e as perguntas que ficaram sem resposta.', desenho: 'motivos' },
+      { titulo: 'Os números do seu ramo', texto: 'Pedidos e tempo de preparo, aulas e presença, mensalidades em dia.', desenho: 'funil' },
     ],
     /*
      * Os mesmos números medidos da home (comentário de `SecaoNumeros`):
