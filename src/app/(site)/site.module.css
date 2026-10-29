@@ -2224,7 +2224,8 @@ a.canal h3 svg {
   grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr);
   align-items: center;
   gap: 48px;
-  min-height: 380px;
+  /* Cabe a etapa mais alta: o painel não pula de altura quando a etapa troca sozinha. */
+  min-height: 520px;
   margin-top: 24px;
   padding: 44px 52px;
   border-radius: 24px;
@@ -2275,14 +2276,17 @@ a.canal h3 svg {
 
 .jornadaTela {
   justify-self: center;
+  display: grid;
+  justify-items: center;
   width: 100%;
-  max-width: 400px;
+  max-width: 460px;
   animation: vitrineConversa 0.5s var(--curva) both;
 }
 
 /* ───── as telas das etapas ───── */
 
 .jtJanela {
+  width: 100%;
   overflow: hidden;
   border-radius: 14px;
   background: #ffffff;
@@ -2292,39 +2296,6 @@ a.canal h3 svg {
 
 .jtCorpo {
   padding: 14px;
-}
-
-.jtLinhas {
-  display: grid;
-  gap: 6px;
-}
-
-.jtLinha {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 9px 10px;
-  border: 1px solid #edf0f7;
-  border-radius: 10px;
-  font-size: 13px;
-  animation: vitrineEntra 0.4s var(--curva) both;
-  animation-delay: calc(0.15s + var(--i) * 0.12s);
-}
-
-.jtLinha[data-destaque] {
-  border-color: rgb(29 78 216 / 0.35);
-  background: rgb(29 78 216 / 0.05);
-}
-
-.jtLinha strong {
-  display: block;
-  font-size: 13.5px;
-}
-
-.jtLinha small {
-  display: block;
-  font-size: 12px;
-  color: #64708a;
 }
 
 .jtAvatar {
@@ -2340,99 +2311,345 @@ a.canal h3 svg {
   color: #1d4ed8;
 }
 
-.jtSetor {
-  margin-left: auto;
-  font-size: 12px;
-  font-weight: 600;
-  text-align: right;
-  color: #1d4ed8;
+/* 01 · captação: as origens à esquerda, os fios convergindo e a ficha do lead. */
+.jtCaptacao {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 44px minmax(0, 230px);
+  align-items: center;
 }
 
-.jtConversa {
+.jtOrigens {
   display: grid;
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.jtOrigens li {
+  display: flex;
+  align-items: center;
   gap: 8px;
-  padding: 4px;
+  padding: 9px 10px;
+  border-radius: 10px;
+  background: rgb(255 255 255 / 0.95);
+  font-size: 12.5px;
+  font-weight: 500;
+  color: #0c1838;
+  box-shadow: 0 10px 20px -14px rgb(0 0 0 / 0.5);
+  animation: vitrineEntra 0.4s var(--curva) both;
+  animation-delay: calc(0.1s + var(--i) * 0.1s);
+}
+
+.jtOrigens li[data-ativa] {
+  outline: 2px solid #93c5fd;
+}
+
+.jtOrigens li > span {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 8px;
+  background: #f4f6fb;
+}
+
+.jtFiosCaptacao {
+  width: 44px;
+  height: 200px;
+  fill: none;
+  stroke: rgb(255 255 255 / 0.55);
+  stroke-width: 1.6;
+  stroke-dasharray: 120;
+  stroke-dashoffset: 120;
+  animation: fioDesenha 0.9s var(--curva) 0.45s forwards;
+}
+
+@keyframes fioDesenha {
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+.jtLead {
+  display: grid;
+  justify-items: center;
+  gap: 2px;
+  text-align: center;
+  animation: vitrineEntra 0.45s var(--curva) 0.8s both;
+}
+
+.jtAvatarGrande {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  margin-bottom: 4px;
+  border-radius: 50%;
+  background: #1d4ed8;
+  font-size: 14px;
+  font-weight: 600;
+  color: #ffffff;
+}
+
+.jtLead strong {
+  font-size: 14px;
+}
+
+.jtLead > small {
+  font-size: 11.5px;
+  color: #64708a;
+}
+
+.jtLead dl {
+  display: grid;
+  gap: 6px;
+  width: 100%;
+  margin: 10px 0 0;
+  padding-top: 10px;
+  border-top: 1px solid #edf0f7;
+  text-align: left;
+}
+
+.jtLead dl > div {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 11.5px;
+}
+
+.jtLead dt {
+  color: #64708a;
+}
+
+.jtLead dd {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin: 0;
+  font-weight: 600;
+}
+
+/* 02 e 05 e 06 · a conversa no visual do WhatsApp. */
+.jtWhats {
+  display: grid;
+  gap: 6px;
+  padding: 10px;
   border-radius: 10px;
   background: #efeae2;
 }
 
-.jtBalao {
-  justify-self: end;
-  margin: 0;
-  padding: 7px 10px;
+.jtWa {
+  max-width: 82%;
+  padding: 6px 9px;
   border-radius: 8px;
-  background: #d9fdd3;
-  font-size: 13px;
+  font-size: 12.5px;
+  line-height: 1.4;
+  color: #111b21;
+  box-shadow: 0 1px 0.5px rgb(11 20 26 / 0.13);
+  animation: vitrineEntra 0.4s var(--curva) both;
 }
 
-.jtCard,
-.jtPagamento {
+.jtWa[data-de='ela'] {
   justify-self: start;
-  display: grid;
-  gap: 2px;
+  border-top-left-radius: 2px;
+  background: #ffffff;
+}
+
+.jtWa[data-de='nos'] {
+  justify-self: end;
+  border-top-right-radius: 2px;
+  background: #d9fdd3;
+  animation-delay: 0.3s;
+}
+
+.jtWa time {
+  float: right;
+  margin: 4px 0 -2px 8px;
+  font-size: 10px;
+  color: #667781;
+}
+
+.jtWa[data-rico] {
   width: 240px;
   padding: 4px 4px 0;
-  overflow: hidden;
-  border-radius: 8px;
-  background: #ffffff;
-  font-size: 13px;
-  animation: vitrineEntra 0.45s var(--curva) 0.25s both;
 }
 
-.jtCard img {
+.jtWa[data-rico] > img {
+  display: block;
   width: 100%;
-  height: 110px;
+  height: 100px;
   border-radius: 6px;
   object-fit: cover;
 }
 
-.jtCard strong,
-.jtCard small {
-  padding-inline: 6px;
+.jtWa[data-rico] > span {
+  display: block;
+  padding: 6px 5px 0;
 }
 
-.jtCard strong {
-  margin-top: 6px;
+.jtWa[data-rico] > time {
+  margin-right: 5px;
 }
 
-.jtCard small {
-  color: #64708a;
-}
-
-.jtCard em,
-.jtEtapas em {
-  margin-top: 8px;
-  padding: 8px 0;
-  border-top: 1px solid #edf0f7;
+.jtWa > em {
+  display: flex;
+  clear: both;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  margin: 4px -4px 0;
+  padding: 7px 0;
+  border-top: 1px solid rgb(17 27 33 / 0.1);
+  font-size: 12px;
   font-style: normal;
+  font-weight: 500;
+  color: #027eb5;
+}
+
+.jtOpcoes {
+  display: grid;
+  gap: 4px;
+  justify-self: end;
+  width: 240px;
+  animation: vitrineEntra 0.4s var(--curva) 0.55s both;
+}
+
+.jtOpcoes span {
+  padding: 7px;
+  border-radius: 8px;
+  background: #ffffff;
+  font-size: 12px;
   font-weight: 500;
   text-align: center;
   color: #027eb5;
 }
 
-.jtPagamento {
-  padding: 12px 14px;
+.jtRodapeIa {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  margin: 4px 0 0;
+  font-size: 11.5px;
+  color: #54656f;
+  animation: vitrineEntra 0.4s var(--curva) 0.75s both;
 }
 
-.jtPagamento small {
+.jtPontoIa {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #22c55e;
+  box-shadow: 0 0 0 3px rgb(34 197 94 / 0.2);
+}
+
+/* 03 · a fila por setor. */
+.jtSetores {
+  display: flex;
+  gap: 4px;
+  padding: 3px;
+  border-radius: 9px;
+  background: #f1f4fa;
+}
+
+.jtSetores span {
+  flex: 1;
+  padding: 6px 8px;
+  border-radius: 7px;
+  font-size: 12px;
+  font-weight: 500;
+  text-align: center;
+  color: #64708a;
+}
+
+.jtSetores span[data-ativo] {
+  background: #ffffff;
+  color: #0c1838;
+  box-shadow: 0 1px 3px rgb(16 32 84 / 0.12);
+}
+
+.jtSetores b {
+  margin-left: 4px;
+  font-size: 11px;
+  color: #1d4ed8;
+}
+
+.jtTransferencia {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 10px 0;
+  padding: 8px 10px;
+  border-radius: 8px;
+  background: rgb(22 163 74 / 0.08);
+  font-size: 12px;
+  color: #15803d;
+  animation: vitrineEntra 0.4s var(--curva) 0.2s both;
+}
+
+.jtLinhas {
+  display: grid;
+  gap: 6px;
+}
+
+.jtLinha {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  border: 1px solid #edf0f7;
+  border-radius: 10px;
+  font-size: 13px;
+  animation: vitrineEntra 0.4s var(--curva) both;
+  animation-delay: calc(0.3s + var(--i) * 0.12s);
+}
+
+.jtLinha[data-destaque] {
+  border-color: rgb(29 78 216 / 0.35);
+  background: rgb(29 78 216 / 0.05);
+}
+
+.jtLinha strong {
+  display: block;
+  font-size: 13px;
+}
+
+.jtLinha small {
+  display: block;
   font-size: 11.5px;
   color: #64708a;
 }
 
-.jtPagamento b {
+.jtEstado {
+  margin-left: auto;
+  flex: none;
+  font-size: 11px;
+  font-weight: 600;
+  color: #15803d;
+}
+
+.jtEstado[data-espera] {
+  color: #b45309;
+}
+
+/* 04 · o funil com valores. */
+.jtFunilTopo {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.jtFunilTopo strong {
   font-size: 20px;
   letter-spacing: -0.02em;
 }
 
-.jtPago {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  margin-top: 6px;
-  font-size: 12.5px;
-  font-weight: 600;
-  color: #15803d;
-  animation: vitrineEntra 0.4s var(--curva) 0.9s both;
+.jtFunilTopo small {
+  font-size: 12px;
+  color: #64708a;
 }
 
 .jtFunil {
@@ -2445,39 +2662,67 @@ a.canal h3 svg {
   display: grid;
   align-content: start;
   gap: 6px;
-  min-height: 150px;
+  min-height: 170px;
   padding: 8px;
   border-radius: 10px;
   background: #f4f6fb;
 }
 
 .jtColuna > small {
-  font-size: 11.5px;
+  display: flex;
+  flex-direction: column;
+  font-size: 11px;
   font-weight: 600;
   color: #64708a;
 }
 
-.jtCartao,
+.jtColuna > small b {
+  font-size: 11px;
+  color: #0c1838;
+}
+
 .jtCartaoFantasma {
   display: grid;
-  gap: 2px;
+  gap: 1px;
   padding: 8px;
+  border: 1px dashed #dbe2f0;
   border-radius: 8px;
-  background: #ffffff;
-  font-size: 12px;
+  font-size: 11px;
+  color: #94a3c4;
 }
 
 .jtCartao {
+  display: grid;
+  gap: 3px;
+  padding: 9px;
   border: 1px solid rgb(29 78 216 / 0.4);
-  box-shadow: 0 8px 16px -10px rgb(29 78 216 / 0.5);
-  animation: cartaoAnda 0.7s cubic-bezier(0.22, 1, 0.36, 1) 0.2s both;
+  border-radius: 8px;
+  background: #ffffff;
+  font-size: 11.5px;
+  box-shadow: 0 10px 18px -10px rgb(29 78 216 / 0.55);
+  animation: cartaoAnda 0.75s cubic-bezier(0.22, 1, 0.36, 1) 0.25s both;
 }
 
 @keyframes cartaoAnda {
   from {
-    translate: -110% 0;
-    opacity: 0.4;
+    translate: -112% 0;
   }
+}
+
+.jtCartaoTopo {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.jtCartaoTopo .jtAvatar {
+  width: 22px;
+  height: 22px;
+  font-size: 9px;
+}
+
+.jtCartao b {
+  font-size: 14px;
 }
 
 .jtCartao small {
@@ -2489,70 +2734,191 @@ a.canal h3 svg {
   color: #1d4ed8;
 }
 
-.jtCartaoFantasma {
-  color: #94a3c4;
-  border: 1px dashed #dbe2f0;
-  background: transparent;
+/* 05 · o link de pagamento e a confirmação. */
+.jtLinkPreview {
+  display: grid !important;
+  gap: 1px;
+  margin-bottom: 4px;
+  padding: 7px 8px !important;
+  border-left: 3px solid #25d366;
+  border-radius: 6px;
+  background: rgb(17 27 33 / 0.06);
+  font-size: 11.5px;
+  color: #54656f;
 }
 
-.jtEtapas {
+.jtLinkPreview small {
+  font-size: 10px;
+}
+
+.jtLinkPreview b {
+  font-size: 12.5px;
+  color: #111b21;
+}
+
+.jtConfirmacao {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 4px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: #ffffff;
+  box-shadow: 0 10px 22px -14px rgb(0 0 0 / 0.4);
+  animation: vitrineEntra 0.45s var(--curva) 0.85s both;
+}
+
+.jtConfirmacaoIcone {
   display: grid;
-  gap: 6px;
-  font-size: 13.5px;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: #16a34a;
+  color: #ffffff;
 }
 
-.jtEtapas > span {
+.jtConfirmacao b {
+  display: block;
+  font-size: 13px;
+}
+
+.jtConfirmacao small {
+  font-size: 11px;
+  color: #64708a;
+}
+
+.jtValor {
+  margin-left: auto;
+  font-size: 15px !important;
+  color: #15803d;
+}
+
+/* 06 · o rastreio. */
+.jtRastreio {
+  display: grid !important;
+  gap: 3px;
+}
+
+.jtRastreio i {
+  display: flex;
+  justify-content: space-between;
+  font-style: normal;
   animation: vitrineEntra 0.35s var(--curva) both;
-  animation-delay: calc(0.15s + var(--i) * 0.14s);
+  animation-delay: calc(0.4s + var(--i) * 0.14s);
 }
 
+.jtRastreio i:first-of-type {
+  margin-top: 6px;
+}
+
+.jtRastreio i[data-atual] {
+  font-weight: 600;
+}
+
+.jtRastreio i small {
+  font-size: 10.5px;
+  font-weight: 400;
+  color: #667781;
+}
+
+/* 07 · a nota, o comentário e o lembrete. */
 .jtVolta {
   display: grid;
-  gap: 12px;
-  font-size: 13px;
+  gap: 10px;
+}
+
+.jtNpsCaixa {
+  display: grid;
+  gap: 10px;
+  padding: 12px;
+  border-radius: 10px;
+  background: #f7f9fd;
+  font-size: 12.5px;
 }
 
 .jtNps {
   display: grid;
   grid-template-columns: repeat(11, minmax(0, 1fr));
-  gap: 4px;
+  gap: 3px;
 }
 
 .jtNps i {
   display: grid;
   place-items: center;
-  height: 28px;
+  height: 26px;
   border-radius: 6px;
-  background: #f1f4fa;
-  font-size: 12px;
+  background: #ffffff;
+  font-size: 11.5px;
   font-style: normal;
   color: #64708a;
+  box-shadow: inset 0 0 0 1px #e3e8f3;
 }
 
 .jtNps i[data-nota] {
   background: #16a34a;
   color: #ffffff;
   font-weight: 600;
+  box-shadow: none;
   animation: notaAcende 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) 0.4s both;
 }
 
 @keyframes notaAcende {
   from {
     scale: 0.6;
-    background: #f1f4fa;
+    background: #ffffff;
     color: #64708a;
   }
 }
 
-.jtRecompra {
+.jtComentario {
+  display: grid;
+  gap: 2px;
+  font-style: italic;
+  color: #3b4a6b;
+  animation: vitrineEntra 0.4s var(--curva) 0.7s both;
+}
+
+.jtEstrelas {
+  font-style: normal;
+  letter-spacing: 2px;
+  color: #f59e0b;
+}
+
+.jtAgenda {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 10px;
   padding: 10px 12px;
+  border: 1px solid rgb(29 78 216 / 0.2);
   border-radius: 10px;
-  background: rgb(29 78 216 / 0.06);
-  font-weight: 500;
+  background: rgb(29 78 216 / 0.05);
+  animation: vitrineEntra 0.4s var(--curva) 0.95s both;
+}
+
+.jtAgendaIcone {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 34px;
+  height: 36px;
+  border-radius: 7px;
+  border-top: 7px solid #1d4ed8;
+  background: #ffffff;
+  font-size: 12px;
+  font-weight: 700;
   color: #1d4ed8;
+  box-shadow: 0 2px 6px rgb(16 32 84 / 0.12);
+}
+
+.jtAgenda b {
+  display: block;
+  font-size: 12.5px;
+}
+
+.jtAgenda small {
+  font-size: 11.5px;
+  color: #64708a;
 }
 
 /* No celular as etapas viram uma faixa que rola de lado, e o palco empilha. */
@@ -2582,7 +2948,10 @@ a.canal h3 svg {
 
   .jornadaPalco {
     grid-template-columns: 1fr;
+    align-content: start;
     gap: 28px;
+    /* A etapa mais alta no celular tem 767px: o painel não pula na troca. */
+    min-height: 770px;
     padding: 28px 20px;
   }
 }
@@ -2592,14 +2961,9 @@ a.canal h3 svg {
   .jornadaNo,
   .jornadaPalcoTexto,
   .jornadaTela,
-  .jtLinha,
-  .jtCard,
-  .jtPagamento,
-  .jtPago,
-  .jtCartao,
-  .jtEtapas > span,
-  .jtNps i[data-nota] {
-    animation: none;
-    transition: none;
+  .jornadaTela * {
+    animation: none !important;
+    transition: none !important;
+    stroke-dashoffset: 0;
   }
 }

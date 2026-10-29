@@ -286,13 +286,41 @@ export function SecaoPrecoResumo() {
  * pedido e pesquisa pelos fluxos e sequências) e leva à página que detalha.
  */
 const JORNADA = [
-  { titulo: 'Chega', texto: 'Do anúncio, do Instagram, do site ou do formulário, com a origem anotada.', href: '/produto/contatos-e-funil' },
-  { titulo: 'O chatbot atende', texto: 'Responde na hora, qualifica e mostra o produto com foto e preço.', href: '/produto/fluxos' },
-  { titulo: 'O setor assume', texto: 'Vendas, suporte ou financeiro: cai na fila certa, com o histórico junto.', href: '/produto/inbox' },
-  { titulo: 'Vira negócio', texto: 'Etapa, valor, dono e próxima ação no funil.', href: '/produto/contatos-e-funil' },
-  { titulo: 'Paga no chat', texto: 'Link de pagamento ou Pix na conversa, confirmado quando o banco aprova.', href: '/integracoes' },
-  { titulo: 'Recebe', texto: 'O status do pedido chega pelo WhatsApp, do pago ao entregue.', href: '/segmentos/loja-virtual' },
-  { titulo: 'Volta', texto: 'Pesquisa de satisfação e mensagem de recompra no tempo certo.', href: '/produto/fluxos' },
+  {
+    titulo: 'Captação de leads',
+    texto: 'Do anúncio, do Instagram, do site ou do formulário: todo contato entra com a origem anotada.',
+    href: '/produto/contatos-e-funil',
+  },
+  {
+    titulo: 'Atendimento automático',
+    texto: 'O chatbot e a IA respondem na hora, tiram dúvidas e mostram o produto com foto e preço.',
+    href: '/produto/fluxos',
+  },
+  {
+    titulo: 'Atendimento da equipe',
+    texto: 'Quando precisa de gente, a conversa cai na fila do setor certo, com o histórico junto.',
+    href: '/produto/inbox',
+  },
+  {
+    titulo: 'Funil de vendas',
+    texto: 'Cada negociação com etapa, valor, responsável e próxima ação, sem planilha.',
+    href: '/produto/contatos-e-funil',
+  },
+  {
+    titulo: 'Pagamento',
+    texto: 'Link de pagamento ou Pix na própria conversa, confirmado sozinho quando o banco aprova.',
+    href: '/integracoes',
+  },
+  {
+    titulo: 'Entrega e rastreio',
+    texto: 'O cliente recebe cada etapa do pedido no WhatsApp, do pagamento aprovado à entrega.',
+    href: '/segmentos/loja-virtual',
+  },
+  {
+    titulo: 'Avaliação e recompra',
+    texto: 'Pesquisa de satisfação depois da entrega e lembrete de recompra na hora certa.',
+    href: '/produto/fluxos',
+  },
 ]
 
 export function SecaoJornada() {
