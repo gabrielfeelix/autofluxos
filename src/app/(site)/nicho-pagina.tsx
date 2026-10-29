@@ -1,0 +1,269 @@
+import Link from 'next/link'
+import type { CSSProperties } from 'react'
+import { GLIFO_WHATSAPP } from '@/components/design/glifos-oficiais'
+import { IlustracaoDoRamo } from './ilustracoes-dos-ramos'
+import { MODELOS_DE_TODOS, type NichoDoSite } from './nichos-do-site'
+import { PreviaQueTroca } from './pecas-interativas'
+import { CONVERSAS, PreviaWhatsApp } from './previa-whatsapp'
+import n from './nicho.module.css'
+import s from './pagina-inicial.module.css'
+import x from './site.module.css'
+
+/*
+ * A página de cada ramo (`/segmentos/[slug]`). A cor do ramo pinta a página
+ * inteira (o degradê da capa e do rodapé, via `PaginaDoSite`), e cada seção
+ * mostra o produto como ele fica naquele ramo: a conversa, os fluxos prontos
+ * na tela do app e o menu com os nomes do ramo. Dados em `nichos-do-site.ts`.
+ */
+
+const cor = (nicho: NichoDoSite) => ({ '--cor': nicho.cor }) as CSSProperties
+
+function Seta() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+      <path d="M2.5 6h7M6.5 3l3 3-3 3" />
+    </svg>
+  )
+}
+
+function Cabeca({ olho, titulo, texto }: { olho: string; titulo: string; texto?: string }) {
+  return (
+    <div className={s.cabecaSecao}>
+      <span className={s.olho} data-revela>
+        {olho}
+      </span>
+      <h2 className={`${s.tituloSecao} ${s.tituloSecaoCentro}`} data-revela data-como="desfoque" data-atraso="60">
+        {titulo}
+      </h2>
+      {texto && (
+        <p className={`${s.chamada} ${s.chamadaCentro}`} data-revela data-atraso="100">
+          {texto}
+        </p>
+      )}
+    </div>
+  )
+}
+
+/* ───────────── capa: o texto e a cena do ramo ───────────── */
+
+export function CapaDoRamo({ nicho }: { nicho: NichoDoSite }) {
+  return (
+    <section className={`${s.capa} ${x.capaDividida}`} style={cor(nicho)}>
+      <div className={s.veu} aria-hidden />
+      <div className={`${s.faixa} ${x.capaGrade}`}>
+        <div className={x.capaTexto}>
+          <p className={x.capaOlho} data-entra="" style={{ '--atraso': 0 } as CSSProperties}>
+            Para {nicho.nome.toLowerCase()} · {nicho.quem}
+          </p>
+          <h1 className={x.capaTitulo} data-entra="desfoque" style={{ '--atraso': 60 } as CSSProperties}>
+            {nicho.titulo}
+          </h1>
+          <p className={x.capaSub} data-entra="" style={{ '--atraso': 160 } as CSSProperties}>
+            {nicho.subtitulo}
+          </p>
+          <div className={s.acoes} data-entra="" style={{ '--atraso': 260 } as CSSProperties}>
+            <Link className={`${s.botao} ${s.botaoPrincipal} ${s.botaoGrande}`} href="/precos">
+              Ver planos
+            </Link>
+            <a className={`${s.botao} ${s.botaoVazado} ${s.botaoGrande}`} href="#conversar">
+              Fale conosco
+            </a>
+          </div>
+        </div>
+
+        {/* A cena: a ilustração do ramo atrás, a conversa no centro e os fluxos prontos por cima. */}
+        <div className={n.cena} data-entra="escala" style={{ '--atraso': 160 } as CSSProperties}>
+          <span className={n.cenaCirculo} aria-hidden>
+            <IlustracaoDoRamo slug={nicho.slug} />
+          </span>
+          <div className={n.cenaConversa}>
+            <PreviaQueTroca chaves={nicho.conversas} />
+          </div>
+          <div className={n.cenaApp} aria-hidden>
+            <div className={x.fichaBarra}>
+              <i />
+              <i />
+              <i />
+              <span>Fluxos prontos</span>
+            </div>
+            <ul>
+              {nicho.modelos.slice(0, 3).map((m) => (
+                <li key={m}>
+                  <span className={n.fios}>
+                    <i />
+                    <i />
+                  </span>
+                  {m}
+                  <b className={n.chave} />
+                </li>
+              ))}
+            </ul>
+          </div>
+        </div>
+      </div>
+    </section>
+  )
+}
+
+/* ───────────── o corpo ───────────── */
+
+export function CorpoDoRamo({ nicho }: { nicho: NichoDoSite }) {
+  const segunda = nicho.conversas[1] ?? nicho.conversas[0]!
+  const nomeMinusculo = nicho.nome.toLowerCase()
+  return (
+    <div style={cor(nicho)}>
+      {/* As três dores do ramo: o problema em destaque, a solução embaixo. */}
+      <section className={s.secao}>
+        <div className={s.faixa}>
+          <Cabeca olho="O que muda no dia" titulo="Três conversas que deixam de tomar o seu tempo" />
+          <div className={n.dores}>
+            {nicho.dores.map((d, i) => (
+              <article key={d.dor} className={n.dor} data-revela data-como="escala" data-atraso={i * 90}>
+                <div className={n.dorProblema}>
+                  <small>{String(i + 1).padStart(2, '0')} · Hoje</small>
+                  <p>{d.dor}</p>
+                  <span className={n.repete} aria-hidden>
+                    <i />
+                    <i />
+                    <i />
+                  </span>
+                </div>
+                <div className={n.dorSolucao}>
+                  <span className={n.visto} aria-hidden>
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="m5 12.5 4.5 4.5L19 7.5" />
+                    </svg>
+                  </span>
+                  <p>{d.resposta}</p>
+                </div>
+              </article>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* A IA no ramo: o que ela sabe responder, e a conversa num palco da cor do ramo. */}
+      <section className={`${s.secao} ${s.secaoTonal}`}>
+        <div className={`${s.faixa} ${n.iaGrade}`}>
+          <div>
+            <span className={s.olho} data-revela>
+              A IA neste ramo
+            </span>
+            <h2 className={s.tituloSecao} data-revela data-como="desfoque" data-atraso="60">
+              Responde com o que é seu, e chama a equipe no resto
+            </h2>
+            <ul className={n.listaIa}>
+              {[...nicho.ia, 'Sem resposta na ficha, passa para a equipe em vez de inventar'].map((item, i) => (
+                <li key={item} data-revela data-atraso={120 + i * 60}>
+                  <span className={n.visto} aria-hidden>
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="m5 12.5 4.5 4.5L19 7.5" />
+                    </svg>
+                  </span>
+                  {item}
+                </li>
+              ))}
+            </ul>
+          </div>
+          <div className={n.palco} data-revela data-como="escala">
+            <div className={n.palcoConversa}>
+              <PreviaWhatsApp conversa={CONVERSAS[segunda]} />
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Os modelos como estão na tela de automações. */}
+      <section className={s.secao}>
+        <div className={s.faixa}>
+          <Cabeca olho="Modelos prontos" titulo="Fluxos que já vêm montados" texto="Você liga, ajusta os textos e publica. Dá para editar cada bloco depois." />
+          <div className={n.app} data-revela data-como="escala">
+            <div className={x.fichaBarra}>
+              <i />
+              <i />
+              <i />
+              <span>autofluxos.4yu.com.br · Automações</span>
+            </div>
+            <div className={n.appCorpo}>
+              <nav className={n.appMenu} aria-hidden>
+                <b>Automações</b>
+                <span data-ativo>Fluxos</span>
+                <span>Gatilhos</span>
+                <span>Sequências</span>
+                <span>Transmissões</span>
+              </nav>
+              <div className={n.appLista}>
+                <div className={n.appTopo}>
+                  <strong>Fluxos</strong>
+                  <small>{nicho.modelos.length + MODELOS_DE_TODOS.length} prontos para {nomeMinusculo}</small>
+                </div>
+                {[...nicho.modelos.map((m) => [m, true] as const), ...MODELOS_DE_TODOS.map((m) => [m, false] as const)].map(([m, doRamo], i) => (
+                  <div key={m} className={n.appLinha} style={{ '--i': i } as CSSProperties}>
+                    <span className={n.fios} aria-hidden>
+                      <i />
+                      <i />
+                      <i />
+                    </span>
+                    <span className={n.appNome}>
+                      {m}
+                      <small>{doRamo ? `Modelo para ${nomeMinusculo}` : 'Em toda conta'}</small>
+                    </span>
+                    <span className={n.appCanal} aria-hidden>
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="#25d366">
+                        <path d={GLIFO_WHATSAPP} />
+                      </svg>
+                      WhatsApp
+                    </span>
+                    <b className={n.chave} aria-label="Ligado" />
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* O menu do app com os nomes do ramo em destaque. */}
+      <section className={`${s.secao} ${s.secaoTonal}`}>
+        <div className={`${s.faixa} ${n.linguaGrade}`}>
+          <div className={n.menuApp} data-revela data-como="escala" aria-hidden>
+            <span className={n.menuMarca}>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src="/logos/logo-autofluxos-marca.png" alt="" width={20} height={20} />
+              AutoFluxos
+            </span>
+            <span>Início</span>
+            <span>Conversas</span>
+            {nicho.noApp.map((item) => (
+              <span key={item.titulo} data-ramo>
+                {item.titulo}
+              </span>
+            ))}
+            <span>Automações</span>
+            <span>Análise</span>
+            <span>Configurações</span>
+          </div>
+          <div>
+            <span className={s.olho} data-revela>
+              Dentro do app
+            </span>
+            <h2 className={s.tituloSecao} data-revela data-como="desfoque" data-atraso="60">
+              O AutoFluxos fala a língua de {nomeMinusculo}
+            </h2>
+            <dl className={n.lingua}>
+              {nicho.noApp.map((item, i) => (
+                <div key={item.titulo} data-revela data-atraso={120 + i * 70}>
+                  <dt>{item.titulo}</dt>
+                  <dd>{item.texto}</dd>
+                </div>
+              ))}
+            </dl>
+            <Link href="/precos" className={n.link}>
+              Ver os planos <Seta />
+            </Link>
+          </div>
+        </div>
+      </section>
+    </div>
+  )
+}

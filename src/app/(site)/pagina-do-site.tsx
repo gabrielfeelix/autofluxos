@@ -2,7 +2,7 @@ import Link from 'next/link'
 import { BentoDoProduto } from './bento-do-produto'
 import { CANAIS } from './canais-do-site'
 import { RECURSOS } from './recursos-do-site'
-import type { ReactNode } from 'react'
+import type { CSSProperties, ReactNode } from 'react'
 import {
   anualDoPlano,
   O_QUE_E_CONVERSA,
@@ -49,9 +49,19 @@ const IAS = [
   { nome: 'Google', glifo: GLIFO_GOOGLE, endereco: (q: string) => `https://www.google.com/search?udm=50&q=${q}` },
 ]
 
-export function PaginaDoSite({ capa, children }: { capa: ReactNode; children: ReactNode }) {
+/**
+ * `cor`: a página de um ramo troca o azul da casca pelo degradê da cor dele,
+ * na capa e no rodapé. Sem ela, o azul de sempre.
+ */
+export function PaginaDoSite({ capa, children, cor }: { capa: ReactNode; children: ReactNode; cor?: string }) {
+  const estilo = cor
+    ? ({
+        '--lp-casca': `linear-gradient(135deg, color-mix(in srgb, ${cor} 72%, #0c1838) 0%, ${cor} 48%, color-mix(in srgb, ${cor} 78%, #ffffff) 100%)`,
+        '--cor-veu': `color-mix(in srgb, ${cor} 70%, #0c1838)`,
+      } as CSSProperties)
+    : undefined
   return (
-    <div className={s.pagina}>
+    <div className={s.pagina} style={estilo}>
       <Revelar seletorCabecalho={s.cabecalho} classeRolado={s.cabecalhoRolado} />
       <Cursor classePonto={s.cursorPonto} classeAnel={s.cursorAnel} classeAtivo={s.cursorAtivo} />
 

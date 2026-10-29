@@ -6,7 +6,7 @@ import { Desktop, Pergunta } from './pagina-do-site'
 import { GLIFO_META } from '@/components/design/glifos-oficiais'
 import { CANAIS, type CanalDoSite } from './canais-do-site'
 import { RECURSOS, type RecursoDoSite } from './recursos-do-site'
-import { MODELOS_DE_TODOS, type NichoDoSite } from './nichos-do-site'
+import { type NichoDoSite } from './nichos-do-site'
 import { AntesEDepois } from './antes-e-depois'
 import { JornadaViva } from './jornada-viva'
 import { CalculadoraMeta, DoisLados, NumerosMedidos, PreviaQueTroca, VitrineDeNichos } from './pecas-interativas'
@@ -125,38 +125,6 @@ export function CapaSimples({ olho, titulo, texto, children }: { olho: string; t
           {texto}
         </p>
         {children}
-      </div>
-    </section>
-  )
-}
-
-export function CapaDoNicho({ nicho }: { nicho: NichoDoSite }) {
-  return (
-    <section className={`${s.capa} ${x.capaDividida}`}>
-      <div className={s.veu} aria-hidden />
-      <div className={`${s.faixa} ${x.capaGrade}`}>
-        <div className={x.capaTexto}>
-          <p className={x.capaOlho} {...entra(0)}>
-            Para {nicho.nome.toLowerCase()} · {nicho.quem}
-          </p>
-          <h1 className={x.capaTitulo} {...entra(60, 'desfoque')}>
-            {nicho.titulo}
-          </h1>
-          <p className={x.capaSub} {...entra(160)}>
-            {nicho.subtitulo}
-          </p>
-          <div className={s.acoes} {...entra(260)}>
-            <Link className={`${s.botao} ${s.botaoPrincipal} ${s.botaoGrande}`} href="/precos">
-              Ver planos
-            </Link>
-            <a className={`${s.botao} ${s.botaoVazado} ${s.botaoGrande}`} href="#conversar">
-              Fale conosco
-            </a>
-          </div>
-        </div>
-        <div className={x.capaVisual} {...entra(160, 'escala')}>
-          <PreviaQueTroca chaves={nicho.conversas} />
-        </div>
       </div>
     </section>
   )
@@ -774,99 +742,6 @@ export function SecaoPartesDoProduto({ atual }: { atual?: string }) {
 
 /* ─────────────────────────── nicho ─────────────────────────── */
 
-export function CorpoDoNicho({ nicho }: { nicho: NichoDoSite }) {
-  const segunda = nicho.conversas[1]
-  return (
-    <>
-      <section className={s.secao}>
-        <div className={s.faixa}>
-          <Cabeca olho="O que muda no dia" titulo="Três conversas que deixam de tomar o seu tempo" />
-          <div className={x.dores} style={{ '--cor': nicho.cor } as CSSProperties}>
-            {nicho.dores.map((d, i) => (
-              <article key={d.dor} className={x.dor} data-revela data-como="escala" data-atraso={i * 90}>
-                <span className={x.dorNumero}>{String(i + 1).padStart(2, '0')}</span>
-                <h3>{d.dor}</h3>
-                <p>{d.resposta}</p>
-              </article>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      <section className={s.secao}>
-        <div className={`${s.faixa} ${x.iaGrade}`}>
-          <div>
-            <span className={s.olho} data-revela>
-              A IA neste ramo
-            </span>
-            <h2 className={s.tituloSecao} data-revela data-como="desfoque" data-atraso="60">
-              Responde com o que é seu, e chama a equipe no resto
-            </h2>
-            <ul className={x.listaIa} style={{ '--cor': nicho.cor } as CSSProperties}>
-              {nicho.ia.map((item, i) => (
-                <li key={item} data-revela data-atraso={120 + i * 60}>
-                  {item}
-                </li>
-              ))}
-              <li data-revela data-atraso={120 + nicho.ia.length * 60}>
-                Sem resposta na ficha, passa para a equipe em vez de inventar
-              </li>
-            </ul>
-          </div>
-          {segunda ? (
-            <div data-revela data-como="escala">
-              <PreviaWhatsApp conversa={CONVERSAS[segunda]} />
-            </div>
-          ) : (
-            <div className={x.noAppCaixa} data-revela data-como="escala">
-              <NoApp nicho={nicho} />
-            </div>
-          )}
-        </div>
-      </section>
-
-      <section className={s.secao}>
-        <div className={s.faixa}>
-          <Cabeca olho="Modelos prontos" titulo="Fluxos que já vêm montados" texto="Você liga, ajusta os textos e publica. Dá para editar cada bloco depois." />
-          <div className={x.modelos}>
-            {nicho.modelos.map((m, i) => (
-              <div key={m} className={x.modelo} style={{ '--cor': nicho.cor } as CSSProperties} data-revela data-atraso={i * 50}>
-                <span className={x.modeloFios} aria-hidden>
-                  <i />
-                  <i />
-                  <i />
-                </span>
-                <strong>{m}</strong>
-                <small>Modelo para {nicho.nome.toLowerCase()}</small>
-              </div>
-            ))}
-            {MODELOS_DE_TODOS.map((m) => (
-              <div key={m} className={x.modelo} data-revela>
-                <span className={x.modeloFios} aria-hidden>
-                  <i />
-                  <i />
-                </span>
-                <strong>{m}</strong>
-                <small>Em toda conta</small>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {segunda && (
-        <section className={s.secao}>
-          <div className={s.faixa}>
-            <Cabeca olho="Dentro do app" titulo={`O AutoFluxos fala a língua de ${nicho.nome.toLowerCase()}`} />
-            <NoApp nicho={nicho} />
-          </div>
-        </section>
-      )}
-
-    </>
-  )
-}
-
 export function IntegracoesDoNicho({ nicho }: { nicho: NichoDoSite }) {
   return (
     <section className={s.secao}>
@@ -875,19 +750,6 @@ export function IntegracoesDoNicho({ nicho }: { nicho: NichoDoSite }) {
         <VitrineDeIntegracoes grupos={nicho.integracoes} />
       </div>
     </section>
-  )
-}
-
-function NoApp({ nicho }: { nicho: NichoDoSite }) {
-  return (
-    <div className={x.noApp}>
-      {nicho.noApp.map((item) => (
-        <div key={item.titulo} data-revela>
-          <strong>{item.titulo}</strong>
-          <p>{item.texto}</p>
-        </div>
-      ))}
-    </div>
   )
 }
 

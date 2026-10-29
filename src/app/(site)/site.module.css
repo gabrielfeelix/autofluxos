@@ -696,7 +696,8 @@
 
 .faixaAzul {
   padding: clamp(56px, 7vw, 96px) 0;
-  background: var(--casca-fios-3), linear-gradient(135deg, #1a3fb8 0%, #1d4ed8 45%, #3a6cf0 100%);
+  /* O degradê da casca: azul no site, a cor do ramo na página de um ramo. */
+  background: var(--casca-fios-3), var(--lp-casca);
   color: #ffffff;
 }
 

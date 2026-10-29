@@ -312,7 +312,12 @@
   z-index: -1;
   pointer-events: none;
   background:
-    radial-gradient(ellipse 58% 50% at 50% 46%, rgb(26 63 184 / 0.55), rgb(26 63 184 / 0.18) 62%, transparent 82%);
+    radial-gradient(
+      ellipse 58% 50% at 50% 46%,
+      color-mix(in srgb, var(--cor-veu, #1a3fb8) 55%, transparent),
+      color-mix(in srgb, var(--cor-veu, #1a3fb8) 18%, transparent) 62%,
+      transparent 82%
+    );
 }
 
 .capaInterno {
