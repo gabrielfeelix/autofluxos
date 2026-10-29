@@ -5,7 +5,6 @@ import { DerivaDeParticulas } from './deriva-de-particulas'
 import { Desktop, Pergunta } from './pagina-do-site'
 import { GLIFO_META } from '@/components/design/glifos-oficiais'
 import { CANAIS, type CanalDoSite } from './canais-do-site'
-import { RECURSOS } from './recursos-do-site'
 import { type NichoDoSite } from './nichos-do-site'
 import { AntesEDepois } from './antes-e-depois'
 import { JornadaViva } from './jornada-viva'
@@ -655,34 +654,6 @@ export function SecaoIaNaConversa() {
         </div>
         <div data-revela data-como="escala">
           <PreviaWhatsApp conversa={CONVERSAS.clinica} />
-        </div>
-      </div>
-    </section>
-  )
-}
-
-/** Uma porta para cada parte: na visão geral de `/produto` e no pé de cada parte, com a atual marcada. */
-export function SecaoPartesDoProduto({ atual }: { atual?: string }) {
-  return (
-    <section className={s.secao} id="partes">
-      <div className={s.faixa}>
-        <Cabeca olho={atual ? 'O resto do produto' : 'Cada parte'} titulo={atual ? 'Cada parte conversa com as outras' : 'Veja em detalhe'} />
-        <div className={`${x.canais} ${x.partes}`}>
-          {RECURSOS.map((r, i) => (
-            <Link
-              key={r.slug}
-              href={`/produto/${r.slug}`}
-              className={x.canal}
-              aria-current={r.slug === atual ? 'page' : undefined}
-              data-revela
-              data-atraso={i * 60}
-            >
-              <h3>
-                {r.nome} {r.slug === atual ? <small>Você está aqui</small> : <Seta />}
-              </h3>
-              <p>{r.linha}</p>
-            </Link>
-          ))}
         </div>
       </div>
     </section>

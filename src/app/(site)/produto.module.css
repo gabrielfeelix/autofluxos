@@ -339,58 +339,107 @@
 .partes {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 12px;
-  margin-top: 40px;
+  gap: 16px;
+  margin-top: 44px;
 }
 
 .parte {
-  display: grid;
-  grid-template-columns: auto 1fr;
-  gap: 4px 14px;
-  align-items: center;
-  padding: 20px 22px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
   border: 1px solid var(--line);
-  border-radius: 18px;
+  border-radius: 22px;
+  background: #ffffff;
   color: inherit;
   text-decoration: none;
   transition:
-    border-color 0.2s,
-    background 0.2s;
+    translate 0.3s var(--curva),
+    border-color 0.3s var(--curva),
+    box-shadow 0.3s var(--curva);
 }
 
 .parte:hover {
-  border-color: color-mix(in srgb, var(--cor) 45%, transparent);
-  background: color-mix(in srgb, var(--cor) 5%, #ffffff);
+  translate: 0 -3px;
+  border-color: color-mix(in srgb, var(--cor) 40%, transparent);
+  box-shadow: 0 28px 50px -34px color-mix(in srgb, var(--cor) 60%, transparent);
+}
+
+.parte:focus-visible {
+  outline: 2px solid var(--cor);
+  outline-offset: 3px;
+}
+
+/* O topo tingido da cor da parte, com o desenho dela no traço do app. */
+.parteArte {
+  position: relative;
+  display: grid;
+  place-items: center;
+  height: 150px;
+  background: color-mix(in srgb, var(--cor) 8%, #ffffff);
+  color: var(--cor);
+  transition: background 0.3s var(--curva);
+}
+
+.parte:hover .parteArte {
+  background: color-mix(in srgb, var(--cor) 13%, #ffffff);
+}
+
+.parteArte svg {
+  height: 104px;
+  width: auto;
+  color: inherit;
+  animation: none;
 }
 
 .parte[aria-current='page'] {
   border-color: var(--cor);
-  background: color-mix(in srgb, var(--cor) 8%, #ffffff);
+  box-shadow: inset 0 0 0 1px var(--cor);
 }
 
-.parteCor {
-  grid-row: span 2;
-  width: 12px;
-  height: 36px;
-  border-radius: 6px;
+.parteAqui {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  padding: 4px 10px;
+  border-radius: 999px;
   background: var(--cor);
-}
-
-.parte strong {
-  font-size: 16px;
+  font-size: 12px;
+  font-style: normal;
   font-weight: 600;
-  letter-spacing: -0.015em;
+  color: #ffffff;
 }
 
-.parte > span:last-child {
-  font-size: 13.5px;
-  line-height: 1.45;
+.parteTexto {
+  display: grid;
+  gap: 6px;
+  padding: 20px 22px 24px;
+}
+
+.parteTexto strong {
+  font-size: 18px;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+}
+
+.parteTexto span {
+  font-size: 14.5px;
+  line-height: 1.5;
   color: var(--muted);
 }
 
 @media (max-width: 900px) {
   .partes {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 560px) {
+  .partes {
     grid-template-columns: 1fr;
+  }
+
+  .parteArte {
+    height: 120px;
   }
 }
 

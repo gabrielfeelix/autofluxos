@@ -22,6 +22,7 @@ import {
   IlustracaoRespostasRapidas,
   IlustracaoSegmentos,
   IlustracaoSequencias,
+  IlustracaoTransmissoes,
   IlustracaoTudoCerto,
 } from '@/components/design/ilustracoes'
 import { RECURSOS, type DesenhoDoItem, type RecursoDoSite } from './recursos-do-site'
@@ -214,17 +215,30 @@ function BentoDosItens({ recurso }: { recurso: RecursoDoSite }) {
   )
 }
 
-/** As outras partes, cada uma com a sua cor: a atual fica marcada. */
-function SecaoOutrasPartes({ atual }: { atual: string }) {
+/** O desenho de cada parte, tirado das telas vazias e dos relatórios do próprio app. */
+const DESENHO_DA_PARTE: Record<string, () => ReactNode> = {
+  fluxos: () => <IlustracaoAutomacoes />,
+  ia: () => <IlustracaoProdutos />,
+  inbox: () => <IlustracaoInbox />,
+  'contatos-e-funil': () => <IlustracaoQuadros />,
+  transmissoes: () => <IlustracaoTransmissoes />,
+  relatorios: () => <IlustracaoDeRelatorio desenho="desfecho" />,
+}
+
+/**
+ * Uma porta para cada parte, cada uma com a sua cor e o desenho dela: no pé de
+ * cada parte (a atual fica marcada) e na visão geral de `/produto`.
+ */
+export function SecaoOutrasPartes({ atual }: { atual?: string }) {
   return (
-    <section className={s.secao}>
+    <section className={s.secao} id="partes">
       <div className={s.faixa}>
         <div className={s.cabecaSecao}>
           <span className={s.olho} data-revela>
-            O resto do produto
+            {atual ? 'O resto do produto' : 'Cada parte'}
           </span>
           <h2 className={`${s.tituloSecao} ${s.tituloSecaoCentro}`} data-revela data-como="desfoque" data-atraso="60">
-            Cada parte conversa com as outras
+            {atual ? 'Cada parte conversa com as outras' : 'Veja cada parte em detalhe'}
           </h2>
         </div>
         <nav className={p.partes} aria-label="Partes do produto">
@@ -236,11 +250,17 @@ function SecaoOutrasPartes({ atual }: { atual: string }) {
               style={cor(r)}
               aria-current={r.slug === atual ? 'page' : undefined}
               data-revela
-              data-atraso={i * 50}
+              data-como="escala"
+              data-atraso={(i % 3) * 70}
             >
-              <span className={p.parteCor} aria-hidden />
-              <strong>{r.nome}</strong>
-              <span>{r.slug === atual ? 'Você está aqui' : r.linha}</span>
+              <span className={p.parteArte} aria-hidden>
+                {DESENHO_DA_PARTE[r.slug]?.()}
+                {r.slug === atual && <em className={p.parteAqui}>Você está aqui</em>}
+              </span>
+              <span className={p.parteTexto}>
+                <strong>{r.nome}</strong>
+                <span>{r.linha}</span>
+              </span>
             </Link>
           ))}
         </nav>

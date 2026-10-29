@@ -428,7 +428,7 @@
   margin-top: 28px;
   padding: 12px 18px;
   border-radius: 10px;
-  background: #0c1838;
+  background: #1d4ed8;
   font-size: 14.5px;
   font-weight: 600;
   color: #ffffff;
@@ -1764,17 +1764,20 @@ a.canal h3 svg {
   color: var(--muted);
 }
 
+/* O azul da capa com os fios, nunca o azul-marinho chapado (o Gabriel vetou fundo escuro, 29/out). */
 .resultado {
   padding: 28px;
   border-radius: 20px;
-  background: #0b1430;
+  background:
+    var(--casca-fios-2),
+    linear-gradient(140deg, #1a3fb8 0%, #1d4ed8 50%, color-mix(in srgb, #1d4ed8 62%, #0c1838) 100%);
   color: #ffffff;
 }
 
 .resultadoRotulo {
   margin: 0;
   font-size: 14px;
-  color: rgb(220 228 255 / 0.7);
+  color: rgb(255 255 255 / 0.8);
 }
 
 .resultadoValor {
@@ -1790,7 +1793,7 @@ a.canal h3 svg {
   gap: 10px;
   margin: 22px 0 0;
   padding: 18px 0 0;
-  border-top: 1px solid rgb(255 255 255 / 0.12);
+  border-top: 1px solid rgb(255 255 255 / 0.22);
 }
 
 .conta div {
@@ -1801,7 +1804,7 @@ a.canal h3 svg {
 }
 
 .conta dt {
-  color: rgb(220 228 255 / 0.7);
+  color: rgb(255 255 255 / 0.8);
 }
 
 .conta dd {
@@ -1814,7 +1817,7 @@ a.canal h3 svg {
   margin: 20px 0 0;
   font-size: 13px;
   line-height: 1.55;
-  color: rgb(220 228 255 / 0.66);
+  color: rgb(255 255 255 / 0.78);
 }
 
 @media (prefers-reduced-motion: reduce) {
