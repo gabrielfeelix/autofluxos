@@ -110,6 +110,14 @@ const PORTAS_ABERTAS = [
    * decifrar são do navegador de quem assinou.
    */
   '/sw-push.js',
+  /**
+   * As imagens de compartilhamento do site (`opengraph-image.tsx`): quem busca
+   * é o robô do WhatsApp, do LinkedIn ou do Google, sem sessão. As das rotas
+   * com prefixo aberto (`/produto/`, `/canais/`, `/segmentos/`) já passam.
+   */
+  '/opengraph-image',
+  '/precos/opengraph-image',
+  '/integracoes/opengraph-image',
 ]
 
 /**

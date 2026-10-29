@@ -123,6 +123,9 @@ function trama(semente) {
 
 const SEMENTES = [4, 17, 29]
 SEMENTES.forEach((semente, i) => {
-  writeFileSync(new URL(`../../public/fundos/fios-${i + 1}.svg`, import.meta.url), trama(semente))
+  const svg = trama(semente)
+  writeFileSync(new URL(`../../public/fundos/fios-${i + 1}.svg`, import.meta.url), svg)
+  // A imagem de compartilhamento lê a primeira de `assets/og/`, que vai junto da função no servidor.
+  if (i === 0) writeFileSync(new URL('../../assets/og/fios.svg', import.meta.url), svg)
 })
 console.log(`${SEMENTES.length} tramas em public/fundos/`)
