@@ -9,7 +9,9 @@ import f from './fluxo-se-montando.module.css'
  * O fluxo se montando (seção 2 do `docs/PLANO-LP-V2.md`). Nenhum dos 24
  * concorrentes lidos em 28/out mostra o editor de fluxo, e ele é o nome do
  * produto. Ao rolar, os fios saem dos canais, ligam os blocos e chegam às
- * integrações; depois uma mensagem percorre o caminho escolhido.
+ * integrações; depois uma mensagem percorre o caminho escolhido. É animação
+ * por tempo, não pela rolagem: preso ao scroll, quem rolava rápido passava
+ * pelo palco vazio (pedido do Gabriel em 29/out).
  *
  * **Os fios são medidos, não desenhados à mão.** Cada ponta é um elemento com
  * `data-no`, e as curvas saem da posição real dele. Assim o mesmo desenho serve
@@ -39,10 +41,12 @@ const FIOS: Fio[] = [
 ]
 
 const COLUNAS = 5
+const TEMPO_POR_COLUNA = 900
+// Como a jornada da home: quem chega já vê o fluxo começar, sem esperar demais.
+const PRIMEIRO_FIO = 1000
 type Desenho = { largura: number; altura: number; fios: { d: string; coluna: number; caminho: boolean; ordem: number }[] }
 
 export function FluxoSeMontando({ cabeca }: { cabeca: ReactNode }) {
-  const secao = useRef<HTMLElement>(null)
   const palco = useRef<HTMLDivElement>(null)
   const [desenho, setDesenho] = useState<Desenho>({ largura: 0, altura: 0, fios: [] })
 
@@ -89,46 +93,57 @@ export function FluxoSeMontando({ cabeca }: { cabeca: ReactNode }) {
     return () => observador.disconnect()
   }, [])
 
-  // A rolagem vira `--s`. Sem movimento, fica tudo pronto e a seção não trava.
+  // `--s` anda com o tempo: 1 s depois de o palco aparecer, uma coluna a cada
+  // `TEMPO_POR_COLUNA`. Saiu da tela, volta ao zero para montar de novo na
+  // próxima visita. Sem movimento, fica tudo pronto desde o começo.
   useEffect(() => {
-    const el = secao.current
     const p = palco.current
-    if (!el || !p || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return
-    el.dataset.movimento = 'rola'
-
+    if (!p || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return
     let quadro = 0
-    const atualizar = () => {
-      quadro = 0
-      const travada = getComputedStyle(el).getPropertyValue('--travada').trim() === '1'
-      let progresso: number
-      if (travada) {
-        const r = el.getBoundingClientRect()
-        progresso = -r.top / Math.max(r.height - window.innerHeight, 1)
-      } else {
-        // Sem trava (celular): o desenho acompanha o palco atravessando a tela.
-        const r = p.getBoundingClientRect()
-        progresso = (window.innerHeight * 0.9 - r.top) / (r.height * 0.95)
-      }
-      // Termina antes do fim da trava, para o fluxo pronto ficar um tempo na tela.
-      const s = Math.min(Math.max(progresso * 1.5, 0), 1) * COLUNAS
-      p.style.setProperty('--s', s.toFixed(3))
-      if (s >= COLUNAS) p.dataset.pronto = ''
-    }
-    const pedir = () => {
-      if (!quadro) quadro = requestAnimationFrame(atualizar)
-    }
-    atualizar()
-    window.addEventListener('scroll', pedir, { passive: true })
-    window.addEventListener('resize', pedir)
-    return () => {
+    let espera = 0
+    const zerar = () => {
       cancelAnimationFrame(quadro)
-      window.removeEventListener('scroll', pedir)
-      window.removeEventListener('resize', pedir)
+      window.clearTimeout(espera)
+      quadro = 0
+      p.style.setProperty('--s', '0')
+      delete p.dataset.pronto
+    }
+    const montar = () => {
+      const inicio = performance.now()
+      const total = COLUNAS * TEMPO_POR_COLUNA
+      const passo = (agora: number) => {
+        const t = Math.min((agora - inicio) / total, 1)
+        // Sai devagar e chega devagar: o primeiro fio e o último pedem um respiro.
+        const s = (t < 0.5 ? 2 * t * t : 1 - (-2 * t + 2) ** 2 / 2) * COLUNAS
+        p.style.setProperty('--s', s.toFixed(3))
+        if (t < 1) quadro = requestAnimationFrame(passo)
+        else p.dataset.pronto = ''
+      }
+      quadro = requestAnimationFrame(passo)
+    }
+    zerar()
+    let rodando = false
+    const observador = new IntersectionObserver(
+      ([e]) => {
+        if (e!.intersectionRatio >= 0.35 && !rodando) {
+          rodando = true
+          espera = window.setTimeout(montar, PRIMEIRO_FIO)
+        } else if (!e!.isIntersecting && rodando) {
+          rodando = false
+          zerar()
+        }
+      },
+      { threshold: [0, 0.35] },
+    )
+    observador.observe(p)
+    return () => {
+      observador.disconnect()
+      zerar()
     }
   }, [])
 
   return (
-    <section ref={secao} className={f.secao} id="fluxo">
+    <section className={f.secao} id="fluxo">
       <div className={f.trava}>
         {cabeca}
 

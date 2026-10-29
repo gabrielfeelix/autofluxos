@@ -21,26 +21,6 @@
   padding: clamp(72px, 9vw, 120px) 0 clamp(48px, 6vw, 80px);
 }
 
-/* A trava só existe onde cabe: tela larga e alta o bastante para o palco inteiro. */
-@media (min-width: 900px) and (min-height: 680px) {
-  .secao {
-    --travada: 1;
-  }
-
-  .secao[data-movimento='rola'] {
-    /* 170vh: o fluxo monta em menos de uma tela de rolagem. Com 260vh pedia scroll demais. */
-    height: 170vh;
-  }
-
-  .secao[data-movimento='rola'] .trava {
-    position: sticky;
-    top: 0;
-    height: 100svh;
-    padding-top: 84px;
-    padding-bottom: 24px;
-  }
-}
-
 .palco {
   position: relative;
   display: grid;
