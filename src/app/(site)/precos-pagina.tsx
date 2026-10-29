@@ -17,46 +17,40 @@ const FALAR_COM_VENDAS = `mailto:contato@4yu.com.br?subject=${encodeURIComponent
 
 /* ───────────── Enterprise ───────────── */
 
+/*
+ * O que cada item quer dizer, numa linha. A chave é o texto de
+ * `ENTERPRISE.itens`: mudou lá, a linha some aqui em vez de mentir.
+ */
+const DETALHE_DO_ENTERPRISE: Record<string, string> = {
+  'Conversas, números e atendentes sob medida': 'O contrato acompanha o tamanho da operação, sem franquia fixa.',
+  'Integração com o seu sistema': 'Ligamos o AutoFluxos ao ERP, ao CRM ou ao sistema próprio da empresa.',
+  'Robôs montados pela 4YU': 'A 4YU desenha os fluxos da operação junto com a sua equipe.',
+  'Gerente de conta': 'Uma pessoa da 4YU acompanha a conta e responde direto.',
+}
+
 /**
  * Não é um quarto plano: é o contrato de quem passou da tabela. Por isso fica
- * fora da fileira, na largura toda, no azul da capa com os fios, e com o preço
- * de partida grande em vez de escondido numa frase.
+ * fora da fileira, na largura toda, no azul da capa com os fios, e sem preço:
+ * o valor sai da conversa com vendas.
  */
 export function CartaoEnterprise() {
   return (
     <aside className={c.enterprise} data-revela data-como="escala" aria-labelledby="plano-enterprise">
       <div className={c.enterpriseTexto}>
         <h3 id="plano-enterprise">{ENTERPRISE.nome}</h3>
-        <p>{ENTERPRISE.resumo}</p>
-        <p className={c.enterprisePreco}>
-          <small>a partir de</small>
-          <strong>{reais(ENTERPRISE.aPartirDe)}</strong>
-          <small>por mês</small>
-        </p>
+        <p>{ENTERPRISE.resumo} O valor é combinado com vendas, pelo tamanho da operação.</p>
         <a className={`${s.botao} ${x.botaoBranco} ${s.botaoGrande}`} href={FALAR_COM_VENDAS}>
           Falar com vendas
         </a>
       </div>
-      <ul className={c.enterpriseItens}>
+      <dl className={c.enterpriseItens}>
         {ENTERPRISE.itens.map((item) => (
-          <li key={item}>
-            <span className={c.enterpriseVisto} aria-hidden>
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
-                <path d="m5 12.5 4.5 4.5L19 7.5" />
-              </svg>
-            </span>
-            {item}
-          </li>
+          <div key={item}>
+            <dt>{item}</dt>
+            {DETALHE_DO_ENTERPRISE[item] && <dd>{DETALHE_DO_ENTERPRISE[item]}</dd>}
+          </div>
         ))}
-        <li>
-          <span className={c.enterpriseVisto} aria-hidden>
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
-              <path d="m5 12.5 4.5 4.5L19 7.5" />
-            </svg>
-          </span>
-          Tudo do Escala
-        </li>
-      </ul>
+      </dl>
     </aside>
   )
 }
@@ -66,7 +60,7 @@ export function CartaoEnterprise() {
 type Linha = { rotulo: string; valor: (plano: Plano) => string; enterprise: string }
 
 const NUMEROS: Linha[] = [
-  { rotulo: 'Mensalidade', valor: (p) => reais(p.preco), enterprise: `a partir de ${reais(ENTERPRISE.aPartirDe)}` },
+  { rotulo: 'Mensalidade', valor: (p) => reais(p.preco), enterprise: 'Falar com vendas' },
   {
     rotulo: 'No anual, por mês',
     valor: (p) => {
@@ -146,7 +140,7 @@ export function SecaoComparacao() {
                 ))}
                 <th scope="col" className={c.colunaEnterprise}>
                   {ENTERPRISE.nome}
-                  <small>sob contrato</small>
+                  <small>sob consulta</small>
                 </th>
               </tr>
             </thead>

@@ -36,7 +36,7 @@ export default async function PaginaDoRecurso({ params }: { params: Promise<{ sl
   const recurso = recursoPorSlug((await params).slug)
   if (!recurso) notFound()
   return (
-    <PaginaDoSite cor={recurso.cor} capa={<CapaDoProduto recurso={recurso} />}>
+    <PaginaDoSite capa={<CapaDoProduto recurso={recurso} />}>
       <CorpoDoProduto recurso={recurso}>{PECAS[recurso.slug]?.()}</CorpoDoProduto>
       <SecaoPrecoResumo />
     </PaginaDoSite>

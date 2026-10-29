@@ -10,7 +10,7 @@ import x from './site.module.css'
 
 /*
  * A página de cada parte do produto (`/produto/[slug]`), no molde das páginas
- * de ramo: a cor da parte pinta a página inteira (`PaginaDoSite cor`), a capa
+ * de ramo, mas no azul do AutoFluxos: só o ramo pinta a página inteira. A capa
  * mostra a parte funcionando (as cenas do bento da home, maiores) com a ficha
  * técnica por cima, e cada bloco do corpo tem um tratamento próprio: as três
  * mudanças em linhas largas de texto, a peça interativa da parte e os itens

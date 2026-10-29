@@ -225,10 +225,9 @@ export const PLANOS: Plano[] = [
  */
 export const LIMITE_DE_ATENDENTES_SEM_CONTRATO = 50
 
-/** O que a tabela diz do Enterprise. Sem preço fechado: é contrato. */
+/** O que a tabela diz do Enterprise. Sem preço no site: o valor sai da conversa com vendas. */
 export const ENTERPRISE = {
   nome: 'Enterprise',
-  aPartirDe: 2500,
   resumo: 'Para operação acima de 50 atendentes ou com integração sob medida.',
   itens: [
     'Conversas, números e atendentes sob medida',
