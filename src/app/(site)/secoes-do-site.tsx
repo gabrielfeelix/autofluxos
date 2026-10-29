@@ -7,6 +7,7 @@ import { GLIFO_META } from '@/components/design/glifos-oficiais'
 import { CANAIS, type CanalDoSite } from './canais-do-site'
 import { RECURSOS, type RecursoDoSite } from './recursos-do-site'
 import { MODELOS_DE_TODOS, type NichoDoSite } from './nichos-do-site'
+import { JornadaViva } from './jornada-viva'
 import { CalculadoraMeta, DoisLados, NumerosMedidos, PreviaQueTroca, VitrineDeNichos } from './pecas-interativas'
 import { CONVERSAS, PreviaWhatsApp } from './previa-whatsapp'
 import { ITENS_DE_INTEGRACAO } from './integracoes-do-site'
@@ -300,20 +301,10 @@ export function SecaoJornada() {
       <div className={s.faixa}>
         <Cabeca
           olho="Como funciona"
-          titulo="Do primeiro contato ao pós-venda, tudo no mesmo WhatsApp"
+          titulo={`Do primeiro contato ao pós\u2011venda, tudo no mesmo WhatsApp`}
           texto="Hoje cada etapa mora num lugar: o celular, a planilha, o link de pagamento, o grupo da equipe. No AutoFluxos é a mesma conversa do começo ao fim."
         />
-        <ol className={x.jornada} data-revela>
-          {JORNADA.map((e, i) => (
-            <li key={e.titulo} style={{ '--i': i } as CSSProperties}>
-              <span className={x.jornadaNo}>{String(i + 1).padStart(2, '0')}</span>
-              <Link href={e.href} className={x.jornadaTexto}>
-                <strong>{e.titulo}</strong>
-                <span>{e.texto}</span>
-              </Link>
-            </li>
-          ))}
-        </ol>
+        <JornadaViva etapas={JORNADA} />
       </div>
     </section>
   )

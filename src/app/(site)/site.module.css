@@ -2112,17 +2112,20 @@ a.canal h3 svg {
 /* ─────────────────────────── jornada ─────────────────────────── */
 
 /*
- * As sete etapas numa linha, ligadas por um fio que se desenha da esquerda
- * para a direita quando a seção entra na tela; os nós acendem em sequência,
- * no tempo do fio. É a assinatura dos fios do site, contando a conversa
- * inteira em vez de um fluxo só.
+ * A jornada como player: sete etapas numa linha, o fio enche até a etapa
+ * ativa (`--progresso`), e o palco embaixo mostra a tela daquela etapa sobre
+ * a trama de fios.
  */
+.jornadaViva {
+  margin-top: 52px;
+}
+
 .jornada {
   position: relative;
   display: grid;
   grid-template-columns: repeat(7, minmax(0, 1fr));
-  gap: 12px;
-  margin: 56px 0 0;
+  gap: 8px;
+  margin: 0;
   padding: 0;
   list-style: none;
 }
@@ -2133,34 +2136,51 @@ a.canal h3 svg {
   position: absolute;
   top: 21px;
   left: calc(100% / 14);
-  right: calc(100% / 14);
   height: 2px;
   border-radius: 1px;
 }
 
 .jornada::before {
+  right: calc(100% / 14);
   background: var(--line);
 }
 
-/* O fio que corre por cima do trilho. */
+/* O fio que enche até a etapa ativa. */
 .jornada::after {
+  width: calc((100% - 100% / 7) * var(--progresso));
   background: #1d4ed8;
-  transform-origin: left;
-  scale: 0 1;
-  transition: scale 1.6s cubic-bezier(0.65, 0, 0.35, 1) 0.2s;
-}
-
-.jornada[data-revelado]::after {
-  scale: 1 1;
+  transition: width 0.7s cubic-bezier(0.65, 0, 0.35, 1);
 }
 
 .jornada li {
   position: relative;
   z-index: 1;
+}
+
+.jornadaBotao {
   display: flex;
   flex-direction: column;
   align-items: center;
-  text-align: center;
+  gap: 12px;
+  width: 100%;
+  padding: 0 4px 10px;
+  border: 0;
+  background: none;
+  font: inherit;
+  color: var(--muted);
+  cursor: pointer;
+}
+
+.jornadaBotao strong {
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  transition: color 0.3s var(--curva);
+}
+
+.jornadaBotao:hover strong,
+.jornadaBotao[aria-selected='true'] strong {
+  color: var(--ink);
 }
 
 .jornadaNo {
@@ -2176,96 +2196,410 @@ a.canal h3 svg {
   color: var(--dim);
   font-variant-numeric: tabular-nums;
   transition:
-    border-color 0.4s var(--curva),
-    background 0.4s var(--curva),
-    color 0.4s var(--curva),
+    border-color 0.35s var(--curva),
+    background 0.35s var(--curva),
+    color 0.35s var(--curva),
+    box-shadow 0.35s var(--curva),
     scale 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
-  transition-delay: calc(0.2s + var(--i) * 0.23s);
 }
 
-.jornada[data-revelado] .jornadaNo {
+.jornadaBotao[data-feita] .jornadaNo {
   border-color: #1d4ed8;
   background: #1d4ed8;
   color: #ffffff;
 }
 
-.jornadaTexto {
+.jornadaBotao[aria-selected='true'] .jornadaNo {
+  scale: 1.12;
+  box-shadow: 0 0 0 6px rgb(29 78 216 / 0.14);
+}
+
+.jornadaBotao:hover .jornadaNo {
+  border-color: #1d4ed8;
+}
+
+/* O palco: o texto da etapa à esquerda, a tela do produto à direita. */
+.jornadaPalco {
+  display: grid;
+  grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr);
+  align-items: center;
+  gap: 48px;
+  min-height: 380px;
+  margin-top: 24px;
+  padding: 44px 52px;
+  border-radius: 24px;
+  background:
+    var(--casca-fios-2),
+    linear-gradient(145deg, #1d4ed8 0%, #12308f 100%);
+  color: #ffffff;
+}
+
+.jornadaPalcoTexto {
+  animation: vitrineEntra 0.45s var(--curva) both;
+}
+
+.jornadaPalcoTexto small {
+  font-size: 13px;
+  font-weight: 600;
+  color: rgb(255 255 255 / 0.7);
+  font-variant-numeric: tabular-nums;
+}
+
+.jornadaPalcoTexto h3 {
+  margin: 8px 0 0;
+  font-size: clamp(28px, 3vw, 38px);
+  font-weight: 600;
+  letter-spacing: -0.035em;
+}
+
+.jornadaPalcoTexto p {
+  max-width: 38ch;
+  margin: 12px 0 0;
+  font-size: 16px;
+  line-height: 1.6;
+  color: rgb(255 255 255 / 0.85);
+}
+
+.jornadaLink {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 24px;
+  padding-bottom: 3px;
+  border-bottom: 1px solid rgb(255 255 255 / 0.45);
+  font-size: 14.5px;
+  font-weight: 600;
+  color: #ffffff;
+  text-decoration: none;
+}
+
+.jornadaTela {
+  justify-self: center;
+  width: 100%;
+  max-width: 400px;
+  animation: vitrineConversa 0.5s var(--curva) both;
+}
+
+/* ───── as telas das etapas ───── */
+
+.jtJanela {
+  overflow: hidden;
+  border-radius: 14px;
+  background: #ffffff;
+  color: #0c1838;
+  box-shadow: 0 34px 64px -28px rgb(0 0 0 / 0.5);
+}
+
+.jtCorpo {
+  padding: 14px;
+}
+
+.jtLinhas {
   display: grid;
   gap: 6px;
-  margin-top: 18px;
-  padding: 10px 8px 12px;
-  border-radius: 12px;
-  color: inherit;
-  text-decoration: none;
-  transition: background 0.2s var(--curva);
 }
 
-.jornadaTexto:hover {
-  background: var(--canvas-deep);
+.jtLinha {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 10px;
+  border: 1px solid #edf0f7;
+  border-radius: 10px;
+  font-size: 13px;
+  animation: vitrineEntra 0.4s var(--curva) both;
+  animation-delay: calc(0.15s + var(--i) * 0.12s);
 }
 
-.jornada li:hover .jornadaNo {
-  scale: 1.1;
-  transition-delay: 0s;
+.jtLinha[data-destaque] {
+  border-color: rgb(29 78 216 / 0.35);
+  background: rgb(29 78 216 / 0.05);
 }
 
-.jornadaTexto strong {
-  font-size: 15.5px;
+.jtLinha strong {
+  display: block;
+  font-size: 13.5px;
+}
+
+.jtLinha small {
+  display: block;
+  font-size: 12px;
+  color: #64708a;
+}
+
+.jtAvatar {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: #e8eefc;
+  font-size: 11px;
+  font-weight: 600;
+  color: #1d4ed8;
+}
+
+.jtSetor {
+  margin-left: auto;
+  font-size: 12px;
+  font-weight: 600;
+  text-align: right;
+  color: #1d4ed8;
+}
+
+.jtConversa {
+  display: grid;
+  gap: 8px;
+  padding: 4px;
+  border-radius: 10px;
+  background: #efeae2;
+}
+
+.jtBalao {
+  justify-self: end;
+  margin: 0;
+  padding: 7px 10px;
+  border-radius: 8px;
+  background: #d9fdd3;
+  font-size: 13px;
+}
+
+.jtCard,
+.jtPagamento {
+  justify-self: start;
+  display: grid;
+  gap: 2px;
+  width: 240px;
+  padding: 4px 4px 0;
+  overflow: hidden;
+  border-radius: 8px;
+  background: #ffffff;
+  font-size: 13px;
+  animation: vitrineEntra 0.45s var(--curva) 0.25s both;
+}
+
+.jtCard img {
+  width: 100%;
+  height: 110px;
+  border-radius: 6px;
+  object-fit: cover;
+}
+
+.jtCard strong,
+.jtCard small {
+  padding-inline: 6px;
+}
+
+.jtCard strong {
+  margin-top: 6px;
+}
+
+.jtCard small {
+  color: #64708a;
+}
+
+.jtCard em,
+.jtEtapas em {
+  margin-top: 8px;
+  padding: 8px 0;
+  border-top: 1px solid #edf0f7;
+  font-style: normal;
+  font-weight: 500;
+  text-align: center;
+  color: #027eb5;
+}
+
+.jtPagamento {
+  padding: 12px 14px;
+}
+
+.jtPagamento small {
+  font-size: 11.5px;
+  color: #64708a;
+}
+
+.jtPagamento b {
+  font-size: 20px;
   letter-spacing: -0.02em;
 }
 
-.jornadaTexto span {
-  font-size: 13.5px;
-  line-height: 1.5;
-  color: var(--muted);
+.jtPago {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 6px;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: #15803d;
+  animation: vitrineEntra 0.4s var(--curva) 0.9s both;
 }
 
-/* No celular a jornada desce: o fio vira vertical, à esquerda dos nós. */
+.jtFunil {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.jtColuna {
+  display: grid;
+  align-content: start;
+  gap: 6px;
+  min-height: 150px;
+  padding: 8px;
+  border-radius: 10px;
+  background: #f4f6fb;
+}
+
+.jtColuna > small {
+  font-size: 11.5px;
+  font-weight: 600;
+  color: #64708a;
+}
+
+.jtCartao,
+.jtCartaoFantasma {
+  display: grid;
+  gap: 2px;
+  padding: 8px;
+  border-radius: 8px;
+  background: #ffffff;
+  font-size: 12px;
+}
+
+.jtCartao {
+  border: 1px solid rgb(29 78 216 / 0.4);
+  box-shadow: 0 8px 16px -10px rgb(29 78 216 / 0.5);
+  animation: cartaoAnda 0.7s cubic-bezier(0.22, 1, 0.36, 1) 0.2s both;
+}
+
+@keyframes cartaoAnda {
+  from {
+    translate: -110% 0;
+    opacity: 0.4;
+  }
+}
+
+.jtCartao small {
+  color: #64708a;
+}
+
+.jtCartao em {
+  font-style: normal;
+  color: #1d4ed8;
+}
+
+.jtCartaoFantasma {
+  color: #94a3c4;
+  border: 1px dashed #dbe2f0;
+  background: transparent;
+}
+
+.jtEtapas {
+  display: grid;
+  gap: 6px;
+  font-size: 13.5px;
+}
+
+.jtEtapas > span {
+  animation: vitrineEntra 0.35s var(--curva) both;
+  animation-delay: calc(0.15s + var(--i) * 0.14s);
+}
+
+.jtVolta {
+  display: grid;
+  gap: 12px;
+  font-size: 13px;
+}
+
+.jtNps {
+  display: grid;
+  grid-template-columns: repeat(11, minmax(0, 1fr));
+  gap: 4px;
+}
+
+.jtNps i {
+  display: grid;
+  place-items: center;
+  height: 28px;
+  border-radius: 6px;
+  background: #f1f4fa;
+  font-size: 12px;
+  font-style: normal;
+  color: #64708a;
+}
+
+.jtNps i[data-nota] {
+  background: #16a34a;
+  color: #ffffff;
+  font-weight: 600;
+  animation: notaAcende 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) 0.4s both;
+}
+
+@keyframes notaAcende {
+  from {
+    scale: 0.6;
+    background: #f1f4fa;
+    color: #64708a;
+  }
+}
+
+.jtRecompra {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: rgb(29 78 216 / 0.06);
+  font-weight: 500;
+  color: #1d4ed8;
+}
+
+/* No celular as etapas viram uma faixa que rola de lado, e o palco empilha. */
 @media (max-width: 900px) {
   .jornada {
-    grid-template-columns: 1fr;
+    display: flex;
     gap: 4px;
+    margin-inline: -20px;
+    padding: 10px 20px 0;
+    overflow-x: auto;
+    scrollbar-width: none;
   }
 
   .jornada::before,
   .jornada::after {
-    top: 22px;
-    bottom: 22px;
-    left: 21px;
-    right: auto;
-    width: 2px;
-    height: auto;
-  }
-
-  .jornada::after {
-    transform-origin: top;
-    scale: 1 0;
-  }
-
-  .jornada[data-revelado]::after {
-    scale: 1 1;
+    display: none;
   }
 
   .jornada li {
-    flex-direction: row;
-    align-items: flex-start;
-    gap: 14px;
-    text-align: left;
-  }
-
-  .jornadaNo {
     flex: none;
+    width: 92px;
   }
 
-  .jornadaTexto {
-    margin-top: 0;
-    padding: 8px 10px 14px;
+  .jornadaBotao strong {
+    font-size: 13px;
+  }
+
+  .jornadaPalco {
+    grid-template-columns: 1fr;
+    gap: 28px;
+    padding: 28px 20px;
   }
 }
 
 @media (prefers-reduced-motion: reduce) {
   .jornada::after,
-  .jornadaNo {
+  .jornadaNo,
+  .jornadaPalcoTexto,
+  .jornadaTela,
+  .jtLinha,
+  .jtCard,
+  .jtPagamento,
+  .jtPago,
+  .jtCartao,
+  .jtEtapas > span,
+  .jtNps i[data-nota] {
+    animation: none;
     transition: none;
   }
 }
