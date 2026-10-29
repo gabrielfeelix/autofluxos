@@ -2492,12 +2492,6 @@
   }
 }
 
-@media (max-width: 560px) {
-  .rodapeTopo {
-    grid-template-columns: 1fr;
-  }
-}
-
 .rodapeSobre {
   display: grid;
   gap: 16px;
@@ -2838,4 +2832,35 @@
 .rodapeIaBotao:focus-visible {
   outline: 2px solid var(--ink);
   outline-offset: 2px;
+}
+
+/*
+ * Rodapé no celular: as colunas de links andam em pares e cada linha tem
+ * 40px de toque. Fica no fim do arquivo para vencer as regras base acima.
+ */
+@media (max-width: 560px) {
+  .rodapeTopo {
+    gap: 32px 20px;
+  }
+
+  .rodapeSobre {
+    grid-column: 1 / -1;
+  }
+
+  .rodapeColuna {
+    gap: 0;
+  }
+
+  .rodapeTitulo {
+    margin-bottom: 4px;
+  }
+
+  .rodapeLink {
+    padding-block: 10px;
+  }
+
+  .rodapeIaBotao {
+    width: 44px;
+    height: 44px;
+  }
 }

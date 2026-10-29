@@ -117,6 +117,7 @@
 }
 
 .pontos button {
+  position: relative;
   width: 8px;
   height: 8px;
   padding: 0;
@@ -132,6 +133,12 @@
 .pontos button[aria-selected='true'] {
   width: 22px;
   background: #ffffff;
+}
+
+.pontos button::after {
+  content: '';
+  position: absolute;
+  inset: -14px -4px;
 }
 
 /* ─────────────────────────── nichos da home ─────────────────────────── */
@@ -685,6 +692,7 @@
 }
 
 .linkForte {
+  position: relative;
   display: inline-flex;
   align-items: center;
   gap: 6px;
@@ -692,6 +700,13 @@
   font-weight: 600;
   color: #1d4ed8;
   text-decoration: none;
+}
+
+/* Alvo de toque de 40px no celular sem mexer no desenho do link. */
+.linkForte::after {
+  content: '';
+  position: absolute;
+  inset: -10px -4px;
 }
 
 .faixaAzul {
@@ -2294,6 +2309,7 @@ a.canal h3 svg {
 }
 
 .jornadaLink {
+  position: relative;
   display: inline-flex;
   align-items: center;
   gap: 8px;
@@ -2304,6 +2320,12 @@ a.canal h3 svg {
   font-weight: 600;
   color: #ffffff;
   text-decoration: none;
+}
+
+.jornadaLink::after {
+  content: '';
+  position: absolute;
+  inset: -10px -4px;
 }
 
 .jornadaTela {
