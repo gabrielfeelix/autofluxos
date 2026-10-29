@@ -6,6 +6,7 @@ import { MODELOS_DE_TODOS, type NichoDoSite } from './nichos-do-site'
 import { PreviaQueTroca } from './pecas-interativas'
 import { CONVERSAS, PreviaWhatsApp } from './previa-whatsapp'
 import { JanelaDaCapa, ModuloDoRamo } from './modulos-dos-ramos'
+import { SecaoInboxDoRamo } from './inbox-do-ramo'
 import { Pergunta } from './pagina-do-site'
 import n from './nicho.module.css'
 import s from './pagina-inicial.module.css'
@@ -129,6 +130,9 @@ export function CorpoDoRamo({ nicho }: { nicho: NichoDoSite }) {
 
       {/* O que só este ramo tem: módulo e layout próprios. */}
       <ModuloDoRamo nicho={nicho} />
+
+      {/* O Inbox fazendo o trabalho do ramo: produto, cupom e cobrança; ou a aula marcada na Verandi. */}
+      <SecaoInboxDoRamo slug={nicho.slug} />
 
       {/* A IA no ramo: o que ela sabe responder, e a conversa num palco da cor do ramo. */}
       <section className={`${s.secao} ${s.secaoTonal}`}>
