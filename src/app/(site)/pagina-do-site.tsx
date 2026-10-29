@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import { BentoDoProduto } from './bento-do-produto'
 import { CANAIS } from './canais-do-site'
 import { RECURSOS } from './recursos-do-site'
 import type { ReactNode } from 'react'
@@ -297,44 +298,11 @@ export function SecaoOQueFaz() {
                 O que ele faz
               </span>
               <h2 className={s.tituloSecao} data-revela data-como="desfoque" data-atraso="60">
-                Cinco peças que trabalham juntas
+                Seis peças que trabalham juntas
               </h2>
                 <span className={s.risco} data-revela data-atraso="90" aria-hidden />
 
-              <div className={s.bento}>
-                <Caixa
-                  larga
-                  arte={<ArteFluxo />}
-                  titulo="Fluxos montados bloco a bloco"
-                  texto="Você arrasta mensagem, pergunta, condição e espera até a conversa ficar do jeito que você atende. Testa ali mesmo. Cada publicação vira uma versão, então dá para voltar quando algo sai errado."
-                  atraso={0}
-                />
-                <Caixa
-                  larga
-                  arte={<ArteFila />}
-                  titulo="Caixa de entrada da equipe"
-                  texto="Todas as conversas numa tela, cada setor com a sua fila. Quem assume no meio recebe o resumo do que já foi dito, e a IA sugere a resposta antes de enviar."
-                  atraso={80}
-                />
-                <Caixa
-                  arte={<ArteIA />}
-                  titulo="IA com coleira"
-                  texto="Para o que não cabe num roteiro fixo. Ela responde dentro do que você escrever e chama alguém quando não sabe, em vez de arriscar."
-                  atraso={160}
-                />
-                <Caixa
-                  arte={<ArteFicha />}
-                  titulo="Ficha de cada contato"
-                  texto="Sete conversas anteriores, as etiquetas que você criou e o que já foi combinado. Quem entra no meio não pergunta de novo."
-                  atraso={200}
-                />
-                <Caixa
-                  arte={<ArteConexao />}
-                  titulo="Conecta no seu sistema"
-                  texto="O fluxo abre a sua agenda no meio da conversa e responde com o horário que está livre agora, não com um horário genérico."
-                  atraso={240}
-                />
-              </div>
+              <BentoDoProduto />
             </div>
           </section>
   )
@@ -731,38 +699,6 @@ function Falas() {
 }
 
 
-function Caixa({
-  arte,
-  titulo,
-  texto,
-  larga,
-  atraso,
-}: {
-  arte: ReactNode
-  titulo: string
-  texto: string
-  larga?: boolean
-  atraso: number
-}) {
-  return (
-    <article
-      className={`${s.caixa} ${larga ? s.caixaLarga : ''}`}
-      data-revela
-      data-como="escala"
-      data-atraso={atraso}
-    >
-      <span className={s.lustro} aria-hidden />
-      <div className={s.caixaArte} aria-hidden>
-        {arte}
-      </div>
-      <div className={s.caixaPe}>
-        <h3 className={s.caixaTitulo}>{titulo}</h3>
-        <p className={s.caixaTexto}>{texto}</p>
-      </div>
-    </article>
-  )
-}
-
 function Passo({
   rotulo,
   arte,
@@ -964,41 +900,6 @@ function ArteFila() {
   )
 }
 
-/** A IA consultando o catálogo antes de responder: o preço vem de lá. */
-function ArteIA() {
-  return (
-    <div className={s.arteIA}>
-      <span className={s.falaCliente}>Tem a ração Golden 15 kg?</span>
-      <span className={s.consultaIA}>
-        <IconeIA />
-        consultou o catálogo
-      </span>
-      <span className={s.falaIA}>Tem sim: R$ 189,90, e entrega amanhã.</span>
-    </div>
-  )
-}
-
-/** A ficha do contato, com as etiquetas acendendo uma a uma. */
-function ArteFicha() {
-  return (
-    <div className={s.arteFicha}>
-      <div className={s.fichaTopo}>
-        <span className={s.fichaAvatar}>MC</span>
-        <span className={s.textoFila}>
-          <b>Marina Costa</b>
-          <span>7 conversas · desde mar/2026</span>
-        </span>
-      </div>
-      <div className={s.fichaEtiquetas}>
-        <span className={s.etiqueta}>cliente</span>
-        <span className={s.etiqueta}>sábado</span>
-        <span className={s.etiqueta}>parcelar</span>
-      </div>
-      <span className={s.fichaNota}>Combinado: entrega no sábado, 10h</span>
-    </div>
-  )
-}
-
 /** Dois sistemas ligados, com o pacote atravessando o trilho e a resposta embaixo. */
 function ArteConexao({
   de = 'Fluxo',
@@ -1117,17 +1018,6 @@ function IconeFluxo() {
   )
 }
 
-
-
-function IconeIA() {
-  return (
-    <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
-      <path d="M12 3v3M12 18v3M3 12h3M18 12h3" strokeLinecap="round" />
-      <rect x="7" y="7" width="10" height="10" rx="3" />
-      <circle cx="12" cy="12" r="1.6" fill="currentColor" stroke="none" />
-    </svg>
-  )
-}
 
 
 function IconePlug() {

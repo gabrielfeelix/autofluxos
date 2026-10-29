@@ -1,0 +1,683 @@
+/*
+ * O bento "O que ele faz" (`bento-do-produto.tsx`). Seis cartões em
+ * zigue-zague numa grade de seis colunas: o largo ocupa quatro, o estreito
+ * duas. O palco de cada um é a cor da peça com a trama de fios, e a tela em
+ * cima dele anima em loop, só com CSS.
+ */
+.bento {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 16px;
+  margin-top: 48px;
+}
+
+.peca {
+  grid-column: span 2;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: 22px;
+  background: #ffffff;
+  transition:
+    translate 0.35s var(--curva),
+    box-shadow 0.35s var(--curva);
+}
+
+.peca[data-largo] {
+  grid-column: span 4;
+}
+
+.peca:hover {
+  translate: 0 -3px;
+  box-shadow: 0 24px 48px -32px rgb(16 32 84 / 0.5);
+}
+
+@media (max-width: 960px) {
+  .bento {
+    grid-template-columns: 1fr;
+  }
+
+  .peca,
+  .peca[data-largo] {
+    grid-column: auto;
+  }
+}
+
+.palco {
+  display: grid;
+  place-items: center;
+  min-height: 270px;
+  padding: 28px;
+  background:
+    var(--casca-fios-3),
+    linear-gradient(145deg, var(--cor) 0%, color-mix(in srgb, var(--cor) 62%, #0c1838) 100%);
+  background-position: var(--fios-x, 0) var(--fios-y, 0), 0 0;
+}
+
+.pe {
+  padding: 20px 24px 24px;
+}
+
+.pe h3 {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+}
+
+.pe p {
+  max-width: 52ch;
+  margin: 6px 0 0;
+  font-size: 14.5px;
+  line-height: 1.55;
+  color: var(--muted);
+}
+
+/* ───── a janela ───── */
+
+.janela {
+  width: 100%;
+  max-width: 320px;
+  overflow: hidden;
+  border-radius: 14px;
+  background: #ffffff;
+  color: #0c1838;
+  box-shadow: 0 30px 60px -28px rgb(0 0 0 / 0.55);
+}
+
+.janelaLarga {
+  max-width: 600px;
+}
+
+.barra {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 8px 12px;
+  border-bottom: 1px solid #edf0f7;
+  background: #f6f8fd;
+}
+
+.barra i {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #d5dbe8;
+}
+
+.barra span {
+  margin-left: 8px;
+  font-size: 11px;
+  color: #64708a;
+}
+
+/* ───── fluxos ───── */
+
+.fluxo {
+  position: relative;
+  height: 180px;
+  margin: 12px 14px 14px;
+  background: radial-gradient(circle, rgb(16 32 84 / 0.09) 1px, transparent 1.3px) 0 0 / 14px 14px;
+}
+
+.fluxoFios {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  fill: none;
+  stroke: var(--cor);
+  stroke-width: 1.6;
+  stroke-dasharray: 5 5;
+  animation: corre 1.2s linear infinite;
+}
+
+@keyframes corre {
+  to {
+    stroke-dashoffset: -20;
+  }
+}
+
+.bloco {
+  position: absolute;
+  display: grid;
+  gap: 2px;
+  width: 22%;
+  padding: 8px 10px;
+  border: 1px solid #e3e8f3;
+  border-radius: 10px;
+  background: #ffffff;
+  font-size: 11.5px;
+  font-weight: 500;
+  box-shadow: 0 6px 14px -10px rgb(16 32 84 / 0.4);
+  animation: acende 4s var(--curva) infinite;
+  animation-delay: calc(var(--n) * 0.7s);
+}
+
+.blocoFim {
+  width: 16%;
+}
+
+.bloco small {
+  font-size: 9.5px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--cor);
+}
+
+.opcoes {
+  display: grid;
+  gap: 3px;
+  margin-top: 2px;
+}
+
+.opcoes i {
+  padding: 3px 5px;
+  border-radius: 5px;
+  background: #f1f4fa;
+  font-size: 10px;
+  font-style: normal;
+}
+
+@keyframes acende {
+  0%,
+  100% {
+    border-color: #e3e8f3;
+    box-shadow: 0 6px 14px -10px rgb(16 32 84 / 0.4);
+  }
+  12%,
+  28% {
+    border-color: var(--cor);
+    box-shadow:
+      0 0 0 3px color-mix(in srgb, var(--cor) 18%, transparent),
+      0 6px 14px -10px rgb(16 32 84 / 0.4);
+  }
+}
+
+/* ───── conversa (IA e pagamento) ───── */
+
+.conversa {
+  display: grid;
+  gap: 8px;
+  min-height: 220px;
+  align-content: start;
+  padding: 12px;
+  background: #efeae2;
+  font-size: 12px;
+}
+
+.balaoCliente {
+  justify-self: end;
+  max-width: 80%;
+  padding: 7px 9px;
+  border-radius: 8px 2px 8px 8px;
+  background: #d9fdd3;
+}
+
+.consultando {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  grid-row: 2;
+  grid-column: 1;
+  align-self: start;
+  justify-self: start;
+  padding: 6px 9px;
+  border-radius: 999px;
+  background: #ffffff;
+  font-size: 11px;
+  color: #64708a;
+  animation: consulta 7s linear infinite;
+}
+
+.consultando i {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--cor);
+  animation: pontinho 0.9s ease-in-out infinite;
+}
+
+.consultando i:nth-child(2) {
+  animation-delay: 0.15s;
+}
+
+.consultando i:nth-child(3) {
+  margin-right: 4px;
+  animation-delay: 0.3s;
+}
+
+@keyframes pontinho {
+  50% {
+    translate: 0 -3px;
+    opacity: 0.4;
+  }
+}
+
+@keyframes consulta {
+  0%,
+  8% {
+    opacity: 0;
+  }
+  12%,
+  38% {
+    opacity: 1;
+  }
+  42%,
+  100% {
+    opacity: 0;
+  }
+}
+
+.balaoIA {
+  display: grid;
+  gap: 2px;
+  grid-row: 2;
+  grid-column: 1;
+  justify-self: start;
+  width: 200px;
+  padding: 4px 4px 7px;
+  border-radius: 2px 8px 8px 8px;
+  background: #ffffff;
+  animation: aparece 7s var(--curva) infinite;
+}
+
+.balaoIA img {
+  width: 100%;
+  height: 80px;
+  margin-bottom: 4px;
+  border-radius: 6px;
+  object-fit: cover;
+}
+
+.balaoIA b,
+.balaoIA {
+  padding-inline: 4px;
+}
+
+.balaoIA img {
+  margin-inline: -4px;
+  width: calc(100% + 8px);
+}
+
+@keyframes aparece {
+  0%,
+  42% {
+    opacity: 0;
+    translate: 0 8px;
+  }
+  48%,
+  94% {
+    opacity: 1;
+    translate: 0 0;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+/* ───── inbox por setor ───── */
+
+.setores {
+  position: relative;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  margin: 10px;
+  padding: 3px;
+  border-radius: 9px;
+  background: #f1f4fa;
+  font-size: 11.5px;
+  font-weight: 500;
+  text-align: center;
+}
+
+.setores > span:not(.setorAtivo) {
+  position: relative;
+  padding: 6px 0;
+}
+
+.setorAtivo {
+  position: absolute;
+  top: 3px;
+  bottom: 3px;
+  left: 3px;
+  width: calc((100% - 6px) / 3);
+  border-radius: 7px;
+  background: #ffffff;
+  box-shadow: 0 1px 3px rgb(16 32 84 / 0.15);
+  animation: setor 9s cubic-bezier(0.65, 0, 0.35, 1) infinite;
+}
+
+@keyframes setor {
+  0%,
+  30% {
+    translate: 0 0;
+  }
+  33%,
+  63% {
+    translate: 100% 0;
+  }
+  66%,
+  96% {
+    translate: 200% 0;
+  }
+  100% {
+    translate: 0 0;
+  }
+}
+
+.filas {
+  position: relative;
+  height: 112px;
+  margin: 0 10px 12px;
+}
+
+.fila {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  gap: 6px;
+  align-content: start;
+  animation: fila 9s linear infinite;
+  animation-delay: calc(var(--f) * 3s - 9s);
+}
+
+@keyframes fila {
+  0%,
+  30% {
+    opacity: 1;
+    translate: 0 0;
+  }
+  33%,
+  97% {
+    opacity: 0;
+    translate: 0 6px;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+
+.linha {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px;
+  border: 1px solid #edf0f7;
+  border-radius: 9px;
+  font-size: 11px;
+  color: #64708a;
+}
+
+.linha > i {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--cor) 14%, #ffffff);
+  font-size: 9.5px;
+  font-style: normal;
+  font-weight: 600;
+  color: var(--cor);
+}
+
+.linha b {
+  display: block;
+  font-size: 12px;
+  color: #0c1838;
+}
+
+/* ───── funil ───── */
+
+.funil {
+  position: relative;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+  margin: 12px;
+}
+
+.coluna {
+  display: grid;
+  align-content: start;
+  min-height: 150px;
+  padding: 8px;
+  border-radius: 10px;
+  background: #f4f6fb;
+}
+
+.coluna small {
+  font-size: 10.5px;
+  font-weight: 600;
+  color: #64708a;
+}
+
+.cartaoParado {
+  margin-top: 62px;
+  padding: 7px 8px;
+  border: 1px dashed #dbe2f0;
+  border-radius: 8px;
+  font-size: 10.5px;
+  color: #94a3c4;
+}
+
+.cartaoAnda {
+  position: absolute;
+  top: 30px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: calc(25% - 22px);
+  padding: 7px 8px;
+  border: 1px solid color-mix(in srgb, var(--cor) 45%, transparent);
+  border-radius: 8px;
+  background: #ffffff;
+  font-size: 10.5px;
+  color: #64708a;
+  box-shadow: 0 10px 18px -10px color-mix(in srgb, var(--cor) 70%, transparent);
+  animation: anda 8s cubic-bezier(0.65, 0, 0.35, 1) infinite;
+}
+
+.cartaoAnda > i {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: var(--cor);
+  font-size: 9px;
+  font-style: normal;
+  font-weight: 600;
+  color: #ffffff;
+}
+
+.cartaoAnda b {
+  display: block;
+  font-size: 11px;
+  color: #0c1838;
+}
+
+@keyframes anda {
+  0%,
+  16% {
+    left: 7px;
+  }
+  25%,
+  41% {
+    left: calc(25% + 5px);
+  }
+  50%,
+  66% {
+    left: calc(50% + 3px);
+  }
+  75%,
+  94% {
+    left: calc(75% + 1px);
+    border-color: #16a34a;
+  }
+  100% {
+    left: 7px;
+  }
+}
+
+/* ───── relatórios ───── */
+
+.relatorio {
+  display: grid;
+  grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr);
+  align-items: end;
+  gap: 16px;
+  padding: 14px;
+}
+
+.kpis {
+  display: grid;
+  gap: 8px;
+}
+
+.kpis span {
+  display: grid;
+  padding: 8px 10px;
+  border-radius: 9px;
+  background: #f4f6fb;
+  font-size: 10.5px;
+  color: #64708a;
+}
+
+.kpis b {
+  font-size: 18px;
+  letter-spacing: -0.02em;
+  color: #1d4ed8;
+}
+
+.grafico {
+  display: flex;
+  align-items: flex-end;
+  gap: 5px;
+  height: 150px;
+  padding: 0 4px;
+  border-bottom: 1px solid #e3e8f3;
+}
+
+.grafico i {
+  flex: 1;
+  height: var(--h);
+  border-radius: 4px 4px 0 0;
+  background: linear-gradient(180deg, #3b82f6, #1d4ed8);
+  transform-origin: bottom;
+  animation: barra 6s cubic-bezier(0.22, 1, 0.36, 1) infinite;
+  animation-delay: calc(var(--n) * 60ms);
+}
+
+@keyframes barra {
+  0% {
+    scale: 1 0.08;
+  }
+  28%,
+  86% {
+    scale: 1 1;
+  }
+  100% {
+    scale: 1 0.08;
+  }
+}
+
+/* ───── pagamento ───── */
+
+.link {
+  display: grid;
+  gap: 2px;
+  justify-self: start;
+  padding: 8px 10px;
+  border-left: 3px solid #25d366;
+  border-radius: 8px;
+  background: #ffffff;
+  color: #54656f;
+}
+
+.link small {
+  font-size: 10px;
+}
+
+.link b {
+  font-size: 13px;
+  color: #111b21;
+}
+
+.situacao {
+  position: relative;
+  display: grid;
+  height: 38px;
+  margin-top: 6px;
+}
+
+.aguardando,
+.pago {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  border-radius: 10px;
+  font-size: 12.5px;
+  font-weight: 600;
+}
+
+.aguardando {
+  background: #fff7ed;
+  color: #b45309;
+  animation: troca 6s linear infinite;
+}
+
+.pago {
+  background: #16a34a;
+  color: #ffffff;
+  animation: trocaPago 6s linear infinite;
+}
+
+@keyframes troca {
+  0%,
+  45% {
+    opacity: 1;
+    scale: 1;
+  }
+  50%,
+  95% {
+    opacity: 0;
+    scale: 0.96;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+
+@keyframes trocaPago {
+  0%,
+  45% {
+    opacity: 0;
+    scale: 0.96;
+  }
+  50%,
+  95% {
+    opacity: 1;
+    scale: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .bento * {
+    animation: none !important;
+  }
+
+  .aguardando,
+  .consultando {
+    display: none;
+  }
+}
