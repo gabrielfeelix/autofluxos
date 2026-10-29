@@ -5,7 +5,7 @@ import { DerivaDeParticulas } from './deriva-de-particulas'
 import { Desktop, Pergunta } from './pagina-do-site'
 import { GLIFO_META } from '@/components/design/glifos-oficiais'
 import { CANAIS, type CanalDoSite } from './canais-do-site'
-import { RECURSOS, type RecursoDoSite } from './recursos-do-site'
+import { RECURSOS } from './recursos-do-site'
 import { type NichoDoSite } from './nichos-do-site'
 import { AntesEDepois } from './antes-e-depois'
 import { JornadaViva } from './jornada-viva'
@@ -625,57 +625,6 @@ export function CorpoDoCanal({ canal }: { canal: CanalDoSite }) {
 }
 
 /* ─────────────────────────── partes do produto ─────────────────────────── */
-
-export function CapaDoRecurso({ recurso }: { recurso: RecursoDoSite }) {
-  return (
-    <CapaComJanela
-      olho={`Produto · ${recurso.nome}`}
-      titulo={recurso.titulo}
-      texto={recurso.subtitulo}
-      visual={<JanelaDeFicha barra={recurso.ficha.barra} titulo={recurso.ficha.titulo} linhas={recurso.ficha.linhas} />}
-    />
-  )
-}
-
-/** `children`: a peça própria da parte (o fluxo que se monta, o Inbox, a calculadora), entre os destaques e a lista. */
-export function CorpoDoRecurso({ recurso, children }: { recurso: RecursoDoSite; children?: ReactNode }) {
-  return (
-    <>
-      <section className={s.secao}>
-        <div className={s.faixa}>
-          <Cabeca olho={recurso.nome} titulo="O que muda no dia da equipe" />
-          <div className={x.dores}>
-            {recurso.destaques.map((d, i) => (
-              <article key={d.titulo} className={x.dor} data-revela data-como="escala" data-atraso={i * 90}>
-                <span className={x.dorNumero}>{String(i + 1).padStart(2, '0')}</span>
-                <h3>{d.titulo}</h3>
-                <p>{d.texto}</p>
-              </article>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {children}
-
-      <section className={s.secao}>
-        <div className={s.faixa}>
-          <Cabeca olho="Em detalhe" titulo="Tudo o que vem junto" />
-          <div className={x.noApp}>
-            {recurso.itens.map((r) => (
-              <div key={r.titulo} data-revela>
-                <strong>{r.titulo}</strong>
-                <p>{r.texto}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      <SecaoPartesDoProduto atual={recurso.slug} />
-    </>
-  )
-}
 
 /** A IA marcando o horário dentro da conversa, na prévia do WhatsApp já aprovada. */
 export function SecaoIaNaConversa() {

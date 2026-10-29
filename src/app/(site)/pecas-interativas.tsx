@@ -7,7 +7,7 @@ import { NICHOS_DO_SITE } from './nichos-do-site'
 import { CONVERSAS, PreviaWhatsApp, type ChaveDaConversa } from './previa-whatsapp'
 import x from './site.module.css'
 
-function useMovimentoReduzido(): boolean {
+export function useMovimentoReduzido(): boolean {
   return useSyncExternalStore(
     (avisar) => {
       const consulta = window.matchMedia('(prefers-reduced-motion: reduce)')

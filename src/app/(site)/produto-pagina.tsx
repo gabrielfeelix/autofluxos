@@ -3,6 +3,7 @@ import type { CSSProperties, ReactNode } from 'react'
 import { CenaFluxo, CenaFunil, CenaIA, CenaInbox, CenaRelatorio } from './bento-do-produto'
 import { RECURSOS, type RecursoDoSite } from './recursos-do-site'
 import { JanelaDeFicha } from './secoes-do-site'
+import { ConversaQuePreencheAFicha, RelatoriosEmAbas } from './pecas-do-produto'
 import p from './produto.module.css'
 import s from './pagina-inicial.module.css'
 import x from './site.module.css'
@@ -21,9 +22,10 @@ const cor = (recurso: RecursoDoSite) => ({ '--cor': recurso.cor }) as CSSPropert
 /* ───────────── capa ───────────── */
 
 /** O palco de cada parte: o tom combina com o que a cena desenha (a conversa da IA pede fundo de cor, o editor pede branco). */
-const PALCOS: Record<string, { tom: 'claro' | 'tingido' | 'cor'; cena: () => ReactNode }> = {
+/** `ficha`: o lado em que a ficha cobre o palco, o que a cena deixa livre (na IA, a resposta vem pela esquerda). */
+const PALCOS: Record<string, { tom: 'claro' | 'tingido' | 'cor'; cena: () => ReactNode; ficha?: 'direita' }> = {
   fluxos: { tom: 'claro', cena: () => <CenaFluxo /> },
-  ia: { tom: 'cor', cena: () => <CenaIA /> },
+  ia: { tom: 'tingido', cena: () => <CenaIA />, ficha: 'direita' },
   inbox: { tom: 'tingido', cena: () => <CenaInbox /> },
   'contatos-e-funil': { tom: 'cor', cena: () => <CenaFunil /> },
   transmissoes: { tom: 'claro', cena: () => <CenaTransmissao /> },
@@ -63,8 +65,8 @@ export function CapaDoProduto({ recurso }: { recurso: RecursoDoSite }) {
               {palco.cena()}
             </div>
           )}
-          <div className={p.fichaFlutuante}>
-            <JanelaDeFicha barra={recurso.ficha.barra} titulo={recurso.ficha.titulo} linhas={recurso.ficha.linhas} cor={recurso.cor} />
+          <div className={p.fichaFlutuante} data-lado={palco?.ficha}>
+            <JanelaDeFicha barra={recurso.ficha.barra} titulo={recurso.ficha.titulo} linhas={recurso.ficha.linhas.slice(0, 3)} cor={recurso.cor} />
           </div>
         </div>
       </div>
@@ -186,6 +188,54 @@ function SecaoOutrasPartes({ atual }: { atual: string }) {
             </Link>
           ))}
         </nav>
+      </div>
+    </section>
+  )
+}
+
+/* ───────────── as peças novas, com a cabeça de cada uma ───────────── */
+
+function Cabeca({ olho, titulo, texto }: { olho: string; titulo: string; texto: string }) {
+  return (
+    <div className={`${s.faixa} ${s.cabecaSecao}`}>
+      <span className={s.olho} data-revela>
+        {olho}
+      </span>
+      <h2 className={`${s.tituloSecao} ${s.tituloSecaoCentro}`} data-revela data-como="desfoque" data-atraso="60">
+        {titulo}
+      </h2>
+      <p className={`${s.chamada} ${s.chamadaCentro}`} data-revela data-atraso="100">
+        {texto}
+      </p>
+    </div>
+  )
+}
+
+export function SecaoConversaPreenche() {
+  return (
+    <section className={s.secao}>
+      <Cabeca
+        olho="Na prática"
+        titulo="A conversa preenche a ficha e move o cartão"
+        texto="O que o fluxo pergunta vira campo do contato. Quando a equipe assume e a venda sai, o cartão anda no funil sem ninguém arrastar."
+      />
+      <div className={p.palcoLargo} data-revela data-como="escala">
+        <ConversaQuePreencheAFicha />
+      </div>
+    </section>
+  )
+}
+
+export function SecaoRelatoriosEmAbas() {
+  return (
+    <section className={s.secao}>
+      <Cabeca
+        olho="Na prática"
+        titulo="Três perguntas que o relatório responde"
+        texto="Quanto o chatbot resolveu, quanto entrou de venda e em que hora a equipe faz falta. Cada número vem com a explicação na tela."
+      />
+      <div data-revela data-como="escala">
+        <RelatoriosEmAbas />
       </div>
     </section>
   )

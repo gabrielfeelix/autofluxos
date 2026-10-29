@@ -9,9 +9,11 @@
 
 .cena {
   position: relative;
+  /* Sem isto o funil, que sai pela borda de propósito, alarga a coluna da grade no celular. */
+  min-width: 0;
   justify-self: end;
-  width: min(100%, 580px);
-  padding: 0 0 120px 70px;
+  width: min(100%, 540px);
+  padding-bottom: 64px;
 }
 
 .palco {
@@ -19,7 +21,7 @@
   display: flex;
   flex-direction: column;
   gap: 18px;
-  min-height: 400px;
+  min-height: 440px;
   padding: 30px;
   overflow: hidden;
   border-radius: 28px;
@@ -35,8 +37,10 @@
 .palco[data-tom='cor'] {
   background:
     var(--casca-fios-2),
-    linear-gradient(145deg, color-mix(in srgb, var(--cor) 88%, #ffffff), color-mix(in srgb, var(--cor) 62%, #0c1838));
+    linear-gradient(145deg, color-mix(in srgb, var(--cor) 82%, #ffffff), color-mix(in srgb, var(--cor) 55%, #0c1838));
   color: #ffffff;
+  outline: 1px solid rgb(255 255 255 / 0.22);
+  outline-offset: -1px;
 }
 
 /* O editor de fluxos ocupa o palco inteiro, sem a borda da peça larga do bento. */
@@ -65,18 +69,35 @@
   justify-content: center;
 }
 
+/* A ficha sai pela borda esquerda do palco, no vão entre o texto e a cena, e cobre só o canto. */
 .fichaFlutuante {
   position: absolute;
-  left: 0;
+  left: -52px;
   bottom: 0;
   z-index: 2;
-  width: 290px;
-  font-size: 13px;
+  width: 270px;
+  font-size: 12.5px;
+}
+
+.fichaFlutuante[data-lado='direita'] {
+  left: auto;
+  right: -36px;
+}
+
+/* Na ficha estreita o rótulo quebra linha em vez de empurrar o valor para fora. */
+.fichaFlutuante dl dt {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.fichaFlutuante dl dd {
+  flex: 0 1 auto;
 }
 
 /* A ficha da capa é compacta: a janela do app, não uma tabela. */
 .fichaFlutuante dl > div {
   padding-block: 7px;
+  font-size: 13px;
 }
 
 .fichaFlutuante strong {
@@ -94,9 +115,12 @@
     min-height: 340px;
   }
 
-  .fichaFlutuante {
+  .fichaFlutuante,
+  .fichaFlutuante[data-lado] {
     position: relative;
-    width: min(100%, 320px);
+    left: auto;
+    right: auto;
+    width: min(100% - 32px, 320px);
     margin: -40px 0 0 16px;
   }
 }
@@ -579,5 +603,589 @@
   .mudancas h3::before {
     transition: none;
     scale: 1 1;
+  }
+}
+
+/* ───── peças: o palco colorido em volta delas ───── */
+
+.palcoLargo {
+  width: min(100% - 40px, 1360px);
+  margin: 48px auto 0;
+  padding: clamp(20px, 4vw, 56px);
+  border-radius: 32px;
+  background:
+    var(--casca-fios-2),
+    linear-gradient(145deg, var(--cor), color-mix(in srgb, var(--cor) 62%, #0c1838));
+}
+
+/* ───── contatos e funil: a conversa preenche a ficha ───── */
+
+.preenche {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr);
+  gap: 20px;
+  max-width: 1040px;
+  margin-inline: auto;
+}
+
+.preencheConversa {
+  display: flex;
+  flex-direction: column;
+  min-height: 420px;
+  overflow: hidden;
+  border-radius: 20px;
+  background: #efeae2;
+  box-shadow: 0 40px 70px -40px rgb(0 0 0 / 0.55);
+}
+
+.preencheTopo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 16px;
+  background: #ffffff;
+  font-size: 12px;
+  color: #64708a;
+}
+
+.preencheTopo > i {
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--cor) 14%, #ffffff);
+  font-size: 12px;
+  font-style: normal;
+  font-weight: 600;
+  color: var(--cor);
+}
+
+.preencheTopo b {
+  display: block;
+  font-size: 14px;
+  color: #111b21;
+}
+
+.preencheFalas {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  justify-content: flex-end;
+  gap: 6px;
+  padding: 16px;
+  overflow: hidden;
+}
+
+.fala {
+  max-width: 82%;
+  padding: 7px 10px;
+  border-radius: 10px;
+  background: #ffffff;
+  font-size: 13.5px;
+  line-height: 1.4;
+  color: #111b21;
+  box-shadow: 0 1px 1px rgb(0 0 0 / 0.08);
+}
+
+.fala[data-de='cliente'] {
+  align-self: flex-end;
+  background: #d9fdd3;
+}
+
+.fala small {
+  display: block;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--cor);
+}
+
+.fala[data-nova] {
+  animation: falaChega 0.45s var(--curva) both;
+}
+
+.fala[data-nova] + .fala[data-nova] {
+  animation-delay: 0.5s;
+}
+
+@keyframes falaChega {
+  from {
+    opacity: 0;
+    translate: 0 10px;
+  }
+}
+
+.preencheLado {
+  display: grid;
+  align-content: start;
+  gap: 14px;
+}
+
+.fichaContato {
+  overflow: hidden;
+  border-radius: 20px;
+  background: #ffffff;
+  color: #0c1838;
+  box-shadow: 0 40px 70px -40px rgb(0 0 0 / 0.55);
+}
+
+.fichaContatoTopo {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 16px 20px 8px;
+}
+
+.fichaContatoTopo strong {
+  font-size: 16px;
+  letter-spacing: -0.02em;
+}
+
+.fichaContatoTopo small {
+  font-size: 12px;
+  color: #64708a;
+}
+
+.fichaContato dl {
+  margin: 0;
+  padding: 4px 20px 12px;
+}
+
+.fichaContato dl > div {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  padding: 9px 0;
+  border-top: 1px solid #edf0f7;
+  font-size: 13.5px;
+}
+
+.fichaContato dt {
+  color: #64708a;
+}
+
+.fichaContato dd {
+  margin: 0;
+  font-weight: 600;
+  text-align: right;
+}
+
+.fichaContato dl > div[data-novo] dd {
+  animation: campoChega 1.2s var(--curva) both;
+}
+
+@keyframes campoChega {
+  0% {
+    opacity: 0;
+    background: transparent;
+  }
+  25% {
+    opacity: 1;
+    background: color-mix(in srgb, var(--cor) 16%, #ffffff);
+  }
+  100% {
+    background: transparent;
+  }
+}
+
+.vazio {
+  display: inline-block;
+  width: 96px;
+  height: 10px;
+  border-radius: 5px;
+  background: #edf0f7;
+  vertical-align: middle;
+}
+
+.funilMini {
+  position: relative;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 6px;
+  padding: 10px;
+  border-radius: 16px;
+  background: rgb(255 255 255 / 0.12);
+  border: 1px solid rgb(255 255 255 / 0.16);
+}
+
+.funilMini > span {
+  min-height: 96px;
+  padding: 8px;
+  border-radius: 10px;
+  background: rgb(255 255 255 / 0.08);
+  font-size: 11.5px;
+  font-weight: 600;
+  color: rgb(255 255 255 / 0.75);
+}
+
+.funilMini > span[data-atual] {
+  color: #ffffff;
+  background: rgb(255 255 255 / 0.16);
+}
+
+/* O cartão anda pela coluna da etapa atual: um quarto da largura por etapa. */
+.funilCartao {
+  position: absolute;
+  bottom: 16px;
+  --coluna: calc((100% - 38px) / 4);
+  left: calc(16px + var(--etapa) * (var(--coluna) + 6px));
+  display: grid;
+  width: calc(var(--coluna) - 12px);
+  padding: 6px 8px;
+  border-radius: 8px;
+  background: #ffffff;
+  font-size: 12px;
+  color: #0c1838;
+  box-shadow: 0 10px 20px -10px rgb(0 0 0 / 0.5);
+  transition:
+    left 0.7s var(--curva),
+    box-shadow 0.3s;
+}
+
+.funilCartao small {
+  font-size: 11px;
+  font-weight: 500;
+  color: #64708a;
+}
+
+.funilCartao[data-ganho] {
+  box-shadow:
+    0 0 0 3px #22c55e,
+    0 10px 20px -10px rgb(0 0 0 / 0.5);
+}
+
+/* As etapas embaixo: quem clica escolhe, e o automático para. */
+.etapas {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.etapas button {
+  padding: 7px 13px;
+  border: 1px solid rgb(255 255 255 / 0.28);
+  border-radius: 999px;
+  background: transparent;
+  font: inherit;
+  font-size: 13px;
+  color: rgb(255 255 255 / 0.8);
+  cursor: pointer;
+  transition:
+    background 0.2s,
+    color 0.2s;
+}
+
+.etapas button[data-feito] {
+  color: #ffffff;
+  border-color: rgb(255 255 255 / 0.5);
+}
+
+.etapas button[aria-selected='true'] {
+  background: #ffffff;
+  border-color: #ffffff;
+  color: var(--cor);
+}
+
+.etapas button:focus-visible,
+.relatorioBarra button:focus-visible {
+  outline: 2px solid #ffffff;
+  outline-offset: 2px;
+}
+
+@media (max-width: 800px) {
+  .preenche {
+    grid-template-columns: 1fr;
+  }
+
+  .preencheConversa {
+    min-height: 300px;
+  }
+}
+
+/* ───── relatórios: as três telas ───── */
+
+.relatorio {
+  width: min(100% - 40px, 1120px);
+  margin: 48px auto 0;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: 24px;
+  background: #ffffff;
+  box-shadow: var(--sombra-janela);
+}
+
+.relatorioBarra {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px 20px;
+  padding: 14px 18px;
+  border-bottom: 1px solid var(--line);
+  background: #f6f8fd;
+}
+
+.relatorioBarra > div {
+  display: flex;
+  gap: 4px;
+  padding: 4px;
+  border-radius: 12px;
+  background: #ffffff;
+  border: 1px solid var(--line);
+}
+
+.relatorioBarra button {
+  padding: 7px 14px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  font: inherit;
+  font-size: 13.5px;
+  font-weight: 500;
+  color: var(--muted);
+  cursor: pointer;
+}
+
+.relatorioBarra button[aria-selected='true'] {
+  background: var(--cor);
+  color: #ffffff;
+}
+
+.relatorioBarra button:focus-visible {
+  outline-color: var(--cor);
+}
+
+.relatorioBarra small {
+  font-size: 12.5px;
+  color: var(--dim);
+}
+
+.relatorioTela {
+  min-height: 340px;
+  padding: clamp(20px, 4vw, 44px);
+  animation: telaChega 0.5s var(--curva) both;
+}
+
+@keyframes telaChega {
+  from {
+    opacity: 0;
+    translate: 0 8px;
+  }
+}
+
+.telaAtendimento {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: clamp(24px, 5vw, 64px);
+  align-items: center;
+}
+
+.rosca {
+  display: grid;
+  place-content: center;
+  width: 240px;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  background:
+    radial-gradient(circle, #ffffff 58%, transparent 58.5%),
+    conic-gradient(var(--cor) calc(var(--enche-rosca) * 1%), #e8ecf4 0);
+  text-align: center;
+  animation: rosca 1.4s var(--curva) both;
+  --enche-rosca: var(--parte);
+}
+
+@property --enche-rosca {
+  syntax: '<number>';
+  inherits: false;
+  initial-value: 0;
+}
+
+@keyframes rosca {
+  from {
+    --enche-rosca: 0;
+  }
+}
+
+.rosca strong {
+  font-size: 54px;
+  font-weight: 600;
+  line-height: 1;
+  letter-spacing: -0.05em;
+  color: var(--cor);
+}
+
+.rosca span {
+  max-width: 13ch;
+  margin-top: 6px;
+  font-size: 13px;
+  line-height: 1.35;
+  color: var(--muted);
+}
+
+.indicadores {
+  display: grid;
+  gap: 0;
+  margin: 0;
+}
+
+.indicadores > div {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 2px 16px;
+  padding: 16px 0;
+  border-top: 1px solid var(--line);
+}
+
+.indicadores > div:first-child {
+  border-top: 0;
+}
+
+.indicadores dt {
+  font-size: 14px;
+  color: var(--muted);
+}
+
+.indicadores dd {
+  grid-row: span 2;
+  margin: 0;
+  font-size: clamp(24px, 2.6vw, 34px);
+  font-weight: 600;
+  letter-spacing: -0.03em;
+  text-align: right;
+}
+
+.indicadores small {
+  font-size: 12.5px;
+  color: var(--dim);
+}
+
+.indicadores[data-linha] {
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+}
+
+.indicadores[data-linha] > div {
+  display: grid;
+  grid-template-columns: 1fr;
+  padding: 18px 20px;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+}
+
+.indicadores[data-linha] dd {
+  grid-row: auto;
+  text-align: left;
+}
+
+.telaVendas {
+  display: grid;
+  gap: 28px;
+}
+
+.maisVendidos {
+  display: grid;
+  gap: 10px;
+}
+
+.maisVendidos > small,
+.telaHorarios > small {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.maisVendidos > span {
+  display: grid;
+  grid-template-columns: 170px 1fr 40px;
+  gap: 14px;
+  align-items: center;
+  font-size: 14px;
+}
+
+.maisVendidos i {
+  height: 12px;
+  border-radius: 6px;
+  background: linear-gradient(90deg, var(--cor), color-mix(in srgb, var(--cor) 60%, #ffffff));
+  width: var(--w);
+  transform-origin: left;
+  animation: barraCresce 0.9s calc(var(--n) * 0.08s) var(--curva) both;
+}
+
+@keyframes barraCresce {
+  from {
+    scale: 0 1;
+  }
+}
+
+.maisVendidos b {
+  text-align: right;
+}
+
+.telaHorarios {
+  display: grid;
+  gap: 16px;
+}
+
+.calor {
+  display: grid;
+  grid-template-columns: 40px repeat(8, 1fr);
+  gap: 5px;
+  font-size: 12px;
+  color: var(--dim);
+}
+
+.calorHora {
+  text-align: center;
+}
+
+.calorDia {
+  align-self: center;
+}
+
+.calor > i {
+  height: 30px;
+  border-radius: 6px;
+  background: color-mix(in srgb, var(--cor) calc(var(--v) * 100%), #f1f4fa);
+  animation: telaChega 0.4s calc(var(--n) * 0.025s) var(--curva) both;
+}
+
+@media (max-width: 720px) {
+  .telaAtendimento {
+    grid-template-columns: 1fr;
+    justify-items: center;
+  }
+
+  .indicadores {
+    width: 100%;
+  }
+
+  .indicadores[data-linha] {
+    grid-template-columns: 1fr;
+  }
+
+  .maisVendidos > span {
+    grid-template-columns: 1fr 34px;
+  }
+
+  .maisVendidos i {
+    grid-column: 1 / -1;
+    grid-row: 2;
+  }
+
+  .calor > i {
+    height: 22px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .preenche *,
+  .relatorio * {
+    animation: none !important;
+    transition: none !important;
   }
 }

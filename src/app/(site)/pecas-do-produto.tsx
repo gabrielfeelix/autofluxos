@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from 'react'
+import { useMovimentoReduzido } from './pecas-interativas'
 import p from './produto.module.css'
 
 /*
@@ -18,18 +19,15 @@ function useAvanco(total: number, tempo: number) {
   const [visivel, setVisivel] = useState(false)
   const raiz = useRef<HTMLDivElement>(null)
   const primeira = useRef(true)
+  const calmo = useMovimentoReduzido()
 
   useEffect(() => {
     const el = raiz.current
-    if (!el) return
-    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
-      setAtiva(total - 1)
-      return
-    }
+    if (!el || calmo) return
     const o = new IntersectionObserver(([e]) => setVisivel(e!.isIntersecting), { threshold: 0.35 })
     o.observe(el)
     return () => o.disconnect()
-  }, [total])
+  }, [calmo])
 
   useEffect(() => {
     if (!visivel || parado) return
@@ -47,7 +45,8 @@ function useAvanco(total: number, tempo: number) {
     setParado(true)
     setAtiva(i)
   }
-  return { ativa, escolher, raiz }
+  // Sem movimento, fica no fim, com tudo preenchido, até alguém escolher uma etapa.
+  return { ativa: calmo && !parado ? total - 1 : ativa, escolher, raiz }
 }
 
 /* ───────────── contatos e funil: a conversa preenche a ficha ───────────── */
