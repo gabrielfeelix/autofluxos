@@ -16,7 +16,10 @@
   grid-template-columns: repeat(12, minmax(0, 1fr));
   grid-auto-flow: dense;
   gap: 18px;
-  margin: 0 calc(50% - 50vw + 40px);
+  /* Sai da faixa para quase a tela toda, mas para em 1440px: em monitor largo esticava demais. */
+  width: min(100vw - 80px, 1440px);
+  margin-left: 50%;
+  translate: -50% 0;
 }
 
 .peca {
@@ -407,13 +410,14 @@
   animation-delay: calc(var(--f) * 3s - 9s);
 }
 
+/* Uma fila sai (27 a 30%) antes de a próxima entrar (30 a 33%): sem nomes sobrepostos. */
 @keyframes fila {
   0%,
-  30% {
+  27% {
     opacity: 1;
     translate: 0 0;
   }
-  33%,
+  30%,
   97% {
     opacity: 0;
     translate: 0 6px;
@@ -803,7 +807,7 @@
 @media (max-width: 1100px) {
   .bento {
     grid-template-columns: repeat(2, minmax(0, 1fr));
-    margin-inline: calc(50% - 50vw + 20px);
+    width: calc(100vw - 40px);
   }
 
   .peca,
@@ -820,7 +824,9 @@
 @media (max-width: 700px) {
   .bento {
     grid-template-columns: 1fr;
-    margin-inline: 0;
+    width: 100%;
+    margin-left: 0;
+    translate: none;
   }
 
   .peca[data-forma='larga'] {
