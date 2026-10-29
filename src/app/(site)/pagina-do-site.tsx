@@ -413,6 +413,18 @@ export function SecaoPrecos() {
           <section className={`${s.secao} ${s.secaoAbaixoDaCapa}`} id="precos">
             <div className={`${s.focoLuz} ${s.focoEsquerda}`} aria-hidden />
             <div className={s.faixa}>
+              {/*
+                O título anuncia a seção: sem ele, a capa azul virava branco vazio e
+                a quebra parecia seca (Edu e Gabriel, 29/out). Não repete o da capa.
+                Sem revelação: é o primeiro texto abaixo da capa e virava o LCP.
+              */}
+              <div className={s.cabecaSecao}>
+                <span className={s.olho}>Planos</span>
+                <h2 className={`${s.tituloSecao} ${s.tituloSecaoCentro}`} style={{ maxWidth: '26ch' }}>
+                  Os planos crescem com a sua equipe
+                </h2>
+              </div>
+
               <div className={s.planos}>
                 {PLANOS.map((plano, indice) => (
                   <Plano
