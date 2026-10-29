@@ -195,18 +195,24 @@ export function AntesEDepois() {
   const [parado, setParado] = useState(false)
   const [visivel, setVisivel] = useState(false)
   const raiz = useRef<HTMLDivElement>(null)
+  const primeira = useRef(true)
 
   useEffect(() => {
     const el = raiz.current
     if (!el || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return
-    const o = new IntersectionObserver(([e]) => setVisivel(e!.isIntersecting), { threshold: 0.4 })
+    const o = new IntersectionObserver(([e]) => setVisivel(e!.isIntersecting), { threshold: 0.3 })
     o.observe(el)
     return () => o.disconnect()
   }, [])
 
   useEffect(() => {
     if (!visivel || parado) return
-    const r = window.setTimeout(() => setAgora((v) => !v), agora ? 5200 : 2600)
+    // Na primeira vez a bagunça fica só 1 s: quem chega na seção já vê a operação se arrumar.
+    const espera = agora ? 5200 : primeira.current ? 1000 : 2400
+    const r = window.setTimeout(() => {
+      primeira.current = false
+      setAgora((v) => !v)
+    }, espera)
     return () => window.clearTimeout(r)
   }, [agora, visivel, parado])
 
