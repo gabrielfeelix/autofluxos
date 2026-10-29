@@ -325,7 +325,14 @@ export async function proxy(req: NextRequest) {
   if (PREFIXOS_ABERTOS.some((prefixo) => caminho.startsWith(prefixo))) return NextResponse.next()
 
   // Presença, não validade. Ver o comentário no topo.
-  if (getSessionCookie(req) !== null) return NextResponse.next()
+  if (getSessionCookie(req) !== null) {
+    if (!caminho.startsWith('/clientes/')) return NextResponse.next()
+    // O caminho vai junto para o esqueleto de fora da conta (`app/clientes/loading.tsx`):
+    // no recarregar, ele aparece antes do layout da conta e precisa saber qual tela desenhar.
+    const cabecalhos = new Headers(req.headers)
+    cabecalhos.set('x-caminho', caminho)
+    return NextResponse.next({ request: { headers: cabecalhos } })
+  }
 
   // Rota de API não redireciona nem renderiza: ela responde status.
   if (caminho.startsWith('/api/')) return new NextResponse('sessão expirada', { status: 401 })
