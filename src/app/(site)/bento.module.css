@@ -4,24 +4,68 @@
  * duas. O palco de cada um é a cor da peça com a trama de fios, e a tela em
  * cima dele anima em loop, só com CSS.
  */
-/* Quase de ponta a ponta: sai da faixa e deixa 40px de cada lado da tela, três por linha. */
+/*
+ * Bento assimétrico numa grade de 12 colunas, de quase ponta a ponta:
+ * Fluxos (deitado) e IA na primeira linha; Inbox alto à esquerda, com
+ * pagamento e relatórios ao lado e o CRM (deitado, invertido) embaixo deles.
+ * O título fica centralizado em cima, fora da grade.
+ */
 .bento {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 16px;
-  margin: 48px calc(50% - 50vw + 40px) 0;
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+  grid-auto-flow: dense;
+  gap: 18px;
+  margin: 0 calc(50% - 50vw + 40px);
+}
+
+.cabeca {
+  display: grid;
+  justify-items: center;
+  margin-bottom: 48px;
+  text-align: center;
 }
 
 .peca {
+  grid-column: span 4;
   display: flex;
   flex-direction: column;
   overflow: hidden;
   border: 1px solid var(--line);
-  border-radius: 22px;
+  border-radius: 24px;
   background: #ffffff;
   transition:
     translate 0.35s var(--curva),
     box-shadow 0.35s var(--curva);
+}
+
+.peca[data-forma='deitado'],
+.peca[data-forma='invertido'] {
+  grid-column: span 8;
+  flex-direction: row-reverse;
+}
+
+.peca[data-forma='invertido'] {
+  flex-direction: row;
+}
+
+.peca[data-forma='deitado'] .palco,
+.peca[data-forma='invertido'] .palco {
+  flex: 1.7;
+}
+
+.peca[data-forma='deitado'] .pe,
+.peca[data-forma='invertido'] .pe {
+  flex: 1;
+  align-self: center;
+  padding: 32px;
+}
+
+.peca[data-forma='alto'] {
+  grid-row: span 2;
+}
+
+.peca[data-forma='alto'] .palco {
+  flex: 1;
 }
 
 .peca:hover {
@@ -33,6 +77,13 @@
   .bento {
     grid-template-columns: repeat(2, minmax(0, 1fr));
     margin-inline: calc(50% - 50vw + 20px);
+  }
+
+  .peca,
+  .peca[data-forma] {
+    grid-column: span 1;
+    grid-row: auto;
+    flex-direction: column;
   }
 }
 
@@ -46,8 +97,8 @@
 .palco {
   display: grid;
   place-items: center;
-  min-height: 270px;
-  padding: 28px;
+  min-height: 280px;
+  padding: 32px;
   background:
     var(--casca-fios-3),
     linear-gradient(145deg, var(--cor) 0%, color-mix(in srgb, var(--cor) 62%, #0c1838) 100%);
@@ -55,20 +106,35 @@
 }
 
 .pe {
-  padding: 20px 24px 24px;
+  padding: 22px 26px 26px;
+}
+
+.indice {
+  display: block;
+  margin-bottom: 10px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--cor);
+  font-variant-numeric: tabular-nums;
 }
 
 .pe h3 {
   margin: 0;
-  font-size: 18px;
+  font-size: 20px;
   font-weight: 600;
   letter-spacing: -0.02em;
 }
 
+.peca[data-forma='deitado'] .pe h3,
+.peca[data-forma='invertido'] .pe h3 {
+  font-size: clamp(22px, 2vw, 28px);
+  line-height: 1.15;
+}
+
 .pe p {
-  max-width: 52ch;
-  margin: 6px 0 0;
-  font-size: 14.5px;
+  max-width: 46ch;
+  margin: 8px 0 0;
+  font-size: 15px;
   line-height: 1.55;
   color: var(--muted);
 }
@@ -370,7 +436,7 @@
 
 .filas {
   position: relative;
-  height: 112px;
+  height: 236px;
   margin: 0 10px 12px;
 }
 
@@ -423,6 +489,18 @@
   font-style: normal;
   font-weight: 600;
   color: var(--cor);
+}
+
+.linha > em {
+  margin-left: auto;
+  font-size: 10.5px;
+  font-style: normal;
+  font-weight: 600;
+  color: #64708a;
+}
+
+.linha > em[data-espera] {
+  color: #b45309;
 }
 
 .linha b {

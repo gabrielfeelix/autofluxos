@@ -9,72 +9,86 @@ import b from './bento.module.css'
  * (fila por setor) e `79aa74f4` (IA do atendente).
  */
 
-type Peca = { titulo: string; texto: string; cor: string; largo?: boolean; tela: ReactNode }
+/** `deitado`: texto de um lado, tela do outro (`invertido` troca os lados). `alto`: ocupa duas linhas. */
+type Forma = 'deitado' | 'invertido' | 'alto' | 'normal'
+type Peca = { titulo: string; texto: string; cor: string; forma: Forma; tela: ReactNode }
 
-export function BentoDoProduto() {
+export function BentoDoProduto({ cabeca }: { cabeca: ReactNode }) {
   const pecas: Peca[] = [
     {
       titulo: 'Fluxos e chatbot',
       texto: 'Monte o atendimento arrastando blocos. Teste na hora e publique sem programar.',
       cor: '#1d4ed8',
-      largo: true,
+      forma: 'deitado',
       tela: <TelaFluxo />,
     },
     {
       titulo: 'IA que conhece o seu negócio',
       texto: 'Responde pelo catálogo e pelas suas regras. Quando não sabe, chama a equipe.',
       cor: '#e8743b',
+      forma: 'normal',
       tela: <TelaIA />,
     },
     {
       titulo: 'Inbox com fila por setor',
       texto: 'Vendas, suporte e financeiro no mesmo número, cada um com a sua fila.',
       cor: '#0e7490',
+      forma: 'alto',
       tela: <TelaInbox />,
     },
     {
       titulo: 'CRM e funil de vendas',
       texto: 'Cada negociação com etapa, valor e responsável. O cartão anda junto com a conversa.',
       cor: '#2f4a8a',
-      largo: true,
+      forma: 'invertido',
       tela: <TelaFunil />,
     },
     {
       titulo: 'Relatórios',
       texto: 'Quanto o chatbot resolveu, quanto a equipe demorou para responder e quanto vendeu pelo chat.',
       cor: '#334155',
-      largo: true,
+      forma: 'normal',
       tela: <TelaRelatorio />,
     },
     {
       titulo: 'Pagamento no chat',
       texto: 'Link ou Pix na conversa, e a confirmação do banco chega sozinha.',
       cor: '#0f8f6b',
+      forma: 'normal',
       tela: <TelaPagamento />,
     },
   ]
+  // A ordem na grade: Fluxos largo e IA; Inbox alto à esquerda, pagamento e relatórios ao lado; CRM largo embaixo deles.
+  const ORDEM = [0, 1, 2, 5, 4, 3]
   return (
+    <>
+    <div className={b.cabeca}>{cabeca}</div>
     <div className={b.bento}>
-      {pecas.map((p, i) => (
-        <article
-          key={p.titulo}
-          className={b.peca}
-          data-largo={p.largo || undefined}
-          style={{ '--cor': p.cor, '--fios-x': `${-i * 230}px`, '--fios-y': `${-(i % 3) * 160}px` } as CSSProperties}
-          data-revela
-          data-como="escala"
-          data-atraso={i * 70}
-        >
-          <div className={b.palco} aria-hidden>
-            {p.tela}
-          </div>
-          <div className={b.pe}>
-            <h3>{p.titulo}</h3>
-            <p>{p.texto}</p>
-          </div>
-        </article>
-      ))}
+      {ORDEM.map((i, n) => {
+        const p = pecas[i]!
+        return (
+          <article
+            key={p.titulo}
+            className={b.peca}
+            data-forma={p.forma}
+            style={{ '--cor': p.cor, '--fios-x': `${-i * 230}px`, '--fios-y': `${-(i % 3) * 160}px` } as CSSProperties}
+            data-revela
+            data-como="escala"
+            data-atraso={n * 70}
+          >
+            <div className={b.palco} aria-hidden>
+              {p.tela}
+            </div>
+            <div className={b.pe}>
+              <small className={b.indice}>{String(n + 1).padStart(2, '0')}</small>
+              <h3>{p.titulo}</h3>
+              <p>{p.texto}</p>
+            </div>
+          </article>
+        )
+      })}
     </div>
+    </>
   )
 }
 
@@ -160,16 +174,22 @@ function TelaIA() {
 function TelaInbox() {
   const filas = [
     [
-      ['MC', 'Marina Costa', 'Dá para parcelar?'],
-      ['JP', 'Júlia Pereira', 'Tem na cor preta?'],
+      ['MC', 'Marina Costa', 'Dá para parcelar?', 'Ana'],
+      ['JP', 'Júlia Pereira', 'Tem na cor preta?', 'espera 1 min'],
+      ['TS', 'Tiago Souza', 'Entregam em Maringá?', 'Diego'],
+      ['LR', 'Lucas Rocha', 'Quero o modelo maior', 'chatbot'],
     ],
     [
-      ['AL', 'André Lima', 'Parou de esquentar'],
-      ['TS', 'Tiago Souza', 'Como troco a peça?'],
+      ['AL', 'André Lima', 'Parou de esquentar', 'Bruno'],
+      ['TS', 'Tânia Silva', 'Como troco a peça?', 'espera 3 min'],
+      ['PM', 'Paulo Melo', 'Manual em português?', 'chatbot'],
+      ['FN', 'Fábio Nunes', 'A garantia cobre?', 'Bruno'],
     ],
     [
-      ['RS', 'Rafael Souza', 'Segue o comprovante'],
-      ['CB', 'Carla Brito', 'Preciso da nota'],
+      ['RS', 'Rafael Souza', 'Segue o comprovante', 'Carla'],
+      ['CB', 'Carla Brito', 'Preciso da nota', 'espera 2 min'],
+      ['VM', 'Vera Moura', 'Boleto venceu', 'chatbot'],
+      ['EO', 'Edu Oliveira', 'Dá para dividir?', 'Carla'],
     ],
   ]
   return (
@@ -183,13 +203,14 @@ function TelaInbox() {
       <div className={b.filas}>
         {filas.map((fila, f) => (
           <div key={f} className={b.fila} style={{ '--f': f } as CSSProperties}>
-            {fila.map(([sigla, nome, texto]) => (
-              <span key={sigla} className={b.linha}>
+            {fila.map(([sigla, nome, texto, quem]) => (
+              <span key={nome} className={b.linha}>
                 <i>{sigla}</i>
                 <span>
                   <b>{nome}</b>
                   {texto}
                 </span>
+                <em data-espera={quem!.startsWith('espera') || undefined}>{quem}</em>
               </span>
             ))}
           </div>

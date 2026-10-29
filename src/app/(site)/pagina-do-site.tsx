@@ -294,15 +294,19 @@ export function SecaoOQueFaz() {
           <section className={s.secao}>
             <div className={`${s.focoLuz} ${s.focoEsquerda}`} aria-hidden />
             <div className={`${s.faixa} ${s.faixaLarga}`}>
-              <span className={s.olho} data-revela>
-                O que ele faz
-              </span>
-              <h2 className={s.tituloSecao} data-revela data-como="desfoque" data-atraso="60">
-                Seis peças que trabalham juntas
-              </h2>
-                <span className={s.risco} data-revela data-atraso="90" aria-hidden />
-
-              <BentoDoProduto />
+              <BentoDoProduto
+                cabeca={
+                  <>
+                    <span className={s.olho} data-revela>
+                      O que ele faz
+                    </span>
+                    <h2 className={`${s.tituloSecao} ${s.tituloSecaoCentro}`} data-revela data-como="desfoque" data-atraso="60">
+                      Seis peças que trabalham juntas
+                    </h2>
+                    <span className={`${s.risco} ${s.riscoCentro}`} data-revela data-atraso="90" aria-hidden />
+                  </>
+                }
+              />
             </div>
           </section>
   )
