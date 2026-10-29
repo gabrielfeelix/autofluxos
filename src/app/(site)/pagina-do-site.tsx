@@ -1,4 +1,6 @@
 import Link from 'next/link'
+import { CANAIS } from './canais-do-site'
+import { RECURSOS } from './recursos-do-site'
 import type { ReactNode } from 'react'
 import {
   anualDoPlano,
@@ -148,18 +150,29 @@ export function PaginaDoSite({ capa, children }: { capa: ReactNode; children: Re
 
             <nav className={s.rodapeColuna}>
               <span className={s.rodapeTitulo}>Produto</span>
-              <a className={s.rodapeLink} data-n="001" href="/produto">
-                O que ele faz
-              </a>
-              <a className={s.rodapeLink} data-n="002" href="/produto#como">
-                Como funciona
-              </a>
-              <a className={s.rodapeLink} data-n="003" href="/precos">
+              <Link className={s.rodapeLink} data-n="001" href="/produto">
+                Visão geral
+              </Link>
+              {RECURSOS.map((r, i) => (
+                <Link key={r.slug} className={s.rodapeLink} data-n={String(i + 2).padStart(3, '0')} href={`/produto/${r.slug}`}>
+                  {r.nome}
+                </Link>
+              ))}
+            </nav>
+
+            <nav className={s.rodapeColuna}>
+              <span className={s.rodapeTitulo}>Canais</span>
+              {CANAIS.map((c, i) => (
+                <Link key={c.slug} className={s.rodapeLink} data-n={String(i + 1).padStart(3, '0')} href={`/canais/${c.slug}`}>
+                  {c.nome}
+                </Link>
+              ))}
+              <Link className={s.rodapeLink} data-n={String(CANAIS.length + 1).padStart(3, '0')} href="/integracoes">
+                Integrações
+              </Link>
+              <Link className={s.rodapeLink} data-n={String(CANAIS.length + 2).padStart(3, '0')} href="/precos">
                 Preços
-              </a>
-              <a className={s.rodapeLink} data-n="004" href="/precos#duvidas">
-                Dúvidas
-              </a>
+              </Link>
             </nav>
 
             <nav className={s.rodapeColuna}>

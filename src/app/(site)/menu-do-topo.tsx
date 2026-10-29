@@ -37,11 +37,11 @@ const ITENS: { chave: Chave; rotulo: string }[] = [
 ]
 
 const PRODUTO = [
-  { titulo: 'Fluxos e chatbot', texto: 'Blocos que você arrasta, liga e testa na hora.', href: '/produto#fluxo', icone: <IconeFluxo /> },
-  { titulo: 'IA que lê o seu negócio', texto: 'Responde pelo catálogo e pelas regras. Sem resposta, chama a equipe.', href: '/#nichos', icone: <IconeIA /> },
-  { titulo: 'Inbox da equipe', texto: 'Todas as conversas numa fila, com a ficha do cliente ao lado.', href: '/produto#como', icone: <IconeInbox /> },
-  { titulo: 'Contatos e funil', texto: 'Etiquetas, etapas e negócios de cada cliente.', href: '/produto#como', icone: <IconeContatos /> },
-  { titulo: 'Transmissões', texto: 'Campanhas com modelo aprovado pela Meta e retorno por contato.', href: '/precos', icone: <IconeTransmissao /> },
+  { titulo: 'Fluxos e chatbot', texto: 'Blocos que você arrasta, liga e testa na hora.', href: '/produto/fluxos', icone: <IconeFluxo /> },
+  { titulo: 'IA que lê o seu negócio', texto: 'Responde pelo catálogo e pelas regras. Sem resposta, chama a equipe.', href: '/produto/ia', icone: <IconeIA /> },
+  { titulo: 'Inbox da equipe', texto: 'Todas as conversas numa fila, com a ficha do cliente ao lado.', href: '/produto/inbox', icone: <IconeInbox /> },
+  { titulo: 'Contatos e funil', texto: 'Etiquetas, etapas e negócios de cada cliente.', href: '/produto/contatos-e-funil', icone: <IconeContatos /> },
+  { titulo: 'Transmissões', texto: 'Campanhas com modelo aprovado pela Meta e retorno por contato.', href: '/produto/transmissoes', icone: <IconeTransmissao /> },
 ]
 
 const RECURSOS = [
@@ -296,9 +296,9 @@ function PainelProduto() {
             <li key={r}>{r}</li>
           ))}
         </ul>
-        <a href="/produto#como" className={m.mais}>
-          Como funciona <IconeDireita />
-        </a>
+        <Link href="/produto" className={m.mais}>
+          Visão geral do produto <IconeDireita />
+        </Link>
       </div>
 
       <a href="/precos" className={m.chamada}>

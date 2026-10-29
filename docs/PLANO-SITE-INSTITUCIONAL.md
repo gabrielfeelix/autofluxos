@@ -108,10 +108,15 @@ Feito em 28/out à noite, antes do merge no `main`:
 - Bento "O que ele faz" e janelas do "Como funciona" com conteúdo real; a
   janela de resultados usa os números medidos (74%, 1 min 46 s).
 
+Feito em 29/out: abas viram páginas. `/canais/[slug]` (WhatsApp,
+Instagram, chat do site, Telegram; dados em `canais-do-site.ts`, limites
+lidos de `src/core/canais.ts`) e `/produto/[slug]` (fluxos, ia, inbox,
+contatos-e-funil, transmissoes, relatorios; dados em `recursos-do-site.ts`).
+Menu, rodapé (colunas Produto e Canais), proxy e sitemap apontam para elas.
+
 Falta:
 
-1. Comparação de planos em `/precos`; índice fixo em `/produto`; seção
-   própria de IA e de relatórios em `/produto`.
+1. Comparação de planos em `/precos`.
 2. Imagem de compartilhamento (OG) por página; página por integração.
 3. **Depende do Gabriel:** nome comercial dos nichos; logo oficial da
    Verandi; autorização de MGM Pilates e PCYES para logo ou depoimento

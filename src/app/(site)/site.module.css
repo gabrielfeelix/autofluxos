@@ -443,12 +443,36 @@ a.canal h3 svg {
   color: var(--cor);
 }
 
-.canaisOutros {
+.canaisOutros,
+.partes {
   grid-template-columns: repeat(3, minmax(0, 1fr));
 }
 
+.partes .canal {
+  --cor: #1d4ed8;
+  background: var(--surface);
+  border-color: var(--line);
+}
+
+.partes .canal h3 {
+  margin-top: 0;
+}
+
+.partes .canal h3 small {
+  margin-left: auto;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--dim);
+}
+
+.partes .canal[aria-current] {
+  border-color: color-mix(in srgb, var(--cor) 40%, transparent);
+  background: color-mix(in srgb, var(--cor) 5%, #ffffff);
+}
+
 @media (max-width: 760px) {
-  .canaisOutros {
+  .canaisOutros,
+  .partes {
     grid-template-columns: 1fr;
   }
 }

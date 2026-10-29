@@ -1,5 +1,5 @@
 import { PaginaDoSite, SecaoComo, SecaoFluxo, SecaoNaPratica, SecaoOQueFaz } from '../(site)/pagina-do-site'
-import { CapaSimples, SecaoCanais, SecaoDoisLados } from '../(site)/secoes-do-site'
+import { CapaSimples, SecaoCanais, SecaoDoisLados, SecaoPartesDoProduto } from '../(site)/secoes-do-site'
 import { metadadosDoSite } from '../(site)/metadados'
 
 export const metadata = metadadosDoSite(
@@ -20,6 +20,7 @@ export default function PaginaDoProduto() {
       }
     >
       <SecaoCanais />
+      <SecaoPartesDoProduto />
       <SecaoFluxo />
       <SecaoDoisLados />
       <SecaoNaPratica />

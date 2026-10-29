@@ -4,6 +4,7 @@ import { DIAS_DE_TESTE, PLANOS } from '@/core/planos'
 import { DerivaDeParticulas } from './deriva-de-particulas'
 import { Desktop, Pergunta } from './pagina-do-site'
 import { CANAIS, type CanalDoSite } from './canais-do-site'
+import { RECURSOS, type RecursoDoSite } from './recursos-do-site'
 import { MODELOS_DE_TODOS, NICHOS_DO_SITE, type NichoDoSite } from './nichos-do-site'
 import { CalculadoraMeta, DoisLados, PreviaQueTroca } from './pecas-interativas'
 import { CONVERSAS, PreviaWhatsApp } from './previa-whatsapp'
@@ -384,24 +385,25 @@ export function SecaoCalculadora() {
 
 /* ─────────────────────────── canal ─────────────────────────── */
 
-export function CapaDoCanal({ canal }: { canal: CanalDoSite }) {
+/** Capa com texto à esquerda e uma janela do produto à direita: canais e partes do produto. */
+function CapaComJanela({ olho, titulo, texto, aviso, visual }: { olho: string; titulo: string; texto: string; aviso?: string; visual: ReactNode }) {
   return (
     <section className={`${s.capa} ${x.capaDividida}`}>
       <div className={s.veu} aria-hidden />
       <div className={`${s.faixa} ${x.capaGrade}`}>
         <div className={x.capaTexto}>
           <p className={x.capaOlho} {...entra(0)}>
-            Canais · {canal.nome}
+            {olho}
           </p>
           <h1 className={x.capaTitulo} {...entra(60, 'desfoque')}>
-            {canal.titulo}
+            {titulo}
           </h1>
           <p className={x.capaSub} {...entra(160)}>
-            {canal.subtitulo}
+            {texto}
           </p>
-          {canal.aviso && (
+          {aviso && (
             <p className={x.avisoCanal} {...entra(200)}>
-              {canal.aviso}
+              {aviso}
             </p>
           )}
           <div className={s.acoes} {...entra(260)}>
@@ -414,31 +416,41 @@ export function CapaDoCanal({ canal }: { canal: CanalDoSite }) {
           </div>
         </div>
         <div className={x.capaVisual} {...entra(160, 'escala')}>
-          {canal.conversas ? <PreviaQueTroca chaves={canal.conversas} /> : <FichaDoCanal canal={canal} />}
+          {visual}
         </div>
       </div>
     </section>
   )
 }
 
-/** Os números do canal numa janela, lidos de `src/core/canais.ts` via `canais-do-site.ts`. */
-function FichaDoCanal({ canal }: { canal: CanalDoSite }) {
+/** Uma janela branca com linhas de rótulo e valor, como uma tela de configuração do app. */
+function JanelaDeFicha({
+  barra,
+  titulo,
+  marca,
+  linhas,
+  cor = '#1d4ed8',
+}: {
+  barra: string
+  titulo: string
+  marca?: ReactNode
+  linhas: { rotulo: string; valor: string }[]
+  cor?: string
+}) {
   return (
-    <div className={x.ficha} style={{ '--cor': canal.cor } as CSSProperties}>
+    <div className={x.ficha} style={{ '--cor': cor } as CSSProperties}>
       <div className={x.fichaBarra}>
         <i />
         <i />
         <i />
-        <span>Ficha do canal</span>
+        <span>{barra}</span>
       </div>
       <div className={x.fichaTopo}>
-        <span className={x.canalMarca}>
-          <MarcaDoCanal canal={canal} />
-        </span>
-        <strong>{canal.nome}</strong>
+        {marca && <span className={x.canalMarca}>{marca}</span>}
+        <strong>{titulo}</strong>
       </div>
       <dl className={x.fichaLinhas}>
-        {canal.ficha.map((f) => (
+        {linhas.map((f) => (
           <div key={f.rotulo}>
             <dt>{f.rotulo}</dt>
             <dd>{f.valor}</dd>
@@ -447,6 +459,23 @@ function FichaDoCanal({ canal }: { canal: CanalDoSite }) {
       </dl>
     </div>
   )
+}
+
+export function CapaDoCanal({ canal }: { canal: CanalDoSite }) {
+  return (
+    <CapaComJanela
+      olho={`Canais · ${canal.nome}`}
+      titulo={canal.titulo}
+      texto={canal.subtitulo}
+      aviso={canal.aviso}
+      visual={canal.conversas ? <PreviaQueTroca chaves={canal.conversas} /> : <FichaDoCanal canal={canal} />}
+    />
+  )
+}
+
+/** Os números do canal, lidos de `src/core/canais.ts` via `canais-do-site.ts`. */
+function FichaDoCanal({ canal }: { canal: CanalDoSite }) {
+  return <JanelaDeFicha barra="Ficha do canal" titulo={canal.nome} marca={<MarcaDoCanal canal={canal} />} linhas={canal.ficha} cor={canal.cor} />
 }
 
 export function CorpoDoCanal({ canal }: { canal: CanalDoSite }) {
@@ -568,6 +597,122 @@ export function CorpoDoCanal({ canal }: { canal: CanalDoSite }) {
         </div>
       </section>
     </>
+  )
+}
+
+/* ─────────────────────────── partes do produto ─────────────────────────── */
+
+export function CapaDoRecurso({ recurso }: { recurso: RecursoDoSite }) {
+  return (
+    <CapaComJanela
+      olho={`Produto · ${recurso.nome}`}
+      titulo={recurso.titulo}
+      texto={recurso.subtitulo}
+      visual={<JanelaDeFicha barra={recurso.ficha.barra} titulo={recurso.ficha.titulo} linhas={recurso.ficha.linhas} />}
+    />
+  )
+}
+
+/** `children`: a peça própria da parte (o fluxo que se monta, o Inbox, a calculadora), entre os destaques e a lista. */
+export function CorpoDoRecurso({ recurso, children }: { recurso: RecursoDoSite; children?: ReactNode }) {
+  return (
+    <>
+      <section className={s.secao}>
+        <div className={s.faixa}>
+          <Cabeca olho={recurso.nome} titulo="O que muda no dia da equipe" />
+          <div className={x.dores}>
+            {recurso.destaques.map((d, i) => (
+              <article key={d.titulo} className={x.dor} data-revela data-como="escala" data-atraso={i * 90}>
+                <span className={x.dorNumero}>{String(i + 1).padStart(2, '0')}</span>
+                <h3>{d.titulo}</h3>
+                <p>{d.texto}</p>
+              </article>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {children}
+
+      <section className={s.secao}>
+        <div className={s.faixa}>
+          <Cabeca olho="Em detalhe" titulo="Tudo o que vem junto" />
+          <div className={x.noApp}>
+            {recurso.itens.map((r) => (
+              <div key={r.titulo} data-revela>
+                <strong>{r.titulo}</strong>
+                <p>{r.texto}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <SecaoPartesDoProduto atual={recurso.slug} />
+    </>
+  )
+}
+
+/** A IA marcando o horário dentro da conversa, na prévia do WhatsApp já aprovada. */
+export function SecaoIaNaConversa() {
+  return (
+    <section className={s.secao}>
+      <div className={`${s.faixa} ${x.iaGrade}`}>
+        <div>
+          <span className={s.olho} data-revela>
+            Na conversa
+          </span>
+          <h2 className={s.tituloSecao} data-revela data-como="desfoque" data-atraso="60">
+            Consulta a agenda, oferece o horário e confirma
+          </h2>
+          <ul className={x.listaIa}>
+            <li data-revela data-atraso="120">
+              Vê os horários livres antes de oferecer
+            </li>
+            <li data-revela data-atraso="180">
+              Pergunta antes de marcar, se você pedir
+            </li>
+            <li data-revela data-atraso="240">
+              Agenda o lembrete sem ninguém lembrar de mandar
+            </li>
+            <li data-revela data-atraso="300">
+              Sem resposta na ficha, passa para a equipe em vez de inventar
+            </li>
+          </ul>
+        </div>
+        <div data-revela data-como="escala">
+          <PreviaWhatsApp conversa={CONVERSAS.clinica} />
+        </div>
+      </div>
+    </section>
+  )
+}
+
+/** Uma porta para cada parte: na visão geral de `/produto` e no pé de cada parte, com a atual marcada. */
+export function SecaoPartesDoProduto({ atual }: { atual?: string }) {
+  return (
+    <section className={s.secao} id="partes">
+      <div className={s.faixa}>
+        <Cabeca olho={atual ? 'O resto do produto' : 'Cada parte'} titulo={atual ? 'Cada parte conversa com as outras' : 'Veja em detalhe'} />
+        <div className={`${x.canais} ${x.partes}`}>
+          {RECURSOS.map((r, i) => (
+            <Link
+              key={r.slug}
+              href={`/produto/${r.slug}`}
+              className={x.canal}
+              aria-current={r.slug === atual ? 'page' : undefined}
+              data-revela
+              data-atraso={i * 60}
+            >
+              <h3>
+                {r.nome} {r.slug === atual ? <small>Você está aqui</small> : <Seta />}
+              </h3>
+              <p>{r.linha}</p>
+            </Link>
+          ))}
+        </div>
+      </div>
+    </section>
   )
 }
 

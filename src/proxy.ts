@@ -281,6 +281,8 @@ const PREFIXOS_ABERTOS = [
   '/segmentos/',
   // As páginas de cada canal do site, `/canais/[slug]`.
   '/canais/',
+  // As partes do produto, `/produto/[slug]`. A visão geral `/produto` é exata, lá em cima.
+  '/produto/',
   // O cabeçalho dos modelos de pesquisa, em `public/pesquisas/`: quem busca é
   // o servidor da Meta, sem sessão. Sem isto a imagem virava a tela de login.
   '/pesquisas/',
