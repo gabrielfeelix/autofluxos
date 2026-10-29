@@ -258,8 +258,13 @@
   position: relative;
   display: grid;
   place-items: center;
-  /* Sem altura mínima: o título começa logo abaixo do cabeçalho, sem o vão. */
-  padding: clamp(40px, 6vw, 76px) 0 clamp(64px, 8vw, 92px);
+  /*
+   * A capa sobe por baixo do cabeçalho (78px): sem isso a luz e as partículas
+   * paravam numa linha reta na altura dele, como uma faixa invisível nas
+   * laterais da ilha. O padding devolve o mesmo espaço ao conteúdo.
+   */
+  margin-top: -78px;
+  padding: calc(clamp(40px, 6vw, 76px) + 78px) 0 clamp(64px, 8vw, 92px);
   isolation: isolate;
   overflow: hidden;
 }
