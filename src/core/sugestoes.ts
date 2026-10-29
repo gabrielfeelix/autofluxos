@@ -43,3 +43,62 @@ export function telaDaSugestao(caminho: string): string {
   const semConta = semBusca.replace(/^\/clientes\/[^/]+/, '')
   return (semConta || '/').slice(0, LIMITE_DA_TELA)
 }
+
+/**
+ * A triagem da 4YU sobre cada sugestão, também na auditoria: um ato
+ * `triou_sugestao` com `alvo_id` = id da sugestão. Vale o mais novo, então
+ * mudar de ideia é só marcar de novo, e o histórico de quem marcou o quê fica.
+ * Sugestão sem triagem nenhuma é `nova`.
+ */
+export const ATO_DA_TRIAGEM = 'triou_sugestao'
+
+export const SITUACOES_DA_SUGESTAO = ['nova', 'planejada', 'feita', 'descartada'] as const
+
+export type SituacaoDaSugestao = (typeof SITUACOES_DA_SUGESTAO)[number]
+
+export const ROTULO_DA_SITUACAO: Record<SituacaoDaSugestao, string> = {
+  nova: 'Nova',
+  planejada: 'Planejada',
+  feita: 'Feita',
+  descartada: 'Descartada',
+}
+
+export function ehSituacaoDaSugestao(valor: unknown): valor is SituacaoDaSugestao {
+  return typeof valor === 'string' && (SITUACOES_DA_SUGESTAO as readonly string[]).includes(valor)
+}
+
+/**
+ * O nome da tela como aparece no menu do cliente, para quem lê a sugestão não
+ * ter que decorar endereço. Do mais específico para o mais geral: `/leads/
+ * segmentos` acha "Segmentos" antes de `/leads` achar "Contatos".
+ */
+const NOMES_DAS_TELAS: [string, string][] = [
+  ['/conversas/respostas-rapidas', 'Respostas rápidas'],
+  ['/conversas/canais', 'Canais'],
+  ['/leads/segmentos', 'Segmentos'],
+  ['/leads/cobrancas', 'Cobranças'],
+  ['/loja/catalogo', 'Produtos'],
+  ['/loja/pedidos', 'Pedidos da loja'],
+  ['/relatorios/vendas', 'Relatório de vendas'],
+  ['/inbox', 'Conversas'],
+  ['/conversas', 'Conversas'],
+  ['/favoritas', 'Mensagens salvas'],
+  ['/leads', 'Contatos'],
+  ['/quadros', 'Negócios'],
+  ['/negocios', 'Negócios'],
+  ['/atividades', 'Atividades'],
+  ['/fluxos', 'Automações'],
+  ['/transmissoes', 'Transmissões'],
+  ['/respostas', 'Respostas coletadas'],
+  ['/loja', 'Integrações da loja'],
+  ['/relatorios', 'Relatório de atendimento'],
+  ['/ajustes', 'Configurações'],
+  ['/configurar', 'Primeiros passos'],
+]
+
+/** Endereço que não está no menu volta como veio: melhor cru do que inventado. */
+export function nomeDaTela(tela: string): string {
+  if (tela === '/' || tela === '') return 'Início'
+  const achado = NOMES_DAS_TELAS.find(([prefixo]) => tela === prefixo || tela.startsWith(`${prefixo}/`))
+  return achado ? achado[1] : tela
+}

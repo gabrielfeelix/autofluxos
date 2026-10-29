@@ -1,9 +1,11 @@
 'use server'
 
-import { ATO_DA_SUGESTAO, conferirSugestao, telaDaSugestao } from '@/core/sugestoes'
+import { ATO_DA_SUGESTAO, ATO_DA_TRIAGEM, conferirSugestao, ehSituacaoDaSugestao, ROTULO_DA_SITUACAO, telaDaSugestao } from '@/core/sugestoes'
 import { exigirCapacidade, recusou } from './permissoes'
 import { registrarConfirmando } from './repos/auditoria'
 import { acharCliente } from './repos/clientes'
+import { acharSugestao } from './repos/sugestoes'
+import { exigirAdminDaPlataforma } from './sessao'
 
 /**
  * "Sentiu falta de algo?": guarda o pedido de melhoria para a 4YU ler em
@@ -41,5 +43,39 @@ export async function acaoSugerirMelhoria(
     detalhes: { texto: conferida.texto, tela, nome: acesso.sessao.usuario.nome },
   })
   if (!gravou) return { ok: false, erro: 'não foi possível enviar agora. Tente de novo em instantes.' }
+  return { ok: true }
+}
+
+/**
+ * A triagem da 4YU: nova, planejada, feita ou descartada. Só a administração
+ * da plataforma marca; o cliente nunca vê esta situação.
+ *
+ * Grava um ato novo em vez de editar a sugestão (a auditoria é append-only):
+ * a situação de agora é a do ato mais novo, e o caminho até ela fica guardado.
+ * Sem `revalidatePath`: a tela já mudou na hora (`useAcaoOtimista`).
+ */
+export async function acaoTriarSugestao(
+  sugestaoId: string,
+  situacao: string,
+): Promise<{ ok: true } | { ok: false; erro: string }> {
+  const sessao = await exigirAdminDaPlataforma()
+  if (!ehSituacaoDaSugestao(situacao)) return { ok: false, erro: 'situação desconhecida' }
+
+  const sugestao = await acharSugestao(String(sugestaoId ?? ''))
+  if (!sugestao) return { ok: false, erro: 'esta sugestão não existe mais' }
+
+  const gravou = await registrarConfirmando({
+    acao: ATO_DA_TRIAGEM,
+    autorId: sessao.usuario.id,
+    autorEmail: sessao.usuario.email,
+    contaId: sugestao.contaId,
+    contaNome: sugestao.contaNome,
+    alvoTipo: 'sugestao',
+    alvoId: sugestao.id,
+    alvoNome: ROTULO_DA_SITUACAO[situacao],
+    detalhes: { situacao },
+    impersonadoPor: sessao.impersonadoPor,
+  })
+  if (!gravou) return { ok: false, erro: 'não foi possível salvar agora. Tente de novo em instantes.' }
   return { ok: true }
 }
