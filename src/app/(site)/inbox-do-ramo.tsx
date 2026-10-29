@@ -96,6 +96,27 @@ function Etapas({ rotulos, etapa, escolher }: { rotulos: string[]; etapa: number
   )
 }
 
+/** O rodapé da bolha da equipe: quem mandou, a hora e o visto duplo de lida. */
+function Rodape({ hora }: { hora: string }) {
+  return (
+    <small className={r.rodape}>
+      Ana · {hora}
+      <svg width="15" height="10" viewBox="0 0 18 11" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+        <path d="m1 5.5 3.5 3.5L11 2M7 9l1 1 7-8" />
+      </svg>
+    </small>
+  )
+}
+
+function IconeCobrar() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+      <rect x="3" y="5" width="18" height="14" rx="2.5" />
+      <path d="M3 10h18M7 15h3" />
+    </svg>
+  )
+}
+
 const Visto = () => (
   <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
     <path d="m5 12.5 4.5 4.5L19 7.5" />
@@ -140,6 +161,7 @@ export function InboxQueVende() {
                 <img src="/fotos-do-site/fone.webp" alt="" width={240} height={110} />
                 <b>Fone Over-ear Bluetooth</b>
                 R$ 249,90 · preto, 7 em estoque
+                <Rodape hora="10:42" />
                 <em>Ver produto</em>
               </span>
             </>
@@ -150,10 +172,11 @@ export function InboxQueVende() {
             </span>
           )}
           {enviado(1) && (
-            <span className={`${r.fala} ${r.cupom}`} data-de="equipe" data-novo={etapa === 1 || undefined}>
-              <small>Cupom</small>
-              <b>BEMVINDO10</b>
-              10% de desconto na primeira compra
+            <span className={r.fala} data-de="equipe" data-novo={etapa === 1 || undefined}>
+              <span>
+                Cupom 10% off para o site: <b className={r.codigo}>BEMVINDO10</b>
+              </span>
+              <Rodape hora="10:43" />
             </span>
           )}
           {perguntou(2) && (
@@ -162,12 +185,32 @@ export function InboxQueVende() {
             </span>
           )}
           {enviado(2) && (
-            <span className={`${r.fala} ${r.cobranca}`} data-de="equipe" data-novo={etapa === 2 || undefined}>
-              <b>Pedido · R$ 224,91</b>
-              1x Fone Over-ear preto · entrega
-              <em>Pagar com Pix ou cartão</em>
-              <span className={r.pago}>
-                <Visto /> Pago
+            // O cartão da cobrança como o Inbox desenha (`components/inbox/cartao-da-cobranca.tsx`).
+            <span className={r.cobranca} data-novo={etapa === 2 || undefined}>
+              <span className={r.cobrancaTopo}>
+                <span>
+                  <IconeCobrar /> Cobrança
+                </span>
+                <span className={r.selo} data-pago={fase === ULTIMA_FASE || etapa > 2 ? '' : undefined}>
+                  {fase === ULTIMA_FASE || etapa > 2 ? 'Paga' : 'Aguardando'}
+                </span>
+              </span>
+              <span className={r.cobrancaCorpo}>
+                <b>Fone Over-ear Bluetooth</b>
+                <span className={r.item}>
+                  <span>1× Fone Over-ear preto</span> R$ 249,90
+                </span>
+                <span className={r.item}>
+                  <span>Cupom BEMVINDO10</span> – R$ 24,99
+                </span>
+                <span className={r.total}>
+                  <span>Total</span> R$ 224,91
+                </span>
+                <small>Entrega no endereço · Ana · 10:44</small>
+              </span>
+              <span className={r.cobrancaAcoes}>
+                <span>Copiar Pix</span>
+                <span>Abrir link</span>
               </span>
             </span>
           )}
@@ -177,12 +220,30 @@ export function InboxQueVende() {
             </span>
           )}
           {enviado(3) && (
-            <span className={`${r.fala} ${r.rastreio}`} data-de="equipe" data-novo={etapa === 3 || undefined}>
-              <b>Pedido #1042</b>
-              <span>✅ Confirmado</span>
-              <span>✅ Separado</span>
-              <span>🔵 Enviado</span>
-              <span>⚪ Entregue</span>
+            // O status como sai no WhatsApp (`core/pedido-na-conversa.ts`): a foto, a resposta na primeira linha,
+            // a previsão, a linha do tempo e o pedido como comprovante, com o botão de rastreio.
+            <span className={`${r.fala} ${r.status}`} data-de="equipe" data-novo={etapa === 3 || undefined}>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src="/fotos-do-site/fone.webp" alt="" width={260} height={96} />
+              <span className={r.statusTexto}>
+                <b>🚚 Seu pedido está a caminho</b>
+                <span>
+                  Previsão de entrega: <b>sexta, 31/10</b>
+                </span>
+                <span className={r.linhaDoTempo}>
+                  <span>✅ Pagamento aprovado</span>
+                  <span>✅ Pedido separado</span>
+                  <span>
+                    🔵 <b>Em transporte</b> · 30/10
+                  </span>
+                  <span>⚪ Entrega no seu endereço</span>
+                </span>
+                <span>
+                  <b>Pedido #1042</b> · R$ 224,91
+                </span>
+                <span className={r.itensDoPedido}>1x Fone Over-ear Bluetooth preto</span>
+              </span>
+              <Rodape hora="10:52" />
               <em>Rastrear entrega</em>
             </span>
           )}

@@ -118,6 +118,11 @@
   background: #f8fafd;
 }
 
+/* Mensagem não encolhe: a conversa corta por cima, como a rolagem do Inbox. */
+.conversa > * {
+  flex-shrink: 0;
+}
+
 .fala {
   display: grid;
   gap: 2px;
@@ -137,6 +142,7 @@
 .fala[data-de='equipe'] {
   align-self: flex-end;
   border: 1px solid #cdd9f7;
+  border-radius: 12px 12px 4px 12px;
   background: #e8eefc;
 }
 
@@ -185,31 +191,176 @@
   letter-spacing: 0.04em;
 }
 
-.cobranca {
-  position: relative;
+.codigo {
+  font-weight: 700;
+  letter-spacing: 0.03em;
 }
 
-.cobranca b {
-  padding-right: 64px;
-}
-
-.pago {
-  position: absolute;
-  top: 8px;
-  right: 8px;
+.rodape {
   display: inline-flex;
   align-items: center;
+  justify-content: flex-end;
   gap: 4px;
-  padding: 2px 8px;
-  border-radius: 999px;
-  background: #16a34a;
-  font-size: 11px;
-  font-weight: 600;
-  color: #ffffff;
+  margin-top: 2px;
+  font-size: 10.5px;
+  color: #7a86a1;
 }
 
-.rastreio span {
+.rodape svg {
+  color: #3b82f6;
+}
+
+/* A cobrança: o cartão branco do Inbox, com o selo, os itens, o total e as ações. */
+.cobranca {
+  align-self: flex-end;
+  display: grid;
+  width: 300px;
+  max-width: 85%;
+  overflow: hidden;
+  border: 1px solid #e3e8f3;
+  border-radius: 15px 15px 4px 15px;
+  background: #ffffff;
+  box-shadow: 0 1px 2px rgb(16 24 40 / 0.06);
+}
+
+.cobranca[data-novo] {
+  animation: chega 0.5s var(--curva) both;
+}
+
+.cobrancaTopo {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 10px 12px 0;
+}
+
+.cobrancaTopo > span:first-child {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11.5px;
+  font-weight: 600;
+  color: #56617c;
+}
+
+.selo {
+  padding: 2px 9px;
+  border-radius: 999px;
+  background: #fff7ed;
+  font-size: 11px;
+  font-weight: 600;
+  color: #b45309;
+  transition:
+    background 0.3s,
+    color 0.3s;
+}
+
+.selo[data-pago] {
+  background: #dcfce7;
+  color: #15803d;
+}
+
+.cobrancaCorpo {
+  display: grid;
+  gap: 3px;
+  padding: 6px 12px 9px;
+}
+
+.cobrancaCorpo > b {
+  margin-bottom: 3px;
+  font-size: 14px;
+}
+
+.item,
+.total {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
   font-size: 12.5px;
+  font-variant-numeric: tabular-nums;
+  color: #56617c;
+}
+
+.total {
+  margin-top: 4px;
+  padding-top: 6px;
+  border-top: 1px solid #edf0f7;
+  font-size: 15px;
+  font-weight: 700;
+  color: #0c1838;
+}
+
+.total span {
+  font-size: 12.5px;
+  font-weight: 500;
+  color: #56617c;
+}
+
+.cobrancaCorpo small {
+  margin-top: 2px;
+  font-size: 11px;
+  color: #7a86a1;
+}
+
+.cobrancaAcoes {
+  display: flex;
+  border-top: 1px solid #edf0f7;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: #1d4ed8;
+}
+
+.cobrancaAcoes span {
+  flex: 1;
+  padding: 8px;
+  text-align: center;
+}
+
+.cobrancaAcoes span + span {
+  border-left: 1px solid #edf0f7;
+}
+
+/* O status do pedido: a foto do produto em cima e o texto como sai no WhatsApp. */
+.status {
+  width: 300px;
+  padding: 4px 4px 0;
+}
+
+.status img {
+  width: 100%;
+  height: 96px;
+  border-radius: 9px;
+  object-fit: cover;
+}
+
+.statusTexto {
+  display: grid;
+  gap: 6px;
+  padding: 8px 8px 0;
+  font-size: 13px;
+  line-height: 1.4;
+}
+
+.linhaDoTempo {
+  display: grid;
+  gap: 2px;
+  font-size: 12.5px;
+}
+
+.itensDoPedido {
+  margin-top: -4px;
+  font-size: 12.5px;
+  color: #56617c;
+}
+
+.status .rodape {
+  padding: 0 8px;
+}
+
+.status em {
+  margin: 6px -4px 0;
+  padding: 8px;
 }
 
 /* ───── o campo de resposta e a barra de ferramentas ───── */
@@ -250,8 +401,7 @@
 .dica {
   position: absolute;
   bottom: calc(100% + 8px);
-  left: 50%;
-  translate: -50% 0;
+  left: 0;
   padding: 4px 9px;
   border-radius: 6px;
   background: #1d4ed8;
