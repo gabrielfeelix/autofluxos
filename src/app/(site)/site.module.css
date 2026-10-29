@@ -1186,8 +1186,9 @@ a.canal h3 svg {
 .doisLados {
   position: relative;
   max-width: 1040px;
-  /* A janela ganhou o campo de resposta e a ficha: a legenda de baixo precisa do espaço. */
-  height: 600px;
+  /* A janela ganhou o campo de resposta e a ficha; a legenda vai abaixo do bloco (`.sincronia`). */
+  height: 560px;
+  margin-bottom: 64px;
   margin: 48px auto 0;
 }
 
@@ -1709,7 +1710,7 @@ a.canal h3 svg {
   position: absolute;
   left: calc(240px + 72px);
   right: 0;
-  bottom: 0;
+  top: calc(100% + 16px);
   margin: 0;
   font-size: 13.5px;
   line-height: 1.5;
@@ -3049,8 +3050,10 @@ a.canal h3 svg {
   display: grid;
   align-content: start;
   justify-items: center;
-  gap: 4px;
-  padding: 20px 14px;
+  gap: 3px;
+  max-height: 100%;
+  overflow: hidden;
+  padding: 16px 14px;
   border-left: 1px solid var(--line-soft);
   font-size: 12px;
   color: #64708a;
@@ -3101,9 +3104,9 @@ a.canal h3 svg {
 
 .janelaFicha dl {
   display: grid;
-  gap: 6px;
+  gap: 5px;
   width: 100%;
-  margin: 10px 0 0;
+  margin: 8px 0 0;
   text-align: left;
 }
 
@@ -3119,7 +3122,7 @@ a.canal h3 svg {
 
 .janelaFichaTitulo {
   justify-self: start;
-  margin-top: 10px;
+  margin-top: 8px;
   font-weight: 600;
   color: #0c1838;
 }
@@ -3148,4 +3151,43 @@ a.canal h3 svg {
   .janelaFicha {
     display: none;
   }
+}
+
+/* A ficha mais perto da real: responsável com foto, ação de encerrar, funil e o que o fluxo coletou. */
+.janelaFichaBloco em {
+  margin-top: 6px;
+  padding: 5px;
+  border: 1px solid #f6c87a;
+  border-radius: 8px;
+  background: #ffffff;
+  font-size: 11px;
+  font-style: normal;
+  font-weight: 600;
+  text-align: center;
+  color: #b45309;
+}
+
+.janelaFicha dd {
+  display: inline-flex;
+  align-items: center;
+}
+
+.janelaFunil {
+  display: grid;
+  gap: 2px;
+  justify-self: stretch;
+  padding: 7px 9px;
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  text-align: left;
+}
+
+.janelaFunil small {
+  font-size: 10.5px;
+  color: #8a93a8;
+}
+
+.janelaFunil b {
+  font-size: 12px;
+  color: #0c1838;
 }

@@ -7,7 +7,7 @@ import { IlustracaoDoRamo } from './ilustracoes-dos-ramos'
 import { NICHOS_DO_SITE } from './nichos-do-site'
 import { CONVERSAS, PreviaWhatsApp, type ChaveDaConversa } from './previa-whatsapp'
 import x from './site.module.css'
-import { FotoDaPessoa } from './pessoas-do-site'
+import { FotoDaPessoa, MiniFoto } from './pessoas-do-site'
 
 export function useMovimentoReduzido(): boolean {
   return useSyncExternalStore(
@@ -377,16 +377,40 @@ export function DoisLados() {
           <small>+55 44 9••••-4412</small>
           <span className={x.janelaFichaBloco} data-tom={transferiu ? 'equipe' : 'bot'}>
             <b>{transferiu ? 'Em atendimento' : 'Com o chatbot'}</b>
-            {transferiu ? 'Júlia' : 'Fluxo de vendas'}
+            {transferiu ? 'Júlia, pelo celular' : 'Fluxo de vendas'}
+            {transferiu && <em>Finalizar atendimento</em>}
           </span>
           <dl>
             <div>
-              <dt>Origem</dt>
-              <dd>Anúncio</dd>
+              <dt>Responsável</dt>
+              <dd>
+                {transferiu && <MiniFoto nome="Júlia Andrade" tamanho={16} />}
+                {transferiu ? 'Júlia' : 'Chatbot'}
+              </dd>
             </div>
             <div>
-              <dt>Cliente desde</dt>
-              <dd>hoje</dd>
+              <dt>Origem</dt>
+              <dd>Anúncio · Instagram</dd>
+            </div>
+            <div>
+              <dt>Falou por último</dt>
+              <dd>agora</dd>
+            </div>
+          </dl>
+          <small className={x.janelaFichaTitulo}>No funil</small>
+          <span className={x.janelaFunil}>
+            <small>Vendas</small>
+            <b>{pago ? 'Ganho · R$ 268,80' : 'Proposta · R$ 268,80'}</b>
+          </span>
+          <small className={x.janelaFichaTitulo}>O que o fluxo coletou</small>
+          <dl>
+            <div>
+              <dt>Interesse</dt>
+              <dd>Fone bluetooth</dd>
+            </div>
+            <div>
+              <dt>Cor</dt>
+              <dd>Preto</dd>
             </div>
           </dl>
           <small className={x.janelaFichaTitulo}>Etiquetas</small>
