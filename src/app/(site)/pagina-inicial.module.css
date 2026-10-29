@@ -1123,46 +1123,10 @@
  */
 .fechamento {
   position: relative;
-  margin: clamp(30px, 5vw, 60px) 0;
-  padding: clamp(56px, 9vw, 104px) clamp(24px, 5vw, 60px);
+  margin: clamp(30px, 5vw, 60px) 0 0;
+  padding: clamp(56px, 9vw, 104px) clamp(24px, 5vw, 60px) clamp(40px, 5vw, 56px);
   text-align: center;
   isolation: isolate;
-}
-
-/*
- * O brilho do fechamento.
- *
- * **Ele era um círculo cortado pelo `overflow: hidden` do pai**, e o corte
- * aparecia como uma linha reta no fim da luz. Duas coisas mudaram: o pai não
- * recorta mais (o `isolation` já contém o `z-index` sem precisar de overflow),
- * e a forma virou uma elipse larga e rasa em vez de um círculo de 860px.
- *
- * A elipse é o formato certo aqui: a luz vem de baixo, do rodapé, e luz que
- * sobe do chão é achatada, não redonda. As paradas do degradê são suaves até o
- * transparente, então não existe borda para cortar.
- */
-.fechamentoBrilho {
-  position: absolute;
-  left: 50%;
-  bottom: -18%;
-  z-index: -1;
-  width: min(1180px, 150vw);
-  height: 90%;
-  translate: -50% 0;
-  background:
-    radial-gradient(
-      ellipse 60% 100% at 50% 100%,
-      color-mix(in srgb, var(--accent) 13%, transparent),
-      color-mix(in srgb, var(--accent) 5%, transparent) 42%,
-      transparent 72%
-    ),
-    radial-gradient(
-      ellipse 44% 80% at 50% 100%,
-      rgb(var(--veu) / 0.08),
-      transparent 66%
-    );
-  pointer-events: none;
-  filter: blur(26px);
 }
 
 /* ─────────────────────────── rodapé ─────────────────────────── */
@@ -2436,7 +2400,7 @@
 .rodape {
   position: relative;
   overflow: hidden;
-  margin-top: clamp(40px, 6vw, 80px);
+  margin-top: clamp(16px, 3vw, 32px);
   border-top: 1px solid rgb(var(--veu) / 0.07);
   padding-top: clamp(44px, 6vw, 70px);
 }

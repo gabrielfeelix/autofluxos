@@ -78,7 +78,6 @@ export function PaginaDoSite({ capa, children }: { capa: ReactNode; children: Re
 
         <section className={s.faixa} id="conversar">
           <div className={s.fechamento}>
-            <div className={s.fechamentoBrilho} aria-hidden />
             <span className={s.olho} data-revela>
               Começar
             </span>
