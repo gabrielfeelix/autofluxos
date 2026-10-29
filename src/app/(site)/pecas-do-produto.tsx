@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from 'react'
 import { useMovimentoReduzido } from './pecas-interativas'
 import p from './produto.module.css'
+import { FotoDaPessoa, MiniFoto } from './pessoas-do-site'
 
 /*
  * As peças interativas das partes que ainda não tinham uma (`/produto/[slug]`):
@@ -128,7 +129,7 @@ export function ConversaQuePreencheAFicha() {
     <div ref={raiz} className={p.preenche}>
       <div className={p.preencheConversa} aria-hidden>
         <div className={p.preencheTopo}>
-          <i>{preenchidos.has('Nome') ? 'MC' : '?'}</i>
+          <i>{preenchidos.has('Nome') ? <FotoDaPessoa nome="Marina Costa" /> : '?'}</i>
           <span>
             <b>{preenchidos.get('Nome') ?? '+55 41 9····-2208'}</b>
             WhatsApp
@@ -172,7 +173,10 @@ export function ConversaQuePreencheAFicha() {
             </span>
           ))}
           <b className={p.funilCartao} data-ganho={atual.etapa === 3 || undefined}>
-            Marina
+            <span>
+              <MiniFoto nome="Marina Costa" tamanho={16} />
+              Marina
+            </span>
             {valor && <small>{valor}</small>}
           </b>
         </div>

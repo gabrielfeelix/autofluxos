@@ -5,6 +5,7 @@ import { useMovimentoReduzido } from './pecas-interativas'
 import { TituloComCanal } from './titulo-com-canal'
 import r from './inbox-do-ramo.module.css'
 import s from './pagina-inicial.module.css'
+import { FotoDaPessoa } from './pessoas-do-site'
 
 /*
  * O Inbox fazendo o trabalho do ramo, com os botões que existem de verdade:
@@ -70,7 +71,9 @@ function Janela({ titulo, children }: { titulo: string; children: ReactNode }) {
         <span>autofluxos.4yu.com.br/inbox</span>
       </div>
       <div className={r.topo}>
-        <span className={r.avatar}>MC</span>
+        <span className={r.avatar}>
+          <FotoDaPessoa nome="Marina Costa" />
+        </span>
         <span>
           <strong>Marina Costa</strong>
           <small>

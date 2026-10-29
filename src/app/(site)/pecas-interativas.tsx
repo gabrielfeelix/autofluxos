@@ -7,6 +7,7 @@ import { IlustracaoDoRamo } from './ilustracoes-dos-ramos'
 import { NICHOS_DO_SITE } from './nichos-do-site'
 import { CONVERSAS, PreviaWhatsApp, type ChaveDaConversa } from './previa-whatsapp'
 import x from './site.module.css'
+import { FotoDaPessoa } from './pessoas-do-site'
 
 export function useMovimentoReduzido(): boolean {
   return useSyncExternalStore(
@@ -326,8 +327,12 @@ export function DoisLados() {
           <i />
           <span>autofluxos.4yu.com.br/inbox</span>
         </div>
+        <div className={x.janelaGrade}>
+        <div className={x.janelaConversa}>
         <div className={x.janelaTopo}>
-          <span className={x.janelaAvatar}>MC</span>
+          <span className={x.janelaAvatar}>
+            <FotoDaPessoa nome="Marina Costa" />
+          </span>
           <span>
             <strong>Marina Costa</strong>
             <small>
@@ -349,6 +354,48 @@ export function DoisLados() {
             </div>
           ))}
         </div>
+        {/* O campo de resposta com a barra do Inbox: anexo, emoji, produto, cobrança, cupom, formatação. */}
+        <div className={x.janelaCampo} aria-hidden>
+          <span>Responder Marina pelo WhatsApp...</span>
+          <span className={x.janelaFerramentas}>
+            {['M21.4 11.1 12.2 20.3a6 6 0 0 1-8.5-8.5l9.2-9.2a4 4 0 0 1 5.7 5.7l-9.2 9.2a2 2 0 0 1-2.8-2.8l8.5-8.5', 'M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18ZM8.5 14.5s1.3 1.8 3.5 1.8 3.5-1.8 3.5-1.8M9 9.5h.01M15 9.5h.01', 'M3 7.5 12 3l9 4.5v9L12 21l-9-4.5v-9Zm0 0 9 4.5m0 0 9-4.5M12 12v9', 'M12 3v18M16.5 7.5c0-1.7-2-3-4.5-3s-4.5 1.3-4.5 3 1.6 2.6 4.5 3.3 4.5 1.6 4.5 3.4-2 3.3-4.5 3.3-4.5-1.4-4.5-3.3', 'M3 8.5V7a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v1.5a2.5 2.5 0 0 0 0 5V17a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-3.5a2.5 2.5 0 0 0 0-5ZM14 5v14'].map((d) => (
+              <svg key={d} width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                <path d={d} />
+              </svg>
+            ))}
+            <b>B</b>
+            <i>I</i>
+          </span>
+        </div>
+        </div>
+        {/* A ficha do contato, como a coluna da direita do Inbox. */}
+        <aside className={x.janelaFicha} aria-hidden>
+          <span className={x.janelaFichaFoto}>
+            <FotoDaPessoa nome="Marina Costa" />
+          </span>
+          <strong>Marina Costa</strong>
+          <small>+55 44 9••••-4412</small>
+          <span className={x.janelaFichaBloco} data-tom={transferiu ? 'equipe' : 'bot'}>
+            <b>{transferiu ? 'Em atendimento' : 'Com o chatbot'}</b>
+            {transferiu ? 'Júlia' : 'Fluxo de vendas'}
+          </span>
+          <dl>
+            <div>
+              <dt>Origem</dt>
+              <dd>Anúncio</dd>
+            </div>
+            <div>
+              <dt>Cliente desde</dt>
+              <dd>hoje</dd>
+            </div>
+          </dl>
+          <small className={x.janelaFichaTitulo}>Etiquetas</small>
+          <span className={x.janelaEtiquetas}>
+            <i>fone</i>
+            <i>{pago ? 'comprou' : 'interessada'}</i>
+          </span>
+        </aside>
+        </div>
       </div>
 
       <div className={x.aparelho}>
@@ -362,7 +409,9 @@ export function DoisLados() {
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden>
               <path d="m15 18-6-6 6-6" />
             </svg>
-            <span className={x.aparelhoAvatar}>M</span>
+            <span className={x.aparelhoAvatar}>
+              <FotoDaPessoa nome="Marina Costa" />
+            </span>
             <span>
               <strong>Marina Costa</strong>
               <small>WhatsApp Business</small>

@@ -252,22 +252,11 @@
 }
 
 .qr {
-  display: grid;
-  grid-template-columns: repeat(7, 1fr);
-  gap: 2px;
-  width: 92px;
-  padding: 6px;
+  display: block;
+  width: 116px;
+  height: 116px;
   border-radius: 8px;
-  background: #ffffff;
-}
-
-.qr i {
-  aspect-ratio: 1;
-  border-radius: 1px;
-}
-
-.qr i[data-cheio] {
-  background: #0c1838;
+  box-shadow: 0 0 0 1px #e3e8f3;
 }
 
 .copiar {

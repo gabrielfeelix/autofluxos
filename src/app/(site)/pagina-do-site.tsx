@@ -20,6 +20,7 @@ import { ProgressoDosPassos } from './progresso-dos-passos'
 import { Revelar } from './revelar'
 import { GLIFO_CLAUDE, GLIFO_GOOGLE, GLIFO_OPENAI, GLIFO_PERPLEXITY } from '@/components/design/glifos-oficiais'
 import s from './pagina-inicial.module.css'
+import { FotoDaPessoa } from './pessoas-do-site'
 
 /**
  * A porta de entrada pública do AutoFluxos.
@@ -543,7 +544,7 @@ export function Desktop() {
           {conversas.map((c) => (
             <div key={c.nome} className={`${s.itemLista} ${c.ativa ? s.itemListaAtivo : ''}`}>
               <span className={`${s.avatarLista} ${c.bot ? s.avatarListaBot : ''}`} aria-hidden>
-                {c.sigla}
+                <FotoDaPessoa nome={c.nome} />
               </span>
               <span className={s.corpoLista}>
                 <span className={s.nomeLista}>{c.nome}</span>
@@ -557,7 +558,7 @@ export function Desktop() {
         <div className={s.colunaThread}>
           <div className={s.threadTopo}>
             <span className={s.avatarLista} aria-hidden>
-              MC
+              <FotoDaPessoa nome="Marina Costa" />
             </span>
             <span>
               <span className={s.threadNome}>Marina Costa</span>
@@ -583,7 +584,7 @@ export function Desktop() {
         <div className={s.colunaFicha}>
           <div className={s.fichaCabeca}>
             <span className={s.fichaAvatarGrande} aria-hidden>
-              MC
+              <FotoDaPessoa nome="Marina Costa" />
             </span>
             <span>
               <span className={s.threadNome}>Marina Costa</span>
@@ -873,9 +874,11 @@ function ArteFila() {
   ]
   return (
     <div className={s.arteFila}>
-      {fila.map(([iniciais, nome, previa, canto], i) => (
+      {fila.map(([, nome, previa, canto], i) => (
         <div key={nome} className={s.itemFila}>
-          <span className={s.avatarFila}>{iniciais}</span>
+          <span className={s.avatarFila}>
+            <FotoDaPessoa nome={nome!} />
+          </span>
           <span className={s.textoFila}>
             <b>{nome}</b>
             <span>{previa}</span>

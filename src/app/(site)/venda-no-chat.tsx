@@ -1,3 +1,4 @@
+import QRCode from 'qrcode'
 import { ITENS_DE_INTEGRACAO } from './integracoes-do-site'
 import { TituloComCanal } from './titulo-com-canal'
 import v from './venda-no-chat.module.css'
@@ -75,11 +76,7 @@ export function SecaoVendaNoChat() {
                   <span>Cartão</span>
                   <span>Boleto</span>
                 </span>
-                <span className={v.qr}>
-                  {Array.from({ length: 49 }, (_, i) => (
-                    <i key={i} data-cheio={(i * 7 + (i % 5) * 3) % 3 === 0 || [0, 1, 7, 8, 5, 6, 12, 13, 35, 36, 42, 43].includes(i) || undefined} />
-                  ))}
-                </span>
+                <QrDoPix />
                 <span className={v.copiar}>Copiar código Pix</span>
               </span>
             </div>
@@ -118,5 +115,22 @@ export function SecaoVendaNoChat() {
         </ul>
       </div>
     </section>
+  )
+}
+
+/*
+ * Um QR de verdade, gerado no servidor com a mesma lib do app. Aponta para a
+ * página de preços: quem escanear da tela cai no site, não num Pix de mentira.
+ */
+function QrDoPix() {
+  const { modules } = QRCode.create('https://autofluxos.4yu.com.br/precos', { errorCorrectionLevel: 'M' })
+  const n = modules.size
+  let d = ''
+  for (let y = 0; y < n; y++) for (let x = 0; x < n; x++) if (modules.get(y, x)) d += `M${x} ${y}h1v1h-1z`
+  return (
+    <svg className={v.qr} viewBox={`-2 -2 ${n + 4} ${n + 4}`} shapeRendering="crispEdges" aria-hidden>
+      <rect x={-2} y={-2} width={n + 4} height={n + 4} fill="#ffffff" />
+      <path d={d} fill="#0c1838" />
+    </svg>
   )
 }

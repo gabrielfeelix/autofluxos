@@ -1,5 +1,6 @@
 import type { CSSProperties, ReactNode } from 'react'
 import b from './bento.module.css'
+import { FotoDaPessoa, MiniFoto } from './pessoas-do-site'
 
 /*
  * O bento "O que ele faz": as seis partes mais fortes do produto. Cada peça
@@ -171,9 +172,11 @@ export function CenaInbox() {
       <div className={b.filas}>
         {filas.map((fila, f) => (
           <div key={f} className={b.fila} style={{ '--f': f } as CSSProperties}>
-            {fila.map(([sigla, nome, texto, quem]) => (
+            {fila.map(([, nome, texto, quem]) => (
               <span key={nome} className={b.linha}>
-                <i>{sigla}</i>
+                <i>
+                  <FotoDaPessoa nome={nome!} />
+                </i>
                 <span>
                   <b>{nome}</b>
                   {texto}
@@ -273,13 +276,16 @@ export function CenaFunil() {
           </small>
           {cartoes.map((c) => (
             <span key={c} className={b.cartaoParado}>
+              <MiniFoto nome={c.split(' · ')[0]!} />
               {c}
             </span>
           ))}
         </div>
       ))}
       <span className={b.cartaoAnda}>
-        <i>MC</i>
+        <i>
+          <FotoDaPessoa nome="Marina Costa" />
+        </i>
         <span>
           <b>Marina Costa</b>
           R$ 268,80

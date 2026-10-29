@@ -31,6 +31,7 @@ import { ConversaQuePreencheAFicha, RelatoriosEmAbas } from './pecas-do-produto'
 import p from './produto.module.css'
 import s from './pagina-inicial.module.css'
 import x from './site.module.css'
+import { FotoDaPessoa } from './pessoas-do-site'
 
 /*
  * A página de cada parte do produto (`/produto/[slug]`), no molde das páginas
@@ -355,9 +356,11 @@ function CenaTransmissao() {
         ))}
       </div>
       <ul className={p.campanhaLista}>
-        {CONTATOS_DA_CAMPANHA.map(([sigla, nome], n) => (
+        {CONTATOS_DA_CAMPANHA.map(([, nome], n) => (
           <li key={nome} style={{ '--n': n } as CSSProperties}>
-            <i>{sigla}</i>
+            <i>
+              <FotoDaPessoa nome={nome} />
+            </i>
             <span>{nome}</span>
             <em className={p.estados}>
               <span data-estado="fila">Na fila</span>

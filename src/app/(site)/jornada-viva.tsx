@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from 'react'
 import { GLIFO_INSTAGRAM, GLIFO_META } from '@/components/design/glifos-oficiais'
 import x from './site.module.css'
+import { FotoDaPessoa, MiniFoto } from './pessoas-do-site'
 
 /*
  * A jornada da home como um player: as etapas avançam sozinhas, o fio
@@ -180,7 +181,9 @@ const TELAS: ReactNode[] = [
     </svg>
     <Janela titulo="Contatos · lead novo" largura={230}>
       <div className={x.jtLead}>
-        <span className={x.jtAvatarGrande}>MC</span>
+        <span className={x.jtAvatarGrande}>
+          <FotoDaPessoa nome="Marina Costa" />
+        </span>
         <strong>Marina Costa</strong>
         <small>(44) 9••••-4412</small>
         <dl>
@@ -255,7 +258,9 @@ const TELAS: ReactNode[] = [
         ['TS', 'Tiago Souza', 'Vocês entregam em Maringá?', 'espera 5 min', false],
       ].map(([sigla, nome, texto, estado, destaque], i) => (
         <div key={String(sigla)} className={x.jtLinha} data-destaque={destaque || undefined} style={{ '--i': i } as CSSProperties}>
-          <span className={x.jtAvatar}>{sigla}</span>
+          <span className={x.jtAvatar}>
+            <FotoDaPessoa nome={String(nome)} />
+          </span>
           <span>
             <strong>{nome}</strong>
             <small>{texto}</small>
@@ -287,14 +292,19 @@ const TELAS: ReactNode[] = [
           </small>
           {c.cartoes.map(([nome, valor]) => (
             <span key={nome} className={x.jtCartaoFantasma}>
-              {nome}
+              <span>
+                <MiniFoto nome={nome!} tamanho={18} />
+                {nome}
+              </span>
               <b>{valor}</b>
             </span>
           ))}
           {i === 1 && (
             <span className={x.jtCartao}>
               <span className={x.jtCartaoTopo}>
-                <span className={x.jtAvatar}>MC</span>
+                <span className={x.jtAvatar}>
+                  <FotoDaPessoa nome="Marina Costa" />
+                </span>
                 <strong>Marina Costa</strong>
               </span>
               <b>R$ 268,80</b>

@@ -1,4 +1,5 @@
 import type { CSSProperties, ReactNode } from 'react'
+import { MiniFoto } from './pessoas-do-site'
 import { TituloComCanal } from './titulo-com-canal'
 import { GLIFO_WHATSAPP } from '@/components/design/glifos-oficiais'
 import type { NichoDoSite } from './nichos-do-site'
@@ -326,7 +327,8 @@ function ModuloRestaurante() {
                 .map((t) => (
                   <span key={t.n} className={m.ticket}>
                     <span className={m.ticketTopo}>
-                      <b>{t.n}</b> {t.quem}
+                      <b>{t.n}</b> <MiniFoto nome={t.quem} tamanho={16} />
+                      {t.quem}
                       <em>{t.origem === 'WhatsApp' ? <Zap /> : t.origem}</em>
                     </span>
                     <span>{t.itens}</span>

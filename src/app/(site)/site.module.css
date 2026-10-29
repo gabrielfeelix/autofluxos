@@ -1186,7 +1186,8 @@ a.canal h3 svg {
 .doisLados {
   position: relative;
   max-width: 1040px;
-  height: 540px;
+  /* A janela ganhou o campo de resposta e a ficha: a legenda de baixo precisa do espaço. */
+  height: 600px;
   margin: 48px auto 0;
 }
 
@@ -1286,7 +1287,7 @@ a.canal h3 svg {
   flex-direction: column;
   justify-content: flex-end;
   gap: 6px;
-  height: 380px;
+  height: 330px;
   overflow: hidden;
   /* A mensagem que sai por cima some aos poucos, em vez de aparecer cortada. */
   mask-image: linear-gradient(180deg, transparent, #000 48px);
@@ -3008,4 +3009,143 @@ a.canal h3 svg {
 
 .olhoMarca {
   flex: none;
+}
+
+/* O Inbox da coexistência inteiro: a conversa com o campo de resposta e a ficha à direita. */
+.janelaGrade {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 210px;
+}
+
+.janelaConversa {
+  min-width: 0;
+}
+
+.janelaCampo {
+  display: grid;
+  gap: 8px;
+  margin: 0 18px 14px var(--margem);
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  font-size: 13px;
+  color: #8a93a8;
+}
+
+.janelaFerramentas {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: #64708a;
+}
+
+.janelaFerramentas b,
+.janelaFerramentas i {
+  font-size: 13px;
+  color: #64708a;
+}
+
+.janelaFicha {
+  display: grid;
+  align-content: start;
+  justify-items: center;
+  gap: 4px;
+  padding: 20px 14px;
+  border-left: 1px solid var(--line-soft);
+  font-size: 12px;
+  color: #64708a;
+  text-align: center;
+}
+
+.janelaFichaFoto {
+  width: 56px;
+  height: 56px;
+  margin-bottom: 4px;
+  overflow: hidden;
+  border-radius: 50%;
+}
+
+.janelaFicha strong {
+  font-size: 14px;
+  color: #0c1838;
+}
+
+.janelaFichaBloco {
+  display: grid;
+  gap: 2px;
+  width: 100%;
+  margin-top: 10px;
+  padding: 9px 10px;
+  border: 1px solid #fde4b0;
+  border-radius: 10px;
+  background: #fffbeb;
+  text-align: left;
+  color: #56617c;
+}
+
+.janelaFichaBloco b {
+  font-size: 10.5px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #b45309;
+}
+
+.janelaFichaBloco[data-tom='bot'] {
+  border-color: #cdd9f7;
+  background: #eef3fe;
+}
+
+.janelaFichaBloco[data-tom='bot'] b {
+  color: #1d4ed8;
+}
+
+.janelaFicha dl {
+  display: grid;
+  gap: 6px;
+  width: 100%;
+  margin: 10px 0 0;
+  text-align: left;
+}
+
+.janelaFicha dl > div {
+  display: flex;
+  justify-content: space-between;
+}
+
+.janelaFicha dd {
+  margin: 0;
+  color: #0c1838;
+}
+
+.janelaFichaTitulo {
+  justify-self: start;
+  margin-top: 10px;
+  font-weight: 600;
+  color: #0c1838;
+}
+
+.janelaEtiquetas {
+  display: flex;
+  flex-wrap: wrap;
+  justify-self: start;
+  gap: 4px;
+}
+
+.janelaEtiquetas i {
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: #eef3fe;
+  font-size: 11px;
+  font-style: normal;
+  color: #1d4ed8;
+}
+
+@media (max-width: 900px) {
+  .janelaGrade {
+    grid-template-columns: 1fr;
+  }
+
+  .janelaFicha {
+    display: none;
+  }
 }
