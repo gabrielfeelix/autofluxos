@@ -93,7 +93,7 @@ export const TEXTO_DO_ACEITE_DO_SITE =
  * `mensagem` é o "SAIR" na conversa; `meta` é a Meta recusando o envio porque a
  * pessoa parou as promoções pelo próprio WhatsApp.
  */
-export type OrigemDoConsentimento = 'mensagem' | 'site' | 'lead_ads' | 'manual' | 'fluxo' | 'importacao' | 'meta'
+export type OrigemDoConsentimento = 'mensagem' | 'site' | 'lead_ads' | 'manual' | 'fluxo' | 'importacao' | 'meta' | 'api'
 
 /** A linha mais recente de MARKETING de um contato. `null` = nunca houve registro. */
 export type EstadoDoMarketing = {
@@ -110,6 +110,7 @@ const ORIGEM_EM_PALAVRAS: Record<string, string> = {
   fluxo: 'pelo fluxo',
   importacao: 'na importação',
   meta: 'pelo próprio WhatsApp',
+  api: 'no sistema da empresa (checkout ou cadastro)',
 }
 
 export function origemEmPalavras(origem: string): string {

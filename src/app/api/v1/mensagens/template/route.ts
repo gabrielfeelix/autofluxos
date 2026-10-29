@@ -38,6 +38,8 @@ const corpoSchema = z.object({
       cabecalho: z.array(valor).max(1).optional(),
     })
     .optional(),
+  aceite_marketing: z.literal(true).optional(),
+  texto_do_aceite: z.string().trim().min(1).max(500).optional(),
 })
 
 export async function POST(request: Request) {

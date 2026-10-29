@@ -253,6 +253,7 @@ function ErrosELimites() {
     [409, 'template_nao_aprovado', 'O modelo existe, mas não está aprovado na Meta agora (pendente, pausado, recusado).'],
     [409, 'sem_numero', 'A organização não tem número de WhatsApp conectado.'],
     [409, 'sem_conta_de_recebimento', 'A organização não conectou Mercado Pago nem Asaas em Ajustes › Pagamentos.'],
+    [409, 'sem_aceite_de_marketing', 'Modelo de marketing para quem pediu para sair das promoções. Só reenvie com aceite_marketing: true se a pessoa aceitou de novo.'],
     [409, 'requisicao_em_andamento', 'Outra chamada com a mesma Idempotency-Key ainda está em andamento.'],
     [413, 'corpo_grande', 'Corpo acima de 64 KB.'],
     [422, 'corpo_invalido', 'Campo obrigatório faltando ou com tipo errado. A mensagem diz qual.'],
@@ -587,8 +588,27 @@ function EnviarTemplate() {
           { nome: 'idioma', tipo: 'string', descricao: 'Obrigatório só quando o mesmo nome existe em mais de um idioma.' },
           { nome: 'valores.corpo', tipo: 'string[]', descricao: <>Um valor por variável do corpo, na ordem: o primeiro entra no <Cod>{'{{1}}'}</Cod>. A quantidade precisa bater.</> },
           { nome: 'valores.cabecalho', tipo: 'string[]', descricao: 'O valor da variável do cabeçalho de texto, quando houver.' },
+          {
+            nome: 'aceite_marketing',
+            tipo: 'true',
+            descricao: (
+              <>
+                Mande quando a pessoa marcou &quot;aceito receber promoções&quot; no seu sistema (checkout, cadastro). O
+                aceite fica gravado na ficha do contato antes do envio. Só aceita <Cod>true</Cod>: caixinha
+                desmarcada não é recusa, é só não mandar o campo.
+              </>
+            ),
+          },
+          { nome: 'texto_do_aceite', tipo: 'string', descricao: 'O texto da caixinha que a pessoa marcou, até 500 caracteres. Fica guardado como prova do aceite.' },
         ]}
       />
+      <Nota titulo="Modelo de marketing respeita o SAIR">
+        <p>
+          Quem respondeu SAIR no WhatsApp não recebe modelo de categoria marketing: a chamada volta 409{' '}
+          <Cod>sem_aceite_de_marketing</Cod> e nada é cobrado. Contato sem registro nenhum recebe, como nas
+          transmissões. Modelos de utilidade (lembrete, confirmação, cobrança) não passam por esta regra.
+        </p>
+      </Nota>
       <Respostas>
         <Resposta status={202} descricao="Aceito pela Meta" aberta corpo={JSON.stringify(ENVIO_EXEMPLO, null, 2)}>
           <p>

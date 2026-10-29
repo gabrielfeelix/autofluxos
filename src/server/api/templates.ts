@@ -9,6 +9,9 @@ import { confirmarEntrega, contextoDeResposta, registrarSaida } from '../repos/c
 import { anotar } from '../repos/eventos'
 import { listarTemplates, listarTemplatesAprovados, type Template } from '../repos/templates'
 import { gravarContatoDaApi } from './contatos'
+import { recebePromocoes } from '@/core/consentimento'
+import { mudarMarketing } from '../consentimento'
+import { marketingDoContato } from '../repos/consentimentos'
 import type { CodigoDeErro } from './autenticar'
 import { modeloComClique } from '../link-do-clique'
 
@@ -76,6 +79,10 @@ export type PedidoDeEnvio = {
   template: string
   idioma?: string
   valores?: { corpo?: string[]; cabecalho?: string[] }
+  /** A pessoa marcou "aceito receber promoções" no sistema de quem integra (checkout, cadastro). */
+  aceite_marketing?: true
+  /** O texto da caixinha que ela marcou, guardado como prova do aceite. */
+  texto_do_aceite?: string
 }
 
 export type ResultadoDoEnvio =
@@ -170,6 +177,31 @@ export async function enviarModeloPelaApi(clienteId: string, pedido: PedidoDeEnv
   const gravado = await gravarContatoDaApi(clienteId, { telefone: pedido.telefone })
   if (!gravado.ok) return recusa(422, 'telefone_invalido', 'Telefone sem DDD ou incompleto. Exemplo: 5511987654321.')
   const contatoId = gravado.contato.id
+
+  /*
+   * Modelo de marketing respeita o SAIR, igual à transmissão: quem pediu para
+   * sair não recebe, e é a qualidade do número da organização que cai quando
+   * recebe mesmo assim. O aceite que vem junto (a caixinha do checkout) é
+   * gravado antes de conferir: é o mais novo, e vale sobre um SAIR antigo.
+   */
+  if (template.categoria === 'MARKETING') {
+    if (pedido.aceite_marketing) {
+      await mudarMarketing({
+        clienteId,
+        contatoId,
+        aceito: true,
+        origem: 'api',
+        textoExibido: pedido.texto_do_aceite ?? null,
+        autor: 'API',
+      })
+    } else if (!recebePromocoes(await marketingDoContato(clienteId, contatoId))) {
+      return recusa(
+        409,
+        'sem_aceite_de_marketing',
+        `O contato pediu para não receber promoções, e "${template.nome}" é um modelo de marketing. Envie aceite_marketing: true só se a pessoa aceitou de novo no seu sistema.`,
+      )
+    }
+  }
 
   const contexto = await contextoDeResposta(clienteId, contatoId)
   const canal = contexto ? await adaptadorDoCanal(contexto.canal) : null

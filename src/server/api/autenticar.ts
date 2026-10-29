@@ -50,6 +50,7 @@ export type CodigoDeErro =
   | 'requisicao_em_andamento'
   | 'template_nao_encontrado'
   | 'template_nao_aprovado'
+  | 'sem_aceite_de_marketing'
   | 'template_com_midia'
   | 'link_com_lacuna'
   | 'idioma_obrigatorio'
