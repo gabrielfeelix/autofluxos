@@ -215,7 +215,7 @@ export const RECURSOS: RecursoDoSite[] = [
       { titulo: 'Os números do seu ramo', texto: 'Pedidos e tempo de preparo, aulas e presença, mensalidades em dia.' },
     ],
     /*
-     * Os mesmos números medidos da home (`NUMEROS` em `secoes-do-site.tsx`):
+     * Os mesmos números medidos da home (comentário de `SecaoNumeros`):
      * 90 dias até 28/out/2026, todas as contas. Refazer a conta antes de mudar.
      */
     ficha: {

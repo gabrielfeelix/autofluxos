@@ -860,8 +860,12 @@ a.canal h3 svg {
 .janelaCorpo {
   display: flex;
   flex-direction: column;
+  justify-content: flex-end;
   gap: 6px;
   height: 380px;
+  overflow: hidden;
+  /* A mensagem que sai por cima some aos poucos, em vez de aparecer cortada. */
+  mask-image: linear-gradient(180deg, transparent, #000 48px);
   padding: 16px 24px 24px var(--margem);
   background: #fafbfe;
 }
@@ -994,7 +998,11 @@ a.canal h3 svg {
   flex: 1;
   display: flex;
   flex-direction: column;
+  justify-content: flex-end;
   gap: 6px;
+  min-height: 0;
+  overflow: hidden;
+  mask-image: linear-gradient(180deg, transparent, #000 32px);
   padding: 10px 10px 8px;
 }
 
@@ -1065,6 +1073,206 @@ a.canal h3 svg {
   align-self: flex-end;
   border-top-right-radius: 2px;
   background: #d9fdd3;
+}
+
+/* ── mensagens ricas da coexistência: foto do produto, áudio, Pix ── */
+
+.janelaBalao p {
+  margin: 0;
+}
+
+.janelaBalao[data-rico] {
+  display: grid;
+  gap: 10px;
+}
+
+.janelaProduto {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px;
+  border-radius: 10px;
+  background: #ffffff;
+}
+
+.janelaProduto img {
+  flex: none;
+  width: 56px;
+  height: 56px;
+  border-radius: 8px;
+  object-fit: cover;
+}
+
+.janelaProduto strong {
+  display: block;
+  font-size: 13.5px;
+}
+
+.janelaProduto small {
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.janelaAudio {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 260px;
+}
+
+.janelaAudio > i {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: #1d4ed8;
+  color: #ffffff;
+}
+
+.janelaAudio small,
+.aparelhoAudio small {
+  font-size: 11.5px;
+  color: var(--dim);
+  font-variant-numeric: tabular-nums;
+}
+
+.onda {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  height: 22px;
+}
+
+.onda i {
+  flex: 1;
+  min-width: 2px;
+  border-radius: 1px;
+  background: #9fb0d4;
+}
+
+.janelaTranscricao {
+  display: grid;
+  gap: 2px;
+  max-width: 320px;
+  padding-top: 8px;
+  border-top: 1px solid var(--line);
+  font-size: 13px;
+  line-height: 1.45;
+  color: var(--soft);
+}
+
+.janelaTranscricao small {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: #1d4ed8;
+}
+
+.janelaPix,
+.aparelhoPix {
+  display: grid;
+  gap: 4px;
+  min-width: 220px;
+}
+
+.janelaPix strong,
+.aparelhoPix strong {
+  margin-bottom: 2px;
+}
+
+.janelaPix span,
+.aparelhoPix span {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  font-size: 13px;
+}
+
+.janelaPix b,
+.aparelhoPix b {
+  white-space: nowrap;
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+}
+
+.janelaPix [data-total],
+.aparelhoPix [data-total] {
+  margin-top: 4px;
+  padding-top: 6px;
+  border-top: 1px solid rgb(255 255 255 / 0.3);
+  font-weight: 600;
+}
+
+.janelaPix [data-total] b,
+.aparelhoPix [data-total] b {
+  font-weight: 700;
+}
+
+.aparelhoBalao[data-rico] {
+  padding: 4px 4px 6px;
+}
+
+.aparelhoBalao[data-rico] > span,
+.aparelhoBalao[data-rico] > strong {
+  display: block;
+  padding-inline: 5px;
+}
+
+.aparelhoFoto {
+  display: block;
+  width: 100%;
+  height: 92px;
+  border-radius: 6px;
+  object-fit: cover;
+}
+
+.aparelhoProduto {
+  margin: 6px 0 4px;
+  font-size: 12.5px;
+  line-height: 1.3;
+}
+
+.aparelhoProduto b {
+  display: block;
+  font-weight: 500;
+  color: #54656f;
+}
+
+.aparelhoAudio {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 170px;
+  color: #54656f;
+}
+
+.aparelhoPix {
+  width: 188px;
+  min-width: 0;
+  padding-inline: 5px;
+  font-size: 12.5px;
+}
+
+.aparelhoPix span {
+  font-size: 12.5px;
+}
+
+.aparelhoPix [data-total] {
+  border-top-color: rgb(17 27 33 / 0.12);
+}
+
+.aparelhoPix em {
+  display: block;
+  margin-top: 6px;
+  padding-top: 6px;
+  border-top: 1px solid rgb(17 27 33 / 0.12);
+  font-size: 12.5px;
+  font-style: normal;
+  font-weight: 500;
+  text-align: center;
+  color: #027eb5;
 }
 
 @keyframes entra {
@@ -1257,26 +1465,47 @@ a.canal h3 svg {
 }
 
 .numeros {
-  padding: clamp(48px, 6vw, 72px) 0;
+  padding: clamp(48px, 6vw, 80px) 0;
   border-bottom: 1px solid var(--line);
 }
 
 .numerosGrade {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  column-gap: 40px;
 }
 
-@media (max-width: 760px) {
+@media (max-width: 860px) {
   .numerosGrade {
     grid-template-columns: 1fr;
-    row-gap: 28px;
+  }
+}
+
+.numero {
+  display: flex;
+  flex-direction: column;
+  padding: 8px 36px 8px 0;
+}
+
+.numero + .numero {
+  padding-left: 36px;
+  border-left: 1px solid var(--line);
+}
+
+@media (max-width: 860px) {
+  .numero,
+  .numero + .numero {
+    padding: 28px 0;
+    border-left: 0;
+  }
+
+  .numero + .numero {
+    border-top: 1px solid var(--line);
   }
 }
 
 .numero strong {
   display: block;
-  font-size: clamp(44px, 5.6vw, 72px);
+  font-size: clamp(44px, 5vw, 64px);
   line-height: 1;
   font-weight: 600;
   letter-spacing: -0.05em;
@@ -1284,20 +1513,179 @@ a.canal h3 svg {
   font-variant-numeric: tabular-nums;
 }
 
-.numero span {
+.numero > span {
   display: block;
   margin-top: 10px;
-  max-width: 28ch;
+  max-width: 26ch;
   font-size: 15px;
   line-height: 1.5;
   color: var(--muted);
 }
 
-.numerosFonte {
-  grid-column: 1 / -1;
-  margin: 28px 0 0;
-  font-size: 13px;
+/* As três peças ficam no pé da coluna, alinhadas entre si. */
+.marcas,
+.tempos,
+.dia {
+  margin-top: auto;
+  padding-top: 28px;
+}
+
+/* 74%: 50 marcas, 37 cheias. */
+.marcas {
+  display: grid;
+  grid-template-columns: repeat(25, minmax(0, 1fr));
+  gap: 4px;
+}
+
+.marcas i {
+  height: 14px;
+  border-radius: 3px;
+  background: #e6ebf5;
+}
+
+.marcas i[data-cheia] {
+  background: #1d4ed8;
+  transition: background 0.25s var(--curva) calc(var(--i) * 22ms);
+}
+
+[data-vivo='espera'] .marcas i[data-cheia] {
+  background: #e6ebf5;
+  transition: none;
+}
+
+.numeroLegenda {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 12px 0 0;
+  font-size: 12.5px;
   color: var(--dim);
+}
+
+.numeroLegenda b {
+  width: 8px;
+  height: 8px;
+  border-radius: 2px;
+  background: #1d4ed8;
+}
+
+/* 4 s contra 1 min 46 s: a barra do chatbot enche na hora, a da equipe demora. */
+.tempos {
+  display: grid;
+  gap: 12px;
+}
+
+.tempos > div {
+  display: grid;
+  grid-template-columns: 58px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 12px;
+}
+
+.tempos small {
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.tempos i {
+  height: 10px;
+  border-radius: 5px;
+  background: #e6ebf5;
+  overflow: hidden;
+}
+
+.tempos b {
+  display: block;
+  width: max(var(--w), 8px);
+  height: 100%;
+  border-radius: 5px;
+  background: #1d4ed8;
+  transition: width 0.35s var(--curva);
+}
+
+.tempos [data-lenta] b {
+  background: #94a3c4;
+  transition: width 2.4s linear 0.2s;
+}
+
+[data-vivo='espera'] .tempos b {
+  width: 0;
+  transition: none;
+}
+
+.tempos em {
+  min-width: 72px;
+  font-size: 13px;
+  font-style: normal;
+  font-weight: 600;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+/* 1 em 6: um dia de 24 h, o expediente marcado e as mensagens chegando. */
+.diaTrilho {
+  position: relative;
+  height: 28px;
+  border-radius: 6px;
+  background: #f1f4fa;
+}
+
+.diaExpediente {
+  position: absolute;
+  inset: 0 auto 0 calc(100% / 3);
+  width: calc(100% * 10 / 24);
+  border-inline: 1px dashed #b9c6e4;
+  background: #e3eafa;
+}
+
+.diaTrilho i {
+  position: absolute;
+  top: 50%;
+  left: var(--x);
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #94a3c4;
+  translate: -50% -50%;
+  transition:
+    scale 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) calc(var(--i) * 140ms),
+    opacity 0.2s linear calc(var(--i) * 140ms);
+}
+
+.diaTrilho i[data-fora] {
+  width: 14px;
+  height: 14px;
+  background: #1d4ed8;
+  box-shadow: 0 0 0 4px rgb(29 78 216 / 0.16);
+}
+
+[data-vivo='espera'] .diaTrilho i {
+  scale: 0;
+  opacity: 0;
+  transition: none;
+}
+
+.diaHoras {
+  position: relative;
+  height: 18px;
+  margin-top: 8px;
+}
+
+.diaHoras small {
+  position: absolute;
+  left: var(--x);
+  translate: -50% 0;
+  font-size: 11.5px;
+  color: var(--dim);
+  font-variant-numeric: tabular-nums;
+}
+
+.diaHoras small:first-child {
+  translate: 0 0;
+}
+
+.diaHoras small:last-child {
+  translate: -100% 0;
 }
 
 .duvidasCurtas {

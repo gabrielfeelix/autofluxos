@@ -6,8 +6,8 @@ import { useEffect, useRef } from 'react'
  * O cursor da landing: um anel que persegue o ponteiro com atraso.
  *
  * **São dois elementos, e a distância entre eles é o efeito.** O ponto segue o
- * mouse na hora; o anel chega depois, interpolando 14% da distância a cada
- * quadro. Quando o ponteiro para, o anel alcança e os dois viram um só. Quando
+ * mouse na hora; o anel chega depois, interpolando a distância com uma constante
+ * de 40 ms. Quando o ponteiro para, o anel alcança e os dois viram um só. Quando
  * corre, o anel fica para trás e se estica na direção do movimento, é o mesmo
  * truque que os sites de referência usam, e o que faz o cursor parecer um
  * objeto com massa em vez de um sprite colado.
@@ -50,17 +50,22 @@ export function Cursor({ classePonto, classeAnel, classeAtivo }: {
     let visivel = false
     let quadro = 0
 
-    function laco() {
-      // 0.14 por quadro: o anel alcança em ~8 quadros parado, e fica visivelmente
-      // atrás em movimento. Mais alto gruda, mais baixo parece solto.
-      anelX += (alvoX - anelX) * 0.14
-      anelY += (alvoY - anelY) * 0.14
+    let antes = performance.now()
 
+    function laco(agora: number) {
+      // Suavização por tempo, não por quadro: 0,14 por quadro deixava o anel
+      // atrás demais a 60 Hz e mudava de peso em tela de 120 Hz. Constante de
+      // 40 ms: ~34% do caminho a cada quadro de 60 Hz, alcança em ~120 ms.
+      const dt = Math.min(agora - antes, 64)
+      antes = agora
+      const k = 1 - Math.exp(-dt / 40)
+      anelX += (alvoX - anelX) * k
+      anelY += (alvoY - anelY) * k
       // A distância vira esticada: o anel se alonga na direção em que corre.
       const dx = alvoX - anelX
       const dy = alvoY - anelY
-      const dist = Math.min(Math.sqrt(dx * dx + dy * dy), 90)
-      const estica = 1 + dist / 190
+      const dist = Math.min(Math.sqrt(dx * dx + dy * dy), 60)
+      const estica = 1 + dist / 150
       const angulo = (Math.atan2(dy, dx) * 180) / Math.PI
 
       anel!.style.transform = `translate(${anelX}px, ${anelY}px) translate(-50%, -50%) rotate(${angulo}deg) scaleX(${estica}) scaleY(${1 / estica})`

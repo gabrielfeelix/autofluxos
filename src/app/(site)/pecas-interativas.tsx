@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useRef, useState, useSyncExternalStore } from 'react'
+import { useEffect, useRef, useState, useSyncExternalStore, type CSSProperties } from 'react'
 import { CONVERSAS, PreviaWhatsApp, type ChaveDaConversa } from './previa-whatsapp'
 import x from './site.module.css'
 
@@ -68,16 +68,144 @@ export function PreviaQueTroca({ chaves, intervalo = 7000 }: { chaves: ChaveDaCo
  * Business do celular do dono e no Inbox, ao mesmo tempo; no fim a atendente
  * responde **pelo celular** e a resposta surge no Inbox.
  */
-type Fala = { de: 'cliente' | 'bot' | 'equipe'; texto: string; marca?: string }
+type Fala = {
+  de: 'cliente' | 'bot' | 'equipe'
+  texto?: string
+  produto?: { foto: string; nome: string; preco: string }
+  audio?: { duracao: string; transcricao: string }
+  pix?: { pedido: string; itens: [string, string][]; total: string }
+}
 
+// Fone R$ 249,90 + frete R$ 18,90, os mesmos valores da prévia da loja (`previa-whatsapp.tsx`).
 const ROTEIRO: Fala[] = [
   { de: 'cliente', texto: 'Oi! Vocês entregam no sábado?' },
-  { de: 'bot', texto: 'Entregamos sim, das 9h às 14h. Quer que eu monte o pedido?', marca: 'Chatbot' },
-  { de: 'cliente', texto: 'Prefiro falar com alguém' },
-  { de: 'equipe', texto: 'Oi, Marina! Aqui é a Júlia. Te ajudo agora.', marca: 'Respondido pelo celular' },
+  {
+    de: 'bot',
+    texto: 'Entregamos sim, das 9h às 14h. Este é o mais pedido da semana:',
+    produto: { foto: '/fotos-do-site/fone.webp', nome: 'Fone Over-ear Bluetooth', preco: 'R$ 249,90' },
+  },
+  { de: 'cliente', audio: { duracao: '0:07', transcricao: 'Quero esse em preto, mas queria tirar uma dúvida do tamanho com alguém.' } },
+  { de: 'equipe', texto: 'Oi, Marina! Aqui é a Júlia. Ele ajusta na cabeça, serve em todo mundo. Separo o preto?' },
+  { de: 'cliente', texto: 'Pode separar!' },
+  { de: 'equipe', pix: { pedido: 'Pedido 1042', itens: [['Fone preto', 'R$ 249,90'], ['Entrega sábado', 'R$ 18,90']], total: 'R$ 268,80' } },
 ]
 
-const HORAS_DA_CONVERSA = ['10:41', '10:41', '10:42', '10:43']
+const HORAS_DA_CONVERSA = ['10:41', '10:41', '10:42', '10:43', '10:43', '10:44']
+// Quando a Júlia entra: a fala da equipe que vem logo depois do áudio.
+const ENTRADA_DA_EQUIPE = 3
+
+const ONDA_DO_AUDIO = [35, 60, 85, 50, 95, 65, 40, 75, 90, 55, 35, 70, 85, 45, 30, 60, 80, 50, 35, 25]
+
+function Onda() {
+  return (
+    <span className={x.onda} aria-hidden>
+      {ONDA_DO_AUDIO.map((h, i) => (
+        <i key={i} style={{ height: `${h}%` }} />
+      ))}
+    </span>
+  )
+}
+
+function Tocar() {
+  return (
+    <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
+      <path d="M7 4.5v15a1 1 0 0 0 1.5.86l12-7.5a1 1 0 0 0 0-1.72l-12-7.5A1 1 0 0 0 7 4.5Z" />
+    </svg>
+  )
+}
+
+/** O que a conversa mostra no Inbox: o áudio chega com a transcrição embaixo. */
+function NoInbox({ f }: { f: Fala }) {
+  return (
+    <div className={x.janelaBalao} data-rico={f.produto || f.audio || f.pix ? '' : undefined}>
+      {f.texto && <p>{f.texto}</p>}
+      {f.produto && (
+        <span className={x.janelaProduto}>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={f.produto.foto} alt="" width={56} height={56} />
+          <span>
+            <strong>{f.produto.nome}</strong>
+            <small>{f.produto.preco} · cartão enviado pelo chatbot</small>
+          </span>
+        </span>
+      )}
+      {f.audio && (
+        <>
+          <span className={x.janelaAudio}>
+            <i>
+              <Tocar />
+            </i>
+            <Onda />
+            <small>{f.audio.duracao}</small>
+          </span>
+          <span className={x.janelaTranscricao}>
+            <small>Transcrição</small>
+            {f.audio.transcricao}
+          </span>
+        </>
+      )}
+      {f.pix && (
+        <span className={x.janelaPix}>
+          <strong>{f.pix.pedido}</strong>
+          {f.pix.itens.map(([nome, valor]) => (
+            <span key={nome}>
+              {nome}
+              <b>{valor}</b>
+            </span>
+          ))}
+          <span data-total>
+            Total no Pix
+            <b>{f.pix.total}</b>
+          </span>
+        </span>
+      )}
+    </div>
+  )
+}
+
+/** O mesmo no WhatsApp Business do celular, no visual do app. */
+function NoCelular({ f, hora }: { f: Fala; hora: string }) {
+  const lado = f.de === 'cliente' ? 'ela' : 'nos'
+  return (
+    <div className={x.aparelhoBalao} data-de={lado} data-rico={f.produto || f.pix ? '' : undefined}>
+      {f.produto && (
+        <>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img className={x.aparelhoFoto} src={f.produto.foto} alt="" width={240} height={120} />
+          <strong className={x.aparelhoProduto}>
+            {f.produto.nome}
+            <b>{f.produto.preco}</b>
+          </strong>
+        </>
+      )}
+      {f.texto && <span>{f.texto}</span>}
+      {f.audio && (
+        <span className={x.aparelhoAudio}>
+          <Tocar />
+          <Onda />
+          <small>{f.audio.duracao}</small>
+        </span>
+      )}
+      {f.pix && (
+        <span className={x.aparelhoPix}>
+          <strong>Resumo do pedido</strong>
+          {f.pix.itens.map(([nome, valor]) => (
+            <span key={nome}>
+              {nome}
+              <b>{valor}</b>
+            </span>
+          ))}
+          <span data-total>
+            Total
+            <b>{f.pix.total}</b>
+          </span>
+          <em>Copiar código Pix</em>
+        </span>
+      )}
+      <time>{hora}</time>
+    </div>
+  )
+}
 
 export function DoisLados() {
   const [n, setN] = useState(0)
@@ -96,12 +224,13 @@ export function DoisLados() {
   useEffect(() => {
     if (calmo || !visivel) return
     const fim = n >= ROTEIRO.length
-    const r = window.setTimeout(() => setN(fim ? 0 : n + 1), fim ? 3200 : n === 0 ? 500 : 1500)
+    // Rápido como conversa de verdade: a primeira entra logo, as seguintes a cada ~1 s.
+    const r = window.setTimeout(() => setN(fim ? 0 : n + 1), fim ? 2800 : n === 0 ? 300 : 1050)
     return () => window.clearTimeout(r)
   }, [n, calmo, visivel])
 
   const falas = ROTEIRO.slice(0, calmo ? ROTEIRO.length : n)
-  const transferiu = falas.length >= 3
+  const transferiu = falas.length > ENTRADA_DA_EQUIPE
 
   return (
     <div ref={raiz} className={x.doisLados} aria-label="A mesma conversa no celular do dono e no Inbox">
@@ -124,8 +253,8 @@ export function DoisLados() {
           <p className={x.janelaAviso}>Hoje</p>
           {falas.map((f, i) => (
             <div key={i} className={x.janelaLinha} data-de={f.de}>
-              {i === 3 && <p className={x.janelaAviso}>Júlia entrou na conversa</p>}
-              <p className={x.janelaBalao}>{f.texto}</p>
+              {i === ENTRADA_DA_EQUIPE && <p className={x.janelaAviso}>Júlia entrou na conversa</p>}
+              <NoInbox f={f} />
               <small>
                 {f.de === 'bot' ? 'Chatbot · ' : f.de === 'equipe' ? 'Júlia, pelo celular · ' : ''}
                 {HORAS_DA_CONVERSA[i]}
@@ -155,10 +284,7 @@ export function DoisLados() {
           <div className={x.aparelhoCorpo}>
             <p className={x.aparelhoData}>Hoje</p>
             {falas.map((f, i) => (
-              <p key={i} className={x.aparelhoBalao} data-de={f.de === 'cliente' ? 'ela' : 'nos'}>
-                {f.texto}
-                <time>{HORAS_DA_CONVERSA[i]}</time>
-              </p>
+              <NoCelular key={i} f={f} hora={HORAS_DA_CONVERSA[i]!} />
             ))}
           </div>
           <div className={x.aparelhoCampo} aria-hidden>
@@ -173,6 +299,118 @@ export function DoisLados() {
       </div>
 
       <p className={x.sincronia}>O mesmo número nos dois lados. Cada mensagem aparece no celular e no Inbox ao mesmo tempo.</p>
+    </div>
+  )
+}
+
+/*
+ * Os três números medidos da home, cada um com a peça que o explica. Medição
+ * e consulta no comentário de `SecaoNumeros`, `secoes-do-site.tsx`: 90 dias até 28/out/2026.
+ *
+ * Sem JavaScript, o HTML já chega no estado final (barras cheias, 74%). O
+ * efeito marca `data-vivo="espera"` ao montar, zerando tudo, e `"sim"` quando
+ * a seção entra na tela; o CSS anima a passagem de um para o outro.
+ */
+const TEMPO_DO_CHATBOT = 4
+const TEMPO_DA_EQUIPE = 106
+// Horários ilustrativos, não medidos: cinco no horário comercial e um fora, na proporção medida de 1 em 6.
+const CHEGADAS = [9.4, 10.8, 13.6, 15.1, 16.7, 21.4]
+
+export function NumerosMedidos({ atraso = 0 }: { atraso?: number }) {
+  const raiz = useRef<HTMLDivElement>(null)
+  const conta = useRef<HTMLElement>(null)
+
+  useEffect(() => {
+    const el = raiz.current
+    const numero = conta.current
+    if (!el || !numero || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return
+    el.dataset.vivo = 'espera'
+    numero.textContent = '0%'
+    let quadro = 0
+    let espera = 0
+    const o = new IntersectionObserver(
+      ([e]) => {
+        if (!e!.isIntersecting) return
+        o.disconnect()
+        espera = window.setTimeout(() => {
+          el.dataset.vivo = 'sim'
+          const inicio = performance.now()
+          const passo = (agora: number) => {
+            const p = Math.min((agora - inicio) / 1200, 1)
+            numero.textContent = `${Math.round(74 * (1 - Math.pow(1 - p, 3)))}%`
+            if (p < 1) quadro = requestAnimationFrame(passo)
+          }
+          quadro = requestAnimationFrame(passo)
+        }, atraso)
+      },
+      { threshold: 0.35 },
+    )
+    o.observe(el)
+    return () => {
+      o.disconnect()
+      window.clearTimeout(espera)
+      cancelAnimationFrame(quadro)
+    }
+  }, [atraso])
+
+  return (
+    <div ref={raiz} className={x.numerosGrade}>
+      <div className={x.numero}>
+        <strong ref={conta}>74%</strong>
+        <span>das conversas terminam sem precisar da equipe</span>
+        <div className={x.marcas} aria-hidden>
+          {Array.from({ length: 50 }, (_, i) => (
+            <i key={i} data-cheia={i < 37 || undefined} style={{ '--i': i } as CSSProperties} />
+          ))}
+        </div>
+        <p className={x.numeroLegenda}>
+          <b /> Resolvidas pelo chatbot e pela IA
+        </p>
+      </div>
+
+      <div className={x.numero}>
+        <strong>4 s</strong>
+        <span>para o chatbot responder, na mediana</span>
+        <div className={x.tempos}>
+          <div>
+            <small>Chatbot</small>
+            <i>
+              <b style={{ '--w': `${(TEMPO_DO_CHATBOT / TEMPO_DA_EQUIPE) * 100}%` } as CSSProperties} />
+            </i>
+            <em>4 s</em>
+          </div>
+          <div data-lenta>
+            <small>Equipe</small>
+            <i>
+              <b style={{ '--w': '100%' } as CSSProperties} />
+            </i>
+            <em>1 min 46 s</em>
+          </div>
+        </div>
+      </div>
+
+      <div className={x.numero}>
+        <strong>1 em 6</strong>
+        <span>mensagens chega fora do horário comercial</span>
+        <div className={x.dia} aria-hidden>
+          <div className={x.diaTrilho}>
+            <span className={x.diaExpediente} />
+            {CHEGADAS.map((h, i) => (
+              <i
+                key={h}
+                data-fora={h < 8 || h >= 18 || undefined}
+                style={{ '--x': `${(h / 24) * 100}%`, '--i': i } as CSSProperties}
+              />
+            ))}
+          </div>
+          <div className={x.diaHoras}>
+            <small style={{ '--x': '0%' } as CSSProperties}>0h</small>
+            <small style={{ '--x': `${(8 / 24) * 100}%` } as CSSProperties}>8h</small>
+            <small style={{ '--x': `${(18 / 24) * 100}%` } as CSSProperties}>18h</small>
+            <small style={{ '--x': '100%' } as CSSProperties}>24h</small>
+          </div>
+        </div>
+      </div>
     </div>
   )
 }

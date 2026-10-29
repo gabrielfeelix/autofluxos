@@ -6,7 +6,7 @@ import { Desktop, Pergunta } from './pagina-do-site'
 import { CANAIS, type CanalDoSite } from './canais-do-site'
 import { RECURSOS, type RecursoDoSite } from './recursos-do-site'
 import { MODELOS_DE_TODOS, NICHOS_DO_SITE, type NichoDoSite } from './nichos-do-site'
-import { CalculadoraMeta, DoisLados, PreviaQueTroca } from './pecas-interativas'
+import { CalculadoraMeta, DoisLados, NumerosMedidos, PreviaQueTroca } from './pecas-interativas'
 import { CONVERSAS, PreviaWhatsApp } from './previa-whatsapp'
 import { ITENS_DE_INTEGRACAO } from './integracoes-do-site'
 import { VitrineDeIntegracoes } from './vitrine-de-integracoes'
@@ -161,26 +161,15 @@ export function CapaDoNicho({ nicho }: { nicho: NichoDoSite }) {
  * 8h-18h. 4 s: mediana entre a mensagem recebida e a próxima enviada na mesma
  * sessão (`messages`, lead() por session_id), 1.730 respostas antes de haver
  * transferência; com a equipe a mediana é 106 s. Refazer a conta antes de
- * mudar qualquer número.
+ * mudar qualquer número. Desenhados em `NumerosMedidos` (`pecas-interativas.tsx`).
  */
-const NUMEROS = [
-  { valor: '74%', rotulo: 'das conversas terminam sem precisar da equipe' },
-  { valor: '4 s', rotulo: 'para o chatbot responder, na mediana. Com a equipe, 1 min 46 s' },
-  { valor: '1 em 6', rotulo: 'mensagens chega fora do horário comercial' },
-]
 
 // Logo abaixo da capa, já na primeira tela do celular: entra como a capa, sem esperar o JavaScript.
 export function SecaoNumeros() {
   return (
-    <section className={x.numeros}>
-      <div className={`${s.faixa} ${x.numerosGrade}`}>
-        {NUMEROS.map((n, i) => (
-          <div key={n.valor} className={x.numero} {...entra(500 + i * 90)}>
-            <strong>{n.valor}</strong>
-            <span>{n.rotulo}</span>
-          </div>
-        ))}
-        <p className={x.numerosFonte}>Medido nas contas do AutoFluxos, últimos 90 dias.</p>
+    <section className={x.numeros} {...entra(500)}>
+      <div className={s.faixa}>
+        <NumerosMedidos atraso={500} />
       </div>
     </section>
   )
