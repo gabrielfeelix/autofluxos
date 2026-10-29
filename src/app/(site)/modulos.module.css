@@ -794,21 +794,56 @@
   background: color-mix(in srgb, var(--cor) calc(var(--v) * 100%), #fde2e2);
 }
 
-/* Passou o mouse, a barra ganha a cor cheia e o horário dela se destaca. */
+/*
+ * No mouse: as outras barras apagam, a da hora apontada fica na cor cheia,
+ * cresce e mostra quantos pedidos chegaram (pedido de 29/out: mais forte).
+ */
 .picoBarras i {
   transition:
     background 0.2s var(--curva),
-    translate 0.2s var(--curva);
+    opacity 0.2s var(--curva),
+    scale 0.2s var(--curva);
+  transform-origin: bottom;
+}
+
+.picoBarras:hover i {
+  opacity: 0.35;
 }
 
 .picoBarras i:hover {
-  translate: 0 -3px;
+  opacity: 1;
+  scale: 1.06 1.08;
   background: var(--cor);
+  box-shadow: 0 10px 22px -10px var(--cor);
 }
 
 .picoBarras i:hover span {
   font-weight: 700;
   color: var(--cor);
+}
+
+.picoBarras b {
+  position: absolute;
+  bottom: calc(100% + 6px);
+  left: 50%;
+  translate: -50% 4px;
+  padding: 3px 8px;
+  border-radius: 6px;
+  background: var(--cor);
+  font-size: 11px;
+  font-style: normal;
+  white-space: nowrap;
+  color: #ffffff;
+  opacity: 0;
+  pointer-events: none;
+  transition:
+    opacity 0.2s var(--curva),
+    translate 0.2s var(--curva);
+}
+
+.picoBarras i:hover b {
+  opacity: 1;
+  translate: -50% 0;
 }
 
 .picoBarras span {

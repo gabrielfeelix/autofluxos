@@ -1,0 +1,405 @@
+/*
+ * A venda no chat (`venda-no-chat.tsx`). Palco na cor da página (`--cor`, que
+ * na home é o azul da capa) com os fios; três passos em sequência que acendem
+ * um depois do outro num ciclo de 9 s; os gateways em fichas brancas embaixo.
+ */
+
+.palco {
+  width: min(100% - 40px, 1240px);
+  margin: 48px auto 0;
+  padding: clamp(20px, 4vw, 48px);
+  border-radius: 32px;
+  background:
+    var(--casca-fios-2),
+    linear-gradient(145deg, var(--cor, #1d4ed8), color-mix(in srgb, var(--cor, #1d4ed8) 62%, #0c1838));
+  color: #ffffff;
+}
+
+.passos {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: clamp(14px, 2vw, 24px);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.passo {
+  display: grid;
+  grid-template-rows: auto 1fr;
+  gap: 14px;
+  padding: 16px;
+  border: 1px solid rgb(255 255 255 / 0.16);
+  border-radius: 22px;
+  background: rgb(255 255 255 / 0.08);
+  animation: acende 9s var(--curva) infinite;
+  animation-delay: calc(var(--n) * 3s);
+}
+
+/* O passo da vez ganha borda e fundo mais claros; os outros descansam. */
+@keyframes acende {
+  0%,
+  30% {
+    border-color: rgb(255 255 255 / 0.6);
+    background: rgb(255 255 255 / 0.16);
+  }
+  36%,
+  100% {
+    border-color: rgb(255 255 255 / 0.16);
+    background: rgb(255 255 255 / 0.08);
+  }
+}
+
+.rotulo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.rotulo i {
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: #ffffff;
+  font-size: 13px;
+  font-style: normal;
+  color: var(--cor, #1d4ed8);
+}
+
+/* ───── 1 · a cobrança, como o cartão do Inbox ───── */
+
+.cartao {
+  align-self: center;
+  display: grid;
+  gap: 4px;
+  overflow: hidden;
+  border-radius: 15px 15px 4px 15px;
+  background: #ffffff;
+  color: #0c1838;
+  font-size: 12.5px;
+  box-shadow: 0 30px 50px -30px rgb(0 0 0 / 0.6);
+}
+
+.cartaoTopo {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 12px 0;
+  font-size: 11.5px;
+  font-weight: 600;
+  color: #56617c;
+}
+
+.cartao > b {
+  padding: 2px 12px 0;
+  font-size: 14px;
+}
+
+.linha,
+.total {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 0 12px;
+  color: #56617c;
+  font-variant-numeric: tabular-nums;
+}
+
+.total {
+  margin: 4px 12px 0;
+  padding: 6px 0 8px;
+  border-top: 1px solid #edf0f7;
+  font-size: 15px;
+  font-weight: 700;
+  color: #0c1838;
+}
+
+.total span {
+  font-size: 12.5px;
+  font-weight: 500;
+  color: #56617c;
+}
+
+.acoes {
+  display: flex;
+  border-top: 1px solid #edf0f7;
+  font-weight: 600;
+  color: #1d4ed8;
+}
+
+.acoes span {
+  flex: 1;
+  padding: 8px;
+  text-align: center;
+}
+
+.acoes span + span {
+  border-left: 1px solid #edf0f7;
+}
+
+/* O selo troca de "Aguardando" para "Paga" quando o passo 3 acende. */
+.selo {
+  display: grid;
+}
+
+.selo > span {
+  grid-area: 1 / 1;
+  justify-self: end;
+  padding: 2px 9px;
+  border-radius: 999px;
+  font-size: 11px;
+}
+
+.selo [data-estado='aguardando'] {
+  background: #fff7ed;
+  color: #b45309;
+  animation: selo 9s steps(1) infinite;
+}
+
+.selo [data-estado='paga'] {
+  background: #dcfce7;
+  color: #15803d;
+  animation: seloPaga 9s steps(1) infinite;
+}
+
+@keyframes selo {
+  0%,
+  66% {
+    visibility: visible;
+  }
+  67%,
+  100% {
+    visibility: hidden;
+  }
+}
+
+@keyframes seloPaga {
+  0%,
+  66% {
+    visibility: hidden;
+  }
+  67%,
+  100% {
+    visibility: visible;
+  }
+}
+
+/* ───── 2 · o link aberto no celular ───── */
+
+.celular {
+  align-self: center;
+  justify-self: center;
+  width: min(100%, 230px);
+  overflow: hidden;
+  border: 6px solid #ffffff;
+  border-radius: 26px;
+  background: #f6f8fd;
+  color: #0c1838;
+  box-shadow: 0 30px 50px -30px rgb(0 0 0 / 0.6);
+}
+
+.celularTopo {
+  display: block;
+  padding: 8px 12px;
+  background: #ffffff;
+  font-size: 11.5px;
+  color: #56617c;
+}
+
+.checkout {
+  display: grid;
+  justify-items: center;
+  gap: 8px;
+  padding: 12px;
+  text-align: center;
+}
+
+.checkout small {
+  font-size: 11px;
+  color: #56617c;
+}
+
+.checkout > b {
+  font-size: 22px;
+  letter-spacing: -0.03em;
+}
+
+.formas {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 3px;
+  width: 100%;
+  padding: 3px;
+  border-radius: 9px;
+  background: #e8ecf4;
+  font-size: 11px;
+  font-weight: 600;
+  color: #56617c;
+}
+
+.formas span {
+  padding: 4px;
+  border-radius: 7px;
+}
+
+.formas [data-ativa] {
+  background: #ffffff;
+  color: #0c1838;
+}
+
+.qr {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 2px;
+  width: 92px;
+  padding: 6px;
+  border-radius: 8px;
+  background: #ffffff;
+}
+
+.qr i {
+  aspect-ratio: 1;
+  border-radius: 1px;
+}
+
+.qr i[data-cheio] {
+  background: #0c1838;
+}
+
+.copiar {
+  width: 100%;
+  padding: 7px;
+  border-radius: 9px;
+  background: #1d4ed8;
+  font-size: 12px;
+  font-weight: 600;
+  color: #ffffff;
+}
+
+/* ───── 3 · aprovado ───── */
+
+.aprovado {
+  align-self: center;
+  display: grid;
+  gap: 10px;
+}
+
+.aviso {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 11px 14px;
+  border-radius: 14px;
+  background: #ffffff;
+  color: #0c1838;
+  font-size: 11.5px;
+  box-shadow: 0 20px 40px -18px rgb(0 0 0 / 0.55);
+}
+
+.aviso > i {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: #16a34a;
+  font-style: normal;
+  font-weight: 700;
+  color: #ffffff;
+}
+
+.aviso b {
+  display: block;
+  font-size: 13.5px;
+}
+
+.fala {
+  justify-self: start;
+  padding: 8px 12px;
+  border-radius: 12px 12px 12px 4px;
+  background: #ffffff;
+  font-size: 13px;
+  color: #111b21;
+}
+
+.resultado {
+  font-size: 14px;
+  line-height: 1.5;
+  color: rgb(255 255 255 / 0.9);
+}
+
+.resultado b {
+  padding: 1px 8px;
+  border-radius: 999px;
+  background: #dcfce7;
+  color: #15803d;
+}
+
+/* ───── os gateways ───── */
+
+.gateways {
+  display: grid;
+  justify-items: center;
+  gap: 14px;
+  margin-top: 32px;
+}
+
+.gateways small {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.gateways ul {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.gateways li {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 14px 8px 10px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: #ffffff;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.gateways li img,
+.gateways li svg {
+  width: 20px;
+  height: 20px;
+  object-fit: contain;
+}
+
+@media (max-width: 900px) {
+  .passos {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .palco * {
+    animation: none !important;
+  }
+
+  .selo [data-estado='aguardando'] {
+    visibility: hidden;
+  }
+
+  .selo [data-estado='paga'] {
+    visibility: visible;
+  }
+}

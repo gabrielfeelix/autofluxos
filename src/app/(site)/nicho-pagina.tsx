@@ -7,6 +7,7 @@ import { PreviaQueTroca } from './pecas-interativas'
 import { CONVERSAS, PreviaWhatsApp } from './previa-whatsapp'
 import { JanelaDaCapa, ModuloDoRamo } from './modulos-dos-ramos'
 import { SecaoInboxDoRamo } from './inbox-do-ramo'
+import { SecaoVendaNoChat } from './venda-no-chat'
 import { Pergunta } from './pagina-do-site'
 import n from './nicho.module.css'
 import s from './pagina-inicial.module.css'
@@ -133,6 +134,9 @@ export function CorpoDoRamo({ nicho }: { nicho: NichoDoSite }) {
 
       {/* O Inbox fazendo o trabalho do ramo: produto, cupom e cobrança; ou a aula marcada na Verandi. */}
       <SecaoInboxDoRamo slug={nicho.slug} />
+
+      {/* A venda fechada dentro do WhatsApp, com os gateways prontos. */}
+      <SecaoVendaNoChat />
 
       {/* A IA no ramo: o que ela sabe responder, e a conversa num palco da cor do ramo. */}
       <section className={`${s.secao} ${s.secaoTonal}`}>

@@ -1,4 +1,5 @@
 import { PaginaDoSite, SecaoFluxo, SecaoOQueFaz } from './(site)/pagina-do-site'
+import { SecaoVendaNoChat } from './(site)/venda-no-chat'
 import {
   CapaDaHome,
   SecaoDoisLados,
@@ -36,6 +37,7 @@ export default function PaginaInicial() {
       <SecaoJornada />
       <SecaoFluxo />
       <SecaoDoisLados />
+      <SecaoVendaNoChat />
       <SecaoNichos />
       <SecaoImprovisos />
       <SecaoOQueFaz />

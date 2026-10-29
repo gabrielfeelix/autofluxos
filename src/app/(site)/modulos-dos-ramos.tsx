@@ -372,6 +372,8 @@ function ModuloRestaurante() {
               {pico.map((v, i) => (
                 <i key={i} style={{ '--v': v / 10 } as CSSProperties}>
                   <span>{`${18 + Math.floor(i / 2)}h${i % 2 ? '30' : ''}`}</span>
+                  {/* Sábado de exemplo: o pico de 21h tem 40 pedidos. */}
+                  <b>{v * 4} pedidos</b>
                 </i>
               ))}
             </div>
