@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState, useSyncExternalStore, type CSSProperties } from 'react'
 import Link from 'next/link'
+import { IlustracaoDoRamo } from './ilustracoes-dos-ramos'
 import { NICHOS_DO_SITE } from './nichos-do-site'
 import { CONVERSAS, PreviaWhatsApp, type ChaveDaConversa } from './previa-whatsapp'
 import x from './site.module.css'
@@ -441,13 +442,14 @@ export function VitrineDeNichos() {
             style={{ '--cor': n.cor } as CSSProperties}
             onClick={() => setAtivo(i)}
           >
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={n.foto} alt="" width={600} height={400} loading="lazy" />
-            <span className={x.vitrineAbaTexto}>
-              <strong>{n.nome}</strong>
-              <em>{n.quem}</em>
+            <span className={x.vitrineCirculo}>
+              <svg className={x.vitrineAnel} viewBox="0 0 140 140" aria-hidden>
+                <circle cx="70" cy="70" r="68" pathLength={100} key={`${ativo}-${correndo}`} />
+              </svg>
+              <IlustracaoDoRamo slug={n.slug} />
             </span>
-            {i === ativo && <i className={x.vitrineRelogio} key={`${ativo}-${correndo}`} aria-hidden />}
+            <strong>{n.nome}</strong>
+            <em>{n.quem}</em>
           </button>
         ))}
       </div>
@@ -457,22 +459,47 @@ export function VitrineDeNichos() {
           <p className={x.vitrineQuem}>Para {nicho.nome.toLowerCase()}</p>
           <h3>{nicho.titulo}</h3>
           <p className={x.vitrineSub}>{nicho.subtitulo}</p>
-          <p className={x.vitrineLegenda}>Já vem pronto na conta</p>
-          <ul className={x.vitrineModelos}>
-            {nicho.modelos.slice(0, 4).map((m, i) => (
-              <li key={m} style={{ '--i': i } as CSSProperties}>
-                {m}
-              </li>
+          <dl className={x.vitrineNoApp}>
+            {nicho.noApp.map((item, i) => (
+              <div key={item.titulo} style={{ '--i': i } as CSSProperties}>
+                <dt>{item.titulo}</dt>
+                <dd>{item.texto}</dd>
+              </div>
             ))}
-          </ul>
-          <Link href={`/segmentos/${nicho.slug}`} className={x.vitrineLink}>
+          </dl>
+          <Link href={`/segmentos/${nicho.slug}`} className={x.vitrineBotao}>
             Ver tudo para {nicho.nome.toLowerCase()}
             <svg width="14" height="14" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
               <path d="M2.5 6h7M6.5 3l3 3-3 3" />
             </svg>
           </Link>
         </div>
+
         <div className={x.vitrineCena}>
+          <div className={x.vitrineApp} key={`app-${nicho.slug}`}>
+            <div className={x.fichaBarra}>
+              <i />
+              <i />
+              <i />
+              <span>Automações · {nicho.nome}</span>
+            </div>
+            <div className={x.vitrineAppTopo}>
+              <strong>Fluxos prontos</strong>
+              <small>{nicho.modelos.slice(0, 4).length} publicados</small>
+            </div>
+            <ul>
+              {nicho.modelos.slice(0, 4).map((m, i) => (
+                <li key={m} style={{ '--i': i } as CSSProperties}>
+                  <span className={x.vitrineAppFios} aria-hidden>
+                    <i />
+                    <i />
+                  </span>
+                  <span>{m}</span>
+                  <b className={x.vitrineChave} aria-label="Ligado" />
+                </li>
+              ))}
+            </ul>
+          </div>
           <div className={x.vitrineConversa} key={`conversa-${nicho.slug}`}>
             <PreviaWhatsApp conversa={CONVERSAS[nicho.conversas[0]!]} />
           </div>
