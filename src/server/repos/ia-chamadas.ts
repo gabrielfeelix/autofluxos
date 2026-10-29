@@ -100,6 +100,13 @@ export const FERRAMENTA_RESPOSTA = 'resposta'
  */
 export const FERRAMENTA_TRANSCRICAO = 'transcricao'
 
+/**
+ * Um gesto da IA do atendente (sugerir, resumir, ajustar) com a chave da 4YU.
+ * Conta no teto da conta, como a transcrição, e não no limite por contato: é a
+ * equipe clicando, e gastar o limite do contato calaria o robô dele.
+ */
+export const FERRAMENTA_COPILOTO = 'copiloto'
+
 /** A janela do limite: as últimas 24 horas, e não o dia do calendário. */
 const JANELA_DO_LIMITE_MS = 24 * 60 * 60 * 1_000
 
@@ -191,6 +198,18 @@ export async function registrarTranscricao(clienteId: string, contatoId: string)
   })
 }
 
+/** Grava um gesto da IA do atendente feito com a chave da 4YU, para o teto da conta. */
+export async function registrarUsoDoCopiloto(clienteId: string, contatoId: string, tarefa: string): Promise<void> {
+  await registrarChamada({
+    clienteId,
+    contatoId,
+    ferramenta: FERRAMENTA_COPILOTO,
+    argumentos: { tarefa },
+    decididoPor: 'ia',
+    ok: true,
+  })
+}
+
 /**
  * Quanto a IA já respondeu na conta inteira, nos últimos 30 dias, e o teto.
  *
@@ -232,7 +251,7 @@ export async function cotaDeIaDaConta(clienteId: string): Promise<{ teto: number
       .from('ia_chamadas')
       .select('id', { count: 'exact', head: true })
       .eq('client_id', clienteId)
-      .in('ferramenta', [FERRAMENTA_RESPOSTA, FERRAMENTA_TRANSCRICAO])
+      .in('ferramenta', [FERRAMENTA_RESPOSTA, FERRAMENTA_TRANSCRICAO, FERRAMENTA_COPILOTO])
       .gte('criado_em', desde)
     if (error) {
       console.error('[ia] não foi possível contar as respostas da conta', error.message)

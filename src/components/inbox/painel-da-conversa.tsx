@@ -39,6 +39,8 @@ import {
   acaoLiberarAtendimento,
   acaoResponderLead,
 } from '@/server/acoes'
+import { ResumoComIa } from '@/components/inbox/resumo-com-ia'
+import { acaoAjustarTexto, acaoResumirConversa, acaoSugerirResposta } from '@/server/acoes-copiloto'
 import type { ConversaAberta } from '@/server/conversa-aberta'
 import type { RespostaRapida } from '@/server/repos/respostas-rapidas'
 import type { MembroDaConta } from '@/server/repos/usuarios'
@@ -305,6 +307,9 @@ function ColunaDaConversa({
             temAutomacao={temAutomacao}
             espiando={espiado !== null}
           />
+          {dados.temIa && espiado === null && (
+            <ResumoComIa key={lead.contatoId} resumir={acaoResumirConversa.bind(null, clienteId, lead.contatoId)} />
+          )}
           {/*
             O provedor envolve a conversa **e** a caixa porque a citação nasce
             numa e é usada na outra. A `key` do `Fragment` de cima faz trocar de
@@ -347,6 +352,14 @@ function ColunaDaConversa({
                     anexo={{ clienteId, contatoId: lead.contatoId }}
                     temPedidos={dados.temPedidos}
                     cobrar={dados.cobrar}
+                    copiloto={
+                      dados.temIa
+                        ? {
+                            sugerir: acaoSugerirResposta.bind(null, clienteId, lead.contatoId),
+                            ajustar: acaoAjustarTexto.bind(null, clienteId, lead.contatoId),
+                          }
+                        : undefined
+                    }
                   />
                 </TravaDaResposta>
               )}

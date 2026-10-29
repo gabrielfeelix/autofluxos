@@ -8,6 +8,7 @@ import { useCitacao } from '@/components/lead/citacao'
 import { RetomarComModelo } from '@/components/lead/retomar-com-modelo'
 import { avisarEnvio, pedirNovas } from '@/components/inbox/sinal-de-conversa'
 import { SeletorDeEmoji } from '@/components/lead/seletor-de-emoji'
+import { BotaoDaIa, CartaoDaIa, useIaDoAtendente, type CopilotoDoCompositor } from '@/components/lead/ia-do-atendente'
 import { SeletorDeProduto } from '@/components/lead/seletor-de-produto'
 import { SeletorDePedido } from '@/components/lead/seletor-de-pedido'
 import { BotaoDeCobrar, type CobrarNaConversa } from '@/components/lead/botao-de-cobrar'
@@ -70,7 +71,13 @@ export function CaixaDeResposta({
   cobrar = null,
   conversa,
   canal = 'whatsapp',
+  copiloto,
 }: {
+  /**
+   * A IA do atendente (sugerir, corrigir, formal, curto). Ausente esconde o
+   * botão: a Ficha e as contas sem IA no plano não o mostram.
+   */
+  copiloto?: CopilotoDoCompositor
   acao: (formData: FormData) => Promise<{ ok: boolean; erro?: string }>
   /** `null` = fora da janela, ou a pessoa nunca escreveu. */
   restaDaJanela: string | null
@@ -273,6 +280,27 @@ export function CaixaDeResposta({
 
   const formata = canal === 'whatsapp'
 
+  const lerCampo = useCallback(() => campo.current?.value ?? '', [])
+  const ia = useIaDoAtendente(copiloto, lerCampo)
+
+  /**
+   * O texto da IA entra no campo **só aqui**, pelo clique em "Usar". Troca o
+   * que estava escrito (o ajuste foi pedido sobre ele, e a sugestão aparece
+   * por cima do que a pessoa já via) e não envia: mandar é o avião.
+   */
+  function usarDaIa(texto: string) {
+    const textarea = campo.current
+    if (!textarea) return
+    const setter = Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype, 'value')?.set
+    setter?.call(textarea, texto.slice(0, 4096))
+    textarea.dispatchEvent(new Event('input', { bubbles: true }))
+    conferirTexto()
+    textarea.focus()
+    textarea.setSelectionRange(textarea.value.length, textarea.value.length)
+    ia.fechar()
+    setAnuncio('Texto da IA no campo. Revise antes de enviar.')
+  }
+
   /** Depois de qualquer escrita que não veio da digitação. */
   function conferirTexto() {
     const textarea = campo.current
@@ -445,6 +473,10 @@ export function CaixaDeResposta({
             ×
           </button>
         </div>
+      )}
+
+      {livre && (
+        <CartaoDaIa estado={ia.estado} aoUsar={usarDaIa} aoFechar={ia.fechar} aoTentarDeNovo={(p) => void ia.pedir(p)} />
       )}
 
       {erro && (
@@ -656,6 +688,10 @@ export function CaixaDeResposta({
         )}
         {livre && anexo && temPedidos && !gravando && (
           <SeletorDeCupom clienteId={anexo.clienteId} contatoId={anexo.contatoId} desabilitado={enviando} />
+        )}
+
+        {livre && !gravando && copiloto && (
+          <BotaoDaIa aoPedir={(p) => void ia.pedir(p)} temTexto={temTexto} desabilitado={enviando} />
         )}
 
         {livre && !gravando && formata && (

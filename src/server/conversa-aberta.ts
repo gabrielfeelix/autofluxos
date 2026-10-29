@@ -1,4 +1,5 @@
 import 'server-only'
+import { recusaDoPlano } from './recursos-do-plano'
 import { EXIGE_DOCUMENTO } from '@/channels/pagamento'
 import { comoFalta, restaDaJanela } from '@/channels/janela'
 import type { AnuncioEmCache, Passagem } from '@/core/anuncios'
@@ -63,6 +64,8 @@ export type ConversaAberta = {
   favoritas: string[]
   exigeAssumir: boolean
   temPedidos: boolean
+  /** O plano inclui IA: a caixa mostra a ajuda da IA e o topo, o resumo. */
+  temIa: boolean
   /** O botão Cobrar: a conta tem onde receber e quem abriu pode cobrar. */
   cobrar: CobrarNaConversa | null
   passagens: Passagem[]
@@ -110,6 +113,7 @@ export async function lerConversaAberta({
     historico,
     canalLido,
     cobrar,
+    recusaDaIa,
   ] = await Promise.all([
     lerConversa(lead.contatoId),
     contextoDeResposta(clienteId, lead.contatoId),
@@ -139,6 +143,7 @@ export async function lerConversaAberta({
       ? Promise.resolve(canal)
       : canaisDosContatos(clienteId).then((mapa) => canalPeloContato(lead.waId, mapa.get(lead.contatoId))),
     cobrarNaConversa(clienteId, lead),
+    recusaDoPlano(clienteId, 'ia').catch(() => 'sem leitura do plano'),
   ])
 
   /*
@@ -210,6 +215,7 @@ export async function lerConversaAberta({
     favoritas: [...favoritas],
     exigeAssumir: ajustes.exigeAssumir,
     temPedidos: Boolean(loja?.ativa && loja.conexaoId),
+    temIa: recusaDaIa === null,
     cobrar,
     passagens: historico.passagens,
     nomesDosAnuncios: [...historico.nomesDosAnuncios],

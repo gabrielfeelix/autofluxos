@@ -47,6 +47,13 @@ export type PedidoDeIa = {
    * Quem informa é o resolvedor, que é onde o mundo entra.
    */
   hoje?: string
+  /**
+   * O prompt já montado, para quem não é o atendente virtual: a IA do
+   * atendente (`ia/copiloto.ts`) fala com quem atende, e não com o cliente, e
+   * tem regras próprias. Presente, `montarPrompt` devolve isto como está e a
+   * cadeia de provedores segue valendo igual.
+   */
+  pronto?: { sistema: string; usuario: string }
 }
 
 export type Turno =

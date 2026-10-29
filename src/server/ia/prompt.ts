@@ -55,6 +55,7 @@ export const TURNOS_DE_HISTORICO = 6
 export const LIMITE_MENSAGEM_DO_CLIENTE = 1500
 
 export function montarPrompt(pedido: PedidoDeIa): { sistema: string; usuario: string } {
+  if (pedido.pronto) return pedido.pronto
   const contexto = pedido.contextoNegocio.trim()
   const ferramentas = pedido.ferramentas ?? []
   /*

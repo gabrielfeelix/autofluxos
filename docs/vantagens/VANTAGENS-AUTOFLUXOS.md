@@ -82,6 +82,12 @@ aqui fica o que o cliente ganha.
   atendente abre o Inbox nos setores dele, o gestor vê todos. Dá para
   transferir para um setor, não só para uma pessoa, com o histórico junto, e
   o relatório mostra volume e espera de cada setor. *(29/out/2026)*
+- **IA do atendente, sem tirar o controle dele**: sugere a resposta com base
+  na conversa, nas informações do negócio e no catálogo; resume a conversa em
+  três linhas para quem assume no meio; corrige o texto e deixa mais formal ou
+  mais curto. Tudo aparece num cartão que só a equipe vê, e nada entra no campo
+  nem sai para o cliente sem o clique do atendente. Se um provedor de IA cai, o
+  próximo assume. *(29/out/2026)*
 
 ## Automatizar
 
