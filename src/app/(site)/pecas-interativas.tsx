@@ -429,6 +429,7 @@ export function VitrineDeNichos() {
       onFocus={() => setParado(true)}
       onBlur={() => setParado(false)}
     >
+      <p className={x.vitrineDica}>Escolha o seu ramo</p>
       <div className={x.vitrineAbas} role="tablist" aria-label="Ramos">
         {NICHOS_DO_SITE.map((n, i) => (
           <button
