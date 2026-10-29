@@ -6,6 +6,9 @@ para o agente que vai executar. Leia inteiro antes de tocar em código.
 
 ## Versões: a v1 não muda
 
+**29/out/2026: o Gabriel aprovou a v2, que entrou no `main` e está no ar.** A
+tabela abaixo fica como regra para a v3 em diante.
+
 A LP que está no ar é a **v1** e fica exatamente como está até o Gabriel
 aprovar outra. Cada versão nova vive separada, com endereço e link próprios.
 

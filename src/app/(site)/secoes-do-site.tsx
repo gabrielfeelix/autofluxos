@@ -21,17 +21,32 @@ import x from './site.module.css'
 const precoDeEntrada = Math.min(...PLANOS.map((p) => p.preco))
 const reais = (v: number) => v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL', maximumFractionDigits: 0 })
 
-function Cabeca({ olho, titulo, texto, id }: { olho: string; titulo: ReactNode; texto?: ReactNode; id?: string }) {
+/** `naPrimeiraTela`: a seção que abre logo abaixo de uma capa curta entra como a capa (ver `entra()`). */
+function Cabeca({
+  olho,
+  titulo,
+  texto,
+  id,
+  naPrimeiraTela,
+}: {
+  olho: string
+  titulo: ReactNode
+  texto?: ReactNode
+  id?: string
+  naPrimeiraTela?: boolean
+}) {
+  const revela = (atraso: number, como?: 'desfoque') =>
+    naPrimeiraTela ? entra(atraso, como) : { 'data-revela': true, 'data-como': como, 'data-atraso': atraso }
   return (
     <div className={s.cabecaSecao} id={id}>
-      <span className={s.olho} data-revela>
+      <span className={s.olho} {...revela(0)}>
         {olho}
       </span>
-      <h2 className={`${s.tituloSecao} ${s.tituloSecaoCentro}`} data-revela data-como="desfoque" data-atraso="60">
+      <h2 className={`${s.tituloSecao} ${s.tituloSecaoCentro}`} {...revela(60, 'desfoque')}>
         {titulo}
       </h2>
       {texto && (
-        <p className={`${s.chamada} ${s.chamadaCentro}`} data-revela data-atraso="100">
+        <p className={`${s.chamada} ${s.chamadaCentro}`} {...revela(100)}>
           {texto}
         </p>
       )}
@@ -41,24 +56,34 @@ function Cabeca({ olho, titulo, texto, id }: { olho: string; titulo: ReactNode; 
 
 /* ─────────────────────────── capas ─────────────────────────── */
 
+/*
+ * A capa entra só com CSS, na primeira pintura. Com `data-revela` ela esperava
+ * o JavaScript hidratar para aparecer, e o subtítulo, que é o maior texto da
+ * tela, virava o LCP: 4,7 s de espera no Lighthouse mobile de 28/out. Vale
+ * também para o que fica na primeira tela logo abaixo dela.
+ */
+function entra(atraso: number, como?: 'desfoque' | 'escala') {
+  return { 'data-entra': como ?? '', style: { '--atraso': atraso } as CSSProperties }
+}
+
 export function CapaDaHome() {
   return (
     <section className={`${s.capa} ${x.capaSimples}`}>
       <DerivaDeParticulas className={s.campo} />
       <div className={s.veu} aria-hidden />
       <div className={`${s.faixa} ${x.capaSimplesInterno}`}>
-        <p className={s.selo} data-revela>
+        <p className={s.selo} {...entra(0)}>
           <span className={s.seloTag}>Novo</span>
           API oficial do WhatsApp Business
         </p>
-        <h1 className={`${x.capaTitulo} ${x.capaTituloHome}`} data-revela data-como="desfoque" data-atraso="80">
+        <h1 className={`${x.capaTitulo} ${x.capaTituloHome}`} {...entra(80, 'desfoque')}>
           Seu WhatsApp responde na hora. <em>Sua equipe entra quando precisa.</em>
         </h1>
-        <p className={x.capaSub} data-revela data-atraso="200">
+        <p className={x.capaSub} {...entra(200)}>
           Chatbot, IA e a caixa de entrada da equipe no número que você já usa. Horário, preço, agenda e pedido se
           resolvem na conversa; o que precisa de gente chega à equipe com o histórico ao lado.
         </p>
-        <div className={s.acoes} data-revela data-atraso="300">
+        <div className={s.acoes} {...entra(300)}>
           <Link className={`${s.botao} ${s.botaoPrincipal} ${s.botaoGrande}`} href="/precos">
             Ver planos
           </Link>
@@ -68,7 +93,7 @@ export function CapaDaHome() {
         </div>
       </div>
       {/* A tela do Inbox saindo pela borda de baixo: o produto aparece antes de rolar. */}
-      <div className={x.capaTela} data-revela data-como="escala" data-atraso="420" aria-hidden>
+      <div className={x.capaTela} {...entra(420, 'escala')} aria-hidden>
         <Desktop />
       </div>
     </section>
@@ -80,13 +105,13 @@ export function CapaSimples({ olho, titulo, texto, children }: { olho: string; t
     <section className={`${s.capa} ${x.capaSimples}`}>
       <div className={s.veu} aria-hidden />
       <div className={`${s.faixa} ${x.capaSimplesInterno}`}>
-        <p className={x.capaOlho} data-revela>
+        <p className={x.capaOlho} {...entra(0)}>
           {olho}
         </p>
-        <h1 className={x.capaTitulo} data-revela data-como="desfoque" data-atraso="60">
+        <h1 className={x.capaTitulo} {...entra(60, 'desfoque')}>
           {titulo}
         </h1>
-        <p className={x.capaSub} data-revela data-atraso="160">
+        <p className={x.capaSub} {...entra(160)}>
           {texto}
         </p>
         {children}
@@ -101,16 +126,16 @@ export function CapaDoNicho({ nicho }: { nicho: NichoDoSite }) {
       <div className={s.veu} aria-hidden />
       <div className={`${s.faixa} ${x.capaGrade}`}>
         <div className={x.capaTexto}>
-          <p className={x.capaOlho} data-revela>
+          <p className={x.capaOlho} {...entra(0)}>
             Para {nicho.nome.toLowerCase()} · {nicho.quem}
           </p>
-          <h1 className={x.capaTitulo} data-revela data-como="desfoque" data-atraso="60">
+          <h1 className={x.capaTitulo} {...entra(60, 'desfoque')}>
             {nicho.titulo}
           </h1>
-          <p className={x.capaSub} data-revela data-atraso="160">
+          <p className={x.capaSub} {...entra(160)}>
             {nicho.subtitulo}
           </p>
-          <div className={s.acoes} data-revela data-atraso="260">
+          <div className={s.acoes} {...entra(260)}>
             <Link className={`${s.botao} ${s.botaoPrincipal} ${s.botaoGrande}`} href="/precos">
               Ver planos
             </Link>
@@ -119,7 +144,7 @@ export function CapaDoNicho({ nicho }: { nicho: NichoDoSite }) {
             </a>
           </div>
         </div>
-        <div className={x.capaVisual} data-revela data-como="escala" data-atraso="160">
+        <div className={x.capaVisual} {...entra(160, 'escala')}>
           <PreviaQueTroca chaves={nicho.conversas} />
         </div>
       </div>
@@ -144,12 +169,13 @@ const NUMEROS = [
   { valor: '1 em 6', rotulo: 'mensagens chega fora do horário comercial' },
 ]
 
+// Logo abaixo da capa, já na primeira tela do celular: entra como a capa, sem esperar o JavaScript.
 export function SecaoNumeros() {
   return (
     <section className={x.numeros}>
       <div className={`${s.faixa} ${x.numerosGrade}`}>
         {NUMEROS.map((n, i) => (
-          <div key={n.valor} className={x.numero} data-revela data-atraso={i * 90}>
+          <div key={n.valor} className={x.numero} {...entra(500 + i * 90)}>
             <strong>{n.valor}</strong>
             <span>{n.rotulo}</span>
           </div>
@@ -282,7 +308,7 @@ export function SecaoCanais() {
   return (
     <section className={s.secao} id="canais">
       <div className={s.faixa}>
-        <Cabeca olho="Canais" titulo="Onde o seu cliente já está" texto="Uma fila só para todos os canais, com o mesmo fluxo e a mesma equipe." />
+        <Cabeca naPrimeiraTela olho="Canais" titulo="Onde o seu cliente já está" texto="Uma fila só para todos os canais, com o mesmo fluxo e a mesma equipe." />
         <div className={x.canais}>
           {CANAIS.map((c, i) => (
             <article key={c.nome} className={x.canal} style={{ '--cor': c.cor } as CSSProperties} data-revela data-como="escala" data-atraso={i * 70}>

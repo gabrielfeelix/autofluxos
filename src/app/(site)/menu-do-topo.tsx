@@ -363,7 +363,7 @@ function PainelSegmentos() {
             onFocus={() => setI(n)}
           >
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img className={m.fotoSegmento} src={s.foto} alt="" width={320} height={150} />
+            <img className={m.fotoSegmento} src={s.foto} alt="" width={320} height={150} loading="lazy" />
             <span>
               <strong>{s.titulo}</strong>
               <small>{s.texto}</small>

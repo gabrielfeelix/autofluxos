@@ -412,18 +412,12 @@ export function SecaoComo() {
 
 export function SecaoPrecos() {
   return (
-          <section className={s.secao} id="precos">
+          <section className={`${s.secao} ${s.secaoAbaixoDaCapa}`} id="precos">
             <div className={`${s.focoLuz} ${s.focoEsquerda}`} aria-hidden />
             <div className={s.faixa}>
+              {/* O título é o da capa de /precos, logo acima: repetir aqui era eco. Sem revelação: é o primeiro texto abaixo da capa e virava o LCP. */}
               <div className={s.cabecaSecao}>
-                <span className={s.olho} data-revela>
-                  Preços
-                </span>
-                <h2 className={`${s.tituloSecao} ${s.tituloSecaoCentro}`} data-revela data-como="desfoque" data-atraso="60">
-  Um preço que cabe antes de dar resultado
-                </h2>
-                <span className={`${s.risco} ${s.riscoCentro}`} data-revela data-atraso="90" aria-hidden />
-                <p className={`${s.chamada} ${s.chamadaCentro}`} data-revela data-atraso="100">
+                <p className={`${s.chamada} ${s.chamadaCentro}`}>
                   Organize, automatize, decida. A IA é a mesma em todos os planos: o que sobe é o que ela
                   faz sozinha, o tamanho da equipe e quantas conversas cabem no mês. {DIAS_DE_TESTE} dias
                   grátis, sem cartão, e quem só acompanha (sócio, financeiro) entra de graça.
@@ -910,51 +904,62 @@ export function Pergunta({ pergunta, resposta }: { pergunta: string; resposta: s
  * diz o que elas mostram.
  */
 
-/** Três blocos que acendem em sequência, como o fluxo executando. */
+/** Três blocos de verdade que acendem em sequência, como o fluxo executando. */
 function ArteFluxo() {
+  const blocos = [
+    ['Mensagem', 'Olá, {nome}! Como posso ajudar?'],
+    ['Pergunta', 'Horário · Fazer pedido · Falar com alguém'],
+    ['Condição', 'Fora do horário? Deixa recado'],
+  ]
   return (
     <div className={`${s.arte} ${s.arteFluxo}`}>
-      {['Mensagem', 'Pergunta', 'Condição'].map((rotulo) => (
-        <div key={rotulo} className={s.blocoFluxo}>
-          <span className={s.pontoBloco} />
-          {rotulo}
-          <span className={s.linhaBloco} />
+      {blocos.map(([tipo, texto]) => (
+        <div key={tipo} className={s.blocoFluxo}>
+          <span className={s.blocoTipo}>
+            <span className={s.pontoBloco} />
+            {tipo}
+          </span>
+          <span className={s.blocoTexto}>{texto}</span>
         </div>
       ))}
     </div>
   )
 }
 
-/** A fila da caixa de entrada esvaziando: cada item resolve e some. */
+/** A fila da caixa de entrada: quem espera em cima, cada um com o seu dono. */
 function ArteFila() {
+  const fila = [
+    ['MC', 'Marina Costa', 'Dá pra parcelar?', 'espera 2 min'],
+    ['AL', 'André Lima', 'Vocês fazem orçamento?', 'Ana'],
+    ['RS', 'Rafael Souza', 'Perfeito, obrigado!', 'chatbot'],
+    ['JP', 'Júlia Pereira', 'Confirmado para sábado', '09:28'],
+  ]
   return (
     <div className={s.arteFila}>
-      {[0, 1, 2, 3].map((i) => (
-        <div key={i} className={s.itemFila}>
-          <span className={s.avatarFila} />
+      {fila.map(([iniciais, nome, previa, canto], i) => (
+        <div key={nome} className={s.itemFila}>
+          <span className={s.avatarFila}>{iniciais}</span>
           <span className={s.textoFila}>
-            <span className={s.barraFila} />
-            <span className={`${s.barraFila} ${s.barraFilaCurta}`} />
+            <b>{nome}</b>
+            <span>{previa}</span>
           </span>
-          {i === 0 && <span className={s.selinhoFila}>espera</span>}
+          <span className={i === 0 ? s.selinhoFila : s.cantoFila}>{canto}</span>
         </div>
       ))}
     </div>
   )
 }
 
-/** O núcleo da IA pulsando com dois anéis, e os três pontos de "pensando". */
+/** A IA consultando o catálogo antes de responder: o preço vem de lá. */
 function ArteIA() {
   return (
     <div className={s.arteIA}>
-      <span className={s.nucleoIA}>
+      <span className={s.falaCliente}>Tem a ração Golden 15 kg?</span>
+      <span className={s.consultaIA}>
         <IconeIA />
+        consultou o catálogo
       </span>
-      <span className={s.pontosIA}>
-        <span className={s.pontoIA} />
-        <span className={s.pontoIA} />
-        <span className={s.pontoIA} />
-      </span>
+      <span className={s.falaIA}>Tem sim: R$ 189,90, e entrega amanhã.</span>
     </div>
   )
 }
@@ -966,8 +971,8 @@ function ArteFicha() {
       <div className={s.fichaTopo}>
         <span className={s.fichaAvatar}>MC</span>
         <span className={s.textoFila}>
-          <span className={s.barraFila} />
-          <span className={`${s.barraFila} ${s.barraFilaCurta}`} />
+          <b>Marina Costa</b>
+          <span>7 conversas · desde mar/2026</span>
         </span>
       </div>
       <div className={s.fichaEtiquetas}>
@@ -975,21 +980,39 @@ function ArteFicha() {
         <span className={s.etiqueta}>sábado</span>
         <span className={s.etiqueta}>parcelar</span>
       </div>
+      <span className={s.fichaNota}>Combinado: entrega no sábado, 10h</span>
     </div>
   )
 }
 
-/** Dois sistemas ligados, com o pacote atravessando o trilho. */
-function ArteConexao() {
+/** Dois sistemas ligados, com o pacote atravessando o trilho e a resposta embaixo. */
+function ArteConexao({
+  de = 'Fluxo',
+  para = 'Agenda',
+  resposta = 'Quinta, 19h está livre',
+}: {
+  de?: string
+  para?: string
+  resposta?: string
+}) {
   return (
-    <div className={s.arteConexao}>
-      <span className={s.noConexao}>
-        <IconeFluxo />
-      </span>
-      <span className={s.trilhoConexao} />
-      <span className={s.noConexao}>
-        <IconePlug />
-      </span>
+    <div className={s.arteConexaoCaixa}>
+      <div className={s.arteConexao}>
+        <span className={s.noConexaoRotulado}>
+          <span className={s.noConexao}>
+            <IconeFluxo />
+          </span>
+          {de}
+        </span>
+        <span className={s.trilhoConexao} />
+        <span className={s.noConexaoRotulado}>
+          <span className={s.noConexao}>
+            <IconePlug />
+          </span>
+          {para}
+        </span>
+      </div>
+      <span className={s.respostaConexao}>{resposta}</span>
     </div>
   )
 }
@@ -1013,11 +1036,7 @@ function Janela({ titulo, children }: { titulo: string; children: ReactNode }) {
 function JanelaConexao() {
   return (
     <Janela titulo="conectar número">
-      <ArteConexao />
-      <span className={s.linhaMedidor}>
-        <span className={s.pontoBloco} />
-        +55 44 7400-7438
-      </span>
+      <ArteConexao de="Seu WhatsApp" para="AutoFluxos" resposta="+55 44 7400-7438 · conectado" />
     </Janela>
   )
 }
@@ -1038,21 +1057,30 @@ function JanelaAtendimento() {
   )
 }
 
+/*
+ * Os mesmos números da faixa da home (medidos nas contas do AutoFluxos, 90
+ * dias; ver `NUMEROS` em `secoes-do-site.tsx`), para a janela não contradizer a
+ * página.
+ */
 function JanelaNumeros() {
   return (
     <Janela titulo="o que aconteceu">
       {[
-        ['resolvido pelo fluxo', 78],
-        ['passou para pessoa', 22],
-        ['sem resposta', 4],
-      ].map(([rotulo, pct]) => (
-        <span key={rotulo as string} className={s.linhaMedidor}>
+        ['resolvido pelo fluxo', 74, '74%'],
+        ['passou para a equipe', 26, '26%'],
+      ].map(([rotulo, pct, valor]) => (
+        <span key={rotulo} className={s.linhaMedidor}>
+          <span className={s.rotuloMedidor}>{rotulo}</span>
           <span className={s.medidor}>
-            <span className={s.medidorPreenchido} style={{ maxWidth: `${pct}%` }} />
+            <span className={s.medidorPreenchido} style={{ width: `${pct}%` }} />
           </span>
-          {rotulo}
+          <b>{valor}</b>
         </span>
       ))}
+      <span className={s.linhaMedidor}>
+        <span className={s.rotuloMedidor}>equipe responde em</span>
+        <b>1 min 46 s</b>
+      </span>
     </Janela>
   )
 }

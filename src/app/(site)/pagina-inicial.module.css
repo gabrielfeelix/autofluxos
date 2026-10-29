@@ -482,6 +482,11 @@
   isolation: isolate;
 }
 
+/* Primeira seção de uma página cujo título já está na capa: sem o vão de quem abre com cabeçalho. */
+.secaoAbaixoDaCapa {
+  padding-top: clamp(40px, 5vw, 64px);
+}
+
 .olho {
   display: inline-flex;
   align-items: center;
@@ -1219,6 +1224,45 @@
   transform: translateX(-26px);
 }
 
+/*
+ * A capa usa a mesma entrada, mas por animação de CSS: começa na primeira
+ * pintura, sem esperar o JavaScript (ver `entra()` em `secoes-do-site.tsx`).
+ */
+.pagina [data-entra] {
+  animation: entrar 0.75s var(--curva) both;
+  animation-delay: calc(var(--atraso, 0) * 1ms);
+}
+
+.pagina [data-entra='desfoque'] {
+  animation-name: entrarDesfoque;
+}
+
+.pagina [data-entra='escala'] {
+  animation-name: entrarEscala;
+}
+
+@keyframes entrar {
+  from {
+    opacity: 0;
+    transform: translateY(26px);
+  }
+}
+
+@keyframes entrarDesfoque {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+    filter: blur(9px);
+  }
+}
+
+@keyframes entrarEscala {
+  from {
+    opacity: 0;
+    transform: translateY(30px) scale(0.965);
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .pontoVivo,
   .balao,
@@ -1272,13 +1316,32 @@
   display: flex;
   align-items: center;
   gap: 10px;
-  padding: 11px 13px;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+  padding: 10px 13px;
   border-radius: 11px;
   border: 1px solid rgb(var(--veu) / 0.08);
   background: rgb(var(--veu) / 0.035);
-  font-size: 12.5px;
-  color: var(--soft);
   animation: acender 4s var(--curva) infinite;
+}
+
+.blocoTipo {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 9.5px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--dim);
+  font-family: var(--font-jetbrains-mono), ui-monospace, monospace;
+}
+
+.blocoTexto {
+  font-size: 12.5px;
+  line-height: 1.35;
+  color: var(--ink);
 }
 
 .blocoFluxo:nth-child(2) {
@@ -1316,45 +1379,6 @@
   box-shadow: 0 0 10px color-mix(in srgb, var(--accent) 70%, transparent);
 }
 
-.linhaBloco {
-  position: relative;
-  height: 3px;
-  border-radius: 2px;
-  background: rgb(var(--veu) / 0.1);
-  flex: 1;
-  overflow: hidden;
-}
-
-/* Um pulso de luz atravessa a linha, como dado passando pelo bloco. */
-.linhaBloco::after {
-  content: '';
-  position: absolute;
-  inset: 0;
-  border-radius: inherit;
-  background: linear-gradient(90deg, transparent, var(--accent), transparent);
-  transform: translateX(-100%);
-  animation: passar 4s var(--curva) infinite;
-}
-
-.blocoFluxo:nth-child(2) .linhaBloco::after {
-  animation-delay: 0.5s;
-}
-
-.blocoFluxo:nth-child(3) .linhaBloco::after {
-  animation-delay: 1s;
-}
-
-@keyframes passar {
-  0%,
-  10% {
-    transform: translateX(-100%);
-  }
-  38%,
-  100% {
-    transform: translateX(100%);
-  }
-}
-
 /* ── fila da caixa de entrada que esvazia ── */
 
 .arteFila {
@@ -1372,7 +1396,7 @@
   border-radius: 10px;
   border: 1px solid rgb(var(--veu) / 0.07);
   background: rgb(var(--veu) / 0.03);
-  animation: resolver 5s var(--curva) infinite;
+  animation: acender 5s var(--curva) infinite;
 }
 
 .itemFila:nth-child(2) {
@@ -1387,54 +1411,45 @@
   animation-delay: 3.3s;
 }
 
-@keyframes resolver {
-  0%,
-  6% {
-    opacity: 1;
-    transform: none;
-    border-color: rgb(var(--veu) / 0.07);
-  }
-  12% {
-    opacity: 1;
-    transform: translateX(-3px);
-    border-color: color-mix(in srgb, var(--accent) 50%, transparent);
-  }
-  22%,
-  90% {
-    opacity: 0.22;
-    transform: translateX(14px);
-    border-color: rgb(var(--veu) / 0.04);
-  }
-  100% {
-    opacity: 1;
-    transform: none;
-    border-color: rgb(var(--veu) / 0.07);
-  }
-}
-
 .avatarFila {
-  width: 22px;
-  height: 22px;
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
   border-radius: 50%;
-  background: rgb(var(--veu) / 0.1);
+  background: color-mix(in srgb, var(--accent) 14%, transparent);
+  color: var(--accent);
+  font-size: 9.5px;
+  font-weight: 700;
   flex: none;
 }
 
 .textoFila {
   display: grid;
-  gap: 5px;
+  gap: 1px;
   flex: 1;
+  min-width: 0;
+  text-align: left;
 }
 
-.barraFila {
-  height: 5px;
-  border-radius: 3px;
-  background: rgb(var(--veu) / 0.13);
+.textoFila b {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--ink);
 }
 
-.barraFilaCurta {
-  width: 55%;
-  background: rgb(var(--veu) / 0.07);
+.textoFila span {
+  overflow: hidden;
+  font-size: 11px;
+  color: var(--muted);
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.cantoFila {
+  font-size: 10px;
+  color: var(--dim);
+  flex: none;
 }
 
 .selinhoFila {
@@ -1453,90 +1468,68 @@
 /* ── a IA pensando e entregando ── */
 
 .arteIA {
-  display: grid;
-  gap: 12px;
-  place-items: center;
-}
-
-.nucleoIA {
-  position: relative;
-  display: grid;
-  place-items: center;
-  width: 62px;
-  height: 62px;
-  border-radius: 18px;
-  border: 1px solid color-mix(in srgb, var(--accent) 30%, transparent);
-  background: color-mix(in srgb, var(--accent) 10%, transparent);
-  color: var(--accent);
-  animation: respiraNucleo 3s var(--curva) infinite;
-}
-
-@keyframes respiraNucleo {
-  0%,
-  100% {
-    box-shadow: 0 0 26px -6px color-mix(in srgb, var(--accent) 40%, transparent);
-  }
-  50% {
-    box-shadow: 0 0 44px -4px color-mix(in srgb, var(--accent) 75%, transparent);
-  }
-}
-
-/* Dois anéis que saem do núcleo, defasados, o "pensando". */
-.nucleoIA::before,
-.nucleoIA::after {
-  content: '';
-  position: absolute;
-  inset: -1px;
-  border-radius: inherit;
-  border: 1px solid color-mix(in srgb, var(--accent) 40%, transparent);
-  animation: onda 3s var(--curva) infinite;
-}
-
-.nucleoIA::after {
-  animation-delay: 1.5s;
-}
-
-@keyframes onda {
-  0% {
-    opacity: 0.9;
-    transform: scale(1);
-  }
-  100% {
-    opacity: 0;
-    transform: scale(2.1);
-  }
-}
-
-.pontosIA {
   display: flex;
-  gap: 5px;
+  flex-direction: column;
+  gap: 8px;
+  width: 100%;
+  max-width: 250px;
+  font-size: 12px;
+  line-height: 1.35;
 }
 
-.pontoIA {
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background: rgb(var(--veu) / 0.3);
-  animation: pensar 1.4s ease-in-out infinite;
+.falaCliente,
+.falaIA {
+  max-width: 88%;
+  padding: 7px 11px;
+  border-radius: 12px;
 }
 
-.pontoIA:nth-child(2) {
-  animation-delay: 0.2s;
+.falaCliente {
+  align-self: flex-end;
+  border-bottom-right-radius: 4px;
+  background: #dcf8c6;
+  color: #0b2a12;
 }
 
-.pontoIA:nth-child(3) {
-  animation-delay: 0.4s;
+.falaIA {
+  align-self: flex-start;
+  border-bottom-left-radius: 4px;
+  background: rgb(var(--veu) / 0.05);
+  color: var(--ink);
 }
 
-@keyframes pensar {
+/* A consulta brilha passando, como a IA trabalhando antes de responder. */
+.consultaIA {
+  display: inline-flex;
+  align-self: flex-start;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 9px 3px 6px;
+  border-radius: 999px;
+  border: 1px solid color-mix(in srgb, var(--accent) 35%, transparent);
+  background:
+    linear-gradient(100deg, transparent 30%, rgb(255 255 255 / 0.85) 50%, transparent 70%) -150% 0 / 200% 100% no-repeat,
+    color-mix(in srgb, var(--accent) 10%, white);
+  color: var(--accent);
+  font-size: 10px;
+  font-weight: 600;
+  font-family: var(--font-jetbrains-mono), ui-monospace, monospace;
+  animation: brilhoConsulta 3s var(--curva) infinite;
+}
+
+.consultaIA svg {
+  width: 13px;
+  height: 13px;
+}
+
+@keyframes brilhoConsulta {
   0%,
-  100% {
-    opacity: 0.25;
-    transform: translateY(0);
+  30% {
+    background-position: -150% 0, 0 0;
   }
-  40% {
-    opacity: 1;
-    transform: translateY(-4px);
+  80%,
+  100% {
+    background-position: 250% 0, 0 0;
   }
 }
 
@@ -1545,10 +1538,16 @@
 .arteFicha {
   width: 100%;
   max-width: 250px;
-  padding: 16px;
-  border-radius: 14px;
-  border: 1px solid rgb(var(--veu) / 0.07);
-  background: rgb(var(--veu) / 0.03);
+}
+
+.fichaNota {
+  display: block;
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid rgb(var(--veu) / 0.06);
+  font-size: 11px;
+  color: var(--muted);
+  text-align: left;
 }
 
 .fichaTopo {
@@ -1619,8 +1618,35 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
+  align-items: flex-start;
   width: 100%;
-  max-width: 240px;
+}
+
+.arteConexaoCaixa {
+  display: grid;
+  justify-items: center;
+  gap: 12px;
+  width: 100%;
+  max-width: 250px;
+}
+
+.noConexaoRotulado {
+  display: grid;
+  justify-items: center;
+  gap: 6px;
+  font-size: 10.5px;
+  font-weight: 600;
+  color: var(--muted);
+  z-index: 1;
+}
+
+.respostaConexao {
+  padding: 4px 11px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--accent) 10%, transparent);
+  color: var(--accent);
+  font-size: 11px;
+  font-weight: 600;
 }
 
 .noConexao {
@@ -1638,7 +1664,7 @@
 }
 
 /* O segundo nó acende meio ciclo depois: é quando o pacote chega nele. */
-.arteConexao .noConexao:last-child {
+.arteConexao > :last-child .noConexao {
   animation-delay: 1.2s;
 }
 
@@ -1660,6 +1686,7 @@
 
 .trilhoConexao {
   position: relative;
+  margin: 22px -10px 0;
   flex: 1;
   height: 1px;
   background: rgb(var(--veu) / 0.12);
@@ -1740,7 +1767,19 @@
   overflow: hidden;
 }
 
+.rotuloMedidor {
+  width: 128px;
+  flex: none;
+}
+
+.linhaMedidor b {
+  margin-left: auto;
+  color: var(--ink);
+  font-weight: 600;
+}
+
 .medidorPreenchido {
+  display: block;
   height: 100%;
   border-radius: 3px;
   background: linear-gradient(90deg, color-mix(in srgb, var(--accent) 60%, transparent), var(--accent));
@@ -2361,12 +2400,9 @@
 @media (prefers-reduced-motion: reduce) {
   .pagina :where(
       .blocoFluxo,
-      .linhaBloco::after,
       .itemFila,
-      .nucleoIA,
-      .nucleoIA::before,
-      .nucleoIA::after,
-      .pontoIA,
+      .consultaIA,
+      [data-entra],
       .etiqueta,
       .noConexao,
       .trilhoConexao::after,

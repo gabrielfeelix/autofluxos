@@ -93,16 +93,26 @@ Feito depois (commit desta rodada): home com números medidos em linha clara,
 tela do Inbox saindo do hero, coexistência e três dúvidas curtas; sitemap
 com as páginas novas; busca e "Pedir esta" na vitrine de integrações.
 
+Feito em 28/out à noite, antes do merge no `main`:
+
+- **Tarifas da Meta conferidas** na página oficial
+  (developers.facebook.com/docs/whatsapp/pricing): desde 1º/out/2026 a Meta
+  voltou a cobrar mensagem de serviço, com 1.000 grátis por número por mês;
+  R$ 0,035 (serviço) e R$ 0,3217 (marketing) batem com a tabela BRL; a janela
+  grátis do Click-to-WhatsApp é de até 7 dias. A calculadora estava certa.
+- **Lighthouse mobile** (build de produção local, 2 rodadas): `/` 80 a 93,
+  `/produto` 87, `/precos` 85, `/segmentos/loja-virtual` 89 a 92. A v1 no ar
+  deu 88. O LCP era texto da primeira tela esperando o JS da revelação; a capa
+  e o que fica logo abaixo dela agora entram só com CSS (`entra()` em
+  `secoes-do-site.tsx`). As fotos dos nichos foram para 600x800.
+- Bento "O que ele faz" e janelas do "Como funciona" com conteúdo real; a
+  janela de resultados usa os números medidos (74%, 1 min 46 s).
+
 Falta:
 
-1. **Conferir as tarifas da Meta** na tabela oficial antes do merge no
-   `main` (`pecas-interativas.tsx`, constantes `SERVICO` e `MARKETING`).
-2. **Lighthouse mobile** da `/` (não pode cair de 90).
-3. Bento "O que ele faz" com conteúdo real nas janelas (nomes na fila, texto
-   nos blocos, IA consultando o catálogo).
-4. Comparação de planos em `/precos`; índice fixo em `/produto`; seção
+1. Comparação de planos em `/precos`; índice fixo em `/produto`; seção
    própria de IA e de relatórios em `/produto`.
-5. Imagem de compartilhamento (OG) por página; página por integração.
-6. **Depende do Gabriel:** nome comercial dos nichos; logo oficial da
+2. Imagem de compartilhamento (OG) por página; página por integração.
+3. **Depende do Gabriel:** nome comercial dos nichos; logo oficial da
    Verandi; autorização de MGM Pilates e PCYES para logo ou depoimento
    (casos nas páginas de nicho).

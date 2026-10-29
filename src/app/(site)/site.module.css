@@ -154,6 +154,11 @@
   .nichoTexto {
     padding: 14px;
   }
+
+  /* No cartão de 170 px a linha de quem é cobria metade da foto e brigava com o título. */
+  .nichoTexto small {
+    display: none;
+  }
 }
 
 /*
@@ -187,7 +192,7 @@
   position: absolute;
   inset: 0;
   z-index: -1;
-  background: linear-gradient(180deg, transparent 38%, rgb(6 12 32 / 0.82) 100%);
+  background: linear-gradient(180deg, transparent 30%, rgb(6 12 32 / 0.55) 58%, rgb(6 12 32 / 0.9) 100%);
 }
 
 .nicho:hover img {

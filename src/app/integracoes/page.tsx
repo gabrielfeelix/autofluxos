@@ -21,7 +21,7 @@ export default function PaginaDeIntegracoes() {
         />
       }
     >
-      <section className={s.secao}>
+      <section className={`${s.secao} ${s.secaoAbaixoDaCapa}`}>
         <div className={s.faixa}>
           <VitrineDeIntegracoes />
         </div>
