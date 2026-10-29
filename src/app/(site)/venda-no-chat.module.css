@@ -203,7 +203,9 @@
 }
 
 .celularTopo {
-  display: block;
+  display: flex;
+  align-items: center;
+  gap: 8px;
   padding: 8px 12px;
   background: #ffffff;
   font-size: 11.5px;
@@ -267,6 +269,10 @@
   font-size: 12px;
   font-weight: 600;
   color: #ffffff;
+}
+
+.celularTopo img {
+  border-radius: 50%;
 }
 
 /* ───── 3 · aprovado ───── */

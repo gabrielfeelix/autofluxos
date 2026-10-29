@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react'
 import type { Conversa, Mensagem } from './previa-whatsapp'
+import { logoDoNegocio } from './logos-de-exemplo'
 import w from './previa-whatsapp.module.css'
 
 const HORAS = ['10:41', '10:41', '10:42', '10:42']
@@ -17,6 +18,7 @@ const TEMPO_POR_MENSAGEM = 900
  */
 export function PreviaWhatsApp({ conversa }: { conversa: Conversa }) {
   const total = conversa.mensagens.length
+  const logo = logoDoNegocio(conversa.negocio)
   const [vistas, setVistas] = useState(1)
   const corpo = useRef<HTMLDivElement>(null)
 
@@ -38,7 +40,12 @@ export function PreviaWhatsApp({ conversa }: { conversa: Conversa }) {
     <div className={w.tela}>
       <div className={w.topo}>
         <span className={w.avatar} style={{ background: conversa.cor }}>
-          {conversa.negocio[0]}
+          {logo ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={logo} alt="" width={32} height={32} style={{ width: '100%', height: '100%', borderRadius: '50%', objectFit: 'cover' }} />
+          ) : (
+            conversa.negocio[0]
+          )}
         </span>
         <span>
           <strong>{conversa.negocio}</strong>

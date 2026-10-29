@@ -287,6 +287,8 @@ const PREFIXOS_ABERTOS = [
   '/fundos/',
   // As fotos das prévias da página inicial (Unsplash, uso comercial livre).
   '/fotos-do-site/',
+  // As logos dos negócios de exemplo do site (Ponto Som, Studio Movimento...).
+  '/logos-de-exemplo/',
   // As páginas de cada nicho do site, `/segmentos/[slug]`.
   '/segmentos/',
   // As páginas de cada canal do site, `/canais/[slug]`.

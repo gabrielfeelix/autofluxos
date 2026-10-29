@@ -66,6 +66,8 @@ export function SecaoVendaNoChat() {
             </span>
             <div className={v.celular} aria-hidden>
               <span className={v.celularTopo}>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src="/logos-de-exemplo/ponto-som.webp" alt="" width={22} height={22} />
                 <TituloComCanal texto="WhatsApp · Ponto Som" tamanho={12} />
               </span>
               <span className={v.checkout}>
