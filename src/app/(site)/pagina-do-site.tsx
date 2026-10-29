@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import { WHATSAPP_DA_4YU } from '@/components/ajuda/moldura'
 import { BentoDoProduto } from './bento-do-produto'
 import { InboxClicavel } from './inbox-clicavel'
 import { CartaoEnterprise } from './precos-pagina'
@@ -21,6 +22,14 @@ import { Revelar } from './revelar'
 import { GLIFO_CLAUDE, GLIFO_GOOGLE, GLIFO_OPENAI, GLIFO_PERPLEXITY } from '@/components/design/glifos-oficiais'
 import s from './pagina-inicial.module.css'
 import { FotoDaPessoa } from './pessoas-do-site'
+
+/**
+ * "Fale conosco" e "Testar grátis" abrem o WhatsApp da 4YU com a frase pronta:
+ * a conta nasce pela nossa mão, e a conversa começa onde a gente atende.
+ */
+function whatsDa4YU(texto: string): string {
+  return `${WHATSAPP_DA_4YU}?text=${encodeURIComponent(texto)}`
+}
 
 /**
  * A porta de entrada pública do AutoFluxos.
@@ -107,7 +116,9 @@ export function PaginaDoSite({ capa, children, cor }: { capa: ReactNode; childre
             <div className={s.acoes} data-revela data-atraso="140">
               <a
                 className={`${s.botao} ${s.botaoPrincipal} ${s.botaoGrande}`}
-                href="mailto:contato@4yu.com.br?subject=AutoFluxos%3A%20quero%20conhecer"
+                href={whatsDa4YU('Olá! Quero conhecer o AutoFluxos.')}
+                target="_blank"
+                rel="noopener noreferrer"
               >
                 Fale conosco
               </a>
@@ -197,7 +208,9 @@ export function PaginaDoSite({ capa, children, cor }: { capa: ReactNode; childre
               <a
                 className={s.rodapeLink}
                 data-n="002"
-                href="mailto:contato@4yu.com.br?subject=AutoFluxos%3A%20quero%20conhecer"
+                href={whatsDa4YU('Olá! Quero conhecer o AutoFluxos.')}
+                target="_blank"
+                rel="noopener noreferrer"
               >
                 Fale conosco
               </a>
@@ -659,7 +672,9 @@ function Plano({
 
       <a
         className={`${s.botao} ${destaque ? s.botaoPrincipal : s.botaoVazado} ${s.planoBotao}`}
-        href={`mailto:contato@4yu.com.br?subject=${encodeURIComponent(`AutoFluxos: teste grátis do plano ${nome}`)}`}
+        href={whatsDa4YU(preco ? `Olá! Quero testar o plano ${nome} do AutoFluxos por ${DIAS_DE_TESTE} dias.` : `Olá! Quero saber mais sobre o plano ${nome} do AutoFluxos.`)}
+        target="_blank"
+        rel="noopener noreferrer"
       >
         {preco ? `Testar ${DIAS_DE_TESTE} dias grátis` : 'Fale conosco'}
       </a>
