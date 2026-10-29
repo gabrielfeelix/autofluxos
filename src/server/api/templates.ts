@@ -249,7 +249,13 @@ export async function enviarModeloPelaApi(clienteId: string, pedido: PedidoDeEnv
 
   // Grava antes de mandar: a função que morre entre o envio e o registro não
   // pode apagar do histórico o que o contato já recebeu.
-  const registro = await registrarSaida({ contatoId, sessaoId: contexto.sessaoId, texto, autor: AUTOR_DA_API })
+  const registro = await registrarSaida({
+    contatoId,
+    sessaoId: contexto.sessaoId,
+    texto,
+    autor: AUTOR_DA_API,
+    ...(cartoes.cartoes.length > 0 ? { payload: payloadDoCarrossel(template, cartoes.cartoes, preencher(template.componentes.corpo, valoresDoCorpo)) } : {}),
+  })
 
   let envio
   try {
@@ -343,4 +349,28 @@ function conferirCartoes(
     })
   }
   return { cartoes: saida }
+}
+
+/**
+ * O carrossel como o Inbox desenha: o balão de cima em `frase` e um cartão por
+ * produto em `produtos`, o formato que os cards do bot já usam (`CardsDeProduto`).
+ * O primeiro valor do cartão vira o título; os outros, a linha de baixo.
+ */
+function payloadDoCarrossel(template: Template, cartoes: CartaoDoEnvio[], frase: string) {
+  const botao = template.componentes.carrossel?.botoes.find((b) => b.tipo === 'URL')
+  return {
+    frase,
+    produtos: cartoes.map((cartao) => {
+      const [titulo, ...resto] = cartao.corpo ?? []
+      const fim = cartao.botoes?.[0]?.texto
+      const link = botao?.valor ? (fim !== undefined ? botao.valor.replace('{{1}}', fim) : botao.valor) : undefined
+      return {
+        nome: titulo ?? 'produto',
+        foto: cartao.midia,
+        detalhe: resto.join(' · '),
+        ...(link?.startsWith('https://') ? { link } : {}),
+        ...(botao ? { botao: botao.texto } : {}),
+      }
+    }),
+  }
 }

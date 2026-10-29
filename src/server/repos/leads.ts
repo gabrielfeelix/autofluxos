@@ -151,7 +151,15 @@ export type EtiquetaDeLead = (typeof ETIQUETAS_DE_LEAD)[number]
  * preço e o botão da loja. `titulo` e `detalhe` saem de `linhasDoCard`, a mesma
  * função que monta o corpo do `cta_url`, para a Inbox dizer o que o cliente leu.
  */
-export type ProdutoNaMensagem = { nome: string; foto: string | null; titulo: string; detalhe: string; link: string | null }
+export type ProdutoNaMensagem = {
+  nome: string
+  foto: string | null
+  titulo: string
+  detalhe: string
+  link: string | null
+  /** O texto do botão, quando não é o "Ver na loja" (o carrossel do carrinho diz "Finalizar compra"). */
+  botao?: string
+}
 
 /** O botão de link (`cta_url`) que saiu embaixo do texto, como a pessoa viu. */
 export type BotaoNaMensagem = { rotulo: string; url: string }
@@ -1457,6 +1465,9 @@ function botaoDoPayload(payload: unknown): BotaoNaMensagem | null {
  * juntos (`receber-mensagem.ts`); sem frase, o texto é só o dos cards.
  */
 function fraseDosCards(texto: string | null, payload: unknown): string | null {
+  // O carrossel grava o balão de cima à parte: o texto da linha também lista os cartões.
+  const gravada = (payload as { frase?: unknown } | null)?.frase
+  if (typeof gravada === 'string' && gravada.trim()) return gravada
   const lista = (payload as { produtos?: unknown } | null)?.produtos
   if (!texto || !Array.isArray(lista) || lista.length === 0) return null
   const cards = (lista as ProdutoDaLoja[]).map(textoDoCard).join('\n\n')
@@ -1475,8 +1486,13 @@ function produtosDoPayload(payload: unknown): ProdutoNaMensagem[] {
     // Sem foto e sem link o que saiu foi texto, e o texto já está na mensagem.
     if (!foto && !link) return []
     const nome = typeof p?.nome === 'string' ? p.nome : 'produto'
-    const { titulo, detalhe } = linhasDoCard({ ...(item as ProdutoDaLoja), nome }, { whatsapp: true })
-    return [{ nome, foto, titulo, detalhe, link }]
+    // O cartão de um modelo de carrossel já vem com o texto pronto (`detalhe`).
+    const pronto = item as { detalhe?: unknown; botao?: unknown }
+    const { titulo, detalhe } =
+      typeof pronto.detalhe === 'string'
+        ? { titulo: nome, detalhe: pronto.detalhe }
+        : linhasDoCard({ ...(item as ProdutoDaLoja), nome }, { whatsapp: true })
+    return [{ nome, foto, titulo, detalhe, link, ...(typeof pronto.botao === 'string' ? { botao: pronto.botao } : {}) }]
   })
 }
 
