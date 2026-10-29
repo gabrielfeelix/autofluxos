@@ -5,6 +5,7 @@ import { IlustracaoDoRamo } from './ilustracoes-dos-ramos'
 import { MODELOS_DE_TODOS, type NichoDoSite } from './nichos-do-site'
 import { PreviaQueTroca } from './pecas-interativas'
 import { CONVERSAS, PreviaWhatsApp } from './previa-whatsapp'
+import { Pergunta } from './pagina-do-site'
 import n from './nicho.module.css'
 import s from './pagina-inicial.module.css'
 import x from './site.module.css'
@@ -185,36 +186,53 @@ export function CorpoDoRamo({ nicho }: { nicho: NichoDoSite }) {
               <span>autofluxos.4yu.com.br · Automações</span>
             </div>
             <div className={n.appCorpo}>
+              {/* O menu do app, como em `secoes-do-cliente.tsx`, com Automações aberto. */}
               <nav className={n.appMenu} aria-hidden>
-                <b>Automações</b>
-                <span data-ativo>Fluxos</span>
-                <span>Gatilhos</span>
-                <span>Sequências</span>
-                <span>Transmissões</span>
+                <span className={n.appMarca}>
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src="/logos/logo-autofluxos-marca.png" alt="" width={18} height={18} />
+                  AutoFluxos
+                </span>
+                <span>Início</span>
+                <span>Conversas</span>
+                <span>CRM</span>
+                <span data-ativo>Automações</span>
+                <span>Comércio</span>
+                <span>Análise</span>
+                <span>Configurações</span>
               </nav>
               <div className={n.appLista}>
+                {/* O topo e as linhas seguem a tela real de `clientes/[id]/fluxos`. */}
                 <div className={n.appTopo}>
-                  <strong>Fluxos</strong>
-                  <small>{nicho.modelos.length + MODELOS_DE_TODOS.length} prontos para {nomeMinusculo}</small>
+                  <strong>Automações</strong>
+                  <span className={n.appNova}>+ Nova automação</span>
                 </div>
-                {[...nicho.modelos.map((m) => [m, true] as const), ...MODELOS_DE_TODOS.map((m) => [m, false] as const)].map(([m, doRamo], i) => (
-                  <div key={m} className={n.appLinha} style={{ '--i': i } as CSSProperties}>
-                    <span className={n.fios} aria-hidden>
-                      <i />
-                      <i />
-                      <i />
-                    </span>
+                <div className={n.appAbas} aria-hidden>
+                  <span data-ativa>Fluxos</span>
+                  <span>Gatilhos</span>
+                  <span>Sequências</span>
+                </div>
+                <div className={n.appBusca}>Buscar automação</div>
+                {[...nicho.modelos, ...MODELOS_DE_TODOS].map((m, i) => (
+                  <div key={m} className={n.appLinha}>
                     <span className={n.appNome}>
-                      {m}
-                      <small>{doRamo ? `Modelo para ${nomeMinusculo}` : 'Em toda conta'}</small>
+                      <span className={n.appNomeTopo}>
+                        {m}
+                        <span className={n.seloCanal}>
+                          <svg width="11" height="11" viewBox="0 0 24 24" fill="#25d366" aria-hidden>
+                            <path d={GLIFO_WHATSAPP} />
+                          </svg>
+                          WhatsApp
+                        </span>
+                        {i % 3 === 1 && <span className={n.seloIa}>IA</span>}
+                      </span>
+                      <small>
+                        {6 + ((i * 5) % 9)} blocos{i === 0 ? ' · Principal' : ''}
+                      </small>
                     </span>
-                    <span className={n.appCanal} aria-hidden>
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="#25d366">
-                        <path d={GLIFO_WHATSAPP} />
-                      </svg>
-                      WhatsApp
-                    </span>
-                    <b className={n.chave} aria-label="Ligado" />
+                    <span className={n.appPublicada}>Publicada v{1 + (i % 3)}</span>
+                    <b className={n.chave} aria-label="Ligada" />
+                    <span className={n.appEditar}>Editar</span>
                   </div>
                 ))}
               </div>
@@ -261,6 +279,31 @@ export function CorpoDoRamo({ nicho }: { nicho: NichoDoSite }) {
             <Link href="/precos" className={n.link}>
               Ver os planos <Seta />
             </Link>
+          </div>
+        </div>
+      </section>
+
+      {/* As dúvidas de quem é do ramo, com a resposta do que o produto faz hoje. */}
+      <section className={s.secao}>
+        <div className={`${s.faixa} ${n.faqGrade}`}>
+          <div>
+            <span className={s.olho} data-revela>
+              Perguntas frequentes
+            </span>
+            <h2 className={s.tituloSecao} data-revela data-como="desfoque" data-atraso="60">
+              O que {nomeMinusculo} pergunta antes de começar
+            </h2>
+            <p className={s.chamada} data-revela data-atraso="100">
+              Não achou a sua? A gente responde pelo WhatsApp.
+            </p>
+            <a className={n.link} href="#conversar">
+              Falar com a gente <Seta />
+            </a>
+          </div>
+          <div className={n.faq}>
+            {nicho.duvidas.map((d) => (
+              <Pergunta key={d.pergunta} pergunta={d.pergunta} resposta={d.resposta} />
+            ))}
           </div>
         </div>
       </section>

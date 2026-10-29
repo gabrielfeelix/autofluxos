@@ -24,6 +24,8 @@ export type NichoDoSite = {
   modelos: string[]
   noApp: { titulo: string; texto: string }[]
   integracoes: GrupoDeIntegracao[]
+  /** O FAQ da página do ramo. Só o que o produto faz hoje (`docs/FUNCIONALIDADES.md`). */
+  duvidas: { pergunta: string; resposta: string }[]
 }
 
 /** Os modelos que toda conta recebe, em qualquer ramo (`MODELOS_DE_QUALQUER_RAMO`). */
@@ -57,6 +59,32 @@ export const NICHOS_DO_SITE: NichoDoSite[] = [
       { titulo: 'Matrículas', texto: 'O funil acompanha da aula experimental à matrícula.' },
       { titulo: 'Planos e modalidades', texto: 'O catálogo guarda planos e valores que a IA consulta.' },
     ],
+    duvidas: [
+      {
+        pergunta: 'O aluno consegue marcar e remarcar sozinho?',
+        resposta: 'Sim. O chatbot mostra os horários livres em botões e marca direto na agenda. Para remarcar, o aluno escolhe outro horário na mesma conversa.',
+      },
+      {
+        pergunta: 'Preciso de um sistema de agenda?',
+        resposta: 'A agenda que o chatbot consulta e atualiza é a da Verandi, o sistema de agenda da 4YU, que já conversa com o AutoFluxos. Sem ela, o chatbot tira dúvidas, manda os planos e passa o pedido de horário para a equipe.',
+      },
+      {
+        pergunta: 'Como funciona o lembrete de aula?',
+        resposta: 'O modelo de lembrete avisa o aluno antes da aula, com um botão para dizer que não vai. A vaga volta para a agenda na hora.',
+      },
+      {
+        pergunta: 'E o aluno que parou de vir?',
+        resposta: 'Uma sequência chama de volta quem não aparece há algumas semanas, no tempo que você definir, e para sozinha quando ele responde.',
+      },
+      {
+        pergunta: 'A IA pode inventar o preço de um plano?',
+        resposta: 'Não. Ela responde pelos planos e valores cadastrados no catálogo. Quando a resposta não está lá, passa a conversa para a equipe.',
+      },
+      {
+        pergunta: 'Dá para cobrar a mensalidade pelo WhatsApp?',
+        resposta: 'Sim. A cobrança vai por link de pagamento ou Pix na conversa, e o relatório mostra quem está em dia e quem saiu.',
+      },
+    ],
     integracoes: ['pagamentos'],
   },
   {
@@ -85,6 +113,32 @@ export const NICHOS_DO_SITE: NichoDoSite[] = [
       { titulo: 'Pedidos em lista', texto: 'De novo a separando, enviado e entregue, com aviso ao cliente.' },
       { titulo: 'Vendas pelo chat', texto: 'O relatório mostra o que foi recebido e vendido na conversa.' },
     ],
+    duvidas: [
+      {
+        pergunta: 'Funciona com a minha loja?',
+        resposta: 'Magento e Nuvemshop conectam direto pelo menu Loja. Shopify, VTEX, WooCommerce, Tray e Loja Integrada estão a caminho. Sem loja virtual, o catálogo próprio entra por planilha.',
+      },
+      {
+        pergunta: 'O chatbot mostra preço e estoque de verdade?',
+        resposta: 'Sim. Ele consulta a loja conectada e manda foto, preço e estoque reais. No Magento, também calcula o frete pelo CEP.',
+      },
+      {
+        pergunta: 'O cliente consegue saber onde está o pedido?',
+        resposta: 'No Magento, sim: quando o telefone ou o CPF batem com o pedido, o chatbot mostra a situação, os itens e o rastreio.',
+      },
+      {
+        pergunta: 'Dá para recuperar carrinho abandonado?',
+        resposta: 'Sim. O modelo de carrinho abandonado chama o cliente de volta com o produto que ficou para trás.',
+      },
+      {
+        pergunta: 'E cupom de desconto?',
+        resposta: 'No Magento, a equipe e o chatbot mandam cupons pela conversa, e o relatório mostra quantos foram usados.',
+      },
+      {
+        pergunta: 'Consigo saber quanto vendi pelo chat?',
+        resposta: 'Sim. O relatório mostra o que foi recebido e vendido na conversa e quais produtos tiveram mais cliques.',
+      },
+    ],
     integracoes: ['lojas', 'pagamentos'],
   },
   {
@@ -108,6 +162,32 @@ export const NICHOS_DO_SITE: NichoDoSite[] = [
       { titulo: 'Quadro de pedidos', texto: 'Novo, pago, em preparo, saiu e entregue, arrastando o cartão.' },
       { titulo: 'Horários de pico', texto: 'O relatório mostra quando chegam mais pedidos pelo chat.' },
     ],
+    duvidas: [
+      {
+        pergunta: 'O cliente monta o pedido sozinho?',
+        resposta: 'Sim. O cardápio chega com foto e botões, o cliente escolhe os itens e o sistema soma o total, com a taxa de entrega.',
+      },
+      {
+        pergunta: 'Funciona com o meu cardápio online?',
+        resposta: 'Sim. Os pedidos do Cardápio Web, do Goomer e do OlaClick entram no mesmo quadro dos pedidos feitos pelo WhatsApp.',
+      },
+      {
+        pergunta: 'Como recebo o pagamento?',
+        resposta: 'Por Pix ou link de pagamento na própria conversa, e o pedido muda para pago quando o banco confirma.',
+      },
+      {
+        pergunta: 'E o entregador?',
+        resposta: 'O motoboy recebe um link no celular, sem precisar de conta, e marca quando saiu e quando entregou. O cliente é avisado a cada etapa.',
+      },
+      {
+        pergunta: 'O que acontece fora do horário?',
+        resposta: 'O chatbot continua atendendo: informa o horário, o endereço e quando a cozinha abre, sem ninguém no balcão.',
+      },
+      {
+        pergunta: 'Consigo ver os horários de pico?',
+        resposta: 'Sim. O relatório mostra em que dia e hora chegam mais pedidos, para você reforçar a equipe e a cozinha.',
+      },
+    ],
     integracoes: ['cardapios', 'pagamentos'],
   },
   {
@@ -130,6 +210,32 @@ export const NICHOS_DO_SITE: NichoDoSite[] = [
       { titulo: 'Produtos e serviços', texto: 'O catálogo guarda o que você vende, com foto e preço.' },
       { titulo: 'Pedidos para retirar', texto: 'Novo, pago e retirado, numa lista simples.' },
       { titulo: 'Áudio transcrito', texto: 'Toda mensagem de voz vira texto na conversa.' },
+    ],
+    duvidas: [
+      {
+        pergunta: 'Preciso ter loja virtual?',
+        resposta: 'Não. Os produtos e serviços entram num catálogo próprio, por planilha, com foto e preço, e o chatbot consulta por ali.',
+      },
+      {
+        pergunta: 'O chatbot responde "vocês têm?"',
+        resposta: 'Sim. O modelo "Vocês têm?" responde com a foto e o preço do catálogo e, se não tiver, passa para a equipe.',
+      },
+      {
+        pergunta: 'Dá para separar um produto para retirar?',
+        resposta: 'Sim. O pedido fica numa lista simples, de novo a pago e retirado, e o cliente recebe o aviso.',
+      },
+      {
+        pergunta: 'E quando o cliente manda áudio pedindo orçamento?',
+        resposta: 'O áudio vira texto na conversa com um toque, e a equipe responde sem precisar ouvir no balcão.',
+      },
+      {
+        pergunta: 'Continuo usando o WhatsApp do celular?',
+        resposta: 'Sim. Com a coexistência, o número segue no app WhatsApp Business, e o que for respondido pelo celular aparece no Inbox.',
+      },
+      {
+        pergunta: 'Minha equipe é pequena. Vale a pena?',
+        resposta: 'Vale. O plano de entrada já cobre um número com chatbot e até 3 pessoas no Inbox, com 14 dias para testar.',
+      },
     ],
     integracoes: ['pagamentos'],
   },

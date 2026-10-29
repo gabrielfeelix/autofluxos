@@ -296,23 +296,29 @@
 
 .appCorpo {
   display: grid;
-  grid-template-columns: 200px minmax(0, 1fr);
+  grid-template-columns: 190px minmax(0, 1fr);
 }
 
 .appMenu {
   display: grid;
   align-content: start;
   gap: 2px;
-  padding: 18px 12px;
+  padding: 14px 10px;
   border-right: 1px solid #edf0f7;
   background: #f8fafd;
-  font-size: 13.5px;
+  font-size: 13px;
 }
 
-.appMenu b {
-  margin: 0 10px 8px;
-  font-size: 11.5px;
-  color: #64708a;
+.appMarca {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 10px;
+  padding: 2px 8px 12px !important;
+  border-bottom: 1px solid #edf0f7;
+  border-radius: 0 !important;
+  font-weight: 600;
+  color: #0c1838 !important;
 }
 
 .appMenu span {
@@ -328,52 +334,120 @@
 }
 
 .appLista {
-  padding: 18px 22px 20px;
+  padding: 18px 22px 16px;
 }
 
 .appTopo {
   display: flex;
-  align-items: baseline;
+  align-items: center;
   justify-content: space-between;
-  margin-bottom: 10px;
 }
 
 .appTopo strong {
-  font-size: 18px;
+  font-size: 19px;
+  letter-spacing: -0.02em;
 }
 
-.appTopo small {
+.appNova {
+  padding: 7px 12px;
+  border-radius: 9px;
+  background: var(--cor);
   font-size: 12.5px;
+  font-weight: 600;
+  color: #ffffff;
+}
+
+.appAbas {
+  display: flex;
+  gap: 18px;
+  margin-top: 12px;
+  border-bottom: 1px solid #edf0f7;
+  font-size: 13px;
   color: #64708a;
+}
+
+.appAbas span {
+  padding: 8px 0;
+}
+
+.appAbas span[data-ativa] {
+  border-bottom: 2px solid var(--cor);
+  font-weight: 600;
+  color: #0c1838;
+}
+
+.appBusca {
+  margin: 12px 0 6px;
+  padding: 8px 12px;
+  border: 1px solid #e3e8f3;
+  border-radius: 9px;
+  font-size: 12.5px;
+  color: #94a3c4;
 }
 
 .appLinha {
   display: grid;
-  grid-template-columns: auto minmax(0, 1fr) auto auto;
+  grid-template-columns: minmax(0, 1fr) auto auto auto;
   align-items: center;
-  gap: 16px;
-  padding: 12px 6px;
-  border-top: 1px solid #edf0f7;
+  gap: 14px;
+  padding: 11px 6px;
+  border-bottom: 1px solid #edf0f7;
 }
 
 .appNome {
   display: grid;
-  font-size: 14.5px;
+  gap: 2px;
+}
+
+.appNomeTopo {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  font-size: 13.5px;
   font-weight: 600;
 }
 
 .appNome small {
-  font-size: 12px;
-  font-weight: 400;
+  font-size: 11px;
   color: #64708a;
 }
 
-.appCanal {
+.seloCanal {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  font-size: 12.5px;
+  gap: 4px;
+  padding: 1px 7px;
+  border: 1px solid #d6f5df;
+  border-radius: 999px;
+  background: #f0fbf3;
+  font-size: 10px;
+  font-weight: 600;
+  color: #15803d;
+}
+
+.seloIa {
+  padding: 0 5px;
+  border: 1px solid #e3e8f3;
+  border-radius: 4px;
+  font-size: 10px;
+  font-weight: 700;
+  color: #1d4ed8;
+}
+
+.appPublicada {
+  font-size: 11.5px;
+  white-space: nowrap;
   color: #3b4a6b;
+}
+
+.appEditar {
+  padding: 4px 10px;
+  border: 1px solid #e3e8f3;
+  border-radius: 8px;
+  font-size: 11px;
+  font-weight: 600;
+  color: #64708a;
 }
 
 @media (max-width: 700px) {
@@ -381,13 +455,31 @@
     grid-template-columns: 1fr;
   }
 
-  .appMenu {
+  .appMenu,
+  .appPublicada,
+  .appEditar {
     display: none;
   }
+}
 
-  .appCanal {
-    display: none;
+/* ───── perguntas frequentes ───── */
+
+.faqGrade {
+  display: grid;
+  grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.2fr);
+  align-items: start;
+  gap: clamp(32px, 6vw, 88px);
+}
+
+@media (max-width: 900px) {
+  .faqGrade {
+    grid-template-columns: 1fr;
   }
+}
+
+.faq {
+  display: grid;
+  gap: 10px;
 }
 
 /* ───── a língua do ramo ───── */
