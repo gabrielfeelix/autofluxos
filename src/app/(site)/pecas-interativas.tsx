@@ -306,7 +306,7 @@ export function DoisLados() {
     if (calmo || !visivel) return
     const fim = n >= ROTEIRO.length
     // Rápido como conversa de verdade: a primeira entra logo, as seguintes a cada ~1 s.
-    const r = window.setTimeout(() => setN(fim ? 0 : n + 1), fim ? 2800 : n === 0 ? 300 : 1050)
+    const r = window.setTimeout(() => setN(fim ? 0 : n + 1), fim ? 2200 : n === 0 ? 300 : 800)
     return () => window.clearTimeout(r)
   }, [n, calmo, visivel])
 
