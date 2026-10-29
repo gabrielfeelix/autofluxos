@@ -28,7 +28,8 @@
   }
 
   .secao[data-movimento='rola'] {
-    height: 260vh;
+    /* 170vh: o fluxo monta em menos de uma tela de rolagem. Com 260vh pedia scroll demais. */
+    height: 170vh;
   }
 
   .secao[data-movimento='rola'] .trava {

@@ -110,7 +110,7 @@ export function FluxoSeMontando({ cabeca }: { cabeca: ReactNode }) {
         progresso = (window.innerHeight * 0.9 - r.top) / (r.height * 0.95)
       }
       // Termina antes do fim da trava, para o fluxo pronto ficar um tempo na tela.
-      const s = Math.min(Math.max(progresso * 1.25, 0), 1) * COLUNAS
+      const s = Math.min(Math.max(progresso * 1.5, 0), 1) * COLUNAS
       p.style.setProperty('--s', s.toFixed(3))
       if (s >= COLUNAS) p.dataset.pronto = ''
     }
