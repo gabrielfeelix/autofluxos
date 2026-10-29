@@ -1,7 +1,8 @@
 import 'server-only'
 import { hojeNaConta } from '@/core/horario'
-import { linkComLacuna, podeEnviar, preencherLacunas as preencher, recadoDoLinkComLacuna, variaveisDe, type Categoria, type StatusDoTemplate } from '@/core/templates'
+import { imagemDoCabecalho, linkComLacuna, podeEnviar, preencherLacunas as preencher, recadoDoLinkComLacuna, variaveisDe, type Categoria, type StatusDoTemplate } from '@/core/templates'
 import type { AutorDaSaida } from '@/core/autor-da-mensagem'
+import type { CartaoDoEnvio } from '@/channels/types'
 import { adaptadorDoCanal } from '../adaptador-do-canal'
 import { db } from '../db'
 import { consumirLimite } from '../limite'
@@ -80,9 +81,24 @@ export type PedidoDeEnvio = {
   idioma?: string
   valores?: { corpo?: string[]; cabecalho?: string[] }
   /** A pessoa marcou "aceito receber promoções" no sistema de quem integra (checkout, cadastro). */
+  /** O fim variável do botão de link do modelo (o que entra no `{{1}}` do endereço). */
+  link?: string
+  /** A foto do cabeçalho, por `https://`, quando o modelo tem cabeçalho de imagem. */
+  imagem?: string
+  /** Os cartões de um modelo de carrossel, na quantidade exata do modelo. */
+  cartoes?: CartaoDoPedido[]
   aceite_marketing?: true
   /** O texto da caixinha que ela marcou, guardado como prova do aceite. */
   texto_do_aceite?: string
+}
+
+export type CartaoDoPedido = {
+  /** Foto (ou vídeo, se o modelo for de vídeo) por `https://`. */
+  imagem: string
+  /** Um valor por variável do texto do cartão, na ordem. */
+  valores?: string[]
+  /** O fim variável do botão de link do cartão (o que entra no `{{1}}` do endereço). */
+  link?: string
 }
 
 export type ResultadoDoEnvio =
@@ -154,11 +170,22 @@ export async function enviarModeloPelaApi(clienteId: string, pedido: PedidoDeEnv
   if (!podeEnviar(template.status)) {
     return recusa(409, 'template_nao_aprovado', `O modelo "${template.nome}" está ${template.status as StatusDoTemplate} na Meta. Só modelo aprovado entrega.`)
   }
-  if (template.componentes.cabecalho && template.componentes.cabecalho.tipo !== 'texto') {
-    return recusa(422, 'template_com_midia', 'Modelos com imagem, vídeo ou documento no cabeçalho ainda não podem ser enviados pela API.')
+  const cabecalho = template.componentes.cabecalho
+  if (cabecalho && cabecalho.tipo !== 'texto' && cabecalho.tipo !== 'imagem') {
+    return recusa(422, 'template_com_midia', 'Modelos com vídeo ou documento no cabeçalho ainda não podem ser enviados pela API.')
   }
+  const imagem = pedido.imagem?.trim() || imagemDoCabecalho(template.componentes)
+  if (cabecalho?.tipo === 'imagem' && !imagem?.startsWith('https://')) {
+    return recusa(422, 'imagem_obrigatoria', `O modelo "${template.nome}" tem foto no cabeçalho. Envie o campo imagem com o endereço https:// da foto.`)
+  }
+  const cartoes = conferirCartoes(template, pedido.cartoes)
+  if ('erro' in cartoes) return cartoes.erro
+  // Botão de link com fim variável: quem integra manda o fim em `link` (o
+  // carrinho, o pedido). Sem ele, a Meta recusaria o envio.
   const lacuna = linkComLacuna(template.componentes)
-  if (lacuna) return recusa(422, 'link_com_lacuna', recadoDoLinkComLacuna(lacuna))
+  const link = pedido.link?.trim()
+  if (lacuna && !link) return recusa(422, 'link_com_lacuna', `${recadoDoLinkComLacuna(lacuna)} Pela API, envie o fim do endereço no campo link.`)
+  const botoesDoLink = lacuna && link ? [{ indice: (template.componentes.botoes ?? []).indexOf(lacuna), texto: link }] : []
 
   const valoresDoCorpo = pedido.valores?.corpo ?? []
   const valoresDoCabecalho = pedido.valores?.cabecalho ?? []
@@ -209,12 +236,16 @@ export async function enviarModeloPelaApi(clienteId: string, pedido: PedidoDeEnv
     return recusa(409, 'sem_numero', 'A organização não tem um número de WhatsApp conectado para enviar modelos.')
   }
 
-  const texto = preencher(
-    template.componentes.cabecalho?.tipo === 'texto'
-      ? `${preencher(template.componentes.cabecalho.texto, valoresDoCabecalho)}\n\n${template.componentes.corpo}`
-      : template.componentes.corpo,
-    valoresDoCorpo,
-  )
+  const texto = [
+    preencher(
+      template.componentes.cabecalho?.tipo === 'texto'
+        ? `${preencher(template.componentes.cabecalho.texto, valoresDoCabecalho)}\n\n${template.componentes.corpo}`
+        : template.componentes.corpo,
+      valoresDoCorpo,
+    ),
+    // O histórico da conversa mostra o que cada cartão levou, já preenchido.
+    ...cartoes.cartoes.map((cartao, i) => `[${i + 1}] ${preencher(template.componentes.carrossel?.corpo ?? '', cartao.corpo ?? []).trim() || cartao.midia}`),
+  ].join('\n')
 
   // Grava antes de mandar: a função que morre entre o envio e o registro não
   // pode apagar do histórico o que o contato já recebeu.
@@ -225,11 +256,14 @@ export async function enviarModeloPelaApi(clienteId: string, pedido: PedidoDeEnv
     envio = await canal.enviarTemplate(contexto.waId, modeloComClique({
       nome: template.nome,
       idioma: template.idioma,
-      ...(valoresDoCorpo.length > 0 || valoresDoCabecalho.length > 0
+      ...(valoresDoCorpo.length > 0 || valoresDoCabecalho.length > 0 || imagem || cartoes.cartoes.length > 0 || botoesDoLink.length > 0
         ? {
             valores: {
               ...(valoresDoCorpo.length > 0 ? { corpo: valoresDoCorpo } : {}),
               ...(valoresDoCabecalho.length > 0 ? { cabecalho: valoresDoCabecalho } : {}),
+              ...(cabecalho?.tipo === 'imagem' && imagem ? { cabecalhoImagem: imagem } : {}),
+              ...(cartoes.cartoes.length > 0 ? { cartoes: cartoes.cartoes } : {}),
+              ...(botoesDoLink.length > 0 ? { botoes: botoesDoLink } : {}),
             },
           }
         : {}),
@@ -255,4 +289,58 @@ export async function enviarModeloPelaApi(clienteId: string, pedido: PedidoDeEnv
       template: { nome: template.nome, idioma: template.idioma },
     },
   }
+}
+
+/**
+ * Os cartões do pedido, conferidos contra o carrossel do modelo.
+ *
+ * **A quantidade tem que ser a do modelo**: a Meta só envia um carrossel com o
+ * número de cartões com que ele foi aprovado. Por isso quem integra cria um
+ * modelo por quantidade (`carrinho_2` ... `carrinho_10`) e escolhe pelo tamanho
+ * do carrinho, e a recusa diz qual seria o certo.
+ */
+function conferirCartoes(
+  template: Template,
+  cartoes: CartaoDoPedido[] | undefined,
+): { cartoes: CartaoDoEnvio[] } | { erro: ResultadoDoEnvio } {
+  const carrossel = template.componentes.carrossel
+  if (!carrossel) {
+    if (cartoes && cartoes.length > 0) {
+      return { erro: recusa(422, 'cartoes_incompativeis', `O modelo "${template.nome}" não é carrossel. Tire o campo cartoes ou use um modelo de carrossel.`) }
+    }
+    return { cartoes: [] }
+  }
+  const vieram = cartoes?.length ?? 0
+  if (vieram !== carrossel.cartoes) {
+    return {
+      erro: recusa(
+        422,
+        'cartoes_incompativeis',
+        `O modelo "${template.nome}" tem ${carrossel.cartoes} cartões e vieram ${vieram}. A Meta só envia a quantidade com que o modelo foi aprovado: use o modelo de ${vieram} cartões.`,
+      ),
+    }
+  }
+  const variaveis = variaveisDe(carrossel.corpo ?? '').length
+  const linkComVariavel = carrossel.botoes.findIndex((b) => b.tipo === 'URL' && variaveisDe(b.valor ?? '').length > 0)
+  const saida: CartaoDoEnvio[] = []
+  for (const [i, cartao] of (cartoes ?? []).entries()) {
+    const n = i + 1
+    if (!cartao.imagem?.trim().startsWith('https://')) {
+      return { erro: recusa(422, 'corpo_invalido', `cartoes[${i}].imagem: endereço https:// da foto do cartão ${n}.`) }
+    }
+    const valores = cartao.valores ?? []
+    if (valores.length !== variaveis) {
+      return { erro: recusa(422, 'valores_incompletos', `cartoes[${i}].valores: o texto do cartão tem ${variaveis} variáveis e vieram ${valores.length}.`) }
+    }
+    if (linkComVariavel >= 0 && !cartao.link?.trim()) {
+      return { erro: recusa(422, 'valores_incompletos', `cartoes[${i}].link: o botão do cartão ${n} tem endereço variável e o link não veio.`) }
+    }
+    saida.push({
+      midia: cartao.imagem.trim(),
+      tipo: carrossel.cabecalho,
+      ...(valores.length > 0 ? { corpo: valores } : {}),
+      ...(linkComVariavel >= 0 ? { botoes: [{ indice: linkComVariavel, texto: cartao.link!.trim() }] } : {}),
+    })
+  }
+  return { cartoes: saida }
 }

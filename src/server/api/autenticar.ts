@@ -51,6 +51,8 @@ export type CodigoDeErro =
   | 'template_nao_encontrado'
   | 'template_nao_aprovado'
   | 'sem_aceite_de_marketing'
+  | 'imagem_obrigatoria'
+  | 'cartoes_incompativeis'
   | 'template_com_midia'
   | 'link_com_lacuna'
   | 'idioma_obrigatorio'

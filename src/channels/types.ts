@@ -70,6 +70,20 @@ export type ValoresDoTemplate = {
    * clique contado (0139); a Meta recusa o modelo sem ele.
    */
   botoes?: { indice: number; texto: string }[]
+  /**
+   * Os cartões de um modelo de carrossel, na ordem, **na quantidade exata do
+   * modelo** (a Meta recusa outra). Cada um com a sua foto, os valores do texto
+   * do cartão e o fim variável dos botões de link.
+   */
+  cartoes?: CartaoDoEnvio[]
+}
+
+export type CartaoDoEnvio = {
+  /** Foto ou vídeo por `https://`, conforme o cabeçalho do cartão no modelo. */
+  midia: string
+  tipo: 'imagem' | 'video'
+  corpo?: string[]
+  botoes?: { indice: number; texto: string }[]
 }
 
 /**

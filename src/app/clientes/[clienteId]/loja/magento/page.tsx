@@ -15,6 +15,11 @@ import { acharCliente } from '@/server/repos/clientes'
 import { estadoDoToken } from '@/server/adaptador-da-loja'
 import { acompanhaPedidos, lojaDaConta } from '@/server/repos/lojas'
 import { AcompanharPedidos } from '@/components/cliente/acompanhar-pedidos'
+import { RecuperarCarrinho } from '@/components/cliente/recuperar-carrinho'
+import { CARTOES_DO_CARROSSEL } from '@/core/templates'
+import { PREFIXO_DO_CARRINHO } from '@/core/carrinho'
+import { acaoCriarModelosDoCarrinho } from '@/server/acoes-carrinho'
+import { listarTemplates } from '@/server/repos/templates'
 
 export const dynamic = 'force-dynamic'
 
@@ -34,11 +39,17 @@ export default async function Pagina({
   const cliente = await acharCliente(clienteId)
   if (!cliente) notFound()
 
-  const [loja, token, acompanha] = await Promise.all([
+  const [loja, token, acompanha, templates] = await Promise.all([
     lojaDaConta(cliente.id),
     estadoDoToken(cliente.id),
     acompanhaPedidos(cliente.id),
+    listarTemplates(cliente.id).catch(() => []),
   ])
+  // Os dez do carrinho, na ordem, com o status de cada um (ou "ausente").
+  const modelosDoCarrinho = Array.from({ length: CARTOES_DO_CARROSSEL.maximo }, (_, i) => {
+    const nome = `${PREFIXO_DO_CARRINHO}${i + 1}`
+    return { nome, status: templates.find((t) => t.nome === nome)?.status ?? 'ausente' }
+  })
 
   return (
     <ClienteShell cliente={cliente} ativa="loja">
@@ -83,6 +94,16 @@ export default async function Pagina({
             ligado={acompanha}
             eventosHref={`/clientes/${cliente.id}/fluxos?aba=eventos`}
             alternar={acaoAcompanharPedidos.bind(null, cliente.id)}
+          />
+        )}
+
+        {loja?.ativa && (
+          <RecuperarCarrinho
+            loja={cliente.nome}
+            modelos={modelosDoCarrinho}
+            criar={acaoCriarModelosDoCarrinho.bind(null, cliente.id)}
+            guiaHref="/ajuda/desenvolvedores/api-enviar-template"
+            apiHref={`/clientes/${cliente.id}/ajustes/api`}
           />
         )}
       </Miolo>

@@ -1,7 +1,7 @@
 import 'server-only'
 import { createHmac, timingSafeEqual } from 'node:crypto'
 import type { ValoresDoTemplate } from '@/channels/types'
-import { ENDERECO_DO_CLIQUE, imagemDoCabecalho, indiceDoBotaoContado, type Botao, type Componentes } from '@/core/templates'
+import { CARROSSEL_SO_PELA_API, ENDERECO_DO_CLIQUE, imagemDoCabecalho, indiceDoBotaoContado, type Botao, type Componentes } from '@/core/templates'
 
 /**
  * O clique no link de uma transmissão, contado (0139).
@@ -96,9 +96,12 @@ export function comCodigoDoClique(
  */
 export function modeloComClique<T extends { valores?: ValoresDoTemplate }>(
   envio: T,
-  template: { id: string; componentes: Pick<Componentes, 'botoes' | 'cabecalho'> | null },
+  template: { id: string; componentes: Pick<Componentes, 'botoes' | 'cabecalho' | 'carrossel'> | null },
   destinatarioId?: string | null,
 ): T {
+  // Trava única para transmissão, sequência, agendada e "retomar": nenhum
+  // deles sabe preencher os cartões, e a Meta recusaria o envio pela metade.
+  if (template.componentes?.carrossel && !envio.valores?.cartoes?.length) throw new Error(CARROSSEL_SO_PELA_API)
   let valores = comCodigoDoClique(envio.valores, template, destinatarioId)
   const imagem = imagemDoCabecalho(template.componentes)
   if (imagem && !valores?.cabecalhoImagem) valores = { ...(valores ?? {}), cabecalhoImagem: imagem }

@@ -253,6 +253,8 @@ function ErrosELimites() {
     [409, 'template_nao_aprovado', 'O modelo existe, mas não está aprovado na Meta agora (pendente, pausado, recusado).'],
     [409, 'sem_numero', 'A organização não tem número de WhatsApp conectado.'],
     [409, 'sem_conta_de_recebimento', 'A organização não conectou Mercado Pago nem Asaas em Ajustes › Pagamentos.'],
+    [422, 'cartoes_incompativeis', 'A quantidade de cartões não é a do modelo de carrossel. Use o modelo com essa quantidade.'],
+    [422, 'imagem_obrigatoria', 'O modelo tem foto no topo e o campo imagem não veio.'],
     [409, 'sem_aceite_de_marketing', 'Modelo de marketing para quem pediu para sair das promoções. Só reenvie com aceite_marketing: true se a pessoa aceitou de novo.'],
     [409, 'requisicao_em_andamento', 'Outra chamada com a mesma Idempotency-Key ainda está em andamento.'],
     [413, 'corpo_grande', 'Corpo acima de 64 KB.'],
@@ -588,6 +590,19 @@ function EnviarTemplate() {
           { nome: 'idioma', tipo: 'string', descricao: 'Obrigatório só quando o mesmo nome existe em mais de um idioma.' },
           { nome: 'valores.corpo', tipo: 'string[]', descricao: <>Um valor por variável do corpo, na ordem: o primeiro entra no <Cod>{'{{1}}'}</Cod>. A quantidade precisa bater.</> },
           { nome: 'valores.cabecalho', tipo: 'string[]', descricao: 'O valor da variável do cabeçalho de texto, quando houver.' },
+          { nome: 'link', tipo: 'string', descricao: <>O fim do endereço do botão de link, quando o modelo tem <Cod>{'https://loja.com/{{1}}'}</Cod>: o que entra no lugar do <Cod>{'{{1}}'}</Cod>.</> },
+          { nome: 'imagem', tipo: 'string', descricao: 'Endereço https:// da foto do topo, quando o modelo tem cabeçalho de imagem.' },
+          {
+            nome: 'cartoes',
+            tipo: 'object[]',
+            descricao: (
+              <>
+                Só em modelo de carrossel, <strong className="text-ink">na quantidade exata de cartões do modelo</strong> (regra
+                da Meta). Cada cartão: <Cod>imagem</Cod> (https://), <Cod>valores</Cod> (um por variável do texto do cartão) e{' '}
+                <Cod>link</Cod> (o fim do endereço do botão).
+              </>
+            ),
+          },
           {
             nome: 'aceite_marketing',
             tipo: 'true',
@@ -602,6 +617,16 @@ function EnviarTemplate() {
           { nome: 'texto_do_aceite', tipo: 'string', descricao: 'O texto da caixinha que a pessoa marcou, até 500 caracteres. Fica guardado como prova do aceite.' },
         ]}
       />
+      <Nota titulo="Carrinho abandonado: um modelo por quantidade de itens">
+        <p>
+          Os modelos <Cod>carrinho_1</Cod> a <Cod>carrinho_10</Cod> são criados em Comércio › Integrações › Magento. Escolha
+          pelo número de itens: três itens, <Cod>carrinho_3</Cod> com três cartões; mais de dez, os dez primeiros no{' '}
+          <Cod>carrinho_10</Cod>. O <Cod>carrinho_1</Cod> não é carrossel: vai com <Cod>imagem</Cod>, <Cod>link</Cod> e{' '}
+          <Cod>valores.corpo</Cod> com o nome da pessoa e do produto. Nos outros, <Cod>valores.corpo</Cod> leva só o nome, e
+          cada cartão leva <Cod>valores</Cod> com o nome e o preço do produto. Use o id do carrinho como{' '}
+          <Cod>Idempotency-Key</Cod>.
+        </p>
+      </Nota>
       <Nota titulo="Modelo de marketing respeita o SAIR">
         <p>
           Quem respondeu SAIR no WhatsApp não recebe modelo de categoria marketing: a chamada volta 409{' '}

@@ -216,7 +216,38 @@ export type Componentes = {
   corpo: string
   rodape?: string
   botoes?: Botao[]
+  /**
+   * Carrossel: o balão de texto (`corpo`) seguido de cartões que se arrastam
+   * de lado, cada um com foto, texto curto e botões. Só existe em marketing.
+   *
+   * Um molde e uma quantidade, e não uma lista de cartões, porque a Meta exige
+   * que todos tenham a mesma forma, e o que muda de um para o outro (a foto, o
+   * produto, o link) vem no envio. **A quantidade é fixa**: o modelo aprovado
+   * com 3 cartões só envia 3 (regra da Meta). Com carrossel, o balão não leva
+   * cabeçalho, rodapé nem botões próprios.
+   */
+  carrossel?: Carrossel
 }
+
+export type Carrossel = {
+  /** De 2 a 10. */
+  cartoes: number
+  cabecalho: 'imagem' | 'video'
+  /** Até 160 caracteres, com variáveis. Vazio = cartão só com foto e botões. */
+  corpo?: string
+  /** Até 2. Link com variável só no fim, como em qualquer botão. */
+  botoes: Botao[]
+  /** A foto de exemplo para a revisão da Meta, no acervo da conta. Não vai nos envios. */
+  exemplo?: string
+}
+
+export const CARTOES_DO_CARROSSEL = { minimo: 2, maximo: 10 } as const
+
+/** O recado de quem tenta mandar carrossel por onde não há cartões para preencher. */
+export const CARROSSEL_SO_PELA_API =
+  'Modelo de carrossel só é enviado pela API, que manda a foto e o link de cada cartão. Escolha outro modelo.'
+
+export const LIMITE_DO_CORPO_DO_CARTAO = 160
 
 /** A imagem que o cabeçalho do modelo leva no envio, quando ele tem uma. */
 export function imagemDoCabecalho(componentes: Pick<Componentes, 'cabecalho'> | null | undefined): string | undefined {
@@ -376,7 +407,7 @@ export function conferirValores(
 
 export type Reparo = {
   gravidade: 'erro' | 'aviso'
-  campo: 'nome' | 'cabecalho' | 'corpo' | 'rodape' | 'botoes'
+  campo: 'nome' | 'cabecalho' | 'corpo' | 'rodape' | 'botoes' | 'carrossel'
   recado: string
 }
 
@@ -525,6 +556,39 @@ export function validarTemplate(
     })
   }
 
+  if (componentes.carrossel) reparos.push(...validarCarrossel(componentes, categoria))
+
+  return reparos
+}
+
+/** As regras da Meta para o carrossel (doc "Media card carousel templates"). */
+function validarCarrossel(componentes: Componentes, categoria: Categoria): Reparo[] {
+  const carrossel = componentes.carrossel!
+  const reparos: Reparo[] = []
+  const erro = (campo: Reparo['campo'], recado: string) => reparos.push({ gravidade: 'erro', campo, recado })
+
+  if (categoria !== 'MARKETING') erro('corpo', 'Carrossel só existe em modelo de marketing.')
+  if (componentes.cabecalho || componentes.rodape?.trim() || (componentes.botoes ?? []).length > 0) {
+    erro('carrossel', 'Com carrossel, cabeçalho, rodapé e botões ficam dentro dos cartões, não no balão.')
+  }
+  const { minimo, maximo } = CARTOES_DO_CARROSSEL
+  if (!Number.isInteger(carrossel.cartoes) || carrossel.cartoes < minimo || carrossel.cartoes > maximo) {
+    erro('carrossel', `O carrossel tem de ${minimo} a ${maximo} cartões.`)
+  }
+  const texto = carrossel.corpo?.trim() ?? ''
+  if (texto.length > LIMITE_DO_CORPO_DO_CARTAO) {
+    erro('carrossel', `O texto do cartão cabe em ${LIMITE_DO_CORPO_DO_CARTAO} caracteres, contando as variáveis.`)
+  }
+  if (!numeracaoContinua(variaveisDe(texto))) erro('carrossel', 'As variáveis do cartão começam em {{1}} e seguem em ordem.')
+  if (carrossel.botoes.length === 0 || carrossel.botoes.length > 2) erro('carrossel', 'Cada cartão leva 1 ou 2 botões.')
+  for (const botao of carrossel.botoes) {
+    if (!['URL', 'QUICK_REPLY', 'PHONE_NUMBER'].includes(botao.tipo)) erro('carrossel', 'No cartão, o botão é de link, de resposta ou de ligar.')
+    if (!botao.texto.trim() || botao.texto.length > 25) erro('carrossel', 'O texto do botão do cartão tem até 25 caracteres.')
+    const valor = botao.valor ?? ''
+    if (botao.tipo === 'URL' && variaveisDe(valor).length > 0 && !/\{\{1\}\}$/.test(valor)) {
+      erro('carrossel', 'No link do cartão, a variável fica no fim do endereço: https://loja.com/{{1}}')
+    }
+  }
   return reparos
 }
 
@@ -679,6 +743,10 @@ export type Exemplos = {
    * template com imagem.
    */
   cabecalhoMidia?: string
+  /** O handle da foto de exemplo dos cartões do carrossel (a mesma em todos). */
+  cartaoMidia?: string
+  /** Os exemplos das variáveis do texto do cartão. */
+  cartaoCorpo?: string[]
 }
 
 const TIPO_DE_CABECALHO_NA_META = {
@@ -699,6 +767,7 @@ export function componentesParaMeta(
   exemplos: Exemplos = {},
 ): ComponenteDaMeta[] {
   const saida: ComponenteDaMeta[] = []
+  if (componentes.carrossel) return carrosselParaMeta(componentes.corpo, componentes.carrossel, exemplos)
 
   const cabecalho = componentes.cabecalho
   if (cabecalho) {
@@ -741,8 +810,13 @@ export function componentesParaMeta(
   if (rodape) saida.push({ type: 'FOOTER', text: rodape })
 
   const botoes = componentes.botoes ?? []
-  if (botoes.length > 0) {
-    saida.push({
+  if (botoes.length > 0) saida.push(botoesParaMeta(botoes))
+
+  return saida
+}
+
+function botoesParaMeta(botoes: Botao[]): ComponenteDaMeta {
+  return {
       type: 'BUTTONS',
       buttons: botoes.map((botao) => {
         if (botao.tipo === 'URL') {
@@ -765,10 +839,45 @@ export function componentesParaMeta(
         }
         return { type: 'QUICK_REPLY', text: botao.texto }
       }),
+  }
+}
+
+/**
+ * O carrossel: só o balão (`BODY`) e o `CAROUSEL`, com o mesmo cartão repetido
+ * `cartoes` vezes. A Meta recusa cabeçalho, rodapé ou botões fora dos cartões.
+ */
+function carrosselParaMeta(corpoDoBalao: string, carrossel: Carrossel, exemplos: Exemplos): ComponenteDaMeta[] {
+  const corpo = corpoDoBalao.trim()
+  const doCorpo = variaveisDe(corpo)
+  const exemploDoCorpo = (exemplos.corpo ?? []).slice(0, doCorpo.length)
+  const textoDoCartao = carrossel.corpo?.trim() ?? ''
+  const doCartao = variaveisDe(textoDoCartao)
+  const exemploDoCartao = (exemplos.cartaoCorpo ?? []).slice(0, doCartao.length)
+
+  const cartao: ComponenteDaMeta[] = [
+    {
+      type: 'HEADER',
+      format: TIPO_DE_CABECALHO_NA_META[carrossel.cabecalho],
+      ...(exemplos.cartaoMidia ? { example: { header_handle: [exemplos.cartaoMidia] } } : {}),
+    },
+  ]
+  if (textoDoCartao) {
+    cartao.push({
+      type: 'BODY',
+      text: textoDoCartao,
+      ...(doCartao.length > 0 && exemploDoCartao.length > 0 ? { example: { body_text: [exemploDoCartao] } } : {}),
     })
   }
+  if (carrossel.botoes.length > 0) cartao.push(botoesParaMeta(carrossel.botoes))
 
-  return saida
+  return [
+    {
+      type: 'BODY',
+      text: corpo,
+      ...(doCorpo.length > 0 && exemploDoCorpo.length > 0 ? { example: { body_text: [exemploDoCorpo] } } : {}),
+    },
+    { type: 'CAROUSEL', cards: Array.from({ length: carrossel.cartoes }, () => ({ components: cartao })) },
+  ]
 }
 
 /**

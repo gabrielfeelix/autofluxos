@@ -3,6 +3,8 @@ import {
   LIMITE_POR_TIPO_DE_BOTAO,
   statusDaMeta,
   type Categoria,
+  type Botao,
+  type Carrossel,
   type TipoDeBotao,
   type Componentes,
   type Exemplos,
@@ -312,17 +314,32 @@ export function componentesDaMeta(lista: unknown[]): Componentes {
       if (formato === 'VIDEO') componentes.cabecalho = { tipo: 'video' }
       if (formato === 'DOCUMENT') componentes.cabecalho = { tipo: 'documento' }
     }
-    if (tipo === 'BUTTONS' && Array.isArray(item.buttons)) {
-      componentes.botoes = item.buttons.flatMap((b) => {
-        const botao = b as Record<string, unknown>
-        const tipoDoBotao = texto(botao.type).toUpperCase()
-        if (!(tipoDoBotao in LIMITE_POR_TIPO_DE_BOTAO)) return []
-        const valor = texto(botao.url) || texto(botao.phone_number)
-        return [{ tipo: tipoDoBotao as TipoDeBotao, texto: texto(botao.text), ...(valor ? { valor } : {}) }]
-      })
+    if (tipo === 'BUTTONS' && Array.isArray(item.buttons)) componentes.botoes = botoesDaMeta(item.buttons)
+    if (tipo === 'CAROUSEL' && Array.isArray(item.cards) && item.cards.length > 0) {
+      // Os cartões têm a mesma forma (regra da Meta): o primeiro é o molde.
+      const primeiro = item.cards[0] as { components?: unknown[] }
+      const carrossel: Carrossel = { cartoes: item.cards.length, cabecalho: 'imagem', botoes: [] }
+      for (const parte of primeiro.components ?? []) {
+        const doCartao = parte as Record<string, unknown>
+        const tipoDoCartao = texto(doCartao.type).toUpperCase()
+        if (tipoDoCartao === 'HEADER' && texto(doCartao.format).toUpperCase() === 'VIDEO') carrossel.cabecalho = 'video'
+        if (tipoDoCartao === 'BODY') carrossel.corpo = texto(doCartao.text)
+        if (tipoDoCartao === 'BUTTONS' && Array.isArray(doCartao.buttons)) carrossel.botoes = botoesDaMeta(doCartao.buttons)
+      }
+      componentes.carrossel = carrossel
     }
   }
   return componentes
+}
+
+function botoesDaMeta(lista: unknown[]): Botao[] {
+  return lista.flatMap((b) => {
+    const botao = b as Record<string, unknown>
+    const tipoDoBotao = texto(botao.type).toUpperCase()
+    if (!(tipoDoBotao in LIMITE_POR_TIPO_DE_BOTAO)) return []
+    const valor = texto(botao.url) || texto(botao.phone_number)
+    return [{ tipo: tipoDoBotao as TipoDeBotao, texto: texto(botao.text), ...(valor ? { valor } : {}) }]
+  })
 }
 
 /**

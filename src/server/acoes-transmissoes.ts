@@ -149,6 +149,8 @@ export async function acaoCriarTemplate(
     componentes: Componentes
     /** Os valores de exemplo de cada variável, a Meta os exige. */
     exemplos?: string[]
+    /** Os exemplos das variáveis do texto do cartão, quando é carrossel. */
+    exemplosDoCartao?: string[]
   },
 ): Promise<ResultadoDoTemplate> {
   const acesso = await exigirCapacidade(clienteId, 'configurar_operacao', 'todos')
@@ -177,6 +179,12 @@ export async function acaoCriarTemplate(
       ok: false,
       erro: `Preencha um exemplo para cada variável (${quantasVariaveis}). Sem exemplo, a Meta recusa por formato, e a recusa demora horas.`,
     }
+  }
+
+  const doCartao = variaveisDe(dados.componentes.carrossel?.corpo ?? '').length
+  const exemplosDoCartao = (dados.exemplosDoCartao ?? []).filter((e) => e.trim())
+  if (doCartao > 0 && exemplosDoCartao.length < doCartao) {
+    return { ok: false, erro: `Preencha um exemplo para cada variável do cartão (${doCartao}).` }
   }
 
   const conta = await contaNaMeta(clienteId)
@@ -212,7 +220,11 @@ export async function acaoCriarTemplate(
     idioma,
     categoria: dados.categoria,
     componentes: dados.componentes,
-    exemplos: { corpo: exemplos, ...(imagem.handle ? { cabecalhoMidia: imagem.handle } : {}) },
+    exemplos: {
+      corpo: exemplos,
+      ...(imagem.handle ? (dados.componentes.carrossel ? { cartaoMidia: imagem.handle } : { cabecalhoMidia: imagem.handle }) : {}),
+      ...(exemplosDoCartao.length > 0 ? { cartaoCorpo: exemplosDoCartao } : {}),
+    },
   })
 
   if (!resposta.ok) {
@@ -253,11 +265,12 @@ async function exemploDaImagem(
   componentes: Componentes,
   token: string,
 ): Promise<{ handle?: string } | { erro: string }> {
-  const cabecalho = componentes.cabecalho
-  if (cabecalho?.tipo !== 'imagem') return {}
-  if (!cabecalho.url) return { erro: 'Escolha a imagem do topo da mensagem.' }
+  // No carrossel, a foto de exemplo é a dos cartões (a mesma nos N).
+  const url = componentes.carrossel ? componentes.carrossel.exemplo : componentes.cabecalho?.tipo === 'imagem' ? componentes.cabecalho.url : null
+  if (url === null) return {}
+  if (!url) return { erro: componentes.carrossel ? 'Escolha a foto de exemplo dos cartões.' : 'Escolha a imagem do topo da mensagem.' }
 
-  const arquivo = await lerDoAcervo(clienteId, cabecalho.url)
+  const arquivo = await lerDoAcervo(clienteId, url)
   if (!arquivo) return { erro: 'Não encontramos a imagem no acervo desta conta. Envie de novo.' }
   if (!IMAGEM_DO_CABECALHO.tipos.includes(arquivo.tipo)) {
     return { erro: 'A Meta aceita só JPG ou PNG no topo da mensagem.' }

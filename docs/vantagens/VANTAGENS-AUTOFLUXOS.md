@@ -325,6 +325,11 @@ aqui fica o que o cliente ganha.
   cliente recebe o aviso com o botão Acompanhar entrega e vê o entregador no
   mapa, mesmo sem nunca ter falado com a loja. *(27/out/2026)*
 
+- **Carrinho abandonado vira vitrine no WhatsApp**: quem largou a compra
+  recebe um carrossel com a foto, o nome e o preço de cada item e o botão de
+  finalizar, só se aceitou promoções no checkout. Os modelos para a Meta saem
+  prontos com um clique, um por tamanho de carrinho.
+
 ## Medir
 
 - **Relatórios de atendimento e vendas**: conversas, quanto a automação

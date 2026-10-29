@@ -20,7 +20,17 @@ precisa de permissão nova.
   produção (conferido em `chaves_de_api`), então nada quebrou.
 - Modelo pronto só texto: `src/core/modelos-prontos.ts` (`ecommerce-carrinho`).
 
-## O que falta (nós)
+## Feito na mesma sessão (29/out, tarde)
+
+Um modelo por quantidade (ideia do Gabriel): `carrinho_1` (foto no topo) e
+`carrinho_2` a `carrinho_10` (carrossel), em `src/core/carrinho.ts`. Criados
+de uma vez pelo botão em Comércio › Integrações › Magento
+(`acoes-carrinho.ts`). A API aceita `link`, `imagem` e `cartoes`
+(`server/api/templates.ts`) e confere a quantidade. Carrossel fora da API é
+barrado em `modeloComClique` e na transmissão. Os itens abaixo ficam como
+histórico do plano; o que resta é o que está em "Gabriel" e "Yuri".
+
+## Plano original (nós)
 
 1. **Conferir as regras do carrossel na doc da Meta** (MCP `meta-devtools`):
    quantidade de cartões (2 a 10), se o envio precisa ter **o mesmo número de

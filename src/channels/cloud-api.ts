@@ -620,6 +620,36 @@ export function canalCloudApi(config: ConfigCloudApi): Canal {
         })
       }
 
+      // Carrossel: um objeto por cartão, pela posição (`card_index`). A Meta
+      // exige todos, na quantidade com que o modelo foi aprovado.
+      if (valores?.cartoes && valores.cartoes.length > 0) {
+        componentes.push({
+          type: 'carousel',
+          cards: valores.cartoes.map((cartao, indice) => ({
+            card_index: indice,
+            components: [
+              {
+                type: 'header',
+                parameters: [
+                  cartao.tipo === 'video'
+                    ? { type: 'video', video: { link: cartao.midia } }
+                    : { type: 'image', image: { link: cartao.midia } },
+                ],
+              },
+              ...((cartao.corpo ?? []).length > 0
+                ? [{ type: 'body', parameters: (cartao.corpo ?? []).map((texto) => ({ type: 'text', text: texto })) }]
+                : []),
+              ...(cartao.botoes ?? []).map((botao) => ({
+                type: 'button',
+                sub_type: 'url',
+                index: String(botao.indice),
+                parameters: [{ type: 'text', text: botao.texto }],
+              })),
+            ],
+          })),
+        })
+      }
+
       const resposta = await mandar({
         to: para,
         type: 'template',

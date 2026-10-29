@@ -12,6 +12,7 @@ import {
 } from '@/core/disparo'
 import { atendimentoAberto } from '@/core/horario'
 import {
+  CARROSSEL_SO_PELA_API,
   condutaPara,
   explicarErro,
   linkComLacuna,
@@ -170,6 +171,11 @@ export async function dispararTransmissao(
     const motivo = `o modelo está ${template.status} na Meta, e só modelo aprovado entrega`
     await pararTransmissao(transmissao, motivo)
     return { ...resumo, terminou: true, parou: motivo }
+  }
+
+  if (template.componentes?.carrossel) {
+    await pararTransmissao(transmissao, CARROSSEL_SO_PELA_API)
+    return { ...resumo, terminou: true, parou: CARROSSEL_SO_PELA_API }
   }
 
   const lacuna = linkComLacuna(template.componentes)

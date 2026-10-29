@@ -38,6 +38,18 @@ const corpoSchema = z.object({
       cabecalho: z.array(valor).max(1).optional(),
     })
     .optional(),
+  link: z.string().trim().min(1).max(2000).optional(),
+  imagem: z.url({ protocol: /^https$/ }).max(2000).optional(),
+  cartoes: z
+    .array(
+      z.object({
+        imagem: z.url({ protocol: /^https$/ }).max(2000),
+        valores: z.array(valor).max(10).optional(),
+        link: z.string().trim().min(1).max(2000).optional(),
+      }),
+    )
+    .max(10)
+    .optional(),
   aceite_marketing: z.literal(true).optional(),
   texto_do_aceite: z.string().trim().min(1).max(500).optional(),
 })
