@@ -8,17 +8,21 @@
 export type RecursoDoSite = {
   slug: string
   nome: string
+  /** A cor da parte, a mesma da peça no bento da home: pinta a capa, o rodapé e os destaques da página. */
+  cor: string
   linha: string
   titulo: string
   subtitulo: string
   destaques: { titulo: string; texto: string }[]
-  itens: { titulo: string; texto: string }[]
+  /** `numero`: o número que já está no texto, em tipografia grande na peça do bento. */
+  itens: { titulo: string; texto: string; numero?: string }[]
   ficha: { barra: string; titulo: string; linhas: { rotulo: string; valor: string }[] }
 }
 
 export const RECURSOS: RecursoDoSite[] = [
   {
     slug: 'fluxos',
+    cor: '#1d4ed8',
     nome: 'Fluxos e chatbot',
     linha: 'Blocos que você arrasta, liga e testa na hora.',
     titulo: 'Fluxos que você desenha, testa e publica sem programar',
@@ -36,9 +40,9 @@ export const RECURSOS: RecursoDoSite[] = [
       { titulo: 'Perguntas que validam', texto: 'Botões, listas e texto livre, com conferência de data, e-mail, telefone e CPF.' },
       { titulo: 'Gatilhos', texto: 'Palavra-chave, frase do anúncio, evento de outro sistema, formulário do Lead Ads ou chamada pela API.' },
       { titulo: 'Saída para a equipe', texto: 'Quem escreve "atendente" ou "falar com uma pessoa" chega a alguém em qualquer ponto do fluxo.' },
-      { titulo: 'Pesquisa de satisfação', texto: 'NPS de 0 a 10, com caminho próprio para quem elogia, quem fica neutro e quem reclama.' },
+      { titulo: 'Pesquisa de satisfação', texto: 'NPS de 0 a 10, com caminho próprio para quem elogia, quem fica neutro e quem reclama.', numero: '0 a 10' },
       { titulo: 'Serviços externos', texto: 'Chamada a outro sistema com a credencial guardada no cofre e a resposta virando variável.' },
-      { titulo: 'Sequências', texto: 'Até 5 passos para quem sumiu ou encerrou o atendimento, e saem sozinhas quando o cliente responde.' },
+      { titulo: 'Sequências', texto: 'Até 5 passos para quem sumiu ou encerrou o atendimento, e saem sozinhas quando o cliente responde.', numero: '5 passos' },
       { titulo: 'Link de teste', texto: 'Mande o fluxo para alguém testar, com prazo, contador de aberturas e botão de importar.' },
       { titulo: 'Respostas em planilha', texto: 'Cada passagem pelo fluxo vira uma linha, com as variáveis em coluna e exportação em CSV.' },
       { titulo: 'Modelos prontos', texto: 'Agendamento, carrinho abandonado, qualificação, lembrete, pós-atendimento e outros.' },
@@ -58,6 +62,7 @@ export const RECURSOS: RecursoDoSite[] = [
   },
   {
     slug: 'ia',
+    cor: '#c2560c',
     nome: 'IA que lê o seu negócio',
     linha: 'Responde pelo catálogo e pelas regras. Sem resposta, chama a equipe.',
     titulo: 'Uma IA que responde pelo seu negócio, e só por ele',
@@ -90,6 +95,7 @@ export const RECURSOS: RecursoDoSite[] = [
   },
   {
     slug: 'inbox',
+    cor: '#0e7490',
     nome: 'Inbox da equipe',
     linha: 'A equipe no mesmo número, cada setor com a sua fila.',
     titulo: 'A equipe inteira no mesmo número, cada setor com a sua fila',
@@ -101,10 +107,10 @@ export const RECURSOS: RecursoDoSite[] = [
       { titulo: 'Nada fica esquecido', texto: 'Adie, agende uma resposta, fixe no topo ou marque como não lida. A conversa volta sozinha na hora marcada.' },
     ],
     itens: [
-      { titulo: 'Áudio gravado no navegador', texto: 'Até 5 minutos, no formato que o WhatsApp aceita.' },
+      { titulo: 'Áudio gravado no navegador', texto: 'Até 5 minutos, no formato que o WhatsApp aceita.', numero: '5 min' },
       { titulo: 'Fila por setor', texto: 'Vendas, suporte e financeiro com fila própria. O chatbot já entrega a conversa no setor certo.' },
       { titulo: 'Respostas rápidas', texto: 'Digite / e escolha. Dá para importar a lista por planilha.' },
-      { titulo: 'Mensagem agendada', texto: 'Para até um ano depois, com aviso quando a janela de 24 horas fechou.' },
+      { titulo: 'Mensagem agendada', texto: 'Para até um ano depois, com aviso quando a janela de 24 horas fechou.', numero: '1 ano' },
       { titulo: 'Supervisão', texto: 'O gestor vê a caixa de cada atendente como ele vê, sem marcar nada como lido.' },
       { titulo: 'Aviso com o painel fechado', texto: 'Notificação no navegador quando um cliente pede atendimento. De madrugada, não toca.' },
       { titulo: 'IA do atendente', texto: 'Sugere a resposta, corrige, deixa mais formal ou mais curta e resume a conversa. Só sai quando a pessoa envia.' },
@@ -126,6 +132,7 @@ export const RECURSOS: RecursoDoSite[] = [
   },
   {
     slug: 'contatos-e-funil',
+    cor: '#3150a0',
     nome: 'Contatos e funil',
     linha: 'Etiquetas, etapas e negócios de cada cliente.',
     titulo: 'A ficha de cada cliente e o funil, preenchidos pela conversa',
@@ -136,13 +143,13 @@ export const RECURSOS: RecursoDoSite[] = [
       { titulo: 'A correção da equipe vale mais', texto: 'O que a equipe corrige não é sobrescrito por importação nem por automação.' },
     ],
     itens: [
-      { titulo: 'Vários funis', texto: 'Seis modelos prontos: atendimento, comercial, captação, agenda, pós-venda e pedidos.' },
+      { titulo: 'Vários funis', texto: 'Seis modelos prontos: atendimento, comercial, captação, agenda, pós-venda e pedidos.', numero: '6 modelos' },
       { titulo: 'Kanban e lista', texto: 'Arraste o cartão entre etapas, com alerta do que está parado há dias demais.' },
       { titulo: 'Ganho e perda', texto: 'Ganhar com valor, perder com motivo e reabrir. A venda é registrada com os itens.' },
       { titulo: 'Segmentos', texto: 'Regras por estágio, valor comprado, produto, data e temperatura, com contagem ao vivo.' },
       { titulo: 'Nível de cliente', texto: 'Ouro, prata e bronze pelo valor comprado, com faixas que você define.' },
       { titulo: 'Importar planilha', texto: 'Reconhece nome e telefone sozinho, com ou sem o nono dígito.' },
-      { titulo: 'Exportar', texto: 'CSV com os filtros aplicados, até 20 mil linhas.' },
+      { titulo: 'Exportar', texto: 'CSV com os filtros aplicados, até 20 mil linhas.', numero: '20 mil' },
       { titulo: 'Etiquetas', texto: 'Seis cores, juntar duas em uma e três etiquetas que se aplicam sozinhas.' },
       { titulo: 'Origem do contato', texto: 'O anúncio de onde o cliente veio, na ficha e nos relatórios.' },
     ],
@@ -161,6 +168,7 @@ export const RECURSOS: RecursoDoSite[] = [
   },
   {
     slug: 'transmissoes',
+    cor: '#15803d',
     nome: 'Transmissões',
     linha: 'Campanhas com modelo aprovado pela Meta e retorno por contato.',
     titulo: 'Campanhas no WhatsApp, com o retorno de cada contato',
@@ -194,6 +202,7 @@ export const RECURSOS: RecursoDoSite[] = [
   },
   {
     slug: 'relatorios',
+    cor: '#475569',
     nome: 'Relatórios',
     linha: 'O que o atendimento resolveu, vendeu e deixou esperando.',
     titulo: 'O que o atendimento resolveu, vendeu e deixou esperando',

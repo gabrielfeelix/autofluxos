@@ -13,7 +13,7 @@ em preços, **a Enterprise tem que ter destaque**.
 | Branch | `lp-v2`, pasta `../autofluxos-v2/` (worktree, já tem `node_modules`) |
 | Local | `PORTA=3101 bash scripts/ux-local/dev.sh` → http://localhost:3101 |
 | Produção | `autofluxos.4yu.com.br`. O site novo já está no ar: `main` = `lp-v2` até `075d5815` |
-| Commits locais ainda sem push | `96358194` (páginas de ramo) e este handoff. Conferir com `git log origin/main..lp-v2` |
+| Commits locais ainda sem push | as páginas de ramo e este handoff. Conferir com `git log origin/main..lp-v2` |
 | Publicar | **só com ok do Gabriel** (memória `site-v2-localhost-ate-aprovar`): `git push origin lp-v2:main lp-v2` (fast-forward; conferir antes com `git merge-base --is-ancestor origin/main lp-v2`) e acompanhar o deploy até READY pela API da Vercel |
 | Push | `set -a && . ../.secrets/4yu.env && set +a && git -c credential.helper='!f(){ echo username=x-access-token; echo "password=$GITHUB_TOKEN"; }; f' push origin lp-v2:main lp-v2` |
 
@@ -29,7 +29,13 @@ nela.
   (`pecas-interativas.tsx`, `ilustracoes-dos-ramos.tsx`); bento assimétrico
   com **um tratamento por peça** (`bento-do-produto.tsx`, `bento.module.css`).
 - **Páginas de ramo** (`nicho-pagina.tsx`, `nicho.module.css`): a página
-  inteira na cor do ramo via `PaginaDoSite cor={...}`.
+  inteira na cor do ramo via `PaginaDoSite cor={...}`; base comum (capa com
+  cena, dores, IA, tela de automações fiel ao app, menu do ramo, FAQ) e
+  **personalidade própria** em `modulos-dos-ramos.tsx`: janela da capa e um
+  módulo exclusivo por ramo (agenda semanal, loja sincronizada, quadro da
+  cozinha, planilha que vira catálogo). O Gabriel cobra isso: "cada um tem
+  vantagens e módulos próprios, componentes próprios". Vale para as páginas
+  de produto também.
 - **Fundo de fios componentizado**: `--casca-fios`, `--casca-fios-2`,
   `--casca-fios-3` (`scripts/fundos/gerar-fios.mjs`). Use nos palcos coloridos
   com degradê da cor: `background: var(--casca-fios-2), linear-gradient(145deg, cor, color-mix(cor 62%, #0c1838))`.

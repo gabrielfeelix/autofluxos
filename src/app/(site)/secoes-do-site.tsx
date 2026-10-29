@@ -448,7 +448,7 @@ function CapaComJanela({ olho, titulo, texto, aviso, visual }: { olho: string; t
 }
 
 /** Uma janela branca com linhas de rótulo e valor, como uma tela de configuração do app. */
-function JanelaDeFicha({
+export function JanelaDeFicha({
   barra,
   titulo,
   marca,

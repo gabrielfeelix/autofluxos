@@ -5,6 +5,7 @@ import { IlustracaoDoRamo } from './ilustracoes-dos-ramos'
 import { MODELOS_DE_TODOS, type NichoDoSite } from './nichos-do-site'
 import { PreviaQueTroca } from './pecas-interativas'
 import { CONVERSAS, PreviaWhatsApp } from './previa-whatsapp'
+import { JanelaDaCapa, ModuloDoRamo } from './modulos-dos-ramos'
 import { Pergunta } from './pagina-do-site'
 import n from './nicho.module.css'
 import s from './pagina-inicial.module.css'
@@ -81,24 +82,7 @@ export function CapaDoRamo({ nicho }: { nicho: NichoDoSite }) {
             <PreviaQueTroca chaves={nicho.conversas} />
           </div>
           <div className={n.cenaApp} aria-hidden>
-            <div className={x.fichaBarra}>
-              <i />
-              <i />
-              <i />
-              <span>Fluxos prontos</span>
-            </div>
-            <ul>
-              {nicho.modelos.slice(0, 3).map((m) => (
-                <li key={m}>
-                  <span className={n.fios}>
-                    <i />
-                    <i />
-                  </span>
-                  {m}
-                  <b className={n.chave} />
-                </li>
-              ))}
-            </ul>
+            <JanelaDaCapa nicho={nicho} />
           </div>
         </div>
       </div>
@@ -142,6 +126,9 @@ export function CorpoDoRamo({ nicho }: { nicho: NichoDoSite }) {
           </div>
         </div>
       </section>
+
+      {/* O que só este ramo tem: módulo e layout próprios. */}
+      <ModuloDoRamo nicho={nicho} />
 
       {/* A IA no ramo: o que ela sabe responder, e a conversa num palco da cor do ramo. */}
       <section className={`${s.secao} ${s.secaoTonal}`}>

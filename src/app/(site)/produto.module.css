@@ -1,0 +1,583 @@
+/*
+ * A página de cada parte do produto (`produto-pagina.tsx`). Tudo usa `--cor`,
+ * a cor da parte: o palco da capa, a ficha, as mudanças, o bento dos itens.
+ * As cenas da capa são as do bento da home (`bento.module.css`); aqui só o
+ * palco em volta delas, com os mesmos 30px de respiro que elas esperam.
+ */
+
+/* ───── a cena da capa ───── */
+
+.cena {
+  position: relative;
+  justify-self: end;
+  width: min(100%, 580px);
+  padding: 0 0 120px 70px;
+}
+
+.palco {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  min-height: 400px;
+  padding: 30px;
+  overflow: hidden;
+  border-radius: 28px;
+  background: #ffffff;
+  color: #0c1838;
+  box-shadow: 0 50px 90px -50px rgb(0 0 0 / 0.6);
+}
+
+.palco[data-tom='tingido'] {
+  background: linear-gradient(180deg, color-mix(in srgb, var(--cor) 14%, #ffffff), color-mix(in srgb, var(--cor) 4%, #ffffff));
+}
+
+.palco[data-tom='cor'] {
+  background:
+    var(--casca-fios-2),
+    linear-gradient(145deg, color-mix(in srgb, var(--cor) 88%, #ffffff), color-mix(in srgb, var(--cor) 62%, #0c1838));
+  color: #ffffff;
+}
+
+/* O editor de fluxos ocupa o palco inteiro, sem a borda da peça larga do bento. */
+.palco[data-cena='fluxos'] > div {
+  flex: 1;
+  margin: -30px;
+  border-left: 0;
+}
+
+/* A conversa da IA começa do topo, com espaço para a resposta chegar. */
+.palco[data-cena='ia'] {
+  justify-content: center;
+  font-size: 14px;
+}
+
+.palco[data-cena='ia'] > div {
+  margin-top: 0;
+  font-size: 14px;
+}
+
+.palco[data-cena='relatorios'] {
+  justify-content: space-between;
+}
+
+.palco[data-cena='contatos-e-funil'] {
+  justify-content: center;
+}
+
+.fichaFlutuante {
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  z-index: 2;
+  width: 290px;
+  font-size: 13px;
+}
+
+/* A ficha da capa é compacta: a janela do app, não uma tabela. */
+.fichaFlutuante dl > div {
+  padding-block: 7px;
+}
+
+.fichaFlutuante strong {
+  font-size: 15px;
+}
+
+@media (max-width: 900px) {
+  .cena {
+    justify-self: stretch;
+    width: 100%;
+    padding: 0;
+  }
+
+  .palco {
+    min-height: 340px;
+  }
+
+  .fichaFlutuante {
+    position: relative;
+    width: min(100%, 320px);
+    margin: -40px 0 0 16px;
+  }
+}
+
+/* ───── as três mudanças: linhas largas de texto ───── */
+
+.tituloLargo {
+  max-width: 24ch;
+}
+
+.mudancas {
+  margin: clamp(32px, 4vw, 56px) 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.mudancas li {
+  display: grid;
+  grid-template-columns: minmax(0, 7fr) minmax(0, 5fr);
+  gap: 16px clamp(24px, 5vw, 80px);
+  align-items: baseline;
+  padding: clamp(24px, 3vw, 36px) 0;
+  border-top: 1px solid var(--line);
+}
+
+.mudancas li:last-child {
+  border-bottom: 1px solid var(--line);
+}
+
+.mudancas h3 {
+  position: relative;
+  margin: 0;
+  padding-left: 28px;
+  font-size: clamp(24px, 3vw, 38px);
+  font-weight: 600;
+  line-height: 1.1;
+  letter-spacing: -0.03em;
+  text-wrap: balance;
+}
+
+/* O traço da cor da parte, que cresce quando a linha aparece. */
+.mudancas h3::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0.5em;
+  width: 14px;
+  height: 4px;
+  border-radius: 2px;
+  background: var(--cor);
+  transform-origin: left;
+  scale: 0 1;
+  transition: scale 0.6s 0.25s var(--curva);
+}
+
+.mudancas li[data-revelado] h3::before {
+  scale: 1 1;
+}
+
+.mudancas p {
+  margin: 0;
+  max-width: 46ch;
+  font-size: 17px;
+  line-height: 1.6;
+  color: var(--muted);
+}
+
+@media (max-width: 760px) {
+  .mudancas li {
+    grid-template-columns: 1fr;
+  }
+
+  .mudancas p {
+    padding-left: 28px;
+    font-size: 15.5px;
+  }
+}
+
+/* ───── o bento dos itens ───── */
+
+.itens {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 16px;
+  width: min(100% - 40px, 1360px);
+  margin: 48px auto 0;
+}
+
+.item {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 28px;
+  min-height: 230px;
+  padding: 28px;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: 24px;
+  background: #ffffff;
+}
+
+.item[data-larga] {
+  grid-column: span 2;
+}
+
+.item h3 {
+  margin: 0;
+  font-size: 19px;
+  font-weight: 600;
+  line-height: 1.2;
+  letter-spacing: -0.02em;
+}
+
+.item p {
+  max-width: 42ch;
+  margin: 8px 0 0;
+  font-size: 15px;
+  line-height: 1.55;
+  color: var(--muted);
+}
+
+/* Sem número, o texto desce para o pé da peça: o vazio em cima é a respiração do bento. */
+.item > div:only-child {
+  margin-top: auto;
+}
+
+.itemNumero {
+  font-size: clamp(52px, 5.4vw, 84px);
+  font-weight: 600;
+  line-height: 0.9;
+  letter-spacing: -0.05em;
+  color: var(--cor);
+}
+
+.item[data-tom='tingido'] {
+  border-color: color-mix(in srgb, var(--cor) 20%, transparent);
+  background: linear-gradient(180deg, color-mix(in srgb, var(--cor) 10%, #ffffff), color-mix(in srgb, var(--cor) 3%, #ffffff));
+}
+
+.item[data-tom='cor'],
+.item[data-tom='fundo'] {
+  border-color: transparent;
+  color: #ffffff;
+}
+
+.item[data-tom='cor'] {
+  background:
+    var(--casca-fios-2),
+    linear-gradient(145deg, var(--cor), color-mix(in srgb, var(--cor) 62%, #0c1838));
+}
+
+.item[data-tom='fundo'] {
+  background:
+    var(--casca-fios-3),
+    linear-gradient(150deg, color-mix(in srgb, var(--cor) 72%, #0c1838), color-mix(in srgb, var(--cor) 45%, #0c1838));
+}
+
+.item[data-tom='cor'] h3,
+.item[data-tom='fundo'] h3 {
+  font-size: clamp(22px, 2.2vw, 28px);
+  letter-spacing: -0.03em;
+}
+
+.item[data-tom='cor'] p,
+.item[data-tom='fundo'] p {
+  color: rgb(255 255 255 / 0.82);
+}
+
+.item[data-tom='cor'] .itemNumero,
+.item[data-tom='fundo'] .itemNumero {
+  color: #ffffff;
+}
+
+@media (max-width: 1100px) {
+  .itens {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 640px) {
+  .itens {
+    grid-template-columns: 1fr;
+  }
+
+  .item[data-larga] {
+    grid-column: auto;
+  }
+
+  .item {
+    min-height: 0;
+  }
+}
+
+/* ───── as outras partes ───── */
+
+.partes {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  margin-top: 40px;
+}
+
+.parte {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 4px 14px;
+  align-items: center;
+  padding: 20px 22px;
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  color: inherit;
+  text-decoration: none;
+  transition:
+    border-color 0.2s,
+    background 0.2s;
+}
+
+.parte:hover {
+  border-color: color-mix(in srgb, var(--cor) 45%, transparent);
+  background: color-mix(in srgb, var(--cor) 5%, #ffffff);
+}
+
+.parte[aria-current='page'] {
+  border-color: var(--cor);
+  background: color-mix(in srgb, var(--cor) 8%, #ffffff);
+}
+
+.parteCor {
+  grid-row: span 2;
+  width: 12px;
+  height: 36px;
+  border-radius: 6px;
+  background: var(--cor);
+}
+
+.parte strong {
+  font-size: 16px;
+  font-weight: 600;
+  letter-spacing: -0.015em;
+}
+
+.parte > span:last-child {
+  font-size: 13.5px;
+  line-height: 1.45;
+  color: var(--muted);
+}
+
+@media (max-width: 900px) {
+  .partes {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ───── a cena das transmissões ───── */
+
+.campanha {
+  display: grid;
+  gap: 16px;
+  font-size: 13px;
+}
+
+.campanhaTopo {
+  display: grid;
+  gap: 3px;
+}
+
+.campanhaTopo small {
+  font-size: 11.5px;
+  color: #64708a;
+}
+
+.campanhaTopo b {
+  font-size: 20px;
+  letter-spacing: -0.02em;
+}
+
+.campanhaModelo {
+  justify-self: start;
+  margin-top: 6px;
+  padding: 4px 9px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--cor) 10%, #ffffff);
+  font-size: 11.5px;
+  color: color-mix(in srgb, var(--cor) 80%, #0c1838);
+}
+
+.campanhaBarras {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+}
+
+.campanhaBarras > span {
+  display: grid;
+  gap: 2px;
+  padding: 12px;
+  border-radius: 12px;
+  background: #f6f8fd;
+}
+
+.campanhaBarras small {
+  font-size: 11px;
+  color: #64708a;
+}
+
+.campanhaBarras b {
+  font-size: 22px;
+  letter-spacing: -0.03em;
+}
+
+.campanhaBarras i {
+  height: 4px;
+  margin-top: 6px;
+  border-radius: 2px;
+  background: linear-gradient(90deg, var(--cor) var(--enche, 100%), #e3e8f3 0);
+  animation: enche 9s calc(var(--n) * 0.5s) var(--curva) infinite;
+}
+
+@keyframes enche {
+  0% {
+    --enche: 0%;
+  }
+  60%,
+  100% {
+    --enche: 100%;
+  }
+}
+
+@property --enche {
+  syntax: '<percentage>';
+  inherits: false;
+  initial-value: 100%;
+}
+
+.campanhaLista {
+  display: grid;
+  gap: 6px;
+  margin: 0 -30px -30px;
+  padding: 12px 16px 16px;
+  border-top: 1px solid #edf0f7;
+  background: #fbfcfe;
+  list-style: none;
+}
+
+.campanhaLista li {
+  display: grid;
+  grid-template-columns: 28px 1fr auto;
+  gap: 10px;
+  align-items: center;
+  padding: 7px 10px;
+  border: 1px solid #edf0f7;
+  border-radius: 10px;
+  background: #ffffff;
+  color: #0c1838;
+}
+
+.campanhaLista li > i {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--cor) 12%, #ffffff);
+  font-size: 10.5px;
+  font-style: normal;
+  font-weight: 600;
+  color: var(--cor);
+}
+
+/* Os quatro status empilhados; um de cada vez, na ordem da tela de transmissões. */
+.estados {
+  display: grid;
+  font-style: normal;
+}
+
+.estados > span {
+  grid-area: 1 / 1;
+  justify-self: end;
+  padding: 3px 9px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 500;
+  opacity: 0;
+  animation: 9s calc(var(--n) * 0.45s) infinite both;
+}
+
+.estados [data-estado='fila'] {
+  background: #f1f4fa;
+  color: #64708a;
+  animation-name: estadoFila;
+}
+
+.estados [data-estado='enviado'] {
+  background: #eef2fb;
+  color: #3b4a6b;
+  animation-name: estadoEnviado;
+}
+
+.estados [data-estado='entregue'] {
+  background: #e0f2fe;
+  color: #0369a1;
+  animation-name: estadoEntregue;
+}
+
+.estados [data-estado='lido'] {
+  background: color-mix(in srgb, var(--cor) 14%, #ffffff);
+  color: var(--cor);
+  animation-name: estadoLido;
+}
+
+@keyframes estadoFila {
+  0%,
+  14% {
+    opacity: 1;
+  }
+  16%,
+  100% {
+    opacity: 0;
+  }
+}
+
+@keyframes estadoEnviado {
+  0%,
+  14% {
+    opacity: 0;
+  }
+  16%,
+  32% {
+    opacity: 1;
+  }
+  34%,
+  100% {
+    opacity: 0;
+  }
+}
+
+@keyframes estadoEntregue {
+  0%,
+  32% {
+    opacity: 0;
+  }
+  34%,
+  52% {
+    opacity: 1;
+  }
+  54%,
+  100% {
+    opacity: 0;
+  }
+}
+
+@keyframes estadoLido {
+  0%,
+  52% {
+    opacity: 0;
+  }
+  54%,
+  96% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .palco *,
+  .campanha * {
+    animation: none !important;
+  }
+
+  .estados > span {
+    opacity: 0;
+  }
+
+  .estados [data-estado='lido'] {
+    opacity: 1;
+  }
+
+  .mudancas h3::before {
+    transition: none;
+    scale: 1 1;
+  }
+}

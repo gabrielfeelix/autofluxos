@@ -49,38 +49,44 @@ function PecaFluxo() {
   return (
     <Peca forma="larga" tom="claro" atraso={0}>
       <Texto n={1} titulo="Fluxos e chatbot" texto="Monte o atendimento arrastando blocos. Teste na hora e publique sem programar." />
-      <div className={b.canvas} aria-hidden>
-        <svg className={b.fluxoFios} viewBox="0 0 640 220" preserveAspectRatio="none">
-          <path d="M150 110H200" />
-          <path d="M330 110H380" />
-          <path d="M510 110C540 110 540 50 570 50" />
-          <path d="M510 110C540 110 540 170 570 170" />
-        </svg>
-        <span className={b.bloco} style={{ '--n': 0, left: '2%', top: '40%' } as CSSProperties}>
-          <small>Gatilho</small>
-          Palavra &quot;oi&quot;
-        </span>
-        <span className={b.bloco} style={{ '--n': 1, left: '31%', top: '40%' } as CSSProperties}>
-          <small>Mensagem</small>
-          Olá, {'{nome}'}!
-        </span>
-        <span className={b.bloco} style={{ '--n': 2, left: '59%', top: '28%' } as CSSProperties}>
-          <small>Pergunta</small>
-          <span className={b.opcoes}>
-            <i>Ver produtos</i>
-            <i>Falar com alguém</i>
-          </span>
-        </span>
-        <span className={b.bloco} style={{ '--n': 3, left: '89%', top: '12%' } as CSSProperties}>
-          <small>IA</small>
-          Catálogo
-        </span>
-        <span className={b.bloco} style={{ '--n': 3, left: '89%', top: '66%' } as CSSProperties}>
-          <small>Equipe</small>
-          Vendas
-        </span>
-      </div>
+      <CenaFluxo />
     </Peca>
+  )
+}
+
+export function CenaFluxo() {
+  return (
+    <div className={b.canvas} aria-hidden>
+      <svg className={b.fluxoFios} viewBox="0 0 640 220" preserveAspectRatio="none">
+        <path d="M150 110H200" />
+        <path d="M330 110H380" />
+        <path d="M510 110C540 110 540 50 570 50" />
+        <path d="M510 110C540 110 540 170 570 170" />
+      </svg>
+      <span className={b.bloco} style={{ '--n': 0, left: '2%', top: '40%' } as CSSProperties}>
+        <small>Gatilho</small>
+        Palavra &quot;oi&quot;
+      </span>
+      <span className={b.bloco} style={{ '--n': 1, left: '31%', top: '40%' } as CSSProperties}>
+        <small>Mensagem</small>
+        Olá, {'{nome}'}!
+      </span>
+      <span className={b.bloco} style={{ '--n': 2, left: '59%', top: '28%' } as CSSProperties}>
+        <small>Pergunta</small>
+        <span className={b.opcoes}>
+          <i>Ver produtos</i>
+          <i>Falar com alguém</i>
+        </span>
+      </span>
+      <span className={b.bloco} style={{ '--n': 3, left: '89%', top: '12%' } as CSSProperties}>
+        <small>IA</small>
+        Catálogo
+      </span>
+      <span className={b.bloco} style={{ '--n': 3, left: '89%', top: '66%' } as CSSProperties}>
+        <small>Equipe</small>
+        Vendas
+      </span>
+    </div>
   )
 }
 
@@ -89,27 +95,42 @@ function PecaIA() {
   return (
     <Peca forma="normal" tom="escuro" atraso={70}>
       <Texto n={2} titulo="IA que conhece o seu negócio" texto="Responde pelo catálogo e pelas suas regras. Quando não sabe, chama a equipe." />
-      <div className={b.conversaSolta} aria-hidden>
-        <span className={b.balaoCliente}>Tem ração para filhote de porte médio?</span>
-        <span className={b.consultando}>
-          <i />
-          <i />
-          <i />
-          consultando o catálogo
-        </span>
-        <span className={b.balaoIA}>
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/fotos-do-site/racao.webp" alt="" width={200} height={80} />
-          <b>Ração Filhote Médio 10 kg</b>
-          R$ 189,90 · 4 na prateleira
-        </span>
-      </div>
+      <CenaIA />
     </Peca>
+  )
+}
+
+export function CenaIA() {
+  return (
+    <div className={b.conversaSolta} aria-hidden>
+      <span className={b.balaoCliente}>Tem ração para filhote de porte médio?</span>
+      <span className={b.consultando}>
+        <i />
+        <i />
+        <i />
+        consultando o catálogo
+      </span>
+      <span className={b.balaoIA}>
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src="/fotos-do-site/racao.webp" alt="" width={200} height={80} />
+        <b>Ração Filhote Médio 10 kg</b>
+        R$ 189,90 · 4 na prateleira
+      </span>
+    </div>
   )
 }
 
 /* 03 · Inbox: tingido, a fila saindo pela borda de baixo, a aba do setor deslizando. */
 function PecaInbox() {
+  return (
+    <Peca forma="alta" tom="tingido" atraso={140}>
+      <Texto n={3} titulo="Inbox com fila por setor" texto="Vendas, suporte e financeiro no mesmo número, cada um com a sua fila." />
+      <CenaInbox />
+    </Peca>
+  )
+}
+
+export function CenaInbox() {
   const filas = [
     [
       ['MC', 'Marina Costa', 'Dá para parcelar?', 'Ana'],
@@ -140,33 +161,30 @@ function PecaInbox() {
     ],
   ]
   return (
-    <Peca forma="alta" tom="tingido" atraso={140}>
-      <Texto n={3} titulo="Inbox com fila por setor" texto="Vendas, suporte e financeiro no mesmo número, cada um com a sua fila." />
-      <div className={b.inbox} aria-hidden>
-        <div className={b.setores}>
-          <span className={b.setorAtivo} />
-          <span>Vendas</span>
-          <span>Suporte</span>
-          <span>Financeiro</span>
-        </div>
-        <div className={b.filas}>
-          {filas.map((fila, f) => (
-            <div key={f} className={b.fila} style={{ '--f': f } as CSSProperties}>
-              {fila.map(([sigla, nome, texto, quem]) => (
-                <span key={nome} className={b.linha}>
-                  <i>{sigla}</i>
-                  <span>
-                    <b>{nome}</b>
-                    {texto}
-                  </span>
-                  <em data-espera={quem!.startsWith('espera') || undefined}>{quem}</em>
-                </span>
-              ))}
-            </div>
-          ))}
-        </div>
+    <div className={b.inbox} aria-hidden>
+      <div className={b.setores}>
+        <span className={b.setorAtivo} />
+        <span>Vendas</span>
+        <span>Suporte</span>
+        <span>Financeiro</span>
       </div>
-    </Peca>
+      <div className={b.filas}>
+        {filas.map((fila, f) => (
+          <div key={f} className={b.fila} style={{ '--f': f } as CSSProperties}>
+            {fila.map(([sigla, nome, texto, quem]) => (
+              <span key={nome} className={b.linha}>
+                <i>{sigla}</i>
+                <span>
+                  <b>{nome}</b>
+                  {texto}
+                </span>
+                <em data-espera={quem!.startsWith('espera') || undefined}>{quem}</em>
+              </span>
+            ))}
+          </div>
+        ))}
+      </div>
+    </div>
   )
 }
 
@@ -203,9 +221,18 @@ function PecaPagamento() {
 
 /* 05 · Relatórios: branco, o número medido enorme e as barras embaixo. */
 function PecaRelatorio() {
-  const barras = [22, 34, 50, 70, 86, 64, 58, 78, 92, 66, 44, 28]
   return (
     <Peca forma="normal" tom="claro" atraso={280}>
+      <CenaRelatorio />
+      <Texto n={5} titulo="Relatórios" texto="Quanto o chatbot resolveu, quanto a equipe demorou e quanto vendeu pelo chat." />
+    </Peca>
+  )
+}
+
+export function CenaRelatorio() {
+  const barras = [22, 34, 50, 70, 86, 64, 58, 78, 92, 66, 44, 28]
+  return (
+    <>
       <div className={b.numero} aria-hidden>
         <strong>74%</strong>
         <span>das conversas terminam sem precisar da equipe</span>
@@ -215,13 +242,21 @@ function PecaRelatorio() {
           <i key={i} style={{ '--h': `${h}%`, '--n': i } as CSSProperties} />
         ))}
       </div>
-      <Texto n={5} titulo="Relatórios" texto="Quanto o chatbot resolveu, quanto a equipe demorou e quanto vendeu pelo chat." />
-    </Peca>
+    </>
   )
 }
 
 /* 06 · CRM: índigo com fios, o funil saindo pela borda da direita e o cartão atravessando. */
 function PecaFunil() {
+  return (
+    <Peca forma="larga" tom="indigo" atraso={350}>
+      <Texto n={6} titulo="CRM e funil de vendas" texto="Cada negociação com etapa, valor e responsável. O cartão anda junto com a conversa." />
+      <CenaFunil />
+    </Peca>
+  )
+}
+
+export function CenaFunil() {
   const colunas: [string, string, string[]][] = [
     ['Novo lead', 'R$ 3.120', ['André · R$ 480', 'Bia · R$ 210']],
     ['Proposta', 'R$ 5.940', ['Tiago · R$ 1.290']],
@@ -229,30 +264,27 @@ function PecaFunil() {
     ['Pós-venda', 'R$ 1.980', ['Caio · R$ 320']],
   ]
   return (
-    <Peca forma="larga" tom="indigo" atraso={350}>
-      <Texto n={6} titulo="CRM e funil de vendas" texto="Cada negociação com etapa, valor e responsável. O cartão anda junto com a conversa." />
-      <div className={b.funil} aria-hidden>
-        {colunas.map(([coluna, total, cartoes]) => (
-          <div key={coluna} className={b.coluna}>
-            <small>
-              {coluna}
-              <b>{total}</b>
-            </small>
-            {cartoes.map((c) => (
-              <span key={c} className={b.cartaoParado}>
-                {c}
-              </span>
-            ))}
-          </div>
-        ))}
-        <span className={b.cartaoAnda}>
-          <i>MC</i>
-          <span>
-            <b>Marina Costa</b>
-            R$ 268,80
-          </span>
+    <div className={b.funil} aria-hidden>
+      {colunas.map(([coluna, total, cartoes]) => (
+        <div key={coluna} className={b.coluna}>
+          <small>
+            {coluna}
+            <b>{total}</b>
+          </small>
+          {cartoes.map((c) => (
+            <span key={c} className={b.cartaoParado}>
+              {c}
+            </span>
+          ))}
+        </div>
+      ))}
+      <span className={b.cartaoAnda}>
+        <i>MC</i>
+        <span>
+          <b>Marina Costa</b>
+          R$ 268,80
         </span>
-      </div>
-    </Peca>
+      </span>
+    </div>
   )
 }
