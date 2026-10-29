@@ -30,11 +30,10 @@ import m from './menu-do-topo.module.css'
  * mesmas três partes, fechar no topo e Entrar e Ver planos no pé.
  */
 
-type Chave = 'produto' | 'canais' | 'segmentos' | 'integracoes'
+type Chave = 'produto' | 'segmentos' | 'integracoes'
 
 const ITENS: { chave: Chave; rotulo: string }[] = [
   { chave: 'produto', rotulo: 'Produto' },
-  { chave: 'canais', rotulo: 'Canais' },
   { chave: 'segmentos', rotulo: 'Segmentos' },
   { chave: 'integracoes', rotulo: 'Integrações' },
 ]
@@ -45,15 +44,7 @@ const PRODUTO = [
   { titulo: 'Inbox da equipe', texto: 'Todas as conversas numa fila, com a ficha do cliente ao lado.', href: '/produto/inbox', icone: <IconeInbox /> },
   { titulo: 'Contatos e funil', texto: 'Etiquetas, etapas e negócios de cada cliente.', href: '/produto/contatos-e-funil', icone: <IconeContatos /> },
   { titulo: 'Transmissões', texto: 'Campanhas com modelo aprovado pela Meta e retorno por contato.', href: '/produto/transmissoes', icone: <IconeTransmissao /> },
-]
-
-const RECURSOS = [
-  'Áudio transcrito no Inbox',
-  'Pedido e Pix dentro da conversa',
-  'Agenda com lembrete e confirmação',
-  'De qual anúncio veio cada venda',
-  'Respostas prontas para a equipe',
-  'Relatórios de atendimento e vendas',
+  { titulo: 'Relatórios', texto: 'Atendimento, vendas e custo do WhatsApp num painel.', href: '/produto/relatorios', icone: <IconeRelatorio /> },
 ]
 
 const FUNCIONA_COM = [
@@ -176,7 +167,6 @@ export function MenuDoTopo({ classeItem, hrefEntrar }: { classeItem?: string; hr
       >
         <div ref={conteudo} key={ultimo} className={m.conteudo}>
           {ultimo === 'produto' && <PainelProduto />}
-          {ultimo === 'canais' && <PainelCanais />}
           {ultimo === 'segmentos' && <PainelSegmentos />}
           {ultimo === 'integracoes' && <PainelIntegracoes />}
         </div>
@@ -290,23 +280,28 @@ function PainelProduto() {
         ))}
       </div>
 
-      <div className={m.recursos}>
-        <p className={m.legenda}>Também no produto</p>
-        <ul>
-          {RECURSOS.map((r) => (
-            <li key={r}>{r}</li>
+      <div className={m.ladoProduto}>
+        <div className={m.canaisDoProduto}>
+          <p className={m.legenda}>Canais, numa fila só</p>
+          {CANAIS.map((c) => (
+            <a key={c.slug} href={`/canais/${c.slug}`} className={m.linhaCanal} style={{ '--cor': c.cor } as CSSProperties}>
+              <span>
+                <MarcaDoCanal glifo={c.glifo} />
+              </span>
+              {c.nome}
+            </a>
           ))}
-        </ul>
-        <Link href="/produto" className={m.mais}>
-          Visão geral do produto <IconeDireita />
-        </Link>
-      </div>
+          <Link href="/produto" className={m.mais}>
+            Ver o produto inteiro <IconeDireita />
+          </Link>
+        </div>
 
-      <a href="/precos" className={m.chamada}>
-        <strong>Comece pelo seu WhatsApp</strong>
-        <span>Montamos o primeiro fluxo com você, no número que você já usa.</span>
-        <em>Ver planos</em>
-      </a>
+        <a href="/precos" className={m.chamada}>
+          <strong>Comece pelo seu WhatsApp</strong>
+          <span>Montamos o primeiro fluxo com você, no número que você já usa.</span>
+          <em>Ver planos</em>
+        </a>
+      </div>
 
       <div className={m.rodape}>
         <span className={m.legenda}>Funciona com</span>
@@ -323,27 +318,6 @@ function PainelProduto() {
           Todas as integrações <IconeDireita />
         </a>
       </div>
-    </div>
-  )
-}
-
-function PainelCanais() {
-  return (
-    <div className={m.canais}>
-      {CANAIS.map((c) => (
-        <a key={c.nome} href={`/canais/${c.slug}`} className={m.cartaoCanal} style={{ '--cor': c.cor } as CSSProperties}>
-          <span className={m.marcaCanal}>
-            <MarcaDoCanal glifo={c.glifo} />
-          </span>
-          <strong>{c.nome}</strong>
-          <small>{c.linha}</small>
-          <ul>
-            {c.fatos.map((f) => (
-              <li key={f}>{f}</li>
-            ))}
-          </ul>
-        </a>
-      ))}
     </div>
   )
 }
@@ -478,6 +452,14 @@ function Icone({ children }: { children: ReactNode }) {
     <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden {...traco}>
       {children}
     </svg>
+  )
+}
+
+function IconeRelatorio() {
+  return (
+    <Icone>
+      <path d="M4 20h16M7 16v-4M12 16V7M17 16v-6" />
+    </Icone>
   )
 }
 
