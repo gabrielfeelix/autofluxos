@@ -3,7 +3,7 @@ import type { CSSProperties, ReactNode } from 'react'
 import { DIAS_DE_TESTE, PLANOS } from '@/core/planos'
 import { DerivaDeParticulas } from './deriva-de-particulas'
 import { Desktop, Pergunta } from './pagina-do-site'
-import { GLIFO_META } from '@/components/design/glifos-oficiais'
+import { GLIFO_META, GLIFO_WHATSAPP } from '@/components/design/glifos-oficiais'
 import { CANAIS, type CanalDoSite } from './canais-do-site'
 import { type NichoDoSite } from './nichos-do-site'
 import { AntesEDepois } from './antes-e-depois'
@@ -23,6 +23,25 @@ import x from './site.module.css'
 const precoDeEntrada = Math.min(...PLANOS.map((p) => p.preco))
 const reais = (v: number) => v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL', maximumFractionDigits: 0 })
 
+/*
+ * A logo oficial no rótulo de cima, quando a seção fala da Meta ou do
+ * WhatsApp: a pessoa reconhece a marca antes de ler (pedido do Gabriel,
+ * 29/out, como o selo da capa da home).
+ */
+const MARCAS_DO_OLHO = {
+  meta: { glifo: GLIFO_META, cor: '#0866ff', nome: 'Meta' },
+  whatsapp: { glifo: GLIFO_WHATSAPP, cor: '#25d366', nome: 'WhatsApp' },
+} as const
+
+function MarcaDoOlho({ marca }: { marca: keyof typeof MARCAS_DO_OLHO }) {
+  const m = MARCAS_DO_OLHO[marca]
+  return (
+    <svg className={x.olhoMarca} width="16" height="16" viewBox="0 0 24 24" fill={m.cor} role="img" aria-label={m.nome}>
+      <path d={m.glifo} />
+    </svg>
+  )
+}
+
 /** `naPrimeiraTela`: a seção que abre logo abaixo de uma capa curta entra como a capa (ver `entra()`). */
 function Cabeca({
   olho,
@@ -30,18 +49,21 @@ function Cabeca({
   texto,
   id,
   naPrimeiraTela,
+  marca,
 }: {
   olho: string
   titulo: ReactNode
   texto?: ReactNode
   id?: string
   naPrimeiraTela?: boolean
+  marca?: keyof typeof MARCAS_DO_OLHO
 }) {
   const revela = (atraso: number, como?: 'desfoque') =>
     naPrimeiraTela ? entra(atraso, como) : { 'data-revela': true, 'data-como': como, 'data-atraso': atraso }
   return (
     <div className={s.cabecaSecao} id={id}>
-      <span className={s.olho} {...revela(0)}>
+      <span className={`${s.olho} ${marca ? x.olhoComMarca : ''}`} {...revela(0)}>
+        {marca && <MarcaDoOlho marca={marca} />}
         {olho}
       </span>
       <h2 className={`${s.tituloSecao} ${s.tituloSecaoCentro}`} {...revela(60, 'desfoque')}>
@@ -379,6 +401,7 @@ export function SecaoDoisLados() {
     <section className={`${s.secao} ${s.secaoTonal}`} id="coexistencia">
       <div className={s.faixa}>
         <Cabeca
+          marca="whatsapp"
           olho="Coexistência"
           titulo="O WhatsApp do celular continua com você"
           texto="O número segue no app WhatsApp Business. O que o chatbot responde aparece no celular, e o que a equipe responde pelo celular aparece no Inbox."
@@ -396,6 +419,7 @@ export function SecaoCalculadora() {
     <section className={s.secao} id="custo-da-meta">
       <div className={s.faixa}>
         <Cabeca
+          marca="meta"
           olho="Custo da Meta"
           titulo="Quanto a Meta cobra, antes de você assinar"
           texto="A Meta cobra por mensagem, à parte do plano. Ajuste ao seu volume e veja o valor."

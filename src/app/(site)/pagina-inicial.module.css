@@ -1742,6 +1742,19 @@
   background: rgb(var(--veu) / 0.14);
 }
 
+/* Os três botões da janela do Mac, nas cores dele: fechar, minimizar, ampliar. */
+.janelaPonto:nth-of-type(1) {
+  background: #ff5f57;
+}
+
+.janelaPonto:nth-of-type(2) {
+  background: #febc2e;
+}
+
+.janelaPonto:nth-of-type(3) {
+  background: #28c840;
+}
+
 .janelaTitulo {
   margin-left: 6px;
   font-size: 11px;

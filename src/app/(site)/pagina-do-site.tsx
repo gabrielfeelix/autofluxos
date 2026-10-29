@@ -1,5 +1,6 @@
 import Link from 'next/link'
 import { BentoDoProduto } from './bento-do-produto'
+import { TituloComCanal } from './titulo-com-canal'
 import { CartaoEnterprise } from './precos-pagina'
 import { CANAIS } from './canais-do-site'
 import { RECURSOS } from './recursos-do-site'
@@ -560,7 +561,9 @@ export function Desktop() {
             </span>
             <span>
               <span className={s.threadNome}>Marina Costa</span>
-              <span className={s.threadSub}>+55 44 9•••-4412</span>
+              <span className={s.threadSub}>
+                <TituloComCanal texto="WhatsApp · +55 44 9•••-4412" tamanho={12} />
+              </span>
             </span>
             <span className={s.threadAcao}>Ana assumiu</span>
           </div>

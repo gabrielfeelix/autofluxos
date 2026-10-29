@@ -1,5 +1,6 @@
 'use client'
 
+import { TituloComCanal } from './titulo-com-canal'
 import Link from 'next/link'
 import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from 'react'
 import { GLIFO_INSTAGRAM, GLIFO_META } from '@/components/design/glifos-oficiais'
@@ -107,7 +108,9 @@ function Janela({ titulo, children, largura }: { titulo: string; children: React
         <i />
         <i />
         <i />
-        <span>{titulo}</span>
+        <span>
+          <TituloComCanal texto={titulo} />
+        </span>
       </div>
       <div className={x.jtCorpo}>{children}</div>
     </div>

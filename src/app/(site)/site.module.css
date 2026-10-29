@@ -925,6 +925,19 @@ a.canal h3 svg {
   background: #d5dbe8;
 }
 
+/* Os três botões da janela do Mac, nas cores dele: fechar, minimizar, ampliar. */
+.fichaBarra i:nth-of-type(1) {
+  background: #ff5f57;
+}
+
+.fichaBarra i:nth-of-type(2) {
+  background: #febc2e;
+}
+
+.fichaBarra i:nth-of-type(3) {
+  background: #28c840;
+}
+
 .fichaBarra span {
   margin-left: 10px;
   font-size: 11.5px;
@@ -1205,6 +1218,19 @@ a.canal h3 svg {
   height: 9px;
   border-radius: 50%;
   background: #d5dbe8;
+}
+
+/* Os três botões da janela do Mac, nas cores dele: fechar, minimizar, ampliar. */
+.janelaBarra i:nth-of-type(1) {
+  background: #ff5f57;
+}
+
+.janelaBarra i:nth-of-type(2) {
+  background: #febc2e;
+}
+
+.janelaBarra i:nth-of-type(3) {
+  background: #28c840;
 }
 
 .janelaBarra span {
@@ -2970,4 +2996,16 @@ a.canal h3 svg {
     transition: none !important;
     stroke-dashoffset: 0;
   }
+}
+
+/* O rótulo com a logo oficial (Meta, WhatsApp): uma pílula clara, a marca na cor dela. */
+.olhoComMarca {
+  padding: 6px 12px 6px 8px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: #ffffff;
+}
+
+.olhoMarca {
+  flex: none;
 }

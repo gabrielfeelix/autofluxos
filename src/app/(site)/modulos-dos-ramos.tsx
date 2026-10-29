@@ -1,4 +1,5 @@
 import type { CSSProperties, ReactNode } from 'react'
+import { TituloComCanal } from './titulo-com-canal'
 import { GLIFO_WHATSAPP } from '@/components/design/glifos-oficiais'
 import type { NichoDoSite } from './nichos-do-site'
 import m from './modulos.module.css'
@@ -44,7 +45,9 @@ function Janela({ titulo, children, className }: { titulo: string; children: Rea
         <i />
         <i />
         <i />
-        <span>{titulo}</span>
+        <span>
+          <TituloComCanal texto={titulo} />
+        </span>
       </div>
       {children}
     </div>

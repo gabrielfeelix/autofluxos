@@ -1,5 +1,6 @@
 'use client'
 
+import { TituloComCanal } from './titulo-com-canal'
 import { useEffect, useRef, useState, useSyncExternalStore, type CSSProperties } from 'react'
 import Link from 'next/link'
 import { IlustracaoDoRamo } from './ilustracoes-dos-ramos'
@@ -306,7 +307,7 @@ export function DoisLados() {
     if (calmo || !visivel) return
     const fim = n >= ROTEIRO.length
     // Rápido como conversa de verdade: a primeira entra logo, as seguintes a cada ~1 s.
-    const r = window.setTimeout(() => setN(fim ? 0 : n + 1), fim ? 2200 : n === 0 ? 300 : 800)
+    const r = window.setTimeout(() => setN(fim ? 0 : n + 1), fim ? 2200 : n === 0 ? 300 : 1100)
     return () => window.clearTimeout(r)
   }, [n, calmo, visivel])
 
@@ -329,7 +330,9 @@ export function DoisLados() {
           <span className={x.janelaAvatar}>MC</span>
           <span>
             <strong>Marina Costa</strong>
-            <small>WhatsApp · +55 44 9••••-4412</small>
+            <small>
+              <TituloComCanal texto="WhatsApp · +55 44 9••••-4412" tamanho={12} />
+            </small>
           </span>
           <em>{transferiu ? 'Atendida por Júlia' : 'Chatbot atendendo'}</em>
         </div>
