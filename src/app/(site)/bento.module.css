@@ -239,6 +239,7 @@
 .balaoIA {
   grid-row: 2;
   grid-column: 1;
+  transform-origin: left bottom;
 }
 
 .consultando {
@@ -252,7 +253,7 @@
   background: rgb(255 255 255 / 0.16);
   font-size: 11.5px;
   color: rgb(255 255 255 / 0.85);
-  animation: consulta 7s linear infinite;
+  animation: consulta 7s var(--curva) infinite;
 }
 
 .consultando i {
@@ -279,18 +280,19 @@
   }
 }
 
+/* "Consultando" e a resposta surgem como balão, crescendo do canto, sem esmaecer. */
 @keyframes consulta {
   0%,
   8% {
-    opacity: 0;
+    scale: 0;
   }
   12%,
   38% {
-    opacity: 1;
+    scale: 1;
   }
   42%,
   100% {
-    opacity: 0;
+    scale: 0;
   }
 }
 
@@ -322,16 +324,14 @@
 @keyframes aparece {
   0%,
   42% {
-    opacity: 0;
-    translate: 0 8px;
+    scale: 0;
   }
   48%,
   94% {
-    opacity: 1;
-    translate: 0 0;
+    scale: 1;
   }
   100% {
-    opacity: 0;
+    scale: 0;
   }
 }
 
@@ -398,32 +398,40 @@
   position: relative;
   height: 420px;
   margin-top: 12px;
+  overflow: hidden;
 }
 
+/*
+ * As três filas lado a lado, correndo de lado junto com a aba do setor (mesmo
+ * tempo e mesma curva de `setor`). Sem esmaecer: o Gabriel não quer fade aqui.
+ */
 .fila {
   position: absolute;
-  inset: 0;
+  top: 0;
+  bottom: 0;
+  left: calc(var(--f) * 100%);
+  width: 100%;
   display: grid;
   gap: 7px;
   align-content: start;
-  animation: fila 9s linear infinite;
-  animation-delay: calc(var(--f) * 3s - 9s);
+  animation: fila 9s cubic-bezier(0.65, 0, 0.35, 1) infinite;
 }
 
-/* Uma fila sai (27 a 30%) antes de a próxima entrar (30 a 33%): sem nomes sobrepostos. */
 @keyframes fila {
   0%,
-  27% {
-    opacity: 1;
+  30% {
     translate: 0 0;
   }
-  30%,
-  97% {
-    opacity: 0;
-    translate: 0 6px;
+  33%,
+  63% {
+    translate: -100% 0;
+  }
+  66%,
+  96% {
+    translate: -200% 0;
   }
   100% {
-    opacity: 1;
+    translate: 0 0;
   }
 }
 
@@ -533,6 +541,8 @@
   display: grid;
   width: 96px;
   height: 24px;
+  overflow: hidden;
+  border-radius: 999px;
 }
 
 .aguardando,
@@ -549,42 +559,41 @@
 .aguardando {
   background: #fff7ed;
   color: #b45309;
-  animation: troca 6s linear infinite;
+  animation: troca 6s var(--curva) infinite;
 }
 
 .pago {
   background: #16a34a;
   color: #ffffff;
-  animation: trocaPago 6s linear infinite;
+  animation: trocaPago 6s var(--curva) infinite;
 }
 
+/* O status rola como contador: "Aguardando" sobe e "Pago" entra por baixo. */
 @keyframes troca {
   0%,
   45% {
-    opacity: 1;
+    translate: 0 0;
   }
   50%,
   95% {
-    opacity: 0;
+    translate: 0 -110%;
   }
   100% {
-    opacity: 1;
+    translate: 0 0;
   }
 }
 
 @keyframes trocaPago {
   0%,
   45% {
-    opacity: 0;
-    scale: 0.9;
+    translate: 0 110%;
   }
   50%,
   95% {
-    opacity: 1;
-    scale: 1;
+    translate: 0 0;
   }
   100% {
-    opacity: 0;
+    translate: 0 110%;
   }
 }
 
@@ -627,21 +636,18 @@
   color: #0c1838;
 }
 
+/* O aviso do banco entra pela borda direita da peça, como notificação, e sai por ela. */
 @keyframes aviso {
   0%,
   46% {
-    opacity: 0;
-    translate: 16px -6px;
-    scale: 0.94;
+    translate: calc(100% + 40px) 0;
   }
   52%,
   94% {
-    opacity: 1;
     translate: 0 0;
-    scale: 1;
   }
   100% {
-    opacity: 0;
+    translate: calc(100% + 40px) 0;
   }
 }
 

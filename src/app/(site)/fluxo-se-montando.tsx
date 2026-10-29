@@ -41,8 +41,9 @@ const FIOS: Fio[] = [
 ]
 
 const COLUNAS = 5
-const TEMPO_POR_COLUNA = 420
-// Quem chega na seção já vê o fluxo começar: o Gabriel achou lento com 1 s de espera e 0,9 s por coluna.
+// Uma coluna a cada 0,8 s: o fio sai, desenha e o card acende antes do próximo.
+// Com 0,42 s e uma curva só para tudo, o Gabriel achou corrido; com 0,9 s e 1 s de espera, lento.
+const TEMPO_POR_COLUNA = 800
 const PRIMEIRO_FIO = 150
 type Desenho = { largura: number; altura: number; fios: { d: string; coluna: number; caminho: boolean; ordem: number }[] }
 
@@ -110,13 +111,15 @@ export function FluxoSeMontando({ cabeca }: { cabeca: ReactNode }) {
     }
     const montar = () => {
       const inicio = performance.now()
-      const total = COLUNAS * TEMPO_POR_COLUNA
       const passo = (agora: number) => {
-        const t = Math.min((agora - inicio) / total, 1)
-        // Sai devagar e chega devagar: o primeiro fio e o último pedem um respiro.
-        const s = (t < 0.5 ? 2 * t * t : 1 - (-2 * t + 2) ** 2 / 2) * COLUNAS
+        const bruto = Math.min((agora - inicio) / TEMPO_POR_COLUNA, COLUNAS)
+        // Cada coluna tem a própria curva: o fio arranca, desacelera ao chegar e o
+        // card acende; aí a próxima arranca. É o que dá o passo a passo orgânico.
+        const coluna = Math.min(Math.floor(bruto), COLUNAS - 1)
+        const f = bruto - coluna
+        const s = coluna + (f < 0.5 ? 4 * f ** 3 : 1 - (-2 * f + 2) ** 3 / 2)
         p.style.setProperty('--s', s.toFixed(3))
-        if (t < 1) quadro = requestAnimationFrame(passo)
+        if (bruto < COLUNAS) quadro = requestAnimationFrame(passo)
         else p.dataset.pronto = ''
       }
       quadro = requestAnimationFrame(passo)
