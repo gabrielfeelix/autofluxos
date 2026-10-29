@@ -84,11 +84,12 @@ export function CapaDaHome() {
           API oficial do WhatsApp Business
         </p>
         <h1 className={`${x.capaTitulo} ${x.capaTituloHome}`} {...entra(80, 'desfoque')}>
-          Seu WhatsApp responde na hora. <em>Sua equipe entra quando precisa.</em>
+          {/* Hífen que não quebra: "pós-" sozinho no fim da linha. */}
+          Atendimento, vendas e pós{'\u2011'}venda no WhatsApp. <em>A equipe inteira no mesmo número.</em>
         </h1>
         <p className={x.capaSub} {...entra(200)}>
-          Chatbot, IA e a caixa de entrada da equipe no número que você já usa. Horário, preço, agenda e pedido se
-          resolvem na conversa; o que precisa de gente chega à equipe com o histórico ao lado.
+          O chatbot e a IA respondem na hora, cada setor tem a sua fila, o funil anda sozinho e o pagamento se confirma
+          na conversa. Do primeiro oi à recompra, no número que você já usa.
         </p>
         <div className={s.acoes} {...entra(300)}>
           <Link className={`${s.botao} ${s.botaoPrincipal} ${s.botaoGrande}`} href="/precos">
@@ -270,6 +271,49 @@ export function SecaoPrecoResumo() {
         <Link className={`${s.botao} ${x.botaoBranco} ${s.botaoGrande}`} href="/precos">
           Ver planos e calcular
         </Link>
+      </div>
+    </section>
+  )
+}
+
+/* ─────────────────────────── jornada ─────────────────────────── */
+
+/*
+ * A conversa inteira, do anúncio à recompra: o AutoFluxos não é só o chatbot.
+ * Cada etapa existe no produto (fila por setor e IA do atendente desde
+ * `a743d066` e `79aa74f4`; pagamento confirmado pelos gateways; aviso do
+ * pedido e pesquisa pelos fluxos e sequências) e leva à página que detalha.
+ */
+const JORNADA = [
+  { titulo: 'Chega', texto: 'Do anúncio, do Instagram, do site ou do formulário, com a origem anotada.', href: '/produto/contatos-e-funil' },
+  { titulo: 'O chatbot atende', texto: 'Responde na hora, qualifica e mostra o produto com foto e preço.', href: '/produto/fluxos' },
+  { titulo: 'O setor assume', texto: 'Vendas, suporte ou financeiro: cai na fila certa, com o histórico junto.', href: '/produto/inbox' },
+  { titulo: 'Vira negócio', texto: 'Etapa, valor, dono e próxima ação no funil.', href: '/produto/contatos-e-funil' },
+  { titulo: 'Paga no chat', texto: 'Link de pagamento ou Pix na conversa, confirmado quando o banco aprova.', href: '/integracoes' },
+  { titulo: 'Recebe', texto: 'O status do pedido chega pelo WhatsApp, do pago ao entregue.', href: '/segmentos/loja-virtual' },
+  { titulo: 'Volta', texto: 'Pesquisa de satisfação e mensagem de recompra no tempo certo.', href: '/produto/fluxos' },
+]
+
+export function SecaoJornada() {
+  return (
+    <section className={s.secao} id="jornada">
+      <div className={s.faixa}>
+        <Cabeca
+          olho="A jornada"
+          titulo="Uma conversa, do primeiro oi à recompra"
+          texto="Hoje cada etapa mora num lugar: o celular, a planilha, o link de pagamento, o grupo da equipe. No AutoFluxos é a mesma conversa do começo ao fim."
+        />
+        <ol className={x.jornada} data-revela>
+          {JORNADA.map((e, i) => (
+            <li key={e.titulo} style={{ '--i': i } as CSSProperties}>
+              <span className={x.jornadaNo}>{String(i + 1).padStart(2, '0')}</span>
+              <Link href={e.href} className={x.jornadaTexto}>
+                <strong>{e.titulo}</strong>
+                <span>{e.texto}</span>
+              </Link>
+            </li>
+          ))}
+        </ol>
       </div>
     </section>
   )

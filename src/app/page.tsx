@@ -4,6 +4,7 @@ import {
   SecaoDoisLados,
   SecaoDuvidasCurtas,
   SecaoIntegracoesResumo,
+  SecaoJornada,
   SecaoNichos,
   SecaoNumeros,
   SecaoPrecoResumo,
@@ -23,14 +24,15 @@ import { metadadosDoSite } from './(site)/metadados'
  */
 export const metadata = metadadosDoSite(
   '/',
-  'AutoFluxos: o WhatsApp da sua empresa respondendo na hora',
-  'Chatbot, IA e Inbox da equipe no WhatsApp da sua empresa. O que se repete se resolve na conversa; o que precisa de gente chega à equipe com o histórico.',
+  'AutoFluxos: atendimento, vendas e pós-venda no WhatsApp',
+  'A equipe inteira no mesmo número: chatbot e IA, fila por setor, funil, pagamento na conversa e pós-venda, no WhatsApp, Instagram e chat do site.',
 )
 
 export default function PaginaInicial() {
   return (
     <PaginaDoSite capa={<CapaDaHome />}>
       <SecaoNumeros />
+      <SecaoJornada />
       <SecaoFluxo />
       <SecaoDoisLados />
       <SecaoNichos />

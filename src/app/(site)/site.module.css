@@ -85,8 +85,12 @@
 }
 
 /* Na home, cada frase do título numa linha no computador. */
+.capaSimplesInterno .capaTituloHome em {
+  display: block;
+}
+
 .capaSimplesInterno .capaTituloHome {
-  max-width: 24ch;
+  max-width: 25ch;
   margin-top: 22px;
   font-size: clamp(34px, 5.4vw, 62px);
 }
@@ -2103,4 +2107,165 @@ a.canal h3 svg {
 
 .duvidasCurtas > div:last-child > * {
   width: 100%;
+}
+
+/* ─────────────────────────── jornada ─────────────────────────── */
+
+/*
+ * As sete etapas numa linha, ligadas por um fio que se desenha da esquerda
+ * para a direita quando a seção entra na tela; os nós acendem em sequência,
+ * no tempo do fio. É a assinatura dos fios do site, contando a conversa
+ * inteira em vez de um fluxo só.
+ */
+.jornada {
+  position: relative;
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 12px;
+  margin: 56px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.jornada::before,
+.jornada::after {
+  content: '';
+  position: absolute;
+  top: 21px;
+  left: calc(100% / 14);
+  right: calc(100% / 14);
+  height: 2px;
+  border-radius: 1px;
+}
+
+.jornada::before {
+  background: var(--line);
+}
+
+/* O fio que corre por cima do trilho. */
+.jornada::after {
+  background: #1d4ed8;
+  transform-origin: left;
+  scale: 0 1;
+  transition: scale 1.6s cubic-bezier(0.65, 0, 0.35, 1) 0.2s;
+}
+
+.jornada[data-revelado]::after {
+  scale: 1 1;
+}
+
+.jornada li {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+.jornadaNo {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border: 2px solid var(--line);
+  border-radius: 50%;
+  background: #ffffff;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--dim);
+  font-variant-numeric: tabular-nums;
+  transition:
+    border-color 0.4s var(--curva),
+    background 0.4s var(--curva),
+    color 0.4s var(--curva),
+    scale 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
+  transition-delay: calc(0.2s + var(--i) * 0.23s);
+}
+
+.jornada[data-revelado] .jornadaNo {
+  border-color: #1d4ed8;
+  background: #1d4ed8;
+  color: #ffffff;
+}
+
+.jornadaTexto {
+  display: grid;
+  gap: 6px;
+  margin-top: 18px;
+  padding: 10px 8px 12px;
+  border-radius: 12px;
+  color: inherit;
+  text-decoration: none;
+  transition: background 0.2s var(--curva);
+}
+
+.jornadaTexto:hover {
+  background: var(--canvas-deep);
+}
+
+.jornada li:hover .jornadaNo {
+  scale: 1.1;
+  transition-delay: 0s;
+}
+
+.jornadaTexto strong {
+  font-size: 15.5px;
+  letter-spacing: -0.02em;
+}
+
+.jornadaTexto span {
+  font-size: 13.5px;
+  line-height: 1.5;
+  color: var(--muted);
+}
+
+/* No celular a jornada desce: o fio vira vertical, à esquerda dos nós. */
+@media (max-width: 900px) {
+  .jornada {
+    grid-template-columns: 1fr;
+    gap: 4px;
+  }
+
+  .jornada::before,
+  .jornada::after {
+    top: 22px;
+    bottom: 22px;
+    left: 21px;
+    right: auto;
+    width: 2px;
+    height: auto;
+  }
+
+  .jornada::after {
+    transform-origin: top;
+    scale: 1 0;
+  }
+
+  .jornada[data-revelado]::after {
+    scale: 1 1;
+  }
+
+  .jornada li {
+    flex-direction: row;
+    align-items: flex-start;
+    gap: 14px;
+    text-align: left;
+  }
+
+  .jornadaNo {
+    flex: none;
+  }
+
+  .jornadaTexto {
+    margin-top: 0;
+    padding: 8px 10px 14px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .jornada::after,
+  .jornadaNo {
+    transition: none;
+  }
 }
