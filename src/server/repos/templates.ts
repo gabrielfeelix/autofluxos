@@ -69,6 +69,9 @@ function paraComponentes(bruto: unknown): Componentes {
     corpo: typeof objeto.corpo === 'string' ? objeto.corpo : '',
     ...(typeof objeto.rodape === 'string' ? { rodape: objeto.rodape } : {}),
     ...(Array.isArray(objeto.botoes) ? { botoes: objeto.botoes as Componentes['botoes'] } : {}),
+    // Sem esta linha o carrossel some na leitura, e a API recusa o modelo
+    // como se não fosse carrossel (achado no primeiro teste real, 29/out).
+    ...(objeto.carrossel && typeof objeto.carrossel === 'object' ? { carrossel: objeto.carrossel as Componentes['carrossel'] } : {}),
   }
 }
 
