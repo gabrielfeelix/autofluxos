@@ -7,6 +7,7 @@ import { GLIFO_META } from '@/components/design/glifos-oficiais'
 import { CANAIS, type CanalDoSite } from './canais-do-site'
 import { RECURSOS, type RecursoDoSite } from './recursos-do-site'
 import { MODELOS_DE_TODOS, type NichoDoSite } from './nichos-do-site'
+import { AntesEDepois } from './antes-e-depois'
 import { JornadaViva } from './jornada-viva'
 import { CalculadoraMeta, DoisLados, NumerosMedidos, PreviaQueTroca, VitrineDeNichos } from './pecas-interativas'
 import { CONVERSAS, PreviaWhatsApp } from './previa-whatsapp'
@@ -341,15 +342,6 @@ export function SecaoJornada() {
 /* ─────────────────────────── antes e depois ─────────────────────────── */
 
 /* Cada "depois" existe no produto: acessos por pessoa, funil, fila por setor (`a743d066`), pagamento pelos gateways, transmissões e aviso do pedido. */
-const IMPROVISOS = [
-  { antes: 'Um celular passado de mão em mão', agora: 'A equipe inteira no mesmo número, cada um com o próprio acesso' },
-  { antes: 'Planilha de leads e anotação no caderno', agora: 'Funil com etapa, valor e próxima ação de cada negociação' },
-  { antes: 'Grupo da equipe para avisar quem atende', agora: 'Fila por setor e transferência com o histórico junto' },
-  { antes: 'Link de pagamento solto e print de comprovante', agora: 'Pagamento na conversa, confirmado sozinho pelo banco' },
-  { antes: 'Ferramenta de disparo à parte', agora: 'Transmissões com modelo aprovado e retorno de cada contato' },
-  { antes: '"Cadê meu pedido?" respondido à mão', agora: 'Cada etapa do pedido avisada sozinha pelo WhatsApp' },
-]
-
 export function SecaoImprovisos() {
   return (
     <section className={s.secao} id="antes-e-depois">
@@ -357,27 +349,9 @@ export function SecaoImprovisos() {
         <Cabeca
           olho="Antes e depois"
           titulo="Seis improvisos a menos na sua operação"
-          texto="O que a equipe resolve no jeitinho hoje, e como fica dentro do AutoFluxos."
+          texto="Vire a chave e veja a operação se arrumar."
         />
-        <div className={x.improvisos}>
-          {IMPROVISOS.map((m, i) => (
-            <article key={m.antes} className={x.improviso} data-revela data-como="escala" data-atraso={i * 60}>
-              <p className={x.improvisoAntes}>
-                <small>Hoje</small>
-                {m.antes}
-              </p>
-              <span className={x.improvisoSeta} aria-hidden>
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M12 5v14M6 13l6 6 6-6" />
-                </svg>
-              </span>
-              <p className={x.improvisoAgora}>
-                <small>No AutoFluxos</small>
-                {m.agora}
-              </p>
-            </article>
-          ))}
-        </div>
+        <AntesEDepois />
       </div>
     </section>
   )
