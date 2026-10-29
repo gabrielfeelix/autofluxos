@@ -223,7 +223,7 @@ export function SecaoDuvidasCurtas() {
 export function SecaoNichos() {
   return (
     <section className={s.secao} id="nichos">
-      <div className={s.faixa}>
+      <div className={`${s.faixa} ${s.faixaLarga}`}>
         <Cabeca
           olho="Para quem é"
           titulo="Pronto para o seu tipo de negócio"
@@ -238,8 +238,8 @@ export function SecaoNichos() {
 export function SecaoIntegracoesResumo() {
   const logos = ITENS_DE_INTEGRACAO.filter((i) => !i.emBreve).slice(0, 14)
   return (
-    <section className={s.secao}>
-      <div className={s.faixa}>
+    <section className={`${s.secao} ${s.secaoCompacta}`}>
+      <div className={`${s.faixa} ${s.faixaEstreita}`}>
         <Cabeca olho="Integrações" titulo="Liga no que você já usa" />
         <div className={x.logos} data-revela>
           {logos.map((l) => (
@@ -327,7 +327,7 @@ const JORNADA = [
 export function SecaoJornada() {
   return (
     <section className={s.secao} id="jornada">
-      <div className={s.faixa}>
+      <div className={`${s.faixa} ${s.faixaLarga}`}>
         <Cabeca
           olho="Como funciona"
           titulo={`Do primeiro contato ao pós\u2011venda, tudo no mesmo WhatsApp`}
@@ -344,7 +344,7 @@ export function SecaoJornada() {
 /* Cada "depois" existe no produto: acessos por pessoa, funil, fila por setor (`a743d066`), pagamento pelos gateways, transmissões e aviso do pedido. */
 export function SecaoImprovisos() {
   return (
-    <section className={s.secao} id="antes-e-depois">
+    <section className={`${s.secao} ${s.secaoTonal}`} id="antes-e-depois">
       <div className={s.faixa}>
         <Cabeca
           olho="Antes e depois"
@@ -409,7 +409,7 @@ export function MarcaDoCanal({ canal, tamanho = 22 }: { canal: CanalDoSite; tama
 
 export function SecaoDoisLados() {
   return (
-    <section className={s.secao} id="coexistencia">
+    <section className={`${s.secao} ${s.secaoTonal}`} id="coexistencia">
       <div className={s.faixa}>
         <Cabeca
           olho="Coexistência"

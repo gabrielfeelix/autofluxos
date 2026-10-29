@@ -98,6 +98,27 @@
   margin-inline: auto;
 }
 
+/*
+ * Larguras e ritmo: nem toda seção cabe nos mesmos 1200px. As de palco
+ * (jornada, ramos, bento) abrem para 1360; as de lista fecham para 960; e
+ * as faixas tonais, de ponta a ponta, separam um bloco do outro sem linha.
+ */
+.faixaLarga {
+  width: min(100% - 40px, 1360px);
+}
+
+.faixaEstreita {
+  width: min(100% - 40px, 960px);
+}
+
+.secaoTonal {
+  background: var(--canvas-deep);
+}
+
+.secaoCompacta {
+  padding-block: clamp(48px, 6vw, 84px);
+}
+
 /* Focos soltos no meio da página, para o fundo nunca ficar liso. */
 .focoLuz {
   position: absolute;

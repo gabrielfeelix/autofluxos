@@ -293,7 +293,7 @@ export function SecaoOQueFaz() {
   return (
           <section className={s.secao}>
             <div className={`${s.focoLuz} ${s.focoEsquerda}`} aria-hidden />
-            <div className={s.faixa}>
+            <div className={`${s.faixa} ${s.faixaLarga}`}>
               <span className={s.olho} data-revela>
                 O que ele faz
               </span>
