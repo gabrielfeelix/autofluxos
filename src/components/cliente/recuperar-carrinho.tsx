@@ -134,9 +134,9 @@ export function RecuperarCarrinho({
 }
 
 const ITENS = [
-  { nome: 'Headset Gamer', preco: 'R$ 349,90' },
-  { nome: 'Mouse sem fio', preco: 'R$ 189,90' },
-  { nome: 'Teclado mecânico', preco: 'R$ 429,90' },
+  { nome: 'Headset Gamer Zero', de: 'R$ 399,90', por: 'R$ 349,90' },
+  { nome: 'Mouse sem fio', de: null, por: 'R$ 189,90' },
+  { nome: 'Teclado mecânico', de: null, por: 'R$ 429,90' },
 ]
 
 /** O carrossel como chega no WhatsApp, com o texto exato dos modelos. */
@@ -144,11 +144,16 @@ function Previa({ loja }: { loja: string }) {
   return (
     <div className="min-w-0 rounded-[10px] bg-[#efeae2] p-3 dark:bg-[#0b141a]">
       <div className="max-w-[340px] rounded-lg rounded-tl-none bg-white px-3 py-2 text-[13px] leading-[1.45] text-[#111b21] shadow-sm dark:bg-[#202c33] dark:text-[#e9edef]">
-        Oi, Maria! Os itens que você escolheu na {loja} continuam no seu carrinho. Se ficou alguma dúvida sobre produto,
-        frete ou pagamento, é só responder esta mensagem.
+        Oi, Maria! 👋
         <br />
         <br />
-        Para não receber promoções, responda SAIR.
+        Seu carrinho na <strong>{loja}</strong> continua do jeito que você deixou. 🛒
+        <br />
+        <br />
+        Quer ajuda pra decidir? Pergunta sobre produto, frete ou pagamento é só responder aqui. 💬
+        <br />
+        <br />
+        <em>Para não receber promoções, responda SAIR.</em>
       </div>
       <div className="mt-2 flex gap-2 overflow-x-auto pb-1">
         {ITENS.map((item) => (
@@ -156,7 +161,18 @@ function Previa({ loja }: { loja: string }) {
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src="/exemplos/carrinho-produto.jpg" alt="" className="aspect-[1.91] w-full object-cover" />
             <p className="px-2.5 py-2 text-[12.5px] leading-[1.4] text-[#111b21] dark:text-[#e9edef]">
-              Este item ficou esperando por você no carrinho: {item.nome}, por {item.preco} no site da loja.
+              🎮 <strong>{item.nome}</strong>
+              <br />
+              {item.de ? (
+                <>
+                  De <s>{item.de}</s> por <strong>{item.por}</strong>
+                </>
+              ) : (
+                <>
+                  Por <strong>{item.por}</strong>
+                </>
+              )}
+              . Ele continua separado no seu carrinho.
             </p>
             <p className="border-t border-black/10 py-2 text-center text-[12.5px] font-medium text-[#027eb5] dark:border-white/10 dark:text-[#53bdeb]">
               Finalizar compra

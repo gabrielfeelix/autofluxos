@@ -182,6 +182,36 @@ export async function criarTemplateNaMeta(entrada: {
   }
 }
 
+/**
+ * Edita um modelo que já existe na Meta, mantendo nome e id.
+ *
+ * Só modelo aprovado, recusado ou pausado aceita edição, e a Meta limita
+ * (uma por dia, dez por mês). A categoria não muda aqui. Depois de editado,
+ * ele volta para revisão: quem chama grava `pendente`.
+ */
+export async function editarTemplateNaMeta(entrada: {
+  token: string
+  wabaTemplateId: string
+  componentes: Componentes
+  exemplos?: Exemplos
+  versaoGraph?: string
+}): Promise<{ ok: true } | { ok: false; erro: ErroDaMeta }> {
+  const url = `https://graph.facebook.com/${versaoGraph(entrada.versaoGraph)}/${entrada.wabaTemplateId}`
+  try {
+    const resposta = await fetch(url, {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${entrada.token}`, 'content-type': 'application/json' },
+      body: JSON.stringify({ components: componentesParaMeta(entrada.componentes, entrada.exemplos) }),
+      signal: AbortSignal.timeout(TIMEOUT_MS),
+    })
+    const corpo = (await resposta.json().catch(() => null)) as CorpoDaMeta | null
+    if (!resposta.ok || corpo?.error) return { ok: false, erro: erroDoCorpo(corpo, resposta.status) }
+    return { ok: true }
+  } catch (erro) {
+    return { ok: false, erro: { codigo: null, mensagem: erro instanceof Error ? erro.message : String(erro) } }
+  }
+}
+
 export type TemplateNaMeta = {
   wabaTemplateId: string
   nome: string

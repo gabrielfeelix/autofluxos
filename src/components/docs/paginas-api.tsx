@@ -622,8 +622,9 @@ function EnviarTemplate() {
           Os modelos <Cod>carrinho_1</Cod> a <Cod>carrinho_10</Cod> são criados em Comércio › Integrações › Magento. Escolha
           pelo número de itens: três itens, <Cod>carrinho_3</Cod> com três cartões; mais de dez, os dez primeiros no{' '}
           <Cod>carrinho_10</Cod>. O <Cod>carrinho_1</Cod> não é carrossel: vai com <Cod>imagem</Cod>, <Cod>link</Cod> e{' '}
-          <Cod>valores.corpo</Cod> com o nome da pessoa e do produto. Nos outros, <Cod>valores.corpo</Cod> leva só o nome, e
-          cada cartão leva <Cod>valores</Cod> com o nome e o preço do produto. Use o id do carrinho como{' '}
+          <Cod>valores.corpo</Cod> com o nome da pessoa, o do produto e a linha do preço. Nos outros, <Cod>valores.corpo</Cod>{' '}
+          leva só o nome, e cada cartão leva <Cod>valores</Cod> com o nome do produto e a linha do preço. A linha do preço vem
+          pronta: <Cod>{'Por *R$ 349,90*'}</Cod>, ou em promoção <Cod>{'De ~R$ 399,90~ por *R$ 349,90*'}</Cod>. Use o id do carrinho como{' '}
           <Cod>Idempotency-Key</Cod>.
         </p>
       </Nota>

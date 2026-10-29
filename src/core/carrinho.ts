@@ -25,7 +25,14 @@ export type ModeloDoCarrinho = {
 
 const SAIR = 'Para não receber promoções, responda SAIR.'
 
-const DUVIDA = 'Se ficou alguma dúvida sobre produto, frete ou pagamento, é só responder esta mensagem.'
+const DUVIDA = 'Quer ajuda pra decidir? Pergunta sobre produto, frete ou pagamento é só responder aqui. 💬'
+
+/**
+ * O preço vem pronto de quem integra, numa variável só: "Por *R$ 349,90*" ou,
+ * em promoção, "De ~R$ 399,90~ por *R$ 349,90*". Assim o mesmo modelo serve
+ * aos dois casos, sem dobrar a família (decisão do Gabriel, 29/out/2026).
+ */
+const PRECO_DE_EXEMPLO = 'De ~R$ 399,90~ por *R$ 349,90*'
 
 /** O endereço da loja sem barra no fim: o botão é `<endereço>/{{1}}`, e o fim vem do carrinho. */
 function base(endereco: string): string {
@@ -44,11 +51,11 @@ export function modelosDoCarrinho(loja: { nome: string; endereco: string; exempl
     nome: `${PREFIXO_DO_CARRINHO}1`,
     componentes: {
       cabecalho: { tipo: 'imagem', url: loja.exemplo },
-      corpo: `Oi, {{1}}! O {{2}} que você escolheu na ${loja.nome} continua no seu carrinho.\n\n${DUVIDA}`,
+      corpo: `Oi, {{1}}! 👋\n\n🎮 *{{2}}* continua no seu carrinho na *${loja.nome}*, do jeito que você deixou.\n{{3}}.\n\n${DUVIDA}`,
       rodape: SAIR,
       botoes: [botao],
     },
-    exemplos: ['Maria', 'Headset Gamer'],
+    exemplos: ['Maria', 'Headset Gamer Zero', PRECO_DE_EXEMPLO],
     exemplosDoCartao: [],
   }
   const carrosseis = Array.from({ length: CARTOES_DO_CARROSSEL.maximo - 1 }, (_, i): ModeloDoCarrinho => {
@@ -56,11 +63,11 @@ export function modelosDoCarrinho(loja: { nome: string; endereco: string; exempl
     return {
       nome: `${PREFIXO_DO_CARRINHO}${cartoes}`,
       componentes: {
-        corpo: `Oi, {{1}}! Os itens que você escolheu na ${loja.nome} continuam no seu carrinho. ${DUVIDA}\n\n${SAIR}`,
-        carrossel: { cartoes, cabecalho: 'imagem', corpo: 'Este item ficou esperando por você no carrinho: {{1}}, por {{2}} no site da loja.', botoes: [botao], exemplo: loja.exemplo },
+        corpo: `Oi, {{1}}! 👋\n\nSeu carrinho na *${loja.nome}* continua do jeito que você deixou. 🛒\n\n${DUVIDA}\n\n_${SAIR}_`,
+        carrossel: { cartoes, cabecalho: 'imagem', corpo: '🎮 *{{1}}*\n{{2}}. Ele continua separado no seu carrinho.', botoes: [botao], exemplo: loja.exemplo },
       },
       exemplos: ['Maria'],
-      exemplosDoCartao: ['Headset Gamer', 'R$ 349,90'],
+      exemplosDoCartao: ['Headset Gamer Zero', PRECO_DE_EXEMPLO],
     }
   })
   return [umItem, ...carrosseis]
