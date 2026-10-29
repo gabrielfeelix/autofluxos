@@ -18,7 +18,8 @@ import s from './pagina-inicial.module.css'
  * automático e toca só aquela. Sem movimento, fica no fim, tudo enviado.
  */
 
-const TEMPOS = [900, 1500, 1000, 2200]
+// A primeira fase é a da pergunta da cliente: tempo de ler antes de a equipe tocar no botão.
+const TEMPOS = [1400, 1500, 1000, 2200]
 const ULTIMA_FASE = TEMPOS.length - 1
 
 function useRoteiro(etapas: number) {
@@ -119,6 +120,9 @@ const PRODUTOS = [
 export function InboxQueVende() {
   const { etapa, fase, escolher, raiz } = useRoteiro(FERRAMENTAS.length)
   const enviado = (e: number) => e < etapa || (e === etapa && fase === ULTIMA_FASE)
+  // Cada envio responde a uma pergunta: ela chega no começo da etapa, antes do menu abrir.
+  const perguntou = (e: number) => e <= etapa
+  const nova = (e: number) => (e === etapa && fase === 0) || undefined
   const aberto = fase === 1 || fase === 2
   const escolhendo = fase === 2
 
@@ -138,16 +142,23 @@ export function InboxQueVende() {
                 R$ 249,90 · preto, 7 em estoque
                 <em>Ver produto</em>
               </span>
-              <span className={r.fala} data-de="cliente">
-                Esse preto! Tem algum desconto?
-              </span>
             </>
+          )}
+          {perguntou(1) && (
+            <span className={r.fala} data-de="cliente" data-novo={nova(1)}>
+              Esse preto! Tem algum desconto?
+            </span>
           )}
           {enviado(1) && (
             <span className={`${r.fala} ${r.cupom}`} data-de="equipe" data-novo={etapa === 1 || undefined}>
               <small>Cupom</small>
               <b>BEMVINDO10</b>
               10% de desconto na primeira compra
+            </span>
+          )}
+          {perguntou(2) && (
+            <span className={r.fala} data-de="cliente" data-novo={nova(2)}>
+              Ótimo, quero esse! Como eu pago?
             </span>
           )}
           {enviado(2) && (
@@ -158,6 +169,11 @@ export function InboxQueVende() {
               <span className={r.pago}>
                 <Visto /> Pago
               </span>
+            </span>
+          )}
+          {perguntou(3) && (
+            <span className={r.fala} data-de="cliente" data-novo={nova(3)}>
+              Paguei! Quando chega?
             </span>
           )}
           {enviado(3) && (
