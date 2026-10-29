@@ -245,7 +245,14 @@
    * foto de galáxia.
    */
   --casca: linear-gradient(135deg, #1a3fb8 0%, #1d4ed8 45%, #3a6cf0 100%);
-  --casca-fios: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='240' height='150'%3E%3Cg fill='none' stroke='white' stroke-opacity='.1' stroke-width='1.4'%3E%3Crect x='20' y='18' width='52' height='24' rx='7'/%3E%3Crect x='140' y='80' width='52' height='24' rx='7'/%3E%3Ccircle cx='212' cy='30' r='6'/%3E%3Ccircle cx='46' cy='118' r='6'/%3E%3Cpath d='M72 30c40 0 30 62 68 62M192 92c26 0 20-46 20-56M46 42v70M52 118c40 0 60-14 88-14'/%3E%3C/g%3E%3Cg fill='white' fill-opacity='.1'%3E%3Ccircle cx='72' cy='30' r='2.5'/%3E%3Ccircle cx='140' cy='92' r='2.5'/%3E%3Ccircle cx='192' cy='92' r='2.5'/%3E%3C/g%3E%3C/svg%3E");
+  /*
+   * A trama de fios de fundo, em três versões sorteadas por
+   * `scripts/fundos/gerar-fios.mjs` (10 motivos, 4x4 células por trama). Cada
+   * lugar usa uma, para o desenho não se repetir à vista.
+   */
+  --casca-fios: url('/fundos/fios-1.svg');
+  --casca-fios-2: url('/fundos/fios-2.svg');
+  --casca-fios-3: url('/fundos/fios-3.svg');
   /* Texto e controle que moram direto no azul. */
   --sobre-casca: #ffffff;
   --sobre-casca-suave: rgb(255 255 255 / 0.78);

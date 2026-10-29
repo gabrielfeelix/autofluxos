@@ -275,6 +275,8 @@ const PREFIXOS_ABERTOS = [
   // quem não entrou, e sem isto a imagem virava a tela de login.
   '/marcas-de-loja/',
   '/marcas-de-cardapio/',
+  // As tramas de fios de fundo (`scripts/fundos/gerar-fios.mjs`), usadas no site e no login.
+  '/fundos/',
   // As fotos das prévias da página inicial (Unsplash, uso comercial livre).
   '/fotos-do-site/',
   // As páginas de cada nicho do site, `/segmentos/[slug]`.

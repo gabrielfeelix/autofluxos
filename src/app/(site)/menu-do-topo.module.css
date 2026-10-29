@@ -253,7 +253,7 @@
   gap: 8px;
   padding: 20px;
   border-radius: 14px;
-  background: var(--casca-fios), linear-gradient(135deg, #1a3fb8, #3a6cf0);
+  background: var(--casca-fios-2), linear-gradient(135deg, #1a3fb8, #3a6cf0);
   color: #ffffff;
   text-decoration: none;
 }
