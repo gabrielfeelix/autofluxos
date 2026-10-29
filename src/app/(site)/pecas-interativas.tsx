@@ -26,7 +26,8 @@ export function useMovimentoReduzido(): boolean {
  * do hero: em vez de dizer "funciona em qualquer ramo", mostra. Pausa fora da
  * tela; sem movimento, fica na primeira.
  */
-export function PreviaQueTroca({ chaves, intervalo = 7000 }: { chaves: ChaveDaConversa[]; intervalo?: number }) {
+// 9 s: a conversa chega uma mensagem por vez (0,9 s cada) e ainda sobra tempo de ler o fim.
+export function PreviaQueTroca({ chaves, intervalo = 9000 }: { chaves: ChaveDaConversa[]; intervalo?: number }) {
   const [i, setI] = useState(0)
   const [visivel, setVisivel] = useState(true)
   const raiz = useRef<HTMLDivElement>(null)

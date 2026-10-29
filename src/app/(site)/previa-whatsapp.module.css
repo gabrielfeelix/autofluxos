@@ -53,14 +53,8 @@
   flex: 1;
   display: flex;
   flex-direction: column;
-  /*
-   * Como o WhatsApp rolado até o fim: a resposta depois do toque no botão é o
-   * que importa, então a conversa mais alta que a tela mostra o fim, e o topo
-   * some num degradê em vez de aparecer cortado embaixo do cabeçalho. (Antes
-   * era `safe flex-end`, começando do topo, e a resposta nova ficava fora.)
-   */
-  justify-content: flex-end;
-  mask-image: linear-gradient(180deg, transparent 0, #000 36px);
+  /* Começa da primeira mensagem; o componente rola até a última a cada uma que chega. */
+  justify-content: flex-start;
   gap: 5px;
   min-height: 0;
   padding: 8px 10px;
@@ -70,8 +64,8 @@
 /* Uma mensagem depois da outra, como numa conversa de verdade. */
 .linha {
   display: flex;
+  /* Cada mensagem entra quando é montada: o ritmo vem do componente, uma a cada 0,9 s. */
   animation: chega 0.32s cubic-bezier(0.44, 0, 0.56, 1) both;
-  animation-delay: calc(var(--i) * 0.55s + 0.1s);
 }
 
 .linha[data-lado='cliente'] {
@@ -127,6 +121,18 @@
 
 .pilha .balao {
   max-width: none;
+}
+
+/* O botão que a pessoa tocou fica verde, com o visto, como a escolha marcada no WhatsApp. */
+.botao[data-escolhido] {
+  background: #d9fdd3;
+  font-weight: 600;
+  color: #0b6b51;
+  transition: background 0.25s, color 0.25s;
+}
+
+.botao[data-escolhido] svg {
+  color: #0b6b51;
 }
 
 .botao {
