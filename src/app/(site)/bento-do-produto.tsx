@@ -2,156 +2,94 @@ import type { CSSProperties, ReactNode } from 'react'
 import b from './bento.module.css'
 
 /*
- * O bento "O que ele faz": as seis partes mais fortes do produto, cada uma
- * num cartão com palco de cor e uma tela animada em loop. Largos e estreitos
- * se alternam em zigue-zague. Toda a animação é CSS e para com movimento
- * reduzido. Fatos: `docs/FUNCIONALIDADES.md` e as features de `a743d066`
- * (fila por setor) e `79aa74f4` (IA do atendente).
+ * O bento "O que ele faz": as seis partes mais fortes do produto. Cada peça
+ * tem um tratamento próprio, como nos bentos premiados (Framer, Dev.Hire,
+ * Bolt, Gumroad): fundo claro, escuro, tingido ou da cor da marca; interface
+ * que sai pela borda em vez de janela centralizada; número gigante no lugar de
+ * tela; texto em cima ou embaixo. Toda a animação é CSS e para com movimento
+ * reduzido. Fatos: `docs/FUNCIONALIDADES.md`, `a743d066` (fila por setor) e
+ * `79aa74f4` (IA do atendente); 74% é o número medido da home.
  */
-
-/** `deitado`: texto de um lado, tela do outro (`invertido` troca os lados). `alto`: ocupa duas linhas. */
-type Forma = 'deitado' | 'invertido' | 'alto' | 'normal'
-type Peca = { titulo: string; texto: string; cor: string; forma: Forma; tela: ReactNode }
-
 export function BentoDoProduto({ cabeca }: { cabeca: ReactNode }) {
-  const pecas: Peca[] = [
-    {
-      titulo: 'Fluxos e chatbot',
-      texto: 'Monte o atendimento arrastando blocos. Teste na hora e publique sem programar.',
-      cor: '#1d4ed8',
-      forma: 'deitado',
-      tela: <TelaFluxo />,
-    },
-    {
-      titulo: 'IA que conhece o seu negócio',
-      texto: 'Responde pelo catálogo e pelas suas regras. Quando não sabe, chama a equipe.',
-      cor: '#e8743b',
-      forma: 'normal',
-      tela: <TelaIA />,
-    },
-    {
-      titulo: 'Inbox com fila por setor',
-      texto: 'Vendas, suporte e financeiro no mesmo número, cada um com a sua fila.',
-      cor: '#0e7490',
-      forma: 'alto',
-      tela: <TelaInbox />,
-    },
-    {
-      titulo: 'CRM e funil de vendas',
-      texto: 'Cada negociação com etapa, valor e responsável. O cartão anda junto com a conversa.',
-      cor: '#2f4a8a',
-      forma: 'invertido',
-      tela: <TelaFunil />,
-    },
-    {
-      titulo: 'Relatórios',
-      texto: 'Quanto o chatbot resolveu, quanto a equipe demorou para responder e quanto vendeu pelo chat.',
-      cor: '#334155',
-      forma: 'normal',
-      tela: <TelaRelatorio />,
-    },
-    {
-      titulo: 'Pagamento no chat',
-      texto: 'Link ou Pix na conversa, e a confirmação do banco chega sozinha.',
-      cor: '#0f8f6b',
-      forma: 'normal',
-      tela: <TelaPagamento />,
-    },
-  ]
-  // A ordem na grade: Fluxos largo e IA; Inbox alto à esquerda, pagamento e relatórios ao lado; CRM largo embaixo deles.
-  const ORDEM = [0, 1, 2, 5, 4, 3]
   return (
     <>
-    <div className={b.cabeca}>{cabeca}</div>
-    <div className={b.bento}>
-      {ORDEM.map((i, n) => {
-        const p = pecas[i]!
-        return (
-          <article
-            key={p.titulo}
-            className={b.peca}
-            data-forma={p.forma}
-            style={{ '--cor': p.cor, '--fios-x': `${-i * 230}px`, '--fios-y': `${-(i % 3) * 160}px` } as CSSProperties}
-            data-revela
-            data-como="escala"
-            data-atraso={n * 70}
-          >
-            <div className={b.palco} aria-hidden>
-              {p.tela}
-            </div>
-            <div className={b.pe}>
-              <small className={b.indice}>{String(n + 1).padStart(2, '0')}</small>
-              <h3>{p.titulo}</h3>
-              <p>{p.texto}</p>
-            </div>
-          </article>
-        )
-      })}
-    </div>
+      <div className={b.cabeca}>{cabeca}</div>
+      <div className={b.bento}>
+        <PecaFluxo />
+        <PecaIA />
+        <PecaInbox />
+        <PecaPagamento />
+        <PecaRelatorio />
+        <PecaFunil />
+      </div>
     </>
   )
 }
 
-/* ───────────── as telas ───────────── */
-
-function Janela({ titulo, children, className }: { titulo: string; children: ReactNode; className?: string }) {
+function Texto({ n, titulo, texto }: { n: number; titulo: string; texto: string }) {
   return (
-    <div className={`${b.janela} ${className ?? ''}`}>
-      <div className={b.barra}>
-        <i />
-        <i />
-        <i />
-        <span>{titulo}</span>
-      </div>
-      {children}
+    <div className={b.texto}>
+      <small className={b.indice}>{String(n).padStart(2, '0')}</small>
+      <h3>{titulo}</h3>
+      <p>{texto}</p>
     </div>
   )
 }
 
-/** O editor: gatilho, mensagem e pergunta que abre em dois caminhos; os blocos acendem em sequência e os fios correm. */
-function TelaFluxo() {
+function Peca({ forma, tom, atraso, children }: { forma: string; tom: string; atraso: number; children: ReactNode }) {
   return (
-    <Janela titulo="Fluxos · Boas-vindas" className={b.janelaLarga}>
-      <div className={b.fluxo}>
-        <svg className={b.fluxoFios} viewBox="0 0 560 170" preserveAspectRatio="none">
-          <path d="M120 85H160" />
-          <path d="M280 85H320" />
-          <path d="M440 85C460 85 460 40 480 40" />
-          <path d="M440 85C460 85 460 130 480 130" />
+    <article className={b.peca} data-forma={forma} data-tom={tom} data-revela data-como="escala" data-atraso={atraso}>
+      {children}
+    </article>
+  )
+}
+
+/* 01 · Fluxos: branco com a trama do editor; os blocos soltos, saindo pela borda. */
+function PecaFluxo() {
+  return (
+    <Peca forma="larga" tom="claro" atraso={0}>
+      <Texto n={1} titulo="Fluxos e chatbot" texto="Monte o atendimento arrastando blocos. Teste na hora e publique sem programar." />
+      <div className={b.canvas} aria-hidden>
+        <svg className={b.fluxoFios} viewBox="0 0 640 220" preserveAspectRatio="none">
+          <path d="M150 110H200" />
+          <path d="M330 110H380" />
+          <path d="M510 110C540 110 540 50 570 50" />
+          <path d="M510 110C540 110 540 170 570 170" />
         </svg>
-        <span className={b.bloco} style={{ '--n': 0, left: '0%', top: '34%' } as CSSProperties}>
+        <span className={b.bloco} style={{ '--n': 0, left: '2%', top: '40%' } as CSSProperties}>
           <small>Gatilho</small>
           Palavra &quot;oi&quot;
         </span>
-        <span className={b.bloco} style={{ '--n': 1, left: '28.5%', top: '34%' } as CSSProperties}>
+        <span className={b.bloco} style={{ '--n': 1, left: '31%', top: '40%' } as CSSProperties}>
           <small>Mensagem</small>
           Olá, {'{nome}'}!
         </span>
-        <span className={b.bloco} style={{ '--n': 2, left: '57%', top: '22%' } as CSSProperties}>
+        <span className={b.bloco} style={{ '--n': 2, left: '59%', top: '28%' } as CSSProperties}>
           <small>Pergunta</small>
           <span className={b.opcoes}>
             <i>Ver produtos</i>
             <i>Falar com alguém</i>
           </span>
         </span>
-        <span className={`${b.bloco} ${b.blocoFim}`} style={{ '--n': 3, right: '0%', top: '8%' } as CSSProperties}>
+        <span className={b.bloco} style={{ '--n': 3, left: '89%', top: '12%' } as CSSProperties}>
           <small>IA</small>
           Catálogo
         </span>
-        <span className={`${b.bloco} ${b.blocoFim}`} style={{ '--n': 3, right: '0%', top: '62%' } as CSSProperties}>
+        <span className={b.bloco} style={{ '--n': 3, left: '89%', top: '66%' } as CSSProperties}>
           <small>Equipe</small>
           Vendas
         </span>
       </div>
-    </Janela>
+    </Peca>
   )
 }
 
-/** A IA: o cliente pergunta, ela consulta o catálogo (pontinhos) e responde com o produto. */
-function TelaIA() {
+/* 02 · IA: escuro, a conversa flutuando, sem janela. */
+function PecaIA() {
   return (
-    <Janela titulo="WhatsApp · Pet Amigo">
-      <div className={b.conversa}>
+    <Peca forma="normal" tom="escuro" atraso={70}>
+      <Texto n={2} titulo="IA que conhece o seu negócio" texto="Responde pelo catálogo e pelas suas regras. Quando não sabe, chama a equipe." />
+      <div className={b.conversaSolta} aria-hidden>
         <span className={b.balaoCliente}>Tem ração para filhote de porte médio?</span>
         <span className={b.consultando}>
           <i />
@@ -166,131 +104,141 @@ function TelaIA() {
           R$ 189,90 · 4 na prateleira
         </span>
       </div>
-    </Janela>
+    </Peca>
   )
 }
 
-/** O Inbox: a aba do setor desliza entre Vendas, Suporte e Financeiro, e a fila troca junto. */
-function TelaInbox() {
+/* 03 · Inbox: tingido, a fila saindo pela borda de baixo, a aba do setor deslizando. */
+function PecaInbox() {
   const filas = [
     [
       ['MC', 'Marina Costa', 'Dá para parcelar?', 'Ana'],
       ['JP', 'Júlia Pereira', 'Tem na cor preta?', 'espera 1 min'],
       ['TS', 'Tiago Souza', 'Entregam em Maringá?', 'Diego'],
       ['LR', 'Lucas Rocha', 'Quero o modelo maior', 'chatbot'],
+      ['NB', 'Nina Barros', 'Chega até sexta?', 'Ana'],
+      ['OF', 'Otávio Faria', 'Tem desconto à vista?', 'espera 4 min'],
+      ['HS', 'Helena Sá', 'Qual o prazo de troca?', 'Diego'],
     ],
     [
       ['AL', 'André Lima', 'Parou de esquentar', 'Bruno'],
       ['TS', 'Tânia Silva', 'Como troco a peça?', 'espera 3 min'],
       ['PM', 'Paulo Melo', 'Manual em português?', 'chatbot'],
       ['FN', 'Fábio Nunes', 'A garantia cobre?', 'Bruno'],
+      ['GR', 'Gil Ramos', 'Veio sem o cabo', 'Bruno'],
+      ['DM', 'Davi Matos', 'Não liga mais', 'espera 6 min'],
+      ['RC', 'Rita Cunha', 'Precisa de assistência?', 'chatbot'],
     ],
     [
       ['RS', 'Rafael Souza', 'Segue o comprovante', 'Carla'],
       ['CB', 'Carla Brito', 'Preciso da nota', 'espera 2 min'],
       ['VM', 'Vera Moura', 'Boleto venceu', 'chatbot'],
       ['EO', 'Edu Oliveira', 'Dá para dividir?', 'Carla'],
+      ['IS', 'Iara Santos', 'Paguei duas vezes', 'Carla'],
+      ['MP', 'Mauro Pinto', 'Quero estornar', 'espera 1 min'],
+      ['LS', 'Luna Serra', 'Mudou o CNPJ', 'chatbot'],
     ],
   ]
   return (
-    <Janela titulo="Inbox">
-      <div className={b.setores}>
-        <span className={b.setorAtivo} />
-        <span>Vendas</span>
-        <span>Suporte</span>
-        <span>Financeiro</span>
-      </div>
-      <div className={b.filas}>
-        {filas.map((fila, f) => (
-          <div key={f} className={b.fila} style={{ '--f': f } as CSSProperties}>
-            {fila.map(([sigla, nome, texto, quem]) => (
-              <span key={nome} className={b.linha}>
-                <i>{sigla}</i>
-                <span>
-                  <b>{nome}</b>
-                  {texto}
-                </span>
-                <em data-espera={quem!.startsWith('espera') || undefined}>{quem}</em>
-              </span>
-            ))}
-          </div>
-        ))}
-      </div>
-    </Janela>
-  )
-}
-
-/** O funil: o cartão da Marina atravessa as etapas, e o total do ganho sobe quando ele chega. */
-function TelaFunil() {
-  return (
-    <Janela titulo="Negociações · Funil comercial" className={b.janelaLarga}>
-      <div className={b.funil}>
-        {['Novo lead', 'Proposta', 'Ganho'].map((c, i) => (
-          <div key={c} className={b.coluna}>
-            <small>{c}</small>
-            {i === 0 && <span className={b.cartaoParado}>André · R$ 480</span>}
-            {i === 1 && <span className={b.cartaoParado}>Tiago · R$ 1.290</span>}
-            {i === 2 && <span className={b.cartaoParado}>Rafael · R$ 890</span>}
-          </div>
-        ))}
-        <span className={b.cartaoAnda}>
-          <i>MC</i>
-          <span>
-            <b>Marina</b>
-            R$ 268,80
-          </span>
-        </span>
-      </div>
-    </Janela>
-  )
-}
-
-/** Os relatórios: os números medidos e as barras de conversas por hora crescendo. */
-function TelaRelatorio() {
-  // Números medidos da home (comentário de `SecaoNumeros`); as barras são ilustrativas.
-  const barras = [18, 30, 52, 74, 88, 70, 62, 80, 94, 66, 40, 26]
-  return (
-    <Janela titulo="Análise · Atendimento" className={b.janelaLarga}>
-      <div className={b.relatorio}>
-        <div className={b.kpis}>
-          <span>
-            <b>74%</b>
-            sem precisar da equipe
-          </span>
-          <span>
-            <b>4 s</b>
-            resposta do chatbot
-          </span>
-          <span>
-            <b>1 em 6</b>
-            fora do horário
-          </span>
+    <Peca forma="alta" tom="tingido" atraso={140}>
+      <Texto n={3} titulo="Inbox com fila por setor" texto="Vendas, suporte e financeiro no mesmo número, cada um com a sua fila." />
+      <div className={b.inbox} aria-hidden>
+        <div className={b.setores}>
+          <span className={b.setorAtivo} />
+          <span>Vendas</span>
+          <span>Suporte</span>
+          <span>Financeiro</span>
         </div>
-        <div className={b.grafico}>
-          {barras.map((h, i) => (
-            <i key={i} style={{ '--h': `${h}%`, '--n': i } as CSSProperties} />
+        <div className={b.filas}>
+          {filas.map((fila, f) => (
+            <div key={f} className={b.fila} style={{ '--f': f } as CSSProperties}>
+              {fila.map(([sigla, nome, texto, quem]) => (
+                <span key={nome} className={b.linha}>
+                  <i>{sigla}</i>
+                  <span>
+                    <b>{nome}</b>
+                    {texto}
+                  </span>
+                  <em data-espera={quem!.startsWith('espera') || undefined}>{quem}</em>
+                </span>
+              ))}
+            </div>
           ))}
         </div>
       </div>
-    </Janela>
+    </Peca>
   )
 }
 
-/** O pagamento: o link na conversa e o selo que vira "Pago" com a confirmação do banco. */
-function TelaPagamento() {
+/* 04 · Pagamento: a cor da marca inteira, o valor em tipografia gigante e o selo que vira pago. */
+function PecaPagamento() {
   return (
-    <Janela titulo="WhatsApp · Marina Costa">
-      <div className={b.conversa}>
-        <span className={b.link}>
-          <small>autofluxos.4yu.com.br/pagar</small>
-          <b>Pedido #1042 · R$ 268,80</b>
-          Pix ou cartão em até 6x
-        </span>
+    <Peca forma="normal" tom="marca" atraso={210}>
+      <div className={b.valor} aria-hidden>
+        <small>Pedido #1042 · link de pagamento</small>
+        <strong>R$ 268,80</strong>
         <span className={b.situacao}>
           <span className={b.aguardando}>Aguardando pagamento</span>
           <span className={b.pago}>✓ Pago no Pix às 10:45</span>
         </span>
       </div>
-    </Janela>
+      <Texto n={4} titulo="Pagamento no chat" texto="Link ou Pix na conversa, e a confirmação do banco chega sozinha." />
+    </Peca>
+  )
+}
+
+/* 05 · Relatórios: branco, o número medido enorme e as barras embaixo. */
+function PecaRelatorio() {
+  const barras = [22, 34, 50, 70, 86, 64, 58, 78, 92, 66, 44, 28]
+  return (
+    <Peca forma="normal" tom="claro" atraso={280}>
+      <div className={b.numero} aria-hidden>
+        <strong>74%</strong>
+        <span>das conversas terminam sem precisar da equipe</span>
+      </div>
+      <div className={b.grafico} aria-hidden>
+        {barras.map((h, i) => (
+          <i key={i} style={{ '--h': `${h}%`, '--n': i } as CSSProperties} />
+        ))}
+      </div>
+      <Texto n={5} titulo="Relatórios" texto="Quanto o chatbot resolveu, quanto a equipe demorou e quanto vendeu pelo chat." />
+    </Peca>
+  )
+}
+
+/* 06 · CRM: índigo com fios, o funil saindo pela borda da direita e o cartão atravessando. */
+function PecaFunil() {
+  const colunas: [string, string, string[]][] = [
+    ['Novo lead', 'R$ 3.120', ['André · R$ 480', 'Bia · R$ 210']],
+    ['Proposta', 'R$ 5.940', ['Tiago · R$ 1.290']],
+    ['Ganho', 'R$ 3.420', ['Rafael · R$ 890', 'Lia · R$ 640']],
+    ['Pós-venda', 'R$ 1.980', ['Caio · R$ 320']],
+  ]
+  return (
+    <Peca forma="larga" tom="indigo" atraso={350}>
+      <Texto n={6} titulo="CRM e funil de vendas" texto="Cada negociação com etapa, valor e responsável. O cartão anda junto com a conversa." />
+      <div className={b.funil} aria-hidden>
+        {colunas.map(([coluna, total, cartoes]) => (
+          <div key={coluna} className={b.coluna}>
+            <small>
+              {coluna}
+              <b>{total}</b>
+            </small>
+            {cartoes.map((c) => (
+              <span key={c} className={b.cartaoParado}>
+                {c}
+              </span>
+            ))}
+          </div>
+        ))}
+        <span className={b.cartaoAnda}>
+          <i>MC</i>
+          <span>
+            <b>Marina Costa</b>
+            R$ 268,80
+          </span>
+        </span>
+      </div>
+    </Peca>
   )
 }
