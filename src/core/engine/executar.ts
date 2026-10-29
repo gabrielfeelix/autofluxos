@@ -1452,6 +1452,7 @@ function avancar(
           motivo: interpolar(no.data.motivo, s.vars),
           // Só quando o bloco escolheu alguém; ausente segue avisando a equipe.
           ...(no.data.avisarUsuarioId ? { avisarUsuarioId: no.data.avisarUsuarioId } : {}),
+          ...(no.data.equipeId ? { equipeId: no.data.equipeId } : {}),
         })
         s.noAtual = no.id
         s.status = 'humano'

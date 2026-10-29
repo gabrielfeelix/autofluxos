@@ -121,6 +121,8 @@ export type Lead = {
   aguardando: { motivo: string; desde: string } | null
   /** Quem assumiu este contato. `null` = ninguém. */
   atribuidoA: string | null
+  /** Em que fila de setor a conversa está (0157). `null` = fila geral. */
+  setorId: string | null
   /** Ver a 0049. `estadoEfetivo` já considera o prazo de um adiamento vencido. */
   estado: 'aberta' | 'adiada' | 'resolvida'
   estadoEfetivo: 'aberta' | 'adiada' | 'resolvida'
@@ -379,6 +381,7 @@ type Linha = {
   porta_de_entrada_em: string | null
   ultima_direcao: string | null
   atribuido_a: string | null
+  equipe_id?: string | null
   estado?: string | null
   estado_efetivo?: string | null
   adiada_ate?: string | null
@@ -401,7 +404,7 @@ type Linha = {
 // tipo para saber o formato do retorno, e concatenação vira `string` genérica,
 // aí o tipo do `data` desanda e o `tsc` acusa.
 const COLUNAS =
-  'contact_id, client_id, wa_id, nome, nome_real, notas, campos, criado_em, ultima_em, ultima_entrada_em, ultima_direcao, ultimo_texto, ultimo_tipo, ultimo_autor_tipo, ultimo_autor_nome, handoff_motivo, handoff_em, ultima_entregue, automacao_ativa, atribuido_a, estado, estado_efetivo, adiada_ate, adiada_nota, porta_de_entrada_em, ultima_situacao, ultima_e_reacao'
+  'contact_id, client_id, wa_id, nome, nome_real, notas, campos, criado_em, ultima_em, ultima_entrada_em, ultima_direcao, ultimo_texto, ultimo_tipo, ultimo_autor_tipo, ultimo_autor_nome, handoff_motivo, handoff_em, ultima_entregue, automacao_ativa, atribuido_a, estado, estado_efetivo, adiada_ate, adiada_nota, porta_de_entrada_em, ultima_situacao, ultima_e_reacao, equipe_id'
 
 /**
  * `campos` é `jsonb`: o banco aceita qualquer coisa ali. Hoje só o motor
@@ -461,6 +464,7 @@ function paraLead(linha: Linha): Lead {
         ? { motivo: linha.handoff_motivo, desde: linha.handoff_em }
         : null,
     atribuidoA: linha.atribuido_a,
+    setorId: linha.equipe_id ?? null,
     estado: (linha.estado ?? 'aberta') as 'aberta' | 'adiada' | 'resolvida',
     estadoEfetivo: (linha.estado_efetivo ?? linha.estado ?? 'aberta') as
       | 'aberta'
@@ -2039,6 +2043,25 @@ export async function donoDoContato(
   if (error) throw new Error(`não foi possível saber de quem é a conversa: ${error.message}`)
   if (!data) return undefined
   return (data as { atribuido_a: string | null }).atribuido_a
+}
+
+/** Dono e setor da conversa agora. `undefined` quando o contato não é desta conta. */
+export async function donoESetorDoContato(
+  clienteId: string,
+  contatoId: string,
+): Promise<{ dono: string | null; setor: string | null } | undefined> {
+  const { data, error } = await db()
+    .from('contacts')
+    .select('atribuido_a, equipe_id')
+    .eq('id', contatoId)
+    .eq('client_id', clienteId)
+    .maybeSingle()
+
+  if (ehIdInvalido(error)) return undefined
+  if (error) throw new Error(`não foi possível saber de quem é a conversa: ${error.message}`)
+  if (!data) return undefined
+  const linha = data as { atribuido_a: string | null; equipe_id: string | null }
+  return { dono: linha.atribuido_a, setor: linha.equipe_id }
 }
 
 /**

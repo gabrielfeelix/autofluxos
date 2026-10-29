@@ -635,6 +635,15 @@ export const noHandoffSchema = z.object({
      */
     avisarUsuarioId: z.string().optional(),
     /**
+     * Para a fila de que setor (equipe) a conversa vai.
+     *
+     * **Ausente = a fila geral**, que é como todo grafo publicado antes da 0157
+     * se comporta. Com setor, só membro dele recebe a conversa pela
+     * distribuição, e a carteira só vale se o dono for do setor (ver
+     * `core/distribuicao-por-setor.ts`). Equipe arquivada vale como ausente.
+     */
+    equipeId: z.string().optional(),
+    /**
      * Quanto tempo sem a equipe falar até a conversa voltar ao bot.
      *
      * Três valores possíveis, e os três são decisões diferentes:

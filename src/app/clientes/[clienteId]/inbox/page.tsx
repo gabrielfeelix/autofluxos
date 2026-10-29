@@ -6,6 +6,7 @@ import { notFound } from 'next/navigation'
 import { membrosDaConta, type MembroDaConta } from '@/server/repos/usuarios'
 import { sessaoAtual } from '@/server/sessao'
 import { acessoCompleto } from '@/server/permissoes'
+import { equipesPorMembro, listarEquipes } from '@/server/repos/equipes'
 import { alcanceDaTela, espiando, quemPossoEspiar } from '@/server/espiar'
 import { FaixaDeEspiar, MenuDeEspiar } from '@/components/inbox/espiar'
 import { alcancaDono } from '@/core/permissoes'
@@ -634,7 +635,7 @@ async function Conteudo({
    * Vem inteiro e não contado porque o número da barra é um botão: clicar abre
    * a lista com o cancelar. O teto de 200 está no repositório.
    */
-  const [agendadasDaConta, inicial] = await Promise.all([
+  const [agendadasDaConta, inicial, setores, equipesDeCada, acesso] = await Promise.all([
     listarAgendadasDaConta(clienteId),
     selecionado
       ? lerConversaAberta({
@@ -645,7 +646,19 @@ async function Conteudo({
           canal: canalPeloContato(selecionado.waId, canalDoContato.get(selecionado.contatoId)),
         })
       : Promise.resolve(null),
+    listarEquipes(clienteId),
+    equipesPorMembro(clienteId),
+    acessoCompleto(clienteId),
   ])
+
+  /*
+   * O setor que a fila abre (0157). Quem é de algum setor começa nos dele; o
+   * gestor, e quem não é de setor nenhum, começa em todos. É só o ponto de
+   * partida do filtro, não uma trava: ver `cabeNoSetor`.
+   */
+  const meusSetores = usuarioId ? (equipesDeCada.get(usuarioId) ?? []) : []
+  const gestor = acesso.papel === 'owner' || acesso.papel === 'admin'
+  const setorInicial = !gestor && meusSetores.length > 0 ? 'meus' : 'todos'
 
   /*
    * Conta a fila inteira quando ela veio, e não a página: a linha diz "N
@@ -704,6 +717,9 @@ async function Conteudo({
           agendadas={agendadasDaConta}
           canalDoContato={canalDoContato}
           menuDeEspiar={menuDeEspiar}
+          setores={setores.map(({ id, nome }) => ({ id, nome }))}
+          meusSetores={meusSetores}
+          setorInicial={setorInicial}
         />
       }
       conversa={
@@ -717,6 +733,7 @@ async function Conteudo({
           inicial={inicial}
           clienteId={clienteId}
           equipe={equipe}
+          setores={setores.map(({ id, nome }) => ({ id, nome }))}
           usuarioId={usuarioId}
           etiquetas={etiquetas}
           temAutomacao={temAutomacao}

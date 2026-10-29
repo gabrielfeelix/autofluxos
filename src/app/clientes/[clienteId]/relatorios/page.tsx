@@ -28,6 +28,7 @@ import { comentariosDoPeriodo } from '@/server/repos/avaliacoes'
 import { lojaVisivel } from '@/server/repos/recursos'
 import {
   atendimentosPorPessoa,
+  atendimentosPorSetor,
   conversasPorCanal,
   faixasDeEspera,
   horariosDoPeriodo,
@@ -147,6 +148,7 @@ export default async function Pagina({
   const horarios = await horariosDoPeriodo(clienteId, periodo, responsaveis)
   const canais = await conversasPorCanal(clienteId, periodo, responsaveis)
   const espera = await faixasDeEspera(clienteId, periodo, responsaveis)
+  const setores = await atendimentosPorSetor(clienteId, periodo, responsaveis)
   const origens = await origemDosContatos(clienteId, periodo, responsaveis)
   // Só onde o Comércio aparece no menu, a mesma regra da barra lateral: conta
   // que desligou a Loja não tem card de produto para contar.
@@ -384,6 +386,38 @@ export default async function Pagina({
                   n: p.atendimentos,
                   valor: p.fechados,
                   detalhe: `${p.fechados} de ${p.atendimentos} resolvidos`,
+                }))}
+              />
+            ),
+          },
+        ]
+      : []),
+    ...(setores.length > 0
+      ? [
+          {
+            id: 'setores',
+            titulo: 'Por setor',
+            largura: 'metade' as const,
+            conteudo: (
+              <ListaEmBarras
+                titulo="Por setor"
+                desenho="atendentes"
+                subtitulo="Conversas que o fluxo mandou para a fila de cada setor, e quanto esperaram pela primeira resposta."
+                ranking
+                valorEmDinheiro={false}
+                rotuloQuantidade="Conversas"
+                unidade={['conversa', 'conversas']}
+                vazio="Nenhuma conversa foi para um setor no período."
+                linhas={setores.map((s) => ({
+                  chave: s.equipeId,
+                  rotulo: s.nome,
+                  n: s.atendimentos,
+                  detalhe: [
+                    s.esperaMediana === null ? 'sem resposta ainda' : `espera típica de ${duracaoCurta(s.esperaMediana)}`,
+                    s.semResposta > 0 ? `${s.semResposta} sem resposta` : null,
+                  ]
+                    .filter(Boolean)
+                    .join(' · '),
                 }))}
               />
             ),
@@ -754,4 +788,13 @@ const COR_DO_CANAL: Record<string, string> = {
   instagram: 'var(--marca-instagram)',
   telegram: 'var(--marca-telegram)',
   site: DEFINICAO_DO_CANAL.site.cor,
+}
+
+/** "4 min", "1 h 20 min": a espera típica de um setor, em linguagem de gente. */
+function duracaoCurta(segundos: number): string {
+  const minutos = Math.max(1, Math.round(segundos / 60))
+  if (minutos < 60) return `${minutos} min`
+  const horas = Math.floor(minutos / 60)
+  const resto = minutos % 60
+  return resto === 0 ? `${horas} h` : `${horas} h ${resto} min`
 }

@@ -359,6 +359,7 @@ export function Editor({
   etapas,
   etiquetas,
   equipe,
+  setores,
   horarioConfigurado,
   retomadaDaConta,
   fluxos,
@@ -397,6 +398,8 @@ export function Editor({
   etiquetas: EtiquetaDoCliente[]
   /** Quem atende, para o handoff poder endereçar o aviso a uma pessoa. */
   equipe: MembroDoCliente[]
+  /** As equipes da conta, que o handoff oferece como setor. */
+  setores: MembroDoCliente[]
   /** A conta tem horário de atendimento? O bloco de handoff usa. */
   horarioConfigurado: boolean
   /**
@@ -2169,6 +2172,7 @@ export function Editor({
                 etapas={etapas}
                 etiquetas={etiquetas}
                 equipe={equipe}
+                setores={setores}
                 horarioConfigurado={horarioConfigurado}
                 retomadaDaConta={retomadaDaConta}
                 fluxos={fluxos}

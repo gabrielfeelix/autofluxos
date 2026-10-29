@@ -428,6 +428,8 @@ export type Acao =
        * servidor, porque isso é uma pergunta ao banco.
        */
       avisarUsuarioId?: string
+      /** O setor pedido pelo bloco. O servidor confere se a equipe é da conta. */
+      equipeId?: string
     }
   /**
    * O desenho acabou.

@@ -8,7 +8,7 @@ import { dentroDoTetoDaConta, RECADO_DO_TETO_DA_CONTA } from '@/server/limite'
 import { recusaDoPlano } from './recursos-do-plano'
 import { podeLigar } from '@/core/entrada'
 import { destinoPodeReceber, recusaParaLigar } from './repos/entrada'
-import { podeResponderAgora } from './distribuir-atendimento'
+import { distribuirSeSemDono, podeResponderAgora } from './distribuir-atendimento'
 import { revalidatePath } from 'next/cache'
 import { headers } from 'next/headers'
 import { redirect } from 'next/navigation'
@@ -74,6 +74,7 @@ import {
   alterarAutomacaoDoContato,
   registrarSaida,
   atribuirSeSemDono,
+  definirSetorDoContato,
 } from './repos/conversas'
 import { travarContato } from './repos/travas'
 import { anotar, RELIGOU_O_BOT } from './repos/eventos'
@@ -112,7 +113,8 @@ import {
   revogarLink,
   type LinkDoFluxo,
 } from './repos/compartilhar'
-import { acharModelo } from '@/exemplos/modelos'
+import { acharModelo, comSetoresDaConta } from '@/exemplos/modelos'
+import { listarEquipes, setorEhDaConta } from './repos/equipes'
 import {
   apagarEtiqueta,
   criarEtiqueta,
@@ -258,7 +260,8 @@ export async function acaoCriarFluxo(clienteId: string, formData: FormData) {
   // Nasce sem IA: contratar a Etapa 2 é ato da 4YU (ver `acaoAlternarIa`), e
   // uma caixinha aqui devolveria ao cliente o portão que acabou de sair da mão
   // dele.
-  const fluxo = await criarFluxo(clienteId, nome, modelo?.grafo ?? fluxoNovo(), false, canal)
+  const grafo = modelo?.setores ? comSetoresDaConta(modelo, await listarEquipes(clienteId)) : modelo?.grafo
+  const fluxo = await criarFluxo(clienteId, nome, grafo ?? fluxoNovo(), false, canal)
   revalidatePath(`/clientes/${clienteId}`)
   redirect(`/clientes/${clienteId}/fluxos/${fluxo.id}`)
 }
@@ -3265,6 +3268,43 @@ export async function acaoLiberarAtendimento(
 
   // Gesto rápido: sem recarregar a página, ver `gestoSemRecarregar`.
   return { ok: true }
+}
+
+/**
+ * Passa a conversa para a fila de um setor (0157), com o histórico junto.
+ *
+ * O histórico é do contato, e não da fila: mudar o setor não move nada, só
+ * muda quem enxerga a conversa como sua. O responsável atual sai, porque
+ * transferir para o Suporte é dizer "não é comigo", e a distribuição escolhe
+ * alguém do setor; na distribuição manual, ou sem ninguém disponível, a
+ * conversa espera sem responsável na fila do setor.
+ *
+ * Devolve quem ficou com ela, para a tela mostrar sem recarregar.
+ */
+export async function acaoPassarParaSetor(
+  clienteId: string,
+  contatoId: string,
+  equipeId: string,
+): Promise<{ ok: boolean; erro?: string; responsavel?: string | null }> {
+  const acesso = await exigirCapacidade(clienteId, 'atender', 'proprios')
+  if (recusou(acesso)) return acesso
+  if (!(await alcancaContato(clienteId, contatoId, acesso))) {
+    return { ok: false, erro: 'este contato não é deste cliente' }
+  }
+  if (!(await setorEhDaConta(clienteId, equipeId))) {
+    return { ok: false, erro: 'esse setor não existe mais nesta conta' }
+  }
+
+  if (!(await definirSetorDoContato(clienteId, contatoId, equipeId))) {
+    return { ok: false, erro: 'este contato não é deste cliente' }
+  }
+  // Solta e sobe a revisão, como devolver à fila (RB-15).
+  const revisao = await trocarControle(clienteId, contatoId, null)
+  if (revisao === null) return { ok: false, erro: 'este contato não é deste cliente' }
+  const responsavel = await distribuirSeSemDono(clienteId, contatoId)
+
+  // Gesto rápido: sem recarregar a página, ver `gestoSemRecarregar`.
+  return { ok: true, responsavel }
 }
 
 /**

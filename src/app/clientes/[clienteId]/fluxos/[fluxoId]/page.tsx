@@ -20,6 +20,7 @@ import { lojaDaConta, lojaNuvemshopDaConta } from '@/server/repos/lojas'
 import { temProdutoAtivo } from '@/server/repos/produtos'
 import { listarEtiquetas } from '@/server/repos/etiquetas'
 import { membrosDaConta } from '@/server/repos/usuarios'
+import { listarEquipes } from '@/server/repos/equipes'
 import { listarQuadros } from '@/server/repos/quadros'
 import { acharFluxo, acharVersao, listarFluxos, listarVersoes } from '@/server/repos/fluxos'
 import { contarRespostasPorVariavel } from '@/server/repos/respostas'
@@ -115,6 +116,8 @@ export default async function Pagina({
       erro instanceof Error ? erro.message : erro,
     )
   }
+  // Os setores (equipes) para o handoff mandar a conversa à fila certa.
+  const setores = (await listarEquipes(cliente.id)).map(({ id, nome }) => ({ id, nome }))
 
   /**
    * O editor não usa a moldura do cliente, é tela cheia por natureza, então
@@ -233,6 +236,7 @@ export default async function Pagina({
         )}
         etiquetas={etiquetas.map((e) => ({ id: e.id, nome: e.nome, cor: e.cor }))}
         equipe={equipe}
+        setores={setores}
         horarioConfigurado={cliente.horarioAtendimento !== null}
         retomadaDaConta={cliente.retomada}
         publicadaInicial={

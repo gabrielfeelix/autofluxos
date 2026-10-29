@@ -1,8 +1,10 @@
 import 'server-only'
-import { escolherAtendente, type Candidato } from '@/core/rodizio'
+import { decidirDistribuicao } from '@/core/distribuicao-por-setor'
+import type { Candidato, ModoDeEscolha } from '@/core/rodizio'
 import { atribuirContato } from './repos/conversas'
 import { ajustesDaConta, atendentesDaConta, marcarUltimoLead, ultimosLeadsDaConta } from './repos/distribuicao'
-import { contarAbertasPorAtendente, donoDoContato } from './repos/leads'
+import { membrosDoSetor } from './repos/equipes'
+import { contarAbertasPorAtendente, donoDoContato, donoESetorDoContato } from './repos/leads'
 import { membrosDaConta } from './repos/usuarios'
 
 /**
@@ -30,6 +32,14 @@ import { membrosDaConta } from './repos/usuarios'
  * "quem tem dono não entra na distribuição" é a carteira inteira em uma linha.
  *
  * ---------------------------------------------------------------------------
+ * O setor restringe (0157)
+ * ---------------------------------------------------------------------------
+ *
+ * Conversa na fila de um setor só vai para membro dele, e a carteira só ganha
+ * quando o dono é do setor. A regra inteira está em
+ * `core/distribuicao-por-setor.ts`; aqui é só a ida ao banco.
+ *
+ * ---------------------------------------------------------------------------
  * Nunca derruba o webhook
  * ---------------------------------------------------------------------------
  *
@@ -43,20 +53,28 @@ export async function distribuirSeSemDono(
   contatoId: string,
 ): Promise<string | null> {
   try {
+    const atual = await donoESetorDoContato(clienteId, contatoId)
+    // O contato não é desta conta.
+    if (atual === undefined) return null
+
+    const setor = atual.setor ? await membrosDoSetor(clienteId, atual.setor) : null
+    // Sem setor e com dono, a carteira decide sem ler mais nada.
+    if (setor === null && atual.dono !== null) return null
+
     const ajustes = await ajustesDaConta(clienteId)
-    if (ajustes.distribuicao === 'manual') return null
-    const modo = ajustes.distribuicao
+    const manual = ajustes.distribuicao === 'manual'
+    // Manual sem setor: ninguém é escolhido e nada é solto.
+    if (manual && setor === null) return null
+    const modo: ModoDeEscolha = ajustes.distribuicao === 'manual' ? 'balanceado' : ajustes.distribuicao
 
-    const dono = await donoDoContato(clienteId, contatoId)
-    // `undefined` = o contato não é desta conta. `string` = a carteira decide.
-    if (dono !== null) return null
-
-    const [equipe, configurados, abertas, ultimos] = await Promise.all([
-      membrosDaConta(clienteId),
-      atendentesDaConta(clienteId),
-      contarAbertasPorAtendente(clienteId),
-      modo === 'rodizio' ? ultimosLeadsDaConta(clienteId) : Promise.resolve(new Map<string, string>()),
-    ])
+    const [equipe, configurados, abertas, ultimos] = manual
+      ? [[], new Map(), new Map<string, number>(), new Map<string, string>()]
+      : await Promise.all([
+          membrosDaConta(clienteId),
+          atendentesDaConta(clienteId),
+          contarAbertasPorAtendente(clienteId),
+          modo === 'rodizio' ? ultimosLeadsDaConta(clienteId) : Promise.resolve(new Map<string, string>()),
+        ])
 
     const candidatos: Candidato[] = equipe.map((membro) => {
       const ajuste = configurados.get(membro.id)
@@ -71,18 +89,22 @@ export async function distribuirSeSemDono(
       }
     })
 
-    const escolhido = escolherAtendente(candidatos, modo)
+    const decisao = decidirDistribuicao({ dono: atual.dono, membrosDoSetor: setor, candidatos, modo })
     /*
      * Ninguém apto é resposta comum e legítima: equipe inteira ausente de
      * madrugada, todo mundo no teto numa terça de campanha. A conversa fica sem
      * dono e aparece no rail "Sem dono", que é a rede de segurança que já
      * existia antes de qualquer distribuição.
      */
-    if (!escolhido) return null
+    if (decisao.tipo === 'manter') return null
+    if (decisao.tipo === 'soltar') {
+      await atribuirContato(clienteId, contatoId, null)
+      return null
+    }
 
-    const deu = await atribuirContato(clienteId, contatoId, escolhido)
-    if (deu) await marcarUltimoLead(clienteId, escolhido)
-    return deu ? escolhido : null
+    const deu = await atribuirContato(clienteId, contatoId, decisao.usuarioId)
+    if (deu) await marcarUltimoLead(clienteId, decisao.usuarioId)
+    return deu ? decisao.usuarioId : null
   } catch (erro) {
     console.error(
       '[distribuicao] não foi possível distribuir a conversa',

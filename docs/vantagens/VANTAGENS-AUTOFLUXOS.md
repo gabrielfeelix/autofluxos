@@ -77,6 +77,11 @@ aqui fica o que o cliente ganha.
   respondeu o bot, a IA ou uma pessoa.
 - **Gestor acompanha a caixa de cada atendente** como ele vê, sem marcar
   nada como lido, com registro de quem olhou.
+- **Fila por setor**: o chatbot pergunta se é venda, suporte ou financeiro e
+  a conversa cai na fila daquele setor, e só quem é do setor recebe. Cada
+  atendente abre o Inbox nos setores dele, o gestor vê todos. Dá para
+  transferir para um setor, não só para uma pessoa, com o histórico junto, e
+  o relatório mostra volume e espera de cada setor. *(29/out/2026)*
 
 ## Automatizar
 

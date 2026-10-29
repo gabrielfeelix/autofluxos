@@ -87,6 +87,16 @@ export type TotaisDoPeriodo = {
   fechamentos: FechamentosDoPeriodo
 }
 
+/** Volume e espera de uma fila de setor (0157), pelo setor pedido no handoff. */
+export type AtendimentoDoSetor = {
+  equipeId: string
+  nome: string
+  atendimentos: number
+  /** Mediana, em segundos, até a primeira resposta. `null` sem nenhuma resposta. */
+  esperaMediana: number | null
+  semResposta: number
+}
+
 export type AtendimentoDaPessoa = {
   usuarioId: string
   atendimentos: number
@@ -375,6 +385,52 @@ export async function atendimentosPorPessoa(
     usuarioId: String(r.usuario_id),
     atendimentos: Number(r.atendimentos),
     fechados: Number(r.fechados),
+  }))
+}
+
+/*
+ * O setor vem do handoff, e não do contato: é o retrato de para onde a
+ * conversa foi pedida, que não muda quando alguém a transfere depois.
+ */
+const SQL_DOS_SETORES = `
+with ${LIMITES},
+fila as (
+  select h.equipe_id,
+         extract(epoch from (
+           (select min(m.ts) from public.messages m
+             where m.contact_id = c.id and m.direcao = 'saida' and m.ts > h.criado_em) - h.criado_em
+         )) as segundos
+    from public.handoffs h
+    join public.sessions s on s.id = h.session_id
+    join public.contacts c on c.id = s.contact_id,
+         lim
+   where c.client_id = $1
+     and h.equipe_id is not null
+     and h.criado_em >= lim.ini and h.criado_em < lim.fim
+     and ${NO_ESCOPO('c.atribuido_a')}
+)
+select f.equipe_id, e.nome,
+       count(*)::int as atendimentos,
+       percentile_cont(0.5) within group (order by f.segundos) as espera_mediana,
+       count(*) filter (where f.segundos is null)::int as sem_resposta
+  from fila f
+  join public.equipes e on e.id = f.equipe_id and e.client_id = $1
+ group by f.equipe_id, e.nome
+ order by atendimentos desc`
+
+/** Quantas conversas cada setor recebeu no período, e quanto esperaram. */
+export async function atendimentosPorSetor(
+  clienteId: string,
+  periodo: Periodo,
+  responsaveis: Responsaveis,
+): Promise<AtendimentoDoSetor[]> {
+  const { rows } = await bancoDeDados().query(SQL_DOS_SETORES, parametros(clienteId, periodo, responsaveis))
+  return (rows as Record<string, unknown>[]).map((r) => ({
+    equipeId: String(r.equipe_id),
+    nome: String(r.nome),
+    atendimentos: Number(r.atendimentos),
+    esperaMediana: numeroOuNulo(r.espera_mediana),
+    semResposta: Number(r.sem_resposta),
   }))
 }
 

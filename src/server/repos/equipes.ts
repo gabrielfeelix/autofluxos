@@ -199,6 +199,32 @@ export async function equipesPorMembro(clienteId: string): Promise<Map<string, s
   return saida
 }
 
+/**
+ * Quem é deste setor, ou `null` quando a equipe não é desta conta ou foi
+ * arquivada: aí a conversa volta a valer como fila geral, em vez de esperar
+ * uma equipe que não existe mais.
+ */
+export async function membrosDoSetor(clienteId: string, equipeId: string): Promise<Set<string> | null> {
+  const { data, error } = await db()
+    .from('equipes')
+    .select('id, equipe_membros(usuario_id)')
+    .eq('id', equipeId)
+    .eq('client_id', clienteId)
+    .is('arquivada_em', null)
+    .maybeSingle()
+
+  if (ehIdInvalido(error)) return null
+  if (error) throw new Error(`não foi possível ler o setor: ${error.message}`)
+  if (!data) return null
+  const linha = data as { equipe_membros: { usuario_id: string }[] }
+  return new Set(linha.equipe_membros.map((m) => m.usuario_id))
+}
+
+/** A equipe é desta conta e está viva? Toda escrita de setor passa por aqui. */
+export async function setorEhDaConta(clienteId: string, equipeId: string): Promise<boolean> {
+  return (await membrosDoSetor(clienteId, equipeId)) !== null
+}
+
 // ---------------------------------------------------------------------------
 // As capacidades
 // ---------------------------------------------------------------------------

@@ -9,6 +9,7 @@ import { cobrancaAmigavel } from './cobranca-amigavel'
 import { horarioELocal } from './horario-e-local'
 import { lembrete } from './lembrete'
 import { menuAtendimento } from './menu-atendimento'
+import { menuPorSetor, SETORES_DO_MENU } from './menu-por-setor'
 import { naoComparecimento } from './nao-comparecimento'
 import { pesquisaNps } from './pesquisa-nps'
 import { qualificarSdr } from './qualificar-sdr'
@@ -84,6 +85,11 @@ export type Modelo = {
    */
   sinonimos?: readonly string[]
   grafo: Fluxo
+  /**
+   * Blocos de handoff que pedem um setor, pelo nome da equipe. Ligados na
+   * criação por `comSetoresDaConta`; sem equipe com o nome, fila geral.
+   */
+  setores?: Readonly<Record<string, string>>
 }
 
 /**
@@ -307,6 +313,16 @@ export const MODELOS: Modelo[] = [
     grafo: menuAtendimento,
   },
   {
+    id: 'menu-por-setor',
+    nome: 'Menu de atendimento por setor',
+    resumo:
+      'Pergunta o assunto e manda a conversa para a fila de Vendas, Suporte ou Financeiro. Só quem é do setor recebe.',
+    etiquetas: ['WhatsApp', 'Instagram', 'Atendimento', 'Financeiro'],
+    sinonimos: ['setor', 'departamento', 'fila', 'menu', 'suporte', 'financeiro', 'vendas', 'transferir'],
+    grafo: menuPorSetor,
+    setores: SETORES_DO_MENU,
+  },
+  {
     id: 'qualificar-sdr',
     nome: 'Qualificar lead antes do time comercial',
     resumo:
@@ -412,4 +428,25 @@ export const MODELOS: Modelo[] = [
 
 export function acharModelo(id: string): Modelo | undefined {
   return MODELOS.find((modelo) => modelo.id === id)
+}
+
+const nomeComparavel = (nome: string) =>
+  nome.normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim().toLowerCase()
+
+/**
+ * O grafo do modelo com os setores ligados às equipes desta conta, pelo nome
+ * ("Financeiro" acha "financeiro"). Equipe que não existe deixa o bloco na
+ * fila geral, e o campo Setor do editor fica esperando a escolha.
+ */
+export function comSetoresDaConta(modelo: Modelo, equipes: readonly { id: string; nome: string }[]): Fluxo {
+  if (!modelo.setores) return modelo.grafo
+  const porNome = new Map(equipes.map((equipe) => [nomeComparavel(equipe.nome), equipe.id]))
+  return {
+    ...modelo.grafo,
+    nodes: modelo.grafo.nodes.map((no) => {
+      const nome = modelo.setores?.[no.id]
+      const equipeId = nome ? porNome.get(nomeComparavel(nome)) : undefined
+      return no.type === 'handoff' && equipeId ? { ...no, data: { ...no.data, equipeId } } : no
+    }),
+  }
 }

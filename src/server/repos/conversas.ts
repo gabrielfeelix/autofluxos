@@ -1204,10 +1204,12 @@ export async function registrarHandoff(
   sessaoId: string,
   motivo: string,
   origem: OrigemDoHandoff,
+  /** O setor pedido, como retrato para o relatório. Ver a 0157. */
+  equipeId: string | null = null,
 ): Promise<void> {
   const { error } = await db()
     .from('handoffs')
-    .insert({ session_id: sessaoId, motivo, origem })
+    .insert({ session_id: sessaoId, motivo, origem, ...(equipeId ? { equipe_id: equipeId } : {}) })
   if (error) throw new Error(`não foi possível registrar o handoff: ${error.message}`)
 }
 
@@ -1831,6 +1833,30 @@ export async function revisaoDoControle(
   if (error) return null
   const linha = data as { controle_revisao: number | null } | null
   return linha?.controle_revisao ?? null
+}
+
+/**
+ * Em que fila de setor a conversa está. `null` devolve à fila geral.
+ *
+ * Quem chama confere antes que a equipe é desta conta (`setorEhDaConta`): a
+ * chave estrangeira só garante que a equipe existe, não que é do vizinho.
+ */
+export async function definirSetorDoContato(
+  clienteId: string,
+  contatoId: string,
+  equipeId: string | null,
+): Promise<boolean> {
+  const { data, error } = await db()
+    .from('contacts')
+    .update({ equipe_id: equipeId })
+    .eq('id', contatoId)
+    .eq('client_id', clienteId)
+    .select('id')
+    .maybeSingle()
+
+  if (ehIdInvalido(error)) return false
+  if (error) throw new Error(`não foi possível mudar o setor da conversa: ${error.message}`)
+  return data !== null
 }
 
 /**

@@ -134,10 +134,15 @@ export function Assumir({
  */
 export function PassarPara({
   atribuir,
+  passarParaSetor,
   equipe,
+  setores = [],
 }: {
   atribuir: (formData: FormData) => Promise<{ ok: boolean; erro?: string }>
+  /** Para a fila de um setor (0157). Vem antes das pessoas na janela. */
+  passarParaSetor?: (equipeId: string) => Promise<{ ok: boolean; erro?: string }>
   equipe: { id: string; nome: string; presenca: string }[]
+  setores?: { id: string; nome: string }[]
 }) {
   /*
    * Passar era um `<form action>` com "…" no botão até o servidor redesenhar a
@@ -165,6 +170,23 @@ export function PassarPara({
       setErro(falha)
       if (falha) setPassadoPara(null)
     })
+  }
+
+  /*
+   * Para o setor, o responsável sai na hora e a fila muda; quem do setor fica
+   * com ela a distribuição decide no servidor, e chega pelo pulso da fila.
+   */
+  const transferirParaSetor = (setor: { id: string; nome: string }) => {
+    if (!passarParaSetor) return
+    setAberto(false)
+    setErro(null)
+    setPassadoPara(setor.nome)
+    void conversa
+      .agir({ setorId: setor.id, atribuidoA: null }, () => passarParaSetor(setor.id))
+      .then((falha) => {
+        setErro(falha)
+        if (falha) setPassadoPara(null)
+      })
   }
 
   return (
@@ -196,8 +218,63 @@ export function PassarPara({
         aberto={aberto}
         aoFechar={() => setAberto(false)}
         titulo="Transferir conversa"
-        descricao="A conversa é transferida para a pessoa escolhida, que passa a ser a responsável. O cliente não é avisado."
+        descricao={
+          setores.length > 0 && passarParaSetor
+            ? 'Para um setor, a conversa vai para a fila dele e alguém da equipe assume. Para uma pessoa, ela passa a ser a responsável. O histórico vai junto e o cliente não é avisado.'
+            : 'A conversa é transferida para a pessoa escolhida, que passa a ser a responsável. O cliente não é avisado.'
+        }
       >
+        {setores.length > 0 && passarParaSetor && (
+          <>
+            <p className="mb-1 text-[11px] font-bold tracking-[0.05em] text-muted uppercase">Setores</p>
+            <ul className="-mx-1 mb-3 flex flex-col">
+              {setores.map((setor) => {
+                const atual = setor.id === conversa.valor.setorId
+                return (
+                  <li key={setor.id}>
+                    <button
+                      type="button"
+                      disabled={atual}
+                      onClick={() => transferirParaSetor(setor)}
+                      className="flex w-full items-center gap-3 rounded-[10px] px-2 py-2 text-left transition hover:bg-surface disabled:cursor-default disabled:hover:bg-transparent"
+                    >
+                      <span
+                        aria-hidden
+                        className="flex size-8 shrink-0 items-center justify-center rounded-full bg-surface text-muted"
+                      >
+                        {/* Grupo de pessoas: uma fila, e não alguém. */}
+                        <svg
+                          viewBox="0 0 24 24"
+                          className="size-[16px]"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="1.8"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        >
+                          <circle cx="9" cy="8" r="3" />
+                          <path d="M3.5 19a5.5 5.5 0 0 1 11 0" />
+                          <path d="M16 5.2a3 3 0 0 1 0 5.6" />
+                          <path d="M17.5 14a5.5 5.5 0 0 1 3 5" />
+                        </svg>
+                      </span>
+                      <span className="min-w-0 flex-1">
+                        <span className="block truncate text-[13px] font-semibold text-ink">{setor.nome}</span>
+                        <span className="block text-[11px] text-dim">Fila do setor</span>
+                      </span>
+                      {atual && (
+                        <span className="shrink-0 rounded-full bg-surface px-2 py-0.5 text-[10.5px] font-semibold text-muted">
+                          Setor atual
+                        </span>
+                      )}
+                    </button>
+                  </li>
+                )
+              })}
+            </ul>
+            <p className="mb-1 text-[11px] font-bold tracking-[0.05em] text-muted uppercase">Pessoas</p>
+          </>
+        )}
         <ul className="-mx-1 flex max-h-[360px] flex-col overflow-y-auto">
           {equipe.map((membro) => {
             const atual = membro.id === conversa.valor.atribuidoA

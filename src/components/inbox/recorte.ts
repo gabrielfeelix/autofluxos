@@ -13,3 +13,28 @@ export function cabeNoRecorte(lead: Lead, estado: FiltroDeEstado, atribuicao: st
   if (atribuicao === 'sem-dono') return lead.atribuidoA === null
   return lead.atribuidoA === atribuicao
 }
+
+/**
+ * A conversa cabe no filtro de setor (0157)?
+ *
+ * `meus` é o padrão de quem é de algum setor: as filas dos setores dela, a
+ * fila geral e o que já é dela, mesmo vindo de outro setor. Esconder a fila
+ * geral deixaria sem ninguém a conversa que ainda não escolheu assunto.
+ */
+export function cabeNoSetor(
+  lead: Lead,
+  setor: string,
+  meusSetores: readonly string[],
+  usuarioId: string | null,
+): boolean {
+  if (setor === 'todos') return true
+  if (setor === 'sem-setor') return lead.setorId === null
+  if (setor === 'meus') {
+    return (
+      lead.setorId === null ||
+      meusSetores.includes(lead.setorId) ||
+      (usuarioId !== null && lead.atribuidoA === usuarioId)
+    )
+  }
+  return lead.setorId === setor
+}

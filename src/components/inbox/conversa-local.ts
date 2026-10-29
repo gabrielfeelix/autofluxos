@@ -47,6 +47,8 @@ export type Conversa = {
   aguardando: { motivo: string; desde: string } | null
   /** Ids das etiquetas manuais aplicadas. */
   etiquetas: string[]
+  /** A fila de setor (0157). Opcional: só a conversa aberta e a fila leem. */
+  setorId?: string | null
 }
 
 type Remendo = { valores: Partial<Conversa>; base: Partial<Conversa> }
@@ -269,6 +271,7 @@ type LinhaDaFila = {
   automacaoAtiva: boolean
   atribuidoA: string | null
   aguardando: Conversa['aguardando']
+  setorId: string | null
 }
 
 /**
@@ -286,6 +289,7 @@ export function linhaViva<T extends LinhaDaFila>(lead: T, todos: ReadonlyMap<str
     automacaoAtiva: lead.automacaoAtiva,
     atribuidoA: lead.atribuidoA,
     aguardando: lead.aguardando,
+    setorId: lead.setorId,
   })
   return {
     ...lead,
@@ -293,5 +297,6 @@ export function linhaViva<T extends LinhaDaFila>(lead: T, todos: ReadonlyMap<str
     automacaoAtiva: v.automacaoAtiva,
     atribuidoA: v.atribuidoA,
     aguardando: v.aguardando,
+    setorId: v.setorId ?? null,
   }
 }

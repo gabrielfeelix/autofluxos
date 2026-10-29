@@ -361,6 +361,7 @@ export function Painel({
   etapas = [],
   etiquetas = [],
   equipe = [],
+  setores = [],
   retomadaDaConta,
   horarioConfigurado = false,
   fluxos = [],
@@ -404,6 +405,8 @@ export function Painel({
   etiquetas?: EtiquetaDoCliente[]
   /** Quem atende, para escolher a quem endereçar o aviso do handoff. */
   equipe?: MembroDoCliente[]
+  /** As equipes da conta: o handoff manda a conversa para a fila de uma delas. */
+  setores?: MembroDoCliente[]
   /**
    * O que a conta decidiu sobre conversa parada em atendimento humano.
    *
@@ -2171,6 +2174,55 @@ export function Painel({
             aceitaVariavel
             conhecidas={variaveis}
           />
+          {/*
+            **Setor.** A fila para onde a conversa vai. Sem setor, a fila geral,
+            que é o que todo bloco publicado antes da 0157 faz. Só aparece
+            quando a conta tem equipe: sem nenhuma, não há o que escolher, e a
+            dica aponta onde criar.
+          */}
+          <div className="block">
+            <span className="mb-1.5 block text-[11px] font-bold tracking-[0.05em] text-muted uppercase">
+              Setor
+              <AjudaDoCampo
+                titulo="Setor"
+                secao="blocos"
+                texto="Para a fila de qual equipe a conversa vai."
+                alinhar="direita"
+                detalhes={
+                  <p>
+                    Com setor, só quem é da equipe recebe a conversa, e ela aparece na fila daquele
+                    setor no Inbox. Se o cliente já tinha um responsável de outro setor, a conversa
+                    passa para alguém do setor escolhido. Sem setor, vai para a fila geral.
+                  </p>
+                }
+              />
+            </span>
+            {setores.length > 0 ? (
+              <Dropdown
+                valor={no.data.equipeId ?? ''}
+                aoMudar={(v) => aoMudarDados({ equipeId: v === '' ? undefined : v })}
+                rotuloAcessivel="Setor que recebe esta conversa"
+                opcoes={[
+                  { valor: '', rotulo: 'Fila geral', detalhe: 'qualquer pessoa da equipe' },
+                  ...setores.map((setor) => ({ valor: setor.id, rotulo: setor.nome })),
+                ]}
+              />
+            ) : (
+              <span className="block text-[12px] leading-5 text-dim">
+                Para mandar a conversa à fila de um setor,{' '}
+                <a href={`/clientes/${clienteId}/ajustes/equipe`} className="font-semibold text-primary underline-offset-2 hover:underline">
+                  crie as equipes
+                </a>
+                .
+              </span>
+            )}
+            {no.data.equipeId && !setores.some((setor) => setor.id === no.data.equipeId) && (
+              <span className="mt-1.5 block text-[11px] leading-4 text-dim">
+                Este setor foi arquivado. A conversa vai para a fila geral até você escolher outro.
+              </span>
+            )}
+          </div>
+
           {/*
             **Avisar a equipe toda é o padrão, e continua sendo o certo na
             maioria dos handoffs**: quem estiver disponível pega. Escolher uma

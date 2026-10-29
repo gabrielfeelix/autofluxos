@@ -33,6 +33,7 @@ import { acaoAnotar } from '@/server/acoes-crm'
 import {
   acaoAssumirAtendimento,
   acaoAtribuirPara,
+  acaoPassarParaSetor,
   acaoAlternarAutomacaoDoLead,
   acaoEncerrarAtendimento,
   acaoLiberarAtendimento,
@@ -45,6 +46,8 @@ import type { MembroDaConta } from '@/server/repos/usuarios'
 type DaConta = {
   clienteId: string
   equipe: MembroDaConta[]
+  /** As filas de setor da conta (0157), para transferir para um setor. */
+  setores?: { id: string; nome: string }[]
   usuarioId: string | null
   etiquetas: EtiquetaEscolhivel[]
   temAutomacao: boolean
@@ -258,6 +261,7 @@ function ColunaDaConversa({
   dados,
   clienteId,
   equipe,
+  setores = [],
   usuarioId,
   etiquetas,
   temAutomacao,
@@ -284,6 +288,7 @@ function ColunaDaConversa({
           sessaoComPessoa: dados.comPessoa,
           aguardando: lead.aguardando,
           etiquetas: lead.etiquetasManuais.map((etiqueta) => etiqueta.id),
+          setorId: lead.setorId,
         }}
         usuarioId={usuarioId}
         temAutomacao={temAutomacao}
@@ -294,6 +299,7 @@ function ColunaDaConversa({
             clienteId={clienteId}
             dados={dados}
             equipe={equipe}
+            setores={setores}
             usuarioId={usuarioId}
             etiquetas={etiquetas}
             temAutomacao={temAutomacao}
@@ -365,6 +371,7 @@ function CabecalhoDaConversa({
   clienteId,
   dados,
   equipe,
+  setores,
   usuarioId,
   etiquetas,
   temAutomacao,
@@ -375,6 +382,7 @@ function CabecalhoDaConversa({
   /** No modo espiar o cabeçalho só informa: assumir, passar e as ações somem. */
   espiando: boolean
   equipe: MembroDaConta[]
+  setores: { id: string; nome: string }[]
   usuarioId: string | null
   etiquetas: EtiquetaEscolhivel[]
   temAutomacao: boolean
@@ -438,8 +446,13 @@ function CabecalhoDaConversa({
         o avião de papel que abre a janela da equipe, porque é raro e exige
         escolher quem. Transferir só aparece quando há para quem passar.
       */}
-      {!espiando && equipe.length > 1 && (
-        <PassarPara atribuir={acaoAtribuirPara.bind(null, clienteId, lead.contatoId)} equipe={equipe} />
+      {!espiando && (equipe.length > 1 || setores.length > 0) && (
+        <PassarPara
+          atribuir={acaoAtribuirPara.bind(null, clienteId, lead.contatoId)}
+          passarParaSetor={acaoPassarParaSetor.bind(null, clienteId, lead.contatoId)}
+          equipe={equipe}
+          setores={setores}
+        />
       )}
 
       {!espiando && (usuarioId || responsavel) && (

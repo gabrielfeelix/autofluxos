@@ -33,7 +33,7 @@ import { linhaViva, useRemendos } from "@/components/inbox/conversa-local";
 import { esquecerContadoresVivos, juntarComVivas, juntarNaPagina, naoLidasVivas, registrarEnvioLocal, useFilaViva, zerarNaoLidaViva } from "@/components/inbox/fila-viva";
 import { ENVIO, type Envio } from "@/components/inbox/sinal-de-conversa";
 import { ajustarContagem } from "@/components/design/contagens-local";
-import { cabeNoRecorte } from "@/components/inbox/recorte";
+import { cabeNoRecorte, cabeNoSetor } from "@/components/inbox/recorte";
 import { abrirConversa, preCarregarConversa, useAberta } from "@/components/inbox/aberta-local";
 import type { MensagemAgendada } from "@/server/repos/mensagens-agendadas";
 import { resumoDoMotivo } from "@/core/aviso-de-handoff";
@@ -78,6 +78,9 @@ export type Contagem = {
  * mostrando três porque as outras 37 estão na página 2. Aí os rails voltam a
  * ser `<Link>` e quem filtra é o servidor, como sempre fez.
  */
+const NENHUM_SETOR: { id: string; nome: string }[] = [];
+const NENHUM_ID: string[] = [];
+
 export function Fila({
   clienteId,
   leads: leadsDoServidor,
@@ -100,7 +103,16 @@ export function Fila({
   canalDoContato,
   menuDeEspiar,
   rotuloDeTodos = "Todos os atendentes",
+  setores = NENHUM_SETOR,
+  meusSetores = NENHUM_ID,
+  setorInicial = "todos",
 }: {
+  /** As equipes da conta, que são as filas de setor (0157). Vazio esconde o filtro. */
+  setores?: { id: string; nome: string }[];
+  /** Os setores de quem olha: o "Meus setores" do filtro. */
+  meusSetores?: string[];
+  /** `todos`, `meus`, `sem-setor` ou o id de um setor. */
+  setorInicial?: string;
   /** O olho do modo espiar, montado no servidor (`components/inbox/espiar.tsx`). */
   menuDeEspiar?: React.ReactNode;
   clienteId: string;
@@ -295,6 +307,12 @@ export function Fila({
    * pílulas aparecem, ver `TETO_DA_FILA_LOCAL`.
    */
   const [soNaoLidas, setSoNaoLidas] = useState(false);
+  /*
+   * O setor filtra aqui, no navegador, como "Não lidas": trocar de fila não
+   * redesenha a página. É padrão e não trava: quem é do Suporte começa vendo
+   * a fila dele e pode olhar as outras com um clique.
+   */
+  const [setor, setSetor] = useState(setorInicial);
   const [ordem, setOrdem] = useState<Ordem>("recentes");
 
   /*
@@ -513,8 +531,15 @@ export function Fila({
     };
   }, [local, digitado, clienteId]);
 
+  const nomeDoSetor = useMemo(() => new Map(setores.map((s) => [s.id, s.nome])), [setores]);
+  const doSetor = useCallback(
+    (lista: Lead[]) =>
+      setor === "todos" ? lista : lista.filter((lead) => cabeNoSetor(lead, setor, meusSetores, usuarioId)),
+    [setor, meusSetores, usuarioId],
+  );
+
   const naTela = useMemo(() => {
-    if (!local) return comFixadasNoTopo(leads, fixadaEm);
+    if (!local) return comFixadasNoTopo(doSetor(leads), fixadaEm);
     /*
      * Buscando, a lista é a fila inteira, não a aba aberta: quem procura
      * "9974" olhando "Abertas" não achava a conversa já resolvida. É o que o
@@ -522,12 +547,12 @@ export function Fila({
      */
     const termo = digitado.trim();
     const base = termo === "" ? recorte : local;
-    const recortada = soNaoLidas
+    const recortada = doSetor(soNaoLidas
       ? base.filter((lead) => semLerDe(lead.contatoId) > 0)
-      : base;
+      : base);
     const ditas = porMensagem.termo === termo ? porMensagem.ids : undefined;
     return comFixadasNoTopo(ordenar(procurar(recortada, digitado, ditas), ordem), fixadaEm);
-  }, [local, recorte, leads, soNaoLidas, semLerDe, ordem, digitado, fixadaEm, porMensagem]);
+  }, [local, recorte, leads, soNaoLidas, semLerDe, ordem, digitado, fixadaEm, porMensagem, doSetor]);
 
   const nomeDe = (id: string | null) =>
     id
@@ -719,6 +744,31 @@ export function Fila({
                 />
               )}
             </>
+          )}
+
+          {setores.length > 0 && (
+            <PilulaMenu
+              aria="Filtrar por setor"
+              escolhida={setor}
+              rotulo={
+                setor === "todos"
+                  ? "Todos os setores"
+                  : setor === "meus"
+                    ? "Meus setores"
+                    : setor === "sem-setor"
+                      ? "Fila geral"
+                      : (setores.find((s) => s.id === setor)?.nome ?? "Setor")
+              }
+              opcoes={[
+                { chave: "todos", rotulo: "Todos os setores" },
+                ...(meusSetores.length > 0
+                  ? [{ chave: "meus", rotulo: "Meus setores", descricao: "Os seus, a fila geral e as suas conversas" }]
+                  : []),
+                ...setores.map((s) => ({ chave: s.id, rotulo: s.nome })),
+                { chave: "sem-setor", rotulo: "Fila geral", descricao: "Conversas sem setor" },
+              ]}
+              aoEscolher={setSetor}
+            />
           )}
 
           {local && (
@@ -1034,9 +1084,21 @@ export function Fila({
                     óbvio, e em toda linha era ruído. O de outra pessoa fica,
                     porque é o que evita pegar conversa que já tem dono.
                   */}
-                  {nomeDe(lead.atribuidoA) && lead.atribuidoA !== usuarioId && (
+                  {/*
+                    O setor só aparece quando a pessoa olha mais de um: filtrada
+                    no Suporte, escrever "Suporte" em toda linha é ruído.
+                  */}
+                  {((nomeDe(lead.atribuidoA) && lead.atribuidoA !== usuarioId) ||
+                    (lead.setorId && setor !== lead.setorId && nomeDoSetor.get(lead.setorId))) && (
                     <span className="mt-0.5 block truncate text-[12px] text-dim">
-                      {`responsável: ${nomeDe(lead.atribuidoA)}`}
+                      {[
+                        lead.setorId && setor !== lead.setorId ? nomeDoSetor.get(lead.setorId) : null,
+                        nomeDe(lead.atribuidoA) && lead.atribuidoA !== usuarioId
+                          ? `responsável: ${nomeDe(lead.atribuidoA)}`
+                          : null,
+                      ]
+                        .filter(Boolean)
+                        .join(" · ")}
                     </span>
                   )}
                   {/*

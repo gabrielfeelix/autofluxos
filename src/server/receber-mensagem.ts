@@ -81,6 +81,7 @@ import {
   confirmarEntrega,
   registrarEntrada,
   registrarHandoff,
+  definirSetorDoContato,
   registrarSaida,
   trocarVersaoDaSessao,
   ultimaSessao,
@@ -96,6 +97,7 @@ import {
   type SessaoSalva,
   revisaoDoControle,
 } from './repos/conversas'
+import { setorEhDaConta } from './repos/equipes'
 import { ESPERA_DA_MENSAGEM_MS, travarContato } from './repos/travas'
 import { JANELA_DA_RAJADA_MS, textoDaRajada } from '@/core/rajada'
 import { comCitacao } from '@/core/citacao-para-ia'
@@ -1137,6 +1139,14 @@ async function avancarConversa(
      * acompanhar. Conta sem distribuição (ou sem ninguém disponível) segue sem
      * dono, como antes. Quem já tem dono não muda.
      */
+    /*
+     * Conversa nova começa na fila geral, e o menu do fluxo escolhe o setor.
+     *
+     * Sem isto, quem pediu o Financeiro em março voltaria em outubro preso à
+     * fila do Financeiro para perguntar de um produto. A retomada é a mesma
+     * conversa continuando, e mantém o setor em que estava.
+     */
+    if (!retomada) await definirSetorDoContato(canalSalvo.clienteId, contato.id, null)
     await distribuirSeSemDono(canalSalvo.clienteId, contato.id)
     // Depois de criar a sessão de propósito: o contador é da tela, e nunca pode
     // ficar entre a escolha do fluxo e a conversa existir.
@@ -2841,7 +2851,15 @@ async function aplicar(
         // Prevista: o bloco está no fluxo porque alguém o pôs ali. Um fluxo que
         // termina em "falar com a recepção" é o produto funcionando, e contá-lo
         // como falha faria a operação saudável parecer quebrada.
-        await registrarHandoff(sessaoId, acao.motivo, 'prevista')
+        {
+          // O setor do bloco só vale se a equipe for desta conta e estiver
+          // viva: grafo copiado de outra conta, ou equipe arquivada depois de
+          // publicar, cai na fila geral em vez de numa fila que ninguém vê.
+          const setor =
+            acao.equipeId && (await setorEhDaConta(contato.clienteId, acao.equipeId)) ? acao.equipeId : null
+          if (setor) await definirSetorDoContato(contato.clienteId, contato.id, setor)
+          await registrarHandoff(sessaoId, acao.motivo, 'prevista', setor)
+        }
         await distribuirSeSemDono(contato.clienteId, contato.id)
         // O bloco pode ter endereçado o aviso a alguém; sem isso, a equipe.
         await avisarDoHandoff(acao.motivo, acao.avisarUsuarioId)
