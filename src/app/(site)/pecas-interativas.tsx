@@ -442,9 +442,8 @@ export function VitrineDeNichos() {
             onClick={() => setAtivo(i)}
           >
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={n.foto} alt="" width={96} height={128} loading="lazy" />
-            <span>
-              <small>{String(i + 1).padStart(2, '0')}</small>
+            <img src={n.foto} alt="" width={600} height={400} loading="lazy" />
+            <span className={x.vitrineAbaTexto}>
               <strong>{n.nome}</strong>
               <em>{n.quem}</em>
             </span>
@@ -454,15 +453,11 @@ export function VitrineDeNichos() {
       </div>
 
       <div className={x.vitrinePalco} id="palco-dos-ramos" role="tabpanel" aria-labelledby={`aba-${nicho.slug}`}>
-        {NICHOS_DO_SITE.map((n, i) => (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img key={n.slug} className={x.vitrineFoto} src={n.foto} alt="" width={720} height={960} loading="lazy" data-ativa={i === ativo || undefined} />
-        ))}
         <div className={x.vitrineTexto} key={nicho.slug}>
-          <p className={x.vitrineQuem}>{nicho.quem}</p>
+          <p className={x.vitrineQuem}>Para {nicho.nome.toLowerCase()}</p>
           <h3>{nicho.titulo}</h3>
           <p className={x.vitrineSub}>{nicho.subtitulo}</p>
-          <p className={x.vitrineLegenda}>Vem pronto</p>
+          <p className={x.vitrineLegenda}>Já vem pronto na conta</p>
           <ul className={x.vitrineModelos}>
             {nicho.modelos.slice(0, 4).map((m, i) => (
               <li key={m} style={{ '--i': i } as CSSProperties}>
@@ -477,8 +472,10 @@ export function VitrineDeNichos() {
             </svg>
           </Link>
         </div>
-        <div className={x.vitrineConversa} key={`conversa-${nicho.slug}`}>
-          <PreviaWhatsApp conversa={CONVERSAS[nicho.conversas[0]!]} />
+        <div className={x.vitrineCena}>
+          <div className={x.vitrineConversa} key={`conversa-${nicho.slug}`}>
+            <PreviaWhatsApp conversa={CONVERSAS[nicho.conversas[0]!]} />
+          </div>
         </div>
       </div>
     </div>
