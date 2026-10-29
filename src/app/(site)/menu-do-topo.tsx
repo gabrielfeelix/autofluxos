@@ -5,6 +5,7 @@ import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from 
 import { createPortal } from 'react-dom'
 import { CANAIS } from './canais-do-site'
 import { IlustracaoDoRamo } from './ilustracoes-dos-ramos'
+import { ITENS_DE_INTEGRACAO, type Grupo } from './integracoes-do-site'
 import { NICHOS_DO_SITE } from './nichos-do-site'
 import { CONVERSAS, PreviaWhatsApp } from './previa-whatsapp'
 import m from './menu-do-topo.module.css'
@@ -29,12 +30,13 @@ import m from './menu-do-topo.module.css'
  * mesmas três partes, fechar no topo e Entrar e Ver planos no pé.
  */
 
-type Chave = 'produto' | 'canais' | 'segmentos'
+type Chave = 'produto' | 'canais' | 'segmentos' | 'integracoes'
 
 const ITENS: { chave: Chave; rotulo: string }[] = [
   { chave: 'produto', rotulo: 'Produto' },
   { chave: 'canais', rotulo: 'Canais' },
   { chave: 'segmentos', rotulo: 'Segmentos' },
+  { chave: 'integracoes', rotulo: 'Integrações' },
 ]
 
 const PRODUTO = [
@@ -160,9 +162,6 @@ export function MenuDoTopo({ classeItem, hrefEntrar }: { classeItem?: string; hr
             <IconeSeta />
           </button>
         ))}
-        <a className={classeItem} href="/integracoes" onPointerEnter={sair}>
-          Integrações
-        </a>
         <a className={classeItem} href="/precos" onPointerEnter={sair}>
           Preços
         </a>
@@ -179,6 +178,7 @@ export function MenuDoTopo({ classeItem, hrefEntrar }: { classeItem?: string; hr
           {ultimo === 'produto' && <PainelProduto />}
           {ultimo === 'canais' && <PainelCanais />}
           {ultimo === 'segmentos' && <PainelSegmentos />}
+          {ultimo === 'integracoes' && <PainelIntegracoes />}
         </div>
       </div>
 
@@ -384,6 +384,64 @@ function PainelSegmentos() {
         <Link href="/#nichos" className={m.mais}>
           Ver todos os segmentos <IconeDireita />
         </Link>
+      </div>
+    </div>
+  )
+}
+
+/*
+ * As integrações por grupo, com a logo oficial de cada uma (`integracoes-do-site.tsx`).
+ * Só o que já funciona entra na lista; o que vem depois aparece como contagem.
+ */
+const GRUPOS_DE_INTEGRACAO: { grupo: Grupo; titulo: string }[] = [
+  { grupo: 'lojas', titulo: 'Lojas virtuais' },
+  { grupo: 'pagamentos', titulo: 'Pagamentos' },
+  { grupo: 'cardapios', titulo: 'Cardápios' },
+  { grupo: 'canais', titulo: 'Canais e anúncios' },
+]
+const PRONTAS = ITENS_DE_INTEGRACAO.filter((i) => !i.emBreve)
+
+function PainelIntegracoes() {
+  return (
+    <div className={m.integracoes}>
+      {GRUPOS_DE_INTEGRACAO.map((g) => {
+        const prontas = PRONTAS.filter((i) => i.grupo === g.grupo)
+        const emBreve = ITENS_DE_INTEGRACAO.filter((i) => i.grupo === g.grupo && i.emBreve)
+        return (
+          <div key={g.grupo} className={m.grupoIntegracao}>
+            <p className={m.legenda}>{g.titulo}</p>
+            <ul>
+              {prontas.slice(0, 5).map((i) => (
+                <li key={i.nome}>
+                  <span className={m.logoIntegracao}>{i.marca}</span>
+                  <span>
+                    <strong>{i.nome}</strong>
+                    <small>{i.detalhe}</small>
+                  </span>
+                </li>
+              ))}
+            </ul>
+            {prontas.length > 5 && <p className={m.maisIntegracoes}>e mais {prontas.length - 5}</p>}
+            {emBreve.length > 0 && (
+              <div className={m.emBreve}>
+                <p className={m.legenda}>Em breve</p>
+                <span>
+                  {emBreve.map((i) => (
+                    <span key={i.nome} className={m.logoIntegracao} title={i.nome}>
+                      {i.marca}
+                    </span>
+                  ))}
+                </span>
+              </div>
+            )}
+          </div>
+        )
+      })}
+      <div className={m.rodape}>
+        <a href="/integracoes" className={m.mais}>
+          Ver as {PRONTAS.length} integrações <IconeDireita />
+        </a>
+        <span className={m.legenda}>Não achou a sua? Na página dá para pedir.</span>
       </div>
     </div>
   )

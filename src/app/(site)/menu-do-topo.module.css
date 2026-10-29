@@ -733,3 +733,93 @@
     animation: none;
   }
 }
+
+/* ─────────────── integrações: quatro colunas por grupo, com a logo oficial ─────────────── */
+
+.integracoes {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+  padding: 12px;
+}
+
+.grupoIntegracao {
+  padding: 14px 12px 10px;
+  border-radius: 14px;
+}
+
+.grupoIntegracao + .grupoIntegracao {
+  border-left: 1px solid var(--line);
+  border-radius: 0;
+}
+
+.grupoIntegracao ul {
+  display: grid;
+  gap: 2px;
+  margin: 10px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.grupoIntegracao li {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px;
+  border-radius: 10px;
+}
+
+.logoIntegracao {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+}
+
+.logoIntegracao img,
+.logoIntegracao svg {
+  max-width: 28px;
+  max-height: 28px;
+  object-fit: contain;
+}
+
+.grupoIntegracao strong {
+  display: block;
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+.grupoIntegracao small {
+  display: block;
+  margin-top: 1px;
+  font-size: 12.5px;
+  color: var(--muted);
+}
+
+.maisIntegracoes {
+  margin: 4px 8px 0;
+  font-size: 12.5px;
+  color: var(--dim);
+}
+
+.emBreve {
+  margin: 14px 8px 0;
+  padding-top: 12px;
+  border-top: 1px dashed var(--line);
+}
+
+.emBreve > span {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 8px;
+}
+
+.emBreve .logoIntegracao {
+  width: 26px;
+  height: 26px;
+  filter: grayscale(1);
+  opacity: 0.55;
+}
