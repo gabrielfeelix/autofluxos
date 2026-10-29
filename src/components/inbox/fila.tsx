@@ -572,6 +572,9 @@ export function Fila({
 
   /** O endereço de uma aba do rail, preservando a conversa aberta. */
   const comBusca = termo === "" ? "" : `&busca=${encodeURIComponent(termo)}`;
+  // O filtro de situação vai junto na paginação: sem ele, o "›" voltava para
+  // "Abertas", que tinha uma página só, e a lista parecia não mudar.
+  const comEstado = estado === "aberta" ? "" : `&estado=${encodeURIComponent(estado)}`;
   const conversaAberta = abertaId ? `&conversa=${encodeURIComponent(abertaId)}` : "";
 
   /*
@@ -1222,7 +1225,7 @@ export function Fila({
         {!local && paginas > 1 && (
           <div className="flex items-center justify-between gap-2 border-t border-line px-3 py-2.5">
             <PassoDaPagina
-              href={`/clientes/${clienteId}/inbox?de=${encodeURIComponent(atribuicao)}${comBusca}&pagina=${pagina - 1}`}
+              href={`/clientes/${clienteId}/inbox?de=${encodeURIComponent(atribuicao)}${comBusca}${comEstado}&pagina=${pagina - 1}`}
               desabilitado={pagina <= 1}
               rotulo="Página anterior"
             >
@@ -1232,7 +1235,7 @@ export function Fila({
               {pagina} / {paginas}
             </span>
             <PassoDaPagina
-              href={`/clientes/${clienteId}/inbox?de=${encodeURIComponent(atribuicao)}${comBusca}&pagina=${pagina + 1}`}
+              href={`/clientes/${clienteId}/inbox?de=${encodeURIComponent(atribuicao)}${comBusca}${comEstado}&pagina=${pagina + 1}`}
               desabilitado={pagina >= paginas}
               rotulo="Próxima página"
             >
