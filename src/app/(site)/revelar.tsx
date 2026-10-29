@@ -69,9 +69,16 @@ export function Revelar({
     }
 
     const topo = seletorCabecalho ? document.querySelector<HTMLElement>(`.${seletorCabecalho}`) : null
+    // `data-some`: descendo depois da capa, o CSS do celular tira a ilha da
+    // frente; subindo 6px já basta para ela voltar.
+    let ultimoY = window.scrollY
     const aoRolar = () => {
       if (!topo || !classeRolado) return
-      topo.classList.toggle(classeRolado, window.scrollY > 8)
+      const y = window.scrollY
+      topo.classList.toggle(classeRolado, y > 8)
+      if (y < 120 || y < ultimoY - 6) topo.removeAttribute('data-some')
+      else if (y > ultimoY + 6) topo.setAttribute('data-some', '')
+      if (Math.abs(y - ultimoY) > 6) ultimoY = y
     }
     aoRolar()
     window.addEventListener('scroll', aoRolar, { passive: true })

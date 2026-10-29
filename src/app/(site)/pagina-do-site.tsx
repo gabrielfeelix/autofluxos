@@ -79,9 +79,14 @@ export function PaginaDoSite({ capa, children, cor }: { capa: ReactNode; childre
 
           <MenuDoTopo classeItem={s.menuItem} hrefEntrar={ENTRAR} />
 
-          <Link className={`${s.botao} ${s.botaoVazado}`} href={ENTRAR}>
-            Entrar
-          </Link>
+          <div className={s.cabecalhoAcoes}>
+            <Link className={`${s.botao} ${s.botaoVazado} ${s.cabecalhoEntrar}`} href={ENTRAR}>
+              Entrar
+            </Link>
+            <Link className={`${s.botao} ${s.botaoPrincipal} ${s.cabecalhoCta}`} href="/precos">
+              Testar grátis
+            </Link>
+          </div>
         </div>
       </header>
 
