@@ -3,13 +3,12 @@ import type { CSSProperties, ReactNode } from 'react'
 import { DIAS_DE_TESTE, PLANOS } from '@/core/planos'
 import { DerivaDeParticulas } from './deriva-de-particulas'
 import { Desktop, Pergunta } from './pagina-do-site'
-import { CANAIS } from './canais-do-site'
+import { CANAIS, type CanalDoSite } from './canais-do-site'
 import { MODELOS_DE_TODOS, NICHOS_DO_SITE, type NichoDoSite } from './nichos-do-site'
 import { CalculadoraMeta, DoisLados, PreviaQueTroca } from './pecas-interativas'
 import { CONVERSAS, PreviaWhatsApp } from './previa-whatsapp'
 import { ITENS_DE_INTEGRACAO } from './integracoes-do-site'
 import { VitrineDeIntegracoes } from './vitrine-de-integracoes'
-import { GLIFO_INSTAGRAM, GLIFO_TELEGRAM, GLIFO_WHATSAPP } from '@/components/design/glifos-oficiais'
 import s from './pagina-inicial.module.css'
 import x from './site.module.css'
 
@@ -304,25 +303,23 @@ export function SecaoPrecoResumo() {
 /* ─────────────────────────── produto ─────────────────────────── */
 
 export function SecaoCanais() {
-  const glifos: Record<string, string | undefined> = { WhatsApp: GLIFO_WHATSAPP, Instagram: GLIFO_INSTAGRAM, Telegram: GLIFO_TELEGRAM }
   return (
     <section className={s.secao} id="canais">
       <div className={s.faixa}>
         <Cabeca naPrimeiraTela olho="Canais" titulo="Onde o seu cliente já está" texto="Uma fila só para todos os canais, com o mesmo fluxo e a mesma equipe." />
         <div className={x.canais}>
           {CANAIS.map((c, i) => (
-            <article key={c.nome} className={x.canal} style={{ '--cor': c.cor } as CSSProperties} data-revela data-como="escala" data-atraso={i * 70}>
+            <Link
+              key={c.nome}
+              href={`/canais/${c.slug}`}
+              className={x.canal}
+              style={{ '--cor': c.cor } as CSSProperties}
+              data-revela
+              data-como="escala"
+              data-atraso={i * 70}
+            >
               <span className={x.canalMarca}>
-                {glifos[c.nome] ? (
-                  <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
-                    <path d={glifos[c.nome]} />
-                  </svg>
-                ) : (
-                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" aria-hidden>
-                    <rect x="2.5" y="3.5" width="19" height="14" rx="2.5" />
-                    <path d="M2.5 7.5h19M8 21h8" />
-                  </svg>
-                )}
+                <MarcaDoCanal canal={c} />
               </span>
               <h3>{c.nome}</h3>
               <p>{c.linha}</p>
@@ -331,11 +328,25 @@ export function SecaoCanais() {
                   <li key={f}>{f}</li>
                 ))}
               </ul>
-            </article>
+            </Link>
           ))}
         </div>
       </div>
     </section>
+  )
+}
+
+/** Glifo oficial quando a marca tem um; o chat do site é nosso e leva o desenho de uma janela. */
+export function MarcaDoCanal({ canal, tamanho = 22 }: { canal: CanalDoSite; tamanho?: number }) {
+  return canal.glifo ? (
+    <svg width={tamanho} height={tamanho} viewBox="0 0 24 24" fill="currentColor" aria-hidden>
+      <path d={canal.glifo} />
+    </svg>
+  ) : (
+    <svg width={tamanho} height={tamanho} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" aria-hidden>
+      <rect x="2.5" y="3.5" width="19" height="14" rx="2.5" />
+      <path d="M2.5 7.5h19M8 21h8" />
+    </svg>
   )
 }
 
@@ -368,6 +379,195 @@ export function SecaoCalculadora() {
         <CalculadoraMeta />
       </div>
     </section>
+  )
+}
+
+/* ─────────────────────────── canal ─────────────────────────── */
+
+export function CapaDoCanal({ canal }: { canal: CanalDoSite }) {
+  return (
+    <section className={`${s.capa} ${x.capaDividida}`}>
+      <div className={s.veu} aria-hidden />
+      <div className={`${s.faixa} ${x.capaGrade}`}>
+        <div className={x.capaTexto}>
+          <p className={x.capaOlho} {...entra(0)}>
+            Canais · {canal.nome}
+          </p>
+          <h1 className={x.capaTitulo} {...entra(60, 'desfoque')}>
+            {canal.titulo}
+          </h1>
+          <p className={x.capaSub} {...entra(160)}>
+            {canal.subtitulo}
+          </p>
+          {canal.aviso && (
+            <p className={x.avisoCanal} {...entra(200)}>
+              {canal.aviso}
+            </p>
+          )}
+          <div className={s.acoes} {...entra(260)}>
+            <Link className={`${s.botao} ${s.botaoPrincipal} ${s.botaoGrande}`} href="/precos">
+              Ver planos
+            </Link>
+            <a className={`${s.botao} ${s.botaoVazado} ${s.botaoGrande}`} href="#conversar">
+              Fale conosco
+            </a>
+          </div>
+        </div>
+        <div className={x.capaVisual} {...entra(160, 'escala')}>
+          {canal.conversas ? <PreviaQueTroca chaves={canal.conversas} /> : <FichaDoCanal canal={canal} />}
+        </div>
+      </div>
+    </section>
+  )
+}
+
+/** Os números do canal numa janela, lidos de `src/core/canais.ts` via `canais-do-site.ts`. */
+function FichaDoCanal({ canal }: { canal: CanalDoSite }) {
+  return (
+    <div className={x.ficha} style={{ '--cor': canal.cor } as CSSProperties}>
+      <div className={x.fichaBarra}>
+        <i />
+        <i />
+        <i />
+        <span>Ficha do canal</span>
+      </div>
+      <div className={x.fichaTopo}>
+        <span className={x.canalMarca}>
+          <MarcaDoCanal canal={canal} />
+        </span>
+        <strong>{canal.nome}</strong>
+      </div>
+      <dl className={x.fichaLinhas}>
+        {canal.ficha.map((f) => (
+          <div key={f.rotulo}>
+            <dt>{f.rotulo}</dt>
+            <dd>{f.valor}</dd>
+          </div>
+        ))}
+      </dl>
+    </div>
+  )
+}
+
+export function CorpoDoCanal({ canal }: { canal: CanalDoSite }) {
+  const cor = { '--cor': canal.cor } as CSSProperties
+  return (
+    <>
+      <section className={s.secao}>
+        <div className={s.faixa}>
+          <Cabeca olho="Como conecta" titulo={`${canal.nome} ligado em três passos`} />
+          <div className={x.dores} style={cor}>
+            {canal.passos.map((p, i) => (
+              <article key={p.titulo} className={x.dor} data-revela data-como="escala" data-atraso={i * 90}>
+                <span className={x.dorNumero}>{String(i + 1).padStart(2, '0')}</span>
+                <h3>{p.titulo}</h3>
+                <p>{p.texto}</p>
+              </article>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {canal.slug === 'whatsapp' && <SecaoDoisLados />}
+
+      {canal.slug === 'site' && (
+        <section className={s.secao}>
+          <div className={`${s.faixa} ${x.iaGrade} ${x.gradeLarga}`}>
+            <div>
+              <span className={s.olho} data-revela>
+                Instalação
+              </span>
+              <h2 className={s.tituloSecao} data-revela data-como="desfoque" data-atraso="60">
+                Uma linha antes do fim da página
+              </h2>
+              <p className={s.chamada} data-revela data-atraso="100">
+                Funciona em WordPress, Wix, Shopify, Nuvemshop, Magento ou HTML puro. O código já vem com a chave da sua conta no painel.
+              </p>
+            </div>
+            <div className={x.codigo} data-revela data-como="escala">
+              <div className={x.fichaBarra}>
+                <i />
+                <i />
+                <i />
+                <span>index.html</span>
+              </div>
+              <pre>
+                <code>
+                  <span className={x.codigoApagado}>{'<body>\n  ...\n'}</span>
+                  {'  <script\n    src="'}
+                  <span className={x.codigoTexto}>https://autofluxos.4yu.com.br/chat/v1.js</span>
+                  {'"\n    data-chave="'}
+                  <span className={x.codigoTexto}>SUA_CHAVE</span>
+                  {'"\n    async\n  ></script>\n'}
+                  <span className={x.codigoApagado}>{'</body>'}</span>
+                </code>
+              </pre>
+            </div>
+          </div>
+        </section>
+      )}
+
+      <section className={s.secao}>
+        <div className={s.faixa}>
+          <Cabeca olho="O que funciona" titulo={`Tudo o que ${canal.slug === 'site' ? 'o chat do site' : `o ${canal.nome}`} faz no AutoFluxos`} />
+          <div className={x.noApp}>
+            {canal.recursos.map((r) => (
+              <div key={r.titulo} data-revela>
+                <strong>{r.titulo}</strong>
+                <p>{r.texto}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {canal.conversas && (
+        <section className={s.secao}>
+          <div className={`${s.faixa} ${x.iaGrade} ${x.gradeLarga}`}>
+            <div>
+              <span className={s.olho} data-revela>
+                Ficha técnica
+              </span>
+              <h2 className={s.tituloSecao} data-revela data-como="desfoque" data-atraso="60">
+                Os limites da Meta, já respeitados no editor
+              </h2>
+              <p className={s.chamada} data-revela data-atraso="100">
+                O editor de fluxos avisa antes de publicar um botão a mais ou um texto longo demais. O que passa no editor, chega no celular do cliente.
+              </p>
+            </div>
+            <div data-revela data-como="escala">
+              <FichaDoCanal canal={canal} />
+            </div>
+          </div>
+        </section>
+      )}
+
+      <section className={s.secao}>
+        <div className={s.faixa}>
+          <Cabeca olho="Os outros canais" titulo="O mesmo fluxo, onde o cliente estiver" />
+          <div className={`${x.canais} ${x.canaisOutros}`}>
+            {CANAIS.filter((c) => c.slug !== canal.slug).map((c, i) => (
+              <Link
+                key={c.slug}
+                href={`/canais/${c.slug}`}
+                className={x.canal}
+                style={{ '--cor': c.cor } as CSSProperties}
+                data-revela
+                data-atraso={i * 70}
+              >
+                <span className={x.canalMarca}>
+                  <MarcaDoCanal canal={c} />
+                </span>
+                <h3>
+                  {c.nome} <Seta />
+                </h3>
+                <p>{c.linha}</p>
+              </Link>
+            ))}
+          </div>
+        </div>
+      </section>
+    </>
   )
 }
 

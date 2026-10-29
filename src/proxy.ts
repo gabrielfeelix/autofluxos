@@ -279,6 +279,8 @@ const PREFIXOS_ABERTOS = [
   '/fotos-do-site/',
   // As páginas de cada nicho do site, `/segmentos/[slug]`.
   '/segmentos/',
+  // As páginas de cada canal do site, `/canais/[slug]`.
+  '/canais/',
   // O cabeçalho dos modelos de pesquisa, em `public/pesquisas/`: quem busca é
   // o servidor da Meta, sem sessão. Sem isto a imagem virava a tela de login.
   '/pesquisas/',

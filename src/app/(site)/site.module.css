@@ -419,6 +419,160 @@
   rotate: -45deg;
 }
 
+a.canal {
+  display: block;
+  color: inherit;
+  text-decoration: none;
+  transition:
+    border-color 0.2s var(--curva),
+    translate 0.2s var(--curva);
+}
+
+a.canal:hover {
+  border-color: color-mix(in srgb, var(--cor) 45%, transparent);
+  translate: 0 -2px;
+}
+
+a.canal h3 {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+a.canal h3 svg {
+  color: var(--cor);
+}
+
+.canaisOutros {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+@media (max-width: 760px) {
+  .canaisOutros {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ─────────────────────────── página do canal ─────────────────────────── */
+
+.gradeLarga {
+  grid-template-columns: minmax(0, 1fr) minmax(0, 480px);
+}
+
+@media (max-width: 860px) {
+  .gradeLarga {
+    grid-template-columns: 1fr;
+  }
+}
+
+.avisoCanal {
+  max-width: 52ch;
+  margin: 20px 0 0;
+  padding-left: 14px;
+  border-left: 2px solid rgb(255 255 255 / 0.5);
+  font-size: 14px;
+  line-height: 1.55;
+  color: var(--muted);
+}
+
+/* A ficha e o código: janela branca sobre a cor da capa, como no bento. */
+.ficha,
+.codigo {
+  overflow: hidden;
+  border: 1px solid #e3e8f3;
+  border-radius: 16px;
+  background: #ffffff;
+  color: #0c1838;
+  box-shadow: 0 40px 80px -40px rgb(8 20 70 / 0.55), 0 2px 8px rgb(16 32 84 / 0.06);
+  text-align: left;
+}
+
+.fichaBarra {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 14px;
+  border-bottom: 1px solid #edf0f7;
+  background: #f6f8fd;
+}
+
+.fichaBarra i {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: #d5dbe8;
+}
+
+.fichaBarra span {
+  margin-left: 10px;
+  font-size: 11.5px;
+  color: #64708a;
+}
+
+.fichaTopo {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 18px 20px 6px;
+}
+
+.fichaTopo .canalMarca {
+  background: color-mix(in srgb, var(--cor) 10%, #ffffff);
+  box-shadow: none;
+}
+
+.fichaTopo strong {
+  font-size: 17px;
+  letter-spacing: -0.02em;
+}
+
+.fichaLinhas {
+  margin: 0;
+  padding: 6px 20px 14px;
+}
+
+.fichaLinhas > div {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 11px 0;
+  font-size: 14px;
+}
+
+.fichaLinhas > div + div {
+  border-top: 1px solid #edf0f7;
+}
+
+.fichaLinhas dt {
+  flex: none;
+  color: #64708a;
+}
+
+.fichaLinhas dd {
+  margin: 0;
+  font-weight: 600;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.codigo pre {
+  margin: 0;
+  padding: 22px 22px 24px;
+  overflow-x: auto;
+  font-family: var(--font-mono, ui-monospace, SFMono-Regular, Menlo, monospace);
+  font-size: 13.5px;
+  line-height: 1.7;
+  color: #0c1838;
+}
+
+.codigoTexto {
+  color: #1d4ed8;
+}
+
+.codigoApagado {
+  color: #a3acc0;
+}
+
 /* ─────────────────────────── página do nicho ─────────────────────────── */
 
 .dores {

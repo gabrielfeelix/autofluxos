@@ -233,7 +233,7 @@ export function MenuDoTopo({ classeItem, hrefEntrar }: { classeItem?: string; hr
               <Grupo titulo="Canais">
                 <div className={m.canaisFolha}>
                   {CANAIS.map((c) => (
-                    <a key={c.nome} href="/produto#canais" style={{ '--cor': c.cor } as CSSProperties}>
+                    <a key={c.nome} href={`/canais/${c.slug}`} style={{ '--cor': c.cor } as CSSProperties}>
                       <MarcaDoCanal glifo={c.glifo} />
                       {c.nome}
                     </a>
@@ -330,7 +330,7 @@ function PainelCanais() {
   return (
     <div className={m.canais}>
       {CANAIS.map((c) => (
-        <a key={c.nome} href="/produto#canais" className={m.cartaoCanal} style={{ '--cor': c.cor } as CSSProperties}>
+        <a key={c.nome} href={`/canais/${c.slug}`} className={m.cartaoCanal} style={{ '--cor': c.cor } as CSSProperties}>
           <span className={m.marcaCanal}>
             <MarcaDoCanal glifo={c.glifo} />
           </span>
