@@ -549,14 +549,14 @@
 
 .vitrineConversa {
   position: absolute;
-  top: 40px;
+  top: 32px;
   right: 32px;
   width: 290px;
   animation: vitrineConversa 0.6s var(--curva) both;
 }
 
 .vitrineConversa > * {
-  height: 460px;
+  height: 490px;
   box-shadow: 0 40px 70px -30px rgb(0 0 0 / 0.45);
 }
 

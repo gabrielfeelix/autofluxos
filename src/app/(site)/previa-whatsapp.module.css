@@ -53,10 +53,11 @@
   flex: 1;
   display: flex;
   flex-direction: column;
-  justify-content: flex-end;
-  gap: 6px;
+  /* `safe`: conversa mais alta que a tela começa do topo, em vez de sair cortada embaixo do cabeçalho. */
+  justify-content: safe flex-end;
+  gap: 5px;
   min-height: 0;
-  padding: 10px;
+  padding: 8px 10px;
   overflow: hidden;
 }
 
@@ -146,7 +147,8 @@
   display: block;
   width: 100%;
   height: auto;
-  aspect-ratio: 16 / 9;
+  /* 2:1 e não 16:9: com a foto mais baixa, as conversas de foto cabem inteiras na tela de 500px. */
+  aspect-ratio: 2 / 1;
   object-fit: cover;
   border-radius: 6px;
 }
