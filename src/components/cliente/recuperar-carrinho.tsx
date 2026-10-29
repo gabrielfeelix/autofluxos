@@ -156,7 +156,7 @@ function Previa({ loja }: { loja: string }) {
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src="/exemplos/carrinho-produto.jpg" alt="" className="aspect-[1.91] w-full object-cover" />
             <p className="px-2.5 py-2 text-[12.5px] leading-[1.4] text-[#111b21] dark:text-[#e9edef]">
-              No carrinho: {item.nome}, por {item.preco}.
+              Este item ficou esperando por você no carrinho: {item.nome}, por {item.preco} no site da loja.
             </p>
             <p className="border-t border-black/10 py-2 text-center text-[12.5px] font-medium text-[#027eb5] dark:border-white/10 dark:text-[#53bdeb]">
               Finalizar compra

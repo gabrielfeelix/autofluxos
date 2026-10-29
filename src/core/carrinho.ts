@@ -57,7 +57,7 @@ export function modelosDoCarrinho(loja: { nome: string; endereco: string; exempl
       nome: `${PREFIXO_DO_CARRINHO}${cartoes}`,
       componentes: {
         corpo: `Oi, {{1}}! Os itens que você escolheu na ${loja.nome} continuam no seu carrinho. ${DUVIDA}\n\n${SAIR}`,
-        carrossel: { cartoes, cabecalho: 'imagem', corpo: 'No carrinho: {{1}}, por {{2}}.', botoes: [botao], exemplo: loja.exemplo },
+        carrossel: { cartoes, cabecalho: 'imagem', corpo: 'Este item ficou esperando por você no carrinho: {{1}}, por {{2}} no site da loja.', botoes: [botao], exemplo: loja.exemplo },
       },
       exemplos: ['Maria'],
       exemplosDoCartao: ['Headset Gamer', 'R$ 349,90'],
