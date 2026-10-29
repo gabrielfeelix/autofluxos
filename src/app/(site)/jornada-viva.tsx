@@ -92,7 +92,8 @@ export function JornadaViva({ etapas }: { etapas: Etapa[] }) {
             </svg>
           </Link>
         </div>
-        <div className={x.jornadaTela} key={`m${ativa}`} aria-hidden>
+        {/* Mexer na tela (as abas do Inbox, por exemplo) para o automático: senão ela trocaria embaixo do clique. */}
+        <div className={x.jornadaTela} key={`m${ativa}`} onPointerDown={() => setParado(true)}>
           {TELAS[ativa]}
         </div>
       </div>
@@ -236,41 +237,8 @@ const TELAS: ReactNode[] = [
   </Janela>,
 
   // 03 Atendimento da equipe: abas por setor e a conversa que chega com o histórico.
-  <Janela key="3" titulo="Inbox · Vendas">
-    <div className={x.jtSetores}>
-      {[
-        ['Vendas', 3],
-        ['Suporte', 1],
-        ['Financeiro', 2],
-      ].map(([setor, n], i) => (
-        <span key={String(setor)} data-ativo={i === 0 || undefined}>
-          {setor} <b>{n}</b>
-        </span>
-      ))}
-    </div>
-    <div className={x.jtTransferencia}>
-      <Visto /> Transferida do chatbot para <b>Vendas</b>, com o histórico
-    </div>
-    <div className={x.jtLinhas}>
-      {[
-        ['MC', 'Marina Costa', 'Queria tirar uma dúvida do tamanho', 'Ana assumiu', true],
-        ['JP', 'Júlia Pereira', 'Dá para parcelar em 6x?', 'espera 2 min', false],
-        ['TS', 'Tiago Souza', 'Vocês entregam em Maringá?', 'espera 5 min', false],
-      ].map(([sigla, nome, texto, estado, destaque], i) => (
-        <div key={String(sigla)} className={x.jtLinha} data-destaque={destaque || undefined} style={{ '--i': i } as CSSProperties}>
-          <span className={x.jtAvatar}>
-            <FotoDaPessoa nome={String(nome)} />
-          </span>
-          <span>
-            <strong>{nome}</strong>
-            <small>{texto}</small>
-          </span>
-          <span className={x.jtEstado} data-espera={!destaque || undefined}>
-            {estado}
-          </span>
-        </div>
-      ))}
-    </div>
+  <Janela key="3" titulo="Inbox · Fila por setor">
+    <SetoresDaJornada />
   </Janela>,
 
   // 04 Funil de vendas: colunas com valor, e o cartão da Marina avançando.
@@ -406,3 +374,61 @@ const TELAS: ReactNode[] = [
     </div>
   </Janela>,
 ]
+
+/* As abas do Inbox na etapa 03: cada setor com a sua fila, clicáveis (pedido do Gabriel, 29/out). */
+const FILAS_DA_JORNADA: { setor: string; linhas: [string, string, string, boolean][] }[] = [
+  {
+    setor: 'Vendas',
+    linhas: [
+      ['Marina Costa', 'Queria tirar uma dúvida do tamanho', 'Ana assumiu', true],
+      ['Júlia Pereira', 'Dá para parcelar em 6x?', 'espera 2 min', false],
+      ['Tiago Souza', 'Vocês entregam em Maringá?', 'espera 5 min', false],
+    ],
+  },
+  {
+    setor: 'Suporte',
+    linhas: [['André Lima', 'Parou de carregar depois da atualização', 'Bruno assumiu', true]],
+  },
+  {
+    setor: 'Financeiro',
+    linhas: [
+      ['Rafael Souza', 'Segue o comprovante do Pix', 'Carla assumiu', true],
+      ['Vera Moura', 'O boleto venceu ontem', 'espera 3 min', false],
+    ],
+  },
+]
+
+function SetoresDaJornada() {
+  const [ativo, setAtivo] = useState(0)
+  const fila = FILAS_DA_JORNADA[ativo]!
+  return (
+    <>
+      <div className={x.jtSetores} role="tablist" aria-label="Setores">
+        {FILAS_DA_JORNADA.map((f, i) => (
+          <button key={f.setor} type="button" role="tab" aria-selected={i === ativo} data-ativo={i === ativo || undefined} onClick={() => setAtivo(i)}>
+            {f.setor} <b>{f.linhas.length}</b>
+          </button>
+        ))}
+      </div>
+      <div className={x.jtTransferencia}>
+        <Visto /> Transferida do chatbot para <b>{fila.setor}</b>, com o histórico
+      </div>
+      <div className={x.jtLinhas} key={ativo}>
+        {fila.linhas.map(([nome, texto, estado, destaque], i) => (
+          <div key={nome} className={x.jtLinha} data-destaque={destaque || undefined} style={{ '--i': i } as CSSProperties}>
+            <span className={x.jtAvatar}>
+              <FotoDaPessoa nome={nome} />
+            </span>
+            <span>
+              <strong>{nome}</strong>
+              <small>{texto}</small>
+            </span>
+            <span className={x.jtEstado} data-espera={!destaque || undefined}>
+              {estado}
+            </span>
+          </div>
+        ))}
+      </div>
+    </>
+  )
+}

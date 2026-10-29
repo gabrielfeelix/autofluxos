@@ -2586,8 +2586,13 @@ a.canal h3 svg {
   background: #f1f4fa;
 }
 
-.jtSetores span {
+.jtSetores span,
+.jtSetores button {
   flex: 1;
+  border: 0;
+  background: none;
+  font-family: inherit;
+  cursor: pointer;
   padding: 6px 8px;
   border-radius: 7px;
   font-size: 12px;
@@ -2596,7 +2601,12 @@ a.canal h3 svg {
   color: #64708a;
 }
 
-.jtSetores span[data-ativo] {
+.jtSetores button:focus-visible {
+  outline: 2px solid #1d4ed8;
+  outline-offset: 1px;
+}
+
+.jtSetores [data-ativo] {
   background: #ffffff;
   color: #0c1838;
   box-shadow: 0 1px 3px rgb(16 32 84 / 0.12);
