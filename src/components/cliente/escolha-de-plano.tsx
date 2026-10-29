@@ -19,7 +19,7 @@ import { diaPorExtenso, excedente, fraseDoExcedente, reais } from '@/core/contra
 import { anualDoPlano, custoDaEquipe, RECURSOS_DO_PLANO, type CicloDeCobranca } from '@/core/planos'
 import { ModalDeTroca } from '@/components/plano/modal-de-troca'
 import { FranquiaDaMeta } from '@/components/plano/franquia-da-meta'
-import type { FranquiaDoNumero } from '@/core/franquia-da-meta'
+import type { FranquiaDoNumero, GastoDoPeriodo } from '@/core/franquia-da-meta'
 
 /**
  * O plano da conta, o consumo do mês, e o pedido de troca.
@@ -42,6 +42,7 @@ export function EscolhaDePlano({
   conexoesHref,
   contrato,
   franquiaDaMeta = null,
+  gastoDaMeta = null,
   planos = PLANOS,
   equipe = 0,
   leitores = 0,
@@ -104,6 +105,7 @@ export function EscolhaDePlano({
   conexoesHref: string
   /** A franquia de serviço da Meta por número (0104). Nulo = conta sem WhatsApp oficial. */
   franquiaDaMeta?: FranquiaDoNumero[] | null
+  gastoDaMeta?: GastoDoPeriodo | null
 }) {
   const acharPlano = (id: IdDoPlano) => planos.find((p) => p.id === id) ?? acharPlanoDoCodigo(id)
   // Otimista: subir pela assinatura vale na hora, e a tela já mostra o plano novo.
@@ -350,7 +352,7 @@ export function EscolhaDePlano({
           {consumo.arquivos === 1 ? '' : 's'}, somando {comoTamanho(consumo.bytes)}.
         </p>
 
-        {franquiaDaMeta && <FranquiaDaMeta numeros={franquiaDaMeta} mes={consumo.mes} />}
+        {franquiaDaMeta && <FranquiaDaMeta numeros={franquiaDaMeta} mes={consumo.mes} gasto={gastoDaMeta} />}
       </section>
 
       <section aria-labelledby="titulo-solicitar">

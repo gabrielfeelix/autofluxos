@@ -9,7 +9,7 @@ import { mensalidadeLiberada } from '@/server/mensalidade-da-4yu'
 import { assinaturaDaConta, cobrancaDaConta } from '@/server/repos/faturas-da-conta'
 import { acharCliente } from '@/server/repos/clientes'
 import { consumoDaMetaDoMes } from '@/server/consumo-da-meta'
-import { franquiaDoMes } from '@/core/franquia-da-meta'
+import { franquiaDoMes, gastoDoPeriodo } from '@/core/franquia-da-meta'
 import { listarCanais } from '@/server/repos/conversas'
 import { chaveDoMes, consumoDaConta, contratoDaConta, composicaoDaEquipe, testeDaConta, usoDaOrganizacao } from '@/server/repos/plano'
 import { pedidosDePlano } from '@/server/repos/pedidos-de-plano'
@@ -66,6 +66,8 @@ export default async function Pagina({ params }: { params: Promise<{ clienteId: 
   // Só aparece para quem tem número na API oficial: é a conta que a Meta cobra.
   const temWhatsAppOficial = canais.some((canal) => canal.provider === 'cloud-api')
   const franquiaDaMeta = temWhatsAppOficial ? franquiaDoMes(pontosDaMeta, chaveDoMes(new Date())) : null
+  // O gasto por tipo: marketing paga desde a primeira, serviço só depois das grátis.
+  const gastoDaMeta = temWhatsAppOficial ? gastoDoPeriodo(pontosDaMeta, chaveDoMes(new Date()), new Date().toISOString().slice(0, 10)) : null
   const plano = contrato.plano
   // Só o pedido que a administração ainda não respondeu (A5). Atendido ou
   // recusado, some da tela; pedido para o plano que já vale também.
@@ -97,6 +99,7 @@ export default async function Pagina({ params }: { params: Promise<{ clienteId: 
           uso={uso}
           contrato={contrato}
           franquiaDaMeta={franquiaDaMeta}
+          gastoDaMeta={gastoDaMeta}
           equipe={equipe.atendentes}
           leitores={equipe.leitores}
           testeAte={testeAte}
