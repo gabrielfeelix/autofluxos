@@ -53,8 +53,14 @@
   flex: 1;
   display: flex;
   flex-direction: column;
-  /* `safe`: conversa mais alta que a tela começa do topo, em vez de sair cortada embaixo do cabeçalho. */
-  justify-content: safe flex-end;
+  /*
+   * Como o WhatsApp rolado até o fim: a resposta depois do toque no botão é o
+   * que importa, então a conversa mais alta que a tela mostra o fim, e o topo
+   * some num degradê em vez de aparecer cortado embaixo do cabeçalho. (Antes
+   * era `safe flex-end`, começando do topo, e a resposta nova ficava fora.)
+   */
+  justify-content: flex-end;
+  mask-image: linear-gradient(180deg, transparent 0, #000 36px);
   gap: 5px;
   min-height: 0;
   padding: 8px 10px;

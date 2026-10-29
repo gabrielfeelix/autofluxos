@@ -41,6 +41,8 @@ const LISTA: (Conversa & { chave: ChaveDaConversa })[] = [
         texto: 'Para o seu CEP o frete fica R$ 18,90, com entrega na quinta.',
         botoes: ['Comprar agora', 'Ver outras cores'],
       },
+      { de: 'cliente', texto: 'Comprar agora' },
+      { de: 'bot', texto: 'Pedido separado! Paga por Pix ou cartão neste link, e eu confirmo aqui quando cair.', botoes: ['Pagar R$ 268,80'] },
     ],
   },
   {
@@ -99,6 +101,8 @@ const LISTA: (Conversa & { chave: ChaveDaConversa })[] = [
         texto: 'Para 12.000 BTUs a instalação fica a partir de R$ 180, com até 3 metros de tubulação.',
         botoes: ['Marcar visita', 'Falar com técnico'],
       },
+      { de: 'cliente', texto: 'Marcar visita' },
+      { de: 'bot', texto: 'Visita marcada para quinta às 14h. O técnico avisa por aqui quando sair.' },
     ],
   },
   {
@@ -115,6 +119,8 @@ const LISTA: (Conversa & { chave: ChaveDaConversa })[] = [
         previsao: 'Chega na quinta, até as 18h.',
       },
       { de: 'bot', texto: 'Quer receber um aviso quando sair para entrega?', botoes: ['Sim, me avise'] },
+      { de: 'cliente', texto: 'Sim, me avise' },
+      { de: 'bot', texto: 'Combinado! Aviso aqui assim que o pedido sair para entrega.' },
     ],
   },
   {
@@ -130,6 +136,7 @@ const LISTA: (Conversa & { chave: ChaveDaConversa })[] = [
       },
       { de: 'bot', texto: 'Separo uma para você retirar hoje? Ficamos abertos até as 19h.', botoes: ['Separar para hoje', 'Ver outras marcas'] },
       { de: 'cliente', texto: 'Separar para hoje' },
+      { de: 'bot', texto: 'Separado! Fica no seu nome no balcão até as 19h.' },
     ],
   },
 ]
