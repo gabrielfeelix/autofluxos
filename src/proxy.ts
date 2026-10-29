@@ -298,6 +298,9 @@ const PREFIXOS_ABERTOS = [
   // O cabeçalho dos modelos de pesquisa, em `public/pesquisas/`: quem busca é
   // o servidor da Meta, sem sessão. Sem isto a imagem virava a tela de login.
   '/pesquisas/',
+  // A foto de exemplo dos modelos de carrinho, em `public/exemplos/`: a Meta
+  // busca sem sessão, e a tela de login no lugar dela falha com 131053.
+  '/exemplos/',
   /**
    * O ícone da aba do navegador.
    *
