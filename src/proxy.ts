@@ -362,7 +362,9 @@ export const config = {
   // para `/entrar` em vez da lista de páginas.
   // `llms.txt` também: é o resumo que as IAs leem pelo "Pergunte a uma IA" do
   // rodapé, e quem busca não tem sessão.
+  // `.well-known` é o catálogo de recursos para agentes (`ard.json`, `ai-catalog.json`),
+  // também lido sem sessão; sem isto ele recebia o redirecionamento para `/entrar`.
   matcher: [
-    '/((?!api/auth|api/webhook|api/manutencao|_next/static|_next/image|favicon.ico|robots.txt|sitemap.xml|llms.txt).*)',
+    '/((?!api/auth|api/webhook|api/manutencao|_next/static|_next/image|favicon.ico|robots.txt|sitemap.xml|llms.txt|.well-known).*)',
   ],
 }

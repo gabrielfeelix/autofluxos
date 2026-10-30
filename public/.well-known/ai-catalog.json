@@ -1,0 +1,31 @@
+{
+  "entries": [
+    {
+      "identifier": "urn:air:dialogon.com.br:site:llms-txt",
+      "displayName": "Dialogon: resumo do produto para IAs",
+      "description": "Plataforma brasileira de atendimento e vendas por mensagem: WhatsApp, Instagram Direct, chat do site e Telegram numa caixa de entrada só, com chatbot de fluxos visuais e IA.",
+      "type": "text/plain",
+      "url": "https://dialogon.com.br/llms.txt",
+      "representativeQueries": [
+        "o que é o Dialogon",
+        "plataforma de atendimento e vendas por WhatsApp para empresas brasileiras"
+      ]
+    },
+    {
+      "identifier": "urn:air:dialogon.com.br:site:precos",
+      "displayName": "Dialogon: planos e preços",
+      "type": "text/html",
+      "url": "https://dialogon.com.br/precos",
+      "representativeQueries": [
+        "quanto custa o Dialogon",
+        "planos de chatbot e atendimento por WhatsApp"
+      ]
+    },
+    {
+      "identifier": "urn:air:dialogon.com.br:site:sitemap",
+      "displayName": "Dialogon: mapa do site",
+      "type": "application/xml",
+      "url": "https://dialogon.com.br/sitemap.xml"
+    }
+  ]
+}
