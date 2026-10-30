@@ -15,25 +15,30 @@ import Image from 'next/image'
  * `priority` porque a barra lateral é a primeira coisa desenhada em qualquer
  * tela: carregada preguiçosamente, a logo pisca em cada navegação.
  *
- * Recolhida, a barra esconde o nome e deixa só o símbolo, quem faz isso é o
- * `span:last-child` em `barra-lateral.tsx`, e por isso o nome precisa continuar
- * sendo o último filho daqui.
+ * Aberta, aparece a logo horizontal oficial (símbolo e nome juntos, colorida no
+ * tema claro e branca no escuro). Recolhida, a barra esconde o último `span`
+ * (a logo horizontal) e mostra o `.marca-simbolo`, que fica escondido por
+ * padrão: quem faz as duas coisas é o embrulho em `barra-lateral.tsx`, e por
+ * isso a logo horizontal precisa continuar sendo o último filho daqui.
  */
 export function Marca({ compacta = false }: { compacta?: boolean }) {
-  const lado = compacta ? 24 : 30
+  // A logo horizontal tem proporção 549×120: a altura manda, a largura acompanha.
+  const altura = compacta ? 24 : 30
+  const largura = Math.round((altura * 549) / 120)
 
   return (
-    <div className="flex items-center gap-2.5">
+    <div className="flex items-center">
       <Image
         src="/logos/logo-dialogon-marca.png"
         alt="Dialogon"
-        width={lado}
-        height={lado}
+        width={altura}
+        height={altura}
         priority
-        className="shrink-0"
+        className="marca-simbolo hidden shrink-0"
       />
-      <span className={`${compacta ? 'text-sm' : 'text-[18px]'} font-bold tracking-[-0.01em]`}>
-        Dialogon
+      <span className="flex">
+        <Image src="/logos/dialogon-horizontal.png" alt="Dialogon" width={largura} height={altura} priority className="dark:hidden" />
+        <Image src="/logos/dialogon-horizontal-branca.png" alt="" width={largura} height={altura} priority className="hidden dark:block" />
       </span>
     </div>
   )

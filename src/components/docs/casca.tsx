@@ -79,10 +79,10 @@ export function CabecalhoDeDocs({ area }: { area: Area | 'inicio' }) {
     <header className="mx-auto w-full max-w-[1440px] px-3 pt-3 md:px-6">
       <div className="flex h-[60px] items-center gap-2 rounded-2xl border border-white/25 bg-white/[0.14] pr-2 pl-3 text-white backdrop-blur-md md:gap-4 md:pl-4">
         <Link href="/ajuda" className="flex shrink-0 items-center gap-2.5">
-          <span className="flex size-8 items-center justify-center rounded-[10px] bg-white">
-            <Image src="/logos/logo-dialogon-marca.png" alt="" width={22} height={22} />
+          <span className="flex size-8 items-center justify-center rounded-[10px] bg-white lg:hidden">
+            <Image src="/logos/logo-dialogon-marca.png" alt="Dialogon" width={22} height={22} />
           </span>
-          <span className="hidden text-[15px] font-bold tracking-[-0.01em] lg:inline">Dialogon</span>
+          <Image src="/logos/dialogon-horizontal-branca.png" alt="Dialogon" width={119} height={26} className="hidden lg:block" />
         </Link>
         <nav aria-label="Áreas" className="flex items-center gap-1 overflow-x-auto">
           {aba('ajuda', '/ajuda', 'Central de ajuda')}

@@ -83,12 +83,9 @@ export function PaginaDoSite({ capa, children, cor }: { capa: ReactNode; childre
 
       <header className={s.cabecalho}>
         <div className={`${s.faixa} ${s.cabecalhoInterno}`}>
-          <Link className={s.marca} href="/">
-            <span className={s.marcaSigla} aria-hidden>
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src="/logos/logo-dialogon-marca.png" alt="" width={24} height={24} />
-            </span>
-            Dialogon
+          <Link className={s.marca} href="/" aria-label="Dialogon, início">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/logos/dialogon-horizontal.png" alt="Dialogon" width={128} height={28} />
           </Link>
 
           <MenuDoTopo classeItem={s.menuItem} hrefEntrar={ENTRAR} />
@@ -146,12 +143,10 @@ export function PaginaDoSite({ capa, children, cor }: { capa: ReactNode; childre
         <div className={s.faixa}>
           <div className={s.rodapeTopo}>
             <div className={s.rodapeSobre}>
-              <Link className={s.marca} href="/">
-                <span className={s.marcaSigla} aria-hidden>
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src="/logos/logo-dialogon-marca.png" alt="" width={24} height={24} />
-            </span>
-                Dialogon
+              <Link className={s.marca} href="/" aria-label="Dialogon, início">
+                {/* O rodapé é azul: a versão branca da logo horizontal. */}
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src="/logos/dialogon-horizontal-branca.png" alt="Dialogon" width={128} height={28} />
               </Link>
               <p className={s.rodapeTexto}>
                 Atendimento no WhatsApp da sua empresa. O fluxo responde o que se repete e

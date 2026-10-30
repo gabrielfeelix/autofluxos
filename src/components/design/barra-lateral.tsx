@@ -153,7 +153,7 @@ export function BarraLateral({ base, area = 'cliente', itens: itensRecebidos = [
         // dá lugar ao ícone de expandir, como na Brevo.
         <button type="button" onClick={() => { dica.esconder(); definirPreferencia('barra', false) }} aria-label="Expandir a barra lateral" aria-expanded={false} {...dica.gatilho('Expandir menu')}
           className="group relative mx-auto mb-5 flex size-10 shrink-0 items-center justify-center rounded-[10px] transition hover:bg-surface">
-          <span className="transition-opacity duration-150 group-hover:opacity-0 group-focus-visible:opacity-0 [&_span:last-child]:hidden">{marca}</span>
+          <span className="transition-opacity duration-150 group-hover:opacity-0 group-focus-visible:opacity-0 [&_span:last-child]:hidden [&_.marca-simbolo]:block">{marca}</span>
           <span aria-hidden className="absolute inset-0 flex items-center justify-center text-muted opacity-0 transition-opacity duration-150 group-hover:opacity-100 group-focus-visible:opacity-100"><IconeDoPainel abrir /></span>
         </button>
       ) : (

@@ -31,11 +31,8 @@ export function Portico({
     <main className="app-casca flex min-h-screen flex-col md:flex-row md:items-stretch">
       {/* No azul, a apresentação; no celular fica só a marca, por cima do cartão. */}
       <section className="relative flex min-w-0 flex-col justify-between px-6 pt-6 text-white md:flex-[1.1] md:px-14 md:py-12">
-        <div className="flex items-center gap-2.5">
-          <span className="flex size-9 items-center justify-center rounded-xl bg-white">
-            <Image src="/logos/logo-dialogon-marca.png" alt="" width={24} height={24} priority />
-          </span>
-          <span className="text-[17px] font-bold tracking-[-0.01em]">Dialogon</span>
+        <div className="flex items-center">
+          <Image src="/logos/dialogon-horizontal-branca.png" alt="Dialogon" width={137} height={30} priority />
         </div>
 
         <div className="hidden max-w-[520px] md:block">

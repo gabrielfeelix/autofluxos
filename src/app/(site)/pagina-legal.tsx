@@ -57,12 +57,9 @@ export function PaginaLegal({
 
       <header className={s.cabecalho}>
         <div className={`${s.faixa} ${s.cabecalhoInterno}`}>
-          <Link className={s.marca} href="/">
-            <span className={s.marcaSigla} aria-hidden>
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src="/logos/logo-dialogon-marca.png" alt="" width={24} height={24} />
-            </span>
-            Dialogon
+          <Link className={s.marca} href="/" aria-label="Dialogon, início">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/logos/dialogon-horizontal.png" alt="Dialogon" width={128} height={28} />
           </Link>
           <Link className={s.voltar} href="/">
             <IconeVoltar />
