@@ -407,9 +407,11 @@
 
 /* No celular, a mesa vira uma lista: o "hoje" continua torto e apagado, o "agora" se endireita. */
 @media (max-width: 760px) {
+  /* Duas colunas: em uma só, os seis cartões davam quase duas telas. */
   .mesa {
     display: grid;
-    gap: 12px;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
     height: auto;
   }
 
@@ -418,13 +420,39 @@
     left: auto;
     top: auto;
     width: 100%;
-    height: 150px;
+    height: 176px;
     rotate: calc(var(--hr) / 3);
   }
 
   [data-estado='agora'] .cartao {
     left: auto;
     top: auto;
+  }
+
+  /* Meia tela de largura: a peça encolhe para caber, sem vazar do cartão. */
+  .faceHoje,
+  .faceAgora {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 10px;
+    padding: 14px 10px;
+    overflow: hidden;
+  }
+
+  .faceAgora > :not(p) {
+    max-width: 100%;
+    overflow: hidden;
+  }
+
+  .faceHoje p {
+    font-size: 13px;
+  }
+
+  .faceAgora p {
+    font-size: 12px;
+  }
+
+  .faceAgora p b {
+    font-size: 14px;
   }
 }
 
