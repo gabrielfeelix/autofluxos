@@ -182,8 +182,13 @@ sem ™/®, sem menção ao Brasil; não aparece em busca por "Codewire" nem por
 mesmo ramo que "não poderia desconhecer"; depende de oposição em 60 dias ou
 nulidade em 180 dias pedidas por eles) e prioridade unionista de 6 meses se
 tiverem depósito recente. Biblioteca de Anúncios da Meta conferida pelo Gabriel em 30/out: nenhum
-anúncio deles (os ~24 resultados são política com "diálogo"). Falta conferir no
-[TMview](https://www.tmdn.org/tmview/#/tmview/results?page=1&pageSize=30&criteria=C&basicSearch=dialogon).
+anúncio deles (os ~24 resultados são política com "diálogo"). [TMview](https://www.tmdn.org/tmview/#/tmview/results?page=1&pageSize=30&criteria=C&basicSearch=dialogon)
+conferido em 30/out, 6 resultados: DIALOGON na França (2010, consultoria; 1989,
+cimento), ambos vencidos; DialogOne registrada na Tailândia (até 2036) e no Japão
+(Digital Advertising Consortium, classes 9, 35, 42); DialogOnline na Alemanha
+(Finstreet, 42). Nada da Codewire em país nenhum (nem Grécia, nem EUIPO). Marca é
+territorial: nada disso bloqueia o INPI. Próximo passo se for Dialogon: registrar
+`dialogon.com.br`, criar o @dialogon e depositar DIALOGON nas classes 9, 42 e 35.
 
 **Caíram por dono (não repetir):**
 - SABIÁ é marca da Amazon Technologies (classes 9 e 42), e a Maritaca AI
