@@ -30,7 +30,23 @@
 ## Links
 
 - [Página inicial](https://dialogon.com.br/): o produto, como funciona, preços e dúvidas.
-- [Preços](https://dialogon.com.br/#precos): planos com preço na página, sem projeto de implantação.
+- [Preços](https://dialogon.com.br/precos): planos com preço na página, sem projeto de implantação.
+- [Produto](https://dialogon.com.br/produto): visão geral do que o Dialogon faz.
+- [Fluxos e chatbot](https://dialogon.com.br/produto/fluxos)
+- [IA que lê o seu negócio](https://dialogon.com.br/produto/ia)
+- [Inbox da equipe](https://dialogon.com.br/produto/inbox)
+- [Contatos e funil](https://dialogon.com.br/produto/contatos-e-funil)
+- [Transmissões](https://dialogon.com.br/produto/transmissoes)
+- [Relatórios](https://dialogon.com.br/produto/relatorios)
+- [WhatsApp](https://dialogon.com.br/canais/whatsapp)
+- [Instagram](https://dialogon.com.br/canais/instagram)
+- [Chat do site](https://dialogon.com.br/canais/site)
+- [Telegram](https://dialogon.com.br/canais/telegram)
+- [Segmento: aulas e horários](https://dialogon.com.br/segmentos/aulas-e-horarios)
+- [Segmento: loja virtual](https://dialogon.com.br/segmentos/loja-virtual)
+- [Segmento: restaurantes e delivery](https://dialogon.com.br/segmentos/restaurantes-e-delivery)
+- [Segmento: comércio e serviços](https://dialogon.com.br/segmentos/comercio)
+- [Integrações](https://dialogon.com.br/integracoes): Magento, Nuvemshop, Mercado Pago, Asaas, Cardápio Web, Goomer e mais.
 - [Dúvidas frequentes](https://dialogon.com.br/#duvidas)
 - [Privacidade](https://dialogon.com.br/privacidade)
 - [Termos de serviço](https://dialogon.com.br/termos)

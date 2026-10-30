@@ -1,4 +1,5 @@
 import type { MetadataRoute } from 'next'
+import { SITE_URL } from './(site)/metadados'
 
 /**
  * O painel é autenticado e não deve aparecer em mecanismos de busca, mas a
@@ -26,6 +27,6 @@ export default function robots(): MetadataRoute.Robots {
         '/api/',
       ],
     },
-    sitemap: 'https://dialogon.com.br/sitemap.xml',
+    sitemap: `${SITE_URL}/sitemap.xml`,
   }
 }

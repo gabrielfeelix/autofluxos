@@ -4,6 +4,7 @@ import { PaginaDoSite, SecaoFluxo, SecaoNaPratica } from '../../(site)/pagina-do
 import { RECURSOS, recursoPorSlug } from '../../(site)/recursos-do-site'
 import { SecaoCalculadora, SecaoDoisLados, SecaoIaNaConversa, SecaoPrecoResumo } from '../../(site)/secoes-do-site'
 import { CapaDoProduto, CorpoDoProduto, SecaoConversaPreenche, SecaoRelatoriosEmAbas } from '../../(site)/produto-pagina'
+import { DadosDaTrilha } from '../../(site)/dados-estruturados'
 import { metadadosDoSite } from '../../(site)/metadados'
 
 /** Uma página por parte do produto, com a peça que mostra aquela parte funcionando. */
@@ -37,6 +38,13 @@ export default async function PaginaDoRecurso({ params }: { params: Promise<{ sl
   if (!recurso) notFound()
   return (
     <PaginaDoSite capa={<CapaDoProduto recurso={recurso} />}>
+      <DadosDaTrilha
+        itens={[
+          { nome: 'Início', caminho: '/' },
+          { nome: 'Produto', caminho: '/produto' },
+          { nome: recurso.nome, caminho: `/produto/${recurso.slug}` },
+        ]}
+      />
       <CorpoDoProduto recurso={recurso}>{PECAS[recurso.slug]?.()}</CorpoDoProduto>
       <SecaoPrecoResumo />
     </PaginaDoSite>

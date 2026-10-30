@@ -11,6 +11,7 @@ import {
   SecaoNumeros,
   SecaoPrecoResumo,
 } from './(site)/secoes-do-site'
+import { DadosDaOrganizacao, DadosDoAplicativo } from './(site)/dados-estruturados'
 import { metadadosDoSite } from './(site)/metadados'
 
 /**
@@ -24,15 +25,17 @@ import { metadadosDoSite } from './(site)/metadados'
  * (`docs/PLANO-SITE-INSTITUCIONAL.md`): prova, como resolve, o medo do celular,
  * para quem é, o que faz, com o que liga, quanto custa e as dúvidas de sempre.
  */
-export const metadata = metadadosDoSite(
-  '/',
-  'Dialogon: atendimento, vendas e pós-venda no WhatsApp',
-  'A equipe inteira no mesmo número: chatbot e IA, fila por setor, funil, pagamento na conversa e pós-venda, no WhatsApp, Instagram e chat do site.',
-)
+const TITULO = 'Dialogon: atendimento, vendas e pós-venda no WhatsApp'
+const DESCRICAO =
+  'A equipe inteira no mesmo número: chatbot e IA, fila por setor, funil, pagamento na conversa e pós-venda, no WhatsApp, Instagram e chat do site.'
+
+export const metadata = metadadosDoSite('/', TITULO, DESCRICAO)
 
 export default function PaginaInicial() {
   return (
     <PaginaDoSite capa={<CapaDaHome />}>
+      <DadosDaOrganizacao />
+      <DadosDoAplicativo descricao={DESCRICAO} />
       <SecaoNumeros />
       <SecaoJornada />
       <SecaoFluxo />

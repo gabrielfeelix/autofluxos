@@ -3,6 +3,7 @@ import { Inter, JetBrains_Mono, Noto_Color_Emoji, Outfit } from 'next/font/googl
 import type { ReactNode } from 'react'
 import { SCRIPT_DAS_PREFERENCIAS } from '@/components/design/tema'
 import { DicaDoTruncado } from '@/components/design/dica-do-truncado'
+import { SITE_URL } from './(site)/metadados'
 import './globals.css'
 
 const outfit = Outfit({
@@ -65,7 +66,7 @@ export const metadata: Metadata = {
   // num buscador. A landing em `/` sobrescreve isso, ela existe justamente
   // para ser encontrada.
   robots: { index: false, follow: false },
-  metadataBase: new URL('https://dialogon.com.br'),
+  metadataBase: new URL(SITE_URL),
 }
 
 export default function RootLayout({ children }: { children: ReactNode }) {
