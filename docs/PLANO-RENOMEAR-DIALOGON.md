@@ -17,10 +17,12 @@ Feito: texto do cliente (`e52840ea`); domínio na Vercel e DNS na Hostinger
 redirecionamento do domínio antigo (`6e12aab3`); `contato@dialogon.com.br`
 criado na Hostinger e no texto do cliente (`c30e412f`); Meta: URLs de
 privacidade, termos, exclusão, e-mail, URL do site, URIs de OAuth do WhatsApp
-e de anúncios e SDK JS com o domínio novo (validador da Meta confirmou).
+e de anúncios, SDK JS e redirect do login do Instagram com o domínio novo
+(validador da Meta confirmou). As URIs antigas ficam até meados de
+novembro; depois, apagar as de `autofluxos.4yu.com.br` no Login do Facebook
+e no Instagram (não os Domínios do aplicativo nem os webhooks).
 
-Falta: redirect do Instagram (`/api/instagram/retorno`) no caso de uso do
-Instagram; Mercado Pago, PagBank, Stripe e Nuvemshop quando alguém conectar;
+Falta: Mercado Pago, PagBank, Stripe e Nuvemshop quando alguém conectar;
 Search Console da propriedade `dialogon.com.br` e Mudança de endereço; correções
 de `docs/SEO-AUDITORIA.md`; ícone do app na Meta com a logo nova; envio de
 e-mail (Brevo) ainda em `autofluxos.mail.4yu.com.br`; webhooks e URLs de API que
