@@ -181,9 +181,9 @@ sem ™/®, sem menção ao Brasil; não aparece em busca por "Codewire" nem por
 "dialogon voice agent". Riscos: LPI art. 124, XXIII (marca estrangeira do
 mesmo ramo que "não poderia desconhecer"; depende de oposição em 60 dias ou
 nulidade em 180 dias pedidas por eles) e prioridade unionista de 6 meses se
-tiverem depósito recente. Falta o Gabriel conferir no
-[TMview](https://www.tmdn.org/tmview/#/tmview/results?page=1&pageSize=30&criteria=C&basicSearch=dialogon)
-e na [Biblioteca de Anúncios da Meta](https://www.facebook.com/ads/library/?active_status=all&ad_type=all&country=ALL&q=dialogon).
+tiverem depósito recente. Biblioteca de Anúncios da Meta conferida pelo Gabriel em 30/out: nenhum
+anúncio deles (os ~24 resultados são política com "diálogo"). Falta conferir no
+[TMview](https://www.tmdn.org/tmview/#/tmview/results?page=1&pageSize=30&criteria=C&basicSearch=dialogon).
 
 **Caíram por dono (não repetir):**
 - SABIÁ é marca da Amazon Technologies (classes 9 e 42), e a Maritaca AI
