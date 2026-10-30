@@ -22,6 +22,16 @@ e de anúncios, SDK JS e redirect do login do Instagram com o domínio novo
 novembro; depois, apagar as de `autofluxos.4yu.com.br` no Login do Facebook
 e no Instagram (não os Domínios do aplicativo nem os webhooks).
 
+Também feito em 30/out: Search Console (`sc-domain:dialogon.com.br`, sitemap,
+Gabriel proprietário), envio do Brevo em `mail.dialogon.com.br`
+(`EMAIL_REMETENTE` na Vercel), chat da home liberado para o domínio novo no
+banco (`channels.site_config`), cron `autofluxos-pedidos-da-loja` apontando para
+`dialogon.com.br`, Instagram oficial `@usedialogon` (o `@dialogon` tem dono).
+Webhooks conferidos: cardápios, gateways de cliente e Telegram sem nenhum
+conectado; Asaas da 4YU sem chave em produção. Os webhooks da Meta seguem em
+`autofluxos.4yu.com.br/api/webhook/*` de propósito: o token de verificação é
+segredo sensível na Vercel e a troca ficou para o Gabriel decidir.
+
 Falta: Mercado Pago, PagBank, Stripe e Nuvemshop quando alguém conectar;
 Search Console da propriedade `dialogon.com.br` e Mudança de endereço; correções
 de `docs/SEO-AUDITORIA.md`; ícone do app na Meta com a logo nova; envio de
