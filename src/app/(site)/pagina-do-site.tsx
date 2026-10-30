@@ -86,7 +86,7 @@ export function PaginaDoSite({ capa, children, cor }: { capa: ReactNode; childre
           <Link className={s.marca} href="/">
             <span className={s.marcaSigla} aria-hidden>
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src="/logos/logo-autofluxos-marca.png" alt="" width={24} height={24} />
+              <img src="/logos/logo-dialogon-marca.png" alt="" width={24} height={24} />
             </span>
             Dialogon
           </Link>
@@ -149,7 +149,7 @@ export function PaginaDoSite({ capa, children, cor }: { capa: ReactNode; childre
               <Link className={s.marca} href="/">
                 <span className={s.marcaSigla} aria-hidden>
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src="/logos/logo-autofluxos-marca.png" alt="" width={24} height={24} />
+              <img src="/logos/logo-dialogon-marca.png" alt="" width={24} height={24} />
             </span>
                 Dialogon
               </Link>

@@ -185,7 +185,7 @@ export function CorpoDoRamo({ nicho }: { nicho: NichoDoSite }) {
               <nav className={n.appMenu} aria-hidden>
                 <span className={n.appMarca}>
                   {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src="/logos/logo-autofluxos-marca.png" alt="" width={18} height={18} />
+                  <img src="/logos/logo-dialogon-marca.png" alt="" width={18} height={18} />
                   Dialogon
                 </span>
                 <span>Início</span>
@@ -242,7 +242,7 @@ export function CorpoDoRamo({ nicho }: { nicho: NichoDoSite }) {
           <div className={n.menuApp} data-revela data-como="escala" aria-hidden>
             <span className={n.menuMarca}>
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src="/logos/logo-autofluxos-marca.png" alt="" width={20} height={20} />
+              <img src="/logos/logo-dialogon-marca.png" alt="" width={20} height={20} />
               Dialogon
             </span>
             <span>Início</span>

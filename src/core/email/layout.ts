@@ -42,7 +42,7 @@ export type Email = {
 export type EmailMontado = { assunto: string; html: string; texto: string }
 
 /** A logo mora no domínio de produção: leitor de e-mail não alcança localhost. */
-export const LOGO = 'https://dialogon.com.br/logos/logo-autofluxos-marca.png'
+export const LOGO = 'https://dialogon.com.br/logos/logo-dialogon-marca.png'
 export const CONTATO = 'contato@dialogon.com.br'
 
 const COR = {

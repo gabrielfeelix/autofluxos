@@ -33,7 +33,7 @@ export function Portico({
       <section className="relative flex min-w-0 flex-col justify-between px-6 pt-6 text-white md:flex-[1.1] md:px-14 md:py-12">
         <div className="flex items-center gap-2.5">
           <span className="flex size-9 items-center justify-center rounded-xl bg-white">
-            <Image src="/logos/logo-autofluxos-marca.png" alt="" width={24} height={24} priority />
+            <Image src="/logos/logo-dialogon-marca.png" alt="" width={24} height={24} priority />
           </span>
           <span className="text-[17px] font-bold tracking-[-0.01em]">Dialogon</span>
         </div>

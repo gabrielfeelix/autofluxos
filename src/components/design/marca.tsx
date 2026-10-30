@@ -25,7 +25,7 @@ export function Marca({ compacta = false }: { compacta?: boolean }) {
   return (
     <div className="flex items-center gap-2.5">
       <Image
-        src="/logos/logo-autofluxos-marca.png"
+        src="/logos/logo-dialogon-marca.png"
         alt="Dialogon"
         width={lado}
         height={lado}
