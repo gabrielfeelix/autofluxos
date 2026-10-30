@@ -2632,7 +2632,8 @@
 }
 
 /*
- * O nome ocupa a largura inteira.
+ * O nome ocupa a largura inteira, centralizado: "Dialogon" tem 8 letras, e
+ * alinhado à esquerda sobrava um vão à direita que parecia erro.
  *
  * `clamp` com `vw` no meio faz a palavra crescer com a tela, e o
  * `letter-spacing` negativo aperta as letras para o bloco parecer sólido. O
@@ -2641,6 +2642,7 @@
  */
 .rodapeNome {
   margin: 0;
+  text-align: center;
   font-size: clamp(58px, 15.5vw, 220px);
   line-height: 0.84;
   letter-spacing: -0.055em;
