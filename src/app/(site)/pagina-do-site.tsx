@@ -245,8 +245,8 @@ export function PaginaDoSite({ capa, children, cor }: { capa: ReactNode; childre
               >
                 Verandi
               </a>
-              <a className={s.rodapeLink} data-n="003" href="mailto:contato@4yu.com.br">
-                contato@4yu.com.br
+              <a className={s.rodapeLink} data-n="003" href={FALE_CONOSCO} target="_blank" rel="noopener noreferrer">
+                WhatsApp da 4YU
               </a>
             </nav>
           </div>
