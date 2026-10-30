@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import Script from 'next/script'
 import { BentoDoProduto } from './bento-do-produto'
 import { InboxClicavel } from './inbox-clicavel'
 import { CartaoEnterprise } from './precos-pagina'
@@ -37,6 +38,14 @@ import { FotoDaPessoa } from './pessoas-do-site'
 const ENTRAR = '/entrar'
 
 /*
+ * O balão do próprio AutoFluxos: o canal Site da conta "4YU Tech
+ * Demonstração", que roda os mesmos fluxos do número 44 7400-7438. A chave é
+ * pública por desenho (vai no HTML de qualquer site cliente); quem barra uso
+ * indevido é a lista de domínios do canal.
+ */
+const CHAVE_DO_BALAO = 'aaNPqcrfdE4M1ioL8U4NTM6-'
+
+/*
  * "Pergunte a uma IA" do rodapé (como no zipchat.ai, 28/out/2026): abre a IA
  * com a pergunta pronta, apontando para o `public/llms.txt`. O Gemini não
  * aceita pergunta pelo endereço; o Modo IA do Google (`udm=50`) aceita.
@@ -66,6 +75,7 @@ export function PaginaDoSite({ capa, children, cor }: { capa: ReactNode; childre
     <div className={s.pagina} style={estilo}>
       <Revelar seletorCabecalho={s.cabecalho} classeRolado={s.cabecalhoRolado} />
       <Cursor classePonto={s.cursorPonto} classeAnel={s.cursorAnel} classeAtivo={s.cursorAtivo} />
+      <Script src="/chat/v1.js" data-chave={CHAVE_DO_BALAO} strategy="lazyOnload" />
 
       <header className={s.cabecalho}>
         <div className={`${s.faixa} ${s.cabecalhoInterno}`}>

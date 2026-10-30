@@ -105,8 +105,12 @@ export function MenuDoTopo({ classeItem, hrefEntrar }: { classeItem?: string; hr
     if (!folha) return
     const raizDoc = document.documentElement
     raizDoc.style.overflow = 'hidden'
+    // O balão de chat fica por cima de tudo e cobriria o Testar grátis do pé.
+    const balao = document.querySelector<HTMLElement>('[data-autofluxos="chat"]')
+    if (balao) balao.style.display = 'none'
     return () => {
       raizDoc.style.overflow = ''
+      if (balao) balao.style.display = ''
     }
   }, [folha])
 

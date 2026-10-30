@@ -53,7 +53,7 @@ export type Porta =
  * a conversa em intervalos enquanto espera resposta.
  */
 export async function abrirPorta(req: Request, chave: string, uso: 'leitura' | 'envio'): Promise<Porta> {
-  const origem = req.headers.get('origin')
+  const origem = origemDoPedido(req)
   const canal = await acharChatPorChave(chave)
 
   if (!canal || canal.status !== 'ativo' || !origemPermitida(origem, canal.config.dominios, LOCAL)) {
@@ -66,6 +66,22 @@ export async function abrirPorta(req: Request, chave: string, uso: 'leitura' | '
   }
 
   return { ok: true, canal, origem: origem! }
+}
+
+/**
+ * A origem de quem chama. Num GET do mesmo domínio o navegador não manda
+ * `Origin` (é o caso do balão no próprio site do AutoFluxos); aí vale o
+ * `Sec-Fetch-Site: same-origin`, e a origem é a do próprio pedido, que ainda
+ * passa pela lista de domínios do canal.
+ */
+function origemDoPedido(req: Request): string | null {
+  const origem = req.headers.get('origin')
+  if (origem) return origem
+  if (req.headers.get('sec-fetch-site') !== 'same-origin') return null
+  // `req.url` pode vir com o host interno do servidor; o `Host` é o que o navegador pediu.
+  const host = req.headers.get('x-forwarded-host') ?? req.headers.get('host')
+  const protocolo = req.headers.get('x-forwarded-proto') ?? new URL(req.url).protocol.replace(':', '')
+  return host ? `${protocolo}://${host}` : null
 }
 
 /** O preflight do navegador: só responde com CORS a origem que está na lista. */
