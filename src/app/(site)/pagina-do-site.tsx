@@ -16,6 +16,7 @@ import {
 } from '@/core/planos'
 import { Cursor } from './cursor'
 import { FluxoSeMontando } from './fluxo-se-montando'
+import { FALE_CONOSCO, whatsappDa4yu } from './contato-do-site'
 import { MenuDoTopo } from './menu-do-topo'
 import { ProgressoDosPassos } from './progresso-dos-passos'
 import { Revelar } from './revelar'
@@ -122,7 +123,9 @@ export function PaginaDoSite({ capa, children, cor }: { capa: ReactNode; childre
             <div className={s.acoes} data-revela data-atraso="140">
               <a
                 className={`${s.botao} ${s.botaoPrincipal} ${s.botaoGrande}`}
-                href="mailto:contato@4yu.com.br?subject=AutoFluxos%3A%20quero%20conhecer"
+                href={FALE_CONOSCO}
+                target="_blank"
+                rel="noopener noreferrer"
               >
                 Fale conosco
               </a>
@@ -212,7 +215,9 @@ export function PaginaDoSite({ capa, children, cor }: { capa: ReactNode; childre
               <a
                 className={s.rodapeLink}
                 data-n="002"
-                href="mailto:contato@4yu.com.br?subject=AutoFluxos%3A%20quero%20conhecer"
+                href={FALE_CONOSCO}
+                target="_blank"
+                rel="noopener noreferrer"
               >
                 Fale conosco
               </a>
@@ -674,7 +679,9 @@ function Plano({
 
       <a
         className={`${s.botao} ${destaque ? s.botaoPrincipal : s.botaoVazado} ${s.planoBotao}`}
-        href={`mailto:contato@4yu.com.br?subject=${encodeURIComponent(`AutoFluxos: teste grátis do plano ${nome}`)}`}
+        href={whatsappDa4yu(preco ? `Olá! Quero testar o plano ${nome} do AutoFluxos.` : 'Olá! Quero conhecer o AutoFluxos.')}
+        target="_blank"
+        rel="noopener noreferrer"
       >
         {preco ? `Testar ${DIAS_DE_TESTE} dias grátis` : 'Fale conosco'}
       </a>

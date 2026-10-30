@@ -2,6 +2,7 @@ import { Fragment } from 'react'
 import { ENTERPRISE, PLANOS, RECURSOS_DO_PLANO, anualDoPlano, type Plano } from '@/core/planos'
 import s from './pagina-inicial.module.css'
 import x from './site.module.css'
+import { whatsappDa4yu } from './contato-do-site'
 import c from './precos.module.css'
 
 /*
@@ -13,7 +14,7 @@ import c from './precos.module.css'
 const reais = (v: number, centavos = false) =>
   v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL', minimumFractionDigits: centavos ? 2 : 0, maximumFractionDigits: centavos ? 2 : 0 })
 
-const FALAR_COM_VENDAS = `mailto:contato@4yu.com.br?subject=${encodeURIComponent('AutoFluxos: plano Enterprise')}`
+const FALAR_COM_VENDAS = whatsappDa4yu('Olá! Quero conhecer o plano Enterprise do AutoFluxos.')
 
 /* ───────────── Enterprise ───────────── */
 
@@ -39,7 +40,7 @@ export function CartaoEnterprise() {
       <div className={c.enterpriseTexto}>
         <h3 id="plano-enterprise">{ENTERPRISE.nome}</h3>
         <p>{ENTERPRISE.resumo} O valor é combinado com vendas, pelo tamanho da operação.</p>
-        <a className={`${s.botao} ${x.botaoBranco} ${s.botaoGrande}`} href={FALAR_COM_VENDAS}>
+        <a className={`${s.botao} ${x.botaoBranco} ${s.botaoGrande}`} href={FALAR_COM_VENDAS} target="_blank" rel="noopener noreferrer">
           Falar com vendas
         </a>
       </div>
