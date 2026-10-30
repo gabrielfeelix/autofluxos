@@ -78,7 +78,8 @@ export function PaginaDoSite({ capa, children, cor }: { capa: ReactNode; childre
     <div className={s.pagina} style={estilo}>
       <Revelar seletorCabecalho={s.cabecalho} classeRolado={s.cabecalhoRolado} />
       <Cursor classePonto={s.cursorPonto} classeAnel={s.cursorAnel} classeAtivo={s.cursorAtivo} />
-      <Script src="/chat/v1.js" data-chave={CHAVE_DO_BALAO} strategy="lazyOnload" />
+      {/* 44px: fora da moldura azul da página, que tem até 24px na borda. */}
+      <Script src="/chat/v1.js" data-chave={CHAVE_DO_BALAO} data-distancia="44" strategy="lazyOnload" />
 
       <header className={s.cabecalho}>
         <div className={`${s.faixa} ${s.cabecalhoInterno}`}>

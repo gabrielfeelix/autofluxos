@@ -14,7 +14,8 @@
  *
  * Os botões têm até 20 caracteres, o limite do WhatsApp que o `validar()` cobra.
  *
- * O roteiro: quem chega escolhe entre testar, tirar dúvida e suporte. Testar
+ * O roteiro: quem chega escolhe entre testar o chatbot (a demonstração por
+ * ramo, a mesma do WhatsApp), criar a conta, tirar dúvida e suporte. Testar
  * manda o link do cadastro (o teste começa sozinho ao criar a empresa) e
  * oferece ajuda da equipe para montar o primeiro fluxo. Dúvida e suporte vão
  * para a IA; quando ela não sabe, ou a pessoa pede alguém, a conversa passa
@@ -65,11 +66,36 @@ no('oi', 'mensagem', { partes: [{ tipo: 'texto', texto: 'Oi! Aqui é o AutoFluxo
 no('menu', 'pergunta', {
   texto: 'Como posso te ajudar?',
   opcoes: [
-    { id: 'testar', rotulo: 'Quero testar' },
+    { id: 'demo', rotulo: 'Testar o chatbot' },
+    { id: 'testar', rotulo: 'Criar minha conta' },
     { id: 'duvida', rotulo: 'Tenho uma dúvida' },
     { id: 'suporte', rotulo: 'Preciso de suporte' },
   ],
 })
+
+// Demonstração: o bot atende como se fosse o negócio da pessoa, com os mesmos
+// fluxos de ramo que o WhatsApp 44 7400-7438 usa (Demo · Início).
+const DEMOS = [
+  { id: 'pizzaria', rotulo: 'Pizzaria', fluxoId: '8db234cc-b965-4f35-8016-e8b6da30e8a9' },
+  { id: 'hamburgueria', rotulo: 'Hamburgueria', fluxoId: '5da31bcb-ab13-40a4-9152-d21feef2a28a' },
+  { id: 'restaurante', rotulo: 'Restaurante', fluxoId: '3de73e6c-5519-4fd9-a5c4-14d08c8761fe' },
+  { id: 'loja-de-roupas', rotulo: 'Loja de roupas', fluxoId: '3c6fdae0-fab8-4d17-8be1-c3bd7131524b' },
+  { id: 'salao-e-servicos', rotulo: 'Salão e serviços', fluxoId: '49f0a40c-4eaa-4161-a3b2-e25b8467a928' },
+  { id: 'aulas-e-estudio', rotulo: 'Aulas e estúdio', fluxoId: '6679e515-d89e-46b5-825b-d2f907467c7c' },
+  { id: 'loja-online', rotulo: 'Loja online', fluxoId: '8d4ba017-0a61-4672-b6ce-b1b347966e2d' },
+]
+no('demo-aviso', 'mensagem', {
+  partes: [{
+    tipo: 'texto',
+    texto: 'Escolha um ramo e eu atendo como se fosse o seu negócio. É uma demonstração: pedidos, compras e agendamentos feitos aqui não são reais.',
+  }],
+}, -600)
+no('demo-ramo', 'pergunta', {
+  texto: 'Qual ramo você quer ver?',
+  opcoes: DEMOS.map((d) => ({ id: d.id, rotulo: d.rotulo })),
+  salvarEm: 'ramo_demo',
+}, -600)
+for (const d of DEMOS) no(`ir-${d.id}`, 'ir-fluxo', { rotulo: `Demo · ${d.rotulo}`, fluxoId: d.fluxoId }, -600)
 
 // Testar
 no('teste', 'mensagem', {
@@ -120,7 +146,7 @@ no('suporte', 'handoff', {
 no('mais', 'pergunta', {
   texto: 'Posso ajudar em mais alguma coisa?',
   opcoes: [
-    { id: 'testar', rotulo: 'Quero testar' },
+    { id: 'testar', rotulo: 'Criar minha conta' },
     { id: 'outra', rotulo: 'Tenho outra dúvida' },
     { id: 'fim', rotulo: 'Era só isso' },
   ],
@@ -131,6 +157,9 @@ liga('tem-nome', 'oi-nome', 'verdadeiro')
 liga('tem-nome', 'oi', 'falso')
 liga('oi-nome', 'menu')
 liga('oi', 'menu')
+liga('menu', 'demo-aviso', 'demo')
+liga('demo-aviso', 'demo-ramo')
+for (const d of DEMOS) liga('demo-ramo', `ir-${d.id}`, d.id)
 liga('menu', 'teste', 'testar')
 liga('menu', 'ia-duvida', 'duvida')
 liga('menu', 'ia-suporte', 'suporte')

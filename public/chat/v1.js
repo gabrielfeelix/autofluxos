@@ -121,17 +121,20 @@
     '.raiz.escuro .painel,.raiz.escuro .convite{box-shadow:0 24px 60px -18px rgba(0,0,0,.8),0 0 0 1px rgba(255,255,255,.08)}' +
     '*{box-sizing:border-box;font-family:inherit;margin:0}[hidden]{display:none!important}' +
     'button{font:inherit;color:inherit}' +
-    '.raiz{position:fixed;right:20px;bottom:20px;z-index:2147483000;display:flex;flex-direction:column;align-items:flex-end;gap:12px;color:var(--tinta);font-size:15px;line-height:1.45;-webkit-font-smoothing:antialiased}' +
-    '.botao{width:64px;height:64px;border-radius:50%;border:0;background:var(--c);color:#fff;cursor:pointer;display:grid;place-items:center;box-shadow:0 10px 28px -8px color-mix(in srgb,var(--c) 70%,#000),0 2px 6px rgba(22,24,29,.18);transition:transform .18s ease;position:relative}' +
+    '.raiz{position:fixed;right:var(--dist,20px);bottom:var(--dist,20px);z-index:2147483000;display:flex;flex-direction:column;align-items:flex-end;gap:12px;color:var(--tinta);font-size:15px;line-height:1.45;-webkit-font-smoothing:antialiased}' +
+    '.botao{width:64px;height:64px;border-radius:50%;border:0;background:var(--c);color:#fff;cursor:pointer;display:grid;place-items:center;box-shadow:0 0 0 3px rgba(255,255,255,.95),0 12px 30px -8px color-mix(in srgb,var(--c) 70%,#000),0 2px 6px rgba(22,24,29,.18);transition:transform .18s ease;position:relative}' +
     '.botao:hover{transform:scale(1.05)}' +
     '.botao .mascote{width:100%;height:100%;object-fit:cover;border-radius:50%;pointer-events:none}' +
-    '.botao svg.robo{width:54px;height:54px;overflow:visible}' +
-    '.robo.vivo .braco{transform-origin:47px 41px;animation:acena 3.6s ease-in-out infinite}' +
-    '.robo.vivo .olhos{transform-origin:32px 31px;animation:pisca 4.2s infinite}' +
-    '.robo.vivo .antena{animation:respira 1.8s ease-in-out infinite}' +
+    '.botao svg.robo{width:56px;height:56px;overflow:visible}' +
+    '.robo.vivo .corpo{animation:flutua 3.2s ease-in-out infinite}' +
+    '.robo.vivo .braco{transform-origin:43px 50px;animation:acena 3.6s ease-in-out infinite}' +
+    '.robo.vivo .olhos{transform-origin:32px 31px;animation:pisca 4.2s infinite,olha 7s ease-in-out infinite}' +
+    '.robo.vivo .antena,.robo.vivo .peito{transform-box:fill-box;transform-origin:center;animation:respira 1.8s ease-in-out infinite}' +
+    '@keyframes flutua{0%,100%{transform:translateY(0)}50%{transform:translateY(-1.4px)}}' +
+    '@keyframes olha{0%,38%,100%{translate:0 0}44%,58%{translate:1.6px 0}64%,78%{translate:-1.6px 0}}' +
     '@keyframes acena{0%,52%,100%{transform:rotate(0)}8%{transform:rotate(-24deg)}16%{transform:rotate(10deg)}24%{transform:rotate(-24deg)}32%{transform:rotate(10deg)}42%{transform:rotate(0)}}' +
     '@keyframes pisca{0%,92%,100%{transform:scaleY(1)}95%{transform:scaleY(.1)}}' +
-    '@keyframes respira{0%,100%{opacity:1}50%{opacity:.35}}' +
+    '@keyframes respira{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.55;transform:scale(.82)}}' +
     '.botao:focus-visible,button:focus-visible,a:focus-visible,textarea:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid color-mix(in srgb,var(--c) 45%,#fff);outline-offset:2px}' +
     '.botao>svg:not(.robo){width:27px;height:27px}' +
     '.naolidas{position:absolute;top:-3px;right:-3px;min-width:20px;height:20px;padding:0 5px;border-radius:10px;background:#E11D48;color:#fff;font-size:11.5px;font-weight:700;display:grid;place-items:center;border:2px solid #fff}' +
@@ -266,24 +269,61 @@
     '.redondo.vermelho{background:#E11D48;box-shadow:0 0 0 2px rgba(255,255,255,.9),0 10px 24px -8px rgba(0,0,0,.45)}.redondo.vermelho svg{transform:rotate(135deg)}' +
     '.marca{text-align:center;font-size:11px;color:#A3A7B0;padding:6px 0 8px;background:var(--fundo)}' +
     '.marca a{color:inherit;text-decoration:none}' +
-    '@media (max-width:480px){.raiz{right:14px;bottom:14px}.raiz.aberto{inset:0}.raiz.aberto .botao{display:none}.painel{position:fixed;inset:0;width:auto;height:100%;border-radius:0}.convite{max-width:230px}}' +
+    '@media (max-width:480px){.raiz{right:max(14px,calc(var(--dist,20px) - 16px));bottom:max(14px,calc(var(--dist,20px) - 16px))}.raiz.aberto{inset:0}.raiz.aberto .botao{display:none}.painel{position:fixed;inset:0;width:auto;height:100%;border-radius:0}.convite{max-width:230px}}' +
     '@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}'
 
-  /* O robô: no botão ele acena em loop, pisca e a antena respira; no avatar
-   * fica parado. Cores fixas de propósito: branco e visor escuro leem em cima
-   * de qualquer cor de marca. */
+  /* O robô: no botão ele flutua, acena, pisca, olha para os lados e a antena
+   * respira; no avatar fica parado. Branco com visor azul-marinho lê em cima
+   * de qualquer cor de marca; a antena e a luz do peito usam o degradê da
+   * marca AutoFluxos. Os ids dos degradês levam um contador: o mesmo robô
+   * aparece no botão e em cada avatar, e um degradê dentro de um SVG
+   * escondido (o botão some com o painel aberto no celular) não pinta os
+   * outros que apontam para ele. */
+  var robos = 0
   function robo(vivo) {
+    var n = 'af' + ++robos
     return (
-      '<svg class="robo' + (vivo ? ' vivo' : '') + '" viewBox="7 3 52 52" aria-hidden="true">' +
-      '<g class="braco"><path d="M47 41 Q54 39 56 30" stroke="#fff" stroke-width="4" stroke-linecap="round" fill="none"/><circle cx="56.5" cy="27" r="4.6" fill="#fff"/></g>' +
-      '<line x1="32" y1="19" x2="32" y2="12" stroke="#fff" stroke-width="3" stroke-linecap="round"/>' +
-      '<circle class="antena" cx="32" cy="10" r="3.4" fill="#FFD43B"/>' +
-      '<rect x="11.5" y="28" width="5" height="10" rx="2.5" fill="#fff" opacity=".85"/>' +
-      '<rect x="15" y="19" width="34" height="28" rx="10" fill="#fff"/>' +
-      '<rect x="19.5" y="24.5" width="25" height="15" rx="7.5" fill="#16181D"/>' +
-      '<g class="olhos"><rect x="24.5" y="28.5" width="4.6" height="5.6" rx="2.3" fill="#6EE7F9"/><rect x="34.9" y="28.5" width="4.6" height="5.6" rx="2.3" fill="#6EE7F9"/></g>' +
-      '<path d="M28.5 36.2 Q32 38.4 35.5 36.2" stroke="#6EE7F9" stroke-width="1.6" stroke-linecap="round" fill="none"/>' +
-      '<rect x="25" y="47" width="14" height="5" rx="2.5" fill="#fff" opacity=".85"/>' +
+      '<svg class="robo' + (vivo ? ' vivo' : '') + '" viewBox="0 0 64 64" aria-hidden="true">' +
+      '<defs>' +
+      '<linearGradient id="' + n + 'c" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#FFFFFF"/><stop offset="1" stop-color="#D9E3FA"/></linearGradient>' +
+      '<linearGradient id="' + n + 'v" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#1B2D63"/><stop offset="1" stop-color="#0C1838"/></linearGradient>' +
+      '<linearGradient id="' + n + 'm" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#38BDF8"/><stop offset=".55" stop-color="#3B82F6"/><stop offset="1" stop-color="#8B5CF6"/></linearGradient>' +
+      '</defs>' +
+      '<g class="corpo">' +
+      // tronco, com a gola e a luz do peito
+      '<path d="M21.5 58V53a6.5 6.5 0 0 1 6.5-6.5h8a6.5 6.5 0 0 1 6.5 6.5V58Z" fill="url(#' + n + 'c)"/>' +
+      '<path d="M26 47.2h12" stroke="#0C1838" stroke-width="2.2" stroke-linecap="round" opacity=".85"/>' +
+      '<circle class="peito" cx="32" cy="53" r="2.3" fill="url(#' + n + 'm)"/>' +
+      // braço parado
+      '<path d="M22 51.5Q16.5 53 15.5 58" stroke="#EEF2FC" stroke-width="4" stroke-linecap="round" fill="none"/>' +
+      // antena
+      '<path d="M32 15.5V9" stroke="#EEF2FC" stroke-width="2.6" stroke-linecap="round"/>' +
+      '<circle class="antena" cx="32" cy="7" r="3.6" fill="url(#' + n + 'm)"/>' +
+      '<circle cx="30.9" cy="5.9" r="1" fill="#fff" opacity=".85"/>' +
+      // orelhas
+      '<rect x="8.5" y="26" width="6.5" height="13" rx="3.25" fill="#0C1838"/>' +
+      '<rect x="10.2" y="29" width="2.2" height="7" rx="1.1" fill="#3B82F6" opacity=".9"/>' +
+      '<rect x="49" y="26" width="6.5" height="13" rx="3.25" fill="#0C1838"/>' +
+      '<rect x="51.6" y="29" width="2.2" height="7" rx="1.1" fill="#3B82F6" opacity=".9"/>' +
+      // cabeça, com o brilho de cima
+      '<rect x="13" y="14.5" width="38" height="33" rx="12.5" fill="url(#' + n + 'c)"/>' +
+      '<path d="M18.5 21.5Q20.5 18.2 26 17.6" stroke="#fff" stroke-width="2.4" stroke-linecap="round" fill="none"/>' +
+      // visor, com o reflexo
+      '<rect x="17.5" y="22" width="29" height="18.5" rx="8.5" fill="url(#' + n + 'v)"/>' +
+      '<path d="M22.5 23.2h5.6l-5.4 16h-3.2a4 4 0 0 1-.7-1.6Z" fill="#fff" opacity=".1"/>' +
+      // olhos, com o ponto de luz
+      '<g class="olhos">' +
+      '<rect x="23.6" y="26.8" width="5.2" height="7.4" rx="2.6" fill="#7DD3FC"/>' +
+      '<rect x="35.2" y="26.8" width="5.2" height="7.4" rx="2.6" fill="#7DD3FC"/>' +
+      '<circle cx="27.2" cy="28.4" r="1" fill="#fff"/><circle cx="38.8" cy="28.4" r="1" fill="#fff"/>' +
+      '</g>' +
+      // sorriso e bochechas
+      '<path d="M28.6 36.6Q32 38.9 35.4 36.6" stroke="#7DD3FC" stroke-width="1.7" stroke-linecap="round" fill="none"/>' +
+      '<circle cx="21.6" cy="36.4" r="1.5" fill="#F9A8D4" opacity=".55"/><circle cx="42.4" cy="36.4" r="1.5" fill="#F9A8D4" opacity=".55"/>' +
+      // braço que acena
+      '<g class="braco"><path d="M42.5 50.5Q51.5 49.5 53.5 39" stroke="#EEF2FC" stroke-width="4.2" stroke-linecap="round" fill="none"/>' +
+      '<circle cx="54.2" cy="35.2" r="4.4" fill="url(#' + n + 'c)"/><circle cx="54.2" cy="35.2" r="4.4" fill="none" stroke="#0C1838" stroke-opacity=".12"/></g>' +
+      '</g>' +
       '</svg>'
     )
   }
@@ -315,6 +355,10 @@
   sombra.appendChild(estilo)
 
   var raiz = el('div', 'raiz')
+  // `data-distancia` no script: quanto o balão fica da borda, para o site que
+  // tem moldura ou faixa colorida no canto não ver o botão encostado nela.
+  var distancia = parseInt(script.getAttribute('data-distancia') || '', 10)
+  if (distancia >= 0 && distancia <= 120) raiz.style.setProperty('--dist', distancia + 'px')
   sombra.appendChild(raiz)
 
   var config = null
@@ -359,9 +403,30 @@
         a.rel = 'noopener'
         alvo.appendChild(a)
       } else if (partes[i]) {
-        alvo.appendChild(document.createTextNode(partes[i]))
+        formatado(alvo, partes[i])
       }
     }
+  }
+
+  /* A formatação do WhatsApp (*negrito*, _itálico_, ~riscado~): os fluxos são
+   * os mesmos dos dois canais, e no balão os asteriscos apareciam crus. Só
+   * casa marca colada no texto (`*oi*`, não `2 * 3 * 4`), como o WhatsApp. Monta
+   * nós de texto, nunca HTML: o que vem da conversa não vira marcação. */
+  var MARCAS = { '*': 'b', _: 'i', '~': 's' }
+  function formatado(alvo, texto) {
+    var re = /([*_~])(?=\S)((?:(?!\1)[^\n])*?\S)\1(?![\w])/g
+    var desde = 0
+    var m
+    while ((m = re.exec(texto))) {
+      var antes = texto.charAt(m.index - 1)
+      if (m.index > 0 && /\w/.test(antes)) continue
+      if (m.index > desde) alvo.appendChild(document.createTextNode(texto.slice(desde, m.index)))
+      var marcado = el(MARCAS[m[1]])
+      formatado(marcado, m[2])
+      alvo.appendChild(marcado)
+      desde = m.index + m[0].length
+    }
+    if (desde < texto.length) alvo.appendChild(document.createTextNode(texto.slice(desde)))
   }
 
   /* O personagem da loja, quando ela mandou um, e o robô quando não. Vídeo vai
