@@ -33,14 +33,13 @@ const { db } = await import('@/server/db')
 const { criarFluxo, publicar } = await import('@/server/repos/fluxos')
 const { fluxoSchema } = await import('@/core/flow/schema')
 const { SAIDA_CONCLUIDO } = await import('@/core/flow/schema')
-const { PLANOS, DIAS_DE_TESTE } = await import('@/core/planos')
+const { DIAS_DE_TESTE } = await import('@/core/planos')
+const { CADASTRO, INSTRUCAO_COMERCIAL, INSTRUCAO_SUPORTE, MARCA_DO_PRODUTO, SOBRE_O_PRODUTO } = await import('./textos-do-chat-4yu')
 
 const GRAVAR = process.argv.includes('--gravar')
 
 const CLIENTE = '3a1d5ac8-369c-4373-856a-495468e7bad4'
 const NOME = 'Site · Início'
-const MARCA_DO_PRODUTO = 'SOBRE O AUTOFLUXOS (o produto que a 4YU vende):'
-const CADASTRO = 'https://autofluxos.4yu.com.br/cadastrar'
 
 type No = { id: string; type: string; position: { x: number; y: number }; data: Record<string, unknown> }
 type Aresta = { id: string; source: string; target: string; sourceHandle?: string }
@@ -54,11 +53,6 @@ function no(id: string, type: string, data: Record<string, unknown>, x = 0) {
 function liga(source: string, target: string, sourceHandle?: string) {
   arestas.push({ id: `e${arestas.length + 1}`, source, target, ...(sourceHandle ? { sourceHandle } : {}) })
 }
-
-const INSTRUCAO_BASE =
-  'Você atende no chat do site do AutoFluxos, da 4YU. Responda em português, em frases curtas, com o que está em SOBRE A EMPRESA, ' +
-  'principalmente a parte SOBRE O AUTOFLUXOS. Nunca invente preço, prazo, recurso ou integração. ' +
-  'Quando a pessoa disser que entendeu, que era só isso, ou que quer testar, chame concluir_conversa com um resumo de uma linha do que ela perguntou.'
 
 no('tem-nome', 'condicao', { variavel: 'nome', operador: 'preenchido', valor: '' })
 no('oi-nome', 'mensagem', { partes: [{ tipo: 'texto', texto: 'Oi, {{nome}}! Aqui é o AutoFluxos, da 4YU.' }] }, -200)
@@ -120,9 +114,7 @@ no('boa', 'mensagem', { partes: [{ tipo: 'texto', texto: 'Combinado! Se travar e
 
 // Dúvida
 no('ia-duvida', 'ia', {
-  instrucao:
-    INSTRUCAO_BASE +
-    ' A pessoa ainda não é cliente e tem uma dúvida sobre o produto, os planos ou o teste grátis.',
+  instrucao: INSTRUCAO_COMERCIAL,
   salvarEm: 'ultima_resposta',
   ferramentas: [],
   conversar: { maxTurnos: 12, concluir: { salvarEm: 'assunto_ia' } },
@@ -130,10 +122,7 @@ no('ia-duvida', 'ia', {
 
 // Suporte
 no('ia-suporte', 'ia', {
-  instrucao:
-    INSTRUCAO_BASE +
-    ' A pessoa já é cliente e precisa de ajuda para usar o sistema. Explique o caminho no painel quando souber. ' +
-    'Se for um problema da conta dela (algo que parou, cobrança, acesso), não tente resolver: isso é com a equipe de suporte.',
+  instrucao: INSTRUCAO_SUPORTE,
   salvarEm: 'ultima_resposta',
   ferramentas: [],
   conversar: { maxTurnos: 12, concluir: { salvarEm: 'assunto_ia' } },
@@ -146,8 +135,10 @@ no('suporte', 'handoff', {
 no('mais', 'pergunta', {
   texto: 'Posso ajudar em mais alguma coisa?',
   opcoes: [
+    { id: 'demo', rotulo: 'Testar o chatbot' },
     { id: 'testar', rotulo: 'Criar minha conta' },
     { id: 'outra', rotulo: 'Tenho outra dúvida' },
+    { id: 'equipe', rotulo: 'Falar com a equipe' },
     { id: 'fim', rotulo: 'Era só isso' },
   ],
 })
@@ -168,27 +159,20 @@ liga('ajuda', 'empresa', 'sim')
 liga('ajuda', 'boa', 'nao')
 liga('empresa', 'comercial')
 liga('ia-duvida', 'mais', SAIDA_CONCLUIDO)
-liga('ia-duvida', 'comercial')
+// Saiu da conversa com a IA ("menu" ou o teto de respostas): volta às opções,
+// não cai numa pessoa sem ter pedido. Pedido de gente e "não sei" o motor já transfere.
+liga('ia-duvida', 'mais')
 liga('ia-suporte', 'mais', SAIDA_CONCLUIDO)
 liga('ia-suporte', 'suporte')
 liga('mais', 'teste', 'testar')
 liga('mais', 'ia-duvida', 'outra')
+liga('mais', 'demo-aviso', 'demo')
+liga('mais', 'empresa', 'equipe')
 liga('mais', 'tchau', 'fim')
 
 const grafo = fluxoSchema.parse({ inicio: 'tem-nome', nodes: nos, edges: arestas })
 
-const reais = (v: number) => v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
-const PRODUTO = [
-  MARCA_DO_PRODUTO,
-  'Atendimento no WhatsApp, Instagram, Telegram e chat do site numa caixa só (Inbox), com chatbot de fluxos, IA que responde pelo catálogo e pelas regras da empresa, CRM com funil, transmissões e relatórios. A equipe inteira atende no mesmo número.',
-  'Usa a API oficial do WhatsApp da Meta. Dá para manter o WhatsApp Business no celular ao mesmo tempo (coexistência).',
-  `Teste grátis: ${DIAS_DE_TESTE} dias, sem cartão, no plano escolhido na página de preços (Operação, se não escolher). Sem fidelidade. A conta se cria sozinha em ${CADASTRO}.`,
-  'Planos (mensalidade; a tarifa das mensagens da Meta é cobrada à parte, pela Meta):',
-  ...PLANOS.map((p) => `- ${p.nome}: ${reais(p.preco)} por mês. ${p.itens.filter((i) => !i.startsWith('Tudo d')).join('; ')}.`),
-  '- Enterprise: sob consulta, para operação acima de 50 atendentes ou integração sob medida.',
-  'Integrações: Magento, Nuvemshop, Mercado Pago, Asaas, InfinitePay, PagBank, Efí, iugu, Pagar.me, PagHiper, Woovi, Goomer, Cardápio Web, OlaClick, anúncios da Meta, API e webhooks.',
-  'Se o cliente quiser, a equipe da 4YU monta o primeiro fluxo junto com ele, pelo WhatsApp.',
-].join('\n')
+const PRODUTO = SOBRE_O_PRODUTO
 
 console.log(JSON.stringify({ nos: grafo.nodes.length, arestas: grafo.edges.length }))
 console.log(PRODUTO)
