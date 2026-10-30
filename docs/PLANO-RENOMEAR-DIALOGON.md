@@ -6,8 +6,25 @@ Decidido pelo Gabriel em 30/out/2026; `dialogon.com.br` comprado no mesmo dia
 ## Decisões de partida (o Gabriel pode vetar)
 
 - Grafia: **Dialogon** (só o D maiúsculo).
-- Site em `dialogon.com.br`; sistema em `app.dialogon.com.br`.
-  `autofluxos.4yu.com.br` vira redirecionamento permanente, não some.
+- Site e sistema juntos em `dialogon.com.br` (o `app.` exigiria dividir o
+  app; decidido em 30/out). `autofluxos.4yu.com.br` redireciona as páginas com
+  308 e mantém `/api` respondendo (webhooks da Meta não seguem redirect).
+
+## Estado em 30/out/2026, fim do dia
+
+Feito: texto do cliente (`e52840ea`); domínio na Vercel e DNS na Hostinger
+(`@` A 216.198.79.1 e 64.29.17.1, `www` CNAME da Vercel); URLs fixas e
+redirecionamento do domínio antigo (`6e12aab3`); `contato@dialogon.com.br`
+criado na Hostinger e no texto do cliente (`c30e412f`); Meta: URLs de
+privacidade, termos, exclusão, e-mail, URL do site, URIs de OAuth do WhatsApp
+e de anúncios e SDK JS com o domínio novo (validador da Meta confirmou).
+
+Falta: redirect do Instagram (`/api/instagram/retorno`) no caso de uso do
+Instagram; Mercado Pago, PagBank, Stripe e Nuvemshop quando alguém conectar;
+Search Console da propriedade `dialogon.com.br` e Mudança de endereço; correções
+de `docs/SEO-AUDITORIA.md`; ícone do app na Meta com a logo nova; envio de
+e-mail (Brevo) ainda em `autofluxos.mail.4yu.com.br`; webhooks e URLs de API que
+clientes cadastraram (PCYES, gateways) ainda no endereço antigo.
 
 ## Inventário (30/out/2026, `grep` sem node_modules, .next, .git)
 
