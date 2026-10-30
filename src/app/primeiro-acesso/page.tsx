@@ -23,10 +23,10 @@ export const dynamic = 'force-dynamic'
 export default async function PrimeiroAcesso({
   searchParams,
 }: {
-  searchParams: Promise<{ telefone?: string }>
+  searchParams: Promise<{ telefone?: string; plano?: string }>
 }) {
   const sessao = await exigirUsuario()
-  const { telefone } = await searchParams
+  const { telefone, plano } = await searchParams
 
   /*
    * O administrador da plataforma não passa por aqui.
@@ -50,7 +50,7 @@ export default async function PrimeiroAcesso({
         </p>
       }
     >
-      <FormularioDeEmpresa action={acaoPrimeiroAcesso} telefoneInicial={telefone ?? ''} />
+      <FormularioDeEmpresa action={acaoPrimeiroAcesso} telefoneInicial={telefone ?? ''} plano={plano} />
     </Portico>
   )
 }

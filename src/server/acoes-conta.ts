@@ -1,6 +1,8 @@
 'use server'
 
 import { after } from 'next/server'
+import { DIAS_DE_TESTE, PLANO_DO_TESTE, ehIdDePlano, type IdDoPlano } from '@/core/planos'
+import { iniciarTeste } from '@/server/repos/plano'
 import { avisarBoasVindas, avisarOrganizacaoApagada, gestoresDaConta } from './avisos-por-email'
 import { cadastrarSemTrocarDeSessao } from './cadastro-por-outra-pessoa'
 import { revalidatePath } from 'next/cache'
@@ -1007,7 +1009,11 @@ export async function acaoCadastrarSe(
    * Não é segredo (é o telefone de quem acabou de digitá-lo na mesma tela) e
    * some do endereço assim que o primeiro acesso termina.
    */
-  const destino = telefone === '' ? '/primeiro-acesso' : `/primeiro-acesso?telefone=${encodeURIComponent(telefone)}`
+  const plano = String(formData.get('plano') ?? '')
+  const busca = new URLSearchParams()
+  if (telefone !== '') busca.set('telefone', telefone)
+  if (ehIdDePlano(plano)) busca.set('plano', plano)
+  const destino = busca.size ? `/primeiro-acesso?${busca}` : '/primeiro-acesso'
   redirect(destino)
 }
 
@@ -1081,6 +1087,22 @@ export async function acaoPrimeiroAcesso(
     })
 
     if (contexto !== '') await atualizarContexto(id, contexto)
+
+    /*
+     * Teste grátis por conta própria (decisão do Gabriel, 30/out/2026): quem
+     * se cadastra sozinho não espera a 4YU liberar. A empresa nasce em teste de
+     * `DIAS_DE_TESTE` dias, sem cartão, no plano escolhido no site (o do teste
+     * quando não escolheu). Antes disto ela nascia no plano padrão sem data de
+     * fim, de graça para sempre. Falhar aqui não derruba o primeiro acesso: a
+     * 4YU ainda consegue iniciar o teste pelo admin.
+     */
+    const escolhido = String(formData.get('plano') ?? '')
+    const planoDoTeste = ehIdDePlano(escolhido) ? (escolhido as IdDoPlano) : PLANO_DO_TESTE
+    const fimDoTeste = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Sao_Paulo' }).format(
+      new Date(Date.now() + DIAS_DE_TESTE * 24 * 60 * 60 * 1000),
+    )
+    const teste = await iniciarTeste(id, planoDoTeste, fimDoTeste)
+    if (!teste.ok) console.error('[primeiro-acesso] teste grátis não começou:', teste.erro)
 
     await registrar({
       acao: 'criou_conta',

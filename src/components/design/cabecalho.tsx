@@ -40,7 +40,6 @@ export type AvisoDoCabecalho = {
 }
 
 const WHATSAPP_DA_4YU = 'https://wa.me/5544998775978'
-const EMAIL_DA_4YU = 'contato@4yu.com.br'
 
 export function Cabecalho({
   clienteId,
@@ -535,7 +534,6 @@ function GavetaDeAjuda({ aberta, aoFechar, aoSugerir }: { aberta: boolean; aoFec
             <div className="flex flex-col">
               <PortaDeAjuda icone={<IconeLivro />} titulo="Central de ajuda" texto="Como montar automações, perguntas, datas e integrações, com exemplo." href="/ajuda" />
               <PortaDeAjuda icone={<IconeWhatsapp />} titulo="Falar com o suporte" texto="Atendimento da equipe 4YU no WhatsApp, em horário comercial." href={WHATSAPP_DA_4YU} externo />
-              <PortaDeAjuda icone={<IconeEnvelope />} titulo="Escrever para a 4YU" texto={`Para pedido com calma, print ou planilha: ${EMAIL_DA_4YU}.`} href={`mailto:${EMAIL_DA_4YU}`} externo />
               <button type="button" onClick={aoSugerir} className="flex gap-3.5 rounded-xl px-3 py-3 text-left transition hover:bg-surface">
                 <span aria-hidden className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-primary-weak text-primary">
                   <IconeSentiuFalta tamanho={18} />
@@ -612,5 +610,4 @@ const IconeSair = () => <Traco tamanho={16}><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2
 const IconeSol = () => <Traco tamanho={16}><circle cx="12" cy="12" r="4" /><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4" /></Traco>
 const IconeLua = () => <Traco tamanho={16}><path d="M20 14.5A8.5 8.5 0 0 1 9.5 4a8.5 8.5 0 1 0 10.5 10.5Z" /></Traco>
 const IconeLivro = () => <Traco><path d="M4 19.5V5a2 2 0 0 1 2-2h14v16H6a2 2 0 0 0-2 2Zm0 0A2 2 0 0 0 6 21h14" /><path d="M9 7h7M9 11h5" /></Traco>
-const IconeEnvelope = () => <Traco><rect x="3" y="5" width="18" height="14" rx="2" /><path d="m3 7 9 6 9-6" /></Traco>
 const IconeWhatsapp = () => <Traco><path d="M3.5 20.5 5 16a8.5 8.5 0 1 1 3.2 3.1Z" /><path d="M9 9.5c0 3 2.5 5.5 5.5 5.5l1.2-1.4-2-1-.9.8a4 4 0 0 1-2.2-2.2l.8-.9-1-2Z" /></Traco>

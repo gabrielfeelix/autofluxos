@@ -865,6 +865,44 @@
   }
 }
 
+/*
+ * No celular as seis peças viram um carrossel de deslizar: empilhadas davam
+ * quase seis telas de rolagem. A próxima aparece pela borda, que é o convite
+ * para arrastar.
+ */
+@media (max-width: 700px) {
+  .bento {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    width: auto;
+    margin-inline: -20px;
+    padding: 4px 20px 12px;
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    scroll-snap-type: x mandatory;
+    scroll-padding-inline: 20px;
+    scrollbar-width: none;
+  }
+
+  .bento::-webkit-scrollbar {
+    display: none;
+  }
+
+  .peca,
+  .peca[data-forma],
+  .peca[data-forma='larga'] {
+    flex: 0 0 86%;
+    min-height: 0;
+    padding: 24px;
+    scroll-snap-align: start;
+  }
+
+  .canvas {
+    margin: 0 -24px -24px;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .bento * {
     animation: none !important;

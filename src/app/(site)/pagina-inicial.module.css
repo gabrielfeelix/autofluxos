@@ -153,6 +153,8 @@
   top: 0;
   z-index: 50;
   padding-top: 12px;
+  /* A faixa transparente em volta da ilha não pode roubar o toque da página. */
+  pointer-events: none;
 }
 
 .cabecalhoInterno {
@@ -166,15 +168,21 @@
   border: 1px solid rgb(255 255 255 / 0.25);
   background: rgb(255 255 255 / 0.14);
   backdrop-filter: blur(14px) saturate(1.2);
+  pointer-events: auto;
   transition:
     background 0.3s var(--curva),
     border-color 0.3s var(--curva),
-    box-shadow 0.3s var(--curva);
+    box-shadow 0.3s var(--curva),
+    translate 0.4s var(--curva);
 }
 
-.cabecalhoRolado .cabecalhoInterno {
+/* Com a folha do celular aberta a ilha vira papel, como a folha embaixo dela. */
+.cabecalhoRolado .cabecalhoInterno,
+.cabecalho:has([id='folha-do-topo']) .cabecalhoInterno {
   --veu: 16 32 84;
   --accent: #1d4ed8;
+  --accent-hover: #1a43c0;
+  --sobre-accent: #ffffff;
   --panel: #ffffff;
   --ink: #0c1838;
   --muted: #56617c;
@@ -183,6 +191,17 @@
   background: rgb(255 255 255 / 0.96);
   border-color: rgb(16 32 84 / 0.08);
   box-shadow: var(--sombra-ilha);
+}
+
+.cabecalho:has([id='folha-do-topo']) .cabecalhoInterno {
+  box-shadow: none;
+}
+
+.cabecalhoAcoes {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  order: 2;
 }
 
 .marca {
@@ -2492,12 +2511,6 @@
   }
 }
 
-@media (max-width: 560px) {
-  .rodapeTopo {
-    grid-template-columns: 1fr;
-  }
-}
-
 .rodapeSobre {
   display: grid;
   gap: 16px;
@@ -2838,4 +2851,76 @@
 .rodapeIaBotao:focus-visible {
   outline: 2px solid var(--ink);
   outline-offset: 2px;
+}
+
+/*
+ * Rodapé no celular: as colunas de links andam em pares e cada linha tem
+ * 40px de toque. Fica no fim do arquivo para vencer as regras base acima.
+ */
+@media (max-width: 560px) {
+  .rodapeTopo {
+    gap: 32px 20px;
+  }
+
+  .rodapeSobre {
+    grid-column: 1 / -1;
+  }
+
+  .rodapeColuna {
+    gap: 0;
+  }
+
+  .rodapeTitulo {
+    margin-bottom: 4px;
+  }
+
+  .rodapeLink {
+    padding-block: 10px;
+  }
+
+  .rodapeIaBotao {
+    width: 44px;
+    height: 44px;
+  }
+}
+
+/*
+ * Barra do cabeçalho no celular (no fim do arquivo para vencer `.botao`).
+ *
+ * No celular a barra é a dos SaaS de referência: marca à esquerda, a chamada
+ * principal e o menu à direita (Entrar vai para dentro da folha). Ao descer a
+ * página a ilha sobe e sai da frente; qualquer subida a traz de volta.
+ */
+@media (max-width: 860px) {
+  .cabecalhoInterno {
+    gap: 8px;
+  }
+
+  .cabecalhoInterno .marca {
+    margin-right: auto;
+  }
+
+  .cabecalhoEntrar {
+    display: none;
+  }
+
+  .cabecalhoCta {
+    min-height: 44px;
+    padding: 0 16px;
+    font-size: 14px;
+    transition:
+      opacity 0.2s var(--curva),
+      scale 0.2s var(--curva);
+  }
+
+  /* Com a folha aberta o Testar grátis mora no pé dela; dois iguais na tela confundem. */
+  .cabecalho:has([id='folha-do-topo']) .cabecalhoCta {
+    opacity: 0;
+    scale: 0.94;
+    pointer-events: none;
+  }
+
+  .cabecalho[data-some]:not(:has([id='folha-do-topo'])) .cabecalhoInterno {
+    translate: 0 calc(-100% - 16px);
+  }
 }

@@ -2,6 +2,7 @@ import { Fragment } from 'react'
 import { ENTERPRISE, PLANOS, RECURSOS_DO_PLANO, anualDoPlano, type Plano } from '@/core/planos'
 import s from './pagina-inicial.module.css'
 import x from './site.module.css'
+import { whatsappDa4yu } from './contato-do-site'
 import c from './precos.module.css'
 
 /*
@@ -13,7 +14,7 @@ import c from './precos.module.css'
 const reais = (v: number, centavos = false) =>
   v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL', minimumFractionDigits: centavos ? 2 : 0, maximumFractionDigits: centavos ? 2 : 0 })
 
-const FALAR_COM_VENDAS = `mailto:contato@4yu.com.br?subject=${encodeURIComponent('AutoFluxos: plano Enterprise')}`
+const FALAR_COM_VENDAS = whatsappDa4yu('Olá! Quero conhecer o plano Enterprise do AutoFluxos.')
 
 /* ───────────── Enterprise ───────────── */
 
@@ -39,7 +40,7 @@ export function CartaoEnterprise() {
       <div className={c.enterpriseTexto}>
         <h3 id="plano-enterprise">{ENTERPRISE.nome}</h3>
         <p>{ENTERPRISE.resumo} O valor é combinado com vendas, pelo tamanho da operação.</p>
-        <a className={`${s.botao} ${x.botaoBranco} ${s.botaoGrande}`} href={FALAR_COM_VENDAS}>
+        <a className={`${s.botao} ${x.botaoBranco} ${s.botaoGrande}`} href={FALAR_COM_VENDAS} target="_blank" rel="noopener noreferrer">
           Falar com vendas
         </a>
       </div>
@@ -88,8 +89,9 @@ const NUMEROS: Linha[] = [
 
 /*
  * Só o que nenhum plano da tabela tem. "Robôs montados pela 4YU" fica de fora
- * de propósito: toda conta nasce com o primeiro fluxo montado por nós (o
- * fechamento da página diz isso), e marcar "não incluso" nos outros mentiria.
+ * de propósito: em qualquer plano a equipe monta o primeiro fluxo junto, se o
+ * cliente pedir (o fechamento da página diz isso), e marcar "não incluso" nos
+ * outros mentiria.
  */
 const SO_NO_ENTERPRISE = ['Integração com o seu sistema', 'Gerente de conta']
 
@@ -124,6 +126,21 @@ export function SecaoComparacao() {
             Os mesmos números que a fatura usa. Passou da franquia, nada trava: a conversa a mais entra na fatura seguinte.
           </p>
         </div>
+
+        {/*
+          No celular a tabela mostra um plano por vez, escolhido aqui. São rádios
+          e não estado do React: o `:has()` do CSS esconde as outras colunas e a
+          página continua toda no servidor. No computador o seletor some.
+        */}
+        <div className={c.comparar}>
+          <div className={c.seletor} role="radiogroup" aria-label="Plano para comparar">
+            {[...PLANOS.map((p) => p.nome), ENTERPRISE.nome].map((nome, i) => (
+              <label key={nome}>
+                <input type="radio" name="plano-comparado" data-coluna={i + 2} defaultChecked={i === 1} />
+                {nome}
+              </label>
+            ))}
+          </div>
 
         <div className={c.rolagem} data-revela>
           <table className={c.tabela}>
@@ -185,6 +202,7 @@ export function SecaoComparacao() {
               ))}
             </tbody>
           </table>
+        </div>
         </div>
       </div>
     </section>

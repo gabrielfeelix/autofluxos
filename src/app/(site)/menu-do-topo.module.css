@@ -479,8 +479,10 @@
 }
 
 /*
- * A folha do celular: tela cheia, fora da página (portal no `body`), então os
- * tokens e a curva estão escritos aqui, sem herdar de `.pagina`.
+ * A folha do celular: tela cheia por baixo da barra (que continua em cima,
+ * agora branca, com o X no lugar do menu). Mora dentro do `<header>`, então o
+ * `z-index: -1` a põe atrás da ilha e na frente da página. Os tokens estão
+ * escritos aqui: o `<header>` herda os do azul da capa.
  */
 .folha {
   --ink: #0c1838;
@@ -489,99 +491,167 @@
   --dim: #66708a;
   --line: rgb(16 32 84 / 0.1);
   --surface: #f5f7fc;
+  --curva-folha: cubic-bezier(0.22, 1, 0.36, 1);
   position: fixed;
   inset: 0;
-  z-index: 100;
+  z-index: -1;
   display: flex;
   flex-direction: column;
+  /* A ilha do topo tem 12 + 66px; a lista começa logo abaixo dela. */
+  padding-top: 86px;
   background: #ffffff;
   color: var(--ink);
-  animation: entraFolha 0.28s cubic-bezier(0.44, 0, 0.56, 1);
+  pointer-events: auto;
+  animation: entraFolha 0.24s ease-out;
+}
+
+.folha[data-saindo] {
+  animation: saiFolha 0.18s ease-in forwards;
 }
 
 @keyframes entraFolha {
   from {
     opacity: 0;
-    translate: 0 12px;
   }
 }
 
-.folhaTopo {
+@keyframes saiFolha {
+  to {
+    opacity: 0;
+  }
+}
+
+.folhaLista {
+  flex: 1;
+  margin: 0;
+  padding: 8px 20px 24px;
+  list-style: none;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+/* As linhas entram uma depois da outra, de leve, como na Stripe. */
+.folhaLista > li {
+  border-bottom: 1px solid var(--line);
+  animation: entraLinha 0.5s var(--curva-folha) backwards;
+  animation-delay: calc(var(--i) * 40ms + 60ms);
+}
+
+@keyframes entraLinha {
+  from {
+    opacity: 0;
+    translate: 0 10px;
+  }
+}
+
+.folhaItem {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 12px 16px 12px 20px;
-  border-bottom: 1px solid var(--line);
-}
-
-.folhaMarca {
-  display: inline-flex;
-  align-items: center;
-  gap: 10px;
-  font-size: 16px;
+  width: 100%;
+  min-height: 62px;
+  padding: 0 2px;
+  border: 0;
+  background: none;
+  font-family: inherit;
+  font-size: 21px;
   font-weight: 600;
+  letter-spacing: -0.02em;
   color: inherit;
+  text-align: left;
   text-decoration: none;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
 }
 
-.folhaMarca span {
+.folhaSeta {
   display: grid;
   place-items: center;
   width: 32px;
   height: 32px;
-  border-radius: 10px;
-  border: 1px solid var(--line);
-  color: #1d4ed8;
-}
-
-.fecharFolha {
-  display: grid;
-  place-items: center;
-  width: 44px;
-  height: 44px;
-  border: 1px solid var(--line);
-  border-radius: 12px;
+  border-radius: 99px;
   background: var(--surface);
-  color: var(--ink);
-  cursor: pointer;
+  color: var(--muted);
+  transition:
+    rotate 0.3s var(--curva-folha),
+    background 0.2s,
+    color 0.2s;
 }
 
-.folhaCorpo {
-  flex: 1;
+.folhaSeta .seta {
+  width: 12px;
+  height: 12px;
+  rotate: none;
+}
+
+.folhaItem[aria-expanded='true'] .folhaSeta {
+  rotate: 180deg;
+  background: #1d4ed8;
+  color: #ffffff;
+}
+
+.folhaItem:active .folhaSeta {
+  scale: 0.92;
+}
+
+.gaveta {
   display: grid;
-  align-content: start;
-  gap: 28px;
-  overflow-y: auto;
-  overscroll-behavior: contain;
-  padding: 22px 20px 28px;
+  grid-template-rows: 0fr;
+  transition: grid-template-rows 0.34s var(--curva-folha);
 }
 
-.grupo {
-  display: grid;
-  gap: 2px;
+.gaveta[data-aberta] {
+  grid-template-rows: 1fr;
 }
 
-.grupo .legenda {
-  margin-bottom: 8px;
+.gavetaMiolo {
+  min-height: 0;
+  overflow: hidden;
+}
+
+.gavetaMiolo > :first-child {
+  margin-top: 2px;
+}
+
+.gavetaMiolo > :last-child {
+  margin-bottom: 18px;
+}
+
+/* O conteúdo da gaveta desliza junto com a abertura, sem chegar seco. */
+.gavetaMiolo > * {
+  opacity: 0;
+  translate: 0 -6px;
+  transition:
+    opacity 0.2s,
+    translate 0.3s var(--curva-folha);
+}
+
+.gaveta[data-aberta] .gavetaMiolo > * {
+  opacity: 1;
+  translate: 0 0;
+  transition-delay: 0.08s;
 }
 
 .linhaFolha {
   display: flex;
   align-items: center;
   gap: 14px;
-  min-height: 52px;
-  padding: 8px 4px;
+  min-height: 56px;
+  padding: 8px 10px;
+  margin-inline: -10px;
+  border-radius: 12px;
   color: inherit;
   text-decoration: none;
+  -webkit-tap-highlight-color: transparent;
 }
 
-.linhaFolha + .linhaFolha {
-  border-top: 1px solid var(--line);
+.linhaFolha:active {
+  background: var(--surface);
 }
 
 .linhaFolha strong {
   display: block;
-  font-size: 16px;
+  font-size: 15.5px;
   font-weight: 600;
   letter-spacing: -0.01em;
 }
@@ -589,15 +659,37 @@
 .linhaFolha small {
   display: block;
   margin-top: 2px;
-  font-size: 13.5px;
+  font-size: 13px;
   line-height: 1.4;
   color: var(--muted);
+}
+
+.pontoDoRamo {
+  flex: none;
+  width: 10px;
+  height: 10px;
+  margin-inline: 11px;
+  border-radius: 99px;
+  background: var(--cor);
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--cor) 16%, transparent);
+}
+
+.folhaVerTudo {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 44px;
+  font-size: 14.5px;
+  font-weight: 600;
+  color: #1d4ed8;
+  text-decoration: none;
 }
 
 .canaisFolha {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 8px;
+  padding-top: 4px;
 }
 
 .canaisFolha a {
@@ -619,27 +711,13 @@
   color: var(--cor);
 }
 
-.folhaLinks {
-  display: grid;
-  border-top: 1px solid var(--line);
-}
-
-.folhaLinks a {
-  padding: 16px 4px;
-  border-bottom: 1px solid var(--line);
-  font-size: 18px;
-  font-weight: 600;
-  letter-spacing: -0.01em;
-  color: inherit;
-  text-decoration: none;
-}
-
 .folhaAcoes {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 10px;
   padding: 14px 16px calc(14px + env(safe-area-inset-bottom));
   border-top: 1px solid var(--line);
+  animation: entraLinha 0.5s var(--curva-folha) 0.22s backwards;
 }
 
 .folhaEntrar,
@@ -671,8 +749,15 @@
   }
 
   .conteudo,
-  .folha {
+  .folha,
+  .folhaLista > li,
+  .folhaAcoes {
     animation: none;
+  }
+
+  .gaveta,
+  .gavetaMiolo > * {
+    transition: none;
   }
 }
 

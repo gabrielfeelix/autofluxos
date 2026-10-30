@@ -576,6 +576,7 @@
 }
 
 .link {
+  position: relative;
   display: inline-flex;
   align-items: center;
   gap: 8px;
@@ -583,4 +584,11 @@
   font-weight: 600;
   color: var(--cor);
   text-decoration: none;
+}
+
+/* Alvo de toque de 40px no celular sem mexer no desenho do link. */
+.link::after {
+  content: '';
+  position: absolute;
+  inset: -10px -4px;
 }

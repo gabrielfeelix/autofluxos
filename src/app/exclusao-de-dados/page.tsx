@@ -74,9 +74,9 @@ const SECOES: readonly SecaoLegal[] = [
         <p>Se preferir falar diretamente conosco, ou se a empresa não responder:</p>
         <Lista>
           <Item>
-            Escreva para <a href="mailto:contato@4yu.com.br?subject=Exclus%C3%A3o%20de%20dados">contato@4yu.com.br</a>{' '}
-            com o assunto <strong>“Exclusão de dados”</strong>, ou mande mensagem no WhatsApp{' '}
-            <a href="https://wa.me/5544998775978">+55 44 99877-5978</a>.
+            Mande mensagem no WhatsApp{' '}
+            <a href="https://wa.me/5544998775978?text=Ol%C3%A1%21%20Quero%20pedir%20a%20exclus%C3%A3o%20dos%20meus%20dados.">+55 44 99877-5978</a> com o assunto{' '}
+            <strong>“Exclusão de dados”</strong>.
           </Item>
           <Item>
             Diga <strong>o número de WhatsApp (ou o @ do Instagram) que você usou na conversa</strong>{' '}
@@ -122,9 +122,8 @@ const SECOES: readonly SecaoLegal[] = [
           </Item>
           <Item>
             <strong>A conta inteira:</strong> o proprietário pede pelo painel, em Configurações, Dados da
-            organização, Pedir exclusão. Ou por{' '}
-            <a href="mailto:contato@4yu.com.br?subject=Exclus%C3%A3o%20da%20conta">contato@4yu.com.br</a>{' '}
-            usando o e-mail de administrador da conta. Apagamos a empresa e tudo que pende dela ,
+            organização, Pedir exclusão. Ou pelo WhatsApp{' '}
+            <a href="https://wa.me/5544998775978?text=Ol%C3%A1%21%20Quero%20pedir%20a%20exclus%C3%A3o%20da%20conta%20da%20minha%20empresa.">+55 44 99877-5978</a>, informando o e-mail de administrador da conta. Apagamos a empresa e tudo que pende dela ,
             contatos, conversas, fluxos, quadros e sequências.
           </Item>
         </Lista>
@@ -228,11 +227,9 @@ const SECOES: readonly SecaoLegal[] = [
     conteudo: (
       <>
         <p>
-          <a href="mailto:contato@4yu.com.br?subject=Exclus%C3%A3o%20de%20dados">contato@4yu.com.br</a>
-        </p>
-        <p>
           WhatsApp <a href="https://wa.me/5544998775978">+55 44 99877-5978</a>
         </p>
+        <p>E-mail: contato@4yu.com.br</p>
         <p>
           68.770.493 GABRIEL FELIX BARBOSA (4YU) · CNPJ 68.770.493/0001-82 · Rua Osvaldo Cruz,
           297, Zona 07, Maringá/PR, CEP 87020-200.
@@ -265,7 +262,7 @@ export default function Pagina() {
         texto:
           'Quer apagar agora? Escreva com o número que você usou na conversa. Respondemos em português, sem letra miúda.',
         rotulo: 'Pedir a exclusão',
-        href: 'mailto:contato@4yu.com.br?subject=Exclus%C3%A3o%20de%20dados',
+        href: 'https://wa.me/5544998775978?text=Ol%C3%A1%21%20Quero%20pedir%20a%20exclus%C3%A3o%20dos%20meus%20dados.',
       }}
     />
   )

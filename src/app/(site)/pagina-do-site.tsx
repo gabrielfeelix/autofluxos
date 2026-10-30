@@ -1,5 +1,5 @@
 import Link from 'next/link'
-import { WHATSAPP_DA_4YU } from '@/components/ajuda/moldura'
+import Script from 'next/script'
 import { BentoDoProduto } from './bento-do-produto'
 import { InboxClicavel } from './inbox-clicavel'
 import { CartaoEnterprise } from './precos-pagina'
@@ -16,20 +16,13 @@ import {
 } from '@/core/planos'
 import { Cursor } from './cursor'
 import { FluxoSeMontando } from './fluxo-se-montando'
+import { FALE_CONOSCO, whatsappDa4yu } from './contato-do-site'
 import { MenuDoTopo } from './menu-do-topo'
 import { ProgressoDosPassos } from './progresso-dos-passos'
 import { Revelar } from './revelar'
 import { GLIFO_CLAUDE, GLIFO_GOOGLE, GLIFO_OPENAI, GLIFO_PERPLEXITY } from '@/components/design/glifos-oficiais'
 import s from './pagina-inicial.module.css'
 import { FotoDaPessoa } from './pessoas-do-site'
-
-/**
- * "Fale conosco" e "Testar grátis" abrem o WhatsApp da 4YU com a frase pronta:
- * a conta nasce pela nossa mão, e a conversa começa onde a gente atende.
- */
-function whatsDa4YU(texto: string): string {
-  return `${WHATSAPP_DA_4YU}?text=${encodeURIComponent(texto)}`
-}
 
 /**
  * A porta de entrada pública do AutoFluxos.
@@ -44,6 +37,16 @@ function whatsDa4YU(texto: string): string {
  */
 
 const ENTRAR = '/entrar'
+/** O teste grátis por conta própria: cria a conta e a empresa já nasce em teste. */
+const CADASTRO = '/cadastrar'
+
+/*
+ * O balão do próprio AutoFluxos: o canal Site da conta "4YU Tech
+ * Demonstração", que roda os mesmos fluxos do número 44 7400-7438. A chave é
+ * pública por desenho (vai no HTML de qualquer site cliente); quem barra uso
+ * indevido é a lista de domínios do canal.
+ */
+const CHAVE_DO_BALAO = 'aaNPqcrfdE4M1ioL8U4NTM6-'
 
 /*
  * "Pergunte a uma IA" do rodapé (como no zipchat.ai, 28/out/2026): abre a IA
@@ -75,6 +78,7 @@ export function PaginaDoSite({ capa, children, cor }: { capa: ReactNode; childre
     <div className={s.pagina} style={estilo}>
       <Revelar seletorCabecalho={s.cabecalho} classeRolado={s.cabecalhoRolado} />
       <Cursor classePonto={s.cursorPonto} classeAnel={s.cursorAnel} classeAtivo={s.cursorAtivo} />
+      <Script src="/chat/v1.js" data-chave={CHAVE_DO_BALAO} strategy="lazyOnload" />
 
       <header className={s.cabecalho}>
         <div className={`${s.faixa} ${s.cabecalhoInterno}`}>
@@ -88,9 +92,14 @@ export function PaginaDoSite({ capa, children, cor }: { capa: ReactNode; childre
 
           <MenuDoTopo classeItem={s.menuItem} hrefEntrar={ENTRAR} />
 
-          <Link className={`${s.botao} ${s.botaoVazado}`} href={ENTRAR}>
-            Entrar
-          </Link>
+          <div className={s.cabecalhoAcoes}>
+            <Link className={`${s.botao} ${s.botaoVazado} ${s.cabecalhoEntrar}`} href={ENTRAR}>
+              Entrar
+            </Link>
+            <Link className={`${s.botao} ${s.botaoPrincipal} ${s.cabecalhoCta}`} href={CADASTRO}>
+              Testar grátis
+            </Link>
+          </div>
         </div>
       </header>
 
@@ -105,26 +114,26 @@ export function PaginaDoSite({ capa, children, cor }: { capa: ReactNode; childre
               Começar
             </span>
             <h2 className={`${s.tituloSecao} ${s.tituloSecaoCentro}`} data-revela data-como="desfoque" data-atraso="60">
-              A conta nasce pela nossa mão
+              Teste {DIAS_DE_TESTE} dias, sem cartão
             </h2>
               <span className={`${s.risco} ${s.riscoCentro}`} data-revela data-atraso="90" aria-hidden />
             <p className={`${s.chamada} ${s.chamadaCentro}`} data-revela data-atraso="100">
-              Não existe cadastro automático aqui, e isso é de propósito. Conectamos o seu
-              número e montamos o primeiro fluxo junto, para o sistema abrir já atendendo.
-              Escreva contando que perguntas chegam no seu WhatsApp.
+              Crie a conta em um minuto, conecte o seu número e comece com um fluxo pronto do
+              seu ramo. Se preferir, a equipe da 4YU monta o primeiro fluxo junto com você
+              pelo WhatsApp.
             </p>
             <div className={s.acoes} data-revela data-atraso="140">
+              <Link className={`${s.botao} ${s.botaoPrincipal} ${s.botaoGrande}`} href={CADASTRO}>
+                Testar grátis
+              </Link>
               <a
-                className={`${s.botao} ${s.botaoPrincipal} ${s.botaoGrande}`}
-                href={whatsDa4YU('Olá! Quero conhecer o AutoFluxos.')}
+                className={`${s.botao} ${s.botaoVazado} ${s.botaoGrande}`}
+                href={FALE_CONOSCO}
                 target="_blank"
                 rel="noopener noreferrer"
               >
                 Fale conosco
               </a>
-              <Link className={`${s.botao} ${s.botaoVazado} ${s.botaoGrande}`} href={ENTRAR}>
-                Já sou cliente
-              </Link>
             </div>
           </div>
         </section>
@@ -208,7 +217,7 @@ export function PaginaDoSite({ capa, children, cor }: { capa: ReactNode; childre
               <a
                 className={s.rodapeLink}
                 data-n="002"
-                href={whatsDa4YU('Olá! Quero conhecer o AutoFluxos.')}
+                href={FALE_CONOSCO}
                 target="_blank"
                 rel="noopener noreferrer"
               >
@@ -238,8 +247,8 @@ export function PaginaDoSite({ capa, children, cor }: { capa: ReactNode; childre
               >
                 Verandi
               </a>
-              <a className={s.rodapeLink} data-n="003" href="mailto:contato@4yu.com.br">
-                contato@4yu.com.br
+              <a className={s.rodapeLink} data-n="003" href={FALE_CONOSCO} target="_blank" rel="noopener noreferrer">
+                WhatsApp da 4YU
               </a>
             </nav>
           </div>
@@ -442,6 +451,7 @@ export function SecaoPrecos() {
                 {PLANOS.map((plano, indice) => (
                   <Plano
                     key={plano.id}
+                    id={plano.id}
                     nome={plano.nome}
                     preco={plano.preco.toLocaleString('pt-BR')}
                     anual={anualDoPlano(plano)}
@@ -516,7 +526,7 @@ export function SecaoDuvidas() {
                 />
                 <Pergunta
                   pergunta="Quanto tempo até estar no ar?"
-                  resposta="A autorização do número na Meta costuma levar alguns dias. O primeiro fluxo desenhamos juntos numa conversa de uma hora."
+                  resposta={`A conta fica pronta na hora, e o teste de ${DIAS_DE_TESTE} dias começa junto, sem cartão. A autorização do número na Meta costuma levar alguns dias; se quiser, a equipe da 4YU desenha o primeiro fluxo com você numa conversa de uma hora.`}
                 />
                 <Pergunta
                   pergunta="E os meus dados?"
@@ -600,6 +610,7 @@ function PromessaDoPlano({ resumo }: { resumo: string }) {
 }
 
 function Plano({
+  id,
   nome,
   preco,
   anual,
@@ -608,6 +619,8 @@ function Plano({
   destaque,
   atraso,
 }: {
+  /** Com id, o botão abre o cadastro com o teste já nesse plano. */
+  id?: string
   nome: string
   preco: string | null
   /** O anual, quando o plano tem: a linha embaixo do preço mensal. */
@@ -672,9 +685,8 @@ function Plano({
 
       <a
         className={`${s.botao} ${destaque ? s.botaoPrincipal : s.botaoVazado} ${s.planoBotao}`}
-        href={whatsDa4YU(preco ? `Olá! Quero testar o plano ${nome} do AutoFluxos por ${DIAS_DE_TESTE} dias.` : `Olá! Quero saber mais sobre o plano ${nome} do AutoFluxos.`)}
-        target="_blank"
-        rel="noopener noreferrer"
+        href={id && preco ? `/cadastrar?plano=${id}` : whatsappDa4yu('Olá! Quero conhecer o AutoFluxos.')}
+        {...(id && preco ? {} : { target: '_blank', rel: 'noopener noreferrer' })}
       >
         {preco ? `Testar ${DIAS_DE_TESTE} dias grátis` : 'Fale conosco'}
       </a>

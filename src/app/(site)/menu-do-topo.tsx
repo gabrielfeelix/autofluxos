@@ -25,12 +25,21 @@ import m from './menu-do-topo.module.css'
  *
  * Abre no mouse e no teclado (Enter ou espaço no botão), fecha com Esc, com o
  * mouse saindo (com uma folga, para a diagonal até o painel não fechar) e com
- * clique fora. No celular vira uma folha de tela cheia (no `body`, porque o
- * `backdrop-filter` do cabeçalho prenderia um `fixed` dentro dele), com as
- * mesmas três partes, fechar no topo e Entrar e Ver planos no pé.
+ * clique fora.
+ *
+ * **No celular** vira uma folha de tela cheia por baixo da barra, como no
+ * Linear e na Stripe: a barra fica no lugar e o botão de menu vira o X, sem um
+ * segundo topo dentro da folha. As partes andam numa sanfona (uma aberta por
+ * vez), para a primeira vista caber numa tela, e Entrar e Testar grátis ficam
+ * presos no pé. A folha vai para dentro do `<header>` e não do `.cabecalhoInterno`:
+ * o `backdrop-filter` da ilha prenderia um `fixed` dentro dela.
  */
 
 type Chave = 'produto' | 'segmentos' | 'integracoes'
+type Gaveta = 'produto' | 'canais' | 'segmentos'
+
+// Tempo da saída da folha; o CSS (`saiFolha`) usa o mesmo.
+const SAIDA_DA_FOLHA = 180
 
 const ITENS: { chave: Chave; rotulo: string }[] = [
   { chave: 'produto', rotulo: 'Produto' },
@@ -73,6 +82,8 @@ export function MenuDoTopo({ classeItem, hrefEntrar }: { classeItem?: string; hr
   // esvazia antes de terminar de apagar.
   const [ultimo, setUltimo] = useState<Chave>('produto')
   const [folha, setFolha] = useState(false)
+  const [saindo, setSaindo] = useState(false)
+  const [gaveta, setGaveta] = useState<Gaveta | null>(null)
   const [altura, setAltura] = useState<number>()
   const raiz = useRef<HTMLDivElement>(null)
   const conteudo = useRef<HTMLDivElement>(null)
@@ -94,8 +105,12 @@ export function MenuDoTopo({ classeItem, hrefEntrar }: { classeItem?: string; hr
     if (!folha) return
     const raizDoc = document.documentElement
     raizDoc.style.overflow = 'hidden'
+    // O balão de chat fica por cima de tudo e cobriria o Testar grátis do pé.
+    const balao = document.querySelector<HTMLElement>('[data-autofluxos="chat"]')
+    if (balao) balao.style.display = 'none'
     return () => {
       raizDoc.style.overflow = ''
+      if (balao) balao.style.display = ''
     }
   }, [folha])
 
@@ -104,7 +119,7 @@ export function MenuDoTopo({ classeItem, hrefEntrar }: { classeItem?: string; hr
     const tecla = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
         setAberto(null)
-        setFolha(false)
+        fecharFolha()
       }
     }
     const fora = (e: PointerEvent) => {
@@ -127,9 +142,17 @@ export function MenuDoTopo({ classeItem, hrefEntrar }: { classeItem?: string; hr
     window.clearTimeout(fechar.current)
     fechar.current = window.setTimeout(() => setAberto(null), 160)
   }
+  function fecharFolha() {
+    setSaindo(true)
+    window.setTimeout(() => {
+      setFolha(false)
+      setSaindo(false)
+      setGaveta(null)
+    }, SAIDA_DA_FOLHA)
+  }
   const escolheu = () => {
     setAberto(null)
-    setFolha(false)
+    if (folha) fecharFolha()
   }
 
   return (
@@ -175,10 +198,10 @@ export function MenuDoTopo({ classeItem, hrefEntrar }: { classeItem?: string; hr
       <button
         type="button"
         className={m.abrirFolha}
-        aria-expanded={folha}
+        aria-expanded={folha && !saindo}
         aria-controls="folha-do-topo"
-        aria-label={folha ? 'Fechar menu' : 'Abrir menu'}
-        onClick={() => setFolha((f) => !f)}
+        aria-label={folha && !saindo ? 'Fechar menu' : 'Abrir menu'}
+        onClick={() => (folha ? fecharFolha() : setFolha(true))}
       >
         <i />
         <i />
@@ -186,30 +209,15 @@ export function MenuDoTopo({ classeItem, hrefEntrar }: { classeItem?: string; hr
 
       {folha &&
         createPortal(
-          <div
+          <nav
             id="folha-do-topo"
             className={m.folha}
-            role="dialog"
-            aria-modal="true"
             aria-label="Menu"
+            data-saindo={saindo || undefined}
             onClick={(e) => (e.target as HTMLElement).closest('a') && escolheu()}
           >
-            <div className={m.folhaTopo}>
-              <Link href="/" className={m.folhaMarca}>
-                <span>
-                  <IconeFluxo />
-                </span>
-                AutoFluxos
-              </Link>
-              <button type="button" className={m.fecharFolha} aria-label="Fechar menu" onClick={() => setFolha(false)} autoFocus>
-                <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden {...traco} strokeWidth={2}>
-                  <path d="M6 6l12 12M18 6 6 18" />
-                </svg>
-              </button>
-            </div>
-
-            <div className={m.folhaCorpo}>
-              <Grupo titulo="Produto">
+            <ul className={m.folhaLista}>
+              <ItemDaSanfona chave="produto" rotulo="Produto" i={0} aberta={gaveta} alternar={setGaveta}>
                 {PRODUTO.map((p) => (
                   <a key={p.titulo} href={p.href} className={m.linhaFolha}>
                     <span className={m.icone}>{p.icone}</span>
@@ -219,9 +227,12 @@ export function MenuDoTopo({ classeItem, hrefEntrar }: { classeItem?: string; hr
                     </span>
                   </a>
                 ))}
-              </Grupo>
+                <a href="/produto" className={m.folhaVerTudo}>
+                  Ver o produto inteiro <IconeDireita />
+                </a>
+              </ItemDaSanfona>
 
-              <Grupo titulo="Canais">
+              <ItemDaSanfona chave="canais" rotulo="Canais" i={1} aberta={gaveta} alternar={setGaveta}>
                 <div className={m.canaisFolha}>
                   {CANAIS.map((c) => (
                     <a key={c.nome} href={`/canais/${c.slug}`} style={{ '--cor': c.cor } as CSSProperties}>
@@ -230,36 +241,46 @@ export function MenuDoTopo({ classeItem, hrefEntrar }: { classeItem?: string; hr
                     </a>
                   ))}
                 </div>
-              </Grupo>
+              </ItemDaSanfona>
 
-              <Grupo titulo="Segmentos">
-                {SEGMENTOS.map((s) => (
-                  <a key={s.titulo} href={s.href} className={m.linhaFolha}>
+              <ItemDaSanfona chave="segmentos" rotulo="Segmentos" i={2} aberta={gaveta} alternar={setGaveta}>
+                {SEGMENTOS.map((sg) => (
+                  <a key={sg.titulo} href={sg.href} className={m.linhaFolha} style={{ '--cor': sg.cor } as CSSProperties}>
+                    <span className={m.pontoDoRamo} aria-hidden />
                     <span>
-                      <strong>{s.titulo}</strong>
-                      <small>{s.texto}</small>
+                      <strong>{sg.titulo}</strong>
+                      <small>{sg.texto}</small>
                     </span>
                   </a>
                 ))}
-              </Grupo>
+              </ItemDaSanfona>
 
-              <div className={m.folhaLinks}>
-                <a href="/integracoes">Integrações</a>
-                <a href="/precos">Preços</a>
-                <a href="/precos#duvidas">Dúvidas</a>
-              </div>
-            </div>
+              {[
+                { rotulo: 'Integrações', href: '/integracoes' },
+                { rotulo: 'Preços', href: '/precos' },
+                { rotulo: 'Dúvidas', href: '/precos#duvidas' },
+              ].map((l, i) => (
+                <li key={l.href} style={{ '--i': i + 3 } as CSSProperties}>
+                  <a href={l.href} className={m.folhaItem}>
+                    {l.rotulo}
+                    <span className={m.folhaSeta}>
+                      <IconeDireita />
+                    </span>
+                  </a>
+                </li>
+              ))}
+            </ul>
 
             <div className={m.folhaAcoes}>
               <a href={hrefEntrar} className={m.folhaEntrar}>
                 Entrar
               </a>
-              <a href="/precos" className={m.folhaPlanos}>
-                Ver planos
+              <a href="/cadastrar" className={m.folhaPlanos}>
+                Testar grátis
               </a>
             </div>
-          </div>,
-          document.body,
+          </nav>,
+          raiz.current?.closest('header') ?? document.body,
         )}
     </div>
   )
@@ -421,12 +442,45 @@ function PainelIntegracoes() {
   )
 }
 
-function Grupo({ titulo, children }: { titulo: string; children: ReactNode }) {
+/*
+ * Uma linha da sanfona do celular. A gaveta abre por `grid-template-rows`
+ * (0fr para 1fr), que anima até a altura do conteúdo sem medir nada; fechada,
+ * fica `inert` para o Tab não entrar em link escondido.
+ */
+function ItemDaSanfona({
+  chave,
+  rotulo,
+  i,
+  aberta,
+  alternar,
+  children,
+}: {
+  chave: Gaveta
+  rotulo: string
+  i: number
+  aberta: Gaveta | null
+  alternar: (g: Gaveta | null) => void
+  children: ReactNode
+}) {
+  const esta = aberta === chave
   return (
-    <div className={m.grupo}>
-      <p className={m.legenda}>{titulo}</p>
-      {children}
-    </div>
+    <li style={{ '--i': i } as CSSProperties}>
+      <button
+        type="button"
+        className={m.folhaItem}
+        aria-expanded={esta}
+        aria-controls={`gaveta-${chave}`}
+        onClick={() => alternar(esta ? null : chave)}
+      >
+        {rotulo}
+        <span className={m.folhaSeta}>
+          <IconeSeta />
+        </span>
+      </button>
+      <div id={`gaveta-${chave}`} className={m.gaveta} data-aberta={esta || undefined} inert={!esta}>
+        <div className={m.gavetaMiolo}>{children}</div>
+      </div>
+    </li>
   )
 }
 

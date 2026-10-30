@@ -175,6 +175,17 @@
   .texto small:not(.selo) {
     display: none;
   }
+
+  /* "Em breve" e "Pedir esta" quebravam cada um em duas linhas no card estreito. */
+  .pedir {
+    flex-wrap: wrap;
+    gap: 2px 8px;
+  }
+
+  .pedir .selo,
+  .pedir a {
+    white-space: nowrap;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -229,4 +240,12 @@
 .vazio a {
   font-weight: 600;
   color: #1d4ed8;
+}
+
+/* Abaixo de 16px o Safari do iPhone dá zoom na página ao focar a busca. */
+@media (max-width: 560px) {
+  .busca {
+    max-width: none;
+    font-size: 16px;
+  }
 }

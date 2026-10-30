@@ -207,3 +207,93 @@
     padding: 12px 10px;
   }
 }
+
+/*
+ * Comparação no celular: um plano por vez. O seletor são rádios; o `:has()`
+ * deixa à mostra a coluna dos rótulos e a do plano marcado (`data-coluna` é o
+ * índice da coluna na linha, contando o rótulo como 1).
+ */
+.seletor {
+  display: none;
+}
+
+@media (max-width: 760px) {
+  .seletor {
+    position: sticky;
+    top: 12px;
+    z-index: 2;
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 4px;
+    margin-top: 32px;
+    padding: 4px;
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    background: rgb(255 255 255 / 0.92);
+    backdrop-filter: blur(10px);
+    box-shadow: 0 8px 24px -12px rgb(16 32 84 / 0.25);
+  }
+
+  .seletor label {
+    position: relative;
+    display: grid;
+    place-items: center;
+    min-height: 44px;
+    border-radius: 10px;
+    font-size: 13.5px;
+    font-weight: 600;
+    color: var(--muted);
+    cursor: pointer;
+    transition:
+      background 0.2s,
+      color 0.2s;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  .seletor input {
+    position: absolute;
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  .seletor label:has(input:checked) {
+    background: #1d4ed8;
+    color: #ffffff;
+  }
+
+  .seletor label:has(input:focus-visible) {
+    outline: 2px solid #1d4ed8;
+    outline-offset: 2px;
+  }
+
+  .comparar .rolagem {
+    margin-top: 12px;
+    overflow: visible;
+  }
+
+  .comparar .tabela {
+    min-width: 0;
+    table-layout: auto;
+  }
+
+  .comparar .tabela tr > :first-child {
+    position: static;
+    width: 58%;
+  }
+
+  .comparar .tabela tr > :not(:first-child) {
+    width: 42%;
+  }
+
+  .comparar .tabela th,
+  .comparar .tabela td {
+    padding: 13px 14px;
+  }
+
+  .comparar:has([data-coluna='2']:checked) .tabela tr > :not(:first-child, :nth-child(2)),
+  .comparar:has([data-coluna='3']:checked) .tabela tr > :not(:first-child, :nth-child(3)),
+  .comparar:has([data-coluna='4']:checked) .tabela tr > :not(:first-child, :nth-child(4)),
+  .comparar:has([data-coluna='5']:checked) .tabela tr > :not(:first-child, :nth-child(5)) {
+    display: none;
+  }
+}

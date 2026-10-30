@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import { DIAS_DE_TESTE, ehIdDePlano } from '@/core/planos'
 import { redirect } from 'next/navigation'
 import { FormularioDeConta } from '@/components/conta/formulario'
 import { Portico } from '@/components/design/portico'
@@ -23,7 +24,8 @@ export const dynamic = 'force-dynamic'
  * `role` não é tocado em caminho nenhum, e é por construção que ninguém nasce
  * administrador por esta porta.
  */
-export default async function Cadastrar() {
+export default async function Cadastrar({ searchParams }: { searchParams: Promise<{ plano?: string }> }) {
+  const { plano } = await searchParams
   // Quem já está logado não se cadastra de novo, vai para onde já pertence.
   const sessao = await sessaoAtual()
   if (sessao) redirect(await destinoAposEntrar(sessao))
@@ -31,7 +33,7 @@ export default async function Cadastrar() {
   return (
     <Portico
       titulo="Criar seu acesso"
-      descricao="Seu login no AutoFluxos. A empresa você cria no passo seguinte."
+      descricao={`Seu login no AutoFluxos. A empresa você cria no passo seguinte, e o teste de ${DIAS_DE_TESTE} dias começa junto, sem cartão.`}
       rodape={
         <p>
           Já tem conta?{' '}
@@ -49,6 +51,7 @@ export default async function Cadastrar() {
         botao="Criar acesso"
         pedirNome
         pedirTelefone
+        plano={plano && ehIdDePlano(plano) ? plano : undefined}
         ajuda="Depois daqui você entra e cria a sua empresa. Leva menos de um minuto."
       />
     </Portico>

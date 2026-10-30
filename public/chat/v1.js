@@ -902,6 +902,7 @@
       if (aceite && aceite.checked) valores.aceite = 'sim'
       ficha = valores
       gravar('ficha', '1')
+      if (valores.nome) gravar('nome', valores.nome.split(' ')[0])
       irPara('conversa', null)
     })
 
@@ -927,9 +928,38 @@
     var conversa = atual ? conversaPorId(atual) : null
     var msgs = conversa ? conversa.mensagens : []
 
-    var saudacao = el('div', 'msg empresa')
-    textoComLinks(saudacao, config.saudacao)
-    lista.appendChild(saudacao)
+    // A abertura do fluxo (servidor, `abertura-do-site.ts`) entra no lugar da
+    // saudação: a conversa nova já começa com a mensagem e os botões do bot.
+    // Vale para a conversa nova e para a que foi aberta por um desses botões.
+    var abertura = aberturaDe(atual)
+    if (abertura) {
+      var respondidaAbertura = msgs.length > 0 || pendentes.some(function (p) { return p.conversa === atual })
+      abertura.mensagens.forEach(function (texto) {
+        var b0 = el('div', 'msg empresa')
+        textoComLinks(b0, texto)
+        lista.appendChild(b0)
+      })
+      var pergunta = el('div', 'msg empresa')
+      textoComLinks(pergunta, abertura.pergunta.texto)
+      lista.appendChild(pergunta)
+      var caixaAbertura = el('div', 'opcoes')
+      var escolhidaAbertura = atual ? ler('abertura:' + atual) : null
+      abertura.pergunta.opcoes.forEach(function (o) {
+        var bo = el('button', o.rotulo === escolhidaAbertura ? 'escolhida' : null, o.rotulo)
+        bo.type = 'button'
+        bo.disabled = respondidaAbertura
+        bo.addEventListener('click', function () {
+          pelaAbertura = o.rotulo
+          mandar({ opcao: { id: o.id, rotulo: o.rotulo } }, o.rotulo)
+        })
+        caixaAbertura.appendChild(bo)
+      })
+      lista.appendChild(caixaAbertura)
+    } else {
+      var saudacao = el('div', 'msg empresa')
+      textoComLinks(saudacao, config.saudacao)
+      lista.appendChild(saudacao)
+    }
 
     var ultimoAutor = null
     var ultimaEmpresa = -1
@@ -1010,6 +1040,20 @@
     painel.appendChild(t)
 
     rolar.scrollTop = distanciaDoFim < 80 || esperandoDesde ? rolar.scrollHeight : rolar.scrollHeight - rolar.clientHeight - distanciaDoFim
+  }
+
+  var pelaAbertura = null
+  function aberturaDe(conversa) {
+    var a = config.abertura
+    if (!a) return null
+    if (conversa !== null && !ler('abertura:' + conversa)) return null
+    var nome = ler('nome')
+    if (!nome) return a.semNome
+    var troca = function (t) { return t.split('{{nome}}').join(nome) }
+    return {
+      mensagens: a.comNome.mensagens.map(troca),
+      pergunta: { texto: troca(a.comNome.pergunta.texto), opcoes: a.comNome.pergunta.opcoes },
+    }
   }
 
   function respondeuDepois(msgs, i, minhas) {
@@ -1344,7 +1388,9 @@
       marcar(ref)
       atual = ref
       if (ficha) corpo.ficha = ficha
+      if (pelaAbertura) gravar('abertura:' + ref, pelaAbertura)
     }
+    pelaAbertura = null
     var conversa = atual
     var fichaMandada = corpo.ficha || null
     pendentes.push({ ref: ref, texto: textoDaBolha, conversa: conversa })

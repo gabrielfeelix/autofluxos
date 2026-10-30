@@ -224,11 +224,9 @@ const SECOES: readonly SecaoLegal[] = [
     conteudo: (
       <>
         <p>
-          <a href="mailto:contato@4yu.com.br">contato@4yu.com.br</a>
-        </p>
-        <p>
           WhatsApp <a href="https://wa.me/5544998775978">+55 44 99877-5978</a>
         </p>
+        <p>E-mail: contato@4yu.com.br</p>
         <p>
           68.770.493 GABRIEL FELIX BARBOSA (4YU) · CNPJ 68.770.493/0001-82 · Rua Osvaldo Cruz,
           297, Zona 07, Maringá/PR, CEP 87020-200.
@@ -266,7 +264,7 @@ export default function Pagina() {
         texto:
           'Ficou alguma dúvida sobre o que fazemos com os dados? Escreva. Respondemos em português, sem letra miúda.',
         rotulo: 'Fale conosco',
-        href: 'mailto:contato@4yu.com.br?subject=AutoFluxos%3A%20d%C3%BAvida%20sobre%20privacidade',
+        href: 'https://wa.me/5544998775978?text=Ol%C3%A1%21%20Tenho%20uma%20d%C3%BAvida%20sobre%20a%20privacidade%20no%20AutoFluxos.',
       }}
     />
   )
