@@ -574,7 +574,7 @@ export function VitrineDeNichos() {
                     <i />
                   </span>
                   <span>{m}</span>
-                  <b className={x.vitrineChave} aria-label="Ligado" />
+                  <b className={x.vitrineChave} role="img" aria-label="Ligado" />
                 </li>
               ))}
             </ul>

@@ -60,7 +60,7 @@ export function JornadaViva({ etapas }: { etapas: Etapa[] }) {
     <div ref={raiz} className={x.jornadaViva} style={{ '--progresso': ativa / (etapas.length - 1) } as CSSProperties}>
       <ol className={x.jornada} role="tablist" aria-label="Etapas">
         {etapas.map((e, i) => (
-          <li key={e.titulo}>
+          <li key={e.titulo} role="presentation">
             <button
               type="button"
               role="tab"
