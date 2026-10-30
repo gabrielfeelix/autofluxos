@@ -403,9 +403,30 @@
         a.rel = 'noopener'
         alvo.appendChild(a)
       } else if (partes[i]) {
-        alvo.appendChild(document.createTextNode(partes[i]))
+        formatado(alvo, partes[i])
       }
     }
+  }
+
+  /* A formatação do WhatsApp (*negrito*, _itálico_, ~riscado~): os fluxos são
+   * os mesmos dos dois canais, e no balão os asteriscos apareciam crus. Só
+   * casa marca colada no texto (`*oi*`, não `2 * 3 * 4`), como o WhatsApp. Monta
+   * nós de texto, nunca HTML: o que vem da conversa não vira marcação. */
+  var MARCAS = { '*': 'b', _: 'i', '~': 's' }
+  function formatado(alvo, texto) {
+    var re = /([*_~])(?=\S)((?:(?!\1)[^\n])*?\S)\1(?![\w])/g
+    var desde = 0
+    var m
+    while ((m = re.exec(texto))) {
+      var antes = texto.charAt(m.index - 1)
+      if (m.index > 0 && /\w/.test(antes)) continue
+      if (m.index > desde) alvo.appendChild(document.createTextNode(texto.slice(desde, m.index)))
+      var marcado = el(MARCAS[m[1]])
+      formatado(marcado, m[2])
+      alvo.appendChild(marcado)
+      desde = m.index + m[0].length
+    }
+    if (desde < texto.length) alvo.appendChild(document.createTextNode(texto.slice(desde)))
   }
 
   /* O personagem da loja, quando ela mandou um, e o robô quando não. Vídeo vai
