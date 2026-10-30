@@ -48,6 +48,23 @@ de `docs/SEO-AUDITORIA.md`; ícone do app na Meta com a logo nova; envio de
 e-mail (Brevo) ainda em `autofluxos.mail.4yu.com.br`; webhooks e URLs de API que
 clientes cadastraram (PCYES, gateways) ainda no endereço antigo.
 
+## Para continuar (30/out, noite)
+
+- Marca: kit em `assets/marca-dialogon/Dialogon-logos.zip`. Favicon = ícone de
+  app; logo horizontal oficial no site (branca no topo azul, colorida quando a
+  ilha rola e vira papel), no login, na central de ajuda e na barra do sistema
+  (colorida, branca no tema escuro, só símbolo recolhida). Falta print da barra
+  do sistema logado.
+- Webhooks da Meta no domínio novo sem entrega confirmada (seção acima).
+- WhatsApp do +55 44 7400-7438: decidir se o número é só do Dialogon; se for,
+  nome de exibição "Dialogon" (revisão da Meta) e reservar o usuário
+  `dialogon` (livre em 30/out) pelo app ou WhatsApp Manager.
+- Instagram `@usedialogon`: falta o link `https://dialogon.com.br/precos` na bio
+  (só pelo celular). Pedir `@dialogon` à Meta depois do registro no INPI.
+- INPI: depositar DIALOGON nas classes 9, 42 e 35.
+- SEO: GA4 próprio do Dialogon; desfoque do h1 em produto e segmentos; reflow
+  forçado e imagens (`docs/SEO-AUDITORIA.md`).
+
 ## Inventário (30/out/2026, `grep` sem node_modules, .next, .git)
 
 1.440 ocorrências em 443 arquivos. Dentro de `src/`:
