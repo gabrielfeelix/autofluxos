@@ -275,7 +275,7 @@ export function MenuDoTopo({ classeItem, hrefEntrar }: { classeItem?: string; hr
               <a href={hrefEntrar} className={m.folhaEntrar}>
                 Entrar
               </a>
-              <a href="/precos" className={m.folhaPlanos}>
+              <a href="/cadastrar" className={m.folhaPlanos}>
                 Testar grátis
               </a>
             </div>

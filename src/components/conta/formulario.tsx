@@ -21,6 +21,7 @@ export function FormularioDeConta({
   pedirNome = false,
   pedirTelefone = false,
   ajuda,
+  plano,
 }: {
   action: (estado: EstadoDeConta, formData: FormData) => Promise<EstadoDeConta>
   botao: string
@@ -32,11 +33,14 @@ export function FormularioDeConta({
    */
   pedirTelefone?: boolean
   ajuda?: string
+  /** O plano escolhido no site (`/cadastrar?plano=`), levado até o primeiro acesso. */
+  plano?: string
 }) {
   const [estado, enviar, pendente] = useActionState(action, INICIAL)
 
   return (
     <form action={enviar} className="flex flex-col gap-3.5">
+      {plano && <input type="hidden" name="plano" value={plano} />}
       {pedirNome && (
         <label>
           <Rotulo>Nome</Rotulo>

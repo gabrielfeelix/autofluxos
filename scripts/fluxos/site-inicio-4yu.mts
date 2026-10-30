@@ -15,7 +15,8 @@
  * Os botões têm até 20 caracteres, o limite do WhatsApp que o `validar()` cobra.
  *
  * O roteiro: quem chega escolhe entre testar, tirar dúvida e suporte. Testar
- * pede a empresa e passa para a equipe liberar o acesso. Dúvida e suporte vão
+ * manda o link do cadastro (o teste começa sozinho ao criar a empresa) e
+ * oferece ajuda da equipe para montar o primeiro fluxo. Dúvida e suporte vão
  * para a IA; quando ela não sabe, ou a pessoa pede alguém, a conversa passa
  * para a equipe sozinha (`NAO_SEI` vira atendimento no motor).
  *
@@ -38,6 +39,7 @@ const GRAVAR = process.argv.includes('--gravar')
 const CLIENTE = '3a1d5ac8-369c-4373-856a-495468e7bad4'
 const NOME = 'Site · Início'
 const MARCA_DO_PRODUTO = 'SOBRE O AUTOFLUXOS (o produto que a 4YU vende):'
+const CADASTRO = 'https://autofluxos.4yu.com.br/cadastrar'
 
 type No = { id: string; type: string; position: { x: number; y: number }; data: Record<string, unknown> }
 type Aresta = { id: string; source: string; target: string; sourceHandle?: string }
@@ -71,13 +73,24 @@ no('menu', 'pergunta', {
 
 // Testar
 no('teste', 'mensagem', {
-  partes: [{ tipo: 'texto', texto: `O teste é de ${DIAS_DE_TESTE} dias, sem cartão, com o plano Operação liberado.` }],
+  partes: [{
+    tipo: 'texto',
+    texto: `O teste é de ${DIAS_DE_TESTE} dias, sem cartão. Você cria a conta aqui, em um minuto, e a empresa já nasce em teste: ${CADASTRO}`,
+  }],
+}, -300)
+no('ajuda', 'pergunta', {
+  texto: 'Quer que alguém da equipe te ajude a montar o primeiro fluxo?',
+  opcoes: [
+    { id: 'sim', rotulo: 'Quero ajuda' },
+    { id: 'nao', rotulo: 'Vou sozinho' },
+  ],
 }, -300)
 no('empresa', 'pergunta', { texto: 'Qual o nome da sua empresa e o que ela vende?', opcoes: [], salvarEm: 'empresa_lead' }, -300)
 no('comercial', 'handoff', {
-  motivo: 'Comercial · quer testar · {{empresa_lead}}',
-  mensagens: ['Anotado! Alguém da equipe te chama aqui mesmo para liberar o seu acesso.'],
+  motivo: 'Comercial · quer ajuda para começar · {{empresa_lead}}',
+  mensagens: ['Anotado! Alguém da equipe te chama aqui mesmo para montar o primeiro fluxo com você.'],
 }, -300)
+no('boa', 'mensagem', { partes: [{ tipo: 'texto', texto: 'Combinado! Se travar em alguma coisa, é só chamar aqui.' }] }, -300)
 
 // Dúvida
 no('ia-duvida', 'ia', {
@@ -121,7 +134,9 @@ liga('oi', 'menu')
 liga('menu', 'teste', 'testar')
 liga('menu', 'ia-duvida', 'duvida')
 liga('menu', 'ia-suporte', 'suporte')
-liga('teste', 'empresa')
+liga('teste', 'ajuda')
+liga('ajuda', 'empresa', 'sim')
+liga('ajuda', 'boa', 'nao')
 liga('empresa', 'comercial')
 liga('ia-duvida', 'mais', SAIDA_CONCLUIDO)
 liga('ia-duvida', 'comercial')
@@ -138,12 +153,12 @@ const PRODUTO = [
   MARCA_DO_PRODUTO,
   'Atendimento no WhatsApp, Instagram, Telegram e chat do site numa caixa só (Inbox), com chatbot de fluxos, IA que responde pelo catálogo e pelas regras da empresa, CRM com funil, transmissões e relatórios. A equipe inteira atende no mesmo número.',
   'Usa a API oficial do WhatsApp da Meta. Dá para manter o WhatsApp Business no celular ao mesmo tempo (coexistência).',
-  `Teste grátis: ${DIAS_DE_TESTE} dias, sem cartão, com o plano Operação liberado. Sem fidelidade.`,
+  `Teste grátis: ${DIAS_DE_TESTE} dias, sem cartão, no plano escolhido na página de preços (Operação, se não escolher). Sem fidelidade. A conta se cria sozinha em ${CADASTRO}.`,
   'Planos (mensalidade; a tarifa das mensagens da Meta é cobrada à parte, pela Meta):',
   ...PLANOS.map((p) => `- ${p.nome}: ${reais(p.preco)} por mês. ${p.itens.filter((i) => !i.startsWith('Tudo d')).join('; ')}.`),
   '- Enterprise: sob consulta, para operação acima de 50 atendentes ou integração sob medida.',
   'Integrações: Magento, Nuvemshop, Mercado Pago, Asaas, InfinitePay, PagBank, Efí, iugu, Pagar.me, PagHiper, Woovi, Goomer, Cardápio Web, OlaClick, anúncios da Meta, API e webhooks.',
-  'Quem cria a conta e monta o primeiro fluxo junto com o cliente é a equipe da 4YU.',
+  'Se o cliente quiser, a equipe da 4YU monta o primeiro fluxo junto com ele, pelo WhatsApp.',
 ].join('\n')
 
 console.log(JSON.stringify({ nos: grafo.nodes.length, arestas: grafo.edges.length }))

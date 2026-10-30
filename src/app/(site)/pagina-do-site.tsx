@@ -37,6 +37,8 @@ import { FotoDaPessoa } from './pessoas-do-site'
  */
 
 const ENTRAR = '/entrar'
+/** O teste grátis por conta própria: cria a conta e a empresa já nasce em teste. */
+const CADASTRO = '/cadastrar'
 
 /*
  * O balão do próprio AutoFluxos: o canal Site da conta "4YU Tech
@@ -94,7 +96,7 @@ export function PaginaDoSite({ capa, children, cor }: { capa: ReactNode; childre
             <Link className={`${s.botao} ${s.botaoVazado} ${s.cabecalhoEntrar}`} href={ENTRAR}>
               Entrar
             </Link>
-            <Link className={`${s.botao} ${s.botaoPrincipal} ${s.cabecalhoCta}`} href="/precos">
+            <Link className={`${s.botao} ${s.botaoPrincipal} ${s.cabecalhoCta}`} href={CADASTRO}>
               Testar grátis
             </Link>
           </div>
@@ -112,26 +114,26 @@ export function PaginaDoSite({ capa, children, cor }: { capa: ReactNode; childre
               Começar
             </span>
             <h2 className={`${s.tituloSecao} ${s.tituloSecaoCentro}`} data-revela data-como="desfoque" data-atraso="60">
-              A conta nasce pela nossa mão
+              Teste {DIAS_DE_TESTE} dias, sem cartão
             </h2>
               <span className={`${s.risco} ${s.riscoCentro}`} data-revela data-atraso="90" aria-hidden />
             <p className={`${s.chamada} ${s.chamadaCentro}`} data-revela data-atraso="100">
-              Não existe cadastro automático aqui, e isso é de propósito. Conectamos o seu
-              número e montamos o primeiro fluxo junto, para o sistema abrir já atendendo.
-              Escreva contando que perguntas chegam no seu WhatsApp.
+              Crie a conta em um minuto, conecte o seu número e comece com um fluxo pronto do
+              seu ramo. Se preferir, a equipe da 4YU monta o primeiro fluxo junto com você
+              pelo WhatsApp.
             </p>
             <div className={s.acoes} data-revela data-atraso="140">
+              <Link className={`${s.botao} ${s.botaoPrincipal} ${s.botaoGrande}`} href={CADASTRO}>
+                Testar grátis
+              </Link>
               <a
-                className={`${s.botao} ${s.botaoPrincipal} ${s.botaoGrande}`}
+                className={`${s.botao} ${s.botaoVazado} ${s.botaoGrande}`}
                 href={FALE_CONOSCO}
                 target="_blank"
                 rel="noopener noreferrer"
               >
                 Fale conosco
               </a>
-              <Link className={`${s.botao} ${s.botaoVazado} ${s.botaoGrande}`} href={ENTRAR}>
-                Já sou cliente
-              </Link>
             </div>
           </div>
         </section>
@@ -449,6 +451,7 @@ export function SecaoPrecos() {
                 {PLANOS.map((plano, indice) => (
                   <Plano
                     key={plano.id}
+                    id={plano.id}
                     nome={plano.nome}
                     preco={plano.preco.toLocaleString('pt-BR')}
                     anual={anualDoPlano(plano)}
@@ -523,7 +526,7 @@ export function SecaoDuvidas() {
                 />
                 <Pergunta
                   pergunta="Quanto tempo até estar no ar?"
-                  resposta="A autorização do número na Meta costuma levar alguns dias. O primeiro fluxo desenhamos juntos numa conversa de uma hora."
+                  resposta={`A conta fica pronta na hora, e o teste de ${DIAS_DE_TESTE} dias começa junto, sem cartão. A autorização do número na Meta costuma levar alguns dias; se quiser, a equipe da 4YU desenha o primeiro fluxo com você numa conversa de uma hora.`}
                 />
                 <Pergunta
                   pergunta="E os meus dados?"
@@ -607,6 +610,7 @@ function PromessaDoPlano({ resumo }: { resumo: string }) {
 }
 
 function Plano({
+  id,
   nome,
   preco,
   anual,
@@ -615,6 +619,8 @@ function Plano({
   destaque,
   atraso,
 }: {
+  /** Com id, o botão abre o cadastro com o teste já nesse plano. */
+  id?: string
   nome: string
   preco: string | null
   /** O anual, quando o plano tem: a linha embaixo do preço mensal. */
@@ -679,9 +685,8 @@ function Plano({
 
       <a
         className={`${s.botao} ${destaque ? s.botaoPrincipal : s.botaoVazado} ${s.planoBotao}`}
-        href={whatsappDa4yu(preco ? `Olá! Quero testar o plano ${nome} do AutoFluxos.` : 'Olá! Quero conhecer o AutoFluxos.')}
-        target="_blank"
-        rel="noopener noreferrer"
+        href={id && preco ? `/cadastrar?plano=${id}` : whatsappDa4yu('Olá! Quero conhecer o AutoFluxos.')}
+        {...(id && preco ? {} : { target: '_blank', rel: 'noopener noreferrer' })}
       >
         {preco ? `Testar ${DIAS_DE_TESTE} dias grátis` : 'Fale conosco'}
       </a>

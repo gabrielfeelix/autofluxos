@@ -89,8 +89,9 @@ const NUMEROS: Linha[] = [
 
 /*
  * Só o que nenhum plano da tabela tem. "Robôs montados pela 4YU" fica de fora
- * de propósito: toda conta nasce com o primeiro fluxo montado por nós (o
- * fechamento da página diz isso), e marcar "não incluso" nos outros mentiria.
+ * de propósito: em qualquer plano a equipe monta o primeiro fluxo junto, se o
+ * cliente pedir (o fechamento da página diz isso), e marcar "não incluso" nos
+ * outros mentiria.
  */
 const SO_NO_ENTERPRISE = ['Integração com o seu sistema', 'Gerente de conta']
 

@@ -20,10 +20,13 @@ import { CampoDeTelefone } from '@/components/design/campo-de-telefone'
 export function FormularioDeEmpresa({
   action,
   telefoneInicial = '',
+  plano,
 }: {
   action: (formData: FormData) => Promise<{ ok?: boolean; erro?: string } | void>
   /** Veio da tela de cadastro pela URL, a pessoa já digitou, não pergunte de novo. */
   telefoneInicial?: string
+  /** O plano escolhido no site, para o teste grátis começar nele. */
+  plano?: string
 }) {
   const [erro, setErro] = useState<string | null>(null)
   const [pendente, setPendente] = useState(false)
@@ -39,6 +42,7 @@ export function FormularioDeEmpresa({
 
   return (
     <form action={enviar} className="flex flex-col gap-3.5">
+      {plano && <input type="hidden" name="plano" value={plano} />}
       <label>
         <Rotulo>Nome da organização</Rotulo>
         <input
