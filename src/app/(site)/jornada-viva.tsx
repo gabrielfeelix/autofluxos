@@ -290,7 +290,7 @@ const TELAS: ReactNode[] = [
     <div className={x.jtWhats}>
       <div className={x.jtWa} data-de="nos" data-rico>
         <span className={x.jtLinkPreview}>
-          <small>autofluxos.4yu.com.br/pagar</small>
+          <small>dialogon.com.br/pagar</small>
           <b>Pedido #1042 · R$ 268,80</b>
           Pix ou cartão em até 6x
         </span>

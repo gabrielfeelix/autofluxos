@@ -11,7 +11,7 @@ import { acharCliente } from '@/server/repos/clientes'
 
 export const dynamic = 'force-dynamic'
 
-const ENDERECO_DO_GATILHO = 'https://autofluxos.4yu.com.br/api/webhook/foody/'
+const ENDERECO_DO_GATILHO = 'https://dialogon.com.br/api/webhook/foody/'
 
 /**
  * Integrações > Cardápio e delivery > Foody Delivery. O token e o gatilho

@@ -70,10 +70,10 @@ describe('o state do OAuth', () => {
     expect(estadoDoPagBank(`${CLIENTE}.1.abc`)).toBeNull()
   })
   it('monta a autorização com os escopos separados por +', () => {
-    const url = urlDeAutorizacao({ origem: 'https://autofluxos.4yu.com.br', estado: `${CLIENTE}.1.AAAA` })
+    const url = urlDeAutorizacao({ origem: 'https://dialogon.com.br', estado: `${CLIENTE}.1.AAAA` })
     expect(url.startsWith('https://connect.pagbank.com.br/oauth2/authorize?')).toBe(true)
     expect(url).toContain('scope=payments.read+payments.create+checkout.create+accounts.read')
-    expect(url).toContain('redirect_uri=https%3A%2F%2Fautofluxos.4yu.com.br%2Fapi%2Fpagamentos%2Fpagbank%2Fretorno')
+    expect(url).toContain('redirect_uri=https%3A%2F%2Fdialogon.com.br%2Fapi%2Fpagamentos%2Fpagbank%2Fretorno')
   })
   it('vai para o sandbox com PAGBANK_SANDBOX=1', () => {
     vi.stubEnv('PAGBANK_SANDBOX', '1')
@@ -94,7 +94,7 @@ describe('o token', () => {
     })
     vi.stubGlobal('fetch', fetch)
     const antes = Date.now()
-    const token = await trocarCodigo({ codigo: 'c0d3', origem: 'https://autofluxos.4yu.com.br' })
+    const token = await trocarCodigo({ codigo: 'c0d3', origem: 'https://dialogon.com.br' })
     expect(token).toMatchObject({ token: 'a', renovacao: 'r', contaId: 'ACCO_737348328392943', ambiente: 'producao' })
     expect(token.expiraEm!.getTime() - antes).toBeGreaterThanOrEqual(86_400_000 - 1_000)
     const [url, init] = fetch.mock.calls[0] as unknown as [string, RequestInit]
@@ -107,7 +107,7 @@ describe('o token', () => {
     expect(JSON.parse(String(init.body))).toEqual({
       grant_type: 'authorization_code',
       code: 'c0d3',
-      redirect_uri: 'https://autofluxos.4yu.com.br/api/pagamentos/pagbank/retorno',
+      redirect_uri: 'https://dialogon.com.br/api/pagamentos/pagbank/retorno',
     })
   })
   it('renova no ambiente da conexão', async () => {
@@ -164,7 +164,7 @@ describe('criarCobranca', () => {
     expect(corpo.reference_id).toBe(pedido.referencia)
     expect(corpo.customer).toEqual({
       name: 'Ana Souza',
-      email: 'pagador@autofluxos.4yu.com.br',
+      email: 'pagador@dialogon.com.br',
       tax_id: '01234567890',
       phones: [{ country: '55', area: '44', number: '999990000', type: 'MOBILE' }],
     })

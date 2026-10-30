@@ -54,7 +54,7 @@ const CHAVE_DO_BALAO = 'aaNPqcrfdE4M1ioL8U4NTM6-'
  * aceita pergunta pelo endereço; o Modo IA do Google (`udm=50`) aceita.
  */
 const PERGUNTA_PARA_IA =
-  'Estou pesquisando o Dialogon (https://autofluxos.4yu.com.br), plataforma brasileira de atendimento e vendas no WhatsApp, Instagram e chat do site, com chatbot e IA. Usando o site oficial e https://autofluxos.4yu.com.br/llms.txt, resuma: 1) o que o Dialogon faz e como funciona; 2) para quem ele é e os melhores usos; 3) o que o diferencia de outras ferramentas de atendimento.'
+  'Estou pesquisando o Dialogon (https://dialogon.com.br), plataforma brasileira de atendimento e vendas no WhatsApp, Instagram e chat do site, com chatbot e IA. Usando o site oficial e https://dialogon.com.br/llms.txt, resuma: 1) o que o Dialogon faz e como funciona; 2) para quem ele é e os melhores usos; 3) o que o diferencia de outras ferramentas de atendimento.'
 
 const IAS = [
   { nome: 'ChatGPT', glifo: GLIFO_OPENAI, endereco: (q: string) => `https://chatgpt.com/?q=${q}` },
@@ -559,7 +559,7 @@ export function Desktop() {
         <span className={s.janelaPonto} />
         <span className={s.janelaPonto} />
         <span className={s.janelaPonto} />
-        <span className={s.desktopEndereco}>autofluxos.4yu.com.br/inbox</span>
+        <span className={s.desktopEndereco}>dialogon.com.br/inbox</span>
       </div>
       <InboxClicavel />
     </div>

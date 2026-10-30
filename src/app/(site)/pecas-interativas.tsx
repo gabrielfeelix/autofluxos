@@ -327,7 +327,7 @@ export function DoisLados() {
           <i />
           <i />
           <i />
-          <span>autofluxos.4yu.com.br/inbox</span>
+          <span>dialogon.com.br/inbox</span>
         </div>
         <div className={x.janelaGrade}>
         <div className={x.janelaConversa}>

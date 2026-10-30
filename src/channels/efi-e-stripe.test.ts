@@ -126,10 +126,10 @@ describe('Stripe', () => {
   })
 
   it('autorização com read_write e o retorno do endereço', () => {
-    const url = new URL(urlDeAutorizacao({ origem: 'https://autofluxos.4yu.com.br', estado: 'bilhete' }))
+    const url = new URL(urlDeAutorizacao({ origem: 'https://dialogon.com.br', estado: 'bilhete' }))
     expect(url.origin + url.pathname).toBe('https://connect.stripe.com/oauth/authorize')
     expect(url.searchParams.get('scope')).toBe('read_write')
-    expect(url.searchParams.get('redirect_uri')).toBe('https://autofluxos.4yu.com.br/api/pagamentos/stripe/retorno')
+    expect(url.searchParams.get('redirect_uri')).toBe('https://dialogon.com.br/api/pagamentos/stripe/retorno')
   })
 
   it('assinatura: certa passa; errada, velha ou sem segredo, não', () => {

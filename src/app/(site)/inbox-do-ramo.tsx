@@ -68,7 +68,7 @@ function Janela({ titulo, children }: { titulo: string; children: ReactNode }) {
         <i />
         <i />
         <i />
-        <span>autofluxos.4yu.com.br/inbox</span>
+        <span>dialogon.com.br/inbox</span>
       </div>
       <div className={r.topo}>
         <span className={r.avatar}>

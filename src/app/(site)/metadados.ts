@@ -1,6 +1,6 @@
 import type { Metadata } from 'next'
 
-const SITE = 'https://autofluxos.4yu.com.br'
+const SITE = 'https://dialogon.com.br'
 
 /**
  * Os metadados das páginas do site. O painel inteiro é `noindex` pelo layout

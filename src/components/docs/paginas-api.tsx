@@ -12,7 +12,7 @@ import type { PaginaDev } from './paginas-dev'
  * mudar, esta página muda junto.
  */
 
-const BASE = 'https://autofluxos.4yu.com.br/api/v1'
+const BASE = 'https://dialogon.com.br/api/v1'
 const TELEFONE = '5511987654321'
 
 const P = ({ children }: { children: ReactNode }) => <p>{children}</p>

@@ -178,7 +178,7 @@ export function CorpoDoRamo({ nicho }: { nicho: NichoDoSite }) {
               <i />
               <i />
               <i />
-              <span>autofluxos.4yu.com.br · Automações</span>
+              <span>dialogon.com.br · Automações</span>
             </div>
             <div className={n.appCorpo}>
               {/* O menu do app, como em `secoes-do-cliente.tsx`, com Automações aberto. */}

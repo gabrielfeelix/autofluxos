@@ -10,7 +10,7 @@ import { createHmac, timingSafeEqual } from 'node:crypto'
  * valor e o nome da cobrança dos outros.
  */
 
-export const ENDERECO_DE_PAGAR = 'https://autofluxos.4yu.com.br/pagar/'
+export const ENDERECO_DE_PAGAR = 'https://dialogon.com.br/pagar/'
 
 function assinar(id: string, chave: string): string {
   return createHmac('sha256', `pagar:${chave}`).update(id).digest('base64url').slice(0, 22)

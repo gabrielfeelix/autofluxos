@@ -61,7 +61,7 @@ export function mensalidadeLiberada(adminDa4yu: boolean): boolean {
 
 /** De onde o Asaas chama o aviso: a produção, ou o endereço local configurado. */
 export function origemDoAviso(): string {
-  return process.env.VERCEL_ENV === 'production' ? 'https://autofluxos.4yu.com.br' : (process.env.BETTER_AUTH_URL ?? '')
+  return process.env.VERCEL_ENV === 'production' ? 'https://dialogon.com.br' : (process.env.BETTER_AUTH_URL ?? '')
 }
 
 /** Para onde o Asaas manda o e-mail quando o aviso falha. */
@@ -76,7 +76,7 @@ export async function assinar(
   clienteId: string,
   planoId: IdDoPlano,
   ciclo: CicloDeCobranca,
-  /** `https://autofluxos.4yu.com.br`: de onde o Asaas chama o aviso. */
+  /** `https://dialogon.com.br`: de onde o Asaas chama o aviso. */
   origem: string,
   /** O que a pessoa preencheu no modal, quando faltava no cadastro. */
   dados: { documento?: string; email?: string } = {},

@@ -125,6 +125,26 @@ const config: NextConfig = {
 
   async redirects() {
     return [
+      /*
+       * O endereço antigo (`autofluxos.4yu.com.br`) manda toda página para o
+       * domínio novo, com 301 e o mesmo caminho, que é o que o Google pede numa
+       * mudança de domínio. **`/api` fica de fora de propósito:** a Meta não
+       * segue redirecionamento em webhook, e PCYES, gateways e cardápios ainda
+       * chamam o endereço antigo. Sai quando todos estiverem trocados
+       * (`docs/PLANO-RENOMEAR-DIALOGON.md`, Fase 2).
+       */
+      {
+        source: '/',
+        has: [{ type: 'host' as const, value: 'autofluxos.4yu.com.br' }],
+        destination: 'https://dialogon.com.br/',
+        permanent: true,
+      },
+      {
+        source: '/:caminho((?!api/).*)',
+        has: [{ type: 'host' as const, value: 'autofluxos.4yu.com.br' }],
+        destination: 'https://dialogon.com.br/:caminho',
+        permanent: true,
+      },
       ...TELAS_QUE_MUDARAM.map(({ de, para }) => ({
         source: `/clientes/:clienteId/${de}`,
         destination: `/clientes/:clienteId/${para}`,

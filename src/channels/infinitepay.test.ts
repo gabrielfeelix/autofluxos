@@ -50,7 +50,7 @@ describe('criarCobranca', () => {
       customer: { name: 'Ana', phone_number: '+5544999990000' },
     })
     expect(corpo.webhook_url).toBe(
-      `https://autofluxos.4yu.com.br/api/webhook/infinitepay/${pedido.clienteId}?t=${segredoDoAviso(pedido.clienteId)}`,
+      `https://dialogon.com.br/api/webhook/infinitepay/${pedido.clienteId}?t=${segredoDoAviso(pedido.clienteId)}`,
     )
   })
 

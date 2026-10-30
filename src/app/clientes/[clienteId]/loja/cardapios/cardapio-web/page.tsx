@@ -9,7 +9,7 @@ import { acharCliente } from '@/server/repos/clientes'
 
 export const dynamic = 'force-dynamic'
 
-const ENDERECO_DO_WEBHOOK = 'https://autofluxos.4yu.com.br/api/webhook/cardapio-web/'
+const ENDERECO_DO_WEBHOOK = 'https://dialogon.com.br/api/webhook/cardapio-web/'
 
 /**
  * Integrações > Cardápio e delivery > Cardápio Web. A chave e o token do

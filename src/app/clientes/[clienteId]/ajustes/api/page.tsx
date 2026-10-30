@@ -16,7 +16,7 @@ import { exigirAcessoAoCliente, podeAdministrarConta } from '@/server/sessao'
 
 export const dynamic = 'force-dynamic'
 
-const BASE = 'https://autofluxos.4yu.com.br/api/v1'
+const BASE = 'https://dialogon.com.br/api/v1'
 const DOCS = '/ajuda/desenvolvedores'
 
 /**

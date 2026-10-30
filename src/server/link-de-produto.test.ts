@@ -11,7 +11,7 @@ describe('o link do "Ver produto"', () => {
 
   it('volta ao destino e diz de quem é o clique', () => {
     const { link } = comLinkRastreado(produto, contato)
-    expect(link.startsWith('https://autofluxos.4yu.com.br/api/site/produto/')).toBe(true)
+    expect(link.startsWith('https://dialogon.com.br/api/site/produto/')).toBe(true)
     const token = link.split('/').pop()!
     expect(lerLinkRastreado(token)).toEqual({
       k: 'cliente-1',

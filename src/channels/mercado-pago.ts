@@ -144,7 +144,7 @@ export async function lerConta(token: string): Promise<{ id: string; apelido: st
  * nunca tem; este endereço não recebe nada e só preenche o campo. Quem paga
  * pelo link digita o próprio e-mail no checkout.
  */
-const EMAIL_SEM_EMAIL = 'pagador@autofluxos.4yu.com.br'
+const EMAIL_SEM_EMAIL = 'pagador@dialogon.com.br'
 
 async function chamarComToken<T>(
   token: string,

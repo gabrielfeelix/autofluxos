@@ -29,9 +29,9 @@
 
 ## Links
 
-- [Página inicial](https://autofluxos.4yu.com.br/): o produto, como funciona, preços e dúvidas.
-- [Preços](https://autofluxos.4yu.com.br/#precos): planos com preço na página, sem projeto de implantação.
-- [Dúvidas frequentes](https://autofluxos.4yu.com.br/#duvidas)
-- [Privacidade](https://autofluxos.4yu.com.br/privacidade)
-- [Termos de serviço](https://autofluxos.4yu.com.br/termos)
+- [Página inicial](https://dialogon.com.br/): o produto, como funciona, preços e dúvidas.
+- [Preços](https://dialogon.com.br/#precos): planos com preço na página, sem projeto de implantação.
+- [Dúvidas frequentes](https://dialogon.com.br/#duvidas)
+- [Privacidade](https://dialogon.com.br/privacidade)
+- [Termos de serviço](https://dialogon.com.br/termos)
 - [Contato](mailto:contato@4yu.com.br)

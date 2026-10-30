@@ -825,7 +825,7 @@ async function registrarOnboardingPelaMeta(valor: Record<string, unknown>): Prom
   await alertar(
     'um cliente terminou o Embedded Signup e o retorno não chegou até nós',
     new Error(
-      `A Meta avisou por webhook (PARTNER_ADDED) que a WABA ${wabaId} foi conectada, mas nenhum canal nosso tem essa WABA, ou seja, o navegador do cliente não voltou para /api/whatsapp/retorno e o onboarding não foi concluído deste lado. Causa mais provável: o redirect_uri https://autofluxos.4yu.com.br/api/whatsapp/retorno não está em "Valid OAuth redirect URIs" no painel da Meta (Facebook Login for Business → Settings). Sem ele a Meta conclui a conexão e para na tela dela. A janela de 24h para sincronizar contatos e histórico **já está correndo**.`,
+      `A Meta avisou por webhook (PARTNER_ADDED) que a WABA ${wabaId} foi conectada, mas nenhum canal nosso tem essa WABA, ou seja, o navegador do cliente não voltou para /api/whatsapp/retorno e o onboarding não foi concluído deste lado. Causa mais provável: o redirect_uri https://dialogon.com.br/api/whatsapp/retorno não está em "Valid OAuth redirect URIs" no painel da Meta (Facebook Login for Business → Settings). Sem ele a Meta conclui a conexão e para na tela dela. A janela de 24h para sincronizar contatos e histórico **já está correndo**.`,
     ),
     { waba: wabaId },
   )

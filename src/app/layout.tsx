@@ -65,7 +65,7 @@ export const metadata: Metadata = {
   // num buscador. A landing em `/` sobrescreve isso, ela existe justamente
   // para ser encontrada.
   robots: { index: false, follow: false },
-  metadataBase: new URL('https://autofluxos.4yu.com.br'),
+  metadataBase: new URL('https://dialogon.com.br'),
 }
 
 export default function RootLayout({ children }: { children: ReactNode }) {

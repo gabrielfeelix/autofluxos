@@ -571,7 +571,7 @@ export function CorpoDoCanal({ canal }: { canal: CanalDoSite }) {
                 <code>
                   <span className={x.codigoApagado}>{'<body>\n  ...\n'}</span>
                   {'  <script\n    src="'}
-                  <span className={x.codigoTexto}>https://autofluxos.4yu.com.br/chat/v1.js</span>
+                  <span className={x.codigoTexto}>https://dialogon.com.br/chat/v1.js</span>
                   {'"\n    data-chave="'}
                   <span className={x.codigoTexto}>SUA_CHAVE</span>
                   {'"\n    async\n  ></script>\n'}

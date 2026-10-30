@@ -49,7 +49,7 @@ const PCYES = '64dbc3a9-1f77-4892-9770-e3e4be9e14cd'
 const ACERVO = `https://${new URL(process.env.SUPABASE_URL!).host}/storage/v1/object/public/autofluxos-acervo/${DEMO}`
 const MINUTOS_ATE_O_AVISO = 2
 /** Onde moram o Pix e a página de cartão de mentira (`core/pagamento-demo.ts`). */
-const SITE = 'https://autofluxos.4yu.com.br'
+const SITE = 'https://dialogon.com.br'
 
 type Item = { slug: string; nome: string; categoria: string; preco: number; descricao: string }
 const CATALOGO: Record<string, { itens: Item[] }> = JSON.parse(

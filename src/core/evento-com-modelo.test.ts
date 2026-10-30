@@ -42,7 +42,7 @@ describe('configuração do evento com modelo', () => {
   })
 
   it('guarda a imagem do cabeçalho e recusa endereço sem https', () => {
-    const imagem = 'https://autofluxos.4yu.com.br/pesquisas/pcyes-pedido-confirmado.jpg'
+    const imagem = 'https://dialogon.com.br/pesquisas/pcyes-pedido-confirmado.jpg'
     const r = conferirModeloDoEvento({ ...pcyes, imagem })
     expect(r.ok && r.modelo.imagem).toBe(imagem)
     expect(conferirModeloDoEvento({ ...pcyes, imagem: 'http://exemplo.com/a.jpg' })).toEqual({

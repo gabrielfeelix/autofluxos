@@ -243,7 +243,7 @@ const PREFIXOS_ABERTOS = [
    * O teste de trinta segundos que prova isto, o mesmo dos webhooks:
    *
    *     curl -s -o /dev/null -w '%{http_code}\n' -X POST \
-   *       https://autofluxos.4yu.com.br/api/simular/compartilhado
+   *       https://dialogon.com.br/api/simular/compartilhado
    *
    * 401 quer dizer que o proxy está comendo; qualquer outra coisa quer dizer
    * que a rota rodou e se defendeu sozinha.

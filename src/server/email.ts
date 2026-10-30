@@ -102,7 +102,7 @@ export async function enviarModelo<I extends IdDoModelo>(para: Destinatario | De
  * push.
  */
 export function enderecoParaEmail(): string {
-  if (process.env.VERCEL_ENV === 'production') return 'https://autofluxos.4yu.com.br'
+  if (process.env.VERCEL_ENV === 'production') return 'https://dialogon.com.br'
   return enderecoDoPainel()
 }
 

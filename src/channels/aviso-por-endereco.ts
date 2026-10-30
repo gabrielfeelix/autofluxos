@@ -37,7 +37,7 @@ export function avisoAutentico(gateway: Gateway, clienteId: string, recebido: st
  * o recolhe.
  */
 export function enderecoDoAviso(gateway: Gateway, clienteId: string, extra = ''): string | null {
-  const base = process.env.VERCEL_ENV === 'production' ? 'https://autofluxos.4yu.com.br' : process.env.BETTER_AUTH_URL
+  const base = process.env.VERCEL_ENV === 'production' ? 'https://dialogon.com.br' : process.env.BETTER_AUTH_URL
   if (!base) return null
   return `${base.replace(/\/$/, '')}/api/webhook/pagamento/${gateway}/${clienteId}?t=${segredoDoAviso(gateway, clienteId)}${extra}`
 }

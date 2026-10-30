@@ -8,7 +8,7 @@ import { acharContato } from '../repos/conversas'
 import { acharPedido, type Pedido } from '../repos/pedidos'
 import { lerTokenDoEntregador } from './token'
 
-export const ENDERECO_DO_ENTREGADOR = 'https://autofluxos.4yu.com.br/e/'
+export const ENDERECO_DO_ENTREGADOR = 'https://dialogon.com.br/e/'
 
 export type PassoDoEntregador = 'saiu' | 'entregue'
 

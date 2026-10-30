@@ -17,7 +17,7 @@ export const dynamic = 'force-dynamic'
  * copiar a linha que vai no HTML.
  *
  * O endereço do script sai do próprio pedido, e não de uma constante: em
- * produção é `autofluxos.4yu.com.br`, no ambiente local é `localhost`, e o
+ * produção é `dialogon.com.br`, no ambiente local é `localhost`, e o
  * trecho copiado de cada um aponta para o servidor que o gerou.
  */
 export default async function Pagina({ params }: { params: Promise<{ clienteId: string }> }) {
@@ -29,7 +29,7 @@ export default async function Pagina({ params }: { params: Promise<{ clienteId: 
   const principal = canal?.flowId ? await acharFluxo(canal.flowId) : null
 
   const cabecalhos = await headers()
-  const anfitriao = cabecalhos.get('x-forwarded-host') ?? cabecalhos.get('host') ?? 'autofluxos.4yu.com.br'
+  const anfitriao = cabecalhos.get('x-forwarded-host') ?? cabecalhos.get('host') ?? 'dialogon.com.br'
   const protocolo = cabecalhos.get('x-forwarded-proto') ?? (anfitriao.startsWith('localhost') ? 'http' : 'https')
 
   return (

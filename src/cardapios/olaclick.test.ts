@@ -147,7 +147,7 @@ describe('OlaClick', () => {
   })
 
   it('registrar o webhook apaga o anterior da mesma URL e devolve o segredo', async () => {
-    const url = 'https://autofluxos.4yu.com.br/api/webhook/olaclick/conta'
+    const url = 'https://dialogon.com.br/api/webhook/olaclick/conta'
     const feitas: string[] = []
     const r = await registrarWebhookDaOlaClick('chave', url, 'conta', async (alvo, init) => {
       feitas.push(`${init?.method ?? 'GET'} ${String(alvo).replace(/^.*\/v1/, '')}`)

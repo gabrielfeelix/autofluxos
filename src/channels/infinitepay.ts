@@ -77,7 +77,7 @@ export function avisoAutentico(clienteId: string, recebido: string | null): bool
 }
 
 function enderecoDoAviso(clienteId: string): string | null {
-  const base = process.env.VERCEL_ENV === 'production' ? 'https://autofluxos.4yu.com.br' : process.env.BETTER_AUTH_URL
+  const base = process.env.VERCEL_ENV === 'production' ? 'https://dialogon.com.br' : process.env.BETTER_AUTH_URL
   if (!base) return null
   return `${base.replace(/\/$/, '')}/api/webhook/infinitepay/${clienteId}?t=${segredoDoAviso(clienteId)}`
 }

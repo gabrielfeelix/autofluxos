@@ -165,7 +165,7 @@ export type Botao = {
 }
 
 /** O endereço que conta o clique e redireciona. O fim variável é o código assinado. */
-export const ENDERECO_DO_CLIQUE = 'https://autofluxos.4yu.com.br/api/site/clique/'
+export const ENDERECO_DO_CLIQUE = 'https://dialogon.com.br/api/site/clique/'
 
 /**
  * O botão de link reescrito para contar cliques: a Meta aprova o nosso

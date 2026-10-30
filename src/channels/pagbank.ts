@@ -222,9 +222,9 @@ export function clienteDoEndereco(curto: string): string | null {
 
 const TETO_DO_ENDERECO = 100
 
-/** `https://autofluxos.4yu.com.br/api/webhook/pagbank/<22>?t=<22>`: 97 caracteres. */
+/** `https://dialogon.com.br/api/webhook/pagbank/<22>?t=<22>`: 97 caracteres. */
 export function enderecoDoAviso(clienteId: string): string | null {
-  const base = process.env.VERCEL_ENV === 'production' ? 'https://autofluxos.4yu.com.br' : process.env.BETTER_AUTH_URL
+  const base = process.env.VERCEL_ENV === 'production' ? 'https://dialogon.com.br' : process.env.BETTER_AUTH_URL
   if (!base) return null
   const endereco = `${base.replace(/\/$/, '')}/api/webhook/pagbank/${enderecoDoCliente(clienteId)}?t=${segredoDoAviso(clienteId)}`
   return endereco.length <= TETO_DO_ENDERECO ? endereco : null
@@ -246,7 +246,7 @@ export function pedidoDoAviso(corpo: unknown): string | null {
  * O PagBank pede e-mail de quem paga, e contato de WhatsApp quase nunca tem.
  * Este endereço não recebe nada e só preenche o campo, como no Mercado Pago.
  */
-const EMAIL_SEM_EMAIL = 'pagador@autofluxos.4yu.com.br'
+const EMAIL_SEM_EMAIL = 'pagador@dialogon.com.br'
 
 async function chamar<T>(
   acesso: { token: string; ambiente: Ambiente },

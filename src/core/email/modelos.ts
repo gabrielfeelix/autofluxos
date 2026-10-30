@@ -163,7 +163,7 @@ export const MODELOS = {
       ],
       motivo: 'Você recebe este e-mail porque criou uma conta no Dialogon.',
     }),
-    exemplo: { nome: 'Daniel Moreira', organizacao: 'MGM Pilates', link: 'https://autofluxos.4yu.com.br/painel' },
+    exemplo: { nome: 'Daniel Moreira', organizacao: 'MGM Pilates', link: 'https://dialogon.com.br/painel' },
   }),
 
   confirmarEmail: definir<{ nome: string; link: string }>({
@@ -184,7 +184,7 @@ export const MODELOS = {
       ],
       motivo: 'Você recebe este e-mail porque este endereço foi usado para criar uma conta no Dialogon. Se não foi você, ignore.',
     }),
-    exemplo: { nome: 'Daniel Moreira', link: 'https://autofluxos.4yu.com.br/confirmar-email?token=exemplo' },
+    exemplo: { nome: 'Daniel Moreira', link: 'https://dialogon.com.br/confirmar-email?token=exemplo' },
   }),
 
   redefinirSenha: definir<{ nome: string; link: string }>({
@@ -212,7 +212,7 @@ export const MODELOS = {
       ],
       motivo: 'Você recebe este e-mail porque alguém pediu para redefinir a senha desta conta.',
     }),
-    exemplo: { nome: 'Daniel Moreira', link: 'https://autofluxos.4yu.com.br/redefinir-senha?token=exemplo' },
+    exemplo: { nome: 'Daniel Moreira', link: 'https://dialogon.com.br/redefinir-senha?token=exemplo' },
   }),
 
   senhaAlterada: definir<{ nome: string; quando: string; link: string }>({
@@ -233,7 +233,7 @@ export const MODELOS = {
       ],
       motivo: MOTIVO_DE_SEGURANCA,
     }),
-    exemplo: { nome: 'Daniel Moreira', quando: '19 de outubro, às 14:32', link: 'https://autofluxos.4yu.com.br/esqueci-senha' },
+    exemplo: { nome: 'Daniel Moreira', quando: '19 de outubro, às 14:32', link: 'https://dialogon.com.br/esqueci-senha' },
   }),
 
   duasEtapasLigada: definir<{ nome: string; quando: string }>({
@@ -279,7 +279,7 @@ export const MODELOS = {
       ],
       motivo: MOTIVO_DE_SEGURANCA,
     }),
-    exemplo: { nome: 'Daniel Moreira', quando: '19 de outubro, às 14:32', link: 'https://autofluxos.4yu.com.br/painel' },
+    exemplo: { nome: 'Daniel Moreira', quando: '19 de outubro, às 14:32', link: 'https://dialogon.com.br/painel' },
   }),
 
   // -------------------------------------------------------------------------
@@ -321,7 +321,7 @@ export const MODELOS = {
       funcao: 'Atendente',
       email: 'rodrigo@mgmpilates.com.br',
       contaNova: true,
-      link: 'https://autofluxos.4yu.com.br/entrar',
+      link: 'https://dialogon.com.br/entrar',
     },
   }),
 
@@ -378,7 +378,7 @@ export const MODELOS = {
       chave: 'Integração do site',
       permissoes: 'Contatos (leitura e escrita)',
       quando: '19 de outubro, às 14:32',
-      link: 'https://autofluxos.4yu.com.br/clientes/exemplo/ajustes/api',
+      link: 'https://dialogon.com.br/clientes/exemplo/ajustes/api',
     },
   }),
 
@@ -412,7 +412,7 @@ export const MODELOS = {
       ],
       motivo: 'Você recebe este e-mail porque pediu uma troca de plano no Dialogon.',
     }),
-    exemplo: { nome: 'Daniel Moreira', organizacao: 'MGM Pilates', plano: 'Pro', ciclo: 'Mensal', link: 'https://autofluxos.4yu.com.br/clientes/exemplo/ajustes/plano' },
+    exemplo: { nome: 'Daniel Moreira', organizacao: 'MGM Pilates', plano: 'Pro', ciclo: 'Mensal', link: 'https://dialogon.com.br/clientes/exemplo/ajustes/plano' },
   }),
 
   pedidoDePlanoParaEquipe: definir<{ organizacao: string; quem: string; email: string; de: string; para: string; ciclo: string; link: string }>({
@@ -445,7 +445,7 @@ export const MODELOS = {
       de: 'Essencial',
       para: 'Pro',
       ciclo: 'Mensal',
-      link: 'https://autofluxos.4yu.com.br/admin/pedidos',
+      link: 'https://dialogon.com.br/admin/pedidos',
     },
   }),
 
@@ -467,7 +467,7 @@ export const MODELOS = {
       ],
       motivo: MOTIVO_DE_GESTAO,
     }),
-    exemplo: { organizacao: 'MGM Pilates', plano: 'Pro', link: 'https://autofluxos.4yu.com.br/clientes/exemplo/ajustes/plano' },
+    exemplo: { organizacao: 'MGM Pilates', plano: 'Pro', link: 'https://dialogon.com.br/clientes/exemplo/ajustes/plano' },
   }),
 
   planoAtivado: definir<{ organizacao: string; plano: string; preco: string; desde: string; link: string }>({
@@ -495,7 +495,7 @@ export const MODELOS = {
       ],
       motivo: MOTIVO_DE_GESTAO,
     }),
-    exemplo: { organizacao: 'MGM Pilates', plano: 'Pro', preco: 'R$ 497', desde: '19 de outubro', link: 'https://autofluxos.4yu.com.br/clientes/exemplo/ajustes/plano' },
+    exemplo: { organizacao: 'MGM Pilates', plano: 'Pro', preco: 'R$ 497', desde: '19 de outubro', link: 'https://dialogon.com.br/clientes/exemplo/ajustes/plano' },
   }),
 
   trocaDePlanoAgendada: definir<{ organizacao: string; de: string; para: string; data: string; faltam: number | null; oQueSai: string; link: string }>({
@@ -532,7 +532,7 @@ export const MODELOS = {
       data: '1º de novembro',
       faltam: 7,
       oQueSai: 'Sai do plano e fica só leitura, com a configuração guardada: Transmissões, API.',
-      link: 'https://autofluxos.4yu.com.br/clientes/exemplo/ajustes/plano',
+      link: 'https://dialogon.com.br/clientes/exemplo/ajustes/plano',
     },
   }),
 
@@ -562,7 +562,7 @@ export const MODELOS = {
       preco: 'R$ 297',
       oQueSai: 'Sai do plano e fica só leitura, com a configuração guardada: Transmissões, API.',
       canceladas: 2,
-      link: 'https://autofluxos.4yu.com.br/clientes/exemplo/ajustes/plano',
+      link: 'https://dialogon.com.br/clientes/exemplo/ajustes/plano',
     },
   }),
 
@@ -622,7 +622,7 @@ export const MODELOS = {
       ],
       motivo: MOTIVO_DE_GESTAO,
     }),
-    exemplo: { organizacao: 'MGM Pilates', plano: 'Pro', data: '18 de novembro', atual: 'R$ 497', novo: 'R$ 547', link: 'https://autofluxos.4yu.com.br/clientes/exemplo/ajustes/plano' },
+    exemplo: { organizacao: 'MGM Pilates', plano: 'Pro', data: '18 de novembro', atual: 'R$ 497', novo: 'R$ 547', link: 'https://dialogon.com.br/clientes/exemplo/ajustes/plano' },
   }),
 
   consumoDoPlano: definir<{ organizacao: string; plano: string; usadas: number; total: number; faixa: 80 | 100; precoExcedente: string; conta: string; link: string }>({
@@ -659,7 +659,7 @@ export const MODELOS = {
       faixa: 80,
       precoExcedente: 'R$ 0,40',
       conta: '',
-      link: 'https://autofluxos.4yu.com.br/clientes/exemplo/ajustes/plano',
+      link: 'https://dialogon.com.br/clientes/exemplo/ajustes/plano',
     },
   }),
 
@@ -708,7 +708,7 @@ export const MODELOS = {
       excedentes: 0,
       custo: 'R$ 0',
       tarifa: 'R$ 0,035',
-      link: 'https://autofluxos.4yu.com.br/clientes/exemplo/ajustes/plano',
+      link: 'https://dialogon.com.br/clientes/exemplo/ajustes/plano',
     },
   }),
 
@@ -737,7 +737,7 @@ export const MODELOS = {
       ],
       motivo: MOTIVO_DE_GESTAO,
     }),
-    exemplo: { organizacao: 'MGM Pilates', link: 'https://autofluxos.4yu.com.br/clientes/exemplo/inbox' },
+    exemplo: { organizacao: 'MGM Pilates', link: 'https://dialogon.com.br/clientes/exemplo/inbox' },
   }),
 
   // -------------------------------------------------------------------------
@@ -776,7 +776,7 @@ export const MODELOS = {
       entregues: 401,
       lidas: 288,
       falhas: 6,
-      link: 'https://autofluxos.4yu.com.br/clientes/exemplo/transmissoes/exemplo',
+      link: 'https://dialogon.com.br/clientes/exemplo/transmissoes/exemplo',
     },
   }),
   // -------------------------------------------------------------------------
@@ -802,7 +802,7 @@ export const MODELOS = {
       ],
       motivo: 'Aviso enviado sempre que a sua função numa organização muda.',
     }),
-    exemplo: { nome: 'Rodrigo Alves', organizacao: 'MGM Pilates', de: 'Atendente', para: 'Gestor', link: 'https://autofluxos.4yu.com.br/painel' },
+    exemplo: { nome: 'Rodrigo Alves', organizacao: 'MGM Pilates', de: 'Atendente', para: 'Gestor', link: 'https://dialogon.com.br/painel' },
   }),
 
   organizacaoSuspensa: definir<{ organizacao: string; suspensa: boolean; link: string }>({
@@ -836,7 +836,7 @@ export const MODELOS = {
             ],
             motivo: MOTIVO_DE_GESTAO,
           },
-    exemplo: { organizacao: 'MGM Pilates', suspensa: true, link: 'https://autofluxos.4yu.com.br/painel' },
+    exemplo: { organizacao: 'MGM Pilates', suspensa: true, link: 'https://dialogon.com.br/painel' },
   }),
 
   organizacaoApagada: definir<{ organizacao: string; quando: string }>({
@@ -936,7 +936,7 @@ export const MODELOS = {
         motivo: MOTIVO_DE_GESTAO,
       }
     },
-    exemplo: { organizacao: 'MGM Pilates', plano: 'Pro', ate: '2 de novembro', momento: 'faltam3', link: 'https://autofluxos.4yu.com.br/clientes/exemplo/ajustes/plano' },
+    exemplo: { organizacao: 'MGM Pilates', plano: 'Pro', ate: '2 de novembro', momento: 'faltam3', link: 'https://dialogon.com.br/clientes/exemplo/ajustes/plano' },
   }),
 
   // -------------------------------------------------------------------------
@@ -965,7 +965,7 @@ export const MODELOS = {
       ],
       motivo: MOTIVO_DE_GESTAO,
     }),
-    exemplo: { organizacao: 'MGM Pilates', numero: '+55 44 99999-0000', link: 'https://autofluxos.4yu.com.br/clientes/exemplo/conversas/canais/whatsapp' },
+    exemplo: { organizacao: 'MGM Pilates', numero: '+55 44 99999-0000', link: 'https://dialogon.com.br/clientes/exemplo/conversas/canais/whatsapp' },
   }),
 
   modeloDoWhatsapp: definir<{ organizacao: string; modelo: string; situacao: 'aprovado' | 'recusado' | 'pausado' | 'desativado'; motivo: string; link: string }>({
@@ -1001,7 +1001,7 @@ export const MODELOS = {
       modelo: 'lembrete_de_aula',
       situacao: 'recusado',
       motivo: 'O conteúdo parece promocional para a categoria Utilidade.',
-      link: 'https://autofluxos.4yu.com.br/clientes/exemplo/transmissoes',
+      link: 'https://dialogon.com.br/clientes/exemplo/transmissoes',
     },
   }),
 
@@ -1023,7 +1023,7 @@ export const MODELOS = {
       ],
       motivo: MOTIVO_DE_GESTAO,
     }),
-    exemplo: { organizacao: 'MGM Pilates', perfil: '@mgmpilates', link: 'https://autofluxos.4yu.com.br/clientes/exemplo/conversas/canais/instagram' },
+    exemplo: { organizacao: 'MGM Pilates', perfil: '@mgmpilates', link: 'https://dialogon.com.br/clientes/exemplo/conversas/canais/instagram' },
   }),
 
   webhookPausado: definir<{ organizacao: string; endereco: string; falhas: number; link: string }>({
@@ -1045,7 +1045,7 @@ export const MODELOS = {
       ],
       motivo: MOTIVO_DE_GESTAO,
     }),
-    exemplo: { organizacao: 'MGM Pilates', endereco: 'https://sistema.exemplo.com.br/autofluxos', falhas: 20, link: 'https://autofluxos.4yu.com.br/clientes/exemplo/ajustes/api' },
+    exemplo: { organizacao: 'MGM Pilates', endereco: 'https://sistema.exemplo.com.br/autofluxos', falhas: 20, link: 'https://dialogon.com.br/clientes/exemplo/ajustes/api' },
   }),
 
   transmissaoFalhou: definir<{ nome: string; transmissao: string; motivo: string; link: string }>({
@@ -1068,7 +1068,7 @@ export const MODELOS = {
       nome: 'Daniel Moreira',
       transmissao: 'Aulas experimentais de novembro',
       motivo: 'O modelo de mensagem foi pausado pela Meta.',
-      link: 'https://autofluxos.4yu.com.br/clientes/exemplo/transmissoes/exemplo',
+      link: 'https://dialogon.com.br/clientes/exemplo/transmissoes/exemplo',
     },
   }),
   // -------------------------------------------------------------------------
@@ -1149,7 +1149,7 @@ export const MODELOS = {
       email: 'daniel@mgmpilates.com.br',
       organizacao: 'MGM Pilates',
       motivo: 'Encerramos as atividades da unidade.',
-      link: 'https://autofluxos.4yu.com.br/admin/organizacoes/exemplo/perigo',
+      link: 'https://dialogon.com.br/admin/organizacoes/exemplo/perigo',
     },
   }),
 } as const

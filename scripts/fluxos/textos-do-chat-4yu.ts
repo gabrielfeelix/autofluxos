@@ -19,7 +19,7 @@
 import { DIAS_DE_TESTE, O_QUE_E_CONVERSA, PLANOS } from '@/core/planos'
 
 export const MARCA_DO_PRODUTO = 'SOBRE O DIALOGON (o produto que a 4YU vende):'
-export const CADASTRO = 'https://autofluxos.4yu.com.br/cadastrar'
+export const CADASTRO = 'https://dialogon.com.br/cadastrar'
 
 const reais = (v: number) => v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
 

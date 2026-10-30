@@ -21,7 +21,7 @@ import type { Loja, ResultadoDaLoja } from './types'
 const API = 'https://api.nuvemshop.com.br/2025-03'
 
 /** Obrigatório pela Nuvemshop: sem nome do app e contato, a API responde 400. */
-export const USER_AGENT = 'Dialogon (https://autofluxos.4yu.com.br)'
+export const USER_AGENT = 'Dialogon (https://dialogon.com.br)'
 
 const PRAZO_MS = 6_000
 

@@ -13,12 +13,12 @@ import type { ProdutoDaLoja } from '@/core/loja'
  * mensagem nenhuma, e quem atende vê "abriu o produto X" no histórico.
  *
  * **Assinado, e é o ponto.** Sem a assinatura, qualquer um montaria um link
- * `autofluxos.4yu.com.br/...` que redireciona para onde quiser, e usaria o
+ * `dialogon.com.br/...` que redireciona para onde quiser, e usaria o
  * nosso domínio para dar credibilidade a golpe. O token só vale com o destino
  * que nós mesmos escrevemos.
  */
 
-const BASE = 'https://autofluxos.4yu.com.br/api/site/produto/'
+const BASE = 'https://dialogon.com.br/api/site/produto/'
 
 type Conteudo = { k: string; c: string; u: string; n: string }
 

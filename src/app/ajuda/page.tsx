@@ -158,7 +158,7 @@ export default function Pagina() {
                 {
                   rotulo: 'cURL',
                   linguagem: 'shell',
-                  codigo: 'curl --request POST \\\n  --url https://autofluxos.4yu.com.br/api/webhook/entrada/SEU_CLIENTE_ID \\\n  --header "x-autofluxos-assinatura: sha256=$assinatura" \\\n  --data \'{"evento":"vaga.aberta","telefone":"5511999998888"}\'',
+                  codigo: 'curl --request POST \\\n  --url https://dialogon.com.br/api/webhook/entrada/SEU_CLIENTE_ID \\\n  --header "x-autofluxos-assinatura: sha256=$assinatura" \\\n  --data \'{"evento":"vaga.aberta","telefone":"5511999998888"}\'',
                 },
               ]}
             />

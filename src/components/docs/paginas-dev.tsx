@@ -16,7 +16,7 @@ import { Endpoint, ListaDeCampos, Resposta, Respostas, SeloDeMetodo, type Metodo
  * mudar, esta página muda junto.
  */
 
-const BASE = 'https://autofluxos.4yu.com.br'
+const BASE = 'https://dialogon.com.br'
 const URL_DO_WEBHOOK = `${BASE}/api/webhook/entrada/SEU_CLIENTE_ID`
 
 export type PaginaDev = {

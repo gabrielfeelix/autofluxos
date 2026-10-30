@@ -23,7 +23,7 @@ import { apagarConexao, criarConexao, lerCredencial, trocarValor } from '../repo
 
 const NOME_DA_CONEXAO = 'OlaClick (cardápio)'
 
-export const ENDERECO_DO_WEBHOOK_DA_OLACLICK = 'https://autofluxos.4yu.com.br/api/webhook/olaclick/'
+export const ENDERECO_DO_WEBHOOK_DA_OLACLICK = 'https://dialogon.com.br/api/webhook/olaclick/'
 
 export type OlaClickConectada =
   | { ok: true; loja: string; webhook: true }

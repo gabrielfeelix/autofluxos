@@ -247,8 +247,8 @@ async function criarLink(conta: string, pedido: PedidoDeCobranca): Promise<z.inf
   const agora = Math.floor(Date.now() / 1_000)
   const base =
     process.env.VERCEL_ENV === 'production'
-      ? 'https://autofluxos.4yu.com.br'
-      : (process.env.BETTER_AUTH_URL ?? 'https://autofluxos.4yu.com.br')
+      ? 'https://dialogon.com.br'
+      : (process.env.BETTER_AUTH_URL ?? 'https://dialogon.com.br')
   try {
     return sessaoSchema.parse(
       await chamar(

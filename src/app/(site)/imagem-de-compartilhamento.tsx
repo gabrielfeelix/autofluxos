@@ -73,7 +73,7 @@ export async function imagemDeCompartilhamento({ olho, titulo }: { olho: string;
         </div>
 
         <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 24, color: 'rgba(255,255,255,0.8)' }}>
-          <span>autofluxos.4yu.com.br</span>
+          <span>dialogon.com.br</span>
           <span>API oficial do WhatsApp Business</span>
         </div>
       </div>

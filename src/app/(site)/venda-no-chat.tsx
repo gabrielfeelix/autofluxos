@@ -125,7 +125,7 @@ export function SecaoVendaNoChat() {
  * página de preços: quem escanear da tela cai no site, não num Pix de mentira.
  */
 function QrDoPix() {
-  const { modules } = QRCode.create('https://autofluxos.4yu.com.br/precos', { errorCorrectionLevel: 'M' })
+  const { modules } = QRCode.create('https://dialogon.com.br/precos', { errorCorrectionLevel: 'M' })
   const n = modules.size
   let d = ''
   for (let y = 0; y < n; y++) for (let x = 0; x < n; x++) if (modules.get(y, x)) d += `M${x} ${y}h1v1h-1z`

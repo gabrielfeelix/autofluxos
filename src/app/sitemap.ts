@@ -10,7 +10,7 @@ import { RECURSOS } from './(site)/recursos-do-site'
  * produto é painel autenticado e está proibido no `robots.ts`.
  */
 export default function sitemap(): MetadataRoute.Sitemap {
-  const base = 'https://autofluxos.4yu.com.br'
+  const base = 'https://dialogon.com.br'
 
   return [
     { url: `${base}/`, changeFrequency: 'monthly', priority: 1 },

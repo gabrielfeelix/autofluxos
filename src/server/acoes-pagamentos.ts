@@ -163,7 +163,7 @@ export async function acaoChavePublicaDaIugu(clienteId: string): Promise<{ ok: b
 /** Para onde o Asaas manda o aviso de pagamento desta organização. */
 function enderecoDoAviso(clienteId: string): string {
   const base =
-    process.env.VERCEL_ENV === 'production' ? 'https://autofluxos.4yu.com.br' : (process.env.BETTER_AUTH_URL ?? '')
+    process.env.VERCEL_ENV === 'production' ? 'https://dialogon.com.br' : (process.env.BETTER_AUTH_URL ?? '')
   return `${base}/api/webhook/asaas/${clienteId}`
 }
 

@@ -25,7 +25,7 @@ import { MODELOS } from '../src/core/email/modelos.ts'
 const API = 'https://api.brevo.com/v3'
 const REMETENTE = { name: 'Dialogon', email: 'nao-responda@autofluxos.mail.4yu.com.br' }
 const SUFIXO = '[cópia, editar no código]'
-const PAINEL = 'https://autofluxos.4yu.com.br'
+const PAINEL = 'https://dialogon.com.br'
 const previa = process.argv.includes('--previa')
 
 const chave = process.env.BREVO_API_KEY

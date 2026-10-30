@@ -60,7 +60,7 @@ export function segredoDoWebhook(botId: string): string {
 }
 
 export function enderecoDoWebhook(botId: string): string {
-  const base = process.env.VERCEL_ENV === 'production' ? 'https://autofluxos.4yu.com.br' : (process.env.BETTER_AUTH_URL ?? '')
+  const base = process.env.VERCEL_ENV === 'production' ? 'https://dialogon.com.br' : (process.env.BETTER_AUTH_URL ?? '')
   return `${base}/api/webhook/telegram/${botId}`
 }
 

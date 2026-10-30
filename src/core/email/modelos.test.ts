@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { montarEmail } from './layout'
 import { MODELOS, primeiroNome } from './modelos'
 
-const PAINEL = 'https://autofluxos.4yu.com.br'
+const PAINEL = 'https://dialogon.com.br'
 
 describe('modelos de e-mail', () => {
   const todos = Object.entries(MODELOS).map(([id, modelo]) => {

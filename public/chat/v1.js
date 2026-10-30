@@ -2,7 +2,7 @@
  * Dialogon: o balão de conversa do site.
  *
  * O lojista cola uma linha no HTML:
- *   <script src="https://autofluxos.4yu.com.br/chat/v1.js" data-chave="..." async></script>
+ *   <script src="https://dialogon.com.br/chat/v1.js" data-chave="..." async></script>
  *
  * Sem framework e sem dependência: é um arquivo que roda dentro da loja de
  * outra pessoa, e cada kilobyte é dela. Tudo mora num Shadow DOM, então o CSS

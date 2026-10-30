@@ -26,6 +26,6 @@ export default function robots(): MetadataRoute.Robots {
         '/api/',
       ],
     },
-    sitemap: 'https://autofluxos.4yu.com.br/sitemap.xml',
+    sitemap: 'https://dialogon.com.br/sitemap.xml',
   }
 }

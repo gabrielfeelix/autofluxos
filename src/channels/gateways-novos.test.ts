@@ -51,7 +51,7 @@ describe('o aviso por endereço', () => {
   })
   it('endereço de produção, com o extra no fim', () => {
     expect(enderecoDoAviso('efi', CLIENTE, '&ignorar=')).toBe(
-      `https://autofluxos.4yu.com.br/api/webhook/pagamento/efi/${CLIENTE}?t=${segredoDoAviso('efi', CLIENTE)}&ignorar=`,
+      `https://dialogon.com.br/api/webhook/pagamento/efi/${CLIENTE}?t=${segredoDoAviso('efi', CLIENTE)}&ignorar=`,
     )
   })
 })

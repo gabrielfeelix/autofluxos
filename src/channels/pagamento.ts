@@ -167,7 +167,7 @@ export function telefoneBrasileiro(telefone: string | null): { ddd: string; nume
 }
 
 /** O e-mail que preenche o campo quando o contato não tem: não recebe nada. */
-export const EMAIL_SEM_EMAIL = 'pagador@autofluxos.4yu.com.br'
+export const EMAIL_SEM_EMAIL = 'pagador@dialogon.com.br'
 
 /** Os últimos quatro caracteres, para a tela dizer qual credencial está ligada sem mostrá-la. */
 export function finalDe(segredo: string): string {
