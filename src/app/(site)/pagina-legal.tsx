@@ -59,7 +59,7 @@ export function PaginaLegal({
         <div className={`${s.faixa} ${s.cabecalhoInterno}`}>
           <Link className={s.marca} href="/" aria-label="Dialogon, início">
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/logos/dialogon-horizontal.png" alt="Dialogon" width={128} height={28} />
+            <img src="/logos/dialogon-horizontal-branca.png" alt="Dialogon" width={128} height={28} />
           </Link>
           <Link className={s.voltar} href="/">
             <IconeVoltar />
