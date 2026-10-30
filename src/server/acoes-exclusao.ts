@@ -19,7 +19,7 @@ import { contasDoUsuario, sessaoAtual } from './sessao'
  * página `/exclusao-de-dados`: confirmar em 2 dias úteis, concluir em 15.
  *
  * O pedido fica na auditoria (`pediu_exclusao`) e sai por e-mail para os dois
- * lados: o comprovante para quem pediu, e o pedido para `contato@4yu.com.br`.
+ * lados: o comprovante para quem pediu, e o pedido para `contato@dialogon.com.br`.
  */
 
 export type ResultadoDoPedidoDeExclusao = { ok: true; email: string } | { ok: false; erro: string }

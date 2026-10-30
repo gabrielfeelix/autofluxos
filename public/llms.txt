@@ -34,4 +34,4 @@
 - [Dúvidas frequentes](https://dialogon.com.br/#duvidas)
 - [Privacidade](https://dialogon.com.br/privacidade)
 - [Termos de serviço](https://dialogon.com.br/termos)
-- [Contato](mailto:contato@4yu.com.br)
+- [Contato](mailto:contato@dialogon.com.br)

@@ -435,7 +435,7 @@ function CartaoDaAssinatura({
           <p className="mt-1 text-[12.5px] leading-5 text-dim">
             {combinada === 'cortesia'
               ? 'Esta organização não tem cobrança. Para mudar de plano, peça em Plano e consumo.'
-              : 'O pagamento desta organização é combinado direto com a 4YU. Dúvidas: contato@4yu.com.br.'}
+              : 'O pagamento desta organização é combinado direto com a 4YU. Dúvidas: contato@dialogon.com.br.'}
           </p>
         </div>
       </div>

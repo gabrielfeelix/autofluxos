@@ -12,7 +12,7 @@ import type { Categoria } from './artigos'
  */
 
 export const WHATSAPP_DA_4YU = 'https://wa.me/5544998775978'
-export const EMAIL_DA_4YU = 'contato@4yu.com.br'
+export const EMAIL_DA_4YU = 'contato@dialogon.com.br'
 
 /** O fim de toda página: quem não achou fala com a equipe. */
 export function FaleComAGente() {

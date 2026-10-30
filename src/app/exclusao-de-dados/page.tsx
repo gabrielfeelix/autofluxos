@@ -229,7 +229,7 @@ const SECOES: readonly SecaoLegal[] = [
         <p>
           WhatsApp <a href="https://wa.me/5544998775978">+55 44 99877-5978</a>
         </p>
-        <p>E-mail: contato@4yu.com.br</p>
+        <p>E-mail: contato@dialogon.com.br</p>
         <p>
           68.770.493 GABRIEL FELIX BARBOSA (4YU) · CNPJ 68.770.493/0001-82 · Rua Osvaldo Cruz,
           297, Zona 07, Maringá/PR, CEP 87020-200.

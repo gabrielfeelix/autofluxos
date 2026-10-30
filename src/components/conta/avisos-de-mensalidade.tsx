@@ -37,7 +37,7 @@ export async function AvisosDeMensalidade({ contas }: { contas: ContaDoUsuario[]
             </p>
             <p className="mt-0.5 text-[12.5px] leading-5 text-muted">
               {estado === 'cancelada_por_atraso'
-                ? 'Depois de 60 dias sem pagamento. Nada foi apagado: escreva para contato@4yu.com.br para retomar.'
+                ? 'Depois de 60 dias sem pagamento. Nada foi apagado: escreva para contato@dialogon.com.br para retomar.'
                 : `A mensalidade${fatura ? ` de ${reaisDeCentavos(fatura.valorCentavos)}` : ''} está em atraso. Os robôs continuam atendendo; o painel volta assim que o pagamento for confirmado.`}
             </p>
           </div>
