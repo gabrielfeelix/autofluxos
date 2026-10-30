@@ -158,6 +158,19 @@ export function abrirConversa(clienteId: string, previa: Previa, endereco: strin
   if (precisaBuscar(id)) void buscar(clienteId, id)
 }
 
+/**
+ * Chegou mensagem do contato na conversa aberta: relê do servidor.
+ *
+ * O histórico busca só as bolhas novas e avisa que deu conta, o que cancela o
+ * redesenho da página. Mas a janela de 24h (e com ela a caixa de resposta ou o
+ * "Escolher modelo") é calculada no servidor, e ficava fechada até o F5 mesmo
+ * com a pessoa tendo acabado de escrever (Gabriel, 30/out/2026).
+ */
+export function relerAberta(clienteId: string, contatoId: string) {
+  if (clienteAtual !== clienteId) return
+  void buscar(clienteId, contatoId)
+}
+
 /** O ponteiro chegou na linha: o clique, se vier, encontra a conversa pronta. */
 export function preCarregarConversa(clienteId: string, contatoId: string) {
   trocarDeCliente(clienteId)

@@ -1,5 +1,6 @@
 'use client'
 
+import { relerAberta } from './aberta-local'
 import { useConversaAbertaOuNada } from './conversa-local'
 import { Fragment, useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { useSearchParams } from 'next/navigation'
@@ -276,6 +277,9 @@ export function Historico({
           for (const mensagem of novas) porId.set(mensagem.id, mensagem)
           return [...porId.values()].sort((a, b) => Date.parse(a.ts) - Date.parse(b.ts))
         })
+
+        // Mensagem do contato reabre a janela de 24h, que vem do servidor.
+        if (novas.some((mensagem) => mensagem.direcao === 'entrada')) relerAberta(clienteId, contatoId)
 
         /*
          * A conversa aberta deu conta do recado: quem escuta o servidor não
