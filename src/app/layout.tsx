@@ -60,7 +60,7 @@ const emoji = Noto_Color_Emoji({
 })
 
 export const metadata: Metadata = {
-  title: 'Dialogon, atendimento desenhado bloco a bloco',
+  title: 'Dialogon | Atendimento e vendas no WhatsApp com IA',
   description: 'Automação visual de atendimento no WhatsApp.',
   // O padrão é não indexar: o painel inteiro é privado e não tem nada a fazer
   // num buscador. A landing em `/` sobrescreve isso, ela existe justamente

@@ -25,7 +25,7 @@ import { metadadosDoSite } from './(site)/metadados'
  * (`docs/PLANO-SITE-INSTITUCIONAL.md`): prova, como resolve, o medo do celular,
  * para quem é, o que faz, com o que liga, quanto custa e as dúvidas de sempre.
  */
-const TITULO = 'Dialogon, atendimento e vendas no WhatsApp com IA'
+const TITULO = 'Dialogon | Atendimento e vendas no WhatsApp com IA'
 const DESCRICAO =
   'Atendimento, vendas e pós-venda no WhatsApp, Instagram e chat do site, com chatbot, IA, funil e pagamento na conversa. Teste por 14 dias.'
 

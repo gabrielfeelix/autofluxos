@@ -48,7 +48,7 @@ Regras: formato "Assunto | Dialogon", título até 60, descrição até 155, sem
 
 | Página | Título proposto | Descrição proposta |
 |---|---|---|
-| `/` | Dialogon, atendimento e vendas no WhatsApp com IA | Atendimento, vendas e pós-venda no WhatsApp, Instagram e chat do site, com chatbot, IA, funil e pagamento na conversa. Teste por 14 dias. |
+| `/` | Dialogon \| Atendimento e vendas no WhatsApp com IA | Atendimento, vendas e pós-venda no WhatsApp, Instagram e chat do site, com chatbot, IA, funil e pagamento na conversa. Teste por 14 dias. |
 | `/produto` | Produto: fluxos, IA, Inbox e canais \| Dialogon | Fluxos visuais, IA que responde pelo seu negócio, caixa de entrada da equipe, contatos e funil, no WhatsApp, Instagram, site e Telegram. |
 | `/produto/fluxos` | Chatbot de WhatsApp com fluxos visuais \| Dialogon | Desenhe o atendimento em blocos, valide tudo antes de publicar e teste num simulador que roda o motor de verdade. Sem programar. |
 | `/produto/ia` | IA de atendimento que lê o seu negócio \| Dialogon | A IA responde com a ficha da empresa, o catálogo e o cardápio, consulta pedido e agenda, e passa para a equipe quando não sabe. |
