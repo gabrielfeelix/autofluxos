@@ -21,6 +21,8 @@ export function DadosDaOrganizacao() {
           url: SITE_URL,
           logo: `${SITE_URL}/logos/logo-dialogon-marca.png`,
           email: 'contato@dialogon.com.br',
+          // O @dialogon tem outro dono; o perfil oficial é este até a marca ser registrada.
+          sameAs: ['https://www.instagram.com/usedialogon/'],
           parentOrganization: { '@type': 'Organization', name: '4YU' },
         }}
       />
