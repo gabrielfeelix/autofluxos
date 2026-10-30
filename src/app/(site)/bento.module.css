@@ -177,6 +177,21 @@
   font-weight: 500;
   white-space: nowrap;
   box-shadow: 0 8px 18px -12px rgb(16 32 84 / 0.45);
+}
+
+/*
+ * O destaque azul vive numa camada própria que só troca opacidade: animar
+ * `border-color` e `box-shadow` direto no bloco roda na thread principal.
+ */
+.bloco::after {
+  content: '';
+  position: absolute;
+  inset: -1px;
+  border: 1px solid #1d4ed8;
+  border-radius: inherit;
+  box-shadow: 0 0 0 4px rgb(29 78 216 / 0.14);
+  opacity: 0;
+  pointer-events: none;
   animation: acende 4s var(--curva) infinite;
   animation-delay: calc(var(--n) * 0.7s);
 }
@@ -206,14 +221,11 @@
 @keyframes acende {
   0%,
   100% {
-    border-color: #e3e8f3;
+    opacity: 0;
   }
   12%,
   28% {
-    border-color: #1d4ed8;
-    box-shadow:
-      0 0 0 4px rgb(29 78 216 / 0.14),
-      0 8px 18px -12px rgb(16 32 84 / 0.45);
+    opacity: 1;
   }
 }
 
@@ -763,6 +775,7 @@
 .cartaoAnda {
   position: absolute;
   top: 40px;
+  left: 10px;
   display: flex;
   align-items: center;
   gap: 8px;
@@ -796,24 +809,47 @@
   color: #0c1838;
 }
 
+/* Anda por `translate` (era `left`); o anel verde é uma camada que só troca opacidade. */
+.cartaoAnda::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  box-shadow: 0 0 0 3px #22c55e;
+  opacity: 0;
+  pointer-events: none;
+  animation: anda-anel 8s cubic-bezier(0.65, 0, 0.35, 1) infinite;
+}
+
 @keyframes anda {
   0%,
   18% {
-    left: 10px;
+    translate: 0 0;
   }
   30%,
   48% {
-    left: 210px;
+    translate: 200px 0;
   }
   60%,
   90% {
-    left: 410px;
-    box-shadow:
-      0 0 0 3px #22c55e,
-      0 14px 26px -12px rgb(0 0 0 / 0.5);
+    translate: 400px 0;
   }
   100% {
-    left: 10px;
+    translate: 0 0;
+  }
+}
+
+@keyframes anda-anel {
+  0%,
+  48% {
+    opacity: 0;
+  }
+  60%,
+  90% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
   }
 }
 
