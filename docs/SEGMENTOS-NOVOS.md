@@ -180,6 +180,28 @@ Verandi ou de qualquer sistema acima.
 - Páginas `/segmentos/<ramo>` do site para os ramos novos: precisam de foto e
   texto aprovados (`propor-texto-antes-de-publicar`).
 
+## 8.1 Para depois (decisão do Gabriel, 30/out/2026)
+
+Avaliadas e adiadas: agora o que falta é prova (cliente real em cada sistema),
+não código. Entram quando um cliente desses ramos pedir.
+
+- **Páginas do site dos ramos novos** (`/segmentos/...`): fazer em localhost e
+  aprovar o texto antes de publicar.
+- **Confirmação na véspera com a agenda de fora**: ler as marcações de amanhã
+  no sistema conectado, mandar Confirmar, Remarcar ou Não vou, e gravar a
+  resposta lá. Útil em parte: Feegow, Simples Dental e Trinks já mandam
+  lembrete; o nosso ganho é a resposta cair na mesma conversa e a IA remarcar.
+  Precisa da operação "marcações do dia" nos conectores e de um job no
+  `pg_cron`.
+- **Campos por ramo só onde o AutoFluxos é a origem**: imóvel (bairro, quartos,
+  venda ou aluguel) e acomodação da pousada, para a IA filtrar. **Não** para
+  paciente, aluno ou pet: esse dado mora no sistema de origem, e copiar cria
+  duas versões do mesmo cadastro.
+- **Passar a Verandi para o contrato de agenda**, com teste da Verandi junto
+  (MGM é cliente pagante).
+- **Descartado**: painel "Hoje" no Início espelhando a agenda do dia. A
+  recepção já vê isso no próprio sistema.
+
 ## 9. Onde está no código ✅
 
 - Contrato e conectores: `src/agendas/` (testes em `agendas.test.ts`, contra
