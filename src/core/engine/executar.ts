@@ -61,6 +61,10 @@ export const MAX_PASSOS = 100
  * Escape global (§9 da arquitetura): funciona de qualquer nó, sem precisar
  * estar desenhado no fluxo. A lista é curta de propósito, cada termo aqui é
  * uma frase que só quem quer falar com gente escreve.
+ *
+ * Casa a palavra inteira, não um pedaço dela: "tenho 2 atendentes" fala da
+ * equipe de quem escreve, e no chat comercial do AutoFluxos (30/out/2026) a
+ * pergunta "qual plano?" ia parar numa pessoa por causa do plural.
  */
 export const PALAVRAS_ESCAPE = [
   'atendente',
@@ -1838,7 +1842,7 @@ function proximo(fluxo: Fluxo, noId: string, saida?: string): string | null {
  */
 export function pediuAtendente(texto: string): boolean {
   const t = normalizar(texto)
-  return PALAVRAS_ESCAPE.some((palavra) => t.includes(palavra))
+  return PALAVRAS_ESCAPE.some((palavra) => new RegExp(`(^|[^\\p{L}])${palavra}($|[^\\p{L}])`, 'u').test(t))
 }
 
 /** A pessoa pediu para recomeçar. Ver `PALAVRAS_DE_REINICIO`. */
