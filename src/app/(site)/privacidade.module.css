@@ -136,7 +136,8 @@
   width: 32px;
   height: 32px;
   border-radius: 10px;
-  background: var(--panel);
+  /* A marca oficial é um degradê azul e roxo: só aparece sobre branco. */
+  background: #ffffff;
   border: 1px solid var(--line);
   color: var(--accent);
 }
@@ -258,9 +259,6 @@
   .corpo {
     grid-template-columns: 1fr;
     gap: 30px;
-  }
-  .indice {
-    display: none;
   }
 }
 
@@ -478,4 +476,22 @@
 
 .rodape a:hover {
   color: var(--ink);
+}
+
+/*
+ * No celular o índice fica no topo, como lista de atalhos, e não preso na
+ * lateral: a regra de esconder até 900px perdia para a regra base, que vem
+ * depois, e o índice já aparecia. Mantido de propósito, porque a página é
+ * longa, mas sem o `sticky` e com 40px de toque por link.
+ */
+@media (max-width: 900px) {
+  .indice {
+    position: static;
+    gap: 0;
+  }
+
+  .indiceLink {
+    align-items: center;
+    min-height: 40px;
+  }
 }
