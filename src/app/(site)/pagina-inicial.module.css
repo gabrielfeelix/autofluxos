@@ -197,6 +197,25 @@
   box-shadow: none;
 }
 
+/*
+ * A logo acompanha a ilha: branca sobre o vidro azul, colorida quando a ilha
+ * vira papel (rolou a página ou abriu a folha do celular). O degradê da versão
+ * colorida só aparece sobre branco, e a branca some sobre branco.
+ */
+.marcaCor {
+  display: none;
+}
+
+.cabecalhoRolado .marcaBranca,
+.cabecalho:has([id='folha-do-topo']) .marcaBranca {
+  display: none;
+}
+
+.cabecalhoRolado .marcaCor,
+.cabecalho:has([id='folha-do-topo']) .marcaCor {
+  display: block;
+}
+
 .cabecalhoAcoes {
   display: flex;
   align-items: center;
