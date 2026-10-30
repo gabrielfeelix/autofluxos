@@ -50,7 +50,7 @@
   left: 4px;
   width: calc(50% - 4px);
   border-radius: 10px;
-  background: #94a3b8;
+  background: #64748b;
   transition:
     translate 0.5s cubic-bezier(0.65, 0, 0.35, 1),
     background 0.5s var(--curva);
@@ -115,7 +115,7 @@
 .faceHoje {
   border: 1.5px dashed #c5cede;
   background: #f4f6fa;
-  color: #7a869f;
+  color: #65718c;
 }
 
 .faceAgora {
