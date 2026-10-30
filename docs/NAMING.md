@@ -155,6 +155,59 @@ raiz sem marca viva no INPI nas classes 9, 35, 38 e 42.
 - **Recusados pelo som:** Dédalo ("dedar"), Zedar ("azedar"), Vetan
   ("vetar"), Tifeu ("tifo"), Dezra (o "zr" não tem pronúncia única).
 
+### Rodada de 30/out/2026: nomes brasileiros, depois sem "Chat"
+
+**A virada do Gabriel:** não precisa de Chat, Bot nem CRM no nome. Nome de
+empresa inventado, e para SEO o descritivo vai na aba
+(`Nome | Atendimento com IA no WhatsApp`). Filtro sem sufixo:
+`scripts/naming/filtro-puro.sh` (`.com.br` livre bloqueia, `.com` só informa).
+Falta no filtro: `.ai`, `.io` e busca na web pelo nome exato, que derrubou o
+Dialogon depois de passar em tudo.
+
+**Finalistas:**
+
+| Nome | Raiz | Conferido em 30/out |
+|---|---|---|
+| **Dialogon** | diálogo | `.com.br` e `@` livres, INPI zero. Existe o Dialogon.ai (abaixo) |
+| Dialon | diálogo | `.com.br` livre, INPI zero; `.ai` registrado sem site |
+| Dialen, Dialey | diálogo | `.com.br`, `.ai`, `.io` e `@` livres, INPI zero |
+| Converson | conversa, conversão | `.com.br`, `.ai`, `.io` livres, INPI zero |
+| Prosay | prosa + say | `.com.br` livre, INPI zero; `.ai` registrado sem site |
+
+**Dialogon.ai:** Codewire Systems (Atenas, Grécia, sócio único), agente de voz
+e chatbot, de US$ 149/mês, grego e inglês. `codewire.ai` registrado em
+26/abr/2025, `dialogon.ai` em 19/ago/2025. Sem redes sociais, sem sitemap,
+sem ™/®, sem menção ao Brasil; não aparece em busca por "Codewire" nem por
+"dialogon voice agent". Riscos: LPI art. 124, XXIII (marca estrangeira do
+mesmo ramo que "não poderia desconhecer"; depende de oposição em 60 dias ou
+nulidade em 180 dias pedidas por eles) e prioridade unionista de 6 meses se
+tiverem depósito recente. Falta o Gabriel conferir no
+[TMview](https://www.tmdn.org/tmview/#/tmview/results?page=1&pageSize=30&criteria=C&basicSearch=dialogon)
+e na [Biblioteca de Anúncios da Meta](https://www.facebook.com/ads/library/?active_status=all&ad_type=all&country=ALL&q=dialogon).
+
+**Caíram por dono (não repetir):**
+- SABIÁ é marca da Amazon Technologies (classes 9 e 42), e a Maritaca AI
+  chama o LLM dela de Sabiá: SabiChat fora.
+- TINO tem 7 marcas vivas no ramo (42, 9, 38, 35): TinoChat e Tinor fora.
+- Vozy é IA de voz para atendimento (Medellín, US$ 5 mi); Suntu é a Suntu
+  Capital; Convay soa como Convai e há um "Convay AI" no ar.
+- Palavra regional ou de esperteza famosa já tem marca em software:
+  Borogodó, Xodó, Cafuné, Fuxico, Chamego, Dengo, Muvuca, Sagaz, Ginga,
+  Cordel, Aboio, Frevo, Lince, Batuta, Pique, Tato, Jeito, Arandu (é IA).
+
+**Recusados pelo Gabriel (o porquê é a regra):**
+- palavra inteira de 3 ou 4 sílabas + Chat: LigadoChat, EspertaChat,
+  AtinadoChat ("não tem criatividade"); SabirChat "muito feio";
+- PerspiChat: o Edu disse que parece "psi psi" de chamar gato;
+- variação de charla e parla (Charlo, Parlo, Parlin...);
+- diminutivo: Palavrin, Assuntin;
+- parece palavra escrita errado: Sintu (sinto), Chamu (chamo), Respon;
+- lembra marca ou nome: Trelu (Trello), Leron (LeBron), Fabby (Fabiana);
+- lembra outra palavra: Lavra (larva), Confabo (lavabo); final mudo: Confab;
+- personagens do folclore como raiz (Uiraty, Itaty): "tá ruim".
+- Gostou do som: Dialon, Dialogon, Vozy, Suntu, Fabu (os três últimos têm
+  dono).
+
 ### Para registrar (só o Gabriel)
 
 1. `igniachat.com.br` e `igniachat.com` no Registro.br e num registrador .com.

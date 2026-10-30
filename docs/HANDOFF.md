@@ -1,5 +1,9 @@
 # Handoff: 19/ago/2026, atualizado em 04/set
 
+> **Naming (30/out/2026): nomes brasileiros e sem "Chat".** Finalistas
+> (Dialogon, Dialon, Dialen, Converson, Prosay), o caso Dialogon.ai e tudo que
+> caiu, em [NAMING.md](NAMING.md), seção "Rodada de 30/out/2026".
+
 > **Mais recente (22/out/2026): cobrança no chat e frentes paralelas** em
 > [HANDOFF-22-OUT-COBRANCA-E-FRENTES.md](HANDOFF-22-OUT-COBRANCA-E-FRENTES.md).
 
