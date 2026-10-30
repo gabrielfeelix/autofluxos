@@ -6,8 +6,8 @@ import s from '../(site)/pagina-inicial.module.css'
 
 export const metadata = metadadosDoSite(
   '/integracoes',
-  'Integrações | Dialogon',
-  'Magento, Nuvemshop, Mercado Pago, Asaas, Cardápio Web, Goomer e mais: o Dialogon consulta o seu sistema e responde com o dado de verdade.',
+  'Integrações com loja, pagamento e cardápio | Dialogon',
+  'Magento, Nuvemshop, Mercado Pago, Asaas, Cardápio Web, Goomer e mais: o Dialogon consulta o seu sistema e responde com o dado real.',
 )
 
 export default function PaginaDeIntegracoes() {

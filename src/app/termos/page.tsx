@@ -25,9 +25,9 @@ import { Item, Lista, PaginaLegal, type SecaoLegal } from '../(site)/pagina-lega
  * dia da régua, muda aqui no mesmo commit.
  */
 export const metadata: Metadata = {
-  title: 'Termos de Serviço · Dialogon',
+  title: 'Termos de Serviço | Dialogon',
   description:
-    'As regras de uso do Dialogon: quem opera, o que o serviço faz, o que não se pode fazer com ele e o que acontece em caso de uso indevido.',
+    'As regras de uso do Dialogon: quem opera, o que o serviço faz, o que não se pode fazer e as consequências de uso indevido.',
 }
 
 const ATUALIZADA_EM = '23 de outubro de 2026'

@@ -1,8 +1,15 @@
+import type { Metadata } from 'next'
 import Link from 'next/link'
 import { FormularioDePedido } from '@/components/conta/formulario-de-senha-esquecida'
 import { Portico } from '@/components/design/portico'
 
 export const dynamic = 'force-dynamic'
+
+// Só título e descrição próprios; o `noindex` vem do layout raiz.
+export const metadata: Metadata = {
+  title: 'Recuperar senha | Dialogon',
+  description: 'Receba por e-mail o link para criar uma nova senha do Dialogon.',
+}
 
 /** Primeiro passo de "esqueci a senha": o e-mail. O link chega pelo Brevo. */
 export default function EsqueciASenha() {

@@ -1,3 +1,4 @@
+import type { Metadata } from 'next'
 import Link from 'next/link'
 import { redirect } from 'next/navigation'
 import { FormularioDeConta } from '@/components/conta/formulario'
@@ -8,6 +9,12 @@ import { destinoAposEntrar } from '@/server/permissoes'
 import { sessaoAtual } from '@/server/sessao'
 
 export const dynamic = 'force-dynamic'
+
+// Só título e descrição próprios; o `noindex` vem do layout raiz.
+export const metadata: Metadata = {
+  title: 'Entrar | Dialogon',
+  description: 'Acesse o painel do Dialogon.',
+}
 
 /**
  * Entrar com a **sua** conta.

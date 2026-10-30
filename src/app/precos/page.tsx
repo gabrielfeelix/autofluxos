@@ -4,9 +4,9 @@ import { SecaoComparacao } from '../(site)/precos-pagina'
 import { DadosDoAplicativo } from '../(site)/dados-estruturados'
 import { metadadosDoSite } from '../(site)/metadados'
 
-const DESCRICAO = 'Planos do Dialogon, teste grátis, e a calculadora do que a Meta cobra pelas mensagens do WhatsApp, sem acréscimo.'
+const DESCRICAO = 'Planos do Dialogon, teste grátis e a calculadora do que a Meta cobra pelas mensagens do WhatsApp, repassado sem acréscimo.'
 
-export const metadata = metadadosDoSite('/precos', 'Preços e custo da Meta | Dialogon', DESCRICAO)
+export const metadata = metadadosDoSite('/precos', 'Preços e custo das mensagens da Meta | Dialogon', DESCRICAO)
 
 export default function PaginaDePrecos() {
   return (

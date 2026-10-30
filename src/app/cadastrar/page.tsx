@@ -1,3 +1,4 @@
+import type { Metadata } from 'next'
 import Link from 'next/link'
 import { DIAS_DE_TESTE, ehIdDePlano } from '@/core/planos'
 import { redirect } from 'next/navigation'
@@ -8,6 +9,12 @@ import { destinoAposEntrar } from '@/server/permissoes'
 import { sessaoAtual } from '@/server/sessao'
 
 export const dynamic = 'force-dynamic'
+
+// Só título e descrição próprios; o `noindex` vem do layout raiz.
+export const metadata: Metadata = {
+  title: 'Criar conta | Dialogon',
+  description: 'Crie sua conta no Dialogon e teste por 14 dias, sem cartão.',
+}
 
 /**
  * O cadastro aberto, a porta de quem chega sozinho.

@@ -29,7 +29,7 @@ import { Item, Lista, PaginaLegal, type SecaoLegal } from '../(site)/pagina-lega
  * nascerem com a mesma cara em vez de com uma cópia dela.
  */
 export const metadata: Metadata = {
-  title: 'Política de Privacidade · Dialogon',
+  title: 'Política de Privacidade | Dialogon',
   description:
     'Como o Dialogon trata os dados das conversas de WhatsApp atendidas pelas automações dos seus clientes.',
 }

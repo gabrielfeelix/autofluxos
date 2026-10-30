@@ -29,7 +29,7 @@ import { Item, Lista, PaginaLegal, type SecaoLegal } from '../(site)/pagina-lega
  * exclusão que descreve outro sistema é pior do que não ter página.
  */
 export const metadata: Metadata = {
-  title: 'Exclusão de dados · Dialogon',
+  title: 'Exclusão de dados | Dialogon',
   description:
     'Como pedir a exclusão dos seus dados no Dialogon, em quanto tempo respondemos e o que exatamente é apagado.',
 }
