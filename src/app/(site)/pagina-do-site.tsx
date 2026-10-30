@@ -84,8 +84,9 @@ export function PaginaDoSite({ capa, children, cor }: { capa: ReactNode; childre
       <header className={s.cabecalho}>
         <div className={`${s.faixa} ${s.cabecalhoInterno}`}>
           <Link className={s.marca} href="/" aria-label="Dialogon, início">
+            {/* O topo do site é azul: o degradê da logo some nele, vai a versão branca. */}
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/logos/dialogon-horizontal.png" alt="Dialogon" width={128} height={28} />
+            <img src="/logos/dialogon-horizontal-branca.png" alt="Dialogon" width={128} height={28} />
           </Link>
 
           <MenuDoTopo classeItem={s.menuItem} hrefEntrar={ENTRAR} />
