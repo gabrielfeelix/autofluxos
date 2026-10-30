@@ -32,6 +32,16 @@ conectado; Asaas da 4YU sem chave em produção. Os webhooks da Meta seguem em
 `autofluxos.4yu.com.br/api/webhook/*` de propósito: o token de verificação é
 segredo sensível na Vercel e a troca ficou para o Gabriel decidir.
 
+**Webhooks da Meta (30/out, 17h):** o Gabriel trocou as callbacks de WhatsApp,
+Instagram e Page para `dialogon.com.br/api/webhook/*` com token de verificação
+novo (já na Vercel; o aperto de mão das três rotas respondeu certo). Depois
+disso, um "oi" mandado para +55 44 7400-7438 às 17h18 **não chegou** em
+`public.messages` (última entrada 16:47). Não é urgente (ninguém entrando em
+contato) e ele decidiu não voltar para a URL antiga. Investigar numa sessão com
+acesso aos logs de requisição da Vercel: se a Meta entrega e a rota falha
+(assinatura, corpo) ou se a callback não salvou / há override por WABA. Rollback
+possível: callback antiga com o mesmo token novo.
+
 Falta: Mercado Pago, PagBank, Stripe e Nuvemshop quando alguém conectar;
 Search Console da propriedade `dialogon.com.br` e Mudança de endereço; correções
 de `docs/SEO-AUDITORIA.md`; ícone do app na Meta com a logo nova; envio de
