@@ -68,8 +68,8 @@ no('menu', 'pergunta', {
   opcoes: [
     { id: 'demo', rotulo: 'Testar o chatbot' },
     { id: 'testar', rotulo: 'Criar minha conta' },
-    { id: 'duvida', rotulo: 'Tenho uma dúvida' },
-    { id: 'suporte', rotulo: 'Preciso de suporte' },
+    { id: 'duvida', rotulo: 'Planos e dúvidas' },
+    { id: 'suporte', rotulo: 'Já sou cliente' },
   ],
 })
 
