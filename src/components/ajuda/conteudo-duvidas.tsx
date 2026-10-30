@@ -213,7 +213,7 @@ export function SecaoDuvidas() {
           </p>
         </Duvida>
 
-        <Duvida p="O AutoFluxos guarda a lista de alunos, presença ou turma?">
+        <Duvida p="O Dialogon guarda a lista de alunos, presença ou turma?">
           <p>
             Não, e nunca vai guardar. Isso mora na Verandi. Aqui ficam a conversa, o contato e o que
             a conversa coletou. Os dois sistemas conversam por API, e nenhum lê o banco do outro.

@@ -39,10 +39,10 @@ describe('descricaoDaAssinatura', () => {
   // O Intl separa "R$" do número com espaço inquebrável.
   const descricao = (...a: Parameters<typeof descricaoDaAssinatura>) => descricaoDaAssinatura(...a).replace(/\u00a0/g, ' ')
   it('diz o plano e os extras', () => {
-    expect(descricao(comNome, 'mensal', 5)).toBe('AutoFluxos Operação, mensal: plano R$ 197,00 + 2 atendentes extras R$ 138,00')
+    expect(descricao(comNome, 'mensal', 5)).toBe('Dialogon Operação, mensal: plano R$ 197,00 + 2 atendentes extras R$ 138,00')
   })
   it('no anual, os extras somam os 12 meses', () => {
-    expect(descricao(comNome, 'anual', 4)).toBe('AutoFluxos Operação, anual: plano R$ 1.970,00 + 1 atendente extra R$ 828,00')
+    expect(descricao(comNome, 'anual', 4)).toBe('Dialogon Operação, anual: plano R$ 1.970,00 + 1 atendente extra R$ 828,00')
   })
 })
 

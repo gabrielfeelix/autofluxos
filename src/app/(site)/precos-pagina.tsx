@@ -14,7 +14,7 @@ import c from './precos.module.css'
 const reais = (v: number, centavos = false) =>
   v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL', minimumFractionDigits: centavos ? 2 : 0, maximumFractionDigits: centavos ? 2 : 0 })
 
-const FALAR_COM_VENDAS = whatsappDa4yu('Olá! Quero conhecer o plano Enterprise do AutoFluxos.')
+const FALAR_COM_VENDAS = whatsappDa4yu('Olá! Quero conhecer o plano Enterprise do Dialogon.')
 
 /* ───────────── Enterprise ───────────── */
 
@@ -24,7 +24,7 @@ const FALAR_COM_VENDAS = whatsappDa4yu('Olá! Quero conhecer o plano Enterprise 
  */
 const DETALHE_DO_ENTERPRISE: Record<string, string> = {
   'Conversas, números e atendentes sob medida': 'O contrato acompanha o tamanho da operação, sem franquia fixa.',
-  'Integração com o seu sistema': 'Ligamos o AutoFluxos ao ERP, ao CRM ou ao sistema próprio da empresa.',
+  'Integração com o seu sistema': 'Ligamos o Dialogon ao ERP, ao CRM ou ao sistema próprio da empresa.',
   'Robôs montados pela 4YU': 'A 4YU desenha os fluxos da operação junto com a sua equipe.',
   'Gerente de conta': 'Uma pessoa da 4YU acompanha a conta e responde direto.',
 }

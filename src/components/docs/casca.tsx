@@ -82,7 +82,7 @@ export function CabecalhoDeDocs({ area }: { area: Area | 'inicio' }) {
           <span className="flex size-8 items-center justify-center rounded-[10px] bg-white">
             <Image src="/logos/logo-autofluxos-marca.png" alt="" width={22} height={22} />
           </span>
-          <span className="hidden text-[15px] font-bold tracking-[-0.01em] lg:inline">AutoFluxos</span>
+          <span className="hidden text-[15px] font-bold tracking-[-0.01em] lg:inline">Dialogon</span>
         </Link>
         <nav aria-label="Áreas" className="flex items-center gap-1 overflow-x-auto">
           {aba('ajuda', '/ajuda', 'Central de ajuda')}

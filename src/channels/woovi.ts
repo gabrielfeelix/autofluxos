@@ -94,7 +94,7 @@ export async function conectarWoovi(valores: Record<string, string>, clienteId: 
     try {
       const criado = avisoCriadoSchema.parse(
         await chamar(acesso, 'POST', '/api/v1/webhook', {
-          webhook: { name: 'AutoFluxos', event: 'OPENPIX:CHARGE_COMPLETED', url, isActive: true },
+          webhook: { name: 'Dialogon', event: 'OPENPIX:CHARGE_COMPLETED', url, isActive: true },
         }),
       )
       avisoNoGateway = criado.webhook.id

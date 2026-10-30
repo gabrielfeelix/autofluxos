@@ -272,7 +272,7 @@ export async function salvarLojaNuvemshop(
     )
 
   if (error?.code === '23505') {
-    throw new Error('esta loja Nuvemshop já está conectada a outra conta do AutoFluxos')
+    throw new Error('esta loja Nuvemshop já está conectada a outra conta do Dialogon')
   }
   if (error) throw new Error(`não foi possível salvar a loja: ${error.message}`)
 }

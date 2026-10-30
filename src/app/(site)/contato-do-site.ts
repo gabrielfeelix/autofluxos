@@ -10,4 +10,4 @@ export function whatsappDa4yu(texto: string): string {
   return `https://wa.me/${NUMERO_DA_4YU}?text=${encodeURIComponent(texto)}`
 }
 
-export const FALE_CONOSCO = whatsappDa4yu('Olá! Quero conhecer o AutoFluxos.')
+export const FALE_CONOSCO = whatsappDa4yu('Olá! Quero conhecer o Dialogon.')

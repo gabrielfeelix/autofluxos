@@ -1,7 +1,7 @@
 import type { Bloco, Email } from './layout'
 
 /**
- * Todos os e-mails do AutoFluxos, um por situação.
+ * Todos os e-mails do Dialogon, um por situação.
  *
  * **Esta é a fonte da verdade.** O envio monta o HTML daqui, na hora
  * (`server/email.ts`), e os modelos que aparecem no painel da Brevo são cópias
@@ -44,8 +44,8 @@ function so<T>(condicao: unknown, bloco: T): T[] {
   return condicao ? [bloco] : []
 }
 
-const MOTIVO_DE_SEGURANCA = 'Aviso de segurança da sua conta no AutoFluxos. Ele sai sempre, mesmo que tenha sido você.'
-const MOTIVO_DE_GESTAO = 'Você recebe este e-mail porque administra esta organização no AutoFluxos.'
+const MOTIVO_DE_SEGURANCA = 'Aviso de segurança da sua conta no Dialogon. Ele sai sempre, mesmo que tenha sido você.'
+const MOTIVO_DE_GESTAO = 'Você recebe este e-mail porque administra esta organização no Dialogon.'
 
 /**
  * A régua da mensalidade em atraso (`server/passada-da-mensalidade.ts`), no
@@ -97,7 +97,7 @@ const ETAPAS_DO_ATRASO: Record<
   },
   suspensa: {
     tom: 'perigo',
-    assunto: (o) => `O acesso de ${o} ao AutoFluxos foi suspenso por falta de pagamento`,
+    assunto: (o) => `O acesso de ${o} ao Dialogon foi suspenso por falta de pagamento`,
     previa: () => 'O painel volta sozinho assim que o pagamento for confirmado.',
     titulo: 'O acesso ao painel foi suspenso',
     depoisDoVencimento: ', e o acesso da equipe ao painel foi suspenso.',
@@ -124,7 +124,7 @@ const ETAPAS_DO_ATRASO: Record<
   },
   cancelada: {
     tom: 'perigo',
-    assunto: (o) => `A assinatura de ${o} no AutoFluxos foi cancelada`,
+    assunto: (o) => `A assinatura de ${o} no Dialogon foi cancelada`,
     previa: () => 'Fale com a 4YU para retomar: nada foi apagado.',
     titulo: 'A assinatura foi cancelada',
     depoisDoVencimento: ', e depois de 60 dias sem pagamento a assinatura foi cancelada.',
@@ -142,14 +142,14 @@ export const MODELOS = {
     nome: 'Boas-vindas',
     grupo: 'Conta',
     montar: (p) => ({
-      assunto: primeiroNome(p.nome) ? `Boas-vindas ao AutoFluxos, ${primeiroNome(p.nome)}` : 'Boas-vindas ao AutoFluxos',
+      assunto: primeiroNome(p.nome) ? `Boas-vindas ao Dialogon, ${primeiroNome(p.nome)}` : 'Boas-vindas ao Dialogon',
       previa: 'Sua organização está criada. Três passos para colocar o atendimento no ar.',
       selo: { texto: 'Conta criada', tom: 'marca' },
       titulo: 'Sua organização está pronta',
       blocos: [
         {
           tipo: 'texto',
-          texto: `${oi(p.nome)} A organização **${p.organizacao}** foi criada no AutoFluxos. A partir de agora, cada conversa que chegar no WhatsApp pode ser conduzida por um fluxo e passada para a sua equipe na hora certa.`,
+          texto: `${oi(p.nome)} A organização **${p.organizacao}** foi criada no Dialogon. A partir de agora, cada conversa que chegar no WhatsApp pode ser conduzida por um fluxo e passada para a sua equipe na hora certa.`,
         },
         {
           tipo: 'passos',
@@ -159,9 +159,9 @@ export const MODELOS = {
             { titulo: 'Traga a equipe', texto: 'Adicione quem atende, com a função de cada pessoa, e acompanhe tudo pelo Inbox.' },
           ],
         },
-        { tipo: 'botao', rotulo: 'Abrir o AutoFluxos', link: p.link },
+        { tipo: 'botao', rotulo: 'Abrir o Dialogon', link: p.link },
       ],
-      motivo: 'Você recebe este e-mail porque criou uma conta no AutoFluxos.',
+      motivo: 'Você recebe este e-mail porque criou uma conta no Dialogon.',
     }),
     exemplo: { nome: 'Daniel Moreira', organizacao: 'MGM Pilates', link: 'https://autofluxos.4yu.com.br/painel' },
   }),
@@ -170,19 +170,19 @@ export const MODELOS = {
     nome: 'Confirmar e-mail',
     grupo: 'Conta',
     montar: (p) => ({
-      assunto: 'Confirme seu e-mail no AutoFluxos',
+      assunto: 'Confirme seu e-mail no Dialogon',
       previa: 'Um clique para confirmar que este endereço é seu.',
       selo: { texto: 'Confirmação', tom: 'marca' },
       titulo: 'Confirme seu e-mail',
       blocos: [
         {
           tipo: 'texto',
-          texto: `${oi(p.nome)} Confirme que este endereço é seu para manter o acesso ao AutoFluxos. É por ele que você recupera a senha, se um dia precisar.`,
+          texto: `${oi(p.nome)} Confirme que este endereço é seu para manter o acesso ao Dialogon. É por ele que você recupera a senha, se um dia precisar.`,
         },
         { tipo: 'botao', rotulo: 'Confirmar meu e-mail', link: p.link, extenso: true },
-        { tipo: 'nota', texto: 'O link vale por **24 horas**. Depois disso, entre no AutoFluxos e peça outro.' },
+        { tipo: 'nota', texto: 'O link vale por **24 horas**. Depois disso, entre no Dialogon e peça outro.' },
       ],
-      motivo: 'Você recebe este e-mail porque este endereço foi usado para criar uma conta no AutoFluxos. Se não foi você, ignore.',
+      motivo: 'Você recebe este e-mail porque este endereço foi usado para criar uma conta no Dialogon. Se não foi você, ignore.',
     }),
     exemplo: { nome: 'Daniel Moreira', link: 'https://autofluxos.4yu.com.br/confirmar-email?token=exemplo' },
   }),
@@ -191,14 +191,14 @@ export const MODELOS = {
     nome: 'Redefinir senha',
     grupo: 'Segurança',
     montar: (p) => ({
-      assunto: 'Redefinir a senha do AutoFluxos',
+      assunto: 'Redefinir a senha do Dialogon',
       previa: 'O link vale por 1 hora e funciona uma vez só.',
       selo: { texto: 'Segurança', tom: 'marca' },
       titulo: 'Crie uma senha nova',
       blocos: [
         {
           tipo: 'texto',
-          texto: `${oi(p.nome)} Recebemos um pedido para redefinir a senha da sua conta no AutoFluxos. Use o botão abaixo para escolher a senha nova.`,
+          texto: `${oi(p.nome)} Recebemos um pedido para redefinir a senha da sua conta no Dialogon. Use o botão abaixo para escolher a senha nova.`,
         },
         { tipo: 'botao', rotulo: 'Criar uma senha nova', link: p.link, extenso: true },
         {
@@ -219,14 +219,14 @@ export const MODELOS = {
     nome: 'Senha alterada',
     grupo: 'Segurança',
     montar: (p) => ({
-      assunto: 'Sua senha do AutoFluxos foi alterada',
+      assunto: 'Sua senha do Dialogon foi alterada',
       previa: 'Se foi você, está tudo certo. Se não foi, crie uma senha nova agora.',
       selo: { texto: 'Segurança', tom: 'marca' },
       titulo: 'Sua senha foi alterada',
       blocos: [
         {
           tipo: 'texto',
-          texto: `${oi(p.nome)} A senha da sua conta no AutoFluxos foi alterada em **${p.quando}**. Por segurança, as sessões abertas em outros aparelhos foram encerradas.`,
+          texto: `${oi(p.nome)} A senha da sua conta no Dialogon foi alterada em **${p.quando}**. Por segurança, as sessões abertas em outros aparelhos foram encerradas.`,
         },
         { tipo: 'nota', tom: 'perigo', texto: `**Não foi você?** Crie uma senha nova agora e avise a 4YU em contato@4yu.com.br.` },
         { tipo: 'botao', rotulo: 'Criar uma senha nova', link: p.link },
@@ -241,13 +241,13 @@ export const MODELOS = {
     grupo: 'Segurança',
     montar: (p) => ({
       assunto: 'Verificação em duas etapas ligada',
-      previa: 'Além da senha, o AutoFluxos agora pede o código do aplicativo.',
+      previa: 'Além da senha, o Dialogon agora pede o código do aplicativo.',
       selo: { texto: 'Segurança', tom: 'ok' },
       titulo: 'Sua conta ficou mais protegida',
       blocos: [
         {
           tipo: 'texto',
-          texto: `${oi(p.nome)} A verificação em duas etapas foi ligada em **${p.quando}**. Daqui em diante, além da senha, o AutoFluxos pede o código do aplicativo autenticador para entrar.`,
+          texto: `${oi(p.nome)} A verificação em duas etapas foi ligada em **${p.quando}**. Daqui em diante, além da senha, o Dialogon pede o código do aplicativo autenticador para entrar.`,
         },
         {
           tipo: 'nota',
@@ -275,7 +275,7 @@ export const MODELOS = {
           texto: `${oi(p.nome)} A verificação em duas etapas da sua conta foi desligada em **${p.quando}**. A partir de agora, basta a senha para entrar.`,
         },
         { tipo: 'nota', tom: 'perigo', texto: '**Não foi você?** Troque a senha imediatamente e ligue a verificação de novo no seu perfil.' },
-        { tipo: 'botao', rotulo: 'Abrir o AutoFluxos', link: p.link },
+        { tipo: 'botao', rotulo: 'Abrir o Dialogon', link: p.link },
       ],
       motivo: MOTIVO_DE_SEGURANCA,
     }),
@@ -290,12 +290,12 @@ export const MODELOS = {
     nome: 'Acesso liberado',
     grupo: 'Equipe',
     montar: (p) => ({
-      assunto: `Seu acesso a ${p.organizacao} no AutoFluxos está liberado`,
+      assunto: `Seu acesso a ${p.organizacao} no Dialogon está liberado`,
       previa: `${p.quem} liberou o seu acesso como ${p.funcao}.`,
       selo: { texto: 'Acesso liberado', tom: 'ok' },
       titulo: `Você agora faz parte de ${p.organizacao}`,
       blocos: [
-        { tipo: 'texto', texto: `${oi(p.nome)} **${p.quem}** liberou o seu acesso à organização **${p.organizacao}** no AutoFluxos.` },
+        { tipo: 'texto', texto: `${oi(p.nome)} **${p.quem}** liberou o seu acesso à organização **${p.organizacao}** no Dialogon.` },
         {
           tipo: 'fatos',
           linhas: [
@@ -308,11 +308,11 @@ export const MODELOS = {
           tipo: 'texto',
           texto: p.contaNova
             ? 'Use a senha combinada com quem liberou o acesso. Se preferir criar a sua, use **Esqueci a senha** na tela de entrada.'
-            : 'Entre com o e-mail e a senha que você já usa no AutoFluxos. A organização aparece no seletor de contas.',
+            : 'Entre com o e-mail e a senha que você já usa no Dialogon. A organização aparece no seletor de contas.',
         },
-        { tipo: 'botao', rotulo: 'Entrar no AutoFluxos', link: p.link },
+        { tipo: 'botao', rotulo: 'Entrar no Dialogon', link: p.link },
       ],
-      motivo: 'Você recebe este e-mail porque uma organização liberou acesso para este endereço no AutoFluxos.',
+      motivo: 'Você recebe este e-mail porque uma organização liberou acesso para este endereço no Dialogon.',
     }),
     exemplo: {
       nome: 'Rodrigo Alves',
@@ -336,7 +336,7 @@ export const MODELOS = {
       blocos: [
         {
           tipo: 'texto',
-          texto: `${oi(p.nome)} O seu acesso à organização **${p.organizacao}** no AutoFluxos foi encerrado por quem administra a conta. As conversas que estavam com você seguem com a equipe.`,
+          texto: `${oi(p.nome)} O seu acesso à organização **${p.organizacao}** no Dialogon foi encerrado por quem administra a conta. As conversas que estavam com você seguem com a equipe.`,
         },
         { tipo: 'texto', texto: 'Sua conta continua existindo. Se você participa de outras organizações, elas seguem disponíveis normalmente.' },
         { tipo: 'nota', texto: 'Acha que foi um engano? Fale com quem administra a organização.' },
@@ -410,7 +410,7 @@ export const MODELOS = {
         { tipo: 'texto', texto: 'Até a confirmação, tudo continua funcionando no plano atual.' },
         { tipo: 'botao', rotulo: 'Ver o plano', link: p.link },
       ],
-      motivo: 'Você recebe este e-mail porque pediu uma troca de plano no AutoFluxos.',
+      motivo: 'Você recebe este e-mail porque pediu uma troca de plano no Dialogon.',
     }),
     exemplo: { nome: 'Daniel Moreira', organizacao: 'MGM Pilates', plano: 'Pro', ciclo: 'Mensal', link: 'https://autofluxos.4yu.com.br/clientes/exemplo/ajustes/plano' },
   }),
@@ -640,7 +640,7 @@ export const MODELOS = {
             tipo: 'texto',
             texto: `**${p.organizacao}** teve **${p.usadas.toLocaleString('pt-BR')} conversas** neste mês, de ${p.total.toLocaleString('pt-BR')} incluídas no plano **${p.plano}**.`,
           },
-          { tipo: 'medidor', usado: p.usadas, total: p.total, tom: passou ? 'perigo' : 'aviso', legenda: 'Conversas do mês, contadas pelo AutoFluxos. A contagem recomeça no dia 1º.' },
+          { tipo: 'medidor', usado: p.usadas, total: p.total, tom: passou ? 'perigo' : 'aviso', legenda: 'Conversas do mês, contadas pelo Dialogon. A contagem recomeça no dia 1º.' },
           {
             tipo: 'texto',
             texto: `Nada é bloqueado. ${passou ? 'Cada' : 'Acima da faixa, cada'} conversa a mais custa **${p.precoExcedente}**, cobrada na fatura seguinte.${p.conta ? ` ${p.conta}` : ''}`,
@@ -695,7 +695,7 @@ export const MODELOS = {
           tipo: 'texto',
           texto: `Acima de 1.000, cada conversa de atendimento custa cerca de **${p.tarifa}**, cobrada pela Meta. Modelos de marketing e de utilidade são cobrados à parte, desde a primeira mensagem.`,
         },
-        ...so(p.estourou, { tipo: 'nota', texto: 'O atendimento continua normal. Nada é bloqueado pelo AutoFluxos.' } as Bloco),
+        ...so(p.estourou, { tipo: 'nota', texto: 'O atendimento continua normal. Nada é bloqueado pelo Dialogon.' } as Bloco),
         { tipo: 'botao', rotulo: 'Ver o consumo', link: p.link },
       ],
       motivo: MOTIVO_DE_GESTAO,
@@ -716,14 +716,14 @@ export const MODELOS = {
     nome: 'WhatsApp conectado',
     grupo: 'WhatsApp',
     montar: (p) => ({
-      assunto: `WhatsApp de ${p.organizacao} conectado ao AutoFluxos`,
+      assunto: `WhatsApp de ${p.organizacao} conectado ao Dialogon`,
       previa: 'As mensagens que chegarem no número já aparecem no Inbox.',
       selo: { texto: 'WhatsApp', tom: 'ok' },
       titulo: 'Seu WhatsApp está conectado',
       blocos: [
         {
           tipo: 'texto',
-          texto: `O número oficial de **${p.organizacao}** foi conectado ao AutoFluxos. As mensagens que chegarem nele já aparecem no Inbox e podem ser respondidas pelos fluxos.`,
+          texto: `O número oficial de **${p.organizacao}** foi conectado ao Dialogon. As mensagens que chegarem nele já aparecem no Inbox e podem ser respondidas pelos fluxos.`,
         },
         {
           tipo: 'passos',
@@ -767,7 +767,7 @@ export const MODELOS = {
         { tipo: 'texto', texto: 'Entregas e leituras continuam sendo contadas nas próximas horas, conforme o WhatsApp confirma.' },
         { tipo: 'botao', rotulo: 'Ver a transmissão', link: p.link },
       ],
-      motivo: 'Você recebe este e-mail porque criou esta transmissão no AutoFluxos.',
+      motivo: 'Você recebe este e-mail porque criou esta transmissão no Dialogon.',
     }),
     exemplo: {
       nome: 'Daniel Moreira',
@@ -798,7 +798,7 @@ export const MODELOS = {
           linhas: [...(p.de ? [{ rotulo: 'Antes', valor: p.de }] : []), { rotulo: 'Agora', valor: p.para }],
         },
         { tipo: 'texto', texto: 'O que você vê e pode fazer no painel já segue a função nova. Se a tela estiver aberta, recarregue a página.' },
-        { tipo: 'botao', rotulo: 'Abrir o AutoFluxos', link: p.link },
+        { tipo: 'botao', rotulo: 'Abrir o Dialogon', link: p.link },
       ],
       motivo: 'Aviso enviado sempre que a sua função numa organização muda.',
     }),
@@ -811,14 +811,14 @@ export const MODELOS = {
     montar: (p) =>
       p.suspensa
         ? {
-            assunto: `O acesso de ${p.organizacao} ao AutoFluxos foi suspenso`,
+            assunto: `O acesso de ${p.organizacao} ao Dialogon foi suspenso`,
             previa: 'O painel fica fechado até a situação ser resolvida com a 4YU.',
             selo: { texto: 'Conta', tom: 'perigo' },
             titulo: 'O acesso ao painel foi suspenso',
             blocos: [
               {
                 tipo: 'texto',
-                texto: `O acesso da equipe de **${p.organizacao}** ao painel do AutoFluxos foi suspenso pela 4YU. Ninguém da organização consegue entrar até a reativação.`,
+                texto: `O acesso da equipe de **${p.organizacao}** ao painel do Dialogon foi suspenso pela 4YU. Ninguém da organização consegue entrar até a reativação.`,
               },
               { tipo: 'nota', tom: 'aviso', texto: 'Os fluxos e os canais **não foram desligados**: as conversas em andamento seguem sendo atendidas.' },
               { tipo: 'texto', texto: 'Para entender o motivo e resolver, escreva para contato@4yu.com.br.' },
@@ -826,13 +826,13 @@ export const MODELOS = {
             motivo: MOTIVO_DE_GESTAO,
           }
         : {
-            assunto: `O acesso de ${p.organizacao} ao AutoFluxos foi reativado`,
+            assunto: `O acesso de ${p.organizacao} ao Dialogon foi reativado`,
             previa: 'A equipe já pode entrar no painel normalmente.',
             selo: { texto: 'Conta', tom: 'ok' },
             titulo: 'O acesso ao painel voltou',
             blocos: [
-              { tipo: 'texto', texto: `O acesso da equipe de **${p.organizacao}** ao painel do AutoFluxos foi reativado. Todos entram normalmente, com as mesmas funções de antes.` },
-              { tipo: 'botao', rotulo: 'Abrir o AutoFluxos', link: p.link },
+              { tipo: 'texto', texto: `O acesso da equipe de **${p.organizacao}** ao painel do Dialogon foi reativado. Todos entram normalmente, com as mesmas funções de antes.` },
+              { tipo: 'botao', rotulo: 'Abrir o Dialogon', link: p.link },
             ],
             motivo: MOTIVO_DE_GESTAO,
           },
@@ -843,14 +843,14 @@ export const MODELOS = {
     nome: 'Organização apagada',
     grupo: 'Conta',
     montar: (p) => ({
-      assunto: `A organização ${p.organizacao} foi apagada do AutoFluxos`,
+      assunto: `A organização ${p.organizacao} foi apagada do Dialogon`,
       previa: 'Confirmação da exclusão. Guarde este e-mail como comprovante.',
       selo: { texto: 'Conta', tom: 'perigo' },
       titulo: 'A organização foi apagada',
       blocos: [
         {
           tipo: 'texto',
-          texto: `A organização **${p.organizacao}** foi apagada do AutoFluxos em **${p.quando}**, junto com os fluxos, contatos, conversas e arquivos dela.`,
+          texto: `A organização **${p.organizacao}** foi apagada do Dialogon em **${p.quando}**, junto com os fluxos, contatos, conversas e arquivos dela.`,
         },
         { tipo: 'texto', texto: 'O seu login continua existindo se você participa de outras organizações. A exclusão não pode ser desfeita.' },
         { tipo: 'nota', tom: 'perigo', texto: '**Não pediu esta exclusão?** Escreva agora para contato@4yu.com.br.' },
@@ -864,14 +864,14 @@ export const MODELOS = {
     nome: 'Conta de usuário excluída',
     grupo: 'Conta',
     montar: (p) => ({
-      assunto: 'Sua conta no AutoFluxos foi excluída',
+      assunto: 'Sua conta no Dialogon foi excluída',
       previa: 'Confirmação da exclusão. Guarde este e-mail como comprovante.',
       selo: { texto: 'Conta', tom: 'perigo' },
       titulo: 'Sua conta foi excluída',
       blocos: [
         {
           tipo: 'texto',
-          texto: `${oi(p.nome)} A sua conta de acesso ao AutoFluxos foi excluída em **${p.quando}**. Este e-mail não entra mais no painel, e as sessões abertas foram encerradas.`,
+          texto: `${oi(p.nome)} A sua conta de acesso ao Dialogon foi excluída em **${p.quando}**. Este e-mail não entra mais no painel, e as sessões abertas foram encerradas.`,
         },
         { tipo: 'texto', texto: 'As conversas que você atendeu continuam com a organização, que é a dona delas.' },
         { tipo: 'nota', tom: 'perigo', texto: '**Não pediu esta exclusão?** Escreva agora para contato@4yu.com.br.' },
@@ -931,7 +931,7 @@ export const MODELOS = {
         blocos: [
           { tipo: 'texto', texto: textos.texto },
           { tipo: 'texto', texto: textos.depois },
-          { tipo: 'botao', rotulo: p.momento === 'comecou' ? 'Abrir o AutoFluxos' : 'Escolher o plano', link: p.link },
+          { tipo: 'botao', rotulo: p.momento === 'comecou' ? 'Abrir o Dialogon' : 'Escolher o plano', link: p.link },
         ],
         motivo: MOTIVO_DE_GESTAO,
       }
@@ -948,13 +948,13 @@ export const MODELOS = {
     grupo: 'WhatsApp',
     montar: (p) => ({
       assunto: `O WhatsApp de ${p.organizacao} foi desconectado`,
-      previa: 'As mensagens do número pararam de chegar no AutoFluxos.',
+      previa: 'As mensagens do número pararam de chegar no Dialogon.',
       selo: { texto: 'WhatsApp', tom: 'perigo' },
       titulo: 'O WhatsApp foi desconectado',
       blocos: [
         {
           tipo: 'texto',
-          texto: `A Meta avisou que o número **${p.numero}** de **${p.organizacao}** deixou de estar ligado ao AutoFluxos. Enquanto ele estiver desconectado, as mensagens não chegam no Inbox e os fluxos não respondem.`,
+          texto: `A Meta avisou que o número **${p.numero}** de **${p.organizacao}** deixou de estar ligado ao Dialogon. Enquanto ele estiver desconectado, as mensagens não chegam no Inbox e os fluxos não respondem.`,
         },
         {
           tipo: 'nota',
@@ -1037,7 +1037,7 @@ export const MODELOS = {
       blocos: [
         {
           tipo: 'texto',
-          texto: `O endereço que recebe os eventos do AutoFluxos falhou **${p.falhas} vezes seguidas**, e o envio foi pausado para não acumular erro. Os eventos novos não estão chegando lá.`,
+          texto: `O endereço que recebe os eventos do Dialogon falhou **${p.falhas} vezes seguidas**, e o envio foi pausado para não acumular erro. Os eventos novos não estão chegando lá.`,
         },
         { tipo: 'nota', tom: 'aviso', texto: `**Endereço:** ${p.endereco}` },
         { tipo: 'texto', texto: 'Confira com quem cuida desse sistema se ele está no ar. Depois, religue o webhook na tela da API.' },
@@ -1062,7 +1062,7 @@ export const MODELOS = {
         { tipo: 'texto', texto: 'Na tela da transmissão está quem recebeu e quem ficou de fora, com o motivo de cada falha.' },
         { tipo: 'botao', rotulo: 'Ver a transmissão', link: p.link },
       ],
-      motivo: 'Você recebe este e-mail porque criou esta transmissão no AutoFluxos.',
+      motivo: 'Você recebe este e-mail porque criou esta transmissão no Dialogon.',
     }),
     exemplo: {
       nome: 'Daniel Moreira',
@@ -1089,8 +1089,8 @@ export const MODELOS = {
           {
             tipo: 'texto',
             texto: daOrganizacao
-              ? `${oi(p.nome)} Recebemos o pedido para apagar a organização **${p.organizacao}** do AutoFluxos, com os contatos, conversas, fluxos, quadros e arquivos dela.`
-              : `${oi(p.nome)} Recebemos o pedido para excluir a sua conta de acesso ao AutoFluxos (**${p.email}**). As conversas que você atendeu continuam com as organizações, que são as donas delas.`,
+              ? `${oi(p.nome)} Recebemos o pedido para apagar a organização **${p.organizacao}** do Dialogon, com os contatos, conversas, fluxos, quadros e arquivos dela.`
+              : `${oi(p.nome)} Recebemos o pedido para excluir a sua conta de acesso ao Dialogon (**${p.email}**). As conversas que você atendeu continuam com as organizações, que são as donas delas.`,
           },
           {
             tipo: 'fatos',

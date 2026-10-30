@@ -4,7 +4,7 @@ import { canalPorSlug } from '../../(site)/canais-do-site'
 
 export const size = TAMANHO
 export const contentType = TIPO
-export const alt = 'AutoFluxos: um canal de atendimento'
+export const alt = 'Dialogon: um canal de atendimento'
 
 export default async function Imagem({ params }: { params: Promise<{ slug: string }> }) {
   const canal = canalPorSlug((await params).slug)

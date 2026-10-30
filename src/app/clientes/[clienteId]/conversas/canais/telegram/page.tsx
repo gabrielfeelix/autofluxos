@@ -14,7 +14,7 @@ const RESULTADOS: Record<string, { tom: 'bom' | 'ruim'; texto: string }> = {
   desligado: { tom: 'bom', texto: 'Bot desligado. Ele parou de mandar mensagens para cá.' },
   token_invalido: { tom: 'ruim', texto: 'Isso não parece um token do @BotFather. Ele tem números, dois pontos e uma sequência longa de letras.' },
   token_recusado: { tom: 'ruim', texto: 'O Telegram não reconheceu este token. Copie de novo do @BotFather, ou gere outro com /token.' },
-  de_outra_conta: { tom: 'ruim', texto: 'Este bot já está ligado a outra conta do AutoFluxos.' },
+  de_outra_conta: { tom: 'ruim', texto: 'Este bot já está ligado a outra conta do Dialogon.' },
   sem_webhook: { tom: 'ruim', texto: 'O Telegram recusou o endereço de entrega. Nada ficou ligado; tente de novo em alguns minutos.' },
   falhou: { tom: 'ruim', texto: 'Não foi possível ligar o bot. O detalhe está em Alertas, na administração.' },
 }

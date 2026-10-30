@@ -26,14 +26,14 @@ export function Marca({ compacta = false }: { compacta?: boolean }) {
     <div className="flex items-center gap-2.5">
       <Image
         src="/logos/logo-autofluxos-marca.png"
-        alt="AutoFluxos"
+        alt="Dialogon"
         width={lado}
         height={lado}
         priority
         className="shrink-0"
       />
       <span className={`${compacta ? 'text-sm' : 'text-[18px]'} font-bold tracking-[-0.01em]`}>
-        AutoFluxos
+        Dialogon
       </span>
     </div>
   )

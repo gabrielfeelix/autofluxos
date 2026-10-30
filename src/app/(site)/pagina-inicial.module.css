@@ -1,5 +1,5 @@
 /*
- * A landing pública do AutoFluxos.
+ * A landing pública do Dialogon.
  *
  * **Ela mora na casca azul, a mesma de dentro do produto** (decisão de 02/out
  * em `docs/DECISIONS.md`). Quem clica em "Entrar" tem que sentir que continuou
@@ -2810,7 +2810,7 @@
   }
 }
 
-/* "Pergunte a uma IA sobre o AutoFluxos": os logos em monocromo, no vidro do rodapé. */
+/* "Pergunte a uma IA sobre o Dialogon": os logos em monocromo, no vidro do rodapé. */
 .rodapeIa {
   display: grid;
   gap: 10px;

@@ -50,7 +50,7 @@ export default async function Entrar({ searchParams }: PageProps<'/entrar'>) {
           ? 'Senha nova salva. Entre com ela.'
           : busca.conta === 'criada'
             ? 'Conta criada. Entre com o e-mail e a senha que você acabou de cadastrar.'
-            : 'Sua conta do AutoFluxos.'
+            : 'Sua conta do Dialogon.'
       }
       rodape={
         <>

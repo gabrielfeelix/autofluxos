@@ -6,7 +6,7 @@ import a from './antes.module.css'
 /*
  * Antes e depois como cena, não como texto: os seis improvisos de hoje
  * aparecem jogados na mesa, tortos e apagados; com a chave em "Com o
- * AutoFluxos" cada um gira, se alinha na grade e vira a tela do produto.
+ * Dialogon" cada um gira, se alinha na grade e vira a tela do produto.
  * A chave alterna sozinha enquanto a seção está na tela e para quando a
  * pessoa clica. Cada "depois" existe no produto (ver `SecaoImprovisos`).
  */
@@ -229,7 +229,7 @@ export function AntesEDepois() {
           Hoje
         </button>
         <button type="button" role="tab" aria-selected={agora} onClick={() => escolher(true)}>
-          Com o AutoFluxos
+          Com o Dialogon
         </button>
       </div>
 

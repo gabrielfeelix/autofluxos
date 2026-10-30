@@ -119,7 +119,7 @@ export function lerArquivoDeFluxo(texto: string): LeituraDoArquivo {
   const temEnvelope = objeto.formato === MARCA_DO_ARQUIVO
 
   if (typeof objeto.formato === 'string' && !temEnvelope) {
-    return { ok: false, erro: 'este arquivo é de outro sistema, não do AutoFluxos' }
+    return { ok: false, erro: 'este arquivo é de outro sistema, não do Dialogon' }
   }
 
   const candidato = temEnvelope ? objeto.grafo : objeto

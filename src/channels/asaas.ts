@@ -81,7 +81,7 @@ export async function chamar<T>(
     method: metodo,
     headers: {
       access_token: acesso.token.trim(),
-      'User-Agent': 'AutoFluxos/1.0',
+      'User-Agent': 'Dialogon/1.0',
       Accept: 'application/json',
       ...(corpo === undefined ? {} : { 'Content-Type': 'application/json' }),
     },
@@ -192,7 +192,7 @@ export async function criarAviso(
 ): Promise<string> {
   const criado = avisoCriadoSchema.parse(
     await chamar(acesso, 'POST', '/webhooks', {
-      name: 'AutoFluxos',
+      name: 'Dialogon',
       url: entrada.url,
       email: entrada.email,
       enabled: true,

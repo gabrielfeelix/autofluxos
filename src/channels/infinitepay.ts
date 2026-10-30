@@ -45,7 +45,7 @@ export function tagDaInfinitePay(bruta: string): string | null {
 async function chamar<T>(caminho: string, corpo: unknown): Promise<T> {
   const resposta = await fetch(`${BASE}${caminho}`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json', Accept: 'application/json', 'User-Agent': 'AutoFluxos/1.0' },
+    headers: { 'Content-Type': 'application/json', Accept: 'application/json', 'User-Agent': 'Dialogon/1.0' },
     body: JSON.stringify(corpo),
     signal: AbortSignal.timeout(PRAZO_MS),
     cache: 'no-store',

@@ -5,8 +5,8 @@ import { metadadosDoSite } from '../(site)/metadados'
 
 export const metadata = metadadosDoSite(
   '/precos',
-  'Preços e custo da Meta | AutoFluxos',
-  'Planos do AutoFluxos, teste grátis, e a calculadora do que a Meta cobra pelas mensagens do WhatsApp, sem acréscimo.',
+  'Preços e custo da Meta | Dialogon',
+  'Planos do Dialogon, teste grátis, e a calculadora do que a Meta cobra pelas mensagens do WhatsApp, sem acréscimo.',
 )
 
 export default function PaginaDePrecos() {

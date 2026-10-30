@@ -83,7 +83,7 @@ export async function alertar(
 
 function montarTexto(titulo: string, detalhe: string, contexto: ContextoDoAlerta): string {
   const onde = ambienteAtual()
-  const linhas = [`🔴 **AutoFluxos (${onde}), ${titulo}**`, detalhe]
+  const linhas = [`🔴 **Dialogon (${onde}), ${titulo}**`, detalhe]
 
   for (const [chave, valor] of Object.entries(contexto)) {
     if (valor === null || valor === undefined || valor === '') continue

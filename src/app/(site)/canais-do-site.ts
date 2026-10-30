@@ -39,7 +39,7 @@ export const CANAIS: CanalDoSite[] = [
     fatos: ['Continua no app do celular', 'Áudio vira texto no Inbox', 'Transmissões com modelo aprovado'],
     titulo: 'O WhatsApp da empresa atendendo no mesmo número',
     subtitulo:
-      'Pela API oficial da Meta, com coexistência: o número segue no app do celular, e o chatbot, a IA e a equipe respondem pelo AutoFluxos.',
+      'Pela API oficial da Meta, com coexistência: o número segue no app do celular, e o chatbot, a IA e a equipe respondem pelo Dialogon.',
     passos: [
       {
         titulo: 'Entra com a conta da Meta',

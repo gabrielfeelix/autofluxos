@@ -5,7 +5,7 @@ import { metadadosDoSite } from '../(site)/metadados'
 
 export const metadata = metadadosDoSite(
   '/produto',
-  'O produto: fluxos, IA, Inbox e canais | AutoFluxos',
+  'O produto: fluxos, IA, Inbox e canais | Dialogon',
   'Fluxos visuais, IA que responde pelo seu negócio, Inbox da equipe, contatos e funil, no WhatsApp, Instagram, chat do site e Telegram.',
 )
 

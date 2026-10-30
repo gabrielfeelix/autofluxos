@@ -14,7 +14,7 @@ export const dynamic = 'force-dynamic'
  *   número e apaga o token do cofre, que já não vale.
  * - Os três de LGPD (`store/redact`, `customers/redact`,
  *   `customers/data_request`), cadastrados no portal do parceiro: nesta fase
- *   o AutoFluxos não guarda dado de cliente vindo da Nuvemshop (o bot só
+ *   o Dialogon não guarda dado de cliente vindo da Nuvemshop (o bot só
  *   consulta produto), então não há o que apagar nem relatar; responde 200.
  *   Quando a F5 gravar pedido, estes passam a ter trabalho.
  *

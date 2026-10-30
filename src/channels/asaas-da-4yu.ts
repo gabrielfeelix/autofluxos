@@ -6,7 +6,7 @@ import { ambienteDaChave, chamar, ErroDoAsaas } from './asaas'
 import { centavosDeReais, type AcessoAoGateway } from './pagamento'
 
 /**
- * A conta Asaas **da 4YU**, que cobra a mensalidade do AutoFluxos
+ * A conta Asaas **da 4YU**, que cobra a mensalidade do Dialogon
  * (docs/PLANO-MENSALIDADE-ASAAS.md).
  *
  * Não confundir com `asaas.ts`, que fala com a conta de cada cliente para ele
@@ -87,7 +87,7 @@ export async function garantirAviso(origem: string, email: string): Promise<void
   const existentes = listaDeAvisosSchema.parse(await chamar(acesso, 'GET', '/webhooks?limit=100'))
   if (existentes.data.some((aviso) => aviso.url === url)) return
   await chamar(acesso, 'POST', '/webhooks', {
-    name: 'AutoFluxos, mensalidade',
+    name: 'Dialogon, mensalidade',
     url,
     email,
     enabled: true,
@@ -139,7 +139,7 @@ export type Assinante = {
 }
 
 /**
- * O cliente do AutoFluxos como cliente da 4YU no Asaas. Procura pela
+ * O cliente do Dialogon como cliente da 4YU no Asaas. Procura pela
  * referência antes de criar: clicar duas vezes em Assinar não pode virar dois
  * clientes, nem duas notas fiscais no nome de cada um.
  *

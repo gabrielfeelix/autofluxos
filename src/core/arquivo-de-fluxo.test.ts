@@ -74,7 +74,7 @@ describe('importar', () => {
     })
     expect(lerArquivoDeFluxo('{"formato":"outro.coisa","grafo":{}}')).toMatchObject({
       ok: false,
-      erro: 'este arquivo é de outro sistema, não do AutoFluxos',
+      erro: 'este arquivo é de outro sistema, não do Dialogon',
     })
     expect(lerArquivoDeFluxo('{"nodes":[]}')).toMatchObject({
       ok: false,

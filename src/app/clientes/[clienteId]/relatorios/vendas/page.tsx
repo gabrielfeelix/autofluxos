@@ -512,7 +512,7 @@ async function blocoDasMensalidades(clienteId: string, periodo: Periodo, anterio
     conteudo: (
       <CaixaDoBloco
         titulo="Mensalidades"
-        subtitulo="As mensalidades cobradas pelo AutoFluxos: quem entrou, quem está em dia e quem saiu no período."
+        subtitulo="As mensalidades cobradas pelo Dialogon: quem entrou, quem está em dia e quem saiu no período."
       >
         <div className="grid grid-cols-2 gap-3 pb-4 md:grid-cols-3 lg:gap-4 xl:grid-cols-5">
           <Cartao
@@ -544,7 +544,7 @@ async function blocoDasMensalidades(clienteId: string, periodo: Periodo, anterio
             valor={String(atual.canceladas)}
             detalhe="encerradas no período"
             comparacao={<Mudanca atual={atual.canceladas} antes={antes.canceladas} />}
-            definicao="Mensalidades canceladas no período. É a saída que o AutoFluxos enxerga; faltas e evasão ficam na Verandi."
+            definicao="Mensalidades canceladas no período. É a saída que o Dialogon enxerga; faltas e evasão ficam na Verandi."
           />
           {podeVerValor && (
             <Cartao

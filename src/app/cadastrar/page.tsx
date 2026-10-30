@@ -33,7 +33,7 @@ export default async function Cadastrar({ searchParams }: { searchParams: Promis
   return (
     <Portico
       titulo="Criar seu acesso"
-      descricao={`Seu login no AutoFluxos. A empresa você cria no passo seguinte, e o teste de ${DIAS_DE_TESTE} dias começa junto, sem cartão.`}
+      descricao={`Seu login no Dialogon. A empresa você cria no passo seguinte, e o teste de ${DIAS_DE_TESTE} dias começa junto, sem cartão.`}
       rodape={
         <p>
           Já tem conta?{' '}

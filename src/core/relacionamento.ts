@@ -7,7 +7,7 @@
  *
  * O método clássico de RFM ordena a base e corta em cinco partes iguais: os 20%
  * que mais gastam viram nota 5. Ele é o padrão do varejo e **não serve aqui**,
- * por uma razão que aparece já no primeiro cliente do AutoFluxos: a nota é
+ * por uma razão que aparece já no primeiro cliente do Dialogon: a nota é
  * relativa à base, então num estúdio com trinta alunas o "topo" é topo de trinta, pode ser gente que gastou trezentos reais no ano. O dono olha "Ouro" e vê um
  * cliente que ele não considera ouro nenhum, e a partir daí não confia em mais
  * nada da tela.

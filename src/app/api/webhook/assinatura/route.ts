@@ -8,7 +8,7 @@ export const dynamic = 'force-dynamic'
 
 /**
  * Os avisos da conta Asaas **da 4YU**: as faturas da mensalidade do
- * AutoFluxos (docs/PLANO-MENSALIDADE-ASAAS.md). Um endereço só, cadastrado
+ * Dialogon (docs/PLANO-MENSALIDADE-ASAAS.md). Um endereço só, cadastrado
  * por `garantirAviso` na primeira assinatura.
  *
  * Mesmo desenho de `asaas/[clienteId]`: o `asaas-access-token` é conferido

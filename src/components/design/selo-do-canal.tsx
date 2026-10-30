@@ -14,7 +14,7 @@ import { GLIFO_INSTAGRAM, GLIFO_TELEGRAM, GLIFO_WHATSAPP } from './glifos-oficia
  * verde no fluxo de WhatsApp e de rosa no de Instagram é tentador e erra duas
  * vezes: troca a identidade do produto pela do canal, e obriga a redesenhar
  * tudo a cada canal novo. O selo carrega a informação; o resto continua sendo
- * o AutoFluxos.
+ * o Dialogon.
  */
 export function SeloDoCanal({
   canal,

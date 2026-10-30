@@ -39,7 +39,7 @@ export function PrimeirosPassos({ passos }: { passos: PassoDaConta[] }) {
     <section className="app-card overflow-hidden" aria-labelledby="titulo-passos">
       <header className="bg-primary px-5 py-4 text-white">
         <h2 id="titulo-passos" className="text-[15px] font-bold tracking-[-0.01em]">
-          Comece a usar o AutoFluxos
+          Comece a usar o Dialogon
         </h2>
         <p className="mt-1 text-[12.5px] text-white/85">
           {proximo

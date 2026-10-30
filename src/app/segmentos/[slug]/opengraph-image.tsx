@@ -4,7 +4,7 @@ import { nichoPorSlug } from '../../(site)/nichos-do-site'
 
 export const size = TAMANHO
 export const contentType = TIPO
-export const alt = 'AutoFluxos para o seu ramo'
+export const alt = 'Dialogon para o seu ramo'
 
 export default async function Imagem({ params }: { params: Promise<{ slug: string }> }) {
   const nicho = nichoPorSlug((await params).slug)

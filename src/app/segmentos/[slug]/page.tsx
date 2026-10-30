@@ -14,7 +14,7 @@ export function generateStaticParams() {
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }) {
   const nicho = nichoPorSlug((await params).slug)
   if (!nicho) return {}
-  return metadadosDoSite(`/segmentos/${nicho.slug}`, `AutoFluxos para ${nicho.nome.toLowerCase()}`, nicho.subtitulo)
+  return metadadosDoSite(`/segmentos/${nicho.slug}`, `Dialogon para ${nicho.nome.toLowerCase()}`, nicho.subtitulo)
 }
 
 export default async function PaginaDoNicho({ params }: { params: Promise<{ slug: string }> }) {

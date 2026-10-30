@@ -766,7 +766,7 @@ function WebhooksDeSaida() {
   return (
     <>
       <P>
-        O AutoFluxos faz um <Cod>POST</Cod> com JSON no endereço do seu sistema quando algo acontece na
+        O Dialogon faz um <Cod>POST</Cod> com JSON no endereço do seu sistema quando algo acontece na
         organização. É o caminho para levar o lead do WhatsApp ao seu CRM ou planilha sem consultar a API de
         tempos em tempos.
       </P>
@@ -781,7 +781,7 @@ function WebhooksDeSaida() {
         <Passo n={2} titulo="Guarde o segredo">
           <p>
             Ele aparece <strong className="text-ink">uma vez</strong>, no formato <Cod>whsec_…</Cod>, e serve para
-            conferir que cada envio veio do AutoFluxos. Perdeu? Gere outro em Editar.
+            conferir que cada envio veio do Dialogon. Perdeu? Gere outro em Editar.
           </p>
         </Passo>
         <Passo n={3} titulo="Teste">
@@ -1169,7 +1169,7 @@ const CORPO_COBRANCA = { telefone: TELEFONE, valor: 49.9, descricao: 'Mensalidad
 const IDEMPOTENCIA_COBRANCA = { 'Idempotency-Key': 'pedido-8841' }
 
 const CAMPOS_DA_COBRANCA = [
-  { nome: 'id', tipo: 'string', descricao: 'O id da cobrança no AutoFluxos.' },
+  { nome: 'id', tipo: 'string', descricao: 'O id da cobrança no Dialogon.' },
   { nome: 'valor', tipo: 'número', descricao: 'Em reais, com até duas casas.' },
   {
     nome: 'status',
@@ -1478,7 +1478,7 @@ export const PAGINAS_API: PaginaDev[] = [
     slug: 'webhooks-de-saida',
     grupo: 'Webhooks de saída',
     titulo: 'Receber eventos',
-    resumo: 'O AutoFluxos avisa o seu sistema: contato novo, etapa do funil, oportunidade ganha ou perdida, cobrança paga ou vencida.',
+    resumo: 'O Dialogon avisa o seu sistema: contato novo, etapa do funil, oportunidade ganha ou perdida, cobrança paga ou vencida.',
     Corpo: WebhooksDeSaida,
     painel: [
       { trechos: [json('POST', CORPO_WEBHOOK)], titulo: 'Corpo enviado' },

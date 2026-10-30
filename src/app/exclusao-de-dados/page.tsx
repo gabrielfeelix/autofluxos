@@ -29,9 +29,9 @@ import { Item, Lista, PaginaLegal, type SecaoLegal } from '../(site)/pagina-lega
  * exclusão que descreve outro sistema é pior do que não ter página.
  */
 export const metadata: Metadata = {
-  title: 'Exclusão de dados · AutoFluxos',
+  title: 'Exclusão de dados · Dialogon',
   description:
-    'Como pedir a exclusão dos seus dados no AutoFluxos, em quanto tempo respondemos e o que exatamente é apagado.',
+    'Como pedir a exclusão dos seus dados no Dialogon, em quanto tempo respondemos e o que exatamente é apagado.',
 }
 
 const ATUALIZADA_EM = '3 de setembro de 2026'
@@ -43,7 +43,7 @@ const SECOES: readonly SecaoLegal[] = [
     conteudo: (
       <>
         <p>
-          O AutoFluxos é a ferramenta que empresas usam para atender no WhatsApp e no Instagram. O
+          O Dialogon é a ferramenta que empresas usam para atender no WhatsApp e no Instagram. O
           caminho para apagar depende de qual dos dois lados você está:
         </p>
         <Lista>

@@ -96,7 +96,7 @@ export default async function Pagina({ params }: { params: Promise<{ clienteId: 
 
         <section className="app-card mb-5 overflow-hidden">
           <header className="border-b border-line px-5 py-4">
-            <h2 className="text-[14.5px] font-bold">Para que você usa o AutoFluxos</h2>
+            <h2 className="text-[14.5px] font-bold">Para que você usa o Dialogon</h2>
             <p className="mt-1 text-[12.5px] leading-5 text-dim">
               É o que decide quais passos a tela inicial cobra. Dá para trocar
               quando quiser, e trocar não apaga nem cria nada.

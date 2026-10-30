@@ -38,7 +38,7 @@ const PLANO = 'escala'
 const LIMITE_DE_IA_POR_CONTATO = 40
 
 const CONTEXTO = [
-  'Conta de demonstração da 4YU (AutoFluxos): mostra, pelo WhatsApp, como o atendimento automático funciona em vários tipos de negócio.',
+  'Conta de demonstração da 4YU (Dialogon): mostra, pelo WhatsApp, como o atendimento automático funciona em vários tipos de negócio.',
   'Os negócios daqui (Pizzaria Exemplo, Hamburgueria Exemplo, Restaurante Exemplo, Moda Exemplo, Salão Exemplo, Estúdio Exemplo) são fictícios: pedidos, agendamentos e compras feitos nesta conversa não são reais e ninguém vai entregar nada.',
   'A loja online de tecnologia é a PCYES de verdade, com os produtos e preços do site dela.',
   'Quem quiser isto no próprio negócio fala com a equipe da 4YU por aqui mesmo.',

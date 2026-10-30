@@ -359,7 +359,7 @@ export async function criarCobranca(pedido: PedidoDeCobrancaDaConta): Promise<Re
  * `estornada`, usada pelo aviso e pelo relógio.
  *
  * Devolve o status em que a cobrança ficou, ou `null` quando o pagamento não é
- * de cobrança nenhuma desta conta (aviso de uma venda feita fora do AutoFluxos,
+ * de cobrança nenhuma desta conta (aviso de uma venda feita fora do Dialogon,
  * na mesma conta do gateway: acontece, e não é erro).
  */
 export async function aplicarPagamento(

@@ -46,7 +46,7 @@ export const dynamic = 'force-dynamic'
  * (docs/PLANO-COBRANCA-CAMADA-1.md e docs/gateways/PLANO-GATEWAYS.md).
  *
  * **A frase de cima responde o medo antes da pergunta**: o dinheiro vai
- * direto para a conta dele, e o AutoFluxos não fica com nada no meio.
+ * direto para a conta dele, e o Dialogon não fica com nada no meio.
  *
  * **Uma conta de recebimento por vez** (`conexaoAtiva`). A ligada sobe para o
  * topo, sozinha, com o que dá para fazer com ela; as outras ficam no catálogo
@@ -313,7 +313,7 @@ export default async function Pagina({
             descricao={
               <>
                 Conecte a conta em que a empresa já recebe para cobrar pela conversa, com Pix e link de pagamento. O dinheiro cai direto na
-                sua conta, e o AutoFluxos não cobra porcentagem.
+                sua conta, e o Dialogon não cobra porcentagem.
               </>
             }
           />

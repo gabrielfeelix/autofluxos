@@ -63,7 +63,7 @@ export const MAX_PASSOS = 100
  * uma frase que só quem quer falar com gente escreve.
  *
  * Casa a palavra inteira, não um pedaço dela: "tenho 2 atendentes" fala da
- * equipe de quem escreve, e no chat comercial do AutoFluxos (30/out/2026) a
+ * equipe de quem escreve, e no chat comercial do Dialogon (30/out/2026) a
  * pergunta "qual plano?" ia parar numa pessoa por causa do plural.
  */
 export const PALAVRAS_ESCAPE = [

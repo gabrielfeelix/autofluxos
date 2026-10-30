@@ -17,7 +17,7 @@ const QUANDO = new Intl.DateTimeFormat('pt-BR', {
 
 /**
  * Os avisos da Verandi, dentro do cartão dela (a ponte). Um clique liga: o
- * AutoFluxos cria o segredo, registra o endereço lá, e cada aula cancelada,
+ * Dialogon cria o segredo, registra o endereço lá, e cada aula cancelada,
  * falta ou vaga aberta passa a poder começar uma automação.
  *
  * Muda na hora e volta se a Verandi recusar.
@@ -103,7 +103,7 @@ export function AvisosDaVerandi({
           ? ultimoEm
             ? `O último aviso chegou em ${QUANDO.format(new Date(ultimoEm))}.`
             : 'Ligados. Os avisos chegam assim que acontecerem na Verandi.'
-          : 'A Verandi avisa o AutoFluxos quando algo acontece na agenda, e cada aviso pode começar uma automação no WhatsApp do aluno.'}
+          : 'A Verandi avisa o Dialogon quando algo acontece na agenda, e cada aviso pode começar uma automação no WhatsApp do aluno.'}
       </p>
       {erro && (
         <p role="status" className="mt-2 rounded-[9px] border border-rose-400/25 bg-rose-400/[0.08] px-3 py-2 text-[11.5px] leading-4 text-perigo">

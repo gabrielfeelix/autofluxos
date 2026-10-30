@@ -96,7 +96,7 @@ export function SecaoComoFunciona() {
       titulo="O caminho que uma mensagem faz"
       chamada={
         <>
-          Alguém escreve no WhatsApp do seu cliente. O AutoFluxos decide qual automação atende,
+          Alguém escreve no WhatsApp do seu cliente. O Dialogon decide qual automação atende,
           executa os blocos um a um, e, quando o desenho manda, entrega a conversa para uma
           pessoa. Tudo o que você vai ler aqui é um pedaço desse caminho.
         </>
@@ -107,7 +107,7 @@ export function SecaoComoFunciona() {
           {
             titulo: 'Chega a mensagem',
             texto:
-              'O número do cliente recebe. O AutoFluxos já sabe o telefone e o nome de perfil de quem escreveu.',
+              'O número do cliente recebe. O Dialogon já sabe o telefone e o nome de perfil de quem escreveu.',
           },
           {
             titulo: 'Escolhe a porta',

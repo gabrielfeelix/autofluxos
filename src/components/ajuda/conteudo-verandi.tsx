@@ -40,7 +40,7 @@ export function SecaoVerandiLigar() {
       titulo="Ligar a automação na Verandi"
       chamada={
         <>
-          A Verandi é a agenda da 4YU, e, do ponto de vista do AutoFluxos, é{' '}
+          A Verandi é a agenda da 4YU, e, do ponto de vista do Dialogon, é{' '}
           <strong className="text-soft">um sistema do cliente como qualquer outro</strong>. Nada de
           turma, matrícula ou presença mora aqui: o bot lê e escreve pela API, e o dado fica lá.
         </>
@@ -57,7 +57,7 @@ export function SecaoVerandiLigar() {
 
         <Passo n={2} titulo="Cadastre a chave em Credenciais">
           <p>
-            Aqui no AutoFluxos: <strong className="text-soft">Configurações → Credenciais → Nova
+            Aqui no Dialogon: <strong className="text-soft">Configurações → Credenciais → Nova
             credencial</strong>. Dê um nome que você reconheça (“Agenda”), escolha o tipo{' '}
             <Cod>bearer</Cod> e cole a chave.
           </p>
@@ -312,7 +312,7 @@ export function SecaoVerandiDados() {
 
       <Nota tom="dica" titulo="A fronteira, em uma frase">
         <p>
-          O AutoFluxos guarda o <strong className="text-soft">estado da conversa</strong>: o que foi
+          O Dialogon guarda o <strong className="text-soft">estado da conversa</strong>: o que foi
           perguntado, o que foi respondido, em que bloco a pessoa está. A Verandi guarda o{' '}
           <strong className="text-soft">estado do negócio</strong>: turma, matrícula, presença,
           reposição. Nenhum dos dois lê o banco do outro.
@@ -553,7 +553,7 @@ export function SecaoOutrosSistemas() {
 
       <Sub>Se o cliente opera em planilha</Sub>
       <p>
-        A planilha precisa ter uma aba chamada <Cod>AutoFluxos</Cod> e um intervalo nomeado por
+        A planilha precisa ter uma aba chamada <Cod>Dialogon</Cod> e um intervalo nomeado por
         consulta, com os valores juntos numa célula, separados por ponto e vírgula:
       </p>
       <Codigo titulo="a célula do intervalo “quarta”">{`07:00;10:00;15:00`}</Codigo>

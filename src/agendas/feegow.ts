@@ -165,7 +165,7 @@ export function conectorFeegow(token: string, ajustes: AjustesDaFeegow = {}, bus
         plano: 0,
         ...(ajustes.canalId ? { canal_id: ajustes.canalId } : {}),
         celular: telefoneNacional(pessoa.telefone),
-        notas: 'Marcado pelo WhatsApp (AutoFluxos).',
+        notas: 'Marcado pelo WhatsApp (Dialogon).',
       })
       if (!r.ok) return r
       const marcacaoId = texto(objeto(r.valor).agendamento_id)
@@ -180,7 +180,7 @@ export function conectorFeegow(token: string, ajustes: AjustesDaFeegow = {}, bus
       const r = await post('/appoints/cancel-appoint', {
         agendamento_id: Number(marcacaoId),
         motivo_id: ajustes.motivoDeCancelamento ?? 1,
-        obs: 'Desmarcado pelo paciente no WhatsApp (AutoFluxos).',
+        obs: 'Desmarcado pelo paciente no WhatsApp (Dialogon).',
       })
       return r.ok ? { ok: true, valor: true } : r
     },

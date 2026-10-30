@@ -51,7 +51,7 @@ export function ModalDePedirExclusao({
       descricao={
         daOrganizacao
           ? `${organizacao ?? 'A organização'} e tudo que pertence a ela: contatos, conversas, fluxos, quadros e arquivos.`
-          : 'O seu login no AutoFluxos, em todas as organizações em que você entra com este e-mail.'
+          : 'O seu login no Dialogon, em todas as organizações em que você entra com este e-mail.'
       }
     >
       {enviadoPara ? (

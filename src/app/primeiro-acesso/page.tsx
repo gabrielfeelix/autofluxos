@@ -43,7 +43,7 @@ export default async function PrimeiroAcesso({
   return (
     <Portico
       titulo="Criar sua organização"
-      descricao={`Olá, ${sessao.usuario.nome.split(' ')[0]}. Esta será a primeira conta da sua empresa no AutoFluxos.`}
+      descricao={`Olá, ${sessao.usuario.nome.split(' ')[0]}. Esta será a primeira conta da sua empresa no Dialogon.`}
       rodape={
         <p>
           Depois, vamos ajudar você a escolher seu objetivo, preparar o sistema e conectar seu canal de atendimento.

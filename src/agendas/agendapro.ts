@@ -167,7 +167,7 @@ export function conectorAgendaPro(chave: string, ajustes: AjustesDaAgendaPro = {
           provider_id: Number(h.p),
           client_id: Number(id.valor),
           location_id: Number(h.l),
-          notes: 'Marcado pelo WhatsApp (AutoFluxos).',
+          notes: 'Marcado pelo WhatsApp (Dialogon).',
         }),
       })
       if (!r.ok) return r

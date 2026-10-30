@@ -15,7 +15,7 @@ import {
  * em nome dele (docs/PLANO-COBRANCA-CAMADA-1.md).
  *
  * **O dinheiro nunca passa por nós.** Tudo aqui age com o token do dono, na
- * conta do dono: a cobrança é dele, o Pix cai para ele, e o AutoFluxos não
+ * conta do dono: a cobrança é dele, o Pix cai para ele, e o Dialogon não
  * cobra porcentagem (Resolução BCB 494/2025, ver MERCADO-COBRANCA-NO-CHAT.md).
  *
  * `MERCADO_PAGO_CLIENT_ID` e `MERCADO_PAGO_CLIENT_SECRET` vêm da aplicação

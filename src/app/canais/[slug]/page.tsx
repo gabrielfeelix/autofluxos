@@ -12,7 +12,7 @@ export function generateStaticParams() {
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }) {
   const canal = canalPorSlug((await params).slug)
   if (!canal) return {}
-  return metadadosDoSite(`/canais/${canal.slug}`, `${canal.nome} no AutoFluxos`, canal.subtitulo)
+  return metadadosDoSite(`/canais/${canal.slug}`, `${canal.nome} no Dialogon`, canal.subtitulo)
 }
 
 export default async function PaginaDoCanal({ params }: { params: Promise<{ slug: string }> }) {

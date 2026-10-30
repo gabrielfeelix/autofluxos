@@ -233,7 +233,7 @@ function montar() {
        * A própria biblioteca trava depois de erros seguidos no código.
        */
       twoFactor({
-        issuer: 'AutoFluxos',
+        issuer: 'Dialogon',
         schema: { twoFactor: { modelName: 'af_dois_fatores' } },
       }),
 

@@ -156,7 +156,7 @@ export default async function Pagina({
             href={`/clientes/${cliente.id}/ajustes/recursos`}
             icone={ICONE_DA_TELA['recursos']}
             titulo="Objetivo e recursos"
-            descricao="Para que esta organização usa o AutoFluxos, e se o CRM aparece no menu. Ninguém precisa de tudo."
+            descricao="Para que esta organização usa o Dialogon, e se o CRM aparece no menu. Ninguém precisa de tudo."
             estado={<Selo tom={recursos.crmAtivo ? 'ok' : 'neutro'}>{recursos.crmAtivo ? 'com CRM' : 'sem CRM'}</Selo>}
           />
           <Cartao

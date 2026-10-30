@@ -14,7 +14,7 @@ import {
 import { metadadosDoSite } from './(site)/metadados'
 
 /**
- * A porta de entrada pública do AutoFluxos.
+ * A porta de entrada pública do Dialogon.
  *
  * **Esta rota era o painel e virou o site.** O painel foi para `/painel`. A
  * Meta exige, para a verificação do Tech Provider, "um site completo que
@@ -26,7 +26,7 @@ import { metadadosDoSite } from './(site)/metadados'
  */
 export const metadata = metadadosDoSite(
   '/',
-  'AutoFluxos: atendimento, vendas e pós-venda no WhatsApp',
+  'Dialogon: atendimento, vendas e pós-venda no WhatsApp',
   'A equipe inteira no mesmo número: chatbot e IA, fila por setor, funil, pagamento na conversa e pós-venda, no WhatsApp, Instagram e chat do site.',
 )
 

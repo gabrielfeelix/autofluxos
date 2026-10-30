@@ -87,7 +87,7 @@ export default async function Organizacoes({
   return (
     <TelaDaAdministracao
       titulo="Organizações"
-      descricao="Quem usa o AutoFluxos: plano, quem tem acesso, quem espera e o uso do mês. Clique numa linha para abrir o detalhe."
+      descricao="Quem usa o Dialogon: plano, quem tem acesso, quem espera e o uso do mês. Clique numa linha para abrir o detalhe."
       acoes={
         <NovaOrganizacao planos={planos} />
       }

@@ -12,6 +12,6 @@ export function metadadosDoSite(caminho: string, titulo: string, descricao: stri
     description: descricao,
     robots: { index: true, follow: true },
     alternates: { canonical: `${SITE}${caminho}` },
-    openGraph: { type: 'website', locale: 'pt_BR', siteName: 'AutoFluxos', url: `${SITE}${caminho}`, title: titulo, description: descricao },
+    openGraph: { type: 'website', locale: 'pt_BR', siteName: 'Dialogon', url: `${SITE}${caminho}`, title: titulo, description: descricao },
   }
 }

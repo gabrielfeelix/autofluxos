@@ -21,7 +21,7 @@ import { SeloDeMetodo } from '@/components/docs/referencia'
  * endereço próprio, `/ajuda/<id>`, que dá para mandar para alguém.
  */
 export const metadata: Metadata = {
-  title: 'Central de ajuda, AutoFluxos',
+  title: 'Central de ajuda, Dialogon',
   description:
     'Como montar automações de WhatsApp, fazer a conversa entender datas e ligar a agenda da Verandi.',
 }

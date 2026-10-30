@@ -1,5 +1,5 @@
 /**
- * O chat do site do AutoFluxos (30/out/2026, texto aprovado pelo Gabriel).
+ * O chat do site do Dialogon (30/out/2026, texto aprovado pelo Gabriel).
  *
  *   npx tsx --conditions=react-server scripts/fluxos/site-inicio-4yu.mts [--gravar]
  *
@@ -55,8 +55,8 @@ function liga(source: string, target: string, sourceHandle?: string) {
 }
 
 no('tem-nome', 'condicao', { variavel: 'nome', operador: 'preenchido', valor: '' })
-no('oi-nome', 'mensagem', { partes: [{ tipo: 'texto', texto: 'Oi, {{nome}}! Aqui é o AutoFluxos, da 4YU.' }] }, -200)
-no('oi', 'mensagem', { partes: [{ tipo: 'texto', texto: 'Oi! Aqui é o AutoFluxos, da 4YU.' }] }, 200)
+no('oi-nome', 'mensagem', { partes: [{ tipo: 'texto', texto: 'Oi, {{nome}}! Aqui é o Dialogon, da 4YU.' }] }, -200)
+no('oi', 'mensagem', { partes: [{ tipo: 'texto', texto: 'Oi! Aqui é o Dialogon, da 4YU.' }] }, 200)
 no('menu', 'pergunta', {
   texto: 'Como posso te ajudar?',
   opcoes: [

@@ -18,7 +18,7 @@ const RESULTADOS: Record<string, { tom: 'ok' | 'aviso' | 'perigo'; texto: string
   },
   cancelado: { tom: 'aviso', texto: 'A autorização foi cancelada na Nuvemshop. Nada mudou por aqui.' },
   falhou: { tom: 'perigo', texto: 'A Nuvemshop não completou a conexão. Tente de novo; se repetir, fale com o suporte.' },
-  outra_conta: { tom: 'perigo', texto: 'Esta loja Nuvemshop já está conectada a outra conta do AutoFluxos.' },
+  outra_conta: { tom: 'perigo', texto: 'Esta loja Nuvemshop já está conectada a outra conta do Dialogon.' },
 }
 
 const COR = {
@@ -77,7 +77,7 @@ export function LojaNuvemshop({
           </header>
           <ol className="flex flex-col gap-3 px-5 py-4 text-[13px] leading-5">
             <Passo n={1}>Clique em Conectar. Você vai para a Nuvemshop, já logado na sua loja.</Passo>
-            <Passo n={2}>Autorize o AutoFluxos a <strong>ler</strong> produtos e pedidos. Ele não altera nada.</Passo>
+            <Passo n={2}>Autorize o Dialogon a <strong>ler</strong> produtos e pedidos. Ele não altera nada.</Passo>
             <Passo n={3}>Volte para cá, teste uma busca e ligue o bot.</Passo>
           </ol>
           <div className="flex flex-wrap items-center gap-3 border-t border-line px-5 py-4">

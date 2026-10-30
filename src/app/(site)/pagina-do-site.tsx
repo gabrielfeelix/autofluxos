@@ -25,7 +25,7 @@ import s from './pagina-inicial.module.css'
 import { FotoDaPessoa } from './pessoas-do-site'
 
 /**
- * A porta de entrada pública do AutoFluxos.
+ * A porta de entrada pública do Dialogon.
  *
  * **Esta rota era o painel e virou a landing.** O painel foi para `/painel`.
  * A troca não é cosmética: a Meta exige, para a verificação de acesso do Tech
@@ -41,7 +41,7 @@ const ENTRAR = '/entrar'
 const CADASTRO = '/cadastrar'
 
 /*
- * O balão do próprio AutoFluxos: o canal Site da conta "4YU Tech
+ * O balão do próprio Dialogon: o canal Site da conta "4YU Tech
  * Demonstração", que roda os mesmos fluxos do número 44 7400-7438. A chave é
  * pública por desenho (vai no HTML de qualquer site cliente); quem barra uso
  * indevido é a lista de domínios do canal.
@@ -54,7 +54,7 @@ const CHAVE_DO_BALAO = 'aaNPqcrfdE4M1ioL8U4NTM6-'
  * aceita pergunta pelo endereço; o Modo IA do Google (`udm=50`) aceita.
  */
 const PERGUNTA_PARA_IA =
-  'Estou pesquisando o AutoFluxos (https://autofluxos.4yu.com.br), plataforma brasileira de atendimento e vendas no WhatsApp, Instagram e chat do site, com chatbot e IA. Usando o site oficial e https://autofluxos.4yu.com.br/llms.txt, resuma: 1) o que o AutoFluxos faz e como funciona; 2) para quem ele é e os melhores usos; 3) o que o diferencia de outras ferramentas de atendimento.'
+  'Estou pesquisando o Dialogon (https://autofluxos.4yu.com.br), plataforma brasileira de atendimento e vendas no WhatsApp, Instagram e chat do site, com chatbot e IA. Usando o site oficial e https://autofluxos.4yu.com.br/llms.txt, resuma: 1) o que o Dialogon faz e como funciona; 2) para quem ele é e os melhores usos; 3) o que o diferencia de outras ferramentas de atendimento.'
 
 const IAS = [
   { nome: 'ChatGPT', glifo: GLIFO_OPENAI, endereco: (q: string) => `https://chatgpt.com/?q=${q}` },
@@ -88,7 +88,7 @@ export function PaginaDoSite({ capa, children, cor }: { capa: ReactNode; childre
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img src="/logos/logo-autofluxos-marca.png" alt="" width={24} height={24} />
             </span>
-            AutoFluxos
+            Dialogon
           </Link>
 
           <MenuDoTopo classeItem={s.menuItem} hrefEntrar={ENTRAR} />
@@ -151,7 +151,7 @@ export function PaginaDoSite({ capa, children, cor }: { capa: ReactNode; childre
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img src="/logos/logo-autofluxos-marca.png" alt="" width={24} height={24} />
             </span>
-                AutoFluxos
+                Dialogon
               </Link>
               <p className={s.rodapeTexto}>
                 Atendimento no WhatsApp da sua empresa. O fluxo responde o que se repete e
@@ -162,7 +162,7 @@ export function PaginaDoSite({ capa, children, cor }: { capa: ReactNode; childre
                 Atendendo em +55 44 7400-7438
               </span>
               <div className={s.rodapeIa}>
-                <span className={s.rodapeIaTitulo}>Pergunte a uma IA sobre o AutoFluxos</span>
+                <span className={s.rodapeIaTitulo}>Pergunte a uma IA sobre o Dialogon</span>
                 <div className={s.rodapeIaBotoes}>
                   {IAS.map((ia) => (
                     <a
@@ -171,7 +171,7 @@ export function PaginaDoSite({ capa, children, cor }: { capa: ReactNode; childre
                       href={ia.endereco(encodeURIComponent(PERGUNTA_PARA_IA))}
                       target="_blank"
                       rel="noopener noreferrer"
-                      aria-label={`Perguntar ao ${ia.nome} sobre o AutoFluxos`}
+                      aria-label={`Perguntar ao ${ia.nome} sobre o Dialogon`}
                       title={ia.nome}
                     >
                       <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
@@ -255,7 +255,7 @@ export function PaginaDoSite({ capa, children, cor }: { capa: ReactNode; childre
           </div>
 
           <div className={s.rodapeMarca} aria-hidden>
-            <p className={s.rodapeNome}>AutoFluxos</p>
+            <p className={s.rodapeNome}>Dialogon</p>
           </div>
 
           <div className={s.rodapePe}>
@@ -503,7 +503,7 @@ export function SecaoDuvidas() {
                 />
                 <Pergunta
                   pergunta="Meu número pode ser bloqueado?"
-                  resposta="O AutoFluxos usa a API oficial da Meta, e o envio respeita as regras dela: fora da janela de 24 horas, só sai mensagem com modelo aprovado. O que leva a bloqueio é disparo em massa para quem não pediu e denúncia de spam, e é isso que o produto não deixa acontecer por acidente."
+                  resposta="O Dialogon usa a API oficial da Meta, e o envio respeita as regras dela: fora da janela de 24 horas, só sai mensagem com modelo aprovado. O que leva a bloqueio é disparo em massa para quem não pediu e denúncia de spam, e é isso que o produto não deixa acontecer por acidente."
                 />
                 <Pergunta
                   pergunta="Perco o WhatsApp do celular?"
@@ -686,7 +686,7 @@ function Plano({
 
       <a
         className={`${s.botao} ${destaque ? s.botaoPrincipal : s.botaoVazado} ${s.planoBotao}`}
-        href={id && preco ? `/cadastrar?plano=${id}` : whatsappDa4yu('Olá! Quero conhecer o AutoFluxos.')}
+        href={id && preco ? `/cadastrar?plano=${id}` : whatsappDa4yu('Olá! Quero conhecer o Dialogon.')}
         {...(id && preco ? {} : { target: '_blank', rel: 'noopener noreferrer' })}
       >
         {preco ? `Testar ${DIAS_DE_TESTE} dias grátis` : 'Fale conosco'}
@@ -824,7 +824,7 @@ function Janela({ titulo, children }: { titulo: string; children: ReactNode }) {
 function JanelaConexao() {
   return (
     <Janela titulo="conectar número">
-      <ArteConexao de="Seu WhatsApp" para="AutoFluxos" resposta="+55 44 7400-7438 · conectado" />
+      <ArteConexao de="Seu WhatsApp" para="Dialogon" resposta="+55 44 7400-7438 · conectado" />
     </Janela>
   )
 }
@@ -846,7 +846,7 @@ function JanelaAtendimento() {
 }
 
 /*
- * Os mesmos números da faixa da home (medidos nas contas do AutoFluxos, 90
+ * Os mesmos números da faixa da home (medidos nas contas do Dialogon, 90
  * dias; ver `NUMEROS` em `secoes-do-site.tsx`), para a janela não contradizer a
  * página.
  */

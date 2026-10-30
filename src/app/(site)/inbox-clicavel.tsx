@@ -49,7 +49,7 @@ const CONVERSAS: Conversa[] = [
     ],
     falas: [
       { quem: 'cliente', texto: 'Oi! Vocês atendem sábado de manhã?' },
-      { quem: 'bot', autor: 'AutoFluxos', texto: 'Oi, Marina! Sábado das 8h às 12h. Quer que eu veja um horário para você?' },
+      { quem: 'bot', autor: 'Dialogon', texto: 'Oi, Marina! Sábado das 8h às 12h. Quer que eu veja um horário para você?' },
       { quem: 'cliente', texto: 'Quero. Mas antes: dá pra parcelar? Meu caso é meio específico…' },
       { quem: 'marco', texto: 'Passou para uma pessoa' },
       { quem: 'pessoa', autor: 'Ana · equipe', texto: 'Oi Marina, aqui é a Ana. Vi que você quer sábado. Me conta o seu caso.' },
@@ -69,11 +69,11 @@ const CONVERSAS: Conversa[] = [
       ['Atendido por', 'Diego'],
     ],
     falas: [
-      { quem: 'bot', autor: 'AutoFluxos', texto: '📦 Seu pedido #1038 foi entregue hoje às 10h12. Chegou tudo certo?' },
+      { quem: 'bot', autor: 'Dialogon', texto: '📦 Seu pedido #1038 foi entregue hoje às 10h12. Chegou tudo certo?' },
       { quem: 'cliente', texto: 'Chegou sim, bem embalado' },
-      { quem: 'bot', autor: 'AutoFluxos', texto: 'Que bom! De 0 a 10, quanto você indicaria a loja para um amigo?' },
+      { quem: 'bot', autor: 'Dialogon', texto: 'Que bom! De 0 a 10, quanto você indicaria a loja para um amigo?' },
       { quem: 'cliente', texto: '10' },
-      { quem: 'bot', autor: 'AutoFluxos', texto: 'Obrigado, Rafael! Seu cupom VOLTA15 vale 15% na próxima compra.' },
+      { quem: 'bot', autor: 'Dialogon', texto: 'Obrigado, Rafael! Seu cupom VOLTA15 vale 15% na próxima compra.' },
       { quem: 'cliente', texto: 'Perfeito, obrigado!' },
     ],
   },
@@ -93,9 +93,9 @@ const CONVERSAS: Conversa[] = [
     ],
     falas: [
       { quem: 'cliente', texto: 'Oi, vi o anúncio. Consigo marcar uma avaliação quinta à tarde?' },
-      { quem: 'bot', autor: 'AutoFluxos', texto: 'Consegue sim! Tenho quinta às 15h ou às 16h30. Qual prefere?' },
+      { quem: 'bot', autor: 'Dialogon', texto: 'Consegue sim! Tenho quinta às 15h ou às 16h30. Qual prefere?' },
       { quem: 'cliente', texto: '15h' },
-      { quem: 'bot', autor: 'AutoFluxos', texto: 'Confirmado para quinta às 15h. Te mando um lembrete na véspera.' },
+      { quem: 'bot', autor: 'Dialogon', texto: 'Confirmado para quinta às 15h. Te mando um lembrete na véspera.' },
     ],
   },
   {
@@ -114,7 +114,7 @@ const CONVERSAS: Conversa[] = [
     ],
     falas: [
       { quem: 'cliente', texto: 'Bom dia. Vocês fazem orçamento para empresa?' },
-      { quem: 'bot', autor: 'AutoFluxos', texto: 'Fazemos! Quantas unidades e para quando?' },
+      { quem: 'bot', autor: 'Dialogon', texto: 'Fazemos! Quantas unidades e para quando?' },
       { quem: 'cliente', texto: 'Umas 40, com nota fiscal, para o fim do mês' },
       { quem: 'marco', texto: 'Na fila de Vendas' },
     ],
@@ -135,7 +135,7 @@ const CONVERSAS: Conversa[] = [
     ],
     falas: [
       { quem: 'cliente', texto: 'Qual o endereço da loja? Quero retirar hoje' },
-      { quem: 'bot', autor: 'AutoFluxos', texto: 'Rua das Palmeiras, 210, Centro. Aberto até as 19h. O seu pedido já está separado no balcão.' },
+      { quem: 'bot', autor: 'Dialogon', texto: 'Rua das Palmeiras, 210, Centro. Aberto até as 19h. O seu pedido já está separado no balcão.' },
       { quem: 'cliente', texto: 'Obrigada!' },
     ],
   },

@@ -1,5 +1,5 @@
 /**
- * Publica as cópias dos e-mails do AutoFluxos como modelos na Brevo.
+ * Publica as cópias dos e-mails do Dialogon como modelos na Brevo.
  *
  *   set -a && . ../.secrets/4yu.env && set +a
  *   npx jiti scripts/modelos-da-brevo.mts            # cria ou atualiza
@@ -23,7 +23,7 @@ import { CONTATO, montarEmail } from '../src/core/email/layout.ts'
 import { MODELOS } from '../src/core/email/modelos.ts'
 
 const API = 'https://api.brevo.com/v3'
-const REMETENTE = { name: 'AutoFluxos', email: 'nao-responda@autofluxos.mail.4yu.com.br' }
+const REMETENTE = { name: 'Dialogon', email: 'nao-responda@autofluxos.mail.4yu.com.br' }
 const SUFIXO = '[cópia, editar no código]'
 const PAINEL = 'https://autofluxos.4yu.com.br'
 const previa = process.argv.includes('--previa')
@@ -64,7 +64,7 @@ if (previa) mkdirSync('/tmp/modelos-da-brevo', { recursive: true })
 for (const [id, modelo] of Object.entries(MODELOS)) {
   const m = modelo as unknown as { nome: string; grupo: string; montar: (p: unknown) => Parameters<typeof montarEmail>[0]; exemplo: Record<string, unknown> }
   const email = montarEmail(m.montar(comParametros(m.exemplo)), PAINEL)
-  const nome = `AutoFluxos · ${m.grupo} · ${m.nome} ${SUFIXO}`
+  const nome = `Dialogon · ${m.grupo} · ${m.nome} ${SUFIXO}`
 
   if (previa) {
     writeFileSync(`/tmp/modelos-da-brevo/${id}.html`, email.html)

@@ -2,7 +2,7 @@ import type { StatusDeMensalidade } from './mensalidade'
 
 /**
  * Os números das mensalidades (0145) de um período, sem banco: Análise >
- * Vendas, para quem cobra mensalidade pelo AutoFluxos (no ramo de aulas,
+ * Vendas, para quem cobra mensalidade pelo Dialogon (no ramo de aulas,
  * é a matrícula).
  *
  * **Em dia** é a mensalidade ativa sem nenhuma cobrança vencida e não paga

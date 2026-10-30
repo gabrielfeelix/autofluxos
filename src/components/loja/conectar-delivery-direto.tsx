@@ -232,7 +232,7 @@ export function ConectarDeliveryDireto({ clienteId, conectado }: { clienteId: st
             </li>
           </ol>
           <p className="mt-4 border-t border-line-soft pt-3 text-[12px] leading-5 text-dim">
-            Pedidos de mesa ficam de fora. O AutoFluxos só lê os pedidos: não aceita, não recusa e não muda a etapa
+            Pedidos de mesa ficam de fora. O Dialogon só lê os pedidos: não aceita, não recusa e não muda a etapa
             no seu sistema.
           </p>
         </aside>

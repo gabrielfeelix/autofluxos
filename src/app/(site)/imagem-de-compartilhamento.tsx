@@ -64,7 +64,7 @@ export async function imagemDeCompartilhamento({ olho, titulo }: { olho: string;
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src={logo} width={48} height={48} alt="" />
           </div>
-          <span style={{ fontSize: 34, fontWeight: 700, letterSpacing: -0.5 }}>AutoFluxos</span>
+          <span style={{ fontSize: 34, fontWeight: 700, letterSpacing: -0.5 }}>Dialogon</span>
         </div>
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: 18, maxWidth: 1000 }}>

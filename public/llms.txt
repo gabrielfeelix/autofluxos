@@ -1,6 +1,6 @@
-# AutoFluxos
+# Dialogon
 
-> AutoFluxos é uma plataforma brasileira de atendimento e vendas por mensagem.
+> Dialogon é uma plataforma brasileira de atendimento e vendas por mensagem.
 > Reúne WhatsApp, Instagram Direct, chat do site e Telegram numa caixa de
 > entrada só, com chatbot de fluxos visuais e IA que atende com o contexto da
 > empresa. Usa a API oficial do WhatsApp Business, no mesmo número da empresa.
@@ -24,7 +24,7 @@
 
 ## Números medidos
 
-- 74% das conversas com o chatbot terminam sem precisar da equipe (média das contas do AutoFluxos, 90 dias até outubro de 2026).
+- 74% das conversas com o chatbot terminam sem precisar da equipe (média das contas do Dialogon, 90 dias até outubro de 2026).
 - 1 em cada 6 mensagens chega fora do horário comercial.
 
 ## Links

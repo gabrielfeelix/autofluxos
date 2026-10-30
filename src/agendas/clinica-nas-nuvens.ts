@@ -232,7 +232,7 @@ export function conectorClinicaNasNuvens(
           ...(h.pp ? { idPessoaExecutor: Number(h.pp) } : {}),
           status: 'AGENDADO',
           telefoneCelularPaciente: telefoneNacional(pessoa.telefone),
-          observacoes: 'Marcado pelo WhatsApp (AutoFluxos).',
+          observacoes: 'Marcado pelo WhatsApp (Dialogon).',
         }),
       })
       if (!r.ok) return r

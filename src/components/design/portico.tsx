@@ -35,7 +35,7 @@ export function Portico({
           <span className="flex size-9 items-center justify-center rounded-xl bg-white">
             <Image src="/logos/logo-autofluxos-marca.png" alt="" width={24} height={24} priority />
           </span>
-          <span className="text-[17px] font-bold tracking-[-0.01em]">AutoFluxos</span>
+          <span className="text-[17px] font-bold tracking-[-0.01em]">Dialogon</span>
         </div>
 
         <div className="hidden max-w-[520px] md:block">

@@ -7,7 +7,7 @@ import { EVENTOS_DA_LOJA } from '@/core/eventos-da-loja'
 
 /**
  * Ligar o status dos pedidos como evento (0153): a cada 10 minutos o
- * AutoFluxos lê os pedidos da loja, e cada mudança de status vira
+ * Dialogon lê os pedidos da loja, e cada mudança de status vira
  * `pedido.<status>` em Automações > Eventos. Otimista: muda na hora e volta se
  * o servidor recusar.
  */

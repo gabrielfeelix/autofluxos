@@ -181,7 +181,7 @@ export function ConectarOlaClick({ clienteId, conectado }: { clienteId: string; 
               <h2 className="text-[14.5px] font-bold">Receber os pedidos na hora</h2>
               <p className="text-[12.5px] leading-5 text-muted">
                 A chave atual não tem permissão de webhook. No painel da OlaClick, crie uma chave nova com as permissões
-                webhooks:read e webhooks:write marcadas e use Trocar a chave. O AutoFluxos cadastra o webhook sozinho.
+                webhooks:read e webhooks:write marcadas e use Trocar a chave. O Dialogon cadastra o webhook sozinho.
               </p>
             </section>
           )}

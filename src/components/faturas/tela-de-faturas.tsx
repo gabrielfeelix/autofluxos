@@ -539,7 +539,7 @@ function CartaoDaAssinatura({
   )
 }
 
-/** "AutoFluxos Operação, mensal: plano R$ 597,00 + 2 atendentes extras R$ 118,00" em linhas de rótulo e valor. */
+/** "Dialogon Operação, mensal: plano R$ 597,00 + 2 atendentes extras R$ 118,00" em linhas de rótulo e valor. */
 function composicao(descricao: string | null): { rotulo: string; valor: string }[] | null {
   const depois = descricao?.split(': ')[1]
   if (!depois) return null

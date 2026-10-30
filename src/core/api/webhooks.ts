@@ -2,7 +2,7 @@
  * Webhooks de saída, sem banco nem rede (fase 3 de
  * `docs/HANDOFF-02-OUT-API-PUBLICA.md`).
  *
- * O AutoFluxos faz um POST no endereço do cliente quando um evento acontece.
+ * O Dialogon faz um POST no endereço do cliente quando um evento acontece.
  * Cada POST leva:
  *
  * - `x-autofluxos-timestamp`: segundos desde 1970, quando o envio foi assinado;

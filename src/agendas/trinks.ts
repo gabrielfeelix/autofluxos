@@ -190,7 +190,7 @@ export function conectorTrinks(chave: string, ajustes: AjustesDaTrinks, buscar: 
           dataHoraInicio: `${h.d}T${h.h}:00`,
           duracaoEmMinutos: Number(h.du) || 30,
           ...(h.v ? { valor: Number(h.v) } : {}),
-          observacoes: 'Marcado pelo WhatsApp (AutoFluxos).',
+          observacoes: 'Marcado pelo WhatsApp (Dialogon).',
           confirmado: false,
         }),
       })
@@ -204,7 +204,7 @@ export function conectorTrinks(chave: string, ajustes: AjustesDaTrinks, buscar: 
       const r = await chamar(`/v1/agendamentos/${encodeURIComponent(marcacaoId)}/status/cancelado`, {
         method: 'PATCH',
         // 1 = Cliente, pela tabela de quem cancelou.
-        body: JSON.stringify({ quemCancelou: 1, motivo: 'Desmarcado pela cliente no WhatsApp (AutoFluxos).' }),
+        body: JSON.stringify({ quemCancelou: 1, motivo: 'Desmarcado pela cliente no WhatsApp (Dialogon).' }),
       })
       return r.ok ? { ok: true, valor: true } : r
     },

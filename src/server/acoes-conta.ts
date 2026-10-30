@@ -929,7 +929,7 @@ function ehUuid(valor: string): boolean {
  * A diferença com `acaoCriarPrimeiroAdministrador` é o que **não** acontece
  * aqui: ninguém nasce `admin` de plataforma. `papelDePlataforma` fica nulo, e a
  * pessoa é `owner` só da empresa que ela criar no primeiro acesso. É a linha que
- * separa "cliente do AutoFluxos" de "quem opera a 4YU", e ela não pode depender
+ * separa "cliente do Dialogon" de "quem opera a 4YU", e ela não pode depender
  * de lembrança: `role` simplesmente não é tocado neste caminho.
  *
  * **Não há confirmação por e-mail**, e isso é decisão registrada, não descuido.

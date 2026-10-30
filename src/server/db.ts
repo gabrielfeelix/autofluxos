@@ -74,7 +74,7 @@ function ehEnderecoLocal(url: string): boolean {
  * `af_auditoria` de uma conta de cliente em 21/set/2026.
  *
  * Aqui a recusa não depende de qual config foi escolhido: o que decide é o
- * endereço. AutoFluxos e Verandi dividem o projeto de produção, e um teste que
+ * endereço. Dialogon e Verandi dividem o projeto de produção, e um teste que
  * cria e apaga registro lá mexe no banco de dois produtos ao mesmo tempo.
  */
 export function conferirDestinoDeTeste(

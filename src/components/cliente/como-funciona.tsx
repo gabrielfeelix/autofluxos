@@ -10,7 +10,7 @@ import {
 import { Modal } from '@/components/design/modal'
 
 /**
- * Como o AutoFluxos funciona, desenhado.
+ * Como o Dialogon funciona, desenhado.
  *
  * Existe porque a primeira dúvida de quem entra não é "onde clico", é **o que
  * essa ferramenta faz com a minha conversa**. Um parágrafo explicando canal,
@@ -77,7 +77,7 @@ export function ComoFunciona() {
     <section className="app-card px-5 py-5" aria-labelledby="titulo-como-funciona">
       <header className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
         <h2 id="titulo-como-funciona" className="text-[15px] font-bold tracking-[-0.01em]">
-          Como funciona o AutoFluxos
+          Como funciona o Dialogon
         </h2>
         <button
           type="button"
@@ -117,7 +117,7 @@ export function ComoFunciona() {
       <Modal
         aberto={aberto}
         aoFechar={() => setAberto(false)}
-        titulo="Como funciona o AutoFluxos"
+        titulo="Como funciona o Dialogon"
         descricao="As quatro peças, e o que cada uma resolve."
         largura={560}
       >

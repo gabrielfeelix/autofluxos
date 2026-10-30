@@ -172,7 +172,7 @@ function SemPlano({ clienteId, recusa }: { clienteId: string; recusa: string }) 
       <div className="grid gap-8 p-6 md:grid-cols-[minmax(0,1fr)_260px] md:p-10">
         <div>
           <Pilula tom="aviso">Não incluído no plano atual</Pilula>
-          <h2 className="mt-3 text-[20px] font-bold tracking-[-0.01em]">Ligue os seus sistemas ao AutoFluxos</h2>
+          <h2 className="mt-3 text-[20px] font-bold tracking-[-0.01em]">Ligue os seus sistemas ao Dialogon</h2>
           <p className="mt-1.5 max-w-[56ch] text-[13px] leading-6 text-muted">{recusa}</p>
           <ul className="mt-6 grid gap-3 sm:grid-cols-3">
             {itens.map((item) => (

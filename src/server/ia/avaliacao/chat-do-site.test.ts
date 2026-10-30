@@ -5,8 +5,8 @@ import type { Fluxo } from '@/core/flow/schema'
 import { INSTRUCAO_COMERCIAL, SOBRE_O_PRODUTO } from '../../../../scripts/fluxos/textos-do-chat-4yu'
 
 /**
- * A avaliação do consultor do chat do site do AutoFluxos: a instrução e o
- * "Sobre o AutoFluxos" de `scripts/fluxos/textos-do-chat-4yu.ts`, o Gemini de
+ * A avaliação do consultor do chat do site do Dialogon: a instrução e o
+ * "Sobre o Dialogon" de `scripts/fluxos/textos-do-chat-4yu.ts`, o Gemini de
  * verdade e um cliente fazendo as perguntas que um dono de negócio faz.
  *
  * Não confere nada sozinho: grava as respostas em `AVALIACAO_SAIDA` para ler
@@ -28,7 +28,7 @@ const { executarComEfeitos } = await import('../../efeitos/resolver')
 const { gemini } = await import('../gemini')
 
 const CONTEXTO = [
-  'Conta de demonstração da 4YU (AutoFluxos): mostra, pelo WhatsApp, como o atendimento automático funciona em vários tipos de negócio.',
+  'Conta de demonstração da 4YU (Dialogon): mostra, pelo WhatsApp, como o atendimento automático funciona em vários tipos de negócio.',
   SOBRE_O_PRODUTO,
 ].join('\n\n')
 

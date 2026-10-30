@@ -2,7 +2,7 @@ import { telefoneCanonico } from './contatos/telefone'
 import { STATUS_DE_PEDIDO, type EntregaDoPedido, type StatusDePedido } from './pedidos'
 
 /**
- * O pedido que nasce fora do AutoFluxos (cardápio digital, delivery próprio,
+ * O pedido que nasce fora do Dialogon (cardápio digital, delivery próprio,
  * link do entregador), sem banco.
  *
  * Toda plataforma traduz o pedido dela para este formato, e daí em diante ele

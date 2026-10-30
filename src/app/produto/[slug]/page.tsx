@@ -29,7 +29,7 @@ const PECAS: Record<string, () => ReactNode> = {
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }) {
   const recurso = recursoPorSlug((await params).slug)
   if (!recurso) return {}
-  return metadadosDoSite(`/produto/${recurso.slug}`, `${recurso.nome} | AutoFluxos`, recurso.subtitulo)
+  return metadadosDoSite(`/produto/${recurso.slug}`, `${recurso.nome} | Dialogon`, recurso.subtitulo)
 }
 
 export default async function PaginaDoRecurso({ params }: { params: Promise<{ slug: string }> }) {

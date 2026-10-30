@@ -1,5 +1,5 @@
 /*
- * AutoFluxos: o balão de conversa do site.
+ * Dialogon: o balão de conversa do site.
  *
  * O lojista cola uma linha no HTML:
  *   <script src="https://autofluxos.4yu.com.br/chat/v1.js" data-chave="..." async></script>
@@ -275,7 +275,7 @@
   /* O robô: no botão ele flutua, acena, pisca, olha para os lados e a antena
    * respira; no avatar fica parado. Branco com visor azul-marinho lê em cima
    * de qualquer cor de marca; a antena e a luz do peito usam o degradê da
-   * marca AutoFluxos. Os ids dos degradês levam um contador: o mesmo robô
+   * marca Dialogon. Os ids dos degradês levam um contador: o mesmo robô
    * aparece no botão e em cada avatar, e um degradê dentro de um SVG
    * escondido (o botão some com o painel aberto no celular) não pinta os
    * outros que apontam para ele. */
@@ -633,7 +633,7 @@
     else telaConversa(mesmaTela ? rolagem : 0)
 
     var marca = el('div', 'marca')
-    var link = el('a', null, 'Atendimento por AutoFluxos')
+    var link = el('a', null, 'Atendimento por Dialogon')
     link.href = 'https://4yu.com.br/'
     link.target = '_blank'
     link.rel = 'noopener'

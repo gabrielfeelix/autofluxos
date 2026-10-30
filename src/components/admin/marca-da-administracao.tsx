@@ -28,7 +28,7 @@ export function ContextoDaAdministracao() {
       </span>
       <span className="min-w-0">
         <span className="block truncate text-[12.5px] font-semibold">Administração</span>
-        <span className="block truncate text-[11px] text-dim">Plataforma AutoFluxos</span>
+        <span className="block truncate text-[11px] text-dim">Plataforma Dialogon</span>
       </span>
     </div>
   )

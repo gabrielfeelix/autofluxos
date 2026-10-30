@@ -2,7 +2,7 @@ import type { ReactNode } from 'react'
 import { GLIFO_INSTAGRAM, GLIFO_META, GLIFO_TELEGRAM, GLIFO_WHATSAPP } from '@/components/design/glifos-oficiais'
 
 /*
- * O que o AutoFluxos liga, para a vitrine (`vitrine-de-integracoes.tsx`), o
+ * O que o Dialogon liga, para a vitrine (`vitrine-de-integracoes.tsx`), o
  * resumo da home e as páginas de nicho. Só logo oficial, e só o que existe:
  * sem conector, `emBreve`. Fontes: `components/loja/conectar-loja.tsx`,
  * `ajustes/pagamentos/page.tsx` e `docs/FUNCIONALIDADES.md` §13.

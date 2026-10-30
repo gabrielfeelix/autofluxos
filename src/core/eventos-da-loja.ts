@@ -1,6 +1,6 @@
 /**
  * O status do pedido da loja como evento (0153), sem o lojista precisar de
- * desenvolvedor: o AutoFluxos lê os pedidos da Magento conectada e cada
+ * desenvolvedor: o Dialogon lê os pedidos da Magento conectada e cada
  * mudança de status vira `pedido.<status>`, o mesmo nome que um webhook
  * mandaria. O gatilho de Automações > Eventos decide o que acontece.
  *

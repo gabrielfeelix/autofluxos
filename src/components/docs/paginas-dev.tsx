@@ -95,33 +95,33 @@ function Visao() {
   return (
     <>
       <P>
-        O AutoFluxos conversa com outros sistemas de cinco formas. Escolha pela direção em que o
+        O Dialogon conversa com outros sistemas de cinco formas. Escolha pela direção em que o
         dado anda.
       </P>
       <ul className="ml-5 list-disc space-y-2">
         <li>
-          <strong className="text-ink">O seu sistema chama o AutoFluxos.</strong> Cadastra contatos,
+          <strong className="text-ink">O seu sistema chama o Dialogon.</strong> Cadastra contatos,
           consulta dados, envia modelos aprovados, move o funil e dispara automações com uma chave da organização. Use a{' '}
           <a className="font-medium text-primary hover:underline" href="/ajuda/desenvolvedores/api-autenticacao">API</a>.
         </li>
         <li>
-          <strong className="text-ink">O AutoFluxos avisa o seu sistema.</strong> Contato novo, mudança de
+          <strong className="text-ink">O Dialogon avisa o seu sistema.</strong> Contato novo, mudança de
           etapa e oportunidade ganha ou perdida chegam ao seu CRM ou planilha num POST assinado. Use os{' '}
           <a className="font-medium text-primary hover:underline" href="/ajuda/desenvolvedores/webhooks-de-saida">webhooks de saída</a>.
         </li>
         <li>
-          <strong className="text-ink">O seu sistema avisa o AutoFluxos.</strong> Um evento (vaga
+          <strong className="text-ink">O seu sistema avisa o Dialogon.</strong> Um evento (vaga
           aberta, pedido enviado, consulta confirmada) abre uma conversa no WhatsApp do contato,
           sem chave, só com um segredo de assinatura. Use o{' '}
           <a className="font-medium text-primary hover:underline" href="/ajuda/desenvolvedores/webhook-de-entrada">webhook de entrada</a>.
         </li>
         <li>
-          <strong className="text-ink">O AutoFluxos consulta o seu sistema.</strong> No meio da
+          <strong className="text-ink">O Dialogon consulta o seu sistema.</strong> No meio da
           conversa, a automação busca horários, cria um cadastro ou registra um pedido. Use o bloco{' '}
           <a className="font-medium text-primary hover:underline" href="/ajuda/desenvolvedores/chamar-seu-sistema">Chama um sistema</a>.
         </li>
         <li>
-          <strong className="text-ink">O seu site atende pelo AutoFluxos.</strong> Um script coloca
+          <strong className="text-ink">O seu site atende pelo Dialogon.</strong> Um script coloca
           o chat no site e as conversas caem na mesma caixa de entrada. Veja{' '}
           <a className="font-medium text-primary hover:underline" href="/ajuda/desenvolvedores/chat-do-site">Chat do site</a>.
         </li>
@@ -193,7 +193,7 @@ function Assinatura() {
       <BlocoDeCodigo trechos={CHAMADA} />
       <Sub>Trocar o segredo</Sub>
       <P>
-        Uma organização pode ter mais de um webhook ativo, e o AutoFluxos aceita a assinatura de
+        Uma organização pode ter mais de um webhook ativo, e o Dialogon aceita a assinatura de
         qualquer um deles. Para trocar sem parar a integração: crie um novo, passe o seu sistema
         para o segredo novo e só então apague o antigo.
       </P>
@@ -263,7 +263,7 @@ function Limites() {
         campos={[
           { nome: 'Chamadas', tipo: '120 por minuto', descricao: 'Por organização. Acima disso a resposta é 429.' },
           { nome: 'Tamanho do corpo', tipo: '64 KB', descricao: 'Acima disso a resposta é 413, antes de qualquer outra conferência.' },
-          { nome: 'Novas tentativas', tipo: 'nenhuma', descricao: 'O AutoFluxos não enfileira nem repete eventos. Se a sua chamada falhar, repita do seu lado.' },
+          { nome: 'Novas tentativas', tipo: 'nenhuma', descricao: 'O Dialogon não enfileira nem repete eventos. Se a sua chamada falhar, repita do seu lado.' },
           { nome: 'Duplicidade', tipo: 'sem chave', descricao: 'Não há identificador de idempotência: o mesmo evento enviado duas vezes abre a automação duas vezes.' },
         ]}
       />
@@ -408,7 +408,7 @@ function Verandi() {
 }
 
 export const PAGINAS_DEV: PaginaDev[] = [
-  { slug: 'visao-geral', grupo: 'Introdução', titulo: 'Visão geral', resumo: 'As cinco formas de integrar um sistema com o AutoFluxos.', Corpo: Visao },
+  { slug: 'visao-geral', grupo: 'Introdução', titulo: 'Visão geral', resumo: 'As cinco formas de integrar um sistema com o Dialogon.', Corpo: Visao },
   ...PAGINAS_API,
   { slug: 'webhook-de-entrada', grupo: 'Webhook de entrada', titulo: 'Configurar o webhook', resumo: 'Receba eventos do seu sistema e abra uma automação no WhatsApp do contato.', Corpo: ConfigurarWebhook },
   { slug: 'assinatura', grupo: 'Webhook de entrada', titulo: 'Assinar a requisição', resumo: 'Como calcular o HMAC-SHA256 que autentica cada chamada.', Corpo: Assinatura },

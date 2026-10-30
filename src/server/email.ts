@@ -21,7 +21,7 @@ export function emailConfigurado(): boolean {
 export type Destinatario = { email: string; nome?: string }
 
 /**
- * Quem assina e quem recebe a resposta. Ausente: o AutoFluxos assina e a
+ * Quem assina e quem recebe a resposta. Ausente: o Dialogon assina e a
  * resposta vai para a caixa humana da 4YU, que é o certo para e-mail do
  * sistema e errado para e-mail que um fluxo do cliente manda (0139).
  */
@@ -46,7 +46,7 @@ async function enviarEmail(
       method: 'POST',
       headers: { 'api-key': process.env.BREVO_API_KEY!, 'content-type': 'application/json', accept: 'application/json' },
       body: JSON.stringify({
-        sender: { email: process.env.EMAIL_REMETENTE, name: assinatura?.remetenteNome ?? 'AutoFluxos' },
+        sender: { email: process.env.EMAIL_REMETENTE, name: assinatura?.remetenteNome ?? 'Dialogon' },
         // O remetente é `nao-responda@`: quem responde cai na caixa humana da
         // 4YU, ou na da empresa quando o e-mail é de um fluxo dela. Empresa
         // sem e-mail cadastrado fica sem `replyTo`: mandar a resposta do
@@ -125,7 +125,7 @@ export async function enviarConfirmacaoDeEmail(para: Destinatario, token: string
  * O e-mail que um fluxo manda, com o nome da empresa como remetente.
  *
  * Sem o desenho dos e-mails do sistema, de propósito: a logo e o rodapé do
- * AutoFluxos numa confirmação de aula do estúdio fariam o cliente do estúdio
+ * Dialogon numa confirmação de aula do estúdio fariam o cliente do estúdio
  * achar que falou com outra empresa. Texto da pessoa, em parágrafos, e uma
  * linha dizendo quem mandou.
  */

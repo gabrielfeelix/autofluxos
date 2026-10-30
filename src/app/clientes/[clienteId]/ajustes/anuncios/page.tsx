@@ -195,7 +195,7 @@ export default async function Pagina({
                     <li>
                       Clique em{" "}
                       <strong className="text-soft">Gerar token</strong>,
-                      escolha o app AutoFluxos e marque as permissões de leads e
+                      escolha o app Dialogon e marque as permissões de leads e
                       de anúncios.
                     </li>
                     <li>Copie e cole abaixo, ele aparece uma vez só.</li>

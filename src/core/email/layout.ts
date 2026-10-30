@@ -1,5 +1,5 @@
 /**
- * O desenho de todo e-mail do AutoFluxos, num lugar só.
+ * O desenho de todo e-mail do Dialogon, num lugar só.
  *
  * Cada modelo (`modelos.ts`) descreve **o que** diz em blocos; este arquivo
  * decide **como** aparece, em HTML e em texto puro, a partir dos mesmos
@@ -218,7 +218,7 @@ a{color:${COR.primariaForte}}
 <tr><td style="padding:0 4px 20px">
 <table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr>
 <td width="40" height="40" align="center" valign="middle" bgcolor="#ffffff" style="width:40px;height:40px;background:#ffffff;border:1px solid ${COR.linha};border-radius:12px"><img src="${LOGO}" width="26" height="26" alt="" style="display:block;width:26px;height:26px;border:0"></td>
-<td style="padding-left:11px;font-family:${TITULO};font-size:18px;font-weight:700;letter-spacing:-0.01em;color:${COR.tinta}">AutoFluxos</td>
+<td style="padding-left:11px;font-family:${TITULO};font-size:18px;font-weight:700;letter-spacing:-0.01em;color:${COR.tinta}">Dialogon</td>
 </tr></table>
 </td></tr>
 
@@ -238,7 +238,7 @@ ${corpo}
 <tr><td align="center" style="padding:24px 20px 0;font-family:${CORPO};font-size:12px;line-height:1.6;color:${COR.apagado}">
 <p style="margin:0 0 6px">${escapar(email.motivo)}</p>
 <p style="margin:0 0 6px">Dúvidas? Escreva para <a href="mailto:${CONTATO}" style="color:${COR.apagado};text-decoration:underline">${CONTATO}</a>.</p>
-<p style="margin:0"><a href="${escapar(painel)}" target="_blank" style="color:${COR.apagado};text-decoration:underline">Abrir o AutoFluxos</a> &middot; um produto 4YU</p>
+<p style="margin:0"><a href="${escapar(painel)}" target="_blank" style="color:${COR.apagado};text-decoration:underline">Abrir o Dialogon</a> &middot; um produto 4YU</p>
 </td></tr>
 
 </table>
@@ -252,7 +252,7 @@ ${corpo}
     ...email.blocos.map(blocoEmTexto),
     email.motivo,
     `Dúvidas? Escreva para ${CONTATO}.`,
-    `AutoFluxos, um produto 4YU: ${painel}`,
+    `Dialogon, um produto 4YU: ${painel}`,
   ].join('\n\n')
 
   return { assunto: email.assunto, html, texto }

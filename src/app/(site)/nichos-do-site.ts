@@ -40,7 +40,7 @@ export const NICHOS_DO_SITE: NichoDoSite[] = [
     cor: '#c2410c',
     titulo: 'Agenda cheia sem passar o dia no WhatsApp',
     subtitulo:
-      'Aula experimental, remarcação, lembrete e aluno que sumiu: o AutoFluxos conduz a conversa e a agenda se atualiza sozinha.',
+      'Aula experimental, remarcação, lembrete e aluno que sumiu: o Dialogon conduz a conversa e a agenda se atualiza sozinha.',
     conversas: ['estudio', 'clinica'],
     dores: [
       { dor: '"Tem horário amanhã?" o dia inteiro', resposta: 'O chatbot mostra os horários livres em botões e marca direto na agenda.' },
@@ -66,7 +66,7 @@ export const NICHOS_DO_SITE: NichoDoSite[] = [
       },
       {
         pergunta: 'Preciso de um sistema de agenda?',
-        resposta: 'A agenda que o chatbot consulta e atualiza é a da Verandi, o sistema de agenda da 4YU, que já conversa com o AutoFluxos. Sem ela, o chatbot tira dúvidas, manda os planos e passa o pedido de horário para a equipe.',
+        resposta: 'A agenda que o chatbot consulta e atualiza é a da Verandi, o sistema de agenda da 4YU, que já conversa com o Dialogon. Sem ela, o chatbot tira dúvidas, manda os planos e passa o pedido de horário para a equipe.',
       },
       {
         pergunta: 'Como funciona o lembrete de aula?',

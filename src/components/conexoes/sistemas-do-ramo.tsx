@@ -51,7 +51,7 @@ export function SistemasDoRamo({
         descricao={
           nomeDoRamo
             ? `Os sistemas de agenda e gestão mais usados em ${nomeDoRamo.toLowerCase()}. Conectado, a IA consulta horários, marca e desmarca direto no sistema que a equipe já usa.`
-            : 'Os sistemas de agenda e gestão que o AutoFluxos conecta. Conectado, a IA consulta horários, marca e desmarca direto no sistema que a equipe já usa.'
+            : 'Os sistemas de agenda e gestão que o Dialogon conecta. Conectado, a IA consulta horários, marca e desmarca direto no sistema que a equipe já usa.'
         }
       />
 

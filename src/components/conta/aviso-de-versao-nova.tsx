@@ -80,7 +80,7 @@ export function AvisoDeVersaoNova() {
           </svg>
         </span>
         <span>
-          <strong className="font-semibold text-ink">Saiu uma versão nova do AutoFluxos.</strong> Atualize a página para usar a mais
+          <strong className="font-semibold text-ink">Saiu uma versão nova do Dialogon.</strong> Atualize a página para usar a mais
           recente; o que você já salvou continua lá.
         </span>
       </p>

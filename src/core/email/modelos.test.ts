@@ -13,7 +13,7 @@ describe('modelos de e-mail', () => {
   it.each(todos)('%s monta HTML e texto, com assunto', (_id, email) => {
     expect(email.assunto.length).toBeGreaterThan(5)
     expect(email.html).toContain('<!doctype html>')
-    expect(email.html).toContain('AutoFluxos')
+    expect(email.html).toContain('Dialogon')
     expect(email.texto).toContain(PAINEL)
     // O texto puro não carrega marcação.
     expect(email.texto).not.toMatch(/\*\*|<[a-z]/i)

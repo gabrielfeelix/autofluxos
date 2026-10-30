@@ -67,7 +67,7 @@ export async function acaoSalvarChatDoSite(
 /**
  * O que a tela aceita como animação do botão, e como cada um é guardado.
  *
- * O bucket é o `autofluxos-acervo` (público, do AutoFluxos), num prefixo
+ * O bucket é o `autofluxos-acervo` (público, do Dialogon), num prefixo
  * próprio para não aparecer na lista de arquivos da conta. Ele não aceita GIF,
  * e é de propósito que não se mexe nele: Storage é global ao projeto dividido
  * com a Verandi. O GIF, que é o formato que todo mundo tem, vira WebP animado

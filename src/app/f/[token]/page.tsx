@@ -80,7 +80,7 @@ export default async function Pagina({ params }: { params: Promise<{ token: stri
         texto={`Peça um link novo a ${link.origem}: quem compartilhou gera outro no editor da automação, em "Compartilhar".`}
       >
         <Link href="/entrar" className="botao-secundario botao-md">
-          Entrar no AutoFluxos
+          Entrar no Dialogon
         </Link>
         <Link href="/ajuda" className="px-3 py-2 text-[12.5px] font-semibold text-primary hover:opacity-80">
           Ver a ajuda
@@ -139,7 +139,7 @@ export default async function Pagina({ params }: { params: Promise<{ token: stri
                 href="/entrar"
                 className="text-muted underline underline-offset-2 transition hover:text-primary"
               >
-                entre no AutoFluxos
+                entre no Dialogon
               </Link>{' '}
               e abra este link de novo. Sem conta, dá para conversar com o fluxo e ler o
               desenho inteiro aqui embaixo.
@@ -208,7 +208,7 @@ export default async function Pagina({ params }: { params: Promise<{ token: stri
       />
 
       <p className="mt-6 text-center text-[11px] leading-[1.7] text-dim">
-        Feito no <strong className="font-semibold text-muted">AutoFluxos</strong>, da 4YU ,
+        Feito no <strong className="font-semibold text-muted">Dialogon</strong>, da 4YU ,
         atendimento no WhatsApp desenhado bloco a bloco.
       </p>
     </main>

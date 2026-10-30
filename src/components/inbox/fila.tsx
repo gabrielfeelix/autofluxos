@@ -491,7 +491,7 @@ export function Fila({
   );
 
   /*
-   * "(3) AutoFluxos" na aba, como o WhatsApp Web: quantas conversas têm
+   * "(3) Dialogon" na aba, como o WhatsApp Web: quantas conversas têm
    * mensagem nova para mim. A Inbox é a tela que fica aberta o dia inteiro
    * atrás de outras abas, e sem isto quem atende só sabia que chegou coisa
    * olhando para ela (pedido de 30/set/2026).

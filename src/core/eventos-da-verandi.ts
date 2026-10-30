@@ -1,5 +1,5 @@
 /**
- * Os avisos da Verandi como o AutoFluxos os entende (a ponte entre os dois).
+ * Os avisos da Verandi como o Dialogon os entende (a ponte entre os dois).
  *
  * A Verandi manda `{ evento, eventoId, criadoEm, dados }`, assinado com
  * `instante.corpo`, e é ela quem decide o que vai em `dados`: quem, qual

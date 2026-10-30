@@ -2,7 +2,7 @@ import 'server-only'
 import { z } from 'zod'
 
 /**
- * Ligar uma conta do Instagram ao AutoFluxos, o Business Login da Meta.
+ * Ligar uma conta do Instagram ao Dialogon, o Business Login da Meta.
  *
  * ---------------------------------------------------------------------------
  * Três hosts diferentes, e trocar um pelo outro dá erro que não explica nada

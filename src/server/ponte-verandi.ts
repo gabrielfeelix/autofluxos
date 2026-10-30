@@ -5,7 +5,7 @@ import { chaveDaAgenda } from './formularios-do-whatsapp/agenda'
 import { apagarWebhook, criarWebhook, listarWebhooks, type WebhookDeEntrada } from './repos/webhooks-de-entrada'
 
 /**
- * A ponte entre o AutoFluxos e a Verandi, os dois produtos da 4YU.
+ * A ponte entre o Dialogon e a Verandi, os dois produtos da 4YU.
  *
  * Nenhum dos dois lê o banco do outro (dividem o projeto Supabase, cada um no
  * seu schema, e cruzar é proibido). A ponte é HTTP, com a chave `vr_` que a

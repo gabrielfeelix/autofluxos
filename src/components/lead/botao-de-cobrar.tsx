@@ -189,7 +189,7 @@ export function BotaoDeCobrar({
               </p>
               <p className="text-[12px] leading-5 text-dim">
                 Primeiro conecte a conta onde você recebe, no Mercado Pago ou no Asaas. O dinheiro vai
-                direto para ela, sem porcentagem para o AutoFluxos.
+                direto para ela, sem porcentagem para o Dialogon.
               </p>
               <Link href={`/clientes/${clienteId}/ajustes/pagamentos`} className="botao-primario botao-md w-full">
                 Conectar conta de recebimento

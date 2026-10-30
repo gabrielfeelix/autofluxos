@@ -258,7 +258,7 @@ export const PACOTES: Record<Nicho, PacoteDoNicho> = {
    * A seção Comércio vira **Planos** (pedido do Gabriel, 26/set): o que um
    * estúdio vende são planos, pacotes e modalidades, e cadastrados no
    * catálogo a IA responde preço e modalidade com o dado certo. A agenda
-   * continua no sistema do cliente, por integração: o AutoFluxos não vira
+   * continua no sistema do cliente, por integração: o Dialogon não vira
    * gestão de alunos. Integração de loja on-line não se aplica e some.
    */
   aulas: {
@@ -275,7 +275,7 @@ export const PACOTES: Record<Nicho, PacoteDoNicho> = {
     modelosDeFluxo: ['agendamento', 'reagendamento', 'nao-comparecimento', 'lembrete', 'aluno-inativo', 'voltei-de-licenca'],
     modeloDeFunil: 'agendamento',
     pedidos: null,
-    // As aulas da Verandi (a ponte) e a matrícula, para quem cobra mensalidade pelo AutoFluxos.
+    // As aulas da Verandi (a ponte) e a matrícula, para quem cobra mensalidade pelo Dialogon.
     primeirosEmVendas: ['aulas', 'mensalidades'],
     passosDoInicio: ['ficha'],
     ficha: {

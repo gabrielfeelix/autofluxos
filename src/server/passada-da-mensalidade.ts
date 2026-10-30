@@ -96,7 +96,7 @@ export async function passadaDaMensalidade(agora = new Date()): Promise<ResumoDa
           clienteAsaas: conta.clienteAsaas,
           valorCentavos: Math.round(cobranca.valor * 100),
           vencimento: somarDias(hoje, DIAS_PARA_PAGAR_O_EXCEDENTE),
-          descricao: `AutoFluxos: ${cobranca.conversas.toLocaleString('pt-BR')} conversas acima da faixa do ${plano.nome} em ${mes}`,
+          descricao: `Dialogon: ${cobranca.conversas.toLocaleString('pt-BR')} conversas acima da faixa do ${plano.nome} em ${mes}`,
           referencia,
         })
         resumo.excedentes += 1

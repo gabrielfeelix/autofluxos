@@ -4,7 +4,7 @@ import { versaoDoDeploy } from '@/lib/versao-do-deploy'
 export const dynamic = 'force-dynamic'
 
 /**
- * Qual versão do AutoFluxos está no ar agora.
+ * Qual versão do Dialogon está no ar agora.
  *
  * Quem pergunta é a aba aberta (`AvisoDeVersaoNova`): ela guarda a primeira
  * resposta e, quando uma resposta seguinte for diferente, avisa que saiu

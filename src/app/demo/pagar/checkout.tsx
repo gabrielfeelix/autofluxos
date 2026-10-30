@@ -5,7 +5,7 @@ import { NUMERO_DA_DEMO, reaisDito } from '@/core/pagamento-demo'
 
 /*
  * Cores fixas de propósito: é a "loja" de mentira, não uma tela do
- * AutoFluxos, e precisa ler igual em qualquer celular, claro ou escuro.
+ * Dialogon, e precisa ler igual em qualquer celular, claro ou escuro.
  */
 const VERDE = '#1F9D55'
 

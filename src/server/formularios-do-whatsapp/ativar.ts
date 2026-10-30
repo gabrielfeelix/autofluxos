@@ -120,7 +120,7 @@ export async function ativarFormulario(clienteId: string, canalId: string): Prom
     let flowId = formulario.flowId
     if (!flowId) {
       const criado = await graph(`${numero.wabaId}/flows`, token, {
-        name: `Agendamento AutoFluxos ${formulario.id.slice(0, 8)}`,
+        name: `Agendamento Dialogon ${formulario.id.slice(0, 8)}`,
         categories: ['APPOINTMENT_BOOKING'],
         flow_json: JSON.stringify(FLOW_JSON_DE_AGENDAMENTO),
         endpoint_uri: `${enderecoDoPainel()}/api/webhook/formulario-whatsapp/${formulario.id}`,

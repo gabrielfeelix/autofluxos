@@ -10,7 +10,7 @@ import type { HorarioDeAtendimento } from '@/core/horario'
  *
  * **O cliente não deve configurar o horário duas vezes.** Quem usa a Verandi já
  * disse lá que abre das 7h às 20h e que fecha no feriado; pedir a mesma coisa
- * de novo no AutoFluxos não é só trabalho repetido, é uma segunda verdade que
+ * de novo no Dialogon não é só trabalho repetido, é uma segunda verdade que
  * diverge da primeira no dia em que alguém cadastra o feriado de um lado só. E
  * quem descobre a divergência é quem mandou mensagem no feriado e ouviu "te
  * respondemos ainda hoje".

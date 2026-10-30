@@ -258,7 +258,7 @@ export function LojaMagento({
           <h2 className="text-[15px] font-bold tracking-[-0.01em]">Estoque exato (opcional)</h2>
           <p className="mt-1 mb-4 max-w-[600px] text-[13px] leading-6 text-muted">
             Com o token de administrador da loja, o bot diz <strong className="text-soft">quantas unidades restam</strong>{' '}
-            e garante a foto do produto nas lojas que não a deixam aberta. Este acesso é usado só para ler: o AutoFluxos não cria, altera nem
+            e garante a foto do produto nas lojas que não a deixam aberta. Este acesso é usado só para ler: o Dialogon não cria, altera nem
             apaga nada na loja, e a loja pode revogar quando quiser em Sistema › Integrações.
           </p>
 

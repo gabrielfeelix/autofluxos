@@ -948,7 +948,7 @@ export const noNotaSchema = z.object({
  *
  * Não espera nada nem muda o caminho: como a anotação, é registro que sai e
  * o fluxo segue. Quem responde o e-mail cai no e-mail da empresa cadastrado
- * em Ajustes, nunca no remetente do AutoFluxos.
+ * em Ajustes, nunca no remetente do Dialogon.
  */
 export const noEmailSchema = z.object({
   ...base,

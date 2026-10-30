@@ -186,7 +186,7 @@ export function CorpoDoRamo({ nicho }: { nicho: NichoDoSite }) {
                 <span className={n.appMarca}>
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img src="/logos/logo-autofluxos-marca.png" alt="" width={18} height={18} />
-                  AutoFluxos
+                  Dialogon
                 </span>
                 <span>Início</span>
                 <span>Conversas</span>
@@ -243,7 +243,7 @@ export function CorpoDoRamo({ nicho }: { nicho: NichoDoSite }) {
             <span className={n.menuMarca}>
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img src="/logos/logo-autofluxos-marca.png" alt="" width={20} height={20} />
-              AutoFluxos
+              Dialogon
             </span>
             <span>Início</span>
             <span>Conversas</span>
@@ -261,7 +261,7 @@ export function CorpoDoRamo({ nicho }: { nicho: NichoDoSite }) {
               Dentro do app
             </span>
             <h2 className={s.tituloSecao} data-revela data-como="desfoque" data-atraso="60">
-              O AutoFluxos fala a língua de {nomeMinusculo}
+              O Dialogon fala a língua de {nomeMinusculo}
             </h2>
             <dl className={n.lingua}>
               {nicho.noApp.map((item, i) => (

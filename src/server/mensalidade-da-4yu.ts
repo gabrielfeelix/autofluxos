@@ -35,7 +35,7 @@ import { agendarDescida, definirPlano, planoDaConta, tamanhoDaEquipe } from './r
 import { planoVigente } from './repos/planos'
 
 /**
- * A mensalidade do AutoFluxos pelo Asaas da 4YU (docs/PLANO-MENSALIDADE-ASAAS.md).
+ * A mensalidade do Dialogon pelo Asaas da 4YU (docs/PLANO-MENSALIDADE-ASAAS.md).
  *
  * **O plano muda pelo aviso, nunca pelo clique.** Assinar cria a assinatura e
  * devolve a página de pagamento do Asaas; `clients.plano` só troca quando o

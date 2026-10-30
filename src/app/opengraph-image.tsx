@@ -2,7 +2,7 @@ import { imagemDeCompartilhamento, TAMANHO, TIPO } from './(site)/imagem-de-comp
 
 export const size = TAMANHO
 export const contentType = TIPO
-export const alt = 'AutoFluxos: atendimento, vendas e pós-venda no WhatsApp'
+export const alt = 'Dialogon: atendimento, vendas e pós-venda no WhatsApp'
 
 export default function Imagem() {
   return imagemDeCompartilhamento({

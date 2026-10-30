@@ -47,7 +47,7 @@ export function descricaoDaAssinatura(
       `${equipe.extras} ${equipe.extras === 1 ? 'atendente extra' : 'atendentes extras'} ${reaisDeCentavos(Math.round(equipe.valor * meses * 100))}`,
     )
   }
-  return `AutoFluxos ${plano.nome}, ${ciclo}: ${partes.join(' + ')}`
+  return `Dialogon ${plano.nome}, ${ciclo}: ${partes.join(' + ')}`
 }
 
 export type FiltroDeFaturas = {

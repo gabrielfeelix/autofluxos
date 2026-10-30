@@ -29,9 +29,9 @@ import { Item, Lista, PaginaLegal, type SecaoLegal } from '../(site)/pagina-lega
  * nascerem com a mesma cara em vez de com uma cópia dela.
  */
 export const metadata: Metadata = {
-  title: 'Política de Privacidade · AutoFluxos',
+  title: 'Política de Privacidade · Dialogon',
   description:
-    'Como o AutoFluxos trata os dados das conversas de WhatsApp atendidas pelas automações dos seus clientes.',
+    'Como o Dialogon trata os dados das conversas de WhatsApp atendidas pelas automações dos seus clientes.',
 }
 
 const ATUALIZADA_EM = '4 de setembro de 2026'
@@ -39,11 +39,11 @@ const ATUALIZADA_EM = '4 de setembro de 2026'
 const SECOES: readonly SecaoLegal[] = [
   {
     id: 'quem-somos',
-    titulo: 'Quem somos e o que o AutoFluxos faz',
+    titulo: 'Quem somos e o que o Dialogon faz',
     conteudo: (
       <>
         <p>
-          O AutoFluxos é um serviço da <strong>4YU</strong> que automatiza o atendimento de
+          O Dialogon é um serviço da <strong>4YU</strong> que automatiza o atendimento de
           empresas no WhatsApp. Cada empresa cliente desenha o próprio fluxo de conversa e o
           conecta a um número do WhatsApp Business Platform (Cloud API, da Meta).
         </p>
@@ -264,7 +264,7 @@ export default function Pagina() {
         texto:
           'Ficou alguma dúvida sobre o que fazemos com os dados? Escreva. Respondemos em português, sem letra miúda.',
         rotulo: 'Fale conosco',
-        href: 'https://wa.me/5544998775978?text=Ol%C3%A1%21%20Tenho%20uma%20d%C3%BAvida%20sobre%20a%20privacidade%20no%20AutoFluxos.',
+        href: 'https://wa.me/5544998775978?text=Ol%C3%A1%21%20Tenho%20uma%20d%C3%BAvida%20sobre%20a%20privacidade%20no%20Dialogon.',
       }}
     />
   )

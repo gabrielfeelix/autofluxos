@@ -1,5 +1,5 @@
 /**
- * O que todo gateway de pagamento sabe fazer, do jeito que o AutoFluxos pede
+ * O que todo gateway de pagamento sabe fazer, do jeito que o Dialogon pede
  * (docs/PLANO-COBRANCA-CAMADA-1.md).
  *
  * Mercado Pago e Asaas falam línguas diferentes: um conecta por login e o

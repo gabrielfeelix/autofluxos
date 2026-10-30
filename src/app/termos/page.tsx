@@ -25,9 +25,9 @@ import { Item, Lista, PaginaLegal, type SecaoLegal } from '../(site)/pagina-lega
  * dia da régua, muda aqui no mesmo commit.
  */
 export const metadata: Metadata = {
-  title: 'Termos de Serviço · AutoFluxos',
+  title: 'Termos de Serviço · Dialogon',
   description:
-    'As regras de uso do AutoFluxos: quem opera, o que o serviço faz, o que não se pode fazer com ele e o que acontece em caso de uso indevido.',
+    'As regras de uso do Dialogon: quem opera, o que o serviço faz, o que não se pode fazer com ele e o que acontece em caso de uso indevido.',
 }
 
 const ATUALIZADA_EM = '23 de outubro de 2026'
@@ -35,11 +35,11 @@ const ATUALIZADA_EM = '23 de outubro de 2026'
 const SECOES: readonly SecaoLegal[] = [
   {
     id: 'quem-opera',
-    titulo: 'Quem opera o AutoFluxos',
+    titulo: 'Quem opera o Dialogon',
     conteudo: (
       <>
         <p>
-          O AutoFluxos é operado por <strong>68.770.493 GABRIEL FELIX BARBOSA (4YU)</strong>, CNPJ
+          O Dialogon é operado por <strong>68.770.493 GABRIEL FELIX BARBOSA (4YU)</strong>, CNPJ
           68.770.493/0001-82, com endereço na Rua Osvaldo Cruz, 297, Zona 07, Maringá/PR, CEP
           87020-200. Neste documento, “nós” é essa empresa e “você” é quem usa o serviço.
         </p>
@@ -57,14 +57,14 @@ const SECOES: readonly SecaoLegal[] = [
     conteudo: (
       <>
         <p>
-          O AutoFluxos é uma ferramenta de automação de atendimento. Você desenha um fluxo de
+          O Dialogon é uma ferramenta de automação de atendimento. Você desenha um fluxo de
           conversa, liga esse fluxo a um canal, um número do WhatsApp Business Platform (Cloud
           API, da Meta) ou uma conta profissional do Instagram, e o sistema responde às pessoas
           que escrevem para você, guarda o que elas respondem e chama uma pessoa da sua equipe
           quando o fluxo mandar.
         </p>
         <p>
-          <strong>O AutoFluxos não é o WhatsApp nem o Instagram.</strong> Nós usamos as APIs
+          <strong>O Dialogon não é o WhatsApp nem o Instagram.</strong> Nós usamos as APIs
           oficiais da Meta e não somos afiliados a ela. Quem entrega a mensagem é a Meta, sob as
           regras dela.
         </p>
@@ -133,7 +133,7 @@ const SECOES: readonly SecaoLegal[] = [
     titulo: 'O que não se pode fazer com o serviço',
     conteudo: (
       <>
-        <p>Usar o AutoFluxos para qualquer das coisas abaixo é quebra destes termos:</p>
+        <p>Usar o Dialogon para qualquer das coisas abaixo é quebra destes termos:</p>
         <Lista>
           <Item>
             <strong>Mandar mensagem para quem não pediu.</strong> Disparo em massa para lista
@@ -253,7 +253,7 @@ const SECOES: readonly SecaoLegal[] = [
           for relevante.
         </p>
         <p>
-          <strong>Automação não substitui pessoa em assunto urgente.</strong> Não use o AutoFluxos
+          <strong>Automação não substitui pessoa em assunto urgente.</strong> Não use o Dialogon
           como único canal para emergência médica, segurança ou qualquer situação em que a demora
           de uma resposta cause dano.
         </p>
@@ -282,7 +282,7 @@ const SECOES: readonly SecaoLegal[] = [
     titulo: 'De quem é o quê',
     conteudo: (
       <p>
-        O software, a marca e o design do AutoFluxos são nossos. Os fluxos que você desenha, os
+        O software, a marca e o design do Dialogon são nossos. Os fluxos que você desenha, os
         textos que escreve e os dados que coleta são seus, você nos dá apenas a licença
         necessária para hospedar, processar e transmitir esse conteúdo para o serviço funcionar.
         Presets e modelos que o produto oferece você pode usar, copiar e alterar à vontade dentro
@@ -348,7 +348,7 @@ export default function Pagina() {
         texto:
           'Alguma dúvida sobre uma regra destas antes de assinar embaixo? Pergunte. Respondemos em português, sem letra miúda.',
         rotulo: 'Fale conosco',
-        href: 'https://wa.me/5544998775978?text=Ol%C3%A1%21%20Tenho%20uma%20d%C3%BAvida%20sobre%20os%20termos%20do%20AutoFluxos.',
+        href: 'https://wa.me/5544998775978?text=Ol%C3%A1%21%20Tenho%20uma%20d%C3%BAvida%20sobre%20os%20termos%20do%20Dialogon.',
       }}
     />
   )

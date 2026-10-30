@@ -31,8 +31,8 @@ function emailDeResposta(email: string, quem: string, texto: string): string {
     .split('\n')
     .map((linha) => `> ${linha}`)
     .join('\n')
-  const corpo = `Olá${primeiroNome ? `, ${primeiroNome}` : ''}!\n\nRecebemos a sua sugestão no AutoFluxos:\n\n${citacao}\n\n`
-  return `mailto:${email}?subject=${encodeURIComponent('Sobre a sua sugestão no AutoFluxos')}&body=${encodeURIComponent(corpo)}`
+  const corpo = `Olá${primeiroNome ? `, ${primeiroNome}` : ''}!\n\nRecebemos a sua sugestão no Dialogon:\n\n${citacao}\n\n`
+  return `mailto:${email}?subject=${encodeURIComponent('Sobre a sua sugestão no Dialogon')}&body=${encodeURIComponent(corpo)}`
 }
 
 export type DadosDoCartao = {

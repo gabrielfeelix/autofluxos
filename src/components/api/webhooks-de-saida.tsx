@@ -18,7 +18,7 @@ import {
 import type { EntregaDeWebhook, WebhookDeSaida } from '@/server/repos/webhooks-de-saida'
 
 /**
- * A seção Webhooks de Configurações > API: para onde o AutoFluxos avisa o
+ * A seção Webhooks de Configurações > API: para onde o Dialogon avisa o
  * sistema do cliente, e o que aconteceu nas últimas entregas.
  *
  * Otimista como as chaves: ligar e desligar mudam na hora e voltam se o
@@ -136,7 +136,7 @@ export function WebhooksDeSaida({
             Webhooks
           </h2>
           <p className="text-[12.5px] text-muted">
-            O AutoFluxos avisa o seu sistema quando algo acontece aqui, com um POST assinado.
+            O Dialogon avisa o seu sistema quando algo acontece aqui, com um POST assinado.
           </p>
         </div>
         <Botao variante="primario" onClick={() => setCriando(true)}>
@@ -246,7 +246,7 @@ export function WebhooksDeSaida({
         <div className="space-y-4">
           <div className="rounded-[10px] border border-amber-400/30 bg-amber-400/[0.08] px-3.5 py-3 text-[12.5px] leading-5 text-aviso">
             <strong>Guarde agora, ele não aparece de novo.</strong> O seu sistema usa este segredo para conferir que
-            cada POST veio do AutoFluxos. Se perder, gere outro em Editar.
+            cada POST veio do Dialogon. Se perder, gere outro em Editar.
           </div>
           {segredoNovo && <CampoParaCopiar valor={segredoNovo} rotuloAcessivel="Copiar o segredo" />}
           <p className="text-[12px] leading-5 text-muted">

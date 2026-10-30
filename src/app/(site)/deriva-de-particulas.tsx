@@ -25,7 +25,7 @@ type Particula = {
  * O campo de partículas da capa.
  *
  * **Ele é uma rede que se liga, não poeira flutuando.** A diferença é o
- * produto: o AutoFluxos liga blocos numa conversa, e a metáfora certa é a
+ * produto: o Dialogon liga blocos numa conversa, e a metáfora certa é a
  * ligação, pontos que se encontram, acendem uma linha entre si e seguem.
  * Poeira genérica seria bonita e não diria nada.
  *

@@ -6,8 +6,8 @@ import s from '../(site)/pagina-inicial.module.css'
 
 export const metadata = metadadosDoSite(
   '/integracoes',
-  'Integrações | AutoFluxos',
-  'Magento, Nuvemshop, Mercado Pago, Asaas, Cardápio Web, Goomer e mais: o AutoFluxos consulta o seu sistema e responde com o dado de verdade.',
+  'Integrações | Dialogon',
+  'Magento, Nuvemshop, Mercado Pago, Asaas, Cardápio Web, Goomer e mais: o Dialogon consulta o seu sistema e responde com o dado de verdade.',
 )
 
 export default function PaginaDeIntegracoes() {
@@ -17,7 +17,7 @@ export default function PaginaDeIntegracoes() {
         <CapaSimples
           olho="Integrações"
           titulo="Liga no que você já usa"
-          texto="Loja, pagamento, cardápio e anúncio conversam com o fluxo. O cliente pergunta, o AutoFluxos consulta o sistema e responde com o dado de verdade."
+          texto="Loja, pagamento, cardápio e anúncio conversam com o fluxo. O cliente pergunta, o Dialogon consulta o sistema e responde com o dado de verdade."
         />
       }
     >

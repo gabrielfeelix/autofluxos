@@ -196,7 +196,7 @@ export function SecaoDuvidasCurtas() {
           />
           <Pergunta
             pergunta="Meu número pode ser bloqueado?"
-            resposta="O AutoFluxos usa a API oficial da Meta e respeita as regras dela: fora da janela de 24 horas, só sai mensagem com modelo aprovado. Bloqueio vem de disparo em massa para quem não pediu, e o produto não deixa isso acontecer por acidente."
+            resposta="O Dialogon usa a API oficial da Meta e respeita as regras dela: fora da janela de 24 horas, só sai mensagem com modelo aprovado. Bloqueio vem de disparo em massa para quem não pediu, e o produto não deixa isso acontecer por acidente."
           />
           <Pergunta
             pergunta="A IA pode inventar preço?"
@@ -270,7 +270,7 @@ export function SecaoPrecoResumo() {
 /* ─────────────────────────── jornada ─────────────────────────── */
 
 /*
- * A conversa inteira, do anúncio à recompra: o AutoFluxos não é só o chatbot.
+ * A conversa inteira, do anúncio à recompra: o Dialogon não é só o chatbot.
  * Cada etapa existe no produto (fila por setor e IA do atendente desde
  * `a743d066` e `79aa74f4`; pagamento confirmado pelos gateways; aviso do
  * pedido e pesquisa pelos fluxos e sequências) e leva à página que detalha.
@@ -320,7 +320,7 @@ export function SecaoJornada() {
         <Cabeca
           olho="Como funciona"
           titulo={`Do primeiro contato ao pós\u2011venda, tudo no mesmo WhatsApp`}
-          texto="Hoje cada etapa mora num lugar: o celular, a planilha, o link de pagamento, o grupo da equipe. No AutoFluxos é a mesma conversa do começo ao fim."
+          texto="Hoje cada etapa mora num lugar: o celular, a planilha, o link de pagamento, o grupo da equipe. No Dialogon é a mesma conversa do começo ao fim."
         />
         <JornadaViva etapas={JORNADA} />
       </div>
@@ -585,7 +585,7 @@ export function CorpoDoCanal({ canal }: { canal: CanalDoSite }) {
 
       <section className={s.secao}>
         <div className={s.faixa}>
-          <Cabeca olho="O que funciona" titulo={`Tudo o que ${canal.slug === 'site' ? 'o chat do site' : `o ${canal.nome}`} faz no AutoFluxos`} />
+          <Cabeca olho="O que funciona" titulo={`Tudo o que ${canal.slug === 'site' ? 'o chat do site' : `o ${canal.nome}`} faz no Dialogon`} />
           <div className={x.noApp}>
             {canal.recursos.map((r) => (
               <div key={r.titulo} data-revela>

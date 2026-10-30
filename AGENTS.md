@@ -8,6 +8,13 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 
 <!-- END:nextjs-agent-rules -->
 
+## O produto se chama Dialogon
+
+AutoFluxos virou **Dialogon** em 30/out/2026 (`docs/PLANO-RENOMEAR-DIALOGON.md`).
+Texto novo para o cliente sai como "Dialogon". O repositório, a pasta, o
+projeto Supabase, as variáveis `AUTOFLUXOS_*`, o cookie, os buckets e o cabeçalho
+`X-AutoFluxos-Teste` continuam com o nome antigo de propósito.
+
 ## Banco de produção compartilhado: obrigatório
 
 AutoFluxos e Verandi são produtos diferentes no **mesmo projeto Supabase de

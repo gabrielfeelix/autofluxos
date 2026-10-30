@@ -70,7 +70,7 @@ export async function abrirPorta(req: Request, chave: string, uso: 'leitura' | '
 
 /**
  * A origem de quem chama. Num GET do mesmo domínio o navegador não manda
- * `Origin` (é o caso do balão no próprio site do AutoFluxos); aí vale o
+ * `Origin` (é o caso do balão no próprio site do Dialogon); aí vale o
  * `Sec-Fetch-Site: same-origin`, e a origem é a do próprio pedido, que ainda
  * passa pela lista de domínios do canal.
  */

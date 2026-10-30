@@ -153,7 +153,7 @@ export const PRESETS: Preset[] = [
    * horários e inaceitável para uma lista de alunos.
    *
    * O formato do que se lê está fechado em `docs/PLANILHAS.md`: uma aba
-   * `AutoFluxos`, um intervalo nomeado por dia, e a célula com os valores
+   * `Dialogon`, um intervalo nomeado por dia, e a célula com os valores
    * separados por ponto e vírgula, que é exatamente o que `opcoesDe` espera.
    */
   {
@@ -206,7 +206,7 @@ export const PRESETS: Preset[] = [
    * ponta a ponta.
    *
    * **Ela é um sistema do cliente como qualquer outro, e não uma exceção.** A
-   * fronteira do ARQUITETURA.md continua de pé: o AutoFluxos não guarda turma,
+   * fronteira do ARQUITETURA.md continua de pé: o Dialogon não guarda turma,
    * matrícula nem presença; ele lê e escreve pela API, e o dado mora lá. O que
    * estes presets fazem é tirar da frente as três coisas que se erra em
    * silêncio ao montar a chamada na mão, o endereço, o caminho do campo, e o

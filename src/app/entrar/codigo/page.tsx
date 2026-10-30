@@ -14,7 +14,7 @@ export default function CodigoDoLogin() {
   return (
     <Portico
       titulo="Código de verificação"
-      descricao="Abra o aplicativo de autenticação no celular e digite o código do AutoFluxos."
+      descricao="Abra o aplicativo de autenticação no celular e digite o código do Dialogon."
       rodape={
         <p>
           Perdeu o celular? Use um dos códigos de recuperação que você guardou.{' '}
