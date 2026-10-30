@@ -1500,6 +1500,17 @@ extração explícito para os objetos de `public`.
   fonte de pedidos). Ensaio com `rollback` limpo; releitura dos dois checks com
   `foody`; 0 pedidos de fora e 0 cardápios conectados existentes; Verandi com
   **57** migrations.
+- **a `0158` foi aplicada em 30/out/2026**, pela Management API, numa
+  transação, sem pedir (aditiva). `clients_nicho_check` com os ramos novos;
+  tabela `agendas_conectadas` (RLS ligada, só `service_role`, 0 linhas);
+  `pedidos_de_loja_plataforma_check` com os sistemas dos ramos novos.
+  Releitura: checks atualizados, anon sem `select`, contas intactas (3 aulas,
+  1 ecommerce, 4 sem ramo); Verandi com **57** migrations.
+- **a `0159` foi aplicada em 30/out/2026**, mesmo caminho. Ramo `beleza` vira
+  `salao` no check (0 contas com `beleza`) e `preparar_onboarding` aceita os
+  ramos e atendentes novos. Base da função conferida igual à da produção antes
+  de recriar. Releitura: função com `atendente-saude`, check com `salao`, anon
+  sem `execute`.
 
 - **SSL obrigatório desde 19/out/2026** (`PUT .../ssl-enforcement`), com
   autorização do dono. Conexão sem TLS leva `ESSLREQUIRED`, inclusive pelo

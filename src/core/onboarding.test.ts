@@ -62,7 +62,7 @@ describe('preparação da empresa', () => {
     for (const id of FUNIS_DAS_FRENTES) expect(MODELOS_DE_QUADRO.map((m) => m.id)).toContain(id)
   })
   it('recusa frente que não existe', () => {
-    expect(respostasOnboardingSchema.safeParse({ ...RESPOSTAS_INICIAIS, nicho: 'saude' }).success).toBe(false)
+    expect(respostasOnboardingSchema.safeParse({ ...RESPOSTAS_INICIAIS, nicho: 'padaria' }).success).toBe(false)
   })
   it('a preparar_onboarding vigente aceita todo chatbot oferecido, todo funil das frentes e toda frente', () => {
     // Vigente = a última migration que recria a função (0109, 0124, ...): modelo

@@ -27,7 +27,7 @@ describe('o ramo da conta', () => {
 
   it('reconhece só os ramos que existem', () => {
     for (const nicho of NICHOS) expect(ehNicho(nicho)).toBe(true)
-    for (const outro of ['', 'saude', 'Restaurante', null, undefined, 1]) expect(ehNicho(outro)).toBe(false)
+    for (const outro of ['', 'padaria', 'Restaurante', null, undefined, 1]) expect(ehNicho(outro)).toBe(false)
   })
 
   it('todo ramo tem pacote, com objetivo que existe e nome escrito', () => {

@@ -479,3 +479,19 @@ quando fizer sentido, e o agendador foi para o próprio Supabase:
   (`vault.update_secret`), ou a passada passa a levar 401.
 - O GitHub Actions segue como reserva. A entrada anterior ("pg_cron fora")
   fica superada por esta.
+
+## 30/out/2026: ramos novos e agenda de fora por contrato próprio
+
+- Sete ramos novos (`saude`, `laboratorio`, `farmacia`, `salao`, `pet`,
+  `imobiliaria`, `hospedagem`) entram como `PacoteDoNicho`, sem código por
+  ramo (docs/SEGMENTOS-NOVOS.md).
+- Agenda de fora ganhou ferramentas próprias (`tipo: 'agenda'`), executadas no
+  servidor como as de loja. As `agenda_*` da Verandi **não** mudaram: a MGM é
+  cliente pagante, e migrar a Verandi para o contrato fica para quando houver
+  teste dela.
+- Conectores só onde há API pública com chave do próprio dono: Feegow, Clínica
+  nas Nuvens, Trinks, AgendaPro, EVO. O resto vira "Solicitar integração".
+- O telefone de quem sofre a ação vem do contato, nunca do modelo; desmarcar
+  confere a marcação contra `minhas` da mesma pessoa na hora.
+- EVO não desmarca pela integração: o enum de status do Swagger não tem nomes.
+

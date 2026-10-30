@@ -164,7 +164,7 @@ export type Ferramenta = {
    *
    * Serve para a tela agrupar e para o validador saber qual Conexão cobrar.
    */
-  integracao: 'verandi' | 'loja' | 'conversa'
+  integracao: 'verandi' | 'loja' | 'conversa' | 'agenda'
 }
 
 /**
@@ -189,6 +189,14 @@ export type ChamadaDeFerramenta =
       operacao: OperacaoDeLoja
     }
   /**
+   * A agenda de fora que a conta conectou (`agendas_conectadas`, 0158). Como
+   * a loja, sem URL: o endereço e a chave são da conta, nunca do modelo.
+   */
+  | {
+      tipo: 'agenda'
+      operacao: OperacaoDeAgenda
+    }
+  /**
    * Não sai para lugar nenhum: é o sinal de que a conversa terminou bem. Quem
    * trata é o resolvedor, que guarda o resumo e devolve a vez ao modelo para a
    * frase final. Ver `CONCLUIR_CONVERSA`.
@@ -199,6 +207,9 @@ export type ChamadaDeFerramenta =
    * manda o resumo (`core/cobranca.ts`). Ver `ferramentaDeCobranca`.
    */
   | { tipo: 'cobranca' }
+
+/** O que uma ferramenta de agenda pede ao conector (`src/agendas/types.ts`). */
+export type OperacaoDeAgenda = 'servicos' | 'horarios' | 'minhas' | 'marcar' | 'desmarcar'
 
 /** O que uma ferramenta de loja pede ao adaptador. `cardapio` é da conta, não da loja. */
 export type OperacaoDeLoja =
@@ -257,6 +268,134 @@ const ARGUMENTO_CATEGORIA: Argumento = {
  * aqui porque é onde alguém vai procurar quando o bot marcar para o ano errado.
  */
 export const FORMATO_DE_DATA = 'AAAA-MM-DD'
+
+/**
+ * O documento de quem conversa, para o sistema que só acha a pessoa por ele.
+ *
+ * É texto que a própria pessoa digita, e o conector só aceita o cadastro achado
+ * se o celular dele for o desta conversa (`agendas/clinica-nas-nuvens.ts`): um
+ * CPF alheio não abre a agenda de ninguém.
+ */
+const ARGUMENTOS_DE_DOCUMENTO: Argumento[] = [
+  {
+    nome: 'cpf',
+    tipo: 'texto',
+    descricao: 'O CPF da pessoa, só se a consulta anterior pediu (`precisa: "cpf"`). Deixe vazio nos outros casos.',
+    obrigatorio: false,
+  },
+  {
+    nome: 'nascimento',
+    tipo: 'texto',
+    descricao: `A data de nascimento da pessoa em ${FORMATO_DE_DATA}, só se a consulta anterior pediu (precisa: "nascimento").`,
+    obrigatorio: false,
+  },
+]
+
+const PROJECAO_DO_AVISO: Projecao[] = [{ caminho: 'aviso' }, { caminho: 'precisa' }]
+
+/**
+ * As ferramentas da agenda de fora: Feegow, Clínica nas Nuvens, Trinks,
+ * AgendaPro e EVO (docs/SEGMENTOS-NOVOS.md §2).
+ *
+ * Não têm URL: quem executa é `server/agenda-externa.ts`, com a agenda que a
+ * conta conectou. Nenhuma recebe o telefone do modelo: a pessoa é sempre a da
+ * conversa, e desmarcar só vale para marcação que `minhas_marcacoes` mostrou.
+ * As `agenda_*` da Verandi seguem como estão.
+ */
+const FERRAMENTAS_DA_AGENDA_EXTERNA: Ferramenta[] = [
+  {
+    nome: 'servicos_da_agenda',
+    rotulo: 'Ver serviços e profissionais',
+    escreve: false,
+    descricao:
+      'Lista os serviços (especialidades, procedimentos, aulas) e os profissionais da agenda, com o id de cada um. ' +
+      'Chame antes de filtrar `horarios_livres`, é daqui que saem os ids. ' +
+      'Não use para saber se há vaga: para isso existe `horarios_livres`.',
+    argumentos: [],
+    injetados: [],
+    chamada: { tipo: 'agenda', operacao: 'servicos' },
+    projecao: [
+      { caminho: 'servicos', campos: ['servicoId', 'nome', 'duracaoMin', 'preco'], limite: 40 },
+      { caminho: 'profissionais', campos: ['profissionalId', 'nome'], limite: 40 },
+    ],
+    credencial: 'nenhuma',
+    integracao: 'agenda',
+  },
+  {
+    nome: 'horarios_livres',
+    rotulo: 'Ver horários livres',
+    escreve: false,
+    descricao:
+      'Consulta os horários livres de um período, até 7 dias por vez. ' +
+      'Use quando a pessoa perguntar se tem horário, ou quiser escolher um. ' +
+      'Informe `servico` com o id de `servicos_da_agenda` quando a pessoa tiver dito o que quer; alguns sistemas só mostram vaga com o serviço escolhido e devolvem um `aviso` dizendo isso. ' +
+      'Não use para ver o que a pessoa já marcou: para isso existe `minhas_marcacoes`.',
+    argumentos: [
+      { nome: 'de', tipo: 'data', descricao: `Primeiro dia do período, no formato ${FORMATO_DE_DATA}.`, obrigatorio: true },
+      { nome: 'ate', tipo: 'data', descricao: `Último dia do período, no formato ${FORMATO_DE_DATA}. Para um dia só, repita o valor de "de".`, obrigatorio: true },
+      { nome: 'servico', tipo: 'id', descricao: 'Id do serviço, vindo de `servicos_da_agenda`. Deixe vazio se a pessoa não escolheu.', obrigatorio: false, soDeResultadoAnterior: true },
+      { nome: 'profissional', tipo: 'id', descricao: 'Id do profissional, vindo de `servicos_da_agenda`. Deixe vazio para ver todos.', obrigatorio: false, soDeResultadoAnterior: true },
+    ],
+    injetados: [],
+    chamada: { tipo: 'agenda', operacao: 'horarios' },
+    projecao: [{ caminho: 'horarios', campos: ['horarioId', 'data', 'hora', 'servico', 'profissional'], limite: 20 }, ...PROJECAO_DO_AVISO],
+    credencial: 'nenhuma',
+    integracao: 'agenda',
+  },
+  {
+    nome: 'minhas_marcacoes',
+    rotulo: 'Ver as marcações de quem está conversando',
+    escreve: false,
+    descricao:
+      'Mostra as próximas marcações da pessoa que está conversando, com o id de cada uma. ' +
+      'Use quando ela perguntar pelos próprios horários ou quiser desmarcar. ' +
+      'Não serve para consultar outra pessoa. Se voltar `precisa`, peça à pessoa esse dado e chame de novo com ele.',
+    argumentos: ARGUMENTOS_DE_DOCUMENTO,
+    injetados: [],
+    chamada: { tipo: 'agenda', operacao: 'minhas' },
+    projecao: [{ caminho: 'marcacoes', campos: ['marcacaoId', 'data', 'hora', 'servico', 'profissional', 'situacao'], limite: 20 }, ...PROJECAO_DO_AVISO],
+    credencial: 'nenhuma',
+    integracao: 'agenda',
+  },
+  {
+    nome: 'marcar_horario',
+    rotulo: 'Marcar um horário',
+    escreve: true,
+    acao: 'marcar você em',
+    descricao:
+      'Marca a pessoa que está conversando num horário livre. ' +
+      'Use somente com um `horario_id` que veio de `horarios_livres`, e somente depois de a pessoa ter dito qual horário quer. ' +
+      'Se voltar `precisa`, peça à pessoa esse dado e chame de novo com ele.',
+    argumentos: [
+      { nome: 'horario_id', tipo: 'id', descricao: 'Id do horário, vindo do campo `horarioId` de `horarios_livres`.', obrigatorio: true, soDeResultadoAnterior: true },
+      ...ARGUMENTOS_DE_DOCUMENTO,
+    ],
+    injetados: [],
+    chamada: { tipo: 'agenda', operacao: 'marcar' },
+    projecao: [{ caminho: 'marcacao', campos: ['marcacaoId', 'data', 'hora', 'servico', 'profissional', 'situacao'], limite: 1 }, ...PROJECAO_DO_AVISO],
+    credencial: 'nenhuma',
+    integracao: 'agenda',
+  },
+  {
+    nome: 'desmarcar_horario',
+    rotulo: 'Desmarcar um horário',
+    escreve: true,
+    acao: 'desmarcar',
+    descricao:
+      'Desmarca uma marcação da pessoa que está conversando. ' +
+      'Use somente com um `marcacao_id` que veio de `minhas_marcacoes`. ' +
+      'Para remarcar, desmarque primeiro e depois use `horarios_livres` e `marcar_horario`.',
+    argumentos: [
+      { nome: 'marcacao_id', tipo: 'id', descricao: 'Id da marcação, vindo do campo `marcacaoId` de `minhas_marcacoes`.', obrigatorio: true, soDeResultadoAnterior: true },
+      ...ARGUMENTOS_DE_DOCUMENTO,
+    ],
+    injetados: [],
+    chamada: { tipo: 'agenda', operacao: 'desmarcar' },
+    projecao: [{ caminho: 'desmarcado' }, ...PROJECAO_DO_AVISO],
+    credencial: 'nenhuma',
+    integracao: 'agenda',
+  },
+]
 
 export const FERRAMENTAS: Ferramenta[] = [
   {
@@ -480,6 +619,7 @@ export const FERRAMENTAS: Ferramenta[] = [
     credencial: 'bearer',
     integracao: 'verandi',
   },
+  ...FERRAMENTAS_DA_AGENDA_EXTERNA,
   {
     nome: 'loja_buscar',
     rotulo: 'Buscar produto na loja',

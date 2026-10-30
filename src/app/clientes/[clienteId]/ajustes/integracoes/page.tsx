@@ -7,6 +7,7 @@ import { notFound } from 'next/navigation'
 import type { ReactNode } from 'react'
 import { AjustesShell } from '@/components/design/ajustes-shell'
 import {
+  LogoAgenda,
   LogoChave,
   LogoInstagram,
   LogoLoja,
@@ -74,6 +75,7 @@ const LOGO: Record<ChaveDaIntegracao, ReactNode> = {
   instagram: <LogoInstagram />,
   anuncios: <LogoMeta />,
   chaves: <LogoChave />,
+  sistemas: <LogoAgenda />,
   magento: <LogoLoja />,
   telegram: <LogoTelegram />,
   site: <LogoSite />,

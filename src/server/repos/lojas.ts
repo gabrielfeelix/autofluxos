@@ -1,4 +1,5 @@
 import 'server-only'
+import { ehSistemaDoRamo, type SistemaDoRamo } from '@/core/sistemas-dos-ramos'
 import { ehPlataformaDeCardapio, type PlataformaDeCardapio } from '@/core/plataformas-de-cardapio'
 import { ehPlataformaDeLoja, type PlataformaDeLoja } from '@/core/plataformas-de-loja'
 import type { ViaDeEstoque } from '@/loja/types'
@@ -189,6 +190,12 @@ export async function pedidosDeCardapio(clienteId: string): Promise<PlataformaDe
   return (data as { plataforma: string }[]).map((l) => l.plataforma).filter(ehPlataformaDeCardapio)
 }
 
+export async function pedidosDeSistemas(clienteId: string): Promise<SistemaDoRamo[]> {
+  const { data, error } = await db().from('pedidos_de_loja').select('plataforma').eq('client_id', clienteId)
+  if (error || !data) return []
+  return (data as { plataforma: string }[]).map((l) => l.plataforma).filter(ehSistemaDoRamo)
+}
+
 export async function pedidosDeLoja(clienteId: string): Promise<PlataformaDeLoja[]> {
   const { data, error } = await db().from('pedidos_de_loja').select('plataforma').eq('client_id', clienteId)
   if (error || !data) return []
@@ -201,7 +208,7 @@ export async function pedidosDeLoja(clienteId: string): Promise<PlataformaDeLoja
  */
 export async function registrarPedidoDeLoja(
   clienteId: string,
-  plataforma: PlataformaDeLoja | PlataformaDeCardapio,
+  plataforma: PlataformaDeLoja | PlataformaDeCardapio | SistemaDoRamo,
 ): Promise<{ ok: true } | { ok: false; motivo: string }> {
   const { error } = await db()
     .from('pedidos_de_loja')

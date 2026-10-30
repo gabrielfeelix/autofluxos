@@ -51,6 +51,9 @@ import { chamarHttp } from './http'
 import { lerCredencial } from '../repos/conexoes'
 import { creditarPontosDaPesquisa } from '../pontos-da-loja'
 import { consultarPedidoDaConta, lojaAtivaDaConta, temMonteSeuPc } from '../adaptador-da-loja'
+import { executarNaAgenda } from '../agenda-externa'
+import { pacoteDo } from '@/core/nichos'
+import { nichoDaConta } from '../repos/recursos'
 import { amostra, CATEGORIAS_DO_MONTE_SEU_PC, categoriaDoMonteSeuPc, ehPcCompleto, PECAS_DE_UM_PC } from '@/loja/monte-seu-pc'
 import { cardDoPedido } from '../card-do-pedido'
 import { comCortesia } from '../ia/cortesia'
@@ -956,7 +959,13 @@ async function responderComFerramentas({
     permitidas = permitidas.filter((f) => !ehMontador(f))
   }
 
+  // As regras do ramo (saúde, farmácia, hospedagem) valem em toda IA da conta.
+  const regrasDoRamo = opcoes.clienteId
+    ? pacoteDo(await nichoDaConta(opcoes.clienteId).catch(() => null))?.regrasDaIa
+    : undefined
+
   const base = {
+    ...(regrasDoRamo?.length ? { regrasDoRamo } : {}),
     // O do bloco substitui o da conta, e não soma: ver `sobreAEmpresa` no schema.
     contextoNegocio: chamada.sobreAEmpresa ?? opcoes.contextoNegocio,
     instrucao: chamada.instrucao,
@@ -1549,6 +1558,20 @@ async function dispararFerramenta({
 
   if (ferramenta.chamada.tipo === 'loja') {
     const r = await executarNaLoja(ferramenta.chamada.operacao, conferida.chamada.valores, opcoes, fonteDoCatalogo)
+    await logar({
+      opcoes,
+      ferramenta,
+      argumentos: conferida.chamada.valores,
+      decididoPor,
+      ok: r.ok,
+      ...(r.ok ? {} : { detalhe: r.motivo }),
+      resumo,
+    })
+    return r
+  }
+
+  if (ferramenta.chamada.tipo === 'agenda') {
+    const r = await executarNaAgenda(ferramenta.chamada.operacao, conferida.chamada.valores, opcoes)
     await logar({
       opcoes,
       ferramenta,

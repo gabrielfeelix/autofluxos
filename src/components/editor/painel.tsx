@@ -3810,6 +3810,34 @@ function ConsultasDaIa({
         </fieldset>
       ))}
 
+      <fieldset className="mt-3 border-t border-line pt-3">
+        <legend className="mb-1 text-[11px] font-bold tracking-[0.05em] text-muted uppercase">
+          Na agenda conectada
+        </legend>
+        <p className="mb-2 text-[11.5px] leading-[1.45] text-dim">
+          Feegow, Clínica nas Nuvens, Trinks, AgendaPro ou EVO, a que estiver ligada em{' '}
+          <a href={`/clientes/${clienteId}/ajustes/integracoes/sistemas`} className="font-semibold text-primary hover:underline">
+            Sistemas do seu ramo
+          </a>
+          . Não pede credencial aqui.
+        </p>
+        {FERRAMENTAS.filter((f) => f.integracao === 'agenda').map((f) => (
+          <label key={f.nome} className="mb-1 flex items-center gap-2.5 rounded-[7px] px-1.5 py-1 last:mb-0 hover:bg-surface">
+            <Caixa marcada={marcadas.has(f.nome)} aoMudar={(marcada) => alternar(f.nome, marcada)} />
+            <span className="min-w-0 flex-1 text-[12.5px] leading-4">{f.rotulo}</span>
+            {f.escreve && (
+              <span
+                className={`shrink-0 text-[10.5px] ${
+                  politicaDaFerramenta(f.nome, politicasDaIa) === 'automatico' ? 'font-semibold text-aviso' : 'text-dim'
+                }`}
+              >
+                {efeitoDaPolitica(politicaDaFerramenta(f.nome, politicasDaIa)).selo}
+              </span>
+            )}
+          </label>
+        ))}
+      </fieldset>
+
       {precisaDeCredencial && (
         <div className="mt-2.5 block">
           <span className="mb-1.5 block text-[11px] font-bold tracking-[0.05em] text-muted uppercase">

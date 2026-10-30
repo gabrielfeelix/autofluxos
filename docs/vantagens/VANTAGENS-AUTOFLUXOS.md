@@ -363,6 +363,17 @@ aqui fica o que o cliente ganha.
 
 ## Integrar e segurança
 
+- **Fala com o sistema de agenda que a empresa já usa**: Feegow e Clínica nas
+  Nuvens (clínicas), Trinks e AgendaPro (salões), EVO (academias). A IA mostra
+  horário livre, marca e desmarca direto lá, sempre para quem está conversando
+  e só depois de a pessoa confirmar. *(30/out/2026)*
+- **Pronto para clínica, laboratório, farmácia, salão, pet shop, imobiliária e
+  pousada**: cada ramo chega com menu, perguntas do assistente, atendente de IA
+  e modelos de mensagem próprios. *(30/out/2026)*
+- **Saúde dentro da LGPD**: nos ramos de saúde a conversa abre com o aviso de
+  uso do dado, e a IA não dá diagnóstico, não indica remédio, não comenta
+  resultado de exame e manda urgência para o 192. *(30/out/2026)*
+
 - **API pública**, webhooks de entrada e saída, e integrações prontas com RD
   Station, Google Sheets e outras.
 - **O sistema da empresa sabe quem pagou, na hora**: cobrança paga ou vencida

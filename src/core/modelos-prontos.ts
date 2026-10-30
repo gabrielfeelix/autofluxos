@@ -483,6 +483,593 @@ export const MODELOS_PRONTOS: readonly ModeloPronto[] = [
     categoria: 'MARKETING',
     sinonimos: ['inativo', 'sumiu', 'saudade', 'voltar'],
   },
+  // -------------------------------------------------------------------------
+  // Clínica, consultório, odontologia. Nada de diagnóstico, exame ou doença no texto: dado de saúde é sensível (docs/SEGMENTOS-NOVOS.md §3).
+  // -------------------------------------------------------------------------
+  {
+    id: 'saude-lembrete',
+    ramo: 'saude',
+    titulo: 'Lembrete de consulta',
+    resumo: 'Avisa na véspera e pede confirmação.',
+    corpo:
+      'Oi {nome}! Lembrando da sua consulta dia {data} às {hora}. Pode confirmar sua presença?',
+    categoria: 'UTILITY',
+    sinonimos: ['lembrete', 'véspera', 'confirmar', 'consulta'],
+  },
+  {
+    id: 'saude-confirmada',
+    ramo: 'saude',
+    titulo: 'Consulta marcada',
+    resumo: 'Confirma na hora que a consulta foi marcada.',
+    corpo:
+      'Oi {nome}, sua consulta está marcada para o dia {data} às {hora}. Chegue com 15 minutos de antecedência.',
+    categoria: 'UTILITY',
+    sinonimos: ['agendamento', 'marcada', 'agendou'],
+  },
+  {
+    id: 'saude-remarcar',
+    ramo: 'saude',
+    titulo: 'Remarcar consulta',
+    resumo: 'Quando a clínica precisa trocar o horário.',
+    corpo:
+      'Oi {nome}, precisamos remarcar sua consulta do dia {data}. Qual outro horário fica melhor para você?',
+    categoria: 'UTILITY',
+    sinonimos: ['remarcar', 'reagendar', 'trocar horário'],
+  },
+  {
+    id: 'saude-falta',
+    ramo: 'saude',
+    titulo: 'Faltou na consulta',
+    resumo: 'No mesmo dia, para quem não compareceu.',
+    corpo:
+      'Oi {nome}, sentimos sua falta na consulta de hoje. Quer marcar um novo horário?',
+    categoria: 'UTILITY',
+    sinonimos: ['falta', 'não compareceu', 'no show'],
+  },
+  {
+    id: 'saude-documentos',
+    ramo: 'saude',
+    titulo: 'Documentos para a consulta',
+    resumo: 'Lembra o que levar no dia.',
+    corpo:
+      'Oi {nome}, para a consulta do dia {data}, traga um documento com foto e a carteirinha do convênio.',
+    categoria: 'UTILITY',
+    sinonimos: ['documentos', 'carteirinha', 'convênio', 'levar'],
+  },
+  {
+    id: 'saude-retorno',
+    ramo: 'saude',
+    titulo: 'Lembrete de retorno',
+    resumo: 'Para o retorno combinado com o profissional.',
+    corpo:
+      'Oi {nome}, está chegando a data do seu retorno. Responda esta mensagem para escolher o melhor dia.',
+    categoria: 'UTILITY',
+    sinonimos: ['retorno', 'revisão', 'volta'],
+  },
+  {
+    id: 'saude-pagamento',
+    ramo: 'saude',
+    titulo: 'Cobrança da consulta',
+    resumo: 'Envia o valor e o link de pagamento.',
+    corpo:
+      'Oi {nome}, o valor da sua consulta é de {valor}. Para pagar, acesse {link} quando preferir.',
+    categoria: 'UTILITY',
+    sinonimos: ['pagamento', 'cobrança', 'pix', 'particular'],
+  },
+  {
+    id: 'saude-campanha',
+    ramo: 'saude',
+    titulo: 'Campanha de prevenção',
+    resumo: 'Convida para um check-up. Exige aceite de marketing.',
+    corpo:
+      'Oi {nome}! Este mês a clínica tem horários especiais para check-up. Responda esta mensagem para agendar o seu.',
+    categoria: 'MARKETING',
+    sinonimos: ['campanha', 'check-up', 'prevenção', 'promoção'],
+  },
+
+  // -------------------------------------------------------------------------
+  // Laboratório. O resultado nunca vai na mensagem: só o aviso e o caminho do portal.
+  // -------------------------------------------------------------------------
+  {
+    id: 'lab-coleta',
+    ramo: 'laboratorio',
+    titulo: 'Coleta agendada',
+    resumo: 'Confirma o dia e o horário da coleta.',
+    corpo:
+      'Oi {nome}, sua coleta está agendada para o dia {data} às {hora}. Siga o preparo que enviamos.',
+    categoria: 'UTILITY',
+    sinonimos: ['coleta', 'agendada', 'exame'],
+  },
+  {
+    id: 'lab-preparo',
+    ramo: 'laboratorio',
+    titulo: 'Lembrete de preparo',
+    resumo: 'Na véspera, lembra jejum e preparo.',
+    corpo:
+      'Oi {nome}, lembrete para a sua coleta de amanhã: siga o jejum e o preparo indicados no pedido.',
+    categoria: 'UTILITY',
+    sinonimos: ['jejum', 'preparo', 'véspera'],
+  },
+  {
+    id: 'lab-resultado',
+    ramo: 'laboratorio',
+    titulo: 'Resultado disponível',
+    resumo: 'Avisa que saiu, sem nada do conteúdo.',
+    corpo:
+      'Oi {nome}, seu resultado já está disponível. Acesse {link} com o seu protocolo para ver.',
+    categoria: 'UTILITY',
+    sinonimos: ['resultado', 'laudo', 'pronto'],
+  },
+  {
+    id: 'lab-protocolo',
+    ramo: 'laboratorio',
+    titulo: 'Protocolo de atendimento',
+    resumo: 'Envia o protocolo depois da coleta.',
+    corpo:
+      'Oi {nome}, o seu protocolo é o número {codigo}. Guarde para acessar o resultado.',
+    categoria: 'UTILITY',
+    sinonimos: ['protocolo', 'senha', 'código'],
+  },
+  {
+    id: 'lab-domiciliar',
+    ramo: 'laboratorio',
+    titulo: 'Coleta em casa confirmada',
+    resumo: 'Confirma a visita da coleta domiciliar.',
+    corpo:
+      'Oi {nome}, a coleta em casa está confirmada para o dia {data} às {hora}. Nossa equipe vai até você.',
+    categoria: 'UTILITY',
+    sinonimos: ['domiciliar', 'em casa', 'visita'],
+  },
+  {
+    id: 'lab-remarcar',
+    ramo: 'laboratorio',
+    titulo: 'Remarcar coleta',
+    resumo: 'Quando é preciso trocar o horário.',
+    corpo:
+      'Oi {nome}, precisamos remarcar sua coleta do dia {data}. Qual outro horário fica melhor?',
+    categoria: 'UTILITY',
+    sinonimos: ['remarcar', 'reagendar'],
+  },
+  {
+    id: 'lab-pagamento',
+    ramo: 'laboratorio',
+    titulo: 'Cobrança dos exames',
+    resumo: 'Envia o total e o link de pagamento.',
+    corpo:
+      'Oi {nome}, o total dos seus exames é de {valor}. Para pagar, acesse {link} quando preferir.',
+    categoria: 'UTILITY',
+    sinonimos: ['pagamento', 'orçamento', 'pix'],
+  },
+  {
+    id: 'lab-campanha',
+    ramo: 'laboratorio',
+    titulo: 'Campanha de check-up',
+    resumo: 'Divulga pacote de exames. Exige aceite de marketing.',
+    corpo:
+      'Oi {nome}! Este mês temos pacote de check-up com condição especial. Responda para saber mais.',
+    categoria: 'MARKETING',
+    sinonimos: ['campanha', 'check-up', 'promoção'],
+  },
+
+  // -------------------------------------------------------------------------
+  // Farmácia e drogaria.
+  // -------------------------------------------------------------------------
+  {
+    id: 'farmacia-pedido-recebido',
+    ramo: 'farmacia',
+    titulo: 'Pedido recebido',
+    resumo: 'Confirma o pedido feito pelo WhatsApp.',
+    corpo:
+      'Oi {nome}, recebemos o seu pedido número {codigo}. Já estamos separando os produtos.',
+    categoria: 'UTILITY',
+    sinonimos: ['pedido', 'recebido', 'separando'],
+  },
+  {
+    id: 'farmacia-saiu',
+    ramo: 'farmacia',
+    titulo: 'Pedido saiu para entrega',
+    resumo: 'Avisa que o entregador está a caminho.',
+    corpo:
+      'Oi {nome}, seu pedido número {codigo} saiu para entrega e chega em breve.',
+    categoria: 'UTILITY',
+    sinonimos: ['entrega', 'saiu', 'motoboy'],
+  },
+  {
+    id: 'farmacia-retirada',
+    ramo: 'farmacia',
+    titulo: 'Pronto para retirar',
+    resumo: 'Avisa que o pedido espera no balcão.',
+    corpo:
+      'Oi {nome}, seu pedido número {codigo} está pronto para retirada no balcão.',
+    categoria: 'UTILITY',
+    sinonimos: ['retirada', 'balcão', 'pronto'],
+  },
+  {
+    id: 'farmacia-receita',
+    ramo: 'farmacia',
+    titulo: 'Receita para conferir',
+    resumo: 'Pede a receita antes de separar.',
+    corpo:
+      'Oi {nome}, para separar o seu pedido o farmacêutico precisa conferir a receita. Pode enviar uma foto por aqui?',
+    categoria: 'UTILITY',
+    sinonimos: ['receita', 'farmacêutico', 'conferir'],
+  },
+  {
+    id: 'farmacia-recompra',
+    ramo: 'farmacia',
+    titulo: 'Lembrete de recompra',
+    resumo: 'Para uso contínuo, quando está acabando.',
+    corpo:
+      'Oi {nome}, o seu medicamento de uso contínuo deve estar acabando. Quer que a gente separe para você?',
+    categoria: 'UTILITY',
+    sinonimos: ['recompra', 'uso contínuo', 'acabando'],
+  },
+  {
+    id: 'farmacia-pagamento',
+    ramo: 'farmacia',
+    titulo: 'Link de pagamento',
+    resumo: 'Envia o total e o link.',
+    corpo:
+      'Oi {nome}, o total do seu pedido é de {valor}. Para pagar, acesse {link} quando preferir.',
+    categoria: 'UTILITY',
+    sinonimos: ['pagamento', 'pix', 'link'],
+  },
+  {
+    id: 'farmacia-ofertas',
+    ramo: 'farmacia',
+    titulo: 'Ofertas da semana',
+    resumo: 'Divulga as ofertas. Exige aceite de marketing.',
+    corpo:
+      'Oi {nome}! Esta semana tem oferta em produtos de higiene e beleza. Acesse {link} e confira.',
+    categoria: 'MARKETING',
+    sinonimos: ['oferta', 'promoção', 'desconto'],
+  },
+  {
+    id: 'farmacia-plantao',
+    ramo: 'farmacia',
+    titulo: 'Aviso de plantão',
+    resumo: 'Avisa o dia de plantão da farmácia.',
+    corpo:
+      'Oi {nome}, estaremos de plantão no dia {data}. Conte com a gente.',
+    categoria: 'MARKETING',
+    sinonimos: ['plantão', 'domingo', 'feriado'],
+  },
+
+  // -------------------------------------------------------------------------
+  // Salão, barbearia, estética.
+  // -------------------------------------------------------------------------
+  {
+    id: 'salao-lembrete',
+    ramo: 'salao',
+    titulo: 'Lembrete de horário',
+    resumo: 'Avisa na véspera e pede confirmação.',
+    corpo:
+      'Oi {nome}! Lembrando do seu horário dia {data} às {hora}. Pode confirmar?',
+    categoria: 'UTILITY',
+    sinonimos: ['lembrete', 'véspera', 'confirmar'],
+  },
+  {
+    id: 'salao-confirmado',
+    ramo: 'salao',
+    titulo: 'Horário marcado',
+    resumo: 'Confirma na hora que o horário foi marcado.',
+    corpo:
+      'Oi {nome}, seu horário está marcado para o dia {data} às {hora}. Até lá!',
+    categoria: 'UTILITY',
+    sinonimos: ['agendamento', 'marcado'],
+  },
+  {
+    id: 'salao-remarcar',
+    ramo: 'salao',
+    titulo: 'Remarcar horário',
+    resumo: 'Quando é preciso trocar o horário.',
+    corpo:
+      'Oi {nome}, precisamos remarcar seu horário do dia {data}. Qual outro horário fica melhor para você?',
+    categoria: 'UTILITY',
+    sinonimos: ['remarcar', 'reagendar'],
+  },
+  {
+    id: 'salao-falta',
+    ramo: 'salao',
+    titulo: 'Faltou no horário',
+    resumo: 'No mesmo dia, para quem não apareceu.',
+    corpo:
+      'Oi {nome}, sentimos sua falta hoje. Quer marcar um novo horário?',
+    categoria: 'UTILITY',
+    sinonimos: ['falta', 'no show'],
+  },
+  {
+    id: 'salao-pagamento',
+    ramo: 'salao',
+    titulo: 'Link de pagamento',
+    resumo: 'Envia o valor e o link.',
+    corpo:
+      'Oi {nome}, o valor do seu atendimento é de {valor}. Para pagar, acesse {link} quando preferir.',
+    categoria: 'UTILITY',
+    sinonimos: ['pagamento', 'pix'],
+  },
+  {
+    id: 'salao-retorno',
+    ramo: 'salao',
+    titulo: 'Hora de voltar',
+    resumo: 'Para manutenção de corte, unha ou coloração.',
+    corpo:
+      'Oi {nome}, já faz um tempo desde o seu último atendimento. Quer marcar a manutenção?',
+    categoria: 'MARKETING',
+    sinonimos: ['retorno', 'manutenção', 'voltar'],
+  },
+  {
+    id: 'salao-aniversario',
+    ramo: 'salao',
+    titulo: 'Feliz aniversário',
+    resumo: 'Parabéns com um mimo. Exige aceite de marketing.',
+    corpo:
+      'Oi {nome}, feliz aniversário! Neste mês você tem um mimo especial no seu próximo atendimento.',
+    categoria: 'MARKETING',
+    sinonimos: ['aniversário', 'parabéns', 'mimo'],
+  },
+  {
+    id: 'salao-vagas',
+    ramo: 'salao',
+    titulo: 'Horários livres hoje',
+    resumo: 'Divulga encaixe do dia. Exige aceite de marketing.',
+    corpo:
+      'Oi {nome}! Abrimos horários para hoje. Responda esta mensagem para garantir o seu.',
+    categoria: 'MARKETING',
+    sinonimos: ['encaixe', 'vaga', 'hoje'],
+  },
+
+  // -------------------------------------------------------------------------
+  // Pet shop e veterinária.
+  // -------------------------------------------------------------------------
+  {
+    id: 'pet-lembrete',
+    ramo: 'pet',
+    titulo: 'Lembrete de banho e tosa',
+    resumo: 'Avisa na véspera e pede confirmação.',
+    corpo:
+      'Oi {nome}! Lembrando do banho e tosa dia {data} às {hora}. Pode confirmar?',
+    categoria: 'UTILITY',
+    sinonimos: ['lembrete', 'banho', 'tosa'],
+  },
+  {
+    id: 'pet-pronto',
+    ramo: 'pet',
+    titulo: 'Pet pronto para buscar',
+    resumo: 'Avisa que o animal está pronto.',
+    corpo:
+      'Oi {nome}, seu pet já está pronto e esperando por você. Pode vir buscar quando quiser.',
+    categoria: 'UTILITY',
+    sinonimos: ['pronto', 'buscar', 'retirar'],
+  },
+  {
+    id: 'pet-leva-traz',
+    ramo: 'pet',
+    titulo: 'Busca a caminho',
+    resumo: 'Avisa que o leva e traz saiu.',
+    corpo:
+      'Oi {nome}, nosso motorista está a caminho para buscar o seu pet. Chegamos em breve.',
+    categoria: 'UTILITY',
+    sinonimos: ['leva e traz', 'busca', 'motorista'],
+  },
+  {
+    id: 'pet-vacina',
+    ramo: 'pet',
+    titulo: 'Lembrete de vacina',
+    resumo: 'Avisa a data da próxima dose.',
+    corpo:
+      'Oi {nome}, a próxima vacina do seu pet está marcada para o dia {data}. Responda para confirmar o horário.',
+    categoria: 'UTILITY',
+    sinonimos: ['vacina', 'dose', 'reforço'],
+  },
+  {
+    id: 'pet-consulta',
+    ramo: 'pet',
+    titulo: 'Consulta veterinária marcada',
+    resumo: 'Confirma a consulta.',
+    corpo:
+      'Oi {nome}, a consulta do seu pet está marcada para o dia {data} às {hora}.',
+    categoria: 'UTILITY',
+    sinonimos: ['consulta', 'veterinário'],
+  },
+  {
+    id: 'pet-pagamento',
+    ramo: 'pet',
+    titulo: 'Link de pagamento',
+    resumo: 'Envia o valor e o link.',
+    corpo:
+      'Oi {nome}, o valor do atendimento é de {valor}. Para pagar, acesse {link} quando preferir.',
+    categoria: 'UTILITY',
+    sinonimos: ['pagamento', 'pix'],
+  },
+  {
+    id: 'pet-retorno',
+    ramo: 'pet',
+    titulo: 'Hora do próximo banho',
+    resumo: 'Para quem já está no período. Exige aceite de marketing.',
+    corpo:
+      'Oi {nome}, já está na hora do próximo banho do seu pet. Quer marcar?',
+    categoria: 'MARKETING',
+    sinonimos: ['retorno', 'banho', 'voltar'],
+  },
+  {
+    id: 'pet-ofertas',
+    ramo: 'pet',
+    titulo: 'Ofertas de ração e acessórios',
+    resumo: 'Divulga ofertas. Exige aceite de marketing.',
+    corpo:
+      'Oi {nome}! Esta semana tem oferta em ração e acessórios. Acesse {link} e confira.',
+    categoria: 'MARKETING',
+    sinonimos: ['oferta', 'ração', 'promoção'],
+  },
+
+  // -------------------------------------------------------------------------
+  // Imobiliária e corretor.
+  // -------------------------------------------------------------------------
+  {
+    id: 'imob-visita',
+    ramo: 'imobiliaria',
+    titulo: 'Visita marcada',
+    resumo: 'Confirma dia e horário da visita.',
+    corpo:
+      'Oi {nome}, sua visita ao imóvel está marcada para o dia {data} às {hora}. O corretor encontra você no local.',
+    categoria: 'UTILITY',
+    sinonimos: ['visita', 'marcada', 'corretor'],
+  },
+  {
+    id: 'imob-lembrete',
+    ramo: 'imobiliaria',
+    titulo: 'Lembrete de visita',
+    resumo: 'Na véspera, pede confirmação.',
+    corpo:
+      'Oi {nome}! Lembrando da visita ao imóvel dia {data} às {hora}. Pode confirmar?',
+    categoria: 'UTILITY',
+    sinonimos: ['lembrete', 'véspera', 'visita'],
+  },
+  {
+    id: 'imob-proposta',
+    ramo: 'imobiliaria',
+    titulo: 'Proposta recebida',
+    resumo: 'Confirma que a proposta chegou.',
+    corpo:
+      'Oi {nome}, recebemos sua proposta de número {codigo}. O corretor retorna assim que o proprietário responder.',
+    categoria: 'UTILITY',
+    sinonimos: ['proposta', 'oferta', 'negociação'],
+  },
+  {
+    id: 'imob-documentos',
+    ramo: 'imobiliaria',
+    titulo: 'Documentos pendentes',
+    resumo: 'Pede o que falta para seguir.',
+    corpo:
+      'Oi {nome}, para seguir com o processo faltam alguns documentos. Acesse {link} para ver a lista.',
+    categoria: 'UTILITY',
+    sinonimos: ['documentos', 'pendente', 'cadastro'],
+  },
+  {
+    id: 'imob-aluguel',
+    ramo: 'imobiliaria',
+    titulo: 'Lembrete de aluguel',
+    resumo: 'Lembra o vencimento do aluguel.',
+    corpo:
+      'Oi {nome}, o aluguel no valor de {valor} vence dia {data}. Qualquer dúvida, estamos por aqui.',
+    categoria: 'UTILITY',
+    sinonimos: ['aluguel', 'vencimento', 'boleto'],
+  },
+  {
+    id: 'imob-novidades',
+    ramo: 'imobiliaria',
+    titulo: 'Imóveis novos para você',
+    resumo: 'Envia opções do perfil. Exige aceite de marketing.',
+    corpo:
+      'Oi {nome}! Chegaram imóveis novos no perfil que você procura. Acesse {link} e veja as opções.',
+    categoria: 'MARKETING',
+    sinonimos: ['novos', 'lançamento', 'opções'],
+  },
+  {
+    id: 'imob-retomar',
+    ramo: 'imobiliaria',
+    titulo: 'Ainda procurando imóvel?',
+    resumo: 'Retoma quem parou de responder. Exige aceite de marketing.',
+    corpo:
+      'Oi {nome}, você ainda está procurando imóvel? Posso separar algumas opções para você.',
+    categoria: 'MARKETING',
+    sinonimos: ['retomar', 'procurando', 'sumiu'],
+  },
+  {
+    id: 'imob-avaliacao',
+    ramo: 'imobiliaria',
+    titulo: 'Avaliação do seu imóvel',
+    resumo: 'Para quem quer vender ou alugar. Exige aceite de marketing.',
+    corpo:
+      'Oi {nome}! Fazemos a avaliação do seu imóvel sem custo. Responda esta mensagem para agendar.',
+    categoria: 'MARKETING',
+    sinonimos: ['avaliação', 'anunciar', 'captação'],
+  },
+
+  // -------------------------------------------------------------------------
+  // Pousada, hotel, hospedagem.
+  // -------------------------------------------------------------------------
+  {
+    id: 'hosp-reserva',
+    ramo: 'hospedagem',
+    titulo: 'Reserva confirmada',
+    resumo: 'Confirma a reserva com o código.',
+    corpo:
+      'Oi {nome}, sua reserva de número {codigo} está confirmada. Estamos esperando por você!',
+    categoria: 'UTILITY',
+    sinonimos: ['reserva', 'confirmada'],
+  },
+  {
+    id: 'hosp-sinal',
+    ramo: 'hospedagem',
+    titulo: 'Sinal da reserva',
+    resumo: 'Envia o valor do sinal e o link.',
+    corpo:
+      'Oi {nome}, para garantir a sua reserva o sinal é de {valor}. Para pagar, acesse {link} quando preferir.',
+    categoria: 'UTILITY',
+    sinonimos: ['sinal', 'pagamento', 'pix'],
+  },
+  {
+    id: 'hosp-checkin',
+    ramo: 'hospedagem',
+    titulo: 'Lembrete de check-in',
+    resumo: 'Na véspera, com horário e endereço.',
+    corpo:
+      'Oi {nome}! Sua chegada está marcada para o dia {data}. O check-in começa às {hora}.',
+    categoria: 'UTILITY',
+    sinonimos: ['check-in', 'chegada', 'véspera'],
+  },
+  {
+    id: 'hosp-boas-vindas',
+    ramo: 'hospedagem',
+    titulo: 'Boas-vindas',
+    resumo: 'No dia da chegada.',
+    corpo:
+      'Oi {nome}, seja bem-vindo! Qualquer coisa durante a estadia, é só chamar por aqui.',
+    categoria: 'UTILITY',
+    sinonimos: ['boas-vindas', 'estadia'],
+  },
+  {
+    id: 'hosp-checkout',
+    ramo: 'hospedagem',
+    titulo: 'Check-out',
+    resumo: 'Na manhã da saída.',
+    corpo:
+      'Oi {nome}, lembrando que o check-out é até as {hora}. Obrigado pela estadia!',
+    categoria: 'UTILITY',
+    sinonimos: ['check-out', 'saída'],
+  },
+  {
+    id: 'hosp-avaliacao',
+    ramo: 'hospedagem',
+    titulo: 'Avaliação da estadia',
+    resumo: 'Pede avaliação depois da saída.',
+    corpo:
+      'Oi {nome}, obrigado por se hospedar com a gente. Para contar como foi a sua estadia, acesse {link} quando puder.',
+    categoria: 'UTILITY',
+    sinonimos: ['avaliação', 'feedback'],
+  },
+  {
+    id: 'hosp-feriado',
+    ramo: 'hospedagem',
+    titulo: 'Pacote de feriado',
+    resumo: 'Divulga pacotes. Exige aceite de marketing.',
+    corpo:
+      'Oi {nome}! Abrimos as reservas para o feriado com pacote especial. Responda para saber as datas.',
+    categoria: 'MARKETING',
+    sinonimos: ['feriado', 'pacote', 'promoção'],
+  },
+  {
+    id: 'hosp-volta',
+    ramo: 'hospedagem',
+    titulo: 'Convite para voltar',
+    resumo: 'Para hóspede antigo. Exige aceite de marketing.',
+    corpo:
+      'Oi {nome}, que tal voltar a se hospedar com a gente? Temos condição especial para quem já é hóspede.',
+    categoria: 'MARKETING',
+    sinonimos: ['voltar', 'retorno', 'hóspede'],
+  },
 ]
 
 /**

@@ -35,7 +35,12 @@ describe('o catálogo tem forma de catálogo', () => {
     // escreveu a entrada do catálogo.
     for (const f of FERRAMENTAS) {
       // Ferramenta de loja não tem verbo: ela só lê, por construção do adaptador.
-      expect(f.escreve).toBe(f.chamada.tipo === 'http' ? f.chamada.metodo !== 'GET' : false)
+      // A de agenda de fora grava só ao marcar e desmarcar.
+      const grava =
+        f.chamada.tipo === 'http'
+          ? f.chamada.metodo !== 'GET'
+          : f.chamada.tipo === 'agenda' && (f.chamada.operacao === 'marcar' || f.chamada.operacao === 'desmarcar')
+      expect(f.escreve).toBe(grava)
     }
   })
 

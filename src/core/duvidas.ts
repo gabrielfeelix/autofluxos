@@ -70,6 +70,13 @@ const CATEGORIAS: Record<Nicho | 'padrao', readonly string[]> = {
     'Troca e garantia',
     OUTROS,
   ],
+  saude: ['Marcar e remarcar', 'Convênio', 'Valores', 'Preparo e documentos', 'Horário e localização', 'Pagamento', OUTROS],
+  laboratorio: ['Preparo e jejum', 'Resultado', 'Coleta e horário', 'Convênio', 'Valores', 'Coleta domiciliar', OUTROS],
+  farmacia: ['Tem o produto', 'Preço', 'Entrega', 'Receita', 'Horário e plantão', 'Pagamento', OUTROS],
+  salao: ['Marcar e remarcar', 'Serviços e valores', 'Profissionais', 'Horário e localização', 'Pagamento', 'Atraso e cancelamento', OUTROS],
+  pet: ['Marcar banho, tosa ou consulta', 'Valores', 'Leva e traz', 'Vacinas', 'Produtos', 'Horário e localização', OUTROS],
+  imobiliaria: ['Imóveis disponíveis', 'Visita', 'Aluguel e garantias', 'Financiamento', 'Anunciar um imóvel', 'Horário e localização', OUTROS],
+  hospedagem: ['Disponibilidade e reserva', 'Tarifas', 'Check-in e check-out', 'Animais', 'Estrutura', 'Como chegar', OUTROS],
   padrao: [
     'Preço',
     'Prazo e entrega',

@@ -1,4 +1,5 @@
 import 'server-only'
+import { agendaAtivaDaConta } from './repos/agendas'
 import { conexaoAtiva } from './repos/pagamentos'
 import { estadoDaConexao, type EstadoDaConexao } from '@/core/conexoes'
 import { canalDoInstagram } from './repos/canais-instagram'
@@ -11,7 +12,7 @@ import { paginasDaConta } from './repos/paginas-de-lead'
 import { ultimaChegadaDeAnuncio, ultimaMensagemRecebida } from './repos/ultimos-eventos'
 import { NOME_DA_CONEXAO_DE_ADS } from './token-de-anuncios'
 
-export type ChaveDaIntegracao = 'whatsapp' | 'instagram' | 'anuncios' | 'chaves' | 'magento' | 'telegram' | 'site' | 'mercado_pago' | 'asaas' | 'infinitepay' | 'pagbank' | 'woovi' | 'paghiper' | 'stripe' | 'efi' | 'iugu' | 'pagarme'
+export type ChaveDaIntegracao = 'whatsapp' | 'instagram' | 'anuncios' | 'chaves' | 'sistemas' | 'magento' | 'telegram' | 'site' | 'mercado_pago' | 'asaas' | 'infinitepay' | 'pagbank' | 'woovi' | 'paghiper' | 'stripe' | 'efi' | 'iugu' | 'pagarme'
 
 export type ItemDoCatalogo = {
   chave: ChaveDaIntegracao
@@ -36,7 +37,7 @@ export type ItemDoCatalogo = {
  * total fixo de cinco, e a tela desenhava seis cartões.
  */
 export async function catalogoDeIntegracoes(clienteId: string): Promise<ItemDoCatalogo[]> {
-  const [canais, contaDoInstagram, paginas, conexoes, loja, ultimaMensagem, ultimoAnuncio, site] =
+  const [canais, contaDoInstagram, paginas, conexoes, loja, ultimaMensagem, ultimoAnuncio, site, agenda] =
     await Promise.all([
       listarCanais(clienteId),
       canalDoInstagram(clienteId),
@@ -46,6 +47,7 @@ export async function catalogoDeIntegracoes(clienteId: string): Promise<ItemDoCa
       ultimaMensagemRecebida(clienteId),
       ultimaChegadaDeAnuncio(clienteId),
       chatDoSite(clienteId),
+      agendaAtivaDaConta(clienteId),
     ])
 
   const numeros = canais.filter((c) => c.provider === 'cloud-api')
@@ -133,6 +135,15 @@ export async function catalogoDeIntegracoes(clienteId: string): Promise<ItemDoCa
       href: '/ajustes/chaves',
       disponivel: true,
       estado: estadoDaConexao({ tipo: 'cadastro', configurado: conexoes.length > 0, href: '/ajustes/chaves' }),
+    },
+    {
+      chave: 'sistemas',
+      nome: 'Sistema de agenda e gestão',
+      categoria: 'Agenda',
+      descricao: 'Feegow, Clínica nas Nuvens, Trinks, AgendaPro e EVO: a IA consulta horários, marca e desmarca no sistema que a equipe já usa.',
+      href: '/ajustes/integracoes/sistemas',
+      disponivel: true,
+      estado: estadoDaConexao({ tipo: 'cadastro', configurado: agenda !== null, href: '/ajustes/integracoes/sistemas' }),
     },
     {
       chave: 'magento',

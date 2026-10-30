@@ -27,6 +27,11 @@ export type PedidoDeIa = {
    * próprio número em que ele já estava (15/out/2026).
    */
   numeroDoCanal?: string
+  /**
+   * Regras do ramo da conta (`PacoteDoNicho.regrasDaIa`): dado de saúde,
+   * receita, vaga de hospedagem. Valem acima da tarefa do bloco.
+   */
+  regrasDoRamo?: readonly string[]
   /** A instrução do bloco, já interpolada pelo motor. */
   instrucao: string
   /** A última coisa que a pessoa escreveu. */

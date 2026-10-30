@@ -1,6 +1,7 @@
 import type { PerguntaDaFicha } from './ficha-do-assistente'
 import type { Objetivo } from './objetivo-da-conta'
 import type { StatusDePedido } from './pedidos'
+import type { SistemaDoRamo } from './sistemas-dos-ramos'
 
 /**
  * O ramo da conta, e o que ele muda na tela (docs/NICHOS.md, docs/PLANO-NICHOS.md).
@@ -30,7 +31,19 @@ import type { StatusDePedido } from './pedidos'
  * Puro, sem banco e sem React, como `core/planos.ts` e `core/objetivo-da-conta.ts`.
  */
 
-export const NICHOS = ['aulas', 'ecommerce', 'restaurante', 'comercio'] as const
+export const NICHOS = [
+  'aulas',
+  'ecommerce',
+  'restaurante',
+  'comercio',
+  'saude',
+  'laboratorio',
+  'farmacia',
+  'salao',
+  'pet',
+  'imobiliaria',
+  'hospedagem',
+] as const
 
 export type Nicho = (typeof NICHOS)[number]
 
@@ -147,6 +160,20 @@ export type PacoteDoNicho = {
    * Início, que tem os números; aqui mora só qual passo a frente pede.
    */
   passosDoInicio: PassoDaFrente[]
+  /**
+   * O ramo lida com dado de saúde, que a LGPD trata como sensível (art. 11):
+   * os modelos abrem com o aviso de uso do dado, e as `regrasDaIa` entram em
+   * toda IA da conta (docs/SEGMENTOS-NOVOS.md §3).
+   */
+  dadoSensivel?: boolean
+  /** Regras que valem acima da tarefa do bloco, em toda IA da conta deste ramo. */
+  regrasDaIa?: readonly string[]
+  /**
+   * Os sistemas de gestão do ramo, na ordem da tela de integrações
+   * (`core/sistemas-dos-ramos.ts`). Vazio = o ramo integra pelo que já existe
+   * (loja on-line, cardápio, Verandi).
+   */
+  sistemas: readonly SistemaDoRamo[]
 }
 
 /**
@@ -198,6 +225,17 @@ const PAGAMENTO = p(
 )
 
 /**
+ * As regras de IA dos ramos de saúde (docs/SEGMENTOS-NOVOS.md §3). Dado de
+ * saúde é sensível pela LGPD, e palpite clínico de chatbot é risco para quem
+ * lê. Valem acima da tarefa de qualquer bloco.
+ */
+const REGRAS_DE_SAUDE: readonly string[] = [
+  'Não dê diagnóstico, não interprete sintoma nem resultado de exame, e não indique, troque ou ajuste remédio ou dose.',
+  'Relato de urgência (dor no peito, falta de ar, sangramento, desmaio, ideia de se machucar): diga para ligar 192 ou procurar o pronto-socorro agora, e passe para uma pessoa da equipe.',
+  'Não peça nem repita diagnóstico, CID, nome de doença ou resultado de exame na conversa. Para resultado, indique o caminho oficial (portal do laboratório ou retorno com o profissional).',
+]
+
+/**
  * Os modelos que servem a qualquer negócio, e por isso aparecem em toda
  * galeria com ramo, sob "Para qualquer negócio". Recado, menu de dúvidas e
  * pesquisa de satisfação são o mesmo trabalho na pizzaria e no estúdio.
@@ -225,6 +263,7 @@ export const PACOTES: Record<Nicho, PacoteDoNicho> = {
    */
   aulas: {
     nome: 'Aulas e serviços com horário',
+    sistemas: ['evo', 'tecnofit', 'next_fit', 'cloudgym'],
     exemplos: 'pilates, academia, estúdio, escola, clínica',
     objetivoSugerido: 'atender',
     rotulos: { contatos: 'Alunos', negocios: 'Matrículas', loja: 'Planos', catalogo: 'Planos e modalidades' },
@@ -256,6 +295,7 @@ export const PACOTES: Record<Nicho, PacoteDoNicho> = {
   },
   ecommerce: {
     nome: 'Loja virtual',
+    sistemas: [],
     exemplos: 'loja no site, Magento, Nuvemshop',
     objetivoSugerido: 'vender',
     rotulos: { contatos: 'Clientes', loja: 'Loja' },
@@ -302,6 +342,7 @@ export const PACOTES: Record<Nicho, PacoteDoNicho> = {
   },
   restaurante: {
     nome: 'Restaurante, lanchonete, delivery',
+    sistemas: [],
     exemplos: 'pizzaria, hamburgueria, marmitaria',
     objetivoSugerido: 'vender',
     // Negócios fica com o nome de sempre: "Pedidos" agora é a tela de pedidos (0146).
@@ -333,6 +374,7 @@ export const PACOTES: Record<Nicho, PacoteDoNicho> = {
   },
   comercio: {
     nome: 'Loja física, comércio',
+    sistemas: [],
     exemplos: 'loja de bairro, papelaria, pet shop',
     objetivoSugerido: 'atender',
     rotulos: { contatos: 'Clientes', loja: 'Produtos', catalogo: 'Produtos e serviços' },
@@ -360,6 +402,234 @@ export const PACOTES: Record<Nicho, PacoteDoNicho> = {
         PAGAMENTO,
         p('encomenda', 'ENCOMENDA', ['encomenda', 'reserva', 'separar'], 'Dá para encomendar ou pedir para separar?', 'Separamos por até 2 dias. Encomenda com 50% de sinal.', 'Consegue separar para mim?'),
         p('estacionamento', 'ESTACIONAMENTO', ['estacionamento'], 'Tem estacionamento?', 'Não, mas tem vaga na rua e um estacionamento pago ao lado.', 'Tem onde estacionar?'),
+      ],
+    },
+  },
+  saude: {
+    nome: 'Clínica, consultório, odontologia',
+    sistemas: ['feegow', 'clinica_nas_nuvens', 'agendapro', 'ninsaude', 'clinicorp', 'iclinic', 'amigo', 'simples_dental'],
+    exemplos: 'clínica médica, dentista, fisioterapia, psicologia',
+    objetivoSugerido: 'atender',
+    rotulos: { contatos: 'Pacientes', negocios: 'Tratamentos', loja: 'Procedimentos', catalogo: 'Consultas e procedimentos' },
+    ocultos: ['conectar-loja'],
+    iconeComercio: 'planos',
+    visaoDoCatalogo: 'lista',
+    materiais: false,
+    tituloDosModelos: 'Para clínicas e consultórios',
+    modelosDeFluxo: ['atendente-saude', 'horario-e-local'],
+    modeloDeFunil: 'agendamento',
+    pedidos: null,
+    primeirosEmVendas: [],
+    passosDoInicio: ['ficha'],
+    dadoSensivel: true,
+    regrasDaIa: REGRAS_DE_SAUDE,
+    ficha: {
+      pode: ['Responder dúvidas com o que está nesta ficha', 'Mostrar horários livres e marcar consulta', 'Informar convênios, valores e preparo', 'Informar horário e endereço'],
+      perguntas: [
+        p('oferta', 'ESPECIALIDADES', ['especialidades', 'o que oferecemos', 'servicos'], 'Quais especialidades e procedimentos a clínica oferece?', 'Clínica geral, dermatologia e pediatria. Exames de sangue no local.', 'Vocês têm dermatologista?'),
+        p('convenios', 'CONVÊNIOS', ['convenios', 'convenio', 'planos de saude'], 'Quais convênios a clínica aceita?', 'Unimed, Bradesco Saúde e SulAmérica. Demais, só particular.', 'Aceitam Unimed?'),
+        p('valores', 'VALORES', ['valores', 'precos', 'particular'], 'Qual o valor da consulta particular? O que pode ser dito sobre preço?', 'Consulta particular R$ 250. Retorno em até 30 dias sem custo.', 'Quanto custa a consulta?'),
+        p('horarios', 'HORÁRIO DE ATENDIMENTO', ['horario', 'funcionamento'], 'Qual o horário de atendimento da clínica?', 'Segunda a sexta, das 8h às 18h. Sábado, das 8h às 12h.', 'Que horas vocês abrem?'),
+        p('preparo', 'PREPARO', ['preparo', 'jejum', 'o que levar'], 'O que o paciente precisa levar ou fazer antes da consulta?', 'Documento com foto, carteirinha do convênio e exames anteriores.', 'Preciso levar alguma coisa?'),
+        p('cancelamento', 'REMARCAÇÃO E FALTA', ['cancelamento', 'remarcar', 'falta'], 'Qual a regra para remarcar ou faltar?', 'Remarcação com 24 horas de antecedência, pelo WhatsApp.', 'Preciso remarcar, como faço?'),
+        p('urgencia', 'URGÊNCIA', ['urgencia', 'emergencia'], 'O que dizer a quem relata urgência?', 'A clínica não atende urgência. Em emergência, ligue 192 ou procure o pronto-socorro.', 'Estou passando mal, vocês atendem agora?'),
+        ONDE_FICA,
+        PAGAMENTO,
+      ],
+    },
+  },
+  laboratorio: {
+    nome: 'Laboratório de análises e exames',
+    sistemas: ['feegow', 'clinica_nas_nuvens', 'shift', 'pixeon'],
+    exemplos: 'laboratório de análises clínicas, imagem, coleta domiciliar',
+    objetivoSugerido: 'atender',
+    rotulos: { contatos: 'Pacientes', loja: 'Exames', catalogo: 'Exames e preparo' },
+    ocultos: ['conectar-loja'],
+    iconeComercio: 'planos',
+    visaoDoCatalogo: 'lista',
+    materiais: false,
+    tituloDosModelos: 'Para laboratórios',
+    modelosDeFluxo: ['atendente-laboratorio', 'horario-e-local'],
+    modeloDeFunil: 'atendimento',
+    pedidos: null,
+    primeirosEmVendas: [],
+    passosDoInicio: ['ficha'],
+    dadoSensivel: true,
+    regrasDaIa: REGRAS_DE_SAUDE,
+    ficha: {
+      pode: ['Responder dúvidas com o que está nesta ficha', 'Informar preparo, jejum e valores dos exames', 'Explicar como pegar o resultado', 'Informar horário de coleta e endereço'],
+      perguntas: [
+        p('oferta', 'EXAMES', ['exames', 'o que oferecemos'], 'Que exames o laboratório faz?', 'Análises clínicas, ultrassom e raio-X. Teste do pezinho e de gravidez.', 'Vocês fazem exame de sangue?'),
+        p('coleta', 'HORÁRIO DE COLETA', ['coleta', 'horario'], 'Qual o horário de coleta? Precisa agendar?', 'Coleta de segunda a sábado, das 6h30 às 11h, por ordem de chegada.', 'Que horas abre a coleta?'),
+        p('jejum', 'PREPARO E JEJUM', ['jejum', 'preparo'], 'Qual o preparo dos exames mais pedidos?', 'Glicemia e colesterol: jejum de 8 a 12 horas. Urina: primeira da manhã.', 'Preciso de jejum?'),
+        p('resultado', 'RESULTADO', ['resultado', 'laudo'], 'Como e quando o paciente recebe o resultado?', 'Em até 3 dias úteis, no portal do laboratório, com o protocolo e a data de nascimento.', 'Meu resultado já saiu?'),
+        p('domiciliar', 'COLETA DOMICILIAR', ['domiciliar', 'em casa'], 'Fazem coleta em casa? Como funciona e quanto custa?', 'Sim, com agendamento, taxa de R$ 40 na cidade.', 'Vocês coletam em casa?'),
+        p('convenios', 'CONVÊNIOS', ['convenios', 'convenio'], 'Quais convênios o laboratório aceita?', 'Unimed, Bradesco Saúde e SUS com pedido da unidade de saúde.', 'Aceitam meu plano?'),
+        p('pedido', 'PEDIDO MÉDICO', ['pedido medico', 'guia'], 'Precisa de pedido médico? Aceita pedido por foto?', 'Convênio exige pedido médico original. Particular aceita foto do pedido.', 'Preciso do pedido do médico?'),
+        ONDE_FICA,
+        PAGAMENTO,
+      ],
+    },
+  },
+  farmacia: {
+    nome: 'Farmácia e drogaria',
+    sistemas: ['trier', 'linx_farma'],
+    exemplos: 'farmácia de bairro, drogaria, manipulação',
+    objetivoSugerido: 'vender',
+    rotulos: { contatos: 'Clientes', loja: 'Produtos', catalogo: 'Produtos' },
+    ocultos: ['conectar-loja'],
+    iconeComercio: 'vitrine',
+    visaoDoCatalogo: 'lista',
+    materiais: false,
+    tituloDosModelos: 'Para farmácias',
+    modelosDeFluxo: ['atendente-farmacia', 'voces-tem', 'horario-e-local'],
+    modeloDeFunil: 'pedidos',
+    pedidos: { etapas: ['novo', 'pago', 'em_preparo', 'saiu', 'entregue'], rotulos: { em_preparo: 'Separando' }, visao: 'lista', despacho: 'preparo' },
+    primeirosEmVendas: ['pedidos', 'vendidos-pelo-chat', 'pedidos-entrega'],
+    passosDoInicio: ['ficha'],
+    dadoSensivel: true,
+    regrasDaIa: [
+      ...REGRAS_DE_SAUDE,
+      'Medicamento que exige receita (tarja vermelha ou preta, antibiótico, controlado): diga que precisa da receita e que o farmacêutico confere, e não confirme venda nem reserva.',
+    ],
+    ficha: {
+      pode: ['Responder dúvidas com o que está nesta ficha', 'Dizer se tem o produto e quanto custa', 'Ajudar a montar um pedido de produtos sem receita', 'Informar entrega, horário e endereço'],
+      perguntas: [
+        p('horario', 'HORÁRIO', ['horario', 'funcionamento', 'plantao'], 'Qual o horário de funcionamento? Tem plantão?', 'Todos os dias, das 7h às 22h. Plantão no primeiro domingo do mês.', 'Vocês estão abertos?'),
+        p('entrega', 'ENTREGA', ['entrega', 'delivery', 'taxa de entrega'], 'Vocês entregam? Onde, em quanto tempo e por quanto?', 'Entregamos na cidade em até 1 hora. Grátis acima de R$ 50, senão R$ 5.', 'Vocês entregam?'),
+        p('receita', 'RECEITA', ['receita', 'controlado', 'tarja'], 'Como funciona a compra de remédio com receita?', 'A receita é conferida pelo farmacêutico na entrega ou no balcão. Controlados só com a receita original.', 'Posso comprar antibiótico pelo WhatsApp?'),
+        p('convenios', 'CONVÊNIOS E DESCONTOS', ['convenios', 'desconto', 'farmacia popular', 'pbm'], 'Aceitam convênio de empresa, Farmácia Popular ou programa de desconto de laboratório?', 'Farmácia Popular sim, com CPF e receita. Programas de desconto de laboratório no balcão.', 'Tem desconto pelo CPF?'),
+        p('manipulacao', 'MANIPULAÇÃO', ['manipulacao', 'formula'], 'Fazem manipulação? Como pedir orçamento?', 'Sim. Mande a foto da receita e retornamos o orçamento em até 2 horas.', 'Vocês manipulam?'),
+        p('servicos', 'SERVIÇOS', ['servicos', 'aplicacao', 'pressao'], 'Que serviços a farmácia oferece?', 'Aferição de pressão, teste de glicemia e aplicação de injetáveis com receita.', 'Vocês aplicam injeção?'),
+        ONDE_FICA,
+        PAGAMENTO,
+      ],
+    },
+  },
+  salao: {
+    nome: 'Salão, barbearia, estética',
+    sistemas: ['trinks', 'agendapro', 'booksy', 'avec'],
+    exemplos: 'salão de beleza, barbearia, estética, manicure',
+    objetivoSugerido: 'atender',
+    rotulos: { contatos: 'Clientes', loja: 'Serviços', catalogo: 'Serviços e valores' },
+    ocultos: ['conectar-loja'],
+    iconeComercio: 'planos',
+    visaoDoCatalogo: 'lista',
+    materiais: false,
+    tituloDosModelos: 'Para salões e barbearias',
+    modelosDeFluxo: ['atendente-beleza', 'horario-e-local'],
+    modeloDeFunil: 'agendamento',
+    pedidos: null,
+    primeirosEmVendas: [],
+    passosDoInicio: ['ficha'],
+    ficha: {
+      pode: ['Responder dúvidas com o que está nesta ficha', 'Mostrar horários livres e marcar', 'Informar serviços e valores do catálogo', 'Informar horário e endereço'],
+      perguntas: [
+        p('oferta', 'SERVIÇOS', ['servicos', 'o que oferecemos'], 'Quais serviços vocês oferecem?', 'Corte, escova, coloração, manicure e design de sobrancelha.', 'Vocês fazem luzes?'),
+        p('valores', 'VALORES', ['valores', 'precos'], 'Quais os valores? O que pode ser dito sobre preço?', 'Corte feminino a partir de R$ 70. Coloração só com avaliação.', 'Quanto custa o corte?'),
+        p('horarios', 'HORÁRIO', ['horario', 'funcionamento'], 'Qual o horário de funcionamento?', 'Terça a sábado, das 9h às 19h.', 'Abre segunda?'),
+        p('agendamento', 'AGENDAMENTO', ['agendamento', 'encaixe', 'marcar'], 'Precisa agendar? Atendem por encaixe?', 'Só com horário marcado. Encaixe quando sobra vaga no dia.', 'Tem horário hoje?'),
+        p('atraso', 'ATRASO E CANCELAMENTO', ['atraso', 'cancelamento', 'falta'], 'Qual a regra para atraso e cancelamento?', 'Tolerância de 15 minutos. Cancelamento com 4 horas de antecedência.', 'Vou me atrasar, tudo bem?'),
+        p('profissionais', 'PROFISSIONAIS', ['profissionais', 'equipe'], 'Quem atende e qual a especialidade de cada um?', 'Ana: coloração. Bruno: corte masculino e barba. Carla: manicure.', 'Quem faz barba aí?'),
+        ONDE_FICA,
+        PAGAMENTO,
+      ],
+    },
+  },
+  pet: {
+    nome: 'Pet shop e veterinária',
+    sistemas: ['trinks', 'agendapro', 'simplesvet'],
+    exemplos: 'banho e tosa, clínica veterinária, hotel para cães',
+    objetivoSugerido: 'atender',
+    rotulos: { contatos: 'Tutores', loja: 'Serviços e produtos', catalogo: 'Serviços e produtos' },
+    ocultos: ['conectar-loja'],
+    iconeComercio: 'vitrine',
+    visaoDoCatalogo: 'lista',
+    materiais: false,
+    tituloDosModelos: 'Para pet shops e veterinárias',
+    modelosDeFluxo: ['atendente-pet', 'voces-tem', 'horario-e-local'],
+    modeloDeFunil: 'agendamento',
+    pedidos: { etapas: ['novo', 'pago', 'em_preparo', 'saiu', 'entregue'], rotulos: { em_preparo: 'Separando' }, visao: 'lista', despacho: 'preparo' },
+    primeirosEmVendas: ['pedidos', 'vendidos-pelo-chat'],
+    passosDoInicio: ['ficha'],
+    regrasDaIa: [
+      'Não dê diagnóstico, não indique remédio nem dose para animal. Sintoma ou mal-estar do animal: oriente procurar o veterinário e passe para uma pessoa da equipe.',
+    ],
+    ficha: {
+      pode: ['Responder dúvidas com o que está nesta ficha', 'Mostrar horários livres e marcar banho, tosa ou consulta', 'Dizer se tem o produto e quanto custa', 'Informar busca e entrega do animal'],
+      perguntas: [
+        p('oferta', 'SERVIÇOS', ['servicos', 'o que oferecemos'], 'Quais serviços vocês oferecem?', 'Banho, tosa, consulta veterinária, vacinas e hotel.', 'Vocês fazem tosa?'),
+        p('valores', 'VALORES', ['valores', 'precos', 'porte'], 'Quais os valores? Muda por porte ou pelagem?', 'Banho de porte pequeno R$ 50, médio R$ 70, grande R$ 90.', 'Quanto é o banho?'),
+        p('busca', 'LEVA E TRAZ', ['leva e traz', 'buscar', 'taxi dog'], 'Vocês buscam e levam o animal? Por quanto?', 'Sim, no bairro, por R$ 15 ida e volta.', 'Vocês buscam o cachorro?'),
+        p('vacinas', 'VACINAS', ['vacinas', 'vacina'], 'Exigem vacina em dia? Quais vacinas aplicam?', 'Banho e hotel exigem V10 e antirrábica em dia.', 'Precisa de vacina?'),
+        p('horarios', 'HORÁRIO', ['horario', 'funcionamento'], 'Qual o horário de funcionamento?', 'Segunda a sábado, das 8h às 18h.', 'Que horas vocês abrem?'),
+        ONDE_FICA,
+        PAGAMENTO,
+      ],
+    },
+  },
+  imobiliaria: {
+    nome: 'Imobiliária e corretor',
+    sistemas: ['vista', 'jetimob', 'kenlo'],
+    exemplos: 'imobiliária, corretor autônomo, loteadora',
+    objetivoSugerido: 'vender',
+    rotulos: { contatos: 'Clientes', loja: 'Imóveis', catalogo: 'Imóveis' },
+    ocultos: ['conectar-loja'],
+    iconeComercio: 'vitrine',
+    visaoDoCatalogo: 'grade',
+    materiais: false,
+    tituloDosModelos: 'Para imobiliárias',
+    modelosDeFluxo: ['atendente-imobiliaria', 'qualificar-sdr'],
+    modeloDeFunil: 'comercial',
+    pedidos: null,
+    primeirosEmVendas: [],
+    passosDoInicio: ['ficha'],
+    regrasDaIa: [
+      'Nunca garanta aprovação de financiamento, valor de parcela ou disponibilidade do imóvel: quem confirma é o corretor.',
+    ],
+    ficha: {
+      pode: ['Responder dúvidas com o que está nesta ficha', 'Mostrar imóveis do catálogo com foto e valor', 'Entender o que a pessoa procura e passar ao corretor', 'Combinar visita'],
+      perguntas: [
+        p('oferta', 'O QUE TRABALHAMOS', ['o que trabalhamos', 'regiao', 'imoveis'], 'Que tipo de imóvel e em que região vocês trabalham?', 'Venda e aluguel de casas e apartamentos na zona sul.', 'Vocês têm apartamento para alugar?'),
+        p('visita', 'VISITA', ['visita', 'visitar'], 'Como funciona a visita?', 'Com hora marcada, de segunda a sábado, acompanhada por um corretor.', 'Posso ver o imóvel amanhã?'),
+        p('aluguel', 'DOCUMENTOS DO ALUGUEL', ['aluguel', 'documentos', 'fiador', 'garantia'], 'O que é preciso para alugar? Que garantias aceitam?', 'Documento, comprovante de renda de 3 vezes o aluguel. Fiador, seguro fiança ou caução.', 'Precisa de fiador?'),
+        p('financiamento', 'FINANCIAMENTO', ['financiamento', 'fgts', 'entrada'], 'Vocês ajudam com financiamento e FGTS?', 'Sim, o corretor simula com o banco. Aceitamos FGTS na entrada.', 'Dá para usar FGTS?'),
+        p('captacao', 'ANUNCIAR UM IMÓVEL', ['anunciar', 'vender meu imovel', 'captacao'], 'Como quem quer vender ou alugar o próprio imóvel anuncia com vocês?', 'Um corretor faz a avaliação gratuita e as fotos.', 'Quero vender minha casa, como faço?'),
+        p('horarios', 'HORÁRIO', ['horario', 'funcionamento'], 'Qual o horário de atendimento?', 'Segunda a sexta, das 9h às 18h. Sábado, das 9h às 13h.', 'Até que horas vocês atendem?'),
+        ONDE_FICA,
+      ],
+    },
+  },
+  hospedagem: {
+    nome: 'Pousada, hotel, hospedagem',
+    sistemas: ['stays', 'cloudbeds', 'omnibees'],
+    exemplos: 'pousada, hotel, chalés, aluguel por temporada',
+    objetivoSugerido: 'vender',
+    rotulos: { contatos: 'Hóspedes', negocios: 'Reservas', loja: 'Acomodações', catalogo: 'Acomodações e tarifas' },
+    ocultos: ['conectar-loja'],
+    iconeComercio: 'vitrine',
+    visaoDoCatalogo: 'grade',
+    materiais: false,
+    tituloDosModelos: 'Para pousadas e hotéis',
+    modelosDeFluxo: ['atendente-hospedagem', 'horario-e-local'],
+    modeloDeFunil: 'comercial',
+    pedidos: null,
+    primeirosEmVendas: [],
+    passosDoInicio: ['ficha'],
+    regrasDaIa: [
+      'Nunca confirme vaga para uma data: diga que a equipe confere a disponibilidade e passe para uma pessoa com as datas e o número de hóspedes.',
+    ],
+    ficha: {
+      pode: ['Responder dúvidas com o que está nesta ficha', 'Mostrar acomodações e tarifas com foto', 'Anotar datas e hóspedes para a reserva', 'Informar check-in, check-out e como chegar'],
+      perguntas: [
+        p('oferta', 'ACOMODAÇÕES', ['acomodacoes', 'quartos', 'chales'], 'Que acomodações vocês têm e para quantas pessoas?', 'Quartos duplos e chalés para até 4 pessoas, com café da manhã.', 'Tem quarto para casal?'),
+        p('tarifas', 'TARIFAS', ['tarifas', 'diaria', 'valores'], 'Quanto custa a diária? Muda em feriado e alta temporada?', 'Diária a partir de R$ 280 para casal. Feriados com pacote mínimo de 3 noites.', 'Quanto é a diária?'),
+        p('checkin', 'CHECK-IN E CHECK-OUT', ['check-in', 'check-out', 'checkin'], 'Qual o horário de check-in e check-out?', 'Check-in a partir das 14h. Check-out até 12h.', 'Que horas posso chegar?'),
+        p('reserva', 'RESERVA E SINAL', ['reserva', 'sinal', 'cancelamento'], 'Como se faz a reserva? Tem sinal? Qual a política de cancelamento?', 'Sinal de 50% por Pix. Cancelamento com 7 dias devolve o sinal.', 'Como faço para reservar?'),
+        p('pets', 'ANIMAIS', ['pet', 'animais', 'cachorro'], 'Aceitam animais de estimação?', 'Sim, porte pequeno, com taxa de R$ 50 por estadia.', 'Posso levar meu cachorro?'),
+        p('estrutura', 'ESTRUTURA', ['estrutura', 'piscina', 'estacionamento', 'cafe'], 'O que a hospedagem oferece?', 'Piscina, wi-fi, estacionamento e café da manhã incluso.', 'Tem estacionamento?'),
+        ONDE_FICA,
+        PAGAMENTO,
       ],
     },
   },

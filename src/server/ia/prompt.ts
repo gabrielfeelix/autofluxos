@@ -167,6 +167,7 @@ export function montarPrompt(pedido: PedidoDeIa): { sistema: string; usuario: st
     ...(ferramentas.length > 0
       ? [`15. Antes de gravar qualquer coisa, confirme com a pessoa em palavras o que vai ser feito. Se ela não tiver dito claramente o que quer, pergunte, ou responda ${MARCA_NAO_SEI}.`]
       : []),
+    ...(pedido.regrasDoRamo ?? []).map((regra, i) => `${16 + i}. ${regra}`),
     '',
     /*
      * Quem vence um conflito, dito com todas as letras. Os modelos tendem a

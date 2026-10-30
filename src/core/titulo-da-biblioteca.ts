@@ -182,6 +182,13 @@ const TEMAS_DO_RAMO: Record<Nicho, readonly string[]> = {
   ecommerce: ['order', 'delivery', 'shipment', 'shipping', 'purchase', 'refund', 'return', 'payment', 'address', 'account', 'feedback'],
   restaurante: ['order', 'delivery', 'reservation', 'payment', 'purchase', 'feedback'],
   comercio: ['order', 'delivery', 'purchase', 'payment', 'refund', 'return', 'feedback'],
+  saude: ['appointment', 'payment', 'feedback'],
+  laboratorio: ['appointment', 'payment', 'feedback'],
+  farmacia: ['order', 'delivery', 'purchase', 'payment', 'feedback'],
+  salao: ['appointment', 'payment', 'feedback'],
+  pet: ['appointment', 'order', 'delivery', 'payment', 'feedback'],
+  imobiliaria: ['appointment', 'event', 'feedback'],
+  hospedagem: ['reservation', 'payment', 'feedback'],
 }
 
 /** O modelo da biblioteca serve ao ramo da conta? Sem ramo, todos servem. */

@@ -1,5 +1,14 @@
 import { fluxoSchema, type Fluxo } from '@/core/flow/schema'
 import { fluxoNovo } from '@/core/flow/novo'
+import {
+  atendenteBeleza,
+  atendenteFarmacia,
+  atendenteHospedagem,
+  atendenteImobiliaria,
+  atendenteLaboratorio,
+  atendentePet,
+  atendenteSaude,
+} from './atendente-do-ramo'
 import { agendamento } from './agendamento'
 import { alunoInativo } from './aluno-inativo'
 import { atendenteIaRestaurante } from './atendente-ia-restaurante'
@@ -405,6 +414,69 @@ export const MODELOS: Modelo[] = [
       'loja física', 'comércio', 'bairro',
     ],
     grafo: horarioELocal,
+  },
+  {
+    id: 'atendente-saude',
+    nome: 'Atendente da clínica',
+    resumo:
+      'Abre com o aviso de uso do dado de saúde (LGPD). A IA tira dúvidas de convênio e valores e marca, remarca ou desmarca consultas na agenda conectada (Feegow, Clínica nas Nuvens, AgendaPro).',
+    etiquetas: ['WhatsApp', 'Agenda', 'Atendimento', 'Precisa de IA', 'Precisa de integração'],
+    sinonimos: ['clínica', 'consulta', 'médico', 'dentista', 'consultório', 'paciente', 'convênio', 'saúde', 'odontologia'],
+    grafo: atendenteSaude,
+  },
+  {
+    id: 'atendente-laboratorio',
+    nome: 'Atendente do laboratório',
+    resumo:
+      'Abre com o aviso de uso do dado de saúde (LGPD). A IA explica preparo, jejum, coleta, valores e onde pegar o resultado, sem nunca comentar um resultado.',
+    etiquetas: ['WhatsApp', 'Atendimento', 'Precisa de IA'],
+    sinonimos: ['laboratório', 'exame', 'jejum', 'coleta', 'resultado', 'laudo', 'análises clínicas', 'saúde'],
+    grafo: atendenteLaboratorio,
+  },
+  {
+    id: 'atendente-farmacia',
+    nome: 'Atendente da farmácia',
+    resumo:
+      'A IA diz se tem o produto e o preço pelo catálogo, informa entrega e plantão, e passa remédio com receita para o farmacêutico.',
+    etiquetas: ['WhatsApp', 'Comércio', 'Atendimento', 'Precisa de IA'],
+    sinonimos: ['farmácia', 'drogaria', 'remédio', 'medicamento', 'receita', 'entrega', 'plantão'],
+    grafo: atendenteFarmacia,
+  },
+  {
+    id: 'atendente-beleza',
+    nome: 'Atendente do salão',
+    resumo:
+      'A IA mostra serviços e valores e marca, remarca ou desmarca horários na agenda conectada (Trinks, AgendaPro).',
+    etiquetas: ['WhatsApp', 'Instagram', 'Agenda', 'Atendimento', 'Precisa de IA', 'Precisa de integração'],
+    sinonimos: ['salão', 'barbearia', 'salão de beleza', 'estética', 'manicure', 'corte', 'horário', 'agendar'],
+    grafo: atendenteBeleza,
+  },
+  {
+    id: 'atendente-pet',
+    nome: 'Atendente do pet shop',
+    resumo:
+      'A IA marca banho, tosa e consulta na agenda conectada e responde preço de produto pelo catálogo. Sintoma do animal vai para a equipe.',
+    etiquetas: ['WhatsApp', 'Instagram', 'Agenda', 'Atendimento', 'Precisa de IA', 'Precisa de integração'],
+    sinonimos: ['pet shop', 'veterinário', 'banho', 'tosa', 'cachorro', 'gato', 'ração', 'vacina'],
+    grafo: atendentePet,
+  },
+  {
+    id: 'atendente-imobiliaria',
+    nome: 'Atendente da imobiliária',
+    resumo:
+      'A IA entende o que a pessoa procura, mostra imóveis do catálogo com foto e valor e passa a visita para um corretor.',
+    etiquetas: ['WhatsApp', 'Instagram', 'Vendas', 'Atendimento', 'Precisa de IA'],
+    sinonimos: ['imobiliária', 'imóvel', 'corretor', 'aluguel', 'apartamento', 'casa', 'visita', 'financiamento'],
+    grafo: atendenteImobiliaria,
+  },
+  {
+    id: 'atendente-hospedagem',
+    nome: 'Atendente da pousada',
+    resumo:
+      'A IA mostra acomodações e tarifas, anota datas e hóspedes e passa a reserva para a recepção, sem prometer vaga.',
+    etiquetas: ['WhatsApp', 'Instagram', 'Vendas', 'Atendimento', 'Precisa de IA'],
+    sinonimos: ['pousada', 'hotel', 'hospedar', 'reserva', 'diária', 'chalé', 'check-in', 'temporada'],
+    grafo: atendenteHospedagem,
   },
   {
     id: 'pesquisa-nps',
