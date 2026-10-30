@@ -106,7 +106,7 @@ export function CapaDaHome() {
           </span>
           API oficial do WhatsApp Business
         </p>
-        <h1 className={`${x.capaTitulo} ${x.capaTituloHome}`} {...entra(80, 'desfoque')}>
+        <h1 className={`${x.capaTitulo} ${x.capaTituloHome}`}>
           {/* Hífen que não quebra: "pós-" sozinho no fim da linha. */}
           Atendimento, vendas e pós{'\u2011'}venda no WhatsApp. <em>A equipe inteira no mesmo número.</em>
         </h1>
