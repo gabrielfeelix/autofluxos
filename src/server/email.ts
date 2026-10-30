@@ -7,7 +7,7 @@ import { enderecoDoPainel } from './endereco'
  * E-mail transacional pela Brevo, melhor-esforço.
  *
  * **Sem `BREVO_API_KEY` e `EMAIL_REMETENTE` no ambiente, não envia e diz que
- * não enviou.** O remetente é `<algo>@autofluxos.mail.4yu.com.br` (a regra dos
+ * não enviou.** O remetente é `<algo>@mail.dialogon.com.br` (a regra dos
  * namespaces em `4yu-apps/CLAUDE.md`), autenticado na Brevo desde 05/out
  * (antes disso a Brevo recusava: "sender is not valid"). Mandar do domínio
  * raiz sujaria a reputação da caixa humana da 4YU, e isso não se desfaz.

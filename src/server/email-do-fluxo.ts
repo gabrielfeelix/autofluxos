@@ -13,7 +13,7 @@ import { anotar } from './repos/eventos'
  * e-mail no dia e quem assina.
  *
  * **O teto do dia protege o domínio de envio, não a conta.** Todo e-mail de
- * fluxo sai de `autofluxos.mail.4yu.com.br`, e um fluxo com defeito em laço
+ * fluxo sai de `mail.dialogon.com.br`, e um fluxo com defeito em laço
  * mandando mil e-mails por hora derrubaria a reputação do domínio para todas
  * as contas, inclusive o "esqueci a senha". 300 por conta em 24h cobre
  * confirmação e aviso à equipe com folga.
