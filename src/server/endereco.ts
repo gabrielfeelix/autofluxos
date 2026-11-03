@@ -20,6 +20,14 @@ export function enderecoDoPainel(): string {
   const configurado = process.env.BETTER_AUTH_URL?.trim()
   if (configurado) return configurado.replace(/\/+$/, '')
 
+  /*
+   * Produção não tem `BETTER_AUTH_URL`, e cair no `VERCEL_URL` lá entregava o
+   * endereço do deploy: a URL do webhook de entrada na tela e a que a ponte
+   * registra na Verandi apontavam para uma publicação que o próximo push
+   * aposenta. Mesmo domínio fixo de `enderecoParaEmail()`.
+   */
+  if (process.env.VERCEL_ENV === 'production') return 'https://dialogon.com.br'
+
   const daVercel = process.env.VERCEL_URL?.trim()
   if (daVercel) return `https://${daVercel}`
 

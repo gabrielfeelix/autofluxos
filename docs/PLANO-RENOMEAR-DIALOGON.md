@@ -53,6 +53,27 @@ para `/api/webhook/instagram` sem campos; o certo é `/api/webhook/leadgen` com
 `leadgen` (a varredura diária cobre os leads enquanto isso). Ao trocar a URL,
 confira os campos de novo.
 
+**Revisão de 03/nov (o que ainda pode quebrar):**
+- `enderecoDoPainel()` caía no `VERCEL_URL` em produção (não há
+  `BETTER_AUTH_URL` lá): a URL do webhook de entrada na tela e a que a ponte
+  registra na Verandi eram do deploy. Agora é `dialogon.com.br` em produção.
+  Nenhum cliente tinha registrado uma (só o PCYES/Magento, criado à mão).
+- PCYES: o fluxo "Pesquisa pós-compra" e o modelo `pesquisa_pos_compra_v4`
+  usam imagem em `autofluxos.4yu.com.br/pesquisas/*.jpg`, que agora responde
+  308. Trocar para `dialogon.com.br` antes de reativar a pesquisa.
+- Mercado Pago, PagBank, Stripe e Nuvemshop: o retorno do OAuth sai do
+  domínio onde a pessoa está, então o primeiro cliente que conectar vai dar
+  "redirect_uri" errado até a URI nova ser cadastrada em cada um.
+- Instagram: o objeto `instagram` não aparece nas assinaturas do app; só o
+  canal de teste do Gabriel usa.
+- Quem estava logado no endereço antigo precisa entrar de novo em
+  `dialogon.com.br` (o cookie é por domínio). Avisar a equipe do MGM.
+- O redirecionamento do domínio antigo tem de seguir poupando `/api` e o
+  domínio antigo tem de continuar na Vercel: PCYES e a página `leadgen`
+  chamam por ele.
+- Em meados de novembro, ao apagar as URIs antigas da Meta, reler
+  `GET /{app_id}/subscriptions` depois.
+
 Falta: Mercado Pago, PagBank, Stripe e Nuvemshop quando alguém conectar;
 Search Console da propriedade `dialogon.com.br` e Mudança de endereço; correções
 de `docs/SEO-AUDITORIA.md`; ícone do app na Meta com a logo nova; envio de
