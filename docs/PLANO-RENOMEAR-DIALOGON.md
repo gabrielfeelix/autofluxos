@@ -58,12 +58,17 @@ confira os campos de novo.
   `BETTER_AUTH_URL` lá): a URL do webhook de entrada na tela e a que a ponte
   registra na Verandi eram do deploy. Agora é `dialogon.com.br` em produção.
   Nenhum cliente tinha registrado uma (só o PCYES/Magento, criado à mão).
-- PCYES: o fluxo "Pesquisa pós-compra" e o modelo `pesquisa_pos_compra_v4`
-  usam imagem em `autofluxos.4yu.com.br/pesquisas/*.jpg`, que agora responde
-  308. Trocar para `dialogon.com.br` antes de reativar a pesquisa.
-- Mercado Pago, PagBank, Stripe e Nuvemshop: o retorno do OAuth sai do
-  domínio onde a pessoa está, então o primeiro cliente que conectar vai dar
-  "redirect_uri" errado até a URI nova ser cadastrada em cada um.
+- PCYES: o fluxo "Pesquisa pós-compra" (agora v13), o gatilho
+  `pedido.processando` e o modelo `pesquisa_pos_compra_v4` apontavam imagem e
+  pontos para `autofluxos.4yu.com.br`. Trocados para `dialogon.com.br`; nenhum
+  fluxo, gatilho ou modelo de cliente guarda mais o endereço antigo.
+- Objeto Page da Meta reapontado para `/api/webhook/leadgen` com `leadgen`
+  (POST assinado responde 200). Para isso o `WHATSAPP_VERIFY_TOKEN` foi trocado
+  na Vercel e em `.secrets/4yu.env` (`AUTOFLUXOS_WA_VERIFY_TOKEN`); a entrega
+  não usa esse token, só o aperto de mão ao salvar uma callback.
+- Mercado Pago, PagBank, Stripe e Nuvemshop: nenhum tem chave em produção,
+  então nunca foram ligados. Ao criar cada app, cadastrar já com
+  `dialogon.com.br`.
 - Instagram: o objeto `instagram` não aparece nas assinaturas do app; só o
   canal de teste do Gabriel usa.
 - Quem estava logado no endereço antigo precisa entrar de novo em
