@@ -42,6 +42,17 @@ acesso aos logs de requisição da Vercel: se a Meta entrega e a rota falha
 (assinatura, corpo) ou se a callback não salvou / há override por WABA. Rollback
 possível: callback antiga com o mesmo token novo.
 
+**Resolvido em 03/nov:** a callback salvou, mas a troca deixou os campos
+assinados vazios nos três objetos (`GET /{app_id}/subscriptions` com token de
+app mostrava `fields: []`). Sem `messages` a Meta não entregou nada a ninguém de
+30/out 16h27 até 03/nov 14h25; o MGM reclamou. Reassinados no painel:
+`messages`, `history`, `smb_app_state_sync`, `smb_message_echoes`,
+`account_update`, `message_template_status_update`, `template_category_update`.
+Teste no número do MGM entrou e o bot respondeu. Pendente: o objeto Page aponta
+para `/api/webhook/instagram` sem campos; o certo é `/api/webhook/leadgen` com
+`leadgen` (a varredura diária cobre os leads enquanto isso). Ao trocar a URL,
+confira os campos de novo.
+
 Falta: Mercado Pago, PagBank, Stripe e Nuvemshop quando alguém conectar;
 Search Console da propriedade `dialogon.com.br` e Mudança de endereço; correções
 de `docs/SEO-AUDITORIA.md`; ícone do app na Meta com a logo nova; envio de
