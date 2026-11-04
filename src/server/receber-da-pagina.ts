@@ -1,7 +1,8 @@
 import 'server-only'
 import { adaptadorDoCanal } from './adaptador-do-canal'
 import { alertar } from './alertar'
-import { nomeNoMessenger } from './messenger/conexao'
+import { fotoNoMessenger, nomeNoMessenger } from './messenger/conexao'
+import { atualizarFotoDoContato } from './foto-do-contato'
 import { acharCanalPorPagina } from './repos/canais-messenger'
 import { lerTokenDoCanal } from './repos/conversas'
 import { responderComentario } from './receber-comentario-do-instagram'
@@ -46,8 +47,15 @@ export async function receberDaPagina(payload: unknown): Promise<void> {
       if (!mensagem) continue
 
       const adaptador = await adaptadorDoCanal(canal)
-      const nome = await nomeNoMessenger(evento.sender.id, await lerTokenDoCanal(canal))
+      const token = await lerTokenDoCanal(canal)
+      const nome = await nomeNoMessenger(evento.sender.id, token)
       await tratarUma(canal, mensagem, nome, () => adaptador)
+      // Depois da conversa, para a resposta não esperar pela foto.
+      await atualizarFotoDoContato({
+        clienteId: canal.clienteId,
+        idNoCanal: evento.sender.id,
+        buscarLink: () => fotoNoMessenger(evento.sender.id, token),
+      })
     }
 
     for (const mudanca of entrada.changes) {

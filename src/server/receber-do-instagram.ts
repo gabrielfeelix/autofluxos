@@ -1,7 +1,8 @@
 import 'server-only'
 import { z } from 'zod'
 import { adaptadorDoCanal } from './adaptador-do-canal'
-import { nomeDoPerfil } from './instagram/conexao'
+import { fotoDoPerfil, nomeDoPerfil } from './instagram/conexao'
+import { atualizarFotoDoContato } from './foto-do-contato'
 import {
   type CanalSalvo,
   acharCanalPorContaDoInstagram,
@@ -351,6 +352,12 @@ export async function receberDoInstagram(
 
       await tratarUma(canalSalvo, mensagem, nome, fabrica)
       tratadas += 1
+      // Depois da conversa, para a resposta não esperar pela foto.
+      await atualizarFotoDoContato({
+        clienteId: canalSalvo.clienteId,
+        idNoCanal: evento.sender.id,
+        buscarLink: async () => fotoDoPerfil({ igsid: evento.sender.id, token: await lerTokenDoCanal(canalSalvo) }),
+      })
     }
   }
 

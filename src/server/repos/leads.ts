@@ -64,6 +64,8 @@ export type Lead = {
   nomeDoPerfil: string | null
   /** Corrigido por gente ou vindo da planilha. Vazio = ninguém corrigiu. */
   nomeReal: string
+  /** Foto de perfil guardada (Messenger e Instagram). WhatsApp não tem. */
+  foto?: string | null
   /** Anotação de quem atende. Não vai para o WhatsApp nem para automação. */
   notas: string
   /** O que o fluxo coletou. As chaves mudam de fluxo para fluxo. */
@@ -414,13 +416,14 @@ type Linha = {
   nome_real: string
   notas: string
   ultimo_tipo: string | null
+  foto_url?: string | null
 }
 
 // Numa linha só, e não concatenado: o supabase-js lê esta string no nível de
 // tipo para saber o formato do retorno, e concatenação vira `string` genérica,
 // aí o tipo do `data` desanda e o `tsc` acusa.
 const COLUNAS =
-  'contact_id, client_id, wa_id, nome, nome_real, notas, campos, criado_em, ultima_em, ultima_entrada_em, ultima_direcao, ultimo_texto, ultimo_tipo, ultimo_autor_tipo, ultimo_autor_nome, handoff_motivo, handoff_em, ultima_entregue, automacao_ativa, atribuido_a, estado, estado_efetivo, adiada_ate, adiada_nota, porta_de_entrada_em, ultima_situacao, ultima_e_reacao, equipe_id'
+  'contact_id, client_id, wa_id, nome, nome_real, notas, campos, criado_em, ultima_em, ultima_entrada_em, ultima_direcao, ultimo_texto, ultimo_tipo, ultimo_autor_tipo, ultimo_autor_nome, handoff_motivo, handoff_em, ultima_entregue, automacao_ativa, atribuido_a, estado, estado_efetivo, adiada_ate, adiada_nota, porta_de_entrada_em, ultima_situacao, ultima_e_reacao, equipe_id, foto_url'
 
 /**
  * `campos` é `jsonb`: o banco aceita qualquer coisa ali. Hoje só o motor
@@ -461,6 +464,7 @@ function paraLead(linha: Linha): Lead {
     nome: nomeReal !== '' ? nomeReal : linha.nome,
     nomeDoPerfil: linha.nome,
     nomeReal,
+    foto: linha.foto_url ?? null,
     notas: linha.notas ?? '',
     campos: paraCampos(linha.campos, linha.wa_id),
     ultimaEm: linha.ultima_em,

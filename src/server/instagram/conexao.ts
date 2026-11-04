@@ -348,3 +348,16 @@ export async function nomeDoPerfil(opcoes: {
     return null
   }
 }
+
+/** O link da foto de perfil de quem mandou direct. `null` se não der. */
+export async function fotoDoPerfil(opcoes: { igsid: string; token: string }): Promise<string | null> {
+  const url = new URL(`https://graph.instagram.com/${versaoDoGraph()}/${opcoes.igsid}`)
+  url.searchParams.set('fields', 'profile_pic')
+  url.searchParams.set('access_token', opcoes.token)
+  try {
+    const perfil = (await pedir(url.toString())) as { profile_pic?: unknown }
+    return typeof perfil.profile_pic === 'string' ? perfil.profile_pic : null
+  } catch {
+    return null
+  }
+}

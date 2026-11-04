@@ -48,7 +48,10 @@ export function Avatar({
   tamanho = 36,
   canal,
   semente,
+  foto,
 }: {
+  /** Foto de perfil guardada. Ganha das iniciais quando existe. */
+  foto?: string | null
   nome: string | null
   /**
    * A cor da silhueta quando não há nome: o número ou o id do contato. Sem
@@ -78,7 +81,10 @@ export function Avatar({
       }}
       className={`relative flex shrink-0 items-center justify-center rounded-full font-bold ${COR}`}
     >
-      {limpo ? (
+      {foto ? (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img src={foto} alt="" aria-hidden loading="lazy" className="size-full rounded-full object-cover" />
+      ) : limpo ? (
         // eslint-disable-next-line @next/next/no-img-element
         <img src={retratoDoContato(limpo)} alt="" aria-hidden className="size-full rounded-full" />
       ) : (

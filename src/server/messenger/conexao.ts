@@ -115,3 +115,20 @@ export async function nomeNoMessenger(psid: string, tokenDaPagina: string): Prom
     return null
   }
 }
+
+/** O link da foto de perfil de quem escreveu para a página. `null` se não der. */
+export async function fotoNoMessenger(psid: string, tokenDaPagina: string): Promise<string | null> {
+  const url = new URL(`https://graph.facebook.com/${VERSAO}/${psid}`)
+  url.searchParams.set('fields', 'profile_pic')
+  try {
+    const r = await fetch(url, {
+      headers: { Authorization: `Bearer ${tokenDaPagina}` },
+      cache: 'no-store',
+      signal: AbortSignal.timeout(5_000),
+    })
+    const corpo = (await r.json().catch(() => null)) as { profile_pic?: unknown } | null
+    return r.ok && typeof corpo?.profile_pic === 'string' ? corpo.profile_pic : null
+  } catch {
+    return null
+  }
+}
