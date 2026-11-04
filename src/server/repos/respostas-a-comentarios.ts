@@ -93,6 +93,8 @@ export async function criarRespostaAComentario(
     respostaPublica: string | null
     fluxoId: string | null
   },
+  /** Com id, atualiza a regra em vez de criar outra. */
+  respostaId?: string,
 ): Promise<{ ok: true; id: string } | { ok: false; motivo: string }> {
   // O canal vem de um formulário: conferir que é desta conta e é Instagram ou página.
   const { data: canal, error: erroDoCanal } = await db()
@@ -119,20 +121,36 @@ export async function criarRespostaAComentario(
     if (!fluxo) return { ok: false, motivo: 'escolha um fluxo desta conta' }
   }
 
+  const campos = {
+    channel_id: dados.canalId,
+    palavras: dados.palavras,
+    post_id: dados.post?.id ?? null,
+    post_legenda: dados.post?.legenda?.slice(0, 300) ?? null,
+    post_imagem: dados.post?.imagem ?? null,
+    post_link: dados.post?.link ?? null,
+    mensagem: dados.mensagem,
+    resposta_publica: dados.respostaPublica,
+    flow_id: dados.fluxoId,
+  }
+
+  // Editar: mesma conferência de conta e fluxo acima, e a linha precisa ser desta conta.
+  if (respostaId) {
+    const { data, error } = await db()
+      .from('respostas_a_comentarios')
+      .update(campos)
+      .eq('id', respostaId)
+      .eq('client_id', clienteId)
+      .select('id')
+      .maybeSingle()
+    if (ehIdInvalido(error)) return { ok: false, motivo: 'esta resposta não existe mais' }
+    if (error) throw new Error(`não foi possível salvar a resposta a comentário: ${error.message}`)
+    if (!data) return { ok: false, motivo: 'esta resposta não existe mais' }
+    return { ok: true, id: respostaId }
+  }
+
   const { data, error } = await db()
     .from('respostas_a_comentarios')
-    .insert({
-      client_id: clienteId,
-      channel_id: dados.canalId,
-      palavras: dados.palavras,
-      post_id: dados.post?.id ?? null,
-      post_legenda: dados.post?.legenda?.slice(0, 300) ?? null,
-      post_imagem: dados.post?.imagem ?? null,
-      post_link: dados.post?.link ?? null,
-      mensagem: dados.mensagem,
-      resposta_publica: dados.respostaPublica,
-      flow_id: dados.fluxoId,
-    })
+    .insert({ client_id: clienteId, ...campos })
     .select('id')
     .single()
 

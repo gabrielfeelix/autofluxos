@@ -35,7 +35,7 @@ import { validarPublicacao } from '@/core/validar-publicacao'
 import { Dropdown } from '@/components/design/dropdown'
 import { InterruptorDeGatilho } from '@/components/gatilhos/interruptor'
 import { CamposDaRespostaAComentario, InterruptorDeRespostaAComentario } from '@/components/gatilhos/comentarios'
-import { acaoApagarRespostaAComentario, acaoCriarRespostaAComentario } from '@/server/acoes-comentarios'
+import { acaoApagarRespostaAComentario, acaoCriarRespostaAComentario, acaoEditarRespostaAComentario } from '@/server/acoes-comentarios'
 import { listarRespostasAComentarios } from '@/server/repos/respostas-a-comentarios'
 import { InterruptorDeEvento } from '@/components/gatilhos/interruptor-de-evento'
 import { WebhooksDeEntrada } from '@/components/gatilhos/webhooks-de-entrada'
@@ -1188,6 +1188,21 @@ async function ConteudoDaAba({
                     <strong className="font-semibold text-soft">{resposta.execucoes}</strong>{' '}
                     {resposta.execucoes === 1 ? 'envio' : 'envios'}
                   </span>
+                  <ModalFormulario
+                    botao="Editar"
+                    variante="linha"
+                    titulo="Editar resposta a comentário"
+                    descricao="Vale para os próximos comentários. Quem já recebeu o direct não recebe de novo."
+                    rotuloEnviar="Salvar"
+                    action={acaoEditarRespostaAComentario.bind(null, cliente.id, resposta.id, {})}
+                  >
+                    <CamposDaRespostaAComentario
+                      clienteId={cliente.id}
+                      contas={contasDoInstagram}
+                      fluxos={fluxos.map((f) => ({ id: f.id, nome: f.nome, publicado: f.versaoPublicadaId !== null }))}
+                      inicial={resposta}
+                    />
+                  </ModalFormulario>
                   <BotaoPerigo
                     titulo="Apaga a resposta e a contagem dela. Para só pausar, use o interruptor."
                     pergunta={`Apagar esta resposta a comentário? A contagem de ${resposta.execucoes} envio(s) some junto.`}

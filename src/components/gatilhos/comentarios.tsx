@@ -6,6 +6,8 @@ import { Dropdown } from '@/components/design/dropdown'
 import { RotuloCampo } from '@/components/design/modal-formulario'
 import { depoisDaTela } from '@/components/inbox/conversa-local'
 import { LIMITES_DO_COMENTARIO } from '@/core/comentarios'
+import { GLIFO_FACEBOOK } from '@/components/design/glifos-oficiais'
+import { LogoDoCanal } from '@/components/design/selo-do-canal'
 import { acaoAlternarRespostaAComentario, acaoPostsDoInstagram } from '@/server/acoes-comentarios'
 import type { PostDoInstagram } from '@/server/instagram/comentarios'
 
@@ -19,24 +21,47 @@ type ContaDeComentario = { id: string; rotulo: string; rede: 'instagram' | 'mess
  * post específico, porque quem quer "todos os posts" não precisa esperar por
  * ela, e o modal abre na hora.
  */
+/** A regra que já existe, quando o formulário é o de editar. */
+export type RespostaParaEditar = {
+  canalId: string
+  palavras: string[]
+  postId: string | null
+  postLegenda: string | null
+  postImagem: string | null
+  postLink: string | null
+  mensagem: string
+  respostaPublica: string | null
+  fluxoId: string | null
+}
+
 export function CamposDaRespostaAComentario({
   clienteId,
   contas,
   fluxos,
+  inicial,
 }: {
   clienteId: string
   contas: ContaDeComentario[]
   /** Os fluxos da conta, para "quando a pessoa responder". */
   fluxos: { id: string; nome: string; publicado: boolean }[]
+  /** Editando: a regra salva preenche os campos. */
+  inicial?: RespostaParaEditar
 }) {
-  const [canalId, setCanalId] = useState(contas[0]?.id ?? '')
-  const [alcance, setAlcance] = useState<'todos' | 'um'>('todos')
-  const [quando, setQuando] = useState<'palavras' | 'qualquer'>('palavras')
+  const [canalId, setCanalId] = useState(inicial?.canalId ?? contas[0]?.id ?? '')
+  const [alcance, setAlcance] = useState<'todos' | 'um'>(inicial?.postId ? 'um' : 'todos')
+  const [quando, setQuando] = useState<'palavras' | 'qualquer'>(
+    inicial && inicial.palavras.length === 0 ? 'qualquer' : 'palavras',
+  )
   const [posts, setPosts] = useState<PostDoInstagram[] | null>(null)
   const [carregando, setCarregando] = useState(false)
   const [erroDosPosts, setErroDosPosts] = useState<string | null>(null)
-  const [escolhido, setEscolhido] = useState<PostDoInstagram | null>(null)
-  const [mensagem, setMensagem] = useState('')
+  // Editando: o post salvo já vem escolhido, para salvar sem abrir a lista.
+  const [escolhido, setEscolhido] = useState<PostDoInstagram | null>(
+    inicial?.postId
+      ? { id: inicial.postId, legenda: inicial.postLegenda, imagem: inicial.postImagem, link: inicial.postLink, tipo: '', publicadoEm: null }
+      : null,
+  )
+  const [mensagem, setMensagem] = useState(inicial?.mensagem ?? '')
 
   async function buscarPosts(conta: string) {
     setCarregando(true)
@@ -78,6 +103,16 @@ export function CamposDaRespostaAComentario({
               valor: c.id,
               rotulo: c.rotulo,
               detalhe: c.rede === 'messenger' ? 'Página do Facebook' : 'Instagram',
+              icone:
+                c.rede === 'messenger' ? (
+                  <svg aria-hidden viewBox="0 0 24 24" width={16} height={16} fill="#0866FF">
+                    <path d={GLIFO_FACEBOOK} />
+                  </svg>
+                ) : (
+                  <span className="text-marca-instagram">
+                    <LogoDoCanal canal="instagram" tamanho={16} />
+                  </span>
+                ),
             }))}
           />
         </div>
@@ -95,7 +130,19 @@ export function CamposDaRespostaAComentario({
           ]}
         />
 
-        {alcance === 'um' && (
+        {alcance === 'um' && posts === null && !carregando && !erroDosPosts && escolhido && (
+          <div className="mt-3 flex items-center gap-3">
+            {escolhido.imagem && (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={escolhido.imagem} alt="" className="size-14 shrink-0 rounded-lg border border-line object-cover" />
+            )}
+            <button type="button" onClick={() => void buscarPosts(canalId)} className="text-[12px] font-semibold text-primary hover:underline">
+              Trocar o post
+            </button>
+          </div>
+        )}
+
+        {alcance === 'um' && !(posts === null && !carregando && !erroDosPosts && escolhido) && (
           <div className="mt-3">
             {carregando && (
               <div className="grid grid-cols-4 gap-2 sm:grid-cols-5" aria-label="Carregando os posts">
@@ -175,6 +222,7 @@ export function CamposDaRespostaAComentario({
               name="palavras"
               required
               maxLength={400}
+              defaultValue={inicial?.palavras.join(', ') ?? ''}
               placeholder="Exemplo: eu quero, link, preço"
               className="app-field mt-3 px-[13px] py-[11px] text-[13.5px]"
             />
@@ -210,7 +258,7 @@ export function CamposDaRespostaAComentario({
         <Dropdown
           nome="fluxoId"
           rotuloAcessivel="Fluxo que a resposta da pessoa abre"
-          valorInicial=""
+          valorInicial={inicial?.fluxoId ?? ''}
           opcoes={[
             { valor: '', rotulo: 'Seguir o fluxo padrão do canal' },
             ...fluxos.map((f) => ({
@@ -230,6 +278,7 @@ export function CamposDaRespostaAComentario({
         <input
           name="respostaPublica"
           maxLength={LIMITES_DO_COMENTARIO.respostaPublica}
+          defaultValue={inicial?.respostaPublica ?? ''}
           placeholder="Exemplo: Enviamos os detalhes no seu direct."
           className="app-field px-[13px] py-[11px] text-[13.5px]"
         />

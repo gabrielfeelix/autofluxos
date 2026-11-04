@@ -21,7 +21,25 @@ import {
 
 export async function acaoCriarRespostaAComentario(
   clienteId: string,
+  estado: EstadoSalvar,
+  formData: FormData,
+): Promise<EstadoSalvar> {
+  return salvarRespostaAComentario(clienteId, undefined, formData)
+}
+
+/** O mesmo formulário da criação, aplicado a uma regra que já existe. */
+export async function acaoEditarRespostaAComentario(
+  clienteId: string,
+  respostaId: string,
   _estado: EstadoSalvar,
+  formData: FormData,
+): Promise<EstadoSalvar> {
+  return salvarRespostaAComentario(clienteId, respostaId, formData)
+}
+
+async function salvarRespostaAComentario(
+  clienteId: string,
+  respostaId: string | undefined,
   formData: FormData,
 ): Promise<EstadoSalvar> {
   const acesso = await exigirCapacidade(clienteId, 'configurar_operacao', 'todos')
@@ -81,7 +99,7 @@ export async function acaoCriarRespostaAComentario(
     mensagem,
     respostaPublica: respostaPublica === '' ? null : respostaPublica,
     fluxoId,
-  })
+  }, respostaId)
   if (!r.ok) return { erro: r.motivo }
 
   revalidatePath(`/clientes/${clienteId}/fluxos`)
