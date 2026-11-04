@@ -763,6 +763,10 @@ function ListaDeMensagens({
                 !mensagem.semCopia &&
                 !mensagem.naoSuportada && (mensagem.apagada ? <MensagemApagada /> : mensagem.editada ? <EdicaoSemTexto /> : <SemTexto />)
               )}
+              {/* O rodapé do modelo aprovado, cinza e menor, como o WhatsApp desenha. */}
+              {mensagem.rodapeDoModelo && (
+                <span className="mt-1.5 block text-[12px] leading-4 opacity-70">{mensagem.rodapeDoModelo}</span>
+              )}
               {/*
                 O rodapé da bolha diz a hora, e **quem escreveu só quando isso
                 acrescenta alguma coisa**.
@@ -806,7 +810,8 @@ function ListaDeMensagens({
                 </RodapeDaBolha>
               )}
               {/* Dentro da bolha, como o WhatsApp desenha o `cta_url`: largura toda, linha fina em cima. */}
-              {mensagem.botao && <BotaoDeLinkNaConversa botao={mensagem.botao} />}
+              {mensagem.cupom && <BotaoDeCupomNaConversa codigo={mensagem.cupom} ultimo={!mensagem.botao} />}
+              {mensagem.botao && <BotaoDeLinkNaConversa botao={mensagem.botao} colado={Boolean(mensagem.cupom)} />}
             </p>
             )}
             </RodapeDaMensagem>
@@ -826,20 +831,47 @@ function ListaDeMensagens({
  * O botão de link que saiu com a mensagem, pendurado embaixo dela como no
  * WhatsApp. É link de verdade: quem atende abre e vê para onde o cliente vai.
  */
-function BotaoDeLinkNaConversa({ botao }: { botao: NonNullable<MensagemDoLead['botao']> }) {
+function BotaoDeLinkNaConversa({ botao, colado = false }: { botao: NonNullable<MensagemDoLead['botao']>; colado?: boolean }) {
   return (
     <a
       href={botao.url}
       target="_blank"
       rel="noreferrer"
       title={botao.url}
-      className="-mx-3.5 -mb-2 mt-2 flex items-center justify-center gap-1.5 border-t border-current/15 py-2 text-[13.5px] leading-5 font-semibold whitespace-normal transition hover:opacity-75"
+      className={`-mx-3.5 -mb-2 ${colado ? 'mt-0' : 'mt-2'} flex items-center justify-center gap-1.5 border-t border-current/15 py-2 text-[13.5px] leading-5 font-semibold whitespace-normal transition hover:opacity-75`}
     >
       <svg aria-hidden width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
         <path d="M14 4h6v6M20 4l-9 9M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5" />
       </svg>
       {botao.rotulo}
     </a>
+  )
+}
+
+/**
+ * O "Copiar código" de um modelo, como o cliente viu. Copia de verdade: quem
+ * atende confere o cupom sem abrir o modelo.
+ */
+function BotaoDeCupomNaConversa({ codigo, ultimo }: { codigo: string; ultimo: boolean }) {
+  const [copiado, setCopiado] = useState(false)
+  return (
+    <button
+      type="button"
+      title={`Copiar ${codigo}`}
+      onClick={() => {
+        void navigator.clipboard?.writeText(codigo).then(() => {
+          setCopiado(true)
+          setTimeout(() => setCopiado(false), 1600)
+        })
+      }}
+      className={`-mx-3.5 ${ultimo ? '-mb-2' : ''} mt-2 flex w-[calc(100%+1.75rem)] items-center justify-center gap-1.5 border-t border-current/15 py-2 text-[13.5px] leading-5 font-semibold transition hover:opacity-75`}
+    >
+      <svg aria-hidden width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <rect x="9" y="9" width="11" height="11" rx="2" />
+        <path d="M5 15V5a1 1 0 0 1 1-1h10" />
+      </svg>
+      {copiado ? 'Copiado' : `Copiar código · ${codigo}`}
+    </button>
   )
 }
 

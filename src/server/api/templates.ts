@@ -254,7 +254,10 @@ export async function enviarModeloPelaApi(clienteId: string, pedido: PedidoDeEnv
     sessaoId: contexto.sessaoId,
     texto,
     autor: AUTOR_DA_API,
-    ...(cartoes.cartoes.length > 0 ? { payload: payloadDoCarrossel(template, cartoes.cartoes, preencher(template.componentes.corpo, valoresDoCorpo)) } : {}),
+    payload:
+      cartoes.cartoes.length > 0
+        ? payloadDoCarrossel(template, cartoes.cartoes, preencher(template.componentes.corpo, valoresDoCorpo))
+        : payloadDoModelo(template, cabecalho?.tipo === 'imagem' ? imagem : undefined, link),
   })
 
   let envio
@@ -356,6 +359,24 @@ function conferirCartoes(
  * produto em `produtos`, o formato que os cards do bot já usam (`CardsDeProduto`).
  * O primeiro valor do cartão vira o título; os outros, a linha de baixo.
  */
+/**
+ * O que a bolha do inbox precisa para mostrar o modelo como o cliente viu: a
+ * foto do cabeçalho (`anexo`), o rodapé, o botão de link e o código do
+ * "Copiar código". Sem isto a conversa mostrava só o corpo (04/nov/2026).
+ */
+function payloadDoModelo(template: Template, imagem: string | undefined, link: string | undefined) {
+  const { botoes = [], rodape } = template.componentes
+  const doLink = botoes.find((b) => b.tipo === 'URL')
+  const destino = doLink ? (doLink.destino ?? (link !== undefined ? (doLink.valor ?? '').replace('{{1}}', link) : doLink.valor)) : undefined
+  const cupom = botoes.find((b) => b.tipo === 'COPY_CODE')?.valor
+  return {
+    ...(imagem?.startsWith('https://') ? { midia: 'imagem', url: imagem } : {}),
+    ...(rodape?.trim() ? { rodape } : {}),
+    ...(doLink && destino?.startsWith('https://') ? { botao: { rotulo: doLink.texto, url: destino } } : {}),
+    ...(cupom ? { cupom } : {}),
+  }
+}
+
 function payloadDoCarrossel(template: Template, cartoes: CartaoDoEnvio[], frase: string) {
   const botao = template.componentes.carrossel?.botoes.find((b) => b.tipo === 'URL')
   return {

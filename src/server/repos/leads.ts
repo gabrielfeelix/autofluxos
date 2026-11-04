@@ -251,6 +251,14 @@ export type MensagemDoLead = {
    * tinha para tocar (02/out/2026).
    */
   botao?: BotaoNaMensagem
+  /**
+   * O rodapé e o código do "Copiar código" de um modelo aprovado
+   * (`payload.rodape`, `payload.cupom`). Sem isto a bolha do modelo mostrava
+   * só o corpo, e quem atende não via o cupom que o cliente recebeu
+   * (PCYES, 04/nov/2026).
+   */
+  rodapeDoModelo?: string
+  cupom?: string
   cobranca?: CobrancaNaMensagem
   /**
    * O lugar que ela mandou. Ausente em quase toda linha.
@@ -1254,6 +1262,7 @@ export async function lerConversa(
         const anexo = anexoDoPayload(m.payload)
         const produtos = produtosDoPayload(m.payload)
         const botao = botaoDoPayload(m.payload)
+        const doModelo = extrasDoModelo(m.payload)
         const local = localDoPayload(m.payload)
         const cartoes = cartoesDoPayload(m.payload)
 
@@ -1326,6 +1335,7 @@ export async function lerConversa(
           ...(produtos.length ? { produtos } : {}),
           ...(produtos.length && fraseDosCards(m.texto, m.payload) ? { fraseDosCards: fraseDosCards(m.texto, m.payload)! } : {}),
           ...(botao ? { botao } : {}),
+          ...doModelo,
           ...(cobrancas.has(cobrancaDoPayload(m.payload) ?? '') ? { cobranca: cobrancas.get(cobrancaDoPayload(m.payload)!)! } : {}),
           ...(recebido ? { recebido } : {}),
           ...(semCopia ? { semCopia: true as const } : {}),
@@ -1451,6 +1461,15 @@ async function cobrancasDasMensagens(contatoId: string, mensagens: { payload: un
     )
   } catch {
     return new Map()
+  }
+}
+
+/** Rodapé e cupom de um modelo, quando gravados; o resto da bolha já vem de `anexo` e `botao`. */
+function extrasDoModelo(payload: unknown): { rodapeDoModelo?: string; cupom?: string } {
+  const p = payload as { rodape?: unknown; cupom?: unknown } | null
+  return {
+    ...(typeof p?.rodape === 'string' && p.rodape.trim() ? { rodapeDoModelo: p.rodape } : {}),
+    ...(typeof p?.cupom === 'string' && p.cupom.trim() ? { cupom: p.cupom } : {}),
   }
 }
 
