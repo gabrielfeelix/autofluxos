@@ -1,7 +1,7 @@
 import { ImagemDaConversa } from '@/components/lead/visor-de-imagem'
 import type { AnexoDaMensagem, CartaoDeContato, ProdutoNaMensagem, Citada, LocalDaMensagem } from '@/server/repos/leads'
 import { telefoneLegivel } from '@/core/contatos/telefone'
-import { type Compartilhado, ROTULO_DO_COMPARTILHADO } from '@/core/compartilhado'
+import { type Compartilhado, embedDoInstagram, ROTULO_DO_COMPARTILHADO } from '@/core/compartilhado'
 import { LogoDoCanal } from '@/components/design/selo-do-canal'
 
 /**
@@ -300,6 +300,32 @@ export function MensagemNaoSuportada({ motivo }: { motivo?: string } = {}) {
  */
 export function CompartilhadoNaBolha({ compartilhado }: { compartilhado: Compartilhado }) {
   const rotulo = ROTULO_DO_COMPARTILHADO[compartilhado.tipo]
+  /*
+   * Reel e post públicos tocam ali mesmo, no player oficial do Instagram: é o
+   * que a pessoa vê no direct, capa e play. `lazy` porque uma conversa com
+   * vinte reels não pode abrir vinte players de uma vez.
+   */
+  const embed = embedDoInstagram(compartilhado.url)
+  if (embed) {
+    return (
+      <span className="mb-1.5 block w-[300px] max-w-full">
+        <span className="mb-1.5 flex items-center gap-1.5 text-[12px] leading-4 font-semibold opacity-85">
+          <LogoDoCanal canal="instagram" tamanho={13} />
+          {rotulo}
+        </span>
+        <iframe
+          src={embed}
+          title={rotulo}
+          loading="lazy"
+          sandbox="allow-scripts allow-same-origin allow-popups allow-popups-to-escape-sandbox"
+          className="block h-[488px] w-full rounded-lg border border-line bg-white"
+        />
+        {compartilhado.titulo && (
+          <span className="mt-1.5 line-clamp-2 block text-[12px] leading-4 opacity-75">{compartilhado.titulo}</span>
+        )}
+      </span>
+    )
+  }
   const conteudo = (
     <>
       <span className="flex size-8 shrink-0 items-center justify-center rounded-md border border-line bg-canvas text-marca-instagram">

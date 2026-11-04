@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { compartilhadoDoPayload, ehArquivoDaMeta, tipoDoLinkDoInstagram } from './compartilhado'
+import { compartilhadoDoPayload, ehArquivoDaMeta, embedDoInstagram, tipoDoLinkDoInstagram } from './compartilhado'
 
 describe('ehArquivoDaMeta', () => {
   it('aceita só CDN da Meta e o Giphy, em https', () => {
@@ -35,5 +35,16 @@ describe('compartilhadoDoPayload', () => {
     expect(compartilhadoDoPayload({ compartilhado: { tipo: 'post', url: 'javascript:alert(1)' } })).toEqual({ tipo: 'post' })
     expect(compartilhadoDoPayload({ compartilhado: { tipo: 'outro' } })).toBeNull()
     expect(compartilhadoDoPayload({ type: 'video' })).toBeNull()
+  })
+})
+
+describe('embedDoInstagram', () => {
+  it('monta o player oficial de reel e post, e recusa o resto', () => {
+    expect(embedDoInstagram('https://www.instagram.com/reel/DfDWVlSJslQ/')).toBe('https://www.instagram.com/reel/DfDWVlSJslQ/embed/')
+    expect(embedDoInstagram('https://instagram.com/reels/abc_1-2?igsh=x')).toBe('https://www.instagram.com/reel/abc_1-2/embed/')
+    expect(embedDoInstagram('https://www.instagram.com/p/Cxyz/')).toBe('https://www.instagram.com/p/Cxyz/embed/')
+    expect(embedDoInstagram('https://www.instagram.com/stories/conta/1/')).toBeNull()
+    expect(embedDoInstagram('https://evil.test/reel/abc/')).toBeNull()
+    expect(embedDoInstagram(undefined)).toBeNull()
   })
 })

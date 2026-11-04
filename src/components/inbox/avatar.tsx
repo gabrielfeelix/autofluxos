@@ -82,8 +82,19 @@ export function Avatar({
       className={`relative flex shrink-0 items-center justify-center rounded-full font-bold ${COR}`}
     >
       {foto ? (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img src={foto} alt="" aria-hidden loading="lazy" className="size-full rounded-full object-cover" />
+        /*
+          As iniciais ficam por baixo da foto: se a foto não carregar (rede,
+          bloqueador, arquivo trocado), aparece a letra, e não um círculo
+          vazio da cor do fundo (04/nov/2026).
+        */
+        <>
+          {limpo && (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={retratoDoContato(limpo)} alt="" aria-hidden className="absolute inset-0 size-full rounded-full" />
+          )}
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={foto} alt="" aria-hidden className="relative size-full rounded-full object-cover" />
+        </>
       ) : limpo ? (
         // eslint-disable-next-line @next/next/no-img-element
         <img src={retratoDoContato(limpo)} alt="" aria-hidden className="size-full rounded-full" />

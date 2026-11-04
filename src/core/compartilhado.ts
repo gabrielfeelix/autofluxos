@@ -51,6 +51,22 @@ export function tipoDoLinkDoInstagram(url: string | undefined): TipoDeCompartilh
 }
 
 /**
+ * O player oficial do Instagram para um reel ou post público, ou `null`.
+ *
+ * É o mesmo `/embed/` que o botão "Incorporar" do Instagram gera: mostra a
+ * capa e toca o vídeo ali dentro, sem baixar nada nem pedir permissão de API.
+ * Conta privada ou post apagado mostram o aviso do próprio Instagram.
+ */
+export function embedDoInstagram(url: string | undefined): string | null {
+  if (!url || !tipoDoLinkDoInstagram(url)) return null
+  const [tipo, codigo] = new URL(url).pathname.split('/').filter(Boolean)
+  if (!codigo || !/^[A-Za-z0-9_-]+$/.test(codigo)) return null
+  if (tipo === 'reel' || tipo === 'reels') return `https://www.instagram.com/reel/${codigo}/embed/`
+  if (tipo === 'p' || tipo === 'tv') return `https://www.instagram.com/p/${codigo}/embed/`
+  return null
+}
+
+/**
  * Os hosts de onde a Meta serve anexo de direct. Só destes o servidor baixa.
  *
  * A URL chega no webhook, e baixar qualquer endereço que venha de fora é pedir
