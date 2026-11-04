@@ -1,3 +1,5 @@
+import { POST as receber } from '../route'
+
 /**
  * Os três avisos de LGPD da Nuvemshop em endereço próprio
  * (`/store-redact`, `/customers-redact`, `/customers-data-request`), que é
@@ -5,4 +7,8 @@
  * de cima: a assinatura confere o corpo e o `event` diz o que é, o caminho
  * não decide nada.
  */
-export { POST, dynamic } from '../route'
+export const dynamic = 'force-dynamic'
+
+export async function POST(req: Request) {
+  return receber(req)
+}
