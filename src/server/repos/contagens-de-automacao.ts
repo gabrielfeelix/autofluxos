@@ -43,6 +43,7 @@ import { db, ehIdInvalido } from '../db'
 export type ContagensDeAutomacao = {
   fluxos: number
   palavras: number
+  comentarios: number
   eventos: number
   campanhas: number
   sequencias: number
@@ -70,13 +71,14 @@ export async function contagensDeAutomacao(clienteId: string): Promise<Contagens
     return count ?? 0
   }
 
-  const [fluxos, palavras, eventos, campanhas, sequencias] = await Promise.all([
+  const [fluxos, palavras, comentarios, eventos, campanhas, sequencias] = await Promise.all([
     contar('fluxos'),
     contar('gatilhos'),
+    contar('respostas_a_comentarios'),
     contar('gatilhos_de_evento'),
     contar('campanhas'),
     contar('sequencias'),
   ])
 
-  return { fluxos, palavras, eventos, campanhas, sequencias }
+  return { fluxos, palavras, comentarios, eventos, campanhas, sequencias }
 }

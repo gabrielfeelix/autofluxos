@@ -12,6 +12,7 @@ import { registrarMensagemDeCoexistencia } from './repos/coexistencia'
 import { db } from './db'
 import { type FabricaDeCanal, type Mensagem, tratarUma } from './receber-mensagem'
 import { alertar } from './alertar'
+import { comentarioSchema, tratarComentario } from './receber-comentario-do-instagram'
 
 /**
  * O caminho de um direct do Instagram até a resposta.
@@ -99,6 +100,20 @@ export const webhookDoInstagramSchema = z.object({
          * pula os nulos e trata os que sobraram.
          */
         messaging: z.array(eventoDeMensagemSchema.nullable().catch(null)).default([]),
+        /** A conta do cliente. É o que identifica o canal num comentário. */
+        id: z.string().optional(),
+        /*
+         * Comentário em post chega aqui, e não em `messaging`. Mesmo cuidado:
+         * o que não for comentário vira `null` em vez de reprovar o lote.
+         */
+        changes: z
+          .array(
+            z
+              .object({ field: z.string(), value: z.unknown() })
+              .nullable()
+              .catch(null),
+          )
+          .default([]),
       }),
     )
     .default([]),
@@ -335,6 +350,16 @@ export async function receberDoInstagram(
       const nome = await nomeDeQuemMandou(canalSalvo, evento.sender.id)
 
       await tratarUma(canalSalvo, mensagem, nome, fabrica)
+      tratadas += 1
+    }
+  }
+
+  for (const entrada of analise.data.entry) {
+    for (const mudanca of entrada.changes) {
+      if (mudanca?.field !== 'comments' || !entrada.id) continue
+      const comentario = comentarioSchema.safeParse(mudanca.value)
+      if (!comentario.success) continue
+      await tratarComentario(entrada.id, comentario.data)
       tratadas += 1
     }
   }

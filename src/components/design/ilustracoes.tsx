@@ -502,6 +502,34 @@ export function IlustracaoRespostasRapidas() {
   )
 }
 
+/** Comentários: alguém comenta no post e a resposta sai no direct. */
+export function IlustracaoComentarios() {
+  return (
+    <Tela titulo="Um post com um comentário que vira mensagem no direct">
+      {/* O post, com a foto e a legenda */}
+      <rect x={18} y={8} width={84} height={104} rx={8} {...TRACO} />
+      <rect x={26} y={16} width={68} height={50} rx={5} fill="currentColor" opacity={0.15} />
+      <path d="M32 58l14-16 10 10 8-7 16 13" {...TRACO} opacity={0.6} />
+      <circle cx={80} cy={28} r={5} fill="currentColor" opacity={0.3} />
+
+      {/* O comentário com a palavra */}
+      <circle cx={31} cy={82} r={5} fill="currentColor" opacity={0.3} />
+      <rect x={40} y={77} width={52} height={10} rx={5} fill="currentColor" opacity={0.22} className="ilu-pulsa" />
+      <rect x={40} y={94} width={34} height={5} rx={2.5} fill="currentColor" opacity={0.15} />
+
+      {/* O caminho até o direct */}
+      <path d="M96 82c18 0 22-26 40-26" {...TRACO} strokeDasharray="3 4" />
+      <path d="M131 51l6 5-6 5" {...TRACO} />
+
+      {/* O direct, com a mensagem e o link */}
+      <rect x={142} y={30} width={44} height={60} rx={8} {...TRACO} />
+      <rect x={148} y={40} width={32} height={14} rx={6} fill="currentColor" opacity={0.3} />
+      <rect x={148} y={58} width={26} height={5} rx={2.5} fill="currentColor" opacity={0.18} />
+      <path d="M152 74h16" {...TRACO} strokeWidth={2} opacity={0.7} />
+    </Tela>
+  )
+}
+
 /** Transmissões: uma mensagem saindo para muita gente de uma vez. */
 export function IlustracaoTransmissoes() {
   const destinos = [22, 60, 98]

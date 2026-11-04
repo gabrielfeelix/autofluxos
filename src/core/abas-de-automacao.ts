@@ -10,10 +10,10 @@
  * automação" já na galeria de modelos (`abrirModelos`). Aba desconhecida cai em
  * Fluxos: o valor vem da URL, e link velho não pode virar tela em branco.
  */
-export const CONTEUDOS = ['fluxos', 'palavras', 'eventos', 'campanhas', 'sequencias'] as const
+export const CONTEUDOS = ['fluxos', 'palavras', 'comentarios', 'eventos', 'campanhas', 'sequencias'] as const
 export type Conteudo = (typeof CONTEUDOS)[number]
 
-export const TIPOS_DE_GATILHO = ['palavras', 'eventos', 'campanhas'] as const
+export const TIPOS_DE_GATILHO = ['palavras', 'comentarios', 'eventos', 'campanhas'] as const
 export type TipoDeGatilho = (typeof TIPOS_DE_GATILHO)[number]
 
 export type AbaPrincipal = 'fluxos' | 'gatilhos' | 'sequencias'

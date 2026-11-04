@@ -31,7 +31,7 @@ afterEach(() => {
 })
 
 describe('assinarMensagens', () => {
-  it('pede `messages` no host do Instagram, com a conta profissional na URL', async () => {
+  it('pede `messages` e `comments` no host do Instagram, com a conta profissional na URL', async () => {
     const espiao = fingirFetch()
 
     await assinarMensagens({ igUserId: '17841400183953038', token: 'token-longo' })
@@ -41,7 +41,7 @@ describe('assinarMensagens', () => {
     expect(init.method).toBe('POST')
 
     const corpo = new URLSearchParams(String(init.body))
-    expect(corpo.get('subscribed_fields')).toBe('messages')
+    expect(corpo.get('subscribed_fields')).toBe('messages,comments')
     expect(corpo.get('access_token')).toBe('token-longo')
   })
 

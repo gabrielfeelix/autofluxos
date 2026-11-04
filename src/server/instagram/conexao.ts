@@ -32,6 +32,11 @@ import { z } from 'zod'
 /** Sobrescreva pelo `.env` quando a Meta aposentar a versão. */
 const VERSAO_PADRAO = 'v25.0'
 
+/** A versão da Graph API em uso, a mesma em toda chamada deste produto. */
+export function versaoDoGraph(): string {
+  return process.env.META_GRAPH_VERSION ?? VERSAO_PADRAO
+}
+
 /**
  * O que pedimos ao dono do perfil.
  *
@@ -39,11 +44,19 @@ const VERSAO_PADRAO = 'v25.0'
  * pedido sem ele. `..._manage_messages` é o que permite ler e responder
  * direct, e é o que depende do app review.
  *
- * Não pedimos `..._manage_comments` nem `..._content_publish`: permissão que
- * não é usada é permissão a mais para justificar no app review, e cada uma é
- * revisada separadamente.
+ * `..._manage_comments` entrou em 04/nov/2026 com a resposta a comentário
+ * (Automações → Gatilhos → Comentários): é ela que libera o webhook de
+ * comentário e a resposta pública. O direct para quem comentou usa a de
+ * mensagens. Conta conectada antes disso precisa reconectar para ganhar a nova.
+ *
+ * `..._content_publish` continua fora: permissão que não é usada é permissão a
+ * mais para justificar no app review, e cada uma é revisada separadamente.
  */
-export const ESCOPOS = ['instagram_business_basic', 'instagram_business_manage_messages'] as const
+export const ESCOPOS = [
+  'instagram_business_basic',
+  'instagram_business_manage_messages',
+  'instagram_business_manage_comments',
+] as const
 
 /** Quanto vale o token longo, para gravar a validade sem consultar a Meta. */
 export const DIAS_DO_TOKEN_LONGO = 60
@@ -125,7 +138,7 @@ const perfilSchema = z.object({
   username: z.string().optional(),
 })
 
-async function pedir(url: string, init?: RequestInit): Promise<unknown> {
+export async function pedir(url: string, init?: RequestInit): Promise<unknown> {
   let resposta: Response
   try {
     resposta = await fetch(url, { ...init, signal: AbortSignal.timeout(TIMEOUT_MS) })
@@ -276,7 +289,10 @@ export async function assinarMensagens(opcoes: {
       method: 'POST',
       headers: { 'content-type': 'application/x-www-form-urlencoded' },
       body: new URLSearchParams({
-        subscribed_fields: 'messages',
+        // `comments` é o webhook da resposta a comentário. Sem a permissão de
+        // comentários a Meta recusa a lista inteira, e é por isso que quem
+        // conectou antes de 04/nov/2026 precisa reconectar.
+        subscribed_fields: 'messages,comments',
         access_token: opcoes.token,
       }),
     }),

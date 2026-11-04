@@ -185,6 +185,11 @@ aqui fica o que o cliente ganha.
   contato. *(21/out/2026)*
 - **Cards de produto, cupons e carrinho abandonado** no WhatsApp.
 - **Lead Ads**: o formulário do Facebook e do Instagram vira contato no funil.
+- **Comentou, recebeu no direct**: quem comenta uma palavra num post do
+  Instagram recebe na hora o link ou a oferta no direct, e o post pode
+  responder em público que a mensagem foi enviada. Vale para um post ou para
+  todos, e a conversa continua no Inbox quando a pessoa responde.
+  *(04/nov/2026)*
 - **Cobrar pela conversa**: botão Cobrar no Inbox manda Pix copia e cola e
   link de cartão ou boleto. A cobrança vira paga sozinha quando o banco
   confirma, e a tela Cobranças mostra quanto entrou e quanto falta. O dinheiro

@@ -24,7 +24,7 @@ import {
   EsqueletoDeBotao,
   EsqueletoDeLinhas,
 } from '@/components/design/esqueleto'
-import { IlustracaoAnuncios, IlustracaoAutomacoes, IlustracaoEventos, IlustracaoPalavrasChave, IlustracaoSequencias } from '@/components/design/ilustracoes'
+import { IlustracaoAnuncios, IlustracaoAutomacoes, IlustracaoComentarios, IlustracaoEventos, IlustracaoPalavrasChave, IlustracaoSequencias } from '@/components/design/ilustracoes'
 import { BotaoPerigo } from '@/components/design/botao-perigo'
 import {
   ModalFormulario,
@@ -34,6 +34,9 @@ import { validar } from '@/core/flow/validar'
 import { validarPublicacao } from '@/core/validar-publicacao'
 import { Dropdown } from '@/components/design/dropdown'
 import { InterruptorDeGatilho } from '@/components/gatilhos/interruptor'
+import { CamposDaRespostaAComentario, InterruptorDeRespostaAComentario } from '@/components/gatilhos/comentarios'
+import { acaoApagarRespostaAComentario, acaoCriarRespostaAComentario } from '@/server/acoes-comentarios'
+import { listarRespostasAComentarios } from '@/server/repos/respostas-a-comentarios'
 import { InterruptorDeEvento } from '@/components/gatilhos/interruptor-de-evento'
 import { WebhooksDeEntrada } from '@/components/gatilhos/webhooks-de-entrada'
 import { InterruptorDeCampanha } from '@/components/gatilhos/interruptor-de-campanha'
@@ -138,6 +141,7 @@ const ABAS_ROTULOS = [
 /** As sub-abas de Gatilhos, na ordem em que aparecem. */
 const TIPOS_ROTULOS = [
   { chave: 'palavras', rotulo: 'Palavras-chave' },
+  { chave: 'comentarios', rotulo: 'Comentários' },
   { chave: 'eventos', rotulo: 'Eventos' },
   { chave: 'campanhas', rotulo: 'Campanhas' },
 ] as const satisfies readonly { chave: TipoDeGatilho; rotulo: string }[]
@@ -272,12 +276,13 @@ async function ConteudoDaAba({
     esperando,
     nicho,
     templatesDoEvento,
+    respostasAComentarios,
   ] = await Promise.all([
     contagensDeAutomacao(cliente.id),
     precisa('fluxos', 'palavras', 'eventos', 'campanhas', 'sequencias')
       ? listarFluxos(cliente.id)
       : vazio([] as Awaited<ReturnType<typeof listarFluxos>>),
-    precisa('fluxos') ? listarCanais(cliente.id) : vazio([] as Awaited<ReturnType<typeof listarCanais>>),
+    precisa('fluxos', 'comentarios') ? listarCanais(cliente.id) : vazio([] as Awaited<ReturnType<typeof listarCanais>>),
     precisa('fluxos', 'palavras', 'eventos', 'campanhas')
       ? contarExecucoesPorFluxo(cliente.id)
       : vazio(new Map<string, number>()),
@@ -312,6 +317,9 @@ async function ConteudoDaAba({
     precisa('fluxos') ? nichoDaConta(cliente.id) : vazio(null),
     // "Começar pelo modelo": todos, porque a reserva segura enquanto a Meta revisa o principal.
     precisa('eventos') ? listarTemplates(cliente.id) : vazio([] as Awaited<ReturnType<typeof listarTemplates>>),
+    precisa('comentarios')
+      ? listarRespostasAComentarios(cliente.id)
+      : vazio([] as Awaited<ReturnType<typeof listarRespostasAComentarios>>),
   ])
   const criarPastaComCliente = acaoCriarPasta.bind(null, cliente.id, {})
   // Os campos de passo (criar e editar) usam as mesmas listas.
@@ -369,6 +377,13 @@ async function ConteudoDaAba({
   const eventosVisiveis = gatilhosDeEvento.filter((g) => casaTexto(g.evento))
   const campanhasVisiveis = campanhas.filter((c) => casaTexto(c.nome, c.frase))
   const sequenciasVisiveis = sequencias.filter((q) => casaTexto(q.nome))
+  const contasDoInstagram = canais
+    .filter((c) => c.provider === 'instagram' && c.status === 'ativo')
+    .map((c) => ({ id: c.id, usuario: c.igUsername }))
+  const respostasVisiveis = respostasAComentarios.filter((r) =>
+    casaTexto(r.mensagem, r.palavras.join(' '), r.postLegenda ?? ''),
+  )
+  const criarRespostaComCliente = acaoCriarRespostaAComentario.bind(null, cliente.id, {})
 
   /**
    * Os fluxos agrupados por gaveta, com a raiz **por último**.
@@ -431,6 +446,7 @@ async function ConteudoDaAba({
   const CONTAGEM: Record<Aba, number> = {
     fluxos: contagens.fluxos,
     palavras: contagens.palavras,
+    comentarios: contagens.comentarios,
     eventos: contagens.eventos,
     campanhas: contagens.campanhas,
     sequencias: contagens.sequencias,
@@ -555,6 +571,21 @@ async function ConteudoDaAba({
                     }))}
                   />
                 </div>
+              </ModalFormulario>
+            )}</>,
+    }),
+    comentarios: () => ({
+      descricao: <>Quem comenta no post recebe a sua mensagem no direct, na hora.</>,
+      acoes: <>{contasDoInstagram.length > 0 && (
+              <ModalFormulario
+                botao="+ Resposta a comentário"
+                titulo="Nova resposta a comentário"
+                descricao="Vale para comentários feitos depois de salvar. Cada comentário recebe uma mensagem no direct; se a pessoa responder, a conversa segue no Inbox."
+                rotuloEnviar="Salvar e ligar"
+                tamanho="lg"
+                action={criarRespostaComCliente}
+              >
+                <CamposDaRespostaAComentario clienteId={cliente.id} contas={contasDoInstagram} />
               </ModalFormulario>
             )}</>,
     }),
@@ -1008,6 +1039,123 @@ async function ConteudoDaAba({
           )}
 
 
+        </section>
+        </>
+        )}
+
+        {aba === 'comentarios' && (
+        <>
+          {respostasAComentarios.length > 0 && (
+            <BuscaDaAba
+              base={`/clientes/${cliente.id}/fluxos`}
+              parametros={parametros}
+              placeholder="Buscar resposta a comentário"
+              visiveis={respostasVisiveis.length}
+              total={respostasAComentarios.length}
+            />
+          )}
+        <section className="app-card overflow-hidden">
+          <NadaNaBusca parametros={parametros} visiveis={respostasVisiveis.length} />
+
+          {respostasAComentarios.length === 0 ? (
+            <div className="border-b border-line px-5 py-12 text-center last:border-0">
+              <IlustracaoComentarios />
+              <p className="mt-6 text-[13px] font-semibold text-soft">
+                {contasDoInstagram.length === 0 ? 'Conecte o Instagram para responder comentários' : 'Nenhuma resposta a comentário ainda'}
+              </p>
+              <p className="mx-auto mt-1 max-w-[460px] text-xs leading-5 text-dim">
+                {contasDoInstagram.length === 0
+                  ? 'Com a conta ligada, quem comentar uma palavra no seu post recebe o link ou a oferta direto no direct.'
+                  : 'Escolha o post e a palavra. Quem comentar recebe a sua mensagem no direct, e a conversa continua no Inbox.'}
+              </p>
+              {contasDoInstagram.length === 0 && (
+                <Link
+                  href={`/clientes/${cliente.id}/conversas/canais/instagram`}
+                  className="mt-5 inline-flex rounded-full bg-primary px-4 py-2 text-[12.5px] font-semibold text-white transition hover:opacity-90"
+                >
+                  Conectar o Instagram
+                </Link>
+              )}
+            </div>
+          ) : (
+            <ul>
+              {respostasVisiveis.map((resposta) => (
+                <li
+                  key={resposta.id}
+                  className="flex items-center gap-3.5 border-b border-line px-5 py-3.5 last:border-0"
+                >
+                  <InterruptorDeRespostaAComentario
+                    clienteId={cliente.id}
+                    respostaId={resposta.id}
+                    ativo={resposta.ativo}
+                  />
+                  {resposta.postImagem ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={resposta.postImagem}
+                      alt=""
+                      loading="lazy"
+                      className="size-11 shrink-0 rounded-lg border border-line bg-surface-strong object-cover"
+                    />
+                  ) : (
+                    <span
+                      aria-hidden
+                      className="grid size-11 shrink-0 place-items-center rounded-lg border border-line bg-surface-strong text-dim"
+                    >
+                      <svg viewBox="0 0 24 24" width={18} height={18} fill="none" stroke="currentColor" strokeWidth={1.6}>
+                        <rect x="3" y="3" width="7.5" height="7.5" rx="1.5" />
+                        <rect x="13.5" y="3" width="7.5" height="7.5" rx="1.5" />
+                        <rect x="3" y="13.5" width="7.5" height="7.5" rx="1.5" />
+                        <rect x="13.5" y="13.5" width="7.5" height="7.5" rx="1.5" />
+                      </svg>
+                    </span>
+                  )}
+                  <span className="min-w-0 flex-1">
+                    <span className="flex min-w-0 flex-wrap items-center gap-1.5">
+                      {resposta.palavras.length === 0 ? (
+                        <strong className={`text-[13px] font-semibold ${resposta.ativo ? '' : 'text-dim line-through'}`}>
+                          Qualquer comentário
+                        </strong>
+                      ) : (
+                        resposta.palavras.map((palavra) => (
+                          <span
+                            key={palavra}
+                            className={`rounded-md border border-line bg-surface-strong px-1.5 py-0.5 text-[12px] font-semibold ${resposta.ativo ? 'text-soft' : 'text-dim line-through'}`}
+                          >
+                            {palavra}
+                          </span>
+                        ))
+                      )}
+                      <span className="text-[11px] text-dim">
+                        {resposta.postId ? 'neste post' : 'em todos os posts'}
+                      </span>
+                    </span>
+                    <span className="mt-1 block truncate text-[12px] text-muted">
+                      <span className="text-dim">Direct: </span>
+                      {resposta.mensagem}
+                    </span>
+                    {resposta.respostaPublica && (
+                      <span className="mt-0.5 block truncate text-[11px] text-dim">
+                        Responde no comentário: {resposta.respostaPublica}
+                      </span>
+                    )}
+                  </span>
+                  <span className="hidden sm:inline-flex">
+                    <SeloDoCanal canal="instagram" compacto />
+                  </span>
+                  <span className="whitespace-nowrap text-[11px] text-dim">
+                    <strong className="font-semibold text-soft">{resposta.execucoes}</strong>{' '}
+                    {resposta.execucoes === 1 ? 'envio' : 'envios'}
+                  </span>
+                  <BotaoPerigo
+                    titulo="Apaga a resposta e a contagem dela. Para só pausar, use o interruptor."
+                    pergunta={`Apagar esta resposta a comentário? A contagem de ${resposta.execucoes} envio(s) some junto.`}
+                    acao={acaoApagarRespostaAComentario.bind(null, cliente.id, resposta.id)}
+                  />
+                </li>
+              ))}
+            </ul>
+          )}
         </section>
         </>
         )}
