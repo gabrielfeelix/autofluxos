@@ -13,6 +13,7 @@ import { ultimaMensagemRecebida } from '@/server/repos/ultimos-eventos'
 import { CamadasDaConexao } from '@/components/conexoes/camadas'
 import { estadoDaConexao } from '@/core/conexoes'
 import { IlustracaoCanal } from '@/components/design/ilustracoes'
+import { listarRespostasAComentarios } from '@/server/repos/respostas-a-comentarios'
 
 export const dynamic = 'force-dynamic'
 
@@ -69,10 +70,13 @@ export default async function Pagina({
   const cliente = await acharCliente(clienteId)
   if (!cliente) notFound()
 
-  const [canal, ultimaMensagem] = await Promise.all([
+  const [canal, ultimaMensagem, todasAsRegras] = await Promise.all([
     canalDoInstagram(clienteId),
     ultimaMensagemRecebida(clienteId),
+    listarRespostasAComentarios(clienteId),
   ])
+  const regras = canal ? todasAsRegras.filter((regra) => regra.canalId === canal.id) : []
+  const novaRegra = `/clientes/${clienteId}/fluxos?aba=gatilhos&tipo=comentarios&nova=1`
   const estado = estadoDaConexao({
     tipo: 'instagram',
     conta: canal ? { igUsername: canal.igUsername, tokenExpiraEm: canal.tokenExpiraEm } : null,
@@ -168,7 +172,81 @@ export default async function Pagina({
               </p>
             )}
           </section>
-        ) : (
+        ) : null}
+
+        {/*
+          Comentários nos posts: a resposta automática mora em Automações →
+          Gatilhos → Comentários, mas quem procura por ela vem ao Instagram.
+          Aqui ficam as regras desta conta e o botão de criar (04/nov/2026).
+        */}
+        {canal && (
+          <section className="app-card mt-5 px-5 py-5">
+            <div className="flex flex-wrap items-start justify-between gap-3">
+              <div className="min-w-0">
+                <p className="text-[14px] font-semibold text-soft">Comentários nos posts</p>
+                <p className="mt-1 max-w-md text-[12.5px] leading-6 text-dim">
+                  Quem comentar uma palavra, como &quot;eu quero&quot;, recebe a sua mensagem no direct.
+                </p>
+              </div>
+              <a href={novaRegra} className="botao-primario botao-md shrink-0">
+                Nova resposta a comentário
+              </a>
+            </div>
+
+            {regras.length > 0 && (
+              <ul className="mt-4 divide-y divide-line border-t border-line">
+                {regras.map((regra) => (
+                  <li key={regra.id} className="flex items-center gap-3 py-3">
+                    {regra.postImagem ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img src={regra.postImagem} alt="" className="size-11 shrink-0 rounded-[8px] border border-line object-cover" />
+                    ) : (
+                      <span className="grid size-11 shrink-0 place-items-center rounded-[8px] border border-line bg-canvas text-[10px] font-semibold text-muted">
+                        Todos
+                      </span>
+                    )}
+                    <div className="min-w-0 flex-1">
+                      <p className="flex flex-wrap items-center gap-1.5 text-[12.5px] text-soft">
+                        {regra.palavras.length > 0 ? (
+                          regra.palavras.map((palavra) => (
+                            <span key={palavra} className="rounded-full border border-line px-2 py-0.5 text-[11.5px] font-semibold">
+                              {palavra}
+                            </span>
+                          ))
+                        ) : (
+                          <span className="font-semibold">Qualquer comentário</span>
+                        )}
+                        <span className="text-[11.5px] text-dim">
+                          {regra.postId ? (regra.postLegenda ? `em "${regra.postLegenda.slice(0, 40)}"` : 'em um post') : 'em todos os posts'}
+                        </span>
+                      </p>
+                      <p className="mt-0.5 truncate text-[12px] text-dim">{regra.mensagem}</p>
+                    </div>
+                    <div className="shrink-0 text-right">
+                      <p className={`text-[11.5px] font-semibold ${regra.ativo ? 'text-ok' : 'text-muted'}`}>
+                        {regra.ativo ? 'Ligada' : 'Desligada'}
+                      </p>
+                      <p className="text-[11px] text-dim">
+                        {regra.execucoes} {regra.execucoes === 1 ? 'resposta' : 'respostas'}
+                      </p>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            )}
+
+            {regras.length > 0 && (
+              <a
+                href={`/clientes/${clienteId}/fluxos?aba=gatilhos&tipo=comentarios`}
+                className="mt-1 inline-block text-[12px] font-semibold text-primary hover:underline"
+              >
+                Editar respostas
+              </a>
+            )}
+          </section>
+        )}
+
+        {!canal && (
           <section className="app-card flex items-center gap-10 px-5 py-6">
             <div className="min-w-0 flex-1">
             <p className="text-[14px] font-semibold text-soft">Nenhuma conta ligada</p>

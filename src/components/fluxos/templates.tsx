@@ -66,6 +66,12 @@ export type ModeloDeGaleria = {
   etiquetas: readonly string[]
   /** Palavras que só a busca vê. Ver `core/flow/filtrar-modelos.ts`. */
   sinonimos?: readonly string[]
+  /**
+   * Atalho para outra tela, e não um fluxo: "Responder quem comentar no post"
+   * é gatilho (Gatilhos → Comentários), mas quem procura na galeria não sabe
+   * disso. Com `href`, o cartão é link e aparece em qualquer ramo.
+   */
+  href?: string
 }
 
 /**
@@ -145,12 +151,10 @@ function CartaoDoTemplate({
   modelo: ModeloDeGaleria
   aoEscolher: (modelo: ModeloDeGaleria) => void
 }) {
-  return (
-    <button
-      type="button"
-      onClick={() => aoEscolher(modelo)}
-      className="group flex h-full flex-col items-start rounded-[13px] border border-line bg-panel p-3 text-left transition hover:border-primary/45 hover:bg-primary/[0.05]"
-    >
+  const classe =
+    'group flex h-full flex-col items-start rounded-[13px] border border-line bg-panel p-3 text-left transition hover:border-primary/45 hover:bg-primary/[0.05]'
+  const miolo = (
+    <>
       <span className="block w-full overflow-hidden rounded-[10px] opacity-90 transition group-hover:opacity-100">
         <DesenhoDoTemplate id={modelo.id} />
       </span>
@@ -166,6 +170,18 @@ function CartaoDoTemplate({
           </span>
         ))}
       </span>
+    </>
+  )
+  if (modelo.href) {
+    return (
+      <a href={modelo.href} className={classe}>
+        {miolo}
+      </a>
+    )
+  }
+  return (
+    <button type="button" onClick={() => aoEscolher(modelo)} className={classe}>
+      {miolo}
     </button>
   )
 }
@@ -195,7 +211,15 @@ export function GaleriaDeTemplates({
   const [termo, setTermo] = useState('')
   const [marcadas, setMarcadas] = useState<string[]>([])
 
-  const grupos = useMemo(() => separarPeloRamo(modelos, destaque), [modelos, destaque])
+  const grupos = useMemo(() => {
+    // Atalho vale para todo ramo: vai na frente de "Para qualquer negócio".
+    const atalhos = modelos.filter((modelo) => modelo.href)
+    const separados = separarPeloRamo(
+      modelos.filter((modelo) => !modelo.href),
+      destaque,
+    )
+    return destaque ? { doRamo: separados.doRamo, outros: [...atalhos, ...separados.outros] } : separados
+  }, [modelos, destaque])
   // A conta com ramo procura só no que ela vê; sem ramo, em tudo.
   const daConta = useMemo(() => (destaque ? [...grupos.doRamo, ...grupos.outros] : modelos), [destaque, grupos, modelos])
   const achados = useMemo(
@@ -484,6 +508,35 @@ export function NovaAutomacao({
       >
         {passo === 'como' && (
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+            {/*
+              No topo (04/nov/2026): é o pedido mais comum de quem vende pelo Instagram, e no fim do diálogo ninguém achava. Não é fluxo, é gatilho (Gatilhos → Comentários), mas quem chega
+              aqui querendo "responder comentário" não sabe disso e não
+              deveria precisar saber. O atalho leva ao formulário já aberto.
+            */}
+            <a
+              href={`/clientes/${clienteId}/fluxos?aba=gatilhos&tipo=comentarios&nova=1`}
+              className="group flex items-center gap-3.5 rounded-[14px] border border-line bg-panel p-3.5 text-left transition hover:border-primary/45 hover:bg-primary/[0.045] focus-visible:border-primary/60 focus-visible:outline-none sm:col-span-2"
+            >
+              <span
+                aria-hidden
+                className="grid size-10 shrink-0 place-items-center rounded-[10px]"
+                style={{
+                  color: DEFINICAO_DO_CANAL.instagram.cor,
+                  background: `color-mix(in oklab, ${DEFINICAO_DO_CANAL.instagram.cor} 10%, transparent)`,
+                }}
+              >
+                <LogoDoCanal canal="instagram" tamanho={18} />
+              </span>
+              <span className="min-w-0 flex-1">
+                <span className="block text-[14px] font-bold text-soft">Responder quem comentar no post</span>
+                <span className="mt-0.5 block text-[11.5px] leading-[1.55] text-dim">
+                  Quem comentar uma palavra no seu post do Instagram recebe a sua mensagem no direct.
+                </span>
+              </span>
+              <span aria-hidden className="text-[16px] text-muted transition group-hover:translate-x-0.5 group-hover:text-soft">
+                →
+              </span>
+            </a>
             <EscolhaDeComeco
               titulo="Em branco"
               rodape="a tela vazia do editor"
@@ -529,35 +582,6 @@ export function NovaAutomacao({
               Uma cópia de uma automação sua. Nasce como rascunho, desligada.
             </EscolhaDeComeco>
 
-            {/*
-              Não é fluxo, é gatilho (Gatilhos → Comentários), mas quem chega
-              aqui querendo "responder comentário" não sabe disso e não
-              deveria precisar saber. O atalho leva ao formulário já aberto.
-            */}
-            <a
-              href={`/clientes/${clienteId}/fluxos?aba=gatilhos&tipo=comentarios&nova=1`}
-              className="group flex items-center gap-3.5 rounded-[14px] border border-line bg-panel p-3.5 text-left transition hover:border-primary/45 hover:bg-primary/[0.045] focus-visible:border-primary/60 focus-visible:outline-none sm:col-span-2"
-            >
-              <span
-                aria-hidden
-                className="grid size-10 shrink-0 place-items-center rounded-[10px]"
-                style={{
-                  color: DEFINICAO_DO_CANAL.instagram.cor,
-                  background: `color-mix(in oklab, ${DEFINICAO_DO_CANAL.instagram.cor} 10%, transparent)`,
-                }}
-              >
-                <LogoDoCanal canal="instagram" tamanho={18} />
-              </span>
-              <span className="min-w-0 flex-1">
-                <span className="block text-[14px] font-bold text-soft">Responder comentário</span>
-                <span className="mt-0.5 block text-[11.5px] leading-[1.55] text-dim">
-                  Quem comentar uma palavra no seu post do Instagram recebe a sua mensagem no direct.
-                </span>
-              </span>
-              <span aria-hidden className="text-[16px] text-muted transition group-hover:translate-x-0.5 group-hover:text-soft">
-                →
-              </span>
-            </a>
           </div>
         )}
 

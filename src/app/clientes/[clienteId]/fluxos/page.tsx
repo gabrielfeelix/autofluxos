@@ -535,7 +535,17 @@ async function ConteudoDaAba({
                 por um nome de três palavras e quase ninguém usava. */}
             <NovaAutomacao
               acao={criarComCliente}
-              modelos={TEMPLATES}
+              modelos={[
+                {
+                  id: 'responder-comentario',
+                  nome: 'Responder quem comentar no post',
+                  resumo: 'Quem comentar uma palavra, como "eu quero", recebe a sua mensagem no direct. Em um post ou em todos.',
+                  etiquetas: ['Instagram', 'Vendas', 'Atendimento'],
+                  sinonimos: ['comentário', 'comentar', 'comentou', 'post', 'publicação', 'eu quero', 'palavra', 'direct', 'facebook'],
+                  href: `/clientes/${cliente.id}/fluxos?aba=gatilhos&tipo=comentarios&nova=1`,
+                },
+                ...TEMPLATES,
+              ]}
               etiquetas={ETIQUETAS}
               destaque={destaqueDeFluxos(pacoteDo(nicho))}
               clienteId={cliente.id}

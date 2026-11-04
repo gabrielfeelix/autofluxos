@@ -459,7 +459,26 @@ function DesenhoGenerico() {
   )
 }
 
+/** Responder comentário: o post, o comentário embaixo, e o direct que sai. */
+function DesenhoComentario() {
+  return (
+    <Canvas id="t-comentario">
+      {/* O post: quadrado com a foto sugerida. */}
+      <rect x="18" y="10" width="52" height="52" rx="8" fill={CHEIO} stroke={TRACO} />
+      <path d="M26 52l12-14 9 9 6-6 9 11z" fill={ROXO} opacity="0.5" />
+      <circle cx="56" cy="24" r="5" fill={AMBAR} opacity="0.7" />
+      {/* O comentário, com a palavra em destaque. */}
+      <rect x="84" y="20" width="62" height="20" rx="10" fill={CHEIO} stroke={TRACO} />
+      <rect x="93" y="27.5" width="26" height="5" rx="2.5" fill={AZUL} opacity="0.8" />
+      <rect x="123" y="27.5" width="14" height="5" rx="2.5" fill={TRACO} />
+      <Fio d="M146 30C162 30 162 42 178 42" />
+      <Bloco x={178} y={28} cor={VERDE} largura={56} altura={28} linhas={1} />
+    </Canvas>
+  )
+}
+
 const DESENHOS: Record<string, () => ReactNode> = {
+  'responder-comentario': DesenhoComentario,
   'menu-atendimento': DesenhoMenu,
   'qualificar-sdr': DesenhoFunil,
   'carrinho-abandonado': DesenhoCarrinho,
