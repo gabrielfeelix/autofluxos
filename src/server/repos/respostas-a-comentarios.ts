@@ -94,18 +94,18 @@ export async function criarRespostaAComentario(
     fluxoId: string | null
   },
 ): Promise<{ ok: true; id: string } | { ok: false; motivo: string }> {
-  // O canal vem de um formulário: conferir que é desta conta e é Instagram.
+  // O canal vem de um formulário: conferir que é desta conta e é Instagram ou página.
   const { data: canal, error: erroDoCanal } = await db()
     .from('channels')
     .select('id')
     .eq('id', dados.canalId)
     .eq('client_id', clienteId)
-    .eq('provider', 'instagram')
+    .in('provider', ['instagram', 'messenger'])
     .maybeSingle()
 
-  if (ehIdInvalido(erroDoCanal)) return { ok: false, motivo: 'escolha uma conta do Instagram válida' }
+  if (ehIdInvalido(erroDoCanal)) return { ok: false, motivo: 'escolha uma conta do Instagram ou uma página válida' }
   if (erroDoCanal) throw new Error(`não foi possível conferir a conta: ${erroDoCanal.message}`)
-  if (!canal) return { ok: false, motivo: 'esta conta do Instagram não é deste cliente' }
+  if (!canal) return { ok: false, motivo: 'esta conta não é deste cliente' }
 
   if (dados.fluxoId) {
     const { data: fluxo, error: erroDoFluxo } = await db()
@@ -181,7 +181,7 @@ export async function reservarComentario(dados: {
   comentarioId: string
   clienteId: string
   respostaId: string
-  autorIgsid: string
+  autorIgsid: string | null
 }): Promise<boolean> {
   const { error } = await db().from('comentarios_respondidos').insert({
     comentario_id: dados.comentarioId,

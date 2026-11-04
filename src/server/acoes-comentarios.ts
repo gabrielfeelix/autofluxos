@@ -4,6 +4,7 @@ import { revalidatePath } from 'next/cache'
 import type { EstadoSalvar } from '@/components/design/formulario-salvar'
 import { LIMITES_DO_COMENTARIO, lerPalavras } from '@/core/comentarios'
 import { type PostDoInstagram, postsRecentes } from './instagram/comentarios'
+import { postsDaPagina } from './messenger/comentarios'
 import { exigirCapacidade, recusou } from './permissoes'
 import { listarCanais, lerTokenDoCanal } from './repos/conversas'
 import {
@@ -35,7 +36,7 @@ export async function acaoCriarRespostaAComentario(
   // Vazio é o fluxo padrão do Instagram, o comportamento de antes desta opção.
   const fluxoId = texto('fluxoId') || null
 
-  if (canalId === '') return { erro: 'Conecte uma conta do Instagram antes.' }
+  if (canalId === '') return { erro: 'Conecte o Instagram ou a página do Facebook antes.' }
   if (!qualquer && palavras.length === 0) {
     return { erro: 'Escreva ao menos uma palavra, ou escolha responder qualquer comentário.' }
   }
@@ -56,7 +57,7 @@ export async function acaoCriarRespostaAComentario(
   if (postBruto !== '') {
     try {
       const lido = JSON.parse(postBruto) as Partial<PostDoInstagram>
-      if (typeof lido.id === 'string' && /^\d{5,30}$/.test(lido.id)) {
+      if (typeof lido.id === 'string' && /^\d{5,30}(_\d{5,30})?$/.test(lido.id)) {
         const textoOuNulo = (v: unknown) => (typeof v === 'string' && v !== '' ? v : null)
         const link = textoOuNulo(lido.link)
         const imagem = textoOuNulo(lido.imagem)
@@ -124,7 +125,18 @@ export async function acaoPostsDoInstagram(
   const acesso = await exigirCapacidade(clienteId, 'configurar_operacao', 'todos')
   if (recusou(acesso)) return { ok: false, erro: acesso.erro ?? 'sem permissão' }
 
-  const canal = (await listarCanais(clienteId)).find((c) => c.id === canalId && c.provider === 'instagram')
+  const canal = (await listarCanais(clienteId)).find(
+    (c) => c.id === canalId && (c.provider === 'instagram' || c.provider === 'messenger'),
+  )
+  // A página do Facebook: os posts dela, com o token da página.
+  if (canal?.provider === 'messenger') {
+    try {
+      return { ok: true, posts: await postsDaPagina({ token: await lerTokenDoCanal(canal) }) }
+    } catch (erro) {
+      console.warn('[messenger] não foi possível listar os posts', erro)
+      return { ok: false, erro: 'Não foi possível buscar os posts agora. Você ainda pode usar todos os posts.' }
+    }
+  }
   if (!canal || !canal.igUserId) return { ok: false, erro: 'Esta conta do Instagram não está mais ligada.' }
 
   try {

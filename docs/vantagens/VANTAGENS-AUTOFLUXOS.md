@@ -193,7 +193,8 @@ aqui fica o que o cliente ganha.
   responder em público que a mensagem foi enviada. Vale para um post ou para
   todos. Quando a pessoa responde, a conversa pode abrir um fluxo próprio
   daquele post (oferta, coleta de dados, venda) em vez do atendimento padrão.
-  *(04/nov/2026)*
+  Vale também para os posts da página do Facebook, com a mensagem chegando
+  no Messenger. *(04/nov/2026)*
 - **Cobrar pela conversa**: botão Cobrar no Inbox manda Pix copia e cola e
   link de cartão ou boleto. A cobrança vira paga sozinha quando o banco
   confirma, e a tela Cobranças mostra quanto entrou e quanto falta. O dinheiro

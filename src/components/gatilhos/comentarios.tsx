@@ -9,7 +9,8 @@ import { LIMITES_DO_COMENTARIO } from '@/core/comentarios'
 import { acaoAlternarRespostaAComentario, acaoPostsDoInstagram } from '@/server/acoes-comentarios'
 import type { PostDoInstagram } from '@/server/instagram/comentarios'
 
-type ContaDoInstagram = { id: string; usuario: string | null }
+/** Uma conta que recebe comentário: perfil do Instagram ou página do Facebook. */
+type ContaDeComentario = { id: string; rotulo: string; rede: 'instagram' | 'messenger' }
 
 /**
  * Os campos do modal "Nova resposta a comentário".
@@ -24,7 +25,7 @@ export function CamposDaRespostaAComentario({
   fluxos,
 }: {
   clienteId: string
-  contas: ContaDoInstagram[]
+  contas: ContaDeComentario[]
   /** Os fluxos da conta, para "quando a pessoa responder". */
   fluxos: { id: string; nome: string; publicado: boolean }[]
 }) {
@@ -63,9 +64,9 @@ export function CamposDaRespostaAComentario({
 
       {contas.length > 1 && (
         <div>
-          <RotuloCampo>Conta do Instagram</RotuloCampo>
+          <RotuloCampo>Conta</RotuloCampo>
           <Dropdown
-            rotuloAcessivel="Conta do Instagram"
+            rotuloAcessivel="Conta que recebe o comentário"
             valor={canalId}
             aoMudar={(valor) => {
               setCanalId(valor)
@@ -73,7 +74,11 @@ export function CamposDaRespostaAComentario({
               setEscolhido(null)
               if (alcance === 'um') void buscarPosts(valor)
             }}
-            opcoes={contas.map((c) => ({ valor: c.id, rotulo: c.usuario ? `@${c.usuario}` : 'Conta sem @' }))}
+            opcoes={contas.map((c) => ({
+              valor: c.id,
+              rotulo: c.rotulo,
+              detalhe: c.rede === 'messenger' ? 'Página do Facebook' : 'Instagram',
+            }))}
           />
         </div>
       )}
@@ -207,7 +212,7 @@ export function CamposDaRespostaAComentario({
           rotuloAcessivel="Fluxo que a resposta da pessoa abre"
           valorInicial=""
           opcoes={[
-            { valor: '', rotulo: 'Seguir o fluxo padrão do Instagram' },
+            { valor: '', rotulo: 'Seguir o fluxo padrão do canal' },
             ...fluxos.map((f) => ({
               valor: f.id,
               rotulo: `Abrir o fluxo ${f.nome}`,

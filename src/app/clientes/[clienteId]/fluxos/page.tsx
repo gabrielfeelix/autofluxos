@@ -67,6 +67,7 @@ import {
 } from '@/server/acoes'
 import { acaoSalvarModeloDoEvento } from '@/server/acoes-evento-com-modelo'
 import { acharCliente, type Cliente } from '@/server/repos/clientes'
+import { canalDoMessenger } from '@/server/repos/canais-messenger'
 import { fluxoDoPapel, listarCanais } from '@/server/repos/conversas'
 import { enderecoDoPainel } from '@/server/endereco'
 import { listarGatilhos } from '@/server/repos/gatilhos'
@@ -381,9 +382,21 @@ async function ConteudoDaAba({
   const eventosVisiveis = gatilhosDeEvento.filter((g) => casaTexto(g.evento))
   const campanhasVisiveis = campanhas.filter((c) => casaTexto(c.nome, c.frase))
   const sequenciasVisiveis = sequencias.filter((q) => casaTexto(q.nome))
+  // Quem recebe comentário: perfis do Instagram e páginas do Facebook (Messenger).
+  const paginaDoMessenger = canais.some((c) => c.provider === 'messenger') ? await canalDoMessenger(cliente.id) : null
   const contasDoInstagram = canais
-    .filter((c) => c.provider === 'instagram' && c.status === 'ativo')
-    .map((c) => ({ id: c.id, usuario: c.igUsername }))
+    .filter((c) => (c.provider === 'instagram' || c.provider === 'messenger') && c.status === 'ativo')
+    .map((c) => ({
+      id: c.id,
+      rede: c.provider as 'instagram' | 'messenger',
+      rotulo:
+        c.provider === 'messenger'
+          ? (paginaDoMessenger?.id === c.id ? paginaDoMessenger.fbPageNome : null) ?? 'Página do Facebook'
+          : c.igUsername
+            ? `@${c.igUsername}`
+            : 'Conta sem @',
+    }))
+  const redeDoCanal = new Map(contasDoInstagram.map((c) => [c.id, c.rede]))
   const respostasVisiveis = respostasAComentarios.filter((r) =>
     casaTexto(r.mensagem, r.palavras.join(' '), r.postLegenda ?? ''),
   )
@@ -1069,7 +1082,7 @@ async function ConteudoDaAba({
             <div className="border-b border-line px-5 py-12 text-center last:border-0">
               <IlustracaoComentarios />
               <p className="mt-6 text-[13px] font-semibold text-soft">
-                {contasDoInstagram.length === 0 ? 'Conecte o Instagram para responder comentários' : 'Nenhuma resposta a comentário ainda'}
+                {contasDoInstagram.length === 0 ? 'Conecte o Instagram ou o Messenger para responder comentários' : 'Nenhuma resposta a comentário ainda'}
               </p>
               <p className="mx-auto mt-1 max-w-[460px] text-xs leading-5 text-dim">
                 {contasDoInstagram.length === 0
@@ -1159,7 +1172,7 @@ async function ConteudoDaAba({
                     )}
                   </span>
                   <span className="hidden sm:inline-flex">
-                    <SeloDoCanal canal="instagram" compacto />
+                    <SeloDoCanal canal={redeDoCanal.get(resposta.canalId) ?? 'instagram'} compacto />
                   </span>
                   <span className="hidden whitespace-nowrap text-[11px] text-dim sm:inline">
                     <strong className="font-semibold text-soft">{resposta.execucoes}</strong>{' '}
