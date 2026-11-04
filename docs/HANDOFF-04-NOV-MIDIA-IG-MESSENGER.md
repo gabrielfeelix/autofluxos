@@ -80,12 +80,10 @@ conversa do Estúdio de exemplo (`22ee56d8-48e3-4763-a5af-d863db5eee62`, conta
 
 ## Outras pendências abertas em 04/nov (fora desta frente)
 
-- **Decisão do Gabriel, caso Gunter (PCYES):** primeira mensagem que já traz
-  pergunta ("entregam pra Maceió?") deve ir direto para a IA em vez do menu de
-  boas-vindas? Ainda sem resposta.
-- **Instagram da 4YU Tech Demonstração sem fluxo:** a @usedialogon recebe e
-  ninguém responde. Ele escolhe o fluxo em
-  https://dialogon.com.br/clientes/3a1d5ac8-369c-4373-856a-495468e7bad4/conversas/canais/instagram
+- **Caso Gunter (PCYES):** descartado pelo Gabriel em 04/nov/2026. O menu de
+  boas-vindas continua vindo antes da IA.
+- **Instagram da 4YU Tech Demonstração:** resolvido em 04/nov/2026, usa o
+  "Demo · Início", o mesmo do WhatsApp e do Messenger.
 - **Revisão da Meta:** permissões de página, `instagram_business_manage_comments`
   e `business_management` no rascunho; faltam os vídeos (Inbox do Instagram,
   Messenger, comentários). Estúdio de exemplo segue sendo a conta do revisor.
