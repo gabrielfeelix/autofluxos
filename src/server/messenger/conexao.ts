@@ -22,6 +22,12 @@ export const ESCOPOS_DO_MESSENGER = [
   'pages_manage_metadata',
   'pages_read_engagement',
   'pages_manage_engagement',
+  /*
+   * Página que pertence a um portfólio de negócios só sai em `me/accounts` com
+   * esta permissão. Sem ela a lista volta vazia mesmo para quem administra
+   * tudo (04/nov/2026: as quatro páginas do Portfólio 4YU sumiram).
+   */
+  'business_management',
 ] as const
 
 /** Os campos do webhook `page` que o Inbox precisa. */
