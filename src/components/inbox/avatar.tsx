@@ -11,8 +11,8 @@
  * Por que ilustração, e não foto
  * ---------------------------------------------------------------------------
  *
- * Ilustração gerada pelo nome (`retratoDoContato`, estilo Thumbs) desde
- * 04/nov/2026; antes eram iniciais. **A Cloud API não expõe foto de perfil de
+ * Iniciais com a cor tirada do nome (`retratoDoContato`, estilo Initials do
+ * DiceBear) desde 04/nov/2026; antes era um roxo só. **A Cloud API não expõe foto de perfil de
  * contato.** O webhook entrega
  * `contacts[].profile` com só o nome; o único `profile_picture_url` que existe
  * é o do próprio negócio, o nosso lado, não o dela. Quem mostra foto de
@@ -51,9 +51,9 @@ export function Avatar({
 }: {
   nome: string | null
   /**
-   * O que gera o desenho quando não há nome: o número ou o id do contato.
-   * Sem ela, todo "sem nome" cairia na mesma silhueta e a fila viraria uma
-   * coluna de bonecos iguais.
+   * A cor da silhueta quando não há nome: o número ou o id do contato. Sem
+   * ela, todo "sem nome" teria a mesma cor e a fila viraria uma coluna igual.
+   * Não vira iniciais: as do número seriam dígitos.
    */
   semente?: string
   alerta?: boolean
@@ -67,16 +67,20 @@ export function Avatar({
   canal?: CanalId
 }) {
   const limpo = nome?.trim() ?? ''
-  const base = limpo || semente?.trim() || ''
 
   return (
     <span
-      style={{ width: tamanho, height: tamanho, fontSize: Math.round(tamanho * 0.3) }}
+      style={{
+        width: tamanho,
+        height: tamanho,
+        fontSize: Math.round(tamanho * 0.3),
+        ...(!limpo && semente ? { background: corDaSilhueta(semente) } : {}),
+      }}
       className={`relative flex shrink-0 items-center justify-center rounded-full font-bold ${COR}`}
     >
-      {base ? (
+      {limpo ? (
         // eslint-disable-next-line @next/next/no-img-element
-        <img src={retratoDoContato(base)} alt="" aria-hidden className="size-full rounded-full" />
+        <img src={retratoDoContato(limpo)} alt="" aria-hidden className="size-full rounded-full" />
       ) : (
         /* Sem nome (visitante do site, quase sempre): uma silhueta, e não
            "?". O ponto de interrogação lia como erro, como se faltasse dado
@@ -109,4 +113,13 @@ export function Avatar({
       )}
     </span>
   )
+}
+
+/** As cores da silhueta, na família das do Initials, escolhida pelo número. */
+const CORES_DA_SILHUETA = ['#5c6bc0', '#26a69a', '#ef6c00', '#8e24aa', '#00897b', '#3949ab', '#d81b60', '#6d4c41']
+
+function corDaSilhueta(semente: string): string {
+  let soma = 0
+  for (const letra of semente) soma = (soma * 31 + letra.charCodeAt(0)) >>> 0
+  return CORES_DA_SILHUETA[soma % CORES_DA_SILHUETA.length]!
 }

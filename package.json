@@ -20,7 +20,7 @@
   "dependencies": {
     "@dicebear/bottts": "^9.4.3",
     "@dicebear/core": "^9.4.3",
-    "@dicebear/thumbs": "^9.4.3",
+    "@dicebear/initials": "^9.4.3",
     "@supabase/realtime-js": "^2.116.0",
     "@supabase/supabase-js": "^2.116.0",
     "@xyflow/react": "^12.11.6",

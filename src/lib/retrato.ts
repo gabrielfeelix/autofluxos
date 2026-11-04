@@ -1,6 +1,6 @@
 import { createAvatar } from '@dicebear/core'
 import * as bottts from '@dicebear/bottts'
-import * as thumbs from '@dicebear/thumbs'
+import * as initials from '@dicebear/initials'
 
 /**
  * O retrato ilustrado de quem usa o sistema, para quando a pessoa não subiu
@@ -34,19 +34,19 @@ export function retratoDe(semente: string): string {
 const cacheDoContato = new Map<string, string>()
 
 /**
- * O retrato de um contato de cliente, no lugar das iniciais (04/nov/2026).
+ * O retrato de um contato de cliente: as iniciais, com a cor tirada do nome.
  *
- * Estilo Thumbs, e não o Bottts da equipe: robô é quem trabalha no sistema, e
- * cliente com cara de robô confundiria quem atende com quem é atendido, numa
- * fila em que o bot ainda escreve "chatbot:". Mesma regra de semente: gerado
- * aqui, nada sai para terceiro.
+ * Estilo Initials, escolha do Gabriel (04/nov/2026), depois de testar o
+ * Thumbs. Era um roxo só para todo mundo; a cor por nome separa as linhas da
+ * fila de relance. Não é o Bottts da equipe: robô é quem trabalha no sistema.
+ * Mesma regra de semente: gerado aqui, nada sai para terceiro.
  */
 export function retratoDoContato(semente: string): string {
   const chave = semente.trim().toLowerCase()
   const pronto = cacheDoContato.get(chave)
   if (pronto) return pronto
 
-  const uri = createAvatar(thumbs, { seed: chave, backgroundColor: FUNDOS }).toDataUri()
+  const uri = createAvatar(initials, { seed: semente.trim(), fontWeight: 600, fontSize: 40 }).toDataUri()
   cacheDoContato.set(chave, uri)
   return uri
 }
