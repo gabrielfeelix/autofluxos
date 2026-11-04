@@ -188,7 +188,8 @@ aqui fica o que o cliente ganha.
 - **Comentou, recebeu no direct**: quem comenta uma palavra num post do
   Instagram recebe na hora o link ou a oferta no direct, e o post pode
   responder em público que a mensagem foi enviada. Vale para um post ou para
-  todos, e a conversa continua no Inbox quando a pessoa responde.
+  todos. Quando a pessoa responde, a conversa pode abrir um fluxo próprio
+  daquele post (oferta, coleta de dados, venda) em vez do atendimento padrão.
   *(04/nov/2026)*
 - **Cobrar pela conversa**: botão Cobrar no Inbox manda Pix copia e cola e
   link de cartão ou boleto. A cobrança vira paga sozinha quando o banco
