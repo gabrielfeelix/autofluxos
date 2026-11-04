@@ -1,6 +1,7 @@
 import 'server-only'
 import { motivoDoNaoSuportado, tipoDoNaoSuportado } from '@/core/payload-da-mensagem'
 import { db } from './db'
+import type { CanalId } from '@/core/canais'
 import { encaminhamentoEmTexto, telefoneLegivel } from '@/core/encaminhar'
 import { z } from 'zod'
 import { distribuirSeSemDono } from './distribuir-atendimento'
@@ -496,6 +497,17 @@ export async function tratarUma(
   )
 
   if (contato.criadoAgora) await porNoQuadroPadrao(contato)
+
+  /*
+   * O canal fica no contato na primeira mensagem (0166). Deduzir pela sessão
+   * falhava em canal sem fluxo, que nunca abre sessão, e o selo da fila
+   * mostrava WhatsApp para quem veio pelo Instagram. Só escreve quando falta.
+   */
+  await db()
+    .from('contacts')
+    .update({ canal: canalDoProvedor(canalSalvo.provider) })
+    .eq('id', contato.id)
+    .is('canal', null)
 
   /**
    * O CRM toma conhecimento de que essa pessoa falou (0058).
@@ -3213,4 +3225,9 @@ export function ehRetomada(
   // dentro da janela: os dois são "acabou de ser atendida".
   const marcos = [anterior?.atualizadoEm ? Date.parse(anterior.atualizadoEm) : NaN, equipeFalouEm?.getTime() ?? NaN]
   return marcos.some((t) => Number.isFinite(t) && agora - t >= 0 && agora - t <= JANELA_DE_RETOMADA_MS)
+}
+
+/** O canal da tela para o `provider` gravado em `channels`. */
+function canalDoProvedor(provider: string): CanalId {
+  return provider === 'cloud-api' ? 'whatsapp' : (provider as CanalId)
 }

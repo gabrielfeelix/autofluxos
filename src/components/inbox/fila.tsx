@@ -461,7 +461,7 @@ export function Fila({
       endereco.searchParams.set("conversa", lead.contatoId);
       abrirConversa(
         clienteId,
-        { lead, canal: canalPeloContato(lead.waId, canalDoContato.get(lead.contatoId)) },
+        { lead, canal: canalPeloContato(lead.waId, canalDoContato.get(lead.contatoId) ?? lead.canal ?? undefined) },
         `${endereco.pathname}${endereco.search}`,
       );
     },
@@ -1000,7 +1000,7 @@ export function Fila({
                   foto={lead.foto}
                   alerta={Boolean(lead.aguardando) && !janelaExpirada(lead)}
                   tamanho={44}
-                  canal={canalPeloContato(lead.waId, canalDoContato.get(lead.contatoId))}
+                  canal={canalPeloContato(lead.waId, canalDoContato.get(lead.contatoId) ?? lead.canal ?? undefined)}
                 />
                 <span className="min-w-0 flex-1">
                   <span className="flex items-baseline gap-2">

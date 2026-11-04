@@ -1,4 +1,5 @@
 import 'server-only'
+import type { CanalId } from '@/core/canais'
 import { z } from 'zod'
 import type { Conciliacao, ContatoConhecido } from '@/core/contatos/planilha'
 import { chavesDoTelefone, digitos, trechosDoTelefone } from '@/core/contatos/telefone'
@@ -66,6 +67,8 @@ export type Lead = {
   nomeReal: string
   /** Foto de perfil guardada (Messenger e Instagram). WhatsApp não tem. */
   foto?: string | null
+  /** O canal gravado no contato (0166). A fila usa quando o mapa não sabe. */
+  canal?: CanalId | null
   /** Anotação de quem atende. Não vai para o WhatsApp nem para automação. */
   notas: string
   /** O que o fluxo coletou. As chaves mudam de fluxo para fluxo. */
@@ -417,13 +420,14 @@ type Linha = {
   notas: string
   ultimo_tipo: string | null
   foto_url?: string | null
+  canal?: string | null
 }
 
 // Numa linha só, e não concatenado: o supabase-js lê esta string no nível de
 // tipo para saber o formato do retorno, e concatenação vira `string` genérica,
 // aí o tipo do `data` desanda e o `tsc` acusa.
 const COLUNAS =
-  'contact_id, client_id, wa_id, nome, nome_real, notas, campos, criado_em, ultima_em, ultima_entrada_em, ultima_direcao, ultimo_texto, ultimo_tipo, ultimo_autor_tipo, ultimo_autor_nome, handoff_motivo, handoff_em, ultima_entregue, automacao_ativa, atribuido_a, estado, estado_efetivo, adiada_ate, adiada_nota, porta_de_entrada_em, ultima_situacao, ultima_e_reacao, equipe_id, foto_url'
+  'contact_id, client_id, wa_id, nome, nome_real, notas, campos, criado_em, ultima_em, ultima_entrada_em, ultima_direcao, ultimo_texto, ultimo_tipo, ultimo_autor_tipo, ultimo_autor_nome, handoff_motivo, handoff_em, ultima_entregue, automacao_ativa, atribuido_a, estado, estado_efetivo, adiada_ate, adiada_nota, porta_de_entrada_em, ultima_situacao, ultima_e_reacao, equipe_id, foto_url, canal'
 
 /**
  * `campos` é `jsonb`: o banco aceita qualquer coisa ali. Hoje só o motor
@@ -465,6 +469,7 @@ function paraLead(linha: Linha): Lead {
     nomeDoPerfil: linha.nome,
     nomeReal,
     foto: linha.foto_url ?? null,
+    canal: (linha.canal ?? null) as CanalId | null,
     notas: linha.notas ?? '',
     campos: paraCampos(linha.campos, linha.wa_id),
     ultimaEm: linha.ultima_em,

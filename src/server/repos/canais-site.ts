@@ -213,6 +213,25 @@ export async function canaisDosContatos(clienteId: string): Promise<Map<string, 
   }
 
   /*
+   * O canal gravado no próprio contato (0166) ganha de tudo: é o que veio na
+   * primeira mensagem, e não depende de haver sessão nem do tamanho do id.
+   */
+  for (let inicio = 0; ; inicio += PAGINA) {
+    const { data, error: erro } = await db()
+      .from('contacts')
+      .select('id, canal')
+      .eq('client_id', clienteId)
+      .not('canal', 'is', null)
+      .neq('canal', 'whatsapp')
+      .order('id')
+      .range(inicio, inicio + PAGINA - 1)
+
+    if (erro) throw new Error(`não foi possível ler o canal dos contatos: ${erro.message}`)
+    for (const linha of data ?? []) mapa.set(linha.id as string, linha.canal as CanalId)
+    if (!data || data.length < PAGINA) break
+  }
+
+  /*
    * Contato do Instagram sem sessão, pelo mesmo motivo do site: conta sem
    * fluxo ligado nunca abre sessão, e o contato caía no padrão WhatsApp (o
    * Estúdio de exemplo, 19/out/2026, todo o Direct com selo de WhatsApp).
