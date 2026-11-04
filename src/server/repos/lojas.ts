@@ -3,6 +3,7 @@ import { ehSistemaDoRamo, type SistemaDoRamo } from '@/core/sistemas-dos-ramos'
 import { ehPlataformaDeCardapio, type PlataformaDeCardapio } from '@/core/plataformas-de-cardapio'
 import { ehPlataformaDeLoja, type PlataformaDeLoja } from '@/core/plataformas-de-loja'
 import type { ViaDeEstoque } from '@/loja/types'
+import { lerLembrete, type LembreteDePagamento } from '@/core/lembrete-de-pagamento'
 import { db, ehIdInvalido } from '../db'
 
 /**
@@ -398,4 +399,50 @@ export async function marcarStatusAvisado(clienteId: string, pedido: string, sta
   if (error?.code === '23505') return false
   if (error) throw new Error(`não foi possível marcar o status avisado: ${error.message}`)
   return true
+}
+
+/**
+ * O lembrete de pagamento pendente da loja Magento da conta (0162). `null`
+ * quando não há loja ou o banco ainda não tem a coluna.
+ */
+export async function lembreteDaConta(clienteId: string): Promise<LembreteDePagamento | null> {
+  const { data, error } = await db()
+    .from('lojas_integradas')
+    .select('lembrete_pagamento')
+    .eq('client_id', clienteId)
+    .eq('plataforma', 'magento')
+    .maybeSingle()
+  if (error?.code === '42703' || ehIdInvalido(error)) return null
+  if (error) throw new Error(`não foi possível ler o lembrete de pagamento: ${error.message}`)
+  return data ? lerLembrete((data as { lembrete_pagamento: unknown }).lembrete_pagamento) : null
+}
+
+export async function salvarLembrete(clienteId: string, config: LembreteDePagamento): Promise<boolean> {
+  const { data, error } = await db()
+    .from('lojas_integradas')
+    .update({ lembrete_pagamento: config })
+    .eq('client_id', clienteId)
+    .eq('plataforma', 'magento')
+    .select('id')
+    .maybeSingle()
+  if (ehIdInvalido(error)) return false
+  if (error) throw new Error(`não foi possível salvar o lembrete de pagamento: ${error.message}`)
+  return data !== null
+}
+
+/** As lojas Magento ligadas, com token e com o lembrete ativo. */
+export async function lojasComLembrete(): Promise<(LojaIntegrada & { lembrete: LembreteDePagamento })[]> {
+  const { data, error } = await db()
+    .from('lojas_integradas')
+    .select(`${COLUNAS}, lembrete_pagamento`)
+    .eq('plataforma', 'magento')
+    .eq('ativa', true)
+    .not('conexao_id', 'is', null)
+    .eq('lembrete_pagamento->>ativo', 'true')
+  if (error?.code === '42703') return []
+  if (error) throw new Error(`não foi possível listar as lojas com lembrete: ${error.message}`)
+  return (data as unknown as (Linha & { lembrete_pagamento: unknown })[]).map((l) => ({
+    ...paraLoja(l),
+    lembrete: lerLembrete(l.lembrete_pagamento),
+  }))
 }

@@ -55,6 +55,7 @@ export type CodigoDeErro =
   | 'cartoes_incompativeis'
   | 'template_com_midia'
   | 'link_com_lacuna'
+  | 'cupom_invalido'
   | 'idioma_obrigatorio'
   | 'valores_incompletos'
   | 'teto_diario'

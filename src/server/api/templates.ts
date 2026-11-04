@@ -87,6 +87,8 @@ export type PedidoDeEnvio = {
   imagem?: string
   /** Os cartões de um modelo de carrossel, na quantidade exata do modelo. */
   cartoes?: CartaoDoPedido[]
+  /** O código do botão "Copiar código". Ausente, vale o código com que o modelo foi aprovado. */
+  cupom?: string
   aceite_marketing?: true
   /** O texto da caixinha que ela marcou, guardado como prova do aceite. */
   texto_do_aceite?: string
@@ -158,7 +160,11 @@ function confereValores(esperado: number, recebido: string[] | undefined, onde: 
  * Envia um modelo aprovado. A ordem é das recusas que não custam nada para a
  * que custa: modelo, variáveis, teto do dia, contato, canal, e só então a Meta.
  */
-export async function enviarModeloPelaApi(clienteId: string, pedido: PedidoDeEnvio): Promise<ResultadoDoEnvio> {
+export async function enviarModeloPelaApi(
+  clienteId: string,
+  pedido: PedidoDeEnvio,
+  opcoes: { autor?: AutorDaSaida } = {},
+): Promise<ResultadoDoEnvio> {
   const escolha = escolherModelo(await listarTemplates(clienteId), pedido.template, pedido.idioma)
   if ('erro' in escolha) return escolha.erro
   const { template } = escolha
@@ -187,6 +193,12 @@ export async function enviarModeloPelaApi(clienteId: string, pedido: PedidoDeEnv
   if (lacuna && !link) return recusa(422, 'link_com_lacuna', `${recadoDoLinkComLacuna(lacuna)} Pela API, envie o fim do endereço no campo link.`)
   const botoesDoLink = lacuna && link ? [{ indice: (template.componentes.botoes ?? []).indexOf(lacuna), texto: link }] : []
 
+  const indiceDoCupom = (template.componentes.botoes ?? []).findIndex((b) => b.tipo === 'COPY_CODE')
+  const codigoDoCupom = pedido.cupom?.trim()
+  if (codigoDoCupom && (indiceDoCupom < 0 || !/^[\w-]{1,15}$/.test(codigoDoCupom))) {
+    return recusa(422, 'cupom_invalido', indiceDoCupom < 0 ? `O modelo "${template.nome}" não tem botão de copiar código.` : 'O cupom tem até 15 letras, números, hífen ou sublinhado.')
+  }
+  const cupom = codigoDoCupom ? { indice: indiceDoCupom, codigo: codigoDoCupom } : null
   const valoresDoCorpo = pedido.valores?.corpo ?? []
   const valoresDoCabecalho = pedido.valores?.cabecalho ?? []
   const faltaNoCorpo = confereValores(variaveisDe(template.componentes.corpo).length, pedido.valores?.corpo, 'corpo')
@@ -253,11 +265,11 @@ export async function enviarModeloPelaApi(clienteId: string, pedido: PedidoDeEnv
     contatoId,
     sessaoId: contexto.sessaoId,
     texto,
-    autor: AUTOR_DA_API,
+    autor: opcoes.autor ?? AUTOR_DA_API,
     payload:
       cartoes.cartoes.length > 0
         ? payloadDoCarrossel(template, cartoes.cartoes, preencher(template.componentes.corpo, valoresDoCorpo))
-        : payloadDoModelo(template, cabecalho?.tipo === 'imagem' ? imagem : undefined, link),
+        : payloadDoModelo(template, cabecalho?.tipo === 'imagem' ? imagem : undefined, link, cupom?.codigo),
   })
 
   let envio
@@ -265,7 +277,7 @@ export async function enviarModeloPelaApi(clienteId: string, pedido: PedidoDeEnv
     envio = await canal.enviarTemplate(contexto.waId, modeloComClique({
       nome: template.nome,
       idioma: template.idioma,
-      ...(valoresDoCorpo.length > 0 || valoresDoCabecalho.length > 0 || imagem || cartoes.cartoes.length > 0 || botoesDoLink.length > 0
+      ...(valoresDoCorpo.length > 0 || valoresDoCabecalho.length > 0 || imagem || cartoes.cartoes.length > 0 || botoesDoLink.length > 0 || cupom
         ? {
             valores: {
               ...(valoresDoCorpo.length > 0 ? { corpo: valoresDoCorpo } : {}),
@@ -273,6 +285,7 @@ export async function enviarModeloPelaApi(clienteId: string, pedido: PedidoDeEnv
               ...(cabecalho?.tipo === 'imagem' && imagem ? { cabecalhoImagem: imagem } : {}),
               ...(cartoes.cartoes.length > 0 ? { cartoes: cartoes.cartoes } : {}),
               ...(botoesDoLink.length > 0 ? { botoes: botoesDoLink } : {}),
+              ...(cupom ? { cupom } : {}),
             },
           }
         : {}),
@@ -364,11 +377,11 @@ function conferirCartoes(
  * foto do cabeçalho (`anexo`), o rodapé, o botão de link e o código do
  * "Copiar código". Sem isto a conversa mostrava só o corpo (04/nov/2026).
  */
-function payloadDoModelo(template: Template, imagem: string | undefined, link: string | undefined) {
+function payloadDoModelo(template: Template, imagem: string | undefined, link: string | undefined, codigo?: string) {
   const { botoes = [], rodape } = template.componentes
   const doLink = botoes.find((b) => b.tipo === 'URL')
   const destino = doLink ? (doLink.destino ?? (link !== undefined ? (doLink.valor ?? '').replace('{{1}}', link) : doLink.valor)) : undefined
-  const cupom = botoes.find((b) => b.tipo === 'COPY_CODE')?.valor
+  const cupom = codigo ?? botoes.find((b) => b.tipo === 'COPY_CODE')?.valor
   return {
     ...(imagem?.startsWith('https://') ? { midia: 'imagem', url: imagem } : {}),
     ...(rodape?.trim() ? { rodape } : {}),

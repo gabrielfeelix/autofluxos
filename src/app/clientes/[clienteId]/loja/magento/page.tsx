@@ -13,13 +13,16 @@ import {
 } from '@/server/acoes-loja'
 import { acharCliente } from '@/server/repos/clientes'
 import { estadoDoToken } from '@/server/adaptador-da-loja'
-import { acompanhaPedidos, lojaDaConta } from '@/server/repos/lojas'
+import { acompanhaPedidos, lembreteDaConta, lojaDaConta } from '@/server/repos/lojas'
 import { AcompanharPedidos } from '@/components/cliente/acompanhar-pedidos'
 import { RecuperarCarrinho } from '@/components/cliente/recuperar-carrinho'
 import { CARTOES_DO_CARROSSEL } from '@/core/templates'
 import { PREFIXO_DO_CARRINHO } from '@/core/carrinho'
 import { acaoCriarModelosDoCarrinho } from '@/server/acoes-carrinho'
 import { listarTemplates } from '@/server/repos/templates'
+import { LembrarPagamento } from '@/components/cliente/lembrar-pagamento'
+import { LEMBRETE_PADRAO, MODELO_COM_CUPOM, MODELO_SEM_CUPOM } from '@/core/lembrete-de-pagamento'
+import { acaoCriarModeloDoLembrete, acaoCuponsDoLembrete, acaoSalvarLembrete } from '@/server/acoes-lembrete-de-pagamento'
 
 export const dynamic = 'force-dynamic'
 
@@ -39,12 +42,14 @@ export default async function Pagina({
   const cliente = await acharCliente(clienteId)
   if (!cliente) notFound()
 
-  const [loja, token, acompanha, templates] = await Promise.all([
+  const [loja, token, acompanha, templates, lembrete] = await Promise.all([
     lojaDaConta(cliente.id),
     estadoDoToken(cliente.id),
     acompanhaPedidos(cliente.id),
     listarTemplates(cliente.id).catch(() => []),
+    lembreteDaConta(cliente.id).catch(() => null),
   ])
+  const statusDe = (nome: string) => templates.find((t) => t.nome === nome)?.status ?? 'ausente'
   // Os dez do carrinho, na ordem, com o status de cada um (ou "ausente").
   const modelosDoCarrinho = Array.from({ length: CARTOES_DO_CARROSSEL.maximo }, (_, i) => {
     const nome = `${PREFIXO_DO_CARRINHO}${i + 1}`
@@ -94,6 +99,17 @@ export default async function Pagina({
             ligado={acompanha}
             eventosHref={`/clientes/${cliente.id}/fluxos?aba=eventos`}
             alternar={acaoAcompanharPedidos.bind(null, cliente.id)}
+          />
+        )}
+
+        {/* Lê os pedidos pendentes com o token, como o acompanhamento de status. */}
+        {loja?.ativa && loja.conexaoId && (
+          <LembrarPagamento
+            inicial={lembrete ?? LEMBRETE_PADRAO}
+            modelos={{ comCupom: statusDe(MODELO_COM_CUPOM), semCupom: statusDe(MODELO_SEM_CUPOM) }}
+            salvar={acaoSalvarLembrete.bind(null, cliente.id)}
+            criarModelo={acaoCriarModeloDoLembrete.bind(null, cliente.id)}
+            listarCupons={acaoCuponsDoLembrete.bind(null, cliente.id)}
           />
         )}
 

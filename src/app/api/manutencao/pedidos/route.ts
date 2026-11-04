@@ -2,6 +2,7 @@ import { iguais } from '@/lib/segredo'
 import { acompanharPedidos } from '@/server/acompanhar-pedidos'
 import { alertar } from '@/server/alertar'
 import { acompanharCardapios } from '@/server/cardapios/passada'
+import { lembrarPagamentos } from '@/server/lembrar-pagamentos'
 
 export const dynamic = 'force-dynamic'
 
@@ -39,7 +40,12 @@ export async function GET(req: Request) {
       await alertar('a passada dos cardápios falhou', erro)
       return null
     })
-    return Response.json({ ...loja, cardapios })
+    // Depois dos eventos, e isolado: o lembrete que falha não cala a passada.
+    const lembretes = await lembrarPagamentos().catch(async (erro) => {
+      await alertar('a passada do lembrete de pagamento falhou', erro)
+      return null
+    })
+    return Response.json({ ...loja, cardapios, lembretes })
   } catch (erro) {
     await alertar('a passada dos pedidos da loja falhou', erro)
     return Response.json({ erro: 'a passada falhou' }, { status: 500 })

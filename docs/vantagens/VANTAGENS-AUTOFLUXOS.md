@@ -336,6 +336,12 @@ aqui fica o que o cliente ganha.
   finalizar, só se aceitou promoções no checkout. Os modelos para a Meta saem
   prontos com um clique, um por tamanho de carrinho.
 
+- **Pedido que não foi pago recebe lembrete sozinho**: depois do tempo que a
+  loja escolhe, quem fez o pedido e não pagou ganha um WhatsApp com a foto do
+  produto, o botão para voltar à página dele e, se a loja quiser, um cupom com
+  "Copiar código". Só uma vez por pedido, e só se ele continuar pendente.
+  Trocar de cupom não pede nova aprovação da Meta. *(04/nov/2026)*
+
 ## Medir
 
 - **Relatórios de atendimento e vendas**: conversas, quanto a automação
