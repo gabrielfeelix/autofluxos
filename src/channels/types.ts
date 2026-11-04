@@ -71,6 +71,11 @@ export type ValoresDoTemplate = {
    */
   botoes?: { indice: number; texto: string }[]
   /**
+   * O código do botão "Copiar código" (`COPY_CODE`), pela posição do botão. A
+   * Meta exige o código também no envio, não só na aprovação; sem ele recusa.
+   */
+  cupom?: { indice: number; codigo: string }
+  /**
    * Os cartões de um modelo de carrossel, na ordem, **na quantidade exata do
    * modelo** (a Meta recusa outra). Cada um com a sua foto, os valores do texto
    * do cartão e o fim variável dos botões de link.

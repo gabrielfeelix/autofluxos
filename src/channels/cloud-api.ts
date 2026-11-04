@@ -620,6 +620,15 @@ export function canalCloudApi(config: ConfigCloudApi): Canal {
         })
       }
 
+      if (valores?.cupom) {
+        componentes.push({
+          type: 'button',
+          sub_type: 'copy_code',
+          index: String(valores.cupom.indice),
+          parameters: [{ type: 'coupon_code', coupon_code: valores.cupom.codigo }],
+        })
+      }
+
       // Carrossel: um objeto por cartão, pela posição (`card_index`). A Meta
       // exige todos, na quantidade com que o modelo foi aprovado.
       if (valores?.cartoes && valores.cartoes.length > 0) {

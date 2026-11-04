@@ -105,5 +105,11 @@ export function modeloComClique<T extends { valores?: ValoresDoTemplate }>(
   let valores = comCodigoDoClique(envio.valores, template, destinatarioId)
   const imagem = imagemDoCabecalho(template.componentes)
   if (imagem && !valores?.cabecalhoImagem) valores = { ...(valores ?? {}), cabecalhoImagem: imagem }
+  // O código do "Copiar código" mora no modelo (o mesmo que a Meta aprovou).
+  const botoes = template.componentes?.botoes ?? []
+  const indiceDoCupom = botoes.findIndex((b) => b.tipo === 'COPY_CODE' && b.valor)
+  if (indiceDoCupom >= 0 && !valores?.cupom) {
+    valores = { ...(valores ?? {}), cupom: { indice: indiceDoCupom, codigo: botoes[indiceDoCupom]?.valor ?? '' } }
+  }
   return valores === envio.valores ? envio : { ...envio, valores }
 }
