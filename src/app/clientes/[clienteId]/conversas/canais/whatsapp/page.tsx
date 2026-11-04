@@ -12,7 +12,7 @@ import { Trilha } from '@/components/design/trilha'
 import { BotaoPerigo } from '@/components/design/botao-perigo'
 import { Dropdown } from '@/components/design/dropdown'
 import { ModalFormulario, RotuloCampo } from '@/components/design/modal-formulario'
-import { LogoDoCanal } from '@/components/design/selo-do-canal'
+import { LogoDoCanal, MarcaDoCanal } from '@/components/design/selo-do-canal'
 import {
   acaoConectarNumero,
   acaoDefinirFluxosDoNumero,
@@ -171,11 +171,17 @@ export default async function Pagina({
         <Trilha
           caminho={[
             { rotulo: 'Canais', href: `/clientes/${cliente.id}/conversas/canais` },
-            { rotulo: 'WhatsApp' },
+            { rotulo: 'WhatsApp', icone: <LogoDoCanal canal="whatsapp" tamanho={11} /> },
           ]}
         />
         <VoltaDoReparo clienteId={cliente.id} volta={voltaInterna(volta, cliente.id)} />
-        <CabecalhoDaTela titulo="WhatsApp" />
+        <CabecalhoDaTela
+          titulo={
+            <span className="inline-flex items-center gap-2.5">
+              <MarcaDoCanal canal="whatsapp" tamanho={30} />
+              WhatsApp
+            </span>
+          } />
 
         <div className="mb-5">
           <CamadasDaConexao

@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react'
 import Link from 'next/link'
 
 /**
@@ -22,7 +23,7 @@ export function Trilha({
   caminho,
 }: {
   /** Do mais geral para o mais específico. O último é onde a pessoa está. */
-  caminho: { rotulo: string; href?: string }[]
+  caminho: { rotulo: string; href?: string; icone?: ReactNode }[]
 }) {
   return (
     <nav aria-label="Trilha de navegação" className="mb-2 flex flex-wrap items-center gap-1.5">
@@ -47,8 +48,9 @@ export function Trilha({
                 // `aria-current` diz ao leitor de tela que este é o lugar
                 // atual, sem ele a trilha vira uma lista de palavras soltas.
                 aria-current={ultimo ? 'page' : undefined}
-                className={ultimo ? 'text-[11.5px] font-semibold text-muted' : 'text-[11.5px] text-dim'}
+                className={`inline-flex items-center gap-1 ${ultimo ? 'text-[11.5px] font-semibold text-muted' : 'text-[11.5px] text-dim'}`}
               >
+                {pedaco.icone}
                 {pedaco.rotulo}
               </span>
             )}

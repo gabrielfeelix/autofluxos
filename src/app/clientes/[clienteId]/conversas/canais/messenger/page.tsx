@@ -3,6 +3,7 @@ import { CabecalhoDaTela } from '@/components/design/cabecalho-da-tela'
 import { ClienteShell } from '@/components/design/cliente-shell'
 import { LogoFacebook } from '@/components/design/logos-de-marca'
 import { Trilha } from '@/components/design/trilha'
+import { LogoDoCanal, MarcaDoCanal } from '@/components/design/selo-do-canal'
 import { DEFINICAO_DO_CANAL } from '@/core/canais'
 import { acaoConectarMessenger, acaoDesligarMessenger, acaoEscolherPagina } from '@/server/acoes-messenger'
 import { paginasComToken } from '@/server/messenger/conexao'
@@ -54,8 +55,14 @@ export default async function Pagina({
   return (
     <ClienteShell cliente={cliente} ativa="canais">
       <main className="w-full max-w-[820px] px-4 pt-[38px] pb-[46px] md:px-[46px]">
-        <Trilha caminho={[{ rotulo: 'Canais', href: `/clientes/${cliente.id}/conversas/canais` }, { rotulo: 'Messenger' }]} />
-        <CabecalhoDaTela titulo="Messenger" descricao={DEFINICAO_DO_CANAL.messenger.resumo} />
+        <Trilha caminho={[{ rotulo: 'Canais', href: `/clientes/${cliente.id}/conversas/canais` }, { rotulo: 'Messenger', icone: <LogoDoCanal canal="messenger" tamanho={11} /> }]} />
+        <CabecalhoDaTela
+          titulo={
+            <span className="inline-flex items-center gap-2.5">
+              <MarcaDoCanal canal="messenger" tamanho={30} />
+              Messenger
+            </span>
+          } descricao={DEFINICAO_DO_CANAL.messenger.resumo} />
 
         {aviso && (
           <p

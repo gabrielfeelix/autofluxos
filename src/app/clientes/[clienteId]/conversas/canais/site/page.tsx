@@ -3,6 +3,7 @@ import { headers } from 'next/headers'
 import { notFound } from 'next/navigation'
 import { ClienteShell } from '@/components/design/cliente-shell'
 import { Trilha } from '@/components/design/trilha'
+import { LogoDoCanal, MarcaDoCanal } from '@/components/design/selo-do-canal'
 import { ConfigurarChatDoSite } from '@/components/canais/configurar-chat-do-site'
 import { CONFIG_PADRAO } from '@/core/chat-do-site'
 import { DEFINICAO_DO_CANAL } from '@/core/canais'
@@ -38,11 +39,16 @@ export default async function Pagina({ params }: { params: Promise<{ clienteId: 
         <Trilha
           caminho={[
             { rotulo: 'Canais', href: `/clientes/${cliente.id}/conversas/canais` },
-            { rotulo: 'Site' },
+            { rotulo: 'Site', icone: <LogoDoCanal canal="site" tamanho={11} /> },
           ]}
         />
         <CabecalhoDaTela
-          titulo="Chat no site"
+          titulo={
+            <span className="inline-flex items-center gap-2.5">
+              <MarcaDoCanal canal="site" tamanho={30} />
+              Chat no site
+            </span>
+          }
           descricao={`${DEFINICAO_DO_CANAL.site.resumo} O visitante conversa com os mesmos fluxos e a mesma IA do WhatsApp, e a equipe responde pelo Inbox.`}
         />
 

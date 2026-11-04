@@ -2,6 +2,7 @@ import { notFound } from 'next/navigation'
 import { CabecalhoDaTela } from '@/components/design/cabecalho-da-tela'
 import { ClienteShell } from '@/components/design/cliente-shell'
 import { Trilha } from '@/components/design/trilha'
+import { LogoDoCanal, MarcaDoCanal } from '@/components/design/selo-do-canal'
 import { DEFINICAO_DO_CANAL } from '@/core/canais'
 import { acaoConectarTelegram, acaoDesligarTelegram } from '@/server/acoes-telegram'
 import { acharCliente } from '@/server/repos/clientes'
@@ -47,8 +48,14 @@ export default async function Pagina({
   return (
     <ClienteShell cliente={cliente} ativa="canais">
       <main className="w-full max-w-[820px] px-4 pt-[38px] pb-[46px] md:px-[46px]">
-        <Trilha caminho={[{ rotulo: 'Canais', href: `/clientes/${cliente.id}/conversas/canais` }, { rotulo: 'Telegram' }]} />
-        <CabecalhoDaTela titulo="Telegram" descricao={DEFINICAO_DO_CANAL.telegram.resumo} />
+        <Trilha caminho={[{ rotulo: 'Canais', href: `/clientes/${cliente.id}/conversas/canais` }, { rotulo: 'Telegram', icone: <LogoDoCanal canal="telegram" tamanho={11} /> }]} />
+        <CabecalhoDaTela
+          titulo={
+            <span className="inline-flex items-center gap-2.5">
+              <MarcaDoCanal canal="telegram" tamanho={30} />
+              Telegram
+            </span>
+          } descricao={DEFINICAO_DO_CANAL.telegram.resumo} />
 
         {aviso && (
           <p

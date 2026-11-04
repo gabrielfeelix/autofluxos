@@ -2,9 +2,11 @@ import { CabecalhoDaTela } from '@/components/design/cabecalho-da-tela'
 import { notFound } from 'next/navigation'
 import { ClienteShell } from '@/components/design/cliente-shell'
 import { Trilha } from '@/components/design/trilha'
+import { LogoDoCanal, MarcaDoCanal } from '@/components/design/selo-do-canal'
 import { DEFINICAO_DO_CANAL } from '@/core/canais'
 import { acaoConectarInstagram, acaoDesligarInstagram } from '@/server/acoes-instagram'
-import { ESCOPOS, instagramConfigurado } from '@/server/instagram/conexao'
+import { ESCOPOS, fotoDaConta, instagramConfigurado } from '@/server/instagram/conexao'
+import { lerTokenDoCanal } from '@/server/repos/conversas'
 import { acharCliente } from '@/server/repos/clientes'
 import { canalDoInstagram, diasAteVencer } from '@/server/repos/canais-instagram'
 import { ultimaMensagemRecebida } from '@/server/repos/ultimos-eventos'
@@ -76,6 +78,8 @@ export default async function Pagina({
     conta: canal ? { igUsername: canal.igUsername, tokenExpiraEm: canal.tokenExpiraEm } : null,
     ultimoEvento: ultimaMensagem,
   })
+  // A foto da conta é enfeite: sem token ou com a Meta fora, o cartão mostra o logo.
+  const foto = canal?.tokenRef ? await lerTokenDoCanal(canal).then(fotoDaConta).catch(() => null) : null
   const configurado = instagramConfigurado()
   const dias = diasAteVencer(canal?.tokenExpiraEm ?? null)
   const aviso = resultado ? RESULTADOS[resultado] : undefined
@@ -86,10 +90,16 @@ export default async function Pagina({
         <Trilha
           caminho={[
             { rotulo: 'Canais', href: `/clientes/${cliente.id}/conversas/canais` },
-            { rotulo: 'Instagram' },
+            { rotulo: 'Instagram', icone: <LogoDoCanal canal="instagram" tamanho={11} /> },
           ]}
         />
-        <CabecalhoDaTela titulo="Instagram" descricao={DEFINICAO_DO_CANAL.instagram.resumo} />
+        <CabecalhoDaTela
+          titulo={
+            <span className="inline-flex items-center gap-2.5">
+              <MarcaDoCanal canal="instagram" tamanho={30} />
+              Instagram
+            </span>
+          } descricao={DEFINICAO_DO_CANAL.instagram.resumo} />
 
         {aviso && (
           <p
@@ -114,9 +124,15 @@ export default async function Pagina({
         {canal ? (
           <section className="app-card px-5 py-5">
             <div className="flex flex-wrap items-center gap-3">
-              <span className="size-[9px] shrink-0 rounded-full bg-emerald-400" />
+              {foto ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={foto} alt="" className="size-11 shrink-0 rounded-full border border-line object-cover" />
+              ) : (
+                <MarcaDoCanal canal="instagram" tamanho={44} />
+              )}
               <div className="min-w-0 flex-1">
-                <p className="text-[14px] font-semibold text-soft">
+                <p className="flex items-center gap-2 text-[14px] font-semibold text-soft">
+                  <span aria-label="Conectada" className="size-[8px] shrink-0 rounded-full bg-emerald-400" />
                   {canal.igUsername ? `@${canal.igUsername}` : 'Conta ligada'}
                 </p>
                 <p className="mt-0.5 font-mono text-[11px] text-dim">conta {canal.igUserId}</p>

@@ -361,3 +361,19 @@ export async function fotoDoPerfil(opcoes: { igsid: string; token: string }): Pr
     return null
   }
 }
+
+/**
+ * A foto de perfil da própria conta conectada, para o cartão da tela do canal.
+ * O link expira em dias, por isso é lido a cada visita e não guardado.
+ */
+export async function fotoDaConta(token: string): Promise<string | null> {
+  const url = new URL(`https://graph.instagram.com/${versaoDoGraph()}/me`)
+  url.searchParams.set('fields', 'profile_picture_url')
+  url.searchParams.set('access_token', token)
+  try {
+    const perfil = (await pedir(url.toString())) as { profile_picture_url?: unknown }
+    return typeof perfil.profile_picture_url === 'string' ? perfil.profile_picture_url : null
+  } catch {
+    return null
+  }
+}

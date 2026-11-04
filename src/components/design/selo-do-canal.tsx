@@ -96,3 +96,31 @@ export function LogoDoCanal({ canal, tamanho = 12 }: { canal: CanalId; tamanho?:
     </svg>
   )
 }
+
+/** O fundo da marca de cada canal; o Instagram é o gradiente, que é como ele é reconhecido. */
+const FUNDO_DA_MARCA: Partial<Record<CanalId, string>> = {
+  instagram: 'linear-gradient(45deg, #F58529 0%, #DD2A7B 55%, #8134AF 100%)',
+}
+
+/**
+ * O logo do canal num quadrado com a cor da marca e o glifo branco. Para título
+ * de tela e cartão de conta: em fundo azul ou branco, o glifo colorido solto
+ * some, e o quadrado lê como o ícone do app que a pessoa já conhece.
+ */
+export function MarcaDoCanal({ canal, tamanho = 32 }: { canal: CanalId; tamanho?: number }) {
+  const definicao = DEFINICAO_DO_CANAL[canal]
+  return (
+    <span
+      aria-hidden
+      style={{
+        width: tamanho,
+        height: tamanho,
+        background: FUNDO_DA_MARCA[canal] ?? definicao.cor,
+        borderRadius: Math.round(tamanho * 0.28),
+      }}
+      className="inline-flex shrink-0 items-center justify-center text-white shadow-sm"
+    >
+      <LogoDoCanal canal={canal} tamanho={Math.round(tamanho * 0.56)} />
+    </span>
+  )
+}
