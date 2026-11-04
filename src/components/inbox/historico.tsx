@@ -10,6 +10,7 @@ import { assinaturaDasReacoes } from '@/core/reacoes'
 import {
   AnexoNaConversa,
   ArquivoSemCopia,
+  CompartilhadoNaBolha,
   MensagemNaoSuportada,
   CartoesNaBolha,
   CitacaoNaBolha,
@@ -589,6 +590,7 @@ function ListaDeMensagens({
           !mensagem.cita &&
           !mensagem.local &&
           !mensagem.cartoes &&
+          !mensagem.compartilhado &&
           (midiaDaBolha?.midia === 'imagem' || midiaDaBolha?.midia === 'video')
         const etiqueta = diasDaConversa[indice]
         /*
@@ -738,6 +740,7 @@ function ListaDeMensagens({
                 </p>
               )}
               {mensagem.semCopia && <ArquivoSemCopia nossa={nossa} />}
+              {mensagem.compartilhado && <CompartilhadoNaBolha compartilhado={mensagem.compartilhado} />}
               {mensagem.naoSuportada && <MensagemNaoSuportada motivo={mensagem.motivoNaoSuportada} />}
               {mensagem.local && <LocalNaBolha local={mensagem.local} />}
               {mensagem.cartoes && <CartoesNaBolha cartoes={mensagem.cartoes} />}
@@ -761,6 +764,7 @@ function ListaDeMensagens({
                 !mensagem.anexo &&
                 !mensagem.recebido &&
                 !mensagem.semCopia &&
+                !mensagem.compartilhado &&
                 !mensagem.naoSuportada && (mensagem.apagada ? <MensagemApagada /> : mensagem.editada ? <EdicaoSemTexto /> : <SemTexto />)
               )}
               {/* O rodapé do modelo aprovado, cinza e menor, como o WhatsApp desenha. */}

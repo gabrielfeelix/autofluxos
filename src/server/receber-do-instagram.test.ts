@@ -88,7 +88,55 @@ describe('traduzir a mensagem do Instagram', () => {
       attachments: [{ type: 'story_mention', payload: {} }],
     })
 
-    expect(m?.type).toBe('sticker')
+    expect(m?.type).toBe('image')
+    expect(m?.compartilhado).toEqual({ tipo: 'story' })
+  })
+
+  it('reel compartilhado vira cartão com o link, e o fluxo segue vendo vídeo', () => {
+    const m = paraMensagemInterna('igsid-contato', {
+      mid: 'mid-reel',
+      attachments: [
+        { type: 'ig_reel', payload: { url: 'https://www.instagram.com/reel/DfDWVlSJslQ/', title: ' Legenda do reel ' } },
+      ],
+    })
+
+    expect(m?.type).toBe('video')
+    expect(m?.compartilhado).toEqual({
+      tipo: 'reel',
+      url: 'https://www.instagram.com/reel/DfDWVlSJslQ/',
+      titulo: 'Legenda do reel',
+    })
+  })
+
+  it('vídeo cujo link é de reel também é reel, como a Meta manda às vezes', () => {
+    const m = paraMensagemInterna('igsid-contato', {
+      mid: 'mid-reel-2',
+      attachments: [{ type: 'video', payload: { url: 'https://www.instagram.com/reel/De2esAVifwW/' } }],
+    })
+
+    expect(m?.compartilhado?.tipo).toBe('reel')
+  })
+
+  it('post compartilhado é a prévia em imagem, sem link de CDN no cartão', () => {
+    const prévia = 'https://lookaside.fbsbx.com/ig_messaging_cdn/?asset_id=1&signature=x'
+    const m = paraMensagemInterna('igsid-contato', {
+      mid: 'mid-post',
+      attachments: [{ type: 'share', payload: { url: prévia } }],
+    })
+
+    expect(m?.type).toBe('image')
+    expect(m?.image).toEqual({ id: prévia })
+    expect(m?.compartilhado).toEqual({ tipo: 'post' })
+  })
+
+  it('áudio e figurinha comuns não viram compartilhado', () => {
+    const m = paraMensagemInterna('igsid-contato', {
+      mid: 'mid-audio',
+      attachments: [{ type: 'audio', payload: { url: 'https://lookaside.fbsbx.com/ig_messaging_cdn/?asset_id=2' } }],
+    })
+
+    expect(m?.type).toBe('audio')
+    expect(m?.compartilhado).toBeUndefined()
   })
 
   it('tipo de anexo que a Meta inventar amanhã não vira null', () => {

@@ -725,6 +725,7 @@ export function CaixaDeResposta({
             contatoId={anexo.contatoId}
             desabilitado={enviando}
             aoGravar={setGravando}
+            canal={canal}
           />
         )}
 

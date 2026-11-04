@@ -64,6 +64,10 @@ aqui fica o que o cliente ganha.
   imagem ou vídeo, formulário de contato com os campos que a empresa quer, e
   prévia ao vivo antes de publicar.
 - **Instagram Direct no mesmo Inbox**, com a conexão que se renova sozinha.
+- **Mídia do Instagram e do Messenger como no WhatsApp**: áudio toca, foto,
+  figurinha e GIF aparecem, reel e post compartilhados viram cartão que abre
+  no Instagram, inclusive o que a equipe respondeu pelo celular. Áudio gravado
+  no Inbox sai no formato que o Instagram aceita.
 - **Aviso quando um canal cai**: o Inbox mostra na hora se o número
   desconectou ou o acesso venceu, antes de o cliente ficar sem resposta.
 - **Tudo em tempo real**, sem recarregar: mensagem nova, quem assumiu,

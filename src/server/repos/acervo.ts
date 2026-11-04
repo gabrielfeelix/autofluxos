@@ -55,6 +55,8 @@ export const TIPOS_ACEITOS: Record<string, { extensao: string; midia: TipoDeMidi
   // `audio/aac` como alternativa que alguns oferecem. A Meta lista os dois.
   'audio/mp4': { extensao: 'm4a', midia: 'audio' },
   'audio/aac': { extensao: 'aac', midia: 'audio' },
+  // Voz gravada para Instagram e Messenger, que não tocam OGG (0167).
+  'audio/wav': { extensao: 'wav', midia: 'audio' },
   'application/pdf': { extensao: 'pdf', midia: 'documento' },
   // O resto da tabela de documentos da Meta (0144).
   'text/plain': { extensao: 'txt', midia: 'documento' },

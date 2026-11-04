@@ -59,6 +59,26 @@ export function midiaDoTipo(tipo: string | null | undefined): TipoDeMidia | null
 }
 
 /**
+ * O tipo que a bolha desenha, conferido pelo que desceu.
+ *
+ * No WhatsApp o `type` da mensagem já diz tudo. No Instagram não: a menção em
+ * story chega sem dizer se é foto ou vídeo, o post compartilhado chega como
+ * prévia, e o GIF do teclado é imagem animada. O MIME do arquivo baixado é a
+ * única fonte certa nesses casos.
+ *
+ * Áudio fica áudio mesmo vindo como `video/mp4`: é assim que o Instagram serve
+ * a mensagem de voz (medido em 04/nov/2026), e tocar num `<video>` mostraria
+ * um retângulo preto.
+ */
+export function midiaPeloArquivo(declarada: TipoDeMidia, mime: string | null | undefined): TipoDeMidia {
+  if (declarada === 'audio' || declarada === 'documento') return declarada
+  const limpo = mimeLimpo(mime)
+  if (limpo.startsWith('video/')) return 'video'
+  if (limpo.startsWith('image/')) return 'imagem'
+  return declarada
+}
+
+/**
  * A extensão do arquivo, a partir do mime que a Meta declarou.
  *
  * Serve para o nome no bucket, e **para o navegador saber o que fazer** quando
@@ -73,13 +93,16 @@ const EXTENSAO: Record<string, string> = {
   'image/jpeg': 'jpg',
   'image/png': 'png',
   'image/webp': 'webp',
+  'image/gif': 'gif',
   'video/mp4': 'mp4',
   'video/3gpp': '3gp',
+  'video/quicktime': 'mov',
   'audio/aac': 'aac',
   'audio/amr': 'amr',
   'audio/mpeg': 'mp3',
   'audio/mp4': 'm4a',
   'audio/ogg': 'ogg',
+  'audio/wav': 'wav',
   'application/pdf': 'pdf',
   'text/plain': 'txt',
   'application/msword': 'doc',
@@ -97,8 +120,20 @@ export function extensaoDoMime(mime: string | null | undefined): string {
 }
 
 /** O mime sem os parâmetros, é o que o bucket valida em `allowed_mime_types`. */
+/**
+ * Grafias antigas do mesmo formato. O CDN da Meta e alguns navegadores ainda
+ * mandam o `x-`, e o `allowed_mime_types` do bucket compara string exata.
+ */
+const SINONIMOS: Record<string, string> = {
+  'audio/x-wav': 'audio/wav',
+  'audio/wave': 'audio/wav',
+  'audio/x-m4a': 'audio/mp4',
+  'image/jpg': 'image/jpeg',
+}
+
 export function mimeLimpo(mime: string | null | undefined): string {
-  return mime?.split(';')[0]?.trim().toLowerCase() ?? 'application/octet-stream'
+  const limpo = mime?.split(';')[0]?.trim().toLowerCase() || 'application/octet-stream'
+  return SINONIMOS[limpo] ?? limpo
 }
 
 /**

@@ -14,6 +14,8 @@ import { db } from './db'
 import { type FabricaDeCanal, type Mensagem, tratarUma } from './receber-mensagem'
 import { alertar } from './alertar'
 import { comentarioSchema, tratarComentario } from './receber-comentario-do-instagram'
+import { type Compartilhado, ehArquivoDaMeta, tipoDoLinkDoInstagram } from '@/core/compartilhado'
+import { guardarMidiaRecebida } from './guardar-midia-recebida'
 
 /**
  * O caminho de um direct do Instagram até a resposta.
@@ -52,10 +54,10 @@ import { comentarioSchema, tratarComentario } from './receber-comentario-do-inst
  *    silêncio, para sempre.
  */
 
-/** O que a Meta manda de anexo. Só o tipo e a url interessam por enquanto. */
+/** O que a Meta manda de anexo: o tipo, a url e, no reel, a legenda. */
 const anexoSchema = z.object({
   type: z.string(),
-  payload: z.object({ url: z.string().optional() }).optional(),
+  payload: z.object({ url: z.string().optional(), title: z.string().optional() }).nullish(),
 })
 
 const mensagemDoInstagramSchema = z.object({
@@ -121,26 +123,30 @@ export const webhookDoInstagramSchema = z.object({
 })
 
 /**
- * O tipo do nosso lado para um anexo do Instagram.
+ * O tipo do nosso lado para um anexo do Instagram ou do Messenger.
  *
  * A Meta usa `image`, `video`, `audio`, `file`, `share`, `story_mention`,
- * `ig_reel`. `paraEntrada` do lado do WhatsApp guarda o `type` cru em
- * `formato`, e é isso que o desenho vê na saída "mandou arquivo", então
- * traduzir para o vocabulário do WhatsApp é o que faz o mesmo fluxo se
- * comportar igual nos dois canais.
+ * `ig_reel`, `reel`, `ig_post` e, no Messenger, `fallback` (link). `paraEntrada`
+ * do lado do WhatsApp guarda o `type` cru em `formato`, e é isso que o desenho
+ * vê na saída "mandou arquivo", então traduzir para o vocabulário do WhatsApp é
+ * o que faz o mesmo fluxo se comportar igual nos canais.
+ *
+ * O que foi **compartilhado** (reel, post, story, link) leva também
+ * `compartilhado`, para a bolha desenhar o cartão. O reel fica `video` para o
+ * fluxo, e a URL dele (`instagram.com/reel/...`) não é baixada: o adaptador só
+ * baixa de CDN da Meta. O post vem como a prévia em imagem, e essa desce.
  */
-const TIPO_DO_ANEXO: Record<string, string> = {
-  image: 'image',
-  video: 'video',
-  audio: 'audio',
-  file: 'document',
-  // Figurinha, reel compartilhado, menção em story: não são arquivo que o
-  // fluxo saiba tratar, mas também não podem virar texto vazio. Caem no mesmo
-  // caminho de mídia, que leva a conversa para uma pessoa quando o desenho
-  // não trata, o comportamento certo para "chegou algo que não sei ler".
-  share: 'sticker',
-  story_mention: 'sticker',
-  ig_reel: 'video',
+const TIPO_DO_ANEXO: Record<string, { tipo: string; compartilhado?: Compartilhado['tipo'] }> = {
+  image: { tipo: 'image' },
+  video: { tipo: 'video' },
+  audio: { tipo: 'audio' },
+  file: { tipo: 'document' },
+  share: { tipo: 'image', compartilhado: 'post' },
+  ig_post: { tipo: 'image', compartilhado: 'post' },
+  ig_reel: { tipo: 'video', compartilhado: 'reel' },
+  reel: { tipo: 'video', compartilhado: 'reel' },
+  story_mention: { tipo: 'image', compartilhado: 'story' },
+  fallback: { tipo: 'sticker', compartilhado: 'link' },
 }
 
 /**
@@ -178,10 +184,29 @@ export function paraMensagemInterna(
 
   const anexo = mensagem.attachments?.[0]
   if (anexo) {
-    const tipo = TIPO_DO_ANEXO[anexo.type] ?? 'sticker'
+    const url = anexo.payload?.url
+    /*
+     * O link manda mais que o rótulo da Meta: um `video` cuja URL é
+     * `instagram.com/reel/...` é reel compartilhado, e não arquivo. Foi assim
+     * que 96 reels viraram "arquivo recebido, sem cópia" até 04/nov/2026.
+     */
+    const pelaUrl = tipoDoLinkDoInstagram(url)
+    const conhecido = TIPO_DO_ANEXO[anexo.type]
+    const tipo = pelaUrl === 'reel' ? 'video' : (conhecido?.tipo ?? 'sticker')
+    const tipoCompartilhado = pelaUrl ?? conhecido?.compartilhado
+    const titulo = anexo.payload?.title?.trim()
+    const compartilhado: Compartilhado | null = tipoCompartilhado
+      ? {
+          tipo: tipoCompartilhado,
+          // A prévia do post é CDN, não é o post: link só quando é público.
+          ...(url && !ehArquivoDaMeta(url) ? { url } : {}),
+          ...(titulo ? { titulo } : {}),
+        }
+      : null
     return {
       ...base,
       type: tipo,
+      ...(compartilhado ? { compartilhado } : {}),
       /*
        * O Instagram manda a **url** do anexo, e o WhatsApp manda um **id** para
        * baixar depois. O campo interno se chama `id` porque nasceu do WhatsApp,
@@ -189,7 +214,7 @@ export function paraMensagemInterna(
        * arquivo", e é assim que o nó de API a recebe.
        */
       [tipo === 'document' ? 'document' : tipo]: {
-        ...(anexo.payload?.url ? { id: anexo.payload.url } : {}),
+        ...(url ? { id: url } : {}),
       },
     }
   }
@@ -436,7 +461,7 @@ async function gravarEco(
     }
 
     const interna = paraMensagemInterna(contaId, { ...mensagem, is_echo: false })
-    await registrarMensagemDeCoexistencia({
+    const linha = await registrarMensagemDeCoexistencia({
       contatoId: contato.id,
       waMessageId: mensagem.mid,
       direcao: 'saida',
@@ -445,6 +470,19 @@ async function gravarEco(
       ts: null,
       historico: false,
     })
+
+    /*
+     * O áudio, a foto ou o vídeo mandado pelo celular: mesma cópia da mídia
+     * recebida, para a conversa mostrar o que foi respondido em vez de "(áudio,
+     * imagem ou documento)". A URL do CDN expira, então é agora ou nunca.
+     */
+    const anexo = interna ? (interna.image ?? interna.audio ?? interna.video ?? interna.document ?? interna.sticker) : undefined
+    if (linha && interna && anexo?.id) {
+      await guardarMidiaRecebida(await adaptadorDoCanal(canal), canal.clienteId, contato.id, linha, {
+        tipo: interna.type,
+        midiaId: anexo.id,
+      })
+    }
   } catch (erro) {
     console.error('[webhook instagram] não foi possível gravar o eco', erro)
   }

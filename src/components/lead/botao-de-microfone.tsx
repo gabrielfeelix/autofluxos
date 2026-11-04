@@ -18,6 +18,8 @@ import {
   type FormatoDeGravacao,
 } from '@/core/audio-de-voz'
 import { webmOpusParaOgg } from '@/core/ogg-opus'
+import { MIME_WAV, pcmParaWav, TAXA_DO_WAV } from '@/core/wav'
+import type { CanalId } from '@/core/canais'
 import { acaoPrepararEnvioDeArquivo } from '@/server/acoes'
 import { acaoEnviarMidiaDoInbox } from '@/server/acoes-midia-do-inbox'
 import { pedirNovas } from '@/components/inbox/sinal-de-conversa'
@@ -57,9 +59,12 @@ export function BotaoDeMicrofone({
   contatoId,
   desabilitado = false,
   aoGravar,
+  canal = 'whatsapp',
 }: {
   clienteId: string
   contatoId: string
+  /** Instagram e Messenger não tocam OGG: lá o áudio sai em WAV (`core/wav.ts`). */
+  canal?: CanalId
   desabilitado?: boolean
   /** Avisa o rodapé para sair do caminho enquanto a gravação acontece. */
   aoGravar?: (gravando: boolean) => void
@@ -209,6 +214,16 @@ export function BotaoDeMicrofone({
    */
   const prepararEEnviar = useCallback(
     async (gravado: Blob, formato: FormatoDeGravacao) => {
+      if (canal === 'instagram' || canal === 'messenger') {
+        setFase('subindo')
+        const wav = await paraWav(gravado)
+        if (!wav) {
+          setErro('Não foi possível preparar o áudio neste navegador. Tente pelo Chrome ou pelo Firefox.')
+          return
+        }
+        await enviar(new Blob([wav as unknown as BlobPart]), MIME_WAV, 'wav')
+        return
+      }
       let audio = gravado
       if (formato.remux) {
         setFase('subindo')
@@ -224,7 +239,7 @@ export function BotaoDeMicrofone({
     },
     // `enviar` é estável, depende só de clienteId e contatoId.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [clienteId, contatoId],
+    [clienteId, contatoId, canal],
   )
 
   async function comecar() {
@@ -437,4 +452,30 @@ export function BotaoDeMicrofone({
       )}
     </span>
   )
+}
+
+/**
+ * O áudio gravado (Opus em WebM ou OGG), decodificado pelo próprio navegador e
+ * reescrito em WAV mono de 16 kHz. `null` quando o navegador não decodifica.
+ *
+ * O `OfflineAudioContext` de um canal só faz a mistura para mono e a troca de
+ * taxa de uma vez, sem biblioteca.
+ */
+async function paraWav(gravado: Blob): Promise<Uint8Array | null> {
+  try {
+    const contexto = new AudioContext()
+    const decodificado = await contexto.decodeAudioData(await gravado.arrayBuffer())
+    void contexto.close()
+    const quadros = Math.max(1, Math.ceil(decodificado.duration * TAXA_DO_WAV))
+    const offline = new OfflineAudioContext(1, quadros, TAXA_DO_WAV)
+    const fonte = offline.createBufferSource()
+    fonte.buffer = decodificado
+    fonte.connect(offline.destination)
+    fonte.start()
+    const final = await offline.startRendering()
+    return pcmParaWav(final.getChannelData(0))
+  } catch (erro) {
+    console.warn('[microfone] não foi possível converter para WAV', erro)
+    return null
+  }
 }

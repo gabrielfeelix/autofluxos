@@ -2,6 +2,7 @@ import { LIMITE_ATRASO_SEGUNDOS, type Opcao } from '@/core/flow/schema'
 import { cortarCaracteres } from '@/core/flow/texto'
 import { linhasDoCard } from '@/core/loja'
 import { DEFINICAO_DO_CANAL } from '@/core/canais'
+import { ehArquivoDaMeta } from '@/core/compartilhado'
 import type { Canal, Midia } from './types'
 
 /**
@@ -51,6 +52,10 @@ const TIMEOUT_MS = 15_000
 const LIMITE_ELEMENTOS_GENERIC = 10
 const LIMITE_TITULO_GENERIC = 80
 const TEXTO_DO_BOTAO_DA_LOJA = 'Ver na loja'
+/** Arquivo, não JSON: mesmo teto do download do WhatsApp (`cloud-api.ts`). */
+const TIMEOUT_DOWNLOAD_MS = 30_000
+/** O CDN da Meta redireciona uma vez, às vezes duas. Mais que isso é estranho. */
+const MAXIMO_DE_SALTOS = 3
 /** Indicador é conveniência; ele não pode consumir o prazo de um envio real. */
 const TIMEOUT_INDICADOR_MS = 2_000
 
@@ -178,6 +183,50 @@ export function canalInstagram(config: ConfigInstagram): Canal {
 
     async enviarTexto(para, texto) {
       return mandarTexto(para, texto)
+    },
+
+    /*
+     * O anexo do direct, pela URL de CDN que veio no webhook.
+     *
+     * Diferente do WhatsApp, não há troca de id por URL: a Meta já manda o
+     * endereço, e ele desce **sem token** (assinado na própria URL). Só baixa
+     * de host da Meta (`ehArquivoDaMeta`), e confere de novo a cada
+     * redirecionamento: seguir sozinho deixaria um redirecionamento levar o
+     * servidor para fora da lista.
+     *
+     * Reel e post compartilhados chegam como `instagram.com/...`, que não é
+     * arquivo, e param aqui sem pedido nenhum: a bolha os desenha como cartão.
+     */
+    async baixarMidia(endereco) {
+      let atual = endereco
+      try {
+        for (let salto = 0; salto <= MAXIMO_DE_SALTOS; salto++) {
+          if (!ehArquivoDaMeta(atual)) return null
+          const resposta = await fetch(atual, {
+            redirect: 'manual',
+            signal: AbortSignal.timeout(TIMEOUT_DOWNLOAD_MS),
+          })
+          const destino = resposta.headers.get('location')
+          if (resposta.status >= 300 && resposta.status < 400 && destino) {
+            atual = new URL(destino, atual).toString()
+            continue
+          }
+          if (!resposta.ok) {
+            console.warn(`[${nomeDaRede.toLowerCase()}] o anexo não desceu (${resposta.status})`)
+            return null
+          }
+          const bytes = new Uint8Array(await resposta.arrayBuffer())
+          const mime = resposta.headers.get('content-type') ?? 'application/octet-stream'
+          return { bytes, mime }
+        }
+        return null
+      } catch (erro) {
+        console.warn(
+          `[${nomeDaRede.toLowerCase()}] não foi possível baixar o anexo`,
+          erro instanceof Error ? erro.message : String(erro),
+        )
+        return null
+      }
     },
 
     async enviarMidia(para, { midia, url: endereco, legenda }: Midia) {

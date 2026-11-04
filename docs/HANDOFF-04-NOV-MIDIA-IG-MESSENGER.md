@@ -1,5 +1,13 @@
 # Handoff 04/nov/2026: mídia do Instagram e do Messenger no Inbox
 
+> **Executado em 04/nov/2026.** Download pela URL de CDN em
+> `channels/instagram.ts` (`baixarMidia`, hosts em `core/compartilhado.ts`),
+> cartão de reel/post/story/link (`CompartilhadoNaBolha`), eco com cópia,
+> voz em WAV para Instagram/Messenger (`core/wav.ts`), migration `0167`
+> aplicada. Retroativo: 135 reels viraram cartão; 27 arquivos antigos ainda
+> baixaram, 25 com URL expirada, 1 HEIC ignorado. Falta testar um envio real
+> de áudio WAV pelo Inbox numa conversa do Instagram.
+
 Pedido do Gabriel: tudo que o WhatsApp mostra no Inbox (áudio, imagem, vídeo,
 figurinha, GIF, documento) tem que aparecer igual no Instagram e no Messenger,
 recebido e enviado, mais o reel/post que a pessoa compartilha.

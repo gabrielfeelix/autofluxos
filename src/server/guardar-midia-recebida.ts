@@ -1,5 +1,5 @@
 import 'server-only'
-import { midiaDoTipo, TETO_DO_ARQUIVO } from '@/core/midia-recebida'
+import { midiaDoTipo, midiaPeloArquivo, TETO_DO_ARQUIVO } from '@/core/midia-recebida'
 import type { Canal } from '@/channels/types'
 import { guardarArquivo } from './repos/midia-recebida'
 
@@ -35,10 +35,10 @@ export async function guardarMidiaRecebida(
   if (!midia || !entrada.midiaId) return
 
   /*
-   * Canal sem download não é erro: só o WhatsApp passa por aqui hoje, e o
-   * Instagram entrega mídia por URL própria. Perguntar antes é o que faz a
-   * ausência ser silêncio em vez de `canal.baixarMidia is not a function` no
-   * log de produção.
+   * Canal sem download não é erro (site, Telegram). Perguntar antes é o que
+   * faz a ausência ser silêncio em vez de `canal.baixarMidia is not a function`
+   * no log de produção. WhatsApp baixa pelo id; Instagram e Messenger, pela URL
+   * de CDN que vem no webhook.
    */
   if (!canal.baixarMidia) return
 
@@ -63,7 +63,7 @@ export async function guardarMidiaRecebida(
       return
     }
 
-    await guardarArquivo(clienteId, contatoId, mensagemId, arquivo, midia)
+    await guardarArquivo(clienteId, contatoId, mensagemId, arquivo, midiaPeloArquivo(midia, arquivo.mime))
   } catch (erro) {
     console.warn(
       '[midia] não foi possível guardar a mídia recebida',

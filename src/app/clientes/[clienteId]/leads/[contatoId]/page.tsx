@@ -88,6 +88,7 @@ import { SeletorDeEtiquetas } from '@/components/etiquetas/seletor'
 import {
   AnexoNaConversa,
   ArquivoSemCopia,
+  CompartilhadoNaBolha,
   MensagemNaoSuportada,
   CartoesNaBolha,
   CitacaoNaBolha,
@@ -928,6 +929,7 @@ async function Historico({
               */}
               {mensagem.recebido && <AnexoNaConversa anexo={mensagem.recebido} />}
               {mensagem.semCopia && <ArquivoSemCopia />}
+              {mensagem.compartilhado && <CompartilhadoNaBolha compartilhado={mensagem.compartilhado} />}
               {mensagem.naoSuportada && <MensagemNaoSuportada motivo={mensagem.motivoNaoSuportada} />}
               {mensagem.local && <LocalNaBolha local={mensagem.local} />}
               {mensagem.cartoes && <CartoesNaBolha cartoes={mensagem.cartoes} />}
@@ -943,6 +945,7 @@ async function Historico({
                 !mensagem.local &&
                 !mensagem.cartoes &&
                 !mensagem.semCopia &&
+                !mensagem.compartilhado &&
                 !mensagem.naoSuportada && (mensagem.apagada ? <MensagemApagada /> : mensagem.editada ? <EdicaoSemTexto /> : <SemTexto />)
               )}
               {/*

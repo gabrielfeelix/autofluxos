@@ -235,6 +235,14 @@ const mensagemSchema = z.object({
    */
   unsupported: z.unknown().optional(),
   errors: z.unknown().optional(),
+  /**
+   * Reel, post, story ou link compartilhado no Instagram/Messenger. Não vem da
+   * Cloud API: é `paraMensagemInterna` que põe, para a bolha desenhar o cartão
+   * (`core/compartilhado.ts`). Fica no `payload` gravado.
+   */
+  compartilhado: z
+    .object({ tipo: z.enum(['reel', 'post', 'story', 'link']), url: z.string().optional(), titulo: z.string().optional() })
+    .optional(),
   /*
    * A pessoa editou ou apagou uma mensagem que já mandou.
    *

@@ -18,6 +18,7 @@ import {
 } from '@/core/payload-da-mensagem'
 import { autorDoPayload, comoChamarOAutor } from '@/core/autor-da-mensagem'
 import { ehArquivoGuardado, midiaDoTipo } from '@/core/midia-recebida'
+import { type Compartilhado, compartilhadoDoPayload } from '@/core/compartilhado'
 import { enderecoDaMidia } from './midia-recebida'
 import { naoLidasPorContato } from './leituras'
 import { TIPOS_DE_MIDIA, type TipoDeMidia } from '@/core/flow/schema'
@@ -291,6 +292,8 @@ export type MensagemDoLead = {
    * um quebrado é uma frase.
    */
   semCopia?: true
+  /** Reel, post, story ou link compartilhado no Instagram/Messenger. */
+  compartilhado?: Compartilhado
   /**
    * A Meta disse `unsupported`: existe uma mensagem ali e ela **não vem** para
    * a API.
@@ -1274,6 +1277,7 @@ export async function lerConversa(
         const doModelo = extrasDoModelo(m.payload)
         const local = localDoPayload(m.payload)
         const cartoes = cartoesDoPayload(m.payload)
+        const compartilhado = compartilhadoDoPayload(m.payload)
 
         /*
          * Dois estados: temos o arquivo, ou chegou arquivo do qual nunca houve
@@ -1297,8 +1301,14 @@ export async function lerConversa(
               }
             : null
         const tipoDaMeta = (m.payload as { type?: string } | null)?.type
-        // Só entrada: a mídia que sai leva `type` desde 06/out (a prévia da fila) e mora no `anexo`.
-        const semCopia = m.direcao === 'entrada' && !recebido && midiaDoTipo(tipoDaMeta) !== null
+        /*
+         * A mídia que o bot e o painel mandam mora no `anexo`. Sem anexo e sem
+         * cópia, a saída é o eco do celular (Instagram, coexistência), e a
+         * frase certa é a mesma da entrada, no lado de cá. Reel compartilhado
+         * nunca tem cópia, e não falta nada: ele é o cartão.
+         */
+        const semCopia =
+          !recebido && !anexo && !(compartilhado && compartilhado.tipo !== 'story') && midiaDoTipo(tipoDaMeta) !== null
         /*
          * `unsupported` é uma resposta da Meta, não uma falha nossa, e a bolha
          * precisa dizer isso com essa palavra. Antes ela caía no genérico
@@ -1348,6 +1358,7 @@ export async function lerConversa(
           ...(cobrancas.has(cobrancaDoPayload(m.payload) ?? '') ? { cobranca: cobrancas.get(cobrancaDoPayload(m.payload)!)! } : {}),
           ...(recebido ? { recebido } : {}),
           ...(semCopia ? { semCopia: true as const } : {}),
+          ...(compartilhado ? { compartilhado } : {}),
           ...(naoSuportada ? { naoSuportada: true as const } : {}),
           ...(editada ? { editada: true as const } : {}),
           ...(motivo ? { motivoNaoSuportada: motivo } : {}),

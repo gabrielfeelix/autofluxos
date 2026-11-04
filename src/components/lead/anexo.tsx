@@ -1,6 +1,8 @@
 import { ImagemDaConversa } from '@/components/lead/visor-de-imagem'
 import type { AnexoDaMensagem, CartaoDeContato, ProdutoNaMensagem, Citada, LocalDaMensagem } from '@/server/repos/leads'
 import { telefoneLegivel } from '@/core/contatos/telefone'
+import { type Compartilhado, ROTULO_DO_COMPARTILHADO } from '@/core/compartilhado'
+import { LogoDoCanal } from '@/components/design/selo-do-canal'
 
 /**
  * O arquivo dentro da bolha, nas telas de Lead e de Inbox.
@@ -285,6 +287,47 @@ export function MensagemNaoSuportada({ motivo }: { motivo?: string } = {}) {
         {motivo ? `${motivo}: ` : ''}mensagem que o WhatsApp não entrega para o painel, veja no celular
       </span>
     </span>
+  )
+}
+
+/**
+ * O reel, post, story ou link que a pessoa compartilhou.
+ *
+ * O Instagram desenha isso como um cartão que abre o conteúdo, e é o que quem
+ * atende reconhece. O reel não tem cópia por aqui de propósito: é conteúdo
+ * público de outra conta, e o link é o que importa. O post traz a prévia em
+ * imagem, que aparece acima deste cartão.
+ */
+export function CompartilhadoNaBolha({ compartilhado }: { compartilhado: Compartilhado }) {
+  const rotulo = ROTULO_DO_COMPARTILHADO[compartilhado.tipo]
+  const conteudo = (
+    <>
+      <span className="flex size-8 shrink-0 items-center justify-center rounded-md border border-line bg-canvas text-marca-instagram">
+        <LogoDoCanal canal="instagram" tamanho={16} />
+      </span>
+      <span className="min-w-0 flex-1">
+        <span className="block text-[12.5px] leading-4 font-semibold">{rotulo}</span>
+        {compartilhado.titulo && (
+          <span className="mt-0.5 line-clamp-2 block text-[12px] leading-4 text-dim">{compartilhado.titulo}</span>
+        )}
+        {compartilhado.url && (
+          <span className="mt-0.5 block text-[11.5px] leading-4 text-dim underline">Abrir no Instagram</span>
+        )}
+      </span>
+    </>
+  )
+  const caixa =
+    'mb-1.5 flex w-[260px] max-w-full items-center gap-2.5 rounded-lg border border-line bg-surface px-2.5 py-2 text-left'
+  if (!compartilhado.url) return <span className={caixa}>{conteudo}</span>
+  return (
+    <a
+      href={compartilhado.url}
+      target="_blank"
+      rel="noreferrer"
+      className={`${caixa} transition hover:border-primary/40`}
+    >
+      {conteudo}
+    </a>
   )
 }
 

@@ -99,6 +99,16 @@ export async function acaoEnviarMidiaDoInbox(
     }
   }
 
+  /*
+   * WAV existe no acervo para a voz do Instagram e do Messenger (`core/wav.ts`).
+   * A Cloud API não tem WAV na tabela: recusar aqui diz o motivo, em vez de um
+   * erro da Meta sem contexto.
+   */
+  const semWav = !['instagram', 'messenger', 'telegram', 'site'].includes(contexto.canal.provider ?? '')
+  if (semWav && /\.wav(\?|$)/i.test(url)) {
+    return { ok: false, erro: 'o WhatsApp não aceita áudio WAV; mande em MP3, M4A ou OGG' }
+  }
+
   let canal
   try {
     canal = await adaptadorDoCanal(contexto.canal)
