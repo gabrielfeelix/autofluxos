@@ -322,11 +322,21 @@ type Tentativa =
   | { tipo: 'pronta'; resposta: Resposta }
   | { tipo: 'retentar'; status: string; desistencia: Resposta }
 
+/** O teto da segunda chance, quando a primeira voltou vazia. */
+const TETO_COM_FOLGA = 4096
+
+/** O mesmo pedido com mais espaço para o modelo pensar e ainda escrever. */
+function comFolga(corpo: string): string {
+  const pedido = JSON.parse(corpo) as { generationConfig?: Record<string, unknown> }
+  return JSON.stringify({ ...pedido, generationConfig: { ...pedido.generationConfig, maxOutputTokens: TETO_COM_FOLGA } })
+}
+
 async function tentar(
   nome: string,
   chave: string,
   corpo: string,
   timeout: number,
+  segundaChance = false,
 ): Promise<Tentativa> {
   try {
     const resposta = await fetch(`${ENDERECO}/${nome}:generateContent`, {
@@ -396,16 +406,22 @@ async function tentar(
       .join('')
 
     /*
-     * Vazio vai para o próximo modelo, como um 503.
+     * Vazio: o mesmo modelo de novo, com folga, e só então o próximo.
      *
      * 04/nov/2026, PCYES: depois de `loja_buscar` o flash-lite voltou sem
-     * texto e um lead de compra foi para um atendente sem a reserva tentar.
-     * O `finishReason` diz se foi teto de tokens gasto pensando ou consulta
-     * malformada; sem ele no log, o próximo vazio é adivinhação de novo.
+     * texto e um lead de compra foi para um atendente sem ninguém tentar de
+     * novo. O suspeito é o teto: o modelo gasta os 1200 tokens pensando
+     * (compatibilidade de peça em cima de uma lista de produtos) e não chega
+     * a escrever. A segunda chance sobe o teto; quem encurta a mensagem
+     * continua sendo o `prompt.ts`. Vazio de novo vira retentativa, como um
+     * 503: reserva, último recurso, outro provedor, e só então uma pessoa.
+     * O `finishReason` vai para o log, para o próximo vazio não ser
+     * adivinhação.
      */
     const fim = json.candidates?.[0]?.finishReason
     if (texto.trim() === '') {
       console.warn(`[ia] ${nome} respondeu vazio (finishReason ${fim ?? 'ausente'})`)
+      if (!segundaChance) return tentar(nome, chave, comFolga(corpo), timeout, true)
       return {
         tipo: 'retentar',
         status: `vazio ${fim ?? ''}`.trim(),
