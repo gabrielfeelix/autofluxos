@@ -308,18 +308,34 @@ export function CompartilhadoNaBolha({ compartilhado }: { compartilhado: Compart
   const embed = embedDoInstagram(compartilhado.url)
   if (embed) {
     return (
-      <span className="mb-1.5 block w-[300px] max-w-full">
-        <span className="mb-1.5 flex items-center gap-1.5 text-[12px] leading-4 font-semibold opacity-85">
-          <LogoDoCanal canal="instagram" tamanho={13} />
-          {rotulo}
+      <span className="mb-1.5 block w-[260px]">
+        <span className="mb-1.5 flex items-center justify-between gap-2 text-[12px] leading-4">
+          <span className="flex items-center gap-1.5 font-semibold opacity-85">
+            <LogoDoCanal canal="instagram" tamanho={13} />
+            {rotulo}
+          </span>
+          <a href={compartilhado.url} target="_blank" rel="noreferrer" className="underline opacity-70 hover:opacity-100">
+            Abrir
+          </a>
         </span>
-        <iframe
-          src={embed}
-          title={rotulo}
-          loading="lazy"
-          sandbox="allow-scripts allow-same-origin allow-popups allow-popups-to-escape-sandbox"
-          className="block h-[488px] w-full rounded-lg border border-line bg-white"
-        />
+        {/*
+          Só o vídeo. O player do Instagram traz cabeçalho (54px), curtir,
+          comentar e rolagem; a janela mostra apenas a faixa do vídeo, que em
+          260px de largura vai de y 54 a 377 (medido em 04/nov/2026, altura =
+          1,25 × largura − 1). Largura fixa porque a medida depende dela.
+        */}
+        <span className="block h-[324px] w-[260px] overflow-hidden rounded-lg bg-black">
+          <iframe
+            src={embed}
+            title={rotulo}
+            loading="lazy"
+            scrolling="no"
+            width={260}
+            height={440}
+            sandbox="allow-scripts allow-same-origin allow-popups allow-popups-to-escape-sandbox"
+            className="-mt-[54px] block border-0"
+          />
+        </span>
         {compartilhado.titulo && (
           <span className="mt-1.5 line-clamp-2 block text-[12px] leading-4 opacity-75">{compartilhado.titulo}</span>
         )}
