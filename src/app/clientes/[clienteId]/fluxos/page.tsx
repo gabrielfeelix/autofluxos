@@ -200,6 +200,7 @@ export default async function Pagina({
             principal={principal}
             abrirModelos={abrirModelos}
             parametros={parametros}
+            novaResposta={pedidos.nova === '1'}
           />
         </Suspense>
       </Miolo>
@@ -223,12 +224,15 @@ async function ConteudoDaAba({
   principal,
   abrirModelos,
   parametros,
+  novaResposta = false,
 }: {
   cliente: Cliente
   aba: Aba
   principal: AbaPrincipal
   abrirModelos: boolean
   parametros: Record<string, string>
+  /** `?nova=1`: o atalho "Responder comentário" do Nova automação. */
+  novaResposta?: boolean
 }) {
   /*
    * O carregamento é **por aba**, e a barra é por contagem (T7.1, item 5).
@@ -279,7 +283,7 @@ async function ConteudoDaAba({
     respostasAComentarios,
   ] = await Promise.all([
     contagensDeAutomacao(cliente.id),
-    precisa('fluxos', 'palavras', 'eventos', 'campanhas', 'sequencias')
+    precisa('fluxos', 'palavras', 'comentarios', 'eventos', 'campanhas', 'sequencias')
       ? listarFluxos(cliente.id)
       : vazio([] as Awaited<ReturnType<typeof listarFluxos>>),
     precisa('fluxos', 'comentarios') ? listarCanais(cliente.id) : vazio([] as Awaited<ReturnType<typeof listarCanais>>),
@@ -582,10 +586,14 @@ async function ConteudoDaAba({
                 titulo="Nova resposta a comentário"
                 descricao="Vale para comentários feitos depois de salvar. Cada comentário recebe uma mensagem no direct; se a pessoa responder, a conversa segue no Inbox."
                 rotuloEnviar="Salvar e ligar"
-                tamanho="lg"
+                abrirAoCarregar={novaResposta}
                 action={criarRespostaComCliente}
               >
-                <CamposDaRespostaAComentario clienteId={cliente.id} contas={contasDoInstagram} />
+                <CamposDaRespostaAComentario
+                  clienteId={cliente.id}
+                  contas={contasDoInstagram}
+                  fluxos={fluxos.map((f) => ({ id: f.id, nome: f.nome, publicado: f.versaoPublicadaId !== null }))}
+                />
               </ModalFormulario>
             )}</>,
     }),
@@ -1137,6 +1145,16 @@ async function ConteudoDaAba({
                     {resposta.respostaPublica && (
                       <span className="mt-0.5 block truncate text-[11px] text-dim">
                         Responde no comentário: {resposta.respostaPublica}
+                      </span>
+                    )}
+                    {resposta.fluxoId && (
+                      <span className="mt-0.5 block truncate text-[11px] text-dim">
+                        A resposta abre{' '}
+                        <NomeDoDestino
+                          destino={fluxos.find((f) => f.id === resposta.fluxoId)}
+                          clienteId={cliente.id}
+                          volta={voltaDaAba}
+                        />
                       </span>
                     )}
                   </span>

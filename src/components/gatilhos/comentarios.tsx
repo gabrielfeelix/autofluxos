@@ -21,9 +21,12 @@ type ContaDoInstagram = { id: string; usuario: string | null }
 export function CamposDaRespostaAComentario({
   clienteId,
   contas,
+  fluxos,
 }: {
   clienteId: string
   contas: ContaDoInstagram[]
+  /** Os fluxos da conta, para "quando a pessoa responder". */
+  fluxos: { id: string; nome: string; publicado: boolean }[]
 }) {
   const [canalId, setCanalId] = useState(contas[0]?.id ?? '')
   const [alcance, setAlcance] = useState<'todos' | 'um'>('todos')
@@ -196,6 +199,26 @@ export function CamposDaRespostaAComentario({
           </span>
         </span>
       </label>
+
+      <div>
+        <RotuloCampo>Quando a pessoa responder o direct</RotuloCampo>
+        <Dropdown
+          nome="fluxoId"
+          rotuloAcessivel="Fluxo que a resposta da pessoa abre"
+          valorInicial=""
+          opcoes={[
+            { valor: '', rotulo: 'Seguir o fluxo padrão do Instagram' },
+            ...fluxos.map((f) => ({
+              valor: f.id,
+              rotulo: `Abrir o fluxo ${f.nome}`,
+              ...(f.publicado ? {} : { detalhe: 'rascunho' }),
+            })),
+          ]}
+        />
+        <span className="mt-1.5 block text-[11.5px] leading-5 text-dim">
+          Um fluxo próprio dá a cada post a sua jornada: oferta, coleta de dados, venda.
+        </span>
+      </div>
 
       <label className="block">
         <RotuloCampo>Resposta no comentário (opcional)</RotuloCampo>

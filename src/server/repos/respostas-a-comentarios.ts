@@ -18,6 +18,8 @@ export type RespostaSalva = RespostaAComentario & {
   postLink: string | null
   mensagem: string
   respostaPublica: string | null
+  /** O fluxo que a resposta da pessoa abre. Nulo: o fluxo padrão do canal. */
+  fluxoId: string | null
   execucoes: number
 }
 
@@ -31,12 +33,13 @@ type Linha = {
   post_link: string | null
   mensagem: string
   resposta_publica: string | null
+  flow_id: string | null
   ativo: boolean
   execucoes: number
 }
 
 const COLUNAS =
-  'id, channel_id, palavras, post_id, post_legenda, post_imagem, post_link, mensagem, resposta_publica, ativo, execucoes'
+  'id, channel_id, palavras, post_id, post_legenda, post_imagem, post_link, mensagem, resposta_publica, flow_id, ativo, execucoes'
 
 function paraResposta(linha: Linha): RespostaSalva {
   return {
@@ -49,6 +52,7 @@ function paraResposta(linha: Linha): RespostaSalva {
     postLink: linha.post_link,
     mensagem: linha.mensagem,
     respostaPublica: linha.resposta_publica,
+    fluxoId: linha.flow_id,
     ativo: linha.ativo,
     execucoes: linha.execucoes,
   }
@@ -87,6 +91,7 @@ export async function criarRespostaAComentario(
     post: { id: string; legenda: string | null; imagem: string | null; link: string | null } | null
     mensagem: string
     respostaPublica: string | null
+    fluxoId: string | null
   },
 ): Promise<{ ok: true; id: string } | { ok: false; motivo: string }> {
   // O canal vem de um formulário: conferir que é desta conta e é Instagram.
@@ -102,6 +107,18 @@ export async function criarRespostaAComentario(
   if (erroDoCanal) throw new Error(`não foi possível conferir a conta: ${erroDoCanal.message}`)
   if (!canal) return { ok: false, motivo: 'esta conta do Instagram não é deste cliente' }
 
+  if (dados.fluxoId) {
+    const { data: fluxo, error: erroDoFluxo } = await db()
+      .from('flows')
+      .select('id')
+      .eq('id', dados.fluxoId)
+      .eq('client_id', clienteId)
+      .maybeSingle()
+    if (ehIdInvalido(erroDoFluxo)) return { ok: false, motivo: 'escolha um fluxo desta conta' }
+    if (erroDoFluxo) throw new Error(`não foi possível conferir o fluxo: ${erroDoFluxo.message}`)
+    if (!fluxo) return { ok: false, motivo: 'escolha um fluxo desta conta' }
+  }
+
   const { data, error } = await db()
     .from('respostas_a_comentarios')
     .insert({
@@ -114,6 +131,7 @@ export async function criarRespostaAComentario(
       post_link: dados.post?.link ?? null,
       mensagem: dados.mensagem,
       resposta_publica: dados.respostaPublica,
+      flow_id: dados.fluxoId,
     })
     .select('id')
     .single()
@@ -183,10 +201,15 @@ export async function concluirComentario(dados: {
   respostaId: string
   ok: boolean
   detalhe: string | null
+  contatoId?: string | null
 }): Promise<void> {
   await db()
     .from('comentarios_respondidos')
-    .update({ ok: dados.ok, detalhe: dados.detalhe?.slice(0, 500) ?? null })
+    .update({
+      ok: dados.ok,
+      detalhe: dados.detalhe?.slice(0, 500) ?? null,
+      ...(dados.contatoId ? { contato_id: dados.contatoId } : {}),
+    })
     .eq('comentario_id', dados.comentarioId)
 
   if (!dados.ok) return
@@ -206,4 +229,47 @@ export async function concluirComentario(dados: {
     .from('respostas_a_comentarios')
     .update({ execucoes: (data as { execucoes: number }).execucoes + 1 })
     .eq('id', dados.respostaId)
+}
+
+/** Quanto vale a marca: a mesma janela da Meta para a resposta privada. */
+const JANELA_DO_COMENTARIO_MS = 7 * 24 * 60 * 60 * 1000
+
+/**
+ * O comentário respondido que ainda espera a primeira mensagem desta pessoa,
+ * e o fluxo que essa mensagem deve abrir.
+ *
+ * Só conta o que deu certo, ainda não foi consumido, está dentro dos 7 dias e
+ * cuja regra aponta um fluxo. Sem fluxo na regra, a conversa segue o padrão do
+ * canal, e não há nada para devolver.
+ */
+export async function comentarioEsperandoResposta(
+  contatoId: string,
+): Promise<{ comentarioId: string; fluxoId: string } | null> {
+  const { data, error } = await db()
+    .from('comentarios_respondidos')
+    .select('comentario_id, respostas_a_comentarios!inner(flow_id)')
+    .eq('contato_id', contatoId)
+    .eq('ok', true)
+    .is('consumido_em', null)
+    .gte('criado_em', new Date(Date.now() - JANELA_DO_COMENTARIO_MS).toISOString())
+    .not('respostas_a_comentarios.flow_id', 'is', null)
+    .order('criado_em', { ascending: false })
+    .limit(1)
+
+  if (ehIdInvalido(error)) return null
+  if (error) {
+    console.warn('[comentarios] não foi possível ler o comentário pendente', error.message)
+    return null
+  }
+  const linha = (data as unknown as { comentario_id: string; respostas_a_comentarios: { flow_id: string | null } }[])[0]
+  const fluxoId = linha?.respostas_a_comentarios?.flow_id
+  return linha && fluxoId ? { comentarioId: linha.comentario_id, fluxoId } : null
+}
+
+/** A primeira resposta da pessoa já abriu o fluxo: as próximas seguem a conversa. */
+export async function consumirComentario(comentarioId: string): Promise<void> {
+  await db()
+    .from('comentarios_respondidos')
+    .update({ consumido_em: new Date().toISOString() })
+    .eq('comentario_id', comentarioId)
 }

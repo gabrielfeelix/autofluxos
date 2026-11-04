@@ -6,6 +6,8 @@ import { ImportarJson } from '@/components/fluxos/importar-json'
 import { acaoDuplicarFluxo } from '@/server/acoes'
 import { Modal } from '@/components/design/modal'
 import { EscolherCanal } from '@/components/fluxos/escolher-canal'
+import { LogoDoCanal } from '@/components/design/selo-do-canal'
+import { DEFINICAO_DO_CANAL } from '@/core/canais'
 import { contarEtiquetas, filtrarModelos } from '@/core/flow/filtrar-modelos'
 import { separarPeloRamo, type DestaqueDoRamo } from '@/core/nichos'
 import {
@@ -526,6 +528,36 @@ export function NovaAutomacao({
             >
               Uma cópia de uma automação sua. Nasce como rascunho, desligada.
             </EscolhaDeComeco>
+
+            {/*
+              Não é fluxo, é gatilho (Gatilhos → Comentários), mas quem chega
+              aqui querendo "responder comentário" não sabe disso e não
+              deveria precisar saber. O atalho leva ao formulário já aberto.
+            */}
+            <a
+              href={`/clientes/${clienteId}/fluxos?aba=gatilhos&tipo=comentarios&nova=1`}
+              className="group flex items-center gap-3.5 rounded-[14px] border border-line bg-panel p-3.5 text-left transition hover:border-primary/45 hover:bg-primary/[0.045] focus-visible:border-primary/60 focus-visible:outline-none sm:col-span-2"
+            >
+              <span
+                aria-hidden
+                className="grid size-10 shrink-0 place-items-center rounded-[10px]"
+                style={{
+                  color: DEFINICAO_DO_CANAL.instagram.cor,
+                  background: `color-mix(in oklab, ${DEFINICAO_DO_CANAL.instagram.cor} 10%, transparent)`,
+                }}
+              >
+                <LogoDoCanal canal="instagram" tamanho={18} />
+              </span>
+              <span className="min-w-0 flex-1">
+                <span className="block text-[14px] font-bold text-soft">Responder comentário</span>
+                <span className="mt-0.5 block text-[11.5px] leading-[1.55] text-dim">
+                  Quem comentar uma palavra no seu post do Instagram recebe a sua mensagem no direct.
+                </span>
+              </span>
+              <span aria-hidden className="text-[16px] text-muted transition group-hover:translate-x-0.5 group-hover:text-soft">
+                →
+              </span>
+            </a>
           </div>
         )}
 

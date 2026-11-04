@@ -32,6 +32,8 @@ export async function acaoCriarRespostaAComentario(
   const respostaPublica = texto('respostaPublica')
   const palavras = lerPalavras(texto('palavras'))
   const qualquer = texto('quando') === 'qualquer'
+  // Vazio é o fluxo padrão do Instagram, o comportamento de antes desta opção.
+  const fluxoId = texto('fluxoId') || null
 
   if (canalId === '') return { erro: 'Conecte uma conta do Instagram antes.' }
   if (!qualquer && palavras.length === 0) {
@@ -77,6 +79,7 @@ export async function acaoCriarRespostaAComentario(
     post,
     mensagem,
     respostaPublica: respostaPublica === '' ? null : respostaPublica,
+    fluxoId,
   })
   if (!r.ok) return { erro: r.motivo }
 

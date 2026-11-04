@@ -42,6 +42,7 @@ import { tipoDoReferral } from '@/core/regras-de-entrada'
 import { aindaAutorizada } from '@/core/controle-da-conversa'
 import { casarGatilho } from '@/core/gatilhos'
 import { casarCampanha } from '@/core/campanhas'
+import { comentarioEsperandoResposta, consumirComentario } from './repos/respostas-a-comentarios'
 import { atribuirCampanha, campanhasAtivas, contarDisparoDaCampanha } from './repos/campanhas'
 import { chaveDoTimeout, dadosDoTimeoutSchema } from '@/core/tarefas'
 import { agendar, cancelarPorChave } from './repos/tarefas'
@@ -874,6 +875,8 @@ type Abertura = {
   gatilhoId?: string
   /** Preenchido só quando quem escolheu foi uma campanha (B4). */
   campanhaId?: string
+  /** A primeira resposta a um direct de comentário (0161): consumida ao abrir. */
+  comentarioId?: string
 }
 
 /**
@@ -910,8 +913,9 @@ async function escolherAbertura(
   canalSalvo: CanalSalvo,
   estado: { temSessaoViva: boolean; primeiraVez: boolean },
   entrada: Entrada,
+  contatoId: string,
 ): Promise<Abertura | null> {
-  const candidatos: { fluxoId: string; gatilhoId?: string; campanhaId?: string }[] = []
+  const candidatos: { fluxoId: string; gatilhoId?: string; campanhaId?: string; comentarioId?: string }[] = []
 
   if (entrada.tipo === 'texto' && !pediuAtendente(entrada.texto)) {
     // As duas listas juntas: a conta que tem campanha quase sempre tem gatilho,
@@ -926,6 +930,19 @@ async function escolherAbertura(
 
     const casado = casarGatilho(gatilhos, entrada.texto)
     if (casado) candidatos.push({ fluxoId: casado.fluxoId, gatilhoId: casado.id })
+  }
+
+  /*
+   * 2.5. **Resposta ao direct de um comentário** (0161). A regra do comentário
+   *    pode apontar um fluxo, e a primeira mensagem da pessoa depois do direct
+   *    abre esse fluxo, em vez do padrão do canal. Depois da palavra-chave,
+   *    que é pedido explícito; antes de mídia, boas-vindas e principal, que
+   *    são o padrão que esta regra veio substituir. Qualquer tipo de entrada
+   *    serve: responder com áudio ou figurinha também é responder.
+   */
+  if (canalSalvo.provider === 'instagram') {
+    const pendente = await comentarioEsperandoResposta(contatoId)
+    if (pendente) candidatos.push({ fluxoId: pendente.fluxoId, comentarioId: pendente.comentarioId })
   }
 
   if (entrada.tipo === 'midia' && canalSalvo.fluxoMidiaId) {
@@ -954,6 +971,7 @@ async function escolherAbertura(
         nomeDoFluxo: fluxo.nome,
         ...(candidato.gatilhoId ? { gatilhoId: candidato.gatilhoId } : {}),
         ...(candidato.campanhaId ? { campanhaId: candidato.campanhaId } : {}),
+        ...(candidato.comentarioId ? { comentarioId: candidato.comentarioId } : {}),
       }
     }
   }
@@ -1083,6 +1101,7 @@ async function avancarConversa(
     canalSalvo,
     { temSessaoViva: Boolean(viva) && !recomecar, primeiraVez: anterior === null },
     entrada,
+    contato.id,
   )
 
   let salva: SessaoSalva
@@ -1151,6 +1170,7 @@ async function avancarConversa(
     // Depois de criar a sessão de propósito: o contador é da tela, e nunca pode
     // ficar entre a escolha do fluxo e a conversa existir.
     if (abertura.gatilhoId) await contarDisparo(abertura.gatilhoId)
+    if (abertura.comentarioId) await consumirComentario(abertura.comentarioId)
     if (abertura.campanhaId) {
       await contarDisparoDaCampanha(abertura.campanhaId)
       // Primeiro toque: `atribuirCampanha` só escreve em contato sem campanha.
@@ -3182,13 +3202,13 @@ const JANELA_DE_RETOMADA_MS = 2 * 60 * 60 * 1000
 export function ehRetomada(
   anterior: { sessao: { status: string }; atualizadoEm?: string } | null,
   entrada: Entrada,
-  abertura: { gatilhoId?: string | null; campanhaId?: string | null },
+  abertura: { gatilhoId?: string | null; campanhaId?: string | null; comentarioId?: string | null },
   agora: number,
   equipeFalouEm: Date | null = null,
 ): boolean {
   if (anterior && anterior.sessao.status !== 'encerrada') return false
   if (entrada.tipo !== 'texto' || pediuInicioDoAtendimento(entrada.texto)) return false
-  if (abertura.gatilhoId || abertura.campanhaId) return false
+  if (abertura.gatilhoId || abertura.campanhaId || abertura.comentarioId) return false
   // O fim da conversa do bot ou a última fala da equipe, o que tiver acontecido
   // dentro da janela: os dois são "acabou de ser atendida".
   const marcos = [anterior?.atualizadoEm ? Date.parse(anterior.atualizadoEm) : NaN, equipeFalouEm?.getTime() ?? NaN]

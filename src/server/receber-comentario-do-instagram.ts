@@ -53,6 +53,7 @@ export async function tratarComentario(contaId: string, comentario: ComentarioDo
   })
   if (!reservado) return
 
+  let contatoId: string | null = null
   try {
     const token = await lerTokenDoCanal(canal)
     const mensagemId = await responderNoDirect({
@@ -68,6 +69,7 @@ export async function tratarComentario(contaId: string, comentario: ComentarioDo
      * é descartado como repetido.
      */
     const contato = await acharOuCriarContato(canal.clienteId, comentario.from.id, comentario.from.username ?? null)
+    contatoId = contato.id
     await registrarMensagemDeCoexistencia({
       contatoId: contato.id,
       waMessageId: mensagemId ?? `comentario:${comentario.id}`,
@@ -93,10 +95,12 @@ export async function tratarComentario(contaId: string, comentario: ComentarioDo
       }
     }
 
-    await concluirComentario({ comentarioId: comentario.id, respostaId: resposta.id, ok: true, detalhe })
+    // O contato vai junto: é por ele que a primeira resposta da pessoa acha o
+    // fluxo da regra (`comentarioEsperandoResposta`).
+    await concluirComentario({ comentarioId: comentario.id, respostaId: resposta.id, ok: true, detalhe, contatoId })
   } catch (erro) {
     const motivo = erro instanceof Error ? erro.message : String(erro)
-    await concluirComentario({ comentarioId: comentario.id, respostaId: resposta.id, ok: false, detalhe: motivo })
+    await concluirComentario({ comentarioId: comentario.id, respostaId: resposta.id, ok: false, detalhe: motivo, contatoId })
     await alertar('a resposta automática a um comentário do Instagram falhou', erro, {
       cliente: canal.clienteId,
       resposta: resposta.id,

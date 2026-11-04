@@ -2,7 +2,7 @@
 
 import type { ReactNode } from 'react'
 import { useCliqueNoFundo } from '@/components/design/clique-no-fundo'
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import {
   camposDoFormulario,
   houveRascunho,
@@ -44,6 +44,7 @@ export function ModalFormulario({
   rotuloEnviar = 'Criar e abrir',
   variante = 'primario',
   tamanho,
+  abrirAoCarregar = false,
 }: {
   botao: ReactNode
   titulo: string
@@ -73,6 +74,11 @@ export function ModalFormulario({
    * passar: as ações de `CabecalhoDaTela` saem em `lg` pelo CSS.
    */
   tamanho?: 'sm' | 'md' | 'lg'
+  /**
+   * Abre sozinho quando a tela carrega. É o atalho de outra tela para este
+   * formulário: "Responder comentário", no Nova automação, chega aqui com ele.
+   */
+  abrirAoCarregar?: boolean
 }) {
   const dialogo = useRef<HTMLDialogElement>(null)
   const fundo = useCliqueNoFundo(dialogo, () => tentarFechar())
@@ -136,6 +142,12 @@ export function ModalFormulario({
     // parecer digitação.
     inicial.current = camposAgora()
   }
+
+  useEffect(() => {
+    if (abrirAoCarregar && !dialogo.current?.open) abrir()
+    // Só na montagem: depois disso quem abre e fecha é a pessoa.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   /**
    * Fechar, perguntando primeiro se houver o que perder.
