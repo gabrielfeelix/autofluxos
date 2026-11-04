@@ -29,6 +29,8 @@ export function SistemasDoRamo({
   testar,
   desligar,
   solicitar,
+  conectarComGoogle,
+  avisoDoGoogle,
 }: {
   clienteId: string
   nomeDoRamo: string | null
@@ -39,9 +41,13 @@ export function SistemasDoRamo({
   testar: (plataforma: SistemaDoRamo) => Promise<Resposta>
   desligar: (plataforma: SistemaDoRamo) => Promise<Resposta>
   solicitar: (plataforma: SistemaDoRamo) => Promise<{ ok: true } | { ok: false; motivo: string }>
+  /** Leva à autorização do Google Agenda (OAuth). */
+  conectarComGoogle: () => Promise<void>
+  /** O que voltou da autorização do Google, já em frase. */
+  avisoDoGoogle?: { tom: 'ok' | 'erro'; texto: string }
 }) {
-  const conectam = sistemas.filter((s) => s.campos.length > 0)
-  const emBreve = sistemas.filter((s) => s.campos.length === 0)
+  const conectam = sistemas.filter((s) => s.campos.length > 0 || s.oauth)
+  const emBreve = sistemas.filter((s) => s.campos.length === 0 && !s.oauth)
 
   return (
     <Miolo largura="cheia">
@@ -66,6 +72,8 @@ export function SistemasDoRamo({
                 conectar={conectar}
                 testar={testar}
                 desligar={desligar}
+                conectarComGoogle={conectarComGoogle}
+                avisoInicial={ficha.oauth ? avisoDoGoogle : undefined}
               />
             ))}
           </div>
@@ -116,9 +124,13 @@ function CartaoQueConecta({
   conectar,
   testar,
   desligar,
+  conectarComGoogle,
+  avisoInicial,
 }: {
   ficha: FichaDoSistema
   estado: EstadoDaAgendaNaTela | null
+  conectarComGoogle: () => Promise<void>
+  avisoInicial?: { tom: 'ok' | 'erro'; texto: string } | undefined
   conectar: (plataforma: SistemaDoRamo, valores: Record<string, string>) => Promise<Resposta>
   testar: (plataforma: SistemaDoRamo) => Promise<Resposta>
   desligar: (plataforma: SistemaDoRamo) => Promise<Resposta>
@@ -126,7 +138,7 @@ function CartaoQueConecta({
   const [ligada, setLigada] = useState(Boolean(estado?.ativo))
   const [aberto, setAberto] = useState(false)
   const [valores, setValores] = useState<Record<string, string>>({})
-  const [aviso, setAviso] = useState<{ tom: 'ok' | 'erro'; texto: string } | null>(null)
+  const [aviso, setAviso] = useState<{ tom: 'ok' | 'erro'; texto: string } | null>(avisoInicial ?? null)
   const [rodando, comecar] = useTransition()
 
   function enviar(e: FormEvent) {
@@ -149,7 +161,7 @@ function CartaoQueConecta({
     setAviso(null)
     comecar(async () => {
       const r = await testar(ficha.id)
-      setAviso(r.ok ? { tom: 'ok', texto: `A chave vale. ${r.resumo ? primeiraMaiuscula(r.resumo) + '.' : ''}` } : { tom: 'erro', texto: primeiraMaiuscula(r.motivo) })
+      setAviso(r.ok ? { tom: 'ok', texto: `${ficha.oauth ? 'A conexão vale' : 'A chave vale'}. ${r.resumo ? primeiraMaiuscula(r.resumo) + '.' : ''}` } : { tom: 'erro', texto: primeiraMaiuscula(r.motivo) })
     })
   }
 
@@ -217,13 +229,30 @@ function CartaoQueConecta({
               <button type="button" onClick={conferir} disabled={rodando} className="botao-md botao-secundario disabled:opacity-60">
                 {rodando ? 'Conferindo…' : 'Testar a conexão'}
               </button>
-              <button type="button" onClick={() => setAberto(true)} className="botao-md botao-secundario">
-                Trocar a chave
-              </button>
+              {ficha.oauth ? (
+                <form action={conectarComGoogle}>
+                  <button type="submit" className="botao-md botao-secundario">
+                    Trocar a conta
+                  </button>
+                </form>
+              ) : (
+                <button type="button" onClick={() => setAberto(true)} className="botao-md botao-secundario">
+                  Trocar a chave
+                </button>
+              )}
               <button type="button" onClick={desconectar} disabled={rodando} className="botao-md botao-secundario text-perigo">
                 Desligar
               </button>
             </div>
+          ) : ficha.oauth ? (
+            <form action={conectarComGoogle} className="self-start">
+              <button type="submit" className="botao-md botao-secundario gap-2">
+                {/* O "G" oficial, do pacote de marca do Google. */}
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src="/logos/marcas/google.png" alt="" width={16} height={16} aria-hidden />
+                Conectar com Google
+              </button>
+            </form>
           ) : (
             <button type="button" onClick={() => setAberto(true)} className="botao-md botao-primario self-start">
               Conectar

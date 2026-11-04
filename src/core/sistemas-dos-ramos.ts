@@ -12,6 +12,7 @@ import type { PacoteDoNicho } from './nichos'
  */
 
 export const SISTEMAS_DOS_RAMOS = [
+  'google_agenda',
   'feegow',
   'clinica_nas_nuvens',
   'trinks',
@@ -43,7 +44,7 @@ export const SISTEMAS_DOS_RAMOS = [
 export type SistemaDoRamo = (typeof SISTEMAS_DOS_RAMOS)[number]
 
 /** Os que já têm conector de agenda (`src/agendas/`). */
-export const AGENDAS_COM_CONECTOR = ['feegow', 'clinica_nas_nuvens', 'trinks', 'agendapro', 'evo'] as const
+export const AGENDAS_COM_CONECTOR = ['feegow', 'clinica_nas_nuvens', 'trinks', 'agendapro', 'evo', 'google_agenda'] as const
 
 export type AgendaComConector = (typeof AGENDAS_COM_CONECTOR)[number]
 
@@ -68,10 +69,20 @@ export type FichaDoSistema = {
   resumo: string
   /** Os campos da tela de conectar. Vazio = ainda sem conector ("Solicitar integração"). */
   campos: readonly CampoDaConexao[]
+  /** Conecta por login da empresa dona (OAuth), e não por chave colada. */
+  oauth?: 'google'
 }
 
 
 export const FICHAS_DOS_SISTEMAS: Record<SistemaDoRamo, FichaDoSistema> = {
+  google_agenda: {
+    id: 'google_agenda',
+    nome: 'Google Agenda',
+    tipo: 'agenda',
+    resumo: 'A IA lê os horários livres da sua agenda do Google e marca o atendimento como evento, com o nome e o telefone do cliente.',
+    campos: [],
+    oauth: 'google',
+  },
   feegow: {
     id: 'feegow',
     nome: 'Feegow',
@@ -172,11 +183,12 @@ export function sistemasParaAConta(pacote: PacoteDoNicho | null): FichaDoSistema
   const todos = SISTEMAS_DOS_RAMOS.map((id) => FICHAS_DOS_SISTEMAS[id])
   if (!pacote) return todos
   const doRamo = pacote.sistemas.map((id) => FICHAS_DOS_SISTEMAS[id])
-  const outros = todos.filter((f) => !pacote.sistemas.includes(f.id) && f.campos.length > 0)
+  const outros = todos.filter((f) => !pacote.sistemas.includes(f.id) && (f.campos.length > 0 || f.oauth))
   return [...doRamo, ...outros]
 }
 
 /** O logo oficial, baixado do site de cada sistema (`public/marcas-de-sistemas/`). */
 export function arquivoDaMarca(id: SistemaDoRamo): string {
+  if (id === 'google_agenda') return 'google_agenda.png'
   return id === 'jetimob' || id === 'cloudbeds' ? `${id}.svg` : `${id}.png`
 }

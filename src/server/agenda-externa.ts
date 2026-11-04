@@ -4,6 +4,8 @@ import { conectorClinicaNasNuvens } from '@/agendas/clinica-nas-nuvens'
 import { lerSegredo } from '@/agendas/comum'
 import { conectorEvo } from '@/agendas/evo'
 import { conectorFeegow } from '@/agendas/feegow'
+import { type AjustesDoGoogle, conectorGoogleAgenda } from '@/agendas/google-agenda'
+import { tokenDeAcessoDoGoogle } from './google-agenda/conexao'
 import { conectorTrinks } from '@/agendas/trinks'
 import type { ConectorDeAgenda, PessoaDaAgenda, ResultadoDaAgenda } from '@/agendas/types'
 import type { OperacaoDeAgenda } from '@/core/ferramentas'
@@ -48,6 +50,11 @@ export function montarConector(
       return conectorTrinks(segredo.chave ?? '', { estabelecimentoId: String(ajustes.estabelecimentoId ?? '') })
     case 'agendapro':
       return conectorAgendaPro(segredo.chave ?? '', { locationId: n(ajustes.locationId) })
+    case 'google_agenda':
+      return conectorGoogleAgenda(() => tokenDeAcessoDoGoogle(segredo.refreshToken ?? ''), {
+        ...(ajustes as AjustesDoGoogle),
+        duracaoMin: n(ajustes.duracaoMin),
+      })
     case 'evo':
       return conectorEvo({ dns: String(ajustes.dns ?? ''), chave: segredo.chave ?? '' }, { idBranch: n(ajustes.idBranch) })
   }

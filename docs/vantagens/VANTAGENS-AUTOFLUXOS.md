@@ -383,6 +383,10 @@ aqui fica o que o cliente ganha.
   Nuvens (clínicas), Trinks e AgendaPro (salões), EVO (academias). A IA mostra
   horário livre, marca e desmarca direto lá, sempre para quem está conversando
   e só depois de a pessoa confirmar. *(30/out/2026)*
+- **Google Agenda, sem sistema nenhum**: quem só usa a agenda do Google
+  conecta com um login, e a IA oferece os horários livres do expediente e
+  marca o atendimento como evento, com nome e telefone do cliente.
+  *(04/nov/2026)*
 - **Pronto para clínica, laboratório, farmácia, salão, pet shop, imobiliária e
   pousada**: cada ramo chega com menu, perguntas do assistente, atendente de IA
   e modelos de mensagem próprios. *(30/out/2026)*

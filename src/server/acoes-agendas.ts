@@ -7,6 +7,10 @@ import { exigirCapacidade, recusou } from './permissoes'
 import { agendasDaConta, salvarAgenda } from './repos/agendas'
 import { criarConexao, lerCredencial, listarConexoes, trocarValor } from './repos/conexoes'
 import { registrarPedidoDeLoja } from './repos/lojas'
+import { headers } from 'next/headers'
+import { redirect } from 'next/navigation'
+import { googleAgendaConfigurado, urlDeAutorizacaoDoGoogle } from './google-agenda/conexao'
+import { iniciarConexao } from './instagram/estado'
 
 type Resposta = { ok: true; resumo?: string } | { ok: false; motivo: string }
 
@@ -92,4 +96,18 @@ export async function acaoSolicitarSistema(clienteId: string, plataforma: string
   if (recusou(acesso)) return { ok: false, motivo: acesso.erro ?? 'sem permissão' }
   if (!ehSistemaDoRamo(plataforma)) return { ok: false, motivo: 'esse sistema não está na lista' }
   return registrarPedidoDeLoja(clienteId, plataforma)
+}
+
+/**
+ * Manda para a autorização do Google Agenda. A origem vem do cabeçalho, como
+ * no Facebook Login, para produção e preview baterem com o retorno.
+ */
+export async function acaoConectarGoogleAgenda(clienteId: string): Promise<void> {
+  const acesso = await exigirCapacidade(clienteId, 'configurar_operacao', 'todos')
+  if (recusou(acesso)) return
+  if (!googleAgendaConfigurado()) redirect(`/clientes/${clienteId}/ajustes/integracoes/sistemas?google=sem_cliente`)
+  const cabecalhos = await headers()
+  const host = cabecalhos.get('x-forwarded-host') ?? cabecalhos.get('host')
+  const protocolo = cabecalhos.get('x-forwarded-proto') ?? 'https'
+  redirect(urlDeAutorizacaoDoGoogle({ origem: `${protocolo}://${host}`, state: await iniciarConexao(clienteId) }))
 }
