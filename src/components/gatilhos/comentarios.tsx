@@ -90,8 +90,8 @@ export function CamposDaRespostaAComentario({
         {alcance === 'um' && (
           <div className="mt-3">
             {carregando && (
-              <div className="grid grid-cols-4 gap-2 sm:grid-cols-6" aria-label="Carregando os posts">
-                {Array.from({ length: 12 }, (_, i) => (
+              <div className="grid grid-cols-4 gap-2 sm:grid-cols-5" aria-label="Carregando os posts">
+                {Array.from({ length: 10 }, (_, i) => (
                   <span key={i} className="aspect-square animate-pulse rounded-lg bg-surface-strong" />
                 ))}
               </div>
@@ -111,7 +111,7 @@ export function CamposDaRespostaAComentario({
             )}
 
             {posts !== null && !carregando && posts.length > 0 && (
-              <div className="grid max-h-[232px] grid-cols-4 gap-2 overflow-y-auto pr-1 sm:grid-cols-6" role="radiogroup" aria-label="Escolha o post">
+              <div className="grid max-h-[248px] grid-cols-4 gap-2 overflow-y-auto pr-1 sm:grid-cols-5" role="radiogroup" aria-label="Escolha o post">
                 {posts.map((post) => {
                   const aceso = escolhido?.id === post.id
                   return (
@@ -157,7 +157,7 @@ export function CamposDaRespostaAComentario({
           ativa={quando}
           aoEscolher={setQuando}
           opcoes={[
-            { chave: 'palavras', rotulo: 'Comentou uma palavra' },
+            { chave: 'palavras', rotulo: 'Com palavras' },
             { chave: 'qualquer', rotulo: 'Qualquer comentário' },
           ]}
         />
