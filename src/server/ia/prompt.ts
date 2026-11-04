@@ -262,7 +262,12 @@ function blocoDeFerramentas(ferramentas: readonly Ferramenta[]): string[] {
 export function interpretarResposta(bruto: string | null | undefined): Resposta {
   const texto = (bruto ?? '').trim()
 
-  if (texto === '') return { tipo: 'nao_sei', motivo: 'o modelo respondeu vazio' }
+  // Vazio não é "não sei", é o modelo que não terminou (teto de tokens gasto
+  // pensando, chamada de consulta malformada). 04/nov/2026, PCYES: depois de
+  // `loja_buscar` o Gemini voltou sem texto e um lead de compra foi para um
+  // atendente sem nenhum outro modelo tentar. Falha de transporte, então a
+  // cadeia passa adiante.
+  if (texto === '') return { tipo: 'nao_sei', motivo: 'o modelo respondeu vazio', falhou: true }
 
   // Rascunho do modelo no lugar da resposta: falha de transporte, para a
   // cadeia tentar o próximo provedor em vez de mandar isso ao cliente.

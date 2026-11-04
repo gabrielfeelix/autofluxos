@@ -388,17 +388,32 @@ async function tentar(
       }
     }
 
-    return {
-      tipo: 'pronta',
-      // Só o texto de resposta, juntado: parte de pensamento fica de fora, e a
-      // resposta pode vir partida em mais de uma parte.
-      resposta: interpretarResposta(
-        partes
-          .filter((p) => p.text !== undefined && !p.thought)
-          .map((p) => p.text)
-          .join(''),
-      ),
+    // Só o texto de resposta, juntado: parte de pensamento fica de fora, e a
+    // resposta pode vir partida em mais de uma parte.
+    const texto = partes
+      .filter((p) => p.text !== undefined && !p.thought)
+      .map((p) => p.text)
+      .join('')
+
+    /*
+     * Vazio vai para o próximo modelo, como um 503.
+     *
+     * 04/nov/2026, PCYES: depois de `loja_buscar` o flash-lite voltou sem
+     * texto e um lead de compra foi para um atendente sem a reserva tentar.
+     * O `finishReason` diz se foi teto de tokens gasto pensando ou consulta
+     * malformada; sem ele no log, o próximo vazio é adivinhação de novo.
+     */
+    const fim = json.candidates?.[0]?.finishReason
+    if (texto.trim() === '') {
+      console.warn(`[ia] ${nome} respondeu vazio (finishReason ${fim ?? 'ausente'})`)
+      return {
+        tipo: 'retentar',
+        status: `vazio ${fim ?? ''}`.trim(),
+        desistencia: { tipo: 'nao_sei', motivo: `o modelo respondeu vazio (${fim ?? 'sem motivo'})`, falhou: true },
+      }
     }
+
+    return { tipo: 'pronta', resposta: interpretarResposta(texto) }
   } catch (erro) {
     const porTempo = erro instanceof Error && erro.name === 'TimeoutError'
     console.error('[ia] gemini falhou', erro)
@@ -430,7 +445,7 @@ type ParteGemini = {
 }
 
 type RespostaGemini = {
-  candidates?: { content?: { parts?: ParteGemini[] } }[]
+  candidates?: { content?: { parts?: ParteGemini[] }; finishReason?: string }[]
   promptFeedback?: { blockReason?: string }
 }
 
