@@ -166,12 +166,12 @@ export async function canaisDosContatos(clienteId: string): Promise<Map<string, 
     .from('channels')
     .select('id, provider')
     .eq('client_id', clienteId)
-    .in('provider', ['instagram', 'site'])
+    .in('provider', ['instagram', 'site', 'messenger', 'telegram'])
   if (error) throw new Error(`não foi possível listar os canais: ${error.message}`)
   if (!canais || canais.length === 0) return mapa
 
   const canalDoId = new Map(
-    canais.map((c) => [c.id as string, (c.provider === 'site' ? 'site' : 'instagram') as CanalId]),
+    canais.map((c) => [c.id as string, (['site', 'messenger', 'telegram'].includes(c.provider as string) ? c.provider : 'instagram') as CanalId]),
   )
 
   const PAGINA = 1000

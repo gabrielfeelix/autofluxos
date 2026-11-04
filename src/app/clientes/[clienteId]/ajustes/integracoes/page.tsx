@@ -10,6 +10,7 @@ import {
   LogoAgenda,
   LogoChave,
   LogoInstagram,
+  LogoMessenger,
   LogoLoja,
   LogoMeta,
   LogoSite,
@@ -73,6 +74,7 @@ const DESCRICAO =
 const LOGO: Record<ChaveDaIntegracao, ReactNode> = {
   whatsapp: <LogoWhatsApp />,
   instagram: <LogoInstagram />,
+  messenger: <LogoMessenger />,
   anuncios: <LogoMeta />,
   chaves: <LogoChave />,
   sistemas: <LogoAgenda />,

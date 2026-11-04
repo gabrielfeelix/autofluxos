@@ -1,5 +1,5 @@
 import { DEFINICAO_DO_CANAL, type CanalId } from '@/core/canais'
-import { GLIFO_INSTAGRAM, GLIFO_TELEGRAM, GLIFO_WHATSAPP } from './glifos-oficiais'
+import { GLIFO_INSTAGRAM, GLIFO_MESSENGER, GLIFO_TELEGRAM, GLIFO_WHATSAPP } from './glifos-oficiais'
 
 /**
  * Por onde esta automação fala, dito na tela, com a cara do canal.
@@ -56,6 +56,13 @@ export function SeloDoCanal({
 export function LogoDoCanal({ canal, tamanho = 12 }: { canal: CanalId; tamanho?: number }) {
   const comum = { 'aria-hidden': true, viewBox: '0 0 24 24', width: tamanho, height: tamanho }
 
+  if (canal === 'messenger') {
+    return (
+      <svg {...comum} className="fill-current">
+        <path d={GLIFO_MESSENGER} />
+      </svg>
+    )
+  }
   if (canal === 'telegram') {
     return (
       <svg {...comum} className="fill-current">

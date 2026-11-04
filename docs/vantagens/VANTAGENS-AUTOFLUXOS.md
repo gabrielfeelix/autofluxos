@@ -34,7 +34,10 @@ aqui fica o que o cliente ganha.
 
 ## Atender melhor
 
-- **Inbox único** para WhatsApp, Instagram, chat do site e Telegram.
+- **Inbox único** para WhatsApp, Instagram, Messenger, chat do site e Telegram.
+- **Messenger da página do Facebook**: conecta com um login do Facebook, e as
+  mensagens da página chegam no Inbox seguindo as mesmas automações do
+  WhatsApp, sem desenhar nada de novo. *(04/nov/2026)*
 - **Telegram completo**: cola o token do bot e ele responde com os mesmos
   fluxos e a mesma IA, sem custo por mensagem. *(21/out/2026)*
   Foto, áudio e arquivo mandados pelo cliente chegam ao Inbox e à IA como

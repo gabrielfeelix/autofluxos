@@ -42,7 +42,7 @@
  * mensagem. Preencher a tabela abaixo é o que basta, não há segunda cópia
  * destes números dentro do validador.
  */
-export const CANAIS = ['whatsapp', 'instagram', 'telegram', 'site'] as const
+export const CANAIS = ['whatsapp', 'instagram', 'messenger', 'telegram', 'site'] as const
 
 export type CanalId = (typeof CANAIS)[number]
 
@@ -113,6 +113,24 @@ export const DEFINICAO_DO_CANAL: Record<CanalId, DefinicaoDeCanal> = {
     // 13 quick replies, rótulo de 20, e a mesma janela de 24h da Meta.
     limites: { botoes: 3, opcoes: 13, rotulo: 20, janelaHoras: 24 },
   },
+  messenger: {
+    id: 'messenger',
+    nome: 'Messenger',
+    resumo: 'Atende as mensagens da página do Facebook no mesmo Inbox.',
+    cor: '#0866FF',
+    /*
+     * Desde a 0163: a página fica em `channels` com `provider = messenger`, o
+     * token da página no Vault, e as mensagens chegam pelo webhook do objeto
+     * `page` (`/api/webhook/leadgen`, que despacha por campo).
+     *
+     * Roda as automações do WhatsApp, como o site: 13 quick replies e rótulo
+     * de 20 cabem tudo o que o validador do WhatsApp aprova, e a janela de 24h
+     * é a mesma. Desenhar tudo duas vezes não daria nada a ninguém.
+     */
+    disponivel: true,
+    fluxoProprio: false,
+    limites: { botoes: 3, opcoes: 13, rotulo: 20, janelaHoras: 24 },
+  },
   telegram: {
     id: 'telegram',
     nome: 'Telegram',
@@ -142,7 +160,7 @@ export const DEFINICAO_DO_CANAL: Record<CanalId, DefinicaoDeCanal> = {
   },
 }
 
-/** Os canais que se escolhem ao criar uma automação. O site usa as do WhatsApp. */
+/** Os canais que se escolhem ao criar uma automação. Site e Messenger usam as do WhatsApp. */
 export const CANAIS_DE_FLUXO = CANAIS.filter((id) => DEFINICAO_DO_CANAL[id].fluxoProprio !== false)
 
 /** O canal de tudo que já existe. Automação antiga é de WhatsApp. */

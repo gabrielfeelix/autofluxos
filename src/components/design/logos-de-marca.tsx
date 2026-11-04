@@ -1,4 +1,4 @@
-import { GLIFO_INSTAGRAM, GLIFO_META, GLIFO_STRIPE, GLIFO_TELEGRAM, GLIFO_WHATSAPP } from './glifos-oficiais'
+import { GLIFO_FACEBOOK, GLIFO_INSTAGRAM, GLIFO_MESSENGER, GLIFO_META, GLIFO_STRIPE, GLIFO_TELEGRAM, GLIFO_WHATSAPP } from './glifos-oficiais'
 
 /**
  * As logos das marcas com que o produto conversa.
@@ -99,6 +99,24 @@ export function LogoMeta() {
   return (
     <Moldura marca>
       <Glifo d={GLIFO_META} cor="#0467DF" tamanho={26} />
+    </Moldura>
+  )
+}
+
+/** Messenger, na cor oficial (Meta Brand Resources). */
+export function LogoMessenger() {
+  return (
+    <Moldura marca>
+      <Glifo d={GLIFO_MESSENGER} cor="#0866FF" />
+    </Moldura>
+  )
+}
+
+/** Facebook, na cor oficial (Meta Brand Resources). */
+export function LogoFacebook() {
+  return (
+    <Moldura marca>
+      <Glifo d={GLIFO_FACEBOOK} cor="#0866FF" />
     </Moldura>
   )
 }

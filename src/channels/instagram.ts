@@ -72,6 +72,13 @@ export type ConfigInstagram = {
   /** Token da própria conta, vindo do Vault. Nunca do ambiente. */
   token: string
   versaoGraph?: string
+  /**
+   * `messenger`: a mesma Send API, pela página do Facebook. O corpo é
+   * idêntico ao do Instagram; mudam o endereço (`graph.facebook.com/me`, com o
+   * token da página o `me` é a própria página) e o `messaging_type`, que o
+   * Messenger cobra em toda mensagem.
+   */
+  plataforma?: 'instagram' | 'messenger'
 }
 
 /**
@@ -90,7 +97,11 @@ const TIPO_NO_INSTAGRAM = {
 
 export function canalInstagram(config: ConfigInstagram): Canal {
   const versao = config.versaoGraph ?? process.env.META_GRAPH_VERSION ?? VERSAO_PADRAO
-  const url = `https://graph.instagram.com/${versao}/${config.igUserId}/messages`
+  const messenger = config.plataforma === 'messenger'
+  const url = messenger
+    ? `https://graph.facebook.com/${versao}/me/messages`
+    : `https://graph.instagram.com/${versao}/${config.igUserId}/messages`
+  const nomeDaRede = messenger ? 'Messenger' : 'Instagram'
 
   async function mandar(
     corpo: Record<string, unknown>,
@@ -104,16 +115,16 @@ export function canalInstagram(config: ConfigInstagram): Canal {
           Authorization: `Bearer ${config.token}`,
           'content-type': 'application/json',
         },
-        body: JSON.stringify(corpo),
+        body: JSON.stringify(messenger && 'message' in corpo ? { messaging_type: 'RESPONSE', ...corpo } : corpo),
         signal: AbortSignal.timeout(timeoutMs),
       })
     } catch (erro) {
       const nome = erro instanceof Error ? erro.name : ''
       if (nome === 'TimeoutError' || nome === 'AbortError') {
-        throw new Error(`o Instagram não respondeu em ${timeoutMs / 1000}s`)
+        throw new Error(`o ${nomeDaRede} não respondeu em ${timeoutMs / 1000}s`)
       }
       throw new Error(
-        `não foi possível falar com o Instagram: ${erro instanceof Error ? erro.message : erro}`,
+        `não foi possível falar com o ${nomeDaRede}: ${erro instanceof Error ? erro.message : erro}`,
       )
     }
 
@@ -122,7 +133,7 @@ export function canalInstagram(config: ConfigInstagram): Canal {
       // de "fora da janela de 24h" (não tem conserto agora), duas conclusões
       // opostas para quem for ler o alerta.
       const detalhe = await resposta.text().catch(() => '')
-      throw new Error(`Instagram respondeu ${resposta.status}: ${detalhe.slice(0, 400)}`)
+      throw new Error(`${nomeDaRede} respondeu ${resposta.status}: ${detalhe.slice(0, 400)}`)
     }
     /*
      * O `message_id` vira o `wa_message_id` da linha. É ele que faz o eco
@@ -138,7 +149,7 @@ export function canalInstagram(config: ConfigInstagram): Canal {
   }
 
   return {
-    origem: 'instagram',
+    origem: messenger ? 'messenger' : 'instagram',
     async aguardarResposta({ contato }, atrasoMs) {
       try {
         // Duas ações separadas porque a API as trata como coisas diferentes, e

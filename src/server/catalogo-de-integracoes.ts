@@ -4,6 +4,7 @@ import { conexaoAtiva } from './repos/pagamentos'
 import { estadoDaConexao, type EstadoDaConexao } from '@/core/conexoes'
 import { canalDoInstagram } from './repos/canais-instagram'
 import { canalDoTelegram } from './repos/canais-telegram'
+import { canalDoMessenger } from './repos/canais-messenger'
 import { chatDoSite } from './repos/canais-site'
 import { listarConexoes } from './repos/conexoes'
 import { listarCanais } from './repos/conversas'
@@ -12,7 +13,7 @@ import { paginasDaConta } from './repos/paginas-de-lead'
 import { ultimaChegadaDeAnuncio, ultimaMensagemRecebida } from './repos/ultimos-eventos'
 import { NOME_DA_CONEXAO_DE_ADS } from './token-de-anuncios'
 
-export type ChaveDaIntegracao = 'whatsapp' | 'instagram' | 'anuncios' | 'chaves' | 'sistemas' | 'magento' | 'telegram' | 'site' | 'mercado_pago' | 'asaas' | 'infinitepay' | 'pagbank' | 'woovi' | 'paghiper' | 'stripe' | 'efi' | 'iugu' | 'pagarme'
+export type ChaveDaIntegracao = 'whatsapp' | 'instagram' | 'messenger' | 'anuncios' | 'chaves' | 'sistemas' | 'magento' | 'telegram' | 'site' | 'mercado_pago' | 'asaas' | 'infinitepay' | 'pagbank' | 'woovi' | 'paghiper' | 'stripe' | 'efi' | 'iugu' | 'pagarme'
 
 export type ItemDoCatalogo = {
   chave: ChaveDaIntegracao
@@ -54,6 +55,8 @@ export async function catalogoDeIntegracoes(clienteId: string): Promise<ItemDoCa
   // Fora do `Promise.all` de propósito: antes da 0140 a leitura volta nula, e
   // isso não pode atrasar nem derrubar o resto do catálogo.
   const botDoTelegram = await canalDoTelegram(clienteId)
+  // Antes da 0163 a leitura volta nula, como a do Telegram.
+  const paginaDoMessenger = await canalDoMessenger(clienteId)
   // Também fora: antes da 0141 a tabela não existe, e a leitura volta nula.
   const pagamento = await conexaoAtiva(clienteId).catch(() => null)
   const temTokenDeAnuncios = conexoes.some(
@@ -93,6 +96,15 @@ export async function catalogoDeIntegracoes(clienteId: string): Promise<ItemDoCa
         ultimoEvento: ultimaMensagem,
       }),
       rotuloDoEvento: 'Última mensagem recebida na conta',
+    },
+    {
+      chave: 'messenger',
+      nome: 'Messenger',
+      categoria: 'Canal',
+      descricao: 'As mensagens da página do Facebook no mesmo Inbox, com as automações do WhatsApp.',
+      href: '/conversas/canais/messenger',
+      disponivel: true,
+      estado: estadoDaConexao({ tipo: 'cadastro', configurado: paginaDoMessenger !== null, href: '/conversas/canais/messenger' }),
     },
     {
       chave: 'site',

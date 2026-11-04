@@ -34,6 +34,11 @@ export async function adaptadorDoCanal(canal: CanalSalvo): Promise<Canal> {
 
   if (canal.provider === 'telegram') return canalTelegram({ token: await lerTokenDoCanal(canal) })
 
+  // A página do Facebook: mesma Send API do Instagram, com o token da página.
+  if (canal.provider === 'messenger') {
+    return canalInstagram({ igUserId: 'me', token: await lerTokenDoCanal(canal), plataforma: 'messenger' })
+  }
+
   if (canal.provider === 'instagram') {
     if (!canal.igUserId) {
       throw new Error('este canal é de Instagram mas não tem conta ligada; reconecte pelo painel')

@@ -513,7 +513,7 @@ export async function tratarUma(
    */
   await marcarUltimaMensagem(canalSalvo.clienteId, contato.id)
   if (contato.criadoAgora) {
-    await anotar(canalSalvo.clienteId, contato.id, 'chegou', { origem: canalSalvo.provider === 'instagram' ? 'Instagram' : canalSalvo.provider === 'site' ? 'Site' : canalSalvo.provider === 'telegram' ? 'Telegram' : 'WhatsApp' })
+    await anotar(canalSalvo.clienteId, contato.id, 'chegou', { origem: canalSalvo.provider === 'instagram' ? 'Instagram' : canalSalvo.provider === 'messenger' ? 'Messenger' : canalSalvo.provider === 'site' ? 'Site' : canalSalvo.provider === 'telegram' ? 'Telegram' : 'WhatsApp' })
   } else {
     await aplicarFato(canalSalvo.clienteId, contato.id, 'voltou-a-falar')
   }
@@ -940,7 +940,7 @@ async function escolherAbertura(
    *    são o padrão que esta regra veio substituir. Qualquer tipo de entrada
    *    serve: responder com áudio ou figurinha também é responder.
    */
-  if (canalSalvo.provider === 'instagram') {
+  if (canalSalvo.provider === 'instagram' || canalSalvo.provider === 'messenger') {
     const pendente = await comentarioEsperandoResposta(contatoId)
     if (pendente) candidatos.push({ fluxoId: pendente.fluxoId, comentarioId: pendente.comentarioId })
   }

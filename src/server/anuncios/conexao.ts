@@ -78,6 +78,8 @@ export type TokenDeAnuncios = { token: string; expiraEm: Date | null }
 export async function trocarCodigoPorToken(entrada: {
   codigo: string
   origem: string
+  /** A rota de retorno usada no início. O Messenger tem a dele. */
+  retorno?: string
 }): Promise<TokenDeAnuncios> {
   const appId = process.env.META_APP_ID
   const segredo = process.env.META_APP_SECRET
@@ -86,7 +88,7 @@ export async function trocarCodigoPorToken(entrada: {
   const curto = new URL(`https://graph.facebook.com/${VERSAO_PADRAO}/oauth/access_token`)
   curto.searchParams.set('client_id', appId)
   curto.searchParams.set('client_secret', segredo)
-  curto.searchParams.set('redirect_uri', `${entrada.origem}/api/anuncios/retorno`)
+  curto.searchParams.set('redirect_uri', `${entrada.origem}${entrada.retorno ?? '/api/anuncios/retorno'}`)
   curto.searchParams.set('code', entrada.codigo)
 
   const r1 = await fetch(curto, { cache: 'no-store' })

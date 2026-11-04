@@ -6,6 +6,7 @@ import { avisosDoWebhook } from '@/core/lead-ads'
 import { alertar } from '@/server/alertar'
 import { clientePelaPagina } from '@/server/repos/paginas-de-lead'
 import { receberLeadsDoFormulario } from '@/server/receber-lead-do-formulario'
+import { receberDaPagina, temAlgoParaOInbox } from '@/server/receber-da-pagina'
 import { tokenDeAnuncios } from '@/server/token-de-anuncios'
 
 /**
@@ -41,7 +42,7 @@ import { tokenDeAnuncios } from '@/server/token-de-anuncios'
 const LIMITE_DO_CORPO_EM_BYTES = 128 * 1024
 
 /** Mesmo teto do webhook do WhatsApp: buscar N leads na Graph leva tempo. */
-export const maxDuration = 60
+export const maxDuration = 300
 
 /**
  * O handshake de verificação.
@@ -109,6 +110,21 @@ export async function POST(req: Request) {
       } catch (erro) {
         const detalhe = erro instanceof Error ? erro.message : String(erro)
         await alertar('o lote de leads do formulário falhou inteiro', detalhe, {})
+      }
+    })
+  }
+
+  /*
+   * O objeto `page` tem **uma** URL de retorno no app, e é esta. Messenger
+   * (`messages`) e comentário da página (`feed`) chegam aqui junto com o
+   * `leadgen`, e cada um segue o seu caminho sem atrapalhar o outro.
+   */
+  if (temAlgoParaOInbox(json)) {
+    after(async () => {
+      try {
+        await receberDaPagina(json)
+      } catch (erro) {
+        await alertar('o processamento do webhook da página falhou', erro, {})
       }
     })
   }
