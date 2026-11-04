@@ -84,3 +84,26 @@ cada frente quando ficar pronta. Print em 1440 e 390 de toda tela nova.
 Contas que gravam o vídeo precisam ter papel no app: @usedialogon como
 testadora do Instagram e a página da Dialogon com admin do app.
 https://developers.facebook.com/apps/1063817842847269/roles/roles/
+
+## Feito em 04/nov (as quatro frentes no ar)
+
+| Frente | Commit | O que falta (humano) |
+|---|---|---|
+| Login com Google | `7fd38359` | cliente OAuth e as variáveis `GOOGLE_CLIENT_ID`/`GOOGLE_CLIENT_SECRET` (o botão só aparece com elas) |
+| Messenger | `58876c5c`, migration `0163` aplicada | ligar a página da Dialogon e pedir as permissões no review |
+| Comentário de página | `3367ecf6` | vídeo do review |
+| Google Agenda | `4307147a`, migration `0164` aplicada | o mesmo cliente OAuth, Calendar API ativada, vídeo da verificação |
+
+- Webhook `page` do app agora assina `leadgen, messages, messaging_postbacks,
+  feed` (conferido por `GET /1063817842847269/subscriptions`). Atualizado
+  sem `callback_url`: o `WHATSAPP_VERIFY_TOKEN` do `.env` local não é o da
+  Vercel (verificação dá 403), e o da Vercel é sensível, não sai pela API.
+- Conta com 2FA ou admin da plataforma não entra pelo Google: recusa no
+  `databaseHooks.session.create.before`, volta para `/entrar` com a frase.
+- Messenger roda as automações do WhatsApp (`fluxoProprio: false`), como o site.
+- Google Agenda: livre = expediente (padrão seg a sex, 9h às 18h, 60 min,
+  ajustável em `agendas_conectadas.ajustes`) menos eventos ocupados.
+- Passo a passo do humano: `4yu-apps/PENDENCIAS-DO-GABRIEL.md`, itens
+  "Google: cliente OAuth" e "Meta: Messenger e comentário de página".
+- Nada disso recebeu evento real ainda: o primeiro teste ponta a ponta é
+  com a página ligada e o cliente OAuth criado.
