@@ -586,6 +586,7 @@ function EnviarTemplate() {
         titulo="Corpo"
         campos={[
           { nome: 'telefone', tipo: 'string', obrigatorio: true, descricao: <>Com DDD, de preferência com DDI: <Cod>{TELEFONE}</Cod>.</> },
+          { nome: 'nome', tipo: 'string', descricao: 'O nome do contato, até 120 caracteres. Cria ou atualiza a ficha, para ele não aparecer "sem nome" no Inbox.' },
           { nome: 'template', tipo: 'string', obrigatorio: true, descricao: <>O <Cod>nome</Cod> do modelo, como em <Link href="/ajuda/desenvolvedores/api-listar-templates">Listar modelos</Link>.</> },
           { nome: 'idioma', tipo: 'string', descricao: 'Obrigatório só quando o mesmo nome existe em mais de um idioma.' },
           { nome: 'valores.corpo', tipo: 'string[]', descricao: <>Um valor por variável do corpo, na ordem: o primeiro entra no <Cod>{'{{1}}'}</Cod>. A quantidade precisa bater.</> },

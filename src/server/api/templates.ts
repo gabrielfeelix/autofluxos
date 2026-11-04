@@ -77,6 +77,8 @@ export async function tetoConfiguradoDaApi(clienteId: string): Promise<number | 
 
 export type PedidoDeEnvio = {
   telefone: string
+  /** O nome do contato, para criar ou atualizar a ficha. Opcional. */
+  nome?: string
   template: string
   idioma?: string
   valores?: { corpo?: string[]; cabecalho?: string[] }
@@ -213,7 +215,12 @@ export async function enviarModeloPelaApi(
     return recusa(429, 'teto_diario', `A organização chegou ao teto de ${teto} modelos por dia pela API. O contador volta a zero à meia-noite (horário de Brasília).`)
   }
 
-  const gravado = await gravarContatoDaApi(clienteId, { telefone: pedido.telefone })
+  // O nome vai junto quando o sistema de fora manda: sem ele o contato nasce
+  // "sem nome" no Inbox, mesmo com a mensagem dizendo "Fala, Tiago!".
+  const gravado = await gravarContatoDaApi(clienteId, {
+    telefone: pedido.telefone,
+    ...(pedido.nome ? { nome: pedido.nome } : {}),
+  })
   if (!gravado.ok) return recusa(422, 'telefone_invalido', 'Telefone sem DDD ou incompleto. Exemplo: 5511987654321.')
   const contatoId = gravado.contato.id
 

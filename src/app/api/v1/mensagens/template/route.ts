@@ -30,6 +30,7 @@ const valor = z.union([z.string(), z.number()]).transform((v) => String(v).trim(
 
 const corpoSchema = z.object({
   telefone: z.string().trim().min(1, 'obrigatório').max(40),
+  nome: z.string().trim().min(1).max(120).optional(),
   template: z.string().trim().min(1, 'obrigatório').max(512),
   idioma: z.string().trim().min(2).max(15).optional(),
   valores: z
