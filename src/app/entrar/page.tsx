@@ -3,6 +3,9 @@ import Link from 'next/link'
 import { redirect } from 'next/navigation'
 import { FormularioDeConta } from '@/components/conta/formulario'
 import { Portico } from '@/components/design/portico'
+import { EntrarComGoogle } from '@/components/conta/entrar-com-google'
+import { fraseDoErroDoGoogle } from '@/core/erro-do-google'
+import { googleLigado } from '@/server/auth'
 import { IlustracaoOutroAparelho } from '@/components/design/ilustracoes'
 import { acaoEntrar } from '@/server/acoes-conta'
 import { destinoAposEntrar } from '@/server/permissoes'
@@ -81,6 +84,7 @@ export default async function Entrar({ searchParams }: PageProps<'/entrar'>) {
         </>
       }
     >
+      {googleLigado() && <EntrarComGoogle erro={fraseDoErroDoGoogle(busca.error as string | undefined)} />}
       <FormularioDeConta action={acaoEntrar} botao="Entrar" />
     </Portico>
   )

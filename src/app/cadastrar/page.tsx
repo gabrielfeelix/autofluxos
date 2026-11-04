@@ -4,6 +4,8 @@ import { DIAS_DE_TESTE, ehIdDePlano } from '@/core/planos'
 import { redirect } from 'next/navigation'
 import { FormularioDeConta } from '@/components/conta/formulario'
 import { Portico } from '@/components/design/portico'
+import { EntrarComGoogle } from '@/components/conta/entrar-com-google'
+import { googleLigado } from '@/server/auth'
 import { acaoCadastrarSe } from '@/server/acoes-conta'
 import { destinoAposEntrar } from '@/server/permissoes'
 import { sessaoAtual } from '@/server/sessao'
@@ -53,6 +55,7 @@ export default async function Cadastrar({ searchParams }: { searchParams: Promis
         </p>
       }
     >
+      {googleLigado() && <EntrarComGoogle />}
       <FormularioDeConta
         action={acaoCadastrarSe}
         botao="Criar acesso"

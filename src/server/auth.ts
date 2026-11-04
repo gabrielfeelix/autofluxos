@@ -69,6 +69,17 @@ export function ehSenhaVazada(erro: unknown): boolean {
   return corpo?.code === 'PASSWORD_COMPROMISED' || (erro instanceof Error && erro.message === SENHA_VAZADA)
 }
 
+/** O cliente OAuth do Google está configurado neste ambiente? */
+export function googleLigado(): boolean {
+  return Boolean(process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET)
+}
+
+/** Onde o painel responde: produção fixa, o resto pelo `BETTER_AUTH_URL`. */
+export function origemDoPainel(): string {
+  if (process.env.VERCEL_ENV === 'production') return 'https://dialogon.com.br'
+  return process.env.BETTER_AUTH_URL ?? 'http://localhost:3000'
+}
+
 export function bancoDoLogin(): Pool {
   if (poolCache) return poolCache
 
@@ -105,6 +116,10 @@ function montar() {
      * quebra o login inteiro, e vale mais não ter do que ter chutado.
      */
     baseURL: process.env.BETTER_AUTH_URL,
+
+    // Erro interno do retorno do Google cairia em `/api/auth/error`, que está
+    // fechada (404). Volta para a tela de entrar, que diz o que houve.
+    onAPIError: { errorURL: '/entrar' },
 
     emailAndPassword: {
       enabled: true,
@@ -185,7 +200,38 @@ function montar() {
       expiresIn: 60 * 60 * 24 * 7,
       updateAge: 60 * 60 * 24,
     },
-    account: { modelName: 'af_contas' },
+    account: {
+      modelName: 'af_contas',
+      /*
+       * Entrar com Google numa conta que já existe com senha: liga as duas pelo
+       * e-mail. A biblioteca só liga quando o Google diz que o e-mail é dele
+       * **e** a conta daqui já confirmou o e-mail (`requireLocalEmailVerified`,
+       * padrão `true`). É o que impede alguém de cadastrar o e-mail de outra
+       * pessoa com senha, esperar ela entrar com Google e ficar com a conta.
+       */
+      accountLinking: { enabled: true },
+    },
+
+    /*
+     * Login com Google, ligado só quando o cliente OAuth existe no ambiente.
+     * Sem as duas variáveis o botão some (`googleLigado`) e nada aqui muda.
+     *
+     * Escopos `openid email profile`, o padrão do provedor: não pedem
+     * verificação do app no Google, só a tela de consentimento com marca. O
+     * retorno é fixo no domínio de produção porque a Vercel não tem
+     * `BETTER_AUTH_URL`, e derivar da requisição dentro de uma Server Action
+     * não é confiável. Fora da produção vale o `BETTER_AUTH_URL` local.
+     */
+    socialProviders: googleLigado()
+      ? {
+          google: {
+            clientId: process.env.GOOGLE_CLIENT_ID as string,
+            clientSecret: process.env.GOOGLE_CLIENT_SECRET as string,
+            redirectURI: `${origemDoPainel()}/api/auth/callback/google`,
+            prompt: 'select_account',
+          },
+        }
+      : undefined,
     verification: { modelName: 'af_verificacoes' },
 
     /*
@@ -198,6 +244,36 @@ function montar() {
     databaseHooks: {
       session: {
         create: {
+          /*
+           * Sessão que nasce do retorno do Google. Duas regras que o login por
+           * senha já cumpre em `acaoEntrar` e que aqui precisam ser ditas:
+           *
+           * - Conta com verificação em duas etapas **não entra pelo Google**. O
+           *   plugin `twoFactor` só intercepta o login por senha; aceitar o
+           *   Google aqui seria pular o código. Administrador da plataforma
+           *   cai na mesma regra, porque o 2FA dele é obrigatório.
+           * - O login vai para a auditoria, como o de senha.
+           */
+          before: async (sessao, contexto) => {
+            if (!contexto?.path?.startsWith('/callback/')) return
+            const { rows } = await bancoDoLogin().query<{ email: string; role: string | null; dois: boolean | null }>(
+              'select email, "role", "twoFactorEnabled" as dois from af_usuarios where id = $1',
+              [sessao.userId],
+            )
+            const usuario = rows[0]
+            const ehAdmin = (usuario?.role ?? '').split(',').map((papel) => papel.trim()).includes('admin')
+            if (!usuario || usuario.dois || ehAdmin) return false
+            after(() =>
+              registrar({
+                acao: 'entrou',
+                autorId: sessao.userId,
+                autorEmail: usuario.email,
+                alvoTipo: 'usuario',
+                alvoId: sessao.userId,
+                detalhes: { via: 'google' },
+              }),
+            )
+          },
           after: async (sessao) => {
             after(() =>
               limitarSessoes(bancoDoLogin(), sessao as { userId: string; impersonatedBy?: string | null }).catch(

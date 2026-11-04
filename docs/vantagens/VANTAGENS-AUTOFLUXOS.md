@@ -429,6 +429,8 @@ aqui fica o que o cliente ganha.
 
 - **Configura em minutos**: um assistente de 4 passos pergunta o ramo e o
   objetivo e já deixa a automação e o funil em rascunho.
+- **Entra com a conta do Google**: um clique no cadastro e no login, sem
+  criar senha; quem já tinha senha continua entrando pelos dois jeitos.
 - **Teste grátis de 14 dias** no plano Profissional.
 - **Nada some ao mudar de plano**: o recurso pausado fica só para leitura, e
   disparo sem resposta não conta como conversa.

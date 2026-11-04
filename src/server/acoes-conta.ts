@@ -216,6 +216,38 @@ export async function acaoEntrar(
   redirect(await destinoAposEntrar({ usuario, contaAtivaId: null, impersonadoPor: null }))
 }
 
+/**
+ * Começa o login com Google.
+ *
+ * A biblioteca grava o `state` (cookie assinado e linha em `af_verificacoes`) e
+ * devolve o endereço do Google; o cookie chega ao navegador pelo
+ * `nextCookies`. Quem já tem conta volta para `/entrar`, que manda adiante; quem
+ * nasceu agora vai criar a empresa, como no cadastro por senha.
+ */
+export async function acaoEntrarComGoogle(): Promise<{ erro?: string }> {
+  const cabecalhos = await headers()
+  const barradoPorIp = await barrado(chaveDeLimite('login', cabecalhos))
+  if (barradoPorIp) return { erro: barradoPorIp }
+
+  let endereco: string | undefined
+  try {
+    const inicio = await autenticacao().api.signInSocial({
+      body: {
+        provider: 'google',
+        callbackURL: '/entrar',
+        newUserCallbackURL: '/primeiro-acesso',
+        errorCallbackURL: '/entrar',
+      },
+      headers: cabecalhos,
+    })
+    endereco = inicio.url
+  } catch (erro) {
+    console.error('[google] não foi possível começar:', motivo(erro))
+  }
+  if (!endereco) return { erro: 'Não foi possível abrir o Google agora. Tente de novo em instantes.' }
+  redirect(endereco)
+}
+
 // ---------------------------------------------------------------------------
 // Esqueci a senha
 // ---------------------------------------------------------------------------
