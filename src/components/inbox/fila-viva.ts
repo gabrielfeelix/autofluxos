@@ -21,6 +21,12 @@ export type ContagemViva = { total: number; semDono: number; porUsuario: Map<str
 export type PorEstadoVivo = { aberta: number; adiada: number; resolvida: number }
 
 type Estado = {
+  /**
+   * De qual empresa são estas linhas. O armazém é um só no navegador, e sem
+   * isto trocar de empresa pela barra lateral levava as conversas da anterior
+   * para a fila da nova até um F5 (04/nov/2026).
+   */
+  clienteId: string | null
   linhas: ReadonlyMap<string, Lead>
   naoLidas: ReadonlyMap<string, number>
   /**
@@ -31,7 +37,16 @@ type Estado = {
   porEstado: PorEstadoVivo | null
 }
 
-let estado: Estado = { linhas: new Map(), naoLidas: new Map(), contagem: null, porEstado: null }
+const VAZIO: Estado = { clienteId: null, linhas: new Map(), naoLidas: new Map(), contagem: null, porEstado: null }
+
+let estado: Estado = VAZIO
+
+/** Troca de empresa: o que era da anterior não serve para nada aqui. */
+function daEmpresa(clienteId: string) {
+  if (estado.clienteId === clienteId) return
+  estado = { ...VAZIO, clienteId }
+  pulsoVisto = null
+}
 /** O último pulso que a tela já mostra, venha do servidor ou daqui. */
 let pulsoVisto: string | null = null
 const assinantes = new Set<() => void>()
@@ -43,12 +58,14 @@ function assinar(assinante: () => void) {
   }
 }
 
-export function useFilaViva(): Estado {
-  return useSyncExternalStore(
+export function useFilaViva(clienteId: string): Estado {
+  const atual = useSyncExternalStore(
     assinar,
     () => estado,
     () => estado,
   )
+  // Até o primeiro pulso da empresa nova, as linhas guardadas são da anterior.
+  return atual.clienteId === clienteId ? atual : VAZIO
 }
 
 /** O instante de um pulso (`<ts>|<arquivos>`), em milissegundos. */
@@ -63,7 +80,8 @@ function instante(pulso: string | null): number {
  * chegou por aqui. Sem isto, o pulso novo seria comparado sempre contra o da
  * página, que não muda mais, e toda batida do stream buscaria de novo.
  */
-export function pulsoDaTela(doServidor: string | null): string | null {
+export function pulsoDaTela(doServidor: string | null, clienteId: string): string | null {
+  if (estado.clienteId !== clienteId) return doServidor
   // Empate de hora fica com o que chegou por aqui: o pulso também muda sem
   // mensagem nova (arquivo baixado, tique de lida), e o visto é o mais recente.
   return pulsoVisto !== null && instante(pulsoVisto) >= instante(doServidor) ? pulsoVisto : doServidor
@@ -76,6 +94,7 @@ export function pulsoDaTela(doServidor: string | null): string | null {
  * resposta: aí quem chama redesenha a página, que é o plano B de sempre.
  */
 export async function buscarMudancas(clienteId: string, desdePulso: string | null): Promise<boolean> {
+  daEmpresa(clienteId)
   const desde = instante(desdePulso)
   if (!desde) return false
   try {
@@ -95,6 +114,8 @@ export async function buscarMudancas(clienteId: string, desdePulso: string | nul
     }
     if (dados.barra) definirContagensVivas(dados.barra)
 
+    // A resposta pode chegar depois de a pessoa já ter trocado de empresa.
+    if (estado.clienteId !== clienteId) return false
     const linhas = new Map(estado.linhas)
     const naoLidas = new Map(estado.naoLidas)
     for (const lead of dados.leads) {
@@ -102,6 +123,7 @@ export async function buscarMudancas(clienteId: string, desdePulso: string | nul
       naoLidas.set(lead.contatoId, dados.naoLidas[lead.contatoId] ?? 0)
     }
     estado = {
+      clienteId,
       linhas,
       naoLidas,
       contagem: dados.contagem
@@ -128,7 +150,8 @@ export async function buscarMudancas(clienteId: string, desdePulso: string | nul
  * verdade, com `set` e sem comparar hora, então relógio adiantado no
  * computador de quem atende não prende a linha local.
  */
-export function registrarEnvioLocal(lead: Lead) {
+export function registrarEnvioLocal(clienteId: string, lead: Lead) {
+  daEmpresa(clienteId)
   estado = { ...estado, linhas: new Map(estado.linhas).set(lead.contatoId, lead) }
   assinantes.forEach((assinante) => assinante())
 }

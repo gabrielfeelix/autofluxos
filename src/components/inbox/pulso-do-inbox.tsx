@@ -167,7 +167,7 @@ export function PulsoDoInbox({
         // Sem conversa no endereço, a aberta é a primeira da fila: pergunta.
         if (!aberta || contatos.has(aberta)) pedirNovas(null)
         contatos.clear()
-        void buscarMudancas(clienteId, pulsoDaTela(pulsoAtual.current))
+        void buscarMudancas(clienteId, pulsoDaTela(pulsoAtual.current, clienteId))
       }, 120)
     }
 
@@ -262,7 +262,7 @@ export function PulsoDoInbox({
        * falhou (rede) ou veio incompleta, tenta de novo daqui a pouco, só a
        * parte que mudou.
        */
-      void buscarMudancas(clienteId, pulsoDaTela(pulsoNaTela)).then((deu) => {
+      void buscarMudancas(clienteId, pulsoDaTela(pulsoNaTela, clienteId)).then((deu) => {
         if (!deu && ativo && redesenhoMarcado === null) {
           redesenhoMarcado = window.setTimeout(redesenhar, NOVA_TENTATIVA_MS)
         }
@@ -287,7 +287,7 @@ export function PulsoDoInbox({
      */
     function reagir(pulso: string | null) {
       if (!ativo) return
-      if (!precisaAtualizar({ doBanco: pulso, naTela: pulsoDaTela(pulsoNaTela) })) return
+      if (!precisaAtualizar({ doBanco: pulso, naTela: pulsoDaTela(pulsoNaTela, clienteId) })) return
 
       pedirNovas(pulso)
 

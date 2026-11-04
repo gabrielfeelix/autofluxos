@@ -187,7 +187,7 @@ export function Fila({
    * que troca a última frase, a hora e a ordem de uma conversa quando chega
    * mensagem nela, sem redesenhar a página.
    */
-  const viva = useFilaViva();
+  const viva = useFilaViva(clienteId);
   /*
    * Os contadores do topo seguem o último pulso. Quando o servidor redesenha,
    * os dele são os mais novos, e os vivos saem até o próximo pulso.
@@ -222,7 +222,7 @@ export function Fila({
       if (envio.estado !== "saindo") return;
       const lead = leadsRef.current.find((l) => l.contatoId === envio.contatoId);
       if (!lead) return;
-      registrarEnvioLocal({
+      registrarEnvioLocal(clienteId, {
         ...lead,
         ultimaEm: new Date().toISOString(),
         ultimaDirecao: "saida",
@@ -237,7 +237,7 @@ export function Fila({
     };
     window.addEventListener(ENVIO, aoEnviar);
     return () => window.removeEventListener(ENVIO, aoEnviar);
-  }, [meuNome]);
+  }, [meuNome, clienteId]);
   const local = useMemo(
     () =>
       localDoServidor
