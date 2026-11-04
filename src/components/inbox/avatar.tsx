@@ -1,5 +1,5 @@
 /**
- * As iniciais de quem está do outro lado, com o ponto vermelho de quem espera.
+ * O retrato de quem está do outro lado, com o ponto vermelho de quem espera.
  *
  * **Mora em arquivo próprio porque é usado dos dois lados da fronteira**: a
  * linha da fila (`components/inbox/fila.tsx`, cliente) e o cabeçalho da
@@ -8,10 +8,12 @@
  * componente de cliente.
  *
  * ---------------------------------------------------------------------------
- * Por que iniciais, e não foto
+ * Por que ilustração, e não foto
  * ---------------------------------------------------------------------------
  *
- * **A Cloud API não expõe foto de perfil de contato.** O webhook entrega
+ * Ilustração gerada pelo nome (`retratoDoContato`, estilo Thumbs) desde
+ * 04/nov/2026; antes eram iniciais. **A Cloud API não expõe foto de perfil de
+ * contato.** O webhook entrega
  * `contacts[].profile` com só o nome; o único `profile_picture_url` que existe
  * é o do próprio negócio, o nosso lado, não o dela. Quem mostra foto de
  * contato no mercado está rodando provedor não oficial por cima do WhatsApp
@@ -19,7 +21,7 @@
  */
 import { DEFINICAO_DO_CANAL, type CanalId } from '@/core/canais'
 import { LogoDoCanal } from '@/components/design/selo-do-canal'
-import { iniciais } from '@/core/iniciais'
+import { retratoDoContato } from '@/lib/retrato'
 
 /**
  * Uma cor só, chapada: roxo escuro com a inicial clara.
@@ -58,7 +60,6 @@ export function Avatar({
   canal?: CanalId
 }) {
   const limpo = nome?.trim() ?? ''
-  const letras = limpo ? iniciais(limpo) : ''
 
   return (
     <span
@@ -66,7 +67,8 @@ export function Avatar({
       className={`relative flex shrink-0 items-center justify-center rounded-full font-bold ${COR}`}
     >
       {limpo ? (
-        letras
+        // eslint-disable-next-line @next/next/no-img-element
+        <img src={retratoDoContato(limpo)} alt="" aria-hidden className="size-full rounded-full" />
       ) : (
         /* Sem nome (visitante do site, quase sempre): uma silhueta, e não
            "?". O ponto de interrogação lia como erro, como se faltasse dado

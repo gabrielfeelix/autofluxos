@@ -1,5 +1,6 @@
 import { createAvatar } from '@dicebear/core'
 import * as bottts from '@dicebear/bottts'
+import * as thumbs from '@dicebear/thumbs'
 
 /**
  * O retrato ilustrado de quem usa o sistema, para quando a pessoa não subiu
@@ -12,7 +13,7 @@ import * as bottts from '@dicebear/bottts'
  * tela aberta. Gerado no próprio código, nada sai, e funciona sem rede.
  *
  * Mesmo nome, mesmo rosto, em qualquer tela e sessão, sem guardar nada.
- * Contato de cliente continua com iniciais (`inbox/avatar.tsx`).
+ * Contato de cliente tem o dele, em outro estilo (`retratoDoContato`).
  */
 
 /** Fundos claros, da família do `primary-weak`, para o rosto não brigar com selo colorido ao lado. */
@@ -27,6 +28,26 @@ export function retratoDe(semente: string): string {
 
   const uri = createAvatar(bottts, { seed: chave, backgroundColor: FUNDOS }).toDataUri()
   cache.set(chave, uri)
+  return uri
+}
+
+const cacheDoContato = new Map<string, string>()
+
+/**
+ * O retrato de um contato de cliente, no lugar das iniciais (04/nov/2026).
+ *
+ * Estilo Thumbs, e não o Bottts da equipe: robô é quem trabalha no sistema, e
+ * cliente com cara de robô confundiria quem atende com quem é atendido, numa
+ * fila em que o bot ainda escreve "chatbot:". Mesma regra de semente: gerado
+ * aqui, nada sai para terceiro.
+ */
+export function retratoDoContato(semente: string): string {
+  const chave = semente.trim().toLowerCase()
+  const pronto = cacheDoContato.get(chave)
+  if (pronto) return pronto
+
+  const uri = createAvatar(thumbs, { seed: chave, backgroundColor: FUNDOS }).toDataUri()
+  cacheDoContato.set(chave, uri)
   return uri
 }
 
