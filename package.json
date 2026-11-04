@@ -27,7 +27,7 @@
     "better-auth": "^1.7.5",
     "fflate": "^0.8.3",
     "next": "^16.4.2",
-    "node-forge": "1.4.0",
+    "node-forge": "1.4.1",
     "pg": "^8.23.0",
     "qrcode": "^1.5.4",
     "react": "^19.3.0",
