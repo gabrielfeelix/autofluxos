@@ -996,6 +996,7 @@ export function Fila({
               >
                 <Avatar
                   nome={lead.nome}
+                  semente={lead.waId}
                   alerta={Boolean(lead.aguardando) && !janelaExpirada(lead)}
                   tamanho={44}
                   canal={canalPeloContato(lead.waId, canalDoContato.get(lead.contatoId))}

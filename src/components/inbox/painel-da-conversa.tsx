@@ -156,7 +156,7 @@ function ConversaChegando({ previa, falhou }: { previa: Previa | null; falhou: b
         </span>
         <header className="flex min-h-[62px] items-center gap-3 border-b border-line px-4 py-2">
           {previa ? (
-            <Avatar nome={previa.lead.nome} alerta={Boolean(previa.lead.aguardando) && !janelaExpirada(previa.lead)} tamanho={40} canal={previa.canal} />
+            <Avatar nome={previa.lead.nome} semente={previa.lead.waId} alerta={Boolean(previa.lead.aguardando) && !janelaExpirada(previa.lead)} tamanho={40} canal={previa.canal} />
           ) : (
             <Esqueleto className="size-10 rounded-full" />
           )}
@@ -216,7 +216,7 @@ function ConversaChegando({ previa, falhou }: { previa: Previa | null; falhou: b
         <aside aria-hidden className="min-w-0 overflow-hidden border-l border-line bg-panel">
           <div className="flex items-center gap-3 border-b border-line px-4 py-3.5">
             {previa ? (
-              <Avatar nome={previa.lead.nome} tamanho={40} canal={previa.canal} />
+              <Avatar nome={previa.lead.nome} semente={previa.lead.waId} tamanho={40} canal={previa.canal} />
             ) : (
               <Esqueleto className="size-10 rounded-full" />
             )}
@@ -411,7 +411,7 @@ function CabecalhoDaConversa({
       por baixo da coluna do contato, sem dar para clicar (visto na 5.9).
     */
     <header className="flex min-h-[62px] flex-wrap items-center gap-x-3 gap-y-2 border-b border-line px-4 py-2">
-      <Avatar nome={lead.nome} alerta={Boolean(lead.aguardando) && !janelaExpirada(lead)} tamanho={40} canal={canal} />
+      <Avatar nome={lead.nome} semente={lead.waId} alerta={Boolean(lead.aguardando) && !janelaExpirada(lead)} tamanho={40} canal={canal} />
       <div className="min-w-[140px] flex-1">
         <h2 className="truncate text-[13.5px] font-bold">
           {nome}
@@ -535,7 +535,7 @@ function DadosDoLead({
         quem era aquela ficha.
       */}
       <div className="flex items-center gap-3 border-b border-line px-4 py-3.5">
-        <Avatar nome={lead.nome} tamanho={40} canal={canal} />
+        <Avatar nome={lead.nome} semente={lead.waId} tamanho={40} canal={canal} />
         <div className="min-w-0 flex-1">
           <h2 className="truncate text-[14.5px] leading-5 font-semibold">{lead.nome ?? 'sem nome'}</h2>
           <p className="truncate font-mono text-[12px] text-dim">

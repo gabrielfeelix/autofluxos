@@ -47,8 +47,15 @@ export function Avatar({
   alerta = false,
   tamanho = 36,
   canal,
+  semente,
 }: {
   nome: string | null
+  /**
+   * O que gera o desenho quando não há nome: o número ou o id do contato.
+   * Sem ela, todo "sem nome" cairia na mesma silhueta e a fila viraria uma
+   * coluna de bonecos iguais.
+   */
+  semente?: string
   alerta?: boolean
   /** Em pixels. 44 na fila; 40 no cabeçalho e no topo da ficha. */
   tamanho?: number
@@ -60,15 +67,16 @@ export function Avatar({
   canal?: CanalId
 }) {
   const limpo = nome?.trim() ?? ''
+  const base = limpo || semente?.trim() || ''
 
   return (
     <span
       style={{ width: tamanho, height: tamanho, fontSize: Math.round(tamanho * 0.3) }}
       className={`relative flex shrink-0 items-center justify-center rounded-full font-bold ${COR}`}
     >
-      {limpo ? (
+      {base ? (
         // eslint-disable-next-line @next/next/no-img-element
-        <img src={retratoDoContato(limpo)} alt="" aria-hidden className="size-full rounded-full" />
+        <img src={retratoDoContato(base)} alt="" aria-hidden className="size-full rounded-full" />
       ) : (
         /* Sem nome (visitante do site, quase sempre): uma silhueta, e não
            "?". O ponto de interrogação lia como erro, como se faltasse dado
