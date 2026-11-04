@@ -1,0 +1,57 @@
+# Handoff 04/nov/2026: mídia do Instagram e do Messenger no Inbox
+
+Pedido do Gabriel: tudo que o WhatsApp mostra no Inbox (áudio, imagem, vídeo,
+figurinha, GIF, documento) tem que aparecer igual no Instagram e no Messenger,
+recebido e enviado, mais o reel/post que a pessoa compartilha.
+
+## O que está errado hoje (medido no banco em 04/nov)
+
+Contatos com `contacts.canal` em `instagram`/`messenger`, mensagens sem texto:
+96 vídeos/reels, 37 figurinhas, 14 áudios e 2 imagens recebidos; 39 vídeos,
+4 áudios e 1 imagem enviados. **Todos com `messages.arquivo` nulo.** O Inbox
+mostra "arquivo recebido, sem cópia guardada" e, no eco do que foi mandado pelo
+celular, "(áudio, imagem ou documento)".
+
+O payload já traz o endereço, guardado como `id` (ver `paraMensagemInterna` em
+`src/server/receber-do-instagram.ts`):
+
+```
+{"type":"video","video":{"id":"https://www.instagram.com/reel/DfDWVlSJslQ/"}}
+{"type":"sticker","sticker":{"id":"https://lookaside.fbsbx.com/ig_messaging_cdn/?asset_id=..."}}
+```
+
+No WhatsApp o `id` é um media id e a cópia é baixada por `guardarMidiaRecebida`
+(procurar no código); no Instagram/Messenger é uma URL de CDN que expira.
+
+## O que fazer
+
+1. **Recebido (Instagram e Messenger):** quando o anexo tem URL de CDN
+   (`lookaside.fbsbx.com`, `scontent`, `cdninstagram`), baixar e guardar pelo
+   mesmo caminho do WhatsApp (`guardarMidiaRecebida`), para o Inbox tocar o
+   áudio, mostrar imagem/figurinha/GIF e o vídeo como no WhatsApp.
+2. **Reel, post e story compartilhados** (`ig_reel`, `share`, `story_mention`,
+   e vídeo cujo `id` é `instagram.com/reel/...`): não baixar, mostrar como
+   cartão de link ("Reel compartilhado", abre no Instagram). Hoje caem em
+   `sticker`/`video` pela tabela `TIPO_DO_ANEXO`.
+3. **Eco** (`gravarEco`, mesmo arquivo): ler os `attachments` do eco e gravar
+   com o tipo e o arquivo certos, em vez do texto genérico.
+4. **Messenger** (`src/server/receber-da-pagina.ts`): mesma coisa; os anexos
+   chegam em `message.attachments[].payload.url`.
+5. **Enviar mídia pelo Inbox** para Instagram/Messenger: conferir no adaptador
+   (`channels/instagram.ts` e o do Messenger) se áudio/imagem/arquivo saem;
+   o WhatsApp é a referência.
+6. **Retroativo:** as mensagens antigas têm URL expirada; não dá para baixar.
+   O reel antigo dá (é link público): converter os já gravados em cartão.
+
+Validar com tsc e os testes do Instagram; print do Inbox em 1440 e 390 com uma
+conversa do Estúdio de exemplo (`22ee56d8-48e3-4763-a5af-d863db5eee62`, conta
+@gaabriel.feelix) que tenha áudio, figurinha e reel.
+
+## Feito hoje que esta frente não deve desfazer
+
+- `contacts.canal` (0166) e `contacts.foto_url`/`foto_em` (0165).
+- Foto de perfil buscada na chegada da mensagem e ao conectar o Instagram
+  (`src/server/foto-do-contato.ts`).
+- Filtro por canal na fila e aviso de janela fechada em todo canal de 24h
+  (`src/components/inbox/fila.tsx`).
+- Fila em tempo real separada por empresa (`src/components/inbox/fila-viva.ts`).
