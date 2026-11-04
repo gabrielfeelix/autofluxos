@@ -4,6 +4,20 @@ Pedido do Gabriel: tudo que o WhatsApp mostra no Inbox (áudio, imagem, vídeo,
 figurinha, GIF, documento) tem que aparecer igual no Instagram e no Messenger,
 recebido e enviado, mais o reel/post que a pessoa compartilha.
 
+## Antes de começar
+
+- `git pull` primeiro: outros agentes commitam nesta pasta. Commit só dos
+  próprios arquivos (`git add` nominal) e push na hora, com o helper do
+  `GITHUB_TOKEN` (memória `push-repo-motion`). Conferir o deploy READY na
+  Vercel antes de dizer "no ar".
+- Banco: ler `docs/BANCO-COMPARTILHADO.md`. Consulta e migration pela
+  Management API com `SUPABASE_ACCESS_TOKEN` do cofre e o ref
+  `xxxynoshwirupkdzwxbj`. Próxima migration: `ls supabase/migrations | tail -1`
+  (a última hoje é `0166`).
+- Validar com `tsc` e os testes dos arquivos tocados, nunca a suíte inteira.
+- Gabriel quer resposta curta, sem explicação longa, e link clicável em todo
+  passo que for dele.
+
 ## O que está errado hoje (medido no banco em 04/nov)
 
 Contatos com `contacts.canal` em `instagram`/`messenger`, mensagens sem texto:
@@ -55,3 +69,17 @@ conversa do Estúdio de exemplo (`22ee56d8-48e3-4763-a5af-d863db5eee62`, conta
 - Filtro por canal na fila e aviso de janela fechada em todo canal de 24h
   (`src/components/inbox/fila.tsx`).
 - Fila em tempo real separada por empresa (`src/components/inbox/fila-viva.ts`).
+
+## Outras pendências abertas em 04/nov (fora desta frente)
+
+- **Decisão do Gabriel, caso Gunter (PCYES):** primeira mensagem que já traz
+  pergunta ("entregam pra Maceió?") deve ir direto para a IA em vez do menu de
+  boas-vindas? Ainda sem resposta.
+- **Instagram da 4YU Tech Demonstração sem fluxo:** a @usedialogon recebe e
+  ninguém responde. Ele escolhe o fluxo em
+  https://dialogon.com.br/clientes/3a1d5ac8-369c-4373-856a-495468e7bad4/conversas/canais/instagram
+- **Revisão da Meta:** permissões de página, `instagram_business_manage_comments`
+  e `business_management` no rascunho; faltam os vídeos (Inbox do Instagram,
+  Messenger, comentários). Estúdio de exemplo segue sendo a conta do revisor.
+- **Nomes de contato da PCYES:** o envio de modelo pela API aceita `nome`
+  desde `ae8e2cb0`; falta quem integra o sistema da PCYES mandar o campo.
