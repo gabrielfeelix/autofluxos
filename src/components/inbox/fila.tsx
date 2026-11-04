@@ -1068,10 +1068,11 @@ export function Fila({
                       </Badge>
                     )}
                   </span>
-                  {lead.aguardando && (
+                  {temJanela(canalPeloContato(lead.waId, canalDoContato.get(lead.contatoId) ?? lead.canal ?? undefined)) && (
                     <RelogioDaJanela
                       ultimaEntradaEm={lead.ultimaEntradaEm}
                       portaDeEntradaEm={lead.portaDeEntradaEm}
+                      soExpirada={!lead.aguardando}
                     />
                   )}
                   {/*
@@ -1390,12 +1391,30 @@ function PassoDaPagina({
 function RelogioDaJanela({
   ultimaEntradaEm,
   portaDeEntradaEm,
+  soExpirada = false,
 }: {
   ultimaEntradaEm: string | null;
   portaDeEntradaEm: string | null;
+  /**
+   * Conversa que não espera ninguém: só o "expirada" aparece (04/nov/2026).
+   * Antes nada aparecia, e numa fila em que só as de quem espera diziam
+   * "expirada", as outras pareciam abertas para texto livre sem estar.
+   */
+  soExpirada?: boolean;
 }) {
   const janela = { ultimaEntradaEm, portaDeEntradaEm };
   const restante = restaDaJanela(janela);
+
+  // Nunca escreveu (contato criado por envio de modelo pela API): não há janela
+  // nenhuma, e texto livre não sai. Mesmo aviso, com o motivo certo.
+  if (restante === null && !ultimaEntradaEm && !dentroDaPortaDeEntrada(janela)) {
+    return (
+      <span className="mt-0.5 block text-[12px] text-dim">
+        ainda não respondeu, só modelo aprovado
+      </span>
+    );
+  }
+  if (soExpirada && restante !== 0) return null;
 
   /*
    * Quem chegou por anúncio e ainda não escreveu não tem janela de texto livre,
@@ -1885,4 +1904,9 @@ function Engrenagem() {
       <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09a1.65 1.65 0 0 0-1.08-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.6 1.65 1.65 0 0 0 10 3.09V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9c.14.35.4.65.73.85.3.18.64.27 1 .26H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1Z" />
     </svg>
   );
+}
+
+/** Canais com a janela de 24h da Meta. Site e Telegram respondem a qualquer hora. */
+function temJanela(canal: CanalId): boolean {
+  return canal === "whatsapp" || canal === "instagram" || canal === "messenger";
 }
