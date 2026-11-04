@@ -23,10 +23,6 @@
     {
       "path": "/api/manutencao/duvidas",
       "schedule": "0 8 * * *"
-    },
-    {
-      "path": "/api/manutencao/fotos",
-      "schedule": "15 8 * * *"
     }
   ]
 }

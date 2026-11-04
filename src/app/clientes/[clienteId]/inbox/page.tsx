@@ -1,5 +1,3 @@
-import { after } from 'next/server'
-import { preencherFotosPendentes } from '@/server/foto-do-contato'
 import { EsqueletoDeInbox } from '@/components/design/esqueleto'
 import { janelaExpirada } from '@/channels/janela'
 import { Fragment, Suspense } from 'react'
@@ -98,10 +96,6 @@ export default async function Pagina({
   const [{ clienteId }, busca] = await Promise.all([params, searchParams])
   const cliente = await acharCliente(clienteId)
   if (!cliente) notFound()
-
-  // As fotos de perfil que faltam (Instagram e Messenger), depois da resposta:
-  // a tela não espera, e na próxima visita elas já estão lá.
-  after(() => preencherFotosPendentes(clienteId).catch(() => 0))
 
   /*
    * A chave é o **filtro**, e não a conversa aberta.

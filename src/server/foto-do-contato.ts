@@ -63,11 +63,8 @@ export async function atualizarFotoDoContato(opcoes: {
 /**
  * As fotos que faltam, sem esperar a pessoa escrever de novo.
  *
- * A busca na chegada da mensagem só alcança quem escreve depois do deploy, ou
- * depois de a conta ser conectada; quem já estava no Inbox ficava com as
- * iniciais para sempre. Esta passada cobre esses, em lote curto, e roda
- * sozinha: ao abrir o Inbox (depois da resposta), ao conectar a conta e uma
- * vez por dia para todas as contas.
+ * A busca na chegada da mensagem cobre todo contato novo. Esta passada cobre
+ * quem já estava no Inbox quando a conta é reconectada, e roda só aí.
  */
 export async function preencherFotosPendentes(clienteId: string, limite = 25): Promise<number> {
   const { canaisComFoto } = await import('./foto-do-contato-canais')
