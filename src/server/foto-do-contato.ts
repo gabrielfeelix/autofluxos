@@ -59,3 +59,36 @@ export async function atualizarFotoDoContato(opcoes: {
     console.warn('[foto] não foi possível atualizar a foto do contato', erro)
   }
 }
+
+/**
+ * As fotos que faltam, sem esperar a pessoa escrever de novo.
+ *
+ * A busca na chegada da mensagem só alcança quem escreve depois do deploy, ou
+ * depois de a conta ser conectada; quem já estava no Inbox ficava com as
+ * iniciais para sempre. Esta passada cobre esses, em lote curto, e roda
+ * sozinha: ao abrir o Inbox (depois da resposta), ao conectar a conta e uma
+ * vez por dia para todas as contas.
+ */
+export async function preencherFotosPendentes(clienteId: string, limite = 25): Promise<number> {
+  const { canaisComFoto } = await import('./foto-do-contato-canais')
+  const canais = await canaisComFoto(clienteId)
+  let feitas = 0
+
+  for (const canal of canais) {
+    const { data } = await db()
+      .from('contacts')
+      .select('wa_id')
+      .eq('client_id', clienteId)
+      .eq('canal', canal.canal)
+      .is('foto_em', null)
+      .order('ultima_mensagem_em', { ascending: false, nullsFirst: false })
+      .limit(limite - feitas)
+
+    for (const { wa_id } of (data ?? []) as { wa_id: string }[]) {
+      await atualizarFotoDoContato({ clienteId, idNoCanal: wa_id, buscarLink: () => canal.buscarLink(wa_id) })
+      feitas += 1
+    }
+    if (feitas >= limite) break
+  }
+  return feitas
+}

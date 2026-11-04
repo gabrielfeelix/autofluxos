@@ -7,7 +7,7 @@ import { useCallback, useDeferredValue, useEffect, useMemo, useRef, useState, us
 import { comoFalta, dentroDaPortaDeEntrada, janelaExpirada, restaDaJanela } from "@/channels/janela";
 import { Dica } from "@/components/design/dica";
 import { LARGURA_DA_FILA } from "@/components/design/tema";
-import { canalPeloContato, type CanalId } from "@/core/canais";
+import { CANAIS, DEFINICAO_DO_CANAL, canalPeloContato, type CanalId } from "@/core/canais";
 import { chavesDoTelefone, trechosDoTelefone } from "@/core/contatos/telefone";
 import { acaoBuscarNasMensagens } from "@/server/acoes-busca";
 import { Avatar } from "@/components/inbox/avatar";
@@ -532,10 +532,28 @@ export function Fila({
   }, [local, digitado, clienteId]);
 
   const nomeDoSetor = useMemo(() => new Map(setores.map((s) => [s.id, s.nome])), [setores]);
+
+  /*
+   * O canal filtra no navegador, como o setor (04/nov/2026). As opções saem
+   * das conversas que existem: canal sem ninguém não vira opção, e com um
+   * canal só o filtro nem aparece.
+   */
+  const [canalFiltro, setCanalFiltro] = useState<"todos" | CanalId>("todos");
+  const canalDe = useCallback(
+    (lead: Lead) => canalPeloContato(lead.waId, canalDoContato.get(lead.contatoId) ?? lead.canal ?? undefined),
+    [canalDoContato],
+  );
+  const canaisPresentes = useMemo(() => {
+    const vistos = new Set((local ?? leads).map(canalDe));
+    return CANAIS.filter((c) => vistos.has(c));
+  }, [local, leads, canalDe]);
+
   const doSetor = useCallback(
-    (lista: Lead[]) =>
-      setor === "todos" ? lista : lista.filter((lead) => cabeNoSetor(lead, setor, meusSetores, usuarioId)),
-    [setor, meusSetores, usuarioId],
+    (lista: Lead[]) => {
+      const doCanal = canalFiltro === "todos" ? lista : lista.filter((lead) => canalDe(lead) === canalFiltro);
+      return setor === "todos" ? doCanal : doCanal.filter((lead) => cabeNoSetor(lead, setor, meusSetores, usuarioId));
+    },
+    [setor, meusSetores, usuarioId, canalFiltro, canalDe],
   );
 
   const naTela = useMemo(() => {
@@ -747,6 +765,19 @@ export function Fila({
                 />
               )}
             </>
+          )}
+
+          {canaisPresentes.length > 1 && (
+            <PilulaMenu
+              aria="Filtrar por canal"
+              escolhida={canalFiltro}
+              rotulo={canalFiltro === "todos" ? "Todos os canais" : DEFINICAO_DO_CANAL[canalFiltro].nome}
+              opcoes={[
+                { chave: "todos", rotulo: "Todos os canais" },
+                ...canaisPresentes.map((c) => ({ chave: c, rotulo: DEFINICAO_DO_CANAL[c].nome })),
+              ]}
+              aoEscolher={(chave) => setCanalFiltro(chave as "todos" | CanalId)}
+            />
           )}
 
           {setores.length > 0 && (

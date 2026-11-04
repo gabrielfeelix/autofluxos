@@ -1,4 +1,6 @@
+import { after } from 'next/server'
 import { redirect } from 'next/navigation'
+import { preencherFotosPendentes } from '@/server/foto-do-contato'
 import { alertar } from '@/server/alertar'
 import { assinarMensagens, trocarCodigoPorConta } from '@/server/instagram/conexao'
 import { concluirConexao } from '@/server/instagram/estado'
@@ -111,5 +113,7 @@ export async function GET(req: Request) {
     redirect(`${destino}?resultado=falhou`)
   }
 
+  // As fotos de quem já conversava com a conta, sem a pessoa esperar por elas.
+  after(() => preencherFotosPendentes(clienteId, 40).catch(() => 0))
   redirect(`${destino}?resultado=${assinou ? 'conectado' : 'sem_webhook'}`)
 }
