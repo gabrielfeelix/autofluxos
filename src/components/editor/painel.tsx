@@ -3838,6 +3838,21 @@ function ConsultasDaIa({
         ))}
       </fieldset>
 
+      <fieldset className="mt-3 border-t border-line pt-3">
+        <legend className="mb-1 text-[11px] font-bold tracking-[0.05em] text-muted uppercase">
+          No material da empresa
+        </legend>
+        <p className="mb-2 text-[11.5px] leading-[1.45] text-dim">
+          Manuais e apostilas grandes demais para o Conhecimento da IA. A IA pesquisa só os trechos que a pergunta pede.
+        </p>
+        {FERRAMENTAS.filter((f) => f.integracao === 'conhecimento').map((f) => (
+          <label key={f.nome} className="mb-1 flex items-center gap-2.5 rounded-[7px] px-1.5 py-1 last:mb-0 hover:bg-surface">
+            <Caixa marcada={marcadas.has(f.nome)} aoMudar={(marcada) => alternar(f.nome, marcada)} />
+            <span className="min-w-0 flex-1 text-[12.5px] leading-4">{f.rotulo}</span>
+          </label>
+        ))}
+      </fieldset>
+
       {precisaDeCredencial && (
         <div className="mt-2.5 block">
           <span className="mb-1.5 block text-[11px] font-bold tracking-[0.05em] text-muted uppercase">

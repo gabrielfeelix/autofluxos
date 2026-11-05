@@ -1511,6 +1511,12 @@ extração explícito para os objetos de `public`.
   ramos e atendentes novos. Base da função conferida igual à da produção antes
   de recriar. Releitura: função com `atendente-saude`, check com `salao`, anon
   sem `execute`.
+- **a `0168` foi aplicada em 5/nov/2026**, pela Management API, numa
+  transação, sem pedir (aditiva). Tabela `conhecimento_trechos` (RLS ligada,
+  só `service_role`) e RPC `buscar_conhecimento` (só `service_role`), a base
+  de conhecimento da IA (`docs/BASE-DE-CONHECIMENTO.md`). Nenhuma extensão
+  nova: sem `unaccent`, o acento sai no código. Releitura: tabela existe, RLS
+  ligada, anon sem `execute`; Verandi com **57** migrations.
 
 - **SSL obrigatório desde 19/out/2026** (`PUT .../ssl-enforcement`), com
   autorização do dono. Conexão sem TLS leva `ESSLREQUIRED`, inclusive pelo

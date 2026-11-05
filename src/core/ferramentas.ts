@@ -164,7 +164,7 @@ export type Ferramenta = {
    *
    * Serve para a tela agrupar e para o validador saber qual Conexão cobrar.
    */
-  integracao: 'verandi' | 'loja' | 'conversa' | 'agenda'
+  integracao: 'verandi' | 'loja' | 'conversa' | 'agenda' | 'conhecimento'
 }
 
 /**
@@ -197,6 +197,15 @@ export type ChamadaDeFerramenta =
       operacao: OperacaoDeAgenda
     }
   /**
+   * A base de conhecimento da conta (`conhecimento_trechos`, 0168): material
+   * grande pesquisado em trechos. Sem URL nem credencial; a conta é a da
+   * conversa. Quem executa é `server/conhecimento.ts`.
+   */
+  | {
+      tipo: 'conhecimento'
+      operacao: OperacaoDeConhecimento
+    }
+  /**
    * Não sai para lugar nenhum: é o sinal de que a conversa terminou bem. Quem
    * trata é o resolvedor, que guarda o resumo e devolve a vez ao modelo para a
    * frase final. Ver `CONCLUIR_CONVERSA`.
@@ -207,6 +216,9 @@ export type ChamadaDeFerramenta =
    * manda o resumo (`core/cobranca.ts`). Ver `ferramentaDeCobranca`.
    */
   | { tipo: 'cobranca' }
+
+/** O que uma ferramenta da base de conhecimento pede ao banco. */
+export type OperacaoDeConhecimento = 'buscar'
 
 /** O que uma ferramenta de agenda pede ao conector (`src/agendas/types.ts`). */
 export type OperacaoDeAgenda = 'servicos' | 'horarios' | 'minhas' | 'marcar' | 'desmarcar'
@@ -620,6 +632,34 @@ export const FERRAMENTAS: Ferramenta[] = [
     integracao: 'verandi',
   },
   ...FERRAMENTAS_DA_AGENDA_EXTERNA,
+  /*
+   * Material grande (manual, apostila, regulamento) não cabe no "Sobre a
+   * empresa" e não deve ir inteiro em cada resposta, ainda mais com modelo
+   * gratuito. Vai em trechos para `conhecimento_trechos` e a IA pesquisa só o
+   * que a pergunta pede (Solar Buy-Side, 05/nov/2026: sem isto a IA inventou
+   * que o manual servia para grupo A e que havia nota fiscal).
+   */
+  {
+    nome: 'consultar_material',
+    rotulo: 'Pesquisar no material da empresa',
+    escreve: false,
+    descricao:
+      'Pesquisa no material da empresa (manuais, apostilas, regulamentos) e devolve os trechos mais parecidos com a pergunta, com a seção e a página. ' +
+      'Use sempre que a pergunta for sobre o conteúdo do material, um conceito, uma regra ou um detalhe que não esteja em SOBRE A EMPRESA, antes de responder. ' +
+      'Pesquise com as palavras-chave da pergunta, sem frase ("bateria hibrido autonomia", "fio b 2029", "comparar propostas quantas"). ' +
+      'Se os trechos não responderem, pesquise de novo com sinônimos. ' +
+      'Responda só com o que os trechos dizem, resumido com suas palavras e citando a seção; nunca copie trechos longos nem invente o que não veio. ' +
+      'Se nada vier, diga que não encontrou essa informação no material e ofereça passar para a equipe.',
+    // Não obrigatório de propósito: com obrigatório, o modelo gratuito que
+    // esquecia o argumento derrubava a conversa para uma pessoa (5/nov). Vazio
+    // volta um aviso e ele pesquisa de novo.
+    argumentos: [{ nome: 'termos', tipo: 'texto', descricao: 'Palavras-chave da pergunta, de 2 a 8 palavras. Sempre preencha.', obrigatorio: false }],
+    injetados: [],
+    chamada: { tipo: 'conhecimento', operacao: 'buscar' },
+    projecao: [{ caminho: 'trechos', campos: ['fonte', 'secao', 'pagina', 'texto'], limite: 4 }, { caminho: 'aviso' }],
+    credencial: 'nenhuma',
+    integracao: 'conhecimento',
+  },
   {
     nome: 'loja_buscar',
     rotulo: 'Buscar produto na loja',

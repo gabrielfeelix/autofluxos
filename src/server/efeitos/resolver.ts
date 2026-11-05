@@ -52,6 +52,7 @@ import { lerCredencial } from '../repos/conexoes'
 import { creditarPontosDaPesquisa } from '../pontos-da-loja'
 import { consultarPedidoDaConta, lojaAtivaDaConta, temMonteSeuPc } from '../adaptador-da-loja'
 import { executarNaAgenda } from '../agenda-externa'
+import { executarNoConhecimento } from '../conhecimento'
 import { pacoteDo } from '@/core/nichos'
 import { nichoDaConta } from '../repos/recursos'
 import { amostra, CATEGORIAS_DO_MONTE_SEU_PC, categoriaDoMonteSeuPc, ehPcCompleto, PECAS_DE_UM_PC } from '@/loja/monte-seu-pc'
@@ -1572,6 +1573,20 @@ async function dispararFerramenta({
 
   if (ferramenta.chamada.tipo === 'agenda') {
     const r = await executarNaAgenda(ferramenta.chamada.operacao, conferida.chamada.valores, opcoes)
+    await logar({
+      opcoes,
+      ferramenta,
+      argumentos: conferida.chamada.valores,
+      decididoPor,
+      ok: r.ok,
+      ...(r.ok ? {} : { detalhe: r.motivo }),
+      resumo,
+    })
+    return r
+  }
+
+  if (ferramenta.chamada.tipo === 'conhecimento') {
+    const r = await executarNoConhecimento(ferramenta.chamada.operacao, conferida.chamada.valores, opcoes)
     await logar({
       opcoes,
       ferramenta,

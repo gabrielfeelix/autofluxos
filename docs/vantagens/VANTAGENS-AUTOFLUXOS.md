@@ -158,6 +158,9 @@ aqui fica o que o cliente ganha.
 - **Ficha do assistente** com as perguntas certas para o ramo e um placar de
   quanto a IA já sabe da empresa.
 - **Manda o cardápio ou a tabela em PDF** quando o cliente pede.
+- **Responde pelo manual da empresa**: manuais e apostilas de centenas de
+  páginas viram base de pesquisa; a IA acha o trecho certo, responde em
+  poucas linhas e diz a seção e a página, sem entregar o material inteiro.
 - **Não inventa produto, preço nem horário**: só fala do que veio do
   catálogo, da loja ou da agenda, e o que não sabe vira atendimento humano.
 - **Pede confirmação antes de agir**: "posso marcar para as 7h?", com a
