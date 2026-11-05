@@ -39,6 +39,22 @@ npx tsx --conditions=react-server scripts/conhecimento/importar.mts <conta> trec
 
 Reimportar a mesma fonte troca os trechos dela inteiros.
 
+## Trechos-mapa: o que o teste do Francis ensinou (5/nov/2026)
+
+A busca por palavra não acha assunto escrito com outro nome ("BESS" contra
+"bateria") e, sem trecho, a IA citou seção e página de memória: "10.2, p. 42"
+para telhado (é 2.8, p. 29) e "28.4" para contrato (é 18.3 e 19.x). Duas
+correções:
+
+- `scripts/demo/conhecimento-solar-mapa.json`: um trecho por tema (fases,
+  anexos, bateria, telhado, contrato, índice do Código), com seção, página e
+  os sinônimos. Mapa de material novo: monte a partir de
+  `select secao, min(pagina) ... group by secao`.
+- Trecho que não vem de PDF (site, mapa) grava `pagina` nula, senão a IA cita
+  "página 1". A regra do prompt: página só se veio num trecho desta resposta.
+
+Reteste com as perguntas do Francis: 17 de 17 certas, depois de 4 rodadas.
+
 ## O que fica para depois
 
 - Tela para o cliente subir o PDF sozinho (hoje é por script).

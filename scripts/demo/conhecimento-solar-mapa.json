@@ -1,0 +1,65 @@
+[
+ {
+  "fonte": "Mapa do Manual e do Código",
+  "secao": "MAPA DO MANUAL: AS 4 FASES, SEÇÕES E PÁGINAS",
+  "pagina": null,
+  "ordem": 2000,
+  "texto": "O Manual Solar Buy-Side (PDF de 161 páginas) segue a jornada de compra em 4 fases, mais os anexos técnicos. Fase 1, Conhecimento (seções 1 a 6, páginas 22 a 47): entender o consumo, a conta de luz, os componentes do sistema, telhado, potência, bateria e segurança do imóvel. Fase 2, Preparação (seções 7 a 13, páginas 49 a 64): avaliar o risco do prestador de serviço, sede, CNPJ, CREA, eliminar as 4 empresas menos confiáveis, pedir viabilidade econômico-financeira e ler datasheets. Fase 3, Análise (seções 14 a 17, páginas 66 a 84): leilão reverso, preço como último critério, coletar os dados de até seis propostas em quadros, dar nota a cada critério e escolher dois finalistas. Fase 4, Decisão (seções 18 a 21, páginas 86 a 100): proposta contratual, contrato, garantia de performance e financiamento. Anexos técnicos (seções 23 a 38, páginas 102 a 150). O índice do PDF é navegável: clicar no título leva à página."
+ },
+ {
+  "fonte": "Mapa do Manual e do Código",
+  "secao": "FASE 1 CONHECIMENTO: CONTA DE LUZ, COMPONENTES, TELHADO, POTÊNCIA",
+  "pagina": null,
+  "ordem": 2001,
+  "texto": "Fase 1, Conhecimento, no Manual: 1.0 analise seu consumo de energia e valor pago (p. 22); 1.5 identificando os dados na fatura de energia, conta de luz (p. 23); componentes do sistema fotovoltaico: 2.2 inversor solar (p. 24), 2.3 estrutura metálica de suporte (p. 25), 2.5 dispositivos de proteção (p. 26), 2.7 conectores solares (p. 28); 2.8 qual é a eficiência dos telhados na geração de energia solar, orientação e inclinação (p. 29); 2.9 perda de eficiência dos módulos por sombreamento (p. 30); 2.10 como microinversores minimizam a perda de geração (p. 31); 3.0 a 3.2 como definir e calcular a potência do sistema, kWp, e os fatores que influenciam (p. 32 a 36); 3.3 a 3.5 previsão futura da demanda, novos equipamentos e carro elétrico (p. 37 a 39); 4.2 a 4.10 bateria, autonomia e inversor híbrido (p. 40 a 43); 6.0 e 6.1 segurança do imóvel e capacidade estrutural do telhado (p. 44 e 45); 6.3 velocidade dos ventos (p. 46); 6.5 sistemas solares exigem manutenção (p. 47)."
+ },
+ {
+  "fonte": "Mapa do Manual e do Código",
+  "secao": "FASE 2 PREPARAÇÃO: RISCO DO PRESTADOR, SEDE, CNPJ, CREA, VIABILIDADE, DATASHEET",
+  "pagina": null,
+  "ordem": 2002,
+  "texto": "Fase 2, Preparação, no Manual: 7.0 conheça o risco do prestador de serviços, a integradora (p. 49); 7.1 páginas dedicadas à energia fotovoltaica (p. 50); 8.4 verificação da sede e das estruturas físicas (p. 51); 8.7 verificação do CNPJ (p. 53); 9.0 Etapa 2: eliminando as 4 empresas menos confiáveis (p. 54); 9.2 consulta ao CREA, conselho regional de engenharia (p. 55); 10.3 solicite a análise de viabilidade econômico-financeira, payback e retorno (p. 57); 10.4 como interpretar o conceito de simultaneidade (p. 59); 11.0 a 11.2 datasheets dos equipamentos principais, módulo e inversor, com figuras anotadas (p. 60 e 61); 12.1 avalie a transparência dos vendedores (p. 63); 13.1 próxima etapa (p. 64)."
+ },
+ {
+  "fonte": "Mapa do Manual e do Código",
+  "secao": "FASE 3 ANÁLISE: LEILÃO REVERSO, QUADROS, PONTUAÇÃO DAS PROPOSTAS, FINALISTAS",
+  "pagina": null,
+  "ordem": 2003,
+  "texto": "Fase 3, Análise, no Manual: 14.0 leilão reverso e a ilusão do menor preço (p. 66); 14.1 preço sempre deve ser o último item a considerar (p. 67); 14.2 riscos de falha e descumprimento em energia solar (p. 68); 14.5 entendendo o valor agregado (p. 69); 15.0 Etapa 1: identificação e coleta das informações das propostas (p. 70), com o exemplo da proposta fictícia Renova (15.1, p. 71); quadros para preencher: 15.2 quadro 1 da empresa (p. 74), 15.3 quadro 2 da tecnologia (p. 75), 15.4 sobrecarga do inversor (p. 76), 15.5 confiabilidade de fabricantes (p. 77), 15.6 quadro 3 da viabilidade financeira (p. 78); 16.1 a 16.3 avaliação comparativa das empresas e das propostas (p. 79 e 80); 17.0 Etapa 3: avaliação do nível de confiança das propostas (p. 81): no Manual o comprador dá a nota à mão, de 1 a 10 por critério, e a viabilidade financeira fica sem nota porque costuma ser manipulada; 17.1 resultado da pontuação (p. 83); 17.5 escolha dois finalistas (p. 84)."
+ },
+ {
+  "fonte": "Mapa do Manual e do Código",
+  "secao": "FASE 4 DECISÃO: CONTRATO DE COMPRA E VENDA, CLÁUSULAS, FINANCIAMENTO",
+  "pagina": null,
+  "ordem": 2004,
+  "texto": "Fase 4, Decisão, no Manual, onde está o contrato de compra e venda do sistema solar: 18.3 exija a proposta contratual (p. 86); 18.5 receba as últimas propostas, a negociação final (p. 87); o que conferir no contrato, cláusula por cláusula: 19.4 descrição do sistema e escopo do fornecimento (p. 88 e 89), 19.9 subcontratação (p. 90), 19.14 garantia de performance, a geração prometida (p. 91), 19.17 contratação de profissionais para trabalho em altura (p. 92), 19.19 dicas adicionais (p. 93); 20.1 vamos revisar (p. 94); 20.3 sentimento de confiabilidade nos vendedores e nas empresas (p. 95); 21.1 a 21.6 financiamento de sistema solar: simular em bancos e fintechs e preencher o quadro modelo de financiamento (p. 96 a 100). Depois da compra, o contrato de manutenção durante a garantia está nos anexos, seção 34.3 (p. 138)."
+ },
+ {
+  "fonte": "Mapa do Manual e do Código",
+  "secao": "ANEXOS TÉCNICOS DO MANUAL: PARA QUE SERVEM E O QUE TRAZEM",
+  "pagina": null,
+  "ordem": 2005,
+  "texto": "Os anexos técnicos do Manual (seções 23 a 38, páginas 102 a 150) são consulta rápida para avaliar equipamentos, fornecedores e o pós-venda: 23.0 fabricantes confiáveis e marcas com histórico ruim (p. 103); 23.3 cadeia dos equipamentos e responsabilidades de cada um (p. 104); 23.4 prazos de garantia dos equipamentos (p. 106); 24.0 módulos fotovoltaicos, com 5 dicas, Inmetro (24.5, p. 112) e como comparar tecnologias de células (24.8, p. 116) (p. 107 a 116); 25.0 critérios técnicos para escolher inversores, string e microinversor, e top fabricantes importados em 2025 (p. 117 a 121); 26.0 inversor híbrido (p. 122); 27.0 bateria solar no-break (p. 123); 28.0 estruturas metálicas (p. 124); 29.0 elementos de proteção elétrica (p. 125); 30.0 carregadores de veículos elétricos (p. 126); 31.0 Reclame Aqui das marcas (p. 127 a 129); 32.0 e 32.2 distribuidoras de equipamentos e a avaliação de 33 delas (p. 130 a 134); 33.0 limpeza dos módulos (p. 135 a 137); 34.0 inspeção e manutenção preventiva, testes elétricos, termografia e relatório (p. 138 a 141); 35.0 monitoramento (p. 143 e 144); 36.0 e 37.0 seguro do sistema fotovoltaico (p. 146 a 149)."
+ },
+ {
+  "fonte": "Mapa do Manual e do Código",
+  "secao": "BATERIA, BESS, ARMAZENAMENTO, SISTEMA HÍBRIDO, NO-BREAK, OFF-GRID",
+  "pagina": null,
+  "ordem": 2006,
+  "texto": "Bateria e armazenamento de energia (BESS, battery energy storage system) no Manual: 4.2 que equipamentos podem ser alimentados por bateria e qual a autonomia (p. 40); 4.3 exemplos de autonomia por equipamento prioritário, para quando falta energia (p. 41); 4.6 capacidade de armazenamento, kWh (p. 42); 4.10 instalação e custo de inversor híbrido sem bateria, para instalar a bateria depois (p. 43); nos anexos, 26.0 inversor de corrente híbrido conectado a bateria (p. 122) e 27.0 bateria solar no-break (p. 123). Para o vendedor, o site cita que a abordagem consultiva ajuda em projetos B2C e B2B exigentes, sistemas híbridos e BESS."
+ },
+ {
+  "fonte": "Mapa do Manual e do Código",
+  "secao": "TELHADO: EFICIÊNCIA, ORIENTAÇÃO, INCLINAÇÃO, SOMBRA, ESTRUTURA, VENTO, LIMPEZA",
+  "pagina": null,
+  "ordem": 2007,
+  "texto": "Telhado no Manual: 2.8 qual é a eficiência dos telhados na geração de energia solar, orientação e inclinação (p. 29); 2.9 perda de eficiência dos módulos por sombreamento (p. 30); 2.10 microinversores para reduzir a perda por sombra (p. 31); 6.1 avaliação da capacidade estrutural do telhado para suportar o sistema (p. 45); 6.3 velocidade dos ventos na região (p. 46); nos anexos, 28.0 estruturas metálicas de suporte dos módulos (p. 124) e 33.5 limpeza eficiente e segura em telhados (p. 137)."
+ },
+ {
+  "fonte": "Mapa do Manual e do Código",
+  "secao": "CÓDIGO DO VENDEDOR CONSULTIVO: ÍNDICE E CHECKLIST BUY-SIDE COM AS 10 ETAPAS",
+  "pagina": null,
+  "ordem": 2008,
+  "texto": "O Código do Vendedor Consultivo (o site fala em 26 páginas de conteúdo; o PDF tem 36, com capa, índice e anexos) segue as mesmas 4 fases do Manual, do lado de quem vende. Introdução: o que o método é e o que não é, o conceito Buy-Side, pontos cegos do vendedor comum (p. 5 a 7). Imersão no Buy-Side: vender decisão, não preço; vendedor comum x Buy-Side; Laboratório de Empatia (p. 8 a 10). Fase 1: informações essenciais antes do primeiro orçamento (p. 11). Fase 2: risco do prestador, due diligence da própria reputação online, viabilidade, postura consultiva x reativa, quando alertar sobre o leilão reverso (p. 13 e 14). Roteiro de treinamento: apresentação presencial da proposta, educação guiada do cliente, segundo contato antes da decisão, perguntas de qualificação, guia de respostas a objeções de preço (p. 17 a 20). Fase 3: a cilada do preço baixo e a avaliação do nível de confiança da sua proposta (p. 22 e 23). Fase 4: rodada final de negociação e escolha da melhor proposta (p. 24). Anexos técnicos, Mapa do Essencial e Checklist Buy-Side (p. 25 em diante). O Checklist Buy-Side tem 10 etapas, de 0 a 9: Etapa 0 preparação mental Buy-Side; Etapa 1 conhecimento do cliente; Etapa 2 credibilidade e filtro de confiança; Etapa 3 preparação da solução e proposta; Etapa 4 cadeia de fornecimento; Etapa 5 antes, durante e após a venda; Etapa 6 pós-venda, inspeção e longo prazo; Etapa 7 decisão final, contrato e fechamento; Etapa 8 reunião final e postura profissional; Etapa 9 argumentos de autoridade. Cada etapa tem objetivo e itens para marcar: o conteúdo de cada uma está no Código."
+ }
+]

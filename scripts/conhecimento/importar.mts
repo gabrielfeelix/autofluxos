@@ -19,7 +19,7 @@ const [conta, arquivo] = process.argv.slice(2)
 const GRAVAR = process.argv.includes('--gravar')
 if (!conta || !arquivo) throw new Error('uso: importar.mts <conta> <trechos.json> [--gravar]')
 
-type Trecho = { fonte: string; secao: string; pagina: number; ordem: number; texto: string }
+type Trecho = { fonte: string; secao: string; pagina: number | null; ordem: number; texto: string }
 const trechos: Trecho[] = JSON.parse(fs.readFileSync(arquivo, 'utf8'))
 const fontes = [...new Set(trechos.map((t) => t.fonte))]
 console.log(`${trechos.length} trechos de ${fontes.join(', ')}`)

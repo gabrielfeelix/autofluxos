@@ -1,24 +1,79 @@
 [
- {"fonte": "Site Solar Buy-Side", "secao": "PREÇO, PAGAMENTO, PIX, CARTÃO, BOLETO E PARCELAMENTO", "pagina": 1, "ordem": 1000,
-  "texto": "Valor do Método Solar Buy-Side completo (Manual + Código do Vendedor Consultivo + Plataforma de Avaliação + Licença de Uso Coletiva para até 10 vendedores): R$ 797,00 à vista no Pix. No cartão de crédito: 12x de R$ 81,94 (R$ 983,28 no total, com os juros do parcelamento). Também aceita boleto, à vista; o site não fala em boleto parcelado. A compra é processada pela Greenn, em ambiente criptografado, com liberação imediata no e-mail. Uma venda de um sistema residencial de 2 kWp já paga o investimento."},
- {"fonte": "Site Solar Buy-Side", "secao": "PROMOÇÃO DE LANÇAMENTO, LIVE, DESCONTO E CUPOM", "pagina": 1, "ordem": 1001,
-  "texto": "Hoje não há desconto nem cupom: o preço é R$ 797,00. Live de lançamento do Solar Buy-Side: terça-feira, 1º de dezembro de 2026, às 20h (horário de Brasília), com inscrição pelo site solarbuyside.com.br. Logo depois da live, a partir das 21h de 1º/12/2026, abre a Promoção de lançamento por só 48 horas: 25% OFF, de R$ 797,00 por R$ 597,75 à vista no Pix, ou 12x de R$ 61,46 no cartão (economia de R$ 199,25). Quando as 48 horas acabam, o valor volta para R$ 797,00. Fora dessas 48 horas não existe desconto, e a IA não cria condição especial."},
- {"fonte": "Site Solar Buy-Side", "secao": "GARANTIA, REEMBOLSO E DEVOLUÇÃO", "pagina": 1, "ordem": 1002,
-  "texto": "Garantia incondicional de 7 dias corridos depois da confirmação do pagamento: reembolso integral, sem precisar justificar, conforme o Código de Defesa do Consumidor (art. 49). O reembolso segue as regras da Greenn, que vende e processa a compra. Como funciona o reembolso: https://greenn.crisp.help/pt-br/article/como-funciona-o-reembolso-1hvb3dz/ . Como solicitar o reembolso: https://greenn.crisp.help/pt-br/article/solicitando-seu-reembolso-1gwdxdm/ . Ao pedir o reembolso, o acesso à Plataforma de Avaliação de Proposta é cancelado na hora. O site não diz o que acontece com os PDFs já baixados: a equipe confirma."},
- {"fonte": "Site Solar Buy-Side", "secao": "ENTREGA, ACESSO, E-MAIL, FORMATO PDF E ATUALIZAÇÕES", "pagina": 1, "ordem": 1003,
-  "texto": "Entrega digital e imediata: confirmado o pagamento, chega em poucos minutos um e-mail automático com o Manual Solar Buy-Side e o Código do Vendedor Consultivo em PDF interativo, com índice navegável, para ler no celular, tablet ou computador, também offline. O mesmo e-mail traz o link para o cadastro na Plataforma de Avaliação, que é online. Não achou o e-mail: confira spam e promoções; se não estiver lá, fale com a equipe pelo WhatsApp. Os PDFs vêm na versão vigente na compra e não recebem atualização depois. A Plataforma recebe melhorias, correções e recursos novos sem custo, e pode ficar fora do ar por pouco tempo em manutenção, sem perda do acesso."},
- {"fonte": "Site Solar Buy-Side", "secao": "PLATAFORMA DE AVALIAÇÃO DE PROPOSTA: ACESSO E ESCALA DE RISCO", "pagina": 1, "ordem": 1004,
-  "texto": "A Plataforma de Avaliação de Proposta Comercial (https://plataforma.solarbuyside.com.br) dá nota à proposta antes de ela chegar ao cliente: teste sua proposta antes que o mercado teste. O vendedor anota os mesmos campos para até seis propostas, com salvamento automático, e a Plataforma calcula o Índice de Confiabilidade Solar Buy-Side de 0 a 100, nos grupos Empresa e Tecnologia, com a viabilidade financeira como análise informativa. Escala de risco: 0 a 40 risco crítico; 41 a 60 risco moderado; 61 a 80 risco baixo; 81 a 100 risco mínimo. Exemplo do site: seis propostas para o mesmo cliente; venceu a da Soli Brasil, de R$ 16.342,80 (R$ 1.842,80 acima da mais barata), com índice 79,2. Acesso vitalício, uso ilimitado; cada compra libera 1 cadastro. Termos de uso e privacidade: https://plataforma.solarbuyside.com.br/primeiro-acesso"},
- {"fonte": "Site Solar Buy-Side", "secao": "LICENÇA DE USO COLETIVA, EQUIPE, MATRIZ E FILIAL, MAIS DE 10 VENDEDORES", "pagina": 1, "ordem": 1005,
-  "texto": "A Licença de Uso Coletiva vale por CNPJ: até 10 vendedores da mesma empresa (integradora ou representação comercial) usam o Manual e o Código, pagando uma vez só os mesmos R$ 797,00. Custo por pessoa (R$ 797,00 dividido pelo integrador mais os vendedores): integrador + 1 vendedor R$ 399; + 2 vendedores R$ 265; + 3 R$ 199; + 4 R$ 159; + 5 R$ 133; + 6 R$ 114; + 7 R$ 99; + 8 R$ 88; + 9 R$ 80; + 10 R$ 72. Como a licença é por CNPJ, matriz e filial com CNPJs diferentes são empresas diferentes no site; caso especial, a equipe confirma. Mais de 10 vendedores no mesmo CNPJ: a licença cobre 10; a equipe orienta o restante. A Plataforma libera 1 cadastro por compra."},
- {"fonte": "Site Solar Buy-Side", "secao": "RESULTADOS, DEPOIMENTOS, LUCAS E RODRIGO", "pagina": 1, "ordem": 1006,
-  "texto": "Validação em campo em 2025: quase 500 propostas analisadas e 126 vendas de 5 integradoras durante 2 meses. A conversão média pode sair de 20% para 25% a 30%, conforme o domínio do método (observação, não garantia). Simulação do site com 20 propostas por mês: de 4 para 5 a 6 vendas por mês, de 12 a 24 sistemas a mais por ano (estimativa). A abordagem consultiva também ajuda em projetos B2C e B2B exigentes, sistemas híbridos e BESS (armazenamento em bateria). Depoimentos: Lucas Tavares de Freitas, integrador solar de Belo Horizonte: deixou de competir por preço e passou a vender a decisão mais segura; quando o cliente compara três orçamentos, volta para ele. Rodrigo Almeida Teixeira, integrador de São Paulo: em maio fechou 5 sistemas novos em 30 dias e mudou a qualidade das conversas com clientes."},
- {"fonte": "Site Solar Buy-Side", "secao": "PANORAMA 2026, OS 3 RISCOS, JANELA DE 120 DIAS E CONSUMIDOR FINAL", "pagina": 1, "ordem": 1007,
-  "texto": "Panorama 2026: o comprador de sistema solar está cada vez mais preparado. Ele vai analisar os 3 riscos antes de investir: risco do integrador (engenharia e suporte), risco técnico (equipamentos e garantias) e risco financeiro (payback e custo de propriedade). Fornecedores e tecnologias passam por crivo mais rigoroso, e a confiabilidade da integradora vira fator decisivo antes do preço. O lançamento oficial do método abre uma janela de 120 dias para quem vende dominar o método antes do lançamento nacional do Manual e da Plataforma para o consumidor final (pessoa física). Hoje a venda é só para empresas, por CNPJ; a versão para pessoa física está sendo preparada. Vídeo no site: A Nova Realidade Solar, cerca de 4 minutos."},
- {"fonte": "Site Solar Buy-Side", "secao": "APOIADORES INSTITUCIONAIS, MARCAS PARCEIRAS", "pagina": 1, "ordem": 1008,
-  "texto": "Doze empresas de referência apoiam a missão de profissionalizar o setor solar: BelEnergy (distribuidora âncora, também com BelEnergy Carregadores Elétricos e BelEnergy Sistemas de Fixação), Clamper, Eletro Graphics, HDT Energy, Hoymiles, Huawei, Longi Solar, New Cabos Solar, Ombrello Seguro, PV Clean, SolarView e Staubli. Apoiar significa apoiar a ideia e a missão, nada mais: não é validação técnica, editorial nem comercial do método. As marcas não escrevem, não revisam e não aprovam o conteúdo do Manual, do Código ou da Plataforma, e não participam da venda nem respondem por ela. Quem vende, entrega e dá suporte é só a Buy-Side Soluções, pela Greenn."},
- {"fonte": "Site Solar Buy-Side", "secao": "EMPRESA, ENDEREÇO, CONTATO, SUPORTE E HORÁRIO", "pagina": 1, "ordem": 1009,
-  "texto": "Empresa: Buy-Side Soluções, CNPJ 55.463.086/0001-80. Endereço: Torre Norte, Av. Bento Munhoz da Rocha Neto, 632, 19º andar, salas 1905 a 1908, Zona 7, Maringá, PR, CEP 87030-010. E-mail: contato@buyside.com.br, respondido em horário comercial. Dúvida ou problema com compra, recebimento ou acesso: a equipe atende pelo WhatsApp. Site: https://solarbuyside.com.br . Política de privacidade: https://solarbuyside.com.br/politica-de-privacidade . Termos de uso: https://solarbuyside.com.br/termos-de-uso . Medidas antipirataria: https://solarbuyside.com.br/medidas-antipiratarias . O conteúdo é protegido por direitos autorais: compartilhar os PDFs fora da licença é proibido."},
- {"fonte": "Site Solar Buy-Side", "secao": "MANUAL, CÓDIGO E FASES: O QUE É CADA UM", "pagina": 1, "ordem": 1010,
-  "texto": "O Manual Solar Buy-Side (mais de 130 páginas, mais de 160 tópicos) é escrito para o comprador de sistema fotovoltaico do grupo B (baixa tensão, residencial e empresarial) e organiza a jornada de compra em 4 fases: Conhecimento (entender o consumo e a necessidade de geração), Preparação (identificar e avaliar empresas e pedir propostas), Análise (comparar até seis propostas e escolher as duas melhores) e Decisão (negociar, escolher o fornecedor, analisar o contrato e concluir a compra). O vendedor lê o Manual para enxergar como o cliente avalia. O Código do Vendedor Consultivo (cerca de 30 páginas) mostra como aplicar essa visão na venda: mentalidade Buy-Side, diagnóstico dos critérios de compra, roteiro da venda consultiva, antecipação de objeções e blindagem contra a guerra de preços, com o Checklist Buy-Side (etapas 0 a 9), Mapa do Essencial, Laboratório de Empatia e roteiros de treinamento. Os datasheets de módulo e inversor (seções 11.1 e 11.2 do Manual, páginas 60 e 61) são explicados com figuras anotadas: o detalhe está no Manual."}
+ {
+  "fonte": "Site Solar Buy-Side",
+  "secao": "PREÇO, PAGAMENTO, PIX, CARTÃO, BOLETO E PARCELAMENTO",
+  "pagina": null,
+  "ordem": 1000,
+  "texto": "Valor do Método Solar Buy-Side completo (Manual + Código do Vendedor Consultivo + Plataforma de Avaliação + Licença de Uso Coletiva para até 10 vendedores): R$ 797,00 à vista no Pix. No cartão de crédito: 12x de R$ 81,94 (R$ 983,28 no total, com os juros do parcelamento). Também aceita boleto, à vista; o site não fala em boleto parcelado. A compra é processada pela Greenn, em ambiente criptografado, com liberação imediata no e-mail. Uma venda de um sistema residencial de 2 kWp já paga o investimento."
+ },
+ {
+  "fonte": "Site Solar Buy-Side",
+  "secao": "PROMOÇÃO DE LANÇAMENTO, LIVE, DESCONTO E CUPOM",
+  "pagina": null,
+  "ordem": 1001,
+  "texto": "Hoje não há desconto nem cupom: o preço é R$ 797,00. Live de lançamento do Solar Buy-Side: terça-feira, 1º de dezembro de 2026, às 20h (horário de Brasília), com inscrição pelo site solarbuyside.com.br. Logo depois da live, a partir das 21h de 1º/12/2026, abre a Promoção de lançamento por só 48 horas: 25% OFF, de R$ 797,00 por R$ 597,75 à vista no Pix, ou 12x de R$ 61,46 no cartão (economia de R$ 199,25). Quando as 48 horas acabam, o valor volta para R$ 797,00. Fora dessas 48 horas não existe desconto, e a IA não cria condição especial."
+ },
+ {
+  "fonte": "Site Solar Buy-Side",
+  "secao": "GARANTIA, REEMBOLSO E DEVOLUÇÃO",
+  "pagina": null,
+  "ordem": 1002,
+  "texto": "Garantia incondicional de 7 dias corridos depois da confirmação do pagamento: reembolso integral, sem precisar justificar, conforme o Código de Defesa do Consumidor (art. 49). O reembolso segue as regras da Greenn, que vende e processa a compra. Como funciona o reembolso: https://greenn.crisp.help/pt-br/article/como-funciona-o-reembolso-1hvb3dz/ . Como solicitar o reembolso: https://greenn.crisp.help/pt-br/article/solicitando-seu-reembolso-1gwdxdm/ . Ao pedir o reembolso, o acesso à Plataforma de Avaliação de Proposta é cancelado na hora. O site não diz o que acontece com os PDFs já baixados: a equipe confirma."
+ },
+ {
+  "fonte": "Site Solar Buy-Side",
+  "secao": "ENTREGA, ACESSO, E-MAIL, FORMATO PDF E ATUALIZAÇÕES",
+  "pagina": null,
+  "ordem": 1003,
+  "texto": "Entrega digital e imediata: confirmado o pagamento, chega em poucos minutos um e-mail automático com o Manual Solar Buy-Side e o Código do Vendedor Consultivo em PDF interativo, com índice navegável, para ler no celular, tablet ou computador, também offline. O mesmo e-mail traz o link para o cadastro na Plataforma de Avaliação, que é online. Não achou o e-mail: confira spam e promoções; se não estiver lá, fale com a equipe pelo WhatsApp. Os PDFs vêm na versão vigente na compra e não recebem atualização depois. A Plataforma recebe melhorias, correções e recursos novos sem custo, e pode ficar fora do ar por pouco tempo em manutenção, sem perda do acesso."
+ },
+ {
+  "fonte": "Site Solar Buy-Side",
+  "secao": "PLATAFORMA DE AVALIAÇÃO DE PROPOSTA: NOTA AUTOMÁTICA, ACESSO POR 6 MESES E ESCALA DE RISCO",
+  "pagina": null,
+  "ordem": 1004,
+  "texto": "A Plataforma de Avaliação de Proposta Comercial (https://plataforma.solarbuyside.com.br) dá nota à proposta antes de ela chegar ao cliente: teste sua proposta antes que o mercado teste. A nota é automática: o vendedor conversa com a empresa e anota os dados, com salvamento automático, os mesmos campos para até seis propostas. Na empresa: atuação no ramo solar desde (ano), ano de abertura, registro no CREA de engenharia elétrica, quantidade de sistemas instalados, instalação por funcionário próprio, sede física, prazo máximo de instalação, garantia contra defeito, prazo de assistência técnica, memorial descritivo e diagrama unifilar, reputação no Reclame Aqui. Na tecnologia: geração anual proposta, marca e garantia do módulo e do inversor, sobrecarga DC/AC, reputação da distribuidora e do fabricante. A Plataforma converte cada dado em nota de 0 a 10, aplica o peso de cada critério e calcula o Índice de Confiabilidade Solar Buy-Side, de 0 a 100, nos grupos Empresa e Tecnologia; a viabilidade financeira entra como análise informativa, sem nota. No Manual a mesma avaliação é feita à mão, em quadros, com nota de 1 a 10 (seções 15 a 17, p. 70 a 84); a Plataforma faz a conta sozinha. Escala de risco: 0 a 40 risco crítico; 41 a 60 risco moderado; 61 a 80 risco baixo; 81 a 100 risco mínimo. Exemplo do site: seis propostas para o mesmo cliente; venceu a da Soli Brasil, de R$ 16.342,80 (R$ 1.842,80 acima da mais barata), com índice 79,2. Acesso: liberado automaticamente após a compra, por 6 meses contados da criação da conta (FAQ do site e Termos de Uso), com uso ilimitado nesse prazo; cada compra libera 1 cadastro. Termos de uso e privacidade: https://plataforma.solarbuyside.com.br/primeiro-acesso"
+ },
+ {
+  "fonte": "Site Solar Buy-Side",
+  "secao": "LICENÇA DE USO COLETIVA, EQUIPE, MATRIZ E FILIAL, MAIS DE 10 VENDEDORES",
+  "pagina": null,
+  "ordem": 1005,
+  "texto": "A Licença de Uso Coletiva vale por CNPJ: até 10 vendedores da mesma empresa (integradora ou representação comercial) usam o Manual e o Código, pagando uma vez só os mesmos R$ 797,00. Custo por pessoa (R$ 797,00 dividido pelo integrador mais os vendedores): integrador + 1 vendedor R$ 399; + 2 vendedores R$ 265; + 3 R$ 199; + 4 R$ 159; + 5 R$ 133; + 6 R$ 114; + 7 R$ 99; + 8 R$ 88; + 9 R$ 80; + 10 R$ 72. Como a licença é por CNPJ, matriz e filial com CNPJs diferentes são empresas diferentes no site; caso especial, a equipe confirma. Mais de 10 vendedores no mesmo CNPJ: a licença cobre 10; a equipe orienta o restante. A Plataforma libera 1 cadastro por compra."
+ },
+ {
+  "fonte": "Site Solar Buy-Side",
+  "secao": "RESULTADOS, DEPOIMENTOS, LUCAS E RODRIGO",
+  "pagina": null,
+  "ordem": 1006,
+  "texto": "Validação em campo em 2025: quase 500 propostas analisadas e 126 vendas de 5 integradoras durante 2 meses. A conversão média pode sair de 20% para 25% a 30%, conforme o domínio do método (observação, não garantia). Simulação do site com 20 propostas por mês: de 4 para 5 a 6 vendas por mês, de 12 a 24 sistemas a mais por ano (estimativa). A abordagem consultiva também ajuda em projetos B2C e B2B exigentes, sistemas híbridos e BESS (armazenamento em bateria). Depoimentos: Lucas Tavares de Freitas, integrador solar de Belo Horizonte: deixou de competir por preço e passou a vender a decisão mais segura; quando o cliente compara três orçamentos, volta para ele. Rodrigo Almeida Teixeira, integrador de São Paulo: em maio fechou 5 sistemas novos em 30 dias e mudou a qualidade das conversas com clientes."
+ },
+ {
+  "fonte": "Site Solar Buy-Side",
+  "secao": "PANORAMA 2026, OS 3 RISCOS, JANELA DE 120 DIAS, VÍDEO A NOVA REALIDADE SOLAR E CONSUMIDOR FINAL",
+  "pagina": null,
+  "ordem": 1007,
+  "texto": "Panorama 2026: o comprador de sistema solar está cada vez mais preparado. Ele vai analisar os 3 riscos antes de investir: risco do integrador (engenharia e suporte), risco técnico (equipamentos e garantias) e risco financeiro (payback e custo de propriedade). Fornecedores e tecnologias passam por crivo mais rigoroso, e a confiabilidade da integradora vira fator decisivo antes do preço. O lançamento oficial do método abre uma janela de 120 dias para quem vende dominar o método antes do lançamento nacional do Manual e da Plataforma para o consumidor final (pessoa física). Hoje a venda é só para empresas, por CNPJ; a versão para pessoa física está sendo preparada. Vídeo no site: \"A Nova Realidade Solar\", conteúdo exclusivo de 3 minutos e 54 segundos (\"em 4 minutos, você descobre por que quem se prepara agora sai na frente\"). Ele trata de três pontos: os 3 riscos (integrador, tecnológico e financeiro); a solução, o Manual de Compra de Sistema Solar Buy-Side; e o resultado, o comprador leigo que vira comprador informado. A mensagem: a maioria dos vendedores solares continua tentando convencer o cliente; os vendedores Buy-Side aprendem primeiro como o comprador decide."
+ },
+ {
+  "fonte": "Site Solar Buy-Side",
+  "secao": "APOIADORES INSTITUCIONAIS, MARCAS PARCEIRAS",
+  "pagina": null,
+  "ordem": 1008,
+  "texto": "Doze empresas de referência apoiam a missão de profissionalizar o setor solar: BelEnergy (distribuidora âncora, também com BelEnergy Carregadores Elétricos e BelEnergy Sistemas de Fixação), Clamper, Eletro Graphics, HDT Energy, Hoymiles, Huawei, Longi Solar, New Cabos Solar, Ombrello Seguro, PV Clean, SolarView e Staubli. Apoiar significa apoiar a ideia e a missão, nada mais: não é validação técnica, editorial nem comercial do método. As marcas não escrevem, não revisam e não aprovam o conteúdo do Manual, do Código ou da Plataforma, e não participam da venda nem respondem por ela. Quem vende, entrega e dá suporte é só a Buy-Side Soluções, pela Greenn."
+ },
+ {
+  "fonte": "Site Solar Buy-Side",
+  "secao": "EMPRESA, ENDEREÇO, CONTATO, SUPORTE E HORÁRIO",
+  "pagina": null,
+  "ordem": 1009,
+  "texto": "Empresa: Buy-Side Soluções, CNPJ 55.463.086/0001-80. Endereço: Torre Norte, Av. Bento Munhoz da Rocha Neto, 632, 19º andar, salas 1905 a 1908, Zona 7, Maringá, PR, CEP 87030-010. E-mail: contato@buyside.com.br, respondido em horário comercial. Dúvida ou problema com compra, recebimento ou acesso: a equipe atende pelo WhatsApp. Site: https://solarbuyside.com.br . Política de privacidade: https://solarbuyside.com.br/politica-de-privacidade . Termos de uso: https://solarbuyside.com.br/termos-de-uso . Medidas antipirataria: https://solarbuyside.com.br/medidas-antipiratarias . O conteúdo é protegido por direitos autorais: compartilhar os PDFs fora da licença é proibido."
+ },
+ {
+  "fonte": "Site Solar Buy-Side",
+  "secao": "MANUAL, CÓDIGO E FASES: O QUE É CADA UM",
+  "pagina": null,
+  "ordem": 1010,
+  "texto": "O Manual Solar Buy-Side (mais de 130 páginas, mais de 160 tópicos) é escrito para o comprador de sistema fotovoltaico do grupo B (baixa tensão, residencial e empresarial) e organiza a jornada de compra em 4 fases: Conhecimento (entender o consumo e a necessidade de geração), Preparação (identificar e avaliar empresas e pedir propostas), Análise (comparar até seis propostas e escolher as duas melhores) e Decisão (negociar, escolher o fornecedor, analisar o contrato e concluir a compra). O vendedor lê o Manual para enxergar como o cliente avalia. O Código do Vendedor Consultivo (26 páginas de conteúdo, como diz o site; o PDF tem 36 com capa, índice e anexos) mostra como aplicar essa visão na venda: mentalidade Buy-Side, diagnóstico dos critérios de compra, roteiro da venda consultiva, antecipação de objeções e blindagem contra a guerra de preços, com o Checklist Buy-Side (etapas 0 a 9), Mapa do Essencial, Laboratório de Empatia e roteiros de treinamento. Os datasheets de módulo e inversor (seções 11.1 e 11.2 do Manual, páginas 60 e 61) são explicados com figuras anotadas: o detalhe está no Manual."
+ }
 ]
