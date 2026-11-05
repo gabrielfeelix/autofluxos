@@ -55,6 +55,15 @@ export function tokenDaGreenn(clienteId: string): string {
   return createHmac('sha256', `greenn:${chave}`).update(clienteId).digest('base64url')
 }
 
+/** O endereço para colar na Greenn, ou `undefined` quando o ambiente não sabe assinar. */
+export function enderecoDaGreenn(base: string, clienteId: string): string | undefined {
+  try {
+    return `${base}/api/webhook/greenn/${clienteId}?token=${tokenDaGreenn(clienteId)}`
+  } catch {
+    return undefined
+  }
+}
+
 export function greennAutentico(clienteId: string, recebido: string | null): boolean {
   if (!recebido) return false
   try {

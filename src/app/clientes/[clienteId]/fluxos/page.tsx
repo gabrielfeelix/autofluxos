@@ -72,6 +72,7 @@ import { fluxoDoPapel, listarCanais } from '@/server/repos/conversas'
 import { enderecoDoPainel } from '@/server/endereco'
 import { listarGatilhos } from '@/server/repos/gatilhos'
 import { listarGatilhosDeEvento, listarWebhooks } from '@/server/repos/webhooks-de-entrada'
+import { enderecoDaGreenn } from '@/server/greenn'
 import { listarPastas } from '@/server/repos/pastas'
 import { listarEtiquetas } from '@/server/repos/etiquetas'
 import {
@@ -1303,6 +1304,7 @@ async function ConteudoDaAba({
             clienteId={cliente.id}
             webhooks={webhooksDeEntrada}
             endereco={`${enderecoDoPainel()}/api/webhook/entrada/${cliente.id}`}
+            greenn={enderecoDaGreenn(enderecoDoPainel(), cliente.id)}
           />
         </section>
         </>

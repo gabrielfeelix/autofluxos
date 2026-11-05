@@ -27,11 +27,14 @@ export function WebhooksDeEntrada({
   clienteId,
   webhooks,
   endereco,
+  greenn,
 }: {
   clienteId: string
   webhooks: WebhookDeEntrada[]
   /** A URL completa, montada no servidor: o navegador não sabe o domínio real. */
   endereco: string
+  /** O endereço da Greenn, já com o token da conta. Só o servidor sabe montar. */
+  greenn?: string
 }) {
   const [nome, setNome] = useState('')
   const [novo, setNovo] = useState<string | null>(null)
@@ -144,6 +147,19 @@ curl -X POST ${endereco} \\
           mas não é enviado.
         </p>
       </details>
+
+      {greenn && (
+        <div className="mt-4 rounded-lg border border-line bg-panel px-4 py-3">
+          <p className="text-[12px] font-semibold text-soft">Vendas da Greenn</p>
+          <p className="mt-1 mb-3 text-[11px] leading-5 text-dim">
+            Na Greenn: Produtos, editar o produto, Conteúdos, Adicionar conteúdo, Sistema externo,
+            Entrega por webhook. Marque todos os eventos e cole este endereço. Venda paga recebe a
+            etiqueta Comprou; pagamento gerado e não pago, Pagamento pendente; reembolso e chargeback,
+            Reembolso, e a pessoa sai das campanhas. As mensagens saem pelas sequências de cada etiqueta.
+          </p>
+          <EnderecoParaCopiar endereco={greenn} rotulo="Endereço da Greenn" />
+        </div>
+      )}
     </div>
   )
 }
@@ -277,11 +293,11 @@ function BotaoApagar({
  * Antes ele só existia dentro do `curl` do "Como o outro sistema chama", e
  * copiar dali trazia junto a barra invertida da linha.
  */
-function EnderecoParaCopiar({ endereco }: { endereco: string }) {
+function EnderecoParaCopiar({ endereco, rotulo = 'Endereço' }: { endereco: string; rotulo?: string }) {
   const [copiado, setCopiado] = useState(false)
   return (
     <div className="mb-4">
-      <span className="mb-1 block text-[11px] font-bold tracking-[0.05em] text-muted uppercase">Endereço</span>
+      <span className="mb-1 block text-[11px] font-bold tracking-[0.05em] text-muted uppercase">{rotulo}</span>
       <div className="flex items-center gap-2">
         <code className="min-w-0 flex-1 truncate rounded-lg border border-line bg-surface px-3 py-2 font-mono text-[11.5px] text-soft" title={endereco}>
           {endereco}
