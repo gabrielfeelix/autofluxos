@@ -158,6 +158,8 @@ export const MOTIVOS_DE_SAIDA = {
    */
   vendeu: 'a venda foi registrada',
   perdeu: 'a negociação foi marcada como perdida',
+  /** Reembolso ou chargeback avisado pelo checkout de fora (Greenn). */
+  reembolso: 'a compra foi reembolsada ou contestada',
 } as const
 
 export type MotivoDeSaida = keyof typeof MOTIVOS_DE_SAIDA
