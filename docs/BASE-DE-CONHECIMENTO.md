@@ -25,7 +25,7 @@ a IA pesquisa só o que a pergunta pede.
   dividido com a Verandi: o acento sai em `src/core/conhecimento.ts`, dos dois
   lados. A consulta é palavra `[a-z0-9]` unida por OU, montada no servidor.
 - Consulta da IA `consultar_material` (`src/core/ferramentas.ts`, executada em
-  `src/server/conhecimento.ts`): devolve até 4 trechos. No editor de fluxo,
+  `src/server/conhecimento.ts`): devolve até 5 trechos. No editor de fluxo,
   bloco de IA, grupo "No material da empresa".
 - A busca é por conta, não por bloco: toda IA da conta com a consulta marcada
   pesquisa o mesmo material.

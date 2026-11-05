@@ -56,6 +56,10 @@ def main() -> None:
         texto = re.sub(r'\n{3,}', '\n\n', texto).strip()
         if len(texto) < 80:
             continue
+        # Sumário (linhas de pontinhos até o número da página): só título, sem
+        # conteúdo, e tomava as vagas da busca (Manual Solar Buy-Side, p. 8 a 14).
+        if texto.count('.....') > 15:
+            continue
         # Junta linha quebrada no meio da frase; mantém item e título em linha própria.
         texto = re.sub(r'(?<=[a-zà-ú,])\n(?=[a-zà-ú])', ' ', texto)
         atual = ''

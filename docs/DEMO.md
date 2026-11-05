@@ -125,6 +125,17 @@ no simulador: equipe de 4 vendedores dá R$ 797 total e R$ 159 por pessoa (a
 primeira versão multiplicava), desconto recusado sem "condição especial",
 consumidor final encaminhado para a equipe.
 
+Base de conhecimento (5/nov, `docs/BASE-DE-CONHECIMENTO.md`): 254 trechos do
+Manual e do Código (sem o sumário) e 11 trechos do site, escritos à mão a
+partir de solarbuyside.com.br (`scripts/demo/conhecimento-solar-site.json`:
+promoção e live de 1º/12, reembolso, depoimentos, apoiadores, Plataforma,
+contato). Mudou o site: edite o JSON e rode `scripts/conhecimento/importar.mts`.
+Auditoria de 5/nov (cliente exigente, ~45 perguntas): os erros achados
+(cupom, Pix x cartão, preço por pessoa, apoiadores com a Solis, nota fiscal
+inventada, oferta repetida) foram corrigidos e retestados. Pergunta que só a
+equipe responde fica em `SOBRE_SOLAR` como pergunta e resposta prontas: em
+lista, o modelo gratuito voltava a inventar.
+
 A **Loja online** é a PCYES de verdade: os botões são a cópia do menu da PCYES
 (comprar, meu pedido, suporte, garantia, empresa, parcerias), e "Quero
 comprar" abre uma vitrine só de botões com produtos reais (headsets, teclados,

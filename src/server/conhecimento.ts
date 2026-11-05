@@ -21,7 +21,7 @@ export async function executarNoConhecimento(
     return { ok: true, json: { trechos: [], aviso: 'Faltou o que pesquisar: chame consultar_material de novo com `termos` preenchido com as palavras-chave da pergunta.' } }
   }
 
-  const { data, error } = await db().rpc('buscar_conhecimento', { p_cliente: opcoes.clienteId, p_consulta: consulta, p_limite: 4 })
+  const { data, error } = await db().rpc('buscar_conhecimento', { p_cliente: opcoes.clienteId, p_consulta: consulta, p_limite: 5 })
   if (error) return { ok: false, motivo: 'a pesquisa no material falhou' }
   const trechos = (data ?? []) as { fonte: string; secao: string; pagina: number | null; texto: string }[]
   if (trechos.length === 0) {

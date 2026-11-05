@@ -656,7 +656,7 @@ export const FERRAMENTAS: Ferramenta[] = [
     argumentos: [{ nome: 'termos', tipo: 'texto', descricao: 'Palavras-chave da pergunta, de 2 a 8 palavras. Sempre preencha.', obrigatorio: false }],
     injetados: [],
     chamada: { tipo: 'conhecimento', operacao: 'buscar' },
-    projecao: [{ caminho: 'trechos', campos: ['fonte', 'secao', 'pagina', 'texto'], limite: 4 }, { caminho: 'aviso' }],
+    projecao: [{ caminho: 'trechos', campos: ['fonte', 'secao', 'pagina', 'texto'], limite: 5 }, { caminho: 'aviso' }],
     credencial: 'nenhuma',
     integracao: 'conhecimento',
   },
