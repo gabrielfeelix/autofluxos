@@ -565,6 +565,8 @@ for (const [chave, nome] of Object.entries(NOMES)) {
 /* -------------------------------------------------------- peças comuns */
 const LEAD_RESPOSTA = 'Quero no meu negócio'
 const ENERGIA_SOLAR = 'Energia solar'
+/** Ramo solar no menu. Fora do ar desde 5/nov/2026, depois do teste do Francis. */
+const SOLAR_NO_MENU = false
 const TROCAR = 'Trocar de ramo'
 const VOLTAR = 'Voltar ao menu'
 const MENSAGENS_DO_LEAD = [
@@ -632,7 +634,7 @@ function saudacao(g: Grafo, depois: string): void {
 function fluxoInicio() {
   const g = new Grafo('tem-nome')
   saudacao(g, 'ramo')
-  const rotulos = [...RAMOS.map((r) => r.rotulo), ENERGIA_SOLAR, 'Loja online (PCYES)', LEAD_RESPOSTA]
+  const rotulos = [...RAMOS.map((r) => r.rotulo), ...(SOLAR_NO_MENU ? [ENERGIA_SOLAR] : []), 'Loja online (PCYES)', LEAD_RESPOSTA]
   g.no('ramo', 'pergunta', {
     texto: 'Qual é o seu ramo? Escolha um para testar 👇\n_Para recomeçar a qualquer momento, escreva *inicio*._',
     salvarEm: 'ramo_demo',
@@ -643,8 +645,10 @@ function fluxoInicio() {
     g.no(`ir-${r.chave}`, 'ir-fluxo', { fluxoId: ids[r.chave], rotulo: NOMES[r.chave] })
     g.liga('ramo', `ir-${r.chave}`, idDe(r.rotulo))
   }
-  g.no('ir-solar', 'ir-fluxo', { fluxoId: ids.solar, rotulo: NOMES.solar })
-  g.liga('ramo', 'ir-solar', idDe(ENERGIA_SOLAR))
+  if (SOLAR_NO_MENU) {
+    g.no('ir-solar', 'ir-fluxo', { fluxoId: ids.solar, rotulo: NOMES.solar })
+    g.liga('ramo', 'ir-solar', idDe(ENERGIA_SOLAR))
+  }
   g.no('ir-loja', 'ir-fluxo', { fluxoId: ids.loja, rotulo: NOMES.loja })
   g.liga('ramo', 'ir-loja', idDe('Loja online (PCYES)'))
   lead(g)

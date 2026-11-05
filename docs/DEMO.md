@@ -12,8 +12,8 @@ horário é marcado.
 1. **Oi com o nome** do perfil do WhatsApp (sem nome, só "Oi!") e o aviso de
    que é uma demonstração.
 2. **Qual é o seu ramo?** Pizzaria, Hamburgueria, Restaurante, Loja de roupas,
-   Salão e serviços, Aulas e estúdio, Energia solar (Solar Buy-Side), Loja
-   online (PCYES) ou "Quero no meu negócio".
+   Salão e serviços, Aulas e estúdio, Loja online (PCYES) ou "Quero no meu
+   negócio". Energia solar (Solar Buy-Side) está fora do menu desde 5/nov/2026.
 3. **Com botões ou com IA?**
    - **Com botões**: uma compra de verdade. "Ver cardápio" (ou "Fazer
      pedido") abre a **lista** do WhatsApp: nos ramos de comida, primeiro as
@@ -111,6 +111,11 @@ bolha só (campo novo `imagem` na pergunta); quem escolhe retirada recebe
 **antes** de passar para a pessoa; e as cópias da PCYES não têm mais prazo nas
 perguntas (antes, parar de testar virava "Vou te passar para um atendente"
 horas depois).
+
+**Fora do ar desde 5/nov/2026**, depois do teste do Francis: o fluxo continua
+publicado, só saiu dos menus (`SOLAR_NO_MENU` em `scripts/demo/fluxos.mts` e
+o item comentado em `scripts/fluxos/site-inicio-4yu.mts`). Para voltar, liga
+os dois e publica `--so=inicio` e o chat do site.
 
 A **Energia solar** é a Solar Buy-Side de verdade (5/nov/2026, para o Francis
 Poloni testar): o método de venda consultiva para integradores e vendedores
