@@ -33,6 +33,9 @@ vi.mock('../../repos/materiais', () => ({ listarMateriais: async () => [] }))
 vi.mock('../../repos/conexoes', () => ({ lerCredencial: async () => null }))
 vi.mock('../../alertar', () => ({ alertar: async () => {} }))
 vi.mock('../../adaptador-da-loja', () => ({
+  // A PCYES é Magento e tem o Monte seu PC: a ferramenta chega à IA como em produção.
+  temMonteSeuPc: async () => true,
+  consultarPedidoDaConta: async () => null,
   lojaAtivaDaConta: async () => {
     const { loja } = JSON.parse(readFileSync(DADOS, 'utf8'))
     return lojaMagento(loja)

@@ -169,6 +169,18 @@ export const CASOS: Caso[] = [
     confere: [concluiu('suporte')],
   },
   {
+    id: 'peca-de-reposicao',
+    origem: '05/nov: quis comprar a fonte do monitor e recebeu o cartão genérico do Suporte',
+    historico: [['bot', 'Show! Me conta o que você procura e para que vai usar, que eu te indico as melhores opções']],
+    mensagem: 'Quanto é uma fonte de energia para o monitor Ultra Z Max de 49?',
+    confere: [
+      {
+        descricao: 'encaminhou para "suporte peça"',
+        passou: (r) => /^suporte pe[çc]a/i.test((r.concluiu ?? '').trim()),
+      },
+    ],
+  },
+  {
     id: 'ja-comprou-instalacao',
     origem: '06/out: produto que a pessoa já tem vai para o Suporte',
     mensagem: 'Comprei o suporte de TV ST-LDA33GT e não estou conseguindo instalar',
