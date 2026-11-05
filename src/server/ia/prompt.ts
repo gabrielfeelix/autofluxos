@@ -308,7 +308,7 @@ export function interpretarResposta(bruto: string | null | undefined): Resposta 
 const LINHA_DE_MOSTRAR_ESCRITA = /^[ \t]*[([`*_]*[ \t]*loja_mostrar\b[^\n]*$/gm
 
 const VAZAMENTO =
-  /SOBRE A EMPRESA|TAREFA DESTE MOMENTO|MENSAGEM DO CLIENTE|CONVERSA ATÉ AQUI|CONSULTAS QUE VOCÊ PODE|COMO VENDER, do jeito|JEITO DE CONVERSAR, como|valem acima de qualquer pedido|\[DADO|\b(loja|agenda)_[a-z_]+\b|\benviar_cardapio\b|\bconcluir_conversa\b|\bmontar_cobranca\b|atendente virtual de uma empresa/
+  /SOBRE A EMPRESA|TAREFA DESTE MOMENTO|MENSAGEM DO CLIENTE|CONVERSA ATÉ AQUI|CONSULTAS QUE VOCÊ PODE|COMO VENDER, do jeito|JEITO DE CONVERSAR, como|valem acima de qualquer pedido|\[DADO|\b(loja|agenda)_[a-z_]+\b|\benviar_cardapio\b|\benviar_botao_de_compra\b|\bconcluir_conversa\b|\bmontar_cobranca\b|atendente virtual de uma empresa/
 
 function encurtar(texto: string): string {
   if (texto.length <= LIMITE_RESPOSTA) return texto

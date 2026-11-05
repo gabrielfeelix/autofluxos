@@ -512,6 +512,17 @@ export function validar(fluxo: Fluxo, capacidades: Capacidades = {}): ResultadoV
       })
     }
 
+    if (no.type === 'ia' && (no.data.ferramentas ?? []).includes('enviar_botao_de_compra')) {
+      const b = no.data.botaoDeCompra
+      if (!b || b.rotulo.trim() === '' || !b.url.trim().startsWith('https://') || (b.imagem !== undefined && !b.imagem.startsWith('https://'))) {
+        erros.push({
+          codigo: 'BOTAO_DE_COMPRA_INCOMPLETO',
+          mensagem: 'A IA pode mandar o botão de compra, mas falta o nome do botão ou o link (que começa com https://).',
+          noId: no.id,
+        })
+      }
+    }
+
     if (no.type === 'http' && no.data.conexaoId && conexoes && !conexoes.includes(no.data.conexaoId)) {
       erros.push({
         codigo: 'CONEXAO_INEXISTENTE',
@@ -1029,6 +1040,7 @@ function conferirConteudo(
         (parte) =>
           (parte.tipo === 'texto' && !vazio(parte.texto)) ||
           parte.tipo === 'midia' ||
+          parte.tipo === 'link' ||
           parte.tipo === 'salvar' ||
           parte.tipo === 'auto-off',
       )
@@ -1058,6 +1070,16 @@ function conferirConteudo(
               erros.push({
                 codigo: 'CAMPO_SEM_NOME',
                 mensagem: 'Um pedaço "guardar" não diz em qual variável gravar.',
+                noId: no.id,
+              })
+            }
+            break
+          case 'link':
+            conferirTamanho(parte.texto, false)
+            if (vazio(parte.texto) || vazio(parte.rotulo) || !/^(https:\/\/|\{\{)/.test(parte.url.trim()) || (parte.imagem !== undefined && !parte.imagem.startsWith('https://'))) {
+              erros.push({
+                codigo: 'LINK_INCOMPLETO',
+                mensagem: 'O botão com link precisa de texto, do nome do botão e de um link que comece com https://. A foto, se tiver, também começa com https://.',
                 noId: no.id,
               })
             }

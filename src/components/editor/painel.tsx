@@ -1900,6 +1900,12 @@ export function Painel({
             aoMudar={aoMudarDados}
           />
 
+          <BotaoDeCompraDaIa
+            ferramentas={no.data.ferramentas ?? []}
+            botao={no.data.botaoDeCompra}
+            aoMudar={aoMudarDados}
+          />
+
           {/*
             De onde saem os produtos (PLANO-NICHOS 4.9). Só existe escolha com
             loja on-line ligada: sem ela, o catálogo próprio já é a única fonte.
@@ -3687,6 +3693,77 @@ function Mapeamentos({
  * funcionamento, o que já está escrito no contexto do negócio não precisa de
  * chamada nenhuma.
  */
+/**
+ * O botão de compra que a IA manda (`enviar_botao_de_compra`): o checkout
+ * como botão, logo depois da frase, e não como link solto no parágrafo.
+ */
+function BotaoDeCompraDaIa({
+  ferramentas,
+  botao,
+  aoMudar,
+}: {
+  ferramentas: string[]
+  botao: { texto: string; rotulo: string; url: string; imagem?: string } | undefined
+  aoMudar: (dados: Record<string, unknown>) => void
+}) {
+  const ligado = ferramentas.includes('enviar_botao_de_compra')
+  const atual = botao ?? { texto: '', rotulo: 'Comprar agora', url: '' }
+  const mudar = (parcial: Partial<typeof atual>) => aoMudar({ botaoDeCompra: { ...atual, ...parcial } })
+  return (
+    <fieldset className="mt-3 border-t border-line pt-3">
+      <legend className="mb-1 text-[11px] font-bold tracking-[0.05em] text-muted uppercase">Na venda</legend>
+      <label className="mb-1 flex items-center gap-2.5 rounded-[7px] px-1.5 py-1 hover:bg-surface">
+        <Caixa
+          marcada={ligado}
+          aoMudar={(marcada) =>
+            aoMudar({
+              ferramentas: marcada
+                ? [...ferramentas.filter((n) => n !== 'enviar_botao_de_compra'), 'enviar_botao_de_compra']
+                : ferramentas.filter((n) => n !== 'enviar_botao_de_compra'),
+              ...(marcada && !botao ? { botaoDeCompra: atual } : {}),
+            })
+          }
+        />
+        <span className="min-w-0 flex-1 text-[12.5px] leading-4">Mandar o botão de compra</span>
+      </label>
+      {ligado && (
+        <div className="mt-2 space-y-2">
+          <textarea
+            value={atual.texto}
+            rows={2}
+            maxLength={1024}
+            placeholder="Exemplo: Clique no botão para ir ao pagamento seguro. O acesso chega no seu e-mail."
+            onChange={(e) => mudar({ texto: e.target.value })}
+            className="app-field w-full px-3 py-2.5 text-[12.5px]"
+          />
+          <input
+            value={atual.rotulo}
+            maxLength={20}
+            placeholder="Exemplo: Comprar agora"
+            onChange={(e) => mudar({ rotulo: e.target.value })}
+            className="app-field px-3 py-2.5 text-[12.5px]"
+          />
+          <input
+            value={atual.url}
+            placeholder="Exemplo: https://pagamento.seusite.com.br"
+            onChange={(e) => mudar({ url: e.target.value })}
+            className="app-field px-3 py-2.5 text-[12.5px]"
+          />
+          <input
+            value={atual.imagem ?? ''}
+            placeholder="Foto no topo, opcional. Exemplo: https://seusite.com.br/capa.png"
+            onChange={(e) => mudar({ imagem: e.target.value || undefined })}
+            className="app-field px-3 py-2.5 text-[12.5px]"
+          />
+          <p className="text-[10.5px] leading-4 text-dim">
+            A IA manda o botão quando a pessoa quiser comprar. O link não aparece escrito na frase.
+          </p>
+        </div>
+      )}
+    </fieldset>
+  )
+}
+
 function ConsultasDaIa({
   escolhidas,
   conexaoId,

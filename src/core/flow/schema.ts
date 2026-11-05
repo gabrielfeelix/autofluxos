@@ -170,6 +170,23 @@ export const parteMidiaSchema = z.object({
   nomeArquivo: z.string().optional(),
 })
 
+/**
+ * Um botão que abre uma página: o "Comprar agora" que leva ao checkout.
+ *
+ * Sai como `cta_url` no WhatsApp (texto, botão e foto opcional em cima) e
+ * como texto com o link onde o canal não tem botão. Existe porque link solto
+ * no fim de um parágrafo é o que a pessoa menos clica (Solar Buy-Side,
+ * 5/nov/2026). Rótulo até 20 caracteres, o limite do `cta_url`.
+ */
+export const parteLinkSchema = z.object({
+  tipo: z.literal('link'),
+  texto: z.string().max(1024),
+  rotulo: z.string().max(20),
+  url: z.string(),
+  /** A foto do cabeçalho, `https://` (o `validar()` confere). */
+  imagem: z.string().optional(),
+})
+
 export const parteAtrasoSchema = z.object({
   tipo: z.literal('atraso'),
   segundos: z.number().min(0).max(LIMITE_ATRASO_SEGUNDOS),
@@ -198,6 +215,7 @@ export const parteAutoOffSchema = z.object({ tipo: z.literal('auto-off') })
 
 export const parteSchema = z.discriminatedUnion('tipo', [
   parteTextoSchema,
+  parteLinkSchema,
   parteMidiaSchema,
   parteAtrasoSchema,
   parteSalvarSchema,
@@ -565,6 +583,21 @@ export const noIaSchema = z.object({
      * hamburgueria não tinha arquivo para mandar e listava o cardápio em
      * texto corrido (27/set).
      */
+    /**
+     * O botão de compra deste bloco, para `enviar_botao_de_compra`: texto,
+     * nome do botão (até 20) e o link do checkout, com foto opcional. Sai como
+     * `cta_url` logo depois da frase da IA, e o link some da frase. Existe
+     * porque link escrito no meio de um parágrafo é o que menos se clica
+     * (Solar Buy-Side, 5/nov/2026).
+     */
+    botaoDeCompra: z
+      .object({
+        texto: z.string().max(1024),
+        rotulo: z.string().max(20),
+        url: z.string(),
+        imagem: z.string().optional(),
+      })
+      .optional(),
     cardapio: z
       .object({
         imagem: z.string().startsWith('https://').optional(),
@@ -1073,7 +1106,7 @@ export const noVoltarSchema = z.object({
  *
  * - grava em `avaliacoes`, com data própria, a nota de março continua lá
  *   depois da de setembro, e é isso que permite responder "melhoramos?";
- * - classifica pela régua oficial do NPS (9–10, 7–8, 0–6) em vez de deixar cada
+ * - classifica pela régua oficial do NPS (9 a 10, 7 a 8, 0 a 6) em vez de deixar cada
  *   fluxo inventar a sua. Duas contas diferentes com cortes diferentes não se
  *   comparam, e ninguém percebe que não se comparam;
  * - nasce com as três saídas já desenhadas, que é o que faz *"nota baixa não
@@ -1344,7 +1377,7 @@ export const SAIDA_CONCLUIDO = 'concluido'
 
 /**
  * As três saídas da pesquisa de satisfação (0060), na régua oficial do NPS:
- * **9–10 promotor, 7–8 neutro, 0–6 detrator**.
+ * **9 a 10 promotor, 7 a 8 neutro, 0 a 6 detrator**.
  *
  * Elas são fixas, e isso é a razão de o bloco existir. Montada à mão, cada
  * pesquisa escolhia o próprio corte, e duas contas com cortes diferentes

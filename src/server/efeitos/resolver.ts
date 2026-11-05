@@ -1352,6 +1352,21 @@ async function responderComFerramentas({
       continue
     }
 
+    if (ferramenta.chamada.tipo === 'botao_de_compra') {
+      const botao = chamada.botaoDeCompra
+      if (botao && !anexos.some((a) => a.tipo === 'enviar_link' && a.url === botao.url)) {
+        anexos.push({
+          tipo: 'enviar_link',
+          texto: botao.texto.trim() !== '' ? botao.texto : 'Clique no botão para concluir a compra.',
+          rotulo: botao.rotulo,
+          url: botao.url,
+          ...(botao.imagem?.startsWith('https://') ? { imagem: botao.imagem } : {}),
+        })
+      }
+      conversa.push({ de: 'ferramenta', nome: ferramenta.nome, texto: JSON.stringify({ enviado: Boolean(botao) }) })
+      continue
+    }
+
     const disparo = await dispararFerramenta({
       ferramenta,
       argumentos: resposta.argumentos,

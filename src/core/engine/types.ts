@@ -265,8 +265,9 @@ export type Acao =
    * Um botão que abre uma página, com foto opcional em cima: a página de
    * downloads do produto quando não há manual em PDF (`cardDosDownloads`).
    *
-   * Nunca sai do motor: quem escreve é o resolvedor, com o link lido da loja.
-   * O canal decide a forma: `cta_url` onde existe, texto com o link nos outros.
+   * Sai do motor pela parte `link` da mensagem (o "Comprar agora"), e do
+   * resolvedor com o link lido da loja. O canal decide a forma: `cta_url` onde
+   * existe, texto com o link nos outros.
    */
   | {
       tipo: 'enviar_link'
@@ -331,6 +332,8 @@ export type Acao =
       concluir?: true
       /** O cardápio em arquivo do bloco, no lugar do da conta. */
       cardapio?: { imagem?: string; pdf?: string; nomeArquivo?: string }
+      /** O botão de compra do bloco, para `enviar_botao_de_compra`. */
+      botaoDeCompra?: { texto: string; rotulo: string; url: string; imagem?: string }
       /** As regras da cobrança conferida, do `conversar.cobranca` do bloco. */
       cobranca?: { taxaEntrega: number; ajustes: { nome: string; valor: number }[] }
       /** O "Sobre a empresa" do bloco, no lugar do da conta. Ausente = o da conta. */

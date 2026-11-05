@@ -55,7 +55,7 @@ export function partesDaMensagem(no: NoMensagem): Parte[] {
  */
 export function textoDaMensagem(no: NoMensagem): string {
   return partesDaMensagem(no)
-    .filter((parte) => parte.tipo === 'texto')
+    .filter((parte) => parte.tipo === 'texto' || parte.tipo === 'link')
     .map((parte) => parte.texto)
     .join('\n')
     .trim()
@@ -74,6 +74,8 @@ export function parteNova(tipo: Parte['tipo']): Parte {
       return { tipo: 'atraso', segundos: 1 }
     case 'salvar':
       return { tipo: 'salvar', campo: '', valor: '' }
+    case 'link':
+      return { tipo: 'link', texto: '', rotulo: 'Comprar agora', url: '' }
     case 'auto-off':
       return { tipo: 'auto-off' }
   }

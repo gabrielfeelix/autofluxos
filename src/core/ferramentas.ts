@@ -164,7 +164,7 @@ export type Ferramenta = {
    *
    * Serve para a tela agrupar e para o validador saber qual Conexão cobrar.
    */
-  integracao: 'verandi' | 'loja' | 'conversa' | 'agenda' | 'conhecimento'
+  integracao: 'verandi' | 'loja' | 'conversa' | 'agenda' | 'conhecimento' | 'venda'
 }
 
 /**
@@ -211,6 +211,11 @@ export type ChamadaDeFerramenta =
    * frase final. Ver `CONCLUIR_CONVERSA`.
    */
   | { tipo: 'concluir' }
+  /**
+   * Não sai para lugar nenhum: o resolvedor manda o botão de compra do bloco
+   * (`botaoDeCompra`) logo depois da frase. Ver `enviar_botao_de_compra`.
+   */
+  | { tipo: 'botao_de_compra' }
   /**
    * Não sai para lugar nenhum: o resolvedor soma o pedido pelo catálogo e
    * manda o resumo (`core/cobranca.ts`). Ver `ferramentaDeCobranca`.
@@ -659,6 +664,28 @@ export const FERRAMENTAS: Ferramenta[] = [
     projecao: [{ caminho: 'trechos', campos: ['fonte', 'secao', 'pagina', 'texto'], limite: 5 }, { caminho: 'aviso' }],
     credencial: 'nenhuma',
     integracao: 'conhecimento',
+  },
+  {
+    /*
+     * O botão de compra do bloco (`botaoDeCompra`): o checkout como botão, e
+     * não como link solto no fim do parágrafo. Sem argumento: o link é o que
+     * o desenho configurou, e o modelo nunca o escreve.
+     */
+    nome: 'enviar_botao_de_compra',
+    rotulo: 'Mandar o botão de compra',
+    escreve: false,
+    descricao:
+      'Manda o botão de compra (o checkout) logo depois da sua frase. ' +
+      'Use quando a pessoa disser que quer comprar, pedir o link de pagamento, o checkout ou "como faço para comprar". ' +
+      'Se vier `enviado: true`, escreva só a frase de fechamento, sem link: o botão já vai junto. ' +
+      'Se vier `enviado: false`, não há botão configurado: mande o link de compra que está em SOBRE A EMPRESA. ' +
+      'Não use duas vezes seguidas na mesma conversa.',
+    argumentos: [],
+    injetados: [],
+    chamada: { tipo: 'botao_de_compra' },
+    projecao: [{ caminho: 'enviado' }],
+    credencial: 'nenhuma',
+    integracao: 'venda',
   },
   {
     nome: 'loja_buscar',

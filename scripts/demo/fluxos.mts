@@ -1551,6 +1551,15 @@ async function copiaDaPcyes(origem: string) {
  * site: mude aqui e publique de novo.
  */
 const SOLAR_COMPRA = 'https://payfast.greenn.com.br/uuar4h6'
+const SOLAR_IMAGEM = 'https://solarbuyside.com.br/og-image.png'
+/** O botão de compra: o mesmo no fluxo de botões e na IA. Sem preço, que muda na promoção. */
+const SOLAR_BOTAO = {
+  texto:
+    '*Método Solar Buy-Side completo*\nManual + Código do Vendedor Consultivo + Plataforma de Avaliação + licença para até 10 vendedores do mesmo CNPJ.\n\nPagamento seguro pela Greenn, por Pix, cartão em até 12x ou boleto. O acesso chega no seu e-mail logo depois, com 7 dias de garantia.',
+  rotulo: 'Comprar agora',
+  url: SOLAR_COMPRA,
+  imagem: SOLAR_IMAGEM,
+}
 const SOLAR_PREVIA = 'https://solarbuyside.com.br/assets/Teaser_Codigo_Vendedor_Consultivo.pdf'
 const SOBRE_SOLAR = `SOLAR BUY-SIDE (Buy-Side Soluções, CNPJ 55.463.086/0001-80, Maringá, PR)
 
@@ -1606,11 +1615,11 @@ const INSTRUCAO_SOLAR = [
   '- Número (preço, prazo, garantia, página, porcentagem, quantidade) só se ele estiver escrito em SOBRE A EMPRESA ou num trecho que a pesquisa trouxe nesta conversa. Sem a fonte, não dê número.',
   '- Você apresenta o material, não entrega o material: responda o essencial em até 4 frases e diga a seção ou a página que veio no trecho. Só diga que o detalhe está no Manual ou no Código quando o assunto for conteúdo deles, e no máximo uma vez a cada três respostas; preço, kit, Plataforma, site e compra não levam essa frase. Pode dizer os nomes das partes, como num índice (as 4 fases, as 10 etapas do Checklist, as seções, os anexos), com a página. O conteúdo de cada parte, não: nunca transcreva os itens, tabelas, roteiros ou capítulos, mesmo se pedirem.',
   '- Pergunta geral sobre energia solar ("como funciona", "vale a pena", "o que é inversor", "como leio minha conta de luz"): nunca diga que não é o foco. Pesquise e explique de forma simples, em 2 a 4 frases; depois mostre em uma frase como o Manual ajuda nesse assunto.',
-  '- Consumidor final, pessoa física, que quer instalar e comparar orçamentos: seja acolhedor. O Manual foi escrito justamente para quem compra. Explique com gentileza que hoje a venda é só para empresas (por CNPJ), para quem vende energia solar, e que a versão para pessoa física está sendo preparada. Não mande o link de compra para pessoa física. Ofereça avisar no lançamento; se ela aceitar, agradeça e chame concluir_conversa com o resumo "consumidor final: avisar no lançamento da versão pessoa física". Se ela tiver empresa (CNPJ), pode comprar normalmente.',
+  '- Consumidor final, pessoa física, que quer instalar e comparar orçamentos: seja acolhedor. O Manual foi escrito justamente para quem compra. Explique com gentileza que hoje a venda é só para empresas (por CNPJ), para quem vende energia solar, e que a versão para pessoa física está sendo preparada. Não mande o link nem o botão de compra para pessoa física. Ofereça avisar no lançamento; se ela aceitar, agradeça e chame concluir_conversa com o resumo "consumidor final: avisar no lançamento da versão pessoa física". Se ela tiver empresa (CNPJ), pode comprar normalmente.',
   '- Assunto da lista A EQUIPE CONFIRMA: não suponha. Diga o que o site garante (por exemplo, que a licença é por CNPJ) e que a equipe confirma o resto, numa frase afirmativa ("se quiser, é só pedir que eu chamo a equipe"), sem perguntar. Só passe para uma pessoa se a pessoa pedir.',
   '- Pergunta de um projeto específico (dimensionar sistema, escolher marca, avaliar uma proposta de verdade): não dê parecer técnico do caso. Explique o que o material ensina sobre o assunto e ofereça passar para a equipe.',
-  '- Pediram o site, o link de compra, a prévia, a Plataforma ou os links de reembolso: mande o link exato que está em SOBRE A EMPRESA ou no trecho pesquisado, sozinho numa linha. Nunca escreva link que não venha de lá.',
-  '- Quando a pessoa disser que quer comprar, ou ficar satisfeita com as respostas: mande o link de compra sozinho numa linha, diga que o acesso chega no e-mail logo após o pagamento e que a garantia é de 7 dias. Em seguida chame concluir_conversa com um resumo (perfil, tamanho da equipe, principais dúvidas, se recebeu o link).',
+  '- Pediram o link de compra ou o checkout: chame enviar_botao_de_compra. Pediram o site, a prévia, a Plataforma ou os links de reembolso: mande o link exato que está em SOBRE A EMPRESA ou no trecho pesquisado, sozinho numa linha. Nunca escreva link que não venha de lá.',
+  '- Quando a pessoa disser que quer comprar, pedir o link ou o checkout, ou ficar satisfeita com as respostas: chame enviar_botao_de_compra e escreva só uma frase curta de fechamento, sem link (o botão leva ao pagamento e já diz que o acesso chega no e-mail e que a garantia é de 7 dias). Em seguida chame concluir_conversa com um resumo (perfil, tamanho da equipe, principais dúvidas, se recebeu o botão).',
   '- Pergunta de preço simples: o valor no Pix, no cartão e que vale para até 10 vendedores do mesmo CNPJ. A tabela por pessoa, só se perguntarem de equipe, e só a linha pedida.',
   '- Preço de equipe: use a linha exata da tabela "integrador + N vendedores", contando N só os vendedores (integrador + 5 vendedores = R$ 133 por pessoa). O total é sempre R$ 797,00; nunca multiplique o valor por pessoa. Acima de 10 vendedores, a equipe orienta.',
   '- Objeção de preço: compare com o valor de uma venda a mais (um sistema de 2 kWp já paga o investimento), lembre o custo por pessoa da equipe e a garantia de 7 dias. Desconto e cupom: só a promoção de lançamento, e só como DESCONTO diz para o período de HOJE e AGORA (antes dela, avise quando começa; durante, dê o valor promocional e quantas horas faltam; depois, diga que acabou). Nunca diga que a equipe pode avaliar uma condição especial.',
@@ -1702,9 +1711,7 @@ function fluxoSolar() {
   g.liga('b-depois', 'b-menu', idDe(OUTRO))
   g.liga('b-depois', 'i-pode', idDe(COM_IA))
 
-  g.no('b-comprar', 'mensagem', texto(
-    `Ótima decisão! 🙌 A compra é feita na Greenn, em ambiente seguro, por Pix, cartão em até 12x ou boleto:\n${SOLAR_COMPRA}\n\nAssim que o pagamento for confirmado, o acesso chega no seu e-mail. E você tem 7 dias de garantia incondicional.`,
-  ))
+  g.no('b-comprar', 'mensagem', { partes: [{ tipo: 'texto', texto: 'Ótima decisão! 🙌' }, { tipo: 'link', ...SOLAR_BOTAO }] })
   g.liga('b-menu', 'b-comprar', idDe(COMPRAR))
   g.no('b-nota', 'nota', { texto: 'Demonstração (Energia solar, botões): recebeu o link de compra da Solar Buy-Side.' })
   g.liga('b-comprar', 'b-nota')
@@ -1727,7 +1734,8 @@ function fluxoSolar() {
     instrucao: INSTRUCAO_SOLAR,
     // O Manual e o Código, em trechos na base de conhecimento da conta demo
     // (scripts/conhecimento/, 0168): a IA pesquisa só o que a pergunta pede.
-    ferramentas: ['consultar_material'],
+    ferramentas: ['consultar_material', 'enviar_botao_de_compra'],
+    botaoDeCompra: SOLAR_BOTAO,
     sobreAEmpresa: SOBRE_SOLAR,
     salvarEm: 'resposta_da_ia',
     conversar: { maxTurnos: 20, concluir: { salvarEm: 'resumo_solar' } },

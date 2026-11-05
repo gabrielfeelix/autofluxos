@@ -1113,6 +1113,18 @@ function avancar(
               break
             }
 
+            case 'link':
+              acoes.push({
+                tipo: 'enviar_link',
+                texto: interpolar(parte.texto, s.vars),
+                rotulo: parte.rotulo,
+                url: interpolar(parte.url, s.vars),
+                ...(parte.imagem?.startsWith('https://') ? { imagem: parte.imagem } : {}),
+                ...(esperaMs > 0 ? { atrasoMs: esperaMs } : {}),
+              })
+              esperaMs = 0
+              break
+
             case 'salvar': {
               const valor = interpolar(parte.valor, s.vars)
               s.vars[parte.campo] = valor
@@ -1920,6 +1932,9 @@ function chamarIa(no: NoIa, s: Sessao): Acao {
     ...(no.data.conversar?.concluir ? { concluir: true as const } : {}),
     ...(no.data.conversar?.cobranca ? { cobranca: no.data.conversar.cobranca } : {}),
     ...(no.data.cardapio ? { cardapio: no.data.cardapio } : {}),
+    ...(no.data.botaoDeCompra?.url.startsWith('https://') && no.data.botaoDeCompra.rotulo.trim() !== ''
+      ? { botaoDeCompra: no.data.botaoDeCompra }
+      : {}),
     ...((no.data.sobreAEmpresa ?? '').trim() !== '' ? { sobreAEmpresa: no.data.sobreAEmpresa!.trim() } : {}),
   }
 }

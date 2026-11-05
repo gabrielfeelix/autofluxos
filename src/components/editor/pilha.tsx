@@ -36,6 +36,7 @@ const ICONE_DA_PARTE: Record<TipoDeParte, string> = {
   midia: '▣',
   atraso: '⏱',
   salvar: '↓',
+  link: '⇗',
   'auto-off': '⏻',
 }
 
@@ -45,6 +46,7 @@ const DICA_DA_PARTE: Record<TipoDeParte, string> = {
   midia: 'Manda foto, vídeo, áudio ou documento',
   atraso: 'Mostra "digitando…" antes do próximo pedaço',
   salvar: 'Grava um valor no contato',
+  link: 'Manda um botão que abre um link, como o de pagamento',
   'auto-off': 'Para de responder este contato',
 }
 
@@ -53,6 +55,7 @@ const NOME_DA_PARTE: Record<TipoDeParte, string> = {
   midia: 'Arquivo',
   atraso: 'Atraso',
   salvar: 'Guardar',
+  link: 'Botão com link',
   'auto-off': 'Desligar o bot',
 }
 
@@ -150,7 +153,7 @@ export function PilhaDeMensagem({
         da leitura, e a coluna do painel deixa de ter uma faixa de sobras.
       */}
       <div className="grid grid-cols-3 gap-1.5 border-t border-line pt-3">
-        {(['texto', 'midia', 'atraso', 'salvar', 'auto-off'] as const).map((tipo) => (
+        {(['texto', 'midia', 'link', 'atraso', 'salvar', 'auto-off'] as const).map((tipo) => (
           <button
             key={tipo}
             type="button"
@@ -328,6 +331,40 @@ function Corpo({
           />
           <p className="text-[10.5px] leading-4 text-dim">
             Grava no contato e vira coluna na tela de Contatos.
+          </p>
+        </div>
+      )
+
+    case 'link':
+      return (
+        <div className="space-y-2">
+          <CampoDeTexto
+            valor={parte.texto}
+            aoMudar={(texto) => aoMudar({ ...parte, texto })}
+            conhecidas={variaveis}
+          />
+          <input
+            value={parte.rotulo}
+            maxLength={20}
+            placeholder="Exemplo: Comprar agora"
+            onChange={(e) => aoMudar({ ...parte, rotulo: e.target.value })}
+            className="app-field px-3 py-2.5 text-[12.5px]"
+          />
+          <LinhaComVariaveis
+            valor={parte.url}
+            placeholder="Exemplo: https://pagamento.seusite.com.br"
+            conhecidas={variaveis}
+            variaveis={variaveis}
+            aoMudar={(url) => aoMudar({ ...parte, url })}
+          />
+          <input
+            value={parte.imagem ?? ''}
+            placeholder="Foto no topo, opcional. Exemplo: https://seusite.com.br/capa.png"
+            onChange={(e) => aoMudar({ ...parte, imagem: e.target.value || undefined })}
+            className="app-field px-3 py-2.5 text-[12.5px]"
+          />
+          <p className="text-[10.5px] leading-4 text-dim">
+            No WhatsApp sai como botão; o nome do botão vai até 20 caracteres.
           </p>
         </div>
       )
