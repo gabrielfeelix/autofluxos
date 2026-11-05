@@ -76,6 +76,7 @@ const DEMOS = [
   { id: 'loja-de-roupas', rotulo: 'Loja de roupas', fluxoId: '3c6fdae0-fab8-4d17-8be1-c3bd7131524b' },
   { id: 'salao-e-servicos', rotulo: 'Salão e serviços', fluxoId: '49f0a40c-4eaa-4161-a3b2-e25b8467a928' },
   { id: 'aulas-e-estudio', rotulo: 'Aulas e estúdio', fluxoId: '6679e515-d89e-46b5-825b-d2f907467c7c' },
+  { id: 'energia-solar', rotulo: 'Energia solar', fluxoId: '39037746-6900-451f-b550-941d1e11bed2' },
   { id: 'loja-online', rotulo: 'Loja online', fluxoId: '8d4ba017-0a61-4672-b6ce-b1b347966e2d' },
 ]
 no('demo-aviso', 'mensagem', {

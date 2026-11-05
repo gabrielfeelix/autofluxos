@@ -12,8 +12,8 @@ horário é marcado.
 1. **Oi com o nome** do perfil do WhatsApp (sem nome, só "Oi!") e o aviso de
    que é uma demonstração.
 2. **Qual é o seu ramo?** Pizzaria, Hamburgueria, Restaurante, Loja de roupas,
-   Salão e serviços, Aulas e estúdio, Loja online (PCYES) ou "Quero no meu
-   negócio".
+   Salão e serviços, Aulas e estúdio, Energia solar (Solar Buy-Side), Loja
+   online (PCYES) ou "Quero no meu negócio".
 3. **Com botões ou com IA?**
    - **Com botões**: uma compra de verdade. "Ver cardápio" (ou "Fazer
      pedido") abre a **lista** do WhatsApp: nos ramos de comida, primeiro as
@@ -112,6 +112,19 @@ bolha só (campo novo `imagem` na pergunta); quem escolhe retirada recebe
 perguntas (antes, parar de testar virava "Vou te passar para um atendente"
 horas depois).
 
+A **Energia solar** é a Solar Buy-Side de verdade (5/nov/2026, para o Francis
+Poloni testar): o método de venda consultiva para integradores e vendedores
+solares, com o conteúdo, os preços e o checkout real da Greenn do site
+`solarbuyside.com.br`. Botões: método, kit (com a prévia do Código em PDF),
+Plataforma de avaliação, preço, garantia e "Quero comprar" com o link. IA:
+"Sobre a empresa" e instrução próprios no bloco (`SOBRE_SOLAR` e
+`INSTRUCAO_SOLAR` em `scripts/demo/fluxos.mts`), sem ferramenta; manda o link
+de compra e conclui. Preço mudou no site (promoção de lançamento é 25% OFF por
+48h, pelo link com cupom): mude o texto e publique com `--so=solar`. Testado
+no simulador: equipe de 4 vendedores dá R$ 797 total e R$ 159 por pessoa (a
+primeira versão multiplicava), desconto recusado sem "condição especial",
+consumidor final encaminhado para a equipe.
+
 A **Loja online** é a PCYES de verdade: os botões são a cópia do menu da PCYES
 (comprar, meu pedido, suporte, garantia, empresa, parcerias), e "Quero
 comprar" abre uma vitrine só de botões com produtos reais (headsets, teclados,
@@ -143,6 +156,7 @@ repete as opções e ensina a escrever *inicio*.
 | Demo · Loja de roupas | `3c6fdae0-fab8-4d17-8be1-c3bd7131524b` |
 | Demo · Salão e serviços | `49f0a40c-4eaa-4161-a3b2-e25b8467a928` |
 | Demo · Aulas e estúdio | `6679e515-d89e-46b5-825b-d2f907467c7c` |
+| Demo · Energia solar (Solar Buy-Side) | `39037746-6900-451f-b550-941d1e11bed2` |
 | Demo · Loja online (PCYES) | `8d4ba017-0a61-4672-b6ce-b1b347966e2d` |
 | Demo · PCYES produtos (vitrine com botões) | `dabe5456-691a-4f6b-bc88-25cce1d2924a` |
 | Demo · PCYES menu | `9f17964c-2d7c-4541-8a50-7068b3edab4d` |
@@ -202,7 +216,9 @@ Tudo é refeito por script, idempotente (o que existe é pulado):
 - `scripts/mover-canal.mts`: move um número entre contas.
 
 Todos rodam com `npx tsx --conditions=react-server` e fazem dry-run sem
-`--gravar`.
+`--gravar`. `fluxos.mts --so=inicio,solar` publica só os fluxos citados, sem
+reler a PCYES: em 5/nov o menu da PCYES saltava para um fluxo novo
+(`968c958a...`) fora de `PCYES_FLUXOS`, e a rodada inteira parava.
 
 ## Fontes das imagens
 

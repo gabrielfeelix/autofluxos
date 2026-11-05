@@ -4,6 +4,7 @@
  *   npx tsx --conditions=react-server scripts/demo/fluxos.mts            (dry-run: monta e valida)
  *   npx tsx --conditions=react-server scripts/demo/fluxos.mts --gravar   (cria o que falta e publica)
  *   ... --gravar --sem-loja   (não relê a loja da PCYES, se ela estiver fora do ar)
+ *   ... --gravar --so=inicio,solar   (publica só estes fluxos)
  *
  * Publica pelo mesmo `publicar()` da tela, que roda `validar()`, a conferência
  * de publicação e a RPC `publicar_fluxo`: cada rodada vira uma versão nova, e
@@ -44,6 +45,12 @@ const { lojaAtivaDaConta } = await import('@/server/adaptador-da-loja')
 const GRAVAR = process.argv.includes('--gravar')
 /** Não relê a loja da PCYES: a vitrine com botões dela fica na versão publicada. Para quando a loja está fora do ar. */
 const SEM_LOJA = process.argv.includes('--sem-loja')
+/**
+ * Publica só estes fluxos (`--so=inicio,solar`), sem reler nem copiar a PCYES.
+ * Para mexer num ramo sem depender do resto: os fluxos da PCYES mudam na conta
+ * dela, e uma mudança lá (um salto novo no menu) trava a rodada inteira.
+ */
+const SO = process.argv.find((a) => a.startsWith('--so='))?.slice('--so='.length).split(',').filter(Boolean)
 const DEMO = '3a1d5ac8-369c-4373-856a-495468e7bad4'
 const PCYES = '64dbc3a9-1f77-4892-9770-e3e4be9e14cd'
 const ACERVO = `https://${new URL(process.env.SUPABASE_URL!).host}/storage/v1/object/public/autofluxos-acervo/${DEMO}`
@@ -528,6 +535,7 @@ const NOMES = {
   lead: 'Demo · Quero no meu negócio',
   loja: 'Demo · Loja online (PCYES)',
   pcyesProdutos: 'Demo · PCYES produtos',
+  solar: 'Demo · Energia solar',
   ...Object.fromEntries(RAMOS.map((r) => [r.chave, `Demo · ${r.rotulo}`])),
 } as Record<string, string>
 
@@ -556,6 +564,7 @@ for (const [chave, nome] of Object.entries(NOMES)) {
 
 /* -------------------------------------------------------- peças comuns */
 const LEAD_RESPOSTA = 'Quero no meu negócio'
+const ENERGIA_SOLAR = 'Energia solar'
 const TROCAR = 'Trocar de ramo'
 const VOLTAR = 'Voltar ao menu'
 const MENSAGENS_DO_LEAD = [
@@ -623,7 +632,7 @@ function saudacao(g: Grafo, depois: string): void {
 function fluxoInicio() {
   const g = new Grafo('tem-nome')
   saudacao(g, 'ramo')
-  const rotulos = [...RAMOS.map((r) => r.rotulo), 'Loja online (PCYES)', LEAD_RESPOSTA]
+  const rotulos = [...RAMOS.map((r) => r.rotulo), ENERGIA_SOLAR, 'Loja online (PCYES)', LEAD_RESPOSTA]
   g.no('ramo', 'pergunta', {
     texto: 'Qual é o seu ramo? Escolha um para testar 👇\n_Para recomeçar a qualquer momento, escreva *inicio*._',
     salvarEm: 'ramo_demo',
@@ -634,6 +643,8 @@ function fluxoInicio() {
     g.no(`ir-${r.chave}`, 'ir-fluxo', { fluxoId: ids[r.chave], rotulo: NOMES[r.chave] })
     g.liga('ramo', `ir-${r.chave}`, idDe(r.rotulo))
   }
+  g.no('ir-solar', 'ir-fluxo', { fluxoId: ids.solar, rotulo: NOMES.solar })
+  g.liga('ramo', 'ir-solar', idDe(ENERGIA_SOLAR))
   g.no('ir-loja', 'ir-fluxo', { fluxoId: ids.loja, rotulo: NOMES.loja })
   g.liga('ramo', 'ir-loja', idDe('Loja online (PCYES)'))
   lead(g)
@@ -1522,16 +1533,205 @@ async function copiaDaPcyes(origem: string) {
   return grafo
 }
 
+/* ------------------------------------------- energia solar (Solar Buy-Side) */
+/**
+ * O ramo de energia solar é a Solar Buy-Side de verdade, como a loja online é
+ * a PCYES: o método de venda consultiva do Francis Poloni para integradores e
+ * vendedores solares (projeto `solarbuy-side-platform`). O conteúdo e os
+ * preços são os de https://solarbuyside.com.br, lidos em 05/nov/2026; o link
+ * de compra é o checkout real da Greenn.
+ *
+ * O preço muda: na promoção de lançamento a página mostra 25% de desconto
+ * pelo link com cupom. Por isso a IA não anuncia desconto que não esteja aqui
+ * e diz que o valor da promoção aparece no próprio link. Mudou o preço no
+ * site: mude aqui e publique de novo.
+ */
+const SOLAR_COMPRA = 'https://payfast.greenn.com.br/uuar4h6'
+const SOLAR_PREVIA = 'https://solarbuyside.com.br/assets/Teaser_Codigo_Vendedor_Consultivo.pdf'
+const SOBRE_SOLAR = `SOLAR BUY-SIDE (Buy-Side Soluções, CNPJ 55.463.086/0001-80)
+
+O QUE É: o Método Solar Buy-Side ensina integradores e vendedores de energia solar fotovoltaica a conduzir a venda pela perspectiva de quem compra. Em vez de disputar preço, o vendedor passa a vender decisão técnica: reduz o risco, a insegurança e o arrependimento do comprador. Lema: "vender decisão, não preço".
+O PROBLEMA: a conversão média do setor é de 20% (Greener 2026). Quase 4 em cada 5 compradores não fecham, muitas vezes sem objeção nenhuma; o vendedor só vê o cliente sumir. É a "eliminação silenciosa": o comprador avalia confiança, risco e clareza antes do preço.
+PARA QUEM É: empresas de integração solar, empresas iniciantes no setor e representantes comerciais de energia solar. Não exige conhecimento técnico: a linguagem é clara, para vendedores de todos os níveis.
+AUTORES: Francis Poloni, visão Buy-Side (comprador), no setor desde 2019, assessorando comprador e vendedor. Ovídio Collesi, visão Sell-Side (vendedor), em venda e pós-venda solar desde 2020, com passagem por marketplaces, distribuidores, integradoras e certificadora.
+
+O KIT COMPLETO
+1. Manual Solar Buy-Side: mais de 130 páginas e 160 tópicos, em PDF interativo com índice navegável. Mostra, pela ótica do comprador residencial e empresarial, como ele avalia integradoras, compara propostas e decide. Jornada de compra em 4 fases, do diagnóstico à decisão, com anexos técnicos. Acesso vitalício.
+2. Código do Vendedor Consultivo: cerca de 30 páginas. Mentalidade Buy-Side, diagnóstico dos critérios de compra, roteiro da venda consultiva, antecipação de objeções e blindagem contra a guerra de preços (o "leilão reverso"). Inclui Checklist Buy-Side de 9 etapas, Mapa do Essencial, Laboratório de Empatia e roteiros de treinamento com guia de objeções de preço.
+As 4 fases: Conhecimento (dados qualificados do cliente antes do primeiro orçamento), Preparação (credibilidade, análise financeira e postura consultiva), Análise (blindagem contra o leilão reverso e a cilada do menor preço) e Decisão (o cliente valida uma escolha racional).
+3. Plataforma de Avaliação de Proposta Comercial (plataforma.solarbuyside.com.br): dá nota à proposta antes de ela chegar ao cliente. Compara propostas pelo Índice de Confiabilidade Solar Buy-Side, de 0 a 100, em dois grupos. Empresa: atuação no ramo solar, tempo de empresa, registro no CREA, sistemas já instalados, equipe de instalação própria, sede física, prazo de instalação, garantia de projeto e execução, prova de manutenção, prazo de assistência, memorial descritivo e diagrama unifilar, confiança no vendedor e Reclame Aqui. Tecnologia: geração anual, marca e garantias do módulo e do inversor, sobrecarga DC/AC e reputação da distribuidora e dos fabricantes. A viabilidade financeira (payback) entra como análise informativa. Exemplo do site: entre seis propostas para o mesmo cliente, venceu a de R$ 16.342,80, nem a mais cara nem a mais barata, por ter o maior índice (79,2 de 100). Acesso vitalício e uso ilimitado; cada compra libera 1 cadastro.
+4. Licença de Uso Coletiva: até 10 vendedores do mesmo CNPJ usam o Manual e o Código, e o preço NÃO muda com o tamanho da equipe: é sempre o mesmo valor único de R$ 797,00 por CNPJ. Quanto maior a equipe, menor o custo por pessoa (R$ 797,00 dividido entre o integrador e os vendedores): integrador + 1 vendedor, R$ 399 por pessoa; + 2 vendedores, R$ 265; + 3, R$ 199; + 4, R$ 159; + 5, R$ 133; + 6, R$ 114; + 7, R$ 99; + 8, R$ 88; + 9, R$ 80; + 10, R$ 72. Nunca multiplique esses valores: o total é sempre R$ 797,00.
+
+PREÇO E COMPRA
+Valor: R$ 797,00 por CNPJ, à vista no Pix, ou 12x de R$ 81,94 no cartão. Também aceita boleto. Em promoção de lançamento, o valor com desconto aparece no próprio link de compra.
+Link de compra (Greenn, ambiente seguro): ${SOLAR_COMPRA}
+Entrega: digital e imediata. Confirmado o pagamento, o Manual e o Código chegam em PDF no e-mail cadastrado em poucos minutos, com o link para o cadastro na Plataforma. Não chegou: conferir spam e promoções.
+Os PDFs vêm na versão vigente na compra e não recebem atualização depois; a Plataforma recebe melhorias sem custo.
+Garantia: incondicional de 7 dias corridos após a confirmação do pagamento. Reembolso integral, sem justificativa (CDC, art. 49), pelas regras da Greenn. Ao pedir reembolso, o acesso à Plataforma é cancelado na hora.
+Prévia gratuita do Código do Vendedor Consultivo (PDF): ${SOLAR_PREVIA}
+Resultado observado: em 2025, 5 integradoras aplicaram o método por 2 meses (quase 500 propostas, 126 vendas). A conversão média pode sair de 20% para 25% a 30%, conforme o domínio do método. É observação de campo, não garantia. Uma venda de um sistema residencial de 2 kWp já paga o investimento.
+Apoiadores institucionais (apoiam a missão; não escrevem o conteúdo nem participam da venda): BelEnergy, PV Clean, Solis, Clamper, Longi, Staubli, Hoymiles, SolarView e Electro Graphics.
+Próxima fase: o Manual de Compra e a Plataforma também para o consumidor final, em breve.
+Site: https://solarbuyside.com.br. E-mail: contato@buyside.com.br.`
+
+const INSTRUCAO_SOLAR = [
+  'Você é o atendente da Solar Buy-Side no WhatsApp. Quem escreve costuma ser integrador, vendedor ou representante comercial de energia solar.',
+  'Tom consultivo e profissional, frases curtas, como um especialista que respeita o tempo de quem pergunta.',
+  '- Primeira resposta: uma frase curta de boas-vindas da Solar Buy-Side e já responda o que a pessoa perguntou. Se ela só cumprimentou, pergunte se ela vende energia solar numa integradora, como vendedor ou como representante.',
+  '- Entenda o perfil cedo, sem interrogatório: o papel (integradora, vendedor, representante) e quantas pessoas vendem na equipe. Equipe com 2 ou mais vendedores: mostre a Licença de Uso Coletiva e o valor por pessoa.',
+  '- Pergunta de um projeto específico (dimensionar sistema, escolher marca, avaliar uma proposta de verdade): não dê parecer técnico do caso. Explique que o Manual e a Plataforma ensinam a fazer essa análise e ofereça passar para a equipe.',
+  '- Quem quer comprar um sistema solar para a própria casa ou empresa: explique que o kit de hoje é para quem vende e que a versão para o consumidor final sai em breve; ofereça passar o contato para a equipe.',
+  '- Quer ver o conteúdo antes de comprar: mande o link da prévia gratuita do Código do Vendedor Consultivo.',
+  '- Quando a pessoa disser que quer comprar, ou ficar satisfeita com as respostas: mande o link de compra sozinho numa linha, diga que o acesso chega no e-mail logo após o pagamento e que a garantia é de 7 dias. Em seguida chame concluir_conversa com um resumo (perfil, tamanho da equipe, principais dúvidas, se recebeu o link).',
+  '- Preço: o total é sempre R$ 797,00 por CNPJ, com 1 ou com 10 vendedores. Para equipe, diga o total e o custo por pessoa da tabela, contando o integrador (integrador + 4 vendedores = R$ 159 por pessoa). Nunca multiplique o valor por pessoa.',
+  '- Objeção de preço: compare com o valor de uma venda a mais (um sistema residencial de 2 kWp já paga o investimento), lembre o custo por pessoa da equipe e a garantia de 7 dias. Nunca ofereça desconto, cupom ou condição que não esteja em SOBRE A EMPRESA, e não diga que a equipe pode avaliar uma condição especial.',
+  '- Problema com compra já feita (e-mail que não chegou, acesso à Plataforma, reembolso): oriente com o que está em SOBRE A EMPRESA e, se não resolver, passe para uma pessoa.',
+  '- Resultados: cite a validação de 2025 como observação de campo, nunca como promessa.',
+  '- Termine cada resposta com uma pergunta curta que leve a conversa adiante, menos depois de concluir.',
+].join('\n')
+
+function fluxoSolar() {
+  const g = new Grafo('modo')
+  g.no('modo', 'pergunta', {
+    texto:
+      '☀️ *Energia solar*\nAqui o atendimento é o da *Solar Buy-Side* de verdade: o método de venda consultiva para integradores e vendedores de energia solar, com o conteúdo e os preços do site.\n_O link de compra que aparece aqui é o real, da Greenn._\nQuer testar com botões ou com IA?',
+    salvarEm: 'modo',
+    opcoes: opcoes(['Com botões', 'Com IA', TROCAR]),
+  })
+  trocar(g)
+  lead(g, 'lead', ENERGIA_SOLAR)
+  g.liga('modo', 'b-menu', idDe('Com botões'))
+  g.liga('modo', 'i-primeira', idDe('Com IA'))
+  g.liga('modo', 'trocar', idDe(TROCAR))
+
+  /* ---- botões */
+  const COMPRAR = 'Quero comprar'
+  const OUTRO = 'Ver outro assunto'
+  const COM_IA = 'Tirar dúvida com IA'
+  g.no('b-menu', 'pergunta', {
+    texto: '☀️ *Solar Buy-Side*\nVender decisão, não preço. Sobre o que você quer saber? 👇',
+    salvarEm: 'assunto',
+    opcoes: opcoes([
+      { rotulo: 'O que é o método', descricao: 'Vender pela ótica de quem compra' },
+      { rotulo: 'O que vem no kit', descricao: 'Manual, Código, Plataforma e licença' },
+      { rotulo: 'Avaliar proposta', descricao: 'A Plataforma dá nota antes de enviar' },
+      { rotulo: 'Preço e pagamento', descricao: 'Pix, cartão em 12x ou boleto' },
+      { rotulo: 'Garantia e acesso', descricao: '7 dias e entrega imediata no e-mail' },
+      { rotulo: COMPRAR, descricao: 'Link seguro da Greenn' },
+      { rotulo: COM_IA, descricao: 'Pergunte o que quiser' },
+      { rotulo: LEAD_RESPOSTA, descricao: 'Um atendente assim na sua empresa' },
+      { rotulo: TROCAR },
+    ]),
+  })
+  const respostas: [string, Record<string, unknown>][] = [
+    [
+      'O que é o método',
+      texto(
+        '*O Método Solar Buy-Side* ☀️\nA conversão média do setor é de 20%: quase 4 em cada 5 compradores não fecham, muitas vezes sem dizer por quê. É a *eliminação silenciosa*.\n\nO método ensina o integrador e o vendedor a enxergar a venda como o comprador enxerga: os riscos que ele sente, os critérios que usa para comparar propostas e o que o faz decidir. Assim você sai da guerra de preço e passa a vender decisão técnica.\n\nAssinado por *Francis Poloni* (visão do comprador) e *Ovídio Collesi* (visão do vendedor).',
+      ),
+    ],
+    [
+      'O que vem no kit',
+      {
+        partes: [
+          { tipo: 'atraso', segundos: 1 },
+          {
+            tipo: 'texto',
+            texto:
+              '*O que vem no kit* 📦\n• *Manual Solar Buy-Side*: mais de 130 páginas e 160 tópicos, com a jornada de compra em 4 fases, do diagnóstico à decisão.\n• *Código do Vendedor Consultivo*: postura consultiva, antecipação de objeções e blindagem contra o leilão de preço, com checklist e roteiros.\n• *Plataforma de Avaliação de Proposta*: dá nota à sua proposta antes de ela chegar ao cliente. Acesso vitalício.\n• *Licença de Uso Coletiva*: até 10 vendedores do mesmo CNPJ.\n\nTudo em PDF interativo, para ler no celular ou no computador. Aqui vai uma prévia do Código 👇',
+          },
+          { tipo: 'midia', midia: 'documento', url: SOLAR_PREVIA, legenda: 'Prévia gratuita do Código do Vendedor Consultivo', nomeArquivo: 'Previa-Codigo-do-Vendedor-Consultivo.pdf' },
+        ],
+      },
+    ],
+    [
+      'Avaliar proposta',
+      texto(
+        '*Plataforma de Avaliação de Proposta* 📊\nNo Buy-Side, a proposta comercial tem nota. A Plataforma compara propostas pelo *Índice de Confiabilidade*, de 0 a 100: a empresa (experiência, engenharia, equipe própria, garantias, assistência) e a tecnologia (geração, marcas, garantias, sobrecarga DC/AC, reputação de distribuidora e fabricantes).\n\nNo exemplo do site, entre seis propostas para o mesmo cliente, venceu a de *R$ 16.342,80*: nem a mais cara, nem a mais barata, a mais confiável.\n\nTeste a sua proposta antes que o mercado teste. Acesso vitalício, sem limite de uso.',
+      ),
+    ],
+    [
+      'Preço e pagamento',
+      texto(
+        '*Preço e pagamento* 💳\n*R$ 797,00* à vista no Pix, ou *12x de R$ 81,94* no cartão. Também aceita boleto.\n\nO valor é por CNPJ e já inclui a Licença de Uso Coletiva, para até 10 vendedores:\n• *Integrador + 1 vendedor*: R$ 399 por pessoa\n• *Integrador + 4 vendedores*: R$ 159 por pessoa\n• *Integrador + 10 vendedores*: R$ 72 por pessoa\n\nUma venda de um sistema residencial de 2 kWp já paga o investimento.',
+      ),
+    ],
+    [
+      'Garantia e acesso',
+      texto(
+        '*Garantia e acesso* ✅\n• *Entrega imediata*: confirmado o pagamento, o Manual e o Código chegam no seu e-mail em poucos minutos, com o link para o cadastro na Plataforma.\n• *Garantia incondicional de 7 dias*: se não for o que você esperava, o reembolso é integral, sem justificativa, pelas regras da Greenn.\n• *Pagamento seguro*: a compra é processada pela Greenn, em ambiente criptografado.\n\nNão achou o e-mail? Confira as pastas de spam e promoções.',
+      ),
+    ],
+  ]
+  respostas.forEach(([rotulo, data], i) => {
+    g.no(`b-r${i}`, 'mensagem', data)
+    g.liga('b-menu', `b-r${i}`, idDe(rotulo))
+    g.liga(`b-r${i}`, 'b-depois')
+  })
+  g.no('b-depois', 'pergunta', { texto: 'Quer saber mais alguma coisa?', salvarEm: 'escolha', opcoes: opcoes([COMPRAR, OUTRO, COM_IA]) })
+  g.liga('b-depois', 'b-comprar', idDe(COMPRAR))
+  g.liga('b-depois', 'b-menu', idDe(OUTRO))
+  g.liga('b-depois', 'i-pode', idDe(COM_IA))
+
+  g.no('b-comprar', 'mensagem', texto(
+    `Ótima decisão! 🙌 A compra é feita na Greenn, em ambiente seguro, por Pix, cartão em até 12x ou boleto:\n${SOLAR_COMPRA}\n\nAssim que o pagamento for confirmado, o acesso chega no seu e-mail. E você tem 7 dias de garantia incondicional.`,
+  ))
+  g.liga('b-menu', 'b-comprar', idDe(COMPRAR))
+  g.no('b-nota', 'nota', { texto: 'Demonstração (Energia solar, botões): recebeu o link de compra da Solar Buy-Side.' })
+  g.liga('b-comprar', 'b-nota')
+  g.no('b-fim', 'pergunta', { texto: 'Posso ajudar em mais alguma coisa?', salvarEm: 'escolha', opcoes: opcoes([OUTRO, LEAD_RESPOSTA, TROCAR]) })
+  g.liga('b-nota', 'b-fim')
+  g.liga('b-fim', 'b-menu', idDe(OUTRO))
+  g.liga('b-fim', 'lead', idDe(LEAD_RESPOSTA))
+  g.liga('b-fim', 'trocar', idDe(TROCAR))
+  g.liga('b-menu', 'i-pode', idDe(COM_IA))
+  g.liga('b-menu', 'lead', idDe(LEAD_RESPOSTA))
+  g.liga('b-menu', 'trocar', idDe(TROCAR))
+
+  /* ---- IA */
+  g.no('i-primeira', 'pergunta', {
+    texto: 'Pronto! A partir de agora eu sou o atendente da *Solar Buy-Side*. ☀️\nMande uma dúvida como se você fosse um integrador ou vendedor de energia solar. 😉\n_Para sair do papel, escreva *sair*. Para recomeçar, *inicio*._',
+    salvarEm: 'primeira_mensagem',
+  })
+  g.no('i-pode', 'pergunta', { texto: 'Pode mandar sua dúvida, sou o atendente da *Solar Buy-Side*. 😊', salvarEm: 'primeira_mensagem' })
+  g.no('i-conversa', 'ia', {
+    instrucao: INSTRUCAO_SOLAR,
+    ferramentas: [],
+    sobreAEmpresa: SOBRE_SOLAR,
+    salvarEm: 'resposta_da_ia',
+    conversar: { maxTurnos: 20, concluir: { salvarEm: 'resumo_solar' } },
+  })
+  g.liga('i-primeira', 'i-conversa')
+  g.liga('i-pode', 'i-conversa')
+  g.no('i-nota', 'nota', { texto: 'Demonstração (Energia solar, IA como Solar Buy-Side): {{resumo_solar}}' })
+  g.liga('i-conversa', 'i-nota', 'concluido')
+  g.no('i-depois', 'pergunta', { texto: 'Posso ajudar em mais alguma coisa?', salvarEm: 'escolha', opcoes: opcoes(['Continuar conversa', LEAD_RESPOSTA, TROCAR]) })
+  g.liga('i-nota', 'i-depois')
+  g.no('i-saida', 'pergunta', { texto: 'Saí do papel. 🙂 E agora?', salvarEm: 'escolha', opcoes: opcoes(['Continuar conversa', LEAD_RESPOSTA, TROCAR]) })
+  g.liga('i-conversa', 'i-saida')
+  for (const p of ['i-depois', 'i-saida']) {
+    g.liga(p, 'i-pode', idDe('Continuar conversa'))
+    g.liga(p, 'lead', idDe(LEAD_RESPOSTA))
+    g.liga(p, 'trocar', idDe(TROCAR))
+  }
+  return g.json()
+}
+
 /* ---------------------------------------------------- montar e validar */
 const grafos: Record<string, unknown> = {
   inicio: fluxoInicio(),
   qr: fluxoQr(),
   lead: fluxoLead(),
   loja: fluxoLoja(),
-  ...(SEM_LOJA ? {} : { pcyesProdutos: await fluxoProdutosPcyes() }),
+  solar: fluxoSolar(),
+  ...(SEM_LOJA || SO ? {} : { pcyesProdutos: await fluxoProdutosPcyes() }),
   ...Object.fromEntries(RAMOS.map((r) => [r.chave, fluxoRamo(r)])),
 }
-for (const origem of Object.keys(PCYES_FLUXOS)) grafos[`pcyes:${origem}`] = await copiaDaPcyes(origem)
+if (!SO) for (const origem of Object.keys(PCYES_FLUXOS)) grafos[`pcyes:${origem}`] = await copiaDaPcyes(origem)
+if (SO) {
+  for (const chave of SO) if (!(chave in grafos)) throw new Error(`--so: não conheço o fluxo "${chave}"`)
+  for (const chave of Object.keys(grafos)) if (!SO.includes(chave)) delete grafos[chave]
+}
 
 const listaDeFluxos = Object.keys(NOMES).map((k) => ({ id: ids[k], nome: NOMES[k], publicado: true, ativo: true }))
 let falhou = false
