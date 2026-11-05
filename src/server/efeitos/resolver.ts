@@ -130,6 +130,8 @@ export type OpcoesDeEfeitos = {
    * traduzir "amanhã", e o chute errado é um agendamento meses fora.
    */
   hoje?: string
+  /** A hora de agora no fuso da conta, `HH:MM`, para a IA. */
+  agora?: string
   /**
    * As datas prontas do fluxo: `{{hoje}}`, `{{semana_de}}`, e as outras.
    *
@@ -972,6 +974,7 @@ async function responderComFerramentas({
     instrucao: chamada.instrucao,
     pergunta,
     hoje: opcoes.hoje,
+    agora: opcoes.agora,
     numeroDoCanal: opcoes.numeroDoCanal,
   }
 

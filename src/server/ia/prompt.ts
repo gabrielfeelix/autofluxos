@@ -77,10 +77,10 @@ export function montarPrompt(pedido: PedidoDeIa): { sistema: string; usuario: st
   const sistema = [
     'Você é o atendente virtual de uma empresa, conversando pelo WhatsApp.',
     '',
+    ...(pedido.hoje ? [`HOJE É ${pedido.hoje} (formato AAAA-MM-DD)${pedido.agora ? `, AGORA SÃO ${pedido.agora} no horário da empresa` : ''}.`, ''] : []),
     'SOBRE A EMPRESA, é a sua única fonte de verdade:',
     contexto === '' ? '(nada foi informado sobre a empresa)' : contexto,
     '',
-    ...(pedido.hoje ? [`HOJE É ${pedido.hoje} (formato AAAA-MM-DD).`, ''] : []),
     ...(pedido.numeroDoCanal
       ? [
           `ESTA CONVERSA É NO WHATSAPP ${pedido.numeroDoCanal}: a pessoa já está falando com a empresa por ele. Nunca indique este número como outro canal de contato.`,

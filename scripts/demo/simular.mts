@@ -25,7 +25,7 @@ const { acharFluxo, acharVersao } = await import('@/server/repos/fluxos')
 const { acharCliente } = await import('@/server/repos/clientes')
 const { sessaoNova } = await import('@/core/engine/types')
 const { varsDeData } = await import('@/core/datas')
-const { SEMPRE_ABERTO, hojeNaConta } = await import('@/core/horario')
+const { SEMPRE_ABERTO, hojeNaConta, horaNaConta } = await import('@/core/horario')
 const { casarGatilho } = await import('@/core/gatilhos')
 const { gatilhosAtivos } = await import('@/server/repos/gatilhos')
 
@@ -55,7 +55,8 @@ async function rodada(entrada: Record<string, unknown>) {
     modelo,
     contextoNegocio: conta?.contextoNegocio ?? '',
     historico: historico.slice(-20),
-    hoje: hojeNaConta(SEMPRE_ABERTO.fuso),
+    hoje: process.env.SIMULAR_HOJE ?? hojeNaConta(SEMPRE_ABERTO.fuso),
+    agora: process.env.SIMULAR_AGORA ?? horaNaConta(SEMPRE_ABERTO.fuso),
     datas: varsDeData(SEMPRE_ABERTO.fuso),
     origem: 'simulador',
     clienteId,

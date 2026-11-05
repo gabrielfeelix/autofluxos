@@ -52,6 +52,8 @@ export type PedidoDeIa = {
    * Quem informa é o resolvedor, que é onde o mundo entra.
    */
   hoje?: string
+  /** A hora de agora na conta, em `HH:MM`. Vai junto com `hoje`. */
+  agora?: string
   /**
    * O prompt já montado, para quem não é o atendente virtual: a IA do
    * atendente (`ia/copiloto.ts`) fala com quem atende, e não com o cliente, e

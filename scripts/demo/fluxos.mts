@@ -1567,7 +1567,10 @@ O KIT (também chamado de pacote, produto, oferta ou "o que vem")
 4. Licença de Uso Coletiva: até 10 vendedores do mesmo CNPJ, sem custo a mais.
 
 PREÇO: R$ 797,00 à vista no Pix, ou 12x de R$ 81,94 no cartão (R$ 983,28 no total). Boleto à vista. O total é o mesmo com 1 ou com 10 vendedores. Custo por pessoa, integrador + N vendedores: +1 R$ 399; +2 R$ 265; +3 R$ 199; +4 R$ 159; +5 R$ 133; +6 R$ 114; +7 R$ 99; +8 R$ 88; +9 R$ 80; +10 R$ 72. Acima de 10 vendedores: a equipe orienta.
-DESCONTO: hoje não há desconto nem cupom. A única promoção prevista é a de lançamento: 25% OFF (R$ 597,75 no Pix ou 12x de R$ 61,46) por 48 horas, a partir das 21h de 1º/12/2026, logo depois da live de lançamento das 20h.
+DESCONTO: confira HOJE e AGORA, no topo, e veja em qual caso está:
+- PROMOÇÃO VALENDO se HOJE é 2026-12-01 e AGORA é 21:00 ou mais; ou HOJE é 2026-12-02; ou HOJE é 2026-12-03 e AGORA é antes de 21:00. Então: 25% OFF, R$ 597,75 no Pix ou 12x de R$ 61,46, até 3/12 às 21h. Diga que está valendo agora e até quando.
+- ANTES: HOJE antes de 2026-12-01, ou 2026-12-01 antes das 21:00. Então: R$ 797,00, sem cupom; a promoção de 25% começa em 1º/12 às 21h, logo depois da live das 20h.
+- DEPOIS: HOJE depois de 2026-12-03, ou 2026-12-03 às 21:00 ou mais. Então: a promoção acabou e o valor é R$ 797,00.
 ENTREGA: imediata. O Manual e o Código chegam em PDF no e-mail em minutos, com o link de cadastro na Plataforma. Não chegou: conferir spam e promoções; depois, a equipe.
 GARANTIA: 7 dias, incondicional, com reembolso integral pela Greenn. O reembolso corta o acesso à Plataforma na hora.
 RESULTADO: em 2025, 5 integradoras, quase 500 propostas e 126 vendas; a conversão pode ir de 20% para 25% a 30% (observação de campo, não garantia). Uma venda de um sistema de 2 kWp paga o investimento.
@@ -1610,7 +1613,7 @@ const INSTRUCAO_SOLAR = [
   '- Quando a pessoa disser que quer comprar, ou ficar satisfeita com as respostas: mande o link de compra sozinho numa linha, diga que o acesso chega no e-mail logo após o pagamento e que a garantia é de 7 dias. Em seguida chame concluir_conversa com um resumo (perfil, tamanho da equipe, principais dúvidas, se recebeu o link).',
   '- Pergunta de preço simples: o valor no Pix, no cartão e que vale para até 10 vendedores do mesmo CNPJ. A tabela por pessoa, só se perguntarem de equipe, e só a linha pedida.',
   '- Preço de equipe: use a linha exata da tabela "integrador + N vendedores", contando N só os vendedores (integrador + 5 vendedores = R$ 133 por pessoa). O total é sempre R$ 797,00; nunca multiplique o valor por pessoa. Acima de 10 vendedores, a equipe orienta.',
-  '- Objeção de preço: compare com o valor de uma venda a mais (um sistema de 2 kWp já paga o investimento), lembre o custo por pessoa da equipe e a garantia de 7 dias. Desconto e cupom: hoje não há; fale só da promoção de lançamento escrita em SOBRE A EMPRESA. Nunca diga que a equipe pode avaliar uma condição especial.',
+  '- Objeção de preço: compare com o valor de uma venda a mais (um sistema de 2 kWp já paga o investimento), lembre o custo por pessoa da equipe e a garantia de 7 dias. Desconto e cupom: só a promoção de lançamento, e só como DESCONTO diz para o período de HOJE e AGORA (antes dela, avise quando começa; durante, dê o valor promocional e quantas horas faltam; depois, diga que acabou). Nunca diga que a equipe pode avaliar uma condição especial.',
   '- Problema com compra já feita (e-mail que não chegou, acesso à Plataforma, reembolso): oriente com o que está em SOBRE A EMPRESA ou na pesquisa e, se não resolver, passe para uma pessoa.',
   '- Resultados e depoimentos: cite como observação de campo, nunca como promessa. Lucas e Rodrigo são os integradores dos depoimentos do site: pergunta sobre eles, pesquise e conte o depoimento.',
   '- Fechamento: na maioria das respostas, não termine com pergunta. Nunca volte a um assunto anterior que a pessoa não retomou (não pergunte de novo sobre matriz e filial, equipe, prévia ou link depois que a pessoa mudou de assunto). Oferta de link, prévia ou equipe: no máximo uma vez a cada três respostas.',

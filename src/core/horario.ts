@@ -149,6 +149,15 @@ export function agoraNaConta(
  * `agoraNaConta`: quem tem horário de atendimento tem fuso configurado, e é
  * ele que descreve o dia de quem está conversando.
  */
+/**
+ * A hora de agora na conta, em `HH:MM` (24h). A IA precisa dela além do dia:
+ * promoção que começa às 21h e acaba 48h depois só é respondida certo se o
+ * modelo souber se já passou das 21h (Solar Buy-Side, 1º/12/2026).
+ */
+export function horaNaConta(fuso: string, agora: Date = new Date()): string {
+  return new Intl.DateTimeFormat('en-GB', { timeZone: fuso, hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }).format(agora)
+}
+
 export function hojeNaConta(fuso: string, agora: Date = new Date()): string {
   // `en-CA` produz `AAAA-MM-DD` direto, que é o formato que a agenda aceita.
   return new Intl.DateTimeFormat('en-CA', {
