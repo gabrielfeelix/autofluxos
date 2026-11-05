@@ -1624,7 +1624,7 @@ const INSTRUCAO_SOLAR = [
   '- Preço de equipe: use a linha exata da tabela "integrador + N vendedores", contando N só os vendedores (integrador + 5 vendedores = R$ 133 por pessoa). O total é sempre R$ 797,00; nunca multiplique o valor por pessoa. Acima de 10 vendedores, a equipe orienta.',
   '- Objeção de preço: compare com o valor de uma venda a mais (um sistema de 2 kWp já paga o investimento), lembre o custo por pessoa da equipe e a garantia de 7 dias. Desconto e cupom: só a promoção de lançamento, e só como DESCONTO diz para o período de HOJE e AGORA (antes dela, avise quando começa; durante, dê o valor promocional e quantas horas faltam; depois, diga que acabou). Nunca diga que a equipe pode avaliar uma condição especial.',
   '- Problema com compra já feita (e-mail que não chegou, acesso à Plataforma, reembolso): oriente com o que está em SOBRE A EMPRESA ou na pesquisa e, se não resolver, passe para uma pessoa.',
-  '- Resultados e depoimentos: cite como observação de campo, nunca como promessa. Lucas e Rodrigo são os integradores dos depoimentos do site: pergunta sobre eles, pesquise e conte o depoimento.',
+  '- Resultados e depoimentos: cite como observação de campo, nunca como promessa. Lucas e Rodrigo são os integradores dos depoimentos do site: pergunta sobre eles, pesquise e conte o depoimento, sem afirmar nada além do que o site diz (não diga que fizeram parte da validação de 2025).',
   '- Fechamento: na maioria das respostas, não termine com pergunta. Nunca volte a um assunto anterior que a pessoa não retomou (não pergunte de novo sobre matriz e filial, equipe, prévia ou link depois que a pessoa mudou de assunto). Oferta de link, prévia ou equipe: no máximo uma vez a cada três respostas.',
 ].join('\n')
 
@@ -1744,11 +1744,14 @@ function fluxoSolar() {
   g.liga('i-pode', 'i-conversa')
   g.no('i-nota', 'nota', { texto: 'Demonstração (Energia solar, IA como Solar Buy-Side): {{resumo_solar}}' })
   g.liga('i-conversa', 'i-nota', 'concluido')
-  g.no('i-depois', 'pergunta', { texto: 'Posso ajudar em mais alguma coisa?', salvarEm: 'escolha', opcoes: opcoes(['Continuar conversa', LEAD_RESPOSTA, TROCAR]) })
-  g.liga('i-nota', 'i-depois')
+  // Concluiu (comprou, pediu aviso): a IA continua disponível. Menu aqui fazia
+  // "obrigado" e "a Greenn é confiável?" ouvirem "toque numa das opções".
+  g.no('i-mais', 'pergunta', { texto: 'Se surgir outra dúvida, é só escrever por aqui. 😊', salvarEm: 'primeira_mensagem' })
+  g.liga('i-nota', 'i-mais')
+  g.liga('i-mais', 'i-conversa')
   g.no('i-saida', 'pergunta', { texto: 'Saí do papel. 🙂 E agora?', salvarEm: 'escolha', opcoes: opcoes(['Continuar conversa', LEAD_RESPOSTA, TROCAR]) })
   g.liga('i-conversa', 'i-saida')
-  for (const p of ['i-depois', 'i-saida']) {
+  for (const p of ['i-saida']) {
     g.liga(p, 'i-pode', idDe('Continuar conversa'))
     g.liga(p, 'lead', idDe(LEAD_RESPOSTA))
     g.liga(p, 'trocar', idDe(TROCAR))

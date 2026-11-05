@@ -677,7 +677,7 @@ export const FERRAMENTAS: Ferramenta[] = [
     descricao:
       'Manda o botão de compra (o checkout) logo depois da sua frase. ' +
       'Use quando a pessoa disser que quer comprar, pedir o link de pagamento, o checkout ou "como faço para comprar". ' +
-      'Se vier `enviado: true`, escreva só a frase de fechamento, sem link: o botão já vai junto. ' +
+      'Se vier `enviado: true`, escreva só uma frase curta de fechamento, sem link, como "Perfeito! É só tocar no botão abaixo para concluir a compra.": o botão já vai junto, com o resto. ' +
       'Se vier `enviado: false`, não há botão configurado: mande o link de compra que está em SOBRE A EMPRESA. ' +
       'Não use duas vezes seguidas na mesma conversa.',
     argumentos: [],
