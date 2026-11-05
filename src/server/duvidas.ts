@@ -1,4 +1,5 @@
 import 'server-only'
+import { chaveGeminiDa4yu } from '@/server/ia/modelo'
 import {
   categoriasDoRamo,
   lerClassificacao,
@@ -53,7 +54,7 @@ export async function passadaDasDuvidas(prazoMs = 50_000): Promise<ResultadoDaPa
   for (const [clienteId, daConta] of porConta) {
     if (Date.now() > fim) return { conversas, duvidas, parouPor: 'tempo' }
 
-    const chave = (await lerChave(clienteId).catch(() => null)) ?? process.env.GEMINI_API_KEY ?? null
+    const chave = (await lerChave(clienteId).catch(() => null)) ?? chaveGeminiDa4yu()
     if (!chave) return { conversas, duvidas, parouPor: 'sem chave de IA' }
 
     const categorias = categoriasDoRamo(await nichoDaConta(clienteId))

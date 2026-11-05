@@ -1,4 +1,5 @@
 import 'server-only'
+import { chaveGeminiDa4yu } from '@/server/ia/modelo'
 import { ehArquivoGuardado } from '@/core/midia-recebida'
 import { db } from './db'
 import { lerChave } from './repos/chave-de-ia'
@@ -101,7 +102,7 @@ export async function lerImagemRecebida(
   } catch (erro) {
     console.error('[ler-imagem] não foi possível ler a chave do cliente:', erro)
   }
-  chave ??= process.env.GEMINI_API_KEY ?? null
+  chave ??= chaveGeminiDa4yu()
   if (!chave) return null
 
   const arquivo = await baixarArquivo(linha.arquivo.caminho)

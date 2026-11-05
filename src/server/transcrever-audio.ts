@@ -1,4 +1,5 @@
 import 'server-only'
+import { chaveGeminiDa4yu } from '@/server/ia/modelo'
 import { recusaDoPlano } from './recursos-do-plano'
 import { ehArquivoGuardado } from '@/core/midia-recebida'
 import { db } from './db'
@@ -177,7 +178,7 @@ export async function transcreverAudio(
       }
     }
   }
-  chave ??= process.env.GEMINI_API_KEY ?? null
+  chave ??= chaveGeminiDa4yu()
   if (!chave) return { ok: false, erro: 'falta GEMINI_API_KEY no ambiente' }
 
   const arquivo = await baixarArquivo(linha.arquivo.caminho)

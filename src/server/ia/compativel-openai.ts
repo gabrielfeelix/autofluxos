@@ -20,7 +20,7 @@ import type { Modelo, PedidoDeIa, Resposta } from './types'
  * fluxos o dia inteiro sem pagar.
  */
 
-export type NomeDoProvedor = 'groq' | 'cloudflare'
+export type NomeDoProvedor = 'groq' | 'cloudflare' | 'xai'
 
 type Provedor = {
   /** Com `{conta}` quando o endereço leva o id da conta (`variavelDaConta`). */
@@ -68,6 +68,19 @@ export const PROVEDORES: Record<NomeDoProvedor, Provedor> = {
     variavelDaConta: 'CLOUDFLARE_ACCOUNT_ID',
     modelo: '@cf/openai/gpt-oss-120b',
     variavel: 'CLOUDFLARE_API_TOKEN',
+    extras: { max_tokens: 1200 },
+  },
+  /*
+   * xAI (Grok), **pago**, reserva do Gemini pago desde nov/2026 (Solar
+   * Buy-Side). Entra na cadeia só quando há chave paga do Gemini, ver
+   * `modeloDa4yu`. Sem raciocínio: o turno de venda precisa de resposta em
+   * poucos segundos, e o modelo de raciocínio gasta isso pensando. `XAI_MODELO`
+   * troca sem deploy de código.
+   */
+  xai: {
+    endereco: 'https://api.x.ai/v1/chat/completions',
+    modelo: process.env.XAI_MODELO || 'grok-4.20-0309-non-reasoning',
+    variavel: 'XAI_API_KEY',
     extras: { max_tokens: 1200 },
   },
 }

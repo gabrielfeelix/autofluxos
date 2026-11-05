@@ -110,10 +110,24 @@ function modeloDa4yu(): Modelo | null {
     if (chave && enderecoDo(nome)) elos.push({ nome, modelo: compativelOpenai({ provedor: nome, chave }) })
   }
 
-  const chaveGemini = process.env.GEMINI_API_KEY
-  if (chaveGemini) elos.push({ nome: 'gemini', modelo: gemini({ chave: chaveGemini }) })
-  compativel('groq')
-  compativel('cloudflare')
+  /*
+   * **Com chave paga, só provedor pago** (nov/2026, Solar Buy-Side). O mesmo
+   * modelo do Gemini em que os bots foram ajustados, com o Grok de reserva. Os
+   * free tiers saem da cadeia em vez de ficarem no fim dela: cair num grátis
+   * mandaria a conversa do cliente do cliente para treino de modelo, que é
+   * exatamente a linha descrita em `escolherModelo`. Se os dois pagos caírem,
+   * a conversa vai para uma pessoa, que é o desfecho certo.
+   */
+  const paga = process.env.GEMINI_API_KEY_PAGA
+  if (paga) {
+    elos.push({ nome: 'gemini', modelo: gemini({ chave: paga }) })
+    compativel('xai')
+  } else {
+    const chaveGemini = process.env.GEMINI_API_KEY
+    if (chaveGemini) elos.push({ nome: 'gemini', modelo: gemini({ chave: chaveGemini }) })
+    compativel('groq')
+    compativel('cloudflare')
+  }
 
   const preso = process.env.IA_PROVEDOR
   const usados = preso ? elos.filter((e) => e.nome === preso) : elos
@@ -121,4 +135,13 @@ function modeloDa4yu(): Modelo | null {
   const [unico, ...resto] = usados
   if (!unico) return null
   return resto.length === 0 ? unico.modelo : emCadeia(usados)
+}
+
+/**
+ * A chave do Gemini da 4YU para o que não passa pela cadeia: áudio, imagem e
+ * dúvidas. A paga ganha da grátis pelo mesmo motivo de `modeloDa4yu`: o áudio
+ * e a foto que o cliente do cliente manda são dado pessoal tanto quanto o texto.
+ */
+export function chaveGeminiDa4yu(): string | null {
+  return process.env.GEMINI_API_KEY_PAGA || process.env.GEMINI_API_KEY || null
 }
