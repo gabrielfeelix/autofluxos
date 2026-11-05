@@ -236,7 +236,7 @@ export function proximaAbertura(
      * A mesma noção de faixa válida que `atendimentoAberto` usa.
      *
      * Sem o `ate`, as duas funções discordavam: uma faixa invertida
-     * (`18:00`–`08:00`) nunca abria o atendimento e mesmo assim era anunciada
+     * (`18:00` a `08:00`) nunca abria o atendimento e mesmo assim era anunciada
      * como "abre hoje às 18:00". Prometer um horário em que ninguém vai
      * responder é pior do que não prometer nada.
      */
