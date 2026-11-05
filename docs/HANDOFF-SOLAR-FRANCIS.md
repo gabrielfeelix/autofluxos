@@ -110,6 +110,8 @@ inteira. Sem travessão em arquivo nenhum. Respostas em pt-BR. Custo da Meta:
   copia os 275 trechos da conta demo e liga o fluxo em todos os canais da
   conta **sem mudar o status** (o chat do site segue pausado). Conteúdo único
   em `scripts/solar/conteudo.mts`, usado pelo demo e pela conta.
-- **Pendente:** ligar o chat do site (decisão do Gabriel); rodar
-  `conta.mts --gravar` de novo depois de conectar o WhatsApp, para o canal
-  novo receber o fluxo; link da Greenn da promoção, se for outro.
+- **Número novo herda o fluxo:** `fluxoHerdadoDaConta` (repos/conversas.ts)
+  dá ao WhatsApp recém-conectado o fluxo de outro canal da conta; não precisa
+  rodar o script de novo.
+- **Pendente:** ligar o chat do site (decisão do Gabriel); link da Greenn da
+  promoção, se for outro.

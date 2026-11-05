@@ -1,5 +1,6 @@
 import 'server-only'
 import { db, ehIdInvalido } from '../db'
+import { fluxoHerdadoDaConta } from './conversas'
 
 /**
  * O estado de coexistência de um número, e a agenda que veio junto (0047).
@@ -459,6 +460,8 @@ export async function salvarNumeroDoOnboarding(entrada: {
       token_ref: tokenRef,
       token_expira_em: expira,
       status: 'ativo',
+      // Número novo herda o fluxo que a conta já usa (`fluxoHerdadoDaConta`).
+      flow_id: await fluxoHerdadoDaConta(entrada.clienteId),
     })
     .select('id')
     .single()

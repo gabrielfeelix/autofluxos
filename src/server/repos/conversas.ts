@@ -1573,6 +1573,29 @@ export async function vincularSessaoNaMensagem(
   await db().from('messages').update({ session_id: sessaoId }).eq('wa_message_id', waMessageId)
 }
 
+/**
+ * O fluxo principal que um número novo herda: o de outro canal da mesma
+ * conta, o mais recente que tenha um.
+ *
+ * Sem isto o WhatsApp recém-conectado nascia sem fluxo e ficava mudo, mesmo
+ * com a automação ligada: "ativar" liga o fluxo, mas quem diz qual fluxo
+ * responde num número é `channels.flow_id` (Solar Buy-Side, 5/nov/2026, com o
+ * chat do site já apontando para o atendimento). Instagram, Messenger e site
+ * já herdavam do WhatsApp; isto é a mesma regra no sentido contrário.
+ */
+export async function fluxoHerdadoDaConta(clienteId: string): Promise<string | null> {
+  const { data, error } = await db()
+    .from('channels')
+    .select('flow_id')
+    .eq('client_id', clienteId)
+    .not('flow_id', 'is', null)
+    .order('criado_em', { ascending: false })
+    .limit(1)
+    .maybeSingle()
+  if (error) throw new Error(`não foi possível ler o fluxo da conta: ${error.message}`)
+  return (data as { flow_id: string | null } | null)?.flow_id ?? null
+}
+
 export async function criarCanal(dados: {
   clienteId: string
   phoneNumberId: string
@@ -1585,7 +1608,7 @@ export async function criarCanal(dados: {
       client_id: dados.clienteId,
       phone_number_id: dados.phoneNumberId.trim(),
       waba_id: dados.wabaId ?? null,
-      flow_id: dados.flowId ?? null,
+      flow_id: dados.flowId ?? (await fluxoHerdadoDaConta(dados.clienteId)),
     })
     .select(COLUNAS_DO_CANAL)
     .single()
