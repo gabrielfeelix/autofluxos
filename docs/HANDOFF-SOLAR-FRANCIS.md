@@ -92,3 +92,24 @@ inteira. Sem travessão em arquivo nenhum. Respostas em pt-BR. Custo da Meta:
   (`solarbuy-side-platform` `141ef30`). Ligar o canal depois que o fluxo for
   copiado: sem fluxo, o balão abriria sem resposta.
 - **Pendente:** o que depende do Gabriel está em `4yu-apps/PENDENCIAS-DO-GABRIEL.md`.
+
+## Estado da Sessão A (05/nov/2026)
+
+- **Hora na IA:** `HOJE` e `AGORA` no topo do prompt (`horaNaConta`,
+  `fb18fe9b`); a promoção vira sozinha às 21h de 1º/12 e acaba às 21h de
+  3/12. Testado em 4 horários. O simulador aceita `SIMULAR_HOJE` e
+  `SIMULAR_AGORA`.
+- **Botão de compra:** parte "Botão com link" na mensagem e "Mandar o botão
+  de compra" no bloco de IA (`69ec5341`). O card aprovado pelo Gabriel está
+  em `SOLAR_BOTAO` e substitui a frase da IA.
+- **Bateria:** 60 perguntas em 6 conversas, corrigidas até acertar
+  (`5b0144f5`). Depois de concluir, a conversa volta para a IA em vez de cair
+  num menu que só aceita toque.
+- **Conta do Francis:** `scripts/solar/conta.mts --gravar` publica
+  "Atendimento Solar Buy-Side" (`fe6ae38e-936f-457a-8df1-b1352ab0d01c`),
+  copia os 275 trechos da conta demo e liga o fluxo em todos os canais da
+  conta **sem mudar o status** (o chat do site segue pausado). Conteúdo único
+  em `scripts/solar/conteudo.mts`, usado pelo demo e pela conta.
+- **Pendente:** ligar o chat do site (decisão do Gabriel); rodar
+  `conta.mts --gravar` de novo depois de conectar o WhatsApp, para o canal
+  novo receber o fluxo; link da Greenn da promoção, se for outro.

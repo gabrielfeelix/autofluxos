@@ -1361,6 +1361,8 @@ async function responderComFerramentas({
           rotulo: botao.rotulo,
           url: botao.url,
           ...(botao.imagem?.startsWith('https://') ? { imagem: botao.imagem } : {}),
+          // O card já diz tudo: a frase da IA ("o botão já foi enviado") sai.
+          substituiFrase: true,
         })
       }
       conversa.push({ de: 'ferramenta', nome: ferramenta.nome, texto: JSON.stringify({ enviado: Boolean(botao) }) })
