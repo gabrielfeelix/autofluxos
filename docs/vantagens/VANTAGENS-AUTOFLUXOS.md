@@ -386,6 +386,13 @@ aqui fica o que o cliente ganha.
 
 ## Integrar e segurança
 
+- **Vendas da Greenn no CRM**: venda paga vira cliente com a etiqueta
+  Comprou e recebe as boas-vindas; boleto ou Pix em aberto ganha lembrete; quem
+  pede reembolso ou abre chargeback sai das campanhas sozinho. Basta colar um
+  endereço no produto da Greenn. *(05/nov/2026)*
+- **IA paga, com reserva**: o atendimento roda no Gemini pago, com o Grok de
+  reserva; a conversa do seu cliente nunca passa por modelo gratuito que
+  treina com ela. *(05/nov/2026)*
 - **Fala com o sistema de agenda que a empresa já usa**: Feegow e Clínica nas
   Nuvens (clínicas), Trinks e AgendaPro (salões), EVO (academias). A IA mostra
   horário livre, marca e desmarca direto lá, sempre para quem está conversando

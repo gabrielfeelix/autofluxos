@@ -72,3 +72,23 @@ Banco compartilhado com a Verandi (`docs/BANCO-COMPARTILHADO.md`): nada de
 próprios arquivos, com `git add` nominal. Validar com `tsc`, não com a suíte
 inteira. Sem travessão em arquivo nenhum. Respostas em pt-BR. Custo da Meta:
 1.000 respostas grátis por número por mês, depois R$ 0,035; marketing R$ 0,32.
+
+## Estado da Sessão B (05/nov/2026)
+
+- **Conta:** "Solar Buy-Side", `3d149933-40e6-4aa0-9d6e-4cb4498ace0d`, plano
+  `solar-buy-side` (R$ 259, `teto_ia` 3.000, fora de venda). É o destino do
+  item 4 da Sessão A.
+- **Greenn:** `/api/webhook/greenn/[clienteId]?token=` (commit `41c7cea0`), o
+  endereço pronto aparece na aba Eventos (`56792031`). `paid` etiqueta
+  Comprou + estágio cliente + etapa "Comprou" se existir; `waiting_payment`
+  etiqueta Pagamento pendente; `refunded`/`chargedback` etiqueta Reembolso,
+  sai das sequências e do marketing. Mensagens = sequências por etiqueta
+  (boas-vindas na Comprou; lembrete na Pagamento pendente, saída pela Comprou),
+  montadas quando os modelos forem aprovados.
+- **IA paga:** `GEMINI_API_KEY_PAGA` liga Gemini pago + Grok (`XAI_API_KEY`),
+  sem free tiers (`f69968e1`). Sem a variável, nada muda.
+- **Chat do site:** canal `11de982c-afec-4c00-8bcd-20c3de7cbdd6` **pausado**,
+  domínios solarbuyside.com.br e www; snippet no ar na landing
+  (`solarbuy-side-platform` `141ef30`). Ligar o canal depois que o fluxo for
+  copiado: sem fluxo, o balão abriria sem resposta.
+- **Pendente:** o que depende do Gabriel está em `4yu-apps/PENDENCIAS-DO-GABRIEL.md`.
