@@ -2,7 +2,32 @@
 
 import { useState } from 'react'
 import { Dropdown } from '@/components/design/dropdown'
-import { DIAS_SEM_CONVERSA, EVENTOS_DE_SEQUENCIA, ROTULO_DO_EVENTO } from '@/core/sequencias'
+import { GrupoDeRadio } from '@/components/design/grupo-de-radio'
+import { DIAS_SEM_CONVERSA, EVENTOS_DE_SEQUENCIA, type EventoDeSequencia } from '@/core/sequencias'
+
+/**
+ * O gatilho em cartões, com o texto inteiro (06/nov/2026). Era um seletor
+ * espremido ao lado do nome, num modal de 420px, e as quatro opções saíam
+ * cortadas no meio ("Quando alguém cli..."): ninguém escolhia lendo.
+ */
+const GATILHOS: Record<EventoDeSequencia, { titulo: string; descricao: string }> = {
+  atendimento_encerrado: {
+    titulo: 'Ao finalizar um atendimento',
+    descricao: 'Entra quem teve o atendimento finalizado pela equipe.',
+  },
+  etiqueta_aplicada: {
+    titulo: 'Ao receber uma etiqueta',
+    descricao: 'Você escolhe a etiqueta logo abaixo.',
+  },
+  etapa_alcancada: {
+    titulo: 'Ao chegar numa etapa do funil',
+    descricao: 'Você escolhe a etapa logo abaixo.',
+  },
+  cliente_sumido: {
+    titulo: 'Quando um cliente some',
+    descricao: 'Quem já comprou e parou de falar há alguns dias.',
+  },
+}
 
 export type EtiquetaNaLista = { id: string; nome: string }
 export type EtapaNaLista = { id: string; rotulo: string }
@@ -26,42 +51,44 @@ export function CamposDaSequencia({
   etiquetas: EtiquetaNaLista[]
   etapas: EtapaNaLista[]
 }) {
-  const [evento, setEvento] = useState<string>(EVENTOS_DE_SEQUENCIA[0])
+  const [evento, setEvento] = useState<EventoDeSequencia>(EVENTOS_DE_SEQUENCIA[0])
   const porEtiqueta = evento === 'etiqueta_aplicada'
   const porEtapa = evento === 'etapa_alcancada'
   const porSumico = evento === 'cliente_sumido'
 
   return (
-    <div className="grid gap-2.5 md:grid-cols-2">
-      <input
-        name="nome"
-        required
-        maxLength={60}
-        placeholder="Nome (ex.: Retomada de orçamento)"
-        aria-label="Nome da sequência"
-        className="app-field px-3 py-2.5 text-[12.5px]"
-      />
+    <div className="grid gap-3.5">
+      <label>
+        <span className="mb-1 block text-[11px] font-semibold text-muted">Nome</span>
+        <input
+          name="nome"
+          required
+          maxLength={60}
+          placeholder="Exemplo: Retomada de orçamento"
+          aria-label="Nome da sequência"
+          className="app-field w-full px-3 py-2.5 text-[12.5px]"
+        />
+      </label>
 
-      <Dropdown
-        nome="evento"
-        rotuloAcessivel="O que inscreve alguém"
-        valorInicial={EVENTOS_DE_SEQUENCIA[0]}
-        aoMudar={setEvento}
-        valor={evento}
-        opcoes={EVENTOS_DE_SEQUENCIA.map((item) => ({
-          valor: item,
-          rotulo: ROTULO_DO_EVENTO[item],
-        }))}
-      />
+      <div>
+        <span className="mb-1 block text-[11px] font-semibold text-muted">Quem entra na sequência</span>
+        <input type="hidden" name="evento" value={evento} />
+        <GrupoDeRadio
+          rotulo="O que inscreve alguém"
+          valor={evento}
+          aoEscolher={setEvento}
+          opcoes={EVENTOS_DE_SEQUENCIA.map((item) => ({ valor: item, ...GATILHOS[item] }))}
+        />
+      </div>
 
       {porEtiqueta &&
         (etiquetas.length === 0 ? (
-          <p className="text-[11.5px] leading-5 text-aviso/90 md:col-span-2">
+          <p className="text-[11.5px] leading-5 text-aviso/90">
             Crie uma etiqueta primeiro, em Configurações → Etiquetas. Sem ela este gatilho não tem o
             que observar.
           </p>
         ) : (
-          <div className="md:col-span-2">
+          <div>
             <span className="mb-1 block text-[11px] font-semibold text-muted">
               Etiqueta que dispara
             </span>
@@ -75,11 +102,11 @@ export function CamposDaSequencia({
 
       {porEtapa &&
         (etapas.length === 0 ? (
-          <p className="text-[11.5px] leading-5 text-aviso/90 md:col-span-2">
+          <p className="text-[11.5px] leading-5 text-aviso/90">
             Crie um quadro primeiro, em Quadros. Sem etapa este gatilho não tem o que observar.
           </p>
         ) : (
-          <div className="md:col-span-2">
+          <div>
             <span className="mb-1 block text-[11px] font-semibold text-muted">
               Etapa que dispara
             </span>
@@ -97,7 +124,7 @@ export function CamposDaSequencia({
         ))}
 
       {porSumico && (
-        <label className="md:col-span-2">
+        <label>
           <span className="mb-1 block text-[11px] font-semibold text-muted">
             Depois de quantos dias sem falar
           </span>
@@ -125,7 +152,7 @@ export function CamposDaSequencia({
         </label>
       )}
 
-      <div className="md:col-span-2">
+      <div>
         <span className="mb-1 block text-[11px] font-semibold text-muted">
           Etiqueta que tira da sequência (opcional)
         </span>
