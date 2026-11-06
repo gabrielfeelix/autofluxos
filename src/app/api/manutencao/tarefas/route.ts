@@ -49,6 +49,26 @@ export async function GET(req: Request) {
     return Response.json({ erro: 'não autorizado' }, { status: 401 })
   }
 
+  /*
+   * A passada leve, do pg_cron a cada dois minutos (06/nov/2026): só a fila de
+   * tarefas (prazo da pergunta, bloco Esperar, fim da pausa do bot) e as
+   * mensagens agendadas. O resto desta rota (consumo da Meta, mensalidades,
+   * transmissões) é diário de propósito, e a cada dois minutos estouraria o
+   * limite da API da Meta.
+   */
+  if (new URL(req.url).searchParams.get('leve') === '1') {
+    try {
+      const agendadas = await enviarAgendadas().catch((erro) => {
+        console.error('[tarefas] a passada das agendadas falhou', erro)
+        return null
+      })
+      return Response.json({ ...(await rodarTarefas()), agendadas })
+    } catch (erro) {
+      await alertar('a passada leve do agendador falhou', erro)
+      return Response.json({ erro: 'a passada falhou' }, { status: 500 })
+    }
+  }
+
   try {
     /*
      * As mensagens agendadas pegam carona neste cron, e não ganharam um
