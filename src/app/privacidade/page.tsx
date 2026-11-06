@@ -43,13 +43,13 @@ const SECOES: readonly SecaoLegal[] = [
     conteudo: (
       <>
         <p>
-          O Dialogon é um serviço da <strong>4YU</strong> que automatiza o atendimento de
+          O Dialogon é um serviço de <strong>68.770.493 GABRIEL FELIX BARBOSA</strong> que automatiza o atendimento de
           empresas no WhatsApp. Cada empresa cliente desenha o próprio fluxo de conversa e o
           conecta a um número do WhatsApp Business Platform (Cloud API, da Meta).
         </p>
         <p>
           Nessa relação, a <strong>empresa cliente é a controladora</strong> dos dados das
-          conversas dela, e a 4YU é <strong>operadora</strong>: tratamos os dados para executar o
+          conversas dela, e nós somos a <strong>operadora</strong>: tratamos os dados para executar o
           atendimento que ela desenhou, e não para finalidade própria.
         </p>
       </>
@@ -202,8 +202,8 @@ const SECOES: readonly SecaoLegal[] = [
       <>
         <p>
           Você pode pedir confirmação de tratamento, acesso, correção, anonimização,
-          portabilidade ou eliminação dos seus dados, nos termos da LGPD (Lei 13.709/2018). Como a
-          4YU é operadora, o caminho mais direto é falar com a empresa com quem você conversou no
+          portabilidade ou eliminação dos seus dados, nos termos da LGPD (Lei 13.709/2018). Como
+          somos a operadora, o caminho mais direto é falar com a empresa com quem você conversou no
           WhatsApp, que é a controladora. Se preferir, escreva para nós e encaminhamos ao cliente
           responsável.
         </p>
@@ -228,7 +228,7 @@ const SECOES: readonly SecaoLegal[] = [
         </p>
         <p>E-mail: contato@dialogon.com.br</p>
         <p>
-          68.770.493 GABRIEL FELIX BARBOSA (4YU) · CNPJ 68.770.493/0001-82 · Rua Osvaldo Cruz,
+          68.770.493 GABRIEL FELIX BARBOSA · CNPJ 68.770.493/0001-82 · Rua Osvaldo Cruz,
           297, Zona 07, Maringá/PR, CEP 87020-200.
         </p>
       </>

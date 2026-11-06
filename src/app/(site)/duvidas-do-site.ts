@@ -50,7 +50,7 @@ export const DUVIDAS: Duvida[] = [
   },
   {
     pergunta: 'Quanto tempo até estar no ar?',
-    resposta: `A conta fica pronta na hora, e o teste de ${DIAS_DE_TESTE} dias começa junto, sem cartão. A autorização do número na Meta costuma levar alguns dias; se quiser, a equipe da 4YU desenha o primeiro fluxo com você numa conversa de uma hora.`,
+    resposta: `A conta fica pronta na hora, e o teste de ${DIAS_DE_TESTE} dias começa junto, sem cartão. A autorização do número na Meta costuma levar alguns dias; se quiser, a nossa equipe desenha o primeiro fluxo com você numa conversa de uma hora.`,
   },
   {
     pergunta: 'E os meus dados?',
@@ -168,12 +168,12 @@ export const DUVIDAS_DE_QUEM_PESQUISA: Duvida[] = [
   },
   {
     pergunta: 'Em que idioma funciona?',
-    resposta: 'O painel, o suporte e os modelos prontos são em português do Brasil, e os preços são em reais. A empresa por trás é a 4YU, de Maringá (PR).',
+    resposta: 'O painel, o suporte e os modelos prontos são em português do Brasil, e os preços são em reais. A empresa por trás é de Maringá (PR).',
   },
   {
     pergunta: 'Quem monta o primeiro fluxo?',
     resposta:
-      'O próprio cliente consegue, com modelos prontos do ramo e um assistente de configuração em quatro passos. Se preferir, a equipe da 4YU desenha o primeiro fluxo junto, numa conversa de uma hora, em qualquer plano.',
+      'O próprio cliente consegue, com modelos prontos do ramo e um assistente de configuração em quatro passos. Se preferir, a equipe do Dialogon desenha o primeiro fluxo junto, numa conversa de uma hora, em qualquer plano.',
   },
   {
     pergunta: 'Quando o Dialogon NÃO é a escolha certa?',

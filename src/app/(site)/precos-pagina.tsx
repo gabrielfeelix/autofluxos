@@ -25,8 +25,8 @@ const FALAR_COM_VENDAS = whatsappDa4yu('Olá! Quero conhecer o plano Enterprise 
 const DETALHE_DO_ENTERPRISE: Record<string, string> = {
   'Conversas, números e atendentes sob medida': 'O contrato acompanha o tamanho da operação, sem franquia fixa.',
   'Integração com o seu sistema': 'Ligamos o Dialogon ao ERP, ao CRM ou ao sistema próprio da empresa.',
-  'Robôs montados pela 4YU': 'A 4YU desenha os fluxos da operação junto com a sua equipe.',
-  'Gerente de conta': 'Uma pessoa da 4YU acompanha a conta e responde direto.',
+  'Robôs montados pela nossa equipe': 'Nossa equipe desenha os fluxos da operação junto com a sua equipe.',
+  'Gerente de conta': 'Uma pessoa da nossa equipe acompanha a conta e responde direto.',
 }
 
 /**
@@ -88,7 +88,7 @@ const NUMEROS: Linha[] = [
 ]
 
 /*
- * Só o que nenhum plano da tabela tem. "Robôs montados pela 4YU" fica de fora
+ * Só o que nenhum plano da tabela tem. "Robôs montados pela nossa equipe" fica de fora
  * de propósito: em qualquer plano a equipe monta o primeiro fluxo junto, se o
  * cliente pedir (o fechamento da página diz isso), e marcar "não incluso" nos
  * outros mentiria.

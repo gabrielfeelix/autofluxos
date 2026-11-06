@@ -125,7 +125,7 @@ const ETAPAS_DO_ATRASO: Record<
   cancelada: {
     tom: 'perigo',
     assunto: (o) => `A assinatura de ${o} no Dialogon foi cancelada`,
-    previa: () => 'Fale com a 4YU para retomar: nada foi apagado.',
+    previa: () => 'Fale com a gente para retomar: nada foi apagado.',
     titulo: 'A assinatura foi cancelada',
     depoisDoVencimento: ', e depois de 60 dias sem pagamento a assinatura foi cancelada.',
     nota: () => 'Nada foi apagado: fluxos, contatos e conversas continuam guardados.',
@@ -228,7 +228,7 @@ export const MODELOS = {
           tipo: 'texto',
           texto: `${oi(p.nome)} A senha da sua conta no Dialogon foi alterada em **${p.quando}**. Por segurança, as sessões abertas em outros aparelhos foram encerradas.`,
         },
-        { tipo: 'nota', tom: 'perigo', texto: `**Não foi você?** Crie uma senha nova agora e avise a 4YU em contato@dialogon.com.br.` },
+        { tipo: 'nota', tom: 'perigo', texto: `**Não foi você?** Crie uma senha nova agora e avise a equipe do Dialogon em contato@dialogon.com.br.` },
         { tipo: 'botao', rotulo: 'Criar uma senha nova', link: p.link },
       ],
       motivo: MOTIVO_DE_SEGURANCA,
@@ -391,13 +391,13 @@ export const MODELOS = {
     grupo: 'Plano',
     montar: (p) => ({
       assunto: `Recebemos o pedido do plano ${p.plano}`,
-      previa: 'A equipe da 4YU confere os detalhes e entra em contato para confirmar.',
+      previa: 'Nossa equipe confere os detalhes e entra em contato para confirmar.',
       selo: { texto: 'Plano', tom: 'marca' },
       titulo: 'Pedido de troca de plano recebido',
       blocos: [
         {
           tipo: 'texto',
-          texto: `${oi(p.nome)} Recebemos o pedido para levar **${p.organizacao}** ao plano **${p.plano}**. A equipe da 4YU confere os detalhes e entra em contato para confirmar.`,
+          texto: `${oi(p.nome)} Recebemos o pedido para levar **${p.organizacao}** ao plano **${p.plano}**. Nossa equipe confere os detalhes e entra em contato para confirmar.`,
         },
         {
           tipo: 'fatos',
@@ -812,13 +812,13 @@ export const MODELOS = {
       p.suspensa
         ? {
             assunto: `O acesso de ${p.organizacao} ao Dialogon foi suspenso`,
-            previa: 'O painel fica fechado até a situação ser resolvida com a 4YU.',
+            previa: 'O painel fica fechado até a situação ser resolvida com a equipe do Dialogon.',
             selo: { texto: 'Conta', tom: 'perigo' },
             titulo: 'O acesso ao painel foi suspenso',
             blocos: [
               {
                 tipo: 'texto',
-                texto: `O acesso da equipe de **${p.organizacao}** ao painel do Dialogon foi suspenso pela 4YU. Ninguém da organização consegue entrar até a reativação.`,
+                texto: `O acesso da equipe de **${p.organizacao}** ao painel do Dialogon foi suspenso pela equipe do Dialogon. Ninguém da organização consegue entrar até a reativação.`,
               },
               { tipo: 'nota', tom: 'aviso', texto: 'Os fluxos e os canais **não foram desligados**: as conversas em andamento seguem sendo atendidas.' },
               { tipo: 'texto', texto: 'Para entender o motivo e resolver, escreva para contato@dialogon.com.br.' },
@@ -1082,7 +1082,7 @@ export const MODELOS = {
       const daOrganizacao = p.alvo === 'organizacao'
       return {
         assunto: daOrganizacao ? `Recebemos o pedido de exclusão de ${p.organizacao}` : 'Recebemos o pedido de exclusão da sua conta',
-        previa: 'A 4YU confirma em até 2 dias úteis e conclui em até 15 dias.',
+        previa: 'Confirmamos em até 2 dias úteis e concluímos em até 15 dias.',
         selo: { texto: 'Exclusão', tom: 'aviso' },
         titulo: daOrganizacao ? 'Pedido de exclusão da organização recebido' : 'Pedido de exclusão da conta recebido',
         blocos: [
@@ -1096,7 +1096,7 @@ export const MODELOS = {
             tipo: 'fatos',
             linhas: [
               { rotulo: 'Pedido feito em', valor: p.quando },
-              { rotulo: 'Confirmação da 4YU', valor: 'Até 2 dias úteis' },
+              { rotulo: 'Nossa confirmação', valor: 'Até 2 dias úteis' },
               { rotulo: 'Exclusão concluída', valor: 'Até 15 dias' },
             ],
           },

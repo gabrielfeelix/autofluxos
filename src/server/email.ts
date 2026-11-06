@@ -55,7 +55,7 @@ async function enviarEmail(
           ? assinatura.responderPara
             ? { replyTo: { email: assinatura.responderPara, name: assinatura.remetenteNome } }
             : {}
-          : { replyTo: { email: CONTATO, name: '4YU' } }),
+          : { replyTo: { email: CONTATO, name: 'Dialogon' } }),
         to: para.map(({ email, nome }) => (nome ? { email, name: nome } : { email })),
         subject: email.assunto,
         textContent: email.texto,

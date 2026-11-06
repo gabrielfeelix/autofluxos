@@ -48,7 +48,7 @@ const NOMES_DOS_GRUPOS: Record<Grupo, string> = {
 }
 
 export const RESUMO =
-  'Dialogon é uma plataforma brasileira de atendimento e vendas por mensagem. Reúne WhatsApp, Instagram Direct, chat do site e Telegram numa caixa de entrada só, com chatbot de fluxos visuais, IA que atende com o contexto da empresa, CRM com funil e transmissões. Usa a API oficial do WhatsApp (Cloud API da Meta), no mesmo número que a empresa já tem. É um produto da 4YU, de Maringá (PR).'
+  'Dialogon é uma plataforma brasileira de atendimento e vendas por mensagem. Reúne WhatsApp, Instagram Direct, chat do site e Telegram numa caixa de entrada só, com chatbot de fluxos visuais, IA que atende com o contexto da empresa, CRM com funil e transmissões. Usa a API oficial do WhatsApp (Cloud API da Meta), no mesmo número que a empresa já tem. A empresa é de Maringá (PR).'
 
 export const FATOS_CURTOS = [
   `Teste grátis de ${DIAS_DE_TESTE} dias, sem cartão.`,
@@ -100,7 +100,7 @@ export function precosEmMarkdown() {
     `- Teste grátis: ${DIAS_DE_TESTE} dias, sem cartão, até ${CONVERSAS_NO_TESTE} conversas, com os recursos do plano Operação.`,
     `- ${O_QUE_E_CONVERSA}`,
     `- ${TARIFA_DA_META} As primeiras 1.000 mensagens de atendimento por número no mês são grátis pela Meta.`,
-    '- Em qualquer plano, a equipe da 4YU monta o primeiro fluxo junto, se o cliente pedir.',
+    '- Em qualquer plano, a equipe do Dialogon monta o primeiro fluxo junto, se o cliente pedir.',
     '',
     '## Planos',
     '',
@@ -134,7 +134,7 @@ export function integracoesEmMarkdown() {
     '',
     'Em todos, a IA mostra o horário livre, marca e desmarca direto no sistema, sempre para quem está conversando e só depois de a pessoa confirmar.',
     '',
-    '- **Verandi** (disponível): agenda e gestão de aulas da 4YU, para estúdios, academias e escolas.',
+    '- **Verandi** (disponível): agenda e gestão de aulas, para estúdios, academias e escolas.',
     '- **Google Agenda** (disponível): para quem não usa sistema nenhum; conecta com um login e o atendimento vira evento com nome e telefone do cliente.',
     '- **Feegow** (disponível): clínicas.',
     '- **Clínica nas Nuvens** (disponível): clínicas.',

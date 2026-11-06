@@ -232,7 +232,7 @@ export const ENTERPRISE = {
   itens: [
     'Conversas, números e atendentes sob medida',
     'Integração com o seu sistema',
-    'Robôs montados pela 4YU',
+    'Robôs montados pela nossa equipe',
     'Gerente de conta',
   ],
 } as const

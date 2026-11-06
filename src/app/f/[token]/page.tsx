@@ -208,7 +208,7 @@ export default async function Pagina({ params }: { params: Promise<{ token: stri
       />
 
       <p className="mt-6 text-center text-[11px] leading-[1.7] text-dim">
-        Feito no <strong className="font-semibold text-muted">Dialogon</strong>, da 4YU ,
+        Feito no <strong className="font-semibold text-muted">Dialogon</strong>,
         atendimento no WhatsApp desenhado bloco a bloco.
       </p>
     </main>

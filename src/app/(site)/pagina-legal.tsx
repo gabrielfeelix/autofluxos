@@ -75,7 +75,7 @@ export function PaginaLegal({
         <div className={s.capaBrilho} aria-hidden />
 
         <div className={s.faixa}>
-          <span className={s.olho}>4YU · Dialogon</span>
+          <span className={s.olho}>Dialogon</span>
           <h1 className={s.titulo}>{titulo}</h1>
           <p className={s.resumo}>{resumo}</p>
 
@@ -135,7 +135,7 @@ export function PaginaLegal({
 
       <footer className={s.rodape}>
         <div className={s.faixa}>
-          Dialogon é um produto da <a href="https://4yu.com.br" rel="noopener">4YU</a> · Gabriel
+          Dialogon · Gabriel
           Felix Barbosa · CNPJ 68.770.493/0001-82 · Maringá, PR
           <br />
           WhatsApp é marca da Meta Platforms. Usamos a API oficial do WhatsApp Business e não

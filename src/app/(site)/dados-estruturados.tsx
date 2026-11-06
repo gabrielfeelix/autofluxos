@@ -28,7 +28,6 @@ export function DadosDaOrganizacao() {
           knowsLanguage: 'pt-BR',
           // O @dialogon tem outro dono; o perfil oficial é este até a marca ser registrada.
           sameAs: ['https://www.instagram.com/usedialogon/'],
-          parentOrganization: { '@type': 'Organization', name: '4YU' },
         }}
       />
       <DadosEstruturados dados={{ '@context': 'https://schema.org', '@type': 'WebSite', name: 'Dialogon', url: SITE_URL }} />

@@ -13,7 +13,7 @@ import { Item, Lista, PaginaLegal, type SecaoLegal } from '../(site)/pagina-lega
  * governa o texto.** A parte de dados aponta para a política em vez de repetir, dois documentos dizendo a mesma coisa com palavras diferentes divergem no
  * primeiro ajuste. O que este documento acrescenta é o que a política não
  * cobre: quem pode usar, o que não se pode fazer com o serviço, o que acontece
- * quando alguém faz, e o que a 4YU **não** promete.
+ * quando alguém faz, e o que o Dialogon **não** promete.
  *
  * **O que ele não diz, de propósito:** preço e nível de serviço. O preço mora
  * na tela de planos, que muda sem precisar mudar este documento; escrever um
@@ -39,7 +39,7 @@ const SECOES: readonly SecaoLegal[] = [
     conteudo: (
       <>
         <p>
-          O Dialogon é operado por <strong>68.770.493 GABRIEL FELIX BARBOSA (4YU)</strong>, CNPJ
+          O Dialogon é operado por <strong>68.770.493 GABRIEL FELIX BARBOSA</strong>, CNPJ
           68.770.493/0001-82, com endereço na Rua Osvaldo Cruz, 297, Zona 07, Maringá/PR, CEP
           87020-200. Neste documento, “nós” é essa empresa e “você” é quem usa o serviço.
         </p>
@@ -102,7 +102,7 @@ const SECOES: readonly SecaoLegal[] = [
       <>
         <p>
           <strong>São seus.</strong> Na linguagem da LGPD, a sua empresa é a{' '}
-          <strong>controladora</strong> dos dados das conversas dela e a 4YU é a{' '}
+          <strong>controladora</strong> dos dados das conversas dela e nós somos a{' '}
           <strong>operadora</strong>: tratamos esses dados para executar o atendimento que você
           desenhou, e não para finalidade própria. Não vendemos dados, não os cedemos para
           publicidade de terceiros e não treinamos modelos de IA com eles.
@@ -120,7 +120,7 @@ const SECOES: readonly SecaoLegal[] = [
         </p>
         <p>
           <strong>Se acontecer um incidente de segurança</strong> que alcance dados da sua empresa,
-          a 4YU avisa você em até 24 horas depois de confirmá-lo, com o que se sabe até ali: o que
+          avisamos você em até 24 horas depois de confirmá-lo, com o que se sabe até ali: o que
           foi afetado, desde quando e o que já foi feito. É o que você precisa para cumprir o seu
           próprio prazo de comunicação à ANPD e às pessoas afetadas, e nós seguimos ajudando até o
           fim da apuração.
@@ -197,7 +197,7 @@ const SECOES: readonly SecaoLegal[] = [
             10º dia, o acesso ao painel é suspenso, e os robôs e os canais continuam atendendo. No 30º dia,
             IA, transcrição, transmissões e integrações pausam. No 60º dia, a assinatura é cancelada. Pago
             o que está em aberto, tudo volta sozinho, exceto depois do cancelamento, quando a retomada é
-            combinada com a 4YU. Nada é apagado por atraso.
+            combinada conosco. Nada é apagado por atraso.
           </Item>
           <Item>
             <strong>Cancelamento.</strong> Você cancela quando quiser, em Configurações, Faturas, sem multa.
@@ -322,7 +322,7 @@ const SECOES: readonly SecaoLegal[] = [
         </p>
         <p>E-mail: contato@dialogon.com.br</p>
         <p>
-          68.770.493 GABRIEL FELIX BARBOSA (4YU) · CNPJ 68.770.493/0001-82 · Rua Osvaldo Cruz,
+          68.770.493 GABRIEL FELIX BARBOSA · CNPJ 68.770.493/0001-82 · Rua Osvaldo Cruz,
           297, Zona 07, Maringá/PR, CEP 87020-200.
         </p>
       </>

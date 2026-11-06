@@ -66,7 +66,7 @@ export const NICHOS_DO_SITE: NichoDoSite[] = [
       },
       {
         pergunta: 'Preciso de um sistema de agenda?',
-        resposta: 'A agenda que o chatbot consulta e atualiza é a da Verandi, o sistema de agenda da 4YU, que já conversa com o Dialogon. Sem ela, o chatbot tira dúvidas, manda os planos e passa o pedido de horário para a equipe.',
+        resposta: 'A agenda que o chatbot consulta e atualiza é a da Verandi, sistema de agenda que já conversa com o Dialogon. Sem ela, o chatbot tira dúvidas, manda os planos e passa o pedido de horário para a equipe.',
       },
       {
         pergunta: 'Como funciona o lembrete de aula?',

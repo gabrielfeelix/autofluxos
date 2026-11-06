@@ -84,7 +84,7 @@ export const CANAIS: CanalDoSite[] = [
     subtitulo: 'Mensagem, foto, áudio e menção em story chegam no Inbox, e a equipe responde sem abrir o celular.',
     // `disponivel: false` em `src/core/canais.ts`: Standard Access até o App Review.
     aviso:
-      'A conexão de contas de clientes depende da revisão de acesso da Meta, em andamento. A integração já funciona nas contas da 4YU e será liberada para todos assim que a Meta aprovar.',
+      'A conexão de contas de clientes depende da revisão de acesso da Meta, em andamento. A integração já funciona nas contas internas do Dialogon e será liberada para todos assim que a Meta aprovar.',
     passos: [
       { titulo: 'Entra com o Instagram', texto: 'Login oficial do Instagram, na conta profissional da empresa.' },
       { titulo: 'O acesso se renova sozinho', texto: 'A autorização vale 60 dias e é renovada antes de vencer, sem você fazer nada.' },

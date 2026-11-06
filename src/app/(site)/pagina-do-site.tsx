@@ -120,7 +120,7 @@ export function PaginaDoSite({ capa, children, cor }: { capa: ReactNode; childre
               <span className={`${s.risco} ${s.riscoCentro}`} data-revela data-atraso="90" aria-hidden />
             <p className={`${s.chamada} ${s.chamadaCentro}`} data-revela data-atraso="100">
               Crie a conta em um minuto, conecte o seu número e comece com um fluxo pronto do
-              seu ramo. Se preferir, a equipe da 4YU monta o primeiro fluxo junto com você
+              seu ramo. Se preferir, a nossa equipe monta o primeiro fluxo junto com você
               pelo WhatsApp.
             </p>
             <div className={s.acoes} data-revela data-atraso="140">
@@ -233,24 +233,6 @@ export function PaginaDoSite({ capa, children, cor }: { capa: ReactNode; childre
                 Exclusão de dados
               </Link>
             </nav>
-
-            <nav className={s.rodapeColuna}>
-              <span className={s.rodapeTitulo}>4YU</span>
-              <a className={s.rodapeLink} data-n="001" href="https://4yu.com.br" rel="noopener">
-                Todos os produtos
-              </a>
-              <a
-                className={s.rodapeLink}
-                data-n="002"
-                href="https://verandi.4yu.com.br"
-                rel="noopener"
-              >
-                Verandi
-              </a>
-              <a className={s.rodapeLink} data-n="003" href={FALE_CONOSCO} target="_blank" rel="noopener noreferrer">
-                WhatsApp da 4YU
-              </a>
-            </nav>
           </div>
 
           <div className={s.rodapeMarca} aria-hidden>
@@ -259,7 +241,7 @@ export function PaginaDoSite({ capa, children, cor }: { capa: ReactNode; childre
 
           <div className={s.rodapePe}>
             <span>
-              Um produto da <a href="https://4yu.com.br" rel="noopener">4YU</a> · Gabriel Felix
+              Gabriel Felix
               Barbosa · CNPJ 68.770.493/0001-82 · Maringá, PR
             </span>
             <span className={s.rodapeAviso}>

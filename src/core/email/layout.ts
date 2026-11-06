@@ -238,7 +238,7 @@ ${corpo}
 <tr><td align="center" style="padding:24px 20px 0;font-family:${CORPO};font-size:12px;line-height:1.6;color:${COR.apagado}">
 <p style="margin:0 0 6px">${escapar(email.motivo)}</p>
 <p style="margin:0 0 6px">Dúvidas? Escreva para <a href="mailto:${CONTATO}" style="color:${COR.apagado};text-decoration:underline">${CONTATO}</a>.</p>
-<p style="margin:0"><a href="${escapar(painel)}" target="_blank" style="color:${COR.apagado};text-decoration:underline">Abrir o Dialogon</a> &middot; um produto 4YU</p>
+<p style="margin:0"><a href="${escapar(painel)}" target="_blank" style="color:${COR.apagado};text-decoration:underline">Abrir o Dialogon</a></p>
 </td></tr>
 
 </table>
@@ -252,7 +252,7 @@ ${corpo}
     ...email.blocos.map(blocoEmTexto),
     email.motivo,
     `Dúvidas? Escreva para ${CONTATO}.`,
-    `Dialogon, um produto 4YU: ${painel}`,
+    `Dialogon: ${painel}`,
   ].join('\n\n')
 
   return { assunto: email.assunto, html, texto }
