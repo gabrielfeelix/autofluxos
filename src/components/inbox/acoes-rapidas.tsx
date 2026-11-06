@@ -13,6 +13,8 @@ import { AgendarMensagem, IconeAgendar } from '@/components/inbox/agendar'
 import { MarcarAtividade, IconeAtividade } from '@/components/inbox/marcar-atividade'
 import { AvisoFlutuante } from '@/components/design/aviso-flutuante'
 import type { MensagemAgendada } from '@/server/repos/mensagens-agendadas'
+import { acaoEnviarAutomacao, acaoFimDaPausa, acaoPausarBotPorPrazo } from '@/server/acoes-automacao-na-conversa'
+import { ContadorDaPausa, IconeAutomacao, PainelEnviarAutomacao, PainelPausarBot } from '@/components/inbox/automacao-na-conversa'
 import {
   acaoAdiarConversa,
   acaoAlternarAutomacaoDoLead,
@@ -94,6 +96,27 @@ export function AcoesRapidas({
 
   const resolvida = conversa.valor.estado !== 'aberta'
   const botLigado = conversa.valor.automacaoAtiva
+  const [enviada, setEnviada] = useState<string | null>(null)
+  /** Até quando a pausa vai, lido da tarefa de retomada. `null`: sem prazo. */
+  const [fimDaPausa, setFimDaPausa] = useState<string | null>(null)
+  // Trocar de conversa zera; a leitura abaixo traz o prazo da nova.
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- o prazo é de cada contato
+    setFimDaPausa(null)
+  }, [contatoId])
+  useEffect(() => {
+    if (botLigado) return
+    let vivo = true
+    // Só acrescenta: o clique em "30 minutos" pausa na hora (otimista) e esta
+    // leitura pode chegar antes de o servidor agendar, com `null`, apagando o
+    // prazo que a própria pausa acabou de devolver.
+    void acaoFimDaPausa(clienteId, contatoId).then((ate) => {
+      if (vivo && ate) setFimDaPausa(ate)
+    })
+    return () => {
+      vivo = false
+    }
+  }, [botLigado, clienteId, contatoId])
   const comAtendente = conversa.valor.sessaoComPessoa
 
   const agir = (mudanca: Parameters<typeof conversa.agir>[0], acao: Parameters<typeof conversa.agir>[1]) => {
@@ -264,18 +287,78 @@ export function AcoesRapidas({
         </BotaoDeIcone>
       )}
 
-      {temAutomacao && !comAtendente && (
-        <BotaoDeIcone
-          rotulo={botLigado ? 'Pausar o bot nesta conversa' : 'Religar o bot nesta conversa'}
-          marcada={!botLigado}
-          aoClicar={() =>
-            agir({ automacaoAtiva: !botLigado }, () =>
-              acaoAlternarAutomacaoDoLead(clienteId, contatoId, !botLigado),
-            )
-          }
-        >
-          {botLigado ? <IconePausa /> : <IconeTocar />}
-        </BotaoDeIcone>
+      {/*
+        Enviar automação (06/nov/2026): a equipe escolhe um fluxo e o contato
+        recebe o começo dele agora. É o "o aluno quer remarcar, um clique".
+      */}
+      {temAutomacao && (
+        <AcaoComPainel rotulo="Enviar automação" icone={<IconeAutomacao />} largura={300}>
+          {(fechar) => (
+            <PainelEnviarAutomacao
+              clienteId={clienteId}
+              contatoId={contatoId}
+              nomeDoContato={nomeDoContato}
+              aoEnviar={(automacao) => {
+                fechar()
+                setErro(null)
+                void conversa
+                  .agir({ sessaoComPessoa: false, aguardando: null, automacaoAtiva: true }, () =>
+                    acaoEnviarAutomacao(clienteId, contatoId, automacao.id),
+                  )
+                  .then((falhou) => {
+                    if (falhou) setErro(falhou)
+                    else {
+                      setFimDaPausa(null)
+                      setEnviada(`"${automacao.nome}" enviada para ${nomeDoContato}`)
+                    }
+                  })
+              }}
+            />
+          )}
+        </AcaoComPainel>
+      )}
+      {enviada && (
+        <AvisoFlutuante tom="neutro" aoSumir={() => setEnviada(null)}>
+          {enviada}
+        </AvisoFlutuante>
+      )}
+
+      {temAutomacao && !comAtendente && botLigado && (
+        <AcaoComPainel rotulo="Pausar o bot nesta conversa" icone={<IconePausa />} largura={232} recolhido>
+          {(fechar) => (
+            <PainelPausarBot
+              aoPausar={(minutos) => {
+                fechar()
+                setErro(null)
+                void conversa
+                  .agir({ automacaoAtiva: false }, async () => {
+                    const r = await acaoPausarBotPorPrazo(clienteId, contatoId, minutos)
+                    if (r.ok) setFimDaPausa(r.ate)
+                    return r
+                  })
+                  .then(setErro)
+              }}
+            />
+          )}
+        </AcaoComPainel>
+      )}
+
+      {temAutomacao && !comAtendente && !botLigado && (
+        <div className="flex items-center">
+          <BotaoDeIcone
+            rotulo="Religar o bot nesta conversa"
+            marcada
+            aoClicar={() =>
+              agir({ automacaoAtiva: true }, () => {
+                setFimDaPausa(null)
+                return acaoAlternarAutomacaoDoLead(clienteId, contatoId, true)
+              })
+            }
+          >
+            <IconeTocar />
+          </BotaoDeIcone>
+          {fimDaPausa && <ContadorDaPausa ate={fimDaPausa} />}
+        </div>
       )}
 
       <span className="mx-1 h-4 w-px bg-line" aria-hidden />

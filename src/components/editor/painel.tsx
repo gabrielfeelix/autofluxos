@@ -26,8 +26,13 @@ import {
   MAX_ROTULO_DO_FORMULARIO,
   MAX_TURNOS_DA_IA,
   METODOS,
+  MAX_REGRAS,
   OPERADORES,
+  minutosDaEspera,
+  regrasDaCondicao,
+  type NoCondicao,
   type Operador,
+  type RegraDaCondicao,
   type Cabecalho,
   type Mapeamento,
   type No,
@@ -36,6 +41,9 @@ import {
 import { LIMITE_DA_NOTA } from '@/core/flow/limites'
 import { mensagensDoHandoff, partesDaMensagem } from '@/core/flow/mensagem'
 import { Dropdown } from '@/components/design/dropdown'
+import { Alternador } from '@/components/design/alternador'
+import { fraseDaCondicao, fraseDaEspera } from '@/core/flow/condicao'
+import { DEFINICAO_DO_CANAL } from '@/core/canais'
 import { AjudaDoCampo } from '@/components/design/ajuda-do-campo'
 import { LinhaLigaDesliga } from '@/components/design/interruptor'
 import { SecaoAvancada } from '@/components/design/secao-avancada'
@@ -1057,86 +1065,80 @@ export function Painel({
       )}
 
       {no.type === 'condicao' && (
-        <>
-          <CampoDeVariavel
-            rotulo="Variável"
-            valor={no.data.variavel}
-            variaveis={deOutrosBlocos}
-            modo="usa"
-            secao="blocos"
-            dica="O nome cru, sem chaves: prazo, e não {{prazo}}."
-            nota={
-              <p>
-                Aqui se escreve o <strong>nome</strong> da variável, não a citação dela. Nas
-                mensagens você escreve <code>{'{{prazo}}'}</code> porque ali o texto é lido junto
-                com o resto da frase; neste campo o fluxo já sabe que é uma variável, e as chaves
-                virariam parte do nome.
-              </p>
-            }
-            aoMudar={(variavel) => aoMudarDados({ variavel })}
-          />
-          <div className="block">
-            <span className="mb-1.5 block text-[11px] font-bold tracking-[0.05em] text-muted uppercase">
-              Operador
-              <AjudaDoCampo
-                titulo="Operador"
-                secao="blocos"
-                texto="Como a condição compara. A frase inteira se lê em voz alta: “orcamento é maior que 500”."
-                detalhes={
-                  <>
-                    <p>
-                      A condição separa os caminhos do fluxo em dois: a saída <strong>sim</strong> e
-                      a saída <strong>não</strong>. As duas precisam estar ligadas, senão a conversa
-                      morre num dos lados.
-                    </p>
-                    <p>
-                      Leia a linha inteira em voz alta para conferir:{' '}
-                      <code>orcamento é maior que 500</code>. <strong>Vazio</strong> e{' '}
-                      <strong>preenchido</strong> não pedem valor nenhum, servem para perguntar se o
-                      fluxo já guardou aquilo.
-                    </p>
-                  </>
-                }
-              />
-            </span>
-            <Dropdown
-              valor={no.data.operador}
-              aoMudar={(operador) => aoMudarDados({ operador })}
-              rotuloAcessivel="Operador"
-              opcoes={OPERADORES.map((operador) => ({
-                valor: operador,
-                rotulo: ROTULO_DO_OPERADOR[operador],
-              }))}
-            />
-          </div>
-          {no.data.operador !== 'vazio' && no.data.operador !== 'preenchido' && (
-            <div className="space-y-1.5">
-              <Linha
-                rotulo="Valor"
-                valor={no.data.valor}
-                dica="Com o que comparar: um texto que você escreve, ou outra informação da conversa."
-                secao="blocos"
-                detalhes={
+        <FormularioDaCondicao
+          data={no.data}
+          aoMudarDados={aoMudarDados}
+          deOutrosBlocos={deOutrosBlocos}
+          variaveis={variaveis}
+          valoresDeVariaveis={valoresDeVariaveis}
+          etiquetas={etiquetas}
+          etapas={etapas}
+        />
+      )}
+
+      {no.type === 'espera' && (
+        <div className="block">
+          <span className="mb-1.5 block text-[11px] font-bold tracking-[0.05em] text-muted uppercase">
+            Quanto tempo esperar
+            <AjudaDoCampo
+              titulo="Esperar"
+              secao="blocos"
+              texto="A conversa para aqui e segue sozinha quando o tempo acabar."
+              detalhes={
+                <>
                   <p>
-                    Quando a variável vem de uma pergunta com botões, os valores possíveis aparecem
-                    clicáveis logo abaixo deste campo. Use-os: digitar “Agendar aula” de memória
-                    cria um erro que <strong>não estoura em lugar nenhum</strong>, a comparação
-                    falha calada, todo mundo desce pelo ramo errado, e o desenho continua parecendo
-                    certo.
+                    Serve para dar tempo antes do próximo passo: mandar o material, esperar 5
+                    minutos e perguntar se a pessoa gostou; mandar a proposta e lembrar no dia
+                    seguinte.
                   </p>
-                }
-                aoMudar={(valor) => aoMudarDados({ valor })}
-                aceitaVariavel
-                conhecidas={variaveis}
-              />
-              <ValoresConhecidos
-                valores={valoresDeVariaveis[no.data.variavel] ?? []}
-                escolhido={no.data.valor}
-                aoEscolher={(valor) => aoMudarDados({ valor })}
+                  <p>
+                    O que a pessoa escrever durante a espera fica no Inbox e não mexe na conversa.
+                    Pedir atendente ou voltar ao menu continua funcionando.
+                  </p>
+                  <p>
+                    No WhatsApp, depois de 24 horas sem a pessoa escrever, só sai modelo aprovado.
+                    Espera de um dia ou mais pode terminar com a mensagem seguinte recusada.
+                  </p>
+                </>
+              }
+            />
+          </span>
+          <div className="flex gap-2">
+            <div className="w-20 shrink-0">
+            <input
+              type="number"
+              min={1}
+              max={no.data.unidade === 'dias' ? 30 : no.data.unidade === 'horas' ? 720 : 1440}
+              inputMode="numeric"
+              value={no.data.quantidade}
+              onChange={(e) => {
+                const n = Math.floor(Number(e.target.value))
+                if (Number.isFinite(n)) aoMudarDados({ quantidade: Math.max(1, n) })
+              }}
+              aria-label="Quantidade"
+              className="app-field w-full px-3 py-2.5 text-[13px] tabular-nums"
+            />
+            </div>
+            <div className="min-w-0 flex-1">
+              <Dropdown
+                valor={no.data.unidade}
+                aoMudar={(unidade) => aoMudarDados({ unidade })}
+                rotuloAcessivel="Unidade"
+                opcoes={[
+                  { valor: 'minutos', rotulo: no.data.quantidade === 1 ? 'minuto' : 'minutos' },
+                  { valor: 'horas', rotulo: no.data.quantidade === 1 ? 'hora' : 'horas' },
+                  { valor: 'dias', rotulo: no.data.quantidade === 1 ? 'dia' : 'dias' },
+                ]}
               />
             </div>
+          </div>
+          {minutosDaEspera(no) >= 24 * 60 && (
+            <span className="mt-2 block rounded-[8px] border border-amber-300/25 bg-amber-300/[0.06] px-2.5 py-2 text-[11px] leading-4 text-aviso">
+              Espera longa: no WhatsApp e no Instagram, depois de 24 horas sem a pessoa escrever, a
+              mensagem seguinte pode ser recusada.
+            </span>
           )}
-        </>
+        </div>
       )}
 
       {no.type === 'salvar-campo' && (
@@ -3298,7 +3300,9 @@ function resumoDoBloco(no: No): string {
     case 'midia':
       return curto(no.data.legenda ?? '') || `Envia ${no.data.midia}`
     case 'condicao':
-      return curto(`Se ${no.data.variavel} ${no.data.operador} ${no.data.valor}`)
+      return curto(`Se ${fraseDaCondicao(no)}`)
+    case 'espera':
+      return `Espera ${fraseDaEspera(no)}`
     case 'salvar-campo':
       return curto(`Guarda ${no.data.campo}`)
     case 'nps':
@@ -4109,4 +4113,283 @@ function erroDoEndereco(url: string): string | null {
   // Variável no servidor tem erro próprio e mais claro, na lista do fluxo.
   if (/^https:\/\/[^/]*\{\{/.test(limpo)) return null
   return problemaDoEndereco(limpo)?.mensagem ?? null
+}
+
+const TIPOS_DE_REGRA: { valor: RegraDaCondicao['tipo']; rotulo: string }[] = [
+  { valor: 'variavel', rotulo: 'Informação da conversa' },
+  { valor: 'etiqueta', rotulo: 'Etiqueta do contato' },
+  { valor: 'etapa', rotulo: 'Etapa do funil' },
+  { valor: 'horario', rotulo: 'Horário de atendimento' },
+  { valor: 'canal', rotulo: 'Canal da conversa' },
+]
+
+function regraNova(tipo: RegraDaCondicao['tipo']): RegraDaCondicao {
+  switch (tipo) {
+    case 'variavel':
+      return { tipo, variavel: '', operador: 'igual', valor: '' }
+    case 'etiqueta':
+      return { tipo, etiquetaId: '', tem: true }
+    case 'etapa':
+      return { tipo, colunaId: '', esta: true }
+    case 'horario':
+      return { tipo, aberto: true }
+    case 'canal':
+      return { tipo, canal: 'whatsapp' }
+  }
+}
+
+/**
+ * A condição com várias regras (06/nov/2026).
+ *
+ * Cada regra é um cartão com o tipo no topo, e o "todas / qualquer uma" só
+ * aparece quando há mais de uma: com uma regra só, a escolha não muda nada e
+ * seria uma pergunta a mais na tela. O formato antigo (uma variável) vira a
+ * primeira regra na primeira edição, e o motor lê os dois.
+ */
+function FormularioDaCondicao({
+  data,
+  aoMudarDados,
+  deOutrosBlocos,
+  variaveis,
+  valoresDeVariaveis,
+  etiquetas,
+  etapas,
+}: {
+  data: NoCondicao['data']
+  aoMudarDados: (dados: Record<string, unknown>) => void
+  deOutrosBlocos: string[]
+  variaveis: string[]
+  valoresDeVariaveis: Record<string, string[]>
+  etiquetas: EtiquetaDoCliente[]
+  etapas: EtapaDoCliente[]
+}) {
+  const regras = regrasDaCondicao(data)
+  const modo = data.modo ?? 'todas'
+  const mudarRegras = (novas: RegraDaCondicao[]) => aoMudarDados({ regras: novas, modo })
+  const mudarRegra = (i: number, regra: RegraDaCondicao) => mudarRegras(regras.map((r, j) => (j === i ? regra : r)))
+
+  return (
+    <div className="space-y-3">
+      <div className="flex items-center justify-between gap-2">
+        <span className="text-[11px] font-bold tracking-[0.05em] text-muted uppercase">
+          Quando seguir pelo sim
+          <AjudaDoCampo
+            titulo="Condição"
+            secao="blocos"
+            texto="Confere o contato e divide o caminho: passou, sai pelo sim; não passou, pelo não."
+            detalhes={
+              <>
+                <p>
+                  Cada regra olha uma coisa: uma informação que a conversa guardou, uma etiqueta, a
+                  etapa do funil, se a empresa está em horário de atendimento ou por qual canal a
+                  pessoa fala.
+                </p>
+                <p>
+                  Com mais de uma regra, escolha se <strong>todas</strong> precisam passar ou se{' '}
+                  <strong>qualquer uma</strong> basta. As duas saídas, sim e não, precisam estar
+                  ligadas.
+                </p>
+              </>
+            }
+          />
+        </span>
+      </div>
+
+      {regras.length > 1 && (
+        <Alternador
+          rotulo="Como juntar as regras"
+          ativa={modo}
+          aoEscolher={(m) => aoMudarDados({ regras, modo: m })}
+          opcoes={[
+            { chave: 'todas', rotulo: 'Todas as regras' },
+            { chave: 'qualquer', rotulo: 'Qualquer uma' },
+          ]}
+        />
+      )}
+
+      <ol className="space-y-2">
+        {regras.map((regra, i) => (
+          <li key={i} className="rounded-[10px] border border-strong bg-surface p-3">
+            <div className="mb-2 flex items-center gap-2">
+              <span className="w-8 shrink-0 text-[11px] font-semibold text-dim">
+                {i === 0 ? 'Se' : modo === 'qualquer' ? 'Ou' : 'E'}
+              </span>
+              <div className="min-w-0 flex-1">
+                <Dropdown
+                  valor={regra.tipo}
+                  aoMudar={(tipo) => mudarRegra(i, regraNova(tipo as RegraDaCondicao['tipo']))}
+                  rotuloAcessivel={`Tipo da regra ${i + 1}`}
+                  opcoes={TIPOS_DE_REGRA}
+                />
+              </div>
+              {regras.length > 1 && (
+                <button
+                  type="button"
+                  onClick={() => mudarRegras(regras.filter((_, j) => j !== i))}
+                  aria-label={`Remover a regra ${i + 1}`}
+                  title="Remover regra"
+                  className="grid size-8 shrink-0 place-items-center rounded-md text-dim hover:bg-surface-strong hover:text-perigo"
+                >
+                  ×
+                </button>
+              )}
+            </div>
+            <CorpoDaRegra
+              regra={regra}
+              aoMudar={(r) => mudarRegra(i, r)}
+              deOutrosBlocos={deOutrosBlocos}
+              variaveis={variaveis}
+              valoresDeVariaveis={valoresDeVariaveis}
+              etiquetas={etiquetas}
+              etapas={etapas}
+            />
+          </li>
+        ))}
+      </ol>
+
+      {regras.length < MAX_REGRAS && (
+        <button
+          type="button"
+          onClick={() => mudarRegras([...regras, regraNova('etiqueta')])}
+          className="w-full rounded-[10px] border border-dashed border-strong px-3 py-2 text-[12px] font-semibold text-muted hover:border-primary hover:text-primary"
+        >
+          + Adicionar regra
+        </button>
+      )}
+
+      <p className="text-[11.5px] leading-4 text-dim">
+        Se {fraseDaCondicao({ data: { ...data, regras, modo } })}, segue pelo <strong>sim</strong>.
+        Senão, pelo <strong>não</strong>.
+      </p>
+    </div>
+  )
+}
+
+function CorpoDaRegra({
+  regra,
+  aoMudar,
+  deOutrosBlocos,
+  variaveis,
+  valoresDeVariaveis,
+  etiquetas,
+  etapas,
+}: {
+  regra: RegraDaCondicao
+  aoMudar: (regra: RegraDaCondicao) => void
+  deOutrosBlocos: string[]
+  variaveis: string[]
+  valoresDeVariaveis: Record<string, string[]>
+  etiquetas: EtiquetaDoCliente[]
+  etapas: EtapaDoCliente[]
+}) {
+  switch (regra.tipo) {
+    case 'variavel':
+      return (
+        <div className="space-y-2">
+          <CampoDeVariavel
+            rotulo="Informação"
+            valor={regra.variavel}
+            variaveis={deOutrosBlocos}
+            modo="usa"
+            secao="blocos"
+            dica="O nome cru, sem chaves: prazo, e não {{prazo}}."
+            aoMudar={(variavel) => aoMudar({ ...regra, variavel })}
+          />
+          <Dropdown
+            valor={regra.operador}
+            aoMudar={(operador) => aoMudar({ ...regra, operador: operador as Operador })}
+            rotuloAcessivel="Como comparar"
+            opcoes={OPERADORES.map((operador) => ({ valor: operador, rotulo: ROTULO_DO_OPERADOR[operador] }))}
+          />
+          {regra.operador !== 'vazio' && regra.operador !== 'preenchido' && (
+            <div className="space-y-1.5">
+              <Linha
+                rotulo="Valor"
+                valor={regra.valor}
+                dica="Com o que comparar: um texto que você escreve, ou outra informação da conversa."
+                secao="blocos"
+                aoMudar={(valor) => aoMudar({ ...regra, valor })}
+                aceitaVariavel
+                conhecidas={variaveis}
+              />
+              <ValoresConhecidos
+                valores={valoresDeVariaveis[regra.variavel] ?? []}
+                escolhido={regra.valor}
+                aoEscolher={(valor) => aoMudar({ ...regra, valor })}
+              />
+            </div>
+          )}
+        </div>
+      )
+    case 'etiqueta':
+      return etiquetas.length === 0 ? (
+        <p className="text-[11.5px] leading-5 text-dim">
+          Esta conta ainda não tem etiqueta. Crie uma em Ajustes, Etiquetas.
+        </p>
+      ) : (
+        <div className="space-y-2">
+          <Alternador
+            rotulo="Tem ou não tem"
+            ativa={regra.tem ? 'tem' : 'nao'}
+            aoEscolher={(v) => aoMudar({ ...regra, tem: v === 'tem' })}
+            opcoes={[
+              { chave: 'tem', rotulo: 'Tem a etiqueta' },
+              { chave: 'nao', rotulo: 'Não tem' },
+            ]}
+          />
+          <Dropdown
+            valor={regra.etiquetaId}
+            aoMudar={(etiquetaId) => aoMudar({ ...regra, etiquetaId })}
+            rotuloAcessivel="Etiqueta"
+            opcoes={[{ valor: '', rotulo: 'Escolha a etiqueta' }, ...etiquetas.map((e) => ({ valor: e.id, rotulo: e.nome }))]}
+          />
+        </div>
+      )
+    case 'etapa':
+      return etapas.length === 0 ? (
+        <p className="text-[11.5px] leading-5 text-dim">Esta conta ainda não tem quadro. Crie um em Quadros.</p>
+      ) : (
+        <div className="space-y-2">
+          <Alternador
+            rotulo="Está ou não está"
+            ativa={regra.esta ? 'esta' : 'nao'}
+            aoEscolher={(v) => aoMudar({ ...regra, esta: v === 'esta' })}
+            opcoes={[
+              { chave: 'esta', rotulo: 'Está na etapa' },
+              { chave: 'nao', rotulo: 'Não está' },
+            ]}
+          />
+          <Dropdown
+            valor={regra.colunaId}
+            aoMudar={(colunaId) => aoMudar({ ...regra, colunaId })}
+            rotuloAcessivel="Etapa do funil"
+            opcoes={[{ valor: '', rotulo: 'Escolha a etapa' }, ...etapas.map((e) => ({ valor: e.colunaId, rotulo: e.rotulo }))]}
+          />
+        </div>
+      )
+    case 'horario':
+      return (
+        <Alternador
+          rotulo="Dentro ou fora do horário"
+          ativa={regra.aberto ? 'aberto' : 'fechado'}
+          aoEscolher={(v) => aoMudar({ ...regra, aberto: v === 'aberto' })}
+          opcoes={[
+            { chave: 'aberto', rotulo: 'Dentro do horário' },
+            { chave: 'fechado', rotulo: 'Fora do horário' },
+          ]}
+        />
+      )
+    case 'canal':
+      return (
+        <Dropdown
+          valor={regra.canal}
+          aoMudar={(canal) => aoMudar({ ...regra, canal: canal as typeof regra.canal })}
+          rotuloAcessivel="Canal"
+          opcoes={(['whatsapp', 'instagram', 'messenger', 'telegram', 'site'] as const).map((c) => ({
+            valor: c,
+            rotulo: `Conversa pelo ${DEFINICAO_DO_CANAL[c].nome}`,
+          }))}
+        />
+      )
+  }
 }

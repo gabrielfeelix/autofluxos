@@ -2,6 +2,7 @@ import 'server-only'
 import { rodarVencimentoDeCobranca } from './cobrancas'
 import { rodarDesistenciaDoFormulario, rodarTimeoutDePergunta, type FabricaDeCanal } from './receber-mensagem'
 import { rodarPassoDeSequencia } from './sequencias-passo'
+import { rodarRetomadaDaAutomacao } from './pausa-do-bot'
 import { rodarContinuidadeDeProcesso } from './servicos/concluir-processo'
 import {
   devolverDesconhecidas,
@@ -89,5 +90,7 @@ async function executar(
       return rodarVencimentoDeCobranca(tarefa.clienteId, tarefa.dados)
     case 'desistencia_do_formulario':
       return rodarDesistenciaDoFormulario(tarefa.clienteId, tarefa.dados, fabricaDeCanal)
+    case 'retomar_automacao':
+      return rodarRetomadaDaAutomacao(tarefa.clienteId, tarefa.dados)
   }
 }

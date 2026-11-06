@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { Alternador } from '@/components/design/alternador'
+import { LinhaLigaDesliga } from '@/components/design/interruptor'
 import { Dropdown } from '@/components/design/dropdown'
 import { RotuloCampo } from '@/components/design/modal-formulario'
 import { depoisDaTela } from '@/components/inbox/conversa-local'
@@ -62,6 +62,16 @@ export function CamposDaRespostaAComentario({
       : null,
   )
   const [mensagem, setMensagem] = useState(inicial?.mensagem ?? '')
+  const [palavras, setPalavras] = useState(inicial?.palavras.join(', ') ?? '')
+  const [emPublico, setEmPublico] = useState(Boolean(inicial?.respostaPublica))
+  const [respostaPublica, setRespostaPublica] = useState(inicial?.respostaPublica ?? '')
+
+  /** Os atalhos de palavra: tocar acrescenta, sem repetir a que já está. */
+  function acrescentarPalavra(palavra: string) {
+    const atuais = palavras.split(',').map((p) => p.trim()).filter(Boolean)
+    if (atuais.some((p) => p.toLowerCase() === palavra)) return
+    setPalavras([...atuais, palavra].join(', '))
+  }
 
   async function buscarPosts(conta: string) {
     setCarregando(true)
@@ -118,15 +128,15 @@ export function CamposDaRespostaAComentario({
         </div>
       )}
 
-      <div>
-        <RotuloCampo>Em qual post</RotuloCampo>
-        <Alternador
+      <section>
+        <TituloDaSecao>Quando alguém comentar</TituloDaSecao>
+        <GrupoDeRadio
           rotulo="Em qual post"
-          ativa={alcance}
+          valor={alcance}
           aoEscolher={escolherAlcance}
           opcoes={[
-            { chave: 'todos', rotulo: 'Todos os posts' },
-            { chave: 'um', rotulo: 'Um post específico' },
+            { valor: 'todos', titulo: 'Em qualquer post ou reel', descricao: 'Vale para os posts de hoje e os que vierem.' },
+            { valor: 'um', titulo: 'Num post específico', descricao: 'Você escolhe pela foto, logo abaixo.' },
           ]}
         />
 
@@ -203,17 +213,17 @@ export function CamposDaRespostaAComentario({
             )}
           </div>
         )}
-      </div>
+      </section>
 
-      <div>
-        <RotuloCampo>Quando responder</RotuloCampo>
-        <Alternador
+      <section>
+        <TituloDaSecao>E o comentário tem</TituloDaSecao>
+        <GrupoDeRadio
           rotulo="Quando responder"
-          ativa={quando}
+          valor={quando}
           aoEscolher={setQuando}
           opcoes={[
-            { chave: 'palavras', rotulo: 'Com palavras' },
-            { chave: 'qualquer', rotulo: 'Qualquer comentário' },
+            { valor: 'palavras', titulo: 'Uma destas palavras', descricao: 'Só responde quem escrever a palavra combinada.' },
+            { valor: 'qualquer', titulo: 'Qualquer comentário', descricao: 'Responde todo mundo que comentar.' },
           ]}
         />
         {quando === 'palavras' && (
@@ -222,19 +232,33 @@ export function CamposDaRespostaAComentario({
               name="palavras"
               required
               maxLength={400}
-              defaultValue={inicial?.palavras.join(', ') ?? ''}
+              value={palavras}
+              onChange={(e) => setPalavras(e.target.value)}
               placeholder="Exemplo: eu quero, link, preço"
               className="app-field mt-3 px-[13px] py-[11px] text-[13.5px]"
             />
+            <div className="mt-2 flex flex-wrap items-center gap-1.5">
+              <span className="text-[11.5px] text-dim">Mais usadas:</span>
+              {['eu quero', 'link', 'preço', 'quero'].map((p) => (
+                <button
+                  key={p}
+                  type="button"
+                  onClick={() => acrescentarPalavra(p)}
+                  className="rounded-full border border-line px-2.5 py-0.5 text-[11.5px] text-muted transition hover:border-primary/50 hover:text-primary"
+                >
+                  {p}
+                </button>
+              ))}
+            </div>
             <p className="mt-1.5 text-[11.5px] leading-5 text-dim">
               Separe por vírgula. Vale a palavra inteira, sem diferença de acento ou maiúscula.
             </p>
           </>
         )}
-      </div>
+      </section>
 
       <label className="block">
-        <RotuloCampo>Mensagem no direct</RotuloCampo>
+        <TituloDaSecao>Ela recebe no direct</TituloDaSecao>
         <textarea
           name="mensagem"
           required
@@ -253,8 +277,28 @@ export function CamposDaRespostaAComentario({
         </span>
       </label>
 
-      <div>
-        <RotuloCampo>Quando a pessoa responder o direct</RotuloCampo>
+      <section>
+        <input type="hidden" name="respostaPublica" value={emPublico ? respostaPublica : ''} />
+        <LinhaLigaDesliga
+          titulo="Responder também em público"
+          descricao="Uma frase curta embaixo do comentário, avisando que a mensagem foi pro direct."
+          marcada={emPublico}
+          aoMudar={setEmPublico}
+        />
+        {emPublico && (
+          <input
+            maxLength={LIMITES_DO_COMENTARIO.respostaPublica}
+            value={respostaPublica}
+            onChange={(e) => setRespostaPublica(e.target.value)}
+            aria-label="Resposta no comentário"
+            placeholder="Exemplo: Enviamos os detalhes no seu direct."
+            className="app-field mt-2 px-[13px] py-[11px] text-[13.5px]"
+          />
+        )}
+      </section>
+
+      <section>
+        <TituloDaSecao>Quando ela responder o direct</TituloDaSecao>
         <Dropdown
           nome="fluxoId"
           rotuloAcessivel="Fluxo que a resposta da pessoa abre"
@@ -271,22 +315,63 @@ export function CamposDaRespostaAComentario({
         <span className="mt-1.5 block text-[11.5px] leading-5 text-dim">
           Um fluxo próprio dá a cada post a sua jornada: oferta, coleta de dados, venda.
         </span>
-      </div>
-
-      <label className="block">
-        <RotuloCampo>Resposta no comentário (opcional)</RotuloCampo>
-        <input
-          name="respostaPublica"
-          maxLength={LIMITES_DO_COMENTARIO.respostaPublica}
-          defaultValue={inicial?.respostaPublica ?? ''}
-          placeholder="Exemplo: Enviamos os detalhes no seu direct."
-          className="app-field px-[13px] py-[11px] text-[13.5px]"
-        />
-        <span className="mt-1.5 block text-[11.5px] leading-5 text-dim">
-          Aparece em público, embaixo do comentário. Em branco, só o direct sai.
-        </span>
-      </label>
+      </section>
     </>
+  )
+}
+
+/** O título de cada passo do formulário: "Quando alguém comentar", "Ela recebe no direct". */
+function TituloDaSecao({ children }: { children: React.ReactNode }) {
+  return <span className="mb-2 block text-[13px] font-semibold text-ink">{children}</span>
+}
+
+/**
+ * Rádios em cartão, um embaixo do outro (06/nov/2026).
+ *
+ * Era um alternador de dois botões ("Com palavras", "Qualquer comentário"):
+ * cabia, mas obrigava a adivinhar o que cada lado fazia. Cada opção agora diz
+ * o que acontece numa linha, como no ManyChat que o Eduardo mostrou.
+ */
+function GrupoDeRadio<V extends string>({
+  rotulo,
+  valor,
+  aoEscolher,
+  opcoes,
+}: {
+  rotulo: string
+  valor: V
+  aoEscolher: (valor: V) => void
+  opcoes: { valor: V; titulo: string; descricao: string }[]
+}) {
+  return (
+    <div role="radiogroup" aria-label={rotulo} className="overflow-hidden rounded-[10px] border border-line">
+      {opcoes.map((o, i) => {
+        const aceso = o.valor === valor
+        return (
+          <button
+            key={o.valor}
+            type="button"
+            role="radio"
+            aria-checked={aceso}
+            onClick={() => aoEscolher(o.valor)}
+            className={`flex w-full items-start gap-3 px-3 py-2.5 text-left transition ${i > 0 ? 'border-t border-line' : ''} ${
+              aceso ? 'bg-primary/[0.06]' : 'hover:bg-surface-strong/60'
+            }`}
+          >
+            <span
+              aria-hidden
+              className={`mt-0.5 grid size-4 shrink-0 place-items-center rounded-full border ${aceso ? 'border-primary' : 'border-strong'}`}
+            >
+              {aceso && <span className="size-2 rounded-full bg-primary" />}
+            </span>
+            <span className="min-w-0">
+              <span className="block text-[13px] font-medium text-ink">{o.titulo}</span>
+              <span className="block text-[11.5px] leading-4 text-dim">{o.descricao}</span>
+            </span>
+          </button>
+        )
+      })}
+    </div>
   )
 }
 

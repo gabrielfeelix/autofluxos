@@ -32,6 +32,8 @@ import {
   type Fluxo,
   type No,
   type TipoDeMidia,
+  minutosDaEspera,
+  regrasDaCondicao,
 } from './schema'
 import { contarCaracteres, temMetadeDeCaractere } from './texto'
 import { CANAL_PADRAO, DEFINICAO_DO_CANAL, type CanalId, type DefinicaoDeCanal } from '../canais'
@@ -597,6 +599,41 @@ export function validar(fluxo: Fluxo, capacidades: Capacidades = {}): ResultadoV
       }
     }
 
+    if (no.type === 'condicao') {
+      for (const regra of regrasDaCondicao(no.data)) {
+        if (regra.tipo === 'etiqueta' && etiquetas && regra.etiquetaId && !etiquetas.includes(regra.etiquetaId)) {
+          erros.push({
+            codigo: 'CONDICAO_ETIQUETA_INEXISTENTE',
+            mensagem: `${descrever(no)} pergunta por uma etiqueta que não existe mais neste cliente. Escolha outra.`,
+            noId: no.id,
+          })
+        }
+        if (regra.tipo === 'etapa' && etapas && regra.colunaId && !etapas.includes(regra.colunaId)) {
+          erros.push({
+            codigo: 'CONDICAO_ETAPA_INEXISTENTE',
+            mensagem: `${descrever(no)} pergunta por uma etapa que não existe mais neste cliente. Escolha outra.`,
+            noId: no.id,
+          })
+        }
+      }
+    }
+
+    /*
+     * Esperar mais que a janela do canal: a mensagem seguinte pode não sair.
+     *
+     * Aviso, e não impedimento: se a pessoa escreveu durante a espera, a janela
+     * reabriu e a mensagem sai. O que o desenho não garante é isso, e quem
+     * desenhou "espera 2 dias e cobra" precisa saber que o WhatsApp só aceita
+     * modelo aprovado depois de 24 horas de silêncio.
+     */
+    if (no.type === 'espera' && limites.janelaHoras !== null && minutosDaEspera(no) >= limites.janelaHoras * 60) {
+      avisos.push({
+        codigo: 'ESPERA_FORA_DA_JANELA',
+        mensagem: `${descrever(no)} espera ${limites.janelaHoras} horas ou mais. Se a pessoa não escrever nesse meio tempo, o ${nomeDoCanal} recusa a mensagem seguinte, porque a janela de ${limites.janelaHoras} horas fechou.`,
+        noId: no.id,
+      })
+    }
+
     if (no.type === 'etiqueta') {
       if (!no.data.etiquetaId) {
         erros.push({
@@ -777,7 +814,7 @@ export function validar(fluxo: Fluxo, capacidades: Capacidades = {}): ResultadoV
         if (!minhasSaidas.some((a) => a.sourceHandle === saida)) {
           erros.push({
             codigo: 'CONDICAO_SEM_SAIDA',
-            mensagem: `A condição sobre "${no.data.variavel}" não tem saída para "${saida}".`,
+            mensagem: `${descrever(no)} não tem saída para "${saida === SAIDA_VERDADEIRO ? 'sim' : 'não'}".`,
             noId: no.id,
           })
         }
@@ -1221,10 +1258,23 @@ function conferirConteudo(
     }
 
     case 'condicao':
-      conferirVariavel(no.data.variavel, 'variável')
-      if (vazio(no.data.variavel)) {
-        erros.push({ codigo: 'CONDICAO_SEM_VARIAVEL', mensagem: 'A condição não diz qual variável olhar.', noId: no.id })
+      for (const regra of regrasDaCondicao(no.data)) {
+        if (regra.tipo === 'variavel') {
+          conferirVariavel(regra.variavel, 'variável')
+          if (vazio(regra.variavel)) {
+            erros.push({ codigo: 'CONDICAO_SEM_VARIAVEL', mensagem: `${descrever(no)} tem uma regra que não diz qual variável olhar.`, noId: no.id })
+          }
+        }
+        if (regra.tipo === 'etiqueta' && !regra.etiquetaId) {
+          erros.push({ codigo: 'CONDICAO_SEM_ETIQUETA', mensagem: `${descrever(no)} tem uma regra de etiqueta sem etiqueta escolhida.`, noId: no.id })
+        }
+        if (regra.tipo === 'etapa' && !regra.colunaId) {
+          erros.push({ codigo: 'CONDICAO_SEM_ETAPA', mensagem: `${descrever(no)} tem uma regra de etapa sem etapa escolhida.`, noId: no.id })
+        }
       }
+      break
+
+    case 'espera':
       break
 
     case 'salvar-campo':
@@ -1700,7 +1750,9 @@ function variaveisDoNo(no: No): string[] {
     case 'handoff':
       return mensagensDoHandoff(no).flatMap((mensagem) => variaveisCitadas(mensagem))
     case 'condicao':
-      return [no.data.variavel]
+      return regrasDaCondicao(no.data).flatMap((r) => (r.tipo === 'variavel' ? [r.variavel] : []))
+    case 'espera':
+      return []
     case 'http':
       return [
         ...variaveisCitadas(no.data.url),
@@ -1788,6 +1840,7 @@ function textosDoNo(no: No): string[] {
       return [no.data.texto, no.data.botao]
     case 'pontos':
     case 'condicao':
+    case 'espera':
     case 'etapa':
     case 'etiqueta':
     case 'ir-fluxo':

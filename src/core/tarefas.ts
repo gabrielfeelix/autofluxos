@@ -19,6 +19,8 @@ export const TIPOS_DE_TAREFA = [
   'vencimento_de_cobranca',
   /** O bloco Agendar esperou o formulário e a pessoa não marcou (0143). */
   'desistencia_do_formulario',
+  /** A pausa com prazo do bot num contato acabou (06/nov/2026). Ver `server/pausa-do-bot.ts`. */
+  'retomar_automacao',
 ] as const
 
 export type TipoDeTarefa = (typeof TIPOS_DE_TAREFA)[number]
@@ -87,4 +89,17 @@ export type DadosDoPasso = z.infer<typeof dadosDoPassoSchema>
  */
 export function chaveDoPasso(inscricaoId: string): string {
   return `sequencia:${inscricaoId}`
+}
+
+/**
+ * A pausa com prazo do bot num contato (06/nov/2026).
+ *
+ * Uma chave por contato: pausar de novo substitui o prazo anterior, e religar
+ * à mão cancela pela mesma chave. É também por ela que a tela lê **até quando**
+ * a pausa vai, sem coluna nova: o `quando` da tarefa pendente é o fim.
+ */
+export const dadosDaRetomadaSchema = z.object({ contatoId: z.string().uuid() })
+
+export function chaveDaRetomada(contatoId: string): string {
+  return `retomar_automacao:${contatoId}`
 }

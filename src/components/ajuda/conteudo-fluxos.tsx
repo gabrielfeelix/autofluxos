@@ -54,6 +54,7 @@ const ORDEM_DOS_BLOCOS: TipoNo[] = [
   'cobrar',
   'agendar',
   'pontos',
+  'espera',
 ]
 
 /** Quando usar cada bloco, em uma frase, o que a barra do editor não cabe. */
@@ -86,6 +87,8 @@ const QUANDO_USAR: Record<TipoNo, string> = {
     'Marcar horário sem trocar mensagem: o WhatsApp abre um formulário com os dias e os horários livres da agenda, e a pessoa escolhe com dois toques. Marcou, segue por um caminho com o horário guardado; não marcou no prazo, por outro.',
   pontos:
     'Premiar quem respondeu: credita pontos no programa de fidelidade da loja conectada para o pedido da conversa, uma vez por pedido. Lançou, segue por um caminho; não lançou, por outro, e o time recebe um alerta para lançar na mão.',
+  espera:
+    'Dar tempo antes do próximo passo: manda o material, espera 5 minutos, 2 horas ou 1 dia e pergunta se a pessoa gostou. O que ela escrever nesse meio tempo fica no Inbox, e a conversa continua de onde parou quando o prazo acaba.',
 }
 
 export function SecaoComoFunciona() {

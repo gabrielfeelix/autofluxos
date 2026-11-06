@@ -1,4 +1,5 @@
 import { fluxoSchema, type Fluxo, type No } from './flow/schema'
+import { fraseDaCondicao, fraseDaEspera } from './flow/condicao'
 import { mensagensDoHandoff, partesDaMensagem } from './flow/mensagem'
 
 /**
@@ -284,7 +285,9 @@ function textoDoBloco(no: No): string {
     case 'pergunta':
       return no.data.texto
     case 'condicao':
-      return `se ${no.data.variavel} ${no.data.operador} ${no.data.valor}`.trim()
+      return `se ${fraseDaCondicao(no)}`
+    case 'espera':
+      return `espera ${fraseDaEspera(no)}`
     case 'salvar-campo':
       return `guarda ${no.data.campo}`
     case 'nps':

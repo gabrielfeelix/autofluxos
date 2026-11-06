@@ -9,6 +9,7 @@ import { MARCA_DE_MOSTRAR, PROMETE_LINK, cepLimpo, produtosPrometidos, semMarcaD
 import { semElogioDeAbertura, semMarcacaoDeCard, semRepetirOsCards } from '@/core/juntar-cards'
 import { VARIAVEIS_DE_DATA } from '@/core/datas'
 import { VARIAVEIS_DO_ATENDIMENTO, varsDoAtendimento } from '@/core/vars-do-atendimento'
+import { comFatosDoContato } from '../fatos-do-contato'
 import { VARIAVEIS_DA_COBRANCA, montarCobranca, type Cobranca } from '@/core/cobranca'
 import { estaAtivo } from '@/core/produtos'
 import { listarProdutos } from '../repos/produtos'
@@ -254,7 +255,11 @@ async function rodar(
   entrada: Entrada,
   opcoes: OpcoesDeEfeitos,
 ): Promise<ResultadoComEfeitos> {
-  const atendimento = opcoes.atendimento ?? ATENDIMENTO_SEMPRE_ABERTO
+  // As etiquetas, etapas e o canal do contato, para as regras da condição.
+  // O simulador (`semRede`) não lê o banco: lá as regras respondem "não tem".
+  const atendimento = opcoes.semRede
+    ? (opcoes.atendimento ?? ATENDIMENTO_SEMPRE_ABERTO)
+    : await comFatosDoContato(opcoes.atendimento ?? ATENDIMENTO_SEMPRE_ABERTO, opcoes.contatoId)
 
   /*
    * As datas entram na rodada e **saem antes de gravar**.

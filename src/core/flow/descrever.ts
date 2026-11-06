@@ -1,4 +1,5 @@
 import { textoDaMensagem } from './mensagem'
+import { fraseDaCondicao, fraseDaEspera } from './condicao'
 import {
   SAIDA_DETRATOR,
   SAIDA_ESCOLHEU,
@@ -45,7 +46,9 @@ export function descrever(no: No): string {
     case 'pergunta':
       return rotular('Pergunta', curto(no.data.texto))
     case 'condicao':
-      return rotular('Condição sobre', curto(no.data.variavel))
+      return rotular('Condição', curto(fraseDaCondicao(no)))
+    case 'espera':
+      return `Esperar ${fraseDaEspera(no)}`
     case 'salvar-campo':
       return rotular('Guardar em', curto(no.data.campo))
     case 'ia':

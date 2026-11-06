@@ -1,6 +1,8 @@
 'use client'
 
 import { exigeCredencial, presetDoBloco } from '@/core/presets'
+import { fraseDaEspera, fraseDaRegra } from '@/core/flow/condicao'
+import { regrasDaCondicao } from '@/core/flow/schema'
 import { RealceDeVariaveis } from './realce-de-variaveis'
 import { CORES, ICONES, NOMES } from '@/core/flow/blocos'
 import { partesDaMensagem } from '@/core/flow/mensagem'
@@ -24,13 +26,6 @@ import type { No, NoMensagem, TipoNo } from '@/core/flow/schema'
 /** Uma linha da prévia: o rótulo à esquerda, o valor por extenso à direita. */
 type Detalhe = { rotulo: string; valor: string; tom?: 'aviso' }
 
-const OPERADOR: Record<string, string> = {
-  igual: 'é igual a',
-  diferente: 'é diferente de',
-  contem: 'contém',
-  vazio: 'está vazia',
-  preenchido: 'está preenchida',
-}
 
 const MIDIA: Record<string, string> = {
   imagem: 'Foto',
@@ -138,16 +133,13 @@ export function detalhesDoBloco(no: No): Detalhe[] {
     }
 
     case 'condicao':
-      return [
-        {
-          rotulo: 'Se',
-          valor: `{{${no.data.variavel}}} ${OPERADOR[no.data.operador] ?? no.data.operador}${
-            no.data.operador === 'vazio' || no.data.operador === 'preenchido'
-              ? ''
-              : ` "${no.data.valor}"`
-          }`,
-        },
-      ]
+      return regrasDaCondicao(no.data).map((regra, i) => ({
+        rotulo: i === 0 ? 'Se' : no.data.modo === 'qualquer' ? 'Ou' : 'E',
+        valor: fraseDaRegra(regra),
+      }))
+
+    case 'espera':
+      return [{ rotulo: 'Espera', valor: fraseDaEspera(no) }]
 
     case 'salvar-campo':
       return [

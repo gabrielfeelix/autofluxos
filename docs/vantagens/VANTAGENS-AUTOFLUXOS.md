@@ -35,6 +35,12 @@ aqui fica o que o cliente ganha.
 ## Atender melhor
 
 - **Inbox único** para WhatsApp, Instagram, Messenger, chat do site e Telegram.
+- **Enviar uma automação de dentro da conversa**: o aluno quer remarcar, a
+  recepção escolhe o fluxo de reagendamento e ele mesmo refaz o agendamento,
+  sem ninguém marcar na mão. *(06/nov/2026)*
+- **Pausar o bot por um tempo**: 30 minutos, 1 hora, 4 horas ou 24 horas, com
+  contador na conversa. Nenhuma automação atropela o atendimento, e o bot
+  volta sozinho no fim. *(06/nov/2026)*
 - **Messenger da página do Facebook**: conecta com um login do Facebook, e as
   mensagens da página chegam no Inbox seguindo as mesmas automações do
   WhatsApp, sem desenhar nada de novo. *(04/nov/2026)*
@@ -98,7 +104,7 @@ aqui fica o que o cliente ganha.
 
 ## Automatizar
 
-- **Fluxos visuais** com 18 blocos: mensagem, pergunta, condição, IA, agenda,
+- **Fluxos visuais** com 20 blocos: mensagem, pergunta, condição, espera, IA, agenda,
   etiqueta, funil, anotação, e-mail, cobrança, agendamento por formulário,
   chamada de sistema externo e mais.
 - **Enviar e-mail pelo fluxo**: a confirmação para o cliente ou o aviso para a
@@ -110,6 +116,15 @@ aqui fica o que o cliente ganha.
 - **Gatilhos**: palavra-chave, anúncio específico, formulário do Facebook,
   evento de outro sistema e API.
 - **Modelos prontos por nicho**: aulas e serviços, loja, restaurante e mais.
+- **Esperar antes do próximo passo**: o fluxo manda o material, espera 5
+  minutos, 2 horas ou 1 dia e pergunta se a pessoa gostou, sozinho. O que ela
+  escrever no meio do caminho fica no Inbox. *(06/nov/2026)*
+- **Condições que conhecem o contato**: o caminho muda pela etiqueta, pela
+  etapa do funil, pelo horário de atendimento ou pelo canal, e várias regras
+  se juntam com "todas" ou "qualquer uma". *(06/nov/2026)*
+- **Variáveis à vista**: um botão no editor mostra cada informação que o fluxo
+  guarda, qual bloco cria, onde ela é usada e quantas respostas já teve; um
+  clique leva até o bloco. *(06/nov/2026)*
 - **Simulador** para testar o fluxo antes de publicar, e versões com "voltar
   para esta".
 - **Publica sem medo**: antes de ir ao ar, o sistema confere cerca de 70

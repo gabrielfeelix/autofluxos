@@ -47,7 +47,7 @@ import { comentarioEsperandoResposta, consumirComentario } from './repos/respost
 import { atribuirCampanha, campanhasAtivas, contarDisparoDaCampanha } from './repos/campanhas'
 import { chaveDoTimeout, dadosDoTimeoutSchema } from '@/core/tarefas'
 import { agendar, cancelarPorChave } from './repos/tarefas'
-import { timeoutDaPergunta } from '@/core/flow/schema'
+import { minutosDaEspera, timeoutDaPergunta } from '@/core/flow/schema'
 import type { Fluxo } from '@/core/flow/schema'
 import type { Sessao } from '@/core/engine/types'
 import { dentroDaJanela } from '@/channels/janela'
@@ -111,6 +111,7 @@ import { porContatoNaEtapa } from './repos/quadros'
 import { porNoQuadroPadrao } from './quadro-de-entrada'
 import { aplicarFato, marcarUltimaMensagem } from './repos/crm'
 import { anotar, religadoEm } from './repos/eventos'
+import { cancelarRetomada } from './pausa-do-bot'
 import { registrarPassagem } from './repos/passagens'
 import { enviarEmailDoBloco } from './email-do-fluxo'
 import { ehPedidoDeSaida } from '@/core/consentimento'
@@ -1528,7 +1529,11 @@ async function sincronizarTimeout(
       ? grafo.nodes.find((no) => no.id === sessao.noAtual)
       : undefined
 
-  const minutos = parada?.type === 'pergunta' ? timeoutDaPergunta(parada) : null
+  // A espera usa o mesmo relógio da pergunta: parada no bloco, o agendador
+  // acorda com `timeout` no prazo, e a mesma checagem de nó protege contra a
+  // tarefa velha.
+  const minutos =
+    parada?.type === 'pergunta' ? timeoutDaPergunta(parada) : parada?.type === 'espera' ? minutosDaEspera(parada) : null
   if (minutos === null || minutos === undefined) {
     await cancelarPorChave(chave)
     return
@@ -1985,6 +1990,10 @@ export async function abrirFluxoParaContato(
     if (resultado.destino) await trocarVersaoDaSessao(salva.id, resultado.destino.versaoId)
 
     await guardarSessao(salva.id, resultado.sessao)
+    // O prazo da pergunta e o do bloco Esperar. Faltava aqui: um fluxo aberto
+    // por sequência, campanha ou API que parasse numa pergunta com prazo nunca
+    // acordava (06/nov/2026).
+    await sincronizarTimeout(clienteId, contatoId, salva.id, resultado.destino?.grafo ?? versao.grafo, resultado.sessao)
     await aplicar(
       fabricaDeCanal(contexto.canal),
       contato,
@@ -2013,6 +2022,49 @@ export type DevolucaoAoBot =
   | 'janela_fechada'
   | 'sem_fluxo'
   | 'ocupado'
+
+/**
+ * Alguém da equipe escolheu uma automação para este contato, pelo Inbox
+ * (06/nov/2026, o "enviar automação" do ManyChat que o Eduardo trouxe).
+ *
+ * É um gesto explícito de quem está atendendo, então ele **ganha** das duas
+ * travas que protegem o contato de envios automáticos: o atendimento humano em
+ * curso termina (é a própria pessoa da equipe que está passando a conversa para
+ * o fluxo) e a pausa do bot é desfeita. O resto é `abrirFluxoParaContato`: a
+ * janela de 24h, o fluxo publicado e ligado, a trava do contato.
+ *
+ * O caso de uso: "o aluno quer remarcar", um clique, e o próprio aluno refaz o
+ * fluxo de agendamento, sem ninguém agendar na mão.
+ */
+export async function enviarAutomacaoPelaEquipe(
+  clienteId: string,
+  contatoId: string,
+  fluxoId: string,
+  autor: string | null,
+  fabricaDeCanal: FabricaDeCanal = canalPadrao,
+): Promise<AberturaPorNossaConta> {
+  const contexto = await contextoDeResposta(clienteId, contatoId)
+  if (!contexto) return 'sem_contexto'
+  if (!dentroDaJanela(contexto)) return 'janela_fechada'
+
+  const fluxo = await acharFluxo(fluxoId)
+  if (!fluxo || fluxo.clienteId !== clienteId || !fluxo.versaoPublicadaId || !fluxo.ativo) return 'sem_fluxo'
+
+  await encerrarAtendimento(clienteId, contatoId)
+  const contato = await acharContato(contatoId)
+  if (!contato) return 'sem_contexto'
+  if (!contato.automacaoAtiva) {
+    const religou = await alterarAutomacaoDoContato(clienteId, contatoId, true)
+    if (!religou.ok) return 'atendimento_humano'
+  }
+  await cancelarRetomada(contatoId)
+
+  const r = await abrirFluxoParaContato(clienteId, contatoId, fluxoId, fabricaDeCanal)
+  if (r === 'aberto') {
+    await anotar(clienteId, contatoId, 'automacao', { o_que: 'automação enviada pela equipe', fluxo: fluxo.nome }, autor)
+  }
+  return r
+}
 
 /**
  * "Devolver para o bot": a equipe tira a conversa da fila e o bot **continua de

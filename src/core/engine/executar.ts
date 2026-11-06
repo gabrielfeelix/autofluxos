@@ -37,7 +37,10 @@ import {
   type Fluxo,
   type No,
   type NoCobrar,
+  type NoCondicao,
   type NoIa,
+  type RegraDaCondicao,
+  regrasDaCondicao,
   type NoNps,
   type NoPergunta,
   type Opcao,
@@ -209,6 +212,19 @@ export type ContextoDoAtendimento = {
    * `motivoDeHojeFechado` em `core/horario.ts`.
    */
   motivoDeFechado?: string | null
+  /**
+   * O que o sistema sabe do contato e a condição pode perguntar (06/nov/2026):
+   * as etiquetas que ele tem, as etapas de quadro em que está e o canal da
+   * conversa. Ids, como o bloco guarda.
+   *
+   * Ausente quando quem chama não carregou (simulador, prévia): a regra de
+   * etiqueta ou de etapa responde "não tem", e a de canal responde "não é".
+   * Dentro de uma mesma execução, o bloco Etiqueta e o de Etapa **atualizam**
+   * estas listas, para "pôs a etiqueta e logo depois perguntou se tem" dar sim.
+   */
+  etiquetas?: string[]
+  colunas?: string[]
+  canal?: string
 }
 
 export const ATENDIMENTO_SEMPRE_ABERTO: ContextoDoAtendimento = {
@@ -259,6 +275,9 @@ export function executar(
 ): Resultado {
   const s: Sessao = { ...sessao, vars: { ...sessao.vars } }
   const acoes: Acao[] = []
+  // Cópia das listas do contato: os blocos Etiqueta e Etapa escrevem nelas
+  // durante esta execução, e quem chamou não pode ver a sua mudar por baixo.
+  contexto = { ...contexto, etiquetas: [...(contexto.etiquetas ?? [])], colunas: [...(contexto.colunas ?? [])] }
 
   // Humano assumiu ou a conversa acabou: o bot fica calado.
   if (s.status === 'humano' || s.status === 'encerrada') {
@@ -338,6 +357,9 @@ export function executar(
     // conversa espera por ele em vez de ir para a fila.
     if (parada?.type === 'cobrar') return esperarPagamento(s, acoes, contexto)
     if (parada?.type === 'agendar') return esperarFormulario(s, acoes, contexto)
+    // Foto ou áudio durante uma espera fica no Inbox e não mexe na conversa,
+    // como o texto: ver `noEsperaSchema`.
+    if (parada?.type === 'espera') return { acoes, sessao: s }
     const tratada =
       parada?.type === 'pergunta' ? proximo(fluxo, parada.id, SAIDA_MIDIA) : null
 
@@ -512,6 +534,13 @@ export function executar(
    * pode empurrar ninguém.
    */
   if (entrada.tipo === 'timeout') {
+    // A espera acabou: segue pela única saída. Sem ligação depois dela, a
+    // conversa termina ali, que é o que o desenho disse.
+    if (atual.type === 'espera') {
+      s.tentativas = 0
+      return avancar(contexto, fluxo, porId, s, acoes, proximo(fluxo, atual.id), { no: atual })
+    }
+
     /*
      * A pesquisa tem prazo pelo mesmo motivo da pergunta, e o desfecho dela é
      * **o oposto**: sem saída desenhada, o timeout da pesquisa **encerra** em
@@ -732,6 +761,10 @@ export function executar(
     }
     return esperarFormulario(s, acoes, contexto)
   }
+
+  // Escreveu durante a espera: fica no Inbox, a conversa continua esperando.
+  // Atendente e menu já foram tratados lá em cima e valem aqui também.
+  if (atual.type === 'espera') return { acoes, sessao: s }
 
   if (atual.type === 'pergunta') {
     return responderPergunta(contexto, fluxo, porId, s, acoes, atual, entrada)
@@ -1184,6 +1217,7 @@ function avancar(
             quadroId: no.data.quadroId,
             colunaId: no.data.colunaId,
           })
+          contexto.colunas = [...(contexto.colunas ?? []), no.data.colunaId]
         }
         atual = seguir(no)
         break
@@ -1195,6 +1229,10 @@ function avancar(
         // para o grafo que já estava no ar quando a etiqueta foi apagada.
         if (no.data.etiquetaId) {
           acoes.push({ tipo: 'aplicar_etiqueta', etiquetaId: no.data.etiquetaId, ...(no.data.tirar ? { tirar: true as const } : {}) })
+          const lista = contexto.etiquetas ?? []
+          contexto.etiquetas = no.data.tirar
+            ? lista.filter((id) => id !== no.data.etiquetaId)
+            : [...lista, no.data.etiquetaId]
         }
         atual = seguir(no)
         break
@@ -1306,9 +1344,22 @@ function avancar(
       }
 
       case 'condicao': {
-        const passou = avaliar(no.data.variavel, no.data.operador, no.data.valor, s.vars)
+        const passou = avaliarCondicao(no, s.vars, contexto)
         atual = seguir(no, passou ? SAIDA_VERDADEIRO : SAIDA_FALSO)
         break
+      }
+
+      /*
+       * Esperar: para aqui e o agendador acorda no prazo, com `timeout`
+       * (`sincronizarTimeout` no servidor). Uma pausa curta que estava
+       * pendurada (`esperaMs`) é descartada: a espera longa já a engoliu.
+       */
+      case 'espera': {
+        esperaMs = 0
+        s.noAtual = no.id
+        s.status = 'ativa'
+        s.tentativas = 0
+        return { acoes, sessao: s }
       }
 
       case 'pergunta': {
@@ -1734,6 +1785,43 @@ function porParte(opcoes: Opcao[], digitado: string): Opcao | undefined {
     return dentro(rotulo, dito) || dentro(dito, rotulo)
   })
   return servem.length === 1 ? servem[0] : undefined
+}
+
+/**
+ * A condição inteira: todas as regras (E) ou qualquer uma (OU).
+ *
+ * Exportada para o simulador e para o teste. Regra pela metade (etiqueta sem
+ * etiqueta escolhida) responde falso, e o validador já recusa publicar assim.
+ */
+export function avaliarCondicao(
+  no: Pick<NoCondicao, 'data'>,
+  vars: Record<string, string>,
+  contexto: ContextoDoAtendimento,
+): boolean {
+  const regras = regrasDaCondicao(no.data)
+  const resultado = (r: RegraDaCondicao) => avaliarRegra(r, vars, contexto)
+  return no.data.modo === 'qualquer' ? regras.some(resultado) : regras.every(resultado)
+}
+
+function avaliarRegra(regra: RegraDaCondicao, vars: Record<string, string>, contexto: ContextoDoAtendimento): boolean {
+  switch (regra.tipo) {
+    case 'variavel':
+      return avaliar(regra.variavel, regra.operador, regra.valor, vars)
+    case 'etiqueta': {
+      if (!regra.etiquetaId) return false
+      const tem = (contexto.etiquetas ?? []).includes(regra.etiquetaId)
+      return regra.tem ? tem : !tem
+    }
+    case 'etapa': {
+      if (!regra.colunaId) return false
+      const esta = (contexto.colunas ?? []).includes(regra.colunaId)
+      return regra.esta ? esta : !esta
+    }
+    case 'horario':
+      return regra.aberto ? contexto.atendimentoAberto : !contexto.atendimentoAberto
+    case 'canal':
+      return contexto.canal === regra.canal
+  }
 }
 
 function avaliar(

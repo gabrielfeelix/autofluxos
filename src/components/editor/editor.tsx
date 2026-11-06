@@ -57,8 +57,9 @@ import {
 import { Modal } from '@/components/design/modal'
 import { SeloDoCanal } from '@/components/design/selo-do-canal'
 import { AcaoDaArestaProvider, RealceDeArestasProvider, tiposDeAresta } from './arestas'
-import { DESCRICOES, filtrarCatalogo, GRUPOS_DE_BLOCOS } from '@/core/flow/blocos'
-import { CORES, ICONES, NOMES, NomesDeEtiquetaProvider, RespostasPorVariavelProvider, tiposDeNo } from './nos'
+import { blocoFuncionaNoCanal, DESCRICOES, filtrarCatalogo, GRUPOS_DE_BLOCOS } from '@/core/flow/blocos'
+import { BotaoDeVariaveis } from './variaveis-do-fluxo'
+import { CORES, ICONES, NOMES, NomesDeEtapaProvider, NomesDeEtiquetaProvider, RespostasPorVariavelProvider, tiposDeNo } from './nos'
 import { NomeDoFluxo } from './nome-do-fluxo'
 import { organizar, type AlcasDoBloco } from './organizar'
 import { PuxadorDeLargura } from './puxador'
@@ -199,7 +200,17 @@ export function dadosPadrao(tipo: TipoNo): Record<string, unknown> {
     case 'pergunta':
       return { texto: 'O que você quer perguntar?', opcoes: [] }
     case 'condicao':
-      return { variavel: 'assunto', operador: 'igual', valor: '' }
+      // Nasce já no formato de regras, com uma regra de variável: é o caso
+      // mais comum, e a pessoa acrescenta etiqueta, etapa ou horário dali.
+      return {
+        variavel: '',
+        operador: 'igual',
+        valor: '',
+        modo: 'todas',
+        regras: [{ tipo: 'variavel', variavel: 'assunto', operador: 'igual', valor: '' }],
+      }
+    case 'espera':
+      return { quantidade: 5, unidade: 'minutos' }
     case 'salvar-campo':
       return { campo: 'campo', valor: '' }
     case 'etapa':
@@ -510,7 +521,10 @@ export function Editor({
         .map((grupo) => ({
           ...grupo,
           tipos: grupo.tipos.filter(
-            (tipo) => (tipo !== 'cobrar' || cobrancaHabilitada) && (tipo !== 'agendar' || (formularioDeAgendamento && canal === 'whatsapp')),
+            (tipo) =>
+              blocoFuncionaNoCanal(tipo, canal) &&
+              (tipo !== 'cobrar' || cobrancaHabilitada) &&
+              (tipo !== 'agendar' || formularioDeAgendamento),
           ),
         }))
         .filter((grupo) => grupo.tipos.length > 0),
@@ -656,6 +670,7 @@ export function Editor({
     () => Object.fromEntries(etiquetas.map((e) => [e.id, e.nome])),
     [etiquetas],
   )
+  const nomesDeEtapa = useMemo(() => Object.fromEntries(etapas.map((e) => [e.colunaId, e.rotulo])), [etapas])
   const validacao = useMemo(
     () => {
       const doDesenho = validar(fluxo, {
@@ -1627,6 +1642,15 @@ export function Editor({
          , com o mesmo bloco selecionado, o mesmo zoom e a mesma posição do
           quadro, que são estado de tela e não sobrevivem a uma navegação.
         */}
+        <BotaoDeVariaveis
+          fluxo={fluxo}
+          origens={origensDeVariaveis}
+          valores={valoresDeVariaveis}
+          respostasPorVariavel={respostasPorVariavel}
+          variaveisDaConta={variaveisDaConta}
+          aoFocar={focar}
+        />
+
         <button
           type="button"
           onClick={arrumar}
@@ -1930,6 +1954,7 @@ export function Editor({
           <RealceDeArestasProvider>
           <RespostasPorVariavelProvider value={respostasPorVariavel}>
           <NomesDeEtiquetaProvider value={nomesDeEtiqueta}>
+          <NomesDeEtapaProvider value={nomesDeEtapa}>
           <ReactFlow
             onInit={setTela}
             nodes={nodes}
@@ -2044,6 +2069,7 @@ export function Editor({
             />
           </ReactFlow>
           {previa && <PreviaDoBloco no={previa.no} x={previa.x} y={previa.y} />}
+          </NomesDeEtapaProvider>
           </NomesDeEtiquetaProvider>
           </RespostasPorVariavelProvider>
           </RealceDeArestasProvider>

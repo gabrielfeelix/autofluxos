@@ -91,12 +91,13 @@ export const NOMES: Record<TipoNo, string> = {
   cobrar: 'Cobrar',
   pontos: 'Dar pontos',
   agendar: 'Agendar',
+  espera: 'Esperar',
 }
 
 export const ICONES: Record<TipoNo, string> = {
   mensagem: '↗',
   pergunta: '?',
-  condicao: '⑂',
+  condicao: '◇',
   'salvar-campo': '↓',
   ia: '✦',
   handoff: '♙',
@@ -113,6 +114,7 @@ export const ICONES: Record<TipoNo, string> = {
   cobrar: '$',
   pontos: '★',
   agendar: '◷',
+  espera: '◔',
 }
 
 /** A linha de baixo na barra de blocos: o que ele faz, em três palavras. */
@@ -136,6 +138,7 @@ export const DESCRICOES: Record<TipoNo, string> = {
   cobrar: 'Manda Pix e espera pagar',
   pontos: 'Credita na fidelidade da loja',
   agendar: 'Formulário de dia e horário',
+  espera: 'Minutos, horas ou dias',
 }
 
 /**
@@ -165,6 +168,7 @@ export const CORES: Record<TipoNo, string> = {
   cobrar: 'border-lime-400/30',
   pontos: 'border-yellow-400/30',
   agendar: 'border-teal-400/30',
+  espera: 'border-orange-400/30',
 }
 
 /**
@@ -178,7 +182,7 @@ export const CORES: Record<TipoNo, string> = {
  */
 export const GRUPOS_DE_BLOCOS: { nome: string; tipos: TipoNo[] }[] = [
   { nome: 'Conversar', tipos: ['mensagem', 'midia', 'pergunta', 'nps'] },
-  { nome: 'Decidir', tipos: ['condicao', 'voltar', 'ir-fluxo'] },
+  { nome: 'Decidir', tipos: ['condicao', 'espera', 'voltar', 'ir-fluxo'] },
   { nome: 'Organizar', tipos: ['salvar-campo', 'etapa', 'etiqueta', 'nota'] },
   { nome: 'Integrar', tipos: ['ia', 'http', 'email', 'handoff', 'encaminhar', 'cobrar', 'agendar', 'pontos'] },
 ]
@@ -191,6 +195,23 @@ function semAcento(texto: string): string {
  * Os grupos com os blocos cujo nome ou descrição contém o termo, sem ligar
  * para acento nem maiúscula. Grupo que fica vazio sai da lista.
  */
+/**
+ * Os blocos que só existem num canal (06/nov/2026).
+ *
+ * Bloco que não funciona no canal da automação **some da barra**, em vez de
+ * aparecer e ser recusado na hora de publicar. Hoje é só o Agendar, que usa o
+ * formulário nativo do WhatsApp; a lista mora aqui para o próximo bloco desse
+ * tipo entrar numa linha, e o validador e o editor lerem a mesma regra.
+ */
+const SO_NO_CANAL: Partial<Record<TipoNo, readonly string[]>> = {
+  agendar: ['whatsapp'],
+}
+
+export function blocoFuncionaNoCanal(tipo: TipoNo, canal: string): boolean {
+  const canais = SO_NO_CANAL[tipo]
+  return !canais || canais.includes(canal)
+}
+
 export function filtrarCatalogo(termo: string): { nome: string; tipos: TipoNo[] }[] {
   const busca = semAcento(termo.trim())
   if (busca === '') return GRUPOS_DE_BLOCOS

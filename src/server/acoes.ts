@@ -77,6 +77,7 @@ import {
   definirSetorDoContato,
 } from './repos/conversas'
 import { travarContato } from './repos/travas'
+import { cancelarRetomada } from './pausa-do-bot'
 import { anotar, RELIGOU_O_BOT } from './repos/eventos'
 import { membrosDaConta, removerComDestino } from './repos/usuarios'
 import { exigirHierarquia } from './pessoas'
@@ -2436,6 +2437,10 @@ export async function acaoAlternarAutomacaoDoLead(
   } finally {
     await destravar()
   }
+
+  // Religar ou pausar à mão desfaz um prazo de pausa que estivesse correndo:
+  // a decisão mais nova vale. A pausa com prazo agenda o dela logo depois.
+  await cancelarRetomada(contatoId)
 
   // Pausar o bot cala o bot inteiro, e sequência é bot (0031). Só na pausa:
   // religar não devolve ninguém a um acompanhamento de que já saiu, quem

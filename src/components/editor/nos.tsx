@@ -1,6 +1,8 @@
 'use client'
 
 import { Handle, Position, type NodeProps, type NodeTypes } from '@xyflow/react'
+import { fraseDaEspera, fraseDaRegra } from '@/core/flow/condicao'
+import { regrasDaCondicao, type NoCondicao as NoCondicaoTipo, type NoEspera as NoEsperaTipo } from '@/core/flow/schema'
 import { createContext, useContext, useState, type ReactNode } from 'react'
 import { CORES, ICONES, NOMES } from '@/core/flow/blocos'
 import { ROTULO_PADRAO_DO_ENCAMINHAMENTO } from '@/core/encaminhar'
@@ -75,6 +77,10 @@ export const RespostasPorVariavelProvider = RespostasPorVariavel.Provider
 const NomesDeEtiqueta = createContext<Record<string, string>>({})
 
 export const NomesDeEtiquetaProvider = NomesDeEtiqueta.Provider
+
+/** Os nomes das etapas do funil por id de coluna, para a regra de etapa da condição. */
+const NomesDeEtapa = createContext<Record<string, string>>({})
+export const NomesDeEtapaProvider = NomesDeEtapa.Provider
 
 function Caixa({
   tipo,
@@ -420,21 +426,46 @@ export function comoPrazo(minutos: number): string {
   return `${Math.floor(minutos / 60)}h${minutos % 60}`
 }
 
+/**
+ * A condição desenha **cada regra numa linha**, em português, e as saídas
+ * como "sim" e "não" (06/nov/2026). "assunto igual preço" com o operador cru
+ * era o nome do campo no banco, não uma frase que se lê.
+ */
 function NoCondicao({ data, selected }: NodeProps) {
-  const d = data as { variavel: string; operador: string; valor: string }
+  const d = data as NoCondicaoTipo['data']
+  const etiquetas = useContext(NomesDeEtiqueta)
+  const colunas = useContext(NomesDeEtapa)
+  const regras = regrasDaCondicao(d)
+  const ligacao = d.modo === 'qualquer' ? 'ou' : 'e'
   return (
     <Caixa tipo="condicao" selecionado={!!selected} saidaUnica={false}>
-      <p className="text-soft">
-        <code className="font-mono text-[11px] text-primary">{d.variavel}</code>{' '}
-        <span className="text-muted">{d.operador}</span>{' '}
-        {d.valor && <code className="font-mono text-[11px]">{d.valor}</code>}
-      </p>
+      <ul className="space-y-0.5 text-[12px] leading-5 text-soft">
+        {regras.map((regra, i) => (
+          <li key={i} className="flex gap-1.5">
+            <span className="w-5 shrink-0 text-[11px] text-dim">{i === 0 ? 'se' : ligacao}</span>
+            <span className="min-w-0 break-words">{fraseDaRegra(regra, { etiquetas, colunas })}</span>
+          </li>
+        ))}
+      </ul>
       <Saida id={SAIDA_VERDADEIRO}>
-        <span className="text-[11px] text-ok">verdadeiro</span>
+        <span className="text-[11px] text-ok">sim</span>
       </Saida>
       <Saida id={SAIDA_FALSO}>
-        <span className="text-[11px] text-muted">falso</span>
+        <span className="text-[11px] text-muted">não</span>
       </Saida>
+    </Caixa>
+  )
+}
+
+/** Esperar: o prazo em destaque e o que acontece depois. */
+function NoEspera({ data, selected }: NodeProps) {
+  const d = data as NoEsperaTipo['data']
+  return (
+    <Caixa tipo="espera" selecionado={!!selected}>
+      <p className="text-[12.5px] leading-5 text-soft">
+        Espera <strong className="font-semibold text-ink">{fraseDaEspera({ data: d })}</strong>
+      </p>
+      <p className="text-[10.5px] text-dim">depois segue para o próximo bloco</p>
     </Caixa>
   )
 }
@@ -895,4 +926,5 @@ export const tiposDeNo = {
   cobrar: NoCobrar,
   agendar: NoAgendar,
   pontos: NoPontos,
+  espera: NoEspera,
 } satisfies Record<TipoNo, NodeTypes[string]>

@@ -36,16 +36,16 @@ export const maxDuration = 60
  * dono apontar um disparador externo para cá (ver PENDENCIAS-DO-DONO).
  */
 export async function GET(req: Request) {
-  const segredo = process.env.CRON_SECRET
-  if (!segredo) {
-    return Response.json(
-      { erro: 'CRON_SECRET não configurado; o agendador não roda sem ele' },
-      { status: 503 },
-    )
+  // O `CRON_SECRET` da Vercel (piso diário) ou o `AGENDADOR_SEGREDO` do pg_cron
+  // que chama a cada dois minutos (06/nov/2026): sem ele, a espera de cinco
+  // minutos do bloco Esperar só acordava na mensagem seguinte da conta.
+  const segredos = [process.env.CRON_SECRET, process.env.AGENDADOR_SEGREDO].filter((s): s is string => !!s)
+  if (segredos.length === 0) {
+    return Response.json({ erro: 'nenhum segredo de agendador configurado' }, { status: 503 })
   }
 
   const informado = (req.headers.get('authorization') ?? '').replace(/^Bearer /, '')
-  if (!iguais(informado, segredo)) {
+  if (!segredos.some((s) => iguais(informado, s))) {
     return Response.json({ erro: 'não autorizado' }, { status: 401 })
   }
 

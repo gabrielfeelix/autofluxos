@@ -448,15 +448,116 @@ export const OPERADORES = [
 ] as const
 export type Operador = (typeof OPERADORES)[number]
 
-export const noCondicaoSchema = z.object({
-  ...base,
-  type: z.literal('condicao'),
-  data: z.object({
+/**
+ * Uma regra da condição (06/nov/2026, pedido do Eduardo a partir do ManyChat).
+ *
+ * A condição nasceu testando **uma variável**. Faltava perguntar o que o
+ * sistema já sabe do contato sem ninguém ter guardado nada: se ele tem uma
+ * etiqueta, em que etapa do quadro está, se a empresa está em horário de
+ * atendimento agora, por qual canal ele fala. Cada uma é uma regra, e a
+ * condição junta várias com "todas" ou "qualquer uma".
+ *
+ * `canal` existe porque o site e o Messenger rodam as automações do WhatsApp
+ * (`fluxoProprio: false`): o mesmo desenho atende os três, e às vezes precisa
+ * dizer uma coisa diferente para quem está no balão do site.
+ */
+export const regraDaCondicaoSchema = z.discriminatedUnion('tipo', [
+  z.object({
+    tipo: z.literal('variavel'),
     variavel: nomeVariavel,
     operador: z.enum(OPERADORES),
     valor: z.string().default(''),
   }),
+  z.object({
+    tipo: z.literal('etiqueta'),
+    etiquetaId: z.string().default(''),
+    /** `false`: a regra passa quando o contato **não** tem a etiqueta. */
+    tem: z.boolean().default(true),
+  }),
+  z.object({
+    tipo: z.literal('etapa'),
+    colunaId: z.string().default(''),
+    esta: z.boolean().default(true),
+  }),
+  z.object({
+    tipo: z.literal('horario'),
+    /** `true`: passa dentro do horário de atendimento da conta. */
+    aberto: z.boolean().default(true),
+  }),
+  z.object({
+    tipo: z.literal('canal'),
+    canal: z.enum(['whatsapp', 'instagram', 'messenger', 'telegram', 'site']).default('whatsapp'),
+  }),
+])
+export type RegraDaCondicao = z.infer<typeof regraDaCondicaoSchema>
+export type TipoDeRegra = RegraDaCondicao['tipo']
+
+/** Uma condição com mais regras que isso é um fluxo inteiro escondido num bloco. */
+export const MAX_REGRAS = 8
+
+export const noCondicaoSchema = z.object({
+  ...base,
+  type: z.literal('condicao'),
+  data: z.object({
+    /**
+     * A regra única de antes. Continua aqui porque toda versão publicada até
+     * 06/nov/2026 tem só ela, e uma conversa presa a essa versão precisa
+     * continuar decidindo igual. Com `regras` preenchido, ela é ignorada.
+     */
+    variavel: nomeVariavel.default(''),
+    operador: z.enum(OPERADORES).default('igual'),
+    valor: z.string().default(''),
+    /** As regras novas. Ausente ou vazio: vale a regra única de cima. */
+    regras: z.array(regraDaCondicaoSchema).max(MAX_REGRAS).optional(),
+    /** `todas` (E) ou `qualquer` (OU). Ausente é `todas`. */
+    modo: z.enum(['todas', 'qualquer']).optional(),
+  }),
 })
+
+/**
+ * As regras que valem numa condição, nos dois formatos.
+ *
+ * O grafo antigo tem só `variavel/operador/valor`; o novo tem `regras`. Quem lê
+ * (motor, validador, editor) chama isto e não precisa saber qual chegou, a
+ * mesma ideia de `partesDaMensagem`.
+ */
+export function regrasDaCondicao(data: z.infer<typeof noCondicaoSchema>['data']): RegraDaCondicao[] {
+  if (data.regras && data.regras.length > 0) return data.regras
+  return [{ tipo: 'variavel', variavel: data.variavel, operador: data.operador, valor: data.valor }]
+}
+
+/**
+ * Esperar minutos, horas ou dias antes de seguir (06/nov/2026).
+ *
+ * O atraso da mensagem vai até `LIMITE_ATRASO_SEGUNDOS`, porque ele dorme
+ * dentro do webhook. Esta espera **não dorme**: a conversa fica parada no
+ * bloco e o agendador a acorda no prazo, o mesmo caminho do prazo da pergunta.
+ * É o "manda o guia, espera 5 minutos e pergunta se gostou" que o ManyChat
+ * chama de Smart Delay.
+ *
+ * O que a pessoa escreve durante a espera não move a conversa: fica no Inbox, e
+ * as palavras de escape (atendente, menu) continuam valendo. Responder em cima
+ * de uma espera desenhada atropelaria o que o desenho prometeu.
+ */
+export const UNIDADES_DE_ESPERA = ['minutos', 'horas', 'dias'] as const
+export type UnidadeDeEspera = (typeof UNIDADES_DE_ESPERA)[number]
+/** Trinta dias: depois disso o desenho virou uma sequência, e sequência já existe. */
+export const MAX_ESPERA_MINUTOS = 30 * 24 * 60
+const MINUTOS_POR_UNIDADE: Record<UnidadeDeEspera, number> = { minutos: 1, horas: 60, dias: 24 * 60 }
+
+export const noEsperaSchema = z.object({
+  ...base,
+  type: z.literal('espera'),
+  data: z.object({
+    quantidade: z.number().int().min(1).max(MAX_ESPERA_MINUTOS).default(5),
+    unidade: z.enum(UNIDADES_DE_ESPERA).default('minutos'),
+  }),
+})
+export type NoEspera = z.infer<typeof noEsperaSchema>
+
+export function minutosDaEspera(no: Pick<NoEspera, 'data'>): number {
+  return Math.min(MAX_ESPERA_MINUTOS, Math.max(1, no.data.quantidade * MINUTOS_POR_UNIDADE[no.data.unidade]))
+}
 
 export const noSalvarCampoSchema = z.object({
   ...base,
@@ -1265,6 +1366,7 @@ export const noSchema = z.discriminatedUnion('type', [
   noCobrarSchema,
   noAgendarSchema,
   noPontosSchema,
+  noEsperaSchema,
 ])
 
 export const arestaSchema = z.object({
@@ -1313,6 +1415,7 @@ export type NoEtapa = z.infer<typeof noEtapaSchema>
 export type NoCobrar = z.infer<typeof noCobrarSchema>
 export type NoAgendar = z.infer<typeof noAgendarSchema>
 export type NoPontos = z.infer<typeof noPontosSchema>
+export type NoCondicao = z.infer<typeof noCondicaoSchema>
 export type Aresta = z.infer<typeof arestaSchema>
 export type Fluxo = z.infer<typeof fluxoSchema>
 export type TipoNo = No['type']
