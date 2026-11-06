@@ -365,9 +365,11 @@ export const config = {
   // `llms.txt` também: é o resumo que as IAs leem pelo "Pergunte a uma IA" do
   // rodapé, e quem busca não tem sessão. O mesmo vale para `llms-full.txt` e
   // as fatias `.md` listadas em `/para-agentes` (ver `(site)/para-agentes.ts`).
+  // `8cf1073e2e0eb4d0fcaadfefa489e97c.txt` é a chave do IndexNow (`scripts/avisar-buscadores.mjs`): o Bing
+  // confere que o arquivo existe antes de aceitar o aviso de página nova.
   // `.well-known` é o catálogo de recursos para agentes (`ard.json`, `ai-catalog.json`),
   // também lido sem sessão; sem isto ele recebia o redirecionamento para `/entrar`.
   matcher: [
-    '/((?!api/auth|api/webhook|api/manutencao|_next/static|_next/image|favicon.ico|robots.txt|sitemap.xml|llms.txt|llms-full.txt|precos.md|integracoes.md|duvidas.md|api.md|.well-known).*)',
+    '/((?!api/auth|api/webhook|api/manutencao|_next/static|_next/image|favicon.ico|robots.txt|sitemap.xml|llms.txt|llms-full.txt|precos.md|integracoes.md|duvidas.md|api.md|8cf1073e2e0eb4d0fcaadfefa489e97c.txt|.well-known).*)',
   ],
 }
