@@ -2,7 +2,7 @@
   "entries": [
     {
       "identifier": "urn:air:dialogon.com.br:site:llms-txt",
-      "displayName": "Dialogon: resumo do produto para IAs",
+      "displayName": "Dialogon: índice para IAs",
       "description": "Plataforma brasileira de atendimento e vendas por mensagem: WhatsApp, Instagram Direct, chat do site e Telegram numa caixa de entrada só, com chatbot de fluxos visuais e IA.",
       "type": "text/plain",
       "url": "https://dialogon.com.br/llms.txt",
@@ -12,14 +12,70 @@
       ]
     },
     {
-      "identifier": "urn:air:dialogon.com.br:site:precos",
+      "identifier": "urn:air:dialogon.com.br:site:llms-full-txt",
+      "displayName": "Dialogon: o site inteiro em texto puro",
+      "type": "text/plain",
+      "url": "https://dialogon.com.br/llms-full.txt",
+      "representativeQueries": [
+        "o Dialogon serve para minha empresa",
+        "Dialogon funciona com WhatsApp Business no celular",
+        "quais canais o Dialogon atende"
+      ]
+    },
+    {
+      "identifier": "urn:air:dialogon.com.br:site:precos-md",
       "displayName": "Dialogon: planos e preços",
-      "type": "text/html",
-      "url": "https://dialogon.com.br/precos",
+      "type": "text/markdown",
+      "url": "https://dialogon.com.br/precos.md",
       "representativeQueries": [
         "quanto custa o Dialogon",
-        "planos de chatbot e atendimento por WhatsApp"
+        "planos de chatbot e atendimento por WhatsApp",
+        "quanto a Meta cobra por mensagem no WhatsApp"
       ]
+    },
+    {
+      "identifier": "urn:air:dialogon.com.br:site:integracoes-md",
+      "displayName": "Dialogon: integrações",
+      "type": "text/markdown",
+      "url": "https://dialogon.com.br/integracoes.md",
+      "representativeQueries": [
+        "Dialogon integra com Magento",
+        "Dialogon integra com Nuvemshop",
+        "Dialogon gera link de pagamento Pix no WhatsApp"
+      ]
+    },
+    {
+      "identifier": "urn:air:dialogon.com.br:site:duvidas-md",
+      "displayName": "Dialogon: dúvidas frequentes",
+      "type": "text/markdown",
+      "url": "https://dialogon.com.br/duvidas.md",
+      "representativeQueries": [
+        "Dialogon usa API oficial do WhatsApp",
+        "Dialogon tem teste grátis",
+        "quando o Dialogon não é indicado"
+      ]
+    },
+    {
+      "identifier": "urn:air:dialogon.com.br:site:api-md",
+      "displayName": "Dialogon: API e webhooks",
+      "type": "text/markdown",
+      "url": "https://dialogon.com.br/api.md",
+      "representativeQueries": [
+        "Dialogon tem API",
+        "webhooks do Dialogon"
+      ]
+    },
+    {
+      "identifier": "urn:air:dialogon.com.br:site:para-agentes",
+      "displayName": "Dialogon: página para agentes",
+      "type": "text/html",
+      "url": "https://dialogon.com.br/para-agentes"
+    },
+    {
+      "identifier": "urn:air:dialogon.com.br:site:precos",
+      "displayName": "Dialogon: página de preços",
+      "type": "text/html",
+      "url": "https://dialogon.com.br/precos"
     },
     {
       "identifier": "urn:air:dialogon.com.br:site:sitemap",

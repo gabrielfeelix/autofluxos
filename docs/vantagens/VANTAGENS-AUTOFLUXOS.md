@@ -386,6 +386,12 @@ aqui fica o que o cliente ganha.
 
 ## Integrar e segurança
 
+- **Encontrado e entendido por IA**: o site tem uma versão para agentes
+  (`/para-agentes`, com o botão Para pessoas / Para agentes no rodapé) e
+  entrega o produto inteiro em texto puro: `llms.txt`, `llms-full.txt`,
+  preços, integrações, dúvidas e API em Markdown. Quando alguém pergunta ao
+  ChatGPT, Claude ou Gemini sobre atendimento no WhatsApp, a IA lê o Dialogon
+  com os números certos, gerados das mesmas fontes que o site. *(06/nov/2026)*
 - **Vendas da Greenn no CRM**: venda paga vira cliente com a etiqueta
   Comprou e recebe as boas-vindas; boleto ou Pix em aberto ganha lembrete; quem
   pede reembolso ou abre chargeback sai das campanhas sozinho. Basta colar um

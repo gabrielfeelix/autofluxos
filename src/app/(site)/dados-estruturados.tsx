@@ -1,4 +1,5 @@
-import { PLANOS } from '@/core/planos'
+import { PLANOS, RECURSOS_DO_PLANO } from '@/core/planos'
+import type { Duvida } from './duvidas-do-site'
 import { SITE_URL } from './metadados'
 
 /**
@@ -21,6 +22,10 @@ export function DadosDaOrganizacao() {
           url: SITE_URL,
           logo: `${SITE_URL}/logos/logo-dialogon-marca.png`,
           email: 'contato@dialogon.com.br',
+          description:
+            'Plataforma brasileira de atendimento e vendas por WhatsApp, Instagram, chat do site e Telegram, com chatbot, IA e CRM.',
+          areaServed: { '@type': 'Country', name: 'Brasil' },
+          knowsLanguage: 'pt-BR',
           // O @dialogon tem outro dono; o perfil oficial é este até a marca ser registrada.
           sameAs: ['https://www.instagram.com/usedialogon/'],
           parentOrganization: { '@type': 'Organization', name: '4YU' },
@@ -44,7 +49,23 @@ export function DadosDoAplicativo({ descricao }: { descricao: string }) {
         url: SITE_URL,
         applicationCategory: 'BusinessApplication',
         operatingSystem: 'Web',
-        offers: { '@type': 'Offer', price: menorPreco, priceCurrency: 'BRL' },
+        inLanguage: 'pt-BR',
+        featureList: RECURSOS_DO_PLANO.map((r) => r.rotulo),
+        offers: {
+          '@type': 'AggregateOffer',
+          priceCurrency: 'BRL',
+          lowPrice: menorPreco,
+          highPrice: Math.max(...PLANOS.map((p) => p.preco)),
+          offerCount: PLANOS.length,
+          offers: PLANOS.map((p) => ({
+            '@type': 'Offer',
+            name: p.nome,
+            price: p.preco,
+            priceCurrency: 'BRL',
+            description: p.resumo,
+            url: `${SITE_URL}/precos`,
+          })),
+        },
       }}
     />
   )
@@ -58,6 +79,26 @@ export function DadosDaTrilha({ itens }: { itens: { nome: string; caminho: strin
         '@context': 'https://schema.org',
         '@type': 'BreadcrumbList',
         itemListElement: itens.map((item, i) => ({ '@type': 'ListItem', position: i + 1, name: item.nome, item: `${SITE_URL}${item.caminho}` })),
+      }}
+    />
+  )
+}
+
+/**
+ * FAQPage com as mesmas perguntas que a página mostra. O Google só aceita
+ * FAQ que o visitante também lê, por isso a fonte é a mesma lista do JSX.
+ */
+export function DadosDasDuvidas({ duvidas }: { duvidas: Duvida[] }) {
+  return (
+    <DadosEstruturados
+      dados={{
+        '@context': 'https://schema.org',
+        '@type': 'FAQPage',
+        mainEntity: duvidas.map((d) => ({
+          '@type': 'Question',
+          name: d.pergunta,
+          acceptedAnswer: { '@type': 'Answer', text: d.resposta },
+        })),
       }}
     />
   )

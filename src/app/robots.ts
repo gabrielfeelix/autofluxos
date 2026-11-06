@@ -13,7 +13,27 @@ import { SITE_URL } from './(site)/metadados'
 export default function robots(): MetadataRoute.Robots {
   return {
     rules: {
-      userAgent: '*',
+      // Os rastreadores de IA entram pelo nome, no mesmo grupo do `*`: a regra é a
+      // mesma, e o nome explícito diz que a porta está aberta para eles de
+      // propósito, não por esquecimento.
+      userAgent: [
+        '*',
+        'GPTBot',
+        'OAI-SearchBot',
+        'ChatGPT-User',
+        'ClaudeBot',
+        'Claude-SearchBot',
+        'Claude-User',
+        'PerplexityBot',
+        'Perplexity-User',
+        'Google-Extended',
+        'Applebot-Extended',
+        'Bingbot',
+        'meta-externalagent',
+        'Amazonbot',
+        'DuckAssistBot',
+        'MistralAI-User',
+      ],
       allow: ['/$', '/privacidade', '/termos', '/exclusao-de-dados'],
       disallow: [
         '/painel',

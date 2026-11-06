@@ -1247,6 +1247,21 @@
  * O `.pagina` na frente não é decoração: CSS Module recusa seletor sem classe
  * local ("not pure"), porque `[data-revela]` solto vazaria para o app inteiro.
  */
+/*
+ * Seleção de texto em marinho sólido com letra branca.
+ *
+ * A do app é o azul da marca a 20%, e na casca azul da página isso some: o
+ * visitante arrastava o mouse sobre o texto branco e nada mudava. Marinho
+ * aparece no azul e no branco, e a letra branca continua legível nos dois.
+ * O texto com degradê recortado (`background-clip: text`) pega a cor também,
+ * senão a seleção mostraria só o fundo, sem letra.
+ */
+.pagina ::selection {
+  background: #0b1a4a;
+  color: #ffffff;
+  -webkit-text-fill-color: #ffffff;
+}
+
 .pagina [data-revela] {
   opacity: 0;
   transform: translateY(26px);
@@ -2271,69 +2286,6 @@
 
 .linhaFicha span:last-child {
   color: var(--dim);
-}
-
-/* ═══════════════════ o cursor ═══════════════════
-
-   Um ponto que segue o mouse na hora e um anel que chega atrasado. A distância
-   entre os dois é o efeito: parado eles se sobrepõem, em movimento o anel fica
-   para trás e se estica na direção da corrida.
-
-   Só existe onde há ponteiro fino e onde ninguém pediu para parar de animar.
-   ═══════════════════════════════════════════════ */
-
-.cursorPonto,
-.cursorAnel {
-  position: fixed;
-  top: 0;
-  left: 0;
-  z-index: 9999;
-  pointer-events: none;
-  opacity: 0;
-  transition: opacity 0.25s var(--curva);
-}
-
-.cursorPonto {
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  /* Azul com contorno branco: o cursor passa pelo azul e pelo quadro branco,
-     e precisa aparecer nos dois. */
-  background: var(--azul);
-  box-shadow: 0 0 0 1.5px #ffffff;
-}
-
-.cursorAnel {
-  width: 30px;
-  height: 30px;
-  border-radius: 50%;
-  border: 1px solid rgb(29 78 216 / 0.55);
-  box-shadow: 0 0 0 1px rgb(255 255 255 / 0.6);
-  /* A opacidade é do JS; a borda e o fundo transicionam sozinhos para o
-     estado de hover não pular. Sem margem negativa: quem centraliza é o
-     `translate(-50%, -50%)` do JS, e as duas juntas tiravam o anel do ponto. */
-  transition:
-    opacity 0.25s var(--curva),
-    width 0.25s var(--curva),
-    height 0.25s var(--curva),
-    border-color 0.25s var(--curva),
-    background 0.25s var(--curva);
-}
-
-/* Sobre link ou botão o anel infla e ganha corpo, virando um contorno do que
-   vai ser clicado. */
-.cursorAtivo {
-  width: 46px;
-  height: 46px;
-  border-color: rgb(29 78 216 / 0.85);
-  background: rgb(29 78 216 / 0.1);
-}
-
-@media (pointer: coarse), (prefers-reduced-motion: reduce) {
-  .cursorPonto,
-  .cursorAnel {
-    display: none;
-  }
 }
 
 /* ═══════════════════ para quem é ═══════════════════

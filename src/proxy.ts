@@ -95,6 +95,8 @@ const PORTAS_ABERTAS = [
   '/produto',
   '/precos',
   '/integracoes',
+  /** A versão do site para agentes de IA: só texto, sem dado de conta. */
+  '/para-agentes',
   /**
    * O service worker do aviso de handoff (0045).
    *
@@ -361,10 +363,11 @@ export const config = {
   // rastreador sem cookie, e dentro do matcher ele receberia o redirecionamento
   // para `/entrar` em vez da lista de páginas.
   // `llms.txt` também: é o resumo que as IAs leem pelo "Pergunte a uma IA" do
-  // rodapé, e quem busca não tem sessão.
+  // rodapé, e quem busca não tem sessão. O mesmo vale para `llms-full.txt` e
+  // as fatias `.md` listadas em `/para-agentes` (ver `(site)/para-agentes.ts`).
   // `.well-known` é o catálogo de recursos para agentes (`ard.json`, `ai-catalog.json`),
   // também lido sem sessão; sem isto ele recebia o redirecionamento para `/entrar`.
   matcher: [
-    '/((?!api/auth|api/webhook|api/manutencao|_next/static|_next/image|favicon.ico|robots.txt|sitemap.xml|llms.txt|.well-known).*)',
+    '/((?!api/auth|api/webhook|api/manutencao|_next/static|_next/image|favicon.ico|robots.txt|sitemap.xml|llms.txt|llms-full.txt|precos.md|integracoes.md|duvidas.md|api.md|.well-known).*)',
   ],
 }

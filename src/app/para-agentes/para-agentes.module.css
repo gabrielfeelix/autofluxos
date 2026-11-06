@@ -1,0 +1,144 @@
+/*
+ * Terminal de propósito: é a página que conversa com agente, e o texto em
+ * monoespaçada diz "isto é para copiar" antes de qualquer palavra.
+ */
+.pagina {
+  min-height: 100dvh;
+  background: #0d1117;
+  color: #c9d1d9;
+  font-family: var(--font-jetbrains-mono), ui-monospace, monospace;
+  font-size: 14px;
+  line-height: 1.7;
+}
+
+.pagina ::selection {
+  background: #1d4ed8;
+  color: #ffffff;
+}
+
+.pagina a {
+  color: #79a7ff;
+  text-decoration: none;
+}
+
+.pagina a:hover {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.coluna {
+  display: grid;
+  gap: 28px;
+  max-width: 760px;
+  margin: 0 auto;
+  padding: clamp(32px, 7vw, 72px) 16px 72px;
+}
+
+.arroba {
+  margin: 8px 0 0;
+  color: #ffffff;
+  font-weight: 600;
+}
+
+.sinal {
+  color: #79a7ff;
+}
+
+.titulo {
+  margin: -16px 0 0;
+  color: #ffffff;
+  font-size: 15px;
+  font-weight: 500;
+  line-height: 1.6;
+}
+
+.prompt {
+  display: grid;
+  gap: 14px;
+  border: 1px solid rgb(255 255 255 / 0.1);
+  border-radius: 10px;
+  padding: 16px;
+  background: rgb(255 255 255 / 0.03);
+}
+
+.prompt code {
+  color: #e6edf3;
+  font: inherit;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.copiar {
+  justify-self: start;
+  min-height: 36px;
+  border: 1px solid rgb(255 255 255 / 0.16);
+  border-radius: 8px;
+  padding: 0 14px;
+  background: transparent;
+  color: #ffffff;
+  font: inherit;
+  font-size: 13px;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+.copiar:hover {
+  background: rgb(255 255 255 / 0.08);
+}
+
+.secao {
+  display: grid;
+  gap: 12px;
+}
+
+.comentario {
+  margin: 0;
+  color: #6e7681;
+  font-size: 14px;
+  font-weight: 400;
+}
+
+.texto {
+  margin: 0;
+}
+
+.fatos {
+  display: grid;
+  gap: 4px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.fatos li::before {
+  content: '- ';
+  color: #6e7681;
+}
+
+.tabela {
+  display: grid;
+  gap: 6px;
+  margin: 0;
+}
+
+.linha {
+  display: grid;
+  grid-template-columns: 130px 1fr;
+  gap: 16px;
+}
+
+.linha dt {
+  color: #8b949e;
+}
+
+.linha dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+@media (max-width: 480px) {
+  .linha {
+    grid-template-columns: 100px 1fr;
+    gap: 10px;
+  }
+}

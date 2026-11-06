@@ -3,6 +3,7 @@ import type { CSSProperties, ReactNode } from 'react'
 import { DIAS_DE_TESTE, PLANOS } from '@/core/planos'
 import { DerivaDeParticulas } from './deriva-de-particulas'
 import { Desktop, Pergunta } from './pagina-do-site'
+import { DUVIDAS_CURTAS } from './duvidas-do-site'
 import { GLIFO_META, GLIFO_WHATSAPP } from '@/components/design/glifos-oficiais'
 import { CANAIS, type CanalDoSite } from './canais-do-site'
 import { type NichoDoSite } from './nichos-do-site'
@@ -190,18 +191,9 @@ export function SecaoDuvidasCurtas() {
           </Link>
         </div>
         <div className={s.perguntas}>
-          <Pergunta
-            pergunta="Perco o WhatsApp do celular?"
-            resposta="Não. O número continua no app WhatsApp Business do celular. O que o chatbot responde aparece lá, e o que você responde pelo celular aparece no Inbox."
-          />
-          <Pergunta
-            pergunta="Meu número pode ser bloqueado?"
-            resposta="O Dialogon usa a API oficial da Meta e respeita as regras dela: fora da janela de 24 horas, só sai mensagem com modelo aprovado. Bloqueio vem de disparo em massa para quem não pediu, e o produto não deixa isso acontecer por acidente."
-          />
-          <Pergunta
-            pergunta="A IA pode inventar preço?"
-            resposta="Ela responde só com o que está na ficha e no catálogo do seu negócio. Sem a informação, passa a conversa para a equipe em vez de arriscar."
-          />
+          {DUVIDAS_CURTAS.map((d) => (
+            <Pergunta key={d.pergunta} pergunta={d.pergunta} resposta={d.resposta} />
+          ))}
         </div>
       </div>
     </section>

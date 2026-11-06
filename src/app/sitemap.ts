@@ -22,6 +22,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     '/produto',
     '/precos',
     '/integracoes',
+    '/para-agentes',
     ...RECURSOS.map((r) => `/produto/${r.slug}`),
     ...CANAIS.map((c) => `/canais/${c.slug}`),
     ...NICHOS_DO_SITE.map((n) => `/segmentos/${n.slug}`),

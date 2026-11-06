@@ -1,0 +1,73 @@
+.troca {
+  display: inline-flex;
+  gap: 2px;
+  width: fit-content;
+  border-radius: 11px;
+  padding: 3px;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.opcao {
+  display: inline-flex;
+  min-height: 32px;
+  align-items: center;
+  border-radius: 8px;
+  padding: 0 12px;
+  white-space: nowrap;
+  text-decoration: none;
+  transition:
+    background 0.2s ease,
+    color 0.2s ease;
+}
+
+.opcao:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: 2px;
+}
+
+/* Sobre a casca azul do rodapé. */
+.azul {
+  border: 1px solid rgb(255 255 255 / 0.18);
+  background: rgb(255 255 255 / 0.06);
+}
+
+.azul .opcao {
+  color: rgb(255 255 255 / 0.78);
+}
+
+.azul .opcao:hover {
+  background: rgb(255 255 255 / 0.12);
+  color: #ffffff;
+}
+
+.azul .opcao[aria-current='page'] {
+  background: #ffffff;
+  color: #1d4ed8;
+}
+
+/* Na página de agentes, fundo quase preto. */
+.escuro {
+  border: 1px solid rgb(255 255 255 / 0.1);
+  background: rgb(255 255 255 / 0.04);
+}
+
+.escuro .opcao {
+  color: #9aa3b5;
+}
+
+.escuro .opcao:hover {
+  background: rgb(255 255 255 / 0.08);
+  color: #ffffff;
+}
+
+.escuro .opcao[aria-current='page'] {
+  background: #ffffff;
+  color: #0d1117;
+}
+
+@media (max-width: 560px) {
+  .opcao {
+    min-height: 40px;
+  }
+}

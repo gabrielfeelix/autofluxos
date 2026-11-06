@@ -14,7 +14,6 @@ import {
   PLANO_EM_DESTAQUE,
   TARIFA_DA_META,
 } from '@/core/planos'
-import { Cursor } from './cursor'
 import { FluxoSeMontando } from './fluxo-se-montando'
 import { FALE_CONOSCO, whatsappDa4yu } from './contato-do-site'
 import { MenuDoTopo } from './menu-do-topo'
@@ -22,6 +21,8 @@ import { ProgressoDosPassos } from './progresso-dos-passos'
 import { Revelar } from './revelar'
 import { GLIFO_CLAUDE, GLIFO_GOOGLE, GLIFO_OPENAI, GLIFO_PERPLEXITY } from '@/components/design/glifos-oficiais'
 import s from './pagina-inicial.module.css'
+import { DUVIDAS } from './duvidas-do-site'
+import { TrocaDePublico } from './troca-de-publico'
 import { FotoDaPessoa } from './pessoas-do-site'
 
 /**
@@ -77,7 +78,6 @@ export function PaginaDoSite({ capa, children, cor }: { capa: ReactNode; childre
   return (
     <div className={s.pagina} style={estilo}>
       <Revelar seletorCabecalho={s.cabecalho} classeRolado={s.cabecalhoRolado} />
-      <Cursor classePonto={s.cursorPonto} classeAnel={s.cursorAnel} classeAtivo={s.cursorAtivo} />
       {/* 44px: fora da moldura azul da página, que tem até 24px na borda. */}
       <Script src="/chat/v1.js" data-chave={CHAVE_DO_BALAO} data-distancia="44" strategy="lazyOnload" />
 
@@ -160,6 +160,7 @@ export function PaginaDoSite({ capa, children, cor }: { capa: ReactNode; childre
                 Atendendo em +55 44 7400-7438
               </span>
               <div className={s.rodapeIa}>
+                <TrocaDePublico atual="pessoas" tom="azul" />
                 <span className={s.rodapeIaTitulo}>Pergunte a uma IA sobre o Dialogon</span>
                 <div className={s.rodapeIaBotoes}>
                   {IAS.map((ia) => (
@@ -495,42 +496,9 @@ export function SecaoDuvidas() {
               </div>
 
               <div className={s.perguntas}>
-                <Pergunta
-                  pergunta="Vou perder o meu número atual?"
-                  resposta="Não. O atendimento acontece no seu próprio número, o mesmo que está no cartão e no Google. Você autoriza a conexão dentro do WhatsApp e desfaz quando quiser."
-                />
-                <Pergunta
-                  pergunta="Meu número pode ser bloqueado?"
-                  resposta="O Dialogon usa a API oficial da Meta, e o envio respeita as regras dela: fora da janela de 24 horas, só sai mensagem com modelo aprovado. O que leva a bloqueio é disparo em massa para quem não pediu e denúncia de spam, e é isso que o produto não deixa acontecer por acidente."
-                />
-                <Pergunta
-                  pergunta="Perco o WhatsApp do celular?"
-                  resposta="Não. Com a coexistência, o número continua no app WhatsApp Business do celular. O que o chatbot responde aparece lá, e o que você responde pelo celular aparece no Inbox."
-                />
-                <Pergunta
-                  pergunta="Quanto a Meta cobra pelas mensagens?"
-                  resposta="A Meta cobra por mensagem, à parte do plano e sem acréscimo nosso. As primeiras 1.000 de atendimento por número no mês são grátis. A calculadora logo acima mostra o valor para o seu volume."
-                />
-                <Pergunta
-                  pergunta="Preciso saber programar?"
-                  resposta="Não. O fluxo se monta arrastando blocos, e configuramos o primeiro com você. Quem ajusta depois é quem atende, não um técnico."
-                />
-                <Pergunta
-                  pergunta="A IA pode inventar coisa e falar besteira com meu cliente?"
-                  resposta="Ela responde dentro dos limites que você escrever e chama uma pessoa quando não sabe, em vez de arriscar. Você também pode rodar o produto inteiro sem IA. Muitos fluxos não precisam dela."
-                />
-                <Pergunta
-                  pergunta="Continuo conseguindo atender pessoalmente?"
-                  resposta="Sim, e é para isso que ele existe. Quando a conversa sai do previsto, ela cai na caixa de entrada com o histórico junto. A pessoa assume no meio e o cliente não repete nada."
-                />
-                <Pergunta
-                  pergunta="Quanto tempo até estar no ar?"
-                  resposta={`A conta fica pronta na hora, e o teste de ${DIAS_DE_TESTE} dias começa junto, sem cartão. A autorização do número na Meta costuma levar alguns dias; se quiser, a equipe da 4YU desenha o primeiro fluxo com você numa conversa de uma hora.`}
-                />
-                <Pergunta
-                  pergunta="E os meus dados?"
-                  resposta="As conversas ficam na sua conta e cada empresa vê só as próprias. O que fazemos com dado pessoal está na política de privacidade, sem letra miúda."
-                />
+                {DUVIDAS.map((d) => (
+                  <Pergunta key={d.pergunta} pergunta={d.pergunta} resposta={d.resposta} />
+                ))}
               </div>
             </div>
           </section>

@@ -11,7 +11,8 @@ import {
   SecaoNumeros,
   SecaoPrecoResumo,
 } from './(site)/secoes-do-site'
-import { DadosDaOrganizacao, DadosDoAplicativo } from './(site)/dados-estruturados'
+import { DadosDaOrganizacao, DadosDasDuvidas, DadosDoAplicativo } from './(site)/dados-estruturados'
+import { DUVIDAS_CURTAS } from './(site)/duvidas-do-site'
 import { metadadosDoSite } from './(site)/metadados'
 
 /**
@@ -36,6 +37,7 @@ export default function PaginaInicial() {
     <PaginaDoSite capa={<CapaDaHome />}>
       <DadosDaOrganizacao />
       <DadosDoAplicativo descricao={DESCRICAO} />
+      <DadosDasDuvidas duvidas={DUVIDAS_CURTAS} />
       <SecaoNumeros />
       <SecaoJornada />
       <SecaoFluxo />

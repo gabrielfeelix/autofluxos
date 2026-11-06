@@ -81,7 +81,9 @@ export function metadadosDoSite(caminho: string, titulo: string, descricao: stri
     title: titulo,
     description: descricao,
     robots: { index: true, follow: true },
-    alternates: { canonical: `${SITE_URL}${caminho}` },
+    // O `llms.txt` anunciado em toda página pública: agente que lê só o HTML
+    // descobre a versão em texto puro sem adivinhar o endereço.
+    alternates: { canonical: `${SITE_URL}${caminho}`, types: { 'text/plain': `${SITE_URL}/llms.txt` } },
     openGraph: { type: 'website', locale: 'pt_BR', siteName: 'Dialogon', url: `${SITE_URL}${caminho}`, title: titulo, description: descricao },
   }
 }
