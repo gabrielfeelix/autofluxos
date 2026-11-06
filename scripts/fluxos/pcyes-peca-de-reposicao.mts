@@ -67,6 +67,14 @@ vendedor.data.instrucao = trocar(
   'vendedor-ia',
 )
 
+// O especialista passava calado: `mensagens: []` vence `mensagem`
+// (`core/flow/mensagem.ts`) e a frase da IA é calada na transferência. O
+// validador de hoje recusa publicar assim; volta a frase que já estava no nó.
+const especialista = no(vendas, 'especialista-produto')
+if (Array.isArray(especialista.data.mensagens) && especialista.data.mensagens.length === 0) {
+  especialista.data.mensagens = [especialista.data.mensagem]
+}
+
 // Triagem do menu: o mesmo resumo.
 const menu = await publicado(MENU)
 const triagem = no(menu, 'triagem')
