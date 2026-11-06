@@ -14,11 +14,14 @@ export function PainelEnviarAutomacao({
   clienteId,
   contatoId,
   nomeDoContato,
+  devolve,
   aoEnviar,
 }: {
   clienteId: string
   contatoId: string
   nomeDoContato: string
+  /** Alguém da equipe está atendendo: a conversa volta para ele no fim do fluxo. */
+  devolve: boolean
   aoEnviar: (automacao: AutomacaoParaEnviar) => void
 }) {
   const [lista, setLista] = useState<AutomacaoParaEnviar[] | null>(null)
@@ -47,7 +50,9 @@ export function PainelEnviarAutomacao({
     <div className="flex flex-col">
       <p className="text-[12px] font-bold text-soft">Enviar automação</p>
       <p className="mt-0.5 text-[11.5px] leading-4 text-dim">
-        {nomeDoContato} recebe o início da automação agora, e o bot conduz a partir dali.
+        {devolve
+          ? `${nomeDoContato} recebe o início da automação agora. Quando ela terminar, a conversa volta para você.`
+          : `${nomeDoContato} recebe o início da automação agora, e o bot conduz a partir dali.`}
       </p>
 
       {(lista?.length ?? 0) > 6 && (
@@ -110,7 +115,7 @@ export function PainelEnviarAutomacao({
         onClick={() => escolhida && aoEnviar(escolhida)}
         className="mt-2.5 w-full rounded-lg bg-primary px-3 py-2 text-[12.5px] font-semibold text-white transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-40"
       >
-        {escolhida ? `Enviar "${escolhida.nome}"` : 'Escolha uma automação'}
+        {!escolhida ? 'Escolha uma automação' : devolve ? 'Enviar e voltar para mim' : `Enviar "${escolhida.nome}"`}
       </button>
     </div>
   )

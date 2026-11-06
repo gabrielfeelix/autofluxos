@@ -4,7 +4,7 @@ import { escolherResposta } from '@/core/comentarios'
 import { alertar } from './alertar'
 import { responderNoComentario, responderNoDirect } from './instagram/comentarios'
 import { registrarMensagemDeCoexistencia } from './repos/coexistencia'
-import { type CanalSalvo, acharCanalPorContaDoInstagram, acharOuCriarContato, lerTokenDoCanal } from './repos/conversas'
+import { type CanalSalvo, acharCanalPorContaDoInstagram, acharOuCriarContato, contatoCalado, lerTokenDoCanal } from './repos/conversas'
 import {
   concluirComentario,
   reservarComentario,
@@ -102,6 +102,26 @@ export async function responderComentario(entrada: {
 
   let contatoId: string | null = null
   try {
+    /*
+     * Alguém da equipe está conversando com essa pessoa, ou o bot foi pausado
+     * nela: o direct automático atropelaria a conversa (06/nov/2026). A
+     * resposta pública também fica de fora, porque ela costuma dizer "te
+     * chamei no direct". No Facebook o id do comentário não é o do Messenger,
+     * então lá não há como saber antes de enviar.
+     */
+    if (entrada.rede === 'Instagram' && comentario.autorId) {
+      if (await contatoCalado(canal.clienteId, comentario.autorId, canal.id)) {
+        await concluirComentario({
+          comentarioId: comentario.id,
+          respostaId: resposta.id,
+          ok: false,
+          detalhe: 'contato em atendimento pela equipe ou com o bot pausado; o direct não foi enviado',
+          contatoId: null,
+        })
+        return
+      }
+    }
+
     const token = await lerTokenDoCanal(canal)
     const { mensagemId, destinatarioId } = await entrada.direct(token, resposta.mensagem)
 

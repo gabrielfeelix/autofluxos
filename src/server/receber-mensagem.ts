@@ -1909,6 +1909,8 @@ export async function abrirFluxoParaContato(
   fabricaDeCanal: FabricaDeCanal = canalPadrao,
   /** Variáveis que o evento traz (`{{aula_hora}}` da Verandi), por cima das do contato. */
   varsDoEvento: Record<string, string> = {},
+  /** Quando o fluxo terminar, a conversa volta para a equipe (0169). */
+  devolverAEquipe = false,
 ): Promise<AberturaPorNossaConta> {
   const contexto = await contextoDeResposta(clienteId, contatoId)
   if (!contexto) return 'sem_contexto'
@@ -1962,10 +1964,13 @@ export async function abrirFluxoParaContato(
       await definirStatusDaSessao(anterior.id, 'encerrada')
     }
 
-    const salva = await criarSessao(contatoId, contexto.canal.id, versao.id, {
-      ...sessaoNova(),
-      vars: { ...varsIniciais(contato), ...varsDoEvento },
-    })
+    const salva = await criarSessao(
+      contatoId,
+      contexto.canal.id,
+      versao.id,
+      { ...sessaoNova(), vars: { ...varsIniciais(contato), ...varsDoEvento } },
+      devolverAEquipe,
+    )
 
     const [opcoesDeIa, horario] = await Promise.all([
       prepararIa(contexto.canal, contatoId, versao, null),
@@ -2035,6 +2040,11 @@ export type DevolucaoAoBot =
  *
  * O caso de uso: "o aluno quer remarcar", um clique, e o próprio aluno refaz o
  * fluxo de agendamento, sem ninguém agendar na mão.
+ *
+ * **Enviada no meio de um atendimento, a conversa volta para quem atendia**
+ * quando o fluxo termina (0169). O bot faz o pedaço pedido (coletar dados,
+ * mandar o pagamento) e devolve; sem isso a conversa ficava com o bot e quem
+ * atendia perdia o fio. Com o bot conduzindo, o fluxo só troca de mãos.
  */
 export async function enviarAutomacaoPelaEquipe(
   clienteId: string,
@@ -2050,6 +2060,11 @@ export async function enviarAutomacaoPelaEquipe(
   const fluxo = await acharFluxo(fluxoId)
   if (!fluxo || fluxo.clienteId !== clienteId || !fluxo.versaoPublicadaId || !fluxo.ativo) return 'sem_fluxo'
 
+  const antes = await acharContato(contatoId)
+  if (!antes) return 'sem_contexto'
+  const emCurso = await ultimaSessao(contatoId, contexto.canal.id)
+  const comEquipe = emCurso?.sessao.status === 'humano' || !antes.automacaoAtiva
+
   await encerrarAtendimento(clienteId, contatoId)
   const contato = await acharContato(contatoId)
   if (!contato) return 'sem_contexto'
@@ -2059,9 +2074,15 @@ export async function enviarAutomacaoPelaEquipe(
   }
   await cancelarRetomada(contatoId)
 
-  const r = await abrirFluxoParaContato(clienteId, contatoId, fluxoId, fabricaDeCanal)
+  const r = await abrirFluxoParaContato(clienteId, contatoId, fluxoId, fabricaDeCanal, {}, comEquipe)
   if (r === 'aberto') {
-    await anotar(clienteId, contatoId, 'automacao', { o_que: 'automação enviada pela equipe', fluxo: fluxo.nome }, autor)
+    await anotar(
+      clienteId,
+      contatoId,
+      'automacao',
+      { o_que: 'automação enviada pela equipe', fluxo: fluxo.nome, ...(comEquipe ? { volta_para_a_equipe: true } : {}) },
+      autor,
+    )
   }
   return r
 }

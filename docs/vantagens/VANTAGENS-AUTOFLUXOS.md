@@ -37,10 +37,14 @@ aqui fica o que o cliente ganha.
 - **Inbox único** para WhatsApp, Instagram, Messenger, chat do site e Telegram.
 - **Enviar uma automação de dentro da conversa**: o aluno quer remarcar, a
   recepção escolhe o fluxo de reagendamento e ele mesmo refaz o agendamento,
-  sem ninguém marcar na mão. *(06/nov/2026)*
+  sem ninguém marcar na mão. Enviada no meio de um atendimento, a conversa
+  volta para quem atendia quando o fluxo termina. *(06/nov/2026)*
 - **Pausar o bot por um tempo**: 30 minutos, 1 hora, 4 horas ou 24 horas, com
   contador na conversa. Nenhuma automação atropela o atendimento, e o bot
   volta sozinho no fim. *(06/nov/2026)*
+- **Atendimento humano não é atropelado**: com alguém da equipe na conversa,
+  nem fluxo, nem sequência, nem o direct automático de comentário do Instagram
+  falam com o contato. *(06/nov/2026)*
 - **Messenger da página do Facebook**: conecta com um login do Facebook, e as
   mensagens da página chegam no Inbox seguindo as mesmas automações do
   WhatsApp, sem desenhar nada de novo. *(04/nov/2026)*

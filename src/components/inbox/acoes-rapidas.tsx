@@ -275,16 +275,24 @@ export function AcoesRapidas({
         (ver `devolverAoBot`).
       */}
       {temAutomacao && comAtendente && (
-        <BotaoDeIcone
-          rotulo="Devolver para o bot"
-          aoClicar={() =>
-            agir({ sessaoComPessoa: false, aguardando: null, automacaoAtiva: true }, () =>
-              acaoDevolverAoBot(clienteId, contatoId),
-            )
-          }
-        >
-          <IconeTocar />
-        </BotaoDeIcone>
+        <div className="flex items-center gap-1">
+          <span
+            className="hidden text-[11px] text-dim sm:inline"
+            title="Com alguém da equipe atendendo, nenhuma automação fala com este contato"
+          >
+            Bot calado
+          </span>
+          <BotaoDeIcone
+            rotulo="Devolver para o bot"
+            aoClicar={() =>
+              agir({ sessaoComPessoa: false, aguardando: null, automacaoAtiva: true }, () =>
+                acaoDevolverAoBot(clienteId, contatoId),
+              )
+            }
+          >
+            <IconeTocar />
+          </BotaoDeIcone>
+        </div>
       )}
 
       {/*
@@ -298,7 +306,9 @@ export function AcoesRapidas({
               clienteId={clienteId}
               contatoId={contatoId}
               nomeDoContato={nomeDoContato}
+              devolve={comAtendente || !botLigado}
               aoEnviar={(automacao) => {
+                const devolve = comAtendente || !botLigado
                 fechar()
                 setErro(null)
                 void conversa
@@ -309,7 +319,11 @@ export function AcoesRapidas({
                     if (falhou) setErro(falhou)
                     else {
                       setFimDaPausa(null)
-                      setEnviada(`"${automacao.nome}" enviada para ${nomeDoContato}`)
+                      setEnviada(
+                        devolve
+                          ? `"${automacao.nome}" enviada. A conversa volta para você no fim.`
+                          : `"${automacao.nome}" enviada para ${nomeDoContato}`,
+                      )
                     }
                   })
               }}

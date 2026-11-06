@@ -669,10 +669,13 @@ export async function criarSessao(
   canalId: string,
   flowVersionId: string,
   sessao: Sessao,
+  /** A conversa volta para a equipe quando este fluxo terminar (0169). */
+  devolverAEquipe = false,
 ): Promise<SessaoSalva> {
   const { data, error } = await db()
     .from('sessions')
     .insert({
+      ...(devolverAEquipe ? { devolver_a_equipe: true } : {}),
       contact_id: contatoId,
       channel_id: canalId,
       flow_version_id: flowVersionId,
@@ -828,6 +831,42 @@ export async function guardarSessao(id: string, sessao: Sessao): Promise<void> {
     .eq('id', id)
 
   if (error) throw new Error(`não foi possível guardar a sessão: ${error.message}`)
+
+  /*
+   * O fluxo enviado pela equipe no meio de um atendimento terminou: a conversa
+   * volta para quem estava atendendo (0169). Só o fim natural passa aqui; quem
+   * encerra de propósito (outro fluxo abrindo, "Já atendi") usa
+   * `definirStatusDaSessao` e não devolve nada. A marca é apagada na volta, ou
+   * um "Devolver para o bot" depois devolveria à equipe outra vez.
+   */
+  if (sessao.status === 'encerrada') {
+    const { error: erroDaVolta } = await db()
+      .from('sessions')
+      .update({ status: 'humano', devolver_a_equipe: false })
+      .eq('id', id)
+      .eq('status', 'encerrada')
+      .eq('devolver_a_equipe', true)
+    if (erroDaVolta) throw new Error(`não foi possível devolver a conversa à equipe: ${erroDaVolta.message}`)
+  }
+}
+
+/**
+ * O contato do Instagram que comentou está com alguém da equipe, ou com o bot
+ * pausado? O direct automático do comentário não pode atropelar a conversa
+ * (RB-48), e o id do comentário é o mesmo do direct só no Instagram.
+ */
+export async function contatoCalado(clienteId: string, waId: string, canalId: string): Promise<boolean> {
+  const { data, error } = await db()
+    .from('contacts')
+    .select('id, automacao_ativa')
+    .eq('client_id', clienteId)
+    .eq('wa_id', waId)
+    .maybeSingle()
+  if (error) throw new Error(`não foi possível achar o contato do comentário: ${error.message}`)
+  if (!data) return false
+  if (data.automacao_ativa === false) return true
+  const salva = await ultimaSessao(data.id as string, canalId)
+  return salva?.sessao.status === 'humano'
 }
 
 /**
