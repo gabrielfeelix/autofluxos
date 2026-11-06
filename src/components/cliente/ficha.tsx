@@ -50,7 +50,7 @@ export function FichaDoCliente({
           <p className="mt-0.5 text-[12px] text-dim">
             {daPlataforma
               ? 'Quem é este cliente e como falar com ele. É a nossa ficha, nada daqui vai para o WhatsApp.'
-              : 'Quem responde pela organização e como a 4YU fala com vocês. Nada daqui vai para o WhatsApp.'}
+              : 'Quem responde pela organização e como falamos com vocês. Nada daqui vai para o WhatsApp.'}
           </p>
         </div>
         {podeEditar ? (
@@ -76,7 +76,7 @@ export function FichaDoCliente({
                 rotulo="Quem responde"
                 nome="responsavel"
                 valor={cliente.responsavel}
-                dica="a pessoa com quem a 4YU fala"
+                dica="a pessoa com quem falamos"
                 exemplo="Exemplo: Daniel, proprietário do estúdio"
               />
               <Campo

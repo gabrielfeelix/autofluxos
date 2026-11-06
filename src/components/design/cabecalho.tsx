@@ -246,7 +246,7 @@ function MenuDoPerfil({
             <strong className="block truncate text-[13.5px] font-bold">{nome}</strong>
             <span className="block truncate text-[11.5px] text-dim">{email}</span>
             {suporte ? (
-              <span className="mt-1 inline-block rounded-full bg-info/15 px-2 py-0.5 text-[10.5px] font-bold text-info">Suporte 4YU</span>
+              <span className="mt-1 inline-block rounded-full bg-info/15 px-2 py-0.5 text-[10.5px] font-bold text-info">Suporte Dialogon</span>
             ) : (
               <span className="mt-1 inline-block rounded-full bg-surface px-2 py-0.5 text-[10.5px] font-semibold text-muted">{papel}</span>
             )}
@@ -533,7 +533,7 @@ function GavetaDeAjuda({ aberta, aoFechar, aoSugerir }: { aberta: boolean; aoFec
           {!busca && (
             <div className="flex flex-col">
               <PortaDeAjuda icone={<IconeLivro />} titulo="Central de ajuda" texto="Como montar automações, perguntas, datas e integrações, com exemplo." href="/ajuda" />
-              <PortaDeAjuda icone={<IconeWhatsapp />} titulo="Falar com o suporte" texto="Atendimento da equipe 4YU no WhatsApp, em horário comercial." href={WHATSAPP_DA_4YU} externo />
+              <PortaDeAjuda icone={<IconeWhatsapp />} titulo="Falar com o suporte" texto="Atendimento da equipe Dialogon no WhatsApp, em horário comercial." href={WHATSAPP_DA_4YU} externo />
               <button type="button" onClick={aoSugerir} className="flex gap-3.5 rounded-xl px-3 py-3 text-left transition hover:bg-surface">
                 <span aria-hidden className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-primary-weak text-primary">
                   <IconeSentiuFalta tamanho={18} />

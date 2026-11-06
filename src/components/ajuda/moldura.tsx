@@ -27,7 +27,7 @@ export function FaleComAGente() {
       <div className="min-w-[240px] flex-1 basis-[300px]">
         <h2 className="text-[18px] font-bold tracking-[-0.015em] text-ink">Não encontrou o que procurava?</h2>
         <p className="mt-1 text-[14px] leading-[1.6] text-muted">
-          A equipe da 4YU atende pelo WhatsApp em horário comercial. Para pedidos com print ou
+          Nossa equipe atende pelo WhatsApp em horário comercial. Para pedidos com print ou
           planilha, escreva para {EMAIL_DA_4YU}.
         </p>
       </div>

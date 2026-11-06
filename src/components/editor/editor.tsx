@@ -1521,7 +1521,7 @@ export function Editor({
         */}
         {podeContratarIa ? (
           <label
-            title="Etapa 2 (IA) é plano à parte. Sem isto, fluxo com bloco de IA não publica. Só a 4YU marca."
+            title="Etapa 2 (IA) é plano à parte. Sem isto, fluxo com bloco de IA não publica. Só o suporte marca."
             className="flex cursor-pointer items-center gap-2 rounded-lg px-1.5 py-1 text-xs text-muted transition hover:bg-surface"
           >
             <Caixa
@@ -1541,7 +1541,7 @@ export function Editor({
         ) : (
           comIa && (
             <span
-              title="Esta automação tem o plano de IA (Etapa 2). Para mudar, fale com a 4YU."
+              title="Esta automação tem o plano de IA (Etapa 2). Para mudar, fale com o suporte."
               className="shrink-0 rounded-full border border-violet-400/25 bg-violet-400/[0.09] px-3 py-1 text-xs text-info"
             >
               IA contratada

@@ -86,7 +86,7 @@ async function SinoDaConta({ clienteId, administra }: { clienteId: string; admin
           quando: pedido.quando,
           tom: 'info',
           titulo: `Pedido do plano ${para} em análise`,
-          texto: 'A 4YU recebeu e responde por aqui. Até lá, o plano atual continua valendo.',
+          texto: 'Nossa equipe recebeu e responde por aqui. Até lá, o plano atual continua valendo.',
           href: `/clientes/${clienteId}/ajustes/plano`,
         })
       } else if (pedido.respondidoEm && new Date(pedido.respondidoEm).getTime() > limite) {
@@ -98,7 +98,7 @@ async function SinoDaConta({ clienteId, administra }: { clienteId: string; admin
           titulo: atendido ? `Plano ${para} aprovado` : `Pedido do plano ${para} recusado`,
           texto: atendido
             ? 'A troca foi feita. Os limites novos já valem para a organização.'
-            : 'O plano continua o mesmo. Fale com a 4YU pela Ajuda para entender o motivo.',
+            : 'O plano continua o mesmo. Fale com o suporte pela Ajuda para entender o motivo.',
           href: `/clientes/${clienteId}/ajustes/plano`,
         })
       }

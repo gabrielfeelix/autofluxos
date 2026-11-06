@@ -20,7 +20,7 @@ export async function generateMetadata({ searchParams }: Props): Promise<Metadat
   const nome = limparNome(um(p.n))
   return {
     title: valor ? `Pagar ${reaisDito(valor)} · ${nome}` : 'Pagamento',
-    description: 'Pagamento com cartão (demonstração 4YU Tech, nada é cobrado).',
+    description: 'Pagamento com cartão (demonstração do Dialogon, nada é cobrado).',
     robots: { index: false, follow: false },
   }
 }

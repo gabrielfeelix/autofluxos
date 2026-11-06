@@ -23,7 +23,7 @@ import { exigirCapacidade, recusou, SEM_PERMISSAO } from '@/server/permissoes'
  * permite. O webhook do WhatsApp chama exatamente o mesmo caminho, mudando só
  * de onde vem a sessão (banco, em vez do corpo da requisição).
  *
- * A IA roda aqui de verdade, com a chave da 4YU. É o que permite desenhar um
+ * A IA roda aqui de verdade, com a chave do Dialogon. É o que permite desenhar um
  * fluxo na frente do cliente e mostrar o bot respondendo na mesma reunião. O
  * dado que passa por aqui é inventado por quem está testando, ver
  * `ia/modelo.ts` sobre onde fica a linha entre demonstração e conversa real.
@@ -71,7 +71,7 @@ export async function POST(req: Request) {
    * O `proxy.ts` deixa passar qualquer requisição que traga um cookie com o
    * nome certo, e o valor pode ser inventado: ele não vai ao banco. Até a
    * auditoria de 28/set/2026 esta rota não conferia mais nada, e um POST sem
-   * `fluxoId` com `iaHabilitada: true` rodava a IA **com a chave da 4YU** para
+   * `fluxoId` com `iaHabilitada: true` rodava a IA **com a chave do Dialogon** para
    * qualquer um na internet, 60 vezes por minuto por IP.
    */
   const quem = await sessaoAtual()

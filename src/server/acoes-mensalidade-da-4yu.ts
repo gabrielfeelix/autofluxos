@@ -36,7 +36,7 @@ export async function acaoAssinar(
   if (!mensalidadeLiberada(ehAdminDaPlataforma(acesso.sessao))) return { ok: false, erro: 'a assinatura ainda não está disponível' }
   if (!ehIdDePlano(planoId)) return { ok: false, erro: 'esse plano não existe' }
   if ((await cobrancaDaConta(clienteId)).forma !== 'asaas') {
-    return { ok: false, erro: 'a cobrança desta organização é combinada direto com a 4YU' }
+    return { ok: false, erro: 'a cobrança desta organização é combinada direto com o Dialogon' }
   }
   const ciclo: CicloDeCobranca = ehCicloDeCobranca(cicloPedido) ? cicloPedido : 'mensal'
 

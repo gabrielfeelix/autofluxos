@@ -34,7 +34,7 @@ export function Checkout({ valor, nome }: { valor: number; nome: string }) {
     <main style={{ minHeight: '100dvh', background: '#EEF1F3', fontFamily: 'system-ui, -apple-system, Segoe UI, Roboto, sans-serif', color: '#1B2126', padding: '24px 16px' }}>
       <div style={{ maxWidth: 420, margin: '0 auto', display: 'flex', flexDirection: 'column', gap: 14 }}>
         <div style={{ background: '#FFF7E0', border: '1px solid #F1D98B', color: '#6B5200', borderRadius: 10, padding: '10px 12px', fontSize: 13 }}>
-          Demonstração da 4YU Tech: nada é cobrado. O cartão de teste já vem preenchido.
+          Demonstração do Dialogon: nada é cobrado. O cartão de teste já vem preenchido.
         </div>
 
         <section style={{ background: 'white', borderRadius: 16, padding: 20, boxShadow: '0 2px 12px rgba(0,0,0,0.06)' }}>

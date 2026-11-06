@@ -65,7 +65,7 @@ const RESULTADOS: Record<string, { texto: string; ok: boolean }> = {
   pagbank_conectado: { texto: 'PagBank conectado. As cobranças pela conversa já podem sair desta conta.', ok: true },
   pagbank_cancelado: { texto: 'A conexão foi cancelada na tela do PagBank. Nada mudou.', ok: false },
   pagbank_outra_conta: { texto: 'Esta conta do PagBank já está ligada a outra organização.', ok: false },
-  pagbank_em_liberacao: { texto: 'O PagBank está sendo liberado pela equipe da 4YU. Nada mudou.', ok: false },
+  pagbank_em_liberacao: { texto: 'O PagBank está sendo liberado pela equipe do Dialogon. Nada mudou.', ok: false },
   pagbank_falhou: { texto: 'Não foi possível conectar o PagBank. Tente de novo.', ok: false },
   stripe_conectado: { texto: 'Stripe conectado. As cobranças pela conversa já podem sair desta conta.', ok: true },
   stripe_cancelado: { texto: 'A conexão foi cancelada na tela do Stripe. Nada mudou.', ok: false },
@@ -288,7 +288,7 @@ export default async function Pagina({
             ? recusa
             : f.liberado
               ? f.convite
-              : `A conexão com o ${NOME_DO_GATEWAY[f.gateway]} está sendo liberada pela equipe da 4YU.`}
+              : `A conexão com o ${NOME_DO_GATEWAY[f.gateway]} está sendo liberada pela equipe do Dialogon.`}
         </CartaoDeConexao>
       ),
     }))

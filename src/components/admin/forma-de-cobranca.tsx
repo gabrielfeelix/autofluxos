@@ -7,12 +7,12 @@ import type { CobrancaDaConta, FormaDeCobranca } from '@/server/repos/faturas-da
 
 const FORMAS: { valor: FormaDeCobranca; rotulo: string; descricao: string }[] = [
   { valor: 'asaas', rotulo: 'Pelo app', descricao: 'Assina em Plano e consumo e paga pelo Asaas, com nota fiscal e régua de atraso.' },
-  { valor: 'por_fora', rotulo: 'Por fora', descricao: 'Pix ou transferência combinado com a 4YU. Não vê o botão Assinar.' },
+  { valor: 'por_fora', rotulo: 'Por fora', descricao: 'Pix ou transferência combinado com o Dialogon. Não vê o botão Assinar.' },
   { valor: 'cortesia', rotulo: 'Cortesia', descricao: 'Não paga: organização de teste ou parceira. Não vê o botão Assinar.' },
 ]
 
 /**
- * Como a 4YU cobra esta organização (0148). O controle interno de quem paga
+ * Como o Dialogon cobra esta organização (0148). O controle interno de quem paga
  * por fora e de quem não paga, ao lado do plano, que é o que se cobra.
  */
 export function FormaDeCobrancaDaOrganizacao({
@@ -49,7 +49,7 @@ export function FormaDeCobrancaDaOrganizacao({
       <h2 id="titulo-cobranca" className="text-[14px] font-bold">
         Cobrança
       </h2>
-      <p className="mt-1 text-[12.5px] leading-5 text-muted">Como a 4YU cobra esta organização. Só a administração vê e muda.</p>
+      <p className="mt-1 text-[12.5px] leading-5 text-muted">Como o Dialogon cobra esta organização. Só a administração vê e muda.</p>
 
       <form
         className="mt-3 flex flex-col gap-3"
@@ -125,7 +125,7 @@ export function FormaDeCobrancaDaOrganizacao({
             maxLength={500}
             rows={2}
             placeholder={
-              forma === 'cortesia' ? 'Exemplo: cliente de teste até a demonstração de dezembro' : 'Exemplo: Pix para a chave da 4YU, comprovante pelo WhatsApp'
+              forma === 'cortesia' ? 'Exemplo: cliente de teste até a demonstração de dezembro' : 'Exemplo: Pix para a chave do Dialogon, comprovante pelo WhatsApp'
             }
             className="app-field px-3 py-2 text-[13px]"
           />

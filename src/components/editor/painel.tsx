@@ -4005,7 +4005,7 @@ function ConsultasDaIa({
         <p className="mt-2.5 rounded-[10px] border border-amber-400/20 bg-amber-400/[0.07] px-3 py-2.5 text-[11.5px] leading-5 text-aviso">
           {semPerguntar.length === 0
             ? 'Nesta conta, antes de gravar a IA pergunta “posso?” ao contato e só grava com o sim.'
-            : `Nesta conta, ${semPerguntar.join(', ')} ${semPerguntar.length === 1 ? 'grava' : 'gravam'} sozinha, sem perguntar ao contato. Para mudar essa regra, fale com a 4YU.`}{' '}
+            : `Nesta conta, ${semPerguntar.join(', ')} ${semPerguntar.length === 1 ? 'grava' : 'gravam'} sozinha, sem perguntar ao contato. Para mudar essa regra, fale com o suporte.`}{' '}
           Ela só age sobre quem está conversando, e só em horários que acabou de consultar.
         </p>
       )}

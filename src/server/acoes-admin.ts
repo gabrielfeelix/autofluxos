@@ -257,7 +257,7 @@ export async function acaoAdminDarAcesso(
     avisarAcessoLiberado({
       pessoa: { email, nome: existente?.nome ?? nome },
       clienteId: organizacaoId,
-      quem: 'A equipe da 4YU',
+      quem: 'A equipe do Dialogon',
       funcao,
       contaNova: !existente,
     }),
@@ -485,7 +485,7 @@ export type DadosDoPlano = {
   /** Atendentes inclusos; acima, `precoAtendenteExtra` por pessoa (0128). */
   atendentes: number
   precoAtendenteExtra: number
-  /** Respostas de IA em 30 dias, com a chave da 4YU. */
+  /** Respostas de IA em 30 dias, com a chave do Dialogon. */
   tetoIa: number
   /** Envios de transmissão por mês; `null` = sem teto. */
   tetoTransmissoes: number | null
@@ -963,7 +963,7 @@ export async function acaoAdminSalvarTetoDaApi(organizacaoId: string, teto: numb
 }
 
 /**
- * Como a 4YU cobra esta organização (0148): pelo app, por fora (Pix
+ * Como o Dialogon cobra esta organização (0148): pelo app, por fora (Pix
  * combinado) ou cortesia. Só a administração muda; a tela do cliente só lê.
  */
 export async function acaoAdminSalvarCobranca(

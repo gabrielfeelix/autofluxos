@@ -228,7 +228,7 @@ export function TabelaDePessoas({
         <div className="app-card px-5 py-12 text-center">
           <IlustracaoEquipe />
           <p className="mt-6 text-[13px] font-bold">Ninguém com acesso ainda</p>
-          <p className="mx-auto mt-1 max-w-sm text-[12px] leading-5 text-dim">Enquanto isso, só o Suporte 4YU abre esta organização.</p>
+          <p className="mx-auto mt-1 max-w-sm text-[12px] leading-5 text-dim">Enquanto isso, só o Suporte Dialogon abre esta organização.</p>
         </div>
         {modal}
       </>

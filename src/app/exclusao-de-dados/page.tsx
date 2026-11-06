@@ -231,7 +231,7 @@ const SECOES: readonly SecaoLegal[] = [
         </p>
         <p>E-mail: contato@dialogon.com.br</p>
         <p>
-          68.770.493 GABRIEL FELIX BARBOSA (4YU) · CNPJ 68.770.493/0001-82 · Rua Osvaldo Cruz,
+          68.770.493 GABRIEL FELIX BARBOSA · CNPJ 68.770.493/0001-82 · Rua Osvaldo Cruz,
           297, Zona 07, Maringá/PR, CEP 87020-200.
         </p>
         <p>

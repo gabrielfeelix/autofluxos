@@ -62,7 +62,7 @@ export function ChaveDeIa({
           </p>
         ) : (
           <p className="text-[12.5px] leading-5 text-soft">
-            Esta conta usa <strong>a chave da 4YU</strong>, que é de demonstração. O Google pode
+            Esta conta usa <strong>a chave do Dialogon</strong>, que é de demonstração. O Google pode
             usar essas conversas para treinar modelo. Para atender clientes reais, cadastre a
             chave paga do cliente.
           </p>
@@ -121,12 +121,12 @@ export function ChaveDeIa({
                   setFeito('')
                   const r = await apagar()
                   if (!r.ok) setErro(r.erro ?? 'não foi possível apagar')
-                  else setFeito('Chave do cliente apagada. A conta voltou para a chave da 4YU.')
+                  else setFeito('Chave do cliente apagada. A conta voltou para a chave do Dialogon.')
                 })
               }
               className="botao-perigo botao-sm"
             >
-              usar a chave da 4YU
+              usar a chave do Dialogon
             </button>
           </div>
         )}

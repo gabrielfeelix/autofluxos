@@ -88,7 +88,7 @@ export function PainelVoce({
           <span className="block truncate text-[12px] text-dim">{email}</span>
           {suporte ? (
             <span className="mt-1 inline-block rounded-full bg-info/15 px-2 py-0.5 text-[11px] font-bold text-info">
-              Suporte 4YU
+              Suporte Dialogon
             </span>
           ) : (
             <span className="mt-0.5 block truncate text-[12px] font-semibold text-muted">{papel}</span>

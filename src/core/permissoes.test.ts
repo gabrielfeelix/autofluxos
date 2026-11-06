@@ -336,8 +336,8 @@ describe('o resumo do acesso em frases', () => {
   })
 
   it('suporte 4YU tem nome próprio, nunca admin sozinho', () => {
-    expect(resumoDoAcesso({ papel: null, ehAdminDaPlataforma: true }).perfil).toBe('Suporte 4YU')
-    expect(rotuloDoPapel(null)).toBe('Suporte 4YU')
+    expect(resumoDoAcesso({ papel: null, ehAdminDaPlataforma: true }).perfil).toBe('Suporte Dialogon')
+    expect(rotuloDoPapel(null)).toBe('Suporte Dialogon')
     expect(rotuloDoPapel('admin')).toBe('Administrador')
   })
 })

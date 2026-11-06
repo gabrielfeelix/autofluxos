@@ -196,7 +196,7 @@ describe('custoDaEquipe', () => {
 })
 
 describe('tetoDeIaDaConta', () => {
-  it('é o número do plano com a chave da 4YU', () => {
+  it('é o número do plano com a chave do Dialogon', () => {
     expect(PLANOS.map((p) => tetoDeIaDaConta(p))).toEqual([1500, 3000, 6000])
   })
 

@@ -30,7 +30,7 @@ export async function GET(req: Request) {
           <img src={qr} width={420} height={420} style={{ marginTop: 24 }} alt="" />
           <div style={{ fontSize: 24, color: '#5B6B68', marginTop: 24 }}>Abra o app do banco e escaneie, ou use o copia e cola</div>
         </div>
-        <div style={{ display: 'flex', marginTop: 'auto', marginBottom: 28, fontSize: 22, color: '#8A9794' }}>Demonstração 4YU Tech · nenhum valor é cobrado</div>
+        <div style={{ display: 'flex', marginTop: 'auto', marginBottom: 28, fontSize: 22, color: '#8A9794' }}>Demonstração Dialogon · nenhum valor é cobrado</div>
       </div>
     ),
     { width: 720, height: 1040, headers: { 'Cache-Control': 'public, max-age=86400, immutable' } },

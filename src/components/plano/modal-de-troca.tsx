@@ -71,7 +71,7 @@ export function ModalDeTroca({
   const virada = diaPorExtenso(proximaVirada(new Date()))
   const descricao =
     quem === 'organizacao'
-      ? 'O pedido vai para a 4YU, que confirma com você antes de mudar a cobrança.'
+      ? 'O pedido vai para a nossa equipe, que confirma com você antes de mudar a cobrança.'
       : desce
         ? `A descida vale na virada do mês, em ${virada}, e fica na auditoria da organização.`
         : 'A subida vale na hora e fica na auditoria da organização.'

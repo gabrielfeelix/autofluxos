@@ -40,7 +40,7 @@ export function SecaoVerandiLigar() {
       titulo="Ligar a automação na Verandi"
       chamada={
         <>
-          A Verandi é a agenda da 4YU, e, do ponto de vista do Dialogon, é{' '}
+          A Verandi é um sistema de agenda e, do ponto de vista do Dialogon, é{' '}
           <strong className="text-soft">um sistema do cliente como qualquer outro</strong>. Nada de
           turma, matrícula ou presença mora aqui: o bot lê e escreve pela API, e o dado fica lá.
         </>

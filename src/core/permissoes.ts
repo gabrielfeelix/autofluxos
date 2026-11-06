@@ -460,7 +460,7 @@ export const ROTULO_DO_PAPEL: Record<PapelDaConta, string> = {
 }
 
 /** O que o administrador da 4YU é numa conta em que ele não é membro (E9). */
-export const ROTULO_DO_SUPORTE = 'Suporte 4YU'
+export const ROTULO_DO_SUPORTE = 'Suporte Dialogon'
 
 export const DETALHE_DO_PAPEL: Record<PapelDaConta, string> = {
   owner: 'faz tudo, inclusive mexer em quem manda',

@@ -35,7 +35,7 @@ export async function acaoTrocarFuncao(clienteId: string, usuarioId: string, fun
   if (r.alvo.funcao === 'leitor' && funcao !== 'leitor') {
     const plano = await planoVigente(await planoDaConta(clienteId))
     if (custoDaEquipe(plano, (await tamanhoDaEquipe(clienteId)) + 1).enterprise) {
-      return { ok: false, erro: `acima de ${LIMITE_DE_ATENDENTES_SEM_CONTRATO} atendentes a conta vira Enterprise: fale com a 4YU para ampliar a equipe` }
+      return { ok: false, erro: `acima de ${LIMITE_DE_ATENDENTES_SEM_CONTRATO} atendentes a conta vira Enterprise: fale com o suporte para ampliar a equipe` }
     }
   }
 
@@ -97,7 +97,7 @@ export async function acaoDarAcessoNaOrganizacao(
   const plano = await planoVigente(await planoDaConta(clienteId))
   const custo = custoDaEquipe(plano, funcao === 'leitor' ? equipe : equipe + 1)
   if (custo.enterprise) {
-    return { erro: `acima de ${LIMITE_DE_ATENDENTES_SEM_CONTRATO} atendentes a conta vira Enterprise: fale com a 4YU para ampliar a equipe` }
+    return { erro: `acima de ${LIMITE_DE_ATENDENTES_SEM_CONTRATO} atendentes a conta vira Enterprise: fale com o suporte para ampliar a equipe` }
   }
   if (custo.extras > 0 && formData.get('aceitouCusto') !== '1') {
     return { custo: frasesDoCusto(plano.nome, plano.atendentes, plano.precoAtendenteExtra, custo.extras, custo.valor) }

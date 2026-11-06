@@ -430,12 +430,12 @@ function CartaoDaAssinatura({
         <div>
           <p className="text-[11.5px] font-semibold text-dim">Assinatura</p>
           <p className="mt-1 text-[17px] font-bold tracking-[-0.02em]">
-            {combinada === 'cortesia' ? 'Cortesia da 4YU' : 'Combinada com a 4YU'}
+            {combinada === 'cortesia' ? 'Cortesia do Dialogon' : 'Combinada com o Dialogon'}
           </p>
           <p className="mt-1 text-[12.5px] leading-5 text-dim">
             {combinada === 'cortesia'
               ? 'Esta organização não tem cobrança. Para mudar de plano, peça em Plano e consumo.'
-              : 'O pagamento desta organização é combinado direto com a 4YU. Dúvidas: contato@dialogon.com.br.'}
+              : 'O pagamento desta organização é combinado direto com o Dialogon. Dúvidas: contato@dialogon.com.br.'}
           </p>
         </div>
       </div>

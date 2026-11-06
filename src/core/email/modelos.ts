@@ -416,7 +416,7 @@ export const MODELOS = {
   }),
 
   pedidoDePlanoParaEquipe: definir<{ organizacao: string; quem: string; email: string; de: string; para: string; ciclo: string; link: string }>({
-    nome: 'Pedido de plano (equipe 4YU)',
+    nome: 'Pedido de plano (equipe Dialogon)',
     grupo: 'Interno',
     montar: (p) => ({
       assunto: `Pedido de plano: ${p.organizacao} quer o ${p.para}`,
@@ -424,7 +424,7 @@ export const MODELOS = {
       selo: { texto: 'Pedido novo', tom: 'aviso' },
       titulo: `${p.organizacao} pediu o plano ${p.para}`,
       blocos: [
-        { tipo: 'texto', texto: `**${p.quem}** (${p.email}) pediu a troca de plano pelo painel. O cliente foi avisado de que a 4YU entra em contato.` },
+        { tipo: 'texto', texto: `**${p.quem}** (${p.email}) pediu a troca de plano pelo painel. O cliente foi avisado de que a nossa equipe entra em contato.` },
         {
           tipo: 'fatos',
           linhas: [
@@ -436,7 +436,7 @@ export const MODELOS = {
         },
         { tipo: 'botao', rotulo: 'Atender o pedido', link: p.link },
       ],
-      motivo: 'Aviso interno da 4YU: um pedido de plano espera resposta na administração.',
+      motivo: 'Aviso interno do Dialogon: um pedido de plano espera resposta na administração.',
     }),
     exemplo: {
       organizacao: 'MGM Pilates',
@@ -1115,7 +1115,7 @@ export const MODELOS = {
   }),
 
   pedidoDeExclusaoParaEquipe: definir<{ alvo: 'usuario' | 'organizacao'; quem: string; email: string; organizacao: string; motivo: string; link: string }>({
-    nome: 'Pedido de exclusão (equipe 4YU)',
+    nome: 'Pedido de exclusão (equipe Dialogon)',
     grupo: 'Interno',
     montar: (p) => {
       const daOrganizacao = p.alvo === 'organizacao'
@@ -1140,7 +1140,7 @@ export const MODELOS = {
           ...so(p.motivo, { tipo: 'nota', texto: `**Motivo informado:** ${p.motivo}` } as Bloco),
           { tipo: 'botao', rotulo: 'Abrir na administração', link: p.link },
         ],
-        motivo: 'Aviso interno da 4YU: um pedido de exclusão espera atendimento (LGPD).',
+        motivo: 'Aviso interno do Dialogon: um pedido de exclusão espera atendimento (LGPD).',
       }
     },
     exemplo: {

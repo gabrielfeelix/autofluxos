@@ -131,7 +131,7 @@ export function avisarPedidoDePlano(clienteId: string, dados: { pessoa: Destinat
       ciclo: CICLO[dados.ciclo],
       link: linkDoPlano(clienteId),
     })
-    await enviarModelo({ email: CONTATO, nome: '4YU' }, 'pedidoDePlanoParaEquipe', {
+    await enviarModelo({ email: CONTATO, nome: 'Dialogon' }, 'pedidoDePlanoParaEquipe', {
       organizacao,
       quem: dados.pessoa.nome || dados.pessoa.email,
       email: dados.pessoa.email,
@@ -339,7 +339,7 @@ export function avisarPedidoDeExclusao(dados: {
       email: dados.pessoa.email,
       quando: quando(),
     })
-    await enviarModelo({ email: CONTATO, nome: '4YU' }, 'pedidoDeExclusaoParaEquipe', {
+    await enviarModelo({ email: CONTATO, nome: 'Dialogon' }, 'pedidoDeExclusaoParaEquipe', {
       alvo: dados.alvo,
       quem: dados.pessoa.nome || dados.pessoa.email,
       email: dados.pessoa.email,

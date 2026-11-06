@@ -42,7 +42,7 @@ export async function acaoPedirExclusao(dados: {
   // Três pedidos por dia bastam para quem mudou de ideia no meio; mais que isso
   // é alguém enchendo a caixa da 4YU.
   const limite = await situacaoDoLimite(`exclusao:${usuario.id}`, 3, 24 * 60 * 60)
-  if (limite !== 'livre') return { ok: false, erro: 'Seu pedido já foi enviado. A 4YU responde por e-mail.' }
+  if (limite !== 'livre') return { ok: false, erro: 'Seu pedido já foi enviado. Respondemos por e-mail.' }
 
   let organizacao: string
   let link: string

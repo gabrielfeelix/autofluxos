@@ -55,7 +55,6 @@ export function Portico({
           </ul>
         </div>
 
-        <p className="hidden text-[12.5px] text-white/70 md:block">Um produto da 4YU</p>
       </section>
 
       <section className="flex flex-1 items-start justify-center p-4 pt-6 md:w-[520px] md:flex-none md:items-center md:p-10">

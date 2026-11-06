@@ -145,7 +145,7 @@ export async function assinar(
 }
 
 /**
- * O que o aviso do Asaas faz. Relê a fatura com a chave da 4YU, grava o
+ * O que o aviso do Asaas faz. Relê a fatura com a chave do Dialogon, grava o
  * espelho e, se a mensalidade foi paga, põe a conta no plano assinado.
  */
 export async function aplicarAvisoDaMensalidade(asaasId: string): Promise<void> {

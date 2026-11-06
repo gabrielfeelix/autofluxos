@@ -303,7 +303,7 @@ export default async function Pagina({
           <p className="text-[12.5px] font-semibold text-muted">Enquanto o app review não sai</p>
           <p className="mt-1.5 text-[12px] leading-6 text-dim">
             As permissões de mensagem estão em <strong>Standard Access</strong>. Nesse estágio o
-            Instagram só embarca contas ligadas à própria conta da Meta da 4YU, dá para atender no
+            Instagram só embarca contas ligadas à própria conta da Meta do Dialogon, dá para atender no
             nosso perfil, não no do cliente. Quando o <strong>Advanced Access</strong> for aprovado,
             esta mesma tela passa a aceitar a conta de qualquer cliente, sem mudar nada aqui.
           </p>

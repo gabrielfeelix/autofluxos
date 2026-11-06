@@ -137,7 +137,7 @@ export async function acaoConectarPorCampos(
       return { ok: false, erro: `Esta conta do ${nome} já está ligada a outra organização.` }
     }
     if (erro instanceof Error && /check constraint|gateway_check/.test(erro.message)) {
-      return { ok: false, erro: `O ${nome} está sendo liberado pela equipe da 4YU.` }
+      return { ok: false, erro: `O ${nome} está sendo liberado pela equipe do Dialogon.` }
     }
     await alertar(`não foi possível salvar a conexão do ${nome}`, erro, { cliente: clienteId })
     return { ok: false, erro: 'Não foi possível salvar a conexão. Tente de novo.' }
@@ -285,7 +285,7 @@ export async function acaoConectarInfinitePay(clienteId: string, tagDigitada: st
       return { ok: false, erro: 'Esta InfiniteTag já está ligada a outra organização.' }
     }
     if (erro instanceof Error && /check constraint|gateway_check/.test(erro.message)) {
-      return { ok: false, erro: 'A InfinitePay está sendo liberada pela equipe da 4YU.' }
+      return { ok: false, erro: 'A InfinitePay está sendo liberada pela equipe do Dialogon.' }
     }
     await alertar('não foi possível salvar a conexão da InfinitePay', erro, { cliente: clienteId })
     return { ok: false, erro: 'Não foi possível salvar a conexão. Tente de novo.' }

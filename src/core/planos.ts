@@ -98,7 +98,7 @@ export type Plano = {
   precoAtendenteExtra: number
   /**
    * Respostas de IA em 30 dias corridos, somando transcrição de áudio (0128).
-   * Só vale para a chave da 4YU: quem usa chave própria paga a IA e não tem
+   * Só vale para a chave do Dialogon: quem usa chave própria paga a IA e não tem
    * teto. Antes era 5 por real de mensalidade; virou número do plano porque o
    * Essencial passou a ter IA e a conta por real deixava de dizer a verdade.
    */

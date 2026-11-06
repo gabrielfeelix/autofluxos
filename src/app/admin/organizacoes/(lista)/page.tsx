@@ -190,7 +190,7 @@ export default async function Organizacoes({
                   <span title={horaExata(organizacao.criadaEm)}>{dataCurta(organizacao.criadaEm)}</span>
                 </td>
                 <td className="px-3 py-3 text-right">
-                  <Link href={`/clientes/${organizacao.id}`} className="botao-secundario botao-sm" title="Abrir como Suporte 4YU">
+                  <Link href={`/clientes/${organizacao.id}`} className="botao-secundario botao-sm" title="Abrir como Suporte Dialogon">
                     Abrir
                   </Link>
                 </td>

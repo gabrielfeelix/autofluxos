@@ -60,7 +60,7 @@ export function ModalDePedirExclusao({
             Pedido enviado. O comprovante foi para <strong>{enviadoPara}</strong>.
           </p>
           <p className="text-[12.5px] leading-5 text-muted">
-            A 4YU confirma em até 2 dias úteis e conclui em até 15 dias. Até lá, tudo segue funcionando. Para
+            Confirmamos em até 2 dias úteis e concluímos em até 15 dias. Até lá, tudo segue funcionando. Para
             cancelar o pedido, responda o e-mail de comprovante.
           </p>
           <div className="flex justify-end">
@@ -79,7 +79,7 @@ export function ModalDePedirExclusao({
         >
           <ul className="flex flex-col gap-2 rounded-xl border border-line bg-surface px-4 py-3 text-[12.5px] leading-5 text-muted">
             <li>
-              <strong className="text-ink">Nada é apagado agora.</strong> A 4YU confere o pedido e confirma por
+              <strong className="text-ink">Nada é apagado agora.</strong> Conferimos o pedido e confirmamos por
               e-mail em até 2 dias úteis.
             </li>
             <li>A exclusão é concluída em até 15 dias e não pode ser desfeita.</li>
@@ -157,8 +157,8 @@ export function ExclusaoDaOrganizacao({ clienteId, organizacao }: { clienteId: s
       <h2 className="border-b border-line px-[18px] py-3.5 text-[13px] font-bold">Excluir a organização</h2>
       <div className="flex flex-col gap-3 px-[18px] py-4 sm:flex-row sm:items-center sm:justify-between sm:gap-6">
         <p className="text-[12.5px] leading-5 text-muted">
-          Peça à 4YU a exclusão de {organizacao} e de tudo que pertence a ela. Nada é apagado na hora: a 4YU
-          confirma por e-mail antes.
+          Peça a exclusão de {organizacao} e de tudo que pertence a ela. Nada é apagado na hora: confirmamos
+           por e-mail antes.
         </p>
         <button
           type="button"

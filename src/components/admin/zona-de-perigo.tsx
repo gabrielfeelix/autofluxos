@@ -56,7 +56,7 @@ export function ZonaDePerigo({
           <p className="mt-1 text-[12.5px] leading-5 text-muted">
             {suspensa
               ? 'Ninguém da organização entra enquanto ela estiver suspensa. Reativar devolve o acesso de todos, com as mesmas funções.'
-              : 'Suspensa, ninguém da organização entra no painel. O Suporte 4YU continua entrando, e nada é apagado. O bot e os canais seguem como estão.'}
+              : 'Suspensa, ninguém da organização entra no painel. O Suporte Dialogon continua entrando, e nada é apagado. O bot e os canais seguem como estão.'}
           </p>
         </div>
         <button

@@ -14,7 +14,7 @@ export const dynamic = 'force-dynamic'
  * quem, e a resposta é sempre um redirect com o resultado na URL.
  *
  * O que se guarda como "token" é a conta do dono (`acct_`): quem fala com o
- * Stripe é a chave da 4YU com o cabeçalho `Stripe-Account`.
+ * Stripe é a chave do Dialogon com o cabeçalho `Stripe-Account`.
  */
 export async function GET(req: Request) {
   const parametros = new URL(req.url).searchParams

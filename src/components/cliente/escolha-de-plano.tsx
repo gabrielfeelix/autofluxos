@@ -53,7 +53,7 @@ export function EscolhaDePlano({
   faturasHref = null,
   combinada = null,
 }: {
-  /** A cobrança é combinada direto com a 4YU (0148): por fora ou cortesia. */
+  /** A cobrança é combinada direto com o Dialogon (0148): por fora ou cortesia. */
   combinada?: 'por_fora' | 'cortesia' | null
   /**
    * Assinar pelo Asaas da 4YU (docs/PLANO-MENSALIDADE-ASAAS.md). Ausente
@@ -237,7 +237,7 @@ export function EscolhaDePlano({
             {reais(contrato.precoContratado ?? plano.preco)} por mês
             {combinada && (
               <span className="block text-[11.5px] text-dim">
-                {combinada === 'cortesia' ? 'Cortesia da 4YU, sem cobrança' : 'Pagamento combinado direto com a 4YU'}
+                {combinada === 'cortesia' ? 'Cortesia do Dialogon, sem cobrança' : 'Pagamento combinado direto com o Dialogon'}
               </span>
             )}
             {faturasHref && (
@@ -392,7 +392,7 @@ export function EscolhaDePlano({
               ? 'O pagamento é feito na página segura do Asaas, por cartão, Pix ou boleto, com nota fiscal. O plano muda assim que o pagamento é confirmado.'
               : trocaDireta
                 ? 'Subir de plano vale na hora, e a assinatura passa ao valor novo. Descer vale a partir da virada do mês.'
-                : 'O pedido vai para a 4YU, que confirma com você antes de mudar a cobrança.'}
+                : 'O pedido vai para a nossa equipe, que confirma com você antes de mudar a cobrança.'}
         </p>
 
         {mensagem && (
@@ -413,10 +413,10 @@ export function EscolhaDePlano({
             <span aria-hidden className="mt-1.5 size-1.5 shrink-0 rounded-full bg-primary" />
             <span>
               {pedido
-                ? `Pedido para o plano ${acharPlano(pedido.para).nome} ${pedido.ciclo} enviado agora. A 4YU entra em contato.`
+                ? `Pedido para o plano ${acharPlano(pedido.para).nome} ${pedido.ciclo} enviado agora. Nossa equipe entra em contato.`
                 : `Pedido para o plano ${acharPlano(pedidoAberto!.para).nome} ${pedidoAberto!.ciclo} enviado em ${new Date(
                     pedidoAberto!.quando,
-                  ).toLocaleDateString('pt-BR')}${pedidoAberto!.por ? ` por ${pedidoAberto!.por}` : ''}. Aguardando a 4YU.`}
+                  ).toLocaleDateString('pt-BR')}${pedidoAberto!.por ? ` por ${pedidoAberto!.por}` : ''}. Aguardando a nossa equipe.`}
             </span>
           </p>
         )}

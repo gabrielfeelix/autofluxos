@@ -27,7 +27,7 @@
  *  2. Você só atribui funções até o seu nível.
  *  3. O Proprietário é um só, e só ele passa a posse adiante.
  *
- * O administrador da plataforma (Suporte 4YU) não é função de organização:
+ * O administrador da plataforma (Suporte Dialogon) não é função de organização:
  * ele está fora da escada, com nível 5, e passa por todas as regras.
  *
  * Puro de propósito, como `permissoes.ts`: a mesma regra vale na tela (o que

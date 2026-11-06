@@ -68,7 +68,7 @@ export function CatalogoDeGateways({ itens }: { itens: ItemDoCatalogo[] }) {
 
       {visiveis.length === 0 ? (
         <p className="app-card px-5 py-6 text-center text-[12.5px] text-muted">
-          Nenhuma conta com esse nome. Se a sua não está aqui, fale com a equipe da 4YU.
+          Nenhuma conta com esse nome. Se a sua não está aqui, fale com a equipe do Dialogon.
         </p>
       ) : grupo === 'todos' && !busca.trim() ? (
         <div className="flex flex-col gap-[26px]">

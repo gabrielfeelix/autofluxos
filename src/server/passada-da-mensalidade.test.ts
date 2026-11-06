@@ -165,7 +165,7 @@ describe('o excedente', () => {
   })
 })
 
-it('sem a chave da 4YU, não roda', async () => {
+it('sem a chave do Dialogon, não roda', async () => {
   asaas.mensalidadeConfigurada.mockReturnValueOnce(false)
   expect(await passadaDaMensalidade(dia('2026-11-01'))).toBeNull()
   expect(repos.contasQueAssinam).not.toHaveBeenCalled()

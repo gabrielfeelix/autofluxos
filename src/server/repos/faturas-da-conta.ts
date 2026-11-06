@@ -213,7 +213,7 @@ export type CobrancaDaConta = {
 export const COBRANCA_PADRAO: CobrancaDaConta = { forma: 'asaas', valor: null, dia: null, nota: null }
 
 /**
- * Como a 4YU cobra esta organização (0148). Antes da migration, ou com erro
+ * Como o Dialogon cobra esta organização (0148). Antes da migration, ou com erro
  * de leitura, é `asaas`: o que o código fazia antes dela existir.
  */
 export async function cobrancaDaConta(clienteId: string): Promise<CobrancaDaConta> {

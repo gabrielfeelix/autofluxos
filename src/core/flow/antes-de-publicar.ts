@@ -175,8 +175,8 @@ export function antesDePublicar(entrada: EntradaAntesDePublicar): ItemAntesDePub
             titulo: 'IA desligada nesta automação',
             detalhe:
               origem === 'importado'
-                ? 'Importar nunca traz a IA junto. Tire os blocos de IA ou peça a liberação à 4YU.'
-                : 'Tire os blocos de IA ou peça a liberação à 4YU.',
+                ? 'Importar nunca traz a IA junto. Tire os blocos de IA ou peça a liberação ao suporte.'
+                : 'Tire os blocos de IA ou peça a liberação ao suporte.',
             noIds: ia,
           },
     )

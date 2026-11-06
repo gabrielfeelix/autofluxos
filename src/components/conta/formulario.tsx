@@ -82,7 +82,7 @@ export function FormularioDeConta({
           // de um erro, sem ela, o estado interno da máscara ignoraria o valor.
           key={estado.telefone ?? ''}
           valorInicial={estado.telefone ?? ''}
-          ajuda="Opcional. É o contato que a 4YU usa se algo travar, não o número que o bot atende."
+          ajuda="Opcional. É o contato que usamos se algo travar, não o número que o bot atende."
         />
       )}
 

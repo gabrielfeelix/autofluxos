@@ -99,7 +99,7 @@ export const DEFINICAO_DO_CANAL: Record<CanalId, DefinicaoDeCanal> = {
      * de conectar existe. O que falta não é código: as permissões
      * `instagram_business_basic` e `instagram_business_manage_messages` estão
      * em **Standard Access** até o app review passar, e em Standard o Business
-     * Login só embarca contas da própria conta da Meta da 4YU.
+     * Login só embarca contas da própria conta da Meta do Dialogon.
      *
      * Manter `false` é a regra deste arquivo sendo cumprida, não contornada:
      * oferecer o canal na criação de automação faria alguém desenhar um fluxo

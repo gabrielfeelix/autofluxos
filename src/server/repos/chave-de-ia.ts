@@ -95,7 +95,7 @@ export async function guardarChave(clienteId: string, chave: string): Promise<vo
   if (anterior !== null) await apagarDoCofre(anterior)
 }
 
-/** Volta a usar a chave da 4YU. O segredo sai do cofre junto. */
+/** Volta a usar a chave do Dialogon. O segredo sai do cofre junto. */
 export async function apagarChave(clienteId: string): Promise<void> {
   const ref = await refDaConta(clienteId)
   if (ref === null) return

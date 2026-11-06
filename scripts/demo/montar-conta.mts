@@ -31,7 +31,7 @@ const { atualizarRetomada } = await import('@/server/repos/clientes')
 
 const GRAVAR = process.argv.includes('--gravar')
 const ARQUIVOS = process.env.DEMO_ARQUIVOS ?? ''
-const NOME_DA_CONTA = '4YU Tech Demonstração'
+const NOME_DA_CONTA = 'Dialogon Demonstração'
 const PCYES = '64dbc3a9-1f77-4892-9770-e3e4be9e14cd'
 const GABRIEL = '931ce0d1-bda3-42cb-b328-418c8b1fe7cc'
 const PLANO = 'escala'

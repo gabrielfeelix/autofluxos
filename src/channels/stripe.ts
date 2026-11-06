@@ -19,7 +19,7 @@ import { EMAIL_SEM_EMAIL, type AcessoAoGateway, type GatewayDePagamento, type Pa
  *   link: a cobrança sai só com ele.
  * - **Aviso**: um endpoint só, da plataforma (`api/webhook/stripe`), assinado
  *   com `STRIPE_WEBHOOK_SECRET`; o evento diz a conta (`account`), e o
- *   PaymentIntent ou a sessão é relido com a chave da 4YU.
+ *   PaymentIntent ou a sessão é relido com a chave do Dialogon.
  * - Ambiente pelo prefixo da chave: `sk_test_` conecta contas de teste.
  */
 

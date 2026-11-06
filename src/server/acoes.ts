@@ -547,7 +547,7 @@ export async function acaoAlternarIa(fluxoId: string, clienteId: string, habilit
   if (!ehAdminDaPlataforma(acesso.sessao)) {
     return {
       ok: false as const,
-      erro: 'só a 4YU contrata a IA de uma automação',
+      erro: 'só o suporte contrata a IA de uma automação',
       iaHabilitada: undefined,
     }
   }

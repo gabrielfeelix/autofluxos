@@ -64,7 +64,7 @@ export default async function Sugestoes({ searchParams }: { searchParams: Promis
         <Numero
           rotulo="Novas"
           valor={novas}
-          detalhe={novas === 0 ? 'Todas já foram lidas' : 'Esperando a 4YU ler'}
+          detalhe={novas === 0 ? 'Todas já foram lidas' : 'Esperando leitura'}
           tom={novas > 0 ? 'aviso' : 'ok'}
           href={`${BASE}?situacao=nova`}
         />

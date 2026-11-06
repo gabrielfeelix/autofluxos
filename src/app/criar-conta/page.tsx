@@ -68,7 +68,7 @@ export default async function CriarConta() {
     return (
       <Portico titulo="Cadastro fechado" descricao="Quem cria conta aqui é quem administra a plataforma.">
         <p className="text-[12.5px] leading-[1.7] text-muted">
-          Não existe cadastro aberto neste painel, a conta de um cliente é criada pela 4YU, junto
+          Não existe cadastro aberto neste painel, a conta de um cliente é criada pela nossa equipe, junto
           com o número de WhatsApp dele. Se você deveria ter acesso, peça a quem administra.
         </p>
         <p className="mt-4 text-[12.5px] text-dim">

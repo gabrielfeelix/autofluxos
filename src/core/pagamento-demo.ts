@@ -67,7 +67,7 @@ export function codigoPix(valor: number, nome: string): string {
     campo('58', 'BR') +
     campo('59', ascii(nome, 25)) +
     campo('60', 'MARINGA') +
-    campo('62', campo('05', 'DEMO4YU')) +
+    campo('62', campo('05', 'DEMODIALOGON')) +
     '6304'
   return corpo + crc16(corpo)
 }

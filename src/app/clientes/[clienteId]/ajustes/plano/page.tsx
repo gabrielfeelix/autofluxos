@@ -59,9 +59,9 @@ export default async function Pagina({ params }: { params: Promise<{ clienteId: 
     assinaturaDaConta(clienteId).catch(() => null),
     cobrancaDaConta(clienteId),
   ])
-  // Por fora ou cortesia (0148): sem botão Assinar; a troca continua sendo pedido à 4YU.
+  // Por fora ou cortesia (0148): sem botão Assinar; a troca continua sendo pedido ao suporte.
   const liberada = acesso !== null && cobranca.forma === 'asaas' && mensalidadeLiberada(ehAdminDaPlataforma(acesso.sessao))
-  // Conta que já paga pelo Asaas troca de plano direto, sem pedido à 4YU.
+  // Conta que já paga pelo Asaas troca de plano direto, sem pedido ao suporte.
   const trocaDireta = liberada && (assinatura?.estado === 'ativa' || assinatura?.estado === 'atrasada')
   // Só aparece para quem tem número na API oficial: é a conta que a Meta cobra.
   const temWhatsAppOficial = canais.some((canal) => canal.provider === 'cloud-api')

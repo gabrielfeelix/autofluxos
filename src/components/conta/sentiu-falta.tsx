@@ -68,7 +68,7 @@ export function SentiuFalta({
       descricao={
         enviada
           ? undefined
-          : 'Conte o que você procurou e não achou, ou o que deixaria seu dia mais fácil. A equipe da 4YU lê cada sugestão.'
+          : 'Conte o que você procurou e não achou, ou o que deixaria seu dia mais fácil. Nossa equipe lê cada sugestão.'
       }
       largura={460}
     >
@@ -80,7 +80,7 @@ export function SentiuFalta({
             </svg>
           </span>
           <p className="max-w-[340px] text-[13px] leading-5 text-soft">
-            Sua sugestão chegou para a equipe da 4YU. Se precisarmos entender melhor, falamos com você.
+            Sua sugestão chegou para a nossa equipe. Se precisarmos entender melhor, falamos com você.
           </p>
           <button type="button" onClick={fechar} className="botao-primario botao-md mt-1 w-full">
             Fechar

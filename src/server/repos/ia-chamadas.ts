@@ -94,14 +94,14 @@ export async function registrarChamada(chamada: ChamadaDeIa): Promise<void> {
 export const FERRAMENTA_RESPOSTA = 'resposta'
 
 /**
- * Uma transcrição de áudio feita com a chave da 4YU (0128). Conta no teto da
+ * Uma transcrição de áudio feita com a chave do Dialogon (0128). Conta no teto da
  * conta junto com as respostas, e não no limite por contato: quem transcreve é
  * a equipe, clicando, não o cliente conversando.
  */
 export const FERRAMENTA_TRANSCRICAO = 'transcricao'
 
 /**
- * Um gesto da IA do atendente (sugerir, resumir, ajustar) com a chave da 4YU.
+ * Um gesto da IA do atendente (sugerir, resumir, ajustar) com a chave do Dialogon.
  * Conta no teto da conta, como a transcrição, e não no limite por contato: é a
  * equipe clicando, e gastar o limite do contato calaria o robô dele.
  */
@@ -186,7 +186,7 @@ export async function registrarRespostaDaIa(clienteId: string, contatoId: string
   })
 }
 
-/** Grava uma transcrição feita com a chave da 4YU, para o teto da conta. */
+/** Grava uma transcrição feita com a chave do Dialogon, para o teto da conta. */
 export async function registrarTranscricao(clienteId: string, contatoId: string): Promise<void> {
   await registrarChamada({
     clienteId,
@@ -198,7 +198,7 @@ export async function registrarTranscricao(clienteId: string, contatoId: string)
   })
 }
 
-/** Grava um gesto da IA do atendente feito com a chave da 4YU, para o teto da conta. */
+/** Grava um gesto da IA do atendente feito com a chave do Dialogon, para o teto da conta. */
 export async function registrarUsoDoCopiloto(clienteId: string, contatoId: string, tarefa: string): Promise<void> {
   await registrarChamada({
     clienteId,
