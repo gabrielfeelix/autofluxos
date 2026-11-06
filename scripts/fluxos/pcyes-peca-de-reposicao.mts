@@ -6,7 +6,7 @@
 // Conversa que pediu: Mary, 05/nov 13:51. O monitor dela (menos de 4 meses)
 // parou, a assistência disse que pode ser a fonte, e ela tocou "Quero comprar"
 // e perguntou quanto custa a fonte. A rota estava certa: a PCYES não vende peça
-// avulsa, o Suporte confere o estoque e envia (contexto da conta). O erro foi a
+// avulsa, o Suporte confere o estoque (contexto da conta). O erro foi a
 // resposta: a IA concluiu "suporte", o motor cala a frase dela quando passa a
 // conversa adiante (`core/engine/executar.ts`, 02/out) e o que chegou foi o
 // cartão genérico "Suporte técnico, instalação e garantia", que não fala de
@@ -14,7 +14,7 @@
 //
 // Correção: Vendas e a triagem do menu concluem `suporte peça` quando é peça
 // de reposição, e o fluxo de Suporte responde esse caso com um texto que fala
-// da peça, do estoque, da garantia e do frete, com a mensagem pronta pedindo a
+// da peça e do estoque, sem prometer frete nem custo (não está no site), com a mensagem pronta pedindo a
 // peça em vez de "o que está acontecendo".
 import { readFileSync, writeFileSync } from 'node:fs'
 import path from 'node:path'
@@ -95,7 +95,7 @@ if (!suporte.nodes.some((n) => n.id === 'e-peca')) {
       data: {
         ...encaminha.data,
         texto:
-          'Peças de reposição, como fonte, cabo, tampa ou pé, são atendidas pelo nosso time de Suporte 🔧\n\nA PCYES não vende peça avulsa pela loja: o Suporte confere se a peça está em estoque e envia para você. Fora da garantia, só o frete fica por sua conta.\n\nToque em *Abrir conversa*: a mensagem já vai pronta, é só completar com o modelo do produto e a peça que você precisa.\n\n📞 Suporte PCYES: (44) 2101-1428\n🕘 Segunda a sexta, das 8h às 18h.',
+          'Peças de reposição, como fonte, cabo, tampa ou pé, são atendidas pelo nosso time de Suporte 🔧\n\nA PCYES não vende peça avulsa pela loja: o Suporte confere se a peça está em estoque e te passa as condições.\n\nToque em *Abrir conversa*: a mensagem já vai pronta, é só completar com o modelo do produto e a peça que você precisa.\n\n📞 Suporte PCYES: (44) 2101-1428\n🕘 Segunda a sexta, das 8h às 18h.',
         mensagemPronta: 'Olá! Vim pelo WhatsApp da PCYES e preciso de uma peça de reposição.\nProduto (modelo):\nPeça:',
       },
     },
